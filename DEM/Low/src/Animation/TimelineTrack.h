@@ -1,15 +1,19 @@
 #pragma once
-#include <StdDEM.h>
+#include <Resources/ResourceObject.h>
 
 // Base track for any timeline-playable object (e.g. animation clip, sound, event track etc)
 
 namespace DEM::Anim
 {
-using PTimelineTrack = std::unique_ptr<class ITimelineTrack>;
+using PTimelineTrack = Ptr<class CTimelineTrack>;
 
-class ITimelineTrack
+class CTimelineTrack : public Resources::CResourceObject
 {
+	RTTI_CLASS_DECL;
+
 public:
+
+	virtual bool IsResourceValid() const override { return true; }
 
 	//???clips here? can make templated by clip type!
 	// NB: whole timeline looping must be handled in a timeline player

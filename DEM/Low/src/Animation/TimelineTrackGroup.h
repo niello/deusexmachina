@@ -7,7 +7,7 @@
 namespace DEM::Anim
 {
 
-class CTimelineTrackGroup : public ITimelineTrack
+class CTimelineTrackGroup : public CTimelineTrack
 {
 public:
 

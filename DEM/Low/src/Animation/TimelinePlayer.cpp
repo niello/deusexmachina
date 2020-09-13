@@ -4,11 +4,11 @@
 namespace DEM::Anim
 {
 
-void CTimelinePlayer::SetTrack(ITimelineTrack* pTrack)
+void CTimelinePlayer::SetTrack(const PTimelineTrack& Track)
 {
-	_pTrack = pTrack;
+	_Track = Track;
 	SetStartTime(0.f);
-	SetEndTime(_pTrack ? _pTrack->GetDuration() : 0.f);
+	SetEndTime(_Track ? _Track->GetDuration() : 0.f);
 }
 //---------------------------------------------------------------------
 
@@ -44,7 +44,7 @@ bool CTimelinePlayer::OnLoopEnd()
 void CTimelinePlayer::PlayInterval()
 {
 	// Empty timeline, nothing to play
-	if (!_pTrack || _EndTime <= _StartTime) return;
+	if (!_Track || _EndTime <= _StartTime) return;
 
 	const float PrevTime = _PrevTime;
 	_PrevTime = _CurrTime;
@@ -61,7 +61,7 @@ void CTimelinePlayer::PlayInterval()
 		LoopStartTime += Duration;
 		while (LoopStartTime < _CurrTime)
 		{
-			_pTrack->PlayInterval(SegmentStartTimeTL, _EndTime, (_RemainingLoopCount == 1));
+			_Track->PlayInterval(SegmentStartTimeTL, _EndTime, (_RemainingLoopCount == 1));
 			if (OnLoopEnd()) return;
 			SegmentStartTimeTL = _StartTime;
 			LoopStartTime += Duration;
@@ -72,7 +72,7 @@ void CTimelinePlayer::PlayInterval()
 		// Play backward
 		while (LoopStartTime > _CurrTime)
 		{
-			_pTrack->PlayInterval(SegmentStartTimeTL, _StartTime, (_RemainingLoopCount == 1));
+			_Track->PlayInterval(SegmentStartTimeTL, _StartTime, (_RemainingLoopCount == 1));
 			if (OnLoopEnd()) return;
 			SegmentStartTimeTL = _EndTime;
 			LoopStartTime -= Duration;
@@ -84,7 +84,7 @@ void CTimelinePlayer::PlayInterval()
 	const float CurrTimeTL = _StartTime + _CurrTime - CurrLoopStartTime;
 
 	// The last segment ends exactly at the current time
-	_pTrack->PlayInterval(SegmentStartTimeTL, CurrTimeTL, true);
+	_Track->PlayInterval(SegmentStartTimeTL, CurrTimeTL, true);
 
 	// Process exact loop end
 	if (LoopStartTime == _CurrTime && OnLoopEnd()) return;

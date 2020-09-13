@@ -11,9 +11,9 @@ namespace DEM::Anim
 {
 using PPoseOutput = Ptr<class IPoseOutput>;
 using PPoseClipBase = std::unique_ptr<class CPoseClipBase>;
-using PPoseTrack = std::unique_ptr<class CPoseTrack>;
+using PPoseTrack = Ptr<class CPoseTrack>;
 
-class CPoseTrack : public ITimelineTrack
+class CPoseTrack : public CTimelineTrack
 {
 protected:
 

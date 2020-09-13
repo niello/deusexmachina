@@ -1,5 +1,5 @@
 #pragma once
-#include <StdDEM.h>
+#include <Data/Ptr.h>
 
 // Plays a set of one or more timeline tracks.
 // Can play the whole timeline (from the start to the last clip end) or a selected interval.
@@ -10,13 +10,13 @@
 namespace DEM::Anim
 {
 using PTimelinePlayer = std::unique_ptr<class CTimelinePlayer>;
-class ITimelineTrack;
+using PTimelineTrack = Ptr<class CTimelineTrack>;
 
 class CTimelinePlayer final
 {
 protected:
 
-	ITimelineTrack* _pTrack = nullptr; //???refcounted strong?
+	PTimelineTrack _Track;
 
 	U32   _RemainingLoopCount = 0;
 
@@ -34,13 +34,13 @@ public:
 
 	static inline constexpr U32 LOOP_INFINITELY = 0; // For _RemainingLoopCount
 
-	void  SetTrack(ITimelineTrack* pTrack);
+	void  SetTrack(const PTimelineTrack& Track);
 	void  SetStartTime(float Time);
 	void  SetEndTime(float Time);
 	void  SetSpeed(float Speed) { _Speed = Speed; }
 	void  SetPaused(bool Paused) { _Paused = Paused; }
 
-	bool  Play(U32 LoopCount = 1) { _RemainingLoopCount = LoopCount; _Paused = !_pTrack; return !_Paused; }
+	bool  Play(U32 LoopCount = 1) { _RemainingLoopCount = LoopCount; _Paused = !_Track; return !_Paused; }
 	void  Stop() { /*_RemainingLoopCount = 0;*/ _Paused = true; SetTime(0.f); }
 	void  SetTime(float Time) { _PrevTime = Time; _CurrTime = Time; }
 	void  Rewind(float Time) { _CurrTime = Time; PlayInterval(); } //???what with _RemainingLoopCount? Set to 1?

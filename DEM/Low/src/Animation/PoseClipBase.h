@@ -13,9 +13,12 @@ class CPoseClipBase
 {
 protected:
 
-	PPoseOutput _Output = nullptr; // Track output (for direct port mapping) or mapped output
+	PPoseOutput _Output; // Track output (for direct port mapping) or mapped output
 
 public:
+
+	CPoseClipBase();
+	virtual ~CPoseClipBase();
 
 	virtual void BindToOutput(const PPoseOutput& Output) = 0;
 	virtual void PlayInterval(float PrevTime, float CurrTime, bool IsLast, const CPoseTrack& Track, UPTR ClipIndex) = 0;

@@ -18,6 +18,8 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/TimelinePlayer.h
 	DEM/Low/src/Animation/TimelineTrack.h
 	DEM/Low/src/Animation/TimelineTrackGroup.h
+	DEM/Low/src/Animation/TimelineTrackLoaderANM.h
+	DEM/Low/src/Animation/TimelineTrackLoaderHRD.h
 	DEM/Low/src/Core/Application.h
 	DEM/Low/src/Core/ApplicationState.h
 	DEM/Low/src/Core/CoreServer.h
@@ -331,7 +333,10 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/StaticPose.cpp
 	DEM/Low/src/Animation/StaticPoseClip.cpp
 	DEM/Low/src/Animation/TimelinePlayer.cpp
+	DEM/Low/src/Animation/TimelineTrack.cpp
 	DEM/Low/src/Animation/TimelineTrackGroup.cpp
+	DEM/Low/src/Animation/TimelineTrackLoaderANM.cpp
+	DEM/Low/src/Animation/TimelineTrackLoaderHRD.cpp
 	DEM/Low/src/Core/Application.cpp
 	DEM/Low/src/Core/ApplicationState.cpp
 	DEM/Low/src/Core/CoreServer.cpp
