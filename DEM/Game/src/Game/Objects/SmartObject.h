@@ -38,21 +38,22 @@ protected:
 		std::vector<std::pair<CStrID, CTimelineTask>> Transitions;
 	};
 
-	CStrID        _DefaultState;
-	std::string   _ScriptPath; //???CStrID of ScriptObject resource? Loader requires Lua.
+	CStrID           _DefaultState;
+	std::string      _ScriptSource; //???CStrID of ScriptObject resource? Loader requires Lua.
 
-	sol::function _OnStateEnter;
-	sol::function _OnStateStartEntering;
-	sol::function _OnStateExit;
-	sol::function _OnStateStartExiting;
-	sol::function _OnStateUpdate;
+	//sol::environment _ScriptObject;
+	sol::function    _OnStateEnter;
+	sol::function    _OnStateStartEntering;
+	sol::function    _OnStateExit;
+	sol::function    _OnStateStartExiting;
+	sol::function    _OnStateUpdate;
 
 	std::vector<CStateRecord> _States; //!!!sort by ID for fast search!
 	std::vector<std::pair<CStrID, sol::function>> _Interactions; // Interaction ID -> optional condition
 
 public:
 
-	CSmartObject(CStrID DefaultState, std::string_view ScriptPath);
+	CSmartObject(CStrID DefaultState, std::string_view ScriptSource);
 
 	virtual bool IsResourceValid() const override { return !_States.empty(); }
 

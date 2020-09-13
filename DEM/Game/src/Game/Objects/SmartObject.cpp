@@ -4,8 +4,8 @@ namespace DEM::Game
 {
 RTTI_CLASS_IMPL(DEM::Game::CSmartObject, Resources::CResourceObject);
 
-CSmartObject::CSmartObject(CStrID DefaultState, std::string_view ScriptPath)
-	: _ScriptPath(ScriptPath)
+CSmartObject::CSmartObject(CStrID DefaultState, std::string_view ScriptSource)
+	: _ScriptSource(ScriptSource)
 	, _DefaultState(DefaultState)
 {
 }
@@ -58,8 +58,18 @@ bool CSmartObject::AddInteraction(CStrID ID)
 
 bool CSmartObject::InitScript(sol::state& Lua)
 {
-	// create Lua table for the new object
-	// load script from path into this table
+	if (_ScriptSource.empty()) return true;
+
+	//???cache env as field? or functions are enough? or don't cache functions, only env?
+	sol::environment ScriptObject(Lua, sol::create);
+	auto Result = Lua.script(_ScriptSource, ScriptObject /*, chunk name from SO ID*/);
+	if (!Result.valid())
+	{
+		sol::error Error = Result;
+		::Sys::Error(Error.what());
+		return false;
+	}
+
 	// save the table as named object in Lua (namespace it like Smart.<MyID>)
 	// cache state functions
 	// cache interaction condition functions

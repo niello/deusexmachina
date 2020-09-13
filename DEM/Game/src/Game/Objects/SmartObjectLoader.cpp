@@ -33,10 +33,19 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 	Data::CHRDParser Parser;
 	if (!Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), Params)) return nullptr;
 
-	CStrID DefaultState = Params.Get(CStrID("DefaultState"), CStrID::Empty);
-	const auto Script = Params.Get(CStrID("Script"), CString::Empty);
+	// Read script source
+	const auto ScriptPath = Params.Get(CStrID("Script"), CString::Empty);
+	{
+		IO::PStream Stream = _ResMgr.CreateResourceStream(ScriptPath, pOutSubId, IO::SAP_SEQUENTIAL);
+		if (!Stream || !Stream->IsOpened()) return nullptr;
+		Buffer = Stream->ReadAll();
+		if (!Buffer) return nullptr;
+	}
+	std::string_view ScriptSource(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize());
 
-	DEM::Game::PSmartObject SmartObject = n_new(DEM::Game::CSmartObject(DefaultState, Script.CStr()));
+	const CStrID DefaultState = Params.Get(CStrID("DefaultState"), CStrID::Empty);
+
+	DEM::Game::PSmartObject SmartObject = n_new(DEM::Game::CSmartObject(DefaultState, ScriptSource));
 
 	Data::PParams StatesDesc;
 	if (Params.TryGet<Data::PParams>(StatesDesc, CStrID("States")))
