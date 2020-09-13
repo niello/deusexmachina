@@ -35,33 +35,34 @@ class CResource final : public Data::CRefCounted
 protected:
 
 	CStrID				_UID;
-	EResourceState		State = EResourceState::NotLoaded;
-	PResourceObject		Object;			// Actual object, such as a texture or a game object description
-	PResourceCreator	Creator;		// For (re)creation of an actual resource object
+	EResourceState		_State = EResourceState::NotLoaded;
+	PResourceObject		_Object;  // Actual object, such as a texture or a game object description
+	PResourceCreator	_Creator; // For (re)creation of an actual resource object
 
-	//PResourceObject	Placeholder; //???here or register per RTTI in Mgr?
-	//UPTR				ByteSize = 0; //???or getter with redirection to PResourceObject?
+	//PResourceObject	_Placeholder; //???here or register per RTTI in Mgr?
+	//UPTR				_ByteSize = 0; //???or getter with redirection to PResourceObject?
 
 public:
 
 	CResource(CStrID UID);
-	virtual ~CResource();
+	virtual ~CResource() override;
 
 	template<class T>
-	T*					GetObject();
+	T*                GetObject();
 	template<class T>
-	T*					ValidateObject();
+	T*                ValidateObject();
 
-	CResourceObject*	GetObject();
-	CResourceObject*	ValidateObject();
+	CResourceObject*  GetObject();
+	CResourceObject*  ValidateObject();
+	void              Unload();
 
 	//PJob ValidateObjectAsync(callback on finished); - doesn't create a job if already actual
 
-	CStrID				GetUID() const { return _UID; }
-	EResourceState		GetState() const { return State; } //!!!must be thread-safe!
-	bool				IsLoaded() const { return State == EResourceState::Loaded; } //!!!must be thread-safe!
-	IResourceCreator*	GetCreator() const { return Creator.Get(); }
-	void				SetCreator(IResourceCreator* pNewCreator);
+	CStrID            GetUID() const { return _UID; }
+	EResourceState    GetState() const { return _State; } //!!!must be thread-safe!
+	bool              IsLoaded() const { return _State == EResourceState::Loaded; } //!!!must be thread-safe!
+	IResourceCreator* GetCreator() const { return _Creator.Get(); }
+	void              SetCreator(IResourceCreator* pNewCreator);
 };
 
 template<class T> inline T* CResource::GetObject()

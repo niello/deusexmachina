@@ -4,9 +4,10 @@ namespace DEM::Game
 {
 RTTI_CLASS_IMPL(DEM::Game::CSmartObject, Resources::CResourceObject);
 
-CSmartObject::CSmartObject(CStrID DefaultState, std::string_view ScriptSource)
-	: _ScriptSource(ScriptSource)
+CSmartObject::CSmartObject(CStrID ID, CStrID DefaultState, std::string_view ScriptSource)
+	: _ID(ID)
 	, _DefaultState(DefaultState)
+	, _ScriptSource(ScriptSource)
 {
 }
 //---------------------------------------------------------------------
@@ -58,7 +59,7 @@ bool CSmartObject::AddInteraction(CStrID ID)
 
 bool CSmartObject::InitScript(sol::state& Lua)
 {
-	if (_ScriptSource.empty()) return true;
+	if (_ScriptSource.empty() || !_ID) return true;
 
 	//???cache ScriptObject as field? or functions are enough? or don't cache functions, only env?
 	sol::environment ScriptObject(Lua, sol::create);
@@ -96,6 +97,14 @@ bool CSmartObject::InitScript(sol::state& Lua)
 		if (Proxy.get_type() == sol::type::function)
 			Condition = Proxy;
 	}
+
+	//???use sol::this_environment for calls as a Self ref?
+
+	//???new_usertype for CSmartObject in ScriptObject or in global table?
+
+	// Write new script object into a smart object registry
+	auto SmartObjectsRegistry = Lua["SmartObjects"].get_or_create<sol::table>();
+	SmartObjectsRegistry[_ID.CStr()] = ScriptObject;
 
 	return true;
 }

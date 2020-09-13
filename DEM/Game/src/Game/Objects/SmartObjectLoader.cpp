@@ -43,9 +43,10 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 	}
 	std::string_view ScriptSource(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize());
 
+	const CStrID ID = Params.Get(CStrID("ID"), CStrID::Empty);
 	const CStrID DefaultState = Params.Get(CStrID("DefaultState"), CStrID::Empty);
 
-	DEM::Game::PSmartObject SmartObject = n_new(DEM::Game::CSmartObject(DefaultState, ScriptSource));
+	DEM::Game::PSmartObject SmartObject = n_new(DEM::Game::CSmartObject(ID, DefaultState, ScriptSource));
 
 	Data::PParams StatesDesc;
 	if (Params.TryGet<Data::PParams>(StatesDesc, CStrID("States")))

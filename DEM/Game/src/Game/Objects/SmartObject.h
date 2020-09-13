@@ -38,6 +38,7 @@ protected:
 		std::vector<std::pair<CStrID, CTimelineTask>> Transitions;
 	};
 
+	CStrID           _ID;
 	CStrID           _DefaultState;
 	std::string      _ScriptSource; //???CStrID of ScriptObject resource? Loader requires Lua.
 
@@ -53,11 +54,11 @@ protected:
 
 public:
 
-	CSmartObject(CStrID DefaultState, std::string_view ScriptSource);
+	CSmartObject(CStrID ID, CStrID DefaultState, std::string_view ScriptSource);
 
 	virtual bool IsResourceValid() const override { return !_States.empty(); }
 
-	// TODO: to constructor? Not intended for runtime changes at least for now
+	// TODO: Add* logic to constructor? Or for runtime changes need also Remove*.
 	bool         AddState(CStrID ID, CTimelineTask&& TimelineTask/*, state logic object ptr (optional)*/);
 	bool         AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& TimelineTask);
 	bool         AddInteraction(CStrID ID);
