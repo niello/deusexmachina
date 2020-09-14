@@ -11,6 +11,10 @@ class CTimelineTrackGroup : public CTimelineTrack
 {
 public:
 
+	virtual float GetDuration() const override;
+
+	virtual void  PlayInterval(float PrevTime, float CurrTime, bool IsLast) override;
+
 	//???if timeline track base class manages clips, how to use this functionality here?
 
 	// start time - offset in parent (if parent exists)
@@ -18,7 +22,7 @@ public:
 
 	// vector<PTimelineTrack>
 
-	// play interval - adjust by start time, play interval on all child tracks
+	// play interval - adjust by start time is made by clip playback logic, play interval on all child tracks
 };
 
 }
