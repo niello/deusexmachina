@@ -16,9 +16,12 @@ const Core::CRTTI& CTimelineTrackLoaderANM::GetResultType() const
 
 PResourceObject CTimelineTrackLoaderANM::CreateResource(CStrID UID)
 {
-	//!!!need some postfix for the UID? Like #TL, to make distinction between TL and animation clip itself!
+	// Requires #TL sub-ID to distinguish from animation clip resource
+	const char* pSubId = strchr(UID.CStr(), '#');
+	if (!pSubId || strcmp(pSubId, "#TL")) return nullptr;
 
-	auto AnimRsrc = _ResMgr.RegisterResource<DEM::Anim::CAnimationClip>(UID);
+	std::string AnimUID(UID.CStr(), pSubId);
+	auto AnimRsrc = _ResMgr.RegisterResource<DEM::Anim::CAnimationClip>(AnimUID.c_str());
 	auto Anim = AnimRsrc->ValidateObject<DEM::Anim::CAnimationClip>();
 	if (!Anim) return nullptr;
 
