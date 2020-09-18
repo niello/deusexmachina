@@ -64,6 +64,7 @@ public:
 	bool         AddInteraction(CStrID ID);
 	bool         InitScript(sol::state& Lua);
 
+	CStrID       GetDefaultState() const { return _DefaultState; }
 	const auto&  GetInteractions() const { return _Interactions; }
 };
 

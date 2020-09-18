@@ -15,8 +15,8 @@ struct CSmartObjectComponent
 
 	Resources::PResource Asset; // CSmartObject
 	CStrID AssetID; //???or PResource? ID and object inside, nicely wrapped
-	// curr state
-	// next state
+	CStrID CurrState;
+	CStrID NextState;
 	//???transition progress / current state timer (one multipurpose time float)? or inside timeline player?
 	//!!!NB: if in player, must save prev time, not curr, or some TL part may be skipped on game reload!
 
