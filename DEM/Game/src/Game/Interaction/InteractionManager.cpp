@@ -170,7 +170,7 @@ void CInteractionManager::ResetCandidateInteraction(CInteractionContext& Context
 }
 //---------------------------------------------------------------------
 
-const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, sol::function Condition, CInteractionContext& Context)
+const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const sol::function& Condition, CInteractionContext& Context)
 {
 	// Validate interaction itself
 	auto pInteraction = FindInteraction(ID);
