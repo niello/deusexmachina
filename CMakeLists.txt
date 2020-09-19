@@ -106,6 +106,15 @@ list(APPEND DEM_TARGETS DEMRPG)
 set(DEM_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/lib/$<$<BOOL:FALSE>:>")
 set(DEM_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin/$<$<BOOL:FALSE>:>")
 
+if(MSVC)
+	foreach(_TARGET_NAME IN LISTS DEM_DEPS_TARGETS)
+		get_target_property(type ${_TARGET_NAME} TYPE)
+		if (NOT ${type} STREQUAL "INTERFACE_LIBRARY")
+			set_target_properties(${_TARGET_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+		endif()
+	endforeach()
+endif()
+
 foreach(_TARGET_NAME IN LISTS DEM_TARGETS)
 
 	set_target_properties(${_TARGET_NAME} PROPERTIES
@@ -126,6 +135,7 @@ foreach(_TARGET_NAME IN LISTS DEM_TARGETS)
 	endforeach()
 
 	if(MSVC)
+		set_target_properties(${_TARGET_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 		if(DEM_DISABLE_CXX_RTTI)
 			target_compile_options(${_TARGET_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
 		endif()

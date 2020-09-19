@@ -17138,7 +17138,9 @@ namespace function_detail {
 		typedef std::remove_pointer_t<std::decay_t<Function>> function_type;
 		typedef lua_bind_traits<function_type> traits_type;
 
-		static int real_call(lua_State* L) noexcept(traits_type::is_noexcept) {
+		// DEM FIXME: temporarily commented is_noexcept due to VS2019 16.7 bug
+		//'traits_type': is not a class or namespace name
+		static int real_call(lua_State* L) /*noexcept(traits_type::is_noexcept)*/ {
 			// Layout:
 			// idx 1...n: verbatim data of member variable pointer
 			function_type& memfx = stack::get<user<function_type>>(L, upvalue_index(2));
