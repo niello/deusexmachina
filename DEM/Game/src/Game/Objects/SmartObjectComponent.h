@@ -1,5 +1,7 @@
 #pragma once
 #include <Resources/Resource.h>
+#include <Animation/TimelinePlayer.h>
+#include <Animation/TimelineTrack.h> // For inlined destructor CSmartObjectComponent -> CTimelinePlayer
 #include <Data/Metadata.h>
 #include <Data/StringID.h>
 
@@ -10,11 +12,10 @@ namespace DEM::Game
 
 struct CSmartObjectComponent
 {
-	//DEM::Anim::CTimelinePlayer Player;
-	//DEM::Anim::PTimelineTrack  Track; // for the last instantiated TL (best setup is the same TL asset for all states & transitions)
+	DEM::Anim::CTimelinePlayer Player;
 
 	Resources::PResource Asset; // CSmartObject
-	CStrID AssetID; //???or PResource? ID and object inside, nicely wrapped
+	CStrID AssetID; // FIXME: PResource Asset must be enough!
 	CStrID CurrState;
 	CStrID NextState;
 	//???transition progress / current state timer (one multipurpose time float)? or inside timeline player?

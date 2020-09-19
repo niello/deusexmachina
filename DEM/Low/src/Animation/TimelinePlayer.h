@@ -34,6 +34,9 @@ public:
 
 	static inline constexpr U32 LOOP_INFINITELY = 0; // For _RemainingLoopCount
 
+	CTimelinePlayer();
+	~CTimelinePlayer();
+
 	void  SetTrack(const PTimelineTrack& Track);
 	void  SetStartTime(float Time);
 	void  SetEndTime(float Time);
@@ -48,6 +51,7 @@ public:
 	void  Update(float dt) { if (!_Paused) { _CurrTime += dt * _Speed; PlayInterval(); } }
 
 	float GetSpeed() const { return _Speed; }
+	float GetCurrTime() const  { return _CurrTime; }
 	U32   GetRemainingLoopCount() const { return _RemainingLoopCount; }
 	bool  IsPlaying() const { return !_Paused; }
 };

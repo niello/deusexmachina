@@ -62,7 +62,7 @@ bool CSmartObject::InitScript(sol::state& Lua)
 	if (_ScriptSource.empty() || !_ID) return true;
 
 	//???cache ScriptObject as field? or functions are enough? or don't cache functions, only env?
-	sol::environment ScriptObject(Lua, sol::create);
+	sol::environment ScriptObject(Lua, sol::create, Lua.globals());
 	auto Result = Lua.script(_ScriptSource, ScriptObject /*, chunk name from SO ID*/);
 	if (!Result.valid())
 	{

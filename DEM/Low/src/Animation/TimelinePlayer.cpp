@@ -3,6 +3,8 @@
 
 namespace DEM::Anim
 {
+CTimelinePlayer::CTimelinePlayer() = default;
+CTimelinePlayer::~CTimelinePlayer() = default;
 
 void CTimelinePlayer::SetTrack(const PTimelineTrack& Track)
 {
