@@ -17,46 +17,64 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, float dt)
 		// if same, no actions required on it, only player must be updated.
 		// if not same, must clone and bind to outputs
 
-		// Ignore requests for the already active state
-		if (SOComponent.NextState == SOComponent.CurrState)
-			SOComponent.NextState = CStrID::Empty;
-
-		if (SOComponent.NextState)
+		switch (SOComponent.Status)
 		{
-			//???state? State, TransitionRequest, ForceRequest, Transition
-
-			// if transition must start ([transition and??] TL are required, or it will be force-set)
-			//   set TL to transition TL
-			//   call OnStateStartExiting
-			//   call OnStateStartEntering
-			// else if transition must end or force request starts
-			//   set TL to state TL or clear
-			//   call OnStateExit
-			//   call OnStateEnter
-			//   clear next state
-			// else
-			//   update transition TL with dt
-		}
-		else
-		{
-			//???pSmart->OnStateUpdate(World, EntityID, SOComponent.CurrState)?
-
-			//!!!TODO: call custom logic, if exists!
-
-			auto& Script = pSmart->GetOnStateUpdateScript();
-			if (Script.valid())
+			case ESmartObjectStatus::InState:
 			{
-				auto Result = Script(EntityID, SOComponent.CurrState);
-				if (!Result.valid())
-				{
-					sol::error Error = Result;
-					::Sys::Error(Error.what());
-				}
-			}
+				//???pSmart->OnStateUpdate(World, EntityID, SOComponent.CurrState)?
 
-			//???!!!even if no state TL, may want to count time in this state (time from enter)!
-			SOComponent.Player.Update(dt);
-		}
+				//!!!TODO: call custom logic, if exists!
+
+				auto& Script = pSmart->GetOnStateUpdateScript();
+				if (Script.valid())
+				{
+					auto Result = Script(EntityID, SOComponent.CurrState);
+					if (!Result.valid())
+					{
+						sol::error Error = Result;
+						::Sys::Error(Error.what());
+					}
+				}
+
+				//???!!!even if no state TL, may want to count time in this state (time from enter)!
+				SOComponent.Player.Update(dt);
+
+				break;
+			}
+			case ESmartObjectStatus::InTransition:
+			{
+				//if transition must end
+				//   set TL to state TL or clear
+				//   call OnStateExit
+				//   call OnStateEnter
+				//   clear next state
+				// else
+				//   update transition TL with dt
+				break;
+			}
+			case ESmartObjectStatus::TransitionRequested:
+			{
+				//!!!need to know if in transition and in what transition!
+				// TargetState & RequestedState instead of NextState?
+				//???state? State, TransitionRequest, ForceRequest, Transition
+
+				// if transition must start ([transition and??] TL are required, or it will be force-set)
+				//   set TL to transition TL
+				//   call OnStateStartExiting
+				//   call OnStateStartEntering
+				break;
+			}
+			case ESmartObjectStatus::ForceStateRequested:
+			{
+				//!!!need to know if in transition and in what transition!
+				// TargetState & RequestedState instead of NextState?
+				//   set TL to state TL or clear
+				//   call OnStateExit
+				//   call OnStateEnter
+				//   clear next state
+				break;
+			}
+		};
 	});
 }
 //---------------------------------------------------------------------
