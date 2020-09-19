@@ -28,8 +28,11 @@ CGameSession::CGameSession()
 		, sol::meta_function::to_string, &CStrID::CStr
 		, sol::meta_function::length, [](CStrID ID) { return ID.CStr() ? strlen(ID.CStr()) : 0; }
 		, sol::meta_function::index, [](CStrID ID, size_t i) { return ID.CStr() ? ID.CStr()[i - 1] : '\0'; }
-		//, sol::meta_function::concatenation, [](CStrID ID, size_t i) { return ID.CStr() ? ID.CStr()[i - 1] : '\0'; }
-	);
+		, sol::meta_function::concatenation, sol::overload(
+			[](const char* a, CStrID b) { return std::string(a) + b.CStr(); }
+			, [](CStrID a, const char* b) { return std::string(a.CStr()) + b; }
+			, [](CStrID a, CStrID b) { return std::string(a.CStr()) + b.CStr(); })
+		);
 }
 //---------------------------------------------------------------------
 
