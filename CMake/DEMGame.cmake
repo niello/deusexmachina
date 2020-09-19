@@ -129,6 +129,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/App/StateHandler.cpp
 	DEM/Game/src/Game/EntityOld.cpp
 	DEM/Game/src/Game/GameLevel.cpp
+	DEM/Game/src/Game/GameSession.cpp
 	DEM/Game/src/Game/GameState.cpp
 	DEM/Game/src/Game/GameStateManager.cpp
 	DEM/Game/src/Game/Property.cpp

@@ -31,25 +31,7 @@ protected:
 
 public:
 
-	CGameSession()
-	{
-		_ScriptState.open_libraries(sol::lib::base);
-		_ScriptState["print"] = [](lua_State* L)
-		{
-			::Sys::Log("Lua > ");
-			const int n = lua_gettop(L); // number of arguments
-			for (int i = 1; i <= n; ++i)
-			{
-				if (i > 1) ::Sys::Log("\t");
-				if (auto s = lua_tostring(L, i))
-					::Sys::Log(s);
-				else
-					::Sys::Log("<unknown>");
-			}
-			::Sys::Log("\n");
-			return 0;
-		};
-	}
+	CGameSession();
 
 	sol::state& GetScriptState() { return _ScriptState; }
 
@@ -76,6 +58,9 @@ public:
 		//	"paint", &Component::Paint,
 		//	sol::meta_function::new_index, &Component::Setter
 		//	);
+
+		//!!!can also call some InitScript<T> routine for these classes (if exists), to register types!
+		//need to register HEntity, for example!
 	}
 	//---------------------------------------------------------------------
 
