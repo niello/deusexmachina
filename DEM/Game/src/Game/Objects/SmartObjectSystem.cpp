@@ -7,64 +7,91 @@ namespace DEM::Game
 
 void ProcessStateChangeRequest(CSmartObjectComponent& SOComponent, const CSmartObject& SOAsset)
 {
-	// If already in another transition and not forced to the new state, need interruption
-	if (!SOComponent.Force && SOComponent.NextState && SOComponent.RequestedState != SOComponent.NextState)
+	// In case game logic callbacks will make another request during the processing of this one
+	const auto RequestedState = SOComponent.RequestedState;
+	SOComponent.RequestedState = CStrID::Empty;
+
+	const CSmartObjectTransitionInfo* pTransitionCN = nullptr;
+	float InitialProgress = 0.f;
+
+	// Handle current transition (A->B)
+	if (SOComponent.NextState && !SOComponent.Force)
 	{
-		// Request currently active transition, it must exist
-		if (auto pTransitionCN = SOAsset.FindTransition(SOComponent.CurrState, SOComponent.NextState))
+		// We are already transiting to the requested state: (A->B)->B
+		if (RequestedState == SOComponent.NextState)
 		{
-			switch (pTransitionCN->InterruptionMode)
-			{
-				case ETransitionInterruptionMode::ResetToStart:
-				// - pTransitionCN is cancelled, new transition starts
-					break;
-				case ETransitionInterruptionMode::RewindToEnd:
-				// - pTransitionCN is finished immediately, B becomes current state, new transition starts
-					break;
-				case ETransitionInterruptionMode::Proportional:
-				// - pTransitionCN is cancelled, new transition starts, progress % is transferred to it
-				// - For A->B->A case, progress % is inverted
-					break;
-				case ETransitionInterruptionMode::Forbid:
-				{
-					// Current transition is kept, request is discarded
-					SOComponent.RequestedState = CStrID::Empty;
-					::Sys::Log("SmartObjects.ProcessStateChangeRequest() > transition interruption is forbidden\n");
-					return;
-				}
-			}
+			::Sys::Log("SmartObjects.ProcessStateChangeRequest() > already transiting to the requested state\n");
+			return;
+		}
 
-			//!!!if new transition not found, force!
+		// Try to interrupt currently active transition: (A->B)->C or (A->B)->A
+		// If current transition was deleted from asset in runtime, default to ResetToStart mode
+		pTransitionCN = SOAsset.FindTransition(SOComponent.CurrState, SOComponent.NextState);
+		const auto InterruptionMode = pTransitionCN ? pTransitionCN->InterruptionMode : ETransitionInterruptionMode::ResetToStart;
+		switch (InterruptionMode)
+		{
+			case ETransitionInterruptionMode::ResetToStart:
+			{
+				// Cancel current transition
+				break;
+			}
+			case ETransitionInterruptionMode::RewindToEnd:
+			{
+				// Finish current transition immediately
+				// Arrive into the NextState, so CurrState = NextState, NextState = 0
+				break;
+			}
+			case ETransitionInterruptionMode::Proportional:
+			{
+				// Remember progress % of the current transition
+				// Cancel current transition
+				// For A->B->C case, progress % is transferred as is
+				// For A->B->A case, progress % is inverted (1-a)
+				break;
+			}
+			case ETransitionInterruptionMode::Forbid:
+			{
+				// Current transition is kept, request is discarded
+				//???don't reset request but wait for transition end? or must be in game logic?
+				//???or special Wait mode, which will restore SOComponent.RequestedState and exit?
+				::Sys::Log("SmartObjects.ProcessStateChangeRequest() > transition interruption is forbidden\n");
+				return;
+			}
+			//???ETransitionInterruptionMode::Force?
+		}
+	}
 
-			if (SOComponent.RequestedState == SOComponent.CurrState)
+	if (SOComponent.NextState)
+	{
+		//!!!if has current transition, must cancel it here!
+		//!!!NB: we may reuse timeline, so real destruction must not happen here!
+	}
+
+	if (!SOComponent.Force)
+	{
+		if (auto pTransitionCR = SOAsset.FindTransition(SOComponent.CurrState, RequestedState))
+		{
+			SOComponent.NextState = RequestedState;
+			if (pTransitionCN && pTransitionCR->TimelineTask.Timeline != pTransitionCN->TimelineTask.Timeline)
 			{
-				// (A->B)->A, try to switch to B->A with inverted progress (1-alpha)
-				//???or for ABA keep setting too? Reset to A, Rewind to B, Proportional B->A inversion
+				// clone new timeline instance for the player
+				// bind to outputs
 			}
-			else
-			{
-				// (A->B)->C, try to switch to A->C or B->C depending on interruption mode
-			}
+			// set initial progress
+			// initialize player with task
 		}
 		else
 		{
-			// Current transition was deleted in runtime, fallback to force-set
+			// No transition to the requested state found. Could discard a request, but let's force it instead.
 			SOComponent.Force = true;
 		}
 	}
 
 	if (SOComponent.Force)
 	{
-		//force into requested state right now
+		//force into requested state right now, so CurrState = RequestedState
 		//do nothing if already in that state and not in transition
 	}
-	else
-	{
-		//init transition (must be found)
-	}
-
-	// Request is processed
-	SOComponent.RequestedState = CStrID::Empty;
 }
 //---------------------------------------------------------------------
 
@@ -75,10 +102,6 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, float dt)
 	{
 		CSmartObject* pSmart = SOComponent.Asset->GetObject<CSmartObject>();
 		if (!pSmart) return;
-
-		//!!!when init timeline, must check if timeline asset is the same for prev and curr cases!
-		// if same, no actions required on it, only player must be updated.
-		// if not same, must clone and bind to outputs
 
 		// No need to make transition A->A (should not happen)
 		n_assert_dbg(SOComponent.CurrState != SOComponent.NextState);
