@@ -5,6 +5,37 @@
 namespace DEM::Game
 {
 
+static void RunTimelineTask(CSmartObjectComponent& SOComponent, const CTimelineTask& Task, float InitialProgress,
+	Anim::PTimelineTrack&& CurrTrack, const Anim::PTimelineTrack& TrackProto)
+{
+	if (!Task.Timeline)
+	{
+		SOComponent.Player.SetTrack(nullptr);
+		return;
+	}
+
+	if (!CurrTrack || Task.Timeline->GetObject<Anim::CTimelineTrack>() != TrackProto)
+	{
+		// CurrTrack = clone new timeline instance for the player
+		// bind to outputs
+	}
+
+	SOComponent.Player.SetTrack(CurrTrack);
+
+	//???always relative time? may need absolute, especially when editing single multisegment TL.
+	const float TrackDuration = SOComponent.Player.GetTrack()->GetDuration();
+	SOComponent.Player.SetStartTime(Task.StartTime * TrackDuration);
+	SOComponent.Player.SetEndTime(Task.EndTime * TrackDuration);
+	SOComponent.Player.SetSpeed(Task.Speed);
+
+	// Transfer the progress % from the previous transition, if required
+	const float FullTime = SOComponent.Player.GetLoopDuration() * Task.LoopCount;
+	SOComponent.Player.SetTime(InitialProgress * FullTime);
+
+	SOComponent.Player.Play(Task.LoopCount);
+}
+//---------------------------------------------------------------------
+
 void ProcessStateChangeRequest(CSmartObjectComponent& SOComponent, const CSmartObject& SOAsset)
 {
 	// In case game logic callbacks will make another request during the processing of this one
@@ -65,11 +96,22 @@ void ProcessStateChangeRequest(CSmartObjectComponent& SOComponent, const CSmartO
 		}
 	}
 
+	Anim::PTimelineTrack TrackProto;
+	Anim::PTimelineTrack CurrTrack;
+
 	// Now current transition must be cancelled
 	if (SOComponent.NextState)
 	{
-		//!!!if has current transition, must cancel it here!
-		//!!!NB: we may reuse timeline, so real destruction must not happen here!
+		if (pTransitionCN)
+		{
+			// Current TL track instance is reusable only if its prototype is known
+			TrackProto = pTransitionCN->TimelineTask.Timeline->GetObject<Anim::CTimelineTrack>();
+			CurrTrack = SOComponent.Player.GetTrack();
+		}
+
+		// call OnTransitionCancel
+
+		SOComponent.NextState = CStrID::Empty;
 	}
 
 	// Try to start a transition to the requested state
@@ -79,17 +121,9 @@ void ProcessStateChangeRequest(CSmartObjectComponent& SOComponent, const CSmartO
 		{
 			SOComponent.NextState = RequestedState;
 
-			if (pTransitionCN && pTransitionCR->TimelineTask.Timeline != pTransitionCN->TimelineTask.Timeline)
-			{
-				// clone new timeline instance for the player
-				// bind to outputs
-			}
+			// call OnTransitionStart
 
-			// initialize player with task
-
-			// Transfer the progress % from the previous transition, if required
-			const float FullTime = SOComponent.Player.GetLoopDuration() * pTransitionCR->TimelineTask.LoopCount;
-			SOComponent.Player.SetTime(InitialProgress * FullTime);
+			RunTimelineTask(SOComponent, pTransitionCR->TimelineTask, InitialProgress, std::move(CurrTrack), TrackProto);
 		}
 		else
 		{
@@ -101,7 +135,14 @@ void ProcessStateChangeRequest(CSmartObjectComponent& SOComponent, const CSmartO
 	// Force-set requested state
 	if (SOComponent.Force && SOComponent.CurrState != RequestedState)
 	{
-		//force into requested state right now, so CurrState = RequestedState
+		if (auto pState = SOAsset.FindState(RequestedState))
+		{
+			SOComponent.CurrState = RequestedState;
+
+			// call OnStateExit, OnStateEnter etc
+
+			RunTimelineTask(SOComponent, pState->TimelineTask, 0.f, std::move(CurrTrack), TrackProto);
+		}
 	}
 }
 //---------------------------------------------------------------------
@@ -121,15 +162,50 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, float dt)
 
 		if (SOComponent.RequestedState) ProcessStateChangeRequest(SOComponent, *pSmart);
 
+		// Advance player time even if no timeline is associated with the state.
+		// This time may be used in game logic and means how long we are in this state.
+		// FIXME: prev VS curr time as the time since entering into the state!
+		SOComponent.Player.Update(dt);
+
 		if (SOComponent.NextState)
 		{
-			//transition
-			// no logic update, timeline does that
-			// check if ended
+			// Infinite transitions are not allowed, so zero loops always mean transition end
+			if (!SOComponent.Player.GetRemainingLoopCount())
+			{
+				Anim::PTimelineTrack TrackProto;
+				Anim::PTimelineTrack CurrTrack;
+				if (auto pTransitionCN = pSmart->FindTransition(SOComponent.CurrState, SOComponent.NextState))
+				{
+					// Current TL track instance is reusable only if its prototype is known
+					TrackProto = pTransitionCN->TimelineTask.Timeline->GetObject<Anim::CTimelineTrack>();
+					CurrTrack = SOComponent.Player.GetTrack();
+				}
+
+				if (auto pState = pSmart->FindState(SOComponent.NextState))
+				{
+					SOComponent.CurrState = SOComponent.NextState;
+
+					//!!!call OnTransitionEnd!
+
+					// call OnStateExit, OnStateEnter etc
+
+					RunTimelineTask(SOComponent, pState->TimelineTask, 0.f, std::move(CurrTrack), TrackProto);
+				}
+				else
+				{
+					// If the state was deleted from asset in runtime, cancel to source state
+
+					//!!!call OnTransitionCancel!
+
+					SOComponent.Player.SetTrack(nullptr);
+				}
+
+				SOComponent.NextState = CStrID::Empty;
+			}
 		}
 		else
 		{
-			// Update in the current state
+			// Update in the current state logic
 
 			//???pSmart->OnStateUpdate(World, EntityID, SOComponent.CurrState)?
 
@@ -145,11 +221,6 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, float dt)
 					::Sys::Error(Error.what());
 				}
 			}
-
-			// Advance player time even if no timeline is associated with the state.
-			// This time may be used in game logic and means how long we are in this state.
-			// FIXME: prev VS curr time!
-			SOComponent.Player.Update(dt);
 		}
 	});
 }

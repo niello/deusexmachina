@@ -792,7 +792,7 @@ public:
 		// Base offset of component data is current offset plus size of indexing table, written just below.
 		U64 ComponentDataOffset = Out.GetStream().Tell() +
 			sizeof(U32) + // Index table size
-			EntityToData.size() * (sizeof(decltype(HEntity::Raw)) + sizeof(U64) + sizeof(U8)) + // Index records
+			static_cast<U64>(EntityToData.size()) * (sizeof(decltype(HEntity::Raw)) + sizeof(U64) + sizeof(U8)) + // Index records
 			sizeof(U64); // Resulting ComponentDataOffset for skip
 
 		// Precalculate offsets per binary data record

@@ -50,6 +50,7 @@ public:
 
 	void  Update(float dt) { if (!_Paused) { _CurrTime += dt * _Speed; PlayInterval(); } }
 
+	auto  GetTrack() const { return _Track.Get(); }
 	float GetLoopDuration() const { return _EndTime - _StartTime; }
 	float GetSpeed() const { return _Speed; }
 	float GetCurrTime() const  { return _CurrTime; }

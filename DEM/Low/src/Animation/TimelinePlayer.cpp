@@ -8,6 +8,7 @@ CTimelinePlayer::~CTimelinePlayer() = default;
 
 void CTimelinePlayer::SetTrack(const PTimelineTrack& Track)
 {
+	Stop();
 	_Track = Track;
 	SetStartTime(0.f);
 	SetEndTime(_Track ? _Track->GetDuration() : 0.f);
@@ -16,13 +17,15 @@ void CTimelinePlayer::SetTrack(const PTimelineTrack& Track)
 
 void CTimelinePlayer::SetStartTime(float Time)
 {
-	_StartTime = std::clamp(Time, 0.f, _EndTime);
+	_StartTime = Time;
+	if (_StartTime > _EndTime) _EndTime = Time;
 }
 //---------------------------------------------------------------------
 
 void CTimelinePlayer::SetEndTime(float Time)
 {
-	_EndTime = std::max(Time, _StartTime);
+	_EndTime = Time;
+	if (_StartTime > _EndTime) _StartTime = Time;
 }
 //---------------------------------------------------------------------
 

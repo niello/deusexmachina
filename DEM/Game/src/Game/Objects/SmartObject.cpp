@@ -57,6 +57,14 @@ bool CSmartObject::AddInteraction(CStrID ID)
 }
 //---------------------------------------------------------------------
 
+const CSmartObjectStateInfo* CSmartObject::FindState(CStrID ID) const
+{
+	// Find source state, it must exist
+	auto It = std::lower_bound(_States.begin(), _States.end(), ID, [](const auto& Elm, CStrID Value) { return Elm.ID < Value; });
+	return (It == _States.end() || (*It).ID != ID) ? nullptr : &(*It);
+}
+//---------------------------------------------------------------------
+
 const CSmartObjectTransitionInfo* CSmartObject::FindTransition(CStrID FromID, CStrID ToID) const
 {
 	// Find source state, it must exist

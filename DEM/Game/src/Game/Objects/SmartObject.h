@@ -81,6 +81,7 @@ public:
 	bool         AddInteraction(CStrID ID);
 	bool         InitScript(sol::state& Lua);
 
+	const CSmartObjectStateInfo*      FindState(CStrID ID) const;
 	const CSmartObjectTransitionInfo* FindTransition(CStrID FromID, CStrID ToID) const;
 
 	//???instead of it write OnState*(World, EntityID, StateID)?

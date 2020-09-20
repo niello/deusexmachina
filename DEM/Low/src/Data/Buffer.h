@@ -90,7 +90,7 @@ public:
 	constexpr CBufferMalloc() = default;
 	CBufferMalloc(UPTR Size) : _pData(Size ? n_malloc(Size) : nullptr), _Size(Size) {}
 	CBufferMalloc(const CBufferMalloc& Other);
-	CBufferMalloc(CBufferMalloc&& Other) : _pData(Other._pData), _Size(Other._Size) { Other._pData = nullptr; Other._Size = 0; }
+	CBufferMalloc(CBufferMalloc&& Other) noexcept : _pData(Other._pData), _Size(Other._Size) { Other._pData = nullptr; Other._Size = 0; }
 	CBufferMalloc& operator =(const CBufferMalloc& Other);
 	CBufferMalloc& operator =(CBufferMalloc&& Other);
 

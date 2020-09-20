@@ -27,7 +27,7 @@ public:
 
 	CStringID() = default;
 	CStringID(const CStringID& Other) : pString(Other.pString) {}
-	CStringID(CStringID&& Other) : pString(Other.pString) {}
+	CStringID(CStringID&& Other) noexcept : pString(Other.pString) {}
 #ifdef _DEBUG
 	explicit // So I can later search all static StrIDs and predefine them
 #endif

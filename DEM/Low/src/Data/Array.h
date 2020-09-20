@@ -39,7 +39,7 @@ public:
 	CArray(UPTR _Count, UPTR _GrowSize);
 	CArray(UPTR _Count, UPTR _GrowSize, const T& Value);
 	CArray(const CArray<T>& Other): pData(nullptr), Allocated(0), Count(0) { Copy(Other); }
-	CArray(CArray<T>&& Other);
+	CArray(CArray<T>&& Other) noexcept;
 	~CArray();
 
 	CIterator	Add();
@@ -109,7 +109,7 @@ public:
 	void        push_back(T&& Val) { Add(std::move(Val)); }
 
 	CArray<T>&	operator =(const CArray<T>& Other) { if (this != &Other) Copy(Other); return *this; }
-	CArray<T>&	operator =(CArray<T>&& Other);
+	CArray<T>&	operator =(CArray<T>&& Other) noexcept;
 	T&			operator [](IPTR Idx) const { return At(Idx); }
 	bool		operator ==(const CArray<T>& Other) const;
 	bool		operator !=(const CArray<T>& Other) const { return !(*this == Other); }
@@ -144,7 +144,7 @@ CArray<T>::CArray(UPTR _Count, UPTR _GrowSize, const T& Value):
 //---------------------------------------------------------------------
 
 template<class T>
-CArray<T>::CArray(CArray<T>&& Other)
+CArray<T>::CArray(CArray<T>&& Other) noexcept
 	: pData(Other.pData)
 	, Allocated(Other.Allocated)
 	, Count(Other.Count)
@@ -158,7 +158,7 @@ CArray<T>::CArray(CArray<T>&& Other)
 //---------------------------------------------------------------------
 
 template<class T>
-CArray<T>& CArray<T>::operator =(CArray<T>&& Other)
+CArray<T>& CArray<T>::operator =(CArray<T>&& Other) noexcept
 {
 	pData = Other.pData;
 	Allocated = Other.Allocated;

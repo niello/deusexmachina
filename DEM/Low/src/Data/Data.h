@@ -18,12 +18,12 @@ class CData
 {
 protected:
 
-	const CType*	Type;
+	const CType*	Type = nullptr;
 
 #ifdef _DEBUG
 	union
 	{
-		void*							Value;
+		void*							Value = nullptr;
 		bool							As_bool;
 		int								As_int;
 		float							As_float;
@@ -37,15 +37,15 @@ protected:
 		struct { float m[4][4]; }*		As_matrix44;
 	};
 #else
-	void*			Value;
+	void*			Value = nullptr;
 #endif
 
 public:
 
-	CData(): Type(nullptr), Value(nullptr) {}
-	CData(const CData& Data): Type(nullptr) { SetTypeValue(Data); }
+	CData() = default;
+	CData(const CData& Data) { SetTypeValue(Data); }
 	template<class T> CData(const T& Val) { Type = DATA_TYPE(T); DATA_TYPE_NV(T)::NewT(&Value, &Val); }
-	explicit CData(const CType* type): Type(type) { if (Type) Type->New(&Value); }
+	explicit CData(const CType* type) : Type(type) { if (Type) Type->New(&Value); }
 	~CData() { if (Type) Type->Delete(&Value); }
 
 	template<class T> T&		New();
