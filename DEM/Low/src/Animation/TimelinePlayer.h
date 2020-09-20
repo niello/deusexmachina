@@ -50,8 +50,10 @@ public:
 
 	void  Update(float dt) { if (!_Paused) { _CurrTime += dt * _Speed; PlayInterval(); } }
 
+	float GetLoopDuration() const { return _EndTime - _StartTime; }
 	float GetSpeed() const { return _Speed; }
 	float GetCurrTime() const  { return _CurrTime; }
+	float GetRemainingTime() const;
 	U32   GetRemainingLoopCount() const { return _RemainingLoopCount; }
 	bool  IsPlaying() const { return !_Paused; }
 };

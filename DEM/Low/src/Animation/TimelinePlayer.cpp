@@ -26,6 +26,20 @@ void CTimelinePlayer::SetEndTime(float Time)
 }
 //---------------------------------------------------------------------
 
+float CTimelinePlayer::GetRemainingTime() const
+{
+	if (!_RemainingLoopCount) return std::numeric_limits<float>().infinity();
+
+	const float Duration = _EndTime - _StartTime;
+	const float FullLoopsTime = (_RemainingLoopCount - 1) * Duration;
+	const float LoopStartTime = std::floor(_PrevTime / Duration) * Duration;
+	const float CurrSegmentTime = (_Speed >= 0.f) ?
+		LoopStartTime + Duration - _PrevTime : // Play forward
+		_PrevTime - LoopStartTime; // Play backward
+	return FullLoopsTime + CurrSegmentTime;
+}
+//---------------------------------------------------------------------
+
 bool CTimelinePlayer::OnLoopEnd()
 {
 	if (_RemainingLoopCount)

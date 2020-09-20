@@ -14,7 +14,7 @@ void ProcessStateChangeRequest(CSmartObjectComponent& SOComponent, const CSmartO
 	const CSmartObjectTransitionInfo* pTransitionCN = nullptr;
 	float InitialProgress = 0.f;
 
-	// Handle current transition (A->B)
+	// Handle current transition (A->B) softly
 	if (SOComponent.NextState && !SOComponent.Force)
 	{
 		// We are already transiting to the requested state: (A->B)->B
@@ -43,10 +43,14 @@ void ProcessStateChangeRequest(CSmartObjectComponent& SOComponent, const CSmartO
 			}
 			case ETransitionInterruptionMode::Proportional:
 			{
-				// Remember progress % of the current transition
-				// Cancel current transition
-				// For A->B->C case, progress % is transferred as is
-				// For A->B->A case, progress % is inverted (1-a)
+				const auto& Task = pTransitionCN->TimelineTask;
+				const float FullTime = SOComponent.Player.GetLoopDuration() * Task.LoopCount;
+				if (FullTime > 0.f) InitialProgress = SOComponent.Player.GetRemainingTime() / FullTime;
+
+				// For (A->B)->A transition inverted progress has more meaning, because we go back the same way
+				if (RequestedState == SOComponent.CurrState)
+					InitialProgress = (1.f - InitialProgress);
+
 				break;
 			}
 			case ETransitionInterruptionMode::Forbid:
@@ -61,24 +65,31 @@ void ProcessStateChangeRequest(CSmartObjectComponent& SOComponent, const CSmartO
 		}
 	}
 
+	// Now current transition must be cancelled
 	if (SOComponent.NextState)
 	{
 		//!!!if has current transition, must cancel it here!
 		//!!!NB: we may reuse timeline, so real destruction must not happen here!
 	}
 
+	// Try to start a transition to the requested state
 	if (!SOComponent.Force)
 	{
 		if (auto pTransitionCR = SOAsset.FindTransition(SOComponent.CurrState, RequestedState))
 		{
 			SOComponent.NextState = RequestedState;
+
 			if (pTransitionCN && pTransitionCR->TimelineTask.Timeline != pTransitionCN->TimelineTask.Timeline)
 			{
 				// clone new timeline instance for the player
 				// bind to outputs
 			}
-			// set initial progress
+
 			// initialize player with task
+
+			// Transfer the progress % from the previous transition, if required
+			const float FullTime = SOComponent.Player.GetLoopDuration() * pTransitionCR->TimelineTask.LoopCount;
+			SOComponent.Player.SetTime(InitialProgress * FullTime);
 		}
 		else
 		{
@@ -87,10 +98,10 @@ void ProcessStateChangeRequest(CSmartObjectComponent& SOComponent, const CSmartO
 		}
 	}
 
-	if (SOComponent.Force)
+	// Force-set requested state
+	if (SOComponent.Force && SOComponent.CurrState != RequestedState)
 	{
 		//force into requested state right now, so CurrState = RequestedState
-		//do nothing if already in that state and not in transition
 	}
 }
 //---------------------------------------------------------------------
