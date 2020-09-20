@@ -23,23 +23,37 @@ struct CTimelineTask
 	U32                  LoopCount = 0;
 };
 
+enum class ETransitionInterruptionMode : U8
+{
+	ResetToStart,
+	RewindToEnd,
+	Proportional,
+	Forbid
+	// Force?
+};
+
+struct CSmartObjectTransitionInfo
+{
+	CStrID                      TargetStateID;
+	CTimelineTask               TimelineTask;
+	ETransitionInterruptionMode InterruptionMode;
+};
+
+struct CSmartObjectStateInfo
+{
+	CStrID        ID;
+	CTimelineTask TimelineTask;
+
+	// state logic object ptr (optional)
+
+	std::vector<CSmartObjectTransitionInfo> Transitions;
+};
+
 class CSmartObject : public Resources::CResourceObject
 {
 	RTTI_CLASS_DECL;
 
 protected:
-
-	//transitions inside states? no custom logic = scripted OnEnter etc always?
-	//!!!instance can cache OnEnter etc functions! or not instance, but class?
-	struct CStateRecord
-	{
-		CStrID        ID;
-		CTimelineTask TimelineTask;
-
-		// state logic object ptr (optional)
-
-		std::vector<std::pair<CStrID, CTimelineTask>> Transitions;
-	};
 
 	CStrID           _ID;
 	CStrID           _DefaultState;
@@ -52,7 +66,7 @@ protected:
 	sol::function    _OnStateStartExiting;
 	sol::function    _OnStateUpdate;
 
-	std::vector<CStateRecord> _States;
+	std::vector<CSmartObjectStateInfo> _States;
 	std::vector<std::pair<CStrID, sol::function>> _Interactions; // Interaction ID -> optional condition
 
 public:
@@ -66,6 +80,8 @@ public:
 	bool         AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& TimelineTask);
 	bool         AddInteraction(CStrID ID);
 	bool         InitScript(sol::state& Lua);
+
+	const CSmartObjectTransitionInfo* FindTransition(CStrID FromID, CStrID ToID) const;
 
 	//???instead of it write OnState*(World, EntityID, StateID)?
 	auto&        GetOnStateUpdateScript() { return _OnStateUpdate; }

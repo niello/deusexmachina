@@ -10,24 +10,17 @@
 namespace DEM::Game
 {
 
-enum class ESmartObjectStatus : U8 //???need better name?
-{
-	InState,
-	InTransition,
-	TransitionRequested,
-	ForceStateRequested
-};
-
 struct CSmartObjectComponent
 {
 	DEM::Anim::CTimelinePlayer Player;
 
 	Resources::PResource       Asset; // CSmartObject
-	CStrID                     AssetID; // FIXME: PResource Asset must be enough!
+	CStrID                     AssetID; // FIXME: PResource Asset must be enough, but how to deserialize without ResMgr?
 
 	CStrID                     CurrState;
 	CStrID                     NextState;
-	ESmartObjectStatus         Status = ESmartObjectStatus::InState;
+	CStrID                     RequestedState;
+	bool                       Force = false; // Force-set requested state immediately?
 
 	//???transition progress / current state timer (one multipurpose time float)? or inside timeline player?
 	//!!!NB: if time is in TL in player, must save/return prev time, not curr, or some TL part may be skipped on game reload!

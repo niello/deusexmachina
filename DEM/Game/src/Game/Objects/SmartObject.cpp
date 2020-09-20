@@ -19,7 +19,7 @@ bool CSmartObject::AddState(CStrID ID, CTimelineTask&& TimelineTask/*, state log
 	if (It != _States.end() && (*It).ID == ID) return false;
 
 	// Insert sorted by ID
-	_States.insert(It, CStateRecord{ ID, std::move(TimelineTask) });
+	_States.insert(It, { ID, std::move(TimelineTask) });
 
 	return true;
 }
@@ -34,8 +34,8 @@ bool CSmartObject::AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& Tim
 	// FIXME: for now don't check dest state existence due to loading order in CSmartObjectLoader
 
 	// Check if this transition already exists
-	auto It2 = std::lower_bound(It->Transitions.begin(), It->Transitions.end(), ToID, [](const auto& Elm, CStrID Value) { return Elm.first < Value; });
-	if (It2 != It->Transitions.end() && (*It2).first == ToID) return false;
+	auto It2 = std::lower_bound(It->Transitions.begin(), It->Transitions.end(), ToID, [](const auto& Elm, CStrID Value) { return Elm.TargetStateID < Value; });
+	if (It2 != It->Transitions.end() && (*It2).TargetStateID == ToID) return false;
 
 	// Insert sorted by ID
 	It->Transitions.insert(It2, { ToID, std::move(TimelineTask) });
@@ -54,6 +54,20 @@ bool CSmartObject::AddInteraction(CStrID ID)
 	_Interactions.insert(It, { ID, sol::function() });
 
 	return true;
+}
+//---------------------------------------------------------------------
+
+const CSmartObjectTransitionInfo* CSmartObject::FindTransition(CStrID FromID, CStrID ToID) const
+{
+	// Find source state, it must exist
+	auto It = std::lower_bound(_States.begin(), _States.end(), FromID, [](const auto& Elm, CStrID Value) { return Elm.ID < Value; });
+	if (It == _States.end() || (*It).ID != FromID) return nullptr;
+
+	// Check if this transition already exists
+	auto It2 = std::lower_bound(It->Transitions.begin(), It->Transitions.end(), ToID, [](const auto& Elm, CStrID Value) { return Elm.TargetStateID < Value; });
+	if (It2 == It->Transitions.end() || (*It2).TargetStateID != ToID) return nullptr;
+
+	return &(*It2);
 }
 //---------------------------------------------------------------------
 
