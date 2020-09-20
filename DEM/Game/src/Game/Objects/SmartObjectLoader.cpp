@@ -65,6 +65,7 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 				Task.StartTime = StateDesc.Get(CStrID("StartTime"), (Task.Speed > 0.f) ? 0.f : 1.f);
 				Task.EndTime = StateDesc.Get(CStrID("EndTime"), (Task.Speed > 0.f) ? 1.f : 0.f);
 				Task.LoopCount = StateDesc.Get(CStrID("LoopCount"), 0);
+				Task.SkeletonRootRelPath = StateDesc.Get(CStrID("SkeletonRootRelPath"), CString::Empty).CStr();
 
 				Task.Timeline->ValidateObject();
 			}
@@ -88,6 +89,7 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 						Task.StartTime = StateDesc.Get(CStrID("StartTime"), (Task.Speed > 0.f) ? 0.f : 1.f);
 						Task.EndTime = StateDesc.Get(CStrID("EndTime"), (Task.Speed > 0.f) ? 1.f : 0.f);
 						Task.LoopCount = StateDesc.Get(CStrID("LoopCount"), 0);
+						Task.SkeletonRootRelPath = StateDesc.Get(CStrID("SkeletonRootRelPath"), CString::Empty).CStr();
 
 						Task.Timeline->ValidateObject();
 					}

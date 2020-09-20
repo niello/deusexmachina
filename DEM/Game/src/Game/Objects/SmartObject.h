@@ -21,6 +21,10 @@ struct CTimelineTask
 	float                StartTime = 0.f;
 	float                EndTime = 1.f; //???use relative time here?
 	U32                  LoopCount = 0;
+
+	//!!!FIXME: need output map (pose, event, sound etc...), not hardcoded pose output!
+	// Or predefined output params, like all poses to some root path, all events to this entity's dispatcher component etc?
+	std::string          SkeletonRootRelPath;
 };
 
 enum class ETransitionInterruptionMode : U8

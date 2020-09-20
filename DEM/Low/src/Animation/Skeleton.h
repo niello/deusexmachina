@@ -20,6 +20,8 @@ protected:
 
 public:
 
+	CSkeleton(Scene::CSceneNode* pNode = nullptr) { SetRootNode(pNode); }
+
 	void SetRootNode(Scene::CSceneNode* pNode);
 
 	virtual U16  BindNode(CStrID NodeID, U16 ParentPort) override;

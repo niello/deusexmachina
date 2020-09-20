@@ -16,6 +16,9 @@ void CAnimatedPoseClip::BindToOutput(const PPoseOutput& Output)
 {
 	if (!_Sampler.GetClip() || _Output == Output) return;
 
+	// TODO: can compare node mappings of old and new clip and skip if equal.
+	// Can even store mapping hash, compare root & mapping count & hash, then do full comparison.
+	// It will be pretty common to reuse the same player with different clips on the same hierarchy.
 	std::vector<U16> PortMapping;
 	_Sampler.GetClip()->GetNodeMapping().Bind(*Output, PortMapping);
 	if (PortMapping.empty())

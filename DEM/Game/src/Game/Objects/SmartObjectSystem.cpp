@@ -2,11 +2,16 @@
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/Objects/SmartObject.h>
 
+//!!!DBG TMP!
+#include <Animation/Skeleton.h>
+#include <Animation/PoseTrack.h>
+#include <Game/ECS/Components/SceneComponent.h>
+
 namespace DEM::Game
 {
 
-static void RunTimelineTask(CSmartObjectComponent& SOComponent, const CTimelineTask& Task, float InitialProgress,
-	Anim::PTimelineTrack&& CurrTrack, const Anim::PTimelineTrack& TrackProto)
+static void RunTimelineTask(DEM::Game::CGameWorld& World, HEntity EntityID, CSmartObjectComponent& SOComponent,
+	const CTimelineTask& Task, float InitialProgress, Anim::PTimelineTrack&& CurrTrack, const Anim::PTimelineTrack& TrackProto)
 {
 	if (!Task.Timeline)
 	{
@@ -14,13 +19,20 @@ static void RunTimelineTask(CSmartObjectComponent& SOComponent, const CTimelineT
 		return;
 	}
 
+	// If current track is cloned from the same prototype, can reuse it and avoid heavy setup
 	const auto* pTaskTrackProto = Task.Timeline->GetObject<Anim::CTimelineTrack>();
 	if (!CurrTrack || pTaskTrackProto != TrackProto)
 	{
 		CurrTrack = pTaskTrackProto->Clone();
-		//!!!TODO:
-		//if pose track:
-		//CurrTrack->SetOutput(pAnimComponent->Output);
+
+		//!!!FIXME: can reuse already filled skeleton? discard mapping wrappers?
+		//OldCurrTrack.As<CPoseTrack>->GetOutput() - may be skeleton ot mapped pose output
+
+		//???!!!DBG TMP!? See Task.SkeletonRootRelPath comment.
+		if (auto pPoseTrack = CurrTrack->As<Anim::CPoseTrack>())
+			if (auto pSceneComponent = World.FindComponent<DEM::Game::CSceneComponent>(EntityID))
+				if (auto pTargetRoot = pSceneComponent->RootNode->FindNodeByPath(Task.SkeletonRootRelPath.c_str()))
+					pPoseTrack->SetOutput(n_new(Anim::CSkeleton(pTargetRoot)));
 	}
 
 	SOComponent.Player.SetTrack(CurrTrack);
@@ -39,7 +51,8 @@ static void RunTimelineTask(CSmartObjectComponent& SOComponent, const CTimelineT
 }
 //---------------------------------------------------------------------
 
-void ProcessStateChangeRequest(CSmartObjectComponent& SOComponent, const CSmartObject& SOAsset)
+void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, HEntity EntityID,
+	CSmartObjectComponent& SOComponent, const CSmartObject& SOAsset)
 {
 	// In case game logic callbacks will make another request during the processing of this one
 	const auto RequestedState = SOComponent.RequestedState;
@@ -126,7 +139,7 @@ void ProcessStateChangeRequest(CSmartObjectComponent& SOComponent, const CSmartO
 
 			// call OnTransitionStart
 
-			RunTimelineTask(SOComponent, pTransitionCR->TimelineTask, InitialProgress, std::move(CurrTrack), TrackProto);
+			RunTimelineTask(World, EntityID, SOComponent, pTransitionCR->TimelineTask, InitialProgress, std::move(CurrTrack), TrackProto);
 		}
 		else
 		{
@@ -144,7 +157,7 @@ void ProcessStateChangeRequest(CSmartObjectComponent& SOComponent, const CSmartO
 
 			// call OnStateExit, OnStateEnter etc
 
-			RunTimelineTask(SOComponent, pState->TimelineTask, 0.f, std::move(CurrTrack), TrackProto);
+			RunTimelineTask(World, EntityID, SOComponent, pState->TimelineTask, 0.f, std::move(CurrTrack), TrackProto);
 		}
 	}
 }
@@ -153,7 +166,7 @@ void ProcessStateChangeRequest(CSmartObjectComponent& SOComponent, const CSmartO
 void UpdateSmartObjects(DEM::Game::CGameWorld& World, float dt)
 {
 	//???only in certain level? or process all loaded object in the world, like now?
-	World.ForEachEntityWith<CSmartObjectComponent>([dt](auto EntityID, auto& Entity, CSmartObjectComponent& SOComponent)
+	World.ForEachEntityWith<CSmartObjectComponent>([&World, dt](auto EntityID, auto& Entity, CSmartObjectComponent& SOComponent)
 	{
 		CSmartObject* pSmart = SOComponent.Asset->GetObject<CSmartObject>();
 		if (!pSmart) return;
@@ -163,7 +176,7 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, float dt)
 		if (SOComponent.CurrState == SOComponent.NextState)
 			SOComponent.NextState = CStrID::Empty;
 
-		if (SOComponent.RequestedState) ProcessStateChangeRequest(SOComponent, *pSmart);
+		if (SOComponent.RequestedState) ProcessStateChangeRequest(World, EntityID, SOComponent, *pSmart);
 
 		// Advance player time even if no timeline is associated with the state.
 		// This time may be used in game logic and means how long we are in this state.
@@ -192,7 +205,7 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, float dt)
 
 					// call OnStateExit, OnStateEnter etc
 
-					RunTimelineTask(SOComponent, pState->TimelineTask, 0.f, std::move(CurrTrack), TrackProto);
+					RunTimelineTask(World, EntityID, SOComponent, pState->TimelineTask, 0.f, std::move(CurrTrack), TrackProto);
 				}
 				else
 				{
