@@ -14,13 +14,14 @@ class CTimelineTrack : public Resources::CResourceObject
 
 public:
 
-	virtual bool IsResourceValid() const override { return true; }
+	virtual bool           IsResourceValid() const override { return true; }
 
 	//???clips here? can make templated by clip type!
 	// NB: whole timeline looping must be handled in a timeline player
 
-	virtual float GetDuration() const = 0;
-	virtual void  PlayInterval(float PrevTime, float CurrTime, bool IsLast) = 0;
+	virtual PTimelineTrack Clone() const = 0;
+	virtual float          GetDuration() const = 0;
+	virtual void           PlayInterval(float PrevTime, float CurrTime, bool IsLast) = 0;
 
 	// sample for time (or set time, if instanced)
 	// rewinding, skipping etc, with intermediate effects (skip or execute script, skip VFX, set anim frame etc)

@@ -14,10 +14,13 @@ static void RunTimelineTask(CSmartObjectComponent& SOComponent, const CTimelineT
 		return;
 	}
 
-	if (!CurrTrack || Task.Timeline->GetObject<Anim::CTimelineTrack>() != TrackProto)
+	const auto* pTaskTrackProto = Task.Timeline->GetObject<Anim::CTimelineTrack>();
+	if (!CurrTrack || pTaskTrackProto != TrackProto)
 	{
-		// CurrTrack = clone new timeline instance for the player
-		// bind to outputs
+		CurrTrack = pTaskTrackProto->Clone();
+		//!!!TODO:
+		//if pose track:
+		//CurrTrack->SetOutput(pAnimComponent->Output);
 	}
 
 	SOComponent.Player.SetTrack(CurrTrack);

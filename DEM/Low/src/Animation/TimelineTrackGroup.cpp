@@ -3,6 +3,13 @@
 namespace DEM::Anim
 {
 
+PTimelineTrack CTimelineTrackGroup::Clone() const
+{
+	NOT_IMPLEMENTED;
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
 float CTimelineTrackGroup::GetDuration() const
 {
 	float MaxDuration = 0.f;

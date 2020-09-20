@@ -8,11 +8,11 @@ CPoseTrack::CPoseTrack() = default;
 CPoseTrack::~CPoseTrack() = default;
 
 //!!!recurse through blenders, handle mapped outputs for leaf sources (like in loading now).
-void CPoseTrack::SetOutput(PPoseOutput&& Output)
+void CPoseTrack::SetOutput(const PPoseOutput& Output)
 {
 	if (Output == _Output) return;
 
-	_Output = std::move(Output);
+	_Output = Output;
 
 	for (auto& [Clip, StartTime, EndTime] : _Clips)
 		Clip->BindToOutput(_Output);
@@ -25,6 +25,13 @@ void CPoseTrack::AddClip(PPoseClipBase&& Clip, float StartTime, float Duration /
 	if (!Clip || Duration <= 0.f) return;
 	auto It = std::lower_bound(_Clips.begin(), _Clips.end(), StartTime, [](const CClip& Clip, float Time) { return Clip.EndTime < Time; });
 	_Clips.insert(It, CClip{ std::move(Clip), StartTime, StartTime + Duration });
+}
+//---------------------------------------------------------------------
+
+PTimelineTrack CPoseTrack::Clone() const
+{
+	NOT_IMPLEMENTED;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

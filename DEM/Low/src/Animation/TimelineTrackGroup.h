@@ -11,9 +11,9 @@ class CTimelineTrackGroup : public CTimelineTrack
 {
 public:
 
-	virtual float GetDuration() const override;
-
-	virtual void  PlayInterval(float PrevTime, float CurrTime, bool IsLast) override;
+	virtual PTimelineTrack Clone() const override;
+	virtual float          GetDuration() const override;
+	virtual void           PlayInterval(float PrevTime, float CurrTime, bool IsLast) override;
 
 	//???if timeline track base class manages clips, how to use this functionality here?
 
