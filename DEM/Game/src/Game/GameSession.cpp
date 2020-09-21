@@ -47,6 +47,10 @@ CGameSession::CGameSession()
 
 CGameSession::~CGameSession()
 {
+	// Before destroying Lua, according to init order
+	_FeaturesByName.clear();
+	_Features.clear();
+
 	_ScriptState["Session"] = sol::nil;
 }
 //---------------------------------------------------------------------

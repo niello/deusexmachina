@@ -8,11 +8,11 @@ namespace DEM::Anim
 {
 using PAnimatedPoseClip = std::unique_ptr<class CAnimatedPoseClip>;
 
-class CAnimatedPoseClip : public CPoseClipBase
+class alignas(CAnimationSampler) CAnimatedPoseClip : public CPoseClipBase
 {
 protected:
 
-	CAnimationSampler _Sampler;
+	CAnimationSampler _Sampler; // At offset 0 for proper alignment
 
 	// float start, end(?) - normalized. If end > 1, it explicitly defines loop count
 	// duration / speed, speed can be negative for reversed animation
@@ -20,6 +20,8 @@ protected:
 	// all this is used to convert TL cip time to animation clip time
 
 public:
+
+	DEM_ALLOCATE_ALIGNED(alignof(CAnimatedPoseClip));
 
 	void         SetAnimationClip(const PAnimationClip& Clip);
 
