@@ -14,6 +14,8 @@ CSmartObject::CSmartObject(CStrID ID, CStrID DefaultState, std::string_view Scri
 
 bool CSmartObject::AddState(CStrID ID, CTimelineTask&& TimelineTask/*, state logic object ptr (optional)*/)
 {
+	if (!ID) return false;
+
 	// Check if state with the same ID exists
 	auto It = std::lower_bound(_States.begin(), _States.end(), ID, [](const auto& Elm, CStrID Value) { return Elm.ID < Value; });
 	if (It != _States.end() && (*It).ID == ID) return false;
@@ -27,6 +29,8 @@ bool CSmartObject::AddState(CStrID ID, CTimelineTask&& TimelineTask/*, state log
 
 bool CSmartObject::AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& TimelineTask)
 {
+	if (!FromID || !ToID) return false;
+
 	// Find source state, it must exist
 	auto It = std::lower_bound(_States.begin(), _States.end(), FromID, [](const auto& Elm, CStrID Value) { return Elm.ID < Value; });
 	if (It == _States.end() || (*It).ID != FromID) return false;
@@ -46,6 +50,8 @@ bool CSmartObject::AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& Tim
 
 bool CSmartObject::AddInteraction(CStrID ID)
 {
+	if (!ID) return false;
+
 	// Check if this interaction exists
 	auto It = std::lower_bound(_Interactions.begin(), _Interactions.end(), ID, [](const auto& Elm, CStrID Value) { return Elm.first < Value; });
 	if (It != _Interactions.end() && (*It).first == ID) return false;
