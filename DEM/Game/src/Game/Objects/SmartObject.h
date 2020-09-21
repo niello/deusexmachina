@@ -64,11 +64,11 @@ protected:
 	std::string      _ScriptSource; //???CStrID of ScriptObject resource? Loader will require Lua.
 
 	//sol::environment _ScriptObject; //???or store as sol::table? what is the difference in size?
-	sol::function    _OnStateEnter;
-	sol::function    _OnStateStartEntering;
-	sol::function    _OnStateExit;
-	sol::function    _OnStateStartExiting;
+	sol::function    _OnStateForceSet;
 	sol::function    _OnStateUpdate;
+	sol::function    _OnTransitionStart;
+	sol::function    _OnTransitionEnd;
+	sol::function    _OnTransitionCancel;
 
 	std::vector<CSmartObjectStateInfo> _States;
 	std::vector<std::pair<CStrID, sol::function>> _Interactions; // Interaction ID -> optional condition
@@ -88,8 +88,11 @@ public:
 	const CSmartObjectStateInfo*      FindState(CStrID ID) const;
 	const CSmartObjectTransitionInfo* FindTransition(CStrID FromID, CStrID ToID) const;
 
-	//???instead of it write OnState*(World, EntityID, StateID)?
-	auto&        GetOnStateUpdateScript() { return _OnStateUpdate; }
+	auto& GetScriptOnStateUpdate() { return _OnStateUpdate; }
+	auto& GetScriptOnStateForceSet() { return _OnStateForceSet; }
+	auto& GetScriptOnTransitionStart() { return _OnTransitionStart; }
+	auto& GetScriptOnTransitionEnd() { return _OnTransitionEnd; }
+	auto& GetScriptOnTransitionCancel() { return _OnTransitionCancel; }
 
 	CStrID       GetDefaultState() const { return _DefaultState; }
 	const auto&  GetInteractions() const { return _Interactions; }

@@ -93,25 +93,25 @@ bool CSmartObject::InitScript(sol::state& Lua)
 		return false;
 	}
 
-	auto Proxy = ScriptObject["OnStateEnter"];
+	auto Proxy = ScriptObject["OnStateForceSet"];
 	if (Proxy.get_type() == sol::type::function)
-		_OnStateEnter = Proxy;
-
-	Proxy = ScriptObject["OnStateStartEntering"];
-	if (Proxy.get_type() == sol::type::function)
-		_OnStateStartEntering = Proxy;
-
-	Proxy = ScriptObject["OnStateExit"];
-	if (Proxy.get_type() == sol::type::function)
-		_OnStateExit = Proxy;
-
-	Proxy = ScriptObject["OnStateStartExiting"];
-	if (Proxy.get_type() == sol::type::function)
-		_OnStateStartExiting = Proxy;
+		_OnStateForceSet = Proxy;
 
 	Proxy = ScriptObject["OnStateUpdate"];
 	if (Proxy.get_type() == sol::type::function)
 		_OnStateUpdate = Proxy;
+
+	Proxy = ScriptObject["OnTransitionStart"];
+	if (Proxy.get_type() == sol::type::function)
+		_OnTransitionStart = Proxy;
+
+	Proxy = ScriptObject["OnTransitionEnd"];
+	if (Proxy.get_type() == sol::type::function)
+		_OnTransitionEnd = Proxy;
+
+	Proxy = ScriptObject["OnTransitionCancel"];
+	if (Proxy.get_type() == sol::type::function)
+		_OnTransitionCancel = Proxy;
 
 	for (auto& [ID, Condition] : _Interactions)
 	{

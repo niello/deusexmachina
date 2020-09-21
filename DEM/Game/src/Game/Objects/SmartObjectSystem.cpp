@@ -11,7 +11,7 @@ namespace DEM::Game
 {
 
 static void RunTimelineTask(DEM::Game::CGameWorld& World, HEntity EntityID, CSmartObjectComponent& SOComponent,
-	const CTimelineTask& Task, float InitialProgress, Anim::PTimelineTrack&& CurrTrack, const Anim::PTimelineTrack& TrackProto)
+	const CTimelineTask& Task, float InitialProgress, Anim::PTimelineTrack CurrTrack, const CTimelineTask* pPrevTask)
 {
 	if (!Task.Timeline)
 	{
@@ -19,23 +19,37 @@ static void RunTimelineTask(DEM::Game::CGameWorld& World, HEntity EntityID, CSma
 		return;
 	}
 
-	// If current track is cloned from the same prototype, can reuse it and avoid heavy setup
-	const auto* pTaskTrackProto = Task.Timeline->GetObject<Anim::CTimelineTrack>();
-	if (!CurrTrack || pTaskTrackProto != TrackProto)
-	{
-		CurrTrack = pTaskTrackProto->Clone();
+	Anim::PTimelineTrack NewTrack;
 
-		//!!!FIXME: can reuse already filled skeleton? discard mapping wrappers?
-		//OldCurrTrack.As<CPoseTrack>->GetOutput() - may be skeleton ot mapped pose output
+	// If current track is cloned from the same prototype, can reuse it and avoid heavy setup
+	const auto* pOldTrackProto = pPrevTask ? pPrevTask->Timeline->GetObject<Anim::CTimelineTrack>() : nullptr;
+	const auto* pNewTrackProto = Task.Timeline->GetObject<Anim::CTimelineTrack>();
+	if (!CurrTrack || pNewTrackProto != pOldTrackProto)
+	{
+		Anim::PTimelineTrack NewTrack = pNewTrackProto->Clone();
 
 		//???!!!DBG TMP!? See Task.SkeletonRootRelPath comment.
-		if (auto pPoseTrack = CurrTrack->As<Anim::CPoseTrack>())
-			if (auto pSceneComponent = World.FindComponent<DEM::Game::CSceneComponent>(EntityID))
-				if (auto pTargetRoot = pSceneComponent->RootNode->FindNodeByPath(Task.SkeletonRootRelPath.c_str()))
-					pPoseTrack->SetOutput(n_new(Anim::CSkeleton(pTargetRoot)));
-	}
+		if (auto pPoseTrack = NewTrack->As<Anim::CPoseTrack>())
+		{
+			if (false)//pPrevTask && pPrevTask->SkeletonRootRelPath == Task.SkeletonRootRelPath)
+			{
+				//!!!FIXME: can reuse already filled skeleton? discard mapping wrappers?
+				//!!!if cache skeleton, SkeletonRootRelPath must be the same!
+				// pOutput = cached output from SOComponent (or dig up skeleton from possible mapping wrappers of prev CurrTrack output)
+			}
+			else
+			{
+				if (auto pSceneComponent = World.FindComponent<DEM::Game::CSceneComponent>(EntityID))
+					if (auto pTargetRoot = pSceneComponent->RootNode->FindNodeByPath(Task.SkeletonRootRelPath.c_str()))
+						pPoseTrack->SetOutput(n_new(Anim::CSkeleton(pTargetRoot)));
+			}
+		}
 
-	SOComponent.Player.SetTrack(CurrTrack);
+		CurrTrack = nullptr;
+
+		SOComponent.Player.SetTrack(NewTrack);
+	}
+	else SOComponent.Player.SetTrack(CurrTrack);
 
 	//???always relative time? may need absolute, especially when editing single multisegment TL.
 	const float TrackDuration = SOComponent.Player.GetTrack()->GetDuration();
@@ -51,8 +65,22 @@ static void RunTimelineTask(DEM::Game::CGameWorld& World, HEntity EntityID, CSma
 }
 //---------------------------------------------------------------------
 
+static void CallTransitionScript(sol::function& Script, HEntity EntityID, CStrID CurrState, CStrID NextState)
+{
+	if (Script.valid())
+	{
+		auto Result = Script(EntityID, CurrState, NextState);
+		if (!Result.valid())
+		{
+			sol::error Error = Result;
+			::Sys::Error(Error.what());
+		}
+	}
+}
+//---------------------------------------------------------------------
+
 void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, HEntity EntityID,
-	CSmartObjectComponent& SOComponent, const CSmartObject& SOAsset)
+	CSmartObjectComponent& SOComponent, CSmartObject& SOAsset)
 {
 	// In case game logic callbacks will make another request during the processing of this one
 	const auto RequestedState = SOComponent.RequestedState;
@@ -60,6 +88,9 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, HEntity EntityID,
 
 	const CSmartObjectTransitionInfo* pTransitionCN = nullptr;
 	float InitialProgress = 0.f;
+
+	// Initial state is always force-set
+	if (!SOComponent.CurrState) SOComponent.Force = true;
 
 	// Handle current transition (A->B) softly
 	if (SOComponent.NextState && !SOComponent.Force)
@@ -112,7 +143,7 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, HEntity EntityID,
 		}
 	}
 
-	Anim::PTimelineTrack TrackProto;
+	const CTimelineTask* pPrevTask = nullptr;
 	Anim::PTimelineTrack CurrTrack;
 
 	// Now current transition must be cancelled
@@ -121,12 +152,11 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, HEntity EntityID,
 		if (pTransitionCN)
 		{
 			// Current TL track instance is reusable only if its prototype is known
-			TrackProto = pTransitionCN->TimelineTask.Timeline->GetObject<Anim::CTimelineTrack>();
+			pPrevTask = &pTransitionCN->TimelineTask;
 			CurrTrack = SOComponent.Player.GetTrack();
 		}
 
-		// call OnTransitionCancel
-
+		CallTransitionScript(SOAsset.GetScriptOnTransitionCancel(), EntityID, SOComponent.CurrState, SOComponent.NextState);
 		SOComponent.NextState = CStrID::Empty;
 	}
 
@@ -136,10 +166,8 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, HEntity EntityID,
 		if (auto pTransitionCR = SOAsset.FindTransition(SOComponent.CurrState, RequestedState))
 		{
 			SOComponent.NextState = RequestedState;
-
-			// call OnTransitionStart
-
-			RunTimelineTask(World, EntityID, SOComponent, pTransitionCR->TimelineTask, InitialProgress, std::move(CurrTrack), TrackProto);
+			CallTransitionScript(SOAsset.GetScriptOnTransitionStart(), EntityID, SOComponent.CurrState, SOComponent.NextState);
+			RunTimelineTask(World, EntityID, SOComponent, pTransitionCR->TimelineTask, InitialProgress, CurrTrack, pPrevTask);
 		}
 		else
 		{
@@ -153,11 +181,9 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, HEntity EntityID,
 	{
 		if (auto pState = SOAsset.FindState(RequestedState))
 		{
+			CallTransitionScript(SOAsset.GetScriptOnStateForceSet(), EntityID, SOComponent.CurrState, RequestedState);
+			RunTimelineTask(World, EntityID, SOComponent, pState->TimelineTask, 0.f, CurrTrack, pPrevTask);
 			SOComponent.CurrState = RequestedState;
-
-			// call OnStateExit, OnStateEnter etc
-
-			RunTimelineTask(World, EntityID, SOComponent, pState->TimelineTask, 0.f, std::move(CurrTrack), TrackProto);
 		}
 	}
 }
@@ -172,8 +198,8 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, float dt)
 		if (!pSmart) return;
 
 		// No need to make transition A->A (should not happen)
-		n_assert_dbg(SOComponent.CurrState != SOComponent.NextState);
-		if (SOComponent.CurrState == SOComponent.NextState)
+		n_assert_dbg(!SOComponent.NextState || SOComponent.CurrState != SOComponent.NextState);
+		if (SOComponent.NextState && SOComponent.CurrState == SOComponent.NextState)
 			SOComponent.NextState = CStrID::Empty;
 
 		if (SOComponent.RequestedState) ProcessStateChangeRequest(World, EntityID, SOComponent, *pSmart);
@@ -188,31 +214,26 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, float dt)
 			// Infinite transitions are not allowed, so zero loops always mean transition end
 			if (!SOComponent.Player.GetRemainingLoopCount())
 			{
-				Anim::PTimelineTrack TrackProto;
-				Anim::PTimelineTrack CurrTrack;
-				if (auto pTransitionCN = pSmart->FindTransition(SOComponent.CurrState, SOComponent.NextState))
-				{
-					// Current TL track instance is reusable only if its prototype is known
-					TrackProto = pTransitionCN->TimelineTask.Timeline->GetObject<Anim::CTimelineTrack>();
-					CurrTrack = SOComponent.Player.GetTrack();
-				}
-
 				if (auto pState = pSmart->FindState(SOComponent.NextState))
 				{
+					const CTimelineTask* pPrevTask = nullptr;
+					Anim::PTimelineTrack CurrTrack;
+					if (auto pTransitionCN = pSmart->FindTransition(SOComponent.CurrState, SOComponent.NextState))
+					{
+						// Current TL track instance is reusable only if its prototype is known
+						pPrevTask = &pTransitionCN->TimelineTask;
+						CurrTrack = SOComponent.Player.GetTrack();
+					}
+
+					// End transition, enter the destination state
+					CallTransitionScript(pSmart->GetScriptOnTransitionEnd(), EntityID, SOComponent.CurrState, SOComponent.NextState);
+					RunTimelineTask(World, EntityID, SOComponent, pState->TimelineTask, 0.f, CurrTrack, pPrevTask);
 					SOComponent.CurrState = SOComponent.NextState;
-
-					//!!!call OnTransitionEnd!
-
-					// call OnStateExit, OnStateEnter etc
-
-					RunTimelineTask(World, EntityID, SOComponent, pState->TimelineTask, 0.f, std::move(CurrTrack), TrackProto);
 				}
 				else
 				{
-					// If the state was deleted from asset in runtime, cancel to source state
-
-					//!!!call OnTransitionCancel!
-
+					// State was deleted from asset in runtime, cancel to source state
+					CallTransitionScript(pSmart->GetScriptOnTransitionCancel(), EntityID, SOComponent.CurrState, SOComponent.NextState);
 					SOComponent.Player.SetTrack(nullptr);
 				}
 
@@ -227,7 +248,7 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, float dt)
 
 			//!!!TODO: call custom logic, if exists!
 
-			auto& Script = pSmart->GetOnStateUpdateScript();
+			auto& Script = pSmart->GetScriptOnStateUpdate();
 			if (Script.valid())
 			{
 				auto Result = Script(EntityID, SOComponent.CurrState);
