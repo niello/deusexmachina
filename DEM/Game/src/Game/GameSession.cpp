@@ -23,6 +23,13 @@ CGameSession::CGameSession()
 		return 0;
 	};
 
+	//???!!!specify "index" to pick features by name? or register each one as field?
+	_ScriptState.new_usertype<CGameSession>("CGameSession"
+		, "FindFeature", sol::overload(
+			static_cast<::Core::CRTTIBaseClass* (CGameSession::*)(const char*) const>(&CGameSession::FindFeature)
+			, static_cast<::Core::CRTTIBaseClass* (CGameSession::*)(CStrID) const>(&CGameSession::FindFeature))
+		);
+
 	_ScriptState.new_usertype<CStrID>("CStrID"
 		, sol::constructors<sol::types<>, sol::types<const char*>>()
 		, sol::meta_function::to_string, &CStrID::CStr
@@ -33,6 +40,14 @@ CGameSession::CGameSession()
 			, [](CStrID a, const char* b) { return std::string(a.CStr()) + b; }
 			, [](CStrID a, CStrID b) { return std::string(a.CStr()) + b.CStr(); })
 		);
+
+	_ScriptState["Session"] = this;
+}
+//---------------------------------------------------------------------
+
+CGameSession::~CGameSession()
+{
+	_ScriptState["Session"] = sol::nil;
 }
 //---------------------------------------------------------------------
 

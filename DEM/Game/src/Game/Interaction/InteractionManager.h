@@ -1,4 +1,5 @@
 #pragma once
+#include <Core/RTTIBaseClass.h>
 #include <Game/Interaction/Ability.h>
 #include <Game/ECS/Entity.h>
 #include <map>
@@ -16,21 +17,24 @@ namespace DEM::Game
 {
 using PInteraction = std::unique_ptr<class CInteraction>;
 struct CInteractionContext;
+class CGameSession;
 
-class CInteractionManager
+class CInteractionManager : public ::Core::CRTTIBaseClass
 {
+	RTTI_CLASS_DECL;
+
 protected:
 
 	std::map<CStrID, CAbility>     _Abilities;
 	std::map<CStrID, PInteraction> _Interactions;
-	sol::state_view                _Lua;
+	sol::state_view                _Lua; //???!!!store session ref instead?!
 	CStrID                         _DefaultAbility;
 
 	const CInteraction* ValidateInteraction(CStrID ID, const sol::function& Condition, CInteractionContext& Context);
 
 public:
 
-	CInteractionManager(sol::state_view Lua);
+	CInteractionManager(CGameSession& Owner);
 	~CInteractionManager();
 
 	bool                RegisterAbility(CStrID ID, CAbility&& Ability);

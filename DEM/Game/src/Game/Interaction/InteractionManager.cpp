@@ -10,11 +10,12 @@
 
 namespace DEM::Game
 {
+RTTI_CLASS_IMPL(CInteractionManager, ::Core::CRTTIBaseClass);
 
 //!!!must be per-session, because uses Lua, which is per-session!
 //!!!if so, no need to store session inside an interaction context!
-CInteractionManager::CInteractionManager(sol::state_view Lua)
-	: _Lua(std::move(Lua))
+CInteractionManager::CInteractionManager(CGameSession& Owner)
+	: _Lua(Owner.GetScriptState())
 {
 	//???right here or call methods from other CPPs? Like CTargetInfo::ScriptInterface(sol::state_view Lua)
 	//!!!needs definition of pointer types!
