@@ -1,4 +1,5 @@
 #include "SmartObject.h"
+#include <sol/sol.hpp>
 
 namespace DEM::Game
 {
@@ -53,11 +54,11 @@ bool CSmartObject::AddInteraction(CStrID ID)
 	if (!ID) return false;
 
 	// Check if this interaction exists
-	auto It = std::lower_bound(_Interactions.begin(), _Interactions.end(), ID, [](const auto& Elm, CStrID Value) { return Elm.first < Value; });
-	if (It != _Interactions.end() && (*It).first == ID) return false;
+	auto It = std::lower_bound(_Interactions.begin(), _Interactions.end(), ID, [](const auto& Elm, CStrID Value) { return Elm < Value; });
+	if (It != _Interactions.end() && *It == ID) return false;
 
 	// Insert sorted by ID
-	_Interactions.insert(It, { ID, sol::function() });
+	_Interactions.insert(It, ID);
 
 	return true;
 }
@@ -91,7 +92,7 @@ bool CSmartObject::InitScript(sol::state& Lua)
 
 	//???cache ScriptObject as field? or functions are enough? or don't cache functions, only env?
 	sol::environment ScriptObject(Lua, sol::create, Lua.globals());
-	auto Result = Lua.script(_ScriptSource, ScriptObject /*, chunk name from SO ID*/);
+	auto Result = Lua.script(_ScriptSource, ScriptObject); //!!!chunk name conflicts with another signature! , std::string(_ID.CStr()));
 	if (!Result.valid())
 	{
 		sol::error Error = Result;
@@ -99,42 +100,30 @@ bool CSmartObject::InitScript(sol::state& Lua)
 		return false;
 	}
 
-	auto Proxy = ScriptObject["OnStateForceSet"];
-	if (Proxy.get_type() == sol::type::function)
-		_OnStateForceSet = Proxy;
-
-	Proxy = ScriptObject["OnStateUpdate"];
-	if (Proxy.get_type() == sol::type::function)
-		_OnStateUpdate = Proxy;
-
-	Proxy = ScriptObject["OnTransitionStart"];
-	if (Proxy.get_type() == sol::type::function)
-		_OnTransitionStart = Proxy;
-
-	Proxy = ScriptObject["OnTransitionEnd"];
-	if (Proxy.get_type() == sol::type::function)
-		_OnTransitionEnd = Proxy;
-
-	Proxy = ScriptObject["OnTransitionCancel"];
-	if (Proxy.get_type() == sol::type::function)
-		_OnTransitionCancel = Proxy;
-
-	for (auto& [ID, Condition] : _Interactions)
-	{
-		Proxy = ScriptObject["Can" + std::string(ID.CStr())];
-		if (Proxy.get_type() == sol::type::function)
-			Condition = Proxy;
-	}
-
 	//???use sol::this_environment for calls as a Self ref?
 
-	//???new_usertype for CSmartObject in ScriptObject or in global table?
+	//???need to add new_usertype for CSmartObject to ScriptObject or to global table?
 
 	// Write new script object into a smart object registry
 	auto SmartObjectsRegistry = Lua["SmartObjects"].get_or_create<sol::table>();
 	SmartObjectsRegistry[_ID.CStr()] = ScriptObject;
 
 	return true;
+}
+//---------------------------------------------------------------------
+
+// NB: can't cache Lua objects here because Lua state is per-session and resource is per-application
+sol::function CSmartObject::GetScriptFunction(sol::state& Lua, std::string_view Name) const
+{
+	auto ObjProxy = Lua["SmartObjects"][_ID.CStr()];
+	if (ObjProxy.get_type() == sol::type::table)
+	{
+		sol::table ScriptObject = ObjProxy;
+		auto FnProxy = ScriptObject[Name];
+		if (FnProxy.get_type() == sol::type::function) return FnProxy;
+	}
+
+	return sol::function();
 }
 //---------------------------------------------------------------------
 

@@ -240,6 +240,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	// If target is a smart object, select first appilcable interaction in it
 	if (Context.Target.Entity)
 	{
+		//!!!remove session from context, store here as owner!
 		if (auto pWorld = Context.Session->FindFeature<CGameWorld>())
 		{
 			auto pSmart = pWorld->FindComponent<CSmartObjectComponent>(Context.Target.Entity);
@@ -249,7 +250,8 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 				{
 					for (U32 i = 0; i < pSmartAsset->GetInteractions().size(); ++i)
 					{
-						const auto& [ID, Condition] = pSmartAsset->GetInteractions()[i];
+						const auto ID = pSmartAsset->GetInteractions()[i];
+						auto Condition = pSmartAsset->GetScriptFunction(Context.Session->GetScriptState(), "Can" + std::string(ID.CStr()));
 						auto pInteraction = ValidateInteraction(ID, Condition, Context);
 						if (pInteraction &&
 							pInteraction->GetMaxTargetCount() > 0 &&

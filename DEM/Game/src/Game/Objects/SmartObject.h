@@ -1,6 +1,6 @@
 #pragma once
 #include <Resources/Resource.h>
-#include <sol/sol.hpp>
+#include <sol/forward.hpp>
 #include <vector>
 
 // Smart object asset describes a set of states, transitions between them,
@@ -59,19 +59,11 @@ class CSmartObject : public Resources::CResourceObject
 
 protected:
 
-	CStrID           _ID;
-	CStrID           _DefaultState;
-	std::string      _ScriptSource; //???CStrID of ScriptObject resource? Loader will require Lua.
-
-	//sol::environment _ScriptObject; //???or store as sol::table? what is the difference in size?
-	sol::function    _OnStateForceSet;
-	sol::function    _OnStateUpdate;
-	sol::function    _OnTransitionStart;
-	sol::function    _OnTransitionEnd;
-	sol::function    _OnTransitionCancel;
-
+	CStrID                             _ID;
+	CStrID                             _DefaultState;
+	std::string                        _ScriptSource;
 	std::vector<CSmartObjectStateInfo> _States;
-	std::vector<std::pair<CStrID, sol::function>> _Interactions; // Interaction ID -> optional condition
+	std::vector<CStrID>                _Interactions;
 
 public:
 
@@ -80,22 +72,19 @@ public:
 	virtual bool IsResourceValid() const override { return !_States.empty(); }
 
 	// TODO: Add* logic to constructor? Or for runtime changes need also Remove*.
-	bool         AddState(CStrID ID, CTimelineTask&& TimelineTask/*, state logic object ptr (optional)*/);
-	bool         AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& TimelineTask);
-	bool         AddInteraction(CStrID ID);
-	bool         InitScript(sol::state& Lua);
+	bool          AddState(CStrID ID, CTimelineTask&& TimelineTask/*, state logic object ptr (optional)*/);
+	bool          AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& TimelineTask);
+	bool          AddInteraction(CStrID ID);
+	bool          InitScript(sol::state& Lua);
 
 	const CSmartObjectStateInfo*      FindState(CStrID ID) const;
 	const CSmartObjectTransitionInfo* FindTransition(CStrID FromID, CStrID ToID) const;
 
-	auto& GetScriptOnStateUpdate() { return _OnStateUpdate; }
-	auto& GetScriptOnStateForceSet() { return _OnStateForceSet; }
-	auto& GetScriptOnTransitionStart() { return _OnTransitionStart; }
-	auto& GetScriptOnTransitionEnd() { return _OnTransitionEnd; }
-	auto& GetScriptOnTransitionCancel() { return _OnTransitionCancel; }
-
-	CStrID       GetDefaultState() const { return _DefaultState; }
-	const auto&  GetInteractions() const { return _Interactions; }
+	sol::function GetScriptFunction(sol::state& Lua, std::string_view Name) const;
+	CStrID        GetID() const { return _ID; }
+	CStrID        GetDefaultState() const { return _DefaultState; }
+	const auto&   GetScriptSource() const { return _ScriptSource; }
+	const auto&   GetInteractions() const { return _Interactions; }
 };
 
 }

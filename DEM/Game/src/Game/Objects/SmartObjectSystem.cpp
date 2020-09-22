@@ -1,6 +1,7 @@
 #include <Game/ECS/GameWorld.h>
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/Objects/SmartObject.h>
+#include <sol/sol.hpp>
 
 //!!!DBG TMP!
 #include <Animation/Skeleton.h>
@@ -79,7 +80,7 @@ static void CallTransitionScript(sol::function& Script, HEntity EntityID, CStrID
 }
 //---------------------------------------------------------------------
 
-void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, HEntity EntityID,
+void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, sol::state& Lua, HEntity EntityID,
 	CSmartObjectComponent& SOComponent, CSmartObject& SOAsset)
 {
 	// In case game logic callbacks will make another request during the processing of this one
@@ -156,7 +157,7 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, HEntity EntityID,
 			CurrTrack = SOComponent.Player.GetTrack();
 		}
 
-		CallTransitionScript(SOAsset.GetScriptOnTransitionCancel(), EntityID, SOComponent.CurrState, SOComponent.NextState);
+		CallTransitionScript(SOAsset.GetScriptFunction(Lua, "OnTransitionCancel"), EntityID, SOComponent.CurrState, SOComponent.NextState);
 		SOComponent.NextState = CStrID::Empty;
 	}
 
@@ -166,7 +167,7 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, HEntity EntityID,
 		if (auto pTransitionCR = SOAsset.FindTransition(SOComponent.CurrState, RequestedState))
 		{
 			SOComponent.NextState = RequestedState;
-			CallTransitionScript(SOAsset.GetScriptOnTransitionStart(), EntityID, SOComponent.CurrState, SOComponent.NextState);
+			CallTransitionScript(SOAsset.GetScriptFunction(Lua, "OnTransitionStart"), EntityID, SOComponent.CurrState, SOComponent.NextState);
 			RunTimelineTask(World, EntityID, SOComponent, pTransitionCR->TimelineTask, InitialProgress, CurrTrack, pPrevTask);
 		}
 		else
@@ -181,18 +182,19 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, HEntity EntityID,
 	{
 		if (auto pState = SOAsset.FindState(RequestedState))
 		{
-			CallTransitionScript(SOAsset.GetScriptOnStateForceSet(), EntityID, SOComponent.CurrState, RequestedState);
+			CallTransitionScript(SOAsset.GetScriptFunction(Lua, "OnStateForceSet"), EntityID, SOComponent.CurrState, RequestedState);
 			RunTimelineTask(World, EntityID, SOComponent, pState->TimelineTask, 0.f, CurrTrack, pPrevTask);
 			SOComponent.CurrState = RequestedState;
+			SOComponent.UpdateScript = SOAsset.GetScriptFunction(Lua, "OnStateUpdate");
 		}
 	}
 }
 //---------------------------------------------------------------------
 
-void UpdateSmartObjects(DEM::Game::CGameWorld& World, float dt)
+void UpdateSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, float dt)
 {
 	//???only in certain level? or process all loaded object in the world, like now?
-	World.ForEachEntityWith<CSmartObjectComponent>([&World, dt](auto EntityID, auto& Entity, CSmartObjectComponent& SOComponent)
+	World.ForEachEntityWith<CSmartObjectComponent>([&World, &Lua, dt](auto EntityID, auto& Entity, CSmartObjectComponent& SOComponent)
 	{
 		CSmartObject* pSmart = SOComponent.Asset->GetObject<CSmartObject>();
 		if (!pSmart) return;
@@ -202,7 +204,7 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, float dt)
 		if (SOComponent.NextState && SOComponent.CurrState == SOComponent.NextState)
 			SOComponent.NextState = CStrID::Empty;
 
-		if (SOComponent.RequestedState) ProcessStateChangeRequest(World, EntityID, SOComponent, *pSmart);
+		if (SOComponent.RequestedState) ProcessStateChangeRequest(World, Lua, EntityID, SOComponent, *pSmart);
 
 		// Advance player time even if no timeline is associated with the state.
 		// This time may be used in game logic and means how long we are in this state.
@@ -226,14 +228,15 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, float dt)
 					}
 
 					// End transition, enter the destination state
-					CallTransitionScript(pSmart->GetScriptOnTransitionEnd(), EntityID, SOComponent.CurrState, SOComponent.NextState);
+					CallTransitionScript(pSmart->GetScriptFunction(Lua, "OnTransitionEnd"), EntityID, SOComponent.CurrState, SOComponent.NextState);
 					RunTimelineTask(World, EntityID, SOComponent, pState->TimelineTask, 0.f, CurrTrack, pPrevTask);
 					SOComponent.CurrState = SOComponent.NextState;
+					SOComponent.UpdateScript = pSmart->GetScriptFunction(Lua, "OnStateUpdate");
 				}
 				else
 				{
 					// State was deleted from asset in runtime, cancel to source state
-					CallTransitionScript(pSmart->GetScriptOnTransitionCancel(), EntityID, SOComponent.CurrState, SOComponent.NextState);
+					CallTransitionScript(pSmart->GetScriptFunction(Lua, "OnTransitionCancel"), EntityID, SOComponent.CurrState, SOComponent.NextState);
 					SOComponent.Player.SetTrack(nullptr);
 				}
 
@@ -248,10 +251,9 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, float dt)
 
 			//!!!TODO: call custom logic, if exists!
 
-			auto& Script = pSmart->GetScriptOnStateUpdate();
-			if (Script.valid())
+			if (SOComponent.UpdateScript.valid())
 			{
-				auto Result = Script(EntityID, SOComponent.CurrState);
+				auto Result = SOComponent.UpdateScript(EntityID, SOComponent.CurrState);
 				if (!Result.valid())
 				{
 					sol::error Error = Result;
