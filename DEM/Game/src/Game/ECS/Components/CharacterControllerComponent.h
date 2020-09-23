@@ -30,7 +30,7 @@ struct CCharacterControllerComponent
 	float           MaxLinearSpeed = 3.f;
 	float           MaxAngularSpeed = PI;
 	float			MaxAcceleration = 0.f;
-	float			MaxLandingImpulse;	//???speed? Maximum impulse the character can handle when landing. When exceeded, falling starts.
+	float			MaxLandingImpulse = 0.f;	//???speed? Maximum impulse the character can handle when landing. When exceeded, falling starts.
 	//float			MaxJumpImpulse;		// Maximum jump impulse (mass- and direction-independent)
 	float           BigTurnThreshold = PI / 3.f;        // Max angle (in rad) actor can turn without stopping linear movement
 	float           SteeringSmoothness = 0.3f;

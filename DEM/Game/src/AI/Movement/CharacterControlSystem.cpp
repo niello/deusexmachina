@@ -62,21 +62,20 @@ static bool UpdateSelfControlState(CCharacterControllerComponent& Character, flo
 	}
 	else if (DistanceToGround > Character.MaxStepDownHeight && IsOnGround)
 	{
-		//???control whole speed or only a vertical component? now the second
+		IsOnGround = false;
 
+		//???control whole speed or only a vertical component? now the second
 		// Y is inverted to be positive when the character moves downwards
 		const float VerticalImpulse = pBody->GetMass() * -pBtBody->getLinearVelocity().y();
 		if (VerticalImpulse > Character.MaxLandingImpulse)
 		{
 			Character.State = ECharacterState::Fall;
 			pBody->SetActive(true);
-			IsOnGround = false;
 		}
 		else if (VerticalImpulse > 0.f)
 		{
 			Character.State = ECharacterState::Jump;
 			pBody->SetActive(true);
-			IsOnGround = false;
 		}
 		//???else if VerticalImpulse == 0.f levitate?
 	}
