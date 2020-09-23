@@ -64,16 +64,18 @@ static bool UpdateSelfControlState(CCharacterControllerComponent& Character, flo
 	{
 		IsOnGround = false;
 
-		//???control whole speed or only a vertical component? now the second
+		//???control whole speed, not only a vertical component?
 		// Y is inverted to be positive when the character moves downwards
-		const float VerticalImpulse = pBody->GetMass() * -pBtBody->getLinearVelocity().y();
-		if (VerticalImpulse > Character.MaxLandingImpulse)
+		const float FallSpeed = -pBtBody->getLinearVelocity().y();
+		if (FallSpeed > Character.MaxLandingVerticalSpeed)
 		{
+			// Can't control itself, fall
 			Character.State = ECharacterState::Fall;
 			pBody->SetActive(true);
 		}
-		else if (VerticalImpulse > 0.f)
+		else if (FallSpeed > 0.f)
 		{
+			// Landing phase of the jump
 			Character.State = ECharacterState::Jump;
 			pBody->SetActive(true);
 		}
