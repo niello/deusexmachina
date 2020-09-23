@@ -481,7 +481,7 @@ bool CGameWorld::InstantiateTemplate(HEntity EntityID, CStrID TemplateID, bool B
 {
 	if (!EntityID || !TemplateID) return false;
 
-	auto Rsrc = _ResMgr.RegisterResource<CEntityTemplate>(TemplateID);
+	auto Rsrc = _ResMgr.RegisterResource<CEntityTemplate>(TemplateID.CStr());
 	auto pTpl = Rsrc ? Rsrc->ValidateObject<CEntityTemplate>() : nullptr;
 	n_assert2(pTpl, ("CGameWorld::InstantiateTemplate() > can't load requested template " + TemplateID.ToString()).c_str());
 	if (!pTpl) return false;

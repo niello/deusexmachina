@@ -163,7 +163,7 @@ const Core::CRTTI& CMeshLoaderNVX2::GetResultType() const
 PResourceObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
-	IO::PStream Stream = _ResMgr.CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);
 	if (!Stream || !Stream->IsOpened()) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);

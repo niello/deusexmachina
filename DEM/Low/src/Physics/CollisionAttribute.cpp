@@ -80,7 +80,7 @@ bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 
 	if (!_Collider)
 	{
-		Resources::PResource RShape = ResMgr.RegisterResource<Physics::CCollisionShape>(_ShapeUID);
+		Resources::PResource RShape = ResMgr.RegisterResource<Physics::CCollisionShape>(_ShapeUID.CStr());
 		if (!RShape) FAIL;
 
 		auto Shape = RShape->ValidateObject<Physics::CCollisionShape>();

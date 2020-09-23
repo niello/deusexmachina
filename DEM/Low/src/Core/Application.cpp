@@ -255,7 +255,7 @@ CStrID CApplication::ActivateUser(CStrID UserID, Input::PInputTranslator&& Input
 	});
 	if (It != ActiveUsers.cend()) return UserID;
 
-	CString Path = GetUserProfilePath(WritablePath, UserID);
+	CString Path = GetUserProfilePath(WritablePath, UserID.CStr());
 	PathUtils::EnsurePathHasEndingDirSeparator(Path);
 
 	if (!IO().DirectoryExists(Path)) return CStrID::Empty;
@@ -265,7 +265,7 @@ CStrID CApplication::ActivateUser(CStrID UserID, Input::PInputTranslator&& Input
 		NewUser.ID = UserID;
 
 		// OnSettingsLoaded is not sent here, subscribe on OnUserActivated
-		NewUser.Settings = ParamsUtils::LoadParamsFromHRD(GetUserSettingsFilePath(WritablePath, UserID));
+		NewUser.Settings = ParamsUtils::LoadParamsFromHRD(GetUserSettingsFilePath(WritablePath, UserID.CStr()));
 		if (!NewUser.Settings) return CStrID::Empty;
 
 		ActiveUsers.push_back(std::move(NewUser));
@@ -311,7 +311,7 @@ void CApplication::DeactivateUser(CStrID UserID)
 	if (It == ActiveUsers.end()) return;
 
 	if (It->SettingsChanged && It->Settings)
-		ParamsUtils::SaveParamsToHRD(GetUserSettingsFilePath(WritablePath, UserID), *It->Settings);
+		ParamsUtils::SaveParamsToHRD(GetUserSettingsFilePath(WritablePath, UserID.CStr()), *It->Settings);
 
 	// All user input is returned to unclaimed
 	It->Input->TransferAllDevices(UnclaimedInput.get());
@@ -433,7 +433,7 @@ void CApplication::SaveSettings()
 	{
 		if (User.SettingsChanged && User.Settings)
 		{
-			const auto UserSettingsPath = GetUserSettingsFilePath(WritablePath, User.ID);
+			const auto UserSettingsPath = GetUserSettingsFilePath(WritablePath, User.ID.CStr());
 
 			if (UserSettingsPath.IsEmpty() ||
 				IO().IsFileReadOnly(UserSettingsPath) ||

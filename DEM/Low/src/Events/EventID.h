@@ -18,7 +18,7 @@ struct CEventID
 	};
 
 	CEventID() = default;
-	CEventID(CStrID _ID): ID(_ID) {}
+	CEventID(CStrID _ID): ID(_ID.CStr()) {}
 	CEventID(const Core::CRTTI* _RTTI): RTTI(_RTTI) {}
 	CEventID(const Core::CRTTI& _RTTI): RTTI(&_RTTI) {}
 

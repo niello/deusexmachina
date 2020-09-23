@@ -20,7 +20,7 @@ PResourceObject CEntityTemplateLoader::CreateResource(CStrID UID)
 	const char* pOutSubId;
 	Data::PBuffer Buffer;
 	{
-		IO::PStream Stream = _ResMgr.CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+		IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);
 		if (!Stream || !Stream->IsOpened()) return nullptr;
 		Buffer = Stream->ReadAll();
 	}

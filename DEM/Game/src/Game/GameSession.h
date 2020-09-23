@@ -25,9 +25,9 @@ protected:
 
 	using PFeature = std::unique_ptr<::Core::CRTTIBaseClass>;
 
-	std::vector<PFeature>                                  _Features;
-	std::map<CStrID, ::Core::CRTTIBaseClass*, std::less<>> _FeaturesByName;
-	sol::state                                             _ScriptState;
+	std::vector<PFeature>                     _Features;
+	std::map<CStrID, ::Core::CRTTIBaseClass*> _FeaturesByName;
+	sol::state                                _ScriptState;
 
 public:
 
@@ -85,7 +85,7 @@ public:
 
 	auto FindFeature(const char* pName) const
 	{
-		auto It = _FeaturesByName.find(pName);
+		auto It = _FeaturesByName.find(CStrID(pName));
 		return (It == _FeaturesByName.cend()) ? nullptr : It->second;
 	}
 	//---------------------------------------------------------------------

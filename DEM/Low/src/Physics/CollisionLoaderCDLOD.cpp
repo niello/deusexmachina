@@ -17,7 +17,7 @@ const Core::CRTTI& CCollisionLoaderCDLOD::GetResultType() const
 PResourceObject CCollisionLoaderCDLOD::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
-	IO::PStream Stream = _ResMgr.CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);
 	if (!Stream || !Stream->IsOpened()) return nullptr;
 
 	// Only "Collision" sub-id is supported

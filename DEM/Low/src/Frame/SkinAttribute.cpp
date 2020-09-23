@@ -83,7 +83,7 @@ bool CSkinAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
 	if (!_SkinInfo)
 	{
-		Resources::PResource Rsrc = ResMgr.RegisterResource<Render::CSkinInfo>(_SkinInfoUID);
+		Resources::PResource Rsrc = ResMgr.RegisterResource<Render::CSkinInfo>(_SkinInfoUID.CStr());
 		_SkinInfo = Rsrc->ValidateObject<Render::CSkinInfo>();
 	}
 

@@ -47,7 +47,7 @@ Render::PRenderable CSkyboxAttribute::CreateRenderable(CGraphicsResourceManager&
 	if (!ResMgr.GetResourceManager()->FindResource(MeshUID))
 	{
 		// NB: CW box is created, because rendering is CCW, but front sides of polygons must be inside the skybox
-		ResMgr.GetResourceManager()->RegisterResource(MeshUID, n_new(Resources::CMeshGeneratorBox(true)));
+		ResMgr.GetResourceManager()->RegisterResource(MeshUID.CStr(), n_new(Resources::CMeshGeneratorBox(true)));
 	}
 
 	auto pSkybox = n_new(Render::CSkybox());

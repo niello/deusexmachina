@@ -69,7 +69,7 @@ bool CTerrainAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
 	if (!_CDLODData)
 	{
-		auto RCDLODData = ResMgr.RegisterResource<Render::CCDLODData>(_CDLODDataUID);
+		auto RCDLODData = ResMgr.RegisterResource<Render::CCDLODData>(_CDLODDataUID.CStr());
 		_CDLODData = RCDLODData->ValidateObject<Render::CCDLODData>();
 	}
 	OK;
@@ -107,7 +107,7 @@ Render::PRenderable CTerrainAttribute::CreateRenderable(CGraphicsResourceManager
 	PatchName.Format("#Mesh_Patch%dx%d", PatchSize, PatchSize);
 	CStrID MeshUID(PatchName);
 	if (!ResMgr.GetResourceManager()->FindResource(MeshUID))
-		ResMgr.GetResourceManager()->RegisterResource(MeshUID, n_new(Resources::CMeshGeneratorQuadPatch(PatchSize)));
+		ResMgr.GetResourceManager()->RegisterResource(MeshUID.CStr(), n_new(Resources::CMeshGeneratorQuadPatch(PatchSize)));
 
 	pTerrain->PatchMesh = ResMgr.GetMesh(MeshUID);
 
@@ -115,7 +115,7 @@ Render::PRenderable CTerrainAttribute::CreateRenderable(CGraphicsResourceManager
 	PatchName.Format("#Mesh_Patch%dx%d", QPatchSize, QPatchSize);
 	CStrID QuarterMeshUID(PatchName);
 	if (!ResMgr.GetResourceManager()->FindResource(QuarterMeshUID))
-		ResMgr.GetResourceManager()->RegisterResource(QuarterMeshUID, n_new(Resources::CMeshGeneratorQuadPatch(QPatchSize)));
+		ResMgr.GetResourceManager()->RegisterResource(QuarterMeshUID.CStr(), n_new(Resources::CMeshGeneratorQuadPatch(QPatchSize)));
 
 	pTerrain->QuarterPatchMesh = ResMgr.GetMesh(QuarterMeshUID);
 

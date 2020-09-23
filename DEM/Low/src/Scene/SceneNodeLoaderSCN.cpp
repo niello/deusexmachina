@@ -58,7 +58,7 @@ bool LoadNode(IO::CBinaryReader& Reader, Scene::PSceneNode Node)
 PResourceObject CSceneNodeLoaderSCN::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
-	IO::PStream Stream = _ResMgr.CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);
 	if (!Stream || !Stream->IsOpened()) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);

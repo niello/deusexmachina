@@ -54,7 +54,7 @@ Render::PMesh CGraphicsResourceManager::GetMesh(CStrID UID)
 
 	if (!pResMgr || !GPU) return nullptr;
 
-	Resources::PResource RMeshData = pResMgr->RegisterResource<Render::CMeshData>(UID);
+	Resources::PResource RMeshData = pResMgr->RegisterResource<Render::CMeshData>(UID.CStr());
 	if (!RMeshData) return nullptr;
 
 	Render::PMeshData MeshData = RMeshData->ValidateObject<Render::CMeshData>();
@@ -94,7 +94,7 @@ Render::PTexture CGraphicsResourceManager::GetTexture(CStrID UID, UPTR AccessFla
 
 	if (!pResMgr || !GPU) return nullptr;
 
-	Resources::PResource RTexData = pResMgr->RegisterResource<Render::CTextureData>(UID);
+	Resources::PResource RTexData = pResMgr->RegisterResource<Render::CTextureData>(UID.CStr());
 	if (!RTexData) return nullptr;
 
 	Render::PTextureData TexData = RTexData->ValidateObject<Render::CTextureData>();
@@ -155,7 +155,7 @@ Render::PShader CGraphicsResourceManager::GetShader(CStrID UID, bool NeedParamTa
 		*/
 	}
 	else
-		Stream = pResMgr->CreateResourceStream(UID, pSubId, IO::SAP_SEQUENTIAL);
+		Stream = pResMgr->CreateResourceStream(UID.CStr(), pSubId, IO::SAP_SEQUENTIAL);
 
 	if (!Stream || !Stream->IsOpened() || !Stream->CanRead()) return nullptr;
 
@@ -437,7 +437,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 	if (!pResMgr || !GPU) return nullptr;
 
 	const char* pOutSubId;
-	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);
 	if (!Stream || !Stream->IsOpened() || !Stream->CanRead()) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
@@ -625,7 +625,7 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 	if (!pResMgr || !GPU) return nullptr;
 
 	const char* pOutSubId;
-	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);
 	if (!Stream || !Stream->IsOpened() || !Stream->CanRead()) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
@@ -709,7 +709,7 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 	if (!pResMgr || !GPU) return nullptr;
 
 	const char* pOutSubId;
-	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);
 	if (!Stream || !Stream->IsOpened() || !Stream->CanRead()) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);

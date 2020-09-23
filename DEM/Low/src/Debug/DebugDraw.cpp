@@ -18,10 +18,10 @@ constexpr UPTR MAX_PRIMITIVE_VERTICES_PER_DIP = 65536;
 CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr)
 	: _GraphicsMgr(&GraphicsMgr)
 {
-	GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_BoxCCW"), n_new(Resources::CMeshGeneratorBox()));
-	GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_SphereCCW12"), n_new(Resources::CMeshGeneratorSphere(12)));
-	GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_CylinderCCW12"), n_new(Resources::CMeshGeneratorCylinder(12)));
-	GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_ConeCCW12"), n_new(Resources::CMeshGeneratorCone(12)));
+	GraphicsMgr.GetResourceManager()->RegisterResource("#Mesh_BoxCCW", n_new(Resources::CMeshGeneratorBox()));
+	GraphicsMgr.GetResourceManager()->RegisterResource("#Mesh_SphereCCW12", n_new(Resources::CMeshGeneratorSphere(12)));
+	GraphicsMgr.GetResourceManager()->RegisterResource("#Mesh_CylinderCCW12", n_new(Resources::CMeshGeneratorCylinder(12)));
+	GraphicsMgr.GetResourceManager()->RegisterResource("#Mesh_ConeCCW12", n_new(Resources::CMeshGeneratorCone(12)));
 
 	_Shapes[Box] = GraphicsMgr.GetMesh(CStrID("#Mesh_BoxCCW"));
 	_Shapes[Sphere] = GraphicsMgr.GetMesh(CStrID("#Mesh_SphereCCW12"));
