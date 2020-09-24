@@ -40,7 +40,7 @@ struct CSmartObjectTransitionInfo
 {
 	CStrID                      TargetStateID;
 	CTimelineTask               TimelineTask;
-	ETransitionInterruptionMode InterruptionMode;
+	ETransitionInterruptionMode InterruptionMode = ETransitionInterruptionMode::ResetToStart;
 };
 
 struct CSmartObjectStateInfo
@@ -73,7 +73,7 @@ public:
 
 	// TODO: Add* logic to constructor? Or for runtime changes need also Remove*.
 	bool          AddState(CStrID ID, CTimelineTask&& TimelineTask/*, state logic object ptr (optional)*/);
-	bool          AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& TimelineTask);
+	bool          AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& TimelineTask, ETransitionInterruptionMode InterruptionMode);
 	bool          AddInteraction(CStrID ID);
 	bool          InitScript(sol::state& Lua);
 

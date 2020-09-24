@@ -94,7 +94,16 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 						Task.Timeline->ValidateObject();
 					}
 
-					SmartObject->AddTransition(StateParam.GetName(), TransitionParam.GetName(), std::move(Task));
+					DEM::Game::ETransitionInterruptionMode InterruptionMode = DEM::Game::ETransitionInterruptionMode::ResetToStart;
+					const auto& ModeStr = StateDesc.Get(CStrID("InterruptionMode"), CString::Empty);
+					if (ModeStr == "ResetToStart") InterruptionMode = DEM::Game::ETransitionInterruptionMode::ResetToStart;
+					else if (ModeStr == "RewindToEnd") InterruptionMode = DEM::Game::ETransitionInterruptionMode::RewindToEnd;
+					else if (ModeStr == "Proportional") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Proportional;
+					else if (ModeStr == "Forbid") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Forbid;
+					//else if (ModeStr == "Force") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Force;
+					else if (ModeStr.IsValid()) ::Sys::Error("CSmartObjectLoader::CreateResource() > Unknown interruption mode");
+
+					SmartObject->AddTransition(StateParam.GetName(), TransitionParam.GetName(), std::move(Task), InterruptionMode);
 				}
 			}
 		}

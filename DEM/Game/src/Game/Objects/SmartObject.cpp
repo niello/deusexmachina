@@ -28,7 +28,7 @@ bool CSmartObject::AddState(CStrID ID, CTimelineTask&& TimelineTask/*, state log
 }
 //---------------------------------------------------------------------
 
-bool CSmartObject::AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& TimelineTask)
+bool CSmartObject::AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& TimelineTask, ETransitionInterruptionMode InterruptionMode)
 {
 	if (!FromID || !ToID) return false;
 
@@ -43,7 +43,7 @@ bool CSmartObject::AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& Tim
 	if (It2 != It->Transitions.end() && (*It2).TargetStateID == ToID) return false;
 
 	// Insert sorted by ID
-	It->Transitions.insert(It2, { ToID, std::move(TimelineTask) });
+	It->Transitions.insert(It2, { ToID, std::move(TimelineTask), InterruptionMode });
 
 	return true;
 }
