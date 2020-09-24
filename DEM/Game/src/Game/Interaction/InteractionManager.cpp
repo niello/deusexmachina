@@ -175,7 +175,8 @@ void CInteractionManager::ResetAbility(CInteractionContext& Context)
 
 void CInteractionManager::ResetCandidateInteraction(CInteractionContext& Context)
 {
-	Context.InteractionIndex = CInteractionContext::NO_INTERACTION;
+	Context.Interaction = CStrID::Empty;
+	Context.Condition = sol::function();
 	Context.SelectedTargets.clear();
 	Context.SelectedTargetCount = 0;
 }
@@ -222,10 +223,9 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	}
 
 	// Validate current candidate interaction, if set
-	if (Context.IsInteractionSet())
+	if (Context.Interaction)
 	{
-		const auto& [ID, Condition] = pAbility->Interactions[Context.InteractionIndex];
-		if (ValidateInteraction(ID, Condition, Context))
+		if (ValidateInteraction(Context.Interaction, Context.Condition, Context))
 		{
 			// If we already started to select targets, stick to the selected interaction
 			if (Context.SelectedTargetCount) return true;
@@ -237,7 +237,9 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 		}
 	}
 
-	// If target is a smart object, select first appilcable interaction in it
+	n_assert(!Context.SelectedTargetCount);
+
+	// If target is a smart object, select first applicable interaction in it
 	if (Context.Target.Entity)
 	{
 		//!!!remove session from context, store here as owner!
@@ -257,7 +259,8 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 							pInteraction->GetMaxTargetCount() > 0 &&
 							pInteraction->GetTargetFilter(0)->IsTargetValid(Context))
 						{
-							Context.InteractionIndex = i;
+							Context.Interaction = ID;
+							Context.Condition = Condition;
 							return true;
 						}
 					}
@@ -275,7 +278,8 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 			pInteraction->GetMaxTargetCount() > 0 &&
 			pInteraction->GetTargetFilter(0)->IsTargetValid(Context))
 		{
-			Context.InteractionIndex = i;
+			Context.Interaction = ID;
+			Context.Condition = Condition;
 			return true;
 		}
 	}
@@ -288,12 +292,12 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 
 bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 {
-	if (!Context.IsInteractionSet()) return false;
+	if (!Context.Interaction) return false;
 
 	// FIXME: probably redundant search, may store InteractionID in a context if ability is not required here
 	auto pAbility = FindAbility(Context.Ability);
 	if (!pAbility) return false;
-	auto pInteraction = FindInteraction(pAbility->Interactions[Context.InteractionIndex].first);
+	auto pInteraction = FindInteraction(Context.Interaction);
 	if (!pInteraction) return false;
 
 	if (Context.SelectedTargetCount >= pInteraction->GetMaxTargetCount()) return false;
@@ -325,18 +329,17 @@ bool CInteractionManager::Revert(CInteractionContext& Context)
 
 bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool Enqueue)
 {
-	if (!Context.IsInteractionSet()) return false;
+	if (!Context.Interaction) return false;
 
 	auto pAbility = FindAvailableAbility(Context.Ability, Context.SelectedActors);
 	if (!pAbility) return false;
-	const CStrID InteractionID = pAbility->Interactions[Context.InteractionIndex].first;
-	auto pInteraction = FindInteraction(InteractionID);
+	auto pInteraction = FindInteraction(Context.Interaction);
 	if (!pInteraction) return false;
 
 	//!!!DBG TMP!
 	std::string Actor = Context.SelectedActors.empty() ? "none" : std::to_string(*Context.SelectedActors.begin());
 	::Sys::Log(("Ability: " + Context.Ability.ToString() +
-		", Interaction: " + InteractionID.CStr() +
+		", Interaction: " + Context.Interaction.CStr() +
 		", Actor: " + Actor + "\n").c_str());
 
 	return pInteraction->Execute(Context, Enqueue);
@@ -350,7 +353,7 @@ const std::string& CInteractionManager::GetCursorImageID(CInteractionContext& Co
 
 	auto pAbility = FindAbility(Context.Ability);
 	if (!pAbility) return EmptyString;
-	auto pInteraction = FindInteraction(pAbility->Interactions[Context.InteractionIndex].first);
+	auto pInteraction = FindInteraction(Context.Interaction);
 	if (!pInteraction) return EmptyString;
 	return pInteraction->GetCursorImageID(Context.SelectedTargetCount);
 }

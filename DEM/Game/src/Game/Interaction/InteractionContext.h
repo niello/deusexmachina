@@ -22,18 +22,16 @@ struct CTargetInfo
 
 struct CInteractionContext
 {
-	static inline constexpr auto NO_INTERACTION = std::numeric_limits<U32>().max();
-
 	PGameSession             Session;
 	CStrID                   Ability;
 	HEntity                  AbilitySource; // E.g. item
-	U32                      InteractionIndex = NO_INTERACTION;
+	CStrID                   Interaction;
+	sol::function            Condition;
 	CTargetInfo              Target;
 	std::vector<HEntity>     SelectedActors;
 	std::vector<CTargetInfo> SelectedTargets;
 	U32                      SelectedTargetCount = 0;
 
-	bool IsInteractionSet() const { return InteractionIndex != NO_INTERACTION; }
 	bool AreAllTargetsSet() const { return !SelectedTargets.empty() && SelectedTargets.size() == SelectedTargetCount; }
 };
 
