@@ -64,7 +64,7 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 				Task.Speed = StateDesc.Get(CStrID("Speed"), 1.f);
 				Task.StartTime = StateDesc.Get(CStrID("StartTime"), (Task.Speed > 0.f) ? 0.f : 1.f);
 				Task.EndTime = StateDesc.Get(CStrID("EndTime"), (Task.Speed > 0.f) ? 1.f : 0.f);
-				Task.LoopCount = StateDesc.Get(CStrID("LoopCount"), 0);
+				Task.LoopCount = StateDesc.Get(CStrID("LoopCount"), 0); // State is infinite by default
 				Task.SkeletonRootRelPath = StateDesc.Get(CStrID("SkeletonRootRelPath"), CString::Empty).CStr();
 
 				Task.Timeline->ValidateObject();
@@ -85,17 +85,17 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 					if (const CStrID TimelineID = TransitionDesc.Get(CStrID("Timeline"), CStrID::Empty))
 					{
 						Task.Timeline = _ResMgr.RegisterResource<DEM::Anim::CTimelineTrack>(TimelineID.CStr());
-						Task.Speed = StateDesc.Get(CStrID("Speed"), 1.f);
-						Task.StartTime = StateDesc.Get(CStrID("StartTime"), (Task.Speed > 0.f) ? 0.f : 1.f);
-						Task.EndTime = StateDesc.Get(CStrID("EndTime"), (Task.Speed > 0.f) ? 1.f : 0.f);
-						Task.LoopCount = StateDesc.Get(CStrID("LoopCount"), 0);
-						Task.SkeletonRootRelPath = StateDesc.Get(CStrID("SkeletonRootRelPath"), CString::Empty).CStr();
+						Task.Speed = TransitionDesc.Get(CStrID("Speed"), 1.f);
+						Task.StartTime = TransitionDesc.Get(CStrID("StartTime"), (Task.Speed > 0.f) ? 0.f : 1.f);
+						Task.EndTime = TransitionDesc.Get(CStrID("EndTime"), (Task.Speed > 0.f) ? 1.f : 0.f);
+						Task.LoopCount = TransitionDesc.Get(CStrID("LoopCount"), 1); // Transition must always be finite
+						Task.SkeletonRootRelPath = TransitionDesc.Get(CStrID("SkeletonRootRelPath"), CString::Empty).CStr();
 
 						Task.Timeline->ValidateObject();
 					}
 
 					DEM::Game::ETransitionInterruptionMode InterruptionMode = DEM::Game::ETransitionInterruptionMode::ResetToStart;
-					const auto& ModeStr = StateDesc.Get(CStrID("InterruptionMode"), CString::Empty);
+					const auto& ModeStr = TransitionDesc.Get(CStrID("InterruptionMode"), CString::Empty);
 					if (ModeStr == "ResetToStart") InterruptionMode = DEM::Game::ETransitionInterruptionMode::ResetToStart;
 					else if (ModeStr == "RewindToEnd") InterruptionMode = DEM::Game::ETransitionInterruptionMode::RewindToEnd;
 					else if (ModeStr == "Proportional") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Proportional;

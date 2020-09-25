@@ -32,11 +32,11 @@ static void RunTimelineTask(DEM::Game::CGameWorld& World, HEntity EntityID, CSma
 		//???!!!DBG TMP!? See Task.SkeletonRootRelPath comment.
 		if (auto pPoseTrack = NewTrack->As<Anim::CPoseTrack>())
 		{
-			if (false)//pPrevTask && pPrevTask->SkeletonRootRelPath == Task.SkeletonRootRelPath)
+			auto pOldPoseTrack = CurrTrack ? CurrTrack->As<Anim::CPoseTrack>() : nullptr;
+			if (pOldPoseTrack && pPrevTask && pPrevTask->SkeletonRootRelPath == Task.SkeletonRootRelPath)
 			{
-				//!!!FIXME: can reuse already filled skeleton? discard mapping wrappers?
-				//!!!if cache skeleton, SkeletonRootRelPath must be the same!
-				// pOutput = cached output from SOComponent (or dig up skeleton from possible mapping wrappers of prev CurrTrack output)
+				// Bone remapping is added per clip where necessary, track itself stores reusable skeleton
+				pPoseTrack->SetOutput(pOldPoseTrack->GetOutput());
 			}
 			else
 			{

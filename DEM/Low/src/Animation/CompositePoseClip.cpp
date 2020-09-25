@@ -3,6 +3,13 @@
 namespace DEM::Anim
 {
 
+PPoseClipBase CCompositePoseClip::Clone() const
+{
+	NOT_IMPLEMENTED;
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
 void CCompositePoseClip::BindToOutput(const PPoseOutput& Output)
 {
 	// bind each track to blender, bind blender to output

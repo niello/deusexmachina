@@ -5,6 +5,17 @@
 namespace DEM::Anim
 {
 
+PPoseClipBase CStaticPoseClip::Clone() const
+{
+	//!!!pose must be reusable, not unique ptr!
+	//PStaticPoseClip NewClip(n_new(CStaticPoseClip()));
+	//NewClip->_Pose = _Pose;
+	//return NewClip;
+	NOT_IMPLEMENTED;
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
 void CStaticPoseClip::BindToOutput(const PPoseOutput& Output)
 {
 	if (!_Pose || _Output == Output) return;

@@ -12,6 +12,17 @@ void CAnimatedPoseClip::SetAnimationClip(const PAnimationClip& Clip)
 }
 //---------------------------------------------------------------------
 
+PPoseClipBase CAnimatedPoseClip::Clone() const
+{
+	PAnimatedPoseClip NewClip(n_new(CAnimatedPoseClip()));
+	NewClip->SetAnimationClip(_Sampler.GetClip());
+
+	// NB: sampler state (curr time etc) is not cloned now. Need?
+
+	return NewClip;
+}
+//---------------------------------------------------------------------
+
 void CAnimatedPoseClip::BindToOutput(const PPoseOutput& Output)
 {
 	if (!_Sampler.GetClip() || _Output == Output) return;

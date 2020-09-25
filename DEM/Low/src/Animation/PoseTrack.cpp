@@ -30,8 +30,19 @@ void CPoseTrack::AddClip(PPoseClipBase&& Clip, float StartTime, float Duration /
 
 PTimelineTrack CPoseTrack::Clone() const
 {
-	NOT_IMPLEMENTED;
-	return nullptr;
+	PPoseTrack NewTrack = n_new(CPoseTrack());
+	for (const auto& ClipData : _Clips)
+	{
+		CClip NewClipData;
+		NewClipData.Clip = ClipData.Clip ? ClipData.Clip->Clone() : nullptr;
+		NewClipData.StartTime = ClipData.StartTime;
+		NewClipData.EndTime = ClipData.EndTime;
+		NewTrack->_Clips.push_back(std::move(NewClipData));
+	}
+
+	// NB: Output binding is not cloned for now. Need?
+
+	return NewTrack;
 }
 //---------------------------------------------------------------------
 

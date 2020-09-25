@@ -33,6 +33,7 @@ public:
 	~CPoseTrack();
 
 	void                   SetOutput(const PPoseOutput& Output);
+	IPoseOutput*           GetOutput() const { return _Output.Get(); }
 	void                   AddClip(PPoseClipBase&& Clip, float StartTime, float Duration /*, overlap resolve mode*/);
 
 	virtual PTimelineTrack Clone() const override;

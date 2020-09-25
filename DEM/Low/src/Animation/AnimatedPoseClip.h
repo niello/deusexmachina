@@ -23,10 +23,11 @@ public:
 
 	DEM_ALLOCATE_ALIGNED(alignof(CAnimatedPoseClip));
 
-	void         SetAnimationClip(const PAnimationClip& Clip);
+	void                  SetAnimationClip(const PAnimationClip& Clip);
 
-	virtual void BindToOutput(const PPoseOutput& Output) override;
-	virtual void PlayInterval(float PrevTime, float CurrTime, bool IsLast, const CPoseTrack& Track, UPTR ClipIndex) override;
+	virtual PPoseClipBase Clone() const override;
+	virtual void          BindToOutput(const PPoseOutput& Output) override;
+	virtual void          PlayInterval(float PrevTime, float CurrTime, bool IsLast, const CPoseTrack& Track, UPTR ClipIndex) override;
 };
 
 }

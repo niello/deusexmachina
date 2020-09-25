@@ -20,8 +20,9 @@ public:
 	CPoseClipBase();
 	virtual ~CPoseClipBase();
 
-	virtual void BindToOutput(const PPoseOutput& Output) = 0;
-	virtual void PlayInterval(float PrevTime, float CurrTime, bool IsLast, const CPoseTrack& Track, UPTR ClipIndex) = 0;
+	virtual PPoseClipBase Clone() const = 0;
+	virtual void          BindToOutput(const PPoseOutput& Output) = 0;
+	virtual void          PlayInterval(float PrevTime, float CurrTime, bool IsLast, const CPoseTrack& Track, UPTR ClipIndex) = 0;
 };
 
 }

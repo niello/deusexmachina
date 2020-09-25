@@ -19,10 +19,11 @@ protected:
 public:
 
 	// TODO: direct (evaluate weight curves, reuse priority), blendtree 1D, blendtree 2D etc
-	virtual void UpdateBlendParams() = 0;
+	virtual void          UpdateBlendParams() = 0;
 
-	virtual void BindToOutput(const PPoseOutput& Output) override;
-	virtual void PlayInterval(float PrevTime, float CurrTime, bool IsLast, const CPoseTrack& Track, UPTR ClipIndex) override;
+	virtual PPoseClipBase Clone() const override;
+	virtual void          BindToOutput(const PPoseOutput& Output) override;
+	virtual void          PlayInterval(float PrevTime, float CurrTime, bool IsLast, const CPoseTrack& Track, UPTR ClipIndex) override;
 };
 
 }
