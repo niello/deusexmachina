@@ -86,6 +86,13 @@ const CSmartObjectTransitionInfo* CSmartObject::FindTransition(CStrID FromID, CS
 }
 //---------------------------------------------------------------------
 
+bool CSmartObject::HasInteraction(CStrID ID) const
+{
+	auto It = std::lower_bound(_Interactions.begin(), _Interactions.end(), ID, [](const auto& Elm, CStrID Value) { return Elm < Value; });
+	return It != _Interactions.end() && *It == ID;
+}
+//---------------------------------------------------------------------
+
 bool CSmartObject::InitScript(sol::state& Lua)
 {
 	if (_ScriptSource.empty() || !_ID) return true;

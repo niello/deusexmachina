@@ -79,6 +79,7 @@ public:
 
 	const CSmartObjectStateInfo*      FindState(CStrID ID) const;
 	const CSmartObjectTransitionInfo* FindTransition(CStrID FromID, CStrID ToID) const;
+	bool                              HasInteraction(CStrID ID) const;
 
 	sol::function GetScriptFunction(sol::state& Lua, std::string_view Name) const;
 	CStrID        GetID() const { return _ID; }

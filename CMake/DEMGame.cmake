@@ -70,6 +70,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/Objects/SmartObject.h
 	DEM/Game/src/Game/Objects/SmartObjectComponent.h
 	DEM/Game/src/Game/Objects/SmartObjectLoader.h
+	DEM/Game/src/Game/Objects/SmartObjectTargetFilter.h
 	DEM/Game/src/Physics/PropPhysics.h
 	DEM/Game/src/Physics/PropTrigger.h
 	DEM/Game/src/Physics/TriggerContactCallback.h
