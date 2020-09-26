@@ -48,20 +48,10 @@ public:
 		_Features[TypeIndex] = std::make_unique<T>(std::forward<TArgs>(Args)...);
 		auto pFeature = _Features[TypeIndex].get();
 		_FeaturesByName.emplace(Name, pFeature);
+
+		_ScriptState["Session"][Name.CStr()] = static_cast<T*>(pFeature);
+
 		return static_cast<T*>(pFeature);
-
-		// TODO: register in Lua right now? or remember name for delayed Lua state init?
-		//???or hack indexing instead of providing real Lua fields? Will require ID->Feature map here.
-		//May be it is the best way, indexing speed may be comparable.
-		//index will work only if field is not in a table itself! But there will be (almost?) nothing in a table!
-		//sol::readonly( &my_class::my_member_variable )
-		//lua.new_usertype<Component>("Component"
-		//	"paint", &Component::Paint,
-		//	sol::meta_function::new_index, &Component::Setter
-		//	);
-
-		//!!!can also call some InitScript<T> routine for these classes (if exists), to register types!
-		//need to register HEntity, for example!
 	}
 	//---------------------------------------------------------------------
 
