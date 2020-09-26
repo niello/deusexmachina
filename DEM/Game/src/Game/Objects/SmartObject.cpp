@@ -122,6 +122,7 @@ bool CSmartObject::InitScript(sol::state& Lua)
 // NB: can't cache Lua objects here because Lua state is per-session and resource is per-application
 sol::function CSmartObject::GetScriptFunction(sol::state& Lua, std::string_view Name) const
 {
+	//???FIXME: can write shorter?
 	auto ObjProxy = Lua["SmartObjects"][_ID.CStr()];
 	if (ObjProxy.get_type() == sol::type::table)
 	{

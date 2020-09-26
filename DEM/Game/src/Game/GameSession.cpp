@@ -23,8 +23,9 @@ CGameSession::CGameSession()
 		return 0;
 	};
 
-	//???!!!specify "index" to pick features by name? or register each one as field?
-	_ScriptState.new_usertype<CGameSession>("CGameSession"
+	//???does index work with polymorphic types?
+	auto SessionClassMeta = _ScriptState.new_usertype<CGameSession>("CGameSession"
+		//, sol::meta_function::index, [](CGameSession& Self, const char* pKey) { return Self.FindFeature(pKey); }
 		, "FindFeature", sol::overload(
 			static_cast<::Core::CRTTIBaseClass* (CGameSession::*)(const char*) const>(&CGameSession::FindFeature)
 			, static_cast<::Core::CRTTIBaseClass* (CGameSession::*)(CStrID) const>(&CGameSession::FindFeature))
@@ -41,7 +42,16 @@ CGameSession::CGameSession()
 			, [](CStrID a, CStrID b) { return std::string(a.CStr()) + b.CStr(); })
 		);
 
-	_ScriptState["Session"] = this;
+	//???or separate table for features? Or in globals?Or Session is a table without usertype methods, only functions?
+	//Session instance may still be needed!
+	auto SessionInstanceMeta = _ScriptState.create_table();
+	SessionInstanceMeta[sol::meta_function::index] = this;
+	SessionInstanceMeta[sol::metatable_key] = SessionClassMeta;
+	auto SessionTable = _ScriptState.create_table();
+	SessionTable[sol::metatable_key] = SessionInstanceMeta;
+	_ScriptState["Session"] = SessionTable;
+
+	//_ScriptState["Session"] = this;
 }
 //---------------------------------------------------------------------
 
