@@ -5,6 +5,7 @@
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Math/AABB.h>
+#include <sol/sol.hpp>
 
 // A complete game world with objects, time and space. Space is subdivided into levels.
 // All levels share the same time. Objects (or entities) can move between levels, but
@@ -132,6 +133,17 @@ public:
 	void ForEachComponent(TCallback Callback);
 	template<typename TComponent, typename TCallback>
 	void FreeDead(TCallback DeinitCallback);
+
+	//???TMP?
+	sol::table _ComponentScripts;
+	void InitScript(sol::state& Lua)
+	{
+		if (!_ComponentScripts.valid())
+		{
+			_ComponentScripts = Lua.create_table();
+			Lua["Session"]["WorldTable"] = _ComponentScripts; //???need?
+		}
+	}
 };
 
 template<class T>
@@ -151,6 +163,14 @@ void CGameWorld::RegisterComponent(CStrID Name, UPTR InitialCapacity)
 	_Storages[TypeIndex] = std::make_unique<TComponentTraits<T>::TStorage>(*this, InitialCapacity);
 	_StorageIDs[TypeIndex] = Name;
 	_StorageMap[Name] = _Storages[TypeIndex].get();
+
+	if (_ComponentScripts.valid())
+	{
+		_ComponentScripts[Name.CStr()] = [pStorage = _Storages[TypeIndex].get()](HEntity EntityID)
+		{
+			return static_cast<TComponentTraits<T>::TStorage*>(pStorage)->Find(EntityID);
+		};
+	}
 }
 //---------------------------------------------------------------------
 

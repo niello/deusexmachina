@@ -17,7 +17,7 @@ CGameSession::CGameSession()
 			if (auto s = lua_tostring(L, i))
 				::Sys::Log(s);
 			else
-				::Sys::Log("<unknown>");
+				::Sys::Log((std::string("Non-printable object of type ") + lua_typename(L, (lua_type(L, i)))).c_str());
 		}
 		::Sys::Log("\n");
 		return 0;
@@ -42,6 +42,7 @@ CGameSession::CGameSession()
 			[](const char* a, CStrID b) { return std::string(a) + b.CStr(); }
 			, [](CStrID a, const char* b) { return std::string(a.CStr()) + b; }
 			, [](CStrID a, CStrID b) { return std::string(a.CStr()) + b.CStr(); })
+		, sol::meta_function::equal_to, [](CStrID a, CStrID b) { return a == b; }
 		);
 
 	//???or separate table for features? Or in globals?Or Session is a table without usertype methods, only functions?

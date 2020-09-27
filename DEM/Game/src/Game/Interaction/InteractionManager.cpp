@@ -198,7 +198,7 @@ const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const so
 			::Sys::Error(Error.what());
 			return nullptr;
 		}
-		else if (!Result) return nullptr;
+		else if (Result.get_type() == sol::type::nil || !Result) return nullptr; //???SOL: why nil can't be negated?
 	}
 
 	// Validate selected targets, their state might change
