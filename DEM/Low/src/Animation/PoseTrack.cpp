@@ -53,7 +53,7 @@ float CPoseTrack::GetDuration() const
 }
 //---------------------------------------------------------------------
 
-// FIXME: this logic is the same for any clip/track type
+// FIXME: this logic is the same for any clip/track type!
 //???are both time points inclusive? event or action exactly at point will be executed twice then, not good
 void CPoseTrack::PlayInterval(float PrevTime, float CurrTime, bool IsLast)
 {
@@ -76,7 +76,16 @@ void CPoseTrack::PlayInterval(float PrevTime, float CurrTime, bool IsLast)
 	else
 	{
 		// Backward playback
-		NOT_IMPLEMENTED;
+		auto It = std::upper_bound(_Clips.begin(), _Clips.end(), PrevTime, [](float Time, const CClip& Clip) { return Time < Clip.EndTime; });
+		bool IsLastClip = (It == _Clips.begin());
+		while (!IsLastClip)
+		{
+			auto CurrIt = It--;
+			IsLastClip = (It == _Clips.begin() || It->EndTime <= CurrTime);
+			const float Offset = CurrIt->StartTime;
+			CurrIt->Clip->PlayInterval(PrevTime - Offset, CurrTime - Offset,
+				IsLast && IsLastClip, *this, std::distance(_Clips.begin(), CurrIt));
+		}
 	}
 }
 //---------------------------------------------------------------------

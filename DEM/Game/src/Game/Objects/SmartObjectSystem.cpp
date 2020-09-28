@@ -14,6 +14,8 @@ namespace DEM::Game
 static void RunTimelineTask(DEM::Game::CGameWorld& World, HEntity EntityID, CSmartObjectComponent& SOComponent,
 	const CTimelineTask& Task, float InitialProgress, Anim::PTimelineTrack CurrTrack, const CTimelineTask* pPrevTask)
 {
+	n_assert_dbg(InitialProgress >= 0.f && InitialProgress <= 1.f);
+
 	if (!Task.Timeline)
 	{
 		SOComponent.Player.SetTrack(nullptr);
@@ -59,8 +61,8 @@ static void RunTimelineTask(DEM::Game::CGameWorld& World, HEntity EntityID, CSma
 	SOComponent.Player.SetSpeed(Task.Speed);
 
 	// Transfer the progress % from the previous transition, if required
-	const float FullTime = SOComponent.Player.GetLoopDuration() * Task.LoopCount;
-	SOComponent.Player.SetTime(InitialProgress * FullTime);
+	const float FullDuration = SOComponent.Player.GetLoopDuration() * Task.LoopCount;
+	SOComponent.Player.SetTime(InitialProgress * FullDuration); //???mul speed sign?
 
 	SOComponent.Player.Play(Task.LoopCount);
 }

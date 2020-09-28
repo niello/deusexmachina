@@ -43,8 +43,9 @@ CGameSession::CGameSession()
 			, [](CStrID a, const char* b) { return std::string(a.CStr()) + b; }
 			, [](CStrID a, CStrID b) { return std::string(a.CStr()) + b.CStr(); })
 		, sol::meta_function::equal_to, [](CStrID a, CStrID b) { return a == b; }
-		, "Empty", []() { return CStrID::Empty;  } //???SOL: how to bind readonly static member?
+		, "Empty", []() { return CStrID::Empty; }
 		);
+	//sol::table StrIDClassTable = _ScriptState["CStrID"];
 	//StrIDClassTable.set("Empty", CStrID::Empty);
 
 	//???or separate table for features? Or in globals?Or Session is a table without usertype methods, only functions?
