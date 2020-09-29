@@ -59,33 +59,38 @@ void CPoseTrack::PlayInterval(float PrevTime, float CurrTime, bool IsLast)
 {
 	if (_Clips.empty()) return;
 
+	const float MinTime = std::min(PrevTime, CurrTime);
+	const float MaxTime = std::max(PrevTime, CurrTime);
+
+	// Find range of active clips [ Clip.EndTime >= MinTime; Clip.StartTime > MaxTime )
+	auto It = std::upper_bound(_Clips.begin(), _Clips.end(), MinTime, [](float Time, const CClip& Clip) { return Time < Clip.EndTime; });
+	if (It == _Clips.end()) return;
+	auto ItEnd = std::lower_bound(It + 1, _Clips.end(), MaxTime, [](const CClip& Clip, float Time) { return Time < Clip.StartTime; });
+	if (It == ItEnd) return;
+
 	if (PrevTime < CurrTime)
 	{
 		// Forward playback
-		auto It = std::upper_bound(_Clips.begin(), _Clips.end(), PrevTime, [](float Time, const CClip& Clip) { return Time < Clip.EndTime; });
-		bool IsLastClip = (It == _Clips.end());
-		while (!IsLastClip)
+		do
 		{
 			auto CurrIt = It++;
-			IsLastClip = (It == _Clips.end() || It->StartTime >= CurrTime);
-			const float Offset = CurrIt->StartTime;
-			CurrIt->Clip->PlayInterval(PrevTime - Offset, CurrTime - Offset,
-				IsLast && IsLastClip, *this, std::distance(_Clips.begin(), CurrIt));
+			CurrIt->Clip->PlayInterval(PrevTime - CurrIt->StartTime, CurrTime - CurrIt->StartTime,
+				IsLast && (It == ItEnd), *this, std::distance(_Clips.begin(), CurrIt));
 		}
+		while (It != ItEnd);
 	}
 	else
 	{
 		// Backward playback
-		auto It = std::upper_bound(_Clips.begin(), _Clips.end(), PrevTime, [](float Time, const CClip& Clip) { return Time < Clip.EndTime; });
-		bool IsLastClip = (It == _Clips.begin());
-		while (!IsLastClip)
+		auto RItEnd = std::make_reverse_iterator(It);
+		auto RIt = std::make_reverse_iterator(ItEnd);
+		do
 		{
-			auto CurrIt = It--;
-			IsLastClip = (It == _Clips.begin() || It->EndTime <= CurrTime);
-			const float Offset = CurrIt->StartTime;
-			CurrIt->Clip->PlayInterval(PrevTime - Offset, CurrTime - Offset,
-				IsLast && IsLastClip, *this, std::distance(_Clips.begin(), CurrIt));
+			auto CurrIt = RIt++;
+			CurrIt->Clip->PlayInterval(PrevTime - CurrIt->StartTime, CurrTime - CurrIt->StartTime,
+				IsLast && (RIt == RItEnd), *this, std::distance(_Clips.begin(), CurrIt.base()) - 1);
 		}
+		while (RIt != RItEnd);
 	}
 }
 //---------------------------------------------------------------------

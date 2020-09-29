@@ -20,7 +20,7 @@ protected:
 	struct CClip
 	{
 		PPoseClipBase Clip;
-		float         StartTime;
+		float         StartTime; // Must be less than next clip start time
 		float         EndTime;   // Must not overlap with the next clip or at least must be less than its end time
 	};
 
