@@ -63,18 +63,19 @@ bool CTimelinePlayer::OnLoopEnd()
 void CTimelinePlayer::PlayInterval()
 {
 	// Empty timeline, nothing to play
-	if (!_Track || _EndTime <= _StartTime) return;
+	if (!_Track || _EndTime <= _StartTime/* || _PrevTime == _CurrTime*/) return;
 
 	const float PrevTime = _PrevTime;
 	_PrevTime = _CurrTime;
 
 	const float Duration = _EndTime - _StartTime;
-
-	// Convert previous time from linear player scale to timeline scale
 	float LoopStartTime = std::floor(PrevTime / Duration) * Duration;
 	float SegmentStartTimeTL = _StartTime + PrevTime - LoopStartTime;
 
-	if (_CurrTime > PrevTime)
+	// FIXME: check how layer behaves when _EndTime == SegmentStartTimeTL == _CurrTime
+	//???won't it PlayInterval twice, in a loop and after it?
+
+	if (_CurrTime >= PrevTime)
 	{
 		// Play forward
 		LoopStartTime += Duration;
@@ -89,6 +90,11 @@ void CTimelinePlayer::PlayInterval()
 	else
 	{
 		// Play backward
+		if (SegmentStartTimeTL == _StartTime)
+		{
+			SegmentStartTimeTL = _EndTime;
+			LoopStartTime -= Duration;
+		}
 		while (LoopStartTime > _CurrTime)
 		{
 			_Track->PlayInterval(SegmentStartTimeTL, _StartTime, (_RemainingLoopCount == 1));
@@ -106,7 +112,7 @@ void CTimelinePlayer::PlayInterval()
 	_Track->PlayInterval(SegmentStartTimeTL, CurrTimeTL, true);
 
 	// Process exact loop end
-	if (LoopStartTime == _CurrTime && OnLoopEnd()) return;
+	if (LoopStartTime == _CurrTime) OnLoopEnd();
 }
 //---------------------------------------------------------------------
 
