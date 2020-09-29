@@ -28,6 +28,7 @@ protected:
 	std::vector<PFeature>                     _Features;
 	std::map<CStrID, ::Core::CRTTIBaseClass*> _FeaturesByName;
 	sol::state                                _ScriptState;
+	sol::table                                _ScriptFields;
 
 public:
 
@@ -49,7 +50,7 @@ public:
 		auto pFeature = _Features[TypeIndex].get();
 		_FeaturesByName.emplace(Name, pFeature);
 
-		_ScriptState["Session"][Name.CStr()] = static_cast<T*>(pFeature);
+		_ScriptFields[Name.CStr()] = static_cast<T*>(pFeature);
 
 		return static_cast<T*>(pFeature);
 	}

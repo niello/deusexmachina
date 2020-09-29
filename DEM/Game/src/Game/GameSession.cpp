@@ -27,7 +27,7 @@ CGameSession::CGameSession()
 	//!!!it doesn't, so session API is not very useful, at least FindFeature, becaus it requires us to
 	//get RTTI and write switch-case for every derived type, which is stupid.
 	auto SessionClassMeta = _ScriptState.new_usertype<CGameSession>("CGameSession"
-		//, sol::meta_function::index, [](CGameSession& Self, const char* pKey) { return Self.FindFeature(pKey); }
+		, sol::meta_function::index, [](CGameSession& Self, const char* pKey) { return Self._ScriptFields[pKey]; }
 		, "FindFeature", sol::overload(
 			static_cast<::Core::CRTTIBaseClass* (CGameSession::*)(const char*) const>(&CGameSession::FindFeature)
 			, static_cast<::Core::CRTTIBaseClass* (CGameSession::*)(CStrID) const>(&CGameSession::FindFeature))
@@ -48,16 +48,8 @@ CGameSession::CGameSession()
 	//sol::table StrIDClassTable = _ScriptState["CStrID"];
 	//StrIDClassTable.set("Empty", CStrID::Empty);
 
-	//???or separate table for features? Or in globals?Or Session is a table without usertype methods, only functions?
-	//Session instance may still be needed!
-	auto SessionInstanceMeta = _ScriptState.create_table();
-	SessionInstanceMeta[sol::meta_function::index] = this;
-	SessionInstanceMeta[sol::metatable_key] = SessionClassMeta;
-	auto SessionTable = _ScriptState.create_table();
-	SessionTable[sol::metatable_key] = SessionInstanceMeta;
-	_ScriptState["Session"] = SessionTable;
-
-	//_ScriptState["Session"] = this;
+	_ScriptFields = _ScriptState.create_table();
+	_ScriptState["Session"] = this;
 }
 //---------------------------------------------------------------------
 

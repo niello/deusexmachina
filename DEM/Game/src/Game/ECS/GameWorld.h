@@ -135,13 +135,14 @@ public:
 	void FreeDead(TCallback DeinitCallback);
 
 	//???TMP?
-	sol::table _ComponentScripts;
+	//???create world based on session (constructor arg) and init fields table in a constructor?
+	sol::table _ScriptFields;
 	void InitScript(sol::state& Lua)
 	{
-		if (!_ComponentScripts.valid())
+		if (!_ScriptFields.valid())
 		{
-			_ComponentScripts = Lua.create_table();
-			Lua["Session"]["WorldTable"] = _ComponentScripts; //???need?
+			_ScriptFields = Lua.create_table();
+			//Lua["Session"]["WorldTable"] = _ScriptFields; //???need?
 		}
 	}
 };
@@ -164,9 +165,10 @@ void CGameWorld::RegisterComponent(CStrID Name, UPTR InitialCapacity)
 	_StorageIDs[TypeIndex] = Name;
 	_StorageMap[Name] = _Storages[TypeIndex].get();
 
-	if (_ComponentScripts.valid())
+	// If scripting is enabled, add component getter for scripts
+	if (_ScriptFields.valid())
 	{
-		_ComponentScripts[Name.CStr()] = [pStorage = _Storages[TypeIndex].get()](HEntity EntityID)
+		_ScriptFields[Name.CStr()] = [pStorage = _Storages[TypeIndex].get()](HEntity EntityID)
 		{
 			return static_cast<TComponentTraits<T>::TStorage*>(pStorage)->Find(EntityID);
 		};
