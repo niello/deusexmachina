@@ -287,7 +287,7 @@ static bool CheckAsyncPathResult(CNavAgentComponent& Agent, ::AI::CPathRequestQu
 }
 //---------------------------------------------------------------------
 
-// Return OutNextTurn for corridor visibility optimization
+// Returns OutNextTurn for corridor visibility optimization
 static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue,
 	const Navigate& NavAction, const vector3& ExactPos, vector3& OutNextTurn)
 {
