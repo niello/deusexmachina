@@ -1,6 +1,7 @@
 #pragma once
 #include <Data.h>
 #include <StringID.h>
+#include <memory>
 
 // Data serialization scheme declares structure of CParams list and allows to omit saving
 // redundant info (types, keys etc). Use it to save CParams/HRD to custom binary files
