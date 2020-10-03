@@ -253,7 +253,7 @@ public:
 				verts.reserve(3 * pVertexList->size());
 				for (const auto& VertexData : *pVertexList)
 				{
-					const auto Vertex = VertexData.GetValue<vector4>();
+					const auto& Vertex = VertexData.GetValue<vector4>();
 					verts.push_back(Vertex.x);
 					verts.push_back(Vertex.y);
 					verts.push_back(Vertex.z);
@@ -261,10 +261,11 @@ public:
 
 				const auto hmin = ParamsUtils::GetParam(RegionDesc, "HeightStart", bmin[1]);
 				const auto hmax = ParamsUtils::GetParam(RegionDesc, "HeightEnd", bmax[1]);
-				const uint8_t areaId = ParamsUtils::GetParam<int>(RegionDesc, "AreaType", RC_WALKABLE_AREA);
 
 				// NB: there are also rcMarkBoxArea, rcMarkCylinderArea
-				rcMarkConvexPolyArea(&ctx, verts.data(), verts.size(), hmin, hmax, areaId, *chf);
+				int areaId = RC_WALKABLE_AREA;
+				if (ParamsUtils::TryGetParam<int>(areaId, RegionDesc, "AreaType"))
+					rcMarkConvexPolyArea(&ctx, verts.data(), pVertexList->size(), hmin, hmax, static_cast<uint8_t>(areaId), *chf);
 
 				auto ID = ParamsUtils::GetParam(RegionDesc, "ID", std::string{});
 				if (!ID.empty())
@@ -330,7 +331,7 @@ public:
 		for (int i = 0; i < pmesh->npolys; ++i)
 		{
 			//!!!DBG TMP! Zero flags pass no filter in detour, so fill with any default for now.
-			if (pmesh->areas[i] == RC_WALKABLE_AREA)
+			//if (pmesh->areas[i] == RC_WALKABLE_AREA)
 				pmesh->flags[i] = POLY_FLAGS_DEFAULT_ENABLED;
 
 			/*
@@ -831,6 +832,6 @@ public:
 
 int main(int argc, const char** argv)
 {
-	CNavmeshTool Tool("cf-navmesh", "Navigation mesh generator for static level geometry", { 0, 1, 0 });
+	CNavmeshTool Tool("cf-navmesh", "Navigation mesh generator for static level geometry", { 1, 0, 0 });
 	return Tool.Execute(argc, argv);
 }

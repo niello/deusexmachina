@@ -38,7 +38,7 @@ CTraversalAction* CNavAgentSettings::FindAction(const CNavAgentComponent& Agent,
 	}
 
 	if (pOutSmartObject) *pOutSmartObject = {};
-	return (AreaType < _Actions.size()) ? _Actions[AreaType] : nullptr;
+	return (AreaType < _Actions.size()) ? _Actions[AreaType].Get() : nullptr;
 }
 //---------------------------------------------------------------------
 
