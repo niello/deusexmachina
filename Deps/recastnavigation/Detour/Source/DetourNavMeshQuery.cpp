@@ -1861,14 +1861,22 @@ dtStatus dtNavMeshQuery::findNextStraightPathPoint(dtStraightPathContext& ctx, f
 					break;
 				}
 
-				next.flags = (toType == DT_POLYTYPE_OFFMESH_CONNECTION) ? DT_STRAIGHTPATH_OFFMESH_CONNECTION : 0;
-
-				// If starting really close to the portal, advance.
-				if (ctx.i == 0)
+				if (toType == DT_POLYTYPE_OFFMESH_CONNECTION)
 				{
-					float t;
-					if (dtDistancePtSegSqr2D(ctx.lastCorner, left, right, t) < dtSqr(0.001f))
-						continue;
+					next.flags = DT_STRAIGHTPATH_OFFMESH_CONNECTION;
+					// NB: offmesh connection trigger radius will handle 'too close' case
+				}
+				else
+				{
+					next.flags = 0;
+
+					// If starting really close to the portal, advance.
+					if (ctx.i == 0)
+					{
+						float t;
+						if (dtDistancePtSegSqr2D(ctx.lastCorner, left, right, t) < dtSqr(0.001f))
+							continue;
+					}
 				}
 			}
 			else

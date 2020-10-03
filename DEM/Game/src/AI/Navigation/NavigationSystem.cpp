@@ -394,15 +394,19 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
 				return;
 			}
-			else if (Agent.IsTraversingLastEdge && pQueue->GetStatus() == DEM::Game::EActionStatus::Succeeded)
+			else if (pQueue->GetStatus() == DEM::Game::EActionStatus::Succeeded)
 			{
 				// If the last edge traversed successfully, finish navigation
-				ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Succeeded);
+				if (Agent.IsTraversingLastEdge)
+				{
+					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Succeeded);
+					pQueue->RemoveAction(*pNavigateAction); //???where must happen?
+					return;
+				}
 
-				//???where must happen?
-				pQueue->RemoveAction(*pNavigateAction);
-
-				return;
+				// Finish traversing an offmesh connection
+				if (Agent.Mode == ENavigationMode::Offmesh)
+					Agent.Mode = ENavigationMode::Surface;
 			}
 
 			// Multiple physics frames can be processed inside one logic frame. Target remains the
