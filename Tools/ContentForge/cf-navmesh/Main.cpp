@@ -242,7 +242,7 @@ public:
 		const Data::CDataArray* pRegionList;
 		if (ParamsUtils::TryGetParam(pRegionList, Desc, "Regions") && !pRegionList->empty())
 		{
-			std::vector<float> verts;
+			std::vector<float> vertsR;
 			for (const auto& Record : *pRegionList)
 			{
 				const auto& RegionDesc = Record.GetValue<Data::CParams>();
@@ -250,13 +250,13 @@ public:
 				const Data::CDataArray* pVertexList;
 				if (!ParamsUtils::TryGetParam(pVertexList, RegionDesc, "Vertices") || pVertexList->empty()) continue;
 
-				verts.reserve(3 * pVertexList->size());
+				vertsR.reserve(3 * pVertexList->size());
 				for (const auto& VertexData : *pVertexList)
 				{
 					const auto& Vertex = VertexData.GetValue<vector4>();
-					verts.push_back(Vertex.x);
-					verts.push_back(Vertex.y);
-					verts.push_back(Vertex.z);
+					vertsR.push_back(Vertex.x);
+					vertsR.push_back(Vertex.y);
+					vertsR.push_back(Vertex.z);
 				}
 
 				const auto hmin = ParamsUtils::GetParam(RegionDesc, "HeightStart", bmin[1]);
@@ -265,11 +265,11 @@ public:
 				// NB: there are also rcMarkBoxArea, rcMarkCylinderArea
 				int areaId = RC_WALKABLE_AREA;
 				if (ParamsUtils::TryGetParam<int>(areaId, RegionDesc, "AreaType"))
-					rcMarkConvexPolyArea(&ctx, verts.data(), pVertexList->size(), hmin, hmax, static_cast<uint8_t>(areaId), *chf);
+					rcMarkConvexPolyArea(&ctx, vertsR.data(), pVertexList->size(), hmin, hmax, static_cast<uint8_t>(areaId), *chf);
 
 				auto ID = ParamsUtils::GetParam(RegionDesc, "ID", std::string{});
 				if (!ID.empty())
-					NamedRegions.emplace(std::move(ID), CRegion{ std::move(verts), hmin, hmax });
+					NamedRegions.emplace(std::move(ID), CRegion{ std::move(vertsR), hmin, hmax });
 			}
 		}
 
@@ -476,9 +476,7 @@ public:
 				// Slightly reduce region to avoid including neighbour polys
 				auto ReducedRegion = OffsetPoly(Region.verts.data(), Region.verts.size() / 3, -2.0f * cellSize);
 
-				// Change Recast CW winding to Detour CCW
-				// TODO: check in current lib version
-				std::reverse(ReducedRegion.begin(), ReducedRegion.end());
+				// TODO: ensure that region is CCW!
 
 				float PointInPoly[3];
 				if (!GetPointInPoly(ReducedRegion, PointInPoly))
@@ -487,8 +485,26 @@ public:
 					continue;
 				}
 
+				const float midY = PointInPoly[1] = (Region.hmax + Region.hmin) * 0.5f;
+
+				float* vertsR = ReducedRegion.data();
+				const size_t nvertsR = ReducedRegion.size() / 3;
+				for (size_t i = 0; i < nvertsR; ++i)
+					vertsR[i * 3 + 1] = midY;
+
+				// Build AABB
+				float bmin[3], bmax[3];
+				rcVcopy(bmin, vertsR);
+				rcVcopy(bmax, vertsR);
+				for (size_t i = 1; i < nvertsR; ++i)
+				{
+					rcVmin(bmin, &vertsR[i * 3]);
+					rcVmax(bmax, &vertsR[i * 3]);
+				}
+
+				// Find any poly in a region AABB
 				dtPolyRef StartPoly;
-				const float Probe[3] = { 0.f, Region.hmax - Region.hmin, 0.f }; //???or half + small value?
+				const float Probe[3] = { (bmax[0] - bmin[0]) * 0.5f, (Region.hmax - Region.hmin) * 0.5f, (bmax[2] - bmin[2]) * 0.5f };
 				pQuery->findNearestPoly(PointInPoly, Probe, &NavFilter, &StartPoly, nullptr);
 				if (!StartPoly)
 				{
