@@ -1,5 +1,6 @@
 #include "NavAgentSettings.h"
 #include <AI/Navigation/TraversalAction.h>
+#include <AI/Navigation/NavControllerComponent.h>
 
 namespace DEM::AI
 {
@@ -21,23 +22,26 @@ CNavAgentSettings::CNavAgentSettings(std::map<U8, float>&& Costs, std::vector<DE
 }
 //---------------------------------------------------------------------
 
-CNavAgentSettings::~CNavAgentSettings()
-{
-}
+CNavAgentSettings::~CNavAgentSettings() = default;
 //---------------------------------------------------------------------
 
-CTraversalAction* CNavAgentSettings::FindAction(const CNavAgentComponent& Agent, U8 AreaType, dtPolyRef PolyRef, Game::HEntity* pOutSmartObject) const
+CTraversalAction* CNavAgentSettings::FindAction(const CNavAgentComponent& Agent, U8 AreaType, dtPolyRef PolyRef, Game::HEntity* pOutController) const
 {
 	const bool UseSmart = (AreaType < _UseSmartObjects.size()) ? _UseSmartObjects[AreaType] : false;
 	if (UseSmart)
 	{
+		Game::HEntity Controller;
+
 		NOT_IMPLEMENTED;
-		// find smart object
+		// get navmesh from the agent (cache inside?)
+		// find controller entity handle by PolyRef
+
+		// find controller component, need world!
 		// get action (need also agent pos?)
 		// if action found, return it
 	}
 
-	if (pOutSmartObject) *pOutSmartObject = {};
+	if (pOutController) *pOutController = {};
 	return (AreaType < _Actions.size()) ? _Actions[AreaType].Get() : nullptr;
 }
 //---------------------------------------------------------------------

@@ -7,7 +7,7 @@
 #include <Math/Vector3.h>
 #include <DetourPathCorridor.h>
 
-// Navigation component allows an entity to plan path along navigation mesh
+// Navigation agent component allows an entity to plan path along navigation mesh
 
 namespace DEM::AI
 {

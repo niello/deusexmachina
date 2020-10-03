@@ -67,6 +67,8 @@ protected:
 
 	std::vector<CNavMeshRecord> _NavData; // Sorted by R & H
 
+	DEM::AI::CNavMesh* GetNavMesh(const CNavMeshRecord& Record) const;
+
 public:
 
 	static PGameLevel LoadFromDesc(CStrID ID, const Data::CParams& In, Resources::CResourceManager& ResMgr);
@@ -86,6 +88,21 @@ public:
 	Physics::CPhysicsLevel*  GetPhysics() const { return _PhysicsLevel.Get(); }
 	::AI::CAILevel*          GetAI() const { return _AILevel.Get(); }
 	DEM::AI::CNavMesh*       GetNavMesh(float AgentRadius, float AgentHeight) const;
+
+	template<typename TCallback>
+	void ForEachNavMesh(TCallback Callback) const
+	{
+		for (const auto& Record : _NavData)
+		{
+			auto pNavMesh = GetNavMesh(Record);
+			if (!pNavMesh) continue;
+
+			if constexpr (std::is_invocable_v<TCallback, float, float, DEM::AI::CNavMesh&>)
+				Callback(Record.AgentRadius, Record.AgentHeight, *pNavMesh);
+			else
+				static_assert(sizeof(TCallback) == 0, "TCallback is not callable with any supported signature"); // always false
+		}
+	}
 };
 
 }

@@ -34,7 +34,7 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_not_collection_v<T>>* = nullptr>
 	static inline void Serialize(Data::CData& Output, const T& Value)
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
@@ -49,12 +49,14 @@ struct ParamsFormat
 		}
 		else if constexpr (Data::CTypeID<T>::IsDeclared)
 			Output = Value;
+		else if constexpr (std::is_same_v<T, std::string>) //!!!FIXME: TMP, use std::string instead of CString!
+			Output = CString(Value.c_str());
 		else
 			static_assert(false, "CData serialization supports only types registered with CTypeID");
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_single_iterable_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_single_collection_v<T>>* = nullptr>
 	static inline void Serialize(Data::CData& Output, const T& Vector)
 	{
 		Data::PDataArray Out(n_new(Data::CDataArray(Vector.size())));
@@ -97,7 +99,7 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_not_collection_v<T>>* = nullptr>
 	static inline bool SerializeDiff(Data::CData& Output, const T& Value, const T& BaseValue)
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
@@ -119,6 +121,14 @@ struct ParamsFormat
 			if (Value != BaseValue)
 			{
 				Output = Value;
+				return true;
+			}
+		}
+		else if constexpr (std::is_same_v<T, std::string>) //!!!FIXME: TMP, use std::string instead of CString!
+		{
+			if (Value != BaseValue)
+			{
+				Output = CString(Value.c_str());
 				return true;
 			}
 		}
@@ -232,7 +242,7 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_not_collection_v<T>>* = nullptr>
 	static inline void Deserialize(const Data::CData& Input, T& Value)
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
@@ -253,12 +263,14 @@ struct ParamsFormat
 		}
 		else if constexpr (Data::CTypeID<T>::IsDeclared)
 			Value = Input.GetValue<T>();
+		else if constexpr (std::is_same_v<T, std::string>) //!!!FIXME: TMP, use std::string instead of CString!
+			Value = Input.GetValue<CString>().CStr();
 		else
 			static_assert(false, "CData deserialization supports only types registered with CTypeID");
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_single_iterable_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_single_collection_v<T>>* = nullptr>
 	static inline void Deserialize(const Data::CData& Input, T& Vector)
 	{
 		Vector.clear();
@@ -310,7 +322,7 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_not_collection_v<T>>* = nullptr>
 	static inline void DeserializeDiff(const Data::CData& Input, T& Value)
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
@@ -338,6 +350,8 @@ struct ParamsFormat
 		}
 		else if constexpr (Data::CTypeID<T>::IsDeclared)
 			Value = Input.GetValue<T>();
+		else if constexpr (std::is_same_v<T, std::string>) //!!!FIXME: TMP, use std::string instead of CString!
+			Value = Input.GetValue<CString>().CStr();
 		else
 			static_assert(false, "CData deserialization supports only types registered with CTypeID");
 	}

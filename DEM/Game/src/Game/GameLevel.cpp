@@ -148,6 +148,13 @@ Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const line3& Ray, 
 }
 //---------------------------------------------------------------------
 
+DEM::AI::CNavMesh* CGameLevel::GetNavMesh(const CNavMeshRecord& Record) const
+{
+	if (!Record.NavMeshResource) return nullptr;
+	return Record.NavMeshResource->ValidateObject<DEM::AI::CNavMesh>();
+}
+//---------------------------------------------------------------------
+
 DEM::AI::CNavMesh* CGameLevel::GetNavMesh(float AgentRadius, float AgentHeight) const
 {
 	// Navigation meshes are sorted by agent radius, then by height, so the first
@@ -157,7 +164,7 @@ DEM::AI::CNavMesh* CGameLevel::GetNavMesh(float AgentRadius, float AgentHeight) 
 		if (AgentRadius <= It->AgentRadius && AgentHeight <= It->AgentHeight)
 			break;
 
-	return (It != _NavData.end()) ? It->NavMeshResource->ValidateObject<DEM::AI::CNavMesh>() : nullptr;
+	return (It != _NavData.end()) ? GetNavMesh(*It) : nullptr;
 }
 //---------------------------------------------------------------------
 

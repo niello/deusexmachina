@@ -55,8 +55,8 @@ PResourceObject CNavAgentSettingsLoaderHRD::CreateResource(CStrID UID)
 			CString ActionID;
 			if (!AreaDesc.TryGet(ActionID, CStrID("Action"))) continue;
 
-			DEM::AI::PTraversalAction Ctlr(Core::CFactory::Instance().Create<DEM::AI::CTraversalAction>(ActionID));
-			if (!Ctlr) continue;
+			DEM::AI::PTraversalAction Action(Core::CFactory::Instance().Create<DEM::AI::CTraversalAction>(ActionID));
+			if (!Action) continue;
 
 			const bool UseSmart = AreaDesc.Get(CStrID("UseSmartObjects"), false);
 
@@ -76,7 +76,7 @@ PResourceObject CNavAgentSettingsLoaderHRD::CreateResource(CStrID UID)
 					Actions.resize(AreaTypeU8 + 1);
 					UseSmartObjects.resize(AreaTypeU8 + 1);
 				}
-				Actions[AreaTypeU8] = std::move(Ctlr);
+				Actions[AreaTypeU8] = std::move(Action);
 				UseSmartObjects[AreaTypeU8] = UseSmart;
 				if (IsCostOverridden) Costs.emplace(AreaTypeU8, Cost);
 			}

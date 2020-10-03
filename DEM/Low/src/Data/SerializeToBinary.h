@@ -13,7 +13,7 @@ namespace DEM
 
 struct BinaryFormat
 {
-	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_not_collection_v<T>>* = nullptr>
 	static inline void Serialize(IO::CBinaryWriter& Output, const T& Value)
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
@@ -27,7 +27,7 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_single_iterable_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_single_collection_v<T>>* = nullptr>
 	static inline void Serialize(IO::CBinaryWriter& Output, const T& Vector)
 	{
 		Output << static_cast<uint32_t>(Vector.size());
@@ -48,7 +48,7 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_not_collection_v<T>>* = nullptr>
 	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Value, const T& BaseValue)
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
@@ -112,7 +112,7 @@ struct BinaryFormat
 		for (size_t i = FirstChange; i < MinSize; ++i)
 		{
 			// Write the index to identify the element. If values are equal in both objects, this will be reverted.
-			// TODO: PROFILE! See writing member code SerializeDiff(in is_not_iterable_v), the same situation.
+			// TODO: PROFILE! See writing member code SerializeDiff(in is_not_collection_v), the same situation.
 			const auto CurrPos = Output.GetStream().Tell();
 			Output << static_cast<uint32_t>(i);
 
@@ -236,7 +236,7 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_not_collection_v<T>>* = nullptr>
 	static inline void Deserialize(IO::CBinaryReader& Input, T& Value)
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
@@ -252,7 +252,7 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_single_iterable_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_single_collection_v<T>>* = nullptr>
 	static inline void Deserialize(IO::CBinaryReader& Input, T& Vector)
 	{
 		uint32_t Count;
@@ -297,7 +297,7 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_not_collection_v<T>>* = nullptr>
 	static inline void DeserializeDiff(IO::CBinaryReader& Input, T& Value)
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)

@@ -41,6 +41,12 @@ constexpr bool is_single_iterable_v = is_single_iterable<T>::value;
 template<typename T>
 constexpr bool is_not_iterable_v = !is_single_iterable_v<T> && !is_pair_iterable_v<T>;
 
+template<typename T>
+constexpr bool is_single_collection_v = is_single_iterable_v<T> && !std::is_same_v<T, std::string>;
+
+template<typename T>
+constexpr bool is_not_collection_v = is_not_iterable_v<T> || std::is_same_v<T, std::string>;
+
 #define STD_SINGLE_CONTAINER_TRAIT(trait_type) \
 template<typename T> \
 struct is_std_##trait_type : std::false_type {}; \

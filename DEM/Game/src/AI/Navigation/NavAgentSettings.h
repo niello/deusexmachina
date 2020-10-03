@@ -28,7 +28,7 @@ public:
 
 	virtual bool         IsResourceValid() const override { return true; }
 
-	CTraversalAction*    FindAction(const CNavAgentComponent& Agent, U8 AreaType, dtPolyRef PolyRef, Game::HEntity* pOutSmartObject) const;
+	CTraversalAction*    FindAction(const CNavAgentComponent& Agent, U8 AreaType, dtPolyRef PolyRef, Game::HEntity* pOutController) const;
 	const dtQueryFilter* GetQueryFilter() const { return &_Filter; }
 };
 

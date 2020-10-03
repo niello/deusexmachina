@@ -1,10 +1,13 @@
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Game/ECS/Components/SceneComponent.h>
+#include <Game/GameLevel.h>
 #include <AI/Navigation/NavAgentComponent.h>
+#include <AI/Navigation/NavControllerComponent.h>
 #include <AI/Navigation/PathRequestQueue.h>
 #include <AI/Navigation/TraversalAction.h>
 #include <AI/Navigation/NavMeshDebugDraw.h>
+#include <AI/Navigation/NavMesh.h>
 #include <Debug/DebugDraw.h>
 #include <DetourCommon.h>
 #include <DetourDebugDraw.h>
@@ -304,13 +307,13 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	dtPolyRef PolyRef;
 	if (dtStatusFailed(Agent.pNavQuery->findNextStraightPathPoint(Ctx, OutNextTurn.v, &Flags, &AreaType, &PolyRef, 0))) return false;
 
-	Game::HEntity SmartObject;
+	Game::HEntity Controller;
 
 	// If it is an offmesh connection, we may start its traversal
 	if (Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
 	{
 		// Check if we can traverse this connection
-		if (auto pAction = Agent.Settings->FindAction(Agent, AreaType, PolyRef, &SmartObject))
+		if (auto pAction = Agent.Settings->FindAction(Agent, AreaType, PolyRef, &Controller))
 		{
 			// Check if we are in a trigger range
 			if (std::abs(ExactPos.y - OutNextTurn.y) < Agent.Height &&
@@ -321,7 +324,7 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 				if (Agent.Corridor.moveOverOffmeshConnection(PolyRef, OffmeshRefs, Start.v, End.v, Agent.pNavQuery))
 				{
 					// Generate action with precalculated path edge
-					if (pAction->GenerateAction(Agent, SmartObject, Queue, NavAction, ExactPos, Start, End))
+					if (pAction->GenerateAction(Agent, Controller, Queue, NavAction, ExactPos, Start, End))
 					{
 						Agent.Mode = ENavigationMode::Offmesh;
 						return true;
@@ -332,8 +335,8 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	}
 
 	// We triggered no offmesh connection and have no precalculated path edge, let's traverse navmesh surface
-	auto pAction = Agent.Settings->FindAction(Agent, Agent.CurrAreaType, Agent.Corridor.getFirstPoly(), &SmartObject);
-	return pAction && pAction->GenerateAction(Agent, SmartObject, Queue, NavAction, ExactPos);
+	auto pAction = Agent.Settings->FindAction(Agent, Agent.CurrAreaType, Agent.Corridor.getFirstPoly(), &Controller);
+	return pAction && pAction->GenerateAction(Agent, Controller, Queue, NavAction, ExactPos);
 }
 //---------------------------------------------------------------------
 
@@ -568,6 +571,31 @@ void DestroyNavigation(DEM::Game::CGameWorld& World, ::AI::CPathRequestQueue& Pa
 			PathQueue.CancelRequest(Agent.AsyncTaskID);
 			Agent.AsyncTaskID = 0;
 		}
+	});
+}
+//---------------------------------------------------------------------
+
+void RegisterNavigationControllers(DEM::Game::CGameWorld& World)
+{
+	World.ForEachEntityWith<const CNavControllerComponent>(
+		[&World](auto EntityID, auto& Entity, const CNavControllerComponent& Component)
+	{
+		auto pLevel = World.FindLevel(Entity.LevelID);
+		if (!pLevel) return;
+
+		//???store navmesh instances with entity bindings?
+		pLevel->ForEachNavMesh([RegionID = Component.RegionID, EntityID](float AgentRadius, float AgentHeight, DEM::AI::CNavMesh& NavMesh)
+		{
+			//???!!!or move into a navmesh instance!?
+			// NavMesh.SetRegionController(RegionID, EntityID);
+			if (auto pRegion = NavMesh.FindRegion(RegionID))
+			{
+				for (auto Poly : *pRegion)
+				{
+					// Register Poly -> EntityID
+				}
+			}
+		});
 	});
 }
 //---------------------------------------------------------------------
