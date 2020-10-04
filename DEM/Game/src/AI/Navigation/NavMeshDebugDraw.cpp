@@ -18,6 +18,7 @@ void CNavMeshDebugDraw::DrawNavMesh(const DEM::AI::CNavMesh& NavMesh)
 	{
 		duDebugDrawNavMesh(this, *pDtNavMesh, DU_DRAWNAVMESH_OFFMESHCONS);
 		//duDebugDrawNavMeshPolysWithFlags(&DD, *pNavQuery->getAttachedNavMesh(), NAV_FLAG_LOCKED, duRGBA(240, 16, 16, 32));
+		//duDebugDrawNavMeshBVTree(&DD, *pNavQuery->getAttachedNavMesh());
 	}
 }
 //---------------------------------------------------------------------
@@ -38,14 +39,6 @@ void CNavMeshDebugDraw::DrawNavMeshPolyAt(const DEM::AI::CNavMesh& NavMesh, cons
 	if (!n_fequal(Pos.x, Nearest[0]) || !n_fequal(Pos.z, Nearest[2])) return;
 
 	duDebugDrawNavMeshPoly(this, *pDtNavMesh, Ref, Color);
-
-	//!!!DBG TMP!
-	static dtPolyRef PrevRef = 0;
-	if (Ref != PrevRef)
-	{
-		::Sys::DbgOut(("Curr nav poly: " + std::to_string(Ref) + '\n').c_str());
-		PrevRef = Ref;
-	}
 }
 //---------------------------------------------------------------------
 

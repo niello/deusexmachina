@@ -19,6 +19,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/Navigation/NavAgentSettings.h
 	DEM/Game/src/AI/Navigation/NavAgentSettingsLoaderHRD.h
 	DEM/Game/src/AI/Navigation/NavControllerComponent.h
+	DEM/Game/src/AI/Navigation/NavMap.h
 	DEM/Game/src/AI/Navigation/NavMesh.h
 	DEM/Game/src/AI/Navigation/NavMeshDebugDraw.h
 	DEM/Game/src/AI/Navigation/NavMeshLoaderNM.h
@@ -105,6 +106,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/Navigation/NavAgentSettings.cpp
 	DEM/Game/src/AI/Navigation/NavAgentSettingsLoaderHRD.cpp
 	DEM/Game/src/AI/Navigation/NavigationSystem.cpp
+	DEM/Game/src/AI/Navigation/NavMap.cpp
 	DEM/Game/src/AI/Navigation/NavMesh.cpp
 	DEM/Game/src/AI/Navigation/NavMeshDebugDraw.cpp
 	DEM/Game/src/AI/Navigation/NavMeshLoaderNM.cpp

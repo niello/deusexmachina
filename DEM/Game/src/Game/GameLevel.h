@@ -1,15 +1,12 @@
 #pragma once
 #include <Data/RefCounted.h>
 #include <Data/Regions.h>
-#include <Data/StringID.h>
+#include <Game/ECS/Entity.h>
 #include <Scene/SPS.h>
 #include <Math/AABB.h>
 
 // Represents one game location. Consists of subsystem worlds (scene, graphics, physics, AI).
 // In MVC pattern it is a model.
-
-// TODO: are physics & AI (and other) worlds optional?
-// TODO: CreateView(Frame::CView& View)?
 
 namespace Scene
 {
@@ -29,7 +26,7 @@ namespace AI
 
 namespace DEM::AI
 {
-	class CNavMesh;
+	using PNavMap = Ptr<class CNavMap>;
 }
 
 namespace Resources
@@ -51,23 +48,14 @@ class CGameLevel : public Data::CRefCounted
 {
 protected:
 
-	struct CNavMeshRecord
-	{
-		float                AgentRadius;
-		float                AgentHeight;
-		Resources::PResource NavMeshResource;
-	};
+	CStrID                 _ID;
 
-	CStrID                      _ID;
+	Scene::PSceneNode      _SceneRoot;
+	Scene::CSPS            _SPS;
+	Physics::PPhysicsLevel _PhysicsLevel;
+	::AI::PAILevel         _AILevel;
 
-	Scene::PSceneNode           _SceneRoot;
-	Scene::CSPS                 _SPS;
-	Physics::PPhysicsLevel      _PhysicsLevel;
-	::AI::PAILevel              _AILevel;
-
-	std::vector<CNavMeshRecord> _NavData; // Sorted by R & H
-
-	DEM::AI::CNavMesh* GetNavMesh(const CNavMeshRecord& Record) const;
+	std::vector<DEM::AI::PNavMap> _NavMaps; // Sorted by R & H
 
 public:
 
@@ -79,6 +67,8 @@ public:
 	bool                     Validate(Resources::CResourceManager& ResMgr);
 	void                     Update(float dt, const vector3* pCOIArray, UPTR COICount);
 
+	void                     SetNavRegionController(CStrID RegionID, HEntity Controller);
+
 	Physics::CPhysicsObject* GetFirstPickIntersection(const line3& Ray, vector3* pOutPoint3D = nullptr) const;
 
 	CStrID                   GetID() const { return _ID; }
@@ -87,22 +77,7 @@ public:
 	Scene::CSPS&             GetSPS() { return _SPS; }
 	Physics::CPhysicsLevel*  GetPhysics() const { return _PhysicsLevel.Get(); }
 	::AI::CAILevel*          GetAI() const { return _AILevel.Get(); }
-	DEM::AI::CNavMesh*       GetNavMesh(float AgentRadius, float AgentHeight) const;
-
-	template<typename TCallback>
-	void ForEachNavMesh(TCallback Callback) const
-	{
-		for (const auto& Record : _NavData)
-		{
-			auto pNavMesh = GetNavMesh(Record);
-			if (!pNavMesh) continue;
-
-			if constexpr (std::is_invocable_v<TCallback, float, float, DEM::AI::CNavMesh&>)
-				Callback(Record.AgentRadius, Record.AgentHeight, *pNavMesh);
-			else
-				static_assert(sizeof(TCallback) == 0, "TCallback is not callable with any supported signature"); // always false
-		}
-	}
+	DEM::AI::CNavMap*        GetNavMap(float AgentRadius, float AgentHeight) const;
 };
 
 }

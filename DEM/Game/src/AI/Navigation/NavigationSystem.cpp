@@ -369,6 +369,26 @@ static void ResetNavigation(CNavAgentComponent& Agent, Game::CActionQueueCompone
 }
 //---------------------------------------------------------------------
 
+void InitNavigationAgents(Game::CGameWorld& World, Game::CGameLevel& Level, Resources::CResourceManager& ResMgr)
+{
+	World.ForEachComponent<DEM::AI::CNavAgentComponent>([&Level, &ResMgr](auto EntityID, DEM::AI::CNavAgentComponent& NavAgent)
+	{
+		auto Rsrc = ResMgr.RegisterResource<DEM::AI::CNavAgentSettings>(NavAgent.SettingsID.CStr());
+		NavAgent.Settings = Rsrc->ValidateObject<DEM::AI::CNavAgentSettings>();
+
+		NavAgent.Corridor.init(256);
+
+		NavAgent.NavMap = Level.GetNavMap(NavAgent.Radius, NavAgent.Height);
+		if (NavAgent.NavMap)
+		{
+			//!!!???pooled queries? don't allocate one per agent?!
+			NavAgent.pNavQuery = dtAllocNavMeshQuery();
+			NavAgent.pNavQuery->init(NavAgent.NavMap->GetDetourNavMesh(), 512);
+		}
+	});
+}
+//---------------------------------------------------------------------
+
 void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathRequestQueue& PathQueue, bool NewFrame)
 {
 	World.ForEachEntityWith<CNavAgentComponent, DEM::Game::CActionQueueComponent, const DEM::Game::CSceneComponent>(
@@ -557,7 +577,6 @@ void RenderDebugNavigation(DEM::Game::CGameWorld& World, Debug::CDebugDraw& Debu
 }
 //---------------------------------------------------------------------
 
-// Need to shutdown async tasks before deleting agent components
 void DestroyNavigation(DEM::Game::CGameWorld& World, ::AI::CPathRequestQueue& PathQueue)
 {
 	World.RemoveAllComponents<DEM::AI::CNavAgentComponent>();
@@ -566,36 +585,30 @@ void DestroyNavigation(DEM::Game::CGameWorld& World, ::AI::CPathRequestQueue& Pa
 	{
 		//???delete active navigate tasks?
 
+		// Need to shutdown async tasks before deleting agent components
 		if (Agent.AsyncTaskID)
 		{
 			PathQueue.CancelRequest(Agent.AsyncTaskID);
 			Agent.AsyncTaskID = 0;
 		}
+
+		if (Agent.pNavQuery)
+		{
+			dtFreeNavMeshQuery(Agent.pNavQuery);
+			Agent.pNavQuery = nullptr;
+		}
 	});
 }
 //---------------------------------------------------------------------
 
+// TODO: unregister!!!
 void RegisterNavigationControllers(DEM::Game::CGameWorld& World)
 {
 	World.ForEachEntityWith<const CNavControllerComponent>(
 		[&World](auto EntityID, auto& Entity, const CNavControllerComponent& Component)
 	{
-		auto pLevel = World.FindLevel(Entity.LevelID);
-		if (!pLevel) return;
-
-		//???store navmesh instances with entity bindings?
-		pLevel->ForEachNavMesh([RegionID = Component.RegionID, EntityID](float AgentRadius, float AgentHeight, DEM::AI::CNavMesh& NavMesh)
-		{
-			//???!!!or move into a navmesh instance!?
-			// NavMesh.SetRegionController(RegionID, EntityID);
-			if (auto pRegion = NavMesh.FindRegion(RegionID))
-			{
-				for (auto Poly : *pRegion)
-				{
-					// Register Poly -> EntityID
-				}
-			}
-		});
+		if (auto pLevel = World.FindLevel(Entity.LevelID))
+			pLevel->SetNavRegionController(Component.RegionID, EntityID);
 	});
 }
 //---------------------------------------------------------------------

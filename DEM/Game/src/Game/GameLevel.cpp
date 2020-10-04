@@ -1,7 +1,8 @@
 #include "GameLevel.h"
 #include <Scene/SceneNode.h>
 #include <Physics/PhysicsLevel.h>
-#include <AI/Navigation/NavMesh.h>
+#include <Physics/PhysicsObject.h>
+#include <AI/Navigation/NavMap.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Data/DataArray.h>
@@ -97,15 +98,15 @@ PGameLevel CGameLevel::LoadFromDesc(CStrID ID, const Data::CParams& In, Resource
 			if (NavDesc->Get(CStrID("Preload"), false))
 				Rsrc->ValidateObject<DEM::AI::CNavMesh>();
 
-			Level->_NavData.push_back({ AgentRadius, AgentHeight, std::move(Rsrc) });
+			Level->_NavMaps.push_back(n_new(AI::CNavMap)(AgentRadius, AgentHeight, Rsrc));
 		}
 
-		std::sort(Level->_NavData.begin(), Level->_NavData.end(),
-			[](const CNavMeshRecord& a, const CNavMeshRecord& b)
+		std::sort(Level->_NavMaps.begin(), Level->_NavMaps.end(),
+			[](const AI::PNavMap& a, const AI::PNavMap& b)
 		{
 			// Sort by radius, then by height ascending
-			return a.AgentRadius < b.AgentRadius ||
-				(a.AgentRadius == b.AgentRadius && a.AgentHeight < b.AgentHeight);
+			return a->GetAgentRadius() < b->GetAgentRadius() ||
+				(a->GetAgentRadius() == b->GetAgentRadius() && a->GetAgentHeight() < b->GetAgentHeight());
 		});
 	}
 
@@ -148,43 +149,31 @@ Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const line3& Ray, 
 }
 //---------------------------------------------------------------------
 
-DEM::AI::CNavMesh* CGameLevel::GetNavMesh(const CNavMeshRecord& Record) const
-{
-	if (!Record.NavMeshResource) return nullptr;
-	return Record.NavMeshResource->ValidateObject<DEM::AI::CNavMesh>();
-}
-//---------------------------------------------------------------------
-
-DEM::AI::CNavMesh* CGameLevel::GetNavMesh(float AgentRadius, float AgentHeight) const
+DEM::AI::CNavMap* CGameLevel::GetNavMap(float AgentRadius, float AgentHeight) const
 {
 	// Navigation meshes are sorted by agent radius, then by height, so the first
 	// matching navmesh is the best one as it allows the most possible movement.
-	auto It = _NavData.begin();
-	for (; It != _NavData.end(); ++It)
-		if (AgentRadius <= It->AgentRadius && AgentHeight <= It->AgentHeight)
+	auto It = _NavMaps.begin();
+	for (; It != _NavMaps.end(); ++It)
+		if (AgentRadius <= (*It)->GetAgentRadius() && AgentHeight <= (*It)->GetAgentHeight())
 			break;
 
-	return (It != _NavData.end()) ? GetNavMesh(*It) : nullptr;
+	return (It != _NavMaps.end()) ? (*It) : nullptr;
+}
+//---------------------------------------------------------------------
+
+void CGameLevel::SetNavRegionController(CStrID RegionID, HEntity Controller)
+{
+	for (const auto& NavMap : _NavMaps)
+		NavMap->SetRegionController(RegionID, Controller);
 }
 //---------------------------------------------------------------------
 
 }
 
 //////////////// TODO: REMOVE ///////////////////////////////
-
-#include <Frame/View.h>
-#include <Frame/CameraAttribute.h>
-#include <Game/Entity.h>
 #include <Scripting/ScriptObject.h>
-#include <Scene/PropSceneNode.h>
-#include <Physics/PhysicsObject.h>
 #include <AI/AILevel.h>
-#include <Events/EventServer.h>
-#include <IO/IOServer.h>
-#include <Data/ParamsUtils.h>
-#include <Data/DataArray.h>
-#include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
-#include <Core/Factory.h>
 
 namespace Game
 {
@@ -374,7 +363,7 @@ bool CGameLevel::Validate(Resources::CResourceManager& ResMgr)
 
 	Data::PParams P = n_new(Data::CParams(1));
 	P->Set(CStrID("ID"), ID);
-	EventSrv->FireEvent(CStrID("OnLevelValidated"), P); //???global or internal?
+	//EventSrv->FireEvent(CStrID("OnLevelValidated"), P); //???global or internal?
 
 	return Result;
 }

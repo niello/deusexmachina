@@ -1,5 +1,6 @@
 #pragma once
 #include <AI/Navigation/NavAgentSettings.h>
+#include <AI/Navigation/NavMap.h>
 #include <Game/ECS/ComponentStorage.h>
 #include <Data/Ptr.h>
 #include <Data/Metadata.h>
@@ -46,6 +47,7 @@ struct CNavAgentComponent
 {
 	dtPathCorridor       Corridor;
 	dtNavMeshQuery*      pNavQuery = nullptr; //???need per-agent or can use pool in path queue or navmesh?
+	PNavMap              NavMap;
 	PNavAgentSettings    Settings;
 	CStrID               SettingsID;
 	float                Radius = 0.3f;
