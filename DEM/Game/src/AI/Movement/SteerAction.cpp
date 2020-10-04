@@ -141,7 +141,7 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 }
 //---------------------------------------------------------------------
 
-//???need both GenerateAction variants really? can unify?
+//???need both GenerateAction variants really? can unify? pointers for Dest & NextDest?
 bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, Game::CActionQueueComponent& Queue,
 	const Navigate& NavAction, const vector3& Pos, const vector3& Dest, const vector3& NextDest)
 {

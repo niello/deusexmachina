@@ -79,7 +79,7 @@ PResourceObject CNavAgentSettingsLoaderHRD::CreateResource(CStrID UID)
 					Actions.resize(AreaTypeU8 + 1);
 					UseControllers.resize(AreaTypeU8 + 1);
 				}
-				Actions[AreaTypeU8] = std::move(Action);
+				Actions[AreaTypeU8] = Action;
 				UseControllers[AreaTypeU8] = UseControllersInArea;
 				if (IsCostOverridden) Costs.emplace(AreaTypeU8, Cost);
 			}
