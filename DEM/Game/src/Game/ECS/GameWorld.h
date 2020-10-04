@@ -110,7 +110,7 @@ public:
 	template<class T> bool        RemoveComponent(HEntity EntityID);
 	template<class T> void        RemoveAllComponents();
 	template<class T> size_t      GetComponentCount() const;
-	template<class T> T*          FindComponent(HEntity EntityID);
+	template<class T> T*          FindComponent(HEntity EntityID) const;
 	template<class T>
 	TComponentStoragePtr<T>       FindComponentStorage();
 	template<class T>
@@ -211,7 +211,7 @@ size_t CGameWorld::GetComponentCount() const
 //---------------------------------------------------------------------
 
 template<class T>
-T* CGameWorld::FindComponent(HEntity EntityID)
+T* CGameWorld::FindComponent(HEntity EntityID) const
 {
 	if (!EntityID) return nullptr;
 	auto pStorage = FindComponentStorage<T>();

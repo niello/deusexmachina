@@ -37,7 +37,7 @@ PResourceObject CNavAgentSettingsLoaderHRD::CreateResource(CStrID UID)
 
 	std::map<U8, float> Costs;
 	std::vector<DEM::AI::PTraversalAction> Actions;
-	std::vector<bool> UseSmartObjects;
+	std::vector<bool> UseControllers;
 
 	// Load area settings
 	Data::PParams SubParams;
@@ -52,13 +52,16 @@ PResourceObject CNavAgentSettingsLoaderHRD::CreateResource(CStrID UID)
 			Data::PDataArray AreaTypes;
 			if (!AreaDesc.TryGet(AreaTypes, CStrID("AreaTypes")) || AreaTypes->IsEmpty()) continue;
 
-			CString ActionID;
-			if (!AreaDesc.TryGet(ActionID, CStrID("Action"))) continue;
+			DEM::AI::PTraversalAction Action;
+			{
+				CString ActionID;
+				if (AreaDesc.TryGet(ActionID, CStrID("Action")))
+					Action = Core::CFactory::Instance().Create<DEM::AI::CTraversalAction>(ActionID);
+			}
 
-			DEM::AI::PTraversalAction Action(Core::CFactory::Instance().Create<DEM::AI::CTraversalAction>(ActionID));
-			if (!Action) continue;
+			const bool UseControllersInArea = AreaDesc.Get(CStrID("UseControllers"), false);
 
-			const bool UseSmart = AreaDesc.Get(CStrID("UseSmartObjects"), false);
+			if (!UseControllersInArea && !Action) continue;
 
 			const float Cost = AreaDesc.Get(CStrID("Cost"), 1.f);
 			const bool IsCostOverridden = !n_fequal(Cost, 1.f);
@@ -74,18 +77,18 @@ PResourceObject CNavAgentSettingsLoaderHRD::CreateResource(CStrID UID)
 				if (Actions.size() <= AreaTypeU8)
 				{
 					Actions.resize(AreaTypeU8 + 1);
-					UseSmartObjects.resize(AreaTypeU8 + 1);
+					UseControllers.resize(AreaTypeU8 + 1);
 				}
 				Actions[AreaTypeU8] = std::move(Action);
-				UseSmartObjects[AreaTypeU8] = UseSmart;
+				UseControllers[AreaTypeU8] = UseControllersInArea;
 				if (IsCostOverridden) Costs.emplace(AreaTypeU8, Cost);
 			}
 		}
 	}
 
-	// TODO: include/exclude flags
+	// TODO: read included/excluded flags
 
-	return n_new(DEM::AI::CNavAgentSettings(std::move(Costs), std::move(Actions), std::move(UseSmartObjects)));
+	return n_new(DEM::AI::CNavAgentSettings(std::move(Costs), std::move(Actions), std::move(UseControllers)));
 }
 //---------------------------------------------------------------------
 

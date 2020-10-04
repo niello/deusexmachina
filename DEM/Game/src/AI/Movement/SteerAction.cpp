@@ -10,7 +10,7 @@ RTTI_CLASS_IMPL(Steer, Events::CEventNative);
 RTTI_CLASS_IMPL(Turn, Events::CEventNative);
 FACTORY_CLASS_IMPL(DEM::AI::CSteerAction, 'STRA', CTraversalAction);
 
-static bool DoGenerateAction(CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue, const Navigate& NavAction,
+static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue, const Navigate& NavAction,
 	dtStraightPathContext& Ctx, dtStatus Status, U8 Flags, U8 AreaType, dtPolyRef PolyRef, const vector3& Pos, vector3 Dest)
 {
 	// TODO: switch to DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal action
@@ -29,7 +29,7 @@ static bool DoGenerateAction(CNavAgentComponent& Agent, Game::CActionQueueCompon
 
 		// Get the next edge traversal action
 		Game::HEntity SmartObject;
-		auto pNextAction = Agent.Settings->FindAction(Agent, AreaType, PolyRef, &SmartObject);
+		auto pNextAction = Agent.Settings->FindAction(World, Agent, AreaType, PolyRef, &SmartObject);
 		ActionChanged = (!pNextAction || &CSteerAction::RTTI != pNextAction->GetRTTI());
 		if (ActionChanged)
 		{
@@ -37,7 +37,7 @@ static bool DoGenerateAction(CNavAgentComponent& Agent, Game::CActionQueueCompon
 			// new action start immediately to avoid regenerating already finished Steer action again and again.
 			// Don't trigger offmesh connections. If it was possible, navigation system would do that.
 			if (pNextAction && DestReached && !(Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION))
-				return pNextAction->GenerateAction(Agent, SmartObject, Queue, NavAction, Pos);
+				return pNextAction->GenerateAction(World, Agent, SmartObject, Queue, NavAction, Pos);
 
 			break;
 		}
@@ -91,7 +91,7 @@ static bool DoGenerateAction(CNavAgentComponent& Agent, Game::CActionQueueCompon
 
 				// Stop if action changes at Curr
 				Game::HEntity SmartObject;
-				auto pNextAction = Agent.Settings->FindAction(Agent, AreaType, PolyRef, &SmartObject);
+				auto pNextAction = Agent.Settings->FindAction(World, Agent, AreaType, PolyRef, &SmartObject);
 				if (!pNextAction || &CSteerAction::RTTI != pNextAction->GetRTTI()) break;
 
 				// Get end point of the next edge with the same action
@@ -123,7 +123,7 @@ static bool DoGenerateAction(CNavAgentComponent& Agent, Game::CActionQueueCompon
 }
 //---------------------------------------------------------------------
 
-bool CSteerAction::GenerateAction(CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue,
+bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue,
 	const Navigate& NavAction, const vector3& Pos)
 {
 	//???add shortcut method to corridor? Agent.Corridor.initStraightPathSearch(Agent.pNavQuery, Ctx);
@@ -142,11 +142,12 @@ bool CSteerAction::GenerateAction(CNavAgentComponent& Agent, Game::HEntity Smart
 	dtStatus Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Dest.v, &Flags, &AreaType, &PolyRef, Options);
 	if (dtStatusFailed(Status)) return false;
 
-	return DoGenerateAction(Agent, Queue, NavAction, Ctx, Status, Flags, AreaType, PolyRef, Pos, Dest);
+	return DoGenerateAction(World, Agent, Queue, NavAction, Ctx, Status, Flags, AreaType, PolyRef, Pos, Dest);
 }
 //---------------------------------------------------------------------
 
-bool CSteerAction::GenerateAction(CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue,
+//???need both GenerateAction variants really? can unify?
+bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue,
 	const Navigate& NavAction, const vector3& Pos, const vector3& Dest, const vector3& NextDest)
 {
 	// When steering comes from an offmesh connection, we know that an offmesh start is already reached,
@@ -163,7 +164,7 @@ bool CSteerAction::GenerateAction(CNavAgentComponent& Agent, Game::HEntity Smart
 	U8 AreaType = 0;
 	Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(PolyRef, &AreaType);
 
-	return DoGenerateAction(Agent, Queue, NavAction, Ctx, DT_IN_PROGRESS, 0, AreaType, PolyRef, Pos, NextDest);
+	return DoGenerateAction(World, Agent, Queue, NavAction, Ctx, DT_IN_PROGRESS, 0, AreaType, PolyRef, Pos, NextDest);
 }
 //---------------------------------------------------------------------
 

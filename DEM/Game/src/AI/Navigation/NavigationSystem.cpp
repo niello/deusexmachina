@@ -291,7 +291,7 @@ static bool CheckAsyncPathResult(CNavAgentComponent& Agent, ::AI::CPathRequestQu
 //---------------------------------------------------------------------
 
 // Returns OutNextTurn for corridor visibility optimization
-static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue,
+static bool GenerateTraversalAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue,
 	const Navigate& NavAction, const vector3& ExactPos, vector3& OutNextTurn)
 {
 	// Check if we are able to trigger an offmesh connection at the next corner
@@ -313,7 +313,7 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	if (Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
 	{
 		// Check if we can traverse this connection
-		if (auto pAction = Agent.Settings->FindAction(Agent, AreaType, PolyRef, &Controller))
+		if (auto pAction = Agent.Settings->FindAction(World, Agent, AreaType, PolyRef, &Controller))
 		{
 			// Check if we are in a trigger range
 			if (std::abs(ExactPos.y - OutNextTurn.y) < Agent.Height &&
@@ -324,7 +324,7 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 				if (Agent.Corridor.moveOverOffmeshConnection(PolyRef, OffmeshRefs, Start.v, End.v, Agent.pNavQuery))
 				{
 					// Generate action with precalculated path edge
-					if (pAction->GenerateAction(Agent, Controller, Queue, NavAction, ExactPos, Start, End))
+					if (pAction->GenerateAction(World, Agent, Controller, Queue, NavAction, ExactPos, Start, End))
 					{
 						Agent.Mode = ENavigationMode::Offmesh;
 						return true;
@@ -335,8 +335,8 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	}
 
 	// We triggered no offmesh connection and have no precalculated path edge, let's traverse navmesh surface
-	auto pAction = Agent.Settings->FindAction(Agent, Agent.CurrAreaType, Agent.Corridor.getFirstPoly(), &Controller);
-	return pAction && pAction->GenerateAction(Agent, Controller, Queue, NavAction, ExactPos);
+	auto pAction = Agent.Settings->FindAction(World, Agent, Agent.CurrAreaType, Agent.Corridor.getFirstPoly(), &Controller);
+	return pAction && pAction->GenerateAction(World, Agent, Controller, Queue, NavAction, ExactPos);
 }
 //---------------------------------------------------------------------
 
@@ -372,7 +372,7 @@ static void ResetNavigation(CNavAgentComponent& Agent, Game::CActionQueueCompone
 void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathRequestQueue& PathQueue, bool NewFrame)
 {
 	World.ForEachEntityWith<CNavAgentComponent, DEM::Game::CActionQueueComponent, const DEM::Game::CSceneComponent>(
-		[dt, &PathQueue, NewFrame](auto EntityID, auto& Entity,
+		[dt, &World, &PathQueue, NewFrame](auto EntityID, auto& Entity,
 			CNavAgentComponent& Agent,
 			DEM::Game::CActionQueueComponent* pQueue,
 			const DEM::Game::CSceneComponent* pSceneComponent)
@@ -449,7 +449,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			if (Agent.Mode == ENavigationMode::Recovery)
 			{
 				// Try to return to the navmesh by the shortest path
-				auto pAction = Agent.Settings->FindAction(Agent, 0, 0, nullptr);
+				auto pAction = Agent.Settings->FindAction(World, Agent, 0, 0, nullptr);
 				if (!pAction || !pAction->GenerateRecoveryAction(*pQueue, *pNavigateAction, Agent.Corridor.getPos()))
 					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
 			}
@@ -471,7 +471,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				}
 
 				vector3 NextTurn;
-				if (!GenerateTraversalAction(Agent, *pQueue, *pNavigateAction, Pos, NextTurn))
+				if (!GenerateTraversalAction(World, Agent, *pQueue, *pNavigateAction, Pos, NextTurn))
 					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
 
 				// Optimize path visibility along the [corridor pos -> NextTurn] straight line

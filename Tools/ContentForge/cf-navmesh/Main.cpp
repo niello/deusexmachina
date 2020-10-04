@@ -519,7 +519,8 @@ public:
 				const auto SearchResult = pQuery->findPolysAroundShape(StartPoly, ReducedRegion.data(), ReducedRegion.size() / 3,
 					&NavFilter, PolyRefs.data(), nullptr, nullptr, &PolyCount, MAX_POLYS);
 
-				//!!!add offmesh polys!
+				//!!!FIXME: instead of search can request polys in region AABB and then check one by one!
+				//!!!FIXME: add offmesh polys!
 
 				if (dtStatusSucceed(SearchResult) && PolyCount > 0)
 					NamedRegionPolys.emplace_back(ID, std::vector<dtPolyRef>(PolyRefs.begin(), PolyRefs.begin() + PolyCount));
