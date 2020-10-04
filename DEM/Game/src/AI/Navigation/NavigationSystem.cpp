@@ -538,9 +538,11 @@ void RenderDebugNavigation(DEM::Game::CGameWorld& World, Debug::CDebugDraw& Debu
 				vector3 From = pSceneComponent->RootNode->GetWorldPosition();
 				vector3 To;
 				dtStatus Status;
+				U8 AreaType = Agent.CurrAreaType;
 				do
 				{
-					Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, To.v, nullptr, nullptr, nullptr, DT_STRAIGHTPATH_AREA_CROSSINGS);
+					const int Options = Agent.Settings->IsAreaControllable(AreaType) ? DT_STRAIGHTPATH_ALL_CROSSINGS : DT_STRAIGHTPATH_AREA_CROSSINGS;
+					Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, To.v, nullptr, &AreaType, nullptr, Options);
 					if (dtStatusFailed(Status)) break;
 
 					DebugDraw.DrawLine(From, To, ColorPathLine);

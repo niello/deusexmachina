@@ -29,8 +29,7 @@ CNavAgentSettings::~CNavAgentSettings() = default;
 
 CTraversalAction* CNavAgentSettings::FindAction(const Game::CGameWorld& World, const CNavAgentComponent& Agent, U8 AreaType, dtPolyRef PolyRef, Game::HEntity* pOutController) const
 {
-	const bool UseControllersInArea = (AreaType < _UseControllers.size()) ? _UseControllers[AreaType] : false;
-	if (UseControllersInArea && Agent.NavMap)
+	if (Agent.NavMap && IsAreaControllable(AreaType))
 	{
 		Game::HEntity ControllerID = Agent.NavMap->GetPolyController(PolyRef);
 		if (auto pController = World.FindComponent<CNavControllerComponent>(ControllerID))

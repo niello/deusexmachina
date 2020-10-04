@@ -35,6 +35,7 @@ public:
 
 	CTraversalAction*    FindAction(const Game::CGameWorld& World, const CNavAgentComponent& Agent, U8 AreaType, dtPolyRef PolyRef, Game::HEntity* pOutController) const;
 	const dtQueryFilter* GetQueryFilter() const { return &_Filter; }
+	bool                 IsAreaControllable(U8 AreaType) const { return (AreaType < _UseControllers.size()) ? _UseControllers[AreaType] : false; }
 };
 
 typedef Ptr<CNavAgentSettings> PNavAgentSettings;

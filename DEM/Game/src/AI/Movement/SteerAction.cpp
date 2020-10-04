@@ -13,9 +13,6 @@ FACTORY_CLASS_IMPL(DEM::AI::CSteerAction, 'STRA', CTraversalAction);
 static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue, const Navigate& NavAction,
 	dtStraightPathContext& Ctx, dtStatus Status, U8 Flags, U8 AreaType, dtPolyRef PolyRef, const vector3& Pos, vector3 Dest)
 {
-	// TODO: switch to DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal action
-	int Options = DT_STRAIGHTPATH_AREA_CROSSINGS;
-
 	Agent.IsTraversingLastEdge = dtStatusSucceed(Status);
 
 	vector3 NextDest = Dest;
@@ -43,6 +40,7 @@ static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent,
 		}
 
 		// Get the next path edge end point
+		const int Options = Agent.Settings->IsAreaControllable(AreaType) ? DT_STRAIGHTPATH_ALL_CROSSINGS : DT_STRAIGHTPATH_AREA_CROSSINGS;
 		Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, Options);
 		if (dtStatusFailed(Status)) break;
 
@@ -77,9 +75,6 @@ static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent,
 		// TODO: can add other criteria, like final navigation target change
 		if (!pSteer || pSteer->_Dest != Dest)
 		{
-			// TODO: switch to DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal action
-			Options = DT_STRAIGHTPATH_AREA_CROSSINGS;
-
 			vector3 Prev = Dest;
 			vector3 Curr = NextDest;
 			while (true)
@@ -96,6 +91,7 @@ static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent,
 
 				// Get end point of the next edge with the same action
 				Prev = Curr;
+				const int Options = Agent.Settings->IsAreaControllable(AreaType) ? DT_STRAIGHTPATH_ALL_CROSSINGS : DT_STRAIGHTPATH_AREA_CROSSINGS;
 				Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Curr.v, nullptr, &AreaType, &PolyRef, Options);
 				if (dtStatusFailed(Status)) break;
 			}
@@ -132,8 +128,7 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 		Agent.Corridor.getPos(), Agent.Corridor.getTarget(), Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Ctx)))
 		return false;
 
-	// TODO: switch to DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal action
-	int Options = DT_STRAIGHTPATH_AREA_CROSSINGS;
+	const int Options = Agent.Settings->IsAreaControllable(Agent.CurrAreaType) ? DT_STRAIGHTPATH_ALL_CROSSINGS : DT_STRAIGHTPATH_AREA_CROSSINGS;
 
 	vector3 Dest;
 	unsigned char Flags;
