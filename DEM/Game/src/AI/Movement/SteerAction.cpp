@@ -28,8 +28,8 @@ static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent,
 			vector3::SqDistance2D(Pos, Dest) < Steer::SqLinearTolerance;
 
 		// Get the next edge traversal action
-		Game::HEntity SmartObject;
-		auto pNextAction = Agent.Settings->FindAction(World, Agent, AreaType, PolyRef, &SmartObject);
+		Game::HEntity Controller;
+		auto pNextAction = Agent.Settings->FindAction(World, Agent, AreaType, PolyRef, &Controller);
 		ActionChanged = (!pNextAction || &CSteerAction::RTTI != pNextAction->GetRTTI());
 		if (ActionChanged)
 		{
@@ -37,7 +37,7 @@ static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent,
 			// new action start immediately to avoid regenerating already finished Steer action again and again.
 			// Don't trigger offmesh connections. If it was possible, navigation system would do that.
 			if (pNextAction && DestReached && !(Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION))
-				return pNextAction->GenerateAction(World, Agent, SmartObject, Queue, NavAction, Pos);
+				return pNextAction->GenerateAction(World, Agent, Controller, Queue, NavAction, Pos);
 
 			break;
 		}
@@ -90,8 +90,8 @@ static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent,
 				if (!dtStatusInProgress(Status)) break;
 
 				// Stop if action changes at Curr
-				Game::HEntity SmartObject;
-				auto pNextAction = Agent.Settings->FindAction(World, Agent, AreaType, PolyRef, &SmartObject);
+				Game::HEntity Controller;
+				auto pNextAction = Agent.Settings->FindAction(World, Agent, AreaType, PolyRef, &Controller);
 				if (!pNextAction || &CSteerAction::RTTI != pNextAction->GetRTTI()) break;
 
 				// Get end point of the next edge with the same action
@@ -123,7 +123,7 @@ static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent,
 }
 //---------------------------------------------------------------------
 
-bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue,
+bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, Game::CActionQueueComponent& Queue,
 	const Navigate& NavAction, const vector3& Pos)
 {
 	//???add shortcut method to corridor? Agent.Corridor.initStraightPathSearch(Agent.pNavQuery, Ctx);
@@ -147,7 +147,7 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 //---------------------------------------------------------------------
 
 //???need both GenerateAction variants really? can unify?
-bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue,
+bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, Game::CActionQueueComponent& Queue,
 	const Navigate& NavAction, const vector3& Pos, const vector3& Dest, const vector3& NextDest)
 {
 	// When steering comes from an offmesh connection, we know that an offmesh start is already reached,

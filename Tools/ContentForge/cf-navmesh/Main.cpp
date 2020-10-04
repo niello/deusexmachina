@@ -250,26 +250,29 @@ public:
 			{
 				const auto& RegionDesc = Record.GetValue<Data::CParams>();
 
-				const Data::CDataArray* pVertexList;
-				if (!ParamsUtils::TryGetParam(pVertexList, RegionDesc, "Vertices") || pVertexList->empty()) continue;
-
-				vertsR.reserve(3 * pVertexList->size());
-				for (const auto& VertexData : *pVertexList)
-				{
-					const auto& Vertex = VertexData.GetValue<vector4>();
-					vertsR.push_back(Vertex.x);
-					vertsR.push_back(Vertex.y);
-					vertsR.push_back(Vertex.z);
-				}
-
 				const auto hmin = ParamsUtils::GetParam(RegionDesc, "HeightStart", bmin[1]);
 				const auto hmax = ParamsUtils::GetParam(RegionDesc, "HeightEnd", bmax[1]);
 
-				// NB: there are also rcMarkBoxArea, rcMarkCylinderArea
-				int areaId = RC_WALKABLE_AREA;
-				if (ParamsUtils::TryGetParam<int>(areaId, RegionDesc, "AreaType"))
-					rcMarkConvexPolyArea(&ctx, vertsR.data(), pVertexList->size(), hmin, hmax, static_cast<uint8_t>(areaId), *chf);
+				// If vertices defined, mark the region with area
+				const Data::CDataArray* pVertexList;
+				if (ParamsUtils::TryGetParam(pVertexList, RegionDesc, "Vertices") && !pVertexList->empty())
+				{
+					vertsR.reserve(3 * pVertexList->size());
+					for (const auto& VertexData : *pVertexList)
+					{
+						const auto& Vertex = VertexData.GetValue<vector4>();
+						vertsR.push_back(Vertex.x);
+						vertsR.push_back(Vertex.y);
+						vertsR.push_back(Vertex.z);
+					}
 
+					// NB: there are also rcMarkBoxArea, rcMarkCylinderArea
+					int areaId = RC_WALKABLE_AREA;
+					if (ParamsUtils::TryGetParam<int>(areaId, RegionDesc, "AreaType"))
+						rcMarkConvexPolyArea(&ctx, vertsR.data(), pVertexList->size(), hmin, hmax, static_cast<uint8_t>(areaId), *chf);
+				}
+
+				// If ID is defined, remember this region as named for runtime access
 				auto ID = ParamsUtils::GetParam(RegionDesc, "ID", std::string{});
 				if (!ID.empty())
 				{
@@ -823,95 +826,102 @@ public:
 	// TODO: check if it really optimizes!
 	bool FillRegionPolyRefs(CRegion& Region, float cellSize, dtNavMeshQuery& Query, std::vector<dtPolyRef>& Out, CThreadSafeLog& Log)
 	{
-		// Slightly reduce region to avoid including neighbour polys
-		auto ReducedRegion = OffsetPoly(Region.verts.data(), Region.verts.size() / 3, -2.0f * cellSize);
-		float* vertsR = ReducedRegion.data();
-		const size_t nvertsR = ReducedRegion.size() / 3;
-
-		// TODO: ensure that region is CCW!
-
-		float centerPos[3] = { vertsR[0], vertsR[1], vertsR[2] };
-		for (size_t i = 1; i < nvertsR; ++i)
-			dtVadd(centerPos, centerPos, &vertsR[i * 3]);
-		dtVscale(centerPos, centerPos, 1.0f / nvertsR);
-
-		const float midY = (Region.hmax + Region.hmin) * 0.5f;
-
-		centerPos[1] = midY;
-		for (size_t i = 0; i < nvertsR; ++i)
-			vertsR[i * 3 + 1] = midY;
-
-		// Build AABB
-		float bmin[3], bmax[3];
-		rcVcopy(bmin, vertsR);
-		rcVcopy(bmax, vertsR);
-		for (size_t i = 1; i < nvertsR; ++i)
+		// Add regular polys
+		if (!Region.verts.empty())
 		{
-			rcVmin(bmin, &vertsR[i * 3]);
-			rcVmax(bmax, &vertsR[i * 3]);
-		}
+			// Slightly reduce region to avoid including neighbour polys
+			Region.verts = OffsetPoly(Region.verts.data(), Region.verts.size() / 3, -0.95f * cellSize);
+			float* vertsR = Region.verts.data();
+			const size_t nvertsR = Region.verts.size() / 3;
 
-		const float halfExtents[3] = { (bmax[0] - bmin[0]) * 0.5f, (Region.hmax - Region.hmin) * 0.5f, (bmax[2] - bmin[2]) * 0.5f };
+			// TODO: ensure that region is CCW!
 
-		class dtCollectPolysQuery : public dtPolyQuery
-		{
-		public:
+			float centerPos[3] = { vertsR[0], vertsR[1], vertsR[2] };
+			for (size_t i = 1; i < nvertsR; ++i)
+				dtVadd(centerPos, centerPos, &vertsR[i * 3]);
+			dtVscale(centerPos, centerPos, 1.0f / nvertsR);
 
-			std::vector<dtPolyRef>& _Polys;
+			const float midY = (Region.hmax + Region.hmin) * 0.5f;
 
-			dtCollectPolysQuery(std::vector<dtPolyRef>& Polys) : _Polys(Polys) {}
+			centerPos[1] = midY;
+			for (size_t i = 0; i < nvertsR; ++i)
+				vertsR[i * 3 + 1] = midY;
 
-			void process(const dtMeshTile* tile, dtPoly** polys, dtPolyRef* refs, int count)
+			// Build AABB
+			float bmin[3], bmax[3];
+			rcVcopy(bmin, vertsR);
+			rcVcopy(bmax, vertsR);
+			for (size_t i = 1; i < nvertsR; ++i)
 			{
-				for (int i = 0; i < count; ++i)
-				{
-					// Check against region shape (poly, box, sphere)
-					// if not outside:
-					_Polys.push_back(refs[i]);
-				}
+				rcVmin(bmin, &vertsR[i * 3]);
+				rcVmax(bmax, &vertsR[i * 3]);
 			}
-		};
 
-		// Find tiles and polys in AABB
-		dtCollectPolysQuery PolyQuery(Out);
-		const dtQueryFilter NavFilter;
-		if (dtStatusFailed(Query.queryPolygons(centerPos, halfExtents, &NavFilter, &PolyQuery)))
-		{
-			Log.LogError("Failed to enumerate polys in a named region AABB");
-			return false;
+			const float halfExtents[3] = { (bmax[0] - bmin[0]) * 0.5f, (Region.hmax - Region.hmin) * 0.5f, (bmax[2] - bmin[2]) * 0.5f };
+
+			// TODO: box, sphere/circle?
+			class CConvexRegionQuery : public dtPolyQuery
+			{
+			public:
+
+				const CRegion& _Region;
+				std::vector<dtPolyRef>& _Polys;
+
+				CConvexRegionQuery(const CRegion& Region, std::vector<dtPolyRef>& Polys) : _Region(Region), _Polys(Polys) {}
+
+				void process(const dtMeshTile* tile, dtPoly** polys, dtPolyRef* refs, int count)
+				{
+					float polyVerts[DT_VERTS_PER_POLYGON * 3];
+
+					for (int i = 0; i < count; ++i)
+					{
+						const dtPoly* poly = polys[i];
+						for (int j = 0; j < poly->vertCount; ++j)
+						{
+							const float* v = &tile->verts[poly->verts[j] * 3];
+							polyVerts[j * 3] = v[0];
+							polyVerts[j * 3 + 1] = v[1];
+							polyVerts[j * 3 + 2] = v[2];
+						}
+
+						//???need to check Y too against _Region.hmin/hmax?
+						if (dtOverlapPolyPoly2D(_Region.verts.data(), _Region.verts.size() / 3, polyVerts, poly->vertCount))
+							_Polys.push_back(refs[i]);
+					}
+				}
+			};
+
+			// Query regular polys
+			CConvexRegionQuery PolyQuery(Region, Out);
+			const dtQueryFilter NavFilter;
+			if (dtStatusFailed(Query.queryPolygons(centerPos, halfExtents, &NavFilter, &PolyQuery)))
+			{
+				Log.LogError("Failed to enumerate polys in a named region AABB");
+				return false;
+			}
 		}
 
 		// Add offmesh connections
 		if (!Region.offmeshIds.empty())
 		{
-			int minx, miny, maxx, maxy;
-			Query.getAttachedNavMesh()->calcTileLoc(bmin, &minx, &miny);
-			Query.getAttachedNavMesh()->calcTileLoc(bmax, &maxx, &maxy);
-
-			static const int MAX_NEIS = 32;
-			const dtMeshTile* neis[MAX_NEIS];
-
-			for (int y = miny; y <= maxy; ++y)
+			const dtNavMesh* pNavMesh = Query.getAttachedNavMesh();
+			for (int tileIdx = 0; tileIdx < pNavMesh->getMaxTiles(); ++tileIdx)
 			{
-				for (int x = minx; x <= maxx; ++x)
+				const dtMeshTile* tile = pNavMesh->getTile(tileIdx);
+				if (!tile || !tile->header) continue;
+
+				const dtPolyRef base = Query.getAttachedNavMesh()->getPolyRefBase(tile);
+
+				for (int i = 0; i < tile->header->offMeshConCount; ++i)
 				{
-					const int nneis = Query.getAttachedNavMesh()->getTilesAt(x, y, neis, MAX_NEIS);
-					for (int j = 0; j < nneis; ++j)
+					const dtOffMeshConnection& offmesh = tile->offMeshCons[i];
+					auto it = Region.offmeshIds.find(offmesh.userId);
+					if (it != Region.offmeshIds.cend())
 					{
-						const dtMeshTile* tile = neis[j];
-						const dtPolyRef base = Query.getAttachedNavMesh()->getPolyRefBase(tile);
-						for (int i = 0; i < tile->header->offMeshConCount; ++i)
-						{
-							const dtOffMeshConnection& offmesh = tile->offMeshCons[i];
-							auto it = Region.offmeshIds.find(offmesh.userId);
-							if (it != Region.offmeshIds.cend())
-							{
-								dtPolyRef ref = base | (dtPolyRef)(offmesh.poly);
-								Out.push_back(ref);
-								Region.offmeshIds.erase(it);
-								if (Region.offmeshIds.empty()) return true;
-							}
-						}
+						dtPolyRef ref = base | (dtPolyRef)(offmesh.poly);
+						Out.push_back(ref);
+						Region.offmeshIds.erase(it);
+						if (Region.offmeshIds.empty()) return true;
 					}
 				}
 			}
