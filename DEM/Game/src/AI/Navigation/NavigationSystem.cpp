@@ -324,11 +324,11 @@ static bool GenerateTraversalAction(Game::CGameWorld& World, CNavAgentComponent&
 				if (Agent.Corridor.moveOverOffmeshConnection(PolyRef, OffmeshRefs, Start.v, End.v, Agent.pNavQuery))
 				{
 					// Generate action with precalculated path edge
-					if (pAction->GenerateAction(World, Agent, Controller, Queue, NavAction, ExactPos, Start, End))
-					{
-						Agent.Mode = ENavigationMode::Offmesh;
-						return true;
-					}
+					if (!pAction->GenerateAction(World, Agent, Controller, Queue, NavAction, ExactPos, Start, End))
+						return false;
+
+					Agent.Mode = ENavigationMode::Offmesh;
+					return true;
 				}
 			}
 		}
