@@ -55,6 +55,8 @@ public:
 
 	//!!!FIXME: REDESIGN! When modify existing but already finished action, must reactivate it.
 	void FIXME_ReactivateAction() { if (!_Stack.empty()) _Status = EActionStatus::Active; }
+	//!!!FIXME: REDESIGN! Now it is a hack, but it is used for waiting without dedicated Wait action.
+	void FIXME_PopSubActions(const Events::CEventBase& Action);
 
 	template<typename T, typename... TArgs>
 	T* EnqueueAction(TArgs&&... Args)

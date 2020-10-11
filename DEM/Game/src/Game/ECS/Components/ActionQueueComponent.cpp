@@ -75,6 +75,22 @@ bool CActionQueueComponent::FinalizeActiveAction(const Events::CEventBase& Actio
 }
 //---------------------------------------------------------------------
 
+//!!!FIXME: REDESIGN!
+void CActionQueueComponent::FIXME_PopSubActions(const Events::CEventBase& Action)
+{
+	// Action must be in active stack
+	auto It = std::find_if(_Stack.begin(), _Stack.end(), [&Action](const auto& Elm)
+	{
+		return Elm.get() == &Action;
+	});
+	if (It == _Stack.cend()) return;
+
+	// Cancel all sub-actions
+	++It;
+	_Stack.erase(It, _Stack.end());
+}
+//---------------------------------------------------------------------
+
 // Only for root actions. To remove sub-action, call FinalizeActiveAction or PushSubActionForParent.
 bool CActionQueueComponent::RemoveAction(const Events::CEventBase& Action)
 {

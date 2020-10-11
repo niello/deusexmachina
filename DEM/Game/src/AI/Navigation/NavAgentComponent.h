@@ -54,11 +54,12 @@ struct CNavAgentComponent
 	float                Height = 1.75f;
 	vector3              TargetPos;
 	dtPolyRef            TargetRef = 0;
+	dtPolyRef            OffmeshRef = 0; // FIXME: change corridor logic to store it as first poly until traversed?
 	float                ReplanTime = 0.f;
 	float                PathOptimizationTime = 0.f;
 	U16                  AsyncTaskID = 0;
 	ENavigationState     State = ENavigationState::Idle;
-	ENavigationMode      Mode = ENavigationMode::Surface;
+	ENavigationMode      Mode = ENavigationMode::Surface; //!!!if will store offmesh ref not in corridor, bool Valid will be enough instead!
 	U8                   CurrAreaType = 0;
 	bool                 IsTraversingLastEdge = false; // FIXME: can rewrite better?
 };

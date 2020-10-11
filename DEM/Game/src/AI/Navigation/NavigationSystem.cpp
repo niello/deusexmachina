@@ -315,9 +315,11 @@ static bool GenerateTraversalAction(Game::CGameWorld& World, CNavAgentComponent&
 		// Check if we can traverse this connection
 		if (auto pAction = Agent.Settings->FindAction(World, Agent, AreaType, PolyRef, &Controller))
 		{
+			const float OffmeshRadius = Agent.NavMap->GetDetourNavMesh()->getOffMeshConnectionByRef(PolyRef)->rad;
+
 			// Check if we are in a trigger range
 			if (std::abs(ExactPos.y - OutNextTurn.y) < Agent.Height &&
-				vector3::SqDistance2D(ExactPos, OutNextTurn) < pAction->GetSqTriggerRadius(Agent.Radius))
+				vector3::SqDistance2D(ExactPos, OutNextTurn) < pAction->GetSqTriggerRadius(Agent.Radius, OffmeshRadius))
 			{
 				dtPolyRef OffmeshRefs[2];
 				vector3 Start, End;
@@ -328,6 +330,8 @@ static bool GenerateTraversalAction(Game::CGameWorld& World, CNavAgentComponent&
 						return false;
 
 					Agent.Mode = ENavigationMode::Offmesh;
+					Agent.OffmeshRef = PolyRef;
+					Agent.CurrAreaType = AreaType;
 					return true;
 				}
 			}
@@ -429,13 +433,18 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 
 				// Finish traversing an offmesh connection
 				if (Agent.Mode == ENavigationMode::Offmesh)
+				{
 					Agent.Mode = ENavigationMode::Surface;
+					Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(Agent.Corridor.getFirstPoly(), &Agent.CurrAreaType);
+				}
 			}
+
+			const bool HasSubAction = pQueue->GetActiveStackTop() != pNavigateAction;
 
 			// Multiple physics frames can be processed inside one logic frame. Target remains the
 			// same during the logic frame but might be reached. Character position is already processed.
 			// So if there is a sub-action, let's just continue executing it, without unnecessary update.
-			if (!NewFrame && PrevMode == Agent.Mode && pQueue->GetActiveStackTop() != pNavigateAction) return;
+			if (!NewFrame && PrevMode == Agent.Mode && HasSubAction) return;
 
 			// NB: in Detour replan time increases only when on navmesh (not offmesh, not invalid)
 			Agent.ReplanTime += dt;
@@ -497,6 +506,15 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				// Optimize path visibility along the [corridor pos -> NextTurn] straight line
 				if (OptimizePath && Agent.Mode == ENavigationMode::Surface)
 					Agent.Corridor.optimizePathVisibility(NextTurn.v, 30.f * Agent.Radius, Agent.pNavQuery, pNavFilter);
+			}
+			else if (/*Agent.Mode == ENavigationMode::Offmesh &&*/ !HasSubAction)
+			{
+				//???can optimize all traversal cases by storing action and comparing new with current?
+				//if so, can avoid storing curr offmesh poly in this case, and maybe surface traversal will benefit too.
+				Game::HEntity Controller;
+				auto pAction = Agent.Settings->FindAction(World, Agent, Agent.CurrAreaType, Agent.OffmeshRef, &Controller);
+				if (!pAction || !pAction->GenerateAction(World, Agent, Controller, *pQueue, *pNavigateAction, Pos))
+					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
 			}
 		}
 		else if (Agent.State != ENavigationState::Idle)
