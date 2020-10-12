@@ -415,10 +415,11 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 
 		if (auto pNavigateAction = pQueue->FindActive<Navigate>())
 		{
-			if (pQueue->GetStatus() == DEM::Game::EActionStatus::Failed)
+			// Check if action or sub-action has finished
+			if (pQueue->GetStatus() == DEM::Game::EActionStatus::Failed || pQueue->GetStatus() == DEM::Game::EActionStatus::Cancelled)
 			{
-				// If sub-action failed, fail navigation
-				ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
+				// If sub-action failed or cancelled, finish navigation with the same result
+				ResetNavigation(Agent, *pQueue, PathQueue, pQueue->GetStatus());
 				return;
 			}
 			else if (pQueue->GetStatus() == DEM::Game::EActionStatus::Succeeded)
@@ -427,7 +428,6 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				if (Agent.IsTraversingLastEdge)
 				{
 					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Succeeded);
-					pQueue->RemoveAction(*pNavigateAction); //???where must happen?
 					return;
 				}
 
