@@ -8,7 +8,7 @@ namespace Input
 
 class CInputConditionEventTemplate: public CInputConditionEvent
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Input::CInputConditionEventTemplate, Input::CInputConditionEvent);
 
 protected:
 

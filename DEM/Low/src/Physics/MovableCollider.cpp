@@ -8,7 +8,6 @@
 
 namespace Physics
 {
-RTTI_CLASS_IMPL(Physics::CMovableCollider, Physics::CPhysicsObject);
 
 // Physics object doesn't know the source of its transform, it only stores an incoming copy
 class CKinematicMotionState: public btMotionState

@@ -9,7 +9,6 @@
 
 namespace Physics
 {
-RTTI_CLASS_IMPL(Physics::CRigidBody, Physics::CPhysicsObject);
 
 // To be useful, rigid body must be connected to a scene node to serve as its transformation source
 // TODO: try make _Offset btVector3 SSE. Last attempt expanded *this size from 20 to 48, need more effort.

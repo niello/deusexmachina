@@ -11,7 +11,7 @@ namespace Physics
 
 class CMovableCollider : public CPhysicsObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Physics::CMovableCollider, Physics::CPhysicsObject);
 
 protected:
 

@@ -13,7 +13,7 @@ typedef Ptr<class CD3D11Shader> PD3D11Shader;
 
 class CD3D11RenderState: public CRenderState
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Render::CD3D11RenderState, Render::CRenderState);
 
 public:
 

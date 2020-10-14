@@ -9,7 +9,7 @@ typedef std::unique_ptr<class IRenderable> PRenderable;
 
 class IRenderable: public Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Render::IRenderable, Core::CRTTIBaseClass);
 
 protected:
 

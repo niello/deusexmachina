@@ -10,11 +10,11 @@ namespace Input
 
 class CInputConditionEvent: public Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Input::CInputConditionEvent, Core::CRTTIBaseClass);
 
 public:
 
-	virtual ~CInputConditionEvent() {}
+	virtual ~CInputConditionEvent() = default;
 
 	virtual bool	UpdateParams(std::function<std::string(const char*)> ParamGetter, std::set<std::string>* pOutParams) { OK; }
 	virtual void	Reset() {}

@@ -16,7 +16,7 @@ class CD3D11GPUDriver;
 
 class CD3D11Shader: public CShader
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Render::CD3D11Shader, Render::CShader);
 
 protected:
 

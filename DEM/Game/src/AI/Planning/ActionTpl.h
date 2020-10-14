@@ -18,7 +18,7 @@ typedef Ptr<class CAction> PAction;
 //???need refcount & factory? can instantiate manually
 class CActionTpl: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(AI::CActionTpl, Core::CObject);
 
 protected:
 

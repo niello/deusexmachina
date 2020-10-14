@@ -14,7 +14,6 @@
 
 namespace Render
 {
-RTTI_CLASS_IMPL(Render::CD3D11DriverFactory, Render::CVideoDriverFactory);
 
 CD3D11DriverFactory::CD3D11DriverFactory() = default;
 //---------------------------------------------------------------------

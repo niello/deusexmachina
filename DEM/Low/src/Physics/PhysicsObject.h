@@ -16,7 +16,7 @@ class CCollisionShape;
 
 class CPhysicsObject: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Physics::CPhysicsObject, Core::CObject);
 
 protected:
 

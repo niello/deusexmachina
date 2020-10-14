@@ -110,17 +110,12 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/Navigation/NavMeshDebugDraw.cpp
 	DEM/Game/src/AI/Navigation/NavMeshLoaderNM.cpp
 	DEM/Game/src/AI/Navigation/PathRequestQueue.cpp
-	DEM/Game/src/AI/Navigation/TraversalAction.cpp
-	DEM/Game/src/AI/Perception/Perceptor.cpp
-	DEM/Game/src/AI/Perception/Sensor.cpp
-	DEM/Game/src/AI/Perception/Stimulus.cpp
 	DEM/Game/src/AI/Planning/ActionTpl.cpp
 	DEM/Game/src/AI/Planning/ActionTplIdle.cpp
 	DEM/Game/src/AI/Planning/Goal.cpp
 	DEM/Game/src/AI/Planning/GoalIdle.cpp
 	DEM/Game/src/AI/Planning/Planner.cpp
 	DEM/Game/src/AI/Planning/WorldState.cpp
-	DEM/Game/src/AI/Planning/WorldStateSource.cpp
 	DEM/Game/src/AI/Planning/WorldStateSourceScript.cpp
 	DEM/Game/src/AI/SmartObj/SmartAction.cpp
 	DEM/Game/src/AI/SmartObj/Actions/ActionGotoSmartObj.cpp
@@ -129,14 +124,11 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/SmartObj/ActionTpls/ActionTplUseSmartObj.cpp
 	DEM/Game/src/App/AppFSM.cpp
 	DEM/Game/src/App/AppStateVideo.cpp
-	DEM/Game/src/App/StateHandler.cpp
 	DEM/Game/src/Game/EntityOld.cpp
 	DEM/Game/src/Game/GameLevel.cpp
 	DEM/Game/src/Game/GameSession.cpp
-	DEM/Game/src/Game/GameState.cpp
 	DEM/Game/src/Game/GameStateManager.cpp
 	DEM/Game/src/Game/Property.cpp
-	DEM/Game/src/Game/ECS/EntityTemplate.cpp
 	DEM/Game/src/Game/ECS/EntityTemplateLoader.cpp
 	DEM/Game/src/Game/ECS/GameWorld.cpp
 	DEM/Game/src/Game/ECS/Components/ActionQueueComponent.cpp

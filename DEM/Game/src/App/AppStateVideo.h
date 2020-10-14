@@ -12,7 +12,7 @@ namespace App
 
 class CAppStateVideo: public CStateHandler
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(App::CAppStateVideo, App::CStateHandler);
 
 private:
 

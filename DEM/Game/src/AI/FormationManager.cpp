@@ -7,7 +7,6 @@
 
 namespace DEM::Game
 {
-RTTI_CLASS_IMPL(CFormationManager, ::Core::CRTTIBaseClass);
 
 CFormationManager::CFormationManager(CGameSession& Owner)
 	: _Owner(Owner)

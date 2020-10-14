@@ -46,7 +46,7 @@ enum EUSMBufferType;
 
 class CD3D11GPUDriver: public CGPUDriver
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Render::CD3D11GPUDriver, Render::CGPUDriver);
 
 public:
 

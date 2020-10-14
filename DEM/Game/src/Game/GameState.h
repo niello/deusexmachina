@@ -13,7 +13,7 @@ typedef Ptr<class CGameState> PGameState;
 
 class CGameState : public ::Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(DEM::Game::CGameState, ::Core::CObject);
 
 public:
 

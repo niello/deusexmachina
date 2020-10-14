@@ -29,7 +29,7 @@ typedef Ptr<class CNodeAttribute> PNodeAttribute;
 
 class CNodeAttribute: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Scene::CNodeAttribute, Core::CObject);
 
 protected:
 

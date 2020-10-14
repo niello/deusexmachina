@@ -6,7 +6,6 @@
 
 namespace DEM::AI
 {
-RTTI_CLASS_IMPL(DEM::AI::CNavAgentSettings, Resources::CResourceObject);
 
 CNavAgentSettings::CNavAgentSettings(std::map<U8, float>&& Costs, std::vector<DEM::AI::PTraversalAction>&& Actions, std::vector<bool>&& UseControllers)
 	: _Actions(std::move(Actions))

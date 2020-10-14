@@ -2,7 +2,6 @@
 
 namespace Core
 {
-RTTI_CLASS_IMPL(Core::CTimeSource, Core::CObject);
 
 void CTimeSource::Update(float _FrameTime)
 {

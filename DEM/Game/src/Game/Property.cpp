@@ -5,7 +5,6 @@
 
 namespace Game
 {
-RTTI_CLASS_IMPL(Game::CProperty, Core::CObject);
 
 CProperty::CProperty(): Active(false), pEntity(nullptr)
 {

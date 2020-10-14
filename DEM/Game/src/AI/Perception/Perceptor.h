@@ -17,7 +17,7 @@ class CStimulus;
 
 class CPerceptor: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(AI::CPerceptor, Core::CObject);
 
 protected:
 

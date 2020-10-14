@@ -3,7 +3,6 @@
 
 namespace DEM::AI
 {
-RTTI_CLASS_IMPL(DEM::AI::CNavMesh, Resources::CResourceObject);
 
 CNavMesh::CNavMesh(float AgentRadius, float AgentHeight, std::vector<U8>&& RawData, std::map<CStrID, CNavRegion>&& Regions)
 	: _AgentRadius(AgentRadius)

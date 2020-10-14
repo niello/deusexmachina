@@ -13,7 +13,7 @@ namespace Render
 
 class CD3D9ConstantBuffer: public CConstantBuffer
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Render::CD3D9ConstantBuffer, Render::CConstantBuffer);
 
 protected:
 

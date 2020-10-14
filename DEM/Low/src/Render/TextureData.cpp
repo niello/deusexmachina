@@ -3,10 +3,9 @@
 
 namespace Render
 {
-RTTI_CLASS_IMPL(Render::CTextureData, Resources::CResourceObject);
 
-CTextureData::CTextureData() {}
-CTextureData::~CTextureData() {}
+CTextureData::CTextureData() = default;
+CTextureData::~CTextureData() = default;
 
 bool CTextureData::UseBuffer()
 {

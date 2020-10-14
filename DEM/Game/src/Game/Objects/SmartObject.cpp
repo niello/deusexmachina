@@ -3,7 +3,6 @@
 
 namespace DEM::Game
 {
-RTTI_CLASS_IMPL(DEM::Game::CSmartObject, Resources::CResourceObject);
 
 CSmartObject::CSmartObject(CStrID ID, CStrID DefaultState, std::string_view ScriptSource)
 	: _ID(ID)

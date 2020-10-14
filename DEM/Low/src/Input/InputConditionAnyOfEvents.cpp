@@ -5,7 +5,6 @@
 
 namespace Input
 {
-RTTI_CLASS_IMPL(Input::CInputConditionAnyOfEvents, Input::CInputConditionEvent);
 
 void CInputConditionAnyOfEvents::AddChild(PInputConditionEvent&& NewChild)
 {

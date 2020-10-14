@@ -16,7 +16,7 @@ namespace Physics
 
 class CRigidBody : public CPhysicsObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Physics::CRigidBody, Physics::CPhysicsObject);
 
 protected:
 

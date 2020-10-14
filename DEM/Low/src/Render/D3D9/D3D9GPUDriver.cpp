@@ -32,7 +32,6 @@
 
 namespace Render
 {
-RTTI_CLASS_IMPL(Render::CD3D9GPUDriver, Render::CGPUDriver);
 
 constexpr UPTR CB_Slot_Count = 4; // Pseudoregisters for CB binding
 constexpr UPTR SM30_VS_Int4Count = 16;

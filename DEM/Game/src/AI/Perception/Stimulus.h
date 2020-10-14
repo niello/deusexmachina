@@ -18,7 +18,7 @@ typedef CStimulusQT::CHandle CStimulusNode;
 
 class CStimulus: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(AI::CStimulus, Core::CObject);
 
 protected:
 

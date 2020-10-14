@@ -3,7 +3,6 @@
 
 namespace Render
 {
-RTTI_CLASS_IMPL(Render::CMeshData, Resources::CResourceObject);
 
 CMeshData::CMeshData() = default;
 

@@ -14,7 +14,7 @@ namespace Resources
 
 class CResourceObject: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Resources::CResourceObject, Core::CObject);
 
 public:
 

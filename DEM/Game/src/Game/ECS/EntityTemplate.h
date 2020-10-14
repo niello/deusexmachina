@@ -9,7 +9,7 @@ namespace DEM::Game
 
 class CEntityTemplate: public Resources::CResourceObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(DEM::Game::CEntityTemplate, Resources::CResourceObject);
 
 protected:
 

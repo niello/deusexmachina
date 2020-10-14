@@ -4,7 +4,6 @@
 
 namespace Frame
 {
-RTTI_CLASS_IMPL(Frame::CRenderableAttribute, Scene::CNodeAttribute);
 
 void CRenderableAttribute::UpdateInSPS(Scene::CSPS& SPS)
 {

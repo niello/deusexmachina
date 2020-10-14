@@ -11,7 +11,7 @@ namespace Core
 
 class CTimeSource: public CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Core::CTimeSource, Core::CObject);
 
 protected:
 

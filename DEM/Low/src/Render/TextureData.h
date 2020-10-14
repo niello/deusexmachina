@@ -17,7 +17,7 @@ namespace Render
 
 class CTextureData: public Resources::CResourceObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Render::CTextureData, Resources::CResourceObject);
 
 private:
 

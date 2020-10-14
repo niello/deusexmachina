@@ -6,7 +6,6 @@
 
 namespace Items
 {
-RTTI_CLASS_IMPL(Items::CItemManager, Core::CObject);
 __ImplementSingleton(Items::CItemManager);
 
 PItemTpl CItemManager::CreateItemTpl(CStrID ID, const Data::CParams& Params)

@@ -10,7 +10,7 @@ namespace Input
 
 class CInputConditionState: public Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Input::CInputConditionState, Core::CRTTIBaseClass);
 
 protected:
 

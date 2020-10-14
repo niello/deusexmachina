@@ -4,7 +4,6 @@
 
 namespace Render
 {
-RTTI_CLASS_IMPL(Render::CD3D9ConstantBuffer, Render::CConstantBuffer);
 
 CD3D9ConstantBuffer::CD3D9ConstantBuffer(PSM30ConstantBufferParam Meta, const CD3D9ConstantBuffer* pInitData, bool Temporary)
 {

@@ -12,7 +12,7 @@ namespace Render
 
 class CDepthStencilBuffer: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Render::CDepthStencilBuffer, Core::CObject);
 
 protected:
 

@@ -13,7 +13,7 @@ typedef Ptr<class CD3D11DriverFactory> PD3D11DriverFactory;
 
 class CD3D11DisplayDriver: public CDisplayDriver
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Render::CD3D11DisplayDriver, Render::CDisplayDriver);
 
 protected:
 

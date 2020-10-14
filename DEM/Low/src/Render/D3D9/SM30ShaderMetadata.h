@@ -52,7 +52,7 @@ public:
 
 class CSM30ConstantBufferParam : public IConstantBufferParam
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(CSM30ConstantBufferParam, IConstantBufferParam);
 
 public:
 

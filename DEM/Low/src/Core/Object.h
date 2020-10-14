@@ -12,9 +12,9 @@ namespace Core
 {
 typedef Ptr<class CObject> PObject;
 
-class CObject: public Data::CRefCounted, public CRTTIBaseClass
+class CObject : public Data::CRefCounted, public CRTTIBaseClass
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Core::CObject, Core::CRTTIBaseClass);
 
 #ifdef _DEBUG
 private:

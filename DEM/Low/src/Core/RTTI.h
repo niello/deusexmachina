@@ -10,23 +10,34 @@ namespace Core
 {
 class CRTTIBaseClass;
 
-class CRTTI
+class CRTTI final
 {
 private:
 
 	typedef CRTTIBaseClass* (*CFactoryFunc)(void* pParam);
 
+	const CRTTI* pParent;
+
 	std::string   Name;
 	Data::CFourCC FourCC;
 	UPTR          InstanceSize;
 
-	const CRTTI*  pParent;
 	CFactoryFunc  pFactoryFunc;
 
 public:
 
 
-	CRTTI(const char* pClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, UPTR InstSize);
+	// TODO: constexpr?
+	CRTTI(const char* pClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, UPTR InstSize)
+		: Name(pClassName)
+		, FourCC(ClassFourCC)
+		, InstanceSize(InstSize)
+		, pParent(pParentClass)
+		, pFactoryFunc(pFactoryCreator)
+	{
+		n_assert(pClassName && *pClassName);
+		n_assert(pParentClass != this);
+	}
 
 	CRTTIBaseClass*    CreateClassInstance(void* pParam = nullptr) const { return pFactoryFunc ? pFactoryFunc(pParam) : nullptr; }
 	//void*            AllocInstanceMemory() const { return n_malloc(InstanceSize); }
@@ -43,18 +54,6 @@ public:
 	bool operator ==(const CRTTI& Other) const { return this == &Other; }
 	bool operator !=(const CRTTI& Other) const { return this != &Other; }
 };
-
-inline CRTTI::CRTTI(const char* pClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, UPTR InstSize):
-	Name(pClassName),
-	FourCC(ClassFourCC),
-	InstanceSize(InstSize),
-	pParent(pParentClass),
-	pFactoryFunc(pFactoryCreator)
-{
-	n_assert(pClassName && *pClassName);
-	n_assert(pParentClass != this);
-}
-//---------------------------------------------------------------------
 
 inline bool CRTTI::IsDerivedFrom(const CRTTI& Other) const
 {
@@ -97,17 +96,11 @@ inline bool CRTTI::IsDerivedFrom(const char* pOtherName) const
 
 }
 
-#define RTTI_CLASS_DECL \
+#define RTTI_CLASS_DECL(Class, ParentClass) \
 public: \
-	static ::Core::CRTTI   RTTI; \
+	inline static const ::Core::CRTTI RTTI = ::Core::CRTTI(#Class, 0, nullptr, &ParentClass::RTTI, 0); \
 	virtual const ::Core::CRTTI* GetRTTI() const override { return &RTTI; } \
 private:
-
-#define RTTI_CLASS_IMPL(Class, ParentClass) \
-	::Core::CRTTI Class::RTTI(#Class, 0, nullptr, &ParentClass::RTTI, 0);
-
-#define RTTI_ROOT_CLASS_IMPL(Class) \
-	::Core::CRTTI Class::RTTI(#Class, 0, nullptr, nullptr, 0);
 
 //	void* operator new(size_t size) { return RTTI.AllocInstanceMemory(); };
 //	void operator delete(void* p) { RTTI.FreeInstanceMemory(p); };

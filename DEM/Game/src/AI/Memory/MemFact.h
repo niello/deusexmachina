@@ -15,7 +15,7 @@ namespace AI
 
 class CMemFact: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(AI::CMemFact, Core::CObject);
 
 protected:
 

@@ -10,7 +10,7 @@ using PTimelineTrack = Ptr<class CTimelineTrack>;
 
 class CTimelineTrack : public Resources::CResourceObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(DEM::Anim::CTimelineTrack, Resources::CResourceObject);
 
 public:
 

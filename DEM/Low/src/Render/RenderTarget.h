@@ -19,7 +19,7 @@ typedef Ptr<class CTexture> PTexture;
 
 class CRenderTarget: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Render::CRenderTarget, Core::CObject);
 
 protected:
 

@@ -22,7 +22,7 @@ typedef Ptr<class CGameLevel> PGameLevel;
 // TODO: make CGameWorldSystem instead? With ECS world, current level, other levels etc inside.
 class CGameWorld final : public ::Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(CGameWorld, ::Core::CRTTIBaseClass);
 
 protected:
 

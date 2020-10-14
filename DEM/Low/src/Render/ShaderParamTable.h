@@ -88,7 +88,7 @@ public:
 
 class IConstantBufferParam : public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(IConstantBufferParam, Core::CObject);
 
 public:
 

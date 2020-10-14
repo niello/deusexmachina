@@ -18,7 +18,7 @@ class CVideoPlayer;
 
 class CVideoServer: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Video::CVideoServer, Core::CObject);
 	__DeclareSingleton(CVideoServer);
 
 protected:

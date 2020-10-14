@@ -18,7 +18,7 @@ namespace AI
 
 class CGoal: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(AI::CGoal, Core::CObject);
 
 protected:
 

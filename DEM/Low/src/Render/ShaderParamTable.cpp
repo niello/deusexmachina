@@ -3,7 +3,6 @@
 
 namespace Render
 {
-RTTI_CLASS_IMPL(IConstantBufferParam, Core::CObject);
 
 const CShaderConstantParam CShaderConstantParam::Empty;
 

@@ -9,7 +9,7 @@ namespace Physics
 
 class CStaticCollider : public CPhysicsObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Physics::CStaticCollider, Physics::CPhysicsObject);
 
 protected:
 

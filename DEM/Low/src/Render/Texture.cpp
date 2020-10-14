@@ -3,7 +3,6 @@
 
 namespace Render
 {
-RTTI_CLASS_IMPL(Render::CTexture, Core::CObject);
 
 CTexture::CTexture() = default;
 

@@ -6,7 +6,6 @@
 
 namespace Frame
 {
-RTTI_CLASS_IMPL(Frame::CRenderPath, Core::CObject);
 
 CRenderPath::CRenderPath() {}
 

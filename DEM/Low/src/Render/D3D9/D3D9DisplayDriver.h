@@ -9,7 +9,7 @@ typedef Ptr<class CD3D9DriverFactory> PD3D9DriverFactory;
 
 class CD3D9DisplayDriver: public CDisplayDriver
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Render::CD3D9DisplayDriver, Render::CDisplayDriver);
 
 protected:
 

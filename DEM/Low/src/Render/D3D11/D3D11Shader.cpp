@@ -5,7 +5,6 @@
 
 namespace Render
 {
-RTTI_CLASS_IMPL(Render::CD3D11Shader, Render::CShader);
 
 CD3D11Shader::CD3D11Shader(ID3D11VertexShader* pShader, U32 InputSignatureID, PShaderParamTable Params)
 	: _pShader(pShader)

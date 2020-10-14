@@ -8,12 +8,11 @@
 
 namespace Render
 {
-RTTI_CLASS_IMPL(CUSMConstantBufferParam, IConstantBufferParam);
 
 template<typename T>
 static inline T* Cast(Core::CRTTIBaseClass& Value)
 {
-#if DEM_SHADER_META_DYNAMICType_VALIDATION
+#if DEM_SHADER_META_DYNAMIC_TYPE_VALIDATION
 	return Value.As<T>();
 #else
 	n_assert_dbg(Value.IsA<T>());

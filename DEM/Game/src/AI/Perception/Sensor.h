@@ -20,7 +20,7 @@ class CMemFact;
 
 class CSensor: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(AI::CSensor, Core::CObject);
 
 protected:
 

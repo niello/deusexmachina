@@ -2,7 +2,6 @@
 
 namespace Input
 {
-RTTI_CLASS_IMPL(Input::CInputConditionComboState, Input::CInputConditionState);
 
 void CInputConditionComboState::AddChild(PInputConditionState&& NewChild)
 {

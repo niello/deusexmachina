@@ -19,7 +19,6 @@
 
 namespace Debug
 {
-RTTI_CLASS_IMPL(Debug::CDebugServer, Core::CObject);
 __ImplementSingleton(Debug::CDebugServer);
 
 CDebugServer::CDebugServer()

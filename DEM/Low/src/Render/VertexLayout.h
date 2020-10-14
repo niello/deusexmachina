@@ -16,7 +16,7 @@ namespace Render
 
 class CVertexLayout: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Render::CVertexLayout, Core::CObject);
 
 protected:
 

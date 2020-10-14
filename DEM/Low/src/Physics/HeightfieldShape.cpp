@@ -3,7 +3,6 @@
 
 namespace Physics
 {
-RTTI_CLASS_IMPL(Physics::CHeightfieldShape, Physics::CCollisionShape);
 
 CHeightfieldShape::CHeightfieldShape(btHeightfieldTerrainShape* pShape, PHeightfieldData&& HeightfieldData, const vector3& Offset)
 	: CCollisionShape(pShape, Offset)

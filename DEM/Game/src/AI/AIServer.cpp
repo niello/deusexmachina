@@ -12,7 +12,6 @@
 
 namespace AI
 {
-RTTI_CLASS_IMPL(AI::CAIServer, Core::CObject);
 __ImplementSingleton(AI::CAIServer);
 
 CAIServer::CAIServer()

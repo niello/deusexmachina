@@ -15,7 +15,7 @@ namespace Render
 
 class CCDLODData: public Resources::CResourceObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Render::CCDLODData, Resources::CResourceObject);
 
 protected:
 

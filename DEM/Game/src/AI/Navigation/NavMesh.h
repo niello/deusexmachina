@@ -19,7 +19,7 @@ using CNavRegion = std::vector<dtPolyRef>;
 
 class CNavMesh : public Resources::CResourceObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(DEM::AI::CNavMesh, Resources::CResourceObject);
 
 protected:
 

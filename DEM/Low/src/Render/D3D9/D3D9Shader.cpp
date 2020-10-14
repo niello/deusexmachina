@@ -4,7 +4,6 @@
 
 namespace Render
 {
-RTTI_CLASS_IMPL(Render::CD3D9Shader, Render::CShader);
 
 CD3D9Shader::CD3D9Shader(IDirect3DVertexShader9* pShader, PShaderParamTable Params)
 	: _pShader(pShader)

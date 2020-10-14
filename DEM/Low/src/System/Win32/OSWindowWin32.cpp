@@ -12,9 +12,8 @@
 //!!!DUPLICATE!
 constexpr int ACCEL_TOGGLEFULLSCREEN = 1001;
 
-namespace DEM { namespace Sys
+namespace DEM::Sys
 {
-RTTI_CLASS_IMPL(DEM::Sys::COSWindowWin32, Core::CObject);
 
 COSWindowWin32::COSWindowWin32(HINSTANCE hInstance, ATOM aWndClass, COSWindowWin32* pParentWnd)
 {
@@ -408,6 +407,6 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 }
 //---------------------------------------------------------------------
 
-}}
+}
 
 #endif

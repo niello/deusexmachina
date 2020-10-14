@@ -21,7 +21,7 @@ class CGameSession;
 
 class CInteractionManager : public ::Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(CInteractionManager, ::Core::CRTTIBaseClass);
 
 protected:
 

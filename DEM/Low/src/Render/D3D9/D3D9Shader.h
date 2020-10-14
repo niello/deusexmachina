@@ -13,7 +13,7 @@ class CD3D9GPUDriver;
 
 class CD3D9Shader: public CShader
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Render::CD3D9Shader, Render::CShader);
 
 protected:
 

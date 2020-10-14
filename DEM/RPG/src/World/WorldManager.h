@@ -20,7 +20,7 @@ namespace RPG
 
 class CWorldManager: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(RPG::CWorldManager, Core::CObject);
 	__DeclareSingleton(CWorldManager);
 
 private:

@@ -15,7 +15,7 @@ typedef CHashTable<CStrID, PProperty> CPropertyStorage;
 
 class CProperty: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Game::CProperty, Core::CObject);
 
 protected:
 

@@ -2,7 +2,6 @@
 
 namespace AI
 {
-RTTI_CLASS_IMPL(AI::CMemFact, Core::CObject);
 
 bool CMemFact::Match(const CMemFact& Pattern, Data::CFlags FieldMask) const
 {

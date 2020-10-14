@@ -14,7 +14,7 @@ using PNodeMapping = Ptr<class CNodeMapping>;
 
 class CAnimationClip: public Resources::CResourceObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(DEM::Anim::CAnimationClip, Resources::CResourceObject);
 
 protected:
 

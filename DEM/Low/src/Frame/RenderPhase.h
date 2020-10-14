@@ -19,7 +19,7 @@ class CRenderPath;
 
 class CRenderPhase: public Core::CObject //???need? lives only in RP!
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Frame::CRenderPhase, Core::CObject);
 
 protected:
 

@@ -4,7 +4,6 @@
 
 namespace Input
 {
-RTTI_CLASS_IMPL(Input::CInputConditionComboEvent, Input::CInputConditionEvent);
 
 void CInputConditionComboEvent::AddChild(PInputConditionEvent&& NewChild)
 {

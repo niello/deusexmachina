@@ -14,7 +14,7 @@ typedef Ptr<class CApplicationState> PApplicationState;
 
 class CApplicationState : public ::Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(DEM::Core::CApplicationState, ::Core::CObject);
 
 protected:
 

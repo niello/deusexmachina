@@ -8,7 +8,7 @@ namespace Input
 
 class CInputConditionComboState: public CInputConditionState
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Input::CInputConditionComboState, Input::CInputConditionState);
 
 protected:
 

@@ -11,7 +11,6 @@ pDXGIOutput->GetParent(__uuidof(IDXGIAdapter1), (void**)&pAdapter);
 
 namespace Render
 {
-RTTI_CLASS_IMPL(Render::CD3D11DisplayDriver, Render::CDisplayDriver);
 
 CD3D11DisplayDriver::CD3D11DisplayDriver(CD3D11DriverFactory& DriverFactory)
 	: _DriverFactory(&DriverFactory)

@@ -4,7 +4,6 @@
 
 namespace DEM::Anim
 {
-RTTI_CLASS_IMPL(DEM::Anim::CAnimationClip, Resources::CResourceObject);
 
 CAnimationClip::CAnimationClip(acl::CompressedClip* pClip, float Duration, PNodeMapping&& NodeMapping)
 	: _pClip(pClip)

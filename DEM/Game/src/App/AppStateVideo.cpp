@@ -8,7 +8,6 @@
 
 namespace App
 {
-RTTI_CLASS_IMPL(App::CAppStateVideo, App::CStateHandler);
 
 void CAppStateVideo::OnStateEnter(CStrID PrevState, Data::PParams Params)
 {

@@ -26,7 +26,7 @@ namespace AI
 
 class CAIServer: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(AI::CAIServer, Core::CObject);
 	__DeclareSingleton(CAIServer);
 
 private:

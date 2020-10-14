@@ -8,7 +8,6 @@
 
 namespace Physics
 {
-RTTI_CLASS_IMPL(Physics::CStaticCollider, Physics::CPhysicsObject);
 
 CStaticCollider::CStaticCollider(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const matrix44& InitialTfm, const CPhysicsMaterial& Material)
 	: CPhysicsObject(CollisionGroupID, CollisionMaskID)

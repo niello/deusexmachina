@@ -2,7 +2,6 @@
 
 namespace Core
 {
-RTTI_CLASS_IMPL(Core::CObject, Core::CRTTIBaseClass);
 
 #ifdef _DEBUG
 CObject::CObjList CObject::List;

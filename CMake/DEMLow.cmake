@@ -333,16 +333,13 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/StaticPose.cpp
 	DEM/Low/src/Animation/StaticPoseClip.cpp
 	DEM/Low/src/Animation/TimelinePlayer.cpp
-	DEM/Low/src/Animation/TimelineTrack.cpp
 	DEM/Low/src/Animation/TimelineTrackGroup.cpp
 	DEM/Low/src/Animation/TimelineTrackLoaderANM.cpp
 	DEM/Low/src/Animation/TimelineTrackLoaderHRD.cpp
 	DEM/Low/src/Core/Application.cpp
-	DEM/Low/src/Core/ApplicationState.cpp
 	DEM/Low/src/Core/CoreServer.cpp
 	DEM/Low/src/Core/Factory.cpp
 	DEM/Low/src/Core/Object.cpp
-	DEM/Low/src/Core/RTTIBaseClass.cpp
 	DEM/Low/src/Core/TimeSource.cpp
 	DEM/Low/src/Data/Buffer.cpp
 	DEM/Low/src/Data/Data.cpp
@@ -362,7 +359,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Debug/LuaConsole.cpp
 	DEM/Low/src/Debug/RenderPhaseDebugDraw.cpp
 	DEM/Low/src/Debug/WatcherWindow.cpp
-	DEM/Low/src/Events/Event.cpp
 	DEM/Low/src/Events/EventDispatcher.cpp
 	DEM/Low/src/Events/EventServer.cpp
 	DEM/Low/src/Events/Subscription.cpp
@@ -389,14 +385,12 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Input/InputConditionComboEvent.cpp
 	DEM/Low/src/Input/InputConditionComboState.cpp
 	DEM/Low/src/Input/InputConditionDown.cpp
-	DEM/Low/src/Input/InputConditionEvent.cpp
 	DEM/Low/src/Input/InputConditionEventTemplate.cpp
 	DEM/Low/src/Input/InputConditionHold.cpp
 	DEM/Low/src/Input/InputConditionMove.cpp
 	DEM/Low/src/Input/InputConditionPressed.cpp
 	DEM/Low/src/Input/InputConditionReleased.cpp
 	DEM/Low/src/Input/InputConditionSequence.cpp
-	DEM/Low/src/Input/InputConditionState.cpp
 	DEM/Low/src/Input/InputConditionStateTemplate.cpp
 	DEM/Low/src/Input/InputConditionText.cpp
 	DEM/Low/src/Input/InputConditionUp.cpp
@@ -436,9 +430,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Physics/SceneNodeValidatePhysics.cpp
 	DEM/Low/src/Physics/StaticCollider.cpp
 	DEM/Low/src/Physics/StaticMeshShape.cpp
-	DEM/Low/src/Render/CDLODData.cpp
 	DEM/Low/src/Render/CDLODDataLoader.cpp
-	DEM/Low/src/Render/DepthStencilBuffer.cpp
 	DEM/Low/src/Render/Effect.cpp
 	DEM/Low/src/Render/GPUDriver.cpp
 	DEM/Low/src/Render/ImageUtils.cpp
@@ -452,10 +444,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/MeshLoaderNVX2.cpp
 	DEM/Low/src/Render/Model.cpp
 	DEM/Low/src/Render/ModelRenderer.cpp
-	DEM/Low/src/Render/Renderable.cpp
-	DEM/Low/src/Render/Renderer.cpp
 	DEM/Low/src/Render/RenderStateDesc.cpp
-	DEM/Low/src/Render/RenderTarget.cpp
 	DEM/Low/src/Render/SamplerDesc.cpp
 	DEM/Low/src/Render/ShaderConstantInfo.cpp
 	DEM/Low/src/Render/ShaderParamStorage.cpp
@@ -506,7 +495,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/D3D9/SM30ShaderMetadata.cpp
 	DEM/Low/src/Resources/Resource.cpp
 	DEM/Low/src/Resources/ResourceManager.cpp
-	DEM/Low/src/Resources/ResourceObject.cpp
 	DEM/Low/src/Scene/LODGroup.cpp
 	DEM/Low/src/Scene/NodeAttribute.cpp
 	DEM/Low/src/Scene/SceneNode.cpp

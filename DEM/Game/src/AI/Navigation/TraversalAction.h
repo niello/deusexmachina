@@ -20,7 +20,7 @@ class Navigate;
 
 class CTraversalAction : public ::Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(CTraversalAction, ::Core::CObject);
 
 public:
 

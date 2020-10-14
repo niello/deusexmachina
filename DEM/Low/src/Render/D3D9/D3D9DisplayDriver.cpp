@@ -5,7 +5,6 @@
 
 namespace Render
 {
-RTTI_CLASS_IMPL(Render::CD3D9DisplayDriver, Render::CDisplayDriver);
 
 CD3D9DisplayDriver::CD3D9DisplayDriver(CD3D9DriverFactory& DriverFactory)
 	: _DriverFactory(&DriverFactory)

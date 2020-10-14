@@ -18,7 +18,7 @@ struct CNavAgentComponent;
 
 class CNavAgentSettings : public Resources::CResourceObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(DEM::AI::CNavAgentSettings, Resources::CResourceObject);
 
 protected:
 

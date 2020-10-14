@@ -25,7 +25,7 @@ using PRenderer = std::unique_ptr<class IRenderer>;
 
 class IRenderer: public Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Render::IRenderer, Core::CRTTIBaseClass);
 
 public:
 

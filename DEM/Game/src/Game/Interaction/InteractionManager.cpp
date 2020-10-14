@@ -10,7 +10,6 @@
 
 namespace DEM::Game
 {
-RTTI_CLASS_IMPL(CInteractionManager, ::Core::CRTTIBaseClass);
 
 //!!!must be per-session, because uses Lua, which is per-session!
 //!!!if so, no need to store session inside an interaction context!

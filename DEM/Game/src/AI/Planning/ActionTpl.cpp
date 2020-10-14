@@ -2,7 +2,6 @@
 
 namespace AI
 {
-RTTI_CLASS_IMPL(AI::CActionTpl, Core::CObject);
 
 void CActionTpl::Init(Data::PParams Params)
 {

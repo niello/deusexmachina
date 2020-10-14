@@ -13,7 +13,7 @@ namespace Events
 
 class CEvent: public CEventBase
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Events::CEvent, Events::CEventBase);
 
 protected:
 

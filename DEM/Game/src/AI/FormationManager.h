@@ -11,7 +11,7 @@ class CGameSession;
 
 class CFormationManager : public ::Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(CFormationManager, ::Core::CRTTIBaseClass);
 
 protected:
 

@@ -26,7 +26,7 @@ class CGraphicsResourceManager;
 
 class CRenderableAttribute: public Scene::CNodeAttribute
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Frame::CRenderableAttribute, Scene::CNodeAttribute);
 
 protected:
 

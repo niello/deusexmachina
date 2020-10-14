@@ -8,7 +8,6 @@
 
 namespace Physics
 {
-RTTI_CLASS_IMPL(Physics::CPhysicsObject, Core::CObject);
 
 CPhysicsObject::CPhysicsObject(CStrID CollisionGroupID, CStrID CollisionMaskID)
 	: _CollisionGroupID(CollisionGroupID)

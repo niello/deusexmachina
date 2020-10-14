@@ -55,7 +55,7 @@ struct CSmartObjectStateInfo
 
 class CSmartObject : public Resources::CResourceObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(DEM::Game::CSmartObject, Resources::CResourceObject);
 
 protected:
 

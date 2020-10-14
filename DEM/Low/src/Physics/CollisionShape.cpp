@@ -6,7 +6,6 @@
 
 namespace Physics
 {
-RTTI_CLASS_IMPL(Physics::CCollisionShape, Resources::CResourceObject);
 
 CCollisionShape::CCollisionShape(btCollisionShape* pBtShape, const vector3& Offset)
 	: _pBtShape(pBtShape)

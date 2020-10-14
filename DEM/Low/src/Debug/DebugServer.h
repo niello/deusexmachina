@@ -13,7 +13,7 @@ namespace Debug
 
 class CDebugServer: public Core::CObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Debug::CDebugServer, Core::CObject);
 	__DeclareSingleton(CDebugServer);
 
 private:

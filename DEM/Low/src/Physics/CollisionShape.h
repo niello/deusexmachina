@@ -12,7 +12,7 @@ typedef Ptr<class CCollisionShape> PCollisionShape;
 
 class CCollisionShape : public Resources::CResourceObject
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Physics::CCollisionShape, Resources::CResourceObject);
 
 protected:
 

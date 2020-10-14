@@ -69,7 +69,7 @@ public:
 
 class CUSMConstantBufferParam : public IConstantBufferParam
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(CUSMConstantBufferParam, IConstantBufferParam);
 
 protected:
 

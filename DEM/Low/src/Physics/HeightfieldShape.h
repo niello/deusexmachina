@@ -12,7 +12,7 @@ typedef std::unique_ptr<char[]> PHeightfieldData;
 
 class CHeightfieldShape : public CCollisionShape
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(Physics::CHeightfieldShape, Physics::CCollisionShape);
 
 protected:
 

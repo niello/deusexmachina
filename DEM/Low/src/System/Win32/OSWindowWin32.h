@@ -8,13 +8,13 @@
 
 // Win32 operating system window implementation
 
-namespace DEM { namespace Sys
+namespace DEM::Sys
 {
 typedef Ptr<class COSWindowWin32> POSWindowWin32;
 
 class COSWindowWin32 : public COSWindow
 {
-	RTTI_CLASS_DECL;
+	RTTI_CLASS_DECL(DEM::Sys::COSWindowWin32, Core::CObject);
 
 protected:
 
@@ -81,6 +81,6 @@ inline bool COSWindowWin32::GetRelativeXY(int XAbs, int YAbs, float& XRel, float
 }
 //---------------------------------------------------------------------
 
-}}
+}
 
 #endif
