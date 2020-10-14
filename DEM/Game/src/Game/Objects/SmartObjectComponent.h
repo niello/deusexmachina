@@ -18,7 +18,7 @@ class SwitchSmartObjectState : public Events::CEventNative
 
 public:
 
-	// point, face direction (angle?), actor animation and/or state, object entity handle, object target state, bool force
+	// point, face direction min & max (angle?), actor animation and/or state, object entity handle, object target state, bool force
 
 	explicit SwitchSmartObjectState(/*const vector3& Destination, float Speed*/)/* : _Destination(Destination), _Speed(Speed)*/ {}
 };
