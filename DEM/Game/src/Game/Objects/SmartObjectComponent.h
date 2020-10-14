@@ -2,6 +2,7 @@
 #include <Resources/Resource.h>
 #include <Animation/TimelinePlayer.h>
 #include <Animation/TimelineTrack.h> // For inlined destructor CSmartObjectComponent -> CTimelinePlayer
+#include <Events/EventNative.h>
 #include <Data/Metadata.h>
 #include <Data/StringID.h>
 #include <sol/sol.hpp>
@@ -10,6 +11,19 @@
 
 namespace DEM::Game
 {
+
+class SwitchSmartObjectState : public Events::CEventNative
+{
+	NATIVE_EVENT_DECL;
+	//RTTI_CLASS_IMPL(SwitchSmartObjectState, Events::CEventNative);
+	//::Core::CRTTI Class::RTTI(#Class, 0, nullptr, &ParentClass::RTTI, 0);
+
+public:
+
+	// point, face direction (angle?), actor animation and/or state, object entity handle, object target state, bool force
+
+	explicit SwitchSmartObjectState(/*const vector3& Destination, float Speed*/)/* : _Destination(Destination), _Speed(Speed)*/ {}
+};
 
 struct CSmartObjectComponent
 {
