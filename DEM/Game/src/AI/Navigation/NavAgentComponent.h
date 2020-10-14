@@ -15,7 +15,7 @@ namespace DEM::AI
 
 class Navigate: public Events::CEventNative
 {
-	NATIVE_EVENT_DECL;
+	NATIVE_EVENT_DECL(Navigate, Events::CEventNative);
 
 public:
 

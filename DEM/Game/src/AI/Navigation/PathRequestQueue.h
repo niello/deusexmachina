@@ -24,26 +24,25 @@ protected:
 		float					EndPos[3];
 		dtPolyRef				StartRef;
 		dtPolyRef				EndRef;
-		dtPolyRef*				pPath;
+		dtPolyRef*				pPath = nullptr;
 		int						PathSize;
 		dtStatus				Status;
 		int						KeepAlive;
-		dtNavMeshQuery*			pNavQuery;
-		const dtQueryFilter*	pFilter;	///< TODO: This is potentially dangerous!
+		dtNavMeshQuery*			pNavQuery = nullptr;
+		const dtQueryFilter*	pFilter = nullptr;	///< TODO: This is potentially dangerous!
 	};
 
 	static const int MAX_QUEUE = 8;
 
 	CPathQuery	Queue[MAX_QUEUE];
-	U16			NextRequestID;
-	int			MaxPathSize;
-	int			QueueHead;
+	U16			NextRequestID = 1;
+	int			MaxPathSize = 0;
+	int			QueueHead = 0;
 	
 	void		Purge();
 
 public:
 
-	CPathRequestQueue();
 	~CPathRequestQueue() { Purge(); }
 
 	bool		Init(int MaxPath);
@@ -54,12 +53,5 @@ public:
 	dtStatus	GetPathResult(U16 RequestID, dtPolyRef* pOutPath, int& OutSize, int MaxPath);
 	int			GetPathSize(U16 RequestID);
 };
-
-inline CPathRequestQueue::CPathRequestQueue(): NextRequestID(1)
-{
-	for (int i = 0; i < MAX_QUEUE; ++i)
-		Queue[i].pPath = nullptr;
-}
-//---------------------------------------------------------------------
 
 }

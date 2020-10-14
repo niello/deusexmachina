@@ -9,7 +9,7 @@ namespace Event
 
 class OSWindowResized: public Events::CEventNative
 {
-	NATIVE_EVENT_DECL;
+	NATIVE_EVENT_DECL(Event::OSWindowResized, Events::CEventNative);
 
 public:
 
@@ -30,7 +30,7 @@ public:
 
 class InputDeviceArrived: public Events::CEventNative
 {
-	NATIVE_EVENT_DECL;
+	NATIVE_EVENT_DECL(Event::InputDeviceArrived, Events::CEventNative);
 
 public:
 
@@ -45,7 +45,7 @@ public:
 
 class InputDeviceRemoved: public Events::CEventNative
 {
-	NATIVE_EVENT_DECL;
+	NATIVE_EVENT_DECL(Event::InputDeviceRemoved, Events::CEventNative);
 
 public:
 

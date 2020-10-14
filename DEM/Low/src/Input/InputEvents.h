@@ -10,7 +10,7 @@ namespace Event
 
 class AxisMove: public Events::CEventNative
 {
-	NATIVE_EVENT_DECL;
+	NATIVE_EVENT_DECL(Event::AxisMove, Events::CEventNative);
 
 public:
 
@@ -29,7 +29,7 @@ public:
 
 class ButtonDown: public Events::CEventNative
 {
-	NATIVE_EVENT_DECL;
+	NATIVE_EVENT_DECL(Event::ButtonDown, Events::CEventNative);
 
 public:
 
@@ -46,7 +46,7 @@ public:
 
 class ButtonUp: public Events::CEventNative
 {
-	NATIVE_EVENT_DECL;
+	NATIVE_EVENT_DECL(Event::ButtonUp, Events::CEventNative);
 
 public:
 
@@ -63,7 +63,7 @@ public:
 
 class TextInput: public Events::CEventNative
 {
-	NATIVE_EVENT_DECL;
+	NATIVE_EVENT_DECL(Event::TextInput, Events::CEventNative);
 
 public:
 

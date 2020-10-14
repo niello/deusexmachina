@@ -102,7 +102,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/Movement/CharacterControlSystem.cpp
 	DEM/Game/src/AI/Movement/SteerAction.cpp
 	DEM/Game/src/AI/Movement/Memory/MemFactObstacle.cpp
-	DEM/Game/src/AI/Navigation/NavAgentComponent.cpp
 	DEM/Game/src/AI/Navigation/NavAgentSettings.cpp
 	DEM/Game/src/AI/Navigation/NavAgentSettingsLoaderHRD.cpp
 	DEM/Game/src/AI/Navigation/NavigationSystem.cpp
@@ -153,7 +152,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Physics/PropTriggerSI.cpp
 	DEM/Game/src/Scene/PropSceneNode.cpp
 	DEM/Game/src/Scene/PropSceneNodeSI.cpp
-	DEM/Game/src/Scene/Events/SetTransform.cpp
 	DEM/Game/src/Scripting/EntityScriptObject.cpp
 	DEM/Game/src/Scripting/PropScriptable.cpp
 	DEM/Game/src/Scripting/ScriptObjectSIEx.cpp

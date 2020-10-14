@@ -8,11 +8,13 @@ namespace Core
 
 class CRTTIBaseClass
 {
-	RTTI_CLASS_DECL; // virtual methods inside
-
 public:
 
+	static ::Core::CRTTI RTTI;
+
 	virtual ~CRTTIBaseClass() = default;
+
+	virtual const CRTTI* GetRTTI() const { return &RTTI; }
 
 	bool               IsExactly(const CRTTI& RTTI) const { return GetRTTI() == &RTTI; }
 	bool               IsExactly(const char* pName) const { return GetRTTI()->GetName() == pName; }

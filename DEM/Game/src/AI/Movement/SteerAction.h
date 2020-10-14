@@ -10,7 +10,7 @@ namespace DEM::AI
 
 class Steer : public Events::CEventNative
 {
-	NATIVE_EVENT_DECL;
+	NATIVE_EVENT_DECL(Steer, Events::CEventNative);
 
 public:
 
@@ -38,7 +38,7 @@ public:
 
 class Turn : public Events::CEventNative
 {
-	NATIVE_EVENT_DECL;
+	NATIVE_EVENT_DECL(Turn, Events::CEventNative);
 
 public:
 

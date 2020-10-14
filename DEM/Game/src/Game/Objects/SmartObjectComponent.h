@@ -14,9 +14,7 @@ namespace DEM::Game
 
 class SwitchSmartObjectState : public Events::CEventNative
 {
-	NATIVE_EVENT_DECL;
-	//RTTI_CLASS_IMPL(SwitchSmartObjectState, Events::CEventNative);
-	//::Core::CRTTI Class::RTTI(#Class, 0, nullptr, &ParentClass::RTTI, 0);
+	NATIVE_EVENT_DECL(SwitchSmartObjectState, Events::CEventNative);
 
 public:
 

@@ -59,7 +59,6 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/AI/Stimuli/StimulusVisible.cpp
 	DEM/RPG/src/Combat/Dmg/DamageEffect.cpp
 	DEM/RPG/src/Combat/Dmg/DamageSource.cpp
-	DEM/RPG/src/Combat/Event/ObjDamageDone.cpp
 	DEM/RPG/src/Combat/Prop/PropDestructible.cpp
 	DEM/RPG/src/Combat/Prop/PropWeapon.cpp
 	DEM/RPG/src/Dlg/DialogueManager.cpp

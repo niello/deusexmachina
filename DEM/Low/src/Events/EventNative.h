@@ -6,11 +6,11 @@
 // ones for the cost of additional class declaration and no runtime flexibility.
 
 // NB: this MUST be declared in all native event classes!
-#define NATIVE_EVENT_DECL \
+#define NATIVE_EVENT_DECL(Class, ParentClass) \
 public: \
-	static ::Core::CRTTI     RTTI; \
-	virtual ::Core::CRTTI*   GetRTTI() const { return &RTTI; } \
-	virtual Events::CEventID GetID() const { return &RTTI; } \
+	inline static const ::Core::CRTTI RTTI = ::Core::CRTTI(#Class, 0, nullptr, &ParentClass::RTTI, 0); \
+	virtual const ::Core::CRTTI* GetRTTI() const override { return &RTTI; } \
+	virtual Events::CEventID     GetID() const override { return &RTTI; } \
 private:
 
 namespace Events
@@ -18,7 +18,7 @@ namespace Events
 
 class CEventNative: public CEventBase
 {
-	NATIVE_EVENT_DECL;
+	NATIVE_EVENT_DECL(CEventNative, Events::CEventBase);
 };
 
 }

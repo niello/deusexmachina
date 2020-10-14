@@ -12,7 +12,7 @@
 
 namespace AI
 {
-typedef Data::CKeyList<Core::CRTTI*, class CStimulus*> CStimulusListSet;
+typedef Data::CKeyList<const Core::CRTTI*, class CStimulus*> CStimulusListSet;
 typedef Data::CQuadTree<class CStimulus*, CStimulusListSet> CStimulusQT;
 typedef CStimulusQT::CHandle CStimulusNode;
 
@@ -44,7 +44,7 @@ public:
 	bool			IsActive() const { return pQTNode != nullptr; }
 	
 	// For CKeyList
-	Core::CRTTI*	GetKey() const { return GetRTTI(); }
+	const Core::CRTTI* GetKey() const { return GetRTTI(); }
 };
 
 typedef Ptr<CStimulus> PStimulus;

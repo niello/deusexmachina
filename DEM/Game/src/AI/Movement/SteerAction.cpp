@@ -6,8 +6,6 @@
 
 namespace DEM::AI
 {
-RTTI_CLASS_IMPL(Steer, Events::CEventNative);
-RTTI_CLASS_IMPL(Turn, Events::CEventNative);
 FACTORY_CLASS_IMPL(DEM::AI::CSteerAction, 'STRA', CTraversalAction);
 
 static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue, const Navigate& NavAction,

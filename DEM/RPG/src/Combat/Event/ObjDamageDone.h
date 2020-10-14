@@ -12,7 +12,7 @@ namespace Event
 
 class ObjDamageDone: public Events::CEventNative
 {
-	NATIVE_EVENT_DECL;
+	NATIVE_EVENT_DECL(Event::ObjDamageDone, Events::CEventNative);
 
 public:
 

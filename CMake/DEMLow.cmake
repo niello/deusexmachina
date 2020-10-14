@@ -364,7 +364,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Debug/WatcherWindow.cpp
 	DEM/Low/src/Events/Event.cpp
 	DEM/Low/src/Events/EventDispatcher.cpp
-	DEM/Low/src/Events/EventNative.cpp
 	DEM/Low/src/Events/EventServer.cpp
 	DEM/Low/src/Events/Subscription.cpp
 	DEM/Low/src/Frame/AmbientLightAttribute.cpp
@@ -401,7 +400,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Input/InputConditionStateTemplate.cpp
 	DEM/Low/src/Input/InputConditionText.cpp
 	DEM/Low/src/Input/InputConditionUp.cpp
-	DEM/Low/src/Input/InputEvents.cpp
 	DEM/Low/src/Input/InputTranslator.cpp
 	DEM/Low/src/IO/BinaryReader.cpp
 	DEM/Low/src/IO/BinaryWriter.cpp
@@ -523,7 +521,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/SI/SITime.cpp
 	DEM/Low/src/System/Memory.cpp
 	DEM/Low/src/System/System.cpp
-	DEM/Low/src/System/SystemEvents.cpp
 	DEM/Low/src/System/Win32/KeyboardWin32.cpp
 	DEM/Low/src/System/Win32/MouseWin32.cpp
 	DEM/Low/src/System/Win32/OSFileSystemWin32.cpp

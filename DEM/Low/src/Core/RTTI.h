@@ -100,7 +100,7 @@ inline bool CRTTI::IsDerivedFrom(const char* pOtherName) const
 #define RTTI_CLASS_DECL \
 public: \
 	static ::Core::CRTTI   RTTI; \
-	virtual ::Core::CRTTI* GetRTTI() const { return &RTTI; } \
+	virtual const ::Core::CRTTI* GetRTTI() const override { return &RTTI; } \
 private:
 
 #define RTTI_CLASS_IMPL(Class, ParentClass) \
@@ -115,7 +115,7 @@ private:
 public: \
 	static ::Core::CRTTI			RTTI; \
 	static const bool				Factory_Registered; \
-	virtual ::Core::CRTTI*			GetRTTI() const { return &RTTI; } \
+	virtual const ::Core::CRTTI*	GetRTTI() const override { return &RTTI; } \
 	static ::Core::CRTTIBaseClass*	CreateClassInstance(void* pParam = nullptr); \
 	static bool						RegisterInFactory(); \
 	static void						ForceFactoryRegistration(); \
