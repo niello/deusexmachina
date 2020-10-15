@@ -14,6 +14,13 @@ void InteractWithSmartObjects(CGameWorld& World)
 		auto pAction = Queue.FindActive<SwitchSmartObjectState>();
 		if (!pAction) return;
 
+		//!!!???only if no sub-action?!
+		//const float ActorRadius = 0.f; // TODO: fill!
+		// TODO: fill Action.Pos with curr actor pos!
+		// TODO: actor anim and/or state
+		//???!!!need interaction ID in params?!
+		//if (!pSOAsset->GetInteractionParams(CStrID(_Name.c_str()), ActorRadius, pAction->Pos, pAction->FaceDir)) return false;
+
 		// if not the same poly, add or update Navigate (can try to raycast but require all polys on the way to be Steer-able
 		// if not the same position (what tolerance, from Steer?), add or update Steer
 		// if not required facing, add or update Face

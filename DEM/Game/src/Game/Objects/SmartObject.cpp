@@ -100,6 +100,12 @@ bool CSmartObject::GetInteractionParams(CStrID ID, float ActorRadius, vector3& A
 	// 2. Each point has min & max radius
 	// 3. Sector definition or 'same side' detection to distinguish between 'push' and 'pull' sides (different actor animations)
 	// 4. Face direction: exact, unchanged, cone from-to?
+
+	// Use only max R, navigate directly to the point (or to closest valid point on cached touched polys).
+	// Since polys are cached and a valid one is found, we are guaranteed to have an appropriate point.
+	// Navigation + regular IsInInteractionZone checks will do the work.
+	// Drawback: if too close to the object, will not move apart, minR and additional logic required for this
+
 	FaceDir.reset();
 	return true;
 }
