@@ -11,9 +11,6 @@ void InteractWithSmartObjects(CGameWorld& World)
 	World.ForEachEntityWith<CActionQueueComponent>(
 		[&World](auto EntityID, auto& Entity, CActionQueueComponent& Queue)
 	{
-		//CSmartObject* pSmart = SOComponent.Asset->GetObject<CSmartObject>();
-		//if (!pSmart) return;
-
 		auto pAction = Queue.FindActive<SwitchSmartObjectState>();
 		if (!pAction) return;
 
@@ -21,6 +18,14 @@ void InteractWithSmartObjects(CGameWorld& World)
 		// if not the same position (what tolerance, from Steer?), add or update Steer
 		// if not required facing, add or update Face
 		// if facing is OK too, start actor animation and request smart object state switching
+
+		//CSmartObject* pSmart = SOComponent.Asset->GetObject<CSmartObject>();
+		//if (!pSmart) return;
+
+		auto pSOComponent = World.FindComponent<CSmartObjectComponent>(pAction->Object);
+		if (!pSOComponent) return;
+		pSOComponent->RequestedState = pAction->ObjectState;
+		pSOComponent->Force = pAction->ForceObjectState;
 	});
 }
 //---------------------------------------------------------------------

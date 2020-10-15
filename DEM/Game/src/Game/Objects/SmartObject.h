@@ -1,7 +1,9 @@
 #pragma once
 #include <Resources/Resource.h>
+#include <Math/Vector3.h>
 #include <sol/forward.hpp>
 #include <vector>
+#include <optional>
 
 // Smart object asset describes a set of states, transitions between them,
 // and interactions available over the object under different conditions.
@@ -79,7 +81,9 @@ public:
 
 	const CSmartObjectStateInfo*      FindState(CStrID ID) const;
 	const CSmartObjectTransitionInfo* FindTransition(CStrID FromID, CStrID ToID) const;
-	bool                              HasInteraction(CStrID ID) const;
+
+	bool          HasInteraction(CStrID ID) const;
+	bool          GetInteractionParams(CStrID ID, float ActorRadius, vector3& ActorPos, std::optional<float>& FaceDir /*actor anim/state*/) const;
 
 	sol::function GetScriptFunction(sol::state& Lua, std::string_view Name) const;
 	CStrID        GetID() const { return _ID; }

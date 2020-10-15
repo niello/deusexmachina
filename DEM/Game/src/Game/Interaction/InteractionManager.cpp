@@ -83,7 +83,7 @@ bool CInteractionManager::RegisterAbility(CStrID ID, const Data::CParams& Params
 					const std::string Condition = (*pActionDesc)->Get(CStrID("Condition"), CString::Empty);
 					if (!Condition.empty())
 					{
-						auto LoadedCondition = _Lua.load("local Target = ...; return " + Condition, (ID.CStr() + ActID).CStr());
+						auto LoadedCondition = _Lua.load("local Actors, Target = ...; return " + Condition, (ID.CStr() + ActID).CStr());
 						if (LoadedCondition.valid()) ConditionFunc = LoadedCondition;
 					}
 
@@ -190,7 +190,7 @@ const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const so
 	// Check additional condition
 	if (Condition)
 	{
-		auto Result = Condition(Context.Target);
+		auto Result = Condition(Context.SelectedActors, Context.Target);
 		if (!Result.valid())
 		{
 			sol::error Error = Result;

@@ -92,6 +92,19 @@ bool CSmartObject::HasInteraction(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
+bool CSmartObject::GetInteractionParams(CStrID ID, float ActorRadius, vector3& ActorPos, std::optional<float>& FaceDir /*actor anim/state*/) const
+{
+	// FIXME: implement data-driven logic!
+	// For door need:
+	// 1. Multiple points
+	// 2. Each point has min & max radius
+	// 3. Sector definition or 'same side' detection to distinguish between 'push' and 'pull' sides (different actor animations)
+	// 4. Face direction: exact, unchanged, cone from-to?
+	FaceDir.reset();
+	return true;
+}
+//---------------------------------------------------------------------
+
 bool CSmartObject::InitScript(sol::state& Lua)
 {
 	if (_ScriptSource.empty() || !_ID) return true;
