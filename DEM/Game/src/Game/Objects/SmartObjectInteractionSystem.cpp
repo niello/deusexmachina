@@ -14,7 +14,29 @@ void InteractWithSmartObjects(CGameWorld& World)
 		auto pAction = Queue.FindActive<SwitchSmartObjectState>();
 		if (!pAction) return;
 
-		//!!!???only if no sub-action?!
+		// Check if action or sub-action is stopped
+		if (pQueue->GetStatus() == DEM::Game::EActionStatus::Failed || pQueue->GetStatus() == DEM::Game::EActionStatus::Cancelled)
+		{
+			// If sub-action failed or cancelled, finish with the same result
+			// TODO: improve API!
+			Queue.FinalizeActiveAction(*pAction, pQueue->GetStatus());
+			Queue.RemoveAction(*pAction);
+			return;
+		}
+
+		// Check if this action succeeded
+		if (pQueue->GetActiveStackTop() == pAction && pQueue->GetStatus() == DEM::Game::EActionStatus::Succeeded)
+		{
+			Queue.RemoveAction(*pAction);
+			return;
+		}
+
+		// If we didn't finish but no sub-action is active, try to generate it
+		if (pQueue->GetActiveStackTop() == pAction || pQueue->GetStatus() == DEM::Game::EActionStatus::Succeeded)
+		{
+			//
+		}
+
 		//const float ActorRadius = 0.f; // TODO: fill!
 		// TODO: fill Action.Pos with curr actor pos!
 		// TODO: actor anim and/or state
