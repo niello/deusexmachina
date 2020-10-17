@@ -6,6 +6,9 @@
 #include <BulletDynamics/Dynamics/btRigidBody.h>
 #include <BulletCollision/CollisionShapes/btCollisionShape.h>
 
+//!!!DBG TMP!
+#include <Math/TransformSRT.h>
+
 namespace Physics
 {
 
@@ -88,7 +91,13 @@ void CMovableCollider::SetTransform(const matrix44& Tfm)
 {
 	_pBtObject->forceActivationState(DISABLE_DEACTIVATION);
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
-	static_cast<CKinematicMotionState*>(static_cast<btRigidBody*>(_pBtObject)->getMotionState())->SetTransform(Tfm, pShape->GetOffset());
+
+	//!!!DBG TMP!
+	::Math::CTransformSRT SRT(Tfm);
+	_pBtObject->getCollisionShape()->setLocalScaling(VectorToBtVector(SRT.Scale));
+	const vector3 Offset = { pShape->GetOffset().x * SRT.Scale.x, pShape->GetOffset().y * SRT.Scale.y, pShape->GetOffset().z * SRT.Scale.z };
+
+	static_cast<CKinematicMotionState*>(static_cast<btRigidBody*>(_pBtObject)->getMotionState())->SetTransform(Tfm, Offset);
 }
 //---------------------------------------------------------------------
 
