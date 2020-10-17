@@ -2,6 +2,7 @@
 #include <Data.h> 
 #include <algorithm> 
 #include <fstream>
+#include <vector>
 
 // Utility functions and data structures
 
@@ -51,12 +52,6 @@ bool ReadAllFile(const char* pPath, std::vector<T>& Out, bool Binary = true)
 	Out.assign(std::istreambuf_iterator<T>(File), std::istreambuf_iterator<T>());
 
 	return !File.bad();
-}
-//---------------------------------------------------------------------
-
-inline bool CompareFloat(float a, float b, float e = std::numeric_limits<float>().epsilon())
-{
-	return std::fabsf(a - b) <= e;
 }
 //---------------------------------------------------------------------
 

@@ -198,15 +198,15 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 	// Save mesh groups (always 1 LOD now, may change later)
 
 	// TODO: test if index offset is needed, each submesh starts from zero now
-	for (const auto& Pair : SubMeshes)
+	for (const auto& [SubMeshID, SubMesh] : SubMeshes)
 	{
 		WriteStream<uint32_t>(File, 0);                                            // First vertex
-		WriteStream(File, static_cast<uint32_t>(Pair.second.Vertices.size()));     // Vertex count
+		WriteStream(File, static_cast<uint32_t>(SubMesh.Vertices.size()));     // Vertex count
 		WriteStream<uint32_t>(File, 0);                                            // First index
-		WriteStream(File, static_cast<uint32_t>(Pair.second.Indices.size()));      // Index count
+		WriteStream(File, static_cast<uint32_t>(SubMesh.Indices.size()));      // Index count
 		WriteStream(File, static_cast<uint8_t>(EPrimitiveTopology::Prim_TriList));
-		WriteStream(File, Pair.second.AABBMin);
-		WriteStream(File, Pair.second.AABBMax);
+		WriteStream(File, SubMesh.AABB.Min);
+		WriteStream(File, SubMesh.AABB.Max);
 	}
 
 	// Align vertex and index data offsets to 16 bytes. It should speed up loading from memory-mapped file.
@@ -421,13 +421,14 @@ bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name
 	const Data::CParams* pTfmParams;
 	if (ParamsUtils::TryGetParam(pTfmParams, TaskParams, "Transform"))
 	{
-		vector4 Value;
-		if (ParamsUtils::TryGetParam(Value, *pTfmParams, "S"))
-			Result.emplace_back(CStrID("Scale"), Value);
-		if (ParamsUtils::TryGetParam(Value, *pTfmParams, "R"))
-			Result.emplace_back(CStrID("Rotation"), Value);
-		if (ParamsUtils::TryGetParam(Value, *pTfmParams, "T"))
-			Result.emplace_back(CStrID("Translation"), Value);
+		float3 Vec3Value;
+		float4 Vec4Value;
+		if (ParamsUtils::TryGetParam(Vec3Value, *pTfmParams, "S"))
+			Result.emplace_back(CStrID("Scale"), Vec3Value);
+		if (ParamsUtils::TryGetParam(Vec4Value, *pTfmParams, "R"))
+			Result.emplace_back(CStrID("Rotation"), Vec4Value);
+		if (ParamsUtils::TryGetParam(Vec3Value, *pTfmParams, "T"))
+			Result.emplace_back(CStrID("Translation"), Vec3Value);
 	}
 
 	//if (Nodes.size() == 1)

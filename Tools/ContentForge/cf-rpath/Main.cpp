@@ -166,7 +166,7 @@ public:
 
 		struct CRenderTarget
 		{
-			vector4 ClearValue;
+			float4 ClearValue;
 		};
 
 		std::map<CStrID, CRenderTarget> RenderTargets;
@@ -190,7 +190,7 @@ public:
 
 				const auto& RTDesc = RTPair.second.GetValue<Data::CParams>();
 				CRenderTarget RT;
-				RT.ClearValue = ParamsUtils::GetParam(RTDesc, "ClearValue", vector4{ 0.f, 0.f, 0.f, 1.f });
+				RT.ClearValue = ParamsUtils::GetParam(RTDesc, "ClearValue", float4{ 0.f, 0.f, 0.f, 1.f });
 				RenderTargets.emplace(RTPair.first, std::move(RT));
 			}
 		}

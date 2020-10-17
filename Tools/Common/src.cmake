@@ -12,6 +12,7 @@ set(DEM_TOOLS_COMMON_HEADERS
 	Type.h
 	Utils.h
 	ValueTable.h
+	Vectors.h
 	Render/RenderEnums.h
 	Render/ShaderMetaCommon.h
 	Render/SM30ShaderMeta.h

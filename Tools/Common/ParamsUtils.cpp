@@ -129,9 +129,20 @@ static bool WriteDataAsHRD(std::ostream& Stream, const Data::CData& Value, size_
 		WriteText(Stream, Value.GetValue<CStrID>());
 		WriteText(Stream, "'");
 	}
-	else if (Value.IsA<vector4>())
+	else if (Value.IsA<float3>())
 	{
-		const vector4& V = Value.GetValue<vector4>();
+		const float3& V = Value.GetValue<float3>();
+		WriteText(Stream, "(");
+		WriteText(Stream, ToStringNoTrailingZeroes(V.x));
+		WriteText(Stream, ", ");
+		WriteText(Stream, ToStringNoTrailingZeroes(V.y));
+		WriteText(Stream, ", ");
+		WriteText(Stream, ToStringNoTrailingZeroes(V.z));
+		WriteText(Stream, ")");
+	}
+	else if (Value.IsA<float4>())
+	{
+		const float4& V = Value.GetValue<float4>();
 		WriteText(Stream, "(");
 		WriteText(Stream, ToStringNoTrailingZeroes(V.x));
 		WriteText(Stream, ", ");
@@ -258,41 +269,47 @@ static bool WriteDataAsOfType(std::ostream& Stream, const Data::CData& Value, in
 	{
 		WriteStream(Stream, Value);
 	}
-	else
+	else if (Value.GetTypeID() != TypeID)
 	{
-		if (Value.GetTypeID() != TypeID)
-		{
-			// Conversion cases //!!!Need CType conversion!
-			if (TypeID == DATA_TYPE_ID(float) && Value.IsA<int>())
-				WriteStream(Stream, static_cast<float>(Value.GetValue<int>()));
-			else if (TypeID == DATA_TYPE_ID(int) && Value.IsA<float>())
-				WriteStream(Stream, static_cast<int>(Value.GetValue<float>()));
-			else if (TypeID == DATA_TYPE_ID(int) && Value.IsA<bool>())
-				WriteStream(Stream, static_cast<int>(Value.GetValue<bool>()));
-			else if (TypeID == DATA_TYPE_ID(CStrID) && Value.IsA<std::string>())
-				WriteStream(Stream, Value.GetValue<std::string>());
-			else if (TypeID == DATA_TYPE_ID(std::string) && Value.IsA<CStrID>())
-				WriteStream(Stream, Value.GetValue<CStrID>());
-			else return false;
-		}
-
-		if (TypeID == DATA_TYPE_ID(bool))
-			WriteStream(Stream, Value.GetValue<bool>());
-		else if (TypeID == DATA_TYPE_ID(int))
-			WriteStream(Stream, Value.GetValue<int>());
-		else if (TypeID == DATA_TYPE_ID(float))
-			WriteStream(Stream, Value.GetValue<float>());
-		else if (TypeID == DATA_TYPE_ID(std::string))
+		// Conversion cases //!!!Need CType conversion!
+		if (TypeID == DATA_TYPE_ID(float) && Value.IsA<int>())
+			WriteStream(Stream, static_cast<float>(Value.GetValue<int>()));
+		else if (TypeID == DATA_TYPE_ID(int) && Value.IsA<float>())
+			WriteStream(Stream, static_cast<int>(Value.GetValue<float>()));
+		else if (TypeID == DATA_TYPE_ID(int) && Value.IsA<bool>())
+			WriteStream(Stream, static_cast<int>(Value.GetValue<bool>()));
+		else if (TypeID == DATA_TYPE_ID(CStrID) && Value.IsA<std::string>())
 			WriteStream(Stream, Value.GetValue<std::string>());
-		else if (TypeID == DATA_TYPE_ID(CStrID))
+		else if (TypeID == DATA_TYPE_ID(std::string) && Value.IsA<CStrID>())
 			WriteStream(Stream, Value.GetValue<CStrID>());
-		else if (TypeID == DATA_TYPE_ID(vector4))
+		else if (TypeID == DATA_TYPE_ID(float4) && Value.IsA<float3>())
 		{
-			assert(ComponentCount >= 1 && ComponentCount <= 4);
-			Stream.write(reinterpret_cast<const char*>(&Value.GetValue<vector4>().x), ComponentCount * sizeof(float));
+			assert(ComponentCount >= 1 && ComponentCount <= 3);
+			Stream.write(reinterpret_cast<const char*>(&Value.GetValue<float3>().x), ComponentCount * sizeof(float));
 		}
 		else return false;
 	}
+	else if (TypeID == DATA_TYPE_ID(bool))
+		WriteStream(Stream, Value.GetValue<bool>());
+	else if (TypeID == DATA_TYPE_ID(int))
+		WriteStream(Stream, Value.GetValue<int>());
+	else if (TypeID == DATA_TYPE_ID(float))
+		WriteStream(Stream, Value.GetValue<float>());
+	else if (TypeID == DATA_TYPE_ID(std::string))
+		WriteStream(Stream, Value.GetValue<std::string>());
+	else if (TypeID == DATA_TYPE_ID(CStrID))
+		WriteStream(Stream, Value.GetValue<CStrID>());
+	else if (TypeID == DATA_TYPE_ID(float3))
+	{
+		assert(ComponentCount >= 1 && ComponentCount <= 3);
+		Stream.write(reinterpret_cast<const char*>(&Value.GetValue<float3>().x), ComponentCount * sizeof(float));
+	}
+	else if (TypeID == DATA_TYPE_ID(float4))
+	{
+		assert(ComponentCount >= 1 && ComponentCount <= 4);
+		Stream.write(reinterpret_cast<const char*>(&Value.GetValue<float4>().x), ComponentCount * sizeof(float));
+	}
+	else return false;
 
 	return true;
 }

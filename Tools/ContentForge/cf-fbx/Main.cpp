@@ -452,11 +452,11 @@ public:
 			constexpr float3 Zero3(0.f, 0.f, 0.f);
 			constexpr float4 IdentityQuat(0.f, 0.f, 0.f, 1.f);
 			if (Scaling != Unit3)
-				NodeSection.emplace_back(sidScale, vector4(Scaling.v, 3));
+				NodeSection.emplace_back(sidScale, Scaling);
 			if (Rotation != IdentityQuat)
-				NodeSection.emplace_back(sidRotation, vector4(Rotation.v, 4));
+				NodeSection.emplace_back(sidRotation, Rotation);
 			if (Translation != Zero3)
-				NodeSection.emplace_back(sidTranslation, vector4(Translation.v, 3));
+				NodeSection.emplace_back(sidTranslation, Translation);
 		}
 
 		// Process children
@@ -976,7 +976,7 @@ public:
 		Data::CParams Attribute;
 		Attribute.emplace_back(CStrID("Class"), 'LGTA'); //std::string("Frame::CLightAttribute"));
 		Attribute.emplace_back(CStrID("LightType"), LightType);
-		Attribute.emplace_back(CStrID("Color"), vector4(Color.v, 3));
+		Attribute.emplace_back(CStrID("Color"), Color);
 		Attribute.emplace_back(CStrID("Intensity"), Intensity);
 
 		if (pLight->CastShadows.Get())

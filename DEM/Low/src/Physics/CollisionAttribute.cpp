@@ -87,13 +87,15 @@ bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 		if (!Shape) FAIL;
 
 		// Also can create bullet kinematic body right here without CMovableCollider wrapper, think of it
+		const matrix44& Tfm = _pNode->IsWorldTransformDirty() ? matrix44::Identity : _pNode->GetWorldMatrix();
 		if (_Static)
-			_Collider = n_new(Physics::CStaticCollider(*Shape, _CollisionGroupID, _CollisionMaskID, _pNode->GetWorldMatrix()));
+			_Collider = n_new(Physics::CStaticCollider(*Shape, _CollisionGroupID, _CollisionMaskID, Tfm));
 		else
-			_Collider = n_new(Physics::CMovableCollider(*Shape, _CollisionGroupID, _CollisionMaskID, _pNode->GetWorldMatrix()));
+			_Collider = n_new(Physics::CMovableCollider(*Shape, _CollisionGroupID, _CollisionMaskID, Tfm));
 
 		// Just updated, save redundant update
-		_LastTransformVersion = _pNode->GetTransformVersion();
+		if (!_pNode->IsWorldTransformDirty())
+			_LastTransformVersion = _pNode->GetTransformVersion();
 	}
 
 	if (IsActive() && _Level) _Collider->AttachToLevel(*_Level);
@@ -116,6 +118,7 @@ void CCollisionAttribute::SetPhysicsLevel(PPhysicsLevel Level)
 
 void CCollisionAttribute::OnActivityChanged(bool Active)
 {
+	if (!_Collider) return;
 	if (Active && _Level) _Collider->AttachToLevel(*_Level);
 	else _Collider->RemoveFromLevel();
 }

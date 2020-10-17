@@ -52,17 +52,17 @@ bool CDataScheme::Init(const CParams& Desc)
 				else if (TypeString == "strid") Rec.TypeID = DATA_TYPE_ID(CStrID);
 				else if (TypeString == "vector2")
 				{
-					Rec.TypeID = DATA_TYPE_ID(vector4);
+					Rec.TypeID = DATA_TYPE_ID(float4);
 					Rec.ComponentCount = 2;
 				}
 				else if (TypeString == "vector3")
 				{
-					Rec.TypeID = DATA_TYPE_ID(vector4);
+					Rec.TypeID = DATA_TYPE_ID(float4);
 					Rec.ComponentCount = 3;
 				}
 				else if (TypeString == "vector4")
 				{
-					Rec.TypeID = DATA_TYPE_ID(vector4);
+					Rec.TypeID = DATA_TYPE_ID(float4);
 					Rec.ComponentCount = 4;
 				}
 				//else if (TypeString == "matrix")) Rec.TypeID = DATA_TYPE_ID(matrix44);

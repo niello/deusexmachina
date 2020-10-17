@@ -107,13 +107,14 @@ public:
 				const Data::CParams* pTfmParams;
 				if (ParamsUtils::TryGetParam(pTfmParams, GeometryDesc, "Transform"))
 				{
-					vector4 Value;
-					if (ParamsUtils::TryGetParam(Value, *pTfmParams, "S"))
-						WorldTfm.scale = { Value.x, Value.y, Value.z, 0.f };
-					if (ParamsUtils::TryGetParam(Value, *pTfmParams, "R"))
-						WorldTfm.rotation = { Value.x, Value.y, Value.z, Value.w };
-					if (ParamsUtils::TryGetParam(Value, *pTfmParams, "T"))
-						WorldTfm.translation = { Value.x, Value.y, Value.z, 1.f };
+					float3 Vec3Value;
+					float4 Vec4Value;
+					if (ParamsUtils::TryGetParam(Vec3Value, *pTfmParams, "S"))
+						WorldTfm.scale = { Vec3Value.x, Vec3Value.y, Vec3Value.z, 0.f };
+					if (ParamsUtils::TryGetParam(Vec4Value, *pTfmParams, "R"))
+						WorldTfm.rotation = { Vec4Value.x, Vec4Value.y, Vec4Value.z, Vec4Value.w };
+					if (ParamsUtils::TryGetParam(Vec3Value, *pTfmParams, "T"))
+						WorldTfm.translation = { Vec3Value.x, Vec3Value.y, Vec3Value.z, 1.f };
 				}
 
 				if (ParamsUtils::HasParam(GeometryDesc, CStrID("Mesh")))
@@ -260,7 +261,7 @@ public:
 					vertsR.reserve(3 * pVertexList->size());
 					for (const auto& VertexData : *pVertexList)
 					{
-						const auto& Vertex = VertexData.GetValue<vector4>();
+						const auto& Vertex = VertexData.GetValue<float3>();
 						vertsR.push_back(Vertex.x);
 						vertsR.push_back(Vertex.y);
 						vertsR.push_back(Vertex.z);
@@ -394,8 +395,8 @@ public:
 			for (const auto& Record : *pOffmeshList)
 			{
 				const auto& OffmeshDesc = Record.GetValue<Data::CParams>();
-				const auto Start = ParamsUtils::GetParam(OffmeshDesc, "Start", vector4{});
-				const auto End = ParamsUtils::GetParam(OffmeshDesc, "End", vector4{});
+				const auto Start = ParamsUtils::GetParam(OffmeshDesc, "Start", float3{});
+				const auto End = ParamsUtils::GetParam(OffmeshDesc, "End", float3{});
 
 				offMeshConVerts.push_back(Start.x);
 				offMeshConVerts.push_back(Start.y);

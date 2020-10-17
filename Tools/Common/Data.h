@@ -1,5 +1,6 @@
 #pragma once
 #include "Type.h"
+#include <Vectors.h>
 #include <StringID.h>
 #include <string>
 #include <vector>
@@ -9,30 +10,6 @@
 // Variant data type with compile-time extendable type list
 
 typedef std::vector<uint8_t> CBuffer;
-
-struct vector4
-{
-	float x, y, z, w;
-
-	vector4() : x(0.f), y(0.f), z(0.f), w(0.f) {}
-	vector4(float x_, float y_, float z_, float w_) : x(x_), y(y_), z(z_), w(w_) {}
-	vector4(std::initializer_list<float> List) : vector4(List.begin(), List.size()) {}
-
-	vector4(const vector4& Other) = default;
-	vector4(vector4&& Other) = default;
-
-	vector4(const float* pFloats, size_t Count)
-		: x(Count > 0 ? pFloats[0] : 0.f)
-		, y(Count > 1 ? pFloats[1] : 0.f)
-		, z(Count > 2 ? pFloats[2] : 0.f)
-		, w(Count > 3 ? pFloats[3] : 0.f)
-	{}
-
-	vector4& operator =(const vector4& Other) = default;
-	vector4& operator =(vector4&& Other) = default;
-
-	bool operator ==(const vector4& Other) const { return x == Other.x && y == Other.y && z == Other.z && w == Other.w; }
-};
 
 namespace Data
 {
@@ -60,8 +37,8 @@ protected:
 		CBuffer*						As_CBuffer;
 		CParams*						As_CParams;
 		CDataArray*						As_CDataArray;
-		struct { float x, y, z; }*		As_vector3;
-		vector4*						As_vector4;
+		float3*							As_vector3;
+		float4*							As_vector4;
 		struct { float m[4][4]; }*		As_matrix44;
 	};
 #else
@@ -247,7 +224,8 @@ DECLARE_TYPE(int, 2)
 DECLARE_TYPE(float, 3)
 DECLARE_TYPE(std::string, 4)
 DECLARE_TYPE(CStrID, 5)
-DECLARE_TYPE(vector4, 7)
+DECLARE_TYPE(float3, 16)
+DECLARE_TYPE(float4, 7)
 DECLARE_TYPE(CBuffer, 9)
 DECLARE_TYPE(CDataArray, 10)
 DECLARE_TYPE(CParams, 11)

@@ -22,12 +22,19 @@ static uint32_t WriteFloatValue(std::ostream& Stream, const Data::CData& Value, 
 		WriteStream(Stream, static_cast<float>(Value.GetValue<int>()));
 		return sizeof(float);
 	}
-	else if (Value.IsA<vector4>())
+	else if (Value.IsA<float3>())
 	{
 		// TODO: implement value truncation?
-		assert(MaxBytes >= sizeof(vector4));
-		WriteStream(Stream, Value.GetValue<vector4>());
-		return sizeof(vector4);
+		assert(MaxBytes >= sizeof(float3));
+		WriteStream(Stream, Value.GetValue<float3>());
+		return sizeof(float3);
+	}
+	else if (Value.IsA<float4>())
+	{
+		// TODO: implement value truncation?
+		assert(MaxBytes >= sizeof(float4));
+		WriteStream(Stream, Value.GetValue<float4>());
+		return sizeof(float4);
 	}
 	else return 0;
 }
@@ -47,11 +54,21 @@ static uint32_t WriteIntValue(std::ostream& Stream, const Data::CData& Value, ui
 		WriteStream(Stream, static_cast<int>(Value.GetValue<float>()));
 		return sizeof(int);
 	}
-	else if (Value.IsA<vector4>())
+	else if (Value.IsA<float3>())
+	{
+		// TODO: implement value truncation?
+		assert(MaxBytes >= 3 * sizeof(int));
+		const auto& Vector = Value.GetValue<float3>();
+		WriteStream(Stream, static_cast<int>(Vector.x));
+		WriteStream(Stream, static_cast<int>(Vector.y));
+		WriteStream(Stream, static_cast<int>(Vector.z));
+		return 3 * sizeof(int);
+	}
+	else if (Value.IsA<float4>())
 	{
 		// TODO: implement value truncation?
 		assert(MaxBytes >= 4 * sizeof(int));
-		const auto& Vector = Value.GetValue<vector4>();
+		const auto& Vector = Value.GetValue<float4>();
 		WriteStream(Stream, static_cast<int>(Vector.x));
 		WriteStream(Stream, static_cast<int>(Vector.y));
 		WriteStream(Stream, static_cast<int>(Vector.z));
@@ -84,7 +101,7 @@ static void WriteSamplerState(std::ostream& Stream, const Data::CParams& Sampler
 	// NB: default values are different for D3D9 and D3D11, but we use the same defaults for consistency
 
 	std::string StrValue;
-	vector4 ColorRGBA;
+	float4 ColorRGBA;
 
 	if (ParamsUtils::TryGetParam(StrValue, SamplerDesc, "AddressU"))
 		WriteStream<uint8_t>(Stream, StringToTexAddressMode(StrValue));

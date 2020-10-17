@@ -60,7 +60,8 @@ void WriteData(std::ostream& Stream, const Data::CData& Value)
 	else if (Value.IsA<float>()) WriteStream<float>(Stream, Value);
 	else if (Value.IsA<std::string>()) WriteStream<std::string>(Stream, Value);
 	else if (Value.IsA<CStrID>()) WriteStream<CStrID>(Stream, Value);
-	else if (Value.IsA<vector4>()) WriteStream<vector4>(Stream, Value);
+	else if (Value.IsA<float3>()) WriteStream<float3>(Stream, Value);
+	else if (Value.IsA<float4>()) WriteStream<float4>(Stream, Value);
 	else if (Value.IsA<Data::CParams>()) WriteStream<Data::CParams>(Stream, Value);
 	else if (Value.IsA<Data::CDataArray>()) WriteStream<Data::CDataArray>(Stream, Value);
 	//else assert

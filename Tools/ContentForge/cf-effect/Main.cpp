@@ -410,7 +410,7 @@ private:
 		std::string StrValue;
 		int IntValue;
 		bool FlagValue;
-		vector4 Vector4Value;
+		float4 Vector4Value;
 
 		if (ParamsUtils::TryGetParam(StrValue, Desc, "Cull"))
 		{
@@ -497,7 +497,7 @@ private:
 			RS.SetFlags(CRenderState::Blend_AlphaToCoverage, FlagValue);
 
 		if (ParamsUtils::TryGetParam(Vector4Value, Desc, "BlendFactor"))
-			memcpy(RS.BlendFactorRGBA, &Vector4Value, sizeof(vector4));
+			memcpy(RS.BlendFactorRGBA, &Vector4Value, sizeof(float4));
 		if (ParamsUtils::TryGetParam(IntValue, Desc, "SampleMask"))
 			RS.SampleMask = IntValue;
 

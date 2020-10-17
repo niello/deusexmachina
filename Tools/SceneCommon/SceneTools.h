@@ -32,63 +32,6 @@ namespace acl
 	typedef std::unique_ptr<class RigidSkeleton, Deleter<RigidSkeleton>> RigidSkeletonPtr;
 }
 
-//???use 32-bit ACL/RTM vectors?
-struct float2
-{
-	union
-	{
-		float v[2];
-		struct
-		{
-			float x, y;
-		};
-	};
-
-	constexpr float2() : x(0.f), y(0.f) {}
-	constexpr float2(float x_, float y_) : x(x_), y(y_) {}
-
-	bool operator ==(const float2& Other) const { return CompareFloat(x, Other.x) && CompareFloat(y, Other.y); }
-	bool operator !=(const float2& Other) const { return !(*this == Other); }
-};
-
-//???use 32-bit ACL/RTM vectors?
-struct float3
-{
-	union
-	{
-		float v[3];
-		struct
-		{
-			float x, y, z;
-		};
-	};
-
-	constexpr float3() : x(0.f), y(0.f), z(0.f) {}
-	constexpr float3(float x_, float y_, float z_) : x(x_), y(y_), z(z_) {}
-
-	bool operator ==(const float3& Other) const { return CompareFloat(x, Other.x) && CompareFloat(y, Other.y) && CompareFloat(z, Other.z); }
-	bool operator !=(const float3& Other) const { return !(*this == Other); }
-};
-
-//???use 32-bit ACL/RTM vectors?
-struct float4
-{
-	union
-	{
-		float v[4];
-		struct
-		{
-			float x, y, z, w;
-		};
-	};
-
-	constexpr float4() : x(0.f), y(0.f), z(0.f), w(0.f) {}
-	constexpr float4(float x_, float y_, float z_, float w_) : x(x_), y(y_), z(z_), w(w_) {}
-
-	bool operator ==(const float4& Other) const { return CompareFloat(x, Other.x) && CompareFloat(y, Other.y) && CompareFloat(z, Other.z) && CompareFloat(w, Other.w); }
-	bool operator !=(const float4& Other) const { return !(*this == Other); }
-};
-
 struct CVertex
 {
 	//???use 32-bit ACL/RTM vectors?
@@ -116,18 +59,24 @@ struct CVertexFormat
 	size_t BlendWeightSize = 16;
 };
 
+struct CAABB
+{
+	float3 Min = { FLT_MAX, FLT_MAX, FLT_MAX };
+	float3 Max = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+};
+
 struct CMeshGroup
 {
 	std::vector<CVertex> Vertices;
 	std::vector<unsigned int> Indices;
-	float3 AABBMin;
-	float3 AABBMax;
+	CAABB AABB;
 };
 
 struct CMeshAttrInfo
 {
 	std::string MeshID;
 	std::vector<std::string> MaterialIDs; // Per group (submesh)
+	CAABB AABB;
 };
 
 struct CSkinAttrInfo
@@ -188,6 +137,17 @@ inline void NormalizeWeights8x4(uint8_t& w1, uint8_t& w2, uint8_t& w3, uint8_t& 
 	w2 = NormalizedFloatToByte(f2);
 	w3 = NormalizedFloatToByte(f3);
 	w4 = NormalizedFloatToByte(f4);
+}
+//---------------------------------------------------------------------
+
+inline void MergeAABBs(CAABB& Dest, const CAABB& Src)
+{
+	if (Dest.Min.x > Src.Min.x) Dest.Min.x = Src.Min.x;
+	if (Dest.Min.y > Src.Min.y) Dest.Min.y = Src.Min.y;
+	if (Dest.Min.z > Src.Min.z) Dest.Min.z = Src.Min.z;
+	if (Dest.Max.x < Src.Max.x) Dest.Max.x = Src.Max.x;
+	if (Dest.Max.y < Src.Max.y) Dest.Max.y = Src.Max.y;
+	if (Dest.Max.z < Src.Max.z) Dest.Max.z = Src.Max.z;
 }
 //---------------------------------------------------------------------
 
