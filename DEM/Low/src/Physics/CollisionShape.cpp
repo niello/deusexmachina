@@ -9,7 +9,7 @@ namespace Physics
 
 CCollisionShape::CCollisionShape(btCollisionShape* pBtShape, const vector3& Offset, const vector3& Scaling)
 	: _pBtShape(pBtShape)
-	, _Offset(Offset)
+	, _Offset(Offset.x * Scaling.x, Offset.y * Scaling.y, Offset.z * Scaling.z)
 {
 	// NB: it is very important to store resource object pointer inside a bullet shape.
 	// This pointer is used in manual refcounting in CMovableCollider and similar shape users.
@@ -28,17 +28,14 @@ CCollisionShape::~CCollisionShape()
 PCollisionShape CCollisionShape::CloneWithScaling(const vector3& Scaling) const
 {
 	const auto& CurrScaling = _pBtShape->getLocalScaling();
-	const vector3 NewOffset(
-		_Offset.x * Scaling.x / CurrScaling.x(),
-		_Offset.y * Scaling.y / CurrScaling.y(),
-		_Offset.z * Scaling.z / CurrScaling.z());
+	const vector3 UnscaledOffset(_Offset.x / CurrScaling.x(), _Offset.y / CurrScaling.y(), _Offset.z / CurrScaling.z());
 
 	switch (_pBtShape->getShapeType())
 	{
 		case BOX_SHAPE_PROXYTYPE:
 		{
-			btVector3 UnscaledHalfExtents = static_cast<btBoxShape*>(_pBtShape)->getHalfExtentsWithMargin() / CurrScaling;
-			return n_new(Physics::CCollisionShape(new btBoxShape(UnscaledHalfExtents), NewOffset, Scaling));
+			const btVector3 UnscaledHalfExtents = static_cast<btBoxShape*>(_pBtShape)->getHalfExtentsWithMargin() / CurrScaling;
+			return n_new(Physics::CCollisionShape(new btBoxShape(UnscaledHalfExtents), UnscaledOffset, Scaling));
 		}
 	}
 
