@@ -36,6 +36,7 @@ PResourceObject CCollisionLoaderHRD::CreateResource(CStrID UID)
 	const CStrID sidType("Type");
 	const CStrID sidOffset("Offset");
 	const CStrID sidSize("Size");
+	const CStrID sidScaling("Scaling");
 	const CStrID sidRadius("Radius");
 	const CStrID sidHeight("Height");
 	const CStrID sidBox("Box");
@@ -43,13 +44,14 @@ PResourceObject CCollisionLoaderHRD::CreateResource(CStrID UID)
 	const CStrID sidCapsuleY("CapsuleY");
 
 	const auto Type = Params.Get(sidType, CStrID::Empty);
-	const auto Offset = Params.Get(sidOffset, vector3::Zero);
+	const auto& Offset = Params.Get(sidOffset, vector3::Zero);
+	const auto& Scaling = Params.Get(sidScaling, vector3::One);
 	if (Type == sidBox)
-		return Physics::CCollisionShape::CreateBox(Params.Get(sidSize, vector3::Zero), Offset);
+		return Physics::CCollisionShape::CreateBox(Params.Get(sidSize, vector3::Zero), Offset, Scaling);
 	else if (Type == sidSphere)
-		return Physics::CCollisionShape::CreateSphere(Params.Get(sidRadius, 0.f), Offset);
+		return Physics::CCollisionShape::CreateSphere(Params.Get(sidRadius, 0.f), Offset, Scaling);
 	else if (Type == sidCapsuleY)
-		return Physics::CCollisionShape::CreateCapsuleY(Params.Get(sidRadius, 0.f), Params.Get(sidHeight, 0.f), Offset);
+		return Physics::CCollisionShape::CreateCapsuleY(Params.Get(sidRadius, 0.f), Params.Get(sidHeight, 0.f), Offset, Scaling);
 
 	return nullptr;
 }
