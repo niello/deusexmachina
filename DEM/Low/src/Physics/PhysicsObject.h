@@ -25,11 +25,13 @@ protected:
 	CStrID             _CollisionGroupID;
 	CStrID             _CollisionMaskID;
 	std::any           _UserData;
+	bool               _IsShapeShared = true; // Shape may be shared with other objects by default. Private copy is created on demand.
 
 	virtual void           AttachToLevelInternal() = 0;
 	virtual void           RemoveFromLevelInternal() = 0;
 
 	void                   SetupInternalObject(btCollisionObject* pBtObject, const CCollisionShape& Shape, const CPhysicsMaterial& Material);
+	bool                   UnshareShapeIfNecessary(const vector3& NewScaling);
 
 public:
 

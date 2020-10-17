@@ -108,6 +108,13 @@ static inline vector3 operator /(const vector3& v0, float s)
 }
 //---------------------------------------------------------------------
 
+// FIXME: inconsistent with *, but useful
+static inline vector3 operator /(const vector3& v0, const vector3& v1)
+{
+	return vector3(v0.x / v1.x, v0.y / v1.y, v0.z / v1.z);
+}
+//---------------------------------------------------------------------
+
 //???force to method? not operator?
 // Dot product.
 static inline float operator %(const vector3& v0, const vector3& v1)

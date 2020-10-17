@@ -20,7 +20,10 @@ void CPhysicsObject::SetupInternalObject(btCollisionObject* pBtObject, const CCo
 {
 	_pBtObject = pBtObject;
 	if (_pBtObject->getCollisionShape() != Shape.GetBulletShape())
+	{
 		_pBtObject->setCollisionShape(Shape.GetBulletShape());
+		_IsShapeShared = true; // Can't guarantee that the new shape will not be shared
+	}
 	_pBtObject->setFriction(Material.Friction);
 	_pBtObject->setRollingFriction(Material.RollingFriction);
 	_pBtObject->setRestitution(1.f - Material.Bounciness);
@@ -31,6 +34,37 @@ void CPhysicsObject::SetupInternalObject(btCollisionObject* pBtObject, const CCo
 	// TODO: terrain is most probably a static collider, not movable!
 	if (Shape.IsA<CHeightfieldShape>())
 		_pBtObject->setCollisionFlags(_pBtObject->getCollisionFlags() | btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT);
+}
+//---------------------------------------------------------------------
+
+// Bullet Physics doesn't support per-instance scaling of shared shapes. When scale changes, we must create our
+// personal shape copy and scale it as we want. Obviously unsharing must be done only once.
+bool CPhysicsObject::UnshareShapeIfNecessary(const vector3& NewScaling)
+{
+	if (!_IsShapeShared) return true;
+
+	constexpr float ShapeUnshareThreshold = 0.0001f;
+
+	const btVector3& ShapeScaling = _pBtObject->getCollisionShape()->getLocalScaling();
+	if (!n_fequal(NewScaling.x, ShapeScaling.x(), ShapeUnshareThreshold) ||
+		!n_fequal(NewScaling.y, ShapeScaling.y(), ShapeUnshareThreshold) ||
+		!n_fequal(NewScaling.z, ShapeScaling.z(), ShapeUnshareThreshold))
+	{
+		auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+		PCollisionShape NewShape = pShape->CloneWithScaling(NewScaling);
+		if (!NewShape) return false;
+
+		_pBtObject->setCollisionShape(NewShape->GetBulletShape());
+		_IsShapeShared = false;
+
+		// Physics object manually handles CCollisionShape refcounting
+		// to avoid wasting space for an explicit PCollisionShape field
+		// FIXME: do all subclasses guarantee to obey this rule? Can crash if not!!!
+		pShape->Release();
+		NewShape->AddRef();
+	}
+
+	return true;
 }
 //---------------------------------------------------------------------
 

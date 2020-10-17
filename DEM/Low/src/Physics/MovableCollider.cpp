@@ -86,9 +86,6 @@ void CMovableCollider::SetActive(bool Active, bool Always)
 
 void CMovableCollider::SetTransform(const matrix44& Tfm)
 {
-	_pBtObject->forceActivationState(DISABLE_DEACTIVATION);
-	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
-
 	vector3& AxisX = Tfm.AxisX();
 	vector3& AxisY = Tfm.AxisY();
 	vector3& AxisZ = Tfm.AxisZ();
@@ -97,27 +94,14 @@ void CMovableCollider::SetTransform(const matrix44& Tfm)
 	const float ScalingY = AxisY.Length();
 	const float ScalingZ = AxisZ.Length();
 
-	constexpr bool IsShapeShared = true;
-	if (IsShapeShared)
-	{
-		const btVector3& ShapeScaling = _pBtObject->getCollisionShape()->getLocalScaling();
-		constexpr float ShapeUnshareThreshold = 0.0001f;
-		if (!n_fequal(ScalingX, ShapeScaling.x(), ShapeUnshareThreshold) ||
-			!n_fequal(ScalingY, ShapeScaling.y(), ShapeUnshareThreshold) ||
-			!n_fequal(ScalingZ, ShapeScaling.z(), ShapeUnshareThreshold))
-		{
-			// unshare shape - create clone, set local scaling, set object shape, addref/release DEM shape objects
-		}
-	}
+	if (!UnshareShapeIfNecessary({ ScalingX, ScalingY, ScalingZ })) return;
 
-	//if shape is shared (no local shape?) and local scaling is different from Tfm scaling for more than a threshold
-	//   clone shape, set new scaling
-	//!!!DBG TMP!
-	_pBtObject->getCollisionShape()->setLocalScaling(btVector3(ScalingX, ScalingY, ScalingZ));
-	const vector3 Offset = { pShape->GetOffset().x * ScalingX, pShape->GetOffset().y * ScalingY, pShape->GetOffset().z * ScalingZ };
+	_pBtObject->forceActivationState(DISABLE_DEACTIVATION);
+
+	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 
 	//???TODO PERF: mul reciprocals instead of divisions? is it still actual to do 1 div and 3 mul instead of 3 div?
-	//???TODO PERF: optimize origin?
+	//???TODO PERF: optimize origin? VectorToBtVector(Offset).dot3(m_basis[0], m_basis[1], m_basis[2]) + VectorToBtVector(Tfm.Translation())
 	auto& OutTfm = static_cast<CKinematicMotionState*>(static_cast<btRigidBody*>(_pBtObject)->getMotionState())->_Tfm;
 	OutTfm.setBasis(
 		btMatrix3x3(
@@ -125,7 +109,7 @@ void CMovableCollider::SetTransform(const matrix44& Tfm)
 			AxisX.y / ScalingX, AxisY.y / ScalingY, AxisZ.y / ScalingZ,
 			AxisX.z / ScalingX, AxisY.z / ScalingY, AxisZ.z / ScalingZ));
 	OutTfm.setOrigin(VectorToBtVector(Tfm.Translation()));
-	OutTfm.getOrigin() = OutTfm * VectorToBtVector(Offset);
+	OutTfm.getOrigin() = OutTfm * VectorToBtVector(pShape->GetOffset());
 }
 //---------------------------------------------------------------------
 

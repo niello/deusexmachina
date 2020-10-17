@@ -8,7 +8,7 @@ class btCollisionShape;
 
 namespace Physics
 {
-typedef Ptr<class CCollisionShape> PCollisionShape;
+using PCollisionShape = Ptr<class CCollisionShape>;
 
 class CCollisionShape : public Resources::CResourceObject
 {
@@ -21,17 +21,18 @@ protected:
 
 public:
 
-	static PCollisionShape CreateSphere(float Radius, const vector3& Offset = vector3::Zero);
-	static PCollisionShape CreateBox(const vector3& Size, const vector3& Offset = vector3::Zero);
-	static PCollisionShape CreateCapsuleY(float Radius, float CylinderLength, const vector3& Offset = vector3::Zero);
+	static PCollisionShape CreateSphere(float Radius, const vector3& Offset = vector3::Zero, const vector3& Scaling = vector3::One);
+	static PCollisionShape CreateBox(const vector3& Size, const vector3& Offset = vector3::Zero, const vector3& Scaling = vector3::One);
+	static PCollisionShape CreateCapsuleY(float Radius, float CylinderLength, const vector3& Offset = vector3::Zero, const vector3& Scaling = vector3::One);
 	// TODO: CreateMesh(Render::PMeshData MeshData)
 
-	CCollisionShape(btCollisionShape* pBtShape, const vector3& Offset = vector3::Zero);
+	CCollisionShape(btCollisionShape* pBtShape, const vector3& Offset = vector3::Zero, const vector3& Scaling = vector3::One);
 	virtual ~CCollisionShape() override;
 
-	virtual bool      IsResourceValid() const { return !!_pBtShape; }
-	const vector3&    GetOffset() const { return _Offset; }
-	btCollisionShape* GetBulletShape() const { return _pBtShape; }
+	virtual bool            IsResourceValid() const { return !!_pBtShape; }
+	virtual PCollisionShape CloneWithScaling(const vector3& Scaling) const;
+	const vector3&          GetOffset() const { return _Offset; }
+	btCollisionShape*       GetBulletShape() const { return _pBtShape; }
 };
 
 }
