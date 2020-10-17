@@ -628,8 +628,8 @@ public:
 				CollisionAttribute.emplace_back(CStrID("Class"), 'COLA'); // Physics::CCollisionAttribute
 				CollisionAttribute.emplace_back(CStrID("Shape"), ShapeID);
 				//CollisionAttribute.emplace_back(CStrID("Static"), true);
-				//CollisionAttribute.emplace_back(CStrID("CollisionGroup"), 0);
-				//CollisionAttribute.emplace_back(CStrID("CollisionMask"), 0);
+				//CollisionAttribute.emplace_back(CStrID("CollisionGroup"), CStrID("..."));
+				//CollisionAttribute.emplace_back(CStrID("CollisionMask"), CStrID("..."));
 				Attributes.push_back(std::move(CollisionAttribute));
 			}
 		}
