@@ -14,6 +14,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		auto pAction = Queue.FindActive<SwitchSmartObjectState>();
 		if (!pAction) return;
 
+		/*
 		// Check if action or sub-action is stopped
 		if (pQueue->GetStatus() == DEM::Game::EActionStatus::Failed || pQueue->GetStatus() == DEM::Game::EActionStatus::Cancelled)
 		{
@@ -36,6 +37,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		{
 			//
 		}
+		*/
 
 		//const float ActorRadius = 0.f; // TODO: fill!
 		// TODO: fill Action.Pos with curr actor pos!
