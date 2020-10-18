@@ -9,13 +9,13 @@ class Ptr
 {
 private:
 
-	T* pObj;
+	T* pObj = nullptr;
 
 public:
 
 	template<class U> friend class Ptr;
 
-	constexpr Ptr() noexcept : pObj(nullptr) {}
+	constexpr Ptr() noexcept = default;
 
 	Ptr(T* pOther): pObj(pOther) { if (pObj) DEMPtrAddRef(pObj); }
 
@@ -47,9 +47,20 @@ public:
 	template<class U>
 	Ptr& operator =(Ptr<U> const& Other) { Ptr(Other).Swap(*this); return *this; }
 
-	Ptr& operator =(Ptr&& Other) noexcept { Ptr(static_cast<Ptr&&>(Other)).Swap(*this); return *this; }
+	Ptr& operator =(Ptr&& Other) noexcept
+	{
+		pObj = Other.pObj;
+		Other.pObj = nullptr;
+		return *this;
+	}
+
 	template<class U>
-	Ptr& operator =(Ptr<U>&& Other) noexcept { Ptr(static_cast<Ptr<U>&&>(Other)).Swap(*this); return *this; }
+	Ptr& operator =(Ptr<U>&& Other) noexcept
+	{
+		pObj = Other.pObj;
+		Other.pObj = nullptr;
+		return *this;
+	}
 
 	T*		operator ->() const { n_assert(pObj); return pObj; }
 	T&		operator *() const { n_assert(pObj); return *pObj; }

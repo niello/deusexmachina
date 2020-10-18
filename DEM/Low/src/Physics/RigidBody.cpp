@@ -10,43 +10,33 @@
 namespace Physics
 {
 
-// To be useful, rigid body must be connected to a scene node to serve as its transformation source
-// TODO: try make _Offset btVector3 SSE. Last attempt expanded *this size from 20 to 48, need more effort.
-class CDynamicMotionState: public btMotionState
+CRigidBody::CDynamicMotionState::CDynamicMotionState(const vector3& Offset) : _Offset(Offset) {}
+//---------------------------------------------------------------------
+
+CRigidBody::CDynamicMotionState::~CDynamicMotionState() = default;
+//---------------------------------------------------------------------
+
+void CRigidBody::CDynamicMotionState::getWorldTransform(btTransform& worldTrans) const
 {
-protected:
+	worldTrans = TfmToBtTfm(_Node ? _Node->GetWorldMatrix() : matrix44::Identity);
+	worldTrans.getOrigin() = worldTrans * VectorToBtVector(_Offset);
+}
+//---------------------------------------------------------------------
 
-	Scene::PSceneNode _Node;
-	vector3           _Offset;
-
-public:
-
-	BT_DECLARE_ALIGNED_ALLOCATOR();
-
-	CDynamicMotionState(const vector3& Offset) : _Offset(Offset) {}
-
-	void SetSceneNode(Scene::PSceneNode&& Node) { _Node = std::move(Node); }
-	Scene::CSceneNode* GetSceneNode() const { return _Node.Get(); }
-
-	virtual void getWorldTransform(btTransform& worldTrans) const override
+void CRigidBody::CDynamicMotionState::setWorldTransform(const btTransform& worldTrans)
+{
+	if (_Node)
 	{
-		worldTrans = TfmToBtTfm(_Node ? _Node->GetWorldMatrix() : matrix44::Identity);
-		worldTrans.getOrigin() = worldTrans * VectorToBtVector(_Offset);
+		auto Tfm = BtTfmToTfm(worldTrans);
+		Tfm.Translation() = Tfm * (-_Offset);
+		_Node->SetWorldTransform(Tfm);
 	}
-
-	virtual void setWorldTransform(const btTransform& worldTrans) override
-	{
-		if (_Node)
-		{
-			auto Tfm = BtTfmToTfm(worldTrans);
-			Tfm.Translation() = Tfm * (-_Offset);
-			_Node->SetWorldTransform(Tfm);
-		}
-	}
-};
+}
+//---------------------------------------------------------------------
 
 CRigidBody::CRigidBody(float Mass, CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const matrix44& InitialTfm, const CPhysicsMaterial& Material)
 	: CPhysicsObject(CollisionGroupID, CollisionMaskID)
+	, _MotionState(Shape.GetOffset())
 {
 	n_assert(Mass != 0.f);
 
@@ -57,12 +47,7 @@ CRigidBody::CRigidBody(float Mass, CCollisionShape& Shape, CStrID CollisionGroup
 	btVector3 Inertia;
 	Shape.GetBulletShape()->calculateLocalInertia(Mass, Inertia);
 
-	btRigidBody::btRigidBodyConstructionInfo CI(
-		Mass,
-		new CDynamicMotionState(Shape.GetOffset()),
-		Shape.GetBulletShape(),
-		Inertia);
-
+	btRigidBody::btRigidBodyConstructionInfo CI(Mass, &_MotionState, Shape.GetBulletShape(), Inertia);
 	SetupInternalObject(new btRigidBody(CI), Shape, Material);
 	_pBtObject->setWorldTransform(TfmToBtTfm(InitialTfm)); //???shape offset?
 	_pBtObject->setInterpolationWorldTransform(_pBtObject->getWorldTransform());
@@ -74,7 +59,6 @@ CRigidBody::~CRigidBody()
 	if (_Level) _Level->GetBtWorld()->removeRigidBody(static_cast<btRigidBody*>(_pBtObject));
 
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
-	delete static_cast<btRigidBody*>(_pBtObject)->getMotionState();
 	delete _pBtObject;
 	pShape->Release(); // See constructor
 }
@@ -96,20 +80,12 @@ void CRigidBody::RemoveFromLevelInternal()
 
 void CRigidBody::SetControlledNode(Scene::CSceneNode* pNode)
 {
-	auto pMotionState = static_cast<CDynamicMotionState*>(static_cast<btRigidBody*>(_pBtObject)->getMotionState());
-	pMotionState->SetSceneNode(pNode);
+	_MotionState.SetSceneNode(pNode);
 	if (pNode)
 	{
 		if (_Level) _Level->GetBtWorld()->synchronizeSingleMotionState(static_cast<btRigidBody*>(_pBtObject));
 		_pBtObject->activate();
 	}
-}
-//---------------------------------------------------------------------
-
-Scene::CSceneNode* CRigidBody::GetControlledNode() const
-{
-	auto pMotionState = static_cast<CDynamicMotionState*>(static_cast<btRigidBody*>(_pBtObject)->getMotionState());
-	return pMotionState->GetSceneNode();
 }
 //---------------------------------------------------------------------
 
@@ -125,10 +101,9 @@ void CRigidBody::SetTransform(const matrix44& Tfm)
 
 void CRigidBody::GetTransform(matrix44& OutTfm) const
 {
-	auto pMotionState = static_cast<CDynamicMotionState*>(static_cast<btRigidBody*>(_pBtObject)->getMotionState());
-	if (pMotionState->GetSceneNode())
+	if (_MotionState.GetSceneNode())
 	{
-		OutTfm = pMotionState->GetSceneNode()->GetWorldMatrix();
+		OutTfm = _MotionState.GetSceneNode()->GetWorldMatrix();
 	}
 	else
 	{
@@ -142,11 +117,9 @@ void CRigidBody::GetTransform(matrix44& OutTfm) const
 // Interpolated AABB from motion state, matches the graphics representation
 void CRigidBody::GetGlobalAABB(CAABB& OutBox) const
 {
-	auto pMotionState = static_cast<CDynamicMotionState*>(static_cast<btRigidBody*>(_pBtObject)->getMotionState());
-
 	btTransform Tfm;
-	if (pMotionState->GetSceneNode())
-		pMotionState->getWorldTransform(Tfm);
+	if (_MotionState.GetSceneNode())
+		_MotionState.getWorldTransform(Tfm);
 	else
 		Tfm = _pBtObject->getWorldTransform(); //???or getInterpolationWorldTransform()?
 
