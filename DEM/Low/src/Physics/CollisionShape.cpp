@@ -59,11 +59,27 @@ PCollisionShape CCollisionShape::CreateBox(const vector3& Size, const vector3& O
 }
 //---------------------------------------------------------------------
 
+PCollisionShape CCollisionShape::CreateCapsuleX(float Radius, float CylinderLength, const vector3& Offset, const vector3& Scaling)
+{
+	if (CylinderLength <= 0.f) return CreateSphere(Radius, Offset);
+
+	return n_new(Physics::CCollisionShape(new btCapsuleShapeX(Radius, CylinderLength), Offset, Scaling));
+}
+//---------------------------------------------------------------------
+
 PCollisionShape CCollisionShape::CreateCapsuleY(float Radius, float CylinderLength, const vector3& Offset, const vector3& Scaling)
 {
 	if (CylinderLength <= 0.f) return CreateSphere(Radius, Offset);
 
 	return n_new(Physics::CCollisionShape(new btCapsuleShape(Radius, CylinderLength), Offset, Scaling));
+}
+//---------------------------------------------------------------------
+
+PCollisionShape CCollisionShape::CreateCapsuleZ(float Radius, float CylinderLength, const vector3& Offset, const vector3& Scaling)
+{
+	if (CylinderLength <= 0.f) return CreateSphere(Radius, Offset);
+
+	return n_new(Physics::CCollisionShape(new btCapsuleShapeZ(Radius, CylinderLength), Offset, Scaling));
 }
 //---------------------------------------------------------------------
 

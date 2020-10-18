@@ -23,7 +23,9 @@ public:
 
 	static PCollisionShape CreateSphere(float Radius, const vector3& Offset = vector3::Zero, const vector3& Scaling = vector3::One);
 	static PCollisionShape CreateBox(const vector3& Size, const vector3& Offset = vector3::Zero, const vector3& Scaling = vector3::One);
+	static PCollisionShape CreateCapsuleX(float Radius, float CylinderLength, const vector3& Offset = vector3::Zero, const vector3& Scaling = vector3::One);
 	static PCollisionShape CreateCapsuleY(float Radius, float CylinderLength, const vector3& Offset = vector3::Zero, const vector3& Scaling = vector3::One);
+	static PCollisionShape CreateCapsuleZ(float Radius, float CylinderLength, const vector3& Offset = vector3::Zero, const vector3& Scaling = vector3::One);
 	// TODO: CreateMesh(Render::PMeshData MeshData)
 
 	CCollisionShape(btCollisionShape* pBtShape, const vector3& Offset = vector3::Zero, const vector3& Scaling = vector3::One);

@@ -616,13 +616,28 @@ public:
 				}
 				else if (ShapeType == "sphere")
 				{
+					// FIXME: now circumscribed around AABB, need parameter for user to choose?
 					CollisionShape.emplace_back(CStrID("Type"), CStrID("Sphere"));
 					CollisionShape.emplace_back(CStrID("Radius"), 0.707107f * std::max({ Size.x, Size.y, Size.z }));
 				}
 				else if (ShapeType == "capsule")
 				{
-					// Radius, Height
-					// CapsuleY etc
+					std::vector<float> Dims{ Size.x, Size.y, Size.z };
+					auto MaxIt = std::max_element(Dims.begin(), Dims.end());
+					const float MaxDim = *MaxIt;
+					const auto Axis = std::distance(Dims.begin(), MaxIt);
+					Dims.erase(MaxIt);
+					const float Diameter = *std::max_element(Dims.begin(), Dims.end());
+
+					// FIXME: now inscribed into AABB, need parameter for user to choose?
+					switch (Axis)
+					{
+						case 0: CollisionShape.emplace_back(CStrID("Type"), CStrID("CapsuleX")); break;
+						case 1: CollisionShape.emplace_back(CStrID("Type"), CStrID("CapsuleY")); break;
+						case 2: CollisionShape.emplace_back(CStrID("Type"), CStrID("CapsuleZ")); break;
+					}
+					CollisionShape.emplace_back(CStrID("Radius"), Diameter * 0.5f);
+					CollisionShape.emplace_back(CStrID("Height"), MaxDim - Diameter);
 				}
 				else if (ShapeType == "convex")
 				{
