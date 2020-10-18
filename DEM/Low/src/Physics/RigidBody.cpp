@@ -16,6 +16,12 @@ CRigidBody::CDynamicMotionState::CDynamicMotionState(const vector3& Offset) : _O
 CRigidBody::CDynamicMotionState::~CDynamicMotionState() = default;
 //---------------------------------------------------------------------
 
+void CRigidBody::CDynamicMotionState::SetSceneNode(Scene::PSceneNode&& Node)
+{
+	_Node = std::move(Node);
+}
+//---------------------------------------------------------------------
+
 void CRigidBody::CDynamicMotionState::getWorldTransform(btTransform& worldTrans) const
 {
 	worldTrans = TfmToBtTfm(_Node ? _Node->GetWorldMatrix() : matrix44::Identity);
@@ -40,16 +46,11 @@ CRigidBody::CRigidBody(float Mass, CCollisionShape& Shape, CStrID CollisionGroup
 {
 	n_assert(Mass != 0.f);
 
-	// Instead of storing strong ref, we manually control refcount and use
-	// a pointer from the bullet collision shape
-	Shape.AddRef();
+	btRigidBody::btRigidBodyConstructionInfo CI(Mass, &_MotionState, Shape.GetBulletShape());
+	Shape.GetBulletShape()->calculateLocalInertia(Mass, CI.m_localInertia);
+	ConstructInternal(new btRigidBody(CI), Shape, Material);
 
-	btVector3 Inertia;
-	Shape.GetBulletShape()->calculateLocalInertia(Mass, Inertia);
-
-	btRigidBody::btRigidBodyConstructionInfo CI(Mass, &_MotionState, Shape.GetBulletShape(), Inertia);
-	SetupInternalObject(new btRigidBody(CI), Shape, Material);
-	_pBtObject->setWorldTransform(TfmToBtTfm(InitialTfm)); //???shape offset?
+	SetTransform(InitialTfm);
 	_pBtObject->setInterpolationWorldTransform(_pBtObject->getWorldTransform());
 }
 //---------------------------------------------------------------------
@@ -57,10 +58,6 @@ CRigidBody::CRigidBody(float Mass, CCollisionShape& Shape, CStrID CollisionGroup
 CRigidBody::~CRigidBody()
 {
 	if (_Level) _Level->GetBtWorld()->removeRigidBody(static_cast<btRigidBody*>(_pBtObject));
-
-	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
-	delete _pBtObject;
-	pShape->Release(); // See constructor
 }
 //---------------------------------------------------------------------
 
@@ -91,11 +88,12 @@ void CRigidBody::SetControlledNode(Scene::CSceneNode* pNode)
 
 void CRigidBody::SetTransform(const matrix44& Tfm)
 {
-	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
-	btTransform BtTfm = TfmToBtTfm(Tfm);
-	BtTfm.getOrigin() = BtTfm * VectorToBtVector(pShape->GetOffset());
-	_pBtObject->setWorldTransform(BtTfm);
-	_pBtObject->activate();
+	btTransform BtTfm;
+	if (PrepareTransform(Tfm, BtTfm))
+	{
+		_pBtObject->setWorldTransform(BtTfm);
+		_pBtObject->activate();
+	}
 }
 //---------------------------------------------------------------------
 

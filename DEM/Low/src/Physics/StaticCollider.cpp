@@ -12,22 +12,15 @@ namespace Physics
 CStaticCollider::CStaticCollider(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const matrix44& InitialTfm, const CPhysicsMaterial& Material)
 	: CPhysicsObject(CollisionGroupID, CollisionMaskID)
 {
-	// Instead of storing strong ref, we manually control refcount and use
-	// a pointer from the bullet collision shape
-	Shape.AddRef();
+	ConstructInternal(new btCollisionObject(), Shape, Material);
 
-	SetupInternalObject(new btCollisionObject(), Shape, Material);
-	_pBtObject->setWorldTransform(TfmToBtTfm(InitialTfm)); //!!!shape offset!
+	SetTransform(InitialTfm);
 }
 //---------------------------------------------------------------------
 
 CStaticCollider::~CStaticCollider()
 {
 	if (_Level) _Level->GetBtWorld()->removeCollisionObject(_pBtObject);
-
-	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
-	delete _pBtObject;
-	pShape->Release(); // See constructor
 }
 //---------------------------------------------------------------------
 
@@ -47,11 +40,14 @@ void CStaticCollider::RemoveFromLevelInternal()
 
 void CStaticCollider::SetTransform(const matrix44& Tfm)
 {
-	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
-	btTransform BtTfm = TfmToBtTfm(Tfm);
-	BtTfm.getOrigin() = BtTfm * VectorToBtVector(pShape->GetOffset());
-	_pBtObject->setWorldTransform(BtTfm);
-	//???need? if (_Level) _Level->GetBtWorld()->updateSingleAabb(_pBtObject);
+	btTransform BtTfm;
+	if (PrepareTransform(Tfm, BtTfm))
+	{
+		_pBtObject->setWorldTransform(BtTfm);
+
+		//n_assert(false); // Just to check if updateSingleAabb is necessary
+		//???need? if (_Level) _Level->GetBtWorld()->updateSingleAabb(_pBtObject);
+	}
 }
 //---------------------------------------------------------------------
 

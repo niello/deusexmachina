@@ -21,13 +21,9 @@ CMovableCollider::CMovableCollider(CCollisionShape& Shape, CStrID CollisionGroup
 	: CPhysicsObject(CollisionGroupID, CollisionMaskID)
 	, _MotionState(InitialTfm, Shape.GetOffset())
 {
-	// Instead of storing strong ref, we manually control refcount and use
-	// a pointer from the bullet collision shape
-	Shape.AddRef();
-
 	// NB: mass must be zero for kinematic objects
 	btRigidBody::btRigidBodyConstructionInfo CI(0.f, &_MotionState, Shape.GetBulletShape());
-	SetupInternalObject(new btRigidBody(CI), Shape, Material);
+	ConstructInternal(new btRigidBody(CI), Shape, Material);
 	_pBtObject->setCollisionFlags(_pBtObject->getCollisionFlags() | btRigidBody::CF_KINEMATIC_OBJECT);
 }
 //---------------------------------------------------------------------
@@ -35,10 +31,6 @@ CMovableCollider::CMovableCollider(CCollisionShape& Shape, CStrID CollisionGroup
 CMovableCollider::~CMovableCollider()
 {
 	if (_Level) _Level->GetBtWorld()->removeRigidBody(static_cast<btRigidBody*>(_pBtObject));
-
-	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
-	delete _pBtObject;
-	pShape->Release(); // See constructor
 }
 //---------------------------------------------------------------------
 
@@ -68,30 +60,8 @@ void CMovableCollider::SetActive(bool Active, bool Always)
 
 void CMovableCollider::SetTransform(const matrix44& Tfm)
 {
-	vector3& AxisX = Tfm.AxisX();
-	vector3& AxisY = Tfm.AxisY();
-	vector3& AxisZ = Tfm.AxisZ();
-
-	const float ScalingX = AxisX.Length();
-	const float ScalingY = AxisY.Length();
-	const float ScalingZ = AxisZ.Length();
-
-	if (!UnshareShapeIfNecessary({ ScalingX, ScalingY, ScalingZ })) return;
-
-	_pBtObject->forceActivationState(DISABLE_DEACTIVATION);
-
-	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
-
-	//???TODO PERF: mul reciprocals instead of divisions? is it still actual to do 1 div and 3 mul instead of 3 div?
-	//???TODO PERF: optimize origin? VectorToBtVector(Offset).dot3(m_basis[0], m_basis[1], m_basis[2]) + VectorToBtVector(Tfm.Translation())
-	auto& OutTfm = _MotionState._Tfm;
-	OutTfm.setBasis(
-		btMatrix3x3(
-			AxisX.x / ScalingX, AxisY.x / ScalingY, AxisZ.x / ScalingZ,
-			AxisX.y / ScalingX, AxisY.y / ScalingY, AxisZ.y / ScalingZ,
-			AxisX.z / ScalingX, AxisY.z / ScalingY, AxisZ.z / ScalingZ));
-	OutTfm.setOrigin(VectorToBtVector(Tfm.Translation()));
-	OutTfm.getOrigin() = OutTfm * VectorToBtVector(pShape->GetOffset());
+	if (PrepareTransform(Tfm, _MotionState._Tfm))
+		_pBtObject->forceActivationState(DISABLE_DEACTIVATION);
 }
 //---------------------------------------------------------------------
 

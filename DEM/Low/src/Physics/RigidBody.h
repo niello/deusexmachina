@@ -34,7 +34,7 @@ protected:
 		CDynamicMotionState(const vector3& Offset);
 		virtual ~CDynamicMotionState() override;
 
-		void SetSceneNode(Scene::PSceneNode&& Node) { _Node = std::move(Node); }
+		void SetSceneNode(Scene::PSceneNode&& Node);
 		Scene::CSceneNode* GetSceneNode() const { return _Node.Get(); }
 
 		virtual void getWorldTransform(btTransform& worldTrans) const override;

@@ -8,6 +8,7 @@
 // Base class for all physics objects. Has collision shape and transformation.
 
 class btCollisionObject;
+class btTransform;
 
 namespace Physics
 {
@@ -30,12 +31,14 @@ protected:
 	virtual void           AttachToLevelInternal() = 0;
 	virtual void           RemoveFromLevelInternal() = 0;
 
-	void                   SetupInternalObject(btCollisionObject* pBtObject, const CCollisionShape& Shape, const CPhysicsMaterial& Material);
+	void                   ConstructInternal(btCollisionObject* pBtObject, CCollisionShape& Shape, const CPhysicsMaterial& Material);
 	bool                   UnshareShapeIfNecessary(const vector3& NewScaling);
+	bool                   PrepareTransform(const matrix44& NewTfm, btTransform& OutTfm);
 
 public:
 
 	CPhysicsObject(CStrID CollisionGroupID, CStrID CollisionMaskID);
+	virtual ~CPhysicsObject() override;
 
 	void                   AttachToLevel(CPhysicsLevel& Level);
 	void                   RemoveFromLevel();

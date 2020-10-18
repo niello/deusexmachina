@@ -16,8 +16,15 @@ CPhysicsObject::CPhysicsObject(CStrID CollisionGroupID, CStrID CollisionMaskID)
 }
 //---------------------------------------------------------------------
 
-void CPhysicsObject::SetupInternalObject(btCollisionObject* pBtObject, const CCollisionShape& Shape, const CPhysicsMaterial& Material)
+// NB: treat this as a part of constructor, each child must call it from its constructor
+void CPhysicsObject::ConstructInternal(btCollisionObject* pBtObject, CCollisionShape& Shape, const CPhysicsMaterial& Material)
 {
+	n_assert_dbg(pBtObject);
+
+	// Instead of storing strong ref, we manually control refcount and use
+	// a pointer from the bullet collision shape
+	Shape.AddRef();
+
 	_pBtObject = pBtObject;
 	if (_pBtObject->getCollisionShape() != Shape.GetBulletShape())
 	{
@@ -34,6 +41,14 @@ void CPhysicsObject::SetupInternalObject(btCollisionObject* pBtObject, const CCo
 	// TODO: terrain is most probably a static collider, not movable!
 	if (Shape.IsA<CHeightfieldShape>())
 		_pBtObject->setCollisionFlags(_pBtObject->getCollisionFlags() | btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT);
+}
+//---------------------------------------------------------------------
+
+CPhysicsObject::~CPhysicsObject()
+{
+	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+	delete _pBtObject;
+	pShape->Release(); // See ConstructInternal
 }
 //---------------------------------------------------------------------
 
@@ -59,10 +74,37 @@ bool CPhysicsObject::UnshareShapeIfNecessary(const vector3& NewScaling)
 
 		// Physics object manually handles CCollisionShape refcounting
 		// to avoid wasting space for an explicit PCollisionShape field
-		// FIXME: do all subclasses guarantee to obey this rule? Can crash if not!!!
 		pShape->Release();
 		NewShape->AddRef();
 	}
+
+	return true;
+}
+//---------------------------------------------------------------------
+
+bool CPhysicsObject::PrepareTransform(const matrix44& NewTfm, btTransform& OutTfm)
+{
+	vector3& AxisX = NewTfm.AxisX();
+	vector3& AxisY = NewTfm.AxisY();
+	vector3& AxisZ = NewTfm.AxisZ();
+
+	const float ScalingX = AxisX.Length();
+	const float ScalingY = AxisY.Length();
+	const float ScalingZ = AxisZ.Length();
+
+	if (!UnshareShapeIfNecessary({ ScalingX, ScalingY, ScalingZ })) return false;
+
+	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+
+	//???TODO PERF: mul reciprocals instead of divisions? is it still actual to do 1 div and 3 mul instead of 3 div?
+	//???TODO PERF: optimize origin? VectorToBtVector(Offset).dot3(m_basis[0], m_basis[1], m_basis[2]) + VectorToBtVector(Tfm.Translation())
+	OutTfm.setBasis(
+		btMatrix3x3(
+			AxisX.x / ScalingX, AxisY.x / ScalingY, AxisZ.x / ScalingZ,
+			AxisX.y / ScalingX, AxisY.y / ScalingY, AxisZ.y / ScalingZ,
+			AxisX.z / ScalingX, AxisY.z / ScalingY, AxisZ.z / ScalingZ));
+	OutTfm.setOrigin(VectorToBtVector(NewTfm.Translation()));
+	OutTfm.getOrigin() = OutTfm * VectorToBtVector(pShape->GetOffset());
 
 	return true;
 }
