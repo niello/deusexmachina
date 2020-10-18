@@ -1200,6 +1200,8 @@ public:
 
 		// Evaluate animation of all skeletons frame by frame and compress with ACL
 
+		pScene->SetCurrentAnimationStack(pAnimStack);
+
 		const auto FrameRate = static_cast<float>(FbxTime::GetFrameRate(FbxTime::GetGlobalTimeMode()));
 		const auto FrameCount = static_cast<uint32_t>(EndFrame - StartFrame + 1);
 
