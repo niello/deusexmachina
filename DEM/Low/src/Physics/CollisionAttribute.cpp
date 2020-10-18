@@ -91,7 +91,7 @@ bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 		if (_Static)
 			_Collider = n_new(Physics::CStaticCollider(*Shape, _CollisionGroupID, _CollisionMaskID, Tfm));
 		else
-			_Collider = n_new(Physics::CMovableCollider(*Shape, _CollisionGroupID, _CollisionMaskID, Tfm));
+			_Collider = new Physics::CMovableCollider(*Shape, _CollisionGroupID, _CollisionMaskID, Tfm);
 
 		// Just updated, save redundant update
 		if (!_pNode->IsWorldTransformDirty())
