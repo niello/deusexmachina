@@ -30,6 +30,7 @@ namespace acl
 	class IAllocator;
 	class AnimationClip;
 	typedef std::unique_ptr<class RigidSkeleton, Deleter<RigidSkeleton>> RigidSkeletonPtr;
+	struct Transform_32;
 }
 
 struct CVertex
@@ -140,6 +141,30 @@ inline void NormalizeWeights8x4(uint8_t& w1, uint8_t& w2, uint8_t& w3, uint8_t& 
 }
 //---------------------------------------------------------------------
 
+inline void InitAABBWithVertex(CAABB& Dest, const float3& Vertex)
+{
+	Dest.Min.x = Vertex.x;
+	Dest.Max.x = Vertex.x;
+	Dest.Min.y = Vertex.y;
+	Dest.Max.y = Vertex.y;
+	Dest.Min.z = Vertex.z;
+	Dest.Max.z = Vertex.z;
+}
+//---------------------------------------------------------------------
+
+inline void ExtendAABB(CAABB& Dest, const float3& Vertex)
+{
+	if (Dest.Min.x > Vertex.x) Dest.Min.x = Vertex.x;
+	else if (Dest.Max.x < Vertex.x) Dest.Max.x = Vertex.x;
+
+	if (Dest.Min.y > Vertex.y) Dest.Min.y = Vertex.y;
+	else if (Dest.Max.y < Vertex.y) Dest.Max.y = Vertex.y;
+
+	if (Dest.Min.z > Vertex.z) Dest.Min.z = Vertex.z;
+	else if (Dest.Max.z < Vertex.z) Dest.Max.z = Vertex.z;
+}
+//---------------------------------------------------------------------
+
 inline void MergeAABBs(CAABB& Dest, const CAABB& Src)
 {
 	if (Dest.Min.x > Src.Min.x) Dest.Min.x = Src.Min.x;
@@ -161,3 +186,5 @@ bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name
 void InitImageProcessing();
 void TermImageProcessing();
 std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesystem::path& DestDir, const Data::CParams& TaskParams, CThreadSafeLog& Log);
+std::string GenerateCollisionShape(std::string ShapeType, const std::filesystem::path& ShapeDir, const std::string& MeshRsrcName, const CMeshAttrInfo& MeshInfo, const acl::Transform_32& GlobalTfm, CThreadSafeLog& Log);
+void FillNodeTransform(const acl::Transform_32& Tfm, Data::CParams& NodeSection);

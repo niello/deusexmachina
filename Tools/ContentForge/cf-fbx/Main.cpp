@@ -132,6 +132,42 @@ static void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic 
 }
 //---------------------------------------------------------------------
 
+static acl::Transform_32 GetNodeTransform(FbxNode* pNode)
+{
+	// Raw properties are left for testing purposes
+	constexpr bool UseRawProperties = false;
+	if (UseRawProperties)
+	{
+		const auto T = pNode->LclTranslation.Get();
+		const auto S = pNode->LclScaling.Get();
+
+		FbxQuaternion R;
+		R.ComposeSphericalXYZ(pNode->LclRotation.Get());
+
+		return
+		{
+			{ static_cast<float>(R[0]), static_cast<float>(R[1]), static_cast<float>(R[2]), static_cast<float>(R[3]) },
+			{ static_cast<float>(T[0]), static_cast<float>(T[1]), static_cast<float>(T[2]), 1.f },
+			{ static_cast<float>(S[0]), static_cast<float>(S[1]), static_cast<float>(S[2]), 0.f }
+		};
+	}
+	else
+	{
+		const auto LocalTfm = pNode->EvaluateLocalTransform();
+		const auto R = LocalTfm.GetQ();
+		const auto T = LocalTfm.GetT();
+		const auto S = LocalTfm.GetS();
+
+		return
+		{
+			{ static_cast<float>(R[0]), static_cast<float>(R[1]), static_cast<float>(R[2]), static_cast<float>(R[3]) },
+			{ static_cast<float>(T[0]), static_cast<float>(T[1]), static_cast<float>(T[2]), 1.f },
+			{ static_cast<float>(S[0]), static_cast<float>(S[1]), static_cast<float>(S[2]), 0.f }
+		};
+	}
+}
+//---------------------------------------------------------------------
+
 class CFBXTool : public CContentForgeTool
 {
 protected:
@@ -145,7 +181,8 @@ protected:
 		fs::path                  MeshPath;
 		fs::path                  SkinPath;
 		fs::path                  AnimPath;
-		std::string               DefaultName;
+		fs::path                  CollisionPath;
+		std::string               TaskName;
 		Data::CParamsSorted       MaterialMap;
 
 		std::unordered_map<const FbxMesh*, CMeshAttrInfo> ProcessedMeshes;
@@ -290,30 +327,24 @@ public:
 
 		Ctx.MaterialMap = ParamsUtils::OrderedParamsToSorted(ParamsUtils::GetParam<Data::CParams>(Task.Params, "Materials", {}));
 
-		Ctx.DefaultName = Task.TaskID.CStr();
+		Ctx.TaskName = Task.TaskID.CStr();
 
-		fs::path OutPath = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
-		if (!_RootDir.empty() && OutPath.is_relative())
-			OutPath = fs::path(_RootDir) / OutPath;
+		fs::path OutPath = GetPath(Task.Params, "Output");
 
-		Ctx.MeshPath = ParamsUtils::GetParam<std::string>(Task.Params, "MeshOutput", std::string{});
-		if (!_RootDir.empty() && Ctx.MeshPath.is_relative())
-			Ctx.MeshPath = fs::path(_RootDir) / Ctx.MeshPath;
-
-		Ctx.SkinPath = ParamsUtils::GetParam<std::string>(Task.Params, "SkinOutput", std::string{});
-		if (!_RootDir.empty() && Ctx.SkinPath.is_relative())
-			Ctx.SkinPath = fs::path(_RootDir) / Ctx.SkinPath;
-
-		Ctx.AnimPath = ParamsUtils::GetParam<std::string>(Task.Params, "AnimOutput", std::string{});
-		if (!_RootDir.empty() && Ctx.AnimPath.is_relative())
-			Ctx.AnimPath = fs::path(_RootDir) / Ctx.AnimPath;
+		Ctx.MeshPath = GetPath(Task.Params, "MeshOutput");
+		Ctx.SkinPath = GetPath(Task.Params, "SkinOutput");
+		Ctx.AnimPath = GetPath(Task.Params, "AnimOutput");
+		Ctx.CollisionPath = GetPath(Task.Params, "CollisionOutput");
 
 		// Export node hierarchy to DEM format, omit FBX root node
 		
 		Data::CParams Nodes;
 
+		// Must be identity, but let's ensure all is correct
+		const auto RootTfm = GetNodeTransform(pScene->GetRootNode());
+
 		for (int i = 0; i < pScene->GetRootNode()->GetChildCount(); ++i)
-			if (!ExportNode(pScene->GetRootNode()->GetChild(i), Ctx, Nodes))
+			if (!ExportNode(pScene->GetRootNode()->GetChild(i), Ctx, Nodes, RootTfm))
 			{
 				return ETaskResult::Failure;
 			}
@@ -344,7 +375,7 @@ public:
 		return Result ? ETaskResult::Success : ETaskResult::Failure;
 	}
 
-	bool ExportNode(FbxNode* pNode, CContext& Ctx, Data::CParams& Nodes)
+	bool ExportNode(FbxNode* pNode, CContext& Ctx, Data::CParams& Nodes, const acl::Transform_32& ParentGlobalTfm)
 	{
 		if (!pNode)
 		{
@@ -354,13 +385,15 @@ public:
 
 		Ctx.Log.LogDebug(std::string("Node ") + pNode->GetName());
 
-		static const CStrID sidTranslation("Translation");
-		static const CStrID sidRotation("Rotation");
-		static const CStrID sidScale("Scale");
 		static const CStrID sidAttrs("Attrs");
 		static const CStrID sidChildren("Children");
 
 		Data::CParams NodeSection;
+
+		// Process transform
+
+		const auto Tfm = GetNodeTransform(pNode);
+		const auto GlobalTfm = acl::transform_mul(Tfm, ParentGlobalTfm);
 
 		// Process attributes
 
@@ -375,7 +408,7 @@ public:
 			{
 				case FbxNodeAttribute::eMesh:
 				{
-					if (!ExportModel(static_cast<FbxMesh*>(pAttribute), Ctx, Attributes)) return false;
+					if (!ExportModel(static_cast<FbxMesh*>(pAttribute), Ctx, Attributes, GlobalTfm)) return false;
 					break;
 				}
 				case FbxNodeAttribute::eLight:
@@ -424,40 +457,7 @@ public:
 
 		// Bone transformation is determined by the bind pose and animations
 		if (!IsBone)
-		{
-			float3 Translation;
-			float3 Scaling;
-			float4 Rotation;
-
-			// Raw properties are left for testing purposes
-			constexpr bool UseRawProperties = false;
-			if (UseRawProperties)
-			{
-				Translation = FbxToDEMVec3(pNode->LclTranslation.Get());
-				Scaling = FbxToDEMVec3(pNode->LclScaling.Get());
-
-				FbxQuaternion Quat;
-				Quat.ComposeSphericalXYZ(pNode->LclRotation.Get());
-				Rotation = FbxToDEMVec4(Quat);
-			}
-			else
-			{
-				const auto LocalTfm = pNode->EvaluateLocalTransform();
-				Translation = FbxToDEMVec3(LocalTfm.GetT());
-				Scaling = FbxToDEMVec3(LocalTfm.GetS());
-				Rotation = FbxToDEMVec4(LocalTfm.GetQ());
-			}
-
-			constexpr float3 Unit3(1.f, 1.f, 1.f);
-			constexpr float3 Zero3(0.f, 0.f, 0.f);
-			constexpr float4 IdentityQuat(0.f, 0.f, 0.f, 1.f);
-			if (Scaling != Unit3)
-				NodeSection.emplace_back(sidScale, Scaling);
-			if (Rotation != IdentityQuat)
-				NodeSection.emplace_back(sidRotation, Rotation);
-			if (Translation != Zero3)
-				NodeSection.emplace_back(sidTranslation, Translation);
-		}
+			FillNodeTransform(Tfm, NodeSection);
 
 		// Process children
 
@@ -472,7 +472,7 @@ public:
 				continue;
 			}
 
-			if (!ExportNode(pNode->GetChild(i), Ctx, Children)) return false;
+			if (!ExportNode(pNode->GetChild(i), Ctx, Children, GlobalTfm)) return false;
 		}
 
 		if (!Children.empty())
@@ -488,7 +488,7 @@ public:
 		return true;
 	}
 
-	bool ExportModel(const FbxMesh* pMesh, CContext& Ctx, Data::CDataArray& Attributes)
+	bool ExportModel(const FbxMesh* pMesh, CContext& Ctx, Data::CDataArray& Attributes, const acl::Transform_32& GlobalTfm)
 	{
 		Ctx.Log.LogDebug(std::string("Model ") + pMesh->GetName());
 
@@ -548,8 +548,26 @@ public:
 		if (DEM_collision.IsValid())
 		{
 			std::string ShapeType = DEM_collision.Get<FbxString>();
+			trim(ShapeType, " \t\n\r");
+			ToLower(ShapeType);
 			if (!ShapeType.empty())
-				Ctx.Log.LogInfo(std::string("Mesh ") + pMesh->GetName() + " has an autogenerated collision shape: " + ShapeType);
+			{
+				const std::string MeshName = pMesh->GetName();
+				const auto MeshRsrcName = GetValidResourceName(MeshName.empty() ? Ctx.TaskName + '_' + MeshName : MeshName);
+
+				const auto ShapePath = GenerateCollisionShape(std::move(ShapeType), Ctx.CollisionPath, MeshRsrcName, MeshInfo, GlobalTfm, Ctx.Log);
+				if (ShapePath.empty()) return false; //???warn instead of failing and proceed without a shape?
+
+				const auto ShapeID = _ResourceRoot + fs::relative(ShapePath, _RootDir).generic_string();
+
+				Data::CParams CollisionAttribute;
+				CollisionAttribute.emplace_back(CStrID("Class"), 'COLA'); // Physics::CCollisionAttribute
+				CollisionAttribute.emplace_back(CStrID("Shape"), ShapeID);
+				//CollisionAttribute.emplace_back(CStrID("Static"), true);
+				//CollisionAttribute.emplace_back(CStrID("CollisionGroup"), CStrID("..."));
+				//CollisionAttribute.emplace_back(CStrID("CollisionMask"), CStrID("..."));
+				Attributes.push_back(std::move(CollisionAttribute));
+			}
 		}
 
 		return true;
@@ -819,14 +837,21 @@ public:
 
 		// Index and optimize vertices
 
-		for (auto& Pair : SubMeshes)
+		for (auto& [SubMeshID, SubMesh] : SubMeshes)
 		{
 			std::vector<CVertex> RawVertices;
-			std::swap(RawVertices, Pair.second.Vertices);
+			std::swap(RawVertices, SubMesh.Vertices);
 
 			std::vector<unsigned int> RawIndices;
 
-			ProcessGeometry(RawVertices, RawIndices, Pair.second.Vertices, Pair.second.Indices);
+			ProcessGeometry(RawVertices, RawIndices, SubMesh.Vertices, SubMesh.Indices);
+
+			if (!SubMesh.Vertices.empty())
+			{
+				InitAABBWithVertex(SubMesh.AABB, SubMesh.Vertices[0].Position);
+				for (const auto& Vertex : SubMesh.Vertices)
+					ExtendAABB(SubMesh.AABB, Vertex.Position);
+			}
 		}
 
 		// TODO: simplify, quantize and compress if required, see meshoptimizer readme, can simplify for lower LODs
@@ -835,28 +860,28 @@ public:
 
 		std::string MeshName = pMesh->GetName();
 		if (MeshName.empty()) MeshName = pMesh->GetNode()->GetName();
-		if (MeshName.empty()) MeshName = Ctx.DefaultName; //!!!FIXME: add counter per resource type!
+		if (MeshName.empty()) MeshName = Ctx.TaskName; //!!!FIXME: add counter per resource type!
 		MeshName = GetValidResourceName(MeshName);
 
 		const auto DestPath = Ctx.MeshPath / (MeshName + ".msh");
 
 		if (!WriteDEMMesh(DestPath, SubMeshes, VertexFormat, Bones.size(), Ctx.Log)) return false;
 
-		// Export materials
+		// Export materials, calculate AABB
 
 		CMeshAttrInfo MeshInfo;
 		MeshInfo.MeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
-		for (const auto& Pair : SubMeshes)
+		for (const auto& [SubMeshID, SubMesh] : SubMeshes)
 		{
 			// PBR materials aren't supported in FBX, can't export.
 			// Blender FBX exporter saves no textures, so parsing is completely useless for now.
 			// Instead of this, materials must be precreated and explicitly declared in .meta.
-			// glTF 2.0 exporter will address this issue.
+			// Use glTF 2.0 exporter, it is free from this issue.
 
 			std::string MaterialID;
-			if (!Pair.first.empty())
+			if (!SubMeshID.empty())
 			{
-				auto MtlIt = Ctx.MaterialMap.find(CStrID(Pair.first.c_str()));
+				auto MtlIt = Ctx.MaterialMap.find(CStrID(SubMeshID.c_str()));
 				if (MtlIt != Ctx.MaterialMap.cend())
 				{
 					fs::path MtlPath = MtlIt->second.GetValue<std::string>();
@@ -867,11 +892,13 @@ public:
 				}
 				else
 				{
-					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " references undefined material " + Pair.first);
+					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " references undefined material " + SubMeshID);
 				}
 			}
 
 			MeshInfo.MaterialIDs.push_back(MaterialID);
+
+			MergeAABBs(MeshInfo.AABB, SubMesh.AABB);
 		}
 
 		Ctx.ProcessedMeshes.emplace(pMesh, std::move(MeshInfo));
