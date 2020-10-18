@@ -22,11 +22,17 @@ static void RunTimelineTask(DEM::Game::CGameWorld& World, HEntity EntityID, CSma
 		return;
 	}
 
+	const auto* pNewTrackProto = Task.Timeline->GetObject<Anim::CTimelineTrack>();
+	if (!pNewTrackProto)
+	{
+		SOComponent.Player.SetTrack(nullptr);
+		return;
+	}
+
 	Anim::PTimelineTrack NewTrack;
 
 	// If current track is cloned from the same prototype, can reuse it and avoid heavy setup
 	const auto* pOldTrackProto = pPrevTask ? pPrevTask->Timeline->GetObject<Anim::CTimelineTrack>() : nullptr;
-	const auto* pNewTrackProto = Task.Timeline->GetObject<Anim::CTimelineTrack>();
 	if (!CurrTrack || pNewTrackProto != pOldTrackProto)
 	{
 		Anim::PTimelineTrack NewTrack = pNewTrackProto->Clone();

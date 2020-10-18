@@ -13,6 +13,14 @@ namespace fs = std::filesystem;
 // Example args:
 // -s src/scenes
 
+// Blender export settings:
+// - Custom Properties: on
+// - Apply Scalings: FBX Units Scale / FBX All
+// - Forward: -Z
+// - Up: Y
+// - Apply Unit: off
+// - Apply Transform: off (if on, node transforms are closer to original, but somethings else seems to be baked into geometry)
+
 template<class TDEM, class TFBX>
 static TDEM FbxToDEM(const TFBX& Value)
 {
@@ -297,6 +305,9 @@ public:
 		pImporter->Destroy();
 
 		// Convert scene transforms and geometry to a more suitable format
+
+		//auto AxisSystem = pScene->GetGlobalSettings().GetAxisSystem();
+		//auto OriginalUpAxis = pScene->GetGlobalSettings().GetOriginalUpAxis();
 
 		const auto SceneFrameRate = FbxTime::GetFrameRate(FbxTime::GetGlobalTimeMode());
 		if (!FbxEqual(SceneFrameRate, _AnimSamplingRate))
