@@ -50,6 +50,11 @@ void InteractWithSmartObjects(CGameWorld& World)
 		// if not required facing, add or update Face
 		// if facing is OK too, start actor animation and request smart object state switching
 
+		// Wants to interact with the controller SO. Must check if it is close enough not to navigate to it (can steer).
+		//Agent.pNavQuery->findLocalNeighbourhood
+		//Agent.pNavQuery->moveAlongSurface
+		//Agent.pNavQuery->raycast
+
 		//CSmartObject* pSmart = SOComponent.Asset->GetObject<CSmartObject>();
 		//if (!pSmart) return;
 
@@ -57,6 +62,8 @@ void InteractWithSmartObjects(CGameWorld& World)
 		if (!pSOComponent) return;
 		pSOComponent->RequestedState = pAction->ObjectState;
 		pSOComponent->Force = pAction->ForceObjectState;
+
+		Queue.FinalizeActiveAction(*pAction, EActionStatus::Succeeded);
 	});
 }
 //---------------------------------------------------------------------
