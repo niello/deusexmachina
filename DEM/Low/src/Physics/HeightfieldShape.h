@@ -21,6 +21,8 @@ protected:
 public:
 
 	CHeightfieldShape(btHeightfieldTerrainShape* pShape, PHeightfieldData&& HeightfieldData, const vector3& Offset = vector3::Zero);
+
+	virtual PCollisionShape CloneWithScaling(const vector3& Scaling) const override;
 };
 
 typedef Ptr<CHeightfieldShape> PHeightfieldShape;

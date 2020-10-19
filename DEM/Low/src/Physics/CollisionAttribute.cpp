@@ -86,7 +86,6 @@ bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 		auto Shape = RShape->ValidateObject<Physics::CCollisionShape>();
 		if (!Shape) FAIL;
 
-		// Also can create bullet kinematic body right here without CMovableCollider wrapper, think of it
 		const matrix44& Tfm = _pNode->IsWorldTransformDirty() ? matrix44::Identity : _pNode->GetWorldMatrix();
 		if (_Static)
 			_Collider = n_new(Physics::CStaticCollider(*Shape, _CollisionGroupID, _CollisionMaskID, Tfm));

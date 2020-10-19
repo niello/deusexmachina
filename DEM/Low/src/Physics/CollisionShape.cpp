@@ -35,7 +35,7 @@ PCollisionShape CCollisionShape::CloneWithScaling(const vector3& Scaling) const
 		case BOX_SHAPE_PROXYTYPE:
 		{
 			const btVector3 UnscaledHalfExtents = static_cast<btBoxShape*>(_pBtShape)->getHalfExtentsWithMargin() / CurrScaling;
-			return n_new(Physics::CCollisionShape(new btBoxShape(UnscaledHalfExtents), UnscaledOffset, Scaling));
+			return n_new(CCollisionShape(new btBoxShape(UnscaledHalfExtents), UnscaledOffset, Scaling));
 		}
 	}
 
@@ -47,7 +47,7 @@ PCollisionShape CCollisionShape::CreateSphere(float Radius, const vector3& Offse
 {
 	if (Radius <= 0.f) return nullptr;
 
-	return n_new(Physics::CCollisionShape(new btSphereShape(Radius), Offset, Scaling));
+	return n_new(CCollisionShape(new btSphereShape(Radius), Offset, Scaling));
 }
 //---------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ PCollisionShape CCollisionShape::CreateBox(const vector3& Size, const vector3& O
 {
 	if (Size.x <= 0.f || Size.y <= 0.f || Size.z <= 0.f) return nullptr;
 
-	return n_new(Physics::CCollisionShape(new btBoxShape(VectorToBtVector(Size * 0.5f)), Offset, Scaling));
+	return n_new(CCollisionShape(new btBoxShape(VectorToBtVector(Size * 0.5f)), Offset, Scaling));
 }
 //---------------------------------------------------------------------
 
@@ -63,7 +63,7 @@ PCollisionShape CCollisionShape::CreateCapsuleX(float Radius, float CylinderLeng
 {
 	if (CylinderLength <= 0.f) return CreateSphere(Radius, Offset);
 
-	return n_new(Physics::CCollisionShape(new btCapsuleShapeX(Radius, CylinderLength), Offset, Scaling));
+	return n_new(CCollisionShape(new btCapsuleShapeX(Radius, CylinderLength), Offset, Scaling));
 }
 //---------------------------------------------------------------------
 
@@ -71,7 +71,7 @@ PCollisionShape CCollisionShape::CreateCapsuleY(float Radius, float CylinderLeng
 {
 	if (CylinderLength <= 0.f) return CreateSphere(Radius, Offset);
 
-	return n_new(Physics::CCollisionShape(new btCapsuleShape(Radius, CylinderLength), Offset, Scaling));
+	return n_new(CCollisionShape(new btCapsuleShape(Radius, CylinderLength), Offset, Scaling));
 }
 //---------------------------------------------------------------------
 
@@ -79,7 +79,7 @@ PCollisionShape CCollisionShape::CreateCapsuleZ(float Radius, float CylinderLeng
 {
 	if (CylinderLength <= 0.f) return CreateSphere(Radius, Offset);
 
-	return n_new(Physics::CCollisionShape(new btCapsuleShapeZ(Radius, CylinderLength), Offset, Scaling));
+	return n_new(CCollisionShape(new btCapsuleShapeZ(Radius, CylinderLength), Offset, Scaling));
 }
 //---------------------------------------------------------------------
 
