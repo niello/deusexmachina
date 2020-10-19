@@ -12,7 +12,9 @@ namespace Physics
 CStaticCollider::CStaticCollider(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const matrix44& InitialTfm, const CPhysicsMaterial& Material)
 	: CPhysicsObject(CollisionGroupID, CollisionMaskID)
 {
-	ConstructInternal(new btCollisionObject(), Shape, Material);
+	auto pCollObj = new btCollisionObject();
+	pCollObj->setCollisionShape(Shape.GetBulletShape());
+	ConstructInternal(pCollObj, Material);
 
 	SetTransform(InitialTfm);
 }
@@ -44,8 +46,6 @@ void CStaticCollider::SetTransform(const matrix44& Tfm)
 	if (PrepareTransform(Tfm, BtTfm))
 	{
 		_pBtObject->setWorldTransform(BtTfm);
-
-		//n_assert(false); // Just to check if updateSingleAabb is necessary
 		//???need? if (_Level) _Level->GetBtWorld()->updateSingleAabb(_pBtObject);
 	}
 }

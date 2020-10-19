@@ -23,7 +23,7 @@ CMovableCollider::CMovableCollider(CCollisionShape& Shape, CStrID CollisionGroup
 {
 	// NB: mass must be zero for kinematic objects
 	btRigidBody::btRigidBodyConstructionInfo CI(0.f, &_MotionState, Shape.GetBulletShape());
-	ConstructInternal(new btRigidBody(CI), Shape, Material);
+	ConstructInternal(new btRigidBody(CI), Material);
 	_pBtObject->setCollisionFlags(_pBtObject->getCollisionFlags() | btRigidBody::CF_KINEMATIC_OBJECT);
 }
 //---------------------------------------------------------------------

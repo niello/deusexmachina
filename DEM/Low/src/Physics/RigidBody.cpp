@@ -48,7 +48,7 @@ CRigidBody::CRigidBody(float Mass, CCollisionShape& Shape, CStrID CollisionGroup
 
 	btRigidBody::btRigidBodyConstructionInfo CI(Mass, &_MotionState, Shape.GetBulletShape());
 	Shape.GetBulletShape()->calculateLocalInertia(Mass, CI.m_localInertia);
-	ConstructInternal(new btRigidBody(CI), Shape, Material);
+	ConstructInternal(new btRigidBody(CI), Material);
 
 	SetTransform(InitialTfm);
 	_pBtObject->setInterpolationWorldTransform(_pBtObject->getWorldTransform());
@@ -99,9 +99,9 @@ void CRigidBody::SetTransform(const matrix44& Tfm)
 
 void CRigidBody::GetTransform(matrix44& OutTfm) const
 {
-	if (_MotionState.GetSceneNode())
+	if (const Scene::CSceneNode* pSceneNode = _MotionState.GetSceneNode())
 	{
-		OutTfm = _MotionState.GetSceneNode()->GetWorldMatrix();
+		OutTfm = pSceneNode->GetWorldMatrix();
 	}
 	else
 	{

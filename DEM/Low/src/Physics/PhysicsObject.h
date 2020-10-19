@@ -31,7 +31,7 @@ protected:
 	virtual void           AttachToLevelInternal() = 0;
 	virtual void           RemoveFromLevelInternal() = 0;
 
-	void                   ConstructInternal(btCollisionObject* pBtObject, CCollisionShape& Shape, const CPhysicsMaterial& Material);
+	void                   ConstructInternal(btCollisionObject* pBtObject, const CPhysicsMaterial& Material);
 	bool                   UnshareShapeIfNecessary(const vector3& NewScaling);
 	bool                   PrepareTransform(const matrix44& NewTfm, btTransform& OutTfm);
 

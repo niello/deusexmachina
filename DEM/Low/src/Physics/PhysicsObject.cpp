@@ -17,30 +17,31 @@ CPhysicsObject::CPhysicsObject(CStrID CollisionGroupID, CStrID CollisionMaskID)
 //---------------------------------------------------------------------
 
 // NB: treat this as a part of constructor, each child must call it from its constructor
-void CPhysicsObject::ConstructInternal(btCollisionObject* pBtObject, CCollisionShape& Shape, const CPhysicsMaterial& Material)
+void CPhysicsObject::ConstructInternal(btCollisionObject* pBtObject, const CPhysicsMaterial& Material)
 {
 	n_assert_dbg(pBtObject);
 
+	_pBtObject = pBtObject;
+
+	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+
+	// Can't guarantee that pShape is not (or will not be) shared
+	_IsShapeShared = true;
+
 	// Instead of storing strong ref, we manually control refcount and use
 	// a pointer from the bullet collision shape
-	Shape.AddRef();
-
-	_pBtObject = pBtObject;
-	if (_pBtObject->getCollisionShape() != Shape.GetBulletShape())
-	{
-		_pBtObject->setCollisionShape(Shape.GetBulletShape());
-		_IsShapeShared = true; // Can't guarantee that the new shape will not be shared
-	}
-	_pBtObject->setFriction(Material.Friction);
-	_pBtObject->setRollingFriction(Material.RollingFriction);
-	_pBtObject->setRestitution(1.f - Material.Bounciness);
-	_pBtObject->setUserPointer(this);
+	pShape->AddRef();
 
 	// As of Bullet v2.89 SDK, debug drawer tries to draw each heightfield triangle wireframe,
 	// so we disable debug drawing of terrain at all
 	// TODO: terrain is most probably a static collider, not movable!
-	if (Shape.IsA<CHeightfieldShape>())
+	if (pShape->IsA<CHeightfieldShape>())
 		_pBtObject->setCollisionFlags(_pBtObject->getCollisionFlags() | btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT);
+
+	_pBtObject->setFriction(Material.Friction);
+	_pBtObject->setRollingFriction(Material.RollingFriction);
+	_pBtObject->setRestitution(1.f - Material.Bounciness);
+	_pBtObject->setUserPointer(this);
 }
 //---------------------------------------------------------------------
 
@@ -72,8 +73,7 @@ bool CPhysicsObject::UnshareShapeIfNecessary(const vector3& NewScaling)
 		_pBtObject->setCollisionShape(NewShape->GetBulletShape());
 		_IsShapeShared = false;
 
-		// Physics object manually handles CCollisionShape refcounting
-		// to avoid wasting space for an explicit PCollisionShape field
+		// See ConstructInternal for explaination
 		pShape->Release();
 		NewShape->AddRef();
 	}
