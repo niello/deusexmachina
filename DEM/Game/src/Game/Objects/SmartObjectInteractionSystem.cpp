@@ -1,5 +1,7 @@
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
+#include <Game/ECS/Components/SceneComponent.h>
+#include <AI/Movement/SteerAction.h>
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/Objects/SmartObject.h>
 
@@ -8,9 +10,13 @@ namespace DEM::Game
 
 void InteractWithSmartObjects(CGameWorld& World)
 {
-	World.ForEachEntityWith<CActionQueueComponent>(
-		[&World](auto EntityID, auto& Entity, CActionQueueComponent& Queue)
+	World.ForEachEntityWith<CActionQueueComponent, const CSceneComponent>(
+		[&World](auto EntityID, auto& Entity,
+			CActionQueueComponent& Queue,
+			const DEM::Game::CSceneComponent* pSceneComponent)
 	{
+		if (!pSceneComponent->RootNode) return;
+
 		auto pAction = Queue.FindActive<SwitchSmartObjectState>();
 		if (!pAction) return;
 
@@ -49,6 +55,15 @@ void InteractWithSmartObjects(CGameWorld& World)
 		// if not the same position (what tolerance, from Steer?), add or update Steer
 		// if not required facing, add or update Face
 		// if facing is OK too, start actor animation and request smart object state switching
+
+		const vector3 ActionPos(127.0f, 43.5f, 115.0f);
+
+		const auto& Pos = pSceneComponent->RootNode->GetWorldPosition();
+		if (vector3::SqDistance2D(ActionPos, Pos) > AI::Steer::SqLinearTolerance)
+		{
+			Queue.PushSubActionForParent<AI::Steer>(*pAction, ActionPos, ActionPos, 0.f);
+			return;
+		}
 
 		// Wants to interact with the controller SO. Must check if it is close enough not to navigate to it (can steer).
 		//Agent.pNavQuery->findLocalNeighbourhood
