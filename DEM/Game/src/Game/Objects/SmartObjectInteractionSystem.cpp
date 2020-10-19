@@ -56,12 +56,24 @@ void InteractWithSmartObjects(CGameWorld& World)
 		// if not required facing, add or update Face
 		// if facing is OK too, start actor animation and request smart object state switching
 
+		const vector3 ObjectPos(128.0f, 43.5f, 115.0f);
 		const vector3 ActionPos(127.0f, 43.5f, 115.0f);
 
 		const auto& Pos = pSceneComponent->RootNode->GetWorldPosition();
-		if (vector3::SqDistance2D(ActionPos, Pos) > AI::Steer::SqLinearTolerance)
+		if (vector3::SqDistance2D(ActionPos, Pos) >= AI::Steer::SqLinearTolerance)
 		{
 			Queue.PushSubActionForParent<AI::Steer>(*pAction, ActionPos, ActionPos, 0.f);
+			return;
+		}
+
+		vector3 LookatDir = -pSceneComponent->RootNode->GetWorldMatrix().AxisZ();
+		LookatDir.norm();
+		vector3 TargetDir = ObjectPos - Pos;
+		TargetDir.norm();
+		const float Angle = vector3::Angle2DNorm(LookatDir, TargetDir);
+		if (std::fabsf(Angle) >= DEM::AI::Turn::AngularTolerance)
+		{
+			Queue.PushSubActionForParent<AI::Turn>(*pAction, TargetDir);
 			return;
 		}
 
@@ -78,6 +90,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		pSOComponent->RequestedState = pAction->ObjectState;
 		pSOComponent->Force = pAction->ForceObjectState;
 
+		//!!!TODO: wait for actor animation or state transition end!
 		Queue.FinalizeActiveAction(*pAction, EActionStatus::Succeeded);
 	});
 }
