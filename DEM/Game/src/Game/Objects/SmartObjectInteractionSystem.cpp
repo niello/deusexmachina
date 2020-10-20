@@ -1,6 +1,7 @@
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Game/ECS/Components/SceneComponent.h>
+#include <AI/Navigation/NavAgentComponent.h>
 #include <AI/Movement/SteerAction.h>
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/Objects/SmartObject.h>
@@ -10,10 +11,11 @@ namespace DEM::Game
 
 void InteractWithSmartObjects(CGameWorld& World)
 {
-	World.ForEachEntityWith<CActionQueueComponent, const CSceneComponent>(
+	World.ForEachEntityWith<CActionQueueComponent, const CSceneComponent, const AI::CNavAgentComponent*>(
 		[&World](auto EntityID, auto& Entity,
 			CActionQueueComponent& Queue,
-			const DEM::Game::CSceneComponent* pSceneComponent)
+			const CSceneComponent* pSceneComponent,
+			const AI::CNavAgentComponent* pNavAgent)
 	{
 		if (!pSceneComponent->RootNode) return;
 
@@ -62,7 +64,26 @@ void InteractWithSmartObjects(CGameWorld& World)
 		const auto& Pos = pSceneComponent->RootNode->GetWorldPosition();
 		if (vector3::SqDistance2D(ActionPos, Pos) >= AI::Steer::SqLinearTolerance)
 		{
-			Queue.PushSubActionForParent<AI::Steer>(*pAction, ActionPos, ActionPos, 0.f);
+			if (pNavAgent)
+			{
+				const float Extents[3] = { pNavAgent->Radius, pNavAgent->Height, pNavAgent->Radius };
+				float NearestPos[3];
+
+				dtPolyRef ObjPolyRef = 0;
+				pNavAgent->pNavQuery->findNearestPoly(ObjectPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NearestPos);
+
+				// FIXME: use pNavAgent->Corridor.getFirstPoly() instead! Offmesh can break this now!
+				dtPolyRef AgentPolyRef = 0;
+				pNavAgent->pNavQuery->findNearestPoly(Pos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &AgentPolyRef, NearestPos);
+
+				if (ObjPolyRef != AgentPolyRef)
+				{
+					Queue.PushSubActionForParent<AI::Navigate>(*pAction, ActionPos, 0.f);
+					return;
+				}
+			}
+
+			Queue.PushSubActionForParent<AI::Steer>(*pAction, ActionPos, ObjectPos, 0.f);
 			return;
 		}
 

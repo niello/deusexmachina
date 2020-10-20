@@ -110,6 +110,9 @@ static bool UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 		// Also can recover to the corridor poly that is valid and most close to start.
 		// Must handle possible clipping through thin impassable areas.
 
+		//!!!FIXME: check if offmesh is being traversed and first corridor poly is dest, not curr!
+		n_assert_dbg(Agent.Mode != ENavigationMode::Offmesh);
+
 		// Make sure the first polygon is valid, but leave other valid
 		// polygons in the path so that replanner can adjust the path better.
 		Agent.Corridor.fixPathStart(NearestRef, NearestPos);
