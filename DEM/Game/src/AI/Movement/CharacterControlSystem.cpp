@@ -322,6 +322,7 @@ void CheckCharacterControllersArrival(DEM::Game::CGameWorld& World, Physics::CPh
 			{
 				// TODO:
 				// If is stuck, increase stuck timer, and if timer is too high, set Stuck mvmt state, i.e. fail movement.
+				// Stuck can be detected if resulting moving average distance remains almost the same for some period of time.
 			}
 		}
 

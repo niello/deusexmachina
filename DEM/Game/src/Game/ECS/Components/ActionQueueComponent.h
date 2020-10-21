@@ -23,7 +23,7 @@ enum class EActionStatus : U8
 	Cancelled
 };
 
-class CActionQueueComponent
+class CActionQueueComponent final
 {
 protected:
 
@@ -35,12 +35,39 @@ protected:
 
 public:
 
+	class HAction
+	{
+	private:
+
+		Events::PEventBase* _It = nullptr;
+
+	public:
+
+		//HAction(...);
+
+		operator bool() const { return !!_It;  }
+
+		//Events::CEventBase* Get() const { return _It ? _It->get() : nullptr; }
+
+		//Events::CEventBase& operator *() const { n_assert_dbg(_pRecord); return _pRecord->Value; }
+		Events::CEventBase* operator ->() const { return _It ? _It->get() : nullptr; }
+	};
+
 	CActionQueueComponent() = default;
 	CActionQueueComponent(const CActionQueueComponent& Other) = delete;
 	CActionQueueComponent(CActionQueueComponent&& Other) = default;
 	CActionQueueComponent& operator =(const CActionQueueComponent& Other) = delete;
 	CActionQueueComponent& operator =(CActionQueueComponent&& Other) = default;
 	~CActionQueueComponent() = default;
+
+	//???small pool allocator for events? one for all components? one for all small things? can be static field, ensure MT safety
+
+	// Push new
+	// Push or update existing (top only? by handle? search here or always provide target handle)
+	// Remove by handle with all children. If root, requires terminal state, otherwise allows InProgress. Never allows New state?
+
+
+	//=====================================================================
 
 	EActionStatus       GetStatus() const { return _Status; }
 	void                Reset();
