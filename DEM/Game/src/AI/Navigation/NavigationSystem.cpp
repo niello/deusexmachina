@@ -418,6 +418,8 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 
 		if (auto pNavigateAction = pQueue->FindActive<Navigate>())
 		{
+			// FIXME: check immediate child, not sub-sub-actions!
+
 			// Check if action or sub-action has finished
 			if (pQueue->GetStatus() == DEM::Game::EActionStatus::Failed || pQueue->GetStatus() == DEM::Game::EActionStatus::Cancelled)
 			{
