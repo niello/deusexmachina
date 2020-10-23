@@ -109,6 +109,13 @@ public:
 		return (It == _Stack.cend()) ? HAction{} : HandleFromIt(It);
 	}
 
+	HAction GetParent(HAction Handle) const
+	{
+		if (!Handle) return {};
+		auto It = ItFromHandle(Handle);
+		return (It == _Stack.cbegin()) ? HAction{} : HandleFromIt(--It);
+	}
+
 	EActionStatus GetStatus(HAction Handle) const
 	{
 		if (!Handle) return EActionStatus::NotQueued;
@@ -140,15 +147,6 @@ public:
 
 		auto pAction = EnqueueAction(std::make_unique<T>(std::forward<TArgs>(Args)...));
 		return pAction ? static_cast<T*>(pAction) : nullptr;
-	}
-
-	template<typename T>
-	T* GetImmediateSubAction(const Events::CEventBase& Parent) const
-	{
-		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
-
-		auto pAction = GetImmediateSubAction(Parent);
-		return pAction ? pAction->As<T>() : nullptr;
 	}
 
 	template<typename T, typename... TArgs>

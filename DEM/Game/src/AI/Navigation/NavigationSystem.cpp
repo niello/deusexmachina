@@ -295,7 +295,7 @@ static bool CheckAsyncPathResult(CNavAgentComponent& Agent, ::AI::CPathRequestQu
 
 // Returns OutNextTurn for corridor visibility optimization
 static bool GenerateTraversalAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue,
-	const Navigate& NavAction, const vector3& ExactPos, vector3& OutNextTurn)
+	Game::HAction NavAction, const vector3& ExactPos, vector3& OutNextTurn)
 {
 	// Check if we are able to trigger an offmesh connection at the next corner
 	//???add shortcut method to corridor? Agent.Corridor.initStraightPathSearch(Agent.pNavQuery, Ctx);
@@ -489,7 +489,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			{
 				// Try to return to the navmesh by the shortest path
 				auto pAction = Agent.Settings->FindAction(World, Agent, 0, 0, nullptr);
-				if (!pAction || !pAction->GenerateRecoveryAction(*pQueue, *pNavigateAction, Agent.Corridor.getPos()))
+				if (!pAction || !pAction->GenerateRecoveryAction(*pQueue, NavigateAction, Agent.Corridor.getPos()))
 					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
 			}
 			else if (Agent.Mode == ENavigationMode::Surface)
@@ -510,7 +510,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				}
 
 				vector3 NextTurn;
-				if (!GenerateTraversalAction(World, Agent, *pQueue, *pNavigateAction, Pos, NextTurn))
+				if (!GenerateTraversalAction(World, Agent, *pQueue, NavigateAction, Pos, NextTurn))
 					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
 
 				// Optimize path visibility along the [corridor pos -> NextTurn] straight line
@@ -523,7 +523,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				//if so, can avoid storing curr offmesh poly in this case, and maybe surface traversal will benefit too.
 				Game::HEntity Controller;
 				auto pAction = Agent.Settings->FindAction(World, Agent, Agent.CurrAreaType, Agent.OffmeshRef, &Controller);
-				if (!pAction || !pAction->GenerateAction(World, Agent, Controller, *pQueue, *pNavigateAction, Pos))
+				if (!pAction || !pAction->GenerateAction(World, Agent, Controller, *pQueue, NavigateAction, Pos))
 					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
 			}
 		}

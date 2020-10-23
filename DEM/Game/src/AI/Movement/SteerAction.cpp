@@ -8,10 +8,13 @@ namespace DEM::AI
 {
 FACTORY_CLASS_IMPL(DEM::AI::CSteerAction, 'STRA', CTraversalAction);
 
-static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue, const Navigate& NavAction,
+static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue, Game::HAction NavAction,
 	dtStraightPathContext& Ctx, dtStatus Status, U8 Flags, U8 AreaType, dtPolyRef PolyRef, const vector3& Pos, vector3 Dest)
 {
 	Agent.IsTraversingLastEdge = dtStatusSucceed(Status);
+
+	auto pNavAction = NavAction.As<Navigate>();
+	n_assert_dbg(pNavAction);
 
 	vector3 NextDest = Dest;
 	bool ActionChanged = false;
@@ -61,7 +64,8 @@ static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent,
 	}
 
 	// Try to get existing sub-action of required type
-	auto pSteer = Queue.GetImmediateSubAction<Steer>(NavAction);
+	auto SteerAction = Queue.GetChild(NavAction);
+	auto pSteer = SteerAction.As<Steer>();
 
 	// Calculate distance from Dest to next action change point. Used for arrival slowdown.
 	float AdditionalDistance = 0.f;
@@ -112,13 +116,13 @@ static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent,
 	}
 	else
 	{
-		return !!Queue.PushSubActionForParent<Steer>(NavAction, Dest, NextDest, AdditionalDistance);
+		return !!Queue.PushSubActionForParent<Steer>(*pNavAction, Dest, NextDest, AdditionalDistance);
 	}
 }
 //---------------------------------------------------------------------
 
 bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, Game::CActionQueueComponent& Queue,
-	const Navigate& NavAction, const vector3& Pos)
+	Game::HAction NavAction, const vector3& Pos)
 {
 	//???add shortcut method to corridor? Agent.Corridor.initStraightPathSearch(Agent.pNavQuery, Ctx);
 	dtStraightPathContext Ctx;
@@ -141,7 +145,7 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 
 //???need both GenerateAction variants really? can unify? pointers for Dest & NextDest?
 bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, Game::CActionQueueComponent& Queue,
-	const Navigate& NavAction, const vector3& Pos, const vector3& Dest, const vector3& NextDest)
+	Game::HAction NavAction, const vector3& Pos, const vector3& Dest, const vector3& NextDest)
 {
 	// When steering comes from an offmesh connection, we know that an offmesh start is already reached,
 	// and we must steer to the offmesh end. So we can assume that Pos == Dest, and NextDest is our target.
@@ -162,9 +166,11 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 //---------------------------------------------------------------------
 
 bool CSteerAction::GenerateRecoveryAction(Game::CActionQueueComponent& Queue,
-	const Navigate& NavAction, const vector3& ValidPos)
+	Game::HAction NavAction, const vector3& ValidPos)
 {
-	return !!Queue.PushSubActionForParent<Steer>(NavAction, ValidPos, ValidPos, -0.f);
+	auto pNavAction = NavAction.As<Navigate>();
+	n_assert_dbg(pNavAction);
+	return !!Queue.PushSubActionForParent<Steer>(*pNavAction, ValidPos, ValidPos, -0.f);
 }
 //---------------------------------------------------------------------
 

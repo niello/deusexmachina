@@ -42,19 +42,6 @@ Events::CEventBase* CActionQueueComponent::FindActive(Events::CEventID ID) const
 }
 //---------------------------------------------------------------------
 
-Events::CEventBase* CActionQueueComponent::GetImmediateSubAction(const Events::CEventBase& Parent) const
-{
-	// Parent must be in active stack
-	auto It = std::find_if(_Stack.begin(), _Stack.end(), [&Parent](const auto& Elm)
-	{
-		return Elm.get() == &Parent;
-	});
-	if (It == _Stack.cend()) return nullptr;
-	++It;
-	return (It == _Stack.cend()) ? nullptr : It->get();
-}
-//---------------------------------------------------------------------
-
 bool CActionQueueComponent::FinalizeActiveAction(const Events::CEventBase& Action, EActionStatus Result)
 {
 	// Result must be a terminal status
