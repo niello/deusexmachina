@@ -65,6 +65,10 @@ public:
 	// Push new
 	// Push or update existing (top only? by handle? search here or always provide target handle)
 	// Remove by handle with all children. If root, requires terminal state, otherwise allows InProgress. Never allows New state?
+	// ClearChildren, possibly with setting state
+	//???state is set for popped action or for current action on the stack top?
+
+	// FindActive<Steer, Turn>(HAction From = {})
 
 
 	//=====================================================================
