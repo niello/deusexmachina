@@ -103,7 +103,8 @@ static bool UpdateSelfControlState(CCharacterControllerComponent& Character, flo
 static vector3 ProcessMovement(CCharacterControllerComponent& Character, CActionQueueComponent& Queue, const vector3& Pos)
 {
 	// Move only when explicitly requested
-	auto pSteerAction = Queue.FindActive<DEM::AI::Steer>();
+	auto SteerAction = Queue.FindActive<AI::Steer>();
+	auto pSteerAction = SteerAction.As<AI::Steer>();
 	if (!pSteerAction) return vector3::Zero;
 
 	vector3 DesiredMovement(pSteerAction->_Dest.x - Pos.x, 0.f, pSteerAction->_Dest.z - Pos.z);
@@ -111,9 +112,9 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 	// Check if already at the desired position
 	const float SqDistanceToDest = DesiredMovement.SqLength2D();
 	const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
-	if (IsSameHeightLevel && SqDistanceToDest < DEM::AI::Steer::SqLinearTolerance)
+	if (IsSameHeightLevel && SqDistanceToDest < AI::Steer::SqLinearTolerance)
 	{
-		Queue.FinalizeActiveAction(*pSteerAction, DEM::Game::EActionStatus::Succeeded);
+		Queue.FinalizeActiveAction(*pSteerAction, EActionStatus::Succeeded);
 		Character.State = ECharacterState::Stand;
 		return vector3::Zero;
 	}
@@ -188,14 +189,14 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 	float DesiredRotation = 0.f;
 	if (Character.State == ECharacterState::Walk)
 		DesiredRotation = vector3::Angle2DNorm(LookatDir, DesiredLinearVelocity);
-	else if (auto pTurnAction = Queue.FindActive<DEM::AI::Turn>())
+	else if (auto pTurnAction = Queue.FindActive<AI::Turn>().As<AI::Turn>())
 		DesiredRotation = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
 
 	const bool IsNegative = (DesiredRotation < 0.f);
 	const float AngleAbs = IsNegative ? -DesiredRotation : DesiredRotation;
 
 	// Already looking at the desired direction
-	if (AngleAbs < DEM::AI::Turn::AngularTolerance) return 0.f;
+	if (AngleAbs < AI::Turn::AngularTolerance) return 0.f;
 
 	float Speed = Character.MaxAngularSpeed;
 
@@ -258,12 +259,12 @@ static void UpdateRigidBodyMovement(Physics::CRigidBody* pBody, float dt, const 
 }
 //---------------------------------------------------------------------
 
-void ProcessCharacterControllers(DEM::Game::CGameWorld& World, Physics::CPhysicsLevel& PhysicsLevel, float dt)
+void ProcessCharacterControllers(CGameWorld& World, Physics::CPhysicsLevel& PhysicsLevel, float dt)
 {
-	World.ForEachEntityWith<CCharacterControllerComponent, DEM::Game::CActionQueueComponent>(
+	World.ForEachEntityWith<CCharacterControllerComponent, CActionQueueComponent>(
 		[dt, &PhysicsLevel](auto EntityID, auto& Entity,
 			CCharacterControllerComponent& Character,
-			DEM::Game::CActionQueueComponent* pQueue)
+			CActionQueueComponent* pQueue)
 	{
 		auto pBody = Character.Body.Get();
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
@@ -292,12 +293,12 @@ void ProcessCharacterControllers(DEM::Game::CGameWorld& World, Physics::CPhysics
 }
 //---------------------------------------------------------------------
 
-void CheckCharacterControllersArrival(DEM::Game::CGameWorld& World, Physics::CPhysicsLevel& PhysicsLevel)
+void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel& PhysicsLevel)
 {
-	World.ForEachEntityWith<CCharacterControllerComponent, DEM::Game::CActionQueueComponent>(
+	World.ForEachEntityWith<CCharacterControllerComponent, CActionQueueComponent>(
 		[&PhysicsLevel](auto EntityID, auto& Entity,
 			CCharacterControllerComponent& Character,
-			DEM::Game::CActionQueueComponent* pQueue)
+			CActionQueueComponent* pQueue)
 	{
 		auto pBody = Character.Body.Get();
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
@@ -305,16 +306,19 @@ void CheckCharacterControllersArrival(DEM::Game::CGameWorld& World, Physics::CPh
 		// Access real physical transform, not an interpolated motion state
 		const auto& BodyTfm = pBody->GetBtBody()->getWorldTransform();
 
-		if (auto pSteerAction = pQueue->FindActive<DEM::AI::Steer>())
+		// NB: we don't try to process Steer and Turn simultaneously, only the most nested of them
+		auto Action = pQueue->FindActive<AI::Steer, AI::Turn>();
+
+		if (auto pSteerAction = Action.As<AI::Steer>())
 		{
 			// Check linear arrival
 			const auto& Offset = pBody->GetCollisionShape()->GetOffset();
 			const vector3 Pos = BtVectorToVector(BodyTfm * btVector3(-Offset.x, -Offset.y, -Offset.z));
 			const float SqDistance = vector3::SqDistance2D(pSteerAction->_Dest, Pos);
 			const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
-			if (IsSameHeightLevel && SqDistance < DEM::AI::Steer::SqLinearTolerance)
+			if (IsSameHeightLevel && SqDistance < AI::Steer::SqLinearTolerance)
 			{
-				pQueue->FinalizeActiveAction(*pSteerAction, DEM::Game::EActionStatus::Succeeded);
+				pQueue->FinalizeActiveAction(*pSteerAction, EActionStatus::Succeeded);
 				if (Character.State == ECharacterState::Walk || Character.State == ECharacterState::ShortStep)
 					Character.State = ECharacterState::Stand;
 			}
@@ -325,14 +329,13 @@ void CheckCharacterControllersArrival(DEM::Game::CGameWorld& World, Physics::CPh
 				// Stuck can be detected if resulting moving average distance remains almost the same for some period of time.
 			}
 		}
-
-		if (auto pTurnAction = pQueue->FindActive<DEM::AI::Turn>())
+		else if (auto pTurnAction = Action.As<AI::Turn>())
 		{
 			// Check angular arrival
 			const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
 			const float Angle = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
-			if (std::fabsf(Angle) < DEM::AI::Turn::AngularTolerance)
-				pQueue->FinalizeActiveAction(*pTurnAction, DEM::Game::EActionStatus::Succeeded);
+			if (std::fabsf(Angle) < AI::Turn::AngularTolerance)
+				pQueue->FinalizeActiveAction(*pTurnAction, EActionStatus::Succeeded);
 		}
 	});
 }

@@ -20,7 +20,32 @@ enum class EActionStatus : U8
 	Active,
 	Succeeded,
 	Failed,
-	Cancelled
+	Cancelled,
+	NotQueued
+};
+
+class HAction final
+{
+private:
+
+	friend class CActionQueueComponent;
+
+	const Events::PEventBase* _It = nullptr;
+
+	HAction(const Events::PEventBase* It) : _It(It) {}
+
+public:
+
+	HAction() = default;
+
+	operator bool() const { return !!_It; }
+
+	template<class T>
+	T* As() const
+	{
+		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
+		return (_It && _It->get()) ? (*_It)->As<T>() : nullptr;
+	}
 };
 
 class CActionQueueComponent final
@@ -33,25 +58,21 @@ protected:
 
 	Events::PEventBase  PrepareToPushSubAction(Events::CEventID ID, const Events::CEventBase& Parent);
 
-public:
-
-	class HAction
+	template<typename T, typename... TNext>
+	inline bool IsActionOneOf(Events::CEventID ID) const
 	{
-	private:
+		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
+		if (ID == T::RTTI) return true;
+		if constexpr (sizeof...(TNext) > 0) return IsActionOneOf<TNext...>(ID);
+		return false;
+	}
 
-		Events::PEventBase* _It = nullptr;
+	// NB: handle must be valid, no additional checks performed
+	inline auto ItFromHandle(HAction Handle) const { return _Stack.begin() + (Handle._It - _Stack.data()); }
 
-	public:
+	static inline HAction HandleFromIt(std::vector<Events::PEventBase>::const_iterator It) { return HAction{ &(*It) }; }
 
-		//HAction(...);
-
-		operator bool() const { return !!_It;  }
-
-		//Events::CEventBase* Get() const { return _It ? _It->get() : nullptr; }
-
-		//Events::CEventBase& operator *() const { n_assert_dbg(_pRecord); return _pRecord->Value; }
-		Events::CEventBase* operator ->() const { return _It ? _It->get() : nullptr; }
-	};
+public:
 
 	CActionQueueComponent() = default;
 	CActionQueueComponent(const CActionQueueComponent& Other) = delete;
@@ -68,12 +89,35 @@ public:
 	// ClearChildren, possibly with setting state
 	//???state is set for popped action or for current action on the stack top?
 
-	// FindActive<Steer, Turn>(HAction From = {})
+	// Go from nested sub-actions to the stack root
+	template<typename... T>
+	HAction FindActive(HAction From = {}) const
+	{
+		auto It = From ? (++std::reverse_iterator(ItFromHandle(From))) : _Stack.crbegin();
 
+		for (; It != _Stack.crend(); ++It)
+			if (IsActionOneOf<T...>((*It)->GetID())) // Could also check if it is a parametrized event and skip other checks if so
+				return HandleFromIt((++It).base());
+
+		return {};
+	}
+
+	HAction GetChild(HAction Handle) const
+	{
+		if (!Handle) return {};
+		auto It = ++ItFromHandle(Handle);
+		return (It == _Stack.cend()) ? HAction{} : HandleFromIt(It);
+	}
+
+	EActionStatus GetStatus(HAction Handle) const
+	{
+		if (!Handle) return EActionStatus::NotQueued;
+		if (Handle._It == &_Stack.back()) return _Status;
+		return EActionStatus::Active;
+	}
 
 	//=====================================================================
 
-	EActionStatus       GetStatus() const { return _Status; }
 	void                Reset();
 	Events::CEventBase* EnqueueAction(Events::PEventBase&& Action);
 	Events::CEventBase* FindActive(Events::CEventID ID) const;
@@ -95,15 +139,6 @@ public:
 		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
 
 		auto pAction = EnqueueAction(std::make_unique<T>(std::forward<TArgs>(Args)...));
-		return pAction ? static_cast<T*>(pAction) : nullptr;
-	}
-
-	template<typename T>
-	T* FindActive() const
-	{
-		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
-
-		auto pAction = FindActive(T::RTTI);
 		return pAction ? static_cast<T*>(pAction) : nullptr;
 	}
 

@@ -19,7 +19,8 @@ void InteractWithSmartObjects(CGameWorld& World)
 	{
 		if (!pSceneComponent->RootNode) return;
 
-		auto pAction = Queue.FindActive<SwitchSmartObjectState>();
+		auto Action = Queue.FindActive<SwitchSmartObjectState>();
+		auto pAction = Action.As<SwitchSmartObjectState>();
 		if (!pAction) return;
 
 		/*

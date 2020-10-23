@@ -357,7 +357,7 @@ static void ResetNavigation(CNavAgentComponent& Agent, Game::CActionQueueCompone
 	}
 
 	// TODO: special method in Queue for finalizing root and proceeding to the next action in queue?
-	while (auto pNavigateAction = Queue.FindActive<Navigate>())
+	while (auto pNavigateAction = Queue.FindActive<Navigate>().As<Navigate>())
 	{
 		Queue.FinalizeActiveAction(*pNavigateAction, Result);
 		if (pNavigateAction == Queue.GetActiveStackTop())
@@ -416,18 +416,20 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			return;
 		}
 
-		if (auto pNavigateAction = pQueue->FindActive<Navigate>())
+		auto NavigateAction = pQueue->FindActive<Navigate>();
+		if (auto pNavigateAction = NavigateAction.As<Navigate>())
 		{
-			// FIXME: check immediate child, not sub-sub-actions!
+			const auto SubAction = pQueue->GetChild(NavigateAction);
+			const auto SubActionStatus = pQueue->GetStatus(SubAction);
 
 			// Check if action or sub-action has finished
-			if (pQueue->GetStatus() == DEM::Game::EActionStatus::Failed || pQueue->GetStatus() == DEM::Game::EActionStatus::Cancelled)
+			if (SubActionStatus == DEM::Game::EActionStatus::Failed || SubActionStatus == DEM::Game::EActionStatus::Cancelled)
 			{
 				// If sub-action failed or cancelled, finish navigation with the same result
-				ResetNavigation(Agent, *pQueue, PathQueue, pQueue->GetStatus());
+				ResetNavigation(Agent, *pQueue, PathQueue, SubActionStatus);
 				return;
 			}
-			else if (pQueue->GetStatus() == DEM::Game::EActionStatus::Succeeded)
+			else if (SubActionStatus == DEM::Game::EActionStatus::Succeeded)
 			{
 				// If the last edge traversed successfully, finish navigation
 				if (Agent.IsTraversingLastEdge)
