@@ -419,38 +419,41 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 		auto NavigateAction = pQueue->FindActive<Navigate>();
 		if (auto pNavigateAction = NavigateAction.As<Navigate>())
 		{
-			const auto SubAction = pQueue->GetChild(NavigateAction);
-			const auto SubActionStatus = pQueue->GetStatus(SubAction);
+			const auto SubActionStatus = pQueue->GetStatus(pQueue->GetChild(NavigateAction));
+			const bool HasSubAction = (SubActionStatus != Game::EActionStatus::NotQueued);
 
-			// Check if action or sub-action has finished
-			if (SubActionStatus == DEM::Game::EActionStatus::Failed || SubActionStatus == DEM::Game::EActionStatus::Cancelled)
+			// Check if sub-action has finished
+			if (HasSubAction)
 			{
-				// If sub-action failed or cancelled, finish navigation with the same result
-				ResetNavigation(Agent, *pQueue, PathQueue, SubActionStatus);
-				return;
-			}
-			else if (SubActionStatus == DEM::Game::EActionStatus::Succeeded)
-			{
-				// If the last edge traversed successfully, finish navigation
-				if (Agent.IsTraversingLastEdge)
+				if (SubActionStatus == DEM::Game::EActionStatus::Failed || SubActionStatus == DEM::Game::EActionStatus::Cancelled)
 				{
-					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Succeeded);
+					// If sub-action failed or cancelled, finish navigation with the same result
+					ResetNavigation(Agent, *pQueue, PathQueue, SubActionStatus);
 					return;
 				}
-
-				// Finish traversing an offmesh connection
-				if (Agent.Mode == ENavigationMode::Offmesh)
+				else if (SubActionStatus == DEM::Game::EActionStatus::Succeeded)
 				{
-					Agent.Mode = ENavigationMode::Surface;
-					Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(Agent.Corridor.getFirstPoly(), &Agent.CurrAreaType);
+					// If the last edge traversed successfully, finish navigation
+					// FIXME: looks like hack, can rewrite better? Could compare curr and target polys? Action can't change inside a poly.
+					// Problems: Steer to door knob? Same poly, different action, or sub-sub-action (then OK)? Traverse ofm, too early dest poly, look at curr Mode?
+					if (Agent.IsTraversingLastEdge)
+					{
+						ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Succeeded);
+						return;
+					}
+
+					// Finish traversing an offmesh connection
+					if (Agent.Mode == ENavigationMode::Offmesh)
+					{
+						Agent.Mode = ENavigationMode::Surface;
+						Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(Agent.Corridor.getFirstPoly(), &Agent.CurrAreaType);
+					}
 				}
 			}
 
-			const bool HasSubAction = pQueue->GetActiveStackTop() != pNavigateAction;
-
-			// Multiple physics frames can be processed inside one logic frame. Target remains the
-			// same during the logic frame but might be reached. Character position is already processed.
-			// So if there is a sub-action, let's just continue executing it, without unnecessary update.
+			// Multiple physics frames can be processed inside one logic frame. Target remains the same
+			// during the logic frame but might be reached by physics in the middle of it. So if there
+			// is an active sub-action, let's just continue executing it, without unnecessary update.
 			if (!NewFrame && PrevMode == Agent.Mode && HasSubAction) return;
 
 			// NB: in Detour replan time increases only when on navmesh (not offmesh, not invalid)
