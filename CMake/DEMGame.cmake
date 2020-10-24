@@ -124,6 +124,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/SmartObj/ActionTpls/ActionTplUseSmartObj.cpp
 	DEM/Game/src/App/AppFSM.cpp
 	DEM/Game/src/App/AppStateVideo.cpp
+	DEM/Game/src/Game/ActionQueueSystem.cpp
 	DEM/Game/src/Game/EntityOld.cpp
 	DEM/Game/src/Game/GameLevel.cpp
 	DEM/Game/src/Game/GameSession.cpp

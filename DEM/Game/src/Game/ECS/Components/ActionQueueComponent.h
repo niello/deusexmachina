@@ -40,6 +40,8 @@ public:
 
 	operator bool() const { return !!_It; }
 
+	auto Get() const { return _It ? _It->get() : nullptr; }
+
 	template<class T>
 	T* As() const
 	{
@@ -85,17 +87,7 @@ public:
 	void EnqueueAction(TArgs&&... Args)
 	{
 		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
-
-		if (_Stack.empty())
-		{
-			n_assert_dbg(_Queue.empty());
-			_Stack.push_back(std::make_unique<T>(std::forward<TArgs>(Args)...));
-			_Status = EActionStatus::New;
-		}
-		else
-		{
-			_Queue.push_back(std::make_unique<T>(std::forward<TArgs>(Args)...));
-		}
+		_Queue.push_back(std::make_unique<T>(std::forward<TArgs>(Args)...));
 	}
 	//---------------------------------------------------------------------
 
@@ -115,11 +107,11 @@ public:
 	}
 	//---------------------------------------------------------------------
 
-	void Reset()
+	void Reset(EActionStatus Status = EActionStatus::NotQueued)
 	{
 		_Stack.clear();
 		_Queue.clear();
-		_Status = EActionStatus::NotQueued; //???cancelled?
+		_Status = Status;
 	}
 	//---------------------------------------------------------------------
 
@@ -182,6 +174,9 @@ public:
 	//---------------------------------------------------------------------
 
 	size_t GetStackDepth() const { return _Stack.size(); }
+	//---------------------------------------------------------------------
+
+	size_t GetQueueSize() const { return _Queue.size() + (_Stack.empty() ? 0 : 1); }
 	//---------------------------------------------------------------------
 
 	EActionStatus GetStatus(HAction Handle) const
