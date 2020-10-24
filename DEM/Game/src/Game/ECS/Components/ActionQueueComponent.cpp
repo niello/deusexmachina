@@ -4,14 +4,6 @@
 namespace DEM::Game
 {
 
-void CActionQueueComponent::Reset()
-{
-	_Stack.clear();
-	_Queue.clear();
-	_Status = EActionStatus::Succeeded;
-}
-//---------------------------------------------------------------------
-
 Events::CEventBase* CActionQueueComponent::EnqueueAction(Events::PEventBase&& Action)
 {
 	if (!Action) return nullptr;
