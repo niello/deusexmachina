@@ -47,11 +47,11 @@ public:
 	{
 	protected:
 
-		UPTR							TotalObjCount;	// Total object count inside this node & its hierarchy
+		UPTR							TotalObjCount = 0;	// Total object count inside this node & its hierarchy
 
-		CQuadTree<TObject, TStorage>*	pOwner;			// Now used only for getting position and size
-		CNode*							pParent;
-		CNode*							pChild;			// Pointer to the first element of CNode[4]
+		CQuadTree<TObject, TStorage>*	pOwner = nullptr;	// Now used only for getting position and size
+		CNode*							pParent = nullptr;
+		CNode*							pChild = nullptr;	// Pointer to the first element of CNode[4]
 
 		U16								Col;
 		U16								Row;
@@ -62,8 +62,6 @@ public:
 	public:
 
 		TStorage						Data;
-
-		CNode(): TotalObjCount(0) {}
 		
 		void	RemoveByValue(const TObject& Object) { RemoveByHandle(Data.Find(Object)); }
 		void	RemoveByHandle(CHandle Handle);

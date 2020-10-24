@@ -79,12 +79,12 @@ void InteractWithSmartObjects(CGameWorld& World)
 
 				if (ObjPolyRef != AgentPolyRef)
 				{
-					Queue.PushSubActionForParent<AI::Navigate>(*pAction, ActionPos, 0.f);
+					Queue.PushChild<AI::Navigate>(Action, ActionPos, 0.f);
 					return;
 				}
 			}
 
-			Queue.PushSubActionForParent<AI::Steer>(*pAction, ActionPos, ObjectPos, 0.f);
+			Queue.PushChild<AI::Steer>(Action, ActionPos, ObjectPos, 0.f);
 			return;
 		}
 
@@ -95,7 +95,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		const float Angle = vector3::Angle2DNorm(LookatDir, TargetDir);
 		if (std::fabsf(Angle) >= DEM::AI::Turn::AngularTolerance)
 		{
-			Queue.PushSubActionForParent<AI::Turn>(*pAction, TargetDir);
+			Queue.PushChild<AI::Turn>(Action, TargetDir);
 			return;
 		}
 
@@ -113,7 +113,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		pSOComponent->Force = pAction->ForceObjectState;
 
 		//!!!TODO: wait for actor animation or state transition end!
-		Queue.FinalizeActiveAction(*pAction, EActionStatus::Succeeded);
+		Queue.SetStatus(Action, EActionStatus::Succeeded);
 	});
 }
 //---------------------------------------------------------------------

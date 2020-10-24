@@ -399,7 +399,7 @@ inline
 void
 matrix33::ident()
 {
-    memcpy(&(m[0][0]), _matrix33_ident, sizeof(_matrix33_ident));
+    memcpy(m, _matrix33_ident, sizeof(_matrix33_ident));
 }
 
 //------------------------------------------------------------------------------

@@ -38,14 +38,14 @@ bool CFormationManager::Move(std::vector<HEntity> Entities, const vector3& World
 	//!!!DBG TMP! send them into the one point, ignore direction!
 	for (auto EntityID : Entities)
 	{
-		if (auto pQueue = pWorld->FindComponent<DEM::Game::CActionQueueComponent>(EntityID))
+		if (auto pQueue = pWorld->FindComponent<CActionQueueComponent>(EntityID))
 		{
 			if (!Enqueue) pQueue->Reset();
 
-			if (auto pAgent = pWorld->FindComponent<DEM::AI::CNavAgentComponent>(EntityID))
-				pQueue->EnqueueAction<DEM::AI::Navigate>(WorldPosition, 0.f);
+			if (auto pAgent = pWorld->FindComponent<AI::CNavAgentComponent>(EntityID))
+				pQueue->EnqueueAction<AI::Navigate>(WorldPosition, 0.f);
 			else
-				pQueue->EnqueueAction<DEM::AI::Steer>(WorldPosition, WorldPosition, 0.f);
+				pQueue->EnqueueAction<AI::Steer>(WorldPosition, WorldPosition, 0.f);
 		}
 	}
 

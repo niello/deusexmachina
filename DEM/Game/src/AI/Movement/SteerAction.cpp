@@ -13,9 +13,6 @@ static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent,
 {
 	Agent.IsTraversingLastEdge = dtStatusSucceed(Status);
 
-	auto pNavAction = NavAction.As<Navigate>();
-	n_assert_dbg(pNavAction);
-
 	vector3 NextDest = Dest;
 	bool ActionChanged = false;
 	while (!Agent.IsTraversingLastEdge)
@@ -63,16 +60,16 @@ static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent,
 		if (dtStatusSucceed(Status)) Agent.IsTraversingLastEdge = true;
 	}
 
-	// Try to get existing sub-action of required type
-	auto SteerAction = Queue.GetChild(NavAction);
-	auto pSteer = SteerAction.As<Steer>();
-
 	// Calculate distance from Dest to next action change point. Used for arrival slowdown.
 	float AdditionalDistance = 0.f;
 
 	// No need to calculate if action changed at Dest
 	if (!ActionChanged && !Agent.IsTraversingLastEdge)
 	{
+		// Try to get existing sub-action of required type
+		auto SteerAction = Queue.GetChild(NavAction);
+		auto pSteer = SteerAction.As<Steer>();
+
 		// Recalculate only when destination changes
 		// TODO: can add other criteria, like final navigation target change
 		if (!pSteer || pSteer->_Dest != Dest)
@@ -106,18 +103,7 @@ static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent,
 	}
 
 	// Update existing action or push the new one
-	if (pSteer)
-	{
-		pSteer->_Dest = Dest;
-		pSteer->_NextDest = NextDest;
-		pSteer->_AdditionalDistance = AdditionalDistance;
-		Queue.FIXME_ReactivateAction();
-		return true;
-	}
-	else
-	{
-		return !!Queue.PushSubActionForParent<Steer>(*pNavAction, Dest, NextDest, AdditionalDistance);
-	}
+	return !!Queue.PushChild<Steer>(NavAction, Dest, NextDest, AdditionalDistance);
 }
 //---------------------------------------------------------------------
 
@@ -168,9 +154,7 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 bool CSteerAction::GenerateRecoveryAction(Game::CActionQueueComponent& Queue,
 	Game::HAction NavAction, const vector3& ValidPos)
 {
-	auto pNavAction = NavAction.As<Navigate>();
-	n_assert_dbg(pNavAction);
-	return !!Queue.PushSubActionForParent<Steer>(*pNavAction, ValidPos, ValidPos, -0.f);
+	return !!Queue.PushChild<Steer>(NavAction, ValidPos, ValidPos, -0.f);
 }
 //---------------------------------------------------------------------
 

@@ -114,7 +114,7 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 	const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
 	if (IsSameHeightLevel && SqDistanceToDest < AI::Steer::SqLinearTolerance)
 	{
-		Queue.FinalizeActiveAction(*pSteerAction, EActionStatus::Succeeded);
+		Queue.SetStatus(SteerAction, EActionStatus::Succeeded);
 		Character.State = ECharacterState::Stand;
 		return vector3::Zero;
 	}
@@ -318,7 +318,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
 			if (IsSameHeightLevel && SqDistance < AI::Steer::SqLinearTolerance)
 			{
-				pQueue->FinalizeActiveAction(*pSteerAction, EActionStatus::Succeeded);
+				pQueue->SetStatus(Action, EActionStatus::Succeeded);
 				if (Character.State == ECharacterState::Walk || Character.State == ECharacterState::ShortStep)
 					Character.State = ECharacterState::Stand;
 			}
@@ -335,7 +335,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
 			const float Angle = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
 			if (std::fabsf(Angle) < AI::Turn::AngularTolerance)
-				pQueue->FinalizeActiveAction(*pTurnAction, EActionStatus::Succeeded);
+				pQueue->SetStatus(Action, EActionStatus::Succeeded);
 		}
 	});
 }

@@ -56,8 +56,6 @@ protected:
 	std::deque<Events::PEventBase>  _Queue;
 	EActionStatus                   _Status = EActionStatus::NotQueued;
 
-	Events::PEventBase  PrepareToPushSubAction(Events::CEventID ID, const Events::CEventBase& Parent);
-
 	template<typename T, typename... TNext>
 	inline bool IsActionOneOf(Events::CEventID ID) const
 	{
@@ -83,32 +81,77 @@ public:
 
 	//???small pool allocator for events? one for all components? one for all small things? can be static field, ensure MT safety
 
-	// Push new
-	// Push or update existing (top only? by handle? search here or always provide target handle)
-	// Remove by handle with all children. If root, requires terminal state, otherwise allows InProgress. Never allows New state?
-	// ClearChildren, possibly with setting state
-	//???state is set for popped action or for current action on the stack top?
-
-	// Universal remove (with state? how to remove root correctly?)
-	// Enqueue and PushSubAction are different
-
 	template<typename T, typename... TArgs>
-	T* EnqueueAction(TArgs&&... Args)
+	void EnqueueAction(TArgs&&... Args)
 	{
 		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
 
-		auto pAction = EnqueueAction(std::make_unique<T>(std::forward<TArgs>(Args)...));
-		return pAction ? static_cast<T*>(pAction) : nullptr;
+		if (_Stack.empty())
+		{
+			n_assert_dbg(_Queue.empty());
+			_Stack.push_back(std::make_unique<T>(std::forward<TArgs>(Args)...));
+			_Status = EActionStatus::New;
+		}
+		else
+		{
+			_Queue.push_back(std::make_unique<T>(std::forward<TArgs>(Args)...));
+		}
 	}
+	//---------------------------------------------------------------------
 
-	// DequeueAction() - need status or must be set on finalization? Dequeue is only for top-level queue users, e.g. QueueSystem.
+	void RunNextAction()
+	{
+		_Stack.clear();
+		if (_Queue.empty())
+		{
+			_Status = EActionStatus::NotQueued;
+		}
+		else
+		{
+			_Stack.push_back(std::move(_Queue.front()));
+			_Queue.pop_front();
+			_Status = EActionStatus::New;
+		}
+	}
+	//---------------------------------------------------------------------
 
-	Events::CEventBase* FindActive(Events::CEventID ID) const;
+	void Reset()
+	{
+		_Stack.clear();
+		_Queue.clear();
+		_Status = EActionStatus::NotQueued; //???cancelled?
+	}
+	//---------------------------------------------------------------------
+
+	HAction FindActive(Events::CEventID ID, HAction From = {}) const
+	{
+		auto It = _Stack.crbegin();
+		if (From)
+		{
+			It = std::reverse_iterator(ItFromHandle(From));
+			if (It == _Stack.crend()) return {};
+			++It;
+		}
+
+		// Walk from nested sub-actions to the stack root
+		for (; It != _Stack.crend(); ++It)
+			if ((*It)->GetID() == ID) // Could also check if it is a parametrized event and skip other checks if so
+				return HandleFromIt((++It).base());
+
+		return {};
+	}
+	//---------------------------------------------------------------------
 
 	template<typename... T>
 	HAction FindActive(HAction From = {}) const
 	{
-		auto It = From ? (++std::reverse_iterator(ItFromHandle(From))) : _Stack.crbegin();
+		auto It = _Stack.crbegin();
+		if (From)
+		{
+			It = std::reverse_iterator(ItFromHandle(From));
+			if (It == _Stack.crend()) return {};
+			++It;
+		}
 
 		// Walk from nested sub-actions to the stack root
 		for (; It != _Stack.crend(); ++It)
@@ -117,6 +160,7 @@ public:
 
 		return {};
 	}
+	//---------------------------------------------------------------------
 
 	HAction GetChild(HAction Handle) const
 	{
@@ -124,6 +168,7 @@ public:
 		auto It = ++ItFromHandle(Handle);
 		return (It == _Stack.cend()) ? HAction{} : HandleFromIt(It);
 	}
+	//---------------------------------------------------------------------
 
 	HAction GetParent(HAction Handle) const
 	{
@@ -131,11 +176,13 @@ public:
 		auto It = ItFromHandle(Handle);
 		return (It == _Stack.cbegin()) ? HAction{} : HandleFromIt(--It);
 	}
+	//---------------------------------------------------------------------
 
-	HAction GetRoot() const
-	{
-		return _Stack.empty() ? HAction{} : HandleFromIt(_Stack.cbegin());
-	}
+	HAction GetRoot() const { return _Stack.empty() ? HAction{} : HandleFromIt(_Stack.cbegin()); }
+	//---------------------------------------------------------------------
+
+	size_t GetStackDepth() const { return _Stack.size(); }
+	//---------------------------------------------------------------------
 
 	EActionStatus GetStatus(HAction Handle) const
 	{
@@ -143,14 +190,18 @@ public:
 		if (Handle._It == &_Stack.back()) return _Status;
 		return EActionStatus::Active;
 	}
+	//---------------------------------------------------------------------
 
+	// NB: pops child actions
 	void SetStatus(HAction Handle, EActionStatus Status)
 	{
 		if (!Handle || Status == EActionStatus::New || Status == EActionStatus::NotQueued) return;
 		_Stack.erase(++ItFromHandle(Handle), _Stack.cend()); // Pop children
 		_Status = Status;
 	}
+	//---------------------------------------------------------------------
 
+	//???need mode for existing actions when its children are not popped and action status is not changed to New?
 	template<typename T, typename... TArgs>
 	HAction PushChild(HAction Parent, TArgs&&... Args)
 	{
@@ -158,19 +209,17 @@ public:
 
 		if (!Parent) return {};
 
-		auto ParentIt = ItFromHandle(Parent);
+		const auto ParentIt = ItFromHandle(Parent);
 
 		// Try to find child of the same type, make it an immediate child of the Parent and protect from popping
-		auto ChildIt = ++ParentIt;
-		if (ChildIt->get()->GetID() == T::RTTI)
-		{
-			++ChildIt;
-		}
-		else for (auto It = ChildIt + 1; It != _Stack.cend(); ++It)
+		auto ChildIt = ParentIt + 1;
+		for (auto It = ChildIt; It != _Stack.cend(); ++It)
 		{
 			if (It->get()->GetID() == T::RTTI)
 			{
-				std::swap(*ChildIt, *It);
+				// Low-level vector usage optimization, ignore iterator constantness
+				if (ChildIt != It)
+					std::swap(const_cast<Events::PEventBase&>(*ChildIt), const_cast<Events::PEventBase&>(*It));
 				++ChildIt;
 				break;
 			}
@@ -195,53 +244,7 @@ public:
 		_Status = EActionStatus::New;
 		return HAction(&_Stack.back());
 	}
-
-	void Reset()
-	{
-		_Stack.clear();
-		_Queue.clear();
-		_Status = EActionStatus::NotQueued; //???cancelled?
-	}
-
-	//=====================================================================
-
-	Events::CEventBase* EnqueueAction(Events::PEventBase&& Action);
-	Events::CEventBase* GetActiveStackTop() const { return _Stack.empty() ? nullptr : _Stack.back().get(); }
-	bool                FinalizeActiveAction(const Events::CEventBase& Action, EActionStatus Result);
-	bool                RemoveAction(const Events::CEventBase& Action);
-
-	//!!!FIXME: REDESIGN! When modify existing but already finished action, must reactivate it.
-	void FIXME_ReactivateAction() { if (!_Stack.empty()) _Status = EActionStatus::Active; }
-	//!!!FIXME: REDESIGN! Now it is a hack, but it is used for waiting without dedicated Wait action.
-	void FIXME_PopSubActions(const Events::CEventBase& Action);
-
-	template<typename T, typename... TArgs>
-	T* PushSubActionForParent(const Events::CEventBase& Parent, TArgs&&... Args)
-	{
-		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
-
-		if (_Stack.empty()) return nullptr; //???or push to root?
-
-		if (auto FreeObject = PrepareToPushSubAction(T::RTTI, Parent))
-		{
-			//if constexpr (sizeof...(TArgs) > 0)
-			{
-				// Recreate object in place
-				T* pReused = static_cast<T*>(FreeObject.get());
-				pReused->~T();
-				n_placement_new(pReused, T(std::forward<TArgs>(Args)...));
-			}
-			_Stack.push_back(std::move(FreeObject));
-		}
-		else
-		{
-			_Stack.push_back(std::make_unique<T>(std::forward<TArgs>(Args)...));
-		}
-
-		_Status = EActionStatus::New;
-
-		return static_cast<T*>(_Stack.back().get());
-	}
+	//---------------------------------------------------------------------
 };
 
 }

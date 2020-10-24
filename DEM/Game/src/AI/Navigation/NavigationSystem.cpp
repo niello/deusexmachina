@@ -347,24 +347,13 @@ static bool GenerateTraversalAction(Game::CGameWorld& World, CNavAgentComponent&
 }
 //---------------------------------------------------------------------
 
-static void ResetNavigation(CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue,
-	::AI::CPathRequestQueue& PathQueue, DEM::Game::EActionStatus Result)
+static void ResetNavigation(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& PathQueue,
+	Game::CActionQueueComponent& Queue, Game::HAction NavAction, Game::EActionStatus Result)
 {
 	if (Agent.AsyncTaskID)
 	{
 		PathQueue.CancelRequest(Agent.AsyncTaskID);
 		Agent.AsyncTaskID = 0;
-	}
-
-	// TODO: special method in Queue for finalizing root and proceeding to the next action in queue?
-	while (auto pNavigateAction = Queue.FindActive<Navigate>().As<Navigate>())
-	{
-		Queue.FinalizeActiveAction(*pNavigateAction, Result);
-		if (pNavigateAction == Queue.GetActiveStackTop())
-		{
-			Queue.RemoveAction(*pNavigateAction);
-			break;
-		}
 	}
 
 	if (auto CurrPoly = Agent.Corridor.getFirstPoly())
@@ -373,6 +362,8 @@ static void ResetNavigation(CNavAgentComponent& Agent, Game::CActionQueueCompone
 	Agent.State = ENavigationState::Idle;
 	if (Agent.Mode == ENavigationMode::Offmesh)
 		Agent.Mode = ENavigationMode::Recovery;
+
+	Queue.SetStatus(NavAction, Result);
 }
 //---------------------------------------------------------------------
 
@@ -412,7 +403,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 		const auto& Pos = pSceneComponent->RootNode->GetWorldPosition();
 		if (!UpdatePosition(Pos, Agent))
 		{
-			ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
+			ResetNavigation(Agent, PathQueue, *pQueue, pQueue->FindActive<Navigate>(), DEM::Game::EActionStatus::Failed);
 			return;
 		}
 
@@ -428,7 +419,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				if (SubActionStatus == DEM::Game::EActionStatus::Failed || SubActionStatus == DEM::Game::EActionStatus::Cancelled)
 				{
 					// If sub-action failed or cancelled, finish navigation with the same result
-					ResetNavigation(Agent, *pQueue, PathQueue, SubActionStatus);
+					ResetNavigation(Agent, PathQueue, *pQueue, NavigateAction, SubActionStatus);
 					return;
 				}
 				else if (SubActionStatus == DEM::Game::EActionStatus::Succeeded)
@@ -438,7 +429,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 					// Problems: Steer to door knob? Same poly, different action, or sub-sub-action (then OK)? Traverse ofm, too early dest poly, look at curr Mode?
 					if (Agent.IsTraversingLastEdge)
 					{
-						ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Succeeded);
+						ResetNavigation(Agent, PathQueue, *pQueue, NavigateAction, DEM::Game::EActionStatus::Succeeded);
 						return;
 					}
 
@@ -462,7 +453,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			// Process target location changes and validity
 			if (!UpdateDestination(*pNavigateAction, Agent, PathQueue))
 			{
-				ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
+				ResetNavigation(Agent, PathQueue, *pQueue, NavigateAction, DEM::Game::EActionStatus::Failed);
 				return;
 			}
 
@@ -479,7 +470,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			{
 				if (!CheckAsyncPathResult(Agent, PathQueue))
 				{
-					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
+					ResetNavigation(Agent, PathQueue, *pQueue, NavigateAction, DEM::Game::EActionStatus::Failed);
 					return;
 				}
 			}
@@ -490,7 +481,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				// Try to return to the navmesh by the shortest path
 				auto pAction = Agent.Settings->FindAction(World, Agent, 0, 0, nullptr);
 				if (!pAction || !pAction->GenerateRecoveryAction(*pQueue, NavigateAction, Agent.Corridor.getPos()))
-					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
+					ResetNavigation(Agent, PathQueue, *pQueue, NavigateAction, DEM::Game::EActionStatus::Failed);
 			}
 			else if (Agent.Mode == ENavigationMode::Surface)
 			{
@@ -511,7 +502,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 
 				vector3 NextTurn;
 				if (!GenerateTraversalAction(World, Agent, *pQueue, NavigateAction, Pos, NextTurn))
-					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
+					ResetNavigation(Agent, PathQueue, *pQueue, NavigateAction, DEM::Game::EActionStatus::Failed);
 
 				// Optimize path visibility along the [corridor pos -> NextTurn] straight line
 				if (OptimizePath && Agent.Mode == ENavigationMode::Surface)
@@ -524,12 +515,12 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				Game::HEntity Controller;
 				auto pAction = Agent.Settings->FindAction(World, Agent, Agent.CurrAreaType, Agent.OffmeshRef, &Controller);
 				if (!pAction || !pAction->GenerateAction(World, Agent, Controller, *pQueue, NavigateAction, Pos))
-					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
+					ResetNavigation(Agent, PathQueue, *pQueue, NavigateAction, DEM::Game::EActionStatus::Failed);
 			}
 		}
 		else if (Agent.State != ENavigationState::Idle)
 		{
-			ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Cancelled);
+			ResetNavigation(Agent, PathQueue, *pQueue, NavigateAction, DEM::Game::EActionStatus::Cancelled);
 		}
 	});
 }
@@ -611,9 +602,22 @@ void DestroyNavigation(DEM::Game::CGameWorld& World, ::AI::CPathRequestQueue& Pa
 {
 	World.RemoveAllComponents<DEM::AI::CNavAgentComponent>();
 
-	World.FreeDead<DEM::AI::CNavAgentComponent>([&PathQueue](auto EntityID, DEM::AI::CNavAgentComponent& Agent)
+	World.FreeDead<DEM::AI::CNavAgentComponent>([&World, &PathQueue](auto EntityID, DEM::AI::CNavAgentComponent& Agent)
 	{
-		//???delete active navigate tasks?
+		// Cancel active navigation tasks
+		if (auto pQueue = World.FindComponent<Game::CActionQueueComponent>(EntityID))
+		{
+			Game::HAction TopNavAction;
+			while (auto NavAction = pQueue->FindActive<Navigate>(TopNavAction))
+				TopNavAction = NavAction;
+
+			if (TopNavAction)
+			{
+				const auto NavActionStatus = pQueue->GetStatus(TopNavAction);
+				if (NavActionStatus == Game::EActionStatus::New || NavActionStatus == Game::EActionStatus::Active)
+					pQueue->SetStatus(TopNavAction, Game::EActionStatus::Cancelled);
+			}
+		}
 
 		// Need to shutdown async tasks before deleting agent components
 		if (Agent.AsyncTaskID)
