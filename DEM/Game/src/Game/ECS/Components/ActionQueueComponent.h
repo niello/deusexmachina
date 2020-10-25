@@ -66,11 +66,72 @@ protected:
 		if constexpr (sizeof...(TNext) > 0) return IsActionOneOf<TNext...>(ID);
 		return false;
 	}
+	//---------------------------------------------------------------------
 
 	// NB: handle must be valid, no additional checks performed
 	inline auto ItFromHandle(HAction Handle) const { return _Stack.begin() + (Handle._It - _Stack.data()); }
+	//---------------------------------------------------------------------
 
 	static inline HAction HandleFromIt(std::vector<Events::PEventBase>::const_iterator It) { return HAction{ &(*It) }; }
+	//---------------------------------------------------------------------
+
+	// ResetOnReuse - when false and immediate child is reused, its state and children are not reset
+	template<typename T, bool ResetOnReuse, typename... TArgs>
+	HAction PushChildT(HAction Parent, TArgs&&... Args)
+	{
+		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
+
+		if (!Parent) return {};
+
+		const auto ParentIt = ItFromHandle(Parent);
+
+		bool Reset = true;
+
+		// Try to find child of the same type, make it an immediate child of the Parent and protect from popping
+		auto ChildIt = ParentIt + 1;
+		for (auto It = ChildIt; It != _Stack.cend(); ++It)
+		{
+			if (It->get()->GetID() == T::RTTI)
+			{
+				// Low-level vector usage optimization, ignore iterator constantness
+				if (ChildIt != It)
+					std::swap(const_cast<Events::PEventBase&>(*ChildIt), const_cast<Events::PEventBase&>(*It));
+				else if constexpr (!ResetOnReuse)
+					Reset = false;
+				++ChildIt;
+				break;
+			}
+		}
+
+		if (Reset)
+		{
+			// Pop remaining children, mark reused one as new
+			_Stack.erase(ChildIt, _Stack.cend());
+			_Status = EActionStatus::New;
+		}
+		else
+		{
+			// Reactivate reused action if it is the most nested and was already finished
+			if (ChildIt == (--_Stack.cend()) && _Status != EActionStatus::New)
+				_Status = EActionStatus::Active;
+		}
+
+		if (ParentIt != (--_Stack.cend()))
+		{
+			// Reuse found child of the requested type
+			T* pReused = static_cast<T*>(_Stack.back().get());
+			pReused->~T();
+			n_placement_new(pReused, T(std::forward<TArgs>(Args)...));
+		}
+		else
+		{
+			// Create new child
+			_Stack.push_back(std::make_unique<T>(std::forward<TArgs>(Args)...));
+		}
+
+		return HAction(&_Stack.back());
+	}
+	//---------------------------------------------------------------------
 
 public:
 
@@ -196,48 +257,17 @@ public:
 	}
 	//---------------------------------------------------------------------
 
-	//???need mode for existing actions when its children are not popped and action status is not changed to New?
 	template<typename T, typename... TArgs>
-	HAction PushChild(HAction Parent, TArgs&&... Args)
+	inline HAction PushOrUpdateChild(HAction Parent, TArgs&&... Args)
 	{
-		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
+		return PushChildT<T, false, TArgs...>(Parent, std::forward<TArgs>(Args)...);
+	}
+	//---------------------------------------------------------------------
 
-		if (!Parent) return {};
-
-		const auto ParentIt = ItFromHandle(Parent);
-
-		// Try to find child of the same type, make it an immediate child of the Parent and protect from popping
-		auto ChildIt = ParentIt + 1;
-		for (auto It = ChildIt; It != _Stack.cend(); ++It)
-		{
-			if (It->get()->GetID() == T::RTTI)
-			{
-				// Low-level vector usage optimization, ignore iterator constantness
-				if (ChildIt != It)
-					std::swap(const_cast<Events::PEventBase&>(*ChildIt), const_cast<Events::PEventBase&>(*It));
-				++ChildIt;
-				break;
-			}
-		}
-
-		// Pop remaining children
-		_Stack.erase(ChildIt, _Stack.cend());
-
-		if (ParentIt != (--_Stack.cend()))
-		{
-			// Reuse found child of the requested type
-			T* pReused = static_cast<T*>(_Stack.back().get());
-			pReused->~T();
-			n_placement_new(pReused, T(std::forward<TArgs>(Args)...));
-		}
-		else
-		{
-			// Create new child
-			_Stack.push_back(std::make_unique<T>(std::forward<TArgs>(Args)...));
-		}
-
-		_Status = EActionStatus::New;
-		return HAction(&_Stack.back());
+	template<typename T, typename... TArgs>
+	inline HAction PushChild(HAction Parent, TArgs&&... Args)
+	{
+		return PushChildT<T, true, TArgs...>(Parent, std::forward<TArgs>(Args)...);
 	}
 	//---------------------------------------------------------------------
 };

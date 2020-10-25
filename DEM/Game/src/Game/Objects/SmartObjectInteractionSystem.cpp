@@ -79,12 +79,12 @@ void InteractWithSmartObjects(CGameWorld& World)
 
 				if (ObjPolyRef != AgentPolyRef)
 				{
-					Queue.PushChild<AI::Navigate>(Action, ActionPos, 0.f);
+					Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, 0.f);
 					return;
 				}
 			}
 
-			Queue.PushChild<AI::Steer>(Action, ActionPos, ObjectPos, 0.f);
+			Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ObjectPos, 0.f);
 			return;
 		}
 
@@ -95,7 +95,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		const float Angle = vector3::Angle2DNorm(LookatDir, TargetDir);
 		if (std::fabsf(Angle) >= DEM::AI::Turn::AngularTolerance)
 		{
-			Queue.PushChild<AI::Turn>(Action, TargetDir);
+			Queue.PushOrUpdateChild<AI::Turn>(Action, TargetDir);
 			return;
 		}
 

@@ -103,7 +103,7 @@ static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent,
 	}
 
 	// Update existing action or push the new one
-	return !!Queue.PushChild<Steer>(NavAction, Dest, NextDest, AdditionalDistance);
+	return !!Queue.PushOrUpdateChild<Steer>(NavAction, Dest, NextDest, AdditionalDistance);
 }
 //---------------------------------------------------------------------
 
@@ -154,7 +154,7 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 bool CSteerAction::GenerateRecoveryAction(Game::CActionQueueComponent& Queue,
 	Game::HAction NavAction, const vector3& ValidPos)
 {
-	return !!Queue.PushChild<Steer>(NavAction, ValidPos, ValidPos, -0.f);
+	return !!Queue.PushOrUpdateChild<Steer>(NavAction, ValidPos, ValidPos, -0.f);
 }
 //---------------------------------------------------------------------
 
