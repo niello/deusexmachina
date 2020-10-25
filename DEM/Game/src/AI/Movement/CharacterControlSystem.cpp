@@ -105,7 +105,12 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 	// Move only when explicitly requested
 	auto SteerAction = Queue.FindActive<AI::Steer>();
 	auto pSteerAction = SteerAction.As<AI::Steer>();
-	if (!pSteerAction) return vector3::Zero;
+	if (!pSteerAction)
+	{
+		if (Character.State == ECharacterState::Walk)
+			Character.State = ECharacterState::Stand;
+		return vector3::Zero;
+	}
 
 	vector3 DesiredMovement(pSteerAction->_Dest.x - Pos.x, 0.f, pSteerAction->_Dest.z - Pos.z);
 
