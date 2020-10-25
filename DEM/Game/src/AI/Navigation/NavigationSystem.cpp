@@ -611,12 +611,8 @@ void DestroyNavigation(DEM::Game::CGameWorld& World, ::AI::CPathRequestQueue& Pa
 			while (auto NavAction = pQueue->FindActive<Navigate>(TopNavAction))
 				TopNavAction = NavAction;
 
-			if (TopNavAction)
-			{
-				const auto NavActionStatus = pQueue->GetStatus(TopNavAction);
-				if (NavActionStatus == Game::EActionStatus::New || NavActionStatus == Game::EActionStatus::Active)
-					pQueue->SetStatus(TopNavAction, Game::EActionStatus::Cancelled);
-			}
+			if (TopNavAction && pQueue->GetStatus(TopNavAction) == Game::EActionStatus::Active)
+				pQueue->SetStatus(TopNavAction, Game::EActionStatus::Cancelled);
 		}
 
 		// Need to shutdown async tasks before deleting agent components

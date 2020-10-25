@@ -15,8 +15,7 @@ namespace DEM::Game
 
 enum class EActionStatus : U8
 {
-	New = 0,
-	Active,
+	Active = 0,
 	Succeeded,
 	Failed,
 	Cancelled,
@@ -85,51 +84,35 @@ protected:
 
 		const auto ParentIt = ItFromHandle(Parent);
 
-		bool Reset = true;
-
 		// Try to find child of the same type, make it an immediate child of the Parent and protect from popping
-		auto ChildIt = ParentIt + 1;
-		for (auto It = ChildIt; It != _Stack.cend(); ++It)
+		const auto ChildIt = ParentIt + 1;
+		const auto ReuseIt = std::find_if(ChildIt, _Stack.cend(), [](const auto& Action) { return Action->GetID() == T::RTTI; });
+		if (ReuseIt == _Stack.cend())
 		{
-			if (It->get()->GetID() == T::RTTI)
-			{
-				// Low-level vector usage optimization, ignore iterator constantness
-				if (ChildIt != It)
-					std::swap(const_cast<Events::PEventBase&>(*ChildIt), const_cast<Events::PEventBase&>(*It));
-				else if constexpr (!ResetOnReuse)
-					Reset = false;
-				++ChildIt;
-				break;
-			}
-		}
-
-		if (Reset)
-		{
-			// Pop remaining children, mark reused one as new
+			// Nothing to reuse, create new child
 			_Stack.erase(ChildIt, _Stack.cend());
-			_Status = EActionStatus::New;
-		}
-		else
-		{
-			// Reactivate reused action if it is the most nested and was already finished
-			if (ChildIt == (--_Stack.cend()) && _Status != EActionStatus::New)
-				_Status = EActionStatus::Active;
-		}
-
-		if (ParentIt != (--_Stack.cend()))
-		{
-			// Reuse found child of the requested type
-			T* pReused = static_cast<T*>(_Stack.back().get());
-			pReused->~T();
-			n_placement_new(pReused, T(std::forward<TArgs>(Args)...));
-		}
-		else
-		{
-			// Create new child
 			_Stack.push_back(std::make_unique<T>(std::forward<TArgs>(Args)...));
+			_Status = EActionStatus::Active;
+			return HAction(&_Stack.back());
 		}
 
-		return HAction(&_Stack.back());
+		if (ChildIt != ReuseIt)
+		{
+			// Low-level vector usage optimization, ignore iterator constantness
+			std::swap(const_cast<Events::PEventBase&>(*ChildIt), const_cast<Events::PEventBase&>(*ReuseIt));
+			_Stack.erase(ChildIt + 1, _Stack.cend());
+		}
+		else if constexpr (ResetOnReuse)
+			_Stack.erase(ChildIt + 1, _Stack.cend());
+
+		// Reuse found child of the requested type
+		T* pReused = static_cast<T*>(ChildIt->get());
+		pReused->~T();
+		n_placement_new(pReused, T(std::forward<TArgs>(Args)...));
+
+		if (ChildIt == (_Stack.cend() - 1)) _Status = EActionStatus::Active;
+
+		return HandleFromIt(ChildIt);
 	}
 	//---------------------------------------------------------------------
 
@@ -163,7 +146,7 @@ public:
 		{
 			_Stack.push_back(std::move(_Queue.front()));
 			_Queue.pop_front();
-			_Status = EActionStatus::New;
+			_Status = EActionStatus::Active;
 		}
 	}
 	//---------------------------------------------------------------------
@@ -251,7 +234,7 @@ public:
 	// NB: pops child actions
 	void SetStatus(HAction Handle, EActionStatus Status)
 	{
-		if (!Handle || Status == EActionStatus::New || Status == EActionStatus::NotQueued) return;
+		if (!Handle || Status == EActionStatus::NotQueued) return;
 		_Stack.erase(++ItFromHandle(Handle), _Stack.cend()); // Pop children
 		_Status = Status;
 	}
