@@ -18,14 +18,11 @@ class SwitchSmartObjectState : public Events::CEventNative
 
 public:
 
-	HEntity              Object;
-	vector3              Pos;
-	std::optional<float> FaceDir;
-	CStrID               ObjectState;
-	bool                 ForceObjectState = false; // Force-set requested state immediately?
-	// point, face direction min & max (angle?), actor animation and/or state, object entity handle, object target state, bool force
+	HEntity _Object;
+	CStrID  _State;
+	bool    _Force = false; // Force-set requested state immediately?
 
-	explicit SwitchSmartObjectState(/*const vector3& Destination, float Speed*/)/* : _Destination(Destination), _Speed(Speed)*/ {}
+	explicit SwitchSmartObjectState(HEntity Object, CStrID State, bool Force) : _Object(Object), _State(State), _Force(Force) {}
 };
 
 struct CSmartObjectComponent

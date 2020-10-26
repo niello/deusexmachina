@@ -298,7 +298,6 @@ static bool GenerateTraversalAction(Game::CGameWorld& World, CNavAgentComponent&
 	Game::HAction NavAction, const vector3& ExactPos, vector3& OutNextTurn)
 {
 	// Check if we are able to trigger an offmesh connection at the next corner
-	//???add shortcut method to corridor? Agent.Corridor.initStraightPathSearch(Agent.pNavQuery, Ctx);
 	dtStraightPathContext Ctx;
 	if (dtStatusFailed(Agent.pNavQuery->initStraightPathSearch(
 		Agent.Corridor.getPos(), Agent.Corridor.getTarget(), Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Ctx)))
@@ -510,6 +509,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			}
 			else if (/*Agent.Mode == ENavigationMode::Offmesh &&*/ !HasSubAction)
 			{
+				// Update traversal action after no-op during an offmesh traversal, e.g. waiting for animation end
 				//???can optimize all traversal cases by storing action and comparing new with current?
 				//if so, can avoid storing curr offmesh poly in this case, and maybe surface traversal will benefit too.
 				Game::HEntity Controller;

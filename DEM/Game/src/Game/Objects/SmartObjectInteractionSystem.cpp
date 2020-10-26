@@ -23,62 +23,77 @@ void InteractWithSmartObjects(CGameWorld& World)
 		auto pAction = Action.As<SwitchSmartObjectState>();
 		if (!pAction) return;
 
-		/*
-		// Check if action or sub-action is stopped
-		if (pQueue->GetStatus() == DEM::Game::EActionStatus::Failed || pQueue->GetStatus() == DEM::Game::EActionStatus::Cancelled)
+		const auto ChildAction = Queue.GetChild(Action);
+		const auto ChildActionStatus = Queue.GetStatus(ChildAction);
+		if (ChildActionStatus == EActionStatus::Failed || ChildActionStatus == EActionStatus::Cancelled)
 		{
-			// If sub-action failed or cancelled, finish with the same result
-			// TODO: improve API!
-			Queue.FinalizeActiveAction(*pAction, pQueue->GetStatus());
-			Queue.RemoveAction(*pAction);
+			// FIXME: if Navigate failed, can retry with another interaction region, until all are tried
+			Queue.SetStatus(Action, ChildActionStatus);
 			return;
 		}
 
-		// Check if this action succeeded
-		if (pQueue->GetActiveStackTop() == pAction && pQueue->GetStatus() == DEM::Game::EActionStatus::Succeeded)
-		{
-			Queue.RemoveAction(*pAction);
-			return;
-		}
+		auto pSOComponent = World.FindComponent<CSmartObjectComponent>(pAction->_Object);
+		if (!pSOComponent) return;
+		const CSmartObject* pSOAsset = pSOComponent->Asset->GetObject<CSmartObject>();
+		if (!pSOAsset) return;
 
-		// If we didn't finish but no sub-action is active, try to generate it
-		if (pQueue->GetActiveStackTop() == pAction || pQueue->GetStatus() == DEM::Game::EActionStatus::Succeeded)
-		{
-			//
-		}
-		*/
+		const auto& ActorPos = pSceneComponent->RootNode->GetWorldPosition();
 
-		//const float ActorRadius = 0.f; // TODO: fill!
+		// FIXME: fill!
+		const float ActorRadius = 0.f;
 		// TODO: fill Action.Pos with curr actor pos!
 		// TODO: actor anim and/or state
 		//???!!!need interaction ID in params?!
-		//if (!pSOAsset->GetInteractionParams(CStrID(_Name.c_str()), ActorRadius, pAction->Pos, pAction->FaceDir)) return false;
-
-		// if not the same poly, add or update Navigate (can try to raycast but require all polys on the way to be Steer-able
-		// if not the same position (what tolerance, from Steer?), add or update Steer
-		// if not required facing, add or update Face
-		// if facing is OK too, start actor animation and request smart object state switching
 
 		const vector3 ObjectPos(128.0f, 43.5f, 115.0f);
-		const vector3 ActionPos(127.0f, 43.5f, 115.0f);
+		vector3 ActionPos(127.0f, 43.5f, 115.0f);
 
-		const auto& Pos = pSceneComponent->RootNode->GetWorldPosition();
-		if (vector3::SqDistance2D(ActionPos, Pos) >= AI::Steer::SqLinearTolerance)
+		// FIXME: get (only if facing is necessary) from interaction params
+		vector3 TargetDir = ObjectPos - ActorPos;
+		TargetDir.norm();
+
+		if (auto pNavAction = ChildAction.As<AI::Navigate>())
+		{
+			// Get target position from cache
+			// If failed, try the next closest region (just select second closest now)
+		}
+		else
+		{
+			// FIXME: need to refresh if already turning? or maybe finish turning and then validate again?
+			// FIXME: where to get interaction name? Request Open iact instead of Opened state? Store both IDs?
+			//???instead of returning all this data, return region indexand pos, and facing & anim get from region index when needed?
+			std::optional<float> FaceDir;
+			if (!pSOAsset->GetInteractionParams(CStrID("Open"), ActorRadius, ActionPos, FaceDir))
+			{
+				Queue.SetStatus(Action, EActionStatus::Failed);
+				return;
+			}
+
+			// TODO: calc TargetDir from FaceDir
+		}
+
+		if (vector3::SqDistance2D(ActionPos, ActorPos) >= AI::Steer::SqLinearTolerance)
 		{
 			if (pNavAgent)
 			{
 				const float Extents[3] = { pNavAgent->Radius, pNavAgent->Height, pNavAgent->Radius };
 				float NearestPos[3];
 
+				// FIXME: if static, get poly along with point from object interaction params
 				dtPolyRef ObjPolyRef = 0;
-				pNavAgent->pNavQuery->findNearestPoly(ObjectPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NearestPos);
+				pNavAgent->pNavQuery->findNearestPoly(ActionPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NearestPos);
 
 				// FIXME: use pNavAgent->Corridor.getFirstPoly() instead! Offmesh can break this now!
 				dtPolyRef AgentPolyRef = 0;
-				pNavAgent->pNavQuery->findNearestPoly(Pos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &AgentPolyRef, NearestPos);
+				pNavAgent->pNavQuery->findNearestPoly(ActorPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &AgentPolyRef, NearestPos);
 
 				if (ObjPolyRef != AgentPolyRef)
 				{
+					// To avoid possible parent path invalidation, could try to optimize with:
+					//Agent.pNavQuery->findLocalNeighbourhood
+					//Agent.pNavQuery->moveAlongSurface
+					//Agent.pNavQuery->raycast
+
 					Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, 0.f);
 					return;
 				}
@@ -88,10 +103,9 @@ void InteractWithSmartObjects(CGameWorld& World)
 			return;
 		}
 
+		//???update only if there is no Turn already active?
 		vector3 LookatDir = -pSceneComponent->RootNode->GetWorldMatrix().AxisZ();
 		LookatDir.norm();
-		vector3 TargetDir = ObjectPos - Pos;
-		TargetDir.norm();
 		const float Angle = vector3::Angle2DNorm(LookatDir, TargetDir);
 		if (std::fabsf(Angle) >= DEM::AI::Turn::AngularTolerance)
 		{
@@ -99,20 +113,10 @@ void InteractWithSmartObjects(CGameWorld& World)
 			return;
 		}
 
-		// Wants to interact with the controller SO. Must check if it is close enough not to navigate to it (can steer).
-		//Agent.pNavQuery->findLocalNeighbourhood
-		//Agent.pNavQuery->moveAlongSurface
-		//Agent.pNavQuery->raycast
+		pSOComponent->RequestedState = pAction->_State;
+		pSOComponent->Force = pAction->_Force;
 
-		//CSmartObject* pSmart = SOComponent.Asset->GetObject<CSmartObject>();
-		//if (!pSmart) return;
-
-		auto pSOComponent = World.FindComponent<CSmartObjectComponent>(pAction->Object);
-		if (!pSOComponent) return;
-		pSOComponent->RequestedState = pAction->ObjectState;
-		pSOComponent->Force = pAction->ForceObjectState;
-
-		//!!!TODO: wait for actor animation or state transition end!
+		// TODO: start actor animation and/or state switching, wait for its end before setting Succeeded status!
 		Queue.SetStatus(Action, EActionStatus::Succeeded);
 	});
 }

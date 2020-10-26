@@ -143,11 +143,10 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 		Agent.Corridor.getPos(), Agent.Corridor.getTarget(), Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Ctx)))
 		return false;
 
-	const dtPolyRef PolyRef = Agent.Corridor.getFirstPoly();
-	U8 AreaType = 0;
-	Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(PolyRef, &AreaType);
+	// FIXME: ensure that Agent.CurrAreaType is always actual here!
 
-	return DoGenerateAction(World, Agent, Queue, NavAction, Ctx, DT_IN_PROGRESS, 0, AreaType, PolyRef, Pos, NextDest);
+	return DoGenerateAction(World, Agent, Queue, NavAction, Ctx,
+		DT_IN_PROGRESS, 0, Agent.CurrAreaType, Agent.Corridor.getFirstPoly(), Pos, NextDest);
 }
 //---------------------------------------------------------------------
 
