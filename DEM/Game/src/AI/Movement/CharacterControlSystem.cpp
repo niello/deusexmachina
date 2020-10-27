@@ -269,7 +269,7 @@ void ProcessCharacterControllers(CGameWorld& World, Physics::CPhysicsLevel& Phys
 	World.ForEachEntityWith<CCharacterControllerComponent, CActionQueueComponent>(
 		[dt, &PhysicsLevel](auto EntityID, auto& Entity,
 			CCharacterControllerComponent& Character,
-			CActionQueueComponent* pQueue)
+			CActionQueueComponent& Queue)
 	{
 		auto pBody = Character.Body.Get();
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
@@ -282,8 +282,8 @@ void ProcessCharacterControllers(CGameWorld& World, Physics::CPhysicsLevel& Phys
 		if (UpdateSelfControlState(Character, DistanceToGround))
 		{
 			// Update movement and other self-control
-			vector3 DesiredLinearVelocity = ProcessMovement(Character, *pQueue, Pos);
-			const float DesiredAngularVelocity = ProcessFacing(Character, *pQueue, DesiredLinearVelocity);
+			vector3 DesiredLinearVelocity = ProcessMovement(Character, Queue, Pos);
+			const float DesiredAngularVelocity = ProcessFacing(Character, Queue, DesiredLinearVelocity);
 			UpdateRigidBodyMovement(pBody, dt, DesiredLinearVelocity, DesiredAngularVelocity, Character.MaxAcceleration);
 
 			// TODO: not needed when levitate, only when really ion the ground
@@ -303,7 +303,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 	World.ForEachEntityWith<CCharacterControllerComponent, CActionQueueComponent>(
 		[&PhysicsLevel](auto EntityID, auto& Entity,
 			CCharacterControllerComponent& Character,
-			CActionQueueComponent* pQueue)
+			CActionQueueComponent& Queue)
 	{
 		auto pBody = Character.Body.Get();
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
@@ -312,7 +312,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 		const auto& BodyTfm = pBody->GetBtBody()->getWorldTransform();
 
 		// NB: we don't try to process Steer and Turn simultaneously, only the most nested of them
-		auto Action = pQueue->FindActive<AI::Steer, AI::Turn>();
+		auto Action = Queue.FindActive<AI::Steer, AI::Turn>();
 
 		if (auto pSteerAction = Action.As<AI::Steer>())
 		{
@@ -323,7 +323,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
 			if (IsSameHeightLevel && SqDistance < AI::Steer::SqLinearTolerance)
 			{
-				pQueue->SetStatus(Action, EActionStatus::Succeeded);
+				Queue.SetStatus(Action, EActionStatus::Succeeded);
 				if (Character.State == ECharacterState::Walk || Character.State == ECharacterState::ShortStep)
 					Character.State = ECharacterState::Stand;
 			}
@@ -340,7 +340,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
 			const float Angle = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
 			if (std::fabsf(Angle) < AI::Turn::AngularTolerance)
-				pQueue->SetStatus(Action, EActionStatus::Succeeded);
+				Queue.SetStatus(Action, EActionStatus::Succeeded);
 		}
 	});
 }

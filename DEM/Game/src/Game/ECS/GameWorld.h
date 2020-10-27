@@ -60,6 +60,22 @@ protected:
 	template<typename TComponent, typename... Components>
 	bool GetNextComponents(HEntity EntityID, std::tuple<ensure_pointer_t<TComponent>, ensure_pointer_t<Components>...>& Out, const std::tuple<TComponentStoragePtr<TComponent>, TComponentStoragePtr<Components>...>& Storages);
 
+	template <typename TDest, typename TSrc>
+	constexpr decltype(auto) RestoreComponentType(TSrc&& Src)
+	{
+		if constexpr (std::is_pointer_v<TDest>) return std::forward<TSrc>(Src);
+		else return std::reference_wrapper<TDest>(*std::forward<TSrc>(Src));
+	}
+	//---------------------------------------------------------------------
+
+	template <typename... Components, class TCallback, typename TComponent, typename ComponentTuple, size_t... I>
+	constexpr decltype(auto) InvokeQueryCallback(TCallback&& _Obj, HEntity EntityID, const CEntity& Entity, TComponent&& MainComponent, ComponentTuple&& NextComponents, std::index_sequence<I...>)
+	{
+		return std::invoke(std::forward<TCallback>(_Obj), EntityID, Entity, std::forward<TComponent>(MainComponent),
+			RestoreComponentType<std::tuple_element_t<I, std::tuple<Components...>>>(std::get<I>(std::forward<ComponentTuple>(NextComponents)))...);
+	}
+	//---------------------------------------------------------------------
+
 public:
 
 	CGameWorld(Resources::CResourceManager& ResMgr);
@@ -335,7 +351,7 @@ inline void CGameWorld::ForEachEntityInLevelWith(CStrID LevelID, TCallback Callb
 
 // Join-iterator over entities containing a set of components. Components specified by pointer are optional.
 // They are nullptr if not present. It is recommended to specify mandatory ones first. Respects 'const' specifier.
-// Callback args: entity ID, entity ref, component pointers in the same order as in args.
+// Callback args: entity ID, entity const ref, component pointers or refs in the same order and constness as in tpl.
 // TODO: pass mandatory components by reference into a Callback?
 template<typename TComponent, typename... Components, typename TCallback, typename TFilter>
 inline void CGameWorld::ForEachEntityWith(TCallback Callback, TFilter Filter)
@@ -363,7 +379,7 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback, TFilter Filter)
 			if constexpr(sizeof...(Components) > 0)
 				if (!GetNextComponents<Components...>(EntityID, NextComponents, NextStorages)) continue;
 
-			std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(EntityID, Entity, std::reference_wrapper<TComponent>(Component)), NextComponents));
+			InvokeQueryCallback<Components...>(std::forward<TCallback>(Callback), EntityID, Entity, std::reference_wrapper<TComponent>(Component), NextComponents, std::make_index_sequence<sizeof...(Components)>{});
 		}
 	}
 }

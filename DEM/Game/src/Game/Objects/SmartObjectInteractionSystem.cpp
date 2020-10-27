@@ -14,10 +14,10 @@ void InteractWithSmartObjects(CGameWorld& World)
 	World.ForEachEntityWith<CActionQueueComponent, const CSceneComponent, const AI::CNavAgentComponent*>(
 		[&World](auto EntityID, auto& Entity,
 			CActionQueueComponent& Queue,
-			const CSceneComponent* pSceneComponent,
+			const CSceneComponent& SceneComponent,
 			const AI::CNavAgentComponent* pNavAgent)
 	{
-		if (!pSceneComponent->RootNode) return;
+		if (!SceneComponent.RootNode) return;
 
 		auto Action = Queue.FindActive<SwitchSmartObjectState>();
 		auto pAction = Action.As<SwitchSmartObjectState>();
@@ -37,7 +37,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		const CSmartObject* pSOAsset = pSOComponent->Asset->GetObject<CSmartObject>();
 		if (!pSOAsset) return;
 
-		const auto& ActorPos = pSceneComponent->RootNode->GetWorldPosition();
+		const auto& ActorPos = SceneComponent.RootNode->GetWorldPosition();
 
 		// FIXME: fill!
 		const float ActorRadius = 0.f;
@@ -104,7 +104,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		}
 
 		//???update only if there is no Turn already active?
-		vector3 LookatDir = -pSceneComponent->RootNode->GetWorldMatrix().AxisZ();
+		vector3 LookatDir = -SceneComponent.RootNode->GetWorldMatrix().AxisZ();
 		LookatDir.norm();
 		const float Angle = vector3::Angle2DNorm(LookatDir, TargetDir);
 		if (std::fabsf(Angle) >= DEM::AI::Turn::AngularTolerance)
