@@ -19,7 +19,6 @@ typedef std::unique_ptr<class CGameWorld> PGameWorld;
 typedef Ptr<class CGameLevel> PGameLevel;
 
 // CRTTIBaseClass for registration in a CGameSession.
-// TODO: make CGameWorldSystem instead? With ECS world, current level, other levels etc inside.
 class CGameWorld final : public ::Core::CRTTIBaseClass
 {
 	RTTI_CLASS_DECL(CGameWorld, ::Core::CRTTIBaseClass);
@@ -326,7 +325,7 @@ DEM_FORCE_INLINE bool CGameWorld::GetNextComponents(HEntity EntityID, std::tuple
 //---------------------------------------------------------------------
 
 // Join-iterator over active entities containing a set of components. See ForEachEntityWith(Callback, Filter).
-// Callback args: entity ID, entity ref, component pointers in the same order as in args.
+// Callback args: entity ID, entity const ref, component pointers or refs in the same order and constness as in tpl.
 template<typename TComponent, typename... Components, typename TCallback>
 inline void CGameWorld::ForEachEntityWith(TCallback Callback)
 {
@@ -338,7 +337,7 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback)
 //---------------------------------------------------------------------
 
 // Join-iterator over active entities in a certain level with a set of components. See ForEachEntityWith(Callback, Filter).
-// Callback args: entity ID, entity ref, component pointers in the same order as in args.
+// Callback args: entity ID, entity const ref, component pointers or refs in the same order and constness as in tpl.
 template<typename TComponent, typename... Components, typename TCallback>
 inline void CGameWorld::ForEachEntityInLevelWith(CStrID LevelID, TCallback Callback)
 {
@@ -352,7 +351,6 @@ inline void CGameWorld::ForEachEntityInLevelWith(CStrID LevelID, TCallback Callb
 // Join-iterator over entities containing a set of components. Components specified by pointer are optional.
 // They are nullptr if not present. It is recommended to specify mandatory ones first. Respects 'const' specifier.
 // Callback args: entity ID, entity const ref, component pointers or refs in the same order and constness as in tpl.
-// TODO: pass mandatory components by reference into a Callback?
 template<typename TComponent, typename... Components, typename TCallback, typename TFilter>
 inline void CGameWorld::ForEachEntityWith(TCallback Callback, TFilter Filter)
 {
