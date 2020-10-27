@@ -63,8 +63,24 @@ void InteractWithSmartObjects(CGameWorld& World)
 
 		//----------- Move
 
-		//!!!may be Navigate or Steer!
-		if (auto pNavAction = ChildAction.As<AI::Navigate>())
+		if (auto pSteerAction = ChildAction.As<AI::Steer>())
+		{
+			if (ChildActionStatus == EActionStatus::Active)
+			{
+				//if (Static) return;
+				// if Steer optimization will be used for dynamic objects, must update target here
+				// and generate Steer or Navigate. But most probably Steer will be used for Static only.
+				// NB: Steer can also be used for dynamic if actor can't navigate. So can check this
+				// and if nav agent is null then update Steer target without trying to generate Navigate.
+				return;
+			}
+			else if (ChildActionStatus == EActionStatus::Failed)
+			{
+				Queue.SetStatus(Action, EActionStatus::Failed);
+				return;
+			}
+		}
+		else if (auto pNavAction = ChildAction.As<AI::Navigate>())
 		{
 			if (ChildActionStatus == EActionStatus::Active)
 			{
@@ -91,7 +107,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		{
 			// get closest target position and region from SO asset
 			// if failed, Queue.SetStatus(Action, EActionStatus::Failed);
-			// if not already at the dest reach, generate Navigate or Steer and return
+			// if not already at the dest reach, generate Navigate or Steer (for Static only?) and return
 		}
 
 		//----------- Turn
@@ -100,11 +116,10 @@ void InteractWithSmartObjects(CGameWorld& World)
 		{
 			if (ChildActionStatus == EActionStatus::Active)
 			{
-				if (!Static)
-				{
-					// get facing from SO asset for the current region
-					// if facing is still required by SO, update it in Turn action and return
-				}
+				if (Static) return;
+
+				// get facing from SO asset for the current region
+				// if facing is still required by SO, update it in Turn action and return
 			}
 			else if (ChildActionStatus == EActionStatus::Failed)
 			{
