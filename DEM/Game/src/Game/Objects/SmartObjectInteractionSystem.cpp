@@ -36,7 +36,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		auto pAction = Action.As<SwitchSmartObjectState>();
 
 		auto pSOComponent = World.FindComponent<CSmartObjectComponent>(pAction->_Object);
-		if (!pSOComponent)
+		if (!pSOComponent || !pSOComponent->Asset)
 		{
 			Queue.SetStatus(Action, EActionStatus::Failed);
 			return;
