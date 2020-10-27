@@ -159,7 +159,7 @@ public:
 	}
 	//---------------------------------------------------------------------
 
-	HAction FindActive(Events::CEventID ID, HAction From = {}) const
+	HAction FindCurrent(Events::CEventID ID, HAction From = {}) const
 	{
 		auto It = _Stack.crbegin();
 		if (From)
@@ -179,7 +179,7 @@ public:
 	//---------------------------------------------------------------------
 
 	template<typename... T>
-	HAction FindActive(HAction From = {}) const
+	HAction FindCurrent(HAction From = {}) const
 	{
 		auto It = _Stack.crbegin();
 		if (From)

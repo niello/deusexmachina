@@ -103,7 +103,7 @@ static bool UpdateSelfControlState(CCharacterControllerComponent& Character, flo
 static vector3 ProcessMovement(CCharacterControllerComponent& Character, CActionQueueComponent& Queue, const vector3& Pos)
 {
 	// Move only when explicitly requested
-	auto SteerAction = Queue.FindActive<AI::Steer>();
+	auto SteerAction = Queue.FindCurrent<AI::Steer>();
 	auto pSteerAction = SteerAction.As<AI::Steer>();
 	if (!pSteerAction)
 	{
@@ -194,7 +194,7 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 	float DesiredRotation = 0.f;
 	if (Character.State == ECharacterState::Walk)
 		DesiredRotation = vector3::Angle2DNorm(LookatDir, DesiredLinearVelocity);
-	else if (auto pTurnAction = Queue.FindActive<AI::Turn>().As<AI::Turn>())
+	else if (auto pTurnAction = Queue.FindCurrent<AI::Turn>().As<AI::Turn>())
 		DesiredRotation = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
 
 	const bool IsNegative = (DesiredRotation < 0.f);
@@ -312,7 +312,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 		const auto& BodyTfm = pBody->GetBtBody()->getWorldTransform();
 
 		// NB: we don't try to process Steer and Turn simultaneously, only the most nested of them
-		auto Action = Queue.FindActive<AI::Steer, AI::Turn>();
+		auto Action = Queue.FindCurrent<AI::Steer, AI::Turn>();
 
 		if (auto pSteerAction = Action.As<AI::Steer>())
 		{

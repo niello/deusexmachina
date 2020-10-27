@@ -19,38 +19,111 @@ void InteractWithSmartObjects(CGameWorld& World)
 	{
 		if (!SceneComponent.RootNode) return;
 
-		auto Action = Queue.FindActive<SwitchSmartObjectState>();
-		auto pAction = Action.As<SwitchSmartObjectState>();
-		if (!pAction) return;
+		auto Action = Queue.FindCurrent<SwitchSmartObjectState>();
+		if (!Action) return;
+
+		const auto ActionStatus = Queue.GetStatus(Action);
+		if (ActionStatus != EActionStatus::Active) return;
 
 		const auto ChildAction = Queue.GetChild(Action);
 		const auto ChildActionStatus = Queue.GetStatus(ChildAction);
-		if (ChildActionStatus == EActionStatus::Failed || ChildActionStatus == EActionStatus::Cancelled)
+		if (ChildActionStatus == EActionStatus::Cancelled)
 		{
-			// FIXME: if Navigate failed, can retry with another interaction region, until all are tried
-			Queue.SetStatus(Action, ChildActionStatus);
+			Queue.SetStatus(Action, EActionStatus::Cancelled);
 			return;
 		}
 
+		auto pAction = Action.As<SwitchSmartObjectState>();
+
 		auto pSOComponent = World.FindComponent<CSmartObjectComponent>(pAction->_Object);
-		if (!pSOComponent) return;
+		if (!pSOComponent)
+		{
+			Queue.SetStatus(Action, EActionStatus::Failed);
+			return;
+		}
+
 		const CSmartObject* pSOAsset = pSOComponent->Asset->GetObject<CSmartObject>();
-		if (!pSOAsset) return;
+		if (!pSOAsset)
+		{
+			Queue.SetStatus(Action, EActionStatus::Failed);
+			return;
+		}
 
 		const auto& ActorPos = SceneComponent.RootNode->GetWorldPosition();
 
-		// FIXME: fill!
+		// FIXME: fill! Get facing (only if necessary) from interaction params
 		const float ActorRadius = 0.f;
-		// TODO: fill Action.Pos with curr actor pos!
-		// TODO: actor anim and/or state
-		//???!!!need interaction ID in params?!
-
+		const bool Static = true; // Means that interaction params can't change, inc. position
 		const vector3 ObjectPos(128.0f, 43.5f, 115.0f);
 		vector3 ActionPos(127.0f, 43.5f, 115.0f);
-
-		// FIXME: get (only if facing is necessary) from interaction params
 		vector3 TargetDir = ObjectPos - ActorPos;
 		TargetDir.norm();
+
+//========
+
+		//----------- Move
+
+		//!!!may be Navigate or Steer!
+		if (auto pNavAction = ChildAction.As<AI::Navigate>())
+		{
+			if (ChildActionStatus == EActionStatus::Active)
+			{
+				if (Static)
+				{
+					// when the path is (re)built, do one time check for closer iact polygon inside the path
+					// if found, get new iact target from its region
+					// mark this check as done until the path is changed (version counter in nav agent?)
+				}
+				else
+				{
+					// get target position from SO asset (for the curr region) and update it in the action
+				}
+				return;
+			}
+			else if (ChildActionStatus == EActionStatus::Failed)
+			{
+				// try to navigate to the point in the next closest region
+				// if all are tried and failed, Queue.SetStatus(Action, EActionStatus::Failed);
+				return;
+			}
+		}
+		else if (!Static || !ChildAction)
+		{
+			// get closest target position and region from SO asset
+			// if failed, Queue.SetStatus(Action, EActionStatus::Failed);
+			// if not already at the dest reach, generate Navigate or Steer and return
+		}
+
+		//----------- Turn
+
+		if (auto pTurnAction = ChildAction.As<AI::Turn>())
+		{
+			if (ChildActionStatus == EActionStatus::Active)
+			{
+				if (!Static)
+				{
+					// get facing from SO asset for the current region
+					// if facing is still required by SO, update it in Turn action and return
+				}
+			}
+			else if (ChildActionStatus == EActionStatus::Failed)
+			{
+				Queue.SetStatus(Action, EActionStatus::Failed);
+				return;
+			}
+		}
+		else if (!Static || !ChildAction)
+		{
+			// get facing from SO asset for the current region
+			// if facing is required by SO and not already looking at that dir, generate Turn action and return
+		}
+
+		//----------- Interact
+
+		// ... anim, state transition etc ...
+
+
+//========
 
 		if (auto pNavAction = ChildAction.As<AI::Navigate>())
 		{

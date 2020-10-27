@@ -360,7 +360,11 @@ static void ResetNavigation(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& 
 
 	Agent.State = ENavigationState::Idle;
 	if (Agent.Mode == ENavigationMode::Offmesh)
+	{
 		Agent.Mode = ENavigationMode::Recovery;
+		Agent.OffmeshRef = 0;
+		Agent.CurrAreaType = 0;
+	}
 
 	Queue.SetStatus(NavAction, Result);
 }
@@ -402,11 +406,11 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 		const auto& Pos = SceneComponent.RootNode->GetWorldPosition();
 		if (!UpdatePosition(Pos, Agent))
 		{
-			ResetNavigation(Agent, PathQueue, Queue, Queue.FindActive<Navigate>(), Game::EActionStatus::Failed);
+			ResetNavigation(Agent, PathQueue, Queue, Queue.FindCurrent<Navigate>(), Game::EActionStatus::Failed);
 			return;
 		}
 
-		auto NavigateAction = Queue.FindActive<Navigate>();
+		auto NavigateAction = Queue.FindCurrent<Navigate>();
 		if (auto pNavigateAction = NavigateAction.As<Navigate>())
 		{
 			const auto SubActionStatus = Queue.GetStatus(Queue.GetChild(NavigateAction));
@@ -423,6 +427,14 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 				}
 				else if (SubActionStatus == Game::EActionStatus::Succeeded)
 				{
+					// Finish traversing an offmesh connection
+					if (Agent.Mode == ENavigationMode::Offmesh)
+					{
+						Agent.Mode = ENavigationMode::Surface;
+						Agent.OffmeshRef = 0;
+						Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(Agent.Corridor.getFirstPoly(), &Agent.CurrAreaType);
+					}
+
 					// If the last edge traversed successfully, finish navigation
 					// FIXME: looks like hack, can rewrite better? Could compare curr and target polys? Action can't change inside a poly.
 					// Problems: Steer to door knob? Same poly, different action, or sub-sub-action (then OK)? Traverse ofm, too early dest poly, look at curr Mode?
@@ -430,13 +442,6 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 					{
 						ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Succeeded);
 						return;
-					}
-
-					// Finish traversing an offmesh connection
-					if (Agent.Mode == ENavigationMode::Offmesh)
-					{
-						Agent.Mode = ENavigationMode::Surface;
-						Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(Agent.Corridor.getFirstPoly(), &Agent.CurrAreaType);
 					}
 				}
 			}
@@ -608,7 +613,7 @@ void DestroyNavigation(Game::CGameWorld& World, ::AI::CPathRequestQueue& PathQue
 		if (auto pQueue = World.FindComponent<Game::CActionQueueComponent>(EntityID))
 		{
 			Game::HAction TopNavAction;
-			while (auto NavAction = pQueue->FindActive<Navigate>(TopNavAction))
+			while (auto NavAction = pQueue->FindCurrent<Navigate>(TopNavAction))
 				TopNavAction = NavAction;
 
 			if (TopNavAction && pQueue->GetStatus(TopNavAction) == Game::EActionStatus::Active)
