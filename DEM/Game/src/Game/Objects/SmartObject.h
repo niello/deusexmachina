@@ -66,10 +66,11 @@ protected:
 	std::string                        _ScriptSource;
 	std::vector<CSmartObjectStateInfo> _States;
 	std::vector<CStrID>                _Interactions;
+	bool                               _Static = false; // true - interaction params never change over time
 
 public:
 
-	CSmartObject(CStrID ID, CStrID DefaultState, std::string_view ScriptSource);
+	CSmartObject(CStrID ID, CStrID DefaultState, bool Static, std::string_view ScriptSource);
 
 	virtual bool IsResourceValid() const override { return !_States.empty(); }
 
@@ -88,6 +89,7 @@ public:
 	sol::function GetScriptFunction(sol::state& Lua, std::string_view Name) const;
 	CStrID        GetID() const { return _ID; }
 	CStrID        GetDefaultState() const { return _DefaultState; }
+	bool          IsStatic() const { return _Static; }
 	const auto&   GetScriptSource() const { return _ScriptSource; }
 	const auto&   GetInteractions() const { return _Interactions; }
 };

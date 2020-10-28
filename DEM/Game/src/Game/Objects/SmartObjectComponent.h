@@ -12,15 +12,19 @@
 namespace DEM::Game
 {
 
+// NB: avoid unnecessary Push[OrUpdate]Child to preserve cached values
 class SwitchSmartObjectState : public Events::CEventNative
 {
 	NATIVE_EVENT_DECL(SwitchSmartObjectState, Events::CEventNative);
 
 public:
 
-	HEntity _Object;
 	CStrID  _State;
-	bool    _Force = false; // Force-set requested state immediately?
+	HEntity _Object;
+	U16     _TriedRegions = 0;    // Cache. Bit flags for up to 16 regions.
+	U8      _RegionIndex = 0;     // Cache
+	bool    _Force = false;       // true - force-set requested state immediately
+	bool    _PathScanned = false; // Cache
 
 	explicit SwitchSmartObjectState(HEntity Object, CStrID State, bool Force) : _Object(Object), _State(State), _Force(Force) {}
 };
@@ -38,6 +42,8 @@ struct CSmartObjectComponent
 	bool                       Force = false; // Force-set requested state immediately?
 
 	sol::function              UpdateScript; // Cache for faster per-frame access
+
+	//!!!cached polys per region!
 
 	//???transition progress / current state timer (one multipurpose time float)? or inside timeline player?
 	//!!!NB: if time is in TL in player, must save/return prev time, not curr, or some TL part may be skipped on game reload!

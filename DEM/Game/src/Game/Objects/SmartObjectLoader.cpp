@@ -46,8 +46,9 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 
 	const CStrID ID = Params.Get(CStrID("ID"), CStrID::Empty);
 	const CStrID DefaultState = Params.Get(CStrID("DefaultState"), CStrID::Empty);
+	const bool Static = Params.Get(CStrID("Static"), false);
 
-	DEM::Game::PSmartObject SmartObject = n_new(DEM::Game::CSmartObject(ID, DefaultState, ScriptSource));
+	DEM::Game::PSmartObject SmartObject = n_new(DEM::Game::CSmartObject(ID, DefaultState, Static, ScriptSource));
 
 	Data::PParams StatesDesc;
 	if (Params.TryGet<Data::PParams>(StatesDesc, CStrID("States")))

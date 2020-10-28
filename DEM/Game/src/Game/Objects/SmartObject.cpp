@@ -4,10 +4,11 @@
 namespace DEM::Game
 {
 
-CSmartObject::CSmartObject(CStrID ID, CStrID DefaultState, std::string_view ScriptSource)
+CSmartObject::CSmartObject(CStrID ID, CStrID DefaultState, bool Static, std::string_view ScriptSource)
 	: _ID(ID)
 	, _DefaultState(DefaultState)
 	, _ScriptSource(ScriptSource)
+	, _Static(Static)
 {
 }
 //---------------------------------------------------------------------

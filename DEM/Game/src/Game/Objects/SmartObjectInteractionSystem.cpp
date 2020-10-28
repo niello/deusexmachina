@@ -53,15 +53,13 @@ void InteractWithSmartObjects(CGameWorld& World)
 
 		// FIXME: fill! Get facing (only if necessary) from interaction params
 		const float ActorRadius = 0.f;
-		const bool Static = true; // Means that interaction params can't change, inc. position
+		const bool Static = pSOAsset->IsStatic();
 		const vector3 ObjectPos(128.0f, 43.5f, 115.0f);
 		vector3 ActionPos(127.0f, 43.5f, 115.0f);
 		vector3 TargetDir = ObjectPos - ActorPos;
 		TargetDir.norm();
 
-//========
-
-		//----------- Move
+		// Move to the interaction point
 
 		if (auto pSteerAction = ChildAction.As<AI::Steer>())
 		{
@@ -86,9 +84,22 @@ void InteractWithSmartObjects(CGameWorld& World)
 			{
 				if (Static)
 				{
-					// when the path is (re)built, do one time check for closer iact polygon inside the path
-					// if found, get new iact target from its region
-					// mark this check as done until the path is changed (version counter in nav agent?)
+					// TODO: could increment path version on replan and recheck, to handle partial path and corridor optimizations!
+					if (!pAction->_PathScanned && pNavAgent && pNavAgent->State == AI::ENavigationState::Following)
+					{
+						pAction->_PathScanned = true;
+
+						for (int PolyIdx = 0; PolyIdx < pNavAgent->Corridor.getPathCount(); ++PolyIdx)
+						{
+							const auto PolyRef = pNavAgent->Corridor.getPath()[PolyIdx];
+
+							//   for i : pSOAsset->GetRegionCount(), get pSOComponent->RegionPolys[i] (sorted)
+							//     if region was not tried and poly is in RegionPolys (binary search)
+							//       pAction->_RegionIndex = curr region
+							//       pAction->_TriedRegions |= (1 << curr region)
+							//       set point from this region on this poly as a target, no replanning will happen
+						}
+					}
 				}
 				else
 				{
@@ -98,19 +109,27 @@ void InteractWithSmartObjects(CGameWorld& World)
 			}
 			else if (ChildActionStatus == EActionStatus::Failed)
 			{
-				// try to navigate to the point in the next closest region
+				// try to navigate to the point in the next closest region (static) or any region (dynamic)
 				// if all are tried and failed, Queue.SetStatus(Action, EActionStatus::Failed);
 				return;
 			}
 		}
 		else if (!Static || !ChildAction)
 		{
-			// get closest target position and region from SO asset
+			//!!!get closest not tried region, then get pos from region!
+			//!!!must not mark region as tried when not Static!
+			std::optional<float> FaceDir;
+			if (!pSOAsset->GetInteractionParams(CStrID("Open"), ActorRadius, ActionPos, FaceDir))
+			{
+				Queue.SetStatus(Action, EActionStatus::Failed);
+				return;
+			}
+
 			// if failed, Queue.SetStatus(Action, EActionStatus::Failed);
 			// if not already at the dest reach, generate Navigate or Steer (for Static only?) and return
 		}
 
-		//----------- Turn
+		// Face interaction direction
 
 		if (auto pTurnAction = ChildAction.As<AI::Turn>())
 		{
@@ -133,32 +152,9 @@ void InteractWithSmartObjects(CGameWorld& World)
 			// if facing is required by SO and not already looking at that dir, generate Turn action and return
 		}
 
-		//----------- Interact
+		// Interact with object
 
 		// ... anim, state transition etc ...
-
-
-//========
-
-		if (auto pNavAction = ChildAction.As<AI::Navigate>())
-		{
-			// Get target position from cache
-			// If failed, try the next closest region (just select second closest now)
-		}
-		else
-		{
-			// FIXME: need to refresh if already turning? or maybe finish turning and then validate again?
-			// FIXME: where to get interaction name? Request Open iact instead of Opened state? Store both IDs?
-			//???instead of returning all this data, return region indexand pos, and facing & anim get from region index when needed?
-			std::optional<float> FaceDir;
-			if (!pSOAsset->GetInteractionParams(CStrID("Open"), ActorRadius, ActionPos, FaceDir))
-			{
-				Queue.SetStatus(Action, EActionStatus::Failed);
-				return;
-			}
-
-			// TODO: calc TargetDir from FaceDir
-		}
 
 		if (vector3::SqDistance2D(ActionPos, ActorPos) >= AI::Steer::SqLinearTolerance)
 		{
