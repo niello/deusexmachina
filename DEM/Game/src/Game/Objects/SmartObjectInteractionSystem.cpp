@@ -5,19 +5,114 @@
 #include <AI/Movement/SteerAction.h>
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/Objects/SmartObject.h>
+#include <DetourCommon.h>
 
 namespace DEM::Game
 {
+
+static inline float SqDistanceToInteractionZone(const vector3& Pos, const CInteractionZone& Zone, UPTR& OutSegment, float& OutT)
+{
+	const auto VertexCount = Zone.Vertices.size();
+	if (VertexCount == 0) return std::numeric_limits<float>().max();
+	else if (VertexCount == 1) return vector3::SqDistance(Pos, Zone.Vertices[0]);
+	else if (VertexCount == 2) return dtDistancePtSegSqr2D(Pos.v, Zone.Vertices[0].v, Zone.Vertices[1].v, OutT);
+	else
+	{
+		if (Zone.Closed)
+		{
+			constexpr UPTR MAX_VERTICES = 128;
+			n_assert_dbg(VertexCount <= MAX_VERTICES);
+
+			// FIXME: find min on the fly? can detect inside?
+			/*
+				// TODO: Replace pnpoly with triArea2D tests?
+				int i, j;
+				bool c = false;
+				for (i = 0, j = nverts-1; i < nverts; j = i++)
+				{
+					const float* vi = &verts[i*3];
+					const float* vj = &verts[j*3];
+					if (((vi[2] > pt[2]) != (vj[2] > pt[2])) &&
+						(pt[0] < (vj[0]-vi[0]) * (pt[2]-vi[2]) / (vj[2]-vi[2]) + vi[0]) )
+						c = !c;
+					ed[j] = dtDistancePtSegSqr2D(pt, vj, vi, et[j]);
+				}
+				return c;
+			*/
+
+			std::array<float, MAX_VERTICES> EdgeD;
+			float EdgeT[MAX_VERTICES];
+			if (dtDistancePtPolyEdgesSqr(Pos.v, Zone.Vertices[0].v, std::min(VertexCount, MAX_VERTICES), EdgeD.data(), EdgeT))
+			{
+				// Point is inside the poly
+				OutSegment = VertexCount;
+				return 0.f;
+			}
+			else
+			{
+				// Find closest edge
+				auto MinIt = std::min_element(EdgeD.cbegin(), EdgeD.cbegin() + VertexCount);
+				OutSegment = std::distance(EdgeD.cbegin(), MinIt);
+				OutT = EdgeT[OutSegment];
+				return *MinIt;
+			}
+		}
+		else
+		{
+			float MinSqDistance = std::numeric_limits<float>().max();
+			for (UPTR i = 0; i < VertexCount - 1; ++i)
+			{
+				float t;
+				const float SqDistance = dtDistancePtSegSqr2D(Pos.v, Zone.Vertices[0].v, Zone.Vertices[1].v, t);
+				if (SqDistance < MinSqDistance)
+				{
+					MinSqDistance = SqDistance;
+					OutSegment = i;
+					OutT = t;
+				}
+			}
+
+			return MinSqDistance;
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+static inline vector3 PointInInteractionZone(const vector3& Pos, const CInteractionZone& Zone, UPTR Segment, float t)
+{
+	const auto VertexCount = Zone.Vertices.size();
+	if (VertexCount == 0) return vector3::Zero;
+	else if (VertexCount == 1) return Zone.Vertices[0];
+	else if (VertexCount == 2)
+	{
+		// FIXME: better lerp!
+		vector3 v = Zone.Vertices[0];
+		v.lerp(Zone.Vertices[1], t);
+		return v;
+	}
+	else
+	{
+		if (Zone.Closed && Segment == VertexCount) return Pos;
+		else
+		{
+			// FIXME: better lerp!
+			vector3 v = Zone.Vertices[Segment];
+			v.lerp(Zone.Vertices[(Segment + 1) % VertexCount], t);
+			return v;
+		}
+	}
+}
+//---------------------------------------------------------------------
 
 void InteractWithSmartObjects(CGameWorld& World)
 {
 	World.ForEachEntityWith<CActionQueueComponent, const CSceneComponent, const AI::CNavAgentComponent*>(
 		[&World](auto EntityID, auto& Entity,
 			CActionQueueComponent& Queue,
-			const CSceneComponent& SceneComponent,
+			const CSceneComponent& ActorSceneComponent,
 			const AI::CNavAgentComponent* pNavAgent)
 	{
-		if (!SceneComponent.RootNode) return;
+		if (!ActorSceneComponent.RootNode) return;
 
 		auto Action = Queue.FindCurrent<SwitchSmartObjectState>();
 		if (!Action) return;
@@ -49,7 +144,14 @@ void InteractWithSmartObjects(CGameWorld& World)
 			return;
 		}
 
-		const auto& ActorPos = SceneComponent.RootNode->GetWorldPosition();
+		auto pSOSceneComponent = World.FindComponent<CSceneComponent>(pAction->_Object);
+		if (!pSOSceneComponent || !pSOSceneComponent->RootNode)
+		{
+			Queue.SetStatus(Action, EActionStatus::Failed);
+			return;
+		}
+
+		const auto& ActorPos = ActorSceneComponent.RootNode->GetWorldPosition();
 
 		// FIXME: fill! Get facing (only if necessary) from interaction params
 		const float ActorRadius = 0.f;
@@ -116,7 +218,24 @@ void InteractWithSmartObjects(CGameWorld& World)
 		}
 		else if (!Static || !ChildAction)
 		{
-			//!!!get closest not tried region, then get pos from region!
+			matrix44 WorldToSmartObject;
+			pSOSceneComponent->RootNode->GetWorldMatrix().invert_simple(WorldToSmartObject);
+			const vector3 SOSpaceActorPos = WorldToSmartObject.transform_coord(ActorPos);
+
+			// for each interaction zone (for current iact) not tried yet
+			//   find distance from pos to point / segment / polygonal chain / closed polygon
+			// get closest zone index
+			// if Static, mark zone as tried
+
+			// find closest pos to the actor in the closest zone (can use hint cached above?)
+			// convert closest pos to the world space
+			// find closest point on poly, center is closest pos, extents is iact R, actor H
+			//???use closestPointOnPolyBoundary?
+			// if none found or found point is farther than R from closest pos:
+			//   either fail this zone or try raycast / findLocalNeighbourhood and test all found polys before failing
+
+			// if failed all zones, Queue.SetStatus(Action, EActionStatus::Failed);
+
 			//!!!must not mark region as tried when not Static!
 			std::optional<float> FaceDir;
 			if (!pSOAsset->GetInteractionParams(CStrID("Open"), ActorRadius, ActionPos, FaceDir))
@@ -125,7 +244,6 @@ void InteractWithSmartObjects(CGameWorld& World)
 				return;
 			}
 
-			// if failed, Queue.SetStatus(Action, EActionStatus::Failed);
 			// if not already at the dest reach, generate Navigate or Steer (for Static only?) and return
 		}
 
@@ -188,7 +306,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		}
 
 		//???update only if there is no Turn already active?
-		vector3 LookatDir = -SceneComponent.RootNode->GetWorldMatrix().AxisZ();
+		vector3 LookatDir = -ActorSceneComponent.RootNode->GetWorldMatrix().AxisZ();
 		LookatDir.norm();
 		const float Angle = vector3::Angle2DNorm(LookatDir, TargetDir);
 		if (std::fabsf(Angle) >= DEM::AI::Turn::AngularTolerance)

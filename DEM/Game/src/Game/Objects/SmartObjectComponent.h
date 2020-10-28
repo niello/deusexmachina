@@ -2,7 +2,6 @@
 #include <Resources/Resource.h>
 #include <Animation/TimelinePlayer.h>
 #include <Animation/TimelineTrack.h> // For inlined destructor CSmartObjectComponent -> CTimelinePlayer
-#include <AI/Navigation/NavFwd.h>
 #include <Events/EventNative.h>
 #include <Data/Metadata.h>
 #include <Data/StringID.h>
@@ -43,8 +42,6 @@ struct CSmartObjectComponent
 	bool                       Force = false; // Force-set requested state immediately?
 
 	sol::function              UpdateScript; // Cache for faster per-frame access
-
-	std::unique_ptr<AI::CNavRegion[]> RegionPolys; // Cache. Sorted lists of polys per interaction region for static smart objects.
 
 	//???transition progress / current state timer (one multipurpose time float)? or inside timeline player?
 	//!!!NB: if time is in TL in player, must save/return prev time, not curr, or some TL part may be skipped on game reload!

@@ -1,5 +1,6 @@
 #pragma once
 #include <Resources/Resource.h>
+#include <Data/FixedArray.h>
 #include <Math/Vector3.h>
 #include <sol/forward.hpp>
 #include <vector>
@@ -53,6 +54,13 @@ struct CSmartObjectStateInfo
 	// state logic object ptr (optional)
 
 	std::vector<CSmartObjectTransitionInfo> Transitions;
+};
+
+struct CInteractionZone
+{
+	CFixedArray<vector3> Vertices;
+	float                Radius;
+	bool                 Closed;
 };
 
 class CSmartObject : public Resources::CResourceObject

@@ -390,6 +390,7 @@ void InitNavigationAgents(Game::CGameWorld& World, Game::CGameLevel& Level, Reso
 }
 //---------------------------------------------------------------------
 
+// NB: PathQueue is updated here
 void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueue& PathQueue, bool NewFrame)
 {
 	World.ForEachEntityWith<CNavAgentComponent, Game::CActionQueueComponent, const Game::CSceneComponent>(
@@ -528,6 +529,8 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Cancelled);
 		}
 	});
+
+	PathQueue.Update(100);
 }
 //---------------------------------------------------------------------
 

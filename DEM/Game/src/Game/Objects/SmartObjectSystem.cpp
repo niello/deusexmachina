@@ -1,4 +1,5 @@
 #include <Game/ECS/GameWorld.h>
+#include <Game/GameLevel.h>
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/Objects/SmartObject.h>
 #include <sol/sol.hpp>
@@ -278,6 +279,7 @@ void InitSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, Resources::
 	World.ForEachComponent<DEM::Game::CSmartObjectComponent>([&Lua, &ResMgr](auto EntityID, DEM::Game::CSmartObjectComponent& Component)
 	{
 		// FIXME: how to load ID into a resource without resource manager available (while deserializing)?
+		// Don't want to store both Asset and AssetID.
 		Component.Asset = ResMgr.RegisterResource<DEM::Game::CSmartObject>(Component.AssetID.CStr());
 		if (!Component.Asset) return;
 
@@ -285,8 +287,10 @@ void InitSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, Resources::
 		{
 			pSmart->InitScript(Lua);
 
-			//!!!???how to set state if CurrState is valid?! Need to initialize pose etc!
+			//!!!???FIXME: how to set state if CurrState is valid?! Need to initialize pose etc!
 			if (!Component.CurrState) Component.RequestedState = pSmart->GetDefaultState();
+
+			//???need poly cache or can calculate intersection of poly and region on the fly?
 		}
 	});
 }
