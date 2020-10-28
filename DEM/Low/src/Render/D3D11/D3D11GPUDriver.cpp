@@ -528,7 +528,7 @@ bool CD3D11GPUDriver::DestroySwapChain(UPTR SwapChainID)
 	
 	CD3D11SwapChain& SC = SwapChains[SwapChainID];
 
-	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
+	for (UPTR i = 0; i < CurrRT.size(); ++i)
 		if (CurrRT[i].Get() == SC.BackBufferRT.Get())
 		{
 			SetRenderTarget(i, nullptr);
@@ -571,7 +571,7 @@ bool CD3D11GPUDriver::ResizeSwapChain(UPTR SwapChainID, unsigned int Width, unsi
 	//one as command (ResizeTarget), one as handler (ResizeBuffers)
 
 	UPTR RemovedRTIdx;
-	for (RemovedRTIdx = 0; RemovedRTIdx < CurrRT.GetCount(); ++RemovedRTIdx)
+	for (RemovedRTIdx = 0; RemovedRTIdx < CurrRT.size(); ++RemovedRTIdx)
 		if (CurrRT[RemovedRTIdx] == SC.BackBufferRT)
 		{
 			CurrRT[RemovedRTIdx] = nullptr;
@@ -593,7 +593,7 @@ bool CD3D11GPUDriver::ResizeSwapChain(UPTR SwapChainID, unsigned int Width, unsi
 		FAIL;
 	}
 
-	if (RemovedRTIdx < CurrRT.GetCount()) SetRenderTarget(RemovedRTIdx, SC.BackBufferRT);
+	if (RemovedRTIdx < CurrRT.size()) SetRenderTarget(RemovedRTIdx, SC.BackBufferRT);
 
 	OK;
 }
@@ -814,7 +814,7 @@ bool CD3D11GPUDriver::GetViewport(UPTR Index, CViewport& OutViewport)
 	// RT might be set but not applied, in that case read values from RT.
 	if (Index == 0 && VPSRSetFlags.IsNot(1 << Index) && CurrDirtyFlags.Is(GPU_Dirty_RT))
 	{
-		for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
+		for (UPTR i = 0; i < CurrRT.size(); ++i)
 		{
 			if (auto pRT = CurrRT[i].Get())
 			{
@@ -908,7 +908,7 @@ bool CD3D11GPUDriver::SetVertexLayout(CVertexLayout* pVLayout)
 
 bool CD3D11GPUDriver::SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR OffsetVertex)
 {
-	if (Index >= CurrVB.GetCount()) FAIL;
+	if (Index >= CurrVB.size()) FAIL;
 	UPTR Offset = pVB ? OffsetVertex * pVB->GetVertexLayout()->GetVertexSizeInBytes() : 0;
 	if (CurrVB[Index].Get() == pVB && CurrVBOffset[Index] == Offset) OK;
 	CurrVB[Index] = (CD3D11VertexBuffer*)pVB;
@@ -938,12 +938,12 @@ bool CD3D11GPUDriver::SetRenderState(CRenderState* pState)
 
 bool CD3D11GPUDriver::SetRenderTarget(UPTR Index, CRenderTarget* pRT)
 {
-	if (Index >= CurrRT.GetCount()) FAIL;
+	if (Index >= CurrRT.size()) FAIL;
 	if (CurrRT[Index].Get() == pRT) OK;
 
 #ifdef _DEBUG // Can't set the same RT to more than one slot
 	if (pRT)
-		for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
+		for (UPTR i = 0; i < CurrRT.size(); ++i)
 			if (CurrRT[i].Get() == pRT) FAIL;
 #endif
 
@@ -1135,7 +1135,7 @@ void CD3D11GPUDriver::EndFrame()
 {
 #ifdef DEM_STATS
 	CString RTString;
-	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
+	for (UPTR i = 0; i < CurrRT.size(); ++i)
 		if (CurrRT[i].IsValidPtr())
 			RTString += StringUtils::FromInt((int)CurrRT[i].Get());
 	if (Core::CCoreServer::HasInstance())
@@ -1159,7 +1159,7 @@ void CD3D11GPUDriver::Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U
 {
 	if (Flags & Clear_Color)
 	{
-		for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
+		for (UPTR i = 0; i < CurrRT.size(); ++i)
 		{
 			CD3D11RenderTarget* pRT = CurrRT[i].Get();
 			if (pRT && pRT->IsValid())
@@ -1503,7 +1503,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 
 	if (Update.Is(GPU_Dirty_VB) && CurrDirtyFlags.Is(GPU_Dirty_VB))
 	{
-		const UPTR MaxVBCount = CurrVB.GetCount();
+		const UPTR MaxVBCount = CurrVB.size();
 		const UPTR PtrsSize = sizeof(ID3D11Buffer*) * MaxVBCount;
 		const UPTR UINTsSize = sizeof(UINT) * MaxVBCount;
 		char* pMem = (char*)PtrArray;
@@ -1555,7 +1555,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 	{
 		ID3D11RenderTargetView** pRTV = (ID3D11RenderTargetView**)PtrArray;
 		n_assert(pRTV);
-		for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
+		for (UPTR i = 0; i < CurrRT.size(); ++i)
 		{
 			CD3D11RenderTarget* pRT = CurrRT[i].Get();
 			if (pRT)
@@ -1568,7 +1568,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 
 		ID3D11DepthStencilView* pDSV = CurrDS.IsValidPtr() ? CurrDS->GetD3DDSView() : nullptr;
 
-		pD3DImmContext->OMSetRenderTargets(CurrRT.GetCount(), pRTV, pDSV);
+		pD3DImmContext->OMSetRenderTargets(CurrRT.size(), pRTV, pDSV);
 		//OMSetRenderTargetsAndUnorderedAccessViews
 
 		// If at least one valid RT and at least one default (unset) VP exist, we check
@@ -1984,13 +1984,13 @@ bool CD3D11GPUDriver::IsConstantBufferBound(const CD3D11ConstantBuffer* pBuffer,
 	{
 		if (ExceptStage == ShaderType_Invalid)
 		{
-			for (UPTR i = 0; i < CurrCB.GetCount(); ++i)
+			for (UPTR i = 0; i < CurrCB.size(); ++i)
 				if (CurrCB[i].Get() == pBuffer) OK;
 		}
 		else
 		{
 			UPTR ExceptIndex = ExceptSlot + ((UPTR)ExceptStage) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;
-			for (UPTR i = 0; i < CurrCB.GetCount(); ++i)
+			for (UPTR i = 0; i < CurrCB.size(); ++i)
 			{
 				if (i == ExceptIndex) continue;
 				if (CurrCB[i].Get() == pBuffer) OK;

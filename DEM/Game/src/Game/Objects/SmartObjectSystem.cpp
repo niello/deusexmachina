@@ -273,4 +273,23 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, float dt)
 }
 //---------------------------------------------------------------------
 
+void InitSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, Resources::CResourceManager& ResMgr)
+{
+	World.ForEachComponent<DEM::Game::CSmartObjectComponent>([&Lua, &ResMgr](auto EntityID, DEM::Game::CSmartObjectComponent& Component)
+	{
+		// FIXME: how to load ID into a resource without resource manager available (while deserializing)?
+		Component.Asset = ResMgr.RegisterResource<DEM::Game::CSmartObject>(Component.AssetID.CStr());
+		if (!Component.Asset) return;
+
+		if (auto pSmart = Component.Asset->ValidateObject<DEM::Game::CSmartObject>())
+		{
+			pSmart->InitScript(Lua);
+
+			//!!!???how to set state if CurrState is valid?! Need to initialize pose etc!
+			if (!Component.CurrState) Component.RequestedState = pSmart->GetDefaultState();
+		}
+	});
+}
+//---------------------------------------------------------------------
+
 }

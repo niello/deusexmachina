@@ -71,10 +71,10 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 	Node.pMesh = pModel->Mesh.Get();
 	Node.pGroup = pModel->Mesh->GetGroup(pModel->MeshGroupIndex, Context.MeshLOD);
 
-	if (pModel->BoneIndices.GetCount())
+	if (pModel->BoneIndices.size())
 	{
-		Node.pSkinMapping = pModel->BoneIndices.GetPtr();
-		Node.BoneCount = pModel->BoneIndices.GetCount();
+		Node.pSkinMapping = pModel->BoneIndices.data();
+		Node.BoneCount = pModel->BoneIndices.size();
 	}
 	else Node.pSkinMapping = nullptr;
 
@@ -430,7 +430,7 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 				// We create this buffer lazy because for D3D11 possibility is high to use only constant-based instancing
 				if (InstanceVB.IsNullPtr())
 				{
-					PVertexLayout VLInstanceData = GPU.CreateVertexLayout(InstanceDataDecl.GetPtr(), InstanceDataDecl.GetCount());
+					PVertexLayout VLInstanceData = GPU.CreateVertexLayout(InstanceDataDecl.data(), InstanceDataDecl.size());
 					InstanceVB = GPU.CreateVertexBuffer(*VLInstanceData, InstanceVBSize, Access_CPU_Write | Access_GPU_Read);
 				}
 
@@ -442,7 +442,7 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 						constexpr UPTR MAX_COMPONENTS = 64;
 
 						UPTR BaseComponentCount = pVL->GetComponentCount();
-						UPTR InstComponentCount = InstanceDataDecl.GetCount();
+						UPTR InstComponentCount = InstanceDataDecl.size();
 						UPTR DescComponentCount = BaseComponentCount + InstComponentCount;
 
 						if (DescComponentCount > MAX_COMPONENTS)
@@ -455,7 +455,7 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 
 						CVertexComponent InstancedDecl[MAX_COMPONENTS];
 						memcpy(InstancedDecl, pVL->GetComponent(0), BaseComponentCount * sizeof(CVertexComponent));
-						memcpy(InstancedDecl + BaseComponentCount, InstanceDataDecl.GetPtr(), InstComponentCount * sizeof(CVertexComponent));
+						memcpy(InstancedDecl + BaseComponentCount, InstanceDataDecl.data(), InstComponentCount * sizeof(CVertexComponent));
 
 						PVertexLayout VLInstanced = GPU.CreateVertexLayout(InstancedDecl, DescComponentCount);
 

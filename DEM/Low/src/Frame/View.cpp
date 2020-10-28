@@ -174,15 +174,15 @@ UPTR CView::GetMeshLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) c
 		}
 		case LOD_Distance:
 		{
-			for (UPTR i = 0; i < MeshLODScale.GetCount(); ++i)
+			for (UPTR i = 0; i < MeshLODScale.size(); ++i)
 				if (SqDistanceToCamera < MeshLODScale[i]) return i;
-			return MeshLODScale.GetCount();
+			return MeshLODScale.size();
 		}
 		case LOD_ScreenSizeRelative:
 		{
-			for (UPTR i = 0; i < MeshLODScale.GetCount(); ++i)
+			for (UPTR i = 0; i < MeshLODScale.size(); ++i)
 				if (ScreenSpaceOccupiedRel > MeshLODScale[i]) return i;
-			return MeshLODScale.GetCount();
+			return MeshLODScale.size();
 		}
 		case LOD_ScreenSizeAbsolute:
 		{
@@ -190,9 +190,9 @@ UPTR CView::GetMeshLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) c
 			if (!RTs.begin()->second) return 0;
 			const Render::CRenderTargetDesc& RTDesc = RTs.begin()->second->GetDesc();
 			const float ScreenSpaceOccupiedAbs = SqDistanceToCamera * RTDesc.Width * RTDesc.Height;
-			for (UPTR i = 0; i < MeshLODScale.GetCount(); ++i)
+			for (UPTR i = 0; i < MeshLODScale.size(); ++i)
 				if (ScreenSpaceOccupiedAbs > MeshLODScale[i]) return i;
-			return MeshLODScale.GetCount();
+			return MeshLODScale.size();
 		}
 	}
 
@@ -210,15 +210,15 @@ UPTR CView::GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRe
 		}
 		case LOD_Distance:
 		{
-			for (UPTR i = 0; i < MaterialLODScale.GetCount(); ++i)
+			for (UPTR i = 0; i < MaterialLODScale.size(); ++i)
 				if (SqDistanceToCamera < MaterialLODScale[i]) return i;
-			return MaterialLODScale.GetCount();
+			return MaterialLODScale.size();
 		}
 		case LOD_ScreenSizeRelative:
 		{
-			for (UPTR i = 0; i < MaterialLODScale.GetCount(); ++i)
+			for (UPTR i = 0; i < MaterialLODScale.size(); ++i)
 				if (ScreenSpaceOccupiedRel > MaterialLODScale[i]) return i;
-			return MaterialLODScale.GetCount();
+			return MaterialLODScale.size();
 		}
 		case LOD_ScreenSizeAbsolute:
 		{
@@ -226,9 +226,9 @@ UPTR CView::GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRe
 			if (!RTs.begin()->second) return 0;
 			const Render::CRenderTargetDesc& RTDesc = RTs.begin()->second->GetDesc();
 			const float ScreenSpaceOccupiedAbs = SqDistanceToCamera * RTDesc.Width * RTDesc.Height;
-			for (UPTR i = 0; i < MaterialLODScale.GetCount(); ++i)
+			for (UPTR i = 0; i < MaterialLODScale.size(); ++i)
 				if (ScreenSpaceOccupiedAbs > MaterialLODScale[i]) return i;
-			return MaterialLODScale.GetCount();
+			return MaterialLODScale.size();
 		}
 	}
 

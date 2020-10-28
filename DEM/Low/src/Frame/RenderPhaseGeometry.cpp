@@ -262,7 +262,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	// Bind render targets and a depth-stencil buffer
 
-	const UPTR RenderTargetCount = RenderTargetIDs.GetCount();
+	const UPTR RenderTargetCount = RenderTargetIDs.size();
 	for (UPTR i = 0; i < RenderTargetCount; ++i)
 		pGPU->SetRenderTarget(i, View.GetRenderTarget(RenderTargetIDs[i]));
 

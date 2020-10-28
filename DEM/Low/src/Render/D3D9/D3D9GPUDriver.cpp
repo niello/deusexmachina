@@ -117,7 +117,7 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, UPTR TargetS
 	//}
 	//VertexLayouts.Clear();
 
-	for (UPTR i = 0; i < CurrRT.GetCount() ; ++i)
+	for (UPTR i = 0; i < CurrRT.size() ; ++i)
 		if (CurrRT[i].IsValidPtr())
 		{
 			CurrRT[i]->Destroy();
@@ -1094,7 +1094,7 @@ void CD3D9GPUDriver::SetDefaultSamplers()
 		Samplers.Add(DefaultSampler);
 	}
 
-	for (UPTR i = 0; i < CurrSS.GetCount(); ++i)
+	for (UPTR i = 0; i < CurrSS.size(); ++i)
 		CurrSS[i] = DefaultSampler;
 }
 //---------------------------------------------------------------------
@@ -1216,7 +1216,7 @@ bool CD3D9GPUDriver::DestroySwapChain(UPTR SwapChainID)
 	CD3D9SwapChain& SC = SwapChains[SwapChainID];
 
 	// Never unset 0'th RT
-	for (UPTR i = 1; i < CurrRT.GetCount(); ++i)
+	for (UPTR i = 1; i < CurrRT.size(); ++i)
 		if (CurrRT[i].Get() == SC.BackBufferRT.Get())
 			SetRenderTarget(i, nullptr);
 
@@ -1581,7 +1581,7 @@ bool CD3D9GPUDriver::SetVertexLayout(CVertexLayout* pVLayout)
 
 bool CD3D9GPUDriver::SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR OffsetVertex)
 {
-	if (Index >= CurrVB.GetCount() || (pVB && OffsetVertex >= pVB->GetVertexCount())) FAIL;
+	if (Index >= CurrVB.size() || (pVB && OffsetVertex >= pVB->GetVertexCount())) FAIL;
 
 	CVBRec& VBRec = CurrVB[Index];
 	if (VBRec.VB.Get() == pVB && VBRec.Offset == OffsetVertex) OK;
@@ -1636,7 +1636,7 @@ bool CD3D9GPUDriver::SetRenderState(CRenderState* pState)
 
 bool CD3D9GPUDriver::SetRenderTarget(UPTR Index, CRenderTarget* pRT)
 {
-	if (Index >= CurrRT.GetCount()) FAIL;
+	if (Index >= CurrRT.size()) FAIL;
 	if (CurrRT[Index].Get() == pRT) OK;
 
 	if (!pRT && Index == 0)
@@ -1915,7 +1915,7 @@ void CD3D9GPUDriver::EndFrame()
 
 #ifdef DEM_STATS
 	CString RTString;
-	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
+	for (UPTR i = 0; i < CurrRT.size(); ++i)
 		if (CurrRT[i].IsValidPtr())
 			RTString += StringUtils::FromInt((int)CurrRT[i].Get());
 	if (Core::CCoreServer::HasInstance())
@@ -1927,7 +1927,7 @@ void CD3D9GPUDriver::EndFrame()
 
 	// It seems that pipeline fails to render depth pre-pass if current RT mismatches
 	// DS buffer, which may happen, for example, during a multi-window rendering
-	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
+	for (UPTR i = 0; i < CurrRT.size(); ++i)
 		SetRenderTarget(i, nullptr);
 	//SetDepthStencilBuffer(nullptr);
 
@@ -3536,7 +3536,7 @@ bool CD3D9GPUDriver::CommitShaderConstants(CConstantBuffer& Buffer)
 	if (CB9.IsDirty())
 	{
 		// For now, the same CB can't be bound to different shader stages
-		for (UPTR i = 0; i < CurrCB.GetCount(); ++i)
+		for (UPTR i = 0; i < CurrCB.size(); ++i)
 		{
 			CCBRec& Rec = CurrCB[i];
 			CD3D9ConstantBuffer* pCurrCB = Rec.CB.Get();

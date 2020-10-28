@@ -48,7 +48,7 @@ bool CModelAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 				U16 Count;
 				if (!DataReader.Read(Count)) FAIL;
 				_BoneIndices.SetSize(Count);
-				if (DataReader.GetStream().Read(_BoneIndices.GetPtr(), Count * sizeof(int)) != Count * sizeof(int)) FAIL;
+				if (DataReader.GetStream().Read(_BoneIndices.data(), Count * sizeof(int)) != Count * sizeof(int)) FAIL;
 				break;
 			}
 			default: FAIL;

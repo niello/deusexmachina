@@ -186,7 +186,7 @@ public:
 	virtual bool				SupportsShaderFormat(U32 ShaderFormatCode) const override { return ShaderFormatCode == 'DXBC'; }
 	virtual UPTR				GetMaxVertexStreams() const override;
 	virtual UPTR				GetMaxTextureSize(ETextureType Type) const override;
-	virtual UPTR				GetMaxMultipleRenderTargetCount() const override { return CurrRT.GetCount(); }
+	virtual UPTR				GetMaxMultipleRenderTargetCount() const override { return CurrRT.size(); }
 
 	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, DEM::Sys::COSWindow* pWindow) override;
 	virtual bool				DestroySwapChain(UPTR SwapChainID) override;

@@ -88,7 +88,7 @@ public:
 	void			UpdateHandle(CHandle& InOutHandle, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ, CNode*& pInOutNode);
 
 	CNode*			GetNode(UPTR Col, UPTR Row, UPTR Level) const;
-	CNode*			GetRootNode() const { return Nodes.GetCount() ? &Nodes[0] : nullptr; }
+	CNode*			GetRootNode() const { return Nodes.size() ? &Nodes[0] : nullptr; }
 	const vector2&	GetSize() const { return Size; }
 
 	//!!!Test against circle (center, r) & 2d box (two corners or center & half)
@@ -187,7 +187,7 @@ void CQuadTree<TObject, TStorage>::CNode::GetBounds(CAABB& Box) const
 template<class TObject, class TStorage>
 void CQuadTree<TObject, TStorage>::Build(float CenterX, float CenterZ, float SizeX, float SizeZ, U8 TreeDepth)
 {
-	n_assert(!Nodes.GetCount() && SizeX > 0.f && SizeZ > 0.f && TreeDepth > 0);
+	n_assert(!Nodes.size() && SizeX > 0.f && SizeZ > 0.f && TreeDepth > 0);
 
 	Center.x = CenterX;
 	Center.y = CenterZ;
@@ -197,7 +197,7 @@ void CQuadTree<TObject, TStorage>::Build(float CenterX, float CenterZ, float Siz
 
 	Nodes.SetSize(0x55555555 & ((1 << (Depth << 1)) - 1));
 
-	for (UPTR i = 0; i < Nodes.GetCount(); ++i) Nodes[i].pOwner = this;
+	for (UPTR i = 0; i < Nodes.size(); ++i) Nodes[i].pOwner = this;
 
 	CNode* pFirstFreeNode = &Nodes[1];
 	Nodes[0].pParent = nullptr;

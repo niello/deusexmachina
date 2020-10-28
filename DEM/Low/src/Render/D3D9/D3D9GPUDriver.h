@@ -143,7 +143,7 @@ public:
 	virtual bool				SupportsShaderFormat(U32 ShaderFormatCode) const { return ShaderFormatCode == 'DX9C'; }
 	virtual UPTR				GetMaxVertexStreams() const;
 	virtual UPTR				GetMaxTextureSize(ETextureType Type) const;
-	virtual UPTR				GetMaxMultipleRenderTargetCount() const { return CurrRT.GetCount(); }
+	virtual UPTR				GetMaxMultipleRenderTargetCount() const { return CurrRT.size(); }
 
 	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, DEM::Sys::COSWindow* pWindow);
 	virtual bool				DestroySwapChain(UPTR SwapChainID);

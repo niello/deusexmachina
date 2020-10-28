@@ -1,21 +1,13 @@
 #pragma once
+#include <AI/Navigation/NavFwd.h>
 #include <Resources/ResourceObject.h>
 #include <Data/StringID.h>
 #include <map>
 
 // Navigation mesh for predefined agent parameters
 
-#ifdef DT_POLYREF64
-#error "64-bit navigation poly refs aren't supported for now"
-#else
-typedef unsigned int dtPolyRef;
-#endif
-
-class dtNavMesh;
-
 namespace DEM::AI
 {
-using CNavRegion = std::vector<dtPolyRef>;
 
 class CNavMesh : public Resources::CResourceObject
 {

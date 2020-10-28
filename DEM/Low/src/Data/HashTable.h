@@ -45,9 +45,9 @@ public:
 		{
 			if (pTable)
 			{
-				ItChain = pTable->Chains.Begin();
-				while (ItChain < pTable->Chains.End() && !ItChain->GetCount()) ++ItChain;
-				It = ItChain < pTable->Chains.End() ? ItChain->Begin() : nullptr;
+				ItChain = pTable->Chains.begin();
+				while (ItChain < pTable->Chains.end() && !ItChain->GetCount()) ++ItChain;
+				It = ItChain < pTable->Chains.end() ? ItChain->Begin() : nullptr;
 			}
 			else
 			{
@@ -70,8 +70,8 @@ public:
 			++It;
 			if (It == ItChain->End())
 			{
-				do ++ItChain; while (ItChain < pTable->Chains.End() && !ItChain->GetCount());
-				It = ItChain < pTable->Chains.End() ? ItChain->Begin() : nullptr;
+				do ++ItChain; while (ItChain < pTable->Chains.end() && !ItChain->GetCount());
+				It = ItChain < pTable->Chains.end() ? ItChain->Begin() : nullptr;
 			}
 			return *this;
 		}
@@ -98,7 +98,7 @@ public:
 	CIterator	End() { return CIterator(nullptr); }
 
 	UPTR		GetCount() const { return Count; }
-	UPTR		Capacity() const { return Chains.GetCount(); }
+	UPTR		Capacity() const { return Chains.size(); }
 	bool		IsEmpty() const { return !Count; }
 
 	void		operator =(const CHashTable<TKey, TVal>& Other) { if (this != &Other) { Chains = Other.Chains; Count = Other.Count; } }
@@ -109,7 +109,7 @@ template<class TKey, class TVal>
 inline CHashTable<TKey, TVal>::CHashTable(UPTR Capacity): Chains(Capacity), Count(0)
 {
 	// Since collision is more of exception, set grow size to 1 to economy memory
-	for (UPTR i = 0; i < Chains.GetCount(); ++i)
+	for (UPTR i = 0; i < Chains.size(); ++i)
 	{
 		Chains[i].SetKeepOrder(true);
 		Chains[i].SetGrowSize(1);
@@ -120,11 +120,11 @@ inline CHashTable<TKey, TVal>::CHashTable(UPTR Capacity): Chains(Capacity), Coun
 template<class TKey, class TVal>
 void CHashTable<TKey, TVal>::Grow(UPTR NewCapacity)
 {
-	if (NewCapacity == Chains.GetCount()) return;
+	if (NewCapacity == Chains.size()) return;
 	CChain Tmp;
 	CopyToArray(Tmp);
 	Chains.SetSize(NewCapacity);
-	for (UPTR i = 0; i < Chains.GetCount(); ++i)
+	for (UPTR i = 0; i < Chains.size(); ++i)
 	{
 		Chains[i].SetKeepOrder(true);
 		Chains[i].SetGrowSize(1);
@@ -136,9 +136,9 @@ void CHashTable<TKey, TVal>::Grow(UPTR NewCapacity)
 template<class TKey, class TVal>
 void CHashTable<TKey, TVal>::Add(const CPair& Pair, bool Replace)
 {
-	if (Count >= (UPTR)(Chains.GetCount() * GROW_THRESHOLD))
-		Grow((UPTR)(Chains.GetCount() * GROW_FACTOR));
-	CChain& Chain = Chains[Pair.GetKeyHash() % Chains.GetCount()];
+	if (Count >= (UPTR)(Chains.size() * GROW_THRESHOLD))
+		Grow((UPTR)(Chains.size() * GROW_FACTOR));
+	CChain& Chain = Chains[Pair.GetKeyHash() % Chains.size()];
 	bool HasEqual;
 	IPTR Idx = Chain.FindClosestIndexSorted(Pair, &HasEqual);
 	if (HasEqual)
@@ -159,7 +159,7 @@ bool CHashTable<TKey, TVal>::Remove(const TKey& Key)
 {
 	if (!Count) FAIL;
 	CPair HashedKey(Key);
-	CChain& Chain = Chains[HashedKey.GetKeyHash() % Chains.GetCount()];
+	CChain& Chain = Chains[HashedKey.GetKeyHash() % Chains.size()];
 	if (!Chain.RemoveByValueSorted(HashedKey)) FAIL;
 	--Count;
 	OK;
@@ -169,7 +169,7 @@ bool CHashTable<TKey, TVal>::Remove(const TKey& Key)
 template<class TKey, class TVal>
 void CHashTable<TKey, TVal>::Clear()
 {
-	for (UPTR i = 0; i < Chains.GetCount(); ++i)
+	for (UPTR i = 0; i < Chains.size(); ++i)
 		Chains[i].Clear();
 	Count = 0;
 }
@@ -180,7 +180,7 @@ inline bool CHashTable<TKey, TVal>::Contains(const TKey& Key) const
 {
 	if (!Count) FAIL;
 	CPair HashedKey(Key);
-	return Chains[HashedKey.GetKeyHash() % Chains.GetCount()].ContainsSorted(HashedKey);
+	return Chains[HashedKey.GetKeyHash() % Chains.size()].ContainsSorted(HashedKey);
 }
 //---------------------------------------------------------------------
 
@@ -200,7 +200,7 @@ TVal* CHashTable<TKey, TVal>::Get(const TKey& Key) const
 	if (Count > 0)
 	{
 		CPair HashedKey(Key);
-		CChain& Chain = Chains[HashedKey.GetKeyHash() % Chains.GetCount()];
+		CChain& Chain = Chains[HashedKey.GetKeyHash() % Chains.size()];
 		if (Chain.GetCount() == 1)
 		{
 			CPair& CurrPair = Chain[0];
@@ -220,7 +220,7 @@ template<class TKey, class TVal>
 TVal& CHashTable<TKey, TVal>::At(const TKey& Key)
 {
 	CPair HashedKey(Key);
-	CChain& Chain = Chains[HashedKey.GetKeyHash() % Chains.GetCount()];
+	CChain& Chain = Chains[HashedKey.GetKeyHash() % Chains.size()];
 
 	IPTR Idx = 0;
 	if (Count > 0)
@@ -242,9 +242,9 @@ TVal& CHashTable<TKey, TVal>::At(const TKey& Key)
 	CChain::CIterator It = Chain.Insert(Idx, HashedKey);
 	++Count;
 
-	if (Count >= (UPTR)(Chains.GetCount() * GROW_THRESHOLD))
+	if (Count >= (UPTR)(Chains.size() * GROW_THRESHOLD))
 	{
-		Grow((UPTR)(Chains.GetCount() * GROW_FACTOR));
+		Grow((UPTR)(Chains.size() * GROW_FACTOR));
 		TVal* pVal = Get(Key);
 		n_assert(pVal);
 		return *pVal;
@@ -258,7 +258,7 @@ void CHashTable<TKey, TVal>::CopyToArray(CChain& OutData) const
 {
 	if (!Count) return;
 	OutData.Resize(OutData.GetCount() + Count);
-	for (UPTR i = 0; i < Chains.GetCount(); ++i)
+	for (UPTR i = 0; i < Chains.size(); ++i)
 	{
 		CChain& Chain = Chains[i];
 		for (CChain::CIterator It = Chain.Begin(); It != Chain.End(); ++It)

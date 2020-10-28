@@ -72,7 +72,7 @@ bool CTerrainRenderer::Init(bool LightingEnabled, const Data::CParams& Params)
 
 	// Light indices
 	UPTR ElementIdx = 2;
-	while (ElementIdx < InstanceDataDecl.GetCount())
+	while (ElementIdx < InstanceDataDecl.size())
 	{
 		pCmp = &InstanceDataDecl[ElementIdx];
 		pCmp->Semantic = VCSem_TexCoord;
@@ -978,13 +978,13 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 			// Vertex declaration size will be 2 elements for VS data + one element per vector.
 			const UPTR LightVectorCount = (LightCount + 3) / 4;
 			const UPTR DeclSize = 2 + LightVectorCount;
-			n_assert_dbg(DeclSize <= InstanceDataDecl.GetCount());
+			n_assert_dbg(DeclSize <= InstanceDataDecl.size());
 
 			// If current buffer doesn't suit the tech, recreate it. Since we only grow tech LightCount and never
 			// shrink it, buffer reallocation will be requested only if can't handle desired light count.
 			if (!InstanceVB || InstanceVB->GetVertexLayout()->GetComponentCount() != DeclSize)
 			{
-				PVertexLayout VLInstanceData = GPU.CreateVertexLayout(InstanceDataDecl.GetPtr(), DeclSize);
+				PVertexLayout VLInstanceData = GPU.CreateVertexLayout(InstanceDataDecl.data(), DeclSize);
 				InstanceVB = nullptr; // Drop before allocating new buffer
 				InstanceVB = GPU.CreateVertexBuffer(*VLInstanceData, InstanceVBSize, Access_CPU_Write | Access_GPU_Read);
 			}
@@ -1070,7 +1070,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 
 				CVertexComponent InstancedDecl[MAX_COMPONENTS];
 				memcpy(InstancedDecl, pVL->GetComponent(0), BaseComponentCount * sizeof(CVertexComponent));
-				memcpy(InstancedDecl + BaseComponentCount, InstanceDataDecl.GetPtr(), InstComponentCount * sizeof(CVertexComponent));
+				memcpy(InstancedDecl + BaseComponentCount, InstanceDataDecl.data(), InstComponentCount * sizeof(CVertexComponent));
 
 				PVertexLayout VLInstanced = GPU.CreateVertexLayout(InstancedDecl, DescComponentCount);
 

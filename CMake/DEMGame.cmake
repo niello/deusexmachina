@@ -19,6 +19,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/Navigation/NavAgentSettings.h
 	DEM/Game/src/AI/Navigation/NavAgentSettingsLoaderHRD.h
 	DEM/Game/src/AI/Navigation/NavControllerComponent.h
+	DEM/Game/src/AI/Navigation/NavFwd.h
 	DEM/Game/src/AI/Navigation/NavMap.h
 	DEM/Game/src/AI/Navigation/NavMesh.h
 	DEM/Game/src/AI/Navigation/NavMeshDebugDraw.h
