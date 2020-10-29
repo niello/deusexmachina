@@ -128,6 +128,24 @@ void InteractWithSmartObjects(CGameWorld& World)
 			return;
 		}
 
+		// Cache allowed zones once
+		if (!pAction->_AllowedZones)
+		{
+			const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
+			for (U8 i = 0; i < ZoneCount; ++i)
+			{
+				const auto& Zone = pSOAsset->GetInteractionZone(i);
+				// if zone supports requested interaction
+				//   set its bit
+			}
+
+			if (!pAction->_AllowedZones)
+			{
+				Queue.SetStatus(Action, EActionStatus::Failed);
+				return;
+			}
+		}
+
 		const auto& ActorPos = ActorSceneComponent.RootNode->GetWorldPosition();
 
 		// FIXME: fill! Get facing (only if necessary) from interaction params
@@ -199,12 +217,28 @@ void InteractWithSmartObjects(CGameWorld& World)
 			pSOSceneComponent->RootNode->GetWorldMatrix().invert_simple(WorldToSmartObject);
 			const vector3 SOSpaceActorPos = WorldToSmartObject.transform_coord(ActorPos);
 
-			// for each interaction zone (for current iact) not tried yet
-			//   find distance from pos to point / segment / polygonal chain / closed polygon
-			// get closest zone index
-			// if Static, mark zone as tried
+			float MinSqDistance = std::numeric_limits<float>().max();
+			UPTR SegmentIdx = 0;
+			float t = 0.f;
+			const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
+			for (U8 i = 0; i < ZoneCount; ++i)
+			{
+				if (!((1 << i) & pAction->_AllowedZones)) continue;
 
-			// find closest pos to the actor in the closest zone (can use hint cached above?)
+				const float SqDistance = SqDistanceToInteractionZone(SOSpaceActorPos, pSOAsset->GetInteractionZone(i), SegmentIdx, t);
+				if (SqDistance < MinSqDistance)
+				{
+					MinSqDistance = SqDistance;
+					pAction->_ZoneIndex = i;
+				}
+			}
+
+			// For static smart objects try each zone only once
+			if (Static) pAction->_AllowedZones &= ~(1 << pAction->_ZoneIndex);
+
+			//!!!FIXME: apply radius or even both SO and actor radii!
+			const auto& Zone = pSOAsset->GetInteractionZone(pAction->_ZoneIndex);
+			const auto ClosestPos = PointInInteractionZone(SOSpaceActorPos, Zone, SegmentIdx, t);
 			// convert closest pos to the world space
 			// find closest point on poly, center is closest pos, extents is iact R, actor H
 			//???use closestPointOnPolyBoundary?

@@ -74,6 +74,7 @@ protected:
 	std::string                        _ScriptSource;
 	std::vector<CSmartObjectStateInfo> _States;
 	std::vector<CStrID>                _Interactions;
+	std::vector<CInteractionZone>      _InteractionZones; //???use CFixedArray<CInteractionZone, U8>?
 	bool                               _Static = false; // true - interaction params never change over time
 
 public:
@@ -93,6 +94,8 @@ public:
 
 	bool          HasInteraction(CStrID ID) const;
 	bool          GetInteractionParams(CStrID ID, float ActorRadius, vector3& ActorPos, std::optional<float>& FaceDir /*actor anim/state*/) const;
+	auto          GetInteractionZoneCount() const { return _InteractionZones.size(); }
+	const auto&   GetInteractionZone(U8 ZoneIdx) const { return _InteractionZones[ZoneIdx]; }
 
 	sol::function GetScriptFunction(sol::state& Lua, std::string_view Name) const;
 	CStrID        GetID() const { return _ID; }

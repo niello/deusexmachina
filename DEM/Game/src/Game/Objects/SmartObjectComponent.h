@@ -21,8 +21,8 @@ public:
 
 	CStrID  _State;
 	HEntity _Object;
-	U16     _TriedRegions = 0;    // Cache. Bit flags for up to 16 regions.
-	U8      _RegionIndex = 0;     // Cache
+	U16     _AllowedZones = 0;    // Cache. Bit flags for up to 16 zones.
+	U8      _ZoneIndex = 0;       // Cache
 	bool    _Force = false;       // true - force-set requested state immediately
 	bool    _PathScanned = false; // Cache
 
