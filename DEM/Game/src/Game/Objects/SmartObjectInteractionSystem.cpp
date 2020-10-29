@@ -20,42 +20,34 @@ static inline float SqDistanceToInteractionZone(const vector3& Pos, const CInter
 	{
 		if (Zone.Closed)
 		{
-			constexpr UPTR MAX_VERTICES = 128;
-			n_assert_dbg(VertexCount <= MAX_VERTICES);
-
-			// FIXME: find min on the fly? can detect inside?
-			/*
-				// TODO: Replace pnpoly with triArea2D tests?
-				int i, j;
-				bool c = false;
-				for (i = 0, j = nverts-1; i < nverts; j = i++)
-				{
-					const float* vi = &verts[i*3];
-					const float* vj = &verts[j*3];
-					if (((vi[2] > pt[2]) != (vj[2] > pt[2])) &&
-						(pt[0] < (vj[0]-vi[0]) * (pt[2]-vi[2]) / (vj[2]-vi[2]) + vi[0]) )
-						c = !c;
-					ed[j] = dtDistancePtSegSqr2D(pt, vj, vi, et[j]);
-				}
-				return c;
-			*/
-
-			std::array<float, MAX_VERTICES> EdgeD;
-			float EdgeT[MAX_VERTICES];
-			if (dtDistancePtPolyEdgesSqr(Pos.v, Zone.Vertices[0].v, std::min(VertexCount, MAX_VERTICES), EdgeD.data(), EdgeT))
+			int i, j;
+			bool Inside = false;
+			float MinSqDistance = std::numeric_limits<float>().max();
+			for (i = 0, j = VertexCount - 1; i < static_cast<int>(VertexCount); j = i++)
 			{
-				// Point is inside the poly
+				const auto& vi = Zone.Vertices[i];
+				const auto& vj = Zone.Vertices[j];
+				if (((vi.z > Pos.z) != (vj.z > Pos.z)) &&
+					(Pos.x < (vj.x - vi.x) * (Pos.z - vi.z) / (vj.z - vi.z) + vi.x))
+					Inside = !Inside;
+
+				float t;
+				const float SqDistance = dtDistancePtSegSqr2D(Pos.v, vj.v, vi.v, t);
+				if (SqDistance < MinSqDistance)
+				{
+					MinSqDistance = SqDistance;
+					OutSegment = i;
+					OutT = t;
+				}
+			}
+
+			if (Inside)
+			{
 				OutSegment = VertexCount;
 				return 0.f;
 			}
-			else
-			{
-				// Find closest edge
-				auto MinIt = std::min_element(EdgeD.cbegin(), EdgeD.cbegin() + VertexCount);
-				OutSegment = std::distance(EdgeD.cbegin(), MinIt);
-				OutT = EdgeT[OutSegment];
-				return *MinIt;
-			}
+
+			return MinSqDistance;
 		}
 		else
 		{
@@ -83,24 +75,9 @@ static inline vector3 PointInInteractionZone(const vector3& Pos, const CInteract
 	const auto VertexCount = Zone.Vertices.size();
 	if (VertexCount == 0) return vector3::Zero;
 	else if (VertexCount == 1) return Zone.Vertices[0];
-	else if (VertexCount == 2)
-	{
-		// FIXME: better lerp!
-		vector3 v = Zone.Vertices[0];
-		v.lerp(Zone.Vertices[1], t);
-		return v;
-	}
-	else
-	{
-		if (Zone.Closed && Segment == VertexCount) return Pos;
-		else
-		{
-			// FIXME: better lerp!
-			vector3 v = Zone.Vertices[Segment];
-			v.lerp(Zone.Vertices[(Segment + 1) % VertexCount], t);
-			return v;
-		}
-	}
+	else if (VertexCount == 2) return vector3::lerp(Zone.Vertices[0], Zone.Vertices[1], t);
+	else if (Segment == VertexCount) return Pos;
+	else return vector3::lerp(Zone.Vertices[Segment], Zone.Vertices[(Segment + 1) % VertexCount], t);
 }
 //---------------------------------------------------------------------
 

@@ -28,6 +28,12 @@ public:
 		float v[3];
 	};
 
+	static inline vector3 lerp(const vector3& v0, const vector3& v1, float lerpVal)
+	{
+		return { v0.x + ((v1.x - v0.x) * lerpVal), v0.y + ((v1.y - v0.y) * lerpVal), v0.z + ((v1.z - v0.z) * lerpVal) };
+	}
+	//---------------------------------------------------------------------
+
 	constexpr vector3(): x(0.f), y(0.f), z(0.f) {}
 	constexpr vector3(const float _x, const float _y, const float _z): x(_x), y(_y), z(_z) {}
 	constexpr vector3(const vector3& vec): x(vec.x), y(vec.y), z(vec.z) {}
@@ -55,8 +61,6 @@ public:
 	bool			isequal(const vector3& v, float tol) const { return n_fabs(v.x - x) <= tol && n_fabs(v.y - y) <= tol && n_fabs(v.z - z) <= tol; }
 	int				compare(const vector3& v, float tol) const;
 	void			rotate(const vector3& axis, float angle);
-	void			lerp(const vector3& v0, float lerpVal);
-	void			lerp(const vector3& v0, const vector3& v1, float lerpVal);
 	vector3			findortho() const;
 	float			Dot(const vector3& v0) const { return x * v0.x + y * v0.y + z * v0.z; }
 	float			Dot2D(const vector3& v0) const { return x * v0.x + z * v0.z; }
@@ -182,22 +186,6 @@ inline void vector3::rotate(const vector3& axis, float angle)
 }
 //---------------------------------------------------------------------
 
-inline void vector3::lerp(const vector3& v0, float lerpVal)
-{
-	x = v0.x + ((x - v0.x) * lerpVal);
-	y = v0.y + ((y - v0.y) * lerpVal);
-	z = v0.z + ((z - v0.z) * lerpVal);
-}
-//---------------------------------------------------------------------
-
-inline void vector3::lerp(const vector3& v0, const vector3& v1, float lerpVal)
-{
-	x = v0.x + ((v1.x - v0.x) * lerpVal);
-	y = v0.y + ((v1.y - v0.y) * lerpVal);
-	z = v0.z + ((v1.z - v0.z) * lerpVal);
-}
-//---------------------------------------------------------------------
-
 // Find a vector that is orthogonal to self. Self should not be (0,0,0).
 // Return value is not normalized.
 inline vector3 vector3::findortho() const
@@ -259,12 +247,6 @@ inline float vector3::Angle2DNorm(const vector3& v0n, const vector3& v1n)
 	float CrossY = v0n.z * v1n.x - v0n.x * v1n.z;
 	float Dot = v0n.x * v1n.x + v0n.z * v1n.z;
 	return atan2f(CrossY, Dot);
-}
-//---------------------------------------------------------------------
-
-template<> static inline void lerp<vector3>(vector3 & result, const vector3 & val0, const vector3 & val1, float lerpVal)
-{
-	result.lerp(val0, val1, lerpVal);
 }
 //---------------------------------------------------------------------
 
