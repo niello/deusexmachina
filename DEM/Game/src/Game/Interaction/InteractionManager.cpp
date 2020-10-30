@@ -249,9 +249,8 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 			{
 				if (auto pSmartAsset = pSmart->Asset->ValidateObject<CSmartObject>())
 				{
-					for (U32 i = 0; i < pSmartAsset->GetInteractions().size(); ++i)
+					for (const CStrID ID : pSmartAsset->GetInteractions())
 					{
-						const auto ID = pSmartAsset->GetInteractions()[i];
 						auto Condition = pSmartAsset->GetScriptFunction(Context.Session->GetScriptState(), "Can" + std::string(ID.CStr()));
 						auto pInteraction = ValidateInteraction(ID, Condition, Context);
 						if (pInteraction &&

@@ -16,7 +16,7 @@ private:
 	T* pData = nullptr;
 	S  Count = 0;
 
-	void	Copy(const CFixedArray<T>& src);
+	void	Copy(const CFixedArray<T, S>& src);
 	void	Delete() { SAFE_DELETE_ARRAY(pData); Count = 0; }
 
 public:
@@ -25,7 +25,8 @@ public:
 
 	CFixedArray() = default;
 	CFixedArray(S _Size) { SetSize(_Size); }
-	CFixedArray(const CFixedArray<T>& Other) { Copy(Other); }
+	CFixedArray(const CFixedArray<T, S>& Other) { Copy(Other); }
+	CFixedArray(CFixedArray<T, S>&& Other) : pData(Other.pData), Count(Other.Count) { Other.pData = nullptr; Other.Count = 0; }
 	~CFixedArray() { if (pData) n_delete_array(pData); }
 
 	CIterator	IteratorAt(IPTR Idx) const { return Idx == INVALID_INDEX ? nullptr : pData + Idx; }
@@ -55,7 +56,7 @@ public:
 
 	void		RawCopyFrom(const T* pSrc, S SrcCount);
 
-	void		operator =(const CFixedArray<T>& Other) { Copy(Other); }
+	void		operator =(const CFixedArray<T, S>& Other) { Copy(Other); }
 	T&			operator [](S Index) const;
 };
 
@@ -81,7 +82,7 @@ template<typename T, typename S> void CFixedArray<T, S>::SetSize(S NewSize, bool
 }
 //---------------------------------------------------------------------
 
-template<typename T, typename S> void CFixedArray<T, S>::Copy(const CFixedArray<T>& Other)
+template<typename T, typename S> void CFixedArray<T, S>::Copy(const CFixedArray<T, S>& Other)
 {
 	if (this == &Other) return;
 	SetSize(Other.Count);

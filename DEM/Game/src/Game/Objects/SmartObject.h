@@ -56,11 +56,21 @@ struct CSmartObjectStateInfo
 	std::vector<CSmartObjectTransitionInfo> Transitions;
 };
 
+struct CSmartObjectInteractionInfo
+{
+	CStrID ID;
+	// facing mode
+	// facing dir
+	// actor anim
+	// actor state
+};
+
 struct CInteractionZone
 {
-	CFixedArray<vector3> Vertices;
-	float                Radius;
-	bool                 Closed;
+	CFixedArray<CSmartObjectInteractionInfo> Interactions;
+	CFixedArray<vector3>                     Vertices;
+	float                                    Radius = 0.f;
+	bool                                     ClosedPolygon = false;
 };
 
 class CSmartObject : public Resources::CResourceObject
@@ -69,13 +79,17 @@ class CSmartObject : public Resources::CResourceObject
 
 protected:
 
+	static inline constexpr UPTR MAX_ZONES = 16; // Because only 16 bits are reserved in SwitchSmartObjectState
+
 	CStrID                             _ID;
 	CStrID                             _DefaultState;
 	std::string                        _ScriptSource;
 	std::vector<CSmartObjectStateInfo> _States;
-	std::vector<CStrID>                _Interactions;
-	std::vector<CInteractionZone>      _InteractionZones; //???use CFixedArray<CInteractionZone, U8>?
+	std::vector<CInteractionZone>      _InteractionZones;
 	bool                               _Static = false; // true - interaction params never change over time
+
+	//???!!!need?!
+	std::vector<CStrID> _Interactions;
 
 public:
 
@@ -86,7 +100,7 @@ public:
 	// TODO: Add* logic to constructor? Or for runtime changes need also Remove*.
 	bool          AddState(CStrID ID, CTimelineTask&& TimelineTask/*, state logic object ptr (optional)*/);
 	bool          AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& TimelineTask, ETransitionInterruptionMode InterruptionMode);
-	bool          AddInteraction(CStrID ID);
+	bool          AddInteractionZone(CInteractionZone&& Zone);
 	bool          InitScript(sol::state& Lua);
 
 	const CSmartObjectStateInfo*      FindState(CStrID ID) const;

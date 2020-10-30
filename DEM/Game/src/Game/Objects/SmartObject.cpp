@@ -49,17 +49,10 @@ bool CSmartObject::AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& Tim
 }
 //---------------------------------------------------------------------
 
-bool CSmartObject::AddInteraction(CStrID ID)
+bool CSmartObject::AddInteractionZone(CInteractionZone&& Zone)
 {
-	if (!ID) return false;
-
-	// Check if this interaction exists
-	auto It = std::lower_bound(_Interactions.begin(), _Interactions.end(), ID, [](const auto& Elm, CStrID Value) { return Elm < Value; });
-	if (It != _Interactions.end() && *It == ID) return false;
-
-	// Insert sorted by ID
-	_Interactions.insert(It, ID);
-
+	if (_InteractionZones.size() >= MAX_ZONES) return false;
+	_InteractionZones.push_back(std::move(Zone));
 	return true;
 }
 //---------------------------------------------------------------------

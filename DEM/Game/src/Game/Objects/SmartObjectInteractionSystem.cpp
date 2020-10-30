@@ -18,54 +18,33 @@ static inline float SqDistanceToInteractionZone(const vector3& Pos, const CInter
 	else if (VertexCount == 2) return dtDistancePtSegSqr2D(Pos.v, Zone.Vertices[0].v, Zone.Vertices[1].v, OutT);
 	else
 	{
-		if (Zone.Closed)
+		float MinSqDistance = std::numeric_limits<float>().max();
+		if (Zone.ClosedPolygon)
 		{
-			int i, j;
-			bool Inside = false;
-			float MinSqDistance = std::numeric_limits<float>().max();
-			for (i = 0, j = VertexCount - 1; i < static_cast<int>(VertexCount); j = i++)
-			{
-				const auto& vi = Zone.Vertices[i];
-				const auto& vj = Zone.Vertices[j];
-				if (((vi.z > Pos.z) != (vj.z > Pos.z)) &&
-					(Pos.x < (vj.x - vi.x) * (Pos.z - vi.z) / (vj.z - vi.z) + vi.x))
-					Inside = !Inside;
-
-				float t;
-				const float SqDistance = dtDistancePtSegSqr2D(Pos.v, vj.v, vi.v, t);
-				if (SqDistance < MinSqDistance)
-				{
-					MinSqDistance = SqDistance;
-					OutSegment = i;
-					OutT = t;
-				}
-			}
-
-			if (Inside)
+			if (dtPointInPolygon(Pos.v, Zone.Vertices[0].v, VertexCount))
 			{
 				OutSegment = VertexCount;
 				return 0.f;
 			}
 
-			return MinSqDistance;
+			// Process implicit closing edge
+			MinSqDistance = dtDistancePtSegSqr2D(Pos.v, Zone.Vertices[VertexCount - 1].v, Zone.Vertices[0].v, OutT);
+			OutSegment = VertexCount - 1;
 		}
-		else
-		{
-			float MinSqDistance = std::numeric_limits<float>().max();
-			for (UPTR i = 0; i < VertexCount - 1; ++i)
-			{
-				float t;
-				const float SqDistance = dtDistancePtSegSqr2D(Pos.v, Zone.Vertices[0].v, Zone.Vertices[1].v, t);
-				if (SqDistance < MinSqDistance)
-				{
-					MinSqDistance = SqDistance;
-					OutSegment = i;
-					OutT = t;
-				}
-			}
 
-			return MinSqDistance;
+		for (UPTR i = 0; i < VertexCount - 1; ++i)
+		{
+			float t;
+			const float SqDistance = dtDistancePtSegSqr2D(Pos.v, Zone.Vertices[i].v, Zone.Vertices[i + 1].v, t);
+			if (SqDistance < MinSqDistance)
+			{
+				MinSqDistance = SqDistance;
+				OutSegment = i;
+				OutT = t;
+			}
 		}
+
+		return MinSqDistance;
 	}
 }
 //---------------------------------------------------------------------
