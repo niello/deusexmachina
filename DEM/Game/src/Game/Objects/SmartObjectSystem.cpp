@@ -163,7 +163,7 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, sol::state& Lua, HE
 				::Sys::Log("SmartObjects.ProcessStateChangeRequest() > transition interruption is forbidden\n");
 				return;
 			}
-			//???ETransitionInterruptionMode::Force?
+			//???ETransitionInterruptionMode::Force? - cancel current transition and force-set requested state
 		}
 	}
 
@@ -206,7 +206,7 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, sol::state& Lua, HE
 	{
 		if (auto pState = SOAsset.FindState(RequestedState))
 		{
-			CallTransitionScript(SOAsset.GetScriptFunction(Lua, "OnStateForceSet"), EntityID, SOComponent.CurrState, RequestedState);
+			CallTransitionScript(SOAsset.GetScriptFunction(Lua, "OnStateForceSet"), EntityID, FromState, RequestedState);
 			RunTimelineTask(World, EntityID, SOComponent, pState->TimelineTask, 0.f, CurrTrack, pPrevTask);
 			SOComponent.CurrState = RequestedState;
 			SOComponent.UpdateScript = SOAsset.GetScriptFunction(Lua, "OnStateUpdate");
