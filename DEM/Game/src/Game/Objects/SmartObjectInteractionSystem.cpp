@@ -166,25 +166,43 @@ void InteractWithSmartObjects(CGameWorld& World)
 			{
 				if (Static)
 				{
-					// TODO: could increment path version on replan and recheck, to handle partial path and corridor optimizations!
-					if (!pAction->_PathScanned && pNavAgent && pNavAgent->State == AI::ENavigationState::Following)
+					// If the path intersects with another interaction zone, can optimize by navigating to it
+					//!!!TODO: instead of _PathScanned could increment path version on replan and recheck, to handle partial path and corridor optimizations!
+					if (!pAction->_PathScanned && pAction->_AllowedZones && pNavAgent && pNavAgent->State == AI::ENavigationState::Following)
 					{
 						pAction->_PathScanned = true;
+
+						const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
 
 						for (int PolyIdx = 0; PolyIdx < pNavAgent->Corridor.getPathCount(); ++PolyIdx)
 						{
 							const auto PolyRef = pNavAgent->Corridor.getPath()[PolyIdx];
+							for (U8 ZoneIdx = 0; ZoneIdx < ZoneCount; ++ZoneIdx)
+							{
+								if (!((1 << ZoneIdx) & pAction->_AllowedZones)) continue;
 
-							//   for i : pSOAsset->GetRegionCount(), get pSOComponent->RegionPolys[i] (sorted)
-							//     if region was not tried and poly is in RegionPolys (binary search)
-							//       pAction->_RegionIndex = curr region
-							//       pAction->_TriedRegions |= (1 << curr region)
-							//       set point from this region on this poly as a target, no replanning will happen
+								const auto& Zone = pSOAsset->GetInteractionZone(i);
+
+								//!!!distance from PolyRef to Zone!
+								const float SqDistance = 0.f;
+
+								const float Radius = Zone.Radius; //???apply actor radius too?
+								const float SqRadius = std::max(Radius * Radius, AI::Steer::SqLinearTolerance);
+								if (SqDistance <= SqRadius)
+								{
+									pAction->_ZoneIndex = ZoneIdx;
+									pAction->_AllowedZones &= ~(1 << ZoneIdx);
+
+									//!!!set new point as a target, no replanning will happen!
+								}
+							}
 						}
 					}
 				}
 				else
 				{
+					const auto& Zone = pSOAsset->GetInteractionZone(pAction->_ZoneIndex);
+					//const float SqDistance = SqDistanceToInteractionZone(SOSpaceActorPos, Zone, SegmentIdx, t);
 					// get target position from SO asset (for the curr region) and update it in the action
 				}
 				return;
@@ -229,33 +247,40 @@ void InteractWithSmartObjects(CGameWorld& World)
 			if (Static) pAction->_AllowedZones &= ~(1 << pAction->_ZoneIndex);
 
 			const auto& Zone = pSOAsset->GetInteractionZone(pAction->_ZoneIndex);
-			const float Radius = Zone.Radius; //???apply actor radius too?
-
 			vector3 ActionPos = PointInInteractionZone(SOSpaceActorPos, Zone, SegmentIdx, t);
-			if (Radius * Radius < MinSqDistance)
+
+			// FIXME: find closest navigable point, use radius as arrival distance, apply to the last path segment
+			const float Radius = Zone.Radius; //???apply actor radius too?
+			const float SqRadius = std::max(Radius * Radius, AI::Steer::SqLinearTolerance);
+			if (SqRadius < MinSqDistance)
 				ActionPos = vector3::lerp(ActionPos, SOSpaceActorPos, Radius / n_sqrt(MinSqDistance));
 
 			ActionPos = ObjectWorldTfm.transform_coord(ActionPos);
 
-// find closest point on nav. poly, center is closest pos, extents is iact R, actor H
-//???use closestPointOnPolyBoundary?
-// if none found or found point is farther than R from closest pos:
-//   either fail this zone or try raycast / findLocalNeighbourhood and test all found polys before failing
-
-			if (vector3::SqDistance2D(ActionPos, ActorPos) >= AI::Steer::SqLinearTolerance)
+			if (vector3::SqDistance2D(ActionPos, ActorPos) > SqRadius)
 			{
 				if (pNavAgent)
 				{
-					const float Extents[3] = { pNavAgent->Radius, pNavAgent->Height, pNavAgent->Radius };
 					float NearestPos[3];
-
-					// FIXME: if static, get poly along with point from object interaction params
+					const float Extents[3] = { Radius, pNavAgent->Height, Radius };
 					dtPolyRef ObjPolyRef = 0;
 					pNavAgent->pNavQuery->findNearestPoly(ActionPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NearestPos);
+					const float SqDiff = dtVdist2DSqr(ActionPos.v, NearestPos);
+					if (!ObjPolyRef || SqDiff > SqRadius)
+					{
+						// No navigable point found
+						// FIXME: try the next zone right now!
+						// TODO: could explore all the interaction zone for intersecion with valid navigation polys, but it is slow
+						//???what if dynamic? discard this zone or fail immediately?
+						return;
+					}
+					else if (SqDiff > 0.f) ActionPos = NearestPos;
 
 					// FIXME: use pNavAgent->Corridor.getFirstPoly() instead! Offmesh can break this now!
+					const float AgentExtents[3] = { pNavAgent->Radius, pNavAgent->Height, pNavAgent->Radius };
 					dtPolyRef AgentPolyRef = 0;
-					pNavAgent->pNavQuery->findNearestPoly(ActorPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &AgentPolyRef, NearestPos);
+					pNavAgent->pNavQuery->findNearestPoly(ActorPos.v, AgentExtents, pNavAgent->Settings->GetQueryFilter(), &AgentPolyRef, NearestPos);
+					//n_assert_dbg(pNavAgent->Corridor.getFirstPoly() == AgentPolyRef);
 
 					if (ObjPolyRef != AgentPolyRef)
 					{
@@ -263,7 +288,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 						//Agent.pNavQuery->findLocalNeighbourhood
 						//Agent.pNavQuery->moveAlongSurface
 						//Agent.pNavQuery->raycast
-
+						// but it would require additional logic and complicate navigation.
 						Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, 0.f);
 						return;
 					}
