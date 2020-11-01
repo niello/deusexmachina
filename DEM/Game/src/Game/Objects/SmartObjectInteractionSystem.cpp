@@ -10,43 +10,48 @@
 namespace DEM::Game
 {
 
+// TODO: to common code!
+// NB: if closed, must be convex
+static float SqDistanceToPolyChain(const vector3& Pos, const float* pVertices, UPTR VertexCount, bool Closed, UPTR& OutSegment, float& OutT)
+{
+	float MinSqDistance = std::numeric_limits<float>().max();
+	if (Closed)
+	{
+		// NB: only convex polys are supported for now!
+		if (dtPointInPolygon(Pos.v, pVertices, VertexCount))
+		{
+			OutSegment = VertexCount;
+			return 0.f;
+		}
+
+		// Process implicit closing edge
+		MinSqDistance = dtDistancePtSegSqr2D(Pos.v, &pVertices[3 * (VertexCount - 1)], &pVertices[0], OutT);
+		OutSegment = VertexCount - 1;
+	}
+
+	for (UPTR i = 0; i < VertexCount - 1; ++i)
+	{
+		float t;
+		const float SqDistance = dtDistancePtSegSqr2D(Pos.v, &pVertices[3 * i], &pVertices[3 * (i + 1)], t);
+		if (SqDistance < MinSqDistance)
+		{
+			MinSqDistance = SqDistance;
+			OutSegment = i;
+			OutT = t;
+		}
+	}
+
+	return MinSqDistance;
+}
+//---------------------------------------------------------------------
+
 static inline float SqDistanceToInteractionZone(const vector3& Pos, const CInteractionZone& Zone, UPTR& OutSegment, float& OutT)
 {
 	const auto VertexCount = Zone.Vertices.size();
 	if (VertexCount == 0) return std::numeric_limits<float>().max();
-	else if (VertexCount == 1) return vector3::SqDistance(Pos, Zone.Vertices[0]);
+	else if (VertexCount == 1) return vector3::SqDistance2D(Pos, Zone.Vertices[0]);
 	else if (VertexCount == 2) return dtDistancePtSegSqr2D(Pos.v, Zone.Vertices[0].v, Zone.Vertices[1].v, OutT);
-	else
-	{
-		float MinSqDistance = std::numeric_limits<float>().max();
-		if (Zone.ClosedPolygon)
-		{
-			// NB: only convex polys are supported for now!
-			if (dtPointInPolygon(Pos.v, Zone.Vertices[0].v, VertexCount))
-			{
-				OutSegment = VertexCount;
-				return 0.f;
-			}
-
-			// Process implicit closing edge
-			MinSqDistance = dtDistancePtSegSqr2D(Pos.v, Zone.Vertices[VertexCount - 1].v, Zone.Vertices[0].v, OutT);
-			OutSegment = VertexCount - 1;
-		}
-
-		for (UPTR i = 0; i < VertexCount - 1; ++i)
-		{
-			float t;
-			const float SqDistance = dtDistancePtSegSqr2D(Pos.v, Zone.Vertices[i].v, Zone.Vertices[i + 1].v, t);
-			if (SqDistance < MinSqDistance)
-			{
-				MinSqDistance = SqDistance;
-				OutSegment = i;
-				OutT = t;
-			}
-		}
-
-		return MinSqDistance;
-	}
+	else return SqDistanceToPolyChain(Pos, Zone.Vertices.data()->v, VertexCount, Zone.ClosedPolygon, OutSegment, OutT);
 }
 //---------------------------------------------------------------------
 
@@ -61,6 +66,86 @@ static inline vector3 PointInInteractionZone(const vector3& Pos, const CInteract
 }
 //---------------------------------------------------------------------
 
+// NB: OutPos is not changed if function returns false
+static bool IsNavPolyInInteractionZone(const CInteractionZone& Zone, const matrix44& ObjectWorldTfm, float* pPolyVerts, int PolyVertCount, vector3& OutPos)
+{
+	UPTR SegmentIdx = 0;
+	float t = 0.f;
+	float SqDistance = std::numeric_limits<float>().max();
+
+	const auto SqRadius = Zone.Radius * Zone.Radius;
+	const auto VertexCount = Zone.Vertices.size();
+	if (VertexCount < 2)
+	{
+		const vector3 Pos = VertexCount ? ObjectWorldTfm.transform_coord(Zone.Vertices[0]) : ObjectWorldTfm.Translation();
+		SqDistance = SqDistanceToPolyChain(Pos, pPolyVerts, PolyVertCount, true, SegmentIdx, t);
+	}
+	else if (VertexCount == 2)
+	{
+		// https://www.geometrictools.com/GTE/Mathematics/DistSegmentSegment.h
+
+		//dtIntersectSegSeg2D
+		//dtIntersectSegmentPoly2D(
+		//	ObjectWorldTfm.transform_coord(Zone.Vertices[0]).v,
+		//	ObjectWorldTfm.transform_coord(Zone.Vertices[1]).v,
+
+		// FIXME: IMPLEMENT!
+		return false;
+	}
+	else
+	{
+		// Can use separating axes to get distances?
+
+		// FIXME: IMPLEMENT!
+		return false;
+	}
+
+	if (SqDistance > SqRadius) return false;
+	dtVlerp(OutPos.v, &pPolyVerts[3 * SegmentIdx], &pPolyVerts[(3 * (SegmentIdx + 1)) % VertexCount], t);
+	return true;
+}
+//---------------------------------------------------------------------
+
+// If new path intersects with another interaction zone, can optimize by navigating to it instead of the original target
+static void OptimizeStaticPath(SwitchSmartObjectState& Action, AI::Navigate& NavAction, const matrix44& ObjectWorldTfm, const CSmartObject& SO, const AI::CNavAgentComponent* pNavAgent)
+{
+	//!!!TODO: instead of _PathScanned could increment path version on replan and recheck,
+	//to handle partial path and corridor optimizations!
+	if (Action._PathScanned || !Action._AllowedZones || !pNavAgent || pNavAgent->State != AI::ENavigationState::Following) return;
+
+	Action._PathScanned = true;
+
+	const auto ZoneCount = SO.GetInteractionZoneCount();
+
+	float Verts[DT_VERTS_PER_POLYGON * 3];
+
+	// Don't test the last poly, we already navigate to it
+	const int PolysToTest = pNavAgent->Corridor.getPathCount() - 1;
+	for (int PolyIdx = 0; PolyIdx < PolysToTest; ++PolyIdx)
+	{
+		const auto PolyRef = pNavAgent->Corridor.getPath()[PolyIdx];
+		const dtMeshTile* pTile = nullptr;
+		const dtPoly* pPoly = nullptr;
+		pNavAgent->pNavQuery->getAttachedNavMesh()->getTileAndPolyByRefUnsafe(PolyRef, &pTile, &pPoly);
+
+		const int PolyVertCount = pPoly->vertCount;
+		for (int i = 0; i < PolyVertCount; ++i)
+			dtVcopy(&Verts[i * 3], &pTile->verts[pPoly->verts[i] * 3]);
+
+		for (U8 ZoneIdx = 0; ZoneIdx < ZoneCount; ++ZoneIdx)
+		{
+			if (!((1 << ZoneIdx) & Action._AllowedZones)) continue;
+			if (IsNavPolyInInteractionZone(SO.GetInteractionZone(ZoneIdx), ObjectWorldTfm, Verts, PolyVertCount, NavAction._Destination))
+			{
+				Action._ZoneIndex = ZoneIdx;
+				Action._AllowedZones &= ~(1 << ZoneIdx);
+				return;
+			}
+		}
+	}
+}
+//---------------------------------------------------------------------
+
 static bool UpdateMovementSubAction(CActionQueueComponent& Queue, HAction Action, const CSmartObject& SO,
 	const AI::CNavAgentComponent* pNavAgent, const matrix44& ObjectWorldTfm, const vector3& ActorPos, bool OnlyCurrZone)
 {
@@ -69,21 +154,22 @@ static bool UpdateMovementSubAction(CActionQueueComponent& Queue, HAction Action
 	const vector3 SOSpaceActorPos = WorldToSmartObject.transform_coord(ActorPos);
 
 	auto pAction = Action.As<SwitchSmartObjectState>();
+	const auto PrevAllowedZones = pAction->_AllowedZones;
+
 	while (OnlyCurrZone || pAction->_AllowedZones)
 	{
-		float MinSqDistance = std::numeric_limits<float>().max();
 		UPTR SegmentIdx = 0;
 		float t = 0.f;
-
 		if (OnlyCurrZone)
 		{
-			MinSqDistance = SqDistanceToInteractionZone(SOSpaceActorPos, SO.GetInteractionZone(pAction->_ZoneIndex), SegmentIdx, t);
+			SqDistanceToInteractionZone(SOSpaceActorPos, SO.GetInteractionZone(pAction->_ZoneIndex), SegmentIdx, t);
 		}
 		else
 		{
 			// Find closest suitable zone
 			// NB: could calculate once, sort and then loop over them, but most probably it will be slower than now,
 			// because it is expected that almost always the first or at worst the second interaction zone will be selected.
+			float MinSqDistance = std::numeric_limits<float>().max();
 			const auto ZoneCount = SO.GetInteractionZoneCount();
 			for (U8 i = 0; i < ZoneCount; ++i)
 			{
@@ -102,23 +188,21 @@ static bool UpdateMovementSubAction(CActionQueueComponent& Queue, HAction Action
 			}
 		}
 
+		pAction->_AllowedZones &= ~(1 << pAction->_ZoneIndex);
+
 		const auto& Zone = SO.GetInteractionZone(pAction->_ZoneIndex);
 
-		// For static smart objects try each zone only once
-		if (SO.IsStatic()) pAction->_AllowedZones &= ~(1 << pAction->_ZoneIndex);
+		vector3 ActionPos = ObjectWorldTfm.transform_coord(PointInInteractionZone(SOSpaceActorPos, Zone, SegmentIdx, t));
 
-		vector3 ActionPos = PointInInteractionZone(SOSpaceActorPos, Zone, SegmentIdx, t);
+		const float WorldSqDistance = vector3::SqDistance2D(ActionPos, ActorPos);
 
 		const float Radius = Zone.Radius; //???apply actor radius too?
 		const float SqRadius = std::max(Radius * Radius, AI::Steer::SqLinearTolerance);
 
-		// FIXME: find closest navigable point, use radius as arrival distance, apply to the last path segment
-		//if (SqRadius < MinSqDistance)
-		//	ActionPos = vector3::lerp(ActionPos, SOSpaceActorPos, Radius / n_sqrt(MinSqDistance));
+		// FIXME: what if there is something in between that blocks an interaction?
+		if (WorldSqDistance <= SqRadius) return false;
 
-		ActionPos = ObjectWorldTfm.transform_coord(ActionPos);
-
-		if (vector3::SqDistance2D(ActionPos, ActorPos) <= SqRadius) return false;
+		ActionPos = vector3::lerp(ActionPos, ActorPos, Radius / n_sqrt(WorldSqDistance));
 
 		if (pNavAgent)
 		{
@@ -130,11 +214,10 @@ static bool UpdateMovementSubAction(CActionQueueComponent& Queue, HAction Action
 			if (!ObjPolyRef || SqDiff > SqRadius)
 			{
 				// No navigable point found inside a zone
-				// NB: this check is simplified and may fail to navigate zones where navigable point exists, so, in order
+				// NB: this check is simplified and may fail to navigate zones where reachable points exist, so, in order
 				// to work, each zone must have at least one navigable point in a zone radius from each base point.
-				// TODO: could explore all the interaction zone for intersecion with valid navigation polys, but it is slow
-				// FIXME: dynamic SO fails immediately for now, to avoid infinite looping. How to process dynamic SO correctly?
-				if (OnlyCurrZone || !SO.IsStatic()) break;
+				// TODO: could instead explore all the interaction zone for intersecion with valid navigation polys, but it is slow.
+				if (OnlyCurrZone) break;
 				continue;
 			}
 			else if (SqDiff > 0.f) ActionPos = NearestPos;
@@ -147,11 +230,8 @@ static bool UpdateMovementSubAction(CActionQueueComponent& Queue, HAction Action
 
 			if (ObjPolyRef != AgentPolyRef)
 			{
-				// To avoid possible parent path invalidation, could try to optimize with:
-				//Agent.pNavQuery->findLocalNeighbourhood
-				//Agent.pNavQuery->moveAlongSurface
-				//Agent.pNavQuery->raycast
-				// but it would require additional logic and complicate navigation.
+				// To avoid possible parent path invalidation, could try to optimize with findLocalNeighbourhood,
+				// moveAlongSurface or raycast, but it would require additional logic and complicate navigation.
 				Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, 0.f);
 				return true;
 			}
@@ -161,56 +241,58 @@ static bool UpdateMovementSubAction(CActionQueueComponent& Queue, HAction Action
 		return true;
 	}
 
-	// No suitable zones left, fail SO interaction entirely
-	Queue.SetStatus(Action, EActionStatus::Failed);
+	// No suitable zones left. Static SO fails, but dynamic still has a chance in subsequent frames.
+	if (SO.IsStatic())
+		Queue.SetStatus(Action, EActionStatus::Failed);
+	else
+		pAction->_AllowedZones = PrevAllowedZones;
+
 	return true;
 }
 //---------------------------------------------------------------------
 
-// NB: OutPos is not changed if function returns false
-static bool IsNavPolyInInteractionZone(const CInteractionZone& Zone, dtPolyRef PolyRef, dtNavMeshQuery& Query, vector3& OutPos)
+static bool UpdateFacingSubAction(CActionQueueComponent& Queue, HAction Action, const CSmartObject& SO,
+	const matrix44& ObjectWorldTfm, const matrix44& ActorWorldTfm)
 {
-	////!!!calc distance from PolyRef to Zone skeleton!
-	//const float SqDistance = 0.f;
+	auto pAction = Action.As<SwitchSmartObjectState>();
+	const auto& Zone = SO.GetInteractionZone(pAction->_ZoneIndex);
 
-	//const float Radius = Zone.Radius; //???apply actor radius too?
-	//const float SqRadius = std::max(Radius * Radius, AI::Steer::SqLinearTolerance);
-	//return SqDistance <= SqRadius;
-
-	//!!!return closest pos!
-
-	//NOT_IMPLEMENTED;
-	return false;
-}
-//---------------------------------------------------------------------
-
-// If new path intersects with another interaction zone, can optimize by navigating to it instead of the original target
-static void OptimizeStaticPath(SwitchSmartObjectState& Action, AI::Navigate& NavAction, const CSmartObject& SO, const AI::CNavAgentComponent* pNavAgent)
-{
-	//!!!TODO: instead of _PathScanned could increment path version on replan and recheck,
-	//to handle partial path and corridor optimizations!
-	if (Action._PathScanned || !Action._AllowedZones || !pNavAgent || pNavAgent->State != AI::ENavigationState::Following) return;
-
-	Action._PathScanned = true;
-
-	const auto ZoneCount = SO.GetInteractionZoneCount();
-
-	// Don't test the last poly, we already navigate to it
-	const int PolysToTest = pNavAgent->Corridor.getPathCount() - 1;
-	for (int PolyIdx = 0; PolyIdx < PolysToTest; ++PolyIdx)
+	auto It = std::find_if(Zone.Interactions.cbegin(), Zone.Interactions.cend(), [ID = pAction->_Interaction](const auto& Elm)
 	{
-		const auto PolyRef = pNavAgent->Corridor.getPath()[PolyIdx];
-		for (U8 ZoneIdx = 0; ZoneIdx < ZoneCount; ++ZoneIdx)
-		{
-			if (!((1 << ZoneIdx) & Action._AllowedZones)) continue;
-			if (IsNavPolyInInteractionZone(SO.GetInteractionZone(ZoneIdx), PolyRef, *pNavAgent->pNavQuery, NavAction._Destination))
-			{
-				Action._ZoneIndex = ZoneIdx;
-				Action._AllowedZones &= ~(1 << ZoneIdx);
-				return;
-			}
-		}
+		return Elm.ID == ID;
+	});
+	if (It == Zone.Interactions.cend())
+	{
+		// Should never happen
+		Queue.SetStatus(Action, EActionStatus::Failed);
+		return false;
 	}
+
+	vector3 TargetDir;
+	switch (It->FacingMode)
+	{
+		case EFacingMode::Direction:
+		{
+			TargetDir = It->FacingDir;
+			break;
+		}
+		case EFacingMode::Point:
+		{
+			TargetDir = ObjectWorldTfm.transform_coord(It->FacingDir) - ActorWorldTfm.Translation();
+			TargetDir.y = 0.f;
+			TargetDir.norm();
+			break;
+		}
+		default: return false;
+	}
+
+	vector3 LookatDir = -ActorWorldTfm.AxisZ();
+	LookatDir.norm();
+	const float Angle = vector3::Angle2DNorm(LookatDir, TargetDir);
+	if (std::fabsf(Angle) <= DEM::AI::Turn::AngularTolerance) return false;
+
+	Queue.PushOrUpdateChild<AI::Turn>(Action, TargetDir);
+	return true;
 }
 //---------------------------------------------------------------------
 
@@ -285,7 +367,8 @@ void InteractWithSmartObjects(CGameWorld& World)
 			}
 		}
 
-		const auto& ActorPos = ActorSceneComponent.RootNode->GetWorldPosition();
+		const auto& ActorWorldTfm = ActorSceneComponent.RootNode->GetWorldMatrix();
+		const auto& ActorPos = ActorWorldTfm.Translation();
 		const auto& ObjectWorldTfm = pSOSceneComponent->RootNode->GetWorldMatrix();
 
 		// Move to the interaction point
@@ -309,7 +392,9 @@ void InteractWithSmartObjects(CGameWorld& World)
 			{
 				if (pSOAsset->IsStatic())
 				{
-					OptimizeStaticPath(*pAction, *pNavAction, *pSOAsset, pNavAgent);
+					// FIXME: distance from segment to poly and from poly to poly are not calculated yet, so optimization works only
+					// for point/circle zones. Maybe a cheaper way is to UpdateMovementSubAction when enter new poly or by time?
+					OptimizeStaticPath(*pAction, *pNavAction, ObjectWorldTfm, *pSOAsset, pNavAgent);
 					return;
 				}
 				else
@@ -337,9 +422,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 			if (ChildActionStatus == EActionStatus::Active)
 			{
 				if (pSOAsset->IsStatic()) return;
-
-				// get facing from SO asset for the current region
-				// if facing is still required by SO, update it in Turn action and return
+				else if (UpdateFacingSubAction(Queue, Action, *pSOAsset, ObjectWorldTfm, ActorWorldTfm)) return;
 			}
 			else if (ChildActionStatus == EActionStatus::Failed)
 			{
@@ -349,22 +432,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		}
 		else
 		{
-			// get facing from SO asset for the current region
-			// if facing is required by SO and not already looking at that dir, generate Turn action and return
-
-			//!!!DBG TMP!
-			vector3 TargetDir = ObjectWorldTfm.Translation() - ActorPos;
-			TargetDir.norm();
-
-			//???update only if there is no Turn already active?
-			vector3 LookatDir = -ActorSceneComponent.RootNode->GetWorldMatrix().AxisZ();
-			LookatDir.norm();
-			const float Angle = vector3::Angle2DNorm(LookatDir, TargetDir);
-			if (std::fabsf(Angle) >= DEM::AI::Turn::AngularTolerance)
-			{
-				Queue.PushOrUpdateChild<AI::Turn>(Action, TargetDir);
-				return;
-			}
+			if (UpdateFacingSubAction(Queue, Action, *pSOAsset, ObjectWorldTfm, ActorWorldTfm)) return;
 		}
 
 		// Interact with object

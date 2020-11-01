@@ -104,7 +104,7 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 					else if (ModeStr == "Proportional") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Proportional;
 					else if (ModeStr == "Forbid") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Forbid;
 					//else if (ModeStr == "Force") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Force;
-					else if (ModeStr.IsValid()) ::Sys::Error("CSmartObjectLoader::CreateResource() > Unknown interruption mode");
+					else if (ModeStr.IsValid()) ::Sys::Error("CSmartObjectLoader::CreateResource() > Unknown transition interruption mode");
 
 					StateInfo.Transitions.push_back({ TransitionParam.GetName(), std::move(Task), InterruptionMode });
 				}
@@ -155,7 +155,28 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 					Interaction.ID = ActionParam.GetName();
 
 					const auto& ActionDesc = *ActionParam.GetValue<Data::PParams>();
-					// FacingMode, FacingDir, ActorAnim etc
+
+					Interaction.FacingMode = DEM::Game::EFacingMode::None;
+					const auto& ModeStr = ActionDesc.Get(CStrID("FacingMode"), CString::Empty);
+					if (ModeStr == "None") Interaction.FacingMode = DEM::Game::EFacingMode::None;
+					else if (ModeStr == "Direction") Interaction.FacingMode = DEM::Game::EFacingMode::Direction;
+					else if (ModeStr == "Point") Interaction.FacingMode = DEM::Game::EFacingMode::Point;
+					else if (ModeStr.IsValid()) ::Sys::Error("CSmartObjectLoader::CreateResource() > Unknown facing mode");
+
+					if (Interaction.FacingMode != DEM::Game::EFacingMode::None)
+					{
+						Interaction.FacingDir = ActionDesc.Get<vector3>(CStrID("FacingDir"), vector3::Zero);
+						Interaction.FacingDir.y = 0.f;
+						if (Interaction.FacingMode == DEM::Game::EFacingMode::Direction)
+						{
+							if (Interaction.FacingDir == vector3::Zero)
+								Interaction.FacingMode = DEM::Game::EFacingMode::None;
+							else
+								Interaction.FacingDir.norm();
+						}
+					}
+
+					// TODO: ActorAnim etc
 				}
 			}
 

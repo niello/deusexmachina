@@ -56,11 +56,20 @@ struct CSmartObjectStateInfo
 	std::vector<CSmartObjectTransitionInfo> Transitions;
 };
 
+enum class EFacingMode : U8
+{
+	None = 0,
+	Direction,
+	Point
+	// TODO: SceneNode?
+};
+
 struct CSmartObjectInteractionInfo
 {
-	CStrID ID;
-	// facing mode
-	// facing dir
+	CStrID      ID;
+	EFacingMode FacingMode;
+	vector3     FacingDir;
+
 	// actor anim
 	// actor state
 };
