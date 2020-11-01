@@ -67,6 +67,12 @@ static void RunTimelineTask(DEM::Game::CGameWorld& World, HEntity EntityID, CSma
 	SOComponent.Player.SetEndTime(Task.EndTime * TrackDuration);
 	SOComponent.Player.SetSpeed(Task.Speed);
 
+	// FIXME: if set full progress, will timeline controller decrement loops?! SetTime or Rewind? or handle externally (here)?
+	n_assert(InitialProgress < 1.f);
+
+	// FIXME: more than one loop will now work wrong with initial progress!
+	n_assert(Task.LoopCount < 2);
+
 	// Transfer the progress % from the previous transition, if required
 	const float FullDuration = SOComponent.Player.GetLoopDuration() * Task.LoopCount;
 	SOComponent.Player.SetTime(InitialProgress * FullDuration * (std::signbit(Task.Speed) ? -1.f : 1.f));
@@ -131,20 +137,21 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, sol::state& Lua, HE
 				// Finish current transition immediately
 				// Arrive into the NextState, so CurrState = NextState, NextState = 0
 				NOT_IMPLEMENTED;
-				FromState = SOComponent.NextState;
+				FromState = SOComponent.NextState; //!!!not needed if arrival happens here, it will handle C = N!
 				break;
 			}
 			case ETransitionInterruptionMode::Proportional:
 			{
-				FromState = SOComponent.NextState;
-
 				const auto& Task = pTransitionCN->TimelineTask;
 				const float FullTime = SOComponent.Player.GetLoopDuration() * Task.LoopCount;
 				if (FullTime > 0.f) InitialProgress = 1.f - (SOComponent.Player.GetRemainingTime() / FullTime);
 
 				// For (A->B)->A transition inverted progress has more meaning, because we go back the same way
 				if (RequestedState == SOComponent.CurrState)
+				{
 					InitialProgress = (1.f - InitialProgress);
+					FromState = SOComponent.NextState;
+				}
 
 				break;
 			}
