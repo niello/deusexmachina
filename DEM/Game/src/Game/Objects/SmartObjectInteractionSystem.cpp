@@ -138,7 +138,6 @@ void InteractWithSmartObjects(CGameWorld& World)
 		const float ActorRadius = 0.f;
 		const bool Static = pSOAsset->IsStatic();
 		const vector3 ObjectPos(128.0f, 43.5f, 115.0f);
-		vector3 ActionPos(127.0f, 43.5f, 115.0f);
 		vector3 TargetDir = ObjectPos - ActorPos;
 		TargetDir.norm();
 
@@ -199,8 +198,15 @@ void InteractWithSmartObjects(CGameWorld& World)
 		}
 		else if (!Static || !ChildAction)
 		{
+			if (!pAction->_AllowedZones)
+			{
+				Queue.SetStatus(Action, EActionStatus::Failed);
+				return;
+			}
+
 			matrix44 WorldToSmartObject;
-			pSOSceneComponent->RootNode->GetWorldMatrix().invert_simple(WorldToSmartObject);
+			const auto& ObjectWorldTfm = pSOSceneComponent->RootNode->GetWorldMatrix();
+			ObjectWorldTfm.invert_simple(WorldToSmartObject);
 			const vector3 SOSpaceActorPos = WorldToSmartObject.transform_coord(ActorPos);
 
 			float MinSqDistance = std::numeric_limits<float>().max();
@@ -222,26 +228,50 @@ void InteractWithSmartObjects(CGameWorld& World)
 			// For static smart objects try each zone only once
 			if (Static) pAction->_AllowedZones &= ~(1 << pAction->_ZoneIndex);
 
-			//!!!FIXME: apply radius or even both SO and actor radii!
 			const auto& Zone = pSOAsset->GetInteractionZone(pAction->_ZoneIndex);
-			const auto ClosestPos = PointInInteractionZone(SOSpaceActorPos, Zone, SegmentIdx, t);
-			// convert closest pos to the world space
-			// find closest point on poly, center is closest pos, extents is iact R, actor H
-			//???use closestPointOnPolyBoundary?
-			// if none found or found point is farther than R from closest pos:
-			//   either fail this zone or try raycast / findLocalNeighbourhood and test all found polys before failing
+			const float Radius = Zone.Radius; //???apply actor radius too?
 
-			// if failed all zones, Queue.SetStatus(Action, EActionStatus::Failed);
+			vector3 ActionPos = PointInInteractionZone(SOSpaceActorPos, Zone, SegmentIdx, t);
+			if (Radius * Radius < MinSqDistance)
+				ActionPos = vector3::lerp(ActionPos, SOSpaceActorPos, Radius / n_sqrt(MinSqDistance));
 
-			//!!!must not mark region as tried when not Static!
-			//std::optional<float> FaceDir;
-			//if (!pSOAsset->GetInteractionParams(CStrID("Open"), ActorRadius, ActionPos, FaceDir))
-			//{
-			//	Queue.SetStatus(Action, EActionStatus::Failed);
-			//	return;
-			//}
+			ActionPos = ObjectWorldTfm.transform_coord(ActionPos);
 
-			// if not already at the dest reach, generate Navigate or Steer (for Static only?) and return
+// find closest point on nav. poly, center is closest pos, extents is iact R, actor H
+//???use closestPointOnPolyBoundary?
+// if none found or found point is farther than R from closest pos:
+//   either fail this zone or try raycast / findLocalNeighbourhood and test all found polys before failing
+
+			if (vector3::SqDistance2D(ActionPos, ActorPos) >= AI::Steer::SqLinearTolerance)
+			{
+				if (pNavAgent)
+				{
+					const float Extents[3] = { pNavAgent->Radius, pNavAgent->Height, pNavAgent->Radius };
+					float NearestPos[3];
+
+					// FIXME: if static, get poly along with point from object interaction params
+					dtPolyRef ObjPolyRef = 0;
+					pNavAgent->pNavQuery->findNearestPoly(ActionPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NearestPos);
+
+					// FIXME: use pNavAgent->Corridor.getFirstPoly() instead! Offmesh can break this now!
+					dtPolyRef AgentPolyRef = 0;
+					pNavAgent->pNavQuery->findNearestPoly(ActorPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &AgentPolyRef, NearestPos);
+
+					if (ObjPolyRef != AgentPolyRef)
+					{
+						// To avoid possible parent path invalidation, could try to optimize with:
+						//Agent.pNavQuery->findLocalNeighbourhood
+						//Agent.pNavQuery->moveAlongSurface
+						//Agent.pNavQuery->raycast
+
+						Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, 0.f);
+						return;
+					}
+				}
+
+				Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ObjectPos, 0.f);
+				return;
+			}
 		}
 
 		// Face interaction direction
@@ -270,37 +300,6 @@ void InteractWithSmartObjects(CGameWorld& World)
 		// Interact with object
 
 		// ... anim, state transition etc ...
-
-		if (vector3::SqDistance2D(ActionPos, ActorPos) >= AI::Steer::SqLinearTolerance)
-		{
-			if (pNavAgent)
-			{
-				const float Extents[3] = { pNavAgent->Radius, pNavAgent->Height, pNavAgent->Radius };
-				float NearestPos[3];
-
-				// FIXME: if static, get poly along with point from object interaction params
-				dtPolyRef ObjPolyRef = 0;
-				pNavAgent->pNavQuery->findNearestPoly(ActionPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NearestPos);
-
-				// FIXME: use pNavAgent->Corridor.getFirstPoly() instead! Offmesh can break this now!
-				dtPolyRef AgentPolyRef = 0;
-				pNavAgent->pNavQuery->findNearestPoly(ActorPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &AgentPolyRef, NearestPos);
-
-				if (ObjPolyRef != AgentPolyRef)
-				{
-					// To avoid possible parent path invalidation, could try to optimize with:
-					//Agent.pNavQuery->findLocalNeighbourhood
-					//Agent.pNavQuery->moveAlongSurface
-					//Agent.pNavQuery->raycast
-
-					Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, 0.f);
-					return;
-				}
-			}
-
-			Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ObjectPos, 0.f);
-			return;
-		}
 
 		//???update only if there is no Turn already active?
 		vector3 LookatDir = -ActorSceneComponent.RootNode->GetWorldMatrix().AxisZ();

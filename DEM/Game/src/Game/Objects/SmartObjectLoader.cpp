@@ -128,7 +128,7 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 			Zone.Radius = ZoneDesc.Get(CStrID("Radius"), 0.f);
 
 			Data::PDataArray VerticesDesc;
-			if (Params.TryGet<Data::PDataArray>(VerticesDesc, CStrID("Vertices")))
+			if (ZoneDesc.TryGet<Data::PDataArray>(VerticesDesc, CStrID("Vertices")))
 			{
 				Zone.Vertices.SetSize(VerticesDesc->GetCount());
 				size_t i = 0;
