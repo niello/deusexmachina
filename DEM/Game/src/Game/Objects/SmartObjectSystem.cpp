@@ -69,7 +69,7 @@ static void RunTimelineTask(DEM::Game::CGameWorld& World, HEntity EntityID, CSma
 
 	// Transfer the progress % from the previous transition, if required
 	const float FullDuration = SOComponent.Player.GetLoopDuration() * Task.LoopCount;
-	SOComponent.Player.SetTime(InitialProgress * FullDuration); //???mul speed sign?
+	SOComponent.Player.SetTime(InitialProgress * FullDuration * (std::signbit(Task.Speed) ? -1.f : 1.f));
 
 	SOComponent.Player.Play(Task.LoopCount);
 }
@@ -102,6 +102,8 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, sol::state& Lua, HE
 	// Initial state is always force-set
 	if (!SOComponent.CurrState) SOComponent.Force = true;
 
+	CStrID FromState = SOComponent.CurrState;
+
 	// Handle current transition (A->B) softly
 	if (SOComponent.NextState && !SOComponent.Force)
 	{
@@ -121,19 +123,24 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, sol::state& Lua, HE
 			case ETransitionInterruptionMode::ResetToStart:
 			{
 				// Cancel current transition
+				NOT_IMPLEMENTED;
 				break;
 			}
 			case ETransitionInterruptionMode::RewindToEnd:
 			{
 				// Finish current transition immediately
 				// Arrive into the NextState, so CurrState = NextState, NextState = 0
+				NOT_IMPLEMENTED;
+				FromState = SOComponent.NextState;
 				break;
 			}
 			case ETransitionInterruptionMode::Proportional:
 			{
+				FromState = SOComponent.NextState;
+
 				const auto& Task = pTransitionCN->TimelineTask;
 				const float FullTime = SOComponent.Player.GetLoopDuration() * Task.LoopCount;
-				if (FullTime > 0.f) InitialProgress = SOComponent.Player.GetRemainingTime() / FullTime;
+				if (FullTime > 0.f) InitialProgress = 1.f - (SOComponent.Player.GetRemainingTime() / FullTime);
 
 				// For (A->B)->A transition inverted progress has more meaning, because we go back the same way
 				if (RequestedState == SOComponent.CurrState)
@@ -173,8 +180,9 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, sol::state& Lua, HE
 	// Try to start a transition to the requested state
 	if (!SOComponent.Force)
 	{
-		if (auto pTransitionCR = SOAsset.FindTransition(SOComponent.CurrState, RequestedState))
+		if (auto pTransitionCR = SOAsset.FindTransition(FromState, RequestedState))
 		{
+			SOComponent.CurrState = FromState;
 			SOComponent.NextState = RequestedState;
 			CallTransitionScript(SOAsset.GetScriptFunction(Lua, "OnTransitionStart"), EntityID, SOComponent.CurrState, SOComponent.NextState);
 			RunTimelineTask(World, EntityID, SOComponent, pTransitionCR->TimelineTask, InitialProgress, CurrTrack, pPrevTask);
@@ -187,7 +195,7 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, sol::state& Lua, HE
 	}
 
 	// Force-set requested state
-	if (SOComponent.Force && SOComponent.CurrState != RequestedState)
+	if (SOComponent.Force && FromState != RequestedState)
 	{
 		if (auto pState = SOAsset.FindState(RequestedState))
 		{

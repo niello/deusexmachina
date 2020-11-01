@@ -10,7 +10,6 @@
 namespace DEM::Game
 {
 
-// TODO: to common code!
 // NB: if closed, must be convex
 static float SqDistanceToPolyChain(const vector3& Pos, const float* pVertices, UPTR VertexCount, bool Closed, UPTR& OutSegment, float& OutT)
 {
@@ -199,7 +198,7 @@ static bool UpdateMovementSubAction(CActionQueueComponent& Queue, HAction Action
 		const float Radius = Zone.Radius; //???apply actor radius too?
 		const float SqRadius = std::max(Radius * Radius, AI::Steer::SqLinearTolerance);
 
-		// FIXME: what if there is something in between that blocks an interaction?
+		// FIXME: what if there is something between ActionPos and ActorPos that blocks an interaction?
 		if (WorldSqDistance <= SqRadius) return false;
 
 		ActionPos = vector3::lerp(ActionPos, ActorPos, Radius / n_sqrt(WorldSqDistance));
