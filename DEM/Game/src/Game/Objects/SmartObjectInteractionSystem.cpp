@@ -61,106 +61,108 @@ static inline vector3 PointInInteractionZone(const vector3& Pos, const CInteract
 }
 //---------------------------------------------------------------------
 
-// NB: non-zero _AllowedZones implied
-static vector3 FindLocalInteractionPoint(SwitchSmartObjectState& Action, const CSmartObject& SO, const vector3& ActorLocalPos, bool OnlyCurrZone)
-{
-	float MinSqDistance = std::numeric_limits<float>().max();
-	UPTR SegmentIdx = 0;
-	float t = 0.f;
-
-	if (OnlyCurrZone)
-	{
-		MinSqDistance = SqDistanceToInteractionZone(ActorLocalPos, SO.GetInteractionZone(Action._ZoneIndex), SegmentIdx, t);
-	}
-	else
-	{
-		// Find closest suitable zone
-		const auto ZoneCount = SO.GetInteractionZoneCount();
-		for (U8 i = 0; i < ZoneCount; ++i)
-		{
-			if (!((1 << i) & Action._AllowedZones)) continue;
-
-			const float SqDistance = SqDistanceToInteractionZone(ActorLocalPos, SO.GetInteractionZone(i), SegmentIdx, t);
-			if (SqDistance < MinSqDistance)
-			{
-				MinSqDistance = SqDistance;
-				Action._ZoneIndex = i;
-			}
-		}
-	}
-
-	// For static smart objects try each zone only once
-	if (SO.IsStatic()) Action._AllowedZones &= ~(1 << Action._ZoneIndex);
-
-	return PointInInteractionZone(ActorLocalPos, SO.GetInteractionZone(Action._ZoneIndex), SegmentIdx, t);
-}
-//---------------------------------------------------------------------
-
-//???when dynamic fails? zones aren't marked as failed!
 static bool UpdateMovementSubAction(CActionQueueComponent& Queue, HAction Action, const CSmartObject& SO,
 	const AI::CNavAgentComponent* pNavAgent, const matrix44& ObjectWorldTfm, const vector3& ActorPos, bool OnlyCurrZone)
 {
-	auto pAction = Action.As<SwitchSmartObjectState>();
-	if (!pAction->_AllowedZones)
-	{
-		Queue.SetStatus(Action, EActionStatus::Failed);
-		return true;
-	}
-
 	matrix44 WorldToSmartObject;
 	ObjectWorldTfm.invert_simple(WorldToSmartObject);
 	const vector3 SOSpaceActorPos = WorldToSmartObject.transform_coord(ActorPos);
 
-	vector3 ActionPos = FindLocalInteractionPoint(*pAction, SO, SOSpaceActorPos, OnlyCurrZone);
-
-	const auto& Zone = SO.GetInteractionZone(pAction->_ZoneIndex);
-	const float Radius = Zone.Radius; //???apply actor radius too?
-	const float SqRadius = std::max(Radius * Radius, AI::Steer::SqLinearTolerance);
-
-	// FIXME: find closest navigable point, use radius as arrival distance, apply to the last path segment
-	//if (SqRadius < MinSqDistance)
-	//	ActionPos = vector3::lerp(ActionPos, SOSpaceActorPos, Radius / n_sqrt(MinSqDistance));
-
-	ActionPos = ObjectWorldTfm.transform_coord(ActionPos);
-
-	if (vector3::SqDistance2D(ActionPos, ActorPos) <= SqRadius) return false;
-
-	if (pNavAgent)
+	auto pAction = Action.As<SwitchSmartObjectState>();
+	while (OnlyCurrZone || pAction->_AllowedZones)
 	{
-		float NearestPos[3];
-		const float Extents[3] = { Radius, pNavAgent->Height, Radius };
-		dtPolyRef ObjPolyRef = 0;
-		pNavAgent->pNavQuery->findNearestPoly(ActionPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NearestPos);
-		const float SqDiff = dtVdist2DSqr(ActionPos.v, NearestPos);
-		if (!ObjPolyRef || SqDiff > SqRadius)
-		{
-			// No navigable point found
-			// FIXME: try the next zone right now!
-			// TODO: could explore all the interaction zone for intersecion with valid navigation polys, but it is slow
-			//???what if dynamic? discard this zone or fail immediately?
-			return true;
-		}
-		else if (SqDiff > 0.f) ActionPos = NearestPos;
+		float MinSqDistance = std::numeric_limits<float>().max();
+		UPTR SegmentIdx = 0;
+		float t = 0.f;
 
-		// FIXME: use pNavAgent->Corridor.getFirstPoly() instead! Offmesh can break this now!
-		const float AgentExtents[3] = { pNavAgent->Radius, pNavAgent->Height, pNavAgent->Radius };
-		dtPolyRef AgentPolyRef = 0;
-		pNavAgent->pNavQuery->findNearestPoly(ActorPos.v, AgentExtents, pNavAgent->Settings->GetQueryFilter(), &AgentPolyRef, NearestPos);
-		//n_assert_dbg(pNavAgent->Corridor.getFirstPoly() == AgentPolyRef);
-
-		if (ObjPolyRef != AgentPolyRef)
+		if (OnlyCurrZone)
 		{
-			// To avoid possible parent path invalidation, could try to optimize with:
-			//Agent.pNavQuery->findLocalNeighbourhood
-			//Agent.pNavQuery->moveAlongSurface
-			//Agent.pNavQuery->raycast
-			// but it would require additional logic and complicate navigation.
-			Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, 0.f);
-			return true;
+			MinSqDistance = SqDistanceToInteractionZone(SOSpaceActorPos, SO.GetInteractionZone(pAction->_ZoneIndex), SegmentIdx, t);
 		}
+		else
+		{
+			// Find closest suitable zone
+			// NB: could calculate once, sort and then loop over them, but most probably it will be slower than now,
+			// because it is expected that almost always the first or at worst the second interaction zone will be selected.
+			const auto ZoneCount = SO.GetInteractionZoneCount();
+			for (U8 i = 0; i < ZoneCount; ++i)
+			{
+				if (!((1 << i) & pAction->_AllowedZones)) continue;
+
+				UPTR CurrS;
+				float CurrT;
+				const float SqDistance = SqDistanceToInteractionZone(SOSpaceActorPos, SO.GetInteractionZone(i), CurrS, CurrT);
+				if (SqDistance < MinSqDistance)
+				{
+					MinSqDistance = SqDistance;
+					SegmentIdx = CurrS;
+					t = CurrT;
+					pAction->_ZoneIndex = i;
+				}
+			}
+		}
+
+		const auto& Zone = SO.GetInteractionZone(pAction->_ZoneIndex);
+
+		// For static smart objects try each zone only once
+		if (SO.IsStatic()) pAction->_AllowedZones &= ~(1 << pAction->_ZoneIndex);
+
+		vector3 ActionPos = PointInInteractionZone(SOSpaceActorPos, Zone, SegmentIdx, t);
+
+		const float Radius = Zone.Radius; //???apply actor radius too?
+		const float SqRadius = std::max(Radius * Radius, AI::Steer::SqLinearTolerance);
+
+		// FIXME: find closest navigable point, use radius as arrival distance, apply to the last path segment
+		//if (SqRadius < MinSqDistance)
+		//	ActionPos = vector3::lerp(ActionPos, SOSpaceActorPos, Radius / n_sqrt(MinSqDistance));
+
+		ActionPos = ObjectWorldTfm.transform_coord(ActionPos);
+
+		if (vector3::SqDistance2D(ActionPos, ActorPos) <= SqRadius) return false;
+
+		if (pNavAgent)
+		{
+			float NearestPos[3];
+			const float Extents[3] = { Radius, pNavAgent->Height, Radius };
+			dtPolyRef ObjPolyRef = 0;
+			pNavAgent->pNavQuery->findNearestPoly(ActionPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NearestPos);
+			const float SqDiff = dtVdist2DSqr(ActionPos.v, NearestPos);
+			if (!ObjPolyRef || SqDiff > SqRadius)
+			{
+				// No navigable point found inside a zone
+				// NB: this check is simplified and may fail to navigate zones where navigable point exists, so, in order
+				// to work, each zone must have at least one navigable point in a zone radius from each base point.
+				// TODO: could explore all the interaction zone for intersecion with valid navigation polys, but it is slow
+				// FIXME: dynamic SO fails immediately for now, to avoid infinite looping. How to process dynamic SO correctly?
+				if (OnlyCurrZone || !SO.IsStatic()) break;
+				continue;
+			}
+			else if (SqDiff > 0.f) ActionPos = NearestPos;
+
+			// FIXME: use pNavAgent->Corridor.getFirstPoly() instead! Offmesh can break this now!
+			const float AgentExtents[3] = { pNavAgent->Radius, pNavAgent->Height, pNavAgent->Radius };
+			dtPolyRef AgentPolyRef = 0;
+			pNavAgent->pNavQuery->findNearestPoly(ActorPos.v, AgentExtents, pNavAgent->Settings->GetQueryFilter(), &AgentPolyRef, NearestPos);
+			//n_assert_dbg(pNavAgent->Corridor.getFirstPoly() == AgentPolyRef);
+
+			if (ObjPolyRef != AgentPolyRef)
+			{
+				// To avoid possible parent path invalidation, could try to optimize with:
+				//Agent.pNavQuery->findLocalNeighbourhood
+				//Agent.pNavQuery->moveAlongSurface
+				//Agent.pNavQuery->raycast
+				// but it would require additional logic and complicate navigation.
+				Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, 0.f);
+				return true;
+			}
+		}
+
+		Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ObjectWorldTfm.Translation(), 0.f);
+		return true;
 	}
 
-	Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ObjectWorldTfm.Translation(), 0.f);
+	// No suitable zones left, fail SO interaction entirely
+	Queue.SetStatus(Action, EActionStatus::Failed);
 	return true;
 }
 //---------------------------------------------------------------------
