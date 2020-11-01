@@ -77,9 +77,11 @@ class CSmartObject : public Resources::CResourceObject
 {
 	RTTI_CLASS_DECL(DEM::Game::CSmartObject, Resources::CResourceObject);
 
-protected:
+public:
 
 	static inline constexpr UPTR MAX_ZONES = 16; // Because only 16 bits are reserved in SwitchSmartObjectState
+
+protected:
 
 	CStrID                             _ID;
 	CStrID                             _DefaultState;

@@ -61,6 +61,42 @@ static inline vector3 PointInInteractionZone(const vector3& Pos, const CInteract
 }
 //---------------------------------------------------------------------
 
+// NB: non-zero _AllowedZones implied
+static vector3 FindLocalInteractionPoint(SwitchSmartObjectState& Action, const CSmartObject& SO, const vector3& ActorLocalPos, U8 ZoneIndex = CSmartObject::MAX_ZONES)
+{
+	float MinSqDistance = std::numeric_limits<float>().max();
+	UPTR SegmentIdx = 0;
+	float t = 0.f;
+
+	if (ZoneIndex >= CSmartObject::MAX_ZONES)
+	{
+		// Find closest suitable zone
+		const auto ZoneCount = SO.GetInteractionZoneCount();
+		for (U8 i = 0; i < ZoneCount; ++i)
+		{
+			if (!((1 << i) & Action._AllowedZones)) continue;
+
+			const float SqDistance = SqDistanceToInteractionZone(ActorLocalPos, SO.GetInteractionZone(i), SegmentIdx, t);
+			if (SqDistance < MinSqDistance)
+			{
+				MinSqDistance = SqDistance;
+				Action._ZoneIndex = i;
+			}
+		}
+	}
+	else
+	{
+		MinSqDistance = SqDistanceToInteractionZone(ActorLocalPos, SO.GetInteractionZone(ZoneIndex), SegmentIdx, t);
+		Action._ZoneIndex = ZoneIndex;
+	}
+
+	// For static smart objects try each zone only once
+	if (SO.IsStatic()) Action._AllowedZones &= ~(1 << Action._ZoneIndex);
+
+	return PointInInteractionZone(ActorLocalPos, SO.GetInteractionZone(Action._ZoneIndex), SegmentIdx, t);
+}
+//---------------------------------------------------------------------
+
 void InteractWithSmartObjects(CGameWorld& World)
 {
 	World.ForEachEntityWith<CActionQueueComponent, const CSceneComponent, const AI::CNavAgentComponent*>(
@@ -133,13 +169,8 @@ void InteractWithSmartObjects(CGameWorld& World)
 		}
 
 		const auto& ActorPos = ActorSceneComponent.RootNode->GetWorldPosition();
-
-		// FIXME: fill! Get facing (only if necessary) from interaction params
-		const float ActorRadius = 0.f;
-		const bool Static = pSOAsset->IsStatic();
-		const vector3 ObjectPos(128.0f, 43.5f, 115.0f);
-		vector3 TargetDir = ObjectPos - ActorPos;
-		TargetDir.norm();
+		const auto& ObjectPos = pSOSceneComponent->RootNode->GetWorldPosition();
+		const auto& ObjectWorldTfm = pSOSceneComponent->RootNode->GetWorldMatrix();
 
 		// Move to the interaction point
 
@@ -147,7 +178,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		{
 			if (ChildActionStatus == EActionStatus::Active)
 			{
-				//if (Static) return;
+				//if (pSOAsset->IsStatic()) return;
 				// if Steer optimization will be used for dynamic objects, must update target here
 				// and generate Steer or Navigate. But most probably Steer will be used for Static only.
 				// NB: Steer can also be used for dynamic if actor can't navigate. So can check this
@@ -164,7 +195,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		{
 			if (ChildActionStatus == EActionStatus::Active)
 			{
-				if (Static)
+				if (pSOAsset->IsStatic())
 				{
 					// If the path intersects with another interaction zone, can optimize by navigating to it
 					//!!!TODO: instead of _PathScanned could increment path version on replan and recheck, to handle partial path and corridor optimizations!
@@ -181,9 +212,9 @@ void InteractWithSmartObjects(CGameWorld& World)
 							{
 								if (!((1 << ZoneIdx) & pAction->_AllowedZones)) continue;
 
-								const auto& Zone = pSOAsset->GetInteractionZone(i);
+								const auto& Zone = pSOAsset->GetInteractionZone(ZoneIdx);
 
-								//!!!distance from PolyRef to Zone!
+								//!!!calc distance from PolyRef to Zone!
 								const float SqDistance = 0.f;
 
 								const float Radius = Zone.Radius; //???apply actor radius too?
@@ -211,10 +242,11 @@ void InteractWithSmartObjects(CGameWorld& World)
 			{
 				// try to navigate to the point in the next closest region (static) or any region (dynamic)
 				// if all are tried and failed, Queue.SetStatus(Action, EActionStatus::Failed);
+				//???when dynamic fails?
 				return;
 			}
 		}
-		else if (!Static || !ChildAction)
+		else if (!pSOAsset->IsStatic() || !ChildAction)
 		{
 			if (!pAction->_AllowedZones)
 			{
@@ -223,37 +255,18 @@ void InteractWithSmartObjects(CGameWorld& World)
 			}
 
 			matrix44 WorldToSmartObject;
-			const auto& ObjectWorldTfm = pSOSceneComponent->RootNode->GetWorldMatrix();
 			ObjectWorldTfm.invert_simple(WorldToSmartObject);
 			const vector3 SOSpaceActorPos = WorldToSmartObject.transform_coord(ActorPos);
 
-			float MinSqDistance = std::numeric_limits<float>().max();
-			UPTR SegmentIdx = 0;
-			float t = 0.f;
-			const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
-			for (U8 i = 0; i < ZoneCount; ++i)
-			{
-				if (!((1 << i) & pAction->_AllowedZones)) continue;
-
-				const float SqDistance = SqDistanceToInteractionZone(SOSpaceActorPos, pSOAsset->GetInteractionZone(i), SegmentIdx, t);
-				if (SqDistance < MinSqDistance)
-				{
-					MinSqDistance = SqDistance;
-					pAction->_ZoneIndex = i;
-				}
-			}
-
-			// For static smart objects try each zone only once
-			if (Static) pAction->_AllowedZones &= ~(1 << pAction->_ZoneIndex);
+			vector3 ActionPos = FindLocalInteractionPoint(*pAction, *pSOAsset, SOSpaceActorPos);
 
 			const auto& Zone = pSOAsset->GetInteractionZone(pAction->_ZoneIndex);
-			vector3 ActionPos = PointInInteractionZone(SOSpaceActorPos, Zone, SegmentIdx, t);
-
-			// FIXME: find closest navigable point, use radius as arrival distance, apply to the last path segment
 			const float Radius = Zone.Radius; //???apply actor radius too?
 			const float SqRadius = std::max(Radius * Radius, AI::Steer::SqLinearTolerance);
-			if (SqRadius < MinSqDistance)
-				ActionPos = vector3::lerp(ActionPos, SOSpaceActorPos, Radius / n_sqrt(MinSqDistance));
+
+			// FIXME: find closest navigable point, use radius as arrival distance, apply to the last path segment
+			//if (SqRadius < MinSqDistance)
+			//	ActionPos = vector3::lerp(ActionPos, SOSpaceActorPos, Radius / n_sqrt(MinSqDistance));
 
 			ActionPos = ObjectWorldTfm.transform_coord(ActionPos);
 
@@ -305,7 +318,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		{
 			if (ChildActionStatus == EActionStatus::Active)
 			{
-				if (Static) return;
+				if (pSOAsset->IsStatic()) return;
 
 				// get facing from SO asset for the current region
 				// if facing is still required by SO, update it in Turn action and return
@@ -316,7 +329,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 				return;
 			}
 		}
-		else if (!Static || !ChildAction)
+		else if (!pSOAsset->IsStatic() || !ChildAction)
 		{
 			// get facing from SO asset for the current region
 			// if facing is required by SO and not already looking at that dir, generate Turn action and return
@@ -325,6 +338,11 @@ void InteractWithSmartObjects(CGameWorld& World)
 		// Interact with object
 
 		// ... anim, state transition etc ...
+
+
+		// FIXME: fill! Get facing (only if necessary) from interaction params
+		vector3 TargetDir = ObjectPos - ActorPos;
+		TargetDir.norm();
 
 		//???update only if there is no Turn already active?
 		vector3 LookatDir = -ActorSceneComponent.RootNode->GetWorldMatrix().AxisZ();
