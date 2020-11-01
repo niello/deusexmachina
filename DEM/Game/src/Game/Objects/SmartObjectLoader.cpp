@@ -48,11 +48,12 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 	const CStrID DefaultState = Params.Get(CStrID("DefaultState"), CStrID::Empty);
 	const bool Static = Params.Get(CStrID("Static"), false);
 
-	DEM::Game::PSmartObject SmartObject = n_new(DEM::Game::CSmartObject(ID, DefaultState, Static, ScriptSource));
-
+	// Load object states and transitions
+	std::vector<DEM::Game::CSmartObjectStateInfo> States;
 	Data::PParams StatesDesc;
 	if (Params.TryGet<Data::PParams>(StatesDesc, CStrID("States")))
 	{
+		States.reserve(StatesDesc->GetCount());
 		for (const auto& StateParam : *StatesDesc)
 		{
 			const auto& StateDesc = *StateParam.GetValue<Data::PParams>();
@@ -71,13 +72,14 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 				Task.Timeline->ValidateObject();
 			}
 
-			SmartObject->AddState(StateParam.GetName(), std::move(Task));
+			DEM::Game::CSmartObjectStateInfo StateInfo{ StateParam.GetName(), std::move(Task) };
 
 			// Transitions from this state
-			//???!!!for integrity validation can load states, then transitions?!
+			//???!!!for integrity validation can load all states, then all transitions?!
 			Data::PParams TransitionsDesc;
 			if (StateDesc.TryGet<Data::PParams>(TransitionsDesc, CStrID("Transitions")))
 			{
+				StateInfo.Transitions.reserve(TransitionsDesc->GetCount());
 				for (const auto& TransitionParam : *TransitionsDesc)
 				{
 					const auto& TransitionDesc = *TransitionParam.GetValue<Data::PParams>();
@@ -104,19 +106,65 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 					//else if (ModeStr == "Force") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Force;
 					else if (ModeStr.IsValid()) ::Sys::Error("CSmartObjectLoader::CreateResource() > Unknown interruption mode");
 
-					SmartObject->AddTransition(StateParam.GetName(), TransitionParam.GetName(), std::move(Task), InterruptionMode);
+					StateInfo.Transitions.push_back({ TransitionParam.GetName(), std::move(Task), InterruptionMode });
 				}
 			}
+
+			States.push_back(std::move(StateInfo));
 		}
 	}
 
-	Data::PDataArray Actions;
-	if (Params.TryGet<Data::PDataArray>(Actions, CStrID("Actions")))
-		for (const auto& ActionData : *Actions)
-			if (auto pActionStr = ActionData.As<CStrID>())
-				SmartObject->AddInteraction(*pActionStr);
+	// Load interaction zones and available interactions
+	std::vector<DEM::Game::CInteractionZone> InteractionZones;
+	Data::PDataArray ZoneDescs;
+	if (Params.TryGet<Data::PDataArray>(ZoneDescs, CStrID("Interactions")))
+	{
+		InteractionZones.reserve(ZoneDescs->GetCount());
+		for (const auto& ZoneParam : *ZoneDescs)
+		{
+			const auto& ZoneDesc = *ZoneParam.GetValue<Data::PParams>();
 
-	return SmartObject;
+			DEM::Game::CInteractionZone Zone;
+			Zone.Radius = ZoneDesc.Get(CStrID("Radius"), 0.f);
+
+			Data::PDataArray VerticesDesc;
+			if (Params.TryGet<Data::PDataArray>(VerticesDesc, CStrID("Vertices")))
+			{
+				Zone.Vertices.SetSize(VerticesDesc->GetCount());
+				size_t i = 0;
+				for (const auto& VertexDesc : *VerticesDesc)
+					Zone.Vertices[i++] = VertexDesc.GetValue<vector3>();
+
+				if (Zone.Vertices.size())
+				{
+					Zone.ClosedPolygon = ZoneDesc.Get(CStrID("ClosedPoly"), false);
+					// TODO: Zone.ConvexPolygon = ZoneDesc.Get(CStrID("ConvexPoly"), false);
+					//???or detect from points?
+				}
+			}
+
+			// Interactions available in this zone
+			Data::PParams ActionsDesc;
+			if (ZoneDesc.TryGet<Data::PParams>(ActionsDesc, CStrID("Actions")))
+			{
+				Zone.Interactions.SetSize(ActionsDesc->GetCount());
+				size_t i = 0;
+				for (const auto& ActionParam : *ActionsDesc)
+				{
+					auto& Interaction = Zone.Interactions[i++];
+					Interaction.ID = ActionParam.GetName();
+
+					const auto& ActionDesc = *ActionParam.GetValue<Data::PParams>();
+					// FacingMode, FacingDir, ActorAnim etc
+				}
+			}
+
+			InteractionZones.push_back(std::move(Zone));
+		}
+	}
+
+
+	return n_new(DEM::Game::CSmartObject(ID, DefaultState, Static, ScriptSource, std::move(States), std::move(InteractionZones)));
 }
 //---------------------------------------------------------------------
 

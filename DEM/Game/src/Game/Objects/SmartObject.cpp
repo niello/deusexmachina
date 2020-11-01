@@ -4,56 +4,31 @@
 namespace DEM::Game
 {
 
-CSmartObject::CSmartObject(CStrID ID, CStrID DefaultState, bool Static, std::string_view ScriptSource)
+CSmartObject::CSmartObject(CStrID ID, CStrID DefaultState, bool Static, std::string_view ScriptSource,
+	std::vector<CSmartObjectStateInfo>&& States, std::vector<CInteractionZone>&& InteractionZones)
 	: _ID(ID)
 	, _DefaultState(DefaultState)
 	, _ScriptSource(ScriptSource)
+	, _States(std::move(States))
+	, _InteractionZones(std::move(InteractionZones))
 	, _Static(Static)
 {
-}
-//---------------------------------------------------------------------
+	n_assert_dbg(_InteractionZones.size() <= MAX_ZONES);
 
-bool CSmartObject::AddState(CStrID ID, CTimelineTask&& TimelineTask/*, state logic object ptr (optional)*/)
-{
-	if (!ID) return false;
+	// Sort states and transitions by ID
+	std::sort(_States.begin(), _States.end(), [](const auto& a, const auto& b) { return a.ID < b.ID; });
+	for (auto& State : _States)
+		std::sort(State.Transitions.begin(), State.Transitions.end(), [](const auto& a, const auto& b) { return a.TargetStateID < b.TargetStateID; });
 
-	// Check if state with the same ID exists
-	auto It = std::lower_bound(_States.begin(), _States.end(), ID, [](const auto& Elm, CStrID Value) { return Elm.ID < Value; });
-	if (It != _States.end() && (*It).ID == ID) return false;
+	// Collect a set of all interactions available for this object
+	std::set<CStrID> Interactions;
+	for (const auto& Zone : _InteractionZones)
+		for (const auto& Interaction : Zone.Interactions)
+			Interactions.insert(Interaction.ID);
 
-	// Insert sorted by ID
-	_States.insert(It, { ID, std::move(TimelineTask) });
-
-	return true;
-}
-//---------------------------------------------------------------------
-
-bool CSmartObject::AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& TimelineTask, ETransitionInterruptionMode InterruptionMode)
-{
-	if (!FromID || !ToID) return false;
-
-	// Find source state, it must exist
-	auto It = std::lower_bound(_States.begin(), _States.end(), FromID, [](const auto& Elm, CStrID Value) { return Elm.ID < Value; });
-	if (It == _States.end() || (*It).ID != FromID) return false;
-
-	// FIXME: for now don't check dest state existence due to loading order in CSmartObjectLoader
-
-	// Check if this transition already exists
-	auto It2 = std::lower_bound(It->Transitions.begin(), It->Transitions.end(), ToID, [](const auto& Elm, CStrID Value) { return Elm.TargetStateID < Value; });
-	if (It2 != It->Transitions.end() && (*It2).TargetStateID == ToID) return false;
-
-	// Insert sorted by ID
-	It->Transitions.insert(It2, { ToID, std::move(TimelineTask), InterruptionMode });
-
-	return true;
-}
-//---------------------------------------------------------------------
-
-bool CSmartObject::AddInteractionZone(CInteractionZone&& Zone)
-{
-	if (_InteractionZones.size() >= MAX_ZONES) return false;
-	_InteractionZones.push_back(std::move(Zone));
-	return true;
+	// Save interaction set into a memory efficient array, already sorted and deduplicated
+	_Interactions.SetSize(Interactions.size());
+	std::copy(Interactions.begin(), Interactions.end(), _Interactions.begin());
 }
 //---------------------------------------------------------------------
 
@@ -83,25 +58,6 @@ bool CSmartObject::HasInteraction(CStrID ID) const
 {
 	auto It = std::lower_bound(_Interactions.begin(), _Interactions.end(), ID, [](const auto& Elm, CStrID Value) { return Elm < Value; });
 	return It != _Interactions.end() && *It == ID;
-}
-//---------------------------------------------------------------------
-
-bool CSmartObject::GetInteractionParams(CStrID ID, float ActorRadius, vector3& ActorPos, std::optional<float>& FaceDir /*actor anim/state*/) const
-{
-	// FIXME: implement data-driven logic!
-	// For door need:
-	// 1. Multiple points
-	// 2. Each point has min & max radius
-	// 3. Sector definition or 'same side' detection to distinguish between 'push' and 'pull' sides (different actor animations)
-	// 4. Face direction: exact, unchanged, cone from-to?
-
-	// Use only max R, navigate directly to the point (or to closest valid point on cached touched polys).
-	// Since polys are cached and a valid one is found, we are guaranteed to have an appropriate point.
-	// Navigation + regular IsInInteractionZone checks will do the work.
-	// Drawback: if too close to the object, will not move apart, minR and additional logic required for this
-
-	FaceDir.reset();
-	return true;
 }
 //---------------------------------------------------------------------
 

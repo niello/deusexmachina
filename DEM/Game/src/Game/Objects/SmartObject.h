@@ -86,28 +86,22 @@ protected:
 	std::string                        _ScriptSource;
 	std::vector<CSmartObjectStateInfo> _States;
 	std::vector<CInteractionZone>      _InteractionZones;
+	CFixedArray<CStrID>                _Interactions;
 	bool                               _Static = false; // true - interaction params never change over time
-
-	//???!!!need?!
-	std::vector<CStrID> _Interactions;
 
 public:
 
-	CSmartObject(CStrID ID, CStrID DefaultState, bool Static, std::string_view ScriptSource);
+	CSmartObject(CStrID ID, CStrID DefaultState, bool Static, std::string_view ScriptSource,
+		std::vector<CSmartObjectStateInfo>&& States, std::vector<CInteractionZone>&& InteractionZones);
 
 	virtual bool IsResourceValid() const override { return !_States.empty(); }
 
-	// TODO: Add* logic to constructor? Or for runtime changes need also Remove*.
-	bool          AddState(CStrID ID, CTimelineTask&& TimelineTask/*, state logic object ptr (optional)*/);
-	bool          AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& TimelineTask, ETransitionInterruptionMode InterruptionMode);
-	bool          AddInteractionZone(CInteractionZone&& Zone);
 	bool          InitScript(sol::state& Lua);
 
 	const CSmartObjectStateInfo*      FindState(CStrID ID) const;
 	const CSmartObjectTransitionInfo* FindTransition(CStrID FromID, CStrID ToID) const;
 
 	bool          HasInteraction(CStrID ID) const;
-	bool          GetInteractionParams(CStrID ID, float ActorRadius, vector3& ActorPos, std::optional<float>& FaceDir /*actor anim/state*/) const;
 	auto          GetInteractionZoneCount() const { return _InteractionZones.size(); }
 	const auto&   GetInteractionZone(U8 ZoneIdx) const { return _InteractionZones[ZoneIdx]; }
 

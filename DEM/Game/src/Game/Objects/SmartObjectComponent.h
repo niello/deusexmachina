@@ -19,6 +19,7 @@ class SwitchSmartObjectState : public Events::CEventNative
 
 public:
 
+	CStrID  _Interaction;
 	CStrID  _State;
 	HEntity _Object;
 	U16     _AllowedZones = 0;    // Cache. Bit flags for up to 16 zones.
@@ -26,7 +27,7 @@ public:
 	bool    _Force = false;       // true - force-set requested state immediately
 	bool    _PathScanned = false; // Cache
 
-	explicit SwitchSmartObjectState(HEntity Object, CStrID State, bool Force) : _Object(Object), _State(State), _Force(Force) {}
+	explicit SwitchSmartObjectState(CStrID Interaction, HEntity Object, CStrID State, bool Force) : _Interaction(Interaction), _Object(Object), _State(State), _Force(Force) {}
 };
 
 struct CSmartObjectComponent

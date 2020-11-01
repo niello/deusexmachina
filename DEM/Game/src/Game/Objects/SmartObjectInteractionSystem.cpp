@@ -21,6 +21,7 @@ static inline float SqDistanceToInteractionZone(const vector3& Pos, const CInter
 		float MinSqDistance = std::numeric_limits<float>().max();
 		if (Zone.ClosedPolygon)
 		{
+			// NB: only convex polys are supported for now!
 			if (dtPointInPolygon(Pos.v, Zone.Vertices[0].v, VertexCount))
 			{
 				OutSegment = VertexCount;
@@ -114,8 +115,14 @@ void InteractWithSmartObjects(CGameWorld& World)
 			for (U8 i = 0; i < ZoneCount; ++i)
 			{
 				const auto& Zone = pSOAsset->GetInteractionZone(i);
-				// if zone supports requested interaction
-				//   set its bit
+				for (const auto& Interaction : Zone.Interactions)
+				{
+					if (Interaction.ID == pAction->_Interaction)
+					{
+						pAction->_AllowedZones |= (1 << i);
+						break;
+					}
+				}
 			}
 
 			if (!pAction->_AllowedZones)
@@ -227,12 +234,12 @@ void InteractWithSmartObjects(CGameWorld& World)
 			// if failed all zones, Queue.SetStatus(Action, EActionStatus::Failed);
 
 			//!!!must not mark region as tried when not Static!
-			std::optional<float> FaceDir;
-			if (!pSOAsset->GetInteractionParams(CStrID("Open"), ActorRadius, ActionPos, FaceDir))
-			{
-				Queue.SetStatus(Action, EActionStatus::Failed);
-				return;
-			}
+			//std::optional<float> FaceDir;
+			//if (!pSOAsset->GetInteractionParams(CStrID("Open"), ActorRadius, ActionPos, FaceDir))
+			//{
+			//	Queue.SetStatus(Action, EActionStatus::Failed);
+			//	return;
+			//}
 
 			// if not already at the dest reach, generate Navigate or Steer (for Static only?) and return
 		}
