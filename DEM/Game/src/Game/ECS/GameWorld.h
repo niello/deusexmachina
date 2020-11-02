@@ -229,7 +229,9 @@ template<class T>
 T* CGameWorld::FindComponent(HEntity EntityID) const
 {
 	if (!EntityID) return nullptr;
-	auto pStorage = FindComponentStorage<T>();
+
+	// NB: explicit storage type is important here because access to the const storage is optimized
+	TComponentStoragePtr<T> pStorage = FindComponentStorage<just_type_t<T>>();
 	return pStorage ? pStorage->Find(EntityID) : nullptr;
 }
 //---------------------------------------------------------------------

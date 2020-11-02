@@ -96,7 +96,7 @@ static void CallTransitionScript(sol::function& Script, HEntity EntityID, CStrID
 //---------------------------------------------------------------------
 
 void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, sol::state& Lua, HEntity EntityID,
-	CSmartObjectComponent& SOComponent, CSmartObject& SOAsset)
+	CSmartObjectComponent& SOComponent, const CSmartObject& SOAsset)
 {
 	// In case game logic callbacks will make another request during the processing of this one
 	const auto RequestedState = SOComponent.RequestedState;
@@ -217,22 +217,21 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, sol::state& Lua, HE
 
 void UpdateSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, float dt)
 {
-	//???only in certain level? or process all loaded object in the world, like now?
 	World.ForEachEntityWith<CSmartObjectComponent>([&World, &Lua, dt](auto EntityID, auto& Entity, CSmartObjectComponent& SOComponent)
 	{
-		CSmartObject* pSmart = SOComponent.Asset->GetObject<CSmartObject>();
-		if (!pSmart) return;
+		const CSmartObject* pSOAsset = SOComponent.Asset->GetObject<CSmartObject>();
+		if (!pSOAsset) return;
 
 		// No need to make transition A->A (should not happen)
 		n_assert_dbg(!SOComponent.NextState || SOComponent.CurrState != SOComponent.NextState);
 		if (SOComponent.NextState && SOComponent.CurrState == SOComponent.NextState)
 			SOComponent.NextState = CStrID::Empty;
 
-		if (SOComponent.RequestedState) ProcessStateChangeRequest(World, Lua, EntityID, SOComponent, *pSmart);
+		if (SOComponent.RequestedState) ProcessStateChangeRequest(World, Lua, EntityID, SOComponent, *pSOAsset);
 
 		// Advance player time even if no timeline is associated with the state.
 		// This time may be used in game logic and means how long we are in this state.
-		// FIXME: prev VS curr time as the time since entering into the state!
+		// FIXME: prev VS curr time as the "time since entering into the state"?
 		SOComponent.Player.Update(dt);
 
 		if (SOComponent.NextState)
@@ -240,11 +239,11 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, float dt)
 			// Infinite transitions are not allowed, so zero loops always mean transition end
 			if (!SOComponent.Player.GetRemainingLoopCount())
 			{
-				if (auto pState = pSmart->FindState(SOComponent.NextState))
+				if (auto pState = pSOAsset->FindState(SOComponent.NextState))
 				{
 					const CTimelineTask* pPrevTask = nullptr;
 					Anim::PTimelineTrack CurrTrack;
-					if (auto pTransitionCN = pSmart->FindTransition(SOComponent.CurrState, SOComponent.NextState))
+					if (auto pTransitionCN = pSOAsset->FindTransition(SOComponent.CurrState, SOComponent.NextState))
 					{
 						// Current TL track instance is reusable only if its prototype is known
 						pPrevTask = &pTransitionCN->TimelineTask;
@@ -252,15 +251,15 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, float dt)
 					}
 
 					// End transition, enter the destination state
-					CallTransitionScript(pSmart->GetScriptFunction(Lua, "OnTransitionEnd"), EntityID, SOComponent.CurrState, SOComponent.NextState);
+					CallTransitionScript(pSOAsset->GetScriptFunction(Lua, "OnTransitionEnd"), EntityID, SOComponent.CurrState, SOComponent.NextState);
 					RunTimelineTask(World, EntityID, SOComponent, pState->TimelineTask, 0.f, CurrTrack, pPrevTask);
 					SOComponent.CurrState = SOComponent.NextState;
-					SOComponent.UpdateScript = pSmart->GetScriptFunction(Lua, "OnStateUpdate");
+					SOComponent.UpdateScript = pSOAsset->GetScriptFunction(Lua, "OnStateUpdate");
 				}
 				else
 				{
 					// State was deleted from asset in runtime, cancel to source state
-					CallTransitionScript(pSmart->GetScriptFunction(Lua, "OnTransitionCancel"), EntityID, SOComponent.CurrState, SOComponent.NextState);
+					CallTransitionScript(pSOAsset->GetScriptFunction(Lua, "OnTransitionCancel"), EntityID, SOComponent.CurrState, SOComponent.NextState);
 					SOComponent.Player.SetTrack(nullptr);
 				}
 
@@ -269,12 +268,7 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, float dt)
 		}
 		else
 		{
-			// Update in the current state logic
-
-			//???pSmart->OnStateUpdate(World, EntityID, SOComponent.CurrState)?
-
-			//!!!TODO: call custom logic, if exists!
-
+			// Update the current state logic
 			if (SOComponent.UpdateScript.valid())
 			{
 				auto Result = SOComponent.UpdateScript(EntityID, SOComponent.CurrState);
@@ -304,8 +298,6 @@ void InitSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, Resources::
 
 			//!!!???FIXME: how to set state if CurrState is valid?! Need to initialize pose etc!
 			if (!Component.CurrState) Component.RequestedState = pSmart->GetDefaultState();
-
-			//???need poly cache or can calculate intersection of poly and region on the fly?
 		}
 	});
 }

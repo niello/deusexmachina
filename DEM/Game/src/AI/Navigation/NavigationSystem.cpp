@@ -320,8 +320,7 @@ static bool GenerateTraversalAction(Game::CGameWorld& World, CNavAgentComponent&
 			const float OffmeshRadius = Agent.NavMap->GetDetourNavMesh()->getOffMeshConnectionByRef(PolyRef)->rad;
 
 			// Check if we are in a trigger range
-			if (std::abs(ExactPos.y - OutNextTurn.y) < Agent.Height &&
-				vector3::SqDistance2D(ExactPos, OutNextTurn) < pAction->GetSqTriggerRadius(Agent.Radius, OffmeshRadius))
+			if (InRange(ExactPos.v, OutNextTurn.v, Agent.Height, pAction->GetSqTriggerRadius(Agent.Radius, OffmeshRadius)))
 			{
 				dtPolyRef OffmeshRefs[2];
 				vector3 Start, End;
