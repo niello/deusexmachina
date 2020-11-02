@@ -217,7 +217,7 @@ static void RequestPath(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& Path
 
 	// Quick synchronous search towards the goal, limited iteration count
 	Agent.pNavQuery->initSlicedFindPath(Agent.Corridor.getFirstPoly(), Agent.TargetRef, Agent.Corridor.getPos(), Agent.TargetPos.v, pNavFilter);
-	Agent.pNavQuery->updateSlicedFindPath(20, 0);
+	Agent.pNavQuery->updateSlicedFindPath(20, nullptr);
 
 	// Try to reuse existing steady path if possible and worthwile
 	std::array<dtPolyRef, 32> Path;
