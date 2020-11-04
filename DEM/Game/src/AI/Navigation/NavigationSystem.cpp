@@ -349,16 +349,16 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 		if (!SceneComponent.RootNode || !Agent.pNavQuery || !Agent.Settings) return;
 
 		const auto PrevMode = Agent.Mode;
+		auto NavigateAction = Queue.FindCurrent<Navigate>();
 
-		// Update navigation status from the curent agent position
+		// Update navigation status from the current agent position
 		const auto& Pos = SceneComponent.RootNode->GetWorldPosition();
 		if (!UpdatePosition(Pos, Agent))
 		{
-			ResetNavigation(Agent, PathQueue, Queue, Queue.FindCurrent<Navigate>(), Game::EActionStatus::Failed);
+			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Failed);
 			return;
 		}
 
-		auto NavigateAction = Queue.FindCurrent<Navigate>();
 		if (!NavigateAction)
 		{
 			if (Agent.State != ENavigationState::Idle)
@@ -392,9 +392,6 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 		// during the logic frame but might be reached by physics in the middle of it. So if there
 		// is an active sub-action, let's just continue executing it, without unnecessary update.
 		if (!NewFrame && PrevMode == Agent.Mode && HasActiveSubAction) return;
-
-		// NB: in Detour replan time increases only when on navmesh (not offmesh, not invalid)
-		Agent.ReplanTime += dt;
 
 		// Process target location changes and validity
 		if (!UpdateDestination(NavigateAction.As<Navigate>()->_Destination, Agent, PathQueue))
@@ -432,6 +429,7 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 		else if (Agent.Mode == ENavigationMode::Surface)
 		{
 			Agent.PathOptimizationTime += dt;
+			Agent.ReplanTime += dt;
 
 			// FIXME: only if necessary events happened? like offsetting from expected position.
 			// The more inaccurate the agent movement, the more beneficial this function becomes. (c) Docs
@@ -444,7 +442,6 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 				Agent.PathOptimizationTime = 0.f;
 			}
 
-			// Check if we are able to trigger an offmesh connection at the next corner
 			dtStraightPathContext Ctx;
 			if (dtStatusFailed(Agent.pNavQuery->initStraightPathSearch(
 				Agent.Corridor.getPos(), Agent.Corridor.getTarget(), Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Ctx)))
@@ -453,18 +450,19 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 				return;
 			}
 
-			// Offmesh start is always a corner, so ignore area and poly changes on the way
-			vector3 NextTurn;
+			// Check if we are able to trigger an offmesh connection at the next corner.
+			// Offmesh start is always a corner, so ignore area and poly changes on the way.
+			vector3 NextCorner;
 			unsigned char Flags;
 			unsigned char AreaType;
 			dtPolyRef PolyRef;
-			if (dtStatusFailed(Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextTurn.v, &Flags, &AreaType, &PolyRef, 0)))
+			if (dtStatusFailed(Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextCorner.v, &Flags, &AreaType, &PolyRef, 0)))
 			{
 				ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Failed);
 				return;
 			}
 
-			// If it is an offmesh connection, we may start its traversal
+			// If the next corner is a start of an offmesh connection, we may try to traverse it
 			if (Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
 			{
 				// Check if an agent can traverse this connection
@@ -479,7 +477,7 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 					}
 
 					// Check if we are in a trigger range
-					if (InRange(Pos.v, NextTurn.v, Agent.Height, pAction->GetSqTriggerRadius(Agent.Radius, pOffmesh->rad)))
+					if (InRange(Pos.v, NextCorner.v, Agent.Height, pAction->GetSqTriggerRadius(Agent.Radius, pOffmesh->rad)))
 					{
 						// Must finish path planning before triggering an ofmesh connection. Stand waiting.
 						if (Agent.State != ENavigationState::Following) return;
@@ -492,6 +490,14 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 						}
 
 						// Offmesh connection traversal begins
+						dtPolyRef OffmeshRefs[2];
+						vector3 Start, End;
+						if (!Agent.Corridor.moveOverOffmeshConnection(PolyRef, OffmeshRefs, Start.v, End.v, Agent.pNavQuery))
+						{
+							ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Failed);
+							return;
+						}
+
 						Agent.Mode = ENavigationMode::Offmesh;
 						Agent.OffmeshRef = PolyRef;
 						Agent.CurrAreaType = AreaType;
@@ -500,11 +506,11 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 				}
 			}
 
-			// Optimize path visibility along the [corridor pos -> NextTurn] straight line
+			// Optimize path visibility along the [corridor pos -> NextCorner] straight line
 			if (OptimizePath)
-				Agent.Corridor.optimizePathVisibility(NextTurn.v, 30.f * Agent.Radius, Agent.pNavQuery, Agent.Settings->GetQueryFilter());
+				Agent.Corridor.optimizePathVisibility(NextCorner.v, 30.f * Agent.Radius, Agent.pNavQuery, Agent.Settings->GetQueryFilter());
 
-			// We triggered no offmesh connection and have no precalculated path edge, let's traverse navmesh surface
+			// We triggered no offmesh connection, let's traverse navmesh surface
 			Game::HEntity Controller;
 			auto pAction = Agent.Settings->FindAction(World, Agent, Agent.CurrAreaType, Agent.Corridor.getFirstPoly(), &Controller);
 			if (!pAction || !pAction->GenerateAction(World, Agent, Controller, Queue, NavigateAction, Pos))
@@ -517,19 +523,11 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 
 			//!!!if Ctx is inited here, and not in traversal action, can init it with Pos here, instead of corridor pos!
 
-			//!!!check if offmesh is traversed! GenerateAction might return Active/Failed/Succeeded!
-			//dtPolyRef OffmeshRefs[2];
-			//vector3 Start, End;
-			//if (Agent.Corridor.moveOverOffmeshConnection(PolyRef, OffmeshRefs, Start.v, End.v, Agent.pNavQuery))
-			//{
-			//}
-
 			// Finish traversing an offmesh connection
 			//	Agent.Mode = ENavigationMode::Surface;
 			//	Agent.OffmeshRef = 0;
 			//	Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(Agent.Corridor.getFirstPoly(), &Agent.CurrAreaType);
 
-			// Update traversal action after no-op during an offmesh traversal, e.g. waiting for animation end
 			Game::HEntity Controller;
 			auto pAction = Agent.Settings->FindAction(World, Agent, Agent.CurrAreaType, Agent.OffmeshRef, &Controller);
 			if (!pAction || !pAction->GenerateAction(World, Agent, Controller, Queue, NavigateAction, Pos))

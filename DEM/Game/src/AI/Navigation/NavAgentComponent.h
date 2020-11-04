@@ -19,13 +19,12 @@ class Navigate: public Events::CEventNative
 
 public:
 
-	//!!!_Destination can instead be universal ITarget, with impls like "point", "entity", "nearest ally" etc!
-	//???or navigation is always to point, and point is updated from target externally? strange.
 	vector3 _Destination;
+	vector3 _FinalFacing;
 	float   _Speed = 0.f;
-	// MinDistance, MaxDistance, MaxTargetOffset
 
 	explicit Navigate(const vector3& Destination, float Speed) : _Destination(Destination), _Speed(Speed) {}
+	explicit Navigate(const vector3& Destination, const vector3& FinalFacing, float Speed) : _Destination(Destination), _FinalFacing(FinalFacing), _Speed(Speed) {}
 };
 
 enum class ENavigationState : U8

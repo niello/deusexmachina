@@ -119,6 +119,9 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 		}
 	}
 
+	// At the last path edge consider desired final facing
+	if (Agent.IsTraversingLastEdge) NextDest = Dest + NavAction.As<Navigate>()->_FinalFacing;
+
 	// Update existing action or push the new one
 	return !!Queue.PushOrUpdateChild<Steer>(NavAction, Dest, NextDest, AdditionalDistance);
 }

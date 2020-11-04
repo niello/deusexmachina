@@ -145,6 +145,38 @@ static void OptimizeStaticPath(SwitchSmartObjectState& Action, AI::Navigate& Nav
 }
 //---------------------------------------------------------------------
 
+static bool GetFacingDirection(const CInteractionZone& Zone, CStrID InteractionID, const matrix44& ObjectWorldTfm,
+	const vector3& ActorPos, vector3& OutFacingDir)
+{
+	auto It = std::find_if(Zone.Interactions.cbegin(), Zone.Interactions.cend(), [InteractionID](const auto& Elm)
+	{
+		return Elm.ID == InteractionID;
+	});
+
+	if (It != Zone.Interactions.cend()) // Should always be true
+	{
+		switch (It->FacingMode)
+		{
+			case EFacingMode::Direction:
+			{
+				OutFacingDir = It->FacingDir;
+				return true;
+			}
+			case EFacingMode::Point:
+			{
+				OutFacingDir = ObjectWorldTfm.transform_coord(It->FacingDir) - ActorPos;
+				OutFacingDir.y = 0.f;
+				OutFacingDir.norm();
+				return true;
+			}
+		}
+	}
+
+	OutFacingDir = vector3::Zero;
+	return false;
+}
+//---------------------------------------------------------------------
+
 static bool UpdateMovementSubAction(CActionQueueComponent& Queue, HAction Action, const CSmartObject& SO,
 	const AI::CNavAgentComponent* pNavAgent, const matrix44& ObjectWorldTfm, const vector3& ActorPos, bool OnlyCurrZone)
 {
@@ -203,6 +235,10 @@ static bool UpdateMovementSubAction(CActionQueueComponent& Queue, HAction Action
 
 		ActionPos = vector3::lerp(ActionPos, ActorPos, Radius / n_sqrt(WorldSqDistance));
 
+		vector3 FacingDir;
+		GetFacingDirection(Zone, pAction->_Interaction, ObjectWorldTfm, ActionPos, FacingDir);
+
+		// If character respects a navmesh and target is not in the same poly, must navigate to it
 		if (pNavAgent)
 		{
 			float NearestPos[3];
@@ -221,22 +257,25 @@ static bool UpdateMovementSubAction(CActionQueueComponent& Queue, HAction Action
 			}
 			else if (SqDiff > 0.f) ActionPos = NearestPos;
 
-			// FIXME: use pNavAgent->Corridor.getFirstPoly() instead! Offmesh can break this now!
-			const float AgentExtents[3] = { pNavAgent->Radius, pNavAgent->Height, pNavAgent->Radius };
-			dtPolyRef AgentPolyRef = 0;
-			pNavAgent->pNavQuery->findNearestPoly(ActorPos.v, AgentExtents, pNavAgent->Settings->GetQueryFilter(), &AgentPolyRef, NearestPos);
-			//n_assert_dbg(pNavAgent->Corridor.getFirstPoly() == AgentPolyRef);
+			dtPolyRef AgentPolyRef = pNavAgent->Corridor.getFirstPoly();
+			if (pNavAgent->Mode == AI::ENavigationMode::Offmesh)
+			{
+				const float AgentExtents[3] = { pNavAgent->Radius, pNavAgent->Height, pNavAgent->Radius };
+				pNavAgent->pNavQuery->findNearestPoly(ActorPos.v, AgentExtents, pNavAgent->Settings->GetQueryFilter(), &AgentPolyRef, NearestPos);
+			}
 
 			if (ObjPolyRef != AgentPolyRef)
 			{
 				// To avoid possible parent path invalidation, could try to optimize with findLocalNeighbourhood,
 				// moveAlongSurface or raycast, but it would require additional logic and complicate navigation.
-				Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, 0.f);
+				Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, FacingDir, 0.f);
 				return true;
 			}
 		}
 
-		Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ObjectWorldTfm.Translation(), 0.f);
+		// For characters without navigation or in the same poly with target, no navigation required
+		// TODO: if pNavAgent, get action from poly instead of hardcoded steering?
+		Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ActionPos + FacingDir, 0.f);
 		return true;
 	}
 
@@ -256,34 +295,8 @@ static bool UpdateFacingSubAction(CActionQueueComponent& Queue, HAction Action, 
 	auto pAction = Action.As<SwitchSmartObjectState>();
 	const auto& Zone = SO.GetInteractionZone(pAction->_ZoneIndex);
 
-	auto It = std::find_if(Zone.Interactions.cbegin(), Zone.Interactions.cend(), [ID = pAction->_Interaction](const auto& Elm)
-	{
-		return Elm.ID == ID;
-	});
-	if (It == Zone.Interactions.cend())
-	{
-		// Should never happen
-		Queue.SetStatus(Action, EActionStatus::Failed);
-		return false;
-	}
-
 	vector3 TargetDir;
-	switch (It->FacingMode)
-	{
-		case EFacingMode::Direction:
-		{
-			TargetDir = It->FacingDir;
-			break;
-		}
-		case EFacingMode::Point:
-		{
-			TargetDir = ObjectWorldTfm.transform_coord(It->FacingDir) - ActorWorldTfm.Translation();
-			TargetDir.y = 0.f;
-			TargetDir.norm();
-			break;
-		}
-		default: return false;
-	}
+	GetFacingDirection(Zone, pAction->_Interaction, ObjectWorldTfm, ActorWorldTfm.Translation(), TargetDir);
 
 	vector3 LookatDir = -ActorWorldTfm.AxisZ();
 	LookatDir.norm();
