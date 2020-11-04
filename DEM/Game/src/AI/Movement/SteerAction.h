@@ -16,7 +16,8 @@ public:
 
 	// Squared range (in meters) in which agent is considered being at the destination
 	// NB: too low tolerance may lead to float precision errors
-	static inline constexpr float SqLinearTolerance = 0.0004f * 0.0004f;
+	static inline constexpr float LinearTolerance = 0.0004f;
+	static inline constexpr float SqLinearTolerance = LinearTolerance * LinearTolerance;
 
 	// TODO: check this old info, may be still actual, then must adjust current tolerances
 	//// At very small speeds and physics step sizes body position stops updating because of limited

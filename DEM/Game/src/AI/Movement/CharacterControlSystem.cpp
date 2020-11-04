@@ -105,9 +105,9 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 	// Move only when explicitly requested
 	auto SteerAction = Queue.FindCurrent<AI::Steer>();
 	auto pSteerAction = SteerAction.As<AI::Steer>();
-	if (!pSteerAction)
+	if (!pSteerAction || Queue.GetStatus(SteerAction) != EActionStatus::Active)
 	{
-		if (Character.State == ECharacterState::Walk)
+		if (Character.State == ECharacterState::Walk || Character.State == ECharacterState::ShortStep)
 			Character.State = ECharacterState::Stand;
 		return vector3::Zero;
 	}
@@ -193,9 +193,15 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 
 	float DesiredRotation = 0.f;
 	if (Character.State == ECharacterState::Walk)
+	{
 		DesiredRotation = vector3::Angle2DNorm(LookatDir, DesiredLinearVelocity);
-	else if (auto pTurnAction = Queue.FindCurrent<AI::Turn>().As<AI::Turn>())
-		DesiredRotation = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
+	}
+	else if (auto TurnAction = Queue.FindCurrent<AI::Turn>())
+	{
+		auto pTurnAction = TurnAction.As<AI::Turn>();
+		if (pTurnAction && Queue.GetStatus(TurnAction) == EActionStatus::Active)
+			DesiredRotation = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
+	}
 
 	const bool IsNegative = (DesiredRotation < 0.f);
 	const float AngleAbs = IsNegative ? -DesiredRotation : DesiredRotation;

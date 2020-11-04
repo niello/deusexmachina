@@ -531,6 +531,8 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 				}
 
 				Agent.CurrAreaType = AreaType;
+
+				//???immediately generate Offmesh action?
 			}
 		}
 		else // ENavigationMode::Offmesh
