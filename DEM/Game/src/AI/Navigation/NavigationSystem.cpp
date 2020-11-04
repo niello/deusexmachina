@@ -15,13 +15,7 @@
 
 namespace DEM::AI
 {
-
 constexpr float EQUALITY_THRESHOLD_SQ = 1.0f / (16384.0f * 16384.0f);
-static inline bool InRange(const float* p0, const float* p1, float AgentHeight, float SqRange)
-{
-	return dtVdist2DSqr(p0, p1) <= SqRange && std::abs(p0[1] - p1[1]) < AgentHeight;
-}
-//---------------------------------------------------------------------
 
 //!!!TODO: review offmesh logic!
 // Returns whether an agent can continue to perform the current navigation task
@@ -564,6 +558,8 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 			{
 				Agent.OffmeshRef = 0;
 				Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(Agent.Corridor.getFirstPoly(), &Agent.CurrAreaType);
+
+				//???immediately generate Surface action?
 			}
 		}
 	});

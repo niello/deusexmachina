@@ -64,6 +64,14 @@ struct CNavAgentComponent
 	bool                 IsTraversingLastEdge = false; // FIXME: can rewrite better?
 };
 
+inline bool InRange(const float* v0, const float* v1, float AgentHeight, float SqRange)
+{
+	const float dx = v1[0] - v0[0];
+	const float dz = v1[2] - v0[2];
+	return (dx * dx + dz * dz) <= SqRange && std::abs(v0[1] - v1[1]) < AgentHeight;
+}
+//---------------------------------------------------------------------
+
 }
 
 namespace DEM::Game

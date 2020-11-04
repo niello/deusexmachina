@@ -1,5 +1,6 @@
 #pragma once
 #include <Scene/SceneNode.h>
+#include <Data/String.h>
 #include <Data/Metadata.h>
 
 // Scene component contains a part of scene hierarchy, including a root node
