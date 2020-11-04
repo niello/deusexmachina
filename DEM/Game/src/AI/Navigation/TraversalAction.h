@@ -27,7 +27,6 @@ public:
 
 	virtual float GetSqTriggerRadius(float AgentRadius, float OffmeshTriggerRadius) const = 0;
 	virtual bool  GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue, Game::HAction NavAction, const vector3& Pos) = 0;
-	virtual bool  GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue, Game::HAction NavAction, const vector3& Pos, const vector3& Dest, const vector3& NextDest) = 0;
 	virtual bool  GenerateRecoveryAction(Game::CActionQueueComponent& Queue, Game::HAction NavAction, const vector3& ValidPos) = 0;
 };
 

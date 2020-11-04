@@ -8,9 +8,26 @@ namespace DEM::AI
 {
 FACTORY_CLASS_IMPL(DEM::AI::CSteerAction, 'STRA', CTraversalAction);
 
-static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue, Game::HAction NavAction,
-	dtStraightPathContext& Ctx, dtStatus Status, U8 Flags, U8 AreaType, dtPolyRef PolyRef, const vector3& Pos, vector3 Dest)
+bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, Game::CActionQueueComponent& Queue,
+	Game::HAction NavAction, const vector3& Pos)
 {
+	const float* pPos = (Agent.Mode == ENavigationMode::Offmesh) ? Pos.v : Agent.Corridor.getPos();
+
+	//???add shortcut method to corridor? Agent.Corridor.initStraightPathSearch(Agent.pNavQuery, Ctx);
+	dtStraightPathContext Ctx;
+	if (dtStatusFailed(Agent.pNavQuery->initStraightPathSearch(
+		pPos, Agent.Corridor.getTarget(), Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Ctx)))
+		return false;
+
+	const int Options = Agent.Settings->IsAreaControllable(Agent.CurrAreaType) ? DT_STRAIGHTPATH_ALL_CROSSINGS : DT_STRAIGHTPATH_AREA_CROSSINGS;
+
+	vector3 Dest;
+	unsigned char Flags;
+	unsigned char AreaType;
+	dtPolyRef PolyRef;
+	dtStatus Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Dest.v, &Flags, &AreaType, &PolyRef, Options);
+	if (dtStatusFailed(Status)) return false;
+
 	Agent.IsTraversingLastEdge = dtStatusSucceed(Status);
 
 	vector3 NextDest = Dest;
@@ -104,49 +121,6 @@ static bool DoGenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent,
 
 	// Update existing action or push the new one
 	return !!Queue.PushOrUpdateChild<Steer>(NavAction, Dest, NextDest, AdditionalDistance);
-}
-//---------------------------------------------------------------------
-
-bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, Game::CActionQueueComponent& Queue,
-	Game::HAction NavAction, const vector3& Pos)
-{
-	//???add shortcut method to corridor? Agent.Corridor.initStraightPathSearch(Agent.pNavQuery, Ctx);
-	dtStraightPathContext Ctx;
-	if (dtStatusFailed(Agent.pNavQuery->initStraightPathSearch(
-		Agent.Corridor.getPos(), Agent.Corridor.getTarget(), Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Ctx)))
-		return false;
-
-	const int Options = Agent.Settings->IsAreaControllable(Agent.CurrAreaType) ? DT_STRAIGHTPATH_ALL_CROSSINGS : DT_STRAIGHTPATH_AREA_CROSSINGS;
-
-	vector3 Dest;
-	unsigned char Flags;
-	unsigned char AreaType;
-	dtPolyRef PolyRef;
-	dtStatus Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Dest.v, &Flags, &AreaType, &PolyRef, Options);
-	if (dtStatusFailed(Status)) return false;
-
-	return DoGenerateAction(World, Agent, Queue, NavAction, Ctx, Status, Flags, AreaType, PolyRef, Pos, Dest);
-}
-//---------------------------------------------------------------------
-
-//???need both GenerateAction variants really? can unify? pointers for Dest & NextDest?
-bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, Game::CActionQueueComponent& Queue,
-	Game::HAction NavAction, const vector3& Pos, const vector3& Dest, const vector3& NextDest)
-{
-	// When steering comes from an offmesh connection, we know that an offmesh start is already reached,
-	// and we must steer to the offmesh end. So we can assume that Pos == Dest, and NextDest is our target.
-	// Note that offmesh connection is already skipped in the corridor.
-
-	//???add shortcut method to corridor? Agent.Corridor.initStraightPathSearch(Agent.pNavQuery, Ctx);
-	dtStraightPathContext Ctx;
-	if (dtStatusFailed(Agent.pNavQuery->initStraightPathSearch(
-		Agent.Corridor.getPos(), Agent.Corridor.getTarget(), Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Ctx)))
-		return false;
-
-	// FIXME: ensure that Agent.CurrAreaType is always actual here!
-
-	return DoGenerateAction(World, Agent, Queue, NavAction, Ctx,
-		DT_IN_PROGRESS, 0, Agent.CurrAreaType, Agent.Corridor.getFirstPoly(), Pos, NextDest);
 }
 //---------------------------------------------------------------------
 
