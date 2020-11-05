@@ -11,6 +11,10 @@ FACTORY_CLASS_IMPL(DEM::AI::CSteerAction, 'STRA', CTraversalAction);
 bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, Game::CActionQueueComponent& Queue,
 	Game::HAction NavAction, const vector3& Pos)
 {
+	// If not on navmesh, recover to the nearest valid position
+	if (Agent.Mode == ENavigationMode::Recovery)
+		return !!Queue.PushOrUpdateChild<Steer>(NavAction, Agent.Corridor.getPos(), Agent.Corridor.getPos(), -0.f);
+
 	const float* pPos = (Agent.Mode == ENavigationMode::Offmesh) ? Pos.v : Agent.Corridor.getPos();
 
 	//???add shortcut method to corridor? Agent.Corridor.initStraightPathSearch(Agent.pNavQuery, Ctx);
@@ -124,13 +128,6 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 
 	// Update existing action or push the new one
 	return !!Queue.PushOrUpdateChild<Steer>(NavAction, Dest, NextDest, AdditionalDistance);
-}
-//---------------------------------------------------------------------
-
-bool CSteerAction::GenerateRecoveryAction(Game::CActionQueueComponent& Queue,
-	Game::HAction NavAction, const vector3& ValidPos)
-{
-	return !!Queue.PushOrUpdateChild<Steer>(NavAction, ValidPos, ValidPos, -0.f);
 }
 //---------------------------------------------------------------------
 

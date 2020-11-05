@@ -26,8 +26,10 @@ class CTraversalAction : public ::Core::CObject
 public:
 
 	virtual float GetSqTriggerRadius(float AgentRadius, float OffmeshTriggerRadius) const = 0;
-	virtual bool  GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue, Game::HAction NavAction, const vector3& Pos) = 0;
-	virtual bool  GenerateRecoveryAction(Game::CActionQueueComponent& Queue, Game::HAction NavAction, const vector3& ValidPos) = 0;
+	virtual bool  CanStartTraversingOffmesh(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, const vector3& Pos) const { return true; }
+	virtual bool  CanEndTraversingOffmesh(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, const vector3& Pos) const { return true; }
+	virtual bool  NeedSlowdownBeforeStart(CNavAgentComponent& Agent) const { return true; }
+	virtual bool  GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, Game::CActionQueueComponent& Queue, Game::HAction NavAction, const vector3& Pos) = 0;
 };
 
 }
