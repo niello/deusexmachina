@@ -36,6 +36,7 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 
 	vector3 NextDest = Dest;
 	bool ActionChanged = false;
+	bool NeedSlowdown = true;
 	while (!Agent.IsTraversingLastEdge)
 	{
 		// Check if Dest is close enough to be considered reached
@@ -55,6 +56,8 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 			if (pNextAction && DestReached && !(Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION))
 				return pNextAction->GenerateAction(World, Agent, Controller, Queue, NavAction, Pos);
 
+			// Some actions require no arrival slowdown when approaching action change point
+			NeedSlowdown = !pNextAction || pNextAction->NeedSlowdownBeforeStart(Agent);
 			break;
 		}
 
@@ -82,7 +85,7 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 	}
 
 	// Calculate distance from Dest to next action change point. Used for arrival slowdown.
-	float AdditionalDistance = 0.f;
+	float AdditionalDistance = NeedSlowdown ? 0.f : -0.f;
 
 	// No need to calculate if action changed at Dest
 	if (!ActionChanged && !Agent.IsTraversingLastEdge)
