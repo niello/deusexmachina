@@ -31,7 +31,7 @@ enum class ENavigationState : U8
 {
 	Idle = 0,  // No navigation is happening currently
 	Requested, // Destination requested, but no path is planned
-	Planning,  // Quick path built if possible, full path planning is in progress
+	Planning,  // Quick path is built if it was possible, full path planning is in progress
 	Following  // Full path is planned
 };
 
@@ -61,7 +61,7 @@ struct CNavAgentComponent
 	ENavigationState     State = ENavigationState::Idle;
 	ENavigationMode      Mode = ENavigationMode::Surface; //!!!if will store offmesh ref not in corridor, bool Valid will be enough instead!
 	U8                   CurrAreaType = 0;
-	bool                 IsTraversingLastEdge = false; // FIXME: can rewrite better?
+	bool                 IsTraversingLastEdge = false; // FIXME: can rewrite better? sub-action success and radius and raycast?
 };
 
 inline bool InRange(const float* v0, const float* v1, float AgentHeight, float SqRange)

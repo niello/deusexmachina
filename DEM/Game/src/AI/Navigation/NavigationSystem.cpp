@@ -120,7 +120,7 @@ static bool UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 //---------------------------------------------------------------------
 
 // Returns whether an agent can continue to perform the current navigation task
-static bool UpdateDestination(const vector3& Dest, CNavAgentComponent& Agent, ::AI::CPathRequestQueue& PathQueue)
+static bool UpdateDestination(const vector3& Dest, CNavAgentComponent& Agent, ::AI::CPathRequestQueue& PathQueue, bool& OutDestChanged)
 {
 	//!!!FIXME: setting, per Navigate action or per entity!
 	constexpr float MaxTargetOffset = 0.5f;
@@ -130,7 +130,8 @@ static bool UpdateDestination(const vector3& Dest, CNavAgentComponent& Agent, ::
 
 	if (Agent.State != ENavigationState::Idle)
 	{
-		if (InRange(Agent.TargetPos.v, Dest.v, Agent.Height, EQUALITY_THRESHOLD_SQ))
+		OutDestChanged = !InRange(Agent.TargetPos.v, Dest.v, Agent.Height, EQUALITY_THRESHOLD_SQ);
+		if (!OutDestChanged)
 		{
 			// Target remains static but we must check its poly validity anyway
 			if (Agent.pNavQuery->isValidPolyRef(Agent.TargetRef, pNavFilter)) return true;
@@ -153,6 +154,7 @@ static bool UpdateDestination(const vector3& Dest, CNavAgentComponent& Agent, ::
 			}
 		}
 	}
+	else OutDestChanged = true;
 
 	// Target poly is unknown or invalid, find the nearest valid one
 	const float TargetExtents[3] = { MaxTargetOffset, Agent.Height, MaxTargetOffset };
@@ -230,6 +232,7 @@ static void RequestPath(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& Path
 		Agent.Corridor.setCorridor(Agent.TargetPos.v, Path.data(), PathSize);
 		Agent.State = ENavigationState::Following;
 		Agent.ReplanTime = 0.f;
+		Agent.PathOptimizationTime = 0.f;
 	}
 	else
 	{
@@ -285,6 +288,7 @@ static bool CheckAsyncPathResult(CNavAgentComponent& Agent, ::AI::CPathRequestQu
 
 	Agent.State = ENavigationState::Following;
 	Agent.ReplanTime = 0.f;
+	Agent.PathOptimizationTime = 0.f;
 	return true;
 }
 //---------------------------------------------------------------------
@@ -313,8 +317,8 @@ static void ResetNavigation(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& 
 }
 //---------------------------------------------------------------------
 
-static CTraversalAction* FindTraversalAction(Game::CGameWorld& World, CNavAgentComponent& Agent,
-	Game::CActionQueueComponent& Queue, Game::HAction NavAction, const vector3& Pos, Game::HEntity& OutController)
+static CTraversalAction* FindTraversalAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue,
+	Game::HAction NavAction, const vector3& Pos, bool OptimizePath, Game::HEntity& OutController)
 {
 	if (Agent.Mode == ENavigationMode::Recovery)
 		return Agent.Settings->FindAction(World, Agent, 0, 0, nullptr);
@@ -325,8 +329,9 @@ static CTraversalAction* FindTraversalAction(Game::CGameWorld& World, CNavAgentC
 	{
 		unsigned char AreaType;
 
-		if (Agent.OffmeshRef) //???FIXME: where to clear? probably remains filled when must not be, and breaks logic!
+		if (Agent.OffmeshRef)
 		{
+			//???FIXME: where to clear OffmeshRef? probably remains filled when must not be, and breaks logic!
 			//!!!must never assert! If path is failed or replanned, OffmeshRef must be cleared!
 			n_assert(Agent.State == ENavigationState::Following);
 
@@ -336,18 +341,11 @@ static CTraversalAction* FindTraversalAction(Game::CGameWorld& World, CNavAgentC
 		}
 		else if (Agent.State == ENavigationState::Following)
 		{
-			// Must finish path planning before triggering an offmesh connection. Stand waiting until the path is planned.
-
 			// FIXME: only if necessary events happened? like offsetting from expected position.
 			// The more inaccurate the agent movement, the more beneficial this function becomes. (c) Docs
 			// The same for optimizePathVisibility (used below).
-			constexpr float OPT_TIME_THR_SEC = 2.5f;
-			const bool OptimizePath = (Agent.PathOptimizationTime >= OPT_TIME_THR_SEC);
 			if (OptimizePath)
-			{
 				Agent.Corridor.optimizePathTopology(Agent.pNavQuery, Agent.Settings->GetQueryFilter());
-				Agent.PathOptimizationTime = 0.f;
-			}
 
 			// Prepare straight path context for the next corner search
 			dtStraightPathContext Ctx;
@@ -357,14 +355,14 @@ static CTraversalAction* FindTraversalAction(Game::CGameWorld& World, CNavAgentC
 				return nullptr;
 			}
 
-			// Check if we are able to trigger an offmesh connection at the next corner.
-			// Offmesh start is always a corner, so ignore area and poly changes on the way.
+			// Find the next corner or offmesh start, ignore area and poly changes
 			vector3 NextCorner;
 			unsigned char Flags;
 			dtPolyRef PolyRef;
 			if (dtStatusFailed(Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextCorner.v, &Flags, &AreaType, &PolyRef, 0)))
 				return nullptr;
 
+			// The next corner is an offmesh connection, try to trigger it
 			if (Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
 			{
 				// Check if an agent can traverse this connection
@@ -403,7 +401,7 @@ static CTraversalAction* FindTraversalAction(Game::CGameWorld& World, CNavAgentC
 		}
 	}
 
-	// NB: could be set during the Surface mode processing, see above
+	// NB: Offmesh mode could be set during the Surface mode processing, see above
 	if (Agent.Mode == ENavigationMode::Offmesh)
 	{
 		// Offmesh action could already have been found in Surface mode
@@ -458,7 +456,9 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 	{
 		if (!SceneComponent.RootNode || !Agent.pNavQuery || !Agent.Settings) return;
 
+		const auto PrevState = Agent.State;
 		const auto PrevMode = Agent.Mode;
+
 		auto NavigateAction = Queue.FindCurrent<Navigate>();
 
 		// Update navigation status from the current agent position
@@ -505,8 +505,8 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 		if (!NewFrame && PrevMode == Agent.Mode && HasActiveSubAction) return;
 
 		// Process target location changes and validity
-		// TODO: if target didn't change and HasActiveSubAction, don't regenerate surface action?
-		if (!UpdateDestination(NavigateAction.As<Navigate>()->_Destination, Agent, PathQueue))
+		bool DestChanged = true;
+		if (!UpdateDestination(NavigateAction.As<Navigate>()->_Destination, Agent, PathQueue, DestChanged))
 		{
 			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Failed);
 			return;
@@ -530,20 +530,32 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 			}
 		}
 
+		bool OptimizePath = false;
 		if (Agent.OffmeshRef)
 		{
-			// Offmesh connection can't change and therefore sub-action can't become inactual
-			if (HasActiveSubAction) return;
+			// Offmesh connection properties can't change and therefore sub-action can't become inactual during the traversal
+			if (HasActiveSubAction && PrevState == Agent.State && (!DestChanged || Agent.Mode == ENavigationMode::Offmesh)) return;
 		}
 		else if (Agent.Mode == ENavigationMode::Surface)
 		{
-			Agent.PathOptimizationTime += dt;
-			Agent.ReplanTime += dt;
+			// When path planning is done, we periodically optimize it and can replan if necessary
+			if (Agent.State == ENavigationState::Following)
+			{
+				Agent.ReplanTime += dt;
+				Agent.PathOptimizationTime += dt;
+
+				constexpr float OPT_TIME_THR_SEC = 2.5f;
+				OptimizePath = (Agent.PathOptimizationTime >= OPT_TIME_THR_SEC);
+				if (OptimizePath) Agent.PathOptimizationTime = 0.f;
+			}
+
+			// Continue executing active sub-action while it is actual
+			if (!DestChanged && !OptimizePath && HasActiveSubAction && PrevState == Agent.State) return;
 		}
 
 		// Generate sub-action for path following
 		Game::HEntity Controller;
-		auto pAction = FindTraversalAction(World, Agent, Queue, NavigateAction, Pos, Controller);
+		auto pAction = FindTraversalAction(World, Agent, Queue, NavigateAction, Pos, OptimizePath, Controller);
 		if (!pAction || !pAction->GenerateAction(World, Agent, Controller, Queue, NavigateAction, Pos))
 			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Failed);
 	});
