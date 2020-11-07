@@ -167,7 +167,12 @@ static bool UpdateDestination(const vector3& Dest, CNavAgentComponent& Agent, ::
 	// If target is in the current corridor, can avoid replanning
 	if (Agent.State != ENavigationState::Idle)
 	{
+		bool OffmeshActual = false;
 		for (int i = 0; i < Agent.Corridor.getPathCount(); ++i)
+		{
+			if (Agent.Corridor.getPath()[i] == Agent.OffmeshRef)
+				OffmeshActual = true;
+
 			if (Agent.Corridor.getPath()[i] == Agent.TargetRef)
 			{
 				Agent.Corridor.shrink(Agent.TargetPos.v, i + 1);
@@ -177,11 +182,22 @@ static bool UpdateDestination(const vector3& Dest, CNavAgentComponent& Agent, ::
 					Agent.AsyncTaskID = 0;
 				}
 				Agent.State = ENavigationState::Following;
+
+				// Offmesh traversal can't be interrupted, but preparation can
+				if (Agent.Mode == ENavigationMode::Surface && !OffmeshActual)
+					Agent.OffmeshRef = 0;
+
 				return true;
 			}
+		}
 	}
 
 	Agent.State = ENavigationState::Requested;
+
+	// Offmesh traversal can't be interrupted, but preparation can
+	if (Agent.Mode == ENavigationMode::Surface)
+		Agent.OffmeshRef = 0;
+
 	return true;
 }
 //---------------------------------------------------------------------
@@ -490,6 +506,7 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 			// FIXME: looks like hack, can rewrite better? Could compare curr and target polys? Action can't change inside a poly.
 			// Problems: Steer to door knob? Same poly, different action, or sub-sub-action (then OK)? Traverse ofm, too early dest poly, look at curr Mode?
 			//!!!hard to support and may work bad with actions other than CSteerAction. Check arrival distance and do raycast here?
+			//!!!raycast must be accompanied by a height check! Or instead of raycast use string pulling and count vertices remained?
 			if (Agent.IsTraversingLastEdge)
 			{
 				ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Succeeded);
