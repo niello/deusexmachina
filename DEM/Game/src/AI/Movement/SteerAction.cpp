@@ -32,12 +32,10 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 	dtStatus Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Dest.v, &Flags, &AreaType, &PolyRef, Options);
 	if (dtStatusFailed(Status)) return false;
 
-	Agent.IsTraversingLastEdge = dtStatusSucceed(Status);
-
 	vector3 NextDest = Dest;
 	bool ActionChanged = false;
 	bool NeedSlowdown = true;
-	while (!Agent.IsTraversingLastEdge)
+	while (!dtStatusSucceed(Status))
 	{
 		// Check if Dest is close enough to be considered reached
 		const bool DestReached =
@@ -79,16 +77,15 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 
 		// Same action and direction, elongate path edge
 		Dest = NextDest;
-
-		// That was the last edge, its successful traversal will finish the navigate action
-		if (dtStatusSucceed(Status)) Agent.IsTraversingLastEdge = true;
 	}
+
+	const bool LastEdge = dtStatusSucceed(Status);
 
 	// Calculate distance from Dest to next action change point. Used for arrival slowdown.
 	float AdditionalDistance = NeedSlowdown ? 0.f : -0.f;
 
 	// No need to calculate if action changed at Dest
-	if (!ActionChanged && !Agent.IsTraversingLastEdge)
+	if (!ActionChanged && !LastEdge)
 	{
 		// Try to get existing sub-action of required type
 		auto SteerAction = Queue.GetChild(NavAction);
@@ -127,7 +124,7 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 	}
 
 	// At the last path edge consider desired final facing
-	if (Agent.IsTraversingLastEdge) NextDest = Dest + NavAction.As<Navigate>()->_FinalFacing;
+	if (LastEdge) NextDest = Dest + NavAction.As<Navigate>()->_FinalFacing;
 
 	// Update existing action or push the new one
 	return !!Queue.PushOrUpdateChild<Steer>(NavAction, Dest, NextDest, AdditionalDistance);

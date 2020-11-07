@@ -8,6 +8,7 @@
 #include <AI/Navigation/TraversalAction.h>
 #include <AI/Navigation/NavMeshDebugDraw.h>
 #include <AI/Navigation/NavMesh.h>
+#include <AI/Movement/SteerAction.h> // FIXME: only for Steer::SqLinearTolerance, can write better?
 #include <Debug/DebugDraw.h>
 #include <DetourCommon.h>
 #include <DetourDebugDraw.h>
@@ -433,11 +434,37 @@ static CTraversalAction* FindTraversalAction(Game::CGameWorld& World, CNavAgentC
 			Agent.Mode = ENavigationMode::Surface;
 			Agent.OffmeshRef = 0;
 			Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(Agent.Corridor.getFirstPoly(), &Agent.CurrAreaType);
+
+			//!!!FIXME: if the target changed during the offmesh traversal so that we must traverse offmesh back,
+			//surface action will generate incorrect traversal, because corridor pos is now exactly at the offmesh start,
+			//and findNextStraightPathPoint will return offmesh end, even though we didn't trigger offmesh yet!!!
+			//This also may happen if we start a game exatly at offmsh connection center, trigger will not happen!
+
 			return Agent.Settings->FindAction(World, Agent, Agent.CurrAreaType, Agent.Corridor.getFirstPoly(), &OutController);
 		}
 	}
 
 	return pAction;
+}
+//---------------------------------------------------------------------
+
+static bool HasArrived(CNavAgentComponent& Agent, const vector3& Pos, float SqArrivalRadius, bool Unobstructed)
+{
+	if (Agent.Mode == ENavigationMode::Offmesh) return false;
+
+	if (dtVdist2DSqr(Pos.v, Agent.Corridor.getTarget()) > std::max(SqArrivalRadius, Steer::SqLinearTolerance)) return false;
+
+	if (!Unobstructed) return true;
+
+	dtStraightPathContext Ctx;
+	if (dtStatusFailed(Agent.pNavQuery->initStraightPathSearch(
+		Agent.Corridor.getPos(), Agent.Corridor.getTarget(), Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Ctx)))
+	{
+		return false;
+	}
+
+	// Succeeds when reached the target, otherwise would be "in progress"
+	return dtStatusSucceed(Agent.pNavQuery->findNextStraightPathPoint(Ctx, nullptr, nullptr, nullptr, nullptr, 0));
 }
 //---------------------------------------------------------------------
 
@@ -500,18 +527,10 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, SubActionStatus);
 			return;
 		}
-		else if (SubActionStatus == Game::EActionStatus::Succeeded)
+		else if (SubActionStatus == Game::EActionStatus::Succeeded && HasArrived(Agent, Pos, 0.f, true))
 		{
-			// If the last edge traversed successfully, finish navigation
-			// FIXME: looks like hack, can rewrite better? Could compare curr and target polys? Action can't change inside a poly.
-			// Problems: Steer to door knob? Same poly, different action, or sub-sub-action (then OK)? Traverse ofm, too early dest poly, look at curr Mode?
-			//!!!hard to support and may work bad with actions other than CSteerAction. Check arrival distance and do raycast here?
-			//!!!raycast must be accompanied by a height check! Or instead of raycast use string pulling and count vertices remained?
-			if (Agent.IsTraversingLastEdge)
-			{
-				ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Succeeded);
-				return;
-			}
+			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Succeeded);
+			return;
 		}
 
 		const bool HasActiveSubAction = (SubActionStatus == Game::EActionStatus::Active);

@@ -48,7 +48,7 @@ struct CNavAgentComponent
 	dtNavMeshQuery*      pNavQuery = nullptr; //???need per-agent or can use pool in path queue or navmesh?
 	PNavMap              NavMap;
 	PNavAgentSettings    Settings;
-	CStrID               SettingsID;
+	CStrID               SettingsID; // FIXME: use resource instead of object+ID?
 	float                Radius = 0.3f;
 	float                Height = 1.75f;
 	vector3              TargetPos;
@@ -61,7 +61,6 @@ struct CNavAgentComponent
 	ENavigationState     State = ENavigationState::Idle;
 	ENavigationMode      Mode = ENavigationMode::Surface; //!!!if will store offmesh ref not in corridor, bool Valid will be enough instead!
 	U8                   CurrAreaType = 0;
-	bool                 IsTraversingLastEdge = false; // FIXME: can rewrite better? sub-action success and radius and raycast?
 };
 
 inline bool InRange(const float* v0, const float* v1, float AgentHeight, float SqRange)
