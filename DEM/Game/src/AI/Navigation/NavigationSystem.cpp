@@ -454,7 +454,8 @@ static bool HasArrived(CNavAgentComponent& Agent, const vector3& Pos, float SqAr
 
 	if (dtVdist2DSqr(Pos.v, Agent.Corridor.getTarget()) > std::max(SqArrivalRadius, Steer::SqLinearTolerance)) return false;
 
-	if (!Unobstructed) return true;
+	// NB: in unobstructed case we allow to break this height constraint, because straight path check is better
+	if (!Unobstructed) return std::abs(Pos.y - Agent.Corridor.getTarget()[1]) < Agent.Height;
 
 	dtStraightPathContext Ctx;
 	if (dtStatusFailed(Agent.pNavQuery->initStraightPathSearch(
@@ -463,7 +464,7 @@ static bool HasArrived(CNavAgentComponent& Agent, const vector3& Pos, float SqAr
 		return false;
 	}
 
-	// Succeeds when reached the target, otherwise would be "in progress"
+	// Succeeds when reached the target, otherwise returns "in progress"
 	return dtStatusSucceed(Agent.pNavQuery->findNextStraightPathPoint(Ctx, nullptr, nullptr, nullptr, nullptr, 0));
 }
 //---------------------------------------------------------------------
