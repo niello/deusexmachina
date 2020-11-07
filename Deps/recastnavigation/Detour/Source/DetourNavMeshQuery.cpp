@@ -1861,10 +1861,22 @@ dtStatus dtNavMeshQuery::findNextStraightPathPoint(dtStraightPathContext& ctx, f
 					break;
 				}
 
+				// DEM: there originally was:
+				//----------------------------
+				// next.flags = (toType == DT_POLYTYPE_OFFMESH_CONNECTION) ? DT_STRAIGHTPATH_OFFMESH_CONNECTION : 0;
+				// + advancing if the start point is too close to the portal point
+				//----------------------------
+				// Now offmesh start point is never skipped, user must call moveOverOffmeshConnection explicitly
+
 				if (toType == DT_POLYTYPE_OFFMESH_CONNECTION)
 				{
-					next.flags = DT_STRAIGHTPATH_OFFMESH_CONNECTION;
-					// NB: must call moveOverOffmeshConnection explicitly, trigger radius will handle 'too close' case
+					dtVcopy(ctx.corner.point, left);
+					ctx.cornerFound = true;
+					ctx.corner.fromIndex = ctx.i;
+					ctx.corner.flags = DT_STRAIGHTPATH_OFFMESH_CONNECTION;
+					ctx.corner.polyRef = next.polyRef;
+					++ctx.i;
+					break;
 				}
 				else
 				{
