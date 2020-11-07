@@ -334,6 +334,8 @@ static void ResetNavigation(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& 
 }
 //---------------------------------------------------------------------
 
+//!!!FIXME: if character stands exactly in the offmesh connection start, findNextStraightPathPoint will return
+//other side of the offmesh connection. Offmesh will not be triggered, its action will be ignored.
 static CTraversalAction* FindTraversalAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue,
 	Game::HAction NavAction, const vector3& Pos, bool OptimizePath, Game::HEntity& OutController)
 {
@@ -435,10 +437,7 @@ static CTraversalAction* FindTraversalAction(Game::CGameWorld& World, CNavAgentC
 			Agent.OffmeshRef = 0;
 			Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(Agent.Corridor.getFirstPoly(), &Agent.CurrAreaType);
 
-			//!!!FIXME: if the target changed during the offmesh traversal so that we must traverse offmesh back,
-			//surface action will generate incorrect traversal, because corridor pos is now exactly at the offmesh start,
-			//and findNextStraightPathPoint will return offmesh end, even though we didn't trigger offmesh yet!!!
-			//This also may happen if we start a game exatly at offmsh connection center, trigger will not happen!
+			if (!UpdatePosition(Pos, Agent)) return nullptr;
 
 			return Agent.Settings->FindAction(World, Agent, Agent.CurrAreaType, Agent.Corridor.getFirstPoly(), &OutController);
 		}
