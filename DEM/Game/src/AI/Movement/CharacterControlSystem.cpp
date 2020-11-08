@@ -239,35 +239,24 @@ static void UpdateRigidBodyMovement(Physics::CRigidBody* pBody, float dt, const 
 	else if (pBody->IsAlwaysActive())
 		pBody->SetActive(true, false);
 
-	auto pBtBody = pBody->GetBtBody();
-
 	// No angular acceleration limit, set directly
-	pBtBody->setAngularVelocity(btVector3(0.f, DesiredAngularVelocity, 0.f));
+	pBody->GetBtBody()->setAngularVelocity(btVector3(0.f, DesiredAngularVelocity, 0.f));
 
-	//???what to do with requested y? perform auto climbing/jumping or deny and wait for an explicit command?
-	const btVector3 ReqLVel = btVector3(DesiredLinearVelocity.x, 0.f, DesiredLinearVelocity.z);
-	if (MaxAcceleration > 0.f)
+	//???what to do with DesiredLinearVelocity.y? perform auto climbing/jumping or deny and wait for an explicit command?
+	const btVector3 ReqLinearVelocity = btVector3(DesiredLinearVelocity.x, 0.f, DesiredLinearVelocity.z);
+	if (MaxAcceleration <= 0.f)
 	{
-		const btVector3& CurrLVel = pBtBody->getLinearVelocity();
-		btVector3 ReqLVelChange(ReqLVel.x() - CurrLVel.x(), 0.f, ReqLVel.z() - CurrLVel.z());
-		if (ReqLVelChange.x() != 0.f || ReqLVelChange.z() != 0.f)
-		{
-			// Slow down with respect to the maximum deceleration
-			btVector3 ReqAccel = ReqLVelChange / dt;
-			btScalar AccelMagSq = ReqAccel.length2();
-			if (AccelMagSq > MaxAcceleration * MaxAcceleration)
-				ReqAccel *= (MaxAcceleration / n_sqrt(AccelMagSq));
-			pBtBody->applyCentralForce(ReqAccel * pBody->GetMass());
-		}
-		else
-		{
-			// Keep horizontal velocity
-			const auto& TotalForce = pBtBody->getTotalForce();
-			pBtBody->clearForces();
-			pBtBody->applyCentralForce(btVector3(0.f, TotalForce.y(), 0.f));
-		}
+		// No linear acceleration limit, set directly
+		pBody->GetBtBody()->setLinearVelocity(ReqLinearVelocity);
+		return;
 	}
-	else pBtBody->setLinearVelocity(ReqLVel);
+
+	btVector3 AccelerationVector = (ReqLinearVelocity - pBody->GetBtBody()->getLinearVelocity()) / dt;
+	AccelerationVector.setY(0.f);
+	const btScalar SqAcceleration = AccelerationVector.length2();
+	if (SqAcceleration > MaxAcceleration * MaxAcceleration)
+		AccelerationVector *= (MaxAcceleration / n_sqrt(SqAcceleration));
+	pBody->GetBtBody()->applyCentralForce(AccelerationVector * pBody->GetMass());
 }
 //---------------------------------------------------------------------
 
@@ -293,7 +282,7 @@ void ProcessCharacterControllers(CGameWorld& World, Physics::CPhysicsLevel& Phys
 			const float DesiredAngularVelocity = ProcessFacing(Character, Queue, DesiredLinearVelocity);
 			UpdateRigidBodyMovement(pBody, dt, DesiredLinearVelocity, DesiredAngularVelocity, Character.MaxAcceleration);
 
-			// TODO: not needed when levitate, only when really ion the ground
+			// TODO: not needed when levitate, only when really stand on the ground
 			// We stand on the ground and want to compensate our DistanceToGround in a single simulation step
 			pBody->GetBtBody()->applyCentralImpulse(btVector3(0.f, (-DistanceToGround / dt) * pBody->GetMass(), 0.f));
 		}
