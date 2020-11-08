@@ -124,8 +124,9 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 		return vector3::Zero;
 	}
 
-	// Initialize movement from the action
-	if (Character.State == ECharacterState::Stand)
+	// Select movement mode. Note that ShortStep may turn into Walk if destination
+	// becomes farther, but opposite switch Walk -> ShortStep is never performed.
+	if (Character.State == ECharacterState::Stand || Character.State == ECharacterState::ShortStep)
 	{
 		const float DestFacingThreshold = 1.5f * Character.Radius;
 		if (IsSameHeightLevel && (SqDistanceToDest <= DestFacingThreshold * DestFacingThreshold))
