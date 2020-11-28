@@ -1,5 +1,5 @@
 #pragma once
-#include <Resources/ResourceObject.h>
+#include <Core/Object.h>
 #include <Math/Vector3.h>
 
 // Shared collision shape, which can be used by multiple collision objects and rigid bodies
@@ -10,9 +10,9 @@ namespace Physics
 {
 using PCollisionShape = Ptr<class CCollisionShape>;
 
-class CCollisionShape : public Resources::CResourceObject
+class CCollisionShape : public ::Core::CObject
 {
-	RTTI_CLASS_DECL(Physics::CCollisionShape, Resources::CResourceObject);
+	RTTI_CLASS_DECL(Physics::CCollisionShape, ::Core::CObject);
 
 protected:
 
@@ -31,7 +31,6 @@ public:
 	CCollisionShape(btCollisionShape* pBtShape, const vector3& Offset = vector3::Zero, const vector3& Scaling = vector3::One);
 	virtual ~CCollisionShape() override;
 
-	virtual bool            IsResourceValid() const { return !!_pBtShape; }
 	virtual PCollisionShape CloneWithScaling(const vector3& Scaling) const;
 	const vector3&          GetOffset() const { return _Offset; }
 	btCollisionShape*       GetBulletShape() const { return _pBtShape; }

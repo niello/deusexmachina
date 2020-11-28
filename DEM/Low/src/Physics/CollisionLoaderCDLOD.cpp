@@ -14,7 +14,7 @@ const Core::CRTTI& CCollisionLoaderCDLOD::GetResultType() const
 //---------------------------------------------------------------------
 
 // Can also load CDLODData resource and acceletare raycasting with minmax map
-PResourceObject CCollisionLoaderCDLOD::CreateResource(CStrID UID)
+Core::PObject CCollisionLoaderCDLOD::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

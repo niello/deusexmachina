@@ -1,5 +1,5 @@
 #pragma once
-#include <Resources/ResourceObject.h>
+#include <Core/Object.h>
 #include <Data/StringID.h>
 #include <Math/Matrix44.h>
 
@@ -15,7 +15,7 @@ struct CBoneInfo
 	UPTR	ParentIndex;
 };
 
-class CSkinInfo: public Resources::CResourceObject
+class CSkinInfo: public ::Core::CObject
 {
 	FACTORY_CLASS_DECL;
 
@@ -30,8 +30,6 @@ public:
 
 	bool				Create(UPTR BoneCount);
 	void				Destroy();
-
-	virtual bool		IsResourceValid() const { return !!pInvBindPose; }
 
 	const matrix44&		GetInvBindPose(UPTR BoneIndex) const { return pInvBindPose[BoneIndex]; }
 	const CBoneInfo&	GetBoneInfo(UPTR BoneIndex) const { return Bones[BoneIndex]; }

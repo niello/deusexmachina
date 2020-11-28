@@ -12,7 +12,7 @@ const Core::CRTTI& CMeshGenerator::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
+Core::PObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 {
 	const float InvEdgeSize = 1.f / static_cast<float>(_QuadsPerEdge);
 	const UPTR VerticesPerEdge = _QuadsPerEdge + 1;
@@ -96,7 +96,7 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 }
 //---------------------------------------------------------------------
 
-PResourceObject CMeshGeneratorBox::CreateResource(CStrID UID)
+Core::PObject CMeshGeneratorBox::CreateResource(CStrID UID)
 {
 	Render::PMeshData MeshData = n_new(Render::CMeshData);
 	MeshData->IndexType = Render::Index_16;
@@ -166,7 +166,7 @@ PResourceObject CMeshGeneratorBox::CreateResource(CStrID UID)
 }
 //---------------------------------------------------------------------
 
-PResourceObject CMeshGeneratorSphere::CreateResource(CStrID UID)
+Core::PObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 {
 	// Twice as much vertices on longitude result in more sphere-looking mesh
 	const U16 MeridianCount = _RowCount * 2;
@@ -294,7 +294,7 @@ PResourceObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 }
 //---------------------------------------------------------------------
 
-PResourceObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
+Core::PObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
 {
 	Render::PMeshData MeshData = n_new(Render::CMeshData);
 	MeshData->IndexType = Render::Index_16;
@@ -400,7 +400,7 @@ PResourceObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
 }
 //---------------------------------------------------------------------
 
-PResourceObject CMeshGeneratorCone::CreateResource(CStrID UID)
+Core::PObject CMeshGeneratorCone::CreateResource(CStrID UID)
 {
 	Render::PMeshData MeshData = n_new(Render::CMeshData);
 	MeshData->IndexType = Render::Index_16;

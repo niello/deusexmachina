@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_INDEX_BUFFER_H__
-#define __DEM_L1_RENDER_INDEX_BUFFER_H__
-
 #include <Core/Object.h>
 #include <Render/RenderFwd.h>
 #include <Data/Flags.h>
@@ -18,15 +15,14 @@ class CIndexBuffer: public Core::CObject
 
 protected:
 
-	EIndexType		IndexType;
-	UPTR			IndexCount;
+	EIndexType		IndexType = EIndexType::Index_16;
+	UPTR			IndexCount = 0;
 	Data::CFlags	Access;
 
 	void InternalDestroy() { IndexCount = 0; Access.ClearAll(); }
 
 public:
 
-	CIndexBuffer(): IndexCount(0) {}
 	virtual ~CIndexBuffer() { InternalDestroy(); }
 
 	virtual void	Destroy() { InternalDestroy(); }
@@ -41,5 +37,3 @@ public:
 typedef Ptr<CIndexBuffer> PIndexBuffer;
 
 }
-
-#endif

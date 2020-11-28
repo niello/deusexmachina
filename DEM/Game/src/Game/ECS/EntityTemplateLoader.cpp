@@ -14,7 +14,7 @@ const Core::CRTTI& CEntityTemplateLoader::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CEntityTemplateLoader::CreateResource(CStrID UID)
+Core::PObject CEntityTemplateLoader::CreateResource(CStrID UID)
 {
 	// TODO: can support optional multiple templates in one file through sub-ID
 	const char* pOutSubId;

@@ -19,7 +19,7 @@ const Core::CRTTI& CNavAgentSettingsLoaderHRD::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CNavAgentSettingsLoaderHRD::CreateResource(CStrID UID)
+Core::PObject CNavAgentSettingsLoaderHRD::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	Data::PBuffer Buffer;

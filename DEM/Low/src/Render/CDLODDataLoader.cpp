@@ -13,7 +13,7 @@ const Core::CRTTI& CCDLODDataLoader::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CCDLODDataLoader::CreateResource(CStrID UID)
+Core::PObject CCDLODDataLoader::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

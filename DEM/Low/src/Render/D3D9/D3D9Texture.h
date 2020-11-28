@@ -20,20 +20,17 @@ class CD3D9Texture: public CTexture
 protected:
 
 	IDirect3DBaseTexture9*	pD3DTex = nullptr; //???or union?
-	UINT					D3DUsage;
-	D3DPOOL					D3DPool;
+	UINT					D3DUsage = {};
+	D3DPOOL					D3DPool = {};
 
 	void InternalDestroy();
 
 public:
 
-	CD3D9Texture() {}
 	virtual ~CD3D9Texture() { InternalDestroy(); }
 
 	bool						Create(PTextureData Data, UINT Usage, D3DPOOL Pool, IDirect3DBaseTexture9* pTexture, bool HoldRAMCopy = false);
 	virtual void				Destroy() { InternalDestroy(); CTexture::Destroy(); }
-
-	virtual bool				IsResourceValid() const { return !!pD3DTex; }
 
 	IDirect3DBaseTexture9*		GetD3DBaseTexture() const { /*n_assert(!LockCount);*/ return pD3DTex; }
 	IDirect3DTexture9*			GetD3DTexture() const;

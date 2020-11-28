@@ -14,7 +14,7 @@ const Core::CRTTI& CTimelineTrackLoaderANM::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CTimelineTrackLoaderANM::CreateResource(CStrID UID)
+Core::PObject CTimelineTrackLoaderANM::CreateResource(CStrID UID)
 {
 	// Requires #TL sub-ID to distinguish from animation clip resource
 	const char* pSubId = strchr(UID.CStr(), '#');

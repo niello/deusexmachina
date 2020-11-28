@@ -1,5 +1,5 @@
 #pragma once
-#include <Resources/ResourceObject.h>
+#include <Core/Object.h>
 #include <Render/RenderFwd.h>
 #include <Render/VertexBuffer.h>
 #include <Render/IndexBuffer.h>
@@ -10,7 +10,7 @@ namespace Render
 {
 typedef Ptr<class CMeshData> PMeshData;
 
-class CMesh: public Resources::CResourceObject
+class CMesh: public ::Core::CObject
 {
 	FACTORY_CLASS_DECL;
 
@@ -33,8 +33,6 @@ public:
 
 	bool					Create(PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer IndexBuffer, bool HoldRAMCopy = false);
 	void					Destroy();
-
-	virtual bool			IsResourceValid() const { return !!VB; }
 
 	PVertexBuffer			GetVertexBuffer() const { return VB; }
 	PIndexBuffer			GetIndexBuffer() const { return IB; }

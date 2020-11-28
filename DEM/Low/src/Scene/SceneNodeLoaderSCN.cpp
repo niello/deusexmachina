@@ -55,7 +55,7 @@ bool LoadNode(IO::CBinaryReader& Reader, Scene::PSceneNode Node)
 }
 //---------------------------------------------------------------------
 
-PResourceObject CSceneNodeLoaderSCN::CreateResource(CStrID UID)
+Core::PObject CSceneNodeLoaderSCN::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

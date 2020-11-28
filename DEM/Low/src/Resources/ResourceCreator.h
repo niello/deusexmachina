@@ -1,23 +1,21 @@
 #pragma once
-#include <Data/RefCounted.h>
+#include <Core/Object.h>
 #include <Data/StringID.h>
-#include <Core/RTTI.h>
 
-// Resource creator is an interface to implement different resource object
-// obtaining algorightms, whether by loading or procedural generation.
-// Being attached to a CResource it allows to reload it on resource object lost.
+// Resource creator is an interface to different implementations of loading
+// and procedural generation algorithms that produce a resource object.
+// Being attached to a CResource it allows to reload it.
 
 namespace Resources
 {
-typedef Ptr<class CResourceObject> PResourceObject;
 typedef Ptr<class IResourceCreator> PResourceCreator;
 
-class IResourceCreator: public Data::CRefCounted
+class IResourceCreator : public Data::CRefCounted
 {
 public:
 
 	virtual const Core::CRTTI&	GetResultType() const = 0;
-	virtual PResourceObject		CreateResource(CStrID UID) = 0;
+	virtual Core::PObject		CreateResource(CStrID UID) = 0;
 };
 
 }

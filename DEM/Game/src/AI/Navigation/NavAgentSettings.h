@@ -1,5 +1,5 @@
 #pragma once
-#include <Resources/ResourceObject.h>
+#include <Core/Object.h>
 #include <Game/ECS/Entity.h>
 #include <DetourNavMeshQuery.h>
 #include <map>
@@ -16,9 +16,9 @@ namespace DEM::AI
 using PTraversalAction = Ptr<class CTraversalAction>;
 struct CNavAgentComponent;
 
-class CNavAgentSettings : public Resources::CResourceObject
+class CNavAgentSettings : public ::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::AI::CNavAgentSettings, Resources::CResourceObject);
+	RTTI_CLASS_DECL(DEM::AI::CNavAgentSettings, ::Core::CObject);
 
 protected:
 
@@ -30,8 +30,6 @@ public:
 
 	CNavAgentSettings(std::map<U8, float>&& Costs, std::vector<DEM::AI::PTraversalAction>&& Actions, std::vector<bool>&& UseControllers);
 	virtual ~CNavAgentSettings() override;
-
-	virtual bool         IsResourceValid() const override { return true; }
 
 	CTraversalAction*    FindAction(const Game::CGameWorld& World, const CNavAgentComponent& Agent, U8 AreaType, dtPolyRef PolyRef, Game::HEntity* pOutController) const;
 	const dtQueryFilter* GetQueryFilter() const { return &_Filter; }

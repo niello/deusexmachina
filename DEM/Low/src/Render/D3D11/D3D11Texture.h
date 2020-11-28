@@ -21,20 +21,17 @@ protected:
 
 	ID3D11Resource*				pD3DTex = nullptr; //???or union?
 	ID3D11ShaderResourceView*	pSRView = nullptr;
-	D3D11_USAGE					D3DUsage;
+	D3D11_USAGE					D3DUsage = {};
 
 	void						InternalDestroy();
 
 public:
 
-	CD3D11Texture() {}
 	virtual ~CD3D11Texture() { InternalDestroy(); CTexture::Destroy(); }
 
 	bool						Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlags, ID3D11ShaderResourceView* pSRV, bool HoldRAMCopy = false); 
 	bool						Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlags, ID3D11Resource* pTexture, ID3D11ShaderResourceView* pSRV, bool HoldRAMCopy = false);
 	virtual void				Destroy() { InternalDestroy(); }
-
-	virtual bool				IsResourceValid() const { return !!pD3DTex; }
 
 	ID3D11Resource*				GetD3DResource() const { return pD3DTex; }
 	ID3D11Texture1D*			GetD3DTexture1D() const;

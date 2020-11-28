@@ -1,5 +1,5 @@
 #pragma once
-#include <Resources/ResourceObject.h>
+#include <Core/Object.h>
 #include <Render/VertexComponent.h>
 #include <Render/RenderFwd.h>
 #include <Data/Array.h>
@@ -20,9 +20,9 @@ namespace Data
 namespace Render
 {
 
-class CMeshData: public Resources::CResourceObject
+class CMeshData: public ::Core::CObject
 {
-	RTTI_CLASS_DECL(Render::CMeshData, Resources::CResourceObject);
+	RTTI_CLASS_DECL(Render::CMeshData, ::Core::CObject);
 
 protected:
 
@@ -50,7 +50,6 @@ public:
 	CMeshData();
 	virtual ~CMeshData();
 
-	virtual bool			IsResourceValid() const { return VBData && VertexCount; }
 	void					Destroy();
 
 	void					InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount, UPTR LODCount, bool UseMapping, bool UpdateAABBs);

@@ -13,7 +13,7 @@ const Core::CRTTI& CSkinInfoLoaderSKN::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CSkinInfoLoaderSKN::CreateResource(CStrID UID)
+Core::PObject CSkinInfoLoaderSKN::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

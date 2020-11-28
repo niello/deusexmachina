@@ -15,23 +15,24 @@ void CResource::SetCreator(IResourceCreator* pNewCreator)
 }
 //--------------------------------------------------------------------
 
-CResourceObject* CResource::GetObject()
+::Core::CObject* CResource::GetObject()
 {
 	if (_State == EResourceState::Loaded)
 	{
-		if (_Object && _Object->IsResourceValid()) return _Object.Get();
+		if (_Object) return _Object.Get();
 		else _State = EResourceState::NotLoaded;
 	}
-	//if (_Placeholder.IsValid() && _Placeholder->IsResourceValid()) return _Placeholder.Get();
+	// FIXME: placeholder per resource TYPE?
+	//if (_Placeholder) return _Placeholder.Get();
 	return nullptr;
 }
 //--------------------------------------------------------------------
 
-CResourceObject* CResource::ValidateObject()
+::Core::CObject* CResource::ValidateObject()
 {
 	if (_State == EResourceState::Loaded)
 	{
-		if (_Object && _Object->IsResourceValid()) return _Object.Get();
+		if (_Object) return _Object.Get();
 		else _State = EResourceState::NotLoaded;
 	}
 
@@ -39,7 +40,7 @@ CResourceObject* CResource::ValidateObject()
 	{
 		_State = EResourceState::LoadingInProgress;
 		_Object = _Creator->CreateResource(_UID);
-		_State = _Object && _Object->IsResourceValid() ? EResourceState::Loaded : EResourceState::LoadingFailed;
+		_State = _Object ? EResourceState::Loaded : EResourceState::LoadingFailed;
 		return _Object.Get();
 	}
 

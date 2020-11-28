@@ -1,5 +1,5 @@
 #pragma once
-#include <Resources/ResourceObject.h>
+#include <Core/Object.h>
 
 // Base track for any timeline-playable object (e.g. animation clip, sound, event track etc).
 // Track prototype can be stored as a resource. You must clone it and bind to outputs in order to play.
@@ -8,13 +8,11 @@ namespace DEM::Anim
 {
 using PTimelineTrack = Ptr<class CTimelineTrack>;
 
-class CTimelineTrack : public Resources::CResourceObject
+class CTimelineTrack : public ::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::Anim::CTimelineTrack, Resources::CResourceObject);
+	RTTI_CLASS_DECL(DEM::Anim::CTimelineTrack, ::Core::CObject);
 
 public:
-
-	virtual bool           IsResourceValid() const override { return true; }
 
 	//???clips here? can make templated by clip type!
 	// NB: whole timeline looping must be handled in a timeline player

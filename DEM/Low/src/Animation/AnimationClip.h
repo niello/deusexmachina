@@ -1,5 +1,5 @@
 #pragma once
-#include <Resources/ResourceObject.h>
+#include <Core/Object.h>
 
 // ACL-compressed animation clip. Animates local SRT transform.
 
@@ -12,9 +12,9 @@ namespace DEM::Anim
 {
 using PNodeMapping = Ptr<class CNodeMapping>;
 
-class CAnimationClip: public Resources::CResourceObject
+class CAnimationClip: public ::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::Anim::CAnimationClip, Resources::CResourceObject);
+	RTTI_CLASS_DECL(DEM::Anim::CAnimationClip, ::Core::CObject);
 
 protected:
 
@@ -26,8 +26,6 @@ public:
 
 	CAnimationClip(acl::CompressedClip* pClip, float Duration, PNodeMapping&& NodeMapping);
 	virtual ~CAnimationClip() override;
-
-	virtual bool IsResourceValid() const override { return !!_pClip; }
 
 	const acl::CompressedClip* GetACLClip() const { return _pClip; }
 	CNodeMapping& GetNodeMapping() const { return *_NodeMapping; } // non-const to create intrusive strong refs

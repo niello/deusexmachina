@@ -20,7 +20,7 @@ public:
 	CResourceLoader(CResourceManager& ResourceManager) : _ResMgr(ResourceManager) {}
 
 	virtual const Core::CRTTI&	GetResultType() const = 0;
-	virtual PResourceObject		CreateResource(CStrID UID) = 0;
+	virtual Core::PObject		CreateResource(CStrID UID) = 0;
 };
 
 }

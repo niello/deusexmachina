@@ -268,7 +268,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Resources/ResourceCreator.h
 	DEM/Low/src/Resources/ResourceLoader.h
 	DEM/Low/src/Resources/ResourceManager.h
-	DEM/Low/src/Resources/ResourceObject.h
 	DEM/Low/src/Scene/LODGroup.h
 	DEM/Low/src/Scene/NodeAttribute.h
 	DEM/Low/src/Scene/NodeVisitor.h

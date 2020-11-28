@@ -16,7 +16,7 @@ const Core::CRTTI& CTimelineTrackLoaderHRD::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CTimelineTrackLoaderHRD::CreateResource(CStrID UID)
+Core::PObject CTimelineTrackLoaderHRD::CreateResource(CStrID UID)
 {
 	// TODO: can support optional multiple templates in one file through sub-ID
 	const char* pOutSubId;

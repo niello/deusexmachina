@@ -1,5 +1,5 @@
 #pragma once
-#include <Resources/ResourceObject.h>
+#include <Core/Object.h>
 #include <Data/StringID.h>
 #include <Data/Flags.h>
 #include <Math/TransformSRT.h>
@@ -23,7 +23,7 @@ typedef Ptr<class CSceneNode> PSceneNode;
 typedef Ptr<class CNodeAttribute> PNodeAttribute;
 class INodeVisitor;
 
-class CSceneNode: public Resources::CResourceObject
+class CSceneNode: public ::Core::CObject
 {
 protected:
 
@@ -60,8 +60,6 @@ public:
 
 	CSceneNode(CStrID NodeName = CStrID::Empty);
 	virtual ~CSceneNode() override;
-
-	virtual bool			IsResourceValid() const override { OK; }
 
 	void					Update(const vector3* pCOIArray, UPTR COICount);
 	bool                    UpdateTransform();

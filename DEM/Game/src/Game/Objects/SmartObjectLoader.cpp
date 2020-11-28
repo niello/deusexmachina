@@ -17,7 +17,7 @@ const Core::CRTTI& CSmartObjectLoader::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
+Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 {
 	// TODO: can support optional multiple templates in one file through sub-ID
 	const char* pOutSubId;

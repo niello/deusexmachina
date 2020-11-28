@@ -13,7 +13,7 @@ public:
 	CEntityTemplateLoader(CResourceManager& ResourceManager) : CResourceLoader(ResourceManager) {}
 
 	virtual const Core::CRTTI& GetResultType() const override;
-	virtual PResourceObject    CreateResource(CStrID UID) override;
+	virtual Core::PObject    CreateResource(CStrID UID) override;
 };
 
 typedef Ptr<CEntityTemplateLoader> PEntityTemplateLoader;

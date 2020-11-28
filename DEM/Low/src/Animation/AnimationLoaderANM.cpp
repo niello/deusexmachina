@@ -14,7 +14,7 @@ const Core::CRTTI& CAnimationLoaderANM::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CAnimationLoaderANM::CreateResource(CStrID UID)
+Core::PObject CAnimationLoaderANM::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

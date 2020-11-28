@@ -1,5 +1,5 @@
 #pragma once
-#include <Resources/ResourceObject.h>
+#include <Core/Object.h>
 #include <Data/FixedArray.h>
 #include <Math/AABB.h>
 
@@ -13,9 +13,9 @@ namespace Resources
 namespace Render
 {
 
-class CCDLODData: public Resources::CResourceObject
+class CCDLODData: public ::Core::CObject
 {
-	RTTI_CLASS_DECL(Render::CCDLODData, Resources::CResourceObject);
+	RTTI_CLASS_DECL(Render::CCDLODData, ::Core::CObject);
 
 protected:
 
@@ -42,7 +42,6 @@ protected:
 
 public:
 
-	virtual bool		IsResourceValid() const { return !!pMinMaxData; }
 	U32					GetHeightMapWidth() const { return HFWidth; }
 	U32					GetHeightMapHeight() const { return HFHeight; }
 	U32					GetPatchSize() const { return PatchSize; }

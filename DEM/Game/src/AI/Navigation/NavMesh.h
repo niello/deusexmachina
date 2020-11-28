@@ -1,6 +1,6 @@
 #pragma once
 #include <AI/Navigation/NavFwd.h>
-#include <Resources/ResourceObject.h>
+#include <Core/Object.h>
 #include <Data/StringID.h>
 #include <map>
 
@@ -9,9 +9,9 @@
 namespace DEM::AI
 {
 
-class CNavMesh : public Resources::CResourceObject
+class CNavMesh : public ::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::AI::CNavMesh, Resources::CResourceObject);
+	RTTI_CLASS_DECL(DEM::AI::CNavMesh, ::Core::CObject);
 
 protected:
 
@@ -27,8 +27,6 @@ public:
 
 	CNavMesh(float AgentRadius, float AgentHeight, std::vector<U8>&& RawData, std::map<CStrID, CNavRegion>&& Regions);
 	virtual ~CNavMesh() override;
-
-	virtual bool      IsResourceValid() const override { return !!_pNavMesh; }
 
 	float             GetAgentRadius() const { return _AgentRadius; }
 	float             GetAgentHeight() const { return _AgentHeight; }

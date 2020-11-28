@@ -16,7 +16,7 @@ const Core::CRTTI& CCollisionLoaderHRD::GetResultType() const
 //---------------------------------------------------------------------
 
 // Can also load CDLODData resource and acceletare raycasting with minmax map
-PResourceObject CCollisionLoaderHRD::CreateResource(CStrID UID)
+Core::PObject CCollisionLoaderHRD::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	Data::PBuffer Buffer;

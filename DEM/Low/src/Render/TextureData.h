@@ -1,5 +1,5 @@
 #pragma once
-#include <Resources/ResourceObject.h>
+#include <Core/Object.h>
 #include <Render/Texture.h> // for CTextureDesc
 
 // Texture data is an engine resource that incapsulates all necessary data
@@ -15,9 +15,9 @@ namespace Data
 namespace Render
 {
 
-class CTextureData: public Resources::CResourceObject
+class CTextureData: public ::Core::CObject
 {
-	RTTI_CLASS_DECL(Render::CTextureData, Resources::CResourceObject);
+	RTTI_CLASS_DECL(Render::CTextureData, ::Core::CObject);
 
 private:
 
@@ -31,8 +31,6 @@ public:
 
 	CTextureData();
 	virtual ~CTextureData();
-
-	virtual bool	IsResourceValid() const { return Data && Desc.Width; }
 
 	// Controls RAM texture data lifetime. Some GPU resources may want to keep this data in RAM.
 	bool			UseBuffer();

@@ -82,9 +82,9 @@ struct CInteractionZone
 	bool                                     ClosedPolygon = false;
 };
 
-class CSmartObject : public Resources::CResourceObject
+class CSmartObject : public ::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::Game::CSmartObject, Resources::CResourceObject);
+	RTTI_CLASS_DECL(DEM::Game::CSmartObject, ::Core::CObject);
 
 public:
 
@@ -104,8 +104,6 @@ public:
 
 	CSmartObject(CStrID ID, CStrID DefaultState, bool Static, std::string_view ScriptSource,
 		std::vector<CSmartObjectStateInfo>&& States, std::vector<CInteractionZone>&& InteractionZones);
-
-	virtual bool IsResourceValid() const override { return !_States.empty(); }
 
 	bool          InitScript(sol::state& Lua);
 

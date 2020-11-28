@@ -14,7 +14,7 @@ const Core::CRTTI& CTextureLoaderCDLOD::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CTextureLoaderCDLOD::CreateResource(CStrID UID)
+Core::PObject CTextureLoaderCDLOD::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

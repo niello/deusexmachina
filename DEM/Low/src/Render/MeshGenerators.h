@@ -30,7 +30,7 @@ public:
 
 	CMeshGeneratorQuadPatch(U32 QuadsPerEdge, bool FrontClockWise = false) : CMeshGenerator(FrontClockWise), _QuadsPerEdge(QuadsPerEdge) {}
 
-	virtual PResourceObject CreateResource(CStrID UID) override;
+	virtual Core::PObject CreateResource(CStrID UID) override;
 };
 
 class CMeshGeneratorBox: public CMeshGenerator
@@ -39,7 +39,7 @@ public:
 
 	CMeshGeneratorBox(bool FrontClockWise = false) : CMeshGenerator(FrontClockWise) {}
 
-	virtual PResourceObject CreateResource(CStrID UID) override;
+	virtual Core::PObject CreateResource(CStrID UID) override;
 };
 
 class CMeshGeneratorSphere: public CMeshGenerator
@@ -52,7 +52,7 @@ public:
 
 	CMeshGeneratorSphere(U16 RowCount, bool FrontClockWise = false) : CMeshGenerator(FrontClockWise), _RowCount(std::max<U16>(RowCount, 4)) {}
 
-	virtual PResourceObject CreateResource(CStrID UID) override;
+	virtual Core::PObject CreateResource(CStrID UID) override;
 };
 
 class CMeshGeneratorCylinder: public CMeshGenerator
@@ -65,7 +65,7 @@ public:
 
 	CMeshGeneratorCylinder(U16 SectorCount, bool FrontClockWise = false) : CMeshGenerator(FrontClockWise), _SectorCount(std::max<U16>(SectorCount, 3)) {}
 
-	virtual PResourceObject CreateResource(CStrID UID) override;
+	virtual Core::PObject CreateResource(CStrID UID) override;
 };
 
 class CMeshGeneratorCone: public CMeshGenerator
@@ -78,7 +78,7 @@ public:
 
 	CMeshGeneratorCone(U16 SectorCount, bool FrontClockWise = false) : CMeshGenerator(FrontClockWise), _SectorCount(std::max<U16>(SectorCount, 3)) {}
 
-	virtual PResourceObject CreateResource(CStrID UID) override;
+	virtual Core::PObject CreateResource(CStrID UID) override;
 };
 
 }

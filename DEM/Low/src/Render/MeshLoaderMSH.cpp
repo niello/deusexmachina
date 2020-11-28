@@ -25,7 +25,7 @@ const Core::CRTTI& CMeshLoaderMSH::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CMeshLoaderMSH::CreateResource(CStrID UID)
+Core::PObject CMeshLoaderMSH::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);
