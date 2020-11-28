@@ -21,7 +21,7 @@ protected:
 	struct CChunkNode
 	{
 		std::unique_ptr<CChunkNode> Next;
-		CRecord                     ChunkRecords[ObjectsPerChunk];
+		CRecord                     ChunkRecords[ObjectsPerChunk] = {};
 	};
 
 	std::unique_ptr<CChunkNode> Chunks;

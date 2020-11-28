@@ -11,8 +11,8 @@ class CPairT
 {
 protected:
 
-	TKey Key;
-	TVal Value;
+	TKey Key = {};
+	TVal Value = {};
 
 public:
 

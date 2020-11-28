@@ -24,12 +24,12 @@ bool CModelRenderer::Init(bool LightingEnabled, const Data::CParams& Params)
 	for (U32 i = 0; i < 4; ++i)
 	{
 		CVertexComponent& Cmp = InstanceDataDecl[i];
-		Cmp.Semantic = VCSem_TexCoord;
+		Cmp.Semantic = EVertexComponentSemantic::TexCoord;
 		Cmp.UserDefinedName = nullptr;
 		Cmp.Index = i + 4;
-		Cmp.Format = VCFmt_Float32_4;
+		Cmp.Format = EVertexComponentFormat::Float32_4;
 		Cmp.Stream = INSTANCE_BUFFER_STREAM_INDEX;
-		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Cmp.OffsetInVertex = VertexComponentOffsetAuto;
 		Cmp.PerInstanceData = true;
 	}
 
@@ -101,7 +101,7 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 				{
 					//!!!???avoid object creation, rewrite functions so that testing against vector + float is possible!?
 					sphere LightBounds(LightRec.Transform.Translation(), pLight->GetRange());
-					if (LightBounds.GetClipStatus(Context.AABB) == Outside) continue;
+					if (LightBounds.GetClipStatus(Context.AABB) == EClipStatus::Outside) continue;
 					break;
 				}
 				case Light_Spot:
@@ -113,7 +113,7 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 					matrix44 GlobalFrustum;
 					LightRec.Transform.invert_simple(GlobalFrustum);
 					GlobalFrustum *= LocalFrustum;
-					if (Context.AABB.GetClipStatus(GlobalFrustum) == Outside) continue;
+					if (Context.AABB.GetClipStatus(GlobalFrustum) == EClipStatus::Outside) continue;
 					break;
 				}
 			}

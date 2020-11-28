@@ -137,7 +137,7 @@ inline T NextPow2(T x)
 }
 
 // Only for power-of-2 alignment //!!!C++11 static_assert may help!
-template <unsigned int Alignment> inline bool IsAligned(const void* Pointer) { return !((unsigned int)Pointer) & (Alignment - 1); }
+template <unsigned int Alignment> inline bool IsAligned(const void* Pointer) { return !(((unsigned int)Pointer) & (Alignment - 1)); }
 inline bool IsAligned16(const void* Pointer) { return !(((unsigned int)Pointer) & 0x0000000f); }
 
 // Execution results
@@ -152,7 +152,7 @@ inline bool ExecResultIsError(UPTR Result) { return Result >= Error; }
 
 //
 
-enum EClipStatus
+enum class EClipStatus
 {
 	Outside,
 	Inside,

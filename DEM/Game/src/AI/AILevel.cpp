@@ -133,20 +133,20 @@ void CAILevel::UpdateStimulusLocation(CStimulusNode& StimulusNode)
 }
 //---------------------------------------------------------------------
 
-void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus EClipStatus)
+void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus ClipStatus)
 {
 	if (!pNode->GetTotalObjCount()) return;
 
-	if (EClipStatus == Clipped)
+	if (ClipStatus == EClipStatus::Clipped)
 	{
 		CAABB BBox;
 		pNode->GetBounds(BBox);
 		BBox.Min.y = Box.Min.y;
 		BBox.Max.y = Box.Max.y;
-		EClipStatus = pSensor->GetBoxClipStatus(pActor, BBox);
+		ClipStatus = pSensor->GetBoxClipStatus(pActor, BBox);
 	}
 
-	if (EClipStatus == Outside) return;
+	if (ClipStatus == EClipStatus::Outside) return;
 
 	for (UPTR i = 0; i < pNode->Data.GetListCount(); ++i)
 		if (pSensor->AcceptsStimulusType(*pNode->Data.GetKeyAt(i)))
@@ -157,7 +157,7 @@ void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor
 
 	if (pNode->HasChildren())
 		for (UPTR i = 0; i < 4; ++i)
-			QTNodeUpdateActorsSense(pNode->GetChild(i), pActor, pSensor, EClipStatus);
+			QTNodeUpdateActorsSense(pNode->GetChild(i), pActor, pSensor, ClipStatus);
 }
 //---------------------------------------------------------------------
 

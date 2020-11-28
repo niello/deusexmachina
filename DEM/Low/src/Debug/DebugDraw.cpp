@@ -30,12 +30,12 @@ CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr)
 
 	// Position, transformation matrix44, color
 	Render::CVertexComponent ShapeComponents[] = {
-		{ Render::VCSem_Position, nullptr, 0, Render::VCFmt_Float32_3, 0, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, false },
-		{ Render::VCSem_TexCoord, nullptr, 4, Render::VCFmt_Float32_4, 1, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, true },
-		{ Render::VCSem_TexCoord, nullptr, 5, Render::VCFmt_Float32_4, 1, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, true },
-		{ Render::VCSem_TexCoord, nullptr, 6, Render::VCFmt_Float32_4, 1, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, true },
-		{ Render::VCSem_TexCoord, nullptr, 7, Render::VCFmt_Float32_4, 1, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, true },
-		{ Render::VCSem_Color, nullptr, 0, Render::VCFmt_UInt8_4_Norm, 1, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, true } };
+		{ Render::EVertexComponentSemantic::Position, nullptr, 0, Render::EVertexComponentFormat::Float32_3, 0, Render::VertexComponentOffsetAuto, false },
+		{ Render::EVertexComponentSemantic::TexCoord, nullptr, 4, Render::EVertexComponentFormat::Float32_4, 1, Render::VertexComponentOffsetAuto, true },
+		{ Render::EVertexComponentSemantic::TexCoord, nullptr, 5, Render::EVertexComponentFormat::Float32_4, 1, Render::VertexComponentOffsetAuto, true },
+		{ Render::EVertexComponentSemantic::TexCoord, nullptr, 6, Render::EVertexComponentFormat::Float32_4, 1, Render::VertexComponentOffsetAuto, true },
+		{ Render::EVertexComponentSemantic::TexCoord, nullptr, 7, Render::EVertexComponentFormat::Float32_4, 1, Render::VertexComponentOffsetAuto, true },
+		{ Render::EVertexComponentSemantic::Color, nullptr, 0, Render::EVertexComponentFormat::UInt8_4_Norm, 1, Render::VertexComponentOffsetAuto, true } };
 
 	_ShapeVertexLayout = GraphicsMgr.GetGPU()->CreateVertexLayout(ShapeComponents, sizeof_array(ShapeComponents));
 
@@ -45,8 +45,8 @@ CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr)
 
 	// Position with size in W, color
 	Render::CVertexComponent PrimitiveComponents[] = {
-		{ Render::VCSem_Position, nullptr, 0, Render::VCFmt_Float32_4, 0, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, false },
-		{ Render::VCSem_Color, nullptr, 0, Render::VCFmt_UInt8_4_Norm, 0, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, false } };
+		{ Render::EVertexComponentSemantic::Position, nullptr, 0, Render::EVertexComponentFormat::Float32_4, 0, Render::VertexComponentOffsetAuto, false },
+		{ Render::EVertexComponentSemantic::Color, nullptr, 0, Render::EVertexComponentFormat::UInt8_4_Norm, 0, Render::VertexComponentOffsetAuto, false } };
 
 	auto PrimitiveVertexLayout = GraphicsMgr.GetGPU()->CreateVertexLayout(PrimitiveComponents, sizeof_array(PrimitiveComponents));
 	_PrimitiveBuffer = GraphicsMgr.GetGPU()->CreateVertexBuffer(*PrimitiveVertexLayout, MAX_PRIMITIVE_VERTICES_PER_DIP, Render::Access_CPU_Write | Render::Access_GPU_Read);

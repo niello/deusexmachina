@@ -52,22 +52,22 @@ bool CTerrainRenderer::Init(bool LightingEnabled, const Data::CParams& Params)
 
 	// Patch offset and scale in XZ
 	CVertexComponent* pCmp = &InstanceDataDecl[0];
-	pCmp->Semantic = VCSem_TexCoord;
+	pCmp->Semantic = EVertexComponentSemantic::TexCoord;
 	pCmp->UserDefinedName = nullptr;
 	pCmp->Index = 0;
-	pCmp->Format = VCFmt_Float32_4;
+	pCmp->Format = EVertexComponentFormat::Float32_4;
 	pCmp->Stream = INSTANCE_BUFFER_STREAM_INDEX;
-	pCmp->OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+	pCmp->OffsetInVertex = VertexComponentOffsetAuto;
 	pCmp->PerInstanceData = true;
 
 	// Morph constants
 	pCmp = &InstanceDataDecl[1];
-	pCmp->Semantic = VCSem_TexCoord;
+	pCmp->Semantic = EVertexComponentSemantic::TexCoord;
 	pCmp->UserDefinedName = nullptr;
 	pCmp->Index = 1;
-	pCmp->Format = VCFmt_Float32_2;
+	pCmp->Format = EVertexComponentFormat::Float32_2;
 	pCmp->Stream = INSTANCE_BUFFER_STREAM_INDEX;
-	pCmp->OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+	pCmp->OffsetInVertex = VertexComponentOffsetAuto;
 	pCmp->PerInstanceData = true;
 
 	// Light indices
@@ -75,12 +75,12 @@ bool CTerrainRenderer::Init(bool LightingEnabled, const Data::CParams& Params)
 	while (ElementIdx < InstanceDataDecl.size())
 	{
 		pCmp = &InstanceDataDecl[ElementIdx];
-		pCmp->Semantic = VCSem_TexCoord;
+		pCmp->Semantic = EVertexComponentSemantic::TexCoord;
 		pCmp->UserDefinedName = nullptr;
 		pCmp->Index = ElementIdx;
-		pCmp->Format = VCFmt_SInt16_4;
+		pCmp->Format = EVertexComponentFormat::SInt16_4;
 		pCmp->Stream = INSTANCE_BUFFER_STREAM_INDEX;
-		pCmp->OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		pCmp->OffsetInVertex = VertexComponentOffsetAuto;
 		pCmp->PerInstanceData = true;
 
 		++ElementIdx;
@@ -112,7 +112,7 @@ bool CTerrainRenderer::CheckNodeSphereIntersection(const CLightTestArgs& Args, c
 	NodeAABB.Max.y = MaxY * Args.pCDLOD->GetVerticalScale();
 	NodeAABB.Max.z = NodeMinZ + ScaleZ;
 
-	if (Sphere.GetClipStatus(NodeAABB) == Outside) FAIL;
+	if (Sphere.GetClipStatus(NodeAABB) == EClipStatus::Outside) FAIL;
 
 	// Leaf node reached
 	if (LOD == 0) OK;
@@ -154,7 +154,7 @@ bool CTerrainRenderer::CheckNodeFrustumIntersection(const CLightTestArgs& Args, 
 	NodeAABB.Max.y = MaxY * Args.pCDLOD->GetVerticalScale();
 	NodeAABB.Max.z = NodeMinZ + ScaleZ;
 
-	if (NodeAABB.GetClipStatus(Frustum) == Outside) FAIL;
+	if (NodeAABB.GetClipStatus(Frustum) == EClipStatus::Outside) FAIL;
 
 	// Leaf node reached
 	if (LOD == 0) OK;
@@ -247,7 +247,7 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 				{
 					//!!!???rewrite functions so that testing against vector + float is possible!?
 					sphere LightBounds(LightRec.Transform.Translation(), pLight->GetRange());
-					if (LightBounds.GetClipStatus(Context.AABB) == Outside) continue;
+					if (LightBounds.GetClipStatus(Context.AABB) == EClipStatus::Outside) continue;
 
 					// Perform coarse test on quadtree
 					if (LIGHT_INTERSECTION_COARSE_TEST_MAX_AABBS > 1)
@@ -280,7 +280,7 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 					matrix44 GlobalFrustum;
 					LightRec.Transform.invert_simple(GlobalFrustum);
 					GlobalFrustum *= LocalFrustum;
-					if (Context.AABB.GetClipStatus(GlobalFrustum) == Outside) continue;
+					if (Context.AABB.GetClipStatus(GlobalFrustum) == EClipStatus::Outside) continue;
 
 					// Perform coarse test on quadtree
 					if (LIGHT_INTERSECTION_COARSE_TEST_MAX_AABBS > 1)
@@ -339,7 +339,7 @@ void CTerrainRenderer::FillNodeLightIndices(const CProcessTerrainNodeArgs& Args,
 			{
 				//!!!???avoid object creation, rewrite functions so that testing against vector + float is possible!?
 				sphere LightBounds(LightRec.Transform.Translation(), pLight->GetRange());
-				if (LightBounds.GetClipStatus(NodeAABB) == Outside) continue;
+				if (LightBounds.GetClipStatus(NodeAABB) == EClipStatus::Outside) continue;
 				break;
 			}
 			case Light_Spot:
@@ -351,7 +351,7 @@ void CTerrainRenderer::FillNodeLightIndices(const CProcessTerrainNodeArgs& Args,
 				matrix44 GlobalFrustum;
 				LightRec.Transform.invert_simple(GlobalFrustum);
 				GlobalFrustum *= LocalFrustum;
-				if (NodeAABB.GetClipStatus(GlobalFrustum) == Outside) continue;
+				if (NodeAABB.GetClipStatus(GlobalFrustum) == EClipStatus::Outside) continue;
 				break;
 			}
 		}
@@ -405,16 +405,16 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 	NodeAABB.Max.y = MaxY * pCDLOD->GetVerticalScale();
 	NodeAABB.Max.z = NodeMinZ + ScaleZ;
 
-	if (Clip == Clipped)
+	if (Clip == EClipStatus::Clipped)
 	{
 		// NB: Visibility is tested for the current camera, NOT always for the main
 		Clip = NodeAABB.GetClipStatus(Args.pRenderContext->ViewProjection);
-		if (Clip == Outside) return Node_Invisible;
+		if (Clip == EClipStatus::Outside) return Node_Invisible;
 	}
 
 	// NB: Always must check the main frame camera, even if some special camera is used for intermediate rendering
 	sphere LODSphere(Args.pRenderContext->CameraPosition, LODRange);
-	if (LODSphere.GetClipStatus(NodeAABB) == Outside) return Node_NotInLOD;
+	if (LODSphere.GetClipStatus(NodeAABB) == EClipStatus::Outside) return Node_NotInLOD;
 
 	// Bits 0 to 3 - if set, add quarterpatch for child[0 .. 3]
 	U8 ChildFlags = 0;
@@ -438,7 +438,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 
 		// NB: Always must check the main frame camera, even if some special camera is used for intermediate rendering
 		LODSphere.r = NextLODRange;
-		if (LODSphere.GetClipStatus(NodeAABB) == Outside)
+		if (LODSphere.GetClipStatus(NodeAABB) == EClipStatus::Outside)
 		{
 			// Add the whole node to the current LOD
 			ChildFlags = Child_All;

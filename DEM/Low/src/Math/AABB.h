@@ -288,9 +288,9 @@ inline bool CAABB::contains(const vector3& v) const
 
 inline EClipStatus CAABB::GetClipStatus(const CAABB& other) const
 {
-	if (contains(other)) return Inside;
-	if (intersects(other)) return Clipped;
-	return Outside;
+	if (contains(other)) return EClipStatus::Inside;
+	if (intersects(other)) return EClipStatus::Clipped;
+	return EClipStatus::Outside;
 }
 //---------------------------------------------------------------------
 
@@ -312,9 +312,9 @@ inline EClipStatus CAABB::GetClipStatus(const matrix44& ViewProj) const
 		ANDFlags &= ClipBits;
 		ORFlags |= ClipBits;
 	}
-	if (!ORFlags) return Inside;
-	if (ANDFlags) return Outside;
-	return Clipped;
+	if (!ORFlags) return EClipStatus::Inside;
+	if (ANDFlags) return EClipStatus::Outside;
+	return EClipStatus::Clipped;
 }
 //---------------------------------------------------------------------
 

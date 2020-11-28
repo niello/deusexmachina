@@ -21,8 +21,8 @@ protected:
 
 	Debug::CDebugDraw&         _DebugDraw;
 	dtNavMeshQuery*            _pQuery = nullptr;
-	Render::EPrimitiveTopology _PrimType;
-	float                      _Size;
+	Render::EPrimitiveTopology _PrimType = Render::EPrimitiveTopology::Prim_Invalid;
+	float                      _Size = 0.f;
 
 public:
 

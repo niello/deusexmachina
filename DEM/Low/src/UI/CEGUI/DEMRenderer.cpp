@@ -16,11 +16,11 @@ String CDEMRenderer::RendererID("CEGUI::CDEMRenderer - official DeusExMachina en
 CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver)
 	: GPU(&GPUDriver)
 {
-	//???use Render::VCFmt_UInt8_4_Norm for color? convert on append vertices?
+	//???use Render::EVertexComponentFormat::UInt8_4_Norm for color? convert on append vertices?
 	Render::CVertexComponent Components[] = {
-			{ Render::VCSem_Position, nullptr, 0, Render::VCFmt_Float32_3, 0, 0, false },
-			{ Render::VCSem_Color, nullptr, 0, Render::VCFmt_Float32_4, 0, 12, false },
-			{ Render::VCSem_TexCoord, nullptr, 0, Render::VCFmt_Float32_2, 0, 28, false } };
+			{ Render::EVertexComponentSemantic::Position, nullptr, 0, Render::EVertexComponentFormat::Float32_3, 0, 0, false },
+			{ Render::EVertexComponentSemantic::Color, nullptr, 0, Render::EVertexComponentFormat::Float32_4, 0, 12, false },
+			{ Render::EVertexComponentSemantic::TexCoord, nullptr, 0, Render::EVertexComponentFormat::Float32_2, 0, 28, false } };
 
 	VertexLayoutTextured = GPU->CreateVertexLayout(Components, 3);
 	n_assert(VertexLayoutTextured.IsValidPtr());

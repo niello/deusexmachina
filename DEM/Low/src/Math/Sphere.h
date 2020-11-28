@@ -97,9 +97,9 @@ inline bool sphere::intersects(const CAABB& box) const
 // the box is completely inside the sphere.
 inline EClipStatus sphere::GetClipStatus(const CAABB& box) const
 {
-	if (inside(box)) return Inside;
-	if (intersects(box)) return Clipped;
-	return Outside;
+	if (inside(box)) return EClipStatus::Inside;
+	if (intersects(box)) return EClipStatus::Clipped;
+	return EClipStatus::Outside;
 }
 //---------------------------------------------------------------------
 

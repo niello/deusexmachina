@@ -53,101 +53,101 @@ static void SetupVertexComponents(U32 Mask, std::vector<Render::CVertexComponent
 {
 	Render::CVertexComponent Cmp;
 	Cmp.Stream = 0;
-	Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+	Cmp.OffsetInVertex = Render::VertexComponentOffsetAuto;
 	Cmp.UserDefinedName = nullptr;
 	Cmp.PerInstanceData = false;
 
 	if (Mask & Coord)
 	{
-		Cmp.Format = Render::VCFmt_Float32_3;
-		Cmp.Semantic = Render::VCSem_Position;
+		Cmp.Format = Render::EVertexComponentFormat::Float32_3;
+		Cmp.Semantic = Render::EVertexComponentSemantic::Position;
 		Cmp.Index = 0;
 		Components.push_back(Cmp);
 	}
 	else if (Mask & Coord4)
 	{
-		Cmp.Format = Render::VCFmt_Float32_4;
-		Cmp.Semantic = Render::VCSem_Position;
+		Cmp.Format = Render::EVertexComponentFormat::Float32_4;
+		Cmp.Semantic = Render::EVertexComponentSemantic::Position;
 		Cmp.Index = 0;
 		Components.push_back(Cmp);
 	}
 
 	if (Mask & Normal)
 	{
-		Cmp.Format = Render::VCFmt_Float32_3;
-		Cmp.Semantic = Render::VCSem_Normal;
+		Cmp.Format = Render::EVertexComponentFormat::Float32_3;
+		Cmp.Semantic = Render::EVertexComponentSemantic::Normal;
 		Cmp.Index = 0;
 		Components.push_back(Cmp);
 	}
 
 	if (Mask & Uv0)
 	{
-		Cmp.Format = Render::VCFmt_Float32_2;
-		Cmp.Semantic = Render::VCSem_TexCoord;
+		Cmp.Format = Render::EVertexComponentFormat::Float32_2;
+		Cmp.Semantic = Render::EVertexComponentSemantic::TexCoord;
 		Cmp.Index = 0;
 		Components.push_back(Cmp);
 	}
 
 	if (Mask & Uv1)
 	{
-		Cmp.Format = Render::VCFmt_Float32_2;
-		Cmp.Semantic = Render::VCSem_TexCoord;
+		Cmp.Format = Render::EVertexComponentFormat::Float32_2;
+		Cmp.Semantic = Render::EVertexComponentSemantic::TexCoord;
 		Cmp.Index = 1;
 		Components.push_back(Cmp);
 	}
 
 	if (Mask & Uv2)
 	{
-		Cmp.Format = Render::VCFmt_Float32_2;
-		Cmp.Semantic = Render::VCSem_TexCoord;
+		Cmp.Format = Render::EVertexComponentFormat::Float32_2;
+		Cmp.Semantic = Render::EVertexComponentSemantic::TexCoord;
 		Cmp.Index = 2;
 		Components.push_back(Cmp);
 	}
 
 	if (Mask & Uv3)
 	{
-		Cmp.Format = Render::VCFmt_Float32_2;
-		Cmp.Semantic = Render::VCSem_TexCoord;
+		Cmp.Format = Render::EVertexComponentFormat::Float32_2;
+		Cmp.Semantic = Render::EVertexComponentSemantic::TexCoord;
 		Cmp.Index = 3;
 		Components.push_back(Cmp);
 	}
 
 	if (Mask & Color)
 	{
-		Cmp.Format = Render::VCFmt_Float32_4;
-		Cmp.Semantic = Render::VCSem_Color;
+		Cmp.Format = Render::EVertexComponentFormat::Float32_4;
+		Cmp.Semantic = Render::EVertexComponentSemantic::Color;
 		Cmp.Index = 0;
 		Components.push_back(Cmp);
 	}
 
 	if (Mask & Tangent)
 	{
-		Cmp.Format = Render::VCFmt_Float32_3;
-		Cmp.Semantic = Render::VCSem_Tangent;
+		Cmp.Format = Render::EVertexComponentFormat::Float32_3;
+		Cmp.Semantic = Render::EVertexComponentSemantic::Tangent;
 		Cmp.Index = 0;
 		Components.push_back(Cmp);
 	}
 
 	if (Mask & Bitangent)
 	{
-		Cmp.Format = Render::VCFmt_Float32_3;
-		Cmp.Semantic = Render::VCSem_Bitangent;
+		Cmp.Format = Render::EVertexComponentFormat::Float32_3;
+		Cmp.Semantic = Render::EVertexComponentSemantic::Bitangent;
 		Cmp.Index = 0;
 		Components.push_back(Cmp);
 	}
 
 	if (Mask & Weights)
 	{
-		Cmp.Format = Render::VCFmt_Float32_4;
-		Cmp.Semantic = Render::VCSem_BoneWeights;
+		Cmp.Format = Render::EVertexComponentFormat::Float32_4;
+		Cmp.Semantic = Render::EVertexComponentSemantic::BoneWeights;
 		Cmp.Index = 0;
 		Components.push_back(Cmp);
 	}
 
 	if (Mask & JIndices)
 	{
-		Cmp.Format = Render::VCFmt_Float32_4;
-		Cmp.Semantic = Render::VCSem_BoneIndices;
+		Cmp.Format = Render::EVertexComponentFormat::Float32_4;
+		Cmp.Semantic = Render::EVertexComponentSemantic::BoneIndices;
 		Cmp.Index = 0;
 		Components.push_back(Cmp);
 	}

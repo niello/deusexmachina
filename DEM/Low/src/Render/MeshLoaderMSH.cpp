@@ -68,7 +68,7 @@ PResourceObject CMeshLoaderMSH::CreateResource(CStrID UID)
 		Component.Semantic = static_cast<Render::EVertexComponentSemantic>(SemanticCode);
 		Component.Index = Index;
 		Component.Stream = StreamIndex;
-		Component.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Component.OffsetInVertex = Render::VertexComponentOffsetAuto;
 		Component.UserDefinedName = nullptr;
 		Component.PerInstanceData = false;
 	}

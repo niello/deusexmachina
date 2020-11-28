@@ -789,13 +789,14 @@ bool CD3D11GPUDriver::SetViewport(UPTR Index, const CViewport* pViewport)
 	}
 	else
 	{
-		Sys::Error("FILL WITH RT DEFAULTS!!!\n");
-		CurrViewport.TopLeftX = pViewport->Left;
-		CurrViewport.TopLeftY = pViewport->Top;
-		CurrViewport.Width = pViewport->Width;
-		CurrViewport.Height = pViewport->Height;
-		CurrViewport.MinDepth = pViewport->MinDepth;
-		CurrViewport.MaxDepth = pViewport->MaxDepth;
+		// TODO: review, maybe hardcoded 640x480 is not the best choice for defaults
+		auto pRT = CurrRT[Index].Get();
+		CurrViewport.TopLeftX = 0.f;
+		CurrViewport.TopLeftY = 0.f;
+		CurrViewport.Width = pRT ? pRT->GetDesc().Width : 640.f;
+		CurrViewport.Height = pRT ? pRT->GetDesc().Height : 480.f;
+		CurrViewport.MinDepth = 0.f;
+		CurrViewport.MaxDepth = 1.f;
 
 		VPSRSetFlags.Clear(IsSetBit);
 	}
@@ -1603,6 +1604,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 		CurrDirtyFlags.Clear(GPU_Dirty_RT | GPU_Dirty_DS);
 	}
 
+	// Viewports
 	if (Update.Is(GPU_Dirty_VP) && CurrDirtyFlags.Is(GPU_Dirty_VP))
 	{
 		// Find the last set VP, as we must set all viewports from 0'th to it.
@@ -1616,6 +1618,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 		CurrDirtyFlags.Clear(GPU_Dirty_VP);
 	}
 
+	// Scissor rects
 	//???set viewports and scissor rects atomically?
 	//???what hapens with set SRs when VPs are set?
 	if (Update.Is(GPU_Dirty_SR) && CurrDirtyFlags.Is(GPU_Dirty_SR))
@@ -1687,15 +1690,15 @@ PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pCompo
 
 		switch (Component.Semantic)
 		{
-			case VCSem_Position:	DeclElement.SemanticName = "POSITION"; break;
-			case VCSem_Normal:		DeclElement.SemanticName = "NORMAL"; break;
-			case VCSem_Tangent:		DeclElement.SemanticName = "TANGENT"; break;
-			case VCSem_Bitangent:	DeclElement.SemanticName = "BINORMAL"; break;
-			case VCSem_TexCoord:	DeclElement.SemanticName = "TEXCOORD"; break;
-			case VCSem_Color:		DeclElement.SemanticName = "COLOR"; break;
-			case VCSem_BoneWeights:	DeclElement.SemanticName = "BLENDWEIGHT"; break;
-			case VCSem_BoneIndices:	DeclElement.SemanticName = "BLENDINDICES"; break;
-			case VCSem_UserDefined:	DeclElement.SemanticName = Component.UserDefinedName; break;
+			case EVertexComponentSemantic::Position:	DeclElement.SemanticName = "POSITION"; break;
+			case EVertexComponentSemantic::Normal:		DeclElement.SemanticName = "NORMAL"; break;
+			case EVertexComponentSemantic::Tangent:		DeclElement.SemanticName = "TANGENT"; break;
+			case EVertexComponentSemantic::Bitangent:	DeclElement.SemanticName = "BINORMAL"; break;
+			case EVertexComponentSemantic::TexCoord:	DeclElement.SemanticName = "TEXCOORD"; break;
+			case EVertexComponentSemantic::Color:		DeclElement.SemanticName = "COLOR"; break;
+			case EVertexComponentSemantic::BoneWeights:	DeclElement.SemanticName = "BLENDWEIGHT"; break;
+			case EVertexComponentSemantic::BoneIndices:	DeclElement.SemanticName = "BLENDINDICES"; break;
+			case EVertexComponentSemantic::UserDefined:	DeclElement.SemanticName = Component.UserDefinedName; break;
 			default:				return nullptr;
 		}
 
@@ -1703,26 +1706,26 @@ PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pCompo
 
 		switch (Component.Format)
 		{
-			case VCFmt_Float32_1:		DeclElement.Format = DXGI_FORMAT_R32_FLOAT; break;
-			case VCFmt_Float32_2:		DeclElement.Format = DXGI_FORMAT_R32G32_FLOAT; break;
-			case VCFmt_Float32_3:		DeclElement.Format = DXGI_FORMAT_R32G32B32_FLOAT; break;
-			case VCFmt_Float32_4:		DeclElement.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
-			case VCFmt_Float16_2:		DeclElement.Format = DXGI_FORMAT_R16G16_FLOAT; break;
-			case VCFmt_Float16_4:		DeclElement.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
-			case VCFmt_UInt8_4:			DeclElement.Format = DXGI_FORMAT_R8G8B8A8_UINT; break;
-			case VCFmt_UInt8_4_Norm:	DeclElement.Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-			case VCFmt_SInt16_2:		DeclElement.Format = DXGI_FORMAT_R16G16_SINT; break;
-			case VCFmt_SInt16_4:		DeclElement.Format = DXGI_FORMAT_R16G16B16A16_SINT; break;
-			case VCFmt_SInt16_2_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16_SNORM; break;
-			case VCFmt_SInt16_4_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16B16A16_SNORM; break;
-			case VCFmt_UInt16_2_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16_UNORM; break;
-			case VCFmt_UInt16_4_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+			case EVertexComponentFormat::Float32_1:		DeclElement.Format = DXGI_FORMAT_R32_FLOAT; break;
+			case EVertexComponentFormat::Float32_2:		DeclElement.Format = DXGI_FORMAT_R32G32_FLOAT; break;
+			case EVertexComponentFormat::Float32_3:		DeclElement.Format = DXGI_FORMAT_R32G32B32_FLOAT; break;
+			case EVertexComponentFormat::Float32_4:		DeclElement.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+			case EVertexComponentFormat::Float16_2:		DeclElement.Format = DXGI_FORMAT_R16G16_FLOAT; break;
+			case EVertexComponentFormat::Float16_4:		DeclElement.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
+			case EVertexComponentFormat::UInt8_4:			DeclElement.Format = DXGI_FORMAT_R8G8B8A8_UINT; break;
+			case EVertexComponentFormat::UInt8_4_Norm:	DeclElement.Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+			case EVertexComponentFormat::SInt16_2:		DeclElement.Format = DXGI_FORMAT_R16G16_SINT; break;
+			case EVertexComponentFormat::SInt16_4:		DeclElement.Format = DXGI_FORMAT_R16G16B16A16_SINT; break;
+			case EVertexComponentFormat::SInt16_2_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16_SNORM; break;
+			case EVertexComponentFormat::SInt16_4_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16B16A16_SNORM; break;
+			case EVertexComponentFormat::UInt16_2_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16_UNORM; break;
+			case EVertexComponentFormat::UInt16_4_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16B16A16_UNORM; break;
 			default:					return nullptr;
 		}
 
 		DeclElement.InputSlot = StreamIndex;
 		DeclElement.AlignedByteOffset =
-			(Component.OffsetInVertex == DEM_VERTEX_COMPONENT_OFFSET_DEFAULT) ? D3D11_APPEND_ALIGNED_ELEMENT : Component.OffsetInVertex;
+			(Component.OffsetInVertex == VertexComponentOffsetAuto) ? D3D11_APPEND_ALIGNED_ELEMENT : Component.OffsetInVertex;
 		if (Component.PerInstanceData)
 		{
 			DeclElement.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
@@ -2517,6 +2520,10 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 //not to duplicate states.
 PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 {
+	ID3D11RasterizerState* pRState = nullptr;
+	ID3D11DepthStencilState* pDSState = nullptr;
+	ID3D11BlendState* pBState = nullptr;
+
 	// Not supported (implement in D3D11 shaders):
 	// - Misc_AlphaTestEnable
 	// - AlphaTestRef
@@ -2543,7 +2550,6 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	RDesc.MultisampleEnable = Desc.Flags.Is(CRenderStateDesc::Rasterizer_MSAAEnable);
 	RDesc.AntialiasedLineEnable = Desc.Flags.Is(CRenderStateDesc::Rasterizer_MSAALinesEnable);
 
-	ID3D11RasterizerState* pRState = nullptr;
 	if (FAILED(pD3DDevice->CreateRasterizerState(&RDesc, &pRState))) goto ProcessFailure;
 
 	D3D11_DEPTH_STENCIL_DESC DSDesc;
@@ -2562,7 +2568,6 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	DSDesc.BackFace.StencilFailOp = GetD3DStencilOp(Desc.StencilBackFace.StencilFailOp);
 	DSDesc.BackFace.StencilDepthFailOp = GetD3DStencilOp(Desc.StencilBackFace.StencilDepthFailOp);
 
-	ID3D11DepthStencilState* pDSState = nullptr;
 	if (FAILED(pD3DDevice->CreateDepthStencilState(&DSDesc, &pDSState))) goto ProcessFailure;
 
 	D3D11_BLEND_DESC BDesc;
@@ -2596,7 +2601,6 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 		}
 	}
 
-	ID3D11BlendState* pBState = nullptr;
 	if (FAILED(pD3DDevice->CreateBlendState(&BDesc, &pBState))) goto ProcessFailure;
 
 	// Since render state creation should be load-time, it is not performance critical. If we
@@ -3224,6 +3228,8 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 
 				break;
 			}
+
+			default: FAIL;
 		};
 
 		// PERF: Async, immediate reading may cause stall. Allow processing multiple read requests per call or make ReadFromResource async?

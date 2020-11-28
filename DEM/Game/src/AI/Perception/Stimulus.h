@@ -29,16 +29,15 @@ protected:
 public:
 
 	//!!!need only for external stimuli!
-	CStimulusQT::CNode*	pQTNode;
+	CStimulusQT::CNode*	pQTNode = nullptr;
 
 	CStrID	SourceEntityID;
 	vector3	Position;
 	//Radius, Height (cyl) / Radius (sph)
-	float	Radius; //???if Height < 0, shp, else cyl?
-	float	Intensity;
-	float	ExpireTime;		//???is dependent on intensity? //???int?
+	float	Radius = 0.f; //???if Height < 0, shp, else cyl?
+	float	Intensity = 0.f;
+	float	ExpireTime = 0.f;		//???is dependent on intensity? //???int?
 
-	CStimulus(): pQTNode(nullptr), Radius(0.f) {}
 	~CStimulus() { if (pQTNode) pQTNode->RemoveByValue(this); }
 
 	bool			IsActive() const { return pQTNode != nullptr; }

@@ -30,8 +30,8 @@ void CMeshData::InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount
 		UPTR PositionOffset = static_cast<UPTR>(-1);
 		for (const auto& Component : VertexFormat)
 		{
-			if (Component.Semantic == EVertexComponentSemantic::VCSem_Position &&
-				Component.Format == EVertexComponentFormat::VCFmt_Float32_3)
+			if (Component.Semantic == EVertexComponentSemantic::Position &&
+				Component.Format == EVertexComponentFormat::Float32_3)
 				PositionOffset = VertexSize;
 
 			VertexSize += Component.GetSize();

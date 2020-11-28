@@ -53,9 +53,9 @@ public:
 		CNode*							pParent = nullptr;
 		CNode*							pChild = nullptr;	// Pointer to the first element of CNode[4]
 
-		U16								Col;
-		U16								Row;
-		U8								Level;
+		U16								Col = 0;
+		U16								Row = 0;
+		U8								Level = 0;
 
 		template<class TObject, class TStorage> friend class CQuadTree;
 

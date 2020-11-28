@@ -22,18 +22,17 @@ protected:
 
 	struct CEventNode
 	{
-		float				FireTime;	//???store int or packed to int for fast CPU comparisons
-		CEventDispatcher*	pDispatcher;	// Call RemoveScheduledEvents() to be able to destruct this dispatcher
+		float				FireTime = 0.f;	//???store int or packed to int for fast CPU comparisons
+		CEventDispatcher*	pDispatcher = nullptr;	// Call RemoveScheduledEvents() to be able to destruct this dispatcher
 		PEventBase			Event;
-		CEventNode*			Next;
-		U8					Flags;
-		CEventNode(): Next(nullptr) {}
+		CEventNode*			Next = nullptr;
+		U8					Flags = 0;
 	};
 
-	CPool<CEventNode>	EventNodes;
-	CEventNode*					PendingEventsHead = nullptr;
-	CEventNode*					PendingEventsTail = nullptr; // To preserve events' fire order, insert to the end of the list
-	CEventNode*					EventsToAdd = nullptr;
+	CPool<CEventNode> EventNodes;
+	CEventNode*       PendingEventsHead = nullptr;
+	CEventNode*       PendingEventsTail = nullptr; // To preserve events' fire order, insert to the end of the list
+	CEventNode*       EventsToAdd = nullptr;
 
 public:
 

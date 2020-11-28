@@ -138,7 +138,7 @@ vector3 operator * (const matrix33& m, const vector3& v)
 inline
 matrix33::matrix33()
 {
-    memcpy(&(m[0][0]), _matrix33_ident, sizeof(_matrix33_ident));
+    memcpy(m, _matrix33_ident, sizeof(_matrix33_ident));
 }
 
 //------------------------------------------------------------------------------
@@ -158,7 +158,7 @@ matrix33::matrix33(const vector3& v0, const vector3& v1, const vector3& v2)
 inline
 matrix33::matrix33(const matrix33& m1)
 {
-    memcpy(m, &(m1.m[0][0]), 9*sizeof(float));
+    memcpy(m, m1.m, 9 * sizeof(float));
 }
 
 //------------------------------------------------------------------------------
@@ -251,31 +251,31 @@ matrix33::to_euler() const
     EulGetOrd(EulOrdXYZs,i,j,k,h,n,s,f);
     if (s==EulRepYes)
     {
-        double sy = (float) sqrt(tmp.M12 * tmp.M12 + tmp.M13 * tmp.M13);
-        if (sy > 16*FLT_EPSILON)
+        const float sy = sqrtf(tmp.M12 * tmp.M12 + tmp.M13 * tmp.M13);
+        if (sy > 16.f * FLT_EPSILON)
         {
             ea.x = (float) atan2(tmp.M12, tmp.M13);
-            ea.y = (float) atan2((float)sy, tmp.M11);
+            ea.y = (float) atan2(sy, tmp.M11);
             ea.z = (float) atan2(tmp.M21, -tmp.M31);
         } else {
             ea.x = (float) atan2(-tmp.M23, tmp.M22);
-            ea.y = (float) atan2((float)sy, tmp.M11);
+            ea.y = (float) atan2(sy, tmp.M11);
             ea.z = 0;
         }
     }
     else
     {
-        double cy = sqrt(tmp.M11 * tmp.M11 + tmp.M21 * tmp.M21);
-        if (cy > 16*FLT_EPSILON)
+		const float cy = sqrtf(tmp.M11 * tmp.M11 + tmp.M21 * tmp.M21);
+        if (cy > 16.f * FLT_EPSILON)
         {
             ea.x = (float) atan2(tmp.M32, tmp.M33);
-            ea.y = (float) atan2(-tmp.M31, (float)cy);
+            ea.y = (float) atan2(-tmp.M31, cy);
             ea.z = (float) atan2(tmp.M21, tmp.M11);
         }
         else
         {
             ea.x = (float) atan2(-tmp.M23, tmp.M22);
-            ea.y = (float) atan2(-tmp.M31, (float)cy);
+            ea.y = (float) atan2(-tmp.M31, cy);
             ea.z = 0;
         }
     }
@@ -426,12 +426,12 @@ matrix33::orthonorm(float limit)
     if (((M11*M21+M12*M22+M13*M23)<limit) &&
         ((M11*M31+M12*M32+M13*M33)<limit) &&
         ((M31*M21+M32*M22+M33*M23)<limit) &&
-        ((M11*M11+M12*M12+M13*M13)>(1.0-limit)) &&
-        ((M11*M11+M12*M12+M13*M13)<(1.0+limit)) &&
-        ((M21*M21+M22*M22+M23*M23)>(1.0-limit)) &&
-        ((M21*M21+M22*M22+M23*M23)<(1.0+limit)) &&
-        ((M31*M31+M32*M32+M33*M33)>(1.0-limit)) &&
-        ((M31*M31+M32*M32+M33*M33)<(1.0+limit)))
+        ((M11*M11+M12*M12+M13*M13)>(1.f-limit)) &&
+        ((M11*M11+M12*M12+M13*M13)<(1.f+limit)) &&
+        ((M21*M21+M22*M22+M23*M23)>(1.f-limit)) &&
+        ((M21*M21+M22*M22+M23*M23)<(1.f+limit)) &&
+        ((M31*M31+M32*M32+M33*M33)>(1.f-limit)) &&
+        ((M31*M31+M32*M32+M33*M33)<(1.f+limit)))
         return true;
     else
         return false;

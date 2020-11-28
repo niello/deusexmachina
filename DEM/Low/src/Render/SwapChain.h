@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_SWAP_CHAIN_H__
-#define __DEM_L1_RENDER_SWAP_CHAIN_H__
-
 #include <Data/Ptr.h>
 #include <Data/Flags.h>
 #include <Data/Regions.h>
@@ -9,7 +6,7 @@
 // Swap chain is a set of a front buffer and one or more back buffers. GPU device renders into a
 // back buffer and presents it to a display (fullscreen) or a desktop (windowed). Presented back
 // buffer becomes a front buffer, and a former front buffer becomes the last back buffer, and so on.
-// Inherit from CSwapChain to create API-specific implementationsþ
+// Inherit from CSwapChain to create API-specific implementationsÑŽ
 
 namespace DEM { namespace Sys
 {
@@ -42,8 +39,8 @@ enum ESwapMode
 struct CSwapChainDesc
 {
 	Data::CFlags	Flags;
-	ESwapMode		SwapMode;
-	UPTR			BackBufferCount;
+	ESwapMode		SwapMode = ESwapMode::SwapMode_CopyDiscard;
+	UPTR			BackBufferCount = 0;
 
 	CSwapChainDesc(): Flags(SwapChain_VSync) {}
 };
@@ -70,5 +67,3 @@ public:
 };
 
 }
-
-#endif

@@ -81,23 +81,23 @@ void CSPS::QueryObjectsInsideFrustum(const matrix44& ViewProj, CArray<CNodeAttri
 
 	CSPSNode* pRootNode = QuadTree.GetRootNode();
 	if (pRootNode && pRootNode->GetTotalObjCount())
-		QueryObjectsInsideFrustum(pRootNode, ViewProj, OutObjects, Clipped);
+		QueryObjectsInsideFrustum(pRootNode, ViewProj, OutObjects, EClipStatus::Clipped);
 }
 //---------------------------------------------------------------------
 
 void CSPS::QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, CArray<CNodeAttribute*>& OutObjects, EClipStatus Clip) const
 {
-	n_assert_dbg(pNode && pNode->GetTotalObjCount() && Clip != Outside);
+	n_assert_dbg(pNode && pNode->GetTotalObjCount() && Clip != EClipStatus::Outside);
 
-	if (Clip == Clipped)
+	if (Clip == EClipStatus::Clipped)
 	{
 		CAABB NodeBox;
 		pNode->GetBounds(NodeBox); //!!!can pass node box as arg and calculate for children, this will save some calculations!
 		NodeBox.Min.y = SceneMinY;
 		NodeBox.Max.y = SceneMaxY;
 		Clip = NodeBox.GetClipStatus(ViewProj);
-		if (Clip == Outside) return;
-		if (Clip == Inside)
+		if (Clip == EClipStatus::Outside) return;
+		if (Clip == EClipStatus::Inside)
 		{
 			// Make room for all underlying objects, including those in child nodes
 			UPTR MinRoomRequired = OutObjects.GetCount() + pNode->GetTotalObjCount();
@@ -110,7 +110,7 @@ void CSPS::QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, 
 	{
 		CSPSCell::CIterator ItObj = pNode->Data.Begin();
 		CSPSCell::CIterator ItEnd = pNode->Data.End();
-		if (Clip == Inside)
+		if (Clip == EClipStatus::Inside)
 		{
 			for (; ItObj != ItEnd; ++ItObj)
 				OutObjects.Add((*ItObj)->pUserData);
@@ -118,7 +118,7 @@ void CSPS::QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, 
 		else // Clipped
 		{
 			for (; ItObj != ItEnd; ++ItObj)
-				if ((*ItObj)->GlobalBox.GetClipStatus(ViewProj) != Outside)
+				if ((*ItObj)->GlobalBox.GetClipStatus(ViewProj) != EClipStatus::Outside)
 					OutObjects.Add((*ItObj)->pUserData);
 		}
 	}

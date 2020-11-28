@@ -27,13 +27,13 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 	MeshData->IndexCount = IndexCount;
 
 	Render::CVertexComponent VC;
-	VC.Format = Render::VCFmt_Float32_2;
-	VC.Semantic = Render::VCSem_Position;
+	VC.Format = Render::EVertexComponentFormat::Float32_2;
+	VC.Semantic = Render::EVertexComponentSemantic::Position;
 	VC.Index = 0;
 	VC.Stream = 0;
 	VC.UserDefinedName = nullptr;
 	VC.Stream = 0;
-	VC.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+	VC.OffsetInVertex = Render::VertexComponentOffsetAuto;
 	VC.PerInstanceData = false;
 	MeshData->VertexFormat.push_back(std::move(VC));
 
@@ -104,13 +104,13 @@ PResourceObject CMeshGeneratorBox::CreateResource(CStrID UID)
 	MeshData->IndexCount = 36;
 
 	Render::CVertexComponent VC;
-	VC.Format = Render::VCFmt_Float32_3;
-	VC.Semantic = Render::VCSem_Position;
+	VC.Format = Render::EVertexComponentFormat::Float32_3;
+	VC.Semantic = Render::EVertexComponentSemantic::Position;
 	VC.Index = 0;
 	VC.Stream = 0;
 	VC.UserDefinedName = nullptr;
 	VC.Stream = 0;
-	VC.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+	VC.OffsetInVertex = Render::VertexComponentOffsetAuto;
 	VC.PerInstanceData = false;
 	MeshData->VertexFormat.push_back(std::move(VC));
 
@@ -177,13 +177,13 @@ PResourceObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 	MeshData->IndexCount = 6 * MeridianCount * (_RowCount - 1);
 
 	Render::CVertexComponent VC;
-	VC.Format = Render::VCFmt_Float32_3;
-	VC.Semantic = Render::VCSem_Position;
+	VC.Format = Render::EVertexComponentFormat::Float32_3;
+	VC.Semantic = Render::EVertexComponentSemantic::Position;
 	VC.Index = 0;
 	VC.Stream = 0;
 	VC.UserDefinedName = nullptr;
 	VC.Stream = 0;
-	VC.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+	VC.OffsetInVertex = Render::VertexComponentOffsetAuto;
 	VC.PerInstanceData = false;
 	MeshData->VertexFormat.push_back(std::move(VC));
 
@@ -302,13 +302,13 @@ PResourceObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
 	MeshData->IndexCount = 12 * _SectorCount - 12;
 
 	Render::CVertexComponent VC;
-	VC.Format = Render::VCFmt_Float32_3;
-	VC.Semantic = Render::VCSem_Position;
+	VC.Format = Render::EVertexComponentFormat::Float32_3;
+	VC.Semantic = Render::EVertexComponentSemantic::Position;
 	VC.Index = 0;
 	VC.Stream = 0;
 	VC.UserDefinedName = nullptr;
 	VC.Stream = 0;
-	VC.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+	VC.OffsetInVertex = Render::VertexComponentOffsetAuto;
 	VC.PerInstanceData = false;
 	MeshData->VertexFormat.push_back(std::move(VC));
 
@@ -408,13 +408,13 @@ PResourceObject CMeshGeneratorCone::CreateResource(CStrID UID)
 	MeshData->IndexCount = 6 * _SectorCount - 6;
 
 	Render::CVertexComponent VC;
-	VC.Format = Render::VCFmt_Float32_3;
-	VC.Semantic = Render::VCSem_Position;
+	VC.Format = Render::EVertexComponentFormat::Float32_3;
+	VC.Semantic = Render::EVertexComponentSemantic::Position;
 	VC.Index = 0;
 	VC.Stream = 0;
 	VC.UserDefinedName = nullptr;
 	VC.Stream = 0;
-	VC.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+	VC.OffsetInVertex = Render::VertexComponentOffsetAuto;
 	VC.PerInstanceData = false;
 	MeshData->VertexFormat.push_back(std::move(VC));
 

@@ -138,7 +138,7 @@ protected:
 	struct CTmpCB
 	{
 		PD3D11ConstantBuffer	CB;
-		CTmpCB*					pNext;
+		CTmpCB*					pNext = nullptr;
 	};
 
 	CPool<CTmpCB>				        TmpCBPool;

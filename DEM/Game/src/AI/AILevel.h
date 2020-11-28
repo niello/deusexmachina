@@ -27,7 +27,7 @@ protected:
 	CAABB					Box;
 	CStimulusQT				StimulusQT;		// Quadtree containing stimuli and other AI hints
 
-	void			QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus EClipStatus = Clipped);
+	void			QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus EClipStatus = EClipStatus::Clipped);
 
 public:
 

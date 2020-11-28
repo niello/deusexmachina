@@ -13,7 +13,7 @@ class CEventBase : public Core::CRTTIBaseClass
 {
 protected:
 
-	mutable UPTR UniqueNumber;
+	mutable UPTR UniqueNumber = 0;
 
 	friend class CEventDispatcher; // For unique number setting
 

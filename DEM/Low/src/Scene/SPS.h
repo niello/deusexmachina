@@ -70,10 +70,10 @@ typedef CSPSQuadTree::CNode CSPSNode;
 
 struct CSPSRecord
 {
-	CSPSRecord*		pNext;
-	CSPSRecord*		pPrev;
-	CSPSNode*		pSPSNode;
-	CNodeAttribute*	pUserData;
+	CSPSRecord*		pNext = nullptr;
+	CSPSRecord*		pPrev = nullptr;
+	CSPSNode*		pSPSNode = nullptr;
+	CNodeAttribute*	pUserData = nullptr;
 	CAABB			GlobalBox;
 };
 

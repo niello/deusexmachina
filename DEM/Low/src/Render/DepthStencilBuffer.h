@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_DEPTH_STENCIL_BUFFER_H__
-#define __DEM_L1_RENDER_DEPTH_STENCIL_BUFFER_H__
-
 #include <Core/Object.h>
 #include <Render/RenderFwd.h>
 
@@ -29,5 +26,3 @@ public:
 typedef Ptr<CDepthStencilBuffer> PDepthStencilBuffer;
 
 }
-
-#endif

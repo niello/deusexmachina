@@ -16,7 +16,7 @@ class CD3D11VertexBuffer: public CVertexBuffer
 protected:
 
 	ID3D11Buffer*	pBuffer = nullptr;
-	D3D11_USAGE		D3DUsage;
+	D3D11_USAGE		D3DUsage = {};
 
 	void InternalDestroy();
 

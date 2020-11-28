@@ -232,8 +232,11 @@ inline UPTR SolveQuadraticEquation(float a, float b, float c, float* pOutX1 = nu
 
 	if (n_fequal(D, 0.f))
 	{
-		if (pOutX1) *pOutX1 = -b / (2.f * a);
-		if (pOutX2) *pOutX2 = *pOutX1;
+		if (pOutX1)
+		{
+			*pOutX1 = -b / (2.f * a);
+			if (pOutX2) *pOutX2 = *pOutX1;
+		}
 		return 1;
 	}
 

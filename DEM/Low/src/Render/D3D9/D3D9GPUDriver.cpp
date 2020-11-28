@@ -2151,26 +2151,26 @@ PVertexLayout CD3D9GPUDriver::CreateVertexLayout(const CVertexComponent* pCompon
 			DeclElement.Stream = StreamIndex;
 
 			DeclElement.Offset =
-				(Component.OffsetInVertex == DEM_VERTEX_COMPONENT_OFFSET_DEFAULT) ? (WORD)StreamOffset[StreamIndex] : (WORD)Component.OffsetInVertex;
+				(Component.OffsetInVertex == VertexComponentOffsetAuto) ? (WORD)StreamOffset[StreamIndex] : (WORD)Component.OffsetInVertex;
 			StreamOffset[StreamIndex] = DeclElement.Offset + Component.GetSize();
 
 			// NB: D3DCOLOR is 31->ARGB->0, but we use 31->ABGR->0, so D3DDECLTYPE_D3DCOLOR is not used
 			switch (Component.Format)
 			{
-				case VCFmt_Float32_1:		DeclElement.Type = D3DDECLTYPE_FLOAT1; break;
-				case VCFmt_Float32_2:		DeclElement.Type = D3DDECLTYPE_FLOAT2; break;
-				case VCFmt_Float32_3:		DeclElement.Type = D3DDECLTYPE_FLOAT3; break;
-				case VCFmt_Float32_4:		DeclElement.Type = D3DDECLTYPE_FLOAT4; break;
-				case VCFmt_Float16_2:		DeclElement.Type = D3DDECLTYPE_FLOAT16_2; break;
-				case VCFmt_Float16_4:		DeclElement.Type = D3DDECLTYPE_FLOAT16_4; break;
-				case VCFmt_UInt8_4:			DeclElement.Type = D3DDECLTYPE_UBYTE4; break;
-				case VCFmt_UInt8_4_Norm:	DeclElement.Type = D3DDECLTYPE_UBYTE4N; break;
-				case VCFmt_SInt16_2:		DeclElement.Type = D3DDECLTYPE_SHORT2; break;
-				case VCFmt_SInt16_4:		DeclElement.Type = D3DDECLTYPE_SHORT4; break;
-				case VCFmt_SInt16_2_Norm:	DeclElement.Type = D3DDECLTYPE_SHORT2N; break;
-				case VCFmt_SInt16_4_Norm:	DeclElement.Type = D3DDECLTYPE_SHORT4N; break;
-				case VCFmt_UInt16_2_Norm:	DeclElement.Type = D3DDECLTYPE_USHORT2N; break;
-				case VCFmt_UInt16_4_Norm:	DeclElement.Type = D3DDECLTYPE_USHORT4N; break;
+				case EVertexComponentFormat::Float32_1:		DeclElement.Type = D3DDECLTYPE_FLOAT1; break;
+				case EVertexComponentFormat::Float32_2:		DeclElement.Type = D3DDECLTYPE_FLOAT2; break;
+				case EVertexComponentFormat::Float32_3:		DeclElement.Type = D3DDECLTYPE_FLOAT3; break;
+				case EVertexComponentFormat::Float32_4:		DeclElement.Type = D3DDECLTYPE_FLOAT4; break;
+				case EVertexComponentFormat::Float16_2:		DeclElement.Type = D3DDECLTYPE_FLOAT16_2; break;
+				case EVertexComponentFormat::Float16_4:		DeclElement.Type = D3DDECLTYPE_FLOAT16_4; break;
+				case EVertexComponentFormat::UInt8_4:			DeclElement.Type = D3DDECLTYPE_UBYTE4; break;
+				case EVertexComponentFormat::UInt8_4_Norm:	DeclElement.Type = D3DDECLTYPE_UBYTE4N; break;
+				case EVertexComponentFormat::SInt16_2:		DeclElement.Type = D3DDECLTYPE_SHORT2; break;
+				case EVertexComponentFormat::SInt16_4:		DeclElement.Type = D3DDECLTYPE_SHORT4; break;
+				case EVertexComponentFormat::SInt16_2_Norm:	DeclElement.Type = D3DDECLTYPE_SHORT2N; break;
+				case EVertexComponentFormat::SInt16_4_Norm:	DeclElement.Type = D3DDECLTYPE_SHORT4N; break;
+				case EVertexComponentFormat::UInt16_2_Norm:	DeclElement.Type = D3DDECLTYPE_USHORT2N; break;
+				case EVertexComponentFormat::UInt16_4_Norm:	DeclElement.Type = D3DDECLTYPE_USHORT4N; break;
 				default:
 				{
 					_freea(StreamOffset);
@@ -2183,14 +2183,14 @@ PVertexLayout CD3D9GPUDriver::CreateVertexLayout(const CVertexComponent* pCompon
 			//???D3DDECLUSAGE_PSIZE?
 			switch (Component.Semantic)
 			{
-				case VCSem_Position:	DeclElement.Usage = D3DDECLUSAGE_POSITION; break;
-				case VCSem_Normal:		DeclElement.Usage = D3DDECLUSAGE_NORMAL; break;
-				case VCSem_Tangent:		DeclElement.Usage = D3DDECLUSAGE_TANGENT; break;
-				case VCSem_Bitangent:	DeclElement.Usage = D3DDECLUSAGE_BINORMAL; break;
-				case VCSem_TexCoord:	DeclElement.Usage = D3DDECLUSAGE_TEXCOORD; break;
-				case VCSem_Color:		DeclElement.Usage = D3DDECLUSAGE_COLOR; break;
-				case VCSem_BoneWeights:	DeclElement.Usage = D3DDECLUSAGE_BLENDWEIGHT; break;
-				case VCSem_BoneIndices:	DeclElement.Usage = D3DDECLUSAGE_BLENDINDICES; break;
+				case EVertexComponentSemantic::Position:	DeclElement.Usage = D3DDECLUSAGE_POSITION; break;
+				case EVertexComponentSemantic::Normal:		DeclElement.Usage = D3DDECLUSAGE_NORMAL; break;
+				case EVertexComponentSemantic::Tangent:		DeclElement.Usage = D3DDECLUSAGE_TANGENT; break;
+				case EVertexComponentSemantic::Bitangent:	DeclElement.Usage = D3DDECLUSAGE_BINORMAL; break;
+				case EVertexComponentSemantic::TexCoord:	DeclElement.Usage = D3DDECLUSAGE_TEXCOORD; break;
+				case EVertexComponentSemantic::Color:		DeclElement.Usage = D3DDECLUSAGE_COLOR; break;
+				case EVertexComponentSemantic::BoneWeights:	DeclElement.Usage = D3DDECLUSAGE_BLENDWEIGHT; break;
+				case EVertexComponentSemantic::BoneIndices:	DeclElement.Usage = D3DDECLUSAGE_BLENDINDICES; break;
 				default:
 				{
 					_freea(StreamOffset);
