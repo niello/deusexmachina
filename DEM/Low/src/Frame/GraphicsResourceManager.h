@@ -1,10 +1,11 @@
 #pragma once
 #include <Render/RenderFwd.h>
 #include <Data/RefCounted.h>
-#include <map>
 
-// Manages all GPU-dependent resources required for frame rendering,
-// prevents redundant GPU resource loading
+// Manages all GPU-dependent resources required for frame rendering, prevents redundant GPU resource loading.
+// Objects created by GPU are specific to that GPU, so each GPU manages its own textures, shaders etc.
+// They can't be shared through a CResourceManager, but it may manage templates, like RAM texture data
+// or material template with IDs instead of real GPU objects. Template can be instantiated with a GPU here.
 
 namespace IO
 {
@@ -43,7 +44,7 @@ private:
 
 	Resources::CResourceManager*                  pResMgr = nullptr; //???strong ref?
 	Render::PGPUDriver                            GPU;
-	std::unique_ptr<UI::CUIServer>                UIServer;
+	std::unique_ptr<UI::CUIServer>                UIServer; // FIXME: is the right place?
 
 	std::unordered_map<CStrID, Render::PMesh>     Meshes;
 	std::unordered_map<CStrID, Render::PTexture>  Textures;

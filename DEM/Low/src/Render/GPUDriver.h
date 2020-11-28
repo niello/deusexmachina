@@ -8,11 +8,7 @@
 // You can implement this class via some graphics API, like D3D or OpenGL.
 // Each GPU device can manage zero or more swap chains, either windowed or fullscreen. Each fullscreen
 // swap chain must be connected to a corresponding display output, represented by a CDisplayDriver instance.
-// Windowed swap chains are present to the desktop. Each swap chain requires a viewport, and now
-// I use COSWindow for it.
-// Objects created by GPU are specific to this GPU, so each GPU manages its own textures, shaders etc.
-// They can't be shared through a CResourceManager, but it may manage templates, like RAM texture data
-// or material template with IDs instead of real GPU objects. Template can be instantiated with a GPU.
+// Windowed swap chains are present to the desktop. Each swap chain requires a viewport, e.g. COSWindow.
 
 //PERF:
 //!!!GCN says load shaders before textures, driver compiles to its ASM in the background!
