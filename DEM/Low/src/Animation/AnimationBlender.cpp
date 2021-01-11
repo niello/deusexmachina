@@ -149,6 +149,7 @@ void CAnimationBlender::SetPriority(U8 Source, U16 Priority)
 	{
 		_Sources[Source]->_Priority = Priority;
 
+		// FIXME: postpone to the next Apply()?
 		std::sort(_SourcesByPriority.begin(), _SourcesByPriority.end(), [this](UPTR a, UPTR b)
 		{
 			return _Sources[a]->GetPriority() > _Sources[b]->GetPriority();

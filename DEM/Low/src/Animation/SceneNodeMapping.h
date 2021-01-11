@@ -9,10 +9,10 @@
 
 namespace DEM::Anim
 {
-using PNodeMapping = Ptr<class CNodeMapping>;
+using PSceneNodeMapping = Ptr<class CSceneNodeMapping>;
 class IPoseOutput;
 
-class CNodeMapping : public Data::CRefCounted
+class CSceneNodeMapping : public Data::CRefCounted
 {
 public:
 
@@ -24,7 +24,7 @@ public:
 		U16    ParentIndex = NoParentIndex;
 	};
 
-	CNodeMapping(std::vector<CNodeInfo>&& Map);
+	CSceneNodeMapping(std::vector<CNodeInfo>&& Map);
 
 	const UPTR       GetNodeCount() const { return _Map.size(); }
 	const CNodeInfo& GetNodeInfo(UPTR Index) const { return _Map[Index]; }

@@ -1,10 +1,10 @@
-#include "NodeMapping.h"
+#include "SceneNodeMapping.h"
 #include <Animation/PoseOutput.h>
 
 namespace DEM::Anim
 {
 
-CNodeMapping::CNodeMapping(std::vector<CNodeInfo>&& Map)
+CSceneNodeMapping::CSceneNodeMapping(std::vector<CNodeInfo>&& Map)
 	: _Map(std::move(Map))
 {
 #ifdef _DEBUG
@@ -21,7 +21,7 @@ CNodeMapping::CNodeMapping(std::vector<CNodeInfo>&& Map)
 // NB: if mapping is direct (each index is bound to the port with the same index),
 // then OutPorts will be cleared and user should write to the output without remapping.
 // It happens quite often with animation clips.
-void CNodeMapping::Bind(IPoseOutput& Output, std::vector<U16>& OutPorts) const
+void CSceneNodeMapping::Bind(IPoseOutput& Output, std::vector<U16>& OutPorts) const
 {
 	OutPorts.clear();
 

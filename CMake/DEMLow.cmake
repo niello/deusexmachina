@@ -8,10 +8,10 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/AnimationSampler.h
 	DEM/Low/src/Animation/CompositePoseClip.h
 	DEM/Low/src/Animation/MappedPoseOutput.h
-	DEM/Low/src/Animation/NodeMapping.h
 	DEM/Low/src/Animation/PoseClipBase.h
 	DEM/Low/src/Animation/PoseOutput.h
 	DEM/Low/src/Animation/PoseTrack.h
+	DEM/Low/src/Animation/SceneNodeMapping.h
 	DEM/Low/src/Animation/Skeleton.h
 	DEM/Low/src/Animation/StaticPose.h
 	DEM/Low/src/Animation/StaticPoseClip.h
@@ -20,6 +20,9 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/TimelineTrackGroup.h
 	DEM/Low/src/Animation/TimelineTrackLoaderANM.h
 	DEM/Low/src/Animation/TimelineTrackLoaderHRD.h
+	DEM/Low/src/Animation/Graph/AnimGraphNode.h
+	DEM/Low/src/Animation/Graph/BlendSpace1D.h
+	DEM/Low/src/Animation/Graph/ClipPlayerNode.h
 	DEM/Low/src/Core/Application.h
 	DEM/Low/src/Core/ApplicationState.h
 	DEM/Low/src/Core/CoreServer.h
@@ -325,9 +328,9 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/AnimationLoaderANM.cpp
 	DEM/Low/src/Animation/AnimationSampler.cpp
 	DEM/Low/src/Animation/CompositePoseClip.cpp
-	DEM/Low/src/Animation/NodeMapping.cpp
 	DEM/Low/src/Animation/PoseClipBase.cpp
 	DEM/Low/src/Animation/PoseTrack.cpp
+	DEM/Low/src/Animation/SceneNodeMapping.cpp
 	DEM/Low/src/Animation/Skeleton.cpp
 	DEM/Low/src/Animation/StaticPose.cpp
 	DEM/Low/src/Animation/StaticPoseClip.cpp
@@ -335,6 +338,9 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/TimelineTrackGroup.cpp
 	DEM/Low/src/Animation/TimelineTrackLoaderANM.cpp
 	DEM/Low/src/Animation/TimelineTrackLoaderHRD.cpp
+	DEM/Low/src/Animation/Graph/AnimGraphNode.cpp
+	DEM/Low/src/Animation/Graph/BlendSpace1D.cpp
+	DEM/Low/src/Animation/Graph/ClipPlayerNode.cpp
 	DEM/Low/src/Core/Application.cpp
 	DEM/Low/src/Core/CoreServer.cpp
 	DEM/Low/src/Core/Factory.cpp

@@ -14,24 +14,24 @@ namespace Scene
 namespace DEM::Anim
 {
 using PStaticPose = std::unique_ptr<class CStaticPose>;
-using PNodeMapping = Ptr<class CNodeMapping>;
+using PSceneNodeMapping = Ptr<class CSceneNodeMapping>;
 class IPoseOutput;
 
 class CStaticPose final
 {
 protected:
 
-	PNodeMapping                     _NodeMapping;
+	PSceneNodeMapping                     _NodeMapping;
 	std::vector<Math::CTransformSRT> _Transforms;
 
 public:
 
-	CStaticPose(std::vector<Math::CTransformSRT>&& Transforms, PNodeMapping&& NodeMapping);
+	CStaticPose(std::vector<Math::CTransformSRT>&& Transforms, PSceneNodeMapping&& NodeMapping);
 	~CStaticPose();
 
 	void Apply(IPoseOutput& Output);
 
-	CNodeMapping& GetNodeMapping() const { return *_NodeMapping; } // non-const to create intrusive strong refs
+	CSceneNodeMapping& GetNodeMapping() const { return *_NodeMapping; } // non-const to create intrusive strong refs
 };
 
 }

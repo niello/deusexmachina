@@ -1,5 +1,5 @@
 #include "StaticPoseClip.h"
-#include <Animation/NodeMapping.h>
+#include <Animation/SceneNodeMapping.h>
 #include <Animation/MappedPoseOutput.h>
 
 namespace DEM::Anim

@@ -1,6 +1,6 @@
 #include "AnimationSampler.h"
 #include <Animation/AnimationClip.h>
-#include <Animation/NodeMapping.h>
+#include <Animation/SceneNodeMapping.h>
 #include <Animation/PoseOutput.h>
 #include <Animation/StaticPose.h>
 
@@ -67,7 +67,7 @@ PStaticPose CAnimationSampler::BakePose(float Time)
 	if (!_Clip) return nullptr;
 	CPoseRecorder Recorder(_Clip->GetNodeCount());
 	Apply(Time, Recorder);
-	return PStaticPose(n_new(CStaticPose(std::move(Recorder._Transforms), &_Clip->GetNodeMapping())));
+	return PStaticPose(n_new(CStaticPose(std::move(Recorder._Transforms), &_Clip->GetSceneNodeMapping())));
 }
 //---------------------------------------------------------------------
 

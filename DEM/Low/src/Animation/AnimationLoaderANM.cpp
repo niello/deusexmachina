@@ -1,6 +1,6 @@
 #include "AnimationLoaderANM.h"
 #include <Animation/AnimationClip.h>
-#include <Animation/NodeMapping.h>
+#include <Animation/SceneNodeMapping.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
 #include <acl/core/compressed_clip.h>
@@ -35,7 +35,7 @@ Core::PObject CAnimationLoaderANM::CreateResource(CStrID UID)
 	if (!Reader.Read(NodeCount) || !NodeCount) return nullptr;
 
 	// Children are always after the parent, as node mapping requires
-	std::vector<DEM::Anim::CNodeMapping::CNodeInfo> NodeMapping(NodeCount);
+	std::vector<DEM::Anim::CSceneNodeMapping::CNodeInfo> NodeMapping(NodeCount);
 	for (U16 i = 0; i < NodeCount; ++i)
 	{
 		if (!Reader.Read(NodeMapping[i].ParentIndex)) return nullptr;
@@ -69,7 +69,7 @@ Core::PObject CAnimationLoaderANM::CreateResource(CStrID UID)
 		return nullptr;
 	}
 
-	return n_new(DEM::Anim::CAnimationClip(pClip, Duration, new DEM::Anim::CNodeMapping(std::move(NodeMapping))));
+	return n_new(DEM::Anim::CAnimationClip(pClip, Duration, new DEM::Anim::CSceneNodeMapping(std::move(NodeMapping))));
 }
 //---------------------------------------------------------------------
 
