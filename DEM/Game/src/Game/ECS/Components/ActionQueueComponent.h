@@ -119,10 +119,8 @@ protected:
 public:
 
 	CActionQueueComponent() = default;
-	CActionQueueComponent(const CActionQueueComponent& Other) = delete;
-	CActionQueueComponent(CActionQueueComponent&& Other) = default;
-	CActionQueueComponent& operator =(const CActionQueueComponent& Other) = delete;
-	CActionQueueComponent& operator =(CActionQueueComponent&& Other) = default;
+	CActionQueueComponent(CActionQueueComponent&&) noexcept = default;
+	CActionQueueComponent& operator =(CActionQueueComponent&&) noexcept = default;
 	~CActionQueueComponent() = default;
 
 	//???small pool allocator for events? one for all components? one for all small things? can be static field, ensure MT safety

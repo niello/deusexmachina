@@ -25,7 +25,7 @@ struct CAnimationControllerInitContext
 	std::map<CStrID, CStrID>     AssetOverrides;
 };
 
-class CAnimationController
+class CAnimationController final
 {
 protected:
 
@@ -37,6 +37,13 @@ protected:
 	// NB: each condition, shared or not, must cache its value and recalculate only if used parameter values changed!
 
 public:
+
+	CAnimationController();
+	CAnimationController(CAnimationController&&) noexcept;
+	CAnimationController& operator =(CAnimationController&&) noexcept;
+	~CAnimationController();
+
+	void SetGraphRoot(PAnimGraphNode&& GraphRoot);
 
 	//???default node must skip Update and return reference pose from eval?
 

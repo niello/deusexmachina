@@ -80,6 +80,7 @@ typedef std::unique_ptr<void, CDeleterNMalloc> UniqueNMallocVoidPtr;
 #define SAFE_FREE(n)			if (n) { n_free(n); n = nullptr; }
 #define SAFE_FREE_ALIGNED(n)	if (n) { n_free_aligned(n); n = nullptr; }
 
+// NB: you have to declare a virtual destructor in a base class if your derived class is aligned and base is not!
 #define DEM_ALLOCATE_ALIGNED(Alignment) \
    inline void* operator new(size_t sizeInBytes)	{ return n_malloc_aligned(sizeInBytes, Alignment); }   \
    inline void  operator delete(void* ptr)			{ n_free_aligned(ptr); }   \

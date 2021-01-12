@@ -17,6 +17,8 @@ protected:
 
 public:
 
+	virtual ~CAnimGraphNode() {}
+
 	//???default node must skip Update and return reference pose from eval?
 
 	virtual void Init(CAnimationControllerInitContext& Context) = 0;
