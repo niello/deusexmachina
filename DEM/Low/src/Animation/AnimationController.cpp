@@ -5,7 +5,11 @@ namespace DEM::Anim
 
 void CAnimationController::Init()
 {
-	//!!!pass asset resolve and override data!
+	//Pass inside:
+	// CSkeletonInfo for filling
+	// Resource manager
+	// std::map<CStrID, CStrID> for asset overriding
+
 	// _GraphRoot->Init();
 }
 //---------------------------------------------------------------------

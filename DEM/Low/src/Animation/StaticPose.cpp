@@ -1,11 +1,11 @@
 #include "StaticPose.h"
-#include <Animation/SceneNodeMapping.h>
+#include <Animation/SkeletonInfo.h>
 #include <Animation/PoseOutput.h>
 
 namespace DEM::Anim
 {
 
-CStaticPose::CStaticPose(std::vector<Math::CTransformSRT>&& Transforms, PSceneNodeMapping&& NodeMapping)
+CStaticPose::CStaticPose(std::vector<Math::CTransformSRT>&& Transforms, PSkeletonInfo&& NodeMapping)
 	: _Transforms(std::move(Transforms))
 	, _NodeMapping(std::move(NodeMapping))
 {

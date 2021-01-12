@@ -12,8 +12,8 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/PoseClipBase.h
 	DEM/Low/src/Animation/PoseOutput.h
 	DEM/Low/src/Animation/PoseTrack.h
-	DEM/Low/src/Animation/SceneNodeMapping.h
 	DEM/Low/src/Animation/Skeleton.h
+	DEM/Low/src/Animation/SkeletonInfo.h
 	DEM/Low/src/Animation/StaticPose.h
 	DEM/Low/src/Animation/StaticPoseClip.h
 	DEM/Low/src/Animation/TimelinePlayer.h
@@ -332,8 +332,8 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/CompositePoseClip.cpp
 	DEM/Low/src/Animation/PoseClipBase.cpp
 	DEM/Low/src/Animation/PoseTrack.cpp
-	DEM/Low/src/Animation/SceneNodeMapping.cpp
 	DEM/Low/src/Animation/Skeleton.cpp
+	DEM/Low/src/Animation/SkeletonInfo.cpp
 	DEM/Low/src/Animation/StaticPose.cpp
 	DEM/Low/src/Animation/StaticPoseClip.cpp
 	DEM/Low/src/Animation/TimelinePlayer.cpp

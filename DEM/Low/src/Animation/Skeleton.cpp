@@ -26,10 +26,9 @@ U16 CSkeleton::BindNode(CStrID NodeID, U16 ParentPort)
 	Scene::CSceneNode* pNode = nullptr;
 	if (ParentPort == InvalidPort)
 	{
-		// When no parent specified, we search by path from the root node.
+		// When no parent is specified, we search by path from the root node.
 		// Empty path is the root node itself, and root port is always 0.
-		// FIXME: either require name matching or always store empty ID for clip root in DEM ACL files!
-		if (!NodeID || NodeID == _Nodes[0]->GetName()) return 0;
+		if (!NodeID) return 0;
 		pNode = _Nodes[0]->FindNodeByPath(NodeID.CStr());
 	}
 	else if (auto pParent = _Nodes[ParentPort].Get())

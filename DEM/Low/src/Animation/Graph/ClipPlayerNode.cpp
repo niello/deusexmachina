@@ -1,5 +1,6 @@
 #include "ClipPlayerNode.h"
 #include <Animation/AnimationClip.h>
+#include <Animation/SkeletonInfo.h>
 
 namespace DEM::Anim
 {
@@ -8,7 +9,18 @@ void CClipPlayerNode::Init(/*some params? e.g. for clip asset obtaining*/)
 {
 	_CurrClipTime = _StartTime;
 
-	//_Sampler.SetClip(Clip);
+	PAnimationClip Clip;
+	// get clip, using remapper and resource manager
+	if (Clip)
+	{
+		//std::vector<U16> PortMapping;
+		//Clip->GetSkeletonInfo().MergeInto(SkeletonInfo, PortMapping);
+
+		//!!!PortMapping must be used in EvaluatePose if not empty!
+		//???use stack-based CMappedPoseOutput?
+
+		_Sampler.SetClip(Clip);
+	}
 }
 //---------------------------------------------------------------------
 

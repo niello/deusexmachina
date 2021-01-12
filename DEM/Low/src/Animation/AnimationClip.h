@@ -10,7 +10,7 @@ namespace acl
 
 namespace DEM::Anim
 {
-using PSceneNodeMapping = Ptr<class CSceneNodeMapping>;
+using PSkeletonInfo = Ptr<class CSkeletonInfo>;
 
 class CAnimationClip: public ::Core::CObject
 {
@@ -19,16 +19,16 @@ class CAnimationClip: public ::Core::CObject
 protected:
 
 	acl::CompressedClip* _pClip = nullptr;
-	PSceneNodeMapping    _NodeMapping;
+	PSkeletonInfo    _NodeMapping;
 	float                _Duration = 0.f;
 
 public:
 
-	CAnimationClip(acl::CompressedClip* pClip, float Duration, PSceneNodeMapping&& NodeMapping);
+	CAnimationClip(acl::CompressedClip* pClip, float Duration, PSkeletonInfo&& NodeMapping);
 	virtual ~CAnimationClip() override;
 
 	const acl::CompressedClip* GetACLClip() const { return _pClip; }
-	CSceneNodeMapping&         GetSceneNodeMapping() const { return *_NodeMapping; } // non-const to create intrusive strong refs
+	CSkeletonInfo&         GetSkeletonInfo() const { return *_NodeMapping; } // non-const to create intrusive strong refs
 	float                      GetDuration() const { return _Duration; }
 	UPTR                       GetNodeCount() const;
 

@@ -1,6 +1,6 @@
 #include "AnimatedPoseClip.h"
 #include <Animation/AnimationClip.h>
-#include <Animation/SceneNodeMapping.h>
+#include <Animation/SkeletonInfo.h>
 #include <Animation/MappedPoseOutput.h>
 
 namespace DEM::Anim
@@ -31,7 +31,7 @@ void CAnimatedPoseClip::BindToOutput(const PPoseOutput& Output)
 	// Can even store mapping hash, compare root & mapping count & hash, then do full comparison.
 	// It will be pretty common to reuse the same player with different clips on the same hierarchy.
 	std::vector<U16> PortMapping;
-	_Sampler.GetClip()->GetSceneNodeMapping().Bind(*Output, PortMapping);
+	_Sampler.GetClip()->GetSkeletonInfo().MapTo(*Output, PortMapping);
 	if (PortMapping.empty())
 		_Output = Output;
 	else
