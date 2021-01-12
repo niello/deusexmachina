@@ -342,6 +342,20 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 	const acl::AnimationClip& Clip, const std::vector<std::string>& NodeNames, CThreadSafeLog& Log)
 {
 	const auto AnimName = DestPath.filename().string();
+	const auto& Skeleton = Clip.get_skeleton();
+	const auto NodeCount = Skeleton.get_num_bones();
+
+	if (!NodeCount)
+	{
+		Log.LogWarning(std::string("Skipped saving empty animation ") + AnimName);
+		return true;
+	}
+
+	if (Skeleton.get_bone(0).parent_index != acl::k_invalid_bone_index)
+	{
+		Log.LogError("Animation " + AnimName + " doesn't start from the root node (may be broken)!");
+		return false;
+	}
 
 	acl::TransformErrorMetric ACLErrorMetric;
 	acl::CompressionSettings ACLSettings = acl::get_default_compression_settings();
@@ -372,13 +386,14 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 
 	WriteStream<float>(File, Clip.get_duration());
 
-	const auto& Skeleton = Clip.get_skeleton();
-	const auto NodeCount = Skeleton.get_num_bones();
-
 	WriteStream<uint16_t>(File, NodeCount);
 
-	// Write node to track mapping to be able to bind animation to the node hierarchy in DEM
-	for (uint16_t i = 0; i < NodeCount; ++i)
+	// Write skeleton info to be able to bind animation to the node hierarchy in DEM
+	// Note that DEM requires all nodes without a parent to have a full path relative
+	// to the root in their IDs. So for the root itself ID must be empty.
+	WriteStream<uint16_t>(File, Skeleton.get_bone(0).parent_index);
+	WriteStream(File, std::string{});
+	for (uint16_t i = 1; i < NodeCount; ++i)
 	{
 		WriteStream<uint16_t>(File, Skeleton.get_bone(i).parent_index);
 		WriteStream(File, NodeNames[i]);
