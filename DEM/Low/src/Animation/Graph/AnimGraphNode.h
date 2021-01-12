@@ -11,7 +11,7 @@ class CAnimGraphNode
 {
 protected:
 
-	//
+	//??? bool Active ?
 
 public:
 

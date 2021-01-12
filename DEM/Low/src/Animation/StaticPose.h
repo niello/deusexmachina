@@ -21,7 +21,7 @@ class CStaticPose final
 {
 protected:
 
-	PSceneNodeMapping                     _NodeMapping;
+	PSceneNodeMapping                _NodeMapping;
 	std::vector<Math::CTransformSRT> _Transforms;
 
 public:

@@ -1,14 +1,14 @@
 #pragma once
 #include <Animation/Graph/AnimGraphNode.h>
 
-// Base for all animation graph nodes
+// Animation graph node that blends sources based on a value in 1D space
 
 namespace DEM::Anim
 {
 //using PBlendSpace1D = std::unique_ptr<class CBlendSpace1D>;
 
-//???or inherit from some base class for all blends? or just contain CAnimationBlender instead.
-//May share phase sync code between all blend spaces!
+//???or inherit from some base class for all blends? or just contain CAnimationBlender instead (if will use it here).
+//May share phase sync code between all blend spaces! Or more generalized sync?
 class CBlendSpace1D : public CAnimGraphNode
 {
 protected:

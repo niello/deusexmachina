@@ -12,7 +12,9 @@ void CBlendSpace1D::Update(float dt/*, params*/)
 {
 	// calculate sources and weights based on input parameter
 	// save sources and weights
-	// maybe must do seek synchronization here
+	// update active sources
+	// maybe must do seek synchronization here, or record info and postpone after graph update
+	//???sync only if clip player, or recurse down to players through any nodes?
 }
 //---------------------------------------------------------------------
 
