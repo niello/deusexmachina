@@ -42,7 +42,8 @@ public:
 	// then OutPorts will be empty, and user can write to the output without remapping.
 	void             MapTo(IPoseOutput& Output, std::vector<U16>& OutPorts) const;
 	void             MapTo(const CSkeletonInfo& Other, std::vector<U16>& OutPorts) const;
-	void             MergeInto(CSkeletonInfo& Other, std::vector<U16>& OutPorts) const;
+
+	void             MergeInto(CSkeletonInfo& Other, std::vector<U16>& Ports, size_t FirstEmptyPort = 0) const;
 
 protected:
 

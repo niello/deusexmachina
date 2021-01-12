@@ -40,8 +40,7 @@ public:
 
 	//???default node must skip Update and return reference pose from eval?
 
-	void Init(Resources::CResourceManager& ResMgr, std::map<CStrID, CStrID> AssetOverrides);
-	//bool BindOutput() - Prepare/Tune external output instead of binding and storing into the node?
+	void Init(Resources::CResourceManager& ResMgr, std::map<CStrID, CStrID> AssetOverrides = {});
 	void Update(float dt);
 	void EvaluatePose(IPoseOutput& Output);
 

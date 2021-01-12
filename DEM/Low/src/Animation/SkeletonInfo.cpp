@@ -101,43 +101,21 @@ void CSkeletonInfo::MapTo(const CSkeletonInfo& Other, std::vector<U16>& OutPorts
 }
 //---------------------------------------------------------------------
 
-void CSkeletonInfo::MergeInto(CSkeletonInfo& Other, std::vector<U16>& OutPorts) const
+// Use it after MapTo if some ports didn't map. It adds missing ports from this skeleton to Other.
+void CSkeletonInfo::MergeInto(CSkeletonInfo& Other, std::vector<U16>& Ports, size_t FirstEmptyPort) const
 {
-	OutPorts.clear();
-
-	// Start from 1 because roots always match
-	for (size_t i = 1; i < _Nodes.size(); ++i)
+	for (size_t i = FirstEmptyPort; i < Ports.size(); ++i)
 	{
+		if (Ports[i] != EmptyPort) continue;
+
 		const auto& NodeInfo = _Nodes[i];
 
-		// Find parent of the current node in Other
-		U16 OtherParentIndex;
-		if (NodeInfo.ParentIndex == EmptyPort)
-			OtherParentIndex = 0; // All non-root nodes without a parent are evaluated from the root
-		else if (OutPorts.empty())
-			OtherParentIndex = NodeInfo.ParentIndex;
-		else
-		{
-			OtherParentIndex = OutPorts[NodeInfo.ParentIndex];
-			if (OtherParentIndex == EmptyPort)
-			{
-				// Parent of this node was not merged, so neither could be the node itself
-				OutPorts.push_back(EmptyPort);
-				n_assert_dbg(OutPorts.size() == (i + 1));
-				continue;
-			}
-		}
+		const U16 OtherParentIndex = (NodeInfo.ParentIndex == EmptyPort) ? EmptyPort : Ports[NodeInfo.ParentIndex];
 
-		U16 OtherPort = Other.FindNodePort(OtherParentIndex, NodeInfo.ID);
-		if (OtherPort == EmptyPort)
-		{
-			// TODO: if ID is a path, should add all nodes one by one, to avoid referencing the same node in multiple ports!
-			//!!!should also try to detect intermediate nodes, they can exist!
-			OtherPort = static_cast<U16>(Other._Nodes.size());
-			Other._Nodes.push_back({ NodeInfo.ID, OtherParentIndex });
-		}
-
-		MapPort(OutPorts, static_cast<U16>(i), OtherPort);
+		// TODO: if ID is a path, should add all nodes one by one, to avoid referencing the same node in multiple ports!
+		//!!!should also try to detect intermediate nodes, they can exist!
+		Ports[i] = static_cast<U16>(Other._Nodes.size());
+		Other._Nodes.push_back({ NodeInfo.ID, OtherParentIndex });
 	}
 }
 //---------------------------------------------------------------------

@@ -23,7 +23,11 @@ void CClipPlayerNode::Init(CAnimationControllerInitContext& Context)
 	auto AnimRsrc = Context.ResourceManager.RegisterResource<CAnimationClip>(ClipID.CStr());
 	if (auto Anim = AnimRsrc->ValidateObject<CAnimationClip>())
 	{
-		if (!Context.SkeletonInfo) Context.SkeletonInfo = &Anim->GetSkeletonInfo();
+		if (!Context.SkeletonInfo)
+		{
+			// Share a clip's skeleton without copying
+			Context.SkeletonInfo = &Anim->GetSkeletonInfo();
+		}
 		else if (Context.SkeletonInfo != &Anim->GetSkeletonInfo())
 		{
 			std::vector<U16> PortMapping;
@@ -36,14 +40,14 @@ void CClipPlayerNode::Init(CAnimationControllerInitContext& Context)
 				if (Context.SkeletonInfo->GetRefCount() > 1)
 					Context.SkeletonInfo = n_new(CSkeletonInfo(*Context.SkeletonInfo));
 
-				//!!!TODO: use PortMapping, may even pass start index as hint (first empty slot pos)!
-				Anim->GetSkeletonInfo().MergeInto(*Context.SkeletonInfo, PortMapping);
+				const auto StartIdx = static_cast<size_t>(std::distance(PortMapping.cbegin(), EmptyIt));
+				Anim->GetSkeletonInfo().MergeInto(*Context.SkeletonInfo, PortMapping, StartIdx);
 			}
-		}
 
-		//!!!PortMapping must be used in EvaluatePose if not empty!
-		//???use stack-based CMappedPoseOutput?
-		//???!!!store PortMapping in a fixed array?! unique_ptr<[]>, nullptr = direct mapping
+			//!!!PortMapping must be used in EvaluatePose if not empty!
+			//???use stack-based CMappedPoseOutput?
+			//???!!!store PortMapping in a fixed array?! unique_ptr<[]>, nullptr = direct mapping
+		}
 
 		_Sampler.SetClip(Anim);
 	}
