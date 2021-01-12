@@ -28,9 +28,14 @@ public:
 	virtual ~CAnimationClip() override;
 
 	const acl::CompressedClip* GetACLClip() const { return _pClip; }
-	CSceneNodeMapping& GetSceneNodeMapping() const { return *_NodeMapping; } // non-const to create intrusive strong refs
-	float GetDuration() const { return _Duration; }
-	UPTR  GetNodeCount() const;
+	CSceneNodeMapping&         GetSceneNodeMapping() const { return *_NodeMapping; } // non-const to create intrusive strong refs
+	float                      GetDuration() const { return _Duration; }
+	UPTR                       GetNodeCount() const;
+
+	float AdjustTime(float Time, bool Loop) const
+	{
+		return Loop ? std::fmodf(Time, _Duration) : std::clamp(Time, 0.f, _Duration);
+	}
 };
 
 typedef Ptr<CAnimationClip> PAnimationClip;

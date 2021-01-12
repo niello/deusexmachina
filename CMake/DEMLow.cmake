@@ -4,6 +4,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/AnimatedPoseClip.h
 	DEM/Low/src/Animation/AnimationBlender.h
 	DEM/Low/src/Animation/AnimationClip.h
+	DEM/Low/src/Animation/AnimationController.h
 	DEM/Low/src/Animation/AnimationLoaderANM.h
 	DEM/Low/src/Animation/AnimationSampler.h
 	DEM/Low/src/Animation/CompositePoseClip.h
@@ -325,6 +326,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/AnimatedPoseClip.cpp
 	DEM/Low/src/Animation/AnimationBlender.cpp
 	DEM/Low/src/Animation/AnimationClip.cpp
+	DEM/Low/src/Animation/AnimationController.cpp
 	DEM/Low/src/Animation/AnimationLoaderANM.cpp
 	DEM/Low/src/Animation/AnimationSampler.cpp
 	DEM/Low/src/Animation/CompositePoseClip.cpp

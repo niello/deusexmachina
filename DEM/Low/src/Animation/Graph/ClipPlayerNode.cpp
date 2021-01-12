@@ -3,13 +3,24 @@
 namespace DEM::Anim
 {
 
-void CClipPlayerNode::Update(float dt/*, params*/)
+void CClipPlayerNode::Init(/*some params?*/)
 {
+	_CurrClipTime = _StartTime;
 }
 //---------------------------------------------------------------------
 
-void CClipPlayerNode::EvaluatePose(/*IPoseOutput& but only if not bound!*/)
+void CClipPlayerNode::Update(float dt/*, params*/)
 {
+	_CurrClipTime += dt * _Speed;
+
+	//!!!clamp / loop!
+	//???where to handle synchronization? pass sync info in a context?
+}
+//---------------------------------------------------------------------
+
+void CClipPlayerNode::EvaluatePose(IPoseOutput& Output)
+{
+	_Sampler.Apply(_CurrClipTime, Output);
 }
 //---------------------------------------------------------------------
 
