@@ -1,6 +1,7 @@
 #pragma once
 #include <Animation/Graph/AnimGraphNode.h>
 #include <Animation/AnimationSampler.h>
+#include <Data/StringID.h>
 
 // Animation graph node that plays a clip resource
 
@@ -15,6 +16,8 @@ protected:
 	//!!!TODO: support composite clips in a sampler!
 	CAnimationSampler _Sampler; // At offset 0 for proper alignment
 
+	CStrID            _ClipID;
+
 	float             _CurrClipTime = 0.f;
 
 	// TODO: ClipID? set on Init(), handle asset overriding there too?
@@ -26,7 +29,7 @@ public:
 
 	DEM_ALLOCATE_ALIGNED(alignof(CClipPlayerNode));
 
-	virtual void Init(/*some params?*/) override;
+	virtual void Init(CAnimationControllerInitContext& Context) override;
 	//virtual bool BindOutput() - Prepare/Tune external output instead of binding and storing into the node?
 	virtual void Update(float dt/*, params*/) override;
 	virtual void EvaluatePose(IPoseOutput& Output) override;

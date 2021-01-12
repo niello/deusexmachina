@@ -11,6 +11,9 @@
 // TODO: for now path in ID is supported only for records with empty ParentIndex. Allow for any records?
 // Can test whole ID first, and if not found, but contain dots, search by path.
 //???force that nodes to have a parent 0 (root)? Logically the same.
+//!!!Cases when one skeleton has "a.b.c" and other has "a", "b" & "c" will lead to dangerous merge.
+//Either the "c" node will be referenced twice or its parent will be placed after it.
+//???Forbid using pathes at all? Or restrict to only certain cases?
 
 namespace DEM::Anim
 {

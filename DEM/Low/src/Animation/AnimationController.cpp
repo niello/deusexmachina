@@ -1,16 +1,15 @@
 #include "AnimationController.h"
+#include <Animation/Graph/AnimGraphNode.h>
 
 namespace DEM::Anim
 {
 
-void CAnimationController::Init()
+void CAnimationController::Init(Resources::CResourceManager& ResMgr, std::map<CStrID, CStrID> AssetOverrides)
 {
-	//Pass inside:
-	// CSkeletonInfo for filling
-	// Resource manager
-	// std::map<CStrID, CStrID> for asset overriding
+	CAnimationControllerInitContext Context{ _SkeletonInfo, ResMgr, AssetOverrides };
+	_GraphRoot->Init(Context);
 
-	// _GraphRoot->Init();
+	// TODO: if !_SkeletonInfo here, can issue a warning - no leaf animation data is provided or some assets not resolved
 }
 //---------------------------------------------------------------------
 

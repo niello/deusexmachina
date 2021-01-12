@@ -3,7 +3,7 @@
 namespace DEM::Anim
 {
 
-void CBlendSpace1D::Init(/*some params?*/)
+void CBlendSpace1D::Init(CAnimationControllerInitContext& Context)
 {
 }
 //---------------------------------------------------------------------

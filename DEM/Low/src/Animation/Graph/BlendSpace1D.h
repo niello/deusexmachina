@@ -30,7 +30,7 @@ protected:
 
 public:
 
-	virtual void Init(/*some params?*/) override;
+	virtual void Init(CAnimationControllerInitContext& Context) override;
 	//virtual bool BindOutput() - Prepare/Tune external output instead of binding and storing into the node?
 	virtual void Update(float dt/*, params*/) override;
 	virtual void EvaluatePose(IPoseOutput& Output) override;

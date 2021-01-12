@@ -1,26 +1,51 @@
 #include "ClipPlayerNode.h"
+#include <Animation/AnimationController.h>
 #include <Animation/AnimationClip.h>
 #include <Animation/SkeletonInfo.h>
+#include <Resources/ResourceManager.h>
+#include <Resources/Resource.h>
 
 namespace DEM::Anim
 {
 
-void CClipPlayerNode::Init(/*some params? e.g. for clip asset obtaining*/)
+void CClipPlayerNode::Init(CAnimationControllerInitContext& Context)
 {
 	_CurrClipTime = _StartTime;
 
-	PAnimationClip Clip;
-	// get clip, using remapper and resource manager
-	if (Clip)
+	CStrID ClipID = _ClipID;
+	if (!Context.AssetOverrides.empty())
 	{
-		//std::vector<U16> PortMapping;
-		//Clip->GetSkeletonInfo().MergeInto(SkeletonInfo, PortMapping);
+		auto It = Context.AssetOverrides.find(ClipID);
+		if (It != Context.AssetOverrides.cend())
+			ClipID = It->second;
+	}
+
+	auto AnimRsrc = Context.ResourceManager.RegisterResource<CAnimationClip>(ClipID.CStr());
+	if (auto Anim = AnimRsrc->ValidateObject<CAnimationClip>())
+	{
+		if (!Context.SkeletonInfo) Context.SkeletonInfo = &Anim->GetSkeletonInfo();
+		else if (Context.SkeletonInfo != &Anim->GetSkeletonInfo())
+		{
+			std::vector<U16> PortMapping;
+			Anim->GetSkeletonInfo().MapTo(*Context.SkeletonInfo, PortMapping);
+
+			auto EmptyIt = std::find(PortMapping.cbegin(), PortMapping.cend(), CSkeletonInfo::EmptyPort);
+			if (EmptyIt != PortMapping.cend())
+			{
+				// Create our own copy instead of modifying a shared one
+				if (Context.SkeletonInfo->GetRefCount() > 1)
+					Context.SkeletonInfo = n_new(CSkeletonInfo(*Context.SkeletonInfo));
+
+				//!!!TODO: use PortMapping, may even pass start index as hint (first empty slot pos)!
+				Anim->GetSkeletonInfo().MergeInto(*Context.SkeletonInfo, PortMapping);
+			}
+		}
 
 		//!!!PortMapping must be used in EvaluatePose if not empty!
 		//???use stack-based CMappedPoseOutput?
-		//???!!!store fixed?! unique_ptr<[]>, nullptr = direct mapping
+		//???!!!store PortMapping in a fixed array?! unique_ptr<[]>, nullptr = direct mapping
 
-		_Sampler.SetClip(Clip);
+		_Sampler.SetClip(Anim);
 	}
 }
 //---------------------------------------------------------------------

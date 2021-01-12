@@ -5,13 +5,18 @@
 namespace DEM::Anim
 {
 
-CAnimationClip::CAnimationClip(acl::CompressedClip* pClip, float Duration, PSkeletonInfo&& NodeMapping)
+CAnimationClip::CAnimationClip(acl::CompressedClip* pClip, float Duration, PSkeletonInfo&& SkeletonInfo)
 	: _pClip(pClip)
-	, _NodeMapping(std::move(NodeMapping))
+	, _SkeletonInfo(std::move(SkeletonInfo))
 	, _Duration(Duration)
 {
-	// DEM animation format forces the root to be at position 0
-	n_assert(_NodeMapping && _NodeMapping->GetNodeCount() && _NodeMapping->GetNodeInfo(0).ParentIndex == CSkeletonInfo::EmptyPort);
+	// TODO: compare _SkeletonInfo for equality (in tools?), share between clips where identical!
+
+	// DEM animation format forces the root to be at position 0 and with empty ID
+	n_assert(_SkeletonInfo &&
+		_SkeletonInfo->GetNodeCount() &&
+		_SkeletonInfo->GetNodeInfo(0).ParentIndex == CSkeletonInfo::EmptyPort &&
+		!_SkeletonInfo->GetNodeInfo(0).ID);
 }
 //---------------------------------------------------------------------
 
@@ -23,7 +28,7 @@ CAnimationClip::~CAnimationClip()
 
 UPTR CAnimationClip::GetNodeCount() const
 {
-	return _NodeMapping->GetNodeCount();
+	return _SkeletonInfo->GetNodeCount();
 }
 //---------------------------------------------------------------------
 

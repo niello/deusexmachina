@@ -19,16 +19,16 @@ class CAnimationClip: public ::Core::CObject
 protected:
 
 	acl::CompressedClip* _pClip = nullptr;
-	PSkeletonInfo    _NodeMapping;
+	PSkeletonInfo        _SkeletonInfo;
 	float                _Duration = 0.f;
 
 public:
 
-	CAnimationClip(acl::CompressedClip* pClip, float Duration, PSkeletonInfo&& NodeMapping);
+	CAnimationClip(acl::CompressedClip* pClip, float Duration, PSkeletonInfo&& SkeletonInfo);
 	virtual ~CAnimationClip() override;
 
 	const acl::CompressedClip* GetACLClip() const { return _pClip; }
-	CSkeletonInfo&         GetSkeletonInfo() const { return *_NodeMapping; } // non-const to create intrusive strong refs
+	CSkeletonInfo&             GetSkeletonInfo() const { return *_SkeletonInfo; } // non-const to create intrusive strong refs
 	float                      GetDuration() const { return _Duration; }
 	UPTR                       GetNodeCount() const;
 
