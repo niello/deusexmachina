@@ -4,35 +4,48 @@
 namespace DEM::Anim
 {
 
-CSkeletonInfo::CSkeletonInfo(std::vector<CNodeInfo>&& Map)
-	: _Map(std::move(Map))
+CSkeletonInfo::CSkeletonInfo(std::vector<CNodeInfo>&& Nodes)
+	: _Nodes(std::move(Nodes))
 {
 #ifdef _DEBUG
 	// Mapping must guarantee that child nodes will go after their parents, for parents
 	// to be processed before children when map clip bones to output ports
-	for (size_t i = 0; i < _Map.size(); ++i)
+	for (size_t i = 0; i < _Nodes.size(); ++i)
 	{
-		n_assert(_Map[i].ParentIndex == EmptyPort || _Map[i].ParentIndex < i);
+		n_assert(_Nodes[i].ParentIndex == EmptyPort || _Nodes[i].ParentIndex < i);
 	}
 #endif
 }
 //---------------------------------------------------------------------
 
-static inline void MapPort(std::vector<U16>& OutPorts, U16 Port, U16 MappedPort)
+U16 CSkeletonInfo::FindNodePort(U16 ParentIndex, CStrID ID) const
 {
-	const bool DirectMapping = OutPorts.empty();
+	// TODO: if ID is a path, need to process all nodes one by one!
+	//!!!can even pre-detect dots and store a cached bit flag in CNodeInfo!
+
+	for (size_t i = ParentIndex + 1; i < _Nodes.size(); ++i)
+		if (_Nodes[i].ParentIndex == ParentIndex && _Nodes[i].ID == ID)
+			return static_cast<U16>(i);
+
+	return EmptyPort;
+}
+//---------------------------------------------------------------------
+
+static inline void MapPort(std::vector<U16>& MappedPorts, U16 Port, U16 MappedPort)
+{
+	const bool DirectMapping = MappedPorts.empty();
 	if (!DirectMapping || Port != MappedPort)
 	{
 		if (DirectMapping)
 		{
 			// Direct mapping satisfies our data no more, build explicit mapping
-			OutPorts.resize(Port);
+			MappedPorts.resize(Port);
 			for (U16 j = 0; j < Port; ++j)
-				OutPorts[j] = j;
+				MappedPorts[j] = j;
 		}
 
-		OutPorts.push_back(MappedPort);
-		n_assert_dbg(OutPorts.size() == (Port + 1));
+		MappedPorts.push_back(MappedPort);
+		n_assert_dbg(MappedPorts.size() == (Port + 1));
 	}
 }
 //---------------------------------------------------------------------
@@ -41,23 +54,16 @@ void CSkeletonInfo::MapTo(IPoseOutput& Output, std::vector<U16>& OutPorts) const
 {
 	OutPorts.clear();
 
-	for (size_t i = 0; i < _Map.size(); ++i)
+	for (size_t i = 0; i < _Nodes.size(); ++i)
 	{
-		const auto& NodeInfo = _Map[i];
+		const auto& NodeInfo = _Nodes[i];
 
-		const bool DirectMapping = OutPorts.empty();
-
-		// See guarantee comment in the constructor
 		const U16 ParentOutputPort =
 			(NodeInfo.ParentIndex == EmptyPort) ? IPoseOutput::InvalidPort :
-			DirectMapping ? NodeInfo.ParentIndex :
+			OutPorts.empty() ? NodeInfo.ParentIndex :
 			OutPorts[NodeInfo.ParentIndex];
 
-		const auto OutputPort = Output.BindNode(NodeInfo.ID, ParentOutputPort);
-		//if (OutputPort == IPoseOutput::InvalidPort) continue with port = IPoseOutput::InvalidPort;
-
-		// Allocate new port
-		MapPort(OutPorts, static_cast<U16>(i), OutputPort);
+		MapPort(OutPorts, static_cast<U16>(i), Output.BindNode(NodeInfo.ID, ParentOutputPort));
 	}
 }
 //---------------------------------------------------------------------
@@ -67,17 +73,15 @@ void CSkeletonInfo::MapTo(const CSkeletonInfo& Other, std::vector<U16>& OutPorts
 	OutPorts.clear();
 
 	// Start from 1 because roots always match
-	for (size_t i = 1; i < _Map.size(); ++i)
+	for (size_t i = 1; i < _Nodes.size(); ++i)
 	{
-		const auto& NodeInfo = _Map[i];
-
-		const bool DirectMapping = OutPorts.empty();
+		const auto& NodeInfo = _Nodes[i];
 
 		// Find parent of the current node in Other
 		U16 OtherParentIndex;
 		if (NodeInfo.ParentIndex == EmptyPort)
 			OtherParentIndex = 0; // All non-root nodes without a parent are evaluated from the root
-		else if (DirectMapping)
+		else if (OutPorts.empty())
 			OtherParentIndex = NodeInfo.ParentIndex;
 		else
 		{
@@ -91,25 +95,8 @@ void CSkeletonInfo::MapTo(const CSkeletonInfo& Other, std::vector<U16>& OutPorts
 			}
 		}
 
-		// TODO: if it is a path, need to process all nodes one by one!
-		// FIXME: check if there is a dot in the name instead of checking ParentIndex!
-		//if (NodeInfo.ParentIndex == EmptyPort)
-		//{
-		//}
-
-		// Parent found, scan all its children in Other to find the current node itself
-		U16 OtherPort = EmptyPort;
-		for (size_t j = OtherParentIndex + 1; j < Other._Map.size(); ++j)
-		{
-			const auto& OtherNodeInfo = Other._Map[j];
-			if (OtherNodeInfo.ParentIndex == OtherParentIndex && NodeInfo.ID == OtherNodeInfo.ID)
-			{
-				OtherPort = static_cast<U16>(j);
-				break;
-			}
-		}
-
-		MapPort(OutPorts, static_cast<U16>(i), OtherPort);
+		// Parent found, try to find a child node by ID
+		MapPort(OutPorts, static_cast<U16>(i), Other.FindNodePort(OtherParentIndex, NodeInfo.ID));
 	}
 }
 //---------------------------------------------------------------------
@@ -119,48 +106,35 @@ void CSkeletonInfo::MergeInto(CSkeletonInfo& Other, std::vector<U16>& OutPorts) 
 	OutPorts.clear();
 
 	// Start from 1 because roots always match
-	for (size_t i = 1; i < _Map.size(); ++i)
+	for (size_t i = 1; i < _Nodes.size(); ++i)
 	{
-		const auto& NodeInfo = _Map[i];
-
-		const bool DirectMapping = OutPorts.empty();
+		const auto& NodeInfo = _Nodes[i];
 
 		// Find parent of the current node in Other
 		U16 OtherParentIndex;
 		if (NodeInfo.ParentIndex == EmptyPort)
 			OtherParentIndex = 0; // All non-root nodes without a parent are evaluated from the root
-		else if (DirectMapping)
+		else if (OutPorts.empty())
 			OtherParentIndex = NodeInfo.ParentIndex;
 		else
 		{
 			OtherParentIndex = OutPorts[NodeInfo.ParentIndex];
 			if (OtherParentIndex == EmptyPort)
 			{
-				//!!!merge parent etc!
+				// Parent of this node was not merged, so neither could be the node itself
+				OutPorts.push_back(EmptyPort);
+				n_assert_dbg(OutPorts.size() == (i + 1));
+				continue;
 			}
 		}
 
-		// TODO: if it is a path, need to process all nodes one by one!
-		// FIXME: check if there is a dot in the name instead of checking ParentIndex!
-		//if (NodeInfo.ParentIndex == EmptyPort)
-		//{
-		//}
-
-		// Parent found, scan all its children in Other to find the current node itself
-		U16 OtherPort = EmptyPort;
-		for (size_t j = OtherParentIndex + 1; j < Other._Map.size(); ++j)
-		{
-			const auto& OtherNodeInfo = Other._Map[j];
-			if (OtherNodeInfo.ParentIndex == OtherParentIndex && NodeInfo.ID == OtherNodeInfo.ID)
-			{
-				OtherPort = static_cast<U16>(j);
-				break;
-			}
-		}
-
+		U16 OtherPort = Other.FindNodePort(OtherParentIndex, NodeInfo.ID);
 		if (OtherPort == EmptyPort)
 		{
-			//!!!merge!
+			// TODO: if ID is a path, should add all nodes one by one, to avoid referencing the same node in multiple ports!
+			//!!!should also try to detect intermediate nodes, they can exist!
+			OtherPort = static_cast<U16>(Other._Nodes.size());
+			Other._Nodes.push_back({ NodeInfo.ID, OtherParentIndex });
 		}
 
 		MapPort(OutPorts, static_cast<U16>(i), OtherPort);

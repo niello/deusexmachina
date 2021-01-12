@@ -18,6 +18,7 @@ void CClipPlayerNode::Init(/*some params? e.g. for clip asset obtaining*/)
 
 		//!!!PortMapping must be used in EvaluatePose if not empty!
 		//???use stack-based CMappedPoseOutput?
+		//???!!!store fixed?! unique_ptr<[]>, nullptr = direct mapping
 
 		_Sampler.SetClip(Clip);
 	}

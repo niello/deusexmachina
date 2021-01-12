@@ -29,20 +29,21 @@ public:
 		U16    ParentIndex = EmptyPort;
 	};
 
-	CSkeletonInfo(std::vector<CNodeInfo>&& Map);
+	CSkeletonInfo(std::vector<CNodeInfo>&& Nodes);
 
-	const UPTR       GetNodeCount() const { return _Map.size(); }
-	const CNodeInfo& GetNodeInfo(UPTR Index) const { return _Map[Index]; }
+	UPTR             GetNodeCount() const { return _Nodes.size(); }
+	const CNodeInfo& GetNodeInfo(UPTR Index) const { return _Nodes[Index]; }
+	U16              FindNodePort(U16 ParentIndex, CStrID ID) const;
 
 	// NB: if mapping is direct (each index is bound to the port with the same index),
-	// then OutPorts will be cleared and user can write to the output without remapping.
+	// then OutPorts will be empty, and user can write to the output without remapping.
 	void             MapTo(IPoseOutput& Output, std::vector<U16>& OutPorts) const;
 	void             MapTo(const CSkeletonInfo& Other, std::vector<U16>& OutPorts) const;
 	void             MergeInto(CSkeletonInfo& Other, std::vector<U16>& OutPorts) const;
 
 protected:
 
-	std::vector<CNodeInfo> _Map;
+	std::vector<CNodeInfo> _Nodes;
 };
 
 }
