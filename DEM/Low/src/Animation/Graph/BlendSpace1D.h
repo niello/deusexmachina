@@ -25,6 +25,8 @@ protected:
 
 	std::vector<CSample> _Samples; // Sorted by value ascending
 	CAnimationBlender    _Blender;
+	CAnimGraphNode*      _pFirst = nullptr;
+	CAnimGraphNode*      _pSecond = nullptr;
 
 	CStrID               _ParamID;
 	UPTR                 _ParamIndex = INVALID_INDEX; // Cached for fast access

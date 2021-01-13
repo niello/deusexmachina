@@ -29,48 +29,67 @@ void CBlendSpace1D::Init(CAnimationControllerInitContext& Context)
 
 void CBlendSpace1D::Update(CAnimationController& Controller, float dt)
 {
-	//!!!TODO: consider in logic!
-	if (_Samples.size() < 2)
-	{
-		// special case, no need in input checking
+	if (_Samples.empty()) return;
 
-		//!!!DBG TMP!
-		_Samples[0].Source->Update(Controller, dt);
-		return;
+	//???use cache if input parameter didn't change?
+
+	_pSecond = nullptr;
+	float BlendFactor = 0.f;
+	if (_Samples.size() == 1)
+	{
+		_pFirst = _Samples[0].Source.get();
+	}
+	else
+	{
+		const float Input = Controller.GetFloat(_ParamIndex);
+
+		//???TODO: filter input to make transitions smoother?
+
+		auto It = std::lower_bound(_Samples.cbegin(), _Samples.cend(), Input,
+			[](const auto& Elm, float Val) { return Elm.Value < Val; });
+
+		if (It != _Samples.cend() && n_fequal(It->Value, Input, SAMPLE_MATCH_TOLERANCE))
+		{
+			_pFirst = It->Source.get();
+		}
+		else if (It != _Samples.cbegin())
+		{
+			auto PrevIt = std::prev(It);
+			if (n_fequal(PrevIt->Value, Input, SAMPLE_MATCH_TOLERANCE))
+			{
+				_pFirst = PrevIt->Source.get();
+			}
+			else
+			{
+				_pFirst = PrevIt->Source.get();
+				_pSecond = It->Source.get();
+				BlendFactor = (Input - PrevIt->Value) / (It->Value - PrevIt->Value);
+
+				//!!!TODO: calc animation speed to prevent foot sliding (lerp between sample speeds/durations by weight?)
+
+				// maybe must do synchronization here, or record info and postpone after graph update
+				//???sync only if clip player, or recurse down to players through any nodes?
+				//!!!NB: sync may be abs time, normalized time (0 - 1) or by phase matching (calc from feet or manual)!
+				//???!!!Phase matching with monotone value may be much better than named markers?
+				//Curr time is obtained from the master track!
+			}
+		}
 	}
 
-	const float Input = Controller.GetFloat(_ParamIndex);
-	//???filter input to make transitions smoother?
-
-	// calc animation speed to prevent foot sliding (lerp between sample speeds/durations by weight?)
-
-	// calculate sources and weights based on input parameter
-	// save sources and weights: float blend_factor = (m_value - low->value) / (high->value - low->value);
-	// update active sources
-	// maybe must do seek synchronization here, or record info and postpone after graph update
-	//???sync only if clip player, or recurse down to players through any nodes?
-
-	//!!!NB: sync may be abs time, normalized time (0 - 1) or by phase matching (calc from feet or manual)!
-	//???!!!Phase matching with monotone value may be much better than named markers?
-	//Curr time is obtained from the master track!
+	_pFirst->Update(Controller, dt);
+	if (_pSecond) _pSecond->Update(Controller, dt); //!!!synchronize instead!
 }
 //---------------------------------------------------------------------
 
 void CBlendSpace1D::EvaluatePose(IPoseOutput& Output)
 {
-	//!!!TODO: consider in logic!
-	if (_Samples.size() < 2)
+	if (_pSecond)
 	{
-		// special case, no need in input checking
-
-		//!!!DBG TMP!
-		_Samples[0].Source->EvaluatePose(Output);
-		return;
+		// use calculated sources and weights to blend final pose
+		// request source poses from sources, must be already updated
+		// use local outputs for blending, or passthrough for the first one, and then blend the second one inplace if needed
 	}
-
-	// use calculated sources and weights to blend final pose
-	// request source poses from sources, must be already updated
-	// use local outputs for blending, or passthrough for the first one, and then blend the second one inplace if needed
+	else if (_pFirst) _pFirst->EvaluatePose(Output);
 }
 //---------------------------------------------------------------------
 
