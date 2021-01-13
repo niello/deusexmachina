@@ -251,9 +251,16 @@ static void UpdateRigidBodyMovement(Physics::CRigidBody* pBody, float dt, const 
 		return;
 	}
 
-	btVector3 AccelerationVector = (ReqLinearVelocity - pBody->GetBtBody()->getLinearVelocity()) / dt;
-	AccelerationVector.setY(0.f);
+	// Disable vertical movement
+	btVector3 CurrLinearVelocity = pBody->GetBtBody()->getLinearVelocity();
+	CurrLinearVelocity.setY(0.f);
+	pBody->GetBtBody()->setLinearVelocity(CurrLinearVelocity);
+
+	// Apply force based on our acceleration limit
+	// FIXME: braking must use separate deceleration or ArriveBrakingCoeff must be calculated from MaxAcceleration!
+	btVector3 AccelerationVector = (ReqLinearVelocity - CurrLinearVelocity) / dt;
 	const btScalar SqAcceleration = AccelerationVector.length2();
+	if (n_fequal(SqAcceleration, 0.f)) return;
 	if (SqAcceleration > MaxAcceleration * MaxAcceleration)
 		AccelerationVector *= (MaxAcceleration / n_sqrt(SqAcceleration));
 	pBody->GetBtBody()->applyCentralForce(AccelerationVector * pBody->GetMass());
