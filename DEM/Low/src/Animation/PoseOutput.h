@@ -23,8 +23,8 @@ public:
 
 	constexpr static inline U16 InvalidPort = std::numeric_limits<U16>().max();
 
-	virtual U16  BindNode(CStrID NodeID, U16 ParentPort) = 0;
-	virtual U8   GetActivePortChannels(U16 Port) const = 0; // returns ETransformChannel flags that port accepts now
+	virtual U16  BindNode(CStrID NodeID, U16 ParentPort) { return InvalidPort; }
+	virtual U8   GetActivePortChannels(U16 Port) const { return ETransformChannel::All; } // returns ETransformChannel flags that port accepts now
 
 	//???PERF: or SetTransform(tfm, ETransformChannel mask)? 3 bool checks inside, but mb less virtual calls. Is critical?
 	virtual void SetScale(U16 Port, const vector3& Scale) = 0;

@@ -1,5 +1,6 @@
 #include "BlendSpace1D.h"
 #include <Animation/AnimationController.h>
+#include <Animation/SkeletonInfo.h>
 
 namespace DEM::Anim
 {
@@ -21,9 +22,9 @@ void CBlendSpace1D::Init(CAnimationControllerInitContext& Context)
 		for (auto& Sample : _Samples)
 			Sample.Source->Init(Context);
 
-		_Blender.Initialize(2);
-		// Map blender to the total skeleton info (after initing child nodes!)
-		// Allocate only two blender inputs
+		// Call after initializing sources, letting them to contribute to SkeletonInfo
+		if (Context.SkeletonInfo)
+			_Blender.Initialize(2, Context.SkeletonInfo->GetNodeCount());
 	}
 }
 //---------------------------------------------------------------------
@@ -95,7 +96,7 @@ void CBlendSpace1D::EvaluatePose(IPoseOutput& Output)
 		_pFirst->EvaluatePose(*_Blender.GetInput(0));
 		_pSecond->EvaluatePose(*_Blender.GetInput(1));
 
-		//_Blender.Apply(); -> _Blender.EvaluatePose(Output);
+		_Blender.EvaluatePose(Output);
 	}
 	else if (_pFirst) _pFirst->EvaluatePose(Output);
 }

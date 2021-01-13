@@ -19,34 +19,25 @@ class CAnimationBlender final
 {
 protected:
 
-	PPoseOutput                         _Output;
-	std::vector<PAnimationBlenderInput> _Sources;
+	std::vector<PAnimationBlenderInput> _Sources; // FIXME: by value, if pose outputs will not be refcounted?
 	std::vector<UPTR>                   _SourcesByPriority;
-	std::vector<Math::CTransformSRT>    _Transforms;   // per node per source
-	std::vector<U8>                     _ChannelMasks; // per node per source
-	U16                                 _PortCount = 0; // for lazy blend matrix allocation
+	std::vector<Math::CTransformSRT>    _Transforms;   // per port per source
+	std::vector<U8>                     _ChannelMasks; // per port per source
+	U16                                 _PortCount = 0;
+	bool                                _PrioritiesChanged = false;
 
 public:
 
 	CAnimationBlender();
 	~CAnimationBlender();
 
-	void Initialize(U8 SourceCount);
-	void Apply();
+	void Initialize(U8 SourceCount, U8 PortCount);
+	void EvaluatePose(IPoseOutput& Output);
 
 	auto GetInput(U8 Source) const { return (_Sources.size() > Source) ? _Sources[Source].Get() : nullptr; }
 
-	U16  BindNode(CStrID NodeID, U16 ParentPort);
 	void SetPriority(U8 Source, U16 Priority);
 	void SetWeight(U8 Source, float Weight);
-
-	U8 GetActivePortChannels(U16 Port) const
-	{
-		n_assert_dbg(_Output);
-		//???PERF: for speed eliminate _pOutput nullptr check and do once on a caller side?
-		//???cache port channels once a frame before blending, return cached value here?
-		return _Output ? _Output->GetActivePortChannels(Port) : 0;
-	}
 
 	void SetScale(U8 Source, U16 Port, const vector3& Scale)
 	{
@@ -91,9 +82,6 @@ protected:
 public:
 
 	CAnimationBlenderInput(CAnimationBlender& Blender, U8 Index) : _pBlender(&Blender), _Index(Index) {}
-
-	virtual U16  BindNode(CStrID NodeID, U16 ParentPort) override { return _pBlender->BindNode(NodeID, ParentPort); }
-	virtual U8   GetActivePortChannels(U16 Port) const override { return _pBlender->GetActivePortChannels(Port); }
 
 	virtual void SetScale(U16 Port, const vector3& Scale) override { _pBlender->SetScale(_Index, Port, Scale); }
 	virtual void SetRotation(U16 Port, const quaternion& Rotation) override { _pBlender->SetRotation(_Index, Port, Rotation); }

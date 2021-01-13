@@ -24,9 +24,6 @@ public:
 
 	CStackMappedPoseOutput(IPoseOutput& Output, U16* PortMapping) : _Output(Output), _PortMapping(PortMapping) {}
 
-	// Stub because not used
-	virtual U16 BindNode(CStrID NodeID, U16 ParentPort) override { return InvalidPort; }
-
 	virtual U8   GetActivePortChannels(U16 Port) const override { return _Output.GetActivePortChannels(_PortMapping[Port]); }
 
 	virtual void SetScale(U16 Port, const vector3& Scale) override { return _Output.SetScale(_PortMapping[Port], Scale); }

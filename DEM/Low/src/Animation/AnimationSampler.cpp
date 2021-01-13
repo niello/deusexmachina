@@ -43,7 +43,6 @@ public:
 
 	CPoseRecorder(UPTR Ports) : _Transforms(Ports) {}
 
-	virtual U16  BindNode(CStrID NodeID, U16 ParentPort) override { return InvalidPort; }
 	virtual U8   GetActivePortChannels(U16 Port) const override { return ETransformChannel::All; }
 	virtual void SetScale(U16 Port, const vector3& Scale) override { _Transforms[Port].Scale = Scale; }
 	virtual void SetRotation(U16 Port, const quaternion& Rotation) override { _Transforms[Port].Rotation = Rotation; }

@@ -4,36 +4,43 @@
 
 namespace DEM::Anim
 {
-
 CAnimationBlender::CAnimationBlender() = default;
 CAnimationBlender::~CAnimationBlender() = default;
 
-//???where to set output?
-// NB: this invalidates all current transforms at least for now
-void CAnimationBlender::Initialize(U8 SourceCount)
+void CAnimationBlender::Initialize(U8 SourceCount, U8 PortCount)
 {
 	_Sources.resize(SourceCount);
-	_Transforms.clear();
-	_ChannelMasks.clear();
+	// FIXME: by value instead of heap alloc, if pose outputs will not be refcounted?
+	for (U8 i = 0; i < SourceCount; ++i)
+		_Sources[i] = n_new(CAnimationBlenderInput(*this, i));
 
 	// All sources initially have the same priority, order is not important
 	_SourcesByPriority.resize(SourceCount);
 	for (size_t i = 0; i < SourceCount; ++i)
 		_SourcesByPriority[i] = i;
+	_PrioritiesChanged = false;
+
+	// Allocate blend matrix (sources * ports)
+	const auto MatrixCellCount = PortCount * SourceCount;
+	_Transforms.resize(MatrixCellCount);
+	_ChannelMasks.resize(MatrixCellCount, 0);
+
+	_PortCount = PortCount;
 }
 //---------------------------------------------------------------------
 
-void CAnimationBlender::Apply()
+void CAnimationBlender::EvaluatePose(IPoseOutput& Output)
 {
 	const auto SourceCount = _Sources.size();
-	const auto MatrixCellCount = _PortCount * SourceCount;
-	if (!MatrixCellCount) return;
+	if (!SourceCount) return;
 
-	// Allocate blend matrix (sources * ports)
-	if (_Transforms.size() != MatrixCellCount)
+	if (_PrioritiesChanged)
 	{
-		_Transforms.resize(MatrixCellCount);
-		_ChannelMasks.resize(MatrixCellCount);
+		std::sort(_SourcesByPriority.begin(), _SourcesByPriority.end(), [this](UPTR a, UPTR b)
+		{
+			return _Sources[a]->GetPriority() > _Sources[b]->GetPriority();
+		});
+		_PrioritiesChanged = false;
 	}
 
 	for (UPTR Port = 0; Port < _PortCount; ++Port)
@@ -103,43 +110,20 @@ void CAnimationBlender::Apply()
 		// Apply accumulated transform
 
 		if (FinalMask & ETransformChannel::Scaling)
-			_Output->SetScale(Port, FinalTfm.Scale);
+			Output.SetScale(Port, FinalTfm.Scale);
 
 		if (FinalMask & ETransformChannel::Rotation)
 		{
 			if (RotationWeights < 1.f) FinalTfm.Rotation.normalize();
-			_Output->SetRotation(Port, FinalTfm.Rotation);
+			Output.SetRotation(Port, FinalTfm.Rotation);
 		}
 
 		if (FinalMask & ETransformChannel::Translation)
-			_Output->SetTranslation(Port, FinalTfm.Translation);
+			Output.SetTranslation(Port, FinalTfm.Translation);
 	}
 
 	// Source data is blended into the output, no more channels are ready to be blended
 	std::memset(_ChannelMasks.data(), 0, _ChannelMasks.size());
-}
-//---------------------------------------------------------------------
-
-// NB: slow operation, try to bind all your sources once on blender init
-U16 CAnimationBlender::BindNode(CStrID NodeID, U16 ParentPort)
-{
-	if (!_Output) return IPoseOutput::InvalidPort;
-
-	const auto OutputPort = _Output->BindNode(NodeID, ParentPort);
-	if (OutputPort == IPoseOutput::InvalidPort) return IPoseOutput::InvalidPort;
-
-	// Check if this output port is already mapped to our input port
-	if (OutputPort < _PortCount) return OutputPort;
-
-	// Allocate new port, delay memory allocation to the next Apply() call
-	const auto Port = _PortCount++;
-
-	// When direct mapping satisfies our data no more, build explicit mapping.
-	// This will never happen if mapped output is already created.
-	if (Port != OutputPort)
-		_Output = n_new(CMappedPoseOutput(std::move(_Output), _PortCount, OutputPort));
-
-	return Port;
 }
 //---------------------------------------------------------------------
 
@@ -148,12 +132,7 @@ void CAnimationBlender::SetPriority(U8 Source, U16 Priority)
 	if (Source < _Sources.size() && _Sources[Source]->GetPriority() != Priority)
 	{
 		_Sources[Source]->_Priority = Priority;
-
-		// FIXME: postpone to the next Apply()?
-		std::sort(_SourcesByPriority.begin(), _SourcesByPriority.end(), [this](UPTR a, UPTR b)
-		{
-			return _Sources[a]->GetPriority() > _Sources[b]->GetPriority();
-		});
+		_PrioritiesChanged = true;
 	}
 }
 //---------------------------------------------------------------------
