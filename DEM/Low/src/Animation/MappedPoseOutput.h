@@ -6,32 +6,8 @@
 
 namespace DEM::Anim
 {
-using PMappedPoseOutput = Ptr<class CMappedPoseOutput>;
 
-class CMappedPoseOutput : public IPoseOutput
-{
-protected:
-
-	PPoseOutput            _Output;
-	std::unique_ptr<U16[]> _PortMapping;
-
-public:
-
-	CMappedPoseOutput(PPoseOutput&& Output, std::unique_ptr<U16[]>&& PortMapping)
-		: _Output(std::move(Output))
-		, _PortMapping(std::move(PortMapping))
-	{}
-
-	virtual U8   GetActivePortChannels(U16 Port) const override { return _Output->GetActivePortChannels(_PortMapping[Port]); }
-
-	virtual void SetScale(U16 Port, const vector3& Scale) override { return _Output->SetScale(_PortMapping[Port], Scale); }
-	virtual void SetRotation(U16 Port, const quaternion& Rotation) override { return _Output->SetRotation(_PortMapping[Port], Rotation); }
-	virtual void SetTranslation(U16 Port, const vector3& Translation) override { return _Output->SetTranslation(_PortMapping[Port], Translation); }
-	virtual void SetTransform(U16 Port, const Math::CTransformSRT& Tfm) override { return _Output->SetTransform(_PortMapping[Port], Tfm); }
-};
-
-//!!!DBG TMP!
-//!!!FIXME: revisit CMappedPoseOutput and this!
+// FIXME: stack-only, not suited for refcounted storing!
 class CStackMappedPoseOutput : public IPoseOutput
 {
 protected:

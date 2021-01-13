@@ -26,9 +26,9 @@ void CPoseTrack::RefreshSkeletonInfo()
 }
 //---------------------------------------------------------------------
 
-void CPoseTrack::SetOutput(const PPoseOutput& Output)
+void CPoseTrack::SetOutput(IPoseOutput* pOutput)
 {
-	_Output = Output; // In cpp because requires an IPoseOutput definition
+	_Output = pOutput; // In cpp because requires an IPoseOutput definition
 }
 //---------------------------------------------------------------------
 

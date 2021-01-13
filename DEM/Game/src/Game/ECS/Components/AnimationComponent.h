@@ -1,11 +1,7 @@
 #pragma once
-#include <Animation/PoseOutput.h>
-#include <Animation/TimelinePlayer.h>
-#include <Animation/TimelineTrack.h>
-#include <Data/Metadata.h>
-
-//!!!DBG TMP!
+#include <Animation/Skeleton.h>
 #include <Animation/AnimationController.h>
+#include <Data/Metadata.h>
 
 // Animation component plays a single animation clip on the entity scene hierarchy
 
@@ -14,11 +10,8 @@ namespace DEM::Game
 
 struct CAnimationComponent
 {
-	DEM::Anim::PPoseOutput     Output;
-	//DEM::Anim::CTimelinePlayer Player;
-	//DEM::Anim::PTimelineTrack  Track;
-
-	DEM::Anim::CAnimationController Controller;
+	Anim::PSkeleton            Output;
+	Anim::CAnimationController Controller;
 
 	CStrID  ClipID;
 	CString RelTargetPath; // FIXME: use std::string, CData must use it too then
@@ -26,8 +19,6 @@ struct CAnimationComponent
 	float   CurrTime = 0.f;
 	bool    Looped = false;
 	bool    Play = true;
-
-	//CAnimationComponent& operator =(CAnimationComponent&& Other) = default;
 };
 
 }

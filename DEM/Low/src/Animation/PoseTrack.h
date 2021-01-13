@@ -36,7 +36,7 @@ public:
 
 	void                   AddClip(PPoseClipBase&& Clip, float StartTime, float Duration /*, overlap resolve mode*/);
 	void                   RefreshSkeletonInfo();
-	void                   SetOutput(const PPoseOutput& Output);
+	void                   SetOutput(IPoseOutput* pOutput);
 	IPoseOutput*           GetOutput() const { return _Output.Get(); }
 	CSkeletonInfo*         GetSkeletonInfo() const { return _SkeletonInfo; } // non-const to create intrusive strong refs
 
