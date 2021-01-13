@@ -49,14 +49,14 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt)
 		auto It = std::lower_bound(_Samples.cbegin(), _Samples.cend(), Input,
 			[](const auto& Elm, float Val) { return Elm.Value < Val; });
 
-		if (It != _Samples.cend() && n_fequal(It->Value, Input, SAMPLE_MATCH_TOLERANCE))
+		if (It == _Samples.cbegin() || (It != _Samples.cend() && n_fequal(It->Value, Input, SAMPLE_MATCH_TOLERANCE)))
 		{
 			_pFirst = It->Source.get();
 		}
-		else if (It != _Samples.cbegin())
+		else
 		{
 			auto PrevIt = std::prev(It);
-			if (n_fequal(PrevIt->Value, Input, SAMPLE_MATCH_TOLERANCE))
+			if (n_fequal(PrevIt->Value, Input, SAMPLE_MATCH_TOLERANCE) || (It == _Samples.cend() && PrevIt->Value < Input))
 			{
 				_pFirst = PrevIt->Source.get();
 			}
