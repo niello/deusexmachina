@@ -9,25 +9,13 @@ CAnimationController::CAnimationController(CAnimationController&&) noexcept = de
 CAnimationController& CAnimationController::operator =(CAnimationController&&) noexcept = default;
 CAnimationController::~CAnimationController() = default;
 
-void CAnimationController::SetGraphRoot(PAnimGraphNode&& GraphRoot)
-{
-	if (_GraphRoot == GraphRoot) return;
-
-	_GraphRoot = std::move(GraphRoot);
-	_SkeletonInfo = nullptr;
-}
-//---------------------------------------------------------------------
-
-void CAnimationController::InitParams(
+void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResourceManager& ResMgr,
 	std::map<CStrID, float>&& Floats,
 	std::map<CStrID, int>&& Ints,
 	std::map<CStrID, bool>&& Bools,
-	std::map<CStrID, CStrID>&& StrIDs)
+	std::map<CStrID, CStrID>&& StrIDs,
+	std::map<CStrID, CStrID> AssetOverrides)
 {
-	// Must not be called when already initialized. Cached param indices
-	// will be invalidated and using them may lead to a crash.
-	n_assert(!_SkeletonInfo);
-
 	_Params.clear();
 	_FloatValues.reset();
 	_IntValues.reset();
@@ -89,11 +77,10 @@ void CAnimationController::InitParams(
 			_StrIDValues[CurrIdx++] = DefaultValue;
 		}
 	}
-}
-//---------------------------------------------------------------------
 
-void CAnimationController::Init(Resources::CResourceManager& ResMgr, std::map<CStrID, CStrID> AssetOverrides)
-{
+	_GraphRoot = std::move(GraphRoot);
+	_SkeletonInfo = nullptr;
+
 	if (_GraphRoot)
 	{
 		CAnimationControllerInitContext Context{ *this, _SkeletonInfo, ResMgr, AssetOverrides };

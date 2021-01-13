@@ -58,12 +58,7 @@ public:
 	CAnimationController& operator =(CAnimationController&&) noexcept;
 	~CAnimationController();
 
-	void SetGraphRoot(PAnimGraphNode&& GraphRoot);
-	void InitParams(std::map<CStrID, float>&& Floats = {}, std::map<CStrID, int>&& Ints = {}, std::map<CStrID, bool>&& Bools = {}, std::map<CStrID, CStrID>&& StrIDs = {});
-
-	//???default node must skip Update and return reference pose from eval?
-
-	void  Init(Resources::CResourceManager& ResMgr, std::map<CStrID, CStrID> AssetOverrides = {});
+	void  Init(PAnimGraphNode&& GraphRoot, Resources::CResourceManager& ResMgr, std::map<CStrID, float>&& Floats = {}, std::map<CStrID, int>&& Ints = {}, std::map<CStrID, bool>&& Bools = {}, std::map<CStrID, CStrID>&& StrIDs = {}, std::map<CStrID, CStrID> AssetOverrides = {});
 	void  Update(float dt);
 	void  EvaluatePose(IPoseOutput& Output);
 

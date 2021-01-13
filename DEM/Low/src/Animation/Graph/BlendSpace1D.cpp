@@ -4,6 +4,12 @@
 namespace DEM::Anim
 {
 
+CBlendSpace1D::CBlendSpace1D(CStrID ParamID)
+	: _ParamID(ParamID)
+{
+}
+//---------------------------------------------------------------------
+
 void CBlendSpace1D::Init(CAnimationControllerInitContext& Context)
 {
 	EParamType Type;
@@ -27,6 +33,10 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt)
 	if (_Samples.size() < 2)
 	{
 		// special case, no need in input checking
+
+		//!!!DBG TMP!
+		_Samples[0].Source->Update(Controller, dt);
+		return;
 	}
 
 	const float Input = Controller.GetFloat(_ParamIndex);
@@ -48,22 +58,42 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt)
 
 void CBlendSpace1D::EvaluatePose(IPoseOutput& Output)
 {
+	//!!!TODO: consider in logic!
+	if (_Samples.size() < 2)
+	{
+		// special case, no need in input checking
+
+		//!!!DBG TMP!
+		_Samples[0].Source->EvaluatePose(Output);
+		return;
+	}
+
 	// use calculated sources and weights to blend final pose
 	// request source poses from sources, must be already updated
 	// use local outputs for blending, or passthrough for the first one, and then blend the second one inplace if needed
 }
 //---------------------------------------------------------------------
 
+// NB: sample value must be different from neighbours at least by SAMPLE_MATCH_TOLERANCE
 bool CBlendSpace1D::AddSample(PAnimGraphNode&& Source, float Value)
 {
 	if (!Source) return false;
 
-	// find sorted pos
-	// compare with neighbours
-	//!!!Value must outstand at least tolerance from neighbour values!
-	NOT_IMPLEMENTED;
+	auto It = _Samples.cend();
+	if (!_Samples.empty())
+	{
+		It = std::lower_bound(_Samples.cbegin(), _Samples.cend(), Value,
+			[](const auto& Elm, float Val) { return Elm.Value < Val; });
 
-	return false;
+		// Check if the value is the same as upper
+		if (It != _Samples.cend() && n_fequal(It->Value, Value, SAMPLE_MATCH_TOLERANCE)) return false;
+
+		// Check if the value is the same as lower
+		if (It != _Samples.cbegin() && n_fequal(std::prev(It)->Value, Value, SAMPLE_MATCH_TOLERANCE)) return false;
+	}
+
+	_Samples.insert(It, { std::move(Source), Value });
+	return true;
 }
 //---------------------------------------------------------------------
 
