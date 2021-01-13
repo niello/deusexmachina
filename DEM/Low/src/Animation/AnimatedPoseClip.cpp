@@ -2,6 +2,7 @@
 #include <Animation/AnimationClip.h>
 #include <Animation/SkeletonInfo.h>
 #include <Animation/MappedPoseOutput.h>
+#include <Animation/PoseTrack.h>
 
 namespace DEM::Anim
 {
@@ -23,27 +24,29 @@ PPoseClipBase CAnimatedPoseClip::Clone() const
 }
 //---------------------------------------------------------------------
 
-void CAnimatedPoseClip::BindToOutput(const PPoseOutput& Output)
+void CAnimatedPoseClip::GatherSkeletonInfo(PSkeletonInfo& SkeletonInfo)
 {
-	if (!_Sampler.GetClip() || _Output == Output) return;
-
-	// TODO: can compare node mappings of old and new clip and skip if equal.
-	// Can even store mapping hash, compare root & mapping count & hash, then do full comparison.
-	// It will be pretty common to reuse the same player with different clips on the same hierarchy.
-	std::vector<U16> PortMapping;
-	_Sampler.GetClip()->GetSkeletonInfo().MapTo(*Output, PortMapping);
-	if (PortMapping.empty())
-		_Output = Output;
-	else
-		_Output = n_new(DEM::Anim::CMappedPoseOutput(PPoseOutput(Output), std::move(PortMapping)));
+	if (!_Sampler.GetClip()) return;
+	CSkeletonInfo::Combine(SkeletonInfo, _Sampler.GetClip()->GetSkeletonInfo(), _PortMapping);
 }
 //---------------------------------------------------------------------
 
-void CAnimatedPoseClip::PlayInterval(float /*PrevTime*/, float CurrTime, bool IsLast, const CPoseTrack& /*Track*/, UPTR /*ClipIndex*/)
+void CAnimatedPoseClip::PlayInterval(float /*PrevTime*/, float CurrTime, bool IsLast, const CPoseTrack& Track, UPTR /*ClipIndex*/)
 {
 	//!!!FIXME: sample pose only if CurrTime is inside the clip (>=0 && <= duration)! Otherwise clip is skipped already.
 	//???IsLast will already check it? Last clip is always current, otherwise it is skipped. Rename to IsCurr?
-	if (IsLast && _Output) _Sampler.Apply(CurrTime, *_Output);
+	if (IsLast && Track.GetOutput())
+	{
+		if (_PortMapping)
+		{
+			CStackMappedPoseOutput MappedOutput(*Track.GetOutput(), _PortMapping.get());
+			_Sampler.Apply(CurrTime, MappedOutput);
+		}
+		else
+		{
+			_Sampler.Apply(CurrTime, *Track.GetOutput());
+		}
+	}
 }
 //---------------------------------------------------------------------
 

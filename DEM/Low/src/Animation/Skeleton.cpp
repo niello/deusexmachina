@@ -1,51 +1,35 @@
 #include "Skeleton.h"
+#include <Animation/SkeletonInfo.h>
 
 namespace DEM::Anim
 {
 
-void CSkeleton::SetRootNode(Scene::CSceneNode* pNode)
+void CSkeleton::Init(Scene::CSceneNode& Root, const CSkeletonInfo& Info)
 {
-	if (_Nodes.empty())
+	_Nodes.clear();
+	const auto NodeCount = Info.GetNodeCount();
+
+	if (!NodeCount) return;
+
+	_Nodes.resize(NodeCount);
+	_Nodes[0] = &Root;
+
+	for (UPTR i = 1; i < NodeCount; ++i)
 	{
-		if (pNode) _Nodes.push_back(pNode);
+		const auto& NodeInfo = Info.GetNodeInfo(i);
+
+		Scene::CSceneNode* pNode = nullptr;
+		if (NodeInfo.ParentIndex == CSkeletonInfo::EmptyPort)
+		{
+			// When no parent is specified, we search by path from the root node
+			_Nodes[i] = _Nodes[0]->FindNodeByPath(NodeInfo.ID.CStr());
+		}
+		else if (auto pParent = _Nodes[NodeInfo.ParentIndex].Get())
+		{
+			// When parent is specified, the node is its direct child
+			_Nodes[i] = pParent->GetChild(NodeInfo.ID);
+		}
 	}
-	else _Nodes[0] = pNode;
-
-	//!!!could rebind instead of invalidating!
-	//!!!to rebind, needs to remember name+parent when port is created!
-	for (size_t i = 1; i < _Nodes.size(); ++i)
-		_Nodes[i] = nullptr;
-}
-//---------------------------------------------------------------------
-
-U16 CSkeleton::BindNode(CStrID NodeID, U16 ParentPort)
-{
-	// Root must be set before binding other nodes
-	if (_Nodes.empty() || !_Nodes[0]) return InvalidPort;
-
-	Scene::CSceneNode* pNode = nullptr;
-	if (ParentPort == InvalidPort)
-	{
-		// When no parent is specified, we search by path from the root node.
-		// Empty path is the root node itself, and root port is always 0.
-		if (!NodeID) return 0;
-		pNode = _Nodes[0]->FindNodeByPath(NodeID.CStr());
-	}
-	else if (auto pParent = _Nodes[ParentPort].Get())
-	{
-		// When parent is specified, the node is its direct child
-		pNode = pParent->GetChild(NodeID);
-	}
-
-	if (!pNode) return InvalidPort;
-
-	// Check if this node is already bound to some port
-	auto It = std::find(_Nodes.cbegin(), _Nodes.cend(), pNode);
-	if (It != _Nodes.cend()) return static_cast<U16>(std::distance(_Nodes.cbegin(), It));
-
-	// Create new port, if not
-	_Nodes.push_back(pNode);
-	return static_cast<U16>(_Nodes.size() - 1);
 }
 //---------------------------------------------------------------------
 

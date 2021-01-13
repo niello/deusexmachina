@@ -1,23 +1,12 @@
 #include "PoseTrack.h"
 #include <Animation/PoseClipBase.h>
 #include <Animation/PoseOutput.h>
+#include <Animation/SkeletonInfo.h>
 
 namespace DEM::Anim
 {
 CPoseTrack::CPoseTrack() = default;
 CPoseTrack::~CPoseTrack() = default;
-
-//!!!recurse through blenders, handle mapped outputs for leaf sources (like in loading now).
-void CPoseTrack::SetOutput(const PPoseOutput& Output)
-{
-	if (Output == _Output) return;
-
-	_Output = Output;
-
-	for (auto& [Clip, StartTime, EndTime] : _Clips)
-		Clip->BindToOutput(_Output);
-}
-//---------------------------------------------------------------------
 
 // FIXME: this logic is the same for any clip/track type
 void CPoseTrack::AddClip(PPoseClipBase&& Clip, float StartTime, float Duration /*, overlap resolve mode*/)
@@ -25,6 +14,21 @@ void CPoseTrack::AddClip(PPoseClipBase&& Clip, float StartTime, float Duration /
 	if (!Clip || Duration <= 0.f) return;
 	auto It = std::lower_bound(_Clips.begin(), _Clips.end(), StartTime, [](const CClip& Clip, float Time) { return Clip.EndTime < Time; });
 	_Clips.insert(It, CClip{ std::move(Clip), StartTime, StartTime + Duration });
+}
+//---------------------------------------------------------------------
+
+//!!!recurse through blenders, handle mapped outputs for leaf sources (like in loading now).
+void CPoseTrack::RefreshSkeletonInfo()
+{
+	_SkeletonInfo = nullptr;
+	for (auto& [Clip, StartTime, EndTime] : _Clips)
+		Clip->GatherSkeletonInfo(_SkeletonInfo);
+}
+//---------------------------------------------------------------------
+
+void CPoseTrack::SetOutput(const PPoseOutput& Output)
+{
+	_Output = Output; // In cpp because requires an IPoseOutput definition
 }
 //---------------------------------------------------------------------
 
@@ -39,6 +43,8 @@ PTimelineTrack CPoseTrack::Clone() const
 		NewClipData.EndTime = ClipData.EndTime;
 		NewTrack->_Clips.push_back(std::move(NewClipData));
 	}
+
+	NewTrack->_SkeletonInfo = _SkeletonInfo;
 
 	// NB: Output binding is not cloned for now. Need?
 

@@ -5,11 +5,11 @@
 namespace DEM::Anim
 {
 
-CStaticPose::CStaticPose(std::vector<Math::CTransformSRT>&& Transforms, PSkeletonInfo&& NodeMapping)
+CStaticPose::CStaticPose(std::vector<Math::CTransformSRT>&& Transforms, PSkeletonInfo&& SkeletonInfo)
 	: _Transforms(std::move(Transforms))
-	, _NodeMapping(std::move(NodeMapping))
+	, _SkeletonInfo(std::move(SkeletonInfo))
 {
-	n_assert_dbg(_NodeMapping->GetNodeCount() == _Transforms.size());
+	n_assert_dbg(_SkeletonInfo->GetNodeCount() == _Transforms.size());
 }
 //---------------------------------------------------------------------
 

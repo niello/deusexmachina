@@ -1,6 +1,7 @@
 #include "StaticPoseClip.h"
 #include <Animation/SkeletonInfo.h>
 #include <Animation/MappedPoseOutput.h>
+#include <Animation/PoseTrack.h>
 
 namespace DEM::Anim
 {
@@ -16,22 +17,27 @@ PPoseClipBase CStaticPoseClip::Clone() const
 }
 //---------------------------------------------------------------------
 
-void CStaticPoseClip::BindToOutput(const PPoseOutput& Output)
+void CStaticPoseClip::GatherSkeletonInfo(PSkeletonInfo& SkeletonInfo)
 {
-	if (!_Pose || _Output == Output) return;
-
-	std::vector<U16> PortMapping;
-	_Pose->GetNodeMapping().MapTo(*Output, PortMapping);
-	if (PortMapping.empty())
-		_Output = Output;
-	else
-		_Output = n_new(DEM::Anim::CMappedPoseOutput(PPoseOutput(Output), std::move(PortMapping)));
+	if (!_Pose) return;
+	CSkeletonInfo::Combine(SkeletonInfo, _Pose->GetSkeletonInfo(), _PortMapping);
 }
 //---------------------------------------------------------------------
 
-void CStaticPoseClip::PlayInterval(float /*PrevTime*/, float /*CurrTime*/, bool IsLast, const CPoseTrack& /*Track*/, UPTR /*ClipIndex*/)
+void CStaticPoseClip::PlayInterval(float /*PrevTime*/, float /*CurrTime*/, bool IsLast, const CPoseTrack& Track, UPTR /*ClipIndex*/)
 {
-	if (IsLast && _Output && _Pose) _Pose->Apply(*_Output);
+	if (IsLast && _Pose && Track.GetOutput())
+	{
+		if (_PortMapping)
+		{
+			CStackMappedPoseOutput MappedOutput(*Track.GetOutput(), _PortMapping.get());
+			_Pose->Apply(MappedOutput);
+		}
+		else
+		{
+			_Pose->Apply(*Track.GetOutput());
+		}
+	}
 }
 //---------------------------------------------------------------------
 

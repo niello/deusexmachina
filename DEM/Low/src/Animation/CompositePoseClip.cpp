@@ -10,7 +10,7 @@ PPoseClipBase CCompositePoseClip::Clone() const
 }
 //---------------------------------------------------------------------
 
-void CCompositePoseClip::BindToOutput(const PPoseOutput& Output)
+void CCompositePoseClip::GatherSkeletonInfo(PSkeletonInfo& SkeletonInfo)
 {
 	// bind each track to blender, bind blender to output
 }

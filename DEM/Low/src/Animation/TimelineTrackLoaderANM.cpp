@@ -29,6 +29,7 @@ Core::PObject CTimelineTrackLoaderANM::CreateResource(CStrID UID)
 	Clip->SetAnimationClip(Anim);
 	DEM::Anim::PPoseTrack Track(n_new(DEM::Anim::CPoseTrack()));
 	Track->AddClip(std::move(Clip), 0.f, Anim->GetDuration());
+	Track->RefreshSkeletonInfo();
 
 	return Track;
 }

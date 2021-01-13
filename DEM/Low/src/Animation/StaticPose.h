@@ -21,17 +21,17 @@ class CStaticPose final
 {
 protected:
 
-	PSkeletonInfo                _NodeMapping;
+	PSkeletonInfo                    _SkeletonInfo;
 	std::vector<Math::CTransformSRT> _Transforms;
 
 public:
 
-	CStaticPose(std::vector<Math::CTransformSRT>&& Transforms, PSkeletonInfo&& NodeMapping);
+	CStaticPose(std::vector<Math::CTransformSRT>&& Transforms, PSkeletonInfo&& SkeletonInfo);
 	~CStaticPose();
 
 	void Apply(IPoseOutput& Output);
 
-	CSkeletonInfo& GetNodeMapping() const { return *_NodeMapping; } // non-const to create intrusive strong refs
+	CSkeletonInfo& GetSkeletonInfo() const { return *_SkeletonInfo; } // non-const to create intrusive strong refs
 };
 
 }

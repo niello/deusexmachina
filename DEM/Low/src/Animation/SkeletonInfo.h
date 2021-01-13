@@ -18,7 +18,6 @@
 namespace DEM::Anim
 {
 using PSkeletonInfo = Ptr<class CSkeletonInfo>;
-class IPoseOutput;
 
 class CSkeletonInfo : public Data::CRefCounted
 {
@@ -32,18 +31,15 @@ public:
 		U16    ParentIndex = EmptyPort;
 	};
 
+	static void      Combine(PSkeletonInfo& Dest, CSkeletonInfo& Src, std::unique_ptr<U16[]>& Mapping);
+
 	CSkeletonInfo(std::vector<CNodeInfo>&& Nodes);
 
 	UPTR             GetNodeCount() const { return _Nodes.size(); }
 	const CNodeInfo& GetNodeInfo(UPTR Index) const { return _Nodes[Index]; }
 	U16              FindNodePort(U16 ParentIndex, CStrID ID) const;
-
-	// NB: if mapping is direct (each index is bound to the port with the same index),
-	// then OutPorts will be empty, and user can write to the output without remapping.
-	void             MapTo(IPoseOutput& Output, std::vector<U16>& OutPorts) const;
-	void             MapTo(const CSkeletonInfo& Other, std::vector<U16>& OutPorts) const;
-
-	void             MergeInto(CSkeletonInfo& Other, std::vector<U16>& Ports, size_t FirstEmptyPort = 0) const;
+	void             MapTo(const CSkeletonInfo& Other, std::unique_ptr<U16[]>& OutMapping) const;
+	void             MergeInto(CSkeletonInfo& Other, std::unique_ptr<U16[]>& Mapping, size_t FirstEmptyPort = 0) const;
 
 protected:
 

@@ -93,6 +93,7 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 						Task.EndTime = TransitionDesc.Get(CStrID("EndTime"), 1.f);
 						Task.LoopCount = TransitionDesc.Get(CStrID("LoopCount"), 1); // Transition must always be finite
 						Task.SkeletonRootRelPath = TransitionDesc.Get(CStrID("SkeletonRootRelPath"), CString::Empty).CStr();
+						n_assert_dbg(Task.LoopCount);
 
 						Task.Timeline->ValidateObject();
 					}

@@ -47,11 +47,17 @@ static void RunTimelineTask(DEM::Game::CGameWorld& World, HEntity EntityID, CSma
 				// Bone remapping is added per clip where necessary, track itself stores reusable skeleton
 				pPoseTrack->SetOutput(pOldPoseTrack->GetOutput());
 			}
-			else
+			else if (pPoseTrack->GetSkeletonInfo())
 			{
 				if (auto pSceneComponent = World.FindComponent<DEM::Game::CSceneComponent>(EntityID))
+				{
 					if (auto pTargetRoot = pSceneComponent->RootNode->FindNodeByPath(Task.SkeletonRootRelPath.c_str()))
-						pPoseTrack->SetOutput(n_new(Anim::CSkeleton(pTargetRoot)));
+					{
+						Anim::PSkeleton Skeleton = n_new(Anim::CSkeleton());
+						Skeleton->Init(*pTargetRoot, *pPoseTrack->GetSkeletonInfo());
+						pPoseTrack->SetOutput(Skeleton);
+					}
+				}
 			}
 		}
 

@@ -8,6 +8,7 @@
 namespace DEM::Anim
 {
 using PSkeleton = Ptr<class CSkeleton>;
+class CSkeletonInfo;
 
 class CSkeleton : public IPoseOutput
 {
@@ -20,11 +21,10 @@ protected:
 
 public:
 
-	CSkeleton(Scene::CSceneNode* pNode = nullptr) { SetRootNode(pNode); }
+	void Init(Scene::CSceneNode& Root, const CSkeletonInfo& Info);
+	void Clear() { _Nodes.clear();  }
 
-	void SetRootNode(Scene::CSceneNode* pNode);
-
-	virtual U16  BindNode(CStrID NodeID, U16 ParentPort) override;
+	//!!!can merge into the single feature with a per-bone layer mask!
 	virtual U8   GetActivePortChannels(U16 Port) const override;
 
 	virtual void SetScale(U16 Port, const vector3& Scale) override;

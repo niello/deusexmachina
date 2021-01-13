@@ -21,7 +21,7 @@ public:
 	virtual void          UpdateBlendParams() = 0;
 
 	virtual PPoseClipBase Clone() const override;
-	virtual void          BindToOutput(const PPoseOutput& Output) override;
+	virtual void          GatherSkeletonInfo(PSkeletonInfo& SkeletonInfo) override;
 	virtual void          PlayInterval(float PrevTime, float CurrTime, bool IsLast, const CPoseTrack& Track, UPTR ClipIndex) override;
 };
 
