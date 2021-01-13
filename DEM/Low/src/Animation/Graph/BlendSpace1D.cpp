@@ -21,6 +21,7 @@ void CBlendSpace1D::Init(CAnimationControllerInitContext& Context)
 		for (auto& Sample : _Samples)
 			Sample.Source->Init(Context);
 
+		_Blender.Initialize(2);
 		// Map blender to the total skeleton info (after initing child nodes!)
 		// Allocate only two blender inputs
 	}
@@ -34,7 +35,6 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt)
 	//???use cache if input parameter didn't change?
 
 	_pSecond = nullptr;
-	float BlendFactor = 0.f;
 	if (_Samples.size() == 1)
 	{
 		_pFirst = _Samples[0].Source.get();
@@ -63,7 +63,10 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt)
 			{
 				_pFirst = PrevIt->Source.get();
 				_pSecond = It->Source.get();
-				BlendFactor = (Input - PrevIt->Value) / (It->Value - PrevIt->Value);
+
+				const float BlendFactor = (Input - PrevIt->Value) / (It->Value - PrevIt->Value);
+				_Blender.SetWeight(0, 1.f - BlendFactor);
+				_Blender.SetWeight(1, BlendFactor);
 
 				//!!!TODO: calc animation speed to prevent foot sliding (lerp between sample speeds/durations by weight?)
 
@@ -85,9 +88,14 @@ void CBlendSpace1D::EvaluatePose(IPoseOutput& Output)
 {
 	if (_pSecond)
 	{
-		// use calculated sources and weights to blend final pose
-		// request source poses from sources, must be already updated
-		// use local outputs for blending, or passthrough for the first one, and then blend the second one inplace if needed
+		//???TODO: try inplace blending in Output instead of preallocated Blender? helps to save
+		// memory and may be faster! We don't use priority here anyway, and weights always sum to 1.f.
+		//Can use special wrapper output CPoseScaleBiasOutput / CPoseWeightedOutput to apply weights on the fly!
+		//!!!can even have single and per-bone weigh variations!
+		_pFirst->EvaluatePose(*_Blender.GetInput(0));
+		_pSecond->EvaluatePose(*_Blender.GetInput(1));
+
+		//_Blender.Apply(); -> _Blender.EvaluatePose(Output);
 	}
 	else if (_pFirst) _pFirst->EvaluatePose(Output);
 }
