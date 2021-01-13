@@ -40,11 +40,11 @@ void CAnimatedPoseClip::PlayInterval(float /*PrevTime*/, float CurrTime, bool Is
 		if (_PortMapping)
 		{
 			CStackMappedPoseOutput MappedOutput(*Track.GetOutput(), _PortMapping.get());
-			_Sampler.Apply(CurrTime, MappedOutput);
+			_Sampler.EvaluatePose(CurrTime, MappedOutput);
 		}
 		else
 		{
-			_Sampler.Apply(CurrTime, *Track.GetOutput());
+			_Sampler.EvaluatePose(CurrTime, *Track.GetOutput());
 		}
 	}
 }

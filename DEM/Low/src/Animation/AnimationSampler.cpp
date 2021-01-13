@@ -34,39 +34,14 @@ struct COutputPoseWriter : acl::OutputWriter
 	IPoseOutput& _Output;
 };
 
-// Records a static pose
-class CPoseRecorder : public IPoseOutput
-{
-public:
-
-	std::vector<Math::CTransformSRT> _Transforms;
-
-	CPoseRecorder(UPTR Ports) : _Transforms(Ports) {}
-
-	virtual U8   GetActivePortChannels(U16 Port) const override { return ETransformChannel::All; }
-	virtual void SetScale(U16 Port, const vector3& Scale) override { _Transforms[Port].Scale = Scale; }
-	virtual void SetRotation(U16 Port, const quaternion& Rotation) override { _Transforms[Port].Rotation = Rotation; }
-	virtual void SetTranslation(U16 Port, const vector3& Translation) override { _Transforms[Port].Translation = Translation; }
-	virtual void SetTransform(U16 Port, const Math::CTransformSRT& Tfm) override { _Transforms[Port] = Tfm; }
-};
-
 CAnimationSampler::CAnimationSampler() = default;
 CAnimationSampler::~CAnimationSampler() = default;
 
-void CAnimationSampler::Apply(float Time, IPoseOutput& Output)
+void CAnimationSampler::EvaluatePose(float Time, IPoseOutput& Output)
 {
 	if (!_Clip) return;
 	_Context.seek(Time, acl::SampleRoundingPolicy::None);
 	_Context.decompress_pose(COutputPoseWriter(Output));
-}
-//---------------------------------------------------------------------
-
-PStaticPose CAnimationSampler::BakePose(float Time)
-{
-	if (!_Clip) return nullptr;
-	CPoseRecorder Recorder(_Clip->GetNodeCount());
-	Apply(Time, Recorder);
-	return PStaticPose(n_new(CStaticPose(std::move(Recorder._Transforms), &_Clip->GetSkeletonInfo())));
 }
 //---------------------------------------------------------------------
 

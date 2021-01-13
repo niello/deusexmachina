@@ -26,8 +26,7 @@ public:
 	CAnimationSampler();
 	~CAnimationSampler();
 
-	void        Apply(float Time, IPoseOutput& Output);
-	PStaticPose BakePose(float Time);
+	void  EvaluatePose(float Time, IPoseOutput& Output);
 
 	bool  SetClip(PAnimationClip Clip);
 	auto* GetClip() const { return _Clip.Get(); }

@@ -55,11 +55,11 @@ void CClipPlayerNode::EvaluatePose(IPoseOutput& Output)
 	if (_PortMapping)
 	{
 		CStackMappedPoseOutput MappedOutput(Output, _PortMapping.get());
-		_Sampler.Apply(_CurrClipTime, MappedOutput);
+		_Sampler.EvaluatePose(_CurrClipTime, MappedOutput);
 	}
 	else
 	{
-		_Sampler.Apply(_CurrClipTime, Output);
+		_Sampler.EvaluatePose(_CurrClipTime, Output);
 	}
 }
 //---------------------------------------------------------------------

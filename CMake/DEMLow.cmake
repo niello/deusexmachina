@@ -11,6 +11,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/MappedPoseOutput.h
 	DEM/Low/src/Animation/PoseClipBase.h
 	DEM/Low/src/Animation/PoseOutput.h
+	DEM/Low/src/Animation/PoseRecorder.h
 	DEM/Low/src/Animation/PoseTrack.h
 	DEM/Low/src/Animation/Skeleton.h
 	DEM/Low/src/Animation/SkeletonInfo.h
