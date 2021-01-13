@@ -6,7 +6,6 @@
 
 namespace DEM::Anim
 {
-class CAnimationBlender;
 using PPoseTrack = std::unique_ptr<class CPoseTrack>;
 
 class CCompositePoseClip : public CPoseClipBase

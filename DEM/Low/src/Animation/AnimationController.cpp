@@ -18,11 +18,85 @@ void CAnimationController::SetGraphRoot(PAnimGraphNode&& GraphRoot)
 }
 //---------------------------------------------------------------------
 
+void CAnimationController::InitParams(
+	std::map<CStrID, float>&& Floats,
+	std::map<CStrID, int>&& Ints,
+	std::map<CStrID, bool>&& Bools,
+	std::map<CStrID, CStrID>&& StrIDs)
+{
+	// Must not be called when already initialized. Cached param indices
+	// will be invalidated and using them may lead to a crash.
+	n_assert(!_SkeletonInfo);
+
+	_Params.clear();
+	_FloatValues.reset();
+	_IntValues.reset();
+	_BoolValues.reset();
+	_StrIDValues.reset();
+
+	if (!Floats.empty())
+	{
+		UPTR CurrIdx = 0;
+		_FloatValues.reset(new float[Floats.size()]);
+		for (const auto [ID, DefaultValue] : Floats)
+		{
+			_Params.emplace(ID, std::pair{ EParamType::Float, CurrIdx });
+			_FloatValues[CurrIdx++] = DefaultValue;
+
+			// Duplicate IDs aren't allowed
+			Ints.erase(ID);
+			Bools.erase(ID);
+			StrIDs.erase(ID);
+		}
+	}
+
+	if (!Ints.empty())
+	{
+		UPTR CurrIdx = 0;
+		_IntValues.reset(new int[Ints.size()]);
+		for (const auto [ID, DefaultValue] : Ints)
+		{
+			_Params.emplace(ID, std::pair{ EParamType::Int, CurrIdx });
+			_IntValues[CurrIdx++] = DefaultValue;
+
+			// Duplicate IDs aren't allowed
+			Bools.erase(ID);
+			StrIDs.erase(ID);
+		}
+	}
+
+	if (!Bools.empty())
+	{
+		UPTR CurrIdx = 0;
+		_BoolValues.reset(new bool[Bools.size()]);
+		for (const auto [ID, DefaultValue] : Bools)
+		{
+			_Params.emplace(ID, std::pair{ EParamType::Bool, CurrIdx });
+			_BoolValues[CurrIdx++] = DefaultValue;
+
+			// Duplicate IDs aren't allowed
+			StrIDs.erase(ID);
+		}
+	}
+
+	if (!StrIDs.empty())
+	{
+		UPTR CurrIdx = 0;
+		_StrIDValues.reset(new CStrID[StrIDs.size()]);
+		for (const auto [ID, DefaultValue] : StrIDs)
+		{
+			_Params.emplace(ID, std::pair{ EParamType::StrID, CurrIdx });
+			_StrIDValues[CurrIdx++] = DefaultValue;
+		}
+	}
+}
+//---------------------------------------------------------------------
+
 void CAnimationController::Init(Resources::CResourceManager& ResMgr, std::map<CStrID, CStrID> AssetOverrides)
 {
 	if (_GraphRoot)
 	{
-		CAnimationControllerInitContext Context{ _SkeletonInfo, ResMgr, AssetOverrides };
+		CAnimationControllerInitContext Context{ *this, _SkeletonInfo, ResMgr, AssetOverrides };
 		_GraphRoot->Init(Context);
 	}
 
@@ -34,7 +108,7 @@ void CAnimationController::Update(float dt)
 {
 	// update conditions etc
 
-	if (_GraphRoot) _GraphRoot->Update(dt/*, params and other context*/);
+	if (_GraphRoot) _GraphRoot->Update(*this, dt);
 
 	// synchronize times etc
 }
@@ -44,6 +118,35 @@ void CAnimationController::EvaluatePose(IPoseOutput& Output)
 {
 	if (_GraphRoot) _GraphRoot->EvaluatePose(Output);
 	//???else (if no _GraphRoot) leave as is or reset to refpose?
+}
+//---------------------------------------------------------------------
+
+bool CAnimationController::FindParam(CStrID ID, EParamType* pOutType, UPTR* pOutIndex) const
+{
+	auto It = _Params.find(ID);
+	if (It == _Params.cend()) return false;
+	if (pOutType) *pOutType = It->second.first;
+	if (pOutIndex) *pOutIndex = It->second.second;
+	return true;
+}
+//---------------------------------------------------------------------
+
+bool CAnimationController::SetFloat(CStrID ID, float Value)
+{
+	EParamType Type;
+	UPTR Index;
+	if (!FindParam(ID, &Type, &Index) || Type != EParamType::Float) return false;
+	_FloatValues[Index] = Value;
+	return true;
+}
+//---------------------------------------------------------------------
+
+float CAnimationController::GetFloat(CStrID ID, float Default) const
+{
+	EParamType Type;
+	UPTR Index;
+	if (!FindParam(ID, &Type, &Index) || Type != EParamType::Float) return Default;
+	return _FloatValues[Index];
 }
 //---------------------------------------------------------------------
 

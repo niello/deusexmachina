@@ -33,8 +33,7 @@ public:
 	CClipPlayerNode(CStrID ClipID, bool Loop = true, float Speed = 1.f, float StartTime = 0.f);
 
 	virtual void Init(CAnimationControllerInitContext& Context) override;
-	//virtual bool BindOutput() - Prepare/Tune external output instead of binding and storing into the node?
-	virtual void Update(float dt/*, params*/) override;
+	virtual void Update(CAnimationController& Controller, float dt) override;
 	virtual void EvaluatePose(IPoseOutput& Output) override;
 };
 

@@ -96,7 +96,7 @@ void CClipPlayerNode::Init(CAnimationControllerInitContext& Context)
 }
 //---------------------------------------------------------------------
 
-void CClipPlayerNode::Update(float dt/*, params*/)
+void CClipPlayerNode::Update(CAnimationController& Controller, float dt)
 {
 	if (_Sampler.GetClip())
 		_CurrClipTime = _Sampler.GetClip()->AdjustTime(_CurrClipTime + dt * _Speed, _Loop);
