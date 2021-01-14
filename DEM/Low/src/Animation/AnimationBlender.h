@@ -12,32 +12,50 @@
 
 namespace DEM::Anim
 {
-using PAnimationBlenderInput = std::unique_ptr<class CAnimationBlenderInput>;
 using PAnimationBlender = std::unique_ptr<class CAnimationBlender>;
 
 class CAnimationBlender final
 {
 protected:
 
-	std::vector<PAnimationBlenderInput> _Sources; // FIXME: by value, if pose outputs will not be refcounted?
-	std::vector<UPTR>                   _SourcesByPriority;
-	std::vector<Math::CTransformSRT>    _Transforms;   // per port per source
-	std::vector<U8>                     _ChannelMasks; // per port per source
-	U16                                 _PortCount = 0;
-	bool                                _PrioritiesChanged = false;
+	class CInput : public IPoseOutput
+	{
+	public:
+
+		CAnimationBlender& _Blender;
+		float              _Weight = 0.f; // Set <= 0.f to deactivate this source
+		U16                _Priority = 0;
+		U8                 _Index;
+
+		CInput(CAnimationBlender& Blender, U8 Index) : _Blender(Blender), _Index(Index) {}
+
+		virtual void SetScale(U16 Port, const vector3& Scale) override { _Blender.SetScale(_Index, Port, Scale); }
+		virtual void SetRotation(U16 Port, const quaternion& Rotation) override { _Blender.SetRotation(_Index, Port, Rotation); }
+		virtual void SetTranslation(U16 Port, const vector3& Translation) override { _Blender.SetTranslation(_Index, Port, Translation); }
+		virtual void SetTransform(U16 Port, const Math::CTransformSRT& Tfm) override { _Blender.SetTransform(_Index, Port, Tfm); }
+	};
+
+	std::vector<CInput>              _Sources;
+	std::vector<U8>                  _SourcesByPriority;
+	std::vector<Math::CTransformSRT> _Transforms;   // per port per source
+	std::vector<U8>                  _ChannelMasks; // per port per source
+	U16                              _PortCount = 0;
+	bool                             _PrioritiesChanged = false;
 
 public:
 
 	CAnimationBlender();
 	~CAnimationBlender();
 
-	void Initialize(U8 SourceCount, U8 PortCount);
-	void EvaluatePose(IPoseOutput& Output);
+	void         Initialize(U8 SourceCount, U8 PortCount);
+	void         EvaluatePose(IPoseOutput& Output);
 
-	auto GetInput(U8 Source) const { return (_Sources.size() > Source) ? _Sources[Source].get() : nullptr; }
+	IPoseOutput* GetInput(U8 Source) { return (_Sources.size() > Source) ? &_Sources[Source] : nullptr; }
 
-	void SetPriority(U8 Source, U16 Priority);
-	void SetWeight(U8 Source, float Weight);
+	void         SetPriority(U8 Source, U16 Priority);
+	void         SetWeight(U8 Source, float Weight);
+	U16          GetPriority(U8 Source) const { return (_Sources.size() > Source) ? _Sources[Source]._Priority : 0; }
+	float        GetWeight(U8 Source) const { return (_Sources.size() > Source) ? _Sources[Source]._Weight : 0.f; }
 
 	void SetScale(U8 Source, U16 Port, const vector3& Scale)
 	{
@@ -66,31 +84,6 @@ public:
 		_Transforms[Idx] = Tfm;
 		_ChannelMasks[Idx] = ETransformChannel::All;
 	}
-};
-
-class CAnimationBlenderInput : public IPoseOutput
-{
-protected:
-
-	friend class CAnimationBlender; // for write access to weight and priority
-
-	CAnimationBlender* _pBlender = nullptr;
-	float              _Weight = 0.f; // Set <= 0.f to deactivate this source
-	U16                _Priority = 0;
-	U8                 _Index;
-
-public:
-
-	CAnimationBlenderInput(CAnimationBlender& Blender, U8 Index) : _pBlender(&Blender), _Index(Index) {}
-
-	virtual void SetScale(U16 Port, const vector3& Scale) override { _pBlender->SetScale(_Index, Port, Scale); }
-	virtual void SetRotation(U16 Port, const quaternion& Rotation) override { _pBlender->SetRotation(_Index, Port, Rotation); }
-	virtual void SetTranslation(U16 Port, const vector3& Translation) override { _pBlender->SetTranslation(_Index, Port, Translation); }
-	virtual void SetTransform(U16 Port, const Math::CTransformSRT& Tfm) override { _pBlender->SetTransform(_Index, Port, Tfm); }
-
-	float        GetWeight() const { return _Weight; }
-	U16          GetPriority() const { return _Priority; }
-	U8           GetIndex() const { return _Index; }
 };
 
 }

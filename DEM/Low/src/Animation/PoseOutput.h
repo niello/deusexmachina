@@ -6,6 +6,7 @@
 
 namespace DEM::Anim
 {
+using PPoseOutput = std::unique_ptr<class IPoseOutput>;
 
 enum ETransformChannel : U8
 {

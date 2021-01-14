@@ -80,8 +80,9 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt)
 		}
 	}
 
+	//!!!must instead advance more weighted one and sync less weighted!
 	_pFirst->Update(Controller, dt);
-	if (_pSecond) _pSecond->Update(Controller, dt); //!!!synchronize instead!
+	if (_pSecond) _pSecond->Update(Controller, dt);
 }
 //---------------------------------------------------------------------
 

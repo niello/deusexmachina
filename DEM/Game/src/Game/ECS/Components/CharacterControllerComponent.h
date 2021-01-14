@@ -54,7 +54,9 @@ template<> inline constexpr auto RegisterMembers<Game::CCharacterControllerCompo
 		Member(1, "Radius", &Game::CCharacterControllerComponent::Radius, &Game::CCharacterControllerComponent::Radius),
 		Member(2, "Height", &Game::CCharacterControllerComponent::Height, &Game::CCharacterControllerComponent::Height),
 		Member(3, "Hover", &Game::CCharacterControllerComponent::Hover, &Game::CCharacterControllerComponent::Hover),
-		Member(4, "MaxAcceleration", &Game::CCharacterControllerComponent::MaxAcceleration, &Game::CCharacterControllerComponent::MaxAcceleration)
+		Member(4, "MaxLinearSpeed", &Game::CCharacterControllerComponent::MaxLinearSpeed, &Game::CCharacterControllerComponent::MaxLinearSpeed),
+		Member(5, "MaxAngularSpeed", &Game::CCharacterControllerComponent::MaxAngularSpeed, &Game::CCharacterControllerComponent::MaxAngularSpeed),
+		Member(6, "MaxAcceleration", &Game::CCharacterControllerComponent::MaxAcceleration, &Game::CCharacterControllerComponent::MaxAcceleration)
 	);
 }
 

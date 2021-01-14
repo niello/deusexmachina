@@ -9,14 +9,14 @@ CAnimationBlender::~CAnimationBlender() = default;
 
 void CAnimationBlender::Initialize(U8 SourceCount, U8 PortCount)
 {
-	_Sources.resize(SourceCount);
-	// FIXME: by value instead of heap alloc, if pose outputs will not be refcounted?
+	_Sources.clear();
+	_Sources.reserve(SourceCount);
 	for (U8 i = 0; i < SourceCount; ++i)
-		_Sources[i].reset(n_new(CAnimationBlenderInput(*this, i)));
+		_Sources.emplace_back(*this, i);
 
 	// All sources initially have the same priority, order is not important
 	_SourcesByPriority.resize(SourceCount);
-	for (size_t i = 0; i < SourceCount; ++i)
+	for (U8 i = 0; i < SourceCount; ++i)
 		_SourcesByPriority[i] = i;
 	_PrioritiesChanged = false;
 
@@ -36,9 +36,9 @@ void CAnimationBlender::EvaluatePose(IPoseOutput& Output)
 
 	if (_PrioritiesChanged)
 	{
-		std::sort(_SourcesByPriority.begin(), _SourcesByPriority.end(), [this](UPTR a, UPTR b)
+		std::sort(_SourcesByPriority.begin(), _SourcesByPriority.end(), [this](U8 a, U8 b)
 		{
-			return _Sources[a]->GetPriority() > _Sources[b]->GetPriority();
+			return _Sources[a]._Priority > _Sources[b]._Priority;
 		});
 		_PrioritiesChanged = false;
 	}
@@ -53,9 +53,9 @@ void CAnimationBlender::EvaluatePose(IPoseOutput& Output)
 
 		const auto Offset = Port * SourceCount;
 
-		for (const auto& SourceIndex : _SourcesByPriority)
+		for (const U8 SourceIndex : _SourcesByPriority)
 		{
-			const float SourceWeight = _Sources[SourceIndex]->GetWeight();
+			const float SourceWeight = _Sources[SourceIndex]._Weight;
 			if (SourceWeight <= 0.f) continue;
 
 			const auto& CurrTfm = _Transforms[Offset + SourceIndex];
@@ -129,9 +129,9 @@ void CAnimationBlender::EvaluatePose(IPoseOutput& Output)
 
 void CAnimationBlender::SetPriority(U8 Source, U16 Priority)
 {
-	if (Source < _Sources.size() && _Sources[Source]->GetPriority() != Priority)
+	if (Source < _Sources.size() && _Sources[Source]._Priority != Priority)
 	{
-		_Sources[Source]->_Priority = Priority;
+		_Sources[Source]._Priority = Priority;
 		_PrioritiesChanged = true;
 	}
 }
@@ -139,7 +139,7 @@ void CAnimationBlender::SetPriority(U8 Source, U16 Priority)
 
 void CAnimationBlender::SetWeight(U8 Source, float Weight)
 {
-	if (Source < _Sources.size()) _Sources[Source]->_Weight = Weight;
+	if (Source < _Sources.size()) _Sources[Source]._Weight = Weight;
 }
 //---------------------------------------------------------------------
 

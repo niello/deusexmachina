@@ -25,7 +25,7 @@ protected:
 		float         EndTime;   // Must not overlap with the next clip or at least must be less than its end time
 	};
 
-	PPoseOutput        _Output; //???must not own? E.g. CSkeleton is refcounted, may be prematurely destroyed here!
+	PPoseOutput        _Output;
 	PSkeletonInfo      _SkeletonInfo;
 	std::vector<CClip> _Clips; // Sorted by start time ascending
 
