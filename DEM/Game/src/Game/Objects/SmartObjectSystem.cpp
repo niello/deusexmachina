@@ -12,12 +12,12 @@
 namespace DEM::Game
 {
 
-static void RunTimelineTask(CGameWorld& World, HEntity EntityID, CSmartObjectComponent& SOComponent,
-	const Anim::CTimelineTask& Task, float InitialProgress, const Anim::CTimelineTask* pPrevTask)
+static void RunTimelineTask(CGameWorld& World, HEntity EntityID, Anim::CTimelinePlayer& Player,
+	const Anim::CTimelineTask& Task, const Anim::CTimelineTask* pPrevTask, float InitialProgress = 0.f)
 {
 	n_assert_dbg(InitialProgress >= 0.f && InitialProgress <= 1.f);
 
-	if (!Anim::LoadTimelineTaskIntoPlayer(SOComponent.Player, World, EntityID, Task, pPrevTask)) return;
+	if (!Anim::LoadTimelineTaskIntoPlayer(Player, World, EntityID, Task, pPrevTask)) return;
 
 	// FIXME: if set full progress, will timeline controller decrement loops?! SetTime or Rewind? or handle externally (here)?
 	n_assert(InitialProgress < 1.f);
@@ -26,10 +26,10 @@ static void RunTimelineTask(CGameWorld& World, HEntity EntityID, CSmartObjectCom
 	n_assert(Task.LoopCount < 2);
 
 	// Transfer the progress % from the previous transition, if required
-	const float FullDuration = SOComponent.Player.GetLoopDuration() * Task.LoopCount;
-	SOComponent.Player.SetTime(InitialProgress * FullDuration * (std::signbit(Task.Speed) ? -1.f : 1.f));
+	const float FullDuration = Player.GetLoopDuration() * Task.LoopCount;
+	Player.SetTime(InitialProgress * FullDuration * (std::signbit(Task.Speed) ? -1.f : 1.f));
 
-	SOComponent.Player.Play(Task.LoopCount);
+	Player.Play(Task.LoopCount);
 }
 //---------------------------------------------------------------------
 
@@ -113,8 +113,16 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, sol::state& Lua, HE
 				::Sys::Log("SmartObjects.ProcessStateChangeRequest() > transition interruption is forbidden\n");
 				return;
 			}
-			//???ETransitionInterruptionMode::Force? - cancel current transition and force-set requested state
-			//???ETransitionInterruptionMode::Wait? - wait current transition to end and then start requested one (restore SOComponent.RequestedState)
+			case ETransitionInterruptionMode::Force:
+			{
+				SOComponent.Force = true;
+				break;
+			}
+			case ETransitionInterruptionMode::Wait:
+			{
+				SOComponent.RequestedState = RequestedState;
+				return;
+			}
 		}
 	}
 
@@ -138,7 +146,7 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, sol::state& Lua, HE
 			SOComponent.CurrState = FromState;
 			SOComponent.NextState = RequestedState;
 			CallTransitionScript(SOAsset.GetScriptFunction(Lua, "OnTransitionStart"), EntityID, SOComponent.CurrState, SOComponent.NextState);
-			RunTimelineTask(World, EntityID, SOComponent, pTransitionCR->TimelineTask, InitialProgress, pPrevTask);
+			RunTimelineTask(World, EntityID, SOComponent.Player, pTransitionCR->TimelineTask, pPrevTask, InitialProgress);
 		}
 		else
 		{
@@ -153,7 +161,7 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, sol::state& Lua, HE
 		if (auto pState = SOAsset.FindState(RequestedState))
 		{
 			CallTransitionScript(SOAsset.GetScriptFunction(Lua, "OnStateForceSet"), EntityID, FromState, RequestedState);
-			RunTimelineTask(World, EntityID, SOComponent, pState->TimelineTask, 0.f, pPrevTask);
+			RunTimelineTask(World, EntityID, SOComponent.Player, pState->TimelineTask, pPrevTask);
 			SOComponent.CurrState = RequestedState;
 			SOComponent.UpdateScript = SOAsset.GetScriptFunction(Lua, "OnStateUpdate");
 		}
@@ -194,7 +202,7 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, float dt)
 
 					// End transition, enter the destination state
 					CallTransitionScript(pSOAsset->GetScriptFunction(Lua, "OnTransitionEnd"), EntityID, SOComponent.CurrState, SOComponent.NextState);
-					RunTimelineTask(World, EntityID, SOComponent, pState->TimelineTask, 0.f, pPrevTask);
+					RunTimelineTask(World, EntityID, SOComponent.Player, pState->TimelineTask, pPrevTask);
 					SOComponent.CurrState = SOComponent.NextState;
 					SOComponent.UpdateScript = pSOAsset->GetScriptFunction(Lua, "OnStateUpdate");
 				}

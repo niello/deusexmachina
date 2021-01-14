@@ -17,11 +17,12 @@ using PSmartObject = Ptr<class CSmartObject>;
 
 enum class ETransitionInterruptionMode : U8
 {
-	ResetToStart,
-	RewindToEnd,
-	Proportional,
-	Forbid
-	// Force, Wait?
+	ResetToStart, // Current transition is aborted back to the outgoing state, then new transition starts
+	RewindToEnd,  // Current transition is played to finish instantly, then new transition starts
+	Proportional, // Current transition progress % is carried to the new transition, inverted if it is inverse of the current one
+	Forbid,       // Current transition is kept, request is discarded
+	Force,        // Cancel current transition and force-set requested state
+	Wait          // Wait for current transition to end and then start requested one
 };
 
 struct CSmartObjectTransitionInfo
