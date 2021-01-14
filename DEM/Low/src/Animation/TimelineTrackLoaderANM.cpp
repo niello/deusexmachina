@@ -27,7 +27,7 @@ Core::PObject CTimelineTrackLoaderANM::CreateResource(CStrID UID)
 
 	DEM::Anim::PAnimatedPoseClip Clip(n_new(DEM::Anim::CAnimatedPoseClip()));
 	Clip->SetAnimationClip(Anim);
-	DEM::Anim::PPoseTrack Track(n_new(DEM::Anim::CPoseTrack()));
+	DEM::Anim::PPoseTrack Track(n_new(DEM::Anim::CPoseTrack(CStrID("ObjectSkeletonRoot"))));
 	Track->AddClip(std::move(Clip), 0.f, Anim->GetDuration());
 	Track->RefreshSkeletonInfo();
 

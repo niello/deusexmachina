@@ -42,6 +42,8 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/SmartObj/Actions/ActionUseSmartObj.h
 	DEM/Game/src/AI/SmartObj/ActionTpls/ActionTplGotoSmartObj.h
 	DEM/Game/src/AI/SmartObj/ActionTpls/ActionTplUseSmartObj.h
+	DEM/Game/src/Animation/AnimationComponent.h
+	DEM/Game/src/Animation/TimelineTask.h
 	DEM/Game/src/App/AppFSM.h
 	DEM/Game/src/App/AppStateVideo.h
 	DEM/Game/src/App/StateHandler.h
@@ -58,7 +60,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/ECS/EntityTemplateLoader.h
 	DEM/Game/src/Game/ECS/GameWorld.h
 	DEM/Game/src/Game/ECS/Components/ActionQueueComponent.h
-	DEM/Game/src/Game/ECS/Components/AnimationComponent.h
 	DEM/Game/src/Game/ECS/Components/CharacterControllerComponent.h
 	DEM/Game/src/Game/ECS/Components/RigidBodyComponent.h
 	DEM/Game/src/Game/ECS/Components/SceneComponent.h
@@ -123,6 +124,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/SmartObj/Actions/ActionUseSmartObj.cpp
 	DEM/Game/src/AI/SmartObj/ActionTpls/ActionTplGotoSmartObj.cpp
 	DEM/Game/src/AI/SmartObj/ActionTpls/ActionTplUseSmartObj.cpp
+	DEM/Game/src/Animation/TimelineTask.cpp
 	DEM/Game/src/App/AppFSM.cpp
 	DEM/Game/src/App/AppStateVideo.cpp
 	DEM/Game/src/Game/ActionQueueSystem.cpp

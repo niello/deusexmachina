@@ -12,7 +12,7 @@ void CAnimationBlender::Initialize(U8 SourceCount, U8 PortCount)
 	_Sources.resize(SourceCount);
 	// FIXME: by value instead of heap alloc, if pose outputs will not be refcounted?
 	for (U8 i = 0; i < SourceCount; ++i)
-		_Sources[i] = n_new(CAnimationBlenderInput(*this, i));
+		_Sources[i].reset(n_new(CAnimationBlenderInput(*this, i)));
 
 	// All sources initially have the same priority, order is not important
 	_SourcesByPriority.resize(SourceCount);

@@ -9,7 +9,7 @@
 
 namespace DEM::Anim
 {
-using PPoseOutput = Ptr<class IPoseOutput>;
+using PPoseOutput = std::unique_ptr<class IPoseOutput>;
 using PPoseClipBase = std::unique_ptr<class CPoseClipBase>;
 using PSkeletonInfo = Ptr<class CSkeletonInfo>;
 using PPoseTrack = Ptr<class CPoseTrack>;
@@ -25,19 +25,19 @@ protected:
 		float         EndTime;   // Must not overlap with the next clip or at least must be less than its end time
 	};
 
-	PPoseOutput        _Output; //???store outside in a track output list? Universal PTimelineTrackOutput.
+	PPoseOutput        _Output; //???must not own? E.g. CSkeleton is refcounted, may be prematurely destroyed here!
 	PSkeletonInfo      _SkeletonInfo;
 	std::vector<CClip> _Clips; // Sorted by start time ascending
 
 public:
 
-	CPoseTrack();
+	CPoseTrack(CStrID Name);
 	~CPoseTrack();
 
 	void                   AddClip(PPoseClipBase&& Clip, float StartTime, float Duration /*, overlap resolve mode*/);
 	void                   RefreshSkeletonInfo();
-	void                   SetOutput(IPoseOutput* pOutput);
-	IPoseOutput*           GetOutput() const { return _Output.Get(); }
+	void                   SetOutput(PPoseOutput&& Output);
+	IPoseOutput*           GetOutput() const { return _Output.get(); }
 	CSkeletonInfo*         GetSkeletonInfo() const { return _SkeletonInfo; } // non-const to create intrusive strong refs
 
 	virtual PTimelineTrack Clone() const override;

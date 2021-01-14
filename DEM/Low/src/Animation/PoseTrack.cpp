@@ -5,7 +5,7 @@
 
 namespace DEM::Anim
 {
-CPoseTrack::CPoseTrack() = default;
+CPoseTrack::CPoseTrack(CStrID Name) : CTimelineTrack(Name) {}
 CPoseTrack::~CPoseTrack() = default;
 
 // FIXME: this logic is the same for any clip/track type
@@ -20,21 +20,22 @@ void CPoseTrack::AddClip(PPoseClipBase&& Clip, float StartTime, float Duration /
 //!!!recurse through blenders, handle mapped outputs for leaf sources (like in loading now).
 void CPoseTrack::RefreshSkeletonInfo()
 {
+	//???do right in AddClip?
 	_SkeletonInfo = nullptr;
 	for (auto& [Clip, StartTime, EndTime] : _Clips)
 		Clip->GatherSkeletonInfo(_SkeletonInfo);
 }
 //---------------------------------------------------------------------
 
-void CPoseTrack::SetOutput(IPoseOutput* pOutput)
+void CPoseTrack::SetOutput(PPoseOutput&& Output)
 {
-	_Output = pOutput; // In cpp because requires an IPoseOutput definition
+	_Output = std::move(Output); // In cpp because requires an IPoseOutput definition
 }
 //---------------------------------------------------------------------
 
 PTimelineTrack CPoseTrack::Clone() const
 {
-	PPoseTrack NewTrack = n_new(CPoseTrack());
+	PPoseTrack NewTrack = n_new(CPoseTrack(_Name));
 	for (const auto& ClipData : _Clips)
 	{
 		CClip NewClipData;

@@ -1,10 +1,9 @@
 #pragma once
-#include <Resources/Resource.h>
+#include <Animation/TimelineTask.h>
 #include <Data/FixedArray.h>
 #include <Math/Vector3.h>
 #include <sol/forward.hpp>
 #include <vector>
-#include <optional>
 
 // Smart object asset describes a set of states, transitions between them,
 // and interactions available over the object under different conditions.
@@ -16,40 +15,26 @@ namespace DEM::Game
 {
 using PSmartObject = Ptr<class CSmartObject>;
 
-//???to timeline player module?
-struct CTimelineTask
-{
-	Resources::PResource Timeline; // nullptr to disable task
-	float                Speed = 1.f;
-	float                StartTime = 0.f;
-	float                EndTime = 1.f; //???use relative time here?
-	U32                  LoopCount = 0;
-
-	//!!!FIXME: need output map (pose, event, sound etc...), not hardcoded pose output!
-	// Or predefined output params, like all poses to some root path, all events to this entity's dispatcher component etc?
-	std::string          SkeletonRootRelPath;
-};
-
 enum class ETransitionInterruptionMode : U8
 {
 	ResetToStart,
 	RewindToEnd,
 	Proportional,
 	Forbid
-	// Force?
+	// Force, Wait?
 };
 
 struct CSmartObjectTransitionInfo
 {
 	CStrID                      TargetStateID;
-	CTimelineTask               TimelineTask;
+	Anim::CTimelineTask         TimelineTask;
 	ETransitionInterruptionMode InterruptionMode = ETransitionInterruptionMode::ResetToStart;
 };
 
 struct CSmartObjectStateInfo
 {
-	CStrID        ID;
-	CTimelineTask TimelineTask;
+	CStrID              ID;
+	Anim::CTimelineTask TimelineTask;
 
 	// state logic object ptr (optional)
 

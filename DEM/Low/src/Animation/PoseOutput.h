@@ -1,13 +1,11 @@
 #pragma once
 #include <Math/TransformSRT.h>
-#include <Data/RefCounted.h>
 #include <Data/StringID.h>
 
 // Interface for writing a set of 3D transforms to a set of targets (for example, bone nodes)
 
 namespace DEM::Anim
 {
-using PPoseOutput = Ptr<class IPoseOutput>;
 
 enum ETransformChannel : U8
 {
@@ -17,7 +15,7 @@ enum ETransformChannel : U8
 	All         = (Translation | Rotation | Scaling)
 };
 
-class IPoseOutput : public Data::CRefCounted
+class IPoseOutput
 {
 public:
 

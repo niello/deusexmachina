@@ -7,16 +7,14 @@
 
 namespace DEM::Anim
 {
-using PSkeleton = Ptr<class CSkeleton>;
+using PSkeleton = std::unique_ptr<class CSkeleton>;
 class CSkeletonInfo;
 
 class CSkeleton : public IPoseOutput
 {
 protected:
 
-	// root node at port 0 always?
-	//???weak ptr?
-	//???store mapping inside for root rebinding?
+	//???weak ptrs?
 	std::vector<Scene::PSceneNode> _Nodes;
 
 public:
@@ -24,7 +22,7 @@ public:
 	void Init(Scene::CSceneNode& Root, const CSkeletonInfo& Info);
 	void Clear() { _Nodes.clear();  }
 
-	//!!!can merge into the single feature with a per-bone layer mask!
+	//!!!can merge channels with a per-bone layer mask into the single feature!
 	virtual U8   GetActivePortChannels(U16 Port) const override;
 
 	virtual void SetScale(U16 Port, const vector3& Scale) override;

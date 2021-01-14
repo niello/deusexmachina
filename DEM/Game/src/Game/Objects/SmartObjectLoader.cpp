@@ -59,18 +59,10 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 			const auto& StateDesc = *StateParam.GetValue<Data::PParams>();
 
 			// Optional timeline player task
-			DEM::Game::CTimelineTask Task;
-			if (const CStrID TimelineID = StateDesc.Get(CStrID("Timeline"), CStrID::Empty))
-			{
-				Task.Timeline = _ResMgr.RegisterResource<DEM::Anim::CTimelineTrack>(TimelineID.CStr());
-				Task.Speed = StateDesc.Get(CStrID("Speed"), 1.f);
-				Task.StartTime = StateDesc.Get(CStrID("StartTime"), 0.f);
-				Task.EndTime = StateDesc.Get(CStrID("EndTime"), 1.f);
-				Task.LoopCount = StateDesc.Get(CStrID("LoopCount"), 0); // State is infinite by default
-				Task.SkeletonRootRelPath = StateDesc.Get(CStrID("SkeletonRootRelPath"), CString::Empty).CStr();
-
-				Task.Timeline->ValidateObject();
-			}
+			DEM::Anim::CTimelineTask Task;
+			Data::PParams TimelineTaskDesc;
+			if (StateDesc.TryGet<Data::PParams>(TimelineTaskDesc, CStrID("Timeline")) && TimelineTaskDesc)
+				DEM::Anim::InitTimelineTask(Task, *TimelineTaskDesc, _ResMgr);
 
 			DEM::Game::CSmartObjectStateInfo StateInfo{ StateParam.GetName(), std::move(Task) };
 
@@ -84,18 +76,14 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 				{
 					const auto& TransitionDesc = *TransitionParam.GetValue<Data::PParams>();
 
-					DEM::Game::CTimelineTask Task;
-					if (const CStrID TimelineID = TransitionDesc.Get(CStrID("Timeline"), CStrID::Empty))
+					DEM::Anim::CTimelineTask Task;
+					Data::PParams TimelineTaskDesc;
+					if (TransitionDesc.TryGet<Data::PParams>(TimelineTaskDesc, CStrID("Timeline")) && TimelineTaskDesc)
 					{
-						Task.Timeline = _ResMgr.RegisterResource<DEM::Anim::CTimelineTrack>(TimelineID.CStr());
-						Task.Speed = TransitionDesc.Get(CStrID("Speed"), 1.f);
-						Task.StartTime = TransitionDesc.Get(CStrID("StartTime"), 0.f);
-						Task.EndTime = TransitionDesc.Get(CStrID("EndTime"), 1.f);
-						Task.LoopCount = TransitionDesc.Get(CStrID("LoopCount"), 1); // Transition must always be finite
-						Task.SkeletonRootRelPath = TransitionDesc.Get(CStrID("SkeletonRootRelPath"), CString::Empty).CStr();
-						n_assert_dbg(Task.LoopCount);
+						DEM::Anim::InitTimelineTask(Task, *TimelineTaskDesc, _ResMgr);
 
-						Task.Timeline->ValidateObject();
+						// Transition must always be finite
+						if (!Task.LoopCount) Task.LoopCount = 1;
 					}
 
 					DEM::Game::ETransitionInterruptionMode InterruptionMode = DEM::Game::ETransitionInterruptionMode::ResetToStart;
@@ -105,6 +93,7 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 					else if (ModeStr == "Proportional") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Proportional;
 					else if (ModeStr == "Forbid") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Forbid;
 					//else if (ModeStr == "Force") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Force;
+					//else if (ModeStr == "Wait") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Wait;
 					else if (ModeStr.IsValid()) ::Sys::Error("CSmartObjectLoader::CreateResource() > Unknown transition interruption mode");
 
 					StateInfo.Transitions.push_back({ TransitionParam.GetName(), std::move(Task), InterruptionMode });

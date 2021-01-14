@@ -10,7 +10,7 @@ namespace DEM::Game
 
 struct CAnimationComponent
 {
-	Anim::PSkeleton            Output;
+	Anim::CSkeleton            Output;
 	Anim::CAnimationController Controller;
 
 	CStrID  ClipID;

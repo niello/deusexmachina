@@ -1,6 +1,6 @@
 #pragma once
 #include <Animation/PoseOutput.h>
-#include <System/System.h>
+#include <Data/Ptr.h>
 
 // Order independent priority+weight animation blender. Accepts only local transformation sources.
 // Animation players and static poses, to name a few. Each animated node is associated with
@@ -12,7 +12,7 @@
 
 namespace DEM::Anim
 {
-using PAnimationBlenderInput = Ptr<class CAnimationBlenderInput>;
+using PAnimationBlenderInput = std::unique_ptr<class CAnimationBlenderInput>;
 using PAnimationBlender = std::unique_ptr<class CAnimationBlender>;
 
 class CAnimationBlender final
@@ -34,7 +34,7 @@ public:
 	void Initialize(U8 SourceCount, U8 PortCount);
 	void EvaluatePose(IPoseOutput& Output);
 
-	auto GetInput(U8 Source) const { return (_Sources.size() > Source) ? _Sources[Source].Get() : nullptr; }
+	auto GetInput(U8 Source) const { return (_Sources.size() > Source) ? _Sources[Source].get() : nullptr; }
 
 	void SetPriority(U8 Source, U16 Priority);
 	void SetWeight(U8 Source, float Weight);

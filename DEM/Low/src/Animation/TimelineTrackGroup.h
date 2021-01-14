@@ -14,6 +14,8 @@ public:
 	virtual PTimelineTrack Clone() const override;
 	virtual float          GetDuration() const override;
 	virtual void           PlayInterval(float PrevTime, float CurrTime, bool IsLast) override;
+	//virtual void           Visit(std::function<void(CTimelineTrack&)>&& Visitor) { Visitor(*this); + children }
+	//virtual void           Visit(std::function<void(const CTimelineTrack&)>&& Visitor) const { Visitor(*this); + children }
 
 	//???if timeline track base class manages clips, how to use this functionality here?
 

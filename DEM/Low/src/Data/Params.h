@@ -32,10 +32,10 @@ private:
 
 public:
 
-	CParams() {}
-	CParams(const CParams& Other): Params(Other.Params) {}
-	CParams(CParams&& Other): Params(std::move(Other.Params)) {}
-	CParams(int InitialSize, int Grow = 4): Params(InitialSize, Grow) {}
+	CParams() = default;
+	CParams(const CParams& Other) : Params(Other.Params) {}
+	CParams(CParams&& Other) noexcept : Params(std::move(Other.Params)) {}
+	CParams(int InitialSize, int Grow = 4) : Params(InitialSize, Grow) {}
 
 	//???const char*/CString version?
 	IPTR						IndexOf(CStrID Name) const;
@@ -76,7 +76,7 @@ public:
 	const CParam&				operator [](IPTR Idx) const { return Params[Idx]; }
 
 	CParams& operator =(const CParams& Other) { Params = Other.Params; return *this; }
-	CParams& operator =(CParams&& Other) { Params = std::move(Other.Params); return *this; }
+	CParams& operator =(CParams&& Other) noexcept { Params = std::move(Other.Params); return *this; }
 };
 //---------------------------------------------------------------------
 
