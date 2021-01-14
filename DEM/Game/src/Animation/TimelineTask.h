@@ -19,7 +19,7 @@ class CTimelinePlayer;
 struct CTimelineTask
 {
 	Resources::PResource Timeline;
-	Data::CParams        OutputDescs;
+	Data::PParams        OutputDescs;
 	float                Speed = 1.f;
 	float                StartTime = 0.f;
 	float                EndTime = 1.f; //???use absolute or relative time here?

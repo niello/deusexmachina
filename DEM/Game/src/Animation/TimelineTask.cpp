@@ -21,13 +21,7 @@ void InitTimelineTask(CTimelineTask& Task, const Data::CParams& Desc, Resources:
 	Task.StartTime = Desc.Get(CStrID("StartTime"), 0.f);
 	Task.EndTime = Desc.Get(CStrID("EndTime"), 1.f);
 	Task.LoopCount = Desc.Get(CStrID("LoopCount"), 0);
-
-	// NB: move will not work due to constness, but if signature changes it will begin to work automatically
-	Data::PParams OutputDescs;
-	if (Desc.TryGet(OutputDescs, CStrID("Outputs")) && OutputDescs)
-		Task.OutputDescs = std::move(*OutputDescs);
-	else
-		Task.OutputDescs.Clear();
+	Task.OutputDescs = Desc.Get(CStrID("Outputs"), Data::PParams{});
 }
 
 // TODO: add context for passing in arbitrary params, like a smart object user ID?
@@ -58,7 +52,7 @@ bool LoadTimelineTaskIntoPlayer(CTimelinePlayer& Player, Game::CGameWorld& World
 		NewTrack->Visit([&Task, &World, Owner](Anim::CTimelineTrack& Track)
 		{
 			Data::CData* pOutputDesc;
-			if (!Task.OutputDescs.TryGet(pOutputDesc, Track.GetName())) return;
+			if (!Task.OutputDescs || !Task.OutputDescs->TryGet(pOutputDesc, Track.GetName())) return;
 
 			if (auto pPoseTrack = Track.As<Anim::CPoseTrack>())
 			{
