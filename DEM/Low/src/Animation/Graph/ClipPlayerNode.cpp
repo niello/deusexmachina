@@ -2,11 +2,9 @@
 #include <Animation/AnimationController.h>
 #include <Animation/AnimationClip.h>
 #include <Animation/SkeletonInfo.h>
+#include <Animation/MappedPoseOutput.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
-
-//!!!DBG TMP!
-#include <Animation/MappedPoseOutput.h>
 
 namespace DEM::Anim
 {
@@ -54,6 +52,9 @@ void CClipPlayerNode::Update(CAnimationController& Controller, float dt, CSyncCo
 			_CurrClipTime = pSyncContext->Value * _Sampler.GetClip()->GetDuration(); break;
 		default: NOT_IMPLEMENTED; break;
 	}
+
+	//::Sys::DbgOut("***CClipPlayerNode: time %lf (rel %lf), clip %s\n", _CurrClipTime,
+	//	_CurrClipTime / _Sampler.GetClip()->GetDuration(), _ClipID.CStr());
 }
 //---------------------------------------------------------------------
 

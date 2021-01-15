@@ -61,12 +61,6 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt, CSyncCont
 {
 	if (_Samples.empty()) return;
 
-	if (_Samples.size() == 1)
-	{
-		UpdateSingleSample(*_Samples[0].Source, Controller, dt, pSyncContext);
-		return;
-	}
-
 	const float Input = Controller.GetFloat(_ParamIndex);
 
 	//???use cache if input parameter didn't change?
@@ -78,7 +72,13 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt, CSyncCont
 	const float ClampedInput = std::clamp(Input, _Samples.front().Value, _Samples.back().Value);
 	if (ClampedInput && ClampedInput != Input) dt *= (Input / ClampedInput);
 
-	auto It = std::lower_bound(_Samples.cbegin(), _Samples.cend(), Input,
+	if (_Samples.size() == 1)
+	{
+		UpdateSingleSample(*_Samples[0].Source, Controller, dt, pSyncContext);
+		return;
+	}
+
+	const auto It = std::lower_bound(_Samples.cbegin(), _Samples.cend(), Input,
 		[](const auto& Elm, float Val) { return Elm.Value < Val; });
 
 	if (It == _Samples.cbegin() || (It != _Samples.cend() && n_fequal(It->Value, Input, SAMPLE_MATCH_TOLERANCE)))
@@ -87,7 +87,7 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt, CSyncCont
 		return;
 	}
 
-	auto PrevIt = std::prev(It);
+	const auto PrevIt = std::prev(It);
 	if (n_fequal(PrevIt->Value, Input, SAMPLE_MATCH_TOLERANCE) || (It == _Samples.cend() && PrevIt->Value < Input))
 	{
 		UpdateSingleSample(*PrevIt->Source, Controller, dt, pSyncContext);
@@ -126,11 +126,12 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt, CSyncCont
 	}
 
 	//???in phase matching normalize phase scalar? to fallback to normalized time for clips that don't support phases.
-
 	CSyncContext LocalSyncContext{ ESyncMethod::NormalizedTime, _NormalizedTime };
 
-	//???OK to pass scaled dt here?
-	_pFirst->Update(Controller, dt, pSyncContext);
+	//::Sys::DbgOut("***CBlendSpace1D: time %lf, input %lf, ipol (%d-%d) %lf\n", _NormalizedTime, Input,
+	//	std::distance(_Samples.cbegin(), PrevIt), std::distance(_Samples.cbegin(), It), BlendFactor);
+
+	_pFirst->Update(Controller, dt, &LocalSyncContext);
 	_pSecond->Update(Controller, dt, &LocalSyncContext);
 }
 //---------------------------------------------------------------------
@@ -155,8 +156,10 @@ void CBlendSpace1D::EvaluatePose(IPoseOutput& Output)
 
 float CBlendSpace1D::GetAnimationLengthScaled() const
 {
-	NOT_IMPLEMENTED;
-	return 0.f;
+	if (!_pFirst) return 0.f;
+	if (!_pSecond) return _pFirst->GetAnimationLengthScaled();
+	return _pFirst->GetAnimationLengthScaled() * _Blender.GetWeight(0) +
+		_pSecond->GetAnimationLengthScaled() * _Blender.GetWeight(1);
 }
 //---------------------------------------------------------------------
 
