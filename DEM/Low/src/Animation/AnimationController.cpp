@@ -95,7 +95,7 @@ void CAnimationController::Update(float dt)
 {
 	// update conditions etc
 
-	if (_GraphRoot) _GraphRoot->Update(*this, dt);
+	if (_GraphRoot) _GraphRoot->Update(*this, dt, nullptr);
 
 	// synchronize times etc
 }

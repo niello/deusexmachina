@@ -3,11 +3,11 @@
 
 // Remaps pose from one set of ports to another. Useful for example when animation clip
 // tracks do not directly correspond to skeleton bones.
+// NB: this output doesn't own its data, the best usage will be to create it on the stack when needed
 
 namespace DEM::Anim
 {
 
-// FIXME: stack-only, not suited for refcounted storing!
 class CStackMappedPoseOutput : public IPoseOutput
 {
 protected:
@@ -19,12 +19,35 @@ public:
 
 	CStackMappedPoseOutput(IPoseOutput& Output, U16* PortMapping) : _Output(Output), _PortMapping(PortMapping) {}
 
-	virtual U8   GetActivePortChannels(U16 Port) const override { return _Output.GetActivePortChannels(_PortMapping[Port]); }
+	virtual U8 GetActivePortChannels(U16 Port) const override
+	{
+		const U16 MappedPort = _PortMapping[Port];
+		return (MappedPort != InvalidPort) ? _Output.GetActivePortChannels(MappedPort) : 0;
+	}
 
-	virtual void SetScale(U16 Port, const vector3& Scale) override { return _Output.SetScale(_PortMapping[Port], Scale); }
-	virtual void SetRotation(U16 Port, const quaternion& Rotation) override { return _Output.SetRotation(_PortMapping[Port], Rotation); }
-	virtual void SetTranslation(U16 Port, const vector3& Translation) override { return _Output.SetTranslation(_PortMapping[Port], Translation); }
-	virtual void SetTransform(U16 Port, const Math::CTransformSRT& Tfm) override { return _Output.SetTransform(_PortMapping[Port], Tfm); }
+	virtual void SetScale(U16 Port, const vector3& Scale) override
+	{
+		const U16 MappedPort = _PortMapping[Port];
+		if (MappedPort != InvalidPort) _Output.SetScale(MappedPort, Scale);
+	}
+
+	virtual void SetRotation(U16 Port, const quaternion& Rotation) override
+	{
+		const U16 MappedPort = _PortMapping[Port];
+		if (MappedPort != InvalidPort) _Output.SetRotation(MappedPort, Rotation);
+	}
+
+	virtual void SetTranslation(U16 Port, const vector3& Translation) override
+	{
+		const U16 MappedPort = _PortMapping[Port];
+		if (MappedPort != InvalidPort) _Output.SetTranslation(MappedPort, Translation);
+	}
+
+	virtual void SetTransform(U16 Port, const Math::CTransformSRT& Tfm) override
+	{
+		const U16 MappedPort = _PortMapping[Port];
+		if (MappedPort != InvalidPort) _Output.SetTransform(MappedPort, Tfm);
+	}
 };
 
 }

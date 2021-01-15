@@ -35,7 +35,7 @@ void CSkeleton::Init(Scene::CSceneNode& Root, const CSkeletonInfo& Info)
 
 U8 CSkeleton::GetActivePortChannels(U16 Port) const
 {
-	const bool NodeActive = (_Nodes.size() > Port && _Nodes[Port] && _Nodes[Port]->IsActive());
+	const bool NodeActive = (Port < _Nodes.size() && _Nodes[Port] && _Nodes[Port]->IsActive());
 	return NodeActive ? ETransformChannel::All : 0;
 }
 //---------------------------------------------------------------------

@@ -33,7 +33,7 @@ public:
 	CClipPlayerNode(CStrID ClipID, bool Loop = true, float Speed = 1.f, float StartTime = 0.f);
 
 	virtual void Init(CAnimationControllerInitContext& Context) override;
-	virtual void Update(CAnimationController& Controller, float dt) override;
+	virtual void Update(CAnimationController& Controller, float dt, CSyncContext* pSyncContext) override;
 	virtual void EvaluatePose(IPoseOutput& Output) override;
 };
 

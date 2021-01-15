@@ -29,22 +29,26 @@ void CBlendSpace1D::Init(CAnimationControllerInitContext& Context)
 }
 //---------------------------------------------------------------------
 
-void CBlendSpace1D::Update(CAnimationController& Controller, float dt)
+void CBlendSpace1D::Update(CAnimationController& Controller, float dt, CSyncContext* pSyncContext)
 {
 	if (_Samples.empty()) return;
 
 	//???use cache if input parameter didn't change?
 
+	// TODO:
+	if (pSyncContext) NOT_IMPLEMENTED;
+
 	_pSecond = nullptr;
 	if (_Samples.size() == 1)
 	{
 		_pFirst = _Samples[0].Source.get();
+		_pFirst->Update(Controller, dt, nullptr);
 	}
 	else
 	{
 		const float Input = Controller.GetFloat(_ParamIndex);
 
-		//???TODO: filter input to make transitions smoother?
+		//???TODO: optionally filter input to make transitions smoother?
 
 		auto It = std::lower_bound(_Samples.cbegin(), _Samples.cend(), Input,
 			[](const auto& Elm, float Val) { return Elm.Value < Val; });
@@ -52,6 +56,7 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt)
 		if (It == _Samples.cbegin() || (It != _Samples.cend() && n_fequal(It->Value, Input, SAMPLE_MATCH_TOLERANCE)))
 		{
 			_pFirst = It->Source.get();
+			_pFirst->Update(Controller, dt, nullptr);
 		}
 		else
 		{
@@ -59,30 +64,41 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt)
 			if (n_fequal(PrevIt->Value, Input, SAMPLE_MATCH_TOLERANCE) || (It == _Samples.cend() && PrevIt->Value < Input))
 			{
 				_pFirst = PrevIt->Source.get();
+				_pFirst->Update(Controller, dt, nullptr);
 			}
 			else
 			{
-				_pFirst = PrevIt->Source.get();
-				_pSecond = It->Source.get();
-
+				// For convenience make sure _pFirst is always the one with greater weight
 				const float BlendFactor = (Input - PrevIt->Value) / (It->Value - PrevIt->Value);
-				_Blender.SetWeight(0, 1.f - BlendFactor);
-				_Blender.SetWeight(1, BlendFactor);
+				if (BlendFactor <= 0.5f)
+				{
+					_pFirst = PrevIt->Source.get();
+					_pSecond = It->Source.get();
+					_Blender.SetWeight(0, 1.f - BlendFactor);
+					_Blender.SetWeight(1, BlendFactor);
+				}
+				else
+				{
+					_pFirst = It->Source.get();
+					_pSecond = PrevIt->Source.get();
+					_Blender.SetWeight(0, BlendFactor);
+					_Blender.SetWeight(1, 1.f - BlendFactor);
+				}
 
 				//!!!TODO: calc animation speed to prevent foot sliding (lerp between sample speeds/durations by weight?)
+				//!!!out of bounds input may require scaling too!
 
-				// maybe must do synchronization here, or record info and postpone after graph update
-				//???sync only if clip player, or recurse down to players through any nodes?
-				//!!!NB: sync may be abs time, normalized time (0 - 1) or by phase matching (calc from feet or manual)!
-				//???!!!Phase matching with monotone value may be much better than named markers?
-				//Curr time is obtained from the master track!
+				//???track normalized time right here and update most weighted animation using blended animation length?
+
+				//???in phase matching normalize phase scalar? to fallback to normalized time for clips that don't support phases.
+
+				CSyncContext LocalSyncContext{ ESyncMethod::NormalizedTime, 0.f };
+
+				_pFirst->Update(Controller, dt, nullptr);
+				_pSecond->Update(Controller, dt, &LocalSyncContext);
 			}
 		}
 	}
-
-	//!!!must instead advance more weighted one and sync less weighted!
-	_pFirst->Update(Controller, dt);
-	if (_pSecond) _pSecond->Update(Controller, dt);
 }
 //---------------------------------------------------------------------
 
@@ -94,6 +110,7 @@ void CBlendSpace1D::EvaluatePose(IPoseOutput& Output)
 		// memory and may be faster! We don't use priority here anyway, and weights always sum to 1.f.
 		//Can use special wrapper output CPoseScaleBiasOutput / CPoseWeightedOutput to apply weights on the fly!
 		//!!!can even have single and per-bone weigh variations!
+		//???cache locality may suffer if blending in place? scene nodes are scattered around the heap.
 		_pFirst->EvaluatePose(*_Blender.GetInput(0));
 		_pSecond->EvaluatePose(*_Blender.GetInput(1));
 

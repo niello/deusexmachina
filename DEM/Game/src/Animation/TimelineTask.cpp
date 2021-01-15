@@ -42,6 +42,7 @@ bool LoadTimelineTaskIntoPlayer(CTimelinePlayer& Player, Game::CGameWorld& World
 	}
 
 	// If current track is cloned from the same prototype, can reuse it and avoid heavy setup
+	// FIXME: track output recreation may be required if output context changed!
 	const auto* pOldTrackProto = pPrevTask ? pPrevTask->Timeline->GetObject<Anim::CTimelineTrack>() : nullptr;
 	if (!Player.GetTrack() || pNewTrackProto != pOldTrackProto)
 	{

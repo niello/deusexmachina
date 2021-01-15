@@ -34,7 +34,9 @@ public:
 
 	float AdjustTime(float Time, bool Loop) const
 	{
-		return Loop ? std::fmodf(Time, _Duration) : std::clamp(Time, 0.f, _Duration);
+		if (Time < 0.f) return Loop ? _Duration + std::fmodf(Time, _Duration) : 0.f;
+		else if (Time > _Duration) return Loop ? std::fmodf(Time, _Duration) : _Duration;
+		else return Time;
 	}
 };
 

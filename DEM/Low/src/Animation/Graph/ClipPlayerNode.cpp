@@ -41,12 +41,19 @@ void CClipPlayerNode::Init(CAnimationControllerInitContext& Context)
 }
 //---------------------------------------------------------------------
 
-void CClipPlayerNode::Update(CAnimationController& Controller, float dt)
+void CClipPlayerNode::Update(CAnimationController& Controller, float dt, CSyncContext* pSyncContext)
 {
-	if (_Sampler.GetClip())
-		_CurrClipTime = _Sampler.GetClip()->AdjustTime(_CurrClipTime + dt * _Speed, _Loop);
+	if (!_Sampler.GetClip()) return;
 
-	//???where to handle synchronization? pass sync info into a context and sync after graph update?
+	const ESyncMethod SyncMethod = pSyncContext ? pSyncContext->Method : ESyncMethod::None;
+	switch (SyncMethod)
+	{
+		case ESyncMethod::None:
+			_CurrClipTime = _Sampler.GetClip()->AdjustTime(_CurrClipTime + dt * _Speed, _Loop); break;
+		case ESyncMethod::NormalizedTime:
+			_CurrClipTime = pSyncContext->Value * _Sampler.GetClip()->GetDuration(); break;
+		default: NOT_IMPLEMENTED; break;
+	}
 }
 //---------------------------------------------------------------------
 
