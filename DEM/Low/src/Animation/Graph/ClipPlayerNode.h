@@ -35,6 +35,8 @@ public:
 	virtual void Init(CAnimationControllerInitContext& Context) override;
 	virtual void Update(CAnimationController& Controller, float dt, CSyncContext* pSyncContext) override;
 	virtual void EvaluatePose(IPoseOutput& Output) override;
+
+	virtual float GetAnimationLengthScaled() const override;
 };
 
 }

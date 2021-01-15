@@ -31,15 +31,21 @@ protected:
 	CStrID               _ParamID;
 	UPTR                 _ParamIndex = INVALID_INDEX; // Cached for fast access
 
+	float                _NormalizedTime = 0.f; // Current time normalized to [0..1]
+
+	void          UpdateSingleSample(CAnimGraphNode& Node, CAnimationController& Controller, float dt, CSyncContext* pSyncContext);
+
 public:
 
 	CBlendSpace1D(CStrID ParamID);
 
-	virtual void Init(CAnimationControllerInitContext& Context) override;
-	virtual void Update(CAnimationController& Controller, float dt, CSyncContext* pSyncContext) override;
-	virtual void EvaluatePose(IPoseOutput& Output) override;
+	virtual void  Init(CAnimationControllerInitContext& Context) override;
+	virtual void  Update(CAnimationController& Controller, float dt, CSyncContext* pSyncContext) override;
+	virtual void  EvaluatePose(IPoseOutput& Output) override;
 
-	bool         AddSample(PAnimGraphNode&& Source, float Value);
+	virtual float GetAnimationLengthScaled() const override;
+
+	bool          AddSample(PAnimGraphNode&& Source, float Value);
 };
 
 }

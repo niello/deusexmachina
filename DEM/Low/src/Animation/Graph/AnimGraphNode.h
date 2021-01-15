@@ -36,9 +36,11 @@ public:
 
 	//???default node must skip Update and return reference pose from eval?
 
-	virtual void Init(CAnimationControllerInitContext& Context) = 0;
-	virtual void Update(CAnimationController& Controller, float dt, CSyncContext* pSyncContext) = 0;
-	virtual void EvaluatePose(IPoseOutput& Output) = 0;
+	virtual void  Init(CAnimationControllerInitContext& Context) = 0;
+	virtual void  Update(CAnimationController& Controller, float dt, CSyncContext* pSyncContext) = 0;
+	virtual void  EvaluatePose(IPoseOutput& Output) = 0;
+
+	virtual float GetAnimationLengthScaled() const { return 0.f; }
 };
 
 }

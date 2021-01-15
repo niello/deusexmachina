@@ -71,4 +71,10 @@ void CClipPlayerNode::EvaluatePose(IPoseOutput& Output)
 }
 //---------------------------------------------------------------------
 
+float CClipPlayerNode::GetAnimationLengthScaled() const
+{
+	return (_Sampler.GetClip() && _Speed) ? (_Sampler.GetClip()->GetDuration() / _Speed) : 0.f;
+}
+//---------------------------------------------------------------------
+
 }

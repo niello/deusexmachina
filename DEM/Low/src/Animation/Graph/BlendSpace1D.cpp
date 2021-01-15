@@ -29,76 +29,109 @@ void CBlendSpace1D::Init(CAnimationControllerInitContext& Context)
 }
 //---------------------------------------------------------------------
 
+static inline void AdvanceNormalizedTime(float dt, float AnimLength, float& NormalizedTime)
+{
+	if (AnimLength)
+	{
+		NormalizedTime += (dt / AnimLength);
+		if (NormalizedTime < 0.f) NormalizedTime += (1.f - std::truncf(NormalizedTime));
+		else if (NormalizedTime > 1.f) NormalizedTime -= std::truncf(NormalizedTime);
+	}
+	else NormalizedTime = 0.f;
+}
+//---------------------------------------------------------------------
+
+void CBlendSpace1D::UpdateSingleSample(CAnimGraphNode& Node, CAnimationController& Controller, float dt, CSyncContext* pSyncContext)
+{
+	const ESyncMethod SyncMethod = pSyncContext ? pSyncContext->Method : ESyncMethod::None;
+	switch (SyncMethod)
+	{
+		case ESyncMethod::None: AdvanceNormalizedTime(dt, Node.GetAnimationLengthScaled(), _NormalizedTime); break;
+		case ESyncMethod::NormalizedTime: _NormalizedTime = pSyncContext->Value; break;
+		default: NOT_IMPLEMENTED; break;
+	}
+
+	_pFirst = &Node;
+	_pSecond = nullptr;
+	_pFirst->Update(Controller, dt, pSyncContext);
+}
+//---------------------------------------------------------------------
+
 void CBlendSpace1D::Update(CAnimationController& Controller, float dt, CSyncContext* pSyncContext)
 {
 	if (_Samples.empty()) return;
 
-	//???use cache if input parameter didn't change?
-
-	// TODO:
-	if (pSyncContext) NOT_IMPLEMENTED;
-
-	_pSecond = nullptr;
 	if (_Samples.size() == 1)
 	{
-		_pFirst = _Samples[0].Source.get();
-		_pFirst->Update(Controller, dt, nullptr);
+		UpdateSingleSample(*_Samples[0].Source, Controller, dt, pSyncContext);
+		return;
+	}
+
+	const float Input = Controller.GetFloat(_ParamIndex);
+
+	//???use cache if input parameter didn't change?
+
+	//???TODO: optionally filter input to make transitions smoother?
+	// then dt *= (BeforeFilter / AfterFilter);
+
+	// Scale animation speed for values outside the sample range
+	const float ClampedInput = std::clamp(Input, _Samples.front().Value, _Samples.back().Value);
+	if (ClampedInput && ClampedInput != Input) dt *= (Input / ClampedInput);
+
+	auto It = std::lower_bound(_Samples.cbegin(), _Samples.cend(), Input,
+		[](const auto& Elm, float Val) { return Elm.Value < Val; });
+
+	if (It == _Samples.cbegin() || (It != _Samples.cend() && n_fequal(It->Value, Input, SAMPLE_MATCH_TOLERANCE)))
+	{
+		UpdateSingleSample(*It->Source, Controller, dt, pSyncContext);
+		return;
+	}
+
+	auto PrevIt = std::prev(It);
+	if (n_fequal(PrevIt->Value, Input, SAMPLE_MATCH_TOLERANCE) || (It == _Samples.cend() && PrevIt->Value < Input))
+	{
+		UpdateSingleSample(*PrevIt->Source, Controller, dt, pSyncContext);
+		return;
+	}
+
+	// For convenience make sure _pFirst is always the one with greater weight
+	const float BlendFactor = (Input - PrevIt->Value) / (It->Value - PrevIt->Value);
+	if (BlendFactor <= 0.5f)
+	{
+		_pFirst = PrevIt->Source.get();
+		_pSecond = It->Source.get();
+		_Blender.SetWeight(0, 1.f - BlendFactor);
+		_Blender.SetWeight(1, BlendFactor);
 	}
 	else
 	{
-		const float Input = Controller.GetFloat(_ParamIndex);
-
-		//???TODO: optionally filter input to make transitions smoother?
-
-		auto It = std::lower_bound(_Samples.cbegin(), _Samples.cend(), Input,
-			[](const auto& Elm, float Val) { return Elm.Value < Val; });
-
-		if (It == _Samples.cbegin() || (It != _Samples.cend() && n_fequal(It->Value, Input, SAMPLE_MATCH_TOLERANCE)))
-		{
-			_pFirst = It->Source.get();
-			_pFirst->Update(Controller, dt, nullptr);
-		}
-		else
-		{
-			auto PrevIt = std::prev(It);
-			if (n_fequal(PrevIt->Value, Input, SAMPLE_MATCH_TOLERANCE) || (It == _Samples.cend() && PrevIt->Value < Input))
-			{
-				_pFirst = PrevIt->Source.get();
-				_pFirst->Update(Controller, dt, nullptr);
-			}
-			else
-			{
-				// For convenience make sure _pFirst is always the one with greater weight
-				const float BlendFactor = (Input - PrevIt->Value) / (It->Value - PrevIt->Value);
-				if (BlendFactor <= 0.5f)
-				{
-					_pFirst = PrevIt->Source.get();
-					_pSecond = It->Source.get();
-					_Blender.SetWeight(0, 1.f - BlendFactor);
-					_Blender.SetWeight(1, BlendFactor);
-				}
-				else
-				{
-					_pFirst = It->Source.get();
-					_pSecond = PrevIt->Source.get();
-					_Blender.SetWeight(0, BlendFactor);
-					_Blender.SetWeight(1, 1.f - BlendFactor);
-				}
-
-				//!!!TODO: calc animation speed to prevent foot sliding (lerp between sample speeds/durations by weight?)
-				//!!!out of bounds input may require scaling too!
-
-				//???track normalized time right here and update most weighted animation using blended animation length?
-
-				//???in phase matching normalize phase scalar? to fallback to normalized time for clips that don't support phases.
-
-				CSyncContext LocalSyncContext{ ESyncMethod::NormalizedTime, 0.f };
-
-				_pFirst->Update(Controller, dt, nullptr);
-				_pSecond->Update(Controller, dt, &LocalSyncContext);
-			}
-		}
+		_pFirst = It->Source.get();
+		_pSecond = PrevIt->Source.get();
+		_Blender.SetWeight(0, BlendFactor);
+		_Blender.SetWeight(1, 1.f - BlendFactor);
 	}
+
+	const ESyncMethod SyncMethod = pSyncContext ? pSyncContext->Method : ESyncMethod::None;
+	switch (SyncMethod)
+	{
+		case ESyncMethod::None:
+		{
+			const float AnimLength = It->Source->GetAnimationLengthScaled() * BlendFactor +
+				PrevIt->Source->GetAnimationLengthScaled() * (1.f - BlendFactor);
+			AdvanceNormalizedTime(dt, AnimLength, _NormalizedTime);
+			break;
+		}
+		case ESyncMethod::NormalizedTime: _NormalizedTime = pSyncContext->Value; break;
+		default: NOT_IMPLEMENTED; break;
+	}
+
+	//???in phase matching normalize phase scalar? to fallback to normalized time for clips that don't support phases.
+
+	CSyncContext LocalSyncContext{ ESyncMethod::NormalizedTime, _NormalizedTime };
+
+	//???OK to pass scaled dt here?
+	_pFirst->Update(Controller, dt, pSyncContext);
+	_pSecond->Update(Controller, dt, &LocalSyncContext);
 }
 //---------------------------------------------------------------------
 
@@ -117,6 +150,13 @@ void CBlendSpace1D::EvaluatePose(IPoseOutput& Output)
 		_Blender.EvaluatePose(Output);
 	}
 	else if (_pFirst) _pFirst->EvaluatePose(Output);
+}
+//---------------------------------------------------------------------
+
+float CBlendSpace1D::GetAnimationLengthScaled() const
+{
+	NOT_IMPLEMENTED;
+	return 0.f;
 }
 //---------------------------------------------------------------------
 
