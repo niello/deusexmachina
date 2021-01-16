@@ -621,8 +621,15 @@ public:
 
 		// Process skin, one for all submeshes
 
+		struct CClusterInfo
+		{
+			const FbxNode*                     pNode = nullptr;
+			size_t                             AffectedVertexCount = 0;
+			std::vector<std::pair<int, float>> WeightByControlPoint; // Sorted by index for fast search
+		};
+
 		std::vector<CBone> Bones;
-		std::vector<std::pair<const FbxCluster*, size_t>> BoneClusters; // Cluster -> Number of vertices really affected
+		std::vector<CClusterInfo> BoneClusters; // Cluster -> Number of vertices really affected
 
 		const FbxAMatrix InvMeshWorldMatrix = pMesh->GetNode()->EvaluateGlobalTransform().Inverse();
 
@@ -662,7 +669,19 @@ public:
 				Bones.push_back(std::move(NewBone));
 
 				// Remember valid cluster for vertex processing and parent index finding
-				BoneClusters.emplace_back(pCluster, 0);
+				BoneClusters.push_back({});
+				BoneClusters.back().pNode = pCluster->GetLink();
+				//auto Mode = pCluster->GetLinkMode();
+				const int ControlPtIdxCount = pCluster->GetControlPointIndicesCount();
+				auto& Weights = BoneClusters.back().WeightByControlPoint;
+				Weights.reserve(ControlPtIdxCount);
+				for (int ControlPtIdx = 0; ControlPtIdx < ControlPtIdxCount; ++ControlPtIdx)
+				{
+					const float Weight = static_cast<float>(pCluster->GetControlPointWeights()[ControlPtIdx]);
+					if (CompareFloat(Weight, 0.f)) continue;
+					Weights.emplace_back(pCluster->GetControlPointIndices()[ControlPtIdx], Weight);
+				}
+				std::sort(Weights.begin(), Weights.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
 			}
 		}
 
@@ -757,54 +776,49 @@ public:
 
 				for (size_t BoneIndex = 0; BoneIndex < BoneClusters.size(); ++BoneIndex)
 				{
-					const FbxCluster* pCluster = BoneClusters[BoneIndex].first;
+					const auto& Weights = BoneClusters[BoneIndex].WeightByControlPoint;
+					auto WeightIt = std::lower_bound(Weights.cbegin(), Weights.cend(), ControlPointIndex,
+						[](const auto& Elm, int Value) { return Elm.first < Value; });
+					if (WeightIt == Weights.cend() || WeightIt->first != ControlPointIndex) continue;
 
-					const int IndexCount = pCluster->GetControlPointIndicesCount();
-					for (int i = 0; i < IndexCount; ++i)
+					const float Weight = WeightIt->second;
+
+					size_t BoneOrderNumber;
+					if (Vertex.BonesUsed >= MaxBonesPerVertex)
 					{
-						const int BoneControlPointIndex = pCluster->GetControlPointIndices()[i];
-						if (BoneControlPointIndex != ControlPointIndex) continue;
+						Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " control point " + std::to_string(ControlPointIndex) + " reached the limit of bones, the least influencing bone discarded");
 
-						const float Weight = static_cast<float>(pCluster->GetControlPointWeights()[i]);
-						if (CompareFloat(Weight, 0.f)) continue;
-
-						size_t BoneOrderNumber;
-						if (Vertex.BonesUsed >= MaxBonesPerVertex)
+						BoneOrderNumber = 0;
+						float MinWeight = (VertexFormat.BlendWeightSize != 8) ? Vertex.BlendWeights32[0] : ByteToNormalizedFloat((Vertex.BlendWeights8 >> (0 * 8)) & 0xff);
+						for (size_t bo = 1; bo < MaxBonesPerVertex; ++bo)
 						{
-							Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " control point " + std::to_string(ControlPointIndex) + " reached the limit of bones, the least influencing bone discarded");
-
-							BoneOrderNumber = 0;
-							float MinWeight = (VertexFormat.BlendWeightSize != 8) ? Vertex.BlendWeights32[0] : ByteToNormalizedFloat((Vertex.BlendWeights8 >> (0 * 8)) & 0xff);
-							for (size_t bo = 1; bo < MaxBonesPerVertex; ++bo)
+							const float Weight = (VertexFormat.BlendWeightSize != 8) ? Vertex.BlendWeights32[bo] : ByteToNormalizedFloat((Vertex.BlendWeights8 >> (bo * 8)) & 0xff);
+							if (Weight < MinWeight)
 							{
-								const float Weight = (VertexFormat.BlendWeightSize != 8) ? Vertex.BlendWeights32[bo] : ByteToNormalizedFloat((Vertex.BlendWeights8 >> (bo * 8)) & 0xff);
-								if (Weight < MinWeight)
-								{
-									BoneOrderNumber = bo;
-									MinWeight = Weight;
-								}
+								BoneOrderNumber = bo;
+								MinWeight = Weight;
 							}
-
-							// The least influencing bone loses a vertex
-							--BoneClusters[Vertex.BlendIndices[BoneOrderNumber]].second;
-						}
-						else
-						{
-							BoneOrderNumber = Vertex.BonesUsed;
-
-							++Vertex.BonesUsed;
-							if (Vertex.BonesUsed > VertexFormat.BonesPerVertex)
-								VertexFormat.BonesPerVertex = Vertex.BonesUsed;
 						}
 
-						Vertex.BlendIndices[BoneOrderNumber] = BoneIndex;
-						if (VertexFormat.BlendWeightSize != 8)
-							Vertex.BlendWeights32[BoneOrderNumber] = Weight;
-						else
-							reinterpret_cast<uint8_t*>(&Vertex.BlendWeights8)[3 - BoneOrderNumber] = NormalizedFloatToByte(Weight);
-
-						++BoneClusters[BoneIndex].second;
+						// The least influencing bone loses a vertex
+						--BoneClusters[Vertex.BlendIndices[BoneOrderNumber]].AffectedVertexCount;
 					}
+					else
+					{
+						BoneOrderNumber = Vertex.BonesUsed;
+
+						++Vertex.BonesUsed;
+						if (Vertex.BonesUsed > VertexFormat.BonesPerVertex)
+							VertexFormat.BonesPerVertex = Vertex.BonesUsed;
+					}
+
+					Vertex.BlendIndices[BoneOrderNumber] = BoneIndex;
+					if (VertexFormat.BlendWeightSize != 8)
+						Vertex.BlendWeights32[BoneOrderNumber] = Weight;
+					else
+						reinterpret_cast<uint8_t*>(&Vertex.BlendWeights8)[3 - BoneOrderNumber] = NormalizedFloatToByte(Weight);
+
+					++BoneClusters[BoneIndex].AffectedVertexCount;
 				}
 
 				constexpr bool RenormalizeWeights = true;
@@ -818,7 +832,7 @@ public:
 		// Check that all bones influence at least one vertex
 		// TODO: if validation failed, should implement removal of unnecessary bones, fixing vertex blend indices
 		for (const auto& ClusterInfo : BoneClusters)
-			assert(ClusterInfo.second > 0);
+			assert(ClusterInfo.AffectedVertexCount > 0);
 
 		// Establish bone parent-child links and check IDs
 
@@ -828,20 +842,20 @@ public:
 			for (size_t i = 0; i < Bones.size(); ++i)
 			{
 				auto& Bone = Bones[i];
-				const auto* pCluster = BoneClusters[i].first;
+				const FbxNode* pLinkNode = BoneClusters[i].pNode;
 
 				if (BoneNames.find(Bone.ID) != BoneNames.cend())
 					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + Bone.ID + " occurs more than once, skin may be broken");
 				else
 					BoneNames.insert(Bone.ID);
 
-				const FbxNode* pParent = pCluster->GetLink()->GetParent();
+				const FbxNode* pParent = pLinkNode->GetParent();
 				const auto It = std::find_if(BoneClusters.cbegin(), BoneClusters.cend(), [pParent](const auto& Pair)
 				{
-					return Pair.first->GetLink() == pParent;
+					return Pair.pNode == pParent;
 				});
 				if (It == BoneClusters.cend())
-					pRootBone = pCluster->GetLink(); // What if some bone is skipped? Will it lead to the false root?
+					pRootBone = pLinkNode; // What if some bone is skipped? Will it lead to the false root?
 				else
 					Bone.ParentBoneIndex = static_cast<uint16_t>(std::distance(BoneClusters.cbegin(), It));
 
