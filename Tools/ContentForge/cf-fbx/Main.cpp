@@ -662,11 +662,11 @@ public:
 		if (pMesh->GetElementMaterialCount() > MaterialLayerCount)
 			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(MaterialLayerCount) + '/' + std::to_string(pMesh->GetElementMaterialCount()) + " material layers");
 
-		// Process skin, one for all submeshes
+		// Process mesh skin, one for all submeshes
 
 		struct CBoneExt
 		{
-			const FbxNode*                     pNode = nullptr;
+			const FbxNode*                     pBone = nullptr;
 			size_t                             AffectedVertexCount = 0;
 			std::vector<std::pair<int, float>> WeightByControlPoint; // Sorted by index for fast search
 		};
@@ -678,6 +678,7 @@ public:
 		const FbxAMatrix InvMeshWorldMatrix = pMesh->GetNode()->EvaluateGlobalTransform().Inverse();
 
 		const auto SkinCount = pMesh->GetDeformerCount(FbxDeformer::eSkin);
+		assert(SkinCount == 1); // TODO: check how it will work with multiple skins
 		for (int s = 0; s < SkinCount; ++s)
 		{
 			const FbxSkin* pSkin = static_cast<FbxSkin*>(pMesh->GetDeformer(s, FbxDeformer::eSkin));
@@ -686,47 +687,46 @@ public:
 			for (int c = 0; c < ClusterCount; ++c)
 			{
 				const FbxCluster* pCluster = pSkin->GetCluster(c);
-
-				const int IndexCount = pCluster->GetControlPointIndicesCount();
-				const int* pIndices = pCluster->GetControlPointIndices();
-				const double* pWeights = pCluster->GetControlPointWeights();
 				const FbxNode* pBone = pCluster->GetLink();
-
-				if (!pBone || !pIndices || !pWeights || !IndexCount)
+				if (!pBone)
 				{
-					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has empty bone " + (pBone ? pBone->GetName() : "<null>"));
+					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has null bone");
 					continue;
 				}
 
-				// We must find the last common node for all influencing bones to build valid skin
+				//const auto Mode = pCluster->GetLinkMode();
+				//pCluster->GetTransformMatrix() - is always equal to pMesh->GetNode()->EvaluateGlobalTransform()?
+
+				// We must find the last common node for all influencing bones to build valid skin from there
 				pRootBone = pRootBone ? FindLastCommonFbxNode(pRootBone, pBone) : pBone;
 
-				//FbxAMatrix MeshWorldMatrix2;
-				//pCluster->GetTransformMatrix(MeshWorldMatrix2);
-				//FbxAMatrix InvMeshWorldMatrix2 = MeshWorldMatrix2.Inverse();
+				Bones.push_back({});
+				Bones.back().ID = GetValidNodeName(pBone->GetName());
 
 				FbxAMatrix WorldBoneMatrix;
 				pCluster->GetTransformLinkMatrix(WorldBoneMatrix);
 				const auto InvLocalBindPose = (InvMeshWorldMatrix * WorldBoneMatrix).Inverse();
 
-				CBone NewBone;
-				NewBone.ID = GetValidNodeName(pBone->GetName());
-
-				// Save matrices (both DEM and FBX SDK use column-major)
+				// Save matrix (both DEM and FBX SDK use column-major)
 				for (int Col = 0; Col < 4; ++Col)
 					for (int Row = 0; Row < 4; ++Row)
-						NewBone.InvLocalBindPose[Col * 4 + Row] = static_cast<float>(InvLocalBindPose[Col][Row]);
+						Bones.back().InvLocalBindPose[Col * 4 + Row] = static_cast<float>(InvLocalBindPose[Col][Row]);
 
-				Bones.push_back(std::move(NewBone));
+				const int IndexCount = pCluster->GetControlPointIndicesCount();
+				const int* pIndices = pCluster->GetControlPointIndices();
+				const double* pWeights = pCluster->GetControlPointWeights();
+				if (!pIndices || !pWeights || !IndexCount)
+				{
+					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has empty bone " + (pBone ? pBone->GetName() : "<null>"));
+					continue;
+				}
 
 				// Remember valid cluster for vertex processing and parent index finding
 				ExtBones.push_back({});
-				ExtBones.back().pNode = pCluster->GetLink();
-				//const auto Mode = pCluster->GetLinkMode();
-				const int ControlPtIdxCount = pCluster->GetControlPointIndicesCount();
+				ExtBones.back().pBone = pBone;
 				auto& Weights = ExtBones.back().WeightByControlPoint;
-				Weights.reserve(ControlPtIdxCount);
-				for (int ControlPtIdx = 0; ControlPtIdx < ControlPtIdxCount; ++ControlPtIdx)
+				Weights.reserve(IndexCount);
+				for (int ControlPtIdx = 0; ControlPtIdx < IndexCount; ++ControlPtIdx)
 				{
 					const float Weight = static_cast<float>(pWeights[ControlPtIdx]);
 					if (!CompareFloat(Weight, 0.f)) Weights.emplace_back(pIndices[ControlPtIdx], Weight);
@@ -736,8 +736,45 @@ public:
 			}
 		}
 
+		// Establish bone parent-child links and check IDs
+
+		// TODO: fix
+		// 1. Descend all active bones to the pRootBone
+		// 2. Calculate depth from root
+		// 3. Sort bones by that depth
+
+		//!!!need to save bind poses!
+
 		if (!pRootBone)
 			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bones have no common root node, skin may be broken");
+
+		{
+			std::set<std::string> BoneNames;
+			for (size_t i = 0; i < Bones.size(); ++i)
+			{
+				auto& Bone = Bones[i];
+
+				if (BoneNames.find(Bone.ID) != BoneNames.cend())
+					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + Bone.ID + " occurs more than once, skin may be broken");
+				else
+					BoneNames.insert(Bone.ID);
+
+				const FbxNode* pBoneNode = ExtBones[i].pBone;
+				const FbxNode* pParentNode = pBoneNode->GetParent();
+				const auto It = std::find_if(ExtBones.cbegin(), ExtBones.cend(), [pParentNode](const auto& Pair)
+				{
+					return Pair.pBone == pParentNode;
+				});
+				if (It == ExtBones.cend())
+					pRootBone = pBoneNode;
+				else
+					Bone.ParentBoneIndex = static_cast<uint16_t>(std::distance(ExtBones.cbegin(), It));
+
+				// TODO: could optionally calculate per-bone AABB (for ragdoll etc). May be also useful for ACL.
+			}
+
+			//!!!all nodes with empty Bone.ParentBoneIndex must be referenced by name, based on the root node
+		}
 
 		// Collect vertices for each material separately (split mesh to groups)
 
@@ -885,40 +922,11 @@ public:
 			}
 		}
 
-		// Check that all bones influence at least one vertex
-		// TODO: if validation failed, should implement removal of unnecessary bones, fixing vertex blend indices
-		for (const auto& BoneInfluence : ExtBones)
-			assert(BoneInfluence.AffectedVertexCount > 0); // Some vertices may be counted multiple times for now
-
-		// Establish bone parent-child links and check IDs
-
-		{
-			std::set<std::string> BoneNames;
-			for (size_t i = 0; i < Bones.size(); ++i)
-			{
-				auto& Bone = Bones[i];
-				const FbxNode* pBoneNode = ExtBones[i].pNode;
-
-				if (BoneNames.find(Bone.ID) != BoneNames.cend())
-					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + Bone.ID + " occurs more than once, skin may be broken");
-				else
-					BoneNames.insert(Bone.ID);
-
-				const FbxNode* pParentNode = pBoneNode->GetParent();
-				const auto It = std::find_if(ExtBones.cbegin(), ExtBones.cend(), [pParentNode](const auto& Pair)
-				{
-					return Pair.pNode == pParentNode;
-				});
-				if (It == ExtBones.cend())
-					pRootBone = pBoneNode;
-				else
-					Bone.ParentBoneIndex = static_cast<uint16_t>(std::distance(ExtBones.cbegin(), It));
-
-				// TODO: could optionally calculate per-bone AABB (for ragdoll etc). May be also useful for ACL.
-			}
-
-			//!!!all nodes with empty Bone.ParentBoneIndex must be referenced by name, based on the root node
-		}
+		// Check that all active bones influence at least one vertex
+		// TODO: if validation failed, should implement recursive removal of unnecessary leaf bones, fixing vertex blend indices
+		// NB: some vertices may be counted multiple times for now
+		for (const auto& ExtBone : ExtBones)
+			assert(ExtBone.WeightByControlPoint.empty() || ExtBone.AffectedVertexCount > 0);
 
 		// Index and optimize vertices
 
