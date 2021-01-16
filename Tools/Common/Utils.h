@@ -14,6 +14,37 @@ struct membuf : std::streambuf
 	}
 };
 
+// Code from https://stackoverflow.com/questions/17074324/how-can-i-sort-two-vectors-in-the-same-way-with-criteria-that-uses-only-one-of
+template <typename T>
+void apply_permutation_in_place(std::vector<T>& vec, const std::vector<size_t>& p)
+{
+	std::vector<bool> done(vec.size());
+	for (size_t i = 0; i < vec.size(); ++i)
+	{
+		if (done[i]) continue;
+		done[i] = true;
+		size_t prev_j = i;
+		size_t j = p[i];
+		while (i != j)
+		{
+			std::swap(vec[prev_j], vec[j]);
+			done[j] = true;
+			prev_j = j;
+			j = p[j];
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+template <typename T>
+void apply_permutation(std::vector<T>& vec, const std::vector<size_t>& p)
+{
+	std::vector<T> sorted_vec(vec.size());
+	std::transform(p.begin(), p.end(), sorted_vec.begin(), [&vec](size_t i) { return vec[i]; });
+	std::swap(vec, sorted_vec);
+}
+//---------------------------------------------------------------------
+
 std::vector<std::string> SplitString(const std::string& Str, char Sep);
 uint32_t CalcCRC(const uint8_t* pData, size_t Size);
 

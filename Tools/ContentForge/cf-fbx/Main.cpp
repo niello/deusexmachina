@@ -86,6 +86,19 @@ static void GetAbsoluteFbxNodePath(const FbxNode* pNode, std::vector<std::string
 }
 //---------------------------------------------------------------------
 
+static size_t GetFbxNodeDepth(const FbxNode* pNode)
+{
+	size_t Depth = 0;
+	const auto* pCurrNode = pNode;
+	while (pCurrNode)
+	{
+		++Depth;
+		pCurrNode = pCurrNode->GetParent();
+	}
+	return Depth;
+}
+//---------------------------------------------------------------------
+
 static const FbxNode* FindLastCommonFbxNode(const FbxNode* pNodeA, const FbxNode* pNodeB)
 {
 	std::vector<const FbxNode*> ChainA;
@@ -662,27 +675,33 @@ public:
 		if (pMesh->GetElementMaterialCount() > MaterialLayerCount)
 			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(MaterialLayerCount) + '/' + std::to_string(pMesh->GetElementMaterialCount()) + " material layers");
 
+		// TODO: process blend shapes!
+
 		// Process mesh skin, one for all submeshes
 
 		struct CBoneExt
 		{
 			const FbxNode*                     pBone = nullptr;
+			size_t                             Depth = 0;
 			size_t                             AffectedVertexCount = 0;
 			std::vector<std::pair<int, float>> WeightByControlPoint; // Sorted by index for fast search
+			FbxAMatrix                         InvLocalBindPose;
+			uint16_t                           ParentIndex = NoParentBone;
 		};
 
-		std::vector<CBone> Bones;
-		std::vector<CBoneExt> ExtBones; // Extended data
+		std::vector<CBoneExt> ExtBones; // Extended bone data
 		const FbxNode* pRootBone = nullptr;
-
 		const FbxAMatrix InvMeshWorldMatrix = pMesh->GetNode()->EvaluateGlobalTransform().Inverse();
 
-		const auto SkinCount = pMesh->GetDeformerCount(FbxDeformer::eSkin);
-		assert(SkinCount == 1); // TODO: check how it will work with multiple skins
+		const int SkinCount = pMesh->GetDeformerCount(FbxDeformer::eSkin);
+		assert(SkinCount < 2); // TODO: check how it will work with multiple skins
+
 		for (int s = 0; s < SkinCount; ++s)
 		{
 			const FbxSkin* pSkin = static_cast<FbxSkin*>(pMesh->GetDeformer(s, FbxDeformer::eSkin));
 			const auto ClusterCount = pSkin->GetClusterCount();
+
+			ExtBones.reserve(ExtBones.size() + ClusterCount);
 
 			for (int c = 0; c < ClusterCount; ++c)
 			{
@@ -697,33 +716,23 @@ public:
 				//const auto Mode = pCluster->GetLinkMode();
 				//pCluster->GetTransformMatrix() - is always equal to pMesh->GetNode()->EvaluateGlobalTransform()?
 
-				// We must find the last common node for all influencing bones to build valid skin from there
-				pRootBone = pRootBone ? FindLastCommonFbxNode(pRootBone, pBone) : pBone;
-
-				Bones.push_back({});
-				Bones.back().ID = GetValidNodeName(pBone->GetName());
+				ExtBones.push_back({});
+				ExtBones.back().pBone = pBone;
+				ExtBones.back().Depth = GetFbxNodeDepth(pBone);
 
 				FbxAMatrix WorldBoneMatrix;
 				pCluster->GetTransformLinkMatrix(WorldBoneMatrix);
-				const auto InvLocalBindPose = (InvMeshWorldMatrix * WorldBoneMatrix).Inverse();
-
-				// Save matrix (both DEM and FBX SDK use column-major)
-				for (int Col = 0; Col < 4; ++Col)
-					for (int Row = 0; Row < 4; ++Row)
-						Bones.back().InvLocalBindPose[Col * 4 + Row] = static_cast<float>(InvLocalBindPose[Col][Row]);
+				ExtBones.back().InvLocalBindPose = (InvMeshWorldMatrix * WorldBoneMatrix).Inverse();
 
 				const int IndexCount = pCluster->GetControlPointIndicesCount();
 				const int* pIndices = pCluster->GetControlPointIndices();
 				const double* pWeights = pCluster->GetControlPointWeights();
-				if (!pIndices || !pWeights || !IndexCount)
-				{
-					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has empty bone " + (pBone ? pBone->GetName() : "<null>"));
-					continue;
-				}
+				if (!pIndices || !pWeights || !IndexCount) continue;
 
-				// Remember valid cluster for vertex processing and parent index finding
-				ExtBones.push_back({});
-				ExtBones.back().pBone = pBone;
+				// We must find the last common node for all influencing bones to build valid skin from there
+				pRootBone = pRootBone ? FindLastCommonFbxNode(pRootBone, pBone) : pBone;
+
+				// Gather bone influences and additional info
 				auto& Weights = ExtBones.back().WeightByControlPoint;
 				Weights.reserve(IndexCount);
 				for (int ControlPtIdx = 0; ControlPtIdx < IndexCount; ++ControlPtIdx)
@@ -736,44 +745,91 @@ public:
 			}
 		}
 
-		// Establish bone parent-child links and check IDs
+		// Process and optimize collected skin data
 
-		// TODO: fix
-		// 1. Descend all active bones to the pRootBone
-		// 2. Calculate depth from root
-		// 3. Sort bones by that depth
-
-		//!!!need to save bind poses!
-
-		if (!pRootBone)
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bones have no common root node, skin may be broken");
-
+		std::vector<CBone> Bones;
+		if (pRootBone)
 		{
-			std::set<std::string> BoneNames;
-			for (size_t i = 0; i < Bones.size(); ++i)
-			{
-				auto& Bone = Bones[i];
+			const size_t RootDepth = GetFbxNodeDepth(pRootBone);
 
+			// Discard bones aside an active hierarchy root, they have no influence on vertices
+			const size_t PrevSize = ExtBones.size();
+			ExtBones.erase(std::remove_if(ExtBones.begin(), ExtBones.end(), [RootDepth, pRootBone](const auto& ExtBone)
+			{
+				return (ExtBone.Depth < RootDepth) || (ExtBone.Depth == RootDepth && ExtBone.pBone != pRootBone);
+			}), ExtBones.end());
+
+			if (ExtBones.size() < PrevSize)
+				Ctx.Log.LogInfo(std::string("Mesh ") + pMesh->GetName() + " - " + std::to_string(PrevSize - ExtBones.size()) + " aside an active hierarchy are discarded");
+
+			// Order bones by increasing depth
+			{
+				std::vector<size_t> Order(ExtBones.size());
+				std::iota(Order.begin(), Order.end(), 0);
+				std::sort(Order.begin(), Order.end(), [&ExtBones](size_t a, size_t b)
+				{
+					const auto DepthA = ExtBones[a].Depth;
+					const auto DepthB = ExtBones[b].Depth;
+					return (DepthA < DepthB) || (DepthA == DepthB && a < b);
+				});
+				apply_permutation(ExtBones, Order);
+			}
+
+			// Establish parent-child links
+			auto ItDepthStart = ExtBones.begin();
+			for (auto It = ExtBones.begin() + 1; It != ExtBones.end(); ++It)
+			{
+				// Find range of our possible parents by depth value
+				const auto ParentDepth = It->Depth - 1;
+				if (ItDepthStart->Depth < ParentDepth)
+					ItDepthStart = std::lower_bound(ItDepthStart + 1, It, ParentDepth,
+						[](const auto& ExtBone, size_t Value) { return ExtBone.Depth < Value; });
+
+				// Try to find a parent in range
+				const FbxNode* pParentNode = It->pBone->GetParent();
+				const auto ItParent = std::find_if(ItDepthStart, It, [pParentNode](const auto& Pair)
+				{
+					return Pair.pBone == pParentNode;
+				});
+				if (ItParent == ExtBones.end())
+				{
+					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + It->pBone->GetName() + " parent not found, skin may be broken");
+					continue;
+				}
+
+				It->ParentIndex = static_cast<uint16_t>(std::distance(ExtBones.begin(), ItParent));
+			}
+
+			// Transfer parent indices into CBone array and use an opportunity to check bone names
+			Bones.resize(ExtBones.size());
+			std::set<std::string> BoneNames;
+			for (size_t i = 0; i < ExtBones.size(); ++i)
+			{
+				const FbxNode* pBoneNode = ExtBones[i].pBone;
+
+				auto& Bone = Bones[i];
+				Bone.ID = GetValidNodeName(pBoneNode->GetName());
+				Bone.ParentBoneIndex = ExtBones[i].ParentIndex;
+
+				// Save matrix (both DEM and FBX SDK use column-major)
+				const auto& InvLocalBindPose = ExtBones[i].InvLocalBindPose;
+				for (int Col = 0; Col < 4; ++Col)
+					for (int Row = 0; Row < 4; ++Row)
+						Bones.back().InvLocalBindPose[Col * 4 + Row] = static_cast<float>(InvLocalBindPose[Col][Row]);
+
+				//???merge bones instead, at least if encountered inside the same skin?
 				if (BoneNames.find(Bone.ID) != BoneNames.cend())
 					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + Bone.ID + " occurs more than once, skin may be broken");
 				else
 					BoneNames.insert(Bone.ID);
 
-				const FbxNode* pBoneNode = ExtBones[i].pBone;
-				const FbxNode* pParentNode = pBoneNode->GetParent();
-				const auto It = std::find_if(ExtBones.cbegin(), ExtBones.cend(), [pParentNode](const auto& Pair)
-				{
-					return Pair.pBone == pParentNode;
-				});
-				if (It == ExtBones.cend())
-					pRootBone = pBoneNode;
-				else
-					Bone.ParentBoneIndex = static_cast<uint16_t>(std::distance(ExtBones.cbegin(), It));
-
 				// TODO: could optionally calculate per-bone AABB (for ragdoll etc). May be also useful for ACL.
 			}
-
-			//!!!all nodes with empty Bone.ParentBoneIndex must be referenced by name, based on the root node
+		}
+		else if (SkinCount)
+		{
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bones have no common root node, skin discarded as it may be broken");
+			ExtBones.clear();
 		}
 
 		// Collect vertices for each material separately (split mesh to groups)
