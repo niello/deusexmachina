@@ -11,7 +11,7 @@ namespace fs = std::filesystem;
 
 // Set working directory to $(TargetDir)
 // Example args:
-// -s src/scenes
+// -s src/scenes --path Data ../../../content
 
 // Blender export settings:
 // - Custom Properties: on
@@ -364,13 +364,16 @@ public:
 
 		// Each stack is a clip. Only one layer (or combined result of all stack layers) is considered, no
 		// blending info saved. Nodes are processed from the root recursively and each can have up to 3 tracks.
-		const int AnimationCount = pScene->GetSrcObjectCount<FbxAnimStack>();
-		for (int i = 0; i < AnimationCount; ++i)
+		if (!Ctx.AnimPath.empty())
 		{
-			const auto pAnimStack = static_cast<FbxAnimStack*>(pScene->GetSrcObject<FbxAnimStack>(i));
-			if (!ExportAnimation(pAnimStack, pScene, Ctx))
+			const int AnimationCount = pScene->GetSrcObjectCount<FbxAnimStack>();
+			for (int i = 0; i < AnimationCount; ++i)
 			{
-				return ETaskResult::Failure;
+				const auto pAnimStack = static_cast<FbxAnimStack*>(pScene->GetSrcObject<FbxAnimStack>(i));
+				if (!ExportAnimation(pAnimStack, pScene, Ctx))
+				{
+					return ETaskResult::Failure;
+				}
 			}
 		}
 
