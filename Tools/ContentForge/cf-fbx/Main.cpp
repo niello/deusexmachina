@@ -99,6 +99,19 @@ static size_t GetFbxNodeDepth(const FbxNode* pNode)
 }
 //---------------------------------------------------------------------
 
+static bool IsInHierarchy(const FbxNode* pNode, const FbxNode* pRoot, size_t* pOutDepth = nullptr)
+{
+	const auto* pCurrNode = pNode;
+	while (pCurrNode)
+	{
+		if (pCurrNode == pRoot) return true;
+		if (pOutDepth) ++(*pOutDepth);
+		pCurrNode = pCurrNode->GetParent();
+	}
+	return false;
+}
+//---------------------------------------------------------------------
+
 static const FbxNode* FindLastCommonFbxNode(const FbxNode* pNodeA, const FbxNode* pNodeB)
 {
 	std::vector<const FbxNode*> ChainA;
@@ -679,7 +692,7 @@ public:
 
 		// Process mesh skin, one for all submeshes
 
-		struct CBoneExt
+		struct CFbxBoneInfo
 		{
 			const FbxNode*                     pBone = nullptr;
 			size_t                             Depth = 0;
@@ -687,9 +700,10 @@ public:
 			std::vector<std::pair<int, float>> WeightByControlPoint; // Sorted by index for fast search
 			FbxAMatrix                         InvLocalBindPose;
 			uint16_t                           ParentIndex = NoParentBone;
+			bool                               HasChildren = false;
 		};
 
-		std::vector<CBoneExt> ExtBones; // Extended bone data
+		std::vector<CFbxBoneInfo> FbxBones; // Extended bone data
 		const FbxNode* pRootBone = nullptr;
 		const FbxAMatrix InvMeshWorldMatrix = pMesh->GetNode()->EvaluateGlobalTransform().Inverse();
 
@@ -701,7 +715,7 @@ public:
 			const FbxSkin* pSkin = static_cast<FbxSkin*>(pMesh->GetDeformer(s, FbxDeformer::eSkin));
 			const auto ClusterCount = pSkin->GetClusterCount();
 
-			ExtBones.reserve(ExtBones.size() + ClusterCount);
+			FbxBones.reserve(FbxBones.size() + ClusterCount);
 
 			for (int c = 0; c < ClusterCount; ++c)
 			{
@@ -716,13 +730,12 @@ public:
 				//const auto Mode = pCluster->GetLinkMode();
 				//pCluster->GetTransformMatrix() - is always equal to pMesh->GetNode()->EvaluateGlobalTransform()?
 
-				ExtBones.push_back({});
-				ExtBones.back().pBone = pBone;
-				ExtBones.back().Depth = GetFbxNodeDepth(pBone);
+				FbxBones.push_back({});
+				FbxBones.back().pBone = pBone;
 
 				FbxAMatrix WorldBoneMatrix;
 				pCluster->GetTransformLinkMatrix(WorldBoneMatrix);
-				ExtBones.back().InvLocalBindPose = (InvMeshWorldMatrix * WorldBoneMatrix).Inverse();
+				FbxBones.back().InvLocalBindPose = (InvMeshWorldMatrix * WorldBoneMatrix).Inverse();
 
 				const int IndexCount = pCluster->GetControlPointIndicesCount();
 				const int* pIndices = pCluster->GetControlPointIndices();
@@ -733,7 +746,7 @@ public:
 				pRootBone = pRootBone ? FindLastCommonFbxNode(pRootBone, pBone) : pBone;
 
 				// Gather bone influences and additional info
-				auto& Weights = ExtBones.back().WeightByControlPoint;
+				auto& Weights = FbxBones.back().WeightByControlPoint;
 				Weights.reserve(IndexCount);
 				for (int ControlPtIdx = 0; ControlPtIdx < IndexCount; ++ControlPtIdx)
 				{
@@ -750,74 +763,73 @@ public:
 		std::vector<CBone> Bones;
 		if (pRootBone)
 		{
-			const size_t RootDepth = GetFbxNodeDepth(pRootBone);
+			// Fill depth relative to the root and mark nodes outside a pRootBone hierarchy
+			for (auto& BoneInfo : FbxBones)
+				if (!IsInHierarchy(BoneInfo.pBone, pRootBone, &BoneInfo.Depth))
+					BoneInfo.pBone = nullptr;
 
-			// Discard bones aside an active hierarchy root, they have no influence on vertices
-			const size_t PrevSize = ExtBones.size();
-			ExtBones.erase(std::remove_if(ExtBones.begin(), ExtBones.end(), [RootDepth, pRootBone](const auto& ExtBone)
-			{
-				return (ExtBone.Depth < RootDepth) || (ExtBone.Depth == RootDepth && ExtBone.pBone != pRootBone);
-			}), ExtBones.end());
+			// Filter out bones outside a hierarchy
+			size_t PrevSize = FbxBones.size();
+			FbxBones.erase(std::remove_if(FbxBones.begin(), FbxBones.end(), [](const auto& Elm) { return !Elm.pBone; }), FbxBones.end());
+			if (FbxBones.size() < PrevSize)
+				Ctx.Log.LogInfo(std::string("Mesh ") + pMesh->GetName() + " - " + std::to_string(PrevSize - FbxBones.size()) + " bones aside an active hierarchy are discarded");
 
-			if (ExtBones.size() < PrevSize)
-				Ctx.Log.LogInfo(std::string("Mesh ") + pMesh->GetName() + " - " + std::to_string(PrevSize - ExtBones.size()) + " aside an active hierarchy are discarded");
-
-			// Order bones by increasing depth
-			{
-				std::vector<size_t> Order(ExtBones.size());
-				std::iota(Order.begin(), Order.end(), 0);
-				std::sort(Order.begin(), Order.end(), [&ExtBones](size_t a, size_t b)
-				{
-					const auto DepthA = ExtBones[a].Depth;
-					const auto DepthB = ExtBones[b].Depth;
-					return (DepthA < DepthB) || (DepthA == DepthB && a < b);
-				});
-				apply_permutation(ExtBones, Order);
-			}
+			// Order active bones by increasing depth
+			std::stable_sort(FbxBones.begin(), FbxBones.end(), [](const auto& a, const auto& b) { return a.Depth < b.Depth; });
 
 			// Establish parent-child links
-			auto ItDepthStart = ExtBones.begin();
-			for (auto It = ExtBones.begin() + 1; It != ExtBones.end(); ++It)
+			auto ItParentsStart = FbxBones.begin();
+			auto ItParentsEnd = FbxBones.begin() + 1;
+			for (auto It = FbxBones.begin() + 1; It != FbxBones.end(); ++It)
 			{
 				// Find range of our possible parents by depth value
 				const auto ParentDepth = It->Depth - 1;
-				if (ItDepthStart->Depth < ParentDepth)
-					ItDepthStart = std::lower_bound(ItDepthStart + 1, It, ParentDepth,
-						[](const auto& ExtBone, size_t Value) { return ExtBone.Depth < Value; });
+				if (ItParentsStart->Depth < ParentDepth)
+				{
+					ItParentsStart = std::lower_bound(ItParentsStart + 1, It, ParentDepth,
+						[](const auto& BoneInfo, size_t Value) { return BoneInfo.Depth < Value; });
+					ItParentsEnd = It;
+				}
 
 				// Try to find a parent in range
 				const FbxNode* pParentNode = It->pBone->GetParent();
-				const auto ItParent = std::find_if(ItDepthStart, It, [pParentNode](const auto& Pair)
+				const auto ItParent = std::find_if(ItParentsStart, ItParentsEnd, [pParentNode](const auto& Pair)
 				{
 					return Pair.pBone == pParentNode;
 				});
-				if (ItParent == ExtBones.end())
-				{
-					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + It->pBone->GetName() + " parent not found, skin may be broken");
-					continue;
-				}
 
-				It->ParentIndex = static_cast<uint16_t>(std::distance(ExtBones.begin(), ItParent));
+				if (ItParent == ItParentsEnd)
+					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + It->pBone->GetName() + " parent not found, skin may be broken");
+				else
+				{
+					It->ParentIndex = static_cast<uint16_t>(std::distance(FbxBones.begin(), ItParent));
+					ItParent->HasChildren = true;
+				}
 			}
 
-			// Transfer parent indices into CBone array and use an opportunity to check bone names
-			Bones.resize(ExtBones.size());
-			std::set<std::string> BoneNames;
-			for (size_t i = 0; i < ExtBones.size(); ++i)
-			{
-				const FbxNode* pBoneNode = ExtBones[i].pBone;
+			// Filter out leaf bones without influence
+			PrevSize = FbxBones.size();
+			FbxBones.erase(std::remove_if(FbxBones.begin(), FbxBones.end(), [](const auto& Elm) { return !Elm.HasChildren && Elm.WeightByControlPoint.empty(); }), FbxBones.end());
+			if (FbxBones.size() < PrevSize)
+				Ctx.Log.LogInfo(std::string("Mesh ") + pMesh->GetName() + " - " + std::to_string(PrevSize - FbxBones.size()) + " non-influencing leaf bones are discarded");
 
-				auto& Bone = Bones[i];
-				Bone.ID = GetValidNodeName(pBoneNode->GetName());
-				Bone.ParentBoneIndex = ExtBones[i].ParentIndex;
+			// Transfer parent indices into CBone array and use an opportunity to check bone names
+			Bones.reserve(FbxBones.size());
+			std::set<std::string> BoneNames;
+			for (const auto& BoneInfo : FbxBones)
+			{
+				Bones.push_back({});
+				auto& Bone = Bones.back();
+				Bone.ID = GetValidNodeName(BoneInfo.pBone->GetName());
+				Bone.ParentBoneIndex = BoneInfo.ParentIndex;
 
 				// Save matrix (both DEM and FBX SDK use column-major)
-				const auto& InvLocalBindPose = ExtBones[i].InvLocalBindPose;
+				const auto& InvLocalBindPose = BoneInfo.InvLocalBindPose;
 				for (int Col = 0; Col < 4; ++Col)
 					for (int Row = 0; Row < 4; ++Row)
-						Bones.back().InvLocalBindPose[Col * 4 + Row] = static_cast<float>(InvLocalBindPose[Col][Row]);
+						Bone.InvLocalBindPose[Col * 4 + Row] = static_cast<float>(InvLocalBindPose[Col][Row]);
 
-				//???merge bones instead, at least if encountered inside the same skin?
+				// Also detects the case if GetValidNodeName returns the same for different nodes
 				if (BoneNames.find(Bone.ID) != BoneNames.cend())
 					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + Bone.ID + " occurs more than once, skin may be broken");
 				else
@@ -829,7 +841,6 @@ public:
 		else if (SkinCount)
 		{
 			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bones have no common root node, skin discarded as it may be broken");
-			ExtBones.clear();
 		}
 
 		// Collect vertices for each material separately (split mesh to groups)
@@ -922,10 +933,10 @@ public:
 				if (VertexFormat.BlendWeightSize != 8 && VertexFormat.BlendWeightSize != 32)
 					Ctx.Log.LogWarning("Unsupported blend weight size, defaulting to full-precision floats (32). Supported values are 8/32.");
 
-				for (size_t BoneIndex = 0; BoneIndex < ExtBones.size(); ++BoneIndex)
+				for (size_t BoneIndex = 0; BoneIndex < FbxBones.size(); ++BoneIndex)
 				{
 					// Check if this bone influences the current vertex (control point)
-					const auto& Weights = ExtBones[BoneIndex].WeightByControlPoint;
+					const auto& Weights = FbxBones[BoneIndex].WeightByControlPoint;
 					auto WeightIt = std::lower_bound(Weights.cbegin(), Weights.cend(), ControlPointIndex,
 						[](const auto& Elm, int Value) { return Elm.first < Value; });
 					if (WeightIt == Weights.cend() || WeightIt->first != ControlPointIndex) continue;
@@ -950,7 +961,7 @@ public:
 						}
 
 						// The least influencing bone loses a vertex
-						--ExtBones[Vertex.BlendIndices[BoneOrderNumber]].AffectedVertexCount;
+						--FbxBones[Vertex.BlendIndices[BoneOrderNumber]].AffectedVertexCount;
 					}
 					else
 					{
@@ -967,7 +978,7 @@ public:
 					else
 						reinterpret_cast<uint8_t*>(&Vertex.BlendWeights8)[3 - BoneOrderNumber] = NormalizedFloatToByte(Weight);
 
-					++ExtBones[BoneIndex].AffectedVertexCount;
+					++FbxBones[BoneIndex].AffectedVertexCount;
 				}
 
 				constexpr bool RenormalizeWeights = true;
@@ -981,8 +992,10 @@ public:
 		// Check that all active bones influence at least one vertex
 		// TODO: if validation failed, should implement recursive removal of unnecessary leaf bones, fixing vertex blend indices
 		// NB: some vertices may be counted multiple times for now
-		for (const auto& ExtBone : ExtBones)
-			assert(ExtBone.WeightByControlPoint.empty() || ExtBone.AffectedVertexCount > 0);
+		for (const auto& BoneInfo : FbxBones)
+			assert(BoneInfo.WeightByControlPoint.empty() || BoneInfo.AffectedVertexCount > 0);
+
+		std::swap(FbxBones, std::vector<CFbxBoneInfo>{});
 
 		// Index and optimize vertices
 
