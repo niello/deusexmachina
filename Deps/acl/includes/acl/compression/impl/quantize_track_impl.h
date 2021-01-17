@@ -83,7 +83,6 @@ namespace acl
 
 			const track& ref_track = (*context.reference_list)[track_index];
 			track_vector4f& mut_track = track_cast<track_vector4f>(context.track_list[track_index]);
-			ACL_ASSERT(mut_track.is_owner(), "Track must be writable");
 
 			const vector4f precision = vector_load1(&mut_track.get_description().precision);
 			const uint32_t ref_element_size = ref_track.get_sample_size();
@@ -93,7 +92,12 @@ namespace acl
 			const vector4f range_min = range.get_min();
 			const vector4f range_extent = range.get_extent();
 
-			vector4f raw_sample = vector_zero();
+			const vector4f zero = vector_zero();
+			const mask4i all_true_mask = mask_set(true, true, true, true);
+			mask4i sample_mask = mask_set(false, false, false, false);
+			std::memcpy(&sample_mask, &all_true_mask, ref_element_size);
+
+			vector4f raw_sample = zero;
 			uint8_t best_bit_rate = k_highest_bit_rate;	// Default to raw if we fail to find something better
 
 			// First we look for the best bit rate possible that keeps us within our precision target
@@ -116,7 +120,8 @@ namespace acl
 					const vector4f decayed_sample = vector_mul_add(decayed_normalized_sample, range_extent, range_min);
 
 					const vector4f delta = vector_abs(vector_sub(raw_sample, decayed_sample));
-					if (!vector_all_less_equal(delta, precision))
+					const vector4f masked_delta = vector_select(sample_mask, delta, zero);
+					if (!vector_all_less_equal(masked_delta, precision))
 					{
 						is_error_to_high = true;
 						break;

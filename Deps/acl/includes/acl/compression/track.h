@@ -111,10 +111,8 @@ namespace acl
 		// Returns a pointer to an untyped sample at the specified index.
 		void* operator[](uint32_t index)
 		{
-			// If we have an allocator, we own the memory and mutable pointers are allowed
-			ACL_ASSERT(is_owner(), "Mutable reference not allowed, create a copy instead");
 			ACL_ASSERT(index < m_num_samples, "Invalid sample index. %u >= %u", index, m_num_samples);
-			return m_allocator ? m_data + (index * m_stride) : nullptr;
+			return m_data + (index * m_stride);
 		}
 
 		//////////////////////////////////////////////////////////////////////////
@@ -138,7 +136,7 @@ namespace acl
 		uint32_t get_num_samples() const { return m_num_samples; }
 
 		//////////////////////////////////////////////////////////////////////////
-		// Returns the stride in bytes in between samples as layed out in memory.
+		// Returns the stride in bytes in between samples as laid out in memory.
 		// This is always sizeof(sample_type) unless the memory isn't owned internally.
 		uint32_t get_stride() const { return m_stride; }
 
@@ -266,6 +264,7 @@ namespace acl
 			out_track.m_sample_rate = m_sample_rate;
 			out_track.m_type = m_type;
 			out_track.m_category = m_category;
+			out_track.m_sample_size = m_sample_size;
 			out_track.m_desc = m_desc;
 
 			std::memcpy(out_track.m_data, m_data, m_data_size);
@@ -283,6 +282,7 @@ namespace acl
 			out_track.m_sample_rate = m_sample_rate;
 			out_track.m_type = m_type;
 			out_track.m_category = m_category;
+			out_track.m_sample_size = m_sample_size;
 			out_track.m_desc = m_desc;
 		}
 
@@ -359,10 +359,8 @@ namespace acl
 		// invalid reference will be returned, leading to a crash.
 		sample_type& operator[](uint32_t index)
 		{
-			// If we have an allocator, we own the memory and mutable references are allowed
-			ACL_ASSERT(is_owner(), "Mutable reference not allowed, create a copy instead");
 			ACL_ASSERT(index < m_num_samples, "Invalid sample index. %u >= %u", index, m_num_samples);
-			return m_allocator ? *reinterpret_cast<sample_type*>(m_data + (index * m_stride)) : *reinterpret_cast<sample_type*>(0x42);
+			return *reinterpret_cast<sample_type*>(m_data + (index * m_stride));
 		}
 
 		//////////////////////////////////////////////////////////////////////////
@@ -431,7 +429,7 @@ namespace acl
 			// Copy the data manually to avoid preserving the stride
 			sample_type* data_copy = reinterpret_cast<sample_type*>(allocator.allocate(data_size));
 			for (uint32_t index = 0; index < num_samples; ++index)
-				data_copy[index] = *reinterpret_cast<sample_type*>(data_raw + (index * stride));
+				data_copy[index] = *reinterpret_cast<const sample_type*>(data_raw + (index * stride));
 
 			return track_typed<track_type_>(&allocator, reinterpret_cast<uint8_t*>(data_copy), num_samples, sizeof(sample_type), data_size, sample_rate, desc);
 		}

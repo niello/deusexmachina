@@ -398,7 +398,7 @@ namespace acl
 
 			const RotationFormat8 rotation_format = m_settings.get_rotation_format(header.rotation_format);
 			const VectorFormat8 translation_format = m_settings.get_translation_format(header.translation_format);
-			const VectorFormat8 scale_format = m_settings.get_translation_format(header.scale_format);
+			const VectorFormat8 scale_format = m_settings.get_scale_format(header.scale_format);
 
 #if defined(ACL_HAS_ASSERT_CHECKS)
 			const RangeReductionFlags8 clip_range_reduction = m_settings.get_clip_range_reduction(header.clip_range_reduction);
@@ -636,7 +636,7 @@ namespace acl
 
 			const RotationFormat8 rotation_format = m_settings.get_rotation_format(header.rotation_format);
 			const VectorFormat8 translation_format = m_settings.get_translation_format(header.translation_format);
-			const VectorFormat8 scale_format = m_settings.get_translation_format(header.scale_format);
+			const VectorFormat8 scale_format = m_settings.get_scale_format(header.scale_format);
 
 			const bool are_all_tracks_variable = is_rotation_format_variable(rotation_format) && is_vector_format_variable(translation_format) && is_vector_format_variable(scale_format);
 			const bool has_mixed_padding_or_fixed_quantization = (m_settings.supports_mixed_packing() && m_context.has_mixed_packing) || !are_all_tracks_variable;
@@ -689,11 +689,12 @@ namespace acl
 						num_constant_translations += count_set_bits(constant_value & translation_track_bit_mask);
 						num_constant_scales += count_set_bits(constant_value & scale_track_bit_mask);
 
-						// Because the number of tracks in a 32bit word isn't a multiple of the number of tracks we have (3),
-						// we have to rotate the masks left
-						rotation_track_bit_mask = rotate_bits_left(rotation_track_bit_mask, 2);
-						translation_track_bit_mask = rotate_bits_left(translation_track_bit_mask, 2);
-						scale_track_bit_mask = rotate_bits_left(scale_track_bit_mask, 2);
+						// Because the number of tracks in a 32 bit value isn't a multiple of the number of tracks we have (3),
+						// we have to cycle the masks. There are 3 possible masks, just swap them.
+						const uint32_t old_rotation_track_bit_mask = rotation_track_bit_mask;
+						rotation_track_bit_mask = translation_track_bit_mask;
+						translation_track_bit_mask = scale_track_bit_mask;
+						scale_track_bit_mask = old_rotation_track_bit_mask;
 					}
 
 					const uint32_t remaining_tracks = track_index % 32;

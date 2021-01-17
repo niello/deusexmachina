@@ -90,11 +90,16 @@ namespace acl
 			if (error_result.any())
 				return error_result;
 
+			if (clip.get_num_samples() > 50000U)
+				return ErrorResult("ACL only supports up to 50000 samples");
+
 			// Disable floating point exceptions during compression because we leverage all SIMD lanes
 			// and we might intentionally divide by zero, etc.
 			scope_disable_fp_exceptions fp_off;
 
+#if defined(SJSON_CPP_WRITER)
 			ScopeProfiler compression_time;
+#endif
 
 			const uint32_t num_samples = clip.get_num_samples();
 			const RigidSkeleton& skeleton = clip.get_skeleton();
@@ -218,6 +223,7 @@ namespace acl
 			buffer_size += 15;
 
 			uint8_t* buffer = allocate_type_array_aligned<uint8_t>(allocator, buffer_size, 16);
+			std::memset(buffer, 0, buffer_size);
 
 			CompressedClip* compressed_clip = make_compressed_clip(buffer, buffer_size, AlgorithmType8::UniformlySampled);
 
@@ -264,9 +270,9 @@ namespace acl
 
 			finalize_compressed_clip(*compressed_clip);
 
+#if defined(SJSON_CPP_WRITER)
 			compression_time.stop();
 
-#if defined(SJSON_CPP_WRITER)
 			if (out_stats.logging != StatLogging::None)
 				write_stats(allocator, clip, clip_context, skeleton, *compressed_clip, settings, header, raw_clip_context, additive_base_clip_context, compression_time, out_stats);
 #endif

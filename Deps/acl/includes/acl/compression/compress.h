@@ -80,7 +80,9 @@ namespace acl
 		// and we might intentionally divide by zero, etc.
 		scope_disable_fp_exceptions fp_off;
 
+#if defined(SJSON_CPP_WRITER)
 		ScopeProfiler compression_time;
+#endif
 
 		track_list_context context;
 		initialize_context(allocator, track_list, context);
@@ -96,7 +98,7 @@ namespace acl
 		const uint32_t range_values_size = write_track_range_values(context, nullptr);
 		const uint32_t animated_num_bits = write_track_animated_values(context, nullptr);
 		const uint32_t animated_values_size = (animated_num_bits + 7) / 8;		// Round up to nearest byte
-		const uint32_t num_bits_per_frame = animated_num_bits / context.num_samples;
+		const uint32_t num_bits_per_frame = context.num_samples != 0 ? (animated_num_bits / context.num_samples) : 0;
 
 		uint32_t buffer_size = 0;
 		buffer_size += sizeof(compressed_tracks);								// Headers
@@ -162,9 +164,9 @@ namespace acl
 		buffer_header->size = buffer_size;
 		buffer_header->hash = hash32(safe_ptr_cast<const uint8_t>(header), buffer_size - sizeof(raw_buffer_header));	// Hash everything but the raw buffer header
 
+#if defined(SJSON_CPP_WRITER)
 		compression_time.stop();
 
-#if defined(SJSON_CPP_WRITER)
 		if (out_stats.logging != StatLogging::None)
 			write_compression_stats(context, *out_compressed_tracks, compression_time, out_stats);
 #endif
