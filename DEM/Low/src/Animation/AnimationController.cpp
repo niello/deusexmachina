@@ -109,7 +109,9 @@ void CAnimationController::EvaluatePose(IPoseOutput& Output)
 
 	//!!!DBG TMP!
 	//pseudo root motion processing
-	Output.SetTranslation(0, vector3::Zero);
+	//???diff from ref pose? can also be from the first frame of the animation, but that complicates things
+	//???precalculate something in tools to simplify processing here? is possible?
+	//Output.SetTranslation(0, vector3::Zero);
 }
 //---------------------------------------------------------------------
 

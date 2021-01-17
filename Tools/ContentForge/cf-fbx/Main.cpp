@@ -270,17 +270,21 @@ protected:
 
 	struct CContext
 	{
-		CThreadSafeLog&           Log;
+		CThreadSafeLog&     Log;
+		Data::CParams&      TaskParams;
 
-		acl::ANSIAllocator        ACLAllocator;
+		acl::ANSIAllocator  ACLAllocator;
 
-		fs::path                  ScenePath;
-		fs::path                  MeshPath;
-		fs::path                  SkinPath;
-		fs::path                  AnimPath;
-		fs::path                  CollisionPath;
-		std::string               TaskName;
-		Data::CParamsSorted       MaterialMap;
+		fs::path            ScenePath;
+		fs::path            MeshPath;
+		fs::path            SkinPath;
+		fs::path            AnimPath;
+		fs::path            CollisionPath;
+		std::string         TaskName;
+		Data::CParamsSorted MaterialMap;
+
+		std::string         LeftFootBoneName;
+		std::string         RightFootBoneName;
 
 		std::unordered_map<const FbxMesh*, CMeshAttrInfo> ProcessedMeshes;
 		std::unordered_map<const FbxMesh*, CSkinAttrInfo> ProcessedSkins;
@@ -423,7 +427,7 @@ public:
 		// Prepare task context
 
 		//!!!TODO: need flags, what to export! command-line override must be provided along with .meta params
-		CContext Ctx{ Task.Log };
+		CContext Ctx{ Task.Log, Task.Params };
 
 		Ctx.MaterialMap = ParamsUtils::OrderedParamsToSorted(ParamsUtils::GetParam<Data::CParams>(Task.Params, "Materials", {}));
 
@@ -454,6 +458,9 @@ public:
 		// blending info saved. Nodes are processed from the root recursively and each can have up to 3 tracks.
 		if (!Ctx.AnimPath.empty())
 		{
+			Ctx.LeftFootBoneName = ParamsUtils::GetParam(Task.Params, "LeftFootBoneName", std::string{});
+			Ctx.RightFootBoneName = ParamsUtils::GetParam(Task.Params, "RightFootBoneName", std::string{});
+
 			const int AnimationCount = pScene->GetSrcObjectCount<FbxAnimStack>();
 			for (int i = 0; i < AnimationCount; ++i)
 			{
@@ -1359,6 +1366,21 @@ public:
 			return true;
 		}
 
+		// Read animation clip settings
+
+		bool DiscardRootMotion = false;
+		bool IsLocomotionTrack = false;
+		const Data::CParams* pParams = nullptr;
+		if (ParamsUtils::TryGetParam(pParams, Ctx.TaskParams, "Animations"))
+		{
+			const Data::CParams* pClipParams = nullptr;
+			if (ParamsUtils::TryGetParam(pClipParams, *pParams, AnimName.c_str()))
+			{
+				DiscardRootMotion = ParamsUtils::GetParam(*pClipParams, "DiscardRootMotion", false);
+				IsLocomotionTrack = ParamsUtils::GetParam(*pClipParams, "IsLocomotionTrack", false);
+			}
+		}
+
 		// Create rigid skeletons and associate ACL bones with FbxNode instances
 
 		std::vector<CSkeletonACLBinding> Skeletons;
@@ -1396,20 +1418,48 @@ public:
 			for (size_t BoneIdx = 0; BoneIdx < Skeleton.Nodes.size(); ++BoneIdx)
 				NodeNames[BoneIdx] = GetValidNodeName(Skeleton.Nodes[BoneIdx]->GetName());
 
-			uint32_t SampleIndex = 0;
 			FbxTime FrameTime;
-			for (FbxLongLong Frame = StartFrame; Frame <= EndFrame; ++Frame, ++SampleIndex)
-			{
-				FrameTime.SetFrame(Frame, FbxTime::GetGlobalTimeMode());
+			float LocomotionSpeed = 0.f;
 
-				for (size_t BoneIdx = 0; BoneIdx < Skeleton.Nodes.size(); ++BoneIdx)
+			for (size_t BoneIdx = 0; BoneIdx < Skeleton.Nodes.size(); ++BoneIdx)
+			{
+				acl::AnimatedBone& Bone = Clip.get_animated_bone(static_cast<uint16_t>(BoneIdx));
+				FbxNode* pNode = Skeleton.Nodes[BoneIdx];
+
+				const bool IsRoot = (BoneIdx == 0);
+				const bool IsLeftFoot = IsLocomotionTrack && Ctx.LeftFootBoneName == pNode->GetName();
+				const bool IsRightFoot = !IsLeftFoot && IsLocomotionTrack && Ctx.RightFootBoneName == pNode->GetName();
+
+				uint32_t SampleIndex = 0;
+				for (FbxLongLong Frame = StartFrame; Frame <= EndFrame; ++Frame, ++SampleIndex)
 				{
-					const auto LocalTfm = Skeleton.Nodes[BoneIdx]->EvaluateLocalTransform(FrameTime);
+					//???can extract locomotion speed from root motion, if it exists?
+					if (IsRoot && DiscardRootMotion && SampleIndex > 0)
+					{
+						Bone.scale_track.set_sample(SampleIndex, Bone.scale_track.get_sample(0));
+						Bone.rotation_track.set_sample(SampleIndex, Bone.rotation_track.get_sample(0));
+						Bone.translation_track.set_sample(SampleIndex, Bone.translation_track.get_sample(0));
+						continue;
+					}
+
+					FrameTime.SetFrame(Frame, FbxTime::GetGlobalTimeMode());
+					const auto LocalTfm = pNode->EvaluateLocalTransform(FrameTime);
 					const auto Scaling = LocalTfm.GetS();
 					const auto Rotation = LocalTfm.GetQ();
 					const auto Translation = LocalTfm.GetT();
 
-					acl::AnimatedBone& Bone = Clip.get_animated_bone(static_cast<uint16_t>(BoneIdx));
+					if (IsLeftFoot)
+					{
+						// remember values for speed and phase calculation
+						int xxx = 0;
+					}
+
+					if (IsRightFoot)
+					{
+						// remember values for speed and phase calculation
+						int xxx = 0;
+					}
+
 					Bone.scale_track.set_sample(SampleIndex, { Scaling[0], Scaling[1], Scaling[2], 1.0 });
 					Bone.rotation_track.set_sample(SampleIndex, { Rotation[0], Rotation[1], Rotation[2], Rotation[3] });
 					Bone.translation_track.set_sample(SampleIndex, { Translation[0], Translation[1], Translation[2], 1.0 });
