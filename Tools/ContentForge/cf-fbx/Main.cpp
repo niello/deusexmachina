@@ -565,14 +565,17 @@ public:
 			}
 		}
 
-		if (!Attributes.empty())
-			NodeSection.emplace_back(sidAttrs, std::move(Attributes));
-
 		// Process transform
 
 		// Bone transformation is determined by the bind pose and animations
+		// TODO: use AutocreateBones when skeleton has no attachments?
 		if (!IsBone)
 			FillNodeTransform(Tfm, NodeSection);
+
+		// Write attributes after SRT for better readability
+
+		if (!Attributes.empty())
+			NodeSection.emplace_back(sidAttrs, std::move(Attributes));
 
 		// Process children
 
@@ -730,7 +733,6 @@ public:
 			size_t                             Depth = 0;
 			size_t                             AffectedVertexCount = 0;
 			std::vector<std::pair<int, float>> WeightByControlPoint; // Sorted by index for fast search
-			FbxAMatrix                         InvLocalBindPose;
 			uint16_t                           ParentIndex = NoParentBone;
 			bool                               HasChildren = false;
 			bool                               HasInfluence = false;
@@ -800,7 +802,7 @@ public:
 				const auto ParentDepth = It->Depth - 1;
 				if (ItParentsStart->Depth < ParentDepth)
 				{
-					ItParentsStart = std::lower_bound(ItParentsStart + 1, It, ParentDepth,
+					ItParentsStart = std::lower_bound(ItParentsEnd, It, ParentDepth,
 						[](const auto& BoneInfo, size_t Value) { return BoneInfo.Depth < Value; });
 					ItParentsEnd = It;
 				}
@@ -813,7 +815,9 @@ public:
 				});
 
 				if (ItParent == ItParentsEnd)
+				{
 					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + It->pCluster->GetLink()->GetName() + " parent not found, skin may be broken");
+				}
 				else
 				{
 					It->ParentIndex = static_cast<uint16_t>(std::distance(FbxBones.begin(), ItParent));
@@ -821,9 +825,23 @@ public:
 				}
 			}
 
-			// Filter out leaf bones without influence
+			// Filter out leaf bones without influence, shift parent indices
 			PrevSize = FbxBones.size();
-			FbxBones.erase(std::remove_if(FbxBones.begin(), FbxBones.end(), [](const auto& Elm) { return !Elm.HasChildren && !Elm.HasInfluence; }), FbxBones.end());
+			for (auto It = FbxBones.begin(); It != FbxBones.end(); /**/)
+			{
+				if (It->HasChildren || It->HasInfluence)
+				{
+					++It;
+				}
+				else
+				{
+					const uint16_t DeletedIdx = static_cast<uint16_t>(std::distance(FbxBones.begin(), It));
+					It = FbxBones.erase(It);
+					for (auto ItFix = It; ItFix != FbxBones.end(); ++ItFix)
+						if (ItFix->ParentIndex > DeletedIdx)
+							--ItFix->ParentIndex;
+				}
+			}
 			if (FbxBones.size() < PrevSize)
 				Ctx.Log.LogInfo(std::string("Mesh ") + pMesh->GetName() + " - " + std::to_string(PrevSize - FbxBones.size()) + " non-influencing leaf bones are discarded");
 
@@ -838,6 +856,8 @@ public:
 				Bone.ParentBoneIndex = BoneInfo.ParentIndex;
 
 				// Generate valid name and verify its uniqueness
+				//???separately check if the same FbxNode* occurs multiple times? Note that
+				//GetValidNodeName may return the same result for different nodes! 
 				Bone.ID = GetValidNodeName(BoneInfo.pCluster->GetLink()->GetName());
 				if (BoneNames.find(Bone.ID) != BoneNames.cend())
 					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + Bone.ID + " occurs more than once, skin may be broken");
@@ -846,17 +866,15 @@ public:
 
 				// TODO: pCluster->GetLinkMode() == FbxCluster::eAdditive, see ViewScene sample in a FBX SDK
 
-				// Calculate bind pose matrix
+				// Calculate bind pose matrix (both DEM and FBX SDK use column-major)
 				FbxAMatrix BoneWorldMatrix;
 				BoneInfo.pCluster->GetTransformLinkMatrix(BoneWorldMatrix);
-				BoneInfo.InvLocalBindPose = (InvMeshWorldMatrix * BoneWorldMatrix).Inverse();
-
-				// Save matrix (both DEM and FBX SDK use column-major)
-				const auto& InvLocalBindPose = BoneInfo.InvLocalBindPose;
+				FbxAMatrix InvLocalBindPose = (InvMeshWorldMatrix * BoneWorldMatrix).Inverse();
 				for (int Col = 0; Col < 4; ++Col)
 					for (int Row = 0; Row < 4; ++Row)
 						Bone.InvLocalBindPose[Col * 4 + Row] = static_cast<float>(InvLocalBindPose[Col][Row]);
 
+				// Gather bone weights per vertex (control point)
 				if (BoneInfo.HasInfluence)
 				{
 					const int IndexCount = BoneInfo.pCluster->GetControlPointIndicesCount();
