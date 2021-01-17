@@ -177,20 +177,22 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 		}
 		else if (VertexFormat.BlendWeightSize == 16)
 		{
-			if (VertexFormat.BonesPerVertex <= 2)
-				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_UInt16_2_Norm, 0, 0);
-			else
+			// FIXME: shader defaults missing components to (0, 0, 0, 1), making the last weight incorrect
+			//if (VertexFormat.BonesPerVertex <= 2)
+			//	WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_UInt16_2_Norm, 0, 0);
+			//else
 				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_UInt16_4_Norm, 0, 0);
 		}
 		else
 		{
-			if (VertexFormat.BonesPerVertex == 1)
-				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_1, 0, 0);
-			else if (VertexFormat.BonesPerVertex == 2)
-				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_2, 0, 0);
-			else if (VertexFormat.BonesPerVertex == 3)
-				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_3, 0, 0);
-			else
+			// FIXME: shader defaults missing components to (0, 0, 0, 1), making the last weight incorrect
+			//if (VertexFormat.BonesPerVertex == 1)
+			//	WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_1, 0, 0);
+			//else if (VertexFormat.BonesPerVertex == 2)
+			//	WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_2, 0, 0);
+			//else if (VertexFormat.BonesPerVertex == 3)
+			//	WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_3, 0, 0);
+			//else
 				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_4, 0, 0);
 		}
 	}
@@ -255,16 +257,23 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 				}
 
 				if (VertexFormat.BlendWeightSize == 8)
+				{
 					WriteStream<uint32_t>(File, Vertex.BlendWeights8);
+				}
 				else if (VertexFormat.BlendWeightSize == 16)
 				{
-					if (VertexFormat.BonesPerVertex <= 2)
-						File.write(reinterpret_cast<const char*>(Vertex.BlendWeights16), 2 * sizeof(uint16_t));
-					else
+					// FIXME: shader defaults missing components to (0, 0, 0, 1), making the last weight incorrect
+					//if (VertexFormat.BonesPerVertex <= 2)
+					//	File.write(reinterpret_cast<const char*>(Vertex.BlendWeights16), 2 * sizeof(uint16_t));
+					//else
 						File.write(reinterpret_cast<const char*>(Vertex.BlendWeights16), 4 * sizeof(uint16_t));
 				}
 				else
-					File.write(reinterpret_cast<const char*>(Vertex.BlendWeights32), VertexFormat.BonesPerVertex * sizeof(float));
+				{
+					// FIXME: shader defaults missing components to (0, 0, 0, 1), making the last weight incorrect
+					//File.write(reinterpret_cast<const char*>(Vertex.BlendWeights32), VertexFormat.BonesPerVertex * sizeof(float));
+					File.write(reinterpret_cast<const char*>(Vertex.BlendWeights32), 4 * sizeof(float));
+				}
 			}
 		}
 	}

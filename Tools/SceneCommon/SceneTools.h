@@ -44,9 +44,9 @@ struct CVertex
 	float2   UV[MaxUV];
 	size_t   BonesUsed = 0;
 	int      BlendIndices[MaxBonesPerVertex];
-	float    BlendWeights32[MaxBonesPerVertex];
-	uint16_t BlendWeights16[MaxBonesPerVertex];
-	uint32_t BlendWeights8; // 4x uint8_t packed
+	float    BlendWeights32[MaxBonesPerVertex] = { 0.f };
+	uint16_t BlendWeights16[MaxBonesPerVertex] = { 0 };
+	uint32_t BlendWeights8 = 0; // 4x uint8_t packed
 };
 
 struct CVertexFormat
