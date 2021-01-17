@@ -1369,7 +1369,7 @@ public:
 		// Read animation clip settings
 
 		bool DiscardRootMotion = false;
-		bool IsLocomotionTrack = false;
+		bool IsLocomotionClip = false;
 		const Data::CParams* pParams = nullptr;
 		if (ParamsUtils::TryGetParam(pParams, Ctx.TaskParams, "Animations"))
 		{
@@ -1377,7 +1377,7 @@ public:
 			if (ParamsUtils::TryGetParam(pClipParams, *pParams, AnimName.c_str()))
 			{
 				DiscardRootMotion = ParamsUtils::GetParam(*pClipParams, "DiscardRootMotion", false);
-				IsLocomotionTrack = ParamsUtils::GetParam(*pClipParams, "IsLocomotionTrack", false);
+				IsLocomotionClip = ParamsUtils::GetParam(*pClipParams, "IsLocomotionClip", false);
 			}
 		}
 
@@ -1420,6 +1420,9 @@ public:
 
 			FbxTime FrameTime;
 			double LocomotionSpeedFromRoot = 0.0;
+			std::vector<acl::Vector4_32> LeftFootPositions;
+			std::vector<acl::Vector4_32> RightFootPositions;
+			acl::Vector4_32 LeftFootForwardDir;
 
 			for (size_t BoneIdx = 0; BoneIdx < Skeleton.Nodes.size(); ++BoneIdx)
 			{
@@ -1427,8 +1430,11 @@ public:
 				FbxNode* pNode = Skeleton.Nodes[BoneIdx];
 
 				const bool IsRoot = (BoneIdx == 0);
-				const bool IsLeftFoot = IsLocomotionTrack && Ctx.LeftFootBoneName == pNode->GetName();
-				const bool IsRightFoot = !IsLeftFoot && IsLocomotionTrack && Ctx.RightFootBoneName == pNode->GetName();
+				const bool IsLeftFoot = IsLocomotionClip && Ctx.LeftFootBoneName == pNode->GetName();
+				const bool IsRightFoot = !IsLeftFoot && IsLocomotionClip && Ctx.RightFootBoneName == pNode->GetName();
+
+				if (IsLeftFoot) LeftFootPositions.resize(FrameCount);
+				if (IsRightFoot) RightFootPositions.resize(FrameCount);
 
 				uint32_t SampleIndex = 0;
 				for (FbxLongLong Frame = StartFrame; Frame <= EndFrame; ++Frame, ++SampleIndex)
@@ -1440,7 +1446,8 @@ public:
 						Bone.rotation_track.set_sample(SampleIndex, Bone.rotation_track.get_sample(0));
 						Bone.translation_track.set_sample(SampleIndex, Bone.translation_track.get_sample(0));
 
-						if (IsLocomotionTrack && Frame == EndFrame)
+						// Try to extract locomotion speed from the root motion
+						if (IsLocomotionClip && Frame == EndFrame)
 						{
 							FrameTime.SetFrame(Frame, FbxTime::GetGlobalTimeMode());
 							const auto T = pNode->EvaluateLocalTransform(FrameTime).GetT();
@@ -1453,29 +1460,53 @@ public:
 
 					FrameTime.SetFrame(Frame, FbxTime::GetGlobalTimeMode());
 					const auto LocalTfm = pNode->EvaluateLocalTransform(FrameTime);
-					const auto Scaling = LocalTfm.GetS();
-					const auto Rotation = LocalTfm.GetQ();
-					const auto Translation = LocalTfm.GetT();
+					const auto S = LocalTfm.GetS();
+					const auto R = LocalTfm.GetQ();
+					const auto T = LocalTfm.GetT();
 
-					if (IsLeftFoot)
-					{
-						// remember values for speed and phase calculation
-						int xxx = 0;
-					}
-					else if (IsRightFoot)
-					{
-						// remember values for speed and phase calculation
-						int xxx = 0;
-					}
+					Bone.scale_track.set_sample(SampleIndex, { S[0], S[1], S[2], 1.0 });
+					Bone.rotation_track.set_sample(SampleIndex, { R[0], R[1], R[2], R[3] });
+					Bone.translation_track.set_sample(SampleIndex, { T[0], T[1], T[2], 1.0 });
 
-					Bone.scale_track.set_sample(SampleIndex, { Scaling[0], Scaling[1], Scaling[2], 1.0 });
-					Bone.rotation_track.set_sample(SampleIndex, { Rotation[0], Rotation[1], Rotation[2], Rotation[3] });
-					Bone.translation_track.set_sample(SampleIndex, { Translation[0], Translation[1], Translation[2], 1.0 });
+					if (IsLeftFoot || IsRightFoot)
+					{
+						const auto GlobalTfm = pNode->EvaluateGlobalTransform(FrameTime);
+						const auto GT = GlobalTfm.GetT();
+						auto& FootPositions = IsLeftFoot ? LeftFootPositions : RightFootPositions;
+						FootPositions[SampleIndex] = { static_cast<float>(GT[0]), static_cast<float>(GT[1]), static_cast<float>(GT[2]), 1.0f };
+						if (IsLeftFoot && SampleIndex == 0)
+						{
+							const auto Dir = -GlobalTfm.GetColumn(2);
+							LeftFootForwardDir = { static_cast<float>(Dir[0]), static_cast<float>(Dir[1]), static_cast<float>(Dir[2]), 1.0f };
+						}
+					}
 				}
 			}
 
-			if (LocomotionSpeedFromRoot > 0.0)
-				Ctx.Log.LogInfo("Animation " + AnimName + " locomotion speed deduced from the root motion: " + std::to_string(LocomotionSpeedFromRoot));
+			if (IsLocomotionClip)
+			{
+				if (LocomotionSpeedFromRoot > 0.0)
+					Ctx.Log.LogInfo("Animation " + AnimName + " locomotion speed deduced from the root motion: " + std::to_string(LocomotionSpeedFromRoot));
+
+				if (!LeftFootPositions.empty() && !RightFootPositions.empty())
+				{
+					//!!!DBG TMP! need to store diffs? calc scalar immediately?
+					std::vector<acl::Vector4_32> Diffs(LeftFootPositions.size());
+					for (uint32_t SampleIndex = 0; SampleIndex < LeftFootPositions.size(); ++SampleIndex)
+					{
+						auto Diff = acl::vector_sub(LeftFootPositions[SampleIndex], RightFootPositions[SampleIndex]);
+						auto Dir = LeftFootForwardDir;
+						if (SampleIndex > 0 && !acl::vector_all_near_equal3(LeftFootPositions[SampleIndex], LeftFootPositions[SampleIndex - 1]))
+							Dir = acl::vector_sub(LeftFootPositions[SampleIndex], LeftFootPositions[SampleIndex - 1]);
+
+						//!!!TODO: project diff on dir! dot scalar is enough?
+
+						Diffs[SampleIndex] = Diff;
+					}
+
+					int xxx = 0;
+				}
+			}
 
 			const auto DestPath = Ctx.AnimPath / (AnimName + ".anm");
 			if (!WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, NodeNames, Ctx.Log)) return false;
