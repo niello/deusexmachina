@@ -79,19 +79,23 @@ void CAnimationBlender::EvaluatePose(IPoseOutput& Output)
 			{
 				const float Weight = std::min(SourceWeight, 1.f - RotationWeights);
 
-				// TODO: check this hardcore stuff for multiple quaternion blending:
-				// https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20070017872.pdf
-				// Impl: http://wiki.unity3d.com/index.php/Averaging_Quaternions_and_Vectors
-				// Impl: https://github.com/christophhagen/averaging-quaternions/blob/master/averageQuaternions.py
+				quaternion Q;
+				Q.x = CurrTfm.Rotation.x * Weight;
+				Q.y = CurrTfm.Rotation.y * Weight;
+				Q.z = CurrTfm.Rotation.z * Weight;
+				Q.w = CurrTfm.Rotation.w * Weight;
+
 				if (FinalMask & ETransformChannel::Rotation)
 				{
-					quaternion Q;
-					Q.slerp(quaternion::Identity, CurrTfm.Rotation, Weight);
-					FinalTfm.Rotation *= Q;
+					// Blend with shortest arc, based on a 4D dot product sign
+					if (Q.x * FinalTfm.Rotation.x + Q.y * FinalTfm.Rotation.y + Q.z * FinalTfm.Rotation.z + Q.w * FinalTfm.Rotation.w < 0.f)
+						FinalTfm.Rotation -= Q;
+					else
+						FinalTfm.Rotation += Q;
 				}
 				else
 				{
-					FinalTfm.Rotation.slerp(quaternion::Identity, CurrTfm.Rotation, Weight);
+					FinalTfm.Rotation = Q;
 				}
 
 				FinalMask |= ETransformChannel::Rotation;
