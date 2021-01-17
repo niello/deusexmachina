@@ -724,6 +724,7 @@ public:
 			bool                               HasInfluence = false;
 		};
 
+		// TODO: merge skins with the same root? many meshes can share one skin!
 		std::vector<CFbxBoneInfo> FbxBones;
 		const FbxNode* pSkinRoot = nullptr;
 		bool HasSkinInfluence = false;
@@ -751,14 +752,7 @@ public:
 
 				FbxBones.push_back({});
 				FbxBones.back().pCluster = pCluster;
-
-				// Calculate bone depth on a hierarchy
-				const auto* pCurrNode = pBone;
-				while (pCurrNode)
-				{
-					++FbxBones.back().Depth;
-					pCurrNode = pCurrNode->GetParent();
-				}
+				FbxBones.back().Depth = GetFbxNodeDepth(pBone);
 
 				// We must find the last common node for all influencing bones to build valid skin from there
 				if (pCluster->GetControlPointIndices() &&
@@ -811,7 +805,7 @@ public:
 				if (It->HasInfluence && It->ParentIndex != NoParentBone)
 					FbxBones[It->ParentIndex].HasInfluence = true;
 
-			// Filter out leaf bones without influence, shift parent indices
+			// Filter out bones without influence, shift parent indices
 			const size_t PrevSize = FbxBones.size();
 			for (auto It = FbxBones.begin(); It != FbxBones.end(); /**/)
 			{
@@ -942,7 +936,7 @@ public:
 				const auto VertexIndex = static_cast<unsigned int>(Vertices.size());
 				const auto ControlPointIndex = pMesh->GetPolygonVertex(p, v);
 
-				CVertex Vertex{};
+				CVertex Vertex;
 
 				// NB: we need float3 positions for meshopt_optimizeOverdraw
 				Vertex.Position = FbxToDEMVec3(pControlPoints[ControlPointIndex]);
