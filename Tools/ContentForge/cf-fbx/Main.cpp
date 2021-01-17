@@ -274,6 +274,7 @@ protected:
 
 		acl::ANSIAllocator        ACLAllocator;
 
+		fs::path                  ScenePath;
 		fs::path                  MeshPath;
 		fs::path                  SkinPath;
 		fs::path                  AnimPath;
@@ -428,8 +429,7 @@ public:
 
 		Ctx.TaskName = Task.TaskID.CStr();
 
-		fs::path OutPath = GetPath(Task.Params, "Output");
-
+		Ctx.ScenePath = GetPath(Task.Params, "Output");
 		Ctx.MeshPath = GetPath(Task.Params, "MeshOutput");
 		Ctx.SkinPath = GetPath(Task.Params, "SkinOutput");
 		Ctx.AnimPath = GetPath(Task.Params, "AnimOutput");
@@ -472,8 +472,10 @@ public:
 
 		// Finalize and save the scene
 
-		const bool Result = WriteDEMScene(GetPath(Task.Params, "Output"), Task.TaskID.ToString(), std::move(Nodes), _SceneSchemes, Task.Params,
-			_OutputHRD, _OutputBin, Task.Log);
+		bool Result = true;
+		if (!Ctx.ScenePath.empty())
+			Result = WriteDEMScene(Ctx.ScenePath, Task.TaskID.ToString(), std::move(Nodes), _SceneSchemes, Task.Params,
+				_OutputHRD, _OutputBin, Task.Log);
 		return Result ? ETaskResult::Success : ETaskResult::Failure;
 	}
 
@@ -1313,6 +1315,9 @@ public:
 			AnimName = AnimName.substr(DlmPos + 1);
 
 		AnimName = GetValidResourceName(AnimName);
+
+		if (Ctx.ScenePath.empty() && pScene->GetSrcObjectCount<FbxAnimStack>() == 1 && (AnimName.empty() || AnimName == "mixamo_com"))
+			AnimName = Ctx.TaskName;
 
 		const auto LayerCount = pAnimStack->GetMemberCount<FbxAnimLayer>();
 		if (LayerCount <= 0)
