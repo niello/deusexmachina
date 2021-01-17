@@ -1,6 +1,7 @@
 #include "AnimationController.h"
 #include <Animation/Graph/AnimGraphNode.h>
 #include <Animation/SkeletonInfo.h>
+#include <Animation/PoseOutput.h>
 
 namespace DEM::Anim
 {
@@ -105,6 +106,10 @@ void CAnimationController::EvaluatePose(IPoseOutput& Output)
 {
 	if (_GraphRoot) _GraphRoot->EvaluatePose(Output);
 	//???else (if no _GraphRoot) leave as is or reset to refpose?
+
+	//!!!DBG TMP!
+	//pseudo root motion processing
+	Output.SetTranslation(0, vector3::Zero);
 }
 //---------------------------------------------------------------------
 
