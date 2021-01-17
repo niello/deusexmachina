@@ -131,19 +131,6 @@ static size_t GetFbxNodeDepth(const FbxNode* pNode)
 }
 //---------------------------------------------------------------------
 
-static bool IsInHierarchy(const FbxNode* pNode, const FbxNode* pRoot, size_t* pOutDepth = nullptr)
-{
-	const auto* pCurrNode = pNode;
-	while (pCurrNode)
-	{
-		if (pCurrNode == pRoot) return true;
-		if (pOutDepth) ++(*pOutDepth);
-		pCurrNode = pCurrNode->GetParent();
-	}
-	return false;
-}
-//---------------------------------------------------------------------
-
 static const FbxNode* FindLastCommonFbxNode(const FbxNode* pNodeA, const FbxNode* pNodeB)
 {
 	std::vector<const FbxNode*> ChainA;
@@ -734,12 +721,12 @@ public:
 			size_t                             AffectedVertexCount = 0;
 			std::vector<std::pair<int, float>> WeightByControlPoint; // Sorted by index for fast search
 			uint16_t                           ParentIndex = NoParentBone;
-			bool                               HasChildren = false;
 			bool                               HasInfluence = false;
 		};
 
 		std::vector<CFbxBoneInfo> FbxBones;
-		const FbxNode* pRootBone = nullptr;
+		const FbxNode* pSkinRoot = nullptr;
+		bool HasSkinInfluence = false;
 
 		const int SkinCount = pMesh->GetDeformerCount(FbxDeformer::eSkin);
 		assert(SkinCount < 2); // TODO: check how it will work with multiple skins
@@ -760,8 +747,18 @@ public:
 					continue;
 				}
 
+				pSkinRoot = pSkinRoot ? FindLastCommonFbxNode(pSkinRoot, pBone) : pBone;
+
 				FbxBones.push_back({});
 				FbxBones.back().pCluster = pCluster;
+
+				// Calculate bone depth on a hierarchy
+				const auto* pCurrNode = pBone;
+				while (pCurrNode)
+				{
+					++FbxBones.back().Depth;
+					pCurrNode = pCurrNode->GetParent();
+				}
 
 				// We must find the last common node for all influencing bones to build valid skin from there
 				if (pCluster->GetControlPointIndices() &&
@@ -769,7 +766,7 @@ public:
 					pCluster->GetControlPointIndicesCount())
 				{
 					FbxBones.back().HasInfluence = true;
-					pRootBone = pRootBone ? FindLastCommonFbxNode(pRootBone, pBone) : pBone;
+					HasSkinInfluence = true;
 				}
 			}
 		}
@@ -777,19 +774,8 @@ public:
 		// Process and optimize collected skin data
 
 		std::vector<CBone> Bones;
-		if (pRootBone)
+		if (HasSkinInfluence)
 		{
-			// Fill depth relative to the root and mark nodes outside a pRootBone hierarchy
-			for (auto& BoneInfo : FbxBones)
-				if (!IsInHierarchy(BoneInfo.pCluster->GetLink(), pRootBone, &BoneInfo.Depth))
-					BoneInfo.pCluster = nullptr;
-
-			// Filter out bones outside a hierarchy
-			size_t PrevSize = FbxBones.size();
-			FbxBones.erase(std::remove_if(FbxBones.begin(), FbxBones.end(), [](const auto& Elm) { return !Elm.pCluster; }), FbxBones.end());
-			if (FbxBones.size() < PrevSize)
-				Ctx.Log.LogInfo(std::string("Mesh ") + pMesh->GetName() + " - " + std::to_string(PrevSize - FbxBones.size()) + " bones aside an active hierarchy are discarded");
-
 			// Order active bones by increasing depth
 			std::stable_sort(FbxBones.begin(), FbxBones.end(), [](const auto& a, const auto& b) { return a.Depth < b.Depth; });
 
@@ -815,21 +801,21 @@ public:
 				});
 
 				if (ItParent == ItParentsEnd)
-				{
 					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + It->pCluster->GetLink()->GetName() + " parent not found, skin may be broken");
-				}
 				else
-				{
 					It->ParentIndex = static_cast<uint16_t>(std::distance(FbxBones.begin(), ItParent));
-					ItParent->HasChildren = true;
-				}
 			}
 
+			// Mark branches with influencing bones
+			for (auto It = FbxBones.rbegin(); It != FbxBones.rend(); ++It)
+				if (It->HasInfluence && It->ParentIndex != NoParentBone)
+					FbxBones[It->ParentIndex].HasInfluence = true;
+
 			// Filter out leaf bones without influence, shift parent indices
-			PrevSize = FbxBones.size();
+			const size_t PrevSize = FbxBones.size();
 			for (auto It = FbxBones.begin(); It != FbxBones.end(); /**/)
 			{
-				if (It->HasChildren || It->HasInfluence)
+				if (It->HasInfluence)
 				{
 					++It;
 				}
@@ -875,12 +861,11 @@ public:
 						Bone.InvLocalBindPose[Col * 4 + Row] = static_cast<float>(InvLocalBindPose[Col][Row]);
 
 				// Gather bone weights per vertex (control point)
-				if (BoneInfo.HasInfluence)
+				const int IndexCount = BoneInfo.pCluster->GetControlPointIndicesCount();
+				if (BoneInfo.HasInfluence && IndexCount)
 				{
-					const int IndexCount = BoneInfo.pCluster->GetControlPointIndicesCount();
 					const int* pIndices = BoneInfo.pCluster->GetControlPointIndices();
 					const double* pWeights = BoneInfo.pCluster->GetControlPointWeights();
-
 					auto& Weights = BoneInfo.WeightByControlPoint;
 					Weights.reserve(IndexCount);
 					for (int ControlPtIdx = 0; ControlPtIdx < IndexCount; ++ControlPtIdx)
@@ -1132,11 +1117,11 @@ public:
 			// Calculate relative path from the skin node to the root joint
 
 			std::string RootSearchPath;
-			if (pMesh->GetNode() != pRootBone)
+			if (pMesh->GetNode() != pSkinRoot)
 			{
 				std::vector<std::string> CurrNodePath, SkeletonRootNodePath;
 				GetAbsoluteFbxNodePath(pMesh->GetNode(), CurrNodePath);
-				GetAbsoluteFbxNodePath(pRootBone, SkeletonRootNodePath);
+				GetAbsoluteFbxNodePath(pSkinRoot, SkeletonRootNodePath);
 				RootSearchPath = GetRelativeNodePath(std::move(CurrNodePath), std::move(SkeletonRootNodePath));
 			}
 
