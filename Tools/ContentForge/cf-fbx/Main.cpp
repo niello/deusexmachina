@@ -1419,7 +1419,7 @@ public:
 				NodeNames[BoneIdx] = GetValidNodeName(Skeleton.Nodes[BoneIdx]->GetName());
 
 			FbxTime FrameTime;
-			float LocomotionSpeed = 0.f;
+			double LocomotionSpeedFromRoot = 0.0;
 
 			for (size_t BoneIdx = 0; BoneIdx < Skeleton.Nodes.size(); ++BoneIdx)
 			{
@@ -1433,12 +1433,21 @@ public:
 				uint32_t SampleIndex = 0;
 				for (FbxLongLong Frame = StartFrame; Frame <= EndFrame; ++Frame, ++SampleIndex)
 				{
-					//???can extract locomotion speed from root motion, if it exists?
-					if (IsRoot && DiscardRootMotion && SampleIndex > 0)
+					if (IsRoot && DiscardRootMotion && Frame > StartFrame)
 					{
+						// All root transforms will be as in the first frame
 						Bone.scale_track.set_sample(SampleIndex, Bone.scale_track.get_sample(0));
 						Bone.rotation_track.set_sample(SampleIndex, Bone.rotation_track.get_sample(0));
 						Bone.translation_track.set_sample(SampleIndex, Bone.translation_track.get_sample(0));
+
+						if (IsLocomotionTrack && Frame == EndFrame)
+						{
+							FrameTime.SetFrame(Frame, FbxTime::GetGlobalTimeMode());
+							const auto T = pNode->EvaluateLocalTransform(FrameTime).GetT();
+							const acl::Vector4_64 Translation = { T[0], T[1], T[2], 1.0 };
+							LocomotionSpeedFromRoot = acl::vector_distance3(Translation, Bone.translation_track.get_sample(0));
+						}
+
 						continue;
 					}
 
@@ -1453,8 +1462,7 @@ public:
 						// remember values for speed and phase calculation
 						int xxx = 0;
 					}
-
-					if (IsRightFoot)
+					else if (IsRightFoot)
 					{
 						// remember values for speed and phase calculation
 						int xxx = 0;
@@ -1465,6 +1473,9 @@ public:
 					Bone.translation_track.set_sample(SampleIndex, { Translation[0], Translation[1], Translation[2], 1.0 });
 				}
 			}
+
+			if (LocomotionSpeedFromRoot > 0.0)
+				Ctx.Log.LogInfo("Animation " + AnimName + " locomotion speed deduced from the root motion: " + std::to_string(LocomotionSpeedFromRoot));
 
 			const auto DestPath = Ctx.AnimPath / (AnimName + ".anm");
 			if (!WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, NodeNames, Ctx.Log)) return false;
