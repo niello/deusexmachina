@@ -35,7 +35,7 @@ std::string GetRelativeNodePath(std::vector<std::string>&& From, std::vector<std
 		RelPath += '^';
 	}
 
-	To.erase(To.begin());
+	if (!To.empty()) To.erase(To.begin());
 	for (auto It = To.crbegin(); It != To.crend(); ++It)
 	{
 		if (!RelPath.empty()) RelPath += '.';

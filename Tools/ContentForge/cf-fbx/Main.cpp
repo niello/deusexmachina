@@ -75,6 +75,38 @@ static inline float4 FbxToDEMVec4(const FbxDouble4& Value)
 }
 //---------------------------------------------------------------------
 
+static inline FbxAMatrix GetFbxNodeGeometricTransform(FbxNode* pNode)
+{
+	return FbxAMatrix(pNode->GetGeometricTranslation(FbxNode::eSourcePivot),
+		pNode->GetGeometricRotation(FbxNode::eSourcePivot),
+		pNode->GetGeometricScaling(FbxNode::eSourcePivot));
+}
+//---------------------------------------------------------------------
+
+static FbxAMatrix GetFbxNodeGlobalPosition(FbxNode* pNode, FbxPose* pPose)
+{
+	if (pPose)
+	{
+		const int NodeIndex = pPose->Find(pNode);
+
+		if (NodeIndex > -1)
+		{
+			const FbxMatrix& PoseMatrix = pPose->GetMatrix(NodeIndex);
+			FbxAMatrix Result;
+			memcpy((double*)Result.mData, (const double*)PoseMatrix.mData, 16 * sizeof(double));
+
+			// The bind pose is always a global matrix, but the rest pose may not be
+			if (!pPose->IsBindPose() && pPose->IsLocalMatrix(NodeIndex) && pNode->GetParent())
+				Result = GetFbxNodeGlobalPosition(pNode->GetParent(), pPose) * Result;
+
+			return Result;
+		}
+	}
+
+	return pNode->EvaluateGlobalTransform();
+}
+//---------------------------------------------------------------------
+
 static void GetAbsoluteFbxNodePath(const FbxNode* pNode, std::vector<std::string>& OutPath)
 {
 	const auto* pCurrNode = pNode;
@@ -690,26 +722,25 @@ public:
 
 		// TODO: process blend shapes!
 
-		// Process mesh skin, one for all submeshes
+		// Collect mesh skin data, one skin for all submeshes
 
 		struct CFbxBoneInfo
 		{
-			const FbxNode*                     pBone = nullptr;
+			const FbxCluster*                  pCluster = nullptr;
 			size_t                             Depth = 0;
 			size_t                             AffectedVertexCount = 0;
 			std::vector<std::pair<int, float>> WeightByControlPoint; // Sorted by index for fast search
 			FbxAMatrix                         InvLocalBindPose;
 			uint16_t                           ParentIndex = NoParentBone;
 			bool                               HasChildren = false;
+			bool                               HasInfluence = false;
 		};
 
-		std::vector<CFbxBoneInfo> FbxBones; // Extended bone data
+		std::vector<CFbxBoneInfo> FbxBones;
 		const FbxNode* pRootBone = nullptr;
-		const FbxAMatrix InvMeshWorldMatrix = pMesh->GetNode()->EvaluateGlobalTransform().Inverse();
 
 		const int SkinCount = pMesh->GetDeformerCount(FbxDeformer::eSkin);
 		assert(SkinCount < 2); // TODO: check how it will work with multiple skins
-
 		for (int s = 0; s < SkinCount; ++s)
 		{
 			const FbxSkin* pSkin = static_cast<FbxSkin*>(pMesh->GetDeformer(s, FbxDeformer::eSkin));
@@ -727,34 +758,17 @@ public:
 					continue;
 				}
 
-				//const auto Mode = pCluster->GetLinkMode();
-				//pCluster->GetTransformMatrix() - is always equal to pMesh->GetNode()->EvaluateGlobalTransform()?
-
 				FbxBones.push_back({});
-				FbxBones.back().pBone = pBone;
-
-				FbxAMatrix WorldBoneMatrix;
-				pCluster->GetTransformLinkMatrix(WorldBoneMatrix);
-				FbxBones.back().InvLocalBindPose = (InvMeshWorldMatrix * WorldBoneMatrix).Inverse();
-
-				const int IndexCount = pCluster->GetControlPointIndicesCount();
-				const int* pIndices = pCluster->GetControlPointIndices();
-				const double* pWeights = pCluster->GetControlPointWeights();
-				if (!pIndices || !pWeights || !IndexCount) continue;
+				FbxBones.back().pCluster = pCluster;
 
 				// We must find the last common node for all influencing bones to build valid skin from there
-				pRootBone = pRootBone ? FindLastCommonFbxNode(pRootBone, pBone) : pBone;
-
-				// Gather bone influences and additional info
-				auto& Weights = FbxBones.back().WeightByControlPoint;
-				Weights.reserve(IndexCount);
-				for (int ControlPtIdx = 0; ControlPtIdx < IndexCount; ++ControlPtIdx)
+				if (pCluster->GetControlPointIndices() &&
+					pCluster->GetControlPointWeights() &&
+					pCluster->GetControlPointIndicesCount())
 				{
-					const float Weight = static_cast<float>(pWeights[ControlPtIdx]);
-					if (!CompareFloat(Weight, 0.f)) Weights.emplace_back(pIndices[ControlPtIdx], Weight);
+					FbxBones.back().HasInfluence = true;
+					pRootBone = pRootBone ? FindLastCommonFbxNode(pRootBone, pBone) : pBone;
 				}
-				assert(!Weights.empty());
-				std::sort(Weights.begin(), Weights.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
 			}
 		}
 
@@ -765,12 +779,12 @@ public:
 		{
 			// Fill depth relative to the root and mark nodes outside a pRootBone hierarchy
 			for (auto& BoneInfo : FbxBones)
-				if (!IsInHierarchy(BoneInfo.pBone, pRootBone, &BoneInfo.Depth))
-					BoneInfo.pBone = nullptr;
+				if (!IsInHierarchy(BoneInfo.pCluster->GetLink(), pRootBone, &BoneInfo.Depth))
+					BoneInfo.pCluster = nullptr;
 
 			// Filter out bones outside a hierarchy
 			size_t PrevSize = FbxBones.size();
-			FbxBones.erase(std::remove_if(FbxBones.begin(), FbxBones.end(), [](const auto& Elm) { return !Elm.pBone; }), FbxBones.end());
+			FbxBones.erase(std::remove_if(FbxBones.begin(), FbxBones.end(), [](const auto& Elm) { return !Elm.pCluster; }), FbxBones.end());
 			if (FbxBones.size() < PrevSize)
 				Ctx.Log.LogInfo(std::string("Mesh ") + pMesh->GetName() + " - " + std::to_string(PrevSize - FbxBones.size()) + " bones aside an active hierarchy are discarded");
 
@@ -792,14 +806,14 @@ public:
 				}
 
 				// Try to find a parent in range
-				const FbxNode* pParentNode = It->pBone->GetParent();
+				const FbxNode* pParentNode = It->pCluster->GetLink()->GetParent();
 				const auto ItParent = std::find_if(ItParentsStart, ItParentsEnd, [pParentNode](const auto& Pair)
 				{
-					return Pair.pBone == pParentNode;
+					return Pair.pCluster->GetLink() == pParentNode;
 				});
 
 				if (ItParent == ItParentsEnd)
-					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + It->pBone->GetName() + " parent not found, skin may be broken");
+					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + It->pCluster->GetLink()->GetName() + " parent not found, skin may be broken");
 				else
 				{
 					It->ParentIndex = static_cast<uint16_t>(std::distance(FbxBones.begin(), ItParent));
@@ -809,19 +823,33 @@ public:
 
 			// Filter out leaf bones without influence
 			PrevSize = FbxBones.size();
-			FbxBones.erase(std::remove_if(FbxBones.begin(), FbxBones.end(), [](const auto& Elm) { return !Elm.HasChildren && Elm.WeightByControlPoint.empty(); }), FbxBones.end());
+			FbxBones.erase(std::remove_if(FbxBones.begin(), FbxBones.end(), [](const auto& Elm) { return !Elm.HasChildren && !Elm.HasInfluence; }), FbxBones.end());
 			if (FbxBones.size() < PrevSize)
 				Ctx.Log.LogInfo(std::string("Mesh ") + pMesh->GetName() + " - " + std::to_string(PrevSize - FbxBones.size()) + " non-influencing leaf bones are discarded");
 
-			// Transfer parent indices into CBone array and use an opportunity to check bone names
+			// Transfer parent indices into CBone array, calculate bind pose matrices and check bone names
 			Bones.reserve(FbxBones.size());
 			std::set<std::string> BoneNames;
-			for (const auto& BoneInfo : FbxBones)
+			const FbxAMatrix InvMeshWorldMatrix = pMesh->GetNode()->EvaluateGlobalTransform().Inverse();
+			for (auto& BoneInfo : FbxBones)
 			{
 				Bones.push_back({});
 				auto& Bone = Bones.back();
-				Bone.ID = GetValidNodeName(BoneInfo.pBone->GetName());
 				Bone.ParentBoneIndex = BoneInfo.ParentIndex;
+
+				// Generate valid name and verify its uniqueness
+				Bone.ID = GetValidNodeName(BoneInfo.pCluster->GetLink()->GetName());
+				if (BoneNames.find(Bone.ID) != BoneNames.cend())
+					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + Bone.ID + " occurs more than once, skin may be broken");
+				else
+					BoneNames.insert(Bone.ID);
+
+				// TODO: pCluster->GetLinkMode() == FbxCluster::eAdditive, see ViewScene sample in a FBX SDK
+
+				// Calculate bind pose matrix
+				FbxAMatrix BoneWorldMatrix;
+				BoneInfo.pCluster->GetTransformLinkMatrix(BoneWorldMatrix);
+				BoneInfo.InvLocalBindPose = (InvMeshWorldMatrix * BoneWorldMatrix).Inverse();
 
 				// Save matrix (both DEM and FBX SDK use column-major)
 				const auto& InvLocalBindPose = BoneInfo.InvLocalBindPose;
@@ -829,13 +857,24 @@ public:
 					for (int Row = 0; Row < 4; ++Row)
 						Bone.InvLocalBindPose[Col * 4 + Row] = static_cast<float>(InvLocalBindPose[Col][Row]);
 
-				// Also detects the case if GetValidNodeName returns the same for different nodes
-				if (BoneNames.find(Bone.ID) != BoneNames.cend())
-					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + Bone.ID + " occurs more than once, skin may be broken");
-				else
-					BoneNames.insert(Bone.ID);
+				if (BoneInfo.HasInfluence)
+				{
+					const int IndexCount = BoneInfo.pCluster->GetControlPointIndicesCount();
+					const int* pIndices = BoneInfo.pCluster->GetControlPointIndices();
+					const double* pWeights = BoneInfo.pCluster->GetControlPointWeights();
 
-				// TODO: could optionally calculate per-bone AABB (for ragdoll etc). May be also useful for ACL.
+					auto& Weights = BoneInfo.WeightByControlPoint;
+					Weights.reserve(IndexCount);
+					for (int ControlPtIdx = 0; ControlPtIdx < IndexCount; ++ControlPtIdx)
+					{
+						const float Weight = static_cast<float>(pWeights[ControlPtIdx]);
+						if (!CompareFloat(Weight, 0.f)) Weights.emplace_back(pIndices[ControlPtIdx], Weight);
+					}
+					assert(!Weights.empty());
+					std::sort(Weights.begin(), Weights.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+
+					// TODO: could optionally calculate per-bone AABB (for ragdoll etc). May be also useful for ACL.
+				}
 			}
 		}
 		else if (SkinCount)
