@@ -1420,9 +1420,41 @@ public:
 
 			FbxTime FrameTime;
 			double LocomotionSpeedFromRoot = 0.0;
+
+			// Process foot bones for locomotion phase matching
+			size_t LeftFootIdx = std::numeric_limits<size_t>().max();
+			size_t RightFootIdx = std::numeric_limits<size_t>().max();
 			std::vector<acl::Vector4_32> LeftFootPositions;
 			std::vector<acl::Vector4_32> RightFootPositions;
-			acl::Vector4_32 LeftFootForwardDir;
+			acl::Vector4_32 FootForwardDir;
+			acl::Vector4_32 FootSideDir;
+			if (IsLocomotionClip && !Ctx.LeftFootBoneName.empty() && !Ctx.RightFootBoneName.empty())
+			{
+				auto& Nodes = Skeleton.Nodes;
+				auto ItLeft = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](FbxNode* pNode) { return Ctx.LeftFootBoneName == pNode->GetName(); });
+				auto ItRight = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](FbxNode* pNode) { return Ctx.RightFootBoneName == pNode->GetName(); });
+				if (ItLeft != Nodes.end() && ItRight != Nodes.end())
+				{
+					if (const FbxNode* pCommonNode = FindLastCommonFbxNode(*ItLeft, *ItRight))
+					{
+						LeftFootIdx = std::distance(Nodes.begin(), ItLeft);
+						RightFootIdx = std::distance(Nodes.begin(), ItRight);
+						LeftFootPositions.resize(FrameCount);
+						RightFootPositions.resize(FrameCount);
+
+						FrameTime.SetFrame(StartFrame, FbxTime::GetGlobalTimeMode());
+						const auto GlobalTfm = const_cast<FbxNode*>(pCommonNode)->EvaluateGlobalTransform(FrameTime);
+
+						const auto Fwd = -GlobalTfm.GetColumn(2);
+						FootForwardDir = { static_cast<float>(Fwd[0]), static_cast<float>(Fwd[1]), static_cast<float>(Fwd[2]), 0.0f };
+						FootForwardDir = acl::vector_normalize3(FootForwardDir);
+
+						const auto Side = GlobalTfm.GetColumn(0);
+						FootSideDir = { static_cast<float>(Side[0]), static_cast<float>(Side[1]), static_cast<float>(Side[2]), 0.0f };
+						FootSideDir = acl::vector_normalize3(FootSideDir);
+					}
+				}
+			}
 
 			for (size_t BoneIdx = 0; BoneIdx < Skeleton.Nodes.size(); ++BoneIdx)
 			{
@@ -1430,11 +1462,6 @@ public:
 				FbxNode* pNode = Skeleton.Nodes[BoneIdx];
 
 				const bool IsRoot = (BoneIdx == 0);
-				const bool IsLeftFoot = IsLocomotionClip && Ctx.LeftFootBoneName == pNode->GetName();
-				const bool IsRightFoot = !IsLeftFoot && IsLocomotionClip && Ctx.RightFootBoneName == pNode->GetName();
-
-				if (IsLeftFoot) LeftFootPositions.resize(FrameCount);
-				if (IsRightFoot) RightFootPositions.resize(FrameCount);
 
 				uint32_t SampleIndex = 0;
 				for (FbxLongLong Frame = StartFrame; Frame <= EndFrame; ++Frame, ++SampleIndex)
@@ -1468,17 +1495,12 @@ public:
 					Bone.rotation_track.set_sample(SampleIndex, { R[0], R[1], R[2], R[3] });
 					Bone.translation_track.set_sample(SampleIndex, { T[0], T[1], T[2], 1.0 });
 
-					if (IsLeftFoot || IsRightFoot)
+					if (BoneIdx == LeftFootIdx || BoneIdx == RightFootIdx)
 					{
 						const auto GlobalTfm = pNode->EvaluateGlobalTransform(FrameTime);
 						const auto GT = GlobalTfm.GetT();
-						auto& FootPositions = IsLeftFoot ? LeftFootPositions : RightFootPositions;
+						auto& FootPositions = (BoneIdx == LeftFootIdx) ? LeftFootPositions : RightFootPositions;
 						FootPositions[SampleIndex] = { static_cast<float>(GT[0]), static_cast<float>(GT[1]), static_cast<float>(GT[2]), 1.0f };
-						if (IsLeftFoot && SampleIndex == 0)
-						{
-							const auto Dir = -GlobalTfm.GetColumn(2);
-							LeftFootForwardDir = { static_cast<float>(Dir[0]), static_cast<float>(Dir[1]), static_cast<float>(Dir[2]), 1.0f };
-						}
 					}
 				}
 			}
@@ -1488,23 +1510,31 @@ public:
 				if (LocomotionSpeedFromRoot > 0.0)
 					Ctx.Log.LogInfo("Animation " + AnimName + " locomotion speed deduced from the root motion: " + std::to_string(LocomotionSpeedFromRoot));
 
+				// Foot phase matching inspired by the method described in:
+				// https://cdn.gearsofwar.com/thecoalition/publications/SIGGRAPH%202017%20-%20High%20Performance%20Animation%20in%20Gears%20ofWar%204%20-%20Abstract.pdf
 				if (!LeftFootPositions.empty() && !RightFootPositions.empty())
 				{
-					//!!!DBG TMP! need to store diffs? calc scalar immediately?
-					std::vector<acl::Vector4_32> Diffs(LeftFootPositions.size());
+					std::vector<float> Phases(LeftFootPositions.size());
 					for (uint32_t SampleIndex = 0; SampleIndex < LeftFootPositions.size(); ++SampleIndex)
 					{
-						auto Diff = acl::vector_sub(LeftFootPositions[SampleIndex], RightFootPositions[SampleIndex]);
-						auto Dir = LeftFootForwardDir;
-						if (SampleIndex > 0 && !acl::vector_all_near_equal3(LeftFootPositions[SampleIndex], LeftFootPositions[SampleIndex - 1]))
-							Dir = acl::vector_sub(LeftFootPositions[SampleIndex], LeftFootPositions[SampleIndex - 1]);
+						// Project foot offset onto the locomotion plane (fwd, up) and normalize it to get phase direction
+						auto Offset = acl::vector_sub(LeftFootPositions[SampleIndex], RightFootPositions[SampleIndex]);
+						auto PhaseDir = acl::vector_sub(Offset, acl::vector_mul(FootSideDir, acl::vector_dot3(Offset, FootSideDir)));
+						PhaseDir = acl::vector_normalize3(PhaseDir);
 
-						//!!!TODO: project diff on dir! dot scalar is enough?
+						const float CosA = acl::vector_dot3(PhaseDir, FootForwardDir);
+						const float SinA = acl::vector_dot3(acl::vector_cross3(PhaseDir, FootForwardDir), FootSideDir);
+						float Angle = std::acosf(CosA) * std::copysignf(180.f, SinA) / 3.14159265f; // Could also use Angle = std::atan2f(SinA, CosA)
 
-						Diffs[SampleIndex] = Diff;
+						Angle = 180.f - Angle;
+
+						Phases[SampleIndex] = Angle;
 					}
 
-					int xxx = 0;
+					// Save frame->phase as is
+					// On load can calculate phase->frame, starting from 0 and finishing when 0 happens again,
+					// may be shifted like [0 deg - 360 deg] -> [6-31 frames] and then [0-5 frames]
+					//???save cos and embed sin sign? to avoid user code calculating acosf. Worth complications?
 				}
 			}
 
