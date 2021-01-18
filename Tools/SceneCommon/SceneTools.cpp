@@ -723,18 +723,25 @@ bool ComputeLocomotion(CLocomotionInfo& Out, acl::Vector4_32 ForwardDir, acl::Ve
 
 		const float CosA = acl::vector_dot3(PhaseDir, ForwardDir);
 		const float SinA = acl::vector_dot3(acl::vector_cross3(PhaseDir, ForwardDir), SideDir);
-		const float Angle = std::copysignf(RadToDeg(std::acosf(CosA)), SinA); // Could also use Angle = std::atan2f(SinA, CosA)
+		const float Angle = std::copysignf(RadToDeg(std::acosf(CosA)), SinA); // Could also use Angle = RadToDeg(std::atan2f(SinA, CosA));
 
 		Out.Phases[i] = 180.f - Angle; // map 180 -> -180 to 0 -> 360, where 0 is the left foot directly above the right
 	}
+
+	//!!!WRONG!
+	//// Try to calculate speed from feet movement
+	//for (uint32_t i = 1; i < LeftFootPositions.size(); ++i)
+	//{
+	//	const auto FootVelocity = acl::vector_sub(LeftFootPositions[i], LeftFootPositions[i - 1]);
+	//	const float Speed = acl::vector_dot3(FootVelocity, ForwardDir);
+	//	Out.SpeedFromFeet += (Out.Phases[i] > 90.f && Out.Phases[i] < 270.f) ? -Speed : Speed;
+	//}
 
 	// Save frame->phase as is
 	// On load can calculate phase->frame, starting from 0 and finishing when 0 happens again,
 	// may be shifted like [0 deg - 360 deg] -> [6-31 frames] and then [0-5 frames]
 	//???save cos and embed sin sign (e.g. values outside [-1;1])? to avoid user code calculating acosf. Worth complications?
 	// NB: interpolation between degrees/redians is linear, unlike for cos. More precise!
-
-	//???try to calculate speed from feet locomotion?! extract -Z part based on phase
 
 	return true;
 }

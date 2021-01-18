@@ -42,6 +42,26 @@ Core::PObject CAnimationLoaderANM::CreateResource(CStrID UID)
 		if (!Reader.Read(NodeMapping[i].ID)) return nullptr;
 	}
 
+	// Load locomotion info
+	U8 IsLocomotion;
+	if (!Reader.Read(IsLocomotion)) return nullptr;
+	if (IsLocomotion)
+	{
+		float Speed;
+		if (!Reader.Read(Speed)) return nullptr;
+
+		U16 FrameCount;
+		if (!Reader.Read(FrameCount)) return nullptr;
+
+		std::vector<float> Phases(FrameCount);
+		for (U16 i = 0; i < FrameCount; ++i)
+			if (!Reader.Read(Phases[i])) return nullptr;
+
+		// TODO: process and save in the asset!
+
+		int DBG_TMP = 0; //!!!DBG TMP!
+	}
+
 	// Skip padding
 	U8 Padding;
 	if (!Reader.Read(Padding)) return nullptr;
