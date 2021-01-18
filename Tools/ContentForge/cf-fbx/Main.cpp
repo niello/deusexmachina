@@ -366,6 +366,13 @@ public:
 
 	virtual ETaskResult ProcessTask(CContentForgeTask& Task) override
 	{
+		const auto Extension = Task.SrcFilePath.extension();
+		if (Extension != ".fbx")
+		{
+			Task.Log.LogWarning("Filename extension must be .fbx");
+			return ETaskResult::NotStarted;
+		}
+
 		// Import FBX scene from the source file
 
 		FbxImporter* pImporter = FbxImporter::Create(pFBXManager, "");
@@ -1426,8 +1433,8 @@ public:
 			size_t RightFootIdx = std::numeric_limits<size_t>().max();
 			std::vector<acl::Vector4_32> LeftFootPositions;
 			std::vector<acl::Vector4_32> RightFootPositions;
-			acl::Vector4_32 FootForwardDir;
-			acl::Vector4_32 FootSideDir;
+			acl::Vector4_32 ForwardDir;
+			acl::Vector4_32 SideDir;
 			if (IsLocomotionClip && !Ctx.LeftFootBoneName.empty() && !Ctx.RightFootBoneName.empty())
 			{
 				auto& Nodes = Skeleton.Nodes;
@@ -1446,12 +1453,12 @@ public:
 						const auto GlobalTfm = const_cast<FbxNode*>(pCommonNode)->EvaluateGlobalTransform(FrameTime);
 
 						const auto Fwd = -GlobalTfm.GetColumn(2);
-						FootForwardDir = { static_cast<float>(Fwd[0]), static_cast<float>(Fwd[1]), static_cast<float>(Fwd[2]), 0.0f };
-						FootForwardDir = acl::vector_normalize3(FootForwardDir);
+						ForwardDir = { static_cast<float>(Fwd[0]), static_cast<float>(Fwd[1]), static_cast<float>(Fwd[2]), 0.0f };
+						ForwardDir = acl::vector_normalize3(ForwardDir);
 
 						const auto Side = GlobalTfm.GetColumn(0);
-						FootSideDir = { static_cast<float>(Side[0]), static_cast<float>(Side[1]), static_cast<float>(Side[2]), 0.0f };
-						FootSideDir = acl::vector_normalize3(FootSideDir);
+						SideDir = { static_cast<float>(Side[0]), static_cast<float>(Side[1]), static_cast<float>(Side[2]), 0.0f };
+						SideDir = acl::vector_normalize3(SideDir);
 					}
 				}
 			}
@@ -1505,41 +1512,20 @@ public:
 				}
 			}
 
+			CLocomotionInfo LocomotionInfo;
 			if (IsLocomotionClip)
 			{
-				if (LocomotionSpeedFromRoot > 0.0)
-					Ctx.Log.LogInfo("Animation " + AnimName + " locomotion speed deduced from the root motion: " + std::to_string(LocomotionSpeedFromRoot));
-
-				// Foot phase matching inspired by the method described in:
-				// https://cdn.gearsofwar.com/thecoalition/publications/SIGGRAPH%202017%20-%20High%20Performance%20Animation%20in%20Gears%20ofWar%204%20-%20Abstract.pdf
-				if (!LeftFootPositions.empty() && !RightFootPositions.empty())
+				if (LocomotionSpeedFromRoot != 0.0)
 				{
-					std::vector<float> Phases(LeftFootPositions.size());
-					for (uint32_t SampleIndex = 0; SampleIndex < LeftFootPositions.size(); ++SampleIndex)
-					{
-						// Project foot offset onto the locomotion plane (fwd, up) and normalize it to get phase direction
-						auto Offset = acl::vector_sub(LeftFootPositions[SampleIndex], RightFootPositions[SampleIndex]);
-						auto PhaseDir = acl::vector_sub(Offset, acl::vector_mul(FootSideDir, acl::vector_dot3(Offset, FootSideDir)));
-						PhaseDir = acl::vector_normalize3(PhaseDir);
-
-						const float CosA = acl::vector_dot3(PhaseDir, FootForwardDir);
-						const float SinA = acl::vector_dot3(acl::vector_cross3(PhaseDir, FootForwardDir), FootSideDir);
-						float Angle = std::acosf(CosA) * std::copysignf(180.f, SinA) / 3.14159265f; // Could also use Angle = std::atan2f(SinA, CosA)
-
-						Phases[SampleIndex] = 180.f - Angle; // map 180 -> -180 to 0 -> 360
-					}
-
-					// Save frame->phase as is
-					// On load can calculate phase->frame, starting from 0 and finishing when 0 happens again,
-					// may be shifted like [0 deg - 360 deg] -> [6-31 frames] and then [0-5 frames]
-					//???save cos and embed sin sign? to avoid user code calculating acosf. Worth complications?
-
-					///!!!save locomotion speed and phase data length, both can be skipped on loading if zero!
+					Ctx.Log.LogInfo("Animation " + AnimName + " locomotion speed deduced from the root motion: " + std::to_string(LocomotionSpeedFromRoot));
+					LocomotionInfo.SpeedFromRoot = static_cast<float>(LocomotionSpeedFromRoot);
 				}
+
+				ComputeLocomotion(LocomotionInfo, ForwardDir, SideDir, LeftFootPositions, RightFootPositions);
 			}
 
 			const auto DestPath = Ctx.AnimPath / (AnimName + ".anm");
-			if (!WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, NodeNames, Ctx.Log)) return false;
+			if (!WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, NodeNames, IsLocomotionClip ? &LocomotionInfo : nullptr, Ctx.Log)) return false;
 		}
 
 		return true;

@@ -348,7 +348,8 @@ bool WriteDEMSkin(const fs::path& DestPath, const std::vector<CBone>& Bones, CTh
 //---------------------------------------------------------------------
 
 bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& ACLAllocator,
-	const acl::AnimationClip& Clip, const std::vector<std::string>& NodeNames, CThreadSafeLog& Log)
+	const acl::AnimationClip& Clip, const std::vector<std::string>& NodeNames,
+	const CLocomotionInfo* pLocomotionInfo, CThreadSafeLog& Log)
 {
 	const auto AnimName = DestPath.filename().string();
 	const auto& Skeleton = Clip.get_skeleton();
@@ -406,6 +407,15 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 	{
 		WriteStream<uint16_t>(File, Skeleton.get_bone(i).parent_index);
 		WriteStream(File, NodeNames[i]);
+	}
+
+	// For locomotion clips save locomotion info
+	WriteStream<uint8_t>(File, pLocomotionInfo != nullptr);
+	if (pLocomotionInfo)
+	{
+		const float Speed = CompareFloat(pLocomotionInfo->SpeedFromFeet, 0.f) ? pLocomotionInfo->SpeedFromRoot : pLocomotionInfo->SpeedFromFeet;
+		WriteStream<float>(File, Speed);
+		WriteVectorToStream(File, pLocomotionInfo->Phases);
 	}
 
 	// Align-16 compressed clip data in a file
@@ -691,5 +701,41 @@ void FillNodeTransform(const acl::Transform_32& Tfm, Data::CParams& NodeSection)
 
 	if (!acl::vector_all_near_equal3(Tfm.translation, Zero3))
 		NodeSection.emplace_back(sidTranslation, float3({ acl::vector_get_x(Tfm.translation), acl::vector_get_y(Tfm.translation), acl::vector_get_z(Tfm.translation) }));
+}
+//---------------------------------------------------------------------
+
+bool ComputeLocomotion(CLocomotionInfo& Out, acl::Vector4_32 ForwardDir, acl::Vector4_32 SideDir,
+	const std::vector<acl::Vector4_32>& LeftFootPositions,
+	const std::vector<acl::Vector4_32>& RightFootPositions)
+{
+	if (LeftFootPositions.empty() || RightFootPositions.empty() || LeftFootPositions.size() != RightFootPositions.size()) return false;
+
+	Out.Phases.resize(LeftFootPositions.size());
+
+	// Foot phase matching inspired by the method described in:
+	// https://cdn.gearsofwar.com/thecoalition/publications/SIGGRAPH%202017%20-%20High%20Performance%20Animation%20in%20Gears%20ofWar%204%20-%20Abstract.pdf
+	for (uint32_t i = 0; i < LeftFootPositions.size(); ++i)
+	{
+		// Project foot offset onto the locomotion plane (fwd, up) and normalize it to get phase direction
+		const auto Offset = acl::vector_sub(LeftFootPositions[i], RightFootPositions[i]);
+		const auto ProjectedOffset = acl::vector_sub(Offset, acl::vector_mul(SideDir, acl::vector_dot3(Offset, SideDir)));
+		const auto PhaseDir = acl::vector_normalize3(ProjectedOffset);
+
+		const float CosA = acl::vector_dot3(PhaseDir, ForwardDir);
+		const float SinA = acl::vector_dot3(acl::vector_cross3(PhaseDir, ForwardDir), SideDir);
+		const float Angle = std::copysignf(RadToDeg(std::acosf(CosA)), SinA); // Could also use Angle = std::atan2f(SinA, CosA)
+
+		Out.Phases[i] = 180.f - Angle; // map 180 -> -180 to 0 -> 360, where 0 is the left foot directly above the right
+	}
+
+	// Save frame->phase as is
+	// On load can calculate phase->frame, starting from 0 and finishing when 0 happens again,
+	// may be shifted like [0 deg - 360 deg] -> [6-31 frames] and then [0-5 frames]
+	//???save cos and embed sin sign (e.g. values outside [-1;1])? to avoid user code calculating acosf. Worth complications?
+	// NB: interpolation between degrees/redians is linear, unlike for cos. More precise!
+
+	//???try to calculate speed from feet locomotion?! extract -Z part based on phase
+
+	return true;
 }
 //---------------------------------------------------------------------

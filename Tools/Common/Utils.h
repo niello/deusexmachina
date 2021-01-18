@@ -203,6 +203,15 @@ inline void WriteStream(std::ostream& Stream, const Data::CParams& Value)
 }
 //---------------------------------------------------------------------
 
+template<typename T>
+inline void WriteVectorToStream(std::ostream& Stream, const std::vector<T>& Value)
+{
+	WriteStream(Stream, static_cast<uint16_t>(Value.size()));
+	for (const T& Data : Value)
+		WriteStream<T>(Stream, Data);
+}
+//---------------------------------------------------------------------
+
 inline std::string FourCC(uint32_t Code)
 {
 	std::string Result;

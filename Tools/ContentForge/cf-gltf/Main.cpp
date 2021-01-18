@@ -1513,7 +1513,7 @@ public:
 		}
 
 		const auto DestPath = Ctx.AnimPath / (RsrcName + ".anm");
-		return WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, NodeNames, Ctx.Log);
+		return WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, NodeNames, nullptr, Ctx.Log);
 	}
 };
 

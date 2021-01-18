@@ -2,6 +2,7 @@
 #include <Render/RenderEnums.h>
 #include <Utils.h>
 #include <acl/core/unique_ptr.h>
+#include <acl/math/vector4_32.h>
 #include <vector>
 #include <map>
 #include <filesystem>
@@ -13,9 +14,10 @@
 // https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#meshes
 constexpr size_t MaxUV = 4;
 constexpr size_t MaxBonesPerVertex = 4;
+constexpr float PI = 3.14159265358979323846f;
 
-inline float RadToDeg(float Rad) { return Rad * 180.0f / 3.1415926535897932385f; }
-inline float DegToRad(float Deg) { return Deg * 3.1415926535897932385f / 180.0f; }
+inline float RadToDeg(float Rad) { return Rad * 180.0f / PI; }
+inline float DegToRad(float Deg) { return Deg * PI / 180.0f; }
 
 class CThreadSafeLog;
 
@@ -101,6 +103,13 @@ struct CBone
 	// TODO: bone object-space or local-space AABB
 };
 
+struct CLocomotionInfo
+{
+	float              SpeedFromRoot = 0.f;
+	float              SpeedFromFeet = 0.f;
+	std::vector<float> Phases;
+};
+
 inline void NormalizeWeights32x4(float& w1, float& w2, float& w3, float& w4)
 {
 	const auto Sum = w1 + w2 + w3 + w4;
@@ -181,10 +190,11 @@ void ProcessGeometry(const std::vector<CVertex>& RawVertices, const std::vector<
 void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic Semantic, EVertexComponentFormat Format, uint8_t Index, uint8_t StreamIndex);
 bool WriteDEMMesh(const std::filesystem::path& DestPath, const std::map<std::string, CMeshGroup>& SubMeshes, const CVertexFormat& VertexFormat, size_t BoneCount, CThreadSafeLog& Log);
 bool WriteDEMSkin(const std::filesystem::path& DestPath, const std::vector<CBone>& Bones, CThreadSafeLog& Log);
-bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& ACLAllocator, const acl::AnimationClip& Clip, const std::vector<std::string>& NodeNames, CThreadSafeLog& Log);
+bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& ACLAllocator, const acl::AnimationClip& Clip, const std::vector<std::string>& NodeNames, const CLocomotionInfo* pLocomotionInfo, CThreadSafeLog& Log);
 bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name, Data::CParams&& Nodes, const Data::CSchemeSet& Schemes, const Data::CParams& TaskParams, bool HRD, bool Binary, CThreadSafeLog& Log);
 void InitImageProcessing();
 void TermImageProcessing();
 std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesystem::path& DestDir, const Data::CParams& TaskParams, CThreadSafeLog& Log);
 std::string GenerateCollisionShape(std::string ShapeType, const std::filesystem::path& ShapeDir, const std::string& MeshRsrcName, const CMeshAttrInfo& MeshInfo, const acl::Transform_32& GlobalTfm, CThreadSafeLog& Log);
 void FillNodeTransform(const acl::Transform_32& Tfm, Data::CParams& NodeSection);
+bool ComputeLocomotion(CLocomotionInfo& Out, acl::Vector4_32 ForwardDir, acl::Vector4_32 SideDir, const std::vector<acl::Vector4_32>& LeftFootPositions, const std::vector<acl::Vector4_32>& RightFootPositions);
