@@ -1526,15 +1526,15 @@ public:
 						const float SinA = acl::vector_dot3(acl::vector_cross3(PhaseDir, FootForwardDir), FootSideDir);
 						float Angle = std::acosf(CosA) * std::copysignf(180.f, SinA) / 3.14159265f; // Could also use Angle = std::atan2f(SinA, CosA)
 
-						Angle = 180.f - Angle;
-
-						Phases[SampleIndex] = Angle;
+						Phases[SampleIndex] = 180.f - Angle; // map 180 -> -180 to 0 -> 360
 					}
 
 					// Save frame->phase as is
 					// On load can calculate phase->frame, starting from 0 and finishing when 0 happens again,
 					// may be shifted like [0 deg - 360 deg] -> [6-31 frames] and then [0-5 frames]
 					//???save cos and embed sin sign? to avoid user code calculating acosf. Worth complications?
+
+					///!!!save locomotion speed and phase data length, both can be skipped on loading if zero!
 				}
 			}
 
