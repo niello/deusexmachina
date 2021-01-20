@@ -704,6 +704,30 @@ void FillNodeTransform(const acl::Transform_32& Tfm, Data::CParams& NodeSection)
 }
 //---------------------------------------------------------------------
 
+static std::pair<size_t, size_t> FindFootOnGroundFrames(const std::vector<float>& Heights)
+{
+	const auto MinMax = std::minmax_element(Heights.cbegin(), Heights.cend());
+	const float Min = *MinMax.first;
+	const float Max = *MinMax.second;
+	const float Tolerance = (Max - Min) * 0.001f;
+
+	size_t Start = 0, End = 0;
+
+	bool PrevFrameDown = false;
+	bool CurrFrameDown = (Heights[0] - Min < Tolerance);
+	for (size_t i = 1; i < Heights.size(); ++i)
+	{
+		PrevFrameDown = CurrFrameDown;
+		CurrFrameDown = (Heights[i] - Min < Tolerance);
+		if (PrevFrameDown == CurrFrameDown) continue;
+		if (CurrFrameDown) Start = i;
+		else End = i;
+	}
+
+	return { Start, End };
+}
+//---------------------------------------------------------------------
+
 bool ComputeLocomotion(CLocomotionInfo& Out, acl::Vector4_32 ForwardDir, acl::Vector4_32 UpDir, acl::Vector4_32 SideDir,
 	const std::vector<acl::Vector4_32>& LeftFootPositions,
 	const std::vector<acl::Vector4_32>& RightFootPositions)
@@ -714,14 +738,12 @@ bool ComputeLocomotion(CLocomotionInfo& Out, acl::Vector4_32 ForwardDir, acl::Ve
 	UpDir = acl::vector_normalize3(UpDir);
 	SideDir = acl::vector_normalize3(SideDir);
 
-	Out.Phases.resize(LeftFootPositions.size());
-
-	float MinYLeft = std::numeric_limits<float>().max();
-	float MinYRight = std::numeric_limits<float>().max();
+	const size_t FrameCount = LeftFootPositions.size();
+	Out.Phases.resize(FrameCount);
 
 	// Foot phase matching inspired by the method described in:
 	// https://cdn.gearsofwar.com/thecoalition/publications/SIGGRAPH%202017%20-%20High%20Performance%20Animation%20in%20Gears%20ofWar%204%20-%20Abstract.pdf
-	for (uint32_t i = 0; i < LeftFootPositions.size(); ++i)
+	for (size_t i = 0; i < FrameCount; ++i)
 	{
 		// Project foot offset onto the locomotion plane (fwd, up) and normalize it to get phase direction
 		const auto Offset = acl::vector_sub(LeftFootPositions[i], RightFootPositions[i]);
@@ -738,29 +760,20 @@ bool ComputeLocomotion(CLocomotionInfo& Out, acl::Vector4_32 ForwardDir, acl::Ve
 		// 180 - left in front of right
 		// 270 - left below right
 		Out.Phases[i] = 180.f - Angle; // map 180 -> -180 to 0 -> 360
-
-		// Also find minimal heights of legs to detect planted foot frames
-		const float LeftY = acl::vector_dot3(LeftFootPositions[i], UpDir);
-		if (MinYLeft > LeftY) MinYLeft = LeftY;
-		const float RightY = acl::vector_dot3(RightFootPositions[i], UpDir);
-		if (MinYRight > RightY) MinYRight = RightY;
 	}
 
 	// Locomotion speed is a speed with which a root moves while a foot stands on the ground.
 	// Here we detect frame ranges with either foot planted. It is also used for "foot down" events.
-	for (uint32_t i = 0; i < LeftFootPositions.size(); ++i)
-	{
-		//!!!one range for each foot!
-	}
 
-	//!!!WRONG!
-	//// Try to calculate speed from feet movement
-	//for (uint32_t i = 1; i < LeftFootPositions.size(); ++i)
-	//{
-	//	const auto FootVelocity = acl::vector_sub(LeftFootPositions[i], LeftFootPositions[i - 1]);
-	//	const float Speed = acl::vector_dot3(FootVelocity, ForwardDir);
-	//	Out.SpeedFromFeet += (Out.Phases[i] > 90.f && Out.Phases[i] < 270.f) ? -Speed : Speed;
-	//}
+	std::vector<float> FootHeights(FrameCount);
+	for (size_t i = 0; i < FrameCount; ++i)
+		FootHeights[i] = acl::vector_dot3(LeftFootPositions[i], UpDir);
+	const auto LeftFootOnGroundFrames = FindFootOnGroundFrames(FootHeights);
+	for (size_t i = 0; i < FrameCount; ++i)
+		FootHeights[i] = acl::vector_dot3(RightFootPositions[i], UpDir);
+	const auto RightFootOnGroundFrames = FindFootOnGroundFrames(FootHeights);
+
+	//
 
 	// Save frame->phase as is
 	// On load can calculate phase->frame, starting from 0 and finishing when 0 happens again,
