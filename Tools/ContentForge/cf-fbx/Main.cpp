@@ -1418,6 +1418,8 @@ public:
 
 		for (CSkeletonACLBinding& Skeleton : Skeletons)
 		{
+			auto& Nodes = Skeleton.Nodes;
+
 			acl::String ClipName(Ctx.ACLAllocator, AnimName.c_str());
 			acl::AnimationClip Clip(Ctx.ACLAllocator, *Skeleton.Skeleton, FrameCount, FrameRate, ClipName);
 
@@ -1426,48 +1428,31 @@ public:
 				NodeNames[BoneIdx] = GetValidNodeName(Skeleton.Nodes[BoneIdx]->GetName());
 
 			FbxTime FrameTime;
-			double LocomotionSpeedFromRoot = 0.0;
+			constexpr size_t RootIdx = 0;
 			std::vector<acl::Vector4_32> RootPositions(FrameCount);
 
 			// Process foot bones for locomotion phase matching
-			constexpr size_t RootIdx = 0;
 			size_t LeftFootIdx = std::numeric_limits<size_t>().max();
 			size_t RightFootIdx = std::numeric_limits<size_t>().max();
 			std::vector<acl::Vector4_32> LeftFootPositions;
 			std::vector<acl::Vector4_32> RightFootPositions;
-			if (IsLocomotionClip)
+			if (IsLocomotionClip && !Ctx.LeftFootBoneName.empty() && !Ctx.RightFootBoneName.empty())
 			{
-				auto& Nodes = Skeleton.Nodes;
-
-				// Try to extract locomotion speed from the root motion
-				if (IsLocomotionClip)
+				auto ItLeft = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](FbxNode* pNode) { return Ctx.LeftFootBoneName == pNode->GetName(); });
+				auto ItRight = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](FbxNode* pNode) { return Ctx.RightFootBoneName == pNode->GetName(); });
+				if (ItLeft != Nodes.end() && ItRight != Nodes.end())
 				{
-					FrameTime.SetFrame(StartFrame, FbxTime::GetGlobalTimeMode());
-					const auto StartT = Nodes[0]->EvaluateGlobalTransform(FrameTime).GetT();
-					FrameTime.SetFrame(EndFrame, FbxTime::GetGlobalTimeMode());
-					const auto T = Nodes[0]->EvaluateGlobalTransform(FrameTime).GetT() - StartT;
-					LocomotionSpeedFromRoot = T.Length();
-					//???project onto the forward axis? or save velocity, not speed?
-				}
-
-				if (!Ctx.LeftFootBoneName.empty() && !Ctx.RightFootBoneName.empty())
-				{
-					auto ItLeft = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](FbxNode* pNode) { return Ctx.LeftFootBoneName == pNode->GetName(); });
-					auto ItRight = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](FbxNode* pNode) { return Ctx.RightFootBoneName == pNode->GetName(); });
-					if (ItLeft != Nodes.end() && ItRight != Nodes.end())
-					{
-						LeftFootIdx = std::distance(Nodes.begin(), ItLeft);
-						RightFootIdx = std::distance(Nodes.begin(), ItRight);
-						LeftFootPositions.resize(FrameCount);
-						RightFootPositions.resize(FrameCount);
-					}
+					LeftFootIdx = std::distance(Nodes.begin(), ItLeft);
+					RightFootIdx = std::distance(Nodes.begin(), ItRight);
+					LeftFootPositions.resize(FrameCount);
+					RightFootPositions.resize(FrameCount);
 				}
 			}
 
-			for (size_t BoneIdx = 0; BoneIdx < Skeleton.Nodes.size(); ++BoneIdx)
+			for (size_t BoneIdx = 0; BoneIdx < Nodes.size(); ++BoneIdx)
 			{
 				acl::AnimatedBone& Bone = Clip.get_animated_bone(static_cast<uint16_t>(BoneIdx));
-				FbxNode* pNode = Skeleton.Nodes[BoneIdx];
+				FbxNode* pNode = Nodes[BoneIdx];
 
 				uint32_t SampleIndex = 0;
 				for (FbxLongLong Frame = StartFrame; Frame <= EndFrame; ++Frame, ++SampleIndex)
@@ -1513,12 +1498,6 @@ public:
 			CLocomotionInfo LocomotionInfo;
 			if (IsLocomotionClip)
 			{
-				if (LocomotionSpeedFromRoot != 0.0)
-				{
-					Ctx.Log.LogInfo("Animation " + AnimName + " locomotion speed deduced from the root motion: " + std::to_string(LocomotionSpeedFromRoot));
-					LocomotionInfo.SpeedFromRoot = static_cast<float>(LocomotionSpeedFromRoot);
-				}
-
 				FbxAMatrix GlobalTfm;
 				auto& AxisSys = pScene->GetGlobalSettings().GetAxisSystem();
 				AxisSys.GetMatrix(GlobalTfm);

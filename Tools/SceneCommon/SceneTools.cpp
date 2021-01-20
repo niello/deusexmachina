@@ -822,6 +822,15 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 		Out.SpeedFromFeet = 0.f;
 	}
 
+	// Try to extract averaged locomotion speed from the root motion.
+	// Note that it can be not equal to SpeedFromFeet and may be even non-constant during the track.
+	{
+		//???or project FullRootDiff onto XZ plane? or store FullRootDiff as velocity instead of speed?
+		const auto FullRootDiff = acl::vector_sub(RootPositions.back(), RootPositions.front());
+		const auto ForwardMovement = acl::vector_mul(ForwardDir, acl::vector_dot3(FullRootDiff, ForwardDir));
+		Out.SpeedFromRoot = acl::vector_length3(ForwardMovement) * FrameRate / static_cast<float>(FrameCount);
+	}
+
 	return true;
 }
 //---------------------------------------------------------------------
