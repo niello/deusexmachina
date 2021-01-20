@@ -105,6 +105,8 @@ struct CBone
 
 struct CLocomotionInfo
 {
+	size_t             LeftFootOnGroundFrame = std::numeric_limits<size_t>().max();
+	size_t             RightFootOnGroundFrame = std::numeric_limits<size_t>().max();
 	float              SpeedFromRoot = 0.f;
 	float              SpeedFromFeet = 0.f;
 	std::vector<float> Phases;
@@ -197,4 +199,4 @@ void TermImageProcessing();
 std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesystem::path& DestDir, const Data::CParams& TaskParams, CThreadSafeLog& Log);
 std::string GenerateCollisionShape(std::string ShapeType, const std::filesystem::path& ShapeDir, const std::string& MeshRsrcName, const CMeshAttrInfo& MeshInfo, const acl::Transform_32& GlobalTfm, CThreadSafeLog& Log);
 void FillNodeTransform(const acl::Transform_32& Tfm, Data::CParams& NodeSection);
-bool ComputeLocomotion(CLocomotionInfo& Out, acl::Vector4_32 ForwardDir, acl::Vector4_32 UpDir, acl::Vector4_32 SideDir, const std::vector<acl::Vector4_32>& LeftFootPositions, const std::vector<acl::Vector4_32>& RightFootPositions);
+bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate, acl::Vector4_32 ForwardDir, acl::Vector4_32 UpDir, acl::Vector4_32 SideDir, const std::vector<acl::Vector4_32>& RootPositions, const std::vector<acl::Vector4_32>& LeftFootPositions, const std::vector<acl::Vector4_32>& RightFootPositions);

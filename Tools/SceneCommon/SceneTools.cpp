@@ -704,8 +704,14 @@ void FillNodeTransform(const acl::Transform_32& Tfm, Data::CParams& NodeSection)
 }
 //---------------------------------------------------------------------
 
-static std::pair<size_t, size_t> FindFootOnGroundFrames(const std::vector<float>& Heights)
+static std::pair<size_t, size_t> FindFootOnGroundFrames(acl::Vector4_32 UpDir, const std::vector<acl::Vector4_32>& FootPositions)
 {
+	if (FootPositions.empty()) return { std::numeric_limits<size_t>().max(), std::numeric_limits<size_t>().max() };
+
+	std::vector<float> Heights(FootPositions.size());
+	for (size_t i = 0; i < FootPositions.size(); ++i)
+		Heights[i] = acl::vector_dot3(FootPositions[i], UpDir);
+
 	const auto MinMax = std::minmax_element(Heights.cbegin(), Heights.cend());
 	const float Min = *MinMax.first;
 	const float Max = *MinMax.second;
@@ -713,6 +719,7 @@ static std::pair<size_t, size_t> FindFootOnGroundFrames(const std::vector<float>
 
 	size_t Start = 0, End = 0;
 
+	// TODO: handle multiple ranges!
 	bool PrevFrameDown = false;
 	bool CurrFrameDown = (Heights[0] - Min < Tolerance);
 	for (size_t i = 1; i < Heights.size(); ++i)
@@ -721,14 +728,16 @@ static std::pair<size_t, size_t> FindFootOnGroundFrames(const std::vector<float>
 		CurrFrameDown = (Heights[i] - Min < Tolerance);
 		if (PrevFrameDown == CurrFrameDown) continue;
 		if (CurrFrameDown) Start = i;
-		else End = i;
+		else End = (i > 0) ? (i - 1) : (Heights.size() - 1);
 	}
 
 	return { Start, End };
 }
 //---------------------------------------------------------------------
 
-bool ComputeLocomotion(CLocomotionInfo& Out, acl::Vector4_32 ForwardDir, acl::Vector4_32 UpDir, acl::Vector4_32 SideDir,
+bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
+	acl::Vector4_32 ForwardDir, acl::Vector4_32 UpDir, acl::Vector4_32 SideDir,
+	const std::vector<acl::Vector4_32>& RootPositions,
 	const std::vector<acl::Vector4_32>& LeftFootPositions,
 	const std::vector<acl::Vector4_32>& RightFootPositions)
 {
@@ -760,26 +769,58 @@ bool ComputeLocomotion(CLocomotionInfo& Out, acl::Vector4_32 ForwardDir, acl::Ve
 		// 180 - left in front of right
 		// 270 - left below right
 		Out.Phases[i] = 180.f - Angle; // map 180 -> -180 to 0 -> 360
+
+		// Save frame->phase as is
+		// On load can calculate phase->frame, starting from 0 and finishing when 0 happens again,
+		// may be shifted like [0 deg - 360 deg] -> [6-31 frames] and then [0-5 frames]
+		//???save cos and embed sin sign (e.g. values outside [-1;1])? to avoid user code calculating acosf. Worth complications?
+		// NB: interpolation between degrees/redians is linear, unlike for cos. More precise!
 	}
 
 	// Locomotion speed is a speed with which a root moves while a foot stands on the ground.
 	// Here we detect frame ranges with either foot planted. It is also used for "foot down" events.
 
-	std::vector<float> FootHeights(FrameCount);
-	for (size_t i = 0; i < FrameCount; ++i)
-		FootHeights[i] = acl::vector_dot3(LeftFootPositions[i], UpDir);
-	const auto LeftFootOnGroundFrames = FindFootOnGroundFrames(FootHeights);
-	for (size_t i = 0; i < FrameCount; ++i)
-		FootHeights[i] = acl::vector_dot3(RightFootPositions[i], UpDir);
-	const auto RightFootOnGroundFrames = FindFootOnGroundFrames(FootHeights);
+	acl::Vector4_32 RootDiff = { 0.f, 0.f, 0.f, 0.f };
+	size_t FramesOnGround = 0;
 
-	//
+	const auto LeftFoGFrames = FindFootOnGroundFrames(UpDir, LeftFootPositions);
+	if (LeftFoGFrames.first < FrameCount)
+	{
+		Out.LeftFootOnGroundFrame = LeftFoGFrames.first;
 
-	// Save frame->phase as is
-	// On load can calculate phase->frame, starting from 0 and finishing when 0 happens again,
-	// may be shifted like [0 deg - 360 deg] -> [6-31 frames] and then [0-5 frames]
-	//???save cos and embed sin sign (e.g. values outside [-1;1])? to avoid user code calculating acosf. Worth complications?
-	// NB: interpolation between degrees/redians is linear, unlike for cos. More precise!
+		const auto RelRootStart = acl::vector_sub(RootPositions[LeftFoGFrames.first], LeftFootPositions[LeftFoGFrames.first]);
+		const auto RelRootEnd = acl::vector_sub(RootPositions[LeftFoGFrames.second], LeftFootPositions[LeftFoGFrames.second]);
+		RootDiff = acl::vector_add(RootDiff, acl::vector_sub(RelRootEnd, RelRootStart));
+
+		FramesOnGround += (LeftFoGFrames.second >= LeftFoGFrames.first) ?
+			(LeftFoGFrames.second - LeftFoGFrames.first) :
+			(FrameCount - LeftFoGFrames.first + LeftFoGFrames.second + 1);
+	}
+
+	const auto RightFoGFrames = FindFootOnGroundFrames(UpDir, RightFootPositions);
+	if (RightFoGFrames.first < FrameCount)
+	{
+		Out.RightFootOnGroundFrame = RightFoGFrames.first;
+
+		const auto RelRootStart = acl::vector_sub(RootPositions[RightFoGFrames.first], RightFootPositions[RightFoGFrames.first]);
+		const auto RelRootEnd = acl::vector_sub(RootPositions[RightFoGFrames.second], RightFootPositions[RightFoGFrames.second]);
+		RootDiff = acl::vector_add(RootDiff, acl::vector_sub(RelRootEnd, RelRootStart));
+
+		FramesOnGround += (RightFoGFrames.second >= RightFoGFrames.first) ?
+			(RightFoGFrames.second - RightFoGFrames.first) :
+			(FrameCount - RightFoGFrames.first + RightFoGFrames.second + 1);
+	}
+
+	if (FramesOnGround)
+	{
+		//???or project RootDiff onto XZ plane? or store RootDiff as velocity instead of speed?
+		const auto ForwardMovement = acl::vector_mul(ForwardDir, acl::vector_dot3(RootDiff, ForwardDir));
+		Out.SpeedFromFeet = acl::vector_length3(ForwardMovement) * FrameRate / static_cast<float>(FramesOnGround);
+	}
+	else
+	{
+		Out.SpeedFromFeet = 0.f;
+	}
 
 	return true;
 }

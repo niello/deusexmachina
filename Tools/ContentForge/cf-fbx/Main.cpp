@@ -1427,8 +1427,10 @@ public:
 
 			FbxTime FrameTime;
 			double LocomotionSpeedFromRoot = 0.0;
+			std::vector<acl::Vector4_32> RootPositions(FrameCount);
 
 			// Process foot bones for locomotion phase matching
+			constexpr size_t RootIdx = 0;
 			size_t LeftFootIdx = std::numeric_limits<size_t>().max();
 			size_t RightFootIdx = std::numeric_limits<size_t>().max();
 			std::vector<acl::Vector4_32> LeftFootPositions;
@@ -1467,36 +1469,43 @@ public:
 				acl::AnimatedBone& Bone = Clip.get_animated_bone(static_cast<uint16_t>(BoneIdx));
 				FbxNode* pNode = Skeleton.Nodes[BoneIdx];
 
-				const bool IsRoot = (BoneIdx == 0);
-
 				uint32_t SampleIndex = 0;
 				for (FbxLongLong Frame = StartFrame; Frame <= EndFrame; ++Frame, ++SampleIndex)
 				{
-					if (IsRoot && DiscardRootMotion && Frame > StartFrame)
-					{
-						// All root transforms will be as in the first frame
-						Bone.scale_track.set_sample(SampleIndex, Bone.scale_track.get_sample(0));
-						Bone.rotation_track.set_sample(SampleIndex, Bone.rotation_track.get_sample(0));
-						Bone.translation_track.set_sample(SampleIndex, Bone.translation_track.get_sample(0));
-						continue;
-					}
-
 					FrameTime.SetFrame(Frame, FbxTime::GetGlobalTimeMode());
-					const auto LocalTfm = pNode->EvaluateLocalTransform(FrameTime);
-					const auto S = LocalTfm.GetS();
-					const auto R = LocalTfm.GetQ();
-					const auto T = LocalTfm.GetT();
 
-					Bone.scale_track.set_sample(SampleIndex, { S[0], S[1], S[2], 1.0 });
-					Bone.rotation_track.set_sample(SampleIndex, { R[0], R[1], R[2], R[3] });
-					Bone.translation_track.set_sample(SampleIndex, { T[0], T[1], T[2], 1.0 });
+					// Collect global positions of special bones
+					std::vector<acl::Vector4_32>* pPositions =
+						(BoneIdx == LeftFootIdx) ? &LeftFootPositions :
+						(BoneIdx == RightFootIdx) ? &RightFootPositions :
+						(BoneIdx == RootIdx) ? &RootPositions :
+						nullptr;
 
-					if (BoneIdx == LeftFootIdx || BoneIdx == RightFootIdx)
+					if (pPositions)
 					{
 						const auto GlobalTfm = pNode->EvaluateGlobalTransform(FrameTime);
 						const auto GT = GlobalTfm.GetT();
-						auto& FootPositions = (BoneIdx == LeftFootIdx) ? LeftFootPositions : RightFootPositions;
-						FootPositions[SampleIndex] = { static_cast<float>(GT[0]), static_cast<float>(GT[1]), static_cast<float>(GT[2]), 1.0f };
+						(*pPositions)[SampleIndex] = { static_cast<float>(GT[0]), static_cast<float>(GT[1]), static_cast<float>(GT[2]), 1.0f };
+					}
+
+					if (BoneIdx == RootIdx && DiscardRootMotion && Frame > StartFrame)
+					{
+						// All root transforms will be as in the first frame
+						//???Add options do discard only some components, like translation XZ?
+						Bone.scale_track.set_sample(SampleIndex, Bone.scale_track.get_sample(0));
+						Bone.rotation_track.set_sample(SampleIndex, Bone.rotation_track.get_sample(0));
+						Bone.translation_track.set_sample(SampleIndex, Bone.translation_track.get_sample(0));
+					}
+					else
+					{
+						const auto LocalTfm = pNode->EvaluateLocalTransform(FrameTime);
+						const auto S = LocalTfm.GetS();
+						const auto R = LocalTfm.GetQ();
+						const auto T = LocalTfm.GetT();
+
+						Bone.scale_track.set_sample(SampleIndex, { S[0], S[1], S[2], 1.0 });
+						Bone.rotation_track.set_sample(SampleIndex, { R[0], R[1], R[2], R[3] });
+						Bone.translation_track.set_sample(SampleIndex, { T[0], T[1], T[2], 1.0 });
 					}
 				}
 			}
@@ -1523,7 +1532,7 @@ public:
 				const auto Side = GlobalTfm.GetColumn(0);
 				acl::Vector4_32 SideDir = { static_cast<float>(Side[0]), static_cast<float>(Side[1]), static_cast<float>(Side[2]), 0.0f };
 
-				ComputeLocomotion(LocomotionInfo, ForwardDir, UpDir, SideDir, LeftFootPositions, RightFootPositions);
+				ComputeLocomotion(LocomotionInfo, FrameRate, ForwardDir, UpDir, SideDir, RootPositions, LeftFootPositions, RightFootPositions);
 			}
 
 			const auto DestPath = Ctx.AnimPath / (AnimName + ".anm");
