@@ -173,6 +173,13 @@ inline void WriteStream(std::ostream& Stream, const CStrID& Value)
 }
 //---------------------------------------------------------------------
 
+template<>
+inline void WriteStream(std::ostream& Stream, const size_t& Value)
+{
+	static_assert(std::is_same_v<size_t, size_t>, "You should not save types of variable size, please cast to uint64_t or uint32_t explicitly");
+}
+//---------------------------------------------------------------------
+
 void WriteData(std::ostream& Stream, const Data::CData& Value);
 
 template<>
@@ -209,6 +216,18 @@ inline void WriteVectorToStream(std::ostream& Stream, const std::vector<T>& Valu
 	WriteStream(Stream, static_cast<uint16_t>(Value.size()));
 	for (const T& Data : Value)
 		WriteStream<T>(Stream, Data);
+}
+//---------------------------------------------------------------------
+
+template<typename T, typename U>
+inline void WriteMapToStream(std::ostream& Stream, const std::map<T, U>& Value)
+{
+	WriteStream(Stream, static_cast<uint16_t>(Value.size()));
+	for (const auto& [TT, UU] : Value)
+	{
+		WriteStream<T>(Stream, TT);
+		WriteStream<U>(Stream, UU);
+	}
 }
 //---------------------------------------------------------------------
 

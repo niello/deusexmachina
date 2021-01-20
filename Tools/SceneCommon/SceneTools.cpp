@@ -395,6 +395,7 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 	WriteStream<uint32_t>(File, 0x00010000); // Version 0.1.0.0
 
 	WriteStream<float>(File, Clip.get_duration());
+	WriteStream<uint32_t>(File, Clip.get_num_samples());
 
 	WriteStream<uint16_t>(File, NodeCount);
 
@@ -415,10 +416,13 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 	{
 		const float Speed = CompareFloat(pLocomotionInfo->SpeedFromFeet, 0.f) ? pLocomotionInfo->SpeedFromRoot : pLocomotionInfo->SpeedFromFeet;
 		WriteStream<float>(File, Speed);
+		WriteStream(File, static_cast<uint32_t>(pLocomotionInfo->LeftFootOnGroundFrame));
+		WriteStream(File, static_cast<uint32_t>(pLocomotionInfo->RightFootOnGroundFrame));
 		WriteVectorToStream(File, pLocomotionInfo->Phases);
+		WriteMapToStream(File, pLocomotionInfo->PhaseNormalizedTimes);
 	}
 
-	// Align-16 compressed clip data in a file
+	// Align compressed clip data in a file to 16 bytes (plan to use memory mapped files for faster loading)
 	uint32_t CurrPos = static_cast<uint32_t>(File.tellp()) + sizeof(uint8_t); // Added padding size
 	if (const auto PaddingStart = CurrPos % 16)
 	{
@@ -748,10 +752,13 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 	SideDir = acl::vector_normalize3(SideDir);
 
 	const size_t FrameCount = LeftFootPositions.size();
-	Out.Phases.resize(FrameCount);
 
 	// Foot phase matching inspired by the method described in:
 	// https://cdn.gearsofwar.com/thecoalition/publications/SIGGRAPH%202017%20-%20High%20Performance%20Animation%20in%20Gears%20ofWar%204%20-%20Abstract.pdf
+
+	Out.Phases.resize(FrameCount);
+	size_t PhaseStart = 0;
+
 	for (size_t i = 0; i < FrameCount; ++i)
 	{
 		// Project foot offset onto the locomotion plane (fwd, up) and normalize it to get phase direction
@@ -770,12 +777,36 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 		// 270 - left below right
 		Out.Phases[i] = 180.f - Angle; // map 180 -> -180 to 0 -> 360
 
-		// Save frame->phase as is
-		// On load can calculate phase->frame, starting from 0 and finishing when 0 happens again,
-		// may be shifted like [0 deg - 360 deg] -> [6-31 frames] and then [0-5 frames]
-		//???save cos and embed sin sign (e.g. values outside [-1;1])? to avoid user code calculating acosf. Worth complications?
-		// NB: interpolation between degrees/redians is linear, unlike for cos. More precise!
+		// Find a loop start (a frame where 360 becomes 0)
+		// FIXME: is the current heuristic robust enough?
+		if (i > 0 && (Out.Phases[i - 1] - Out.Phases[i]) > 180.f) PhaseStart = i;
 	}
+
+	// Fill phase to time mapping
+	const float InvFrame = (FrameCount > 1) ? (1.f / static_cast<float>(FrameCount - 1)) : 0.f;
+	const size_t PhaseEnd = (PhaseStart > 0) ? (PhaseStart - 1) : (FrameCount > 1) ? (FrameCount - 2) : 0;
+	size_t FrameIdx = PhaseStart;
+	float PrevValue = Out.Phases[FrameIdx];
+	Out.PhaseNormalizedTimes.emplace(PrevValue, FrameIdx * InvFrame);
+	while (true)
+	{
+		++FrameIdx;
+
+		// Filter out the last frame due to looping (the last frame is the first frame)
+		if (FrameIdx >= FrameCount - 1) FrameIdx = 0;
+		if (FrameIdx == PhaseStart) break;
+
+		// Filter out decreasing frames to keep it monotone
+		if (Out.Phases[FrameIdx] >= PrevValue)
+		{
+			PrevValue = Out.Phases[FrameIdx];
+			Out.PhaseNormalizedTimes.emplace(PrevValue, FrameIdx * InvFrame);
+		}
+	};
+
+	// Add sentinel frames to PhaseTimes to simplify runtime search
+	Out.PhaseNormalizedTimes.emplace(Out.Phases[PhaseStart] + 360.f, PhaseStart * InvFrame);
+	Out.PhaseNormalizedTimes.emplace(Out.Phases[PhaseEnd] - 360.f, PhaseEnd * InvFrame);
 
 	// Locomotion speed is a speed with which a root moves while a foot stands on the ground.
 	// Here we detect frame ranges with either foot planted. It is also used for "foot down" events.
@@ -783,6 +814,7 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 	acl::Vector4_32 RootDiff = { 0.f, 0.f, 0.f, 0.f };
 	size_t FramesOnGround = 0;
 
+	// Accumulate motion during the left foot on the ground...
 	const auto LeftFoGFrames = FindFootOnGroundFrames(UpDir, LeftFootPositions);
 	if (LeftFoGFrames.first < FrameCount)
 	{
@@ -797,6 +829,7 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 			(FrameCount - LeftFoGFrames.first + LeftFoGFrames.second + 1);
 	}
 
+	// ...and the same for the right foot
 	const auto RightFoGFrames = FindFootOnGroundFrames(UpDir, RightFootPositions);
 	if (RightFoGFrames.first < FrameCount)
 	{
@@ -823,7 +856,7 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 	}
 
 	// Try to extract averaged locomotion speed from the root motion.
-	// Note that it can be not equal to SpeedFromFeet and may be even non-constant during the track.
+	// Note that it can be not equal to SpeedFromFeet and may be even non-constant during the clip.
 	{
 		//???or project FullRootDiff onto XZ plane? or store FullRootDiff as velocity instead of speed?
 		const auto FullRootDiff = acl::vector_sub(RootPositions.back(), RootPositions.front());

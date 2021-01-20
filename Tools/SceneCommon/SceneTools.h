@@ -105,11 +105,12 @@ struct CBone
 
 struct CLocomotionInfo
 {
-	size_t             LeftFootOnGroundFrame = std::numeric_limits<size_t>().max();
-	size_t             RightFootOnGroundFrame = std::numeric_limits<size_t>().max();
-	float              SpeedFromRoot = 0.f;
-	float              SpeedFromFeet = 0.f;
-	std::vector<float> Phases;
+	size_t                 LeftFootOnGroundFrame = std::numeric_limits<size_t>().max();
+	size_t                 RightFootOnGroundFrame = std::numeric_limits<size_t>().max();
+	float                  SpeedFromRoot = 0.f;
+	float                  SpeedFromFeet = 0.f;
+	std::vector<float>     Phases;
+	std::map<float, float> PhaseNormalizedTimes;
 };
 
 inline void NormalizeWeights32x4(float& w1, float& w2, float& w3, float& w4)
