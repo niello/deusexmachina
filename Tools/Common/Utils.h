@@ -124,6 +124,7 @@ template<class T> inline T ReadStream(std::istream& Stream)
 
 template<class T> inline void WriteStream(std::ostream& Stream, const T& Value)
 {
+	//static_assert(!std::is_same_v<T, size_t>, "You should not save types of variable size, please cast to uint64_t or uint32_t explicitly");
 	Stream.write(reinterpret_cast<const char*>(&Value), sizeof(T));
 }
 //---------------------------------------------------------------------
@@ -170,13 +171,6 @@ template<>
 inline void WriteStream(std::ostream& Stream, const CStrID& Value)
 {
 	WriteStream(Stream, std::string(Value.CStr() ? Value.CStr() : ""));
-}
-//---------------------------------------------------------------------
-
-template<>
-inline void WriteStream(std::ostream& Stream, const size_t& Value)
-{
-	static_assert(std::is_same_v<size_t, size_t>, "You should not save types of variable size, please cast to uint64_t or uint32_t explicitly");
 }
 //---------------------------------------------------------------------
 
