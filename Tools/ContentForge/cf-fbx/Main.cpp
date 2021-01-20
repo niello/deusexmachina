@@ -1433,32 +1433,31 @@ public:
 			size_t RightFootIdx = std::numeric_limits<size_t>().max();
 			std::vector<acl::Vector4_32> LeftFootPositions;
 			std::vector<acl::Vector4_32> RightFootPositions;
-			acl::Vector4_32 ForwardDir;
-			acl::Vector4_32 SideDir;
-			if (IsLocomotionClip && !Ctx.LeftFootBoneName.empty() && !Ctx.RightFootBoneName.empty())
+			if (IsLocomotionClip)
 			{
 				auto& Nodes = Skeleton.Nodes;
-				auto ItLeft = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](FbxNode* pNode) { return Ctx.LeftFootBoneName == pNode->GetName(); });
-				auto ItRight = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](FbxNode* pNode) { return Ctx.RightFootBoneName == pNode->GetName(); });
-				if (ItLeft != Nodes.end() && ItRight != Nodes.end())
+
+				// Try to extract locomotion speed from the root motion
+				if (IsLocomotionClip)
 				{
-					if (const FbxNode* pCommonNode = FindLastCommonFbxNode(*ItLeft, *ItRight))
+					FrameTime.SetFrame(StartFrame, FbxTime::GetGlobalTimeMode());
+					const auto StartT = Nodes[0]->EvaluateGlobalTransform(FrameTime).GetT();
+					FrameTime.SetFrame(EndFrame, FbxTime::GetGlobalTimeMode());
+					const auto T = Nodes[0]->EvaluateGlobalTransform(FrameTime).GetT() - StartT;
+					LocomotionSpeedFromRoot = T.Length();
+					//???project onto the forward axis? or save velocity, not speed?
+				}
+
+				if (!Ctx.LeftFootBoneName.empty() && !Ctx.RightFootBoneName.empty())
+				{
+					auto ItLeft = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](FbxNode* pNode) { return Ctx.LeftFootBoneName == pNode->GetName(); });
+					auto ItRight = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](FbxNode* pNode) { return Ctx.RightFootBoneName == pNode->GetName(); });
+					if (ItLeft != Nodes.end() && ItRight != Nodes.end())
 					{
 						LeftFootIdx = std::distance(Nodes.begin(), ItLeft);
 						RightFootIdx = std::distance(Nodes.begin(), ItRight);
 						LeftFootPositions.resize(FrameCount);
 						RightFootPositions.resize(FrameCount);
-
-						FrameTime.SetFrame(StartFrame, FbxTime::GetGlobalTimeMode());
-						const auto GlobalTfm = const_cast<FbxNode*>(pCommonNode)->EvaluateGlobalTransform(FrameTime);
-
-						const auto Fwd = -GlobalTfm.GetColumn(2);
-						ForwardDir = { static_cast<float>(Fwd[0]), static_cast<float>(Fwd[1]), static_cast<float>(Fwd[2]), 0.0f };
-						ForwardDir = acl::vector_normalize3(ForwardDir);
-
-						const auto Side = GlobalTfm.GetColumn(0);
-						SideDir = { static_cast<float>(Side[0]), static_cast<float>(Side[1]), static_cast<float>(Side[2]), 0.0f };
-						SideDir = acl::vector_normalize3(SideDir);
 					}
 				}
 			}
@@ -1479,16 +1478,6 @@ public:
 						Bone.scale_track.set_sample(SampleIndex, Bone.scale_track.get_sample(0));
 						Bone.rotation_track.set_sample(SampleIndex, Bone.rotation_track.get_sample(0));
 						Bone.translation_track.set_sample(SampleIndex, Bone.translation_track.get_sample(0));
-
-						// Try to extract locomotion speed from the root motion
-						if (IsLocomotionClip && Frame == EndFrame)
-						{
-							FrameTime.SetFrame(Frame, FbxTime::GetGlobalTimeMode());
-							const auto T = pNode->EvaluateLocalTransform(FrameTime).GetT();
-							const acl::Vector4_64 Translation = { T[0], T[1], T[2], 1.0 };
-							LocomotionSpeedFromRoot = acl::vector_distance3(Translation, Bone.translation_track.get_sample(0));
-						}
-
 						continue;
 					}
 
@@ -1521,7 +1510,20 @@ public:
 					LocomotionInfo.SpeedFromRoot = static_cast<float>(LocomotionSpeedFromRoot);
 				}
 
-				ComputeLocomotion(LocomotionInfo, ForwardDir, SideDir, LeftFootPositions, RightFootPositions);
+				FbxAMatrix GlobalTfm;
+				auto& AxisSys = pScene->GetGlobalSettings().GetAxisSystem();
+				AxisSys.GetMatrix(GlobalTfm);
+
+				const auto Fwd = GlobalTfm.GetColumn(2);
+				acl::Vector4_32 ForwardDir = { static_cast<float>(Fwd[0]), static_cast<float>(Fwd[1]), static_cast<float>(Fwd[2]), 0.0f };
+
+				const auto Up = GlobalTfm.GetColumn(1);
+				acl::Vector4_32 UpDir = { static_cast<float>(Up[0]), static_cast<float>(Up[1]), static_cast<float>(Up[2]), 0.0f };
+
+				const auto Side = GlobalTfm.GetColumn(0);
+				acl::Vector4_32 SideDir = { static_cast<float>(Side[0]), static_cast<float>(Side[1]), static_cast<float>(Side[2]), 0.0f };
+
+				ComputeLocomotion(LocomotionInfo, ForwardDir, UpDir, SideDir, LeftFootPositions, RightFootPositions);
 			}
 
 			const auto DestPath = Ctx.AnimPath / (AnimName + ".anm");

@@ -704,13 +704,20 @@ void FillNodeTransform(const acl::Transform_32& Tfm, Data::CParams& NodeSection)
 }
 //---------------------------------------------------------------------
 
-bool ComputeLocomotion(CLocomotionInfo& Out, acl::Vector4_32 ForwardDir, acl::Vector4_32 SideDir,
+bool ComputeLocomotion(CLocomotionInfo& Out, acl::Vector4_32 ForwardDir, acl::Vector4_32 UpDir, acl::Vector4_32 SideDir,
 	const std::vector<acl::Vector4_32>& LeftFootPositions,
 	const std::vector<acl::Vector4_32>& RightFootPositions)
 {
 	if (LeftFootPositions.empty() || RightFootPositions.empty() || LeftFootPositions.size() != RightFootPositions.size()) return false;
 
+	ForwardDir = acl::vector_normalize3(ForwardDir);
+	UpDir = acl::vector_normalize3(UpDir);
+	SideDir = acl::vector_normalize3(SideDir);
+
 	Out.Phases.resize(LeftFootPositions.size());
+
+	float MinYLeft = std::numeric_limits<float>().max();
+	float MinYRight = std::numeric_limits<float>().max();
 
 	// Foot phase matching inspired by the method described in:
 	// https://cdn.gearsofwar.com/thecoalition/publications/SIGGRAPH%202017%20-%20High%20Performance%20Animation%20in%20Gears%20ofWar%204%20-%20Abstract.pdf
@@ -725,7 +732,25 @@ bool ComputeLocomotion(CLocomotionInfo& Out, acl::Vector4_32 ForwardDir, acl::Ve
 		const float SinA = acl::vector_dot3(acl::vector_cross3(PhaseDir, ForwardDir), SideDir);
 		const float Angle = std::copysignf(RadToDeg(std::acosf(CosA)), SinA); // Could also use Angle = RadToDeg(std::atan2f(SinA, CosA));
 
-		Out.Phases[i] = 180.f - Angle; // map 180 -> -180 to 0 -> 360, where 0 is the left foot directly above the right
+		// Calculate phase in degrees, where:
+		// 0 - left behind right
+		// 90 - left above right
+		// 180 - left in front of right
+		// 270 - left below right
+		Out.Phases[i] = 180.f - Angle; // map 180 -> -180 to 0 -> 360
+
+		// Also find minimal heights of legs to detect planted foot frames
+		const float LeftY = acl::vector_dot3(LeftFootPositions[i], UpDir);
+		if (MinYLeft > LeftY) MinYLeft = LeftY;
+		const float RightY = acl::vector_dot3(RightFootPositions[i], UpDir);
+		if (MinYRight > RightY) MinYRight = RightY;
+	}
+
+	// Locomotion speed is a speed with which a root moves while a foot stands on the ground.
+	// Here we detect frame ranges with either foot planted. It is also used for "foot down" events.
+	for (uint32_t i = 0; i < LeftFootPositions.size(); ++i)
+	{
+		//!!!one range for each foot!
 	}
 
 	//!!!WRONG!
