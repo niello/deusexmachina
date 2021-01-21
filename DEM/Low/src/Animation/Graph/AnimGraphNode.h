@@ -21,7 +21,8 @@ enum class ESyncMethod //: U8
 struct CSyncContext
 {
 	ESyncMethod Method;
-	float       Value;  // [0..1] for NormalizedTime, phase for PhaseMatching
+	float       NormalizedTime = 0.f;
+	float       LocomotionPhase = std::numeric_limits<float>().lowest();
 };
 
 class CAnimGraphNode
@@ -41,6 +42,7 @@ public:
 	virtual void  EvaluatePose(IPoseOutput& Output) = 0;
 
 	virtual float GetAnimationLengthScaled() const { return 0.f; }
+	virtual float GetLocomotionPhase() const { return std::numeric_limits<float>().lowest(); }
 };
 
 }

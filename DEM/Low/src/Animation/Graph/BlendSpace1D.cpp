@@ -46,8 +46,17 @@ void CBlendSpace1D::UpdateSingleSample(CAnimGraphNode& Node, CAnimationControlle
 	const ESyncMethod SyncMethod = pSyncContext ? pSyncContext->Method : ESyncMethod::None;
 	switch (SyncMethod)
 	{
-		case ESyncMethod::None: AdvanceNormalizedTime(dt, Node.GetAnimationLengthScaled(), _NormalizedTime); break;
-		case ESyncMethod::NormalizedTime: _NormalizedTime = pSyncContext->Value; break;
+		case ESyncMethod::None:
+		{
+			AdvanceNormalizedTime(dt, Node.GetAnimationLengthScaled(), _NormalizedTime);
+			break;
+		}
+		case ESyncMethod::NormalizedTime:
+		case ESyncMethod::PhaseMatching: //???or get _NormalizedTime from _pFirst current phase?
+		{
+			_NormalizedTime = pSyncContext->NormalizedTime;
+			break;
+		}
 		default: NOT_IMPLEMENTED; break;
 	}
 
@@ -119,20 +128,39 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt, CSyncCont
 			const float AnimLength = It->Source->GetAnimationLengthScaled() * BlendFactor +
 				PrevIt->Source->GetAnimationLengthScaled() * (1.f - BlendFactor);
 			AdvanceNormalizedTime(dt, AnimLength, _NormalizedTime);
+
+			CSyncContext LocalSyncContext{ ESyncMethod::NormalizedTime, _NormalizedTime };
+
+			_pFirst->Update(Controller, dt, &LocalSyncContext);
+
+			// Try to synchronize next animations by a locomotion phase
+			const float Phase = _pFirst->GetLocomotionPhase();
+			if (Phase >= 0.f)
+			{
+				LocalSyncContext.Method = ESyncMethod::PhaseMatching;
+				LocalSyncContext.LocomotionPhase = Phase;
+			}
+
+			_pSecond->Update(Controller, dt, &LocalSyncContext);
+
 			break;
 		}
-		case ESyncMethod::NormalizedTime: _NormalizedTime = pSyncContext->Value; break;
+		case ESyncMethod::NormalizedTime:
+		case ESyncMethod::PhaseMatching:
+		{
+			_pFirst->Update(Controller, dt, pSyncContext);
+			_pSecond->Update(Controller, dt, pSyncContext);
+
+			_NormalizedTime = pSyncContext->NormalizedTime;
+			//???if phase matching, get _NormalizedTime from curr _pFirst phase?
+
+			break;
+		}
 		default: NOT_IMPLEMENTED; break;
 	}
 
-	//???in phase matching normalize phase scalar? to fallback to normalized time for clips that don't support phases.
-	CSyncContext LocalSyncContext{ ESyncMethod::NormalizedTime, _NormalizedTime };
-
 	//::Sys::DbgOut("***CBlendSpace1D: time %lf, input %lf, ipol (%d-%d) %lf\n", _NormalizedTime, Input,
 	//	std::distance(_Samples.cbegin(), PrevIt), std::distance(_Samples.cbegin(), It), BlendFactor);
-
-	_pFirst->Update(Controller, dt, &LocalSyncContext);
-	_pSecond->Update(Controller, dt, &LocalSyncContext);
 }
 //---------------------------------------------------------------------
 
@@ -160,6 +188,13 @@ float CBlendSpace1D::GetAnimationLengthScaled() const
 	if (!_pSecond) return _pFirst->GetAnimationLengthScaled();
 	return _pFirst->GetAnimationLengthScaled() * _Blender.GetWeight(0) +
 		_pSecond->GetAnimationLengthScaled() * _Blender.GetWeight(1);
+}
+//---------------------------------------------------------------------
+
+float CBlendSpace1D::GetLocomotionPhase() const
+{
+	// Always from the most weighted animation, others must be synchronized
+	return _pFirst ? _pFirst->GetLocomotionPhase() : std::numeric_limits<float>().lowest();
 }
 //---------------------------------------------------------------------
 

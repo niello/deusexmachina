@@ -49,7 +49,14 @@ void CClipPlayerNode::Update(CAnimationController& Controller, float dt, CSyncCo
 		case ESyncMethod::None:
 			_CurrClipTime = _Sampler.GetClip()->AdjustTime(_CurrClipTime + dt * _Speed, _Loop); break;
 		case ESyncMethod::NormalizedTime:
-			_CurrClipTime = pSyncContext->Value * _Sampler.GetClip()->GetDuration(); break;
+			_CurrClipTime = pSyncContext->NormalizedTime * _Sampler.GetClip()->GetDuration(); break;
+		case ESyncMethod::PhaseMatching:
+		{
+			float NormalizedTime = _Sampler.GetClip()->GetLocomotionPhaseNormalizedTime(pSyncContext->LocomotionPhase);
+			if (NormalizedTime < 0.f) NormalizedTime = pSyncContext->NormalizedTime; // Fall back to time based sync
+			_CurrClipTime = NormalizedTime * _Sampler.GetClip()->GetDuration();
+			break;
+		}
 		default: NOT_IMPLEMENTED; break;
 	}
 
@@ -75,6 +82,14 @@ void CClipPlayerNode::EvaluatePose(IPoseOutput& Output)
 float CClipPlayerNode::GetAnimationLengthScaled() const
 {
 	return (_Sampler.GetClip() && _Speed) ? (_Sampler.GetClip()->GetDuration() / _Speed) : 0.f;
+}
+//---------------------------------------------------------------------
+
+float CClipPlayerNode::GetLocomotionPhase() const
+{
+	return _Sampler.GetClip() ?
+		_Sampler.GetClip()->GetLocomotionPhase(_CurrClipTime / _Sampler.GetClip()->GetDuration()) :
+		std::numeric_limits<float>().lowest();
 }
 //---------------------------------------------------------------------
 

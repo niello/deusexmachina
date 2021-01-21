@@ -37,6 +37,7 @@ public:
 	virtual void EvaluatePose(IPoseOutput& Output) override;
 
 	virtual float GetAnimationLengthScaled() const override;
+	virtual float GetLocomotionPhase() const override;
 };
 
 }

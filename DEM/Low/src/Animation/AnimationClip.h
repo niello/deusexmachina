@@ -46,6 +46,8 @@ public:
 	float                       GetDuration() const { return _Duration; }
 	U32                         GetSampleCount() const { return _SampleCount; }
 	UPTR                        GetNodeCount() const;
+	float                       GetLocomotionPhase(float NormalizedTime) const;
+	float                       GetLocomotionPhaseNormalizedTime(float Phase) const;
 
 	float AdjustTime(float Time, bool Loop) const
 	{
