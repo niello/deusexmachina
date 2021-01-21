@@ -35,7 +35,8 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 	vector3 NextDest = Dest;
 	bool ActionChanged = false;
 	bool NeedSlowdown = true;
-	while (!dtStatusSucceed(Status))
+	bool LastEdge = dtStatusSucceed(Status);
+	while (!LastEdge)
 	{
 		// Check if Dest is close enough to be considered reached
 		const bool DestReached =
@@ -73,13 +74,14 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 			const float Dot = ToNext.dot(ToCurr);
 			if (Dot * Dot < ToNext.SqLength() * ToCurr.SqLength() * COS_SMALL_ANGLE_SQ)
 				break;
+
+			//!!!TODO: slowdown if too big turn is expected!
 		}
 
 		// Same action and direction, elongate path edge
 		Dest = NextDest;
+		LastEdge = dtStatusSucceed(Status);
 	}
-
-	const bool LastEdge = dtStatusSucceed(Status);
 
 	// Calculate distance from Dest to next action change point. Used for arrival slowdown.
 	float AdditionalDistance = NeedSlowdown ? 0.f : -0.f;
