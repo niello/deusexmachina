@@ -168,11 +168,24 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 			Speed *= ((2.f * SlowDownRadius - Distance) * Distance) / (SlowDownRadius * SlowDownRadius);
 	}
 
-	// Avoid overshooting, make exactly remaining movement in one frame
+	// Calculate desired velocity
+	vector3 DesiredLinearVelocity = DesiredMovement;
 	const float FrameTime = Character.Body->GetLevel()->GetStepTime();
-	vector3 DesiredLinearVelocity = (RemainingDistance < Speed * FrameTime) ?
-		DesiredMovement / FrameTime :
-		DesiredMovement * (Speed / RemainingDistance);
+	if (RemainingDistance < Speed * FrameTime)
+	{
+		// Avoid overshooting, make exactly remaining movement in one frame. Mark action
+		// succeeded without waiting CheckCharacterControllersArrival. It is also important
+		// because smoothing may deviate our desired destination farther than SqLinearTolerance
+		// and check will be false negative, leading to slowdown at each path corner.
+		DesiredLinearVelocity /= FrameTime;
+		Queue.SetStatus(SteerAction, EActionStatus::Succeeded);
+		if (Character.State == ECharacterState::Walk || Character.State == ECharacterState::ShortStep)
+			Character.State = ECharacterState::Stand;
+	}
+	else
+	{
+		DesiredLinearVelocity *= (Speed / RemainingDistance);
+	}
 
 // TODO: neighbour separation, obstacle avoidance (see DetourCrowd for impl.)
 //if (Character._ObstacleAvoidanceEnabled) AvoidObstacles();
@@ -317,11 +330,12 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 		auto pBody = Character.Body.Get();
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
 
-		// Access real physical transform, not an interpolated motion state
-		const auto& BodyTfm = pBody->GetBtBody()->getWorldTransform();
-
 		// NB: we don't try to process Steer and Turn simultaneously, only the most nested of them
 		auto Action = Queue.FindCurrent<AI::Steer, AI::Turn>();
+		if (Queue.GetStatus(Action) == EActionStatus::Succeeded) return;
+
+		// Access real physical transform, not an interpolated motion state
+		const auto& BodyTfm = pBody->GetBtBody()->getWorldTransform();
 
 		if (auto pSteerAction = Action.As<AI::Steer>())
 		{
