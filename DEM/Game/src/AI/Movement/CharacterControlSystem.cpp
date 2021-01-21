@@ -195,7 +195,9 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 	float DesiredRotation = 0.f;
 	if (Character.State == ECharacterState::Walk)
 	{
-		DesiredRotation = vector3::Angle2DNorm(LookatDir, DesiredLinearVelocity);
+		vector3 DesiredDir(DesiredLinearVelocity.x, 0.f, DesiredLinearVelocity.z);
+		DesiredDir.norm();
+		DesiredRotation = vector3::Angle2DNorm(LookatDir, DesiredDir);
 	}
 	else if (auto TurnAction = Queue.FindCurrent<AI::Turn>())
 	{
@@ -232,6 +234,10 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 static void UpdateRigidBodyMovement(Physics::CRigidBody* pBody, float dt, const vector3& DesiredLinearVelocity,
 	float DesiredAngularVelocity, float MaxAcceleration)
 {
+	//!!!DBG TMP!
+	::Sys::DbgOut(("***LinearSpeed = " + std::to_string(DesiredLinearVelocity.Length2D()) + ", ").c_str());
+	::Sys::DbgOut(("AngularVelocity = " + std::to_string(DesiredAngularVelocity) + '\n').c_str());
+
 	// We want a precise control over the movement, so deny freezing on low speed
 	// when movement is requested. When idle, allow to deactivate eventually.
 	if (DesiredLinearVelocity != vector3::Zero || DesiredAngularVelocity != 0.f)
