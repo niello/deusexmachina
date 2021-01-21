@@ -112,10 +112,10 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 		return vector3::Zero;
 	}
 
-	vector3 DesiredMovement(pSteerAction->_Dest.x - Pos.x, 0.f, pSteerAction->_Dest.z - Pos.z);
+	vector3 ToDest(pSteerAction->_Dest.x - Pos.x, 0.f, pSteerAction->_Dest.z - Pos.z);
 
 	// Check if already at the desired position
-	const float SqDistanceToDest = DesiredMovement.SqLength2D();
+	const float SqDistanceToDest = ToDest.SqLength2D();
 	const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
 	if (IsSameHeightLevel && SqDistanceToDest < AI::Steer::SqLinearTolerance)
 	{
@@ -136,6 +136,7 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 	}
 
 	// If current destination is an intermediate turning point, make the trajectory smooth
+	vector3 DesiredMovement = ToDest;
 	float RemainingDistance = n_sqrt(SqDistanceToDest);
 	if (Character.SteeringSmoothness > 0.f && pSteerAction->_NextDest != pSteerAction->_Dest)
 	{
@@ -168,24 +169,11 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 			Speed *= ((2.f * SlowDownRadius - Distance) * Distance) / (SlowDownRadius * SlowDownRadius);
 	}
 
-	// Calculate desired velocity
-	vector3 DesiredLinearVelocity = DesiredMovement;
+	// Avoid overshooting, make exactly remaining movement in one frame
 	const float FrameTime = Character.Body->GetLevel()->GetStepTime();
-	if (RemainingDistance < Speed * FrameTime)
-	{
-		// Avoid overshooting, make exactly remaining movement in one frame. Mark action
-		// succeeded without waiting CheckCharacterControllersArrival. It is also important
-		// because smoothing may deviate our desired destination farther than SqLinearTolerance
-		// and check will be false negative, leading to slowdown at each path corner.
-		DesiredLinearVelocity /= FrameTime;
-		Queue.SetStatus(SteerAction, EActionStatus::Succeeded);
-		if (Character.State == ECharacterState::Walk || Character.State == ECharacterState::ShortStep)
-			Character.State = ECharacterState::Stand;
-	}
-	else
-	{
-		DesiredLinearVelocity *= (Speed / RemainingDistance);
-	}
+	vector3 DesiredLinearVelocity = (RemainingDistance < Speed* FrameTime) ?
+		ToDest / FrameTime :
+		DesiredMovement * (Speed / RemainingDistance);
 
 // TODO: neighbour separation, obstacle avoidance (see DetourCrowd for impl.)
 //if (Character._ObstacleAvoidanceEnabled) AvoidObstacles();
@@ -247,10 +235,6 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 static void UpdateRigidBodyMovement(Physics::CRigidBody* pBody, float dt, const vector3& DesiredLinearVelocity,
 	float DesiredAngularVelocity, float MaxAcceleration)
 {
-	//!!!DBG TMP!
-	::Sys::DbgOut(("***LinearSpeed = " + std::to_string(DesiredLinearVelocity.Length2D()) + ", ").c_str());
-	::Sys::DbgOut(("AngularVelocity = " + std::to_string(DesiredAngularVelocity) + '\n').c_str());
-
 	// We want a precise control over the movement, so deny freezing on low speed
 	// when movement is requested. When idle, allow to deactivate eventually.
 	if (DesiredLinearVelocity != vector3::Zero || DesiredAngularVelocity != 0.f)

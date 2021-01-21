@@ -1,6 +1,6 @@
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
-#include <Game/ECS/Components/SceneComponent.h>
+#include <Game/ECS/Components/CharacterControllerComponent.h>
 #include <Game/GameLevel.h>
 #include <AI/Navigation/NavAgentComponent.h>
 #include <AI/Navigation/NavControllerComponent.h>
@@ -9,9 +9,12 @@
 #include <AI/Navigation/NavMeshDebugDraw.h>
 #include <AI/Navigation/NavMesh.h>
 #include <AI/Movement/SteerAction.h> // FIXME: only for Steer::SqLinearTolerance, can write better?
+#include <Physics/CollisionShape.h>
+#include <Physics/BulletConv.h>
 #include <Debug/DebugDraw.h>
 #include <DetourCommon.h>
 #include <DetourDebugDraw.h>
+#include <BulletDynamics/Dynamics/btRigidBody.h>
 #include <array>
 
 namespace DEM::AI
@@ -491,21 +494,24 @@ void InitNavigationAgents(Game::CGameWorld& World, Game::CGameLevel& Level, Reso
 // NB: PathQueue is updated here, after components
 void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueue& PathQueue, bool NewFrame)
 {
-	World.ForEachEntityWith<CNavAgentComponent, Game::CActionQueueComponent, const Game::CSceneComponent>(
+	World.ForEachEntityWith<CNavAgentComponent, Game::CActionQueueComponent, const Game::CCharacterControllerComponent>(
 		[dt, &World, &PathQueue, NewFrame](auto EntityID, auto& Entity,
 			CNavAgentComponent& Agent,
 			Game::CActionQueueComponent& Queue,
-			const Game::CSceneComponent& SceneComponent)
+			const Game::CCharacterControllerComponent& Character)
 	{
-		if (!SceneComponent.RootNode || !Agent.pNavQuery || !Agent.Settings) return;
+		if (!Character.Body || !Agent.pNavQuery || !Agent.Settings) return;
 
 		const auto PrevState = Agent.State;
 		const auto PrevMode = Agent.Mode;
 
 		auto NavigateAction = Queue.FindCurrent<Navigate>();
 
+		// Access real physical transform, not an interpolated motion state
+		const auto& Offset = Character.Body->GetCollisionShape()->GetOffset();
+		const vector3 Pos = BtVectorToVector(Character.Body->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
+
 		// Update navigation status from the current agent position
-		const auto& Pos = SceneComponent.RootNode->GetWorldPosition();
 		if (!UpdatePosition(Pos, Agent))
 		{
 			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Failed);
@@ -604,12 +610,12 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 
 void RenderDebugNavigation(Game::CGameWorld& World, Debug::CDebugDraw& DebugDraw)
 {
-	World.ForEachEntityWith<const CNavAgentComponent, const Game::CSceneComponent>(
+	World.ForEachEntityWith<const CNavAgentComponent, const Game::CCharacterControllerComponent>(
 		[&DebugDraw](auto EntityID, auto& Entity,
 			const CNavAgentComponent& Agent,
-			const Game::CSceneComponent& SceneComponent)
+			const Game::CCharacterControllerComponent& Character)
 	{
-		if (!SceneComponent.RootNode || !Agent.pNavQuery) return;
+		if (!Character.Body || !Agent.pNavQuery) return;
 
 		if (Agent.State == ENavigationState::Planning || Agent.State == ENavigationState::Following)
 		{
@@ -630,7 +636,8 @@ void RenderDebugNavigation(Game::CGameWorld& World, Debug::CDebugDraw& DebugDraw
 			if (dtStatusSucceed(Agent.pNavQuery->initStraightPathSearch(
 				pCurrPos, Agent.Corridor.getTarget(), pCurrPath, Agent.Corridor.getPathCount(), Ctx)))
 			{
-				vector3 From = SceneComponent.RootNode->GetWorldPosition();
+				const auto& Offset = Character.Body->GetCollisionShape()->GetOffset();
+				vector3 From = BtVectorToVector(Character.Body->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
 				vector3 To;
 				dtStatus Status;
 				U8 AreaType = Agent.CurrAreaType;
