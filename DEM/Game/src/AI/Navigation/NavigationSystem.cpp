@@ -538,7 +538,7 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 		// Multiple physics frames can be processed inside one logic frame. Target remains the same
 		// during the logic frame but might be reached by physics in the middle of it. So if there
 		// is an active sub-action, let's just continue executing it, without unnecessary update.
-		if (!NewFrame && PrevMode == Agent.Mode && HasActiveSubAction) return;
+		if (!NewFrame && HasActiveSubAction && PrevMode == Agent.Mode && Agent.State == ENavigationState::Following) return;
 
 		// Process target location changes and validity
 		bool DestChanged = true;
