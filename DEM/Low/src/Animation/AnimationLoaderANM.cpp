@@ -31,6 +31,9 @@ Core::PObject CAnimationLoaderANM::CreateResource(CStrID UID)
 	float Duration;
 	if (!Reader.Read(Duration)) return nullptr;
 
+	U32 SampleCount;
+	if (!Reader.Read(SampleCount)) return nullptr;
+
 	U16 NodeCount;
 	if (!Reader.Read(NodeCount) || !NodeCount) return nullptr;
 
@@ -43,23 +46,34 @@ Core::PObject CAnimationLoaderANM::CreateResource(CStrID UID)
 	}
 
 	// Load locomotion info
+	//???unique ptr to locomotion info structure?
+	DEM::Anim::PBipedLocomotionInfo LocomotionInfo;
 	U8 IsLocomotion;
 	if (!Reader.Read(IsLocomotion)) return nullptr;
 	if (IsLocomotion)
 	{
-		float Speed;
-		if (!Reader.Read(Speed)) return nullptr;
+		LocomotionInfo.reset(n_new(DEM::Anim::CBipedLocomotionInfo));
+		if (!Reader.Read(LocomotionInfo->Speed)) return nullptr;
+		if (!Reader.Read(LocomotionInfo->LeftFootOnGroundFrame)) return nullptr;
+		if (!Reader.Read(LocomotionInfo->RightFootOnGroundFrame)) return nullptr;
 
-		U16 FrameCount;
-		if (!Reader.Read(FrameCount)) return nullptr;
+		U16 PhaseCount;
+		if (!Reader.Read(PhaseCount)) return nullptr;
 
-		std::vector<float> Phases(FrameCount);
-		for (U16 i = 0; i < FrameCount; ++i)
-			if (!Reader.Read(Phases[i])) return nullptr;
+		LocomotionInfo->Phases.reset(n_new_array(float, PhaseCount));
+		if (Stream->Read(LocomotionInfo->Phases.get(), PhaseCount * sizeof(float)) != PhaseCount * sizeof(float)) return nullptr;
 
-		// TODO: process and save in the asset!
+		U16 PhaseTimeCount;
+		if (!Reader.Read(PhaseTimeCount)) return nullptr;
 
-		int DBG_TMP = 0; //!!!DBG TMP!
+		// Saved already sorted
+		for (U16 i = 0; i < PhaseTimeCount; ++i)
+		{
+			float Phase, Time;
+			if (!Reader.Read(Phase)) return nullptr;
+			if (!Reader.Read(Time)) return nullptr;
+			LocomotionInfo->PhaseNormalizedTimes.emplace_back(Phase, Time);
+		}
 	}
 
 	// Skip padding
@@ -89,7 +103,7 @@ Core::PObject CAnimationLoaderANM::CreateResource(CStrID UID)
 		return nullptr;
 	}
 
-	return n_new(DEM::Anim::CAnimationClip(pClip, Duration, new DEM::Anim::CSkeletonInfo(std::move(NodeMapping))));
+	return n_new(DEM::Anim::CAnimationClip(pClip, Duration, SampleCount, new DEM::Anim::CSkeletonInfo(std::move(NodeMapping)), std::move(LocomotionInfo)));
 }
 //---------------------------------------------------------------------
 

@@ -5,10 +5,12 @@
 namespace DEM::Anim
 {
 
-CAnimationClip::CAnimationClip(acl::CompressedClip* pClip, float Duration, PSkeletonInfo&& SkeletonInfo)
+CAnimationClip::CAnimationClip(acl::CompressedClip* pClip, float Duration, U32 SampleCount, PSkeletonInfo&& SkeletonInfo, PBipedLocomotionInfo&& LocomotionInfo)
 	: _pClip(pClip)
 	, _SkeletonInfo(std::move(SkeletonInfo))
+	, _LocomotionInfo(std::move(LocomotionInfo))
 	, _Duration(Duration)
+	, _SampleCount(SampleCount)
 {
 	// TODO: compare _SkeletonInfo for equality (in tools?), share between clips where identical!
 
