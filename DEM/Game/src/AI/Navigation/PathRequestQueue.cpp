@@ -33,10 +33,21 @@ bool CPathRequestQueue::Init(int MaxPath)
 
 void CPathRequestQueue::Update(int MaxIters)
 {
-	static const int MAX_KEEP_ALIVE = 2; // In update ticks
+	constexpr int MAX_KEEP_ALIVE = 2; // In update ticks
+	for (auto& Query : Queue)
+	{
+		if (Query.RequestID && (dtStatusSucceed(Query.Status) || dtStatusFailed(Query.Status)))
+		{
+			++Query.KeepAlive;
+			if (Query.KeepAlive > MAX_KEEP_ALIVE)
+			{
+				Query.RequestID = 0;
+				Query.Status = 0;
+			}
+		}
+	}
 
-	int IterCount = MaxIters;
-	
+	int IterCount = MaxIters;	
 	for (int i = 0; i < MAX_QUEUE; ++i)
 	{
 		CPathQuery& Query = Queue[QueueHead % MAX_QUEUE];
@@ -47,33 +58,22 @@ void CPathRequestQueue::Update(int MaxIters)
 			continue;
 		}
 		
-		if (dtStatusSucceed(Query.Status) || dtStatusFailed(Query.Status))
-		{
-			++Query.KeepAlive;
-			if (Query.KeepAlive > MAX_KEEP_ALIVE)
-			{
-				Query.RequestID = 0;
-				Query.Status = 0;
-			}
-			
-			++QueueHead;
-			continue;
-		}
-		
 		if (Query.Status == 0)
+		{
 			Query.Status = Query.pNavQuery->initSlicedFindPath(Query.StartRef, Query.EndRef, Query.StartPos, Query.EndPos, Query.pFilter);
+			if (dtStatusSucceed(Query.Status))
+				Query.Status = Query.pNavQuery->finalizeSlicedFindPath(Query.pPath, &Query.PathSize, MaxPathSize);
+		}
 
 		if (dtStatusInProgress(Query.Status))
 		{
 			int Iters = 0;
 			Query.Status = Query.pNavQuery->updateSlicedFindPath(IterCount, &Iters);
+			if (dtStatusSucceed(Query.Status))
+				Query.Status = Query.pNavQuery->finalizeSlicedFindPath(Query.pPath, &Query.PathSize, MaxPathSize);
 			IterCount -= Iters;
+			if (IterCount <= 0) break;
 		}
-
-		if (dtStatusSucceed(Query.Status))
-			Query.Status = Query.pNavQuery->finalizeSlicedFindPath(Query.pPath, &Query.PathSize, MaxPathSize);
-
-		if (IterCount <= 0) break;
 
 		++QueueHead;
 	}
@@ -89,7 +89,11 @@ U16 CPathRequestQueue::Request(dtPolyRef RStart, dtPolyRef REnd, const float* pS
 	for (i = 0; i < MAX_QUEUE; ++i)
 		if (Queue[i].RequestID == 0) break;
 
-	if (i == MAX_QUEUE) return 0;
+	if (i == MAX_QUEUE)
+	{
+		n_assert(false); // TODO: fix when it happens
+		return 0;
+	}
 	
 	CPathQuery& Query = Queue[i];
 	Query.RequestID = NextRequestID++;
