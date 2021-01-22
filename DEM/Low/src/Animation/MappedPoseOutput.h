@@ -8,7 +8,7 @@
 namespace DEM::Anim
 {
 
-class CStackMappedPoseOutput : public IPoseOutput
+class CMappedPoseOutput : public IPoseOutput
 {
 protected:
 
@@ -17,7 +17,7 @@ protected:
 
 public:
 
-	CStackMappedPoseOutput(IPoseOutput& Output, U16* PortMapping) : _Output(Output), _PortMapping(PortMapping) {}
+	CMappedPoseOutput(IPoseOutput& Output, U16* PortMapping) : _Output(Output), _PortMapping(PortMapping) {}
 
 	virtual U8 GetActivePortChannels(U16 Port) const override
 	{

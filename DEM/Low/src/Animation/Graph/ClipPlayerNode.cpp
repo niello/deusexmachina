@@ -80,14 +80,9 @@ void CClipPlayerNode::Update(CAnimationController& Controller, float dt, CSyncCo
 void CClipPlayerNode::EvaluatePose(IPoseOutput& Output)
 {
 	if (_PortMapping)
-	{
-		CStackMappedPoseOutput MappedOutput(Output, _PortMapping.get());
-		_Sampler.EvaluatePose(_CurrClipTime, MappedOutput);
-	}
+		_Sampler.EvaluatePose(_CurrClipTime, CMappedPoseOutput(Output, _PortMapping.get()));
 	else
-	{
 		_Sampler.EvaluatePose(_CurrClipTime, Output);
-	}
 }
 //---------------------------------------------------------------------
 

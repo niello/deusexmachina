@@ -29,14 +29,9 @@ void CStaticPoseClip::PlayInterval(float /*PrevTime*/, float /*CurrTime*/, bool 
 	if (IsLast && _Pose && Track.GetOutput())
 	{
 		if (_PortMapping)
-		{
-			CStackMappedPoseOutput MappedOutput(*Track.GetOutput(), _PortMapping.get());
-			_Pose->Apply(MappedOutput);
-		}
+			_Pose->Apply(CMappedPoseOutput(*Track.GetOutput(), _PortMapping.get()));
 		else
-		{
 			_Pose->Apply(*Track.GetOutput());
-		}
 	}
 }
 //---------------------------------------------------------------------
