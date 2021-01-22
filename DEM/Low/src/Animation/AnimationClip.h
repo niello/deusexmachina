@@ -19,6 +19,7 @@ struct CBipedLocomotionInfo
 	std::unique_ptr<float[]>             Phases; // One per each sample in a clip
 	std::vector<std::pair<float, float>> PhaseNormalizedTimes;
 	float                                Speed = 0.f;
+	U32                                  CycleStartFrame = 0;
 	U32                                  LeftFootOnGroundFrame = std::numeric_limits<U32>().max();
 	U32                                  RightFootOnGroundFrame = std::numeric_limits<U32>().max();
 };

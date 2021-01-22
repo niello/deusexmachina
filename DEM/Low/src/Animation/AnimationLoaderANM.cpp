@@ -54,6 +54,7 @@ Core::PObject CAnimationLoaderANM::CreateResource(CStrID UID)
 	{
 		LocomotionInfo.reset(n_new(DEM::Anim::CBipedLocomotionInfo));
 		if (!Reader.Read(LocomotionInfo->Speed)) return nullptr;
+		if (!Reader.Read(LocomotionInfo->CycleStartFrame)) return nullptr;
 		if (!Reader.Read(LocomotionInfo->LeftFootOnGroundFrame)) return nullptr;
 		if (!Reader.Read(LocomotionInfo->RightFootOnGroundFrame)) return nullptr;
 

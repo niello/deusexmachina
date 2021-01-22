@@ -47,10 +47,19 @@ float CAnimationClip::GetLocomotionPhase(float NormalizedTime) const
 	const float Sample = NormalizedTime * SegmentCount;
 	float IntSampleF;
 	const float Factor = std::modff(Sample, &IntSampleF);
+	const size_t IntSample1 = static_cast<size_t>(IntSampleF);
 
-	const size_t IntSample = static_cast<size_t>(IntSampleF);
-	if (IntSample >= SegmentCount) return _LocomotionInfo->Phases[IntSample];
-	return std::fmaf(_LocomotionInfo->Phases[IntSample], 1.f - Factor, Factor * _LocomotionInfo->Phases[IntSample + 1]);
+	const float Phase1 = _LocomotionInfo->Phases[IntSample1];
+	if (IntSample1 >= SegmentCount) return Phase1;
+
+	const size_t IntSample2 = IntSample1 + 1;
+	float Phase2 = _LocomotionInfo->Phases[IntSample2];
+	if (IntSample2 != _LocomotionInfo->CycleStartFrame) return std::fmaf(Phase1, 1.f - Factor, Factor * Phase2);
+
+	// Special case - looping from end to beginning
+	Phase2 += 360.f;
+	const float Result = std::fmaf(Phase1, 1.f - Factor, Factor * Phase2);
+	return (Result > 360.f) ? (Result - 360.f) : Result;
 }
 //---------------------------------------------------------------------
 
@@ -72,7 +81,7 @@ float CAnimationClip::GetLocomotionPhaseNormalizedTime(float Phase) const
 	float Time2 = It->second;
 	const float Factor = (Phase - PrevIt->first) / (It->first - PrevIt->first);
 
-	if (Time2 > Time1) return std::fmaf(Time1, 1.f - Factor, Factor * Time2);
+	if (Time2 >= Time1) return std::fmaf(Time1, 1.f - Factor, Factor * Time2);
 
 	// Special case - looping from end to beginning
 	Time2 += 1.f;

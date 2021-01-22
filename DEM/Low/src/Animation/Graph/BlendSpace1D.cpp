@@ -148,11 +148,11 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt, CSyncCont
 		case ESyncMethod::NormalizedTime:
 		case ESyncMethod::PhaseMatching:
 		{
-			_pFirst->Update(Controller, dt, pSyncContext);
-			_pSecond->Update(Controller, dt, pSyncContext);
-
 			_NormalizedTime = pSyncContext->NormalizedTime;
 			//???if phase matching, get _NormalizedTime from curr _pFirst phase?
+
+			_pFirst->Update(Controller, dt, pSyncContext);
+			_pSecond->Update(Controller, dt, pSyncContext);
 
 			break;
 		}

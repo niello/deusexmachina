@@ -416,8 +416,9 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 	{
 		const float Speed = CompareFloat(pLocomotionInfo->SpeedFromFeet, 0.f) ? pLocomotionInfo->SpeedFromRoot : pLocomotionInfo->SpeedFromFeet;
 		WriteStream<float>(File, Speed);
-		WriteStream(File, static_cast<uint32_t>(pLocomotionInfo->LeftFootOnGroundFrame));
-		WriteStream(File, static_cast<uint32_t>(pLocomotionInfo->RightFootOnGroundFrame));
+		WriteStream(File, pLocomotionInfo->CycleStartFrame);
+		WriteStream(File, pLocomotionInfo->LeftFootOnGroundFrame);
+		WriteStream(File, pLocomotionInfo->RightFootOnGroundFrame);
 		WriteVectorToStream(File, pLocomotionInfo->Phases);
 		WriteMapToStream(File, pLocomotionInfo->PhaseNormalizedTimes);
 	}
@@ -782,6 +783,8 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 		if (i > 0 && (Out.Phases[i - 1] - Out.Phases[i]) > 180.f) PhaseStart = i;
 	}
 
+	Out.CycleStartFrame = static_cast<uint32_t>(PhaseStart);
+
 	// Fill phase to time mapping
 	const float InvFrame = (FrameCount > 1) ? (1.f / static_cast<float>(FrameCount - 1)) : 0.f;
 	const size_t PhaseEnd = (PhaseStart > 0) ? (PhaseStart - 1) : (FrameCount > 1) ? (FrameCount - 2) : 0;
@@ -818,7 +821,7 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 	const auto LeftFoGFrames = FindFootOnGroundFrames(UpDir, LeftFootPositions);
 	if (LeftFoGFrames.first < FrameCount)
 	{
-		Out.LeftFootOnGroundFrame = LeftFoGFrames.first;
+		Out.LeftFootOnGroundFrame = static_cast<uint32_t>(LeftFoGFrames.first);
 
 		const auto RelRootStart = acl::vector_sub(RootPositions[LeftFoGFrames.first], LeftFootPositions[LeftFoGFrames.first]);
 		const auto RelRootEnd = acl::vector_sub(RootPositions[LeftFoGFrames.second], LeftFootPositions[LeftFoGFrames.second]);
@@ -833,7 +836,7 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 	const auto RightFoGFrames = FindFootOnGroundFrames(UpDir, RightFootPositions);
 	if (RightFoGFrames.first < FrameCount)
 	{
-		Out.RightFootOnGroundFrame = RightFoGFrames.first;
+		Out.RightFootOnGroundFrame = static_cast<uint32_t>(RightFoGFrames.first);
 
 		const auto RelRootStart = acl::vector_sub(RootPositions[RightFoGFrames.first], RightFootPositions[RightFoGFrames.first]);
 		const auto RelRootEnd = acl::vector_sub(RootPositions[RightFoGFrames.second], RightFootPositions[RightFoGFrames.second]);

@@ -105,8 +105,9 @@ struct CBone
 
 struct CLocomotionInfo
 {
-	size_t                 LeftFootOnGroundFrame = std::numeric_limits<size_t>().max();
-	size_t                 RightFootOnGroundFrame = std::numeric_limits<size_t>().max();
+	uint32_t               CycleStartFrame = 0;
+	uint32_t               LeftFootOnGroundFrame = std::numeric_limits<uint32_t>().max();
+	uint32_t               RightFootOnGroundFrame = std::numeric_limits<uint32_t>().max();
 	float                  SpeedFromRoot = 0.f;
 	float                  SpeedFromFeet = 0.f;
 	std::vector<float>     Phases;
