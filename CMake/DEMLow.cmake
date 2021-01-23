@@ -24,6 +24,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/TimelineTrackLoaderHRD.h
 	DEM/Low/src/Animation/Graph/AnimGraphNode.h
 	DEM/Low/src/Animation/Graph/BlendSpace1D.h
+	DEM/Low/src/Animation/Graph/BlendSpace2D.h
 	DEM/Low/src/Animation/Graph/ClipPlayerNode.h
 	DEM/Low/src/Core/Application.h
 	DEM/Low/src/Core/ApplicationState.h
@@ -153,6 +154,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/IO/Streams/MemStream.h
 	DEM/Low/src/IO/Streams/ScopedStream.h
 	DEM/Low/src/Math/AABB.h
+	DEM/Low/src/Math/DelaunayTriangulation.h
 	DEM/Low/src/Math/EnvelopeCurve.h
 	DEM/Low/src/Math/Euler.h
 	DEM/Low/src/Math/EulerAngles.h
@@ -343,6 +345,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/TimelineTrackLoaderHRD.cpp
 	DEM/Low/src/Animation/Graph/AnimGraphNode.cpp
 	DEM/Low/src/Animation/Graph/BlendSpace1D.cpp
+	DEM/Low/src/Animation/Graph/BlendSpace2D.cpp
 	DEM/Low/src/Animation/Graph/ClipPlayerNode.cpp
 	DEM/Low/src/Core/Application.cpp
 	DEM/Low/src/Core/CoreServer.cpp
