@@ -82,7 +82,8 @@ endif()
 
 if(DEM_CEGUI_DEPS_FOUND)
 	set(CEGUI_BUILD_COMMON_DIALOGS OFF CACHE INTERNAL "" FORCE)
-
+	set(CEGUI_USE_RAQM OFF CACHE INTERNAL "" FORCE)
+	
 	add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/CEGUI" "${CMAKE_CURRENT_BINARY_DIR}/CEGUI")
 	get_all_targets(DEM_CEGUI_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}/CEGUI")
 	foreach(_TARGET_NAME IN LISTS DEM_CEGUI_TARGETS)
@@ -91,9 +92,15 @@ if(DEM_CEGUI_DEPS_FOUND)
 			"${CMAKE_CURRENT_SOURCE_DIR}/CEGUI/cegui/include"
 			"${CMAKE_CURRENT_BINARY_DIR}/CEGUI/cegui/include"
 			"${CMAKE_CURRENT_SOURCE_DIR}/CEGUI/dependencies/include")
-		if (CEGUI_BUILD_STATIC_CONFIGURATION)
+		if(CEGUI_BUILD_STATIC_CONFIGURATION)
 			target_compile_definitions(${_TARGET_NAME} INTERFACE CEGUI_STATIC)
-			if (CEGUI_BUILD_STATIC_FACTORY_MODULE)
+			#if(CEGUI_USE_RAQM)
+			#	target_compile_definitions(${_TARGET_NAME} PUBLIC RAQM_STATIC)
+			#	if(WIN32)
+			#		target_link_libraries(${_TARGET_NAME} usp10) # gdi32 rpcrt4)
+			#	endif()
+			#endif()
+			if(CEGUI_BUILD_STATIC_FACTORY_MODULE)
 				target_compile_definitions(${_TARGET_NAME} INTERFACE CEGUI_BUILD_STATIC_FACTORY_MODULE)
 			endif()
 		endif()
