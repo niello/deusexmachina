@@ -1,7 +1,7 @@
 #include "BlendSpace2D.h"
 #include <Animation/AnimationController.h>
 #include <Animation/SkeletonInfo.h>
-#include <Math/DelaunayTriangulation.h>
+#include <Math/DelaunayTriangulation.hpp>
 
 namespace DEM::Math
 {
