@@ -1,6 +1,7 @@
 import os
 import sys
 import shutil
+from glob import glob
 from subprocess import check_call
 from hashlib import sha256
 
@@ -9,9 +10,10 @@ import zipfile
 
 
 PROJECT_FOLDER = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-EXPECTED_SHA256 = "b1c822d880b3d361782f1807ea8a6f55e0834a02afd983f2a5141db04a333938"
+EXPECTED_SHA256 = "55c0b811d1e86986b5ebb45e6779cf2ec25a68aceb5d059a70f3432eedb4bb73"
 HAS_ROOT_DIR = True
-DEPS_URL = 'https://bitbucket.org/Jahndal/cegui-dependencies/get/dem/default-minimal.zip'
+DEPS_URL = 'https://github.com/niello/cegui-dependencies/archive/dem_minimal.zip'
+#DEPS_URL = 'https://codeload.github.com/niello/cegui-dependencies/zip/dem_minimal'
 
 
 def unpack_repo(archive_path, dest_folder, has_root_dir=HAS_ROOT_DIR):
@@ -23,9 +25,11 @@ def unpack_repo(archive_path, dest_folder, has_root_dir=HAS_ROOT_DIR):
     if has_root_dir:
         input_zip = zipfile.ZipFile(archive_path)
         for name in input_zip.namelist():
+            if name.endswith('/'):
+                continue
             file_data = input_zip.read(name)
             file_path = os.path.join(dest_folder, name[name.find('/') + 1:])
-            os.makedirs( os.path.dirname(file_path), exist_ok=True)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
             with open(file_path, "wb") as file:
                 file.write(file_data)
     else:
@@ -36,8 +40,9 @@ def unpack_repo(archive_path, dest_folder, has_root_dir=HAS_ROOT_DIR):
 
 if __name__ == "__main__":
     cmake_generator_name = sys.argv[1] if len(sys.argv) > 1 else 'Visual Studio 15 2017'
+    cmake_generator_arch = sys.argv[2] if len(sys.argv) > 2 else 'Win32'
 
-    print("Building CEGUI dependencies using CMake generator " + cmake_generator_name)
+    print("Building CEGUI dependencies using CMake generator " + cmake_generator_name + " " + cmake_generator_arch)
 
     downloads_folder = os.path.join(PROJECT_FOLDER, 'Deps', 'Downloads')
     archive_path = os.path.join(downloads_folder, 'CEGUI-Deps.zip')
@@ -73,6 +78,20 @@ if __name__ == "__main__":
 
     build_folder = os.path.join(dest_folder, 'build')
 
-    check_call(['cmake', '-G', cmake_generator_name, '-DCMAKE_CONFIGURATION_TYPES:STRING=Debug;Release', '-S', dest_folder, '-B' + build_folder])
+    check_call(['cmake', '-G', cmake_generator_name, '-A', cmake_generator_arch, '-DCMAKE_CONFIGURATION_TYPES:STRING=Debug;Release', '-S', dest_folder, '-B' + build_folder])
     check_call(['cmake', '--build', build_folder, '--target', 'ALL_BUILD', '--config', 'Debug'])
     check_call(['cmake', '--build', build_folder, '--target', 'ALL_BUILD', '--config', 'Release'])
+
+    # After building, copy artifacts to a CEGUI dependencies directory
+    deps_folder = os.path.join(build_folder, 'dependencies')
+    cegui_deps_folder = os.path.join(PROJECT_FOLDER, 'Deps', 'CEGUI', 'dependencies')
+    if os.path.exists(cegui_deps_folder):
+        shutil.rmtree(cegui_deps_folder)
+    src_include_folder = os.path.join(deps_folder, 'include')
+    dest_include_folder = os.path.join(cegui_deps_folder, 'include')
+    shutil.copytree(src_include_folder, dest_include_folder, dirs_exist_ok=True)
+    src_libs_folder = os.path.join(deps_folder, 'lib', 'static')
+    dest_libs_folder = os.path.join(cegui_deps_folder, 'lib', 'static')
+    shutil.copytree(src_libs_folder, dest_libs_folder, dirs_exist_ok=True)
+    for file_path in glob(deps_folder + '/*.txt'):
+        shutil.copy(file_path, cegui_deps_folder)
