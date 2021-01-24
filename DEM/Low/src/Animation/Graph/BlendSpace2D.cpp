@@ -34,10 +34,10 @@ void CBlendSpace2D::Init(CAnimationControllerInitContext& Context)
 
 	if (!_Samples.empty())
 	{
-		// TODO: build triangles and acceleration structure
-		// AABB inflate by epsilon? or mb not needed?
-		std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> Triangles;
-		DEM::Math::Delaunay2D(_Samples.cbegin(), _Samples.cend(), Triangles);
+		// TODO: build acceleration structure
+		//!!!when sampling, too low weight must be discarded with renormalization! E.g. 0.499+0.499+0.002->0.5+0.5+0.0
+		std::vector<Math::CDelaunayTriangle> Triangles;
+		Math::Delaunay2D(_Samples.cbegin(), _Samples.cend(), Triangles);
 
 		for (auto& Sample : _Samples)
 			Sample.Source->Init(Context);
@@ -62,6 +62,7 @@ static inline void AdvanceNormalizedTime(float dt, float AnimLength, float& Norm
 }
 //---------------------------------------------------------------------
 
+//!!!DUPLICATED CODE! See 1D!
 void CBlendSpace2D::UpdateSingleSample(CAnimGraphNode& Node, CAnimationController& Controller, float dt, CSyncContext* pSyncContext)
 {
 	const ESyncMethod SyncMethod = pSyncContext ? pSyncContext->Method : ESyncMethod::None;
@@ -197,6 +198,7 @@ void CBlendSpace2D::EvaluatePose(IPoseOutput& Output)
 		//???cache locality may suffer if blending in place? scene nodes are scattered around the heap.
 		_pFirst->EvaluatePose(*_Blender.GetInput(0));
 		_pSecond->EvaluatePose(*_Blender.GetInput(1));
+		if (_pThird) _pThird->EvaluatePose(*_Blender.GetInput(2));
 
 		_Blender.EvaluatePose(Output);
 	}
@@ -209,7 +211,8 @@ float CBlendSpace2D::GetAnimationLengthScaled() const
 	if (!_pFirst) return 0.f;
 	if (!_pSecond) return _pFirst->GetAnimationLengthScaled();
 	return _pFirst->GetAnimationLengthScaled() * _Blender.GetWeight(0) +
-		_pSecond->GetAnimationLengthScaled() * _Blender.GetWeight(1);
+		_pSecond->GetAnimationLengthScaled() * _Blender.GetWeight(1) +
+		(_pThird ? _pThird->GetAnimationLengthScaled() * _Blender.GetWeight(2) : 0.f);
 }
 //---------------------------------------------------------------------
 
@@ -223,22 +226,14 @@ float CBlendSpace2D::GetLocomotionPhase() const
 // NB: sample value must be different from neighbours at least by SAMPLE_MATCH_TOLERANCE
 bool CBlendSpace2D::AddSample(PAnimGraphNode&& Source, float XValue, float YValue)
 {
+	// TODO: fail if acceleration structure/triangles are not empty, or invalidate them and refresh on next Init/sampling!
 	if (!Source) return false;
 
-	auto It = _Samples.cend();
-	if (!_Samples.empty())
-	{
-		It = std::lower_bound(_Samples.cbegin(), _Samples.cend(), XValue,
-			[](const auto& Elm, float Val) { return Elm.XValue < Val; });
+	for (const auto& Sample : _Samples)
+		if (n_fequal(Sample.XValue, XValue, SAMPLE_MATCH_TOLERANCE) && n_fequal(Sample.YValue, YValue, SAMPLE_MATCH_TOLERANCE))
+			return false;
 
-		// Check if the value is the same as upper
-		if (It != _Samples.cend() && n_fequal(It->XValue, XValue, SAMPLE_MATCH_TOLERANCE)) return false;
-
-		// Check if the value is the same as lower
-		if (It != _Samples.cbegin() && n_fequal(std::prev(It)->XValue, XValue, SAMPLE_MATCH_TOLERANCE)) return false;
-	}
-
-	_Samples.insert(It, { std::move(Source), XValue });
+	_Samples.push_back({ std::move(Source), XValue, YValue });
 	return true;
 }
 //---------------------------------------------------------------------
