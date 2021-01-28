@@ -1,7 +1,8 @@
 #pragma once
 #include <Math/Vector2.h>
 #include <vector>
-#include <array>
+#include <array>   // std::array, for assignment and {}-init
+#include <numeric> // std::iota
 
 // Delaunay triangulation algorithm
 // https://en.wikipedia.org/wiki/Delaunay_triangulation
@@ -12,8 +13,6 @@ constexpr uint32_t DelaunaySuperTriAIndex = std::numeric_limits<uint32_t>().max(
 constexpr uint32_t DelaunaySuperTriBIndex = std::numeric_limits<uint32_t>().max() - 2;
 constexpr uint32_t DelaunaySuperTriCIndex = std::numeric_limits<uint32_t>().max() - 1;
 constexpr uint32_t DELAUNAY_INVALID_INDEX = std::numeric_limits<uint32_t>().max();
-
-using CDelaunayTriangle = std::array<uint32_t, 3>;
 
 template<typename T>
 struct CDelaunayInputTraits
@@ -65,7 +64,7 @@ inline float CircumcircleDeterminant(vector2 a, vector2 b, vector2 c, vector2 d)
 // Naive Bowyer-Watson implementation. Result is CCW. There are possible optimizations to be added later if necessary.
 // NB: input vertices should not contain duplicates
 template<typename TFwdIt>
-void Delaunay2D(TFwdIt ItBegin, TFwdIt ItEnd, std::vector<CDelaunayTriangle>& OutTriangles)
+void Delaunay2D(TFwdIt ItBegin, TFwdIt ItEnd, std::vector<std::array<uint32_t, 3>>& OutTriangles)
 {
 	using Tr = CDelaunayInputTraits<typename std::iterator_traits<TFwdIt>::value_type>;
 
@@ -81,8 +80,8 @@ void Delaunay2D(TFwdIt ItBegin, TFwdIt ItEnd, std::vector<CDelaunayTriangle>& Ou
 	}
 	const auto Size = static_cast<size_t>(SignedSize);
 
-	// Need a room for super-triangle indices, and we support only 32-bit indices
-	if (Size > std::numeric_limits<uint32_t>().max() - 3) return;
+	// Max index must be less than the first special index
+	if (Size > DelaunaySuperTriAIndex) return;
 
 	OutTriangles.clear();
 	OutTriangles.reserve(Size + 1);
@@ -148,10 +147,21 @@ void Delaunay2D(TFwdIt ItBegin, TFwdIt ItEnd, std::vector<CDelaunayTriangle>& Ou
 	}), OutTriangles.end());
 
 	// If all points are collinear, connect them with segments (degenerate triangles)
-	// FIXME: points are not sorted here, may add non-optimal segments
 	if (OutTriangles.empty())
+	{
+		// Sort points in 2D to minimize segments and avoid overlapping
+		std::vector<uint32_t> SortedIndices(Size);
+		std::iota(SortedIndices.begin(), SortedIndices.end(), 0);
+		std::sort(SortedIndices.begin(), SortedIndices.end(), [ItBegin](uint32_t ia, uint32_t ib)
+		{
+			const vector2 a = Tr::GetPoint(*std::next(ItBegin, ia));
+			const vector2 b = Tr::GetPoint(*std::next(ItBegin, ib));
+			return (a.x < b.x) || (a.x == b.x && a.y < b.y);
+		});
+
 		for (size_t i = 0; i < Size - 1; ++i)
-			OutTriangles.push_back({ i, i + 1, DELAUNAY_INVALID_INDEX });
+			OutTriangles.push_back({ SortedIndices[i], SortedIndices[i + 1], DELAUNAY_INVALID_INDEX });
+	}
 }
 //---------------------------------------------------------------------
 

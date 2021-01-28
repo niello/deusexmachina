@@ -36,8 +36,7 @@ void CBlendSpace2D::Init(CAnimationControllerInitContext& Context)
 	{
 		// TODO: build acceleration structure
 		//!!!when sampling, too low weight must be discarded with renormalization! E.g. 0.499+0.499+0.002->0.5+0.5+0.0
-		std::vector<Math::CDelaunayTriangle> Triangles;
-		Math::Delaunay2D(_Samples.cbegin(), _Samples.cend(), Triangles);
+		Math::Delaunay2D(_Samples.cbegin(), _Samples.cend(), _Triangles);
 
 		for (auto& Sample : _Samples)
 			Sample.Source->Init(Context);

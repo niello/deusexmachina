@@ -24,18 +24,19 @@ protected:
 
 	static inline constexpr float SAMPLE_MATCH_TOLERANCE = 0.001f; //???or relative to parameter space?
 
-	std::vector<CSample> _Samples;
-	CAnimationBlender    _Blender;
-	CAnimGraphNode*      _pFirst = nullptr;
-	CAnimGraphNode*      _pSecond = nullptr;
-	CAnimGraphNode*      _pThird = nullptr;
+	std::vector<CSample>                 _Samples;
+	std::vector<std::array<uint32_t, 3>> _Triangles;
+	CAnimationBlender                    _Blender;
+	CAnimGraphNode*                      _pFirst = nullptr;
+	CAnimGraphNode*                      _pSecond = nullptr;
+	CAnimGraphNode*                      _pThird = nullptr;
 
-	CStrID               _XParamID;
-	CStrID               _YParamID;
-	UPTR                 _XParamIndex = INVALID_INDEX; // Cached for fast access
-	UPTR                 _YParamIndex = INVALID_INDEX; // Cached for fast access
+	CStrID                               _XParamID;
+	CStrID                               _YParamID;
+	UPTR                                 _XParamIndex = INVALID_INDEX; // Cached for fast access
+	UPTR                                 _YParamIndex = INVALID_INDEX; // Cached for fast access
 
-	float                _NormalizedTime = 0.f; // Current time normalized to [0..1]
+	float                                _NormalizedTime = 0.f; // Current time normalized to [0..1]
 
 	void          UpdateSingleSample(CAnimGraphNode& Node, CAnimationController& Controller, float dt, CSyncContext* pSyncContext);
 
