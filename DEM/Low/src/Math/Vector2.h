@@ -24,10 +24,10 @@ public:
 
 	static const vector2 zero;
 
-	vector2(): x(0.f), y(0.f) {}
-	vector2(const float _x, const float _y): x(_x), y(_y) {}
-	vector2(const vector2& vec): x(vec.x), y(vec.y) {}
-	vector2(const float* p): x(p[0]), y(p[1]) {}
+	constexpr vector2(): x(0.f), y(0.f) {}
+	constexpr vector2(const float _x, const float _y): x(_x), y(_y) {}
+	constexpr vector2(const vector2& vec): x(vec.x), y(vec.y) {}
+	constexpr vector2(const float* p): x(p[0]), y(p[1]) {}
 
 	void	set(const float _x, const float _y) { x = _x; y = _y; }
 	void	set(const vector2& v) { x = v.x; y = v.y; }

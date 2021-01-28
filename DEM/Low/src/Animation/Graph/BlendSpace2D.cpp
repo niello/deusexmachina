@@ -126,6 +126,8 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 		return;
 	}
 
+	//!!!???TODO: check if samples reference the same animation with the same speed etc!?
+
 	// For convenience make sure _pFirst is always the one with greater weight
 	const float BlendFactor = (XInput - PrevIt->XValue) / (It->XValue - PrevIt->XValue);
 	if (BlendFactor <= 0.5f)
