@@ -64,7 +64,7 @@ inline float CircumcircleDeterminant(vector2 a, vector2 b, vector2 c, vector2 d)
 // Naive Bowyer-Watson implementation. Result is CCW. There are possible optimizations to be added later if necessary.
 // NB: input vertices should not contain duplicates
 template<typename TFwdIt>
-void Delaunay2D(TFwdIt ItBegin, TFwdIt ItEnd, std::vector<std::array<uint32_t, 3>>& OutTriangles)
+bool Delaunay2D(TFwdIt ItBegin, TFwdIt ItEnd, std::vector<std::array<uint32_t, 3>>& OutTriangles)
 {
 	using Tr = CDelaunayInputTraits<typename std::iterator_traits<TFwdIt>::value_type>;
 
@@ -76,7 +76,7 @@ void Delaunay2D(TFwdIt ItBegin, TFwdIt ItEnd, std::vector<std::array<uint32_t, 3
 		else if (SignedSize == 2)
 			OutTriangles.push_back({ 0, 1, DELAUNAY_INVALID_INDEX });
 
-		return;
+		return false;
 	}
 	const auto Size = static_cast<size_t>(SignedSize);
 
@@ -146,22 +146,23 @@ void Delaunay2D(TFwdIt ItBegin, TFwdIt ItEnd, std::vector<std::array<uint32_t, 3
 		return Tri[0] >= Size || Tri[1] >= Size || Tri[2] >= Size;
 	}), OutTriangles.end());
 
-	// If all points are collinear, connect them with segments (degenerate triangles)
-	if (OutTriangles.empty())
-	{
-		// Sort points in 2D to minimize segments and avoid overlapping
-		std::vector<uint32_t> SortedIndices(Size);
-		std::iota(SortedIndices.begin(), SortedIndices.end(), 0);
-		std::sort(SortedIndices.begin(), SortedIndices.end(), [ItBegin](uint32_t ia, uint32_t ib)
-		{
-			const vector2 a = Tr::GetPoint(*std::next(ItBegin, ia));
-			const vector2 b = Tr::GetPoint(*std::next(ItBegin, ib));
-			return (a.x < b.x) || (a.x == b.x && a.y < b.y);
-		});
+	if (!OutTriangles.empty()) return true;
 
-		for (size_t i = 0; i < Size - 1; ++i)
-			OutTriangles.push_back({ SortedIndices[i], SortedIndices[i + 1], DELAUNAY_INVALID_INDEX });
-	}
+	// If all points are collinear, connect them with segments (degenerate triangles)
+	// Sort points in 2D to minimize segments and avoid overlapping
+	std::vector<uint32_t> SortedIndices(Size);
+	std::iota(SortedIndices.begin(), SortedIndices.end(), 0);
+	std::sort(SortedIndices.begin(), SortedIndices.end(), [ItBegin](uint32_t ia, uint32_t ib)
+	{
+		const vector2 a = Tr::GetPoint(*std::next(ItBegin, ia));
+		const vector2 b = Tr::GetPoint(*std::next(ItBegin, ib));
+		return (a.x < b.x) || (a.x == b.x && a.y < b.y);
+	});
+
+	for (size_t i = 0; i < Size - 1; ++i)
+		OutTriangles.push_back({ SortedIndices[i], SortedIndices[i + 1], DELAUNAY_INVALID_INDEX });
+
+	return false;
 }
 //---------------------------------------------------------------------
 

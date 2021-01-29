@@ -70,6 +70,12 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt, CSyncCont
 {
 	if (_Samples.empty()) return;
 
+	if (_Samples.size() == 1)
+	{
+		UpdateSingleSample(*_Samples[0].Source, Controller, dt, pSyncContext);
+		return;
+	}
+
 	const float Input = Controller.GetFloat(_ParamIndex);
 
 	//???use cache if input parameter didn't change?
@@ -80,12 +86,6 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt, CSyncCont
 	// Scale animation speed for values outside the sample range
 	const float ClampedInput = std::clamp(Input, _Samples.front().Value, _Samples.back().Value);
 	if (ClampedInput && ClampedInput != Input) dt *= (Input / ClampedInput);
-
-	if (_Samples.size() == 1)
-	{
-		UpdateSingleSample(*_Samples[0].Source, Controller, dt, pSyncContext);
-		return;
-	}
 
 	const auto It = std::lower_bound(_Samples.cbegin(), _Samples.cend(), Input,
 		[](const auto& Elm, float Val) { return Elm.Value < Val; });

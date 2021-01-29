@@ -34,9 +34,75 @@ void CBlendSpace2D::Init(CAnimationControllerInitContext& Context)
 
 	if (!_Samples.empty())
 	{
-		// TODO: build acceleration structure
-		//!!!when sampling, too low weight must be discarded with renormalization! E.g. 0.499+0.499+0.002->0.5+0.5+0.0
-		Math::Delaunay2D(_Samples.cbegin(), _Samples.cend(), _Triangles);
+		// TODO: can obtain adjacency info as a side-effect of Delaunay triangulation?
+		std::vector<std::array<uint32_t, 3>> Triangles;
+		Math::Delaunay2D(_Samples.cbegin(), _Samples.cend(), Triangles);
+
+		//!!!process degenerate cases (point, collinear segments)!
+
+		// TODO: could calculate geometric median if it improves runtime search, but for now considered an overkill
+		vector2 Center;
+		for (const auto& Sample : _Samples)
+		{
+			Center.x += Sample.XValue;
+			Center.y += Sample.YValue;
+		}
+		Center /= static_cast<float>(_Samples.size());
+		size_t StartIndex = INVALID_INDEX;
+
+		_Triangles.resize(Triangles.size());
+		for (size_t i = 0; i < Triangles.size(); ++i)
+		{
+			const auto& SrcTri = Triangles[i];
+			auto& Tri = _Triangles[i];
+
+			// Cache constants for barycentric coordinate evaluation
+			Tri.ax = _Samples[SrcTri[0]].XValue;
+			Tri.ay = _Samples[SrcTri[0]].YValue;
+			Tri.abx = _Samples[SrcTri[1]].XValue - Tri.ax;
+			Tri.aby = _Samples[SrcTri[1]].YValue - Tri.ay;
+			Tri.acx = _Samples[SrcTri[2]].XValue - Tri.ax;
+			Tri.acy = _Samples[SrcTri[2]].YValue - Tri.ay;
+			Tri.InvDenominator = 1.f / (Tri.abx * Tri.acy - Tri.acx * Tri.aby);
+
+			// Check if this triangle contains the starting point
+			if (StartIndex == INVALID_INDEX)
+			{
+				const float apx = Center.x - Tri.ax;
+				const float apy = Center.y - Tri.ay;
+				const float v = (apx * Tri.acy - Tri.acx * apy) * Tri.InvDenominator;
+				if (v >= 0.f && v <= 1.f)
+				{
+					const float w = (Tri.abx * apy - apx * Tri.aby) * Tri.InvDenominator;
+					if (w >= 0.f && (v + w) <= 1.f) StartIndex = i;
+				}
+			}
+		}
+
+		// TODO: could sort by adjacency to improve cache locality when searching. Worth it?
+		n_assert(StartIndex != INVALID_INDEX);
+		if (StartIndex != 0)
+		{
+			std::swap(Triangles[StartIndex], Triangles[0]);
+			std::swap(_Triangles[StartIndex], _Triangles[0]);
+		}
+
+		// Build adjacency info
+		for (size_t i = 0; i < Triangles.size(); ++i)
+		{
+			for (size_t j = i + 1; j < Triangles.size(); ++j)
+			{
+				//!!!write adjacency in both directions!
+				//for (auto& [Edge, IsValid] : Edges)
+				//{
+				//	if (Edge[0] == Tri[0] && Edge[1] == Tri[2]) IsValid = Edge20 = false;
+				//	else if (Edge[0] == Tri[1] && Edge[1] == Tri[0]) IsValid = Edge01 = false;
+				//	else if (Edge[0] == Tri[2] && Edge[1] == Tri[1]) IsValid = Edge12 = false;
+				//	else continue;
+				//	if (!Edge01 && !Edge12 && !Edge20) break;
+				//}
+			}
+		}
 
 		for (auto& Sample : _Samples)
 			Sample.Source->Init(Context);
@@ -91,8 +157,17 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 {
 	if (_Samples.empty()) return;
 
+	if (_Samples.size() == 1)
+	{
+		UpdateSingleSample(*_Samples[0].Source, Controller, dt, pSyncContext);
+		return;
+	}
+
 	const float XInput = Controller.GetFloat(_XParamIndex);
 	const float YInput = Controller.GetFloat(_YParamIndex);
+
+	//!!!when sampling, too low weight must be discarded with renormalization! E.g. 0.499+0.499+0.002->0.5+0.5+0.0
+	//!!!try to use calculated barycentric coords to find point on segment when outside a convex!
 
 	//???use cache if input parameter didn't change?
 
@@ -100,14 +175,9 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 	// then dt *= (BeforeFilter / AfterFilter);
 
 	// Scale animation speed for values outside the sample range
+	//!!!FIXME: can't clamp this way! should handle outside-a-convex case for this?
 	const float ClampedInput = std::clamp(XInput, _Samples.front().XValue, _Samples.back().XValue);
 	if (ClampedInput && ClampedInput != XInput) dt *= (XInput / ClampedInput);
-
-	if (_Samples.size() == 1)
-	{
-		UpdateSingleSample(*_Samples[0].Source, Controller, dt, pSyncContext);
-		return;
-	}
 
 	const auto It = std::lower_bound(_Samples.cbegin(), _Samples.cend(), XInput,
 		[](const auto& Elm, float Val) { return Elm.XValue < Val; });
