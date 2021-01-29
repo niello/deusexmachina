@@ -89,11 +89,12 @@ void CBlendSpace2D::Init(CAnimationControllerInitContext& Context)
 		}
 
 		// Build adjacency info. Only one edge can be common for two triangles.
-		for (size_t i = 0; i < TriCount; ++i)
+		for (size_t i = 0; i < TriCount - 1; ++i)
 		{
 			const auto& SrcTri1 = Triangles[i];
 			for (size_t j = i + 1; j < TriCount; ++j)
 			{
+				// TODO: could skip already filled edges. Note that only one edge can be common, early exits will be needed.
 				uint32_t Edge1, Edge2;
 				const auto& SrcTri2 = Triangles[j];
 				if (SrcTri1[0] == SrcTri2[1] && SrcTri1[1] == SrcTri2[0]) { Edge1 = 0; Edge2 = 0; }
