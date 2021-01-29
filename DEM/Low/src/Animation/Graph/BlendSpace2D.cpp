@@ -50,8 +50,9 @@ void CBlendSpace2D::Init(CAnimationControllerInitContext& Context)
 		Center /= static_cast<float>(_Samples.size());
 		size_t StartIndex = INVALID_INDEX;
 
-		_Triangles.resize(Triangles.size());
-		for (size_t i = 0; i < Triangles.size(); ++i)
+		const size_t TriCount = Triangles.size();
+		_Triangles.resize(TriCount);
+		for (size_t i = 0; i < TriCount; ++i)
 		{
 			const auto& SrcTri = Triangles[i];
 			auto& Tri = _Triangles[i];
@@ -87,20 +88,27 @@ void CBlendSpace2D::Init(CAnimationControllerInitContext& Context)
 			std::swap(_Triangles[StartIndex], _Triangles[0]);
 		}
 
-		// Build adjacency info
-		for (size_t i = 0; i < Triangles.size(); ++i)
+		// Build adjacency info. Only one edge can be common for two triangles.
+		for (size_t i = 0; i < TriCount; ++i)
 		{
-			for (size_t j = i + 1; j < Triangles.size(); ++j)
+			const auto& SrcTri1 = Triangles[i];
+			for (size_t j = i + 1; j < TriCount; ++j)
 			{
-				//!!!write adjacency in both directions!
-				//for (auto& [Edge, IsValid] : Edges)
-				//{
-				//	if (Edge[0] == Tri[0] && Edge[1] == Tri[2]) IsValid = Edge20 = false;
-				//	else if (Edge[0] == Tri[1] && Edge[1] == Tri[0]) IsValid = Edge01 = false;
-				//	else if (Edge[0] == Tri[2] && Edge[1] == Tri[1]) IsValid = Edge12 = false;
-				//	else continue;
-				//	if (!Edge01 && !Edge12 && !Edge20) break;
-				//}
+				uint32_t Edge1, Edge2;
+				const auto& SrcTri2 = Triangles[j];
+				if (SrcTri1[0] == SrcTri2[1] && SrcTri1[1] == SrcTri2[0]) { Edge1 = 0; Edge2 = 0; }
+				else if (SrcTri1[0] == SrcTri2[2] && SrcTri1[1] == SrcTri2[1]) { Edge1 = 0; Edge2 = 1; }
+				else if (SrcTri1[0] == SrcTri2[0] && SrcTri1[1] == SrcTri2[2]) { Edge1 = 0; Edge2 = 2; }
+				else if (SrcTri1[1] == SrcTri2[1] && SrcTri1[2] == SrcTri2[0]) { Edge1 = 1; Edge2 = 0; }
+				else if (SrcTri1[1] == SrcTri2[2] && SrcTri1[2] == SrcTri2[1]) { Edge1 = 1; Edge2 = 1; }
+				else if (SrcTri1[1] == SrcTri2[0] && SrcTri1[2] == SrcTri2[2]) { Edge1 = 1; Edge2 = 2; }
+				else if (SrcTri1[2] == SrcTri2[1] && SrcTri1[0] == SrcTri2[0]) { Edge1 = 2; Edge2 = 0; }
+				else if (SrcTri1[2] == SrcTri2[2] && SrcTri1[0] == SrcTri2[1]) { Edge1 = 2; Edge2 = 1; }
+				else if (SrcTri1[2] == SrcTri2[0] && SrcTri1[0] == SrcTri2[2]) { Edge1 = 2; Edge2 = 2; }
+				else continue;
+
+				_Triangles[i].Adjacent[Edge1] = j;
+				_Triangles[j].Adjacent[Edge2] = i;
 			}
 		}
 

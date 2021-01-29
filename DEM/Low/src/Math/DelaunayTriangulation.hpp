@@ -81,7 +81,7 @@ bool Delaunay2D(TFwdIt ItBegin, TFwdIt ItEnd, std::vector<std::array<uint32_t, 3
 	const auto Size = static_cast<size_t>(SignedSize);
 
 	// Max index must be less than the first special index
-	if (Size > DelaunaySuperTriAIndex) return;
+	if (Size > DelaunaySuperTriAIndex) return false;
 
 	OutTriangles.clear();
 	OutTriangles.reserve(Size + 1);
