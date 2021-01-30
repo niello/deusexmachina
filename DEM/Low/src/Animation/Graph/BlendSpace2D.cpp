@@ -225,7 +225,7 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 			{
 				case 0: // AB
 				{
-					u = (apx * Tri.abx + apy * Tri.aby) / (Tri.abx * Tri.abx + Tri.aby * Tri.aby);
+					v = (apx * Tri.abx + apy * Tri.aby) / (Tri.abx * Tri.abx + Tri.aby * Tri.aby);
 					_pFirst = Tri.Samples[0]->Source.get();
 					_pSecond = Tri.Samples[1]->Source.get();
 					break;
@@ -237,22 +237,22 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 					const float bpx = XInput - Tri.Samples[1]->XValue;
 					const float bpy = YInput - Tri.Samples[1]->YValue;
 
-					u = (bpx * bcx + bpy * bcy) / (bcx * bcx + bcy * bcy);
+					v = (bpx * bcx + bpy * bcy) / (bcx * bcx + bcy * bcy);
 					_pFirst = Tri.Samples[1]->Source.get();
 					_pSecond = Tri.Samples[2]->Source.get();
 					break;
 				}
 				case 2: // CA (inverted to AC to reuse cached values)
 				{
-					u = (apx * Tri.acx + apy * Tri.acy) / (Tri.acx * Tri.acx + Tri.acy * Tri.acy);
+					v = (apx * Tri.acx + apy * Tri.acy) / (Tri.acx * Tri.acx + Tri.acy * Tri.acy);
 					_pFirst = Tri.Samples[0]->Source.get();
 					_pSecond = Tri.Samples[2]->Source.get();
 					break;
 				}
 			}
 
-			u = std::clamp(u, 0.f, 1.f);
-			v = 1.f - u;
+			v = std::clamp(v, 0.f, 1.f);
+			u = 1.f - v;
 			w = 0.f;
 
 			_pThird = nullptr;
