@@ -161,6 +161,7 @@ void CBlendSpace2D::UpdateSingleSample(CAnimGraphNode& Node, CAnimationControlle
 
 	_pFirst = &Node;
 	_pSecond = nullptr;
+	_pThird = nullptr;
 	_pFirst->Update(Controller, dt, pSyncContext);
 }
 //---------------------------------------------------------------------
@@ -206,6 +207,8 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 			break;
 		}
 
+		// TODO: can try to optimize through an array of pairs (x, y) where EdgeIndex = (w[x] > w[y]) ? x : y;
+		//???will need to order edges as BC, CA, AB (opposite to vertices)?
 		size_t EdgeIndex = 0;
 		switch (NegativeMask)
 		{
@@ -232,6 +235,8 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 				}
 				case 1: // BC
 				{
+					// We do not cache this because it adds 2 floats to every triangle
+					// but is useful only for triangles with BC being a border edge
 					const float bcx = Tri.Samples[2]->XValue - Tri.Samples[1]->XValue;
 					const float bcy = Tri.Samples[2]->YValue - Tri.Samples[1]->YValue;
 					const float bpx = XInput - Tri.Samples[1]->XValue;
@@ -288,6 +293,11 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 		_pThird = nullptr;
 		RenormalizeWeights = true;
 	}
+
+	//!!!???TODO: check if samples reference the same animation with the same speed etc!? or blend speeds?
+	//!!!CRY: playback scale is blended from active samples by weight! Does support reverse?
+	//It is used for dt modification only, so maybe should work OK.
+
 	if (RenormalizeWeights)
 	{
 		const float Coeff = 1.f / (u + v + w);
@@ -321,8 +331,6 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 		return;
 	}
 
-	//!!!???TODO: check if samples reference the same animation with the same speed etc!? or blend speeds?
-
 	_Blender.SetWeight(0, u);
 	_Blender.SetWeight(1, v);
 	_Blender.SetWeight(2, w);
@@ -342,15 +350,32 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 			_pFirst->Update(Controller, dt, &LocalSyncContext);
 
 			// Try to synchronize next animations by a locomotion phase
-			const float Phase = _pFirst->GetLocomotionPhase();
-			if (Phase >= 0.f)
 			{
-				LocalSyncContext.Method = ESyncMethod::PhaseMatching;
-				LocalSyncContext.LocomotionPhase = Phase;
+				const float Phase = _pFirst->GetLocomotionPhase();
+				if (Phase >= 0.f)
+				{
+					LocalSyncContext.Method = ESyncMethod::PhaseMatching;
+					LocalSyncContext.LocomotionPhase = Phase;
+				}
 			}
 
 			_pSecond->Update(Controller, dt, &LocalSyncContext);
-			if (_pThird) _pThird->Update(Controller, dt, &LocalSyncContext);
+
+			if (_pThird)
+			{
+				// Try to synchronize next animations by a locomotion phase
+				if (LocalSyncContext.Method != ESyncMethod::PhaseMatching)
+				{
+					const float Phase = _pSecond->GetLocomotionPhase();
+					if (Phase >= 0.f)
+					{
+						LocalSyncContext.Method = ESyncMethod::PhaseMatching;
+						LocalSyncContext.LocomotionPhase = Phase;
+					}
+				}
+
+				_pThird->Update(Controller, dt, &LocalSyncContext);
+			}
 
 			break;
 		}
@@ -369,8 +394,16 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 		default: NOT_IMPLEMENTED; break;
 	}
 
-	//::Sys::DbgOut("***CBlendSpace2D: time %lf, input %lf, ipol (%d-%d) %lf\n", _NormalizedTime, Input,
-	//	std::distance(_Samples.cbegin(), PrevIt), std::distance(_Samples.cbegin(), It), BlendFactor);
+	{
+		auto GetSampleIndex = [this](CAnimGraphNode* pNode) -> int
+		{
+			for (size_t i = 0; i < _Samples.size(); ++i)
+				if (_Samples[i].Source.get() == pNode) return static_cast<int>(i);
+			return -1;
+		};
+		::Sys::DbgOut("***CBlendSpace2D: time %lf, ipol [%d]:%lf [%d]:%lf [%d]:%lf\n", _NormalizedTime,
+			GetSampleIndex(_pFirst), u, GetSampleIndex(_pSecond), v, GetSampleIndex(_pThird), w);
+	}
 }
 //---------------------------------------------------------------------
 
