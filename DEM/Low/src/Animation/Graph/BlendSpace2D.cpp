@@ -175,13 +175,47 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 	const float XInput = Controller.GetFloat(_XParamIndex);
 	const float YInput = Controller.GetFloat(_YParamIndex);
 
-	//!!!when sampling, too low weight must be discarded with renormalization! E.g. 0.499+0.499+0.002->0.5+0.5+0.0
-	//!!!try to use calculated barycentric coords to find point on segment when outside a convex!
-
 	//???use cache if input parameter didn't change?
 
 	//???TODO: optionally filter input to make transitions smoother?
 	// then dt *= (BeforeFilter / AfterFilter);
+
+	// Find triangle or segment of active samples
+	// FIXME: support degenerate cases - point or collinear!
+	size_t CurrTriIndex = 0;
+	float u, v, w;
+	while (true)
+	{
+		const auto& Tri = _Triangles[CurrTriIndex];
+		const float apx = XInput - Tri.ax;
+		const float apy = YInput - Tri.ay;
+		v = (apx * Tri.acy - Tri.acx * apy) * Tri.InvDenominator;
+		w = (Tri.abx * apy - apx * Tri.aby) * Tri.InvDenominator;
+		u = 1.f - v - w;
+		const auto NegativeMask = (static_cast<int>(w < 0.f) << 2) | (static_cast<int>(v < 0.f) << 1) | static_cast<int>(u < 0.f);
+
+		// Zero mask means that all weights are positive and we are inside a triangle
+		if (!NegativeMask) break;
+
+		switch (NegativeMask)
+		{
+			case 1: CurrTriIndex = Tri.Adjacent[1]; break;               // Only A weight is negative, goto BC
+			case 2: CurrTriIndex = Tri.Adjacent[2]; break;               // Only B weight is negative, goto CA
+			case 3: CurrTriIndex = Tri.Adjacent[(v > u) ? 2 : 1]; break; // A and B weights are negative, goto BC/CA
+			case 4: CurrTriIndex = Tri.Adjacent[0]; break;               // Only C weight is negative, goto AB
+			case 5: CurrTriIndex = Tri.Adjacent[(w > u) ? 0 : 1]; break; // A and C weights are negative, goto BC/AB
+			case 6: CurrTriIndex = Tri.Adjacent[(w > v) ? 0 : 2]; break; // B and C weights are negative, goto CA/AB
+		}
+
+		if (CurrTriIndex == INVALID_INDEX)
+		{
+			// We moved outside the convex poly, project onto the border segment
+			//!!!calc weights, apply distance-based scaling like in 1D but for both inputs!
+			break;
+		}
+	}
+
+	//!!!when sampling, too low weight must be discarded with renormalization! E.g. 0.499+0.499+0.002->0.5+0.5+0.0
 
 	// Scale animation speed for values outside the sample range
 	//!!!FIXME: can't clamp this way! should handle outside-a-convex case for this?

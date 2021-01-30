@@ -26,7 +26,7 @@ protected:
 
 	struct CTriangle
 	{
-		uint32_t Adjacent[3] = { INVALID_INDEX, INVALID_INDEX, INVALID_INDEX };
+		uint32_t Adjacent[3] = { INVALID_INDEX, INVALID_INDEX, INVALID_INDEX }; // AB, BC, CA
 		float    InvDenominator;
 		float    ax, ay;
 		float    abx, aby;
