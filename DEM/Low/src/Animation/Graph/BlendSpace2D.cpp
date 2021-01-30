@@ -56,14 +56,17 @@ void CBlendSpace2D::Init(CAnimationControllerInitContext& Context)
 		{
 			const auto& SrcTri = Triangles[i];
 			auto& Tri = _Triangles[i];
+			Tri.Samples[0] = &_Samples[SrcTri[0]];
+			Tri.Samples[1] = &_Samples[SrcTri[1]];
+			Tri.Samples[2] = &_Samples[SrcTri[2]];
 
 			// Cache constants for barycentric coordinate evaluation
-			Tri.ax = _Samples[SrcTri[0]].XValue;
-			Tri.ay = _Samples[SrcTri[0]].YValue;
-			Tri.abx = _Samples[SrcTri[1]].XValue - Tri.ax;
-			Tri.aby = _Samples[SrcTri[1]].YValue - Tri.ay;
-			Tri.acx = _Samples[SrcTri[2]].XValue - Tri.ax;
-			Tri.acy = _Samples[SrcTri[2]].YValue - Tri.ay;
+			Tri.ax = Tri.Samples[0]->XValue;
+			Tri.ay = Tri.Samples[0]->YValue;
+			Tri.abx = Tri.Samples[1]->XValue - Tri.ax;
+			Tri.aby = Tri.Samples[1]->YValue - Tri.ay;
+			Tri.acx = Tri.Samples[2]->XValue - Tri.ax;
+			Tri.acy = Tri.Samples[2]->YValue - Tri.ay;
 			Tri.InvDenominator = 1.f / (Tri.abx * Tri.acy - Tri.acx * Tri.aby);
 
 			// Check if this triangle contains the starting point
@@ -195,75 +198,143 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 		const auto NegativeMask = (static_cast<int>(w < 0.f) << 2) | (static_cast<int>(v < 0.f) << 1) | static_cast<int>(u < 0.f);
 
 		// Zero mask means that all weights are positive and we are inside a triangle
-		if (!NegativeMask) break;
-
-		switch (NegativeMask)
+		if (!NegativeMask)
 		{
-			case 1: CurrTriIndex = Tri.Adjacent[1]; break;               // Only A weight is negative, goto BC
-			case 2: CurrTriIndex = Tri.Adjacent[2]; break;               // Only B weight is negative, goto CA
-			case 3: CurrTriIndex = Tri.Adjacent[(v > u) ? 2 : 1]; break; // A and B weights are negative, goto BC/CA
-			case 4: CurrTriIndex = Tri.Adjacent[0]; break;               // Only C weight is negative, goto AB
-			case 5: CurrTriIndex = Tri.Adjacent[(w > u) ? 0 : 1]; break; // A and C weights are negative, goto BC/AB
-			case 6: CurrTriIndex = Tri.Adjacent[(w > v) ? 0 : 2]; break; // B and C weights are negative, goto CA/AB
+			_pFirst = Tri.Samples[0]->Source.get();
+			_pSecond = Tri.Samples[1]->Source.get();
+			_pThird = Tri.Samples[2]->Source.get();
+			break;
 		}
 
+		size_t EdgeIndex = 0;
+		switch (NegativeMask)
+		{
+			case 1: EdgeIndex = 1; break;               // Only A weight is negative, goto BC
+			case 2: EdgeIndex = 2; break;               // Only B weight is negative, goto CA
+			case 3: EdgeIndex = (v > u) ? 2 : 1; break; // A and B weights are negative, goto BC/CA
+			case 4: EdgeIndex = 0; break;               // Only C weight is negative, goto AB
+			case 5: EdgeIndex = (w > u) ? 0 : 1; break; // A and C weights are negative, goto BC/AB
+			case 6: EdgeIndex = (w > v) ? 0 : 2; break; // B and C weights are negative, goto CA/AB
+		}
+
+		CurrTriIndex = Tri.Adjacent[EdgeIndex];
 		if (CurrTriIndex == INVALID_INDEX)
 		{
-			// We moved outside the convex poly, project onto the border segment
-			//!!!calc weights, apply distance-based scaling like in 1D but for both inputs!
+			// We moved outside the convex poly, project input onto the border segment
+			switch (EdgeIndex)
+			{
+				case 0: // AB
+				{
+					u = (apx * Tri.abx + apy * Tri.aby) / (Tri.abx * Tri.abx + Tri.aby * Tri.aby);
+					_pFirst = Tri.Samples[0]->Source.get();
+					_pSecond = Tri.Samples[1]->Source.get();
+					break;
+				}
+				case 1: // BC
+				{
+					const float bcx = Tri.Samples[2]->XValue - Tri.Samples[1]->XValue;
+					const float bcy = Tri.Samples[2]->YValue - Tri.Samples[1]->YValue;
+					const float bpx = XInput - Tri.Samples[1]->XValue;
+					const float bpy = YInput - Tri.Samples[1]->YValue;
+
+					u = (bpx * bcx + bpy * bcy) / (bcx * bcx + bcy * bcy);
+					_pFirst = Tri.Samples[1]->Source.get();
+					_pSecond = Tri.Samples[2]->Source.get();
+					break;
+				}
+				case 2: // CA (inverted to AC to reuse cached values)
+				{
+					u = (apx * Tri.acx + apy * Tri.acy) / (Tri.acx * Tri.acx + Tri.acy * Tri.acy);
+					_pFirst = Tri.Samples[0]->Source.get();
+					_pSecond = Tri.Samples[2]->Source.get();
+					break;
+				}
+			}
+
+			u = std::clamp(u, 0.f, 1.f);
+			v = 1.f - u;
+			w = 0.f;
+
+			_pThird = nullptr;
+
+			//!!!???apply distance-based anim speed scaling like in 1D but for both inputs!?
+			// Example from 1D:
+			// Scale animation speed for values outside the sample range
+			//!!!FIXME: can't clamp this way! should handle outside-a-convex case for this?
+			//const float ClampedInput = std::clamp(XInput, _Samples.front().XValue, _Samples.back().XValue);
+			//if (ClampedInput && ClampedInput != XInput) dt *= (XInput / ClampedInput);
 			break;
 		}
 	}
 
-	//!!!when sampling, too low weight must be discarded with renormalization! E.g. 0.499+0.499+0.002->0.5+0.5+0.0
-
-	// Scale animation speed for values outside the sample range
-	//!!!FIXME: can't clamp this way! should handle outside-a-convex case for this?
-	const float ClampedInput = std::clamp(XInput, _Samples.front().XValue, _Samples.back().XValue);
-	if (ClampedInput && ClampedInput != XInput) dt *= (XInput / ClampedInput);
-
-	const auto It = std::lower_bound(_Samples.cbegin(), _Samples.cend(), XInput,
-		[](const auto& Elm, float Val) { return Elm.XValue < Val; });
-
-	if (It == _Samples.cbegin() || (It != _Samples.cend() && n_fequal(It->XValue, XInput, SAMPLE_MATCH_TOLERANCE)))
+	// Get rid of too small weights to avoid sampling animations for them
+	constexpr float MINIMAL_WEIGHT = 0.01f;
+	bool RenormalizeWeights = false;
+	if (_pFirst && u < MINIMAL_WEIGHT)
 	{
-		UpdateSingleSample(*It->Source, Controller, dt, pSyncContext);
+		u = 0.f;
+		_pFirst = nullptr;
+		RenormalizeWeights = true;
+	}
+	if (_pSecond && v < MINIMAL_WEIGHT)
+	{
+		v = 0.f;
+		_pSecond = nullptr;
+		RenormalizeWeights = true;
+	}
+	if (_pThird && w < MINIMAL_WEIGHT)
+	{
+		w = 0.f;
+		_pThird = nullptr;
+		RenormalizeWeights = true;
+	}
+	if (RenormalizeWeights)
+	{
+		const float Coeff = 1.f / (u + v + w);
+		u *= Coeff;
+		v *= Coeff;
+		w *= Coeff;
+	}
+
+	// Sort samples by weight descending
+	if (u < v)
+	{
+		std::swap(u, v);
+		std::swap(_pFirst, _pSecond);
+	}
+	if (u < w)
+	{
+		std::swap(u, w);
+		std::swap(_pFirst, _pThird);
+	}
+	if (v < w)
+	{
+		std::swap(v, w);
+		std::swap(_pSecond, _pThird);
+	}
+
+	n_assert_dbg(_pFirst);
+
+	if (!_pSecond)
+	{
+		UpdateSingleSample(*_pFirst, Controller, dt, pSyncContext);
 		return;
 	}
 
-	const auto PrevIt = std::prev(It);
-	if (n_fequal(PrevIt->XValue, XInput, SAMPLE_MATCH_TOLERANCE) || (It == _Samples.cend() && PrevIt->XValue < XInput))
-	{
-		UpdateSingleSample(*PrevIt->Source, Controller, dt, pSyncContext);
-		return;
-	}
+	//!!!???TODO: check if samples reference the same animation with the same speed etc!? or blend speeds?
 
-	//!!!???TODO: check if samples reference the same animation with the same speed etc!?
-
-	// For convenience make sure _pFirst is always the one with greater weight
-	const float BlendFactor = (XInput - PrevIt->XValue) / (It->XValue - PrevIt->XValue);
-	if (BlendFactor <= 0.5f)
-	{
-		_pFirst = PrevIt->Source.get();
-		_pSecond = It->Source.get();
-		_Blender.SetWeight(0, 1.f - BlendFactor);
-		_Blender.SetWeight(1, BlendFactor);
-	}
-	else
-	{
-		_pFirst = It->Source.get();
-		_pSecond = PrevIt->Source.get();
-		_Blender.SetWeight(0, BlendFactor);
-		_Blender.SetWeight(1, 1.f - BlendFactor);
-	}
+	_Blender.SetWeight(0, u);
+	_Blender.SetWeight(1, v);
+	_Blender.SetWeight(2, w);
 
 	const ESyncMethod SyncMethod = pSyncContext ? pSyncContext->Method : ESyncMethod::None;
 	switch (SyncMethod)
 	{
 		case ESyncMethod::None:
 		{
-			const float AnimLength = It->Source->GetAnimationLengthScaled() * BlendFactor +
-				PrevIt->Source->GetAnimationLengthScaled() * (1.f - BlendFactor);
+			const float AnimLength = _pFirst->GetAnimationLengthScaled() * u +
+				_pSecond->GetAnimationLengthScaled() * v +
+				(_pThird ? _pThird->GetAnimationLengthScaled() * w : 0.f);
 			AdvanceNormalizedTime(dt, AnimLength, _NormalizedTime);
 
 			CSyncContext LocalSyncContext{ ESyncMethod::NormalizedTime, _NormalizedTime };
@@ -279,6 +350,7 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 			}
 
 			_pSecond->Update(Controller, dt, &LocalSyncContext);
+			if (_pThird) _pThird->Update(Controller, dt, &LocalSyncContext);
 
 			break;
 		}
@@ -290,6 +362,7 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 
 			_pFirst->Update(Controller, dt, pSyncContext);
 			_pSecond->Update(Controller, dt, pSyncContext);
+			if (_pThird) _pThird->Update(Controller, dt, pSyncContext);
 
 			break;
 		}
