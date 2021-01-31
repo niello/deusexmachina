@@ -40,7 +40,7 @@ void CBlendSpace2D::Init(CAnimationControllerInitContext& Context)
 
 		//!!!process degenerate cases (point, collinear segments)!
 
-		// TODO: could calculate geometric median if it improves runtime search, but for now considered an overkill
+		// TODO: could calculate geometric median if it improves runtime search, but for now considered it an overkill
 		vector2 Center;
 		for (const auto& Sample : _Samples)
 		{
@@ -172,6 +172,7 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 
 	if (_Samples.size() == 1)
 	{
+		//???!!!after fixind dt due to scaling based on distance from input to sample?! See 1D.
 		UpdateSingleSample(*_Samples[0].Source, Controller, dt, pSyncContext);
 		return;
 	}
