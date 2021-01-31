@@ -208,8 +208,12 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 			break;
 		}
 
-		// TODO: can try to optimize through an array of pairs (x, y) where EdgeIndex = (w[x] > w[y]) ? x : y;
-		//???will need to order edges as BC, CA, AB (opposite to vertices)?
+		// TODO: can try to optimize through an array of pairs
+		//const float Weights[] = { u, v, w }; // FIXME: tmp, could use as a primary weight storage!
+		//constexpr std::pair<size_t, size_t> Edges[] = { {3, 3}, {1, 1}, {2, 2}, {2, 1}, {0, 0}, {0, 1}, {0, 2} };
+		//const auto [x, y] = Edges[NegativeMask];
+		//const size_t EdgeIndex2 = (Weights[x] > Weights[y]) ? x : y;
+		//!!!need to order edges as BC, CA, AB (opposite to vertices) to map uvw by index!
 		size_t EdgeIndex = 0;
 		switch (NegativeMask)
 		{
