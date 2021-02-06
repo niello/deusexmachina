@@ -37,9 +37,7 @@ protected:
 	std::vector<CSample>   _Samples;
 	std::vector<CTriangle> _Triangles;
 	CAnimationBlender      _Blender;
-	CAnimGraphNode*        _pFirst = nullptr;
-	CAnimGraphNode*        _pSecond = nullptr;
-	CAnimGraphNode*        _pThird = nullptr;
+	CAnimGraphNode*        _pActiveSamples[3] = { nullptr };
 
 	CStrID                 _XParamID;
 	CStrID                 _YParamID;
@@ -60,6 +58,7 @@ public:
 
 	virtual float GetAnimationLengthScaled() const override;
 	virtual float GetLocomotionPhase() const override;
+	virtual bool  HasLocomotion() const override { return _pActiveSamples[0] && _pActiveSamples[0]->HasLocomotion(); } //???check all?
 
 	bool          AddSample(PAnimGraphNode&& Source, float XValue, float YValue);
 };

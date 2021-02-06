@@ -50,26 +50,47 @@ void CClipPlayerNode::Update(CAnimationController& Controller, float dt, CSyncCo
 		{
 			_CurrClipTime = _Sampler.GetClip()->AdjustTime(_CurrClipTime + dt * _Speed, _Loop);
 
-			//::Sys::DbgOut("***CClipPlayerNode: master, time %lf (rel %lf), clip %s\n", _CurrClipTime,
-			//	_CurrClipTime / _Sampler.GetClip()->GetDuration(), _ClipID.CStr());
+			::Sys::DbgOut("***CClipPlayerNode: master, time %lf (rel %lf), clip %s\n", _CurrClipTime,
+				_CurrClipTime / _Sampler.GetClip()->GetDuration(), _ClipID.CStr());
 			break;
 		}
 		case ESyncMethod::NormalizedTime:
 		{
 			_CurrClipTime = pSyncContext->NormalizedTime * _Sampler.GetClip()->GetDuration();
 
-			//::Sys::DbgOut("***CClipPlayerNode: synced, time %lf (rel %lf), clip %s\n", _CurrClipTime,
-			//	_CurrClipTime / _Sampler.GetClip()->GetDuration(), _ClipID.CStr());
+			::Sys::DbgOut("***CClipPlayerNode: time-synced, time %lf (rel %lf), clip %s\n", _CurrClipTime,
+				_CurrClipTime / _Sampler.GetClip()->GetDuration(), _ClipID.CStr());
 			break;
 		}
 		case ESyncMethod::PhaseMatching:
 		{
-			float NormalizedTime = _Sampler.GetClip()->GetLocomotionPhaseNormalizedTime(pSyncContext->LocomotionPhase);
-			if (NormalizedTime < 0.f) NormalizedTime = pSyncContext->NormalizedTime; // Fall back to time based sync
-			_CurrClipTime = NormalizedTime * _Sampler.GetClip()->GetDuration();
+			const float NormalizedTime = _Sampler.GetClip()->GetLocomotionPhaseNormalizedTime(pSyncContext->LocomotionPhase);
+			if (NormalizedTime < 0.f)
+			{
+				// TODO: per-animation or per-node setting?
+				constexpr bool FallbackToTimeSync = false;
+				if (FallbackToTimeSync)
+				{
+					_CurrClipTime = pSyncContext->NormalizedTime * _Sampler.GetClip()->GetDuration();
 
-			//::Sys::DbgOut("***CClipPlayerNode: phase-synced, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
-			//	_CurrClipTime / _Sampler.GetClip()->GetDuration(), pSyncContext->LocomotionPhase, _ClipID.CStr());
+					::Sys::DbgOut("***CClipPlayerNode: no phase, time-synced, time %lf (rel %lf), clip %s\n", _CurrClipTime,
+						_CurrClipTime / _Sampler.GetClip()->GetDuration(), _ClipID.CStr());
+				}
+				else
+				{
+					_CurrClipTime = _Sampler.GetClip()->AdjustTime(_CurrClipTime + dt * _Speed, _Loop);
+
+					::Sys::DbgOut("***CClipPlayerNode: no phase, not synced, time %lf (rel %lf), clip %s\n", _CurrClipTime,
+						_CurrClipTime / _Sampler.GetClip()->GetDuration(), _ClipID.CStr());
+				}
+			}
+			else
+			{
+				_CurrClipTime = NormalizedTime * _Sampler.GetClip()->GetDuration();
+
+				::Sys::DbgOut("***CClipPlayerNode: phase-synced, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
+					_CurrClipTime / _Sampler.GetClip()->GetDuration(), pSyncContext->LocomotionPhase, _ClipID.CStr());
+			}
 			break;
 		}
 		default: NOT_IMPLEMENTED; break;
@@ -97,6 +118,12 @@ float CClipPlayerNode::GetLocomotionPhase() const
 	return _Sampler.GetClip() ?
 		_Sampler.GetClip()->GetLocomotionPhase(_CurrClipTime / _Sampler.GetClip()->GetDuration()) :
 		std::numeric_limits<float>().lowest();
+}
+//---------------------------------------------------------------------
+
+bool CClipPlayerNode::HasLocomotion() const
+{
+	return _Sampler.GetClip() && _Sampler.GetClip()->GetLocomotionInfo();
 }
 //---------------------------------------------------------------------
 

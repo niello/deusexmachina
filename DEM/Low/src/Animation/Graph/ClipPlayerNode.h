@@ -38,6 +38,7 @@ public:
 
 	virtual float GetAnimationLengthScaled() const override;
 	virtual float GetLocomotionPhase() const override;
+	virtual bool  HasLocomotion() const override;
 };
 
 }

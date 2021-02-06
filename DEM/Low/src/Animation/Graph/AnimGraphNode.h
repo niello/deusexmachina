@@ -22,7 +22,7 @@ struct CSyncContext
 {
 	ESyncMethod Method;
 	float       NormalizedTime = 0.f;
-	float       LocomotionPhase = std::numeric_limits<float>().lowest();
+	float       LocomotionPhase = std::numeric_limits<float>().lowest(); // Use any negative to disable
 };
 
 class CAnimGraphNode
@@ -43,6 +43,7 @@ public:
 
 	virtual float GetAnimationLengthScaled() const { return 0.f; }
 	virtual float GetLocomotionPhase() const { return std::numeric_limits<float>().lowest(); }
+	virtual bool  HasLocomotion() const { return false; }
 };
 
 }

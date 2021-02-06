@@ -35,6 +35,7 @@ void CBlendSpace2D::Init(CAnimationControllerInitContext& Context)
 	if (!_Samples.empty())
 	{
 		// TODO: can obtain adjacency info as a side-effect of Delaunay triangulation?
+		//!!!it may even speed up Delaunay triangulation from O(n^2) to O(n log n)!
 		std::vector<std::array<uint32_t, 3>> Triangles;
 		Math::Delaunay2D(_Samples.cbegin(), _Samples.cend(), Triangles);
 
@@ -151,7 +152,7 @@ void CBlendSpace2D::UpdateSingleSample(CAnimGraphNode& Node, CAnimationControlle
 			break;
 		}
 		case ESyncMethod::NormalizedTime:
-		case ESyncMethod::PhaseMatching: //???or get _NormalizedTime from _pFirst current phase?
+		case ESyncMethod::PhaseMatching: //???or get _NormalizedTime from _pActiveSamples[0] current phase?
 		{
 			_NormalizedTime = pSyncContext->NormalizedTime;
 			break;
@@ -159,10 +160,10 @@ void CBlendSpace2D::UpdateSingleSample(CAnimGraphNode& Node, CAnimationControlle
 		default: NOT_IMPLEMENTED; break;
 	}
 
-	_pFirst = &Node;
-	_pSecond = nullptr;
-	_pThird = nullptr;
-	_pFirst->Update(Controller, dt, pSyncContext);
+	_pActiveSamples[0] = &Node;
+	_pActiveSamples[1] = nullptr;
+	_pActiveSamples[2] = nullptr;
+	_pActiveSamples[0]->Update(Controller, dt, pSyncContext);
 }
 //---------------------------------------------------------------------
 
@@ -202,9 +203,9 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 		// Zero mask means that all weights are positive and we are inside a triangle
 		if (!NegativeMask)
 		{
-			_pFirst = Tri.Samples[0]->Source.get();
-			_pSecond = Tri.Samples[1]->Source.get();
-			_pThird = Tri.Samples[2]->Source.get();
+			_pActiveSamples[0] = Tri.Samples[0]->Source.get();
+			_pActiveSamples[1] = Tri.Samples[1]->Source.get();
+			_pActiveSamples[2] = Tri.Samples[2]->Source.get();
 			break;
 		}
 
@@ -234,8 +235,8 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 				case 0: // AB
 				{
 					v = (apx * Tri.abx + apy * Tri.aby) / (Tri.abx * Tri.abx + Tri.aby * Tri.aby);
-					_pFirst = Tri.Samples[0]->Source.get();
-					_pSecond = Tri.Samples[1]->Source.get();
+					_pActiveSamples[0] = Tri.Samples[0]->Source.get();
+					_pActiveSamples[1] = Tri.Samples[1]->Source.get();
 					break;
 				}
 				case 1: // BC
@@ -248,15 +249,15 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 					const float bpy = YInput - Tri.Samples[1]->YValue;
 
 					v = (bpx * bcx + bpy * bcy) / (bcx * bcx + bcy * bcy);
-					_pFirst = Tri.Samples[1]->Source.get();
-					_pSecond = Tri.Samples[2]->Source.get();
+					_pActiveSamples[0] = Tri.Samples[1]->Source.get();
+					_pActiveSamples[1] = Tri.Samples[2]->Source.get();
 					break;
 				}
 				case 2: // CA (inverted to AC to reuse cached values)
 				{
 					v = (apx * Tri.acx + apy * Tri.acy) / (Tri.acx * Tri.acx + Tri.acy * Tri.acy);
-					_pFirst = Tri.Samples[0]->Source.get();
-					_pSecond = Tri.Samples[2]->Source.get();
+					_pActiveSamples[0] = Tri.Samples[0]->Source.get();
+					_pActiveSamples[1] = Tri.Samples[2]->Source.get();
 					break;
 				}
 			}
@@ -265,7 +266,7 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 			u = 1.f - v;
 			w = 0.f;
 
-			_pThird = nullptr;
+			_pActiveSamples[2] = nullptr;
 
 			//!!!???apply distance-based anim speed scaling like in 1D but for both inputs!?
 			// Example from 1D:
@@ -280,22 +281,22 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 	// Get rid of too small weights to avoid sampling animations for them
 	constexpr float MINIMAL_WEIGHT = 0.01f;
 	bool RenormalizeWeights = false;
-	if (_pFirst && u < MINIMAL_WEIGHT)
+	if (_pActiveSamples[0] && u < MINIMAL_WEIGHT)
 	{
 		u = 0.f;
-		_pFirst = nullptr;
+		_pActiveSamples[0] = nullptr;
 		RenormalizeWeights = true;
 	}
-	if (_pSecond && v < MINIMAL_WEIGHT)
+	if (_pActiveSamples[1] && v < MINIMAL_WEIGHT)
 	{
 		v = 0.f;
-		_pSecond = nullptr;
+		_pActiveSamples[1] = nullptr;
 		RenormalizeWeights = true;
 	}
-	if (_pThird && w < MINIMAL_WEIGHT)
+	if (_pActiveSamples[2] && w < MINIMAL_WEIGHT)
 	{
 		w = 0.f;
-		_pThird = nullptr;
+		_pActiveSamples[2] = nullptr;
 		RenormalizeWeights = true;
 	}
 
@@ -315,24 +316,24 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 	if (u < v)
 	{
 		std::swap(u, v);
-		std::swap(_pFirst, _pSecond);
+		std::swap(_pActiveSamples[0], _pActiveSamples[1]);
 	}
 	if (u < w)
 	{
 		std::swap(u, w);
-		std::swap(_pFirst, _pThird);
+		std::swap(_pActiveSamples[0], _pActiveSamples[2]);
 	}
 	if (v < w)
 	{
 		std::swap(v, w);
-		std::swap(_pSecond, _pThird);
+		std::swap(_pActiveSamples[1], _pActiveSamples[2]);
 	}
 
-	n_assert_dbg(_pFirst);
+	n_assert_dbg(_pActiveSamples[0]);
 
-	if (!_pSecond)
+	if (!_pActiveSamples[1])
 	{
-		UpdateSingleSample(*_pFirst, Controller, dt, pSyncContext);
+		UpdateSingleSample(*_pActiveSamples[0], Controller, dt, pSyncContext);
 		return;
 	}
 
@@ -340,38 +341,39 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 	_Blender.SetWeight(1, v);
 	_Blender.SetWeight(2, w);
 
+	// Update sample playback cursors
+
+	// TODO: implement this:
+	// go from main to least weighted
+	// if locomotion:
+	//   if no phase, get phase from the initial pose and enable phase syncing
+	//   do phase-synced update
+	// else:
+	//   if need time-syncing, request time-synced update
+	//   else:
+	//     if animation was inactive and requires restart, play in synced to time 0
+	//     else play it a master with dt and without syncing
+
 	const ESyncMethod SyncMethod = pSyncContext ? pSyncContext->Method : ESyncMethod::None;
 	switch (SyncMethod)
 	{
 		case ESyncMethod::None:
 		{
-			const float AnimLength = _pFirst->GetAnimationLengthScaled() * u +
-				_pSecond->GetAnimationLengthScaled() * v +
-				(_pThird ? _pThird->GetAnimationLengthScaled() * w : 0.f);
-			AdvanceNormalizedTime(dt, AnimLength, _NormalizedTime);
+			//???need blend space _NormalizedTime? can always get from master animation
+			AdvanceNormalizedTime(dt, GetAnimationLengthScaled(), _NormalizedTime);
 
-			CSyncContext LocalSyncContext{ ESyncMethod::NormalizedTime, _NormalizedTime };
+			//CSyncContext LocalSyncContext{ ESyncMethod::NormalizedTime, _NormalizedTime };
+			CSyncContext LocalSyncContext{ ESyncMethod::None };
 
-			_pFirst->Update(Controller, dt, &LocalSyncContext);
-
-			// Try to synchronize next animations by a locomotion phase
+			for (size_t i = 0; i < 3; ++i)
 			{
-				const float Phase = _pFirst->GetLocomotionPhase();
-				if (Phase >= 0.f)
-				{
-					LocalSyncContext.Method = ESyncMethod::PhaseMatching;
-					LocalSyncContext.LocomotionPhase = Phase;
-				}
-			}
+				const auto pSample = _pActiveSamples[i];
+				if (!pSample) break;
 
-			_pSecond->Update(Controller, dt, &LocalSyncContext);
-
-			if (_pThird)
-			{
-				// Try to synchronize next animations by a locomotion phase
-				if (LocalSyncContext.Method != ESyncMethod::PhaseMatching)
+				if (LocalSyncContext.Method != ESyncMethod::PhaseMatching && pSample->HasLocomotion())
 				{
-					const float Phase = _pSecond->GetLocomotionPhase();
+					//!!!else get from initial pose at the start of the frame!
+					const float Phase = (i > 0) ? _pActiveSamples[i - 1]->GetLocomotionPhase() : -99999.f;
 					if (Phase >= 0.f)
 					{
 						LocalSyncContext.Method = ESyncMethod::PhaseMatching;
@@ -379,7 +381,7 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 					}
 				}
 
-				_pThird->Update(Controller, dt, &LocalSyncContext);
+				pSample->Update(Controller, dt, &LocalSyncContext);
 			}
 
 			break;
@@ -388,11 +390,11 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 		case ESyncMethod::PhaseMatching:
 		{
 			_NormalizedTime = pSyncContext->NormalizedTime;
-			//???if phase matching, get _NormalizedTime from curr _pFirst phase?
+			//???if phase matching, get _NormalizedTime from curr _pActiveSamples[0] phase?
 
-			_pFirst->Update(Controller, dt, pSyncContext);
-			_pSecond->Update(Controller, dt, pSyncContext);
-			if (_pThird) _pThird->Update(Controller, dt, pSyncContext);
+			_pActiveSamples[0]->Update(Controller, dt, pSyncContext);
+			_pActiveSamples[1]->Update(Controller, dt, pSyncContext);
+			if (_pActiveSamples[2]) _pActiveSamples[2]->Update(Controller, dt, pSyncContext);
 
 			break;
 		}
@@ -407,44 +409,44 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 			return -1;
 		};
 		::Sys::DbgOut("***CBlendSpace2D: time %lf, ipol [%d]:%lf [%d]:%lf [%d]:%lf\n", _NormalizedTime,
-			GetSampleIndex(_pFirst), u, GetSampleIndex(_pSecond), v, GetSampleIndex(_pThird), w);
+			GetSampleIndex(_pActiveSamples[0]), u, GetSampleIndex(_pActiveSamples[1]), v, GetSampleIndex(_pActiveSamples[2]), w);
 	}
 }
 //---------------------------------------------------------------------
 
 void CBlendSpace2D::EvaluatePose(IPoseOutput& Output)
 {
-	if (_pSecond)
+	if (_pActiveSamples[1])
 	{
 		//???TODO: try inplace blending in Output instead of preallocated Blender? helps to save
 		// memory and may be faster! We don't use priority here anyway, and weights always sum to 1.f.
 		//Can use special wrapper output CPoseScaleBiasOutput / CPoseWeightedOutput to apply weights on the fly!
 		//!!!can even have single and per-bone weigh variations!
 		//???cache locality may suffer if blending in place? scene nodes are scattered around the heap.
-		_pFirst->EvaluatePose(*_Blender.GetInput(0));
-		_pSecond->EvaluatePose(*_Blender.GetInput(1));
-		if (_pThird) _pThird->EvaluatePose(*_Blender.GetInput(2));
+		_pActiveSamples[0]->EvaluatePose(*_Blender.GetInput(0));
+		_pActiveSamples[1]->EvaluatePose(*_Blender.GetInput(1));
+		if (_pActiveSamples[2]) _pActiveSamples[2]->EvaluatePose(*_Blender.GetInput(2));
 
 		_Blender.EvaluatePose(Output);
 	}
-	else if (_pFirst) _pFirst->EvaluatePose(Output);
+	else if (_pActiveSamples[0]) _pActiveSamples[0]->EvaluatePose(Output);
 }
 //---------------------------------------------------------------------
 
 float CBlendSpace2D::GetAnimationLengthScaled() const
 {
-	if (!_pFirst) return 0.f;
-	if (!_pSecond) return _pFirst->GetAnimationLengthScaled();
-	return _pFirst->GetAnimationLengthScaled() * _Blender.GetWeight(0) +
-		_pSecond->GetAnimationLengthScaled() * _Blender.GetWeight(1) +
-		(_pThird ? _pThird->GetAnimationLengthScaled() * _Blender.GetWeight(2) : 0.f);
+	if (!_pActiveSamples[0]) return 0.f;
+	if (!_pActiveSamples[1]) return _pActiveSamples[0]->GetAnimationLengthScaled();
+	return _pActiveSamples[0]->GetAnimationLengthScaled() * _Blender.GetWeight(0) +
+		_pActiveSamples[1]->GetAnimationLengthScaled() * _Blender.GetWeight(1) +
+		(_pActiveSamples[2] ? _pActiveSamples[2]->GetAnimationLengthScaled() * _Blender.GetWeight(2) : 0.f);
 }
 //---------------------------------------------------------------------
 
 float CBlendSpace2D::GetLocomotionPhase() const
 {
 	// Always from the most weighted animation, others must be synchronized
-	return _pFirst ? _pFirst->GetLocomotionPhase() : std::numeric_limits<float>().lowest();
+	return _pActiveSamples[0] ? _pActiveSamples[0]->GetLocomotionPhase() : std::numeric_limits<float>().lowest();
 }
 //---------------------------------------------------------------------
 
