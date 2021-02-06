@@ -24,10 +24,12 @@ protected:
 
 	static inline constexpr float SAMPLE_MATCH_TOLERANCE = 0.001f; //???or relative to parameter space?
 
+	enum { vA = 0, vB = 1, vC = 2, eBC = 0, eCA = 1, eAB = 2 }; // Triangle vertices and edges
+
 	struct CTriangle
 	{
 		CSample* Samples[3] = {};
-		uint32_t Adjacent[3] = { INVALID_INDEX, INVALID_INDEX, INVALID_INDEX }; // AB, BC, CA
+		uint32_t Adjacent[3] = { INVALID_INDEX, INVALID_INDEX, INVALID_INDEX };
 		float    InvDenominator;
 		float    ax, ay;
 		float    abx, aby;

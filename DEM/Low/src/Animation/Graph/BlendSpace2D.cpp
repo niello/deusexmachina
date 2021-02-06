@@ -57,17 +57,17 @@ void CBlendSpace2D::Init(CAnimationControllerInitContext& Context)
 		{
 			const auto& SrcTri = Triangles[i];
 			auto& Tri = _Triangles[i];
-			Tri.Samples[0] = &_Samples[SrcTri[0]];
-			Tri.Samples[1] = &_Samples[SrcTri[1]];
-			Tri.Samples[2] = &_Samples[SrcTri[2]];
+			Tri.Samples[vA] = &_Samples[SrcTri[vA]];
+			Tri.Samples[vB] = &_Samples[SrcTri[vB]];
+			Tri.Samples[vC] = &_Samples[SrcTri[vC]];
 
 			// Cache constants for barycentric coordinate evaluation
-			Tri.ax = Tri.Samples[0]->XValue;
-			Tri.ay = Tri.Samples[0]->YValue;
-			Tri.abx = Tri.Samples[1]->XValue - Tri.ax;
-			Tri.aby = Tri.Samples[1]->YValue - Tri.ay;
-			Tri.acx = Tri.Samples[2]->XValue - Tri.ax;
-			Tri.acy = Tri.Samples[2]->YValue - Tri.ay;
+			Tri.ax = Tri.Samples[vA]->XValue;
+			Tri.ay = Tri.Samples[vA]->YValue;
+			Tri.abx = Tri.Samples[vB]->XValue - Tri.ax;
+			Tri.aby = Tri.Samples[vB]->YValue - Tri.ay;
+			Tri.acx = Tri.Samples[vC]->XValue - Tri.ax;
+			Tri.acy = Tri.Samples[vC]->YValue - Tri.ay;
 			Tri.InvDenominator = 1.f / (Tri.abx * Tri.acy - Tri.acx * Tri.aby);
 
 			// Check if this triangle contains the starting point
@@ -84,6 +84,7 @@ void CBlendSpace2D::Init(CAnimationControllerInitContext& Context)
 			}
 		}
 
+		// Ensure starting triangle is first
 		// TODO: could sort by adjacency to improve cache locality when searching. Worth it?
 		n_assert(StartIndex != INVALID_INDEX);
 		if (StartIndex != 0)
@@ -101,15 +102,15 @@ void CBlendSpace2D::Init(CAnimationControllerInitContext& Context)
 				// TODO: could skip already filled edges. Note that only one edge can be common, early exits will be needed.
 				uint32_t Edge1, Edge2;
 				const auto& SrcTri2 = Triangles[j];
-				if (SrcTri1[0] == SrcTri2[1] && SrcTri1[1] == SrcTri2[0]) { Edge1 = 0; Edge2 = 0; }
-				else if (SrcTri1[0] == SrcTri2[2] && SrcTri1[1] == SrcTri2[1]) { Edge1 = 0; Edge2 = 1; }
-				else if (SrcTri1[0] == SrcTri2[0] && SrcTri1[1] == SrcTri2[2]) { Edge1 = 0; Edge2 = 2; }
-				else if (SrcTri1[1] == SrcTri2[1] && SrcTri1[2] == SrcTri2[0]) { Edge1 = 1; Edge2 = 0; }
-				else if (SrcTri1[1] == SrcTri2[2] && SrcTri1[2] == SrcTri2[1]) { Edge1 = 1; Edge2 = 1; }
-				else if (SrcTri1[1] == SrcTri2[0] && SrcTri1[2] == SrcTri2[2]) { Edge1 = 1; Edge2 = 2; }
-				else if (SrcTri1[2] == SrcTri2[1] && SrcTri1[0] == SrcTri2[0]) { Edge1 = 2; Edge2 = 0; }
-				else if (SrcTri1[2] == SrcTri2[2] && SrcTri1[0] == SrcTri2[1]) { Edge1 = 2; Edge2 = 1; }
-				else if (SrcTri1[2] == SrcTri2[0] && SrcTri1[0] == SrcTri2[2]) { Edge1 = 2; Edge2 = 2; }
+				/**/ if (SrcTri1[vA] == SrcTri2[vB] && SrcTri1[vB] == SrcTri2[vA]) { Edge1 = eAB; Edge2 = eAB; }
+				else if (SrcTri1[vA] == SrcTri2[vC] && SrcTri1[vB] == SrcTri2[vB]) { Edge1 = eAB; Edge2 = eBC; }
+				else if (SrcTri1[vA] == SrcTri2[vA] && SrcTri1[vB] == SrcTri2[vC]) { Edge1 = eAB; Edge2 = eCA; }
+				else if (SrcTri1[vB] == SrcTri2[vB] && SrcTri1[vC] == SrcTri2[vA]) { Edge1 = eBC; Edge2 = eAB; }
+				else if (SrcTri1[vB] == SrcTri2[vC] && SrcTri1[vC] == SrcTri2[vB]) { Edge1 = eBC; Edge2 = eBC; }
+				else if (SrcTri1[vB] == SrcTri2[vA] && SrcTri1[vC] == SrcTri2[vC]) { Edge1 = eBC; Edge2 = eCA; }
+				else if (SrcTri1[vC] == SrcTri2[vB] && SrcTri1[vA] == SrcTri2[vA]) { Edge1 = eCA; Edge2 = eAB; }
+				else if (SrcTri1[vC] == SrcTri2[vC] && SrcTri1[vA] == SrcTri2[vB]) { Edge1 = eCA; Edge2 = eBC; }
+				else if (SrcTri1[vC] == SrcTri2[vA] && SrcTri1[vA] == SrcTri2[vC]) { Edge1 = eCA; Edge2 = eCA; }
 				else continue;
 
 				_Triangles[i].Adjacent[Edge1] = j;
@@ -188,8 +189,8 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 
 	// Find triangle or segment of active samples
 	// FIXME: support degenerate cases - point or collinear!
-	size_t CurrTriIndex = 0;
 	float u, v, w;
+	size_t CurrTriIndex = 0;
 	while (true)
 	{
 		const auto& Tri = _Triangles[CurrTriIndex];
@@ -209,21 +210,15 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 			break;
 		}
 
-		// TODO: can try to optimize through an array of pairs
-		//const float Weights[] = { u, v, w }; // FIXME: tmp, could use as a primary weight storage!
-		//constexpr std::pair<size_t, size_t> Edges[] = { {3, 3}, {1, 1}, {2, 2}, {2, 1}, {0, 0}, {0, 1}, {0, 2} };
-		//const auto [x, y] = Edges[NegativeMask];
-		//const size_t EdgeIndex2 = (Weights[x] > Weights[y]) ? x : y;
-		//!!!need to order edges as BC, CA, AB (opposite to vertices) to map uvw by index!
-		size_t EdgeIndex = 0;
+		size_t EdgeIndex = eBC;
 		switch (NegativeMask)
 		{
-			case 1: EdgeIndex = 1; break;               // Only A weight is negative, goto BC
-			case 2: EdgeIndex = 2; break;               // Only B weight is negative, goto CA
-			case 3: EdgeIndex = (v > u) ? 2 : 1; break; // A and B weights are negative, goto BC/CA
-			case 4: EdgeIndex = 0; break;               // Only C weight is negative, goto AB
-			case 5: EdgeIndex = (w > u) ? 0 : 1; break; // A and C weights are negative, goto BC/AB
-			case 6: EdgeIndex = (w > v) ? 0 : 2; break; // B and C weights are negative, goto CA/AB
+			case 1: EdgeIndex = eBC; break;                 // Only A weight is negative, goto BC
+			case 2: EdgeIndex = eCA; break;                 // Only B weight is negative, goto CA
+			case 3: EdgeIndex = (v > u) ? eCA : eBC; break; // A and B weights are negative, goto BC/CA
+			case 4: EdgeIndex = eAB; break;                 // Only C weight is negative, goto AB
+			case 5: EdgeIndex = (w > u) ? eAB : eBC; break; // A and C weights are negative, goto BC/AB
+			case 6: EdgeIndex = (w > v) ? eAB : eCA; break; // B and C weights are negative, goto CA/AB
 		}
 
 		CurrTriIndex = Tri.Adjacent[EdgeIndex];
@@ -232,14 +227,14 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 			// We moved outside the convex poly, project input onto the border segment
 			switch (EdgeIndex)
 			{
-				case 0: // AB
+				case eAB:
 				{
 					v = (apx * Tri.abx + apy * Tri.aby) / (Tri.abx * Tri.abx + Tri.aby * Tri.aby);
 					_pActiveSamples[0] = Tri.Samples[0]->Source.get();
 					_pActiveSamples[1] = Tri.Samples[1]->Source.get();
 					break;
 				}
-				case 1: // BC
+				case eBC:
 				{
 					// We do not cache this because it adds 2 floats to every triangle
 					// but is useful only for triangles with BC being a border edge
@@ -253,7 +248,7 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 					_pActiveSamples[1] = Tri.Samples[2]->Source.get();
 					break;
 				}
-				case 2: // CA (inverted to AC to reuse cached values)
+				case eCA: // Inverted to AC to reuse cached values
 				{
 					v = (apx * Tri.acx + apy * Tri.acy) / (Tri.acx * Tri.acx + Tri.acy * Tri.acy);
 					_pActiveSamples[0] = Tri.Samples[0]->Source.get();
