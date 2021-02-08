@@ -45,7 +45,7 @@ public:
 
 	virtual float GetAnimationLengthScaled() const override;
 	virtual float GetLocomotionPhase() const override;
-	virtual bool  HasLocomotion() const override { return _pFirst && _pFirst->HasLocomotion(); } //???check all?
+	virtual bool  HasLocomotion() const override;
 
 	bool          AddSample(PAnimGraphNode&& Source, float Value);
 };

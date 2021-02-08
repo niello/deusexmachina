@@ -196,7 +196,14 @@ float CBlendSpace1D::GetAnimationLengthScaled() const
 float CBlendSpace1D::GetLocomotionPhase() const
 {
 	// Always from the most weighted animation, others must be synchronized
+	//???what if locomotion has less weight than idle?
 	return _pFirst ? _pFirst->GetLocomotionPhase() : std::numeric_limits<float>().lowest();
+}
+//---------------------------------------------------------------------
+
+bool CBlendSpace1D::HasLocomotion() const
+{
+	return (_pFirst && _pFirst->HasLocomotion()) || (_pSecond && _pSecond->HasLocomotion());
 }
 //---------------------------------------------------------------------
 

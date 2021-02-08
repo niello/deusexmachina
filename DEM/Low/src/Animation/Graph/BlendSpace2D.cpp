@@ -339,22 +339,47 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 
 	// Update sample playback cursors
 
-	// TODO: implement this:
-	// go from main to least weighted
-	// if locomotion:
-	//   if no phase, get phase from the initial pose and enable phase syncing
-	//   do phase-synced update
-	// else:
-	//   if need time-syncing, request time-synced update
-	//   else:
-	//     if animation was inactive and requires restart, reset sample to start time (OnActivate?)
-	//     play sample with dt and without syncing
+	/*
+	{
+		CSyncContext LocalSyncContext{ ESyncMethod::None };
+
+		for (size_t i = 0; i < 3; ++i)
+		{
+			const auto pSample = _pActiveSamples[i];
+			if (!pSample) break;
+
+			//!!!if sample was inactive, activate it! OnActivate() will happen, e.g. to reset anim to start time.
+
+			if (pSample->HasLocomotion())
+			{
+				//???get locomotion phase when sampling the clip and propagate up by writing it to the sync context?
+				//only if clip is locomotion and no phase is passed down?
+				if (LocalSyncContext.Method != ESyncMethod::PhaseMatching)
+				{
+					//!!!instead of -99999.f => Controller.GetLocomotionPhaseFromPose()! Do once and cache (in sync context?)
+					const float Phase = (i > 0) ? _pActiveSamples[i - 1]->GetLocomotionPhase() : -99999.f;
+					if (Phase >= 0.f)
+					{
+						LocalSyncContext.Method = ESyncMethod::PhaseMatching;
+						LocalSyncContext.LocomotionPhase = Phase;
+					}
+				}
+
+				//!!!NB: if phase is set externally, must apply it! Make sure it happens!
+			}
+
+			//if phase is set, request phase-synced update
+			//else if need time-syncing, request time-synced update
+			//else play sample with dt and without syncing
+			pSample->Update(Controller, dt, &LocalSyncContext);
+		}
+	}
+	*/
 
 	// - need child sample (de)activation, may be very useful not only for resetting
-	// - need to rewrite syncing as described above
 	// - phase syncing must be correctly implemented, including external poses
 	// - sync normalized time to be synced with phase? Sync locomotion cycle with non-locomotion action. Need?
-	// - playback rate must be correctly calculated for blend spaces (see CRY?)
+	// - playback rate must be correctly calculated for blend spaces (see CRY and UE4?)
 
 	// Next:
 	// - selector (CStrID based?) with blend time for switching to actions like "open door". Finish vs cancel anim?
@@ -457,7 +482,16 @@ float CBlendSpace2D::GetAnimationLengthScaled() const
 float CBlendSpace2D::GetLocomotionPhase() const
 {
 	// Always from the most weighted animation, others must be synchronized
+	//???what if locomotion has less weight than idle?
 	return _pActiveSamples[0] ? _pActiveSamples[0]->GetLocomotionPhase() : std::numeric_limits<float>().lowest();
+}
+//---------------------------------------------------------------------
+
+bool CBlendSpace2D::HasLocomotion() const
+{
+	return (_pActiveSamples[0] && _pActiveSamples[0]->HasLocomotion()) ||
+		(_pActiveSamples[1] && _pActiveSamples[1]->HasLocomotion()) ||
+		(_pActiveSamples[2] && _pActiveSamples[2]->HasLocomotion());
 }
 //---------------------------------------------------------------------
 
