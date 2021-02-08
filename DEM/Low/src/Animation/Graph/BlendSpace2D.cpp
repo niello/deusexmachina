@@ -326,6 +326,7 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 
 	n_assert_dbg(_pActiveSamples[0]);
 
+	//!!!must propagate locomotion phase!
 	if (!_pActiveSamples[1])
 	{
 		UpdateSingleSample(*_pActiveSamples[0], Controller, dt, pSyncContext);
@@ -346,8 +347,21 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 	// else:
 	//   if need time-syncing, request time-synced update
 	//   else:
-	//     if animation was inactive and requires restart, play in synced to time 0
-	//     else play it a master with dt and without syncing
+	//     if animation was inactive and requires restart, reset sample to start time (OnActivate?)
+	//     play sample with dt and without syncing
+
+	// - need child sample (de)activation, may be very useful not only for resetting
+	// - need to rewrite syncing as described above
+	// - phase syncing must be correctly implemented, including external poses
+	// - sync normalized time to be synced with phase? Sync locomotion cycle with non-locomotion action. Need?
+	// - playback rate must be correctly calculated for blend spaces (see CRY?)
+
+	// Next:
+	// - selector (CStrID based?) with blend time for switching to actions like "open door". Finish vs cancel anim?
+	// - pose buffer(s)
+	// - pose modifiers = skeletal controls, object space
+	// - inertialization
+	// - IK
 
 	const ESyncMethod SyncMethod = pSyncContext ? pSyncContext->Method : ESyncMethod::None;
 	switch (SyncMethod)
@@ -365,9 +379,11 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 				const auto pSample = _pActiveSamples[i];
 				if (!pSample) break;
 
+				//???get locomotion phase when sampling the clip and propagate up by writing it to the sync context?
+				//only if clip is locomotion and no phase is passed down?
 				if (LocalSyncContext.Method != ESyncMethod::PhaseMatching && pSample->HasLocomotion())
 				{
-					//!!!else get from initial pose at the start of the frame!
+					//!!!else (-99999.f) get from initial pose at the start of the frame!
 					const float Phase = (i > 0) ? _pActiveSamples[i - 1]->GetLocomotionPhase() : -99999.f;
 					if (Phase >= 0.f)
 					{
