@@ -11,7 +11,7 @@ CBlendSpace1D::CBlendSpace1D(CStrID ParamID)
 }
 //---------------------------------------------------------------------
 
-void CBlendSpace1D::Init(CAnimationControllerInitContext& Context)
+void CBlendSpace1D::Init(CAnimationInitContext& Context)
 {
 	EParamType Type;
 	if (!Context.Controller.FindParam(_ParamID, &Type, &_ParamIndex) || Type != EParamType::Float)
@@ -41,36 +41,11 @@ static inline void AdvanceNormalizedTime(float dt, float AnimLength, float& Norm
 }
 //---------------------------------------------------------------------
 
-void CBlendSpace1D::UpdateSingleSample(CAnimGraphNode& Node, CAnimationController& Controller, float dt, CSyncContext* pSyncContext)
-{
-	const ESyncMethod SyncMethod = pSyncContext ? pSyncContext->Method : ESyncMethod::None;
-	switch (SyncMethod)
-	{
-		case ESyncMethod::None:
-		{
-			AdvanceNormalizedTime(dt, Node.GetAnimationLengthScaled(), _NormalizedTime);
-			break;
-		}
-		case ESyncMethod::NormalizedTime:
-		case ESyncMethod::PhaseMatching: //???or get _NormalizedTime from _pFirst current phase?
-		{
-			_NormalizedTime = pSyncContext->NormalizedTime;
-			break;
-		}
-		default: NOT_IMPLEMENTED; break;
-	}
-
-	_pFirst = &Node;
-	_pSecond = nullptr;
-	_pFirst->Update(Controller, dt, pSyncContext);
-}
-//---------------------------------------------------------------------
-
-void CBlendSpace1D::Update(CAnimationController& Controller, float dt, CSyncContext* pSyncContext)
+void CBlendSpace1D::Update(CAnimationUpdateContext& Context, float dt)
 {
 	if (_Samples.empty()) return;
 
-	const float Input = Controller.GetFloat(_ParamIndex);
+	const float Input = Context.Controller.GetFloat(_ParamIndex);
 
 	//???use cache if input parameter didn't change?
 
@@ -83,7 +58,7 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt, CSyncCont
 
 	if (_Samples.size() == 1)
 	{
-		UpdateSingleSample(*_Samples[0].Source, Controller, dt, pSyncContext);
+		_Samples[0].Source->Update(Context, dt);
 		return;
 	}
 
@@ -92,14 +67,14 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt, CSyncCont
 
 	if (It == _Samples.cbegin() || (It != _Samples.cend() && n_fequal(It->Value, Input, SAMPLE_MATCH_TOLERANCE)))
 	{
-		UpdateSingleSample(*It->Source, Controller, dt, pSyncContext);
+		It->Source->Update(Context, dt);
 		return;
 	}
 
 	const auto PrevIt = std::prev(It);
 	if (n_fequal(PrevIt->Value, Input, SAMPLE_MATCH_TOLERANCE) || (It == _Samples.cend() && PrevIt->Value < Input))
 	{
-		UpdateSingleSample(*PrevIt->Source, Controller, dt, pSyncContext);
+		PrevIt->Source->Update(Context, dt);
 		return;
 	}
 
@@ -122,44 +97,14 @@ void CBlendSpace1D::Update(CAnimationController& Controller, float dt, CSyncCont
 		_Blender.SetWeight(1, 1.f - BlendFactor);
 	}
 
-	const ESyncMethod SyncMethod = pSyncContext ? pSyncContext->Method : ESyncMethod::None;
-	switch (SyncMethod)
-	{
-		case ESyncMethod::None:
-		{
-			const float AnimLength = It->Source->GetAnimationLengthScaled() * BlendFactor +
-				PrevIt->Source->GetAnimationLengthScaled() * (1.f - BlendFactor);
-			AdvanceNormalizedTime(dt, AnimLength, _NormalizedTime);
+	// Update sample playback cursors
 
-			CSyncContext LocalSyncContext{ ESyncMethod::NormalizedTime, _NormalizedTime };
+	// TODO: playback rate must be correctly calculated for blend spaces (see CRY and UE4?)
+	//???need blend space _NormalizedTime? can always get from master animation
+	AdvanceNormalizedTime(dt, GetAnimationLengthScaled(), _NormalizedTime);
 
-			_pFirst->Update(Controller, dt, &LocalSyncContext);
-
-			// Try to synchronize next animations by a locomotion phase
-			const float Phase = _pFirst->GetLocomotionPhase();
-			if (Phase >= 0.f)
-			{
-				LocalSyncContext.Method = ESyncMethod::PhaseMatching;
-				LocalSyncContext.LocomotionPhase = Phase;
-			}
-
-			_pSecond->Update(Controller, dt, &LocalSyncContext);
-
-			break;
-		}
-		case ESyncMethod::NormalizedTime:
-		case ESyncMethod::PhaseMatching:
-		{
-			_NormalizedTime = pSyncContext->NormalizedTime;
-			//???if phase matching, get _NormalizedTime from curr _pFirst phase?
-
-			_pFirst->Update(Controller, dt, pSyncContext);
-			_pSecond->Update(Controller, dt, pSyncContext);
-
-			break;
-		}
-		default: NOT_IMPLEMENTED; break;
-	}
+	_pFirst->Update(Context, dt);
+	_pSecond->Update(Context, dt);
 
 	//::Sys::DbgOut("***CBlendSpace1D: time %lf, input %lf, ipol (%d-%d) %lf\n", _NormalizedTime, Input,
 	//	std::distance(_Samples.cbegin(), PrevIt), std::distance(_Samples.cbegin(), It), BlendFactor);

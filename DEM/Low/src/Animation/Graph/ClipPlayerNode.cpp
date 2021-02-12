@@ -18,9 +18,10 @@ CClipPlayerNode::CClipPlayerNode(CStrID ClipID, bool Loop, float Speed, float St
 }
 //---------------------------------------------------------------------
 
-void CClipPlayerNode::Init(CAnimationControllerInitContext& Context)
+void CClipPlayerNode::Init(CAnimationInitContext& Context)
 {
 	_CurrClipTime = _StartTime;
+	_LastUpdateIndex = Context.Controller.GetUpdateIndex();
 
 	CStrID ClipID = _ClipID;
 	if (!Context.AssetOverrides.empty())
@@ -39,61 +40,55 @@ void CClipPlayerNode::Init(CAnimationControllerInitContext& Context)
 }
 //---------------------------------------------------------------------
 
-void CClipPlayerNode::Update(CAnimationController& Controller, float dt, CSyncContext* pSyncContext)
+void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 {
-	if (!_Sampler.GetClip()) return;
+	const auto pClip = _Sampler.GetClip();
+	if (!pClip || pClip->GetDuration() <= 0.f) return;
 
-	const ESyncMethod SyncMethod = pSyncContext ? pSyncContext->Method : ESyncMethod::None;
-	switch (SyncMethod)
+	const U32 CurrUpdateIndex = Context.Controller.GetUpdateIndex();
+	const bool WasActive = (_LastUpdateIndex == CurrUpdateIndex - 1);
+	if (_ResetOnActivate && !WasActive) _CurrClipTime = _StartTime;
+	_LastUpdateIndex = CurrUpdateIndex;
+
+	if (pClip->GetLocomotionInfo())
 	{
-		case ESyncMethod::None:
+		if (Context.LocomotionPhase >= 0.f)
 		{
-			_CurrClipTime = _Sampler.GetClip()->AdjustTime(_CurrClipTime + dt * _Speed, _Loop);
+			// Locomotion phase is already evaluated, sync clip with it
+			// NB: for now the first locomotion clip determines phase, not the most weighted one. May change later.
+			_CurrClipTime = pClip->GetLocomotionPhaseNormalizedTime(Context.LocomotionPhase) * pClip->GetDuration();
 
-			::Sys::DbgOut("***CClipPlayerNode: master, time %lf (rel %lf), clip %s\n", _CurrClipTime,
-				_CurrClipTime / _Sampler.GetClip()->GetDuration(), _ClipID.CStr());
-			break;
+			::Sys::DbgOut("***CClipPlayerNode: phase-synced, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
+				_CurrClipTime / pClip->GetDuration(), Context.LocomotionPhase, _ClipID.CStr());
 		}
-		case ESyncMethod::NormalizedTime:
+		else if (!WasActive)
 		{
-			_CurrClipTime = pSyncContext->NormalizedTime * _Sampler.GetClip()->GetDuration();
+			// We just started locomotion, sync phase from the current pose
+			Context.LocomotionPhase = Context.Controller.GetPhaseFromPose();
+			_CurrClipTime = pClip->GetLocomotionPhaseNormalizedTime(Context.LocomotionPhase) * pClip->GetDuration();
 
-			::Sys::DbgOut("***CClipPlayerNode: time-synced, time %lf (rel %lf), clip %s\n", _CurrClipTime,
-				_CurrClipTime / _Sampler.GetClip()->GetDuration(), _ClipID.CStr());
-			break;
+			::Sys::DbgOut("***CClipPlayerNode: pose-synced, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
+				_CurrClipTime / pClip->GetDuration(), Context.LocomotionPhase, _ClipID.CStr());
 		}
-		case ESyncMethod::PhaseMatching:
+		else
 		{
-			const float NormalizedTime = _Sampler.GetClip()->GetLocomotionPhaseNormalizedTime(pSyncContext->LocomotionPhase);
-			if (NormalizedTime < 0.f)
-			{
-				// TODO: per-animation or per-node setting?
-				constexpr bool FallbackToTimeSync = false;
-				if (FallbackToTimeSync)
-				{
-					_CurrClipTime = pSyncContext->NormalizedTime * _Sampler.GetClip()->GetDuration();
+			// We continue locomotion and drive the phase by our normal time update
+			_CurrClipTime = pClip->AdjustTime(_CurrClipTime + dt * _Speed, _Loop);
+			Context.LocomotionPhase = pClip->GetLocomotionPhase(_CurrClipTime / pClip->GetDuration());
 
-					::Sys::DbgOut("***CClipPlayerNode: no phase, time-synced, time %lf (rel %lf), clip %s\n", _CurrClipTime,
-						_CurrClipTime / _Sampler.GetClip()->GetDuration(), _ClipID.CStr());
-				}
-				else
-				{
-					_CurrClipTime = _Sampler.GetClip()->AdjustTime(_CurrClipTime + dt * _Speed, _Loop);
-
-					::Sys::DbgOut("***CClipPlayerNode: no phase, not synced, time %lf (rel %lf), clip %s\n", _CurrClipTime,
-						_CurrClipTime / _Sampler.GetClip()->GetDuration(), _ClipID.CStr());
-				}
-			}
-			else
-			{
-				_CurrClipTime = NormalizedTime * _Sampler.GetClip()->GetDuration();
-
-				::Sys::DbgOut("***CClipPlayerNode: phase-synced, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
-					_CurrClipTime / _Sampler.GetClip()->GetDuration(), pSyncContext->LocomotionPhase, _ClipID.CStr());
-			}
-			break;
+			::Sys::DbgOut("***CClipPlayerNode: phase-driving, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
+				_CurrClipTime / pClip->GetDuration(), Context.LocomotionPhase, _ClipID.CStr());
 		}
-		default: NOT_IMPLEMENTED; break;
+	}
+	else
+	{
+		// TODO: add normalized time syncing option? Not used for now.
+
+		// Update regular clip
+		_CurrClipTime = pClip->AdjustTime(_CurrClipTime + dt * _Speed, _Loop);
+
+		::Sys::DbgOut("***CClipPlayerNode: no sync, time %lf (rel %lf), clip %s\n", _CurrClipTime,
+			_CurrClipTime / pClip->GetDuration(), _ClipID.CStr());
 	}
 }
 //---------------------------------------------------------------------

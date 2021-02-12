@@ -48,14 +48,12 @@ protected:
 
 	float                  _NormalizedTime = 0.f; // Current time normalized to [0..1]
 
-	void          UpdateSingleSample(CAnimGraphNode& Node, CAnimationController& Controller, float dt, CSyncContext* pSyncContext);
-
 public:
 
 	CBlendSpace2D(CStrID XParamID, CStrID YParamID);
 
-	virtual void  Init(CAnimationControllerInitContext& Context) override;
-	virtual void  Update(CAnimationController& Controller, float dt, CSyncContext* pSyncContext) override;
+	virtual void  Init(CAnimationInitContext& Context) override;
+	virtual void  Update(CAnimationUpdateContext& Context, float dt) override;
 	virtual void  EvaluatePose(IPoseOutput& Output) override;
 
 	virtual float GetAnimationLengthScaled() const override;

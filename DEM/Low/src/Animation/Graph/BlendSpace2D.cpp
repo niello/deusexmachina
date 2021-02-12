@@ -24,7 +24,7 @@ CBlendSpace2D::CBlendSpace2D(CStrID XParamID, CStrID YParamID)
 }
 //---------------------------------------------------------------------
 
-void CBlendSpace2D::Init(CAnimationControllerInitContext& Context)
+void CBlendSpace2D::Init(CAnimationInitContext& Context)
 {
 	EParamType XType, YType;
 	if (!Context.Controller.FindParam(_XParamID, &XType, &_XParamIndex) || XType != EParamType::Float)
@@ -141,46 +141,19 @@ static inline void AdvanceNormalizedTime(float dt, float AnimLength, float& Norm
 }
 //---------------------------------------------------------------------
 
-//!!!DUPLICATED CODE! See 1D!
-void CBlendSpace2D::UpdateSingleSample(CAnimGraphNode& Node, CAnimationController& Controller, float dt, CSyncContext* pSyncContext)
-{
-	const ESyncMethod SyncMethod = pSyncContext ? pSyncContext->Method : ESyncMethod::None;
-	switch (SyncMethod)
-	{
-		case ESyncMethod::None:
-		{
-			AdvanceNormalizedTime(dt, Node.GetAnimationLengthScaled(), _NormalizedTime);
-			break;
-		}
-		case ESyncMethod::NormalizedTime:
-		case ESyncMethod::PhaseMatching: //???or get _NormalizedTime from _pActiveSamples[0] current phase?
-		{
-			_NormalizedTime = pSyncContext->NormalizedTime;
-			break;
-		}
-		default: NOT_IMPLEMENTED; break;
-	}
-
-	_pActiveSamples[0] = &Node;
-	_pActiveSamples[1] = nullptr;
-	_pActiveSamples[2] = nullptr;
-	_pActiveSamples[0]->Update(Controller, dt, pSyncContext);
-}
-//---------------------------------------------------------------------
-
-void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncContext* pSyncContext)
+void CBlendSpace2D::Update(CAnimationUpdateContext& Context, float dt)
 {
 	if (_Samples.empty()) return;
 
 	if (_Samples.size() == 1)
 	{
 		//???!!!after fixind dt due to scaling based on distance from input to sample?! See 1D.
-		UpdateSingleSample(*_Samples[0].Source, Controller, dt, pSyncContext);
+		_Samples[0].Source->Update(Context, dt);
 		return;
 	}
 
-	const float XInput = Controller.GetFloat(_XParamIndex);
-	const float YInput = Controller.GetFloat(_YParamIndex);
+	const float XInput = Context.Controller.GetFloat(_XParamIndex);
+	const float YInput = Context.Controller.GetFloat(_YParamIndex);
 
 	//???use cache if input parameter didn't change?
 
@@ -326,115 +299,21 @@ void CBlendSpace2D::Update(CAnimationController& Controller, float dt, CSyncCont
 
 	n_assert_dbg(_pActiveSamples[0]);
 
-	//!!!must propagate locomotion phase!
-	if (!_pActiveSamples[1])
-	{
-		UpdateSingleSample(*_pActiveSamples[0], Controller, dt, pSyncContext);
-		return;
-	}
-
 	_Blender.SetWeight(0, u);
 	_Blender.SetWeight(1, v);
 	_Blender.SetWeight(2, w);
 
 	// Update sample playback cursors
 
-	/*
+	// TODO: playback rate must be correctly calculated for blend spaces (see CRY and UE4?)
+	//???need blend space _NormalizedTime? can always get from master animation
+	AdvanceNormalizedTime(dt, GetAnimationLengthScaled(), _NormalizedTime);
+
+	for (size_t i = 0; i < 3; ++i)
 	{
-		CSyncContext LocalSyncContext{ ESyncMethod::None };
-
-		for (size_t i = 0; i < 3; ++i)
-		{
-			const auto pSample = _pActiveSamples[i];
-			if (!pSample) break;
-
-			//!!!if sample was inactive, activate it! OnActivate() will happen, e.g. to reset anim to start time.
-
-			if (pSample->HasLocomotion())
-			{
-				//???get locomotion phase when sampling the clip and propagate up by writing it to the sync context?
-				//only if clip is locomotion and no phase is passed down?
-				if (LocalSyncContext.Method != ESyncMethod::PhaseMatching)
-				{
-					//!!!instead of -99999.f => Controller.GetLocomotionPhaseFromPose()! Do once and cache (in sync context?)
-					const float Phase = (i > 0) ? _pActiveSamples[i - 1]->GetLocomotionPhase() : -99999.f;
-					if (Phase >= 0.f)
-					{
-						LocalSyncContext.Method = ESyncMethod::PhaseMatching;
-						LocalSyncContext.LocomotionPhase = Phase;
-					}
-				}
-
-				//!!!NB: if phase is set externally, must apply it! Make sure it happens!
-			}
-
-			//if phase is set, request phase-synced update
-			//else if need time-syncing, request time-synced update
-			//else play sample with dt and without syncing
-			pSample->Update(Controller, dt, &LocalSyncContext);
-		}
-	}
-	*/
-
-	// - need child sample (de)activation, may be very useful not only for resetting
-	// - phase syncing must be correctly implemented, including external poses
-	// - sync normalized time to be synced with phase? Sync locomotion cycle with non-locomotion action. Need?
-	// - playback rate must be correctly calculated for blend spaces (see CRY and UE4?)
-
-	// Next:
-	// - selector (CStrID based?) with blend time for switching to actions like "open door". Finish vs cancel anim?
-	// - pose buffer(s)
-	// - pose modifiers = skeletal controls, object space
-	// - inertialization
-	// - IK
-
-	const ESyncMethod SyncMethod = pSyncContext ? pSyncContext->Method : ESyncMethod::None;
-	switch (SyncMethod)
-	{
-		case ESyncMethod::None:
-		{
-			//???need blend space _NormalizedTime? can always get from master animation
-			AdvanceNormalizedTime(dt, GetAnimationLengthScaled(), _NormalizedTime);
-
-			//CSyncContext LocalSyncContext{ ESyncMethod::NormalizedTime, _NormalizedTime };
-			CSyncContext LocalSyncContext{ ESyncMethod::None };
-
-			for (size_t i = 0; i < 3; ++i)
-			{
-				const auto pSample = _pActiveSamples[i];
-				if (!pSample) break;
-
-				//???get locomotion phase when sampling the clip and propagate up by writing it to the sync context?
-				//only if clip is locomotion and no phase is passed down?
-				if (LocalSyncContext.Method != ESyncMethod::PhaseMatching && pSample->HasLocomotion())
-				{
-					//!!!else (-99999.f) get from initial pose at the start of the frame!
-					const float Phase = (i > 0) ? _pActiveSamples[i - 1]->GetLocomotionPhase() : -99999.f;
-					if (Phase >= 0.f)
-					{
-						LocalSyncContext.Method = ESyncMethod::PhaseMatching;
-						LocalSyncContext.LocomotionPhase = Phase;
-					}
-				}
-
-				pSample->Update(Controller, dt, &LocalSyncContext);
-			}
-
-			break;
-		}
-		case ESyncMethod::NormalizedTime:
-		case ESyncMethod::PhaseMatching:
-		{
-			_NormalizedTime = pSyncContext->NormalizedTime;
-			//???if phase matching, get _NormalizedTime from curr _pActiveSamples[0] phase?
-
-			_pActiveSamples[0]->Update(Controller, dt, pSyncContext);
-			_pActiveSamples[1]->Update(Controller, dt, pSyncContext);
-			if (_pActiveSamples[2]) _pActiveSamples[2]->Update(Controller, dt, pSyncContext);
-
-			break;
-		}
-		default: NOT_IMPLEMENTED; break;
+		const auto pSample = _pActiveSamples[i];
+		if (!pSample) break;
+		pSample->Update(Context, dt);
 	}
 
 	{

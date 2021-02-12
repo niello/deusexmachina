@@ -81,10 +81,11 @@ void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResource
 
 	_GraphRoot = std::move(GraphRoot);
 	_SkeletonInfo = nullptr;
+	_UpdateCounter = 0;
 
 	if (_GraphRoot)
 	{
-		CAnimationControllerInitContext Context{ *this, _SkeletonInfo, ResMgr, AssetOverrides };
+		CAnimationInitContext Context{ *this, _SkeletonInfo, ResMgr, AssetOverrides };
 		_GraphRoot->Init(Context);
 	}
 
@@ -96,7 +97,19 @@ void CAnimationController::Update(float dt)
 {
 	// update conditions etc
 
-	if (_GraphRoot) _GraphRoot->Update(*this, dt, nullptr);
+	// Next:
+	// - selector (CStrID based?) with blend time for switching to actions like "open door". Finish vs cancel anim?
+	// - pose buffer(s)
+	// - pose modifiers = skeletal controls, object space
+	// - inertialization
+	// - IK
+
+	if (_GraphRoot)
+	{
+		++_UpdateCounter;
+		CAnimationUpdateContext Context{ *this };
+		_GraphRoot->Update(Context, dt);
+	}
 
 	// synchronize times etc
 }
@@ -141,6 +154,13 @@ float CAnimationController::GetFloat(CStrID ID, float Default) const
 	UPTR Index;
 	if (!FindParam(ID, &Type, &Index) || Type != EParamType::Float) return Default;
 	return _FloatValues[Index];
+}
+//---------------------------------------------------------------------
+
+float CAnimationController::GetPhaseFromPose() const
+{
+	//!!!TODO: calc phase from current pose, evaluated at update start!
+	return 0.f;
 }
 //---------------------------------------------------------------------
 

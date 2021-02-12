@@ -27,12 +27,21 @@ enum class EParamType
 	Invalid // For inexistent params
 };
 
-struct CAnimationControllerInitContext
+struct CAnimationInitContext
 {
 	CAnimationController&        Controller;
 	PSkeletonInfo&               SkeletonInfo;
 	Resources::CResourceManager& ResourceManager;
 	std::map<CStrID, CStrID>     AssetOverrides;
+};
+
+struct CAnimationUpdateContext
+{
+	CAnimationController& Controller;
+
+	// TODO: map CStrID -> values, per named sync group?
+	//float NormalizedTime = 0.f;
+	float                 LocomotionPhase = -1.f; // Any negative -> no phase syncing
 };
 
 class CAnimationController final
@@ -47,6 +56,8 @@ protected:
 	std::unique_ptr<int[]>                        _IntValues;
 	std::unique_ptr<bool[]>                       _BoolValues;
 	std::unique_ptr<CStrID[]>                     _StrIDValues;
+
+	U32                                           _UpdateCounter = 0;
 
 	// shared conditions (allow nesting or not? if nested, must control cyclic dependencies and enforce calculation order)
 	// NB: each condition, shared or not, must cache its value and recalculate only if used parameter values changed!
@@ -71,7 +82,10 @@ public:
 	// SetBool
 	// SetStrID
 
+	float GetPhaseFromPose() const;
+
 	const CSkeletonInfo* GetSkeletonInfo() const { return _SkeletonInfo.Get(); }
+	U32                  GetUpdateIndex() const { return _UpdateCounter; }
 };
 
 }

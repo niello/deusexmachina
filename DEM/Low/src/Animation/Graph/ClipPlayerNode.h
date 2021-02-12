@@ -20,11 +20,12 @@ protected:
 	CStrID                 _ClipID;
 
 	float                  _CurrClipTime = 0.f;
+	U32                    _LastUpdateIndex = 0;
 
-	// TODO: ClipID? set on Init(), handle asset overriding there too?
 	float                  _StartTime = 0.f; // In a clip space, not modified by a playback speed
 	float                  _Speed = 1.f;
 	bool                   _Loop = true;
+	bool                   _ResetOnActivate = true;
 
 public:
 
@@ -32,8 +33,8 @@ public:
 
 	CClipPlayerNode(CStrID ClipID, bool Loop = true, float Speed = 1.f, float StartTime = 0.f);
 
-	virtual void Init(CAnimationControllerInitContext& Context) override;
-	virtual void Update(CAnimationController& Controller, float dt, CSyncContext* pSyncContext) override;
+	virtual void Init(CAnimationInitContext& Context) override;
+	virtual void Update(CAnimationUpdateContext& Context, float dt) override;
 	virtual void EvaluatePose(IPoseOutput& Output) override;
 
 	virtual float GetAnimationLengthScaled() const override;
