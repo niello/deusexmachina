@@ -28,8 +28,6 @@ public:
 	virtual void  EvaluatePose(IPoseOutput& Output) = 0;
 
 	virtual float GetAnimationLengthScaled() const { return 0.f; }
-	virtual float GetLocomotionPhase() const { return std::numeric_limits<float>().lowest(); }
-	virtual bool  HasLocomotion() const { return false; }
 };
 
 }

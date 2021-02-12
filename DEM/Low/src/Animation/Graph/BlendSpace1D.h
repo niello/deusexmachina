@@ -42,8 +42,6 @@ public:
 	virtual void  EvaluatePose(IPoseOutput& Output) override;
 
 	virtual float GetAnimationLengthScaled() const override;
-	virtual float GetLocomotionPhase() const override;
-	virtual bool  HasLocomotion() const override;
 
 	bool          AddSample(PAnimGraphNode&& Source, float Value);
 };

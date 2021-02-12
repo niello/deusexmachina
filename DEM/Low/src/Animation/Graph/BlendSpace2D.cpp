@@ -358,22 +358,6 @@ float CBlendSpace2D::GetAnimationLengthScaled() const
 }
 //---------------------------------------------------------------------
 
-float CBlendSpace2D::GetLocomotionPhase() const
-{
-	// Always from the most weighted animation, others must be synchronized
-	//???what if locomotion has less weight than idle?
-	return _pActiveSamples[0] ? _pActiveSamples[0]->GetLocomotionPhase() : std::numeric_limits<float>().lowest();
-}
-//---------------------------------------------------------------------
-
-bool CBlendSpace2D::HasLocomotion() const
-{
-	return (_pActiveSamples[0] && _pActiveSamples[0]->HasLocomotion()) ||
-		(_pActiveSamples[1] && _pActiveSamples[1]->HasLocomotion()) ||
-		(_pActiveSamples[2] && _pActiveSamples[2]->HasLocomotion());
-}
-//---------------------------------------------------------------------
-
 // NB: sample value must be different from neighbours at least by SAMPLE_MATCH_TOLERANCE
 bool CBlendSpace2D::AddSample(PAnimGraphNode&& Source, float XValue, float YValue)
 {

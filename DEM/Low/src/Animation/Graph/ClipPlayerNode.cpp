@@ -67,6 +67,8 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 			Context.LocomotionPhase = Context.Controller.GetPhaseFromPose();
 			_CurrClipTime = pClip->GetLocomotionPhaseNormalizedTime(Context.LocomotionPhase) * pClip->GetDuration();
 
+			//???request inertialization here?
+
 			::Sys::DbgOut("***CClipPlayerNode: pose-synced, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
 				_CurrClipTime / pClip->GetDuration(), Context.LocomotionPhase, _ClipID.CStr());
 		}
@@ -105,20 +107,6 @@ void CClipPlayerNode::EvaluatePose(IPoseOutput& Output)
 float CClipPlayerNode::GetAnimationLengthScaled() const
 {
 	return (_Sampler.GetClip() && _Speed) ? (_Sampler.GetClip()->GetDuration() / _Speed) : 0.f;
-}
-//---------------------------------------------------------------------
-
-float CClipPlayerNode::GetLocomotionPhase() const
-{
-	return _Sampler.GetClip() ?
-		_Sampler.GetClip()->GetLocomotionPhase(_CurrClipTime / _Sampler.GetClip()->GetDuration()) :
-		std::numeric_limits<float>().lowest();
-}
-//---------------------------------------------------------------------
-
-bool CClipPlayerNode::HasLocomotion() const
-{
-	return _Sampler.GetClip() && _Sampler.GetClip()->GetLocomotionInfo();
 }
 //---------------------------------------------------------------------
 
