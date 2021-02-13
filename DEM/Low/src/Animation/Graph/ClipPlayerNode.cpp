@@ -95,12 +95,9 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 }
 //---------------------------------------------------------------------
 
-void CClipPlayerNode::EvaluatePose(IPoseOutput& Output)
+void CClipPlayerNode::EvaluatePose(CPoseBuffer& Output)
 {
-	if (_PortMapping)
-		_Sampler.EvaluatePose(_CurrClipTime, CMappedPoseOutput(Output, _PortMapping.get()));
-	else
-		_Sampler.EvaluatePose(_CurrClipTime, Output);
+	_Sampler.EvaluatePose(_CurrClipTime, Output, _PortMapping.get());
 }
 //---------------------------------------------------------------------
 

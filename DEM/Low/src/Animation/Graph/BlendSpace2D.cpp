@@ -122,8 +122,8 @@ void CBlendSpace2D::Init(CAnimationInitContext& Context)
 			Sample.Source->Init(Context);
 
 		// Call after initializing sources, letting them to contribute to SkeletonInfo
-		if (Context.SkeletonInfo)
-			_Blender.Initialize(3, Context.SkeletonInfo->GetNodeCount());
+		if (Context.SkeletonInfo && _Samples.size() > 1)
+			_TmpPose.SetSize(Context.SkeletonInfo->GetNodeCount());
 	}
 }
 //---------------------------------------------------------------------
@@ -299,9 +299,9 @@ void CBlendSpace2D::Update(CAnimationUpdateContext& Context, float dt)
 
 	n_assert_dbg(_pActiveSamples[0]);
 
-	_Blender.SetWeight(0, u);
-	_Blender.SetWeight(1, v);
-	_Blender.SetWeight(2, w);
+	_Weights[0] = u;
+	_Weights[1] = v;
+	_Weights[2] = w;
 
 	// Update sample playback cursors
 
@@ -329,22 +329,25 @@ void CBlendSpace2D::Update(CAnimationUpdateContext& Context, float dt)
 }
 //---------------------------------------------------------------------
 
-void CBlendSpace2D::EvaluatePose(IPoseOutput& Output)
+void CBlendSpace2D::EvaluatePose(CPoseBuffer& Output)
 {
-	if (_pActiveSamples[1])
-	{
-		//???TODO: try inplace blending in Output instead of preallocated Blender? helps to save
-		// memory and may be faster! We don't use priority here anyway, and weights always sum to 1.f.
-		//Can use special wrapper output CPoseScaleBiasOutput / CPoseWeightedOutput to apply weights on the fly!
-		//!!!can even have single and per-bone weigh variations!
-		//???cache locality may suffer if blending in place? scene nodes are scattered around the heap.
-		_pActiveSamples[0]->EvaluatePose(*_Blender.GetInput(0));
-		_pActiveSamples[1]->EvaluatePose(*_Blender.GetInput(1));
-		if (_pActiveSamples[2]) _pActiveSamples[2]->EvaluatePose(*_Blender.GetInput(2));
+	if (!_pActiveSamples[0]) return;
 
-		_Blender.EvaluatePose(Output);
-	}
-	else if (_pActiveSamples[0]) _pActiveSamples[0]->EvaluatePose(Output);
+	_pActiveSamples[0]->EvaluatePose(Output);
+
+	if (!_pActiveSamples[1]) return;
+
+	Output *= _Weights[0];
+
+	_pActiveSamples[1]->EvaluatePose(_TmpPose);
+	_TmpPose *= _Weights[1];
+	Output.Accumulate(_TmpPose);
+
+	if (!_pActiveSamples[2]) return;
+
+	_pActiveSamples[2]->EvaluatePose(_TmpPose);
+	_TmpPose *= _Weights[2];
+	Output.Accumulate(_TmpPose);
 }
 //---------------------------------------------------------------------
 
@@ -352,9 +355,9 @@ float CBlendSpace2D::GetAnimationLengthScaled() const
 {
 	if (!_pActiveSamples[0]) return 0.f;
 	if (!_pActiveSamples[1]) return _pActiveSamples[0]->GetAnimationLengthScaled();
-	return _pActiveSamples[0]->GetAnimationLengthScaled() * _Blender.GetWeight(0) +
-		_pActiveSamples[1]->GetAnimationLengthScaled() * _Blender.GetWeight(1) +
-		(_pActiveSamples[2] ? _pActiveSamples[2]->GetAnimationLengthScaled() * _Blender.GetWeight(2) : 0.f);
+	return _pActiveSamples[0]->GetAnimationLengthScaled() * _Weights[0] +
+		_pActiveSamples[1]->GetAnimationLengthScaled() * _Weights[1] +
+		(_pActiveSamples[2] ? _pActiveSamples[2]->GetAnimationLengthScaled() * _Weights[2] : 0.f);
 }
 //---------------------------------------------------------------------
 

@@ -14,7 +14,7 @@ protected:
 
 	//std::unique_ptr<acl::Transform_32[]> _Transforms;
 	std::unique_ptr<Math::CTransform> _Transforms;
-	UPTR                              _Count;
+	UPTR                              _Count = 0;
 
 public:
 
@@ -29,6 +29,19 @@ public:
 
 	auto& operator [](UPTR Index) { return _Transforms.get()[Index]; }
 	auto& operator [](UPTR Index) const { return _Transforms.get()[Index]; }
+
+	void Accumulate(const CPoseBuffer& Other)
+	{
+		const UPTR Size = std::min(_Count, Other._Count);
+		for (UPTR i = 0; i < Size; ++i)
+			_Transforms.get()[i].Accumulate(Other[i]);
+	}
+
+	void operator *=(float Weight)
+	{
+		for (UPTR i = 0; i < _Count; ++i)
+			_Transforms.get()[i] *= Weight;
+	}
 };
 
 }

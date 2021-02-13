@@ -1,6 +1,6 @@
 #pragma once
 #include <Animation/Graph/AnimGraphNode.h>
-#include <Animation/AnimationBlender.h>
+#include <Animation/PoseBuffer.h>
 #include <Data/StringID.h>
 
 // Animation graph node that blends sources based on two values in 2D space
@@ -38,8 +38,9 @@ protected:
 
 	std::vector<CSample>   _Samples;
 	std::vector<CTriangle> _Triangles;
-	CAnimationBlender      _Blender;
+	CPoseBuffer            _TmpPose;
 	CAnimGraphNode*        _pActiveSamples[3] = { nullptr };
+	float                  _Weights[3] = { 0.f };
 
 	CStrID                 _XParamID;
 	CStrID                 _YParamID;
@@ -54,7 +55,7 @@ public:
 
 	virtual void  Init(CAnimationInitContext& Context) override;
 	virtual void  Update(CAnimationUpdateContext& Context, float dt) override;
-	virtual void  EvaluatePose(IPoseOutput& Output) override;
+	virtual void  EvaluatePose(CPoseBuffer& Output) override;
 
 	virtual float GetAnimationLengthScaled() const override;
 

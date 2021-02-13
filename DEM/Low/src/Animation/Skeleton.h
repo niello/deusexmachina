@@ -9,6 +9,7 @@ namespace DEM::Anim
 {
 using PSkeleton = std::unique_ptr<class CSkeleton>;
 class CSkeletonInfo;
+class CPoseBuffer;
 
 class CSkeleton : public IPoseOutput
 {
@@ -21,6 +22,9 @@ public:
 
 	void Init(Scene::CSceneNode& Root, const CSkeletonInfo& Info);
 	void Clear() { _Nodes.clear();  }
+
+	void FromPoseBuffer(const CPoseBuffer& Pose);
+	void ToPoseBuffer(CPoseBuffer& Pose) const;
 
 	//!!!can merge channels with a per-bone layer mask into the single feature!
 	virtual U8   GetActivePortChannels(U16 Port) const override;

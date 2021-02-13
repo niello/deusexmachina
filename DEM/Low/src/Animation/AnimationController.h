@@ -17,7 +17,6 @@ namespace DEM::Anim
 using PAnimationController = std::unique_ptr<class CAnimationController>;
 using PAnimGraphNode = std::unique_ptr<class CAnimGraphNode>;
 using PSkeletonInfo = Ptr<class CSkeletonInfo>;
-class IPoseOutput;
 
 enum class EParamType
 {
@@ -75,7 +74,7 @@ public:
 
 	void  Init(PAnimGraphNode&& GraphRoot, Resources::CResourceManager& ResMgr, std::map<CStrID, float>&& Floats = {}, std::map<CStrID, int>&& Ints = {}, std::map<CStrID, bool>&& Bools = {}, std::map<CStrID, CStrID>&& StrIDs = {}, const std::map<CStrID, CStrID>& AssetOverrides = {});
 	void  Update(float dt);
-	void  EvaluatePose(IPoseOutput& Output);
+	void  EvaluatePose(CPoseBuffer& Pose);
 
 	bool  FindParam(CStrID ID, EParamType* pOutType = nullptr, UPTR* pOutIndex = nullptr) const;
 	bool  SetFloat(CStrID ID, float Value);

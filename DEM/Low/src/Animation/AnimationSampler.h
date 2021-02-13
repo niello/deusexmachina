@@ -7,6 +7,7 @@
 namespace DEM::Anim
 {
 class IPoseOutput;
+class CPoseBuffer;
 typedef Ptr<class CAnimationClip> PAnimationClip;
 typedef std::unique_ptr<class CAnimationSampler> PAnimationSampler;
 typedef std::unique_ptr<class CStaticPose> PStaticPose;
@@ -19,6 +20,8 @@ protected:
 	CACLContext    _Context; // At offset 0
 	PAnimationClip _Clip;
 
+	//???store mask right here or separately? what bones (and maybe what components of SRT in them) are used.
+
 public:
 
 	DEM_ALLOCATE_ALIGNED(alignof(CAnimationSampler));
@@ -27,6 +30,7 @@ public:
 	~CAnimationSampler();
 
 	void  EvaluatePose(float Time, IPoseOutput& Output);
+	void  EvaluatePose(float Time, CPoseBuffer& Output, U16* pMapping = nullptr);
 
 	bool  SetClip(PAnimationClip Clip);
 	auto* GetClip() const { return _Clip.Get(); }

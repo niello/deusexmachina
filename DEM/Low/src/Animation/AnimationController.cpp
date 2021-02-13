@@ -120,24 +120,23 @@ void CAnimationController::Update(float dt)
 }
 //---------------------------------------------------------------------
 
-void CAnimationController::EvaluatePose(IPoseOutput& Output)
+void CAnimationController::EvaluatePose(CPoseBuffer& Pose)
 {
 	if (_PoseIndex > 1)
 	{
-		// Init both poses from current
-		// Store pose 0
-		// Copy to pose 1
+		// Init both poses from current. Should be used at the first frame and when teleported.
 		_PoseIndex = 0;
+		_LastPoses[0] = Pose;
+		_LastPoses[1] = Pose;
 	}
 	else
 	{
 		// Swap current and previous pose buffers
 		_PoseIndex ^= 1;
-
-		// Store pose
+		_LastPoses[_PoseIndex] = Pose;
 	}
 
-	if (_GraphRoot) _GraphRoot->EvaluatePose(Output);
+	if (_GraphRoot) _GraphRoot->EvaluatePose(Pose);
 	//???else (if no _GraphRoot) leave as is or reset to refpose?
 
 	//!!!DBG TMP!

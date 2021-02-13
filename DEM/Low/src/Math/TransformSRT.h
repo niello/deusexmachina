@@ -24,6 +24,28 @@ public:
 
 	bool	FromMatrix(const matrix44& Tfm);
 	void	ToMatrix(matrix44& Out) const;
+
+	void Accumulate(const CTransformSRT& Other)
+	{
+		// Blend with shortest arc, based on a 4D dot product sign
+		if (Rotation.x * Other.Rotation.x + Rotation.y * Other.Rotation.y + Rotation.z * Other.Rotation.z + Rotation.w * Other.Rotation.w < 0.f)
+			Rotation -= Other.Rotation;
+		else
+			Rotation += Other.Rotation;
+
+		Translation += Other.Translation;
+		Scale += Other.Scale;
+	}
+
+	void operator *=(float Weight)
+	{
+		Translation *= Weight;
+		Rotation.x *= Weight;
+		Rotation.y *= Weight;
+		Rotation.z *= Weight;
+		Rotation.w *= Weight;
+		Scale *= Weight;
+	}
 };
 
 // Make this class a default transform representation

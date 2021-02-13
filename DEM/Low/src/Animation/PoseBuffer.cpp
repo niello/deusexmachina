@@ -43,6 +43,7 @@ CPoseBuffer& CPoseBuffer::operator =(CPoseBuffer&& Other)
 
 void CPoseBuffer::SetSize(UPTR Size)
 {
+	if (_Count == Size) return;
 	_Count = Size;
 	//if (_Count) _Transforms.reset(new acl::Transform_32[_Count]);
 	if (_Count) _Transforms.reset(new Math::CTransform[_Count]);

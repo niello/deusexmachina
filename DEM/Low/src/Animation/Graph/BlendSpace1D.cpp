@@ -23,8 +23,8 @@ void CBlendSpace1D::Init(CAnimationInitContext& Context)
 			Sample.Source->Init(Context);
 
 		// Call after initializing sources, letting them to contribute to SkeletonInfo
-		if (Context.SkeletonInfo)
-			_Blender.Initialize(2, Context.SkeletonInfo->GetNodeCount());
+		if (Context.SkeletonInfo && _Samples.size() > 1)
+			_TmpPose.SetSize(Context.SkeletonInfo->GetNodeCount());
 	}
 }
 //---------------------------------------------------------------------
@@ -80,22 +80,9 @@ void CBlendSpace1D::Update(CAnimationUpdateContext& Context, float dt)
 
 	//!!!???TODO: check if samples reference the same animation with the same speed etc!? or blend speeds?
 
-	// For convenience make sure _pFirst is always the one with greater weight
-	const float BlendFactor = (Input - PrevIt->Value) / (It->Value - PrevIt->Value);
-	if (BlendFactor <= 0.5f)
-	{
-		_pFirst = PrevIt->Source.get();
-		_pSecond = It->Source.get();
-		_Blender.SetWeight(0, 1.f - BlendFactor);
-		_Blender.SetWeight(1, BlendFactor);
-	}
-	else
-	{
-		_pFirst = It->Source.get();
-		_pSecond = PrevIt->Source.get();
-		_Blender.SetWeight(0, BlendFactor);
-		_Blender.SetWeight(1, 1.f - BlendFactor);
-	}
+	_BlendFactor = (Input - PrevIt->Value) / (It->Value - PrevIt->Value);
+	_pFirst = PrevIt->Source.get();
+	_pSecond = It->Source.get();
 
 	// Update sample playback cursors
 
@@ -111,21 +98,19 @@ void CBlendSpace1D::Update(CAnimationUpdateContext& Context, float dt)
 }
 //---------------------------------------------------------------------
 
-void CBlendSpace1D::EvaluatePose(IPoseOutput& Output)
+void CBlendSpace1D::EvaluatePose(CPoseBuffer& Output)
 {
-	if (_pSecond)
-	{
-		//???TODO: try inplace blending in Output instead of preallocated Blender? helps to save
-		// memory and may be faster! We don't use priority here anyway, and weights always sum to 1.f.
-		//Can use special wrapper output CPoseScaleBiasOutput / CPoseWeightedOutput to apply weights on the fly!
-		//!!!can even have single and per-bone weigh variations!
-		//???cache locality may suffer if blending in place? scene nodes are scattered around the heap.
-		_pFirst->EvaluatePose(*_Blender.GetInput(0));
-		_pSecond->EvaluatePose(*_Blender.GetInput(1));
+	if (!_pFirst) return;
 
-		_Blender.EvaluatePose(Output);
-	}
-	else if (_pFirst) _pFirst->EvaluatePose(Output);
+	_pFirst->EvaluatePose(Output);
+
+	if (!_pSecond) return;
+
+	Output *= (1.f - _BlendFactor);
+
+	_pSecond->EvaluatePose(_TmpPose);
+	_TmpPose *= _BlendFactor;
+	Output.Accumulate(_TmpPose);
 }
 //---------------------------------------------------------------------
 
@@ -133,8 +118,8 @@ float CBlendSpace1D::GetAnimationLengthScaled() const
 {
 	if (!_pFirst) return 0.f;
 	if (!_pSecond) return _pFirst->GetAnimationLengthScaled();
-	return _pFirst->GetAnimationLengthScaled() * _Blender.GetWeight(0) +
-		_pSecond->GetAnimationLengthScaled() * _Blender.GetWeight(1);
+	return _pFirst->GetAnimationLengthScaled() * (1.f - _BlendFactor) +
+		_pSecond->GetAnimationLengthScaled() * _BlendFactor;
 }
 //---------------------------------------------------------------------
 

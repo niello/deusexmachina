@@ -1,5 +1,6 @@
 #include "Skeleton.h"
 #include <Animation/SkeletonInfo.h>
+#include <Animation/PoseBuffer.h>
 
 namespace DEM::Anim
 {
@@ -30,6 +31,25 @@ void CSkeleton::Init(Scene::CSceneNode& Root, const CSkeletonInfo& Info)
 			_Nodes[i] = pParent->GetChild(NodeInfo.ID);
 		}
 	}
+}
+//---------------------------------------------------------------------
+
+void CSkeleton::FromPoseBuffer(const CPoseBuffer& Pose)
+{
+	const UPTR Size = _Nodes.size();
+	for (UPTR i = 0; i < Size; ++i)
+		if (auto pNode = _Nodes[i].Get())
+			pNode->SetLocalTransform(Pose[i]);
+}
+//---------------------------------------------------------------------
+
+void CSkeleton::ToPoseBuffer(CPoseBuffer& Pose) const
+{
+	const UPTR Size = _Nodes.size();
+	Pose.SetSize(Size);
+	for (UPTR i = 0; i < Size; ++i)
+		if (auto pNode = _Nodes[i].Get())
+			Pose[i] = pNode->GetLocalTransform();
 }
 //---------------------------------------------------------------------
 
