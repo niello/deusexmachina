@@ -55,7 +55,7 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 		if (Context.LocomotionPhase < 0.f && WasInactive)
 		{
 			// We just started locomotion, sync the phase from the current pose if possible
-			Context.LocomotionPhase = Context.Controller.GetLocomotionPhaseFromPose();
+			Context.LocomotionPhase = Context.Controller.GetLocomotionPhaseFromPose(Context.Target);
 
 			//???if phase >=0, request inertialization here? Or always handle through weighted blending-in?
 

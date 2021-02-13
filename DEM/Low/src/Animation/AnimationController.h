@@ -17,6 +17,7 @@ namespace DEM::Anim
 using PAnimationController = std::unique_ptr<class CAnimationController>;
 using PAnimGraphNode = std::unique_ptr<class CAnimGraphNode>;
 using PSkeletonInfo = Ptr<class CSkeletonInfo>;
+class CSkeleton;
 
 // FIXME: unify EmptyPort, InvalidPort and this!
 inline constexpr U16 INVALID_BONE_INDEX = std::numeric_limits<U16>().max();
@@ -41,6 +42,7 @@ struct CAnimationInitContext
 struct CAnimationUpdateContext
 {
 	CAnimationController& Controller;
+	const CSkeleton&      Target;
 
 	// TODO: map CStrID -> values, per named sync group?
 	//float NormalizedTime = 0.f;
@@ -62,6 +64,7 @@ protected:
 
 	U32                                           _UpdateCounter = 0;
 
+	CPoseBuffer                                   _CurrPose;
 	CPoseBuffer                                   _LastPoses[2];
 	U8                                            _PoseIndex = 2;
 
@@ -79,8 +82,8 @@ public:
 	~CAnimationController();
 
 	void  Init(PAnimGraphNode&& GraphRoot, Resources::CResourceManager& ResMgr, CStrID LeftFootID = {}, CStrID RightFootID = {}, std::map<CStrID, float>&& Floats = {}, std::map<CStrID, int>&& Ints = {}, std::map<CStrID, bool>&& Bools = {}, std::map<CStrID, CStrID>&& StrIDs = {}, const std::map<CStrID, CStrID>& AssetOverrides = {});
-	void  Update(float dt);
-	void  EvaluatePose(CPoseBuffer& Pose);
+	void  Update(const CSkeleton& Target, float dt);
+	void  EvaluatePose(CSkeleton& Target);
 
 	bool  FindParam(CStrID ID, EParamType* pOutType = nullptr, UPTR* pOutIndex = nullptr) const;
 	bool  SetFloat(CStrID ID, float Value);
@@ -91,7 +94,7 @@ public:
 	// SetBool
 	// SetStrID
 
-	float GetLocomotionPhaseFromPose() const;
+	float GetLocomotionPhaseFromPose(const CSkeleton& Skeleton) const;
 
 	const CSkeletonInfo* GetSkeletonInfo() const { return _SkeletonInfo.Get(); }
 	U32                  GetUpdateIndex() const { return _UpdateCounter; }

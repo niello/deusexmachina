@@ -28,6 +28,8 @@ public:
 	void FromPoseBuffer(const CPoseBuffer& Pose);
 	void ToPoseBuffer(CPoseBuffer& Pose) const;
 
+	const Scene::CSceneNode* GetNode(U16 Port) const { return (_Nodes.size() > Port) ? _Nodes[Port] : nullptr; }
+
 	//!!!can merge channels with a per-bone layer mask into the single feature!
 	virtual U8   GetActivePortChannels(U16 Port) const override;
 

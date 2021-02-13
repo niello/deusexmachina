@@ -84,7 +84,7 @@ void CBlendSpace2D::Init(CAnimationInitContext& Context)
 			}
 		}
 
-		// Ensure starting triangle is first
+		// Ensure the starting triangle is the first
 		// TODO: could sort by adjacency to improve cache locality when searching. Worth it?
 		n_assert(StartIndex != INVALID_INDEX);
 		if (StartIndex != 0)

@@ -1,7 +1,7 @@
 #include "AnimationController.h"
 #include <Animation/Graph/AnimGraphNode.h>
 #include <Animation/SkeletonInfo.h>
-#include <Animation/PoseOutput.h>
+#include <Animation/Skeleton.h>
 
 namespace DEM::Anim
 {
@@ -108,7 +108,7 @@ void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResource
 }
 //---------------------------------------------------------------------
 
-void CAnimationController::Update(float dt)
+void CAnimationController::Update(const CSkeleton& Target, float dt)
 {
 	// update conditions etc
 
@@ -121,7 +121,7 @@ void CAnimationController::Update(float dt)
 	if (_GraphRoot)
 	{
 		++_UpdateCounter;
-		CAnimationUpdateContext Context{ *this };
+		CAnimationUpdateContext Context{ *this, Target };
 		_GraphRoot->Update(Context, dt);
 
 		// TODO: synchronize times by sync group?
@@ -129,23 +129,25 @@ void CAnimationController::Update(float dt)
 }
 //---------------------------------------------------------------------
 
-void CAnimationController::EvaluatePose(CPoseBuffer& Pose)
+void CAnimationController::EvaluatePose(CSkeleton& Target)
 {
+	Target.ToPoseBuffer(_CurrPose); // TODO: update only if changed externally?
+
 	if (_PoseIndex > 1)
 	{
 		// Init both poses from current. Should be used at the first frame and when teleported.
 		_PoseIndex = 0;
-		_LastPoses[0] = Pose;
-		_LastPoses[1] = Pose;
+		_LastPoses[0] = _CurrPose;
+		_LastPoses[1] = _CurrPose;
 	}
 	else
 	{
 		// Swap current and previous pose buffers
 		_PoseIndex ^= 1;
-		_LastPoses[_PoseIndex] = Pose;
+		_LastPoses[_PoseIndex] = _CurrPose;
 	}
 
-	if (_GraphRoot) _GraphRoot->EvaluatePose(Pose);
+	if (_GraphRoot) _GraphRoot->EvaluatePose(_CurrPose);
 	//???else (if no _GraphRoot) leave as is or reset to refpose?
 
 	//!!!DBG TMP!
@@ -153,6 +155,8 @@ void CAnimationController::EvaluatePose(CPoseBuffer& Pose)
 	//???diff from ref pose? can also be from the first frame of the animation, but that complicates things
 	//???precalculate something in tools to simplify processing here? is possible?
 	//Output.SetTranslation(0, vector3::Zero);
+
+	Target.FromPoseBuffer(_CurrPose);
 }
 //---------------------------------------------------------------------
 
@@ -185,14 +189,16 @@ float CAnimationController::GetFloat(CStrID ID, float Default) const
 }
 //---------------------------------------------------------------------
 
-float CAnimationController::GetLocomotionPhaseFromPose() const
+float CAnimationController::GetLocomotionPhaseFromPose(const CSkeleton& Skeleton) const
 {
-	if (_PoseIndex > 1 || _LeftFootBoneIndex == INVALID_BONE_INDEX || _RightFootBoneIndex == INVALID_BONE_INDEX) return -1.f;
+	if (_LeftFootBoneIndex == INVALID_BONE_INDEX || _RightFootBoneIndex == INVALID_BONE_INDEX) return -1.f;
 
-	const auto& PrevPose = _LastPoses[_PoseIndex];
+	const auto* pLeftFootNode = Skeleton.GetNode(_LeftFootBoneIndex);
+	const auto* pRightFootNode = Skeleton.GetNode(_RightFootBoneIndex);
+	if (!pLeftFootNode || !pRightFootNode) return -1.f;
 
 	// Project foot offset onto the locomotion plane (fwd, up) and normalize it to get phase direction
-	const auto Offset = PrevPose[_LeftFootBoneIndex].Translation - PrevPose[_RightFootBoneIndex].Translation;
+	const auto Offset = pLeftFootNode->GetWorldMatrix().Translation() - pRightFootNode->GetWorldMatrix().Translation();
 
 	/* TODO: use ACL/RTM for poses
 	const auto Fwd = RootCoordSystem.GetColumn(2);
