@@ -15,7 +15,7 @@ void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResource
 	std::map<CStrID, int>&& Ints,
 	std::map<CStrID, bool>&& Bools,
 	std::map<CStrID, CStrID>&& StrIDs,
-	std::map<CStrID, CStrID> AssetOverrides)
+	const std::map<CStrID, CStrID>& AssetOverrides)
 {
 	_Params.clear();
 	_FloatValues.reset();
@@ -82,6 +82,7 @@ void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResource
 	_GraphRoot = std::move(GraphRoot);
 	_SkeletonInfo = nullptr;
 	_UpdateCounter = 0;
+	_PoseIndex = 2;
 
 	if (_GraphRoot)
 	{
@@ -90,6 +91,11 @@ void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResource
 	}
 
 	// TODO: if !_SkeletonInfo here, can issue a warning - no leaf animation data is provided or some assets not resolved
+	if (_SkeletonInfo)
+	{
+		_LastPoses[0].SetSize(_SkeletonInfo->GetNodeCount());
+		_LastPoses[1].SetSize(_SkeletonInfo->GetNodeCount());
+	}
 }
 //---------------------------------------------------------------------
 
@@ -97,9 +103,8 @@ void CAnimationController::Update(float dt)
 {
 	// update conditions etc
 
-	// Next:
+	// TODO:
 	// - selector (CStrID based?) with blend time for switching to actions like "open door". Finish vs cancel anim?
-	// - pose buffer(s)
 	// - pose modifiers = skeletal controls, object space
 	// - inertialization
 	// - IK
@@ -109,14 +114,29 @@ void CAnimationController::Update(float dt)
 		++_UpdateCounter;
 		CAnimationUpdateContext Context{ *this };
 		_GraphRoot->Update(Context, dt);
-	}
 
-	// synchronize times etc
+		// TODO: synchronize times by sync group?
+	}
 }
 //---------------------------------------------------------------------
 
 void CAnimationController::EvaluatePose(IPoseOutput& Output)
 {
+	if (_PoseIndex > 1)
+	{
+		// Init both poses from current
+		// Store pose 0
+		// Copy to pose 1
+		_PoseIndex = 0;
+	}
+	else
+	{
+		// Swap current and previous pose buffers
+		_PoseIndex ^= 1;
+
+		// Store pose
+	}
+
 	if (_GraphRoot) _GraphRoot->EvaluatePose(Output);
 	//???else (if no _GraphRoot) leave as is or reset to refpose?
 
@@ -159,7 +179,12 @@ float CAnimationController::GetFloat(CStrID ID, float Default) const
 
 float CAnimationController::GetPhaseFromPose() const
 {
-	//!!!TODO: calc phase from current pose, evaluated at update start!
+	if (_PoseIndex > 1) return 0.f;
+
+	const auto& PrevPose = _LastPoses[_PoseIndex];
+
+	//!!!need to know L&R foot bone indices! Root is always 0.
+
 	return 0.f;
 }
 //---------------------------------------------------------------------

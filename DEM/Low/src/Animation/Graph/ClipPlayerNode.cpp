@@ -46,8 +46,8 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 	if (!pClip || pClip->GetDuration() <= 0.f) return;
 
 	const U32 CurrUpdateIndex = Context.Controller.GetUpdateIndex();
-	const bool WasActive = (_LastUpdateIndex == CurrUpdateIndex - 1);
-	if (_ResetOnActivate && !WasActive) _CurrClipTime = _StartTime;
+	const bool WasInactive = (_LastUpdateIndex != CurrUpdateIndex - 1);
+	if (_ResetOnActivate && WasInactive) _CurrClipTime = _StartTime;
 	_LastUpdateIndex = CurrUpdateIndex;
 
 	if (pClip->GetLocomotionInfo())
@@ -61,13 +61,13 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 			::Sys::DbgOut("***CClipPlayerNode: phase-synced, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
 				_CurrClipTime / pClip->GetDuration(), Context.LocomotionPhase, _ClipID.CStr());
 		}
-		else if (!WasActive)
+		else if (WasInactive)
 		{
 			// We just started locomotion, sync phase from the current pose
 			Context.LocomotionPhase = Context.Controller.GetPhaseFromPose();
 			_CurrClipTime = pClip->GetLocomotionPhaseNormalizedTime(Context.LocomotionPhase) * pClip->GetDuration();
 
-			//???request inertialization here?
+			//???request inertialization here? Or always handle through blending-in?
 
 			::Sys::DbgOut("***CClipPlayerNode: pose-synced, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
 				_CurrClipTime / pClip->GetDuration(), Context.LocomotionPhase, _ClipID.CStr());

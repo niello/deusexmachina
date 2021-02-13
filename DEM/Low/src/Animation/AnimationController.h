@@ -1,6 +1,7 @@
 #pragma once
 #include <Data/Ptr.h>
 #include <Data/StringID.h>
+#include <Animation/PoseBuffer.h>
 #include <map>
 
 // Animation controller plays an animation graph instance, feeding it with parameters.
@@ -29,10 +30,10 @@ enum class EParamType
 
 struct CAnimationInitContext
 {
-	CAnimationController&        Controller;
-	PSkeletonInfo&               SkeletonInfo;
-	Resources::CResourceManager& ResourceManager;
-	std::map<CStrID, CStrID>     AssetOverrides;
+	CAnimationController&           Controller;
+	PSkeletonInfo&                  SkeletonInfo;
+	Resources::CResourceManager&    ResourceManager;
+	const std::map<CStrID, CStrID>& AssetOverrides;
 };
 
 struct CAnimationUpdateContext
@@ -59,6 +60,9 @@ protected:
 
 	U32                                           _UpdateCounter = 0;
 
+	CPoseBuffer                                   _LastPoses[2];
+	U8                                            _PoseIndex = 2;
+
 	// shared conditions (allow nesting or not? if nested, must control cyclic dependencies and enforce calculation order)
 	// NB: each condition, shared or not, must cache its value and recalculate only if used parameter values changed!
 
@@ -69,7 +73,7 @@ public:
 	CAnimationController& operator =(CAnimationController&&) noexcept;
 	~CAnimationController();
 
-	void  Init(PAnimGraphNode&& GraphRoot, Resources::CResourceManager& ResMgr, std::map<CStrID, float>&& Floats = {}, std::map<CStrID, int>&& Ints = {}, std::map<CStrID, bool>&& Bools = {}, std::map<CStrID, CStrID>&& StrIDs = {}, std::map<CStrID, CStrID> AssetOverrides = {});
+	void  Init(PAnimGraphNode&& GraphRoot, Resources::CResourceManager& ResMgr, std::map<CStrID, float>&& Floats = {}, std::map<CStrID, int>&& Ints = {}, std::map<CStrID, bool>&& Bools = {}, std::map<CStrID, CStrID>&& StrIDs = {}, const std::map<CStrID, CStrID>& AssetOverrides = {});
 	void  Update(float dt);
 	void  EvaluatePose(IPoseOutput& Output);
 
