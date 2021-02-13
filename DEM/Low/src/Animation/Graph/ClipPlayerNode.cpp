@@ -52,6 +52,16 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 
 	if (pClip->GetLocomotionInfo())
 	{
+		if (Context.LocomotionPhase < 0.f && WasInactive)
+		{
+			// We just started locomotion, sync the phase from the current pose if possible
+			Context.LocomotionPhase = Context.Controller.GetLocomotionPhaseFromPose();
+
+			//???if phase >=0, request inertialization here? Or always handle through weighted blending-in?
+
+			::Sys::DbgOut("***CClipPlayerNode: phase from pose %lf\n", Context.LocomotionPhase);
+		}
+
 		if (Context.LocomotionPhase >= 0.f)
 		{
 			// Locomotion phase is already evaluated, sync clip with it
@@ -61,20 +71,9 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 			::Sys::DbgOut("***CClipPlayerNode: phase-synced, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
 				_CurrClipTime / pClip->GetDuration(), Context.LocomotionPhase, _ClipID.CStr());
 		}
-		else if (WasInactive)
-		{
-			// We just started locomotion, sync phase from the current pose
-			Context.LocomotionPhase = Context.Controller.GetPhaseFromPose();
-			_CurrClipTime = pClip->GetLocomotionPhaseNormalizedTime(Context.LocomotionPhase) * pClip->GetDuration();
-
-			//???request inertialization here? Or always handle through blending-in?
-
-			::Sys::DbgOut("***CClipPlayerNode: pose-synced, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
-				_CurrClipTime / pClip->GetDuration(), Context.LocomotionPhase, _ClipID.CStr());
-		}
 		else
 		{
-			// We continue locomotion and drive the phase by our normal time update
+			// We drive the phase by our normal time update, others sync with us
 			_CurrClipTime = pClip->AdjustTime(_CurrClipTime + dt * _Speed, _Loop);
 			Context.LocomotionPhase = pClip->GetLocomotionPhase(_CurrClipTime / pClip->GetDuration());
 

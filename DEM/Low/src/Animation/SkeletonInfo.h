@@ -38,6 +38,7 @@ public:
 	UPTR             GetNodeCount() const { return _Nodes.size(); }
 	const CNodeInfo& GetNodeInfo(UPTR Index) const { return _Nodes[Index]; }
 	U16              FindNodePort(U16 ParentIndex, CStrID ID) const;
+	U16              FindNodePort(CStrID ID) const;
 	void             MapTo(const CSkeletonInfo& Other, std::unique_ptr<U16[]>& OutMapping) const;
 	void             MergeInto(CSkeletonInfo& Other, std::unique_ptr<U16[]>& Mapping, size_t FirstEmptyPort = 0) const;
 

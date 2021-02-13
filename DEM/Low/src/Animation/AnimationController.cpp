@@ -11,6 +11,7 @@ CAnimationController& CAnimationController::operator =(CAnimationController&&) n
 CAnimationController::~CAnimationController() = default;
 
 void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResourceManager& ResMgr,
+	CStrID LeftFootID, CStrID RightFootID,
 	std::map<CStrID, float>&& Floats,
 	std::map<CStrID, int>&& Ints,
 	std::map<CStrID, bool>&& Bools,
@@ -82,7 +83,6 @@ void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResource
 	_GraphRoot = std::move(GraphRoot);
 	_SkeletonInfo = nullptr;
 	_UpdateCounter = 0;
-	_PoseIndex = 2;
 
 	if (_GraphRoot)
 	{
@@ -90,11 +90,20 @@ void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResource
 		_GraphRoot->Init(Context);
 	}
 
-	// TODO: if !_SkeletonInfo here, can issue a warning - no leaf animation data is provided or some assets not resolved
+	_PoseIndex = 2;
 	if (_SkeletonInfo)
 	{
 		_LastPoses[0].SetSize(_SkeletonInfo->GetNodeCount());
 		_LastPoses[1].SetSize(_SkeletonInfo->GetNodeCount());
+
+		_LeftFootBoneIndex = _SkeletonInfo->FindNodePort(LeftFootID);
+		_RightFootBoneIndex = _SkeletonInfo->FindNodePort(RightFootID);
+	}
+	else
+	{
+		// TODO: can issue a warning - no leaf animation data is provided or some assets are not resolved
+		_LeftFootBoneIndex = INVALID_BONE_INDEX;
+		_RightFootBoneIndex = INVALID_BONE_INDEX;
 	}
 }
 //---------------------------------------------------------------------
@@ -176,13 +185,32 @@ float CAnimationController::GetFloat(CStrID ID, float Default) const
 }
 //---------------------------------------------------------------------
 
-float CAnimationController::GetPhaseFromPose() const
+float CAnimationController::GetLocomotionPhaseFromPose() const
 {
-	if (_PoseIndex > 1) return 0.f;
+	if (_PoseIndex > 1 || _LeftFootBoneIndex == INVALID_BONE_INDEX || _RightFootBoneIndex == INVALID_BONE_INDEX) return -1.f;
 
 	const auto& PrevPose = _LastPoses[_PoseIndex];
 
-	//!!!need to know L&R foot bone indices! Root is always 0.
+	// Project foot offset onto the locomotion plane (fwd, up) and normalize it to get phase direction
+	const auto Offset = PrevPose[_LeftFootBoneIndex].Translation - PrevPose[_RightFootBoneIndex].Translation;
+
+	/* TODO: use ACL/RTM for poses
+	const auto Fwd = RootCoordSystem.GetColumn(2);
+	acl::Vector4_32 ForwardDir = { static_cast<float>(Fwd[0]), static_cast<float>(Fwd[1]), static_cast<float>(Fwd[2]), 0.0f };
+
+	const auto Side = RootCoordSystem.GetColumn(0);
+	acl::Vector4_32 SideDir = { static_cast<float>(Side[0]), static_cast<float>(Side[1]), static_cast<float>(Side[2]), 0.0f };
+
+	const auto Offset = acl::vector_sub(LeftFootPositions[i], RightFootPositions[i]);
+	const auto ProjectedOffset = acl::vector_sub(Offset, acl::vector_mul(SideDir, acl::vector_dot3(Offset, SideDir)));
+	const auto PhaseDir = acl::vector_normalize3(ProjectedOffset);
+
+	const float CosA = acl::vector_dot3(PhaseDir, ForwardDir);
+	const float SinA = acl::vector_dot3(acl::vector_cross3(PhaseDir, ForwardDir), SideDir);
+	const float Angle = std::copysignf(RadToDeg(std::acosf(CosA)), SinA); // Could also use Angle = RadToDeg(std::atan2f(SinA, CosA));
+
+	return 180.f - Angle; // map 180 -> -180 to 0 -> 360
+	*/
 
 	return 0.f;
 }

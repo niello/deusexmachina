@@ -31,6 +31,16 @@ U16 CSkeletonInfo::FindNodePort(U16 ParentIndex, CStrID ID) const
 }
 //---------------------------------------------------------------------
 
+U16 CSkeletonInfo::FindNodePort(CStrID ID) const
+{
+	for (size_t i = 0; i < _Nodes.size(); ++i)
+		if (_Nodes[i].ID == ID)
+			return static_cast<U16>(i);
+
+	return EmptyPort;
+}
+//---------------------------------------------------------------------
+
 // NB: if mapping is direct (each index is bound to the port with the same index),
 // then OutPorts will be empty, and user can write to the output without remapping.
 void CSkeletonInfo::MapTo(const CSkeletonInfo& Other, std::unique_ptr<U16[]>& OutMapping) const

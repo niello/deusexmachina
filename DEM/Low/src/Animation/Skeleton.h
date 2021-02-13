@@ -23,6 +23,8 @@ public:
 	void Init(Scene::CSceneNode& Root, const CSkeletonInfo& Info);
 	void Clear() { _Nodes.clear();  }
 
+	U16  FindPortByName(CStrID NodeID) const;
+
 	void FromPoseBuffer(const CPoseBuffer& Pose);
 	void ToPoseBuffer(CPoseBuffer& Pose) const;
 

@@ -18,6 +18,9 @@ using PAnimationController = std::unique_ptr<class CAnimationController>;
 using PAnimGraphNode = std::unique_ptr<class CAnimGraphNode>;
 using PSkeletonInfo = Ptr<class CSkeletonInfo>;
 
+// FIXME: unify EmptyPort, InvalidPort and this!
+inline constexpr U16 INVALID_BONE_INDEX = std::numeric_limits<U16>().max();
+
 enum class EParamType
 {
 	Float = 0,
@@ -62,6 +65,9 @@ protected:
 	CPoseBuffer                                   _LastPoses[2];
 	U8                                            _PoseIndex = 2;
 
+	U16                                           _LeftFootBoneIndex = INVALID_BONE_INDEX;
+	U16                                           _RightFootBoneIndex = INVALID_BONE_INDEX;
+
 	// shared conditions (allow nesting or not? if nested, must control cyclic dependencies and enforce calculation order)
 	// NB: each condition, shared or not, must cache its value and recalculate only if used parameter values changed!
 
@@ -72,7 +78,7 @@ public:
 	CAnimationController& operator =(CAnimationController&&) noexcept;
 	~CAnimationController();
 
-	void  Init(PAnimGraphNode&& GraphRoot, Resources::CResourceManager& ResMgr, std::map<CStrID, float>&& Floats = {}, std::map<CStrID, int>&& Ints = {}, std::map<CStrID, bool>&& Bools = {}, std::map<CStrID, CStrID>&& StrIDs = {}, const std::map<CStrID, CStrID>& AssetOverrides = {});
+	void  Init(PAnimGraphNode&& GraphRoot, Resources::CResourceManager& ResMgr, CStrID LeftFootID = {}, CStrID RightFootID = {}, std::map<CStrID, float>&& Floats = {}, std::map<CStrID, int>&& Ints = {}, std::map<CStrID, bool>&& Bools = {}, std::map<CStrID, CStrID>&& StrIDs = {}, const std::map<CStrID, CStrID>& AssetOverrides = {});
 	void  Update(float dt);
 	void  EvaluatePose(CPoseBuffer& Pose);
 
@@ -85,7 +91,7 @@ public:
 	// SetBool
 	// SetStrID
 
-	float GetPhaseFromPose() const;
+	float GetLocomotionPhaseFromPose() const;
 
 	const CSkeletonInfo* GetSkeletonInfo() const { return _SkeletonInfo.Get(); }
 	U32                  GetUpdateIndex() const { return _UpdateCounter; }

@@ -34,6 +34,16 @@ void CSkeleton::Init(Scene::CSceneNode& Root, const CSkeletonInfo& Info)
 }
 //---------------------------------------------------------------------
 
+U16 CSkeleton::FindPortByName(CStrID NodeID) const
+{
+	const U16 Size = static_cast<U16>(_Nodes.size());
+	for (U16 i = 0; i < Size; ++i)
+		if (_Nodes[i] && _Nodes[i]->GetName() == NodeID)
+			return i;
+	return InvalidPort;
+}
+//---------------------------------------------------------------------
+
 void CSkeleton::FromPoseBuffer(const CPoseBuffer& Pose)
 {
 	const UPTR Size = _Nodes.size();
