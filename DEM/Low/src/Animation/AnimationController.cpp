@@ -198,8 +198,10 @@ float CAnimationController::GetLocomotionPhaseFromPose(const CSkeleton& Skeleton
 	const auto* pRightFootNode = Skeleton.GetNode(_RightFootBoneIndex);
 	if (!pRootNode || !pLeftFootNode || !pRightFootNode) return -1.f;
 
-	const auto& ForwardDir = pRootNode->GetWorldMatrix().AxisZ();
-	const auto& SideDir = pRootNode->GetWorldMatrix().AxisX();
+	auto ForwardDir = pRootNode->GetWorldMatrix().AxisZ();
+	ForwardDir.norm();
+	auto SideDir = pRootNode->GetWorldMatrix().AxisX();
+	SideDir.norm();
 
 	// Project foot offset onto the locomotion plane (fwd, up) and normalize it to get phase direction
 	auto PhaseDir = pLeftFootNode->GetWorldMatrix().Translation() - pRightFootNode->GetWorldMatrix().Translation();
