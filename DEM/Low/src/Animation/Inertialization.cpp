@@ -4,104 +4,67 @@
 namespace DEM::Anim
 {
 static constexpr float TIME_EPSILON = 1.e-7f;
-static_assert(TIME_EPSILON* TIME_EPSILON* TIME_EPSILON* TIME_EPSILON* TIME_EPSILON > FLT_MIN, "Too tiny TIME_EPSILON");
+static_assert(TIME_EPSILON * TIME_EPSILON * TIME_EPSILON * TIME_EPSILON * TIME_EPSILON > FLT_MIN, "Inertialization: too tiny TIME_EPSILON");
 
 //???space - local vs world? or always skip root bone inertialization and work in local space only?
 //???support excluded bones like in UE4?
-void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuffer& PrevPose1, const CPoseBuffer& PrevPose2)
+void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuffer& PrevPose1, const CPoseBuffer& PrevPose2, float dt)
 {
 	const auto BoneCount = CurrPose.size();
 	_BoneDiffs.SetSize(BoneCount);
 	for (UPTR i = 0; i < BoneCount; ++i)
 	{
+		//!!!if PrevPose1[i] is invalid, continue;
+
 		auto& BoneDiff = _BoneDiffs[i];
 		const auto& CurrTfm = CurrPose[i];
 		const auto& Prev1Tfm = PrevPose1[i];
+
+		const auto Scale = Prev1Tfm.Scale - CurrTfm.Scale;
+		BoneDiff.ScaleMagnitude = Scale.Length();
+		if (BoneDiff.ScaleMagnitude != 0.f)
+			BoneDiff.ScaleAxis = Scale / BoneDiff.ScaleMagnitude;
+
+		auto InvCurrRotation = CurrTfm.Rotation;
+		InvCurrRotation.invert();
+		const auto Rotation = Prev1Tfm.Rotation * InvCurrRotation;
+		BoneDiff.RotationAxis = Rotation.GetAxis();
+		BoneDiff.RotationAngle = Rotation.GetAngle(); // [0; 2PI], then turn to [0; PI] by flipping axis direction
+		if (BoneDiff.RotationAngle > PI)
+		{
+			BoneDiff.RotationAxis *= -1.f;
+			BoneDiff.RotationAngle = TWO_PI - BoneDiff.RotationAngle;
+		}
+
+		const auto Translation = Prev1Tfm.Translation - CurrTfm.Translation;
+		BoneDiff.TranslationMagnitude = Translation.Length();
+		if (BoneDiff.TranslationMagnitude != 0.f)
+			BoneDiff.TranslationDir = Translation / BoneDiff.TranslationMagnitude;
+
+		//!!!if PrevPose2[i] is invalid or Prev1.DeltaTime is near 0.f, continue;
+
 		const auto& Prev2Tfm = PrevPose2[i];
 
-		//!!!if PrevPose1[i] is invalid, continue;
-
-		//const bool Prev2IsValid = PrevPose2[i] is valid
-
-		// FIXME: UE4 for reference, will be removed ASAP
-		/*
-		// Compute the bone translation difference
+		if (BoneDiff.ScaleMagnitude != 0.f)
 		{
-			FVector TranslationDirection = FVector::ZeroVector;
-			float TranslationMagnitude = 0.0f;
-			float TranslationSpeed = 0.0f;
-
-			const FVector T = Prev1Transform.GetTranslation() - PoseTransform.GetTranslation();
-			TranslationMagnitude = T.Size();
-			if (TranslationMagnitude > KINDA_SMALL_NUMBER)
-			{
-				TranslationDirection = T / TranslationMagnitude;
-			}
-
-			if (Prev2IsValid && Prev1.DeltaTime > KINDA_SMALL_NUMBER && TranslationMagnitude > KINDA_SMALL_NUMBER)
-			{
-				const FVector PrevT = Prev2Transform.GetTranslation() - PoseTransform.GetTranslation();
-				const float PrevMagnitude = FVector::DotProduct(PrevT, TranslationDirection);
-				TranslationSpeed = (TranslationMagnitude - PrevMagnitude) / Prev1.DeltaTime;
-			}
-
-			BoneDiff.TranslationDirection = TranslationDirection;
-			BoneDiff.TranslationMagnitude = TranslationMagnitude;
-			BoneDiff.TranslationSpeed = TranslationSpeed;
+			const auto PrevScale = Prev2Tfm.Scale - CurrTfm.Scale;
+			const float PrevMagnitude = PrevScale.Dot(BoneDiff.ScaleAxis);
+			BoneDiff.ScaleSpeed = (BoneDiff.ScaleMagnitude - PrevMagnitude) / dt;
 		}
 
-		// Compute the bone rotation difference
+		if (BoneDiff.RotationAngle != 0.f)
 		{
-			FVector RotationAxis = FVector::ZeroVector;
-			float RotationAngle = 0.0f;
-			float RotationSpeed = 0.0f;
-
-			const FQuat Q = Prev1Transform.GetRotation() * PoseTransform.GetRotation().Inverse();
-			Q.ToAxisAndAngle(RotationAxis, RotationAngle);
-			RotationAngle = FMath::UnwindRadians(RotationAngle);
-			if (RotationAngle < 0.0f)
-			{
-				RotationAxis = -RotationAxis;
-				RotationAngle = -RotationAngle;
-			}
-
-			if (Prev2IsValid && Prev1.DeltaTime > KINDA_SMALL_NUMBER && RotationAngle > KINDA_SMALL_NUMBER)
-			{
-				const FQuat PrevQ = Prev2Transform.GetRotation() * PoseTransform.GetRotation().Inverse();
-				const float PrevAngle = PrevQ.GetTwistAngle(RotationAxis);
-				RotationSpeed = FMath::UnwindRadians(RotationAngle - PrevAngle) / Prev1.DeltaTime;
-			}
-
-			BoneDiff.RotationAxis = RotationAxis;
-			BoneDiff.RotationAngle = RotationAngle;
-			BoneDiff.RotationSpeed = RotationSpeed;
+			const auto PrevRotation = Prev2Tfm.Rotation * InvCurrRotation;
+			const float PrevAngle = PrevRotation.GetAngleAroundAxis(BoneDiff.RotationAxis);
+			BoneDiff.RotationSpeed = n_normangle_signed_pi(BoneDiff.RotationAngle - PrevAngle) / dt;
 		}
 
-		// Compute the bone scale difference
+		if (BoneDiff.TranslationMagnitude != 0.f)
 		{
-			FVector ScaleAxis = FVector::ZeroVector;
-			float ScaleMagnitude = 0.0f;
-			float ScaleSpeed = 0.0f;
-
-			const FVector S = Prev1Transform.GetScale3D() - PoseTransform.GetScale3D();
-			ScaleMagnitude = S.Size();
-			if (ScaleMagnitude > KINDA_SMALL_NUMBER)
-			{
-				ScaleAxis = S / ScaleMagnitude;
-			}
-
-			if (Prev2IsValid && Prev1.DeltaTime > KINDA_SMALL_NUMBER && ScaleMagnitude > KINDA_SMALL_NUMBER)
-			{
-				const FVector PrevS = Prev2Transform.GetScale3D() - PoseTransform.GetScale3D();
-				const float PrevMagnitude = FVector::DotProduct(PrevS, ScaleAxis);
-				ScaleSpeed = (ScaleMagnitude - PrevMagnitude) / Prev1.DeltaTime;
-			}
-
-			BoneDiff.ScaleAxis = ScaleAxis;
-			BoneDiff.ScaleMagnitude = ScaleMagnitude;
-			BoneDiff.ScaleSpeed = ScaleSpeed;
+			const auto PrevTranslation = Prev2Tfm.Translation - CurrTfm.Translation;
+			const float PrevMagnitude = Translation.Dot(BoneDiff.TranslationDir);
+			BoneDiff.TranslationSpeed = (BoneDiff.TranslationMagnitude - PrevMagnitude) / dt;
 		}
-		*/
 	}
 }
 //---------------------------------------------------------------------

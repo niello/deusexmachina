@@ -18,24 +18,24 @@ protected:
 
 	struct CBoneDiff
 	{
-		vector3 TranslationDir;
-		float   TranslationMagnitude = 0.f;
-		float   TranslationSpeed = 0.f;
+		vector3 ScaleAxis;
+		float   ScaleMagnitude = 0.f;
+		float   ScaleSpeed = 0.f;
 
 		vector3 RotationAxis;
 		float   RotationAngle = 0.f;
 		float   RotationSpeed = 0.f;
 
-		vector3 ScaleAxis;
-		float   ScaleMagnitude = 0.f;
-		float   ScaleSpeed = 0.f;
+		vector3 TranslationDir;
+		float   TranslationMagnitude = 0.f;
+		float   TranslationSpeed = 0.f;
 	};
 
 	CFixedArray<CBoneDiff> _BoneDiffs;
 
 public:
 
-	void Init(const CPoseBuffer& CurrPose, const CPoseBuffer& PrevPose1, const CPoseBuffer& PrevPose2);
+	void Init(const CPoseBuffer& CurrPose, const CPoseBuffer& PrevPose1, const CPoseBuffer& PrevPose2, float dt);
 	void ApplyTo(CPoseBuffer& Target, float ElapsedTime, float Duration) const;
 };
 

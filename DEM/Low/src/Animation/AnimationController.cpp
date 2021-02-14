@@ -141,12 +141,14 @@ void CAnimationController::EvaluatePose(CSkeleton& Target)
 		_PoseIndex = 0;
 		_LastPoses[0] = _CurrPose;
 		_LastPoses[1] = _CurrPose;
+		_LastPoseDt = 0.f;
 	}
 	else
 	{
 		// Swap current and previous pose buffers
 		_PoseIndex ^= 1;
 		_LastPoses[_PoseIndex] = _CurrPose;
+		_LastPoseDt = _InertializationDt;
 	}
 
 	if (_GraphRoot) _GraphRoot->EvaluatePose(_CurrPose);
@@ -246,6 +248,7 @@ void CAnimationController::RequestInertialization(float Duration)
 //---------------------------------------------------------------------
 
 // TODO: detect teleportation, reset pending request and _InertializationDt to mitigate abrupt velocity changes
+// That must zero out _LastPoseDt, when it is not a last dt yet!
 void CAnimationController::ProcessInertialization()
 {
 	if (_PoseIndex > 1) return;
@@ -274,7 +277,7 @@ void CAnimationController::ProcessInertialization()
 	if (_InertializationDuration > 0.f)
 	{
 		if (RequestPending)
-			_InertializationPoseDiff.Init(/*GetComponentTransform(),*/ _CurrPose, _LastPoses[_PoseIndex], _LastPoses[_PoseIndex ^ 1]);
+			_InertializationPoseDiff.Init(_CurrPose, _LastPoses[_PoseIndex], _LastPoses[_PoseIndex ^ 1], _LastPoseDt);
 
 		_InertializationElapsedTime += _InertializationDt;
 		if (_InertializationElapsedTime >= _InertializationDuration)

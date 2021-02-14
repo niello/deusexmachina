@@ -1,10 +1,6 @@
 #pragma once
-#ifndef __DEM_L1_MATH_H__
-#define __DEM_L1_MATH_H__
-
 #include <StdDEM.h>
 #include <math.h>
-#include <stdlib.h>	// rand //???get some cool random number generator?
 
 // Declarations and utility functions
 
@@ -191,6 +187,15 @@ inline float n_normangle(float a)
 }
 //---------------------------------------------------------------------
 
+// Normalize an angular value into the range -PI to PI.
+inline float n_normangle_signed_pi(float a)
+{
+	while (a < -PI) a += TWO_PI;
+	while (a > PI) a -= TWO_PI;
+	return a;
+}
+//---------------------------------------------------------------------
+
 // Compute the shortest angular distance between 2 angles. The angular distance
 // will be between -PI and PI. Positive distance are in counter-clockwise
 // order, negative distances in clockwise order.
@@ -268,5 +273,3 @@ inline U32 RandomU32(U32 Min, U32 Max)
 //---------------------------------------------------------------------
 
 }
-
-#endif

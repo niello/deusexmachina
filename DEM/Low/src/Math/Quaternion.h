@@ -25,9 +25,9 @@ public:
 	void				ident() { x = 0.0f; y = 0.0f; z = 0.0f; w = 1.0f; }
 	void				conjugate() { x = -x; y = -y; z = -z; }
 	void				scale(float s) { x *= s; y *= s; z *= s; w *= s; }
-	float				norm() { return x * x + y * y + z * z + w * w; }
-	float				magnitude() { float n = norm(); return (n > 0.0f) ? n_sqrt(n) : 0.0f; }
-	void				invert() { float n = norm(); if (n > 0.0f) scale(1.0f / norm()); conjugate(); }
+	float				norm() const { return x * x + y * y + z * z + w * w; }
+	float				magnitude() const { float n = norm(); return (n > 0.0f) ? n_sqrt(n) : 0.0f; }
+	void				invert() { float n = norm(); if (n > 0.0f) scale(1.0f / n); conjugate(); }
 	void				normalize() { float l = magnitude(); if (l > 0.0f) scale(1.0f / l); else ident(); }
 	void				lerp(const quaternion& q0, const quaternion& q1, float l) { slerp(q0, q1, l); }
 
@@ -41,6 +41,25 @@ public:
 	const quaternion&	operator +=(const quaternion& q) { x += q.x; y += q.y; z += q.z; w += q.w; return *this; }
 	const quaternion&	operator -=(const quaternion& q) { x -= q.x; y -= q.y; z -= q.z; w -= q.w; return *this; }
 	const quaternion&	operator *=(const quaternion& q);
+
+	float GetAngleAroundAxis(const vector3& Axis) const
+	{
+		const float Dot = Axis.x * x + Axis.y * y + Axis.z * z;
+		const float Angle = 2.f * std::atan2f(Dot, w); // [-2PI; 2PI], convert to [-PI; PI]
+		if (Angle > PI) return Angle - TWO_PI;
+		if (Angle < -PI) return Angle + TWO_PI;
+		return Angle;
+	}
+
+	vector3 GetAxis() const
+	{
+		const float SqLen = x * x + y * y + z * z;
+		if (SqLen < TINY) return vector3::AxisX;
+		const float InvLen = 1.f / n_sqrt(SqLen);
+		return vector3(x * InvLen, y * InvLen, z * InvLen);
+	}
+
+	float GetAngle() const { return 2.f * std::acosf(w); }
 
     //-- convert from euler angles ----------------------------------
     void set_rotate_axis_angle(const vector3& v, float a) {

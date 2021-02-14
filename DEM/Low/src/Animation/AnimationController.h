@@ -67,6 +67,7 @@ protected:
 
 	CPoseBuffer                                   _CurrPose;
 	CPoseBuffer                                   _LastPoses[2];
+	float                                         _LastPoseDt = 0.f;
 	U8                                            _PoseIndex = 2;
 
 	CInertializationPoseDiff                      _InertializationPoseDiff;
