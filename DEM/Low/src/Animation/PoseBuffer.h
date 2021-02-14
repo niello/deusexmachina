@@ -26,6 +26,7 @@ public:
 	CPoseBuffer& operator =(CPoseBuffer&& Other) noexcept;
 
 	void SetSize(UPTR Size);
+	UPTR size() const { return _Count; }
 
 	auto& operator [](UPTR Index) { return _Transforms.get()[Index]; }
 	auto& operator [](UPTR Index) const { return _Transforms.get()[Index]; }

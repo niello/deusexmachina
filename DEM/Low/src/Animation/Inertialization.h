@@ -33,9 +33,6 @@ protected:
 
 	CFixedArray<CBoneDiff> _BoneDiffs;
 
-	// fixed array of
-	//???space - local vs world? or always skip root bone inertialization and work in local space only?
-
 public:
 
 	void Init(const CPoseBuffer& CurrPose, const CPoseBuffer& PrevPose1, const CPoseBuffer& PrevPose2);
