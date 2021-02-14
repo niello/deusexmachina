@@ -20,10 +20,10 @@ public:
 
 	CPoseBuffer() = default;
 	CPoseBuffer(const CPoseBuffer& Other);
-	CPoseBuffer(CPoseBuffer&& Other);
+	CPoseBuffer(CPoseBuffer&& Other) noexcept;
 
 	CPoseBuffer& operator =(const CPoseBuffer& Other);
-	CPoseBuffer& operator =(CPoseBuffer&& Other);
+	CPoseBuffer& operator =(CPoseBuffer&& Other) noexcept;
 
 	void SetSize(UPTR Size);
 

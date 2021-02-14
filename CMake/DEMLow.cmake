@@ -8,6 +8,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/AnimationLoaderANM.h
 	DEM/Low/src/Animation/AnimationSampler.h
 	DEM/Low/src/Animation/CompositePoseClip.h
+	DEM/Low/src/Animation/Inertialization.h
 	DEM/Low/src/Animation/MappedPoseOutput.h
 	DEM/Low/src/Animation/PoseBuffer.h
 	DEM/Low/src/Animation/PoseClipBase.h
@@ -334,6 +335,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/AnimationLoaderANM.cpp
 	DEM/Low/src/Animation/AnimationSampler.cpp
 	DEM/Low/src/Animation/CompositePoseClip.cpp
+	DEM/Low/src/Animation/Inertialization.cpp
 	DEM/Low/src/Animation/PoseBuffer.cpp
 	DEM/Low/src/Animation/PoseClipBase.cpp
 	DEM/Low/src/Animation/PoseTrack.cpp

@@ -14,7 +14,7 @@ CPoseBuffer::CPoseBuffer(const CPoseBuffer& Other)
 }
 //---------------------------------------------------------------------
 
-CPoseBuffer::CPoseBuffer(CPoseBuffer&& Other)
+CPoseBuffer::CPoseBuffer(CPoseBuffer&& Other) noexcept
 	: _Transforms(std::move(Other._Transforms))
 	, _Count(Other._Count)
 {
@@ -23,17 +23,13 @@ CPoseBuffer::CPoseBuffer(CPoseBuffer&& Other)
 
 CPoseBuffer& CPoseBuffer::operator =(const CPoseBuffer& Other)
 {
-	_Count = Other._Count;
-	if (_Count)
-	{
-		_Transforms.reset(new Math::CTransform[_Count]);
-		std::memcpy(_Transforms.get(), Other._Transforms.get(), sizeof(Math::CTransform) * _Count);
-	}
+	SetSize(Other._Count);
+	if (_Count) std::memcpy(_Transforms.get(), Other._Transforms.get(), sizeof(Math::CTransform) * _Count);
 	return *this;
 }
 //---------------------------------------------------------------------
 
-CPoseBuffer& CPoseBuffer::operator =(CPoseBuffer&& Other)
+CPoseBuffer& CPoseBuffer::operator =(CPoseBuffer&& Other) noexcept
 {
 	_Count = Other._Count;
 	_Transforms = std::move(Other._Transforms);

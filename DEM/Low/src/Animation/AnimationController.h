@@ -2,6 +2,7 @@
 #include <Data/Ptr.h>
 #include <Data/StringID.h>
 #include <Animation/PoseBuffer.h>
+#include <Animation/Inertialization.h>
 #include <map>
 
 // Animation controller plays an animation graph instance, feeding it with parameters.
@@ -68,11 +69,20 @@ protected:
 	CPoseBuffer                                   _LastPoses[2];
 	U8                                            _PoseIndex = 2;
 
+	CInertializationPoseDiff                      _InertializationPoseDiff;
+	float                                         _InertializationRequest = -1.f;
+	float                                         _InertializationDuration = 0.f;
+	float                                         _InertializationElapsedTime = 0.f;
+	float                                         _InertializationDeficit = 0.f;
+	float                                         _InertializationDt = 0.f;
+
 	U16                                           _LeftFootBoneIndex = INVALID_BONE_INDEX;
 	U16                                           _RightFootBoneIndex = INVALID_BONE_INDEX;
 
 	// shared conditions (allow nesting or not? if nested, must control cyclic dependencies and enforce calculation order)
 	// NB: each condition, shared or not, must cache its value and recalculate only if used parameter values changed!
+
+	void  ProcessInertialization();
 
 public:
 
@@ -95,6 +105,7 @@ public:
 	// SetStrID
 
 	float GetLocomotionPhaseFromPose(const CSkeleton& Skeleton) const;
+	void  RequestInertialization(float Duration);
 
 	const CSkeletonInfo* GetSkeletonInfo() const { return _SkeletonInfo.Get(); }
 	U32                  GetUpdateIndex() const { return _UpdateCounter; }

@@ -126,6 +126,8 @@ void CAnimationController::Update(const CSkeleton& Target, float dt)
 
 		// TODO: synchronize times by sync group?
 	}
+
+	_InertializationDt += dt; // Don't write to _InertializationElapsedTime, because dt may be discarded by teleportation
 }
 //---------------------------------------------------------------------
 
@@ -149,6 +151,8 @@ void CAnimationController::EvaluatePose(CSkeleton& Target)
 
 	if (_GraphRoot) _GraphRoot->EvaluatePose(_CurrPose);
 	//???else (if no _GraphRoot) leave as is or reset to refpose?
+
+	ProcessInertialization();
 
 	//!!!DBG TMP!
 	//pseudo root motion processing
@@ -214,9 +218,11 @@ float CAnimationController::GetLocomotionPhaseFromPose(const CSkeleton& Skeleton
 	/* TODO: use ACL/RTM for poses
 	const auto Fwd = RootCoordSystem.GetColumn(2);
 	acl::Vector4_32 ForwardDir = { static_cast<float>(Fwd[0]), static_cast<float>(Fwd[1]), static_cast<float>(Fwd[2]), 0.0f };
+	ForwardDir = acl::vector_normalize3(ForwardDir);
 
 	const auto Side = RootCoordSystem.GetColumn(0);
 	acl::Vector4_32 SideDir = { static_cast<float>(Side[0]), static_cast<float>(Side[1]), static_cast<float>(Side[2]), 0.0f };
+	SideDir = acl::vector_normalize3(SideDir);
 
 	const auto Offset = acl::vector_sub(LeftFootPositions[i], RightFootPositions[i]);
 	const auto ProjectedOffset = acl::vector_sub(Offset, acl::vector_mul(SideDir, acl::vector_dot3(Offset, SideDir)));
@@ -229,6 +235,62 @@ float CAnimationController::GetLocomotionPhaseFromPose(const CSkeleton& Skeleton
 	const float Angle = std::copysignf(std::acosf(CosA) * 180.f / PI, SinA); // Could also use Angle = RadToDeg(std::atan2f(SinA, CosA));
 
 	return 180.f - Angle; // map 180 -> -180 to 0 -> 360
+}
+//---------------------------------------------------------------------
+
+void CAnimationController::RequestInertialization(float Duration)
+{
+	if (_InertializationRequest < 0.f || _InertializationRequest > Duration)
+		_InertializationRequest = Duration;
+}
+//---------------------------------------------------------------------
+
+// TODO: detect teleportation, reset pending request and _InertializationDt to mitigate abrupt velocity changes
+void CAnimationController::ProcessInertialization()
+{
+	if (_PoseIndex > 1) return;
+
+	// Process new request
+	const bool RequestPending = (_InertializationRequest > 0.f);
+	if (RequestPending)
+	{
+		float NewDuration = _InertializationRequest;
+		_InertializationRequest = -1.f;
+
+		// When interrupt active inertialization, must reduce duration to avoid degenerate pose (see UE4)
+		if (_InertializationDuration > 0.f)
+		{
+			// TODO: learn why we check prevoius deficit to apply current
+			const bool HasDeficit = (_InertializationDeficit > 0.f);
+			_InertializationDeficit = _InertializationDuration - _InertializationElapsedTime;
+			if (HasDeficit) NewDuration = std::max(0.f, NewDuration - _InertializationDeficit);
+		}
+
+		_InertializationDuration = NewDuration;
+		_InertializationElapsedTime = 0.0f;
+	}
+
+	// Process active inertialization
+	if (_InertializationDuration > 0.f)
+	{
+		if (RequestPending)
+			_InertializationPoseDiff.Init(/*GetComponentTransform(),*/ _CurrPose, _LastPoses[_PoseIndex], _LastPoses[_PoseIndex ^ 1]);
+
+		_InertializationElapsedTime += _InertializationDt;
+		if (_InertializationElapsedTime >= _InertializationDuration)
+		{
+			_InertializationElapsedTime = 0.0f;
+			_InertializationDuration = 0.0f;
+			_InertializationDeficit = 0.0f;
+		}
+		else
+		{
+			_InertializationDeficit = std::max(0.f, _InertializationDeficit - _InertializationDt);
+			_InertializationPoseDiff.ApplyTo(_CurrPose, _InertializationElapsedTime, _InertializationDuration);
+		}
+	}
+
+	_InertializationDt = 0.f;
 }
 //---------------------------------------------------------------------
 

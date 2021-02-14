@@ -57,7 +57,9 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 			// We just started locomotion, sync the phase from the current pose if possible
 			Context.LocomotionPhase = Context.Controller.GetLocomotionPhaseFromPose(Context.Target);
 
-			//???if phase >=0, request inertialization here? Or always handle through weighted blending-in?
+			constexpr float LOCOMOTION_BLEND_IN_TIME = 0.5f;
+			if (Context.LocomotionPhase >= 0.f)
+				Context.Controller.RequestInertialization(LOCOMOTION_BLEND_IN_TIME);
 
 			::Sys::DbgOut("***CClipPlayerNode: phase from pose %lf\n", Context.LocomotionPhase);
 		}
