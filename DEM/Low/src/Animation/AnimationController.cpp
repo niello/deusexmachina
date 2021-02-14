@@ -193,12 +193,21 @@ float CAnimationController::GetLocomotionPhaseFromPose(const CSkeleton& Skeleton
 {
 	if (_LeftFootBoneIndex == INVALID_BONE_INDEX || _RightFootBoneIndex == INVALID_BONE_INDEX) return -1.f;
 
+	const auto* pRootNode = Skeleton.GetNode(0);
 	const auto* pLeftFootNode = Skeleton.GetNode(_LeftFootBoneIndex);
 	const auto* pRightFootNode = Skeleton.GetNode(_RightFootBoneIndex);
-	if (!pLeftFootNode || !pRightFootNode) return -1.f;
+	if (!pRootNode || !pLeftFootNode || !pRightFootNode) return -1.f;
+
+	const auto& ForwardDir = pRootNode->GetWorldMatrix().AxisZ();
+	const auto& SideDir = pRootNode->GetWorldMatrix().AxisX();
 
 	// Project foot offset onto the locomotion plane (fwd, up) and normalize it to get phase direction
-	const auto Offset = pLeftFootNode->GetWorldMatrix().Translation() - pRightFootNode->GetWorldMatrix().Translation();
+	auto PhaseDir = pLeftFootNode->GetWorldMatrix().Translation() - pRightFootNode->GetWorldMatrix().Translation();
+	PhaseDir -= (SideDir * PhaseDir.Dot(SideDir));
+	PhaseDir.norm();
+
+	const float CosA = PhaseDir.Dot(ForwardDir);
+	const float SinA = (PhaseDir * ForwardDir).Dot(SideDir);
 
 	/* TODO: use ACL/RTM for poses
 	const auto Fwd = RootCoordSystem.GetColumn(2);
@@ -213,12 +222,11 @@ float CAnimationController::GetLocomotionPhaseFromPose(const CSkeleton& Skeleton
 
 	const float CosA = acl::vector_dot3(PhaseDir, ForwardDir);
 	const float SinA = acl::vector_dot3(acl::vector_cross3(PhaseDir, ForwardDir), SideDir);
-	const float Angle = std::copysignf(RadToDeg(std::acosf(CosA)), SinA); // Could also use Angle = RadToDeg(std::atan2f(SinA, CosA));
-
-	return 180.f - Angle; // map 180 -> -180 to 0 -> 360
 	*/
 
-	return 0.f;
+	const float Angle = std::copysignf(std::acosf(CosA) * 180.f / PI, SinA); // Could also use Angle = RadToDeg(std::atan2f(SinA, CosA));
+
+	return 180.f - Angle; // map 180 -> -180 to 0 -> 360
 }
 //---------------------------------------------------------------------
 
