@@ -41,6 +41,8 @@ protected:
 		CQuinticCurve   ScaleParams;
 		CQuinticCurve   RotationParams;
 		CQuinticCurve   TranslationParams;
+
+		DEM_ALLOCATE_ALIGNED(alignof(CBoneDiff));
 	};
 
 	CFixedArray<CBoneDiff> _BoneDiffs;

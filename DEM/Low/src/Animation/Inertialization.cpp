@@ -91,14 +91,9 @@ void CInertializationPoseDiff::ApplyTo(CPoseBuffer& Target, float ElapsedTime) c
 	{
 		const auto& BoneDiff = _BoneDiffs[i];
 		auto& Tfm = Target[i];
-
-		n_assert_dbg(acl::quat_is_normalized(Tfm.rotation));
-
 		Tfm.scale = acl::vector_mul_add(BoneDiff.ScaleAxis, BoneDiff.ScaleParams.Evaluate(ElapsedTime), Tfm.scale);
 		Tfm.rotation = acl::quat_mul(acl::quat_from_axis_angle(BoneDiff.RotationAxis, BoneDiff.RotationParams.Evaluate(ElapsedTime)), Tfm.rotation);
 		Tfm.translation = acl::vector_mul_add(BoneDiff.TranslationDir, BoneDiff.TranslationParams.Evaluate(ElapsedTime), Tfm.translation);
-
-		n_assert_dbg(acl::quat_is_normalized(Tfm.rotation));
 	}
 }
 //---------------------------------------------------------------------
@@ -131,13 +126,13 @@ void CInertializationPoseDiff::CQuinticCurve::Prepare(float x0, float v0, float 
 
 	if (Duration5 < std::numeric_limits<float>().epsilon())
 	{
-		_x0 = 0.f;
-		_v0 = 0.f;
-		_sign = 0.f;
 		_a = 0.f;
 		_b = 0.f;
 		_c = 0.f;
 		_d = 0.f;
+		_v0 = 0.f;
+		_x0 = 0.f;
+		_sign = 0.f;
 	}
 	else
 	{
@@ -147,12 +142,12 @@ void CInertializationPoseDiff::CQuinticCurve::Prepare(float x0, float v0, float 
 		const float a0_Dur2_3 = a0_Dur2 * 3.f;
 		const float a0 = a0_Dur2 / Duration2;
 
-		_x0 = x0;
-		_v0 = v0;
 		_a = -0.5f * (a0_Dur2 + 6.f * v0_Dur + 12.f * x0) / Duration5;
 		_b = 0.5f * (a0_Dur2_3 + 16.f * v0_Dur + 30.f * x0) / Duration4;
 		_c = -0.5f * (a0_Dur2_3 + 12.f * v0_Dur + 20.f * x0) / Duration3;
 		_d = 0.5f * a0;
+		_v0 = v0;
+		_x0 = x0;
 	}
 }
 //---------------------------------------------------------------------

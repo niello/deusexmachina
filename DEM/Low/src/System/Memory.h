@@ -94,7 +94,7 @@ typedef std::unique_ptr<void, CDeleterNMalloc> UniqueNMallocVoidPtr;
    inline void  operator delete(void* ptr, const char* file, int line)			{ n_free_aligned(ptr); }   \
    inline void* operator new(size_t, void* ptr, const char* file, int line)		{ return ptr; }   \
    inline void  operator delete(void*, void*, const char* file, int line)		{ }   \
-   inline void* operator new[](size_t sizeInBytes, const char* file, int line)	{ n_malloc_aligned(sizeInBytes, Alignment); }   \
+   inline void* operator new[](size_t sizeInBytes, const char* file, int line)	{ return n_malloc_aligned(sizeInBytes, Alignment); }   \
    inline void  operator delete[](void* ptr, const char* file, int line)		{ n_free_aligned(ptr); }   \
    inline void* operator new[](size_t, void* ptr, const char* file, int line)	{ return ptr; }   \
    inline void  operator delete[](void*, void*, const char* file, int line)		{ }   \
