@@ -20,7 +20,6 @@ protected:
 	{
 		float _x0;
 		float _v0;
-		float _Duration;
 		float _sign;
 		float _a;
 		float _b;
@@ -31,9 +30,6 @@ protected:
 
 		DEM_FORCE_INLINE float Evaluate(float t) const
 		{
-			constexpr float TIME_EPSILON = 1.e-7f;
-			static_assert(TIME_EPSILON * TIME_EPSILON * TIME_EPSILON * TIME_EPSILON * TIME_EPSILON > FLT_MIN, "Inertialization: too tiny TIME_EPSILON");
-			if ((_Duration - t) <= TIME_EPSILON) return 0.f;
 			return _sign * ((((((_a * t) + _b) * t + _c) * t + _d) * t + _v0) * t + _x0);
 		}
 	};

@@ -109,7 +109,7 @@ template<typename T, typename S> IPTR CFixedArray<T, S>::FindIndex(const T& Elm)
 
 template<typename T, typename S> inline T& CFixedArray<T, S>::operator [](S Index) const
 {
-	n_assert(pData && Index < Count);
+	n_assert_dbg(pData && Index < Count);
 	return pData[Index];
 }
 //---------------------------------------------------------------------

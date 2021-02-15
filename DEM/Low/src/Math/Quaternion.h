@@ -13,6 +13,17 @@ public:
 
 	static const quaternion Identity;
 
+	static DEM_FORCE_INLINE /*constexpr*/ quaternion FromAxisAngle(const vector3& v, float a)
+	{
+		//float sin_a, cos_a;
+		//n_sincos(a * 0.5f, sin_a, cos_a);
+
+		const float HalfAngle = 0.5f * a;
+		const float sin_a = std::sinf(HalfAngle);
+		const float cos_a = std::cosf(HalfAngle);
+		return quaternion(v.x * sin_a, v.y * sin_a, v.z * sin_a, cos_a);
+	}
+
 	constexpr quaternion(): x(0.0f), y(0.0f), z(0.0f), w(1.0f) {}
 	constexpr quaternion(float _x, float _y, float _z, float _w): x(_x), y(_y), z(_z), w(_w) {}
 	constexpr quaternion(const quaternion& q): x(q.x), y(q.y), z(q.z), w(q.w) {}
@@ -62,15 +73,6 @@ public:
 	float GetAngle() const { return 2.f * std::acosf(w); }
 
     //-- convert from euler angles ----------------------------------
-    void set_rotate_axis_angle(const vector3& v, float a) {
-		float sin_a, cos_a;
- 		n_sincos(a * 0.5f, sin_a, cos_a);
-        x = v.x * sin_a;
-        y = v.y * sin_a;
-        z = v.z * sin_a;
-        w = cos_a;
-    }
-
     void set_rotate_x(float a) { y = 0.f; z = 0.f; n_sincos(a * 0.5f, x, w); }
     void set_rotate_y(float a) { x = 0.f; z = 0.f; n_sincos(a * 0.5f, y, w); }
     void set_rotate_z(float a) { x = 0.f; y = 0.f; n_sincos(a * 0.5f, z, w); }

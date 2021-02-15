@@ -87,9 +87,7 @@ void CInertializationPoseDiff::ApplyTo(CPoseBuffer& Target, float ElapsedTime) c
 
 		Tfm.Scale += BoneDiff.ScaleAxis * BoneDiff.ScaleParams.Evaluate(ElapsedTime);
 
-		quaternion Q;
-		Q.set_rotate_axis_angle(BoneDiff.RotationAxis, BoneDiff.RotationParams.Evaluate(ElapsedTime));
-		Tfm.Rotation = Q * Tfm.Rotation;
+		Tfm.Rotation = quaternion::FromAxisAngle(BoneDiff.RotationAxis, BoneDiff.RotationParams.Evaluate(ElapsedTime)) * Tfm.Rotation;
 		n_assert_dbg(n_fequal(Tfm.Rotation.magnitude(), 1.f));
 
 		Tfm.Translation += BoneDiff.TranslationDir * BoneDiff.TranslationParams.Evaluate(ElapsedTime);
@@ -123,19 +121,31 @@ void CInertializationPoseDiff::CQuinticCurve::Prepare(float x0, float v0, float 
 	const float Duration4 = Duration * Duration3;
 	const float Duration5 = Duration * Duration4;
 
-	const float v0_Dur = v0 * Duration;
+	if (Duration5 < std::numeric_limits<float>().epsilon())
+	{
+		_x0 = 0.f;
+		_v0 = 0.f;
+		_sign = 0.f;
+		_a = 0.f;
+		_b = 0.f;
+		_c = 0.f;
+		_d = 0.f;
+	}
+	else
+	{
+		const float v0_Dur = v0 * Duration;
 
-	const float a0_Dur2 = std::max(0.0f, -8.f * Duration * v0 - 20.f * x0);
-	const float a0_Dur2_3 = a0_Dur2 * 3.f;
-	const float a0 = a0_Dur2 / Duration2;
+		const float a0_Dur2 = std::max(0.0f, -8.f * Duration * v0 - 20.f * x0);
+		const float a0_Dur2_3 = a0_Dur2 * 3.f;
+		const float a0 = a0_Dur2 / Duration2;
 
-	_x0 = x0;
-	_v0 = v0;
-	_Duration = Duration;
-	_a = -0.5f * (a0_Dur2 + 6.f * v0_Dur + 12.f * x0) / Duration5;
-	_b = 0.5f * (a0_Dur2_3 + 16.f * v0_Dur + 30.f * x0) / Duration4;
-	_c = -0.5f * (a0_Dur2_3 + 12.f * v0_Dur + 20.f * x0) / Duration3;
-	_d = 0.5f * a0;
+		_x0 = x0;
+		_v0 = v0;
+		_a = -0.5f * (a0_Dur2 + 6.f * v0_Dur + 12.f * x0) / Duration5;
+		_b = 0.5f * (a0_Dur2_3 + 16.f * v0_Dur + 30.f * x0) / Duration4;
+		_c = -0.5f * (a0_Dur2_3 + 12.f * v0_Dur + 20.f * x0) / Duration3;
+		_d = 0.5f * a0;
+	}
 }
 //---------------------------------------------------------------------
 
