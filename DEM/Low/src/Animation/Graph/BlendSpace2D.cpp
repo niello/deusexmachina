@@ -342,18 +342,15 @@ void CBlendSpace2D::EvaluatePose(CPoseBuffer& Output)
 	Output *= _Weights[0];
 
 	_pActiveSamples[1]->EvaluatePose(_TmpPose);
-	_TmpPose *= _Weights[1];
-	Output.Accumulate(_TmpPose);
+	Output.Accumulate(_TmpPose, _Weights[1]);
 
 	if (_pActiveSamples[2])
 	{
 		_pActiveSamples[2]->EvaluatePose(_TmpPose);
-		_TmpPose *= _Weights[2];
-		Output.Accumulate(_TmpPose);
+		Output.Accumulate(_TmpPose, _Weights[2]);
 	}
 
-	for (auto& Tfm : Output)
-		Tfm.Rotation.normalize();
+	Output.NormalizeRotations();
 }
 //---------------------------------------------------------------------
 

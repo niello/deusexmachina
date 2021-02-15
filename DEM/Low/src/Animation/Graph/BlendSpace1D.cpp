@@ -1,6 +1,7 @@
 #include "BlendSpace1D.h"
 #include <Animation/AnimationController.h>
 #include <Animation/SkeletonInfo.h>
+#include <Math/Math.h>
 
 namespace DEM::Anim
 {
@@ -109,11 +110,9 @@ void CBlendSpace1D::EvaluatePose(CPoseBuffer& Output)
 	Output *= (1.f - _BlendFactor);
 
 	_pSecond->EvaluatePose(_TmpPose);
-	_TmpPose *= _BlendFactor;
-	Output.Accumulate(_TmpPose);
+	Output.Accumulate(_TmpPose, _BlendFactor);
 
-	for (auto& Tfm : Output)
-		Tfm.Rotation.normalize();
+	Output.NormalizeRotations();
 }
 //---------------------------------------------------------------------
 

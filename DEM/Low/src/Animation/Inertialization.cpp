@@ -11,6 +11,7 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 {
 	const auto BoneCount = CurrPose.size();
 	_BoneDiffs.SetSize(BoneCount);
+	n_assert_dbg(IsAligned16(_BoneDiffs.data()));
 	for (UPTR i = 0; i < BoneCount; ++i)
 	{
 		//!!!if PrevPose1[i] is invalid, continue;
@@ -30,14 +31,14 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 		float RotationAngle = acl::quat_get_angle(Rotation); // [0; 2PI], then turn to [0; PI] by flipping axis direction
 		if (RotationAngle > PI)
 		{
-			BoneDiff.RotationAxis *= -1.f; //!!!flip signs with mm_xor_ps?!
+			BoneDiff.RotationAxis = acl::vector_neg(BoneDiff.RotationAxis);
 			RotationAngle = TWO_PI - RotationAngle;
 		}
 
-		const auto Translation = Prev1Tfm.Translation - CurrTfm.Translation;
-		const float TranslationMagnitude = Translation.Length();
+		const auto Translation = acl::vector_sub(Prev1Tfm.translation, CurrTfm.translation);
+		const float TranslationMagnitude = acl::vector_length3(Translation);
 		if (TranslationMagnitude != 0.f)
-			BoneDiff.TranslationDir = Translation / TranslationMagnitude;
+			BoneDiff.TranslationDir = acl::vector_div(Translation, acl::vector_set(TranslationMagnitude)); //???PERF: or vector_mul(v, 1.f / mag)?
 
 		float ScaleSpeed = 0.f;
 		float RotationSpeed = 0.f;
@@ -48,22 +49,28 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 
 			if (ScaleMagnitude != 0.f)
 			{
-				const auto PrevScale = Prev2Tfm.Scale - CurrTfm.Scale;
-				const float PrevMagnitude = PrevScale.Dot(BoneDiff.ScaleAxis);
+				const auto PrevScale = acl::vector_sub(Prev2Tfm.scale, CurrTfm.scale);
+				const float PrevMagnitude = acl::vector_dot3(PrevScale, BoneDiff.ScaleAxis);
 				ScaleSpeed = (ScaleMagnitude - PrevMagnitude) / dt;
 			}
 
 			if (RotationAngle != 0.f)
 			{
-				const auto PrevRotation = Prev2Tfm.Rotation * InvCurrRotation;
-				const float PrevAngle = PrevRotation.GetAngleAroundAxis(BoneDiff.RotationAxis);
+				const auto PrevRotation = acl::quat_mul(Prev2Tfm.rotation, InvCurrRotation);
+
+				// Get angle around an arbitrary axis
+				// TODO: to routine
+				const float Dot = acl::vector_dot3(BoneDiff.RotationAxis, PrevRotation);
+				const float RawAngle = 2.f * std::atan2f(Dot, acl::quat_get_w(PrevRotation)); // [-2PI; 2PI], convert to [-PI; PI]
+				const float PrevAngle = (RawAngle > PI) ? (RawAngle - TWO_PI) : (RawAngle < -PI) ? (RawAngle + TWO_PI) : RawAngle;
+
 				RotationSpeed = n_normangle_signed_pi(RotationAngle - PrevAngle) / dt;
 			}
 
 			if (TranslationMagnitude != 0.f)
 			{
-				const auto PrevTranslation = Prev2Tfm.Translation - CurrTfm.Translation;
-				const float PrevMagnitude = Translation.Dot(BoneDiff.TranslationDir);
+				const auto PrevTranslation = acl::vector_sub(Prev2Tfm.translation, CurrTfm.translation);
+				const float PrevMagnitude = acl::vector_dot3(Translation, BoneDiff.TranslationDir);
 				TranslationSpeed = (TranslationMagnitude - PrevMagnitude) / dt;
 			}
 		}
@@ -85,11 +92,13 @@ void CInertializationPoseDiff::ApplyTo(CPoseBuffer& Target, float ElapsedTime) c
 		const auto& BoneDiff = _BoneDiffs[i];
 		auto& Tfm = Target[i];
 
-		Tfm.Scale += BoneDiff.ScaleAxis * BoneDiff.ScaleParams.Evaluate(ElapsedTime);
-		Tfm.Rotation = quaternion::FromAxisAngle(BoneDiff.RotationAxis, BoneDiff.RotationParams.Evaluate(ElapsedTime)) * Tfm.Rotation;
-		Tfm.Translation += BoneDiff.TranslationDir * BoneDiff.TranslationParams.Evaluate(ElapsedTime);
+		n_assert_dbg(acl::quat_is_normalized(Tfm.rotation));
 
-		n_assert_dbg(n_fequal(Tfm.Rotation.magnitude(), 1.f));
+		Tfm.scale = acl::vector_mul_add(BoneDiff.ScaleAxis, BoneDiff.ScaleParams.Evaluate(ElapsedTime), Tfm.scale);
+		Tfm.rotation = acl::quat_mul(acl::quat_from_axis_angle(BoneDiff.RotationAxis, BoneDiff.RotationParams.Evaluate(ElapsedTime)), Tfm.rotation);
+		Tfm.translation = acl::vector_mul_add(BoneDiff.TranslationDir, BoneDiff.TranslationParams.Evaluate(ElapsedTime), Tfm.translation);
+
+		n_assert_dbg(acl::quat_is_normalized(Tfm.rotation));
 	}
 }
 //---------------------------------------------------------------------

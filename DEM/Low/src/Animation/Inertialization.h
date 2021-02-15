@@ -1,5 +1,6 @@
 #pragma once
 #include <Data/FixedArray.h>
+#include <acl/math/vector4_32.h>
 
 // Inertialization blending
 // See:
@@ -16,13 +17,13 @@ protected:
 
 	struct CQuinticCurve
 	{
-		float _x0;
-		float _v0;
-		float _sign;
 		float _a;
 		float _b;
 		float _c;
 		float _d;
+		float _v0;
+		float _x0;
+		float _sign;
 
 		void Prepare(float x0, float v0, float Duration);
 
