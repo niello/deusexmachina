@@ -138,7 +138,7 @@ void CInertializationPoseDiff::CQuinticCurve::Prepare(float x0, float v0, float 
 	{
 		const float v0_Dur = v0 * Duration;
 
-		const float a0_Dur2 = std::max(0.0f, -8.f * Duration * v0 - 20.f * x0);
+		const float a0_Dur2 = std::max(0.0f, -8.f * v0_Dur - 20.f * x0);
 		const float a0_Dur2_3 = a0_Dur2 * 3.f;
 		const float a0 = a0_Dur2 / Duration2;
 
