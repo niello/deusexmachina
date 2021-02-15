@@ -23,11 +23,11 @@ public:
 	void				set_from_axes(const vector3& from, const vector3& to);
 
 	void				ident() { x = 0.0f; y = 0.0f; z = 0.0f; w = 1.0f; }
-	void				conjugate() { x = -x; y = -y; z = -z; }
+	void				conjugate() { x = -x; y = -y; z = -z; } //???or flip w?
 	void				scale(float s) { x *= s; y *= s; z *= s; w *= s; }
 	float				norm() const { return x * x + y * y + z * z + w * w; }
-	float				magnitude() const { float n = norm(); return (n > 0.0f) ? n_sqrt(n) : 0.0f; }
-	void				invert() { float n = norm(); if (n > 0.0f) scale(1.0f / n); conjugate(); }
+	float				magnitude() const { const float n = norm(); return (n > 0.0f) ? n_sqrt(n) : 0.0f; }
+	void				invert() { const float n = norm(); if (n > 0.0f) scale(1.0f / n); conjugate(); }
 	void				normalize() { float l = magnitude(); if (l > 0.0f) scale(1.0f / l); else ident(); }
 	void				lerp(const quaternion& q0, const quaternion& q1, float l) { slerp(q0, q1, l); }
 

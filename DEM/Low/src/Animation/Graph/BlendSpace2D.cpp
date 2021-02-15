@@ -280,6 +280,8 @@ void CBlendSpace2D::Update(CAnimationUpdateContext& Context, float dt)
 		w *= Coeff;
 	}
 
+	n_assert_dbg(n_fequal(u + v + w, 1.f));
+
 	// Sort samples by weight descending
 	if (u < v)
 	{
@@ -343,11 +345,15 @@ void CBlendSpace2D::EvaluatePose(CPoseBuffer& Output)
 	_TmpPose *= _Weights[1];
 	Output.Accumulate(_TmpPose);
 
-	if (!_pActiveSamples[2]) return;
+	if (_pActiveSamples[2])
+	{
+		_pActiveSamples[2]->EvaluatePose(_TmpPose);
+		_TmpPose *= _Weights[2];
+		Output.Accumulate(_TmpPose);
+	}
 
-	_pActiveSamples[2]->EvaluatePose(_TmpPose);
-	_TmpPose *= _Weights[2];
-	Output.Accumulate(_TmpPose);
+	for (auto& Tfm : Output)
+		Tfm.Rotation.normalize();
 }
 //---------------------------------------------------------------------
 

@@ -133,13 +133,12 @@ void CInertializationPoseDiff::ApplyTo(CPoseBuffer& Target, float ElapsedTime, f
 		Q.set_rotate_axis_angle(BoneDiff.RotationAxis,
 			InertializeScalar(BoneDiff.RotationAngle, BoneDiff.RotationSpeed, ElapsedTime, Duration));
 		Tfm.Rotation = Q * Tfm.Rotation;
+		n_assert_dbg(n_fequal(Tfm.Rotation.magnitude(), 1.f));
 
 		// Apply the bone scale difference
 		Tfm.Scale += BoneDiff.ScaleAxis *
 			InertializeScalar(BoneDiff.ScaleMagnitude, BoneDiff.ScaleSpeed, ElapsedTime, Duration);
 	}
-
-	//Target.NormalizeRotations();
 }
 //---------------------------------------------------------------------
 

@@ -111,6 +111,9 @@ void CBlendSpace1D::EvaluatePose(CPoseBuffer& Output)
 	_pSecond->EvaluatePose(_TmpPose);
 	_TmpPose *= _BlendFactor;
 	Output.Accumulate(_TmpPose);
+
+	for (auto& Tfm : Output)
+		Tfm.Rotation.normalize();
 }
 //---------------------------------------------------------------------
 
