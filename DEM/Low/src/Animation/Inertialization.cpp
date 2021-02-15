@@ -26,7 +26,8 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			BoneDiff.ScaleAxis = Scale / BoneDiff.ScaleMagnitude;
 
 		auto InvCurrRotation = CurrTfm.Rotation;
-		InvCurrRotation.invert();
+		//InvCurrRotation.conjugate();
+		InvCurrRotation.w *= -1.f;
 		const auto Rotation = Prev1Tfm.Rotation * InvCurrRotation;
 		BoneDiff.RotationAxis = Rotation.GetAxis();
 		BoneDiff.RotationAngle = Rotation.GetAngle(); // [0; 2PI], then turn to [0; PI] by flipping axis direction
