@@ -277,7 +277,7 @@ void CAnimationController::ProcessInertialization()
 	if (_InertializationDuration > 0.f)
 	{
 		if (RequestPending)
-			_InertializationPoseDiff.Init(_CurrPose, _LastPoses[_PoseIndex], _LastPoses[_PoseIndex ^ 1], _LastPoseDt);
+			_InertializationPoseDiff.Init(_CurrPose, _LastPoses[_PoseIndex], _LastPoses[_PoseIndex ^ 1], _LastPoseDt, _InertializationDuration);
 
 		_InertializationElapsedTime += _InertializationDt;
 		if (_InertializationElapsedTime >= _InertializationDuration)
@@ -289,7 +289,7 @@ void CAnimationController::ProcessInertialization()
 		else
 		{
 			_InertializationDeficit = std::max(0.f, _InertializationDeficit - _InertializationDt);
-			_InertializationPoseDiff.ApplyTo(_CurrPose, _InertializationElapsedTime, _InertializationDuration);
+			_InertializationPoseDiff.ApplyTo(_CurrPose, _InertializationElapsedTime);
 		}
 	}
 

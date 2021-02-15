@@ -16,27 +16,46 @@ class CInertializationPoseDiff final
 {
 protected:
 
+	struct CQuinticCurve
+	{
+		float _x0;
+		float _v0;
+		float _Duration;
+		float _sign;
+		float _a;
+		float _b;
+		float _c;
+		float _d;
+
+		void Prepare(float x0, float v0, float Duration);
+
+		DEM_FORCE_INLINE float Evaluate(float t) const
+		{
+			constexpr float TIME_EPSILON = 1.e-7f;
+			static_assert(TIME_EPSILON * TIME_EPSILON * TIME_EPSILON * TIME_EPSILON * TIME_EPSILON > FLT_MIN, "Inertialization: too tiny TIME_EPSILON");
+			if ((_Duration - t) <= TIME_EPSILON) return 0.f;
+			return _sign * ((((((_a * t) + _b) * t + _c) * t + _d) * t + _v0) * t + _x0);
+		}
+	};
+
 	struct CBoneDiff
 	{
-		vector3 ScaleAxis;
-		float   ScaleMagnitude = 0.f;
-		float   ScaleSpeed = 0.f;
+		vector3       ScaleAxis;
+		CQuinticCurve ScaleParams;
 
-		vector3 RotationAxis;
-		float   RotationAngle = 0.f;
-		float   RotationSpeed = 0.f;
+		vector3       RotationAxis;
+		CQuinticCurve RotationParams;
 
-		vector3 TranslationDir;
-		float   TranslationMagnitude = 0.f;
-		float   TranslationSpeed = 0.f;
+		vector3       TranslationDir;
+		CQuinticCurve TranslationParams;
 	};
 
 	CFixedArray<CBoneDiff> _BoneDiffs;
 
 public:
 
-	void Init(const CPoseBuffer& CurrPose, const CPoseBuffer& PrevPose1, const CPoseBuffer& PrevPose2, float dt);
-	void ApplyTo(CPoseBuffer& Target, float ElapsedTime, float Duration) const;
+	void Init(const CPoseBuffer& CurrPose, const CPoseBuffer& PrevPose1, const CPoseBuffer& PrevPose2, float dt, float Duration);
+	void ApplyTo(CPoseBuffer& Target, float ElapsedTime) const;
 };
 
 }
