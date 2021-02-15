@@ -1,7 +1,6 @@
 #pragma once
 #include <StdDEM.h>
-//#include <acl/math/transform_32.h>
-#include <Math/TransformSRT.h>
+#include <acl/math/transform_32.h>
 
 // Buffer with per-bone transforms of the whole skeleton
 
@@ -12,9 +11,8 @@ class CPoseBuffer final
 {
 protected:
 
-	//std::unique_ptr<acl::Transform_32[]> _Transforms;
-	std::unique_ptr<Math::CTransform> _Transforms;
-	UPTR                              _Count = 0;
+	std::unique_ptr<acl::Transform_32[]> _Transforms;
+	UPTR                                 _Count = 0;
 
 public:
 
@@ -39,13 +37,31 @@ public:
 	{
 		const UPTR Size = std::min(_Count, Other._Count);
 		for (UPTR i = 0; i < Size; ++i)
-			_Transforms.get()[i].Accumulate(Other[i]);
+		{
+			const auto& OtherTfm = Other[i];
+			auto& Tfm = _Transforms.get()[i];
+
+			// Blend with shortest arc, based on a 4D dot product sign
+			if (acl::vector_dot(Tfm.rotation, OtherTfm.rotation) < 0.f)
+				Tfm.rotation = acl::vector_sub(Tfm.rotation, OtherTfm.rotation);
+			else
+				Tfm.rotation = acl::vector_add(Tfm.rotation, OtherTfm.rotation);
+
+			Tfm.translation = acl::vector_add(Tfm.translation, OtherTfm.translation);
+			Tfm.scale = acl::vector_add(Tfm.scale, OtherTfm.scale);
+		}
 	}
 
 	void operator *=(float Weight)
 	{
+		const auto WeightVector = acl::vector_set(Weight);
 		for (UPTR i = 0; i < _Count; ++i)
-			_Transforms.get()[i] *= Weight;
+		{
+			auto& Tfm = _Transforms.get()[i];
+			acl::vector_mul(Tfm.scale, WeightVector);
+			acl::vector_mul(Tfm.rotation, WeightVector);
+			acl::vector_mul(Tfm.translation, WeightVector);
+		}
 	}
 };
 

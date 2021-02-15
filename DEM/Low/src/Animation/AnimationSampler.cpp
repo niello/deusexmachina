@@ -35,52 +35,30 @@ struct COutputPoseWriter : public acl::OutputWriter
 };
 
 // Writes bone transforms from ACL clip to CPoseBuffer without mapping
-// FIXME: use ACL transform in the DEM scene and animation?
+// FIXME: pass quats and vectors by value using vectorcall, like ACL and RTM do?
 struct CPoseBufferWriter : public acl::OutputWriter
 {
 	CPoseBuffer& _Output;
 
 	CPoseBufferWriter(CPoseBuffer& Output) : _Output(Output) {}
 
-	void write_bone_rotation(uint16_t bone_index, const acl::Quat_32& rotation)
-	{
-		_Output[bone_index].Rotation.set(acl::quat_get_x(rotation), acl::quat_get_y(rotation), acl::quat_get_z(rotation), acl::quat_get_w(rotation));
-	}
-
-	void write_bone_translation(uint16_t bone_index, const acl::Vector4_32& translation)
-	{
-		_Output[bone_index].Translation.set(acl::vector_get_x(translation), acl::vector_get_y(translation), acl::vector_get_z(translation));
-	}
-
-	void write_bone_scale(uint16_t bone_index, const acl::Vector4_32& scale)
-	{
-		_Output[bone_index].Scale.set(acl::vector_get_x(scale), acl::vector_get_y(scale), acl::vector_get_z(scale));
-	}
+	void write_bone_rotation(uint16_t bone_index, const acl::Quat_32& rotation) { _Output[bone_index].rotation = rotation; }
+	void write_bone_translation(uint16_t bone_index, const acl::Vector4_32& translation) { _Output[bone_index].translation = translation; }
+	void write_bone_scale(uint16_t bone_index, const acl::Vector4_32& scale) { _Output[bone_index].scale = scale; }
 };
 
 // Writes bone transforms from ACL clip to CPoseBuffer with mapping
-// FIXME: use ACL transform in the DEM scene and animation?
+// FIXME: pass quats and vectors by value using vectorcall, like ACL and RTM do?
 struct CMappedPoseBufferWriter : public acl::OutputWriter
 {
 	CPoseBuffer& _Output;
-	U16* _pMapping;
+	U16*         _pMapping;
 
 	CMappedPoseBufferWriter(CPoseBuffer& Output, U16* pMapping) : _Output(Output), _pMapping(pMapping) {}
 
-	void write_bone_rotation(uint16_t bone_index, const acl::Quat_32& rotation)
-	{
-		_Output[_pMapping[bone_index]].Rotation.set(acl::quat_get_x(rotation), acl::quat_get_y(rotation), acl::quat_get_z(rotation), acl::quat_get_w(rotation));
-	}
-
-	void write_bone_translation(uint16_t bone_index, const acl::Vector4_32& translation)
-	{
-		_Output[_pMapping[bone_index]].Translation.set(acl::vector_get_x(translation), acl::vector_get_y(translation), acl::vector_get_z(translation));
-	}
-
-	void write_bone_scale(uint16_t bone_index, const acl::Vector4_32& scale)
-	{
-		_Output[_pMapping[bone_index]].Scale.set(acl::vector_get_x(scale), acl::vector_get_y(scale), acl::vector_get_z(scale));
-	}
+	void write_bone_rotation(uint16_t bone_index, const acl::Quat_32& rotation) { _Output[bone_index].rotation = rotation; }
+	void write_bone_translation(uint16_t bone_index, const acl::Vector4_32& translation) { _Output[bone_index].translation = translation; }
+	void write_bone_scale(uint16_t bone_index, const acl::Vector4_32& scale) { _Output[bone_index].scale = scale; }
 
 	bool skip_bone_rotation(uint16_t bone_index) const { return _pMapping[bone_index] == CSkeletonInfo::EmptyPort; }
 	bool skip_bone_translation(uint16_t bone_index) const { return _pMapping[bone_index] == CSkeletonInfo::EmptyPort; }

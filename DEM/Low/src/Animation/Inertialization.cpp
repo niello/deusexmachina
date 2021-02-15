@@ -1,5 +1,6 @@
 #include "Inertialization.h"
 #include <Animation/PoseBuffer.h>
+#include <Math/Math.h> // FIXME: for PI, search in ACL/RTM?!
 
 namespace DEM::Anim
 {
@@ -18,19 +19,18 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 		const auto& CurrTfm = CurrPose[i];
 		const auto& Prev1Tfm = PrevPose1[i];
 
-		const auto Scale = Prev1Tfm.Scale - CurrTfm.Scale;
-		const float ScaleMagnitude = Scale.Length();
+		const auto Scale = acl::vector_sub(Prev1Tfm.scale, CurrTfm.scale);
+		const float ScaleMagnitude = acl::vector_length3(Scale);
 		if (ScaleMagnitude != 0.f)
-			BoneDiff.ScaleAxis = Scale / ScaleMagnitude;
+			BoneDiff.ScaleAxis = acl::vector_div(Scale, acl::vector_set(ScaleMagnitude)); //???PERF: or vector_mul(Scale, 1.f / ScaleMagnitude)?
 
-		auto InvCurrRotation = CurrTfm.Rotation;
-		InvCurrRotation.w *= -1.f; //InvCurrRotation.conjugate();
-		const auto Rotation = Prev1Tfm.Rotation * InvCurrRotation;
-		BoneDiff.RotationAxis = Rotation.GetAxis();
-		float RotationAngle = Rotation.GetAngle(); // [0; 2PI], then turn to [0; PI] by flipping axis direction
+		const auto InvCurrRotation = acl::quat_conjugate(CurrTfm.rotation);
+		const auto Rotation = acl::quat_mul(Prev1Tfm.rotation, InvCurrRotation);
+		BoneDiff.RotationAxis = acl::quat_get_axis(Rotation);
+		float RotationAngle = acl::quat_get_angle(Rotation); // [0; 2PI], then turn to [0; PI] by flipping axis direction
 		if (RotationAngle > PI)
 		{
-			BoneDiff.RotationAxis *= -1.f;
+			BoneDiff.RotationAxis *= -1.f; //!!!flip signs with mm_xor_ps?!
 			RotationAngle = TWO_PI - RotationAngle;
 		}
 
@@ -86,11 +86,10 @@ void CInertializationPoseDiff::ApplyTo(CPoseBuffer& Target, float ElapsedTime) c
 		auto& Tfm = Target[i];
 
 		Tfm.Scale += BoneDiff.ScaleAxis * BoneDiff.ScaleParams.Evaluate(ElapsedTime);
-
 		Tfm.Rotation = quaternion::FromAxisAngle(BoneDiff.RotationAxis, BoneDiff.RotationParams.Evaluate(ElapsedTime)) * Tfm.Rotation;
-		n_assert_dbg(n_fequal(Tfm.Rotation.magnitude(), 1.f));
-
 		Tfm.Translation += BoneDiff.TranslationDir * BoneDiff.TranslationParams.Evaluate(ElapsedTime);
+
+		n_assert_dbg(n_fequal(Tfm.Rotation.magnitude(), 1.f));
 	}
 }
 //---------------------------------------------------------------------

@@ -1,6 +1,4 @@
 #pragma once
-#include <StdDEM.h>
-#include <Math/TransformSRT.h>
 #include <Data/FixedArray.h>
 
 // Inertialization blending
@@ -36,14 +34,12 @@ protected:
 
 	struct CBoneDiff
 	{
-		vector3       ScaleAxis;
-		CQuinticCurve ScaleParams;
-
-		vector3       RotationAxis;
-		CQuinticCurve RotationParams;
-
-		vector3       TranslationDir;
-		CQuinticCurve TranslationParams;
+		acl::Vector4_32 ScaleAxis;
+		acl::Vector4_32 RotationAxis;
+		acl::Vector4_32 TranslationDir;
+		CQuinticCurve   ScaleParams;
+		CQuinticCurve   RotationParams;
+		CQuinticCurve   TranslationParams;
 	};
 
 	CFixedArray<CBoneDiff> _BoneDiffs;
