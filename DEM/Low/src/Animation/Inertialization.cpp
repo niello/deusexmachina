@@ -40,45 +40,9 @@ acl::Vector4_32 ACL_SIMD_CALL vector_round_bankers(acl::Vector4_32Arg0 input) //
 }
 //---------------------------------------------------------------------
 
-inline acl::Vector4_32 ACL_SIMD_CALL vector_sin(acl::Vector4_32Arg0 input) //RTM_NO_EXCEPT
+inline void ACL_SIMD_CALL vector_sincos(acl::Vector4_32Arg0 input, acl::Vector4_32& outSin, acl::Vector4_32& outCos) //RTM_NO_EXCEPT
 {
 	// Use a degree 11 minimax approximation polynomial
-	// See: GPGPU Programming for Games and Science (David H. Eberly)
-
-	// Remap our input in the [-pi, pi] range
-	__m128 quotient = _mm_mul_ps(input, _mm_set_ps1(1.591549430918953357688837633725143620e-01f)); // 1.f / 2PI
-	quotient = vector_round_bankers(quotient);
-	quotient = _mm_mul_ps(quotient, _mm_set_ps1(TWO_PI));
-	__m128 x = _mm_sub_ps(input, quotient);
-
-	// Remap our input in the [-pi/2, pi/2] range
-	const __m128 sign_mask = _mm_set_ps(-0.0F, -0.0F, -0.0F, -0.0F);
-	__m128 sign = _mm_and_ps(x, sign_mask);
-	__m128 reference = _mm_or_ps(sign, _mm_set_ps1(PI));
-
-	const __m128 reflection = _mm_sub_ps(reference, x);
-	const __m128i abs_mask = _mm_set_epi32(0x7FFFFFFFULL, 0x7FFFFFFFULL, 0x7FFFFFFFULL, 0x7FFFFFFFULL);
-	const __m128 x_abs = _mm_and_ps(x, _mm_castsi128_ps(abs_mask));
-
-	__m128 is_less_equal_than_half_pi = _mm_cmple_ps(x_abs, _mm_set_ps1(HALF_PI));
-
-	x = _mm_or_ps(_mm_andnot_ps(is_less_equal_than_half_pi, reflection), _mm_and_ps(x, is_less_equal_than_half_pi));
-
-	// Calculate our value
-	const __m128 x2 = _mm_mul_ps(x, x);
-	__m128 result = _mm_add_ps(_mm_mul_ps(x2, _mm_set_ps1(-2.3828544692960918e-8F)), _mm_set_ps1(2.7521557770526783e-6F));
-	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(-1.9840782426250314e-4F));
-	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(8.3333303183525942e-3F));
-	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(-1.6666666601721269e-1F));
-	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(1.0F));
-	result = _mm_mul_ps(result, x);
-	return result;
-}
-//---------------------------------------------------------------------
-
-inline acl::Vector4_32 ACL_SIMD_CALL vector_cos(acl::Vector4_32Arg0 input) //RTM_NO_EXCEPT
-{
-	// Use a degree 10 minimax approximation polynomial
 	// See: GPGPU Programming for Games and Science (David H. Eberly)
 
 	// Remap our input in the [-pi, pi] range
@@ -94,21 +58,31 @@ inline acl::Vector4_32 ACL_SIMD_CALL vector_cos(acl::Vector4_32Arg0 input) //RTM
 	const __m128 reflection = _mm_sub_ps(reference, x);
 
 	const __m128i abs_mask = _mm_set_epi32(0x7FFFFFFFULL, 0x7FFFFFFFULL, 0x7FFFFFFFULL, 0x7FFFFFFFULL);
-	__m128 x_abs = _mm_and_ps(x, _mm_castsi128_ps(abs_mask));
+	const __m128 x_abs = _mm_and_ps(x, _mm_castsi128_ps(abs_mask));
 	__m128 is_less_equal_than_half_pi = _mm_cmple_ps(x_abs, _mm_set_ps1(HALF_PI));
 
 	x = _mm_or_ps(_mm_andnot_ps(is_less_equal_than_half_pi, reflection), _mm_and_ps(x, is_less_equal_than_half_pi));
 
 	// Calculate our value
 	const __m128 x2 = _mm_mul_ps(x, x);
-	__m128 result = _mm_add_ps(_mm_mul_ps(x2, _mm_set_ps1(-2.6051615464872668e-7F)), _mm_set_ps1(2.4760495088926859e-5F));
-	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(-1.3888377661039897e-3F));
-	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(4.1666638865338612e-2F));
-	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(-4.9999999508695869e-1F));
-	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(1.0F));
+
+	// Sin
+	__m128 sin = _mm_add_ps(_mm_mul_ps(x2, _mm_set_ps1(-2.3828544692960918e-8F)), _mm_set_ps1(2.7521557770526783e-6F));
+	sin = _mm_add_ps(_mm_mul_ps(sin, x2), _mm_set_ps1(-1.9840782426250314e-4F));
+	sin = _mm_add_ps(_mm_mul_ps(sin, x2), _mm_set_ps1(8.3333303183525942e-3F));
+	sin = _mm_add_ps(_mm_mul_ps(sin, x2), _mm_set_ps1(-1.6666666601721269e-1F));
+	sin = _mm_add_ps(_mm_mul_ps(sin, x2), _mm_set_ps1(1.0F));
+	outSin = _mm_mul_ps(sin, x);
+
+	// Cos
+	__m128 cos = _mm_add_ps(_mm_mul_ps(x2, _mm_set_ps1(-2.6051615464872668e-7F)), _mm_set_ps1(2.4760495088926859e-5F));
+	cos = _mm_add_ps(_mm_mul_ps(cos, x2), _mm_set_ps1(-1.3888377661039897e-3F));
+	cos = _mm_add_ps(_mm_mul_ps(cos, x2), _mm_set_ps1(4.1666638865338612e-2F));
+	cos = _mm_add_ps(_mm_mul_ps(cos, x2), _mm_set_ps1(-4.9999999508695869e-1F));
+	cos = _mm_add_ps(_mm_mul_ps(cos, x2), _mm_set_ps1(1.0F));
 
 	// Remap into [-pi, pi]
-	return _mm_or_ps(result, _mm_andnot_ps(is_less_equal_than_half_pi, sign_mask));
+	outCos = _mm_or_ps(cos, _mm_andnot_ps(is_less_equal_than_half_pi, sign_mask));
 }
 //---------------------------------------------------------------------
 
@@ -276,8 +250,8 @@ void CInertializationPoseDiff::ApplyTo(CPoseBuffer& Target, float ElapsedTime) c
 		const auto TranslationMagnitudes = FourCurves.TranslationParams.Evaluate(t);
 
 		// FIXME: use RTM functions!
-		const auto VSin = vector_sin(RotationHalfAngles);
-		const auto VCos = vector_cos(RotationHalfAngles);
+		acl::Vector4_32 VSin, VCos;
+		vector_sincos(RotationHalfAngles, VSin, VCos);
 
 		const auto& BoneDiff0 = _BoneDiffs[BoneIdx];
 		auto& Tfm0 = Target[BoneIdx];
