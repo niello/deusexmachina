@@ -5,6 +5,115 @@
 namespace DEM::Anim
 {
 
+////////////////!!!DBG TMP!///////////////////
+
+//!!!DBG TMP!
+ACL_FORCE_INLINE acl::Vector4_32 ACL_SIMD_CALL vector_select(acl::Vector4_32Arg0 mask, acl::Vector4_32Arg1 if_true, acl::Vector4_32Arg2 if_false) //RTM_NO_EXCEPT
+{
+	return _mm_or_ps(_mm_andnot_ps(mask, if_false), _mm_and_ps(if_true, mask));
+}
+//---------------------------------------------------------------------
+
+acl::Vector4_32 ACL_SIMD_CALL vector_round_bankers(acl::Vector4_32Arg0 input) //RTM_NO_EXCEPT
+{
+	// SSE4
+	//return _mm_round_ps(input, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+
+	const __m128 sign_mask = _mm_set_ps(-0.0F, -0.0F, -0.0F, -0.0F);
+	__m128 sign = _mm_and_ps(input, sign_mask);
+
+	// We add the largest integer that a 32 bit floating point number can represent and subtract it afterwards.
+	// This relies on the fact that if we had a fractional part, the new value cannot be represented accurately
+	// and IEEE 754 will perform rounding for us. The default rounding mode is Banker's rounding.
+	// This has the effect of removing the fractional part while simultaneously rounding.
+	// Use the same sign as the input value to make sure we handle positive and negative values.
+	const __m128 fractional_limit = _mm_set_ps1(8388608.0F); // 2^23
+	__m128 truncating_offset = _mm_or_ps(sign, fractional_limit);
+	__m128 integer_part = _mm_sub_ps(_mm_add_ps(input, truncating_offset), truncating_offset);
+
+	// If our input was so large that it had no fractional part, return it unchanged
+	// Otherwise return our integer part
+	const __m128i abs_mask = _mm_set_epi32(0x7FFFFFFFULL, 0x7FFFFFFFULL, 0x7FFFFFFFULL, 0x7FFFFFFFULL);
+	__m128 abs_input = _mm_and_ps(input, _mm_castsi128_ps(abs_mask));
+	__m128 is_input_large = _mm_cmpge_ps(abs_input, fractional_limit);
+	return _mm_or_ps(_mm_and_ps(is_input_large, input), _mm_andnot_ps(is_input_large, integer_part));
+}
+//---------------------------------------------------------------------
+
+inline acl::Vector4_32 ACL_SIMD_CALL vector_sin(acl::Vector4_32Arg0 input) //RTM_NO_EXCEPT
+{
+	// Use a degree 11 minimax approximation polynomial
+	// See: GPGPU Programming for Games and Science (David H. Eberly)
+
+	// Remap our input in the [-pi, pi] range
+	__m128 quotient = _mm_mul_ps(input, _mm_set_ps1(1.591549430918953357688837633725143620e-01f)); // 1.f / 2PI
+	quotient = vector_round_bankers(quotient);
+	quotient = _mm_mul_ps(quotient, _mm_set_ps1(TWO_PI));
+	__m128 x = _mm_sub_ps(input, quotient);
+
+	// Remap our input in the [-pi/2, pi/2] range
+	const __m128 sign_mask = _mm_set_ps(-0.0F, -0.0F, -0.0F, -0.0F);
+	__m128 sign = _mm_and_ps(x, sign_mask);
+	__m128 reference = _mm_or_ps(sign, _mm_set_ps1(PI));
+
+	const __m128 reflection = _mm_sub_ps(reference, x);
+	const __m128i abs_mask = _mm_set_epi32(0x7FFFFFFFULL, 0x7FFFFFFFULL, 0x7FFFFFFFULL, 0x7FFFFFFFULL);
+	const __m128 x_abs = _mm_and_ps(x, _mm_castsi128_ps(abs_mask));
+
+	__m128 is_less_equal_than_half_pi = _mm_cmple_ps(x_abs, _mm_set_ps1(HALF_PI));
+
+	x = _mm_or_ps(_mm_andnot_ps(is_less_equal_than_half_pi, reflection), _mm_and_ps(x, is_less_equal_than_half_pi));
+
+	// Calculate our value
+	const __m128 x2 = _mm_mul_ps(x, x);
+	__m128 result = _mm_add_ps(_mm_mul_ps(x2, _mm_set_ps1(-2.3828544692960918e-8F)), _mm_set_ps1(2.7521557770526783e-6F));
+	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(-1.9840782426250314e-4F));
+	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(8.3333303183525942e-3F));
+	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(-1.6666666601721269e-1F));
+	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(1.0F));
+	result = _mm_mul_ps(result, x);
+	return result;
+}
+//---------------------------------------------------------------------
+
+inline acl::Vector4_32 ACL_SIMD_CALL vector_cos(acl::Vector4_32Arg0 input) //RTM_NO_EXCEPT
+{
+	// Use a degree 10 minimax approximation polynomial
+	// See: GPGPU Programming for Games and Science (David H. Eberly)
+
+	// Remap our input in the [-pi, pi] range
+	__m128 quotient = _mm_mul_ps(input, _mm_set_ps1(1.591549430918953357688837633725143620e-01f)); // 1.f / 2PI
+	quotient = vector_round_bankers(quotient);
+	quotient = _mm_mul_ps(quotient, _mm_set_ps1(TWO_PI));
+	__m128 x = _mm_sub_ps(input, quotient);
+
+	// Remap our input in the [-pi/2, pi/2] range
+	const __m128 sign_mask = _mm_set_ps(-0.0F, -0.0F, -0.0F, -0.0F);
+	__m128 x_sign = _mm_and_ps(x, sign_mask);
+	__m128 reference = _mm_or_ps(x_sign, _mm_set_ps1(PI));
+	const __m128 reflection = _mm_sub_ps(reference, x);
+
+	const __m128i abs_mask = _mm_set_epi32(0x7FFFFFFFULL, 0x7FFFFFFFULL, 0x7FFFFFFFULL, 0x7FFFFFFFULL);
+	__m128 x_abs = _mm_and_ps(x, _mm_castsi128_ps(abs_mask));
+	__m128 is_less_equal_than_half_pi = _mm_cmple_ps(x_abs, _mm_set_ps1(HALF_PI));
+
+	x = _mm_or_ps(_mm_andnot_ps(is_less_equal_than_half_pi, reflection), _mm_and_ps(x, is_less_equal_than_half_pi));
+
+	// Calculate our value
+	const __m128 x2 = _mm_mul_ps(x, x);
+	__m128 result = _mm_add_ps(_mm_mul_ps(x2, _mm_set_ps1(-2.6051615464872668e-7F)), _mm_set_ps1(2.4760495088926859e-5F));
+	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(-1.3888377661039897e-3F));
+	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(4.1666638865338612e-2F));
+	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(-4.9999999508695869e-1F));
+	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(1.0F));
+
+	// Remap into [-pi, pi]
+	return _mm_or_ps(result, _mm_andnot_ps(is_less_equal_than_half_pi, sign_mask));
+}
+//---------------------------------------------------------------------
+
+//////////////////////////////////////////////
+
 // TODO PERF: vectorize too?
 static inline void PrepareQuinticSourceData(float& x0, float& v0, float& Duration, float& sign)
 {
@@ -163,37 +272,46 @@ void CInertializationPoseDiff::ApplyTo(CPoseBuffer& Target, float ElapsedTime) c
 	{
 		const auto& FourCurves = _Curves[i];
 		const auto ScaleMagnitudes = FourCurves.ScaleParams.Evaluate(t);
-		const auto RotationAngles = FourCurves.RotationParams.Evaluate(t);
+		const auto RotationHalfAngles = acl::vector_mul(FourCurves.RotationParams.Evaluate(t), 0.5f);
 		const auto TranslationMagnitudes = FourCurves.TranslationParams.Evaluate(t);
 
-		// TODO PERF: calc vectorized sin and cos! 4 at a time! and use them to build quaternions!
-		// RTM vector_sin, vector_cos, later maybe vector_sincos?
+		// FIXME: use RTM functions!
+		const auto VSin = vector_sin(RotationHalfAngles);
+		const auto VCos = vector_cos(RotationHalfAngles);
 
 		const auto& BoneDiff0 = _BoneDiffs[BoneIdx];
 		auto& Tfm0 = Target[BoneIdx];
 		Tfm0.scale = acl::vector_mul_add(BoneDiff0.ScaleAxis, acl::vector_mix_xxxx(ScaleMagnitudes), Tfm0.scale);
-		Tfm0.rotation = acl::quat_mul(acl::quat_from_axis_angle(BoneDiff0.RotationAxis, acl::vector_get_x(RotationAngles)), Tfm0.rotation);
+		auto Quat0 = acl::vector_mul(acl::vector_mix_xxxx(VSin), BoneDiff0.RotationAxis);
+		Quat0 = acl::vector_mix<acl::VectorMix::X, acl::VectorMix::Y, acl::VectorMix::Z, acl::VectorMix::A>(Quat0, VCos);
+		Tfm0.rotation = acl::quat_mul(Quat0, Tfm0.rotation);
 		Tfm0.translation = acl::vector_mul_add(BoneDiff0.TranslationDir, acl::vector_mix_xxxx(TranslationMagnitudes), Tfm0.translation);
 		if (++BoneIdx >= BoneCount) break;
 
 		const auto& BoneDiff1 = _BoneDiffs[BoneIdx];
 		auto& Tfm1 = Target[BoneIdx];
 		Tfm1.scale = acl::vector_mul_add(BoneDiff1.ScaleAxis, acl::vector_mix_yyyy(ScaleMagnitudes), Tfm1.scale);
-		Tfm1.rotation = acl::quat_mul(acl::quat_from_axis_angle(BoneDiff1.RotationAxis, acl::vector_get_y(RotationAngles)), Tfm1.rotation);
+		auto Quat1 = acl::vector_mul(acl::vector_mix_yyyy(VSin), BoneDiff1.RotationAxis);
+		Quat1 = acl::vector_mix<acl::VectorMix::X, acl::VectorMix::Y, acl::VectorMix::Z, acl::VectorMix::B>(Quat1, VCos);
+		Tfm1.rotation = acl::quat_mul(Quat1, Tfm1.rotation);
 		Tfm1.translation = acl::vector_mul_add(BoneDiff1.TranslationDir, acl::vector_mix_yyyy(TranslationMagnitudes), Tfm1.translation);
 		if (++BoneIdx >= BoneCount) break;
 
 		const auto& BoneDiff2 = _BoneDiffs[BoneIdx];
 		auto& Tfm2 = Target[BoneIdx];
 		Tfm2.scale = acl::vector_mul_add(BoneDiff2.ScaleAxis, acl::vector_mix_zzzz(ScaleMagnitudes), Tfm2.scale);
-		Tfm2.rotation = acl::quat_mul(acl::quat_from_axis_angle(BoneDiff2.RotationAxis, acl::vector_get_z(RotationAngles)), Tfm2.rotation);
+		auto Quat2 = acl::vector_mul(acl::vector_mix_zzzz(VSin), BoneDiff2.RotationAxis);
+		Quat2 = acl::vector_mix<acl::VectorMix::X, acl::VectorMix::Y, acl::VectorMix::Z, acl::VectorMix::C>(Quat2, VCos);
+		Tfm2.rotation = acl::quat_mul(Quat2, Tfm2.rotation);
 		Tfm2.translation = acl::vector_mul_add(BoneDiff2.TranslationDir, acl::vector_mix_zzzz(TranslationMagnitudes), Tfm2.translation);
 		if (++BoneIdx >= BoneCount) break;
 
 		const auto& BoneDiff3 = _BoneDiffs[BoneIdx];
 		auto& Tfm3 = Target[BoneIdx];
 		Tfm3.scale = acl::vector_mul_add(BoneDiff3.ScaleAxis, acl::vector_mix_wwww(ScaleMagnitudes), Tfm3.scale);
-		Tfm3.rotation = acl::quat_mul(acl::quat_from_axis_angle(BoneDiff3.RotationAxis, acl::vector_get_w(RotationAngles)), Tfm3.rotation);
+		auto Quat3 = acl::vector_mul(acl::vector_mix_wwww(VSin), BoneDiff3.RotationAxis);
+		Quat3 = acl::vector_mix<acl::VectorMix::X, acl::VectorMix::Y, acl::VectorMix::Z, acl::VectorMix::D>(Quat3, VCos);
+		Tfm3.rotation = acl::quat_mul(Quat3, Tfm3.rotation);
 		Tfm3.translation = acl::vector_mul_add(BoneDiff3.TranslationDir, acl::vector_mix_wwww(TranslationMagnitudes), Tfm3.translation);
 		if (++BoneIdx >= BoneCount) break;
 	}
@@ -233,21 +351,6 @@ void CInertializationPoseDiff::CQuinticCurve::Prepare(float x0, float v0, float 
 		_x0 = x0;
 		_sign = sign;
 	}
-}
-//---------------------------------------------------------------------
-
-//!!!DBG TMP!
-ACL_FORCE_INLINE acl::Vector4_32 ACL_SIMD_CALL vector_select(acl::Vector4_32Arg0 mask, acl::Vector4_32Arg1 if_true, acl::Vector4_32Arg2 if_false) //RTM_NO_EXCEPT
-{
-#if defined(ACL_AVX_INTRINSICS)
-	return _mm_blendv_ps(if_false, if_true, mask);
-#elif defined(ACL_SSE2_INTRINSICS)
-	return _mm_or_ps(_mm_andnot_ps(mask, if_false), _mm_and_ps(if_true, mask));
-#elif defined(ACL_NEON_INTRINSICS)
-	return vbslq_f32(mask, if_true, if_false);
-#else
-	return vector4f{ rtm_impl::select(mask.x, if_true.x, if_false.x), rtm_impl::select(mask.y, if_true.y, if_false.y), rtm_impl::select(mask.z, if_true.z, if_false.z), rtm_impl::select(mask.w, if_true.w, if_false.w) };
-#endif
 }
 //---------------------------------------------------------------------
 
