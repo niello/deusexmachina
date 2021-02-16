@@ -92,12 +92,13 @@ inline void ACL_SIMD_CALL vector_sincos(acl::Vector4_32Arg0 input, acl::Vector4_
 static inline void PrepareQuinticSourceData(float& x0, float& v0, float& Duration, float& sign)
 {
 	// If x0 < 0, mirror for conveniency
-	sign = std::copysign(1.f, x0);
 	if (x0 < 0.f)
 	{
 		x0 = -x0;
 		v0 = -v0;
+		sign = -1.f;
 	}
+	else sign = 1.f;
 
 	if (v0 > 0.f)
 	{
@@ -294,44 +295,30 @@ void CInertializationPoseDiff::ApplyTo(CPoseBuffer& Target, float ElapsedTime) c
 
 void CInertializationPoseDiff::CQuinticCurve4::Prepare(acl::Vector4_32 x0, acl::Vector4_32 v0, acl::Vector4_32 Duration, acl::Vector4_32 sign)
 {
-	const auto Duration2 = acl::vector_mul(Duration, Duration);
-	const auto Duration3 = acl::vector_mul(Duration, Duration2);
-	const auto Duration4 = acl::vector_mul(Duration, Duration3);
-	const auto Duration5 = acl::vector_mul(Duration, Duration4);
+	static_assert(TINY * TINY * TINY * TINY * TINY > 0.f, "Inertialization: tiny float is too tiny");
+	constexpr acl::Vector4_32 TINY_VECTOR{ TINY, TINY, TINY, TINY };
+	const auto Mask = acl::vector_less_than(Duration, TINY_VECTOR);
+	const auto InvDuration = vector_select(Mask, acl::vector_zero_32(), acl::vector_reciprocal(Duration));
+	// TODO PERF: check if all_less_than early exit gives any boost
+	// TODO PERF: ensure the mask is not calculated twice. Use RTM for explicit mask reuse?
+
+	const auto HalfInvDuration = acl::vector_mul(InvDuration, 0.5f);
+	const auto HalfInvDuration2 = acl::vector_mul(InvDuration, HalfInvDuration);
+	const auto HalfInvDuration3 = acl::vector_mul(InvDuration, HalfInvDuration2);
+	const auto HalfInvDuration4 = acl::vector_mul(InvDuration, HalfInvDuration3);
+	const auto HalfInvDuration5 = acl::vector_mul(InvDuration, HalfInvDuration4);
 
 	const auto v0_Dur = acl::vector_mul(v0, Duration);
-
 	const auto a0_Dur2 = acl::vector_max(acl::vector_zero_32(), acl::vector_sub(acl::vector_mul(v0_Dur, -8.f), acl::vector_mul(x0, 20.f)));
 	const auto a0_Dur2_3 = acl::vector_mul(a0_Dur2, 3.f);
-	const auto a0 = acl::vector_div(a0_Dur2, Duration2);
 
-	_a = acl::vector_mul(acl::vector_mul_add(x0, 12.f, acl::vector_mul_add(v0_Dur, 6.f, a0_Dur2)), -0.5f);
-	_a = acl::vector_div(_a, Duration5);
-	_b = acl::vector_mul(acl::vector_mul_add(x0, 30.f, acl::vector_mul_add(v0_Dur, 16.f, a0_Dur2_3)), 0.5f);
-	_b = acl::vector_div(_b, Duration4);
-	_c = acl::vector_mul(acl::vector_mul_add(x0, 20.f, acl::vector_mul_add(v0_Dur, 12.f, a0_Dur2_3)), -0.5f);
-	_c = acl::vector_div(_c, Duration3);
-	_d = acl::vector_mul(a0, 0.5f);
-
+	_a = acl::vector_mul(acl::vector_mul_add(x0, 12.f, acl::vector_mul_add(v0_Dur, 6.f, a0_Dur2)), acl::vector_neg(HalfInvDuration5));
+	_b = acl::vector_mul(acl::vector_mul_add(x0, 30.f, acl::vector_mul_add(v0_Dur, 16.f, a0_Dur2_3)), HalfInvDuration4);
+	_c = acl::vector_mul(acl::vector_mul_add(x0, 20.f, acl::vector_mul_add(v0_Dur, 12.f, a0_Dur2_3)), acl::vector_neg(HalfInvDuration3));
+	_d = acl::vector_mul(a0_Dur2, HalfInvDuration2);
 	_v0 = v0;
 	_x0 = x0;
-	_sign = sign;
-
-	//!!!TODO: when obtain mask, can check if all less than and early exit with all zero vectors!
-	// FIXME: ensure the mask is calculated once!
-	// TODO: need RTM vector_select! Exists only in RTM, not in ACL 1.3.5!
-	constexpr acl::Vector4_32 TINY_VECTOR{ TINY, TINY, TINY, TINY };
-	if (acl::vector_any_less_than(Duration5, TINY_VECTOR))
-	{
-		const auto Mask = acl::vector_less_than(Duration5, TINY_VECTOR);
-		_a = vector_select(Mask, acl::vector_zero_32(), _a);
-		_b = vector_select(Mask, acl::vector_zero_32(), _b);
-		_c = vector_select(Mask, acl::vector_zero_32(), _c);
-		_d = vector_select(Mask, acl::vector_zero_32(), _d);
-		_v0 = vector_select(Mask, acl::vector_zero_32(), _v0);
-		_x0 = vector_select(Mask, acl::vector_zero_32(), _x0);
-		_sign = vector_select(Mask, acl::vector_zero_32(), _sign);
-	}
+	_sign = vector_select(Mask, acl::vector_zero_32(), sign); // Mul on zero sign will effectively zero out the result
 }
 //---------------------------------------------------------------------
 
