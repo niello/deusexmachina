@@ -15,24 +15,6 @@ class CInertializationPoseDiff final
 {
 protected:
 
-	struct CQuinticCurve
-	{
-		float _a;
-		float _b;
-		float _c;
-		float _d;
-		float _v0;
-		float _x0;
-		float _sign;
-
-		void Prepare(float x0, float v0, float Duration, float sign);
-
-		DEM_FORCE_INLINE float Evaluate(float t) const
-		{
-			return _sign * ((((((_a * t) + _b) * t + _c) * t + _d) * t + _v0) * t + _x0);
-		}
-	};
-
 	struct CQuinticCurve4
 	{
 		acl::Vector4_32 _a;
@@ -61,9 +43,6 @@ protected:
 		acl::Vector4_32 ScaleAxis;
 		acl::Vector4_32 RotationAxis;
 		acl::Vector4_32 TranslationDir;
-		//CQuinticCurve   ScaleParams;
-		//CQuinticCurve   RotationParams;
-		//CQuinticCurve   TranslationParams;
 
 		DEM_ALLOCATE_ALIGNED(alignof(CBoneDiff));
 	};
@@ -77,7 +56,7 @@ protected:
 		DEM_ALLOCATE_ALIGNED(alignof(CBoneDiff));
 	};
 
-	CFixedArray<CBoneDiff>   _BoneDiffs; //!!!bases!
+	CFixedArray<CBoneDiff>   _BoneDiffs; //!!!???rename to bases!?
 	CFixedArray<CBoneCurves> _Curves;
 
 public:

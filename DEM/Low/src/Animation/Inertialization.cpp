@@ -14,7 +14,7 @@ ACL_FORCE_INLINE acl::Vector4_32 ACL_SIMD_CALL vector_select(acl::Vector4_32Arg0
 }
 //---------------------------------------------------------------------
 
-acl::Vector4_32 ACL_SIMD_CALL vector_round_bankers(acl::Vector4_32Arg0 input) //RTM_NO_EXCEPT
+inline acl::Vector4_32 ACL_SIMD_CALL vector_round_bankers(acl::Vector4_32Arg0 input) //RTM_NO_EXCEPT
 {
 	// SSE4
 	//return _mm_round_ps(input, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
@@ -288,42 +288,6 @@ void CInertializationPoseDiff::ApplyTo(CPoseBuffer& Target, float ElapsedTime) c
 		Tfm3.rotation = acl::quat_mul(Quat3, Tfm3.rotation);
 		Tfm3.translation = acl::vector_mul_add(BoneDiff3.TranslationDir, acl::vector_mix_wwww(TranslationMagnitudes), Tfm3.translation);
 		if (++BoneIdx >= BoneCount) break;
-	}
-}
-//---------------------------------------------------------------------
-
-void CInertializationPoseDiff::CQuinticCurve::Prepare(float x0, float v0, float Duration, float sign)
-{
-	const float Duration2 = Duration * Duration;
-	const float Duration3 = Duration * Duration2;
-	const float Duration4 = Duration * Duration3;
-	const float Duration5 = Duration * Duration4;
-
-	if (Duration5 < TINY)
-	{
-		_a = 0.f;
-		_b = 0.f;
-		_c = 0.f;
-		_d = 0.f;
-		_v0 = 0.f;
-		_x0 = 0.f;
-		_sign = 0.f;
-	}
-	else
-	{
-		const float v0_Dur = v0 * Duration;
-
-		const float a0_Dur2 = std::max(0.0f, -8.f * v0_Dur - 20.f * x0);
-		const float a0_Dur2_3 = a0_Dur2 * 3.f;
-		const float a0 = a0_Dur2 / Duration2;
-
-		_a = -0.5f * (a0_Dur2 + 6.f * v0_Dur + 12.f * x0) / Duration5;
-		_b = 0.5f * (a0_Dur2_3 + 16.f * v0_Dur + 30.f * x0) / Duration4;
-		_c = -0.5f * (a0_Dur2_3 + 12.f * v0_Dur + 20.f * x0) / Duration3;
-		_d = 0.5f * a0;
-		_v0 = v0;
-		_x0 = x0;
-		_sign = sign;
 	}
 }
 //---------------------------------------------------------------------
