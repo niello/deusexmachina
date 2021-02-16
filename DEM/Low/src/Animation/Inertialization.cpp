@@ -88,7 +88,7 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			float TranslationSpeed = 0.f;
 			if (dt > 0.f) //!!!and PrevPose2[i] is valid and exists
 			{
-				const auto& Prev2Tfm = PrevPose2[i];
+				const auto& Prev2Tfm = PrevPose2[BoneIdx];
 
 				if (ScaleMagnitude != 0.f)
 				{
