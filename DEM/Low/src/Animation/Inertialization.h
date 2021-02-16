@@ -25,11 +25,34 @@ protected:
 		float _x0;
 		float _sign;
 
-		void Prepare(float x0, float v0, float Duration);
+		void Prepare(float x0, float v0, float Duration, float sign);
 
 		DEM_FORCE_INLINE float Evaluate(float t) const
 		{
 			return _sign * ((((((_a * t) + _b) * t + _c) * t + _d) * t + _v0) * t + _x0);
+		}
+	};
+
+	struct CQuinticCurve4
+	{
+		acl::Vector4_32 _a;
+		acl::Vector4_32 _b;
+		acl::Vector4_32 _c;
+		acl::Vector4_32 _d;
+		acl::Vector4_32 _v0;
+		acl::Vector4_32 _x0;
+		acl::Vector4_32 _sign;
+
+		void Prepare(acl::Vector4_32 x0, acl::Vector4_32 v0, acl::Vector4_32 Duration, acl::Vector4_32 sign);
+
+		DEM_FORCE_INLINE acl::Vector4_32 Evaluate(acl::Vector4_32Arg0 t) const
+		{
+			auto Result = acl::vector_mul_add(_a, t, _b);
+			Result = acl::vector_mul_add(Result, t, _c);
+			Result = acl::vector_mul_add(Result, t, _d);
+			Result = acl::vector_mul_add(Result, t, _v0);
+			Result = acl::vector_mul_add(Result, t, _x0);
+			return acl::vector_mul(Result, _sign); //!!!TODO PERF:can use mm_xor_ps with signed zeros in _sign!
 		}
 	};
 
@@ -38,14 +61,24 @@ protected:
 		acl::Vector4_32 ScaleAxis;
 		acl::Vector4_32 RotationAxis;
 		acl::Vector4_32 TranslationDir;
-		CQuinticCurve   ScaleParams;
-		CQuinticCurve   RotationParams;
-		CQuinticCurve   TranslationParams;
+		//CQuinticCurve   ScaleParams;
+		//CQuinticCurve   RotationParams;
+		//CQuinticCurve   TranslationParams;
 
 		DEM_ALLOCATE_ALIGNED(alignof(CBoneDiff));
 	};
 
-	CFixedArray<CBoneDiff> _BoneDiffs;
+	struct CBoneCurves
+	{
+		CQuinticCurve4 ScaleParams;
+		CQuinticCurve4 RotationParams;
+		CQuinticCurve4 TranslationParams;
+
+		DEM_ALLOCATE_ALIGNED(alignof(CBoneDiff));
+	};
+
+	CFixedArray<CBoneDiff>   _BoneDiffs; //!!!bases!
+	CFixedArray<CBoneCurves> _Curves;
 
 public:
 
