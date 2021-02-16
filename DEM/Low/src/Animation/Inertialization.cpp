@@ -64,7 +64,7 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			const auto& Prev1Tfm = PrevPose1[BoneIdx];
 
 			const auto Scale = acl::vector_sub(Prev1Tfm.scale, CurrTfm.scale);
-			float ScaleMagnitude = acl::vector_length3(Scale);
+			const float ScaleMagnitude = acl::vector_length3(Scale);
 			if (ScaleMagnitude != 0.f)
 				BoneDiff.ScaleAxis = acl::vector_div(Scale, acl::vector_set(ScaleMagnitude)); //???PERF: or vector_mul(Scale, 1.f / ScaleMagnitude)?
 
@@ -79,7 +79,7 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			}
 
 			const auto Translation = acl::vector_sub(Prev1Tfm.translation, CurrTfm.translation);
-			float TranslationMagnitude = acl::vector_length3(Translation);
+			const float TranslationMagnitude = acl::vector_length3(Translation);
 			if (TranslationMagnitude != 0.f)
 				BoneDiff.TranslationDir = acl::vector_div(Translation, acl::vector_set(TranslationMagnitude)); //???PERF: or vector_mul(v, 1.f / mag)?
 
@@ -147,10 +147,6 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			acl::vector_unaligned_load_32((uint8_t*)&TranslationV0.v[0]),
 			acl::vector_unaligned_load_32((uint8_t*)&TranslationDurations.v[0]),
 			acl::vector_unaligned_load_32((uint8_t*)&TranslationSigns.v[0]));
-
-		//BoneDiff.ScaleParams.Prepare(ScaleMagnitude, ScaleSpeed, Dur, Sign);
-		//BoneDiff.RotationParams.Prepare(RotationAngle, RotationSpeed, Dur, Sign);
-		//BoneDiff.TranslationParams.Prepare(TranslationMagnitude, TranslationSpeed, Dur, Sign);
 	}
 }
 //---------------------------------------------------------------------
@@ -171,6 +167,7 @@ void CInertializationPoseDiff::ApplyTo(CPoseBuffer& Target, float ElapsedTime) c
 		const auto TranslationMagnitudes = FourCurves.TranslationParams.Evaluate(t);
 
 		// TODO PERF: calc vectorized sin and cos! 4 at a time! and use them to build quaternions!
+		// RTM vector_sin, vector_cos, later maybe vector_sincos?
 
 		const auto& BoneDiff0 = _BoneDiffs[BoneIdx];
 		auto& Tfm0 = Target[BoneIdx];
@@ -239,6 +236,21 @@ void CInertializationPoseDiff::CQuinticCurve::Prepare(float x0, float v0, float 
 }
 //---------------------------------------------------------------------
 
+//!!!DBG TMP!
+ACL_FORCE_INLINE acl::Vector4_32 ACL_SIMD_CALL vector_select(acl::Vector4_32Arg0 mask, acl::Vector4_32Arg1 if_true, acl::Vector4_32Arg2 if_false) //RTM_NO_EXCEPT
+{
+#if defined(ACL_AVX_INTRINSICS)
+	return _mm_blendv_ps(if_false, if_true, mask);
+#elif defined(ACL_SSE2_INTRINSICS)
+	return _mm_or_ps(_mm_andnot_ps(mask, if_false), _mm_and_ps(if_true, mask));
+#elif defined(ACL_NEON_INTRINSICS)
+	return vbslq_f32(mask, if_true, if_false);
+#else
+	return vector4f{ rtm_impl::select(mask.x, if_true.x, if_false.x), rtm_impl::select(mask.y, if_true.y, if_false.y), rtm_impl::select(mask.z, if_true.z, if_false.z), rtm_impl::select(mask.w, if_true.w, if_false.w) };
+#endif
+}
+//---------------------------------------------------------------------
+
 void CInertializationPoseDiff::CQuinticCurve4::Prepare(acl::Vector4_32 x0, acl::Vector4_32 v0, acl::Vector4_32 Duration, acl::Vector4_32 sign)
 {
 	const auto Duration2 = acl::vector_mul(Duration, Duration);
@@ -264,23 +276,21 @@ void CInertializationPoseDiff::CQuinticCurve4::Prepare(acl::Vector4_32 x0, acl::
 	_x0 = x0;
 	_sign = sign;
 
-	// FIXME: can write better?
+	//!!!TODO: when obtain mask, can check if all less than and early exit with all zero vectors!
 	// FIXME: ensure the mask is calculated once!
-	// TODO: need vector_select! Exists only in RTM, not in ACL 1.3.5!
-	/*
+	// TODO: need RTM vector_select! Exists only in RTM, not in ACL 1.3.5!
 	constexpr acl::Vector4_32 TINY_VECTOR{ TINY, TINY, TINY, TINY };
 	if (acl::vector_any_less_than(Duration5, TINY_VECTOR))
 	{
 		const auto Mask = acl::vector_less_than(Duration5, TINY_VECTOR);
-		_a = acl::vector_select(Mask, acl::vector_zero_32(), _a);
-		_b = acl::vector_select(Mask, acl::vector_zero_32(), _b);
-		_c = acl::vector_select(Mask, acl::vector_zero_32(), _c);
-		_d = acl::vector_select(Mask, acl::vector_zero_32(), _d);
-		_v0 = acl::vector_select(Mask, acl::vector_zero_32(), _v0);
-		_x0 = acl::vector_select(Mask, acl::vector_zero_32(), _x0);
-		_sign = acl::vector_select(Mask, acl::vector_zero_32(), _sign);
+		_a = vector_select(Mask, acl::vector_zero_32(), _a);
+		_b = vector_select(Mask, acl::vector_zero_32(), _b);
+		_c = vector_select(Mask, acl::vector_zero_32(), _c);
+		_d = vector_select(Mask, acl::vector_zero_32(), _d);
+		_v0 = vector_select(Mask, acl::vector_zero_32(), _v0);
+		_x0 = vector_select(Mask, acl::vector_zero_32(), _x0);
+		_sign = vector_select(Mask, acl::vector_zero_32(), _sign);
 	}
-	*/
 }
 //---------------------------------------------------------------------
 

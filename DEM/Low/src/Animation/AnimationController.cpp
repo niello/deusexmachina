@@ -289,9 +289,6 @@ void CAnimationController::ProcessInertialization()
 		else
 		{
 			_InertializationDeficit = std::max(0.f, _InertializationDeficit - _InertializationDt);
-
-			//!!!DBG TMP!
-			//for (size_t i = 0; i < 1000000; ++i)
 			_InertializationPoseDiff.ApplyTo(_CurrPose, _InertializationElapsedTime);
 		}
 	}
