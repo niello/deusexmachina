@@ -6,6 +6,7 @@ namespace DEM::Anim
 {
 
 ////////////////!!!DBG TMP!///////////////////
+// Copypaste from https://github.com/nfrechette/rtm in wait for ACL 2.0 release
 
 inline acl::Vector4_32 ACL_SIMD_CALL vector_round_bankers(acl::Vector4_32Arg0 input) //RTM_NO_EXCEPT
 {
@@ -79,8 +80,130 @@ inline void ACL_SIMD_CALL vector_sincos(acl::Vector4_32Arg0 input, acl::Vector4_
 }
 //---------------------------------------------------------------------
 
+inline acl::Vector4_32 ACL_SIMD_CALL vector_acos(acl::Vector4_32Arg0 input) //RTM_NO_EXCEPT
+{
+	// Use the identity: acos(value) + asin(value) = PI/2
+	// This ends up being: acos(value) = PI/2 - asin(value)
+	// Since asin(value) = PI/2 - sqrt(1.0 - polynomial(value))
+	// Our end result is acos(value) = sqrt(1.0 - polynomial(value))
+	// This means we can re-use the same polynomial as asin()
+	// See: GPGPU Programming for Games and Science (David H. Eberly)
+
+	// We first calculate our scale: sqrt(1.0 - abs(value))
+	// Use the sign bit to generate our absolute value since we'll re-use that constant
+	const __m128 sign_bit = _mm_set_ps1(-0.0F);
+	__m128 abs_value = _mm_andnot_ps(sign_bit, input);
+
+	// Calculate our value
+	__m128 result = _mm_add_ps(_mm_mul_ps(abs_value, _mm_set_ps1(-1.2690614339589956e-3F)), _mm_set_ps1(6.7072304676685235e-3F));
+	result = _mm_add_ps(_mm_mul_ps(result, abs_value), _mm_set_ps1(-1.7162031184398074e-2F));
+	result = _mm_add_ps(_mm_mul_ps(result, abs_value), _mm_set_ps1(3.0961594977611639e-2F));
+	result = _mm_add_ps(_mm_mul_ps(result, abs_value), _mm_set_ps1(-5.0207843052845647e-2F));
+	result = _mm_add_ps(_mm_mul_ps(result, abs_value), _mm_set_ps1(8.8986946573346160e-2F));
+	result = _mm_add_ps(_mm_mul_ps(result, abs_value), _mm_set_ps1(-2.1459960076929829e-1F));
+	result = _mm_add_ps(_mm_mul_ps(result, abs_value), _mm_set_ps1(1.5707963267948966F));
+
+	// Scale our result
+	__m128 scale = _mm_sqrt_ps(_mm_sub_ps(_mm_set_ps1(1.0F), abs_value));
+	result = _mm_mul_ps(result, scale);
+
+	// Normally the math is as follow:
+	// If input is positive: result
+	// If input is negative: PI - result = -result + PI
+
+	// As such, the offset is 0.0 when the input is positive and PI when negative
+	__m128 is_input_negative = _mm_cmplt_ps(input, _mm_setzero_ps());
+	__m128 offset = _mm_and_ps(is_input_negative, _mm_set_ps1(PI));
+
+	// And our result has the same sign of the input
+	__m128 input_sign = _mm_and_ps(input, sign_bit);
+	result = _mm_or_ps(result, input_sign);
+	return _mm_add_ps(result, offset);
+}
+//---------------------------------------------------------------------
+
+inline acl::Vector4_32 ACL_SIMD_CALL vector_atan(acl::Vector4_32Arg0 input) //RTM_NO_EXCEPT
+{
+	// Use a degree 13 minimax approximation polynomial
+	// See: GPGPU Programming for Games and Science (David H. Eberly)
+
+	// Discard our sign, we'll restore it later
+	const __m128i abs_mask = _mm_set_epi32(0x7FFFFFFFULL, 0x7FFFFFFFULL, 0x7FFFFFFFULL, 0x7FFFFFFFULL);
+	__m128 abs_value = _mm_and_ps(input, _mm_castsi128_ps(abs_mask));
+
+	// Compute our value
+	__m128 is_larger_than_one = _mm_cmpgt_ps(abs_value, _mm_set_ps1(1.0F));
+	__m128 reciprocal = acl::vector_reciprocal(abs_value);
+
+	__m128 x = acl::vector_blend(is_larger_than_one, reciprocal, abs_value);
+
+	__m128 x2 = _mm_mul_ps(x, x);
+
+	__m128 result = _mm_add_ps(_mm_mul_ps(x2, _mm_set_ps1(7.2128853633444123e-3F)), _mm_set_ps1(-3.5059680836411644e-2F));
+	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(8.1675882859940430e-2F));
+	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(-1.3374657325451267e-1F));
+	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(1.9856563505717162e-1F));
+	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(-3.3324998579202170e-1F));
+	result = _mm_add_ps(_mm_mul_ps(result, x2), _mm_set_ps1(1.0F));
+	result = _mm_mul_ps(result, x);
+
+	__m128 remapped = _mm_sub_ps(_mm_set_ps1(HALF_PI), result);
+
+	// pi/2 - result
+	result = acl::vector_blend(is_larger_than_one, remapped, result);
+
+	// Keep the original sign
+	return _mm_or_ps(result, _mm_and_ps(input, _mm_set_ps1(-0.0F)));
+}
+//---------------------------------------------------------------------
+
+inline acl::Vector4_32 ACL_SIMD_CALL vector_atan2(acl::Vector4_32Arg0 y, acl::Vector4_32Arg1 x) //RTM_NO_EXCEPT
+{
+	// If X == 0.0 and Y != 0.0, we return PI/2 with the sign of Y
+	// If X == 0.0 and Y == 0.0, we return 0.0
+	// If X > 0.0, we return atan(y/x)
+	// If X < 0.0, we return atan(y/x) + sign(Y) * PI
+	// See: https://en.wikipedia.org/wiki/Atan2#Definition_and_computation
+
+	const __m128 zero = _mm_setzero_ps();
+	__m128 is_x_zero = _mm_cmpeq_ps(x, zero);
+	__m128 is_y_zero = _mm_cmpeq_ps(y, zero);
+	__m128 inputs_are_zero = _mm_and_ps(is_x_zero, is_y_zero);
+
+	__m128 is_x_positive = _mm_cmpgt_ps(x, zero);
+
+	const __m128 sign_mask = _mm_set_ps(-0.0F, -0.0F, -0.0F, -0.0F);
+	__m128 y_sign = _mm_and_ps(y, sign_mask);
+
+	// If X == 0.0, our offset is PI/2 otherwise it is PI both with the sign of Y
+	__m128 half_pi = _mm_set_ps1(HALF_PI);
+	__m128 pi = _mm_set_ps1(PI);
+	__m128 offset = _mm_or_ps(_mm_and_ps(is_x_zero, half_pi), _mm_andnot_ps(is_x_zero, pi));
+	offset = _mm_or_ps(offset, y_sign);
+
+	// If X > 0.0, our offset is 0.0
+	offset = _mm_andnot_ps(is_x_positive, offset);
+
+	// If X == 0.0 and Y == 0.0, our offset is 0.0
+	offset = _mm_andnot_ps(inputs_are_zero, offset);
+
+	__m128 angle = _mm_div_ps(y, x);
+	__m128 value = vector_atan(angle);
+
+	// If X == 0.0, our value is 0.0 otherwise it is atan(y/x)
+	value = _mm_andnot_ps(is_x_zero, value);
+
+	// If X == 0.0 and Y == 0.0, our value is 0.0
+	value = _mm_andnot_ps(inputs_are_zero, value);
+
+	return _mm_add_ps(value, offset);
+}
+//---------------------------------------------------------------------
+
 //////////////////////////////////////////////
 
+// The sole purpose of this struct is to allow writing xyzw by index 0123.
+// Will RTM allow that with vector4f and quat4f without switch?
 struct alignas(16) CFloat4A
 {
 	float v[4];
@@ -88,8 +211,8 @@ struct alignas(16) CFloat4A
 	DEM_FORCE_INLINE float& operator[](UPTR i) { return v[i]; }
 	DEM_FORCE_INLINE float operator[](UPTR i) const { return v[i]; }
 
-	// FIXME: use RTM vector_load! Aligned if possible!
-	DEM_FORCE_INLINE operator acl::Vector4_32() const { return acl::vector_unaligned_load_32((uint8_t*)&v[0]); }
+	// FIXME: use RTM vector_load, otherwise is not portable! Aligned if possible!
+	DEM_FORCE_INLINE operator acl::Vector4_32() const { return _mm_load_ps(&v[0]); }
 };
 
 //???space - local vs world? or always skip root bone inertialization and work in local space only?
