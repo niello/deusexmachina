@@ -7,13 +7,6 @@ namespace DEM::Anim
 
 ////////////////!!!DBG TMP!///////////////////
 
-//!!!DBG TMP!
-ACL_FORCE_INLINE acl::Vector4_32 ACL_SIMD_CALL vector_select(acl::Vector4_32Arg0 mask, acl::Vector4_32Arg1 if_true, acl::Vector4_32Arg2 if_false) //RTM_NO_EXCEPT
-{
-	return _mm_or_ps(_mm_andnot_ps(mask, if_false), _mm_and_ps(if_true, mask));
-}
-//---------------------------------------------------------------------
-
 inline acl::Vector4_32 ACL_SIMD_CALL vector_round_bankers(acl::Vector4_32Arg0 input) //RTM_NO_EXCEPT
 {
 	// SSE4
@@ -88,31 +81,6 @@ inline void ACL_SIMD_CALL vector_sincos(acl::Vector4_32Arg0 input, acl::Vector4_
 
 //////////////////////////////////////////////
 
-// TODO PERF: vectorize too?
-static inline void PrepareQuinticSourceData(float& x0, float& v0, float& Duration, float& sign)
-{
-	// If x0 < 0, mirror for conveniency
-	if (x0 < 0.f)
-	{
-		x0 = -x0;
-		v0 = -v0;
-		sign = -1.f;
-	}
-	else sign = 1.f;
-
-	if (v0 > 0.f)
-	{
-		// Avoid overshooting when velocity is directed away from the target value
-		v0 = 0.f;
-	}
-	else if (v0 < 0.f)
-	{
-		// Clamp duration to ensure the curve is above zero for t = [0; Duration)
-		Duration = std::min(Duration, -5.f * x0 / v0);
-	}
-}
-//---------------------------------------------------------------------
-
 //???space - local vs world? or always skip root bone inertialization and work in local space only?
 //???support excluded bones like in UE4?
 void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuffer& PrevPose1, const CPoseBuffer& PrevPose2, float dt, float Duration)
@@ -120,16 +88,12 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 	struct alignas(16) CFloat4A { float v[4]; };
 	CFloat4A ScaleX0;
 	CFloat4A ScaleV0;
-	CFloat4A ScaleDurations;
-	CFloat4A ScaleSigns;
 	CFloat4A RotationX0;
 	CFloat4A RotationV0;
-	CFloat4A RotationDurations;
-	CFloat4A RotationSigns;
 	CFloat4A TranslationX0;
 	CFloat4A TranslationV0;
-	CFloat4A TranslationDurations;
-	CFloat4A TranslationSigns;
+
+	const auto VDuration = acl::vector_set(Duration);
 
 	const auto BoneCount = CurrPose.size();
 	_BoneDiffs.SetSize(BoneCount);
@@ -152,6 +116,7 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			if (ScaleMagnitude != 0.f)
 				BoneDiff.ScaleAxis = acl::vector_div(Scale, acl::vector_set(ScaleMagnitude)); //???PERF: or vector_mul(Scale, 1.f / ScaleMagnitude)?
 
+			// TODO PERF: collect quat w and calculate 4 acos vectorized instead of quat_get_angle?
 			const auto InvCurrRotation = acl::quat_conjugate(CurrTfm.rotation);
 			const auto Rotation = acl::quat_mul(Prev1Tfm.rotation, InvCurrRotation);
 			BoneDiff.RotationAxis = acl::quat_get_axis(Rotation);
@@ -204,33 +169,19 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 
 			ScaleX0.v[j] = ScaleMagnitude;
 			ScaleV0.v[j] = ScaleSpeed;
-			ScaleDurations.v[j] = Duration;
-			PrepareQuinticSourceData(ScaleX0.v[j], ScaleV0.v[j], ScaleDurations.v[j], ScaleSigns.v[j]);
-
 			RotationX0.v[j] = RotationAngle;
 			RotationV0.v[j] = RotationSpeed;
-			RotationDurations.v[j] = Duration;
-			PrepareQuinticSourceData(RotationX0.v[j], RotationV0.v[j], RotationDurations.v[j], RotationSigns.v[j]);
-
 			TranslationX0.v[j] = TranslationMagnitude;
 			TranslationV0.v[j] = TranslationSpeed;
-			TranslationDurations.v[j] = Duration;
-			PrepareQuinticSourceData(TranslationX0.v[j], TranslationV0.v[j], TranslationDurations.v[j], TranslationSigns.v[j]);
 		}
 
 		// FIXME: use RTM vector_load!
 		_Curves[i].ScaleParams.Prepare(acl::vector_unaligned_load_32((uint8_t*)&ScaleX0.v[0]),
-			acl::vector_unaligned_load_32((uint8_t*)&ScaleV0.v[0]),
-			acl::vector_unaligned_load_32((uint8_t*)&ScaleDurations.v[0]),
-			acl::vector_unaligned_load_32((uint8_t*)&ScaleSigns.v[0]));
+			acl::vector_unaligned_load_32((uint8_t*)&ScaleV0.v[0]), VDuration);
 		_Curves[i].RotationParams.Prepare(acl::vector_unaligned_load_32((uint8_t*)&RotationX0.v[0]),
-			acl::vector_unaligned_load_32((uint8_t*)&RotationV0.v[0]),
-			acl::vector_unaligned_load_32((uint8_t*)&RotationDurations.v[0]),
-			acl::vector_unaligned_load_32((uint8_t*)&RotationSigns.v[0]));
+			acl::vector_unaligned_load_32((uint8_t*)&RotationV0.v[0]), VDuration);
 		_Curves[i].TranslationParams.Prepare(acl::vector_unaligned_load_32((uint8_t*)&TranslationX0.v[0]),
-			acl::vector_unaligned_load_32((uint8_t*)&TranslationV0.v[0]),
-			acl::vector_unaligned_load_32((uint8_t*)&TranslationDurations.v[0]),
-			acl::vector_unaligned_load_32((uint8_t*)&TranslationSigns.v[0]));
+			acl::vector_unaligned_load_32((uint8_t*)&TranslationV0.v[0]), VDuration);
 	}
 }
 //---------------------------------------------------------------------
@@ -293,12 +244,29 @@ void CInertializationPoseDiff::ApplyTo(CPoseBuffer& Target, float ElapsedTime) c
 }
 //---------------------------------------------------------------------
 
-void CInertializationPoseDiff::CQuinticCurve4::Prepare(acl::Vector4_32 x0, acl::Vector4_32 v0, acl::Vector4_32 Duration, acl::Vector4_32 sign)
+// TODO PERF: vectorcall or ensure inlined?
+void CInertializationPoseDiff::CQuinticCurve4::Prepare(acl::Vector4_32 x0, acl::Vector4_32 v0, acl::Vector4_32 Duration)
 {
+	// If x0 < 0, mirror for conveniency
+	// TODO PERF: check if all_greater_equal check can optimize here
+	const auto XSignMask = acl::vector_greater_equal(x0, acl::vector_zero_32());
+	const auto sign = acl::vector_blend(XSignMask, acl::vector_set(1.f), acl::vector_set(-1.f));
+	x0 = acl::vector_mul(x0, sign);
+	v0 = acl::vector_mul(v0, sign);
+
+	// Avoid overshooting when velocity is directed away from the target value
+	// TODO PERF: can optimize duration clamping through v0 sign mask evaluation?
+	v0 = acl::vector_min(v0, acl::vector_zero_32());
+
+	// Clamp duration to ensure the curve is above zero for t = [0; Duration)
+	const auto ClampedDuration = acl::vector_min(Duration, acl::vector_div(acl::vector_mul(x0, -5.f), v0));
+	const auto NonZeroVMask = acl::vector_less_than(v0, acl::vector_zero_32());
+	Duration = acl::vector_blend(NonZeroVMask, ClampedDuration, Duration);
+
 	static_assert(TINY * TINY * TINY * TINY * TINY > 0.f, "Inertialization: tiny float is too tiny");
 	constexpr acl::Vector4_32 TINY_VECTOR{ TINY, TINY, TINY, TINY };
 	const auto Mask = acl::vector_less_than(Duration, TINY_VECTOR);
-	const auto InvDuration = vector_select(Mask, acl::vector_zero_32(), acl::vector_reciprocal(Duration));
+	const auto InvDuration = acl::vector_blend(Mask, acl::vector_zero_32(), acl::vector_reciprocal(Duration));
 	// TODO PERF: check if all_less_than early exit gives any boost
 	// TODO PERF: ensure the mask is not calculated twice. Use RTM for explicit mask reuse?
 
@@ -318,7 +286,7 @@ void CInertializationPoseDiff::CQuinticCurve4::Prepare(acl::Vector4_32 x0, acl::
 	_d = acl::vector_mul(a0_Dur2, HalfInvDuration2);
 	_v0 = v0;
 	_x0 = x0;
-	_sign = vector_select(Mask, acl::vector_zero_32(), sign); // Mul on zero sign will effectively zero out the result
+	_sign = acl::vector_blend(Mask, acl::vector_zero_32(), sign); // Mul on zero sign will effectively zero out the result
 }
 //---------------------------------------------------------------------
 

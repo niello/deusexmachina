@@ -25,7 +25,7 @@ protected:
 		acl::Vector4_32 _x0;
 		acl::Vector4_32 _sign;
 
-		void Prepare(acl::Vector4_32 x0, acl::Vector4_32 v0, acl::Vector4_32 Duration, acl::Vector4_32 sign);
+		void Prepare(acl::Vector4_32 x0, acl::Vector4_32 v0, acl::Vector4_32 Duration);
 
 		//!!!TODO PERF:can use mm_xor_ps with signed zeros in _sign! Then must vector_select x0 and v0 in Prepare()!
 		DEM_FORCE_INLINE acl::Vector4_32 Evaluate(acl::Vector4_32Arg0 t) const
