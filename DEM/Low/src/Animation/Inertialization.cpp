@@ -239,16 +239,16 @@ void CInertializationPoseDiff::ApplyTo(CPoseBuffer& Target, float ElapsedTime) c
 {
 	if (ElapsedTime < 0.f) ElapsedTime = 0.f;
 
-	const auto t = acl::vector_set(ElapsedTime);
+	const auto VTime = acl::vector_set(ElapsedTime);
 
 	const UPTR BoneCount = std::min(Target.size(), _BoneDiffs.size());
 	const UPTR TetradCount = (BoneCount + 3) / 4;
 	for (UPTR i = 0, BoneIdx = 0; i < TetradCount; ++i)
 	{
-		const auto& FourCurves = _Curves[i];
-		const auto ScaleMagnitudes = FourCurves.ScaleParams.Evaluate(t);
-		const auto RotationHalfAngles = acl::vector_mul(FourCurves.RotationParams.Evaluate(t), 0.5f);
-		const auto TranslationMagnitudes = FourCurves.TranslationParams.Evaluate(t);
+		const auto& FourCurveSets = _Curves[i];
+		const auto ScaleMagnitudes = FourCurveSets.ScaleParams.Evaluate(VTime);
+		const auto RotationHalfAngles = acl::vector_mul(FourCurveSets.RotationParams.Evaluate(VTime), 0.5f);
+		const auto TranslationMagnitudes = FourCurveSets.TranslationParams.Evaluate(VTime);
 
 		// FIXME: use RTM functions!
 		acl::Vector4_32 VSin, VCos;
