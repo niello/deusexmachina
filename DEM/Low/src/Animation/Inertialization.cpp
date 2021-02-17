@@ -81,17 +81,27 @@ inline void ACL_SIMD_CALL vector_sincos(acl::Vector4_32Arg0 input, acl::Vector4_
 
 //////////////////////////////////////////////
 
+struct alignas(16) CFloat4A
+{
+	float v[4];
+
+	DEM_FORCE_INLINE float& operator[](UPTR i) { return v[i]; }
+	DEM_FORCE_INLINE float operator[](UPTR i) const { return v[i]; }
+
+	// FIXME: use RTM vector_load! Aligned if possible!
+	DEM_FORCE_INLINE operator acl::Vector4_32() const { return acl::vector_unaligned_load_32((uint8_t*)&v[0]); }
+};
+
 //???space - local vs world? or always skip root bone inertialization and work in local space only?
 //???support excluded bones like in UE4?
 void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuffer& PrevPose1, const CPoseBuffer& PrevPose2, float dt, float Duration)
 {
-	struct alignas(16) CFloat4A { float v[4]; };
-	CFloat4A ScaleX0;
-	CFloat4A ScaleV0;
-	CFloat4A RotationX0;
-	CFloat4A RotationV0;
-	CFloat4A TranslationX0;
-	CFloat4A TranslationV0;
+	CFloat4A ScaleX0{};
+	CFloat4A ScaleV0{};
+	CFloat4A RotationX0{};
+	CFloat4A RotationV0{};
+	CFloat4A TranslationX0{};
+	CFloat4A TranslationV0{};
 
 	const auto VDuration = acl::vector_set(Duration);
 
@@ -150,12 +160,10 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 				{
 					const auto PrevRotation = acl::quat_mul(Prev2Tfm.rotation, InvCurrRotation);
 
-					// Get angle around an arbitrary axis
-					// TODO: to routine
+					// Get PrevRotation twist angle around a RotationAxis
+					// TODO PERF: vectorize if possible, atan2f is the slowest part of the Init()
 					const float Dot = acl::vector_dot3(BoneDiff.RotationAxis, PrevRotation);
-					const float RawAngle = 2.f * std::atan2f(Dot, acl::quat_get_w(PrevRotation)); // [-2PI; 2PI], convert to [-PI; PI]
-					const float PrevAngle = (RawAngle > PI) ? (RawAngle - TWO_PI) : (RawAngle < -PI) ? (RawAngle + TWO_PI) : RawAngle;
-
+					const float PrevAngle = 2.f * std::atan2f(Dot, acl::quat_get_w(PrevRotation)); // [-2PI; 2PI]
 					RotationSpeed = n_normangle_signed_pi(RotationAngle - PrevAngle) / dt;
 				}
 
@@ -167,21 +175,17 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 				}
 			}
 
-			ScaleX0.v[j] = ScaleMagnitude;
-			ScaleV0.v[j] = ScaleSpeed;
-			RotationX0.v[j] = RotationAngle;
-			RotationV0.v[j] = RotationSpeed;
-			TranslationX0.v[j] = TranslationMagnitude;
-			TranslationV0.v[j] = TranslationSpeed;
+			ScaleX0[j] = ScaleMagnitude;
+			ScaleV0[j] = ScaleSpeed;
+			RotationX0[j] = RotationAngle;
+			RotationV0[j] = RotationSpeed;
+			TranslationX0[j] = TranslationMagnitude;
+			TranslationV0[j] = TranslationSpeed;
 		}
 
-		// FIXME: use RTM vector_load!
-		_Curves[i].ScaleParams.Prepare(acl::vector_unaligned_load_32((uint8_t*)&ScaleX0.v[0]),
-			acl::vector_unaligned_load_32((uint8_t*)&ScaleV0.v[0]), VDuration);
-		_Curves[i].RotationParams.Prepare(acl::vector_unaligned_load_32((uint8_t*)&RotationX0.v[0]),
-			acl::vector_unaligned_load_32((uint8_t*)&RotationV0.v[0]), VDuration);
-		_Curves[i].TranslationParams.Prepare(acl::vector_unaligned_load_32((uint8_t*)&TranslationX0.v[0]),
-			acl::vector_unaligned_load_32((uint8_t*)&TranslationV0.v[0]), VDuration);
+		_Curves[i].ScaleParams.Prepare(ScaleX0, ScaleV0, VDuration);
+		_Curves[i].RotationParams.Prepare(RotationX0, RotationV0, VDuration);
+		_Curves[i].TranslationParams.Prepare(TranslationX0, TranslationV0, VDuration);
 	}
 }
 //---------------------------------------------------------------------
@@ -280,13 +284,14 @@ void CInertializationPoseDiff::CQuinticCurve4::Prepare(acl::Vector4_32 x0, acl::
 	const auto a0_Dur2 = acl::vector_max(acl::vector_zero_32(), acl::vector_sub(acl::vector_mul(v0_Dur, -8.f), acl::vector_mul(x0, 20.f)));
 	const auto a0_Dur2_3 = acl::vector_mul(a0_Dur2, 3.f);
 
+	_Duration = Duration;
 	_a = acl::vector_mul(acl::vector_mul_add(x0, 12.f, acl::vector_mul_add(v0_Dur, 6.f, a0_Dur2)), acl::vector_neg(HalfInvDuration5));
 	_b = acl::vector_mul(acl::vector_mul_add(x0, 30.f, acl::vector_mul_add(v0_Dur, 16.f, a0_Dur2_3)), HalfInvDuration4);
 	_c = acl::vector_mul(acl::vector_mul_add(x0, 20.f, acl::vector_mul_add(v0_Dur, 12.f, a0_Dur2_3)), acl::vector_neg(HalfInvDuration3));
 	_d = acl::vector_mul(a0_Dur2, HalfInvDuration2);
 	_v0 = v0;
 	_x0 = x0;
-	_sign = acl::vector_blend(Mask, acl::vector_zero_32(), sign); // Mul on zero sign will effectively zero out the result
+	_Sign = acl::vector_blend(Mask, acl::vector_zero_32(), sign); // Mul on zero sign will effectively zero out the result
 }
 //---------------------------------------------------------------------
 
