@@ -267,10 +267,13 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			const auto& Prev1Tfm = PrevPose1[BoneIdx];
 
 			const auto Scale = acl::vector_sub(Prev1Tfm.scale, CurrTfm.scale);
-			ScaleX0[j] = acl::vector_length3(Scale);
+			ScaleX0[j] = acl::vector_length_squared3(Scale);
 			const bool HasScale = (ScaleX0[j] != 0.f);
 			if (HasScale)
+			{
+				ScaleX0[j] = acl::sqrt(ScaleX0[j]);
 				BoneDiff.ScaleAxis = acl::vector_div(Scale, acl::vector_set(ScaleX0[j]));
+			}
 
 			const auto InvCurrRotation = acl::quat_conjugate(CurrTfm.rotation);
 			const auto Rotation = acl::quat_ensure_positive_w(acl::quat_mul(Prev1Tfm.rotation, InvCurrRotation));
@@ -285,10 +288,13 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			}
 
 			const auto Translation = acl::vector_sub(Prev1Tfm.translation, CurrTfm.translation);
-			TranslationX0[j] = acl::vector_length3(Translation);
+			TranslationX0[j] = acl::vector_length_squared3(Translation);
 			const bool HasTranslation = (TranslationX0[j] != 0.f);
 			if (HasTranslation)
+			{
+				TranslationX0[j] = acl::sqrt(TranslationX0[j]);
 				BoneDiff.TranslationDir = acl::vector_div(Translation, acl::vector_set(TranslationX0[j]));
+			}
 
 			if (CalcSpeed) //!!!and PrevPose2[i] is valid and exists (for vectorized can use validity mask!)
 			{
