@@ -275,9 +275,14 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			const auto InvCurrRotation = acl::quat_conjugate(CurrTfm.rotation);
 			const auto Rotation = acl::quat_ensure_positive_w(acl::quat_mul(Prev1Tfm.rotation, InvCurrRotation));
 			RotationQuatW0[j] = acl::quat_get_w(Rotation);
-			const bool HasRotation = (RotationQuatW0[j] != 1.f); // Angle = 0 when w = 1
+			const bool HasRotation = (RotationQuatW0[j] < 1.f); // Angle = 0 when w = 1
 			if (HasRotation)
-				BoneDiff.RotationAxis = acl::quat_get_axis(Rotation);
+			{
+				// Get quaternion axis knowing that rotation is non-zero
+				// NB: sqrt not vectorized because it is very fast and RotationAxis is used later in this loop
+				const float QuatScale = acl::sqrt(1.f - RotationQuatW0[j] * RotationQuatW0[j]);
+				BoneDiff.RotationAxis = acl::vector_div(Rotation, acl::vector_set(QuatScale));
+			}
 
 			const auto Translation = acl::vector_sub(Prev1Tfm.translation, CurrTfm.translation);
 			TranslationX0[j] = acl::vector_length3(Translation);
