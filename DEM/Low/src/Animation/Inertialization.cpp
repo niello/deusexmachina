@@ -8,6 +8,24 @@ namespace DEM::Anim
 ////////////////!!!DBG TMP!///////////////////
 // Copypaste from https://github.com/nfrechette/rtm in wait for ACL 2.0 release
 
+ACL_FORCE_INLINE acl::Vector4_32 ACL_SIMD_CALL vector_equal(acl::Vector4_32Arg0 lhs, acl::Vector4_32Arg1 rhs) //RTM_NO_EXCEPT
+{
+	return _mm_cmpeq_ps(lhs, rhs);
+}
+//---------------------------------------------------------------------
+
+ACL_FORCE_INLINE acl::Vector4_32 ACL_SIMD_CALL vector_greater_than(acl::Vector4_32Arg0 lhs, acl::Vector4_32Arg1 rhs) //RTM_NO_EXCEPT
+{
+	return _mm_cmpgt_ps(lhs, rhs);
+}
+//---------------------------------------------------------------------
+
+ACL_FORCE_INLINE acl::Vector4_32 ACL_SIMD_CALL vector_less_than(acl::Vector4_32Arg0 lhs, acl::Vector4_32Arg1 rhs) //RTM_NO_EXCEPT
+{
+	return _mm_cmplt_ps(lhs, rhs);
+}
+//---------------------------------------------------------------------
+
 inline acl::Vector4_32 ACL_SIMD_CALL vector_round_bankers(acl::Vector4_32Arg0 input) //RTM_NO_EXCEPT
 {
 	// SSE4
@@ -220,13 +238,16 @@ struct alignas(16) CFloat4A
 void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuffer& PrevPose1, const CPoseBuffer& PrevPose2, float dt, float Duration)
 {
 	CFloat4A ScaleX0{};
-	CFloat4A ScaleV0{};
-	CFloat4A RotationX0{};
-	CFloat4A RotationV0{};
+	CFloat4A ScaleX1{};
+	CFloat4A RotationQuatW0{};
+	CFloat4A RotationQuatW1{};
+	CFloat4A RotationPrevDot{};
 	CFloat4A TranslationX0{};
-	CFloat4A TranslationV0{};
+	CFloat4A TranslationX1{};
 
 	const auto VDuration = acl::vector_set(Duration);
+	const auto VInvDt = acl::vector_reciprocal(acl::vector_set(dt));
+	const bool CalcSpeed = (dt > 0.f);
 
 	const auto BoneCount = CurrPose.size();
 	_BoneDiffs.SetSize(BoneCount);
@@ -239,71 +260,90 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 		for (UPTR j = 0; (j < 4) && (BoneIdx < BoneCount); ++j, ++BoneIdx)
 		{
 			//!!!if PrevPose1[i] is invalid or does not exist, continue;
+			//(for vectorized can use validity mask or zero out x0! Or ignore at all? Invalid will not be processed in ApplyTo())
 
 			auto& BoneDiff = _BoneDiffs[BoneIdx];
 			const auto& CurrTfm = CurrPose[BoneIdx];
 			const auto& Prev1Tfm = PrevPose1[BoneIdx];
 
 			const auto Scale = acl::vector_sub(Prev1Tfm.scale, CurrTfm.scale);
-			const float ScaleMagnitude = acl::vector_length3(Scale);
-			if (ScaleMagnitude != 0.f)
-				BoneDiff.ScaleAxis = acl::vector_div(Scale, acl::vector_set(ScaleMagnitude)); //???PERF: or vector_mul(Scale, 1.f / ScaleMagnitude)?
+			ScaleX0[j] = acl::vector_length3(Scale);
+			const bool HasScale = (ScaleX0[j] != 0.f);
+			if (HasScale)
+				BoneDiff.ScaleAxis = acl::vector_div(Scale, acl::vector_set(ScaleX0[j]));
 
-			// TODO PERF: collect quat w and calculate 4 acos vectorized instead of quat_get_angle?
 			const auto InvCurrRotation = acl::quat_conjugate(CurrTfm.rotation);
-			const auto Rotation = acl::quat_mul(Prev1Tfm.rotation, InvCurrRotation);
-			BoneDiff.RotationAxis = acl::quat_get_axis(Rotation);
-			float RotationAngle = acl::quat_get_angle(Rotation); // [0; 2PI], then turn to [0; PI] by flipping axis direction
-			if (RotationAngle > PI)
-			{
-				BoneDiff.RotationAxis = acl::vector_neg(BoneDiff.RotationAxis);
-				RotationAngle = TWO_PI - RotationAngle;
-			}
+			const auto Rotation = acl::quat_ensure_positive_w(acl::quat_mul(Prev1Tfm.rotation, InvCurrRotation));
+			RotationQuatW0[j] = acl::quat_get_w(Rotation);
+			const bool HasRotation = (RotationQuatW0[j] != 1.f); // Angle = 0 when w = 1
+			if (HasRotation)
+				BoneDiff.RotationAxis = acl::quat_get_axis(Rotation);
 
 			const auto Translation = acl::vector_sub(Prev1Tfm.translation, CurrTfm.translation);
-			const float TranslationMagnitude = acl::vector_length3(Translation);
-			if (TranslationMagnitude != 0.f)
-				BoneDiff.TranslationDir = acl::vector_div(Translation, acl::vector_set(TranslationMagnitude)); //???PERF: or vector_mul(v, 1.f / mag)?
+			TranslationX0[j] = acl::vector_length3(Translation);
+			const bool HasTranslation = (TranslationX0[j] != 0.f);
+			if (HasTranslation)
+				BoneDiff.TranslationDir = acl::vector_div(Translation, acl::vector_set(TranslationX0[j]));
 
-			float ScaleSpeed = 0.f;
-			float RotationSpeed = 0.f;
-			float TranslationSpeed = 0.f;
-			if (dt > 0.f) //!!!and PrevPose2[i] is valid and exists
+			if (CalcSpeed) //!!!and PrevPose2[i] is valid and exists (for vectorized can use validity mask!)
 			{
 				const auto& Prev2Tfm = PrevPose2[BoneIdx];
 
-				if (ScaleMagnitude != 0.f)
+				if (HasScale)
 				{
 					const auto PrevScale = acl::vector_sub(Prev2Tfm.scale, CurrTfm.scale);
-					const float PrevMagnitude = acl::vector_dot3(PrevScale, BoneDiff.ScaleAxis);
-					ScaleSpeed = (ScaleMagnitude - PrevMagnitude) / dt;
+					ScaleX1[j] = acl::vector_dot3(PrevScale, BoneDiff.ScaleAxis);
 				}
 
-				if (RotationAngle != 0.f)
+				if (HasRotation)
 				{
+					// Remember data for calculation of PrevRotation twist angle around a RotationAxis
+					//???FIXME: ensure positive w here too?! Will narrow atan2 range?
 					const auto PrevRotation = acl::quat_mul(Prev2Tfm.rotation, InvCurrRotation);
-
-					// Get PrevRotation twist angle around a RotationAxis
-					// TODO PERF: vectorize if possible, atan2f is the slowest part of the Init()
-					const float Dot = acl::vector_dot3(BoneDiff.RotationAxis, PrevRotation);
-					const float PrevAngle = 2.f * std::atan2f(Dot, acl::quat_get_w(PrevRotation)); // [-2PI; 2PI]
-					RotationSpeed = n_normangle_signed_pi(RotationAngle - PrevAngle) / dt;
+					RotationQuatW1[j] = acl::quat_get_w(PrevRotation);
+					RotationPrevDot[j] = acl::vector_dot3(BoneDiff.RotationAxis, PrevRotation);
 				}
 
-				if (TranslationMagnitude != 0.f)
+				if (HasTranslation)
 				{
 					const auto PrevTranslation = acl::vector_sub(Prev2Tfm.translation, CurrTfm.translation);
-					const float PrevMagnitude = acl::vector_dot3(Translation, BoneDiff.TranslationDir);
-					TranslationSpeed = (TranslationMagnitude - PrevMagnitude) / dt;
+					TranslationX1[j] = acl::vector_dot3(Translation, BoneDiff.TranslationDir);
 				}
 			}
+		}
 
-			ScaleX0[j] = ScaleMagnitude;
-			ScaleV0[j] = ScaleSpeed;
-			RotationX0[j] = RotationAngle;
-			RotationV0[j] = RotationSpeed;
-			TranslationX0[j] = TranslationMagnitude;
-			TranslationV0[j] = TranslationSpeed;
+		// Get rotation angles from quat W. Deferred to vectorize acos.
+		const auto RotationX0 = acl::vector_mul(vector_acos(RotationQuatW0), 2.f); // [0; PI] due to positive w
+
+		// Calculate speeds
+		acl::Vector4_32 ScaleV0, RotationV0, TranslationV0;
+		if (CalcSpeed)
+		{
+			const auto ScaleMask = vector_equal(ScaleX0, acl::vector_zero_32());
+			ScaleV0 = acl::vector_blend(ScaleMask, acl::vector_zero_32(), acl::vector_mul(acl::vector_sub(ScaleX0, ScaleX1), VInvDt));
+
+			const auto TranslationMask = vector_equal(ScaleX0, acl::vector_zero_32());
+			TranslationV0 = acl::vector_blend(TranslationMask, acl::vector_zero_32(), acl::vector_mul(acl::vector_sub(TranslationX0, TranslationX1), VInvDt));
+
+			// Get PrevRotation twist angle around a RotationAxis. Deferred to vectorize atan2.
+			const auto RotationX1 = acl::vector_mul(vector_atan2(RotationPrevDot, RotationQuatW1), 2.f); // [-2PI; 2PI]
+			auto AngleDiff = acl::vector_sub(RotationX0, RotationX1); // [0; PI] - [-2PI; 2PI] => [-2PI; 3PI]
+
+			// Normalize AngleDiff from [-2PI; 3PI] to [-PI; PI]
+			// TODO PERF: can write better? See RTM?
+			const auto AngleDiffLessMinusPiMask = vector_less_than(AngleDiff, acl::vector_set(-PI));
+			const auto AngleDiffGreaterPiMask = vector_greater_than(AngleDiff, acl::vector_set(PI));
+			AngleDiff = acl::vector_blend(AngleDiffLessMinusPiMask, acl::vector_add(AngleDiff, acl::vector_set(TWO_PI)), AngleDiff);
+			AngleDiff = acl::vector_blend(AngleDiffGreaterPiMask, acl::vector_sub(AngleDiff, acl::vector_set(TWO_PI)), AngleDiff);
+
+			const auto RotationMask = vector_equal(RotationX0, acl::vector_zero_32());
+			RotationV0 = acl::vector_blend(RotationMask, acl::vector_zero_32(), acl::vector_mul(AngleDiff, VInvDt));
+		}
+		else
+		{
+			ScaleV0 = acl::vector_zero_32();
+			RotationV0 = acl::vector_zero_32();
+			TranslationV0 = acl::vector_zero_32();
 		}
 
 		_Curves[i].ScaleParams.Prepare(ScaleX0, ScaleV0, VDuration);
