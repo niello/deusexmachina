@@ -312,13 +312,13 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 					//???FIXME: ensure positive w here too?! Will narrow atan2 range?
 					const auto PrevRotation = acl::quat_mul(Prev2Tfm.rotation, InvCurrRotation);
 					RotationQuatW1[j] = acl::quat_get_w(PrevRotation);
-					RotationPrevDot[j] = acl::vector_dot3(BoneDiff.RotationAxis, PrevRotation);
+					RotationPrevDot[j] = acl::vector_dot3(PrevRotation, BoneDiff.RotationAxis);
 				}
 
 				if (HasTranslation)
 				{
 					const auto PrevTranslation = acl::vector_sub(Prev2Tfm.translation, CurrTfm.translation);
-					TranslationX1[j] = acl::vector_dot3(Translation, BoneDiff.TranslationDir);
+					TranslationX1[j] = acl::vector_dot3(PrevTranslation, BoneDiff.TranslationDir);
 				}
 			}
 		}
