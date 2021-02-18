@@ -333,7 +333,7 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			const auto ScaleMask = vector_equal(ScaleX0, acl::vector_zero_32());
 			ScaleV0 = acl::vector_blend(ScaleMask, acl::vector_zero_32(), acl::vector_mul(acl::vector_sub(ScaleX0, ScaleX1), VInvDt));
 
-			const auto TranslationMask = vector_equal(ScaleX0, acl::vector_zero_32());
+			const auto TranslationMask = vector_equal(TranslationX0, acl::vector_zero_32());
 			TranslationV0 = acl::vector_blend(TranslationMask, acl::vector_zero_32(), acl::vector_mul(acl::vector_sub(TranslationX0, TranslationX1), VInvDt));
 
 			// Get PrevRotation twist angle around a RotationAxis. Deferred to vectorize atan2.
