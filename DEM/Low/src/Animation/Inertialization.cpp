@@ -1,6 +1,6 @@
 #include "Inertialization.h"
 #include <Animation/PoseBuffer.h>
-#include <Math/Math.h> // FIXME: for PI, search in ACL/RTM?!
+#include <Math/Math.h> // FIXME: for PI, search in ACL/RTM?! acl::k_pi_32, rtm::constants::pi() etc
 
 namespace DEM::Anim
 {
@@ -220,23 +220,83 @@ inline acl::Vector4_32 ACL_SIMD_CALL vector_atan2(acl::Vector4_32Arg0 y, acl::Ve
 
 //////////////////////////////////////////////
 
-// The sole purpose of this struct is to allow writing xyzw by index 0123.
-// Will RTM allow that with vector4f and quat4f without switch?
-struct alignas(16) CFloat4A
+static inline void ACL_SIMD_CALL PrepareCurves(acl::Vector4_32 x0, acl::Vector4_32 v0,
+	acl::Vector4_32 Duration, CQuinticCurve4& Curves)
 {
-	float v[4];
+	// If x0 < 0, mirror for conveniency
+	// TODO PERF: check if all_greater_equal check can optimize here
+	const auto XSignMask = acl::vector_greater_equal(x0, acl::vector_zero_32());
+	const auto sign = acl::vector_blend(XSignMask, acl::vector_set(1.f), acl::vector_set(-1.f));
+	x0 = acl::vector_mul(x0, sign);
+	v0 = acl::vector_mul(v0, sign);
 
-	DEM_FORCE_INLINE float& operator[](UPTR i) { return v[i]; }
-	DEM_FORCE_INLINE float operator[](UPTR i) const { return v[i]; }
+	// Avoid overshooting when velocity is directed away from the target value
+	// TODO PERF: can optimize duration clamping through v0 sign mask evaluation?
+	v0 = acl::vector_min(v0, acl::vector_zero_32());
 
-	// FIXME: use RTM vector_load, otherwise is not portable! Aligned if possible!
-	DEM_FORCE_INLINE operator acl::Vector4_32() const { return _mm_load_ps(&v[0]); }
-};
+	// Clamp duration to ensure the curve is above zero for t = [0; Duration)
+	const auto ClampedDuration = acl::vector_min(Duration, acl::vector_div(acl::vector_mul(x0, -5.f), v0));
+	const auto NonZeroVMask = acl::vector_less_than(v0, acl::vector_zero_32());
+	Duration = acl::vector_blend(NonZeroVMask, ClampedDuration, Duration);
+
+	static_assert(TINY * TINY * TINY * TINY * TINY > 0.f, "Inertialization: tiny float is too tiny");
+	constexpr acl::Vector4_32 TINY_VECTOR{ TINY, TINY, TINY, TINY };
+	const auto Mask = acl::vector_less_than(Duration, TINY_VECTOR);
+	const auto InvDuration = acl::vector_blend(Mask, acl::vector_zero_32(), acl::vector_reciprocal(Duration));
+	// TODO PERF: check if all_less_than early exit gives any boost
+	// TODO PERF: ensure the mask is not calculated twice. Use RTM for explicit mask reuse?
+
+	const auto HalfInvDuration = acl::vector_mul(InvDuration, 0.5f);
+	const auto HalfInvDuration2 = acl::vector_mul(InvDuration, HalfInvDuration);
+	const auto HalfInvDuration3 = acl::vector_mul(InvDuration, HalfInvDuration2);
+	const auto HalfInvDuration4 = acl::vector_mul(InvDuration, HalfInvDuration3);
+	const auto HalfInvDuration5 = acl::vector_mul(InvDuration, HalfInvDuration4);
+
+	const auto v0_Dur = acl::vector_mul(v0, Duration);
+	const auto a0_Dur2 = acl::vector_max(acl::vector_zero_32(), acl::vector_sub(acl::vector_mul(v0_Dur, -8.f), acl::vector_mul(x0, 20.f)));
+	const auto a0_Dur2_3 = acl::vector_mul(a0_Dur2, 3.f);
+
+	Curves._Duration = Duration;
+	Curves._a = acl::vector_mul(acl::vector_mul_add(x0, 12.f, acl::vector_mul_add(v0_Dur, 6.f, a0_Dur2)), acl::vector_neg(HalfInvDuration5));
+	Curves._b = acl::vector_mul(acl::vector_mul_add(x0, 30.f, acl::vector_mul_add(v0_Dur, 16.f, a0_Dur2_3)), HalfInvDuration4);
+	Curves._c = acl::vector_mul(acl::vector_mul_add(x0, 20.f, acl::vector_mul_add(v0_Dur, 12.f, a0_Dur2_3)), acl::vector_neg(HalfInvDuration3));
+	Curves._d = acl::vector_mul(a0_Dur2, HalfInvDuration2);
+	Curves._v0 = v0;
+	Curves._x0 = x0;
+	Curves._Sign = acl::vector_blend(Mask, acl::vector_zero_32(), sign); // Mul on zero sign will effectively zero out the result
+}
+//---------------------------------------------------------------------
+
+static DEM_FORCE_INLINE acl::Vector4_32 ACL_SIMD_CALL EvaluateCurves(acl::Vector4_32Arg0 Time, const CQuinticCurve4& Curves)
+{
+	const auto t = acl::vector_min(Time, Curves._Duration); // or mask = (Time >= _Duration) and set 0.f results by it
+	auto Result = acl::vector_mul_add(Curves._a, t, Curves._b);
+	Result = acl::vector_mul_add(Result, t, Curves._c);
+	Result = acl::vector_mul_add(Result, t, Curves._d);
+	Result = acl::vector_mul_add(Result, t, Curves._v0);
+	Result = acl::vector_mul_add(Result, t, Curves._x0);
+	//!!!TODO PERF: can use sign mask instead of mul?!
+	return acl::vector_mul(Result, Curves._Sign);
+}
+//---------------------------------------------------------------------
 
 //???space - local vs world? or always skip root bone inertialization and work in local space only?
 //???support excluded bones like in UE4?
 void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuffer& PrevPose1, const CPoseBuffer& PrevPose2, float dt, float Duration)
 {
+	// The sole purpose of this struct is to allow writing xyzw by index 0123.
+	// Will RTM allow that with vector4f and quat4f without a switch-case?
+	struct alignas(16) CFloat4A
+	{
+		float v[4];
+
+		DEM_FORCE_INLINE float& operator[](UPTR i) { return v[i]; }
+		DEM_FORCE_INLINE float operator[](UPTR i) const { return v[i]; }
+
+		// FIXME: use RTM vector_load, otherwise is not portable! Aligned if possible!
+		DEM_FORCE_INLINE operator acl::Vector4_32() const { return _mm_load_ps(&v[0]); }
+	};
+
 	CFloat4A ScaleX0{};
 	CFloat4A ScaleX1{};
 	CFloat4A RotationQuatW0{};
@@ -250,11 +310,11 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 	const bool CalcSpeed = (dt > 0.f);
 
 	const auto BoneCount = CurrPose.size();
-	_BoneDiffs.SetSize(BoneCount);
-	n_assert_dbg(IsAligned16(_BoneDiffs.data()));
+	_Axes.SetSize(BoneCount);
+	n_assert_dbg(IsAligned<alignof(CBoneAxes)>(_Axes.data()));
 	const auto TetradCount = (BoneCount + 3) / 4;
 	_Curves.SetSize(TetradCount);
-	n_assert_dbg(IsAligned16(_Curves.data()));
+	n_assert_dbg(IsAligned<alignof(CBoneCurves)>(_Curves.data()));
 	for (UPTR i = 0, BoneIdx = 0; i < TetradCount; ++i)
 	{
 		for (UPTR j = 0; (j < 4) && (BoneIdx < BoneCount); ++j, ++BoneIdx)
@@ -262,7 +322,7 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			//!!!if PrevPose1[i] is invalid or does not exist, continue;
 			//(for vectorized can use validity mask or zero out x0! Or ignore at all? Invalid will not be processed in ApplyTo())
 
-			auto& BoneDiff = _BoneDiffs[BoneIdx];
+			auto& BoneAxes = _Axes[BoneIdx];
 			const auto& CurrTfm = CurrPose[BoneIdx];
 			const auto& Prev1Tfm = PrevPose1[BoneIdx];
 
@@ -272,7 +332,7 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			if (HasScale)
 			{
 				ScaleX0[j] = acl::sqrt(ScaleX0[j]);
-				BoneDiff.ScaleAxis = acl::vector_div(Scale, acl::vector_set(ScaleX0[j]));
+				BoneAxes.ScaleAxis = acl::vector_div(Scale, acl::vector_set(ScaleX0[j]));
 			}
 
 			const auto InvCurrRotation = acl::quat_conjugate(CurrTfm.rotation);
@@ -284,7 +344,7 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 				// Get quaternion axis knowing that rotation is non-zero
 				// NB: sqrt not vectorized because it is very fast and RotationAxis is used later in this loop
 				const float QuatScale = acl::sqrt(1.f - RotationQuatW0[j] * RotationQuatW0[j]);
-				BoneDiff.RotationAxis = acl::vector_div(Rotation, acl::vector_set(QuatScale));
+				BoneAxes.RotationAxis = acl::vector_div(Rotation, acl::vector_set(QuatScale));
 			}
 
 			const auto Translation = acl::vector_sub(Prev1Tfm.translation, CurrTfm.translation);
@@ -293,7 +353,7 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			if (HasTranslation)
 			{
 				TranslationX0[j] = acl::sqrt(TranslationX0[j]);
-				BoneDiff.TranslationDir = acl::vector_div(Translation, acl::vector_set(TranslationX0[j]));
+				BoneAxes.TranslationDir = acl::vector_div(Translation, acl::vector_set(TranslationX0[j]));
 			}
 
 			if (CalcSpeed) //!!!and PrevPose2[i] is valid and exists (for vectorized can use validity mask!)
@@ -303,22 +363,22 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 				if (HasScale)
 				{
 					const auto PrevScale = acl::vector_sub(Prev2Tfm.scale, CurrTfm.scale);
-					ScaleX1[j] = acl::vector_dot3(PrevScale, BoneDiff.ScaleAxis);
+					ScaleX1[j] = acl::vector_dot3(PrevScale, BoneAxes.ScaleAxis);
 				}
 
 				if (HasRotation)
 				{
 					// Remember data for calculation of PrevRotation twist angle around a RotationAxis
-					//???FIXME: ensure positive w here too?! Will narrow atan2 range?
+					//???PERF: ensure positive w here too?! Will narrow atan2 range?
 					const auto PrevRotation = acl::quat_mul(Prev2Tfm.rotation, InvCurrRotation);
 					RotationQuatW1[j] = acl::quat_get_w(PrevRotation);
-					RotationPrevDot[j] = acl::vector_dot3(PrevRotation, BoneDiff.RotationAxis);
+					RotationPrevDot[j] = acl::vector_dot3(PrevRotation, BoneAxes.RotationAxis);
 				}
 
 				if (HasTranslation)
 				{
 					const auto PrevTranslation = acl::vector_sub(Prev2Tfm.translation, CurrTfm.translation);
-					TranslationX1[j] = acl::vector_dot3(PrevTranslation, BoneDiff.TranslationDir);
+					TranslationX1[j] = acl::vector_dot3(PrevTranslation, BoneAxes.TranslationDir);
 				}
 			}
 		}
@@ -357,9 +417,9 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			TranslationV0 = acl::vector_zero_32();
 		}
 
-		_Curves[i].ScaleParams.Prepare(ScaleX0, ScaleV0, VDuration);
-		_Curves[i].RotationParams.Prepare(RotationX0, RotationV0, VDuration);
-		_Curves[i].TranslationParams.Prepare(TranslationX0, TranslationV0, VDuration);
+		PrepareCurves(ScaleX0, ScaleV0, VDuration, _Curves[i].Scale);
+		PrepareCurves(RotationX0, RotationV0, VDuration, _Curves[i].Rotation);
+		PrepareCurves(TranslationX0, TranslationV0, VDuration, _Curves[i].Translation);
 	}
 }
 //---------------------------------------------------------------------
@@ -370,102 +430,54 @@ void CInertializationPoseDiff::ApplyTo(CPoseBuffer& Target, float ElapsedTime) c
 
 	const auto VTime = acl::vector_set(ElapsedTime);
 
-	const UPTR BoneCount = std::min(Target.size(), _BoneDiffs.size());
+	const UPTR BoneCount = std::min(Target.size(), _Axes.size());
 	const UPTR TetradCount = (BoneCount + 3) / 4;
 	for (UPTR i = 0, BoneIdx = 0; i < TetradCount; ++i)
 	{
-		const auto& FourCurveSets = _Curves[i];
-		const auto ScaleMagnitudes = FourCurveSets.ScaleParams.Evaluate(VTime);
-		const auto RotationHalfAngles = acl::vector_mul(FourCurveSets.RotationParams.Evaluate(VTime), 0.5f);
-		const auto TranslationMagnitudes = FourCurveSets.TranslationParams.Evaluate(VTime);
+		const auto ScaleMagnitudes = EvaluateCurves(VTime, _Curves[i].Scale);
+		const auto RotationHalfAngles = acl::vector_mul(EvaluateCurves(VTime, _Curves[i].Rotation), 0.5f);
+		const auto TranslationMagnitudes = EvaluateCurves(VTime, _Curves[i].Translation);
 
-		// FIXME: use RTM functions!
+		// FIXME: use RTM functions! Will they have sincos?
 		acl::Vector4_32 VSin, VCos;
 		vector_sincos(RotationHalfAngles, VSin, VCos);
 
-		const auto& BoneDiff0 = _BoneDiffs[BoneIdx];
+		const auto& BoneAxes0 = _Axes[BoneIdx];
 		auto& Tfm0 = Target[BoneIdx];
-		Tfm0.scale = acl::vector_mul_add(BoneDiff0.ScaleAxis, acl::vector_mix_xxxx(ScaleMagnitudes), Tfm0.scale);
-		auto Quat0 = acl::vector_mul(acl::vector_mix_xxxx(VSin), BoneDiff0.RotationAxis);
+		Tfm0.scale = acl::vector_mul_add(BoneAxes0.ScaleAxis, acl::vector_mix_xxxx(ScaleMagnitudes), Tfm0.scale);
+		auto Quat0 = acl::vector_mul(acl::vector_mix_xxxx(VSin), BoneAxes0.RotationAxis);
 		Quat0 = acl::vector_mix<acl::VectorMix::X, acl::VectorMix::Y, acl::VectorMix::Z, acl::VectorMix::A>(Quat0, VCos);
 		Tfm0.rotation = acl::quat_mul(Quat0, Tfm0.rotation);
-		Tfm0.translation = acl::vector_mul_add(BoneDiff0.TranslationDir, acl::vector_mix_xxxx(TranslationMagnitudes), Tfm0.translation);
+		Tfm0.translation = acl::vector_mul_add(BoneAxes0.TranslationDir, acl::vector_mix_xxxx(TranslationMagnitudes), Tfm0.translation);
 		if (++BoneIdx >= BoneCount) break;
 
-		const auto& BoneDiff1 = _BoneDiffs[BoneIdx];
+		const auto& BoneAxes1 = _Axes[BoneIdx];
 		auto& Tfm1 = Target[BoneIdx];
-		Tfm1.scale = acl::vector_mul_add(BoneDiff1.ScaleAxis, acl::vector_mix_yyyy(ScaleMagnitudes), Tfm1.scale);
-		auto Quat1 = acl::vector_mul(acl::vector_mix_yyyy(VSin), BoneDiff1.RotationAxis);
+		Tfm1.scale = acl::vector_mul_add(BoneAxes1.ScaleAxis, acl::vector_mix_yyyy(ScaleMagnitudes), Tfm1.scale);
+		auto Quat1 = acl::vector_mul(acl::vector_mix_yyyy(VSin), BoneAxes1.RotationAxis);
 		Quat1 = acl::vector_mix<acl::VectorMix::X, acl::VectorMix::Y, acl::VectorMix::Z, acl::VectorMix::B>(Quat1, VCos);
 		Tfm1.rotation = acl::quat_mul(Quat1, Tfm1.rotation);
-		Tfm1.translation = acl::vector_mul_add(BoneDiff1.TranslationDir, acl::vector_mix_yyyy(TranslationMagnitudes), Tfm1.translation);
+		Tfm1.translation = acl::vector_mul_add(BoneAxes1.TranslationDir, acl::vector_mix_yyyy(TranslationMagnitudes), Tfm1.translation);
 		if (++BoneIdx >= BoneCount) break;
 
-		const auto& BoneDiff2 = _BoneDiffs[BoneIdx];
+		const auto& BoneAxes2 = _Axes[BoneIdx];
 		auto& Tfm2 = Target[BoneIdx];
-		Tfm2.scale = acl::vector_mul_add(BoneDiff2.ScaleAxis, acl::vector_mix_zzzz(ScaleMagnitudes), Tfm2.scale);
-		auto Quat2 = acl::vector_mul(acl::vector_mix_zzzz(VSin), BoneDiff2.RotationAxis);
+		Tfm2.scale = acl::vector_mul_add(BoneAxes2.ScaleAxis, acl::vector_mix_zzzz(ScaleMagnitudes), Tfm2.scale);
+		auto Quat2 = acl::vector_mul(acl::vector_mix_zzzz(VSin), BoneAxes2.RotationAxis);
 		Quat2 = acl::vector_mix<acl::VectorMix::X, acl::VectorMix::Y, acl::VectorMix::Z, acl::VectorMix::C>(Quat2, VCos);
 		Tfm2.rotation = acl::quat_mul(Quat2, Tfm2.rotation);
-		Tfm2.translation = acl::vector_mul_add(BoneDiff2.TranslationDir, acl::vector_mix_zzzz(TranslationMagnitudes), Tfm2.translation);
+		Tfm2.translation = acl::vector_mul_add(BoneAxes2.TranslationDir, acl::vector_mix_zzzz(TranslationMagnitudes), Tfm2.translation);
 		if (++BoneIdx >= BoneCount) break;
 
-		const auto& BoneDiff3 = _BoneDiffs[BoneIdx];
+		const auto& BoneAxes3 = _Axes[BoneIdx];
 		auto& Tfm3 = Target[BoneIdx];
-		Tfm3.scale = acl::vector_mul_add(BoneDiff3.ScaleAxis, acl::vector_mix_wwww(ScaleMagnitudes), Tfm3.scale);
-		auto Quat3 = acl::vector_mul(acl::vector_mix_wwww(VSin), BoneDiff3.RotationAxis);
+		Tfm3.scale = acl::vector_mul_add(BoneAxes3.ScaleAxis, acl::vector_mix_wwww(ScaleMagnitudes), Tfm3.scale);
+		auto Quat3 = acl::vector_mul(acl::vector_mix_wwww(VSin), BoneAxes3.RotationAxis);
 		Quat3 = acl::vector_mix<acl::VectorMix::X, acl::VectorMix::Y, acl::VectorMix::Z, acl::VectorMix::D>(Quat3, VCos);
 		Tfm3.rotation = acl::quat_mul(Quat3, Tfm3.rotation);
-		Tfm3.translation = acl::vector_mul_add(BoneDiff3.TranslationDir, acl::vector_mix_wwww(TranslationMagnitudes), Tfm3.translation);
+		Tfm3.translation = acl::vector_mul_add(BoneAxes3.TranslationDir, acl::vector_mix_wwww(TranslationMagnitudes), Tfm3.translation);
 		if (++BoneIdx >= BoneCount) break;
 	}
-}
-//---------------------------------------------------------------------
-
-// TODO PERF: vectorcall or ensure inlined?
-void CInertializationPoseDiff::CQuinticCurve4::Prepare(acl::Vector4_32 x0, acl::Vector4_32 v0, acl::Vector4_32 Duration)
-{
-	// If x0 < 0, mirror for conveniency
-	// TODO PERF: check if all_greater_equal check can optimize here
-	const auto XSignMask = acl::vector_greater_equal(x0, acl::vector_zero_32());
-	const auto sign = acl::vector_blend(XSignMask, acl::vector_set(1.f), acl::vector_set(-1.f));
-	x0 = acl::vector_mul(x0, sign);
-	v0 = acl::vector_mul(v0, sign);
-
-	// Avoid overshooting when velocity is directed away from the target value
-	// TODO PERF: can optimize duration clamping through v0 sign mask evaluation?
-	v0 = acl::vector_min(v0, acl::vector_zero_32());
-
-	// Clamp duration to ensure the curve is above zero for t = [0; Duration)
-	const auto ClampedDuration = acl::vector_min(Duration, acl::vector_div(acl::vector_mul(x0, -5.f), v0));
-	const auto NonZeroVMask = acl::vector_less_than(v0, acl::vector_zero_32());
-	Duration = acl::vector_blend(NonZeroVMask, ClampedDuration, Duration);
-
-	static_assert(TINY * TINY * TINY * TINY * TINY > 0.f, "Inertialization: tiny float is too tiny");
-	constexpr acl::Vector4_32 TINY_VECTOR{ TINY, TINY, TINY, TINY };
-	const auto Mask = acl::vector_less_than(Duration, TINY_VECTOR);
-	const auto InvDuration = acl::vector_blend(Mask, acl::vector_zero_32(), acl::vector_reciprocal(Duration));
-	// TODO PERF: check if all_less_than early exit gives any boost
-	// TODO PERF: ensure the mask is not calculated twice. Use RTM for explicit mask reuse?
-
-	const auto HalfInvDuration = acl::vector_mul(InvDuration, 0.5f);
-	const auto HalfInvDuration2 = acl::vector_mul(InvDuration, HalfInvDuration);
-	const auto HalfInvDuration3 = acl::vector_mul(InvDuration, HalfInvDuration2);
-	const auto HalfInvDuration4 = acl::vector_mul(InvDuration, HalfInvDuration3);
-	const auto HalfInvDuration5 = acl::vector_mul(InvDuration, HalfInvDuration4);
-
-	const auto v0_Dur = acl::vector_mul(v0, Duration);
-	const auto a0_Dur2 = acl::vector_max(acl::vector_zero_32(), acl::vector_sub(acl::vector_mul(v0_Dur, -8.f), acl::vector_mul(x0, 20.f)));
-	const auto a0_Dur2_3 = acl::vector_mul(a0_Dur2, 3.f);
-
-	_Duration = Duration;
-	_a = acl::vector_mul(acl::vector_mul_add(x0, 12.f, acl::vector_mul_add(v0_Dur, 6.f, a0_Dur2)), acl::vector_neg(HalfInvDuration5));
-	_b = acl::vector_mul(acl::vector_mul_add(x0, 30.f, acl::vector_mul_add(v0_Dur, 16.f, a0_Dur2_3)), HalfInvDuration4);
-	_c = acl::vector_mul(acl::vector_mul_add(x0, 20.f, acl::vector_mul_add(v0_Dur, 12.f, a0_Dur2_3)), acl::vector_neg(HalfInvDuration3));
-	_d = acl::vector_mul(a0_Dur2, HalfInvDuration2);
-	_v0 = v0;
-	_x0 = x0;
-	_Sign = acl::vector_blend(Mask, acl::vector_zero_32(), sign); // Mul on zero sign will effectively zero out the result
 }
 //---------------------------------------------------------------------
 

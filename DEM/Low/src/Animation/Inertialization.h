@@ -11,57 +11,43 @@ namespace DEM::Anim
 {
 class CPoseBuffer;
 
+// Four quintic curves vectorized
+struct CQuinticCurve4
+{
+	acl::Vector4_32 _Duration;
+	acl::Vector4_32 _a;
+	acl::Vector4_32 _b;
+	acl::Vector4_32 _c;
+	acl::Vector4_32 _d;
+	acl::Vector4_32 _v0;
+	acl::Vector4_32 _x0;
+	acl::Vector4_32 _Sign;
+};
+
 class CInertializationPoseDiff final
 {
 protected:
 
-	struct CQuinticCurve4
-	{
-		acl::Vector4_32 _Duration;
-		acl::Vector4_32 _a;
-		acl::Vector4_32 _b;
-		acl::Vector4_32 _c;
-		acl::Vector4_32 _d;
-		acl::Vector4_32 _v0;
-		acl::Vector4_32 _x0;
-		acl::Vector4_32 _Sign;
-
-		void Prepare(acl::Vector4_32 x0, acl::Vector4_32 v0, acl::Vector4_32 Duration);
-
-		//!!!TODO PERF:can use mm_xor_ps with signed zeros in _sign! Then must vector_select x0 and v0 in Prepare()!
-		DEM_FORCE_INLINE acl::Vector4_32 Evaluate(acl::Vector4_32Arg0 Time) const
-		{
-			const auto t = acl::vector_min(Time, _Duration); // or mask = (Time >= _Duration) and set 0.f results by it
-			auto Result = acl::vector_mul_add(_a, t, _b);
-			Result = acl::vector_mul_add(Result, t, _c);
-			Result = acl::vector_mul_add(Result, t, _d);
-			Result = acl::vector_mul_add(Result, t, _v0);
-			Result = acl::vector_mul_add(Result, t, _x0);
-			return acl::vector_mul(Result, _Sign);
-		}
-	};
-
-	//???store BoneDiff4? 4 scale axes etc. When iterate, must correctly handle last 0-3 elements
-	struct CBoneDiff
+	struct CBoneAxes
 	{
 		acl::Vector4_32 ScaleAxis;
 		acl::Vector4_32 RotationAxis;
 		acl::Vector4_32 TranslationDir;
 
-		DEM_ALLOCATE_ALIGNED(alignof(CBoneDiff));
+		DEM_ALLOCATE_ALIGNED(alignof(CBoneAxes));
 	};
 
 	struct CBoneCurves
 	{
-		CQuinticCurve4 ScaleParams;
-		CQuinticCurve4 RotationParams;
-		CQuinticCurve4 TranslationParams;
+		CQuinticCurve4 Scale;
+		CQuinticCurve4 Rotation;
+		CQuinticCurve4 Translation;
 
-		DEM_ALLOCATE_ALIGNED(alignof(CBoneDiff));
+		DEM_ALLOCATE_ALIGNED(alignof(CBoneCurves));
 	};
 
-	CFixedArray<CBoneDiff>   _BoneDiffs; //!!!???rename to bases!?
-	CFixedArray<CBoneCurves> _Curves;
+	CFixedArray<CBoneAxes>   _Axes;   // Per bone
+	CFixedArray<CBoneCurves> _Curves; // Per 4 bones
 
 public:
 
