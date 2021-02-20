@@ -26,6 +26,15 @@ ACL_FORCE_INLINE acl::Vector4_32 ACL_SIMD_CALL vector_less_than(acl::Vector4_32A
 }
 //---------------------------------------------------------------------
 
+ACL_FORCE_INLINE acl::Vector4_32 ACL_SIMD_CALL vector_copy_sign(acl::Vector4_32Arg0 input, acl::Vector4_32Arg1 control_sign) //RTM_NO_EXCEPT
+{
+	const __m128 sign_bit = _mm_set_ps1(-0.0F);
+	__m128 signs = _mm_and_ps(sign_bit, control_sign);
+	__m128 abs_input = _mm_andnot_ps(sign_bit, input);
+	return _mm_or_ps(abs_input, signs);
+}
+//---------------------------------------------------------------------
+
 inline acl::Vector4_32 ACL_SIMD_CALL vector_round_bankers(acl::Vector4_32Arg0 input) //RTM_NO_EXCEPT
 {
 	// SSE4
@@ -172,49 +181,6 @@ inline acl::Vector4_32 ACL_SIMD_CALL vector_atan(acl::Vector4_32Arg0 input) //RT
 
 	// Keep the original sign
 	return _mm_or_ps(result, _mm_and_ps(input, _mm_set_ps1(-0.0F)));
-}
-//---------------------------------------------------------------------
-
-inline acl::Vector4_32 ACL_SIMD_CALL vector_atan2(acl::Vector4_32Arg0 y, acl::Vector4_32Arg1 x) //RTM_NO_EXCEPT
-{
-	// If X == 0.0 and Y != 0.0, we return PI/2 with the sign of Y
-	// If X == 0.0 and Y == 0.0, we return 0.0
-	// If X > 0.0, we return atan(y/x)
-	// If X < 0.0, we return atan(y/x) + sign(Y) * PI
-	// See: https://en.wikipedia.org/wiki/Atan2#Definition_and_computation
-
-	const __m128 zero = _mm_setzero_ps();
-	__m128 is_x_zero = _mm_cmpeq_ps(x, zero);
-	__m128 is_y_zero = _mm_cmpeq_ps(y, zero);
-	__m128 inputs_are_zero = _mm_and_ps(is_x_zero, is_y_zero);
-
-	__m128 is_x_positive = _mm_cmpgt_ps(x, zero);
-
-	const __m128 sign_mask = _mm_set_ps(-0.0F, -0.0F, -0.0F, -0.0F);
-	__m128 y_sign = _mm_and_ps(y, sign_mask);
-
-	// If X == 0.0, our offset is PI/2 otherwise it is PI both with the sign of Y
-	__m128 half_pi = _mm_set_ps1(HALF_PI);
-	__m128 pi = _mm_set_ps1(PI);
-	__m128 offset = _mm_or_ps(_mm_and_ps(is_x_zero, half_pi), _mm_andnot_ps(is_x_zero, pi));
-	offset = _mm_or_ps(offset, y_sign);
-
-	// If X > 0.0, our offset is 0.0
-	offset = _mm_andnot_ps(is_x_positive, offset);
-
-	// If X == 0.0 and Y == 0.0, our offset is 0.0
-	offset = _mm_andnot_ps(inputs_are_zero, offset);
-
-	__m128 angle = _mm_div_ps(y, x);
-	__m128 value = vector_atan(angle);
-
-	// If X == 0.0, our value is 0.0 otherwise it is atan(y/x)
-	value = _mm_andnot_ps(is_x_zero, value);
-
-	// If X == 0.0 and Y == 0.0, our value is 0.0
-	value = _mm_andnot_ps(inputs_are_zero, value);
-
-	return _mm_add_ps(value, offset);
 }
 //---------------------------------------------------------------------
 
@@ -369,8 +335,7 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 				if (HasRotation)
 				{
 					// Remember data for calculation of PrevRotation twist angle around a RotationAxis
-					//???PERF: ensure positive w here too?! Will narrow atan2 range?
-					const auto PrevRotation = acl::quat_mul(Prev2Tfm.rotation, InvCurrRotation);
+					const auto PrevRotation = acl::quat_ensure_positive_w(acl::quat_mul(Prev2Tfm.rotation, InvCurrRotation));
 					RotationQuatW1[j] = acl::quat_get_w(PrevRotation);
 					RotationPrevDot[j] = acl::vector_dot3(PrevRotation, BoneAxes.RotationAxis);
 				}
@@ -396,15 +361,16 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			const auto TranslationMask = vector_equal(TranslationX0, acl::vector_zero_32());
 			TranslationV0 = acl::vector_blend(TranslationMask, acl::vector_zero_32(), acl::vector_mul(acl::vector_sub(TranslationX0, TranslationX1), VInvDt));
 
-			// Get PrevRotation twist angle around a RotationAxis. Deferred to vectorize atan2.
-			const auto RotationX1 = acl::vector_mul(vector_atan2(RotationPrevDot, RotationQuatW1), 2.f); // [-2PI; 2PI]
-			auto AngleDiff = acl::vector_sub(RotationX0, RotationX1); // [0; PI] - [-2PI; 2PI] => [-2PI; 3PI]
+			// Get PrevRotation twist angle around a RotationAxis. Deferred to vectorize atan.
+			// Instead of full atan2 logic handle w = 0 manually, otherwise w > 0.
+			const auto Quat1ZeroWMask = vector_equal(RotationQuatW1, acl::vector_zero_32());
+			const auto SignedPi = vector_copy_sign(acl::vector_set(PI), RotationPrevDot);
+			const auto Quat1Angles = acl::vector_mul(vector_atan(acl::vector_div(RotationPrevDot, RotationQuatW1)), 2.f);
+			const auto RotationX1 = acl::vector_blend(Quat1ZeroWMask, SignedPi, Quat1Angles); // [-PI; PI]
+			auto AngleDiff = acl::vector_sub(RotationX0, RotationX1); // [0; PI] - [-PI; PI] => [-PI; 2PI]
 
-			// Normalize AngleDiff from [-2PI; 3PI] to [-PI; PI]
-			// TODO PERF: can write better? See RTM?
-			const auto AngleDiffLessMinusPiMask = vector_less_than(AngleDiff, acl::vector_set(-PI));
+			// Normalize AngleDiff from [-PI; 2PI] to [-PI; PI]
 			const auto AngleDiffGreaterPiMask = vector_greater_than(AngleDiff, acl::vector_set(PI));
-			AngleDiff = acl::vector_blend(AngleDiffLessMinusPiMask, acl::vector_add(AngleDiff, acl::vector_set(TWO_PI)), AngleDiff);
 			AngleDiff = acl::vector_blend(AngleDiffGreaterPiMask, acl::vector_sub(AngleDiff, acl::vector_set(TWO_PI)), AngleDiff);
 
 			const auto RotationMask = vector_equal(RotationX0, acl::vector_zero_32());
