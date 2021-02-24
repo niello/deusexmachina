@@ -3,6 +3,8 @@
 
 // Animation graph node that selects a child node and blends into it
 
+//!!!TODO: lazy eval conditions! (in a CConditionSelectorNode)
+
 namespace DEM::Anim
 {
 using PSelectorNodeBase = std::unique_ptr<class CSelectorNodeBase>;
@@ -20,7 +22,7 @@ protected:
 
 	CVariant* _pCurrVariant = nullptr;
 
-	virtual CVariant* SelectVariant() = 0;
+	virtual CVariant* SelectVariant(CAnimationUpdateContext& Context) = 0;
 
 public:
 
@@ -28,7 +30,8 @@ public:
 	virtual void Update(CAnimationUpdateContext& Context, float dt) override;
 	virtual void EvaluatePose(CPoseBuffer& Output) override;
 
-	virtual float GetAnimationLengthScaled() const override;
+	virtual float GetAnimationLengthScaled() const override { return _pCurrVariant ? _pCurrVariant->Node->GetAnimationLengthScaled() : 0.f; }
+	virtual bool  IsActive() const override { return _pCurrVariant && _pCurrVariant->Node->IsActive(); }
 };
 
 }

@@ -38,6 +38,7 @@ public:
 	virtual void EvaluatePose(CPoseBuffer& Output) override;
 
 	virtual float GetAnimationLengthScaled() const override;
+	virtual bool  IsActive() const override;
 };
 
 }

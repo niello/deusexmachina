@@ -43,6 +43,7 @@ public:
 	virtual void  EvaluatePose(CPoseBuffer& Output) override;
 
 	virtual float GetAnimationLengthScaled() const override;
+	//!!!TODO: override IsActive!
 
 	bool          AddSample(PAnimGraphNode&& Source, float Value);
 };

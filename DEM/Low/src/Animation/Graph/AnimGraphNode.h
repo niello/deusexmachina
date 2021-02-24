@@ -13,10 +13,6 @@ struct CAnimationUpdateContext;
 
 class CAnimGraphNode
 {
-protected:
-
-	//??? bool Active ?
-
 public:
 
 	virtual ~CAnimGraphNode() = default;
@@ -28,6 +24,7 @@ public:
 	virtual void  EvaluatePose(CPoseBuffer& Output) = 0;
 
 	virtual float GetAnimationLengthScaled() const { return 0.f; }
+	virtual bool  IsActive() const { return true; }
 };
 
 }

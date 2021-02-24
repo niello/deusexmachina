@@ -195,6 +195,25 @@ float CAnimationController::GetFloat(CStrID ID, float Default) const
 }
 //---------------------------------------------------------------------
 
+bool CAnimationController::SetBool(CStrID ID, bool Value)
+{
+	EParamType Type;
+	UPTR Index;
+	if (!FindParam(ID, &Type, &Index) || Type != EParamType::Bool) return false;
+	_BoolValues[Index] = Value;
+	return true;
+}
+//---------------------------------------------------------------------
+
+bool CAnimationController::GetBool(CStrID ID, bool Default) const
+{
+	EParamType Type;
+	UPTR Index;
+	if (!FindParam(ID, &Type, &Index) || Type != EParamType::Bool) return Default;
+	return _BoolValues[Index];
+}
+//---------------------------------------------------------------------
+
 float CAnimationController::GetLocomotionPhaseFromPose(const CSkeleton& Skeleton) const
 {
 	if (_LeftFootBoneIndex == INVALID_BONE_INDEX || _RightFootBoneIndex == INVALID_BONE_INDEX) return -1.f;

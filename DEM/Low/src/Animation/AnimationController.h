@@ -102,7 +102,10 @@ public:
 	float GetFloat(CStrID ID, float Default = 0.f) const;
 	float GetFloat(UPTR Index, float Default = 0.f) const { return (Index == INVALID_INDEX) ? Default : _FloatValues[Index]; }
 	// SetInt
-	// SetBool
+	bool  SetBool(CStrID ID, bool Value);
+	bool  SetBool(UPTR Index, bool Value) { if (Index == INVALID_INDEX) return false; _BoolValues[Index] = Value; return true; }
+	bool  GetBool(CStrID ID, bool Default = 0.f) const;
+	bool  GetBool(UPTR Index, bool Default = 0.f) const { return (Index == INVALID_INDEX) ? Default : _BoolValues[Index]; }
 	// SetStrID
 
 	float GetLocomotionPhaseFromPose(const CSkeleton& Skeleton) const;
