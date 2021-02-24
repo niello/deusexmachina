@@ -3,7 +3,7 @@
 
 // Animation graph node that selects a child node and blends into it
 
-//!!!TODO: lazy eval conditions! (in a CConditionSelectorNode)
+//!!!TODO: lazy eval and then cache conditions! (through a controller, use e.g. in a CConditionSelectorNode)
 
 namespace DEM::Anim
 {

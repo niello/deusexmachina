@@ -25,8 +25,6 @@ public:
 	CBoolSelectorNode(CStrID ParamID);
 
 	virtual void Init(CAnimationInitContext& Context) override;
-
-	virtual float GetAnimationLengthScaled() const override;
 };
 
 }
