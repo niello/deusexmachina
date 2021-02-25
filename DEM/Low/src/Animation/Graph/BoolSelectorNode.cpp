@@ -27,4 +27,20 @@ CSelectorNodeBase::CVariant* CBoolSelectorNode::SelectVariant(CAnimationUpdateCo
 }
 //---------------------------------------------------------------------
 
+void CBoolSelectorNode::SetTrueNode(PAnimGraphNode&& Node, float BlendTime, U32 InterruptionPriority)
+{
+	_TrueVariant.Node = std::move(Node);
+	_TrueVariant.BlendTime = BlendTime;
+	_TrueVariant.InterruptionPriority = InterruptionPriority;
+}
+//---------------------------------------------------------------------
+
+void CBoolSelectorNode::SetFalseNode(PAnimGraphNode&& Node, float BlendTime, U32 InterruptionPriority)
+{
+	_FalseVariant.Node = std::move(Node);
+	_FalseVariant.BlendTime = BlendTime;
+	_FalseVariant.InterruptionPriority = InterruptionPriority;
+}
+//---------------------------------------------------------------------
+
 }

@@ -28,7 +28,7 @@ enum class EParamType
 	Float = 0,
 	Int,
 	Bool,
-	StrID,
+	String,
 	Invalid // For inexistent params
 };
 
@@ -61,7 +61,7 @@ protected:
 	std::unique_ptr<float[]>                      _FloatValues;
 	std::unique_ptr<int[]>                        _IntValues;
 	std::unique_ptr<bool[]>                       _BoolValues;
-	std::unique_ptr<CStrID[]>                     _StrIDValues;
+	std::unique_ptr<CStrID[]>                     _StringValues;
 
 	U32                                           _UpdateCounter = 0;
 
@@ -92,24 +92,30 @@ public:
 	CAnimationController& operator =(CAnimationController&&) noexcept;
 	~CAnimationController();
 
-	void  Init(PAnimGraphNode&& GraphRoot, Resources::CResourceManager& ResMgr, CStrID LeftFootID = {}, CStrID RightFootID = {}, std::map<CStrID, float>&& Floats = {}, std::map<CStrID, int>&& Ints = {}, std::map<CStrID, bool>&& Bools = {}, std::map<CStrID, CStrID>&& StrIDs = {}, const std::map<CStrID, CStrID>& AssetOverrides = {});
-	void  Update(const CSkeleton& Target, float dt);
-	void  EvaluatePose(CSkeleton& Target);
+	void   Init(PAnimGraphNode&& GraphRoot, Resources::CResourceManager& ResMgr, CStrID LeftFootID = {}, CStrID RightFootID = {}, std::map<CStrID, float>&& Floats = {}, std::map<CStrID, int>&& Ints = {}, std::map<CStrID, bool>&& Bools = {}, std::map<CStrID, CStrID>&& Strings = {}, const std::map<CStrID, CStrID>& AssetOverrides = {});
+	void   Update(const CSkeleton& Target, float dt);
+	void   EvaluatePose(CSkeleton& Target);
 
-	bool  FindParam(CStrID ID, EParamType* pOutType = nullptr, UPTR* pOutIndex = nullptr) const;
-	bool  SetFloat(CStrID ID, float Value);
-	bool  SetFloat(UPTR Index, float Value) { if (Index == INVALID_INDEX) return false; _FloatValues[Index] = Value; return true; }
-	float GetFloat(CStrID ID, float Default = 0.f) const;
-	float GetFloat(UPTR Index, float Default = 0.f) const { return (Index == INVALID_INDEX) ? Default : _FloatValues[Index]; }
-	// SetInt
-	bool  SetBool(CStrID ID, bool Value);
-	bool  SetBool(UPTR Index, bool Value) { if (Index == INVALID_INDEX) return false; _BoolValues[Index] = Value; return true; }
-	bool  GetBool(CStrID ID, bool Default = 0.f) const;
-	bool  GetBool(UPTR Index, bool Default = 0.f) const { return (Index == INVALID_INDEX) ? Default : _BoolValues[Index]; }
-	// SetStrID
+	bool   FindParam(CStrID ID, EParamType* pOutType = nullptr, UPTR* pOutIndex = nullptr) const;
+	bool   SetFloat(CStrID ID, float Value);
+	bool   SetFloat(UPTR Index, float Value) { if (Index == INVALID_INDEX) return false; _FloatValues[Index] = Value; return true; }
+	float  GetFloat(CStrID ID, float Default = 0.f) const;
+	float  GetFloat(UPTR Index, float Default = 0.f) const { return (Index == INVALID_INDEX) ? Default : _FloatValues[Index]; }
+	bool   SetInt(CStrID ID, int Value);
+	bool   SetInt(UPTR Index, int Value) { if (Index == INVALID_INDEX) return false; _IntValues[Index] = Value; return true; }
+	int    GetInt(CStrID ID, int Default = 0.f) const;
+	int    GetInt(UPTR Index, int Default = 0.f) const { return (Index == INVALID_INDEX) ? Default : _IntValues[Index]; }
+	bool   SetBool(CStrID ID, bool Value);
+	bool   SetBool(UPTR Index, bool Value) { if (Index == INVALID_INDEX) return false; _BoolValues[Index] = Value; return true; }
+	bool   GetBool(CStrID ID, bool Default = 0.f) const;
+	bool   GetBool(UPTR Index, bool Default = 0.f) const { return (Index == INVALID_INDEX) ? Default : _BoolValues[Index]; }
+	bool   SetString(CStrID ID, CStrID Value);
+	bool   SetString(UPTR Index, CStrID Value) { if (Index == INVALID_INDEX) return false; _StringValues[Index] = Value; return true; }
+	CStrID GetString(CStrID ID, CStrID Default = CStrID::Empty) const;
+	CStrID GetString(UPTR Index, CStrID Default = CStrID::Empty) const { return (Index == INVALID_INDEX) ? Default : _StringValues[Index]; }
 
-	float GetLocomotionPhaseFromPose(const CSkeleton& Skeleton) const;
-	void  RequestInertialization(float Duration);
+	float  GetLocomotionPhaseFromPose(const CSkeleton& Skeleton) const;
+	void   RequestInertialization(float Duration);
 
 	const CSkeletonInfo* GetSkeletonInfo() const { return _SkeletonInfo.Get(); }
 	U32                  GetUpdateIndex() const { return _UpdateCounter; }

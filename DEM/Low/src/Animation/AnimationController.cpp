@@ -15,14 +15,14 @@ void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResource
 	std::map<CStrID, float>&& Floats,
 	std::map<CStrID, int>&& Ints,
 	std::map<CStrID, bool>&& Bools,
-	std::map<CStrID, CStrID>&& StrIDs,
+	std::map<CStrID, CStrID>&& Strings,
 	const std::map<CStrID, CStrID>& AssetOverrides)
 {
 	_Params.clear();
 	_FloatValues.reset();
 	_IntValues.reset();
 	_BoolValues.reset();
-	_StrIDValues.reset();
+	_StringValues.reset();
 
 	if (!Floats.empty())
 	{
@@ -36,7 +36,7 @@ void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResource
 			// Duplicate IDs aren't allowed
 			Ints.erase(ID);
 			Bools.erase(ID);
-			StrIDs.erase(ID);
+			Strings.erase(ID);
 		}
 	}
 
@@ -51,7 +51,7 @@ void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResource
 
 			// Duplicate IDs aren't allowed
 			Bools.erase(ID);
-			StrIDs.erase(ID);
+			Strings.erase(ID);
 		}
 	}
 
@@ -65,18 +65,18 @@ void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResource
 			_BoolValues[CurrIdx++] = DefaultValue;
 
 			// Duplicate IDs aren't allowed
-			StrIDs.erase(ID);
+			Strings.erase(ID);
 		}
 	}
 
-	if (!StrIDs.empty())
+	if (!Strings.empty())
 	{
 		UPTR CurrIdx = 0;
-		_StrIDValues.reset(new CStrID[StrIDs.size()]);
-		for (const auto [ID, DefaultValue] : StrIDs)
+		_StringValues.reset(new CStrID[Strings.size()]);
+		for (const auto [ID, DefaultValue] : Strings)
 		{
-			_Params.emplace(ID, std::pair{ EParamType::StrID, CurrIdx });
-			_StrIDValues[CurrIdx++] = DefaultValue;
+			_Params.emplace(ID, std::pair{ EParamType::String, CurrIdx });
+			_StringValues[CurrIdx++] = DefaultValue;
 		}
 	}
 
@@ -195,6 +195,25 @@ float CAnimationController::GetFloat(CStrID ID, float Default) const
 }
 //---------------------------------------------------------------------
 
+bool CAnimationController::SetInt(CStrID ID, int Value)
+{
+	EParamType Type;
+	UPTR Index;
+	if (!FindParam(ID, &Type, &Index) || Type != EParamType::Int) return false;
+	_IntValues[Index] = Value;
+	return true;
+}
+//---------------------------------------------------------------------
+
+int CAnimationController::GetInt(CStrID ID, int Default) const
+{
+	EParamType Type;
+	UPTR Index;
+	if (!FindParam(ID, &Type, &Index) || Type != EParamType::Int) return Default;
+	return _IntValues[Index];
+}
+//---------------------------------------------------------------------
+
 bool CAnimationController::SetBool(CStrID ID, bool Value)
 {
 	EParamType Type;
@@ -211,6 +230,25 @@ bool CAnimationController::GetBool(CStrID ID, bool Default) const
 	UPTR Index;
 	if (!FindParam(ID, &Type, &Index) || Type != EParamType::Bool) return Default;
 	return _BoolValues[Index];
+}
+//---------------------------------------------------------------------
+
+bool CAnimationController::SetString(CStrID ID, CStrID Value)
+{
+	EParamType Type;
+	UPTR Index;
+	if (!FindParam(ID, &Type, &Index) || Type != EParamType::String) return false;
+	_StringValues[Index] = Value;
+	return true;
+}
+//---------------------------------------------------------------------
+
+CStrID CAnimationController::GetString(CStrID ID, CStrID Default) const
+{
+	EParamType Type;
+	UPTR Index;
+	if (!FindParam(ID, &Type, &Index) || Type != EParamType::String) return Default;
+	return _StringValues[Index];
 }
 //---------------------------------------------------------------------
 

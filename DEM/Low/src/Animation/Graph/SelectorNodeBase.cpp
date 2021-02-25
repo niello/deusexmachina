@@ -16,7 +16,8 @@ void CSelectorNodeBase::Update(CAnimationUpdateContext& Context, float dt)
 	if (_pCurrVariant && !_pCurrVariant->Node->IsActive())
 		_pCurrVariant = nullptr;
 
-	auto pNewVariant = SelectVariant();
+	auto pNewVariant = SelectVariant(Context);
+	if (pNewVariant && !pNewVariant->Node) pNewVariant = nullptr;
 	if (pNewVariant != _pCurrVariant)
 	{
 		// NB: <= to allow children with the same priority to interrupt each other

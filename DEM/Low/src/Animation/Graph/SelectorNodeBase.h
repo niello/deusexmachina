@@ -3,8 +3,6 @@
 
 // Animation graph node that selects a child node and blends into it
 
-//!!!TODO: lazy eval and then cache conditions! (through a controller, use e.g. in a CConditionSelectorNode)
-
 namespace DEM::Anim
 {
 using PSelectorNodeBase = std::unique_ptr<class CSelectorNodeBase>;

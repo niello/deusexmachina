@@ -4,11 +4,13 @@
 
 // Animation graph node that selects a subnode based on a boolean value
 
+//!!!TODO: lazy eval and then cache conditions in a controller!
+
 namespace DEM::Anim
 {
-using PBoolSelectorNode = std::unique_ptr<class CBoolSelectorNode>;
+using PConditionalSelectorNode = std::unique_ptr<class CConditionalSelectorNode>;
 
-class CBoolSelectorNode : public CSelectorNodeBase
+class CConditionalSelectorNode : public CSelectorNodeBase
 {
 protected:
 
@@ -22,12 +24,9 @@ protected:
 
 public:
 
-	CBoolSelectorNode(CStrID ParamID);
+	CConditionalSelectorNode(CStrID ParamID);
 
 	virtual void Init(CAnimationInitContext& Context) override;
-
-	void SetTrueNode(PAnimGraphNode&& Node, float BlendTime = 0.f, U32 InterruptionPriority = 0);
-	void SetFalseNode(PAnimGraphNode&& Node, float BlendTime = 0.f, U32 InterruptionPriority = 0);
 };
 
 }

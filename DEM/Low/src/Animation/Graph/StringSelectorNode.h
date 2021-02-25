@@ -2,13 +2,13 @@
 #include <Animation/Graph/SelectorNodeBase.h>
 #include <Data/StringID.h>
 
-// Animation graph node that selects a subnode based on a boolean value
+// Animation graph node that selects a subnode based on a string value
 
 namespace DEM::Anim
 {
-using PBoolSelectorNode = std::unique_ptr<class CBoolSelectorNode>;
+using PStringSelectorNode = std::unique_ptr<class CStringSelectorNode>;
 
-class CBoolSelectorNode : public CSelectorNodeBase
+class CStringSelectorNode : public CSelectorNodeBase
 {
 protected:
 
@@ -22,12 +22,9 @@ protected:
 
 public:
 
-	CBoolSelectorNode(CStrID ParamID);
+	CStringSelectorNode(CStrID ParamID);
 
 	virtual void Init(CAnimationInitContext& Context) override;
-
-	void SetTrueNode(PAnimGraphNode&& Node, float BlendTime = 0.f, U32 InterruptionPriority = 0);
-	void SetFalseNode(PAnimGraphNode&& Node, float BlendTime = 0.f, U32 InterruptionPriority = 0);
 };
 
 }

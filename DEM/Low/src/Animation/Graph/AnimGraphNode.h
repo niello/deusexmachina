@@ -3,6 +3,8 @@
 
 // Base for all animation graph nodes
 
+// TODO: use serialization to save and load graphs?!
+
 namespace DEM::Anim
 {
 using PAnimGraphNode = std::unique_ptr<class CAnimGraphNode>;
