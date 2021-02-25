@@ -30,9 +30,9 @@ public:
 
 	CIntSelectorNode(CStrID ParamID);
 
-	void AddVariant(PAnimGraphNode&& Node, int From, int To, float BlendTime = 0.f, U32 InterruptionPriority = 0);
-
 	virtual void Init(CAnimationInitContext& Context) override;
+
+	void AddVariant(PAnimGraphNode&& Node, int From, int To, float BlendTime = 0.f, U32 InterruptionPriority = 0);
 };
 
 }

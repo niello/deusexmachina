@@ -23,7 +23,22 @@ void CStringSelectorNode::Init(CAnimationInitContext& Context)
 CSelectorNodeBase::CVariant* CStringSelectorNode::SelectVariant(CAnimationUpdateContext& Context)
 {
 	if (_ParamIndex == INVALID_INDEX) return nullptr;
-	return Context.Controller.GetBool(_ParamIndex) ? &_TrueVariant : &_FalseVariant;
+	const CStrID Value = Context.Controller.GetString(_ParamIndex);
+
+	// TODO: sort variants?
+	for (auto& Rec : _Variants)
+		if (Value == Rec.Value)
+			return &Rec.Variant;
+
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
+void CStringSelectorNode::AddVariant(PAnimGraphNode&& Node, CStrID Value, float BlendTime, U32 InterruptionPriority)
+{
+	// TODO: sort variants?
+	// TODO: DEFAULT VARIANT?!
+	_Variants.push_back({ { std::move(Node), BlendTime, InterruptionPriority }, Value });
 }
 //---------------------------------------------------------------------
 
