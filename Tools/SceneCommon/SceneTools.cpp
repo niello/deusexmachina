@@ -440,7 +440,7 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 
 	File.write(reinterpret_cast<const char*>(CompressedClip), CompressedClip->get_size());
 
-	Log.LogInfo(DestPath.filename().generic_string() + " " + std::to_string(File.tellp()) + " bytes saved");
+	Log.LogInfo(DestPath.filename().generic_string() + " " + std::to_string(File.tellp()) + " bytes saved" + (pLocomotionInfo ? ", including locomotion info" : ""));
 
 	return true;
 }

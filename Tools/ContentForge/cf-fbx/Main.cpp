@@ -1096,6 +1096,9 @@ public:
 			if (!SubMeshID.empty())
 			{
 				auto MtlIt = Ctx.MaterialMap.find(CStrID(SubMeshID.c_str()));
+				if (MtlIt == Ctx.MaterialMap.cend())
+					MtlIt = Ctx.MaterialMap.find(CStrID(GetValidResourceName(SubMeshID).c_str()));
+
 				if (MtlIt != Ctx.MaterialMap.cend())
 				{
 					fs::path MtlPath = MtlIt->second.GetValue<std::string>();
@@ -1446,6 +1449,11 @@ public:
 					RightFootIdx = std::distance(Nodes.begin(), ItRight);
 					LeftFootPositions.resize(FrameCount);
 					RightFootPositions.resize(FrameCount);
+				}
+				else
+				{
+					IsLocomotionClip = false;
+					Ctx.Log.LogWarning("Could not find leg bones in a locomotion clip. Locomotion flag is discarded.");
 				}
 			}
 
