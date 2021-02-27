@@ -13,7 +13,7 @@ CIntSelectorNode::CIntSelectorNode(CStrID ParamID)
 void CIntSelectorNode::Init(CAnimationInitContext& Context)
 {
 	EParamType ParamType;
-	if (!Context.Controller.FindParam(_ParamID, &ParamType, &_ParamIndex) || ParamType != EParamType::Bool)
+	if (!Context.Controller.FindParam(_ParamID, &ParamType, &_ParamIndex) || ParamType != EParamType::Int)
 		_ParamIndex = INVALID_INDEX;
 
 	CSelectorNodeBase::Init(Context);

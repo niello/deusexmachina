@@ -23,7 +23,7 @@ void CSelectorNodeBase::Update(CAnimationUpdateContext& Context, float dt)
 		// NB: <= to allow children with the same priority to interrupt each other
 		if (!pNewVariant || !_pCurrVariant || _pCurrVariant->InterruptionPriority <= pNewVariant->InterruptionPriority)
 		{
-			if (pNewVariant) Context.Controller.RequestInertialization(pNewVariant->BlendTime);
+			if (_pCurrVariant && pNewVariant) Context.Controller.RequestInertialization(pNewVariant->BlendTime);
 			_pCurrVariant = pNewVariant;
 		}
 	}
