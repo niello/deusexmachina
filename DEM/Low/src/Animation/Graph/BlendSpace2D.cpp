@@ -118,6 +118,69 @@ void CBlendSpace2D::Init(CAnimationInitContext& Context)
 			}
 		}
 
+		// Map contour edges to a separate array with contour adjacency info
+		for (size_t i = 0; i < TriCount; ++i)
+		{
+			auto& Tri = _Triangles[i];
+			if (Tri.Adjacent[eBC] == INVALID_INDEX)
+			{
+				Tri.Adjacent[eBC] = TriCount + _Contour.size();
+				_Contour.push_back({ i, eBC });
+			}
+			if (Tri.Adjacent[eCA] == INVALID_INDEX)
+			{
+				Tri.Adjacent[eCA] = TriCount + _Contour.size();
+				_Contour.push_back({ i, eCA });
+			}
+			if (Tri.Adjacent[eAB] == INVALID_INDEX)
+			{
+				Tri.Adjacent[eAB] = TriCount + _Contour.size();
+				_Contour.push_back({ i, eAB });
+			}
+		}
+
+		// Build contour adjacency info
+		const auto ContourSize = _Contour.size();
+		for (size_t i = 0; i < ContourSize - 1; ++i)
+		{
+			const auto& Edge1 = _Contour[i];
+			const auto& Tri1 = _Triangles[Edge1.TriIndex];
+			const CSample* pEdge1SampleA = nullptr;
+			const CSample* pEdge1SampleB = nullptr;
+			switch (Edge1.EdgeIndex)
+			{
+				case eAB: pEdge1SampleA = Tri1.Samples[vA]; pEdge1SampleB = Tri1.Samples[vB]; break;
+				case eBC: pEdge1SampleA = Tri1.Samples[vB]; pEdge1SampleB = Tri1.Samples[vC]; break;
+				case eCA: pEdge1SampleA = Tri1.Samples[vC]; pEdge1SampleB = Tri1.Samples[vA]; break;
+			}
+
+			for (size_t j = i + 1; j < ContourSize; ++j)
+			{
+				const auto& Edge2 = _Contour[j];
+				const auto& Tri2 = _Triangles[Edge2.TriIndex];
+				const CSample* pEdge2SampleA = nullptr;
+				const CSample* pEdge2SampleB = nullptr;
+				switch (Edge2.EdgeIndex)
+				{
+					case eAB: pEdge2SampleA = Tri2.Samples[vA]; pEdge2SampleB = Tri2.Samples[vB]; break;
+					case eBC: pEdge2SampleA = Tri2.Samples[vB]; pEdge2SampleB = Tri2.Samples[vC]; break;
+					case eCA: pEdge2SampleA = Tri2.Samples[vC]; pEdge2SampleB = Tri2.Samples[vA]; break;
+				}
+
+				if (pEdge1SampleA == pEdge2SampleB)
+				{
+					_Contour[i].Adjacent[vA] = j;
+					_Contour[j].Adjacent[vB] = i;
+				}
+				else if (pEdge1SampleB == pEdge2SampleA)
+				{
+					_Contour[i].Adjacent[vB] = j;
+					_Contour[j].Adjacent[vA] = i;
+				}
+			}
+		}
+
+		// Initialize sample subgraphs
 		for (auto& Sample : _Samples)
 			Sample.Source->Init(Context);
 
@@ -164,22 +227,23 @@ void CBlendSpace2D::Update(CAnimationUpdateContext& Context, float dt)
 	// FIXME: support degenerate cases - point or collinear!
 	float u, v, w;
 	size_t CurrTriIndex = 0;
+	const auto TriCount = _Triangles.size();
 	while (true)
 	{
-		const auto& Tri = _Triangles[CurrTriIndex];
-		const float apx = XInput - Tri.ax;
-		const float apy = YInput - Tri.ay;
-		v = (apx * Tri.acy - Tri.acx * apy) * Tri.InvDenominator;
-		w = (Tri.abx * apy - apx * Tri.aby) * Tri.InvDenominator;
+		const CTriangle* pTri = &_Triangles[CurrTriIndex];
+		const float apx = XInput - pTri->ax;
+		const float apy = YInput - pTri->ay;
+		v = (apx * pTri->acy - pTri->acx * apy) * pTri->InvDenominator;
+		w = (pTri->abx * apy - apx * pTri->aby) * pTri->InvDenominator;
 		u = 1.f - v - w;
 		const auto NegativeMask = (static_cast<int>(w < 0.f) << 2) | (static_cast<int>(v < 0.f) << 1) | static_cast<int>(u < 0.f);
 
 		// Zero mask means that all weights are positive and we are inside a triangle
 		if (!NegativeMask)
 		{
-			_pActiveSamples[0] = Tri.Samples[0]->Source.get();
-			_pActiveSamples[1] = Tri.Samples[1]->Source.get();
-			_pActiveSamples[2] = Tri.Samples[2]->Source.get();
+			_pActiveSamples[0] = pTri->Samples[0]->Source.get();
+			_pActiveSamples[1] = pTri->Samples[1]->Source.get();
+			_pActiveSamples[2] = pTri->Samples[2]->Source.get();
 			break;
 		}
 
@@ -194,56 +258,81 @@ void CBlendSpace2D::Update(CAnimationUpdateContext& Context, float dt)
 			case 6: EdgeIndex = (w > v) ? eAB : eCA; break; // B and C weights are negative, goto CA/AB
 		}
 
-		CurrTriIndex = Tri.Adjacent[EdgeIndex];
-		if (CurrTriIndex == INVALID_INDEX)
+		// If adjacent triangle exists, proceed to it
+		if (pTri->Adjacent[EdgeIndex] < TriCount)
 		{
-			// We moved outside the convex poly, project input onto the border segment
+			CurrTriIndex = pTri->Adjacent[EdgeIndex];
+			continue;
+		}
+
+		// We moved outside the convex poly, project input onto its contour
+		UPTR ContourWalkDirection = vC; // vA and vB are valid, vC is for undefined
+		const CEdge* pContourEdge = &_Contour[pTri->Adjacent[EdgeIndex] - TriCount];
+		n_assert_dbg(pContourEdge->TriIndex == CurrTriIndex && pContourEdge->EdgeIndex == EdgeIndex);
+		do
+		{
 			switch (EdgeIndex)
 			{
 				case eAB:
 				{
-					v = (apx * Tri.abx + apy * Tri.aby) / (Tri.abx * Tri.abx + Tri.aby * Tri.aby);
-					_pActiveSamples[0] = Tri.Samples[0]->Source.get();
-					_pActiveSamples[1] = Tri.Samples[1]->Source.get();
+					v = (apx * pTri->abx + apy * pTri->aby) / (pTri->abx * pTri->abx + pTri->aby * pTri->aby);
+					_pActiveSamples[0] = pTri->Samples[0]->Source.get();
+					_pActiveSamples[1] = pTri->Samples[1]->Source.get();
 					break;
 				}
 				case eBC:
 				{
 					// We do not cache this because it adds 2 floats to every triangle
 					// but is useful only for triangles with BC being a border edge
-					const float bcx = Tri.Samples[2]->XValue - Tri.Samples[1]->XValue;
-					const float bcy = Tri.Samples[2]->YValue - Tri.Samples[1]->YValue;
-					const float bpx = XInput - Tri.Samples[1]->XValue;
-					const float bpy = YInput - Tri.Samples[1]->YValue;
+					const float bcx = pTri->Samples[2]->XValue - pTri->Samples[1]->XValue;
+					const float bcy = pTri->Samples[2]->YValue - pTri->Samples[1]->YValue;
+					const float bpx = XInput - pTri->Samples[1]->XValue;
+					const float bpy = YInput - pTri->Samples[1]->YValue;
 
 					v = (bpx * bcx + bpy * bcy) / (bcx * bcx + bcy * bcy);
-					_pActiveSamples[0] = Tri.Samples[1]->Source.get();
-					_pActiveSamples[1] = Tri.Samples[2]->Source.get();
+					_pActiveSamples[0] = pTri->Samples[1]->Source.get();
+					_pActiveSamples[1] = pTri->Samples[2]->Source.get();
 					break;
 				}
 				case eCA: // Inverted to AC to reuse cached values
 				{
-					v = (apx * Tri.acx + apy * Tri.acy) / (Tri.acx * Tri.acx + Tri.acy * Tri.acy);
-					_pActiveSamples[0] = Tri.Samples[0]->Source.get();
-					_pActiveSamples[1] = Tri.Samples[2]->Source.get();
+					v = (apx * pTri->acx + apy * pTri->acy) / (pTri->acx * pTri->acx + pTri->acy * pTri->acy);
+					_pActiveSamples[0] = pTri->Samples[0]->Source.get();
+					_pActiveSamples[1] = pTri->Samples[2]->Source.get();
 					break;
 				}
 			}
 
-			v = std::clamp(v, 0.f, 1.f);
-			u = 1.f - v;
-			w = 0.f;
+			UPTR NewDirection;
+			if (v < 0.f) NewDirection = vA;
+			else if (v > 1.f) NewDirection = vB;
+			else break;
 
-			_pActiveSamples[2] = nullptr;
+			// If we changed contour walking direction, it can be an acute angle. Only one sample is active.
+			if (ContourWalkDirection != vC && ContourWalkDirection != NewDirection)
+			{
+				v = std::clamp(v, 0.f, 1.f);
+				break;
+			}
 
-			//!!!???apply distance-based anim speed scaling like in 1D but for both inputs!?
-			// Example from 1D:
-			// Scale animation speed for values outside the sample range
-			//!!!FIXME: can't clamp this way! should handle outside-a-convex case for this?
-			//const float ClampedInput = std::clamp(XInput, _Samples.front().XValue, _Samples.back().XValue);
-			//if (ClampedInput && ClampedInput != XInput) dt *= (XInput / ClampedInput);
-			break;
+			pContourEdge = &_Contour[pContourEdge->Adjacent[NewDirection]];
+			pTri = &_Triangles[pContourEdge->TriIndex];
+			EdgeIndex = pContourEdge->EdgeIndex;
 		}
+		while (true);
+
+		u = 1.f - v;
+		w = 0.f;
+
+		_pActiveSamples[2] = nullptr;
+
+		//!!!???apply distance-based anim speed scaling like in 1D but for both inputs!?
+		// Example from 1D:
+		// Scale animation speed for values outside the sample range
+		//!!!FIXME: can't clamp this way! should handle outside-a-convex case for this?
+		//const float ClampedInput = std::clamp(XInput, _Samples.front().XValue, _Samples.back().XValue);
+		//if (ClampedInput && ClampedInput != XInput) dt *= (XInput / ClampedInput);
+		break;
 	}
 
 	// Get rid of too small weights to avoid sampling animations for them

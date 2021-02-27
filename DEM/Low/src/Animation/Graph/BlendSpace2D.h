@@ -29,15 +29,23 @@ protected:
 	struct CTriangle
 	{
 		CSample* Samples[3] = {};
-		uint32_t Adjacent[3] = { INVALID_INDEX, INVALID_INDEX, INVALID_INDEX };
+		U32      Adjacent[3] = { INVALID_INDEX, INVALID_INDEX, INVALID_INDEX };
 		float    InvDenominator;
 		float    ax, ay;
 		float    abx, aby;
 		float    acx, acy;
 	};
 
+	struct CEdge
+	{
+		U32 TriIndex = INVALID_INDEX;
+		U32 EdgeIndex = INVALID_INDEX; // [0; 2]
+		U32 Adjacent[2] = { INVALID_INDEX, INVALID_INDEX };
+	};
+
 	std::vector<CSample>   _Samples;
 	std::vector<CTriangle> _Triangles;
+	std::vector<CEdge>     _Contour;
 	CPoseBuffer            _TmpPose;
 	CAnimGraphNode*        _pActiveSamples[3] = { nullptr };
 	float                  _Weights[3] = { 0.f };
