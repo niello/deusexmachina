@@ -22,6 +22,7 @@ protected:
 	UPTR                 _ParamIndex = INVALID_INDEX; // Cached for fast access
 
 	std::vector<CRecord> _Variants;
+	CVariant             _DefaultVariant;
 
 	virtual CVariant* SelectVariant(CAnimationUpdateContext& Context) override;
 
@@ -32,6 +33,7 @@ public:
 	virtual void Init(CAnimationInitContext& Context) override;
 
 	void AddVariant(PAnimGraphNode&& Node, CStrID Value, float BlendTime = 0.f, U32 InterruptionPriority = 0);
+	void SetDefaultVariant(PAnimGraphNode&& Node, float BlendTime = 0.f, U32 InterruptionPriority = 0);
 };
 
 }

@@ -30,15 +30,33 @@ CSelectorNodeBase::CVariant* CStringSelectorNode::SelectVariant(CAnimationUpdate
 		if (Value == Rec.Value)
 			return &Rec.Variant;
 
-	return nullptr;
+	return &_DefaultVariant;
 }
 //---------------------------------------------------------------------
 
 void CStringSelectorNode::AddVariant(PAnimGraphNode&& Node, CStrID Value, float BlendTime, U32 InterruptionPriority)
 {
 	// TODO: sort variants?
-	// TODO: DEFAULT VARIANT?!
+	for (auto& Rec : _Variants)
+	{
+		if (Value == Rec.Value)
+		{
+			Rec.Variant.Node = std::move(Node);
+			Rec.Variant.BlendTime = BlendTime;
+			Rec.Variant.InterruptionPriority = InterruptionPriority;
+			return;
+		}
+	}
+
 	_Variants.push_back({ { std::move(Node), BlendTime, InterruptionPriority }, Value });
+}
+//---------------------------------------------------------------------
+
+void CStringSelectorNode::SetDefaultVariant(PAnimGraphNode&& Node, float BlendTime, U32 InterruptionPriority)
+{
+	_DefaultVariant.Node = std::move(Node);
+	_DefaultVariant.BlendTime = BlendTime;
+	_DefaultVariant.InterruptionPriority = InterruptionPriority;
 }
 //---------------------------------------------------------------------
 
