@@ -61,7 +61,7 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 			if (Context.LocomotionPhase >= 0.f)
 				Context.Controller.RequestInertialization(LOCOMOTION_BLEND_IN_TIME);
 
-			::Sys::DbgOut("***CClipPlayerNode: phase from pose %lf\n", Context.LocomotionPhase);
+			//::Sys::DbgOut("***CClipPlayerNode: phase from pose %lf\n", Context.LocomotionPhase);
 		}
 
 		if (Context.LocomotionPhase >= 0.f)
@@ -70,8 +70,8 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 			// NB: for now the first locomotion clip determines phase, not the most weighted one. May change later.
 			_CurrClipTime = pClip->GetLocomotionPhaseNormalizedTime(Context.LocomotionPhase) * pClip->GetDuration();
 
-			::Sys::DbgOut("***CClipPlayerNode: phase-synced, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
-				_CurrClipTime / pClip->GetDuration(), Context.LocomotionPhase, _ClipID.CStr());
+			//::Sys::DbgOut("***CClipPlayerNode: phase-synced, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
+			//	_CurrClipTime / pClip->GetDuration(), Context.LocomotionPhase, _ClipID.CStr());
 		}
 		else
 		{
@@ -79,8 +79,8 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 			_CurrClipTime = pClip->AdjustTime(_CurrClipTime + dt * _Speed, _Loop);
 			Context.LocomotionPhase = pClip->GetLocomotionPhase(_CurrClipTime / pClip->GetDuration());
 
-			::Sys::DbgOut("***CClipPlayerNode: phase-driving, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
-				_CurrClipTime / pClip->GetDuration(), Context.LocomotionPhase, _ClipID.CStr());
+			//::Sys::DbgOut("***CClipPlayerNode: phase-driving, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
+			//	_CurrClipTime / pClip->GetDuration(), Context.LocomotionPhase, _ClipID.CStr());
 		}
 	}
 	else
@@ -90,8 +90,8 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 		// Update regular clip
 		_CurrClipTime = pClip->AdjustTime(_CurrClipTime + dt * _Speed, _Loop);
 
-		::Sys::DbgOut("***CClipPlayerNode: no sync, time %lf (rel %lf), clip %s\n", _CurrClipTime,
-			_CurrClipTime / pClip->GetDuration(), _ClipID.CStr());
+		//::Sys::DbgOut("***CClipPlayerNode: no sync, time %lf (rel %lf), clip %s\n", _CurrClipTime,
+		//	_CurrClipTime / pClip->GetDuration(), _ClipID.CStr());
 	}
 }
 //---------------------------------------------------------------------

@@ -407,16 +407,16 @@ void CBlendSpace2D::Update(CAnimationUpdateContext& Context, float dt)
 		pSample->Update(Context, dt);
 	}
 
-	{
-		auto GetSampleIndex = [this](CAnimGraphNode* pNode) -> int
-		{
-			for (size_t i = 0; i < _Samples.size(); ++i)
-				if (_Samples[i].Source.get() == pNode) return static_cast<int>(i);
-			return -1;
-		};
-		::Sys::DbgOut("***CBlendSpace2D: time %lf, ipol [%d]:%lf [%d]:%lf [%d]:%lf\n", _NormalizedTime,
-			GetSampleIndex(_pActiveSamples[0]), u, GetSampleIndex(_pActiveSamples[1]), v, GetSampleIndex(_pActiveSamples[2]), w);
-	}
+	//{
+	//	auto GetSampleIndex = [this](CAnimGraphNode* pNode) -> int
+	//	{
+	//		for (size_t i = 0; i < _Samples.size(); ++i)
+	//			if (_Samples[i].Source.get() == pNode) return static_cast<int>(i);
+	//		return -1;
+	//	};
+	//	::Sys::DbgOut("***CBlendSpace2D: time %lf, ipol [%d]:%lf [%d]:%lf [%d]:%lf\n", _NormalizedTime,
+	//		GetSampleIndex(_pActiveSamples[0]), u, GetSampleIndex(_pActiveSamples[1]), v, GetSampleIndex(_pActiveSamples[2]), w);
+	//}
 }
 //---------------------------------------------------------------------
 

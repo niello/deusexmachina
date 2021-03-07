@@ -308,13 +308,14 @@ static bool UpdateFacingSubAction(CActionQueueComponent& Queue, HAction Action, 
 }
 //---------------------------------------------------------------------
 
+// TODO: _interrupt_ current interaction if action is changed or removed!
 void InteractWithSmartObjects(CGameWorld& World)
 {
 	World.ForEachEntityWith<CActionQueueComponent, const CSceneComponent, const AI::CNavAgentComponent*>(
 		[&World](auto EntityID, auto& Entity,
 			CActionQueueComponent& Queue,
 			const CSceneComponent& ActorSceneComponent,
-			const AI::CNavAgentComponent* pNavAgent)
+			const AI::CNavAgentComponent* pNavAgent) //???!!!delay requesting nav agent to UpdateMovementSubAction/OptimizeStaticPath?
 	{
 		if (!ActorSceneComponent.RootNode) return;
 
@@ -448,6 +449,15 @@ void InteractWithSmartObjects(CGameWorld& World)
 		}
 
 		// Interact with object
+
+// TODO:
+//???cache SO scripts in SwitchSmartObjectState action? Rename it to InteractWithSmartObject! Cache once with zones?
+// If was another interaction - Interrupt
+// If no current interaction - Start, write current SO and iact ID into the component, override actor animation graph
+// Increase time elapsed since entering into the state (first frame is 0.f or dt or unused part of dt?)
+// Update
+// If Update returned terminal status, End or Interrupt interaction and propagate termination to the action
+// If interaction time ended, End interaction and mark action as successful
 
 		pSOComponent->RequestedState = pAction->_State;
 		pSOComponent->Force = pAction->_Force;
