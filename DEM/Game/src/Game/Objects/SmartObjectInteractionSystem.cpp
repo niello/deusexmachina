@@ -106,7 +106,7 @@ static bool IsNavPolyInInteractionZone(const CInteractionZone& Zone, const matri
 //---------------------------------------------------------------------
 
 // If new path intersects with another interaction zone, can optimize by navigating to it instead of the original target
-static void OptimizeStaticPath(SwitchSmartObjectState& Action, AI::Navigate& NavAction, const matrix44& ObjectWorldTfm, const CSmartObject& SO, const AI::CNavAgentComponent* pNavAgent)
+static void OptimizeStaticPath(InteractWithSmartObject& Action, AI::Navigate& NavAction, const matrix44& ObjectWorldTfm, const CSmartObject& SO, const AI::CNavAgentComponent* pNavAgent)
 {
 	//!!!TODO: instead of _PathScanned could increment path version on replan and recheck,
 	//to handle partial path and corridor optimizations!
@@ -184,7 +184,7 @@ static bool UpdateMovementSubAction(CActionQueueComponent& Queue, HAction Action
 	ObjectWorldTfm.invert_simple(WorldToSmartObject);
 	const vector3 SOSpaceActorPos = WorldToSmartObject.transform_coord(ActorPos);
 
-	auto pAction = Action.As<SwitchSmartObjectState>();
+	auto pAction = Action.As<InteractWithSmartObject>();
 	const auto PrevAllowedZones = pAction->_AllowedZones;
 
 	while (OnlyCurrZone || pAction->_AllowedZones)
@@ -292,7 +292,7 @@ static bool UpdateMovementSubAction(CActionQueueComponent& Queue, HAction Action
 static bool UpdateFacingSubAction(CActionQueueComponent& Queue, HAction Action, const CSmartObject& SO,
 	const matrix44& ObjectWorldTfm, const matrix44& ActorWorldTfm)
 {
-	auto pAction = Action.As<SwitchSmartObjectState>();
+	auto pAction = Action.As<InteractWithSmartObject>();
 	const auto& Zone = SO.GetInteractionZone(pAction->_ZoneIndex);
 
 	vector3 TargetDir;
@@ -319,7 +319,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 	{
 		if (!ActorSceneComponent.RootNode) return;
 
-		auto Action = Queue.FindCurrent<SwitchSmartObjectState>();
+		auto Action = Queue.FindCurrent<InteractWithSmartObject>();
 		if (!Action) return;
 
 		const auto ActionStatus = Queue.GetStatus(Action);
@@ -333,7 +333,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 			return;
 		}
 
-		auto pAction = Action.As<SwitchSmartObjectState>();
+		auto pAction = Action.As<InteractWithSmartObject>();
 
 		auto pSOComponent = World.FindComponent<CSmartObjectComponent>(pAction->_Object);
 		if (!pSOComponent || !pSOComponent->Asset)
@@ -451,7 +451,7 @@ void InteractWithSmartObjects(CGameWorld& World)
 		// Interact with object
 
 // TODO:
-//???cache SO scripts in SwitchSmartObjectState action? Rename it to InteractWithSmartObject! Cache once with zones?
+//???cache SO scripts in InteractWithSmartObject action? Rename it to InteractWithSmartObject! Cache once with zones?
 // If was another interaction - Interrupt
 // If no current interaction - Start, write current SO and iact ID into the component, override actor animation graph
 // Increase time elapsed since entering into the state (first frame is 0.f or dt or unused part of dt?)
@@ -459,10 +459,12 @@ void InteractWithSmartObjects(CGameWorld& World)
 // If Update returned terminal status, End or Interrupt interaction and propagate termination to the action
 // If interaction time ended, End interaction and mark action as successful
 
-		pSOComponent->RequestedState = pAction->_State;
-		pSOComponent->Force = pAction->_Force;
-
-		// TODO: start actor animation and/or state switching, wait for its end before setting Succeeded status!
+		//!!!DBG TMP!
+		if (pAction->_Interaction == CStrID("Open"))
+			pSOComponent->RequestedState = CStrID("Opened");
+		else
+			pSOComponent->RequestedState = CStrID("Closed");
+		pSOComponent->Force = false;
 		Queue.SetStatus(Action, EActionStatus::Succeeded);
 	});
 }

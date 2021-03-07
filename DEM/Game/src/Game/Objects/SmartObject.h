@@ -74,7 +74,7 @@ class CSmartObject : public ::Core::CObject
 
 public:
 
-	static inline constexpr UPTR MAX_ZONES = 16; // Because only 16 bits are reserved in SwitchSmartObjectState
+	static inline constexpr UPTR MAX_ZONES = 16; // Because only 16 bits are reserved in InteractWithSmartObject
 
 protected:
 

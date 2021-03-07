@@ -13,21 +13,21 @@ namespace DEM::Game
 {
 
 // NB: avoid unnecessary Push[OrUpdate]Child to preserve cached values
-class SwitchSmartObjectState : public Events::CEventNative
+class InteractWithSmartObject : public Events::CEventNative
 {
-	NATIVE_EVENT_DECL(SwitchSmartObjectState, Events::CEventNative);
+	NATIVE_EVENT_DECL(InteractWithSmartObject, Events::CEventNative);
 
 public:
 
-	CStrID  _Interaction;
-	CStrID  _State;
-	HEntity _Object;
-	U16     _AllowedZones = 0;    // Cache. Bit flags for up to 16 zones.
-	U8      _ZoneIndex = 0;       // Cache
-	bool    _Force = false;       // true - force-set requested state immediately
-	bool    _PathScanned = false; // Cache
+	CStrID        _Interaction;
+	HEntity       _Object;
 
-	explicit SwitchSmartObjectState(CStrID Interaction, HEntity Object, CStrID State, bool Force) : _Interaction(Interaction), _Object(Object), _State(State), _Force(Force) {}
+	sol::function _UpdateScript;        // Cache
+	U16           _AllowedZones = 0;    // Cache. Bit flags for up to 16 zones.
+	U8            _ZoneIndex = 0;       // Cache
+	bool          _PathScanned = false; // Cache
+
+	explicit InteractWithSmartObject(CStrID Interaction, HEntity Object) : _Interaction(Interaction), _Object(Object) {}
 };
 
 struct CSmartObjectComponent
