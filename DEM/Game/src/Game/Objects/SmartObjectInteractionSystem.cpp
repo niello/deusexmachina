@@ -2,6 +2,7 @@
 #include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Game/ECS/Components/SceneComponent.h>
 #include <AI/Navigation/NavAgentComponent.h>
+#include <AI/AIStateComponent.h>
 #include <AI/Movement/SteerAction.h>
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/Objects/SmartObject.h>
@@ -308,12 +309,26 @@ static bool UpdateFacingSubAction(CActionQueueComponent& Queue, HAction Action, 
 }
 //---------------------------------------------------------------------
 
-// TODO: _interrupt_ current interaction if action is changed or removed!
-void InteractWithSmartObjects(CGameWorld& World)
+static void FinishInteraction(EActionStatus NewStatus, HAction Action, CActionQueueComponent& Queue, AI::CAIStateComponent& AIState)
 {
-	World.ForEachEntityWith<CActionQueueComponent, const CSceneComponent, const AI::CNavAgentComponent*>(
-		[&World](auto EntityID, auto& Entity,
+	n_assert_dbg(NewStatus != EActionStatus::Active);
+
+	if (NewStatus == EActionStatus::NotQueued) NewStatus = EActionStatus::Failed;
+
+	//!!!OnEnd or OnInterrupt interaction and propagate termination to the action
+	AIState.CurrSmartObject = {};
+	AIState.CurrInteraction = CStrID::Empty;
+	Queue.SetStatus(Action, NewStatus);
+}
+//---------------------------------------------------------------------
+
+// TODO: _interrupt_ current interaction if action is changed or removed!
+void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
+{
+	World.ForEachEntityWith<CActionQueueComponent, AI::CAIStateComponent, const CSceneComponent, const AI::CNavAgentComponent*>(
+		[&World, &Lua, dt](auto EntityID, auto& Entity,
 			CActionQueueComponent& Queue,
+			AI::CAIStateComponent& AIState,
 			const CSceneComponent& ActorSceneComponent,
 			const AI::CNavAgentComponent* pNavAgent) //???!!!delay requesting nav agent to UpdateMovementSubAction/OptimizeStaticPath?
 	{
@@ -450,22 +465,47 @@ void InteractWithSmartObjects(CGameWorld& World)
 
 		// Interact with object
 
-// TODO:
-//???cache SO scripts in InteractWithSmartObject action? Rename it to InteractWithSmartObject! Cache once with zones?
-// If was another interaction - Interrupt
-// If no current interaction - Start, write current SO and iact ID into the component, override actor animation graph
-// Increase time elapsed since entering into the state (first frame is 0.f or dt or unused part of dt?)
-// Update
-// If Update returned terminal status, End or Interrupt interaction and propagate termination to the action
-// If interaction time ended, End interaction and mark action as successful
+		if (AIState.CurrSmartObject != pAction->_Object || AIState.CurrInteraction != pAction->_Interaction)
+		{
+			// TODO: to function InterruptCurrentSmartObjectInteraction!
+			//???require AIState.CurrSmartObject to be non-empty? Or interrupt any interaction?
+			//call pSOAsset->GetScriptFunction(Lua, "OnInterrupt" + pAction->_Interaction.ToString());
+			AIState.CurrSmartObject = {};
+			AIState.CurrInteraction = CStrID::Empty;
+			//!!!if animation graph override is enabled, disable it!
+		}
+
+		if (!AIState.CurrSmartObject)
+		{
+			//!!!if animation graph override is defined, enable it!
+
+			// TODO: wrap the call for safety! High risk of a typo in a SO script, game must be stable!
+			if (auto LuaOnStart = pSOAsset->GetScriptFunction(Lua, "OnStart" + pAction->_Interaction.ToString()))
+				LuaOnStart(EntityID, pAction->_Object);
+			AIState.CurrSmartObject = pAction->_Object;
+			AIState.CurrInteraction = pAction->_Interaction;
+			AIState.CurrInteractionTime = 0.f;
+		}
+
+		//!!!Re-cache here in case an action is recreated! But in turn it leads to retrying to cache absent OnUpdate every frame!
+		if (!pAction->_UpdateScript)
+			pAction->_UpdateScript = pSOAsset->GetScriptFunction(Lua, "OnUpdate" + pAction->_Interaction.ToString());
+
+		//???first frame is 0.f or dt or unused part of dt?
+		AIState.CurrInteractionTime += dt;
+
+		EActionStatus NewStatus = EActionStatus::Active;
+
+		// TODO: wrap the call for safety! High risk of a typo in a SO script, game must be stable!
+		if (pAction->_UpdateScript)
+			NewStatus = pAction->_UpdateScript(EntityID, pAction->_Object, dt, AIState.CurrInteractionTime);
 
 		//!!!DBG TMP!
-		if (pAction->_Interaction == CStrID("Open"))
-			pSOComponent->RequestedState = CStrID("Opened");
-		else
-			pSOComponent->RequestedState = CStrID("Closed");
-		pSOComponent->Force = false;
-		Queue.SetStatus(Action, EActionStatus::Succeeded);
+		constexpr float IACT_TIME = 0.5f;
+		if (AIState.CurrInteractionTime >= IACT_TIME) NewStatus = EActionStatus::Succeeded;
+
+		if (NewStatus != EActionStatus::Active)
+			FinishInteraction(NewStatus, Action, Queue, AIState);
 	});
 }
 //---------------------------------------------------------------------

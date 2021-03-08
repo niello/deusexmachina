@@ -14,11 +14,11 @@ class CSmartObjectTargetFilter : public ITargetFilter
 {
 protected:
 
-	CStrID _ActionID;
+	CStrID _InteractionID;
 
 public:
 
-	CSmartObjectTargetFilter(CStrID ActionID = CStrID::Empty) : _ActionID(ActionID) {}
+	CSmartObjectTargetFilter(CStrID InteractionID = CStrID::Empty) : _InteractionID(InteractionID) {}
 
 	virtual bool IsTargetValid(const CInteractionContext& Context, U32 Index) const override
 	{
@@ -30,11 +30,11 @@ public:
 		auto pSmartComponent = pWorld->FindComponent<CSmartObjectComponent>(Target.Entity);
 		if (!pSmartComponent) return false;
 
-		if (!_ActionID) return true;
+		if (!_InteractionID) return true;
 
 		// Optionally check for an interaction
 		auto pSmartAsset = pSmartComponent->Asset->GetObject<CSmartObject>();
-		return pSmartAsset && pSmartAsset->HasInteraction(_ActionID);
+		return pSmartAsset && pSmartAsset->HasInteraction(_InteractionID);
 	}
 };
 
