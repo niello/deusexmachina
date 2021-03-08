@@ -61,6 +61,7 @@ bool CSmartObject::HasInteraction(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
+//!!!TODO: load shared scripts?! E.g. all doors can have different timings and actor animations, but the same lua logic!
 bool CSmartObject::InitScript(sol::state& Lua)
 {
 	if (_ScriptSource.empty() || !_ID) return true;
