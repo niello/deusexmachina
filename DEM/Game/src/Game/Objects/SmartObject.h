@@ -55,9 +55,8 @@ struct CSmartObjectInteractionInfo
 	CStrID      ID;
 	EFacingMode FacingMode;
 	vector3     FacingDir;
-
-	// actor anim
-	// actor state
+	float       FacingTolerance = 0.f;
+	float       Duration = 0.f;
 };
 
 struct CInteractionZone

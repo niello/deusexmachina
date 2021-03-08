@@ -313,20 +313,25 @@ static bool UpdateFacingSubAction(CActionQueueComponent& Queue, HAction Action, 
 //!!!FIXME: UpdateMovementSubAction calls SetStatus too, but doesn't interrupt the interaction!
 //!!!Need to review where interruptions must happen, both for previous and new actions!
 static void EndCurrentInteraction(EActionStatus NewStatus, HAction Action, CActionQueueComponent& Queue,
-	AI::CAIStateComponent& AIState, const CSmartObject* pSOAsset, HEntity EntityID, sol::state& Lua)
+	AI::CAIStateComponent& AIState, const CSmartObject* pSOAsset, HEntity EntityID, CGameWorld& World, sol::state& Lua)
 {
 	//!!!FIXME: there is a hacky passing of EActionStatus::Active in one call, need to rewrite without it!
 	//n_assert_dbg(NewStatus != EActionStatus::Active);
 
 	if (NewStatus == EActionStatus::NotQueued) NewStatus = EActionStatus::Failed;
 
-	//???require AIState.CurrSmartObject to be non-empty? Or interrupt any interaction?
-	//!!!FIXME: pSOAsset must always be present! refactor!
-	if (pSOAsset && AIState.CurrInteraction)
+	if (!pSOAsset && AIState.CurrSmartObject)
 	{
-		auto pAction = Action.As<InteractWithSmartObject>();
-		if (auto LuaOnEnd = pSOAsset->GetScriptFunction(Lua, "OnEnd" + pAction->_Interaction.ToString()))
-			LuaOnEnd(EntityID, pAction->_Object, NewStatus);
+		auto pSOComponent = World.FindComponent<CSmartObjectComponent>(AIState.CurrSmartObject);
+		if (pSOComponent && pSOComponent->Asset)
+			pSOAsset = pSOComponent->Asset->GetObject<CSmartObject>();
+	}
+
+	//???require AIState.CurrSmartObject to be non-empty? Or interrupt any interaction?
+	if (AIState.CurrInteraction)
+	{
+		if (auto LuaOnEnd = pSOAsset->GetScriptFunction(Lua, "OnEnd" + AIState.CurrInteraction.ToString()))
+			LuaOnEnd(EntityID, AIState.CurrSmartObject, NewStatus);
 
 		AIState.CurrSmartObject = {};
 		AIState.CurrInteraction = CStrID::Empty;
@@ -353,16 +358,26 @@ void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 		if (!ActorSceneComponent.RootNode) return;
 
 		auto Action = Queue.FindCurrent<InteractWithSmartObject>();
-		if (!Action) return;
+		if (!Action)
+		{
+			// FIXME: no need to set action status!
+			EndCurrentInteraction(EActionStatus::Active, Action, Queue, AIState, nullptr, EntityID, World, Lua);
+			return;
+		}
 
 		const auto ActionStatus = Queue.GetStatus(Action);
-		if (ActionStatus != EActionStatus::Active) return;
+		if (ActionStatus != EActionStatus::Active)
+		{
+			// FIXME: no need to set action status!
+			EndCurrentInteraction(ActionStatus, Action, Queue, AIState, nullptr, EntityID, World, Lua);
+			return;
+		}
 
 		const auto ChildAction = Queue.GetChild(Action);
 		const auto ChildActionStatus = Queue.GetStatus(ChildAction);
 		if (ChildActionStatus == EActionStatus::Cancelled)
 		{
-			EndCurrentInteraction(EActionStatus::Cancelled, Action, Queue, AIState, nullptr, EntityID, Lua);
+			EndCurrentInteraction(EActionStatus::Cancelled, Action, Queue, AIState, nullptr, EntityID, World, Lua);
 			return;
 		}
 
@@ -371,21 +386,21 @@ void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 		auto pSOComponent = World.FindComponent<CSmartObjectComponent>(pAction->_Object);
 		if (!pSOComponent || !pSOComponent->Asset)
 		{
-			EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, nullptr, EntityID, Lua);
+			EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, nullptr, EntityID, World, Lua);
 			return;
 		}
 
 		const CSmartObject* pSOAsset = pSOComponent->Asset->GetObject<CSmartObject>();
 		if (!pSOAsset)
 		{
-			EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, pSOAsset, EntityID, Lua);
+			EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, nullptr, EntityID, World, Lua);
 			return;
 		}
 
 		auto pSOSceneComponent = World.FindComponent<CSceneComponent>(pAction->_Object);
 		if (!pSOSceneComponent || !pSOSceneComponent->RootNode)
 		{
-			EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, pSOAsset, EntityID, Lua);
+			EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, pSOAsset, EntityID, World, Lua);
 			return;
 		}
 
@@ -408,7 +423,7 @@ void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 
 			if (!pAction->_AllowedZones)
 			{
-				EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, pSOAsset, EntityID, Lua);
+				EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, pSOAsset, EntityID, World, Lua);
 				return;
 			}
 		}
@@ -416,7 +431,7 @@ void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 		//!!!FIXME: must not change action state in a queue!
 		// Interrupt previous action, if active
 		if (AIState.CurrSmartObject != pAction->_Object || AIState.CurrInteraction != pAction->_Interaction)
-			EndCurrentInteraction(EActionStatus::Active, Action, Queue, AIState, pSOAsset, EntityID, Lua);
+			EndCurrentInteraction(EActionStatus::Active, Action, Queue, AIState, pSOAsset, EntityID, World, Lua);
 
 		const auto& ActorWorldTfm = ActorSceneComponent.RootNode->GetWorldMatrix();
 		const auto& ActorPos = ActorWorldTfm.Translation();
@@ -433,7 +448,7 @@ void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 			}
 			else if (ChildActionStatus == EActionStatus::Failed)
 			{
-				EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, pSOAsset, EntityID, Lua);
+				EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, pSOAsset, EntityID, World, Lua);
 				return;
 			}
 		}
@@ -477,7 +492,7 @@ void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 			}
 			else if (ChildActionStatus == EActionStatus::Failed)
 			{
-				EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, pSOAsset, EntityID, Lua);
+				EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, pSOAsset, EntityID, World, Lua);
 				return;
 			}
 		}
@@ -509,16 +524,41 @@ void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 
 		EActionStatus NewStatus = EActionStatus::Active;
 
-		// TODO: wrap the call for safety! High risk of a typo in a SO script, game must be stable!
 		if (pAction->_UpdateScript)
-			NewStatus = pAction->_UpdateScript(EntityID, pAction->_Object, dt, AIState.CurrInteractionTime);
+		{
+			auto UpdateResult = pAction->_UpdateScript(EntityID, pAction->_Object, dt, AIState.CurrInteractionTime);
+			if (!UpdateResult.valid())
+			{
+				sol::error Error = UpdateResult;
+				::Sys::Error(Error.what());
+				NewStatus = EActionStatus::Failed;
+			}
+			else if (UpdateResult.get_type() == sol::type::number)
+			{
+				// Enums are represented as numbers in Sol
+				NewStatus = UpdateResult;
+			}
+			else
+			{
+				//!!!TODO: fmtlib and variadic args in assertion macros!
+				n_assert2_dbg(UpdateResult.get_type() == sol::type::none, ("Unexpected return type from SO lua OnUpdate" + pAction->_Interaction.ToString()).c_str());
+			}
+		}
 
-		//!!!DBG TMP!
-		constexpr float IACT_TIME = 2.5f;
-		if (AIState.CurrInteractionTime >= IACT_TIME) NewStatus = EActionStatus::Succeeded;
+		// TODO: cache duration?
+		float Duration = -1.f;
+		const auto& Zone = pSOAsset->GetInteractionZone(pAction->_ZoneIndex);
+		auto It = std::find_if(Zone.Interactions.cbegin(), Zone.Interactions.cend(), [InteractionID = pAction->_Interaction](const auto& Elm)
+		{
+			return Elm.ID == InteractionID;
+		});
+		if (It != Zone.Interactions.cend()) // Should always be true
+			Duration = It->Duration;
+
+		if (AIState.CurrInteractionTime >= Duration) NewStatus = EActionStatus::Succeeded;
 
 		if (NewStatus != EActionStatus::Active)
-			EndCurrentInteraction(NewStatus, Action, Queue, AIState, pSOAsset, EntityID, Lua);
+			EndCurrentInteraction(NewStatus, Action, Queue, AIState, pSOAsset, EntityID, World, Lua);
 	});
 }
 //---------------------------------------------------------------------

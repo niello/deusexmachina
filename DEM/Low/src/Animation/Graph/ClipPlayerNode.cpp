@@ -110,7 +110,7 @@ float CClipPlayerNode::GetAnimationLengthScaled() const
 
 bool CClipPlayerNode::IsActive() const
 {
-	return !_Sampler.GetClip() || (!_Loop && _CurrClipTime >= _Sampler.GetClip()->GetDuration());
+	return _Sampler.GetClip() && (_Loop || _CurrClipTime < _Sampler.GetClip()->GetDuration());
 }
 //---------------------------------------------------------------------
 
