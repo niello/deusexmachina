@@ -74,6 +74,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/Interaction/TargetFilter.h
 	DEM/Game/src/Game/Objects/SmartObject.h
 	DEM/Game/src/Game/Objects/SmartObjectComponent.h
+	DEM/Game/src/Game/Objects/SmartObjectInteraction.h
 	DEM/Game/src/Game/Objects/SmartObjectLoader.h
 	DEM/Game/src/Game/Objects/SmartObjectTargetFilter.h
 	DEM/Game/src/Physics/PropPhysics.h
@@ -140,6 +141,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/Interaction/InteractionManager.cpp
 	DEM/Game/src/Game/Interaction/SelectInteraction.cpp
 	DEM/Game/src/Game/Objects/SmartObject.cpp
+	DEM/Game/src/Game/Objects/SmartObjectInteraction.cpp
 	DEM/Game/src/Game/Objects/SmartObjectInteractionSystem.cpp
 	DEM/Game/src/Game/Objects/SmartObjectLoader.cpp
 	DEM/Game/src/Game/Objects/SmartObjectSystem.cpp

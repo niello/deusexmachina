@@ -309,16 +309,34 @@ static bool UpdateFacingSubAction(CActionQueueComponent& Queue, HAction Action, 
 }
 //---------------------------------------------------------------------
 
-static void FinishInteraction(EActionStatus NewStatus, HAction Action, CActionQueueComponent& Queue, AI::CAIStateComponent& AIState)
+//!!!FIXME: from some points the call passes nullptr to pSOAsset because not obtained yet!
+//!!!FIXME: UpdateMovementSubAction calls SetStatus too, but doesn't interrupt the interaction!
+//!!!Need to review where interruptions must happen, both for previous and new actions!
+static void EndCurrentInteraction(EActionStatus NewStatus, HAction Action, CActionQueueComponent& Queue,
+	AI::CAIStateComponent& AIState, const CSmartObject* pSOAsset, HEntity EntityID, sol::state& Lua)
 {
-	n_assert_dbg(NewStatus != EActionStatus::Active);
+	//!!!FIXME: there is a hacky passing of EActionStatus::Active in one call, need to rewrite without it!
+	//n_assert_dbg(NewStatus != EActionStatus::Active);
 
 	if (NewStatus == EActionStatus::NotQueued) NewStatus = EActionStatus::Failed;
 
-	//!!!OnEnd or OnInterrupt interaction and propagate termination to the action
-	AIState.CurrSmartObject = {};
-	AIState.CurrInteraction = CStrID::Empty;
-	Queue.SetStatus(Action, NewStatus);
+	//???require AIState.CurrSmartObject to be non-empty? Or interrupt any interaction?
+	//!!!FIXME: pSOAsset must always be present! refactor!
+	if (pSOAsset && AIState.CurrInteraction)
+	{
+		auto pAction = Action.As<InteractWithSmartObject>();
+		if (auto LuaOnEnd = pSOAsset->GetScriptFunction(Lua, "OnEnd" + pAction->_Interaction.ToString()))
+			LuaOnEnd(EntityID, pAction->_Object, NewStatus);
+
+		AIState.CurrSmartObject = {};
+		AIState.CurrInteraction = CStrID::Empty;
+
+		//!!!if animation graph override is enabled, disable it!
+	}
+
+	//!!!FIXME: there is a hacky passing of EActionStatus::Active in one call, need to rewrite without it!
+	if (NewStatus != EActionStatus::Active)
+		Queue.SetStatus(Action, NewStatus);
 }
 //---------------------------------------------------------------------
 
@@ -344,7 +362,7 @@ void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 		const auto ChildActionStatus = Queue.GetStatus(ChildAction);
 		if (ChildActionStatus == EActionStatus::Cancelled)
 		{
-			Queue.SetStatus(Action, EActionStatus::Cancelled);
+			EndCurrentInteraction(EActionStatus::Cancelled, Action, Queue, AIState, nullptr, EntityID, Lua);
 			return;
 		}
 
@@ -353,21 +371,21 @@ void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 		auto pSOComponent = World.FindComponent<CSmartObjectComponent>(pAction->_Object);
 		if (!pSOComponent || !pSOComponent->Asset)
 		{
-			Queue.SetStatus(Action, EActionStatus::Failed);
+			EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, nullptr, EntityID, Lua);
 			return;
 		}
 
 		const CSmartObject* pSOAsset = pSOComponent->Asset->GetObject<CSmartObject>();
 		if (!pSOAsset)
 		{
-			Queue.SetStatus(Action, EActionStatus::Failed);
+			EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, pSOAsset, EntityID, Lua);
 			return;
 		}
 
 		auto pSOSceneComponent = World.FindComponent<CSceneComponent>(pAction->_Object);
 		if (!pSOSceneComponent || !pSOSceneComponent->RootNode)
 		{
-			Queue.SetStatus(Action, EActionStatus::Failed);
+			EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, pSOAsset, EntityID, Lua);
 			return;
 		}
 
@@ -390,10 +408,15 @@ void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 
 			if (!pAction->_AllowedZones)
 			{
-				Queue.SetStatus(Action, EActionStatus::Failed);
+				EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, pSOAsset, EntityID, Lua);
 				return;
 			}
 		}
+
+		//!!!FIXME: must not change action state in a queue!
+		// Interrupt previous action, if active
+		if (AIState.CurrSmartObject != pAction->_Object || AIState.CurrInteraction != pAction->_Interaction)
+			EndCurrentInteraction(EActionStatus::Active, Action, Queue, AIState, pSOAsset, EntityID, Lua);
 
 		const auto& ActorWorldTfm = ActorSceneComponent.RootNode->GetWorldMatrix();
 		const auto& ActorPos = ActorWorldTfm.Translation();
@@ -410,7 +433,7 @@ void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 			}
 			else if (ChildActionStatus == EActionStatus::Failed)
 			{
-				Queue.SetStatus(Action, EActionStatus::Failed);
+				EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, pSOAsset, EntityID, Lua);
 				return;
 			}
 		}
@@ -454,7 +477,7 @@ void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 			}
 			else if (ChildActionStatus == EActionStatus::Failed)
 			{
-				Queue.SetStatus(Action, EActionStatus::Failed);
+				EndCurrentInteraction(EActionStatus::Failed, Action, Queue, AIState, pSOAsset, EntityID, Lua);
 				return;
 			}
 		}
@@ -464,16 +487,6 @@ void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 		}
 
 		// Interact with object
-
-		if (AIState.CurrSmartObject != pAction->_Object || AIState.CurrInteraction != pAction->_Interaction)
-		{
-			// TODO: to function InterruptCurrentSmartObjectInteraction!
-			//???require AIState.CurrSmartObject to be non-empty? Or interrupt any interaction?
-			//call pSOAsset->GetScriptFunction(Lua, "OnInterrupt" + pAction->_Interaction.ToString());
-			AIState.CurrSmartObject = {};
-			AIState.CurrInteraction = CStrID::Empty;
-			//!!!if animation graph override is enabled, disable it!
-		}
 
 		if (!AIState.CurrSmartObject)
 		{
@@ -501,11 +514,11 @@ void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 			NewStatus = pAction->_UpdateScript(EntityID, pAction->_Object, dt, AIState.CurrInteractionTime);
 
 		//!!!DBG TMP!
-		constexpr float IACT_TIME = 0.5f;
+		constexpr float IACT_TIME = 2.5f;
 		if (AIState.CurrInteractionTime >= IACT_TIME) NewStatus = EActionStatus::Succeeded;
 
 		if (NewStatus != EActionStatus::Active)
-			FinishInteraction(NewStatus, Action, Queue, AIState);
+			EndCurrentInteraction(NewStatus, Action, Queue, AIState, pSOAsset, EntityID, Lua);
 	});
 }
 //---------------------------------------------------------------------
