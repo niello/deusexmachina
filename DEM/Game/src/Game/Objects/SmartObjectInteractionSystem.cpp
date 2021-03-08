@@ -299,6 +299,8 @@ static bool UpdateFacingSubAction(CActionQueueComponent& Queue, HAction Action, 
 	vector3 TargetDir;
 	GetFacingDirection(Zone, pAction->_Interaction, ObjectWorldTfm, ActorWorldTfm.Translation(), TargetDir);
 
+	//!!!TODO: use FacingTolerance! in a check below and in generated AI::Turn!
+
 	vector3 LookatDir = -ActorWorldTfm.AxisZ();
 	LookatDir.norm();
 	const float Angle = vector3::Angle2DNorm(LookatDir, TargetDir);
