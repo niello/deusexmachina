@@ -16,17 +16,6 @@ struct CAIStateComponent
 
 }
 
-namespace DEM::Game
-{
-
-template<>
-struct TComponentTraits<DEM::AI::CAIStateComponent>
-{
-	using TStorage = CSparseComponentStorage<DEM::AI::CAIStateComponent, true>;
-};
-
-}
-
 namespace DEM::Meta
 {
 
