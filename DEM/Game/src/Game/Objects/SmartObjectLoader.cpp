@@ -2,7 +2,6 @@
 #include <Game/Objects/SmartObject.h>
 #include <Resources/ResourceManager.h>
 #include <Animation/TimelineTrack.h>
-#include <AI/Movement/SteerAction.h> // FIXME: for AngularTolerance only. Move to another header?
 #include <IO/Stream.h>
 #include <Data/Params.h>
 #include <Data/Buffer.h>
@@ -165,7 +164,7 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 							else
 								Interaction.FacingDir.norm();
 						}
-						Interaction.FacingTolerance = std::max(DEM::AI::Turn::AngularTolerance, ActionDesc.Get(CStrID("FacingTolerance"), 0.f));
+						Interaction.FacingTolerance = n_deg2rad(std::max(0.f, ActionDesc.Get(CStrID("FacingTolerance"), 0.f)));
 					}
 
 					Interaction.Duration = std::max(0.f, ActionDesc.Get(CStrID("Duration"), 0.f));

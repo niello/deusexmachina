@@ -194,6 +194,7 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 	const vector3 LookatDir = BtVectorToVector(pBtBody->getWorldTransform().getBasis() * btVector3(0.f, 0.f, -1.f));
 
 	float DesiredRotation = 0.f;
+	float Tolerance = AI::Turn::AngularTolerance;
 	if (Character.State == ECharacterState::Walk)
 	{
 		vector3 DesiredDir(DesiredLinearVelocity.x, 0.f, DesiredLinearVelocity.z);
@@ -204,14 +205,17 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 	{
 		auto pTurnAction = TurnAction.As<AI::Turn>();
 		if (pTurnAction && Queue.GetStatus(TurnAction) == EActionStatus::Active)
+		{
 			DesiredRotation = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
+			Tolerance = pTurnAction->_Tolerance;
+		}
 	}
 
 	const bool IsNegative = (DesiredRotation < 0.f);
 	const float AngleAbs = IsNegative ? -DesiredRotation : DesiredRotation;
 
 	// Already looking at the desired direction
-	if (AngleAbs < AI::Turn::AngularTolerance) return 0.f;
+	if (AngleAbs < Tolerance) return 0.f;
 
 	float Speed = Character.MaxAngularSpeed;
 
@@ -346,7 +350,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			// Check angular arrival
 			const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
 			const float Angle = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
-			if (std::fabsf(Angle) < AI::Turn::AngularTolerance)
+			if (std::fabsf(Angle) < pTurnAction->_Tolerance)
 				Queue.SetStatus(Action, EActionStatus::Succeeded);
 		}
 	});

@@ -48,8 +48,14 @@ public:
 	static inline constexpr float AngularTolerance = 0.0001f; // Old was 0.005f
 
 	vector3 _LookatDirection;
+	float   _Tolerance;
 
-	explicit Turn(const vector3& LookatDirection) : _LookatDirection(LookatDirection) { _LookatDirection.norm(); }
+	explicit Turn(const vector3& LookatDirection, float Tolerance = AngularTolerance)
+		: _LookatDirection(LookatDirection)
+		, _Tolerance(Tolerance)
+	{
+		_LookatDirection.norm();
+	}
 };
 
 class CSteerAction : public CTraversalAction

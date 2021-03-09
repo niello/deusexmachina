@@ -146,8 +146,8 @@ static void OptimizeStaticPath(InteractWithSmartObject& Action, AI::Navigate& Na
 }
 //---------------------------------------------------------------------
 
-static bool GetFacingDirection(const CInteractionZone& Zone, CStrID InteractionID, const matrix44& ObjectWorldTfm,
-	const vector3& ActorPos, vector3& OutFacingDir)
+static bool GetFacingParams(const CInteractionZone& Zone, CStrID InteractionID, const matrix44& ObjectWorldTfm,
+	const vector3& ActorPos, vector3& OutFacingDir, float& OutFacingTolerance)
 {
 	auto It = std::find_if(Zone.Interactions.cbegin(), Zone.Interactions.cend(), [InteractionID](const auto& Elm)
 	{
@@ -156,6 +156,8 @@ static bool GetFacingDirection(const CInteractionZone& Zone, CStrID InteractionI
 
 	if (It != Zone.Interactions.cend()) // Should always be true
 	{
+		OutFacingTolerance = It->FacingTolerance;
+
 		switch (It->FacingMode)
 		{
 			case EFacingMode::Direction:
@@ -174,6 +176,7 @@ static bool GetFacingDirection(const CInteractionZone& Zone, CStrID InteractionI
 	}
 
 	OutFacingDir = vector3::Zero;
+	OutFacingTolerance = AI::Turn::AngularTolerance;
 	return false;
 }
 //---------------------------------------------------------------------
@@ -237,7 +240,8 @@ static bool UpdateMovementSubAction(CActionQueueComponent& Queue, HAction Action
 		ActionPos = vector3::lerp(ActionPos, ActorPos, Radius / n_sqrt(WorldSqDistance));
 
 		vector3 FacingDir;
-		GetFacingDirection(Zone, pAction->_Interaction, ObjectWorldTfm, ActionPos, FacingDir);
+		float FacingTolerance;
+		GetFacingParams(Zone, pAction->_Interaction, ObjectWorldTfm, ActionPos, FacingDir, FacingTolerance);
 
 		// If character respects a navmesh and target is not in the same poly, must navigate to it
 		if (pNavAgent)
@@ -297,16 +301,17 @@ static bool UpdateFacingSubAction(CActionQueueComponent& Queue, HAction Action, 
 	const auto& Zone = SO.GetInteractionZone(pAction->_ZoneIndex);
 
 	vector3 TargetDir;
-	GetFacingDirection(Zone, pAction->_Interaction, ObjectWorldTfm, ActorWorldTfm.Translation(), TargetDir);
+	float FacingTolerance;
+	GetFacingParams(Zone, pAction->_Interaction, ObjectWorldTfm, ActorWorldTfm.Translation(), TargetDir, FacingTolerance);
 
-	//!!!TODO: use FacingTolerance! in a check below and in generated AI::Turn!
+	FacingTolerance = std::max(FacingTolerance, DEM::AI::Turn::AngularTolerance);
 
 	vector3 LookatDir = -ActorWorldTfm.AxisZ();
 	LookatDir.norm();
 	const float Angle = vector3::Angle2DNorm(LookatDir, TargetDir);
-	if (std::fabsf(Angle) <= DEM::AI::Turn::AngularTolerance) return false;
+	if (std::fabsf(Angle) < FacingTolerance) return false;
 
-	Queue.PushOrUpdateChild<AI::Turn>(Action, TargetDir);
+	Queue.PushOrUpdateChild<AI::Turn>(Action, TargetDir, FacingTolerance);
 	return true;
 }
 //---------------------------------------------------------------------
