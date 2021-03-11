@@ -18,11 +18,17 @@ CClipPlayerNode::CClipPlayerNode(CStrID ClipID, bool Loop, float Speed, float St
 }
 //---------------------------------------------------------------------
 
+void CClipPlayerNode::ResetTime()
+{
+	if (_Sampler.GetClip() && _Speed < 0.f && _StartTime == 0.f)
+		_CurrClipTime = _Sampler.GetClip()->GetDuration();
+	else
+		_CurrClipTime = _StartTime;
+}
+//---------------------------------------------------------------------
+
 void CClipPlayerNode::Init(CAnimationInitContext& Context)
 {
-	_CurrClipTime = _StartTime;
-	_LastUpdateIndex = Context.Controller.GetUpdateIndex();
-
 	CStrID ClipID = _ClipID;
 	if (!Context.AssetOverrides.empty())
 	{
@@ -37,6 +43,9 @@ void CClipPlayerNode::Init(CAnimationInitContext& Context)
 		CSkeletonInfo::Combine(Context.SkeletonInfo, Anim->GetSkeletonInfo(), _PortMapping);
 		_Sampler.SetClip(Anim);
 	}
+
+	ResetTime(); // NB: must be after initializing the clip
+	_LastUpdateIndex = Context.Controller.GetUpdateIndex();
 }
 //---------------------------------------------------------------------
 
@@ -47,7 +56,7 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 
 	const U32 CurrUpdateIndex = Context.Controller.GetUpdateIndex();
 	const bool WasInactive = (_LastUpdateIndex != CurrUpdateIndex - 1);
-	if (_ResetOnActivate && WasInactive) _CurrClipTime = _StartTime;
+	if (_ResetOnActivate && WasInactive) ResetTime();
 	_LastUpdateIndex = CurrUpdateIndex;
 
 	if (pClip->GetLocomotionInfo())
@@ -110,7 +119,9 @@ float CClipPlayerNode::GetAnimationLengthScaled() const
 
 bool CClipPlayerNode::IsActive() const
 {
-	return _Sampler.GetClip() && (_Loop || _CurrClipTime < _Sampler.GetClip()->GetDuration());
+	if (!_Sampler.GetClip()) return false;
+	if (_Loop) return true;
+	return (_Speed > 0.f) ? (_CurrClipTime < _Sampler.GetClip()->GetDuration()) : (_CurrClipTime > 0.f);
 }
 //---------------------------------------------------------------------
 

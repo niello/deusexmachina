@@ -27,6 +27,8 @@ protected:
 	bool                   _Loop = true;
 	bool                   _ResetOnActivate = true;
 
+	void ResetTime();
+
 public:
 
 	DEM_ALLOCATE_ALIGNED(alignof(CClipPlayerNode));
