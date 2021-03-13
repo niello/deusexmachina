@@ -393,6 +393,7 @@ EKey StringToKey(const char* pName)
 	if (!n_stricmp(pName, "~") || !n_stricmp(pName, "`")) return Grave;
 	if (!n_stricmp(pName, "shift")) return LeftShift;
 	if (!n_stricmp(pName, "ctrl")) return LeftControl;
+	if (!n_stricmp(pName, "rightctrl")) return RightControl;
 	if (!n_stricmp(pName, "alt")) return LeftAlt;
 	return Key_Invalid;
 }

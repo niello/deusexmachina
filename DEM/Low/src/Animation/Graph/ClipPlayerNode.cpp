@@ -9,11 +9,12 @@
 namespace DEM::Anim
 {
 
-CClipPlayerNode::CClipPlayerNode(CStrID ClipID, bool Loop, float Speed, float StartTime)
+CClipPlayerNode::CClipPlayerNode(CStrID ClipID, bool Loop, float Speed, float StartTime, bool ResetOnActivate)
 	: _ClipID(ClipID)
 	, _StartTime(StartTime)
 	, _Speed(Speed)
 	, _Loop(Loop)
+	, _ResetOnActivate(ResetOnActivate)
 {
 }
 //---------------------------------------------------------------------

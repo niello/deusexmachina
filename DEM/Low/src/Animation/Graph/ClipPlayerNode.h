@@ -33,7 +33,7 @@ public:
 
 	DEM_ALLOCATE_ALIGNED(alignof(CClipPlayerNode));
 
-	CClipPlayerNode(CStrID ClipID, bool Loop = true, float Speed = 1.f, float StartTime = 0.f);
+	CClipPlayerNode(CStrID ClipID, bool Loop = true, float Speed = 1.f, float StartTime = 0.f, bool ResetOnActivate = true);
 
 	virtual void Init(CAnimationInitContext& Context) override;
 	virtual void Update(CAnimationUpdateContext& Context, float dt) override;

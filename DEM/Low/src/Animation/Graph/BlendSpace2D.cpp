@@ -315,6 +315,7 @@ void CBlendSpace2D::Update(CAnimationUpdateContext& Context, float dt)
 				break;
 			}
 
+			ContourWalkDirection = NewDirection;
 			pContourEdge = &_Contour[pContourEdge->Adjacent[NewDirection]];
 			pTri = &_Triangles[pContourEdge->TriIndex];
 			EdgeIndex = pContourEdge->EdgeIndex;
