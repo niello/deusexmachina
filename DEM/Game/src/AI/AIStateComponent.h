@@ -10,8 +10,8 @@ namespace DEM::AI
 struct CAIStateComponent
 {
 	CStrID        CurrInteraction;
-	Game::HEntity CurrSmartObject;
-	float         CurrInteractionTime = 0.f;
+	Game::HEntity CurrTarget;
+	float         CurrInteractionTime = -1.f; // less than 0 -> did not start yet
 };
 
 }
