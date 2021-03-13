@@ -2,6 +2,7 @@
 #include <Animation/Graph/AnimGraphNode.h>
 #include <Animation/PoseBuffer.h>
 #include <Data/StringID.h>
+#include <Util/TimedFilter.h>
 
 // Animation graph node that blends sources based on a value in 1D space
 
@@ -32,11 +33,13 @@ protected:
 	CStrID               _ParamID;
 	UPTR                 _ParamIndex = INVALID_INDEX; // Cached for fast access
 
+	CTimedFilter<float>  _Filter;
+
 	float                _NormalizedTime = 0.f; // Current time normalized to [0..1]
 
 public:
 
-	CBlendSpace1D(CStrID ParamID);
+	CBlendSpace1D(CStrID ParamID, float SmoothTime = 0.f);
 
 	virtual void  Init(CAnimationInitContext& Context) override;
 	virtual void  Update(CAnimationUpdateContext& Context, float dt) override;

@@ -6,8 +6,9 @@
 namespace DEM::Anim
 {
 
-CBlendSpace1D::CBlendSpace1D(CStrID ParamID)
+CBlendSpace1D::CBlendSpace1D(CStrID ParamID, float SmoothTime)
 	: _ParamID(ParamID)
+	, _Filter(SmoothTime)
 {
 }
 //---------------------------------------------------------------------
@@ -46,12 +47,11 @@ void CBlendSpace1D::Update(CAnimationUpdateContext& Context, float dt)
 {
 	if (_Samples.empty()) return;
 
-	const float Input = Context.Controller.GetFloat(_ParamIndex);
+	const float RawInput = Context.Controller.GetFloat(_ParamIndex);
+	const float Input = _Filter.Update(RawInput, dt);
+	//???!!! dt *= (RawInput / Input); ?!
 
 	//???use cache if input parameter didn't change?
-
-	//???TODO: optionally filter input to make transitions smoother?
-	// then dt *= (BeforeFilter / AfterFilter);
 
 	// Scale animation speed for values outside the sample range
 	const float ClampedInput = std::clamp(Input, _Samples.front().Value, _Samples.back().Value);

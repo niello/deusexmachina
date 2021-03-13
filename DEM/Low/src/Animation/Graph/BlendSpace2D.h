@@ -2,6 +2,7 @@
 #include <Animation/Graph/AnimGraphNode.h>
 #include <Animation/PoseBuffer.h>
 #include <Data/StringID.h>
+#include <Util/TimedFilter.h>
 
 // Animation graph node that blends sources based on two values in 2D space
 
@@ -55,11 +56,14 @@ protected:
 	UPTR                   _XParamIndex = INVALID_INDEX; // Cached for fast access
 	UPTR                   _YParamIndex = INVALID_INDEX; // Cached for fast access
 
+	CTimedFilter<float>    _XFilter;
+	CTimedFilter<float>    _YFilter;
+
 	float                  _NormalizedTime = 0.f; // Current time normalized to [0..1]
 
 public:
 
-	CBlendSpace2D(CStrID XParamID, CStrID YParamID);
+	CBlendSpace2D(CStrID XParamID, CStrID YParamID, float XSmoothTime = 0.f, float YSmoothTime = 0.f);
 
 	virtual void  Init(CAnimationInitContext& Context) override;
 	virtual void  Update(CAnimationUpdateContext& Context, float dt) override;

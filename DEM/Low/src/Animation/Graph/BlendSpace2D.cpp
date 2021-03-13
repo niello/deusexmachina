@@ -17,9 +17,11 @@ struct CDelaunayInputTraits<DEM::Anim::CBlendSpace2D::CSample>
 namespace DEM::Anim
 {
 
-CBlendSpace2D::CBlendSpace2D(CStrID XParamID, CStrID YParamID)
+CBlendSpace2D::CBlendSpace2D(CStrID XParamID, CStrID YParamID, float XSmoothTime, float YSmoothTime)
 	: _XParamID(XParamID)
 	, _YParamID(YParamID)
+	, _XFilter(XSmoothTime)
+	, _YFilter(YSmoothTime)
 {
 }
 //---------------------------------------------------------------------
@@ -215,13 +217,14 @@ void CBlendSpace2D::Update(CAnimationUpdateContext& Context, float dt)
 		return;
 	}
 
-	const float XInput = Context.Controller.GetFloat(_XParamIndex);
-	const float YInput = Context.Controller.GetFloat(_YParamIndex);
+	const float RawXInput = Context.Controller.GetFloat(_XParamIndex);
+	const float RawYInput = Context.Controller.GetFloat(_YParamIndex);
+
+	const float XInput = _XFilter.Update(RawXInput, dt);
+	const float YInput = _YFilter.Update(RawYInput, dt);
+	//???!!! dt *= (Raw{X/Y}Input / {X/Y}Input); !? Both values or one?
 
 	//???use cache if input parameter didn't change?
-
-	//???TODO: optionally filter input to make transitions smoother?
-	// then dt *= (BeforeFilter / AfterFilter);
 
 	// Find triangle or segment of active samples
 	// FIXME: support degenerate cases - point or collinear!
