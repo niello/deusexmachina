@@ -106,11 +106,20 @@ static bool IsNavPolyInInteractionZone(const CInteractionZone& Zone, const matri
 }
 //---------------------------------------------------------------------
 
-static void OptimizeStaticPath(InteractWithSmartObject& Action, AI::Navigate& NavAction, const matrix44& ObjectWorldTfm, const CSmartObject& SO, const AI::CNavAgentComponent* pNavAgent)
+// FIXME: distance from segment to poly and from poly to poly are not calculated yet, so optimization works only
+// for point/circle zones. Maybe a cheaper way is to update sub-action when enter new poly or by timer?
+static bool OptimizeStaticPath(CGameWorld& World, HEntity EntityID, InteractWithSmartObject& Action, AI::Navigate& NavAction, const CSmartObject& SO)
 {
 	//!!!TODO: instead of _PathScanned could increment path version on replan and recheck,
 	//to handle partial path and corridor optimizations!
-	if (Action._PathScanned || !Action._AllowedZones || !pNavAgent || pNavAgent->State != AI::ENavigationState::Following) return;
+	if (Action._PathScanned || !Action._AllowedZones) return true;
+
+	auto pSOSceneComponent = World.FindComponent<CSceneComponent>(Action._Object);
+	if (!pSOSceneComponent || !pSOSceneComponent->RootNode) return false;
+	const auto& ObjectWorldTfm = pSOSceneComponent->RootNode->GetWorldMatrix();
+
+	const auto* pNavAgent = World.FindComponent<AI::CNavAgentComponent>(EntityID);
+	if (!pNavAgent || pNavAgent->State != AI::ENavigationState::Following) return true;
 
 	Action._PathScanned = true;
 
@@ -138,10 +147,12 @@ static void OptimizeStaticPath(InteractWithSmartObject& Action, AI::Navigate& Na
 			{
 				Action._ZoneIndex = ZoneIdx;
 				Action._AllowedZones &= ~(1 << ZoneIdx);
-				return;
+				return true;
 			}
 		}
 	}
+
+	return true;
 }
 //---------------------------------------------------------------------
 
@@ -180,28 +191,6 @@ static bool GetFacingParams(const CInteractionZone& Zone, CStrID InteractionID, 
 }
 //---------------------------------------------------------------------
 
-static void EndCurrentInteraction(EActionStatus NewStatus, AI::CAIStateComponent& AIState, const CSmartObject* pSOAsset, HEntity EntityID, sol::state& Lua)
-{
-	if (!AIState.CurrInteraction) return;
-
-	if (pSOAsset)
-	{
-		if (auto LuaOnEnd = pSOAsset->GetScriptFunction(Lua, "OnEnd" + AIState.CurrInteraction.ToString()))
-		{
-			// If we interrupt action by another NotQueued one, that simply means a cancellation of the previous action
-			if (NewStatus == EActionStatus::NotQueued) NewStatus = EActionStatus::Cancelled;
-			LuaOnEnd(EntityID, AIState.CurrTarget, NewStatus);
-		}
-	}
-
-	AIState.CurrTarget = {};
-	AIState.CurrInteraction = CStrID::Empty;
-	AIState.CurrInteractionTime = -1.f;
-
-	//!!!if animation graph override is enabled, disable it!
-}
-//---------------------------------------------------------------------
-
 static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQueueComponent& Queue, HAction Action,
 	HAction ChildAction, EActionStatus ChildActionStatus, const CSmartObject& SO)
 {
@@ -224,13 +213,8 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 			if (SO.IsStatic())
 			{
 				// If new path intersects with another interaction zone, can optimize by navigating to it instead of the original target
-				// FIXME: distance from segment to poly and from poly to poly are not calculated yet, so optimization works only
-				// for point/circle zones. Maybe a cheaper way is to update sub-action when enter new poly or by timer?
-				auto pSOSceneComponent = World.FindComponent<CSceneComponent>(pAction->_Object);
-				if (!pSOSceneComponent || !pSOSceneComponent->RootNode) return EActionStatus::Failed;
-				const auto* pNavAgent = World.FindComponent<AI::CNavAgentComponent>(EntityID);
-				OptimizeStaticPath(*pAction, *pNavAction, pSOSceneComponent->RootNode->GetWorldMatrix(), SO, pNavAgent);
-				return EActionStatus::Active;
+				const bool Ok = OptimizeStaticPath(World, EntityID, *pAction, *pNavAction, SO);
+				return Ok ? EActionStatus::Active : EActionStatus::Failed;
 			}
 		}
 		else if (ChildActionStatus == EActionStatus::Failed)
@@ -424,7 +408,8 @@ static EActionStatus InteractWithTarget(InteractWithSmartObject& Action, HEntity
 		AIState.CurrInteractionTime = 0.f;
 	}
 
-	//!!!Re-cache here in case an action is recreated! But in turn it leads to retrying to cache absent OnUpdate every frame!
+	//!!!FIXME: Re-cache here in case an action is recreated! But in turn it leads to retrying
+	// to cache absent OnUpdate every frame!
 	if (!Action._UpdateScript)
 		Action._UpdateScript = SO.GetScriptFunction(Lua, "OnUpdate" + AIState.CurrInteraction.ToString());
 
@@ -467,7 +452,29 @@ static EActionStatus InteractWithTarget(InteractWithSmartObject& Action, HEntity
 }
 //---------------------------------------------------------------------
 
-//!!!FIXME: UpdateMovementSubAction calls SetStatus too, but doesn't interrupt the interaction!
+static void EndCurrentInteraction(EActionStatus NewStatus, AI::CAIStateComponent& AIState, const CSmartObject* pSOAsset, HEntity EntityID, sol::state& Lua)
+{
+	if (!AIState.CurrInteraction) return;
+
+	if (pSOAsset && AIState.CurrInteractionTime >= 0.f)
+	{
+		if (auto LuaOnEnd = pSOAsset->GetScriptFunction(Lua, "OnEnd" + AIState.CurrInteraction.ToString()))
+		{
+			// If we interrupt action by another NotQueued one, that simply means a cancellation of the previous action
+			if (NewStatus == EActionStatus::NotQueued) NewStatus = EActionStatus::Cancelled;
+			LuaOnEnd(EntityID, AIState.CurrTarget, NewStatus);
+		}
+	}
+
+	AIState.CurrTarget = {};
+	AIState.CurrInteraction = CStrID::Empty;
+	AIState.CurrInteractionTime = -1.f;
+
+	//!!!if animation graph override is enabled, disable it!
+}
+//---------------------------------------------------------------------
+
+//???Re-check Lua "Can[iact]" every frame? Store a whole CTarget in an action to avoid recreating it each time?
 void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 {
 	World.ForEachEntityWith<CActionQueueComponent, AI::CAIStateComponent>(
@@ -535,19 +542,31 @@ void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 			}
 		}
 
-		//!!!TODO: interrupt interaction if moving or facing!
+		auto Result = EActionStatus::Succeeded;
 
-		// Move to the interaction point
-		auto Result = MoveToTarget(World, EntityID, Queue, Action, ChildAction, ChildActionStatus, *pSOAsset);
+		// Move to and face interaction target. For non-static objects re-check during an interaction phase.
+		if (!pSOAsset->IsStatic() || AIState.CurrInteractionTime < 0.f)
+		{
+			Result = MoveToTarget(World, EntityID, Queue, Action, ChildAction, ChildActionStatus, *pSOAsset);
 
-		// Face interaction direction
-		if (Result == EActionStatus::Succeeded)
-			Result = FaceTarget(World, EntityID, Queue, Action, ChildAction, ChildActionStatus, *pSOAsset);
+			if (Result == EActionStatus::Succeeded)
+				Result = FaceTarget(World, EntityID, Queue, Action, ChildAction, ChildActionStatus, *pSOAsset);
 
-		// Interact with object
+			if (Result == EActionStatus::Active && AIState.CurrInteractionTime >= 0.f)
+			{
+				// If needs moving or facing during an interaction phase, must interrupt an interaction
+				EndCurrentInteraction(EActionStatus::Cancelled, AIState, pSOAsset, EntityID, Lua);
+				AIState.CurrTarget = pAction->_Object;
+				AIState.CurrInteraction = pAction->_Interaction;
+				AIState.CurrInteractionTime = -1.f;
+			}
+		}
+
+		// Interact with object, if it is approached and faced
 		if (Result == EActionStatus::Succeeded)
 			Result = InteractWithTarget(*pAction, EntityID, AIState, *pSOAsset, Lua, dt);
 
+		// If all parts of interaction have finished, finish an action
 		if (Result != EActionStatus::Active)
 		{
 			EndCurrentInteraction(Result, AIState, pSOAsset, EntityID, Lua);
