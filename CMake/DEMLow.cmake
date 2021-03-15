@@ -327,8 +327,8 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Util/PFLoopAngular.h
 	DEM/Low/src/Util/PFLoopIntDrv.h
 	DEM/Low/src/Util/PFLoopQuat.h
+	DEM/Low/src/Util/TimedFilter.h
 	DEM/Low/src/Util/UtilFwd.h
-	DEM/Low/src/Util/WMAFilter.h
 	DEM/Low/src/Video/OGGTheoraPlayer.h
 	DEM/Low/src/Video/VideoPlayer.h
 	DEM/Low/src/Video/VideoServer.h
