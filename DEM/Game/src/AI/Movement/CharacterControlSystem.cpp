@@ -298,7 +298,7 @@ void ProcessCharacterControllers(CGameWorld& World, Physics::CPhysicsLevel& Phys
 
 			// TODO: not needed when levitate, only when really stand on the ground
 			// We stand on the ground and want to compensate our DistanceToGround in a single simulation step
-			pBody->GetBtBody()->applyCentralImpulse(btVector3(0.f, (-DistanceToGround / dt) * pBody->GetMass(), 0.f));
+			if (DistanceToGround != 0.f) pBody->GetBtBody()->applyCentralImpulse(btVector3(0.f, (-DistanceToGround / dt) * pBody->GetMass(), 0.f));
 		}
 		else
 		{
