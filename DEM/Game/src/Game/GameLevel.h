@@ -68,6 +68,7 @@ public:
 	void                     Update(float dt, const vector3* pCOIArray, UPTR COICount);
 
 	void                     SetNavRegionController(CStrID RegionID, HEntity Controller);
+	void                     SetNavRegionFlags(CStrID RegionID, U16 Flags, bool On);
 
 	Physics::CPhysicsObject* GetFirstPickIntersection(const line3& Ray, vector3* pOutPoint3D = nullptr) const;
 

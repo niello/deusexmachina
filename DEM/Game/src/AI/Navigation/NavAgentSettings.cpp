@@ -20,6 +20,10 @@ CNavAgentSettings::CNavAgentSettings(std::map<U8, float>&& Costs, std::vector<DE
 	for (auto [Area, Cost] : Costs)
 		if (Cost > 1.f)
 			_Filter.setAreaCost(Area, Cost);
+
+	// FIXME: share! To navigation config or engine level constant?
+	constexpr U16 NAV_FLAG_LOCKED = 2;
+	_Filter.setExcludeFlags(NAV_FLAG_LOCKED);
 }
 //---------------------------------------------------------------------
 

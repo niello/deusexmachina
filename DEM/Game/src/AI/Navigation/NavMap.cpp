@@ -1,5 +1,6 @@
 #include "NavMap.h"
 #include <Resources/Resource.h>
+#include <DetourNavMesh.h>
 
 namespace DEM::AI
 {
@@ -19,6 +20,26 @@ const CNavRegion* CNavMap::FindRegion(CStrID ID) const
 {
 	auto pNavMesh = GetNavMesh();
 	return pNavMesh ? pNavMesh->FindRegion(ID) : nullptr;
+}
+//---------------------------------------------------------------------
+
+void CNavMap::SetRegionFlags(CStrID RegionID, U16 Flags, bool On)
+{
+	if (!Flags) return;
+
+	auto pRegion = FindRegion(RegionID);
+	if (!pRegion) return;
+
+	auto pDtNavMesh = GetDetourNavMesh();
+	U16 CurrFlags;
+	for (auto PolyRef : *pRegion)
+	{
+		if (dtStatusSucceed(pDtNavMesh->getPolyFlags(PolyRef, &CurrFlags)))
+		{
+			const U16 NewFlags = On ? (CurrFlags | Flags) : (CurrFlags & ~Flags);
+			if (NewFlags != CurrFlags) pDtNavMesh->setPolyFlags(PolyRef, NewFlags);
+		}
+	}
 }
 //---------------------------------------------------------------------
 

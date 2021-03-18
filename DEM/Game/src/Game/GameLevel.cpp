@@ -169,6 +169,13 @@ void CGameLevel::SetNavRegionController(CStrID RegionID, HEntity Controller)
 }
 //---------------------------------------------------------------------
 
+void CGameLevel::SetNavRegionFlags(CStrID RegionID, U16 Flags, bool On)
+{
+	for (const auto& NavMap : _NavMaps)
+		NavMap->SetRegionFlags(RegionID, Flags, On);
+}
+//---------------------------------------------------------------------
+
 }
 
 //////////////// TODO: REMOVE ///////////////////////////////

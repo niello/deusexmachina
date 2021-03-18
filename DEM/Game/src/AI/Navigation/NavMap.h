@@ -35,6 +35,7 @@ public:
 	float             GetAgentRadius() const { return _AgentRadius; }
 	float             GetAgentHeight() const { return _AgentHeight; }
 	const CNavRegion* FindRegion(CStrID ID) const;
+	void              SetRegionFlags(CStrID RegionID, U16 Flags, bool On);
 	void              SetRegionController(CStrID RegionID, Game::HEntity Controller);
 	void              RemoveController(Game::HEntity Controller);
 	Game::HEntity     GetPolyController(dtPolyRef PolyRef) const;
