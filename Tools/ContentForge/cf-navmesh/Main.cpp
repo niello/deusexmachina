@@ -251,6 +251,8 @@ public:
 			{
 				const auto& RegionDesc = Record.GetValue<Data::CParams>();
 
+				vertsR.clear();
+
 				const auto hmin = ParamsUtils::GetParam(RegionDesc, "HeightStart", bmin[1]);
 				const auto hmax = ParamsUtils::GetParam(RegionDesc, "HeightEnd", bmax[1]);
 
@@ -277,7 +279,7 @@ public:
 				auto ID = ParamsUtils::GetParam(RegionDesc, "ID", std::string{});
 				if (!ID.empty())
 				{
-					CRegion NewRegion{ std::move(vertsR), hmin, hmax };
+					CRegion NewRegion{ vertsR, hmin, hmax };
 
 					const Data::CDataArray* pOffmeshCons;
 					if (ParamsUtils::TryGetParam(pOffmeshCons, RegionDesc, "OffmeshIds") && !pOffmeshCons->empty())
