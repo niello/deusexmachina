@@ -37,6 +37,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Items/Prop/PropEquipment.h
 	DEM/RPG/src/Items/Prop/PropInventory.h
 	DEM/RPG/src/Items/Prop/PropItem.h
+	DEM/RPG/src/Objects/LockComponent.h
 	DEM/RPG/src/Quests/Quest.h
 	DEM/RPG/src/Quests/QuestManager.h
 	DEM/RPG/src/Quests/Task.h
