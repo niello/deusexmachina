@@ -38,6 +38,8 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Items/Prop/PropInventory.h
 	DEM/RPG/src/Items/Prop/PropItem.h
 	DEM/RPG/src/Objects/LockComponent.h
+	DEM/RPG/src/Objects/LockedTargetFilter.h
+	DEM/RPG/src/Objects/LockpickInteraction.h
 	DEM/RPG/src/Quests/Quest.h
 	DEM/RPG/src/Quests/QuestManager.h
 	DEM/RPG/src/Quests/Task.h
@@ -80,6 +82,7 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/Items/Prop/PropInventory.cpp
 	DEM/RPG/src/Items/Prop/PropInventorySI.cpp
 	DEM/RPG/src/Items/Prop/PropItem.cpp
+	DEM/RPG/src/Objects/LockpickInteraction.cpp
 	DEM/RPG/src/Quests/QuestManager.cpp
 	DEM/RPG/src/SI/SIDialogueManager.cpp
 	DEM/RPG/src/SI/SIFaction.cpp
