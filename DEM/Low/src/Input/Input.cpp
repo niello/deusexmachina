@@ -395,6 +395,7 @@ EKey StringToKey(const char* pName)
 	if (!n_stricmp(pName, "ctrl")) return LeftControl;
 	if (!n_stricmp(pName, "rightctrl")) return RightControl;
 	if (!n_stricmp(pName, "alt")) return LeftAlt;
+	if (!n_stricmp(pName, "esc")) return Escape;
 	return Key_Invalid;
 }
 //---------------------------------------------------------------------

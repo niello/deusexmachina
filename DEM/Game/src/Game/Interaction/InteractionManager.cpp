@@ -27,6 +27,8 @@ CInteractionManager::CInteractionManager(CGameSession& Owner)
 
 	_Lua.new_usertype<CInteractionContext>("CInteractionContext"
 		, "Ability", &CInteractionContext::Ability
+		, "AbilitySource", &CInteractionContext::AbilitySource
+		, "SelectedActors", &CInteractionContext::SelectedActors
 		, "Target", &CInteractionContext::Target
 		, "SelectedTargets", &CInteractionContext::SelectedTargets
 		, "SelectedTargetCount", &CInteractionContext::SelectedTargetCount
@@ -302,7 +304,7 @@ bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 
 	if (!pInteraction->GetTargetFilter(Context.SelectedTargetCount)->IsTargetValid(Context)) return false;
 
-	// If just starget to select targets, allocate slots for them
+	// If just started to select targets, allocate slots for them
 	if (Context.SelectedTargets.empty())
 	{
 		Context.SelectedTargets.resize(pInteraction->GetMaxTargetCount());
@@ -316,12 +318,16 @@ bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 }
 //---------------------------------------------------------------------
 
+// Revert targets one by one, then revert non-default ability
 bool CInteractionManager::Revert(CInteractionContext& Context)
 {
-	// while has targets selected, revert one by one
-	// if no targets, revert ability to default one
-	NOT_IMPLEMENTED;
-	return false;
+	if (Context.SelectedTargetCount)
+		--Context.SelectedTargetCount;
+	else if (Context.Ability && Context.Ability != _DefaultAbility)
+		SelectAbility(Context, _DefaultAbility, {});
+	else
+		return false;
+	return true;
 }
 //---------------------------------------------------------------------
 
