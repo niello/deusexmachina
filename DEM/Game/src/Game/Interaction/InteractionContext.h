@@ -23,8 +23,8 @@ struct CTargetInfo
 struct CInteractionContext
 {
 	PGameSession             Session;
-	CStrID                   Ability;
-	HEntity                  AbilitySource; // E.g. item
+	CStrID                   Tool;
+	HEntity                  Source; // E.g. item
 	CStrID                   Interaction;
 	sol::function            Condition;
 	CTargetInfo              Target;

@@ -1,6 +1,6 @@
 #pragma once
 #include <Core/RTTIBaseClass.h>
-#include <Game/Interaction/Ability.h>
+#include <Game/Interaction/InteractionTool.h>
 #include <Game/ECS/Entity.h>
 #include <map>
 
@@ -25,10 +25,10 @@ class CInteractionManager : public ::Core::CRTTIBaseClass
 
 protected:
 
-	std::map<CStrID, CAbility>     _Abilities;
-	std::map<CStrID, PInteraction> _Interactions;
-	sol::state_view                _Lua; //???!!!store session ref instead?!
-	CStrID                         _DefaultAbility;
+	std::map<CStrID, CInteractionTool> _Tools;
+	std::map<CStrID, PInteraction>     _Interactions;
+	sol::state_view                    _Lua; //???!!!store session ref instead?!
+	CStrID                             _DefaultTool;
 
 	const CInteraction* ValidateInteraction(CStrID ID, const sol::function& Condition, CInteractionContext& Context);
 
@@ -37,18 +37,18 @@ public:
 	CInteractionManager(CGameSession& Owner);
 	~CInteractionManager();
 
-	bool                RegisterAbility(CStrID ID, CAbility&& Ability);
-	bool                RegisterAbility(CStrID ID, const Data::CParams& Params);
-	//bool                RegisterAbility(CStrID ID, const CInteraction& SingleInteraction);
-	bool                RegisterInteraction(CStrID ID, PInteraction&& Interaction);
-	void                SetDefaultAbility(CStrID ID) { _DefaultAbility = ID; }
+	bool                    RegisterTool(CStrID ID, CInteractionTool&& Tool);
+	bool                    RegisterTool(CStrID ID, const Data::CParams& Params);
+	//bool                    RegisterTool(CStrID ID, const CInteraction& SingleInteraction);
+	bool                    RegisterInteraction(CStrID ID, PInteraction&& Interaction);
+	void                    SetDefaultTool(CStrID ID) { _DefaultTool = ID; }
 
-	const CAbility*     FindAbility(CStrID ID) const;
-	const CAbility*     FindAvailableAbility(CStrID AbilityID, const std::vector<HEntity>& SelectedActors) const;
-	const CInteraction* FindInteraction(CStrID ID) const;
+	const CInteractionTool* FindTool(CStrID ID) const;
+	const CInteractionTool* FindAvailableTool(CStrID ToolID, const std::vector<HEntity>& SelectedActors) const;
+	const CInteraction*     FindInteraction(CStrID ID) const;
 
-	bool                SelectAbility(CInteractionContext& Context, CStrID AbilityID, HEntity AbilitySource = {});
-	void                ResetAbility(CInteractionContext& Context);
+	bool                SelectTool(CInteractionContext& Context, CStrID ToolID, HEntity Source = {});
+	void                ResetTool(CInteractionContext& Context);
 	void                ResetCandidateInteraction(CInteractionContext& Context);
 	bool                UpdateCandidateInteraction(CInteractionContext& Context);
 	bool                AcceptTarget(CInteractionContext& Context);

@@ -26,8 +26,8 @@ CInteractionManager::CInteractionManager(CGameSession& Owner)
 		); // there is also &CTargetInfo::Valid
 
 	_Lua.new_usertype<CInteractionContext>("CInteractionContext"
-		, "Ability", &CInteractionContext::Ability
-		, "AbilitySource", &CInteractionContext::AbilitySource
+		, "Tool", &CInteractionContext::Tool
+		, "Source", &CInteractionContext::Source
 		, "SelectedActors", &CInteractionContext::SelectedActors
 		, "Target", &CInteractionContext::Target
 		, "SelectedTargets", &CInteractionContext::SelectedTargets
@@ -39,31 +39,31 @@ CInteractionManager::CInteractionManager(CGameSession& Owner)
 CInteractionManager::~CInteractionManager() = default;
 //---------------------------------------------------------------------
 
-bool CInteractionManager::RegisterAbility(CStrID ID, CAbility&& Ability)
+bool CInteractionManager::RegisterTool(CStrID ID, CInteractionTool&& Tool)
 {
-	auto It = _Abilities.find(ID);
-	if (It == _Abilities.cend())
-		_Abilities.emplace(ID, std::move(Ability));
+	auto It = _Tools.find(ID);
+	if (It == _Tools.cend())
+		_Tools.emplace(ID, std::move(Tool));
 	else
-		It->second = std::move(Ability);
+		It->second = std::move(Tool);
 
 	return true;
 }
 //---------------------------------------------------------------------
 
-bool CInteractionManager::RegisterAbility(CStrID ID, const Data::CParams& Params)
+bool CInteractionManager::RegisterTool(CStrID ID, const Data::CParams& Params)
 {
-	CAbility Ability;
+	CInteractionTool Tool;
 
-	Ability.IconID = Params.Get(CStrID("Icon"), CString::Empty);
-	Ability.Name = Params.Get(CStrID("Name"), CString::Empty);
-	Ability.Description = Params.Get(CStrID("Description"), CString::Empty);
+	Tool.IconID = Params.Get(CStrID("Icon"), CString::Empty);
+	Tool.Name = Params.Get(CStrID("Name"), CString::Empty);
+	Tool.Description = Params.Get(CStrID("Description"), CString::Empty);
 	const std::string IsAvailable = Params.Get(CStrID("IsAvailable"), CString::Empty);
 
 	Data::PDataArray Tags;
 	if (Params.TryGet<Data::PDataArray>(Tags, CStrID("Tags")))
 		for (const auto& TagData : *Tags)
-			Ability.Tags.insert(CStrID(TagData.GetValue<CString>().CStr()));
+			Tool.Tags.insert(CStrID(TagData.GetValue<CString>().CStr()));
 
 	Data::PDataArray Actions;
 	if (Params.TryGet<Data::PDataArray>(Actions, CStrID("Actions")))
@@ -72,7 +72,7 @@ bool CInteractionManager::RegisterAbility(CStrID ID, const Data::CParams& Params
 		{
 			if (auto pActionStr = ActionData.As<CString>())
 			{
-				Ability.Interactions.emplace_back(CStrID(pActionStr->CStr()), sol::function());
+				Tool.Interactions.emplace_back(CStrID(pActionStr->CStr()), sol::function());
 			}
 			else if (auto pActionDesc = ActionData.As<Data::PParams>())
 			{
@@ -80,7 +80,7 @@ bool CInteractionManager::RegisterAbility(CStrID ID, const Data::CParams& Params
 				if ((*pActionDesc)->TryGet<CString>(ActID, CStrID("ID")))
 				{
 					// TODO: pushes the compiled chunk as a Lua function on top of the stack,
-					// need to save anywhere in this Ability's table?
+					// need to save anywhere in this Tool's table?
 					sol::function ConditionFunc;
 					const std::string Condition = (*pActionDesc)->Get(CStrID("Condition"), CString::Empty);
 					if (!Condition.empty())
@@ -89,21 +89,21 @@ bool CInteractionManager::RegisterAbility(CStrID ID, const Data::CParams& Params
 						if (LoadedCondition.valid()) ConditionFunc = LoadedCondition;
 					}
 
-					Ability.Interactions.emplace_back(CStrID(ActID.CStr()), std::move(ConditionFunc));
+					Tool.Interactions.emplace_back(CStrID(ActID.CStr()), std::move(ConditionFunc));
 				}
 			}
 		}
 	}
 
 	// TODO: pushes the compiled chunk as a Lua function on top of the stack,
-	// need to save anywhere in this Ability's table?
+	// need to save anywhere in this Tool's table?
 	if (!IsAvailable.empty())
 	{
 		auto LoadedCondition = _Lua.load("local SelectedActors = ...; return " + IsAvailable, ID.CStr());
-		if (LoadedCondition.valid()) Ability.AvailabilityCondition = LoadedCondition;
+		if (LoadedCondition.valid()) Tool.AvailabilityCondition = LoadedCondition;
 	}
 
-	return RegisterAbility(ID, std::move(Ability));
+	return RegisterTool(ID, std::move(Tool));
 }
 //---------------------------------------------------------------------
 
@@ -119,29 +119,29 @@ bool CInteractionManager::RegisterInteraction(CStrID ID, PInteraction&& Interact
 }
 //---------------------------------------------------------------------
 
-const CAbility* CInteractionManager::FindAbility(CStrID ID) const
+const CInteractionTool* CInteractionManager::FindTool(CStrID ID) const
 {
-	auto It = _Abilities.find(ID);
-	return (It == _Abilities.cend()) ? nullptr : &It->second;
+	auto It = _Tools.find(ID);
+	return (It == _Tools.cend()) ? nullptr : &It->second;
 }
 //---------------------------------------------------------------------
 
-// Returns found ability only if it is available for the provided actor selection
-const CAbility* CInteractionManager::FindAvailableAbility(CStrID AbilityID, const std::vector<HEntity>& SelectedActors) const
+// Returns found tool only if it is available for the provided actor selection
+const CInteractionTool* CInteractionManager::FindAvailableTool(CStrID ToolID, const std::vector<HEntity>& SelectedActors) const
 {
-	auto pAbility = FindAbility(AbilityID);
-	if (!pAbility) return nullptr;
+	auto pTool = FindTool(ToolID);
+	if (!pTool) return nullptr;
 
-	if (!pAbility->AvailabilityCondition) return pAbility;
+	if (!pTool->AvailabilityCondition) return pTool;
 
-	auto Result = pAbility->AvailabilityCondition(SelectedActors);
+	auto Result = pTool->AvailabilityCondition(SelectedActors);
 	if (!Result.valid())
 	{
 		sol::error Error = Result;
 		::Sys::Error(Error.what());
 	}
 
-	return (Result.valid() && Result) ? pAbility : nullptr;
+	return (Result.valid() && Result) ? pTool : nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -152,24 +152,24 @@ const CInteraction* CInteractionManager::FindInteraction(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-bool CInteractionManager::SelectAbility(CInteractionContext& Context, CStrID AbilityID, HEntity AbilitySource)
+bool CInteractionManager::SelectTool(CInteractionContext& Context, CStrID ToolID, HEntity Source)
 {
-	if (Context.Ability == AbilityID) return true;
+	if (Context.Tool == ToolID) return true;
 
-	if (!FindAvailableAbility(AbilityID, Context.SelectedActors)) return false;
+	if (!FindAvailableTool(ToolID, Context.SelectedActors)) return false;
 
-	Context.Ability = AbilityID;
-	Context.AbilitySource = AbilitySource;
+	Context.Tool = ToolID;
+	Context.Source = Source;
 	ResetCandidateInteraction(Context);
 
 	return false;
 }
 //---------------------------------------------------------------------
 
-void CInteractionManager::ResetAbility(CInteractionContext& Context)
+void CInteractionManager::ResetTool(CInteractionContext& Context)
 {
-	Context.Ability = CStrID::Empty;
-	Context.AbilitySource = {};
+	Context.Tool = CStrID::Empty;
+	Context.Source = {};
 	ResetCandidateInteraction(Context);
 }
 //---------------------------------------------------------------------
@@ -213,14 +213,14 @@ const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const so
 
 bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Context)
 {
-	auto pAbility = FindAvailableAbility(Context.Ability, Context.SelectedActors);
+	auto pTool = FindAvailableTool(Context.Tool, Context.SelectedActors);
 
-	// If selected ability became unavailable, reset to default one
-	if (!pAbility)
+	// If selected tool became unavailable, reset to default one
+	if (!pTool)
 	{
-		SelectAbility(Context, _DefaultAbility, {});
-		pAbility = FindAbility(Context.Ability);
-		if (!pAbility) return false;
+		SelectTool(Context, _DefaultTool, {});
+		pTool = FindTool(Context.Tool);
+		if (!pTool) return false;
 	}
 
 	// Validate current candidate interaction, if set
@@ -269,10 +269,10 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 		}
 	}
 
-	// Select first interaction in the current ability that accepts current target
-	for (U32 i = 0; i < pAbility->Interactions.size(); ++i)
+	// Select first interaction in the current tool that accepts current target
+	for (U32 i = 0; i < pTool->Interactions.size(); ++i)
 	{
-		const auto& [ID, Condition] = pAbility->Interactions[i];
+		const auto& [ID, Condition] = pTool->Interactions[i];
 		auto pInteraction = ValidateInteraction(ID, Condition, Context);
 		if (pInteraction &&
 			pInteraction->GetMaxTargetCount() > 0 &&
@@ -294,9 +294,9 @@ bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 {
 	if (!Context.Interaction) return false;
 
-	// FIXME: probably redundant search, may store InteractionID in a context if ability is not required here
-	auto pAbility = FindAbility(Context.Ability);
-	if (!pAbility) return false;
+	// FIXME: probably redundant search, may store InteractionID in a context if tool is not required here
+	auto pTool = FindTool(Context.Tool);
+	if (!pTool) return false;
 	auto pInteraction = FindInteraction(Context.Interaction);
 	if (!pInteraction) return false;
 
@@ -318,13 +318,13 @@ bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 }
 //---------------------------------------------------------------------
 
-// Revert targets one by one, then revert non-default ability
+// Revert targets one by one, then revert non-default tool
 bool CInteractionManager::Revert(CInteractionContext& Context)
 {
 	if (Context.SelectedTargetCount)
 		--Context.SelectedTargetCount;
-	else if (Context.Ability && Context.Ability != _DefaultAbility)
-		SelectAbility(Context, _DefaultAbility, {});
+	else if (Context.Tool && Context.Tool != _DefaultTool)
+		SelectTool(Context, _DefaultTool, {});
 	else
 		return false;
 	return true;
@@ -335,14 +335,14 @@ bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool 
 {
 	if (!Context.Interaction) return false;
 
-	auto pAbility = FindAvailableAbility(Context.Ability, Context.SelectedActors);
-	if (!pAbility) return false;
+	auto pTool = FindAvailableTool(Context.Tool, Context.SelectedActors);
+	if (!pTool) return false;
 	auto pInteraction = FindInteraction(Context.Interaction);
 	if (!pInteraction) return false;
 
 	//!!!DBG TMP!
 	std::string Actor = Context.SelectedActors.empty() ? "none" : std::to_string(*Context.SelectedActors.begin());
-	::Sys::Log(("Ability: " + Context.Ability.ToString() +
+	::Sys::Log(("Tool: " + Context.Tool.ToString() +
 		", Interaction: " + Context.Interaction.CStr() +
 		", Actor: " + Actor + "\n").c_str());
 
@@ -355,8 +355,8 @@ const std::string& CInteractionManager::GetCursorImageID(CInteractionContext& Co
 	//!!!DBG TMP!
 	static const std::string EmptyString;
 
-	auto pAbility = FindAbility(Context.Ability);
-	if (!pAbility) return EmptyString;
+	auto pTool = FindTool(Context.Tool);
+	if (!pTool) return EmptyString;
 	auto pInteraction = FindInteraction(Context.Interaction);
 	if (!pInteraction) return EmptyString;
 	return pInteraction->GetCursorImageID(Context.SelectedTargetCount);
