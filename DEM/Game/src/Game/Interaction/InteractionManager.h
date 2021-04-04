@@ -4,9 +4,12 @@
 #include <Game/ECS/Entity.h>
 #include <map>
 
-// Handles interaction of the player player with the game world. All available
-// interactions and abilities available in the current game.
-// External systems access them by ID.
+// Handles interaction of the player player with the game world.
+// Stores a registry of all possible interactions and interaction tools,
+// except interactions defined in smart objects.
+// External systems access interactions and tools by ID.
+
+//???register SO interactions here too? Can cache Lua because session is known and Lua context is accessible.
 
 namespace Data
 {
@@ -30,7 +33,7 @@ protected:
 	sol::state_view                    _Lua; //???!!!store session ref instead?!
 	CStrID                             _DefaultTool;
 
-	const CInteraction* ValidateInteraction(CStrID ID, const sol::function& Condition, CInteractionContext& Context);
+	const CInteraction* ValidateInteraction(CStrID ID, const sol::function& Condition, CInteractionContext& Context) const;
 
 public:
 
@@ -44,18 +47,18 @@ public:
 	void                    SetDefaultTool(CStrID ID) { _DefaultTool = ID; }
 
 	const CInteractionTool* FindTool(CStrID ID) const;
-	const CInteractionTool* FindAvailableTool(CStrID ToolID, const std::vector<HEntity>& SelectedActors) const;
+	const CInteractionTool* FindAvailableTool(CStrID ID, const CInteractionContext& Context) const;
 	const CInteraction*     FindInteraction(CStrID ID) const;
 
-	bool                SelectTool(CInteractionContext& Context, CStrID ToolID, HEntity Source = {});
-	void                ResetTool(CInteractionContext& Context);
-	void                ResetCandidateInteraction(CInteractionContext& Context);
-	bool                UpdateCandidateInteraction(CInteractionContext& Context);
-	bool                AcceptTarget(CInteractionContext& Context);
-	bool                Revert(CInteractionContext& Context);
-	bool                ExecuteInteraction(CInteractionContext& Context, bool Enqueue);
+	bool                    SelectTool(CInteractionContext& Context, CStrID ToolID, HEntity Source = {});
+	void                    ResetTool(CInteractionContext& Context);
+	void                    ResetCandidateInteraction(CInteractionContext& Context);
+	bool                    UpdateCandidateInteraction(CInteractionContext& Context);
+	bool                    AcceptTarget(CInteractionContext& Context);
+	bool                    Revert(CInteractionContext& Context);
+	bool                    ExecuteInteraction(CInteractionContext& Context, bool Enqueue);
 
-	const std::string&  GetCursorImageID(CInteractionContext& Context) const;
+	const std::string&      GetCursorImageID(CInteractionContext& Context) const;
 };
 
 }

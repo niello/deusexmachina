@@ -21,7 +21,6 @@ struct CInteractionTool
 	std::string      IconID;
 	std::string      Name;
 	std::string      Description;
-	sol::function    AvailabilityCondition; // FIXME: from interactions! Has no own condition!
 
 	std::set<CStrID> Tags;
 

@@ -12,6 +12,7 @@ public:
 
 	CLockpickInteraction(std::string_view CursorImage = {});
 
+	virtual bool IsAvailable(const Game::CInteractionContext& Context) const;
 	virtual bool Execute(Game::CInteractionContext& Context, bool Enqueue) const override;
 };
 

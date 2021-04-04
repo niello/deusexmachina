@@ -19,13 +19,14 @@ protected:
 		PTargetFilter Filter; //???TODO: use C++/Lua callable instead?! ITargetFilter is just a functor.
 		std::string   CursorImage;
 		U32           Count;
-		bool          Optional; // NB: can have mandatory and optional targets in mixed order
+		bool          IsOptional; // NB: can have mandatory and optional targets in mixed order (really need?)
 	};
 
 	std::vector<CTargetRecord> _Targets;
 
 	std::string                _Name;
 	std::string                _CursorImage;
+	//???icon?
 
 	const CTargetRecord* GetTargetRecord(U32 Index) const;
 
@@ -33,7 +34,7 @@ public:
 
 	virtual ~CInteraction();
 
-	bool AddTarget(PTargetFilter&& Filter, std::string_view CursorImage = {}, U32 Count = 1, bool Optional = false);
+	bool AddTarget(PTargetFilter&& Filter, std::string_view CursorImage = {}, U32 Count = 1, bool IsOptional = false);
 
 	U32                  GetMaxTargetCount() const;
 	const ITargetFilter* GetTargetFilter(U32 Index) const;
@@ -42,6 +43,7 @@ public:
 	const auto&          GetName() const { return _Name; }
 	const std::string&   GetCursorImageID(U32 Index) const;
 
+	virtual bool         IsAvailable(const CInteractionContext& Context) const { return true; }
 	virtual bool         Execute(CInteractionContext& Context, bool Enqueue) const = 0;
 };
 

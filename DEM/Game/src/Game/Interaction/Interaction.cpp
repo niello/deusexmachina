@@ -5,7 +5,7 @@ namespace DEM::Game
 {
 CInteraction::~CInteraction() = default;
 
-bool CInteraction::AddTarget(PTargetFilter&& Filter, std::string_view CursorImage, U32 Count, bool Optional)
+bool CInteraction::AddTarget(PTargetFilter&& Filter, std::string_view CursorImage, U32 Count, bool IsOptional)
 {
 	if (!Filter || !Count) return false;
 
@@ -13,7 +13,7 @@ bool CInteraction::AddTarget(PTargetFilter&& Filter, std::string_view CursorImag
 	Rec.Filter = std::move(Filter);
 	Rec.CursorImage = CursorImage;
 	Rec.Count = Count;
-	Rec.Optional = Optional;
+	Rec.IsOptional = IsOptional;
 	_Targets.push_back(std::move(Rec));
 	return true;
 }
@@ -50,7 +50,7 @@ const ITargetFilter* CInteraction::GetTargetFilter(U32 Index) const
 bool CInteraction::IsTargetOptional(U32 Index) const
 {
 	auto pRec = GetTargetRecord(Index);
-	return pRec ? pRec->Optional : true;
+	return !pRec || pRec->IsOptional;
 }
 //---------------------------------------------------------------------
 

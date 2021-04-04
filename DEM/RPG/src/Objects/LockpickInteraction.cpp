@@ -14,6 +14,14 @@ CLockpickInteraction::CLockpickInteraction(std::string_view CursorImage)
 }
 //---------------------------------------------------------------------
 
+bool CLockpickInteraction::IsAvailable(const Game::CInteractionContext& Context) const
+{
+	// Need at least one capable actor. No mechanics skill is required because there are locks
+	// that are simple enough to be lockpicked by anyone. Hard locks must be filtered in targeting code.
+	return !Context.Actors.empty(); //!!! && AnyHasCapability(Context.Actors, ECapability::Interact)
+}
+//---------------------------------------------------------------------
+
 bool CLockpickInteraction::Execute(Game::CInteractionContext& Context, bool Enqueue) const
 {
 	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;

@@ -58,7 +58,6 @@ bool CInteractionManager::RegisterTool(CStrID ID, const Data::CParams& Params)
 	Tool.IconID = Params.Get(CStrID("Icon"), CString::Empty);
 	Tool.Name = Params.Get(CStrID("Name"), CString::Empty);
 	Tool.Description = Params.Get(CStrID("Description"), CString::Empty);
-	const std::string IsAvailable = Params.Get(CStrID("IsAvailable"), CString::Empty);
 
 	Data::PDataArray Tags;
 	if (Params.TryGet<Data::PDataArray>(Tags, CStrID("Tags")))
@@ -66,7 +65,7 @@ bool CInteractionManager::RegisterTool(CStrID ID, const Data::CParams& Params)
 			Tool.Tags.insert(CStrID(TagData.GetValue<CString>().CStr()));
 
 	Data::PDataArray Actions;
-	if (Params.TryGet<Data::PDataArray>(Actions, CStrID("Actions")))
+	if (Params.TryGet<Data::PDataArray>(Actions, CStrID("Interactions")))
 	{
 		for (const auto& ActionData : *Actions)
 		{
@@ -95,14 +94,6 @@ bool CInteractionManager::RegisterTool(CStrID ID, const Data::CParams& Params)
 		}
 	}
 
-	// TODO: pushes the compiled chunk as a Lua function on top of the stack,
-	// need to save anywhere in this Tool's table?
-	if (!IsAvailable.empty())
-	{
-		auto LoadedCondition = _Lua.load("local SelectedActors = ...; return " + IsAvailable, ID.CStr());
-		if (LoadedCondition.valid()) Tool.AvailabilityCondition = LoadedCondition;
-	}
-
 	return RegisterTool(ID, std::move(Tool));
 }
 //---------------------------------------------------------------------
@@ -126,22 +117,20 @@ const CInteractionTool* CInteractionManager::FindTool(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-// Returns found tool only if it is available for the provided actor selection
-const CInteractionTool* CInteractionManager::FindAvailableTool(CStrID ToolID, const std::vector<HEntity>& SelectedActors) const
+// Returns found tool only if it is available in a context
+const CInteractionTool* CInteractionManager::FindAvailableTool(CStrID ID, const CInteractionContext& Context) const
 {
-	auto pTool = FindTool(ToolID);
+	auto pTool = FindTool(ID);
 	if (!pTool) return nullptr;
 
-	if (!pTool->AvailabilityCondition) return pTool;
-
-	auto Result = pTool->AvailabilityCondition(SelectedActors);
-	if (!Result.valid())
+	//???!!!check Condition too?!
+	for (const auto& [InteractionID, Condition] : pTool->Interactions)
 	{
-		sol::error Error = Result;
-		::Sys::Error(Error.what());
+		auto pInteraction = FindInteraction(InteractionID);
+		if (pInteraction && pInteraction->IsAvailable(Context)) return pTool;
 	}
 
-	return (Result.valid() && Result) ? pTool : nullptr;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -156,7 +145,7 @@ bool CInteractionManager::SelectTool(CInteractionContext& Context, CStrID ToolID
 {
 	if (Context.Tool == ToolID) return true;
 
-	if (!FindAvailableTool(ToolID, Context.Actors)) return false;
+	if (!FindAvailableTool(ToolID, Context)) return false;
 
 	Context.Tool = ToolID;
 	Context.Source = Source;
@@ -183,11 +172,14 @@ void CInteractionManager::ResetCandidateInteraction(CInteractionContext& Context
 }
 //---------------------------------------------------------------------
 
-const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const sol::function& Condition, CInteractionContext& Context)
+const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const sol::function& Condition, CInteractionContext& Context) const
 {
 	// Validate interaction itself
 	auto pInteraction = FindInteraction(ID);
 	if (!pInteraction) return nullptr;
+
+	// Check main condition
+	if (!pInteraction->IsAvailable(Context)) return nullptr;
 
 	// Check additional condition
 	if (Condition)
@@ -213,7 +205,7 @@ const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const so
 
 bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Context)
 {
-	auto pTool = FindAvailableTool(Context.Tool, Context.Actors);
+	auto pTool = FindAvailableTool(Context.Tool, Context);
 
 	// If selected tool became unavailable, reset to default one
 	if (!pTool)
@@ -243,7 +235,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	// If target is a smart object, select first applicable interaction in it
 	if (Context.CandidateTarget.Entity)
 	{
-		//!!!remove session from context, store here as owner!
+		//!!!remove session from context, store here as owner! Anyway CInteractionManager is per session.
 		if (auto pWorld = Context.Session->FindFeature<CGameWorld>())
 		{
 			auto pSmart = pWorld->FindComponent<CSmartObjectComponent>(Context.CandidateTarget.Entity);
@@ -335,7 +327,7 @@ bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool 
 {
 	if (!Context.Interaction) return false;
 
-	auto pTool = FindAvailableTool(Context.Tool, Context.Actors);
+	auto pTool = FindAvailableTool(Context.Tool, Context);
 	if (!pTool) return false;
 	auto pInteraction = FindInteraction(Context.Interaction);
 	if (!pInteraction) return false;
