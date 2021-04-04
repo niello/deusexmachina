@@ -15,7 +15,7 @@ CMoveInteraction::CMoveInteraction(std::string_view CursorImage)
 
 bool CMoveInteraction::Execute(CInteractionContext& Context, bool Enqueue) const
 {
-	if (Context.SelectedTargets.empty()) return false;
+	if (Context.Targets.empty()) return false;
 
 	auto pFormationMgr = Context.Session->FindFeature<CFormationManager>();
 	if (!pFormationMgr) return false;
@@ -24,7 +24,7 @@ bool CMoveInteraction::Execute(CInteractionContext& Context, bool Enqueue) const
 	//const auto* pSceneComponent = pWorld->FindComponent<DEM::Game::CSceneComponent>(*_SelectedActors.begin());
 	//const vector3 Direction = Context.SelectedTargets[0].Point - pSceneComponent->RootNode->GetWorldPosition();
 
-	return pFormationMgr->Move(Context.SelectedActors, Context.SelectedTargets[0].Point, vector3::Zero, Enqueue);
+	return pFormationMgr->Move(Context.Actors, Context.Targets[0].Point, vector3::Zero, Enqueue);
 }
 //---------------------------------------------------------------------
 

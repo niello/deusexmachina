@@ -15,7 +15,7 @@ public:
 
 	virtual bool IsTargetValid(const CInteractionContext& Context, U32 Index) const override
 	{
-		const auto& Target = (Index == CURRENT_TARGET) ? Context.Target : Context.SelectedTargets[Index];
+		const auto& Target = (Index == CURRENT_TARGET) ? Context.CandidateTarget : Context.Targets[Index];
 		if (!Target.Valid) return false;
 		auto pWorld = Context.Session->FindFeature<CGameWorld>();
 		return pWorld && pWorld->FindComponent<CSelectableComponent>(Target.Entity);

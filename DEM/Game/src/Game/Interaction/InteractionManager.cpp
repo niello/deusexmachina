@@ -28,9 +28,9 @@ CInteractionManager::CInteractionManager(CGameSession& Owner)
 	_Lua.new_usertype<CInteractionContext>("CInteractionContext"
 		, "Tool", &CInteractionContext::Tool
 		, "Source", &CInteractionContext::Source
-		, "SelectedActors", &CInteractionContext::SelectedActors
-		, "Target", &CInteractionContext::Target
-		, "SelectedTargets", &CInteractionContext::SelectedTargets
+		, "Actors", &CInteractionContext::Actors
+		, "CandidateTarget", &CInteractionContext::CandidateTarget
+		, "Targets", &CInteractionContext::Targets
 		, "SelectedTargetCount", &CInteractionContext::SelectedTargetCount
 		);
 }
@@ -156,7 +156,7 @@ bool CInteractionManager::SelectTool(CInteractionContext& Context, CStrID ToolID
 {
 	if (Context.Tool == ToolID) return true;
 
-	if (!FindAvailableTool(ToolID, Context.SelectedActors)) return false;
+	if (!FindAvailableTool(ToolID, Context.Actors)) return false;
 
 	Context.Tool = ToolID;
 	Context.Source = Source;
@@ -178,7 +178,7 @@ void CInteractionManager::ResetCandidateInteraction(CInteractionContext& Context
 {
 	Context.Interaction = CStrID::Empty;
 	Context.Condition = sol::function();
-	Context.SelectedTargets.clear();
+	Context.Targets.clear();
 	Context.SelectedTargetCount = 0;
 }
 //---------------------------------------------------------------------
@@ -192,7 +192,7 @@ const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const so
 	// Check additional condition
 	if (Condition)
 	{
-		auto Result = Condition(Context.SelectedActors, Context.Target);
+		auto Result = Condition(Context.Actors, Context.CandidateTarget);
 		if (!Result.valid())
 		{
 			sol::error Error = Result;
@@ -213,7 +213,7 @@ const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const so
 
 bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Context)
 {
-	auto pTool = FindAvailableTool(Context.Tool, Context.SelectedActors);
+	auto pTool = FindAvailableTool(Context.Tool, Context.Actors);
 
 	// If selected tool became unavailable, reset to default one
 	if (!pTool)
@@ -241,12 +241,12 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	n_assert(!Context.SelectedTargetCount);
 
 	// If target is a smart object, select first applicable interaction in it
-	if (Context.Target.Entity)
+	if (Context.CandidateTarget.Entity)
 	{
 		//!!!remove session from context, store here as owner!
 		if (auto pWorld = Context.Session->FindFeature<CGameWorld>())
 		{
-			auto pSmart = pWorld->FindComponent<CSmartObjectComponent>(Context.Target.Entity);
+			auto pSmart = pWorld->FindComponent<CSmartObjectComponent>(Context.CandidateTarget.Entity);
 			if (pSmart && pSmart->Asset)
 			{
 				if (auto pSmartAsset = pSmart->Asset->ValidateObject<CSmartObject>())
@@ -305,13 +305,13 @@ bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 	if (!pInteraction->GetTargetFilter(Context.SelectedTargetCount)->IsTargetValid(Context)) return false;
 
 	// If just started to select targets, allocate slots for them
-	if (Context.SelectedTargets.empty())
+	if (Context.Targets.empty())
 	{
-		Context.SelectedTargets.resize(pInteraction->GetMaxTargetCount());
+		Context.Targets.resize(pInteraction->GetMaxTargetCount());
 		Context.SelectedTargetCount = 0;
 	}
 
-	Context.SelectedTargets[Context.SelectedTargetCount] = Context.Target;
+	Context.Targets[Context.SelectedTargetCount] = Context.CandidateTarget;
 	++Context.SelectedTargetCount;
 
 	return true;
@@ -335,13 +335,13 @@ bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool 
 {
 	if (!Context.Interaction) return false;
 
-	auto pTool = FindAvailableTool(Context.Tool, Context.SelectedActors);
+	auto pTool = FindAvailableTool(Context.Tool, Context.Actors);
 	if (!pTool) return false;
 	auto pInteraction = FindInteraction(Context.Interaction);
 	if (!pInteraction) return false;
 
 	//!!!DBG TMP!
-	std::string Actor = Context.SelectedActors.empty() ? "none" : std::to_string(*Context.SelectedActors.begin());
+	std::string Actor = Context.Actors.empty() ? "none" : std::to_string(*Context.Actors.begin());
 	::Sys::Log(("Tool: " + Context.Tool.ToString() +
 		", Interaction: " + Context.Interaction.CStr() +
 		", Actor: " + Actor + "\n").c_str());

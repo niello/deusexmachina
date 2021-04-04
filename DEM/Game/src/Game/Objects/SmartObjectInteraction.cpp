@@ -18,20 +18,20 @@ CSmartObjectInteraction::CSmartObjectInteraction(CStrID InteractionID, std::stri
 //!!!FIXME: need different implementations for selecting an actor! Now only the first selected actor receives a command!
 bool CSmartObjectInteraction::Execute(CInteractionContext& Context, bool Enqueue) const
 {
-	if (Context.SelectedTargets.empty() || !Context.SelectedTargets[0].Entity || Context.SelectedActors.empty()) return false;
+	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;
 
 	auto pWorld = Context.Session->FindFeature<CGameWorld>();
 	if (!pWorld) return false;
-	auto pSOComponent = pWorld->FindComponent<CSmartObjectComponent>(Context.SelectedTargets[0].Entity);
+	auto pSOComponent = pWorld->FindComponent<CSmartObjectComponent>(Context.Targets[0].Entity);
 	if (!pSOComponent || !pSOComponent->Asset) return false;
 	CSmartObject* pSOAsset = pSOComponent->Asset->GetObject<CSmartObject>();
 	if (!pSOAsset) return false;
 
-	auto pQueue = pWorld->FindComponent<CActionQueueComponent>(Context.SelectedActors[0]);
+	auto pQueue = pWorld->FindComponent<CActionQueueComponent>(Context.Actors[0]);
 	if (!pQueue) return false;
 
 	if (!Enqueue) pQueue->Reset();
-	pQueue->EnqueueAction<InteractWithSmartObject>(_InteractionID, Context.SelectedTargets[0].Entity);
+	pQueue->EnqueueAction<InteractWithSmartObject>(_InteractionID, Context.Targets[0].Entity);
 
 	return true;
 }

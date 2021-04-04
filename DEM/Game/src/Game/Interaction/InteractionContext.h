@@ -20,19 +20,20 @@ struct CTargetInfo
 	bool               Valid = false;
 };
 
+// FIXME: Session not here? pass Session from CInteractionManager along with this ctx? what with Condition then???
 struct CInteractionContext
 {
 	PGameSession             Session;
 	CStrID                   Tool;
-	HEntity                  Source; // E.g. item
 	CStrID                   Interaction;
 	sol::function            Condition;
-	CTargetInfo              Target;
-	std::vector<HEntity>     SelectedActors;
-	std::vector<CTargetInfo> SelectedTargets;
-	U32                      SelectedTargetCount = 0;
+	CTargetInfo              CandidateTarget;
+	HEntity                  Source; // E.g. item
+	std::vector<HEntity>     Actors;
+	std::vector<CTargetInfo> Targets;
+	U32                      SelectedTargetCount = 0; // Required because Targets.size caches max targets for interaction
 
-	bool AreAllTargetsSet() const { return !SelectedTargets.empty() && SelectedTargets.size() == SelectedTargetCount; }
+	bool AreAllTargetsSet() const { return !Targets.empty() && Targets.size() == SelectedTargetCount; }
 };
 
 }

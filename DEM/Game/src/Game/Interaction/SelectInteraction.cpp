@@ -14,18 +14,15 @@ CSelectInteraction::CSelectInteraction(std::string_view CursorImage)
 
 bool CSelectInteraction::Execute(CInteractionContext& Context, bool Enqueue) const
 {
-	if (Context.SelectedTargets.empty()) return false;
+	if (Context.Targets.empty()) return false;
 
-	if (auto EntityID = Context.SelectedTargets[0].Entity)
-	{
-		auto& Selected = Context.SelectedActors;
-		if (!Enqueue) Selected.clear();
-		if (std::find(Selected.cbegin(), Selected.cend(), EntityID) == Selected.cend())
-			Selected.push_back(EntityID);
-		return true;
-	}
+	if (!Enqueue) Context.Actors.clear();
 
-	return false;
+	for (const auto& Target : Context.Targets)
+		if (Target.Entity && std::find(Context.Actors.cbegin(), Context.Actors.cend(), Target.Entity) == Context.Actors.cend())
+			Context.Actors.push_back(Target.Entity);
+
+	return true;
 }
 //---------------------------------------------------------------------
 

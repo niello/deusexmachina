@@ -16,13 +16,13 @@ CLockpickInteraction::CLockpickInteraction(std::string_view CursorImage)
 
 bool CLockpickInteraction::Execute(Game::CInteractionContext& Context, bool Enqueue) const
 {
-	if (Context.SelectedTargets.empty() || !Context.SelectedTargets[0].Entity || Context.SelectedActors.empty()) return false;
+	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;
 
 	auto pWorld = Context.Session->FindFeature<Game::CGameWorld>();
 	if (!pWorld) return false;
 
 	//!!!DBG TMP!
-	pWorld->RemoveComponent<CLockComponent>(Context.SelectedTargets[0].Entity);
+	pWorld->RemoveComponent<CLockComponent>(Context.Targets[0].Entity);
 
 	return true;
 }

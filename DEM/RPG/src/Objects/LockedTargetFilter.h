@@ -18,7 +18,7 @@ public:
 	virtual bool IsTargetValid(const Game::CInteractionContext& Context, U32 Index) const override
 	{
 		// Check for the lock component
-		const auto& Target = (Index == CURRENT_TARGET) ? Context.Target : Context.SelectedTargets[Index];
+		const auto& Target = (Index == CURRENT_TARGET) ? Context.CandidateTarget : Context.Targets[Index];
 		if (!Target.Valid) return false;
 		auto pWorld = Context.Session->FindFeature<Game::CGameWorld>();
 		return pWorld && pWorld->FindComponent<CLockComponent>(Target.Entity);
