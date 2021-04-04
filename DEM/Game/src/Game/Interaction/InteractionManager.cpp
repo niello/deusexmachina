@@ -59,10 +59,11 @@ bool CInteractionManager::RegisterTool(CStrID ID, const Data::CParams& Params)
 	Tool.Name = Params.Get(CStrID("Name"), CString::Empty);
 	Tool.Description = Params.Get(CStrID("Description"), CString::Empty);
 
-	Data::PDataArray Tags;
-	if (Params.TryGet<Data::PDataArray>(Tags, CStrID("Tags")))
-		for (const auto& TagData : *Tags)
-			Tool.Tags.insert(CStrID(TagData.GetValue<CString>().CStr()));
+	// FIXME: tags not here, in actor abilities?!
+	//Data::PDataArray Tags;
+	//if (Params.TryGet<Data::PDataArray>(Tags, CStrID("Tags")))
+	//	for (const auto& TagData : *Tags)
+	//		Tool.Tags.insert(CStrID(TagData.GetValue<CString>().CStr()));
 
 	Data::PDataArray Actions;
 	if (Params.TryGet<Data::PDataArray>(Actions, CStrID("Interactions")))
@@ -86,6 +87,11 @@ bool CInteractionManager::RegisterTool(CStrID ID, const Data::CParams& Params)
 					{
 						auto LoadedCondition = _Lua.load("local Actors, Target = ...; return " + Condition, (ID.CStr() + ActID).CStr());
 						if (LoadedCondition.valid()) ConditionFunc = LoadedCondition;
+						else
+						{
+							sol::error Error = LoadedCondition;
+							::Sys::Error(Error.what());
+						}
 					}
 
 					Tool.Interactions.emplace_back(CStrID(ActID.CStr()), std::move(ConditionFunc));
@@ -100,6 +106,8 @@ bool CInteractionManager::RegisterTool(CStrID ID, const Data::CParams& Params)
 
 bool CInteractionManager::RegisterInteraction(CStrID ID, PInteraction&& Interaction)
 {
+	if (!Interaction || !Interaction->GetMaxTargetCount()) return false;
+
 	auto It = _Interactions.find(ID);
 	if (It == _Interactions.cend())
 		_Interactions.emplace(ID, std::move(Interaction));
@@ -205,79 +213,113 @@ const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const so
 
 bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Context)
 {
-	auto pTool = FindAvailableTool(Context.Tool, Context);
+	if (Context.Interaction)
+	{
+		// If we already started selecting targets, interaction remains selected if only it doesn't become invalid
+		if (Context.SelectedTargetCount && ValidateInteraction(Context.Interaction, Context.Condition, Context)) return true;
 
-	// If selected tool became unavailable, reset to default one
+		ResetCandidateInteraction(Context);
+	}
+
+	// Find current tool by ID. If not found, reset the tool to default.
+	auto pTool = FindTool(Context.Tool);
 	if (!pTool)
 	{
-		SelectTool(Context, _DefaultTool, {});
-		pTool = FindTool(Context.Tool);
+		if (Context.Tool != _DefaultTool)
+		{
+			Context.Tool = _DefaultTool;
+			Context.Source = {};
+			pTool = FindTool(Context.Tool);
+		}
+
 		if (!pTool) return false;
 	}
 
-	// Validate current candidate interaction, if set
-	if (Context.Interaction)
-	{
-		if (ValidateInteraction(Context.Interaction, Context.Condition, Context))
-		{
-			// If we already started to select targets, stick to the selected interaction
-			if (Context.SelectedTargetCount) return true;
-		}
-		else
-		{
-			ResetCandidateInteraction(Context);
-			return false;
-		}
-	}
-
-	n_assert(!Context.SelectedTargetCount);
-
-	// If target is a smart object, select first applicable interaction in it
+	// Check if our current target candidate is a smart object
+	CSmartObject* pSOAsset = nullptr;
 	if (Context.CandidateTarget.Entity)
 	{
 		//!!!remove session from context, store here as owner! Anyway CInteractionManager is per session.
 		if (auto pWorld = Context.Session->FindFeature<CGameWorld>())
 		{
 			auto pSmart = pWorld->FindComponent<CSmartObjectComponent>(Context.CandidateTarget.Entity);
-			if (pSmart && pSmart->Asset)
+			if (pSmart && pSmart->Asset) pSOAsset = pSmart->Asset->ValidateObject<CSmartObject>();
+		}
+	}
+
+	// Allow a smart object to override an interaction by tool ID (e.g. DefaultAction -> Open/Close for door)
+	if (pSOAsset) // && Context.Tool)
+	{
+		//Interaction+ID (or empty) = pSOAsset->GetInteractionOverride(Context.Tool, Context);
+		// if has override, return with it!
+		//!!!must check availability of SO interaction in the context!
+
+		/* OLD:
+			for (const CStrID ID : pSmartAsset->GetInteractions())
 			{
-				if (auto pSmartAsset = pSmart->Asset->ValidateObject<CSmartObject>())
+				auto Condition = pSmartAsset->GetScriptFunction(Context.Session->GetScriptState(), "Can" + std::string(ID.CStr()));
+				auto pInteraction = ValidateInteraction(ID, Condition, Context);
+				if (pInteraction &&
+					pInteraction->GetMaxTargetCount() > 0 &&
+					pInteraction->GetTargetFilter(0)->IsTargetValid(Context))
 				{
-					for (const CStrID ID : pSmartAsset->GetInteractions())
-					{
-						auto Condition = pSmartAsset->GetScriptFunction(Context.Session->GetScriptState(), "Can" + std::string(ID.CStr()));
-						auto pInteraction = ValidateInteraction(ID, Condition, Context);
-						if (pInteraction &&
-							pInteraction->GetMaxTargetCount() > 0 &&
-							pInteraction->GetTargetFilter(0)->IsTargetValid(Context))
-						{
-							Context.Interaction = ID;
-							Context.Condition = Condition;
-							return true;
-						}
-					}
+					Context.Interaction = ID;
+					Context.Condition = Condition;
+					return true;
 				}
 			}
-		}
+		*/
 	}
 
-	// Select first interaction in the current tool that accepts current target
-	for (U32 i = 0; i < pTool->Interactions.size(); ++i)
+	// Resolve selected tool into an interaction, the first valid for the target becomes a candidate
+	//bool HasAvailableInteraction = false;
+	for (const auto& [ID, Condition] : pTool->Interactions)
 	{
-		const auto& [ID, Condition] = pTool->Interactions[i];
-		auto pInteraction = ValidateInteraction(ID, Condition, Context);
-		if (pInteraction &&
-			pInteraction->GetMaxTargetCount() > 0 &&
-			pInteraction->GetTargetFilter(0)->IsTargetValid(Context))
+		auto pInteraction = FindInteraction(ID);
+		if (!pInteraction || !pInteraction->IsAvailable(Context)) continue;
+
+		//HasAvailableInteraction = true;
+
+		// Check additional condition
+		//???!!!move to method?! or can simplify this call? too verbose without any complex logic
+		// FIXME: DUPLICATED CODE! See ValidateInteraction!
+		if (Condition)
+		{
+			auto Result = Condition(Context.Actors, Context.CandidateTarget);
+			if (!Result.valid())
+			{
+				sol::error Error = Result;
+				::Sys::Error(Error.what());
+				continue;
+			}
+			else if (Result.get_type() == sol::type::nil || !Result) continue; //???SOL: why nil can't be negated? https://www.lua.org/pil/3.3.html
+		}
+
+		// If interaction accepts our candidate target as its first target, it becomes our choice
+		if (pInteraction->GetTargetFilter(0)->IsTargetValid(Context))
 		{
 			Context.Interaction = ID;
-			Context.Condition = Condition;
-			return true;
+			Context.Condition = Condition; //???precondition from tool only? availability is virtualized in an interaction
+			break;
 		}
 	}
 
-	// No interaction found for the current context state
-	ResetCandidateInteraction(Context);
+	// Allow a smart object to override an interaction by ID (e.g. FireballAbility -> MySpecialReactionOnFireball)
+	if (pSOAsset && Context.Interaction)
+	{
+		//Interaction+ID (or empty) = pSOAsset->GetInteractionOverride(Context.Interaction, Context);
+		// if has override, return with it!
+		//!!!must check availability of SO interaction in the context!
+	}
+
+	// If tool has no available interactions, the tool itself is not available and must be reset to default
+	//???realy need here? allow an application to do this if it wants?
+	//if (!HasAvailableInteraction)
+	//{
+	//	Context.Tool = _DefaultTool;
+	//	Context.Source = {};
+	//}
+
 	return false;
 }
 //---------------------------------------------------------------------

@@ -22,7 +22,7 @@ struct CInteractionTool
 	std::string      Name;
 	std::string      Description;
 
-	std::set<CStrID> Tags;
+	//std::set<CStrID> Tags; // FIXME: tags not here, in actor abilities?!
 
 	std::vector<std::pair<CStrID, sol::function>> Interactions; // Interaction ID -> optional condition
 };

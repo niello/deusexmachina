@@ -34,6 +34,7 @@ public:
 
 	virtual ~CInteraction();
 
+	//!!!FIXME: target count may depend on actor/ctx!!! E.g. fire rays, one ray per 2 willpower! Virtualize target related methods?
 	bool AddTarget(PTargetFilter&& Filter, std::string_view CursorImage = {}, U32 Count = 1, bool IsOptional = false);
 
 	U32                  GetMaxTargetCount() const;
