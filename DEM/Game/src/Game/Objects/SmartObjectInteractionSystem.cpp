@@ -438,17 +438,7 @@ static EActionStatus InteractWithTarget(InteractWithSmartObject& Action, HEntity
 		}
 	}
 
-	// TODO: cache duration?
-	float Duration = -1.f;
-	const auto& Zone = SO.GetInteractionZone(Action._ZoneIndex);
-	auto It = std::find_if(Zone.Interactions.cbegin(), Zone.Interactions.cend(), [InteractionID = AIState.CurrInteraction](const auto& Elm)
-	{
-		return Elm.ID == InteractionID;
-	});
-	if (It != Zone.Interactions.cend()) // Should always be true
-		Duration = It->Duration;
-
-	return (AIState.CurrInteractionTime >= Duration) ? EActionStatus::Succeeded : EActionStatus::Active;
+	return EActionStatus::Active;
 }
 //---------------------------------------------------------------------
 

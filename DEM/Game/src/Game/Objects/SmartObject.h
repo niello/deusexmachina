@@ -58,7 +58,6 @@ struct CSmartObjectInteractionInfo
 	EFacingMode FacingMode;
 	vector3     FacingDir;
 	float       FacingTolerance = 0.f;
-	float       Duration = 0.f;
 };
 
 struct CInteractionZone

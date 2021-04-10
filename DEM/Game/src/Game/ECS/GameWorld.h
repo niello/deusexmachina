@@ -154,11 +154,7 @@ public:
 	sol::table _ScriptFields;
 	void InitScript(sol::state& Lua)
 	{
-		if (!_ScriptFields.valid())
-		{
-			_ScriptFields = Lua.create_table();
-			//Lua["Session"]["WorldTable"] = _ScriptFields; //???need?
-		}
+		if (!_ScriptFields.valid()) _ScriptFields = Lua.create_table();
 	}
 };
 

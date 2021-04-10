@@ -233,6 +233,7 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, float dt)
 }
 //---------------------------------------------------------------------
 
+// FIXME: how to init SO created in runtime?
 void InitSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, Resources::CResourceManager& ResMgr)
 {
 	World.ForEachComponent<DEM::Game::CSmartObjectComponent>([&Lua, &ResMgr](auto EntityID, DEM::Game::CSmartObjectComponent& Component)

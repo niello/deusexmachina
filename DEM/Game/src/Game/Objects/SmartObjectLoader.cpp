@@ -166,8 +166,6 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 						}
 						Interaction.FacingTolerance = n_deg2rad(std::max(0.f, ActionDesc.Get(CStrID("FacingTolerance"), 0.f)));
 					}
-
-					Interaction.Duration = std::max(0.f, ActionDesc.Get(CStrID("Duration"), 0.f));
 				}
 			}
 
