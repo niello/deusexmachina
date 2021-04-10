@@ -14,7 +14,7 @@ public:
 
 	static inline constexpr auto CURRENT_TARGET = std::numeric_limits<U32>().max();
 
-	virtual bool IsTargetValid(const CInteractionContext& Context, U32 Index = CURRENT_TARGET) const = 0;
+	virtual bool IsTargetValid(CGameSession& Session, const CInteractionContext& Context, U32 Index = CURRENT_TARGET) const = 0;
 };
 
 }

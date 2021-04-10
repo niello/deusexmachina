@@ -23,7 +23,6 @@ struct CTargetInfo
 // FIXME: Session not here? pass Session from CInteractionManager along with this ctx? what with Condition then???
 struct CInteractionContext
 {
-	PGameSession             Session;
 	CStrID                   Tool;
 	CStrID                   Interaction;
 	sol::function            Condition;

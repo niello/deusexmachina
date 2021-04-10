@@ -11,21 +11,19 @@
 namespace DEM::Game
 {
 
-//!!!must be per-session, because uses Lua, which is per-session!
-//!!!if so, no need to store session inside an interaction context!
 CInteractionManager::CInteractionManager(CGameSession& Owner)
-	: _Lua(Owner.GetScriptState())
+	: _Session(Owner)
 {
 	//???right here or call methods from other CPPs? Like CTargetInfo::ScriptInterface(sol::state_view Lua)
 	//!!!needs definition of pointer types!
 	// TODO: add traits for HEntity, add bindings for vector3 and CSceneNode
-	_Lua.new_usertype<CTargetInfo>("CTargetInfo"
+	_Session.GetScriptState().new_usertype<CTargetInfo>("CTargetInfo"
 		, "Entity", &CTargetInfo::Entity
 		//, "Node", &CTargetInfo::pNode
 		, "Point", &CTargetInfo::Point
 		); // there is also &CTargetInfo::Valid
 
-	_Lua.new_usertype<CInteractionContext>("CInteractionContext"
+	_Session.GetScriptState().new_usertype<CInteractionContext>("CInteractionContext"
 		, "Tool", &CInteractionContext::Tool
 		, "Source", &CInteractionContext::Source
 		, "Actors", &CInteractionContext::Actors
@@ -85,7 +83,7 @@ bool CInteractionManager::RegisterTool(CStrID ID, const Data::CParams& Params)
 					const std::string Condition = (*pActionDesc)->Get(CStrID("Condition"), CString::Empty);
 					if (!Condition.empty())
 					{
-						auto LoadedCondition = _Lua.load("local Actors, Target = ...; return " + Condition, (ID.CStr() + ActID).CStr());
+						auto LoadedCondition = _Session.GetScriptState().load("local Actors, Target = ...; return " + Condition, (ID.CStr() + ActID).CStr());
 						if (LoadedCondition.valid()) ConditionFunc = LoadedCondition;
 						else
 						{
@@ -199,12 +197,12 @@ const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const so
 			::Sys::Error(Error.what());
 			return nullptr;
 		}
-		else if (Result.get_type() == sol::type::nil || !Result) return nullptr; //???SOL: why nil can't be negated?
+		else if (Result.get_type() == sol::type::nil || !Result) return nullptr; //???SOL: why nil can't be negated? https://www.lua.org/pil/3.3.html
 	}
 
 	// Validate selected targets, their state might change
 	for (U32 i = 0; i < Context.SelectedTargetCount; ++i)
-		if (!pInteraction->GetTargetFilter(i)->IsTargetValid(Context, i))
+		if (!pInteraction->GetTargetFilter(i)->IsTargetValid(_Session, Context, i))
 			return nullptr;
 
 	return pInteraction;
@@ -239,8 +237,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	CSmartObject* pSOAsset = nullptr;
 	if (Context.CandidateTarget.Entity)
 	{
-		//!!!remove session from context, store here as owner! Anyway CInteractionManager is per session.
-		if (auto pWorld = Context.Session->FindFeature<CGameWorld>())
+		if (auto pWorld = _Session.FindFeature<CGameWorld>())
 		{
 			auto pSmart = pWorld->FindComponent<CSmartObjectComponent>(Context.CandidateTarget.Entity);
 			if (pSmart && pSmart->Asset) pSOAsset = pSmart->Asset->ValidateObject<CSmartObject>();
@@ -248,27 +245,16 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	}
 
 	// Allow a smart object to override an interaction by tool ID (e.g. DefaultAction -> Open/Close for door)
-	if (pSOAsset) // && Context.Tool)
+	//???FIXME: or override only interactions, and add special iact intended for overriding at the beginning of the tool list?!
+	if (pSOAsset && Context.Tool)
 	{
-		//Interaction+ID (or empty) = pSOAsset->GetInteractionOverride(Context.Tool, Context);
-		// if has override, return with it!
-		//!!!must check availability of SO interaction in the context!
-
-		/* OLD:
-			for (const CStrID ID : pSmartAsset->GetInteractions())
-			{
-				auto Condition = pSmartAsset->GetScriptFunction(Context.Session->GetScriptState(), "Can" + std::string(ID.CStr()));
-				auto pInteraction = ValidateInteraction(ID, Condition, Context);
-				if (pInteraction &&
-					pInteraction->GetMaxTargetCount() > 0 &&
-					pInteraction->GetTargetFilter(0)->IsTargetValid(Context))
-				{
-					Context.Interaction = ID;
-					Context.Condition = Condition;
-					return true;
-				}
-			}
-		*/
+		const CStrID OverrideID = pSOAsset->GetInteractionOverride(Context.Tool, Context);
+		if (OverrideID)
+		{
+			Context.Interaction = OverrideID;
+			//???Context.Condition = Condition? virtual method inside iact itself? what with tool precondition?
+			return true;
+		}
 	}
 
 	// Resolve selected tool into an interaction, the first valid for the target becomes a candidate
@@ -296,7 +282,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 		}
 
 		// If interaction accepts our candidate target as its first target, it becomes our choice
-		if (pInteraction->GetTargetFilter(0)->IsTargetValid(Context))
+		if (pInteraction->GetTargetFilter(0)->IsTargetValid(_Session, Context))
 		{
 			Context.Interaction = ID;
 			Context.Condition = Condition; //???precondition from tool only? availability is virtualized in an interaction
@@ -307,9 +293,13 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	// Allow a smart object to override an interaction by ID (e.g. FireballAbility -> MySpecialReactionOnFireball)
 	if (pSOAsset && Context.Interaction)
 	{
-		//Interaction+ID (or empty) = pSOAsset->GetInteractionOverride(Context.Interaction, Context);
-		// if has override, return with it!
-		//!!!must check availability of SO interaction in the context!
+		const CStrID OverrideID = pSOAsset->GetInteractionOverride(Context.Interaction, Context);
+		if (OverrideID)
+		{
+			Context.Interaction = OverrideID;
+			//???Context.Condition = Condition? virtual method inside iact itself? what with tool precondition?
+			return true;
+		}
 	}
 
 	// If tool has no available interactions, the tool itself is not available and must be reset to default
@@ -320,7 +310,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	//	Context.Source = {};
 	//}
 
-	return false;
+	return !!Context.Interaction;
 }
 //---------------------------------------------------------------------
 
@@ -336,7 +326,7 @@ bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 
 	if (Context.SelectedTargetCount >= pInteraction->GetMaxTargetCount()) return false;
 
-	if (!pInteraction->GetTargetFilter(Context.SelectedTargetCount)->IsTargetValid(Context)) return false;
+	if (!pInteraction->GetTargetFilter(Context.SelectedTargetCount)->IsTargetValid(_Session, Context)) return false;
 
 	// If just started to select targets, allocate slots for them
 	if (Context.Targets.empty())
@@ -380,7 +370,7 @@ bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool 
 		", Interaction: " + Context.Interaction.CStr() +
 		", Actor: " + Actor + "\n").c_str());
 
-	return pInteraction->Execute(Context, Enqueue);
+	return pInteraction->Execute(_Session, Context, Enqueue);
 }
 //---------------------------------------------------------------------
 

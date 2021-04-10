@@ -5,11 +5,8 @@
 #include <map>
 
 // Handles interaction of the player player with the game world.
-// Stores a registry of all possible interactions and interaction tools,
-// except interactions defined in smart objects.
+// Stores a registry of all possible interactions and interaction tools.
 // External systems access interactions and tools by ID.
-
-//???register SO interactions here too? Can cache Lua because session is known and Lua context is accessible.
 
 namespace Data
 {
@@ -28,9 +25,9 @@ class CInteractionManager : public ::Core::CRTTIBaseClass
 
 protected:
 
+	CGameSession&                      _Session; // Safe because CInteractionManager lives inside a session
 	std::map<CStrID, CInteractionTool> _Tools;
 	std::map<CStrID, PInteraction>     _Interactions;
-	sol::state_view                    _Lua; //???!!!store session ref instead?!
 	CStrID                             _DefaultTool;
 
 	const CInteraction* ValidateInteraction(CStrID ID, const sol::function& Condition, CInteractionContext& Context) const;
@@ -38,7 +35,7 @@ protected:
 public:
 
 	CInteractionManager(CGameSession& Owner);
-	~CInteractionManager();
+	~CInteractionManager() override;
 
 	bool                    RegisterTool(CStrID ID, CInteractionTool&& Tool);
 	bool                    RegisterTool(CStrID ID, const Data::CParams& Params);

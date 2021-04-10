@@ -4,6 +4,7 @@
 #include <Math/Vector3.h>
 #include <sol/forward.hpp>
 #include <vector>
+#include <map>
 
 // Smart object asset describes a set of states, transitions between them,
 // and interactions available over the object under different conditions.
@@ -14,6 +15,7 @@
 namespace DEM::Game
 {
 using PSmartObject = Ptr<class CSmartObject>;
+struct CInteractionContext;
 
 enum class ETransitionInterruptionMode : U8
 {
@@ -77,13 +79,14 @@ public:
 
 protected:
 
-	CStrID                             _ID;
-	CStrID                             _DefaultState;
-	std::string                        _ScriptSource;
-	std::vector<CSmartObjectStateInfo> _States;
-	std::vector<CInteractionZone>      _InteractionZones;
-	CFixedArray<CStrID>                _Interactions;
-	bool                               _Static = false; // true - interaction params never change over time
+	CStrID                                _ID;
+	CStrID                                _DefaultState;
+	std::string                           _ScriptSource;
+	std::vector<CSmartObjectStateInfo>    _States;
+	std::vector<CInteractionZone>         _InteractionZones;
+	CFixedArray<CStrID>                   _Interactions; //!!!???need map?! or RegisterInteractions creates instances?!
+	std::map<CStrID, CFixedArray<CStrID>> _InteractionOverrides;
+	bool                                  _Static = false; // true - interaction params never change over time
 
 public:
 
@@ -91,6 +94,8 @@ public:
 		std::vector<CSmartObjectStateInfo>&& States, std::vector<CInteractionZone>&& InteractionZones);
 
 	bool          InitScript(sol::state& Lua);
+	//???!!!RegisterInteractions(CInteractionManager& Mgr)?!
+	//???unify into InitInSession(CGameSession)?
 
 	const CSmartObjectStateInfo*      FindState(CStrID ID) const;
 	const CSmartObjectTransitionInfo* FindTransition(CStrID FromID, CStrID ToID) const;
@@ -98,13 +103,13 @@ public:
 	bool          HasInteraction(CStrID ID) const;
 	auto          GetInteractionZoneCount() const { return _InteractionZones.size(); }
 	const auto&   GetInteractionZone(U8 ZoneIdx) const { return _InteractionZones[ZoneIdx]; }
+	const auto&   GetInteractions() const { return _Interactions; }
+	CStrID        GetInteractionOverride(CStrID ID, const CInteractionContext& Context) const;
 
 	sol::function GetScriptFunction(sol::state& Lua, std::string_view Name) const;
 	CStrID        GetID() const { return _ID; }
 	CStrID        GetDefaultState() const { return _DefaultState; }
 	bool          IsStatic() const { return _Static; }
-	const auto&   GetScriptSource() const { return _ScriptSource; }
-	const auto&   GetInteractions() const { return _Interactions; }
 };
 
 }

@@ -22,11 +22,11 @@ bool CLockpickInteraction::IsAvailable(const Game::CInteractionContext& Context)
 }
 //---------------------------------------------------------------------
 
-bool CLockpickInteraction::Execute(Game::CInteractionContext& Context, bool Enqueue) const
+bool CLockpickInteraction::Execute(Game::CGameSession& Session, Game::CInteractionContext& Context, bool Enqueue) const
 {
 	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;
 
-	auto pWorld = Context.Session->FindFeature<Game::CGameWorld>();
+	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return false;
 
 	//!!!DBG TMP!

@@ -12,7 +12,7 @@ public:
 
 	CSelectInteraction(std::string_view CursorImage = {});
 
-	virtual bool Execute(CInteractionContext& Context, bool Enqueue) const override;
+	virtual bool Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue) const override;
 };
 
 }

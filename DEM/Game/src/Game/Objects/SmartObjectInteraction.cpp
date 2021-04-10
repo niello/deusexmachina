@@ -16,11 +16,11 @@ CSmartObjectInteraction::CSmartObjectInteraction(CStrID InteractionID, std::stri
 //---------------------------------------------------------------------
 
 //!!!FIXME: need different implementations for selecting an actor! Now only the first selected actor receives a command!
-bool CSmartObjectInteraction::Execute(CInteractionContext& Context, bool Enqueue) const
+bool CSmartObjectInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue) const
 {
 	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;
 
-	auto pWorld = Context.Session->FindFeature<CGameWorld>();
+	auto pWorld = Session.FindFeature<CGameWorld>();
 	if (!pWorld) return false;
 	auto pSOComponent = pWorld->FindComponent<CSmartObjectComponent>(Context.Targets[0].Entity);
 	if (!pSOComponent || !pSOComponent->Asset) return false;

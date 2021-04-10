@@ -14,11 +14,11 @@ class CPassableTargetFilter : public ITargetFilter
 {
 public:
 
-	virtual bool IsTargetValid(const CInteractionContext& Context, U32 Index) const override
+	virtual bool IsTargetValid(CGameSession& Session, const CInteractionContext& Context, U32 Index) const override
 	{
 		const auto& Target = (Index == CURRENT_TARGET) ? Context.CandidateTarget : Context.Targets[Index];
 		if (!Target.Valid) return false;
-		auto pWorld = Context.Session->FindFeature<CGameWorld>();
+		auto pWorld = Session.FindFeature<CGameWorld>();
 		if (!pWorld) return false;
 
 		for (auto Actor : Context.Actors)

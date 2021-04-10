@@ -61,6 +61,35 @@ bool CSmartObject::HasInteraction(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
+CStrID CSmartObject::GetInteractionOverride(CStrID ID, const CInteractionContext& Context) const
+{
+	auto It = _InteractionOverrides.find(ID);
+	if (It == _InteractionOverrides.cend()) return CStrID::Empty;
+
+	for (const CStrID ID : It->second)
+	{
+		// if iact with this ID is available in a Context
+		//(???test here or in interaction manager? may override into a global action, not SO!)
+		//!!!but override based on a list must select first available interaction! DefaultAction -> Open, Close
+
+		/* OLD:
+			auto Condition = pSmartAsset->GetScriptFunction(Context.Session->GetScriptState(), "Can" + std::string(ID.CStr()));
+			auto pInteraction = ValidateInteraction(ID, Condition, Context);
+			if (pInteraction &&
+				pInteraction->GetMaxTargetCount() > 0 &&
+				pInteraction->GetTargetFilter(0)->IsTargetValid(Context))
+			{
+				Context.Interaction = ID;
+				Context.Condition = Condition;
+				return true;
+			}
+		*/
+	}
+
+	return CStrID::Empty;
+}
+//---------------------------------------------------------------------
+
 //!!!TODO: load shared scripts?! E.g. all doors can have different timings and actor animations, but the same lua logic!
 bool CSmartObject::InitScript(sol::state& Lua)
 {

@@ -13,11 +13,11 @@ CMoveInteraction::CMoveInteraction(std::string_view CursorImage)
 }
 //---------------------------------------------------------------------
 
-bool CMoveInteraction::Execute(CInteractionContext& Context, bool Enqueue) const
+bool CMoveInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue) const
 {
 	if (Context.Targets.empty()) return false;
 
-	auto pFormationMgr = Context.Session->FindFeature<CFormationManager>();
+	auto pFormationMgr = Session.FindFeature<CFormationManager>();
 	if (!pFormationMgr) return false;
 
 	//!!!Direction (in another CMoveAndFaceInteraction? other input type, drag mouse):

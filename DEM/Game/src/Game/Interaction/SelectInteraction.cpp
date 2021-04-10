@@ -12,7 +12,7 @@ CSelectInteraction::CSelectInteraction(std::string_view CursorImage)
 }
 //---------------------------------------------------------------------
 
-bool CSelectInteraction::Execute(CInteractionContext& Context, bool Enqueue) const
+bool CSelectInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue) const
 {
 	if (Context.Targets.empty()) return false;
 
