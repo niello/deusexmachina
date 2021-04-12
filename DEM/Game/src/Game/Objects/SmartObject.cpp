@@ -1,4 +1,5 @@
 #include "SmartObject.h"
+#include <Game/Interaction/InteractionContext.h>
 #include <sol/sol.hpp>
 
 namespace DEM::Game
@@ -63,6 +64,9 @@ bool CSmartObject::HasInteraction(CStrID ID) const
 
 CStrID CSmartObject::GetInteractionOverride(CStrID ID, const CInteractionContext& Context) const
 {
+	//!!!DBG TMP!
+	return Context.Tool == CStrID("DefaultAction") ? CStrID("Open") : CStrID::Empty;
+
 	auto It = _InteractionOverrides.find(ID);
 	if (It == _InteractionOverrides.cend()) return CStrID::Empty;
 
@@ -90,7 +94,6 @@ CStrID CSmartObject::GetInteractionOverride(CStrID ID, const CInteractionContext
 }
 //---------------------------------------------------------------------
 
-//!!!TODO: load shared scripts?! E.g. all doors can have different timings and actor animations, but the same lua logic!
 bool CSmartObject::InitScript(sol::state& Lua)
 {
 	if (_ScriptSource.empty() || !_ID) return true;
