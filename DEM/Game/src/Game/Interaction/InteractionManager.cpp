@@ -219,6 +219,8 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 		ResetCandidateInteraction(Context);
 	}
 
+	//!!!TODO: single iact "tool" - use iact ID, don't reset to default tool. Need to check if iact with ID exists!
+
 	// Find current tool by ID. If not found, reset the tool to default.
 	auto pTool = FindTool(Context.Tool);
 	if (!pTool)
@@ -244,29 +246,10 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 		}
 	}
 
-	// Allow a smart object to override an interaction by tool ID (e.g. DefaultAction -> Open/Close for door)
-	//???FIXME: or override only interactions, and add special iact intended for overriding at the beginning of the tool list?!
-	if (pSOAsset && Context.Tool)
-	{
-		const CStrID OverrideID = pSOAsset->GetInteractionOverride(Context.Tool, Context);
-		if (OverrideID)
-		{
-			Context.Interaction = OverrideID;
-			//???Context.Condition = Condition? virtual method inside iact itself? what with tool precondition?
-			return true;
-		}
-	}
-
 	// Resolve selected tool into an interaction, the first valid for the target becomes a candidate
-	//bool HasAvailableInteraction = false;
-	for (const auto& [ID, Condition] : pTool->Interactions)
+	for (const auto& [OriginalID, Condition] : pTool->Interactions)
 	{
-		auto pInteraction = FindInteraction(ID);
-		if (!pInteraction || !pInteraction->IsAvailable(Context)) continue;
-
-		//HasAvailableInteraction = true;
-
-		// Check additional condition
+		// Check tool precondition
 		//???!!!move to method?! or can simplify this call? too verbose without any complex logic
 		// FIXME: DUPLICATED CODE! See ValidateInteraction!
 		if (Condition)
@@ -278,39 +261,31 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 				::Sys::Error(Error.what());
 				continue;
 			}
-			else if (Result.get_type() == sol::type::nil || !Result) continue; //???SOL: why nil can't be negated? https://www.lua.org/pil/3.3.html
+			else if (/*Result.get_type() == sol::type::nil ||*/ !Result) continue; //???SOL: why nil can't be negated? https://www.lua.org/pil/3.3.html
 		}
 
-		// If interaction accepts our candidate target as its first target, it becomes our choice
-		if (pInteraction->GetTargetFilter(0)->IsTargetValid(_Session, Context))
+		CStrID ID = OriginalID;
+
+		// Allow a smart object to override an interaction by ID
+		// (e.g. Default -> OpenDoor or FireballAbility -> MySpecialReactionOnFireball)
+		//!!!remember SO ID only if overridden interaction is SO-specific (can override to another global iact!)
+		//!!!???can have the same ID but different logic? Name clash between global & SO (not SO & SO)?
+		if (pSOAsset)
+			if (const CStrID OverrideID = pSOAsset->GetInteractionOverride(ID, Context))
+				ID = OverrideID;
+
+		// If interaction is available and accepts our candidate target as its first target, it becomes our choice
+		auto pInteraction = FindInteraction(ID);
+		if (pInteraction &&
+			pInteraction->IsAvailable(Context) &&
+			pInteraction->GetTargetFilter(0)->IsTargetValid(_Session, Context))
 		{
 			Context.Interaction = ID;
-			Context.Condition = Condition; //???precondition from tool only? availability is virtualized in an interaction
-			break;
-		}
-	}
-
-	// Allow a smart object to override an interaction by ID (e.g. FireballAbility -> MySpecialReactionOnFireball)
-	if (pSOAsset && Context.Interaction)
-	{
-		const CStrID OverrideID = pSOAsset->GetInteractionOverride(Context.Interaction, Context);
-		if (OverrideID)
-		{
-			Context.Interaction = OverrideID;
-			//???Context.Condition = Condition? virtual method inside iact itself? what with tool precondition?
 			return true;
 		}
 	}
 
-	// If tool has no available interactions, the tool itself is not available and must be reset to default
-	//???realy need here? allow an application to do this if it wants?
-	//if (!HasAvailableInteraction)
-	//{
-	//	Context.Tool = _DefaultTool;
-	//	Context.Source = {};
-	//}
-
-	return !!Context.Interaction;
+	return false;
 }
 //---------------------------------------------------------------------
 
