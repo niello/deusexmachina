@@ -172,13 +172,12 @@ void CInteractionManager::ResetTool(CInteractionContext& Context)
 void CInteractionManager::ResetCandidateInteraction(CInteractionContext& Context)
 {
 	Context.Interaction = CStrID::Empty;
-	Context.Condition = sol::function();
 	Context.Targets.clear();
 	Context.SelectedTargetCount = 0;
 }
 //---------------------------------------------------------------------
 
-const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const sol::function& Condition, CInteractionContext& Context) const
+const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const CInteractionContext& Context) const
 {
 	// Validate interaction itself
 	auto pInteraction = FindInteraction(ID);
@@ -187,23 +186,8 @@ const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const so
 	// Check main condition
 	if (!pInteraction->IsAvailable(Context)) return nullptr;
 
-	// Check additional condition
-	if (Condition)
-	{
-		auto Result = Condition(Context.Actors, Context.CandidateTarget);
-		if (!Result.valid())
-		{
-			sol::error Error = Result;
-			::Sys::Error(Error.what());
-			return nullptr;
-		}
-		else if (Result.get_type() == sol::type::nil || !Result) return nullptr; //???SOL: why nil can't be negated? https://www.lua.org/pil/3.3.html
-	}
-
 	// Validate selected targets, their state might change
-	for (U32 i = 0; i < Context.SelectedTargetCount; ++i)
-		if (!pInteraction->GetTargetFilter(i)->IsTargetValid(_Session, Context, i))
-			return nullptr;
+	if (!pInteraction->AreSelectedTargetsValid(_Session, Context)) return nullptr;
 
 	return pInteraction;
 }
@@ -214,7 +198,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	if (Context.Interaction)
 	{
 		// If we already started selecting targets, interaction remains selected if only it doesn't become invalid
-		if (Context.SelectedTargetCount && ValidateInteraction(Context.Interaction, Context.Condition, Context)) return true;
+		if (Context.SelectedTargetCount && ValidateInteraction(Context.Interaction, Context)) return true;
 
 		ResetCandidateInteraction(Context);
 	}
@@ -274,11 +258,10 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 			if (const CStrID OverrideID = pSOAsset->GetInteractionOverride(ID, Context))
 				ID = OverrideID;
 
-		// If interaction is available and accepts our candidate target as its first target, it becomes our choice
 		auto pInteraction = FindInteraction(ID);
 		if (pInteraction &&
 			pInteraction->IsAvailable(Context) &&
-			pInteraction->GetTargetFilter(0)->IsTargetValid(_Session, Context))
+			pInteraction->IsCandidateTargetValid(_Session, Context))
 		{
 			Context.Interaction = ID;
 			return true;
@@ -301,7 +284,7 @@ bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 
 	if (Context.SelectedTargetCount >= pInteraction->GetMaxTargetCount()) return false;
 
-	if (!pInteraction->GetTargetFilter(Context.SelectedTargetCount)->IsTargetValid(_Session, Context)) return false;
+	if (!pInteraction->IsCandidateTargetValid(_Session, Context)) return false;
 
 	// If just started to select targets, allocate slots for them
 	if (Context.Targets.empty())
@@ -321,7 +304,7 @@ bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 bool CInteractionManager::Revert(CInteractionContext& Context)
 {
 	if (Context.SelectedTargetCount)
-		--Context.SelectedTargetCount;
+		--Context.SelectedTargetCount; // NB: doesn't clear target info, so it must not have any strong refs!
 	else if (Context.Tool && Context.Tool != _DefaultTool)
 		SelectTool(Context, _DefaultTool, {});
 	else

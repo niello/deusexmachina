@@ -30,7 +30,7 @@ protected:
 	std::map<CStrID, PInteraction>     _Interactions;
 	CStrID                             _DefaultTool;
 
-	const CInteraction* ValidateInteraction(CStrID ID, const sol::function& Condition, CInteractionContext& Context) const;
+	const CInteraction* ValidateInteraction(CStrID ID, const CInteractionContext& Context) const;
 
 public:
 

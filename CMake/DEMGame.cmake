@@ -5,7 +5,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/AIStateComponent.h
 	DEM/Game/src/AI/FormationManager.h
 	DEM/Game/src/AI/MoveInteraction.h
-	DEM/Game/src/AI/PassableTargetFilter.h
 	DEM/Game/src/AI/PropActorBrain.h
 	DEM/Game/src/AI/PropAIHints.h
 	DEM/Game/src/AI/PropSmartObject.h
@@ -69,14 +68,12 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/Interaction/InteractionManager.h
 	DEM/Game/src/Game/Interaction/InteractionTool.h
 	DEM/Game/src/Game/Interaction/SelectableComponent.h
-	DEM/Game/src/Game/Interaction/SelectableTargetFilter.h
 	DEM/Game/src/Game/Interaction/SelectInteraction.h
 	DEM/Game/src/Game/Interaction/TargetFilter.h
 	DEM/Game/src/Game/Objects/SmartObject.h
 	DEM/Game/src/Game/Objects/SmartObjectComponent.h
 	DEM/Game/src/Game/Objects/SmartObjectInteraction.h
 	DEM/Game/src/Game/Objects/SmartObjectLoader.h
-	DEM/Game/src/Game/Objects/SmartObjectTargetFilter.h
 	DEM/Game/src/Physics/PropPhysics.h
 	DEM/Game/src/Physics/PropTrigger.h
 	DEM/Game/src/Physics/TriggerContactCallback.h

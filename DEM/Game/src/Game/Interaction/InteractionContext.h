@@ -25,7 +25,6 @@ struct CInteractionContext
 {
 	CStrID                   Tool;
 	CStrID                   Interaction;
-	sol::function            Condition;
 	CTargetInfo              CandidateTarget;
 	HEntity                  Source; // E.g. item
 	std::vector<HEntity>     Actors;

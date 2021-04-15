@@ -1,5 +1,8 @@
 #include "SmartObjectInteraction.h"
-#include <Game/Objects/SmartObjectTargetFilter.h>
+#include <Game/Interaction/InteractionContext.h>
+#include <Game/Objects/SmartObjectComponent.h>
+#include <Game/Objects/SmartObject.h>
+#include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
 
 namespace DEM::Game
@@ -10,8 +13,31 @@ CSmartObjectInteraction::CSmartObjectInteraction(CStrID InteractionID, std::stri
 {
 	_Name = _InteractionID.ToString();
 	_CursorImage = CursorImage;
+}
+//---------------------------------------------------------------------
 
-	AddTarget(std::make_unique<CSmartObjectTargetFilter>(_InteractionID));
+bool IsTargetSmartObject(const CGameSession& Session, const CInteractionContext& Context, U32 Index, CStrID InteractionID)
+{
+	// Check for smart object component
+	const auto& Target = (Index == Context.SelectedTargetCount) ? Context.CandidateTarget : Context.Targets[Index];
+	if (!Target.Valid) return false;
+	auto pWorld = Session.FindFeature<CGameWorld>();
+	if (!pWorld) return false;
+	auto pSmartComponent = pWorld->FindComponent<CSmartObjectComponent>(Target.Entity);
+	if (!pSmartComponent) return false;
+
+	if (!InteractionID) return true;
+
+	// Optionally check for an interaction
+	auto pSmartAsset = pSmartComponent->Asset->GetObject<CSmartObject>();
+	return pSmartAsset && pSmartAsset->HasInteraction(InteractionID);
+}
+//---------------------------------------------------------------------
+
+bool CSmartObjectInteraction::IsTargetValid(const CGameSession& Session, U32 Index, const CInteractionContext& Context) const
+{
+	// FIXME: CStrID conversion
+	return Index == 0 && IsTargetSmartObject(Session, Context, Index, CStrID(_Name.c_str()));
 }
 //---------------------------------------------------------------------
 
