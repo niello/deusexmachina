@@ -173,8 +173,25 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 		}
 	}
 
+	// Load interaction override rules
+	std::map<CStrID, CFixedArray<CStrID>> Overrides;
+	Data::PParams OverridesDesc;
+	if (Params.TryGet<Data::PParams>(OverridesDesc, CStrID("Overrides")))
+	{
+		for (const auto& OverrideParam : *OverridesDesc)
+		{
+			const auto& IDsDesc = *OverrideParam.GetValue<Data::PDataArray>();
+			if (IDsDesc.IsEmpty()) continue;
 
-	return n_new(DEM::Game::CSmartObject(ID, DefaultState, Static, ScriptSource, std::move(States), std::move(InteractionZones)));
+			CFixedArray<CStrID> IDs(IDsDesc.GetCount());
+			for (UPTR i = 0; i < IDsDesc.GetCount(); ++i)
+				IDs[i] = IDsDesc[i].GetValue<CStrID>();
+
+			Overrides.emplace(OverrideParam.GetName(), std::move(IDs));
+		}
+	}
+
+	return n_new(DEM::Game::CSmartObject(ID, DefaultState, Static, ScriptSource, std::move(States), std::move(InteractionZones), std::move(Overrides)));
 }
 //---------------------------------------------------------------------
 

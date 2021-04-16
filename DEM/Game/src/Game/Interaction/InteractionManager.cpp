@@ -1,7 +1,6 @@
 #include "InteractionManager.h"
 #include <Game/Interaction/Interaction.h>
 #include <Game/Interaction/InteractionContext.h>
-#include <Game/Interaction/TargetFilter.h>
 #include <Game/Objects/SmartObject.h>
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/ECS/GameWorld.h>
@@ -231,40 +230,51 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	}
 
 	// Resolve selected tool into an interaction, the first valid for the target becomes a candidate
-	for (const auto& [OriginalID, Condition] : pTool->Interactions)
+	for (const auto& [OriginalID, Precondition] : pTool->Interactions)
 	{
 		// Check tool precondition
 		//???!!!move to method?! or can simplify this call? too verbose without any complex logic
-		// FIXME: DUPLICATED CODE! See ValidateInteraction!
-		if (Condition)
+		if (Precondition)
 		{
-			auto Result = Condition(Context.Actors, Context.CandidateTarget);
+			auto Result = Precondition(Context.Actors, Context.CandidateTarget);
 			if (!Result.valid())
 			{
 				sol::error Error = Result;
 				::Sys::Error(Error.what());
 				continue;
 			}
-			else if (/*Result.get_type() == sol::type::nil ||*/ !Result) continue; //???SOL: why nil can't be negated? https://www.lua.org/pil/3.3.html
+			else if (Result.get_type() == sol::type::nil || !Result) continue; //???SOL: why nil can't be negated? https://www.lua.org/pil/3.3.html
 		}
 
-		CStrID ID = OriginalID;
-
 		// Allow a smart object to override an interaction by ID
-		// (e.g. Default -> OpenDoor or FireballAbility -> MySpecialReactionOnFireball)
-		//!!!remember SO ID only if overridden interaction is SO-specific (can override to another global iact!)
-		//!!!???can have the same ID but different logic? Name clash between global & SO (not SO & SO)?
-		if (pSOAsset)
-			if (const CStrID OverrideID = pSOAsset->GetInteractionOverride(ID, Context))
-				ID = OverrideID;
-
-		auto pInteraction = FindInteraction(ID);
-		if (pInteraction &&
-			pInteraction->IsAvailable(Context) &&
-			pInteraction->IsCandidateTargetValid(_Session, Context))
+		// (e.g. Default -> OpenDoor / CloseDoor or SomeSpellAbility -> OpenDoorWhenSomeSpellCasted)
+		const CFixedArray<CStrID>* pOverrides = pSOAsset ? pSOAsset->GetInteractionOverrides(OriginalID) : nullptr;
+		if (pOverrides)
 		{
-			Context.Interaction = ID;
-			return true;
+			//!!!???can interaction IDs clash between global & SO (not SO & SO)?
+			for (CStrID OverrideID : *pOverrides)
+			{
+				auto pInteraction = FindInteraction(OverrideID);
+				if (pInteraction &&
+					pInteraction->IsAvailable(Context) &&
+					pInteraction->IsCandidateTargetValid(_Session, Context))
+				{
+					Context.Interaction = OverrideID;
+					return true;
+				}
+			}
+		}
+		else
+		{
+			// No overrides from a smart object, try original interaction
+			auto pInteraction = FindInteraction(OriginalID);
+			if (pInteraction &&
+				pInteraction->IsAvailable(Context) &&
+				pInteraction->IsCandidateTargetValid(_Session, Context))
+			{
+				Context.Interaction = OriginalID;
+				return true;
+			}
 		}
 	}
 

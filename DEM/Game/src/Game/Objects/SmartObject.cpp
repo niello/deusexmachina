@@ -6,12 +6,14 @@ namespace DEM::Game
 {
 
 CSmartObject::CSmartObject(CStrID ID, CStrID DefaultState, bool Static, std::string_view ScriptSource,
-	std::vector<CSmartObjectStateInfo>&& States, std::vector<CInteractionZone>&& InteractionZones)
+	std::vector<CSmartObjectStateInfo>&& States, std::vector<CInteractionZone>&& InteractionZones,
+	std::map<CStrID, CFixedArray<CStrID>>&& InteractionOverrides)
 	: _ID(ID)
 	, _DefaultState(DefaultState)
 	, _ScriptSource(ScriptSource)
 	, _States(std::move(States))
 	, _InteractionZones(std::move(InteractionZones))
+	, _InteractionOverrides(std::move(InteractionOverrides))
 	, _Static(Static)
 {
 	n_assert_dbg(_InteractionZones.size() <= MAX_ZONES);
@@ -62,35 +64,10 @@ bool CSmartObject::HasInteraction(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-CStrID CSmartObject::GetInteractionOverride(CStrID ID, const CInteractionContext& Context) const
+const CFixedArray<CStrID>* CSmartObject::GetInteractionOverrides(CStrID ID) const
 {
-	//!!!DBG TMP!
-	return Context.Tool == CStrID("DefaultAction") ? CStrID("Open") : CStrID::Empty;
-
 	auto It = _InteractionOverrides.find(ID);
-	if (It == _InteractionOverrides.cend()) return CStrID::Empty;
-
-	for (const CStrID ID : It->second)
-	{
-		// if iact with this ID is available in a Context
-		//(???test here or in interaction manager? may override into a global action, not SO!)
-		//!!!but override based on a list must select first available interaction! DefaultAction -> Open, Close
-
-		/* OLD:
-			auto Condition = pSmartAsset->GetScriptFunction(Context.Session->GetScriptState(), "Can" + std::string(ID.CStr()));
-			auto pInteraction = ValidateInteraction(ID, Condition, Context);
-			if (pInteraction &&
-				pInteraction->GetMaxTargetCount() > 0 &&
-				pInteraction->GetTargetFilter(0)->IsTargetValid(Context))
-			{
-				Context.Interaction = ID;
-				Context.Condition = Condition;
-				return true;
-			}
-		*/
-	}
-
-	return CStrID::Empty;
+	return (It == _InteractionOverrides.cend() || It->second.empty()) ? nullptr : &It->second;
 }
 //---------------------------------------------------------------------
 

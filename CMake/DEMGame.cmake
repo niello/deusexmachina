@@ -69,7 +69,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/Interaction/InteractionTool.h
 	DEM/Game/src/Game/Interaction/SelectableComponent.h
 	DEM/Game/src/Game/Interaction/SelectInteraction.h
-	DEM/Game/src/Game/Interaction/TargetFilter.h
 	DEM/Game/src/Game/Objects/SmartObject.h
 	DEM/Game/src/Game/Objects/SmartObjectComponent.h
 	DEM/Game/src/Game/Objects/SmartObjectInteraction.h

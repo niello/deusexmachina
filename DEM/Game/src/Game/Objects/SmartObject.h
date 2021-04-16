@@ -90,7 +90,8 @@ protected:
 public:
 
 	CSmartObject(CStrID ID, CStrID DefaultState, bool Static, std::string_view ScriptSource,
-		std::vector<CSmartObjectStateInfo>&& States, std::vector<CInteractionZone>&& InteractionZones);
+		std::vector<CSmartObjectStateInfo>&& States, std::vector<CInteractionZone>&& InteractionZones,
+		std::map<CStrID, CFixedArray<CStrID>>&& InteractionOverrides);
 
 	bool          InitScript(sol::state& Lua);
 	//???!!!RegisterInteractions(CInteractionManager& Mgr)?!
@@ -103,7 +104,7 @@ public:
 	auto          GetInteractionZoneCount() const { return _InteractionZones.size(); }
 	const auto&   GetInteractionZone(U8 ZoneIdx) const { return _InteractionZones[ZoneIdx]; }
 	const auto&   GetInteractions() const { return _Interactions; }
-	CStrID        GetInteractionOverride(CStrID ID, const CInteractionContext& Context) const;
+	const CFixedArray<CStrID>* GetInteractionOverrides(CStrID ID) const;
 
 	sol::function GetScriptFunction(sol::state& Lua, std::string_view Name) const;
 	CStrID        GetID() const { return _ID; }

@@ -50,6 +50,7 @@ public:
 	T*          end() { return pData + Count; }
 	const T*    end() const { return pData + Count; }
 	const T*    cend() const { return pData + Count; }
+	bool        empty() const { return !Count; }
 	S		    size() const { return Count; }
 	T*          data() { return pData; }
 	const T*    data() const { return pData; }
