@@ -16,6 +16,7 @@ namespace DEM::Game
 {
 using PSmartObject = Ptr<class CSmartObject>;
 struct CInteractionContext;
+class CGameSession;
 
 enum class ETransitionInterruptionMode : U8
 {
@@ -93,9 +94,7 @@ public:
 		std::vector<CSmartObjectStateInfo>&& States, std::vector<CInteractionZone>&& InteractionZones,
 		std::map<CStrID, CFixedArray<CStrID>>&& InteractionOverrides);
 
-	bool          InitScript(sol::state& Lua);
-	//???!!!RegisterInteractions(CInteractionManager& Mgr)?!
-	//???unify into InitInSession(CGameSession)?
+	bool          InitInSession(CGameSession& Session) const;
 
 	const CSmartObjectStateInfo*      FindState(CStrID ID) const;
 	const CSmartObjectTransitionInfo* FindTransition(CStrID FromID, CStrID ToID) const;

@@ -251,9 +251,10 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 		const CFixedArray<CStrID>* pOverrides = pSOAsset ? pSOAsset->GetInteractionOverrides(OriginalID) : nullptr;
 		if (pOverrides)
 		{
-			//!!!???can interaction IDs clash between global & SO (not SO & SO)?
 			for (CStrID OverrideID : *pOverrides)
 			{
+				//!!!???can interaction IDs clash between global & SO (not SO & SO)?
+				//Probably should pass SO ID into FindInteraction.
 				auto pInteraction = FindInteraction(OverrideID);
 				if (pInteraction &&
 					pInteraction->IsAvailable(Context) &&

@@ -47,7 +47,7 @@ static void CallTransitionScript(sol::function& Script, HEntity EntityID, CStrID
 }
 //---------------------------------------------------------------------
 
-void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, sol::state& Lua, HEntity EntityID,
+void ProcessStateChangeRequest(CGameWorld& World, sol::state& Lua, HEntity EntityID,
 	CSmartObjectComponent& SOComponent, const CSmartObject& SOAsset)
 {
 	// In case game logic callbacks will make another request during the processing of this one
@@ -169,7 +169,7 @@ void ProcessStateChangeRequest(DEM::Game::CGameWorld& World, sol::state& Lua, HE
 }
 //---------------------------------------------------------------------
 
-void UpdateSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, float dt)
+void UpdateSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 {
 	World.ForEachEntityWith<CSmartObjectComponent>([&World, &Lua, dt](auto EntityID, auto& Entity, CSmartObjectComponent& SOComponent)
 	{
@@ -234,18 +234,18 @@ void UpdateSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, float dt)
 //---------------------------------------------------------------------
 
 // FIXME: how to init SO created in runtime?
-void InitSmartObjects(DEM::Game::CGameWorld& World, sol::state& Lua, Resources::CResourceManager& ResMgr)
+void InitSmartObjects(CGameWorld& World, CGameSession& Session, Resources::CResourceManager& ResMgr)
 {
-	World.ForEachComponent<DEM::Game::CSmartObjectComponent>([&Lua, &ResMgr](auto EntityID, DEM::Game::CSmartObjectComponent& Component)
+	World.ForEachComponent<CSmartObjectComponent>([&Session, &ResMgr](auto EntityID, CSmartObjectComponent& Component)
 	{
 		// FIXME: how to load ID into a resource without resource manager available (while deserializing)?
 		// Don't want to store both Asset and AssetID.
-		Component.Asset = ResMgr.RegisterResource<DEM::Game::CSmartObject>(Component.AssetID.CStr());
+		Component.Asset = ResMgr.RegisterResource<CSmartObject>(Component.AssetID.CStr());
 		if (!Component.Asset) return;
 
-		if (auto pSmart = Component.Asset->ValidateObject<DEM::Game::CSmartObject>())
+		if (auto pSmart = Component.Asset->ValidateObject<CSmartObject>())
 		{
-			pSmart->InitScript(Lua);
+			pSmart->InitInSession(Session);
 
 			//!!!???FIXME: how to set state if CurrState is valid?! Need to initialize pose etc!
 			if (!Component.CurrState) Component.RequestedState = pSmart->GetDefaultState();

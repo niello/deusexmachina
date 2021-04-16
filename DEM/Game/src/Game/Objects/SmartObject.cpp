@@ -1,5 +1,6 @@
 #include "SmartObject.h"
 #include <Game/Interaction/InteractionContext.h>
+#include <Game/Interaction/InteractionManager.h>
 #include <sol/sol.hpp>
 
 namespace DEM::Game
@@ -71,9 +72,12 @@ const CFixedArray<CStrID>* CSmartObject::GetInteractionOverrides(CStrID ID) cons
 }
 //---------------------------------------------------------------------
 
-bool CSmartObject::InitScript(sol::state& Lua)
+// CSmartObject is shared between sessions, and here we initlialize per-session data
+bool CSmartObject::InitInSession(CGameSession& Session) const
 {
 	if (_ScriptSource.empty() || !_ID) return true;
+
+	auto& Lua = Session.GetScriptState();
 
 	//???cache ScriptObject as field? or functions are enough? or don't cache functions, only env?
 	sol::environment ScriptObject(Lua, sol::create, Lua.globals());
@@ -92,6 +96,32 @@ bool CSmartObject::InitScript(sol::state& Lua)
 	// Write new script object into a smart object registry
 	auto SmartObjectsRegistry = Lua["SmartObjects"].get_or_create<sol::table>();
 	SmartObjectsRegistry[_ID.CStr()] = ScriptObject;
+
+	if (auto pInteractionMgr = Session.FindFeature<CInteractionManager>())
+	{
+		auto Interactions = ScriptObject.get<sol::table>("Interactions");
+		for (const auto& Interaction : Interactions)
+		{
+			if (Interaction.second.get_type() != sol::type::table) continue;
+
+			auto IactTable = Interaction.second.as<sol::table>();
+
+			auto FnExecute = IactTable.get<sol::function>("Execute");
+			if (FnExecute.valid())
+			{
+				// iact = scripted iact
+				::Sys::DbgOut(("*** SO player iact: " + Interaction.first.as<std::string>() + "\n").c_str());
+			}
+			else
+			{
+				// iact = scripted ability iact
+				::Sys::DbgOut(("*** SO actor iact: " + Interaction.first.as<std::string>() + "\n").c_str());
+			}
+
+			CStrID ID(Interaction.first.as<const char*>());
+			//pInteractionMgr->RegisterInteraction(ID, iact);
+		}
+	}
 
 	return true;
 }
