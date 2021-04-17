@@ -28,7 +28,6 @@ CInteractionManager::CInteractionManager(CGameSession& Owner)
 		, "Actors", &CInteractionContext::Actors
 		, "CandidateTarget", &CInteractionContext::CandidateTarget
 		, "Targets", &CInteractionContext::Targets
-		, "SelectedTargetCount", &CInteractionContext::SelectedTargetCount
 		);
 }
 //---------------------------------------------------------------------
@@ -103,7 +102,7 @@ bool CInteractionManager::RegisterTool(CStrID ID, const Data::CParams& Params)
 
 bool CInteractionManager::RegisterInteraction(CStrID ID, PInteraction&& Interaction)
 {
-	if (!Interaction || !Interaction->GetMaxTargetCount()) return false;
+	if (!Interaction/* || !Interaction->GetMaxTargetCount()*/) return false;
 
 	auto It = _Interactions.find(ID);
 	if (It == _Interactions.cend())
@@ -172,7 +171,7 @@ void CInteractionManager::ResetCandidateInteraction(CInteractionContext& Context
 {
 	Context.Interaction = CStrID::Empty;
 	Context.Targets.clear();
-	Context.SelectedTargetCount = 0;
+	Context.TargetExpected = ESoftBool::True;
 }
 //---------------------------------------------------------------------
 
@@ -197,7 +196,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	if (Context.Interaction)
 	{
 		// If we already started selecting targets, interaction remains selected if only it doesn't become invalid
-		if (Context.SelectedTargetCount && ValidateInteraction(Context.Interaction, Context)) return true;
+		if (!Context.Targets.empty() && ValidateInteraction(Context.Interaction, Context)) return true;
 
 		ResetCandidateInteraction(Context);
 	}
@@ -287,25 +286,15 @@ bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 {
 	if (!Context.Interaction) return false;
 
-	// FIXME: probably redundant search, may store InteractionID in a context if tool is not required here
-	auto pTool = FindTool(Context.Tool);
-	if (!pTool) return false;
-	auto pInteraction = FindInteraction(Context.Interaction);
+	auto pInteraction = FindInteraction(Context.Interaction); //!!!SO ID!
 	if (!pInteraction) return false;
 
-	if (Context.SelectedTargetCount >= pInteraction->GetMaxTargetCount()) return false;
+	if (Context.TargetExpected == ESoftBool::False) return false;
 
 	if (!pInteraction->IsCandidateTargetValid(_Session, Context)) return false;
 
-	// If just started to select targets, allocate slots for them
-	if (Context.Targets.empty())
-	{
-		Context.Targets.resize(pInteraction->GetMaxTargetCount());
-		Context.SelectedTargetCount = 0;
-	}
-
-	Context.Targets[Context.SelectedTargetCount] = Context.CandidateTarget;
-	++Context.SelectedTargetCount;
+	Context.Targets.push_back(Context.CandidateTarget);
+	Context.TargetExpected = pInteraction->NeedMoreTargets(Context);
 
 	return true;
 }
@@ -314,8 +303,14 @@ bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 // Revert targets one by one, then revert non-default tool
 bool CInteractionManager::Revert(CInteractionContext& Context)
 {
-	if (Context.SelectedTargetCount)
-		--Context.SelectedTargetCount; // NB: doesn't clear target info, so it must not have any strong refs!
+	if (!Context.Targets.empty())
+	{
+		auto pInteraction = FindInteraction(Context.Interaction); //!!!SO ID!
+		if (!pInteraction) return false;
+
+		Context.Targets.pop_back();
+		Context.TargetExpected = pInteraction->NeedMoreTargets(Context);
+	}
 	else if (Context.Tool && Context.Tool != _DefaultTool)
 		SelectTool(Context, _DefaultTool, {});
 	else
@@ -326,10 +321,9 @@ bool CInteractionManager::Revert(CInteractionContext& Context)
 
 bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool Enqueue)
 {
-	if (!Context.Interaction) return false;
+	// Ensure interaction and all mandatory targets are selected
+	if (!Context.Interaction || Context.TargetExpected == ESoftBool::True) return false;
 
-	auto pTool = FindAvailableTool(Context.Tool, Context);
-	if (!pTool) return false;
 	auto pInteraction = FindInteraction(Context.Interaction);
 	if (!pInteraction) return false;
 
@@ -352,7 +346,7 @@ const std::string& CInteractionManager::GetCursorImageID(CInteractionContext& Co
 	if (!pTool) return EmptyString;
 	auto pInteraction = FindInteraction(Context.Interaction);
 	if (!pInteraction) return EmptyString;
-	return pInteraction->GetCursorImageID(Context.SelectedTargetCount);
+	return pInteraction->GetCursorImageID(Context.Targets.size());
 }
 //---------------------------------------------------------------------
 

@@ -15,7 +15,7 @@ CSelectInteraction::CSelectInteraction(std::string_view CursorImage)
 
 bool IsTargetSelectable(const CGameSession& Session, const CInteractionContext& Context, U32 Index)
 {
-	const auto& Target = (Index == Context.SelectedTargetCount) ? Context.CandidateTarget : Context.Targets[Index];
+	const auto& Target = (Index == Context.Targets.size()) ? Context.CandidateTarget : Context.Targets[Index];
 	if (!Target.Valid) return false;
 	auto pWorld = Session.FindFeature<CGameWorld>();
 	return pWorld && pWorld->FindComponent<CSelectableComponent>(Target.Entity);
@@ -25,6 +25,12 @@ bool IsTargetSelectable(const CGameSession& Session, const CInteractionContext& 
 bool CSelectInteraction::IsTargetValid(const CGameSession& Session, U32 Index, const CInteractionContext& Context) const
 {
 	return Index == 0 && IsTargetSelectable(Session, Context, Index);
+}
+//---------------------------------------------------------------------
+
+ESoftBool CSelectInteraction::NeedMoreTargets(const CInteractionContext& Context) const
+{
+	return (Context.Targets.size() < 1) ? ESoftBool::True : ESoftBool::False;
 }
 //---------------------------------------------------------------------
 

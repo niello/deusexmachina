@@ -5,26 +5,15 @@ namespace DEM::Game
 {
 CInteraction::~CInteraction() = default;
 
-// FIXME: reimplements for new targeting system!
-U32 CInteraction::GetMaxTargetCount() const
-{
-	//U32 Count = 0;
-	//for (const auto& Rec : _Targets)
-	//	Count += Rec.Count;
-	//return Count;
-	return 1;
-}
-//---------------------------------------------------------------------
-
 bool CInteraction::IsCandidateTargetValid(const CGameSession& Session, const CInteractionContext& Context) const
 {
-	return IsTargetValid(Session, Context.SelectedTargetCount, Context);
+	return IsTargetValid(Session, Context.Targets.size(), Context);
 }
 //---------------------------------------------------------------------
 
 bool CInteraction::AreSelectedTargetsValid(const CGameSession& Session, const CInteractionContext& Context) const
 {
-	for (U32 i = 0; i < Context.SelectedTargetCount; ++i)
+	for (U32 i = 0; i < Context.Targets.size(); ++i)
 		if (!IsTargetValid(Session, i, Context)) return false;
 	return true;
 }

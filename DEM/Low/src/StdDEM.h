@@ -152,6 +152,13 @@ inline bool ExecResultIsError(UPTR Result) { return Result >= Error; }
 
 //
 
+enum class ESoftBool : U8
+{
+	False = 0,
+	True = 1,
+	Maybe = 2
+};
+
 enum class EClipStatus
 {
 	Outside,

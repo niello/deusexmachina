@@ -12,6 +12,21 @@ namespace DEM::Game
 using PAbility = std::unique_ptr<class CAbility>;
 using PAbilityInstance = std::unique_ptr<class CAbilityInstance>;
 
+enum class EFacingMode : U8
+{
+	None = 0,  //???need? or use false return value?
+	Direction,
+	Point
+	// TODO: SceneNode?
+};
+
+struct CFacingParams
+{
+	EFacingMode Mode;
+	vector3     Dir;
+	float       Tolerance = 0.f;
+};
+
 class CAbilityInstance
 {
 protected:
@@ -35,7 +50,7 @@ public:
 	virtual PAbilityInstance CreateInstance() const { return PAbilityInstance(n_new(CAbilityInstance(*this))); }
 
 	virtual vector3          GetInteractionPoint() const = 0;
-	virtual bool             GetFacingParams() const = 0;
+	virtual bool             GetFacingParams(CFacingParams& Out) const = 0;
 	virtual void             OnStart() const = 0; // ActorEntity, TargetEntity
 	virtual EActionStatus    OnUpdate() const = 0; // ActorEntity, TargetEntity, AbilityInstance
 	virtual void             OnEnd() const = 0; // ActorEntity, TargetEntity, Status

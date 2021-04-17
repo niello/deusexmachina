@@ -25,7 +25,7 @@ bool CLockpickInteraction::IsAvailable(const Game::CInteractionContext& Context)
 bool IsTargetLocked(const Game::CGameSession& Session, const Game::CInteractionContext& Context, U32 Index)
 {
 	// Check for the lock component
-	const auto& Target = (Index == Context.SelectedTargetCount) ? Context.CandidateTarget : Context.Targets[Index];
+	const auto& Target = (Index == Context.Targets.size()) ? Context.CandidateTarget : Context.Targets[Index];
 	if (!Target.Valid) return false;
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	return pWorld && pWorld->FindComponent<CLockComponent>(Target.Entity);
@@ -35,6 +35,12 @@ bool IsTargetLocked(const Game::CGameSession& Session, const Game::CInteractionC
 bool CLockpickInteraction::IsTargetValid(const Game::CGameSession& Session, U32 Index, const Game::CInteractionContext& Context) const
 {
 	return Index == 0 && IsTargetLocked(Session, Context, Index);
+}
+//---------------------------------------------------------------------
+
+ESoftBool CLockpickInteraction::NeedMoreTargets(const Game::CInteractionContext& Context) const
+{
+	return (Context.Targets.size() < 1) ? ESoftBool::True : ESoftBool::False;
 }
 //---------------------------------------------------------------------
 

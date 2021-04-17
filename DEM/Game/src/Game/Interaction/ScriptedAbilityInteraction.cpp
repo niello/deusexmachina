@@ -28,6 +28,7 @@ CScriptedAbilityInteraction::CScriptedAbilityInteraction(const sol::table& Table
 {
 	_FnIsAvailable = Table.get<sol::function>("IsAvailable");
 	_FnIsTargetValid = Table.get<sol::function>("IsTargetValid");
+	_FnNeedMoreTargets = Table.get<sol::function>("NeedMoreTargets");
 	_FnPrepare = Table.get<sol::function>("Prepare");
 
 	_CursorImage = Table.get<std::string>("CursorImage"); //???to method? pass target index?
@@ -43,6 +44,22 @@ bool CScriptedAbilityInteraction::IsAvailable(const CInteractionContext& Context
 bool CScriptedAbilityInteraction::IsTargetValid(const CGameSession& Session, U32 Index, const CInteractionContext& Context) const
 {
 	return LuaCall(_FnIsTargetValid, Index, Context);
+}
+//---------------------------------------------------------------------
+
+ESoftBool CScriptedAbilityInteraction::NeedMoreTargets(const CInteractionContext& Context) const
+{
+	auto Result = _FnNeedMoreTargets(Context);
+	if (!Result.valid())
+	{
+		sol::error Error = Result;
+		::Sys::Error(Error.what());
+		return ESoftBool::False;
+	}
+
+	if (Result.get_type() == sol::type::boolean) return Result ? ESoftBool::True : ESoftBool::False;
+
+	return Result;
 }
 //---------------------------------------------------------------------
 

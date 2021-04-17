@@ -16,7 +16,7 @@ CMoveInteraction::CMoveInteraction(std::string_view CursorImage)
 
 bool IsTargetPassable(const CGameSession& Session, const CInteractionContext& Context, U32 Index)
 {
-	const auto& Target = (Index == Context.SelectedTargetCount) ? Context.CandidateTarget : Context.Targets[Index];
+	const auto& Target = (Index == Context.Targets.size()) ? Context.CandidateTarget : Context.Targets[Index];
 	if (!Target.Valid) return false;
 	auto pWorld = Session.FindFeature<CGameWorld>();
 	if (!pWorld) return false;
@@ -48,6 +48,12 @@ bool IsTargetPassable(const CGameSession& Session, const CInteractionContext& Co
 bool CMoveInteraction::IsTargetValid(const CGameSession& Session, U32 Index, const CInteractionContext& Context) const
 {
 	return Index == 0 && IsTargetPassable(Session, Context, Index);
+}
+//---------------------------------------------------------------------
+
+ESoftBool CMoveInteraction::NeedMoreTargets(const CInteractionContext& Context) const
+{
+	return (Context.Targets.size() < 1) ? ESoftBool::True : ESoftBool::False;
 }
 //---------------------------------------------------------------------
 
