@@ -1,0 +1,33 @@
+#pragma once
+#include <Game/Interaction/Ability.h>
+#include <sol/sol.hpp>
+
+// Actor's ability implemented fully in script
+
+//???need CScriptedAbilityInstance with Lua table for arbitrary state?
+
+namespace DEM::Game
+{
+
+class CScriptedAbility : public CAbility
+{
+protected:
+
+	sol::function _FnGetInteractionPoint;
+	sol::function _FnGetFacingParams;
+	sol::function _FnOnStart;
+	sol::function _FnOnUpdate;
+	sol::function _FnOnEnd;
+
+public:
+
+	//virtual PAbilityInstance CreateInstance() const { return PAbilityInstance(n_new(CScriptedAbilityInstance(*this))); }
+
+	virtual vector3          GetInteractionPoint() const override;
+	virtual bool             GetFacingParams() const override;
+	virtual void             OnStart() const override; // ActorEntity, TargetEntity
+	virtual EActionStatus    OnUpdate() const override; // ActorEntity, TargetEntity, AbilityInstance - instance everywhere?!
+	virtual void             OnEnd() const override; // ActorEntity, TargetEntity, Status
+};
+
+}

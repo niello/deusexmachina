@@ -1,5 +1,4 @@
 #include "Interaction.h"
-#include <Game/Interaction/TargetFilter.h>
 #include <Game/Interaction/InteractionContext.h>
 
 namespace DEM::Game

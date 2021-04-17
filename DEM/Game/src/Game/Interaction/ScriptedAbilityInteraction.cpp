@@ -1,0 +1,60 @@
+#include "ScriptedAbilityInteraction.h"
+#include <Game/Interaction/InteractionContext.h>
+#include <System/System.h>
+
+namespace DEM::Game
+{
+
+// TODO: common utility function?!
+template<typename... TArgs>
+static bool LuaCall(const sol::function& Fn, TArgs&&... Args)
+{
+	if (!Fn) return false;
+
+	auto Result = Fn(std::forward<TArgs>(Args)...);
+	if (!Result.valid())
+	{
+		sol::error Error = Result;
+		::Sys::Error(Error.what());
+		return false;
+	}
+	else if (Result.get_type() == sol::type::nil || !Result) return false;
+
+	return true;
+}
+//---------------------------------------------------------------------
+
+CScriptedAbilityInteraction::CScriptedAbilityInteraction(const sol::table& Table)
+{
+	_FnIsAvailable = Table.get<sol::function>("IsAvailable");
+	_FnIsTargetValid = Table.get<sol::function>("IsTargetValid");
+	_FnPrepare = Table.get<sol::function>("Prepare");
+
+	_CursorImage = Table.get<std::string>("CursorImage"); //???to method? pass target index?
+}
+//---------------------------------------------------------------------
+
+bool CScriptedAbilityInteraction::IsAvailable(const CInteractionContext& Context) const
+{
+	return !_FnIsAvailable || LuaCall(_FnIsAvailable, Context);
+}
+//---------------------------------------------------------------------
+
+bool CScriptedAbilityInteraction::IsTargetValid(const CGameSession& Session, U32 Index, const CInteractionContext& Context) const
+{
+	return LuaCall(_FnIsTargetValid, Index, Context);
+}
+//---------------------------------------------------------------------
+
+bool CScriptedAbilityInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue) const
+{
+	// Call Prepare - filter actors, adust ability params (like +2 bonus in skill for each helping actor)
+	// Fail if no actors left
+	// Enqueue ExecuteAbility actions into filtered actors' queues, create AbilityInstance for each one
+
+	NOT_IMPLEMENTED;
+	return false;
+}
+//---------------------------------------------------------------------
+
+}

@@ -1,7 +1,7 @@
 #include "SmartObject.h"
 #include <Game/Interaction/InteractionContext.h>
 #include <Game/Interaction/InteractionManager.h>
-#include <sol/sol.hpp>
+#include <Game/Interaction/ScriptedInteraction.h>
 
 namespace DEM::Game
 {
@@ -106,20 +106,26 @@ bool CSmartObject::InitInSession(CGameSession& Session) const
 
 			auto IactTable = Interaction.second.as<sol::table>();
 
-			auto FnExecute = IactTable.get<sol::function>("Execute");
-			if (FnExecute.valid())
+			PInteraction Iact;
+			if (IactTable.get<sol::function>("Execute"))
 			{
-				// iact = scripted iact
-				::Sys::DbgOut(("*** SO player iact: " + Interaction.first.as<std::string>() + "\n").c_str());
+				Iact.reset(n_new(CScriptedInteraction(IactTable)));
 			}
 			else
 			{
-				// iact = scripted ability iact
+				// load scripted ability, register if needed
+				// iact = scripted ability iact with the loaded ability
+
+				//!!!DBG TMP!
+				Iact.reset(n_new(CScriptedInteraction(IactTable)));
 				::Sys::DbgOut(("*** SO actor iact: " + Interaction.first.as<std::string>() + "\n").c_str());
 			}
 
-			CStrID ID(Interaction.first.as<const char*>());
-			//pInteractionMgr->RegisterInteraction(ID, iact);
+			if (Iact)
+			{
+				CStrID ID(Interaction.first.as<const char*>());
+				pInteractionMgr->RegisterInteraction(ID, std::move(Iact));
+			}
 		}
 	}
 
