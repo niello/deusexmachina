@@ -39,7 +39,6 @@ public:
 
 	bool                    RegisterTool(CStrID ID, CInteractionTool&& Tool);
 	bool                    RegisterTool(CStrID ID, const Data::CParams& Params);
-	//bool                    RegisterTool(CStrID ID, const CInteraction& SingleInteraction);
 	bool                    RegisterInteraction(CStrID ID, PInteraction&& Interaction);
 	void                    SetDefaultTool(CStrID ID) { _DefaultTool = ID; }
 
@@ -47,13 +46,13 @@ public:
 	const CInteractionTool* FindAvailableTool(CStrID ID, const CInteractionContext& Context) const;
 	const CInteraction*     FindInteraction(CStrID ID) const;
 
-	bool                    SelectTool(CInteractionContext& Context, CStrID ToolID, HEntity Source = {});
-	void                    ResetTool(CInteractionContext& Context);
-	void                    ResetCandidateInteraction(CInteractionContext& Context);
-	bool                    UpdateCandidateInteraction(CInteractionContext& Context);
-	bool                    AcceptTarget(CInteractionContext& Context);
-	bool                    Revert(CInteractionContext& Context);
-	bool                    ExecuteInteraction(CInteractionContext& Context, bool Enqueue);
+	bool                    SelectTool(CInteractionContext& Context, CStrID ToolID, HEntity Source = {}) const;
+	void                    ResetTool(CInteractionContext& Context) const;
+	void                    ResetCandidateInteraction(CInteractionContext& Context) const;
+	bool                    UpdateCandidateInteraction(CInteractionContext& Context) const;
+	bool                    AcceptTarget(CInteractionContext& Context) const;
+	bool                    Revert(CInteractionContext& Context) const;
+	bool                    ExecuteInteraction(CInteractionContext& Context, bool Enqueue) const;
 
 	const std::string&      GetCursorImageID(CInteractionContext& Context) const;
 };

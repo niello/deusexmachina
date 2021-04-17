@@ -145,7 +145,7 @@ const CInteraction* CInteractionManager::FindInteraction(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-bool CInteractionManager::SelectTool(CInteractionContext& Context, CStrID ToolID, HEntity Source)
+bool CInteractionManager::SelectTool(CInteractionContext& Context, CStrID ToolID, HEntity Source) const
 {
 	if (Context.Tool == ToolID) return true;
 
@@ -159,7 +159,7 @@ bool CInteractionManager::SelectTool(CInteractionContext& Context, CStrID ToolID
 }
 //---------------------------------------------------------------------
 
-void CInteractionManager::ResetTool(CInteractionContext& Context)
+void CInteractionManager::ResetTool(CInteractionContext& Context) const
 {
 	Context.Tool = CStrID::Empty;
 	Context.Source = {};
@@ -167,7 +167,7 @@ void CInteractionManager::ResetTool(CInteractionContext& Context)
 }
 //---------------------------------------------------------------------
 
-void CInteractionManager::ResetCandidateInteraction(CInteractionContext& Context)
+void CInteractionManager::ResetCandidateInteraction(CInteractionContext& Context) const
 {
 	Context.Interaction = CStrID::Empty;
 	Context.Targets.clear();
@@ -191,7 +191,7 @@ const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const CI
 }
 //---------------------------------------------------------------------
 
-bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Context)
+bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Context) const
 {
 	if (Context.Interaction)
 	{
@@ -282,16 +282,12 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 }
 //---------------------------------------------------------------------
 
-bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
+bool CInteractionManager::AcceptTarget(CInteractionContext& Context) const
 {
-	if (!Context.Interaction) return false;
+	if (!Context.Interaction || Context.TargetExpected == ESoftBool::False) return false;
 
 	auto pInteraction = FindInteraction(Context.Interaction); //!!!SO ID!
-	if (!pInteraction) return false;
-
-	if (Context.TargetExpected == ESoftBool::False) return false;
-
-	if (!pInteraction->IsCandidateTargetValid(_Session, Context)) return false;
+	if (!pInteraction || !pInteraction->IsCandidateTargetValid(_Session, Context)) return false;
 
 	Context.Targets.push_back(Context.CandidateTarget);
 	Context.TargetExpected = pInteraction->NeedMoreTargets(Context);
@@ -301,7 +297,7 @@ bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 //---------------------------------------------------------------------
 
 // Revert targets one by one, then revert non-default tool
-bool CInteractionManager::Revert(CInteractionContext& Context)
+bool CInteractionManager::Revert(CInteractionContext& Context) const
 {
 	if (!Context.Targets.empty())
 	{
@@ -319,7 +315,7 @@ bool CInteractionManager::Revert(CInteractionContext& Context)
 }
 //---------------------------------------------------------------------
 
-bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool Enqueue)
+bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool Enqueue) const
 {
 	// Ensure interaction and all mandatory targets are selected
 	if (!Context.Interaction || Context.TargetExpected == ESoftBool::True) return false;
