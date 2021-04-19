@@ -2,16 +2,19 @@
 #include <Resources/Resource.h>
 #include <Animation/TimelinePlayer.h>
 #include <Animation/TimelineTrack.h> // For inlined destructor CSmartObjectComponent -> CTimelinePlayer
-#include <Events/EventNative.h>
 #include <Data/Metadata.h>
 #include <Data/StringID.h>
 #include <sol/sol.hpp>
+
+//!!!DBG TMP!
+#include <Events/EventNative.h>
 
 // Smart object instance that can switch between different states and offer available interactions
 
 namespace DEM::Game
 {
 
+//!!!DBG TMP!
 // NB: avoid unnecessary Push[OrUpdate]Child to preserve cached values
 class InteractWithSmartObject : public Events::CEventNative
 {

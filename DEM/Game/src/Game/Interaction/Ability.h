@@ -1,16 +1,19 @@
 #pragma once
-#include <Math/Vector3.h>
+#include <Game/Interaction/Interaction.h>
+#include <Game/Interaction/InteractionContext.h>
 #include <Game/ECS/Components/ActionQueueComponent.h> // FIXME: for EActionStatus. Or define queue action type here too?!
+#include <Game/ECS/Entity.h>
+#include <Events/EventNative.h>
+#include <Math/Vector3.h>
 
-// Ability is a stateless piece of actor's logic. Most of the time this logic
-// resembles some interaction with a target. An actor itself can be its own target.
-// Ability instance stores the state needed to track interaction progress per actor per time.
-// You should inherit from CAbilityInstance if you need special state for your CAbility.
+// Ability is an interaction performed by a actors in a game world.
+// Ability is stateless, and ability instance stores the state.
+// Inherit from CAbilityInstance if your ability requires additional state fields.
 
 namespace DEM::Game
 {
 using PAbility = std::unique_ptr<class CAbility>;
-using PAbilityInstance = std::unique_ptr<class CAbilityInstance>;
+using PAbilityInstance = std::unique_ptr<struct CAbilityInstance>;
 
 enum class EFacingMode : U8
 {
@@ -27,33 +30,41 @@ struct CFacingParams
 	float       Tolerance = 0.f;
 };
 
-class CAbilityInstance
+class ExecuteAbility : public Events::CEventNative
 {
-protected:
-
-	const CAbility& _Ability; //???!!!can guarantee lifetime?! or use refcounted?
+	NATIVE_EVENT_DECL(ExecuteAbility, Events::CEventNative);
 
 public:
 
-	CAbilityInstance(const CAbility& Ability) : _Ability(Ability) {}
+	PAbilityInstance _AbilityInstance;
 
-	float           ElapsedTime = 0.f;
-	float           PrevElapsedTime = 0.f; // Useful for dt calc and for detecting that we just passed some point in time
+	explicit ExecuteAbility(PAbilityInstance&& AbilityInstance) : _AbilityInstance(std::move(AbilityInstance)) {}
 };
 
-class CAbility
+//???where to handle cooldowns, costs etc?
+//???how to treat targets ability-specific? E.g. what if between Execute & Start skill changed and fire ray count will change too?
+//???in interaction context collect targets with some markers 'what it is' (roles)?
+struct CAbilityInstance
+{
+	//???pass only certain fields to IsAvailable, to check with the same code in iact mgr and during execution?
+	//CStrID                   Interaction; // it is an ability iact ID //!!!SO ID too! -> could be converted into stateless ability ref
+	//HEntity                  Source; // E.g. item
+	//std::vector<HEntity>     Actors; //???need to know other actors? or convert to ability-specific data at Execute() and forget?
+	//std::vector<CTargetInfo> Targets;
+
+	float               ElapsedTime = 0.f;
+	float               PrevElapsedTime = 0.f; // Useful for dt calc and for detecting that we just passed some point in time
+};
+
+class CAbility : public CInteraction
 {
 public:
 
-	virtual ~CAbility() = default;
-
-	virtual PAbilityInstance CreateInstance() const { return PAbilityInstance(n_new(CAbilityInstance(*this))); }
-
-	virtual vector3          GetInteractionPoint() const = 0;
-	virtual bool             GetFacingParams(CFacingParams& Out) const = 0;
-	virtual void             OnStart() const = 0; // ActorEntity, TargetEntity
-	virtual EActionStatus    OnUpdate() const = 0; // ActorEntity, TargetEntity, AbilityInstance
-	virtual void             OnEnd() const = 0; // ActorEntity, TargetEntity, Status
+	virtual vector3       GetInteractionPoint() const = 0; //???or bool return + vector3& Out?!
+	virtual bool          GetFacingParams(CFacingParams& Out) const = 0;
+	virtual void          OnStart() const = 0; // ActorEntity, TargetEntity
+	virtual EActionStatus OnUpdate() const = 0; // ActorEntity, TargetEntity, AbilityInstance
+	virtual void          OnEnd() const = 0; // ActorEntity, TargetEntity, Status
 };
 
 }

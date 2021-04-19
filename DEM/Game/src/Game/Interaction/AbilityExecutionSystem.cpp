@@ -8,6 +8,13 @@
 #include <Game/Objects/SmartObject.h>
 #include <DetourCommon.h>
 
+// Ability execution consists of the following steps:
+// 1. Approach an interaction point
+// 2. Face appropriate direction, if required
+// 3. Start ability
+// 4. Update ability until done, cancelled or failed
+// 5. End ability
+
 namespace DEM::Game
 {
 
@@ -464,8 +471,7 @@ static void EndCurrentInteraction(EActionStatus NewStatus, AI::CAIStateComponent
 }
 //---------------------------------------------------------------------
 
-//???Re-check Lua "Can[iact]" every frame? Store a whole CTarget in an action to avoid recreating it each time?
-void InteractWithSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
+void UpdateAbilityInteractions(CGameWorld& World, sol::state& Lua, float dt)
 {
 	World.ForEachEntityWith<CActionQueueComponent, AI::CAIStateComponent>(
 		[&World, &Lua, dt](auto EntityID, auto& Entity, CActionQueueComponent& Queue, AI::CAIStateComponent& AIState)

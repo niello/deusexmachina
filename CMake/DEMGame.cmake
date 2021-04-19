@@ -137,6 +137,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/ECS/EntityTemplateLoader.cpp
 	DEM/Game/src/Game/ECS/GameWorld.cpp
 	DEM/Game/src/Game/Interaction/Ability.cpp
+	DEM/Game/src/Game/Interaction/AbilityExecutionSystem.cpp
 	DEM/Game/src/Game/Interaction/Interaction.cpp
 	DEM/Game/src/Game/Interaction/InteractionManager.cpp
 	DEM/Game/src/Game/Interaction/ScriptedAbility.cpp
@@ -144,7 +145,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/Interaction/ScriptedInteraction.cpp
 	DEM/Game/src/Game/Interaction/SelectInteraction.cpp
 	DEM/Game/src/Game/Objects/SmartObject.cpp
-	DEM/Game/src/Game/Objects/SmartObjectInteractionSystem.cpp
 	DEM/Game/src/Game/Objects/SmartObjectLoader.cpp
 	DEM/Game/src/Game/Objects/SmartObjectSystem.cpp
 	DEM/Game/src/Physics/PropPhysics.cpp

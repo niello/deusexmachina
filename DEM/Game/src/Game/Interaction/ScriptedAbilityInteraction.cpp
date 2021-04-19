@@ -1,4 +1,6 @@
 #include "ScriptedAbilityInteraction.h"
+#include <Game/ECS/GameWorld.h>
+#include <Game/Interaction/Ability.h>
 #include <Game/Interaction/InteractionContext.h>
 #include <System/System.h>
 
@@ -65,12 +67,29 @@ ESoftBool CScriptedAbilityInteraction::NeedMoreTargets(const CInteractionContext
 
 bool CScriptedAbilityInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue) const
 {
-	// Call Prepare - filter actors, adust ability params (like +2 bonus in skill for each helping actor)
+	// Call Prepare - filter actors, adjust ability params (like +2 bonus in skill for each helping actor)
 	// Fail if no actors left
 	// Enqueue ExecuteAbility actions into filtered actors' queues, create AbilityInstance for each one
 
 	NOT_IMPLEMENTED;
 	return false;
+
+	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;
+
+	auto pWorld = Session.FindFeature<CGameWorld>();
+	if (!pWorld) return false;
+	//auto pSOComponent = pWorld->FindComponent<CSmartObjectComponent>(Context.Targets[0].Entity);
+	//if (!pSOComponent || !pSOComponent->Asset) return false;
+	//CSmartObject* pSOAsset = pSOComponent->Asset->GetObject<CSmartObject>();
+	//if (!pSOAsset) return false;
+
+	auto pQueue = pWorld->FindComponent<CActionQueueComponent>(Context.Actors[0]);
+	if (!pQueue) return false;
+
+	if (!Enqueue) pQueue->Reset();
+	pQueue->EnqueueAction<ExecuteAbility>(Context.Interaction, Context.Targets[0].Entity);
+
+	return true;
 }
 //---------------------------------------------------------------------
 

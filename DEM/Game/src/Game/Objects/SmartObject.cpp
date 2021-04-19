@@ -2,6 +2,7 @@
 #include <Game/Interaction/InteractionContext.h>
 #include <Game/Interaction/InteractionManager.h>
 #include <Game/Interaction/ScriptedInteraction.h>
+#include <Game/Interaction/ScriptedAbilityInteraction.h>
 
 namespace DEM::Game
 {
@@ -113,12 +114,8 @@ bool CSmartObject::InitInSession(CGameSession& Session) const
 			}
 			else
 			{
-				// load scripted ability, register if needed
-				// iact = scripted ability iact with the loaded ability
-
-				//!!!DBG TMP!
-				Iact.reset(n_new(CScriptedInteraction(IactTable)));
-				::Sys::DbgOut(("*** SO actor iact: " + Interaction.first.as<std::string>() + "\n").c_str());
+				// ability = load scripted ability, register if needed
+				Iact.reset(n_new(CScriptedAbilityInteraction(IactTable /*, std move ability*/)));
 			}
 
 			if (Iact)

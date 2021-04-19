@@ -3,6 +3,75 @@
 namespace DEM::Game
 {
 
+/*
+CScriptedAbility::CScriptedAbility(const sol::table& Table)
+{
+	_FnIsAvailable = Table.get<sol::function>("IsAvailable");
+	_FnIsTargetValid = Table.get<sol::function>("IsTargetValid");
+	_FnNeedMoreTargets = Table.get<sol::function>("NeedMoreTargets");
+	_FnPrepare = Table.get<sol::function>("Prepare");
+
+	_CursorImage = Table.get<std::string>("CursorImage"); //???to method? pass target index?
+}
+//---------------------------------------------------------------------
+
+bool CScriptedAbility::IsAvailable(const CInteractionContext& Context) const
+{
+	return !_FnIsAvailable || LuaCall(_FnIsAvailable, Context);
+}
+//---------------------------------------------------------------------
+
+bool CScriptedAbility::IsTargetValid(const CGameSession& Session, U32 Index, const CInteractionContext& Context) const
+{
+	return LuaCall(_FnIsTargetValid, Index, Context);
+}
+//---------------------------------------------------------------------
+
+ESoftBool CScriptedAbility::NeedMoreTargets(const CInteractionContext& Context) const
+{
+	auto Result = _FnNeedMoreTargets(Context);
+	if (!Result.valid())
+	{
+		sol::error Error = Result;
+		::Sys::Error(Error.what());
+		return ESoftBool::False;
+	}
+
+	if (Result.get_type() == sol::type::boolean) return Result ? ESoftBool::True : ESoftBool::False;
+
+	return Result;
+}
+//---------------------------------------------------------------------
+
+bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue) const
+{
+	// Call Prepare - filter actors, adjust ability params (like +2 bonus in skill for each helping actor)
+	// Fail if no actors left
+	// Enqueue ExecuteAbility actions into filtered actors' queues, create AbilityInstance for each one
+
+	NOT_IMPLEMENTED;
+	return false;
+
+	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;
+
+	auto pWorld = Session.FindFeature<CGameWorld>();
+	if (!pWorld) return false;
+	//auto pSOComponent = pWorld->FindComponent<CSmartObjectComponent>(Context.Targets[0].Entity);
+	//if (!pSOComponent || !pSOComponent->Asset) return false;
+	//CSmartObject* pSOAsset = pSOComponent->Asset->GetObject<CSmartObject>();
+	//if (!pSOAsset) return false;
+
+	auto pQueue = pWorld->FindComponent<CActionQueueComponent>(Context.Actors[0]);
+	if (!pQueue) return false;
+
+	if (!Enqueue) pQueue->Reset();
+	pQueue->EnqueueAction<ExecuteAbility>(Context.Interaction, Context.Targets[0].Entity);
+
+	return true;
+}
+//---------------------------------------------------------------------
+*/
+
 vector3 CScriptedAbility::GetInteractionPoint() const
 {
 	NOT_IMPLEMENTED;
