@@ -18,101 +18,6 @@
 namespace DEM::Game
 {
 
-// NB: if closed, must be convex
-static float SqDistanceToPolyChain(const vector3& Pos, const float* pVertices, UPTR VertexCount, bool Closed, UPTR& OutSegment, float& OutT)
-{
-	float MinSqDistance = std::numeric_limits<float>().max();
-	if (Closed)
-	{
-		// NB: only convex polys are supported for now!
-		if (dtPointInPolygon(Pos.v, pVertices, VertexCount))
-		{
-			OutSegment = VertexCount;
-			return 0.f;
-		}
-
-		// Process implicit closing edge
-		MinSqDistance = dtDistancePtSegSqr2D(Pos.v, &pVertices[3 * (VertexCount - 1)], &pVertices[0], OutT);
-		OutSegment = VertexCount - 1;
-	}
-
-	for (UPTR i = 0; i < VertexCount - 1; ++i)
-	{
-		float t;
-		const float SqDistance = dtDistancePtSegSqr2D(Pos.v, &pVertices[3 * i], &pVertices[3 * (i + 1)], t);
-		if (SqDistance < MinSqDistance)
-		{
-			MinSqDistance = SqDistance;
-			OutSegment = i;
-			OutT = t;
-		}
-	}
-
-	return MinSqDistance;
-}
-//---------------------------------------------------------------------
-
-static inline float SqDistanceToInteractionZone(const vector3& Pos, const CInteractionZone& Zone, UPTR& OutSegment, float& OutT)
-{
-	const auto VertexCount = Zone.Vertices.size();
-	if (VertexCount == 0) return std::numeric_limits<float>().max();
-	else if (VertexCount == 1) return vector3::SqDistance2D(Pos, Zone.Vertices[0]);
-	else if (VertexCount == 2) return dtDistancePtSegSqr2D(Pos.v, Zone.Vertices[0].v, Zone.Vertices[1].v, OutT);
-	else return SqDistanceToPolyChain(Pos, Zone.Vertices.data()->v, VertexCount, Zone.ClosedPolygon, OutSegment, OutT);
-}
-//---------------------------------------------------------------------
-
-static inline vector3 PointInInteractionZone(const vector3& Pos, const CInteractionZone& Zone, UPTR Segment, float t)
-{
-	const auto VertexCount = Zone.Vertices.size();
-	if (VertexCount == 0) return vector3::Zero;
-	else if (VertexCount == 1) return Zone.Vertices[0];
-	else if (VertexCount == 2) return vector3::lerp(Zone.Vertices[0], Zone.Vertices[1], t);
-	else if (Segment == VertexCount) return Pos;
-	else return vector3::lerp(Zone.Vertices[Segment], Zone.Vertices[(Segment + 1) % VertexCount], t);
-}
-//---------------------------------------------------------------------
-
-// NB: OutPos is not changed if function returns false
-static bool IsNavPolyInInteractionZone(const CInteractionZone& Zone, const matrix44& ObjectWorldTfm, float* pPolyVerts, int PolyVertCount, vector3& OutPos)
-{
-	UPTR SegmentIdx = 0;
-	float t = 0.f;
-	float SqDistance = std::numeric_limits<float>().max();
-
-	const auto SqRadius = Zone.Radius * Zone.Radius;
-	const auto VertexCount = Zone.Vertices.size();
-	if (VertexCount < 2)
-	{
-		const vector3 Pos = VertexCount ? ObjectWorldTfm.transform_coord(Zone.Vertices[0]) : ObjectWorldTfm.Translation();
-		SqDistance = SqDistanceToPolyChain(Pos, pPolyVerts, PolyVertCount, true, SegmentIdx, t);
-	}
-	else if (VertexCount == 2)
-	{
-		// https://www.geometrictools.com/GTE/Mathematics/DistSegmentSegment.h
-
-		//dtIntersectSegSeg2D
-		//dtIntersectSegmentPoly2D(
-		//	ObjectWorldTfm.transform_coord(Zone.Vertices[0]).v,
-		//	ObjectWorldTfm.transform_coord(Zone.Vertices[1]).v,
-
-		// FIXME: IMPLEMENT!
-		return false;
-	}
-	else
-	{
-		// Can use separating axes to get distances?
-
-		// FIXME: IMPLEMENT!
-		return false;
-	}
-
-	if (SqDistance > SqRadius) return false;
-	dtVlerp(OutPos.v, &pPolyVerts[3 * SegmentIdx], &pPolyVerts[(3 * (SegmentIdx + 1)) % VertexCount], t);
-	return true;
-}
-//---------------------------------------------------------------------
-
 // FIXME: distance from segment to poly and from poly to poly are not calculated yet, so optimization works only
 // for point/circle zones. Maybe a cheaper way is to update sub-action when enter new poly or by timer?
 static bool OptimizeStaticPath(CGameWorld& World, HEntity EntityID, InteractWithSmartObject& Action, AI::Navigate& NavAction, const CSmartObject& SO)
@@ -150,7 +55,8 @@ static bool OptimizeStaticPath(CGameWorld& World, HEntity EntityID, InteractWith
 		for (U8 ZoneIdx = 0; ZoneIdx < ZoneCount; ++ZoneIdx)
 		{
 			if (!((1 << ZoneIdx) & Action._AllowedZones)) continue;
-			if (IsNavPolyInInteractionZone(SO.GetInteractionZone(ZoneIdx), ObjectWorldTfm, Verts, PolyVertCount, NavAction._Destination))
+			const CZone& Zone = SO.GetInteractionZone(ZoneIdx).Zone;
+			if (Zone.IntersectsNavPoly(ObjectWorldTfm, Verts, PolyVertCount, NavAction._Destination))
 			{
 				Action._ZoneIndex = ZoneIdx;
 				Action._AllowedZones &= ~(1 << ZoneIdx);
@@ -265,7 +171,8 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 		float t = 0.f;
 		if (CheckOnlyCurrentZone)
 		{
-			SqDistanceToInteractionZone(SOSpaceActorPos, SO.GetInteractionZone(pAction->_ZoneIndex), SegmentIdx, t);
+			const CZone& Zone = SO.GetInteractionZone(pAction->_ZoneIndex).Zone;
+			Zone.CalcSqDistance(SOSpaceActorPos, SegmentIdx, t);
 		}
 		else
 		{
@@ -280,7 +187,8 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 
 				UPTR CurrS;
 				float CurrT;
-				const float SqDistance = SqDistanceToInteractionZone(SOSpaceActorPos, SO.GetInteractionZone(i), CurrS, CurrT);
+				const CZone& Zone = SO.GetInteractionZone(i).Zone;
+				const float SqDistance = Zone.CalcSqDistance(SOSpaceActorPos, CurrS, CurrT);
 				if (SqDistance < MinSqDistance)
 				{
 					MinSqDistance = SqDistance;
@@ -295,11 +203,11 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 
 		const auto& Zone = SO.GetInteractionZone(pAction->_ZoneIndex);
 
-		vector3 ActionPos = ObjectWorldTfm.transform_coord(PointInInteractionZone(SOSpaceActorPos, Zone, SegmentIdx, t));
+		vector3 ActionPos = ObjectWorldTfm.transform_coord(Zone.Zone.GetPoint(SOSpaceActorPos, SegmentIdx, t));
 
 		const float WorldSqDistance = vector3::SqDistance2D(ActionPos, ActorPos);
 
-		const float Radius = Zone.Radius; //???apply actor radius too?
+		const float Radius = Zone.Zone.Radius; //???apply actor radius too?
 		const float SqRadius = std::max(Radius * Radius, AI::Steer::SqLinearTolerance);
 
 		// FIXME: what if there is something between ActionPos and ActorPos that blocks an interaction?

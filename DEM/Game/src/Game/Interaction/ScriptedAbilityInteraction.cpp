@@ -87,7 +87,7 @@ bool CScriptedAbilityInteraction::Execute(CGameSession& Session, CInteractionCon
 	if (!pQueue) return false;
 
 	if (!Enqueue) pQueue->Reset();
-	pQueue->EnqueueAction<ExecuteAbility>(Context.Interaction, Context.Targets[0].Entity);
+	//pQueue->EnqueueAction<ExecuteAbility>(Context.Interaction, Context.Targets[0].Entity);
 
 	return true;
 }

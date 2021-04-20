@@ -1,7 +1,6 @@
 #pragma once
 #include <Animation/TimelineTask.h>
-#include <Data/FixedArray.h>
-#include <Math/Vector3.h>
+#include <Game/Interaction/Zone.h>
 #include <sol/forward.hpp>
 #include <vector>
 #include <map>
@@ -64,9 +63,7 @@ struct CSmartObjectInteractionInfo
 struct CInteractionZone
 {
 	CFixedArray<CSmartObjectInteractionInfo> Interactions;
-	CFixedArray<vector3>                     Vertices;
-	float                                    Radius = 0.f;
-	bool                                     ClosedPolygon = false;
+	CZone                                    Zone;
 };
 
 class CSmartObject : public ::Core::CObject

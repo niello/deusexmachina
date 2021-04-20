@@ -115,19 +115,19 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 			const auto& ZoneDesc = *ZoneParam.GetValue<Data::PParams>();
 
 			DEM::Game::CInteractionZone Zone;
-			Zone.Radius = ZoneDesc.Get(CStrID("Radius"), 0.f);
+			Zone.Zone.Radius = ZoneDesc.Get(CStrID("Radius"), 0.f);
 
 			Data::PDataArray VerticesDesc;
 			if (ZoneDesc.TryGet<Data::PDataArray>(VerticesDesc, CStrID("Vertices")))
 			{
-				Zone.Vertices.SetSize(VerticesDesc->GetCount());
+				Zone.Zone.Vertices.SetSize(VerticesDesc->GetCount());
 				size_t i = 0;
 				for (const auto& VertexDesc : *VerticesDesc)
-					Zone.Vertices[i++] = VertexDesc.GetValue<vector3>();
+					Zone.Zone.Vertices[i++] = VertexDesc.GetValue<vector3>();
 
-				if (Zone.Vertices.size())
+				if (Zone.Zone.Vertices.size())
 				{
-					Zone.ClosedPolygon = ZoneDesc.Get(CStrID("ClosedPoly"), false);
+					Zone.Zone.ClosedPolygon = ZoneDesc.Get(CStrID("ClosedPoly"), false);
 					// TODO: Zone.ConvexPolygon = ZoneDesc.Get(CStrID("ConvexPoly"), false);
 					//???or detect from points?
 				}
