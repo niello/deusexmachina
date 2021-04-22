@@ -5,6 +5,9 @@
 #include <vector>
 #include <map>
 
+//!!!DBG TMP!
+#include <Game/Interaction/Ability.h>
+
 // Smart object asset describes a set of states, transitions between them,
 // and interactions available over the object under different conditions.
 // This asset is stateless, state is stored in CSmartObjectComponent.
@@ -42,14 +45,6 @@ struct CSmartObjectStateInfo
 	// state logic object ptr (optional)
 
 	std::vector<CSmartObjectTransitionInfo> Transitions;
-};
-
-enum class EFacingMode : U8
-{
-	None = 0,
-	Direction,
-	Point
-	// TODO: SceneNode?
 };
 
 struct CSmartObjectInteractionInfo

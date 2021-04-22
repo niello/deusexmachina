@@ -4,6 +4,7 @@
 #include <AI/Navigation/NavAgentComponent.h>
 #include <AI/AIStateComponent.h>
 #include <AI/Movement/SteerAction.h>
+#include <Game/Interaction/Ability.h>
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/Objects/SmartObject.h>
 #include <DetourCommon.h>
@@ -18,6 +19,7 @@
 namespace DEM::Game
 {
 
+// FIXME: is optimized point used somewhere? Seems like we optimize but continue moving to the old point!
 // FIXME: distance from segment to poly and from poly to poly are not calculated yet, so optimization works only
 // for point/circle zones. Maybe a cheaper way is to update sub-action when enter new poly or by timer?
 static bool OptimizeStaticPath(CGameWorld& World, HEntity EntityID, InteractWithSmartObject& Action, AI::Navigate& NavAction, const CSmartObject& SO)
@@ -112,30 +114,24 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 	bool CheckOnlyCurrentZone = true;
 	if (auto pSteerAction = ChildAction.As<AI::Steer>())
 	{
-		if (ChildActionStatus == EActionStatus::Active)
-		{
-			// No need to update destination if the target is static
-			if (SO.IsStatic()) return EActionStatus::Active;
-		}
-		else return ChildActionStatus; // May be only Failed or Succeeded here
+		// Only proceed to target pos update if the target is dynamic
+		if (SO.IsStatic() || ChildActionStatus != EActionStatus::Active) return ChildActionStatus;
 	}
 	else if (auto pNavAction = ChildAction.As<AI::Navigate>())
 	{
-		if (ChildActionStatus == EActionStatus::Active)
-		{
-			if (SO.IsStatic())
-			{
-				// If new path intersects with another interaction zone, can optimize by navigating to it instead of the original target
-				const bool Ok = OptimizeStaticPath(World, EntityID, *pAction, *pNavAction, SO);
-				return Ok ? EActionStatus::Active : EActionStatus::Failed;
-			}
-		}
-		else if (ChildActionStatus == EActionStatus::Failed)
+		if (ChildActionStatus == EActionStatus::Failed)
 		{
 			// Try other remaining zones with navigable points one by one, fail if none left
 			CheckOnlyCurrentZone = false;
 		}
-		else return EActionStatus::Succeeded;
+		else
+		{
+			// If new path intersects with another interaction zone, can optimize by navigating to it instead of the original target
+			if (SO.IsStatic() && ChildActionStatus == EActionStatus::Active)
+				if (!OptimizeStaticPath(World, EntityID, *pAction, *pNavAction, SO))
+					return EActionStatus::Failed;
+			return ChildActionStatus;
+		}
 	}
 	else if (!SO.IsStatic() || !ChildAction)
 	{
