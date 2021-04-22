@@ -122,7 +122,7 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 		if (ChildActionStatus == EActionStatus::Failed)
 		{
 			// Try other remaining zones with navigable points one by one, fail if none left
-			CheckOnlyCurrentZone = false;
+			CheckOnlyCurrentZone = false; //???clear _ZoneIndex?
 		}
 		else
 		{
@@ -136,7 +136,7 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 	else if (!SO.IsStatic() || !ChildAction)
 	{
 		// Move to the closest zone with navigable point inside, fail if none left
-		CheckOnlyCurrentZone = false;
+		CheckOnlyCurrentZone = false; //???clear _ZoneIndex?
 	}
 	else
 	{
@@ -163,6 +163,7 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 
 	while (CheckOnlyCurrentZone || pAction->_AllowedZones)
 	{
+		// Update current zone and calculate action point prerequisites
 		UPTR SegmentIdx = 0;
 		float t = 0.f;
 		if (CheckOnlyCurrentZone)
@@ -197,12 +198,13 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 
 		pAction->_AllowedZones &= ~(1 << pAction->_ZoneIndex);
 
+		// Calculate action point 
+
 		const auto& Zone = SO.GetInteractionZone(pAction->_ZoneIndex);
 
 		vector3 ActionPos = ObjectWorldTfm.transform_coord(Zone.Zone.GetPoint(SOSpaceActorPos, SegmentIdx, t));
 
 		const float WorldSqDistance = vector3::SqDistance2D(ActionPos, ActorPos);
-
 		const float Radius = Zone.Zone.Radius; //???apply actor radius too?
 		const float SqRadius = std::max(Radius * Radius, AI::Steer::SqLinearTolerance);
 
@@ -212,48 +214,39 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 
 		ActionPos = vector3::lerp(ActionPos, ActorPos, Radius / n_sqrt(WorldSqDistance));
 
+		// Use target facing direction to improve arrival
 		vector3 FacingDir;
 		float FacingTolerance;
 		GetFacingParams(Zone, pAction->_Interaction, ObjectWorldTfm, ActionPos, FacingDir, FacingTolerance);
 
-		// If character respects a navmesh and target is not in the same poly, must navigate to it
+		// If character is a navmesh agent, must navigate. Otherwise a simple steering does the job.
+		// NB: navigate even if already at the target poly, because it may require special traversal action, not Steer
 		if (pNavAgent)
 		{
-			float NearestPos[3];
+			vector3 NavigablePos;
 			const float Extents[3] = { Radius, pNavAgent->Height, Radius };
 			dtPolyRef ObjPolyRef = 0;
-			pNavAgent->pNavQuery->findNearestPoly(ActionPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NearestPos);
-			const float SqDiff = dtVdist2DSqr(ActionPos.v, NearestPos);
-			if (!ObjPolyRef || SqDiff > SqRadius)
+			pNavAgent->pNavQuery->findNearestPoly(ActionPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NavigablePos.v);
+
+			// If no navigable point found inside a zone, try the next zone or fail
+			// NB: this check is simplified and may fail to navigate zones where reachable points exist, so, in order
+			// to work, each zone must have at least one navigable point in a zone radius from each base point.
+			// TODO: could instead explore all the interaction zone for intersecion with valid navigation polys, but it is slow.
+			if (!ObjPolyRef || dtVdist2DSqr(ActionPos.v, NavigablePos.v) > SqRadius)
 			{
-				// No navigable point found inside a zone
-				// NB: this check is simplified and may fail to navigate zones where reachable points exist, so, in order
-				// to work, each zone must have at least one navigable point in a zone radius from each base point.
-				// TODO: could instead explore all the interaction zone for intersecion with valid navigation polys, but it is slow.
 				if (CheckOnlyCurrentZone) break;
 				continue;
 			}
-			else if (SqDiff > 0.f) ActionPos = NearestPos;
 
-			dtPolyRef AgentPolyRef = pNavAgent->Corridor.getFirstPoly();
-			if (pNavAgent->Mode == AI::ENavigationMode::Offmesh)
-			{
-				const float AgentExtents[3] = { pNavAgent->Radius, pNavAgent->Height, pNavAgent->Radius };
-				pNavAgent->pNavQuery->findNearestPoly(ActorPos.v, AgentExtents, pNavAgent->Settings->GetQueryFilter(), &AgentPolyRef, NearestPos);
-			}
-
-			if (ObjPolyRef != AgentPolyRef)
-			{
-				// To avoid possible parent path invalidation, could try to optimize with findLocalNeighbourhood,
-				// moveAlongSurface or raycast, but it would require additional logic and complicate navigation.
-				Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, FacingDir, 0.f);
-				return EActionStatus::Active;
-			}
+			// To avoid possible parent path invalidation, could try to optimize with findLocalNeighbourhood,
+			// moveAlongSurface or raycast, but it would require additional logic and complicate navigation.
+			Queue.PushOrUpdateChild<AI::Navigate>(Action, NavigablePos, FacingDir, 0.f);
+		}
+		else
+		{
+			Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ActionPos + FacingDir, 0.f);
 		}
 
-		// For characters without navigation or in the same poly with target, no navigation required
-		// TODO: if pNavAgent, get action from poly instead of hardcoded steering?
-		Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ActionPos + FacingDir, 0.f);
 		return EActionStatus::Active;
 	}
 
