@@ -72,7 +72,7 @@ static bool OptimizeStaticPath(CGameWorld& World, HEntity EntityID, InteractWith
 //---------------------------------------------------------------------
 
 static bool GetFacingParams(const CInteractionZone& Zone, CStrID InteractionID, const matrix44& ObjectWorldTfm,
-	const vector3& ActorPos, vector3& OutFacingDir, float& OutFacingTolerance)
+	const vector3& ActorPos, vector3& OutFacingDir, float* pOutFacingTolerance)
 {
 	auto It = std::find_if(Zone.Interactions.cbegin(), Zone.Interactions.cend(), [InteractionID](const auto& Elm)
 	{
@@ -81,7 +81,7 @@ static bool GetFacingParams(const CInteractionZone& Zone, CStrID InteractionID, 
 
 	if (It != Zone.Interactions.cend()) // Should always be true
 	{
-		OutFacingTolerance = It->FacingTolerance;
+		if (pOutFacingTolerance) *pOutFacingTolerance = It->FacingTolerance;
 
 		switch (It->FacingMode)
 		{
@@ -101,7 +101,7 @@ static bool GetFacingParams(const CInteractionZone& Zone, CStrID InteractionID, 
 	}
 
 	OutFacingDir = vector3::Zero;
-	OutFacingTolerance = AI::Turn::AngularTolerance;
+	if (pOutFacingTolerance) *pOutFacingTolerance = AI::Turn::AngularTolerance;
 	return false;
 }
 //---------------------------------------------------------------------
@@ -202,50 +202,50 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 
 		const auto& Zone = SO.GetInteractionZone(pAction->_ZoneIndex);
 
-		vector3 ActionPos = ObjectWorldTfm.transform_coord(Zone.Zone.GetPoint(SOSpaceActorPos, SegmentIdx, t));
-
-		const float WorldSqDistance = vector3::SqDistance2D(ActionPos, ActorPos);
 		const float Radius = Zone.Zone.Radius; //???apply actor radius too?
 		const float SqRadius = std::max(Radius * Radius, AI::Steer::SqLinearTolerance);
 
+		vector3 ActionPos = ObjectWorldTfm.transform_coord(Zone.Zone.GetPoint(SOSpaceActorPos, SegmentIdx, t));
+
 		// FIXME: what if there is something between ActionPos and ActorPos that blocks an interaction?
 		// Use visibility raycast?
+		const float WorldSqDistance = vector3::SqDistance2D(ActionPos, ActorPos);
 		if (WorldSqDistance <= SqRadius) return EActionStatus::Succeeded;
 
 		ActionPos = vector3::lerp(ActionPos, ActorPos, Radius / n_sqrt(WorldSqDistance));
 
-		// Use target facing direction to improve arrival
-		vector3 FacingDir;
-		float FacingTolerance;
-		GetFacingParams(Zone, pAction->_Interaction, ObjectWorldTfm, ActionPos, FacingDir, FacingTolerance);
-
-		// If character is a navmesh agent, must navigate. Otherwise a simple steering does the job.
-		// NB: navigate even if already at the target poly, because it may require special traversal action, not Steer
+		// If actor uses navigation, find navigable point in a zone. Proceed to the next zone if failed.
 		if (pNavAgent)
 		{
-			vector3 NavigablePos;
+			float NavigablePos[3];
 			const float Extents[3] = { Radius, pNavAgent->Height, Radius };
 			dtPolyRef ObjPolyRef = 0;
-			pNavAgent->pNavQuery->findNearestPoly(ActionPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NavigablePos.v);
+			pNavAgent->pNavQuery->findNearestPoly(ActionPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NavigablePos);
 
-			// If no navigable point found inside a zone, try the next zone or fail
 			// NB: this check is simplified and may fail to navigate zones where reachable points exist, so, in order
 			// to work, each zone must have at least one navigable point in a zone radius from each base point.
 			// TODO: could instead explore all the interaction zone for intersecion with valid navigation polys, but it is slow.
-			if (!ObjPolyRef || dtVdist2DSqr(ActionPos.v, NavigablePos.v) > SqRadius)
+			if (!ObjPolyRef || dtVdist2DSqr(ActionPos.v, NavigablePos) > SqRadius)
 			{
 				if (CheckOnlyCurrentZone) break;
 				continue;
 			}
 
-			// To avoid possible parent path invalidation, could try to optimize with findLocalNeighbourhood,
-			// moveAlongSurface or raycast, but it would require additional logic and complicate navigation.
-			Queue.PushOrUpdateChild<AI::Navigate>(Action, NavigablePos, FacingDir, 0.f);
+			ActionPos = NavigablePos;
 		}
+
+		// Use target facing direction to improve arrival
+		vector3 FacingDir;
+		GetFacingParams(Zone, pAction->_Interaction, ObjectWorldTfm, ActionPos, FacingDir, nullptr);
+
+		// If character is a navmesh agent, must navigate. Otherwise a simple steering does the job.
+		// NB: navigate even if already at the target poly, because it may require special traversal action, not Steer.
+		// To avoid possible parent path invalidation, could try to optimize with findLocalNeighbourhood,
+		// moveAlongSurface or raycast, but it would require additional logic and complicate navigation.
+		if (pNavAgent)
+			Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, FacingDir, 0.f);
 		else
-		{
 			Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ActionPos + FacingDir, 0.f);
-		}
 
 		return EActionStatus::Active;
 	}
@@ -285,7 +285,7 @@ static EActionStatus FaceTarget(CGameWorld& World, HEntity EntityID, CActionQueu
 
 	vector3 TargetDir;
 	float FacingTolerance;
-	GetFacingParams(Zone, pAction->_Interaction, ObjectWorldTfm, ActorWorldTfm.Translation(), TargetDir, FacingTolerance);
+	GetFacingParams(Zone, pAction->_Interaction, ObjectWorldTfm, ActorWorldTfm.Translation(), TargetDir, &FacingTolerance);
 
 	FacingTolerance = std::max(FacingTolerance, DEM::AI::Turn::AngularTolerance);
 
