@@ -24,10 +24,13 @@ namespace DEM::Game
 // for point/circle zones. Maybe a cheaper way is to update sub-action when enter new poly or by timer?
 static void OptimizePath(CGameWorld& World, HEntity EntityID, InteractWithSmartObject& Action, AI::Navigate& NavAction, const CSmartObject& SO)
 {
+	//!!!TODO: optimize only if the target poly is the end poly, no partial path optimization should happen!
+	//!!!TODO: early exit if no other zones exist! But may also optimize in its own zone and check the last poly too!
+	//!!!TODO: calc new point for navigation!
 	//!!!TODO: instead of _PathScanned could increment path version on replan and recheck,
 	//to handle partial path and corridor optimizations!
 	// Don't optimize path to dynamic target, effort will be invalidated after the next target move or rotation
-	if (!SO.IsStatic() || Action._PathScanned || !Action._AllowedZones) return;
+	if (!SO.IsStatic() || Action._PathScanned) return;
 
 	auto pSOSceneComponent = World.FindComponent<CSceneComponent>(Action._Object);
 	if (!pSOSceneComponent || !pSOSceneComponent->RootNode) return;
@@ -388,6 +391,7 @@ void UpdateAbilityInteractions(CGameWorld& World, sol::state& Lua, float dt)
 		}
 
 		// Cache allowed zones once
+		// FIXME: do _really_ once (old logic probably could return here when tried all zones)! Move to MoveToTarget?
 		if (!pAction->_AllowedZones)
 		{
 			const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
