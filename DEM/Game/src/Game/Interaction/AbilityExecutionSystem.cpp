@@ -22,18 +22,19 @@ namespace DEM::Game
 // FIXME: is optimized point used somewhere? Seems like we optimize but continue moving to the old point!
 // FIXME: distance from segment to poly and from poly to poly are not calculated yet, so optimization works only
 // for point/circle zones. Maybe a cheaper way is to update sub-action when enter new poly or by timer?
-static bool OptimizeStaticPath(CGameWorld& World, HEntity EntityID, InteractWithSmartObject& Action, AI::Navigate& NavAction, const CSmartObject& SO)
+static void OptimizePath(CGameWorld& World, HEntity EntityID, InteractWithSmartObject& Action, AI::Navigate& NavAction, const CSmartObject& SO)
 {
 	//!!!TODO: instead of _PathScanned could increment path version on replan and recheck,
 	//to handle partial path and corridor optimizations!
-	if (Action._PathScanned || !Action._AllowedZones) return true;
+	// Don't optimize path to dynamic target, effort will be invalidated after the next target move or rotation
+	if (!SO.IsStatic() || Action._PathScanned || !Action._AllowedZones) return;
 
 	auto pSOSceneComponent = World.FindComponent<CSceneComponent>(Action._Object);
-	if (!pSOSceneComponent || !pSOSceneComponent->RootNode) return false;
+	if (!pSOSceneComponent || !pSOSceneComponent->RootNode) return;
 	const auto& ObjectWorldTfm = pSOSceneComponent->RootNode->GetWorldMatrix();
 
 	const auto* pNavAgent = World.FindComponent<AI::CNavAgentComponent>(EntityID);
-	if (!pNavAgent || pNavAgent->State != AI::ENavigationState::Following) return true;
+	if (!pNavAgent || pNavAgent->State != AI::ENavigationState::Following) return;
 
 	Action._PathScanned = true;
 
@@ -61,13 +62,10 @@ static bool OptimizeStaticPath(CGameWorld& World, HEntity EntityID, InteractWith
 			if (Zone.IntersectsNavPoly(ObjectWorldTfm, Verts, PolyVertCount, NavAction._Destination))
 			{
 				Action._ZoneIndex = ZoneIdx;
-				Action._AllowedZones &= ~(1 << ZoneIdx);
-				return true;
+				return;
 			}
 		}
 	}
-
-	return true;
 }
 //---------------------------------------------------------------------
 
@@ -111,7 +109,14 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 {
 	auto pAction = Action.As<InteractWithSmartObject>();
 
-	bool CheckOnlyCurrentZone = true;
+	// Throw out failed zones for static objects
+	if (SO.IsStatic() && ChildActionStatus == EActionStatus::Failed) pAction->_AllowedZones &= ~(1 << pAction->_ZoneIndex);
+
+	// FIXME: use default zones of an ability?
+	const auto PrevAllowedZones = pAction->_AllowedZones;
+	if (!PrevAllowedZones) return EActionStatus::Failed;
+
+	// Process movement in progress
 	if (auto pSteerAction = ChildAction.As<AI::Steer>())
 	{
 		// Only proceed to target pos update if the target is dynamic
@@ -119,84 +124,56 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 	}
 	else if (auto pNavAction = ChildAction.As<AI::Navigate>())
 	{
-		if (ChildActionStatus == EActionStatus::Failed)
-		{
-			// Try other remaining zones with navigable points one by one, fail if none left
-			CheckOnlyCurrentZone = false; //???clear _ZoneIndex?
-		}
-		else
+		if (ChildActionStatus != EActionStatus::Failed)
 		{
 			// If new path intersects with another interaction zone, can optimize by navigating to it instead of the original target
-			if (SO.IsStatic() && ChildActionStatus == EActionStatus::Active)
-				if (!OptimizeStaticPath(World, EntityID, *pAction, *pNavAction, SO))
-					return EActionStatus::Failed;
+			if (ChildActionStatus == EActionStatus::Active)
+				OptimizePath(World, EntityID, *pAction, *pNavAction, SO);
 			return ChildActionStatus;
 		}
 	}
-	else if (!SO.IsStatic() || !ChildAction)
-	{
-		// Move to the closest zone with navigable point inside, fail if none left
-		CheckOnlyCurrentZone = false; //???clear _ZoneIndex?
-	}
-	else
-	{
-		return EActionStatus::Succeeded;
-	}
 
-	auto pSOSceneComponent = World.FindComponent<CSceneComponent>(pAction->_Object);
-	if (!pSOSceneComponent || !pSOSceneComponent->RootNode) return EActionStatus::Failed;
+	auto pTargetSceneComponent = World.FindComponent<CSceneComponent>(pAction->_Object);
+	if (!pTargetSceneComponent || !pTargetSceneComponent->RootNode) return EActionStatus::Failed;
 
 	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
 	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return EActionStatus::Failed;
 
-	const auto& ObjectWorldTfm = pSOSceneComponent->RootNode->GetWorldMatrix();
-	matrix44 WorldToSmartObject;
-	ObjectWorldTfm.invert_simple(WorldToSmartObject);
+	const auto& TargetToWorld = pTargetSceneComponent->RootNode->GetWorldMatrix();
+	matrix44 WorldToTarget;
+	TargetToWorld.invert_simple(WorldToTarget);
 
 	const auto& ActorWorldTfm = pActorSceneComponent->RootNode->GetWorldMatrix();
 	const auto& ActorPos = ActorWorldTfm.Translation();
-	const vector3 SOSpaceActorPos = WorldToSmartObject.transform_coord(ActorPos);
+	const vector3 ActorPosInTargetSpace = WorldToTarget.transform_coord(ActorPos);
 
 	const auto* pNavAgent = World.FindComponent<AI::CNavAgentComponent>(EntityID);
 
-	const auto PrevAllowedZones = pAction->_AllowedZones;
-
-	while (CheckOnlyCurrentZone || pAction->_AllowedZones)
+	while (pAction->_AllowedZones)
 	{
-		// Update current zone and calculate action point prerequisites
+		// Find closest suitable zone and calculate action point prerequisites
+		// NB: could calculate once, sort and then loop over them, but most probably it will be slower than now,
+		// because it is expected that almost always the first or at worst the second interaction zone will be selected.
 		UPTR SegmentIdx = 0;
 		float t = 0.f;
-		if (CheckOnlyCurrentZone)
+		float MinSqDistance = std::numeric_limits<float>().max();
+		const auto ZoneCount = SO.GetInteractionZoneCount();
+		for (U8 i = 0; i < ZoneCount; ++i)
 		{
-			const CZone& Zone = SO.GetInteractionZone(pAction->_ZoneIndex).Zone;
-			Zone.CalcSqDistance(SOSpaceActorPos, SegmentIdx, t);
-		}
-		else
-		{
-			// Find closest suitable zone
-			// NB: could calculate once, sort and then loop over them, but most probably it will be slower than now,
-			// because it is expected that almost always the first or at worst the second interaction zone will be selected.
-			float MinSqDistance = std::numeric_limits<float>().max();
-			const auto ZoneCount = SO.GetInteractionZoneCount();
-			for (U8 i = 0; i < ZoneCount; ++i)
-			{
-				if (!((1 << i) & pAction->_AllowedZones)) continue;
+			if (!((1 << i) & pAction->_AllowedZones)) continue;
 
-				UPTR CurrS;
-				float CurrT;
-				const CZone& Zone = SO.GetInteractionZone(i).Zone;
-				const float SqDistance = Zone.CalcSqDistance(SOSpaceActorPos, CurrS, CurrT);
-				if (SqDistance < MinSqDistance)
-				{
-					MinSqDistance = SqDistance;
-					SegmentIdx = CurrS;
-					t = CurrT;
-					pAction->_ZoneIndex = i;
-				}
+			UPTR CurrS;
+			float CurrT;
+			const CZone& Zone = SO.GetInteractionZone(i).Zone;
+			const float SqDistance = Zone.CalcSqDistance(ActorPosInTargetSpace, CurrS, CurrT);
+			if (SqDistance < MinSqDistance)
+			{
+				MinSqDistance = SqDistance;
+				SegmentIdx = CurrS;
+				t = CurrT;
+				pAction->_ZoneIndex = i;
 			}
 		}
-
-		pAction->_AllowedZones &= ~(1 << pAction->_ZoneIndex);
 
 		// Calculate action point 
 
@@ -205,7 +182,7 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 		const float Radius = Zone.Zone.Radius; //???apply actor radius too?
 		const float SqRadius = std::max(Radius * Radius, AI::Steer::SqLinearTolerance);
 
-		vector3 ActionPos = ObjectWorldTfm.transform_coord(Zone.Zone.GetPoint(SOSpaceActorPos, SegmentIdx, t));
+		vector3 ActionPos = TargetToWorld.transform_coord(Zone.Zone.GetPoint(ActorPosInTargetSpace, SegmentIdx, t));
 
 		// FIXME: what if there is something between ActionPos and ActorPos that blocks an interaction?
 		// Use visibility raycast?
@@ -227,7 +204,7 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 			// TODO: could instead explore all the interaction zone for intersecion with valid navigation polys, but it is slow.
 			if (!ObjPolyRef || dtVdist2DSqr(ActionPos.v, NavigablePos) > SqRadius)
 			{
-				if (CheckOnlyCurrentZone) break;
+				pAction->_AllowedZones &= ~(1 << pAction->_ZoneIndex);
 				continue;
 			}
 
@@ -236,7 +213,7 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 
 		// Use target facing direction to improve arrival
 		vector3 FacingDir;
-		GetFacingParams(Zone, pAction->_Interaction, ObjectWorldTfm, ActionPos, FacingDir, nullptr);
+		GetFacingParams(Zone, pAction->_Interaction, TargetToWorld, ActionPos, FacingDir, nullptr);
 
 		// If character is a navmesh agent, must navigate. Otherwise a simple steering does the job.
 		// NB: navigate even if already at the target poly, because it may require special traversal action, not Steer.
