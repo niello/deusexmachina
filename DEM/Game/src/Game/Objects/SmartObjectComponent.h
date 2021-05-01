@@ -6,32 +6,10 @@
 #include <Data/StringID.h>
 #include <sol/sol.hpp>
 
-//!!!DBG TMP!
-#include <Events/EventNative.h>
-
 // Smart object instance that can switch between different states and offer available interactions
 
 namespace DEM::Game
 {
-
-//!!!DBG TMP!
-// NB: avoid unnecessary Push[OrUpdate]Child to preserve cached values
-class InteractWithSmartObject : public Events::CEventNative
-{
-	NATIVE_EVENT_DECL(InteractWithSmartObject, Events::CEventNative);
-
-public:
-
-	CStrID        _Interaction;
-	HEntity       _Object;
-
-	sol::function _UpdateScript;        // Cache
-	U16           _AllowedZones = 0;    // Cache. Bit flags for up to 16 zones.
-	U8            _ZoneIndex = 0;       // Cache
-	bool          _PathScanned = false; // Cache
-
-	explicit InteractWithSmartObject(CStrID Interaction, HEntity Object) : _Interaction(Interaction), _Object(Object) {}
-};
 
 struct CSmartObjectComponent
 {

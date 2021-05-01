@@ -1,5 +1,6 @@
 #pragma once
 #include <Game/ECS/ComponentStorage.h>
+#include <Game/Interaction/Ability.h>
 #include <Data/Metadata.h>
 
 // Character AI state
@@ -9,9 +10,7 @@ namespace DEM::AI
 
 struct CAIStateComponent
 {
-	CStrID        CurrInteraction;
-	Game::HEntity CurrTarget;
-	float         CurrInteractionTime = -1.f; // less than 0 -> did not start yet
+	Game::PAbilityInstance _AbilityInstance;
 };
 
 }

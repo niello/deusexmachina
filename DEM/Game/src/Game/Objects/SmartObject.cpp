@@ -18,8 +18,6 @@ CSmartObject::CSmartObject(CStrID ID, CStrID DefaultState, bool Static, std::str
 	, _InteractionOverrides(std::move(InteractionOverrides))
 	, _Static(Static)
 {
-	n_assert_dbg(_InteractionZones.size() <= MAX_ZONES);
-
 	// Sort states and transitions by ID
 	std::sort(_States.begin(), _States.end(), [](const auto& a, const auto& b) { return a.ID < b.ID; });
 	for (auto& State : _States)

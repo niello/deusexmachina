@@ -22,24 +22,24 @@ namespace DEM::Game
 // FIXME: is optimized point used somewhere? Seems like we optimize but continue moving to the old point!
 // FIXME: distance from segment to poly and from poly to poly are not calculated yet, so optimization works only
 // for point/circle zones. Maybe a cheaper way is to update sub-action when enter new poly or by timer?
-static void OptimizePath(CGameWorld& World, HEntity EntityID, InteractWithSmartObject& Action, AI::Navigate& NavAction, const CSmartObject& SO)
+static void OptimizePath(CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, AI::Navigate& NavAction, const CSmartObject& SO)
 {
 	//!!!TODO: optimize only if the target poly is the end poly, no partial path optimization should happen!
 	//!!!TODO: early exit if no other zones exist! But may also optimize in its own zone and check the last poly too!
 	//!!!TODO: calc new point for navigation!
-	//!!!TODO: instead of _PathScanned could increment path version on replan and recheck,
+	//!!!TODO: instead of PathOptimized could increment path version on replan and recheck,
 	//to handle partial path and corridor optimizations!
 	// Don't optimize path to dynamic target, effort will be invalidated after the next target move or rotation
-	if (!SO.IsStatic() || Action._PathScanned) return;
+	if (!SO.IsStatic() || AbilityInstance.PathOptimized) return;
 
-	auto pSOSceneComponent = World.FindComponent<CSceneComponent>(Action._Object);
+	auto pSOSceneComponent = World.FindComponent<CSceneComponent>(AbilityInstance.Targets[0].Entity);
 	if (!pSOSceneComponent || !pSOSceneComponent->RootNode) return;
 	const auto& ObjectWorldTfm = pSOSceneComponent->RootNode->GetWorldMatrix();
 
 	const auto* pNavAgent = World.FindComponent<AI::CNavAgentComponent>(EntityID);
 	if (!pNavAgent || pNavAgent->State != AI::ENavigationState::Following) return;
 
-	Action._PathScanned = true;
+	AbilityInstance.PathOptimized = true;
 
 	const auto ZoneCount = SO.GetInteractionZoneCount();
 
@@ -60,11 +60,11 @@ static void OptimizePath(CGameWorld& World, HEntity EntityID, InteractWithSmartO
 
 		for (U8 ZoneIdx = 0; ZoneIdx < ZoneCount; ++ZoneIdx)
 		{
-			if (!((1 << ZoneIdx) & Action._AllowedZones)) continue;
+			if (!((1 << ZoneIdx) & AbilityInstance._AllowedZones)) continue;
 			const CZone& Zone = SO.GetInteractionZone(ZoneIdx).Zone;
 			if (Zone.IntersectsNavPoly(ObjectWorldTfm, Verts, PolyVertCount, NavAction._Destination))
 			{
-				Action._ZoneIndex = ZoneIdx;
+				AbilityInstance._ZoneIndex = ZoneIdx;
 				return;
 			}
 		}
@@ -107,40 +107,44 @@ static bool GetFacingParams(const CInteractionZone& Zone, CStrID InteractionID, 
 }
 //---------------------------------------------------------------------
 
-static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQueueComponent& Queue, HAction Action,
+//!!!Check if target tfm changed, reset all zones, update target point, remember new tfm.
+//fail if no zones left, but they were initially (InitialZones not empty)
+static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, CActionQueueComponent& Queue, HAction Action,
 	HAction ChildAction, EActionStatus ChildActionStatus, const CSmartObject& SO)
 {
-	auto pAction = Action.As<InteractWithSmartObject>();
+	n_assert(!AbilityInstance.Targets.empty()); //???can happen? return Succeeded in this case?
 
-	// Throw out failed zones for static objects
-	if (SO.IsStatic() && ChildActionStatus == EActionStatus::Failed) pAction->_AllowedZones &= ~(1 << pAction->_ZoneIndex);
-
-	// FIXME: use default zones of an ability?
-	const auto PrevAllowedZones = pAction->_AllowedZones;
-	if (!PrevAllowedZones) return EActionStatus::Failed;
-
-	// Process movement in progress
-	if (auto pSteerAction = ChildAction.As<AI::Steer>())
-	{
-		// Only proceed to target pos update if the target is dynamic
-		if (SO.IsStatic() || ChildActionStatus != EActionStatus::Active) return ChildActionStatus;
-	}
-	else if (auto pNavAction = ChildAction.As<AI::Navigate>())
-	{
-		if (ChildActionStatus != EActionStatus::Failed)
-		{
-			// If new path intersects with another interaction zone, can optimize by navigating to it instead of the original target
-			if (ChildActionStatus == EActionStatus::Active)
-				OptimizePath(World, EntityID, *pAction, *pNavAction, SO);
-			return ChildActionStatus;
-		}
-	}
-
-	auto pTargetSceneComponent = World.FindComponent<CSceneComponent>(pAction->_Object);
+	auto pTargetSceneComponent = World.FindComponent<CSceneComponent>(AbilityInstance.Targets[0].Entity);
 	if (!pTargetSceneComponent || !pTargetSceneComponent->RootNode) return EActionStatus::Failed;
 
 	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
 	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return EActionStatus::Failed;
+
+	const U32 TargetTfmVersion = pTargetSceneComponent->RootNode->GetTransformVersion();
+	if (AbilityInstance.PrevTargetTfmVersion != TargetTfmVersion)
+	{
+		AbilityInstance.PrevTargetTfmVersion = TargetTfmVersion;
+		AbilityInstance.PathOptimized = false;
+		AbilityInstance.AvailableZones = AbilityInstance.InitialZones;
+	}
+	else if (ChildAction)
+	{
+		auto pSteerAction = ChildAction.As<AI::Steer>();
+		auto pNavAction = ChildAction.As<AI::Navigate>();
+		if (!pSteerAction && !pNavAction) return EActionStatus::Succeeded; // Already at position
+		if (ChildActionStatus != EActionStatus::Failed)
+		{
+			// If new path intersects with another interaction zone, can optimize by navigating to it instead of the original target
+			if (ChildActionStatus == EActionStatus::Active)
+				OptimizePath(AbilityInstance, World, EntityID, *pNavAction, SO);
+			return ChildActionStatus;
+		}
+	}
+
+	// update point, and if it changed, interrupt possible interaction, add movement sub-action & reset path optimized flag
+	// if no zones left, fail (for dynamic targets may retry for some time before failing)
+
+	auto pAction = Action.As<ExecuteAbility>();
 
 	const auto& TargetToWorld = pTargetSceneComponent->RootNode->GetWorldMatrix();
 	matrix44 WorldToTarget;
@@ -152,7 +156,7 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 
 	const auto* pNavAgent = World.FindComponent<AI::CNavAgentComponent>(EntityID);
 
-	while (pAction->_AllowedZones)
+	while (pAction->_AbilityInstance->_AllowedZones)
 	{
 		// Find closest suitable zone and calculate action point prerequisites
 		// NB: could calculate once, sort and then loop over them, but most probably it will be slower than now,
@@ -163,7 +167,7 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 		const auto ZoneCount = SO.GetInteractionZoneCount();
 		for (U8 i = 0; i < ZoneCount; ++i)
 		{
-			if (!((1 << i) & pAction->_AllowedZones)) continue;
+			if (!((1 << i) & pAction->_AbilityInstance->_AllowedZones)) continue;
 
 			UPTR CurrS;
 			float CurrT;
@@ -174,13 +178,13 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 				MinSqDistance = SqDistance;
 				SegmentIdx = CurrS;
 				t = CurrT;
-				pAction->_ZoneIndex = i;
+				pAction->_AbilityInstance->_ZoneIndex = i;
 			}
 		}
 
 		// Calculate action point 
 
-		const auto& Zone = SO.GetInteractionZone(pAction->_ZoneIndex);
+		const auto& Zone = SO.GetInteractionZone(pAction->_AbilityInstance->_ZoneIndex);
 
 		const float Radius = Zone.Zone.Radius; //???apply actor radius too?
 		const float SqRadius = std::max(Radius * Radius, AI::Steer::SqLinearTolerance);
@@ -207,7 +211,7 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 			// TODO: could instead explore all the interaction zone for intersecion with valid navigation polys, but it is slow.
 			if (!ObjPolyRef || dtVdist2DSqr(ActionPos.v, NavigablePos) > SqRadius)
 			{
-				pAction->_AllowedZones &= ~(1 << pAction->_ZoneIndex);
+				pAction->_AbilityInstance->_AllowedZones &= ~(1 << pAction->_AbilityInstance->_ZoneIndex);
 				continue;
 			}
 
@@ -216,7 +220,7 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 
 		// Use target facing direction to improve arrival
 		vector3 FacingDir;
-		GetFacingParams(Zone, pAction->_Interaction, TargetToWorld, ActionPos, FacingDir, nullptr);
+		GetFacingParams(Zone, pAction->_AbilityInstance->_Interaction, TargetToWorld, ActionPos, FacingDir, nullptr);
 
 		// If character is a navmesh agent, must navigate. Otherwise a simple steering does the job.
 		// NB: navigate even if already at the target poly, because it may require special traversal action, not Steer.
@@ -233,7 +237,7 @@ static EActionStatus MoveToTarget(CGameWorld& World, HEntity EntityID, CActionQu
 	// No suitable zones left. Static SO fails, but dynamic still has a chance in subsequent frames.
 	if (SO.IsStatic()) return EActionStatus::Failed;
 
-	pAction->_AllowedZones = PrevAllowedZones;
+	pAction->_AbilityInstance->_AllowedZones = PrevAllowedZones;
 	return EActionStatus::Active;
 }
 //---------------------------------------------------------------------
@@ -251,10 +255,10 @@ static EActionStatus FaceTarget(CGameWorld& World, HEntity EntityID, CActionQueu
 		else return ChildActionStatus; // May be only Failed or Succeeded here
 	}
 
-	auto pAction = Action.As<InteractWithSmartObject>();
-	const auto& Zone = SO.GetInteractionZone(pAction->_ZoneIndex);
+	auto pAction = Action.As<ExecuteAbility>();
+	const auto& Zone = SO.GetInteractionZone(pAction->_AbilityInstance->_ZoneIndex);
 
-	auto pSOSceneComponent = World.FindComponent<CSceneComponent>(pAction->_Object);
+	auto pSOSceneComponent = World.FindComponent<CSceneComponent>(pAction->_AbilityInstance->_Object);
 	if (!pSOSceneComponent || !pSOSceneComponent->RootNode) return EActionStatus::Failed;
 
 	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
@@ -265,7 +269,7 @@ static EActionStatus FaceTarget(CGameWorld& World, HEntity EntityID, CActionQueu
 
 	vector3 TargetDir;
 	float FacingTolerance;
-	GetFacingParams(Zone, pAction->_Interaction, ObjectWorldTfm, ActorWorldTfm.Translation(), TargetDir, &FacingTolerance);
+	GetFacingParams(Zone, pAction->_AbilityInstance->_Interaction, ObjectWorldTfm, ActorWorldTfm.Translation(), TargetDir, &FacingTolerance);
 
 	FacingTolerance = std::max(FacingTolerance, DEM::AI::Turn::AngularTolerance);
 
@@ -279,7 +283,7 @@ static EActionStatus FaceTarget(CGameWorld& World, HEntity EntityID, CActionQueu
 }
 //---------------------------------------------------------------------
 
-static EActionStatus InteractWithTarget(InteractWithSmartObject& Action, HEntity EntityID, AI::CAIStateComponent& AIState, const CSmartObject& SO, sol::state& Lua, float dt)
+static EActionStatus InteractWithTarget(ExecuteAbility& Action, HEntity EntityID, AI::CAIStateComponent& AIState, const CSmartObject& SO, sol::state& Lua, float dt)
 {
 	// Start interaction, if not yet
 	if (AIState.CurrInteractionTime < 0.f)
@@ -288,21 +292,21 @@ static EActionStatus InteractWithTarget(InteractWithSmartObject& Action, HEntity
 
 		// TODO: wrap the call for safety! High risk of a typo in a SO script, game must be stable!
 		if (auto LuaOnStart = SO.GetScriptFunction(Lua, "OnStart" + AIState.CurrInteraction.ToString()))
-			LuaOnStart(EntityID, Action._Object);
+			LuaOnStart(EntityID, Action._AbilityInstance->_Object);
 		AIState.CurrInteractionTime = 0.f;
 	}
 
 	//!!!FIXME: Re-cache here in case an action is recreated! But in turn it leads to retrying
 	// to cache absent OnUpdate every frame!
-	if (!Action._UpdateScript)
-		Action._UpdateScript = SO.GetScriptFunction(Lua, "OnUpdate" + AIState.CurrInteraction.ToString());
+	if (!Action._AbilityInstance->_UpdateScript)
+		Action._AbilityInstance->_UpdateScript = SO.GetScriptFunction(Lua, "OnUpdate" + AIState.CurrInteraction.ToString());
 
 	//???first frame is 0.f or dt or unused part of dt?
 	AIState.CurrInteractionTime += dt;
 
-	if (Action._UpdateScript)
+	if (Action._AbilityInstance->_UpdateScript)
 	{
-		auto UpdateResult = Action._UpdateScript(EntityID, Action._Object, dt, AIState.CurrInteractionTime);
+		auto UpdateResult = Action._AbilityInstance->_UpdateScript(EntityID, Action._AbilityInstance->_Object, dt, AIState.CurrInteractionTime);
 		if (!UpdateResult.valid())
 		{
 			sol::error Error = UpdateResult;
@@ -359,7 +363,7 @@ void UpdateAbilityInteractions(CGameWorld& World, sol::state& Lua, float dt)
 
 		// If current action is empty or has finished with any result, stop current interaction.
 		// If child action was cancelled, the main action is considered cancelled too.
-		const auto Action = Queue.FindCurrent<InteractWithSmartObject>();
+		const auto Action = Queue.FindCurrent<ExecuteAbility>();
 		const auto ChildAction = Queue.GetChild(Action);
 		const auto ChildActionStatus = Queue.GetStatus(ChildAction);
 		const auto ActionStatus = (ChildActionStatus == EActionStatus::Cancelled) ? EActionStatus::Cancelled : Queue.GetStatus(Action);
@@ -369,51 +373,39 @@ void UpdateAbilityInteractions(CGameWorld& World, sol::state& Lua, float dt)
 			return;
 		}
 
-		auto pAction = Action.As<InteractWithSmartObject>();
-		if (AIState.CurrTarget != pAction->_Object || AIState.CurrInteraction != pAction->_Interaction)
+		// ExecuteAbility action with empty ability instance means 'continue executing the current ability'.
+		// This is due to unique_ptr used for ability instances. If made refcounted, can check equality here.
+		auto pAction = Action.As<ExecuteAbility>();
+		if (pAction->_AbilityInstance)
 		{
 			// Interrupt previous action, if it is active
 			EndCurrentInteraction(EActionStatus::Cancelled, AIState, pSOAsset, EntityID, Lua);
 
-			// Setup an actor AI from the action object
-			AIState.CurrTarget = pAction->_Object;
-			AIState.CurrInteraction = pAction->_Interaction;
-			AIState.CurrInteractionTime = -1.f;
+			// Start new ability instance execution
+			AIState._AbilityInstance = std::move(Action._AbilityInstance);
 			pSOComponent = World.FindComponent<CSmartObjectComponent>(AIState.CurrTarget);
 			pSOAsset = (pSOComponent && pSOComponent->Asset) ? pSOComponent->Asset->GetObject<CSmartObject>() : nullptr;
-		}
 
-		if (!pSOAsset)
+			if (pSOAsset)
+			{
+				// TODO: can check additional conditions!
+				const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
+				for (U8 i = 0; i < ZoneCount; ++i)
+					AIState._AbilityInstance->InitialZones.push_back(&pSOAsset->GetInteractionZone(i));
+			}
+
+			//???beside SO zones, instead of them? what additional conditions may influence?
+			AIState._AbilityInstance->Ability.GetZones(AIState._AbilityInstance->InitialZones);
+
+			//!!!must update available zones and reset transform. May be done auto below, if detects difference. Zero out tfm?
+			//!!!???fail if no zones - auto below!?
+			//???should execute action in a current place if no zones returned at all?
+		}
+		else if (!AIState._AbilityInstance)
 		{
-			EndCurrentInteraction(EActionStatus::Failed, AIState, pSOAsset, EntityID, Lua);
-			Queue.SetStatus(Action, EActionStatus::Failed);
+			// No ability is being executed
+			Queue.SetStatus(Action, EActionStatus::Succeeded);
 			return;
-		}
-
-		// Cache allowed zones once
-		// FIXME: do _really_ once (old logic probably could return here when tried all zones)! Move to MoveToTarget?
-		if (!pAction->_AllowedZones)
-		{
-			const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
-			for (U8 i = 0; i < ZoneCount; ++i)
-			{
-				const auto& Zone = pSOAsset->GetInteractionZone(i);
-				for (const auto& Interaction : Zone.Interactions)
-				{
-					if (Interaction.ID == pAction->_Interaction)
-					{
-						pAction->_AllowedZones |= (1 << i);
-						break;
-					}
-				}
-			}
-
-			if (!pAction->_AllowedZones)
-			{
-				EndCurrentInteraction(EActionStatus::Failed, AIState, pSOAsset, EntityID, Lua);
-				Queue.SetStatus(Action, EActionStatus::Failed);
-				return;
-			}
 		}
 
 		auto Result = EActionStatus::Succeeded;
@@ -430,8 +422,8 @@ void UpdateAbilityInteractions(CGameWorld& World, sol::state& Lua, float dt)
 			{
 				// If needs moving or facing during an interaction phase, must interrupt an interaction
 				EndCurrentInteraction(EActionStatus::Cancelled, AIState, pSOAsset, EntityID, Lua);
-				AIState.CurrTarget = pAction->_Object;
-				AIState.CurrInteraction = pAction->_Interaction;
+				AIState.CurrTarget = pAction->_AbilityInstance->_Object;
+				AIState.CurrInteraction = pAction->_AbilityInstance->_Interaction;
 				AIState.CurrInteractionTime = -1.f;
 			}
 		}
