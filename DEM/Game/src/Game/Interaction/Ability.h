@@ -59,6 +59,7 @@ struct CAbilityInstance
 
 	std::vector<CZone*>      InitialZones;
 	std::vector<CZone*>      AvailableZones;
+	U8                       CurrZoneIndex = INVALID_INDEX;
 
 	U32                      PrevTargetTfmVersion = 0;
 	float                    ElapsedTime = 0.f;
@@ -69,8 +70,6 @@ struct CAbilityInstance
 	CStrID        _Interaction;
 	HEntity       _Object;
 	sol::function _UpdateScript;        // Cache
-	U16           _AllowedZones = 0;    // Cache. Bit flags for up to 16 zones.
-	U8            _ZoneIndex = 0;       // Cache
 };
 
 class CAbility : public CInteraction

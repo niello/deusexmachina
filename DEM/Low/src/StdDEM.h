@@ -140,6 +140,14 @@ inline T NextPow2(T x)
 template <unsigned int Alignment> inline bool IsAligned(const void* Pointer) { return !(((unsigned int)Pointer) & (Alignment - 1)); }
 inline bool IsAligned16(const void* Pointer) { return !(((unsigned int)Pointer) & 0x0000000f); }
 
+template<typename T>
+void VectorFastErase(std::vector<T>& Self, UPTR Index)
+{
+	if (Index >= Self.size()) return;
+	if (Index < Self.size() - 1) std::swap(Self[Index], Self[Self.size() - 1]);
+	Self.pop_back();
+}
+
 // Execution results
 
 const UPTR Failure = 0;

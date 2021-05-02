@@ -14,13 +14,11 @@ public:
 
 	CFixedArray<vector3> Vertices;
 	float                Radius = 0.f;
-	bool                 ClosedPolygon = false;
+	bool                 ClosedPolygon = false; //???add also PointSet mode?
 
 	// TODO: typical zone constructors (point, circle, line etc)
 
-	// TODO: better method names!
-	float   CalcSqDistance(const vector3& Pos, UPTR& OutSegment, float& OutT) const;
-	vector3 GetPoint(const vector3& Pos, UPTR Segment, float t) const;
+	float   FindClosestPoint(const vector3& LocalSpacePos, float AdditionalRadius, vector3& OutClosestPoint) const;
 	bool    IntersectsNavPoly(const matrix44& WorldTfm, float* pPolyVerts, int PolyVertCount, vector3& OutPos) const;
 };
 

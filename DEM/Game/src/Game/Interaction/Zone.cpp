@@ -38,24 +38,53 @@ static float SqDistanceToPolyChain(const vector3& Pos, const float* pVertices, U
 }
 //---------------------------------------------------------------------
 
-float CZone::CalcSqDistance(const vector3& Pos, UPTR& OutSegment, float& OutT) const
+// Returns a distance from the closest point to the source point
+float CZone::FindClosestPoint(const vector3& LocalSpacePos, float AdditionalRadius, vector3& OutClosestPoint) const
 {
 	const auto VertexCount = Vertices.size();
-	if (VertexCount == 0) return std::numeric_limits<float>().max();
-	else if (VertexCount == 1) return vector3::SqDistance2D(Pos, Vertices[0]);
-	else if (VertexCount == 2) return dtDistancePtSegSqr2D(Pos.v, Vertices[0].v, Vertices[1].v, OutT);
-	else return SqDistanceToPolyChain(Pos, Vertices.data()->v, VertexCount, ClosedPolygon, OutSegment, OutT);
-}
-//---------------------------------------------------------------------
+	float SqDistance;
+	if (VertexCount == 0)
+	{
+		OutClosestPoint = vector3::Zero;
+		SqDistance = std::numeric_limits<float>().max();
+	}
+	else if (VertexCount == 1)
+	{
+		OutClosestPoint = Vertices[0];
+		SqDistance = vector3::SqDistance2D(LocalSpacePos, Vertices[0]);
+	}
+	else if (VertexCount == 2)
+	{
+		float t;
+		SqDistance = dtDistancePtSegSqr2D(LocalSpacePos.v, Vertices[0].v, Vertices[1].v, t);
+		OutClosestPoint = vector3::lerp(Vertices[0], Vertices[1], t);
+	}
+	else
+	{
+		UPTR s;
+		float t;
+		SqDistance = SqDistanceToPolyChain(LocalSpacePos, Vertices.data()->v, VertexCount, ClosedPolygon, s, t);
+		if (s == VertexCount)
+		{
+			// Point is inside a closed poly
+			OutClosestPoint = LocalSpacePos;
+			return 0.f;
+		}
+		OutClosestPoint = vector3::lerp(Vertices[s], Vertices[(s + 1) % VertexCount], t);
+	}
 
-vector3 CZone::GetPoint(const vector3& Pos, UPTR Segment, float t) const
-{
-	const auto VertexCount = Vertices.size();
-	if (VertexCount == 0) return vector3::Zero;
-	else if (VertexCount == 1) return Vertices[0];
-	else if (VertexCount == 2) return vector3::lerp(Vertices[0], Vertices[1], t);
-	else if (Segment == VertexCount) return Pos;
-	else return vector3::lerp(Vertices[Segment], Vertices[(Segment + 1) % VertexCount], t);
+	const float CurrRadius = Radius + AdditionalRadius;
+	if (SqDistance <= CurrRadius * CurrRadius)
+	{
+		// Point is inside a border radius
+		OutClosestPoint = LocalSpacePos;
+		return 0.f;
+	}
+
+	// Project outside point to the border radius
+	const float Distance = n_sqrt(SqDistance);
+	OutClosestPoint = vector3::lerp(OutClosestPoint, LocalSpacePos, CurrRadius / Distance);
+	return Distance - CurrRadius;
 }
 //---------------------------------------------------------------------
 

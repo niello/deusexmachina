@@ -72,7 +72,7 @@ static void OptimizePath(CAbilityInstance& AbilityInstance, CGameWorld& World, H
 }
 //---------------------------------------------------------------------
 
-static bool GetFacingParams(const CInteractionZone& Zone, CStrID InteractionID, const matrix44& ObjectWorldTfm,
+static bool GetFacingParams(const CAbilityInstance& AbilityInstance, const matrix44& ObjectWorldTfm,
 	const vector3& ActorPos, vector3& OutFacingDir, float* pOutFacingTolerance)
 {
 	auto It = std::find_if(Zone.Interactions.cbegin(), Zone.Interactions.cend(), [InteractionID](const auto& Elm)
@@ -107,12 +107,12 @@ static bool GetFacingParams(const CInteractionZone& Zone, CStrID InteractionID, 
 }
 //---------------------------------------------------------------------
 
-//!!!Check if target tfm changed, reset all zones, update target point, remember new tfm.
-//fail if no zones left, but they were initially (InitialZones not empty)
 static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, CActionQueueComponent& Queue, HAction Action,
 	HAction ChildAction, EActionStatus ChildActionStatus, const CSmartObject& SO)
 {
 	n_assert(!AbilityInstance.Targets.empty()); //???can happen? return Succeeded in this case?
+
+	//???FIXME: what if there were no zones initially? Allow to iact from actor's current position? Then must auto-succeed here!
 
 	auto pTargetSceneComponent = World.FindComponent<CSceneComponent>(AbilityInstance.Targets[0].Entity);
 	if (!pTargetSceneComponent || !pTargetSceneComponent->RootNode) return EActionStatus::Failed;
@@ -120,9 +120,10 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 	const U32 TargetTfmVersion = pTargetSceneComponent->RootNode->GetTransformVersion();
 	if (AbilityInstance.PrevTargetTfmVersion != TargetTfmVersion)
 	{
+		// Target transform changed, therefore all zones might have changed, must update action point
 		AbilityInstance.PrevTargetTfmVersion = TargetTfmVersion;
 		AbilityInstance.PathOptimized = false;
-		AbilityInstance.AvailableZones = AbilityInstance.InitialZones;
+		AbilityInstance.AvailableZones = AbilityInstance.InitialZones; // Intended copy
 	}
 	else if (ChildAction)
 	{
@@ -136,6 +137,9 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 				OptimizePath(AbilityInstance, World, EntityID, *pNavAction, SO);
 			return ChildActionStatus;
 		}
+
+		// Current zone can't be reached, try another one
+		VectorFastErase(AbilityInstance.AvailableZones, AbilityInstance.CurrZoneIndex);
 	}
 
 	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
@@ -153,53 +157,43 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 
 	while (!AbilityInstance.AvailableZones.empty())
 	{
-		// Find closest suitable zone and calculate action point prerequisites
+		// Find closest suitable zone and calculate action point in it
 		// NB: could calculate once for each zone, sort and then loop over them, but most probably it will be slower than now,
 		// because it is expected that almost always the first or at worst the second interaction zone will be selected.
-		auto ItZone = AbilityInstance.AvailableZones.begin();
-		UPTR SegmentIdx = 0;
-		float t = 0.f;
-		float MinSqDistance = std::numeric_limits<float>().max();
-		for (; ItZone != AbilityInstance.AvailableZones.end(); ++ItZone)
+		vector3 ActionPos;
+		float MinDistance = std::numeric_limits<float>().max();
+		for (UPTR i = 0; i < AbilityInstance.AvailableZones.size(); ++i)
 		{
-			UPTR CurrS;
-			float CurrT;
-			const float SqDistance = (*ItZone)->CalcSqDistance(ActorPosInTargetSpace, CurrS, CurrT);
-			if (SqDistance < MinSqDistance)
+			//???adjust for actor radius? for now 0.f
+			vector3 Point;
+			const float Distance = AbilityInstance.AvailableZones[i]->FindClosestPoint(ActorPosInTargetSpace, 0.f, Point);
+			if (Distance < MinDistance)
 			{
-				MinSqDistance = SqDistance;
-				SegmentIdx = CurrS;
-				t = CurrT;
+				AbilityInstance.CurrZoneIndex = i;
+				if (Distance <= AI::Steer::LinearTolerance) return EActionStatus::Succeeded;
+				ActionPos = Point;
+				MinDistance = Distance;
 			}
 		}
 
-		// Calculate action point in a closest zone
-
-		vector3 ActionPos = TargetToWorld.transform_coord((*ItZone)->GetPoint(ActorPosInTargetSpace, SegmentIdx, t));
-
 		// FIXME: what if something between ActionPos and ActorPos blocks an interaction? Use visibility raycast?
-		//???TODO: apply actor radius too somewhere? Can't be baked into iact zone because varies.
-		const float Radius = (*ItZone)->Radius;
-		const float SqRadius = std::max(Radius * Radius, AI::Steer::SqLinearTolerance);
-		const float WorldSqDistance = vector3::SqDistance2D(ActionPos, ActorPos);
-		if (WorldSqDistance <= SqRadius) return EActionStatus::Succeeded;
-
-		ActionPos = vector3::lerp(ActionPos, ActorPos, Radius / n_sqrt(WorldSqDistance));
+		ActionPos = TargetToWorld.transform_coord(ActionPos);
 
 		// If actor uses navigation, find navigable point in a zone. Proceed to the next zone if failed.
+		// NB: this check is simplified and may fail to navigate zones where reachable points exist, so, in order
+		// to work, each zone must have at least one navigable point in a zone radius from each base point.
+		// TODO: could instead explore all the interaction zone for intersecion with valid navigation polys, but it is slow.
 		if (pNavAgent)
 		{
 			float NavigablePos[3];
+			const float Radius = AbilityInstance.AvailableZones[AbilityInstance.CurrZoneIndex]->Radius;
 			const float Extents[3] = { Radius, pNavAgent->Height, Radius };
 			dtPolyRef ObjPolyRef = 0;
 			pNavAgent->pNavQuery->findNearestPoly(ActionPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NavigablePos);
 
-			// NB: this check is simplified and may fail to navigate zones where reachable points exist, so, in order
-			// to work, each zone must have at least one navigable point in a zone radius from each base point.
-			// TODO: could instead explore all the interaction zone for intersecion with valid navigation polys, but it is slow.
-			if (!ObjPolyRef || dtVdist2DSqr(ActionPos.v, NavigablePos) > SqRadius)
+			if (!ObjPolyRef || dtVdist2DSqr(ActionPos.v, NavigablePos) > Radius * Radius)
 			{
-				AbilityInstance._AllowedZones &= ~(1 << AbilityInstance._ZoneIndex);
+				VectorFastErase(AbilityInstance.AvailableZones, AbilityInstance.CurrZoneIndex);
 				continue;
 			}
 
@@ -208,7 +202,7 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 
 		// Use target facing direction to improve arrival
 		vector3 FacingDir;
-		GetFacingParams(**ItZone, AbilityInstance._Interaction, TargetToWorld, ActionPos, FacingDir, nullptr);
+		GetFacingParams(AbilityInstance, TargetToWorld, ActionPos, FacingDir, nullptr);
 
 		// If character is a navmesh agent, must navigate. Otherwise a simple steering does the job.
 		// NB: navigate even if already at the target poly, because it may require special traversal action, not Steer.
@@ -222,10 +216,8 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 		return EActionStatus::Active;
 	}
 
-	//!!!if point changed, interrupt possible interaction, add movement sub-action & reset path optimized flag!
-	//!!!if point not changed or we are already at position, must not interrupt!
-
-	// No zones left, fail (TODO: for dynamic targets may retry for some time before failing)
+	// No zones left, fail
+	// TODO: for dynamic targets may retry for some time before failing (target may change tfm in a second or two)
 	return EActionStatus::Failed;
 }
 //---------------------------------------------------------------------
@@ -257,7 +249,7 @@ static EActionStatus FaceTarget(CGameWorld& World, HEntity EntityID, CActionQueu
 
 	vector3 TargetDir;
 	float FacingTolerance;
-	GetFacingParams(Zone, pAction->_AbilityInstance->_Interaction, ObjectWorldTfm, ActorWorldTfm.Translation(), TargetDir, &FacingTolerance);
+	GetFacingParams(*pAction->_AbilityInstance, ObjectWorldTfm, ActorWorldTfm.Translation(), TargetDir, &FacingTolerance);
 
 	FacingTolerance = std::max(FacingTolerance, DEM::AI::Turn::AngularTolerance);
 
@@ -382,12 +374,10 @@ void UpdateAbilityInteractions(CGameWorld& World, sol::state& Lua, float dt)
 					AIState._AbilityInstance->InitialZones.push_back(&pSOAsset->GetInteractionZone(i));
 			}
 
-			//???beside SO zones, instead of them? what additional conditions may influence?
-			AIState._AbilityInstance->Ability.GetZones(AIState._AbilityInstance->InitialZones);
-
-			//!!!must update available zones and reset transform. May be done auto below, if detects difference. Zero out tfm?
-			//!!!???fail if no zones - auto below!?
+			//???Ability.GetZones beside SO zones, instead of them? what additional conditions may influence?
 			//???should execute action in a current place if no zones returned at all?
+			AIState._AbilityInstance->Ability.GetZones(AIState._AbilityInstance->InitialZones);
+			AIState._AbilityInstance->PrevTargetTfmVersion = 0; //!!!pTargetSceneNode->TransformVersion - 1;
 		}
 		else if (!AIState._AbilityInstance)
 		{
@@ -401,6 +391,8 @@ void UpdateAbilityInteractions(CGameWorld& World, sol::state& Lua, float dt)
 		// Move to and face interaction target. For non-static objects re-check during an interaction phase.
 		if (!pSOAsset->IsStatic() || AIState.CurrInteractionTime < 0.f)
 		{
+			//!!!TODO: if point changed, interrupt possible interaction, add movement sub-action & reset path optimized flag!
+			//!!!TODO: if point not changed or we are already at position, must not interrupt!
 			Result = MoveToTarget(World, EntityID, Queue, Action, ChildAction, ChildActionStatus, *pSOAsset);
 
 			if (Result == EActionStatus::Succeeded)
