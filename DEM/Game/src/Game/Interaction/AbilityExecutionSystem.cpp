@@ -117,9 +117,6 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 	auto pTargetSceneComponent = World.FindComponent<CSceneComponent>(AbilityInstance.Targets[0].Entity);
 	if (!pTargetSceneComponent || !pTargetSceneComponent->RootNode) return EActionStatus::Failed;
 
-	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
-	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return EActionStatus::Failed;
-
 	const U32 TargetTfmVersion = pTargetSceneComponent->RootNode->GetTransformVersion();
 	if (AbilityInstance.PrevTargetTfmVersion != TargetTfmVersion)
 	{
@@ -135,16 +132,14 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 		if (ChildActionStatus != EActionStatus::Failed)
 		{
 			// If new path intersects with another interaction zone, can optimize by navigating to it instead of the original target
-			if (ChildActionStatus == EActionStatus::Active)
+			if (pNavAction && ChildActionStatus == EActionStatus::Active)
 				OptimizePath(AbilityInstance, World, EntityID, *pNavAction, SO);
 			return ChildActionStatus;
 		}
 	}
 
-	// update point, and if it changed, interrupt possible interaction, add movement sub-action & reset path optimized flag
-	// if no zones left, fail (for dynamic targets may retry for some time before failing)
-
-	auto pAction = Action.As<ExecuteAbility>();
+	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
+	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return EActionStatus::Failed;
 
 	const auto& TargetToWorld = pTargetSceneComponent->RootNode->GetWorldMatrix();
 	matrix44 WorldToTarget;
@@ -156,43 +151,36 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 
 	const auto* pNavAgent = World.FindComponent<AI::CNavAgentComponent>(EntityID);
 
-	while (pAction->_AbilityInstance->_AllowedZones)
+	while (!AbilityInstance.AvailableZones.empty())
 	{
 		// Find closest suitable zone and calculate action point prerequisites
-		// NB: could calculate once, sort and then loop over them, but most probably it will be slower than now,
+		// NB: could calculate once for each zone, sort and then loop over them, but most probably it will be slower than now,
 		// because it is expected that almost always the first or at worst the second interaction zone will be selected.
+		auto ItZone = AbilityInstance.AvailableZones.begin();
 		UPTR SegmentIdx = 0;
 		float t = 0.f;
 		float MinSqDistance = std::numeric_limits<float>().max();
-		const auto ZoneCount = SO.GetInteractionZoneCount();
-		for (U8 i = 0; i < ZoneCount; ++i)
+		for (; ItZone != AbilityInstance.AvailableZones.end(); ++ItZone)
 		{
-			if (!((1 << i) & pAction->_AbilityInstance->_AllowedZones)) continue;
-
 			UPTR CurrS;
 			float CurrT;
-			const CZone& Zone = SO.GetInteractionZone(i).Zone;
-			const float SqDistance = Zone.CalcSqDistance(ActorPosInTargetSpace, CurrS, CurrT);
+			const float SqDistance = (*ItZone)->CalcSqDistance(ActorPosInTargetSpace, CurrS, CurrT);
 			if (SqDistance < MinSqDistance)
 			{
 				MinSqDistance = SqDistance;
 				SegmentIdx = CurrS;
 				t = CurrT;
-				pAction->_AbilityInstance->_ZoneIndex = i;
 			}
 		}
 
-		// Calculate action point 
+		// Calculate action point in a closest zone
 
-		const auto& Zone = SO.GetInteractionZone(pAction->_AbilityInstance->_ZoneIndex);
+		vector3 ActionPos = TargetToWorld.transform_coord((*ItZone)->GetPoint(ActorPosInTargetSpace, SegmentIdx, t));
 
-		const float Radius = Zone.Zone.Radius; //???apply actor radius too?
+		// FIXME: what if something between ActionPos and ActorPos blocks an interaction? Use visibility raycast?
+		//???TODO: apply actor radius too somewhere? Can't be baked into iact zone because varies.
+		const float Radius = (*ItZone)->Radius;
 		const float SqRadius = std::max(Radius * Radius, AI::Steer::SqLinearTolerance);
-
-		vector3 ActionPos = TargetToWorld.transform_coord(Zone.Zone.GetPoint(ActorPosInTargetSpace, SegmentIdx, t));
-
-		// FIXME: what if there is something between ActionPos and ActorPos that blocks an interaction?
-		// Use visibility raycast?
 		const float WorldSqDistance = vector3::SqDistance2D(ActionPos, ActorPos);
 		if (WorldSqDistance <= SqRadius) return EActionStatus::Succeeded;
 
@@ -211,7 +199,7 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 			// TODO: could instead explore all the interaction zone for intersecion with valid navigation polys, but it is slow.
 			if (!ObjPolyRef || dtVdist2DSqr(ActionPos.v, NavigablePos) > SqRadius)
 			{
-				pAction->_AbilityInstance->_AllowedZones &= ~(1 << pAction->_AbilityInstance->_ZoneIndex);
+				AbilityInstance._AllowedZones &= ~(1 << AbilityInstance._ZoneIndex);
 				continue;
 			}
 
@@ -220,7 +208,7 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 
 		// Use target facing direction to improve arrival
 		vector3 FacingDir;
-		GetFacingParams(Zone, pAction->_AbilityInstance->_Interaction, TargetToWorld, ActionPos, FacingDir, nullptr);
+		GetFacingParams(**ItZone, AbilityInstance._Interaction, TargetToWorld, ActionPos, FacingDir, nullptr);
 
 		// If character is a navmesh agent, must navigate. Otherwise a simple steering does the job.
 		// NB: navigate even if already at the target poly, because it may require special traversal action, not Steer.
@@ -234,11 +222,11 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 		return EActionStatus::Active;
 	}
 
-	// No suitable zones left. Static SO fails, but dynamic still has a chance in subsequent frames.
-	if (SO.IsStatic()) return EActionStatus::Failed;
+	//!!!if point changed, interrupt possible interaction, add movement sub-action & reset path optimized flag!
+	//!!!if point not changed or we are already at position, must not interrupt!
 
-	pAction->_AbilityInstance->_AllowedZones = PrevAllowedZones;
-	return EActionStatus::Active;
+	// No zones left, fail (TODO: for dynamic targets may retry for some time before failing)
+	return EActionStatus::Failed;
 }
 //---------------------------------------------------------------------
 
