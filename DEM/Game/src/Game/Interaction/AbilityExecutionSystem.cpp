@@ -19,81 +19,24 @@
 namespace DEM::Game
 {
 
-// FIXME: is optimized point used somewhere? Seems like we optimize but continue moving to the old point!
-// FIXME: distance from segment to poly and from poly to poly are not calculated yet, so optimization works only
-// for point/circle zones. Maybe a cheaper way is to update sub-action when enter new poly or by timer?
-static void OptimizePath(CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, AI::Navigate& NavAction, const CSmartObject& SO)
-{
-	//!!!TODO: optimize only if the target poly is the end poly, no partial path optimization should happen!
-	//!!!TODO: early exit if no other zones exist! But may also optimize in its own zone and check the last poly too!
-	//!!!TODO: calc new point for navigation!
-	//!!!TODO: instead of PathOptimized could increment path version on replan and recheck,
-	//to handle partial path and corridor optimizations!
-	// Don't optimize path to dynamic target, effort will be invalidated after the next target move or rotation
-	if (!SO.IsStatic() || AbilityInstance.PathOptimized) return;
-
-	auto pSOSceneComponent = World.FindComponent<CSceneComponent>(AbilityInstance.Targets[0].Entity);
-	if (!pSOSceneComponent || !pSOSceneComponent->RootNode) return;
-	const auto& ObjectWorldTfm = pSOSceneComponent->RootNode->GetWorldMatrix();
-
-	const auto* pNavAgent = World.FindComponent<AI::CNavAgentComponent>(EntityID);
-	if (!pNavAgent || pNavAgent->State != AI::ENavigationState::Following) return;
-
-	AbilityInstance.PathOptimized = true;
-
-	const auto ZoneCount = SO.GetInteractionZoneCount();
-
-	float Verts[DT_VERTS_PER_POLYGON * 3];
-
-	// Don't test the last poly, we already navigate to it
-	const int PolysToTest = pNavAgent->Corridor.getPathCount() - 1;
-	for (int PolyIdx = 0; PolyIdx < PolysToTest; ++PolyIdx)
-	{
-		const auto PolyRef = pNavAgent->Corridor.getPath()[PolyIdx];
-		const dtMeshTile* pTile = nullptr;
-		const dtPoly* pPoly = nullptr;
-		pNavAgent->pNavQuery->getAttachedNavMesh()->getTileAndPolyByRefUnsafe(PolyRef, &pTile, &pPoly);
-
-		const int PolyVertCount = pPoly->vertCount;
-		for (int i = 0; i < PolyVertCount; ++i)
-			dtVcopy(&Verts[i * 3], &pTile->verts[pPoly->verts[i] * 3]);
-
-		for (U8 ZoneIdx = 0; ZoneIdx < ZoneCount; ++ZoneIdx)
-		{
-			if (!((1 << ZoneIdx) & AbilityInstance._AllowedZones)) continue;
-			const CZone& Zone = SO.GetInteractionZone(ZoneIdx).Zone;
-			if (Zone.IntersectsNavPoly(ObjectWorldTfm, Verts, PolyVertCount, NavAction._Destination))
-			{
-				AbilityInstance._ZoneIndex = ZoneIdx;
-				return;
-			}
-		}
-	}
-}
-//---------------------------------------------------------------------
-
 static bool GetFacingParams(const CAbilityInstance& AbilityInstance, const matrix44& ObjectWorldTfm,
 	const vector3& ActorPos, vector3& OutFacingDir, float* pOutFacingTolerance)
 {
-	auto It = std::find_if(Zone.Interactions.cbegin(), Zone.Interactions.cend(), [InteractionID](const auto& Elm)
+	CFacingParams Facing;
+	if (AbilityInstance.Ability.GetFacingParams(Facing))
 	{
-		return Elm.ID == InteractionID;
-	});
+		if (pOutFacingTolerance) *pOutFacingTolerance = std::max(Facing.Tolerance, AI::Turn::AngularTolerance);
 
-	if (It != Zone.Interactions.cend()) // Should always be true
-	{
-		if (pOutFacingTolerance) *pOutFacingTolerance = It->FacingTolerance;
-
-		switch (It->FacingMode)
+		switch (Facing.Mode)
 		{
 			case EFacingMode::Direction:
 			{
-				OutFacingDir = It->FacingDir;
+				OutFacingDir = Facing.Dir;
 				return true;
 			}
 			case EFacingMode::Point:
 			{
-				OutFacingDir = ObjectWorldTfm.transform_coord(It->FacingDir) - ActorPos;
+				OutFacingDir = ObjectWorldTfm.transform_coord(Facing.Dir) - ActorPos;
 				OutFacingDir.y = 0.f;
 				OutFacingDir.norm();
 				return true;
@@ -104,6 +47,91 @@ static bool GetFacingParams(const CAbilityInstance& AbilityInstance, const matri
 	OutFacingDir = vector3::Zero;
 	if (pOutFacingTolerance) *pOutFacingTolerance = AI::Turn::AngularTolerance;
 	return false;
+}
+//---------------------------------------------------------------------
+
+ static void OptimizePath(CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, AI::Navigate& NavAction, const matrix44& TargetToWorld)
+{
+	if (AbilityInstance.PathOptimized) return;
+
+	// Don't optimize until the final path is built
+	// TODO: can also optimize partial path, another zone may intersect it. But need to reoptimize each time the path is updated!
+	const auto* pNavAgent = World.FindComponent<AI::CNavAgentComponent>(EntityID);
+	if (!pNavAgent || pNavAgent->State != AI::ENavigationState::Following || pNavAgent->Corridor.getLastPoly() != pNavAgent->TargetRef) return;
+
+	AbilityInstance.PathOptimized = true;
+
+	float Verts[DT_VERTS_PER_POLYGON * 3];
+	const dtMeshTile* pTile = nullptr;
+	const dtPoly* pPoly = nullptr;
+	vector3 CornerInTargetSpace;
+	bool Stop = false;
+
+	// Find first poly that intersects with any of target zones
+	const int PolyCount = pNavAgent->Corridor.getPathCount();
+	for (int PolyIdx = 0; PolyIdx < PolyCount; ++PolyIdx)
+	{
+		const dtPolyRef PolyRef = pNavAgent->Corridor.getPath()[PolyIdx];
+		pNavAgent->pNavQuery->getAttachedNavMesh()->getTileAndPolyByRefUnsafe(PolyRef, &pTile, &pPoly);
+
+		const int PolyVertCount = pPoly->vertCount;
+		for (int i = 0; i < PolyVertCount; ++i)
+			dtVcopy(&Verts[i * 3], &pTile->verts[pPoly->verts[i] * 3]);
+
+		float MinDistance = std::numeric_limits<float>().max();
+		for (UPTR ZoneIdx = 0; ZoneIdx < AbilityInstance.AvailableZones.size(); ++ZoneIdx)
+		{
+			if (!AbilityInstance.AvailableZones[ZoneIdx]->IntersectsPoly(TargetToWorld, Verts, PolyVertCount)) continue;
+
+			// Find previous path corner and stop on this poly
+			if (!Stop)
+			{
+				vector3 Corner;
+				vector3 NextCorner = pNavAgent->Corridor.getPos();
+				dtPolyRef EnteredRef = pNavAgent->Corridor.getPath()[0];
+
+				dtStraightPathContext Ctx;
+				if (dtStatusFailed(pNavAgent->pNavQuery->initStraightPathSearch(
+					Corner.v, pNavAgent->Corridor.getTarget(), pNavAgent->Corridor.getPath(), PolyCount, Ctx)))
+				{
+					return;
+				}
+
+				for (int PolyIdx2 = 0; PolyIdx2 <= PolyIdx; ++PolyIdx2)
+				{
+					if (EnteredRef != pNavAgent->Corridor.getPath()[PolyIdx2]) continue;
+					Corner = NextCorner;
+					if (PolyIdx2 == PolyIdx) break;
+					if (!dtStatusInProgress(pNavAgent->pNavQuery->findNextStraightPathPoint(Ctx, NextCorner.v, nullptr, nullptr, &EnteredRef, 0)))
+						return;
+				}
+
+				matrix44 WorldToTarget;
+				TargetToWorld.invert_simple(WorldToTarget);
+				CornerInTargetSpace = WorldToTarget.transform_coord(Corner);
+
+				Stop = true;
+			}
+
+			// Find a zone intersecting this poly that is closest to the previous path corner
+			//???adjust for actor radius? for now 0.f
+			vector3 Point;
+			const float Distance = AbilityInstance.AvailableZones[ZoneIdx]->FindClosestPoint(CornerInTargetSpace, 0.f, Point);
+			if (Distance < MinDistance)
+			{
+				NavAction._Destination = Point; // Remember local for now, will convert once at the end
+				AbilityInstance.CurrZoneIndex = ZoneIdx;
+				MinDistance = Distance;
+			}
+		}
+
+		if (Stop)
+		{
+			NavAction._Destination = TargetToWorld.transform_coord(NavAction._Destination);
+			GetFacingParams(AbilityInstance, TargetToWorld, NavAction._Destination, NavAction._FinalFacing, nullptr);
+			break;
+		}
+	}
 }
 //---------------------------------------------------------------------
 
@@ -118,6 +146,7 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 	if (!pTargetSceneComponent || !pTargetSceneComponent->RootNode) return EActionStatus::Failed;
 
 	const U32 TargetTfmVersion = pTargetSceneComponent->RootNode->GetTransformVersion();
+	const auto& TargetToWorld = pTargetSceneComponent->RootNode->GetWorldMatrix();
 	if (AbilityInstance.PrevTargetTfmVersion != TargetTfmVersion)
 	{
 		// Target transform changed, therefore all zones might have changed, must update action point
@@ -134,7 +163,7 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 		{
 			// If new path intersects with another interaction zone, can optimize by navigating to it instead of the original target
 			if (pNavAction && ChildActionStatus == EActionStatus::Active)
-				OptimizePath(AbilityInstance, World, EntityID, *pNavAction, SO);
+				OptimizePath(AbilityInstance, World, EntityID, *pNavAction, TargetToWorld);
 			return ChildActionStatus;
 		}
 
@@ -145,7 +174,6 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
 	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return EActionStatus::Failed;
 
-	const auto& TargetToWorld = pTargetSceneComponent->RootNode->GetWorldMatrix();
 	matrix44 WorldToTarget;
 	TargetToWorld.invert_simple(WorldToTarget);
 

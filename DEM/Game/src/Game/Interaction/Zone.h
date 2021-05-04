@@ -18,8 +18,8 @@ public:
 
 	// TODO: typical zone constructors (point, circle, line etc)
 
-	float   FindClosestPoint(const vector3& LocalSpacePos, float AdditionalRadius, vector3& OutClosestPoint) const;
-	bool    IntersectsNavPoly(const matrix44& WorldTfm, float* pPolyVerts, int PolyVertCount, vector3& OutPos) const;
+	float FindClosestPoint(const vector3& LocalSpacePos, float AdditionalRadius, vector3& OutClosestPoint) const;
+	bool  IntersectsPoly(const matrix44& WorldTfm, float* pPolyVerts, int PolyVertCount) const;
 };
 
 }

@@ -46,7 +46,7 @@ float CZone::FindClosestPoint(const vector3& LocalSpacePos, float AdditionalRadi
 	if (VertexCount == 0)
 	{
 		OutClosestPoint = vector3::Zero;
-		SqDistance = std::numeric_limits<float>().max();
+		SqDistance = vector3::SqDistance2D(LocalSpacePos, vector3::Zero);
 	}
 	else if (VertexCount == 1)
 	{
@@ -88,17 +88,17 @@ float CZone::FindClosestPoint(const vector3& LocalSpacePos, float AdditionalRadi
 }
 //---------------------------------------------------------------------
 
-// NB: OutPos is not changed if function returns false
-bool CZone::IntersectsNavPoly(const matrix44& WorldTfm, float* pPolyVerts, int PolyVertCount, vector3& OutPos) const
+// NB: poly vertices must be CCW
+bool CZone::IntersectsPoly(const matrix44& WorldTfm, float* pPolyVerts, int PolyVertCount) const
 {
 	UPTR SegmentIdx = 0;
 	float t = 0.f;
 	float SqDistance = std::numeric_limits<float>().max();
 
-	const auto SqRadius = Radius * Radius;
 	const auto VertexCount = Vertices.size();
 	if (VertexCount < 2)
 	{
+		// Test point in poly
 		const vector3 Pos = VertexCount ? WorldTfm.transform_coord(Vertices[0]) : WorldTfm.Translation();
 		SqDistance = SqDistanceToPolyChain(Pos, pPolyVerts, PolyVertCount, true, SegmentIdx, t);
 	}
@@ -122,9 +122,7 @@ bool CZone::IntersectsNavPoly(const matrix44& WorldTfm, float* pPolyVerts, int P
 		return false;
 	}
 
-	if (SqDistance > SqRadius) return false;
-	dtVlerp(OutPos.v, &pPolyVerts[3 * SegmentIdx], &pPolyVerts[(3 * (SegmentIdx + 1)) % VertexCount], t);
-	return true;
+	return SqDistance <= Radius * Radius;
 }
 //---------------------------------------------------------------------
 
