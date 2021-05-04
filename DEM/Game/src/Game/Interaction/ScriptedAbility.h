@@ -23,7 +23,7 @@ public:
 
 	//virtual PAbilityInstance CreateInstance() const { return PAbilityInstance(n_new(CScriptedAbilityInstance(*this))); }
 
-	virtual vector3          GetInteractionPoint() const override;
+	virtual bool             GetZones(std::vector<const CZone*>& Out) const override;
 	virtual bool             GetFacingParams(CFacingParams& Out) const override;
 	virtual void             OnStart() const override; // ActorEntity, TargetEntity
 	virtual EActionStatus    OnUpdate() const override; // ActorEntity, TargetEntity, AbilityInstance - instance everywhere?!

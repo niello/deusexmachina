@@ -72,10 +72,10 @@ bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Conte
 //---------------------------------------------------------------------
 */
 
-vector3 CScriptedAbility::GetInteractionPoint() const
+bool CScriptedAbility::GetZones(std::vector<const CZone*>& Out) const
 {
 	NOT_IMPLEMENTED;
-	return {};
+	return false;
 }
 //---------------------------------------------------------------------
 

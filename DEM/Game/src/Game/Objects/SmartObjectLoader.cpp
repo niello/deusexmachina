@@ -46,7 +46,6 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 
 	const CStrID ID = Params.Get(CStrID("ID"), CStrID::Empty);
 	const CStrID DefaultState = Params.Get(CStrID("DefaultState"), CStrID::Empty);
-	const bool Static = Params.Get(CStrID("Static"), false);
 
 	// Load object states and transitions
 	std::vector<DEM::Game::CSmartObjectStateInfo> States;
@@ -191,7 +190,7 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 		}
 	}
 
-	return n_new(DEM::Game::CSmartObject(ID, DefaultState, Static, ScriptSource, std::move(States), std::move(InteractionZones), std::move(Overrides)));
+	return n_new(DEM::Game::CSmartObject(ID, DefaultState, ScriptSource, std::move(States), std::move(InteractionZones), std::move(Overrides)));
 }
 //---------------------------------------------------------------------
 

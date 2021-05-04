@@ -74,11 +74,10 @@ protected:
 	std::vector<CInteractionZone>         _InteractionZones;
 	CFixedArray<CStrID>                   _Interactions; //!!!???need map?! or RegisterInteractions creates instances?!
 	std::map<CStrID, CFixedArray<CStrID>> _InteractionOverrides;
-	bool                                  _Static = false; // true - interaction params never change over time
 
 public:
 
-	CSmartObject(CStrID ID, CStrID DefaultState, bool Static, std::string_view ScriptSource,
+	CSmartObject(CStrID ID, CStrID DefaultState, std::string_view ScriptSource,
 		std::vector<CSmartObjectStateInfo>&& States, std::vector<CInteractionZone>&& InteractionZones,
 		std::map<CStrID, CFixedArray<CStrID>>&& InteractionOverrides);
 
@@ -96,7 +95,6 @@ public:
 	sol::function GetScriptFunction(sol::state& Lua, std::string_view Name) const;
 	CStrID        GetID() const { return _ID; }
 	CStrID        GetDefaultState() const { return _DefaultState; }
-	bool          IsStatic() const { return _Static; }
 };
 
 }

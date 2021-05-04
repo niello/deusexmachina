@@ -136,29 +136,26 @@ static bool GetFacingParams(const CAbilityInstance& AbilityInstance, const matri
 //---------------------------------------------------------------------
 
 static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, CActionQueueComponent& Queue, HAction Action,
-	HAction ChildAction, EActionStatus ChildActionStatus, const CSmartObject& SO)
+	HAction ChildAction, EActionStatus ChildActionStatus, Scene::CSceneNode* pTargetRootNode)
 {
 	n_assert(!AbilityInstance.Targets.empty()); //???can happen? return Succeeded in this case?
 
 	//???FIXME: what if there were no zones initially? Allow to iact from actor's current position? Then must auto-succeed here!
 
-	auto pTargetSceneComponent = World.FindComponent<CSceneComponent>(AbilityInstance.Targets[0].Entity);
-	if (!pTargetSceneComponent || !pTargetSceneComponent->RootNode) return EActionStatus::Failed;
+	//!!!DBG TMP! Need to think over a case with no target object!
+	n_assert(pTargetRootNode);
 
-	const U32 TargetTfmVersion = pTargetSceneComponent->RootNode->GetTransformVersion();
-	const auto& TargetToWorld = pTargetSceneComponent->RootNode->GetWorldMatrix();
-	if (AbilityInstance.PrevTargetTfmVersion != TargetTfmVersion)
+	const auto& TargetToWorld = pTargetRootNode->GetWorldMatrix();
+	if (AbilityInstance.PrevTargetTfmVersion != pTargetRootNode->GetTransformVersion())
 	{
 		// Target transform changed, therefore all zones might have changed, must update action point
-		AbilityInstance.PrevTargetTfmVersion = TargetTfmVersion;
 		AbilityInstance.PathOptimized = false;
 		AbilityInstance.AvailableZones = AbilityInstance.InitialZones; // Intended copy
 	}
 	else if (ChildAction)
 	{
-		auto pSteerAction = ChildAction.As<AI::Steer>();
 		auto pNavAction = ChildAction.As<AI::Navigate>();
-		if (!pSteerAction && !pNavAction) return EActionStatus::Succeeded; // Already at position
+		if (!pNavAction && !ChildAction.As<AI::Steer>()) return EActionStatus::Succeeded; // Already at position
 		if (ChildActionStatus != EActionStatus::Failed)
 		{
 			// If new path intersects with another interaction zone, can optimize by navigating to it instead of the original target
@@ -250,34 +247,24 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 }
 //---------------------------------------------------------------------
 
-static EActionStatus FaceTarget(CGameWorld& World, HEntity EntityID, CActionQueueComponent& Queue, HAction Action,
-	HAction ChildAction, EActionStatus ChildActionStatus, const CSmartObject& SO)
+static EActionStatus FaceTarget(CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, CActionQueueComponent& Queue, HAction Action,
+	HAction ChildAction, EActionStatus ChildActionStatus, Scene::CSceneNode* pTargetRootNode)
 {
-	if (auto pTurnAction = ChildAction.As<AI::Turn>())
-	{
-		if (ChildActionStatus == EActionStatus::Active)
-		{
-			// No need to update facing if the target is static
-			if (SO.IsStatic()) return EActionStatus::Active;
-		}
-		else return ChildActionStatus; // May be only Failed or Succeeded here
-	}
+	//!!!DBG TMP! Need to think over a case with no target object!
+	n_assert(pTargetRootNode);
 
-	auto pAction = Action.As<ExecuteAbility>();
-	const auto& Zone = SO.GetInteractionZone(pAction->_AbilityInstance->_ZoneIndex);
-
-	auto pSOSceneComponent = World.FindComponent<CSceneComponent>(pAction->_AbilityInstance->_Object);
-	if (!pSOSceneComponent || !pSOSceneComponent->RootNode) return EActionStatus::Failed;
+	// FIXME: what if already facing target and tfm didn't change. No Turn action will exist. Store ability phases Move, Face, ReadyToExecute, Execute?
+	// Process Turn sub-action until finished or target transform changed
+	if (ChildAction.As<AI::Turn>() && AbilityInstance.PrevTargetTfmVersion == pTargetRootNode->GetTransformVersion()) return ChildActionStatus;
 
 	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
 	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return EActionStatus::Failed;
 
-	const auto& ObjectWorldTfm = pSOSceneComponent->RootNode->GetWorldMatrix();
 	const auto& ActorWorldTfm = pActorSceneComponent->RootNode->GetWorldMatrix();
 
 	vector3 TargetDir;
 	float FacingTolerance;
-	GetFacingParams(*pAction->_AbilityInstance, ObjectWorldTfm, ActorWorldTfm.Translation(), TargetDir, &FacingTolerance);
+	GetFacingParams(AbilityInstance, pTargetRootNode->GetWorldMatrix(), ActorWorldTfm.Translation(), TargetDir, &FacingTolerance);
 
 	FacingTolerance = std::max(FacingTolerance, DEM::AI::Turn::AngularTolerance);
 
@@ -291,70 +278,59 @@ static EActionStatus FaceTarget(CGameWorld& World, HEntity EntityID, CActionQueu
 }
 //---------------------------------------------------------------------
 
-static EActionStatus InteractWithTarget(ExecuteAbility& Action, HEntity EntityID, AI::CAIStateComponent& AIState, const CSmartObject& SO, sol::state& Lua, float dt)
+static EActionStatus InteractWithTarget(CAbilityInstance& AbilityInstance, HEntity EntityID, float dt)
 {
 	// Start interaction, if not yet
-	if (AIState.CurrInteractionTime < 0.f)
+	if (AbilityInstance.ElapsedTime < 0.f)
 	{
 		//!!!if animation graph override is defined, enable it!
 
-		// TODO: wrap the call for safety! High risk of a typo in a SO script, game must be stable!
-		if (auto LuaOnStart = SO.GetScriptFunction(Lua, "OnStart" + AIState.CurrInteraction.ToString()))
-			LuaOnStart(EntityID, Action._AbilityInstance->_Object);
-		AIState.CurrInteractionTime = 0.f;
+		AbilityInstance.Ability.OnStart(); //???wrap into AbilityInstance.OnStart()? pass self as an argument inside!
+		AbilityInstance.ElapsedTime = 0.f;
 	}
 
-	//!!!FIXME: Re-cache here in case an action is recreated! But in turn it leads to retrying
-	// to cache absent OnUpdate every frame!
-	if (!Action._AbilityInstance->_UpdateScript)
-		Action._AbilityInstance->_UpdateScript = SO.GetScriptFunction(Lua, "OnUpdate" + AIState.CurrInteraction.ToString());
+	//???first frame must have elapsed time 0.f or dt or unused part of dt?
+	AbilityInstance.PrevElapsedTime = AbilityInstance.ElapsedTime;
+	AbilityInstance.ElapsedTime += dt;
 
-	//???first frame is 0.f or dt or unused part of dt?
-	AIState.CurrInteractionTime += dt;
+	return AbilityInstance.Ability.OnUpdate(); //???wrap into AbilityInstance.OnUpdate()? pass self as an argument inside!
 
-	if (Action._AbilityInstance->_UpdateScript)
+	//!!!move to scripted ability!
+	/*
+	if (!UpdateResult.valid())
 	{
-		auto UpdateResult = Action._AbilityInstance->_UpdateScript(EntityID, Action._AbilityInstance->_Object, dt, AIState.CurrInteractionTime);
-		if (!UpdateResult.valid())
-		{
-			sol::error Error = UpdateResult;
-			::Sys::Error(Error.what());
-			return EActionStatus::Failed;
-		}
-		else if (UpdateResult.get_type() == sol::type::number)
-		{
-			// Enums are represented as numbers in Sol
-			EActionStatus NewStatus = UpdateResult;
-			if (NewStatus != EActionStatus::Active) return NewStatus;
-		}
-		else
-		{
-			//!!!TODO: fmtlib and variadic args in assertion macros!
-			n_assert2_dbg(UpdateResult.get_type() == sol::type::none, ("Unexpected return type from SO lua OnUpdate" + AIState.CurrInteraction.ToString()).c_str());
-		}
+		sol::error Error = UpdateResult;
+		::Sys::Error(Error.what());
+		return EActionStatus::Failed;
+	}
+	else if (UpdateResult.get_type() == sol::type::number)
+	{
+		// Enums are represented as numbers in Sol
+		EActionStatus NewStatus = UpdateResult;
+		if (NewStatus != EActionStatus::Active) return NewStatus;
+	}
+	else
+	{
+		//!!!TODO: fmtlib and variadic args in assertion macros!
+		n_assert2_dbg(UpdateResult.get_type() == sol::type::none, ("Unexpected return type from SO lua OnUpdate" + AIState.CurrInteraction.ToString()).c_str());
 	}
 
 	return EActionStatus::Active;
+	*/
 }
 //---------------------------------------------------------------------
 
-static void EndCurrentInteraction(EActionStatus NewStatus, AI::CAIStateComponent& AIState, const CSmartObject* pSOAsset, HEntity EntityID, sol::state& Lua)
+static void EndCurrentInteraction(EActionStatus NewStatus, AI::CAIStateComponent& AIState, HEntity EntityID, sol::state& Lua)
 {
-	if (!AIState.CurrInteraction) return;
+	if (!AIState._AbilityInstance) return;
 
-	if (pSOAsset && AIState.CurrInteractionTime >= 0.f)
+	if (AIState._AbilityInstance->ElapsedTime >= 0.f)
 	{
-		if (auto LuaOnEnd = pSOAsset->GetScriptFunction(Lua, "OnEnd" + AIState.CurrInteraction.ToString()))
-		{
-			// If we interrupt action by another NotQueued one, that simply means a cancellation of the previous action
-			if (NewStatus == EActionStatus::NotQueued) NewStatus = EActionStatus::Cancelled;
-			LuaOnEnd(EntityID, AIState.CurrTarget, NewStatus);
-		}
+		if (NewStatus == EActionStatus::NotQueued) NewStatus = EActionStatus::Cancelled;
+		AIState._AbilityInstance->Ability.OnEnd(); //???wrap into AbilityInstance.OnEnd()? pass self as an argument inside!
 	}
 
-	AIState.CurrTarget = {};
-	AIState.CurrInteraction = CStrID::Empty;
-	AIState.CurrInteractionTime = -1.f;
+	AIState._AbilityInstance = nullptr;
 
 	//!!!if animation graph override is enabled, disable it!
 }
@@ -365,10 +341,6 @@ void UpdateAbilityInteractions(CGameWorld& World, sol::state& Lua, float dt)
 	World.ForEachEntityWith<CActionQueueComponent, AI::CAIStateComponent>(
 		[&World, &Lua, dt](auto EntityID, auto& Entity, CActionQueueComponent& Queue, AI::CAIStateComponent& AIState)
 	{
-		// Get the smart object currently being interacted with, if any
-		auto pSOComponent = World.FindComponent<CSmartObjectComponent>(AIState.CurrTarget);
-		auto pSOAsset = (pSOComponent && pSOComponent->Asset) ? pSOComponent->Asset->GetObject<CSmartObject>() : nullptr;
-
 		// If current action is empty or has finished with any result, stop current interaction.
 		// If child action was cancelled, the main action is considered cancelled too.
 		const auto Action = Queue.FindCurrent<ExecuteAbility>();
@@ -377,73 +349,86 @@ void UpdateAbilityInteractions(CGameWorld& World, sol::state& Lua, float dt)
 		const auto ActionStatus = (ChildActionStatus == EActionStatus::Cancelled) ? EActionStatus::Cancelled : Queue.GetStatus(Action);
 		if (ActionStatus != EActionStatus::Active)
 		{
-			EndCurrentInteraction(ActionStatus, AIState, pSOAsset, EntityID, Lua);
+			EndCurrentInteraction(ActionStatus, AIState, EntityID, Lua);
 			return;
 		}
 
-		// ExecuteAbility action with empty ability instance means 'continue executing the current ability'.
-		// This is due to unique_ptr used for ability instances. If made refcounted, can check equality here.
 		auto pAction = Action.As<ExecuteAbility>();
-		if (pAction->_AbilityInstance)
-		{
-			// Interrupt previous action, if it is active
-			EndCurrentInteraction(EActionStatus::Cancelled, AIState, pSOAsset, EntityID, Lua);
-
-			// Start new ability instance execution
-			AIState._AbilityInstance = std::move(Action._AbilityInstance);
-			pSOComponent = World.FindComponent<CSmartObjectComponent>(AIState.CurrTarget);
-			pSOAsset = (pSOComponent && pSOComponent->Asset) ? pSOComponent->Asset->GetObject<CSmartObject>() : nullptr;
-
-			if (pSOAsset)
-			{
-				// TODO: can check additional conditions!
-				const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
-				for (U8 i = 0; i < ZoneCount; ++i)
-					AIState._AbilityInstance->InitialZones.push_back(&pSOAsset->GetInteractionZone(i));
-			}
-
-			//???Ability.GetZones beside SO zones, instead of them? what additional conditions may influence?
-			//???should execute action in a current place if no zones returned at all?
-			AIState._AbilityInstance->Ability.GetZones(AIState._AbilityInstance->InitialZones);
-			AIState._AbilityInstance->PrevTargetTfmVersion = 0; //!!!pTargetSceneNode->TransformVersion - 1;
-		}
-		else if (!AIState._AbilityInstance)
+		if (!AIState._AbilityInstance && !pAction->_AbilityInstance)
 		{
 			// No ability is being executed
 			Queue.SetStatus(Action, EActionStatus::Succeeded);
 			return;
 		}
 
-		auto Result = EActionStatus::Succeeded;
-
+		//!!!TODO: need to think over a case with no target object!
 		// Move to and face interaction target. For non-static objects re-check during an interaction phase.
-		if (!pSOAsset->IsStatic() || AIState.CurrInteractionTime < 0.f)
+		Scene::CSceneNode* pTargetRootNode = nullptr;
+		if (!AIState._AbilityInstance->Targets.empty())
+			if (auto pTargetSceneComponent = World.FindComponent<CSceneComponent>(AIState._AbilityInstance->Targets[0].Entity))
+				pTargetRootNode = pTargetSceneComponent->RootNode;
+
+		// ExecuteAbility action with empty ability instance means 'continue executing the current ability'.
+		// This is due to unique_ptr used for ability instances. If made refcounted, can check equality here.
+		if (pAction->_AbilityInstance)
 		{
-			//!!!TODO: if point changed, interrupt possible interaction, add movement sub-action & reset path optimized flag!
-			//!!!TODO: if point not changed or we are already at position, must not interrupt!
-			Result = MoveToTarget(World, EntityID, Queue, Action, ChildAction, ChildActionStatus, *pSOAsset);
+			// Interrupt previous action, if it is active
+			EndCurrentInteraction(EActionStatus::Cancelled, AIState, EntityID, Lua);
 
-			if (Result == EActionStatus::Succeeded)
-				Result = FaceTarget(World, EntityID, Queue, Action, ChildAction, ChildActionStatus, *pSOAsset);
+			// Start new ability instance execution
+			// NB: swap new ability with nullptr, because std::move doesn't guarantee donor validity after move
+			std::swap(AIState._AbilityInstance, pAction->_AbilityInstance);
 
-			if (Result == EActionStatus::Active && AIState.CurrInteractionTime >= 0.f)
+			// Collect interaction zones
+			//???Ability.GetZones beside SO zones, instead of them? what additional conditions may influence?
+			//???should execute action in a current place if no zones returned at all?
+			if (!AIState._AbilityInstance->Targets.empty())
 			{
-				// If needs moving or facing during an interaction phase, must interrupt an interaction
-				EndCurrentInteraction(EActionStatus::Cancelled, AIState, pSOAsset, EntityID, Lua);
-				AIState.CurrTarget = pAction->_AbilityInstance->_Object;
-				AIState.CurrInteraction = pAction->_AbilityInstance->_Interaction;
-				AIState.CurrInteractionTime = -1.f;
+				auto pSOComponent = World.FindComponent<CSmartObjectComponent>(AIState._AbilityInstance->Targets[0].Entity);
+				auto pSOAsset = (pSOComponent && pSOComponent->Asset) ? pSOComponent->Asset->GetObject<CSmartObject>() : nullptr;
+				if (pSOAsset)
+				{
+					// TODO: can check additional conditions!
+					const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
+					for (U8 i = 0; i < ZoneCount; ++i)
+						AIState._AbilityInstance->InitialZones.push_back(&pSOAsset->GetInteractionZone(i).Zone);
+				}
+			}
+
+			AIState._AbilityInstance->Ability.GetZones(AIState._AbilityInstance->InitialZones);
+			if (pTargetRootNode) AIState._AbilityInstance->PrevTargetTfmVersion = pTargetRootNode->GetTransformVersion() - 1; // Ensure the first update will happen
+		}
+
+		//!!!TODO: if point changed, interrupt possible interaction, add movement sub-action & reset path optimized flag!
+		//!!!TODO: if point not changed or we are already at position, must not interrupt!
+		auto Result = MoveToTarget(*AIState._AbilityInstance, World, EntityID, Queue, Action, ChildAction, ChildActionStatus, pTargetRootNode);
+
+		if (Result == EActionStatus::Succeeded)
+			Result = FaceTarget(*AIState._AbilityInstance, World, EntityID, Queue, Action, ChildAction, ChildActionStatus, pTargetRootNode);
+
+		n_assert(pTargetRootNode);
+
+		if (pTargetRootNode) AIState._AbilityInstance->PrevTargetTfmVersion = pTargetRootNode->GetTransformVersion();
+
+		if (Result == EActionStatus::Active && AIState._AbilityInstance->ElapsedTime >= 0.f)
+		{
+			// If needs moving or facing during an interaction phase, must interrupt an interaction
+			//???TODO: add setting to interrupt or keep progress? Or progress is kept in target components?
+			if (AIState._AbilityInstance->ElapsedTime >= 0.f)
+			{
+				AIState._AbilityInstance->Ability.OnEnd(/*EActionStatus::Cancelled*/); //???wrap into AbilityInstance.OnEnd()? pass self as an argument inside!
+				AIState._AbilityInstance->ElapsedTime = -1.f;
 			}
 		}
 
 		// Interact with object, if it is approached and faced
 		if (Result == EActionStatus::Succeeded)
-			Result = InteractWithTarget(*pAction, EntityID, AIState, *pSOAsset, Lua, dt);
+			Result = InteractWithTarget(*AIState._AbilityInstance, EntityID, dt);
 
 		// If all parts of interaction have finished, finish an action
 		if (Result != EActionStatus::Active)
 		{
-			EndCurrentInteraction(Result, AIState, pSOAsset, EntityID, Lua);
+			EndCurrentInteraction(Result, AIState, EntityID, Lua);
 			Queue.SetStatus(Action, Result);
 		}
 	});
