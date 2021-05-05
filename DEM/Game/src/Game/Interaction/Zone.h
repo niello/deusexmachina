@@ -12,7 +12,7 @@ class CZone
 {
 public:
 
-	CFixedArray<vector3> Vertices;
+	CFixedArray<vector3> Vertices; //!!!TODO: ensure convex CCW if ClosedPolygon!
 	float                Radius = 0.f;
 	bool                 ClosedPolygon = false; //???add also PointSet mode?
 

@@ -61,15 +61,11 @@ struct CAbilityInstance
 	std::vector<const CZone*> AvailableZones;
 	UPTR                      CurrZoneIndex = INVALID_INDEX;
 
+	matrix44                  TargetToWorld; // FIXME: not needed if CTargetInfo will store full SRT instead of Point!
 	U32                       PrevTargetTfmVersion = 0;
 	float                     ElapsedTime = -1.f;
 	float                     PrevElapsedTime = 0.f; // Useful for dt calc and for detecting that we just passed some point in time
 	bool                      PathOptimized = false;
-
-	//!!!TMP! DELETE!
-	CStrID        _Interaction;
-	HEntity       _Object;
-	sol::function _UpdateScript;        // Cache
 };
 
 class CAbility : public CInteraction
