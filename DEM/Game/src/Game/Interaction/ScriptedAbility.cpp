@@ -115,6 +115,28 @@ void CScriptedAbility::OnStart() const
 EActionStatus CScriptedAbility::OnUpdate() const
 {
 	NOT_IMPLEMENTED;
+
+	/*
+	auto UpdateResult = _FnOnUpdate(args);
+	if (!UpdateResult.valid())
+	{
+		sol::error Error = UpdateResult;
+		::Sys::Error(Error.what());
+		return EActionStatus::Failed;
+	}
+	else if (UpdateResult.get_type() == sol::type::number)
+	{
+		// Enums are represented as numbers in Sol
+		EActionStatus NewStatus = UpdateResult;
+		if (NewStatus != EActionStatus::Active) return NewStatus;
+	}
+	else
+	{
+		//!!!TODO: fmtlib and variadic args in assertion macros!
+		n_assert2_dbg(UpdateResult.get_type() == sol::type::none, ("Unexpected return type from SO lua OnUpdate" + AIState.CurrInteraction.ToString()).c_str());
+	}
+	*/
+
 	return EActionStatus::Active;
 }
 //---------------------------------------------------------------------

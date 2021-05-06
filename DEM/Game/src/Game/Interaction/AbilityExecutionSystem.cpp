@@ -16,6 +16,13 @@
 // 4. Update ability until done, cancelled or failed
 // 5. End ability
 
+//!!!
+// TODO: path optimization - optimize only when enter new poly, don't optimize in offmesh polys
+// TODO: movement failed - add a timeout before failing, use ElapsedTime with Movement status
+// TODO: handle cases without zones, without targets, check all is OK
+// TODO: what if ability requires visibility line from actor to target?
+// TODO: anim graph override
+
 namespace DEM::Game
 {
 
@@ -49,7 +56,7 @@ static bool GetFacingParams(const CAbilityInstance& AbilityInstance, const vecto
 }
 //---------------------------------------------------------------------
 
- static void OptimizePath(CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, AI::Navigate& NavAction)
+static void OptimizePath(CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, AI::Navigate& NavAction)
 {
 	if (AbilityInstance.PathOptimized) return;
 
@@ -246,7 +253,7 @@ static EActionStatus FaceTarget(CAbilityInstance& AbilityInstance, CGameWorld& W
 	HAction ChildAction, bool TransformChanged)
 {
 	// Process Turn sub-action until finished or target transform changed
-	if (AbilityInstance.Status == EAbilityStatus::Facing && !TransformChanged) return Queue.GetStatus(ChildAction);
+	if (AbilityInstance.Status == EAbilityStatus::Facing && !TransformChanged && ChildAction.As<AI::Turn>()) return Queue.GetStatus(ChildAction);
 
 	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
 	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return EActionStatus::Failed;
@@ -291,35 +298,11 @@ static EActionStatus InteractWithTarget(CAbilityInstance& AbilityInstance, HEnti
 	}
 
 	return AbilityInstance.Ability.OnUpdate(); //???wrap into AbilityInstance.OnUpdate()? pass self as an argument inside!
-
-	//!!!move to scripted ability!
-	/*
-	if (!UpdateResult.valid())
-	{
-		sol::error Error = UpdateResult;
-		::Sys::Error(Error.what());
-		return EActionStatus::Failed;
-	}
-	else if (UpdateResult.get_type() == sol::type::number)
-	{
-		// Enums are represented as numbers in Sol
-		EActionStatus NewStatus = UpdateResult;
-		if (NewStatus != EActionStatus::Active) return NewStatus;
-	}
-	else
-	{
-		//!!!TODO: fmtlib and variadic args in assertion macros!
-		n_assert2_dbg(UpdateResult.get_type() == sol::type::none, ("Unexpected return type from SO lua OnUpdate" + AIState.CurrInteraction.ToString()).c_str());
-	}
-
-	return EActionStatus::Active;
-	*/
 }
 //---------------------------------------------------------------------
 
 static void EndCurrentInteraction(EActionStatus NewStatus, AI::CAIStateComponent& AIState, HEntity EntityID)
 {
-	// TODO: ability execution states instead of elapsed time checks?
 	if (AIState._AbilityInstance->Status == EAbilityStatus::Execution)
 	{
 		if (NewStatus == EActionStatus::NotQueued) NewStatus = EActionStatus::Cancelled;
@@ -429,11 +412,9 @@ void UpdateAbilityInteractions(CGameWorld& World, float dt)
 		if (Result == EActionStatus::Succeeded)
 			Result = FaceTarget(AbilityInstance, World, EntityID, Queue, Action, ChildAction, TransformChanged);
 
-		// TODO: ability execution states instead of elapsed time checks?
+		// If needs moving or facing during an interaction phase, must interrupt an interaction
 		if (Result == EActionStatus::Active && AbilityInstance.Status == EAbilityStatus::Execution)
 		{
-			// If needs moving or facing during an interaction phase, must interrupt an interaction
-			//???TODO: add setting to interrupt or keep progress? Or progress is kept in target components?
 			AbilityInstance.Ability.OnEnd(/*EActionStatus::Cancelled*/); //???wrap into AbilityInstance.OnEnd()? pass self as an argument inside!
 			AbilityInstance.Status = EAbilityStatus::Movement;
 		}
