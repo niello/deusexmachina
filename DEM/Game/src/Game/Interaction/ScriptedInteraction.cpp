@@ -6,6 +6,7 @@ namespace DEM::Game
 {
 
 // TODO: common utility function?!
+// FIXME: DUPLICATED CODE! See CScriptedAbility!
 template<typename... TArgs>
 static bool LuaCall(const sol::function& Fn, TArgs&&... Args)
 {

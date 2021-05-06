@@ -1,9 +1,31 @@
 #include "ScriptedAbility.h"
+#include <Game/ECS/GameWorld.h>
+#include <Game/ECS/Components/ActionQueueComponent.h>
 
 namespace DEM::Game
 {
 
-/*
+// TODO: common utility function?!
+// FIXME: DUPLICATED CODE! See CScriptedAbility!
+template<typename... TArgs>
+static bool LuaCall(const sol::function& Fn, TArgs&&... Args)
+{
+	if (!Fn) return false;
+
+	auto Result = Fn(std::forward<TArgs>(Args)...);
+	if (!Result.valid())
+	{
+		sol::error Error = Result;
+		::Sys::Error(Error.what());
+		return false;
+	}
+
+	if (Result.get_type() == sol::type::nil || !Result) return false;
+
+	return true;
+}
+//---------------------------------------------------------------------
+
 CScriptedAbility::CScriptedAbility(const sol::table& Table)
 {
 	_FnIsAvailable = Table.get<sol::function>("IsAvailable");
@@ -65,12 +87,11 @@ bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Conte
 	if (!pQueue) return false;
 
 	if (!Enqueue) pQueue->Reset();
-	pQueue->EnqueueAction<ExecuteAbility>(Context.Interaction, Context.Targets[0].Entity);
+	//pQueue->EnqueueAction<ExecuteAbility>(Context.Interaction, Context.Targets[0].Entity);
 
 	return true;
 }
 //---------------------------------------------------------------------
-*/
 
 bool CScriptedAbility::GetZones(std::vector<const CZone*>& Out) const
 {

@@ -2,7 +2,7 @@
 #include <Game/Interaction/InteractionContext.h>
 #include <Game/Interaction/InteractionManager.h>
 #include <Game/Interaction/ScriptedInteraction.h>
-#include <Game/Interaction/ScriptedAbilityInteraction.h>
+#include <Game/Interaction/ScriptedAbility.h>
 
 namespace DEM::Game
 {
@@ -106,14 +106,9 @@ bool CSmartObject::InitInSession(CGameSession& Session) const
 
 			PInteraction Iact;
 			if (IactTable.get<sol::function>("Execute"))
-			{
 				Iact.reset(n_new(CScriptedInteraction(IactTable)));
-			}
 			else
-			{
-				// ability = load scripted ability, register if needed
-				Iact.reset(n_new(CScriptedAbilityInteraction(IactTable /*, std move ability*/)));
-			}
+				Iact.reset(n_new(CScriptedAbility(IactTable)));
 
 			if (Iact)
 			{

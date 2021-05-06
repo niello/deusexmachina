@@ -69,7 +69,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/Interaction/InteractionManager.h
 	DEM/Game/src/Game/Interaction/InteractionTool.h
 	DEM/Game/src/Game/Interaction/ScriptedAbility.h
-	DEM/Game/src/Game/Interaction/ScriptedAbilityInteraction.h
 	DEM/Game/src/Game/Interaction/ScriptedInteraction.h
 	DEM/Game/src/Game/Interaction/SelectableComponent.h
 	DEM/Game/src/Game/Interaction/SelectInteraction.h
@@ -142,7 +141,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/Interaction/Interaction.cpp
 	DEM/Game/src/Game/Interaction/InteractionManager.cpp
 	DEM/Game/src/Game/Interaction/ScriptedAbility.cpp
-	DEM/Game/src/Game/Interaction/ScriptedAbilityInteraction.cpp
 	DEM/Game/src/Game/Interaction/ScriptedInteraction.cpp
 	DEM/Game/src/Game/Interaction/SelectInteraction.cpp
 	DEM/Game/src/Game/Interaction/Zone.cpp

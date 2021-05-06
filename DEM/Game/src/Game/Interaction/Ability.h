@@ -4,7 +4,7 @@
 #include <Game/ECS/Components/ActionQueueComponent.h> // FIXME: for EActionStatus. Or define queue action type here too?!
 #include <Game/ECS/Entity.h>
 #include <Events/EventNative.h>
-#include <Math/Vector3.h>
+#include <Math/Matrix44.h>
 
 // Ability is an interaction performed by a actors in a game world.
 // Ability is stateless, and ability instance stores the state.
@@ -15,6 +15,13 @@ namespace DEM::Game
 using PAbility = std::unique_ptr<class CAbility>;
 using PAbilityInstance = std::unique_ptr<struct CAbilityInstance>;
 class CZone;
+
+enum class EAbilityStatus : U8
+{
+	Movement = 0,
+	Facing,
+	Execution
+};
 
 enum class EFacingMode : U8
 {
@@ -65,6 +72,7 @@ struct CAbilityInstance
 	U32                       PrevTargetTfmVersion = 0;
 	float                     ElapsedTime = -1.f;
 	float                     PrevElapsedTime = 0.f; // Useful for dt calc and for detecting that we just passed some point in time
+	EAbilityStatus            Status;
 	bool                      PathOptimized = false;
 };
 

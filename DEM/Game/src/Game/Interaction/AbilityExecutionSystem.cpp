@@ -137,8 +137,6 @@ static bool GetFacingParams(const CAbilityInstance& AbilityInstance, const vecto
 static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, CActionQueueComponent& Queue, HAction Action,
 	HAction ChildAction, bool TransformChanged)
 {
-	n_assert(!AbilityInstance.Targets.empty()); //???can happen? return Succeeded in this case?
-
 	//???FIXME: what if there were no zones initially? Allow to iact from actor's current position? Then must auto-succeed here!
 
 	if (TransformChanged)
@@ -239,6 +237,7 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 
 	// No zones left, fail
 	// TODO: for dynamic targets may retry for some time before failing (target may change tfm in a second or two)
+	//!!!can use ElapsedTime, if states move-face-prepare-execute will be explicit!
 	return EActionStatus::Failed;
 }
 //---------------------------------------------------------------------
@@ -246,11 +245,8 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 static EActionStatus FaceTarget(CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, CActionQueueComponent& Queue, HAction Action,
 	HAction ChildAction, bool TransformChanged)
 {
-	// FIXME: what if already facing target and tfm didn't change. No Turn action will exist. Store ability
-	//phases Move, Face, ReadyToExecute, Execute?
-
 	// Process Turn sub-action until finished or target transform changed
-	if (ChildAction.As<AI::Turn>() && !TransformChanged) return Queue.GetStatus(ChildAction);
+	if (AbilityInstance.Status == EAbilityStatus::Facing && !TransformChanged) return Queue.GetStatus(ChildAction);
 
 	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
 	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return EActionStatus::Failed;
@@ -269,6 +265,7 @@ static EActionStatus FaceTarget(CAbilityInstance& AbilityInstance, CGameWorld& W
 	if (std::fabsf(Angle) < FacingTolerance) return EActionStatus::Succeeded;
 
 	Queue.PushOrUpdateChild<AI::Turn>(Action, TargetDir, FacingTolerance);
+	AbilityInstance.Status = EAbilityStatus::Facing;
 	return EActionStatus::Active;
 }
 //---------------------------------------------------------------------
@@ -276,17 +273,22 @@ static EActionStatus FaceTarget(CAbilityInstance& AbilityInstance, CGameWorld& W
 static EActionStatus InteractWithTarget(CAbilityInstance& AbilityInstance, HEntity EntityID, float dt)
 {
 	// Start interaction, if not yet
-	if (AbilityInstance.ElapsedTime < 0.f)
+	if (AbilityInstance.Status != EAbilityStatus::Execution)
 	{
 		//!!!if animation graph override is defined, enable it!
 
 		AbilityInstance.Ability.OnStart(); //???wrap into AbilityInstance.OnStart()? pass self as an argument inside!
+		AbilityInstance.Status = EAbilityStatus::Execution;
+
+		//???first frame must have elapsed time 0.f or dt or part of dt not used by movement and facing?
+		AbilityInstance.PrevElapsedTime = 0.f;
 		AbilityInstance.ElapsedTime = 0.f;
 	}
-
-	//???first frame must have elapsed time 0.f or dt or unused part of dt?
-	AbilityInstance.PrevElapsedTime = AbilityInstance.ElapsedTime;
-	AbilityInstance.ElapsedTime += dt;
+	else
+	{
+		AbilityInstance.PrevElapsedTime = AbilityInstance.ElapsedTime;
+		AbilityInstance.ElapsedTime += dt;
+	}
 
 	return AbilityInstance.Ability.OnUpdate(); //???wrap into AbilityInstance.OnUpdate()? pass self as an argument inside!
 
@@ -318,7 +320,7 @@ static EActionStatus InteractWithTarget(CAbilityInstance& AbilityInstance, HEnti
 static void EndCurrentInteraction(EActionStatus NewStatus, AI::CAIStateComponent& AIState, HEntity EntityID)
 {
 	// TODO: ability execution states instead of elapsed time checks?
-	if (AIState._AbilityInstance->ElapsedTime >= 0.f)
+	if (AIState._AbilityInstance->Status == EAbilityStatus::Execution)
 	{
 		if (NewStatus == EActionStatus::NotQueued) NewStatus = EActionStatus::Cancelled;
 		AIState._AbilityInstance->Ability.OnEnd(); //???wrap into AbilityInstance.OnEnd()? pass self as an argument inside!
@@ -378,15 +380,12 @@ void UpdateAbilityInteractions(CGameWorld& World, float dt)
 				pTargetRootNode = Target.pNode;
 		}
 
-		//!!!if no target node, tfm is changed only at the first frame, and tfm matrix is identity + offset to Target.Point!
-		//???later can turn CTargetInfo::Point into full SRT?
-
 		// Do one time initialization of the new ability instance
 		if (AbilityChanged)
 		{
 			// Collect interaction zones
 			//???Ability.GetZones beside SO zones, instead of them? what additional conditions may influence?
-			//???should execute action without moving if no zones returned at all?
+			//???should actor execute action without moving if no zones found at all?
 			if (!AbilityInstance.Targets.empty())
 			{
 				auto pSOComponent = World.FindComponent<CSmartObjectComponent>(AbilityInstance.Targets[0].Entity);
@@ -413,6 +412,8 @@ void UpdateAbilityInteractions(CGameWorld& World, float dt)
 				// FIXME: AbilityInstance.TargetToWorld not needed if CTargetInfo will store full SRT instead of Point!
 				AbilityInstance.TargetToWorld.Translation() = AbilityInstance.Targets[0].Point;
 			}
+
+			AIState._AbilityInstance->Status = EAbilityStatus::Movement;
 		}
 		else if (pTargetRootNode && AbilityInstance.PrevTargetTfmVersion != pTargetRootNode->GetTransformVersion())
 		{
@@ -429,12 +430,12 @@ void UpdateAbilityInteractions(CGameWorld& World, float dt)
 			Result = FaceTarget(AbilityInstance, World, EntityID, Queue, Action, ChildAction, TransformChanged);
 
 		// TODO: ability execution states instead of elapsed time checks?
-		if (Result == EActionStatus::Active && AbilityInstance.ElapsedTime >= 0.f)
+		if (Result == EActionStatus::Active && AbilityInstance.Status == EAbilityStatus::Execution)
 		{
 			// If needs moving or facing during an interaction phase, must interrupt an interaction
 			//???TODO: add setting to interrupt or keep progress? Or progress is kept in target components?
 			AbilityInstance.Ability.OnEnd(/*EActionStatus::Cancelled*/); //???wrap into AbilityInstance.OnEnd()? pass self as an argument inside!
-			AbilityInstance.ElapsedTime = -1.f;
+			AbilityInstance.Status = EAbilityStatus::Movement;
 		}
 
 		// Interact with object, if it is approached and faced
