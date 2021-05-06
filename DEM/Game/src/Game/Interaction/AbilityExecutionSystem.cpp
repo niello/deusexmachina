@@ -144,7 +144,8 @@ static void OptimizePath(CAbilityInstance& AbilityInstance, CGameWorld& World, H
 static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, CActionQueueComponent& Queue, HAction Action,
 	HAction ChildAction, bool TransformChanged)
 {
-	//???FIXME: what if there were no zones initially? Allow to iact from actor's current position? Then must auto-succeed here!
+	// When no zones available for an interaction, run ability from the current position
+	//if (AbilityInstance.InitialZones.empty()) return EActionStatus::Succeeded;
 
 	if (TransformChanged)
 	{
@@ -156,6 +157,7 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 	{
 		auto pNavAction = ChildAction.As<AI::Navigate>();
 		if (!pNavAction && !ChildAction.As<AI::Steer>()) return EActionStatus::Succeeded; // Already at position
+
 		const auto ChildActionStatus = Queue.GetStatus(ChildAction);
 		if (ChildActionStatus != EActionStatus::Failed)
 		{
@@ -239,6 +241,10 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 		else
 			Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ActionPos + FacingDir, 0.f);
 
+		if (AbilityInstance.Status == EAbilityStatus::Execution)
+			AbilityInstance.Ability.OnEnd(/*EActionStatus::Cancelled*/); //???wrap into AbilityInstance.OnEnd()? pass self as an argument inside!
+		AbilityInstance.Status = EAbilityStatus::Movement;
+
 		return EActionStatus::Active;
 	}
 
@@ -272,7 +278,11 @@ static EActionStatus FaceTarget(CAbilityInstance& AbilityInstance, CGameWorld& W
 	if (std::fabsf(Angle) < FacingTolerance) return EActionStatus::Succeeded;
 
 	Queue.PushOrUpdateChild<AI::Turn>(Action, TargetDir, FacingTolerance);
+
+	if (AbilityInstance.Status == EAbilityStatus::Execution)
+		AbilityInstance.Ability.OnEnd(/*EActionStatus::Cancelled*/); //???wrap into AbilityInstance.OnEnd()? pass self as an argument inside!
 	AbilityInstance.Status = EAbilityStatus::Facing;
+
 	return EActionStatus::Active;
 }
 //---------------------------------------------------------------------
@@ -344,16 +354,35 @@ void UpdateAbilityInteractions(CGameWorld& World, float dt)
 		const bool AbilityChanged = !!pAction->_AbilityInstance;
 		if (AbilityChanged)
 		{
-			// NB: swap new ability with nullptr, because std::move doesn't guarantee donor validity after move
 			if (AIState._AbilityInstance) EndCurrentInteraction(EActionStatus::Cancelled, AIState, EntityID);
+
+			// NB: swap new ability with nullptr, because std::move doesn't guarantee donor validity after move
 			std::swap(AIState._AbilityInstance, pAction->_AbilityInstance);
+
+			if (!AIState._AbilityInstance->Targets.empty())
+			{
+				auto pSOComponent = World.FindComponent<CSmartObjectComponent>(AIState._AbilityInstance->Targets[0].Entity);
+				auto pSOAsset = (pSOComponent && pSOComponent->Asset) ? pSOComponent->Asset->GetObject<CSmartObject>() : nullptr;
+				if (pSOAsset)
+				{
+					// TODO: can check additional conditions!
+					const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
+					for (U8 i = 0; i < ZoneCount; ++i)
+						AIState._AbilityInstance->InitialZones.push_back(&pSOAsset->GetInteractionZone(i).Zone);
+				}
+			}
+
+			//???Ability.GetZones beside SO zones, instead of them? what additional conditions may influence?
+			//???should actor execute action without moving if no zones found at all?
+			AIState._AbilityInstance->Ability.GetZones(AIState._AbilityInstance->InitialZones);
+
+			AIState._AbilityInstance->Status = EAbilityStatus::New;
 		}
 
 		CAbilityInstance& AbilityInstance = *AIState._AbilityInstance;
 
 		// Determine target node, if any
 		Scene::CSceneNode* pTargetRootNode = nullptr;
-		bool TransformChanged = false;
 		if (!AbilityInstance.Targets.empty())
 		{
 			const auto& Target = AbilityInstance.Targets[0];
@@ -363,27 +392,10 @@ void UpdateAbilityInteractions(CGameWorld& World, float dt)
 				pTargetRootNode = Target.pNode;
 		}
 
-		// Do one time initialization of the new ability instance
+		// Update main target transform
+		bool TransformChanged = false;
 		if (AbilityChanged)
 		{
-			// Collect interaction zones
-			//???Ability.GetZones beside SO zones, instead of them? what additional conditions may influence?
-			//???should actor execute action without moving if no zones found at all?
-			if (!AbilityInstance.Targets.empty())
-			{
-				auto pSOComponent = World.FindComponent<CSmartObjectComponent>(AbilityInstance.Targets[0].Entity);
-				auto pSOAsset = (pSOComponent && pSOComponent->Asset) ? pSOComponent->Asset->GetObject<CSmartObject>() : nullptr;
-				if (pSOAsset)
-				{
-					// TODO: can check additional conditions!
-					const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
-					for (U8 i = 0; i < ZoneCount; ++i)
-						AbilityInstance.InitialZones.push_back(&pSOAsset->GetInteractionZone(i).Zone);
-				}
-			}
-
-			AbilityInstance.Ability.GetZones(AbilityInstance.InitialZones);
-
 			TransformChanged = true;
 			if (pTargetRootNode)
 			{
@@ -395,8 +407,6 @@ void UpdateAbilityInteractions(CGameWorld& World, float dt)
 				// FIXME: AbilityInstance.TargetToWorld not needed if CTargetInfo will store full SRT instead of Point!
 				AbilityInstance.TargetToWorld.Translation() = AbilityInstance.Targets[0].Point;
 			}
-
-			AIState._AbilityInstance->Status = EAbilityStatus::Movement;
 		}
 		else if (pTargetRootNode && AbilityInstance.PrevTargetTfmVersion != pTargetRootNode->GetTransformVersion())
 		{
@@ -405,25 +415,16 @@ void UpdateAbilityInteractions(CGameWorld& World, float dt)
 			AbilityInstance.TargetToWorld = pTargetRootNode->GetWorldMatrix();
 		}
 
-		// Move to and face interaction target
+		// Ability execution logic
 
-		auto Result = MoveToTarget(AbilityInstance, World, EntityID, Queue, Action, ChildAction, TransformChanged);
+		EActionStatus Result = MoveToTarget(AbilityInstance, World, EntityID, Queue, Action, ChildAction, TransformChanged);
 
 		if (Result == EActionStatus::Succeeded)
 			Result = FaceTarget(AbilityInstance, World, EntityID, Queue, Action, ChildAction, TransformChanged);
 
-		// If needs moving or facing during an interaction phase, must interrupt an interaction
-		if (Result == EActionStatus::Active && AbilityInstance.Status == EAbilityStatus::Execution)
-		{
-			AbilityInstance.Ability.OnEnd(/*EActionStatus::Cancelled*/); //???wrap into AbilityInstance.OnEnd()? pass self as an argument inside!
-			AbilityInstance.Status = EAbilityStatus::Movement;
-		}
-
-		// Interact with object, if it is approached and faced
 		if (Result == EActionStatus::Succeeded)
 			Result = InteractWithTarget(AbilityInstance, EntityID, dt);
 
-		// If all parts of interaction have finished, finish an action
 		if (Result != EActionStatus::Active)
 		{
 			EndCurrentInteraction(Result, AIState, EntityID);

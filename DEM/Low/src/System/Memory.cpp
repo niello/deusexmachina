@@ -67,6 +67,7 @@ void n_free_aligned_dbg(void* memblock, const char* filename, int line)
 
 // Replacement global new operator without location reporting. This
 // catches calls which don't use n_new for some reason.
+// FIXME: VS2019 has annotations _NODISCARD _Ret_notnull_ _Post_writable_byte_size_(_Size) _VCRT_ALLOCATOR
 void* operator new(size_t size)
 {
 	void* res = _malloc_dbg(size, _NORMAL_BLOCK, __FILE__, __LINE__);

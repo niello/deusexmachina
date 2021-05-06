@@ -18,7 +18,8 @@ class CZone;
 
 enum class EAbilityStatus : U8
 {
-	Movement = 0,
+	New = 0,
+	Movement,
 	Facing,
 	Execution
 };
@@ -33,9 +34,9 @@ enum class EFacingMode : U8
 
 struct CFacingParams
 {
-	EFacingMode Mode;
 	vector3     Dir;
 	float       Tolerance = 0.f;
+	EFacingMode Mode = EFacingMode::None;
 };
 
 //???TODO: to AbilityInstance.h?
