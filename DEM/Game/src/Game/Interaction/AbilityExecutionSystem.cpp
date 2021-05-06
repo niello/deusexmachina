@@ -234,8 +234,7 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 
 		// If character is a navmesh agent, must navigate. Otherwise a simple steering does the job.
 		// NB: navigate even if already at the target poly, because it may require special traversal action, not Steer.
-		// To avoid possible parent path invalidation, could try to optimize with findLocalNeighbourhood,
-		// moveAlongSurface or raycast, but it would require additional logic and complicate navigation.
+		// FIXME: if it is a door opening in a parent navigation task, will invalidate path. Steer or Navigate in this case? Old optimization was to Steer.
 		if (pNavAgent)
 			Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, FacingDir, 0.f);
 		else
