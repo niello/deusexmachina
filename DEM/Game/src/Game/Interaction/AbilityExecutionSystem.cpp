@@ -56,9 +56,12 @@ static bool GetFacingParams(const CAbilityInstance& AbilityInstance, const vecto
 }
 //---------------------------------------------------------------------
 
-static void OptimizePath(CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, AI::Navigate& NavAction)
+static void OptimizePath(CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, HAction ChildAction)
 {
 	if (AbilityInstance.PathOptimized) return;
+
+	auto pNavAction = ChildAction.As<AI::Navigate>();
+	if (!pNavAction) return;
 
 	// Don't optimize until the final path is built
 	// TODO: can also optimize partial path, another zone may intersect it. But need to reoptimize each time the path is updated!
@@ -125,7 +128,7 @@ static void OptimizePath(CAbilityInstance& AbilityInstance, CGameWorld& World, H
 			const float Distance = AbilityInstance.AvailableZones[ZoneIdx]->FindClosestPoint(CornerInTargetSpace, 0.f, Point);
 			if (Distance < MinDistance)
 			{
-				NavAction._Destination = Point; // Remember local for now, will convert once at the end
+				pNavAction->_Destination = Point; // Remember local for now, will convert once at the end
 				AbilityInstance.CurrZoneIndex = ZoneIdx;
 				MinDistance = Distance;
 			}
@@ -133,8 +136,8 @@ static void OptimizePath(CAbilityInstance& AbilityInstance, CGameWorld& World, H
 
 		if (Stop)
 		{
-			NavAction._Destination = AbilityInstance.TargetToWorld.transform_coord(NavAction._Destination);
-			GetFacingParams(AbilityInstance, NavAction._Destination, NavAction._FinalFacing, nullptr);
+			pNavAction->_Destination = AbilityInstance.TargetToWorld.transform_coord(pNavAction->_Destination);
+			GetFacingParams(AbilityInstance, pNavAction->_Destination, pNavAction->_FinalFacing, nullptr);
 			break;
 		}
 	}
@@ -153,21 +156,25 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 		AbilityInstance.PathOptimized = false;
 		AbilityInstance.AvailableZones = AbilityInstance.InitialZones; // Intended copy
 	}
+	else if (AbilityInstance.Stage > EAbilityExecutionStage::Movement)
+	{
+		// Already at position, skip movement
+		return EActionStatus::Succeeded;
+	}
 	else if (ChildAction)
 	{
-		auto pNavAction = ChildAction.As<AI::Navigate>();
-		if (!pNavAction && !ChildAction.As<AI::Steer>()) return EActionStatus::Succeeded; // Already at position
-
+		// Process movement sub-action
 		const auto ChildActionStatus = Queue.GetStatus(ChildAction);
 		if (ChildActionStatus != EActionStatus::Failed)
 		{
-			// If new path intersects with another interaction zone, can optimize by navigating to it instead of the original target
-			if (pNavAction && ChildActionStatus == EActionStatus::Active)
-				OptimizePath(AbilityInstance, World, EntityID, *pNavAction);
+			// Check if another available zone is closer along the way than our target zone
+			if (ChildActionStatus == EActionStatus::Active)
+				OptimizePath(AbilityInstance, World, EntityID, ChildAction);
+
 			return ChildActionStatus;
 		}
 
-		// Current zone can't be reached, try another one
+		// Movement failed. Current zone can't be reached, try another one.
 		VectorFastErase(AbilityInstance.AvailableZones, AbilityInstance.CurrZoneIndex);
 	}
 
@@ -240,9 +247,9 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 		else
 			Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ActionPos + FacingDir, 0.f);
 
-		if (AbilityInstance.Status == EAbilityStatus::Execution)
+		if (AbilityInstance.Stage == EAbilityExecutionStage::Interaction)
 			AbilityInstance.Ability.OnEnd(/*EActionStatus::Cancelled*/); //???wrap into AbilityInstance.OnEnd()? pass self as an argument inside!
-		AbilityInstance.Status = EAbilityStatus::Movement;
+		AbilityInstance.Stage = EAbilityExecutionStage::Movement;
 
 		return EActionStatus::Active;
 	}
@@ -258,7 +265,11 @@ static EActionStatus FaceTarget(CAbilityInstance& AbilityInstance, CGameWorld& W
 	HAction ChildAction, bool TransformChanged)
 {
 	// Process Turn sub-action until finished or target transform changed
-	if (AbilityInstance.Status == EAbilityStatus::Facing && !TransformChanged && ChildAction.As<AI::Turn>()) return Queue.GetStatus(ChildAction);
+	if (!TransformChanged)
+	{
+		if (AbilityInstance.Stage > EAbilityExecutionStage::Facing) return EActionStatus::Succeeded;
+		else if (ChildAction.As<AI::Turn>()) return Queue.GetStatus(ChildAction);
+	}
 
 	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
 	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return EActionStatus::Failed;
@@ -278,9 +289,9 @@ static EActionStatus FaceTarget(CAbilityInstance& AbilityInstance, CGameWorld& W
 
 	Queue.PushOrUpdateChild<AI::Turn>(Action, TargetDir, FacingTolerance);
 
-	if (AbilityInstance.Status == EAbilityStatus::Execution)
+	if (AbilityInstance.Stage == EAbilityExecutionStage::Interaction)
 		AbilityInstance.Ability.OnEnd(/*EActionStatus::Cancelled*/); //???wrap into AbilityInstance.OnEnd()? pass self as an argument inside!
-	AbilityInstance.Status = EAbilityStatus::Facing;
+	AbilityInstance.Stage = EAbilityExecutionStage::Facing;
 
 	return EActionStatus::Active;
 }
@@ -289,12 +300,12 @@ static EActionStatus FaceTarget(CAbilityInstance& AbilityInstance, CGameWorld& W
 static EActionStatus InteractWithTarget(CAbilityInstance& AbilityInstance, HEntity EntityID, float dt)
 {
 	// Start interaction, if not yet
-	if (AbilityInstance.Status != EAbilityStatus::Execution)
+	if (AbilityInstance.Stage != EAbilityExecutionStage::Interaction)
 	{
 		//!!!if animation graph override is defined, enable it!
 
 		AbilityInstance.Ability.OnStart(); //???wrap into AbilityInstance.OnStart()? pass self as an argument inside!
-		AbilityInstance.Status = EAbilityStatus::Execution;
+		AbilityInstance.Stage = EAbilityExecutionStage::Interaction;
 
 		//???first frame must have elapsed time 0.f or dt or part of dt not used by movement and facing?
 		AbilityInstance.PrevElapsedTime = 0.f;
@@ -312,7 +323,7 @@ static EActionStatus InteractWithTarget(CAbilityInstance& AbilityInstance, HEnti
 
 static void EndCurrentInteraction(EActionStatus NewStatus, AI::CAIStateComponent& AIState, HEntity EntityID)
 {
-	if (AIState._AbilityInstance->Status == EAbilityStatus::Execution)
+	if (AIState._AbilityInstance->Stage == EAbilityExecutionStage::Interaction)
 	{
 		if (NewStatus == EActionStatus::NotQueued) NewStatus = EActionStatus::Cancelled;
 		AIState._AbilityInstance->Ability.OnEnd(); //???wrap into AbilityInstance.OnEnd()? pass self as an argument inside!
@@ -364,8 +375,9 @@ void UpdateAbilityInteractions(CGameWorld& World, float dt)
 				auto pSOAsset = (pSOComponent && pSOComponent->Asset) ? pSOComponent->Asset->GetObject<CSmartObject>() : nullptr;
 				if (pSOAsset)
 				{
-					// TODO: can check additional conditions!
+					// TODO: can check additional conditions of zone before adding it!
 					const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
+					AIState._AbilityInstance->InitialZones.reserve(ZoneCount);
 					for (U8 i = 0; i < ZoneCount; ++i)
 						AIState._AbilityInstance->InitialZones.push_back(&pSOAsset->GetInteractionZone(i).Zone);
 				}
@@ -375,7 +387,7 @@ void UpdateAbilityInteractions(CGameWorld& World, float dt)
 			//???should actor execute action without moving if no zones found at all?
 			AIState._AbilityInstance->Ability.GetZones(AIState._AbilityInstance->InitialZones);
 
-			AIState._AbilityInstance->Status = EAbilityStatus::New;
+			AIState._AbilityInstance->Stage = EAbilityExecutionStage::Movement;
 		}
 
 		CAbilityInstance& AbilityInstance = *AIState._AbilityInstance;

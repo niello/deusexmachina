@@ -16,12 +16,11 @@ using PAbility = std::unique_ptr<class CAbility>;
 using PAbilityInstance = std::unique_ptr<struct CAbilityInstance>;
 class CZone;
 
-enum class EAbilityStatus : U8
+enum class EAbilityExecutionStage : U8
 {
-	New = 0,
-	Movement,
+	Movement = 0,
 	Facing,
-	Execution
+	Interaction
 };
 
 enum class EFacingMode : U8
@@ -73,7 +72,7 @@ struct CAbilityInstance
 	U32                       PrevTargetTfmVersion = 0;
 	float                     ElapsedTime = -1.f;
 	float                     PrevElapsedTime = 0.f; // Useful for dt calc and for detecting that we just passed some point in time
-	EAbilityStatus            Status;
+	EAbilityExecutionStage    Stage = EAbilityExecutionStage::Movement;
 	bool                      PathOptimized = false;
 };
 
