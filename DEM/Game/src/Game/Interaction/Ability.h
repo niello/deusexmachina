@@ -5,6 +5,7 @@
 #include <Game/ECS/Entity.h>
 #include <Events/EventNative.h>
 #include <Math/Matrix44.h>
+#include <DetourNavMesh.h> // For dtPolyRef only
 
 // Ability is an interaction performed by a actors in a game world.
 // Ability is stateless, and ability instance stores the state.
@@ -73,7 +74,7 @@ struct CAbilityInstance
 	float                     ElapsedTime = -1.f;
 	float                     PrevElapsedTime = 0.f; // Useful for dt calc and for detecting that we just passed some point in time
 	EAbilityExecutionStage    Stage = EAbilityExecutionStage::Movement;
-	bool                      PathOptimized = false;
+	dtPolyRef                 CheckedPoly = 0; // For path optimization
 };
 
 class CAbility : public CInteraction

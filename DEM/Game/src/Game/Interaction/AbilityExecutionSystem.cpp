@@ -56,90 +56,54 @@ static bool GetFacingParams(const CAbilityInstance& AbilityInstance, const vecto
 }
 //---------------------------------------------------------------------
 
+// When enter new navigation poly, check if it intersects an available zone. If so, move to it instead of original target zone.
 static void OptimizePath(CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, HAction ChildAction)
 {
-	if (AbilityInstance.PathOptimized) return;
-
 	auto pNavAction = ChildAction.As<AI::Navigate>();
 	if (!pNavAction) return;
 
-	// Don't optimize until the final path is built
-	// TODO: can also optimize partial path, another zone may intersect it. But need to reoptimize each time the path is updated!
 	const auto* pNavAgent = World.FindComponent<AI::CNavAgentComponent>(EntityID);
-	if (!pNavAgent || pNavAgent->State != AI::ENavigationState::Following || pNavAgent->Corridor.getLastPoly() != pNavAgent->TargetRef) return;
+	if (!pNavAgent || pNavAgent->Corridor.getFirstPoly() == AbilityInstance.CheckedPoly) return;
 
-	AbilityInstance.PathOptimized = true;
+	AbilityInstance.CheckedPoly = pNavAgent->Corridor.getFirstPoly();
+	if (!AbilityInstance.CheckedPoly) return;
 
-	float Verts[DT_VERTS_PER_POLYGON * 3];
+	matrix44 WorldToTarget;
+	AbilityInstance.TargetToWorld.invert_simple(WorldToTarget);
+	const vector3 ActorPosInTargetSpace = WorldToTarget.transform_coord(pNavAgent->Corridor.getPos());
+
 	const dtMeshTile* pTile = nullptr;
 	const dtPoly* pPoly = nullptr;
-	vector3 CornerInTargetSpace;
-	bool Stop = false;
+	pNavAgent->pNavQuery->getAttachedNavMesh()->getTileAndPolyByRefUnsafe(AbilityInstance.CheckedPoly, &pTile, &pPoly);
 
-	// Find first poly that intersects with any of target zones
-	const int PolyCount = pNavAgent->Corridor.getPathCount();
-	for (int PolyIdx = 0; PolyIdx < PolyCount; ++PolyIdx)
+	float Verts[DT_VERTS_PER_POLYGON * 3];
+	const int PolyVertCount = pPoly->vertCount;
+	for (int i = 0; i < PolyVertCount; ++i)
+		dtVcopy(&Verts[i * 3], &pTile->verts[pPoly->verts[i] * 3]);
+
+	// FIXME: how to find closest point of intersection of nav. poly and zone? Now wrong!
+	float MinDistance = std::numeric_limits<float>().max();
+	for (UPTR ZoneIdx = 0; ZoneIdx < AbilityInstance.AvailableZones.size(); ++ZoneIdx)
 	{
-		const dtPolyRef PolyRef = pNavAgent->Corridor.getPath()[PolyIdx];
-		pNavAgent->pNavQuery->getAttachedNavMesh()->getTileAndPolyByRefUnsafe(PolyRef, &pTile, &pPoly);
+		const auto& Zone = *AbilityInstance.AvailableZones[ZoneIdx];
 
-		const int PolyVertCount = pPoly->vertCount;
-		for (int i = 0; i < PolyVertCount; ++i)
-			dtVcopy(&Verts[i * 3], &pTile->verts[pPoly->verts[i] * 3]);
+		if (!Zone.IntersectsPoly(AbilityInstance.TargetToWorld, Verts, PolyVertCount)) continue;
 
-		float MinDistance = std::numeric_limits<float>().max();
-		for (UPTR ZoneIdx = 0; ZoneIdx < AbilityInstance.AvailableZones.size(); ++ZoneIdx)
+		//???adjust for actor radius? for now 0.f
+		vector3 Point;
+		const float Distance = Zone.FindClosestPoint(ActorPosInTargetSpace, 0.f, Point);
+		if (Distance < MinDistance)
 		{
-			if (!AbilityInstance.AvailableZones[ZoneIdx]->IntersectsPoly(AbilityInstance.TargetToWorld, Verts, PolyVertCount)) continue;
-
-			// Find previous path corner and stop on this poly
-			if (!Stop)
-			{
-				vector3 Corner;
-				vector3 NextCorner = pNavAgent->Corridor.getPos();
-				dtPolyRef EnteredRef = pNavAgent->Corridor.getPath()[0];
-
-				dtStraightPathContext Ctx;
-				if (dtStatusFailed(pNavAgent->pNavQuery->initStraightPathSearch(
-					Corner.v, pNavAgent->Corridor.getTarget(), pNavAgent->Corridor.getPath(), PolyCount, Ctx)))
-				{
-					return;
-				}
-
-				for (int PolyIdx2 = 0; PolyIdx2 <= PolyIdx; ++PolyIdx2)
-				{
-					if (EnteredRef != pNavAgent->Corridor.getPath()[PolyIdx2]) continue;
-					Corner = NextCorner;
-					if (PolyIdx2 == PolyIdx) break;
-					if (!dtStatusInProgress(pNavAgent->pNavQuery->findNextStraightPathPoint(Ctx, NextCorner.v, nullptr, nullptr, &EnteredRef, 0)))
-						return;
-				}
-
-				matrix44 WorldToTarget;
-				AbilityInstance.TargetToWorld.invert_simple(WorldToTarget);
-				CornerInTargetSpace = WorldToTarget.transform_coord(Corner);
-
-				Stop = true;
-			}
-
-			// Find a zone intersecting this poly that is closest to the previous path corner
-			//???adjust for actor radius? for now 0.f
-			vector3 Point;
-			const float Distance = AbilityInstance.AvailableZones[ZoneIdx]->FindClosestPoint(CornerInTargetSpace, 0.f, Point);
-			if (Distance < MinDistance)
-			{
-				pNavAction->_Destination = Point; // Remember local for now, will convert once at the end
-				AbilityInstance.CurrZoneIndex = ZoneIdx;
-				MinDistance = Distance;
-			}
+			MinDistance = Distance;
+			pNavAction->_Destination = Point; // Remember local for now, will convert once at the end
+			AbilityInstance.CurrZoneIndex = ZoneIdx;
 		}
+	}
 
-		if (Stop)
-		{
-			pNavAction->_Destination = AbilityInstance.TargetToWorld.transform_coord(pNavAction->_Destination);
-			GetFacingParams(AbilityInstance, pNavAction->_Destination, pNavAction->_FinalFacing, nullptr);
-			break;
-		}
+	if (MinDistance != std::numeric_limits<float>().max())
+	{
+		pNavAction->_Destination = AbilityInstance.TargetToWorld.transform_coord(pNavAction->_Destination);
+		GetFacingParams(AbilityInstance, pNavAction->_Destination, pNavAction->_FinalFacing, nullptr);
 	}
 }
 //---------------------------------------------------------------------
@@ -153,8 +117,8 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 	if (TransformChanged)
 	{
 		// Target transform changed, therefore all zones might have changed, must update action point
-		AbilityInstance.PathOptimized = false;
 		AbilityInstance.AvailableZones = AbilityInstance.InitialZones; // Intended copy
+		AbilityInstance.CheckedPoly = 0;
 	}
 	else if (AbilityInstance.Stage > EAbilityExecutionStage::Movement)
 	{
@@ -218,6 +182,8 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 		// NB: this check is simplified and may fail to navigate zones where reachable points exist, so, in order
 		// to work, each zone must have at least one navigable point in a zone radius from each base point.
 		// TODO: could instead explore all the interaction zone for intersecion with valid navigation polys, but it is slow.
+		// Can use Edelsbrunner's algorithm for distance between 2 convex polys. Distance < Zone.Radius = intersection.
+		// http://acm.math.spbu.ru/~sk1/download/books/geometry/distance_O(log(n+m))_1985-J-02-ComputingExtremeDistances.pdf
 		if (pNavAgent)
 		{
 			float NavigablePos[3];
