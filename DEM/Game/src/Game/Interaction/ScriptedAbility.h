@@ -37,7 +37,7 @@ public:
 	virtual bool          GetFacingParams(CFacingParams& Out) const override;
 	virtual void          OnStart() const override; // ActorEntity, TargetEntity
 	virtual EActionStatus OnUpdate() const override; // ActorEntity, TargetEntity, AbilityInstance - instance everywhere?!
-	virtual void          OnEnd() const override; // ActorEntity, TargetEntity, Status
+	virtual void          OnEnd(EActionStatus Status) const override; // ActorEntity, TargetEntity, Status
 };
 
 }

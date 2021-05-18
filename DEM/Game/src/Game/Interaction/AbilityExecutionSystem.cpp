@@ -221,7 +221,7 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 			Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ActionPos + FacingDir, 0.f);
 
 		if (AbilityInstance.Stage == EAbilityExecutionStage::Interaction)
-			AbilityInstance.Ability.OnEnd(/*EActionStatus::Cancelled*/); //???wrap into AbilityInstance.OnEnd()? pass self as an argument inside!
+			AbilityInstance.Ability.OnEnd(EActionStatus::Cancelled);
 		AbilityInstance.Stage = EAbilityExecutionStage::Movement;
 
 		return EActionStatus::Active;
@@ -263,7 +263,7 @@ static EActionStatus FaceTarget(CAbilityInstance& AbilityInstance, CGameWorld& W
 	Queue.PushOrUpdateChild<AI::Turn>(Action, TargetDir, FacingTolerance);
 
 	if (AbilityInstance.Stage == EAbilityExecutionStage::Interaction)
-		AbilityInstance.Ability.OnEnd(/*EActionStatus::Cancelled*/); //???wrap into AbilityInstance.OnEnd()? pass self as an argument inside!
+		AbilityInstance.Ability.OnEnd(EActionStatus::Cancelled);
 	AbilityInstance.Stage = EAbilityExecutionStage::Facing;
 
 	return EActionStatus::Active;
@@ -299,7 +299,7 @@ static void EndCurrentInteraction(EActionStatus NewStatus, AI::CAIStateComponent
 	if (AIState._AbilityInstance->Stage == EAbilityExecutionStage::Interaction)
 	{
 		if (NewStatus == EActionStatus::NotQueued) NewStatus = EActionStatus::Cancelled;
-		AIState._AbilityInstance->Ability.OnEnd(); //???wrap into AbilityInstance.OnEnd()? pass self as an argument inside!
+		AIState._AbilityInstance->Ability.OnEnd(NewStatus);
 	}
 
 	AIState._AbilityInstance = nullptr;

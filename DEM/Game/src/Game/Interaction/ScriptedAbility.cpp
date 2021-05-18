@@ -67,29 +67,39 @@ ESoftBool CScriptedAbility::NeedMoreTargets(const CInteractionContext& Context) 
 
 bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue) const
 {
-	// Call Prepare - filter actors, adjust ability params (like +2 bonus in skill for each helping actor)
-	// Fail if no actors left
-	// Enqueue ExecuteAbility actions into filtered actors' queues, create AbilityInstance for each one
-
-	NOT_IMPLEMENTED;
-	return false;
-
-	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;
+	if (Context.Actors.empty()) return false;
 
 	auto pWorld = Session.FindFeature<CGameWorld>();
 	if (!pWorld) return false;
-	//auto pSOComponent = pWorld->FindComponent<CSmartObjectComponent>(Context.Targets[0].Entity);
-	//if (!pSOComponent || !pSOComponent->Asset) return false;
-	//CSmartObject* pSOAsset = pSOComponent->Asset->GetObject<CSmartObject>();
-	//if (!pSOAsset) return false;
 
-	auto pQueue = pWorld->FindComponent<CActionQueueComponent>(Context.Actors[0]);
-	if (!pQueue) return false;
+	std::vector<HEntity> Actors;
+	if (_FnPrepare)
+	{
+		// Filter actors, adjust ability params etc (like +2 bonus in skill for each helping actor)
+		LuaCall(_FnPrepare);
+	}
+	else
+	{
+		std::swap(Actors, Context.Actors);
+	}
 
-	if (!Enqueue) pQueue->Reset();
-	//pQueue->EnqueueAction<ExecuteAbility>(Context.Interaction, Context.Targets[0].Entity);
+	UPTR Issued = 0;
+	for (HEntity ActorID : Actors)
+	{
+		PAbilityInstance AbilityInstance(n_new(CAbilityInstance(*this)));
+		AbilityInstance->Actor = ActorID;
+		AbilityInstance->Source = Context.Source;
+		AbilityInstance->Targets = Context.Targets;
 
-	return true;
+		if (auto pQueue = pWorld->FindComponent<CActionQueueComponent>(ActorID))
+		{
+			if (!Enqueue) pQueue->Reset();
+			pQueue->EnqueueAction<ExecuteAbility>(std::move(AbilityInstance));
+			++Issued;
+		}
+	}
+
+	return !!Issued;
 }
 //---------------------------------------------------------------------
 
@@ -109,6 +119,7 @@ bool CScriptedAbility::GetFacingParams(CFacingParams& Out) const
 
 void CScriptedAbility::OnStart() const
 {
+	LuaCall(_FnOnStart);
 }
 //---------------------------------------------------------------------
 
@@ -141,8 +152,9 @@ EActionStatus CScriptedAbility::OnUpdate() const
 }
 //---------------------------------------------------------------------
 
-void CScriptedAbility::OnEnd() const
+void CScriptedAbility::OnEnd(EActionStatus Status) const
 {
+	LuaCall(_FnOnEnd, Status);
 }
 //---------------------------------------------------------------------
 

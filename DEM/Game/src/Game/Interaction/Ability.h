@@ -60,7 +60,7 @@ struct CAbilityInstance
 	//???pass only certain fields from here and CInteractonContext to CInteraction::IsAvailable, to check
 	//with the same code in iact mgr and during execution?
 
-	CAbility&                 Ability; //???refcounted? or store as iact ID + SO ID? need to resolve each frame.
+	const CAbility&           Ability; //???refcounted? or store as iact ID + SO ID? need to resolve each frame.
 	HEntity                   Source; // E.g. item
 	HEntity                   Actor;
 	std::vector<CTargetInfo>  Targets;
@@ -75,6 +75,8 @@ struct CAbilityInstance
 	float                     PrevElapsedTime = 0.f; // Useful for dt calc and for detecting that we just passed some point in time
 	EAbilityExecutionStage    Stage = EAbilityExecutionStage::Movement;
 	dtPolyRef                 CheckedPoly = 0; // For path optimization
+
+	CAbilityInstance(const CAbility& Ability_) : Ability(Ability_) {}
 };
 
 class CAbility : public CInteraction
@@ -85,7 +87,7 @@ public:
 	virtual bool          GetFacingParams(CFacingParams& Out) const = 0;
 	virtual void          OnStart() const = 0; // ActorEntity, TargetEntity
 	virtual EActionStatus OnUpdate() const = 0; // ActorEntity, TargetEntity, AbilityInstance
-	virtual void          OnEnd() const = 0; // ActorEntity, TargetEntity, Status
+	virtual void          OnEnd(EActionStatus Status) const = 0; // ActorEntity, TargetEntity, Status
 };
 
 }
