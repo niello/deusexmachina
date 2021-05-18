@@ -81,30 +81,37 @@ static void OptimizePath(CAbilityInstance& AbilityInstance, CGameWorld& World, H
 	for (int i = 0; i < PolyVertCount; ++i)
 		dtVcopy(&Verts[i * 3], &pTile->verts[pPoly->verts[i] * 3]);
 
-	// FIXME: how to find closest point of intersection of nav. poly and zone? Now wrong!
 	float MinDistance = std::numeric_limits<float>().max();
 	for (UPTR ZoneIdx = 0; ZoneIdx < AbilityInstance.AvailableZones.size(); ++ZoneIdx)
 	{
 		const auto& Zone = *AbilityInstance.AvailableZones[ZoneIdx];
+
+		// FIXME: need to find an union of zone and curent poly. Then must find a point in that union
+		// closest to the actor position. Now the logic is bad and misses some opportunities.
 
 		if (!Zone.IntersectsPoly(AbilityInstance.TargetToWorld, Verts, PolyVertCount)) continue;
 
 		//???adjust for actor radius? for now 0.f
 		vector3 Point;
 		const float Distance = Zone.FindClosestPoint(ActorPosInTargetSpace, 0.f, Point);
-		if (Distance < MinDistance)
-		{
-			MinDistance = Distance;
-			pNavAction->_Destination = Point; // Remember local for now, will convert once at the end
-			AbilityInstance.CurrZoneIndex = ZoneIdx;
-		}
+		if (MinDistance <= Distance) continue;
+
+		Point = AbilityInstance.TargetToWorld.transform_coord(Point);
+
+		float NavigablePos[3];
+		const float Extents[3] = { Zone.Radius, pNavAgent->Height, Zone.Radius };
+		dtPolyRef ObjPolyRef = 0;
+		pNavAgent->pNavQuery->findNearestPoly(Point.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NavigablePos);
+		if (!ObjPolyRef || dtVdist2DSqr(Point.v, NavigablePos) > Zone.Radius * Zone.Radius) continue;
+
+		MinDistance = Distance;
+		pNavAction->_Destination = Point; // Remember local for now, will convert once at the end
+		AbilityInstance.CurrZoneIndex = ZoneIdx;
 	}
 
+	// If destination changed, update arrival facing
 	if (MinDistance != std::numeric_limits<float>().max())
-	{
-		pNavAction->_Destination = AbilityInstance.TargetToWorld.transform_coord(pNavAction->_Destination);
 		GetFacingParams(AbilityInstance, pNavAction->_Destination, pNavAction->_FinalFacing, nullptr);
-	}
 }
 //---------------------------------------------------------------------
 
