@@ -31,7 +31,7 @@ static bool GetFacingParams(const CAbilityInstance& AbilityInstance, const vecto
 	CFacingParams Facing;
 	if (AbilityInstance.Ability.GetFacingParams(Facing))
 	{
-		if (pOutFacingTolerance) *pOutFacingTolerance = std::max(Facing.Tolerance, AI::Turn::AngularTolerance);
+		if (pOutFacingTolerance) *pOutFacingTolerance = std::max(n_deg2rad(Facing.Tolerance), AI::Turn::AngularTolerance);
 
 		switch (Facing.Mode)
 		{
