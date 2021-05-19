@@ -17,6 +17,7 @@
 // 5. End ability
 
 //!!!
+// TODO: SO-based interactions!!! Must use SO ID along with iact ID!
 // TODO: movement failed - add a timeout before failing, use ElapsedTime with Movement status
 // TODO: what if ability requires visibility line from actor to target?
 // TODO: anim graph override
@@ -27,7 +28,7 @@ namespace DEM::Game
 static bool GetFacingParams(const CAbilityInstance& AbilityInstance, const vector3& ActorPos, vector3& OutFacingDir, float* pOutFacingTolerance)
 {
 	CFacingParams Facing;
-	if (AbilityInstance.Ability.GetFacingParams(Facing))
+	if (AbilityInstance.Ability.GetFacingParams(AbilityInstance, Facing))
 	{
 		if (pOutFacingTolerance) *pOutFacingTolerance = std::max(n_deg2rad(Facing.Tolerance), AI::Turn::AngularTolerance);
 
@@ -220,7 +221,7 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 			Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ActionPos + FacingDir, 0.f);
 
 		if (AbilityInstance.Stage == EAbilityExecutionStage::Interaction)
-			AbilityInstance.Ability.OnEnd(EActionStatus::Cancelled);
+			AbilityInstance.Ability.OnEnd(AbilityInstance, EActionStatus::Cancelled);
 		AbilityInstance.Stage = EAbilityExecutionStage::Movement;
 
 		return EActionStatus::Active;
@@ -262,7 +263,7 @@ static EActionStatus FaceTarget(CAbilityInstance& AbilityInstance, CGameWorld& W
 	Queue.PushOrUpdateChild<AI::Turn>(Action, TargetDir, FacingTolerance);
 
 	if (AbilityInstance.Stage == EAbilityExecutionStage::Interaction)
-		AbilityInstance.Ability.OnEnd(EActionStatus::Cancelled);
+		AbilityInstance.Ability.OnEnd(AbilityInstance, EActionStatus::Cancelled);
 	AbilityInstance.Stage = EAbilityExecutionStage::Facing;
 
 	return EActionStatus::Active;
@@ -276,7 +277,7 @@ static EActionStatus InteractWithTarget(CAbilityInstance& AbilityInstance, HEnti
 	{
 		//!!!if animation graph override is defined, enable it!
 
-		AbilityInstance.Ability.OnStart(); //???wrap into AbilityInstance.OnStart()? pass self as an argument inside!
+		AbilityInstance.Ability.OnStart(AbilityInstance); //???wrap into AbilityInstance.OnStart()? pass self as an argument inside!
 		AbilityInstance.Stage = EAbilityExecutionStage::Interaction;
 
 		//???first frame must have elapsed time 0.f or dt or part of dt not used by movement and facing?
@@ -289,7 +290,7 @@ static EActionStatus InteractWithTarget(CAbilityInstance& AbilityInstance, HEnti
 		AbilityInstance.ElapsedTime += dt;
 	}
 
-	return AbilityInstance.Ability.OnUpdate(); //???wrap into AbilityInstance.OnUpdate()? pass self as an argument inside!
+	return AbilityInstance.Ability.OnUpdate(AbilityInstance); //???wrap into AbilityInstance.OnUpdate()? pass self as an argument inside!
 }
 //---------------------------------------------------------------------
 
@@ -298,7 +299,7 @@ static void EndCurrentInteraction(EActionStatus NewStatus, AI::CAIStateComponent
 	if (AIState._AbilityInstance->Stage == EAbilityExecutionStage::Interaction)
 	{
 		if (NewStatus == EActionStatus::NotQueued) NewStatus = EActionStatus::Cancelled;
-		AIState._AbilityInstance->Ability.OnEnd(NewStatus);
+		AIState._AbilityInstance->Ability.OnEnd(*AIState._AbilityInstance, NewStatus);
 	}
 
 	AIState._AbilityInstance = nullptr;
@@ -357,7 +358,7 @@ void UpdateAbilityInteractions(CGameWorld& World, float dt)
 
 			//???Ability.GetZones beside SO zones, instead of them? what additional conditions may influence?
 			//???should actor execute action without moving if no zones found at all?
-			AIState._AbilityInstance->Ability.GetZones(AIState._AbilityInstance->InitialZones);
+			AIState._AbilityInstance->Ability.GetZones(*AIState._AbilityInstance, AIState._AbilityInstance->InitialZones);
 
 			AIState._AbilityInstance->Stage = EAbilityExecutionStage::Movement;
 		}

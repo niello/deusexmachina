@@ -83,11 +83,11 @@ class CAbility : public CInteraction
 {
 public:
 
-	virtual bool          GetZones(std::vector<const CZone*>& Out) const = 0;
-	virtual bool          GetFacingParams(CFacingParams& Out) const = 0;
-	virtual void          OnStart() const = 0; // ActorEntity, TargetEntity
-	virtual EActionStatus OnUpdate() const = 0; // ActorEntity, TargetEntity, AbilityInstance
-	virtual void          OnEnd(EActionStatus Status) const = 0; // ActorEntity, TargetEntity, Status
+	virtual bool          GetZones(const CAbilityInstance& Instance, std::vector<const CZone*>& Out) const = 0;
+	virtual bool          GetFacingParams(const CAbilityInstance& Instance, CFacingParams& Out) const = 0;
+	virtual void          OnStart(CAbilityInstance& Instance) const = 0;
+	virtual EActionStatus OnUpdate(CAbilityInstance& Instance) const = 0;
+	virtual void          OnEnd(CAbilityInstance& Instance, EActionStatus Status) const = 0;
 };
 
 }

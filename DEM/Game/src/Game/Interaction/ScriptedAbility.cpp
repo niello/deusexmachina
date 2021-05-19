@@ -109,29 +109,29 @@ bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Conte
 }
 //---------------------------------------------------------------------
 
-bool CScriptedAbility::GetZones(std::vector<const CZone*>& Out) const
+bool CScriptedAbility::GetZones(const CAbilityInstance& Instance, std::vector<const CZone*>& Out) const
 {
-	return LuaCall(_FnGetZones, Out);
+	return LuaCall(_FnGetZones, Instance, Out);
 }
 //---------------------------------------------------------------------
 
-bool CScriptedAbility::GetFacingParams(CFacingParams& Out) const
+bool CScriptedAbility::GetFacingParams(const CAbilityInstance& Instance, CFacingParams& Out) const
 {
 	if (!_FnGetFacingParams) return false;
-	LuaCall(_FnGetFacingParams, Out);
+	LuaCall(_FnGetFacingParams, Instance, Out);
 	return Out.Mode != EFacingMode::None;
 }
 //---------------------------------------------------------------------
 
-void CScriptedAbility::OnStart() const
+void CScriptedAbility::OnStart(CAbilityInstance& Instance) const
 {
-	LuaCall(_FnOnStart);
+	LuaCall(_FnOnStart, Instance);
 }
 //---------------------------------------------------------------------
 
-EActionStatus CScriptedAbility::OnUpdate() const
+EActionStatus CScriptedAbility::OnUpdate(CAbilityInstance& Instance) const
 {
-	auto UpdateResult = _FnOnUpdate(/*args*/);
+	auto UpdateResult = _FnOnUpdate(Instance);
 	if (!UpdateResult.valid())
 	{
 		sol::error Error = UpdateResult;
@@ -150,9 +150,9 @@ EActionStatus CScriptedAbility::OnUpdate() const
 }
 //---------------------------------------------------------------------
 
-void CScriptedAbility::OnEnd(EActionStatus Status) const
+void CScriptedAbility::OnEnd(CAbilityInstance& Instance, EActionStatus Status) const
 {
-	LuaCall(_FnOnEnd, Status);
+	LuaCall(_FnOnEnd, Instance, Status);
 }
 //---------------------------------------------------------------------
 
