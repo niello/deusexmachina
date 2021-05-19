@@ -17,9 +17,7 @@
 // 5. End ability
 
 //!!!
-// TODO: path optimization - optimize only when enter new poly, don't optimize in offmesh polys
 // TODO: movement failed - add a timeout before failing, use ElapsedTime with Movement status
-// TODO: handle cases without zones, without targets, check all is OK
 // TODO: what if ability requires visibility line from actor to target?
 // TODO: anim graph override
 
@@ -75,6 +73,7 @@ static void OptimizePath(CAbilityInstance& AbilityInstance, CGameWorld& World, H
 	const dtMeshTile* pTile = nullptr;
 	const dtPoly* pPoly = nullptr;
 	pNavAgent->pNavQuery->getAttachedNavMesh()->getTileAndPolyByRefUnsafe(AbilityInstance.CheckedPoly, &pTile, &pPoly);
+	if (pPoly->getType() == DT_POLYTYPE_OFFMESH_CONNECTION) return;
 
 	float Verts[DT_VERTS_PER_POLYGON * 3];
 	const int PolyVertCount = pPoly->vertCount;
