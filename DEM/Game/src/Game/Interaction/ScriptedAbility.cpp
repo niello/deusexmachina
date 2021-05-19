@@ -21,9 +21,8 @@ static bool LuaCall(const sol::function& Fn, TArgs&&... Args)
 		return false;
 	}
 
-	if (Result.get_type() == sol::type::nil || !Result) return false;
-
-	return true;
+	auto Type = Result.get_type();
+	return Type != sol::type::nil && Type != sol::type::none && Result;
 }
 //---------------------------------------------------------------------
 
@@ -118,7 +117,9 @@ bool CScriptedAbility::GetZones(std::vector<const CZone*>& Out) const
 
 bool CScriptedAbility::GetFacingParams(CFacingParams& Out) const
 {
-	return LuaCall(_FnGetFacingParams, Out);
+	if (!_FnGetFacingParams) return false;
+	LuaCall(_FnGetFacingParams, Out);
+	return Out.Mode != EFacingMode::None;
 }
 //---------------------------------------------------------------------
 
