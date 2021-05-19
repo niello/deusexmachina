@@ -102,7 +102,7 @@ static void OptimizePath(CAbilityInstance& AbilityInstance, CGameWorld& World, H
 		const float Extents[3] = { Zone.Radius, pNavAgent->Height, Zone.Radius };
 		dtPolyRef ObjPolyRef = 0;
 		pNavAgent->pNavQuery->findNearestPoly(Point.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NavigablePos);
-		if (!ObjPolyRef || dtVdist2DSqr(Point.v, NavigablePos) > Zone.Radius * Zone.Radius) continue;
+		if (ObjPolyRef != AbilityInstance.CheckedPoly || dtVdist2DSqr(Point.v, NavigablePos) > Zone.Radius * Zone.Radius) continue;
 
 		MinDistance = Distance;
 		pNavAction->_Destination = Point; // Remember local for now, will convert once at the end
