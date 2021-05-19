@@ -18,7 +18,7 @@ protected:
 	sol::function _FnNeedMoreTargets;
 	sol::function _FnPrepare;
 
-	sol::function _FnGetInteractionPoint;
+	sol::function _FnGetZones;
 	sol::function _FnGetFacingParams;
 	sol::function _FnOnStart;
 	sol::function _FnOnUpdate;

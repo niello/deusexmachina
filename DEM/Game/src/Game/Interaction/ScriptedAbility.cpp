@@ -1,12 +1,13 @@
 #include "ScriptedAbility.h"
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
+#include <Game/Interaction/Zone.h>
 
 namespace DEM::Game
 {
 
 // TODO: common utility function?!
-// FIXME: DUPLICATED CODE! See CScriptedAbility!
+// FIXME: DUPLICATED CODE! See CScriptedInteraction!
 template<typename... TArgs>
 static bool LuaCall(const sol::function& Fn, TArgs&&... Args)
 {
@@ -32,6 +33,12 @@ CScriptedAbility::CScriptedAbility(const sol::table& Table)
 	_FnIsTargetValid = Table.get<sol::function>("IsTargetValid");
 	_FnNeedMoreTargets = Table.get<sol::function>("NeedMoreTargets");
 	_FnPrepare = Table.get<sol::function>("Prepare");
+
+	_FnGetZones = Table.get<sol::function>("GetZones");
+	_FnGetFacingParams = Table.get<sol::function>("GetFacingParams");
+	_FnOnStart = Table.get<sol::function>("OnStart");
+	_FnOnUpdate = Table.get<sol::function>("OnUpdate");
+	_FnOnEnd = Table.get<sol::function>("OnEnd");
 
 	_CursorImage = Table.get<std::string>("CursorImage"); //???to method? pass target index?
 }
@@ -76,11 +83,11 @@ bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Conte
 	if (_FnPrepare)
 	{
 		// Filter actors, adjust ability params etc (like +2 bonus in skill for each helping actor)
-		LuaCall(_FnPrepare);
+		LuaCall(_FnPrepare, Actors);
 	}
 	else
 	{
-		std::swap(Actors, Context.Actors);
+		Actors = Context.Actors;
 	}
 
 	UPTR Issued = 0;
@@ -105,15 +112,13 @@ bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Conte
 
 bool CScriptedAbility::GetZones(std::vector<const CZone*>& Out) const
 {
-	NOT_IMPLEMENTED;
-	return false;
+	return LuaCall(_FnGetZones, Out);
 }
 //---------------------------------------------------------------------
 
 bool CScriptedAbility::GetFacingParams(CFacingParams& Out) const
 {
-	NOT_IMPLEMENTED;
-	return false;
+	return LuaCall(_FnGetFacingParams, Out);
 }
 //---------------------------------------------------------------------
 
@@ -125,30 +130,22 @@ void CScriptedAbility::OnStart() const
 
 EActionStatus CScriptedAbility::OnUpdate() const
 {
-	NOT_IMPLEMENTED;
-
-	/*
-	auto UpdateResult = _FnOnUpdate(args);
+	auto UpdateResult = _FnOnUpdate(/*args*/);
 	if (!UpdateResult.valid())
 	{
 		sol::error Error = UpdateResult;
 		::Sys::Error(Error.what());
 		return EActionStatus::Failed;
 	}
-	else if (UpdateResult.get_type() == sol::type::number)
+	else if (UpdateResult.get_type() != sol::type::number)
 	{
-		// Enums are represented as numbers in Sol
-		EActionStatus NewStatus = UpdateResult;
-		if (NewStatus != EActionStatus::Active) return NewStatus;
-	}
-	else
-	{
+		// Enums are represented as numbers in Sol. Also allow to return nil as an alias for Active.
 		//!!!TODO: fmtlib and variadic args in assertion macros!
-		n_assert2_dbg(UpdateResult.get_type() == sol::type::none, ("Unexpected return type from SO lua OnUpdate" + AIState.CurrInteraction.ToString()).c_str());
+		n_assert2_dbg(UpdateResult.get_type() == sol::type::none, "Unexpected return type from lua OnUpdate");
+		return EActionStatus::Active;
 	}
-	*/
 
-	return EActionStatus::Active;
+	return UpdateResult;
 }
 //---------------------------------------------------------------------
 
