@@ -325,42 +325,44 @@ void UpdateAbilityInteractions(CGameWorld& World, float dt)
 		}
 
 		auto pAction = Action.As<ExecuteAbility>();
-		if (!AIState._AbilityInstance && !pAction->_AbilityInstance)
+		const bool AbilityChanged = (pAction->_AbilityInstance != AIState._AbilityInstance);
+		if (AbilityChanged)
+		{
+			// Interrupt previous ability
+			// NB: it might be our parent, then it will be resumed when we finish executing the nested one
+			if (AIState._AbilityInstance) EndCurrentInteraction(EActionStatus::Cancelled, AIState, EntityID);
+
+			AIState._AbilityInstance = pAction->_AbilityInstance;
+
+			if (AIState._AbilityInstance)
+			{
+				if (!AIState._AbilityInstance->Targets.empty())
+				{
+					auto pSOComponent = World.FindComponent<CSmartObjectComponent>(AIState._AbilityInstance->Targets[0].Entity);
+					auto pSOAsset = (pSOComponent && pSOComponent->Asset) ? pSOComponent->Asset->GetObject<CSmartObject>() : nullptr;
+					if (pSOAsset)
+					{
+						// TODO: can check additional conditions of zone before adding it!
+						const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
+						AIState._AbilityInstance->InitialZones.reserve(ZoneCount);
+						for (U8 i = 0; i < ZoneCount; ++i)
+							AIState._AbilityInstance->InitialZones.push_back(&pSOAsset->GetInteractionZone(i).Zone);
+					}
+				}
+
+				//???Ability.GetZones beside SO zones, instead of them? what additional conditions may influence?
+				//???should actor execute action without moving if no zones found at all?
+				AIState._AbilityInstance->Ability.GetZones(*AIState._AbilityInstance, AIState._AbilityInstance->InitialZones);
+
+				AIState._AbilityInstance->Stage = EAbilityExecutionStage::Movement;
+			}
+		}
+
+		if (!AIState._AbilityInstance)
 		{
 			// No ability is being executed
 			Queue.SetStatus(Action, EActionStatus::Succeeded);
 			return;
-		}
-
-		// ExecuteAbility action with empty ability instance means 'continue executing the current ability'.
-		// This is due to unique_ptr used for ability instances. If made refcounted, can check equality here.
-		const bool AbilityChanged = !!pAction->_AbilityInstance;
-		if (AbilityChanged)
-		{
-			if (AIState._AbilityInstance) EndCurrentInteraction(EActionStatus::Cancelled, AIState, EntityID);
-
-			// NB: swap new ability with nullptr, because std::move doesn't guarantee donor validity after move
-			std::swap(AIState._AbilityInstance, pAction->_AbilityInstance);
-
-			if (!AIState._AbilityInstance->Targets.empty())
-			{
-				auto pSOComponent = World.FindComponent<CSmartObjectComponent>(AIState._AbilityInstance->Targets[0].Entity);
-				auto pSOAsset = (pSOComponent && pSOComponent->Asset) ? pSOComponent->Asset->GetObject<CSmartObject>() : nullptr;
-				if (pSOAsset)
-				{
-					// TODO: can check additional conditions of zone before adding it!
-					const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
-					AIState._AbilityInstance->InitialZones.reserve(ZoneCount);
-					for (U8 i = 0; i < ZoneCount; ++i)
-						AIState._AbilityInstance->InitialZones.push_back(&pSOAsset->GetInteractionZone(i).Zone);
-				}
-			}
-
-			//???Ability.GetZones beside SO zones, instead of them? what additional conditions may influence?
-			//???should actor execute action without moving if no zones found at all?
-			AIState._AbilityInstance->Ability.GetZones(*AIState._AbilityInstance, AIState._AbilityInstance->InitialZones);
-
-			AIState._AbilityInstance->Stage = EAbilityExecutionStage::Movement;
 		}
 
 		CAbilityInstance& AbilityInstance = *AIState._AbilityInstance;

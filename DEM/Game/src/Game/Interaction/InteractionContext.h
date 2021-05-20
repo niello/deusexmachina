@@ -18,6 +18,9 @@ struct CTargetInfo
 	vector3            Point;
 	HEntity            Entity;
 	bool               Valid = false;
+
+	CTargetInfo() = default;
+	CTargetInfo(HEntity Entity_) : Entity(Entity_), Valid(true) {}
 };
 
 struct CInteractionContext

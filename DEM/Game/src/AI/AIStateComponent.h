@@ -1,6 +1,6 @@
 #pragma once
 #include <Game/ECS/ComponentStorage.h>
-#include <Game/Interaction/Ability.h>
+#include <Game/Interaction/AbilityInstance.h>
 #include <Data/Metadata.h>
 
 // Character AI state

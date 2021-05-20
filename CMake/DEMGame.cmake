@@ -64,6 +64,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/ECS/Components/RigidBodyComponent.h
 	DEM/Game/src/Game/ECS/Components/SceneComponent.h
 	DEM/Game/src/Game/Interaction/Ability.h
+	DEM/Game/src/Game/Interaction/AbilityInstance.h
 	DEM/Game/src/Game/Interaction/Interaction.h
 	DEM/Game/src/Game/Interaction/InteractionContext.h
 	DEM/Game/src/Game/Interaction/InteractionManager.h
