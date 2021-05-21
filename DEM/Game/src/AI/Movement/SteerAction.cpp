@@ -1,5 +1,7 @@
 #include "SteerAction.h"
 #include <Game/ECS/Components/ActionQueueComponent.h>
+#include <Game/ECS/GameWorld.h>
+#include <Game/GameSession.h>
 #include <AI/Navigation/NavAgentComponent.h>
 #include <Math/Vector2.h>
 #include <Core/Factory.h>
@@ -8,12 +10,15 @@ namespace DEM::AI
 {
 FACTORY_CLASS_IMPL(DEM::AI::CSteerAction, 'STRA', CTraversalAction);
 
-bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, Game::CActionQueueComponent& Queue,
+bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponent& Agent, Game::HEntity Actor, Game::HEntity Controller, Game::CActionQueueComponent& Queue,
 	Game::HAction NavAction, const vector3& Pos)
 {
 	// If not on navmesh, recover to the nearest valid position
 	if (Agent.Mode == ENavigationMode::Recovery)
 		return !!Queue.PushOrUpdateChild<Steer>(NavAction, Agent.Corridor.getPos(), Agent.Corridor.getPos(), -0.f);
+
+	auto pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return false;
 
 	const float* pPos = (Agent.Mode == ENavigationMode::Offmesh) ? Pos.v : Agent.Corridor.getPos();
 
@@ -45,7 +50,7 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 
 		// Get the next edge traversal action
 		Game::HEntity Controller;
-		auto pNextAction = Agent.Settings->FindAction(World, Agent, AreaType, PolyRef, &Controller);
+		auto pNextAction = Agent.Settings->FindAction(*pWorld, Agent, AreaType, PolyRef, &Controller);
 		ActionChanged = (!pNextAction || &CSteerAction::RTTI != pNextAction->GetRTTI());
 		if (ActionChanged)
 		{
@@ -53,7 +58,7 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 			// new action start immediately to avoid regenerating already finished Steer action again and again.
 			// Don't trigger offmesh connections. If it was possible, navigation system would do that.
 			if (pNextAction && DestReached && !(Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION))
-				return pNextAction->GenerateAction(World, Agent, Controller, Queue, NavAction, Pos);
+				return pNextAction->GenerateAction(Session, Agent, Actor, Controller, Queue, NavAction, Pos);
 
 			// Some actions require no arrival slowdown when approaching action change point
 			NeedSlowdown = !pNextAction || pNextAction->NeedSlowdownBeforeStart(Agent);
@@ -108,7 +113,7 @@ bool CSteerAction::GenerateAction(Game::CGameWorld& World, CNavAgentComponent& A
 
 				// Stop if action changes at Curr
 				Game::HEntity Controller;
-				auto pNextAction = Agent.Settings->FindAction(World, Agent, AreaType, PolyRef, &Controller);
+				auto pNextAction = Agent.Settings->FindAction(*pWorld, Agent, AreaType, PolyRef, &Controller);
 				if (!pNextAction || &CSteerAction::RTTI != pNextAction->GetRTTI()) break;
 
 				// Get end point of the next edge with the same action

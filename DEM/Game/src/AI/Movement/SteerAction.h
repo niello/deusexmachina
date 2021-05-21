@@ -66,7 +66,7 @@ public:
 
 	// When steering through the offmesh connection, must reach the start point first
 	virtual float GetSqTriggerRadius(float AgentRadius, float OffmeshTriggerRadius) const override { return std::max(Steer::SqLinearTolerance, OffmeshTriggerRadius * OffmeshTriggerRadius); }
-	virtual bool  GenerateAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, Game::CActionQueueComponent& Queue, Game::HAction NavAction, const vector3& Pos) override;
+	virtual bool  GenerateAction(Game::CGameSession& Session, CNavAgentComponent& Agent, Game::HEntity Actor, Game::HEntity Controller, Game::CActionQueueComponent& Queue, Game::HAction NavAction, const vector3& Pos) override;
 };
 
 }

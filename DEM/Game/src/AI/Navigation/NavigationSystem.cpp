@@ -2,6 +2,7 @@
 #include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Game/ECS/Components/CharacterControllerComponent.h>
 #include <Game/GameLevel.h>
+#include <Game/GameSession.h>
 #include <AI/Navigation/NavAgentComponent.h>
 #include <AI/Navigation/NavControllerComponent.h>
 #include <AI/Navigation/PathRequestQueue.h>
@@ -492,10 +493,15 @@ void InitNavigationAgents(Game::CGameWorld& World, Game::CGameLevel& Level, Reso
 //---------------------------------------------------------------------
 
 // NB: PathQueue is updated here, after components
-void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueue& PathQueue, bool NewFrame)
+void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, ::AI::CPathRequestQueue& PathQueue, bool NewFrame)
 {
+	auto pWorld = Session.FindFeature<DEM::Game::CGameWorld>();
+	if (!pWorld) return;
+
+	auto& World = *pWorld;
+
 	World.ForEachEntityWith<CNavAgentComponent, Game::CActionQueueComponent, const Game::CCharacterControllerComponent>(
-		[dt, &World, &PathQueue, NewFrame](auto EntityID, auto& Entity,
+		[dt, &Session, &World, &PathQueue, NewFrame](auto EntityID, auto& Entity,
 			CNavAgentComponent& Agent,
 			Game::CActionQueueComponent& Queue,
 			const Game::CCharacterControllerComponent& Character)
@@ -598,7 +604,7 @@ void ProcessNavigation(Game::CGameWorld& World, float dt, ::AI::CPathRequestQueu
 		// Generate sub-action for path following
 		Game::HEntity Controller;
 		auto pAction = FindTraversalAction(World, Agent, Queue, NavigateAction, Pos, OptimizePath, Controller);
-		if (!pAction || !pAction->GenerateAction(World, Agent, Controller, Queue, NavigateAction, Pos))
+		if (!pAction || !pAction->GenerateAction(Session, Agent, EntityID, Controller, Queue, NavigateAction, Pos))
 			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Failed);
 	});
 
