@@ -34,7 +34,7 @@ ESoftBool CSelectInteraction::NeedMoreTargets(const CInteractionContext& Context
 }
 //---------------------------------------------------------------------
 
-bool CSelectInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue) const
+bool CSelectInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue, bool PushChild) const
 {
 	if (Context.Targets.empty()) return false;
 

@@ -73,7 +73,7 @@ ESoftBool CScriptedAbility::NeedMoreTargets(const CInteractionContext& Context) 
 }
 //---------------------------------------------------------------------
 
-bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue) const
+bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue, bool PushChild) const
 {
 	if (Context.Actors.empty()) return false;
 
@@ -94,15 +94,19 @@ bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Conte
 	UPTR Issued = 0;
 	for (HEntity ActorID : Actors)
 	{
-		PAbilityInstance AbilityInstance(n_new(CAbilityInstance(*this)));
-		AbilityInstance->Actor = ActorID;
-		AbilityInstance->Source = Context.Source;
-		AbilityInstance->Targets = Context.Targets;
-
 		if (auto pQueue = pWorld->FindComponent<CActionQueueComponent>(ActorID))
 		{
-			if (!Enqueue) pQueue->Reset();
-			pQueue->EnqueueAction<ExecuteAbility>(std::move(AbilityInstance));
+			PAbilityInstance AbilityInstance(n_new(CAbilityInstance(*this)));
+			AbilityInstance->Actor = ActorID;
+			AbilityInstance->Source = Context.Source;
+			AbilityInstance->Targets = Context.Targets;
+
+			if (PushChild && pQueue->GetCurrent()) pQueue->PushOrUpdateChild<ExecuteAbility>(pQueue->GetCurrent(), std::move(AbilityInstance));
+			else
+			{
+				if (!Enqueue) pQueue->Reset();
+				pQueue->EnqueueAction<ExecuteAbility>(std::move(AbilityInstance));
+			}
 			++Issued;
 		}
 	}

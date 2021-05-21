@@ -44,7 +44,7 @@ ESoftBool CLockpickInteraction::NeedMoreTargets(const Game::CInteractionContext&
 }
 //---------------------------------------------------------------------
 
-bool CLockpickInteraction::Execute(Game::CGameSession& Session, Game::CInteractionContext& Context, bool Enqueue) const
+bool CLockpickInteraction::Execute(Game::CGameSession& Session, Game::CInteractionContext& Context, bool Enqueue, bool PushChild) const
 {
 	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;
 

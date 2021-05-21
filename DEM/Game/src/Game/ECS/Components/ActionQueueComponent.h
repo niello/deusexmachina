@@ -229,6 +229,9 @@ public:
 	HAction GetRoot() const { return _Stack.empty() ? HAction{} : HandleFromIt(_Stack.cbegin()); }
 	//---------------------------------------------------------------------
 
+	HAction GetCurrent() const { return _Stack.empty() ? HAction{} : HandleFromIt(--_Stack.cend()); }
+	//---------------------------------------------------------------------
+
 	size_t GetStackDepth() const { return _Stack.size(); }
 	//---------------------------------------------------------------------
 

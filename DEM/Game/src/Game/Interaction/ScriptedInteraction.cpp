@@ -65,9 +65,9 @@ ESoftBool CScriptedInteraction::NeedMoreTargets(const CInteractionContext& Conte
 }
 //---------------------------------------------------------------------
 
-bool CScriptedInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue) const
+bool CScriptedInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue, bool PushChild) const
 {
-	return LuaCall(_FnExecute, Context, Enqueue);
+	return LuaCall(_FnExecute, Context, Enqueue, PushChild);
 }
 //---------------------------------------------------------------------
 

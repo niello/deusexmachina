@@ -14,7 +14,7 @@ public:
 
 	virtual bool      IsTargetValid(const CGameSession& Session, U32 Index, const CInteractionContext& Context) const override;
 	virtual ESoftBool NeedMoreTargets(const CInteractionContext& Context) const override;
-	virtual bool      Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue) const override;
+	virtual bool      Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue, bool PushChild) const override;
 };
 
 }

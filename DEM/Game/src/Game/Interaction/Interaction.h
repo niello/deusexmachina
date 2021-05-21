@@ -36,7 +36,7 @@ public:
 	virtual bool       IsAvailable(const CInteractionContext& Context) const { return true; }
 	virtual bool       IsTargetValid(const CGameSession& Session, U32 Index, const CInteractionContext& Context) const = 0;
 	virtual ESoftBool  NeedMoreTargets(const CInteractionContext& Context) const = 0;
-	virtual bool       Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue) const = 0;
+	virtual bool       Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue, bool PushChild = false) const = 0;
 };
 
 }

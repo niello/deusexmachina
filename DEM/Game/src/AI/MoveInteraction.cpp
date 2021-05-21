@@ -57,7 +57,7 @@ ESoftBool CMoveInteraction::NeedMoreTargets(const CInteractionContext& Context) 
 }
 //---------------------------------------------------------------------
 
-bool CMoveInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue) const
+bool CMoveInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue, bool PushChild) const
 {
 	if (Context.Targets.empty()) return false;
 
