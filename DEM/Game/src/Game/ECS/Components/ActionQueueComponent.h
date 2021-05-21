@@ -133,6 +133,20 @@ public:
 	}
 	//---------------------------------------------------------------------
 
+	template<typename T, typename... TArgs>
+	inline HAction PushOrUpdateChild(HAction Parent, TArgs&&... Args)
+	{
+		return PushChildT<T, false, TArgs...>(Parent, std::forward<TArgs>(Args)...);
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename... TArgs>
+	inline HAction PushChild(HAction Parent, TArgs&&... Args) //???has practical use cases?
+	{
+		return PushChildT<T, true, TArgs...>(Parent, std::forward<TArgs>(Args)...);
+	}
+	//---------------------------------------------------------------------
+
 	void RunNextAction()
 	{
 		_Stack.clear();
@@ -235,20 +249,6 @@ public:
 		if (!Handle || Status == EActionStatus::NotQueued) return;
 		_Stack.erase(++ItFromHandle(Handle), _Stack.cend()); // Pop children
 		_Status = Status;
-	}
-	//---------------------------------------------------------------------
-
-	template<typename T, typename... TArgs>
-	inline HAction PushOrUpdateChild(HAction Parent, TArgs&&... Args)
-	{
-		return PushChildT<T, false, TArgs...>(Parent, std::forward<TArgs>(Args)...);
-	}
-	//---------------------------------------------------------------------
-
-	template<typename T, typename... TArgs>
-	inline HAction PushChild(HAction Parent, TArgs&&... Args)
-	{
-		return PushChildT<T, true, TArgs...>(Parent, std::forward<TArgs>(Args)...);
 	}
 	//---------------------------------------------------------------------
 };
