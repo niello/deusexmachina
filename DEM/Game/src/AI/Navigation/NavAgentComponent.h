@@ -53,7 +53,7 @@ struct CNavAgentComponent
 	float                Height = 1.75f;
 	vector3              TargetPos;
 	dtPolyRef            TargetRef = 0;
-	dtPolyRef            OffmeshRef = 0; // Currently triggered offmesh connection. Traversal may not yet started.
+	dtPolyRef            OffmeshRef = 0; // Currently triggered offmesh connection. Traversal may not have started yet.
 	float                ReplanTime = 0.f;
 	float                PathOptimizationTime = 0.f;
 	U16                  AsyncTaskID = 0;

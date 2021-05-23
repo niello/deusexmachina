@@ -531,17 +531,13 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, ::AI::CPathRe
 			return;
 		}
 
-		// Check if sub-action has finished
+		// Sub-action termination may lead to a navigation action termination
 		const auto SubActionStatus = Queue.GetStatus(Queue.GetChild(NavigateAction));
-		if (SubActionStatus == Game::EActionStatus::Failed || SubActionStatus == Game::EActionStatus::Cancelled)
+		if (SubActionStatus == Game::EActionStatus::Failed ||
+			SubActionStatus == Game::EActionStatus::Cancelled ||
+			(SubActionStatus == Game::EActionStatus::Succeeded && HasArrived(Agent, Pos, 0.f, true)))
 		{
-			// If sub-action failed or cancelled, finish navigation with the same result
 			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, SubActionStatus);
-			return;
-		}
-		else if (SubActionStatus == Game::EActionStatus::Succeeded && HasArrived(Agent, Pos, 0.f, true))
-		{
-			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Succeeded);
 			return;
 		}
 
@@ -578,6 +574,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, ::AI::CPathRe
 			}
 		}
 
+		// Try to continue execution of an active sub-action
 		bool OptimizePath = false;
 		if (Agent.OffmeshRef)
 		{
