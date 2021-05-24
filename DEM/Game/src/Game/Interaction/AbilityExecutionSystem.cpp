@@ -213,9 +213,9 @@ static EActionStatus MoveToTarget(CAbilityInstance& AbilityInstance, CGameWorld&
 		GetFacingParams(AbilityInstance, ActionPos, FacingDir, nullptr);
 
 		// If character is a navmesh agent, must navigate. Otherwise a simple steering does the job.
-		// NB: navigate even if already at the target poly, because it may require special traversal action, not Steer.
-		// FIXME: if it is a door opening in a parent navigation task, will invalidate path. Steer or Navigate in this case? Old optimization was to Steer.
-		if (pNavAgent)
+		// FIXME: Navigate action can't be nested now because it completely breaks offmesh traversal.
+		// Steering may ignore special traversal logic but it is our only option at least for now.
+		if (pNavAgent /*FIXME:*/ && !Queue.FindCurrent<AI::Navigate>(Action))
 			Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, FacingDir, 0.f);
 		else
 			Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ActionPos + FacingDir, 0.f);

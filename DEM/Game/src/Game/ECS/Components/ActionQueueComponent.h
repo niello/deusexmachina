@@ -178,7 +178,6 @@ public:
 		{
 			It = std::reverse_iterator(ItFromHandle(From));
 			if (It == _Stack.crend()) return {};
-			++It;
 		}
 
 		// Walk from nested sub-actions to the stack root
@@ -198,7 +197,6 @@ public:
 		{
 			It = std::reverse_iterator(ItFromHandle(From));
 			if (It == _Stack.crend()) return {};
-			++It;
 		}
 
 		// Walk from nested sub-actions to the stack root
