@@ -104,7 +104,7 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 	}
 
 	// Load interaction zones and available interactions
-	std::vector<DEM::Game::CInteractionZone> InteractionZones;
+	std::vector<DEM::Game::CZone> InteractionZones;
 	Data::PDataArray ZoneDescs;
 	if (Params.TryGet<Data::PDataArray>(ZoneDescs, CStrID("Interactions")))
 	{
@@ -113,58 +113,22 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 		{
 			const auto& ZoneDesc = *ZoneParam.GetValue<Data::PParams>();
 
-			DEM::Game::CInteractionZone Zone;
-			Zone.Zone.Radius = ZoneDesc.Get(CStrID("Radius"), 0.f);
+			DEM::Game::CZone Zone;
+			Zone.Radius = ZoneDesc.Get(CStrID("Radius"), 0.f);
 
 			Data::PDataArray VerticesDesc;
 			if (ZoneDesc.TryGet<Data::PDataArray>(VerticesDesc, CStrID("Vertices")))
 			{
-				Zone.Zone.Vertices.SetSize(VerticesDesc->GetCount());
+				Zone.Vertices.SetSize(VerticesDesc->GetCount());
 				size_t i = 0;
 				for (const auto& VertexDesc : *VerticesDesc)
-					Zone.Zone.Vertices[i++] = VertexDesc.GetValue<vector3>();
+					Zone.Vertices[i++] = VertexDesc.GetValue<vector3>();
 
-				if (Zone.Zone.Vertices.size())
+				if (Zone.Vertices.size())
 				{
-					Zone.Zone.ClosedPolygon = ZoneDesc.Get(CStrID("ClosedPoly"), false);
+					Zone.ClosedPolygon = ZoneDesc.Get(CStrID("ClosedPoly"), false);
 					// TODO: Zone.ConvexPolygon = ZoneDesc.Get(CStrID("ConvexPoly"), false);
 					//???or detect from points?
-				}
-			}
-
-			// Interactions available in this zone
-			Data::PParams ActionsDesc;
-			if (ZoneDesc.TryGet<Data::PParams>(ActionsDesc, CStrID("Actions")))
-			{
-				Zone.Interactions.SetSize(ActionsDesc->GetCount());
-				size_t i = 0;
-				for (const auto& ActionParam : *ActionsDesc)
-				{
-					auto& Interaction = Zone.Interactions[i++];
-					Interaction.ID = ActionParam.GetName();
-
-					const auto& ActionDesc = *ActionParam.GetValue<Data::PParams>();
-
-					Interaction.FacingMode = DEM::Game::EFacingMode::None;
-					const auto& ModeStr = ActionDesc.Get(CStrID("FacingMode"), CString::Empty);
-					if (ModeStr == "None") Interaction.FacingMode = DEM::Game::EFacingMode::None;
-					else if (ModeStr == "Direction") Interaction.FacingMode = DEM::Game::EFacingMode::Direction;
-					else if (ModeStr == "Point") Interaction.FacingMode = DEM::Game::EFacingMode::Point;
-					else if (ModeStr.IsValid()) ::Sys::Error("CSmartObjectLoader::CreateResource() > Unknown facing mode");
-
-					if (Interaction.FacingMode != DEM::Game::EFacingMode::None)
-					{
-						Interaction.FacingDir = ActionDesc.Get<vector3>(CStrID("FacingDir"), vector3::Zero);
-						Interaction.FacingDir.y = 0.f;
-						if (Interaction.FacingMode == DEM::Game::EFacingMode::Direction)
-						{
-							if (Interaction.FacingDir == vector3::Zero)
-								Interaction.FacingMode = DEM::Game::EFacingMode::None;
-							else
-								Interaction.FacingDir.norm();
-						}
-						Interaction.FacingTolerance = n_deg2rad(std::max(0.f, ActionDesc.Get(CStrID("FacingTolerance"), 0.f)));
-					}
 				}
 			}
 

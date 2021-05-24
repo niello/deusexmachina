@@ -346,7 +346,7 @@ void UpdateAbilityInteractions(CGameWorld& World, float dt)
 						const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
 						AIState._AbilityInstance->InitialZones.reserve(ZoneCount);
 						for (U8 i = 0; i < ZoneCount; ++i)
-							AIState._AbilityInstance->InitialZones.push_back(&pSOAsset->GetInteractionZone(i).Zone);
+							AIState._AbilityInstance->InitialZones.push_back(&pSOAsset->GetInteractionZone(i));
 					}
 				}
 

@@ -5,19 +5,17 @@
 #include <vector>
 #include <map>
 
-//!!!DBG TMP!
-#include <Game/Interaction/Ability.h>
-
 // Smart object asset describes a set of states, transitions between them,
 // and interactions available over the object under different conditions.
 // This asset is stateless, state is stored in CSmartObjectComponent.
 
 // NB: vectors are sorted by ID where possible
 
+//!!!FIXME: separate smart object and FSM?!
+
 namespace DEM::Game
 {
 using PSmartObject = Ptr<class CSmartObject>;
-struct CInteractionContext;
 class CGameSession;
 
 enum class ETransitionInterruptionMode : U8
@@ -47,20 +45,6 @@ struct CSmartObjectStateInfo
 	std::vector<CSmartObjectTransitionInfo> Transitions;
 };
 
-struct CSmartObjectInteractionInfo
-{
-	CStrID      ID;
-	EFacingMode FacingMode;
-	vector3     FacingDir;
-	float       FacingTolerance = 0.f;
-};
-
-struct CInteractionZone
-{
-	CFixedArray<CSmartObjectInteractionInfo> Interactions;
-	CZone                                    Zone;
-};
-
 class CSmartObject : public ::Core::CObject
 {
 	RTTI_CLASS_DECL(DEM::Game::CSmartObject, ::Core::CObject);
@@ -71,30 +55,27 @@ protected:
 	CStrID                                _DefaultState;
 	std::string                           _ScriptSource;
 	std::vector<CSmartObjectStateInfo>    _States;
-	std::vector<CInteractionZone>         _InteractionZones;
-	CFixedArray<CStrID>                   _Interactions; //!!!???need map?! or RegisterInteractions creates instances?!
+	std::vector<CZone>                    _InteractionZones;
 	std::map<CStrID, CFixedArray<CStrID>> _InteractionOverrides;
 
 public:
 
 	CSmartObject(CStrID ID, CStrID DefaultState, std::string_view ScriptSource,
-		std::vector<CSmartObjectStateInfo>&& States, std::vector<CInteractionZone>&& InteractionZones,
+		std::vector<CSmartObjectStateInfo>&& States, std::vector<CZone>&& InteractionZones,
 		std::map<CStrID, CFixedArray<CStrID>>&& InteractionOverrides);
 
-	bool          InitInSession(CGameSession& Session) const;
+	bool                              InitInSession(CGameSession& Session) const;
 
 	const CSmartObjectStateInfo*      FindState(CStrID ID) const;
 	const CSmartObjectTransitionInfo* FindTransition(CStrID FromID, CStrID ToID) const;
 
-	bool          HasInteraction(CStrID ID) const;
-	auto          GetInteractionZoneCount() const { return _InteractionZones.size(); }
-	const auto&   GetInteractionZone(U8 ZoneIdx) const { return _InteractionZones[ZoneIdx]; }
-	const auto&   GetInteractions() const { return _Interactions; }
-	const CFixedArray<CStrID>* GetInteractionOverrides(CStrID ID) const;
+	auto                              GetInteractionZoneCount() const { return _InteractionZones.size(); }
+	const auto&                       GetInteractionZone(U8 ZoneIdx) const { return _InteractionZones[ZoneIdx]; }
+	const CFixedArray<CStrID>*        GetInteractionOverrides(CStrID ID) const;
 
-	sol::function GetScriptFunction(sol::state& Lua, std::string_view Name) const;
-	CStrID        GetID() const { return _ID; }
-	CStrID        GetDefaultState() const { return _DefaultState; }
+	sol::function                     GetScriptFunction(sol::state& Lua, std::string_view Name) const;
+	CStrID                            GetID() const { return _ID; }
+	CStrID                            GetDefaultState() const { return _DefaultState; }
 };
 
 }

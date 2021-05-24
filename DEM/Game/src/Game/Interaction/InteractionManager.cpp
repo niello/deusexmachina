@@ -100,13 +100,15 @@ bool CInteractionManager::RegisterTool(CStrID ID, const Data::CParams& Params)
 }
 //---------------------------------------------------------------------
 
-bool CInteractionManager::RegisterInteraction(CStrID ID, PInteraction&& Interaction)
+bool CInteractionManager::RegisterInteraction(CStrID ID, PInteraction&& Interaction, CStrID SmartObjectID)
 {
 	if (!Interaction/* || !Interaction->GetMaxTargetCount()*/) return false;
 
-	auto It = _Interactions.find(ID);
-	if (It == _Interactions.cend())
-		_Interactions.emplace(ID, std::move(Interaction));
+	auto& Map = _Interactions[SmartObjectID];
+
+	auto It = Map.find(ID);
+	if (It == Map.cend())
+		Map.emplace(ID, std::move(Interaction));
 	else
 		It->second = std::move(Interaction);
 
@@ -138,10 +140,28 @@ const CInteractionTool* CInteractionManager::FindAvailableTool(CStrID ID, const 
 }
 //---------------------------------------------------------------------
 
-const CInteraction* CInteractionManager::FindInteraction(CStrID ID) const
+const CInteraction* CInteractionManager::FindInteraction(CStrID ID, CStrID SmartObjectID) const
 {
-	auto It = _Interactions.find(ID);
-	return (It == _Interactions.cend()) ? nullptr : It->second.get();
+	// Search for an interaction with the specified smart object
+	if (SmartObjectID)
+	{
+		auto ItMap = _Interactions.find(SmartObjectID);
+		if (ItMap != _Interactions.cend())
+		{
+			auto It = (*ItMap).second.find(ID);
+			if (It != (*ItMap).second.cend()) return It->second.get();
+		}
+	}
+
+	// Search for a global interaction
+	auto ItMap = _Interactions.find(CStrID::Empty);
+	if (ItMap != _Interactions.cend())
+	{
+		auto It = (*ItMap).second.find(ID);
+		if (It != (*ItMap).second.cend()) return It->second.get();
+	}
+
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -252,14 +272,13 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 		{
 			for (CStrID OverrideID : *pOverrides)
 			{
-				//!!!???can interaction IDs clash between global & SO (not SO & SO)?
-				//Probably should pass SO ID into FindInteraction.
-				auto pInteraction = FindInteraction(OverrideID);
+				auto pInteraction = FindInteraction(OverrideID, pSOAsset->GetID());
 				if (pInteraction &&
 					pInteraction->IsAvailable(Context) &&
 					pInteraction->IsCandidateTargetValid(_Session, Context))
 				{
 					Context.Interaction = OverrideID;
+					//???!!!save SO asset or use target 0?!
 					return true;
 				}
 			}

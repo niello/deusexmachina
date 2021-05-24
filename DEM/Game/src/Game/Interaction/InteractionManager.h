@@ -25,10 +25,10 @@ class CInteractionManager : public ::Core::CRTTIBaseClass
 
 protected:
 
-	CGameSession&                      _Session; // Safe because CInteractionManager lives inside a session
-	std::map<CStrID, CInteractionTool> _Tools;
-	std::map<CStrID, PInteraction>     _Interactions;
-	CStrID                             _DefaultTool;
+	CGameSession&                                    _Session; // Safe because CInteractionManager lives inside a session
+	std::map<CStrID, CInteractionTool>               _Tools;
+	std::map<CStrID, std::map<CStrID, PInteraction>> _Interactions; // Grouped by smart object ID
+	CStrID                                           _DefaultTool;
 
 	const CInteraction* ValidateInteraction(CStrID ID, const CInteractionContext& Context) const;
 
@@ -39,12 +39,12 @@ public:
 
 	bool                    RegisterTool(CStrID ID, CInteractionTool&& Tool);
 	bool                    RegisterTool(CStrID ID, const Data::CParams& Params);
-	bool                    RegisterInteraction(CStrID ID, PInteraction&& Interaction);
+	bool                    RegisterInteraction(CStrID ID, PInteraction&& Interaction, CStrID SmartObjectID = {});
 	void                    SetDefaultTool(CStrID ID) { _DefaultTool = ID; }
 
 	const CInteractionTool* FindTool(CStrID ID) const;
 	const CInteractionTool* FindAvailableTool(CStrID ID, const CInteractionContext& Context) const;
-	const CInteraction*     FindInteraction(CStrID ID) const;
+	const CInteraction*     FindInteraction(CStrID ID, CStrID SmartObjectID = {}) const;
 
 	bool                    SelectTool(CInteractionContext& Context, CStrID ToolID, HEntity Source = {}) const;
 	void                    ResetTool(CInteractionContext& Context) const;

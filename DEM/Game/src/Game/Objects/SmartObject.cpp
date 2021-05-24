@@ -8,7 +8,7 @@ namespace DEM::Game
 {
 
 CSmartObject::CSmartObject(CStrID ID, CStrID DefaultState, std::string_view ScriptSource,
-	std::vector<CSmartObjectStateInfo>&& States, std::vector<CInteractionZone>&& InteractionZones,
+	std::vector<CSmartObjectStateInfo>&& States, std::vector<CZone>&& InteractionZones,
 	std::map<CStrID, CFixedArray<CStrID>>&& InteractionOverrides)
 	: _ID(ID)
 	, _DefaultState(DefaultState)
@@ -21,16 +21,6 @@ CSmartObject::CSmartObject(CStrID ID, CStrID DefaultState, std::string_view Scri
 	std::sort(_States.begin(), _States.end(), [](const auto& a, const auto& b) { return a.ID < b.ID; });
 	for (auto& State : _States)
 		std::sort(State.Transitions.begin(), State.Transitions.end(), [](const auto& a, const auto& b) { return a.TargetStateID < b.TargetStateID; });
-
-	// Collect a set of all interactions available for this object
-	std::set<CStrID> Interactions;
-	for (const auto& Zone : _InteractionZones)
-		for (const auto& Interaction : Zone.Interactions)
-			Interactions.insert(Interaction.ID);
-
-	// Save interaction set into a memory efficient array, already sorted and deduplicated
-	_Interactions.SetSize(Interactions.size());
-	std::copy(Interactions.begin(), Interactions.end(), _Interactions.begin());
 }
 //---------------------------------------------------------------------
 
@@ -53,13 +43,6 @@ const CSmartObjectTransitionInfo* CSmartObject::FindTransition(CStrID FromID, CS
 	if (It2 == It->Transitions.end() || (*It2).TargetStateID != ToID) return nullptr;
 
 	return &(*It2);
-}
-//---------------------------------------------------------------------
-
-bool CSmartObject::HasInteraction(CStrID ID) const
-{
-	auto It = std::lower_bound(_Interactions.begin(), _Interactions.end(), ID, [](const auto& Elm, CStrID Value) { return Elm < Value; });
-	return It != _Interactions.end() && *It == ID;
 }
 //---------------------------------------------------------------------
 
@@ -112,8 +95,8 @@ bool CSmartObject::InitInSession(CGameSession& Session) const
 
 			if (Iact)
 			{
-				CStrID ID(Interaction.first.as<const char*>());
-				pInteractionMgr->RegisterInteraction(ID, std::move(Iact));
+				CStrID IactID(Interaction.first.as<const char*>());
+				pInteractionMgr->RegisterInteraction(IactID, std::move(Iact), _ID);
 			}
 		}
 	}
