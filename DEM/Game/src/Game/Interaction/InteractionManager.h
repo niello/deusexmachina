@@ -30,8 +30,6 @@ protected:
 	std::map<CStrID, std::map<CStrID, PInteraction>> _Interactions; // Grouped by smart object ID
 	CStrID                                           _DefaultTool;
 
-	const CInteraction* ValidateInteraction(CStrID ID, const CInteractionContext& Context) const;
-
 public:
 
 	CInteractionManager(CGameSession& Owner);

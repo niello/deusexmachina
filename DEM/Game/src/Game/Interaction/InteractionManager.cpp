@@ -190,24 +190,9 @@ void CInteractionManager::ResetTool(CInteractionContext& Context) const
 void CInteractionManager::ResetCandidateInteraction(CInteractionContext& Context) const
 {
 	Context.Interaction = CStrID::Empty;
+	Context.SmartObjectID = CStrID::Empty;
 	Context.Targets.clear();
 	Context.TargetExpected = ESoftBool::True;
-}
-//---------------------------------------------------------------------
-
-const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, const CInteractionContext& Context) const
-{
-	// Validate interaction itself
-	auto pInteraction = FindInteraction(ID);
-	if (!pInteraction) return nullptr;
-
-	// Check main condition
-	if (!pInteraction->IsAvailable(Context)) return nullptr;
-
-	// Validate selected targets, their state might change
-	if (!pInteraction->AreSelectedTargetsValid(_Session, Context)) return nullptr;
-
-	return pInteraction;
 }
 //---------------------------------------------------------------------
 
@@ -216,7 +201,15 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	if (Context.Interaction)
 	{
 		// If we already started selecting targets, interaction remains selected if only it doesn't become invalid
-		if (!Context.Targets.empty() && ValidateInteraction(Context.Interaction, Context)) return true;
+		if (!Context.Targets.empty())
+		{
+			// Validate interaction itself
+			if (auto pInteraction = FindInteraction(Context.Interaction, Context.SmartObjectID))
+			{
+				// Check main condition. Validate selected targets, their state might change.
+				if (pInteraction->IsAvailable(Context) && pInteraction->AreSelectedTargetsValid(_Session, Context)) return true;
+			}
+		}
 
 		ResetCandidateInteraction(Context);
 	}
@@ -278,7 +271,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 					pInteraction->IsCandidateTargetValid(_Session, Context))
 				{
 					Context.Interaction = OverrideID;
-					//???!!!save SO asset or use target 0?!
+					Context.SmartObjectID = pSOAsset->GetID();
 					return true;
 				}
 			}
@@ -292,6 +285,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 				pInteraction->IsCandidateTargetValid(_Session, Context))
 			{
 				Context.Interaction = OriginalID;
+				Context.SmartObjectID = CStrID::Empty;
 				return true;
 			}
 		}
@@ -305,7 +299,7 @@ bool CInteractionManager::AcceptTarget(CInteractionContext& Context) const
 {
 	if (!Context.Interaction || Context.TargetExpected == ESoftBool::False) return false;
 
-	auto pInteraction = FindInteraction(Context.Interaction); //!!!SO ID!
+	auto pInteraction = FindInteraction(Context.Interaction, Context.SmartObjectID);
 	if (!pInteraction || !pInteraction->IsCandidateTargetValid(_Session, Context)) return false;
 
 	Context.Targets.push_back(Context.CandidateTarget);
@@ -320,7 +314,7 @@ bool CInteractionManager::Revert(CInteractionContext& Context) const
 {
 	if (!Context.Targets.empty())
 	{
-		auto pInteraction = FindInteraction(Context.Interaction); //!!!SO ID!
+		auto pInteraction = FindInteraction(Context.Interaction, Context.SmartObjectID);
 		if (!pInteraction) return false;
 
 		Context.Targets.pop_back();
@@ -339,13 +333,14 @@ bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool 
 	// Ensure interaction and all mandatory targets are selected
 	if (!Context.Interaction || Context.TargetExpected == ESoftBool::True) return false;
 
-	auto pInteraction = FindInteraction(Context.Interaction);
+	auto pInteraction = FindInteraction(Context.Interaction, Context.SmartObjectID);
 	if (!pInteraction) return false;
 
 	//!!!DBG TMP!
 	std::string Actor = Context.Actors.empty() ? "none" : std::to_string(*Context.Actors.begin());
 	::Sys::Log(("Tool: " + Context.Tool.ToString() +
-		", Interaction: " + Context.Interaction.CStr() +
+		", Interaction: " + Context.Interaction.ToString() +
+		", SmartObject: " + Context.SmartObjectID.ToString() +
 		", Actor: " + Actor + "\n").c_str());
 
 	return pInteraction->Execute(_Session, Context, Enqueue);
@@ -359,7 +354,7 @@ const std::string& CInteractionManager::GetCursorImageID(CInteractionContext& Co
 
 	auto pTool = FindTool(Context.Tool);
 	if (!pTool) return EmptyString;
-	auto pInteraction = FindInteraction(Context.Interaction);
+	auto pInteraction = FindInteraction(Context.Interaction, Context.SmartObjectID);
 	if (!pInteraction) return EmptyString;
 	return pInteraction->GetCursorImageID(Context.Targets.size());
 }

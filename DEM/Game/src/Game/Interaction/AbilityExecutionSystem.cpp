@@ -17,7 +17,6 @@
 // 5. End ability
 
 //!!!
-// TODO: SO-based interactions!!! Must use SO ID along with iact ID!
 // TODO: movement failed - add a timeout before failing, use ElapsedTime with Movement status
 // TODO: what if ability requires visibility line from actor to target?
 // TODO: anim graph override

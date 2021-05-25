@@ -27,6 +27,7 @@ struct CInteractionContext
 {
 	CStrID                   Tool;
 	CStrID                   Interaction;
+	CStrID                   SmartObjectID;
 	CTargetInfo              CandidateTarget;
 	HEntity                  Source; // E.g. item
 	std::vector<HEntity>     Actors;
