@@ -33,11 +33,11 @@ public:
 	virtual ESoftBool     NeedMoreTargets(const CInteractionContext& Context) const override;
 	virtual bool          Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue, bool PushChild) const override;
 
-	virtual bool          GetZones(const CAbilityInstance& Instance, std::vector<const CZone*>& Out) const override;
-	virtual bool          GetFacingParams(const CAbilityInstance& Instance, CFacingParams& Out) const override;
-	virtual void          OnStart(CAbilityInstance& Instance) const override;
-	virtual EActionStatus OnUpdate(CAbilityInstance& Instance) const override;
-	virtual void          OnEnd(CAbilityInstance& Instance, EActionStatus Status) const override;
+	virtual bool          GetZones(const Game::CGameSession& Session, const CAbilityInstance& Instance, std::vector<const CZone*>& Out) const override;
+	virtual bool          GetFacingParams(const Game::CGameSession& Session, const CAbilityInstance& Instance, CFacingParams& Out) const override;
+	virtual void          OnStart(Game::CGameSession& Session, CAbilityInstance& Instance) const override;
+	virtual EActionStatus OnUpdate(Game::CGameSession& Session, CAbilityInstance& Instance) const override;
+	virtual void          OnEnd(Game::CGameSession& Session, CAbilityInstance& Instance, EActionStatus Status) const override;
 };
 
 }

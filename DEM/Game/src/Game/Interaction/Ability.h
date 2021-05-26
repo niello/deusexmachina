@@ -30,11 +30,11 @@ class CAbility : public CInteraction
 {
 public:
 
-	virtual bool          GetZones(const CAbilityInstance& Instance, std::vector<const CZone*>& Out) const = 0;
-	virtual bool          GetFacingParams(const CAbilityInstance& Instance, CFacingParams& Out) const = 0;
-	virtual void          OnStart(CAbilityInstance& Instance) const = 0;
-	virtual EActionStatus OnUpdate(CAbilityInstance& Instance) const = 0;
-	virtual void          OnEnd(CAbilityInstance& Instance, EActionStatus Status) const = 0;
+	virtual bool          GetZones(const Game::CGameSession& Session, const CAbilityInstance& Instance, std::vector<const CZone*>& Out) const { return false; }
+	virtual bool          GetFacingParams(const Game::CGameSession& Session, const CAbilityInstance& Instance, CFacingParams& Out) const { return false; }
+	virtual void          OnStart(Game::CGameSession& Session, CAbilityInstance& Instance) const = 0;
+	virtual EActionStatus OnUpdate(Game::CGameSession& Session, CAbilityInstance& Instance) const = 0;
+	virtual void          OnEnd(Game::CGameSession& Session, CAbilityInstance& Instance, EActionStatus Status) const = 0;
 };
 
 }

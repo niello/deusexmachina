@@ -97,10 +97,10 @@ bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Conte
 		if (auto pQueue = pWorld->FindComponent<CActionQueueComponent>(ActorID))
 		{
 			PAbilityInstance AbilityInstance(n_new(CAbilityInstance(*this)));
-			AbilityInstance->Actor = ActorID;
 			AbilityInstance->Source = Context.Source;
 			AbilityInstance->Targets = Context.Targets;
 
+			// FIXME: CODE DUPLICATION AMONG ALL ABILITIES!
 			if (PushChild && pQueue->GetCurrent()) pQueue->PushOrUpdateChild<ExecuteAbility>(pQueue->GetCurrent(), std::move(AbilityInstance));
 			else
 			{
@@ -115,13 +115,13 @@ bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Conte
 }
 //---------------------------------------------------------------------
 
-bool CScriptedAbility::GetZones(const CAbilityInstance& Instance, std::vector<const CZone*>& Out) const
+bool CScriptedAbility::GetZones(const Game::CGameSession& Session, const CAbilityInstance& Instance, std::vector<const CZone*>& Out) const
 {
 	return LuaCall(_FnGetZones, Instance, Out);
 }
 //---------------------------------------------------------------------
 
-bool CScriptedAbility::GetFacingParams(const CAbilityInstance& Instance, CFacingParams& Out) const
+bool CScriptedAbility::GetFacingParams(const Game::CGameSession& Session, const CAbilityInstance& Instance, CFacingParams& Out) const
 {
 	if (!_FnGetFacingParams) return false;
 	LuaCall(_FnGetFacingParams, Instance, Out);
@@ -129,13 +129,13 @@ bool CScriptedAbility::GetFacingParams(const CAbilityInstance& Instance, CFacing
 }
 //---------------------------------------------------------------------
 
-void CScriptedAbility::OnStart(CAbilityInstance& Instance) const
+void CScriptedAbility::OnStart(Game::CGameSession& Session, CAbilityInstance& Instance) const
 {
 	LuaCall(_FnOnStart, Instance);
 }
 //---------------------------------------------------------------------
 
-EActionStatus CScriptedAbility::OnUpdate(CAbilityInstance& Instance) const
+EActionStatus CScriptedAbility::OnUpdate(Game::CGameSession& Session, CAbilityInstance& Instance) const
 {
 	auto UpdateResult = _FnOnUpdate(Instance);
 	if (!UpdateResult.valid())
@@ -156,7 +156,7 @@ EActionStatus CScriptedAbility::OnUpdate(CAbilityInstance& Instance) const
 }
 //---------------------------------------------------------------------
 
-void CScriptedAbility::OnEnd(CAbilityInstance& Instance, EActionStatus Status) const
+void CScriptedAbility::OnEnd(Game::CGameSession& Session, CAbilityInstance& Instance, EActionStatus Status) const
 {
 	LuaCall(_FnOnEnd, Instance, Status);
 }
