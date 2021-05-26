@@ -104,11 +104,11 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 	}
 
 	// Load interaction zones and available interactions
-	std::vector<DEM::Game::CZone> InteractionZones;
+	std::vector<DEM::Game::CZone> Zones;
 	Data::PDataArray ZoneDescs;
-	if (Params.TryGet<Data::PDataArray>(ZoneDescs, CStrID("Interactions")))
+	if (Params.TryGet<Data::PDataArray>(ZoneDescs, CStrID("Zones")))
 	{
-		InteractionZones.reserve(ZoneDescs->GetCount());
+		Zones.reserve(ZoneDescs->GetCount());
 		for (const auto& ZoneParam : *ZoneDescs)
 		{
 			const auto& ZoneDesc = *ZoneParam.GetValue<Data::PParams>();
@@ -132,7 +132,7 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 				}
 			}
 
-			InteractionZones.push_back(std::move(Zone));
+			Zones.push_back(std::move(Zone));
 		}
 	}
 
@@ -154,7 +154,7 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 		}
 	}
 
-	return n_new(DEM::Game::CSmartObject(ID, DefaultState, ScriptSource, std::move(States), std::move(InteractionZones), std::move(Overrides)));
+	return n_new(DEM::Game::CSmartObject(ID, DefaultState, ScriptSource, std::move(States), std::move(Zones), std::move(Overrides)));
 }
 //---------------------------------------------------------------------
 

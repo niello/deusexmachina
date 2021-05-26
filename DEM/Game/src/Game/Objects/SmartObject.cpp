@@ -8,13 +8,13 @@ namespace DEM::Game
 {
 
 CSmartObject::CSmartObject(CStrID ID, CStrID DefaultState, std::string_view ScriptSource,
-	std::vector<CSmartObjectStateInfo>&& States, std::vector<CZone>&& InteractionZones,
+	std::vector<CSmartObjectStateInfo>&& States, std::vector<CZone>&& Zones,
 	std::map<CStrID, CFixedArray<CStrID>>&& InteractionOverrides)
 	: _ID(ID)
 	, _DefaultState(DefaultState)
 	, _ScriptSource(ScriptSource)
 	, _States(std::move(States))
-	, _InteractionZones(std::move(InteractionZones))
+	, _InteractionZones(std::move(Zones))
 	, _InteractionOverrides(std::move(InteractionOverrides))
 {
 	// Sort states and transitions by ID

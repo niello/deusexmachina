@@ -61,7 +61,7 @@ protected:
 public:
 
 	CSmartObject(CStrID ID, CStrID DefaultState, std::string_view ScriptSource,
-		std::vector<CSmartObjectStateInfo>&& States, std::vector<CZone>&& InteractionZones,
+		std::vector<CSmartObjectStateInfo>&& States, std::vector<CZone>&& Zones,
 		std::map<CStrID, CFixedArray<CStrID>>&& InteractionOverrides);
 
 	bool                              InitInSession(CGameSession& Session) const;
