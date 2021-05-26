@@ -49,26 +49,10 @@ bool CLockpickAbility::Execute(Game::CGameSession& Session, Game::CInteractionCo
 {
 	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;
 
+	// Push standard action for the first actor only
+	// TODO: choose the first actor able to lockpick, or even the actor with the best chance!
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
-	if (!pWorld) return false;
-
-	if (auto pQueue = pWorld->FindComponent<Game::CActionQueueComponent>(Context.Actors[0]))
-	{
-		Game::PAbilityInstance AbilityInstance(n_new(Game::CAbilityInstance(*this)));
-		AbilityInstance->Source = Context.Source;
-		AbilityInstance->Targets = Context.Targets;
-
-		// FIXME: CODE DUPLICATION AMONG ALL ABILITIES!
-		if (PushChild && pQueue->GetCurrent()) pQueue->PushOrUpdateChild<Game::ExecuteAbility>(pQueue->GetCurrent(), std::move(AbilityInstance));
-		else
-		{
-			if (!Enqueue) pQueue->Reset();
-			pQueue->EnqueueAction<Game::ExecuteAbility>(std::move(AbilityInstance));
-		}
-		return true;
-	}
-
-	return false;
+	return pWorld && PushStandardExecuteAction(*pWorld, Context.Actors[0], Context, Enqueue, PushChild);
 }
 //---------------------------------------------------------------------
 
@@ -96,8 +80,9 @@ Game::EActionStatus CLockpickAbility::OnUpdate(Game::CGameSession& Session, Game
 void CLockpickAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, Game::EActionStatus Status) const
 {
 	//!!!DBG TMP!
-	if (auto pWorld = Session.FindFeature<Game::CGameWorld>())
-		pWorld->RemoveComponent<CLockComponent>(Instance.Targets[0].Entity);
+	if (Status == Game::EActionStatus::Succeeded)
+		if (auto pWorld = Session.FindFeature<Game::CGameWorld>())
+			pWorld->RemoveComponent<CLockComponent>(Instance.Targets[0].Entity);
 }
 //---------------------------------------------------------------------
 

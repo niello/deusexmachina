@@ -80,6 +80,7 @@ bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Conte
 	auto pWorld = Session.FindFeature<CGameWorld>();
 	if (!pWorld) return false;
 
+	// TODO: more params for Prepare?! Pass ability instance here? Or some dict for additional values?!
 	std::vector<HEntity> Actors;
 	if (_FnPrepare)
 	{
@@ -93,23 +94,8 @@ bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Conte
 
 	UPTR Issued = 0;
 	for (HEntity ActorID : Actors)
-	{
-		if (auto pQueue = pWorld->FindComponent<CActionQueueComponent>(ActorID))
-		{
-			PAbilityInstance AbilityInstance(n_new(CAbilityInstance(*this)));
-			AbilityInstance->Source = Context.Source;
-			AbilityInstance->Targets = Context.Targets;
-
-			// FIXME: CODE DUPLICATION AMONG ALL ABILITIES!
-			if (PushChild && pQueue->GetCurrent()) pQueue->PushOrUpdateChild<ExecuteAbility>(pQueue->GetCurrent(), std::move(AbilityInstance));
-			else
-			{
-				if (!Enqueue) pQueue->Reset();
-				pQueue->EnqueueAction<ExecuteAbility>(std::move(AbilityInstance));
-			}
+		if (PushStandardExecuteAction(*pWorld, ActorID, Context, Enqueue, PushChild))
 			++Issued;
-		}
-	}
 
 	return !!Issued;
 }
