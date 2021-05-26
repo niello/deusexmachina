@@ -1,5 +1,7 @@
 #include "LockpickAbility.h"
 #include <Objects/LockComponent.h>
+#include <Animation/AnimationComponent.h>
+#include <Animation/AnimationController.h>
 #include <Game/Interaction/AbilityInstance.h>
 #include <Game/ECS/GameWorld.h>
 
@@ -66,6 +68,9 @@ bool CLockpickAbility::GetFacingParams(const Game::CGameSession& Session, const 
 
 void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
 {
+	if (auto pWorld = Session.FindFeature<Game::CGameWorld>())
+		if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
+			pAnimComponent->Controller.SetString(CStrID("Action"), CStrID("TryOpenDoor")); // FIXME: need correct ID!
 }
 //---------------------------------------------------------------------
 
@@ -77,10 +82,15 @@ Game::EActionStatus CLockpickAbility::OnUpdate(Game::CGameSession& Session, Game
 
 void CLockpickAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, Game::EActionStatus Status) const
 {
-	//!!!DBG TMP!
-	if (Status == Game::EActionStatus::Succeeded)
-		if (auto pWorld = Session.FindFeature<Game::CGameWorld>())
+	if (auto pWorld = Session.FindFeature<Game::CGameWorld>())
+	{
+		if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
+			pAnimComponent->Controller.SetString(CStrID("Action"), CStrID::Empty);
+
+		//!!!DBG TMP!
+		if (Status == Game::EActionStatus::Succeeded)
 			pWorld->RemoveComponent<CLockComponent>(Instance.Targets[0].Entity);
+	}
 }
 //---------------------------------------------------------------------
 

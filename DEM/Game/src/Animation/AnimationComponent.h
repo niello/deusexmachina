@@ -2,6 +2,7 @@
 #include <Animation/Skeleton.h>
 #include <Animation/AnimationController.h>
 #include <Data/Metadata.h>
+#include <Data/String.h>
 
 // Animation component plays a single animation clip on the entity scene hierarchy
 
