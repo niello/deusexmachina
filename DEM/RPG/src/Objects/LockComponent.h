@@ -10,7 +10,9 @@ namespace DEM::RPG //???Shantara2?
 
 struct CLockComponent
 {
-	int Difficulty; //!!!TODO: serialize U8 to CData!
+	//!!!TODO: serialize U8 to CData!
+	int Difficulty = 0; // Difficulty of lockpicking this lock
+	int Jamming = 0;    // Difficulty of repairing this jammed lock (zero unless jammed)
 };
 
 }
@@ -23,7 +25,8 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CLockComponent>()
 {
 	return std::make_tuple
 	(
-		Member(1, "Difficulty", &DEM::RPG::CLockComponent::Difficulty, &DEM::RPG::CLockComponent::Difficulty)
+		Member(1, "Difficulty", &DEM::RPG::CLockComponent::Difficulty, &DEM::RPG::CLockComponent::Difficulty),
+		Member(2, "Jamming", &DEM::RPG::CLockComponent::Jamming, &DEM::RPG::CLockComponent::Jamming)
 	);
 }
 
