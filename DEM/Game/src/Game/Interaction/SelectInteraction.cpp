@@ -13,7 +13,7 @@ CSelectInteraction::CSelectInteraction(std::string_view CursorImage)
 }
 //---------------------------------------------------------------------
 
-bool IsTargetSelectable(const CGameSession& Session, const CInteractionContext& Context, U32 Index)
+static bool IsTargetSelectable(const CGameSession& Session, const CInteractionContext& Context, U32 Index)
 {
 	const auto& Target = (Index == Context.Targets.size()) ? Context.CandidateTarget : Context.Targets[Index];
 	if (!Target.Valid) return false;

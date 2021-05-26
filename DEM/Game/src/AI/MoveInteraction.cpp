@@ -14,7 +14,7 @@ CMoveInteraction::CMoveInteraction(std::string_view CursorImage)
 }
 //---------------------------------------------------------------------
 
-bool IsTargetPassable(const CGameSession& Session, const CInteractionContext& Context, U32 Index)
+static bool IsTargetPassable(const CGameSession& Session, const CInteractionContext& Context, U32 Index)
 {
 	const auto& Target = (Index == Context.Targets.size()) ? Context.CandidateTarget : Context.Targets[Index];
 	if (!Target.Valid) return false;

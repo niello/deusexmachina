@@ -1,9 +1,7 @@
 #include "LockpickAbility.h"
 #include <Objects/LockComponent.h>
-#include <Game/Interaction/InteractionContext.h>
 #include <Game/Interaction/AbilityInstance.h>
 #include <Game/ECS/GameWorld.h>
-#include <Game/ECS/Components/ActionQueueComponent.h>
 
 namespace DEM::RPG
 {
@@ -23,7 +21,7 @@ bool CLockpickAbility::IsAvailable(const Game::CInteractionContext& Context) con
 }
 //---------------------------------------------------------------------
 
-bool IsTargetLocked(const Game::CGameSession& Session, const Game::CInteractionContext& Context, U32 Index)
+static bool IsTargetLocked(const Game::CGameSession& Session, const Game::CInteractionContext& Context, U32 Index)
 {
 	// Check for the lock component
 	const auto& Target = (Index == Context.Targets.size()) ? Context.CandidateTarget : Context.Targets[Index];
