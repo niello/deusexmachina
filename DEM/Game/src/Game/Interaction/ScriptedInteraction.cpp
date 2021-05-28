@@ -37,7 +37,7 @@ CScriptedInteraction::CScriptedInteraction(const sol::table& Table)
 }
 //---------------------------------------------------------------------
 
-bool CScriptedInteraction::IsAvailable(const CInteractionContext& Context) const
+bool CScriptedInteraction::IsAvailable(const CGameSession& Session, const CInteractionContext& Context) const
 {
 	return !_FnIsAvailable || LuaCall(_FnIsAvailable, Context);
 }

@@ -133,7 +133,7 @@ const CInteractionTool* CInteractionManager::FindAvailableTool(CStrID ID, const 
 	for (const auto& [InteractionID, Condition] : pTool->Interactions)
 	{
 		auto pInteraction = FindInteraction(InteractionID);
-		if (pInteraction && pInteraction->IsAvailable(Context)) return pTool;
+		if (pInteraction && pInteraction->IsAvailable(_Session, Context)) return pTool;
 	}
 
 	return nullptr;
@@ -207,7 +207,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 			if (auto pInteraction = FindInteraction(Context.Interaction, Context.SmartObjectID))
 			{
 				// Check main condition. Validate selected targets, their state might change.
-				if (pInteraction->IsAvailable(Context) && pInteraction->AreSelectedTargetsValid(_Session, Context)) return true;
+				if (pInteraction->IsAvailable(_Session, Context) && pInteraction->AreSelectedTargetsValid(_Session, Context)) return true;
 			}
 		}
 
@@ -267,7 +267,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 			{
 				auto pInteraction = FindInteraction(OverrideID, pSOAsset->GetID());
 				if (pInteraction &&
-					pInteraction->IsAvailable(Context) &&
+					pInteraction->IsAvailable(_Session, Context) &&
 					pInteraction->IsCandidateTargetValid(_Session, Context))
 				{
 					Context.Interaction = OverrideID;
@@ -281,7 +281,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 			// No overrides from a smart object, try original interaction
 			auto pInteraction = FindInteraction(OriginalID);
 			if (pInteraction &&
-				pInteraction->IsAvailable(Context) &&
+				pInteraction->IsAvailable(_Session, Context) &&
 				pInteraction->IsCandidateTargetValid(_Session, Context))
 			{
 				Context.Interaction = OriginalID;

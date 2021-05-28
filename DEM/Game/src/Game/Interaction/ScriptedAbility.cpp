@@ -43,7 +43,7 @@ CScriptedAbility::CScriptedAbility(const sol::table& Table)
 }
 //---------------------------------------------------------------------
 
-bool CScriptedAbility::IsAvailable(const CInteractionContext& Context) const
+bool CScriptedAbility::IsAvailable(const CGameSession& Session, const CInteractionContext& Context) const
 {
 	return !_FnIsAvailable || LuaCall(_FnIsAvailable, Context);
 }

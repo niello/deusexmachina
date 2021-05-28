@@ -8,8 +8,7 @@ namespace DEM::RPG
 
 struct COwnedComponent
 {
-	// FIXME: serialize entity IDs!
-	//Game::HEntity Owner;
+	Game::HEntity Owner;
 	//TODO: faction ID, use if no owner?
 };
 
@@ -23,6 +22,7 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::COwnedComponent>()
 {
 	return std::make_tuple
 	(
+		// FIXME: serialize entity IDs!
 		//Member(1, "Owner", &DEM::RPG::COwnedComponent::Owner, &DEM::RPG::COwnedComponent::Owner)
 	);
 }

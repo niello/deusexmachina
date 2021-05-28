@@ -22,7 +22,7 @@ public:
 
 	CScriptedInteraction(const sol::table& Table);
 
-	virtual bool      IsAvailable(const CInteractionContext& Context) const override;
+	virtual bool      IsAvailable(const CGameSession& Session, const CInteractionContext& Context) const override;
 	virtual bool      IsTargetValid(const CGameSession& Session, U32 Index, const CInteractionContext& Context) const override;
 	virtual ESoftBool NeedMoreTargets(const CInteractionContext& Context) const override;
 	virtual bool      Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue, bool PushChild) const override;

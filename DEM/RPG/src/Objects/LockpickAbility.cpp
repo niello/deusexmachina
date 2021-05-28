@@ -4,6 +4,7 @@
 #include <Animation/AnimationController.h>
 #include <Game/Interaction/AbilityInstance.h>
 #include <Game/ECS/GameWorld.h>
+#include <Character/StatsComponent.h>
 
 namespace DEM::RPG
 {
@@ -17,23 +18,19 @@ CLockpickAbility::CLockpickAbility(std::string_view CursorImage)
 
 // TODO:
 // check a capability to interact
-bool CLockpickAbility::IsAvailable(const Game::CInteractionContext& Context) const
+bool CLockpickAbility::IsAvailable(const Game::CGameSession& Session, const Game::CInteractionContext& Context) const
 {
-	// Need at least one capable actor. No mechanics skill is required because there are locks
-	// that are simple enough to be lockpicked by anyone. Hard locks must be filtered in targeting code.
-	return !Context.Actors.empty(); //!!! && AnyHasCapability(Context.Actors, ECapability::Interact)
-}
-//---------------------------------------------------------------------
-
-static bool IsTargetLocked(const Game::CGameSession& Session, const Game::CInteractionContext& Context, U32 Index)
-{
-	// Check for the lock component
-	const auto& Target = (Index == Context.Targets.size()) ? Context.CandidateTarget : Context.Targets[Index];
-	if (!Target.Valid) return false;
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return false;
-	auto pLock = pWorld->FindComponent<CLockComponent>(Target.Entity);
-	return pLock && !pLock->Jamming;
+
+	// Need at least one capable actor. No mechanics skill is required because there are locks that are
+	// simple enough to be lockpicked by anyone. Hard locks must be filtered in target validation code.
+	// TODO: check character caps - to utility function?
+	for (auto ActorID : Context.Actors)
+		if (auto pStats = pWorld->FindComponent<Sh2::CStatsComponent>(ActorID))
+			if (pStats->Capabilities & Sh2::ECapability::Interact) return true;
+
+	return false;
 }
 //---------------------------------------------------------------------
 
@@ -42,7 +39,16 @@ static bool IsTargetLocked(const Game::CGameSession& Session, const Game::CInter
 // if lock is not trivial, require skill > 0 and lockpicking tools item as a source
 bool CLockpickAbility::IsTargetValid(const Game::CGameSession& Session, U32 Index, const Game::CInteractionContext& Context) const
 {
-	return Index == 0 && IsTargetLocked(Session, Context, Index);
+	// Ability accepts only one target
+	if (Index != 0) return false;
+
+	// Check for the lock component
+	const auto& Target = (Index == Context.Targets.size()) ? Context.CandidateTarget : Context.Targets[Index];
+	if (!Target.Valid) return false;
+	auto pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return false;
+	auto pLock = pWorld->FindComponent<CLockComponent>(Target.Entity);
+	return pLock && !pLock->Jamming;
 }
 //---------------------------------------------------------------------
 
