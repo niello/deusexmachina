@@ -9,6 +9,7 @@ namespace DEM::Sh2
 
 struct CLockpickComponent
 {
+	int Modifier = 0;
 };
 
 }
@@ -21,6 +22,7 @@ template<> inline constexpr auto RegisterMembers<DEM::Sh2::CLockpickComponent>()
 {
 	return std::make_tuple
 	(
+		Member(1, "Modifier", &DEM::Sh2::CLockpickComponent::Modifier, &DEM::Sh2::CLockpickComponent::Modifier)
 	);
 }
 

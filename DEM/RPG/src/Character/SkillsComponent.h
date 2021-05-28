@@ -10,7 +10,7 @@ namespace DEM::Sh2
 struct CSkillsComponent
 {
 	//!!!TODO: serialize U8 to CData!
-	int Lockpicking = 0;
+	int Lockpicking = 0; // TODO: need base stat table somewhere to map Lockpicking -> Dexterity
 	int Mechanics = 0;
 };
 
