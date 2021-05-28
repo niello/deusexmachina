@@ -16,12 +16,6 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Character/SkillsComponent.h
 	DEM/RPG/src/Character/StatsComponent.h
 	DEM/RPG/src/Combat/DestructibleComponent.h
-	DEM/RPG/src/Combat/Dmg/Damage.h
-	DEM/RPG/src/Combat/Dmg/DamageEffect.h
-	DEM/RPG/src/Combat/Dmg/DamageSource.h
-	DEM/RPG/src/Combat/Event/ObjDamageDone.h
-	DEM/RPG/src/Combat/Prop/PropDestructible.h
-	DEM/RPG/src/Combat/Prop/PropWeapon.h
 	DEM/RPG/src/Dlg/DialogueManager.h
 	DEM/RPG/src/Dlg/DlgContext.h
 	DEM/RPG/src/Dlg/DlgGraph.h
@@ -66,10 +60,6 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/AI/Sensors/SensorVision.cpp
 	DEM/RPG/src/AI/Stimuli/StimulusSound.cpp
 	DEM/RPG/src/AI/Stimuli/StimulusVisible.cpp
-	DEM/RPG/src/Combat/Dmg/DamageEffect.cpp
-	DEM/RPG/src/Combat/Dmg/DamageSource.cpp
-	DEM/RPG/src/Combat/Prop/PropDestructible.cpp
-	DEM/RPG/src/Combat/Prop/PropWeapon.cpp
 	DEM/RPG/src/Dlg/DialogueManager.cpp
 	DEM/RPG/src/Dlg/DlgContext.cpp
 	DEM/RPG/src/Dlg/PropTalking.cpp

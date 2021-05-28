@@ -2,8 +2,6 @@
 
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
-#include <Scene/PropSceneNode.h>
-#include <Physics/PropPhysics.h>
 #include <Scripting/PropScriptable.h>
 #include <AI/AIServer.h>
 #include <Debug/DebugDraw.h>
@@ -130,27 +128,27 @@ bool CPropAIHints::OnPropsActivated(Events::CEventDispatcher* pDispatcher, const
 		}
 		else if (SizeStr == "Box" || SizeStr == "GfxBox")
 		{
-			CPropSceneNode* pNode = GetEntity()->GetProperty<CPropSceneNode>();
-			if (pNode)
-			{
-				CAABB AABB;
-				pNode->GetAABB(AABB);
-				vector2 HorizDiag(AABB.Max.x - AABB.Min.x, AABB.Max.z - AABB.Min.z);
-				Rec.Stimulus->Radius = HorizDiag.Length() * 0.5f;
-				//!!!Rec.Stimulus->Height = AABB.Max.y - AABB.Min.y;
-			}
+			//CPropSceneNode* pNode = GetEntity()->GetProperty<CPropSceneNode>();
+			//if (pNode)
+			//{
+			//	CAABB AABB;
+			//	pNode->GetAABB(AABB);
+			//	vector2 HorizDiag(AABB.Max.x - AABB.Min.x, AABB.Max.z - AABB.Min.z);
+			//	Rec.Stimulus->Radius = HorizDiag.Length() * 0.5f;
+			//	//!!!Rec.Stimulus->Height = AABB.Max.y - AABB.Min.y;
+			//}
 		}
 		else if (SizeStr == "PhysBox")
 		{
-			CPropPhysics* pPropPhys = GetEntity()->GetProperty<CPropPhysics>();
-			if (pPropPhys)
-			{
-				CAABB AABB;
-				pPropPhys->GetAABB(AABB);
-				vector2 HorizDiag(AABB.Max.x - AABB.Min.x, AABB.Max.z - AABB.Min.z);
-				Rec.Stimulus->Radius = HorizDiag.Length() * 0.5f;
-				//!!!Rec.Stimulus->Height = AABB.Max.y - AABB.Min.y;
-			}
+			//CPropPhysics* pPropPhys = GetEntity()->GetProperty<CPropPhysics>();
+			//if (pPropPhys)
+			//{
+			//	CAABB AABB;
+			//	pPropPhys->GetAABB(AABB);
+			//	vector2 HorizDiag(AABB.Max.x - AABB.Min.x, AABB.Max.z - AABB.Min.z);
+			//	Rec.Stimulus->Radius = HorizDiag.Length() * 0.5f;
+			//	//!!!Rec.Stimulus->Height = AABB.Max.y - AABB.Min.y;
+			//}
 		}
 		else if (SizeStr == "Attr")
 		{

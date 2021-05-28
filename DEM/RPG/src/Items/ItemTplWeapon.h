@@ -1,6 +1,5 @@
 #pragma once
 #include "ItemTpl.h" 
-#include <Combat/Dmg/Damage.h>
 
 // Template for weapon item. Contains weapon parameters that does not change per item instance.
 // Weapon item can be equipped and used to inflict damage.
@@ -27,7 +26,7 @@ public:
 	
 	//!!!???dmg to structure? is it dmgeffect or other struct?
 	//!!!Dmg will be much more flexible & rule-based. now temporary solution:
-	Dmg::EDmgType	DmgType;
+	//Dmg::EDmgType	DmgType;
 	int				x, y, z;	// Damage value, calculated as xdy+z
 	
 	virtual void Init(CStrID SID, const Data::CParams& Params);

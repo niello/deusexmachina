@@ -77,11 +77,8 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/Objects/SmartObject.h
 	DEM/Game/src/Game/Objects/SmartObjectComponent.h
 	DEM/Game/src/Game/Objects/SmartObjectLoader.h
-	DEM/Game/src/Physics/PropPhysics.h
 	DEM/Game/src/Physics/PropTrigger.h
 	DEM/Game/src/Physics/TriggerContactCallback.h
-	DEM/Game/src/Scene/PropSceneNode.h
-	DEM/Game/src/Scene/Events/SetTransform.h
 	DEM/Game/src/Scripting/EntityScriptObject.h
 	DEM/Game/src/Scripting/PropScriptable.h
 	DEM/Game/src/SI/SI_L2.h
@@ -148,11 +145,8 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/Objects/SmartObject.cpp
 	DEM/Game/src/Game/Objects/SmartObjectLoader.cpp
 	DEM/Game/src/Game/Objects/SmartObjectSystem.cpp
-	DEM/Game/src/Physics/PropPhysics.cpp
 	DEM/Game/src/Physics/PropTrigger.cpp
 	DEM/Game/src/Physics/PropTriggerSI.cpp
-	DEM/Game/src/Scene/PropSceneNode.cpp
-	DEM/Game/src/Scene/PropSceneNodeSI.cpp
 	DEM/Game/src/Scripting/EntityScriptObject.cpp
 	DEM/Game/src/Scripting/PropScriptable.cpp
 	DEM/Game/src/Scripting/ScriptObjectSIEx.cpp

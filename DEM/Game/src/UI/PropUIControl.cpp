@@ -7,7 +7,6 @@
 #include <AI/Behaviour/ActionSequence.h>
 #include <AI/SmartObj/Actions/ActionGotoSmartObj.h>
 #include <AI/SmartObj/Actions/ActionUseSmartObj.h>
-#include <Scene/PropSceneNode.h>
 #include <Scripting/PropScriptable.h>
 #include <Scripting/EventHandlerScript.h>
 #include <Resources/ResourceManager.h>
@@ -147,11 +146,11 @@ bool CPropUIControl::OnPropActivated(Events::CEventDispatcher* pDispatcher, cons
 		OK;
 	}
 
-	if (MousePickShape.IsValidPtr() && pProp->IsA<CPropSceneNode>() && ((CPropSceneNode*)pProp)->GetNode())
-	{
-		((CPropSceneNode*)pProp)->GetNode()->AddAttribute(*MousePickShape);
-		OK;
-	}
+	//if (MousePickShape.IsValidPtr() && pProp->IsA<CPropSceneNode>() && ((CPropSceneNode*)pProp)->GetNode())
+	//{
+	//	((CPropSceneNode*)pProp)->GetNode()->AddAttribute(*MousePickShape);
+	//	OK;
+	//}
 
 	if (pProp->IsA<CPropScriptable>())
 	{
@@ -175,12 +174,12 @@ bool CPropUIControl::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, c
 		OK;
 	}
 
-	if (MousePickShape.IsValidPtr() && pProp->IsA<CPropSceneNode>())
-	{
-		MousePickShape->RemoveFromNode();
-		//MousePickShape->CollObj->RemoveFromLevel();
-		OK;
-	}
+	//if (MousePickShape.IsValidPtr() && pProp->IsA<CPropSceneNode>())
+	//{
+	//	MousePickShape->RemoveFromNode();
+	//	//MousePickShape->CollObj->RemoveFromLevel();
+	//	OK;
+	//}
 
 	if (pProp->IsA<CPropScriptable>())
 	{
