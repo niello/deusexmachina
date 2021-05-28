@@ -4,7 +4,7 @@
 
 namespace Math
 {
-
+// TODO: to class, and create RNG instance inside a session
 static U32 WELL512_State[16];
 static U32 WELL512_Index = 0;
 

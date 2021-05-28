@@ -7,6 +7,8 @@
 #include <Character/StatsComponent.h>
 #include <Character/SkillsComponent.h>
 #include <Items/LockpickComponent.h>
+#include <Objects/OwnedComponent.h>
+#include <Math/Math.h>
 
 namespace DEM::RPG
 {
@@ -121,41 +123,49 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 		SkillRollModifier += pLockpick->Modifier;
 	// TODO: assistant, if will bother with that
 
-	//!!!FIXME: roll dice (use Session.RNG, call utility method Sh2::SkillCheck(Actor, Lockpicking) or simple Rng.RandomInt(1, 20))!
-	int Roll = 10;
-	Roll += SkillRollModifier;
-
+	// FIXME: use Session.RNG, call utility method Sh2::SkillCheck(Actor, Lockpicking)
 	//!!!choose animation!
-	//!!!remember difference or result in an ability instance params!
-	const int Difference = Roll - pLock->Difficulty;
+	//!!!remember difference (or result?) in an ability instance params!
+	CStrID AnimAction;
+	const int Difference = Math::RandomU32(1, 20) + SkillRollModifier - pLock->Difficulty;
 	if (Difference > 0)
 	{
 		// success
+		AnimAction = CStrID("TryOpenDoor"); // FIXME: need correct ID!
 	}
 	else if (Difference > -5)
 	{
 		// failure
+		AnimAction = CStrID("TryOpenDoor"); // FIXME: need correct ID!
 	}
 	else
 	{
 		// jamming
+		AnimAction = CStrID("TryOpenDoor"); // FIXME: need correct ID!
 		pLock->Jamming = 5 + Difference;
 	}
 
-	// TODO: if target belongs to another faction, create crime stimulus based on character's stealth and lockpicking difficulty
-
 	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
-		pAnimComponent->Controller.SetString(CStrID("Action"), CStrID("TryOpenDoor")); // FIXME: need correct ID!
+		pAnimComponent->Controller.SetString(CStrID("Action"), AnimAction);
+
+	// If this object is owned to other faction, create crime stimulus
+	if (auto pOwned = pWorld->FindComponent<COwnedComponent>(Instance.Targets[0].Entity))
+	{
+		// TODO:
+		//if (pOwned->Owner || pOwned->FactionID != actor faction)
+		//  create crime stimulus based on character's stealth and lockpicking difficulty
+	}
 }
 //---------------------------------------------------------------------
 
 // TODO:
-// play some sounds
 // wait with playing anim, duration is based on result: failed = 1.5-2 sec, succeeded = 3-5 sec, jammed = 3-7 sec
 // (optional) wait for assistant before start, then perform what's now in OnStart
 // (optional) check if assistant cancelled its action, and if so, remove its bonus
 Game::EActionStatus CLockpickAbility::OnUpdate(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
 {
+	// TODO: play some sounds
+
 	return (Instance.ElapsedTime >= 2.f) ? Game::EActionStatus::Succeeded : Game::EActionStatus::Active;
 }
 //---------------------------------------------------------------------
