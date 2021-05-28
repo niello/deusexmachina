@@ -12,7 +12,10 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/AI/Sensors/SensorVision.h
 	DEM/RPG/src/AI/Stimuli/StimulusSound.h
 	DEM/RPG/src/AI/Stimuli/StimulusVisible.h
-	DEM/RPG/src/Chr/CharacterSheet.h
+	DEM/RPG/src/Character/CharacterSheet.h
+	DEM/RPG/src/Character/SkillsComponent.h
+	DEM/RPG/src/Character/StatsComponent.h
+	DEM/RPG/src/Combat/DestructibleComponent.h
 	DEM/RPG/src/Combat/Dmg/Damage.h
 	DEM/RPG/src/Combat/Dmg/DamageEffect.h
 	DEM/RPG/src/Combat/Dmg/DamageSource.h
@@ -26,11 +29,14 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Dlg/PropTalking.h
 	DEM/RPG/src/Factions/Faction.h
 	DEM/RPG/src/Factions/FactionManager.h
+	DEM/RPG/src/Items/EquipmentComponent.h
+	DEM/RPG/src/Items/InventoryComponent.h
 	DEM/RPG/src/Items/Item.h
 	DEM/RPG/src/Items/ItemManager.h
 	DEM/RPG/src/Items/ItemStack.h
 	DEM/RPG/src/Items/ItemTpl.h
 	DEM/RPG/src/Items/ItemTplWeapon.h
+	DEM/RPG/src/Items/LockpickComponent.h
 	DEM/RPG/src/Items/Actions/ActionEquipItem.h
 	DEM/RPG/src/Items/ActionTpls/ActionTplEquipItem.h
 	DEM/RPG/src/Items/ActionTpls/ActionTplPickItemWorld.h
@@ -39,6 +45,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Items/Prop/PropItem.h
 	DEM/RPG/src/Objects/LockComponent.h
 	DEM/RPG/src/Objects/LockpickAbility.h
+	DEM/RPG/src/Objects/OwnedComponent.h
 	DEM/RPG/src/Quests/Quest.h
 	DEM/RPG/src/Quests/QuestManager.h
 	DEM/RPG/src/Quests/Task.h
