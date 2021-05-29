@@ -3,10 +3,10 @@
 #include <Game/ECS/Entity.h>
 #include <Events/EventNative.h>
 #include <Math/Matrix44.h>
+#include <Data/Params.h>
 #include <DetourNavMesh.h> // For dtPolyRef only
 
-// Ability instance stores the state of a stateless ability and resembles one execution of it by an actor.
-// Inherit from CAbilityInstance if your ability requires additional state fields.
+// Ability instance stores the state of a stateless ability and resembles one execution of it by an actor
 
 namespace DEM::Game
 {
@@ -33,8 +33,8 @@ public:
 };
 
 //???where to handle cooldowns, costs etc?
-//???how to treat targets ability-specific? E.g. what if between Execute & Start skill changed and fire ray count will change too?
-//???in interaction context collect targets with some markers 'what it is' (roles)?
+//???how to treat targets ability-specific? E.g. what if between Execute & Start skill changed and
+//fire ray count will change too? in interaction context store role of each target?
 class CAbilityInstance : public Data::CRefCounted
 {
 public:
@@ -42,10 +42,11 @@ public:
 	//???pass only certain fields from here and CInteractonContext to CInteraction::IsAvailable, to check
 	//with the same code in iact mgr and during execution?
 
-	const CAbility&           Ability; //???refcounted? or store as iact ID + SO ID? need to resolve each frame.
+	const CAbility&           Ability; //???FIXME: refcounted? or store as iact ID + SO ID? need to resolve each frame.
 	HEntity                   Source; // E.g. item
 	HEntity                   Actor;
 	std::vector<CTargetInfo>  Targets;
+	Data::CParams             Params;
 
 	std::vector<const CZone*> InitialZones;
 	std::vector<const CZone*> AvailableZones;

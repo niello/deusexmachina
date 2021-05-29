@@ -32,6 +32,8 @@ private:
 
 public:
 
+	using value_type = CParam;
+
 	CParams() = default;
 	CParams(const CParams& Other) : Params(Other.Params) {}
 	CParams(CParams&& Other) noexcept : Params(std::move(Other.Params)) {}
@@ -74,6 +76,8 @@ public:
 	//???also/instead of this: return CData? or even template class
 	const CParam&				operator [](CStrID Name) const { return Get(Name); }
 	const CParam&				operator [](IPTR Idx) const { return Params[Idx]; }
+	//CParam&				        operator [](CStrID Name) { return Get(Name); }
+	//CParam&				        operator [](IPTR Idx) { return Params[Idx]; }
 
 	CParams& operator =(const CParams& Other) { Params = Other.Params; return *this; }
 	CParams& operator =(CParams&& Other) noexcept { Params = std::move(Other.Params); return *this; }

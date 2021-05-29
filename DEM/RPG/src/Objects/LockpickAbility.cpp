@@ -123,11 +123,12 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 		SkillRollModifier += pLockpick->Modifier;
 	// TODO: assistant, if will bother with that
 
-	// FIXME: use Session.RNG, call utility method Sh2::SkillCheck(Actor, Lockpicking)
+	// FIXME: use Session.RNG, call utility method Sh2::SkillCheck(Actor, Lockpicking, Source)
 	//!!!choose animation!
 	//!!!remember difference (or result?) in an ability instance params!
 	CStrID AnimAction;
 	const int Difference = Math::RandomU32(1, 20) + SkillRollModifier - pLock->Difficulty;
+	Instance.Params.Set(CStrID("Difference"), Difference);
 	if (Difference > 0)
 	{
 		// success
@@ -142,7 +143,7 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 	{
 		// jamming
 		AnimAction = CStrID("TryOpenDoor"); // FIXME: need correct ID!
-		pLock->Jamming = 5 + Difference;
+		pLock->Jamming = -Difference - 5; //???here or OnEnd or somewhere OnUpdate?
 	}
 
 	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
@@ -158,34 +159,41 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 }
 //---------------------------------------------------------------------
 
-// TODO:
-// wait with playing anim, duration is based on result: failed = 1.5-2 sec, succeeded = 3-5 sec, jammed = 3-7 sec
-// (optional) wait for assistant before start, then perform what's now in OnStart
-// (optional) check if assistant cancelled its action, and if so, remove its bonus
 Game::EActionStatus CLockpickAbility::OnUpdate(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
 {
 	// TODO: play some sounds
 
-	return (Instance.ElapsedTime >= 2.f) ? Game::EActionStatus::Succeeded : Game::EActionStatus::Active;
+	// TODO:
+	// (optional) wait for assistant before start, then perform what's now in OnStart
+	// (optional) check if assistant cancelled its action, and if so, remove its bonus
+
+	// TODO: make duration based on skill and dexterity?
+	const int Difference = Instance.Params[CStrID("Difference")].GetValue<int>();
+	float Duration;
+	if (Difference > 0) Duration = 3.f;
+	else if (Difference > -5) Duration = 1.5f;
+	else Duration = 5.f;
+
+	return (Instance.ElapsedTime >= Duration) ? Game::EActionStatus::Succeeded : Game::EActionStatus::Active;
 }
 //---------------------------------------------------------------------
 
-// TODO:
-// change lock status - leave as is, destroy or set Jamming value based on the dice roll result
-// play result sound from the lock
-// if character is not in stealth, play result phrase
-// remove crime stimulus
 void CLockpickAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, Game::EActionStatus Status) const
 {
-	if (auto pWorld = Session.FindFeature<Game::CGameWorld>())
-	{
-		if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
-			pAnimComponent->Controller.SetString(CStrID("Action"), CStrID::Empty);
+	auto pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return;
 
-		//!!!DBG TMP!
-		if (Status == Game::EActionStatus::Succeeded)
-			pWorld->RemoveComponent<CLockComponent>(Instance.Targets[0].Entity);
-	}
+	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
+		pAnimComponent->Controller.SetString(CStrID("Action"), CStrID::Empty);
+
+	// TODO:
+	// play result sound from the lock
+	// if character is not in stealth, play result phrase
+	// remove crime stimulus
+
+	const int Difference = Instance.Params[CStrID("Difference")].GetValue<int>();
+	if (Status == Game::EActionStatus::Succeeded && Difference > 0)
+		pWorld->RemoveComponent<CLockComponent>(Instance.Targets[0].Entity);
 }
 //---------------------------------------------------------------------
 
