@@ -114,6 +114,8 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 	auto pLock = pWorld->FindComponent<CLockComponent>(Instance.Targets[0].Entity);
 	if (!pLock) return;
 
+	// TODO: activate trap if there is one triggered by lockpicking!
+
 	int SkillRollModifier = 0;
 	if (auto pStats = pWorld->FindComponent<Sh2::CStatsComponent>(Instance.Actor))
 		SkillRollModifier += (pStats->Dexterity - 11); // TODO: utility method Sh2::GetStatModifier(StatValue)!
@@ -122,6 +124,7 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 	if (auto pLockpick = pWorld->FindComponent<Sh2::CLockpickComponent>(Instance.Source))
 		SkillRollModifier += pLockpick->Modifier;
 	// TODO: assistant, if will bother with that
+	// TODO: if lockpick is breakable, handle it (maybe chance)
 
 	// FIXME: use Session.RNG, call utility method Sh2::SkillCheck(Actor, Lockpicking, Source)
 	//!!!choose animation!
