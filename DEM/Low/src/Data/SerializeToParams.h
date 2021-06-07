@@ -15,6 +15,64 @@ constexpr bool is_string_compatible_v =
 	std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, std::string> ||
 	std::is_convertible_v<T, const char*>;
 
+namespace Serialization
+{
+
+template<typename T, typename Enable = void>
+struct ParamsFormat
+{
+	static inline void Serialize(Data::CData& Output, const T& Value)
+	{
+		static_assert(std::is_same_v<T, void>, "DEM::Serialization::ParamsFormat > no serialization specified for type!");
+	}
+
+	static inline void Deserialize(const Data::CData& Input, T& Value)
+	{
+		static_assert(std::is_same_v<T, void>, "DEM::Serialization::ParamsFormat > no deserialization specified for type!");
+	}
+};
+
+template<typename T>
+struct ParamsFormat<T, typename std::enable_if_t<Data::CTypeID<T>::IsDeclared>>
+{
+	static inline void Serialize(Data::CData& Output, const T& Value) { Output = Value; }
+	static inline void Deserialize(const Data::CData& Input, T& Value) { Value = Input.GetValue<T>(); }
+};
+
+template<typename T>
+struct ParamsFormat<T, typename std::enable_if_t<std::is_integral_v<T> && !Data::CTypeID<T>::IsDeclared>>
+{
+	static inline void Serialize(Data::CData& Output, const T& Value)
+	{
+		const int IntValue = Value; // To issue compiler warning if data loss is possible
+		Output = IntValue;
+	}
+
+	static inline void Deserialize(const Data::CData& Input, T& Value) { Value = Input.GetValue<int>(); }
+};
+
+template<typename T>
+struct ParamsFormat<T, typename std::enable_if_t<std::is_floating_point_v<T> && !Data::CTypeID<T>::IsDeclared>>
+{
+	static inline void Serialize(Data::CData& Output, const T& Value)
+	{
+		const float FloatValue = Value; // To issue compiler warning if data loss is possible
+		Output = FloatValue;
+	}
+
+	static inline void Deserialize(const Data::CData& Input, T& Value) { Value = Input.GetValue<float>(); }
+};
+
+//!!!FIXME: TMP, use std::string instead of CString!
+template<typename... TTraits>
+struct ParamsFormat<std::basic_string<TTraits...>>
+{
+	static inline void Serialize(Data::CData& Output, const std::basic_string<TTraits...>& Value) { Output = CString(Value.c_str()); }
+	static inline void Deserialize(const Data::CData& Input, std::basic_string<TTraits...>& Value) { Value = Input.GetValue<CString>().CStr(); }
+};
+
+}
+
 struct ParamsFormat
 {
 	template<typename TKey, typename TValue>
@@ -47,12 +105,7 @@ struct ParamsFormat
 			});
 			Output = std::move(Out);
 		}
-		else if constexpr (Data::CTypeID<T>::IsDeclared)
-			Output = Value;
-		else if constexpr (std::is_same_v<T, std::string>) //!!!FIXME: TMP, use std::string instead of CString!
-			Output = CString(Value.c_str());
-		else
-			static_assert(false, "CData serialization supports only types registered with CTypeID");
+		else Serialization::ParamsFormat<T>::Serialize(Output, Value);
 	}
 	//---------------------------------------------------------------------
 
@@ -116,24 +169,11 @@ struct ParamsFormat
 				return true;
 			}
 		}
-		else if constexpr (Data::CTypeID<T>::IsDeclared)
+		else if (Value != BaseValue)
 		{
-			if (Value != BaseValue)
-			{
-				Output = Value;
-				return true;
-			}
+			Serialization::ParamsFormat<T>::Serialize(Output, Value);
+			return true;
 		}
-		else if constexpr (std::is_same_v<T, std::string>) //!!!FIXME: TMP, use std::string instead of CString!
-		{
-			if (Value != BaseValue)
-			{
-				Output = CString(Value.c_str());
-				return true;
-			}
-		}
-		else
-			static_assert(false, "CData serialization supports only types registered with CTypeID");
 
 		return false;
 	}
@@ -261,12 +301,7 @@ struct ParamsFormat
 				});
 			}
 		}
-		else if constexpr (Data::CTypeID<T>::IsDeclared)
-			Value = Input.GetValue<T>();
-		else if constexpr (std::is_same_v<T, std::string>) //!!!FIXME: TMP, use std::string instead of CString!
-			Value = Input.GetValue<CString>().CStr();
-		else
-			static_assert(false, "CData deserialization supports only types registered with CTypeID");
+		else Serialization::ParamsFormat<T>::Deserialize(Input, Value);
 	}
 	//---------------------------------------------------------------------
 
@@ -348,12 +383,7 @@ struct ParamsFormat
 				});
 			}
 		}
-		else if constexpr (Data::CTypeID<T>::IsDeclared)
-			Value = Input.GetValue<T>();
-		else if constexpr (std::is_same_v<T, std::string>) //!!!FIXME: TMP, use std::string instead of CString!
-			Value = Input.GetValue<CString>().CStr();
-		else
-			static_assert(false, "CData deserialization supports only types registered with CTypeID");
+		else Serialization::ParamsFormat<T>::Deserialize(Input, Value);
 	}
 	//---------------------------------------------------------------------
 

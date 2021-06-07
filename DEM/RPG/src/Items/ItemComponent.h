@@ -25,8 +25,8 @@ template<> inline constexpr auto RegisterMembers<RPG::CItemComponent>()
 	return std::make_tuple
 	(
 		Member(1, "Weight", &RPG::CItemComponent::Weight, &RPG::CItemComponent::Weight),
-		Member(2, "Volume", &RPG::CItemComponent::Volume, &RPG::CItemComponent::Volume)//,
-		//Member(3, "Price", &RPG::CItemComponent::Price, &RPG::CItemComponent::Price)
+		Member(2, "Volume", &RPG::CItemComponent::Volume, &RPG::CItemComponent::Volume),
+		Member(3, "Price", &RPG::CItemComponent::Price, &RPG::CItemComponent::Price)
 	);
 }
 

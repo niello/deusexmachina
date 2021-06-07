@@ -26,7 +26,7 @@ template<> inline constexpr auto RegisterMembers<RPG::CItemStackComponent>()
 {
 	return std::make_tuple
 	(
-		//Member(1, "Count", &RPG::CItemStackComponent::Count, &RPG::CItemStackComponent::Count)
+		Member(1, "Count", &RPG::CItemStackComponent::Count, &RPG::CItemStackComponent::Count)
 	);
 }
 

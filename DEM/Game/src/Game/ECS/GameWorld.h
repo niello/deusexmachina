@@ -359,7 +359,7 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback, TFilter Filter)
 	if (TComponentStoragePtr<TComponent> pStorage = FindComponentStorage<just_type_t<TComponent>>())
 	{
 		// Collect a tuple of requested component storages once outside the main loop
-		std::tuple<TComponentStoragePtr<Components>...> NextStorages;
+		std::tuple<TComponentStoragePtr<Components>...> NextStorages; (void)NextStorages;
 		if constexpr(sizeof...(Components) > 0)
 			if (!GetNextStorages<Components...>(NextStorages)) return;
 

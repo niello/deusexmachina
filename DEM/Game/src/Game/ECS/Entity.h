@@ -1,8 +1,7 @@
 #pragma once
 #include <Data/Ptr.h>
-#include <Data/StringID.h>
 #include <Data/HandleArray.h>
-#include <Data/Metadata.h>
+#include <Data/SerializeToParams.h>
 
 // Any world object is an entity, and entity itself is not anything in particular.
 // All "meat" is stored inside components. In a pure ECS an entity must be no more
@@ -44,6 +43,23 @@ template<> inline constexpr auto RegisterMembers<Game::CEntity>()
 		Member(4, "IsActive", &Game::CEntity::IsActive, &Game::CEntity::IsActive)
 	);
 }
+
+}
+
+namespace DEM::Serialization
+{
+
+template<>
+struct ParamsFormat<DEM::Game::HEntity>
+{
+	static inline void Serialize(Data::CData& Output, DEM::Game::HEntity Value)
+	{
+		const int IntValue = Value.Raw; // To issue compiler warning if data loss is possible
+		Output = IntValue;
+	}
+
+	static inline void Deserialize(const Data::CData& Input, DEM::Game::HEntity& Value) { Value = DEM::Game::HEntity{ static_cast<decltype(Value.Raw)>(Input.GetValue<int>()) }; }
+};
 
 }
 
