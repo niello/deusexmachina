@@ -242,6 +242,8 @@ inline constexpr auto Member(std::uint32_t Code, const char* pName, T TClass::* 
 	return CMember<TClass, T, T TClass::*, T TClass::*>(Code, pName, pGetter, pSetter);
 }
 
+#define DEM_META_MEMBER_FIELD(Class, Code, Name) Member(Code, #Name, &Class::Name, &Class::Name)
+
 }
 
 // Default equality comparison for objects with registered metadata.
