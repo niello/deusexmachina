@@ -385,8 +385,10 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback, TFilter Filter)
 template<typename TComponent, typename TCallback>
 inline void CGameWorld::ForEachComponent(TCallback Callback)
 {
-	if (auto pStorage = FindComponentStorage<just_type_t<TComponent>>())
+	// NB: explicit storage type is important here because access to the const storage is optimized
+	if (TComponentStoragePtr<TComponent> pStorage = FindComponentStorage<just_type_t<TComponent>>())
 	{
+		// TODO: can split into slices and dispatch to different threads (ForEachComponent<...>(Start, Count)?)
 		for (auto&& [Component, EntityID] : *pStorage)
 		{
 			// Prevent accessing mutable reference in callback if read-only component is requested
