@@ -248,7 +248,7 @@ protected:
 	// Converts a component to binary diff against the base
 	void SaveComponent(CIndexRecord& Record)
 	{
-		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
+		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return;
 
 		if (!Record.DiffDirty) return;
 
