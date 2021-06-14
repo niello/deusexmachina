@@ -10,7 +10,7 @@ class CRTTIBaseClass
 {
 public:
 
-	inline static const ::Core::CRTTI RTTI = ::Core::CRTTI("Core::CRTTIBaseClass", 0, nullptr, nullptr, 0); \
+	inline static const ::Core::CRTTI RTTI = ::Core::CRTTI("Core::CRTTIBaseClass", 0, nullptr, nullptr, 0);
 
 	virtual ~CRTTIBaseClass() = default;
 

@@ -25,20 +25,10 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Factions/FactionManager.h
 	DEM/RPG/src/Items/EquipmentComponent.h
 	DEM/RPG/src/Items/InventoryComponent.h
-	DEM/RPG/src/Items/Item.h
 	DEM/RPG/src/Items/ItemComponent.h
 	DEM/RPG/src/Items/ItemManager.h
-	DEM/RPG/src/Items/ItemStack.h
 	DEM/RPG/src/Items/ItemStackComponent.h
-	DEM/RPG/src/Items/ItemTpl.h
-	DEM/RPG/src/Items/ItemTplWeapon.h
 	DEM/RPG/src/Items/LockpickComponent.h
-	DEM/RPG/src/Items/Actions/ActionEquipItem.h
-	DEM/RPG/src/Items/ActionTpls/ActionTplEquipItem.h
-	DEM/RPG/src/Items/ActionTpls/ActionTplPickItemWorld.h
-	DEM/RPG/src/Items/Prop/PropEquipment.h
-	DEM/RPG/src/Items/Prop/PropInventory.h
-	DEM/RPG/src/Items/Prop/PropItem.h
 	DEM/RPG/src/Objects/LockComponent.h
 	DEM/RPG/src/Objects/LockpickAbility.h
 	DEM/RPG/src/Objects/OwnedComponent.h
@@ -68,18 +58,7 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/Dlg/PropTalkingSI.cpp
 	DEM/RPG/src/Factions/Faction.cpp
 	DEM/RPG/src/Factions/FactionManager.cpp
-	DEM/RPG/src/Items/Item.cpp
 	DEM/RPG/src/Items/ItemManager.cpp
-	DEM/RPG/src/Items/ItemTpl.cpp
-	DEM/RPG/src/Items/ItemTplWeapon.cpp
-	DEM/RPG/src/Items/Actions/ActionEquipItem.cpp
-	DEM/RPG/src/Items/ActionTpls/ActionTplEquipItem.cpp
-	DEM/RPG/src/Items/ActionTpls/ActionTplPickItemWorld.cpp
-	DEM/RPG/src/Items/Prop/PropEquipment.cpp
-	DEM/RPG/src/Items/Prop/PropEquipmentSI.cpp
-	DEM/RPG/src/Items/Prop/PropInventory.cpp
-	DEM/RPG/src/Items/Prop/PropInventorySI.cpp
-	DEM/RPG/src/Items/Prop/PropItem.cpp
 	DEM/RPG/src/Objects/LockpickAbility.cpp
 	DEM/RPG/src/Quests/QuestManager.cpp
 	DEM/RPG/src/SI/SIDialogueManager.cpp

@@ -1,36 +1,97 @@
 #include "ItemManager.h"
+#include <Items/ItemComponent.h>
+#include <Items/ItemStackComponent.h>
+#include <Game/GameSession.h>
+#include <Game/ECS/GameWorld.h>
+#include <Math/TransformSRT.h>
 
-#include <Data/Params.h>
-#include <Data/ParamsUtils.h>
-#include <Core/Factory.h>
-
-namespace Items
+namespace DEM::RPG
 {
-__ImplementSingleton(Items::CItemManager);
 
-PItemTpl CItemManager::CreateItemTpl(CStrID ID, const Data::CParams& Params)
+CItemManager::CItemManager(Game::CGameSession& Owner) : _Session(Owner)
 {
-	PItemTpl Tpl = Core::CFactory::Instance().Create<CItemTpl>(CString("Items::CItemTpl") + Params.Get<CString>(CStrID("Type"), CString::Empty));
-	n_assert(Tpl.IsValidPtr());
-	Tpl->Init(ID, Params);
-	return Tpl;
 }
 //---------------------------------------------------------------------
 
-PItemTpl CItemManager::GetItemTpl(CStrID ID)
+void CItemManager::GatherExistingTemplates()
 {
-	PItemTpl Tpl;
-	if (ItemTplRegistry.Get(ID, Tpl)) return Tpl;
-	else
-	{
-		Data::PParams HRD = ParamsUtils::LoadParamsFromPRM(CString("Items:") + ID.CStr() + ".prm");
-		if (!HRD) return PItemTpl();
+	_Templates.clear();
 
-		Tpl = CreateItemTpl(ID, *HRD);
-		n_assert(Tpl.IsValidPtr());
-		ItemTplRegistry.Add(ID, Tpl);
-		return Tpl;
+	auto pWorld = _Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return;
+
+	// All item templates live in no level (CStrID::Empty).
+	// For iteration to work, no-level components must be validated before calling GatherExistingTemplates().
+	pWorld->ForEachEntityInLevelWith<const CItemComponent>(CStrID::Empty,
+		[this](auto EntityID, auto& Entity, const CItemComponent& Item)
+	{
+		if (Entity.TemplateID) _Templates.emplace(Entity.TemplateID, EntityID);
+
+		//!!!if the same template is already prototyped, should delete duplicates and patch proto IDs in stacks!
+	});
+
+	//???really need? allows to process non-validated prototypes, but doesn't process ones without alive instances
+	pWorld->ForEachComponent<const CItemStackComponent>([this, pWorld](auto EntityID, const CItemStackComponent& Stack)
+	{
+		if (!Stack.Prototype || Stack.Prototype == EntityID) return;
+
+		const Game::CEntity* pProtoEntity = pWorld->GetEntity(Stack.Prototype);
+		if (!pProtoEntity) return;
+
+		if (pProtoEntity->TemplateID) _Templates.emplace(pProtoEntity->TemplateID, EntityID);
+	});
+}
+//---------------------------------------------------------------------
+
+Game::HEntity CItemManager::InternalCreateStack(Game::CGameWorld& World, CStrID LevelID, CStrID ItemID, U32 Count, Game::HEntity Container)
+{
+	Game::HEntity ProtoEntity;
+	auto It = _Templates.find(ItemID);
+	if (It == _Templates.cend())
+	{
+		// create prototype entity from template, validate components
 	}
+	else ProtoEntity = It->second;
+
+	Game::HEntity StackEntity = World.CreateEntity(LevelID);
+	auto pStack = World.AddComponent<CItemStackComponent>(StackEntity);
+	if (!pStack)
+	{
+		World.DeleteEntity(StackEntity);
+		return {};
+	}
+
+	pStack->Prototype = ProtoEntity;
+	pStack->Count = Count;
+	pStack->Container = Container;
+
+	return StackEntity;
+}
+//---------------------------------------------------------------------
+
+Game::HEntity CItemManager::CreateStack(CStrID ItemID, U32 Count, Game::HEntity Container)
+{
+	auto pWorld = _Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return {};
+
+	const Game::CEntity* pContainerEntity = pWorld->GetEntity(Container);
+	if (!pContainerEntity) return {};
+
+	return InternalCreateStack(*pWorld, pContainerEntity->LevelID, ItemID, Count, Container);
+}
+//---------------------------------------------------------------------
+
+Game::HEntity CItemManager::CreateStack(CStrID ItemID, U32 Count, CStrID LevelID, const Math::CTransformSRT& WorldTfm)
+{
+	auto pWorld = _Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return {};
+
+	auto StackEntity = InternalCreateStack(*pWorld, LevelID, ItemID, Count, {});
+	if (!StackEntity) return {};
+
+	// add scene component! position an object!
+
+	return StackEntity;
 }
 //---------------------------------------------------------------------
 

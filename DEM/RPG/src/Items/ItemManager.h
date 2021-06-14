@@ -1,42 +1,40 @@
 #pragma once
-#ifndef __DEM_L3_ITEM_MANAGER_H__
-#define __DEM_L3_ITEM_MANAGER_H__
+#include <Core/RTTIBaseClass.h>
+#include <Game/ECS/Entity.h>
 
-#include <Core/Object.h>
-#include <Data/Singleton.h>
-#include <Data/HashTable.h>
-#include <Items/ItemTpl.h>
+// Item manager keeps track of item templates and helps to manipulate item entities
 
-// Item manager loads and keeps track of item templates. Works like factory for CItemTpl
-// type-specific derived classes.
-
-namespace Data
+namespace DEM::Game
 {
-	class CParams;
+	class CGameSession;
+	class CGameWorld;
 }
 
-namespace Items
+namespace Math
 {
-#define ItemMgr Items::CItemManager::Instance()
+	class CTransformSRT;
+}
 
-class CItemManager: public Core::CObject
+namespace DEM::RPG
 {
-	RTTI_CLASS_DECL(Items::CItemManager, Core::CObject);
-	__DeclareSingleton(CItemManager);
 
+class CItemManager: public ::Core::CRTTIBaseClass
+{
 private:
 
-	CHashTable<CStrID, PItemTpl> ItemTplRegistry;
+	Game::CGameSession&                       _Session;
+	std::unordered_map<CStrID, Game::HEntity> _Templates;
+
+	Game::HEntity InternalCreateStack(Game::CGameWorld& World, CStrID LevelID, CStrID ItemID, U32 Count, Game::HEntity Container);
 
 public:
 
-	CItemManager() { __ConstructSingleton; }
-	~CItemManager() { __DestructSingleton; }
+	CItemManager(Game::CGameSession& Owner);
 
-	PItemTpl CreateItemTpl(CStrID ID, const Data::CParams& Params); //???type from params?
-	PItemTpl GetItemTpl(CStrID ID);
+	void          GatherExistingTemplates();
+
+	Game::HEntity CreateStack(CStrID ItemID, U32 Count, Game::HEntity Container);
+	Game::HEntity CreateStack(CStrID ItemID, U32 Count, CStrID LevelID, const Math::CTransformSRT& WorldTfm);
 };
 
 }
-
-#endif
