@@ -38,7 +38,7 @@ void CItemManager::GatherExistingTemplates()
 		const Game::CEntity* pProtoEntity = pWorld->GetEntity(Stack.Prototype);
 		if (!pProtoEntity) return;
 
-		if (pProtoEntity->TemplateID) _Templates.emplace(pProtoEntity->TemplateID, EntityID);
+		if (pProtoEntity->TemplateID) _Templates.emplace(pProtoEntity->TemplateID, Stack.Prototype);
 	});
 }
 //---------------------------------------------------------------------
