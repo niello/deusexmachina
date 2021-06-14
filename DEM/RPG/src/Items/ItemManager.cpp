@@ -3,7 +3,7 @@
 #include <Items/ItemStackComponent.h>
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
-#include <Math/TransformSRT.h>
+#include <Game/ECS/Components/SceneComponent.h>
 
 namespace DEM::RPG
 {
@@ -49,7 +49,9 @@ Game::HEntity CItemManager::InternalCreateStack(Game::CGameWorld& World, CStrID 
 	auto It = _Templates.find(ItemID);
 	if (It == _Templates.cend())
 	{
-		// create prototype entity from template, validate components
+		ProtoEntity = World.CreateEntity(CStrID::Empty, ItemID);
+		//World.ValidateComponents() !!!only for the new entity! it is needed to create template components!
+		_Templates.emplace(ItemID, ProtoEntity);
 	}
 	else ProtoEntity = It->second;
 
@@ -89,7 +91,16 @@ Game::HEntity CItemManager::CreateStack(CStrID ItemID, U32 Count, CStrID LevelID
 	auto StackEntity = InternalCreateStack(*pWorld, LevelID, ItemID, Count, {});
 	if (!StackEntity) return {};
 
-	// add scene component! position an object!
+	auto pSceneComponent = pWorld->AddComponent<Game::CSceneComponent>(StackEntity);
+	if (!pSceneComponent)
+	{
+		pWorld->DeleteEntity(StackEntity);
+		return {};
+	}
+
+	//!!!add in-location item scene object!
+
+	pSceneComponent->RootNode->SetLocalTransform(WorldTfm);
 
 	return StackEntity;
 }
