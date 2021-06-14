@@ -7,6 +7,7 @@
 #include <Character/StatsComponent.h>
 #include <Character/SkillsComponent.h>
 #include <Items/LockpickComponent.h>
+#include <Items/ItemUtils.h>
 #include <Objects/OwnedComponent.h>
 #include <Math/Math.h>
 
@@ -58,7 +59,7 @@ bool CLockpickAbility::IsTargetValid(const Game::CGameSession& Session, U32 Inde
 	// Must use tool for non-trivial locks
 	//!!!FIXME: tool may be not held by an actor who will pick the lock!!!
 	//???for multiple actors find a lockpick in all equipment? isn't this all an overcomplication?
-	if (!pWorld->FindComponent<Sh2::CLockpickComponent>(Context.Source)) return false;
+	if (!FindItemComponent<Sh2::CLockpickComponent>(*pWorld, Context.Source)) return false;
 
 	// An actor must be able to interact and must have a lockpicking skill opened
 	for (auto ActorID : Context.Actors)
@@ -121,7 +122,7 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 		SkillRollModifier += (pStats->Dexterity - 11); // TODO: utility method Sh2::GetStatModifier(StatValue)!
 	if (auto pSkills = pWorld->FindComponent<Sh2::CSkillsComponent>(Instance.Actor))
 		SkillRollModifier += pSkills->Lockpicking;
-	if (auto pLockpick = pWorld->FindComponent<Sh2::CLockpickComponent>(Instance.Source))
+	if (auto pLockpick = FindItemComponent<Sh2::CLockpickComponent>(*pWorld, Instance.Source))
 		SkillRollModifier += pLockpick->Modifier;
 	// TODO: assistant, if will bother with that
 	// TODO: if lockpick is breakable, handle it (maybe chance)

@@ -28,6 +28,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Items/ItemComponent.h
 	DEM/RPG/src/Items/ItemManager.h
 	DEM/RPG/src/Items/ItemStackComponent.h
+	DEM/RPG/src/Items/ItemUtils.h
 	DEM/RPG/src/Items/LockpickComponent.h
 	DEM/RPG/src/Objects/LockComponent.h
 	DEM/RPG/src/Objects/LockpickAbility.h

@@ -9,9 +9,10 @@ namespace DEM::RPG
 
 struct CItemComponent
 {
-	float Weight = 0.f;
-	float Volume = 0.f;
-	U32   Price = 0;
+	CStrID InLocationModelID;
+	float  Weight = 0.f;
+	float  Volume = 0.f;
+	U32    Price = 0;
 };
 
 }
@@ -24,9 +25,10 @@ template<> inline constexpr auto RegisterMembers<RPG::CItemComponent>()
 {
 	return std::make_tuple
 	(
-		Member(1, "Weight", &RPG::CItemComponent::Weight, &RPG::CItemComponent::Weight),
-		Member(2, "Volume", &RPG::CItemComponent::Volume, &RPG::CItemComponent::Volume),
-		Member(3, "Price", &RPG::CItemComponent::Price, &RPG::CItemComponent::Price)
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 1, InLocationModelID),
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 2, Weight),
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 3, Volume),
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 4, Price)
 	);
 }
 

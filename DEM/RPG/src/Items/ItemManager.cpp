@@ -1,6 +1,7 @@
 #include "ItemManager.h"
 #include <Items/ItemComponent.h>
 #include <Items/ItemStackComponent.h>
+#include <Items/ItemUtils.h>
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/SceneComponent.h>
@@ -98,8 +99,29 @@ Game::HEntity CItemManager::CreateStack(CStrID ItemID, U32 Count, CStrID LevelID
 		return {};
 	}
 
-	//!!!add in-location item scene object!
+	// Instantiate a scene object
+	//!!!TODO: separate method, not always needed only in CreateStack!
+	//???to ItemUtils?
 
+	auto pItem = FindItemComponent<CItemComponent>(*pWorld, StackEntity);
+	if (!pItem)
+	{
+		pWorld->DeleteEntity(StackEntity);
+		return {};
+	}
+
+	//!!!if add to existing (especially multi-item) object, may change model to some sack, bigger and bigger.
+	//!!!if no asset ID specified, use default, maybe based on item type and size.
+	CStrID ModelAssetID = pItem->InLocationModelID;
+	if (!ModelAssetID)
+	{
+		NOT_IMPLEMENTED_MSG("Need to set default model for in-location items\n");
+		pWorld->DeleteEntity(StackEntity);
+		return {};
+	}
+
+	// RootPath is left clear, an item must be instantiated inside the world root
+	n_assert(pSceneComponent->RootNode);
 	pSceneComponent->RootNode->SetLocalTransform(WorldTfm);
 
 	return StackEntity;

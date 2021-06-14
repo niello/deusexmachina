@@ -1,6 +1,5 @@
 #pragma once
 #include <Scene/SceneNode.h>
-#include <Data/String.h>
 #include <Data/Metadata.h>
 
 // Scene component contains a part of scene hierarchy, including a root node
@@ -14,7 +13,7 @@ struct CSceneComponent
 	Scene::PSceneNode RootNode;
 
 	CStrID            AssetID;
-	CString           RootPath; // FIXME: use std::string, CData must use it too then
+	std::string       RootPath;
 
 	CSceneComponent() : RootNode(n_new(Scene::CSceneNode())) {}
 
