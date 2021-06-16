@@ -298,9 +298,11 @@ protected:
 
 	FbxManager*                pFBXManager = nullptr;
 	Data::CSchemeSet          _SceneSchemes;
+	CSceneSettings            _Settings;
 
 	std::string               _ResourceRoot;
 	std::string               _SchemeFile;
+	std::string               _SettingsFile;
 	double                    _AnimSamplingRate = 30.0;
 	bool                      _OutputBin = false;
 	bool                      _OutputHRD = false; // For debug purposes, saves scene hierarchies in a human-readable format
@@ -313,6 +315,7 @@ public:
 	{
 		// Set default before parsing command line
 		_SchemeFile = "../schemes/scene.dss";
+		_SettingsFile = "../schemes/settings.hrd";
 	}
 
 	virtual bool SupportsMultithreading() const override
@@ -344,6 +347,8 @@ public:
 			}
 		}
 
+		if (!LoadSceneSettings(_SettingsFile, _Settings)) return 3;
+
 		return 0;
 	}
 
@@ -359,6 +364,7 @@ public:
 		CContentForgeTool::ProcessCommandLine(CLIApp);
 		CLIApp.add_option("--res-root", _ResourceRoot, "Resource root prefix for referencing external subresources by path");
 		CLIApp.add_option("--scheme,--schema", _SchemeFile, "Scene binary serialization scheme file path");
+		CLIApp.add_option("--settings", _SettingsFile, "Settings file path");
 		CLIApp.add_option("--fps", _AnimSamplingRate, "Animation sampling rate in frames per second, default is 30");
 		CLIApp.add_flag("-t,--txt", _OutputHRD, "Output scenes in a human-readable format, suitable for debugging only");
 		CLIApp.add_flag("-b,--bin", _OutputBin, "Output scenes in a binary format, suitable for loading into the engine");
@@ -374,6 +380,10 @@ public:
 		}
 
 		// Import FBX scene from the source file
+
+		auto FBMPath = Task.SrcFilePath;
+		FBMPath.replace_extension("fbm");
+		const bool HasFBM = fs::exists(FBMPath);
 
 		FbxImporter* pImporter = FbxImporter::Create(pFBXManager, "");
 
@@ -478,6 +488,10 @@ public:
 				}
 			}
 		}
+
+		// Erase .fbm folder extracted by SDK because it doesn't cleanup after itself as of 2020.0
+		//!!!TODO: also erase when fail during the task!
+		if (!HasFBM) fs::remove_all(FBMPath);
 
 		// Export additional info
 
@@ -1087,17 +1101,21 @@ public:
 		MeshInfo.MeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 		for (const auto& [SubMeshID, SubMesh] : SubMeshes)
 		{
-			// PBR materials aren't supported in FBX, can't export.
-			// Blender FBX exporter saves no textures, so parsing is completely useless for now.
-			// Instead of this, materials must be precreated and explicitly declared in .meta.
-			// Use glTF 2.0 exporter, it is free from this issue.
-
 			std::string MaterialID;
 			if (!SubMeshID.empty())
 			{
+				// Search for the precreated material
 				auto MtlIt = Ctx.MaterialMap.find(CStrID(SubMeshID.c_str()));
 				if (MtlIt == Ctx.MaterialMap.cend())
 					MtlIt = Ctx.MaterialMap.find(CStrID(GetValidResourceName(SubMeshID).c_str()));
+
+				// Export a new material
+				if (MtlIt == Ctx.MaterialMap.cend())
+				{
+					const int FbxMaterialIdx = pMesh->GetNode()->GetMaterialIndex(SubMeshID.c_str());
+					if (FbxMaterialIdx >= 0 && ExportMaterial(pMesh->GetNode()->GetMaterial(FbxMaterialIdx), MaterialID, Ctx))
+						MtlIt = Ctx.MaterialMap.emplace(CStrID(SubMeshID.c_str()), MaterialID).first;
+				}
 
 				if (MtlIt != Ctx.MaterialMap.cend())
 				{
@@ -1109,7 +1127,7 @@ public:
 				}
 				else
 				{
-					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " references undefined material " + SubMeshID);
+					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " material " + SubMeshID + " is not defined in FBX or .meta");
 				}
 			}
 
@@ -1145,6 +1163,80 @@ public:
 		}
 
 		return true;
+	}
+
+	// PBR materials aren't supported in FBX, can't export.
+	// Embed textures in a Blender FBX exporter settings.
+	// You also can precreate materials and declare them in .meta explicitly.
+	// Use glTF 2.0 exporter for PBR materials, it is free from this issue.
+	bool ExportMaterial(FbxSurfaceMaterial* pMaterial, std::string& OutMaterialID, CContext& Ctx)
+	{
+		if (!pMaterial) return false;
+
+		const std::string MtlName = pMaterial->GetName();
+		Ctx.Log.LogDebug("Exporting new material: " + MtlName);
+
+		// Build abstract effect type ID
+
+		//???TODO: detect AlphaTest if main diffuse texture has 1 bit alpha, Alpha if more bits?
+		std::string EffectTypeID = "MetallicRoughnessOpaqueCulled";
+
+		// Get effect resource ID and material table from the effect file
+
+		auto EffectIt = _Settings.EffectsByType.find(EffectTypeID);
+		if (EffectIt == _Settings.EffectsByType.cend() || EffectIt->second.empty())
+		{
+			Ctx.Log.LogError("FBX material " + MtlName + " with type " + EffectTypeID + " has no mapped DEM effect file in effect settings");
+			return false;
+		}
+
+		CMaterialParams MtlParamTable;
+		auto Path = ResolvePathAliases(EffectIt->second).generic_string();
+		Ctx.Log.LogDebug("Opening effect " + Path);
+		if (!GetEffectMaterialParams(MtlParamTable, Path, Ctx.Log)) return false;
+
+		Data::CParams MtlParams;
+
+		// Fill material constants
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////
+
+		const auto DiffuseProp = pMaterial->FindProperty(FbxSurfaceMaterial::sDiffuse);
+
+		int Count = DiffuseProp.GetSrcObjectCount<FbxLayeredTexture>();
+		for (int i = 0; i < Count; ++i)
+		{
+			FbxLayeredTexture* pLayeredTex = FbxCast<FbxLayeredTexture>(DiffuseProp.GetSrcObject<FbxLayeredTexture>(i));
+			const int LayerCount = pLayeredTex->GetSrcObjectCount<FbxTexture>();
+			for (int j = 0; j < LayerCount; ++j)
+			{
+				if (FbxFileTexture* pTex = FbxCast<FbxFileTexture>(DiffuseProp.GetSrcObject<FbxTexture>(i)))
+				{
+					std::string xxx = pTex->GetFileName();
+					int XXX = 0;
+				}
+			}
+		}
+
+		Count = DiffuseProp.GetSrcObjectCount<FbxTexture>();
+		for (int i = 0; i < Count; ++i)
+		{
+			if (FbxFileTexture* pTex = FbxCast<FbxFileTexture>(DiffuseProp.GetSrcObject<FbxTexture>(i)))
+			{
+				std::string xxx = pTex->GetFileName();
+				int XXX = 0;
+			}
+		}
 	}
 
 	bool ExportLight(FbxLight* pLight, CContext& Ctx, Data::CDataArray& Attributes)

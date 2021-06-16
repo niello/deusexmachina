@@ -256,9 +256,7 @@ protected:
 	};
 
 	Data::CSchemeSet          _SceneSchemes;
-
-	std::map<std::string, std::string> _EffectsByType;
-	std::map<std::string, std::string> _EffectParamAliases;
+	CSceneSettings            _Settings;
 
 	std::string               _ResourceRoot;
 	std::string               _SchemeFile;
@@ -309,26 +307,7 @@ public:
 			}
 		}
 
-		{
-			Data::CParams EffectSettings;
-			if (!ParamsUtils::LoadParamsFromHRD(_SettingsFile.c_str(), EffectSettings))
-			{
-				std::cout << "Couldn't load effect settings from " << _SettingsFile;
-				return 3;
-			}
-
-			const Data::CParams* pMap;
-			if (ParamsUtils::TryGetParam(pMap, EffectSettings, "Effects"))
-			{
-				for (const auto& Pair : *pMap)
-					_EffectsByType.emplace(Pair.first.ToString(), Pair.second.GetValue<std::string>());
-			}
-			if (ParamsUtils::TryGetParam(pMap, EffectSettings, "Params"))
-			{
-				for (const auto& Pair : *pMap)
-					_EffectParamAliases.emplace(Pair.first.ToString(), Pair.second.GetValue<std::string>());
-			}
-		}
+		if (!LoadSceneSettings(_SettingsFile, _Settings)) return 3;
 
 		return 0;
 	}
@@ -860,12 +839,6 @@ public:
 		return true;
 	}
 
-	const std::string& GetEffectParamID(const std::string& Alias)
-	{
-		auto It = _EffectParamAliases.find(Alias);
-		return (It == _EffectParamAliases.cend()) ? Alias : It->second;
-	}
-
 	// TODO: there is SGToMR in glTF SDK PBRUtils, can add SG source support through conversion to MR
 	// Or just add a requirement for DEM assets to be authored in MR model.
 	bool ExportMaterial(const std::string& MtlName, std::string& OutMaterialID, CContext& Ctx)
@@ -902,8 +875,8 @@ public:
 
 		// Get effect resource ID and material table from the effect file
 
-		auto EffectIt = _EffectsByType.find(EffectTypeID);
-		if (EffectIt == _EffectsByType.cend() || EffectIt->second.empty())
+		auto EffectIt = _Settings.EffectsByType.find(EffectTypeID);
+		if (EffectIt == _Settings.EffectsByType.cend() || EffectIt->second.empty())
 		{
 			Ctx.Log.LogError("glTF material " + Mtl.name + " with type " + EffectTypeID + " has no mapped DEM effect file in effect settings");
 			return false;
@@ -918,7 +891,7 @@ public:
 
 		// Fill material constants
 
-		const auto& AlbedoFactorID = GetEffectParamID("AlbedoFactor");
+		const auto& AlbedoFactorID = _Settings.GetEffectParamID("AlbedoFactor");
 		if (MtlParamTable.HasConstant(AlbedoFactorID))
 		{
 			const auto& AlbedoFactor = Mtl.metallicRoughness.baseColorFactor;
@@ -926,21 +899,21 @@ public:
 				MtlParams.emplace_back(CStrID(AlbedoFactorID), float4(AlbedoFactor.r, AlbedoFactor.g, AlbedoFactor.b, AlbedoFactor.a));
 		}
 
-		const auto& MetallicFactorID = GetEffectParamID("MetallicFactor");
+		const auto& MetallicFactorID = _Settings.GetEffectParamID("MetallicFactor");
 		if (MtlParamTable.HasConstant(MetallicFactorID))
 		{
 			if (Mtl.metallicRoughness.metallicFactor != 1.f)
 				MtlParams.emplace_back(MetallicFactorID, Mtl.metallicRoughness.metallicFactor);
 		}
 
-		const auto& RoughnessFactorID = GetEffectParamID("RoughnessFactor");
+		const auto& RoughnessFactorID = _Settings.GetEffectParamID("RoughnessFactor");
 		if (MtlParamTable.HasConstant(RoughnessFactorID))
 		{
 			if (Mtl.metallicRoughness.roughnessFactor != 1.f)
 				MtlParams.emplace_back(RoughnessFactorID, Mtl.metallicRoughness.roughnessFactor);
 		}
 
-		const auto& EmissiveFactorID = GetEffectParamID("EmissiveFactor");
+		const auto& EmissiveFactorID = _Settings.GetEffectParamID("EmissiveFactor");
 		if (MtlParamTable.HasConstant(EmissiveFactorID))
 		{
 			if (Mtl.emissiveFactor != gltf::Color3(0.f, 0.f, 0.f))
@@ -949,7 +922,7 @@ public:
 
 		if (Mtl.alphaMode == gltf::AlphaMode::ALPHA_MASK)
 		{
-			const auto& AlphaCutoffID = GetEffectParamID("AlphaCutoff");
+			const auto& AlphaCutoffID = _Settings.GetEffectParamID("AlphaCutoff");
 			if (MtlParamTable.HasConstant(AlphaCutoffID))
 			{
 				if (Mtl.alphaCutoff != 0.5f)
@@ -961,7 +934,7 @@ public:
 
 		std::set<std::string> GLTFSamplers;
 
-		const auto& AlbedoTextureID = GetEffectParamID("AlbedoTexture");
+		const auto& AlbedoTextureID = _Settings.GetEffectParamID("AlbedoTexture");
 		if (!Mtl.metallicRoughness.baseColorTexture.textureId.empty() && MtlParamTable.HasResource(AlbedoTextureID))
 		{
 			std::string TextureID;
@@ -969,7 +942,7 @@ public:
 			MtlParams.emplace_back(AlbedoTextureID, TextureID);
 		}
 
-		const auto& MetallicRoughnessTextureID = GetEffectParamID("MetallicRoughnessTexture");
+		const auto& MetallicRoughnessTextureID = _Settings.GetEffectParamID("MetallicRoughnessTexture");
 		if (!Mtl.metallicRoughness.metallicRoughnessTexture.textureId.empty() && MtlParamTable.HasResource(MetallicRoughnessTextureID))
 		{
 			std::string TextureID;
@@ -977,7 +950,7 @@ public:
 			MtlParams.emplace_back(MetallicRoughnessTextureID, TextureID);
 		}
 
-		const auto& NormalTextureID = GetEffectParamID("NormalTexture");
+		const auto& NormalTextureID = _Settings.GetEffectParamID("NormalTexture");
 		if (!Mtl.normalTexture.textureId.empty() && MtlParamTable.HasResource(NormalTextureID))
 		{
 			std::string TextureID;
@@ -985,7 +958,7 @@ public:
 			MtlParams.emplace_back(NormalTextureID, TextureID);
 		}
 
-		const auto& OcclusionTextureID = GetEffectParamID("OcclusionTexture");
+		const auto& OcclusionTextureID = _Settings.GetEffectParamID("OcclusionTexture");
 		if (!Mtl.occlusionTexture.textureId.empty() && MtlParamTable.HasResource(OcclusionTextureID))
 		{
 			std::string TextureID;
@@ -993,7 +966,7 @@ public:
 			MtlParams.emplace_back(OcclusionTextureID, TextureID);
 		}
 
-		const auto& EmissiveTextureID = GetEffectParamID("EmissiveTexture");
+		const auto& EmissiveTextureID = _Settings.GetEffectParamID("EmissiveTexture");
 		if (!Mtl.emissiveTexture.textureId.empty() && MtlParamTable.HasResource(EmissiveTextureID))
 		{
 			std::string TextureID;
@@ -1010,7 +983,7 @@ public:
 			if (GLTFSamplers.size() > 1)
 				Ctx.Log.LogWarning("Material " + Mtl.name + " uses more than one sampler, but DEM supports only one sampler per PBR material");
 
-			const auto& PBRTextureSamplerID = GetEffectParamID("PBRTextureSampler");
+			const auto& PBRTextureSamplerID = _Settings.GetEffectParamID("PBRTextureSampler");
 			if (MtlParamTable.HasSampler(PBRTextureSamplerID))
 			{
 				const std::string& SamplerGLTFID = *GLTFSamplers.begin();

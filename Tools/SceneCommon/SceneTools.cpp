@@ -46,6 +46,29 @@ std::string GetRelativeNodePath(std::vector<std::string>&& From, std::vector<std
 }
 //---------------------------------------------------------------------
 
+bool LoadSceneSettings(const std::filesystem::path& Path, CSceneSettings& Out)
+{
+	//!!!FIXME: don't convert path to string! Use path in API!
+	Data::CParams SceneSettings;
+	if (!ParamsUtils::LoadParamsFromHRD(Path.generic_string().c_str(), SceneSettings))
+	{
+		std::cout << "Couldn't load scene settings from " << Path;
+		return false;
+	}
+
+	const Data::CParams* pMap;
+	if (ParamsUtils::TryGetParam(pMap, SceneSettings, "Effects"))
+		for (const auto& Pair : *pMap)
+			Out.EffectsByType.emplace(Pair.first.ToString(), Pair.second.GetValue<std::string>());
+
+	if (ParamsUtils::TryGetParam(pMap, SceneSettings, "Params"))
+		for (const auto& Pair : *pMap)
+			Out.EffectParamAliases.emplace(Pair.first.ToString(), Pair.second.GetValue<std::string>());
+
+	return true;
+}
+//---------------------------------------------------------------------
+
 void ProcessGeometry(const std::vector<CVertex>& RawVertices, const std::vector<unsigned int>& RawIndices,
 	std::vector<CVertex>& Vertices, std::vector<unsigned int>& Indices)
 {

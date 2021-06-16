@@ -26,6 +26,18 @@ namespace Data
 	typedef std::map<CStringID, class CDataScheme> CSchemeSet;
 }
 
+struct CSceneSettings
+{
+	std::map<std::string, std::string> EffectsByType;
+	std::map<std::string, std::string> EffectParamAliases;
+
+	const std::string& GetEffectParamID(const std::string& Alias) const
+	{
+		auto It = EffectParamAliases.find(Alias);
+		return (It == EffectParamAliases.cend()) ? Alias : It->second;
+	}
+};
+
 // TODO: look at fbx2acl for correct FBX animation export
 namespace acl
 {
@@ -190,6 +202,7 @@ inline void MergeAABBs(CAABB& Dest, const CAABB& Src)
 //---------------------------------------------------------------------
 
 std::string GetRelativeNodePath(std::vector<std::string>&& From, std::vector<std::string>&& To);
+bool LoadSceneSettings(const std::filesystem::path& Path, CSceneSettings& Out);
 void ProcessGeometry(const std::vector<CVertex>& RawVertices, const std::vector<unsigned int>& RawIndices, std::vector<CVertex>& Vertices, std::vector<unsigned int>& Indices);
 void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic Semantic, EVertexComponentFormat Format, uint8_t Index, uint8_t StreamIndex);
 bool WriteDEMMesh(const std::filesystem::path& DestPath, const std::map<std::string, CMeshGroup>& SubMeshes, const CVertexFormat& VertexFormat, size_t BoneCount, CThreadSafeLog& Log);
