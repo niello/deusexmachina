@@ -1,5 +1,6 @@
 #include <ContentForgeTool.h>
 #include <SceneTools.h>
+#include <Render/ShaderMetaCommon.h>
 #include <Utils.h>
 #include <ParamsUtils.h>
 #include <CLI11.hpp>
@@ -277,6 +278,8 @@ protected:
 
 		fs::path            ScenePath;
 		fs::path            MeshPath;
+		fs::path            MaterialPath;
+		fs::path            TexturePath;
 		fs::path            SkinPath;
 		fs::path            AnimPath;
 		fs::path            CollisionPath;
@@ -288,6 +291,7 @@ protected:
 
 		std::unordered_map<const FbxMesh*, CMeshAttrInfo> ProcessedMeshes;
 		std::unordered_map<const FbxMesh*, CSkinAttrInfo> ProcessedSkins;
+		std::unordered_map<const FbxTexture*, std::string> ProcessedTextures;
 	};
 
 	struct CSkeletonACLBinding
@@ -452,6 +456,8 @@ public:
 
 		Ctx.ScenePath = GetPath(Task.Params, "Output");
 		Ctx.MeshPath = GetPath(Task.Params, "MeshOutput");
+		Ctx.MaterialPath = GetPath(Task.Params, "MaterialOutput");
+		Ctx.TexturePath = GetPath(Task.Params, "TextureOutput");
 		Ctx.SkinPath = GetPath(Task.Params, "SkinOutput");
 		Ctx.AnimPath = GetPath(Task.Params, "AnimOutput");
 		Ctx.CollisionPath = GetPath(Task.Params, "CollisionOutput");
@@ -1165,16 +1171,42 @@ public:
 		return true;
 	}
 
-	// PBR materials aren't supported in FBX, can't export.
-	// Embed textures in a Blender FBX exporter settings.
-	// You also can precreate materials and declare them in .meta explicitly.
-	// Use glTF 2.0 exporter for PBR materials, it is free from this issue.
+	void CollectTextures(FbxProperty& Property, std::set<FbxFileTexture*>& Out)
+	{
+		int Count = Property.GetSrcObjectCount<FbxLayeredTexture>();
+		for (int i = 0; i < Count; ++i)
+		{
+			FbxLayeredTexture* pLayeredTex = FbxCast<FbxLayeredTexture>(Property.GetSrcObject<FbxLayeredTexture>(i));
+			const int LayerCount = pLayeredTex->GetSrcObjectCount<FbxTexture>();
+			for (int j = 0; j < LayerCount; ++j)
+				if (FbxFileTexture* pTex = FbxCast<FbxFileTexture>(pLayeredTex->GetSrcObject<FbxTexture>(j)))
+					Out.insert(pTex);
+		}
+
+		Count = Property.GetSrcObjectCount<FbxTexture>();
+		for (int i = 0; i < Count; ++i)
+			if (FbxFileTexture* pTex = FbxCast<FbxFileTexture>(Property.GetSrcObject<FbxTexture>(i)))
+				Out.insert(pTex);
+	}
+
+	// Embed textures into FBX in a Blender FBX exporter. You can also declare existing DEM materials in .meta.
+	// PBR materials aren't supported in FBX, can't export. Use glTF 2.0 exporter for PBR materials.
+	// TODO: look at FBX SDK 2020.2 Standard Surface support.
 	bool ExportMaterial(FbxSurfaceMaterial* pMaterial, std::string& OutMaterialID, CContext& Ctx)
 	{
 		if (!pMaterial) return false;
 
 		const std::string MtlName = pMaterial->GetName();
 		Ctx.Log.LogDebug("Exporting new material: " + MtlName);
+
+		// Determine FBX surface type
+
+		FbxSurfaceLambert* pLambert = FbxCast<FbxSurfaceLambert>(pMaterial);
+		if (!pLambert)
+		{
+			Ctx.Log.LogWarning("Non-lambertian surfaces are not supported by cf-fbx");
+			return false;
+		}
 
 		// Build abstract effect type ID
 
@@ -1199,44 +1231,135 @@ public:
 
 		// Fill material constants
 
-
-
-
-
-
-
-
-
-
-
-////////////////////////////////////////////
-
-		const auto DiffuseProp = pMaterial->FindProperty(FbxSurfaceMaterial::sDiffuse);
-
-		int Count = DiffuseProp.GetSrcObjectCount<FbxLayeredTexture>();
-		for (int i = 0; i < Count; ++i)
+		//!!!TODO: TransparentColor, TransparencyFactor!
+		// Ambient & AmbientFactor are ignored
+		const auto AlbedoFactorID = _Settings.GetEffectParamID("AlbedoFactor");
+		if (MtlParamTable.HasConstant(AlbedoFactorID))
 		{
-			FbxLayeredTexture* pLayeredTex = FbxCast<FbxLayeredTexture>(DiffuseProp.GetSrcObject<FbxLayeredTexture>(i));
-			const int LayerCount = pLayeredTex->GetSrcObjectCount<FbxTexture>();
-			for (int j = 0; j < LayerCount; ++j)
+			const auto& Value = FbxToDEMVec3(pLambert->Diffuse) * static_cast<float>(pLambert->DiffuseFactor);
+			if (Value != float3(1.f, 1.f, 1.f))
+				MtlParams.emplace_back(CStrID(AlbedoFactorID), float4(Value, 1.f));
+		}
+
+		const auto EmissiveFactorID = _Settings.GetEffectParamID("EmissiveFactor");
+		if (MtlParamTable.HasConstant(EmissiveFactorID))
+		{
+			const auto& Value = FbxToDEMVec3(pLambert->Emissive) * static_cast<float>(pLambert->EmissiveFactor);
+			if (Value != float3(0.f, 0.f, 0.f))
+				MtlParams.emplace_back(CStrID(EmissiveFactorID), float4(Value, 0.f));
+		}
+
+		// Fill material textures and samplers
+
+		// TODO: support layered textures?
+		// TODO: support procedural textures?
+		const auto AlbedoTextureID = _Settings.GetEffectParamID("AlbedoTexture");
+		if (MtlParamTable.HasResource(AlbedoTextureID))
+		{
+			std::set<FbxFileTexture*> Textures;
+			CollectTextures(pLambert->Diffuse, Textures);
+
+			if (!Textures.empty())
 			{
-				if (FbxFileTexture* pTex = FbxCast<FbxFileTexture>(DiffuseProp.GetSrcObject<FbxTexture>(i)))
-				{
-					std::string xxx = pTex->GetFileName();
-					int XXX = 0;
-				}
+				// For now export only the first texture
+				if (Textures.size() > 1)
+					Ctx.Log.LogWarning("There are more than one albedo texture in a material " + MtlName + ", only one will be used");
+
+				std::string TextureID;
+				if (!ExportTexture(*Textures.begin(), TextureID, Ctx)) return false;
+				MtlParams.emplace_back(AlbedoTextureID, TextureID);
 			}
 		}
 
-		Count = DiffuseProp.GetSrcObjectCount<FbxTexture>();
-		for (int i = 0; i < Count; ++i)
+		/*
+		// NormalMap, Bump
+		const auto NormalTextureID = _Settings.GetEffectParamID("NormalTexture");
+		if (!Mtl.normalTexture.textureId.empty() && MtlParamTable.HasResource(NormalTextureID))
 		{
-			if (FbxFileTexture* pTex = FbxCast<FbxFileTexture>(DiffuseProp.GetSrcObject<FbxTexture>(i)))
+			std::string TextureID;
+			if (!ExportTexture(Mtl.normalTexture, TextureID, GLTFSamplers, Ctx)) return false;
+			MtlParams.emplace_back(NormalTextureID, TextureID);
+		}
+
+		// Emissive
+		const auto EmissiveTextureID = _Settings.GetEffectParamID("EmissiveTexture");
+		if (!Mtl.emissiveTexture.textureId.empty() && MtlParamTable.HasResource(EmissiveTextureID))
+		{
+			std::string TextureID;
+			if (!ExportTexture(Mtl.emissiveTexture, TextureID, GLTFSamplers, Ctx)) return false;
+			MtlParams.emplace_back(EmissiveTextureID, TextureID);
+		}
+		*/
+
+		// For phong surfaces convert specular to roughness. For non-phong an effect should provide
+		// default roughness factor or texture. We don't try to set defaults here.
+		if (FbxSurfacePhong* pPhong = FbxCast<FbxSurfacePhong>(pMaterial))
+		{
+			// Convert Blinn-Phong specular power (shininess) into PBR roughness
+			// See http://graphicrants.blogspot.com/2013/08/specular-brdf-reference.html
+			const float Roughness = std::sqrtf(2.f / (static_cast<float>(pPhong->Shininess) + 2.f));
+
+			const auto RoughnessFactorID = _Settings.GetEffectParamID("RoughnessFactor");
+			if (Roughness != 1.f && MtlParamTable.HasConstant(RoughnessFactorID))
+				MtlParams.emplace_back(RoughnessFactorID, Roughness);
+
+			const auto MetallicRoughnessTextureID = _Settings.GetEffectParamID("MetallicRoughnessTexture");
+			if (MtlParamTable.HasResource(MetallicRoughnessTextureID))
 			{
-				std::string xxx = pTex->GetFileName();
-				int XXX = 0;
+				// TODO: can create roughness texture from Specular (tex) * SpecularFactor and using shininess!
+				// Make specular monochrome! Use fixed metallness (zero, phong is a plastic)!
+
+				//std::string TextureID;
+				//if (!ExportTexture(Mtl.metallicRoughness.metallicRoughnessTexture, TextureID, GLTFSamplers, Ctx)) return false;
+				//MtlParams.emplace_back(MetallicRoughnessTextureID, TextureID);
 			}
 		}
+
+		// TODO: need sampler? Can get info from FBX?
+		//const auto PBRTextureSamplerID = _Settings.GetEffectParamID("PBRTextureSampler");
+		//if (MtlParamTable.HasSampler(PBRTextureSamplerID))
+
+		// Write resulting file
+
+		const auto MtlRsrcName = GetValidResourceName(MtlName);
+		const auto DestPath = Ctx.MaterialPath / (MtlRsrcName + ".mtl");
+
+		fs::create_directories(DestPath.parent_path());
+
+		std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
+
+		if (!SaveMaterial(File, EffectIt->second, MtlParamTable, MtlParams, Ctx.Log)) return false;
+
+		OutMaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+
+		return true;
+	}
+
+	bool ExportTexture(FbxFileTexture* pTex, std::string& OutTextureID, CContext& Ctx)
+	{
+		//!!!TODO:
+		//pTex->GetWrapModeU();
+		//pTex->GetWrapModeV();
+		//pTex->GetBlendMode(); //???only for layered?
+		//pTex->GetTextureType();
+
+		auto It = Ctx.ProcessedTextures.find(pTex);
+		if (It != Ctx.ProcessedTextures.cend())
+		{
+			OutTextureID = It->second;
+			return true;
+		}
+
+		fs::path URI = pTex->GetFileName();
+		Ctx.Log.LogDebug("Texture image: " + URI.generic_string() + (pTex->GetName() ? "" : std::string(", name: ") + pTex->GetName()));
+
+		const auto DestPath = WriteTexture(URI, Ctx.TexturePath, Ctx.TaskParams, Ctx.Log);
+		if (DestPath.empty()) return false;
+
+		OutTextureID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+		Ctx.ProcessedTextures.emplace(pTex, OutTextureID);
+
+		return true;
 	}
 
 	bool ExportLight(FbxLight* pLight, CContext& Ctx, Data::CDataArray& Attributes)

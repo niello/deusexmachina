@@ -1,4 +1,5 @@
 #include <ContentForgeTool.h>
+#include <SceneTools.h>
 #include <Render/ShaderMetaCommon.h>
 #include <BTFile.h>
 #include <Utils.h>
@@ -31,17 +32,15 @@ class CL3DTTool : public CContentForgeTool
 {
 protected:
 
-	Data::CSchemeSet          _SceneSchemes;
+	Data::CSchemeSet _SceneSchemes;
+	CSceneSettings   _Settings;
 
-	std::map<std::string, std::string> _EffectsByType;
-	std::map<std::string, std::string> _EffectParamAliases;
-
-	std::string               _ResourceRoot;
-	std::string               _SchemeFile;
-	std::string               _SettingsFile;
-	bool                      _OutputBin = false;
-	bool                      _OutputHRD = false; // For debug purposes, saves scene hierarchies in a human-readable format
-	bool                      _NeedCollision = false;
+	std::string      _ResourceRoot;
+	std::string      _SchemeFile;
+	std::string      _SettingsFile;
+	bool             _OutputBin = false;
+	bool             _OutputHRD = false; // For debug purposes, saves scene hierarchies in a human-readable format
+	bool             _NeedCollision = false;
 
 public:
 
@@ -78,26 +77,7 @@ public:
 			}
 		}
 
-		{
-			Data::CParams EffectSettings;
-			if (!ParamsUtils::LoadParamsFromHRD(_SettingsFile.c_str(), EffectSettings))
-			{
-				std::cout << "Couldn't load effect settings from " << _SettingsFile;
-				return 3;
-			}
-
-			const Data::CParams* pMap;
-			if (ParamsUtils::TryGetParam(pMap, EffectSettings, "Effects"))
-			{
-				for (const auto& Pair : *pMap)
-					_EffectsByType.emplace(Pair.first.ToString(), Pair.second.GetValue<std::string>());
-			}
-			if (ParamsUtils::TryGetParam(pMap, EffectSettings, "Params"))
-			{
-				for (const auto& Pair : *pMap)
-					_EffectParamAliases.emplace(Pair.first.ToString(), Pair.second.GetValue<std::string>());
-			}
-		}
+		if (!LoadSceneSettings(_SettingsFile, _Settings)) return 3;
 
 		return 0;
 	}
@@ -112,12 +92,6 @@ public:
 		CLIApp.add_flag("-t,--txt", _OutputHRD, "Output scenes in a human-readable format, suitable for debugging only");
 		CLIApp.add_flag("-b,--bin", _OutputBin, "Output scenes in a binary format, suitable for loading into the engine");
 		CLIApp.add_flag("-c,--collision", _NeedCollision, "Add a collision attribute to the asset");
-	}
-
-	const std::string& GetEffectParamID(const std::string& Alias)
-	{
-		auto It = _EffectParamAliases.find(Alias);
-		return (It == _EffectParamAliases.cend()) ? Alias : It->second;
 	}
 
 	virtual ETaskResult ProcessTask(CContentForgeTask& Task) override
@@ -429,8 +403,8 @@ public:
 
 		const auto TexturePath = GetPath(Task.Params, "TextureOutput");
 
-		auto EffectIt = _EffectsByType.find("MetallicRoughnessTerrain");
-		if (EffectIt == _EffectsByType.cend() || EffectIt->second.empty())
+		auto EffectIt = _Settings.EffectsByType.find("MetallicRoughnessTerrain");
+		if (EffectIt == _Settings.EffectsByType.cend() || EffectIt->second.empty())
 		{
 			Task.Log.LogError("Material type MetallicRoughnessTerrain has no mapped DEM effect file in effect settings");
 			return ETaskResult::Failure;
@@ -447,7 +421,7 @@ public:
 
 		Data::CParams MtlParams;
 
-		const auto& GeomNormalTextureID = GetEffectParamID("TerrainGeometryNormalTexture");
+		const auto GeomNormalTextureID = _Settings.GetEffectParamID("TerrainGeometryNormalTexture");
 		if (MtlParamTable.HasResource(GeomNormalTextureID))
 		{
 			//std::string FileName = TNPath.filename().generic_string();
@@ -465,7 +439,7 @@ public:
 			MtlParams.emplace_back(CStrID(GeomNormalTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
 		}
 
-		const auto& SplatMapTextureID = GetEffectParamID("SplatMapTexture");
+		const auto SplatMapTextureID = _Settings.GetEffectParamID("SplatMapTexture");
 		if (MtlParamTable.HasResource(SplatMapTextureID))
 		{
 			//std::string FileName = SplatMapPath.filename().generic_string();
@@ -483,7 +457,7 @@ public:
 			MtlParams.emplace_back(CStrID(SplatMapTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
 		}
 
-		const auto& AlbedoTextureID = GetEffectParamID("AlbedoTexture");
+		const auto AlbedoTextureID = _Settings.GetEffectParamID("AlbedoTexture");
 		Data::CDataArray* pAlbedoTextures;
 		if (ParamsUtils::TryGetParam(pAlbedoTextures, Task.Params, "AlbedoTexture"))
 		{

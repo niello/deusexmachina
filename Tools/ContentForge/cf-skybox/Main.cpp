@@ -1,4 +1,5 @@
 #include <ContentForgeTool.h>
+#include <SceneTools.h>
 #include <Render/ShaderMetaCommon.h>
 #include <Utils.h>
 #include <ParamsUtils.h>
@@ -16,9 +17,7 @@ class CSkyboxTool : public CContentForgeTool
 protected:
 
 	Data::CSchemeSet _SceneSchemes;
-
-	std::map<std::string, std::string> _EffectsByType;
-	std::map<std::string, std::string> _EffectParamAliases;
+	CSceneSettings   _Settings;
 
 	std::string _ResourceRoot;
 	std::string _SchemeFile;
@@ -63,26 +62,7 @@ public:
 			}
 		}
 
-		{
-			Data::CParams EffectSettings;
-			if (!ParamsUtils::LoadParamsFromHRD(_SettingsFile.c_str(), EffectSettings))
-			{
-				std::cout << "Couldn't load effect settings from " << _SettingsFile;
-				return 3;
-			}
-
-			const Data::CParams* pMap;
-			if (ParamsUtils::TryGetParam(pMap, EffectSettings, "Effects"))
-			{
-				for (const auto& Pair : *pMap)
-					_EffectsByType.emplace(Pair.first.ToString(), Pair.second.GetValue<std::string>());
-			}
-			if (ParamsUtils::TryGetParam(pMap, EffectSettings, "Params"))
-			{
-				for (const auto& Pair : *pMap)
-					_EffectParamAliases.emplace(Pair.first.ToString(), Pair.second.GetValue<std::string>());
-			}
-		}
+		if (!LoadSceneSettings(_SettingsFile, _Settings)) return 3;
 
 		return 0;
 	}
@@ -100,12 +80,6 @@ public:
 		CLIApp.add_flag("-r", _RecalcIBL, "Recalculate image-based lighting resources (IEM, PMREM) even if they exist");
 	}
 
-	const std::string& GetEffectParamID(const std::string& Alias)
-	{
-		auto It = _EffectParamAliases.find(Alias);
-		return (It == _EffectParamAliases.cend()) ? Alias : It->second;
-	}
-
 	virtual ETaskResult ProcessTask(CContentForgeTask& Task) override
 	{
 		const std::string TaskName = GetValidResourceName(Task.TaskID.ToString());
@@ -119,8 +93,8 @@ public:
 
 		const auto TexturePath = GetPath(Task.Params, "TextureOutput");
 
-		auto EffectIt = _EffectsByType.find("MetallicRoughnessSkybox");
-		if (EffectIt == _EffectsByType.cend() || EffectIt->second.empty())
+		auto EffectIt = _Settings.EffectsByType.find("MetallicRoughnessSkybox");
+		if (EffectIt == _Settings.EffectsByType.cend() || EffectIt->second.empty())
 		{
 			Task.Log.LogError("Material type MetallicRoughnessTerrain has no mapped DEM effect file in effect settings");
 			return ETaskResult::Failure;
@@ -137,7 +111,7 @@ public:
 
 		Data::CParams MtlParams;
 
-		const auto& SkyboxTextureID = GetEffectParamID("SkyboxTexture");
+		const auto SkyboxTextureID = _Settings.GetEffectParamID("SkyboxTexture");
 		if (MtlParamTable.HasResource(SkyboxTextureID))
 		{
 			auto DestPath = TexturePath / SkyboxFileName;

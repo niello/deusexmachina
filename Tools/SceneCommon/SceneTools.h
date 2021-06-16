@@ -28,13 +28,13 @@ namespace Data
 
 struct CSceneSettings
 {
-	std::map<std::string, std::string> EffectsByType;
-	std::map<std::string, std::string> EffectParamAliases;
+	std::map<std::string, std::string>              EffectsByType;
+	std::map<std::string, std::string, std::less<>> EffectParamAliases;
 
-	const std::string& GetEffectParamID(const std::string& Alias) const
+	std::string GetEffectParamID(const std::string_view Alias) const
 	{
 		auto It = EffectParamAliases.find(Alias);
-		return (It == EffectParamAliases.cend()) ? Alias : It->second;
+		return (It == EffectParamAliases.cend()) ? std::string(Alias) : It->second;
 	}
 };
 

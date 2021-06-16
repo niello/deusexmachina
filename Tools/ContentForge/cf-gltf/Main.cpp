@@ -891,7 +891,7 @@ public:
 
 		// Fill material constants
 
-		const auto& AlbedoFactorID = _Settings.GetEffectParamID("AlbedoFactor");
+		const auto AlbedoFactorID = _Settings.GetEffectParamID("AlbedoFactor");
 		if (MtlParamTable.HasConstant(AlbedoFactorID))
 		{
 			const auto& AlbedoFactor = Mtl.metallicRoughness.baseColorFactor;
@@ -899,21 +899,21 @@ public:
 				MtlParams.emplace_back(CStrID(AlbedoFactorID), float4(AlbedoFactor.r, AlbedoFactor.g, AlbedoFactor.b, AlbedoFactor.a));
 		}
 
-		const auto& MetallicFactorID = _Settings.GetEffectParamID("MetallicFactor");
+		const auto MetallicFactorID = _Settings.GetEffectParamID("MetallicFactor");
 		if (MtlParamTable.HasConstant(MetallicFactorID))
 		{
 			if (Mtl.metallicRoughness.metallicFactor != 1.f)
 				MtlParams.emplace_back(MetallicFactorID, Mtl.metallicRoughness.metallicFactor);
 		}
 
-		const auto& RoughnessFactorID = _Settings.GetEffectParamID("RoughnessFactor");
+		const auto RoughnessFactorID = _Settings.GetEffectParamID("RoughnessFactor");
 		if (MtlParamTable.HasConstant(RoughnessFactorID))
 		{
 			if (Mtl.metallicRoughness.roughnessFactor != 1.f)
 				MtlParams.emplace_back(RoughnessFactorID, Mtl.metallicRoughness.roughnessFactor);
 		}
 
-		const auto& EmissiveFactorID = _Settings.GetEffectParamID("EmissiveFactor");
+		const auto EmissiveFactorID = _Settings.GetEffectParamID("EmissiveFactor");
 		if (MtlParamTable.HasConstant(EmissiveFactorID))
 		{
 			if (Mtl.emissiveFactor != gltf::Color3(0.f, 0.f, 0.f))
@@ -922,7 +922,7 @@ public:
 
 		if (Mtl.alphaMode == gltf::AlphaMode::ALPHA_MASK)
 		{
-			const auto& AlphaCutoffID = _Settings.GetEffectParamID("AlphaCutoff");
+			const auto AlphaCutoffID = _Settings.GetEffectParamID("AlphaCutoff");
 			if (MtlParamTable.HasConstant(AlphaCutoffID))
 			{
 				if (Mtl.alphaCutoff != 0.5f)
@@ -934,7 +934,7 @@ public:
 
 		std::set<std::string> GLTFSamplers;
 
-		const auto& AlbedoTextureID = _Settings.GetEffectParamID("AlbedoTexture");
+		const auto AlbedoTextureID = _Settings.GetEffectParamID("AlbedoTexture");
 		if (!Mtl.metallicRoughness.baseColorTexture.textureId.empty() && MtlParamTable.HasResource(AlbedoTextureID))
 		{
 			std::string TextureID;
@@ -942,7 +942,7 @@ public:
 			MtlParams.emplace_back(AlbedoTextureID, TextureID);
 		}
 
-		const auto& MetallicRoughnessTextureID = _Settings.GetEffectParamID("MetallicRoughnessTexture");
+		const auto MetallicRoughnessTextureID = _Settings.GetEffectParamID("MetallicRoughnessTexture");
 		if (!Mtl.metallicRoughness.metallicRoughnessTexture.textureId.empty() && MtlParamTable.HasResource(MetallicRoughnessTextureID))
 		{
 			std::string TextureID;
@@ -950,7 +950,7 @@ public:
 			MtlParams.emplace_back(MetallicRoughnessTextureID, TextureID);
 		}
 
-		const auto& NormalTextureID = _Settings.GetEffectParamID("NormalTexture");
+		const auto NormalTextureID = _Settings.GetEffectParamID("NormalTexture");
 		if (!Mtl.normalTexture.textureId.empty() && MtlParamTable.HasResource(NormalTextureID))
 		{
 			std::string TextureID;
@@ -958,7 +958,7 @@ public:
 			MtlParams.emplace_back(NormalTextureID, TextureID);
 		}
 
-		const auto& OcclusionTextureID = _Settings.GetEffectParamID("OcclusionTexture");
+		const auto OcclusionTextureID = _Settings.GetEffectParamID("OcclusionTexture");
 		if (!Mtl.occlusionTexture.textureId.empty() && MtlParamTable.HasResource(OcclusionTextureID))
 		{
 			std::string TextureID;
@@ -966,7 +966,7 @@ public:
 			MtlParams.emplace_back(OcclusionTextureID, TextureID);
 		}
 
-		const auto& EmissiveTextureID = _Settings.GetEffectParamID("EmissiveTexture");
+		const auto EmissiveTextureID = _Settings.GetEffectParamID("EmissiveTexture");
 		if (!Mtl.emissiveTexture.textureId.empty() && MtlParamTable.HasResource(EmissiveTextureID))
 		{
 			std::string TextureID;
@@ -983,7 +983,7 @@ public:
 			if (GLTFSamplers.size() > 1)
 				Ctx.Log.LogWarning("Material " + Mtl.name + " uses more than one sampler, but DEM supports only one sampler per PBR material");
 
-			const auto& PBRTextureSamplerID = _Settings.GetEffectParamID("PBRTextureSampler");
+			const auto PBRTextureSamplerID = _Settings.GetEffectParamID("PBRTextureSampler");
 			if (MtlParamTable.HasSampler(PBRTextureSamplerID))
 			{
 				const std::string& SamplerGLTFID = *GLTFSamplers.begin();
@@ -1031,7 +1031,7 @@ public:
 			}
 		}
 
-		// Write resulting file
+		// Write resulting file and register material in the cache
 
 		const auto MtlRsrcName = GetValidResourceName(Mtl.name);
 		const auto DestPath = Ctx.MaterialPath / (MtlRsrcName + ".mtl");
@@ -1041,8 +1041,6 @@ public:
 		std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
 
 		if (!SaveMaterial(File, EffectIt->second, MtlParamTable, MtlParams, Ctx.Log)) return false;
-
-		// Register exported material in the cache
 
 		OutMaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 		Ctx.ProcessedMaterials.emplace(MtlName, OutMaterialID);
@@ -1077,7 +1075,6 @@ public:
 
 		Ctx.Log.LogDebug("Texture image " + Image.id + ": " + Image.uri + (Image.name.empty() ? "" : ", name: " + Image.name));
 
-		const auto SrcPath = Ctx.SrcFolder / Image.uri;
 		const auto DestPath = WriteTexture(Ctx.SrcFolder / Image.uri, Ctx.TexturePath, Ctx.TaskParams, Ctx.Log);
 		if (DestPath.empty()) return false;
 

@@ -51,6 +51,8 @@ struct float3
 		, z(Count > 2 ? pFloats[2] : 0.f)
 	{}
 
+	float3 operator *(float Factor) const { return { x* Factor, y * Factor, z * Factor }; }
+
 	bool operator ==(const float3& Other) const { return CompareFloat(x, Other.x) && CompareFloat(y, Other.y) && CompareFloat(z, Other.z); }
 	bool operator !=(const float3& Other) const { return !(*this == Other); }
 };
@@ -71,7 +73,7 @@ struct float4
 	constexpr float4(float x_, float y_, float z_, float w_) : x(x_), y(y_), z(z_), w(w_) {}
 	constexpr float4(std::initializer_list<float> List) : float4(List.begin(), List.size()) {}
 
-	float4(const float3& Other) : x(Other.x), y(Other.y), z(Other.z), w(0.f) {}
+	float4(const float3& Other, float w_ = 0.f) : x(Other.x), y(Other.y), z(Other.z), w(w_) {}
 	float4(const float4& Other) = default;
 	float4(float4&& Other) = default;
 
@@ -82,9 +84,13 @@ struct float4
 		, w(Count > 3 ? pFloats[3] : 0.f)
 	{}
 
+	float4 operator *(float Factor) const { return { x * Factor, y * Factor, z * Factor, w * Factor }; }
+
 	float4& operator =(const float4& Other) = default;
 	float4& operator =(float4&& Other) = default;
 
 	bool operator ==(const float4& Other) const { return CompareFloat(x, Other.x) && CompareFloat(y, Other.y) && CompareFloat(z, Other.z) && CompareFloat(w, Other.w); }
 	bool operator !=(const float4& Other) const { return !(*this == Other); }
+	bool operator ==(const float3& Other) const { return CompareFloat(x, Other.x) && CompareFloat(y, Other.y) && CompareFloat(z, Other.z); }
+	bool operator !=(const float3& Other) const { return !(*this == Other); }
 };
