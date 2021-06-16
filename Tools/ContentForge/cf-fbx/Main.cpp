@@ -320,6 +320,13 @@ public:
 		// Set default before parsing command line
 		_SchemeFile = "../schemes/scene.dss";
 		_SettingsFile = "../schemes/settings.hrd";
+
+		InitImageProcessing();
+	}
+
+	~CFBXTool()
+	{
+		TermImageProcessing();
 	}
 
 	virtual bool SupportsMultithreading() const override
@@ -1321,13 +1328,9 @@ public:
 
 		// Write resulting file
 
-		const auto MtlRsrcName = GetValidResourceName(MtlName);
-		const auto DestPath = Ctx.MaterialPath / (MtlRsrcName + ".mtl");
-
+		const auto DestPath = Ctx.MaterialPath / (GetValidResourceName(MtlName) + ".mtl");
 		fs::create_directories(DestPath.parent_path());
-
 		std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
-
 		if (!SaveMaterial(File, EffectIt->second, MtlParamTable, MtlParams, Ctx.Log)) return false;
 
 		OutMaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
