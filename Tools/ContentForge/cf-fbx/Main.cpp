@@ -1114,7 +1114,7 @@ public:
 		MeshInfo.MeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 		for (const auto& [SubMeshID, SubMesh] : SubMeshes)
 		{
-			std::string MaterialID;
+			fs::path MtlPath;
 			if (!SubMeshID.empty())
 			{
 				// Search for the precreated material
@@ -1126,19 +1126,20 @@ public:
 				{
 					// Export a new material
 					const int FbxMaterialIdx = pMesh->GetNode()->GetMaterialIndex(SubMeshID.c_str());
-					if (FbxMaterialIdx < 0 || !ExportMaterial(pMesh->GetNode()->GetMaterial(FbxMaterialIdx), MaterialID, Ctx))
+					if (FbxMaterialIdx >= 0 && ExportMaterial(pMesh->GetNode()->GetMaterial(FbxMaterialIdx), MtlPath, Ctx))
+						Ctx.MaterialMap.emplace(CStrID(SubMeshID.c_str()), MtlPath.generic_string());
+					else
 						Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " material " + SubMeshID + " is not defined in FBX or .meta");
 				}
-				else
-				{
-					fs::path MtlPath = MtlIt->second.GetValue<std::string>();
-					if (!_RootDir.empty() && MtlPath.is_relative())
-						MtlPath = fs::path(_RootDir) / MtlPath;
-
-					MaterialID = _ResourceRoot + fs::relative(MtlPath, _RootDir).generic_string();
-				}
+				else MtlPath = MtlIt->second.GetValue<std::string>();
 			}
 
+			std::string MaterialID;
+			if (!MtlPath.empty())
+			{
+				if (MtlPath.is_absolute()) MtlPath = fs::relative(MtlPath, _RootDir);
+				MaterialID = _ResourceRoot + MtlPath.generic_string();
+			}
 			MeshInfo.MaterialIDs.push_back(MaterialID);
 
 			MergeAABBs(MeshInfo.AABB, SubMesh.AABB);
@@ -1194,7 +1195,7 @@ public:
 	// Embed textures into FBX in a Blender FBX exporter. You can also declare existing DEM materials in .meta.
 	// PBR materials aren't supported in FBX, can't export. Use glTF 2.0 exporter for PBR materials.
 	// TODO: look at FBX SDK 2020.2 Standard Surface support.
-	bool ExportMaterial(FbxSurfaceMaterial* pMaterial, std::string& OutMaterialID, CContext& Ctx)
+	bool ExportMaterial(FbxSurfaceMaterial* pMaterial, fs::path& OutMaterialPath, CContext& Ctx)
 	{
 		if (!pMaterial) return false;
 
@@ -1346,7 +1347,7 @@ public:
 		std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
 		if (!SaveMaterial(File, EffectIt->second, MtlParamTable, MtlParams, Ctx.Log)) return false;
 
-		OutMaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+		OutMaterialPath = fs::relative(DestPath, _RootDir);
 
 		return true;
 	}
