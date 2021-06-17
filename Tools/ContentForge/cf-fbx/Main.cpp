@@ -14,7 +14,10 @@ namespace fs = std::filesystem;
 // Example args:
 // -s src/scenes --path Data ../../../content
 
-// Blender export settings:
+// NB: FBX SDK supports fbx, dxf, dae, obj and 3ds, so cf-fbx must be able to read all of them too.
+
+// Blender v2.90 export settings:
+// - Path Mode: Copy, Embed Textures (recommended for material export, but you can try separated texture files too)
 // - Custom Properties: on
 // - Apply Scalings: FBX Units Scale / FBX All
 // - Forward: -Z
@@ -1137,7 +1140,7 @@ public:
 			std::string MaterialID;
 			if (!MtlPath.empty())
 			{
-				if (MtlPath.is_absolute()) MtlPath = fs::relative(MtlPath, _RootDir);
+				if (!_RootDir.empty() && MtlPath.is_absolute()) MtlPath = fs::relative(MtlPath, _RootDir);
 				MaterialID = _ResourceRoot + MtlPath.generic_string();
 			}
 			MeshInfo.MaterialIDs.push_back(MaterialID);
@@ -1192,7 +1195,7 @@ public:
 				Out.push_back(pTex);
 	}
 
-	// Embed textures into FBX in a Blender FBX exporter. You can also declare existing DEM materials in .meta.
+	// You can also declare existing DEM materials in .meta an associate them to FBX materials by name.
 	// PBR materials aren't supported in FBX, can't export. Use glTF 2.0 exporter for PBR materials.
 	// TODO: look at FBX SDK 2020.2 Standard Surface support.
 	bool ExportMaterial(FbxSurfaceMaterial* pMaterial, fs::path& OutMaterialPath, CContext& Ctx)
@@ -1331,12 +1334,12 @@ public:
 				// Make specular monochrome! Use fixed metallness (zero, phong is a plastic)!
 
 				//std::string TextureID;
-				//if (!ExportTexture(Mtl.metallicRoughness.metallicRoughnessTexture, TextureID, GLTFSamplers, Ctx)) return false;
+				//if (!ExportTexture(Mtl.metallicRoughness.metallicRoughnessTexture, TextureID, Ctx)) return false;
 				//MtlParams.emplace_back(MetallicRoughnessTextureID, TextureID);
 			}
 		}
 
-		// TODO: need sampler? Can get info from FBX?
+		//!!!TODO: need samplers!!!
 		//const auto PBRTextureSamplerID = _Settings.GetEffectParamID("PBRTextureSampler");
 		//if (MtlParamTable.HasSampler(PBRTextureSamplerID))
 
@@ -1347,7 +1350,7 @@ public:
 		std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
 		if (!SaveMaterial(File, EffectIt->second, MtlParamTable, MtlParams, Ctx.Log)) return false;
 
-		OutMaterialPath = fs::relative(DestPath, _RootDir);
+		OutMaterialPath = _RootDir.empty() ? DestPath : fs::relative(DestPath, _RootDir);
 
 		return true;
 	}
