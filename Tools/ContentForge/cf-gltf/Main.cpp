@@ -979,7 +979,6 @@ public:
 		//even if the material has the sampler explicitly defined! Compare CSamplerDesc.
 		if (!GLTFSamplers.empty())
 		{
-			std::string SamplerName;
 			if (GLTFSamplers.size() > 1)
 				Ctx.Log.LogWarning("Material " + Mtl.name + " uses more than one sampler, but DEM supports only one sampler per PBR material");
 
@@ -1027,7 +1026,7 @@ public:
 						break;
 				}
 
-				MtlParams.emplace_back(PBRTextureSamplerID, std::move(SamplerDesc));
+				if (!SamplerDesc.empty()) MtlParams.emplace_back(PBRTextureSamplerID, std::move(SamplerDesc));
 			}
 		}
 

@@ -1256,9 +1256,11 @@ public:
 		}
 
 		// Fill material textures and samplers
-
 		// TODO: support layered textures?
 		// TODO: support procedural textures?
+
+		std::set<FbxTexture*> UsedTextures;
+
 		const auto AlbedoTextureID = _Settings.GetEffectParamID("AlbedoTexture");
 		if (MtlParamTable.HasResource(AlbedoTextureID))
 		{
@@ -1273,6 +1275,7 @@ public:
 
 				std::string TextureID;
 				if (!ExportTexture(*Textures.begin(), TextureID, Ctx)) return false;
+				UsedTextures.insert(*Textures.begin());
 				MtlParams.emplace_back(AlbedoTextureID, TextureID);
 			}
 		}
@@ -1292,6 +1295,7 @@ public:
 
 				std::string TextureID;
 				if (!ExportTexture(*Textures.begin(), TextureID, Ctx)) return false;
+				UsedTextures.insert(*Textures.begin());
 				MtlParams.emplace_back(NormalTextureID, TextureID);
 			}
 		}
@@ -1311,6 +1315,7 @@ public:
 
 				std::string TextureID;
 				if (!ExportTexture(*Textures.begin(), TextureID, Ctx)) return false;
+				UsedTextures.insert(*Textures.begin());
 				MtlParams.emplace_back(EmissiveTextureID, TextureID);
 			}
 		}
@@ -1335,13 +1340,54 @@ public:
 
 				//std::string TextureID;
 				//if (!ExportTexture(Mtl.metallicRoughness.metallicRoughnessTexture, TextureID, Ctx)) return false;
+				//UsedTextures.insert(*Textures.begin());
 				//MtlParams.emplace_back(MetallicRoughnessTextureID, TextureID);
 			}
 		}
 
-		//!!!TODO: need samplers!!!
-		//const auto PBRTextureSamplerID = _Settings.GetEffectParamID("PBRTextureSampler");
-		//if (MtlParamTable.HasSampler(PBRTextureSamplerID))
+		//!!!TODO:
+		//pTex->GetWrapModeU();
+		//pTex->GetWrapModeV();
+		//pTex->GetBlendMode(); //???only for layered?
+		//pTex->GetTextureType();
+		if (!UsedTextures.empty())
+		{
+			const FbxTexture* pTex = *UsedTextures.cbegin();
+
+			bool NotEqual = false;
+			for (auto It = ++UsedTextures.cbegin(); It != UsedTextures.cend(); ++It)
+			{
+				if (pTex->GetWrapModeU() != (*It)->GetWrapModeU() || pTex->GetWrapModeV() != (*It)->GetWrapModeV())
+				{
+					NotEqual = true;
+					break;
+				}
+			}
+
+			if (NotEqual)
+				Ctx.Log.LogWarning("Material " + MtlName + " uses more than one sampler, but DEM supports only one sampler per PBR material");
+
+			// NB: FBX doesn't support texture filtering
+			const auto PBRTextureSamplerID = _Settings.GetEffectParamID("PBRTextureSampler");
+			if (MtlParamTable.HasSampler(PBRTextureSamplerID))
+			{
+				Data::CParams SamplerDesc;
+
+				switch (pTex->GetWrapModeU())
+				{
+					case FbxTexture::EWrapMode::eRepeat: SamplerDesc.emplace_back(CStrID("AddressU"), std::string("wrap")); break;
+					case FbxTexture::EWrapMode::eClamp: SamplerDesc.emplace_back(CStrID("AddressU"), std::string("clamp")); break;
+				}
+
+				switch (pTex->GetWrapModeV())
+				{
+					case FbxTexture::EWrapMode::eRepeat: SamplerDesc.emplace_back(CStrID("AddressV"), std::string("wrap")); break;
+					case FbxTexture::EWrapMode::eClamp: SamplerDesc.emplace_back(CStrID("AddressV"), std::string("clamp")); break;
+				}
+
+				if (!SamplerDesc.empty()) MtlParams.emplace_back(PBRTextureSamplerID, std::move(SamplerDesc));
+			}
+		}
 
 		// Write resulting file
 
@@ -1357,12 +1403,6 @@ public:
 
 	bool ExportTexture(FbxFileTexture* pTex, std::string& OutTextureID, CContext& Ctx)
 	{
-		//!!!TODO:
-		//pTex->GetWrapModeU();
-		//pTex->GetWrapModeV();
-		//pTex->GetBlendMode(); //???only for layered?
-		//pTex->GetTextureType();
-
 		auto It = Ctx.ProcessedTextures.find(pTex);
 		if (It != Ctx.ProcessedTextures.cend())
 		{
