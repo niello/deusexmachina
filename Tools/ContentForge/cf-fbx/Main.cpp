@@ -1122,25 +1122,20 @@ public:
 				if (MtlIt == Ctx.MaterialMap.cend())
 					MtlIt = Ctx.MaterialMap.find(CStrID(GetValidResourceName(SubMeshID).c_str()));
 
-				// Export a new material
 				if (MtlIt == Ctx.MaterialMap.cend())
 				{
+					// Export a new material
 					const int FbxMaterialIdx = pMesh->GetNode()->GetMaterialIndex(SubMeshID.c_str());
-					if (FbxMaterialIdx >= 0 && ExportMaterial(pMesh->GetNode()->GetMaterial(FbxMaterialIdx), MaterialID, Ctx))
-						MtlIt = Ctx.MaterialMap.emplace(CStrID(SubMeshID.c_str()), MaterialID).first;
+					if (FbxMaterialIdx < 0 || !ExportMaterial(pMesh->GetNode()->GetMaterial(FbxMaterialIdx), MaterialID, Ctx))
+						Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " material " + SubMeshID + " is not defined in FBX or .meta");
 				}
-
-				if (MtlIt != Ctx.MaterialMap.cend())
+				else
 				{
 					fs::path MtlPath = MtlIt->second.GetValue<std::string>();
 					if (!_RootDir.empty() && MtlPath.is_relative())
 						MtlPath = fs::path(_RootDir) / MtlPath;
 
 					MaterialID = _ResourceRoot + fs::relative(MtlPath, _RootDir).generic_string();
-				}
-				else
-				{
-					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " material " + SubMeshID + " is not defined in FBX or .meta");
 				}
 			}
 
@@ -1178,7 +1173,7 @@ public:
 		return true;
 	}
 
-	void CollectTextures(FbxProperty& Property, std::set<FbxFileTexture*>& Out)
+	void CollectTextures(FbxProperty& Property, std::vector<FbxFileTexture*>& Out)
 	{
 		int Count = Property.GetSrcObjectCount<FbxLayeredTexture>();
 		for (int i = 0; i < Count; ++i)
@@ -1187,13 +1182,13 @@ public:
 			const int LayerCount = pLayeredTex->GetSrcObjectCount<FbxTexture>();
 			for (int j = 0; j < LayerCount; ++j)
 				if (FbxFileTexture* pTex = FbxCast<FbxFileTexture>(pLayeredTex->GetSrcObject<FbxTexture>(j)))
-					Out.insert(pTex);
+					Out.push_back(pTex);
 		}
 
 		Count = Property.GetSrcObjectCount<FbxTexture>();
 		for (int i = 0; i < Count; ++i)
 			if (FbxFileTexture* pTex = FbxCast<FbxFileTexture>(Property.GetSrcObject<FbxTexture>(i)))
-				Out.insert(pTex);
+				Out.push_back(pTex);
 	}
 
 	// Embed textures into FBX in a Blender FBX exporter. You can also declare existing DEM materials in .meta.
@@ -1263,7 +1258,7 @@ public:
 		const auto AlbedoTextureID = _Settings.GetEffectParamID("AlbedoTexture");
 		if (MtlParamTable.HasResource(AlbedoTextureID))
 		{
-			std::set<FbxFileTexture*> Textures;
+			std::vector<FbxFileTexture*> Textures;
 			CollectTextures(pLambert->Diffuse, Textures);
 
 			if (!Textures.empty())
@@ -1278,25 +1273,43 @@ public:
 			}
 		}
 
-		/*
-		// NormalMap, Bump
 		const auto NormalTextureID = _Settings.GetEffectParamID("NormalTexture");
-		if (!Mtl.normalTexture.textureId.empty() && MtlParamTable.HasResource(NormalTextureID))
+		if (MtlParamTable.HasResource(NormalTextureID))
 		{
-			std::string TextureID;
-			if (!ExportTexture(Mtl.normalTexture, TextureID, GLTFSamplers, Ctx)) return false;
-			MtlParams.emplace_back(NormalTextureID, TextureID);
+			std::vector<FbxFileTexture*> Textures;
+			CollectTextures(pLambert->NormalMap, Textures);
+			CollectTextures(pLambert->Bump, Textures);
+
+			if (!Textures.empty())
+			{
+				// For now export only the first texture
+				if (Textures.size() > 1)
+					Ctx.Log.LogWarning("There are more than one normal texture in a material " + MtlName + ", only one will be used");
+
+				std::string TextureID;
+				if (!ExportTexture(*Textures.begin(), TextureID, Ctx)) return false;
+				MtlParams.emplace_back(NormalTextureID, TextureID);
+			}
 		}
 
-		// Emissive
 		const auto EmissiveTextureID = _Settings.GetEffectParamID("EmissiveTexture");
-		if (!Mtl.emissiveTexture.textureId.empty() && MtlParamTable.HasResource(EmissiveTextureID))
+		if (MtlParamTable.HasResource(EmissiveTextureID))
 		{
-			std::string TextureID;
-			if (!ExportTexture(Mtl.emissiveTexture, TextureID, GLTFSamplers, Ctx)) return false;
-			MtlParams.emplace_back(EmissiveTextureID, TextureID);
+			std::vector<FbxFileTexture*> Textures;
+			CollectTextures(pLambert->NormalMap, Textures);
+			CollectTextures(pLambert->Bump, Textures);
+
+			if (!Textures.empty())
+			{
+				// For now export only the first texture
+				if (Textures.size() > 1)
+					Ctx.Log.LogWarning("There are more than one emissive texture in a material " + MtlName + ", only one will be used");
+
+				std::string TextureID;
+				if (!ExportTexture(*Textures.begin(), TextureID, Ctx)) return false;
+				MtlParams.emplace_back(EmissiveTextureID, TextureID);
+			}
 		}
-		*/
 
 		// For phong surfaces convert specular to roughness. For non-phong an effect should provide
 		// default roughness factor or texture. We don't try to set defaults here.
