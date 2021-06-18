@@ -552,16 +552,14 @@ public:
 		{
 			gltf::ExtrasDocument MeshExtras(Mesh.extras.c_str());
 			std::string ShapeType = MeshExtras.GetMemberValueOrDefault<std::string>("DEM_collision");
-			trim(ShapeType, " \t\n\r");
-			ToLower(ShapeType);
-			if (!ShapeType.empty())
+			const auto MeshRsrcName = GetValidResourceName(Mesh.name.empty() ? Ctx.TaskName + '_' + Mesh.name : Mesh.name);
+
+			const auto ShapePath = GenerateCollisionShape(ShapeType, Ctx.CollisionPath, MeshRsrcName, MeshInfo, GlobalTfm, Ctx.Log);
+			if (!ShapePath.has_value()) return false; //???warn instead of failing and proceed without a shape?
+
+			if (!ShapePath.value().empty())
 			{
-				const auto MeshRsrcName = GetValidResourceName(Mesh.name.empty() ? Ctx.TaskName + '_' + Mesh.name : Mesh.name);
-
-				const auto ShapePath = GenerateCollisionShape(std::move(ShapeType), Ctx.CollisionPath, MeshRsrcName, MeshInfo, GlobalTfm, Ctx.Log);
-				if (ShapePath.empty()) return false; //???warn instead of failing and proceed without a shape?
-
-				const auto ShapeID = _ResourceRoot + fs::relative(ShapePath, _RootDir).generic_string();
+				const auto ShapeID = _ResourceRoot + fs::relative(ShapePath.value(), _RootDir).generic_string();
 
 				Data::CParams CollisionAttribute;
 				CollisionAttribute.emplace_back(CStrID("Class"), 'COLA'); // Physics::CCollisionAttribute

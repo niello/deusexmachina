@@ -110,7 +110,7 @@ Game::HEntity CItemManager::CreateStack(CStrID ItemID, U32 Count, CStrID LevelID
 		return {};
 	}
 
-	//!!!if add to existing (especially multi-item) object, may change model to some sack, bigger and bigger.
+	//!!!if add to existing (especially multi-item) containing object, may change model to some sack, bigger and bigger.
 	//!!!if no asset ID specified, use default, maybe based on item type and size.
 	CStrID ModelAssetID = pItem->InLocationModelID;
 	if (!ModelAssetID)

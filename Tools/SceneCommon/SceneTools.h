@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <filesystem>
+#include <optional>
 
 // Common tools for scene hierarchy and resources processing.
 // Used by converters from different common formats (FBX, glTF) to DEM.
@@ -212,6 +213,6 @@ bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name
 void InitImageProcessing();
 void TermImageProcessing();
 std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesystem::path& DestDir, const Data::CParams& TaskParams, CThreadSafeLog& Log);
-std::string GenerateCollisionShape(std::string ShapeType, const std::filesystem::path& ShapeDir, const std::string& MeshRsrcName, const CMeshAttrInfo& MeshInfo, const acl::Transform_32& GlobalTfm, CThreadSafeLog& Log);
+std::optional<std::string> GenerateCollisionShape(std::string ShapeType, const std::filesystem::path& ShapeDir, const std::string& MeshRsrcName, const CMeshAttrInfo& MeshInfo, const acl::Transform_32& GlobalTfm, CThreadSafeLog& Log);
 void FillNodeTransform(const acl::Transform_32& Tfm, Data::CParams& NodeSection);
 bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate, acl::Vector4_32 ForwardDir, acl::Vector4_32 UpDir, acl::Vector4_32 SideDir, const std::vector<acl::Vector4_32>& RootPositions, const std::vector<acl::Vector4_32>& LeftFootPositions, const std::vector<acl::Vector4_32>& RightFootPositions);

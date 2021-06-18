@@ -19,6 +19,11 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/DevIL/DevIL/src-IL" "${
 set_target_properties(IL PROPERTIES FOLDER "Deps")
 target_compile_definitions(IL PUBLIC IL_STATIC_LIB)
 
+# Dependency: Bullet Physics' LinearMath (for convex hull collision shape generation from mesh)
+set(BULLET_PHYSICS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/bullet" CACHE INTERNAL "" FORCE)
+FILE(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/bullet/VERSION" BULLET_VERSION)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/bullet/src/LinearMath" "${CMAKE_CURRENT_BINARY_DIR}/Deps/bullet/LinearMath")
+
 # SceneCommon
 include(src.cmake)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_SCENE_COMMON_HEADERS} ${DEM_SCENE_COMMON_SOURCES})
@@ -27,9 +32,10 @@ target_include_directories(SceneCommon PUBLIC
 	"${CMAKE_CURRENT_SOURCE_DIR}"
 	"${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/acl/includes"
 	"${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/DevIL/DevIL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/bullet/src"
 )
 target_link_libraries(SceneCommon PUBLIC ToolsCommon)
-target_link_libraries(SceneCommon PRIVATE meshoptimizer IL)
+target_link_libraries(SceneCommon PRIVATE meshoptimizer IL LinearMath)
 # Instead of setting PNG_LIBRARIES for DevIL, link here to handle debug/release versions
 target_link_libraries(SceneCommon PRIVATE
 	debug "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/CEGUI/dependencies/lib/static/libpng_d.lib"

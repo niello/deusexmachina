@@ -695,21 +695,19 @@ public:
 
 		// Create collision shape if necessary
 
-		auto DEM_collision = pMesh->FindProperty("DEM_collision", true);
+		auto DEM_collision = pMesh->FindProperty("DEM_collision");
 		if (DEM_collision.IsValid())
 		{
 			std::string ShapeType = DEM_collision.Get<FbxString>();
-			trim(ShapeType, " \t\n\r");
-			ToLower(ShapeType);
-			if (!ShapeType.empty())
+			const std::string MeshName = pMesh->GetName();
+			const auto MeshRsrcName = GetValidResourceName(MeshName.empty() ? Ctx.TaskName + '_' + MeshName : MeshName);
+
+			const auto ShapePath = GenerateCollisionShape(ShapeType, Ctx.CollisionPath, MeshRsrcName, MeshInfo, GlobalTfm, Ctx.Log);
+			if (!ShapePath.has_value()) return false; //???warn instead of failing and proceed without a shape?
+
+			if (!ShapePath.value().empty())
 			{
-				const std::string MeshName = pMesh->GetName();
-				const auto MeshRsrcName = GetValidResourceName(MeshName.empty() ? Ctx.TaskName + '_' + MeshName : MeshName);
-
-				const auto ShapePath = GenerateCollisionShape(std::move(ShapeType), Ctx.CollisionPath, MeshRsrcName, MeshInfo, GlobalTfm, Ctx.Log);
-				if (ShapePath.empty()) return false; //???warn instead of failing and proceed without a shape?
-
-				const auto ShapeID = _ResourceRoot + fs::relative(ShapePath, _RootDir).generic_string();
+				const auto ShapeID = _ResourceRoot + fs::relative(ShapePath.value(), _RootDir).generic_string();
 
 				Data::CParams CollisionAttribute;
 				CollisionAttribute.emplace_back(CStrID("Class"), 'COLA'); // Physics::CCollisionAttribute
@@ -1345,11 +1343,6 @@ public:
 			}
 		}
 
-		//!!!TODO:
-		//pTex->GetWrapModeU();
-		//pTex->GetWrapModeV();
-		//pTex->GetBlendMode(); //???only for layered?
-		//pTex->GetTextureType();
 		if (!UsedTextures.empty())
 		{
 			const FbxTexture* pTex = *UsedTextures.cbegin();
