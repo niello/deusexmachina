@@ -227,9 +227,9 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 	for (const auto& [SubMeshID, SubMesh] : SubMeshes)
 	{
 		WriteStream<uint32_t>(File, 0);                                            // First vertex
-		WriteStream(File, static_cast<uint32_t>(SubMesh.Vertices.size()));     // Vertex count
+		WriteStream(File, static_cast<uint32_t>(SubMesh.Vertices.size()));         // Vertex count
 		WriteStream<uint32_t>(File, 0);                                            // First index
-		WriteStream(File, static_cast<uint32_t>(SubMesh.Indices.size()));      // Index count
+		WriteStream(File, static_cast<uint32_t>(SubMesh.Indices.size()));          // Index count
 		WriteStream(File, static_cast<uint8_t>(EPrimitiveTopology::Prim_TriList));
 		WriteStream(File, SubMesh.AABB.Min);
 		WriteStream(File, SubMesh.AABB.Max);
@@ -353,11 +353,52 @@ bool ReadDEMMeshVertexPositions(const std::filesystem::path& Path, std::vector<f
 
 	const auto SubMeshCount = ReadStream<uint32_t>(File);
 	const auto VertexCount = ReadStream<uint32_t>(File);
+
+	Out.resize(VertexCount);
+	if (!VertexCount) return true;
+
 	const auto IndexCount = ReadStream<uint32_t>(File);
 
 	ReadStream<uint8_t>(File); // Skip index size
 
+	size_t PosOffset = 0;
+	size_t VertexSize = 0;
+	bool PosFound = false;
 	const auto VertexComponentCount = ReadStream<uint32_t>(File);
+	for (uint32_t i = 0; i < VertexComponentCount; ++i)
+	{
+		const auto Semantic = static_cast<EVertexComponentSemantic>(ReadStream<uint8_t>(File));
+		const auto Format = static_cast<EVertexComponentFormat>(ReadStream<uint8_t>(File));
+		const size_t ComponentSize = GetVertexComponentSize(Format);
+
+		VertexSize += ComponentSize;
+
+		if (Semantic == EVertexComponentSemantic::VCSem_Position)
+			PosFound = true;
+		else if (!PosFound)
+			PosOffset += ComponentSize;
+
+		// Skip Index and StreamIndex
+		ReadStream<uint8_t>(File);
+		ReadStream<uint8_t>(File);
+	}
+
+	// Skip mesh group definitions, 41 byte each
+	File.seekg(SubMeshCount * 41, std::ios_base::_Seekcur);
+
+	const auto VertexDataOffset = ReadStream<uint32_t>(File);
+	const auto IndexDataOffset = ReadStream<uint32_t>(File);
+
+	// Seek to the first vertex position
+	File.seekg(VertexDataOffset + PosOffset, std::ios_base::_Seekbeg);
+	const auto RemainingVertexSize = VertexSize - sizeof(float3);
+
+	for (uint32_t i = 0; i < VertexCount; ++i)
+	{
+		ReadStream(File, Out[i]);
+		if (i < VertexCount - 1 && RemainingVertexSize > 0)
+			File.seekg(RemainingVertexSize, std::ios_base::_Seekcur);
+	}
 
 	return true;
 }
@@ -723,17 +764,19 @@ std::optional<std::string> GenerateCollisionShape(std::string ShapeType, const s
 		btConvexHullComputer Conv;
 		Conv.compute(Vertices[0].v, sizeof(float3), Vertices.size(), 0.f, 0.f);
 
-		const int VertexCount = Conv.vertices.size();
-		if (!VertexCount) return std::string{};
-
-		for (int i = 0; i < VertexCount; ++i)
-		{
-			Conv.vertices[i];
-		}
-
-		//!!!save convex hull shape! data array of vertices?
+		const int HullVertexCount = Conv.vertices.size();
+		if (!HullVertexCount) return std::string{};
 
 		CollisionShape.emplace_back(CStrID("Type"), CStrID("ConvexHull"));
+
+		Data::CDataArray HullVertices(HullVertexCount);
+		for (int i = 0; i < HullVertexCount; ++i)
+		{
+			const auto& HullVertex = Conv.vertices[i];
+			HullVertices[i].SetValue(float3(HullVertex.getX(), HullVertex.getY(), HullVertex.getZ()));
+		}
+
+		CollisionShape.emplace_back(CStrID("Vertices"), std::move(HullVertices));
 	}
 	else if (ShapeType == "mesh")
 	{
