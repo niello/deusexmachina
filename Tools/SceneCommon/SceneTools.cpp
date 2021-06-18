@@ -789,7 +789,9 @@ std::optional<std::string> GenerateCollisionShape(std::string ShapeType, const s
 		return std::nullopt;
 	}
 
-	CollisionShape.emplace_back(CStrID("Offset"), Center);
+	if (ShapeType != "convex" && ShapeType != "mesh")
+		CollisionShape.emplace_back(CStrID("Offset"), Center);
+
 	CollisionShape.emplace_back(CStrID("Scaling"), Scaling);
 
 	const auto ShapePath = ShapeDir / (MeshRsrcName + ".hrd");

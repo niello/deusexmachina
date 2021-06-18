@@ -5,6 +5,7 @@
 #include <Data/Buffer.h>
 #include <Data/HRDParser.h>
 #include <Data/Params.h>
+#include <Data/DataArray.h>
 
 namespace Resources
 {
@@ -62,8 +63,16 @@ Core::PObject CCollisionLoaderHRD::CreateResource(CStrID UID)
 		return Physics::CCollisionShape::CreateCapsuleZ(Params.Get(sidRadius, 0.f), Params.Get(sidHeight, 0.f), Offset, Scaling);
 	else if (Type == sidConvexHull)
 	{
-		NOT_IMPLEMENTED;
-		//	return Physics::CCollisionShape::CreateConvexHull(Params.Get(sidVertices, Data::PDataArray{}), Offset, Scaling);
+		// TODO: optimize, e.g. save convex hull in a .msh or simple binary file! May support both binary and HRD arrays!
+		Data::PDataArray VerticesData;
+		if (!Params.TryGet(VerticesData, sidVertices)) return nullptr;
+
+		const auto VertexCount = VerticesData->GetCount();
+		std::unique_ptr<vector3[]> Vertices(new vector3[VertexCount]);
+		for (size_t i = 0; i < VertexCount; ++i)
+			Vertices[i] = (*VerticesData)[i];
+
+		return Physics::CCollisionShape::CreateConvexHull(Vertices.get(), VertexCount, Offset, Scaling);
 	}
 
 	return nullptr;
