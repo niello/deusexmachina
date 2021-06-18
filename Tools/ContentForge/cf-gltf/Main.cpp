@@ -557,7 +557,9 @@ public:
 			const auto ShapePath = GenerateCollisionShape(ShapeType, Ctx.CollisionPath, MeshRsrcName, MeshInfo, GlobalTfm, _PathAliases, Ctx.Log);
 			if (!ShapePath.has_value()) return false; //???warn instead of failing and proceed without a shape?
 
-			if (!ShapePath.value().empty())
+			// Don't create a collision shape for rigid bodies
+			const bool IsRigidBody = ParamsUtils::GetParam(Ctx.TaskParams, "RigidBody", false);
+			if (!ShapePath.value().empty() && !IsRigidBody)
 			{
 				const auto ShapeID = _ResourceRoot + fs::relative(ShapePath.value(), _RootDir).generic_string();
 
