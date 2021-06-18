@@ -551,7 +551,7 @@ public:
 	bool ProcessMeshGeometry(const Data::CParams& Desc, const acl::Transform_32& WorldTfm, std::vector<float>& OutVertices, std::vector<int>& OutIndices, CThreadSafeLog& Log)
 	{
 		const auto ResourceID = ParamsUtils::GetParam(Desc, "Mesh", std::string{});
-		const auto Path = ResolvePathAliases(ResourceID);
+		const auto Path = ResolvePathAliases(ResourceID, _PathAliases);
 
 		std::ifstream File(Path, std::ios_base::binary);
 		if (!File)
@@ -726,7 +726,7 @@ public:
 	bool ProcessTerrainGeometry(const Data::CParams& Desc, const acl::Transform_32& WorldTfm, std::vector<float>& OutVertices, std::vector<int>& OutIndices, CThreadSafeLog& Log)
 	{
 		const auto ResourceID = ParamsUtils::GetParam(Desc, "Terrain", std::string{});
-		const auto Path = ResolvePathAliases(ResourceID);
+		const auto Path = ResolvePathAliases(ResourceID, _PathAliases);
 
 		std::ifstream File(Path, std::ios_base::binary);
 		if (!File)

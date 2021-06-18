@@ -71,7 +71,6 @@ public:
 	int Execute(int argc, const char** argv);
 
 	std::filesystem::path GetPath(const Data::CParams& TaskParams, const char* pPathID) const;
-	std::filesystem::path ResolvePathAliases(const std::string& Path) const;
 
 	const std::string& GetName() const { return _Name; }
 	const std::string& GetDesc() const { return _Desc; }

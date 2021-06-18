@@ -702,7 +702,7 @@ public:
 			const std::string MeshName = pMesh->GetName();
 			const auto MeshRsrcName = GetValidResourceName(MeshName.empty() ? Ctx.TaskName + '_' + MeshName : MeshName);
 
-			const auto ShapePath = GenerateCollisionShape(ShapeType, Ctx.CollisionPath, MeshRsrcName, MeshInfo, GlobalTfm, Ctx.Log);
+			const auto ShapePath = GenerateCollisionShape(ShapeType, Ctx.CollisionPath, MeshRsrcName, MeshInfo, GlobalTfm, _PathAliases, Ctx.Log);
 			if (!ShapePath.has_value()) return false; //???warn instead of failing and proceed without a shape?
 
 			if (!ShapePath.value().empty())
@@ -1227,7 +1227,7 @@ public:
 		}
 
 		CMaterialParams MtlParamTable;
-		auto Path = ResolvePathAliases(EffectIt->second).generic_string();
+		auto Path = ResolvePathAliases(EffectIt->second, _PathAliases).generic_string();
 		Ctx.Log.LogDebug("Opening effect " + Path);
 		if (!GetEffectMaterialParams(MtlParamTable, Path, Ctx.Log)) return false;
 

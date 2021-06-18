@@ -76,7 +76,7 @@ public:
 					return ETaskResult::Failure;
 				}
 
-				auto Path = ResolvePathAliases(EffectPathData.GetValue<std::string>());
+				auto Path = ResolvePathAliases(EffectPathData.GetValue<std::string>(), _PathAliases);
 				Task.Log.LogDebug("Opening effect " + Path.generic_string());
 
 				auto FilePtr = std::make_shared<std::ifstream>(Path, std::ios_base::binary);

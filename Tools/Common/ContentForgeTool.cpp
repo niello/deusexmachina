@@ -320,25 +320,3 @@ std::filesystem::path CContentForgeTool::GetPath(const Data::CParams& TaskParams
 	return Result;
 }
 //---------------------------------------------------------------------
-
-std::filesystem::path CContentForgeTool::ResolvePathAliases(const std::string& Path) const
-{
-	std::string Result = Path;
-	auto Pos = Result.find_first_of(':');
-	while (Pos != std::string::npos)
-	{
-		if (Pos > 0)
-		{
-			std::string Alias = Result.substr(0, Pos);
-			auto It = _PathAliases.find(Alias);
-			if (It == _PathAliases.cend()) break; // Not an alias, path is resolved
-			Result = (It->second / Result.substr(Pos + 1)).string();
-		}
-		else Result = Result.substr(1); // Empty alias, just remove leading ':'
-
-		Pos = Result.find_first_of(':');
-	}
-
-	return Result;
-}
-//---------------------------------------------------------------------

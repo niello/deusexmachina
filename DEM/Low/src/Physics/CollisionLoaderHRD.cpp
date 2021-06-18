@@ -44,6 +44,8 @@ Core::PObject CCollisionLoaderHRD::CreateResource(CStrID UID)
 	const CStrID sidCapsuleX("CapsuleX");
 	const CStrID sidCapsuleY("CapsuleY");
 	const CStrID sidCapsuleZ("CapsuleZ");
+	const CStrID sidConvexHull("ConvexHull");
+	const CStrID sidVertices("Vertices");
 
 	const auto Type = Params.Get(sidType, CStrID::Empty);
 	const auto& Offset = Params.Get(sidOffset, vector3::Zero);
@@ -58,6 +60,11 @@ Core::PObject CCollisionLoaderHRD::CreateResource(CStrID UID)
 		return Physics::CCollisionShape::CreateCapsuleY(Params.Get(sidRadius, 0.f), Params.Get(sidHeight, 0.f), Offset, Scaling);
 	else if (Type == sidCapsuleZ)
 		return Physics::CCollisionShape::CreateCapsuleZ(Params.Get(sidRadius, 0.f), Params.Get(sidHeight, 0.f), Offset, Scaling);
+	else if (Type == sidConvexHull)
+	{
+		NOT_IMPLEMENTED;
+		//	return Physics::CCollisionShape::CreateConvexHull(Params.Get(sidVertices, Data::PDataArray{}), Offset, Scaling);
+	}
 
 	return nullptr;
 }

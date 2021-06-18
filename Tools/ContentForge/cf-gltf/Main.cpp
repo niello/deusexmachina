@@ -554,7 +554,7 @@ public:
 			std::string ShapeType = MeshExtras.GetMemberValueOrDefault<std::string>("DEM_collision");
 			const auto MeshRsrcName = GetValidResourceName(Mesh.name.empty() ? Ctx.TaskName + '_' + Mesh.name : Mesh.name);
 
-			const auto ShapePath = GenerateCollisionShape(ShapeType, Ctx.CollisionPath, MeshRsrcName, MeshInfo, GlobalTfm, Ctx.Log);
+			const auto ShapePath = GenerateCollisionShape(ShapeType, Ctx.CollisionPath, MeshRsrcName, MeshInfo, GlobalTfm, _PathAliases, Ctx.Log);
 			if (!ShapePath.has_value()) return false; //???warn instead of failing and proceed without a shape?
 
 			if (!ShapePath.value().empty())
@@ -881,7 +881,7 @@ public:
 		}
 
 		CMaterialParams MtlParamTable;
-		auto Path = ResolvePathAliases(EffectIt->second).generic_string();
+		auto Path = ResolvePathAliases(EffectIt->second, _PathAliases).generic_string();
 		Ctx.Log.LogDebug("Opening effect " + Path);
 		if (!GetEffectMaterialParams(MtlParamTable, Path, Ctx.Log)) return false;
 

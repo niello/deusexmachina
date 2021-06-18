@@ -63,7 +63,7 @@ public:
 
 			// Get material table from the effect file
 
-			auto Path = ResolvePathAliases(EffectID).generic_string();
+			auto Path = ResolvePathAliases(EffectID, _PathAliases).generic_string();
 			Task.Log.LogDebug("Opening effect " + Path);
 			if (!GetEffectMaterialParams(MaterialParams, Path, Task.Log)) return ETaskResult::Failure;
 		}

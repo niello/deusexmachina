@@ -338,6 +338,31 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 }
 //---------------------------------------------------------------------
 
+bool ReadDEMMeshVertexPositions(const std::filesystem::path& Path, std::vector<float3>& Out, CThreadSafeLog& Log)
+{
+	std::ifstream File(Path, std::ios_base::binary);
+	if (!File)
+	{
+		Log.LogError("Can't open mesh file " + Path.generic_string());
+		return false;
+	}
+
+	// Check format magic and version
+	if (ReadStream<uint32_t>(File) != 'MESH') return false;
+	if (ReadStream<uint32_t>(File) != 0x00010000) return false;
+
+	const auto SubMeshCount = ReadStream<uint32_t>(File);
+	const auto VertexCount = ReadStream<uint32_t>(File);
+	const auto IndexCount = ReadStream<uint32_t>(File);
+
+	ReadStream<uint8_t>(File); // Skip index size
+
+	const auto VertexComponentCount = ReadStream<uint32_t>(File);
+
+	return true;
+}
+//---------------------------------------------------------------------
+
 bool WriteDEMSkin(const fs::path& DestPath, const std::vector<CBone>& Bones, CThreadSafeLog& Log)
 {
 	fs::create_directories(DestPath.parent_path());
@@ -633,8 +658,9 @@ std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesy
 }
 //---------------------------------------------------------------------
 
+// TODO: check if already created on this launch, don't recreate
 std::optional<std::string> GenerateCollisionShape(std::string ShapeType, const std::filesystem::path& ShapeDir,
-	const std::string& MeshRsrcName, const CMeshAttrInfo& MeshInfo, const acl::Transform_32& GlobalTfm, CThreadSafeLog& Log)
+	const std::string& MeshRsrcName, const CMeshAttrInfo& MeshInfo, const acl::Transform_32& GlobalTfm, const std::map<std::string, std::filesystem::path>& PathAliases, CThreadSafeLog& Log)
 {
 	trim(ShapeType, " \t\n\r");
 	ToLower(ShapeType);
@@ -689,13 +715,25 @@ std::optional<std::string> GenerateCollisionShape(std::string ShapeType, const s
 	}
 	else if (ShapeType == "convex")
 	{
-		btAlignedObjectArray<btVector3> Vertices;
-		//!!!read vertices!
+		std::vector<float3> Vertices;
+		if (!ReadDEMMeshVertexPositions(ResolvePathAliases(MeshInfo.MeshID, PathAliases), Vertices, Log)) return std::nullopt;
 
-		btConvexHullComputer Сonv;
-		Сonv.compute(&Vertices[0].getX(), sizeof(btVector3), Vertices.size(), 0.f, 0.f);
+		if (Vertices.empty()) return std::string{};
+
+		btConvexHullComputer Conv;
+		Conv.compute(Vertices[0].v, sizeof(float3), Vertices.size(), 0.f, 0.f);
+
+		const int VertexCount = Conv.vertices.size();
+		if (!VertexCount) return std::string{};
+
+		for (int i = 0; i < VertexCount; ++i)
+		{
+			Conv.vertices[i];
+		}
 
 		//!!!save convex hull shape! data array of vertices?
+
+		CollisionShape.emplace_back(CStrID("Type"), CStrID("ConvexHull"));
 	}
 	else if (ShapeType == "mesh")
 	{

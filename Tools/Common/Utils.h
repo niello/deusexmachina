@@ -3,6 +3,7 @@
 #include <algorithm> 
 #include <fstream>
 #include <vector>
+#include <filesystem>
 
 // Utility functions and data structures
 
@@ -305,5 +306,27 @@ inline std::string GetValidNodeName(const std::string& BaseName)
 	std::replace(RsrcName.begin(), RsrcName.end(), '.', '_');
 	std::replace(RsrcName.begin(), RsrcName.end(), '^', '_');
 	return RsrcName;
+}
+//---------------------------------------------------------------------
+
+inline std::filesystem::path ResolvePathAliases(const std::string& Path, const std::map<std::string, std::filesystem::path>& Aliases)
+{
+	std::string Result = Path;
+	auto Pos = Result.find_first_of(':');
+	while (Pos != std::string::npos)
+	{
+		if (Pos > 0)
+		{
+			std::string Alias = Result.substr(0, Pos);
+			auto It = Aliases.find(Alias);
+			if (It == Aliases.cend()) break; // Not an alias, path is resolved
+			Result = (It->second / Result.substr(Pos + 1)).string();
+		}
+		else Result = Result.substr(1); // Empty alias, just remove leading ':'
+
+		Pos = Result.find_first_of(':');
+	}
+
+	return Result;
 }
 //---------------------------------------------------------------------

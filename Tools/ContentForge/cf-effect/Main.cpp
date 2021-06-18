@@ -644,7 +644,7 @@ private:
 			auto ShaderDataIt = Ctx.ShaderCache.find(ShaderID);
 			if (ShaderDataIt == Ctx.ShaderCache.cend())
 			{
-				auto Path = ResolvePathAliases(ShaderID.CStr());
+				auto Path = ResolvePathAliases(ShaderID.CStr(), _PathAliases);
 
 				Ctx.Log->LogDebug("Opening shader " + Path.generic_string());
 

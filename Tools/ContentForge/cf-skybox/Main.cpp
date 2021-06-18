@@ -101,7 +101,7 @@ public:
 		}
 
 		CMaterialParams MtlParamTable;
-		auto Path = ResolvePathAliases(EffectIt->second).generic_string();
+		auto Path = ResolvePathAliases(EffectIt->second, _PathAliases).generic_string();
 		Task.Log.LogDebug("Opening effect " + Path);
 		if (!GetEffectMaterialParams(MtlParamTable, Path, Task.Log))
 		{

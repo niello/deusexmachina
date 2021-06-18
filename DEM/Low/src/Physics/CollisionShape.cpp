@@ -3,6 +3,7 @@
 #include <BulletCollision/CollisionShapes/btBoxShape.h>
 #include <BulletCollision/CollisionShapes/btSphereShape.h>
 #include <BulletCollision/CollisionShapes/btCapsuleShape.h>
+#include <BulletCollision/CollisionShapes/btConvexHullShape.h>
 
 namespace Physics
 {
@@ -80,6 +81,14 @@ PCollisionShape CCollisionShape::CreateCapsuleZ(float Radius, float CylinderLeng
 	if (CylinderLength <= 0.f) return CreateSphere(Radius, Offset);
 
 	return n_new(CCollisionShape(new btCapsuleShapeZ(Radius, CylinderLength), Offset, Scaling));
+}
+//---------------------------------------------------------------------
+
+PCollisionShape CCollisionShape::CreateConvexHull(const vector3* pVertices, UPTR VertexCount, const vector3& Offset, const vector3& Scaling)
+{
+	if (!pVertices || !VertexCount) return nullptr;
+
+	return n_new(CCollisionShape(new btConvexHullShape(pVertices[0].v, VertexCount, sizeof(vector3)), Offset, Scaling));
 }
 //---------------------------------------------------------------------
 
