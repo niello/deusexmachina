@@ -4,9 +4,11 @@
 #include <Game/Interaction/AbilityInstance.h>
 #include <Game/Interaction/Zone.h>
 #include <Game/ECS/GameWorld.h>
+#include <Game/ECS/Components/RigidBodyComponent.h>
 #include <Character/StatsComponent.h>
 //#include <Character/SkillsComponent.h>
 #include <Items/ItemStackComponent.h>
+#include <Scene/SceneComponent.h>
 //#include <Items/ItemUtils.h>
 //#include <Objects/OwnedComponent.h>
 //#include <Math/Math.h>
@@ -110,7 +112,17 @@ void CPickItemAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return;
 
-	pWorld->DeleteEntity(Instance.Targets[0].Entity);
+	// TODO: check character inventory weight and volume
+	// TODO: merge with existing stack if possible
+	// TODO: equip if a) default equipping makes sense, like for weapons b) inventory is full but equipment slot isn't
+	// NB: equipped things ignore volume limitations, but not weight
+
+	const auto ItemStackEntity = Instance.Targets[0].Entity;
+	pWorld->RemoveComponent<Game::CSceneComponent>(ItemStackEntity);
+	pWorld->RemoveComponent<Game::CRigidBodyComponent>(ItemStackEntity);
+
+	if (auto pItemStack = pWorld->FindComponent<CItemStackComponent>(ItemStackEntity))
+		pItemStack->Container = Instance.Actor;
 }
 //---------------------------------------------------------------------
 

@@ -7,7 +7,7 @@
 //!!!DBG TMP!
 #include <Animation/Skeleton.h>
 #include <Animation/PoseTrack.h>
-#include <Game/ECS/Components/SceneComponent.h>
+#include <Scene/SceneComponent.h>
 
 namespace DEM::Game
 {

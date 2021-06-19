@@ -3,7 +3,7 @@
 #include <Animation/TimelinePlayer.h>
 #include <Animation/Skeleton.h>
 #include <Game/ECS/GameWorld.h>
-#include <Game/ECS/Components/SceneComponent.h>
+#include <Scene/SceneComponent.h>
 
 namespace DEM::Anim
 {

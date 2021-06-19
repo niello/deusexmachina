@@ -1,5 +1,6 @@
 #pragma once
 #include <Scene/SceneNode.h>
+#include <Game/ECS/ComponentStorage.h>
 #include <Data/Metadata.h>
 
 // Scene component contains a part of scene hierarchy, including a root node
@@ -19,6 +20,14 @@ struct CSceneComponent
 
 	const auto& GetLocalTransform() const { return RootNode->GetLocalTransform(); }
 	void        SetLocalTransform(const Math::CTransform& Value) { RootNode->SetLocalTransform(Value); }
+};
+
+//!!!???FIXME: use constexpr bool in a component? Will be shorter and more elegant!
+// Scene nodes need to be detached from the scene
+template<>
+struct TComponentTraits<CSceneComponent>
+{
+	using TStorage = CSparseComponentStorage<CSceneComponent, true>;
 };
 
 }

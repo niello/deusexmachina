@@ -62,7 +62,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/ECS/Components/ActionQueueComponent.h
 	DEM/Game/src/Game/ECS/Components/CharacterControllerComponent.h
 	DEM/Game/src/Game/ECS/Components/RigidBodyComponent.h
-	DEM/Game/src/Game/ECS/Components/SceneComponent.h
 	DEM/Game/src/Game/Interaction/Ability.h
 	DEM/Game/src/Game/Interaction/AbilityInstance.h
 	DEM/Game/src/Game/Interaction/Interaction.h
@@ -79,6 +78,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/Objects/SmartObjectLoader.h
 	DEM/Game/src/Physics/PropTrigger.h
 	DEM/Game/src/Physics/TriggerContactCallback.h
+	DEM/Game/src/Scene/SceneComponent.h
 	DEM/Game/src/Scripting/EntityScriptObject.h
 	DEM/Game/src/Scripting/PropScriptable.h
 	DEM/Game/src/SI/SI_L2.h
@@ -147,6 +147,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/Objects/SmartObjectSystem.cpp
 	DEM/Game/src/Physics/PropTrigger.cpp
 	DEM/Game/src/Physics/PropTriggerSI.cpp
+	DEM/Game/src/Scene/SceneSystems.cpp
 	DEM/Game/src/Scripting/EntityScriptObject.cpp
 	DEM/Game/src/Scripting/PropScriptable.cpp
 	DEM/Game/src/Scripting/ScriptObjectSIEx.cpp

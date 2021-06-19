@@ -1,6 +1,6 @@
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
-#include <Game/ECS/Components/SceneComponent.h>
+#include <Scene/SceneComponent.h>
 #include <AI/Navigation/NavAgentComponent.h>
 #include <AI/AIStateComponent.h>
 #include <AI/Movement/SteerAction.h>

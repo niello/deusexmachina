@@ -4,7 +4,7 @@
 #include <Items/ItemUtils.h>
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
-#include <Game/ECS/Components/SceneComponent.h>
+#include <Scene/SceneComponent.h>
 
 namespace DEM::RPG
 {
