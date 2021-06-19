@@ -17,6 +17,7 @@
 namespace Scene
 {
 	class CSPS;
+	class CSceneNode;
 	class CNodeAttribute;
 }
 
@@ -111,6 +112,7 @@ public:
 	bool							CreateUIContext(CStrID RenderTargetID = CStrID::Empty);
 	bool                            CreateDebugDrawer();
 
+	bool                            PrecreateRenderObjects(Scene::CSceneNode& RootNode);
 	Render::IRenderable*            GetRenderObject(const CRenderableAttribute& Attr);
 	void							UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; }

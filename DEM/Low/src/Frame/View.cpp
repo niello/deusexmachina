@@ -105,6 +105,30 @@ bool CView::CreateDebugDrawer()
 }
 //---------------------------------------------------------------------
 
+bool CView::PrecreateRenderObjects(Scene::CSceneNode& RootNode)
+{
+	return RootNode.Visit([this](Scene::CSceneNode& Node)
+	{
+		for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
+		{
+			Scene::CNodeAttribute& Attr = *Node.GetAttribute(i);
+
+			if (auto pAttrTyped = Attr.As<Frame::CRenderableAttribute>())
+			{
+				if (!GetRenderObject(*pAttrTyped)) FAIL;
+			}
+			else if (auto pAttrTyped = Attr.As<Frame::CAmbientLightAttribute>())
+			{
+				//???as renderable? or to separate cache? Use as a light type? Global IBL is much like
+				//directional light, and local is much like omni with ith influence volume!
+				if (!pAttrTyped->ValidateGPUResources(*_GraphicsMgr)) FAIL;
+			}
+		}
+		OK;
+	});
+}
+//---------------------------------------------------------------------
+
 //!!!IRenderable children may now serve as parts of the rendering cache / render nodes!
 Render::IRenderable* CView::GetRenderObject(const CRenderableAttribute& Attr)
 {

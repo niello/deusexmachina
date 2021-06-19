@@ -104,9 +104,9 @@ bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 }
 //---------------------------------------------------------------------
 
-void CCollisionAttribute::SetPhysicsLevel(PPhysicsLevel Level)
+void CCollisionAttribute::SetPhysicsLevel(CPhysicsLevel* pLevel)
 {
-	_Level = Level;
+	_Level = pLevel;
 	if (IsActive() && _Collider)
 	{
 		if (_Level) _Collider->AttachToLevel(*_Level);

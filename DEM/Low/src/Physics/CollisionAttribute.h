@@ -35,7 +35,7 @@ public:
 	virtual Scene::PNodeAttribute Clone() override;
 	virtual void                  UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount) override;
 	virtual bool                  ValidateResources(Resources::CResourceManager& ResMgr) override;
-	void                          SetPhysicsLevel(PPhysicsLevel Level);
+	void                          SetPhysicsLevel(CPhysicsLevel* pLevel);
 	bool                          GetGlobalAABB(CAABB& OutBox) const;
 	CPhysicsObject*               GetCollider() { return _Collider.Get(); }
 };

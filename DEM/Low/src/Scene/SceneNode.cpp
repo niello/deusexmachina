@@ -1,6 +1,5 @@
 #include "SceneNode.h"
 #include <Scene/NodeAttribute.h>
-#include <Scene/NodeVisitor.h>
 #include <Data/StringTokenizer.h>
 
 namespace Scene
@@ -477,15 +476,6 @@ void CSceneNode::UpdateActivity(bool OnDetach)
 		for (const auto& Child : Children)
 			Child->UpdateActivity();
 	}
-}
-//---------------------------------------------------------------------
-
-bool CSceneNode::AcceptVisitor(INodeVisitor& Visitor)
-{
-	if (!Visitor.Visit(*this)) FAIL;
-	for (const auto& Child : Children)
-		if (!Child->AcceptVisitor(Visitor)) FAIL;
-	OK;
 }
 //---------------------------------------------------------------------
 

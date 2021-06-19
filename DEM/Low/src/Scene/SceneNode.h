@@ -21,7 +21,6 @@ namespace Scene
 {
 typedef Ptr<class CSceneNode> PSceneNode;
 typedef Ptr<class CNodeAttribute> PNodeAttribute;
-class INodeVisitor;
 
 class CSceneNode: public ::Core::CObject
 {
@@ -67,7 +66,6 @@ public:
 	PSceneNode				Clone(CSceneNode* pNewParent = nullptr, bool CloneChildren = true);
 	void					RemoveFromParent() { if (pParent) pParent->RemoveChild(*this); }
 
-	bool					AcceptVisitor(INodeVisitor& Visitor);
 	bool                    Visit(const std::function<bool(CSceneNode& Node)>& Visitor);
 
 	CStrID					GetName() const { return Name; }
@@ -135,6 +133,7 @@ template<class T> inline T* CSceneNode::FindFirstAttribute() const
 }
 //---------------------------------------------------------------------
 
+// TODO: make templated for any invocable with this signature! Will be faster due to inlining!
 inline bool CSceneNode::Visit(const std::function<bool(CSceneNode& Node)>& Visitor)
 {
 	if (!Visitor(*this)) FAIL;

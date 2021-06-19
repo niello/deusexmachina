@@ -1,16 +1,16 @@
 #include "GameLevel.h"
+#include <Frame/RenderableAttribute.h>
+#include <Frame/LightAttribute.h>
+#include <Frame/AmbientLightAttribute.h>
 #include <Scene/SceneNode.h>
+#include <Scene/NodeAttribute.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/PhysicsObject.h>
+#include <Physics/CollisionAttribute.h>
 #include <AI/Navigation/NavMap.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Data/DataArray.h>
-
-// TODO: turn visitors into lambdas?
-#include <Frame/SceneNodeUpdateInSPS.h>
-#include <Scene/SceneNodeValidateResources.h>
-#include <Physics/SceneNodeValidatePhysics.h>
 
 namespace DEM::Game
 {
@@ -114,13 +114,29 @@ PGameLevel CGameLevel::LoadFromDesc(CStrID ID, const Data::CParams& In, Resource
 }
 //---------------------------------------------------------------------
 
-bool CGameLevel::Validate(Resources::CResourceManager& ResMgr)
+bool CGameLevel::Validate(Resources::CResourceManager& RsrcMgr)
 {
 	// force entities to spawn into worlds (scene, physics etc)
 
-	if (!_SceneRoot->AcceptVisitor(Scene::CSceneNodeValidateResources(ResMgr))) FAIL;
+	const bool Result = _SceneRoot->Visit([&RsrcMgr](Scene::CSceneNode& Node)
+	{
+		for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
+			if (!Node.GetAttribute(i)->ValidateResources(RsrcMgr)) return false;
+		return true;
+	});
+	if (!Result) FAIL;
 
-	if (_PhysicsLevel && !_SceneRoot->AcceptVisitor(Physics::CSceneNodeValidatePhysics(*_PhysicsLevel))) FAIL;
+	if (_PhysicsLevel)
+	{
+		if (!_SceneRoot->Visit([PhysicsLevel = _PhysicsLevel](Scene::CSceneNode& Node)
+		{
+			for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
+				if (auto pAttrTyped = Node.GetAttribute(i)->As<Physics::CCollisionAttribute>())
+					pAttrTyped->SetPhysicsLevel(PhysicsLevel);
+			OK;
+		}
+		)) FAIL;
+	}
 
 	OK;
 }
@@ -132,7 +148,24 @@ void CGameLevel::Update(float dt, const vector3* pCOIArray, UPTR COICount)
 
 	_SceneRoot->Update(pCOIArray, COICount);
 
-	_SceneRoot->AcceptVisitor(Frame::CSceneNodeUpdateInSPS(_SPS));
+	// TODO: build some list?
+	_SceneRoot->Visit([this](Scene::CSceneNode& Node)
+	{
+		for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
+		{
+			Scene::CNodeAttribute& Attr = *Node.GetAttribute(i);
+			if (!Attr.IsActive()) continue;
+
+			if (auto pAttr = Attr.As<Frame::CRenderableAttribute>())
+				pAttr->UpdateInSPS(_SPS);
+			else if (auto pAttr = Attr.As<Frame::CLightAttribute>())
+				pAttr->UpdateInSPS(_SPS);
+			else if (auto pAttr = Attr.As<Frame::CAmbientLightAttribute>())
+				pAttr->UpdateInSPS(_SPS);
+		}
+
+		OK;
+	});
 }
 //---------------------------------------------------------------------
 
@@ -351,28 +384,6 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 	*/
 
 	OK;
-}
-//---------------------------------------------------------------------
-
-//???validation or activation? activation must be one-time, validation must only validate resources!
-//!!!OnLevelValidated and OnLevelActivated must be separate events!
-bool CGameLevel::Validate(Resources::CResourceManager& ResMgr)
-{
-	bool Result;
-	if (SceneRoot.IsValidPtr())
-	{
-		Scene::CSceneNodeValidateResources Visitor(ResMgr);
-		Result = SceneRoot->AcceptVisitor(Visitor);
-	}
-	else Result = true; // Nothing to validate
-
-	FireEvent(CStrID("ValidateEntities"));
-
-	Data::PParams P = n_new(Data::CParams(1));
-	P->Set(CStrID("ID"), ID);
-	//EventSrv->FireEvent(CStrID("OnLevelValidated"), P); //???global or internal?
-
-	return Result;
 }
 //---------------------------------------------------------------------
 

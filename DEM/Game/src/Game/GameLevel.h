@@ -64,7 +64,7 @@ public:
 	CGameLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds = CAABB::Empty, UPTR SubdivisionDepth = 0);
 	virtual ~CGameLevel() override;
 
-	bool                     Validate(Resources::CResourceManager& ResMgr);
+	bool                     Validate(Resources::CResourceManager& RsrcMgr);
 	void                     Update(float dt, const vector3* pCOIArray, UPTR COICount);
 
 	void                     SetNavRegionController(CStrID RegionID, HEntity Controller);
@@ -134,7 +134,6 @@ public:
 	virtual ~CGameLevel();
 
 	bool					Load(CStrID LevelID, const Data::CParams& Desc);
-	bool					Validate(Resources::CResourceManager& ResMgr);
 	void					Term();
 	bool					Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc = nullptr);
 	//void					RenderDebug();

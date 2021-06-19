@@ -117,8 +117,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Frame/RenderPath.h
 	DEM/Low/src/Frame/RenderPhase.h
 	DEM/Low/src/Frame/RenderPhaseGeometry.h
-	DEM/Low/src/Frame/SceneNodePrecreateRenderObjects.h
-	DEM/Low/src/Frame/SceneNodeUpdateInSPS.h
 	DEM/Low/src/Frame/SkinAttribute.h
 	DEM/Low/src/Frame/SkyboxAttribute.h
 	DEM/Low/src/Frame/TerrainAttribute.h
@@ -195,7 +193,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Physics/PhysicsObject.h
 	DEM/Low/src/Physics/RigidBody.h
 	DEM/Low/src/Physics/RigidBodySet.h
-	DEM/Low/src/Physics/SceneNodeValidatePhysics.h
 	DEM/Low/src/Physics/StaticCollider.h
 	DEM/Low/src/Physics/StaticMeshShape.h
 	DEM/Low/src/Physics/TickListener.h
@@ -285,10 +282,8 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Resources/ResourceManager.h
 	DEM/Low/src/Scene/LODGroup.h
 	DEM/Low/src/Scene/NodeAttribute.h
-	DEM/Low/src/Scene/NodeVisitor.h
 	DEM/Low/src/Scene/SceneNode.h
 	DEM/Low/src/Scene/SceneNodeLoaderSCN.h
-	DEM/Low/src/Scene/SceneNodeValidateResources.h
 	DEM/Low/src/Scene/SPS.h
 	DEM/Low/src/Scripting/EventHandlerScript.h
 	DEM/Low/src/Scripting/ScriptObject.h
@@ -400,8 +395,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Frame/RenderPath.cpp
 	DEM/Low/src/Frame/RenderPhase.cpp
 	DEM/Low/src/Frame/RenderPhaseGeometry.cpp
-	DEM/Low/src/Frame/SceneNodePrecreateRenderObjects.cpp
-	DEM/Low/src/Frame/SceneNodeUpdateInSPS.cpp
 	DEM/Low/src/Frame/SkinAttribute.cpp
 	DEM/Low/src/Frame/SkyboxAttribute.cpp
 	DEM/Low/src/Frame/TerrainAttribute.cpp
@@ -455,7 +448,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Physics/PhysicsObject.cpp
 	DEM/Low/src/Physics/RigidBody.cpp
 	DEM/Low/src/Physics/RigidBodySet.cpp
-	DEM/Low/src/Physics/SceneNodeValidatePhysics.cpp
 	DEM/Low/src/Physics/StaticCollider.cpp
 	DEM/Low/src/Physics/StaticMeshShape.cpp
 	DEM/Low/src/Render/CDLODDataLoader.cpp
@@ -527,7 +519,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Scene/NodeAttribute.cpp
 	DEM/Low/src/Scene/SceneNode.cpp
 	DEM/Low/src/Scene/SceneNodeLoaderSCN.cpp
-	DEM/Low/src/Scene/SceneNodeValidateResources.cpp
 	DEM/Low/src/Scene/SPS.cpp
 	DEM/Low/src/Scripting/EventHandlerScript.cpp
 	DEM/Low/src/Scripting/ScriptObject.cpp
