@@ -36,11 +36,11 @@ protected:
 
 public:
 
-	virtual bool          GetZones(const Game::CGameSession& Session, const CAbilityInstance& Instance, std::vector<const CZone*>& Out) const { return false; }
-	virtual bool          GetFacingParams(const Game::CGameSession& Session, const CAbilityInstance& Instance, CFacingParams& Out) const { return false; }
-	virtual void          OnStart(Game::CGameSession& Session, CAbilityInstance& Instance) const {}
-	virtual EActionStatus OnUpdate(Game::CGameSession& Session, CAbilityInstance& Instance) const { return EActionStatus::Succeeded; }
-	virtual void          OnEnd(Game::CGameSession& Session, CAbilityInstance& Instance, EActionStatus Status) const {}
+	virtual bool          GetZones(const CGameSession& Session, const CAbilityInstance& Instance, std::vector<const CZone*>& Out) const { return false; }
+	virtual bool          GetFacingParams(const CGameSession& Session, const CAbilityInstance& Instance, CFacingParams& Out) const { return false; }
+	virtual void          OnStart(CGameSession& Session, CAbilityInstance& Instance) const {}
+	virtual EActionStatus OnUpdate(CGameSession& Session, CAbilityInstance& Instance) const { return EActionStatus::Succeeded; }
+	virtual void          OnEnd(CGameSession& Session, CAbilityInstance& Instance, EActionStatus Status) const {}
 };
 
 }

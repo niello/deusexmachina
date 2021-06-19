@@ -30,6 +30,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Items/ItemStackComponent.h
 	DEM/RPG/src/Items/ItemUtils.h
 	DEM/RPG/src/Items/LockpickComponent.h
+	DEM/RPG/src/Items/PickItemAbility.h
 	DEM/RPG/src/Objects/LockComponent.h
 	DEM/RPG/src/Objects/LockpickAbility.h
 	DEM/RPG/src/Objects/OwnedComponent.h
@@ -60,6 +61,7 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/Factions/Faction.cpp
 	DEM/RPG/src/Factions/FactionManager.cpp
 	DEM/RPG/src/Items/ItemManager.cpp
+	DEM/RPG/src/Items/PickItemAbility.cpp
 	DEM/RPG/src/Objects/LockpickAbility.cpp
 	DEM/RPG/src/Quests/QuestManager.cpp
 	DEM/RPG/src/SI/SIDialogueManager.cpp
