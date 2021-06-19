@@ -356,6 +356,7 @@ void UpdateAbilityInteractions(DEM::Game::CGameSession& Session, CGameWorld& Wor
 
 				// Get interaction zones from an ability
 				AIState._AbilityInstance->Ability.GetZones(Session, *AIState._AbilityInstance, AIState._AbilityInstance->InitialZones);
+				n_assert_dbg(!AIState._AbilityInstance->InitialZones.empty());
 			}
 		}
 

@@ -72,6 +72,7 @@ Game::HEntity CItemManager::InternalCreateStack(Game::CGameWorld& World, CStrID 
 }
 //---------------------------------------------------------------------
 
+//!!!AddItemsIntoContainer!
 Game::HEntity CItemManager::CreateStack(CStrID ItemID, U32 Count, Game::HEntity Container)
 {
 	auto pWorld = _Session.FindFeature<Game::CGameWorld>();
@@ -92,37 +93,11 @@ Game::HEntity CItemManager::CreateStack(CStrID ItemID, U32 Count, CStrID LevelID
 	auto StackEntity = InternalCreateStack(*pWorld, LevelID, ItemID, Count, {});
 	if (!StackEntity) return {};
 
-	auto pSceneComponent = pWorld->AddComponent<Game::CSceneComponent>(StackEntity);
-	if (!pSceneComponent)
+	if (!DropItemsToLocation(*pWorld, StackEntity, WorldTfm))
 	{
 		pWorld->DeleteEntity(StackEntity);
 		return {};
 	}
-
-	// Instantiate a scene object
-	//!!!TODO: separate method, not always needed only in CreateStack!
-	//???to ItemUtils?
-
-	auto pItem = FindItemComponent<CItemComponent>(*pWorld, StackEntity);
-	if (!pItem)
-	{
-		pWorld->DeleteEntity(StackEntity);
-		return {};
-	}
-
-	//!!!if add to existing (especially multi-item) containing object, may change model to some sack, bigger and bigger.
-	//!!!if no asset ID specified, use default, maybe based on item type and size.
-	CStrID ModelAssetID = pItem->InLocationModelID;
-	if (!ModelAssetID)
-	{
-		NOT_IMPLEMENTED_MSG("Need to set default model for in-location items\n");
-		pWorld->DeleteEntity(StackEntity);
-		return {};
-	}
-
-	// RootPath is left clear, an item must be instantiated inside the world root
-	n_assert(pSceneComponent->RootNode);
-	pSceneComponent->RootNode->SetLocalTransform(WorldTfm);
 
 	return StackEntity;
 }
