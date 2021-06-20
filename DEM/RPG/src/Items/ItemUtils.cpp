@@ -1,5 +1,6 @@
 #include "ItemUtils.h"
 #include <Items/ItemComponent.h>
+#include <Items/ItemContainerComponent.h>
 #include <Scene/SceneComponent.h>
 #include <Game/ECS/Components/RigidBodyComponent.h>
 
@@ -11,29 +12,36 @@ bool AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Gam
 	auto pItemStack = World.FindComponent<CItemStackComponent>(ItemStackEntity);
 	if (!pItemStack) return false;
 
-	//!!!only if container entity has a container component with limits!
-	// Collect weight and volume already occupied in a container
-	float Weight = 0.f;
-	float Volume = 0.f;
-	World.ForEachComponent<const CItemStackComponent>(
-		[&Weight, &Volume, &World, Container](auto EntityID, const CItemStackComponent& Stack)
-	{
-		if (Stack.Container != Container) return;
+	auto pItem = FindItemComponent<const CItemComponent>(World, ItemStackEntity, pItemStack);
+	if (!pItem) return false;
 
-		if (const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, EntityID, &Stack))
+	// Respect container limitations
+	if (auto pContainer = World.FindComponent<const CItemContainerComponent>(Container))
+	{
+		if (pContainer->MaxWeight > 0.f || pContainer->MaxVolume > 0.f)
 		{
-			Weight += Stack.Count * pItem->Weight;
-			Volume += Stack.Count * pItem->Volume;
+			// Collect weight and volume already occupied in a container
+			float Weight = 0.f;
+			float Volume = 0.f;
+			World.ForEachComponent<const CItemStackComponent>(
+				[&Weight, &Volume, &World, Container](auto EntityID, const CItemStackComponent& Stack)
+			{
+				if (Stack.Container != Container) return;
+
+				if (const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, EntityID, &Stack))
+				{
+					Weight += Stack.Count * pItem->Weight;
+					Volume += Stack.Count * pItem->Volume;
+				}
+			});
+
+			// Fail if this item can't be placed into the container
+			// TODO: split stack, fll available container space!
+			const float NewItemWeight = pItemStack->Count * pItem->Weight;
+			if (pContainer->MaxWeight > 0.f && Weight + NewItemWeight > pContainer->MaxWeight) return false;
+			const float NewItemVolume = pItemStack->Count * pItem->Volume;
+			if (pContainer->MaxVolume > 0.f && Volume + NewItemVolume > pContainer->MaxVolume) return false;
 		}
-	});
-
-	if (const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, ItemStackEntity, pItemStack))
-	{
-		//NewItemWeight = pItemStack->Count * pItem->Weight;
-		//NewItemVolume = pItemStack->Count * pItem->Volume;
-
-		// if Weight + NewItemWeight > ContainerWeightLimit, fail
-		// if Volume + NewItemVolume > ContainerVolumeLimit, fail
 	}
 
 	//!!!if bool AllowMerge, try to merge with existing stack inside this container!
@@ -49,7 +57,7 @@ bool AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Gam
 }
 //---------------------------------------------------------------------
 
-//!!!check dropping near another item stack or pile! bool flag 'allow merging'?
+//!!!check dropping near another item stack or pile (temporary container)! bool flag 'allow merging'?
 bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemStackEntity, const Math::CTransformSRT& Tfm)
 {
 	auto pItemStack = World.FindComponent<CItemStackComponent>(ItemStackEntity);

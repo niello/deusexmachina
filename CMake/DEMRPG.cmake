@@ -26,6 +26,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Items/EquipmentComponent.h
 	DEM/RPG/src/Items/InventoryComponent.h
 	DEM/RPG/src/Items/ItemComponent.h
+	DEM/RPG/src/Items/ItemContainerComponent.h
 	DEM/RPG/src/Items/ItemManager.h
 	DEM/RPG/src/Items/ItemStackComponent.h
 	DEM/RPG/src/Items/ItemUtils.h
