@@ -23,7 +23,7 @@ CDEMTexture::CDEMTexture(CDEMRenderer& Renderer, const String& name):
 }
 //--------------------------------------------------------------------
 
-CDEMTexture::~CDEMTexture() {}
+CDEMTexture::~CDEMTexture() = default;
 //--------------------------------------------------------------------
 
 static Render::EPixelFormat CEGUIPixelFormatToPixelFormat(const Texture::PixelFormat fmt)
@@ -31,7 +31,7 @@ static Render::EPixelFormat CEGUIPixelFormatToPixelFormat(const Texture::PixelFo
 	switch (fmt)
 	{
 		case Texture::PixelFormat::Rgba:		return Render::PixelFmt_B8G8R8A8;
-		case Texture::PixelFormat::Rgb:			return Render::PixelFmt_B8G8R8X8;
+		case Texture::PixelFormat::Rgb:			return Render::PixelFmt_B8G8R8X8; // NB: expand to 32 bpp
 		case Texture::PixelFormat::RgbaDxt1:	return Render::PixelFmt_DXT1;
 		case Texture::PixelFormat::RgbaDxt3:	return Render::PixelFmt_DXT3;
 		case Texture::PixelFormat::RgbaDxt5:	return Render::PixelFmt_DXT5;
@@ -131,58 +131,40 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 
 	Data::PBuffer Bytes;
 
-	// Invert to BGR(A), as DX9 doesn't support RGBA textures
+	const UPTR W = static_cast<UPTR>(buffer_size.d_width);
+	const UPTR H = static_cast<UPTR>(buffer_size.d_height);
+
+	// Invert to BGR(X/A), as DX9 doesn't support RGBA textures
+	// NB: expand to 32 bpp for all renderers
 	if (pixel_format == PixelFormat::Rgb)
 	{
-	/*	const unsigned char* src = static_cast<const unsigned char*>(buffer);
-		unsigned char* dest = n_new_array(unsigned char, static_cast<unsigned int>(buffer_size.d_width * buffer_size.d_height) * 4);
-
-		for (int i = 0; i < buffer_size.d_width * buffer_size.d_height; ++i)
-		{
-			dest[i * 4 + 0] = src[i * 3 + 0];
-			dest[i * 4 + 1] = src[i * 3 + 1];
-			dest[i * 4 + 2] = src[i * 3 + 2];
-			dest[i * 4 + 3] = 0xFF;
-		}*/
-
-		const UPTR W = static_cast<UPTR>(buffer_size.d_width);
-		const UPTR H = static_cast<UPTR>(buffer_size.d_height);
-
-		Bytes.reset(n_new(Data::CBufferMallocAligned(W * H * 3, 16)));
+		Bytes.reset(n_new(Data::CBufferMallocAligned(W * H * 4, 16)));
 			
-		U8* pDest = static_cast<U8*>(Bytes->GetPtr());
 		const U8* pSrc = static_cast<const U8*>(buffer);
+		const U8* pSrcEnd = pSrc + W * H * 3;
+		U8* pDest = static_cast<U8*>(Bytes->GetPtr());
 
-		for (UPTR i = 0; i < H; ++i)
+		for (; pSrc < pSrcEnd; pSrc += 3)
 		{
-			for (UPTR j = 0; j < W; ++j)
-			{
-				*pDest++ = pSrc[2];
-				*pDest++ = pSrc[1];
-				*pDest++ = pSrc[0];
-				pSrc += 3;
-			}
+			*pDest++ = pSrc[2];
+			*pDest++ = pSrc[1];
+			*pDest++ = pSrc[0];
+			*pDest++ = 0x00;
 		}
 	}
 	else if (pixel_format == PixelFormat::Rgba)
 	{
-		const UPTR W = static_cast<UPTR>(buffer_size.d_width);
-		const UPTR H = static_cast<UPTR>(buffer_size.d_height);
-
 		Bytes.reset(n_new(Data::CBufferMallocAligned(W * H * 4, 16)));
 
-		U32* pDest = static_cast<U32*>(Bytes->GetPtr());
 		const U32* pSrc = static_cast<const U32*>(buffer);
+		U32* pDest = static_cast<U32*>(Bytes->GetPtr());
 
 		//!!!__mm_shuffle_epi8
-		for (UPTR i = 0; i < H; ++i)
+		for (UPTR i = 0; i < W * H; ++i)
 		{
-			for (UPTR j = 0; j < W; ++j)
-			{
-				const U32 Pixel = *pSrc++;
-				const U32 Tmp = Pixel & 0x00FF00FF;
-				*pDest++ = (Pixel & 0xFF00FF00) | (Tmp << 16) | (Tmp >> 16);
-			}
+			const U32 Pixel = *pSrc++;
+			const U32 Tmp = Pixel & 0x00FF00FF;
+			*pDest++ = (Pixel & 0xFF00FF00) | (Tmp << 16) | (Tmp >> 16);
 		}
 	}
 	else

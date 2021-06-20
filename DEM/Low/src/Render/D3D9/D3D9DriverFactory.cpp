@@ -135,8 +135,9 @@ UPTR CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFORMAT D3DFormat)
 {
 	switch (D3DFormat)
 	{
-		case D3DFMT_DXT1:			return 4;
+		case D3DFMT_DXT1:           return 4;
 
+		case D3DFMT_A4L4:
 		case D3DFMT_P8:
 		case D3DFMT_A8:
 		case D3DFMT_L8:
@@ -144,7 +145,7 @@ UPTR CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFORMAT D3DFormat)
 		case D3DFMT_DXT2:
 		case D3DFMT_DXT3:
 		case D3DFMT_DXT4:
-		case D3DFMT_DXT5:			return 8;
+		case D3DFMT_DXT5:           return 8;
 
 		case D3DFMT_R5G6B5:
 		case D3DFMT_X1R5G5B5:
@@ -157,27 +158,27 @@ UPTR CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFORMAT D3DFormat)
 		case D3DFMT_V8U8:
 		case D3DFMT_L6V5U5:
 		case D3DFMT_L16:
-		case D3DFMT_R16F:			return 16;
+		case D3DFMT_R16F:           return 16;
 
-		case D3DFMT_R8G8B8:
+		case D3DFMT_R8G8B8:         return 24;
+
 		case D3DFMT_A8R8G8B8:
 		case D3DFMT_X8R8G8B8:
 		case D3DFMT_G16R16:
-		case D3DFMT_A4L4:
 		case D3DFMT_X8L8V8U8:
 		case D3DFMT_Q8W8V8U8:
 		case D3DFMT_V16U16:
 		case D3DFMT_A2B10G10R10:
 		case D3DFMT_A2W10V10U10:
 		case D3DFMT_R32F:
-		case D3DFMT_G16R16F:		return 32;
+		case D3DFMT_G16R16F:        return 32;
 
 		case D3DFMT_A16B16G16R16F:
-		case D3DFMT_G32R32F:		return 64;
+		case D3DFMT_G32R32F:        return 64;
 
-		case D3DFMT_A32B32G32R32F:	return 128;
+		case D3DFMT_A32B32G32R32F:  return 128;
 
-		default:					return 0;
+		default:                    return 0;
 	}
 }
 //---------------------------------------------------------------------
