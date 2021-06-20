@@ -71,10 +71,10 @@ void CDEMGeometryBuffer::draw(std::uint32_t drawModeMask) const
 	if (d_clippingActive)
 	{
 		Data::CRect SR;
-		SR.X = (int)d_preparedClippingRegion.left();
-		SR.Y = (int)d_preparedClippingRegion.top();
-		SR.W = (unsigned int)(d_preparedClippingRegion.right() - d_preparedClippingRegion.left());
-		SR.H = (unsigned int)(d_preparedClippingRegion.bottom() - d_preparedClippingRegion.top());
+		SR.X = static_cast<int>(d_preparedClippingRegion.left());
+		SR.Y = static_cast<int>(d_preparedClippingRegion.top());
+		SR.W = static_cast<unsigned int>((d_preparedClippingRegion.right() - d_preparedClippingRegion.left()));
+		SR.H = static_cast<unsigned int>((d_preparedClippingRegion.bottom() - d_preparedClippingRegion.top()));
 		pGPU->SetScissorRect(0, &SR);
 	}
 
