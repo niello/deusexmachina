@@ -36,6 +36,10 @@ bool AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Gam
 		// if Volume + NewItemVolume > ContainerVolumeLimit, fail
 	}
 
+	//!!!if bool AllowMerge, try to merge with existing stack inside this container!
+	//first pass - same prototype, zero modifications
+	//second pass - same prototype, deep comparison?
+
 	World.RemoveComponent<Game::CSceneComponent>(ItemStackEntity);
 	World.RemoveComponent<Game::CRigidBodyComponent>(ItemStackEntity);
 
