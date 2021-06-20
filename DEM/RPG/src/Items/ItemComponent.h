@@ -11,6 +11,7 @@ struct CItemComponent
 {
 	CStrID InLocationModelID;
 	CStrID InLocationPhysicsID;
+	CStrID UIIcon;
 	float  Weight = 0.f;
 	float  Volume = 0.f;
 	U32    Price = 0;
@@ -28,9 +29,10 @@ template<> inline constexpr auto RegisterMembers<RPG::CItemComponent>()
 	(
 		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 1, InLocationModelID),
 		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 2, InLocationPhysicsID),
-		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 3, Weight),
-		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 4, Volume),
-		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 5, Price)
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 3, UIIcon),
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 4, Weight),
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 5, Volume),
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 6, Price)
 	);
 }
 
