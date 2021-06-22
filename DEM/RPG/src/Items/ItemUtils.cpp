@@ -7,7 +7,7 @@
 namespace DEM::RPG
 {
 
-bool AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game::HEntity ItemStackEntity)
+bool AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game::HEntity ItemStackEntity, bool Merge)
 {
 	auto pItemStack = World.FindComponent<CItemStackComponent>(ItemStackEntity);
 	if (!pItemStack) return false;
@@ -44,9 +44,27 @@ bool AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Gam
 		}
 	}
 
-	//!!!if bool AllowMerge, try to merge with existing stack inside this container!
-	//first pass - same prototype, zero modifications
-	//second pass - same prototype, deep comparison?
+	// Try to merge new items into existing stack
+	if (Merge && !pItemStack->Modified)
+	{
+		CItemStackComponent* pMergeInto = nullptr;
+		World.ForEachComponent<CItemStackComponent>(
+			[&pMergeInto, &World, Container, pItemStack](auto EntityID, CItemStackComponent& Stack)
+		{
+			//!!!FIXME: need to break loop once found!
+			if (Stack.Container == Container && Stack.Prototype == pItemStack->Prototype && !Stack.Modified)
+				pMergeInto = &Stack;
+		});
+
+		if (pMergeInto)
+		{
+			pMergeInto->Count += pItemStack->Count;
+			World.DeleteEntity(ItemStackEntity);
+			return true;
+		}
+	}
+
+	// If not merged, simply transfer a stack into the container
 
 	World.RemoveComponent<Game::CSceneComponent>(ItemStackEntity);
 	World.RemoveComponent<Game::CRigidBodyComponent>(ItemStackEntity);
