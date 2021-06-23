@@ -12,7 +12,7 @@ bool AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Gam
 	auto pItemStack = World.FindComponent<CItemStackComponent>(ItemStackEntity);
 	if (!pItemStack) return false;
 
-	auto pItem = FindItemComponent<const CItemComponent>(World, ItemStackEntity, pItemStack);
+	auto pItem = FindItemComponent<const CItemComponent>(World, ItemStackEntity, *pItemStack);
 	if (!pItem) return false;
 
 	// Respect container limitations
@@ -28,7 +28,7 @@ bool AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Gam
 			{
 				if (Stack.Container != Container) return;
 
-				if (const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, EntityID, &Stack))
+				if (const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, EntityID, Stack))
 				{
 					Weight += Stack.Count * pItem->Weight;
 					Volume += Stack.Count * pItem->Volume;
@@ -81,7 +81,7 @@ bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemStackEntity,
 	auto pItemStack = World.FindComponent<CItemStackComponent>(ItemStackEntity);
 	if (!pItemStack) return false;
 
-	const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, ItemStackEntity, pItemStack);
+	const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, ItemStackEntity, *pItemStack);
 	if (!pItem) return false;
 
 	if (pItem->InLocationModelID)

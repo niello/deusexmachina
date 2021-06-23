@@ -17,10 +17,10 @@ bool AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Gam
 bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemStackEntity, const Math::CTransformSRT& Tfm);
 
 template<typename T>
-T* FindItemComponent(const Game::CGameWorld& World, Game::HEntity ItemStackEntity, const CItemStackComponent* pStack)
+T* FindItemComponent(const Game::CGameWorld& World, Game::HEntity ItemStackEntity, const CItemStackComponent& Stack)
 {
 	if (T* pComponent = World.FindComponent<T>(ItemStackEntity)) return pComponent;
-	return pStack ? World.FindComponent<T>(pStack->Prototype) : nullptr;
+	return World.FindComponent<T>(Stack.Prototype);
 }
 //---------------------------------------------------------------------
 
