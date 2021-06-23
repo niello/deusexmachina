@@ -88,6 +88,10 @@ CUIServer::CUIServer(Render::CGPUDriver& GPU, const Data::CParams* pSettings)
 	if (DefaultCursor.IsValid())
 		CEGUISystem->setDefaultCursorName(DefaultCursor.CStr());
 
+	const CString& DefaultTooltip = pSettings ? pSettings->Get<CString>(CStrID("DefaultTooltip"), CString::Empty) : CString::Empty;
+	if (DefaultTooltip.IsValid())
+		CEGUISystem->setDefaultTooltipType(DefaultTooltip.CStr());
+
 	SUBSCRIBE_PEVENT(OnRenderDeviceLost, CUIServer, OnDeviceLost);
 	SUBSCRIBE_PEVENT(OnRenderDeviceReset, CUIServer, OnDeviceReset);
 }
