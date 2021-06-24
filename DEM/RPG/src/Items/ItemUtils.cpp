@@ -84,6 +84,8 @@ bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemStackEntity,
 	const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, ItemStackEntity, *pItemStack);
 	if (!pItem) return false;
 
+	pItemStack->Container = {};
+
 	if (pItem->InLocationModelID)
 	{
 		auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(ItemStackEntity);
