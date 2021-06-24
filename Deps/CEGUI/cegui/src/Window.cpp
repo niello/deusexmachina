@@ -138,6 +138,8 @@ const String Window::EventCursorEntersSurface("CursorEntersSurface");
 const String Window::EventCursorLeavesSurface("CursorLeavesSurface");
 const String Window::EventCursorMove("CursorMove");
 const String Window::EventCursorPressHold("CursorPressHold");
+const String Window::EventSelectWord("SelectWord");
+const String Window::EventSelectAll("SelectAll");
 const String Window::EventCursorActivate("CursorActivate");
 const String Window::EventCharacterKey("CharacterKey");
 const String Window::EventScroll("Scroll");
@@ -2622,7 +2624,7 @@ void Window::onCaptureLost(WindowEventArgs& e)
 
     // handle restore of previous capture window as required.
     if (d_restoreOldCapture && (d_oldCapture != nullptr)) {
-        d_oldCapture->onCaptureLost(e);
+        d_oldCapture->onCaptureGained(e);
         d_oldCapture = nullptr;
     }
 
@@ -2868,6 +2870,46 @@ void Window::onCursorPressHold(CursorInputEventArgs& e)
     {
         e.window = getParent();
         getParent()->onCursorPressHold(e);
+
+        return;
+    }
+
+    // by default we now mark cursor events as handled
+    // (derived classes may override, of course!)
+    ++e.handled;
+}
+
+//----------------------------------------------------------------------------//
+void Window::onSelectWord(CursorInputEventArgs& e)
+{
+    fireEvent(EventSelectWord, e, EventNamespace);
+
+    // optionally propagate to parent
+    if (!e.handled && d_propagatePointerInputs &&
+        d_parent && this != getGUIContext().getModalWindow())
+    {
+        e.window = getParent();
+        getParent()->onSelectWord(e);
+
+        return;
+    }
+
+    // by default we now mark cursor events as handled
+    // (derived classes may override, of course!)
+    ++e.handled;
+}
+
+//----------------------------------------------------------------------------//
+void Window::onSelectAll(CursorInputEventArgs& e)
+{
+    fireEvent(EventSelectAll, e, EventNamespace);
+
+    // optionally propagate to parent
+    if (!e.handled && d_propagatePointerInputs &&
+        d_parent && this != getGUIContext().getModalWindow())
+    {
+        e.window = getParent();
+        getParent()->onSelectAll(e);
 
         return;
     }
@@ -3504,6 +3546,8 @@ void Window::allocateRenderingWindow(bool addStencilBuffer)
     static_cast<RenderingWindow*>(d_surface)->setSize(getPixelSize());
     static_cast<RenderingWindow*>(d_surface)->
         setPosition(getUnclippedOuterRect().get().getPosition());
+    static_cast<RenderingWindow*>(d_surface)->setRotation(d_rotation);
+    updatePivot();
 
     GUIContext* context = getGUIContextPtr();
     if (context)
@@ -3586,6 +3630,11 @@ void Window::initialiseClippers(const RenderingContext& ctx)
 void Window::onRotated(ElementEventArgs& e)
 {
     Element::onRotated(e);
+    
+    if(!getGUIContextPtr())
+    {
+        return;
+    }
 
     // TODO: Checking quaternion for equality with IDENTITY is stupid,
     //       change this to something else, checking with tolerance.
@@ -3804,6 +3853,9 @@ Window* Window::clone(const bool deepCopy) const
     Window* ret =
         WindowManager::getSingleton().createWindow(getType(), getName());
 
+    //Setting some properties on DragContainer trigger events that require the GUI Context to be set
+    if (this->d_guiContext)
+        ret->setGUIContext(this->d_guiContext);
     // always copy properties
     clonePropertiesTo(*ret);
 

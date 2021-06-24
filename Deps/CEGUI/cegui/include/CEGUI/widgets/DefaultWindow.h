@@ -86,6 +86,8 @@ protected:
     void onCursorMove(CursorInputEventArgs& e) override;
     void onScroll(CursorInputEventArgs& e) override;
     void onCursorPressHold(CursorInputEventArgs& e) override;
+    void onSelectWord(CursorInputEventArgs& e) override;
+    void onSelectAll(CursorInputEventArgs& e) override;
     void onCursorActivate(CursorInputEventArgs& e) override;
 
     void onSemanticInputEvent(SemanticEventArgs& e) override;

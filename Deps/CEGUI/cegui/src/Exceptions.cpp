@@ -34,15 +34,16 @@
 
 #if defined( __WIN32__ ) || defined( _WIN32)
 #   include <windows.h>
+#elif defined(__ANDROID__)
+#   include <android/log.h>
 #endif
 
+#if defined(_DEBUG) || defined(DEBUG)
 #if defined(_MSC_VER)
 #   pragma warning(push)
 #   pragma warning(disable : 4091)
 #   include <dbghelp.h>
 #   pragma warning(pop)
-#elif defined(__ANDROID__)
-#   include <android/log.h>
 #elif     (defined(__linux__) && !defined(__ANDROID__)) \
       ||  defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) \
       ||  defined(__HAIKU__)
@@ -50,6 +51,7 @@
 #   include <dlfcn.h>
 #   include <cxxabi.h>
 #   include <cstddef>
+#endif
 #endif
 
 // Start of CEGUI namespace section
@@ -61,19 +63,13 @@ bool Exception::d_stdErrEnabled(true);
 //----------------------------------------------------------------------------//
 static void dumpBacktrace(size_t frames)
 {
-
-#if defined(__ANDROID__)
-
-    // Not implemented yet.
-    CEGUI_UNUSED(frames);
-
-#else
-
 #if defined(_DEBUG) || defined(DEBUG)
 #if defined(_MSC_VER)
     SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_INCLUDE_32BIT_MODULES);
 
-    if (!SymInitialize(GetCurrentProcess(), nullptr, TRUE))
+    HANDLE process = GetCurrentProcess();
+
+    if (!SymInitialize(process, nullptr, TRUE))
         return;
 
     HANDLE thread = GetCurrentThread();
@@ -109,7 +105,7 @@ static void dumpBacktrace(size_t frames)
     logger.logEvent("========== Start of Backtrace ==========", LoggingLevel::Error);
 
     size_t frame_no = 0;
-    while (StackWalk64(machine_arch, GetCurrentProcess(), thread, &stackframe,
+    while (StackWalk64(machine_arch, process, thread, &stackframe,
                        &context, nullptr, SymFunctionTableAccess64, SymGetModuleBase64, nullptr) &&
            stackframe.AddrPC.Offset)
     {
@@ -212,8 +208,6 @@ static void dumpBacktrace(size_t frames)
 #else
 
     CEGUI_UNUSED(frames);
-
-#endif
 
 #endif
 }

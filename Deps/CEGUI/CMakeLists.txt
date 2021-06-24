@@ -66,21 +66,6 @@ cegui_check_mingw()
 cegui_check_msvc()
 
 ################################################################################
-# Define the configurable options that influence usage of other packages
-# DEM: moved this here from below, defaulted to static build
-################################################################################
-option( CEGUI_BUILD_DYNAMIC_CONFIGURATION "DEM: we disable dynamic configuration by default" FALSE)
-option( CEGUI_BUILD_STATIC_CONFIGURATION "Specifies whether the static configs will be built." TRUE)
-option( CEGUI_BUILD_STATIC_FACTORY_MODULE "For static CEGUI builds, specifies whether to include the getWindowFactoryModule method.  When false, the developer must provide a custom implementation of the method" ${CEGUI_BUILD_STATIC_CONFIGURATION})
-# sanity check on static build option for factory method
-if (CEGUI_BUILD_STATIC_FACTORY_MODULE AND NOT CEGUI_BUILD_STATIC_CONFIGURATION)
-  message(SEND_ERROR "You may not enable CEGUI_BUILD_STATIC_FACTORY_MODULE without CEGUI_BUILD_STATIC_CONFIGURATION enabled.  CEGUI needs to be built statically if building the static factory method.")
-endif()
-#if (NOT CEGUI_BUILD_DYNAMIC_CONFIGURATION AND NOT ANDROID)
-#    message(SEND_ERROR "You may not disable CEGUI_BUILD_DYNAMIC_CONFIGURATION in any scenario except android builds.")
-#endif()
-
-################################################################################
 # Check for libs and other packages we might use.
 ################################################################################
 # be sure to search the provided dependencies on Win32 and Mac OS X platforms
@@ -172,6 +157,7 @@ if(NOT TINYXML2_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../tinyxml2")
     set(TINYXML2_FOUND TRUE)
     message("DEM: TinyXML2 found at " ${TINYXML2_INCLUDE_DIR})
 endif()
+# /DEM
 
 find_package(DevIL)
 find_package(FreeImage)
@@ -201,6 +187,7 @@ else()
   find_package(PythonLibs)
 endif()
 find_package(Boost 1.36.0 COMPONENTS python unit_test_framework system timer)
+find_package(SWIG 3.0.8)
 
 find_package(Doxygen)
 find_package(GTK2 COMPONENTS gtk)
@@ -232,7 +219,20 @@ be mindful of which C/C++ runtime setting has been used to compile the various
 components - they must all match or you will get crashes, heap corruption and/or
 other issues." FALSE "WIN32 OR APPLE" FALSE)
 
-set( CEGUI_STRING_CLASS 2 CACHE INT "CEGUI offers three CEGUI::String class configurations
+# DEM: build only static configuration
+option( CEGUI_BUILD_STATIC_CONFIGURATION "Specifies whether the static configs will be built." TRUE)
+option( CEGUI_BUILD_DYNAMIC_CONFIGURATION "Dynamic libs to be built.  Always true except for Android" FALSE)
+option( CEGUI_BUILD_STATIC_FACTORY_MODULE "For static CEGUI builds, specifies whether to include the getWindowFactoryModule method.  When false, the developer must provide a custom implementation of the method" ${CEGUI_BUILD_STATIC_CONFIGURATION})
+# sanity check on static build option for factory method
+if (CEGUI_BUILD_STATIC_FACTORY_MODULE AND NOT CEGUI_BUILD_STATIC_CONFIGURATION)
+    message(SEND_ERROR "You may not enable CEGUI_BUILD_STATIC_FACTORY_MODULE without CEGUI_BUILD_STATIC_CONFIGURATION enabled.  CEGUI needs to be built statically if building the static factory method.")
+endif()
+if (NOT CEGUI_BUILD_DYNAMIC_CONFIGURATION AND NOT ANDROID)
+    #message(SEND_ERROR "You may not disable CEGUI_BUILD_DYNAMIC_CONFIGURATION in any scenario except android builds.")
+endif()
+# /DEM
+
+set( CEGUI_STRING_CLASS "2" CACHE STRING "CEGUI offers three CEGUI::String class configurations
 1 - UTF-8 : ASCII, UTF-8 and UTF-32 aware, minimal storage, slightly less efficient, stores code units as char (std::string) internally - mind this fact when manipulating the String
 2 - UTF-32 : ASCII, UTF-8 and UTF-32 aware, stores 32 bit per character, stores code points as char32_t (std::u32string) internally
 3 - std::string : regular std::string used as CEGUI::String, not Unicode aware"
@@ -284,7 +284,7 @@ cegui_dependent_option( CEGUI_BUILD_LUA_MODULE "Specifies whether to build the L
 cegui_dependent_option( CEGUI_BUILD_LUA_GENERATOR "Specifies whether to build the custom tolua binding generator 'toluappcegui'" "LUA51_FOUND;TOLUAPP_FOUND" )
 
 cegui_dependent_option( CEGUI_BUILD_PYTHON_MODULES_PYPLUSPLUS "Specifies whether to build the Python extension module(s) via boost and Py++" "PYTHONINTERP_FOUND;PYTHONLIBS_FOUND;Boost_PYTHON_FOUND" )
-option( CEGUI_BUILD_PYTHON_MODULES_SWIG "Specifies whether to build the Python extension module(s)" ${PYTHON3LIBS_FOUND} )
+cegui_dependent_option( CEGUI_BUILD_PYTHON_MODULES_SWIG "Specifies whether to build the Python extension module(s) via SWIG" "PYTHON3LIBS_FOUND;SWIG_FOUND" )
 
 option( CEGUI_OPTION_SAFE_LUA_MODULE "Specifies whether to enable extra validation in the Lua script module in non-debug builds" FALSE )
 
@@ -448,9 +448,9 @@ endif()
 
 # We set the Samples to the default value
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/samples")
-option( CEGUI_SAMPLES_ENABLED "Specifies whether to build the CEGUI sample applications" ${_CEGUI_SAMPLES_ENABLED_DEFAULT} )
+    option( CEGUI_SAMPLES_ENABLED "Specifies whether to build the CEGUI sample applications" ${_CEGUI_SAMPLES_ENABLED_DEFAULT} )
 else()
-unset(CEGUI_SAMPLES_ENABLED CACHE)
+    unset(CEGUI_SAMPLES_ENABLED CACHE)
 endif()
 
 if (UNIX AND NOT APPLE AND NOT WIN32)
@@ -459,9 +459,9 @@ endif()
 
 # Option wether to build application templates; default off
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/application_templates")
-option(CEGUI_BUILD_APPLICATION_TEMPLATES "Specifies whether to build the application templates." TRUE)
+    option(CEGUI_BUILD_APPLICATION_TEMPLATES "Specifies whether to build the application templates." TRUE)
 else()
-unset(CEGUI_BUILD_APPLICATION_TEMPLATES CACHE)
+    unset(CEGUI_BUILD_APPLICATION_TEMPLATES CACHE)
 endif()
 
 if (ANDROID)
@@ -472,6 +472,9 @@ if (ANDROID)
     if (CEGUI_BUILD_RENDERER_OPENGLES2_ALTERNATE AND CEGUI_BUILD_RENDERER_OGRE)
         message(SEND_ERROR "Either OpenGLES2 Renderer or Ogre Renderer can be built for android at once.  Please disable one of the renderers.")
     endif()
+elseif (NOT APPLE AND CEGUI_BUILD_RENDERER_OPENGLES)
+    find_package(EGL)
+    set(CEGUI_BUILD_RENDERER_OPENGLES ${EGL_FOUND} CACHE BOOL "OpenGL ES 1 RenderSystem requires EGL on other systems than APPLE" FORCE)
 endif()
 
 if (WIN32 OR APPLE)
@@ -602,12 +605,12 @@ appropriate.")
 endif()
 
 if(CEGUI_BUILD_DYNAMIC_CONFIGURATION)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "ExpatParser" CEGUI_BUILD_XMLPARSER_EXPAT)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "XercesParser" CEGUI_BUILD_XMLPARSER_XERCES)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "LibXMLParser" CEGUI_BUILD_XMLPARSER_LIBXML2)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "RapidXMLParser" CEGUI_BUILD_XMLPARSER_RAPIDXML)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "TinyXMLParser" CEGUI_BUILD_XMLPARSER_TINYXML)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "TinyXML2Parser" CEGUI_BUILD_XMLPARSER_TINYXML2)
+    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "ExpatParser" CEGUI_BUILD_XMLPARSER_EXPAT)
+    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "XercesParser" CEGUI_BUILD_XMLPARSER_XERCES)
+    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "LibXMLParser" CEGUI_BUILD_XMLPARSER_LIBXML2)
+    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "RapidXMLParser" CEGUI_BUILD_XMLPARSER_RAPIDXML)
+    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "TinyXMLParser" CEGUI_BUILD_XMLPARSER_TINYXML)
+    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "TinyXML2Parser" CEGUI_BUILD_XMLPARSER_TINYXML2)
 endif()
 
 if (CEGUI_BUILD_STATIC_CONFIGURATION)
@@ -651,13 +654,13 @@ appropriate.")
 endif()
 
 if(CEGUI_BUILD_DYNAMIC_CONFIGURATION)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "SILLYImageCodec" CEGUI_BUILD_IMAGECODEC_SILLY)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "DevILImageCodec" CEGUI_BUILD_IMAGECODEC_DEVIL)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "FreeImageImageCodec" CEGUI_BUILD_IMAGECODEC_FREEIMAGE)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "STBImageCodec" CEGUI_BUILD_IMAGECODEC_STB)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "CoronaImageCodec" CEGUI_BUILD_IMAGECODEC_CORONA)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "TGAImageCodec" CEGUI_BUILD_IMAGECODEC_TGA)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "SDL2ImageCodec" CEGUI_BUILD_IMAGECODEC_SDL2)
+    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "SILLYImageCodec" CEGUI_BUILD_IMAGECODEC_SILLY)
+    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "DevILImageCodec" CEGUI_BUILD_IMAGECODEC_DEVIL)
+    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "FreeImageImageCodec" CEGUI_BUILD_IMAGECODEC_FREEIMAGE)
+    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "STBImageCodec" CEGUI_BUILD_IMAGECODEC_STB)
+    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "CoronaImageCodec" CEGUI_BUILD_IMAGECODEC_CORONA)
+    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "TGAImageCodec" CEGUI_BUILD_IMAGECODEC_TGA)
+    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "SDL2ImageCodec" CEGUI_BUILD_IMAGECODEC_SDL2)
 endif()
 
 if (CEGUI_BUILD_STATIC_CONFIGURATION)
@@ -764,10 +767,10 @@ configure_file( cegui/include/CEGUI/Version.h.in cegui/include/CEGUI/Version.h )
 configure_file( cegui/include/CEGUI/Config.h.in cegui/include/CEGUI/Config.h )
 configure_file( cegui/include/CEGUI/ModuleConfig.h.in cegui/include/CEGUI/ModuleConfig.h )
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/samples")
-configure_file( samples/common/include/CEGUISamplesConfig.h.in samples/common/include/CEGUISamplesConfig.h )
+    configure_file( samples/common/include/CEGUISamplesConfig.h.in samples/common/include/CEGUISamplesConfig.h )
 endif()
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/doc")
-configure_file( doc/doxygen/doxyfile.in doc/doxygen/doxyfile )
+    configure_file( doc/doxygen/doxyfile.in doc/doxygen/doxyfile )
 endif()
 
 ################################################################################
@@ -833,7 +836,7 @@ if (CEGUI_BUILD_APPLICATION_TEMPLATES)
 endif()
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/datafiles")
-add_subdirectory(datafiles)
+    add_subdirectory(datafiles)
 endif()
 
 if (DOXYGEN_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/doc")
