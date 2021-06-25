@@ -7,17 +7,16 @@
 namespace DEM::Meta
 {
 
-template<class T, class R = void>
-struct enable_if_type { typedef R type; };
-
+// Classify as true if type has `using TAG = std::true_type;` (or other type with value = true), false otherwise
 #define META_DECLARE_TYPEDEF_FLAG(TAG) \
 template<class T, class Enable = void> \
 struct is_typedef_flag_##TAG : std::false_type {}; \
 template<class T> \
-struct is_typedef_flag_##TAG<T, typename DEM::Meta::enable_if_type<typename T::TAG>::type> : T::TAG {}; \
+struct is_typedef_flag_##TAG<T, typename std::enable_if_t<T::TAG::value>> : std::true_type {}; \
 template<typename T> \
 constexpr bool is_typedef_flag_##TAG##_v = is_typedef_flag_##TAG<T>::value;
 
+// Classify as true if type has `constexpr static bool TAG = true;`, false otherwise
 #define META_DECLARE_BOOL_FLAG(TAG) \
 template <typename T, typename = int> \
 struct is_bool_flag_##TAG : std::false_type {}; \
