@@ -44,6 +44,9 @@ enum class ENavigationMode : U8
 
 struct CNavAgentComponent
 {
+	// Must cancel async pathfinding task
+	static constexpr bool ExternalDeinit = true;
+
 	dtPathCorridor       Corridor;
 	dtNavMeshQuery*      pNavQuery = nullptr; //???need per-agent or can use pool in path queue or navmesh?
 	PNavMap              NavMap;
@@ -70,17 +73,6 @@ inline bool InRange(const float* v0, const float* v1, float AgentHeight, float S
 	return (dx * dx + dz * dz) <= SqRange && std::abs(v0[1] - v1[1]) < AgentHeight;
 }
 //---------------------------------------------------------------------
-
-}
-
-namespace DEM::Game
-{
-
-template<>
-struct TComponentTraits<DEM::AI::CNavAgentComponent>
-{
-	using TStorage = CSparseComponentStorage<DEM::AI::CNavAgentComponent, true>;
-};
 
 }
 

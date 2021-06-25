@@ -11,6 +11,10 @@ namespace DEM::Game
 
 struct CSceneComponent
 {
+	// Scene nodes need to be detached from the scene
+	// TODO: need no external objects, may call some Finalizer() embedded into the storage instead.
+	static constexpr bool ExternalDeinit = true;
+
 	Scene::PSceneNode RootNode;
 
 	CStrID            AssetID;
@@ -20,14 +24,6 @@ struct CSceneComponent
 
 	const auto& GetLocalTransform() const { return RootNode->GetLocalTransform(); }
 	void        SetLocalTransform(const Math::CTransform& Value) { RootNode->SetLocalTransform(Value); }
-};
-
-//!!!???FIXME: use constexpr bool in a component? Will be shorter and more elegant!
-// Scene nodes need to be detached from the scene
-template<>
-struct TComponentTraits<CSceneComponent>
-{
-	using TStorage = CSparseComponentStorage<CSceneComponent, true>;
 };
 
 }

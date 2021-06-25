@@ -47,6 +47,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/Array2.h
 	DEM/Low/src/Data/ArrayUtils.h
 	DEM/Low/src/Data/Buffer.h
+	DEM/Low/src/Data/CategorizationTraits.h
 	DEM/Low/src/Data/Data.h
 	DEM/Low/src/Data/DataArray.h
 	DEM/Low/src/Data/DataScheme.h
@@ -62,7 +63,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/HashPairT.h
 	DEM/Low/src/Data/HashTable.h
 	DEM/Low/src/Data/HRDParser.h
-	DEM/Low/src/Data/IterableTraits.h
 	DEM/Low/src/Data/KeyList.h
 	DEM/Low/src/Data/LineBuffer.h
 	DEM/Low/src/Data/List.h

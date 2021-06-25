@@ -1,6 +1,6 @@
 #pragma once
 #include <Data/Metadata.h>
-#include <Data/IterableTraits.h>
+#include <Data/CategorizationTraits.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 #include <Data/Algorithms.h>

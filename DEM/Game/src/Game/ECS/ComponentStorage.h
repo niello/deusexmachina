@@ -1248,10 +1248,14 @@ public:
 // Misc
 ///////////////////////////////////////////////////////////////////////
 
+META_DECLARE_BOOL_FLAG(ExternalDeinit);
+
 template<typename T>
 struct TComponentTraits
 {
-	using TStorage = std::conditional_t<std::is_empty_v<T>, CEmptyComponentStorage<T>, CSparseComponentStorage<T>>;
+	using TStorage = std::conditional_t<std::is_empty_v<T>,
+		CEmptyComponentStorage<T>,
+		CSparseComponentStorage<T, is_bool_flag_ExternalDeinit_v<T>>>;
 };
 
 template<typename T>

@@ -2,10 +2,29 @@
 #include <unordered_set>
 #include <map>
 
-// Helpers for iterability detection
+// Helpers for compile-time type categorization
 
 namespace DEM::Meta
 {
+
+template<class T, class R = void>
+struct enable_if_type { typedef R type; };
+
+#define META_DECLARE_TYPEDEF_FLAG(TAG) \
+template<class T, class Enable = void> \
+struct is_typedef_flag_##TAG : std::false_type {}; \
+template<class T> \
+struct is_typedef_flag_##TAG<T, typename enable_if_type<typename T::TAG>::type> : T::TAG {}; \
+template<typename T> \
+constexpr bool is_typedef_flag_##TAG##_v = is_typedef_flag_##TAG<T>::value;
+
+#define META_DECLARE_BOOL_FLAG(TAG) \
+template <typename T, typename = int> \
+struct is_bool_flag_##TAG : std::false_type {}; \
+template <typename T> \
+struct is_bool_flag_##TAG<T, decltype(T::TAG, 0)> { constexpr static bool value = static_cast<bool>(T::TAG); }; \
+template<typename T> \
+constexpr bool is_bool_flag_##TAG##_v = is_bool_flag_##TAG<T>::value;
 
 template<typename T>
 struct is_pair : std::false_type {};
