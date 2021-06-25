@@ -12,7 +12,7 @@ namespace DEM::Game
 struct CSceneComponent
 {
 	// Scene nodes need to be detached from the scene
-	// TODO: need no external objects, may call some Finalizer() embedded into the storage instead.
+	// TODO: need no external objects, may call optional Finalizer() embedded into the component class
 	static constexpr bool ExternalDeinit = true;
 
 	Scene::PSceneNode RootNode;

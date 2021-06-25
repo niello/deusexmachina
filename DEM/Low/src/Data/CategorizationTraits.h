@@ -14,7 +14,7 @@ struct enable_if_type { typedef R type; };
 template<class T, class Enable = void> \
 struct is_typedef_flag_##TAG : std::false_type {}; \
 template<class T> \
-struct is_typedef_flag_##TAG<T, typename enable_if_type<typename T::TAG>::type> : T::TAG {}; \
+struct is_typedef_flag_##TAG<T, typename DEM::Meta::enable_if_type<typename T::TAG>::type> : T::TAG {}; \
 template<typename T> \
 constexpr bool is_typedef_flag_##TAG##_v = is_typedef_flag_##TAG<T>::value;
 
