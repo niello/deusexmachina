@@ -43,6 +43,23 @@ void CDEMGeometryBuffer::draw(std::uint32_t drawModeMask) const
 	n_assert_dbg(pGPU);
 	if (!pGPU) return;
 
+	if (d_clippingActive)
+	{
+		// Skip completely clipped geometry
+		const UPTR W = static_cast<UPTR>(d_preparedClippingRegion.getWidth());
+		const UPTR H = static_cast<UPTR>(d_preparedClippingRegion.getHeight());
+		if (!W || !H) return;
+
+		Data::CRect SR
+		(
+			static_cast<IPTR>(d_preparedClippingRegion.left()),
+			static_cast<IPTR>(d_preparedClippingRegion.top()),
+			W,
+			H
+		);
+		pGPU->SetScissorRect(0, &SR);
+	}
+
 	if (!d_bufferIsSync)
 	{
 		d_bufferIsSync = true;
@@ -67,16 +84,6 @@ void CDEMGeometryBuffer::draw(std::uint32_t drawModeMask) const
 
 	pGPU->SetVertexBuffer(0, d_vertexBuffer.Get());
 	pGPU->SetVertexLayout(d_vertexBuffer->GetVertexLayout());
-
-	if (d_clippingActive)
-	{
-		Data::CRect SR;
-		SR.X = static_cast<int>(d_preparedClippingRegion.left());
-		SR.Y = static_cast<int>(d_preparedClippingRegion.top());
-		SR.W = static_cast<unsigned int>((d_preparedClippingRegion.right() - d_preparedClippingRegion.left()));
-		SR.H = static_cast<unsigned int>((d_preparedClippingRegion.bottom() - d_preparedClippingRegion.top()));
-		pGPU->SetScissorRect(0, &SR);
-	}
 
 	if (!d_matrixValid || !isRenderTargetDataValid(d_owner.getActiveRenderTarget()))
 	{
