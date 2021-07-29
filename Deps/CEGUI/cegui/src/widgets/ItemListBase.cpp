@@ -111,8 +111,10 @@ ItemListBase::~ItemListBase(void)
 /*************************************************************************
 	Initialise components
 *************************************************************************/
-void ItemListBase::initialiseComponents(void)
+void ItemListBase::initialiseComponents()
 {
+    Window::initialiseComponents();
+
     // this pane may be ourselves, and in fact is by default...
     d_pane->subscribeEvent(Window::EventChildRemoved,
         Event::Subscriber(&ItemListBase::handle_PaneChildRemoved, this));
@@ -295,14 +297,12 @@ void ItemListBase::removeItem(ItemEntry* item)
 *************************************************************************/
 void ItemListBase::setAutoResizeEnabled(bool setting)
 {
-	bool old = d_autoResize;
+	const bool old = d_autoResize;
 	d_autoResize = setting;
 
 	// if not already enabled, trigger a resize - only if not currently initialising
-	if ( d_autoResize && !old && !d_initialising)
-	{
+	if (d_autoResize && !old && !d_initialising)
 		sizeToContent();
-	}
 }
 
 
@@ -337,22 +337,14 @@ void ItemListBase::onListContentsChanged(WindowEventArgs& e)
 
 	    // resort list if requested and enabled
         if (d_resort && d_sortEnabled)
-            sortList(false);
+            sortList();
+        else
+            layoutItemWidgets();
+
         d_resort = false;
 
-	    // redo the item layout and fire our event
-	    layoutItemWidgets();
 	    fireEvent(EventListContentsChanged, e, EventNamespace);
 	}
-}
-
-//----------------------------------------------------------------------------//
-void ItemListBase::onParentSized(ElementEventArgs& e)
-{
-    Window::onParentSized(e);
-
-    if (d_autoResize)
-        sizeToContent();
 }
 
 //----------------------------------------------------------------------------//
@@ -455,67 +447,69 @@ void ItemListBase::addItemListBaseProperties(void)
 void ItemListBase::addChild_impl(Element* element)
 {
     ItemEntry* item = dynamic_cast<ItemEntry*>(element);
-    
-    // if this is an ItemEntry we add it like one, but only if it is not already in the list!
-    if (item)
-    {
-        // add to the pane if we have one
-        if (d_pane != this)
-        {
-            d_pane->addChild(item);
-        }
-        // add item directly to us
-        else
-        {
-            Window::addChild_impl(item);
-        }
-
-	    if (item->d_ownerList != this)
-	    {
-	        // perform normal addItem
-	        // if sorting is enabled, re-sort the list
-            if (d_sortEnabled)
-            {
-                d_listItems.insert(
-                    std::upper_bound(d_listItems.begin(), d_listItems.end(), item, getRealSortCallback()),
-                    item);
-            }
-            // just stick it on the end.
-            else
-            {
-                d_listItems.push_back(item);
-            }
-	        item->d_ownerList = this;
-		    handleUpdatedItemData();
-	    }
-	}
-	// otherwise it's base class processing
-    else
+    if (!item)
     {
         Window::addChild_impl(element);
+        return;
     }
+    
+    // if this is an ItemEntry we add it like one, but only if it is not already in the list!
+    // add to the pane if we have one
+    if (d_pane != this)
+    {
+        d_pane->addChild(item);
+    }
+    // add item directly to us
+    else
+    {
+        Window::addChild_impl(item);
+    }
+
+	if (item->d_ownerList != this)
+	{
+	    // perform normal addItem
+	    // if sorting is enabled, re-sort the list
+        if (d_sortEnabled)
+        {
+            d_listItems.insert(
+                std::upper_bound(d_listItems.begin(), d_listItems.end(), item, getRealSortCallback()),
+                item);
+        }
+        // just stick it on the end.
+        else
+        {
+            d_listItems.push_back(item);
+        }
+	    item->d_ownerList = this;
+		handleUpdatedItemData();
+	}
 }
 
 
 /************************************************************************
     Initialisation done
 *************************************************************************/
-void ItemListBase::endInitialisation(void)
+void ItemListBase::endInitialisation()
 {
     Window::endInitialisation();
     handleUpdatedItemData(true);
 }
 
-
-/************************************************************************
-	Perform child window layout
-************************************************************************/
-void ItemListBase::performChildWindowLayout(bool nonclient_sized_hint,
-                                            bool client_sized_hint)
+//----------------------------------------------------------------------------//
+void ItemListBase::onFontChanged(WindowEventArgs& e)
 {
-	Window::performChildWindowLayout(nonclient_sized_hint,
-                                     client_sized_hint);
-	// if we are not currently initialising
+    Window::onFontChanged(e);
+
+    if (d_autoResize)
+        sizeToContent();
+}
+
+//----------------------------------------------------------------------------//
+void ItemListBase::performChildLayout(bool client, bool nonClient)
+{
+    Window::performChildLayout(client, nonClient);
+
+    // if we are not currently initialising
 	if (!d_initialising)
 	{
 	    // Redo the item layout.
@@ -523,12 +517,10 @@ void ItemListBase::performChildWindowLayout(bool nonclient_sized_hint,
 	    // which is not what is being requested.
 	    // It would also cause infinite recursion... so lets just avoid that :)
 	    layoutItemWidgets();
-	}
+    }
 }
 
-/************************************************************************
-    Resize to fit content
-************************************************************************/
+//----------------------------------------------------------------------------//
 void ItemListBase::sizeToContent_impl(void)
 {
     Rectf renderArea(getItemRenderArea());
@@ -643,13 +635,10 @@ void ItemListBase::onSortModeChanged(WindowEventArgs& e)
 /************************************************************************
     Sort list
 ************************************************************************/
-void ItemListBase::sortList(bool relayout)
+void ItemListBase::sortList()
 {
     std::sort(d_listItems.begin(), d_listItems.end(), getRealSortCallback());
-    if (relayout)
-    {
-        layoutItemWidgets();
-    }
+    layoutItemWidgets();
 }
 
 bool ItemListBase::validateWindowRenderer(const WindowRenderer* renderer) const

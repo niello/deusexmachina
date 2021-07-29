@@ -410,7 +410,7 @@ public:
     Scrollbar* getHorzScrollbar() const;
 
     // Overridden from Window
-    void initialiseComponents(void) override;
+    void initialiseComponents() override;
     void destroy(void) override;
 
 protected:
@@ -428,7 +428,7 @@ protected:
         the ScrollablePane view area and the size of the attached
         ScrolledContainer.
     */
-    void configureScrollbars(void);
+    void configureScrollbars();
 
     /*!
     \brief
@@ -552,7 +552,7 @@ protected:
     void addChild_impl(Element* element) override;
     void removeChild_impl(Element* element) override;
     
-    void onSized_impl(ElementEventArgs& e) override;
+    void onSized(ElementEventArgs& e) override;
     void onScroll(CursorInputEventArgs& e) override;
     void onIsSizeAdjustedToContentChanged(ElementEventArgs& e) override;
     void adjustSizeToContent() override {}

@@ -78,7 +78,7 @@ ListViewItemRenderingState::~ListViewItemRenderingState()
 }
 
 //----------------------------------------------------------------------------//
-ListViewItemRenderingState::ListViewItemRenderingState(ListViewItemRenderingState&& src) :
+ListViewItemRenderingState::ListViewItemRenderingState(ListViewItemRenderingState&& src) noexcept :
     d_string           (src.d_string),
     d_formattedString  (src.d_formattedString),
     d_icon             (std::move(src.d_icon)),
@@ -93,7 +93,7 @@ ListViewItemRenderingState::ListViewItemRenderingState(ListViewItemRenderingStat
 }
 
 //----------------------------------------------------------------------------//
-ListViewItemRenderingState& ListViewItemRenderingState::operator=(ListViewItemRenderingState&& src) {
+ListViewItemRenderingState& ListViewItemRenderingState::operator=(ListViewItemRenderingState&& src) noexcept {
     d_string           = src.d_string,
     d_formattedString  = src.d_formattedString;
     d_icon             = std::move(src.d_icon);
@@ -315,7 +315,7 @@ void ListView::updateItem(ListViewItemRenderingState &item, ModelIndex index,
     String text = d_itemModel->getData(index);
 
     item.setStringAndFormatting(
-        getRenderedStringParser().parse(text, getFont(), &d_textColourRect),
+        getRenderedStringParser().parse(text, getActualFont(), &d_textColourRect),
         d_horzFormatting
     );
 

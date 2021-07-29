@@ -77,7 +77,7 @@ namespace CEGUI
         // Nothing to do here.
     }
 
-    void Spinner::initialiseComponents(void)
+    void Spinner::initialiseComponents()
     {
         // get all the component widgets
         PushButton* increaseButton = getIncreaseButton();
@@ -102,7 +102,7 @@ namespace CEGUI
         // final initialisation
         setTextInputMode(TextInputMode::Integer);
         setCurrentValue(0.0f);
-        performChildWindowLayout();
+        Window::initialiseComponents();
     }
 
     double Spinner::getCurrentValue(void) const
@@ -330,7 +330,7 @@ namespace CEGUI
     void Spinner::onFontChanged(WindowEventArgs& e)
     {
         // Propagate to children
-        getEditbox()->setFont(getFont());
+        getEditbox()->setFont(getActualFont());
         // Call base class handler
         Window::onFontChanged(e);
     }

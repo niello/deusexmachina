@@ -279,9 +279,9 @@ void ListHeaderSegment::doDragSizing(const glm::vec2& local_cursor)
         delta = minWidth - orgWidth;
 
     // update segment area rect
-    // URGENT FIXME: The pixel alignment will be done automatically again, right? Why is it done here? setArea_impl will do it!
+    // URGENT FIXME: The pixel alignment will be done automatically again, right? Why is it done here? setArea will do it!
     URect area(d_area.d_min.d_x, d_area.d_min.d_y, d_area.d_max.d_x + UDim(0,/*PixelAligned(*/delta/*)*/), d_area.d_max.d_y);
-    setArea_impl(area.d_min, area.getSize());
+    setArea(area.d_min, area.getSize(), true);
 
     // move the dragging point so cursor remains 'attached' to edge of segment
     d_dragPoint.x += d_pixelSize.d_width - orgWidth;
@@ -373,7 +373,7 @@ void ListHeaderSegment::initSegmentHoverState(void)
 	if (d_splitterHover)
 	{
 		d_splitterHover = false;
-        getGUIContext().getCursor().setImage(getCursor());
+        getGUIContext().getCursor().setImage(getActualCursor());
 		invalidate();
 	}
 
@@ -460,7 +460,7 @@ void ListHeaderSegment::onCursorMove(CursorInputEventArgs& e)
 		if (d_splitterHover)
 		{
 			d_splitterHover = false;
-            getGUIContext().getCursor().setImage(getCursor());
+            getGUIContext().getCursor().setImage(getActualCursor());
 			invalidate();
 		}
 
@@ -532,7 +532,7 @@ void ListHeaderSegment::onCursorActivate(CursorInputEventArgs& e)
 		}
 		else if (d_dragMoving)
 		{
-            getGUIContext().getCursor().setImage(getCursor());
+            getGUIContext().getCursor().setImage(getActualCursor());
 
 			WindowEventArgs args(this);
 			onSegmentDragStop(args);

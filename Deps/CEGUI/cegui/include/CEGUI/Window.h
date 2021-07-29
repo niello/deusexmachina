@@ -515,7 +515,10 @@ public:
     \return
         String object holding the Window type.
     */
-    const String& getType(void) const;
+    inline const String& getType() const
+    {
+        return d_falagardType.empty() ? d_type : d_falagardType;
+    }
 
     /*!
     \brief
@@ -551,7 +554,10 @@ public:
         - true if the window is disabled.
         - false if the window is enabled.
     */
-    bool isDisabled() const;
+    inline bool isDisabled() const
+    {
+        return !d_enabled;
+    }
 
     /*!
     \brief
@@ -565,7 +571,10 @@ public:
         - true if the window is disabled.
         - false if the window is enabled.
     */
-    bool isEffectiveDisabled() const;
+    inline bool isEffectiveDisabled() const
+    {
+        return !d_enabled || (d_parent && getParent()->isEffectiveDisabled());
+    }
 
     /*!
     \brief
@@ -583,7 +592,10 @@ public:
         - true if the window is set as visible.
         - false if the window is set as hidden.
     */
-    bool isVisible() const;
+    inline bool isVisible() const
+    {
+        return d_visible;
+    }
 
     /*!
     \brief
@@ -601,7 +613,10 @@ public:
         - true if the window will be drawn.
         - false if the window is hidden and therefore ignored when rendering.
     */
-    bool isEffectiveVisible() const;
+    inline bool isEffectiveVisible() const
+    {
+        return d_visible && (!d_parent || getParent()->isEffectiveVisible());
+    }
 
     /*!
     \brief
@@ -617,7 +632,10 @@ public:
         - true if the window is active and may be sent inputs by the system.
         - false if the window is inactive and will not be sent inputs.
     */
-    bool isActive(void) const;
+    inline bool isActive() const
+    {
+        return d_active && (!d_parent || getParent()->isActive());
+    }
 
     /*!
     \brief
@@ -836,22 +854,15 @@ public:
     \brief
         return the active Font object for the Window.
 
-    \param useDefault
-        Specifies whether to return the default font if this Window has no
-        preferred font set. This is typically set to true but whenever we
-        want to know if a default font would be used, this will be set to
-        false, and if the returned Font is a zero pointer we know that this
-        means a default font would be used otherwise.
-
     \return
         Pointer to the Font being used by this Window.  If the window has no
         assigned font, and \a useDefault is true, then the default system font
         is returned.
     */
-    /*!  \deprecated This function is deprecated, as the parameter will be removed in the next major version. Separate functions
-         will be added with proper function names to replicate the functionality for useDefault=false.
-    */
-    const Font* getFont(bool useDefault = true) const;
+    const Font* getActualFont() const;
+
+    //! Returns the font set for this window, nullptr means that a default font will be used
+    const Font* getFont() const { return d_font; }
 
     /*!
     \brief
@@ -956,7 +967,13 @@ public:
         - true to return the non-client clipping area (based on outer rect).
         - false to return the client clipping area (based on inner rect).
     */
-    const Rectf& getClipRect(const bool non_client = false) const;
+    const Rectf& getClipRect(const bool non_client = false) const
+    {
+        return non_client ? getOuterRectClipper() : getInnerRectClipper();
+    }
+
+    //! helper function for calculating a parent clipping rectangle.
+    Rectf getParentClipRect() const;
 
     /*!
     \brief
@@ -1083,16 +1100,15 @@ public:
         Return a pointer to the cursor image to use when the cursor
         indicator is within this window's area.
 
-    \param useDefault
-        Specifies whether to return the default cursor image if this
-        window specifies no preferred cursor image.
-
     \return
         Pointer to the cursor image that will be used when the cursor
-        enters this window's area.  May return NULL indicating no indicator will
+        enters this window's area. May return NULL indicating no indicator will
         be drawn for this window.
     */
-    const Image* getCursor(bool useDefault = true) const;
+    const Image* getActualCursor() const;
+
+    //! Returns the cursor set for this window, nullptr means that a default cursor will be used
+    const Image* getCursor() const { return d_cursor; }
 
     /*!
     \brief
@@ -1142,7 +1158,10 @@ public:
         - false: z-order changes are disabled for this window.
           moveToFront, moveToBack, moveInFront and moveBehind are ignored.
     */
-    bool isZOrderingEnabled(void) const;
+    inline bool isZOrderingEnabled() const
+    {
+        return d_zOrderingEnabled;
+    }
 
     /*!
     \brief
@@ -1155,7 +1174,10 @@ public:
         - false if autorepeat of cursor press events is not enabled for
           this window.
     */
-    bool isCursorAutoRepeatEnabled(void) const;
+    inline bool isCursorAutoRepeatEnabled() const
+    {
+        return d_autoRepeat;
+    }
 
     /*!
     \brief
@@ -1165,7 +1187,10 @@ public:
         float value indicating the delay, in seconds, before the first repeat
         cursor press event will be triggered when autorepeat is enabled.
     */
-    float getAutoRepeatDelay(void) const;
+    inline float getAutoRepeatDelay() const
+    {
+        return d_repeatDelay;
+    }
 
     /*!
     \brief
@@ -1175,7 +1200,10 @@ public:
         float value indicating the rate, in seconds, at which repeat cursor press
         events will be generated after the initial delay has expired.
     */
-    float getAutoRepeatRate(void) const;
+    inline float getAutoRepeatRate() const
+    {
+        return d_repeatRate;
+    }
 
     /*!
     \brief
@@ -1186,7 +1214,10 @@ public:
         - true if System should pass captured input events to child windows.
         - false if System should pass captured input events to this window only.
     */
-    bool distributesCapturedInputs(void) const;
+    inline bool distributesCapturedInputs() const
+    {
+        return d_distCapturedInputs;
+    }
 
     /*!
     \brief
@@ -1197,7 +1228,10 @@ public:
         - true if the Window will use the system default tooltip.
         - false if the window has a custom Tooltip object.
     */
-    bool isUsingDefaultTooltip(void) const;
+    inline bool isUsingDefaultTooltip() const
+    {
+        return !d_customTip;
+    }
 
     /*!
     \brief
@@ -1227,7 +1261,10 @@ public:
     \return
         String object holding the current tooltip text set for this window.
      */
-    const String& getTooltipText(void) const;
+    inline const String& getTooltipText() const
+    {
+        return d_tooltipText;
+    }
 
     /*!
     \brief
@@ -1252,7 +1289,10 @@ public:
         - false if the window does not inherit tooltip text from its parent
           (and shows no tooltip when no text is set).
      */
-    bool inheritsTooltipText(void) const;
+    inline bool inheritsTooltipText() const
+    {
+        return d_inheritsTipText;
+    }
 
     /*!
     \brief
@@ -1283,8 +1323,10 @@ public:
     \return
         Reference to the list of GeometryBuffer objects for this Window.
     */
-    std::vector<GeometryBuffer*>& getGeometryBuffers();
-
+    inline std::vector<GeometryBuffer*>& getGeometryBuffers()
+    {
+        return d_geometryBuffers;
+    }
     
     /*!
     \brief
@@ -1303,7 +1345,10 @@ public:
         String object holding the name of the look assigned to this window.
         Returns the empty string if no look is assigned.
     */
-    const String& getLookNFeel() const;
+    inline const String& getLookNFeel() const
+    {
+        return d_lookName;
+    }
 
     /*!
     \brief
@@ -1396,7 +1441,10 @@ public:
         - true if the Window is enabled as a drag and drop target.
         - false if the window is not enabled as a drag and drop target.
     */
-    bool isDragDropTarget() const;
+    inline bool isDragDropTarget() const
+    {
+        return d_dragDropTarget;
+    }
 
     /*!
     \brief
@@ -1413,7 +1461,10 @@ public:
         return the RenderingSurface currently set for this window.  May return
         0.
     */
-    RenderingSurface* getRenderingSurface() const;
+    inline RenderingSurface* getRenderingSurface() const
+    {
+        return d_surface;
+    }
 
     /*!
     \brief
@@ -1433,7 +1484,10 @@ public:
         - true if automatic use of a caching RenderingSurface is enabled.
         - false if automatic use of a caching RenderTarget is not enabled.
     */
-    bool isUsingAutoRenderingSurface() const;
+    inline bool isUsingAutoRenderingSurface() const
+    {
+        return d_autoRenderingWindow;
+    }
 
     /*!
     \brief
@@ -1445,7 +1499,10 @@ public:
     - true to provide stencil buffer functionality with the texture caching.
     - false to not provide a stencil buffer functionality with the texture caching.
     */
-    bool isAutoRenderingSurfaceStencilEnabled() const;
+    inline bool isAutoRenderingSurfaceStencilEnabled() const
+    {
+        return d_autoRenderingSurfaceStencilEnabled;
+    }
 
     /*!
     \brief
@@ -1471,7 +1528,7 @@ public:
     \return
         Nothing
     */
-    virtual void initialiseComponents(void) {}
+    virtual void initialiseComponents() {}
 
     /*!
     \brief
@@ -1835,7 +1892,10 @@ public:
         is not meant to imply that the windows are overlapping nor that one
         window is obscured by the other.
     */
-    bool isBehind(const Window& wnd) const;
+    inline bool isBehind(const Window& wnd) const
+    {
+        return !isInFront(wnd);
+    }
 
     /*!
     \brief
@@ -2254,38 +2314,6 @@ public:
 
     /*!
     \brief
-        Layout child window content.
-
-        Laying out of child content includes:
-            - ensuring content specified in any assigned WidgetLook has its area
-              rectangles sychronised.
-            - assigned WindowRenderer given the opportunity to update child
-              content areas as needed.
-            - All content is then potentially updated via the onParentSized
-              notification as required by changes in non-client and client area
-              rectangles.
-
-        The system may call this at various times (like when a window is resized
-        for example), and it may be invoked directly where required.
-
-    \param nonclient_sized_hint
-        Hint that the non-client area rectangle has changed size.
-
-    \param client_sized_hint
-        Hint that the client area rectangle has changed size.
-
-    \note
-        The hint parameters are essentially a way to force onParentSized
-        notifications for a given type (client / nonclient) of child window.
-        Setting a hint to false does not mean a notification will not happen,
-        instead it means that the function is to do its best to determine
-        whether a given notification is required to be sent.
-    */
-    virtual void performChildWindowLayout(bool nonclient_sized_hint = false,
-                                          bool client_sized_hint = false);
-
-    /*!
-    \brief
        Sets the value a named user string, creating it as required.
 
     \param name
@@ -2405,7 +2433,7 @@ public:
         That is just after the window has been created, but before any children or
         properties are read.
     */
-    virtual void beginInitialisation(void) { d_initialising = true; }
+    virtual void beginInitialisation() { d_initialising = true; }
 
     /*!
     \brief
@@ -2414,7 +2442,9 @@ public:
         creating a window. That is after all properties and children have been
         loaded and just before the next sibling gets created.
     */
-    virtual void endInitialisation(void) { d_initialising = false; }
+    virtual void endInitialisation();
+
+    bool isInitializing() const { return d_initialising; }
 
     /*!
     \brief
@@ -2468,7 +2498,10 @@ public:
         A pointer to the assigned window renderer object.
         0 if no window renderer is assigned.
     */
-    WindowRenderer* getWindowRenderer(void) const;
+    inline WindowRenderer* getWindowRenderer() const
+    {
+        return d_windowRenderer;
+    }
 
     /*!
     \brief
@@ -2486,18 +2519,6 @@ public:
         Sets whether this window is allowed to write XML
     */
     void setWritingXMLAllowed(bool allow)   {d_allowWriteXML = allow;}
-
-    /*!
-    \brief
-        Inform the window, and optionally all children, that screen area
-        rectangles have changed.
-
-    \param recursive
-        - true to recursively call notifyScreenAreaChanged on attached child
-          Window objects.
-        - false to just process \e this Window.
-    */
-    void notifyScreenAreaChanged(bool recursive = true) override;
 
     /*!
     \brief
@@ -2562,7 +2583,7 @@ public:
     \par
         Note that this setting really only controls whether the Window
         automatically creates and manages the RenderingSurface, as opposed to
-        the \e use of the RenderingSurface.  If a RenderingSurfaceis set for the
+        the \e use of the RenderingSurface. If a RenderingSurface is set for the
         Window it will be used regardless of this setting.
     \par
         Enabling this option will cause the Window to attempt to create a
@@ -2612,20 +2633,29 @@ public:
     //! Return the parsed RenderedString object for this window.
     const RenderedString& getRenderedString() const;
     //! Return a pointer to any custom RenderedStringParser set, or 0 if none.
-    RenderedStringParser* getCustomRenderedStringParser() const;
+    inline RenderedStringParser* getCustomRenderedStringParser() const
+    {
+        return d_customStringParser;
+    }
     //! Set a custom RenderedStringParser, or 0 to remove an existing one.
     void setCustomRenderedStringParser(RenderedStringParser* parser);
     //! return the active RenderedStringParser to be used
     virtual RenderedStringParser& getRenderedStringParser() const;
     //! return whether text parsing is enabled for this window.
-    bool isTextParsingEnabled() const;
+    inline bool isTextParsingEnabled() const
+    {
+        return d_textParsingEnabled;
+    }
     //! set whether text parsing is enabled for this window.
     void setTextParsingEnabled(const bool setting);
 
     //! set margin
     virtual void setMargin(const UBox& margin);
     //! retrieves currently set margin
-    const UBox& getMargin() const;
+    inline const UBox& getMargin() const
+    {
+        return d_margin;
+    }
 
     //! return glm::vec2 \a pos after being fully unprojected for this Window.
     glm::vec2 getUnprojectedPosition(const glm::vec2& pos) const;
@@ -2753,7 +2783,10 @@ public:
         One of the WindowUpdateMode enumerated values indicating the current
         mode set for this Window.
     */
-    WindowUpdateMode getUpdateMode() const;
+    inline WindowUpdateMode getUpdateMode() const
+    {
+        return d_updateMode;
+    }
 
     /*!
     \brief
@@ -2769,7 +2802,10 @@ public:
         (including it's event subscribers) should be propagated back to the
         Window's parent.
     */
-    bool isCursorInputPropagationEnabled() const;
+    inline bool isCursorInputPropagationEnabled() const
+    {
+        return d_propagatePointerInputs;
+    }
 
     /*!
     \brief
@@ -2812,7 +2848,10 @@ public:
         returned here may be inaccurate - this is not a bug, but is required
         to ensure correct handling of certain events.
     */
-    bool isPointerContainedInArea() const;
+    inline bool isPointerContainedInArea() const
+    {
+        return d_containsPointer;
+    }
 
     // overridden from Element
     Sizef getRootContainerSize() const override;
@@ -2824,7 +2863,10 @@ public:
         A window is focused when it is the active Window inside the current
         GUIContext.
     */
-    bool isFocused() const;
+    inline bool isFocused() const
+    {
+        return d_isFocused;
+    }
 
     /*!
     \brief
@@ -2851,7 +2893,7 @@ public:
         A Window cannot be usually focused when it's disabled. Other widgets
         can override this method based on their own behaviour.
     */
-    virtual bool canFocus();
+    virtual bool canFocus() const;
     
     /*!
     \brief
@@ -2875,7 +2917,10 @@ public:
     \return
         The drawMode bitmask that is set for this Window.
     */
-    std::uint32_t getDrawModeMask() const;
+    inline std::uint32_t getDrawModeMask() const
+    {
+        return d_drawModeMask;
+    }
 
     /*!
     \brief
@@ -2888,8 +2933,11 @@ public:
     \return
         True if a bitwise and between the masks return non-zero.
     */
-    bool checkIfDrawMaskAllowsDrawing(std::uint32_t drawModeMask) const;
-    
+    inline bool checkIfDrawMaskAllowsDrawing(std::uint32_t drawModeMask) const
+    {
+        return (getDrawModeMask() & drawModeMask) != 0;
+    }
+
     float getContentWidth() const override;
     float getContentHeight() const override;
     UDim getWidthOfAreaReservedForContentLowerBoundAsFuncOfElementWidth() const override;
@@ -2897,6 +2945,28 @@ public:
     void adjustSizeToContent() override;
     bool contentFitsForSpecifiedElementSize(const Sizef& element_size) const override;
     bool contentFits() const override;
+
+    /*!
+    \brief
+        Layout child windows inside our content areas.
+
+        Laying out of child content includes:
+            - ensuring content specified in any assigned WidgetLook has its area
+              rectangles sychronised.
+            - assigned WindowRenderer given the opportunity to update child
+              content areas as needed.
+            - Children are then updated recursively depending on flags passed.
+
+        The system may call this at various times (like when a window is resized
+        for example), and it may be invoked directly where required.
+
+    \param client
+        - true to process client children
+
+    \param nonClient
+        - true to process non-client children
+    */
+    virtual void performChildLayout(bool client, bool nonClient) override;
 
 protected:
     // friend classes for construction / initialisation purposes (for now)
@@ -2906,16 +2976,9 @@ protected:
     /*************************************************************************
         Event trigger methods
     *************************************************************************/
-    /*!
-    \brief
-        Handler called when the window's size changes.
 
-    \param e
-        WindowEventArgs object whose 'window' pointer field is set to the window
-        that triggered the event.  For this event the trigger window is always
-        'this'.
-    */
-    void onSized_impl(ElementEventArgs& e) override;
+    //! \copydoc Element::handleAreaChanges
+    virtual uint8_t handleAreaChanges(bool moved, bool sized) override;
 
     /*!
     \brief
@@ -3162,19 +3225,6 @@ protected:
         window that has now become active, or NULL for none.
     */
     virtual void onDeactivated(ActivationEventArgs& e);
-
-    /*!
-    \brief
-        Handler called when this window's parent window has been resized.  If
-        this window is the root / GUI Sheet window, this call will be made when
-        the display size changes.
-
-    \param e
-        WindowEventArgs object whose 'window' pointer field is set the the
-        window that caused the event; this is typically either this window's
-        parent window, or NULL to indicate the screen size has changed.
-    */
-    void onParentSized(ElementEventArgs& e) override;
 
     /*!
     \brief
@@ -3462,33 +3512,7 @@ protected:
 
     /*!
     \brief
-        Set the parent window for this window object.
-
-    \param parent
-        Pointer to a Window object that is to be assigned as the parent to this
-        Window.
-
-    \return
-        Nothing
-    */
-    void setParent(Element* parent) override;
-
-    /*!
-    \brief
         Fires off a repeated cursor press event for this window.
-        Update position and clip region on this Windows geometry / rendering
-        surface.
-    */
-    void updateGeometryBuffersTranslationAndClipping();
-
-    /*!
-    \brief
-        Updates this Window's geometry buffers alpha value
-    */
-    void updateGeometryBuffersAlpha();
-
-    /*!
-    \brief
     */
     void generateAutoRepeatEvent(CursorInputSource source);
 
@@ -3518,7 +3542,10 @@ protected:
         Recursively inform all children that the clipping has changed and screen rects
         need to be recached.
     */
-    void notifyClippingChanged(void);
+    void notifyClippingChanged();
+
+    //! notify windows in a hierarchy when the default font changes
+    void notifyDefaultFontChanged();
 
     /*!
     \brief
@@ -3534,13 +3561,6 @@ protected:
 
     //! helper to clean up the auto RenderingWindow surface
     void releaseRenderingWindow();
-
-    //! Helper to intialise the needed clipping for geometry and render surface.
-    void initialiseClippers(const RenderingContext& ctx);
-
-    //! \copydoc Element::setArea_impl
-    void setArea_impl(const UVector2& pos, const USize& size, bool topLeftSizing=false,
-                              bool fireEvents=true, bool adjust_size_to_content=true) override;
 
     /*!
     \brief
@@ -3627,18 +3647,8 @@ protected:
     */
     bool isTopOfZOrder() const;
 
-    /*!
-    \brief
-        Update position and clip region on this Windows geometry / rendering
-        surface.
-    */
-    void updateGeometryRenderSettings();
-
     //! transfer RenderingSurfaces to be owned by our target RenderingSurface.
     void transferChildSurfaces();
-
-    //! helper function for calculating clipping rectangles.
-    Rectf getParentElementClipIntersection(const Rectf& unclipped_area) const;
 
     //! helper function to invalidate window and optionally child windows.
     void invalidate_impl(const bool recursive);
@@ -3667,10 +3677,6 @@ protected:
 
     //! handler function for when font render size changes.
     virtual bool handleFontRenderSizeChange(const EventArgs& args);
-
-    // mark the rect caches defined on Window invalid (does not affect Element)
-    void markCachedWindowRectsInvalid();
-    void layoutLookNFeelChildWidgets();
 
     Window* getChildAtPosition(const glm::vec2& position,
                                bool (Window::*hittestfunc)(const glm::vec2&, bool)
@@ -3729,151 +3735,39 @@ protected:
     /*************************************************************************
         Implementation Data
     *************************************************************************/
-    //! definition of type used for the list of child windows to be drawn
-    typedef std::vector<Window*> ChildDrawList;
-    //! definition of type used for the UserString dictionary.
-    typedef std::unordered_map<String, String> UserStringMap;
-    //! definition of type used to track properties banned from writing XML.
-    typedef std::unordered_set<String> BannedXMLPropertySet;
 
-    //! type of Window (also the name of the WindowFactory that created us)
-    const String d_type;
-    //! Type name of the window as defined in a Falagard mapping.
-    String d_falagardType;
-    //! true when this window is an auto-window
-    bool d_autoWindow;
-
-    //! true when this window is currently being initialised (creating children etc)
-    bool d_initialising;
-    //! true when this window is being destroyed.
-    bool d_destructionStarted;
-    //! true when Window is enabled
-    bool d_enabled;
-    //! is window visible (i.e. it will be rendered, but may still be obscured)
-    bool d_visible;
-    //! true when Window is the active Window (receiving inputs).
-    bool d_active;
-
-    //! Child window objects arranged in rendering order.
-    ChildDrawList d_drawList;
-    //! true when Window will be auto-destroyed by parent.
-    bool d_destroyedByParent;
-
-    //! true when Window will be clipped by parent Window area Rect.
-    bool d_clippedByParent;
-
-    //! Name of the Look assigned to this window (if any).
-    String d_lookName;
+    //! GUIContext.  Set when this window is used as a root window.
+    GUIContext* d_guiContext;
     //! The WindowRenderer module that implements the Look'N'Feel specification
     WindowRenderer* d_windowRenderer;
-    //! List of geometry buffers that cache the geometry drawn by this Window.
-    std::vector<GeometryBuffer*> d_geometryBuffers;
     //! RenderingSurface owned by this window (may be 0)
     RenderingSurface* d_surface;
-    //! true if window geometry cache needs to be regenerated.
-    mutable bool d_needsRedraw;
-    //! holds setting for automatic creation of of surface (RenderingWindow)
-    bool d_autoRenderingWindow;
-    //! holds setting for stencil buffer usage in texture caching
-    bool d_autoRenderingSurfaceStencilEnabled;
-
     //! Holds pointer to the Window objects current cursor image.
     const Image* d_cursor;
-
-    //! Alpha transparency setting for the Window
-    float d_alpha;
-    //! true if the Window inherits alpha from the parent Window
-    bool d_inheritsAlpha;
-
-    //! The Window that previously had capture (used for restoreOldCapture mode)
-    Window* d_oldCapture;
-    //! Restore capture to the previous capture window when releasing capture.
-    bool d_restoreOldCapture;
-    //! Whether to distribute captured inputs to child windows.
-    bool d_distCapturedInputs;
-
+    //! Possible custom Tooltip for this window.
+    Tooltip* d_customTip;
     //! Holds pointer to the Window objects current Font.
     const Font* d_font;
-    //! Holds the text / label / caption for this Window.
-    String d_textLogical;
+    //! Pointer to a custom (user assigned) RenderedStringParser object.
+    RenderedStringParser* d_customStringParser;
+    //! The Window that previously had capture (used for restoreOldCapture mode)
+    Window* d_oldCapture;
+    //! Holds pointer to some user assigned data.
+    void* d_userData;
 
 #ifdef CEGUI_BIDI_SUPPORT
     //! pointer to bidirection support object
     BidiVisualMapping* d_bidiVisualMapping;
-    //! whether bidi visual mapping has been updated since last text change.
-    mutable bool d_bidiDataValid;
 #endif
 
 #ifdef CEGUI_USE_RAQM
     //! raqm text object
-    RaqmTextData* d_raqmTextData;
-    /*! Stores whether raqm text is up-to-date or if the logical text has changed since
-     the last update
-    */
-    mutable bool d_raqmTextNeedsUpdate;
+    std::unique_ptr<RaqmTextData> d_raqmTextData;
 #endif
 
-    //! RenderedString representation of text string as ouput from a parser.
-    mutable RenderedString d_renderedString;
-    //! true if d_renderedString is valid, false if needs re-parse.
-    mutable bool d_renderedStringValid;
-    //! Shared instance of a parser to be used in most instances.
-    static BasicRenderedStringParser d_basicStringParser;
-    //! Shared instance of a parser to be used when rendering text verbatim.
-    static DefaultRenderedStringParser d_defaultStringParser;
-    //! Pointer to a custom (user assigned) RenderedStringParser object.
-    RenderedStringParser* d_customStringParser;
-    //! true if use of parser other than d_defaultStringParser is enabled
-    bool d_textParsingEnabled;
-
-    //! Margin, only used when the Window is inside LayoutContainer class
-    UBox d_margin;
-
-    //! User ID assigned to this Window
-    unsigned int d_ID;
-    //! Holds pointer to some user assigned data.
-    void* d_userData;
-    //! Holds a collection of named user string values.
-    UserStringMap d_userStrings;
-
-    //! true if Window will be drawn on top of all other Windows
-    bool d_alwaysOnTop;
-    //! whether window should rise in the z order when left cursor source is activated.
-    bool d_riseOnPointerActivation;
-    //! true if the Window responds to z-order change requests.
-    bool d_zOrderingEnabled;
-
-    //! whether (most) cursor events pass through this window
-    bool d_cursorPassThroughEnabled;
-    //! whether pressed cursor will auto-repeat the down event.
-    bool d_autoRepeat;
-    //! seconds before first repeat event is fired
-    float d_repeatDelay;
-    //! seconds between further repeats after delay has expired.
-    float d_repeatRate;
-    //! Cursor source we're tracking for auto-repeat purposes.
-    CursorInputSource d_repeatPointerSource;
-    //! implements repeating - is true after delay has elapsed,
-    bool d_repeating;
-    //! implements repeating - tracks time elapsed.
-    float d_repeatElapsed;
-
-    //! true if window will receive drag and drop related notifications
-    bool d_dragDropTarget;
-
-    //! Text string used as tip for this window.
-    String d_tooltipText;
-    //! Possible custom Tooltip for this window.
-    Tooltip* d_customTip;
-    //! true if this Window created the custom Tooltip.
-    bool d_weOwnTip;
-    //! whether tooltip text may be inherited from parent.
-    bool d_inheritsTipText;
-
-    //! true if this window is allowed to write XML, false if not
-    bool d_allowWriteXML;
-    //! collection of properties not to be written to XML for this window.
-    BannedXMLPropertySet d_bannedXMLProperties;
+    // FIXME: why GUI context doesn't propagate this to its window hierarchy?
+    //! connection for event listener for font render size changes.
+    Event::ScopedConnection d_fontRenderSizeChangeConnection;
 
     //! outer area clipping rect in screen pixels
     mutable Rectf d_outerRectClipper;
@@ -3881,55 +3775,149 @@ protected:
     mutable Rectf d_innerRectClipper;
     //! area rect used for hit-testing against this window
     mutable Rectf d_hitTestRect;
-
-    mutable bool d_outerRectClipperValid;
-    mutable bool d_innerRectClipperValid;
-    mutable bool d_hitTestRectValid;
-
-    //! The mode to use for calling Window::update
-    WindowUpdateMode d_updateMode;
-
-    //! specifies whether cursor inputs should be propagated to parent(s)
-    bool d_propagatePointerInputs;
-
-    //! GUIContext.  Set when this window is used as a root window.
-    GUIContext* d_guiContext;
-
-    //! true when cursor is contained within this Window's area.
-    bool d_containsPointer;
-
-    //! The translation which was set for this window.
-    glm::vec3 d_translation;
-    //! true when this window is focused.
-    bool d_isFocused;
-
     //! The clipping region which was set for this window.
     Rectf d_clippingRegion;
-    
+    //! Margin, only used when the Window is inside LayoutContainer class
+    //!!!FIXME: move to LC? Too much memory wasted.
+    UBox d_margin;
     /*!
-        Contains the draw mode mask, for this window, specifying 
-        a the bit flags that determine if the Window will be drawn or not 
+        Contains the draw mode mask, for this window, specifying
+        a the bit flags that determine if the Window will be drawn or not
         in the draw calls, depending on the bitmask passed to the calls.
     */
     std::uint32_t d_drawModeMask;
+    //! User ID assigned to this Window
+    unsigned int d_ID;
+    //! Cursor source we're tracking for auto-repeat purposes.
+    CursorInputSource d_repeatPointerSource;
+    //! The mode to use for calling Window::update
+    WindowUpdateMode d_updateMode;
+    //! The translation which was set for this window.
+    glm::vec3 d_translation;
+    //! Alpha transparency setting for the Window
+    float d_alpha;
+    //! seconds before first repeat event is fired
+    float d_repeatDelay;
+    //! seconds between further repeats after delay has expired.
+    float d_repeatRate;
+    //! implements repeating - tracks time elapsed.
+    float d_repeatElapsed;
 
+    //! Holds a collection of named user string values.
+    std::unordered_map<String, String> d_userStrings;
+    //! collection of properties not to be written to XML for this window.
+    std::unordered_set<String> d_bannedXMLProperties;
+    //! List of geometry buffers that cache the geometry drawn by this Window.
+    std::vector<GeometryBuffer*> d_geometryBuffers;
+    //! Child window objects arranged in rendering order.
+    std::vector<Window*> d_drawList;
+
+    //! RenderedString representation of text string as ouput from a parser.
+    mutable RenderedString d_renderedString;
+    //! Shared instance of a parser to be used in most instances.
+    static BasicRenderedStringParser d_basicStringParser;
+    //! Shared instance of a parser to be used when rendering text verbatim.
+    static DefaultRenderedStringParser d_defaultStringParser;
+
+    //! type of Window (also the name of the WindowFactory that created us)
+    const String d_type;
+    //! Type name of the window as defined in a Falagard mapping.
+    String d_falagardType;
+    //! Name of the Look assigned to this window (if any).
+    String d_lookName;
+
+    //! Holds the text / label / caption for this Window.
+    String d_textLogical;
+    //! Text string used as tip for this window.
+    String d_tooltipText;
+
+    //! true when this window is an auto-window
+    bool d_autoWindow : 1;
+    //! true when this window is currently being initialised (creating children etc)
+    bool d_initialising : 1;
+    //! true when this window is being destroyed.
+    bool d_destructionStarted : 1;
+    //! true when Window is enabled
+    bool d_enabled : 1;
+    //! is window visible (i.e. it will be rendered, but may still be obscured)
+    bool d_visible : 1;
+    //! true when Window is the active Window (receiving inputs).
+    bool d_active : 1;
+    //! true when Window will be auto-destroyed by parent.
+    bool d_destroyedByParent : 1;
+    //! true when Window will be clipped by parent Window area Rect.
+    bool d_clippedByParent : 1;
+    //! true if window geometry cache needs to be regenerated.
+    bool d_needsRedraw : 1;
+    //! holds setting for automatic creation of of surface (RenderingWindow)
+    bool d_autoRenderingWindow : 1;
+    //! holds setting for stencil buffer usage in texture caching
+    bool d_autoRenderingSurfaceStencilEnabled : 1;
+    //! true if the Window inherits alpha from the parent Window
+    bool d_inheritsAlpha : 1;
+    //! Restore capture to the previous capture window when releasing capture.
+    bool d_restoreOldCapture : 1;
+    //! Whether to distribute captured inputs to child windows.
+    bool d_distCapturedInputs : 1;
+
+    //! true if d_renderedString is valid, false if needs re-parse.
+    mutable bool d_renderedStringValid : 1;
+    //! true if use of parser other than d_defaultStringParser is enabled
+    bool d_textParsingEnabled : 1;
+
+    //! true if Window will be drawn on top of all other Windows
+    bool d_alwaysOnTop : 1;
+    //! whether window should rise in the z order when left cursor source is activated.
+    bool d_riseOnPointerActivation : 1;
+    //! true if the Window responds to z-order change requests.
+    bool d_zOrderingEnabled : 1;
+
+    //! whether (most) cursor events pass through this window
+    bool d_cursorPassThroughEnabled : 1;
+    //! whether pressed cursor will auto-repeat the down event.
+    bool d_autoRepeat : 1;
+    //! implements repeating - is true after delay has elapsed,
+    bool d_repeating : 1;
+
+    //! true if window will receive drag and drop related notifications
+    bool d_dragDropTarget : 1;
+
+    //! true if this Window created the custom Tooltip.
+    bool d_weOwnTip : 1;
+    //! whether tooltip text may be inherited from parent.
+    bool d_inheritsTipText : 1;
+
+    //! true if this window is allowed to write XML, false if not
+    bool d_allowWriteXML : 1;
+
+    mutable bool d_outerRectClipperValid : 1;
+    mutable bool d_innerRectClipperValid : 1;
+    mutable bool d_hitTestRectValid : 1;
+
+    //! specifies whether cursor inputs should be propagated to parent(s)
+    bool d_propagatePointerInputs : 1;
+
+    //! true when cursor is contained within this Window's area.
+    bool d_containsPointer : 1;
+
+    //! true when this window is focused.
+    bool d_isFocused : 1;
+
+#ifdef CEGUI_BIDI_SUPPORT
+    //! whether bidi visual mapping has been updated since last text change.
+    mutable bool d_bidiDataValid : 1;
+#endif
+
+#ifdef CEGUI_USE_RAQM
+    /*! Stores whether raqm text is up-to-date or if the logical text has changed since
+     the last update
+    */
+    mutable bool d_raqmTextNeedsUpdate : 1;
+#endif
 
 private:
-    /*************************************************************************
-        May not copy or assign Window objects
-    *************************************************************************/
-    Window(const Window&): NamedElement() {}
-    Window& operator=(const Window&) {return *this;}
-
-    //! Not intended for public use, only used as a "Font" property getter
-    const Font* property_getFont() const;
-    //! Not intended for public use, only used as a "Cursor" property getter
-    const Image* property_getCursor() const;
 
     void updatePivot();
-
-    //! connection for event listener for font render size changes.
-    Event::ScopedConnection d_fontRenderSizeChangeConnection;
 };
 
 } // End of  CEGUI namespace section

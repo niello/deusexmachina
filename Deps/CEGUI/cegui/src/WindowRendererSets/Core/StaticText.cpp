@@ -577,7 +577,7 @@ void FalagardStaticText::setNumOfTextLinesToShow(NumOfTextLinesToShow newValue)
             }
         }
 
-        getWindow()->performChildWindowLayout();
+        getWindow()->performChildLayout(false, false);
 
         vertScrollbar->setDocumentSize(documentSize.d_height);
         vertScrollbar->setPageSize(renderAreaSize.d_height);
@@ -672,8 +672,6 @@ bool FalagardStaticText::onIsSizeAdjustedToContentChanged(const EventArgs&)
         vertScrollbar->hide();
         horzScrollbar->hide();
 
-        d_window->performChildWindowLayout();
-
         // scrollbar events
         vertScrollbar->subscribeEvent(Scrollbar::EventScrollPositionChanged,
             Event::Subscriber(&FalagardStaticText::handleScrollbarChange, this));
@@ -702,7 +700,6 @@ bool FalagardStaticText::onIsSizeAdjustedToContentChanged(const EventArgs&)
                 Event::Subscriber(&FalagardStaticText::onIsSizeAdjustedToContentChanged, this)));
 
         invalidateFormatting();
-        getWindow()->adjustSizeToContent();
     }
 
     void FalagardStaticText::onLookNFeelUnassigned()
@@ -838,13 +835,13 @@ void FalagardStaticText::setUnitIntervalVerticalScrollPosition(float position)
 //----------------------------------------------------------------------------//
 float FalagardStaticText::getLineHeight() const
 {
-    return d_window->getFont()->getFontHeight();
+    return d_window->getActualFont()->getFontHeight();
 }
 
 //----------------------------------------------------------------------------//
 float FalagardStaticText::getVerticalAdvance() const
 {
-    return d_window->getFont()->getFontHeight();
+    return d_window->getActualFont()->getFontHeight();
 }
 
 //----------------------------------------------------------------------------//
@@ -890,7 +887,7 @@ bool FalagardStaticText::handleFontRenderSizeChange(const Font* const font)
 {
     const bool res = WindowRenderer::handleFontRenderSizeChange(font);
 
-    if (d_window->getFont() == font)
+    if (d_window->getActualFont() == font)
     {
         invalidateFormatting();
         getWindow()->adjustSizeToContent();

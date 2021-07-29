@@ -225,15 +225,10 @@ public:
     void setWindowNavigator(WindowNavigator* navigator);
 
 protected:
-    void updateRootWindowAreaRects() const;
     void drawWindowContentToTarget(std::uint32_t drawModeMask);
-    void renderWindowHierarchyToSurfaces(std::uint32_t drawModeMask);
 
     void createDefaultTooltipWindowInstance() const;
     void destroyDefaultTooltipWindowInstance();
-
-    //! notify windows in a hierarchy using default font, when font changes.
-    void notifyDefaultFontChanged(Window* hierarchy_root) const;
 
     Window* getTargetWindow(const glm::vec2& pt, const bool allow_disabled) const;
     //! returns the window used as input target

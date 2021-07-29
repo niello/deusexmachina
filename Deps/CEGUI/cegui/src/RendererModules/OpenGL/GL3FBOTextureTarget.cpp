@@ -86,7 +86,8 @@ void OpenGL3FBOTextureTarget::activate()
             reinterpret_cast<GLint*>(&d_previousFrameBuffer));
 
     // switch to rendering to the texture
-    glBindFramebuffer(GL_FRAMEBUFFER, d_frameBuffer);
+    if (d_previousFrameBuffer != d_frameBuffer)
+        glBindFramebuffer(GL_FRAMEBUFFER, d_frameBuffer);
 
     OpenGLTextureTarget::activate();
 }
@@ -97,7 +98,8 @@ void OpenGL3FBOTextureTarget::deactivate()
     OpenGLTextureTarget::deactivate();
 
     // switch back to rendering to the previously bound framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, d_previousFrameBuffer);
+    if (d_previousFrameBuffer != d_frameBuffer)
+        glBindFramebuffer(GL_FRAMEBUFFER, d_previousFrameBuffer);
 }
 
 //----------------------------------------------------------------------------//
@@ -122,7 +124,7 @@ void OpenGL3FBOTextureTarget::clear()
     glBindFramebuffer(GL_FRAMEBUFFER, d_frameBuffer);
     // Clear it.
     d_glStateChanger->disable(GL_SCISSOR_TEST);
-    glClearColor(0,0,0,0);
+    glClearColor(0.f, 0.f, 0.f, 0.f);
 
     if(!d_usesStencil)
         glClear(GL_COLOR_BUFFER_BIT);
@@ -155,14 +157,9 @@ void OpenGL3FBOTextureTarget::initialiseRenderTexture()
             GL_FRAMEBUFFER_BINDING : GL_FRAMEBUFFER_BINDING_EXT,
             &previousFBO);
 
-    // create FBO
-    glGenFramebuffers(1, &d_frameBuffer);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, d_frameBuffer);
-
     // set up the texture the FBO will draw to
     glGenTextures(1, &d_texture);
-    d_glStateChanger->bindTexture(GL_TEXTURE_2D, d_texture);
+    glBindTexture(GL_TEXTURE_2D, d_texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -174,6 +171,13 @@ void OpenGL3FBOTextureTarget::initialiseRenderTexture()
                  static_cast<GLsizei>(DEFAULT_SIZE),
                  static_cast<GLsizei>(DEFAULT_SIZE),
                  0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    // restore previous texture binding.
+    glBindTexture(GL_TEXTURE_2D, old_tex);
+
+    // create FBO
+    glGenFramebuffers(1, &d_frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, d_frameBuffer);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                               GL_TEXTURE_2D, d_texture, 0);
 
@@ -204,9 +208,6 @@ void OpenGL3FBOTextureTarget::initialiseRenderTexture()
 
     // ensure the CEGUI::Texture is wrapping the gl texture and has correct size
     d_CEGUITexture->setOpenGLTexture(d_texture, d_area.getSize());
-
-    // restore previous texture binding.
-    d_glStateChanger->bindTexture(GL_TEXTURE_2D, old_tex);
 }
 
 //----------------------------------------------------------------------------//
@@ -228,7 +229,8 @@ void OpenGL3FBOTextureTarget::resizeRenderTexture()
     }
 
     // set the texture to the required size
-    d_glStateChanger->bindTexture(GL_TEXTURE_2D, d_texture);
+    if (d_texture != old_tex)
+        glBindTexture(GL_TEXTURE_2D, d_texture);
 
     glTexImage2D(GL_TEXTURE_2D, 0,
                  OpenGLInfo::getSingleton().isSizedInternalFormatSupported() ?
@@ -252,7 +254,8 @@ void OpenGL3FBOTextureTarget::resizeRenderTexture()
     d_CEGUITexture->setOpenGLTexture(d_texture, sz);
 
     // restore previous texture binding.
-    d_glStateChanger->bindTexture(GL_TEXTURE_2D, old_tex);
+    if (d_texture != old_tex)
+        glBindTexture(GL_TEXTURE_2D, old_tex);
 }
 
 //----------------------------------------------------------------------------//
@@ -276,40 +279,56 @@ void OpenGL3FBOTextureTarget::restoreTexture()
 //----------------------------------------------------------------------------//
 void OpenGL3FBOTextureTarget::checkFramebufferStatus()
 {
-    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    const GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
     // Check for completeness
-    if(status != GL_FRAMEBUFFER_COMPLETE)
+    if (status != GL_FRAMEBUFFER_COMPLETE)
     {
         std::stringstream stringStream;
         stringStream << "OpenGL3Renderer: Error - The Framebuffer is incomplete: ";
 
-        switch(status)
+        switch (status)
         {
-        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-            stringStream << "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT\n";
-            break;
-        case GL_FRAMEBUFFER_UNDEFINED:
-            stringStream << "GL_FRAMEBUFFER_UNDEFINED\n";
-            break;
-        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-            stringStream << "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT\n";
-            break;
-        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER :
-            stringStream << "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER\n";
-            break;
-        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
-            stringStream << "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER\n";
-            break;
-        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
-            stringStream << "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE\n";
-            break;
-        case GL_FRAMEBUFFER_UNSUPPORTED:
-            stringStream << "GL_FRAMEBUFFER_UNSUPPORTED\n";
-            break;
-        default:
-            stringStream << "Undefined Framebuffer error\n";
-            break;
+            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+                stringStream << "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT\n";
+                break;
+            case GL_FRAMEBUFFER_UNDEFINED:
+                stringStream << "GL_FRAMEBUFFER_UNDEFINED\n";
+                break;
+            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+                stringStream << "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT\n";
+                break;
+            case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER :
+                stringStream << "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER\n";
+                break;
+            case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+                stringStream << "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER\n";
+                break;
+            case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+                stringStream << "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE\n";
+                break;
+            case GL_FRAMEBUFFER_UNSUPPORTED:
+                stringStream << "GL_FRAMEBUFFER_UNSUPPORTED\n";
+                break;
+            case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
+                stringStream << "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS\n";
+                break;
+            default:
+            {
+                switch (glGetError())
+                {
+                    case GL_INVALID_ENUM:
+                        stringStream << "GL_INVALID_ENUM, target is not GL_DRAW_FRAMEBUFFER, GL_READ_FRAMEBUFFER or GL_FRAMEBUFFER\n";
+                        break;
+                    case GL_INVALID_OPERATION:
+                        stringStream << "GL_INVALID_ENUM, framebuffer is not zero or the name of an existing framebuffer object\n";
+                        break;
+                    default:
+                        stringStream << "Unknown Framebuffer error\n";
+                        break;
+                }
+                break;
+            }
         }
 
         if (CEGUI::Logger* logger = CEGUI::Logger::getSingletonPtr())

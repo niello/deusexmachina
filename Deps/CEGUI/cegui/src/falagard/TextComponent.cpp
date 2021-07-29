@@ -58,7 +58,7 @@ namespace CEGUI
         #error "BIDI Configuration is inconsistant, check your config!"
 #endif
 #ifdef CEGUI_USE_RAQM
-        d_raqmTextData(nullptr),
+        d_raqmTextData(new RaqmTextData()),
         d_raqmTextNeedsUpdate(true),
 #endif 
         d_formattedRenderedString(new LeftAlignedRenderedString(d_renderedString)),
@@ -66,9 +66,6 @@ namespace CEGUI
         d_vertFormatting(VerticalTextFormatting::TopAligned),
         d_horzFormatting(HorizontalTextFormatting::LeftAligned)
     {
-#ifdef CEGUI_USE_RAQM
-        d_raqmTextData = new RaqmTextData();
-#endif        
     }
 
     TextComponent::~TextComponent()
@@ -90,7 +87,12 @@ namespace CEGUI
 #elif defined (CEGUI_BIDI_SUPPORT)
         #error "BIDI Configuration is inconsistant, check your config!"
 #endif
-        
+
+#ifdef CEGUI_USE_RAQM
+        d_raqmTextData(new RaqmTextData()),
+        d_raqmTextNeedsUpdate(true),
+#endif
+
         d_renderedString(obj.d_renderedString),
         d_formattedRenderedString(obj.d_formattedRenderedString),
         d_lastHorzFormatting(obj.d_lastHorzFormatting),
@@ -311,7 +313,7 @@ namespace CEGUI
         try
         {
             return d_fontPropertyName.empty() ?
-                (d_font.empty() ? window.getFont() : &FontManager::getSingleton().get(d_font))
+                (d_font.empty() ? window.getActualFont() : &FontManager::getSingleton().get(d_font))
                 : &FontManager::getSingleton().get(window.getProperty(d_fontPropertyName));
         }
         catch (UnknownObjectException&)
@@ -480,7 +482,7 @@ namespace CEGUI
             d_renderedString = srcWindow.getRenderedStringParser().
                 parse(getTextVisual(), font, nullptr);
         // do we have to override the font?
-        else if (font != srcWindow.getFont())
+        else if (font != srcWindow.getActualFont())
             d_renderedString = srcWindow.getRenderedStringParser().
                 parse(srcWindow.getTextVisual(), font, nullptr);
         // use ready-made RenderedString from the Window itself

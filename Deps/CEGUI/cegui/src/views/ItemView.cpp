@@ -226,14 +226,14 @@ void ItemView::addItemViewProperties()
 }
 
 //----------------------------------------------------------------------------//
-void ItemView::initialiseComponents(void)
+void ItemView::initialiseComponents()
 {
     getVertScrollbar()->subscribeEvent(Scrollbar::EventScrollPositionChanged,
         Event::Subscriber(&ItemView::onScrollPositionChanged, this));
     getHorzScrollbar()->subscribeEvent(Scrollbar::EventScrollPositionChanged,
         Event::Subscriber(&ItemView::onScrollPositionChanged, this));
 
-    performChildWindowLayout();
+    Window::initialiseComponents();
 }
 
 //----------------------------------------------------------------------------//
@@ -757,10 +757,16 @@ void ItemView::onSemanticInputEvent(SemanticEventArgs& e)
 }
 
 //----------------------------------------------------------------------------//
-void ItemView::onParentSized(ElementEventArgs& e)
+void ItemView::onSized(ElementEventArgs& e)
 {
-    Window::onParentSized(e);
+    Window::onSized(e);
+    invalidateView(false);
+}
 
+//----------------------------------------------------------------------------//
+void ItemView::onFontChanged(WindowEventArgs& e)
+{
+    Window::onFontChanged(e);
     resizeToContent();
 }
 
@@ -771,7 +777,7 @@ void ItemView::onTargetSurfaceChanged(RenderingSurface* newSurface)
     Window::onTargetSurfaceChanged(newSurface);
     if (getGUIContextPtr())
     {
-        performChildWindowLayout();
+        performChildLayout(false, false);
         updateScrollbars();
         resizeToContent(); // call invalidateView(false) instead?
     }
@@ -983,7 +989,11 @@ void ItemView::ensureIndexIsVisible(const ModelIndex& index)
 //----------------------------------------------------------------------------//
 void ItemView::setAutoResizeHeightEnabled(bool enabled)
 {
-    updateAutoResizeFlag(d_isAutoResizeHeightEnabled, enabled);
+    if (d_isAutoResizeHeightEnabled != enabled)
+        return;
+
+    d_isAutoResizeHeightEnabled = enabled;
+    resizeToContent();
 }
 
 //----------------------------------------------------------------------------//
@@ -995,25 +1005,17 @@ bool ItemView::isAutoResizeHeightEnabled() const
 //----------------------------------------------------------------------------//
 void ItemView::setAutoResizeWidthEnabled(bool enabled)
 {
-    updateAutoResizeFlag(d_isAutoResizeWidthEnabled, enabled);
+    if (d_isAutoResizeWidthEnabled != enabled)
+        return;
+
+    d_isAutoResizeWidthEnabled = enabled;
+    resizeToContent();
 }
 
 //----------------------------------------------------------------------------//
 bool ItemView::isAutoResizeWidthEnabled() const
 {
     return d_isAutoResizeWidthEnabled;
-}
-
-//----------------------------------------------------------------------------//
-void ItemView::updateAutoResizeFlag(bool& flag, bool enabled)
-{
-    if (flag != enabled)
-    {
-        return;
-    }
-
-    flag = enabled;
-    resizeToContent();
 }
 
 //----------------------------------------------------------------------------//
@@ -1028,10 +1030,10 @@ void ItemView::resizeToContent()
 }
 
 //----------------------------------------------------------------------------//
-ItemViewEventArgs::ItemViewEventArgs(ItemView* wnd, ModelIndex index) :
-WindowEventArgs(wnd),
-d_index(index)
+ItemViewEventArgs::ItemViewEventArgs(ItemView* wnd, ModelIndex index)
+    : WindowEventArgs(wnd)
+    , d_index(index)
 {
-
 }
+
 }

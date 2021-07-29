@@ -117,19 +117,12 @@ void GUIContext::setRootWindow(Window* new_root)
     if (d_rootWindow)
     {
         d_rootWindow->setGUIContext(this);
-        updateRootWindowAreaRects();
+        d_rootWindow->notifyScreenAreaChanged(true);
     }
 
     markAsDirty();
 
     fireEvent(EventRootWindowChanged, args);
-}
-
-//----------------------------------------------------------------------------//
-void GUIContext::updateRootWindowAreaRects() const
-{
-    ElementEventArgs args(nullptr);
-    d_rootWindow->onParentSized(args);
 }
 
 //----------------------------------------------------------------------------//
@@ -275,27 +268,25 @@ void GUIContext::drawWindowContentToTarget(std::uint32_t drawModeMask)
         return;
 
     if (d_rootWindow)
-        renderWindowHierarchyToSurfaces(drawModeMask);
+    {
+        // Draw the window hierarchy to surfaces
+        if (RenderingSurface* rs = d_rootWindow->getTargetRenderingSurface())
+        {
+            rs->clearGeometry();
+
+            if (rs->isRenderingWindow())
+                static_cast<RenderingWindow*>(rs)->getOwner().clearGeometry();
+
+            d_rootWindow->draw(drawModeMask);
+        }
+    }
     else
+    {
         clearGeometry();
+    }
 
     // Mark all rendered modes as not dirty (cursor is always redrawn anyway)
     d_dirtyDrawModeMask &= (~drawModeMask);
-}
-
-//----------------------------------------------------------------------------//
-void GUIContext::renderWindowHierarchyToSurfaces(std::uint32_t drawModeMask)
-{
-    RenderingSurface* rs = d_rootWindow->getTargetRenderingSurface();
-    if (!rs)
-        return;
-
-    rs->clearGeometry();
-
-    if (rs->isRenderingWindow())
-        static_cast<RenderingWindow*>(rs)->getOwner().clearGeometry();
-
-    d_rootWindow->draw(drawModeMask);
 }
 
 //----------------------------------------------------------------------------//
@@ -318,7 +309,7 @@ bool GUIContext::areaChangedHandler(const EventArgs&)
     d_cursor.notifyTargetSizeChanged(d_surfaceSize);
 
     if (d_rootWindow)
-        updateRootWindowAreaRects();
+        d_rootWindow->notifyScreenAreaChanged(true);
 
     return true;
 }
@@ -635,21 +626,9 @@ Font* GUIContext::getDefaultFont() const
 void GUIContext::onDefaultFontChanged(EventArgs& args)
 {
     if (d_rootWindow)
-        notifyDefaultFontChanged(d_rootWindow);
+        d_rootWindow->notifyDefaultFontChanged();
 
     fireEvent(EventDefaultFontChanged, args, EventNamespace);
-}
-
-//----------------------------------------------------------------------------//
-void GUIContext::notifyDefaultFontChanged(Window* hierarchy_root) const
-{
-    WindowEventArgs evt_args(hierarchy_root);
-
-    if (!hierarchy_root->getFont(false))
-        hierarchy_root->onFontChanged(evt_args);
-
-    for (size_t i = 0; i < hierarchy_root->getChildCount(); ++i)
-        notifyDefaultFontChanged(hierarchy_root->getChildAtIndex(i));
 }
 
 //----------------------------------------------------------------------------//

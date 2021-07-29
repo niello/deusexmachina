@@ -55,10 +55,6 @@ GridLayoutContainer::GridLayoutContainer(const String& type, const String& name)
 }
 
 //----------------------------------------------------------------------------//
-GridLayoutContainer::~GridLayoutContainer(void)
-{}
-
-//----------------------------------------------------------------------------//
 void GridLayoutContainer::setGridDimensions(size_t width, size_t height)
 {
     if (width == d_gridWidth && height == d_gridHeight)
@@ -77,7 +73,7 @@ void GridLayoutContainer::setGridDimensions(size_t width, size_t height)
     if (d_initialising)
         return;
 
-    ChildList oldChildren;
+    std::vector<Element*> oldChildren;
     std::swap(oldChildren, d_children);
 
     d_children.reserve(width * height);
@@ -362,15 +358,12 @@ Window* GridLayoutContainer::getChildAtCell(size_t gridX, size_t gridY) const
 }
 
 //----------------------------------------------------------------------------//
-void GridLayoutContainer::layout()
+void GridLayoutContainer::layout_impl()
 {
     // Used to compare UDims
     const Rectf& childContentArea = getChildContentArea().get();
     const float absWidth = childContentArea.getWidth();
     const float absHeight = childContentArea.getHeight();
-
-    // Trigger recalculation of children pixel sizes
-    notifyChildrenOfSizeChange(false, true);
 
     // First, we need to determine rowSizes and colSizes, this is
     // needed before any layouting work takes place
@@ -491,7 +484,7 @@ void GridLayoutContainer::growByOneLine()
 }
 
 //----------------------------------------------------------------------------//
-void GridLayoutContainer::endInitialisation(void)
+void GridLayoutContainer::endInitialisation()
 {
     // After we loaded children from XML, fill remaining free cells with dummies
     const size_t capacity = d_gridWidth * d_gridHeight;
@@ -504,10 +497,6 @@ void GridLayoutContainer::endInitialisation(void)
 //----------------------------------------------------------------------------//
 void GridLayoutContainer::addChild_impl(Element* element)
 {
-    // if the element is already a child of this Window, this is a NOOP
-    if (isChild(element))
-        return;
-
     // Custom logic for dummies. Allow to refresh children already in the list.
     // It is necessary for rearrangement optimization when resizing the grid.
     // Also skip LayoutContainer's subscriptions on child resizing and draw list
@@ -690,4 +679,4 @@ void GridLayoutContainer::addGridLayoutContainerProperties(void)
 
 //----------------------------------------------------------------------------//
 
-} // End of CEGUI namespace section
+}

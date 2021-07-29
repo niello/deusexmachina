@@ -29,13 +29,7 @@
 #ifndef _CEGUIGridLayoutContainer_h_
 #define _CEGUIGridLayoutContainer_h_
 
-#include "./LayoutContainer.h"
-#include "../WindowFactory.h"
-
-#if defined(_MSC_VER)
-#   pragma warning(push)
-#   pragma warning(disable : 4251)
-#endif
+#include "LayoutContainer.h"
 
 namespace CEGUI
 {
@@ -56,7 +50,6 @@ public:
     static const String DummyName;
 
     GridLayoutContainer(const String& type, const String& name);
-    virtual ~GridLayoutContainer(void) override;
 
     /*!
     \brief
@@ -163,7 +156,7 @@ public:
         If something is already in given grid cell, it gets removed!
 
     \see
-        Window::addChild
+        Element::addChild
     */
     void addChildToCell(Window* window, size_t gridX, size_t gridY, bool replace = false);
 
@@ -172,7 +165,7 @@ public:
         Removes the child window that is currently at given grid position
 
     \see
-        Window::removeChild
+        Element::removeChild
     */
     void removeChildFromCell(size_t gridX, size_t gridY);
 
@@ -196,9 +189,6 @@ public:
     */
     Window* getChildAtCell(size_t gridX, size_t gridY) const;
 
-    //! @copydoc LayoutContainer::layout
-    virtual void layout() override;
-
     void onChildOrderChanged(ElementEventArgs& e) override;
 
     //! converts from grid cell position to idx
@@ -212,11 +202,13 @@ protected:
     void validateGridCell(size_t gridX, size_t gridY);
     void growByOneLine();
 
-    void endInitialisation(void) override;
+    void endInitialisation() override;
     void addChild_impl(Element* element) override;
     void removeChild_impl(Element* element) override;
     Window* getChildAutoWindow(const String& name) override;
     int writeChildWindowsXML(XMLSerializer& xml_stream) const override;
+
+    virtual void layout_impl() override;
 
     size_t d_gridWidth = 0;
     size_t d_gridHeight = 0;
@@ -231,13 +223,9 @@ protected:
 
 private:
 
-    void addGridLayoutContainerProperties(void);
+    void addGridLayoutContainerProperties();
 };
 
-} // End of  CEGUI namespace section
+}
 
-#if defined(_MSC_VER)
-#   pragma warning(pop)
 #endif
-
-#endif  // end of guard _CEGUIGridLayoutContainer_h_

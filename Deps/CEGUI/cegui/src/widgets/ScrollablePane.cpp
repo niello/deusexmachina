@@ -239,7 +239,7 @@ void ScrollablePane::setVerticalScrollPosition(float position)
 }
 
 //----------------------------------------------------------------------------//
-void ScrollablePane::initialiseComponents(void)
+void ScrollablePane::initialiseComponents()
 {
     // get horizontal scrollbar
     Scrollbar* horzScrollbar = getHorzScrollbar();
@@ -260,7 +260,7 @@ void ScrollablePane::initialiseComponents(void)
     // do a bit of initialisation
     horzScrollbar->setAlwaysOnTop(true);
     vertScrollbar->setAlwaysOnTop(true);
-    container->setCursor(getCursor());
+    container->setCursor(getActualCursor());
 
     // subscribe to events we need to hear about
     vertScrollbar->subscribeEvent(
@@ -281,10 +281,12 @@ void ScrollablePane::initialiseComponents(void)
     
     // finalise setup
     configureScrollbars();
+
+    Window::initialiseComponents();
 }
 
 //----------------------------------------------------------------------------//
-void ScrollablePane::configureScrollbars(void)
+void ScrollablePane::configureScrollbars()
 {
     // controls should all be valid by this stage
     Scrollbar* const vertScrollbar = getVertScrollbar();
@@ -298,9 +300,7 @@ void ScrollablePane::configureScrollbars(void)
         if (vertScrollbar->isVisible() != show)
         {
             vertScrollbar->setVisible(show);
-
             notifyScreenAreaChanged(true);
-            performChildWindowLayout(false, true);
         }
     }
 
@@ -313,9 +313,7 @@ void ScrollablePane::configureScrollbars(void)
         if (wasVisibleHorz != show)
         {
             horzScrollbar->setVisible(show);
-
             notifyScreenAreaChanged(true);
-            performChildWindowLayout(false, true);
         }
     }
 
@@ -329,9 +327,7 @@ void ScrollablePane::configureScrollbars(void)
         if (vertScrollbar->isVisible() != show)
         {
             vertScrollbar->setVisible(show);
-
             notifyScreenAreaChanged(true);
-            performChildWindowLayout(false, true);
         }
     }
     
@@ -538,11 +534,11 @@ void ScrollablePane::removeChild_impl(Element* element)
 }
 
 //----------------------------------------------------------------------------//
-void ScrollablePane::onSized_impl(ElementEventArgs& e)
+void ScrollablePane::onSized(ElementEventArgs& e)
 {
     configureScrollbars();
     updateContainerPosition();
-    Window::onSized_impl(e);
+    Window::onSized(e);
     
     ++e.handled;
 }

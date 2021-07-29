@@ -166,6 +166,13 @@ void OperatorDim::setNextOperand(const BaseDim* operand)
 }
 
 //----------------------------------------------------------------------------//
+bool OperatorDim::handleFontRenderSizeChange(Window& window, const Font* font) const
+{
+    return (d_left && d_left->handleFontRenderSizeChange(window, font)) ||
+        (d_right && d_right->handleFontRenderSizeChange(window, font));
+}
+
+//----------------------------------------------------------------------------//
 float OperatorDim::getValue(const Window& wnd) const
 {
     const float lval = d_left ? d_left->getValue(wnd) : 0.0f;
@@ -454,13 +461,13 @@ ImageDim::ImageDim(const String& image_name, DimensionType dim) :
 }
 
 //----------------------------------------------------------------------------//
-const String& ImageDim::getSourceImage() const
+const String& ImageDim::getSourceImageName() const
 {
     return d_imageName;
 }
 
 //----------------------------------------------------------------------------//
-void ImageDim::setSourceImage(const String& image_name)
+void ImageDim::setSourceImageName(const String& image_name)
 {
     d_imageName = image_name;
 }
@@ -776,7 +783,7 @@ float FontDim::getValue(const Window& wnd) const
 //----------------------------------------------------------------------------//
 const Font* FontDim::getFontObject(const Window& window) const
 {
-    return d_font.empty() ? window.getFont() :
+    return d_font.empty() ? window.getActualFont() :
                             &FontManager::getSingleton().get(d_font);
 }
 
@@ -936,9 +943,9 @@ void PropertyDim::writeXMLElementAttributes_impl(XMLSerializer& xml_stream) cons
 
 //----------------------------------------------------------------------------//
 Dimension::Dimension()
+    : d_value(nullptr)
+    , d_type(DimensionType::Invalid)
 {
-    d_value = nullptr;
-    d_type = DimensionType::Invalid;
 }
 
 //----------------------------------------------------------------------------//

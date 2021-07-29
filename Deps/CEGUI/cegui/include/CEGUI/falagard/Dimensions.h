@@ -173,7 +173,7 @@ public:
     OperatorDim();
     OperatorDim(DimensionOperator op);
     OperatorDim(DimensionOperator op, BaseDim* left, BaseDim* right);
-    ~OperatorDim();
+    ~OperatorDim() override;
 
     //! set the left hand side operand (passed object is cloned)
     void setLeftOperand(const BaseDim* operand);
@@ -195,6 +195,8 @@ public:
 
     //! helper to set the next free operand, will throw after 2 are set
     void setNextOperand(const BaseDim* operand);
+
+    bool handleFontRenderSizeChange(Window& window, const Font* font) const override;
 
     // Implementation of the base class interface
     float getValue(const Window& wnd) const override;
@@ -226,7 +228,7 @@ private:
 class CEGUIEXPORT AbsoluteDim : public BaseDim
 {
 public:
-    AbsoluteDim() {}
+    AbsoluteDim() : d_val(0.f) {}
     AbsoluteDim(float val);
 
     //! Get the current value of the AbsoluteDim.
@@ -258,7 +260,7 @@ private:
 class CEGUIEXPORT ImageDimBase : public BaseDim
 {
 public:
-    ImageDimBase() {}
+    ImageDimBase() : d_what(DimensionType::Invalid) {}
 
     /*!
     \brief
@@ -313,9 +315,9 @@ public:
     ImageDim(const String& image_name, DimensionType dim);
 
     //! return the name of the image accessed by this ImageDim.
-    const String& getSourceImage() const;
+    const String& getSourceImageName() const;
     //! set the name of the image accessed by this ImageDim.
-    void setSourceImage(const String& image_name);
+    void setSourceImageName(const String& image_name);
 
     // Implementation of the base class interface
     BaseDim* clone() const override;
@@ -382,7 +384,7 @@ protected:
 class CEGUIEXPORT WidgetDim : public BaseDim
 {
 public:
-    WidgetDim() {}
+    WidgetDim() : d_dimensionType(DimensionType::Invalid) {}
     /*!
     \brief
         Constructor.
@@ -462,7 +464,7 @@ private:
 class CEGUIEXPORT UnifiedDim : public BaseDim
 {
 public:
-    UnifiedDim(){}
+    UnifiedDim() : d_what(DimensionType::Invalid) {}
     /*!
     \brief
         Constructor.
@@ -536,7 +538,7 @@ private:
 class CEGUIEXPORT FontDim : public BaseDim
 {
 public:
-    FontDim() {}
+    FontDim() : d_metric(FontMetricType::LineSpacing), d_padding(0.f) {}
     /*!
     \brief
         Constructor.
@@ -594,9 +596,7 @@ public:
     //! Set the current padding of the FontDim.
     void setPadding(float padding);
 
-    // overridden from BaseDim.
-    bool handleFontRenderSizeChange(Window& window,
-                                    const Font* font) const override;
+    bool handleFontRenderSizeChange(Window& window, const Font* font) const override;
 
     // Implementation of the base class interface
     float getValue(const Window& wnd) const override;
@@ -631,7 +631,7 @@ private:
 class CEGUIEXPORT PropertyDim : public BaseDim
 {
 public:
-    PropertyDim() {}
+    PropertyDim() : d_type(DimensionType::Invalid) {}
     /*!
     \brief
         Constructor.

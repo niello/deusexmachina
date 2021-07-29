@@ -31,24 +31,16 @@
 #endif
 
 #include "CEGUI/widgets/LayoutContainer.h"
-#include "CEGUI/RenderingSurface.h"
 
-#if defined(_MSC_VER)
-#   pragma warning(push)
-#   pragma warning(disable : 4355)
-#endif
-
-// Start of CEGUI namespace section
 namespace CEGUI
 {
-
 const String LayoutContainer::EventNamespace("LayoutContainer");
 
 //----------------------------------------------------------------------------//
 LayoutContainer::LayoutContainer(const String& type, const String& name):
     Window(type, name),
     d_needsLayouting(false),
-    d_clientChildContentArea(this, static_cast<Element::CachedRectf::DataGenerator>(&LayoutContainer::getClientChildContentArea_impl))
+    d_childContentArea(this, static_cast<Element::CachedRectf::DataGenerator>(&LayoutContainer::getChildContentArea_impl))
 {
     // layout should take the whole window by default I think
     setSize(USize(cegui_reldim(1), cegui_reldim(1)));
@@ -60,62 +52,40 @@ LayoutContainer::LayoutContainer(const String& type, const String& name):
 }
 
 //----------------------------------------------------------------------------//
-LayoutContainer::~LayoutContainer(void)
-{}
-
-//----------------------------------------------------------------------------//
-void LayoutContainer::markNeedsLayouting()
-{
-    d_needsLayouting = true;
-
-    //invalidate();
-}
-
-//----------------------------------------------------------------------------//
-bool LayoutContainer::needsLayouting() const
-{
-    return d_needsLayouting;
-}
-
-//----------------------------------------------------------------------------//
 void LayoutContainer::layoutIfNecessary()
 {
     if (d_needsLayouting)
     {
-        // Sometimes layout() triggers subsequent layouting, for example when
+        // Sometimes layout_impl() triggers subsequent layouting, for example when
         // the final size calculation changes parent ScrollablePane scrollbars.
         // This is why the flag is cleared before layouting, not after it.
         d_needsLayouting = false;
-        layout();
+        layout_impl();
     }
-}
-
-//----------------------------------------------------------------------------//
-size_t LayoutContainer::getActualChildCount() const
-{
-    return getChildCount();
 }
 
 //----------------------------------------------------------------------------//
 void LayoutContainer::update(float elapsed)
 {
     Window::update(elapsed);
-
     layoutIfNecessary();
 }
 
 //----------------------------------------------------------------------------//
-const Element::CachedRectf& LayoutContainer::getClientChildContentArea() const
+uint8_t LayoutContainer::handleAreaChanges(bool moved, bool sized)
 {
-    return d_clientChildContentArea;
-}
+    // NB: inner rect is invalidated here because it depends on a parent and may
+    // change even if our area didn't change. Window::handleAreaChanges doesn't
+    // invalidate it in this case which may lead to inactual inner rect cache.
+    d_childContentArea.invalidateCache();
+    d_unclippedInnerRect.invalidateCache();
+    const uint8_t flags = Window::handleAreaChanges(moved, sized);
 
-//----------------------------------------------------------------------------//
-void LayoutContainer::notifyScreenAreaChanged(bool recursive)
-{
-    d_clientChildContentArea.invalidateCache();
+    // If content areas resized, relatively sized children may break layout
+    if (flags & (ClientSized | NonClientSized))
+        markNeedsLayouting();
 
-    Window::notifyScreenAreaChanged(recursive);
+    return flags;
 }
 
 //----------------------------------------------------------------------------//
@@ -130,11 +100,11 @@ Rectf LayoutContainer::getUnclippedInnerRect_impl(bool skipAllPixelAlignment) co
 }
 
 //----------------------------------------------------------------------------//
-Rectf LayoutContainer::getClientChildContentArea_impl(bool skipAllPixelAlignment) const
+Rectf LayoutContainer::getChildContentArea_impl(bool skipAllPixelAlignment) const
 {
     if (!d_parent)
     {
-        return skipAllPixelAlignment ? Window::getClientChildContentArea().getFresh(true) : Window::getClientChildContentArea().get();
+        return skipAllPixelAlignment ? Window::getChildContentArea(false).getFresh(true) : Window::getChildContentArea(false).get();
     }
     else
     {
@@ -225,34 +195,16 @@ UVector2 LayoutContainer::getOffsetForWindow(Window* window) const
 //----------------------------------------------------------------------------//
 UVector2 LayoutContainer::getBoundingSizeForWindow(Window* window) const
 {
-    const Sizef& pixelSize = window->getPixelSize();
-
     // we rely on pixelSize rather than mixed absolute and relative getSize
     // this seems to solve problems when windows overlap because their size
     // is constrained by min size
-    const UVector2 size(UDim(0, pixelSize.d_width), UDim(0, pixelSize.d_height));
-    // todo: we still do mixed absolute/relative margin, should we convert the
+    // TODO: we still do mixed absolute/relative margin, should we convert the
     //       value to absolute?
+    const Sizef& pixelSize = window->getPixelSize();
     const UBox& margin = window->getMargin();
-
     return UVector2(
-               margin.d_left + size.d_x + margin.d_right,
-               margin.d_top + size.d_y + margin.d_bottom
-           );
-}
-
-//----------------------------------------------------------------------------//
-void LayoutContainer::onParentSized(ElementEventArgs& e)
-{
-    // This is intentionally not Window::onParentSized.
-    Element::onParentSized(e);
-
-    // force update of child positioning.
-    notifyScreenAreaChanged(true);
-    performChildWindowLayout(true, true);
-
-    // It is possible that children didn't change, but we must re-layout them
-    markNeedsLayouting();
+               margin.d_left + UDim(0, pixelSize.d_width) + margin.d_right,
+               margin.d_top + UDim(0, pixelSize.d_height) + margin.d_bottom);
 }
 
 //----------------------------------------------------------------------------//
@@ -264,9 +216,4 @@ void LayoutContainer::onChildOrderChanged(ElementEventArgs& e)
 
 //----------------------------------------------------------------------------//
 
-#if defined(_MSC_VER)
-#   pragma warning(pop)
-#endif
-
-} // End of  CEGUI namespace section
-
+}
