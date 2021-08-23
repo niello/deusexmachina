@@ -1,3 +1,3 @@
-Cubemap to DEM skybox asset converter
+Navigation mesh builder.
 
-Can create global image-based lighting resources if cubemapgen/mcmg.exe is available in a working directory.
+Converts static level geometry to a recast/detour navigation mesh binary.
