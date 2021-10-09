@@ -4,6 +4,9 @@
 
 // Item manager keeps track of item templates and helps to manipulate item entities
 
+// TODO: add temporary stack entity manipulation for the stack-on-cursor in the inventory UI.
+// If not do that, each stack will take a new EntityID and will waste unique IDs without need.
+
 namespace DEM::Game
 {
 	class CGameSession;
@@ -25,7 +28,7 @@ private:
 	Game::CGameSession&                       _Session;
 	std::unordered_map<CStrID, Game::HEntity> _Templates;
 
-	Game::HEntity InternalCreateStack(Game::CGameWorld& World, CStrID LevelID, CStrID ItemID, U32 Count, Game::HEntity Container);
+	Game::HEntity InternalCreateStack(Game::CGameWorld& World, CStrID LevelID, CStrID ItemID, U32 Count);
 
 public:
 

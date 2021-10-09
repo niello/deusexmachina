@@ -12,7 +12,6 @@ namespace DEM::RPG
 struct CItemStackComponent
 {
 	Game::HEntity Prototype;
-	Game::HEntity Container;
 	U32           Count = 1;
 	U16           Modified = 0; // To optimize out deep comparison when stacking
 };
@@ -28,9 +27,8 @@ template<> inline constexpr auto RegisterMembers<RPG::CItemStackComponent>()
 	return std::make_tuple
 	(
 		DEM_META_MEMBER_FIELD(RPG::CItemStackComponent, 1, Prototype),
-		DEM_META_MEMBER_FIELD(RPG::CItemStackComponent, 2, Container),
-		DEM_META_MEMBER_FIELD(RPG::CItemStackComponent, 3, Count),
-		DEM_META_MEMBER_FIELD(RPG::CItemStackComponent, 4, Modified)
+		DEM_META_MEMBER_FIELD(RPG::CItemStackComponent, 2, Count),
+		DEM_META_MEMBER_FIELD(RPG::CItemStackComponent, 3, Modified)
 	);
 }
 

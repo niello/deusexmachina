@@ -3,8 +3,10 @@
 #include <StdDEM.h>
 
 // Stores an inventory of a character for a Shantara2 role system
-//TODO: RPG common if it is simply a list of item entities?
 
+//???need? isn't CItemContainerComponent enough?
+
+//TODO: RPG common if it is simply a list of item entities?
 namespace DEM::Sh2
 {
 
