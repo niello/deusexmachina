@@ -5,12 +5,12 @@ URLs:
 https://pybullet.org
 
 Current version used:
-3.06+ modified
-https://github.com/bulletphysics/bullet3/commit/4c46f9ce399ab681b6d56af4140ef82ec090cc2b
+3.17+
+https://github.com/bulletphysics/bullet3/commit/ce26271923e48c297b623285421ac1c2ad06e623
 
 Local modifications:
-Warning fixes, see https://github.com/bulletphysics/bullet3/pull/3115
-Unused CMake targets commented out
+Unused CMake targets commented out in CMakeLists.txt and src/CMakeLists.txt
 
 Purpose in DEM:
-Physics simulation, collision, domains and triggers
+Physics simulation, collision, domains, triggers.
+User interaction with objects.

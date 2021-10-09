@@ -28,6 +28,9 @@ SET(CLAMP_VELOCITIES "0" CACHE STRING "Clamp rigid bodies' velocity to this valu
 OPTION(USE_GRAPHICAL_BENCHMARK "Use Graphical Benchmark" ON)
 OPTION(BUILD_SHARED_LIBS "Use shared libraries" OFF)
 OPTION(USE_SOFT_BODY_MULTI_BODY_DYNAMICS_WORLD "Use btSoftMultiBodyDynamicsWorld" ON)
+OPTION(USE_OPENVR "Use OpenVR for virtual reality" OFF)
+
+OPTION(ENABLE_VHACD "Use VHACD in BulletRobotics and pybullet" ON)
 
 OPTION(BULLET2_MULTITHREADING "Build Bullet 2 libraries with mutex locking around certain operations (required for multi-threading)" OFF)
 IF (BULLET2_MULTITHREADING)
@@ -251,7 +254,8 @@ IF(BULLET2_MULTITHREADING)
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 	ENDIF (NOT MSVC)
 	IF (NOT WIN32)
-		LINK_LIBRARIES( pthread )
+		FIND_PACKAGE(Threads)
+		LINK_LIBRARIES( ${CMAKE_THREAD_LIBS_INIT} )
 	ENDIF (NOT WIN32)
 ENDIF (BULLET2_MULTITHREADING)
 
