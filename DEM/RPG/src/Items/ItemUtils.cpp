@@ -62,18 +62,25 @@ bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemStackEntity,
 	const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, ItemStackEntity, *pItemStack);
 	if (!pItem) return false;
 
-	if (pItem->InLocationModelID)
+	// TODO:
+	// If merging enabled, query item stacks and tmp item containers in accessible range, not owned by someone else
+	// If tmp item containers are found, add the stack to the closest one (take lookat dir into account?)
+	// Else if stacks are found, try to merge into the closest one (take lookat dir into account?)
+	// If not merged, create tmp item container and add found stack and our stack to it
+	// If nothing found, drop a new item object into location (create scene and RB)
+
+	if (pItem->WorldModelID)
 	{
 		auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(ItemStackEntity);
 		pSceneComponent->RootNode->RemoveFromParent();
-		pSceneComponent->AssetID = pItem->InLocationModelID;
+		pSceneComponent->AssetID = pItem->WorldModelID;
 		pSceneComponent->SetLocalTransform(Tfm);
 	}
 
-	if (pItem->InLocationPhysicsID)
+	if (pItem->WorldPhysicsID)
 	{
 		auto pPhysicsComponent = World.AddComponent<Game::CRigidBodyComponent>(ItemStackEntity);
-		pPhysicsComponent->ShapeAssetID = pItem->InLocationPhysicsID;
+		pPhysicsComponent->ShapeAssetID = pItem->WorldPhysicsID;
 		pPhysicsComponent->Mass = pItemStack->Count * pItem->Weight;
 		// TODO: physics material, collision group & flags
 	}

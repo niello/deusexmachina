@@ -9,8 +9,8 @@ namespace DEM::RPG
 
 struct CItemComponent
 {
-	CStrID      InLocationModelID;
-	CStrID      InLocationPhysicsID;
+	CStrID      WorldModelID;
+	CStrID      WorldPhysicsID;
 	CStrID      UIIcon;
 	std::string UIName;
 	float       Weight = 0.f;
@@ -29,8 +29,8 @@ template<> inline constexpr auto RegisterMembers<RPG::CItemComponent>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 1, InLocationModelID),
-		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 2, InLocationPhysicsID),
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 1, WorldModelID),
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 2, WorldPhysicsID),
 		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 3, UIIcon),
 		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 4, UIName),
 		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 5, Weight),
