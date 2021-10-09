@@ -44,62 +44,33 @@ void CItemManager::GatherExistingTemplates()
 }
 //---------------------------------------------------------------------
 
-Game::HEntity CItemManager::InternalCreateStack(Game::CGameWorld& World, CStrID LevelID, CStrID ItemID, U32 Count)
+Game::HEntity CItemManager::CreateStack(CStrID ItemID, U32 Count, CStrID LevelID)
 {
+	auto pWorld = _Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return {};
+
 	Game::HEntity ProtoEntity;
 	auto It = _Templates.find(ItemID);
 	if (It == _Templates.cend())
 	{
-		ProtoEntity = World.CreateEntity(CStrID::Empty, ItemID);
+		ProtoEntity = pWorld->CreateEntity(CStrID::Empty, ItemID);
+		if (!ProtoEntity) return {};
+
 		//World.ValidateComponents(ProtoEntity); //!!!TODO: it is needed to create template components!
 		_Templates.emplace(ItemID, ProtoEntity);
 	}
 	else ProtoEntity = It->second;
 
-	Game::HEntity StackEntity = World.CreateEntity(LevelID);
-	auto pStack = World.AddComponent<CItemStackComponent>(StackEntity);
+	Game::HEntity StackEntity = pWorld->CreateEntity(LevelID);
+	auto pStack = pWorld->AddComponent<CItemStackComponent>(StackEntity);
 	if (!pStack)
 	{
-		World.DeleteEntity(StackEntity);
+		pWorld->DeleteEntity(StackEntity);
 		return {};
 	}
 
 	pStack->Prototype = ProtoEntity;
 	pStack->Count = Count;
-
-	return StackEntity;
-}
-//---------------------------------------------------------------------
-
-Game::HEntity CItemManager::CreateStack(CStrID ItemID, U32 Count, Game::HEntity Container)
-{
-	auto pWorld = _Session.FindFeature<Game::CGameWorld>();
-	if (!pWorld) return {};
-
-	const Game::CEntity* pContainerEntity = pWorld->GetEntity(Container);
-	if (!pContainerEntity) return {};
-
-	// FIXME: call AddItemsIntoContainer! Or don't manage this in CItemManager, use ItemUtils API externally?
-	// Maybe here is better, it prevents unreachable item creation, but on the other hand this may be required
-	// by the game logic and universal CItemManager shouldn't take this decision.
-
-	return InternalCreateStack(*pWorld, pContainerEntity->LevelID, ItemID, Count);
-}
-//---------------------------------------------------------------------
-
-Game::HEntity CItemManager::CreateStack(CStrID ItemID, U32 Count, CStrID LevelID, const Math::CTransformSRT& WorldTfm)
-{
-	auto pWorld = _Session.FindFeature<Game::CGameWorld>();
-	if (!pWorld) return {};
-
-	auto StackEntity = InternalCreateStack(*pWorld, LevelID, ItemID, Count);
-	if (!StackEntity) return {};
-
-	if (!DropItemsToLocation(*pWorld, StackEntity, WorldTfm))
-	{
-		pWorld->DeleteEntity(StackEntity);
-		return {};
-	}
 
 	return StackEntity;
 }

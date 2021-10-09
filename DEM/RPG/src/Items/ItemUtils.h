@@ -26,6 +26,19 @@ bool AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Gam
 bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemStackEntity, const Math::CTransformSRT& Tfm);
 void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& Container, CContainerStats& OutStats);
 
+Game::HEntity CreateItemsInLocation(CStrID ItemID, U32 Count, CStrID LevelID, const Math::CTransformSRT& Tfm);
+Game::HEntity CreateItemsInContainer(CStrID ItemID, U32 Count, Game::HEntity Container, size_t Index);
+bool MoveItemsToLocation(Game::HEntity StackID, Game::HEntity PrevContainer, const Math::CTransformSRT& Tfm);
+bool MoveItemsToContainer(Game::HEntity StackID, Game::HEntity PrevContainer, Game::HEntity Container, size_t Index);
+bool MoveAllItemsToLocation(Game::HEntity PrevContainer, const Math::CTransformSRT& Tfm /*, T Filter*/); //???ret num of failed stacks?
+bool MoveAllItemsToContainer(Game::HEntity PrevContainer, Game::HEntity Container /*, T Filter*/); //???ret num of failed stacks?
+void MoveItemsInsideContainer(Game::HEntity Container, size_t OldIndex, size_t NewIndex); //???need variant with stack?
+void QueryItemsInShape(Game::CGameWorld& World /*collision shape - sphere, capsule etc*/ /*, T Filter*/); //!!!including piles!
+bool TryMergeStacks(Game::HEntity StackID1, Game::HEntity StackID2); //bool allow partial?
+Game::HEntity SplitStack(Game::HEntity StackID, U32 AmountToSeparate);
+void EnumContainedItems(Game::HEntity Container /*, T Filter, T2 Callback*/);
+//IsItemValuable, IsItemTrash - not here, game-specific filters? Or use settings from CItemManager?
+
 template<typename T>
 T* FindItemComponent(const Game::CGameWorld& World, Game::HEntity ItemStackEntity, const CItemStackComponent& Stack)
 {
