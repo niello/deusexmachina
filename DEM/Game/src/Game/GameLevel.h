@@ -147,10 +147,8 @@ public:
 	bool					GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const;
 
 	// Physics-based queries
-	bool					GetFirstIntersectedEntity(const line3& Ray, vector3* pOutPoint3D = nullptr, CStrID* pOutEntityUID = nullptr) const;
 	UPTR					GetEntitiesInPhysBox(CArray<CEntity*>& Out, const matrix44& OBB) const;
 	UPTR					GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& Center, float Radius) const;
-	bool					GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position, float ProbeLength = 1000.f) const;
 
 	CStrID					GetID() const { return ID; }
 	const CString&			GetName() const { return Name; }

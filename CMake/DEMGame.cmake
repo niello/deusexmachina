@@ -82,7 +82,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Scripting/EntityScriptObject.h
 	DEM/Game/src/Scripting/PropScriptable.h
 	DEM/Game/src/SI/SI_L2.h
-	DEM/Game/src/UI/PropUIControl.h
 )
 
 set(DEM_L2_GAME_SOURCES
@@ -153,7 +152,5 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Scripting/ScriptObjectSIEx.cpp
 	DEM/Game/src/SI/SIEntityManager.cpp
 	DEM/Game/src/SI/SINavMesh.cpp
-	DEM/Game/src/UI/PropUIControl.cpp
-	DEM/Game/src/UI/PropUIControlSI.cpp
 )
 

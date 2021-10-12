@@ -174,7 +174,7 @@ Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const line3& Ray, 
 {
 	if (!_PhysicsLevel) return nullptr;
 
-	const U16 Group = _PhysicsLevel->CollisionGroups.GetMask("Pick");
+	const U16 Group = _PhysicsLevel->CollisionGroups.GetMask("Interactable");
 	const U16 Mask = _PhysicsLevel->CollisionGroups.GetMask("All");
 	Physics::PPhysicsObject PhysObj;
 	_PhysicsLevel->GetClosestRayContact(Ray.Start, Ray.End(), Group, Mask, pOutPoint3D, &PhysObj);
@@ -579,27 +579,6 @@ bool CGameLevel::OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CE
 //}
 ////---------------------------------------------------------------------
 
-//???write 2 versions, physics-based and mesh-based?
-bool CGameLevel::GetFirstIntersectedEntity(const line3& Ray, vector3* pOutPoint3D, CStrID* pOutEntityUID) const
-{
-	if (!PhysicsLevel) FAIL;
-
-	U16 Group = PhysicsLevel->CollisionGroups.GetMask("Pick");
-	U16 Mask = PhysicsLevel->CollisionGroups.GetMask("All");
-	Physics::PPhysicsObject PhysObj;
-	if (!PhysicsLevel->GetClosestRayContact(Ray.Start, Ray.End(), Group, Mask, pOutPoint3D, &PhysObj)) FAIL;
-
-	if (pOutEntityUID)
-	{
-		//!!!FIXME PHYSICS:
-		//void* pUserData = PhysObj.IsValidPtr() ? PhysObj->GetUserData() : nullptr;
-		//*pOutEntityUID = pUserData ? *(CStrID*)&pUserData : CStrID::Empty;
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
 UPTR CGameLevel::GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const Data::CRect& RelRect) const
 {
 	// calc frustum
@@ -655,24 +634,6 @@ UPTR CGameLevel::GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& C
 	// return newly selected obj count
 	Sys::Error("CGameLevel::GetEntitiesInPhysBox() -> IMPLEMENT ME!");
 	return 0;
-}
-//---------------------------------------------------------------------
-
-bool CGameLevel::GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position, float ProbeLength) const
-{
-	//n_assert(ProbeLength > 0);
-	//vector3 Dir(0.0f, -ProbeLength, 0.0f);
-
-	////!!!can request closest contacts for Default and Terrain!
-	//U16 Group = PhysicsLevel->CollisionGroups.GetMask("Default");
-	//U16 Mask = PhysicsLevel->CollisionGroups.GetMask("All");
-	//vector3 ContactPos;
-	//if (!PhysicsLevel->GetClosestRayContact(Position, Position + Dir, Group, Mask, &ContactPos)) FAIL;
-	//Out.WorldHeight = ContactPos.y;
-
-	////!!!material from CPhysicsObject!
-
-	OK;
 }
 //---------------------------------------------------------------------
 
