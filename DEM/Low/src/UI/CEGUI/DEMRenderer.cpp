@@ -209,11 +209,11 @@ RefCounted<RenderMaterial> CDEMRenderer::createRenderMaterial(const DefaultShade
 {
 	if (shaderType == DefaultShaderType::Textured)
 	{
-		return new RenderMaterial(pShaderWrapperTextured);
+		return RefCounted<RenderMaterial>(new RenderMaterial(pShaderWrapperTextured));
 	}
 	else if (shaderType == DefaultShaderType::Solid)
 	{
-		return new RenderMaterial(pShaderWrapperColoured);
+		return RefCounted<RenderMaterial>(new RenderMaterial(pShaderWrapperColoured));
 	}
 	else
 	{

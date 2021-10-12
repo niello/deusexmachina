@@ -28,7 +28,7 @@ CLuaConsole::~CLuaConsole()
 {
 	UNSUBSCRIBE_EVENT(OnLogMsg);
 
-	if (ConnOnShow.isValid()) ConnOnShow->disconnect();
+	if (ConnOnShow) ConnOnShow->disconnect();
 }
 //---------------------------------------------------------------------
 
