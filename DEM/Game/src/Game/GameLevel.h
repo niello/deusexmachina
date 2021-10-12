@@ -71,6 +71,16 @@ public:
 	void                     SetNavRegionFlags(CStrID RegionID, U16 Flags, bool On);
 
 	Physics::CPhysicsObject* GetFirstPickIntersection(const line3& Ray, vector3* pOutPoint3D = nullptr) const;
+	// Query hierarchy:
+	// 1. All physics objects in a shape
+	// 2. Physics objects in a shape filtered by the collision group
+	// 3. Entities in a shape optionally filtered by the collision group
+	// 4. Reachable entities in a shape (navigation)
+	// 5. Reachable entities in a shape filtered by a custom filter, e.g. by a component presence
+	//???2 methods (physics objects & entities) with filters applied stage by stage according to flags?
+	//collision group filtering is free, it occurs anyway, with "All" by default
+	//ray check may need to apply collision group filter after the raycast, e.g. when searching for
+	//the closest Interactable, if the user wants closer non-interactable collision objects to block it.
 
 	CStrID                   GetID() const { return _ID; }
 
@@ -126,8 +136,6 @@ protected:
 	Physics::PPhysicsLevel		PhysicsLevel;
 	AI::PAILevel				AILevel;
 
-	bool OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-
 public:
 
 	CGameLevel();
@@ -142,13 +150,8 @@ public:
 	// Screen queries
 	//???pass camera? or move to view? here is more universal, but may need renaming as there is no "screen" at the server part
 	//can add shortcut methods to a View, with these names, calling renamed level methods with a view camera
-	UPTR					GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const Data::CRect& RelRect) const;
 	bool					GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset = nullptr) const;
 	bool					GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const;
-
-	// Physics-based queries
-	UPTR					GetEntitiesInPhysBox(CArray<CEntity*>& Out, const matrix44& OBB) const;
-	UPTR					GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& Center, float Radius) const;
 
 	CStrID					GetID() const { return ID; }
 	const CString&			GetName() const { return Name; }

@@ -169,12 +169,13 @@ void CGameLevel::Update(float dt, const vector3* pCOIArray, UPTR COICount)
 }
 //---------------------------------------------------------------------
 
+//???query only interactables? or need 2 methods, one for interactables and one universal raycast?
 //???write 2 versions, physics-based and mesh-based?
 Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const line3& Ray, vector3* pOutPoint3D) const
 {
 	if (!_PhysicsLevel) return nullptr;
 
-	const U16 Group = _PhysicsLevel->CollisionGroups.GetMask("Interactable");
+	const U16 Group = _PhysicsLevel->CollisionGroups.GetMask("Probe");
 	const U16 Mask = _PhysicsLevel->CollisionGroups.GetMask("All");
 	Physics::PPhysicsObject PhysObj;
 	_PhysicsLevel->GetClosestRayContact(Ray.Start, Ray.End(), Group, Mask, pOutPoint3D, &PhysObj);
@@ -509,12 +510,6 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 //}
 ////---------------------------------------------------------------------
 
-bool CGameLevel::OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
-{
-	return !!FireEvent(Event);
-}
-//---------------------------------------------------------------------
-
 //void CGameLevel::RenderScene()
 //{
 ////???add to each view variables?
@@ -579,17 +574,6 @@ bool CGameLevel::OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CE
 //}
 ////---------------------------------------------------------------------
 
-UPTR CGameLevel::GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const Data::CRect& RelRect) const
-{
-	// calc frustum
-	// query SPS with this frustum
-	// select only render objects
-	// return newly selected obj count
-	Sys::Error("CGameLevel::GetEntitiesAtScreenRect() -> IMPLEMENT ME!");
-	return 0;
-}
-//---------------------------------------------------------------------
-
 bool CGameLevel::GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset) const
 {
 	//Frame::PCameraAttribute MainCamera; //!!!DBG TMP!
@@ -614,26 +598,6 @@ bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Enti
 	//vector3 Center = AABB.Center();
 	//MainCamera->GetPoint2D(vector3(Center.x, AABB.Max.y, Center.z), Out.x, Out.y);
 	OK;
-}
-//---------------------------------------------------------------------
-
-UPTR CGameLevel::GetEntitiesInPhysBox(CArray<CEntity*>& Out, const matrix44& OBB) const
-{
-	// request physics level for shapes and bodies
-	// select ones that are attached to entities
-	// return newly selected obj count
-	Sys::Error("CGameLevel::GetEntitiesInPhysBox() -> IMPLEMENT ME!");
-	return 0;
-}
-//---------------------------------------------------------------------
-
-UPTR CGameLevel::GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& Center, float Radius) const
-{
-	// request physics level for shapes and bodies
-	// select ones that are attached to entities
-	// return newly selected obj count
-	Sys::Error("CGameLevel::GetEntitiesInPhysBox() -> IMPLEMENT ME!");
-	return 0;
 }
 //---------------------------------------------------------------------
 
