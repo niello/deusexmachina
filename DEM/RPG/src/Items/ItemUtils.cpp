@@ -89,6 +89,16 @@ bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemStackEntity,
 }
 //---------------------------------------------------------------------
 
+// TODO: use container as an std::optional hint? or handle this in user API and call RemoveItemsFromContainer only when needed?
+void RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity ItemStackEntity, Game::HEntity Container)
+{
+	auto pContainer = World.FindComponent<CItemContainerComponent>(Container);
+	if (!pContainer) return;
+
+	pContainer->Items.erase(std::remove(pContainer->Items.begin(), pContainer->Items.end(), ItemStackEntity));
+}
+//---------------------------------------------------------------------
+
 void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& Container, CContainerStats& OutStats)
 {
 	OutStats.UsedWeight = 0.f;
