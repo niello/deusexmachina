@@ -169,17 +169,21 @@ void CGameLevel::Update(float dt, const vector3* pCOIArray, UPTR COICount)
 }
 //---------------------------------------------------------------------
 
-//???query only interactables? or need 2 methods, one for interactables and one universal raycast?
-//???write 2 versions, physics-based and mesh-based?
 Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const line3& Ray, vector3* pOutPoint3D) const
 {
 	if (!_PhysicsLevel) return nullptr;
 
 	const U16 Group = _PhysicsLevel->CollisionGroups.GetMask("Probe");
-	const U16 Mask = _PhysicsLevel->CollisionGroups.GetMask("All");
+	const U16 Mask = _PhysicsLevel->CollisionGroups.GetMask("All"); // TODO: pass as argument?
 	Physics::PPhysicsObject PhysObj;
 	_PhysicsLevel->GetClosestRayContact(Ray.Start, Ray.End(), Group, Mask, pOutPoint3D, &PhysObj);
 	return PhysObj.Get();
+}
+//---------------------------------------------------------------------
+
+UPTR CGameLevel::EnumEntitiesInSphere(const vector3& p, float r, CStrID CollisionMask, std::function<bool(HEntity&, const vector3&)>&& Callback) const
+{
+	return 0;
 }
 //---------------------------------------------------------------------
 

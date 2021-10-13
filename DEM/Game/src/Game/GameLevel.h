@@ -81,6 +81,9 @@ public:
 	//collision group filtering is free, it occurs anyway, with "All" by default
 	//ray check may need to apply collision group filter after the raycast, e.g. when searching for
 	//the closest Interactable, if the user wants closer non-interactable collision objects to block it.
+	//???is trigger/probe a subclass of CPhysicsObject?
+	//UPTR                     EnumIntersectingCollisionObjects(const Physics::CPhysicsObject);
+	UPTR                     EnumEntitiesInSphere(const vector3& p, float r, CStrID CollisionMask, std::function<bool(HEntity&, const vector3&)>&& Callback) const;
 
 	CStrID                   GetID() const { return _ID; }
 

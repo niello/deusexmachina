@@ -107,11 +107,6 @@ CPhysicsLevel::CPhysicsLevel(const CAABB& Bounds)
 	//btGhostPairCallback* pGhostPairCB = new btGhostPairCallback(); //!!!delete!
 	//pBtDynWorld->getPairCache()->setInternalGhostPairCallback(pGhostPairCB);
 
-	//struct ContactSensorCallback : public btCollisionWorld::ContactResultCallback 
-	//world->contactTest(pCollObj, ContactSensorCallback());
-	//Collision objects with a callback still have collision response with dynamic rigid bodies. In order to use collision objects as trigger, you have to disable the collision response. 
-	//mBody->setCollisionFlags(mBody->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE));
-
 	/*
 	btGhostObject for triggers and raytests, it keeps track of all its intersections
 	btGhostPairCallback to notify application of new/removed collisions
@@ -124,7 +119,6 @@ CPhysicsLevel::CPhysicsLevel(const CAABB& Bounds)
 	appendAnchor attaches body to body
 	use CCD for fast moving objects
 	btConeTwistConstraint for ragdolls
-	#define BT_NO_PROFILE 1 in release
 	materials - restitution and friction
 	there is a multithreading support
 	*/
@@ -191,13 +185,14 @@ bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& En
 }
 //---------------------------------------------------------------------
 
-UPTR CPhysicsLevel::GetAllRayContacts(const vector3& Start, const vector3& End, U16 Group, U16 Mask) const
+//???struct CContact instead of separate object + pos? May add normal.
+UPTR CPhysicsLevel::EnumRayContacts(const vector3& Start, const vector3& End, U16 Group, U16 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const
 {
 	n_assert(pBtDynWorld);
 
 	btVector3 BtStart = VectorToBtVector(Start);
 	btVector3 BtEnd = VectorToBtVector(End);
-	btCollisionWorld::AllHitsRayResultCallback RayCB(BtStart, BtEnd);
+	btCollisionWorld::AllHitsRayResultCallback RayCB(BtStart, BtEnd); // FIXME: use enumerating callback instead of an array!
 	RayCB.m_collisionFilterGroup = Group;
 	RayCB.m_collisionFilterMask = Mask;
 	pBtDynWorld->rayTest(BtStart, BtEnd, RayCB);
@@ -211,6 +206,23 @@ UPTR CPhysicsLevel::GetAllRayContacts(const vector3& Start, const vector3& End, 
 	//void* pUserObj = pCollObj->getUserPointer();
 
 	return RayCB.m_collisionObjects.size();
+}
+//---------------------------------------------------------------------
+
+//???struct CContact instead of separate object + pos? May add normal.
+UPTR CPhysicsLevel::EnumObjectContacts(const CPhysicsObject& Object, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const
+{
+	UPTR Counter = 0;
+
+	//Physics::CTriggerContactCallback TriggerCB(CollObj->GetBtObject(), Collisions, CollObj->GetCollisionGroup(), CollObj->GetCollisionMask());
+	//GetEntity()->GetLevel()->GetPhysics()->GetBtWorld()->contactTest(CollObj->GetBtObject(), TriggerCB);
+	//
+	//struct ContactSensorCallback : public btCollisionWorld::ContactResultCallback 
+	//world->contactTest(pCollObj, ContactSensorCallback());
+	//Collision objects with a callback still have collision response with dynamic rigid bodies. In order to use collision objects as trigger, you have to disable the collision response. 
+	//mBody->setCollisionFlags(mBody->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE));
+
+	return Counter;
 }
 //---------------------------------------------------------------------
 
