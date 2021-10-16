@@ -43,6 +43,7 @@ public:
 	void  Update(float dt);
 	void  RenderDebug(Debug::CDebugDraw& DebugDraw);
 
+	// FIXME CONSISTENCY: contact enumerators work only with CPhysicsObject but GetClosestRayContact detects hit point for any bullet collision objects!
 	bool  GetClosestRayContact(const vector3& Start, const vector3& End, U32 Group, U32 Mask, vector3* pOutPos = nullptr, PPhysicsObject* pOutObj = nullptr, CPhysicsObject* pExclude = nullptr) const;
 	UPTR  EnumRayContacts(const vector3& Start, const vector3& End, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const;
 	UPTR  EnumObjectContacts(const CPhysicsObject& Object, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const;

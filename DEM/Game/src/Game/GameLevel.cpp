@@ -189,8 +189,29 @@ UPTR CGameLevel::EnumEntitiesInSphere(const vector3& Position, float Radius, CSt
 	const auto Group = _PhysicsLevel->CollisionGroups.GetMask("Probe");
 	const auto Mask = _PhysicsLevel->CollisionGroups.GetMask(CollisionMask ? CollisionMask.CStr() : "All");
 
+	//???return contact in a form of CTargetInfo? Fill CTargetInfo from physics object + bullet contact info?
 	_PhysicsLevel->EnumSphereContacts(Position, Radius, Group, Mask, [&Callback](Physics::CPhysicsObject& PhysObj, const vector3& ContactPos)
 	{
+		/*
+		if (pPhysicsObject->UserData().has_value())
+		{
+			if (auto pRB = pPhysicsObject->As<Physics::CRigidBody>())
+			{
+				if (auto pHEntity = std::any_cast<DEM::Game::HEntity>(&pPhysicsObject->UserData()))
+					Out.Entity = *pHEntity;
+				Out.pNode = pRB->GetControlledNode();
+			}
+			else
+			{
+				if (auto pPair = std::any_cast<std::pair<DEM::Game::HEntity, Physics::CCollisionAttribute*>>(&pPhysicsObject->UserData()))
+				{
+					Out.Entity = pPair->first;
+					Out.pNode = pPair->second->GetNode();
+				}
+			}
+		}
+		*/
+
 		return Callback(HEntity{}, ContactPos);
 	});
 	// FIXME: can create on stack? Or move sphere creation to CPhysicsLevel, providing a sphere query here too?

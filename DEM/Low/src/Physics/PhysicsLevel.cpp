@@ -211,7 +211,8 @@ void CPhysicsLevel::RenderDebug(Debug::CDebugDraw& DebugDraw)
 }
 //---------------------------------------------------------------------
 
-// pExclude is optional
+// FIXME CONSISTENCY: contact enumerators work only with CPhysicsObject but GetClosestRayContact detects hit point for any bullet collision objects!
+// NB: may return true when the PPhysicsObject is nullptr! pExclude is optional.
 bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& End, U32 Group, U32 Mask, vector3* pOutPos, PPhysicsObject* pOutObj, CPhysicsObject* pExclude) const
 {
 	if (!pBtDynWorld) FAIL;
