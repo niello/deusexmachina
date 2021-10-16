@@ -36,8 +36,8 @@ CMovableCollider::~CMovableCollider()
 
 void CMovableCollider::AttachToLevelInternal()
 {
-	const U16 Group = _Level->CollisionGroups.GetMask(_CollisionGroupID ? _CollisionGroupID.CStr() : "PhysicalDynamic");
-	const U16 Mask = _Level->CollisionGroups.GetMask(_CollisionMaskID ? _CollisionMaskID.CStr() : "All");
+	const auto Group = _Level->CollisionGroups.GetMask(_CollisionGroupID ? _CollisionGroupID.CStr() : "PhysicalDynamic");
+	const auto Mask = _Level->CollisionGroups.GetMask(_CollisionMaskID ? _CollisionMaskID.CStr() : "All");
 	_Level->GetBtWorld()->addRigidBody(static_cast<btRigidBody*>(_pBtObject), Group, Mask);
 }
 //---------------------------------------------------------------------

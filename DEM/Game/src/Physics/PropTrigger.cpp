@@ -1,11 +1,9 @@
 #include "PropTrigger.h"
-
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/CollisionShape.h>
 #include <Physics/StaticCollider.h>
-#include <Physics/TriggerContactCallback.h>
 #include <Scripting/PropScriptable.h>
 #include <Events/Subscription.h>
 #include <Debug/DebugDraw.h>

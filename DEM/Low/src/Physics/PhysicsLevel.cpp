@@ -7,6 +7,8 @@
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <BulletCollision/BroadphaseCollision/btAxisSweep3.h>
 #include <BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
+#include <BulletCollision/CollisionShapes/btSphereShape.h>
+#include <BulletCollision/CollisionShapes/btCapsuleShape.h>
 #include <BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
 
 // TODO: probably newer bullet versions allow to clear or at least access all objects
@@ -83,6 +85,13 @@ public:
 			m_collisionFilterGroup = pBroadphase->m_collisionFilterGroup;
 			m_collisionFilterMask = pBroadphase->m_collisionFilterMask;
 		}
+	}
+
+	CFunctorContactCallback(btCollisionObject& Self, U32 Group, U32 Mask, std::function<bool(Physics::CPhysicsObject&, const vector3&)>& Callback)
+		: _Self(Self), _Callback(Callback)
+	{
+		m_collisionFilterGroup = Group;
+		m_collisionFilterMask = Mask;
 	}
 
 	virtual btScalar addSingleResult(btManifoldPoint& cp,
@@ -169,13 +178,12 @@ CPhysicsLevel::~CPhysicsLevel()
 {
 	if (!pBtDynWorld) return;
 
-	// FIXME: must delete all remaining objects in the world!
-
 	btConstraintSolver* pBtSolver = pBtDynWorld->getConstraintSolver();
 	btCollisionDispatcher* pBtCollDisp = (btCollisionDispatcher*)pBtDynWorld->getDispatcher();
 	btCollisionConfiguration* pBtCollCfg = pBtCollDisp->getCollisionConfiguration();
 	btBroadphaseInterface* pBtBroadPhase = pBtDynWorld->getBroadphase();
 
+	// NB: ~CMyDiscreteDynamicsWorld() deletes remaining objects in the world
 	delete pBtDynWorld;
 	delete pBtSolver;
 	delete pBtCollDisp;
@@ -204,7 +212,7 @@ void CPhysicsLevel::RenderDebug(Debug::CDebugDraw& DebugDraw)
 //---------------------------------------------------------------------
 
 // pExclude is optional
-bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& End, U16 Group, U16 Mask, vector3* pOutPos, PPhysicsObject* pOutObj, CPhysicsObject* pExclude) const
+bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& End, U32 Group, U32 Mask, vector3* pOutPos, PPhysicsObject* pOutObj, CPhysicsObject* pExclude) const
 {
 	if (!pBtDynWorld) FAIL;
 
@@ -226,7 +234,7 @@ bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& En
 //---------------------------------------------------------------------
 
 //???struct CContact instead of separate object + pos? May add normal.
-UPTR CPhysicsLevel::EnumRayContacts(const vector3& Start, const vector3& End, U16 Group, U16 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const
+UPTR CPhysicsLevel::EnumRayContacts(const vector3& Start, const vector3& End, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const
 {
 	if (!pBtDynWorld) return 0;
 
@@ -253,12 +261,46 @@ UPTR CPhysicsLevel::EnumObjectContacts(const CPhysicsObject& Object, std::functi
 {
 	if (!pBtDynWorld || !Object.GetBtObject()) return 0;
 
-	CFunctorContactCallback CB(*Object.GetBtObject(), std::move(Callback));
+	CFunctorContactCallback CB(*Object.GetBtObject(), Callback);
 	pBtDynWorld->contactTest(Object.GetBtObject(), CB);
 
 	// Collision objects with a callback still have collision response with dynamic rigid bodies.
 	// In order to use collision objects as trigger, you have to disable the collision response. 
 	//Object.GetBtObject()->setCollisionFlags(Object.GetBtObject()->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE));
+
+	return CB.GetContactCount();
+}
+//---------------------------------------------------------------------
+
+UPTR CPhysicsLevel::EnumSphereContacts(const vector3& Position, float Radius, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const
+{
+	if (!pBtDynWorld || !Callback || Radius <= 0.f) return 0;
+
+	btSphereShape BtShape(Radius);
+	btCollisionObject BtObject;
+	BtObject.setCollisionShape(&BtShape);
+	BtObject.getWorldTransform().setOrigin(VectorToBtVector(Position));
+
+	CFunctorContactCallback CB(BtObject, Group, Mask, Callback);
+	pBtDynWorld->contactTest(&BtObject, CB);
+
+	return CB.GetContactCount();
+}
+//---------------------------------------------------------------------
+
+UPTR CPhysicsLevel::EnumCapsuleYContacts(const vector3& Position, float Radius, float CylinderLength, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const
+{
+	if (!pBtDynWorld || !Callback) return 0;
+
+	if (CylinderLength <= 0.f) return EnumSphereContacts(Position, Radius, Group, Mask, std::move(Callback));
+
+	btCapsuleShape BtShape(Radius, CylinderLength);
+	btCollisionObject BtObject;
+	BtObject.setCollisionShape(&BtShape);
+	BtObject.getWorldTransform().setOrigin(VectorToBtVector(Position));
+
+	CFunctorContactCallback CB(BtObject, Group, Mask, Callback);
+	pBtDynWorld->contactTest(&BtObject, CB);
 
 	return CB.GetContactCount();
 }

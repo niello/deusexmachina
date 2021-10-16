@@ -35,7 +35,7 @@ protected:
 
 public:
 
-	Data::CDynamicEnum16     CollisionGroups;
+	Data::CDynamicEnum32     CollisionGroups;
 
 	CPhysicsLevel(const CAABB& Bounds);
 	virtual ~CPhysicsLevel() override;
@@ -43,9 +43,11 @@ public:
 	void  Update(float dt);
 	void  RenderDebug(Debug::CDebugDraw& DebugDraw);
 
-	bool  GetClosestRayContact(const vector3& Start, const vector3& End, U16 Group, U16 Mask, vector3* pOutPos = nullptr, PPhysicsObject* pOutObj = nullptr, CPhysicsObject* pExclude = nullptr) const;
-	UPTR  EnumRayContacts(const vector3& Start, const vector3& End, U16 Group, U16 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const;
+	bool  GetClosestRayContact(const vector3& Start, const vector3& End, U32 Group, U32 Mask, vector3* pOutPos = nullptr, PPhysicsObject* pOutObj = nullptr, CPhysicsObject* pExclude = nullptr) const;
+	UPTR  EnumRayContacts(const vector3& Start, const vector3& End, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const;
 	UPTR  EnumObjectContacts(const CPhysicsObject& Object, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const;
+	UPTR  EnumSphereContacts(const vector3& Position, float Radius, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const;
+	UPTR  EnumCapsuleYContacts(const vector3& Position, float Radius, float CylinderLength, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const;
 
 	void  RegisterTickListener(ITickListener* pListener);
 	void  UnregisterTickListener(ITickListener* pListener);

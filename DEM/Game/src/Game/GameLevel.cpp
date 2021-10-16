@@ -174,29 +174,25 @@ Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const line3& Ray, 
 {
 	if (!_PhysicsLevel) return nullptr;
 
-	const U16 Group = _PhysicsLevel->CollisionGroups.GetMask("Probe");
-	const U16 Mask = _PhysicsLevel->CollisionGroups.GetMask("All"); // TODO: pass as argument?
+	const auto Group = _PhysicsLevel->CollisionGroups.GetMask("Probe");
+	const auto Mask = _PhysicsLevel->CollisionGroups.GetMask("All"); // TODO: pass as argument?
 	Physics::PPhysicsObject PhysObj;
 	_PhysicsLevel->GetClosestRayContact(Ray.Start, Ray.End(), Group, Mask, pOutPoint3D, &PhysObj);
 	return PhysObj.Get();
 }
 //---------------------------------------------------------------------
 
-UPTR CGameLevel::EnumIntersectingEntities(const Physics::CPhysicsObject& Object, std::function<bool(HEntity&, const vector3&)>&& Callback)
+UPTR CGameLevel::EnumEntitiesInSphere(const vector3& Position, float Radius, CStrID CollisionMask, std::function<bool(HEntity&, const vector3&)>&& Callback) const
 {
-	if (!_PhysicsLevel) return 0;
+	if (!_PhysicsLevel || !Callback) return 0;
 
-	//
+	const auto Group = _PhysicsLevel->CollisionGroups.GetMask("Probe");
+	const auto Mask = _PhysicsLevel->CollisionGroups.GetMask(CollisionMask ? CollisionMask.CStr() : "All");
 
-	return 0;
-}
-//---------------------------------------------------------------------
-
-UPTR CGameLevel::EnumEntitiesInSphere(const vector3& p, float r, CStrID CollisionMask, std::function<bool(HEntity&, const vector3&)>&& Callback) const
-{
-	const U16 Group = _PhysicsLevel->CollisionGroups.GetMask("Probe");
-	const U16 Mask = _PhysicsLevel->CollisionGroups.GetMask(CollisionMask ? CollisionMask.CStr() : "All");
-
+	_PhysicsLevel->EnumSphereContacts(Position, Radius, Group, Mask, [&Callback](Physics::CPhysicsObject& PhysObj, const vector3& ContactPos)
+	{
+		return Callback(HEntity{}, ContactPos);
+	});
 	// FIXME: can create on stack? Or move sphere creation to CPhysicsLevel, providing a sphere query here too?
 	//auto Shape = Physics::CCollisionShape::CreateSphere(r);
 
