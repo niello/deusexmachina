@@ -64,6 +64,46 @@ public:
 	}
 };
 
+class CFunctorContactCallback : public btCollisionWorld::ContactResultCallback
+{
+protected:
+
+	btCollisionObject&                                             _Self;
+	std::function<bool(Physics::CPhysicsObject&, const vector3&)>& _Callback;
+	UPTR                                                           _Counter = 0;
+
+public:
+
+	//???struct CContact instead of separate object + pos? May add normal.
+	CFunctorContactCallback(btCollisionObject& Self, std::function<bool(Physics::CPhysicsObject&, const vector3&)>& Callback)
+		: _Self(Self), _Callback(Callback)
+	{
+		if (const btBroadphaseProxy* pBroadphase = _Self.getBroadphaseHandle())
+		{
+			m_collisionFilterGroup = pBroadphase->m_collisionFilterGroup;
+			m_collisionFilterMask = pBroadphase->m_collisionFilterMask;
+		}
+	}
+
+	virtual btScalar addSingleResult(btManifoldPoint& cp,
+		const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0,
+		const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1)
+	{
+		// NB: the same object can be reported multiple times
+		const bool IsMeFirst = (colObj0Wrap->getCollisionObject() == &_Self);
+		const auto pBtObj = IsMeFirst ? colObj1Wrap->getCollisionObject() : colObj0Wrap->getCollisionObject();
+		const auto& Pos = IsMeFirst ? cp.m_positionWorldOnB : cp.m_positionWorldOnA;
+		if (auto pPhysicsObj = static_cast<Physics::CPhysicsObject*>(pBtObj->getUserPointer()))
+		{
+			++_Counter;
+			_Callback(*pPhysicsObj, BtVectorToVector(Pos)); // FIXME: how to interrupt query execution?
+		}
+		return 0;
+	}
+
+	UPTR GetContactCount() const { return _Counter; }
+};
+
 namespace Physics
 {
 
@@ -188,7 +228,7 @@ bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& En
 //???struct CContact instead of separate object + pos? May add normal.
 UPTR CPhysicsLevel::EnumRayContacts(const vector3& Start, const vector3& End, U16 Group, U16 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const
 {
-	n_assert(pBtDynWorld);
+	if (!pBtDynWorld) return 0;
 
 	btVector3 BtStart = VectorToBtVector(Start);
 	btVector3 BtEnd = VectorToBtVector(End);
@@ -209,20 +249,18 @@ UPTR CPhysicsLevel::EnumRayContacts(const vector3& Start, const vector3& End, U1
 }
 //---------------------------------------------------------------------
 
-//???struct CContact instead of separate object + pos? May add normal.
 UPTR CPhysicsLevel::EnumObjectContacts(const CPhysicsObject& Object, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const
 {
-	UPTR Counter = 0;
+	if (!pBtDynWorld || !Object.GetBtObject()) return 0;
 
-	//Physics::CTriggerContactCallback TriggerCB(CollObj->GetBtObject(), Collisions, CollObj->GetCollisionGroup(), CollObj->GetCollisionMask());
-	//GetEntity()->GetLevel()->GetPhysics()->GetBtWorld()->contactTest(CollObj->GetBtObject(), TriggerCB);
-	//
-	//struct ContactSensorCallback : public btCollisionWorld::ContactResultCallback 
-	//world->contactTest(pCollObj, ContactSensorCallback());
-	//Collision objects with a callback still have collision response with dynamic rigid bodies. In order to use collision objects as trigger, you have to disable the collision response. 
-	//mBody->setCollisionFlags(mBody->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE));
+	CFunctorContactCallback CB(*Object.GetBtObject(), std::move(Callback));
+	pBtDynWorld->contactTest(Object.GetBtObject(), CB);
 
-	return Counter;
+	// Collision objects with a callback still have collision response with dynamic rigid bodies.
+	// In order to use collision objects as trigger, you have to disable the collision response. 
+	//Object.GetBtObject()->setCollisionFlags(Object.GetBtObject()->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE));
+
+	return CB.GetContactCount();
 }
 //---------------------------------------------------------------------
 

@@ -7,6 +7,7 @@
 #include <Physics/PhysicsLevel.h>
 #include <Physics/PhysicsObject.h>
 #include <Physics/CollisionAttribute.h>
+#include <Physics/CollisionShape.h>
 #include <AI/Navigation/NavMap.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
@@ -181,8 +182,27 @@ Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const line3& Ray, 
 }
 //---------------------------------------------------------------------
 
+UPTR CGameLevel::EnumIntersectingEntities(const Physics::CPhysicsObject& Object, std::function<bool(HEntity&, const vector3&)>&& Callback)
+{
+	if (!_PhysicsLevel) return 0;
+
+	//
+
+	return 0;
+}
+//---------------------------------------------------------------------
+
 UPTR CGameLevel::EnumEntitiesInSphere(const vector3& p, float r, CStrID CollisionMask, std::function<bool(HEntity&, const vector3&)>&& Callback) const
 {
+	const U16 Group = _PhysicsLevel->CollisionGroups.GetMask("Probe");
+	const U16 Mask = _PhysicsLevel->CollisionGroups.GetMask(CollisionMask ? CollisionMask.CStr() : "All");
+
+	// FIXME: can create on stack? Or move sphere creation to CPhysicsLevel, providing a sphere query here too?
+	//auto Shape = Physics::CCollisionShape::CreateSphere(r);
+
+	//!!!create ghost collider, not added to the physics world etc!
+	//!!!can add a way to create ghost colliders on the stack and from existing shapes!
+
 	return 0;
 }
 //---------------------------------------------------------------------

@@ -56,6 +56,7 @@ public:
 	CPhysicsLevel*         GetLevel() const { return _Level.Get(); }
 	const std::any&        UserData() const { return _UserData; }
 	std::any&              UserData() { return _UserData; }
+	btCollisionObject*     GetBtObject() const { return _pBtObject; }
 };
 
 typedef Ptr<CPhysicsObject> PPhysicsObject;
