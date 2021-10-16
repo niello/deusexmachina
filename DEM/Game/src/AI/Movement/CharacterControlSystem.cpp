@@ -22,7 +22,7 @@ static float CalcDistanceToGround(const CCharacterControllerComponent& Character
 	Start.y += Character.Height;
 	End.y -= (Character.MaxStepDownHeight + GroundProbeLength); // Falling state detection
 
-	auto pBody = Character.Body.Get();
+	auto pBody = Character.RigidBody.Get();
 
 	// FIXME: improve passing collision flags through interfaces!
 	const auto* pCollisionProxy = pBody->GetBtBody()->getBroadphaseProxy();
@@ -43,7 +43,7 @@ static float CalcDistanceToGround(const CCharacterControllerComponent& Character
 //???return IsSelfControlled instead of IsOnGround? Levitate is controlled but above the ground.
 static bool UpdateSelfControlState(CCharacterControllerComponent& Character, float DistanceToGround)
 {
-	auto pBody = Character.Body.Get();
+	auto pBody = Character.RigidBody.Get();
 	auto pBtBody = pBody->GetBtBody();
 	bool IsOnGround = Character.IsOnTheGround();
 	const bool WasOnGround = IsOnGround;
@@ -170,7 +170,7 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 	}
 
 	// Avoid overshooting, make exactly remaining movement in one frame
-	const float FrameTime = Character.Body->GetLevel()->GetStepTime();
+	const float FrameTime = Character.RigidBody->GetLevel()->GetStepTime();
 	vector3 DesiredLinearVelocity = (RemainingDistance < Speed* FrameTime) ?
 		ToDest / FrameTime :
 		DesiredMovement * (Speed / RemainingDistance);
@@ -188,7 +188,7 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 	// If character can't turn, skip facing
 	if (Character.MaxAngularSpeed <= 0.f) return 0.f;
 
-	auto pBody = Character.Body.Get();
+	auto pBody = Character.RigidBody.Get();
 	auto pBtBody = pBody->GetBtBody();
 
 	const vector3 LookatDir = BtVectorToVector(pBtBody->getWorldTransform().getBasis() * btVector3(0.f, 0.f, -1.f));
@@ -281,7 +281,7 @@ void ProcessCharacterControllers(CGameWorld& World, Physics::CPhysicsLevel& Phys
 			CCharacterControllerComponent& Character,
 			CActionQueueComponent& Queue)
 	{
-		auto pBody = Character.Body.Get();
+		auto pBody = Character.RigidBody.Get();
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
 
 		// Access real physical transform, not an interpolated motion state
@@ -315,7 +315,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			CCharacterControllerComponent& Character,
 			CActionQueueComponent& Queue)
 	{
-		auto pBody = Character.Body.Get();
+		auto pBody = Character.RigidBody.Get();
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
 
 		// NB: we don't try to process Steer and Turn simultaneously, only the most nested of them
@@ -362,7 +362,7 @@ void UpdateCharacterControllerShape(CCharacterControllerComponent& Character)
 	// FIXME: use dirty flag or check changes in shape & mass?
 	// NB: can reuse body, setCollisionShape + setMass!
 
-	auto pBody = Character.Body.Get();
+	auto pBody = Character.RigidBody.Get();
 
 	Physics::CPhysicsLevel* pLevel = nullptr;
 	Scene::CSceneNode* pNode = nullptr;
@@ -384,8 +384,8 @@ void UpdateCharacterControllerShape(CCharacterControllerComponent& Character)
 	const vector3 Offset(0.f, (Character.Hover + Character.Height) * 0.5f, 0.f);
 	auto Shape = Physics::CCollisionShape::CreateCapsuleY(Character.Radius, CapsuleHeight, Offset);
 
-	Character.Body = n_new(Physics::CRigidBody(Character.Mass, *Shape, CollisionGroupID, CollisionMaskID, Tfm));
-	pBody = Character.Body.Get();
+	Character.RigidBody = n_new(Physics::CRigidBody(Character.Mass, *Shape, CollisionGroupID, CollisionMaskID, Tfm));
+	pBody = Character.RigidBody.Get();
 
 	pBody->GetBtBody()->setAngularFactor(btVector3(0.f, 1.f, 0.f));
 

@@ -20,7 +20,7 @@ enum class ECharacterState : U8
 
 struct CCharacterControllerComponent
 {
-	Physics::PRigidBody Body;
+	Physics::PRigidBody RigidBody;
 
 	float           Mass = 80.f;
 	float			Radius = 0.3f;

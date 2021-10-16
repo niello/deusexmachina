@@ -506,7 +506,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, ::AI::CPathRe
 			Game::CActionQueueComponent& Queue,
 			const Game::CCharacterControllerComponent& Character)
 	{
-		if (!Character.Body || !Agent.pNavQuery || !Agent.Settings) return;
+		if (!Character.RigidBody || !Agent.pNavQuery || !Agent.Settings) return;
 
 		const auto PrevState = Agent.State;
 		const auto PrevMode = Agent.Mode;
@@ -514,8 +514,8 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, ::AI::CPathRe
 		auto NavigateAction = Queue.FindCurrent<Navigate>();
 
 		// Access real physical transform, not an interpolated motion state
-		const auto& Offset = Character.Body->GetCollisionShape()->GetOffset();
-		const vector3 Pos = BtVectorToVector(Character.Body->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
+		const auto& Offset = Character.RigidBody->GetCollisionShape()->GetOffset();
+		const vector3 Pos = BtVectorToVector(Character.RigidBody->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
 
 		// Update navigation status from the current agent position
 		if (!UpdatePosition(Pos, Agent))
@@ -618,7 +618,7 @@ void RenderDebugNavigation(Game::CGameWorld& World, Debug::CDebugDraw& DebugDraw
 			const CNavAgentComponent& Agent,
 			const Game::CCharacterControllerComponent& Character)
 	{
-		if (!Character.Body || !Agent.pNavQuery) return;
+		if (!Character.RigidBody || !Agent.pNavQuery) return;
 
 		if (Agent.State == ENavigationState::Planning || Agent.State == ENavigationState::Following)
 		{
@@ -639,8 +639,8 @@ void RenderDebugNavigation(Game::CGameWorld& World, Debug::CDebugDraw& DebugDraw
 			if (dtStatusSucceed(Agent.pNavQuery->initStraightPathSearch(
 				pCurrPos, Agent.Corridor.getTarget(), pCurrPath, Agent.Corridor.getPathCount(), Ctx)))
 			{
-				const auto& Offset = Character.Body->GetCollisionShape()->GetOffset();
-				vector3 From = BtVectorToVector(Character.Body->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
+				const auto& Offset = Character.RigidBody->GetCollisionShape()->GetOffset();
+				vector3 From = BtVectorToVector(Character.RigidBody->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
 				vector3 To;
 				dtStatus Status;
 				U8 AreaType = Agent.CurrAreaType;
