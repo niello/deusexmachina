@@ -1,4 +1,5 @@
 #include "GameLevel.h"
+#include <Game/Interaction/InteractionContext.h>
 #include <Frame/RenderableAttribute.h>
 #include <Frame/LightAttribute.h>
 #include <Frame/AmbientLightAttribute.h>
@@ -15,6 +16,7 @@
 
 namespace DEM::Game
 {
+bool GetTargetFromPhysicsObject(const Physics::CPhysicsObject& Object, CTargetInfo& OutTarget);
 
 // FIXME: calculate based on size, 1 unit = 1 meter
 static UPTR GetDefaultHierarchyDepth(const vector3& Size)
@@ -192,33 +194,13 @@ UPTR CGameLevel::EnumEntitiesInSphere(const vector3& Position, float Radius, CSt
 	//???return contact in a form of CTargetInfo? Fill CTargetInfo from physics object + bullet contact info?
 	_PhysicsLevel->EnumSphereContacts(Position, Radius, Group, Mask, [&Callback](Physics::CPhysicsObject& PhysObj, const vector3& ContactPos)
 	{
-		/*
-		if (pPhysicsObject->UserData().has_value())
-		{
-			if (auto pRB = pPhysicsObject->As<Physics::CRigidBody>())
-			{
-				if (auto pHEntity = std::any_cast<DEM::Game::HEntity>(&pPhysicsObject->UserData()))
-					Out.Entity = *pHEntity;
-				Out.pNode = pRB->GetControlledNode();
-			}
-			else
-			{
-				if (auto pPair = std::any_cast<std::pair<DEM::Game::HEntity, Physics::CCollisionAttribute*>>(&pPhysicsObject->UserData()))
-				{
-					Out.Entity = pPair->first;
-					Out.pNode = pPair->second->GetNode();
-				}
-			}
-		}
-		*/
+		CTargetInfo Target;
+		if (!GetTargetFromPhysicsObject(PhysObj, Target) || !Target.Entity) return true;
 
-		return Callback(HEntity{}, ContactPos);
+		Target.Point = ContactPos;
+
+		return Callback(Target.Entity, ContactPos); // FIXME: return target info?
 	});
-	// FIXME: can create on stack? Or move sphere creation to CPhysicsLevel, providing a sphere query here too?
-	//auto Shape = Physics::CCollisionShape::CreateSphere(r);
-
-	//!!!create ghost collider, not added to the physics world etc!
-	//!!!can add a way to create ghost colliders on the stack and from existing shapes!
 
 	return 0;
 }

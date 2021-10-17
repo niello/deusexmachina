@@ -1,6 +1,5 @@
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
-#include <Game/ECS/Components/CharacterControllerComponent.h>
 #include <Game/GameLevel.h>
 #include <Game/GameSession.h>
 #include <AI/Navigation/NavAgentComponent.h>
@@ -10,6 +9,7 @@
 #include <AI/Navigation/NavMeshDebugDraw.h>
 #include <AI/Navigation/NavMesh.h>
 #include <AI/Movement/SteerAction.h> // FIXME: only for Steer::SqLinearTolerance, can write better?
+#include <Physics/CharacterControllerComponent.h>
 #include <Physics/CollisionShape.h>
 #include <Physics/BulletConv.h>
 #include <Debug/DebugDraw.h>

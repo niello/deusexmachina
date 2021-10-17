@@ -60,8 +60,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/ECS/EntityTemplateLoader.h
 	DEM/Game/src/Game/ECS/GameWorld.h
 	DEM/Game/src/Game/ECS/Components/ActionQueueComponent.h
-	DEM/Game/src/Game/ECS/Components/CharacterControllerComponent.h
-	DEM/Game/src/Game/ECS/Components/RigidBodyComponent.h
 	DEM/Game/src/Game/Interaction/Ability.h
 	DEM/Game/src/Game/Interaction/AbilityInstance.h
 	DEM/Game/src/Game/Interaction/Interaction.h
@@ -76,7 +74,9 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/Objects/SmartObject.h
 	DEM/Game/src/Game/Objects/SmartObjectComponent.h
 	DEM/Game/src/Game/Objects/SmartObjectLoader.h
+	DEM/Game/src/Physics/CharacterControllerComponent.h
 	DEM/Game/src/Physics/PropTrigger.h
+	DEM/Game/src/Physics/RigidBodyComponent.h
 	DEM/Game/src/Scene/SceneComponent.h
 	DEM/Game/src/Scripting/EntityScriptObject.h
 	DEM/Game/src/Scripting/PropScriptable.h
@@ -143,6 +143,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/Objects/SmartObject.cpp
 	DEM/Game/src/Game/Objects/SmartObjectLoader.cpp
 	DEM/Game/src/Game/Objects/SmartObjectSystem.cpp
+	DEM/Game/src/Physics/PhysicsSystems.cpp
 	DEM/Game/src/Physics/PropTrigger.cpp
 	DEM/Game/src/Physics/PropTriggerSI.cpp
 	DEM/Game/src/Scene/SceneSystems.cpp

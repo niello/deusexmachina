@@ -72,16 +72,10 @@ public:
 
 	Physics::CPhysicsObject* GetFirstPickIntersection(const line3& Ray, vector3* pOutPoint3D = nullptr) const;
 	// Query hierarchy:
-	// 1. All physics objects in a shape
-	// 2. Physics objects in a shape filtered by the collision group
-	// 3. Entities in a shape optionally filtered by the collision group
 	// 4. Reachable entities in a shape (navigation)
 	// 5. Reachable entities in a shape filtered by a custom filter, e.g. by a component presence
-	//???2 methods (physics objects & entities) with filters applied stage by stage according to flags?
-	//collision group filtering is free, it occurs anyway, with "All" by default
 	//ray check may need to apply collision group filter after the raycast, e.g. when searching for
 	//the closest Interactable, if the user wants closer non-interactable collision objects to block it.
-	//???is trigger/probe a subclass of CPhysicsObject?
 	UPTR                     EnumEntitiesInSphere(const vector3& Position, float Radius, CStrID CollisionMask, std::function<bool(HEntity&, const vector3&)>&& Callback) const;
 
 	CStrID                   GetID() const { return _ID; }

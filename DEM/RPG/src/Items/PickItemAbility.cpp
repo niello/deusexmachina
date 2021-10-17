@@ -4,7 +4,7 @@
 #include <Game/Interaction/AbilityInstance.h>
 #include <Game/Interaction/Zone.h>
 #include <Game/ECS/GameWorld.h>
-#include <Game/ECS/Components/RigidBodyComponent.h>
+#include <Physics/RigidBodyComponent.h>
 #include <Character/StatsComponent.h>
 //#include <Character/SkillsComponent.h>
 #include <Items/ItemStackComponent.h>

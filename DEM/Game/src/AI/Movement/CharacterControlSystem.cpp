@@ -1,7 +1,7 @@
 #include <Game/GameLevel.h>
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
-#include <Game/ECS/Components/CharacterControllerComponent.h>
+#include <Physics/CharacterControllerComponent.h>
 #include <AI/Movement/SteerAction.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/RigidBody.h>

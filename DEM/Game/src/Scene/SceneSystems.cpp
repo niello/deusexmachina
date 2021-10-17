@@ -2,12 +2,8 @@
 #include <Game/ECS/GameWorld.h>
 #include <Game/GameLevel.h>
 #include <Scene/SceneComponent.h>
-#include <Physics/CollisionAttribute.h>
-#include <Physics/PhysicsObject.h>
+#include <Scene/NodeAttribute.h>
 #include <Resources/ResourceManager.h>
-
-// Scene component contains a part of scene hierarchy, including a root node
-// with transform and different possible scene node attributes.
 
 namespace DEM::Game
 {
@@ -35,19 +31,11 @@ void InitNewSceneComponents(CGameWorld& World, Resources::CResourceManager& Rsrc
 		const CStrID NodeID = Entity.Name ? Entity.Name : CStrID(std::to_string(EntityID).c_str());
 		pLevel->GetSceneRoot().AddChildAtPath(NodeID, SceneComponent.RootPath, SceneComponent.RootNode, true);
 
-		// Validate resources, link collision objects to entities and node attributes
-		SceneComponent.RootNode->Visit([&RsrcMgr, EntityID, pPhysicsLevel = pLevel->GetPhysics()](Scene::CSceneNode& Node)
+		// Validate resources
+		SceneComponent.RootNode->Visit([&RsrcMgr](Scene::CSceneNode& Node)
 		{
 			for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
-			{
 				Node.GetAttribute(i)->ValidateResources(RsrcMgr);
-
-				if (auto pCollAttr = Node.GetAttribute(i)->As<Physics::CCollisionAttribute>())
-				{
-					pCollAttr->SetPhysicsLevel(pPhysicsLevel);
-					pCollAttr->GetCollider()->UserData() = std::pair(EntityID, pCollAttr);
-				}
-			}
 			return true;
 		});
 	});
@@ -56,7 +44,7 @@ void InitNewSceneComponents(CGameWorld& World, Resources::CResourceManager& Rsrc
 
 void TermDeletedSceneComponents(CGameWorld& World)
 {
-	World.FreeDead<CSceneComponent>([&World](auto EntityID, CSceneComponent& SceneComponent)
+	World.FreeDead<CSceneComponent>([](auto EntityID, CSceneComponent& SceneComponent)
 	{
 		if (SceneComponent.RootNode && SceneComponent.RootNode->GetParent())
 			SceneComponent.RootNode->RemoveFromParent();

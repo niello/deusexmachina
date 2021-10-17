@@ -2,7 +2,7 @@
 #include <Items/ItemComponent.h>
 #include <Items/ItemContainerComponent.h>
 #include <Scene/SceneComponent.h>
-#include <Game/ECS/Components/RigidBodyComponent.h>
+#include <Physics/RigidBodyComponent.h>
 
 namespace DEM::RPG
 {
@@ -82,7 +82,8 @@ bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemStackEntity,
 		auto pPhysicsComponent = World.AddComponent<Game::CRigidBodyComponent>(ItemStackEntity);
 		pPhysicsComponent->ShapeAssetID = pItem->WorldPhysicsID;
 		pPhysicsComponent->Mass = pItemStack->Count * pItem->Weight;
-		// TODO: physics material, collision group & flags
+		pPhysicsComponent->CollisionGroupID = CStrID("PhysicalDynamic|Interactable");
+		// TODO: physics material?
 	}
 
 	return true;
