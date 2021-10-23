@@ -70,7 +70,7 @@ CResource* CResourceManager::FindResource(const char* pUID) const
 CResource* CResourceManager::FindResource(CStrID UID) const
 {
 	auto It = Registry.find(UID);
-	return (It != Registry.cend()) ? It->second : nullptr;
+	return (It != Registry.cend()) ? It->second.Get() : nullptr;
 }
 //---------------------------------------------------------------------
 

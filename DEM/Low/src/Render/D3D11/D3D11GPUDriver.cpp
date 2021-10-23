@@ -2339,7 +2339,7 @@ PSampler CD3D11GPUDriver::CreateSampler(const CSamplerDesc& Desc)
 		return nullptr;
 	}
 
-	Samplers.push_back(std::move(Samp));
+	Samplers.push_back(Samp);
 
 	return Samp.Get();
 }
@@ -2642,7 +2642,7 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 		RS->SampleMask = Desc.SampleMask;
 		//???store alpha ref as shader var? store clip plane enable as flag that signs to set clip plane vars?
 
-		RenderStates.push_back(std::move(RS));
+		RenderStates.push_back(RS);
 
 		return RS;
 	}

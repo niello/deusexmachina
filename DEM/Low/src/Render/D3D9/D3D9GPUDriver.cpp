@@ -1055,7 +1055,7 @@ void CD3D9GPUDriver::SetDefaultRenderState()
 		pValues[CD3D9RenderState::D3D9_ALPHAFUNC] = D3DCMP_ALWAYS;
 		pValues[CD3D9RenderState::D3D9_CLIPPLANEENABLE] = 0;
 
-		RenderStates.push_back(std::move(DefaultRenderState));
+		RenderStates.push_back(DefaultRenderState);
 	}
 
 	// Can setup W-buffer: D3DCaps.RasterCaps | D3DPRASTERCAPS_WBUFFER -> D3DZB_USEW
@@ -1090,7 +1090,7 @@ void CD3D9GPUDriver::SetDefaultSamplers()
 		pValues[CD3D9Sampler::D3D9_MAXMIPLEVEL] = *(DWORD*)&Zero;
 		pValues[CD3D9Sampler::D3D9_MIPMAPLODBIAS] = *(DWORD*)&Zero;
 
-		Samplers.push_back(std::move(DefaultSampler));
+		Samplers.push_back(DefaultSampler);
 	}
 
 	for (UPTR i = 0; i < CurrSS.size(); ++i)
@@ -2546,7 +2546,7 @@ PSampler CD3D9GPUDriver::CreateSampler(const CSamplerDesc& Desc)
 	for (auto& Sampler : Samplers)
 		if (memcmp(Sampler->D3DStateValues, pValues, sizeof(Sampler->D3DStateValues)) == 0) return Sampler;
 
-	Samplers.push_back(std::move(Samp));
+	Samplers.push_back(Samp);
 
 	return Samp.Get();
 }
