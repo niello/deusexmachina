@@ -50,9 +50,18 @@ public:
 	bool		operator !=(CStringID Other) const noexcept { return pString != Other.pString; }
 	bool		operator ==(const char* pOther) const { return pString == pOther || (pString && pOther && !std::strcmp(pString, pOther)); }
 	bool		operator !=(const char* pOther) const { return pString != pOther && (!pString || !pOther || std::strcmp(pString, pOther)); }
-	bool		operator <(const char* pOther) const noexcept { return pString < pOther; }
 	CStringID&	operator =(const CStringID& Other) { pString = Other.pString; return *this; }
 };
+
+inline bool operator <(CStringID a, const char* b)
+{
+	return std::strcmp(a.CStr(), b) < 0;
+}
+
+inline bool operator <(const char* a, CStringID b)
+{
+	return std::strcmp(a, b.CStr()) < 0;
+}
 
 }
 
