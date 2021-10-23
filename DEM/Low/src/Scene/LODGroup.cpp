@@ -22,7 +22,6 @@ bool CLODGroup::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 
 				short Count;
 				if (!DataReader.Read(Count)) FAIL;
-				SqThresholds.BeginAdd(Count);
 				for (short i = 0; i < Count; ++i)
 				{
 					float Threshold;
@@ -30,9 +29,8 @@ bool CLODGroup::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 					DataReader.Read<float>(Threshold);
 					DataReader.Read<CStrID>(ChildID);
 					//!!!check FLT_MAX and what if square it!
-					SqThresholds.Add(Threshold * Threshold, ChildID);
+					SqThresholds.emplace(Threshold * Threshold, ChildID);
 				}
-				SqThresholds.EndAdd();
 				break;
 			}
 			default: FAIL;
@@ -46,7 +44,7 @@ bool CLODGroup::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 PNodeAttribute CLODGroup::Clone()
 {
 	PLODGroup ClonedAttr = n_new(CLODGroup);
-	SqThresholds.Copy(ClonedAttr->SqThresholds);
+	ClonedAttr->SqThresholds = SqThresholds;
 	return ClonedAttr;
 }
 //---------------------------------------------------------------------
@@ -66,10 +64,10 @@ void CLODGroup::UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount)
 	}
 
 	CStrID SelectedChild;
-	for (UPTR i = 0; i < SqThresholds.GetCount(); ++i)
+	for (const auto [SqThreshold, ID] : SqThresholds)
 	{
-		if (SqThresholds.KeyAt(i) > SqDistance)
-			SelectedChild = SqThresholds.ValueAt(i);
+		if (SqThreshold > SqDistance)
+			SelectedChild = ID;
 		else
 			break;
 	}

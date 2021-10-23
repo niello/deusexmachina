@@ -1042,8 +1042,8 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 		if (ConstInstanceDataVS) GPU.SetVertexLayout(pVL);
 		else
 		{
-			IPTR VLIdx = InstancedLayouts.FindIndex(pVL);
-			if (VLIdx == INVALID_INDEX)
+			auto It = InstancedLayouts.find(pVL);
+			if (It == InstancedLayouts.cend())
 			{
 				constexpr UPTR MAX_COMPONENTS = 64;
 
@@ -1066,11 +1066,11 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 				PVertexLayout VLInstanced = GPU.CreateVertexLayout(InstancedDecl, DescComponentCount);
 
 				n_assert_dbg(VLInstanced.IsValidPtr());
-				InstancedLayouts.Add(pVL, VLInstanced);
+				InstancedLayouts.emplace(pVL, VLInstanced);
 
 				GPU.SetVertexLayout(VLInstanced.Get());
 			}
-			else GPU.SetVertexLayout(InstancedLayouts.ValueAt(VLIdx).Get());
+			else GPU.SetVertexLayout(It->second.Get());
 		}
 
 		// Render patches //!!!may collect patches of different CTerrains if material is the same and instance buffer is big enough!

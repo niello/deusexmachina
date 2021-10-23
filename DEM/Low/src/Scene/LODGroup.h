@@ -1,6 +1,6 @@
 #pragma once
 #include <Scene/NodeAttribute.h>
-#include <Data/Dictionary.h>
+#include <map>
 
 // Level of detail group activates and deactivates child nodes of its node
 // according to a distance to the Center Of Interest (COI). There may be multiple
@@ -22,7 +22,7 @@ protected:
 	// Square threshold to child ID map.
 	// Use FLT_MAX as a key if the last LOD must be active at any distance.
 	// Use CStrID::Empty as a value to disable all children at some distance.
-	CDict<float, CStrID> SqThresholds;
+	std::map<float, CStrID> SqThresholds;
 
 public:
 

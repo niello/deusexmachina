@@ -4,6 +4,7 @@
 #include <Render/SamplerDesc.h>
 #include <Data/FixedArray.h>
 #include <Data/Ptr.h>
+#include <map>
 
 // Default renderer for CTerrain render objects.
 // Currently supports only the translation part of the transformation.
@@ -79,7 +80,7 @@ protected:
 
 	UPTR									CurrMaxLightCount = 0;
 	CFixedArray<CVertexComponent>			InstanceDataDecl;
-	CDict<CVertexLayout*, PVertexLayout>	InstancedLayouts;	//!!!duplicate in different instances of the same renderer!
+	std::map<CVertexLayout*, PVertexLayout>	InstancedLayouts;	//!!!duplicate in different instances of the same renderer!
 	PVertexBuffer							InstanceVB;			//!!!binds an RP to a specific GPU!
 	CPatchInstance*							pInstances = nullptr;
 	U32								        InstanceVBSize = 0;	//???where to define? in a phase? or some setting? or move to CView with a VB?
