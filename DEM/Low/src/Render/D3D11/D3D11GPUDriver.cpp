@@ -1441,7 +1441,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 			{
 				UPTR ShaderType;
 				UPTR SRVSlot;
-				const bool AtTheEnd = (std::next(It) == CurrSRV.cend());
+				const bool AtTheEnd = (It == CurrSRV.cend());
 				if (!AtTheEnd)
 				{
 					const UPTR CurrKey = It->first;
