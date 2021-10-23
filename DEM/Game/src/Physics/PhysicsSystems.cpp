@@ -41,7 +41,7 @@ bool GetTargetFromPhysicsObject(const Physics::CPhysicsObject& Object, CTargetIn
 }
 //---------------------------------------------------------------------
 
-void InitRigidBodies(CGameWorld& World, CStrID LevelID, Resources::CResourceManager& RsrcMgr)
+void InitPhysicsObjects(CGameWorld& World, CStrID LevelID, Resources::CResourceManager& RsrcMgr)
 {
 	auto pLevel = World.FindLevel(LevelID);
 	if (!pLevel) return;
