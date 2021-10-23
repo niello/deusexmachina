@@ -129,9 +129,9 @@ void CDEMRenderer::destroyAllTextureTargets()
 
 Texture& CDEMRenderer::createTexture(const String& name)
 {
-	n_assert(!Textures.Contains(name));
+	n_assert(Textures.find(name) == Textures.cend());
 	CDEMTexture* tex = n_new(CDEMTexture)(*this, name);
-	Textures.Add(name, tex);
+	Textures.emplace(name, tex);
 	logTextureCreation(name);
 	return *tex;
 }
@@ -139,10 +139,10 @@ Texture& CDEMRenderer::createTexture(const String& name)
 
 Texture& CDEMRenderer::createTexture(const String& name, const String& filename, const String& resourceGroup)
 {
-	n_assert(!Textures.Contains(name));
+	n_assert(Textures.find(name) == Textures.cend());
 	CDEMTexture* tex = n_new(CDEMTexture)(*this, name);
 	tex->loadFromFile(filename, resourceGroup);
-	Textures.Add(name, tex);
+	Textures.emplace(name, tex);
 	logTextureCreation(name);
 	return *tex;
 }
@@ -150,10 +150,10 @@ Texture& CDEMRenderer::createTexture(const String& name, const String& filename,
 
 Texture& CDEMRenderer::createTexture(const String& name, const Sizef& size)
 {
-	n_assert(!Textures.Contains(name));
+	n_assert(Textures.find(name) == Textures.cend());
 	CDEMTexture* tex = n_new(CDEMTexture)(*this, name);
 	tex->createEmptyTexture(size);
-	Textures.Add(name, tex);
+	Textures.emplace(name, tex);
 	logTextureCreation(name);
 	return *tex;
 }
@@ -161,7 +161,7 @@ Texture& CDEMRenderer::createTexture(const String& name, const Sizef& size)
 
 void CDEMRenderer::destroyTexture(Texture& texture)
 {
-	if (Textures.Remove(texture.getName()))
+	if (Textures.erase(texture.getName()))
 	{
 		logTextureDestruction(texture.getName());
 		n_delete(&texture);
@@ -171,37 +171,37 @@ void CDEMRenderer::destroyTexture(Texture& texture)
 
 void CDEMRenderer::destroyTexture(const String& name)
 {
-	CDEMTexture* pTexture;
-	if (Textures.Get(name, pTexture))
+	auto It = Textures.find(name);
+	if (It != Textures.cend())
 	{
 		logTextureDestruction(name);
-		n_delete(pTexture);
-		Textures.Remove(name); //!!!double search! need iterator!
+		n_delete(It->second);
+		Textures.erase(It);
 	}
 }
 //--------------------------------------------------------------------
 
 void CDEMRenderer::destroyAllTextures()
 {
-	for (CHashTable<String, CDEMTexture*>::CIterator It = Textures.Begin(); It; ++It)
-		n_delete(*It);
-	Textures.Clear();
+	for (auto& [Name, Tex] : Textures)
+		n_delete(Tex);
+	Textures.clear();
 }
 //--------------------------------------------------------------------
 
 Texture& CDEMRenderer::getTexture(const String& name) const
 {
-	CDEMTexture** ppTex = Textures.Get(name);
-	n_assert(ppTex && *ppTex);
-	return **ppTex;
+	auto It = Textures.find(name);
+	n_assert(It != Textures.cend());
+	return *It->second;
 }
 //--------------------------------------------------------------------
 
 RenderTarget& CDEMRenderer::getDefaultRenderTarget()
 {
-	static CDEMViewportTarget NullTarget(*this, Rectf(0.f, 0.f, 0.f, 0.f));
+	static CDEMViewportTarget Dummy(*this, Rectf(0.f, 0.f, 0.f, 0.f));
 	n_assert("CDEMRenderer::getDefaultRenderTarget() > should NOT be used! To be removed from CEGUI!");
-	return NullTarget;
+	return Dummy;
 }
 //--------------------------------------------------------------------
 

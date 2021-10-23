@@ -2,6 +2,7 @@
 #include <Data/RefCounted.h>
 #include <Render/RenderFwd.h>
 #include <Math/Matrix44.h>
+#include <map>
 
 // An element of a render queue or tree. Caches some values for faster sorting and rendering.
 // Render node context encapsulates external data that shouldn't be stored in a render node
@@ -49,7 +50,7 @@ struct CRenderNodeContext
 	CArray<CLightRecord>*	pLights;
 	CArray<U16>*			pLightIndices;
 
-	CDict<Render::EEffectType, Render::PEffect>	EffectOverrides;
+	std::map<Render::EEffectType, Render::PEffect> EffectOverrides;
 };
 
 }

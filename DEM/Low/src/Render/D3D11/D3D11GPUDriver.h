@@ -3,6 +3,7 @@
 #include <Render/D3D11/D3D11SwapChain.h>
 #include <Data/FixedArray.h>
 #include <System/Allocators/PoolAllocator.h>
+#include <map>
 
 // Direct3D11 GPU device driver.
 
@@ -119,14 +120,14 @@ protected:
 		PD3D11ConstantBuffer		CB;		// nullptr if SRV is not a buffer //???or store PObject - SRV source?
 	};
 
-	CDict<UPTR, CSRVRecord>				CurrSRV; // ShaderType|Register to SRV mapping, not to store all 128 possible SRV values per shader type
+	std::map<UPTR, CSRVRecord>           CurrSRV; // ShaderType|Register to SRV mapping, not to store all 128 possible SRV values per shader type
 
-	UPTR								MaxSRVSlotIndex = 0;
+	UPTR                                 MaxSRVSlotIndex = 0;
 
-	CArray<CD3D11SwapChain>				SwapChains;
-	CDict<CStrID, PD3D11VertexLayout>	VertexLayouts;
-	CArray<PD3D11RenderState>			RenderStates;
-	CArray<PD3D11Sampler>				Samplers;
+	std::vector<CD3D11SwapChain>         SwapChains;
+	std::map<CStrID, PD3D11VertexLayout> VertexLayouts;
+	std::vector<PD3D11RenderState>       RenderStates;
+	std::vector<PD3D11Sampler>           Samplers;
 	//bool								IsInsideFrame;
 	//bool								Wireframe;
 
@@ -142,9 +143,9 @@ protected:
 	};
 
 	CPool<CTmpCB>				        TmpCBPool;
-	CDict<UPTR, CTmpCB*>				TmpConstantBuffers;	// Key is a size (pow2), value is a linked list
-	CDict<UPTR, CTmpCB*>				TmpTextureBuffers;	// Key is a size (pow2), value is a linked list
-	CDict<UPTR, CTmpCB*>				TmpStructuredBuffers;	// Key is a size (pow2), value is a linked list
+	std::map<UPTR, CTmpCB*>				TmpConstantBuffers;	// Key is a size (pow2), value is a linked list
+	std::map<UPTR, CTmpCB*>				TmpTextureBuffers;	// Key is a size (pow2), value is a linked list
+	std::map<UPTR, CTmpCB*>				TmpStructuredBuffers;	// Key is a size (pow2), value is a linked list
 	CTmpCB*								pPendingCBHead = nullptr;
 
 	CD3D11GPUDriver(CD3D11DriverFactory& DriverFactory);

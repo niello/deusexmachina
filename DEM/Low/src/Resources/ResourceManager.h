@@ -1,7 +1,6 @@
 #pragma once
 #include <Data/Ptr.h>
 #include <Data/StringID.h>
-#include <Data/HashTable.h>
 #include <IO/IOFwd.h>
 #include <vector>
 
@@ -36,9 +35,9 @@ protected:
 		PResourceCreator	Creator;
 	};
 
-	IO::CIOServer*						pIO = nullptr;
-	CHashTable<CStrID, PResource>		Registry;
-	std::vector<CDefaultCreatorRecord>	DefaultCreators;
+	IO::CIOServer*                        pIO = nullptr;
+	std::unordered_map<CStrID, PResource> Registry;
+	std::vector<CDefaultCreatorRecord>    DefaultCreators;
 
 public:
 

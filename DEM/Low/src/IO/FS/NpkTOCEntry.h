@@ -1,10 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_NPK_TOC_ENTRY_H__
-#define __DEM_L1_NPK_TOC_ENTRY_H__
-
 #include <IO/FileSystem.h>
-#include <Data/HashTable.h>
-#include <Data/String.h>
+#include <Data/StringID.h>
+#include <map>
 
 // A table of content entry in a CNpkTOC object. Toc entries are organized
 // in a tree of nodes. A node can be a dir node, or a file node. File nodes
@@ -17,12 +14,12 @@ class CNpkTOCEntry
 {
 public:
 
-	typedef CHashTable<CString, CNpkTOCEntry*> CEntryTable;
-	typedef CEntryTable::CIterator CIterator;
+	typedef std::map<CStrID, CNpkTOCEntry*, std::less<>> CEntryTable;
+	typedef CEntryTable::iterator CIterator;
 
 private:
 
-	CString				Name;
+	CStrID				Name;
 	CNpkTOCEntry*		pParent;
 	EFSEntryType		Type;
 	union
@@ -43,11 +40,12 @@ public:
 
 	CNpkTOCEntry*				AddDirEntry(const char* pName);
 	CNpkTOCEntry*				AddFileEntry(const char* pName, UPTR FileOffset, UPTR FileLength);
-	CNpkTOCEntry*				FindEntry(const char* pName);
-	CIterator					GetEntryIterator() { return pEntries ? pEntries->Begin() : CIterator(nullptr); }
+	CNpkTOCEntry*				FindEntry(const char* pName) const;
+	CIterator					GetEntryIterator() { return pEntries ? pEntries->begin() : CIterator{}; }
+	CIterator					End() const { return pEntries ? pEntries->end() : CIterator{}; }
 
-	const CString&	GetName() const { return Name; }
-	CString						GetFullName() const;
+	CStrID                      GetName() const { return Name; }
+	std::string					GetFullName() const;
 	CNpkTOCEntry*				GetParent() const { return pParent; }
 	EFSEntryType				GetType() const { return Type; }
 	bool						IsFile() const { return Type == IO::FSE_FILE; }
@@ -79,8 +77,8 @@ inline CNpkTOCEntry::~CNpkTOCEntry()
 {
 	if (Type == FSE_DIR && pEntries)
 	{
-		for (CIterator It = pEntries->Begin(); It; ++It)
-			n_delete(It.GetValue());
+		for (auto It : *pEntries)
+			n_delete(It.second);
 		n_delete(pEntries);
 	}
 }
@@ -90,9 +88,9 @@ inline CNpkTOCEntry* CNpkTOCEntry::AddDirEntry(const char* pName)
 {
 	n_assert_dbg(pName);
 	n_assert(Type == FSE_DIR);
-	if (!pEntries) pEntries = n_new(CEntryTable(32));
+	if (!pEntries) pEntries = n_new(CEntryTable());
 	CNpkTOCEntry* pNew = n_new(CNpkTOCEntry(this, pName));
-	pEntries->Add(pNew->GetName(), pNew);
+	pEntries->emplace(pNew->GetName(), pNew);
 	return pNew;
 }
 //---------------------------------------------------------------------
@@ -101,49 +99,47 @@ inline CNpkTOCEntry* CNpkTOCEntry::AddFileEntry(const char* pName, UPTR FileOffs
 {
 	n_assert_dbg(pName);
 	n_assert(Type == FSE_DIR);
-	if (!pEntries) pEntries = n_new(CEntryTable(32));
+	if (!pEntries) pEntries = n_new(CEntryTable());
 	CNpkTOCEntry* pNew = n_new(CNpkTOCEntry(this, pName, FileOffset, FileLength));
-	pEntries->Add(pNew->GetName(), pNew);
+	pEntries->emplace(pNew->GetName(), pNew);
 	return pNew;
 }
 //---------------------------------------------------------------------
 
-inline CNpkTOCEntry* CNpkTOCEntry::FindEntry(const char* pName)
+inline CNpkTOCEntry* CNpkTOCEntry::FindEntry(const char* pName) const
 {
 	n_assert(Type == FSE_DIR);
 	if (!pEntries) return nullptr;
 
-	CString Name(pName);
-	Name.ToLower();
+	std::string Name(pName);
+	std::transform(Name.begin(), Name.end(), Name.begin(), std::tolower);
 
-	CNpkTOCEntry* pResult;
-	return pEntries->Get(Name, pResult) ? pResult : nullptr;
+	auto It = pEntries->find(Name.c_str());
+	return (It == pEntries->cend()) ? It->second : nullptr;
 }
 //---------------------------------------------------------------------
 
-inline CString CNpkTOCEntry::GetFullName() const
+inline std::string CNpkTOCEntry::GetFullName() const
 {
-	const int MaxDepth = 16;
-	const CNpkTOCEntry* TraceStack[MaxDepth];
+	constexpr UPTR MAX_DEPTH = 16;
+	const CNpkTOCEntry* TraceStack[MAX_DEPTH];
 
 	int Depth = 0;
 	const CNpkTOCEntry* pCurrEntry = this;
-	while (pCurrEntry && (Depth < MaxDepth))
+	while (pCurrEntry && (Depth < MAX_DEPTH))
 	{
 		TraceStack[Depth++] = pCurrEntry;
 		pCurrEntry = pCurrEntry->GetParent();
 	}
 
-	CString Result;
+	std::string Result;
 	for (--Depth; Depth >= 0; --Depth)
 	{
-		Result.Add(TraceStack[Depth]->GetName());
-		if (Depth > 0) Result.Add("/");
+		Result += TraceStack[Depth]->GetName().CStr();
+		if (Depth > 0) Result += '/';
 	}
 	return Result;
 }
 //---------------------------------------------------------------------
 
 }
-
-#endif

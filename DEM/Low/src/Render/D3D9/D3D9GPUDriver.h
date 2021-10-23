@@ -2,9 +2,9 @@
 #include <Render/GPUDriver.h>
 #include <Render/D3D9/D3D9SwapChain.h>
 #include <Data/FixedArray.h>
-#include <Data/HashTable.h>
 #include <System/Allocators/PoolAllocator.h>
 #include "DEMD3D9.h" // At least for a CAPS structure
+#include <map>
 
 #undef min
 #undef max
@@ -79,11 +79,11 @@ protected:
 	int*								pCurrPSInt4 = nullptr;			// 16 * int4
 	BOOL*								pCurrPSBool = nullptr;			// 16 * BOOL
 
-	CArray<CD3D9SwapChain>				SwapChains;
-	CDict<CStrID, PD3D9VertexLayout>	VertexLayouts;
-	CArray<PD3D9RenderState>			RenderStates;
+	std::vector<CD3D9SwapChain>			SwapChains;
+	std::map<CStrID, PD3D9VertexLayout>	VertexLayouts;
+	std::vector<PD3D9RenderState>		RenderStates;
 	PD3D9RenderState					DefaultRenderState;
-	CArray<PD3D9Sampler>				Samplers;
+	std::vector<PD3D9Sampler>			Samplers;
 	PD3D9Sampler						DefaultSampler;
 	bool								IsInsideFrame = false;
 
@@ -98,7 +98,7 @@ protected:
 	};
 
 	CPool<CTmpCB>				        TmpCBPool;
-	CHashTable<const CSM30ConstantBufferParam*, CTmpCB*>	TmpConstantBuffers;
+	std::unordered_map<const CSM30ConstantBufferParam*, CTmpCB*> TmpConstantBuffers;
 	CTmpCB*								pPendingCBHead = nullptr;
 
 	Events::PSub						Sub_OnPaint; // Fullscreen-only, so only one swap chain will be subscribed

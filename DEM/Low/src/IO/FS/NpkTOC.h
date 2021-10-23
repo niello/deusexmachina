@@ -76,7 +76,7 @@ inline CNpkTOCEntry* CNpkTOC::FindEntry(const char* pPath)
 	char Buf[DEM_MAX_PATH];
 	Data::CStringTokenizer StrTok(pPath, Buf, DEM_MAX_PATH);
 
-	if (!StringUtils::AreEqualCaseInsensitive(pCurrEntry->GetName(), StrTok.GetNextToken("/\\"))) return nullptr;
+	if (!StringUtils::AreEqualCaseInsensitive(pCurrEntry->GetName().CStr(), StrTok.GetNextToken("/\\"))) return nullptr;
 
 	while (pCurrEntry && !StrTok.IsLast())
 	{

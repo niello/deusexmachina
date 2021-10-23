@@ -21,17 +21,8 @@ bool CSkyboxRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& C
 	CMaterial* pMaterial = pSkybox->Material.Get(); //!!!Get by MaterialLOD / quality level!
 	if (!pMaterial) FAIL;
 
-	CEffect* pEffect = pMaterial->GetEffect();
-	EEffectType EffType = pEffect->GetType();
-	for (UPTR i = 0; i < Context.EffectOverrides.GetCount(); ++i)
-	{
-		if (Context.EffectOverrides.KeyAt(i) == EffType)
-		{
-			pEffect = Context.EffectOverrides.ValueAt(i).Get();
-			break;
-		}
-	}
-
+	auto OverrideIt = Context.EffectOverrides.find(pMaterial->GetEffect()->GetType());
+	CEffect* pEffect = (OverrideIt == Context.EffectOverrides.cend()) ? pMaterial->GetEffect() : OverrideIt->second.Get();
 	if (!pEffect) FAIL;
 
 	static const CStrID InputSet_Skybox("Skybox");

@@ -10,9 +10,9 @@ namespace Core
 {
 __ImplementSingleton(Core::CCoreServer);
 
-const CString CCoreServer::Mem_HighWaterSize("Mem_HighWaterSize");
-const CString CCoreServer::Mem_TotalSize("Mem_TotalSize");
-const CString CCoreServer::Mem_TotalCount("Mem_TotalCount");
+const std::string CCoreServer::Mem_HighWaterSize("Mem_HighWaterSize");
+const std::string CCoreServer::Mem_TotalSize("Mem_TotalSize");
+const std::string CCoreServer::Mem_TotalCount("Mem_TotalCount");
 
 CCoreServer::CCoreServer():
 	Time(0.0),
@@ -30,8 +30,8 @@ CCoreServer::CCoreServer():
 
 CCoreServer::~CCoreServer()
 {
-	TimeSources.Clear();
-	Timers.Clear();
+	TimeSources.clear();
+	Timers.clear();
 
 #ifdef _DEBUG
 	CObject::DumpLeaks();
@@ -59,12 +59,13 @@ void CCoreServer::Trigger()
 	PrevTime = CurrTime;
 	Time += FrameTime;
 
-	for (UPTR i = 0; i < TimeSources.GetCount(); ++i)
-		TimeSources.ValueAt(i)->Update((float)FrameTime);
+	for (auto& [Name, TimeSource] : TimeSources)
+		TimeSource->Update((float)FrameTime);
 
-	for (UPTR i = 0; i < Timers.GetCount(); ++i)
+	for (auto It = Timers.begin(); It != Timers.end(); /**/)
 	{
-		CTimer& Timer = Timers.ValueAt(i);
+		auto& Timer = It->second;
+		bool Erase = false;
 		if (Timer.Active && !IsPaused(Timer.TimeSrc))
 		{
 			Timer.CurrTime += (float)GetFrameTime(Timer.TimeSrc);
@@ -72,16 +73,19 @@ void CCoreServer::Trigger()
 			{
 				//!!!???pre-create params once per timer?!
 				Data::PParams P = n_new(Data::CParams);
-				P->Set(CStrID("Name"), CString(Timers.KeyAt(i).CStr()));
+				P->Set(CStrID("Name"), CString(It->first.CStr()));
 				EventSrv->FireEvent(Timer.EventID, P);
 				if (Timer.Loop) Timer.CurrTime -= Timer.Time;
 				else
 				{
-					Timers.RemoveAt(i--);
+					Erase = true;
 					break;
 				}
 			}
 		}
+
+		if (Erase) It = Timers.erase(It);
+		else ++It;
 	}
 
 #ifdef DEM_STATS
@@ -96,44 +100,41 @@ void CCoreServer::Trigger()
 void CCoreServer::AttachTimeSource(CStrID Name, PTimeSource TimeSrc)
 {
 	n_assert(TimeSrc.IsValidPtr());
-	n_assert(!TimeSources.Contains(Name));
+	n_assert(TimeSources.find(Name) == TimeSources.cend());
 	TimeSrc->Reset();
 	//TimeSrc->ForceUnpause(); //???needed?
-	TimeSources.Add(Name, TimeSrc);
+	TimeSources.emplace(Name, TimeSrc);
 }
 //---------------------------------------------------------------------
 
 void CCoreServer::RemoveTimeSource(CStrID Name)
 {
-	IPTR Idx = TimeSources.FindIndex(Name);
-	if (Idx != INVALID_INDEX) TimeSources.RemoveAt(Idx);
+	TimeSources.erase(Name);
 }
 //---------------------------------------------------------------------
 
 void CCoreServer::Save(Data::CParams& TimeParams)
 {
-	if (TimeSources.GetCount())
+	if (TimeSources.size())
 	{
 		Data::PParams SGTimeSrcs = n_new(Data::CParams);
-		for (UPTR i = 0; i < TimeSources.GetCount(); ++i)
+		for (auto& [Key, Src] : TimeSources)
 		{
-			CTimeSource* pSrc = TimeSources.ValueAt(i);
 			Data::PParams SGTimeSrc = n_new(Data::CParams);
-			SGTimeSrc->Set(CStrID("Time"), pSrc->GetTime());
-			SGTimeSrc->Set(CStrID("Factor"), pSrc->GetFactor());
-			SGTimeSrc->Set(CStrID("FrameID"), (int)pSrc->GetFrameID());
-			SGTimeSrc->Set(CStrID("PauseCount"), pSrc->GetPauseCount());
-			SGTimeSrcs->Set(TimeSources.KeyAt(i), SGTimeSrc);
+			SGTimeSrc->Set(CStrID("Time"), Src->GetTime());
+			SGTimeSrc->Set(CStrID("Factor"), Src->GetFactor());
+			SGTimeSrc->Set(CStrID("FrameID"), (int)Src->GetFrameID());
+			SGTimeSrc->Set(CStrID("PauseCount"), Src->GetPauseCount());
+			SGTimeSrcs->Set(Key, SGTimeSrc);
 		}
 		TimeParams.Set(CStrID("TimeSources"), SGTimeSrcs);
 	}
 
-	if (Timers.GetCount())
+	if (Timers.size())
 	{
 		Data::PParams SGTimers = n_new(Data::CParams);
-		for (UPTR i = 0; i < Timers.GetCount(); ++i)
+		for (auto& [Key, Timer] : Timers)
 		{
-			CTimer& Timer = Timers.ValueAt(i);
 			Data::PParams SGTimer = n_new(Data::CParams);
 			SGTimer->Set(CStrID("Time"), Timer.Time);
 			SGTimer->Set(CStrID("CurrTime"), Timer.CurrTime);
@@ -142,7 +143,7 @@ void CCoreServer::Save(Data::CParams& TimeParams)
 			if (Timer.TimeSrc.IsValid())
 				SGTimer->Set(CStrID("TimeSrc"), Timer.TimeSrc);
 			SGTimer->Set(CStrID("EventID"), Timer.EventID);
-			SGTimers->Set(Timers.KeyAt(i), SGTimer);
+			SGTimers->Set(Key, SGTimer);
 		}
 		TimeParams.Set(CStrID("Timers"), SGTimers);
 	}
@@ -158,7 +159,7 @@ void CCoreServer::Load(const Data::CParams& TimeParams)
 		{
 			const Data::CParam& Prm = SubSection->Get(i);
 			Data::PParams TimeSrcDesc = Prm.GetValue<Data::PParams>();
-			PTimeSource TimeSrc = TimeSources.GetOrAdd(Prm.GetName());
+			PTimeSource TimeSrc = TimeSources[Prm.GetName()];
 			TimeSrc->FrameID = TimeSrcDesc->Get<int>(CStrID("FrameID"));
 			TimeSrcDesc->TryGet(TimeSrc->Time, CStrID("Time"));
 			TimeSrcDesc->TryGet(TimeSrc->TimeFactor, CStrID("TimeFactor"));
@@ -166,14 +167,14 @@ void CCoreServer::Load(const Data::CParams& TimeParams)
 		}
 	}
 
-	Timers.Clear();
+	Timers.clear();
 	if (TimeParams.TryGet<Data::PParams>(SubSection, CStrID("Timers")) && SubSection->GetCount())
 	{
 		for (UPTR i = 0; i < SubSection->GetCount(); ++i)
 		{
 			const Data::CParam& Prm = SubSection->Get(i);
 			Data::PParams TimerDesc = Prm.GetValue<Data::PParams>();
-			CTimer& Timer = Timers.Add(Prm.GetName());
+			CTimer& Timer = Timers[Prm.GetName()];
 			TimerDesc->TryGet(Timer.Time, CStrID("Time"));
 			TimerDesc->TryGet(Timer.CurrTime, CStrID("CurrTime"));
 			TimerDesc->TryGet(Timer.Loop, CStrID("Loop"));
@@ -187,33 +188,42 @@ void CCoreServer::Load(const Data::CParams& TimeParams)
 
 CTimeSource* CCoreServer::GetTimeSource(CStrID Name) const
 {
-	IPTR Idx = TimeSources.FindIndex(Name);
-	return (Idx != INVALID_INDEX) ? TimeSources.ValueAt(Idx).Get() : nullptr;
+	auto It = TimeSources.find(Name);
+	return (It != TimeSources.cend()) ? It->second.Get() : nullptr;
 }
 //---------------------------------------------------------------------
 
 CTime CCoreServer::GetTime(CStrID SrcName) const
 {
-	return (SrcName.IsValid()) ? TimeSources[SrcName]->GetTime() : Time;
+	if (!SrcName) return Time;
+
+	auto It = TimeSources.find(SrcName);
+	return (It != TimeSources.cend()) ? It->second->GetTime() : 0;
 }
 //---------------------------------------------------------------------
 
 CTime CCoreServer::GetFrameTime(CStrID SrcName) const
 {
-	return (SrcName.IsValid()) ? TimeSources[SrcName]->GetFrameTime() : FrameTime;
+	if (!SrcName) return FrameTime;
+
+	auto It = TimeSources.find(SrcName);
+	return (It != TimeSources.cend()) ? It->second->GetFrameTime() : 0;
 }
 //---------------------------------------------------------------------
 
 bool CCoreServer::IsPaused(CStrID SrcName) const
 {
-	return (SrcName.IsValid()) ? TimeSources[SrcName]->IsPaused() : false;
+	if (!SrcName) return false;
+
+	auto It = TimeSources.find(SrcName);
+	return (It != TimeSources.cend()) ? It->second->IsPaused() : false;
 }
 //---------------------------------------------------------------------
 
 bool CCoreServer::CreateNamedTimer(CStrID Name, float Time, bool Loop, CStrID Event, CStrID TimeSrc)
 {
-	IPTR Idx = Timers.FindIndex(Name);
-	if (Idx == INVALID_INDEX)
+	auto It = Timers.find(Name);
+	if (It == Timers.cend())
 	{
 		CTimer New;
 		New.TimeSrc = TimeSrc;
@@ -222,7 +232,7 @@ bool CCoreServer::CreateNamedTimer(CStrID Name, float Time, bool Loop, CStrID Ev
 		New.Loop = Loop;
 		New.Active = true;
 		New.CurrTime = 0.f;
-		Timers.Add(Name, New);
+		Timers.emplace(Name, std::move(New));
 		OK;
 	}
 	FAIL;
@@ -231,23 +241,23 @@ bool CCoreServer::CreateNamedTimer(CStrID Name, float Time, bool Loop, CStrID Ev
 
 void CCoreServer::PauseNamedTimer(CStrID Name, bool Pause)
 {
-	IPTR Idx = Timers.FindIndex(Name);
-	if (Idx != INVALID_INDEX) Timers[Name].Active = !Pause;
+	auto It = Timers.find(Name);
+	if (It != Timers.cend())
+		It->second.Active = !Pause;
 }
 //---------------------------------------------------------------------
 
 void CCoreServer::DestroyNamedTimer(CStrID Name)
 {
-	IPTR Idx = Timers.FindIndex(Name);
-	if (Idx != INVALID_INDEX) Timers.RemoveAt(Idx);
+	Timers.erase(Name);
 }
 //---------------------------------------------------------------------
 
 // This is usually called at the beginning of an application state.
 void CCoreServer::ResetAll()
 {
-	for (UPTR i = 0; i < TimeSources.GetCount(); ++i)
-		TimeSources.ValueAt(i)->Reset();
+	for (auto& [Key, Src] : TimeSources)
+		Src->Reset();
 }
 //---------------------------------------------------------------------
 
@@ -256,16 +266,16 @@ void CCoreServer::ResetAll()
 // it, when the pause counter is != 0 it means, pause is activated.
 void CCoreServer::PauseAll()
 {
-	for (UPTR i = 0; i < TimeSources.GetCount(); ++i)
-		TimeSources.ValueAt(i)->Pause();
+	for (auto& [Key, Src] : TimeSources)
+		Src->Pause();
 }
 //---------------------------------------------------------------------
 
 // This is usually called at the beginning of an application state.
 void CCoreServer::UnpauseAll()
 {
-	for (UPTR i = 0; i < TimeSources.GetCount(); ++i)
-		TimeSources.ValueAt(i)->Unpause();
+	for (auto& [Key, Src] : TimeSources)
+		Src->Unpause();
 }
 //---------------------------------------------------------------------
 

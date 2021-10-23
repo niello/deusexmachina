@@ -1,11 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_CEGUI_N2_RESOURCE_PROVIDER_H__
-#define __DEM_L1_CEGUI_N2_RESOURCE_PROVIDER_H__
-
 #include "CEGUI/Base.h"
 #include "CEGUI/ResourceProvider.h"
-
-#include <Data/Dictionary.h>
+#include <map>
 
 namespace CEGUI
 {
@@ -14,24 +10,17 @@ class CDEMResourceProvider: public ResourceProvider
 {
 protected:
 
-	CDict<String, String>	ResourceGroups;
+	std::map<String, String> ResourceGroups;
 
 public:
 
-	CDEMResourceProvider(): ResourceGroups(0, 8, false) {}
-	~CDEMResourceProvider(void) {}
+	void           setResourceGroupDirectory(const String& resourceGroup, const String& directory);
+	const String&  getResourceGroupDirectory(const String& resourceGroup);
+	void           clearResourceGroupDirectory(const String& resourceGroup);
 
-	void			setResourceGroupDirectory(const String& resourceGroup, const String& directory);
-	const String&	getResourceGroupDirectory(const String& resourceGroup);
-
-	void			clearResourceGroupDirectory(const String& resourceGroup);
-
-	void			loadRawDataContainer(const String& filename, RawDataContainer& output, const String& resourceGroup);
-	void			unloadRawDataContainer(RawDataContainer& data);
-	size_t			getResourceGroupFileNames(std::vector<String>& out_vec, const String& file_pattern,
-											  const String& resource_group);
+	virtual void   loadRawDataContainer(const String& filename, RawDataContainer& output, const String& resourceGroup) override;
+	virtual void   unloadRawDataContainer(RawDataContainer& data) override;
+	virtual size_t getResourceGroupFileNames(std::vector<String>& out_vec, const String& file_pattern, const String& resource_group) override;
 };
 
 }
-
-#endif

@@ -8,9 +8,7 @@ namespace IO
 {
 __ImplementSingleton(IO::CIOServer);
 
-//CIOServer::CFSRecord::~CFSRecord() = default;
-
-CIOServer::CIOServer(): Assigns(32)
+CIOServer::CIOServer()
 {
 	__ConstructSingleton;
 }
@@ -381,7 +379,7 @@ void CIOServer::SetAssign(const char* pAssign, const char* pPath)
 {
 	CString RealAssign(pAssign);
 	RealAssign.ToLower();
-	CString& PathString = Assigns.At(RealAssign);
+	CString& PathString = Assigns[RealAssign];
 	PathString = pPath;
 	PathString.Replace('\\', '/');
 	PathUtils::EnsurePathHasEndingDirSeparator(PathString);
@@ -392,8 +390,8 @@ CString CIOServer::GetAssign(const char* pAssign) const
 {
 	CString RealAssign(pAssign);
 	RealAssign.ToLower();
-	CString Str;
-	return Assigns.Get(RealAssign, Str) ? Str : CString::Empty;
+	auto It = Assigns.find(RealAssign); // FIXME: case-insensitive search in a map?
+	return (It != Assigns.cend()) ? It->second : CString::Empty;
 }
 //---------------------------------------------------------------------
 
@@ -409,9 +407,9 @@ CString CIOServer::ResolveAssigns(const char* pPath) const
 	{
 		CString Assign = PathString.SubString(0, ColonIdx);
 		Assign.ToLower();
-		CString AssignValue;
-		if (!Assigns.Get(Assign, AssignValue)) break;
-		PathString = AssignValue + PathString.SubString(ColonIdx + 1, PathString.GetLength() - (ColonIdx + 1));
+		auto It = Assigns.find(Assign); // FIXME: case-insensitive search in a map?
+		if (It == Assigns.cend()) break;
+		PathString = It->second + PathString.SubString(ColonIdx + 1, PathString.GetLength() - (ColonIdx + 1));
 	}
 
 	PathString = PathUtils::CollapseDots(PathString.CStr(), PathString.GetLength());

@@ -117,7 +117,7 @@ n_assert(false);
 	pGraphBuilder->QueryInterface(IID_IBasicVideo, (void**)&pBasicVideo);
 
 	OAHWND OwnerHWnd = 0;
-	CoreSrv->GetGlobal(CString("hwnd"), (int&)OwnerHWnd);
+	CoreSrv->GetGlobal("hwnd", (int&)OwnerHWnd);
 	RECT Rect;
 	GetClientRect((HWND)OwnerHWnd, &Rect);
 	LONG VideoLeft, VideoTop, VideoWidth, VideoHeight;
@@ -165,7 +165,7 @@ void CVideoServer::Stop()
 	SAFE_RELEASE(pGraphBuilder);
 
 	HWND hWnd = nullptr;
-	CoreSrv->GetGlobal(CString("hwnd"), (int&)hWnd);
+	CoreSrv->GetGlobal("hwnd", (int&)hWnd);
 	ShowWindow(hWnd, SW_RESTORE);
 
     _IsPlaying = false;

@@ -1,6 +1,6 @@
 #pragma once
 #include <Render/VertexLayout.h>
-#include <Data/Dictionary.h>
+#include <map>
 
 // Direct3D11 implementation of the vertex layout class
 
@@ -16,9 +16,9 @@ class CD3D11VertexLayout: public CVertexLayout
 
 protected:
 
-	CDict<UPTR, ID3D11InputLayout*>	ShaderSignatureToLayout;  // Actual layouts indexed by a shader input signature
-	D3D11_INPUT_ELEMENT_DESC*		pD3DDesc = nullptr;       // Is reused for each actual input layout creation
-	char*							pSemanticNames = nullptr;
+	std::map<UPTR, ID3D11InputLayout*> ShaderSignatureToLayout;  // Actual layouts indexed by a shader input signature
+	D3D11_INPUT_ELEMENT_DESC*		   pD3DDesc = nullptr;       // Is reused for each actual input layout creation
+	char*							   pSemanticNames = nullptr;
 
 	void InternalDestroy();
 
@@ -40,16 +40,16 @@ typedef Ptr<CD3D11VertexLayout> PD3D11VertexLayout;
 inline bool CD3D11VertexLayout::AddLayoutObject(UPTR ShaderInputSignatureID, ID3D11InputLayout* pD3DLayout)
 {
 	if (!pD3DLayout) FAIL; //???or destroy if found existing?
-	IPTR Idx = ShaderSignatureToLayout.FindIndex(ShaderInputSignatureID);
-	if (Idx == INVALID_INDEX) ShaderSignatureToLayout.Add(ShaderInputSignatureID, pD3DLayout);
+	auto It = ShaderSignatureToLayout.find(ShaderInputSignatureID);
+	if (It == ShaderSignatureToLayout.cend()) ShaderSignatureToLayout.emplace(ShaderInputSignatureID, pD3DLayout);
 	OK;
 }
 //---------------------------------------------------------------------
 
 inline ID3D11InputLayout* CD3D11VertexLayout::GetD3DInputLayout(UPTR ShaderInputSignatureID) const
 {
-	IPTR Idx = ShaderSignatureToLayout.FindIndex(ShaderInputSignatureID);
-	return Idx == INVALID_INDEX ? nullptr : ShaderSignatureToLayout.ValueAt(Idx);
+	auto It = ShaderSignatureToLayout.find(ShaderInputSignatureID);
+	return (It == ShaderSignatureToLayout.cend()) ? nullptr : It->second;
 }
 //---------------------------------------------------------------------
 

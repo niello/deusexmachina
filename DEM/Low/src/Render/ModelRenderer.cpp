@@ -45,19 +45,10 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 	n_assert_dbg(pModel);
 
 	CMaterial* pMaterial = pModel->Material.Get(); //!!!Get by MaterialLOD!
-	if (!pMaterial) FAIL;
+	if (!pMaterial || !pMaterial->GetEffect()) FAIL;
 
-	CEffect* pEffect = pMaterial->GetEffect();
-	EEffectType EffType = pEffect->GetType();
-	for (UPTR i = 0; i < Context.EffectOverrides.GetCount(); ++i)
-	{
-		if (Context.EffectOverrides.KeyAt(i) == EffType)
-		{
-			pEffect = Context.EffectOverrides.ValueAt(i).Get();
-			break;
-		}
-	}
-
+	auto OverrideIt = Context.EffectOverrides.find(pMaterial->GetEffect()->GetType());
+	CEffect* pEffect = (OverrideIt == Context.EffectOverrides.cend()) ? pMaterial->GetEffect() : OverrideIt->second.Get();
 	if (!pEffect) FAIL;
 
 	static const CStrID InputSet_Model("Model");
@@ -436,8 +427,8 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 
 				if (!pVLInstanced)
 				{
-					IPTR VLIdx = InstancedLayouts.FindIndex(pVL);
-					if (VLIdx == INVALID_INDEX)
+					auto It = InstancedLayouts.find(pVL);
+					if (It == InstancedLayouts.cend())
 					{
 						constexpr UPTR MAX_COMPONENTS = 64;
 
@@ -460,9 +451,9 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 						PVertexLayout VLInstanced = GPU.CreateVertexLayout(InstancedDecl, DescComponentCount);
 
 						pVLInstanced = VLInstanced.Get();
-						InstancedLayouts.Add(pVL, VLInstanced);
+						InstancedLayouts.emplace(pVL, VLInstanced);
 					}
-					else pVLInstanced = InstancedLayouts.ValueAt(VLIdx).Get();
+					else pVLInstanced = It->second.Get();
 				}
 
 				GPU.SetVertexLayout(pVLInstanced);

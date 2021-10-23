@@ -18,8 +18,8 @@ void CDEMResourceProvider::loadRawDataContainer(const String& filename, RawDataC
 	if (resourceGroup.empty()) FinalFilename = d_defaultResourceGroup + filename;
 	else
 	{
-		IPTR Idx = ResourceGroups.FindIndex(resourceGroup);
-		if (Idx != INVALID_INDEX) FinalFilename = ResourceGroups.ValueAt(Idx) + filename;
+		auto It = ResourceGroups.find(resourceGroup);
+		if (It != ResourceGroups.cend()) FinalFilename = It->second + filename;
 		else FinalFilename = filename;
 	}
 
@@ -63,8 +63,8 @@ void CDEMResourceProvider::setResourceGroupDirectory(const String& resourceGroup
 	if (directory.length() == 0) return;
 	const String separators("\\/");
 	if (String::npos == separators.find(directory[directory.length() - 1]))
-		ResourceGroups.Add(resourceGroup, directory + '/');
-	else ResourceGroups.Add(resourceGroup, directory);
+		ResourceGroups.emplace(resourceGroup, directory + '/');
+	else ResourceGroups.emplace(resourceGroup, directory);
 }
 //---------------------------------------------------------------------
 
@@ -76,7 +76,7 @@ const String& CDEMResourceProvider::getResourceGroupDirectory(const String& reso
 
 void CDEMResourceProvider::clearResourceGroupDirectory(const String& resourceGroup)
 {
-	ResourceGroups.Remove(resourceGroup);
+	ResourceGroups.erase(resourceGroup);
 }
 //---------------------------------------------------------------------
 
@@ -88,8 +88,8 @@ size_t CDEMResourceProvider::getResourceGroupFileNames(std::vector<String>& out_
 	if (resource_group.empty()) DirName = d_defaultResourceGroup;
 	else
 	{
-		IPTR Idx = ResourceGroups.FindIndex(resource_group);
-		if (Idx != INVALID_INDEX) DirName = ResourceGroups.ValueAt(Idx);
+		auto It = ResourceGroups.find(resource_group);
+		if (It != ResourceGroups.cend()) DirName = It->second;
 		else DirName = "./";
 	}
 

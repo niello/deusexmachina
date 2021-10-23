@@ -68,7 +68,7 @@ void CD3D11DriverFactory::Release()
 	SAFE_RELEASE(pDXGIFactory);
 
 	ShaderSignatures.clear();
-	ShaderSigIDToIndex.Clear();
+	ShaderSigIDToIndex.clear();
 }
 //---------------------------------------------------------------------
 
@@ -183,16 +183,15 @@ PGPUDriver CD3D11DriverFactory::CreateGPUDriver(UPTR Adapter, EGPUDriverType Dri
 bool CD3D11DriverFactory::RegisterShaderInputSignature(U32 ID, Data::PBuffer&& Data)
 {
 	ShaderSignatures.push_back(std::move(Data));
-	ShaderSigIDToIndex.Add(ID, ShaderSignatures.size() - 1, true);
+	ShaderSigIDToIndex.emplace(ID, ShaderSignatures.size() - 1);
 	OK;
 }
 //---------------------------------------------------------------------
 
 const Data::IBuffer* CD3D11DriverFactory::FindShaderInputSignature(U32 ID) const
 {
-	UPTR Index;
-	if (!ShaderSigIDToIndex.Get(ID, Index)) return nullptr;
-	return ShaderSignatures[Index].get();
+	auto It = ShaderSigIDToIndex.find(ID);
+	return (It != ShaderSigIDToIndex.cend()) ? ShaderSignatures[It->second].get() : nullptr;
 }
 //---------------------------------------------------------------------
 

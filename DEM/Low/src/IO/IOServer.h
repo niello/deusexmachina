@@ -1,9 +1,9 @@
 #pragma once
 #include <Data/Singleton.h>
 #include <IO/IOFwd.h>
-#include <Data/HashTable.h>
 #include <Data/String.h>
 #include <vector>
+#include <map>
 
 // IO server manages input/output, file systems and path assigns
 // NB: file times are seconds from 1970-01-01
@@ -30,8 +30,8 @@ private:
 		//~CFSRecord();
 	};
 
-	std::vector<CFSRecord>			FileSystems;
-	CHashTable<CString, CString>	Assigns;
+	std::vector<CFSRecord>                  FileSystems;
+	std::map<CString, CString, std::less<>> Assigns;
 
 	const char*		GetFSLocalPath(const CFSRecord& Rec, const char* pPath, IPTR ColonIndex) const;
 

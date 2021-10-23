@@ -4,8 +4,8 @@
 
 #include <Core/Object.h>
 #include <Data/StringID.h>
-#include <Events/EventsFwd.h>
 #include <Data/HashTable.h>
+#include <Events/EventsFwd.h>
 
 namespace Game
 {

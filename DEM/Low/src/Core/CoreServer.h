@@ -1,13 +1,9 @@
 #pragma once
-#ifndef __DEM_L1_CORE_SERVER_H__
-#define __DEM_L1_CORE_SERVER_H__
-
 #include <Data/Singleton.h>
 #include <Data/Ptr.h>
 #include <Data/StringID.h>
 #include <Data/Params.h>
-#include <Data/HashTable.h>
-#include <Data/Dictionary.h>
+#include <map>
 
 // Core server manages low-level object framework, memory stats and timing
 
@@ -26,9 +22,9 @@ class CCoreServer
 
 protected:
 
-	static const CString Mem_HighWaterSize;
-	static const CString Mem_TotalSize;
-	static const CString Mem_TotalCount;
+	static const std::string Mem_HighWaterSize;
+	static const std::string Mem_TotalSize;
+	static const std::string Mem_TotalCount;
 
 	struct CTimer
 	{
@@ -47,12 +43,12 @@ protected:
 	CTime						LockedFrameTime;
 	CTime						LockTime;
 	float						TimeScale;
-	CDict<CStrID, PTimeSource>	TimeSources;
-	CDict<CStrID, CTimer>		Timers;
+	std::map<CStrID, PTimeSource> TimeSources;
+	std::map<CStrID, CTimer>	Timers;
 
 public:
 
-	CHashTable<CString, Data::CData> Globals; // Left public for iteration
+	std::unordered_map<std::string, Data::CData> Globals; // Left public for iteration
 
 	CCoreServer();
 	~CCoreServer();
@@ -80,19 +76,24 @@ public:
 	void			PauseNamedTimer(CStrID Name, bool Pause = true);
 	void			DestroyNamedTimer(CStrID Name);
 
-	template<class T> void	SetGlobal(const CString& Name, const T& Value) { Globals.At(Name) = Value; }
-	template<class T> T&	GetGlobal(const CString& Name) { return Globals[Name].GetValue<T>(); }
-	template<class T> bool	GetGlobal(const CString& Name, T& OutValue) const;
-	template<> bool			GetGlobal(const CString& Name, Data::CData& OutValue) const { return Globals.Get(Name, OutValue); }
+	template<class T> void	SetGlobal(const std::string& Name, const T& Value) { Globals[Name] = Value; }
+	template<class T> T&	GetGlobal(const std::string& Name) { return Globals[Name].GetValue<T>(); }
+
+	template<class T> bool GetGlobal(const std::string& Name, T& OutValue) const
+	{
+		auto It = Globals.find(Name);
+		if (It == Globals.cend()) return false;
+		It->second.GetValue<T>(OutValue);
+		return true;
+	}
+
+	template<> bool GetGlobal(const std::string& Name, Data::CData& OutValue) const
+	{
+		auto It = Globals.find(Name);
+		if (It == Globals.cend()) return false;
+		OutValue = It->second;
+		return true;
+	}
 };
 
-template<class T> inline bool CCoreServer::GetGlobal(const CString& Name, T& OutValue) const
-{
-	Data::CData Data;
-	return Globals.Get(Name, Data) ? Data.GetValue<T>(OutValue) : false;
 }
-//---------------------------------------------------------------------
-
-}
-
-#endif

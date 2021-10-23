@@ -25,23 +25,22 @@ PResource CResourceManager::RegisterResource(const char* pUID, const Core::CRTTI
 	if (!pUID || !*pUID) return nullptr;
 
 	CStrID UID = pIO ? CStrID(pIO->ResolveAssigns(pUID).CStr()): CStrID(pUID);
-	PResource Rsrc;
-	if (!Registry.Get(UID, Rsrc))
+	auto It = Registry.find(UID);
+	if (It != Registry.cend()) return It->second;
+
+	CString Ext(PathUtils::GetExtension(UID.CStr()));
+	if (Ext.IsValid())
 	{
-		CString Ext(PathUtils::GetExtension(UID.CStr()));
-		if (Ext.IsValid())
-		{
-			IPTR SharpIdx = Ext.FindIndex('#');
-			if (SharpIdx >= 0) Ext.TruncateRight(Ext.GetLength() - SharpIdx);
-		}
-
-		auto pCreator = GetDefaultCreator(Ext, &RsrcType).Get();
-		if (!pCreator) return nullptr;
-
-		Rsrc = n_new(CResource(UID));
-		Rsrc->SetCreator(pCreator);
-		Registry.Add(UID, Rsrc);
+		IPTR SharpIdx = Ext.FindIndex('#');
+		if (SharpIdx >= 0) Ext.TruncateRight(Ext.GetLength() - SharpIdx);
 	}
+
+	auto pCreator = GetDefaultCreator(Ext, &RsrcType).Get();
+	if (!pCreator) return nullptr;
+
+	PResource Rsrc = n_new(CResource(UID));
+	Rsrc->SetCreator(pCreator);
+	Registry.emplace(UID, Rsrc);
 	return Rsrc;
 }
 //---------------------------------------------------------------------
@@ -52,13 +51,12 @@ PResource CResourceManager::RegisterResource(const char* pUID, IResourceCreator*
 	if (!pUID || !*pUID) return nullptr;
 
 	CStrID UID = pIO ? CStrID(pIO->ResolveAssigns(pUID).CStr()): CStrID(pUID);
-	PResource Rsrc;
-	if (!Registry.Get(UID, Rsrc))
-	{
-		Rsrc = n_new(CResource(UID));
-		Rsrc->SetCreator(pCreator);
-		Registry.Add(UID, Rsrc);
-	}
+	auto It = Registry.find(UID);
+	if (It != Registry.cend()) return It->second;
+
+	PResource Rsrc = n_new(CResource(UID));
+	Rsrc->SetCreator(pCreator);
+	Registry.emplace(UID, Rsrc);
 	return Rsrc;
 }
 //---------------------------------------------------------------------
@@ -71,9 +69,8 @@ CResource* CResourceManager::FindResource(const char* pUID) const
 
 CResource* CResourceManager::FindResource(CStrID UID) const
 {
-	PResource Rsrc;
-	Registry.Get(UID, Rsrc);
-	return Rsrc.Get();
+	auto It = Registry.find(UID);
+	return (It != Registry.cend()) ? It->second : nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -86,7 +83,7 @@ void CResourceManager::UnregisterResource(const char* pUID)
 //???need const char* variant?
 void CResourceManager::UnregisterResource(CStrID UID)
 {
-	Registry.Remove(UID);
+	Registry.erase(UID);
 	//???force unload resource object here even if there are references to resource?
 }
 //---------------------------------------------------------------------

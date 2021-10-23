@@ -1,6 +1,5 @@
 #pragma once
 #include <Render/VideoDriverFactory.h>
-#include <Data/HashTable.h>
 #include <vector>
 
 // Direct3D 11 and DXGI 1.1 implementation of CVideoDriverFactory
@@ -40,13 +39,13 @@ class CD3D11DriverFactory: public CVideoDriverFactory
 
 protected:
 
-	IDXGIFactory1*				pDXGIFactory = nullptr;
+	IDXGIFactory1*                pDXGIFactory = nullptr;
 #if DEM_RENDER_DEBUG
-	IDXGIDebug*					pDXGIDebug = nullptr;
+	IDXGIDebug*                   pDXGIDebug = nullptr;
 #endif
-	UPTR						AdapterCount = 0;		// Valid during a lifetime of the DXGI factory object
-	std::vector<Data::PBuffer>	ShaderSignatures;
-	CHashTable<U32, UPTR>		ShaderSigIDToIndex;
+	UPTR                          AdapterCount = 0;		// Valid during a lifetime of the DXGI factory object
+	std::vector<Data::PBuffer>    ShaderSignatures;
+	std::unordered_map<U32, UPTR> ShaderSigIDToIndex;
 
 public:
 

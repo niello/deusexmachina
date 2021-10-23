@@ -58,12 +58,9 @@ void CD3D11VertexLayout::InternalDestroy()
 {
 	SAFE_DELETE_ARRAY(pD3DDesc);
 	SAFE_FREE(pSemanticNames);
-	for (UPTR i = 0; i < ShaderSignatureToLayout.GetCount(); ++i)
-	{
-		ID3D11InputLayout* pLayout = ShaderSignatureToLayout.ValueAt(i);
-		if (pLayout) pLayout->Release();
-	}
-	ShaderSignatureToLayout.Clear();
+	for (auto& [Key, Value] : ShaderSignatureToLayout)
+		if (Value) Value->Release();
+	ShaderSignatureToLayout.clear();
 }
 //---------------------------------------------------------------------
 

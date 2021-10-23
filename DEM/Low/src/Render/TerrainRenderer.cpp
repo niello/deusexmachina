@@ -182,17 +182,8 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 	CMaterial* pMaterial = pTerrain->GetMaterial(); //!!!Get by MaterialLOD!
 	if (!pMaterial) FAIL;
 
-	const CEffect* pEffect = pMaterial->GetEffect();
-	EEffectType EffType = pEffect->GetType();
-	for (UPTR i = 0; i < Context.EffectOverrides.GetCount(); ++i)
-	{
-		if (Context.EffectOverrides.KeyAt(i) == EffType)
-		{
-			pEffect = Context.EffectOverrides.ValueAt(i).Get();
-			break;
-		}
-	}
-
+	auto OverrideIt = Context.EffectOverrides.find(pMaterial->GetEffect()->GetType());
+	CEffect* pEffect = (OverrideIt == Context.EffectOverrides.cend()) ? pMaterial->GetEffect() : OverrideIt->second.Get();
 	if (!pEffect) FAIL;
 
 	static const CStrID InputSet_CDLOD("CDLOD");

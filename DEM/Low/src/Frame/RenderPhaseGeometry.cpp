@@ -87,13 +87,9 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	Render::CRenderNodeContext Context;
 
 	// Find override effects for the current GPU
-	Context.EffectOverrides.Clear();
-	for (UPTR i = 0; i < EffectOverrides.GetCount(); ++i)
-	{
-		CStrID EffectUID = EffectOverrides.ValueAt(i);
-		Render::PEffect Effect = EffectUID.IsValid() ? View.GetGraphicsManager()->GetEffect(EffectUID) : nullptr;
-		Context.EffectOverrides.Add(EffectOverrides.KeyAt(i), Effect);
-	}
+	Context.EffectOverrides.clear();
+	for (const auto& [Key, EffectUID] : EffectOverrides)
+		Context.EffectOverrides.emplace(Key, View.GetGraphicsManager()->GetEffect(EffectUID));
 
 	if (EnableLighting)
 	{
@@ -390,7 +386,7 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CGraphicsResourceManag
 	//!!!remember only IDs here, load effect in a View, as they reference a GPU!
 	//anyway only one loaded copy of resource if possible now, so there can't be
 	//two effect instances created with different GPUs
-	n_assert_dbg(!EffectOverrides.GetCount());
+	n_assert_dbg(EffectOverrides.empty());
 	Data::PParams EffectsDesc;
 	if (Desc.TryGet(EffectsDesc, CStrID("Effects")))
 	{
@@ -407,7 +403,7 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CGraphicsResourceManag
 			else if (Key == "Other") EffectType = Render::EffectType_Other;
 			else FAIL;
 
-			EffectOverrides.Add(EffectType, Prm.GetRawValue().IsNull() ? CStrID::Empty : Prm.GetValue<CStrID>());
+			EffectOverrides.emplace(EffectType, Prm.GetRawValue().IsNull() ? CStrID::Empty : Prm.GetValue<CStrID>());
 		}
 	}
 

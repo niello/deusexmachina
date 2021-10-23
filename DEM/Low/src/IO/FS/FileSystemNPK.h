@@ -24,6 +24,10 @@ protected:
 		CString					Filter;
 
 		CNPKDir(CNpkTOCEntry* pEntry): pTOCEntry(pEntry), It(pTOCEntry->GetEntryIterator()) {}
+
+		bool IsValid() const { return pTOCEntry && It != pTOCEntry->End(); }
+
+		operator bool() const { return IsValid(); }
 	};
 
 	CNpkTOC	TOC;

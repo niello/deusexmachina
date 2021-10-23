@@ -123,8 +123,8 @@ void CWatcherWindow::AddWatched(EVarType Type, const char* Name)
 void CWatcherWindow::AddAllGlobals()
 {
 	UPTR i = Watched.GetCount();
-	for (CHashTable<CString, Data::CData>::CIterator It = CoreSrv->Globals.Begin(); It; ++It, ++i)
-		AddWatched(DEM, It.GetKey().CStr());
+	for (auto& [Name, Value] : CoreSrv->Globals)
+		AddWatched(DEM, Name.c_str());
 
 	for (UPTR j = i; j < Watched.GetCount(); ++j)
 		Watched[j].Clear();
@@ -209,7 +209,7 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 			{
 				Data::CData CurrVar;
 
-				if (CoreSrv->GetGlobal(CString(It->VarName.CStr()), CurrVar))
+				if (CoreSrv->GetGlobal(It->VarName.CStr(), CurrVar))
 				{
 					if (CurrVar.IsA<bool>())
 					{

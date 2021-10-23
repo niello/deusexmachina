@@ -1,6 +1,5 @@
 #pragma once
 #include <Data/RefCounted.h>
-#include <Data/HashTable.h>
 #include <Render/RenderFwd.h>
 
 #include <CEGUI/Renderer.h>
@@ -25,7 +24,7 @@ protected:
 
 	CArray<CDEMTextureTarget*>			TexTargets;
 	CArray<RenderTarget*>				VPTargets;
-	CHashTable<String, CDEMTexture*>	Textures;
+	std::unordered_map<String, CDEMTexture*> Textures;
 
 	Render::PVertexLayout				VertexLayoutTextured;
 	Render::PVertexLayout				VertexLayoutColoured;
@@ -64,7 +63,7 @@ public:
 	virtual void			destroyTexture(const String& name) override;
 	virtual void			destroyAllTextures() override;
 	virtual Texture&		getTexture(const String& name) const override;
-	virtual bool			isTextureDefined(const String& name) const override { return Textures.Contains(name); }
+	virtual bool			isTextureDefined(const String& name) const override { return Textures.find(name) != Textures.cend(); }
 	virtual void			beginRendering() override;
 	virtual void			endRendering() override;
 	virtual void			setDisplaySize(const Sizef& sz) override;

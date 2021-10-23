@@ -42,10 +42,6 @@ namespace Render
 
 CD3D11GPUDriver::CD3D11GPUDriver(CD3D11DriverFactory& DriverFactory)
 	: _DriverFactory(&DriverFactory)
-	, SwapChains(1, 1)
-	, CurrSRV(16, 16)
-	, RenderStates(32, 32)
-	, Samplers(16, 16)
 {
 }
 //---------------------------------------------------------------------
@@ -213,9 +209,9 @@ void CD3D11GPUDriver::Release()
 {
 	if (!pD3DDevice) return;
 
-	for (UPTR i = 0; i < TmpStructuredBuffers.GetCount(); ++i)
+	for (auto& Pair : TmpStructuredBuffers)
 	{
-		CTmpCB* pHead = TmpStructuredBuffers.ValueAt(i);
+		CTmpCB* pHead = Pair.second;
 		while (pHead)
 		{
 			CTmpCB* pNextHead = pHead->pNext;
@@ -223,11 +219,11 @@ void CD3D11GPUDriver::Release()
 			pHead = pNextHead;
 		}
 	}
-	TmpStructuredBuffers.Clear();
+	TmpStructuredBuffers.clear();
 
-	for (UPTR i = 0; i < TmpTextureBuffers.GetCount(); ++i)
+	for (auto& Pair : TmpTextureBuffers)
 	{
-		CTmpCB* pHead = TmpTextureBuffers.ValueAt(i);
+		CTmpCB* pHead = Pair.second;
 		while (pHead)
 		{
 			CTmpCB* pNextHead = pHead->pNext;
@@ -235,11 +231,11 @@ void CD3D11GPUDriver::Release()
 			pHead = pNextHead;
 		}
 	}
-	TmpTextureBuffers.Clear();
+	TmpTextureBuffers.clear();
 
-	for (UPTR i = 0; i < TmpConstantBuffers.GetCount(); ++i)
+	for (auto& Pair : TmpConstantBuffers)
 	{
-		CTmpCB* pHead = TmpConstantBuffers.ValueAt(i);
+		CTmpCB* pHead = Pair.second;
 		while (pHead)
 		{
 			CTmpCB* pNextHead = pHead->pNext;
@@ -247,7 +243,7 @@ void CD3D11GPUDriver::Release()
 			pHead = pNextHead;
 		}
 	}
-	TmpConstantBuffers.Clear();
+	TmpConstantBuffers.clear();
 
 	while (pPendingCBHead)
 	{
@@ -258,18 +254,18 @@ void CD3D11GPUDriver::Release()
 
 	TmpCBPool.Clear();
 
-	VertexLayouts.Clear();
-	RenderStates.Clear();
-	Samplers.Clear();
+	VertexLayouts.clear();
+	RenderStates.clear();
+	Samplers.clear();
 
 	//!!!if code won't be reused in Reset(), call DestroySwapChain()!
-	for (UPTR i = 0; i < SwapChains.GetCount() ; ++i)
-		if (SwapChains[i].IsValid()) SwapChains[i].Destroy();
-	SwapChains.Clear();
+	for (auto& SwapChain : SwapChains)
+		if (SwapChain.IsValid()) SwapChain.Destroy();
+	SwapChains.clear();
 
 	SAFE_DELETE_ARRAY(CurrVP);
 	SAFE_DELETE_ARRAY(CurrSR);
-	CurrSRV.Clear();
+	CurrSRV.clear();
 	CurrVB.SetSize(0);
 	CurrVBOffset.SetSize(0);
 	CurrCB.SetSize(0);
@@ -408,8 +404,8 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 	auto pWndWin32 = static_cast<DEM::Sys::COSWindowWin32*>(pWindow);
 
 	//???or destroy and recreate with new params?
-	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
-		if (SwapChains[i].TargetWindow.Get() == pWindow) return ERR_CREATION_ERROR;
+	for (auto& SwapChain : SwapChains)
+		if (SwapChain.TargetWindow.Get() == pWindow) return ERR_CREATION_ERROR;
 
 	UPTR BBWidth = BackBufferDesc.Width, BBHeight = BackBufferDesc.Height;
 	PrepareWindowAndBackBufferSize(*pWindow, BBWidth, BBHeight);
@@ -493,11 +489,15 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 		return ERR_CREATION_ERROR;
 	}
 
-	CArray<CD3D11SwapChain>::CIterator ItSC = SwapChains.Begin();
-	for (; ItSC != SwapChains.End(); ++ItSC)
+	auto ItSC = SwapChains.begin();
+	for (; ItSC != SwapChains.end(); ++ItSC)
 		if (!ItSC->IsValid()) break;
 
-	if (ItSC == SwapChains.End()) ItSC = SwapChains.Reserve(1);
+	if (ItSC == SwapChains.end())
+	{
+		SwapChains.push_back({});
+		ItSC = SwapChains.end() - 1;
+	}
 
 	ItSC->pSwapChain = pSwapChain;
 
@@ -518,7 +518,7 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 	ItSC->Sub_OnToggleFullscreen = pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D11GPUDriver::OnOSWindowToggleFullscreen);
 	ItSC->Sub_OnClosing = pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnClosing"), this, &CD3D11GPUDriver::OnOSWindowClosing);
 
-	return SwapChains.IndexOf(ItSC);
+	return std::distance(SwapChains.begin(), ItSC);
 }
 //---------------------------------------------------------------------
 
@@ -543,7 +543,7 @@ bool CD3D11GPUDriver::DestroySwapChain(UPTR SwapChainID)
 
 bool CD3D11GPUDriver::SwapChainExists(UPTR SwapChainID) const
 {
-	return SwapChainID < SwapChains.GetCount() && SwapChains[SwapChainID].IsValid();
+	return SwapChainID < SwapChains.size() && SwapChains[SwapChainID].IsValid();
 }
 //---------------------------------------------------------------------
 
@@ -985,10 +985,10 @@ bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11Shad
 	SlotIndex |= (ShaderType << 16); // Encode shader type in a high word
 
 	CSRVRecord* pSRVRec;
-	IPTR DictIdx = CurrSRV.FindIndex(SlotIndex);
-	if (DictIdx != INVALID_INDEX)
+	auto It = CurrSRV.find(SlotIndex);
+	if (It != CurrSRV.cend())
 	{
-		pSRVRec = &CurrSRV.ValueAt(DictIdx);
+		pSRVRec = &It->second;
 		if (pSRVRec->pSRV == pSRV) OK;
 
 		// Free temporary buffer previously bound to this slot
@@ -996,7 +996,7 @@ bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11Shad
 	}
 	else
 	{
-		pSRVRec = &CurrSRV.Add(SlotIndex);
+		pSRVRec = &CurrSRV.emplace(SlotIndex, CSRVRecord{}).first->second;
 	}
 
 	pSRVRec->pSRV = pSRV;
@@ -1063,17 +1063,15 @@ void CD3D11GPUDriver::UnbindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11Sh
 {
 	if (SlotIndex >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT) return;
 
-	CSRVRecord* pSRVRec;
-	IPTR DictIdx = CurrSRV.FindIndex(SlotIndex | (ShaderType << 16));
-	if (DictIdx == INVALID_INDEX) return;
+	auto It = CurrSRV.find(SlotIndex | (ShaderType << 16));
+	if (It == CurrSRV.cend()) return;
 
-	pSRVRec = &CurrSRV.ValueAt(DictIdx);
-	if (pSRVRec->pSRV != pSRV) return;
+	if (It->second.pSRV != pSRV) return;
 
 	// Free temporary buffer previously bound to this slot
-	FreePendingTemporaryBuffer(pSRVRec->CB.Get(), ShaderType, SlotIndex);
+	FreePendingTemporaryBuffer(It->second.CB.Get(), ShaderType, SlotIndex);
 
-	CurrSRV.RemoveAt(DictIdx);
+	CurrSRV.erase(It);
 	CurrDirtyFlags.Set(GPU_Dirty_SRV);
 	ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_Resources + ShaderType));
 }
@@ -1135,14 +1133,14 @@ bool CD3D11GPUDriver::BeginFrame()
 void CD3D11GPUDriver::EndFrame()
 {
 #ifdef DEM_STATS
-	CString RTString;
+	std::string RTString;
 	for (UPTR i = 0; i < CurrRT.size(); ++i)
 		if (CurrRT[i].IsValidPtr())
-			RTString += StringUtils::FromInt((int)CurrRT[i].Get());
+			RTString += std::to_string((UPTR)CurrRT[i].Get());
 	if (Core::CCoreServer::HasInstance())
 	{
-		CoreSrv->SetGlobal<int>(CString("Render_Primitives_") + RTString, PrimitivesRendered);
-		CoreSrv->SetGlobal<int>(CString("Render_Draws_") + RTString, DrawsRendered);
+		CoreSrv->SetGlobal<int>("Render_Primitives_" + RTString, PrimitivesRendered);
+		CoreSrv->SetGlobal<int>("Render_Draws_" + RTString, DrawsRendered);
 	}
 #endif
 
@@ -1429,9 +1427,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 
 	if (Update.Is(GPU_Dirty_SRV) && CurrDirtyFlags.Is(GPU_Dirty_SRV))
 	{
-		if (CurrSRV.IsInAddMode()) CurrSRV.EndAdd();
-
-		if (CurrSRV.GetCount())
+		if (!CurrSRV.empty())
 		{
 			const UPTR SRVArrayMemSize = (MaxSRVSlotIndex + 1) * sizeof(ID3D11ShaderResourceView*);
 			ID3D11ShaderResourceView** ppSRV = (ID3D11ShaderResourceView**)PtrArray;
@@ -1441,14 +1437,14 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 			bool SkipShaderType = true;
 			UPTR FirstSRVSlot;
 			UPTR CurrSRVSlot;
-			for (UPTR i = 0; ; ++i)
+			for (auto It = CurrSRV.begin(); ; ++It)
 			{
 				UPTR ShaderType;
 				UPTR SRVSlot;
-				bool AtTheEnd = (i >= CurrSRV.GetCount());
+				const bool AtTheEnd = (std::next(It) == CurrSRV.cend());
 				if (!AtTheEnd)
 				{
-					const UPTR CurrKey = CurrSRV.KeyAt(i);
+					const UPTR CurrKey = It->first;
 					ShaderType = (CurrKey >> 16);
 					SRVSlot = (CurrKey & 0xffff);
 				}
@@ -1494,7 +1490,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 
 				if (SkipShaderType) continue;
 
-				ppSRV[SRVSlot] = CurrSRV.ValueAt(i).pSRV;
+				ppSRV[SRVSlot] = It->second.pSRV;
 				CurrSRVSlot = SRVSlot;
 			}
 		}
@@ -1673,8 +1669,8 @@ PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pCompo
 
 	CStrID Signature = CVertexLayout::BuildSignature(pComponents, Count);
 
-	IPTR Idx = VertexLayouts.FindIndex(Signature);
-	if (Idx != INVALID_INDEX) return VertexLayouts.ValueAt(Idx).Get();
+	auto It = VertexLayouts.find(Signature);
+	if (It != VertexLayouts.cend()) return It->second.Get();
 
 	UPTR MaxVertexStreams = GetMaxVertexStreams();
 
@@ -1741,7 +1737,7 @@ PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pCompo
 	PD3D11VertexLayout Layout = n_new(CD3D11VertexLayout);
 	if (!Layout->Create(pComponents, Count, DeclData)) return nullptr;
 
-	VertexLayouts.Add(Signature, Layout);
+	VertexLayouts.emplace(Signature, Layout);
 
 	return Layout.Get();
 }
@@ -1918,17 +1914,17 @@ PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(IConstantBufferPa
 	// We create temporary buffers sized by powers of 2, to make reuse easier (the same
 	// principle as for a small allocator). 16 bytes is the smallest possible buffer.
 	UPTR NextPow2Size = std::max<U32>(16, NextPow2(pUSMParam->GetSize())/* * ElementCount; //!!!for StructuredBuffer!*/); 
-	CDict<UPTR, CTmpCB*>& BufferPool = 
-		pUSMParam->GetType() == USMBuffer_Structured ? TmpStructuredBuffers :
-		(pUSMParam->GetType() == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
+	auto& BufferPool = 
+		(pUSMParam->GetType() == USMBuffer_Structured) ? TmpStructuredBuffers :
+		(pUSMParam->GetType() == USMBuffer_Texture) ? TmpTextureBuffers :
+		TmpConstantBuffers;
 
-	IPTR Idx = BufferPool.FindIndex(NextPow2Size);
-	if (Idx != INVALID_INDEX)
+	auto It = BufferPool.find(NextPow2Size);
+	if (It != BufferPool.cend())
 	{
-		CTmpCB* pHead = BufferPool.ValueAt(Idx);
-		if (pHead)
+		if (CTmpCB* pHead = It->second)
 		{
-			BufferPool.ValueAt(Idx) = pHead->pNext;
+			It->second = pHead->pNext;
 			PConstantBuffer CB = pHead->CB.Get();
 			TmpCBPool.Destroy(pHead);
 			return CB;
@@ -1961,19 +1957,20 @@ void CD3D11GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& Buffer)
 	else
 	{
 		EUSMBufferType Type = CB11.GetType();
-		CDict<UPTR, CTmpCB*>& BufferPool = 
-			Type == USMBuffer_Structured ? TmpStructuredBuffers :
-			(Type == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
-		IPTR Idx = BufferPool.FindIndex(BufferSize);
-		if (Idx != INVALID_INDEX)
+		auto& BufferPool = 
+			(Type == USMBuffer_Structured) ? TmpStructuredBuffers :
+			(Type == USMBuffer_Texture) ? TmpTextureBuffers :
+			TmpConstantBuffers;
+		auto It = BufferPool.find(BufferSize);
+		if (It != BufferPool.cend())
 		{
-			pNewNode->pNext = BufferPool.ValueAt(Idx);
-			BufferPool.ValueAt(Idx) = pNewNode;
+			pNewNode->pNext = It->second;
+			It->second = pNewNode;
 		}
 		else
 		{
 			pNewNode->pNext = nullptr;
-			BufferPool.Add(BufferSize, pNewNode);
+			BufferPool.emplace(BufferSize, pNewNode);
 		}
 	}
 }
@@ -1988,7 +1985,7 @@ bool CD3D11GPUDriver::IsConstantBufferBound(const CD3D11ConstantBuffer* pBuffer,
 		if (ExceptStage == ShaderType_Invalid)
 		{
 			for (UPTR i = 0; i < CurrCB.size(); ++i)
-				if (CurrCB[i].Get() == pBuffer) OK;
+				if (CurrCB[i] == pBuffer) OK;
 		}
 		else
 		{
@@ -1996,7 +1993,7 @@ bool CD3D11GPUDriver::IsConstantBufferBound(const CD3D11ConstantBuffer* pBuffer,
 			for (UPTR i = 0; i < CurrCB.size(); ++i)
 			{
 				if (i == ExceptIndex) continue;
-				if (CurrCB[i].Get() == pBuffer) OK;
+				if (CurrCB[i] == pBuffer) OK;
 			}
 		}
 	}
@@ -2004,16 +2001,16 @@ bool CD3D11GPUDriver::IsConstantBufferBound(const CD3D11ConstantBuffer* pBuffer,
 	{
 		if (ExceptStage == ShaderType_Invalid)
 		{
-			for (UPTR i = 0; i < CurrSRV.GetCount(); ++i)
-				if (CurrSRV.ValueAt(i).CB.Get() == pBuffer) OK;
+			for (const auto& Pair : CurrSRV)
+				if (Pair.second.CB == pBuffer) OK;
 		}
 		else
 		{
 			UPTR ExceptIndex = ExceptSlot | (ExceptStage << 16);
-			for (UPTR i = 0; i < CurrSRV.GetCount(); ++i)
+			for (const auto& [Key, Value] : CurrSRV)
 			{
-				if (CurrSRV.KeyAt(i) == ExceptIndex) continue;
-				if (CurrSRV.ValueAt(i).CB.Get() == pBuffer) OK;
+				if (Key == ExceptIndex) continue;
+				if (Value.CB == pBuffer) OK;
 			}
 		}
 	}
@@ -2028,9 +2025,10 @@ void CD3D11GPUDriver::FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pBu
 	if (!pPendingCBHead || !pBuffer || !pBuffer->IsTemporary() || IsConstantBufferBound(pBuffer, Stage, Slot)) return;
 
 	EUSMBufferType Type = pBuffer->GetType();
-	CDict<UPTR, CTmpCB*>& BufferPool = 
-		Type == USMBuffer_Structured ? TmpStructuredBuffers :
-		(Type == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
+	auto& BufferPool = 
+		(Type == USMBuffer_Structured) ? TmpStructuredBuffers :
+		(Type == USMBuffer_Texture) ? TmpTextureBuffers :
+		TmpConstantBuffers;
 
 	CTmpCB* pPrevNode = nullptr;
 	CTmpCB* pCurrNode = pPendingCBHead;
@@ -2043,16 +2041,16 @@ void CD3D11GPUDriver::FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pBu
 
 			UPTR BufferSize = pBuffer->GetSizeInBytes();
 			n_assert_dbg(BufferSize == NextPow2(pBuffer->GetSizeInBytes()));
-			IPTR Idx = BufferPool.FindIndex(BufferSize);
-			if (Idx != INVALID_INDEX)
+			auto It = BufferPool.find(BufferSize);
+			if (It != BufferPool.cend())
 			{
-				pCurrNode->pNext = BufferPool.ValueAt(Idx);
-				BufferPool.ValueAt(Idx) = pCurrNode;
+				pCurrNode->pNext = It->second;
+				It->second = pCurrNode;
 			}
 			else
 			{
 				pCurrNode->pNext = nullptr;
-				BufferPool.Add(BufferSize, pCurrNode);
+				BufferPool.emplace(BufferSize, pCurrNode);
 			}
 
 			break;
@@ -2325,13 +2323,12 @@ PSampler CD3D11GPUDriver::CreateSampler(const CSamplerDesc& Desc)
 	// Since sampler creation should be load-time, it is not performance critical.
 	// We can omit it and allow to create duplicate samplers, but maintaining uniquity
 	// serves both for memory saving and early exits on redundant binding.
-	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
+	for (auto& Sampler : Samplers)
 	{
-		CD3D11Sampler* pSamp = Samplers[i].Get();
-		if (pSamp->GetD3DSampler() == pD3DSamplerState)
+		if (Sampler->GetD3DSampler() == pD3DSamplerState)
 		{
 			pD3DSamplerState->Release();
-			return pSamp;
+			return Sampler;
 		}
 	}
 
@@ -2342,7 +2339,7 @@ PSampler CD3D11GPUDriver::CreateSampler(const CSamplerDesc& Desc)
 		return nullptr;
 	}
 
-	Samplers.Add(Samp);
+	Samplers.push_back(std::move(Samp));
 
 	return Samp.Get();
 }
@@ -2605,9 +2602,9 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 
 	// Since render state creation should be load-time, it is not performance critical. If we
 	// skip this and create new CRenderState, sorting will consider them as different state sets.
-	for (UPTR i = 0; i < RenderStates.GetCount(); ++i)
+	for (auto& RS : RenderStates)
 	{
-		CD3D11RenderState* pRS = RenderStates[i].Get();
+		CD3D11RenderState* pRS = RS.Get();
 		if (pRS->VS == Desc.VertexShader &&
 			pRS->PS == Desc.PixelShader &&
 			pRS->GS == Desc.GeometryShader &&
@@ -2645,7 +2642,7 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 		RS->SampleMask = Desc.SampleMask;
 		//???store alpha ref as shader var? store clip plane enable as flag that signs to set clip plane vars?
 
-		RenderStates.Add(RS);
+		RenderStates.push_back(std::move(RS));
 
 		return RS;
 	}
@@ -3765,7 +3762,7 @@ D3D11_FILTER CD3D11GPUDriver::GetD3DTexFilter(ETexFilter Filter, bool Comparison
 bool CD3D11GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	DEM::Sys::COSWindow* pWnd = (DEM::Sys::COSWindow*)pDispatcher;
-	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
+	for (UPTR i = 0; i < SwapChains.size(); ++i)
 	{
 		CD3D11SwapChain& SC = SwapChains[i];
 		if (SC.TargetWindow.Get() == pWnd)
@@ -3781,7 +3778,7 @@ bool CD3D11GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, c
 bool CD3D11GPUDriver::OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	DEM::Sys::COSWindow* pWnd = (DEM::Sys::COSWindow*)pDispatcher;
-	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
+	for (UPTR i = 0; i < SwapChains.size(); ++i)
 	{
 		CD3D11SwapChain& SC = SwapChains[i];
 		if (SC.TargetWindow.Get() == pWnd)
