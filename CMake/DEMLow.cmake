@@ -106,6 +106,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Events/EventNative.h
 	DEM/Low/src/Events/EventServer.h
 	DEM/Low/src/Events/EventsFwd.h
+	DEM/Low/src/Events/Signal.h
 	DEM/Low/src/Events/Subscription.h
 	DEM/Low/src/Frame/AmbientLightAttribute.h
 	DEM/Low/src/Frame/CameraAttribute.h
