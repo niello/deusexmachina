@@ -53,16 +53,19 @@ public:
 
 	void UnsubscribeAll()
 	{
-		// unsubscribe in a loop
+		// unsubscribe in a loop - GC each node
 	}
 
+	//???garbage collection only in non-const version? could be a mean for the user to control GC.
 	void operator()(TArgs... Args) const
 	{
 		//???hold strong ref? what is necessary to protect invoked list from destructive changes?
 		const CNode* pNode = Slots.get();
 		while (pNode)
 		{
-			pNode->Slot(Args...);
+			if (pNode->Connected)
+				pNode->Slot(Args...);
+			// else GC (can modify list right now? what about multithreading?)
 			pNode = pNode->Next.get();
 		}
 	}
