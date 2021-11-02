@@ -1,7 +1,8 @@
 #pragma once
-#include <StdDEM.h>
+#include <functional>
+#include <memory>
 
-// A signal that notifies an arbitrary number of callable handlers.
+// A signal that notifies an arbitrary number of callable handlers (slots).
 // Implements an Observer pattern. Use it for system decoupling, e.g. for an event system.
 
 namespace DEM
@@ -23,6 +24,7 @@ protected:
 		// TODO: strong and weak counters for intrusive
 		TSlot Slot;
 		PNode Next;
+		bool  Connected = false;
 	};
 
 	PNode Slots;
@@ -38,27 +40,10 @@ public:
 	CSignal& operator =(CSignal&&) noexcept = default;
 	~CSignal() = default;
 
-	// connection [handle] = subscription
-	//!!!return connection handle, not scoped. Scoped as a wrapper!
-	//connection must store disconnect function, signal ptr and slot handle
-
-	//!!!if returned handle is copied, all copies must know if any of them unsubscribed the connection from the signal!
-	//or forbid connection copying, allow only moving!!!
-
-	//all subscriptions may be inherited from an abstract base class (refcounted) to simplify storing them as one type
-
-	//???subscription smart pointer IS a handle?
-	//would be a problem to destroy it - external destroy = unsubscribe, internal destroy happens WHEN unsubscribing
-
-	// Connection API: IsConnected, Disconnect - need to have a signal reference to disconnect
-	// Scoped connection API: transparent creation from a simple connection handle
-
-	//Subscribe(THandler&& Handler) //???return std::list iterator as a handle? make own list to allow checking iterator validity? CHandleList?
-	//Unsubscribe
-
 	template<typename F>
 	void Subscribe(F f)
 	{
+		// TODO: get from cache. If empty, scan Referenced and fill the pool from it. If no luck, make_shared.
 		PNode Node = std::make_shared<CNode>();
 		Node->Slot = std::move(f);
 
@@ -66,15 +51,45 @@ public:
 		Slots = std::move(Node);
 	}
 
-	void UnsubscribeAll() { _Handlers.clear(); }
+	void UnsubscribeAll()
+	{
+		// unsubscribe in a loop
+	}
 
 	void operator()(TArgs... Args) const
 	{
-		Slots->Slot(Args...);
+		//???hold strong ref? what is necessary to protect invoked list from destructive changes?
+		const CNode* pNode = Slots.get();
+		while (pNode)
+		{
+			pNode->Slot(Args...);
+			pNode = pNode->Next.get();
+		}
 	}
 
-	bool Empty() const { return _Handlers.empty(); }
-	UPTR GetHandlerCount() const { return _Handlers.size(); }
+	bool Empty() const
+	{
+		const CNode* pNode = Slots.get();
+		while (pNode)
+		{
+			if (pNode->Connected) return false;
+			pNode = pNode->Next.get();
+		}
+		return true;
+	}
+
+	//???remove disconnected here? what if called during the invocation?
+	size_t GetSlotCount() const
+	{
+		size_t Count = 0;
+		const CNode* pNode = Slots.get();
+		while (pNode)
+		{
+			if (pNode->Connected) ++Count;
+			pNode = pNode->Next.get();
+		}
+		return Count;
+	}
 };
 
 }
