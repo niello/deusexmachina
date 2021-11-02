@@ -14,11 +14,20 @@ class CSignal<TRet(TArgs...)> final
 {
 protected:
 
-	using THandler = std::function<TRet(TArgs...)>;
+	struct CNode;
+	using TSlot = std::function<TRet(TArgs...)>;
+	using PNode = std::shared_ptr<CNode>;
 
-	std::vector<THandler> _Handlers; //???use list or custom data structure to support unsubscribe while iterating?
+	struct CNode
+	{
+		// TODO: strong and weak counters for intrusive
+		TSlot Slot;
+		PNode Next;
+	};
 
-	//!!!can store free node pool if using a custom list!
+	PNode Slots;
+	PNode Referenced;
+	PNode Pool;
 
 public:
 
@@ -47,18 +56,21 @@ public:
 	//Subscribe(THandler&& Handler) //???return std::list iterator as a handle? make own list to allow checking iterator validity? CHandleList?
 	//Unsubscribe
 
-	void UnsubscribeAll() { _Handlers.clear(); }
-
-	void Fire(TArgs... Args) const
+	template<typename F>
+	void Subscribe(F f)
 	{
-		for (auto&& Handler : std::as_const(Handlers))
-			Handler(Args...);
+		PNode Node = std::make_shared<CNode>();
+		Node->Slot = std::move(f);
+
+		Node->Next = std::move(Slots);
+		Slots = std::move(Node);
 	}
+
+	void UnsubscribeAll() { _Handlers.clear(); }
 
 	void operator()(TArgs... Args) const
 	{
-		for (auto&& Handler : std::as_const(Handlers))
-			Handler(Args...);
+		Slots->Slot(Args...);
 	}
 
 	bool Empty() const { return _Handlers.empty(); }
