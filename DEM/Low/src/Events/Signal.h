@@ -7,6 +7,42 @@
 
 namespace DEM
 {
+
+struct CConnectionRecordBase
+{
+	// TODO: strong and weak counters for intrusive
+	bool Connected = false; //???can use one byte from strong counter?
+};
+
+class CConnection
+{
+protected:
+
+	std::weak_ptr<CConnectionRecordBase> _Record;
+
+public:
+
+	CConnection(std::weak_ptr<CConnectionRecordBase>&& Record) : _Record(std::move(Record)) {}
+	~CConnection()
+	{
+		// FIXME: std weak pointer has no access to the weak counter, can't unsubscribe here
+		//!!!Also Referenced / Pool scheme will not work if we don't know the weak count!
+		// if (_Record.weak_use_count() == 1) Disconnect();
+	}
+
+	bool IsConnected() const
+	{
+		const auto SharedRecord = _Record.lock();
+		return SharedRecord && SharedRecord->Connected;
+	}
+
+	void Disconnect()
+	{
+		if (auto SharedRecord = _Record.lock())
+			SharedRecord->Connected = false;
+	}
+};
+
 template<typename T>
 class CSignal;
 
@@ -19,12 +55,10 @@ protected:
 	using TSlot = std::function<TRet(TArgs...)>;
 	using PNode = std::shared_ptr<CNode>;
 
-	struct CNode
+	struct CNode : public CConnectionRecordBase
 	{
-		// TODO: strong and weak counters for intrusive
 		TSlot Slot;
 		PNode Next;
-		bool  Connected = false;
 	};
 
 	PNode Slots;
@@ -41,14 +75,19 @@ public:
 	~CSignal() = default;
 
 	template<typename F>
-	void Subscribe(F f)
+	CConnection Subscribe(F f)
 	{
 		// TODO: get from cache. If empty, scan Referenced and fill the pool from it. If no luck, make_shared.
 		PNode Node = std::make_shared<CNode>();
 		Node->Slot = std::move(f);
+		Node->Connected = true;
+
+		CConnection Conn(Node);
 
 		Node->Next = std::move(Slots);
 		Slots = std::move(Node);
+
+		return Conn;
 	}
 
 	void UnsubscribeAll()
@@ -56,7 +95,10 @@ public:
 		// unsubscribe in a loop - GC each node
 	}
 
+	//!!!need a cached memory cleanup call - free Referenced and Pool!
+
 	//???garbage collection only in non-const version? could be a mean for the user to control GC.
+	//???need also an explicit GC call?
 	void operator()(TArgs... Args) const
 	{
 		//???hold strong ref? what is necessary to protect invoked list from destructive changes?
@@ -81,7 +123,6 @@ public:
 		return true;
 	}
 
-	//???remove disconnected here? what if called during the invocation?
 	size_t GetSlotCount() const
 	{
 		size_t Count = 0;
