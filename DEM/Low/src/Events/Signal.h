@@ -10,8 +10,9 @@ namespace DEM
 
 struct CConnectionRecordBase
 {
-	// TODO: strong and weak counters for intrusive
-	bool Connected = false; //???can use one byte from strong counter?
+	// TODO: strong and weak counters for intrusive?
+	uint16_t ConnectionCount = 0;
+	bool     Connected = false; //???can use one byte from strong counter if 32 bits will be used?
 };
 
 class CConnection
@@ -22,12 +23,33 @@ protected:
 
 public:
 
-	CConnection(std::weak_ptr<CConnectionRecordBase>&& Record) : _Record(std::move(Record)) {}
-	~CConnection()
+	CConnection(std::weak_ptr<CConnectionRecordBase>&& Record) noexcept
+		: _Record(std::move(Record))
 	{
-		// FIXME: std weak pointer has no access to the weak counter, can't unsubscribe here
-		//!!!Also Referenced / Pool scheme will not work if we don't know the weak count!
-		// if (_Record.weak_use_count() == 1) Disconnect();
+		if (auto SharedRecord = _Record.lock())
+			++SharedRecord->ConnectionCount;
+	}
+
+	CConnection(const CConnection& Other) noexcept
+		: _Record(Other._Record)
+	{
+		if (auto SharedRecord = _Record.lock())
+			++SharedRecord->ConnectionCount;
+	}
+
+	CConnection(CConnection&& Other) noexcept
+		: _Record(std::move(Other._Record))
+	{
+		Other._Record.reset();
+	}
+
+	~CConnection() noexcept
+	{
+		// Check if the last connection was disconnected
+		//???only CScopedConnection must auto-disconnect?
+		const auto SharedRecord = _Record.lock();
+		if (SharedRecord && --SharedRecord->ConnectionCount == 0)
+			SharedRecord->Connected = false;
 	}
 
 	bool IsConnected() const
@@ -65,6 +87,62 @@ protected:
 	PNode Referenced;
 	PNode Pool;
 
+	void PrepareNode()
+	{
+		if (!Pool)
+		{
+			// Move no longer referenced disconnected nodes to the pool
+			const CNode* pNode = Referenced.get();
+			const CNode* pPrev = nullptr;
+			PNode First = nullptr;
+			CNode* pLast = nullptr;
+			while (pNode)
+			{
+				if (pNode->ConnectionCount)
+				{
+					if (First)
+					{
+						pLast->Next = std::move(Pool);
+						Pool = std::move(First);
+						First = nullptr;
+					}
+				}
+				else
+				{
+					if (!First)
+						First = pPrev ? pPrev->Next : Referenced; //???std::move()?
+					pLast = pNode;
+				}
+
+				pPrev = pNode;
+				pNode = pNode->Next.get();
+			}
+
+			//???instead of first store last referenced?
+			if (First)
+			{
+				pLast->Next = std::move(Pool);
+				Pool = std::move(First);
+
+				//!!!LastReferenced->Next = nullptr;!
+			}
+		}
+
+		PNode Node;
+		if (Pool)
+		{
+			Node = std::move(Pool);
+			Pool = std::move(Node->Next);
+		}
+		else
+			Node = std::make_shared<CNode>();
+
+		Node->Connected = true;
+
+		Node->Next = std::move(Slots);
+		Slots = std::move(Node);
+	}
+
 public:
 
 	CSignal() = default;
@@ -77,17 +155,9 @@ public:
 	template<typename F>
 	CConnection Subscribe(F f)
 	{
-		// TODO: get from cache. If empty, scan Referenced and fill the pool from it. If no luck, make_shared.
-		PNode Node = std::make_shared<CNode>();
-		Node->Slot = std::move(f);
-		Node->Connected = true;
-
-		CConnection Conn(Node);
-
-		Node->Next = std::move(Slots);
-		Slots = std::move(Node);
-
-		return Conn;
+		PrepareNode();
+		Slots->Slot = std::move(f);
+		return CConnection(Slots);
 	}
 
 	void UnsubscribeAll()
