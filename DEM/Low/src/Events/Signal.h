@@ -43,7 +43,7 @@ public:
 		Other._Record.reset();
 	}
 
-	~CConnection() noexcept
+	~CConnection()
 	{
 		// Check if the last connection was disconnected
 		//???only CScopedConnection must auto-disconnect?
@@ -92,39 +92,42 @@ protected:
 		if (!Pool)
 		{
 			// Move no longer referenced disconnected nodes to the pool
-			const CNode* pNode = Referenced.get();
-			const CNode* pPrev = nullptr;
-			PNode First = nullptr;
-			CNode* pLast = nullptr;
-			while (pNode)
+			CNode* pCurr = Referenced.get();
+			CNode* pPrev = nullptr;
+			CNode* pLastReferenced = nullptr;
+			CNode* pLastNotReferenced = nullptr;
+			while (pCurr)
 			{
-				if (pNode->ConnectionCount)
+				if (pCurr->ConnectionCount)
 				{
-					if (First)
+					// A chunk of not referenced objects is interrupted. Move it to the pool.
+					if (pLastNotReferenced)
 					{
-						pLast->Next = std::move(Pool);
+						pLastNotReferenced->Next = std::move(Pool);
+						auto& First = pLastReferenced ? pLastReferenced->Next : Referenced;
 						Pool = std::move(First);
-						First = nullptr;
+						First = std::move(pPrev->Next);
+						pLastNotReferenced = nullptr;
 					}
 				}
 				else
 				{
-					if (!First)
-						First = pPrev ? pPrev->Next : Referenced; //???std::move()?
-					pLast = pNode;
+					// Track a chunk of not referenced nodes
+					if (!pLastReferenced) pLastReferenced = pPrev;
+					pLastNotReferenced = pCurr;
 				}
 
-				pPrev = pNode;
-				pNode = pNode->Next.get();
+				pPrev = pCurr;
+				pCurr = pCurr->Next.get();
 			}
 
-			//???instead of first store last referenced?
-			if (First)
+			// Move the last tracked chunk to the pool
+			if (pLastNotReferenced)
 			{
-				pLast->Next = std::move(Pool);
+				pLastNotReferenced->Next = std::move(Pool);
+				auto& First = pLastReferenced ? pLastReferenced->Next : Referenced;
 				Pool = std::move(First);
-
-				//!!!LastReferenced->Next = nullptr;!
+				First = nullptr;
 			}
 		}
 
@@ -141,6 +144,15 @@ protected:
 
 		Node->Next = std::move(Slots);
 		Slots = std::move(Node);
+	}
+
+	void CollectNode(CNode* pPrev, PNode Node)
+	{
+		auto& Broken = pPrev ? pPrev->Next : Slots;
+		auto& Dest = Node->ConnectionCount ? Referenced : Pool;
+		Broken = std::move(Node->Next);
+		Node->Next = std::move(Dest);
+		Dest = std::move(Node);
 	}
 
 public:
@@ -162,7 +174,15 @@ public:
 
 	void UnsubscribeAll()
 	{
-		// unsubscribe in a loop - GC each node
+		PNode Curr = Slots;
+		CNode* pPrev = nullptr;
+		while (pCurr)
+		{
+			pCurr->Connected = false;
+			CollectNode(pPrev, Curr);
+			pPrev = Curr.get();
+			Curr = Curr->Next; // FIXME: already changed, must remember before collecting!
+		}
 	}
 
 	//!!!need a cached memory cleanup call - free Referenced and Pool!
