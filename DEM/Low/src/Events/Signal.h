@@ -15,6 +15,7 @@ struct CConnectionRecordBase
 	bool     Connected = false; //???can use one byte from strong counter if 32 bits will be used?
 };
 
+// TODO: find better name? DEM::CConnection has no clear relation to the signal-slot system. Or DEM::Events::...?
 class CConnection
 {
 protected:
@@ -146,15 +147,18 @@ protected:
 		Slots = std::move(Node);
 	}
 
-	void CollectNode(CNode* pPrev, PNode Node)
+	void CollectNode(PNode& Node)
 	{
 		Node->Slot = nullptr;
 
-		auto& Broken = pPrev ? pPrev->Next : Slots;
-		auto& Dest = Node->ConnectionCount ? Referenced : Pool;
-		Broken = std::move(Node->Next);
-		Node->Next = std::move(Dest);
-		Dest = std::move(Node);
+		// Extract the node from its current chain
+		PNode FreeNode = Node;
+		Node = std::move(Node->Next);
+
+		// Attach extracted node to the free list as a new head
+		PNode& Dest = FreeNode->ConnectionCount ? Referenced : Pool;
+		FreeNode->Next = std::move(Dest);
+		Dest = std::move(FreeNode);
 	}
 
 public:
@@ -174,12 +178,21 @@ public:
 		return CConnection(Slots);
 	}
 
+	template<typename F>
+	void SubscribeAndForget(F f)
+	{
+		PrepareNode();
+		Slots->Slot = std::move(f);
+	}
+
+	// TODO: void Subscribe(F f, TID ID) - subscribe by ID value, can share between different slots, no connection tracking
+
 	void UnsubscribeAll()
 	{
 		while (Slots)
 		{
-			pCurr->Connected = false;
-			CollectNode(nullptr, Slots);
+			Slots->Connected = false;
+			CollectNode(Slots);
 		}
 	}
 
@@ -189,31 +202,43 @@ public:
 		Pool = nullptr;
 	}
 
+	void CollectGarbage()
+	{
+		CNode* pCurr = Slots.get();
+		CNode* pPrev = nullptr;
+		while (pCurr)
+		{
+			if (!pCurr->Connected)
+			{
+				auto& SharedCurr = pPrev ? pPrev->Next : Slots;
+				CollectNode(SharedCurr);
+				pCurr = SharedCurr.get();
+			}
+			else
+			{
+				pPrev = pCurr;
+				pCurr = pCurr->Next.get();
+			}
+		}
+	}
+
 	void operator()(TArgs... Args) const
 	{
-		//???hold strong ref? what is necessary to protect invoked list from destructive changes?
+		//???hold strong ref? what is necessary to protect invoked list and node from destructive changes?
 		const CNode* pNode = Slots.get();
 		while (pNode)
 		{
+			//???else (if not connected) clear pNode->Slot immediately to free lambda captures etc? requires non-const!
 			if (pNode->Connected)
 				pNode->Slot(Args...);
 			pNode = pNode->Next.get();
 		}
 	}
 
-	// Performs garbage collection
-	//???need also an explicit GC call?
 	void operator()(TArgs... Args)
 	{
-		//???hold strong ref? what is necessary to protect invoked list from destructive changes?
-		const CNode* pNode = Slots.get();
-		while (pNode)
-		{
-			if (pNode->Connected)
-				pNode->Slot(Args...);
-			// else GC (can modify list right now? what about multithreading?)
-			pNode = pNode->Next.get();
-		}
+		CollectGarbage();
+		std::as_const(*this).operator ()(Args...);
 	}
 
 	bool Empty() const
