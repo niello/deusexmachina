@@ -62,7 +62,11 @@ public:
 	void Disconnect()
 	{
 		if (auto SharedRecord = _Record.lock())
+		{
 			SharedRecord->Connected = false;
+			--SharedRecord->ConnectionCount;
+			_Record.reset();
+		}
 	}
 };
 
@@ -168,10 +172,14 @@ public:
 	CSignal(CSignal&&) noexcept = default;
 	CSignal& operator =(const CSignal&) = delete;
 	CSignal& operator =(CSignal&&) noexcept = default;
-	~CSignal() = default;
+	~CSignal()
+	{
+		//!!!FIXME: kill Slots!
+		ReleaseMemory();
+	}
 
 	template<typename F>
-	CConnection Subscribe(F f)
+	[[nodiscard]] CConnection Subscribe(F f)
 	{
 		PrepareNode();
 		Slots->Slot = std::move(f);
@@ -198,8 +206,11 @@ public:
 
 	void ReleaseMemory()
 	{
-		Referenced = nullptr;
-		Pool = nullptr;
+		while (Referenced)
+			Referenced = std::move(Referenced->Next);
+
+		while (Pool)
+			Pool = std::move(Pool->Next);
 	}
 
 	void CollectGarbage()
