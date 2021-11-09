@@ -148,6 +148,8 @@ protected:
 
 	void CollectNode(CNode* pPrev, PNode Node)
 	{
+		Node->Slot = nullptr;
+
 		auto& Broken = pPrev ? pPrev->Next : Slots;
 		auto& Dest = Node->ConnectionCount ? Referenced : Pool;
 		Broken = std::move(Node->Next);
@@ -174,22 +176,34 @@ public:
 
 	void UnsubscribeAll()
 	{
-		PNode Curr = Slots;
-		CNode* pPrev = nullptr;
-		while (pCurr)
+		while (Slots)
 		{
 			pCurr->Connected = false;
-			CollectNode(pPrev, Curr);
-			pPrev = Curr.get();
-			Curr = Curr->Next; // FIXME: already changed, must remember before collecting!
+			CollectNode(nullptr, Slots);
 		}
 	}
 
-	//!!!need a cached memory cleanup call - free Referenced and Pool!
+	void ReleaseMemory()
+	{
+		Referenced = nullptr;
+		Pool = nullptr;
+	}
 
-	//???garbage collection only in non-const version? could be a mean for the user to control GC.
-	//???need also an explicit GC call?
 	void operator()(TArgs... Args) const
+	{
+		//???hold strong ref? what is necessary to protect invoked list from destructive changes?
+		const CNode* pNode = Slots.get();
+		while (pNode)
+		{
+			if (pNode->Connected)
+				pNode->Slot(Args...);
+			pNode = pNode->Next.get();
+		}
+	}
+
+	// Performs garbage collection
+	//???need also an explicit GC call?
+	void operator()(TArgs... Args)
 	{
 		//???hold strong ref? what is necessary to protect invoked list from destructive changes?
 		const CNode* pNode = Slots.get();
