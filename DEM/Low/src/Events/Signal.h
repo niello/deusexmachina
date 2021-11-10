@@ -24,6 +24,8 @@ protected:
 
 public:
 
+	CConnection() noexcept = default;
+
 	CConnection(std::weak_ptr<CConnectionRecordBase>&& Record) noexcept
 		: _Record(std::move(Record))
 	{
@@ -53,6 +55,21 @@ public:
 			SharedRecord->Connected = false;
 	}
 
+	CConnection& operator =(const CConnection& Other) noexcept
+	{
+		_Record = Other._Record;
+		if (auto SharedRecord = _Record.lock())
+			++SharedRecord->ConnectionCount;
+		return *this;
+	}
+
+	CConnection& operator =(CConnection&& Other) noexcept
+	{
+		_Record = std::move(Other._Record);
+		Other._Record.reset();
+		return *this;
+	}
+
 	bool IsConnected() const
 	{
 		const auto SharedRecord = _Record.lock();
@@ -65,8 +82,8 @@ public:
 		{
 			SharedRecord->Connected = false;
 			--SharedRecord->ConnectionCount;
-			_Record.reset();
 		}
+		_Record.reset();
 	}
 };
 
@@ -242,17 +259,34 @@ public:
 		const CNode* pNode = Slots.get();
 		while (pNode)
 		{
-			//???else (if not connected) clear pNode->Slot immediately to free lambda captures etc? requires non-const!
 			if (pNode->Connected)
 				pNode->Slot(Args...);
 			pNode = pNode->Next.get();
 		}
 	}
 
+	// operator() const + CollectGarbage() merged into a single pass for speed-up
 	void operator()(TArgs... Args)
 	{
-		CollectGarbage();
-		std::as_const(*this).operator ()(Args...);
+		//???hold strong ref? what is necessary to protect invoked list and node from destructive changes?
+		CNode* pCurr = Slots.get();
+		CNode* pPrev = nullptr;
+		while (pCurr)
+		{
+			if (!pCurr->Connected)
+			{
+				auto& SharedCurr = pPrev ? pPrev->Next : Slots;
+				CollectNode(SharedCurr);
+				pCurr = SharedCurr.get();
+			}
+			else
+			{
+				pCurr->Slot(Args...);
+
+				pPrev = pCurr;
+				pCurr = pCurr->Next.get();
+			}
+		}
 	}
 
 	bool Empty() const
