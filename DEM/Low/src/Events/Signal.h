@@ -57,16 +57,29 @@ public:
 
 	CConnection& operator =(const CConnection& Other) noexcept
 	{
+		if (this == &Other) return *this;
+
+		if (auto SharedRecord = _Record.lock())
+			--SharedRecord->ConnectionCount;
+
 		_Record = Other._Record;
+
 		if (auto SharedRecord = _Record.lock())
 			++SharedRecord->ConnectionCount;
+
 		return *this;
 	}
 
 	CConnection& operator =(CConnection&& Other) noexcept
 	{
+		if (this == &Other) return *this;
+
+		if (auto SharedRecord = _Record.lock())
+			--SharedRecord->ConnectionCount;
+
 		_Record = std::move(Other._Record);
 		Other._Record.reset();
+
 		return *this;
 	}
 
