@@ -153,11 +153,11 @@ protected:
 
 	void CollectNode(PNode& Node)
 	{
-		Node->Slot = nullptr;
-
 		// Extract the node from its current chain
-		PNode FreeNode = Node;
-		Node = std::move(Node->Next);
+		PNode FreeNode = std::move(Node);
+		Node = std::move(FreeNode->Next);
+
+		FreeNode->Slot = nullptr;
 
 		// Attach extracted node to the free list as a new head
 		PNode& Dest = FreeNode->ConnectionCount ? Referenced : Pool;
@@ -174,7 +174,10 @@ public:
 	CSignal& operator =(CSignal&&) noexcept = default;
 	~CSignal()
 	{
-		//!!!FIXME: kill Slots!
+		// NB: turn recursion into loop to prevent stack overflow when too many slots exist
+		while (Slots)
+			Slots = std::move(Slots->Next);
+
 		ReleaseMemory();
 	}
 
