@@ -5,6 +5,10 @@
 // A signal that notifies an arbitrary number of callable handlers (slots).
 // Implements an Observer pattern. Use it for system decoupling, e.g. for an event system.
 
+// TODO: void Subscribe(F f, TID ID) - subscribe by ID value, can share between different slots, no connection tracking
+// TODO: invoke with result accumulation, template Callable accumulator.
+//       TAcc Accum(TAcc Curr, TRet SlotRet)? or void Accum(TAcc& Acc, TRet SlotRet).
+
 namespace DEM
 {
 
@@ -124,6 +128,7 @@ protected:
 
 	void PrepareNode()
 	{
+		// Try to reuse disconnected nodes no longer referenced by connection objects
 		if (!Pool)
 		{
 			// Move no longer referenced disconnected nodes to the pool
@@ -138,17 +143,18 @@ protected:
 					// A chunk of not referenced objects is interrupted. Move it to the pool.
 					if (pLastNotReferenced)
 					{
+						PNode Curr = std::move(pLastNotReferenced->Next);
 						pLastNotReferenced->Next = std::move(Pool);
-						auto& First = pLastReferenced ? pLastReferenced->Next : Referenced;
+						PNode& First = pLastReferenced ? pLastReferenced->Next : Referenced;
 						Pool = std::move(First);
-						First = std::move(pPrev->Next);
+						First = std::move(Curr);
 						pLastNotReferenced = nullptr;
 					}
 				}
 				else
 				{
 					// Track a chunk of not referenced nodes
-					if (!pLastReferenced) pLastReferenced = pPrev;
+					if (!pLastNotReferenced) pLastReferenced = pPrev;
 					pLastNotReferenced = pCurr;
 				}
 
@@ -160,11 +166,16 @@ protected:
 			if (pLastNotReferenced)
 			{
 				pLastNotReferenced->Next = std::move(Pool);
-				auto& First = pLastReferenced ? pLastReferenced->Next : Referenced;
+				PNode& First = pLastReferenced ? pLastReferenced->Next : Referenced;
 				Pool = std::move(First);
 				First = nullptr;
 			}
 		}
+
+		// Try to find and reuse disconnected nodes from Slots
+		// TODO PERF: if this is slow on long lists can stop on first N found nodes (and remember start pos for next GC?)
+		//???CollectGarbage(count N)?!
+		if (!Pool) CollectGarbage();
 
 		PNode Node;
 		if (Pool)
@@ -225,8 +236,6 @@ public:
 		PrepareNode();
 		Slots->Slot = std::move(f);
 	}
-
-	// TODO: void Subscribe(F f, TID ID) - subscribe by ID value, can share between different slots, no connection tracking
 
 	void UnsubscribeAll()
 	{
