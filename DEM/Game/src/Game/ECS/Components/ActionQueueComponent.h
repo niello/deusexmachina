@@ -29,9 +29,9 @@ private:
 
 	friend class CActionQueueComponent;
 
-	const Events::PEventBase* _It = nullptr;
+	const ::Events::PEventBase* _It = nullptr;
 
-	HAction(const Events::PEventBase* It) : _It(It) {}
+	HAction(const ::Events::PEventBase* It) : _It(It) {}
 
 public:
 
@@ -44,7 +44,7 @@ public:
 	template<class T>
 	T* As() const
 	{
-		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
+		static_assert(std::is_base_of_v<::Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
 		return (_It && _It->get()) ? (*_It)->As<T>() : nullptr;
 	}
 };
@@ -53,14 +53,14 @@ class CActionQueueComponent final
 {
 protected:
 
-	std::vector<Events::PEventBase> _Stack;
-	std::deque<Events::PEventBase>  _Queue;
+	std::vector<::Events::PEventBase> _Stack;
+	std::deque<::Events::PEventBase>  _Queue;
 	EActionStatus                   _Status = EActionStatus::NotQueued;
 
 	template<typename T, typename... TNext>
-	inline bool IsActionOneOf(Events::CEventID ID) const
+	inline bool IsActionOneOf(::Events::CEventID ID) const
 	{
-		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
+		static_assert(std::is_base_of_v<::Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
 		if (ID == T::RTTI) return true;
 		if constexpr (sizeof...(TNext) > 0) return IsActionOneOf<TNext...>(ID);
 		return false;
@@ -71,14 +71,14 @@ protected:
 	inline auto ItFromHandle(HAction Handle) const { return _Stack.begin() + (Handle._It - _Stack.data()); }
 	//---------------------------------------------------------------------
 
-	static inline HAction HandleFromIt(std::vector<Events::PEventBase>::const_iterator It) { return HAction{ &(*It) }; }
+	static inline HAction HandleFromIt(std::vector<::Events::PEventBase>::const_iterator It) { return HAction{ &(*It) }; }
 	//---------------------------------------------------------------------
 
 	// ResetOnReuse - when false and immediate child is reused, its state and children are not reset
 	template<typename T, bool ResetOnReuse, typename... TArgs>
 	HAction PushChildT(HAction Parent, TArgs&&... Args)
 	{
-		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
+		static_assert(std::is_base_of_v<::Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
 
 		if (!Parent) return {};
 
@@ -99,7 +99,7 @@ protected:
 		if (ChildIt != ReuseIt)
 		{
 			// Low-level vector usage optimization, ignore iterator constantness
-			std::swap(const_cast<Events::PEventBase&>(*ChildIt), const_cast<Events::PEventBase&>(*ReuseIt));
+			std::swap(const_cast<::Events::PEventBase&>(*ChildIt), const_cast<::Events::PEventBase&>(*ReuseIt));
 			_Stack.erase(ChildIt + 1, _Stack.cend());
 		}
 		else if constexpr (ResetOnReuse)
@@ -128,7 +128,7 @@ public:
 	template<typename T, typename... TArgs>
 	void EnqueueAction(TArgs&&... Args)
 	{
-		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
+		static_assert(std::is_base_of_v<::Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
 		_Queue.push_back(std::make_unique<T>(std::forward<TArgs>(Args)...));
 	}
 	//---------------------------------------------------------------------
@@ -171,7 +171,7 @@ public:
 	}
 	//---------------------------------------------------------------------
 
-	HAction FindCurrent(Events::CEventID ID, HAction From = {}) const
+	HAction FindCurrent(::Events::CEventID ID, HAction From = {}) const
 	{
 		auto It = _Stack.crbegin();
 		if (From)

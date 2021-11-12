@@ -21,9 +21,9 @@ enum class EAbilityExecutionStage : U8
 	Interaction
 };
 
-class ExecuteAbility : public Events::CEventNative
+class ExecuteAbility : public ::Events::CEventNative
 {
-	NATIVE_EVENT_DECL(ExecuteAbility, Events::CEventNative);
+	NATIVE_EVENT_DECL(ExecuteAbility, ::Events::CEventNative);
 
 public:
 

@@ -199,7 +199,7 @@ T* CGameWorld::AddComponent(HEntity EntityID)
 template<class T>
 bool CGameWorld::RemoveComponent(HEntity EntityID)
 {
-	if (!EntityID) FAIL;
+	if (!EntityID) return false;
 	auto pStorage = FindComponentStorage<T>();
 	return pStorage ? pStorage->TComponentTraits<T>::TStorage::RemoveComponent(EntityID) : false;
 }

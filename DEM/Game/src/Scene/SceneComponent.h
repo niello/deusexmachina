@@ -15,6 +15,9 @@ struct CSceneComponent
 	// TODO: need no external objects, may call optional Finalizer() embedded into the component class
 	static constexpr bool ExternalDeinit = true;
 
+	// New scene nodes need to be attached to the scene
+	static constexpr bool Signals = true;
+
 	Scene::PSceneNode RootNode;
 
 	CStrID            AssetID;

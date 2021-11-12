@@ -21,31 +21,31 @@ enum EEventPriority
 }
 
 #define DECLARE_EVENT_HANDLER(EventName, HandlerName) \
-	bool HandlerName(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event); \
-	Events::PSub Sub_##EventName;
+	bool HandlerName(::Events::CEventDispatcher* pDispatcher, const ::Events::CEventBase& Event); \
+	::Events::PSub Sub_##EventName;
 
 #define DECLARE_EVENT_HANDLER_VIRTUAL(EventName, HandlerName) \
-	bool HandlerName##Proc(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event); \
+	bool HandlerName##Proc(::Events::CEventDispatcher* pDispatcher, const ::Events::CEventBase& Event); \
 	virtual void HandlerName(); \
-	Events::PSub Sub_##EventName;
+	::Events::PSub Sub_##EventName;
 
 #define DECLARE_2_EVENTS_HANDLER(EventName1, EventName2, HandlerName) \
-	bool HandlerName(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event); \
-	Events::PSub Sub_##EventName1; \
-	Events::PSub Sub_##EventName2;
+	bool HandlerName(::Events::CEventDispatcher* pDispatcher, const ::Events::CEventBase& Event); \
+	::Events::PSub Sub_##EventName1; \
+	::Events::PSub Sub_##EventName2;
 
 #define DECLARE_ALL_EVENTS_HANDLER(HandlerName) \
-	bool HandlerName(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event); \
-	Events::PSub Sub_ALL_EVENTS;
+	bool HandlerName(::Events::CEventDispatcher* pDispatcher, const ::Events::CEventBase& Event); \
+	::Events::PSub Sub_ALL_EVENTS;
 
 #define IMPL_EVENT_HANDLER_VIRTUAL(EventName, Class, HandlerName) \
-	bool Class::HandlerName##Proc(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event) { HandlerName(); OK; }
+	bool Class::HandlerName##Proc(::Events::CEventDispatcher* pDispatcher, const ::Events::CEventBase& Event) { HandlerName(); OK; }
 
 #define SUBSCRIBE_NEVENT(EventName, Class, Handler) \
-	Sub_##EventName = EventSrv->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler)
+	Sub_##EventName = EventSrv->Subscribe<Class>(&::Event::EventName::RTTI, this, &Class::Handler)
 
 #define SUBSCRIBE_NEVENT_PRIORITY(EventName, Class, Handler, Priority) \
-	Sub_##EventName = EventSrv->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, Priority)
+	Sub_##EventName = EventSrv->Subscribe<Class>(&::Event::EventName::RTTI, this, &Class::Handler, Priority)
 
 #define SUBSCRIBE_PEVENT(EventName, Class, Handler) \
 	Sub_##EventName = EventSrv->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler)
@@ -60,10 +60,10 @@ enum EEventPriority
 	Sub_##EventName = EventSrv->Subscribe<Class>(nullptr, this, &Class::Handler, Priority)
 
 #define DISP_SUBSCRIBE_NEVENT(Dispatcher, EventName, Class, Handler) \
-	Sub_##EventName = (Dispatcher)->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler)
+	Sub_##EventName = (Dispatcher)->Subscribe<Class>(&::Event::EventName::RTTI, this, &Class::Handler)
 
 #define DISP_SUBSCRIBE_NEVENT_PRIORITY(Dispatcher, EventName, Class, Handler, Priority) \
-	Sub_##EventName = (Dispatcher)->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, Priority)
+	Sub_##EventName = (Dispatcher)->Subscribe<Class>(&::Event::EventName::RTTI, this, &Class::Handler, Priority)
 
 #define DISP_SUBSCRIBE_PEVENT(Dispatcher, EventName, Class, Handler) \
 	Sub_##EventName = (Dispatcher)->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler)

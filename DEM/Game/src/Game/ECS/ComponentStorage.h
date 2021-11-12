@@ -4,6 +4,7 @@
 #include <Data/SerializeToParams.h>
 #include <Data/SerializeToBinary.h>
 #include <Data/Buffer.h>
+#include <Events/Signal.h>
 #include <IO/Streams/MemStream.h>
 #include <System/Allocators/PoolAllocator.h>
 
@@ -97,11 +98,21 @@ template<typename T> struct CStorageDead
 };
 struct CStorageNoDead {};
 
+// Conditional signals mixin
+template<typename T> struct CStorageSignals
+{
+	Events::CSignal<void(HEntity, T*)> OnAdd;
+	Events::CSignal<void(HEntity, T*)> OnRemove;
+	//???OnModify / OnGetMutable?
+};
+struct CStorageNoSignals {};
+
 // ExternalDeinit flag prevents components from being deleted on remove. Use it when the component
 // requires external deinitialization logic, e.g. cancelling async operations or freeing resources.
-template<typename T, bool ExternalDeinit = false>
+template<typename T, bool Signals = false, bool ExternalDeinit = false>
 class CSparseComponentStorage : public IComponentStorage,
 	std::conditional_t<STORAGE_USE_DIFF_POOL<T>, CStoragePool<T>, CStorageNoPool>,
+	public std::conditional_t<Signals, CStorageSignals<T>, CStorageNoSignals>,
 	public std::conditional_t<ExternalDeinit, CStorageDead<T>, CStorageNoDead>
 {
 protected:
@@ -415,7 +426,11 @@ public:
 				CIndexRecord{ NO_BASE_DATA, {}, 0, Index, EComponentState::Explicit, EComponentState::NoBase, true });
 		}
 
-		return (Index != INVALID_INDEX) ? &_Data[Index].first : nullptr;
+		if (Index == INVALID_INDEX) return nullptr;
+
+		if constexpr (Signals) OnAdd(EntityID, &_Data[Index].first);
+
+		return &_Data[Index].first;
 	}
 	//---------------------------------------------------------------------
 
@@ -966,8 +981,9 @@ public:
 // Default storage for empty components (flags)
 ///////////////////////////////////////////////////////////////////////
 
-template<typename T>
-class CEmptyComponentStorage : public IComponentStorage
+template<typename T, bool Signals = false>
+class CEmptyComponentStorage : public IComponentStorage,
+	public std::conditional_t<Signals, CStorageSignals<T>, CStorageNoSignals>
 {
 protected:
 
@@ -1248,14 +1264,15 @@ public:
 // Misc
 ///////////////////////////////////////////////////////////////////////
 
+META_DECLARE_BOOL_FLAG(Signals);
 META_DECLARE_BOOL_FLAG(ExternalDeinit);
 
 template<typename T>
 struct TComponentTraits
 {
 	using TStorage = std::conditional_t<std::is_empty_v<T>,
-		CEmptyComponentStorage<T>,
-		CSparseComponentStorage<T, is_bool_flag_ExternalDeinit_v<T>>>;
+		CEmptyComponentStorage<T, is_bool_flag_Signals_v<T>>,
+		CSparseComponentStorage<T, is_bool_flag_Signals_v<T>, is_bool_flag_ExternalDeinit_v<T>>>;
 };
 
 template<typename T>

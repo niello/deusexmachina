@@ -9,7 +9,7 @@
 // TODO: invoke with result accumulation, template Callable accumulator.
 //       TAcc Accum(TAcc Curr, TRet SlotRet)? or void Accum(TAcc& Acc, TRet SlotRet).
 
-namespace DEM
+namespace DEM::Events
 {
 
 struct CConnectionRecordBase
@@ -19,7 +19,6 @@ struct CConnectionRecordBase
 	bool     Connected = false; //???can use one byte from strong counter if 32 bits will be used?
 };
 
-// TODO: find better name? DEM::CConnection has no clear relation to the signal-slot system. Or DEM::Events::...?
 class CConnection
 {
 protected:
