@@ -43,8 +43,7 @@ protected:
 			((std::is_same_v<TComponent, TComponents> || _World.FindComponent<const TComponents>(EntityID))
 				&& ...);
 
-		if (HadAllComponents)
-			_Stopped.push_back(EntityID);
+		if (HadAllComponents) _Stopped.push_back(EntityID);
 	}
 
 	template<typename TComponent>
@@ -63,11 +62,7 @@ protected:
 		}
 	}
 
-	template <std::size_t... I>
-	void InitInternal(std::index_sequence<I...>)
-	{
-		(Init<TComponents>(I), ...);
-	}
+	template <std::size_t... I> void InitInternal(std::index_sequence<I...>) { (Init<TComponents>(I), ...); }
 
 public:
 
@@ -75,6 +70,15 @@ public:
 		: _World(World)
 	{
 		InitInternal(std::index_sequence_for<TComponents...>());
+	}
+
+	template<typename F> void ForEachStarted(F Callback) const { for (HEntity EntityID : _Started) Callback(EntityID); }
+	template<typename F> void ForEachStopped(F Callback) const { for (HEntity EntityID : _Stopped) Callback(EntityID); }
+
+	void Clear()
+	{
+		_Started.clear();
+		_Stopped.clear();
 	}
 
 	bool IsConnected() const { return OnAddConn[0].IsConnected(); }
