@@ -52,11 +52,11 @@ protected:
 	{
 		if (auto pStorage = _World.FindComponentStorage<TComponent>())
 		{
-			_OnAddConn[Index] = pStorage->OnAdd.Subscribe([this](HEntity EntityID, TComponent* pComponent)
+			_OnAddConn[Index] = pStorage->OnAdd.Subscribe([this](HEntity EntityID, TComponent*)
 			{
 				OnComponentAdded<TComponent>(EntityID);
 			});
-			_OnRemoveConn[Index] = pStorage->OnRemove.Subscribe([this](HEntity EntityID, TComponent* pComponent)
+			_OnRemoveConn[Index] = pStorage->OnRemove.Subscribe([this](HEntity EntityID, TComponent*)
 			{
 				OnComponentRemoved<TComponent>(EntityID);
 			});
