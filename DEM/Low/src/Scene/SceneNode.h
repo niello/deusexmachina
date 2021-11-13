@@ -133,7 +133,7 @@ template<class T> inline T* CSceneNode::FindFirstAttribute() const
 }
 //---------------------------------------------------------------------
 
-// TODO: make templated for any invocable with this signature! Will be faster due to inlining!
+// TODO: if make templated for Callable bool(CSceneNode&), will be faster? Will passing callable to children prevent inlining?
 inline bool CSceneNode::Visit(const std::function<bool(CSceneNode& Node)>& Visitor)
 {
 	if (!Visitor(*this)) FAIL;

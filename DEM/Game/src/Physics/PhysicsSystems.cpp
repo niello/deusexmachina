@@ -13,6 +13,25 @@ namespace DEM::Game
 {
 void UpdateCharacterControllerShape(CCharacterControllerComponent& Character);
 
+void SetupPassiveColliders(HEntity EntityID, CSceneComponent& SceneComponent, Physics::CPhysicsLevel* pPhysicsLevel)
+{
+	if (!SceneComponent.RootNode) return;
+
+	SceneComponent.RootNode->Visit([EntityID, pPhysicsLevel](Scene::CSceneNode& Node)
+	{
+		for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
+		{
+			if (auto pCollAttr = Node.GetAttribute(i)->As<Physics::CCollisionAttribute>())
+			{
+				pCollAttr->SetPhysicsLevel(pPhysicsLevel);
+				pCollAttr->GetCollider()->UserData() = std::pair(EntityID, pCollAttr);
+			}
+		}
+		return true;
+	});
+}
+//---------------------------------------------------------------------
+
 bool GetTargetFromPhysicsObject(const Physics::CPhysicsObject& Object, CTargetInfo& OutTarget)
 {
 	OutTarget.Valid = false;
@@ -99,20 +118,7 @@ void InitPhysicsObjects(CGameWorld& World, CStrID LevelID, Resources::CResourceM
 	// Setup passive colliders
 	World.ForEachComponent<CSceneComponent>([pPhysicsLevel](auto EntityID, CSceneComponent& SceneComponent)
 	{
-		if (!SceneComponent.RootNode) return;
-
-		SceneComponent.RootNode->Visit([EntityID, pPhysicsLevel](Scene::CSceneNode& Node)
-		{
-			for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
-			{
-				if (auto pCollAttr = Node.GetAttribute(i)->As<Physics::CCollisionAttribute>())
-				{
-					pCollAttr->SetPhysicsLevel(pPhysicsLevel);
-					pCollAttr->GetCollider()->UserData() = std::pair(EntityID, pCollAttr);
-				}
-			}
-			return true;
-		});
+		SetupPassiveColliders(EntityID, SceneComponent, pPhysicsLevel);
 	});
 }
 //---------------------------------------------------------------------
