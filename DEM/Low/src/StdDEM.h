@@ -141,20 +141,22 @@ template <unsigned int Alignment> inline bool IsAligned(const void* Pointer) { r
 inline bool IsAligned16(const void* Pointer) { return !(((unsigned int)Pointer) & 0x0000000f); }
 
 template<typename T>
-void VectorFastErase(std::vector<T>& Self, UPTR Index)
+inline bool VectorFastErase(std::vector<T>& Self, UPTR Index)
 {
-	if (Index >= Self.size()) return;
+	if (Index >= Self.size()) return false;
 	if (Index < Self.size() - 1) std::swap(Self[Index], Self[Self.size() - 1]);
 	Self.pop_back();
+	return true;
 }
 
 template<typename T>
-void VectorFastErase(std::vector<T>& Self, typename std::vector<T>::iterator It)
+inline bool VectorFastErase(std::vector<T>& Self, typename std::vector<T>::iterator It)
 {
-	if (It == Self.cend()) return;
+	if (It == Self.cend()) return false;
 	if (It != --Self.cend())
 		std::swap(*It, Self.back());
 	Self.pop_back();
+	return true;
 }
 
 // Execution results

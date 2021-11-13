@@ -25,7 +25,7 @@ protected:
 	{
 		// Check existence of all other components for this entity
 		const bool Collected =
-			((std::is_same_v<TComponent, TComponents> || _World.FindComponent<std::add_const_t<TComponent>>(EntityID))
+			((std::is_same_v<TComponent, TComponents> || _World.FindComponent<const TComponents>(EntityID))
 			&& ...);
 
 		if (Collected)
@@ -33,6 +33,18 @@ protected:
 			_Started.push_back(EntityID);
 			VectorFastErase(_Stopped, std::find(_Stopped.begin(), _Stopped.end(), EntityID));
 		}
+	}
+
+	template<typename TComponent>
+	void OnComponentRemoved(HEntity EntityID)
+	{
+		// Check if this removal breaks a full set of observed components for this entity
+		const bool HadAllComponents = VectorFastErase(_Started, std::find(_Stopped.begin(), _Stopped.end(), EntityID)) ||
+			((std::is_same_v<TComponent, TComponents> || _World.FindComponent<const TComponents>(EntityID))
+				&& ...);
+
+		if (HadAllComponents)
+			_Stopped.push_back(EntityID);
 	}
 
 	template<typename TComponent>
@@ -44,14 +56,9 @@ protected:
 			{
 				OnComponentAdded<TComponent>(EntityID);
 			});
-			//_OnAddConn[Index] = pStorage->OnAdd.Subscribe(std::bind(&CComponentObserver::OnComponentAdded<TComponent>, this, std::placeholders::_1));
-			_OnRemoveConn[Index] = pStorage->OnRemove.Subscribe([](HEntity EntityID, TComponent* pComponent)
+			_OnRemoveConn[Index] = pStorage->OnRemove.Subscribe([this](HEntity EntityID, TComponent* pComponent)
 			{
-				// remove from the list (fast erase by swapping)
-				// if was in the list, add to removed list
-				//???need template bool flags TrackStart, TrackStop? if so, may not need one of vectors!
-				//can use conditional type - vector or empty struct, to save memory
-				//static assert at least one of 2 flags is set
+				OnComponentRemoved<TComponent>(EntityID);
 			});
 		}
 	}

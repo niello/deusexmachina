@@ -10,6 +10,9 @@ namespace DEM::Game
 
 struct CRigidBodyComponent
 {
+	//???!!!DBG TMP!? or need?
+	static constexpr bool Signals = true;
+
 	Physics::PRigidBody RigidBody;
 
 	// TODO: rel node path?
