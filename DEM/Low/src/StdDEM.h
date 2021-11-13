@@ -159,6 +159,12 @@ inline bool VectorFastErase(std::vector<T>& Self, typename std::vector<T>::itera
 	return true;
 }
 
+template<typename T>
+inline bool VectorFastErase(std::vector<T>& Self, const T& Value)
+{
+	return VectorFastErase(Self, std::find(Self.begin(), Self.end(), Value));
+}
+
 // Execution results
 
 const UPTR Failure = 0;
