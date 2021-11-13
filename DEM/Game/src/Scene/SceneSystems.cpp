@@ -8,36 +8,41 @@
 namespace DEM::Game
 {
 
+void InitNewSceneComponent(HEntity EntityID, const CEntity& Entity, CSceneComponent& SceneComponent, CGameWorld& World, Resources::CResourceManager& RsrcMgr)
+{
+	if (!SceneComponent.AssetID || (SceneComponent.RootNode && SceneComponent.RootNode->GetParent())) return;
+
+	auto pLevel = World.FindLevel(Entity.LevelID);
+	if (!pLevel) return;
+
+	//!!!FIXME: redundant CStrID creation inside if resource exists!!!
+	auto Rsrc = RsrcMgr.RegisterResource<Scene::CSceneNode>(SceneComponent.AssetID.CStr());
+	auto NodeTpl = Rsrc->ValidateObject<Scene::CSceneNode>();
+	if (!NodeTpl) return;
+
+	// Instantiate asset, keeping component transform
+	// FIXME: do it only if asset wasn't instantiated yet! Or clear contents on detach?
+	SceneComponent.RootNode->AddChild(CStrID("asset"), NodeTpl->Clone());
+	const CStrID NodeID = Entity.Name ? Entity.Name : CStrID(std::to_string(EntityID).c_str());
+	pLevel->GetSceneRoot().AddChildAtPath(NodeID, SceneComponent.RootPath, SceneComponent.RootNode, true);
+
+	// Validate resources
+	SceneComponent.RootNode->Visit([&RsrcMgr](Scene::CSceneNode& Node)
+	{
+		for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
+			Node.GetAttribute(i)->ValidateResources(RsrcMgr);
+		return true;
+	});
+}
+//---------------------------------------------------------------------
+
 //!!!FIXME: only in active levels!
-//!!!could optimize with flag-component for just created scene components! Or collect a list of entities for processing.
 void InitNewSceneComponents(CGameWorld& World, Resources::CResourceManager& RsrcMgr)
 {
 	World.ForEachEntityWith<CSceneComponent>(
 		[&World, &RsrcMgr](auto EntityID, auto& Entity, CSceneComponent& SceneComponent)
 	{
-		if (!SceneComponent.AssetID || (SceneComponent.RootNode && SceneComponent.RootNode->GetParent())) return;
-
-		auto pLevel = World.FindLevel(Entity.LevelID);
-		if (!pLevel) return;
-
-		//!!!FIXME: redundant CStrID creation inside if resource exists!!!
-		auto Rsrc = RsrcMgr.RegisterResource<Scene::CSceneNode>(SceneComponent.AssetID.CStr());
-		auto NodeTpl = Rsrc->ValidateObject<Scene::CSceneNode>();
-		if (!NodeTpl) return;
-
-		// Instantiate asset, keeping component transform
-		// FIXME: do it only if asset wasn't instantiated yet! Or clear contents on detach?
-		SceneComponent.RootNode->AddChild(CStrID("asset"), NodeTpl->Clone());
-		const CStrID NodeID = Entity.Name ? Entity.Name : CStrID(std::to_string(EntityID).c_str());
-		pLevel->GetSceneRoot().AddChildAtPath(NodeID, SceneComponent.RootPath, SceneComponent.RootNode, true);
-
-		// Validate resources
-		SceneComponent.RootNode->Visit([&RsrcMgr](Scene::CSceneNode& Node)
-		{
-			for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
-				Node.GetAttribute(i)->ValidateResources(RsrcMgr);
-			return true;
-		});
+		InitNewSceneComponent(EntityID, Entity, SceneComponent, World, RsrcMgr);
 	});
 }
 //---------------------------------------------------------------------

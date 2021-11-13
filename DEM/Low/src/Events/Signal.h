@@ -62,13 +62,16 @@ public:
 	{
 		if (this == &Other) return *this;
 
-		if (auto SharedRecord = _Record.lock())
-			--SharedRecord->ConnectionCount;
+		const auto OldSharedRecord = _Record.lock();
+		const auto NewSharedRecord = Other._Record.lock();
+		if (OldSharedRecord == NewSharedRecord) return *this;
+
+		if (NewSharedRecord) ++NewSharedRecord->ConnectionCount;
+
+		if (OldSharedRecord && --OldSharedRecord->ConnectionCount == 0)
+			OldSharedRecord->Connected = false;
 
 		_Record = Other._Record;
-
-		if (auto SharedRecord = _Record.lock())
-			++SharedRecord->ConnectionCount;
 
 		return *this;
 	}
@@ -77,10 +80,15 @@ public:
 	{
 		if (this == &Other) return *this;
 
-		if (auto SharedRecord = _Record.lock())
-			--SharedRecord->ConnectionCount;
+		const auto OldSharedRecord = _Record.lock();
+		if (OldSharedRecord != Other._Record.lock())
+		{
+			if (OldSharedRecord && --OldSharedRecord->ConnectionCount == 0)
+				OldSharedRecord->Connected = false;
 
-		_Record = std::move(Other._Record);
+			_Record = std::move(Other._Record);
+		}
+
 		Other._Record.reset();
 
 		return *this;
