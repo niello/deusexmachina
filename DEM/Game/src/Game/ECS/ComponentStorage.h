@@ -441,6 +441,9 @@ public:
 		if (!It) FAIL;
 
 		auto& IndexRecord = It->Value;
+
+		if constexpr (Signals) OnRemove(EntityID, &_Data[IndexRecord.Index].first);
+
 		ClearComponent(IndexRecord);
 		ClearDiffBuffer(IndexRecord);
 
@@ -570,6 +573,8 @@ public:
 
 		It->Value.DiffDirty = true;
 
+		if constexpr (Signals) OnAdd(EntityID, &_Data[It->Value.Index].first);
+
 		return true;
 	}
 	//---------------------------------------------------------------------
@@ -676,6 +681,8 @@ public:
 			_IndexByEntity.emplace(HEntity{ EntityIDRaw },
 				CIndexRecord{ OffsetInBase, {}, 0, INVALID_INDEX, ComponentState, ComponentState });
 		}
+
+		//???OnAdd? or when instantiated?
 
 		// Skip binary data for now. Will be accessed on demand through records' OffsetInBase.
 		auto ComponentDataSkipOffset = In.Read<U64>();
@@ -1011,6 +1018,9 @@ public:
 			It->Value.State = EComponentState::Explicit;
 		else
 			_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Explicit, EComponentState::NoBase });
+
+		if constexpr (Signals) OnAdd(EntityID, &_SharedInstance);
+
 		return &_SharedInstance;
 	}
 	//---------------------------------------------------------------------
@@ -1020,6 +1030,8 @@ public:
 	{
 		auto It = _IndexByEntity.find(EntityID);
 		if (!It) return false;
+
+		if constexpr (Signals) OnRemove(EntityID, &_SharedInstance);
 
 		// If record has no template, it can be erased entirely. If component is later added to the template,
 		// it will be instantiated. Can't explicitly delete templated component that is not present.
@@ -1088,6 +1100,8 @@ public:
 			It->Value.State = State;
 		else
 			_IndexByEntity.emplace(EntityID, CIndexRecord{ State, EComponentState::NoBase });
+
+		if constexpr (Signals) OnAdd(EntityID, &_SharedInstance);
 
 		return true;
 	}
