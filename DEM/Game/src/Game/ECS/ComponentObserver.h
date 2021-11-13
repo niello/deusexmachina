@@ -13,24 +13,39 @@ protected:
 
 	static_assert(sizeof...(TComponents) > 0, "CComponentObserver must observe at least one component type");
 
+	CGameWorld&          _World;
 	Events::CConnection  _OnAddConn[sizeof...(TComponents)];
 	Events::CConnection  _OnRemoveConn[sizeof...(TComponents)];
 
 	std::vector<HEntity> _Started;
 	std::vector<HEntity> _Stopped;
 
-public:
-
-	CComponentObserver(CGameWorld& World)
+	template<typename TComponent>
+	void OnComponentAdded(HEntity EntityID)
 	{
-		if (auto pStorage = World.FindComponentStorage<TComponents...>())
+		// Check existence of all other components for this entity
+		const bool Collected =
+			((std::is_same_v<TComponent, TComponents> || _World.FindComponent<std::add_const_t<TComponent>>(EntityID))
+			&& ...);
+
+		if (Collected)
 		{
-			_OnAddConn[0] = pStorage->OnAdd.Subscribe([](HEntity EntityID, TComponents...* pComponent)
+			_Started.push_back(EntityID);
+			VectorFastErase(_Stopped, std::find(_Stopped.begin(), _Stopped.end(), EntityID));
+		}
+	}
+
+	template<typename TComponent>
+	void Init(size_t Index)
+	{
+		if (auto pStorage = _World.FindComponentStorage<TComponent>())
+		{
+			_OnAddConn[Index] = pStorage->OnAdd.Subscribe([this](HEntity EntityID, TComponent* pComponent)
 			{
-				// check existence of all other components
-				// if so, add to the list
+				OnComponentAdded<TComponent>(EntityID);
 			});
-			_OnRemoveConn[0] = pStorage->OnRemove.Subscribe([](HEntity EntityID, TComponents...* pComponent)
+			//_OnAddConn[Index] = pStorage->OnAdd.Subscribe(std::bind(&CComponentObserver::OnComponentAdded<TComponent>, this, std::placeholders::_1));
+			_OnRemoveConn[Index] = pStorage->OnRemove.Subscribe([](HEntity EntityID, TComponent* pComponent)
 			{
 				// remove from the list (fast erase by swapping)
 				// if was in the list, add to removed list
@@ -41,7 +56,21 @@ public:
 		}
 	}
 
-	// bool IsConnected() const { return OnAddConn[0].IsConnected(); }
+	template <std::size_t... I>
+	void InitInternal(std::index_sequence<I...>)
+	{
+		(Init<TComponents>(I), ...);
+	}
+
+public:
+
+	CComponentObserver(CGameWorld& World)
+		: _World(World)
+	{
+		InitInternal(std::index_sequence_for<TComponents...>());
+	}
+
+	bool IsConnected() const { return OnAddConn[0].IsConnected(); }
 };
 
 }

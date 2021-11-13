@@ -375,7 +375,7 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback, TFilter Filter)
 			if constexpr(sizeof...(Components) > 0)
 				if (!GetNextComponents<Components...>(EntityID, NextComponents, NextStorages)) continue;
 
-			InvokeQueryCallback<Components...>(std::forward<TCallback>(Callback), EntityID, Entity, std::reference_wrapper<TComponent>(Component), NextComponents, std::make_index_sequence<sizeof...(Components)>{});
+			InvokeQueryCallback<Components...>(std::forward<TCallback>(Callback), EntityID, Entity, std::reference_wrapper<TComponent>(Component), NextComponents, std::index_sequence_for<Components...>{});
 		}
 	}
 }

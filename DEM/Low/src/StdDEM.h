@@ -148,6 +148,15 @@ void VectorFastErase(std::vector<T>& Self, UPTR Index)
 	Self.pop_back();
 }
 
+template<typename T>
+void VectorFastErase(std::vector<T>& Self, typename std::vector<T>::iterator It)
+{
+	if (It == Self.cend()) return;
+	if (It != --Self.cend())
+		std::swap(*It, Self.back());
+	Self.pop_back();
+}
+
 // Execution results
 
 const UPTR Failure = 0;
