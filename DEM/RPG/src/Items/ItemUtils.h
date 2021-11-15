@@ -15,14 +15,15 @@ struct CItemContainerComponent;
 
 struct CContainerStats
 {
-	float UsedWeight = 0.f;
-	float UsedVolume = 0.f;
-	float FreeWeight = 0.f;
-	float FreeVolume = 0.f;
+	float  UsedWeight = 0.f;
+	float  UsedVolume = 0.f;
+	float  FreeWeight = 0.f;
+	float  FreeVolume = 0.f;
+	size_t Price = 0;
 };
 
 //???vector or set of entities instead?
-bool AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game::HEntity ItemStackEntity, bool Merge = true);
+Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game::HEntity ItemStackEntity, bool Merge = true);
 bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemStackEntity, const Math::CTransformSRT& Tfm);
 void RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity ItemStackEntity, Game::HEntity Container);
 void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& Container, CContainerStats& OutStats);

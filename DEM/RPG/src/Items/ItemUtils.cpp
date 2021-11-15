@@ -7,36 +7,36 @@
 namespace DEM::RPG
 {
 
-bool AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game::HEntity ItemStackEntity, bool Merge)
+Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game::HEntity ItemStackEntity, bool Merge)
 {
 	auto pItemStack = World.FindComponent<CItemStackComponent>(ItemStackEntity);
-	if (!pItemStack) return false;
+	if (!pItemStack) return {};
 
 	auto pItem = FindItemComponent<const CItemComponent>(World, ItemStackEntity, *pItemStack);
-	if (!pItem) return false;
+	if (!pItem) return {};
 
 	auto pContainer = World.FindComponent<CItemContainerComponent>(Container);
-	if (!pContainer) return false;
+	if (!pContainer) return {};
 
 	// Fail if this item can't be placed into the container
 	// TODO: split stack, fill available container space!
 	// bool flag in args to enable this? return actually added count / remaining stack ID?
 	CContainerStats Stats;
 	CalcContainerStats(World, *pContainer, Stats);
-	if (Stats.FreeWeight < pItemStack->Count * pItem->Weight) return false;
-	if (Stats.FreeVolume < pItemStack->Count * pItem->Volume) return false;
+	if (Stats.FreeWeight < pItemStack->Count * pItem->Weight) return {};
+	if (Stats.FreeVolume < pItemStack->Count * pItem->Volume) return {};
 
 	// Try to merge new items into existing stack
 	if (Merge && !pItemStack->Modified)
 	{
-		for (auto ItemEntityID : pContainer->Items)
+		for (auto MergeAcceptorID : pContainer->Items)
 		{
-			auto pStack = World.FindComponent<CItemStackComponent>(ItemEntityID);
-			if (pStack && pStack->Prototype == pItemStack->Prototype && !pStack->Modified)
+			auto pMergeTo = World.FindComponent<CItemStackComponent>(MergeAcceptorID);
+			if (pMergeTo && pMergeTo->Prototype == pItemStack->Prototype && !pMergeTo->Modified)
 			{
-				pStack->Count += pItemStack->Count;
+				pMergeTo->Count += pItemStack->Count;
 				World.DeleteEntity(ItemStackEntity);
-				return true;
+				return MergeAcceptorID;
 			}
 		}
 	}
@@ -49,7 +49,7 @@ bool AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Gam
 	// TODO: allow inserting into specified index!
 	pContainer->Items.push_back(ItemStackEntity);
 
-	return true;
+	return ItemStackEntity;
 }
 //---------------------------------------------------------------------
 
@@ -104,6 +104,7 @@ void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& 
 {
 	OutStats.UsedWeight = 0.f;
 	OutStats.UsedVolume = 0.f;
+	OutStats.Price = 0;
 	for (auto ItemEntityID : Container.Items)
 	{
 		auto pStack = World.FindComponent<const CItemStackComponent>(ItemEntityID);
@@ -113,6 +114,7 @@ void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& 
 		{
 			OutStats.UsedWeight += pStack->Count * pItem->Weight;
 			OutStats.UsedVolume += pStack->Count * pItem->Volume;
+			OutStats.Price += pStack->Count * pItem->Price; //???what to count? only valuable or money-like items?
 		}
 	}
 
