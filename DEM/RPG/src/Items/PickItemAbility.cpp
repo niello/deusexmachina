@@ -117,8 +117,6 @@ void CPickItemAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance
 	// TODO: if owned by another faction, create crime stimulus/signal based on Steal skill check,
 	// it may even interrupt item picking (in OnStart()?)
 
-	// TODO: check character inventory free weight and volume
-	// TODO: merge with existing stack if possible
 	// TODO: equip if a) default equipping makes sense, like for weapons b) inventory is full but equipment slot isn't
 	// NB: equipped things ignore volume limitations, but not weight
 
