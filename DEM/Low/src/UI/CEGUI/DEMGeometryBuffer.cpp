@@ -98,16 +98,21 @@ void CDEMGeometryBuffer::draw(std::uint32_t drawModeMask) const
 	shaderParameterBindings->setParameter("WVP", d_matrix);
 
 	// Prepare for the rendering process according to the used render material
-	const CDEMShaderWrapper& ShaderWrapper = *static_cast<const CDEMShaderWrapper*>(d_renderMaterial->getShaderWrapper());
+	auto pShaderWrapper = static_cast<const CDEMShaderWrapper*>(d_renderMaterial->getShaderWrapper());
+	if (!pShaderWrapper)
+	{
+		::Sys::Error("CDEMGeometryBuffer::draw() > there is no shader in the material");
+		return;
+	}
 
 	if (drawModeMask & (DrawModeFlagWindowRegular | DrawModeFlagMouseCursor))
 	{
 		shaderParameterBindings->setParameter("AlphaPercentage", d_alpha);
-		const_cast<CDEMShaderWrapper&>(ShaderWrapper).setInputSet(d_blendMode, d_clippingActive, false);
+		const_cast<CDEMShaderWrapper*>(pShaderWrapper)->setInputSet(d_blendMode, d_clippingActive, false);
 	}
 	else if (drawModeMask & UI::DrawModeFlagWindowOpaque)
 	{
-		const_cast<CDEMShaderWrapper&>(ShaderWrapper).setInputSet(d_blendMode, d_clippingActive, true);
+		const_cast<CDEMShaderWrapper*>(pShaderWrapper)->setInputSet(d_blendMode, d_clippingActive, true);
 	}
 	else
 	{

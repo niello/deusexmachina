@@ -261,8 +261,9 @@ void CDEMRenderer::beginRendering()
 
 void CDEMRenderer::endRendering()
 {
-	pShaderWrapperTextured = nullptr;
-	pShaderWrapperColoured = nullptr;
+	// FIXME: auto windows crash when creating a buffer in RenderingWindow constructor outside beginRendering / endRendering
+	//pShaderWrapperTextured = nullptr;
+	//pShaderWrapperColoured = nullptr;
 }
 //---------------------------------------------------------------------
 
