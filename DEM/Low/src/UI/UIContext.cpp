@@ -106,14 +106,15 @@ void CUIContext::SetRootWindow(CUIWindow* pWindow)
 		WasPassThroughEnabledInRoot = pWindow->GetWnd()->isCursorPassThroughEnabled();
 		pWindow->GetWnd()->setCursorPassThroughEnabled(true);
 		pCtx->setRootWindow(pWindow->GetWnd());
+
+		//!!!DBG TMP! FIXME: need better way to pass CEGUI input state to UI screens!
+		//Should fix e.g.through passing CUIContext to CUIWindow on push, reset on pop.
+		pCtx->getRootWindow()->setUserData(pInput);
 	}
 	else
 	{
 		pCtx->setRootWindow(nullptr);
 	}
-
-	//???!!!FIXME: to CEGUI?
-	pCtx->updateWindowContainingCursor();
 }
 //---------------------------------------------------------------------
 
