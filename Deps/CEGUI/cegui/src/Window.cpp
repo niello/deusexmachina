@@ -277,6 +277,7 @@ Window::Window(const String& type, const String& name):
     d_customTip(nullptr),
     d_weOwnTip(false),
     d_inheritsTipText(true),
+    d_tooltipEnabled(true),
 
     // XML writing options
     d_allowWriteXML(true),
@@ -359,17 +360,26 @@ bool Window::isChildRecursive(unsigned int ID) const
 //----------------------------------------------------------------------------//
 Window* Window::getChild(unsigned int id) const
 {
-    const size_t child_count = getChildCount();
-
-    for (size_t i = 0; i < child_count; ++i)
-        if (getChildAtIndex(i)->getID() == id)
-            return getChildAtIndex(i);
+    if (Window* w = findChild(id))
+        return w;
 
     std::stringstream& sstream = SharedStringstream::GetPreparedStream();
     sstream << std::hex << id << std::dec;
 
     throw UnknownObjectException("A Window with ID: '" +
         sstream.str() + "' is not attached to Window '" + d_name + "'.");
+}
+
+//----------------------------------------------------------------------------//
+Window* Window::findChild(unsigned int id) const
+{
+    const size_t child_count = getChildCount();
+
+    for (size_t i = 0; i < child_count; ++i)
+        if (getChildAtIndex(i)->getID() == id)
+            return getChildAtIndex(i);
+
+    return nullptr;
 }
 
 //----------------------------------------------------------------------------//
