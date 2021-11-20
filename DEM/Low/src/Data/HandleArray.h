@@ -43,6 +43,8 @@ public:
 	// A new type is required for type safety
 	struct CHandle
 	{
+		using TRawValue = H;
+
 		H Raw = INVALID_HANDLE_VALUE;
 
 		bool operator <(CHandle Other) const { return Raw < Other.Raw; }
