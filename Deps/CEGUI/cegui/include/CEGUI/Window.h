@@ -1111,12 +1111,16 @@ public:
         - true specifies that a disabled window may be returned as the target.
         - false specifies that only enabled windows may be returned.
 
+    \param exclude
+        if not null, excludes the specified window and its children from the test
+
     \return
         Pointer to the child Window that was hit according to the location
         \a position, or 0 if no child of this window was hit.
     */
     Window* getTargetChildAtPosition(const glm::vec2& position,
-                                     const bool allow_disabled = false) const;
+                                     const bool allow_disabled = false,
+                                     const Window* const exclude = nullptr) const;
 
     /*!
     \brief
@@ -3724,7 +3728,8 @@ protected:
                                const
                                #endif
                                ,
-                               bool allow_disabled = false) const;
+                               bool allow_disabled = false,
+                               const Window* const exclude = nullptr) const;
 
     bool isHitTargetWindow(const glm::vec2& position, bool allow_disabled) const;
 
