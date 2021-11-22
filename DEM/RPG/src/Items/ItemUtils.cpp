@@ -7,16 +7,20 @@
 namespace DEM::RPG
 {
 
-Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game::HEntity ItemStackEntity, bool Merge)
+Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game::HEntity StackID, bool Merge)
 {
-	auto pItemStack = World.FindComponent<CItemStackComponent>(ItemStackEntity);
+	auto pItemStack = World.FindComponent<CItemStackComponent>(StackID);
 	if (!pItemStack) return {};
 
-	auto pItem = FindItemComponent<const CItemComponent>(World, ItemStackEntity, *pItemStack);
+	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pItemStack);
 	if (!pItem) return {};
 
 	auto pContainer = World.FindComponent<CItemContainerComponent>(Container);
 	if (!pContainer) return {};
+
+	// Check that we don't insert already contained stack, and find a merge stack if posible
+	if (std::find(pContainer->Items.cbegin(), pContainer->Items.cend(), StackID) != pContainer->Items.cend())
+		return {};
 
 	// Fail if this item can't be placed into the container
 	// TODO: split stack, fill available container space!
@@ -35,7 +39,7 @@ Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Conta
 			if (pMergeTo && pMergeTo->Prototype == pItemStack->Prototype && !pMergeTo->Modified)
 			{
 				pMergeTo->Count += pItemStack->Count;
-				World.DeleteEntity(ItemStackEntity);
+				World.DeleteEntity(StackID);
 				return MergeAcceptorID;
 			}
 		}
@@ -43,13 +47,13 @@ Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Conta
 
 	// If not merged, transfer a stack into the container
 
-	World.RemoveComponent<Game::CSceneComponent>(ItemStackEntity);
-	World.RemoveComponent<Game::CRigidBodyComponent>(ItemStackEntity);
+	World.RemoveComponent<Game::CSceneComponent>(StackID);
+	World.RemoveComponent<Game::CRigidBodyComponent>(StackID);
 
 	// TODO: allow inserting into specified index!
-	pContainer->Items.push_back(ItemStackEntity);
+	pContainer->Items.push_back(StackID);
 
-	return ItemStackEntity;
+	return StackID;
 }
 //---------------------------------------------------------------------
 
