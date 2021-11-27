@@ -29,7 +29,7 @@ public:
 
 	CUIWindow() = default;
 	CUIWindow(const char* pResourceFile) { Load(pResourceFile); }
-	virtual ~CUIWindow();
+	virtual ~CUIWindow() override;
 
 	void			Load(const char* pResourceFile);
 	
