@@ -514,9 +514,22 @@ HEntity CGameWorld::CreateEntity(CStrID LevelID, CStrID TemplateID)
 }
 //---------------------------------------------------------------------
 
+HEntity CGameWorld::CloneEntity(HEntity PrototypeID)
+{
+	HEntity NewEntityID;
+	if (auto pEntity = _Entities.GetValue(PrototypeID))
+	{
+		NewEntityID = CreateEntity(pEntity->LevelID);
+		CloneAllComponents(PrototypeID, NewEntityID);
+	}
+	return NewEntityID;
+}
+//---------------------------------------------------------------------
+
 void CGameWorld::DeleteEntity(HEntity EntityID)
 {
 	if (!_Entities.Free(EntityID)) return;
+
 	for (auto& Storage : _Storages)
 		if (Storage)
 			Storage->RemoveComponent(EntityID);
@@ -534,6 +547,22 @@ IComponentStorage* CGameWorld::FindComponentStorage(CStrID ComponentName)
 {
 	auto It = _StorageMap.find(ComponentName);
 	return (It == _StorageMap.cend()) ? nullptr : It->second;
+}
+//---------------------------------------------------------------------
+
+void CGameWorld::CloneAllComponents(HEntity SrcEntityID, HEntity DestEntityID)
+{
+	if (!SrcEntityID || !DestEntityID || SrcEntityID == DestEntityID) return;
+
+	for (auto& Storage : _Storages)
+	{
+		//Storage->CloneComponent(SrcEntityID, DestEntityID);
+
+		// or
+
+		//if pComponent = Storage->FindComponent(SrcEntityID)
+		//	Storage->AddComponent(DestEntityID, pComponent);
+	}
 }
 //---------------------------------------------------------------------
 

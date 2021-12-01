@@ -108,9 +108,8 @@ public:
 	// AddLevelCOI(id, vector3) - cleared after update
 
 	HEntity        CreateEntity(CStrID LevelID, CStrID TemplateID = CStrID::Empty);
-	// CreateEntity(template ID)
+	HEntity        CloneEntity(HEntity PrototypeID);
 	// CreateEntity(component type list, templated?)
-	// CreateEntity(prototype entity ID for cloning)
 	void           DeleteEntity(HEntity EntityID);
 	// MoveEntity(id, level[id?])
 	bool           EntityExists(HEntity EntityID) const { return !!_Entities.GetValue(EntityID); }
@@ -132,6 +131,9 @@ public:
 	const TComponentStoragePtr<T> FindComponentStorage() const;
 	const IComponentStorage*      FindComponentStorage(CStrID ComponentName) const;
 	IComponentStorage*            FindComponentStorage(CStrID ComponentName);
+	void                          CloneAllComponents(HEntity SrcEntityID, HEntity DestEntityID);
+	template<typename... TComponents>
+	void                          CloneComponents(HEntity SrcEntityID, HEntity DestEntityID);
 
 	template<class T>
 	const Data::CData*            GetTemplateComponentData(CStrID TemplateID) const;
@@ -249,6 +251,16 @@ typename TComponentStoragePtr<T> CGameWorld::FindComponentStorage()
 	if (_Storages.size() <= TypeIndex) return nullptr;
 	auto pStorage = _Storages[TypeIndex].get();
 	return pStorage ? static_cast<TComponentStoragePtr<T>>(pStorage) : nullptr;
+}
+//---------------------------------------------------------------------
+
+template<typename... TComponents>
+void CGameWorld::CloneComponents(HEntity SrcEntityID, HEntity DestEntityID)
+{
+	if (!SrcEntityID || !DestEntityID || SrcEntityID == DestEntityID) return;
+
+	//!!!DBG TMP! Replace with CloneComponent or Find+Add, can use non-virtual functions here!!!
+	(FindComponentStorage<TComponents>()->GetComponentCount(), ...);
 }
 //---------------------------------------------------------------------
 
