@@ -259,8 +259,7 @@ void CGameWorld::CloneComponents(HEntity SrcEntityID, HEntity DestEntityID)
 {
 	if (!SrcEntityID || !DestEntityID || SrcEntityID == DestEntityID) return;
 
-	//!!!DBG TMP! Replace with CloneComponent or Find+Add, can use non-virtual functions here!!!
-	(FindComponentStorage<TComponents>()->GetComponentCount(), ...);
+	(FindComponentStorage<TComponents>()->TComponentTraits<T>::TStorage::CloneComponent(), ...);
 }
 //---------------------------------------------------------------------
 

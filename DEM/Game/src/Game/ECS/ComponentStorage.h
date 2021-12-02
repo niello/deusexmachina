@@ -42,6 +42,7 @@ public:
 	IComponentStorage(const CGameWorld& World) : _World(World) {}
 	virtual ~IComponentStorage() = default;
 
+	virtual bool CloneComponent(HEntity SrcEntityID, HEntity DestEntityID) = 0;
 	virtual bool RemoveComponent(HEntity EntityID) = 0;
 	virtual void InstantiateTemplate(HEntity EntityID, bool BaseState, bool Validate) = 0;
 
@@ -431,6 +432,40 @@ public:
 		if constexpr (Signals) OnAdd(EntityID, &_Data[Index].first);
 
 		return &_Data[Index].first;
+	}
+	//---------------------------------------------------------------------
+
+	virtual bool CloneComponent(HEntity SrcEntityID, HEntity DestEntityID)
+	{
+		auto It = _IndexByEntity.find(SrcEntityID);
+		if (!It) return false;
+
+		T* pDst = Add(DestEntityID);
+		if (!pDst) return false;
+
+		if constexpr (std::is_copy_assignable_v<T>)
+		{
+			*pDst = _Data[It->Value.Index].first;
+			return true;
+		}
+		else
+		{
+			// Slower fallback through serialization
+
+			// Choose some reasonable initial size for the buffer to minimize reallocations.
+			// Max diff size is always more than max whole data size due to field IDs, so it is safe to choose it.
+			IO::CMemStream Stream(std::min<decltype(MAX_DIFF_SIZE)>(MAX_DIFF_SIZE, 512));
+			if (WriteComponent<DEM::BinaryFormat>(IO::CBinaryWriter(Stream), SrcEntityID, It->Value))
+			{
+				DEM::BinaryFormat::Deserialize(IO::CBinaryReader(Stream), *pDst);
+				return true;
+			}
+
+			// We failed, revert changes
+			// TODO: may do serialization trial before adding dest entity but code will be less clean
+			RemoveComponent(DestEntityID);
+			return false;
+		}
 	}
 	//---------------------------------------------------------------------
 
@@ -1022,6 +1057,12 @@ public:
 		if constexpr (Signals) OnAdd(EntityID, &_SharedInstance);
 
 		return &_SharedInstance;
+	}
+	//---------------------------------------------------------------------
+
+	virtual bool CloneComponent(HEntity SrcEntityID, HEntity DestEntityID)
+	{
+		return Find(SrcEntityID) && Add(DestEntityID);
 	}
 	//---------------------------------------------------------------------
 
