@@ -259,7 +259,7 @@ void CGameWorld::CloneComponents(HEntity SrcEntityID, HEntity DestEntityID)
 {
 	if (!SrcEntityID || !DestEntityID || SrcEntityID == DestEntityID) return;
 
-	(FindComponentStorage<TComponents>()->TComponentTraits<T>::TStorage::CloneComponent(), ...);
+	(FindComponentStorage<TComponents>()->TComponentTraits<TComponents>::TStorage::CloneComponent(SrcEntityID, DestEntityID), ...);
 }
 //---------------------------------------------------------------------
 
