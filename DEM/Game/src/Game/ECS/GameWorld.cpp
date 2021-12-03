@@ -555,7 +555,8 @@ void CGameWorld::CloneAllComponents(HEntity SrcEntityID, HEntity DestEntityID)
 	if (!SrcEntityID || !DestEntityID || SrcEntityID == DestEntityID) return;
 
 	for (auto& Storage : _Storages)
-		Storage->CloneComponent(SrcEntityID, DestEntityID);
+		if (Storage)
+			Storage->CloneComponent(SrcEntityID, DestEntityID);
 }
 //---------------------------------------------------------------------
 
