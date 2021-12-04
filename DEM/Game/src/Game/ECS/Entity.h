@@ -64,7 +64,7 @@ struct ParamsFormat<DEM::Game::HEntity>
 		static_assert(sizeof(DEM::Game::HEntity::TRawValue) <= sizeof(int), "Entity ID data may be partially lost");
 
 		if (Value)
-			Output = Value.Raw;
+			Output = static_cast<int>(Value.Raw);
 		else
 			Output.Clear();
 	}
@@ -73,7 +73,7 @@ struct ParamsFormat<DEM::Game::HEntity>
 	{
 		Value = Input.IsVoid() ?
 			DEM::Game::HEntity{} :
-			DEM::Game::HEntity{ static_cast<decltype(Value.Raw)>(Input.GetValue<int>()) };
+			DEM::Game::HEntity{ static_cast<DEM::Game::HEntity::TRawValue>(Input.GetValue<int>()) };
 	}
 };
 
