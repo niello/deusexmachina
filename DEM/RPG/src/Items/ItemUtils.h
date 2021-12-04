@@ -23,9 +23,10 @@ struct CContainerStats
 };
 
 //???vector or set of entities instead?
-Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game::HEntity ItemStackEntity, bool Merge = true);
-bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemStackEntity, const Math::CTransformSRT& Tfm);
-void RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity ItemStackEntity, Game::HEntity Container);
+Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game::HEntity StackID, bool Merge = true);
+bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, const Math::CTransformSRT& Tfm);
+void RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
+void RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity StackID, Game::HEntity Container);
 void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& Container, CContainerStats& OutStats);
 
 Game::HEntity CreateItemsInLocation(CStrID ItemID, U32 Count, CStrID LevelID, const Math::CTransformSRT& Tfm);
@@ -42,18 +43,18 @@ void EnumContainedItems(Game::HEntity Container /*, T Filter, T2 Callback*/);
 //IsItemValuable, IsItemTrash - not here, game-specific filters? Or use settings from CItemManager?
 
 template<typename T>
-T* FindItemComponent(const Game::CGameWorld& World, Game::HEntity ItemStackEntity, const CItemStackComponent& Stack)
+T* FindItemComponent(const Game::CGameWorld& World, Game::HEntity StackID, const CItemStackComponent& Stack)
 {
-	if (T* pComponent = World.FindComponent<T>(ItemStackEntity)) return pComponent;
+	if (T* pComponent = World.FindComponent<T>(StackID)) return pComponent;
 	return World.FindComponent<T>(Stack.Prototype);
 }
 //---------------------------------------------------------------------
 
 template<typename T>
-T* FindItemComponent(const Game::CGameWorld& World, Game::HEntity ItemStackEntity)
+T* FindItemComponent(const Game::CGameWorld& World, Game::HEntity StackID)
 {
-	if (T* pComponent = World.FindComponent<T>(ItemStackEntity)) return pComponent;
-	if (const CItemStackComponent* pStack = World.FindComponent<const CItemStackComponent>(ItemStackEntity))
+	if (T* pComponent = World.FindComponent<T>(StackID)) return pComponent;
+	if (const CItemStackComponent* pStack = World.FindComponent<const CItemStackComponent>(StackID))
 		return World.FindComponent<T>(pStack->Prototype);
 	return nullptr;
 }

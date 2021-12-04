@@ -46,9 +46,7 @@ Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Conta
 	}
 
 	// If not merged, transfer a stack into the container
-
-	World.RemoveComponent<Game::CSceneComponent>(StackID);
-	World.RemoveComponent<Game::CRigidBodyComponent>(StackID);
+	RemoveItemsFromLocation(World, StackID);
 
 	// TODO: allow inserting into specified index!
 	pContainer->Items.push_back(StackID);
@@ -91,6 +89,13 @@ bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemStackEntity,
 	}
 
 	return true;
+}
+//---------------------------------------------------------------------
+
+void RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID)
+{
+	World.RemoveComponent<Game::CSceneComponent>(StackID);
+	World.RemoveComponent<Game::CRigidBodyComponent>(StackID);
 }
 //---------------------------------------------------------------------
 
