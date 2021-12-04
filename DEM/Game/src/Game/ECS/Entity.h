@@ -27,6 +27,13 @@ struct CEntity final
 using CEntityStorage = Data::CHandleArray<CEntity, uint32_t, 18, true>;
 using HEntity = CEntityStorage::CHandle;
 
+//!!!FIXME: use template specializations for ToString?!
+inline std::string EntityToString(HEntity EntityID)
+{
+	return std::to_string(EntityID.Raw & CEntityStorage::INDEX_BITS_MASK) + 'v' +
+		std::to_string(EntityID.Raw >> CEntityStorage::INDEX_BITS);
+}
+
 }
 
 namespace DEM::Meta
@@ -58,7 +65,12 @@ struct ParamsFormat<DEM::Game::HEntity>
 		Output = IntValue;
 	}
 
-	static inline void Deserialize(const Data::CData& Input, DEM::Game::HEntity& Value) { Value = DEM::Game::HEntity{ static_cast<decltype(Value.Raw)>(Input.GetValue<int>()) }; }
+	static inline void Deserialize(const Data::CData& Input, DEM::Game::HEntity& Value)
+	{
+		Value = Input.IsVoid() ?
+			DEM::Game::HEntity{} :
+			DEM::Game::HEntity{ static_cast<decltype(Value.Raw)>(Input.GetValue<int>()) };
+	}
 };
 
 }
