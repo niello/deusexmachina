@@ -61,8 +61,12 @@ struct ParamsFormat<DEM::Game::HEntity>
 {
 	static inline void Serialize(Data::CData& Output, DEM::Game::HEntity Value)
 	{
-		const int IntValue = Value.Raw; // To issue compiler warning if data loss is possible
-		Output = IntValue;
+		static_assert(sizeof(DEM::Game::HEntity::TRawValue) <= sizeof(int), "Entity ID data may be partially lost");
+
+		if (Value)
+			Output = Value.Raw;
+		else
+			Output.Clear();
 	}
 
 	static inline void Deserialize(const Data::CData& Input, DEM::Game::HEntity& Value)
