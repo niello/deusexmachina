@@ -108,8 +108,10 @@ public:
 	// AddLevelCOI(id, vector3) - cleared after update
 
 	HEntity        CreateEntity(CStrID LevelID, CStrID TemplateID = CStrID::Empty);
-	HEntity        CloneEntity(HEntity PrototypeID);
 	// CreateEntity(component type list, templated?)
+	HEntity        CloneEntity(HEntity PrototypeID);
+	template<typename... TComponents>
+	HEntity        CloneEntityExcluding(HEntity PrototypeID);
 	void           DeleteEntity(HEntity EntityID);
 	// MoveEntity(id, level[id?])
 	bool           EntityExists(HEntity EntityID) const { return !!_Entities.GetValue(EntityID); }
@@ -132,6 +134,8 @@ public:
 	const IComponentStorage*      FindComponentStorage(CStrID ComponentName) const;
 	IComponentStorage*            FindComponentStorage(CStrID ComponentName);
 	void                          CloneAllComponents(HEntity SrcEntityID, HEntity DestEntityID);
+	template<typename... TComponents>
+	void                          CloneAllComponentsExcluding(HEntity SrcEntityID, HEntity DestEntityID);
 	template<typename... TComponents>
 	void                          CloneComponents(HEntity SrcEntityID, HEntity DestEntityID);
 
@@ -251,6 +255,32 @@ typename TComponentStoragePtr<T> CGameWorld::FindComponentStorage()
 	if (_Storages.size() <= TypeIndex) return nullptr;
 	auto pStorage = _Storages[TypeIndex].get();
 	return pStorage ? static_cast<TComponentStoragePtr<T>>(pStorage) : nullptr;
+}
+//---------------------------------------------------------------------
+
+template<typename... TComponents>
+HEntity CGameWorld::CloneEntityExcluding(HEntity PrototypeID)
+{
+	HEntity NewEntityID;
+	if (auto pEntity = _Entities.GetValue(PrototypeID))
+	{
+		NewEntityID = CreateEntity(pEntity->LevelID);
+		CloneAllComponentsExcluding<TComponents...>(PrototypeID, NewEntityID);
+	}
+	return NewEntityID;
+}
+//---------------------------------------------------------------------
+
+template<typename... TComponents>
+void CGameWorld::CloneAllComponentsExcluding(HEntity SrcEntityID, HEntity DestEntityID)
+{
+	if (!SrcEntityID || !DestEntityID || SrcEntityID == DestEntityID) return;
+
+	const size_t StorageCount = _Storages.size();
+	for (size_t i = 0; i < StorageCount; ++i)
+		if (((ComponentTypeIndex<TComponents> != i) && ...))
+			if (auto& Storage = _Storages[i])
+				Storage->CloneComponent(SrcEntityID, DestEntityID);
 }
 //---------------------------------------------------------------------
 
