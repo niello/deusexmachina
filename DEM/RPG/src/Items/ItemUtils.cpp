@@ -18,16 +18,16 @@ Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Conta
 	auto pContainer = World.FindComponent<CItemContainerComponent>(Container);
 	if (!pContainer) return {};
 
-	// Check that we don't insert already contained stack, and find a merge stack if posible
+	// Check that we don't insert already contained stack
 	if (std::find(pContainer->Items.cbegin(), pContainer->Items.cend(), StackID) != pContainer->Items.cend())
 		return {};
 
 	// Fail if this item can't be placed into the container
+	// NB: weight is not checked because it doesn't block adding items, only carrying them
 	// TODO: split stack, fill available container space!
 	// bool flag in args to enable this? return actually added count / remaining stack ID?
 	CContainerStats Stats;
 	CalcContainerStats(World, *pContainer, Stats);
-	if (Stats.FreeWeight < pItemStack->Count * pItem->Weight) return {};
 	if (Stats.FreeVolume < pItemStack->Count * pItem->Volume) return {};
 
 	// Try to merge new items into existing stack

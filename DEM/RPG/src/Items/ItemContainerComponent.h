@@ -10,7 +10,7 @@ struct CItemContainerComponent
 {
 	std::vector<Game::HEntity> Items;
 
-	float MaxWeight = -1.f;
+	float MaxWeight = -1.f; //???need as a container attribute? may be determined solely by the owner!
 	float MaxVolume = -1.f;
 	bool  Temporary = false; // Destroy entity when becomes empty
 };

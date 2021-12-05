@@ -41,6 +41,7 @@ bool TryMergeStacks(Game::HEntity StackID1, Game::HEntity StackID2); //bool allo
 Game::HEntity SplitStack(Game::HEntity StackID, U32 AmountToSeparate);
 void EnumContainedItems(Game::HEntity Container /*, T Filter, T2 Callback*/);
 //IsItemValuable, IsItemTrash - not here, game-specific filters? Or use settings from CItemManager?
+//FactionHasItem(faction ID, item ID, count)
 
 template<typename T>
 T* FindItemComponent(const Game::CGameWorld& World, Game::HEntity StackID, const CItemStackComponent& Stack)
