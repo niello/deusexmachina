@@ -31,12 +31,13 @@ Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Conta
 	if (Stats.FreeVolume < pItemStack->Count * pItem->Volume) return {};
 
 	// Try to merge new items into existing stack
+	// TODO: maybe remove !Modified condition in the future. See CanMergeStacks()!
 	if (Merge && !pItemStack->Modified)
 	{
 		for (auto MergeAcceptorID : pContainer->Items)
 		{
 			auto pMergeTo = World.FindComponent<CItemStackComponent>(MergeAcceptorID);
-			if (pMergeTo && pMergeTo->Prototype == pItemStack->Prototype && !pMergeTo->Modified)
+			if (CanMergeStacks(*pItemStack, pMergeTo))
 			{
 				pMergeTo->Count += pItemStack->Count;
 				World.DeleteEntity(StackID);
@@ -48,8 +49,11 @@ Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Conta
 	// If not merged, transfer a stack into the container
 	RemoveItemsFromLocation(World, StackID);
 
-	// TODO: allow inserting into specified index!
-	pContainer->Items.push_back(StackID);
+	auto It = std::find(pContainer->Items.begin(), pContainer->Items.end(), DEM::Game::HEntity{});
+	if (It == pContainer->Items.cend())
+		pContainer->Items.push_back(StackID);
+	else
+		(*It) = StackID;
 
 	return StackID;
 }
@@ -129,6 +133,13 @@ void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& 
 
 	OutStats.FreeWeight = (Container.MaxWeight <= 0.f) ? FLT_MAX : (Container.MaxWeight - OutStats.UsedWeight);
 	OutStats.FreeVolume = (Container.MaxVolume <= 0.f) ? FLT_MAX : (Container.MaxVolume - OutStats.UsedVolume);
+}
+//---------------------------------------------------------------------
+
+bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackComponent* pDestStack)
+{
+	//???TODO: can add more possibilities for merging? deep comparison of components?
+	return pDestStack && pDestStack->Prototype == SrcStack.Prototype && !SrcStack.Modified && !pDestStack->Modified;
 }
 //---------------------------------------------------------------------
 

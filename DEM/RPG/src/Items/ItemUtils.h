@@ -28,6 +28,7 @@ bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, const M
 void RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
 void RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity StackID, Game::HEntity Container);
 void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& Container, CContainerStats& OutStats);
+bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackComponent* pDestStack);
 
 Game::HEntity CreateItemsInLocation(CStrID ItemID, U32 Count, CStrID LevelID, const Math::CTransformSRT& Tfm);
 Game::HEntity CreateItemsInContainer(CStrID ItemID, U32 Count, Game::HEntity Container, size_t Index);
