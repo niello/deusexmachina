@@ -9,12 +9,6 @@ namespace DEM::RPG
 
 Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game::HEntity StackID, bool Merge)
 {
-	auto pItemStack = World.FindComponent<CItemStackComponent>(StackID);
-	if (!pItemStack) return {};
-
-	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pItemStack);
-	if (!pItem) return {};
-
 	auto pContainer = World.FindComponent<CItemContainerComponent>(Container);
 	if (!pContainer) return {};
 
@@ -22,40 +16,74 @@ Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Conta
 	if (std::find(pContainer->Items.cbegin(), pContainer->Items.cend(), StackID) != pContainer->Items.cend())
 		return {};
 
+	auto pItemStack = World.FindComponent<CItemStackComponent>(StackID);
+	if (!pItemStack) return {};
+
 	// Fail if this item can't be placed into the container
 	// NB: weight is not checked because it doesn't block adding items, only carrying them
 	// TODO: split stack, fill available container space!
 	// bool flag in args to enable this? return actually added count / remaining stack ID?
-	CContainerStats Stats;
-	CalcContainerStats(World, *pContainer, Stats);
-	if (Stats.FreeVolume < pItemStack->Count * pItem->Volume) return {};
-
-	// Try to merge new items into existing stack
-	// TODO: maybe remove !Modified condition in the future. See CanMergeStacks()!
-	if (Merge && !pItemStack->Modified)
+	if (auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pItemStack))
 	{
-		for (auto MergeAcceptorID : pContainer->Items)
+		CContainerStats Stats;
+		CalcContainerStats(World, *pContainer, Stats);
+		if (Stats.FreeVolume < pItemStack->Count * pItem->Volume) return {};
+	}
+
+	// Items inside a container are always hidden from the view
+	RemoveItemsFromLocation(World, StackID);
+
+	return AddStackIntoCollection(World, pContainer->Items, StackID, Merge);
+}
+//---------------------------------------------------------------------
+
+Game::HEntity AddStackIntoCollection(Game::CGameWorld& World, std::vector<Game::HEntity>& Collection, Game::HEntity StackID, bool Merge)
+{
+	// Try to merge new items into existing stack
+	if (Merge)
+	{
+		// TODO: maybe will need to remove !Modified condition in the future. See CanMergeStacks() logic!
+		auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
+		if (pStack && !pStack->Modified)
 		{
-			auto pMergeTo = World.FindComponent<CItemStackComponent>(MergeAcceptorID);
-			if (CanMergeStacks(*pItemStack, pMergeTo))
+			for (auto MergeAcceptorID : Collection)
 			{
-				pMergeTo->Count += pItemStack->Count;
-				World.DeleteEntity(StackID);
-				return MergeAcceptorID;
+				auto pMergeTo = World.FindComponent<CItemStackComponent>(MergeAcceptorID);
+				if (CanMergeStacks(*pStack, pMergeTo))
+				{
+					pMergeTo->Count += pStack->Count;
+					World.DeleteEntity(StackID);
+					return MergeAcceptorID;
+				}
 			}
 		}
 	}
 
 	// If not merged, transfer a stack into the container
-	RemoveItemsFromLocation(World, StackID);
-
-	auto It = std::find(pContainer->Items.begin(), pContainer->Items.end(), DEM::Game::HEntity{});
-	if (It == pContainer->Items.cend())
-		pContainer->Items.push_back(StackID);
+	auto It = std::find(Collection.begin(), Collection.end(), DEM::Game::HEntity{});
+	if (It == Collection.cend())
+		Collection.push_back(StackID);
 	else
 		(*It) = StackID;
 
 	return StackID;
+}
+//---------------------------------------------------------------------
+
+void RemoveStackFromCollection(std::vector<Game::HEntity>& Collection, UPTR Index)
+{
+	if (Index == Collection.size() - 1)
+	{
+		// Trim the tail to the last busy slot
+		auto RIt = ++Collection.rbegin();
+		for (; RIt != Collection.rend(); ++RIt)
+			if (*RIt) break;
+		Collection.erase(RIt.base(), Collection.end());
+	}
+	else
+	{
+		Collection[Index] = {};
+	}
 }
 //---------------------------------------------------------------------
 
@@ -140,6 +168,15 @@ bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackCompone
 {
 	//???TODO: can add more possibilities for merging? deep comparison of components?
 	return pDestStack && pDestStack->Prototype == SrcStack.Prototype && !SrcStack.Modified && !pDestStack->Modified;
+}
+//---------------------------------------------------------------------
+
+float GetItemStackVolume(const Game::CGameWorld& World, Game::HEntity StackID)
+{
+	if (auto pStack = World.FindComponent<const CItemStackComponent>(StackID))
+		if (auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack))
+			return pStack->Count * pItem->Volume;
+	return 0.f;
 }
 //---------------------------------------------------------------------
 
