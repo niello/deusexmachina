@@ -25,7 +25,7 @@ struct CContainerStats
 //???vector or set of entities instead?
 Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game::HEntity StackID, bool Merge = true);
 Game::HEntity AddStackIntoCollection(Game::CGameWorld& World, std::vector<Game::HEntity>& Collection, Game::HEntity StackID, bool Merge = true);
-void RemoveStackFromCollection(std::vector<Game::HEntity>& Collection, UPTR Index);
+void ShrinkItemCollection(std::vector<Game::HEntity>& Collection);
 bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, const Math::CTransformSRT& Tfm);
 void RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
 void RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity StackID, Game::HEntity Container);

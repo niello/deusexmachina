@@ -70,20 +70,13 @@ Game::HEntity AddStackIntoCollection(Game::CGameWorld& World, std::vector<Game::
 }
 //---------------------------------------------------------------------
 
-void RemoveStackFromCollection(std::vector<Game::HEntity>& Collection, UPTR Index)
+void ShrinkItemCollection(std::vector<Game::HEntity>& Collection)
 {
-	if (Index == Collection.size() - 1)
-	{
-		// Trim the tail to the last busy slot
-		auto RIt = ++Collection.rbegin();
-		for (; RIt != Collection.rend(); ++RIt)
-			if (*RIt) break;
-		Collection.erase(RIt.base(), Collection.end());
-	}
-	else
-	{
-		Collection[Index] = {};
-	}
+	// Trim the tail to the last busy slot
+	auto RIt = ++Collection.rbegin();
+	for (; RIt != Collection.rend(); ++RIt)
+		if (*RIt) break;
+	Collection.erase(RIt.base(), Collection.end());
 }
 //---------------------------------------------------------------------
 
