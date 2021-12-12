@@ -17,17 +17,27 @@ Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Conta
 		return {};
 
 	auto pItemStack = World.FindComponent<CItemStackComponent>(StackID);
-	if (!pItemStack) return {};
+	n_assert_dbg(pItemStack->Count);
+	if (!pItemStack || pItemStack->Count) return {};
 
-	// Fail if this item can't be placed into the container
-	// NB: weight is not checked because it doesn't block adding items, only carrying them
+	// Check volume limits. Weight doesn't block adding items, only carrying them.
 	// TODO: split stack, fill available container space!
 	// bool flag in args to enable this? return actually added count / remaining stack ID?
-	if (auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pItemStack))
+	if (pContainer->MaxVolume >= 0.f)
 	{
-		CContainerStats Stats;
-		CalcContainerStats(World, *pContainer, Stats);
-		if (Stats.FreeVolume < pItemStack->Count * pItem->Volume) return {};
+		if (auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pItemStack))
+		{
+			if (pItem->Volume > 0.f)
+			{
+				const float RequiredVolume = pItemStack->Count * pItem->Volume;
+				float FreeVolume = pContainer->MaxVolume;
+				for (auto StackID : pContainer->Items)
+				{
+					FreeVolume -= GetItemStackVolume(World, StackID);
+					if (FreeVolume < RequiredVolume) return {};
+				}
+			}
+		}
 	}
 
 	// Items inside a container are always hidden from the view
@@ -43,6 +53,7 @@ Game::HEntity AddStackIntoCollection(Game::CGameWorld& World, std::vector<Game::
 	if (Merge)
 	{
 		// TODO: maybe will need to remove !Modified condition in the future. See CanMergeStacks() logic!
+		//???don't merge items with different owners?!
 		auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
 		if (pStack && !pStack->Modified)
 		{
