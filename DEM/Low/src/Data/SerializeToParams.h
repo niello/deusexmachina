@@ -30,45 +30,16 @@ struct ParamsFormat
 	{
 		static_assert(std::is_same_v<T, void>, "DEM::Serialization::ParamsFormat > no deserialization specified for type!");
 	}
-};
 
-template<typename T>
-struct ParamsFormat<T, typename std::enable_if_t<Data::CTypeID<T>::IsDeclared>>
-{
-	static inline void Serialize(Data::CData& Output, const T& Value) { Output = Value; }
-	static inline void Deserialize(const Data::CData& Input, T& Value) { Value = Input.GetValue<T>(); }
-};
-
-template<typename T>
-struct ParamsFormat<T, typename std::enable_if_t<std::is_integral_v<T> && !Data::CTypeID<T>::IsDeclared>>
-{
-	static inline void Serialize(Data::CData& Output, const T& Value)
+	static inline bool SerializeDiff(Data::CData& Output, const T& Value, const T& BaseValue)
 	{
-		const int IntValue = Value; // To issue compiler warning if data loss is possible
-		Output = IntValue;
+		static_assert(std::is_same_v<T, void>, "DEM::Serialization::ParamsFormat > no diff serialization specified for type!");
 	}
 
-	static inline void Deserialize(const Data::CData& Input, T& Value) { Value = Input.GetValue<int>(); }
-};
-
-template<typename T>
-struct ParamsFormat<T, typename std::enable_if_t<std::is_floating_point_v<T> && !Data::CTypeID<T>::IsDeclared>>
-{
-	static inline void Serialize(Data::CData& Output, const T& Value)
+	static inline void DeserializeDiff(const Data::CData& Input, T& Value)
 	{
-		const float FloatValue = Value; // To issue compiler warning if data loss is possible
-		Output = FloatValue;
+		static_assert(std::is_same_v<T, void>, "DEM::Serialization::ParamsFormat > no diff deserialization specified for type!");
 	}
-
-	static inline void Deserialize(const Data::CData& Input, T& Value) { Value = Input.GetValue<float>(); }
-};
-
-//!!!FIXME: TMP, use std::string instead of CString!
-template<typename... TTraits>
-struct ParamsFormat<std::basic_string<TTraits...>>
-{
-	static inline void Serialize(Data::CData& Output, const std::basic_string<TTraits...>& Value) { Output = CString(Value.c_str()); }
-	static inline void Deserialize(const Data::CData& Input, std::basic_string<TTraits...>& Value) { Value = Input.GetValue<CString>().CStr(); }
 };
 
 }
@@ -95,17 +66,7 @@ struct ParamsFormat
 	template<typename T, typename std::enable_if_t<Meta::is_not_collection_v<T>>* = nullptr>
 	static inline void Serialize(Data::CData& Output, const T& Value)
 	{
-		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
-		{
-			Data::PParams Out(n_new(Data::CParams(DEM::Meta::CMetadata<T>::GetMemberCount())));
-			DEM::Meta::CMetadata<T>::ForEachMember([&Out, &Value](const auto& Member)
-			{
-				if (!Member.CanSerialize()) return;
-				SerializeKeyValue(*Out, Member.GetName(), Member.GetConstValue(Value));
-			});
-			Output = std::move(Out);
-		}
-		else Serialization::ParamsFormat<T>::Serialize(Output, Value);
+		Serialization::ParamsFormat<T>::Serialize(Output, Value);
 	}
 	//---------------------------------------------------------------------
 
@@ -155,19 +116,10 @@ struct ParamsFormat
 	template<typename T, typename std::enable_if_t<Meta::is_not_collection_v<T>>* = nullptr>
 	static inline bool SerializeDiff(Data::CData& Output, const T& Value, const T& BaseValue)
 	{
+		// FIXME: TMP HACK! Need to call Serialize<T> with != check for SerializeDiff of each T without metadata and explicit specialization!
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
 		{
-			Data::PParams Out(n_new(Data::CParams(DEM::Meta::CMetadata<T>::GetMemberCount())));
-			DEM::Meta::CMetadata<T>::ForEachMember([&Out, &Value, &BaseValue](const auto& Member)
-			{
-				if (!Member.CanSerialize()) return;
-				SerializeKeyValueDiff(*Out, Member.GetName(), Member.GetConstValue(Value), Member.GetConstValue(BaseValue));
-			});
-			if (Out->GetCount())
-			{
-				Output = std::move(Out);
-				return true;
-			}
+			return Serialization::ParamsFormat<T>::SerializeDiff(Output, Value, BaseValue);
 		}
 		else if (Value != BaseValue)
 		{
@@ -285,23 +237,7 @@ struct ParamsFormat
 	template<typename T, typename std::enable_if_t<Meta::is_not_collection_v<T>>* = nullptr>
 	static inline void Deserialize(const Data::CData& Input, T& Value)
 	{
-		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
-		{
-			if (auto pParamsPtr = Input.As<Data::PParams>())
-			{
-				DEM::Meta::CMetadata<T>::ForEachMember([pParams = pParamsPtr->Get(), &Value](const auto& Member)
-				{
-					if (!Member.CanSerialize()) return;
-					if (auto pParam = pParams->Find(CStrID(Member.GetName())))
-					{
-						DEM::Meta::TMemberValue<decltype(Member)> FieldValue;
-						Deserialize(pParam->GetRawValue(), FieldValue);
-						Member.SetValue(Value, std::move(FieldValue));
-					}
-				});
-			}
-		}
-		else Serialization::ParamsFormat<T>::Deserialize(Input, Value);
+		Serialization::ParamsFormat<T>::Deserialize(Input, Value);
 	}
 	//---------------------------------------------------------------------
 
@@ -360,30 +296,11 @@ struct ParamsFormat
 	template<typename T, typename std::enable_if_t<Meta::is_not_collection_v<T>>* = nullptr>
 	static inline void DeserializeDiff(const Data::CData& Input, T& Value)
 	{
+		// FIXME: TMP HACK! Need to call Deserialize<T> for DeserializeDiff of each T without metadata and explicit specialization!
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
-		{
-			if (auto pParamsPtr = Input.As<Data::PParams>())
-			{
-				DEM::Meta::CMetadata<T>::ForEachMember([pParams = pParamsPtr->Get(), &Value](const auto& Member)
-				{
-					if (!Member.CanSerialize()) return;
-					if (auto pParam = pParams->Find(CStrID(Member.GetName())))
-					{
-						if constexpr (Member.CanGetWritableRef())
-						{
-							DeserializeDiff(pParam->GetRawValue(), Member.GetValueRef(Value));
-						}
-						else
-						{
-							auto FieldValue = Member.GetConstValue(Value);
-							DeserializeDiff(pParam->GetRawValue(), FieldValue);
-							Member.SetValue(Value, std::move(FieldValue));
-						}
-					}
-				});
-			}
-		}
-		else Serialization::ParamsFormat<T>::Deserialize(Input, Value);
+			Serialization::ParamsFormat<T>::DeserializeDiff(Input, Value);
+		else
+			Serialization::ParamsFormat<T>::Deserialize(Input, Value);
 	}
 	//---------------------------------------------------------------------
 
@@ -469,5 +386,121 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 };
+
+namespace Serialization
+{
+
+template<typename T>
+struct ParamsFormat<T, typename std::enable_if_t<Data::CTypeID<T>::IsDeclared>>
+{
+	static inline void Serialize(Data::CData& Output, const T& Value) { Output = Value; }
+	static inline void Deserialize(const Data::CData& Input, T& Value) { Value = Input.GetValue<T>(); }
+};
+
+template<typename T>
+struct ParamsFormat<T, typename std::enable_if_t<std::is_integral_v<T> && !Data::CTypeID<T>::IsDeclared>>
+{
+	static inline void Serialize(Data::CData& Output, const T& Value)
+	{
+		const int IntValue = Value; // To issue compiler warning if data loss is possible
+		Output = IntValue;
+	}
+
+	static inline void Deserialize(const Data::CData& Input, T& Value) { Value = Input.GetValue<int>(); }
+};
+
+template<typename T>
+struct ParamsFormat<T, typename std::enable_if_t<std::is_floating_point_v<T> && !Data::CTypeID<T>::IsDeclared>>
+{
+	static inline void Serialize(Data::CData& Output, const T& Value)
+	{
+		const float FloatValue = Value; // To issue compiler warning if data loss is possible
+		Output = FloatValue;
+	}
+
+	static inline void Deserialize(const Data::CData& Input, T& Value) { Value = Input.GetValue<float>(); }
+};
+
+//!!!FIXME: TMP, use std::string instead of CString!
+template<typename... TTraits>
+struct ParamsFormat<std::basic_string<TTraits...>>
+{
+	static inline void Serialize(Data::CData& Output, const std::basic_string<TTraits...>& Value) { Output = CString(Value.c_str()); }
+	static inline void Deserialize(const Data::CData& Input, std::basic_string<TTraits...>& Value) { Value = Input.GetValue<CString>().CStr(); }
+};
+
+template<typename T>
+struct ParamsFormat<T, typename std::enable_if_t<Meta::is_not_collection_v<T> && Meta::CMetadata<T>::IsRegistered>>
+{
+	static inline void Serialize(Data::CData& Output, const T& Value)
+	{
+		Data::PParams Out(n_new(Data::CParams(DEM::Meta::CMetadata<T>::GetMemberCount())));
+		DEM::Meta::CMetadata<T>::ForEachMember([&Out, &Value](const auto& Member)
+		{
+			if (Member.CanSerialize())
+				DEM::ParamsFormat::SerializeKeyValue(*Out, Member.GetName(), Member.GetConstValue(Value));
+		});
+		Output = std::move(Out);
+	}
+
+	static inline void Deserialize(const Data::CData& Input, T& Value)
+	{
+		if (auto pParamsPtr = Input.As<Data::PParams>())
+		{
+			DEM::Meta::CMetadata<T>::ForEachMember([pParams = pParamsPtr->Get(), &Value](const auto& Member)
+			{
+				if (!Member.CanSerialize()) return;
+				if (auto pParam = pParams->Find(CStrID(Member.GetName())))
+				{
+					DEM::Meta::TMemberValue<decltype(Member)> FieldValue;
+					DEM::ParamsFormat::Deserialize(pParam->GetRawValue(), FieldValue);
+					Member.SetValue(Value, std::move(FieldValue));
+				}
+			});
+		}
+	}
+
+	static inline bool SerializeDiff(Data::CData& Output, const T& Value, const T& BaseValue)
+	{
+		Data::PParams Out(n_new(Data::CParams(DEM::Meta::CMetadata<T>::GetMemberCount())));
+		DEM::Meta::CMetadata<T>::ForEachMember([&Out, &Value, &BaseValue](const auto& Member)
+		{
+			if (Member.CanSerialize())
+				DEM::ParamsFormat::SerializeKeyValueDiff(*Out, Member.GetName(), Member.GetConstValue(Value), Member.GetConstValue(BaseValue));
+		});
+		if (Out->GetCount())
+		{
+			Output = std::move(Out);
+			return true;
+		}
+		return false;
+	}
+
+	static inline void DeserializeDiff(const Data::CData& Input, T& Value)
+	{
+		if (auto pParamsPtr = Input.As<Data::PParams>())
+		{
+			DEM::Meta::CMetadata<T>::ForEachMember([pParams = pParamsPtr->Get(), &Value](const auto& Member)
+			{
+				if (!Member.CanSerialize()) return;
+				if (auto pParam = pParams->Find(CStrID(Member.GetName())))
+				{
+					if constexpr (Member.CanGetWritableRef())
+					{
+						DEM::ParamsFormat::DeserializeDiff(pParam->GetRawValue(), Member.GetValueRef(Value));
+					}
+					else
+					{
+						auto FieldValue = Member.GetConstValue(Value);
+						DEM::ParamsFormat::DeserializeDiff(pParam->GetRawValue(), FieldValue);
+						Member.SetValue(Value, std::move(FieldValue));
+					}
+				}
+			});
+		}
+	}
+};
+
+}
 
 }
