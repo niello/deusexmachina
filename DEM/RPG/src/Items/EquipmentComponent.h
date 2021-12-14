@@ -7,8 +7,33 @@
 namespace DEM::Sh2
 {
 
+enum EEquipmentSlot
+{
+	Body = 0,
+	Shoulders,
+	Head,
+	Arms,
+	Hands,
+	Legs,
+	Feet,
+	Belt,
+	Backpack,
+	Neck,
+	BraceletLeft,
+	BraceletRight,
+	Ring1Left,
+	Ring1Right,
+	Ring2Left,
+	Ring2Right,
+
+	COUNT
+};
+
 struct CEquipmentComponent
 {
+	Game::HEntity              Equipment[EEquipmentSlot::COUNT];
+	std::vector<Game::HEntity> QuickSlots;
+	U32                        SlotEnabledBits = 0;
 };
 
 }

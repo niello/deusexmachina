@@ -184,4 +184,49 @@ float GetItemStackVolume(const Game::CGameWorld& World, Game::HEntity StackID)
 }
 //---------------------------------------------------------------------
 
+Game::HEntity TransferItems(Game::CGameWorld& World, U32 Count, Game::HEntity& SrcSlot, Game::HEntity& DestSlot)
+{
+	const auto SrcStackID = SrcSlot;
+	const auto DestStackID = DestSlot;
+
+	if (!Count || !SrcStackID || SrcStackID == DestStackID) return SrcStackID;
+
+	auto pSrcStack = World.FindComponent<CItemStackComponent>(SrcStackID);
+	if (!pSrcStack) return {};
+
+	const bool TransferWholeStack = (pSrcStack->Count == Count);
+	if (TransferWholeStack)
+		SrcSlot = {};
+	else
+		pSrcStack->Count -= Count;
+
+	auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID);
+	if (CanMergeStacks(*pSrcStack, pDestStack))
+	{
+		pDestStack->Count += Count;
+		if (TransferWholeStack) World.DeleteEntity(SrcStackID);
+	}
+	else
+	{
+		if (TransferWholeStack)
+		{
+			DestSlot = SrcStackID;
+		}
+		else
+		{
+			const auto NewStackID =
+				World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(SrcStackID);
+			if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
+				pNewStack->Count = Count;
+			DestSlot = NewStackID;
+		}
+
+		// If we replaced some stack, start dragging it instead of the source stack
+		if (DestStackID) return DestStackID;
+	}
+
+	return SrcStackID;
+}
+//---------------------------------------------------------------------
+
 }
