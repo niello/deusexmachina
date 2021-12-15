@@ -253,3 +253,9 @@ inline typename std::enable_if_t<DEM::Meta::CMetadata<T>::IsRegistered, bool> op
 {
 	return DEM::Meta::CMetadata<T>::IsEqual(a, b);
 }
+
+template<typename T>
+inline typename std::enable_if_t<DEM::Meta::CMetadata<T>::IsRegistered, bool> operator !=(const T& a, const T& b)
+{
+	return !DEM::Meta::CMetadata<T>::IsEqual(a, b);
+}
