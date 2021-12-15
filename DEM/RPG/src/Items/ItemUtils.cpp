@@ -1,6 +1,7 @@
 #include "ItemUtils.h"
 #include <Items/ItemComponent.h>
 #include <Items/ItemContainerComponent.h>
+#include <Items/EquipmentComponent.h>
 #include <Scene/SceneComponent.h>
 #include <Physics/RigidBodyComponent.h>
 
@@ -16,20 +17,20 @@ Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Conta
 	if (std::find(pContainer->Items.cbegin(), pContainer->Items.cend(), StackID) != pContainer->Items.cend())
 		return {};
 
-	auto pItemStack = World.FindComponent<CItemStackComponent>(StackID);
-	n_assert_dbg(pItemStack->Count);
-	if (!pItemStack || pItemStack->Count) return {};
+	auto pStack = World.FindComponent<CItemStackComponent>(StackID);
+	n_assert_dbg(pStack && pStack->Count);
+	if (!pStack || !pStack->Count) return {};
 
 	// Check volume limits. Weight doesn't block adding items, only carrying them.
 	// TODO: split stack, fill available container space!
 	// bool flag in args to enable this? return actually added count / remaining stack ID?
 	if (pContainer->MaxVolume >= 0.f)
 	{
-		if (auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pItemStack))
+		if (auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack))
 		{
 			if (pItem->Volume > 0.f)
 			{
-				const float RequiredVolume = pItemStack->Count * pItem->Volume;
+				const float RequiredVolume = pStack->Count * pItem->Volume;
 				float FreeVolume = pContainer->MaxVolume;
 				for (auto StackID : pContainer->Items)
 				{
@@ -44,6 +45,79 @@ Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Conta
 	RemoveItemsFromLocation(World, StackID);
 
 	return AddStackIntoCollection(World, pContainer->Items, StackID, Merge);
+}
+//---------------------------------------------------------------------
+
+Game::HEntity AddItemsIntoQuickSlots(Game::CGameWorld& World, Game::HEntity Owner, Game::HEntity StackID, bool Merge, bool Split)
+{
+	auto pEquipment = World.FindComponent<Sh2::CEquipmentComponent>(Owner);
+	if (!pEquipment) return {};
+
+	// Check that we don't insert already contained stack
+	if (std::find(pEquipment->QuickSlots.cbegin(), pEquipment->QuickSlots.cend(), StackID) != pEquipment->QuickSlots.cend())
+		return {};
+
+	auto pStack = World.FindComponent<CItemStackComponent>(StackID);
+	n_assert_dbg(pStack && pStack->Count);
+	if (!pStack || !pStack->Count) return {};
+
+	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
+	const U32 ItemsPerSlot = (pItem && pItem->Volume > 0.f) ?
+		static_cast<U32>(QUICK_SLOT_VOLUME / pItem->Volume) :
+		std::numeric_limits<U32>().max();
+
+	if (ItemsPerSlot < pStack->Count && !Split) return {};
+
+	// First try to merge into existing stacks of the same item
+	if (Merge)
+	{
+		for (auto MergeAcceptorID : pEquipment->QuickSlots)
+		{
+			auto pMergeTo = World.FindComponent<CItemStackComponent>(MergeAcceptorID);
+
+			// Skip immediately if count limit is reached, no matter what item is there
+			if (pMergeTo->Count >= ItemsPerSlot) continue;
+
+			if (CanMergeStacks(*pStack, pMergeTo))
+			{
+				const U32 RemainingCount = ItemsPerSlot - pMergeTo->Count;
+				if (pStack->Count <= RemainingCount)
+				{
+					pMergeTo->Count += pStack->Count;
+					World.DeleteEntity(StackID);
+					return MergeAcceptorID;
+				}
+				else if (Split)
+				{
+					pStack->Count -= RemainingCount;
+					pMergeTo->Count += RemainingCount;
+				}
+			}
+		}
+	}
+
+	// Put not merged items into free slots
+	for (auto& DestSlot : pEquipment->QuickSlots)
+	{
+		if (DestSlot) continue;
+
+		if (pStack->Count <= ItemsPerSlot)
+		{
+			DestSlot = StackID;
+			return StackID;
+		}
+		else
+		{
+			pStack->Count -= ItemsPerSlot;
+			const auto NewStackID =
+				World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(StackID);
+			if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
+				pNewStack->Count = ItemsPerSlot;
+			DestSlot = NewStackID;
+		}
+	}
+
+	return {};
 }
 //---------------------------------------------------------------------
 

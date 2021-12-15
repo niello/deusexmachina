@@ -13,6 +13,10 @@ namespace DEM::RPG
 {
 struct CItemContainerComponent;
 
+//!!!FIXME: to config!
+constexpr UPTR MAX_QUICK_SLOTS = 10;
+constexpr float QUICK_SLOT_VOLUME = 1.f;
+
 struct CContainerStats
 {
 	float  UsedWeight = 0.f;
@@ -24,6 +28,7 @@ struct CContainerStats
 
 //???vector or set of entities instead?
 Game::HEntity AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game::HEntity StackID, bool Merge = true);
+Game::HEntity AddItemsIntoQuickSlots(Game::CGameWorld& World, Game::HEntity Owner, Game::HEntity StackID, bool Merge = true, bool Split = true);
 Game::HEntity AddStackIntoCollection(Game::CGameWorld& World, std::vector<Game::HEntity>& Collection, Game::HEntity StackID, bool Merge = true);
 void ShrinkItemCollection(std::vector<Game::HEntity>& Collection);
 bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, const Math::CTransformSRT& Tfm);
