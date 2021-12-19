@@ -46,7 +46,7 @@ void RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
 void RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity StackID, Game::HEntity Container);
 void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& Container, CContainerStats& OutStats);
 bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackComponent* pDestStack);
-U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, EItemStorage DestStorage, Game::HEntity StackID);
+U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, EItemStorage DestStorage, Game::HEntity StackID, Game::HEntity ReplacedStackID);
 Game::HEntity TransferItems(Game::CGameWorld& World, U32 Count, Game::HEntity& SrcSlot, Game::HEntity& DestSlot);
 
 Game::HEntity CreateItemsInLocation(CStrID ItemID, U32 Count, CStrID LevelID, const Math::CTransformSRT& Tfm);

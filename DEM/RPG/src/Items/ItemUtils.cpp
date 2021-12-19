@@ -375,8 +375,10 @@ bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackCompone
 }
 //---------------------------------------------------------------------
 
-U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, EItemStorage DestStorage, Game::HEntity StackID)
+U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, EItemStorage DestStorage, Game::HEntity StackID, Game::HEntity ReplacedStackID)
 {
+	if (StackID == ReplacedStackID) return std::numeric_limits<U32>().max();
+
 	switch (DestStorage)
 	{
 		case EItemStorage::Inventory:
@@ -389,49 +391,62 @@ U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, EI
 			if (std::find(pInventory->Items.cbegin(), pInventory->Items.cend(), StackID) != pInventory->Items.cend())
 				return std::numeric_limits<U32>().max();
 
-			//!!!FIXME: use common code with AddItemsIntoContainer! There we calculate capacity for item too!
-			/////
-			float FreeVolume = _InventoryStats.FreeVolume;
-			auto pSrcStack = _pWorld->FindComponent<const CItemStackComponent>(SrcStackID);
+			auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
+			if (!pStack || !pStack->Count) return 0;
 
-			// Add volume of the element to be removed
-			auto pDestStack = _pWorld->FindComponent<const CItemStackComponent>(pDestSlotView->GetStackEntityID());
-			if (!CanMergeStacks(*pSrcStack, pDestStack))
-				if (auto pDestItem = FindItemComponent<const CItemComponent>(*_pWorld, pDestSlotView->GetStackEntityID(), *pDestStack))
-					FreeVolume += pDestItem->Volume * pDestStack->Count;
+			auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
+			if (!pItem || pItem->Volume <= 0.f) return std::numeric_limits<U32>().max();
 
-			if (auto pSrcItem = FindItemComponent<const CItemComponent>(*_pWorld, SrcStackID, *pSrcStack))
-				TransferCount = std::min(TransferCount, static_cast<U32>(FreeVolume / pSrcItem->Volume));
-			/////
+			// We will not replace the stack if we merge with it
+			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
+			if (CanMergeStacks(*pStack, pReplacedStack))
+				ReplacedStackID = {};
 
-			break;
+			//!!!TODO: refactor partial duplication with AddItemsIntoContainer, unify where possible!
+			float FreeVolume = pInventory->MaxVolume;
+			for (auto StoredStackID : pInventory->Items)
+			{
+				if (StoredStackID == ReplacedStackID) continue;
+
+				auto pStoredStack = World.FindComponent<const CItemStackComponent>(StoredStackID);
+				if (!pStoredStack || !pStoredStack->Count) continue;
+
+				if (auto pStoredItem = FindItemComponent<const CItemComponent>(World, StoredStackID, *pStoredStack))
+				{
+					FreeVolume -= (pStoredStack->Count * pStoredItem->Volume);
+					if (FreeVolume <= pItem->Volume) return 0;
+				}
+			}
+
+			return static_cast<U32>(FreeVolume / pItem->Volume);
 		}
 		case EItemStorage::QuickSlot:
 		{
+			auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
+			if (!pStack || !pStack->Count) return 0;
+
+			auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
+			if (!pItem || pItem->Volume <= 0.f) return std::numeric_limits<U32>().max();
+
 			float FreeVolume = QUICK_SLOT_VOLUME;
-			auto pSrcStack = _pWorld->FindComponent<const CItemStackComponent>(SrcStackID);
 
 			// Subtract volume of the element to be merged with
-			auto pDestStack = _pWorld->FindComponent<const CItemStackComponent>(pDestSlotView->GetStackEntityID());
-			if (CanMergeStacks(*pSrcStack, pDestStack))
-				if (auto pDestItem = FindItemComponent<const CItemComponent>(*_pWorld, pDestSlotView->GetStackEntityID(), *pDestStack))
-					FreeVolume -= pDestItem->Volume * pDestStack->Count;
+			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
+			if (CanMergeStacks(*pStack, pReplacedStack))
+				if (auto pDestItem = FindItemComponent<const CItemComponent>(World, ReplacedStackID, *pReplacedStack))
+					FreeVolume -= pDestItem->Volume * pReplacedStack->Count;
 
-			if (auto pSrcItem = FindItemComponent<const CItemComponent>(*_pWorld, SrcStackID, *pSrcStack))
-				TransferCount = std::min(TransferCount, static_cast<U32>(FreeVolume / pSrcItem->Volume));
-
-			break;
+			return static_cast<U32>(FreeVolume / pItem->Volume);
 		}
 		case EItemStorage::Equipment:
 		{
-			auto pEquipment = _pWorld->FindComponent<DEM::Sh2::CEquipmentComponent>(_Owner);
 			//!!!TODO:		
-			// if (IsItemSuitableForEquipmentSlot(pDestSlotView->getID()))
-			TransferCount = 1;
-			// else TransferCount = 0;
-			break;
+			// return IsItemSuitableForEquipmentSlot(pDestSlotView->getID()) ? 1 : 0;
+			return 1;
 		}
 	}
+
+	return 0;
 }
 //---------------------------------------------------------------------
 
