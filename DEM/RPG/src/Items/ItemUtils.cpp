@@ -8,18 +8,19 @@
 namespace DEM::RPG
 {
 
-U32 AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game::HEntity StackID, bool Merge, bool Split)
+// Returns not transferred count
+U32 AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, bool Merge, bool Split)
 {
-	auto pContainer = World.FindComponent<CItemContainerComponent>(Container);
-	if (!pContainer) return {};
+	auto pStack = World.FindComponent<CItemStackComponent>(StackID);
+	n_assert_dbg(pStack && pStack->Count);
+	if (!pStack || !pStack->Count) return 0;
+
+	auto pContainer = World.FindComponent<CItemContainerComponent>(Receiver);
+	if (!pContainer) return pStack->Count;
 
 	// Check that we don't insert already contained stack
 	if (std::find(pContainer->Items.cbegin(), pContainer->Items.cend(), StackID) != pContainer->Items.cend())
-		return {};
-
-	auto pStack = World.FindComponent<CItemStackComponent>(StackID);
-	n_assert_dbg(pStack && pStack->Count);
-	if (!pStack || !pStack->Count) return {};
+		return 0;
 
 	// Check volume limits. Weight doesn't block adding items, only carrying them.
 	auto TransferCount = pStack->Count;
@@ -34,7 +35,7 @@ U32 AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game
 				for (auto StackID : pContainer->Items)
 				{
 					FreeVolume -= GetItemStackVolume(World, StackID);
-					if (FreeVolume < MinRequiredVolume) return {};
+					if (FreeVolume < MinRequiredVolume) return pStack->Count;
 				}
 
 				TransferCount = std::min(TransferCount, static_cast<U32>(FreeVolume / pItem->Volume));
@@ -48,7 +49,7 @@ U32 AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game
 		RemoveItemsFromLocation(World, StackID);
 
 	// Try to merge new items into existing stack
-	// TODO: maybe will need to remove "!pStack->Modified" in the future. See CanMergeStacks() logic!
+	// TODO: maybe will need to remove "!pStack->Modified" in the future. See comments inside CanMergeStacks()!
 	if (Merge && !pStack->Modified)
 	{
 		for (auto MergeAcceptorID : pContainer->Items)
@@ -58,7 +59,7 @@ U32 AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game
 			{
 				pMergeTo->Count += TransferCount;
 				if (RemainingCount)
-					pStack->Count -= TransferCount;
+					pStack->Count = RemainingCount;
 				else
 					World.DeleteEntity(StackID);
 				return RemainingCount;
@@ -66,49 +67,47 @@ U32 AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game
 		}
 	}
 
-	// If not merged, transfer a stack into the container
+	// Split the stack if needed
+	auto NewStackID = StackID;
 	if (RemainingCount)
 	{
-		//pStack->Count -= ItemsPerSlot;
-		//const auto NewStackID =
-		//	World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(StackID);
-		//if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
-		//	pNewStack->Count = ItemsPerSlot;
-		//DestSlot = NewStackID;
-	}
-	else
-	{
+		pStack->Count = RemainingCount;
+		NewStackID = World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(StackID);
+		if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
+			pNewStack->Count = TransferCount;
 	}
 
+	// Put the stack into the container
 	auto It = std::find(pContainer->Items.begin(), pContainer->Items.end(), DEM::Game::HEntity{});
 	if (It == pContainer->Items.cend())
-		pContainer->Items.push_back(StackID);
+		pContainer->Items.push_back(NewStackID);
 	else
-		(*It) = StackID;
+		(*It) = NewStackID;
 
 	return RemainingCount;
 }
 //---------------------------------------------------------------------
 
-Game::HEntity AddItemsIntoQuickSlots(Game::CGameWorld& World, Game::HEntity Owner, Game::HEntity StackID, bool Merge, bool Split)
+// Returns not transferred count
+U32 AddItemsIntoQuickSlots(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, bool Merge, bool Split)
 {
-	auto pEquipment = World.FindComponent<Sh2::CEquipmentComponent>(Owner);
-	if (!pEquipment) return {};
+	auto pStack = World.FindComponent<CItemStackComponent>(StackID);
+	n_assert_dbg(pStack && pStack->Count);
+	if (!pStack || !pStack->Count) return 0;
+
+	auto pEquipment = World.FindComponent<Sh2::CEquipmentComponent>(Receiver);
+	if (!pEquipment) return pStack->Count;
 
 	// Check that we don't insert already contained stack
 	if (std::find(pEquipment->QuickSlots.cbegin(), pEquipment->QuickSlots.cend(), StackID) != pEquipment->QuickSlots.cend())
-		return {};
-
-	auto pStack = World.FindComponent<CItemStackComponent>(StackID);
-	n_assert_dbg(pStack && pStack->Count);
-	if (!pStack || !pStack->Count) return {};
+		return 0;
 
 	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
 	const U32 ItemsPerSlot = (pItem && pItem->Volume > 0.f) ?
 		static_cast<U32>(QUICK_SLOT_VOLUME / pItem->Volume) :
 		std::numeric_limits<U32>().max();
 
-	if (ItemsPerSlot < pStack->Count && !Split) return {};
+	if (ItemsPerSlot < pStack->Count && !Split) return pStack->Count;
 
 	// First try to merge into existing stacks of the same item
 	if (Merge)
@@ -127,7 +126,7 @@ Game::HEntity AddItemsIntoQuickSlots(Game::CGameWorld& World, Game::HEntity Owne
 				{
 					pMergeTo->Count += pStack->Count;
 					World.DeleteEntity(StackID);
-					return MergeAcceptorID;
+					return 0;
 				}
 				else if (Split)
 				{
@@ -146,7 +145,7 @@ Game::HEntity AddItemsIntoQuickSlots(Game::CGameWorld& World, Game::HEntity Owne
 		if (pStack->Count <= ItemsPerSlot)
 		{
 			DestSlot = StackID;
-			return StackID;
+			return 0;
 		}
 		else
 		{
@@ -159,83 +158,86 @@ Game::HEntity AddItemsIntoQuickSlots(Game::CGameWorld& World, Game::HEntity Owne
 		}
 	}
 
-	return {};
+	return pStack->Count;
 }
 //---------------------------------------------------------------------
 
-bool AddItemsToCharacter(Game::CGameWorld& World, Game::HEntity Owner, Game::HEntity StackID, EItemStorage PreferredStorage, bool Merge, bool Split)
+static bool StoreItemStack(Game::CGameWorld& World, Game::HEntity Receiver, EItemStorage Storage, Game::HEntity StackID, bool Merge, bool Split)
+{
+	switch (Storage)
+	{
+		case EItemStorage::Inventory:
+		{
+			if (!AddItemsIntoContainer(World, Receiver, StackID, Merge, Split)) return true;
+			break;
+		}
+		case EItemStorage::QuickSlot:
+		{
+			if (!AddItemsIntoQuickSlots(World, Receiver, StackID, Merge, Split)) return true;
+			break;
+		}
+		case EItemStorage::Equipment:
+		{
+			// limit - single item. Equipment is not a general purpose slot, these are QuickSlots.
+			break;
+		}
+		case EItemStorage::Ground:
+		{
+			//!!!TODO: bool AllowDropToGround! otherwise fail transferring.
+
+			/*
+			// TODO: allow merging?! do merging inside some AddStackIntoCollection() + DropItemsToLocation() wrapper?
+			// Ground is an universal fallback, it always has free space for any item
+			StackID = AddStackIntoCollection(World, _GroundItems, StackID, false);
+			n_assert_dbg(StackID);
+
+			//!!!DUPLICATED CODE, SEE OnSlotDropped! Must be in a single place where tmp container creation etc is handled!
+			Math::CTransformSRT Tfm;
+			if (auto pOwnerScene = World.FindComponent<const DEM::Game::CSceneComponent>(Owner))
+				Tfm.Translation = pOwnerScene->RootNode->GetWorldMatrix().transform_coord(-vector3::AxisZ);
+			DropItemsToLocation(World, StackID, Tfm);
+			*/
+			break;
+		}
+	}
+
+	return false;
+}
+//---------------------------------------------------------------------
+
+//!!!TODO: use std::span for the storage order!
+static bool StoreItemStack(Game::CGameWorld& World, Game::HEntity Receiver, const EItemStorage* pStorageOrder, UPTR StorageCount, Game::HEntity StackID, bool Merge, bool Split)
+{
+	if (!pStorageOrder) return false;
+
+	for (UPTR i = 0; i < StorageCount; ++i)
+		if (StoreItemStack(World, Receiver, pStorageOrder[i], StackID, Merge, Split))
+			return true;
+
+	return false;
+}
+//---------------------------------------------------------------------
+
+bool AddItemsToCharacter(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EItemStorage PreferredStorage, bool AllowGround, bool Merge, bool Split)
 {
 	const EItemStorage* pStorageOrder = nullptr;
+	UPTR Count = 0;
 
-	// NB: any order must end with a Ground!
-	constexpr EItemStorage StorageOrderEquipment[] = { EItemStorage::Equipment, EItemStorage::Inventory, EItemStorage::QuickSlot, EItemStorage::Ground };
-	constexpr EItemStorage StorageOrderInventory[] = { EItemStorage::Inventory, EItemStorage::QuickSlot, EItemStorage::Ground };
-	constexpr EItemStorage StorageOrderQuickSlot[] = { EItemStorage::QuickSlot, EItemStorage::Inventory, EItemStorage::Ground };
-	constexpr EItemStorage StorageOrderGround[] = { EItemStorage::Ground };
+	constexpr EItemStorage StorageOrderEquipment[] = { EItemStorage::Equipment, EItemStorage::Inventory, EItemStorage::QuickSlot };
+	constexpr EItemStorage StorageOrderInventory[] = { EItemStorage::Inventory, EItemStorage::QuickSlot };
+	constexpr EItemStorage StorageOrderQuickSlot[] = { EItemStorage::QuickSlot, EItemStorage::Inventory };
 	switch (PreferredStorage)
 	{
-		case EItemStorage::Equipment: pStorageOrder = StorageOrderEquipment; break;
-		case EItemStorage::Inventory: pStorageOrder = StorageOrderInventory; break;
-		case EItemStorage::QuickSlot: pStorageOrder = StorageOrderQuickSlot; break;
-		case EItemStorage::Ground: pStorageOrder = StorageOrderGround; break;
+		case EItemStorage::Equipment: pStorageOrder = StorageOrderEquipment; Count = sizeof(StorageOrderEquipment) / sizeof(EItemStorage); break;
+		case EItemStorage::Inventory: pStorageOrder = StorageOrderInventory; Count = sizeof(StorageOrderInventory) / sizeof(EItemStorage); break;
+		case EItemStorage::QuickSlot: pStorageOrder = StorageOrderQuickSlot; Count = sizeof(StorageOrderQuickSlot) / sizeof(EItemStorage); break;
+		case EItemStorage::Ground: break;
 		default: return false;
 	}
 
-	while (true)
-	{
-		switch (*pStorageOrder++)
-		{
-			case EItemStorage::Inventory:
-			{
-				StackID = AddItemsIntoContainer(World, Owner, StackID, Merge, Split);
-				if (StackID)
-				{
-					//auto pContainer = _pWorld->FindComponent<const CItemContainerComponent>(Owner);
-					//if (!pContainer) return nullptr;
-					//auto It = std::find(pContainer->Items.cbegin(), pContainer->Items.cend(), StackID);
-					//return static_cast<UI::CItemSlot*>(_pInventoryGrid->getChildAtIndex(It - pContainer->Items.cbegin()));
-				}
-				break;
-			}
-			case EItemStorage::QuickSlot:
-			{
-				StackID = AddItemsIntoQuickSlots(World, Owner, StackID, Merge, Split);
-				if (StackID)
-				{
-					//auto pEquipment = _pWorld->FindComponent<const DEM::Sh2::CEquipmentComponent>(_Owner);
-					//if (!pEquipment) return nullptr;
-					//auto It = std::find(pEquipment->QuickSlots.cbegin(), pEquipment->QuickSlots.cend(), StackID);
-					//return static_cast<UI::CItemSlot*>(_pQuickSlotsGrid->getChildAtIndex(It - pEquipment->QuickSlots.cbegin()));
-				}
-				break;
-			}
-			case EItemStorage::Equipment:
-			{
-				// limit - item count or free volume in a slot
-				break;
-			}
-			case EItemStorage::Ground:
-			{
-				//!!!TODO: bool AllowDropToGround! otherwise fail transferring.
+	if (StoreItemStack(World, Receiver, pStorageOrder, Count, StackID, Merge, Split)) return true;
 
-				/*
-				// TODO: allow merging?! do merging inside some AddStackIntoCollection() + DropItemsToLocation() wrapper?
-				// Ground is an universal fallback, it always has free space for any item
-				StackID = AddStackIntoCollection(World, _GroundItems, StackID, false);
-				n_assert_dbg(StackID);
-
-				//!!!DUPLICATED CODE, SEE OnSlotDropped! Must be in a single place where tmp container creation etc is handled!
-				Math::CTransformSRT Tfm;
-				if (auto pOwnerScene = World.FindComponent<const DEM::Game::CSceneComponent>(Owner))
-					Tfm.Translation = pOwnerScene->RootNode->GetWorldMatrix().transform_coord(-vector3::AxisZ);
-				DropItemsToLocation(World, StackID, Tfm);
-
-				auto It = std::find(_GroundItems.cbegin(), _GroundItems.cend(), StackID);
-				return static_cast<UI::CItemSlot*>(_pGroundGrid->getChildAtIndex(It - _GroundItems.cbegin()));
-				*/
-			}
-		}
-	}
+	return AllowGround && StoreItemStack(World, Receiver, EItemStorage::Ground, StackID, Merge, Split);
 }
 //---------------------------------------------------------------------
 
@@ -355,7 +357,6 @@ void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& 
 		}
 	}
 
-	OutStats.FreeWeight = (Container.MaxWeight <= 0.f) ? FLT_MAX : (Container.MaxWeight - OutStats.UsedWeight);
 	OutStats.FreeVolume = (Container.MaxVolume <= 0.f) ? FLT_MAX : (Container.MaxVolume - OutStats.UsedVolume);
 }
 //---------------------------------------------------------------------

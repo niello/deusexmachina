@@ -22,22 +22,23 @@ enum class EItemStorage
 	Inventory,
 	QuickSlot,
 	Equipment,
-	Ground
+	Ground,
+
+	None
 };
 
 struct CContainerStats
 {
 	float  UsedWeight = 0.f;
 	float  UsedVolume = 0.f;
-	float  FreeWeight = 0.f;
 	float  FreeVolume = 0.f;
 	size_t Price = 0;
 };
 
 //???vector or set of entities instead?
-U32 AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Container, Game::HEntity StackID, bool Merge = true, bool Split = true);
-Game::HEntity AddItemsIntoQuickSlots(Game::CGameWorld& World, Game::HEntity Owner, Game::HEntity StackID, bool Merge = true, bool Split = true);
-bool AddItemsToCharacter(Game::CGameWorld& World, Game::HEntity Owner, Game::HEntity StackID, EItemStorage PreferredStorage, bool Merge = true, bool Split = true);
+U32 AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, bool Merge = true, bool Split = true);
+U32 AddItemsIntoQuickSlots(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, bool Merge = true, bool Split = true);
+bool AddItemsToCharacter(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EItemStorage PreferredStorage, bool AllowGround, bool Merge = true, bool Split = true);
 Game::HEntity AddStackIntoCollection(Game::CGameWorld& World, std::vector<Game::HEntity>& Collection, Game::HEntity StackID, bool Merge = true);
 void ShrinkItemCollection(std::vector<Game::HEntity>& Collection);
 bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, const Math::CTransformSRT& Tfm);
