@@ -8,6 +8,31 @@
 namespace DEM::RPG
 {
 
+static U32 GetContainerCapacityInItems(const Game::CGameWorld& World, const CItemContainerComponent& Container,
+	const CItemComponent* pItem, U32 MinItemCount, Game::HEntity ExcludeStackID)
+{
+	if (!pItem || pItem->Volume <= 0.f || Container.MaxVolume < 0.f) return std::numeric_limits<U32>().max();
+
+	const float MinRequiredVolume = pItem->Volume * MinItemCount;
+	float FreeVolume = Container.MaxVolume;
+	for (auto StoredStackID : Container.Items)
+	{
+		if (StoredStackID == ExcludeStackID) continue;
+
+		auto pStoredStack = World.FindComponent<const CItemStackComponent>(StoredStackID);
+		if (!pStoredStack || !pStoredStack->Count) continue;
+
+		if (auto pStoredItem = FindItemComponent<const CItemComponent>(World, StoredStackID, *pStoredStack))
+		{
+			FreeVolume -= (pStoredStack->Count * pStoredItem->Volume);
+			if (FreeVolume < MinRequiredVolume) return 0;
+		}
+	}
+
+	return static_cast<U32>(FreeVolume / pItem->Volume);
+}
+//---------------------------------------------------------------------
+
 // Returns not transferred count
 U32 AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, bool Merge, bool Split)
 {
@@ -26,27 +51,10 @@ U32 AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Receiver, Game:
 	auto TransferCount = pStack->Count;
 	if (pContainer->MaxVolume >= 0.f)
 	{
-		if (auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack))
-		{
-			if (pItem->Volume > 0.f)
-			{
-				const float MinRequiredVolume = (Split ? 1 : pStack->Count) * pItem->Volume;
-				float FreeVolume = pContainer->MaxVolume;
-				for (auto StoredStackID : pContainer->Items)
-				{
-					auto pStoredStack = World.FindComponent<const CItemStackComponent>(StoredStackID);
-					if (!pStoredStack || !pStoredStack->Count) continue;
-
-					if (auto pStoredItem = FindItemComponent<const CItemComponent>(World, StoredStackID, *pStoredStack))
-					{
-						FreeVolume -= (pStoredStack->Count * pStoredItem->Volume);
-						if (FreeVolume < MinRequiredVolume) return pStack->Count;
-					}
-				}
-
-				TransferCount = std::min(TransferCount, static_cast<U32>(FreeVolume / pItem->Volume));
-			}
-		}
+		auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
+		const auto Capacity = GetContainerCapacityInItems(World, *pContainer, pItem, Split ? 1 : pStack->Count, {});
+		if (!Capacity) return pStack->Count;
+		TransferCount = std::min(TransferCount, Capacity);
 	}
 
 	// Items inside a container are always hidden from the view
@@ -394,31 +402,13 @@ U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, EI
 			auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
 			if (!pStack || !pStack->Count) return 0;
 
-			auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
-			if (!pItem || pItem->Volume <= 0.f) return std::numeric_limits<U32>().max();
-
 			// We will not replace the stack if we merge with it
 			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
 			if (CanMergeStacks(*pStack, pReplacedStack))
 				ReplacedStackID = {};
 
-			//!!!TODO: refactor partial duplication with AddItemsIntoContainer, unify where possible!
-			float FreeVolume = pInventory->MaxVolume;
-			for (auto StoredStackID : pInventory->Items)
-			{
-				if (StoredStackID == ReplacedStackID) continue;
-
-				auto pStoredStack = World.FindComponent<const CItemStackComponent>(StoredStackID);
-				if (!pStoredStack || !pStoredStack->Count) continue;
-
-				if (auto pStoredItem = FindItemComponent<const CItemComponent>(World, StoredStackID, *pStoredStack))
-				{
-					FreeVolume -= (pStoredStack->Count * pStoredItem->Volume);
-					if (FreeVolume <= pItem->Volume) return 0;
-				}
-			}
-
-			return static_cast<U32>(FreeVolume / pItem->Volume);
+			auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
+			return GetContainerCapacityInItems(World, *pInventory, pItem, 1, ReplacedStackID);
 		}
 		case EItemStorage::QuickSlot:
 		{
