@@ -423,8 +423,7 @@ U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, EI
 			// Subtract volume of the element to be merged with
 			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
 			if (CanMergeStacks(*pStack, pReplacedStack))
-				if (auto pDestItem = FindItemComponent<const CItemComponent>(World, ReplacedStackID, *pReplacedStack))
-					FreeVolume -= pDestItem->Volume * pReplacedStack->Count;
+				FreeVolume -= (pReplacedStack->Count * pItem->Volume);
 
 			return static_cast<U32>(FreeVolume / pItem->Volume);
 		}
