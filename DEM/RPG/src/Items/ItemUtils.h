@@ -64,7 +64,7 @@ void EnumContainedItems(Game::HEntity Container /*, T Filter, T2 Callback*/);
 //FactionHasItem(faction ID, item ID, count)
 
 template<typename T>
-T* FindItemComponent(const Game::CGameWorld& World, Game::HEntity StackID, const CItemStackComponent& Stack)
+inline T* FindItemComponent(const Game::CGameWorld& World, Game::HEntity StackID, const CItemStackComponent& Stack)
 {
 	if (T* pComponent = World.FindComponent<T>(StackID)) return pComponent;
 	return World.FindComponent<T>(Stack.Prototype);
@@ -72,12 +72,11 @@ T* FindItemComponent(const Game::CGameWorld& World, Game::HEntity StackID, const
 //---------------------------------------------------------------------
 
 template<typename T>
-T* FindItemComponent(const Game::CGameWorld& World, Game::HEntity StackID)
+inline T* FindItemComponent(const Game::CGameWorld& World, Game::HEntity StackID)
 {
 	if (T* pComponent = World.FindComponent<T>(StackID)) return pComponent;
-	if (const CItemStackComponent* pStack = World.FindComponent<const CItemStackComponent>(StackID))
-		return World.FindComponent<T>(pStack->Prototype);
-	return nullptr;
+	const CItemStackComponent* pStack = World.FindComponent<const CItemStackComponent>(StackID);
+	return pStack ? World.FindComponent<T>(pStack->Prototype) : nullptr;
 }
 //---------------------------------------------------------------------
 
