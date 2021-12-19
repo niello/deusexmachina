@@ -46,7 +46,7 @@ void RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
 void RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity StackID, Game::HEntity Container);
 void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& Container, CContainerStats& OutStats);
 bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackComponent* pDestStack);
-float GetItemStackVolume(const Game::CGameWorld& World, Game::HEntity StackID);
+U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, EItemStorage DestStorage, Game::HEntity StackID);
 Game::HEntity TransferItems(Game::CGameWorld& World, U32 Count, Game::HEntity& SrcSlot, Game::HEntity& DestSlot);
 
 Game::HEntity CreateItemsInLocation(CStrID ItemID, U32 Count, CStrID LevelID, const Math::CTransformSRT& Tfm);
@@ -61,7 +61,7 @@ bool TryMergeStacks(Game::HEntity StackID1, Game::HEntity StackID2); //bool allo
 Game::HEntity SplitStack(Game::HEntity StackID, U32 AmountToSeparate);
 void EnumContainedItems(Game::HEntity Container /*, T Filter, T2 Callback*/);
 //IsItemValuable, IsItemTrash - not here, game-specific filters? Or use settings from CItemManager?
-//FactionHasItem(faction ID, item ID, count)
+//FactionHasItem(faction ID, item ID, count, allow modified)
 
 template<typename T>
 inline T* FindItemComponent(const Game::CGameWorld& World, Game::HEntity StackID, const CItemStackComponent& Stack)
