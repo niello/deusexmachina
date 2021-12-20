@@ -112,7 +112,7 @@ inline CNpkTOCEntry* CNpkTOCEntry::FindEntry(const char* pName) const
 	if (!pEntries) return nullptr;
 
 	std::string Name(pName);
-	std::transform(Name.begin(), Name.end(), Name.begin(), std::tolower);
+	std::transform(Name.cbegin(), Name.cend(), Name.begin(), [](auto c) { return std::tolower(c); });
 
 	auto It = pEntries->find(Name.c_str());
 	return (It == pEntries->cend()) ? It->second : nullptr;

@@ -19,14 +19,41 @@ enum EEquipmentSlot
 	Belt,
 	Backpack,
 	Neck,
-	BraceletLeft,
-	BraceletRight,
-	Ring1Left,
-	Ring1Right,
-	Ring2Left,
-	Ring2Right,
+	BraceletMain,
+	BraceletOff,
+	Ring1Main,
+	Ring1Off,
+	Ring2Main,
+	Ring2Off,
+	MainHandA,
+	OffHandA,
+	MainHandB,
+	OffHandB,
 
 	COUNT
+};
+constexpr const char* EEquipmentSlot_Name[] =
+{
+	"Body",
+	"Shoulders",
+	"Head",
+	"Arms",
+	"Hands",
+	"Legs",
+	"Feet",
+	"Belt",
+	"Backpack",
+	"Neck",
+	"BraceletMain",
+	"BraceletOff",
+	"Ring1Main",
+	"Ring1Off",
+	"Ring2Main",
+	"Ring2Off",
+	"MainHandA",
+	"OffHandA",
+	"MainHandB",
+	"OffHandB"
 };
 
 struct CEquipmentComponent
@@ -103,29 +130,9 @@ struct ParamsFormat<DEM::Sh2::CEquipmentComponent>
 
 		Value.SlotEnabledBits = 0;
 
-		//!!!FIXME: to enum!
-		constexpr const char* pEquipmentSlotName[] =
-		{
-			"Body",
-			"Shoulders",
-			"Head",
-			"Arms",
-			"Hands",
-			"Legs",
-			"Feet",
-			"Belt",
-			"Backpack",
-			"Neck",
-			"BraceletLeft",
-			"BraceletRight",
-			"Ring1Left",
-			"Ring1Right",
-			"Ring2Left",
-			"Ring2Right"
-		};
 		for (U32 i = 0; i < Sh2::EEquipmentSlot::COUNT; ++i)
 		{
-			if (auto pParam = Desc->Find(CStrID(pEquipmentSlotName[i])))
+			if (auto pParam = Desc->Find(CStrID(Sh2::EEquipmentSlot_Name[i])))
 			{
 				const auto& SlotData = pParam->GetRawValue();
 				Value.Equipment[i] = SlotData.IsVoid() ?

@@ -24,7 +24,7 @@ void CDEMResourceProvider::loadRawDataContainer(const String& filename, RawDataC
 	}
 
 #if CEGUI_STRING_CLASS == CEGUI_STRING_CLASS_UTF_32
-	std::string Filename = String::convertUtf32ToUtf8(FinalFilename.getString());
+	const std::string Filename = String::convertUtf32ToUtf8(FinalFilename.getString());
 #else
 	const std::string& Filename = FinalFilename.getString();
 #endif
