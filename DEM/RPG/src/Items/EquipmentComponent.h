@@ -101,7 +101,39 @@ struct ParamsFormat<DEM::Sh2::CEquipmentComponent>
 			}
 		}
 
-		// TODO: read equipment
+		Value.SlotEnabledBits = 0;
+
+		//!!!FIXME: to enum!
+		constexpr const char* pEquipmentSlotName[] =
+		{
+			"Body",
+			"Shoulders",
+			"Head",
+			"Arms",
+			"Hands",
+			"Legs",
+			"Feet",
+			"Belt",
+			"Backpack",
+			"Neck",
+			"BraceletLeft",
+			"BraceletRight",
+			"Ring1Left",
+			"Ring1Right",
+			"Ring2Left",
+			"Ring2Right"
+		};
+		for (U32 i = 0; i < Sh2::EEquipmentSlot::COUNT; ++i)
+		{
+			if (auto pParam = Desc->Find(CStrID(pEquipmentSlotName[i])))
+			{
+				const auto& SlotData = pParam->GetRawValue();
+				Value.Equipment[i] = SlotData.IsVoid() ?
+					Game::HEntity{} :
+					Game::HEntity{ static_cast<Game::HEntity::TRawValue>(SlotData.GetValue<int>()) };
+				Value.SlotEnabledBits |= (1 << i);
+			}
+		}
 	}
 };
 
