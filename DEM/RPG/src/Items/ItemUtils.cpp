@@ -396,9 +396,25 @@ void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerI
 		const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, StackID);
 		if (!pItem || !pItem->WorldModelID) return;
 
+		// Undo scaling
+		Math::CTransformSRT Tfm(pBone->GetWorldMatrix());
+		Tfm.Scale.ReciprocalInplace();
+		Tfm.Rotation = quaternion::Identity;
+		Tfm.Translation = vector3::Zero;
+
+		//!!!TODO: store desired attachment local rotation and translation (and scaling?) somewhere?
+
+		//!!!DBG TMP!
+		Tfm.Rotation.set_rotate_x(HALF_PI);
+		Tfm.Translation.set(20.f, 20.f, 20.f);
+
+		//!!!FIXME:
+		//!!!DISABLE COLLISIONS OR SET COLLISION FLAGS OF EQUIPMENT NOT TO COLLIDE WITH THE CHARACTER!
+
 		auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(StackID);
 		pBone->AddChild(CStrID("Equipment"), pSceneComponent->RootNode, true);
 		pSceneComponent->AssetID = pItem->WorldModelID;
+		pSceneComponent->SetLocalTransform(Tfm);
 	}
 	else
 	{

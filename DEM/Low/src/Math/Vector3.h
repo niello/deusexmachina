@@ -58,6 +58,8 @@ public:
 	float			SqLength2D() const { return x * x + z * z; }
 	void			norm();
 
+	void            ReciprocalInplace() { x = 1.f / x; y = 1.f / y; z = 1.f / z; }
+
 	bool			isequal(const vector3& v, float tol) const { return n_fabs(v.x - x) <= tol && n_fabs(v.y - y) <= tol && n_fabs(v.z - z) <= tol; }
 	int				compare(const vector3& v, float tol) const;
 	void			rotate(const vector3& axis, float angle);
