@@ -357,6 +357,17 @@ CSceneNode* CSceneNode::GetChild(CStrID ChildName) const
 }
 //---------------------------------------------------------------------
 
+CSceneNode* CSceneNode::GetChildRecursively(CStrID ChildName) const
+{
+	if (auto pChild = GetChild(ChildName)) return pChild;
+
+	for (auto& Child : Children)
+		if (auto pChild = Child->GetChildRecursively(ChildName)) return pChild;
+
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
 bool CSceneNode::IsChild(const CSceneNode* pParentNode) const
 {
 	const CSceneNode* pCurr = pParent;

@@ -9,6 +9,12 @@ namespace Math
 	class CTransformSRT;
 }
 
+//!!!FIXME: move all enums etc to proper places!
+namespace DEM::Sh2
+{
+	enum EEquipmentSlot;
+}
+
 namespace DEM::RPG
 {
 struct CItemContainerComponent;
@@ -60,7 +66,7 @@ Game::HEntity AddStackIntoCollection(Game::CGameWorld& World, std::vector<Game::
 void ShrinkItemCollection(std::vector<Game::HEntity>& Collection);
 bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, const Math::CTransformSRT& Tfm);
 void RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
-void RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity StackID, Game::HEntity Container);
+void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, Sh2::EEquipmentSlot Slot);
 void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& Container, CContainerStats& OutStats);
 bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackComponent* pDestStack);
 U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EItemStorage DestStorage, UPTR DestIndex);

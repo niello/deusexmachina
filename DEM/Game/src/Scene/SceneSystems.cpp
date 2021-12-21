@@ -10,7 +10,11 @@ namespace DEM::Game
 
 void InitNewSceneComponent(HEntity EntityID, const CEntity& Entity, CSceneComponent& SceneComponent, CGameWorld& World, Resources::CResourceManager& RsrcMgr)
 {
-	if (!SceneComponent.AssetID || (SceneComponent.RootNode && SceneComponent.RootNode->GetParent())) return;
+	if (!SceneComponent.AssetID || !SceneComponent.RootNode) return;
+
+	//!!!FIXME: redundant CStrID creation!!!
+	const CStrID sidAsset("asset");
+	if (SceneComponent.RootNode->GetChild(sidAsset)) return;
 
 	auto pLevel = World.FindLevel(Entity.LevelID);
 	if (!pLevel) return;
@@ -22,9 +26,12 @@ void InitNewSceneComponent(HEntity EntityID, const CEntity& Entity, CSceneCompon
 
 	// Instantiate asset, keeping component transform
 	// FIXME: do it only if asset wasn't instantiated yet! Or clear contents on detach?
-	SceneComponent.RootNode->AddChild(CStrID("asset"), NodeTpl->Clone());
-	const CStrID NodeID = Entity.Name ? Entity.Name : CStrID(std::to_string(EntityID).c_str());
-	pLevel->GetSceneRoot().AddChildAtPath(NodeID, SceneComponent.RootPath, SceneComponent.RootNode, true);
+	SceneComponent.RootNode->AddChild(sidAsset, NodeTpl->Clone());
+	if (!SceneComponent.RootNode->GetParent())
+	{
+		const CStrID NodeID = Entity.Name ? Entity.Name : CStrID(std::to_string(EntityID).c_str());
+		pLevel->GetSceneRoot().AddChildAtPath(NodeID, SceneComponent.RootPath, SceneComponent.RootNode, true);
+	}
 
 	// Validate resources
 	SceneComponent.RootNode->Visit([&RsrcMgr](Scene::CSceneNode& Node)

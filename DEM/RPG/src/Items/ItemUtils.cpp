@@ -200,6 +200,9 @@ static bool StoreItemStack(Game::CGameWorld& World, Game::HEntity Receiver, EIte
 		{
 			//!!!TODO: bool AllowDropToGround! otherwise fail transferring.
 
+			//!!!TODO: implement!
+			n_assert(false);
+
 			/*
 			// TODO: allow merging?! do merging inside some AddStackIntoCollection() + DropItemsToLocation() wrapper?
 			// Ground is an universal fallback, it always has free space for any item
@@ -344,13 +347,63 @@ void RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID)
 }
 //---------------------------------------------------------------------
 
-// TODO: use container as an std::optional hint? or handle this in user API and call RemoveItemsFromContainer only when needed?
-void RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity ItemStackEntity, Game::HEntity Container)
+void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, Sh2::EEquipmentSlot Slot)
 {
-	auto pContainer = World.FindComponent<CItemContainerComponent>(Container);
-	if (!pContainer) return;
+	if (Slot >= Sh2::EEquipmentSlot::COUNT) return;
 
-	pContainer->Items.erase(std::remove(pContainer->Items.begin(), pContainer->Items.end(), ItemStackEntity));
+	//!!!FIXME: where to place?!
+	constexpr const char* EEquipmentSlot_Bone[] =
+	{
+		"body",
+		"shoulders_cloak",
+		"head",
+		"arms",
+		"hands",
+		"legs",
+		"feet",
+		"belt",
+		"backpack",
+		"neck",
+		"bracelet",
+		"bracelet",
+		"ring",
+		"ring",
+		"ring",
+		"ring",
+		"mixamorig_RightHand",
+		"shield",
+		"mixamorig_RightHand",
+		"shield"
+	};
+
+	//!!!FIXME: constexpr CStrID?! Or at least pre-init once!
+	const auto pBoneName = EEquipmentSlot_Bone[Slot];
+	if (!pBoneName || !*pBoneName) return;
+
+	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(OwnerID);
+	if (!pEquipment) return;
+
+	const auto StackID = pEquipment->Equipment[Slot];
+
+	auto pOwnerScene = World.FindComponent<const DEM::Game::CSceneComponent>(OwnerID);
+	if (!pOwnerScene || !pOwnerScene->RootNode) return;
+
+	auto pBone = pOwnerScene->RootNode->GetChildRecursively(CStrID(pBoneName));
+	if (!pBone) return;
+
+	if (StackID)
+	{
+		const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, StackID);
+		if (!pItem || !pItem->WorldModelID) return;
+
+		auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(StackID);
+		pBone->AddChild(CStrID("Equipment"), pSceneComponent->RootNode, true);
+		pSceneComponent->AssetID = pItem->WorldModelID;
+	}
+	else
+	{
+		pBone->RemoveChild(CStrID("Equipment"));
+	}
 }
 //---------------------------------------------------------------------
 

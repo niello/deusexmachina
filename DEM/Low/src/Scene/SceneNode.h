@@ -81,6 +81,7 @@ public:
 	UPTR					GetChildCount() const { return Children.size(); }
 	CSceneNode*				GetChild(UPTR Idx) const { return Children[Idx]; }
 	CSceneNode*				GetChild(CStrID ChildName) const;
+	CSceneNode*				GetChildRecursively(CStrID ChildName) const;
 	CSceneNode*				FindNodeByPath(const char* pPath) const;
 	CSceneNode*				FindLastNodeAtPath(const char* pPath, char const*& pUnresolvedPathPart) const;
 
