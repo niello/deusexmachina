@@ -27,6 +27,23 @@ enum class EItemStorage
 	None
 };
 
+enum class EEquipmentSlotType
+{
+	Torso,
+	Shoulders,
+	Head,
+	Arms,
+	Hands,     // Hand wear - gloves etc
+	Legs,
+	Feet,
+	Belt,
+	Backpack,
+	Neck,
+	Bracelet,
+	Ring,
+	HandItem   // Items held in hands - primarily weapons and shields
+};
+
 struct CContainerStats
 {
 	float  UsedWeight = 0.f;
@@ -46,8 +63,9 @@ void RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
 void RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity StackID, Game::HEntity Container);
 void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& Container, CContainerStats& OutStats);
 bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackComponent* pDestStack);
-U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, EItemStorage DestStorage, Game::HEntity StackID, Game::HEntity ReplacedStackID);
+U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EItemStorage DestStorage, UPTR DestIndex);
 Game::HEntity TransferItems(Game::CGameWorld& World, U32 Count, Game::HEntity& SrcSlot, Game::HEntity& DestSlot);
+bool CanEquipItem(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EEquipmentSlotType SlotType);
 
 Game::HEntity CreateItemsInLocation(CStrID ItemID, U32 Count, CStrID LevelID, const Math::CTransformSRT& Tfm);
 Game::HEntity CreateItemsInContainer(CStrID ItemID, U32 Count, Game::HEntity Container, size_t Index);

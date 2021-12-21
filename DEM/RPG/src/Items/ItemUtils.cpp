@@ -2,6 +2,7 @@
 #include <Items/ItemComponent.h>
 #include <Items/ItemContainerComponent.h>
 #include <Items/EquipmentComponent.h>
+#include <Items/EquippableComponent.h>
 #include <Scene/SceneComponent.h>
 #include <Physics/RigidBodyComponent.h>
 
@@ -383,15 +384,13 @@ bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackCompone
 }
 //---------------------------------------------------------------------
 
-U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, EItemStorage DestStorage, Game::HEntity StackID, Game::HEntity ReplacedStackID)
+U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EItemStorage DestStorage, UPTR DestIndex)
 {
-	if (StackID == ReplacedStackID) return std::numeric_limits<U32>().max();
-
 	switch (DestStorage)
 	{
 		case EItemStorage::Inventory:
 		{
-			auto pInventory = World.FindComponent<CItemContainerComponent>(Receiver);
+			auto pInventory = World.FindComponent<const CItemContainerComponent>(Receiver);
 			if (!pInventory) return 0;
 
 			if (pInventory->MaxVolume < 0.f) return std::numeric_limits<U32>().max();
@@ -403,6 +402,7 @@ U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, EI
 			if (!pStack || !pStack->Count) return 0;
 
 			// We will not replace the stack if we merge with it
+			auto ReplacedStackID = (DestIndex < pInventory->Items.size()) ? pInventory->Items[DestIndex] : Game::HEntity{};
 			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
 			if (CanMergeStacks(*pStack, pReplacedStack))
 				ReplacedStackID = {};
@@ -412,6 +412,12 @@ U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, EI
 		}
 		case EItemStorage::QuickSlot:
 		{
+			auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(Receiver);
+			if (!pEquipment || DestIndex >= pEquipment->QuickSlots.size()) return 0;
+
+			auto ReplacedStackID = pEquipment->QuickSlots[DestIndex];
+			if (StackID == ReplacedStackID) return std::numeric_limits<U32>().max();
+
 			auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
 			if (!pStack || !pStack->Count) return 0;
 
@@ -429,9 +435,51 @@ U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, EI
 		}
 		case EItemStorage::Equipment:
 		{
-			//!!!TODO:		
-			// return IsItemSuitableForEquipmentSlot(pDestSlotView->getID()) ? 1 : 0;
-			return 1;
+			if (DestIndex >= Sh2::EEquipmentSlot::COUNT) return 0;
+
+			auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(Receiver);
+			if (!pEquipment || !(pEquipment->SlotEnabledBits & (1 << DestIndex))) return 0;
+
+			auto ReplacedStackID = pEquipment->Equipment[DestIndex];
+			if (StackID == ReplacedStackID) return std::numeric_limits<U32>().max();
+
+			auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
+			if (!pStack || !pStack->Count) return 0;
+
+			// Merging equipment is forbidden
+			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
+			if (CanMergeStacks(*pStack, pReplacedStack)) return 0;
+
+			//!!!FIXME: where to place?! Next to EEquipmentSlot enum?
+			constexpr EEquipmentSlotType EEquipmentSlot_Type[] =
+			{
+				EEquipmentSlotType::Torso,
+				EEquipmentSlotType::Shoulders,
+				EEquipmentSlotType::Head,
+				EEquipmentSlotType::Arms,
+				EEquipmentSlotType::Hands,
+				EEquipmentSlotType::Legs,
+				EEquipmentSlotType::Feet,
+				EEquipmentSlotType::Belt,
+				EEquipmentSlotType::Backpack,
+				EEquipmentSlotType::Neck,
+				EEquipmentSlotType::Bracelet,
+				EEquipmentSlotType::Bracelet,
+				EEquipmentSlotType::Ring,
+				EEquipmentSlotType::Ring,
+				EEquipmentSlotType::Ring,
+				EEquipmentSlotType::Ring,
+				EEquipmentSlotType::HandItem,
+				EEquipmentSlotType::HandItem,
+				EEquipmentSlotType::HandItem,
+				EEquipmentSlotType::HandItem
+			};
+
+			return CanEquipItem(World, Receiver, StackID, EEquipmentSlot_Type[DestIndex]) ? 1 : 0;
+		}
+		case EItemStorage::Ground:
+		{
+			return std::numeric_limits<U32>().max();
 		}
 	}
 
@@ -481,6 +529,30 @@ Game::HEntity TransferItems(Game::CGameWorld& World, U32 Count, Game::HEntity& S
 	}
 
 	return SrcStackID;
+}
+//---------------------------------------------------------------------
+
+bool CanEquipItem(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EEquipmentSlotType SlotType)
+{
+	if (auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
+	{
+		// if scripted, try to find CanEquip function in the script
+
+		const auto CheckBit = (1 << static_cast<int>(SlotType));
+		if (pEquippable->IncludeBits & CheckBit) return true;
+		if (pEquippable->ExcludeBits & CheckBit) return false;
+	}
+
+	switch (SlotType)
+	{
+		case EEquipmentSlotType::HandItem:
+		{
+			// Weapon or Shield
+			return true;
+		}
+	}
+
+	return false;
 }
 //---------------------------------------------------------------------
 
