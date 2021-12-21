@@ -532,11 +532,12 @@ Game::HEntity TransferItems(Game::CGameWorld& World, U32 Count, Game::HEntity& S
 }
 //---------------------------------------------------------------------
 
-bool CanEquipItem(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EEquipmentSlotType SlotType)
+bool CanEquipItem(const Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EEquipmentSlotType SlotType)
 {
 	if (auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
 	{
-		// if scripted, try to find CanEquip function in the script
+		// TODO: if scripted, try to find CanEquip function in the script
+		// Return value will be true, false or nil. The latter is to proceed to the C++ logic.
 
 		const auto CheckBit = (1 << static_cast<int>(SlotType));
 		if (pEquippable->IncludeBits & CheckBit) return true;
@@ -547,7 +548,7 @@ bool CanEquipItem(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity
 	{
 		case EEquipmentSlotType::HandItem:
 		{
-			// Weapon or Shield
+			// TODO: allow only Weapon or Shield, don't allow to equip to the slot blocked by a two-handed item
 			return true;
 		}
 	}

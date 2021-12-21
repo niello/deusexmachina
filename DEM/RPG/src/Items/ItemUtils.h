@@ -65,7 +65,7 @@ void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& 
 bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackComponent* pDestStack);
 U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EItemStorage DestStorage, UPTR DestIndex);
 Game::HEntity TransferItems(Game::CGameWorld& World, U32 Count, Game::HEntity& SrcSlot, Game::HEntity& DestSlot);
-bool CanEquipItem(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EEquipmentSlotType SlotType);
+bool CanEquipItem(const Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EEquipmentSlotType SlotType);
 
 Game::HEntity CreateItemsInLocation(CStrID ItemID, U32 Count, CStrID LevelID, const Math::CTransformSRT& Tfm);
 Game::HEntity CreateItemsInContainer(CStrID ItemID, U32 Count, Game::HEntity Container, size_t Index);

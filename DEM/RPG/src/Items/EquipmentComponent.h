@@ -61,6 +61,8 @@ struct CEquipmentComponent
 	Game::HEntity              Equipment[EEquipmentSlot::COUNT];
 	std::vector<Game::HEntity> QuickSlots;
 	U32                        SlotEnabledBits = 0;
+
+	// TODO: active items (A/B in hands, active quickslots, e.g. current ammo)
 };
 
 }
