@@ -406,10 +406,6 @@ void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerI
 
 		//!!!DBG TMP!
 		Tfm.Rotation.set_rotate_x(HALF_PI);
-		Tfm.Translation.set(20.f, 20.f, 20.f);
-
-		//!!!FIXME:
-		//!!!DISABLE COLLISIONS OR SET COLLISION FLAGS OF EQUIPMENT NOT TO COLLIDE WITH THE CHARACTER!
 
 		auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(StackID);
 		pBone->AddChild(CStrID("Equipment"), pSceneComponent->RootNode, true);

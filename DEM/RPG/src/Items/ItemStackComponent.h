@@ -11,6 +11,9 @@ namespace DEM::RPG
 
 struct CItemStackComponent
 {
+	// For disabling collision on equipped stacks
+	static constexpr bool Signals = true;
+
 	Game::HEntity Prototype;
 	U32           Count = 1;
 	U16           Modified = 0; // To optimize out deep comparison when stacking
