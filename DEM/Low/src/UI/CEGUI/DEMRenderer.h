@@ -3,6 +3,7 @@
 #include <Render/RenderFwd.h>
 
 #include <CEGUI/Renderer.h>
+#include <CEGUI/Sizef.h>
 
 namespace CEGUI
 {

@@ -6,6 +6,7 @@
 #include "DEMShaderWrapper.h"
 #include <Render/GPUDriver.h>
 #include <Render/VertexLayout.h>
+#include <CEGUI/RenderMaterial.h>
 #include <CEGUI/System.h>
 #include <CEGUI/Logger.h>
 

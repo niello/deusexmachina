@@ -9,6 +9,9 @@
 
 #include <CEGUI/System.h>
 #include <CEGUI/ImageCodec.h>
+#include <CEGUI/Rectf.h>
+#include <CEGUI/ResourceProvider.h>
+#include <CEGUI/DataContainer.h>
 
 namespace CEGUI
 {

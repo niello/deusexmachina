@@ -26,14 +26,9 @@
  ***************************************************************************/
 #include "CEGUI/falagard/StateImagery.h"
 #include "CEGUI/falagard/XMLHandler.h"
-#include "CEGUI/GeometryBuffer.h"
-#include "CEGUI/System.h"
-#include "CEGUI/Renderer.h"
+#include "CEGUI/XMLSerializer.h"
+#include <algorithm> // sort
 
-#include <algorithm>
-#include <iostream>
-
-// Start of CEGUI namespace section
 namespace CEGUI
 {
 

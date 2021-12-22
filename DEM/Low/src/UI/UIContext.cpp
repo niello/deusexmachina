@@ -9,6 +9,8 @@
 
 #include <CEGUI/RenderTarget.h>
 #include <CEGUI/InputAggregator.h>
+#include <CEGUI/System.h>
+#include <CEGUI/GUIContext.h>
 
 namespace UI
 {

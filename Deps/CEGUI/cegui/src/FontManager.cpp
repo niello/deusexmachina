@@ -29,10 +29,12 @@
 #endif
 
 #include "CEGUI/FontManager.h"
-#include "CEGUI/Exceptions.h"
+#include "CEGUI/Font_xmlHandler.h"
+#include "CEGUI/XMLSerializer.h"
 #include "CEGUI/Logger.h"
 #include "CEGUI/System.h"
-#include "CEGUI/XMLParser.h"
+#include "CEGUI/ResourceProvider.h"
+#include "CEGUI/InputEvent.h"
 #include "CEGUI/PixmapFont.h"
 #include "CEGUI/SharedStringStream.h"
 
@@ -40,8 +42,6 @@
 #   include "CEGUI/FreeTypeFont.h"
 #endif
 
-
-// Start of CEGUI namespace section
 namespace CEGUI
 {
 

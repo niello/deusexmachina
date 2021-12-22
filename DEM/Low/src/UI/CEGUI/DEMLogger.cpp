@@ -1,5 +1,6 @@
 #include <System/System.h> // keep before to disable warning
 #include "DEMLogger.h"
+#include <CEGUI/String.h>
 
 namespace CEGUI
 {

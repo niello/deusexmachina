@@ -26,13 +26,14 @@
  *   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  *   OTHER DEALINGS IN THE SOFTWARE.
  ***************************************************************************/
-#include "CEGUI/Exceptions.h"
 #include "CEGUI/ImageCodecModules/SILLY/ImageCodec.h"
-#include <SILLY.h>
-#include "CEGUI/Logger.h"
+#include "CEGUI/DataContainer.h"
 #include "CEGUI/Sizef.h"
+#include "CEGUI/Texture.h"
+#include "CEGUI/Exceptions.h"
+#include "CEGUI/Logger.h"
+#include <SILLY.h>
 
-// Start of CEGUI namespace section
 namespace CEGUI
 {
 SILLYImageCodec::SILLYImageCodec()

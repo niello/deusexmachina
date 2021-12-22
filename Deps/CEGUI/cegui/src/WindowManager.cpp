@@ -28,17 +28,16 @@
  ***************************************************************************/
 #include "CEGUI/WindowManager.h"
 #include "CEGUI/WindowFactoryManager.h"
-#include "CEGUI/WindowFactory.h"
+#include "CEGUI/System.h"
+#include "CEGUI/Logger.h"
 #include "CEGUI/Window.h"
-#include "CEGUI/Exceptions.h"
 #include "CEGUI/GUILayout_xmlHandler.h"
 #include "CEGUI/XMLParser.h"
+#include "CEGUI/XMLSerializer.h"
 #include "CEGUI/RenderEffectManager.h"
 #include "CEGUI/RenderingWindow.h"
 #include "CEGUI/SharedStringStream.h"
 #include <fstream>
-#include <sstream>
-
 
 // Start of CEGUI namespace section
 namespace CEGUI

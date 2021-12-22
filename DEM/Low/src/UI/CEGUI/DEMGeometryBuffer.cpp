@@ -9,6 +9,7 @@
 #include <UI/CEGUI/DEMShaderWrapper.h>
 #include <UI/UIFwd.h>
 
+#include <CEGUI/RenderMaterial.h>
 #include <CEGUI/RenderEffect.h>
 #include <CEGUI/Vertex.h>
 #include "CEGUI/ShaderParameterBindings.h"

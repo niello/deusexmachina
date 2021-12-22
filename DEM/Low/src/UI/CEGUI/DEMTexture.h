@@ -5,6 +5,7 @@
 #include <UI/CEGUI/DEMRenderer.h>
 #include <CEGUI/Texture.h>
 #include <Data/RefCounted.h>
+#include <CEGUI/Sizef.h>
 
 namespace Render
 {

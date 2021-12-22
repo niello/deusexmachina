@@ -9,8 +9,10 @@
 #include <Render/Effect.h>
 #include <Data/Params.h>
 #include <Core/Factory.h>
-#include <CEGUI/RenderTarget.h>
 #include <UI/CEGUI/DEMRenderer.h>
+#include <CEGUI/RenderTarget.h>
+#include <CEGUI/System.h>
+#include <CEGUI/GUIContext.h>
 
 namespace Frame
 {

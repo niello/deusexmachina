@@ -25,9 +25,10 @@
  *   OTHER DEALINGS IN THE SOFTWARE.
  ***************************************************************************/
 #include "CEGUI/ImageManager.h"
-#include "CEGUI/Logger.h"
-#include "CEGUI/Exceptions.h"
 #include "CEGUI/SharedStringStream.h"
+#include "CEGUI/ImageFactory.h"
+#include "CEGUI/Logger.h"
+#include "CEGUI/Renderer.h"
 
 // for the XML parsing part.
 #include "CEGUI/XMLParser.h"
@@ -39,10 +40,6 @@
 #include "CEGUI/svg/SVGData.h"
 #include "CEGUI/svg/SVGDataManager.h"
 
-#include <cstdio>
-#include <algorithm>
-
-// Start of CEGUI namespace section
 namespace CEGUI
 {
 //----------------------------------------------------------------------------//

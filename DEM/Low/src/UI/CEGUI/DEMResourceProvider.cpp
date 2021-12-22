@@ -6,6 +6,8 @@
 #include <IO/Stream.h>
 #include <Data/StringUtils.h>
 
+#include <CEGUI/DataContainer.h>
+
 namespace CEGUI
 {
 

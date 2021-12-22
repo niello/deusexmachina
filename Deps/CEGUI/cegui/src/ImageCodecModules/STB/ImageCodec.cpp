@@ -26,13 +26,13 @@
  *   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  *   OTHER DEALINGS IN THE SOFTWARE.
  ***************************************************************************/
-#include "CEGUI/Exceptions.h"
 #include "CEGUI/ImageCodecModules/STB/ImageCodec.h"
-#include "CEGUI/Logger.h"
+#include "CEGUI/DataContainer.h"
+#include "CEGUI/Texture.h"
 #include "CEGUI/Sizef.h"
+#include "CEGUI/Logger.h"
 #include "stb_image.h"
 
-// Start of CEGUI namespace section
 namespace CEGUI
 {
 //----------------------------------------------------------------------------//

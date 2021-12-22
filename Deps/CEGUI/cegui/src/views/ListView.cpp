@@ -27,15 +27,15 @@
  *   OTHER DEALINGS IN THE SOFTWARE.
 ***************************************************************************/
 #include "CEGUI/views/ListView.h"
+#include "CEGUI/falagard/XMLEnumHelper.h"
 #include "CEGUI/CoordConverter.h"
-#include <algorithm>
-
-#include "CEGUI/falagard/WidgetLookManager.h"
 #include "CEGUI/LeftAlignedRenderedString.h"
 #include "CEGUI/RightAlignedRenderedString.h"
 #include "CEGUI/CentredRenderedString.h"
-#include "CEGUI/JustifiedRenderedString.h"
 #include "CEGUI/RenderedStringWordWrapper.h"
+#include "CEGUI/RenderedStringParser.h"
+#include "CEGUI/widgets/Scrollbar.h"
+#include <algorithm> // sort
 
 namespace CEGUI
 {

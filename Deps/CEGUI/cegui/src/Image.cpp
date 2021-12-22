@@ -27,10 +27,8 @@
 #include "CEGUI/Image.h"
 #include "CEGUI/Logger.h"
 #include "CEGUI/System.h"
+#include "CEGUI/Renderer.h"
 
-#include <algorithm>
-
-// Start of CEGUI namespace section
 namespace CEGUI
 {
 //----------------------------------------------------------------------------//
