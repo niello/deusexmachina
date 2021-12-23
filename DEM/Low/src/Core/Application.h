@@ -1,6 +1,7 @@
 #pragma once
 #include <Data/Ptr.h>
 #include <Data/Params.h>
+#include <Data/Regions.h>
 #include <Events/EventsFwd.h>
 #include <Input/InputTranslator.h>
 #include <memory>
@@ -159,7 +160,7 @@ public:
 	void				ExitOnWindowClosed(Sys::COSWindow* pWindow);
 
 	//???store windows inside app?
-	int					CreateRenderWindow(Render::CGPUDriver& GPU, U32 Width, U32 Height);
+	int					CreateRenderWindow(Render::CGPUDriver& GPU, const Data::CRect& Rect);
 	//POSConsoleWindow CreateConsoleWindow();
 
 	// Quickstart methods

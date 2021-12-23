@@ -580,10 +580,10 @@ bool CApplication::SetStringSetting(const char* pKey, const CString& Value, CStr
 //---------------------------------------------------------------------
 
 // Creates a GUI window most suitable for 3D scene rendering, based on app & profile settings
-int CApplication::CreateRenderWindow(Render::CGPUDriver& GPU, U32 Width, U32 Height)
+int CApplication::CreateRenderWindow(Render::CGPUDriver& GPU, const Data::CRect& Rect)
 {
 	auto Wnd = Platform.CreateGUIWindow();
-	Wnd->SetRect(Data::CRect(50, 50, Width, Height));
+	Wnd->SetRect(Rect);
 
 	Render::CRenderTargetDesc BBDesc;
 	BBDesc.Format = Render::PixelFmt_DefaultBackBuffer;
@@ -699,7 +699,7 @@ bool CApplication::Update()
 
 	// Process OS messages etc
 
-	if (!Platform.Update()) FAIL;
+	if (!Platform.Update()) return false;
 
 	// Update application state
 
@@ -714,12 +714,11 @@ bool CApplication::Update()
 		_CurrState = RequestedStateCopy;
 	}
 
-	if (_CurrState)
-	{
-		_RequestedState = _CurrState->Update(FrameTime);
-		OK;
-	}
-	else FAIL;
+	if (!_CurrState) return false;
+
+	_RequestedState = _CurrState->Update(FrameTime);
+
+	return true;
 }
 //---------------------------------------------------------------------
 
