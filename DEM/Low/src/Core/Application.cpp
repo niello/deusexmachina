@@ -361,9 +361,9 @@ Input::PInputTranslator CApplication::CreateInput(CStrID UserID) const
 	Input::PInputTranslator NewInput(n_new(Input::CInputTranslator(UserID)));
 
 	// Initialize a bypass context for UI
-	const CStrID UIContextID("UIBypass");
-	NewInput->CreateContext(UIContextID, true);
-	NewInput->EnableContext(UIContextID);
+	const CStrID sidUIBypass("UIBypass");
+	NewInput->CreateContext(sidUIBypass, true);
+	NewInput->EnableContext(sidUIBypass);
 
 	if (InputDesc)
 	{

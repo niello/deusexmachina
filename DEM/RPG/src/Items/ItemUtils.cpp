@@ -370,9 +370,9 @@ void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerI
 		"ring",
 		"ring",
 		"ring",
-		"mixamorig_RightHand",
+		"mixamorig_RightHandMiddle1",
 		"shield",
-		"mixamorig_RightHand",
+		"mixamorig_RightHandMiddle1",
 		"shield"
 	};
 
