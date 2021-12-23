@@ -1,20 +1,15 @@
 #include "UIServer.h"
 
 #include <UI/UIContext.h>
+#include <Render/GPUDriver.h>
 #include <Events/EventServer.h>
 #include <Events/Subscription.h>
 #include <Data/DataArray.h>
-
-#include <Render/GPUDriver.h>
 
 #include <UI/CEGUI/DEMLogger.h>
 #include <UI/CEGUI/DEMRenderer.h>
 #include <UI/CEGUI/DEMResourceProvider.h>
 #include <UI/CEGUI/DEMViewportTarget.h>
-
-// CEGUI uses insecure function in a template class -_-
-#pragma warning(push)
-#pragma warning(disable : 4996) // _CRT_INSECURE_DEPRECATE, VS8: old string routines are deprecated
 
 #include <CEGUI/System.h>
 #include <CEGUI/Font.h>
@@ -110,10 +105,6 @@ CUIServer::~CUIServer()
 
 void CUIServer::Trigger(float FrameTime)
 {
-	for (auto& Connection : ConnectionsToDisconnect)
-		Connection->disconnect();
-	ConnectionsToDisconnect.clear();
-
 	CEGUI::WindowManager::getSingleton().cleanDeadPool();
 
 	CEGUISystem->injectTimePulse(FrameTime);
@@ -155,5 +146,3 @@ bool CUIServer::OnDeviceReset(Events::CEventDispatcher* pDispatcher, const Event
 //---------------------------------------------------------------------
 
 }
-
-#pragma warning(pop)

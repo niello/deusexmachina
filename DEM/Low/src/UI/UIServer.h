@@ -1,7 +1,6 @@
 #pragma once
 #include <Events/EventsFwd.h>
 #include <Data/Ptr.h>
-#include <CEGUI/Event.h>
 
 // UI server (CEGUI launcher & manager). This server creates top-level screens and manages
 // their switching (or provides switching functionality to application states).
@@ -14,6 +13,7 @@ namespace CEGUI
 	class CDEMRenderer;
 	class CDEMResourceProvider;
 	class TinyXML2Parser;
+	class System;
 }
 
 namespace Data
@@ -46,8 +46,6 @@ private:
 	CEGUI::CDEMResourceProvider*		ResourceProvider;
 	CEGUI::TinyXML2Parser*				XMLParser;
 
-	std::vector<CEGUI::Event::Connection> ConnectionsToDisconnect;
-
 	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
 	DECLARE_EVENT_HANDLER(OnRenderDeviceReset, OnDeviceReset);
 
@@ -64,10 +62,6 @@ public:
 	void       Trigger(float FrameTime);
 
 	PUIContext CreateContext(float Width, float Height, DEM::Sys::COSWindow* pHostWindow = nullptr);
-	
-	// Event will be disconnected at the beginning of the next GUI update loop.
-	// Attention! This method is not thread safe. You must call it only from GUI thread.
-	void       DelayedDisconnect(CEGUI::Event::Connection Connection) { ConnectionsToDisconnect.push_back(Connection); }
 };
 
 }
