@@ -5,6 +5,7 @@
 #include <Render/GPUDriver.h>
 #include <Render/VertexBuffer.h>
 #include <Render/Texture.h>
+#include <UI/CEGUI/DEMRenderer.h>
 #include <UI/CEGUI/DEMTexture.h>
 #include <UI/CEGUI/DEMShaderWrapper.h>
 #include <UI/UIFwd.h>

@@ -1,8 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_CEGUI_TEXTURE_H__
-#define __DEM_L1_CEGUI_TEXTURE_H__
-
-#include <UI/CEGUI/DEMRenderer.h>
 #include <CEGUI/Texture.h>
 #include <Data/RefCounted.h>
 #include <CEGUI/Sizef.h>
@@ -20,39 +16,30 @@ class CDEMTexture: public Texture
 {
 protected:
 
-	friend Texture& CDEMRenderer::createTexture(const String&);
-	friend Texture& CDEMRenderer::createTexture(const String&, const String&, const String&);
-	friend Texture& CDEMRenderer::createTexture(const String&, const Sizef&);
-	friend void CDEMRenderer::destroyTexture(const String&);
-	friend void CDEMRenderer::destroyTexture(Texture&);
-	friend void CDEMRenderer::destroyAllTextures();
+	friend class CDEMRenderer;
 
-	CDEMRenderer&		Owner;
-	Render::PTexture	DEMTexture;
-	Sizef				Size;			// tex size //???get from desc?
-	Sizef				DataSize;		// size of original data loaded to tex
-	glm::vec2			TexelScaling;
-	const String		Name;
+	CDEMRenderer&		_Owner;
+	Render::PTexture	_DEMTexture;
+	Sizef				_Size;
+	glm::vec2			_TexelScaling;
+	const String		_Name;
 
-	CDEMTexture(CDEMRenderer& Renderer, const String& name);
-	virtual ~CDEMTexture();
+	CDEMTexture(CDEMRenderer& Renderer, const String& Name);
+	virtual ~CDEMTexture() override;
 
-	void updateCachedScaleValues();
 	void updateTextureSize();
 
 public:
 
-	void					setTexture(Render::CTexture* tex);
-	Render::CTexture*		getTexture() const { return DEMTexture.Get(); }
-	void					setOriginalDataSize(const Sizef& sz) { DataSize = sz; updateCachedScaleValues(); }
+	void					setTexture(Render::CTexture* pTexture);
+	Render::CTexture*		getTexture() const { return _DEMTexture.Get(); }
 
 	void					createEmptyTexture(const Sizef& sz);
 
-	// implement abstract members from base class.
-	virtual const String&	getName() const override { return Name; }
-	virtual const Sizef&	getSize() const override { return Size; }
-	virtual const Sizef&	getOriginalDataSize() const override { return DataSize;}
-	virtual const glm::vec2& getTexelScaling() const override { return TexelScaling; }
+	virtual const String&	getName() const override { return _Name; }
+	virtual const Sizef&	getSize() const override { return _Size; }
+	virtual const Sizef&	getOriginalDataSize() const override { return _Size;}
+	virtual const glm::vec2& getTexelScaling() const override { return _TexelScaling; }
 	virtual void			loadFromFile(const String& filename, const String& resourceGroup) override;
 	virtual void			loadFromMemory(const void* buffer, const Sizef& buffer_size, PixelFormat pixel_format) override;
 	virtual void			blitFromMemory(const void* sourceData, const Rectf& area) override;
@@ -61,5 +48,3 @@ public:
 };
 
 }
-
-#endif

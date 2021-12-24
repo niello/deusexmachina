@@ -32,6 +32,7 @@ public:
 	virtual ~CUIWindow() override;
 
 	void			Load(const char* pResourceFile);
+	virtual void    Update(float dt) {}
 	
 	bool			IsVisible() const { return pWnd->isVisible(); }
 	void			Show() { if (!IsVisible()) SetVisible(true); }

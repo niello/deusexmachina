@@ -16,12 +16,11 @@
 namespace CEGUI
 {
 
-CDEMTexture::CDEMTexture(CDEMRenderer& Renderer, const String& name):
-	Owner(Renderer),
-	Size(0, 0),
-	DataSize(0, 0),
-	TexelScaling(0, 0),
-	Name(name)
+CDEMTexture::CDEMTexture(CDEMRenderer& Renderer, const String& Name):
+	_Owner(Renderer),
+	_Size(0.f, 0.f),
+	_TexelScaling(0.f, 0.f),
+	_Name(Name)
 {
 }
 //--------------------------------------------------------------------
@@ -33,16 +32,21 @@ static Render::EPixelFormat CEGUIPixelFormatToPixelFormat(const Texture::PixelFo
 {
 	switch (fmt)
 	{
-		case Texture::PixelFormat::Rgba:		return Render::PixelFmt_B8G8R8A8;
-		case Texture::PixelFormat::Rgb:			return Render::PixelFmt_B8G8R8X8; // NB: expand to 32 bpp
-		case Texture::PixelFormat::RgbaDxt1:	return Render::PixelFmt_DXT1;
-		case Texture::PixelFormat::RgbaDxt3:	return Render::PixelFmt_DXT3;
-		case Texture::PixelFormat::RgbaDxt5:	return Render::PixelFmt_DXT5;
-		default:								return Render::PixelFmt_Invalid;
+		case Texture::PixelFormat::Rgba:     return Render::PixelFmt_B8G8R8A8;
+		case Texture::PixelFormat::Rgb:      return Render::PixelFmt_B8G8R8X8; // NB: expand to 32 bpp
+		case Texture::PixelFormat::RgbDxt1:  return Render::PixelFmt_DXT1; // NB: OpenGL has different RGB & RGBA DXT1
+		case Texture::PixelFormat::RgbaDxt1: return Render::PixelFmt_DXT1;
+		case Texture::PixelFormat::RgbaDxt3: return Render::PixelFmt_DXT3;
+		case Texture::PixelFormat::RgbaDxt5: return Render::PixelFmt_DXT5;
+		default:                             return Render::PixelFmt_Invalid;
 	}
-	//case Texture::PF_RGB_565:   return D3DFMT_R5G6B5;
-	//case Texture::PF_RGBA_4444: return D3DFMT_A4R4G4B4;
-	//return width * 2;
+/* TODO:
+		Rgba4444,
+		Rgb565,
+		Pvrtc2,
+		Pvrtc4,
+	};
+*/
 }
 //--------------------------------------------------------------------
 
@@ -74,21 +78,21 @@ bool CDEMTexture::isPixelFormatSupported(const PixelFormat fmt) const
 	{
 		case PixelFormat::Rgba:
 		case PixelFormat::Rgb:
+		case PixelFormat::RgbDxt1:
 		case PixelFormat::RgbaDxt1:
 		case PixelFormat::RgbaDxt3:
 		case PixelFormat::RgbaDxt5:	return true;
-		default:					return false;
 	}
+
+	return false;
 }
 //---------------------------------------------------------------------
 
-void CDEMTexture::setTexture(Render::CTexture* tex)
+void CDEMTexture::setTexture(Render::CTexture* pTexture)
 {
-	if (DEMTexture.Get() == tex) return;
-	DEMTexture = tex;
+	if (_DEMTexture == pTexture) return;
+	_DEMTexture = pTexture;
 	updateTextureSize();
-	DataSize = Size;
-	updateCachedScaleValues();
 }
 //---------------------------------------------------------------------
 
@@ -107,12 +111,10 @@ void CDEMTexture::createEmptyTexture(const Sizef& sz)
 	//???is there any way to know will CEGUI write to texture or not?
 	//can create immutable textures!
 	// NB: intentionaly not a dynamic texture, CEGUI will probably write it once on load
-	DEMTexture = Owner.getGPUDriver()->CreateTexture(Data, Render::Access_GPU_Read | Render::Access_GPU_Write);
-	n_assert(DEMTexture.IsValidPtr());
+	_DEMTexture = _Owner.getGPUDriver()->CreateTexture(Data, Render::Access_GPU_Read | Render::Access_GPU_Write);
+	n_assert(_DEMTexture);
 
-	DataSize = sz;
 	updateTextureSize();
-	updateCachedScaleValues();
 }
 //--------------------------------------------------------------------
 
@@ -193,23 +195,21 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 
 	//???is there any way to know will CEGUI write to texture or not?
 	//can create immutable textures!
-	const UPTR AccessFlags = DEMTexture ? DEMTexture->GetAccess() : (Render::Access_GPU_Read | Render::Access_GPU_Write);
+	const UPTR AccessFlags = _DEMTexture ? _DEMTexture->GetAccess() : (Render::Access_GPU_Read | Render::Access_GPU_Write);
 
-	DEMTexture = Owner.getGPUDriver()->CreateTexture(Data, AccessFlags);
+	_DEMTexture = _Owner.getGPUDriver()->CreateTexture(Data, AccessFlags);
 
 	if (!Data->Data->IsOwning()) Data->Data.reset();
 
-	n_assert(DEMTexture.IsValidPtr());
+	n_assert(_DEMTexture);
 
-	DataSize = buffer_size;
 	updateTextureSize();
-	updateCachedScaleValues();
 }
 //--------------------------------------------------------------------
 
 void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 {
-	if (DEMTexture.IsNullPtr() || !sourceData) return;
+	if (!_DEMTexture || !sourceData) return;
 
 	Data::CBox Region(
 		static_cast<int>(area.left()),
@@ -223,10 +223,10 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 	SrcData.RowPitch = static_cast<U32>(area.getWidth()) * 4;
 	SrcData.SlicePitch = 0;
 
-	if (DEMTexture->GetDesc().Format == Render::PixelFmt_R8G8B8A8)
+	if (_DEMTexture->GetDesc().Format == Render::PixelFmt_R8G8B8A8)
 	{
 		SrcData.pData = (char*)sourceData;
-		n_verify(Owner.getGPUDriver()->WriteToResource(*DEMTexture, SrcData, 0, 0, &Region));
+		n_verify(_Owner.getGPUDriver()->WriteToResource(*_DEMTexture, SrcData, 0, 0, &Region));
 	}
 	else
 	{
@@ -236,7 +236,7 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 		blitFromSurface(static_cast<const U32*>(sourceData), pBuf, area.getSize(), SrcData.RowPitch);
 
 		SrcData.pData = (char*)pBuf;
-		n_verify(Owner.getGPUDriver()->WriteToResource(*DEMTexture, SrcData, 0, 0, &Region));
+		n_verify(_Owner.getGPUDriver()->WriteToResource(*_DEMTexture, SrcData, 0, 0, &Region));
 
 		n_free_aligned(pBuf);
 	}
@@ -245,12 +245,12 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 
 void CDEMTexture::blitToMemory(void* targetData)
 {
-    if (DEMTexture.IsNullPtr()) return;
+    if (!_DEMTexture) return;
 
 	Render::CImageData Dest;
 	Dest.pData = (char*)targetData;
-	Dest.RowPitch = DEMTexture->GetRowPitch();
-	Dest.SlicePitch = DEMTexture->GetSlicePitch();
+	Dest.RowPitch = _DEMTexture->GetRowPitch();
+	Dest.SlicePitch = _DEMTexture->GetSlicePitch();
 
 	////!!!convert only if format is not supported!
 //	blitFromSurface(static_cast<U32*>(mapped_tex.pData),
@@ -259,33 +259,27 @@ void CDEMTexture::blitToMemory(void* targetData)
 //                            static_cast<float>(tex_desc.Height)),
 //                    mapped_tex.RowPitch);
 
-	n_assert(Owner.getGPUDriver()->ReadFromResource(Dest, *DEMTexture));
-}
-//--------------------------------------------------------------------
-
-void CDEMTexture::updateCachedScaleValues()
-{
-	const float orgW = DataSize.d_width;
-	const float texW = Size.d_width;
-	const float orgH = DataSize.d_height;
-	const float texH = Size.d_height;
-
-	// If texture and original data dimensions are the same, scale is based on the original size.
-	// If they aren't (and source data was not stretched), scale is based on the size of the resulting texture.
-	TexelScaling.x = 1.0f / ((orgW == texW) ? orgW : texW);
-	TexelScaling.y = 1.0f / ((orgH == texH) ? orgH : texH);
+	n_assert(_Owner.getGPUDriver()->ReadFromResource(Dest, *_DEMTexture));
 }
 //--------------------------------------------------------------------
 
 void CDEMTexture::updateTextureSize()
 {
-	if (DEMTexture.Get())
+	if (_DEMTexture.Get())
 	{
-		const Render::CTextureDesc& Desc = DEMTexture->GetDesc();
-		Size.d_width  = static_cast<float>(Desc.Width);
-		Size.d_height = static_cast<float>(Desc.Height);
+		const Render::CTextureDesc& Desc = _DEMTexture->GetDesc();
+		_Size.d_width  = static_cast<float>(Desc.Width);
+		_Size.d_height = static_cast<float>(Desc.Height);
+		_TexelScaling.x = 1.f / _Size.d_width;
+		_TexelScaling.y = 1.f / _Size.d_height;
 	}
-	else Size.d_height = Size.d_width = 0.0f;
+	else
+	{
+		_Size.d_height = 0.f;
+		_Size.d_width = 0.f;
+		_TexelScaling.x = 0.f;
+		_TexelScaling.y = 0.f;
+	}
 }
 //--------------------------------------------------------------------
 

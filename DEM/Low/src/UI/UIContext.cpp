@@ -56,6 +56,9 @@ CUIContext::~CUIContext()
 void CUIContext::Update(float dt)
 {
 	if (pCtx) pCtx->injectTimePulse(dt);
+
+	if (auto pRootWindow = GetRootWindow())
+		pRootWindow->Update(dt);
 }
 //---------------------------------------------------------------------
 

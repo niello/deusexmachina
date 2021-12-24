@@ -79,10 +79,7 @@ void CDEMTextureTarget::initialiseRenderTexture()
 	n_assert(RT.IsValidPtr());
 
 	if (d_CEGUITexture)
-	{
 		d_CEGUITexture->setTexture(RT->GetShaderResource());
-		d_CEGUITexture->setOriginalDataSize(d_area.getSize());
-	}
 }
 //---------------------------------------------------------------------
 
