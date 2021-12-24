@@ -39,6 +39,8 @@ struct CRect
 	IPTR Top() const { return Y; }
 	IPTR Right() const { return X + W; }
 	IPTR Bottom() const { return Y + H; }
+
+	bool Contains(IPTR x, IPTR y) const { return x >= X && y >= y && x <= Right() && y <= Bottom(); }
 };
 
 struct CRectF //???use templates?

@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_D3D11_RENDER_TARGET_H__
-#define __DEM_L1_D3D11_RENDER_TARGET_H__
-
 #include <Render/RenderTarget.h>
 
 // D3D11 implementation of a render target
@@ -19,15 +16,14 @@ class CD3D11RenderTarget: public CRenderTarget
 
 protected:
 
-	ID3D11RenderTargetView*		pRTView;
-	PD3D11Texture				Texture;
+	ID3D11RenderTargetView* pRTView = nullptr;
+	PD3D11Texture           Texture;
 
 	void					InternalDestroy();
 
 public:
 
-	CD3D11RenderTarget(): pRTView(nullptr) {}
-	virtual ~CD3D11RenderTarget() { InternalDestroy(); }
+	virtual ~CD3D11RenderTarget() override { InternalDestroy(); }
 
 	bool					Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResourceView* pSRV); // For internal use
 	virtual void			Destroy() { InternalDestroy(); }
@@ -40,5 +36,3 @@ public:
 typedef Ptr<CD3D11RenderTarget> PD3D11RenderTarget;
 
 }
-
-#endif

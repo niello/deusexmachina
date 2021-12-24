@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_TARGET_H__
-#define __DEM_L1_RENDER_TARGET_H__
-
 #include <Core/Object.h>
 #include <Render/RenderFwd.h>
 
@@ -37,5 +34,3 @@ public:
 typedef Ptr<CRenderTarget> PRenderTarget;
 
 }
-
-#endif

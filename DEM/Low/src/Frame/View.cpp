@@ -119,6 +119,9 @@ bool CView::CreateMatchingDepthStencilBuffer(CStrID RenderTargetID, CStrID Buffe
 	DSDesc.Width = RTDesc.Width;
 	DSDesc.Height = RTDesc.Height;
 
+	// Free the previous buffer memory before creating the new one
+	SetDepthStencilBuffer(BufferID, nullptr);
+
 	return SetDepthStencilBuffer(BufferID, _GraphicsMgr->GetGPU()->CreateDepthStencilBuffer(DSDesc));
 }
 //---------------------------------------------------------------------
