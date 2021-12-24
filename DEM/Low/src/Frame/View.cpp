@@ -107,6 +107,9 @@ bool CView::CreateDebugDrawer()
 
 bool CView::CreateMatchingDepthStencilBuffer(CStrID RenderTargetID, CStrID BufferID, Render::EPixelFormat Format)
 {
+	// Free the previous buffer memory before creating the new one
+	SetDepthStencilBuffer(BufferID, nullptr);
+
 	auto pTarget = GetRenderTarget(RenderTargetID);
 	if (!pTarget) return false;
 
@@ -119,10 +122,17 @@ bool CView::CreateMatchingDepthStencilBuffer(CStrID RenderTargetID, CStrID Buffe
 	DSDesc.Width = RTDesc.Width;
 	DSDesc.Height = RTDesc.Height;
 
-	// Free the previous buffer memory before creating the new one
-	SetDepthStencilBuffer(BufferID, nullptr);
-
 	return SetDepthStencilBuffer(BufferID, _GraphicsMgr->GetGPU()->CreateDepthStencilBuffer(DSDesc));
+}
+//---------------------------------------------------------------------
+
+CCameraAttribute* CView::CreateDefaultCamera(CStrID NodeID, Scene::CSceneNode& ParentNode, bool SetAsCurrent)
+{
+	Scene::CSceneNode* pCameraNode = ParentNode.CreateChild(CStrID("_DefaultCamera"));
+	Frame::PCameraAttribute MainCamera = Frame::CCameraAttribute::CreatePerspective();
+	pCameraNode->AddAttribute(*MainCamera);
+	if (SetAsCurrent) SetCamera(MainCamera);
+	return MainCamera.Get();
 }
 //---------------------------------------------------------------------
 
