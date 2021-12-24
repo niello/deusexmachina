@@ -105,6 +105,24 @@ bool CView::CreateDebugDrawer()
 }
 //---------------------------------------------------------------------
 
+bool CView::CreateMatchingDepthStencilBuffer(CStrID RenderTargetID, CStrID BufferID, Render::EPixelFormat Format)
+{
+	auto pTarget = GetRenderTarget(RenderTargetID);
+	if (!pTarget) return false;
+
+	const auto& RTDesc = pTarget->GetDesc();
+	Render::CRenderTargetDesc DSDesc;
+	DSDesc.Format = Format;
+	DSDesc.MSAAQuality = Render::MSAA_None;
+	DSDesc.UseAsShaderInput = false;
+	DSDesc.MipLevels = 0;
+	DSDesc.Width = RTDesc.Width;
+	DSDesc.Height = RTDesc.Height;
+
+	return SetDepthStencilBuffer(BufferID, _GraphicsMgr->GetGPU()->CreateDepthStencilBuffer(DSDesc));
+}
+//---------------------------------------------------------------------
+
 bool CView::PrecreateRenderObjects(Scene::CSceneNode& RootNode)
 {
 	return RootNode.Visit([this](Scene::CSceneNode& Node)

@@ -111,6 +111,7 @@ public:
 
 	bool							CreateUIContext(CStrID RenderTargetID = CStrID::Empty);
 	bool                            CreateDebugDrawer();
+	bool                            CreateMatchingDepthStencilBuffer(CStrID RenderTargetID, CStrID BufferID, Render::EPixelFormat Format = Render::PixelFmt_DefaultDepthBuffer);
 
 	bool                            PrecreateRenderObjects(Scene::CSceneNode& RootNode);
 	Render::IRenderable*            GetRenderObject(const CRenderableAttribute& Attr);
