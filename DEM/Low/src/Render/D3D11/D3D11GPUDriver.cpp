@@ -1545,13 +1545,12 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 		CurrDirtyFlags.Clear(GPU_Dirty_IB);
 	}
 
-	CD3D11RenderTarget* pValidRT = nullptr;
-
 	// All render targets and a depth-stencil buffer are set atomically in D3D11
 	if (Update.IsAny(GPU_Dirty_RT | GPU_Dirty_DS) && CurrDirtyFlags.IsAny(GPU_Dirty_RT | GPU_Dirty_DS))
 	{
 		ID3D11RenderTargetView** pRTV = (ID3D11RenderTargetView**)PtrArray;
 		n_assert(pRTV);
+		CD3D11RenderTarget* pValidRT = nullptr;
 		for (UPTR i = 0; i < CurrRT.size(); ++i)
 		{
 			CD3D11RenderTarget* pRT = CurrRT[i].Get();
@@ -1570,7 +1569,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 
 		// If at least one valid RT and at least one default (unset) VP exist, we check
 		// if RT dimensions are changed, and refill all default (unset) VPs properly.
-		// If no valid RTs are set, we cancel VP updating as it has no meaning.
+		// If no valid RTs and DSs are set, we cancel VP updating as it has no meaning.
 		if (pValidRT)
 		{
 			UPTR RTWidth = pValidRT->GetDesc().Width;
@@ -1595,7 +1594,8 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 				D3DVP.Height = (float)RTHeight;
 			}
 		}
-		else CurrDirtyFlags.Clear(GPU_Dirty_VP);
+		else if (!pDSV)
+			CurrDirtyFlags.Clear(GPU_Dirty_VP);
 
 		CurrDirtyFlags.Clear(GPU_Dirty_RT | GPU_Dirty_DS);
 	}

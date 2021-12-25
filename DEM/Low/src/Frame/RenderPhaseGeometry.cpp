@@ -14,6 +14,8 @@
 #include <Render/Effect.h>
 #include <Render/SkinInfo.h>
 #include <Render/GPUDriver.h>
+#include <Render/RenderTarget.h>
+#include <Render/DepthStencilBuffer.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/ResourceCreator.h>
@@ -260,13 +262,20 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	const UPTR RenderTargetCount = RenderTargetIDs.size();
 	for (UPTR i = 0; i < RenderTargetCount; ++i)
-		pGPU->SetRenderTarget(i, View.GetRenderTarget(RenderTargetIDs[i]));
+	{
+		auto pTarget = View.GetRenderTarget(RenderTargetIDs[i]);
+		pGPU->SetRenderTarget(i, pTarget);
+		pGPU->SetViewport(i, &Render::GetRenderTargetViewport(pTarget->GetDesc()));
+	}
 
 	const UPTR MaxRTCount = pGPU->GetMaxMultipleRenderTargetCount();
 	for (UPTR i = RenderTargetCount; i < MaxRTCount; ++i)
 		pGPU->SetRenderTarget(i, nullptr);
 
-	pGPU->SetDepthStencilBuffer(View.GetDepthStencilBuffer(DepthStencilID));
+	auto pDepthStencliBuffer = View.GetDepthStencilBuffer(DepthStencilID);
+	if (pDepthStencliBuffer && !RenderTargetCount)
+		pGPU->SetViewport(0, &Render::GetRenderTargetViewport(pDepthStencliBuffer->GetDesc()));
+	pGPU->SetDepthStencilBuffer(pDepthStencliBuffer);
 
 	// Render the phase
 

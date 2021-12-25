@@ -126,10 +126,17 @@ bool CView::CreateMatchingDepthStencilBuffer(CStrID RenderTargetID, CStrID Buffe
 }
 //---------------------------------------------------------------------
 
-CCameraAttribute* CView::CreateDefaultCamera(CStrID NodeID, Scene::CSceneNode& ParentNode, bool SetAsCurrent)
+CCameraAttribute* CView::CreateDefaultCamera(CStrID RenderTargetID, Scene::CSceneNode& ParentNode, bool SetAsCurrent)
 {
-	Scene::CSceneNode* pCameraNode = ParentNode.CreateChild(CStrID("_DefaultCamera"));
-	Frame::PCameraAttribute MainCamera = Frame::CCameraAttribute::CreatePerspective();
+	std::string CameraNodeName("_default_camera_");
+	CameraNodeName += std::to_string((UPTR)this);
+
+	float Aspect = (16.f / 9.f);
+	if (auto pTarget = GetRenderTarget(RenderTargetID))
+		Aspect = pTarget->GetDesc().Width / static_cast<float>(pTarget->GetDesc().Height);
+
+	Scene::CSceneNode* pCameraNode = ParentNode.CreateChild(CStrID(CameraNodeName.c_str()), true);
+	Frame::PCameraAttribute MainCamera = Frame::CCameraAttribute::CreatePerspective(Aspect);
 	pCameraNode->AddAttribute(*MainCamera);
 	if (SetAsCurrent) SetCamera(MainCamera);
 	return MainCamera.Get();

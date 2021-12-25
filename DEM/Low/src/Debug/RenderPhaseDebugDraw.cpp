@@ -3,6 +3,7 @@
 #include <Frame/GraphicsResourceManager.h>
 #include <Frame/CameraAttribute.h>
 #include <Render/GPUDriver.h>
+#include <Render/RenderTarget.h>
 #include <Render/Effect.h>
 #include <Debug/DebugDraw.h>
 #include <Data/Params.h>
@@ -31,10 +32,11 @@ bool CRenderPhaseDebugDraw::Render(CView& View)
 {
 	const auto pCamera = View.GetCamera();
 	const auto pDebugDraw = View.GetDebugDrawer();
-	auto RT = View.GetRenderTarget(RenderTargetID);
-	if (!pCamera || !pDebugDraw || !Effect || !RT) FAIL;
+	auto pTarget = View.GetRenderTarget(RenderTargetID);
+	if (!pCamera || !pDebugDraw || !Effect || !pTarget) FAIL;
 
-	View.GetGPU()->SetRenderTarget(0, RT);
+	View.GetGPU()->SetRenderTarget(0, pTarget);
+	View.GetGPU()->SetViewport(0, &Render::GetRenderTargetViewport(pTarget->GetDesc()));
 
 	pDebugDraw->Render(*Effect, pCamera->GetViewProjMatrix());
 

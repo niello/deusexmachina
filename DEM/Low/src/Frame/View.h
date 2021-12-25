@@ -112,7 +112,7 @@ public:
 	bool							CreateUIContext(CStrID RenderTargetID = CStrID::Empty);
 	bool                            CreateDebugDrawer();
 	bool                            CreateMatchingDepthStencilBuffer(CStrID RenderTargetID, CStrID BufferID, Render::EPixelFormat Format = Render::PixelFmt_DefaultDepthBuffer);
-	CCameraAttribute*               CreateDefaultCamera(CStrID NodeID, Scene::CSceneNode& ParentNode, bool SetAsCurrent = true);
+	CCameraAttribute*               CreateDefaultCamera(CStrID RenderTargetID, Scene::CSceneNode& ParentNode, bool SetAsCurrent = true);
 
 	bool                            PrecreateRenderObjects(Scene::CSceneNode& RootNode);
 	Render::IRenderable*            GetRenderObject(const CRenderableAttribute& Attr);

@@ -383,6 +383,12 @@ inline UPTR GetMipLevelCount(UPTR Width, UPTR Height, UPTR BlockSize = 1)
 }
 //---------------------------------------------------------------------
 
+constexpr inline CViewport GetRenderTargetViewport(const CRenderTargetDesc& RTDesc)
+{
+	return CViewport{ 0.f, 0.f, static_cast<float>(RTDesc.Width), static_cast<float>(RTDesc.Height), 0.f, 1.f };
+}
+//---------------------------------------------------------------------
+
 constexpr inline U32 ColorRGBA(U8 r, U8 g, U8 b, U8 a = 255)
 {
 	return ((U32)r) | ((U32)g << 8) | ((U32)b << 16) | ((U32)a << 24);

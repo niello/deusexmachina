@@ -1494,20 +1494,16 @@ bool CD3D9GPUDriver::SetViewport(UPTR Index, const CViewport* pViewport)
 
 	//???store curr VP not to reset?
 
-	D3DVIEWPORT9* pD3DVP = nullptr;
-	if (pViewport)
-	{
-		D3DVIEWPORT9 D3DVP;
-		D3DVP.X = (DWORD)pViewport->Left;
-		D3DVP.Y = (DWORD)pViewport->Top;
-		D3DVP.Width = (DWORD)pViewport->Width;
-		D3DVP.Height = (DWORD)pViewport->Height;
-		D3DVP.MinZ = pViewport->MinDepth;
-		D3DVP.MaxZ = pViewport->MaxDepth;
-		pD3DVP = &D3DVP;
-	}
+	if (!pViewport) return SUCCEEDED(pD3DDevice->SetViewport(nullptr));
 
-	return SUCCEEDED(pD3DDevice->SetViewport(pD3DVP));
+	D3DVIEWPORT9 D3DVP;
+	D3DVP.X = (DWORD)pViewport->Left;
+	D3DVP.Y = (DWORD)pViewport->Top;
+	D3DVP.Width = (DWORD)pViewport->Width;
+	D3DVP.Height = (DWORD)pViewport->Height;
+	D3DVP.MinZ = pViewport->MinDepth;
+	D3DVP.MaxZ = pViewport->MaxDepth;
+	return SUCCEEDED(pD3DDevice->SetViewport(&D3DVP));
 }
 //---------------------------------------------------------------------
 
@@ -1535,18 +1531,14 @@ bool CD3D9GPUDriver::SetScissorRect(UPTR Index, const Data::CRect* pScissorRect)
 
 	//???store curr SR not to reset?
 
-	RECT* pSR = nullptr;
-	if (pScissorRect)
-	{
-		RECT SR;
-		SR.left = pScissorRect->X;
-		SR.top = pScissorRect->Y;
-		SR.right = pScissorRect->Right();
-		SR.bottom = pScissorRect->Bottom();
-		pSR = &SR;
-	}
+	if (!pScissorRect) return SUCCEEDED(pD3DDevice->SetScissorRect(nullptr));
 
-	return SUCCEEDED(pD3DDevice->SetScissorRect(pSR));
+	RECT SR;
+	SR.left = pScissorRect->X;
+	SR.top = pScissorRect->Y;
+	SR.right = pScissorRect->Right();
+	SR.bottom = pScissorRect->Bottom();
+	return SUCCEEDED(pD3DDevice->SetScissorRect(&SR));
 }
 //---------------------------------------------------------------------
 

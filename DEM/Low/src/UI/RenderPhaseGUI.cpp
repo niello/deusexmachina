@@ -69,6 +69,8 @@ bool CRenderPhaseGUI::Render(CView& View)
 	auto RT = View.GetRenderTarget(RenderTargetID);
 	if (!RT) FAIL;
 
+	if (!DrawMode) OK;
+
 	View.GetGPU()->SetRenderTarget(0, RT);
 
 	const Render::CRenderTargetDesc& RTDesc = RT->GetDesc();
@@ -80,8 +82,6 @@ bool CRenderPhaseGUI::Render(CView& View)
 	float ViewportRelTop = 0.f;
 	float ViewportRelRight = 1.f;
 	float ViewportRelBottom = 1.f;
-
-	if (!DrawMode) OK;
 
 	CEGUI::Rectf ViewportArea(ViewportRelLeft * RTWidth, ViewportRelTop * RTHeight, ViewportRelRight * RTWidth, ViewportRelBottom * RTHeight);
 	if (pCtx->getRenderTarget().getArea() != ViewportArea)

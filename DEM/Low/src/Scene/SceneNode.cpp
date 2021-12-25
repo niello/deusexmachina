@@ -461,9 +461,7 @@ void CSceneNode::RemoveAttribute(UPTR Idx)
 
 void CSceneNode::SetParent(CSceneNode* pNewParent)
 {
-	// TODO: remove both lines if never happens
-	n_assert_dbg(pParent != pNewParent);
-	//if (pParent == pNewParent) return;
+	if (pParent == pNewParent) return;
 
 	pParent = pNewParent;
 	if (pParent) LastParentTransformVersion = pParent->TransformVersion - 1;
