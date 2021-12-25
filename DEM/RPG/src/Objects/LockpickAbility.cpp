@@ -6,6 +6,7 @@
 #include <Game/ECS/GameWorld.h>
 #include <Character/StatsComponent.h>
 #include <Character/SkillsComponent.h>
+#include <Items/EquipmentComponent.h>
 #include <Items/LockpickComponent.h>
 #include <Items/ItemUtils.h>
 #include <Objects/OwnedComponent.h>
@@ -13,6 +14,49 @@
 
 namespace DEM::RPG
 {
+constexpr Sh2::EEquipmentSlot ToolSlots[] = { Sh2::EEquipmentSlot::MainHandA, Sh2::EEquipmentSlot::MainHandB, Sh2::EEquipmentSlot::OffHandA, Sh2::EEquipmentSlot::OffHandB };
+
+static std::pair<Game::HEntity, int> FindBestLockpick(const Game::CGameWorld& World, Game::HEntity ActorID)
+{
+	Game::HEntity BestLockpick;
+	int BestModifier = std::numeric_limits<int>().min();
+	if (auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ActorID))
+	{
+		for (auto Slot : ToolSlots)
+			if (auto pTool = FindItemComponent<const Sh2::CLockpickComponent>(World, pEquipment->Equipment[Slot]))
+				if (BestModifier < pTool->Modifier)
+				{
+					BestModifier = pTool->Modifier;
+					BestLockpick = pEquipment->Equipment[Slot];
+				}
+
+		for (auto StackID : pEquipment->QuickSlots)
+			if (auto pTool = FindItemComponent<const Sh2::CLockpickComponent>(World, StackID))
+				if (BestModifier < pTool->Modifier)
+				{
+					BestModifier = pTool->Modifier;
+					BestLockpick = StackID;
+				}
+	}
+
+	return { BestLockpick, BestModifier };
+}
+//---------------------------------------------------------------------
+
+static int GetTotalLockpickingModifier(const Game::CGameWorld& World, Game::HEntity ActorID)
+{
+	int Total = 0;
+	if (auto pStats = World.FindComponent<const Sh2::CStatsComponent>(ActorID))
+		Total += (pStats->Dexterity - 11); // TODO: utility method Sh2::GetStatModifier(StatValue)!
+	if (auto pSkills = World.FindComponent<const Sh2::CSkillsComponent>(ActorID))
+		Total += pSkills->Lockpicking;
+
+	auto [BestLockpick, BestModifier] = FindBestLockpick(World, ActorID);
+	if (BestLockpick) Total += BestModifier;
+
+	return Total;
+}
+//---------------------------------------------------------------------
 
 CLockpickAbility::CLockpickAbility(std::string_view CursorImage)
 {
@@ -30,7 +74,7 @@ bool CLockpickAbility::IsAvailable(const Game::CGameSession& Session, const Game
 	// simple enough to be lockpicked by anyone. Hard locks must be filtered in target validation code.
 	// TODO: check character caps - to utility function?
 	for (auto ActorID : Context.Actors)
-		if (auto pStats = pWorld->FindComponent<Sh2::CStatsComponent>(ActorID))
+		if (auto pStats = pWorld->FindComponent<const Sh2::CStatsComponent>(ActorID))
 			if (pStats->Capabilities & Sh2::ECapability::Interact) return true;
 
 	return false;
@@ -47,7 +91,7 @@ bool CLockpickAbility::IsTargetValid(const Game::CGameSession& Session, U32 Inde
 	if (!Target.Valid) return false;
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return false;
-	auto pLock = pWorld->FindComponent<CLockComponent>(Target.Entity);
+	auto pLock = pWorld->FindComponent<const CLockComponent>(Target.Entity);
 
 	// TODO: if jammed, must show an action as disabled with a reason, not skip it
 	if (!pLock || pLock->Jamming) return false;
@@ -56,17 +100,26 @@ bool CLockpickAbility::IsTargetValid(const Game::CGameSession& Session, U32 Inde
 	// TODO: move constant somewhere (Sh2::Balance::GetValue(ID)?)
 	if (pLock->Difficulty < 5) return true;
 
-	// Must use tool for non-trivial locks
-	//!!!FIXME: tool may be not held by an actor who will pick the lock!!!
-	//???for multiple actors find a lockpick in all equipment? isn't this all an overcomplication?
-	if (!FindItemComponent<Sh2::CLockpickComponent>(*pWorld, Context.Source)) return false;
-
 	// An actor must be able to interact and must have a lockpicking skill opened
 	for (auto ActorID : Context.Actors)
-		if (auto pStats = pWorld->FindComponent<Sh2::CStatsComponent>(ActorID))
-			if (pStats->Capabilities & Sh2::ECapability::Interact)
-				if (auto pSkills = pWorld->FindComponent<Sh2::CSkillsComponent>(ActorID))
-					if (pSkills->Lockpicking > 0) return true;
+	{
+		// Must be able to interact with objects
+		auto pStats = pWorld->FindComponent<const Sh2::CStatsComponent>(ActorID);
+		if (!pStats || !(pStats->Capabilities & Sh2::ECapability::Interact)) continue;
+
+		// Must have a Lockpicking skill opened
+		if (auto pSkills = pWorld->FindComponent<const Sh2::CSkillsComponent>(ActorID))
+		if (!pSkills || pSkills->Lockpicking <= 0) continue;
+
+		// Must have a lockpicking tool equipped or in a quick slot
+		if (auto pEquipment = pWorld->FindComponent<const Sh2::CEquipmentComponent>(ActorID))
+		{
+			for (auto Slot : ToolSlots)
+				if (FindItemComponent<const Sh2::CLockpickComponent>(*pWorld, pEquipment->Equipment[Slot])) return true;
+			for (auto StackID : pEquipment->QuickSlots)
+				if (FindItemComponent<const Sh2::CLockpickComponent>(*pWorld, StackID)) return true;
+		}
+	}
 
 	// TODO: must show an action as disabled with a reason, not skip it
 	return false;
@@ -83,18 +136,25 @@ bool CLockpickAbility::Execute(Game::CGameSession& Session, Game::CInteractionCo
 {
 	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;
 
-	// TODO:
-	// choose the actor able to lockpick with the best chance (max bonus). DEX modifier, skill, tools.
-	// (optional) choose an actor able to lockpick with second max bonus, not less than some X, make him move and perform assistance
-	Game::HEntity ActorID = Context.Actors[0];
+	auto pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return false;
+
+	Game::HEntity BestActorID = Context.Actors[0];
 	if (Context.Actors.size() > 1)
 	{
-		//...
+		int BestModifier = std::numeric_limits<int>().min();
+		for (auto ActorID : Context.Actors)
+		{
+			const int Modifier = GetTotalLockpickingModifier(*pWorld, ActorID);
+			if (BestModifier < Modifier)
+			{
+				BestModifier = Modifier;
+				BestActorID = ActorID;
+			}
+		}
 	}
 
-	// Push standard action for the first actor only
-	auto pWorld = Session.FindFeature<Game::CGameWorld>();
-	return pWorld && PushStandardExecuteAction(*pWorld, ActorID, Context, Enqueue, PushChild);
+	return PushStandardExecuteAction(*pWorld, BestActorID, Context, Enqueue, PushChild);
 }
 //---------------------------------------------------------------------
 
@@ -117,13 +177,8 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 
 	// TODO: activate trap if there is one triggered by lockpicking!
 
-	int SkillRollModifier = 0;
-	if (auto pStats = pWorld->FindComponent<Sh2::CStatsComponent>(Instance.Actor))
-		SkillRollModifier += (pStats->Dexterity - 11); // TODO: utility method Sh2::GetStatModifier(StatValue)!
-	if (auto pSkills = pWorld->FindComponent<Sh2::CSkillsComponent>(Instance.Actor))
-		SkillRollModifier += pSkills->Lockpicking;
-	if (auto pLockpick = FindItemComponent<Sh2::CLockpickComponent>(*pWorld, Instance.Source))
-		SkillRollModifier += pLockpick->Modifier;
+	const int SkillRollModifier = GetTotalLockpickingModifier(*pWorld, Instance.Actor);
+
 	// TODO: assistant, if will bother with that
 	// TODO: if lockpick is breakable, handle it (maybe chance)
 
@@ -154,7 +209,7 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 		pAnimComponent->Controller.SetString(CStrID("Action"), AnimAction);
 
 	// If this object is owned to other faction, create crime stimulus
-	if (auto pOwned = pWorld->FindComponent<COwnedComponent>(Instance.Targets[0].Entity))
+	if (auto pOwned = pWorld->FindComponent<const COwnedComponent>(Instance.Targets[0].Entity))
 	{
 		// TODO:
 		//if (pOwned->Owner || pOwned->FactionID != actor faction)
