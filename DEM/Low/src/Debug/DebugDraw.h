@@ -122,10 +122,11 @@ public:
 	void DrawCylinder(const matrix44& Tfm, float R, float Length, U32 Color = Render::Color_White);
 	void DrawCapsule(const matrix44& Tfm, float R, float Length, U32 Color = Render::Color_White);
 
-	void DrawLine(const vector3& P1, const vector3& P2, U32 Color = Render::Color_White, float Size = 1.f);
+	void DrawLine(const vector3& P1, const vector3& P2, U32 Color = Render::Color_White, float Thickness = 1.f);
 	void DrawArrow(const vector3& From, const vector3& To, float Radius, U32 Color = Render::Color_White);
 	void DrawCross();
-	void DrawBoxWireframe(const CAABB& Box, U32 Color = Render::Color_White);
+	void DrawBoxWireframe(const CAABB& Box, U32 Color = Render::Color_White, float Thickness = 1.f);
+	void DrawFrustumWireframe(const matrix44& Frustum, U32 Color = Render::Color_White, float Thickness = 1.f);
 	void DrawArc();
 	void DrawCircleXZ(const vector3& Pos, float Radius, float SegmentCount = 16, U32 Color = Render::Color_White);
 	void DrawGridXZ(); //???or pass arbitrary axes?
@@ -134,8 +135,8 @@ public:
 	void DrawPoint(const vector3& Pos, U32 Color = Render::Color_White, float Size = 1.f) { DrawPoint(Pos.x, Pos.y, Pos.z, Color, Size); }
 	void DrawPoint(float x, float y, float z, U32 Color = Render::Color_White, float Size = 1.f);
 
-	void AddLineVertex(const vector3& Pos, U32 Color = Render::Color_White, float Size = 1.f) { AddLineVertex(Pos.x, Pos.y, Pos.z, Color, Size); }
-	void AddLineVertex(float x, float y, float z, U32 Color = Render::Color_White, float Size = 1.f);
+	void AddLineVertex(const vector3& Pos, U32 Color = Render::Color_White, float Thickness = 1.f) { AddLineVertex(Pos.x, Pos.y, Pos.z, Color, Thickness); }
+	void AddLineVertex(float x, float y, float z, U32 Color = Render::Color_White, float Thickness = 1.f);
 	void AddTriangleVertex(const vector3& Pos, U32 Color = Render::Color_White) { AddTriangleVertex(Pos.x, Pos.y, Pos.z, Color); }
 	void AddTriangleVertex(float x, float y, float z, U32 Color = Render::Color_White);
 
@@ -153,13 +154,13 @@ inline void CDebugDraw::DrawPoint(float x, float y, float z, U32 Color, float Si
 }
 //---------------------------------------------------------------------
 
-inline void CDebugDraw::AddLineVertex(float x, float y, float z, U32 Color, float Size)
+inline void CDebugDraw::AddLineVertex(float x, float y, float z, U32 Color, float Thickness)
 {
 	auto& Vertex = LineVertices.Add();
 	Vertex.Pos.x = x;
 	Vertex.Pos.y = y;
 	Vertex.Pos.z = z;
-	Vertex.Pos.w = Size;
+	Vertex.Pos.w = Thickness;
 	Vertex.Color = Color;
 }
 //---------------------------------------------------------------------

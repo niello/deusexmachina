@@ -310,14 +310,14 @@ void CDebugDraw::DrawCapsule(const matrix44& Tfm, float R, float Length, U32 Col
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawLine(const vector3& P1, const vector3& P2, U32 Color, float Size)
+void CDebugDraw::DrawLine(const vector3& P1, const vector3& P2, U32 Color, float Thickness)
 {
-	AddLineVertex(P1, Color, Size);
-	AddLineVertex(P2, Color, Size);
+	AddLineVertex(P1, Color, Thickness);
+	AddLineVertex(P2, Color, Thickness);
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawBoxWireframe(const CAABB& Box, U32 Color)
+void CDebugDraw::DrawBoxWireframe(const CAABB& Box, U32 Color, float Thickness)
 {
 	const vector3 mmm = Box.GetCorner(0);
 	const vector3 mMm = Box.GetCorner(1);
@@ -327,18 +327,62 @@ void CDebugDraw::DrawBoxWireframe(const CAABB& Box, U32 Color)
 	const vector3 mMM = Box.GetCorner(5);
 	const vector3 mmM = Box.GetCorner(6);
 	const vector3 MmM = Box.GetCorner(7);
-	DrawLine(mmm, Mmm, Color);
-	DrawLine(mmm, mMm, Color);
-	DrawLine(mmm, mmM, Color);
-	DrawLine(MMM, MMm, Color);
-	DrawLine(MMM, mMM, Color);
-	DrawLine(MMM, MmM, Color);
-	DrawLine(mMm, mMM, Color);
-	DrawLine(mMm, MMm, Color);
-	DrawLine(mMM, mmM, Color);
-	DrawLine(Mmm, MmM, Color);
-	DrawLine(mmM, MmM, Color);
+	DrawLine(mmm, Mmm, Color, Thickness);
+	DrawLine(mmm, mMm, Color, Thickness);
+	DrawLine(mmm, mmM, Color, Thickness);
+	DrawLine(MMM, MMm, Color, Thickness);
+	DrawLine(MMM, mMM, Color, Thickness);
+	DrawLine(MMM, MmM, Color, Thickness);
+	DrawLine(mMm, mMM, Color, Thickness);
+	DrawLine(mMm, MMm, Color, Thickness);
+	DrawLine(mMM, mmM, Color, Thickness);
+	DrawLine(Mmm, MmM, Color, Thickness);
+	DrawLine(mmM, MmM, Color, Thickness);
 	DrawLine(MMm, Mmm, Color);
+}
+//---------------------------------------------------------------------
+
+void CDebugDraw::DrawFrustumWireframe(const matrix44& Frustum, U32 Color, float Thickness)
+{
+	constexpr vector4 Corners[] =
+	{
+		{ -1.f, -1.f, -1.f, 1.f },
+		{ -1.f, +1.f, -1.f, 1.f },
+		{ +1.f, +1.f, -1.f, 1.f },
+		{ +1.f, -1.f, -1.f, 1.f },
+		{ -1.f, -1.f, +1.f, 1.f },
+		{ -1.f, +1.f, +1.f, 1.f },
+		{ +1.f, +1.f, +1.f, 1.f },
+		{ +1.f, -1.f, +1.f, 1.f }
+	};
+
+	matrix44 InvFrustum = Frustum;
+	InvFrustum.invert();
+
+	vector3 TransformedCorners[8];
+	for (UPTR i = 0; i < 8; ++i)
+	{
+		const auto Tmp = InvFrustum * Corners[i];
+		TransformedCorners[i] = Tmp / Tmp.w;
+	}
+
+	// Near plane
+	DrawLine(TransformedCorners[0], TransformedCorners[1], Color, Thickness);
+	DrawLine(TransformedCorners[1], TransformedCorners[2], Color, Thickness);
+	DrawLine(TransformedCorners[2], TransformedCorners[3], Color, Thickness);
+	DrawLine(TransformedCorners[3], TransformedCorners[0], Color, Thickness);
+
+	// Far plane
+	DrawLine(TransformedCorners[4], TransformedCorners[5], Color, Thickness);
+	DrawLine(TransformedCorners[5], TransformedCorners[6], Color, Thickness);
+	DrawLine(TransformedCorners[6], TransformedCorners[7], Color, Thickness);
+	DrawLine(TransformedCorners[7], TransformedCorners[4], Color, Thickness);
+
+	// Connections
+	DrawLine(TransformedCorners[0], TransformedCorners[4], Color, Thickness);
+	DrawLine(TransformedCorners[1], TransformedCorners[5], Color, Thickness);
+	DrawLine(TransformedCorners[2], TransformedCorners[6], Color, Thickness);
+	DrawLine(TransformedCorners[3], TransformedCorners[7], Color, Thickness);
 }
 //---------------------------------------------------------------------
 

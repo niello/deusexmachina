@@ -1,5 +1,6 @@
 #include "CameraAttribute.h"
 #include <Scene/SceneNode.h>
+#include <Debug/DebugDraw.h>
 #include <Core/Factory.h>
 
 namespace Frame
@@ -38,6 +39,12 @@ bool CCameraAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 	*/
 
 	return !Count;
+}
+//---------------------------------------------------------------------
+
+void CCameraAttribute::RenderDebug(Debug::CDebugDraw& DebugDraw) const
+{
+	DebugDraw.DrawFrustumWireframe(_ViewProj, Render::ColorRGBA(128, 0, 255, 255), 2.f);
 }
 //---------------------------------------------------------------------
 

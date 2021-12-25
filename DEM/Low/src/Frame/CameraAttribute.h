@@ -48,6 +48,7 @@ public:
 	//???need BBox calculation? projection box, mul view matrix = viewproj box
 
 	virtual bool					LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
+	virtual void                    RenderDebug(Debug::CDebugDraw& DebugDraw) const override;
 	virtual Scene::PNodeAttribute	Clone() override;
 	virtual void					UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount) override;
 
