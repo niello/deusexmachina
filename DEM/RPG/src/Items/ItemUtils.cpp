@@ -198,16 +198,11 @@ static bool StoreItemStack(Game::CGameWorld& World, Game::HEntity Receiver, EIte
 		}
 		case EItemStorage::Ground:
 		{
-			//!!!TODO: bool AllowDropToGround! otherwise fail transferring.
-
-			//!!!TODO: implement!
-			n_assert(false);
+			NOT_IMPLEMENTED;
 
 			/*
-			// TODO: allow merging?! do merging inside some AddStackIntoCollection() + DropItemsToLocation() wrapper?
-			// Ground is an universal fallback, it always has free space for any item
-			StackID = AddStackIntoCollection(World, _GroundItems, StackID, false);
-			n_assert_dbg(StackID);
+			//!!!ground merging, tmp containers etc!
+			//!!!update inventory screen ground list if opened! Common logic must send a signal?
 
 			//!!!DUPLICATED CODE, SEE OnSlotDropped! Must be in a single place where tmp container creation etc is handled!
 			Math::CTransformSRT Tfm;
@@ -246,9 +241,9 @@ bool AddItemsToCharacter(Game::CGameWorld& World, Game::HEntity Receiver, Game::
 	constexpr EItemStorage StorageOrderQuickSlot[] = { EItemStorage::QuickSlot, EItemStorage::Inventory };
 	switch (PreferredStorage)
 	{
-		case EItemStorage::Equipment: pStorageOrder = StorageOrderEquipment; Count = sizeof(StorageOrderEquipment) / sizeof(EItemStorage); break;
-		case EItemStorage::Inventory: pStorageOrder = StorageOrderInventory; Count = sizeof(StorageOrderInventory) / sizeof(EItemStorage); break;
-		case EItemStorage::QuickSlot: pStorageOrder = StorageOrderQuickSlot; Count = sizeof(StorageOrderQuickSlot) / sizeof(EItemStorage); break;
+		case EItemStorage::Equipment: pStorageOrder = StorageOrderEquipment; Count = sizeof_array(StorageOrderEquipment); break;
+		case EItemStorage::Inventory: pStorageOrder = StorageOrderInventory; Count = sizeof_array(StorageOrderInventory); break;
+		case EItemStorage::QuickSlot: pStorageOrder = StorageOrderQuickSlot; Count = sizeof_array(StorageOrderQuickSlot); break;
 		case EItemStorage::Ground: break;
 		default: return false;
 	}

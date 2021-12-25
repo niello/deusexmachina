@@ -20,7 +20,7 @@ CVideoServer::CVideoServer():
 	pBasicVideo(0)
 {
 	__ConstructSingleton;
-	CoInitialize(0);
+	n_verify(SUCCEEDED(::CoInitialize(nullptr)));
 }
 //---------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ CVideoServer::~CVideoServer()
 {
 	n_assert(!_IsPlaying);
 	if (_IsOpen) Close();
-	CoUninitialize();
+	::CoUninitialize();
 	__DestructSingleton;
 }
 //---------------------------------------------------------------------
@@ -93,7 +93,7 @@ n_assert(false);
 	//nGfxServer2::Instance()->EnterDialogBoxMode();
 	//RenderSrv->ClearScreen(0);
 
-	if (FAILED(CoCreateInstance(CLSID_FilterGraph, nullptr, CLSCTX_INPROC_SERVER, IID_IGraphBuilder, (void**)&pGraphBuilder)))
+	if (FAILED(::CoCreateInstance(CLSID_FilterGraph, nullptr, CLSCTX_INPROC_SERVER, IID_IGraphBuilder, (void**)&pGraphBuilder)))
 	{
 		Sys::Error("CVideoServer: could not create DirectShow filter graph!");
 		FAIL;

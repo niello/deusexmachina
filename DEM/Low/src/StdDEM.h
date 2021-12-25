@@ -7,14 +7,16 @@
 #include <functional>
 #include <algorithm>
 
-#define OK				return true
-#define FAIL			return false
+#define OK   return true
+#define FAIL return false
 
-constexpr auto INVALID_INDEX = ~static_cast<size_t>(0);
+template<typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
+constexpr T INVALID_INDEX_T = ~static_cast<T>(0);
 
-// http://cnicholson.net/2011/01/stupid-c-tricks-a-better-sizeof_array
-template<typename T, size_t N> char (&SIZEOF_ARRAY_REQUIRES_ARRAY_ARGUMENT(T (&)[N]))[N];  
-#define sizeof_array(x) sizeof(SIZEOF_ARRAY_REQUIRES_ARRAY_ARGUMENT(x))
+constexpr size_t INVALID_INDEX = ~static_cast<size_t>(0);
+
+template<typename T, size_t N>
+constexpr size_t sizeof_array(const T(&)[N]) { return N; }
 
 #if defined(_MSC_VER) // __FUNCTION__ ## "()"
 #   define DEM_FUNCTION_NAME __FUNCSIG__
