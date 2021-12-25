@@ -371,9 +371,9 @@ void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerI
 		"ring",
 		"ring",
 		"mixamorig_RightHandMiddle1",
-		"shield",
+		"mixamorig_LeftHandMiddle1",
 		"mixamorig_RightHandMiddle1",
-		"shield"
+		"mixamorig_LeftHandMiddle1"
 	};
 
 	//!!!FIXME: constexpr CStrID?! Or at least pre-init once!
