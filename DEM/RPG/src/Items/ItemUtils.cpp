@@ -347,7 +347,7 @@ void RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID)
 }
 //---------------------------------------------------------------------
 
-void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, Sh2::EEquipmentSlot Slot)
+void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, Sh2::EEquipmentSlot Slot, bool ForceHide)
 {
 	if (Slot >= Sh2::EEquipmentSlot::COUNT) return;
 
@@ -391,10 +391,12 @@ void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerI
 	auto pBone = pOwnerScene->RootNode->GetChildRecursively(CStrID(pBoneName));
 	if (!pBone) return;
 
-	if (StackID)
+	if (StackID && !ForceHide)
 	{
 		const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, StackID);
 		if (!pItem || !pItem->WorldModelID) return;
+
+		if (pBone->IsWorldTransformDirty()) pBone->UpdateTransform();
 
 		// Undo scaling
 		Math::CTransformSRT Tfm(pBone->GetWorldMatrix());

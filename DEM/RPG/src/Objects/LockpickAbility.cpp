@@ -206,7 +206,12 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 	}
 
 	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
+	{
 		pAnimComponent->Controller.SetString(CStrID("Action"), AnimAction);
+
+		//!!!model equipment must operate on MainHand, and select currently active set automatically!
+		UpdateCharacterModelEquipment(*pWorld, Instance.Actor, Sh2::EEquipmentSlot::MainHandA, true);
+	}
 
 	// If this object is owned to other faction, create crime stimulus
 	if (auto pOwned = pWorld->FindComponent<const COwnedComponent>(Instance.Targets[0].Entity))
@@ -243,7 +248,12 @@ void CLockpickAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance
 	if (!pWorld) return;
 
 	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
+	{
 		pAnimComponent->Controller.SetString(CStrID("Action"), CStrID::Empty);
+
+		//!!!model equipment must operate on MainHand, and select currently active set automatically!
+		UpdateCharacterModelEquipment(*pWorld, Instance.Actor, Sh2::EEquipmentSlot::MainHandA);
+	}
 
 	// TODO:
 	// play result sound from the lock
