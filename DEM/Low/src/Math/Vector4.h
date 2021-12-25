@@ -31,13 +31,11 @@ public:
         W = (1<<3),
     };
 
-    /// constructor 1
-    vector4();
-    /// constructor 2
-    vector4(const float _x, const float _y, const float _z, const float _w);
-    /// constructor 3
-    vector4(const vector4& vec);
-    vector4(const vector3& vec3, float w_ = 1.f);
+    constexpr vector4() = default;
+	constexpr vector4(const float _x, const float _y, const float _z, const float _w) : x(_x), y(_y), z(_z), w(_w) {}
+	constexpr vector4::vector4(const vector4& v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
+	constexpr vector4::vector4(const vector3& v, float w_ = 1.f) : x(v.x), y(v.y), z(v.z), w(w_) {}
+
     /// set elements 1
     void set(const float _x, const float _y, const float _z, const float _w);
     /// set elements 2
@@ -86,63 +84,11 @@ public:
 	union
 	{
 		struct { float x, y, z, w; };
-		float v[4];
+		float v[4] = { 0.f };
 	};
 };
 
 DECLARE_TYPE(vector4, 7)
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-vector4::vector4() :
-    x(0.0f),
-    y(0.0f),
-    z(0.0f),
-    w(0.0f)
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-vector4::vector4(const float _x, const float _y, const float _z, const float _w) :
-    x(_x),
-    y(_y),
-    z(_z),
-    w(_w)
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-vector4::vector4(const vector4& v) :
-    x(v.x),
-    y(v.y),
-    z(v.z),
-    w(v.w)
-{
-    // empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-vector4::vector4(const vector3& v, float w_) :
-	x(v.x),
-    y(v.y),
-    z(v.z),
-    w(w_)
-{
-    // empty
-}
 
 //------------------------------------------------------------------------------
 /**

@@ -37,7 +37,7 @@ public:
 	constexpr vector3(): x(0.f), y(0.f), z(0.f) {}
 	constexpr vector3(const float _x, const float _y, const float _z): x(_x), y(_y), z(_z) {}
 	constexpr vector3(const vector3& vec): x(vec.x), y(vec.y), z(vec.z) {}
-	constexpr vector3(const vector4& vec);
+	vector3(const vector4& vec);
 	constexpr vector3(const float* vec): x(vec[0]), y(vec[1]), z(vec[2]) {}
 
 	static float	Distance(const vector3& v0, const vector3& v1) { return n_sqrt(SqDistance(v0, v1)); }
