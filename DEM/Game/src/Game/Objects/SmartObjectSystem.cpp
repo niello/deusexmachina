@@ -173,6 +173,8 @@ void UpdateSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 {
 	World.ForEachEntityWith<CSmartObjectComponent>([&World, &Lua, dt](auto EntityID, auto& Entity, CSmartObjectComponent& SOComponent)
 	{
+		if (!SOComponent.Asset) return;
+
 		const CSmartObject* pSOAsset = SOComponent.Asset->GetObject<CSmartObject>();
 		if (!pSOAsset) return;
 

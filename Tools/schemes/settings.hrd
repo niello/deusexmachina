@@ -16,6 +16,7 @@ Params
 {
 	AlbedoTexture = "TexAlbedo"
 	NormalTexture = "TexNormalMap"
+	MetallicRoughnessTexture = "TexMetallicRoughness"
 	TerrainGeometryNormalTexture = "TexGeometryNormalMap"
 	SplatMapTexture = "TexSplatMap"
 	SkyboxTexture = "TexCubeMap"
