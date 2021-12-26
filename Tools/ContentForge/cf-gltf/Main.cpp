@@ -13,7 +13,6 @@
 #include "GLTFExtensions.h"
 #include <acl/core/ansi_allocator.h>
 #include <acl/compression/animation_clip.h>
-#include <smmintrin.h>
 
 namespace fs = std::filesystem;
 namespace gltf = Microsoft::glTF;
@@ -21,53 +20,6 @@ namespace gltf = Microsoft::glTF;
 // Set working directory to $(TargetDir)
 // Example args:
 // -s src/scenes --path Data ../../../content
-
-//!!!FIXME TMP! Copied from https://github.com/nfrechette/rtm! Use it!
-namespace acl
-{
-using mask4f = __m128;
-using mask4f_arg0 = const mask4f;
-using scalarf = float;
-using scalarf_arg2 = const scalarf;
-
-ACL_FORCE_INLINE Vector4_32 ACL_SIMD_CALL vector_select(mask4f_arg0 mask, Vector4_32Arg1 if_true, Vector4_32Arg2 if_false) noexcept
-{
-	return _mm_blendv_ps(if_false, if_true, mask);
-}
-
-inline Quat_32 ACL_SIMD_CALL quat_slerp(Quat_32Arg0 start, Quat_32Arg1 end, scalarf_arg2 alpha) noexcept
-{
-	Vector4_32 start_v = quat_to_vector(start);
-	Vector4_32 end_v = quat_to_vector(end);
-
-	Vector4_32 cos_half_angle_v = vector_vdot(start_v, end_v);
-	mask4f is_angle_negative = vector_less_than(cos_half_angle_v, vector_zero_32());
-
-	// If the two input quaternions aren't on the same half of the hypersphere, flip one and the angle sign
-	end_v = vector_select(is_angle_negative, vector_neg(end_v), end_v);
-	cos_half_angle_v = vector_select(is_angle_negative, vector_neg(cos_half_angle_v), cos_half_angle_v);
-
-	scalarf cos_half_angle = vector_get_x(cos_half_angle_v);
-	scalarf half_angle = std::acos(cos_half_angle);
-	scalarf sin_half_angle = std::sqrt(1.f - cos_half_angle * cos_half_angle);
-	scalarf inv_sin_half_angle = 1.f / sin_half_angle;
-
-	scalarf start_contribution_angle = (1.f - alpha) * half_angle;
-	scalarf end_contribution_angle = alpha * half_angle;
-
-	scalarf start_contribution_sin = std::sin(start_contribution_angle);
-	scalarf end_contribution_sin = std::sin(end_contribution_angle);
-
-	Vector4_32 contribution_sin = vector_set(start_contribution_sin, end_contribution_sin, start_contribution_sin, end_contribution_sin);
-	Vector4_32 contributions = vector_mul(contribution_sin, inv_sin_half_angle);
-	Vector4_32 start_contribution = vector_mix_xxxx(contributions);
-	Vector4_32 end_contribution = vector_mix_yyyy(contributions);
-
-	Vector4_32 result = vector_add(vector_mul(start_v, start_contribution), vector_mul(end_v, end_contribution));
-	return vector_to_quat(result);
-}
-
-}
 
 static const gltf::Node* GetParentNode(const gltf::Document& Doc, const std::string& NodeID)
 {
@@ -248,10 +200,51 @@ static inline gltf::Vector3 LerpVector3(const gltf::Vector3& a, const gltf::Vect
 }
 //---------------------------------------------------------------------
 
-static inline gltf::Quaternion LerpQuaternion(const gltf::Quaternion& a, const gltf::Quaternion& b, float Factor)
+static inline gltf::Quaternion LerpQuaternion(const gltf::Quaternion& q0, const gltf::Quaternion& q1, float Factor)
 {
-	const auto q = acl::quat_slerp({ a.x, a.y, a.z, a.w }, { b.x, b.y, b.z, b.w }, Factor);
-	return { acl::quat_get_x(q), acl::quat_get_y(q), acl::quat_get_z(q), acl::quat_get_w(q) };
+	float fScale1;
+	float fScale2;
+	gltf::Quaternion A = q0;
+	gltf::Quaternion B = q1;
+
+	// compute dot product, aka cos(theta):
+	float fCosTheta = A.x * B.x + A.y * B.y + A.z * B.z + A.w * B.w;
+
+	if (fCosTheta < 0.0f)
+	{
+		// flip start quaternion
+		A.x = -A.x; A.y = -A.y; A.z = -A.z; A.w = -A.w;
+		fCosTheta = -fCosTheta;
+	}
+
+	if ((fCosTheta + 1.0f) > 0.05f)
+	{
+		// If the quaternions are close, use linear interploation
+		if ((1.0f - fCosTheta) < 0.05f)
+		{
+			fScale1 = 1.0f - Factor;
+			fScale2 = Factor;
+		}
+		else
+		{
+			// Otherwise, do spherical interpolation
+			float fTheta = std::acos(fCosTheta);
+			float fSinTheta = std::sin(fTheta);
+			fScale1 = std::sin(fTheta * (1.0f - Factor)) / fSinTheta;
+			fScale2 = std::sin(fTheta * Factor) / fSinTheta;
+		}
+	}
+	else
+	{
+		B.x = -A.y;
+		B.y = A.x;
+		B.z = -A.w;
+		B.w = A.z;
+		fScale1 = std::sin(PI * (0.5f - Factor));
+		fScale2 = std::sin(PI * Factor);
+	}
+
+	return { fScale1 * A.x + fScale2 * B.x, fScale1 * A.y + fScale2 * B.y, fScale1 * A.z + fScale2 * B.z, fScale1 * A.w + fScale2 * B.w };
 }
 //---------------------------------------------------------------------
 
