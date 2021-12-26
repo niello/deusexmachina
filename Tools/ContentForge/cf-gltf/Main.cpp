@@ -13,6 +13,7 @@
 #include "GLTFExtensions.h"
 #include <acl/core/ansi_allocator.h>
 #include <acl/compression/animation_clip.h>
+#include <smmintrin.h>
 
 namespace fs = std::filesystem;
 namespace gltf = Microsoft::glTF;
@@ -20,6 +21,53 @@ namespace gltf = Microsoft::glTF;
 // Set working directory to $(TargetDir)
 // Example args:
 // -s src/scenes --path Data ../../../content
+
+//!!!FIXME TMP! Copied from https://github.com/nfrechette/rtm! Use it!
+namespace acl
+{
+using mask4f = __m128;
+using mask4f_arg0 = const mask4f;
+using scalarf = float;
+using scalarf_arg2 = const scalarf;
+
+ACL_FORCE_INLINE Vector4_32 ACL_SIMD_CALL vector_select(mask4f_arg0 mask, Vector4_32Arg1 if_true, Vector4_32Arg2 if_false) noexcept
+{
+	return _mm_blendv_ps(if_false, if_true, mask);
+}
+
+inline Quat_32 ACL_SIMD_CALL quat_slerp(Quat_32Arg0 start, Quat_32Arg1 end, scalarf_arg2 alpha) noexcept
+{
+	Vector4_32 start_v = quat_to_vector(start);
+	Vector4_32 end_v = quat_to_vector(end);
+
+	Vector4_32 cos_half_angle_v = vector_vdot(start_v, end_v);
+	mask4f is_angle_negative = vector_less_than(cos_half_angle_v, vector_zero_32());
+
+	// If the two input quaternions aren't on the same half of the hypersphere, flip one and the angle sign
+	end_v = vector_select(is_angle_negative, vector_neg(end_v), end_v);
+	cos_half_angle_v = vector_select(is_angle_negative, vector_neg(cos_half_angle_v), cos_half_angle_v);
+
+	scalarf cos_half_angle = vector_get_x(cos_half_angle_v);
+	scalarf half_angle = std::acos(cos_half_angle);
+	scalarf sin_half_angle = std::sqrt(1.f - cos_half_angle * cos_half_angle);
+	scalarf inv_sin_half_angle = 1.f / sin_half_angle;
+
+	scalarf start_contribution_angle = (1.f - alpha) * half_angle;
+	scalarf end_contribution_angle = alpha * half_angle;
+
+	scalarf start_contribution_sin = std::sin(start_contribution_angle);
+	scalarf end_contribution_sin = std::sin(end_contribution_angle);
+
+	Vector4_32 contribution_sin = vector_set(start_contribution_sin, end_contribution_sin, start_contribution_sin, end_contribution_sin);
+	Vector4_32 contributions = vector_mul(contribution_sin, inv_sin_half_angle);
+	Vector4_32 start_contribution = vector_mix_xxxx(contributions);
+	Vector4_32 end_contribution = vector_mix_yyyy(contributions);
+
+	Vector4_32 result = vector_add(vector_mul(start_v, start_contribution), vector_mul(end_v, end_contribution));
+	return vector_to_quat(result);
+}
+
+}
 
 static const gltf::Node* GetParentNode(const gltf::Document& Doc, const std::string& NodeID)
 {
@@ -202,8 +250,7 @@ static inline gltf::Vector3 LerpVector3(const gltf::Vector3& a, const gltf::Vect
 
 static inline gltf::Quaternion LerpQuaternion(const gltf::Quaternion& a, const gltf::Quaternion& b, float Factor)
 {
-	// Is slerp?
-	const auto q = acl::quat_lerp({ a.x, a.y, a.z, a.w }, { b.x, b.y, b.z, b.w }, Factor);
+	const auto q = acl::quat_slerp({ a.x, a.y, a.z, a.w }, { b.x, b.y, b.z, b.w }, Factor);
 	return { acl::quat_get_x(q), acl::quat_get_y(q), acl::quat_get_z(q), acl::quat_get_w(q) };
 }
 //---------------------------------------------------------------------
@@ -1324,14 +1371,18 @@ public:
 
 		// Collect animation data for each animated node
 
+		struct CAnimationData
+		{
+			std::vector<float>      KeyTimes;
+			std::vector<float>      Values;
+			gltf::InterpolationType IpolType = gltf::InterpolationType::INTERPOLATION_UNKNOWN;
+		};
+
 		struct CNodeAnimation
 		{
-			std::vector<float> ScalingKeyTimes;
-			std::vector<float> RotationKeyTimes;
-			std::vector<float> TranslationKeyTimes;
-			std::vector<float> ScalingValues;
-			std::vector<float> RotationValues;
-			std::vector<float> TranslationValues;
+			CAnimationData Scaling;
+			CAnimationData Rotation;
+			CAnimationData Translation;
 		};
 
 		std::set<std::string> OpenList;
@@ -1347,8 +1398,8 @@ public:
 
 			const auto& Sampler = Anim.samplers[Channel.samplerId];
 
-			// Only linear interpolation is supported now
-			assert(Sampler.interpolation == gltf::InterpolationType::INTERPOLATION_LINEAR);
+			// Not supported yet
+			assert(Sampler.interpolation != gltf::InterpolationType::INTERPOLATION_CUBICSPLINE);
 
 			OpenList.insert(Channel.target.nodeId);
 
@@ -1359,16 +1410,19 @@ public:
 			switch (Channel.target.path)
 			{
 				case gltf::TargetPath::TARGET_SCALE:
-					It->second.ScalingKeyTimes = std::move(gltf::AnimationUtils::GetKeyframeTimes(Ctx.Doc, *Ctx.ResourceReader, Sampler));
-					It->second.ScalingValues = std::move(gltf::AnimationUtils::GetScales(Ctx.Doc, *Ctx.ResourceReader, Sampler));
+					It->second.Scaling.KeyTimes = std::move(gltf::AnimationUtils::GetKeyframeTimes(Ctx.Doc, *Ctx.ResourceReader, Sampler));
+					It->second.Scaling.Values = std::move(gltf::AnimationUtils::GetScales(Ctx.Doc, *Ctx.ResourceReader, Sampler));
+					It->second.Scaling.IpolType = Sampler.interpolation;
 					break;
 				case gltf::TargetPath::TARGET_ROTATION:
-					It->second.RotationKeyTimes = std::move(gltf::AnimationUtils::GetKeyframeTimes(Ctx.Doc, *Ctx.ResourceReader, Sampler));
-					It->second.RotationValues = std::move(gltf::AnimationUtils::GetRotations(Ctx.Doc, *Ctx.ResourceReader, Sampler));
+					It->second.Rotation.KeyTimes = std::move(gltf::AnimationUtils::GetKeyframeTimes(Ctx.Doc, *Ctx.ResourceReader, Sampler));
+					It->second.Rotation.Values = std::move(gltf::AnimationUtils::GetRotations(Ctx.Doc, *Ctx.ResourceReader, Sampler));
+					It->second.Rotation.IpolType = Sampler.interpolation;
 					break;
 				case gltf::TargetPath::TARGET_TRANSLATION:
-					It->second.TranslationKeyTimes = std::move(gltf::AnimationUtils::GetKeyframeTimes(Ctx.Doc, *Ctx.ResourceReader, Sampler));
-					It->second.TranslationValues = std::move(gltf::AnimationUtils::GetTranslations(Ctx.Doc, *Ctx.ResourceReader, Sampler));
+					It->second.Translation.KeyTimes = std::move(gltf::AnimationUtils::GetKeyframeTimes(Ctx.Doc, *Ctx.ResourceReader, Sampler));
+					It->second.Translation.Values = std::move(gltf::AnimationUtils::GetTranslations(Ctx.Doc, *Ctx.ResourceReader, Sampler));
+					It->second.Translation.IpolType = Sampler.interpolation;
 					break;
 			}
 		}
@@ -1458,25 +1512,31 @@ public:
 				{
 					const CNodeAnimation& NodeAnim = It->second;
 
-					if (!NodeAnim.ScalingKeyTimes.empty())
+					if (!NodeAnim.Scaling.KeyTimes.empty())
 					{
-						const auto [KeyIdx, Factor] = CalcKeyframeSamplingParams(NodeAnim.ScalingKeyTimes, Time);
-						auto pScalings = reinterpret_cast<const gltf::Vector3*>(NodeAnim.ScalingValues.data());
-						Scaling = (Factor == 0.f) ? pScalings[KeyIdx] : LerpVector3(pScalings[KeyIdx], pScalings[KeyIdx + 1], Factor);
+						const auto [KeyIdx, Factor] = CalcKeyframeSamplingParams(NodeAnim.Scaling.KeyTimes, Time);
+						auto pScalings = reinterpret_cast<const gltf::Vector3*>(NodeAnim.Scaling.Values.data());
+						Scaling = (NodeAnim.Scaling.IpolType == gltf::InterpolationType::INTERPOLATION_STEP || Factor == 0.f) ?
+							pScalings[KeyIdx] :
+							LerpVector3(pScalings[KeyIdx], pScalings[KeyIdx + 1], Factor);
 					}
 
-					if (!NodeAnim.RotationKeyTimes.empty())
+					if (!NodeAnim.Rotation.KeyTimes.empty())
 					{
-						const auto [KeyIdx, Factor] = CalcKeyframeSamplingParams(NodeAnim.RotationKeyTimes, Time);
-						auto pRotations = reinterpret_cast<const gltf::Quaternion*>(NodeAnim.RotationValues.data());
-						Rotation = (Factor == 0.f) ? pRotations[KeyIdx] : LerpQuaternion(pRotations[KeyIdx], pRotations[KeyIdx + 1], Factor);
+						const auto [KeyIdx, Factor] = CalcKeyframeSamplingParams(NodeAnim.Rotation.KeyTimes, Time);
+						auto pRotations = reinterpret_cast<const gltf::Quaternion*>(NodeAnim.Rotation.Values.data());
+						Rotation = (NodeAnim.Scaling.IpolType == gltf::InterpolationType::INTERPOLATION_STEP || Factor == 0.f) ?
+							pRotations[KeyIdx] :
+							LerpQuaternion(pRotations[KeyIdx], pRotations[KeyIdx + 1], Factor);
 					}
 
-					if (!NodeAnim.TranslationKeyTimes.empty())
+					if (!NodeAnim.Translation.KeyTimes.empty())
 					{
-						const auto [KeyIdx, Factor] = CalcKeyframeSamplingParams(NodeAnim.TranslationKeyTimes, Time);
-						auto pTranslations = reinterpret_cast<const gltf::Vector3*>(NodeAnim.TranslationValues.data());
-						Translation = (Factor == 0.f) ? pTranslations[KeyIdx] : LerpVector3(pTranslations[KeyIdx], pTranslations[KeyIdx + 1], Factor);
+						const auto [KeyIdx, Factor] = CalcKeyframeSamplingParams(NodeAnim.Translation.KeyTimes, Time);
+						auto pTranslations = reinterpret_cast<const gltf::Vector3*>(NodeAnim.Translation.Values.data());
+						Translation = (NodeAnim.Scaling.IpolType == gltf::InterpolationType::INTERPOLATION_STEP || Factor == 0.f) ?
+							pTranslations[KeyIdx] :
+							LerpVector3(pTranslations[KeyIdx], pTranslations[KeyIdx + 1], Factor);
 					}
 				}
 
