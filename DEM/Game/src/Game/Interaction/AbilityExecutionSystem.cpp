@@ -342,7 +342,7 @@ void UpdateAbilityInteractions(DEM::Game::CGameSession& Session, CGameWorld& Wor
 				// Get interaction zones from a smart object, if present
 				if (!AIState._AbilityInstance->Targets.empty())
 				{
-					auto pSOComponent = World.FindComponent<CSmartObjectComponent>(AIState._AbilityInstance->Targets[0].Entity);
+					auto pSOComponent = World.FindComponent<const CSmartObjectComponent>(AIState._AbilityInstance->Targets[0].Entity);
 					auto pSOAsset = (pSOComponent && pSOComponent->Asset) ? pSOComponent->Asset->GetObject<CSmartObject>() : nullptr;
 					if (pSOAsset)
 					{

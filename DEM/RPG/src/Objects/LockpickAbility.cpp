@@ -192,17 +192,23 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 	{
 		// success
 		AnimAction = CStrID("TryOpenDoor"); // FIXME: need correct ID!
+
+		::Sys::Log("***DBG Lockpicking succeeded");
 	}
 	else if (Difference > -5)
 	{
 		// failure
 		AnimAction = CStrID("TryOpenDoor"); // FIXME: need correct ID!
+
+		::Sys::Log("***DBG Lockpicking failed");
 	}
 	else
 	{
 		// jamming
 		AnimAction = CStrID("TryOpenDoor"); // FIXME: need correct ID!
 		pLock->Jamming = -Difference - 5; //???here or OnEnd or somewhere OnUpdate?
+
+		::Sys::Log("***DBG Lockpicking failed, lock jammed");
 	}
 
 	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
