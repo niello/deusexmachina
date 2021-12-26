@@ -182,6 +182,9 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 	// TODO: assistant, if will bother with that
 	// TODO: if lockpick is breakable, handle it (maybe chance)
 
+	//!!!TODO: to Sh2 balance config!
+	constexpr int JammingFailureThreshold = -10;
+
 	// FIXME: use Session.RNG, call utility method Sh2::SkillCheck(Actor, Lockpicking, Source)
 	//!!!choose animation!
 	//!!!remember difference (or result?) in an ability instance params!
@@ -195,7 +198,7 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 
 		::Sys::Log("***DBG Lockpicking succeeded");
 	}
-	else if (Difference > -5)
+	else if (Difference > JammingFailureThreshold)
 	{
 		// failure
 		AnimAction = CStrID("TryOpenDoor"); // FIXME: need correct ID!
@@ -206,7 +209,7 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 	{
 		// jamming
 		AnimAction = CStrID("TryOpenDoor"); // FIXME: need correct ID!
-		pLock->Jamming = -Difference - 5; //???here or OnEnd or somewhere OnUpdate?
+		pLock->Jamming = JammingFailureThreshold - Difference + 1; //???here or OnEnd or somewhere OnUpdate?
 
 		::Sys::Log("***DBG Lockpicking failed, lock jammed");
 	}
