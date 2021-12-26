@@ -1273,6 +1273,30 @@ public:
 		return true;
 	}
 
+	// Returns the first key and interpolation factor (zero for exact key sampling)
+	static std::pair<ptrdiff_t, float> CalcKeyframeSamplingParams(const std::vector<float>& KeyTimes, float Time)
+	{
+		constexpr float Tolerance = 0.0001f;
+
+		auto ItNextKey = std::lower_bound(KeyTimes.cbegin(), KeyTimes.cend(), Time - Tolerance);
+		const ptrdiff_t NextKeyNumber = std::distance(KeyTimes.cbegin(), ItNextKey);
+		const bool IsLastKey = (ItNextKey == KeyTimes.cend());
+		if (NextKeyNumber == 0 || IsLastKey || CompareFloat(*ItNextKey, Time, Tolerance))
+		{
+			// Get keyframe value without interpolation
+			return { IsLastKey ? NextKeyNumber - 1 : NextKeyNumber, 0.f };
+		}
+		else
+		{
+			// Interpolate
+			auto ItPrevKey = ItNextKey;
+			--ItPrevKey;
+			const float PrevTime = *ItPrevKey;
+			const float Factor = (Time - PrevTime) / (*ItNextKey - PrevTime);
+			return { NextKeyNumber - 1, Factor };
+		}
+	}
+
 	bool ExportAnimation(const gltf::Animation& Anim, CContext& Ctx)
 	{
 		const auto RsrcName = GetValidResourceName(Anim.name.empty() ? Ctx.TaskName + '_' + Anim.id : Anim.name);
@@ -1302,10 +1326,9 @@ public:
 
 		struct CNodeAnimation
 		{
-			// For verification only
-			std::string KeyTimesAccessorID;
-
-			std::vector<float> KeyTimes;
+			std::vector<float> ScalingKeyTimes;
+			std::vector<float> RotationKeyTimes;
+			std::vector<float> TranslationKeyTimes;
 			std::vector<float> ScalingValues;
 			std::vector<float> RotationValues;
 			std::vector<float> TranslationValues;
@@ -1322,37 +1345,29 @@ public:
 				continue;
 			}
 
+			const auto& Sampler = Anim.samplers[Channel.samplerId];
+
+			// Only linear interpolation is supported now
+			assert(Sampler.interpolation == gltf::InterpolationType::INTERPOLATION_LINEAR);
+
 			OpenList.insert(Channel.target.nodeId);
 
 			auto It = AnimatedNodes.find(Channel.target.nodeId);
 			if (It == AnimatedNodes.end())
 				It = AnimatedNodes.emplace(Channel.target.nodeId, CNodeAnimation{}).first;
 
-			const auto& Sampler = Anim.samplers[Channel.samplerId];
-
-			// Time source must be the same for all SRT channels
-			if (It->second.KeyTimes.empty())
-			{
-				It->second.KeyTimes = std::move(gltf::AnimationUtils::GetKeyframeTimes(Ctx.Doc, *Ctx.ResourceReader, Sampler));
-				It->second.KeyTimesAccessorID = Sampler.inputAccessorId;
-			}
-			else
-			{
-				assert(It->second.KeyTimesAccessorID == Sampler.inputAccessorId);
-			}
-
-			// Only linear interpolation is supported now
-			assert(Sampler.interpolation == gltf::InterpolationType::INTERPOLATION_LINEAR);
-
 			switch (Channel.target.path)
 			{
 				case gltf::TargetPath::TARGET_SCALE:
+					It->second.ScalingKeyTimes = std::move(gltf::AnimationUtils::GetKeyframeTimes(Ctx.Doc, *Ctx.ResourceReader, Sampler));
 					It->second.ScalingValues = std::move(gltf::AnimationUtils::GetScales(Ctx.Doc, *Ctx.ResourceReader, Sampler));
 					break;
 				case gltf::TargetPath::TARGET_ROTATION:
+					It->second.RotationKeyTimes = std::move(gltf::AnimationUtils::GetKeyframeTimes(Ctx.Doc, *Ctx.ResourceReader, Sampler));
 					It->second.RotationValues = std::move(gltf::AnimationUtils::GetRotations(Ctx.Doc, *Ctx.ResourceReader, Sampler));
 					break;
 				case gltf::TargetPath::TARGET_TRANSLATION:
+					It->second.TranslationKeyTimes = std::move(gltf::AnimationUtils::GetKeyframeTimes(Ctx.Doc, *Ctx.ResourceReader, Sampler));
 					It->second.TranslationValues = std::move(gltf::AnimationUtils::GetTranslations(Ctx.Doc, *Ctx.ResourceReader, Sampler));
 					break;
 			}
@@ -1439,38 +1454,29 @@ public:
 				auto Translation = pNode->translation;
 
 				const auto It = AnimatedNodes.find(pNode->id);
-				if (It != AnimatedNodes.cend() && !It->second.KeyTimes.empty())
+				if (It != AnimatedNodes.cend())
 				{
 					const CNodeAnimation& NodeAnim = It->second;
 
-					auto pScalings = reinterpret_cast<const gltf::Vector3*>(NodeAnim.ScalingValues.data());
-					auto pRotations = reinterpret_cast<const gltf::Quaternion*>(NodeAnim.RotationValues.data());
-					auto pTranslations = reinterpret_cast<const gltf::Vector3*>(NodeAnim.TranslationValues.data());
-
-					constexpr float Tolerance = 0.0001f;
-
-					auto ItNextKey = std::lower_bound(NodeAnim.KeyTimes.cbegin(), NodeAnim.KeyTimes.cend(), Time - Tolerance);
-					const auto NextKeyNumber = std::distance(NodeAnim.KeyTimes.cbegin(), ItNextKey);
-					const bool IsLastKey = (ItNextKey == NodeAnim.KeyTimes.cend());
-					if (NextKeyNumber == 0 || IsLastKey || CompareFloat(*ItNextKey, Time, Tolerance))
+					if (!NodeAnim.ScalingKeyTimes.empty())
 					{
-						// Get keyframe value without interpolation
-						const auto KeyNumber = IsLastKey ? NextKeyNumber - 1 : NextKeyNumber;
-						if (pScalings) Scaling = pScalings[KeyNumber];
-						if (pRotations) Rotation = pRotations[KeyNumber];
-						if (pTranslations) Translation = pTranslations[KeyNumber];
+						const auto [KeyIdx, Factor] = CalcKeyframeSamplingParams(NodeAnim.ScalingKeyTimes, Time);
+						auto pScalings = reinterpret_cast<const gltf::Vector3*>(NodeAnim.ScalingValues.data());
+						Scaling = (Factor == 0.f) ? pScalings[KeyIdx] : LerpVector3(pScalings[KeyIdx], pScalings[KeyIdx + 1], Factor);
 					}
-					else
-					{
-						// Interpolate
-						auto ItPrevKey = ItNextKey;
-						--ItPrevKey;
-						const float PrevTime = *ItPrevKey;
-						const float Factor = (Time - PrevTime) / (*ItNextKey - PrevTime);
 
-						if (pScalings) Scaling = LerpVector3(pScalings[NextKeyNumber - 1], pScalings[NextKeyNumber], Factor);
-						if (pRotations) Rotation = LerpQuaternion(pRotations[NextKeyNumber - 1], pRotations[NextKeyNumber], Factor);
-						if (pTranslations) Translation = LerpVector3(pTranslations[NextKeyNumber - 1], pTranslations[NextKeyNumber], Factor);
+					if (!NodeAnim.RotationKeyTimes.empty())
+					{
+						const auto [KeyIdx, Factor] = CalcKeyframeSamplingParams(NodeAnim.RotationKeyTimes, Time);
+						auto pRotations = reinterpret_cast<const gltf::Quaternion*>(NodeAnim.RotationValues.data());
+						Rotation = (Factor == 0.f) ? pRotations[KeyIdx] : LerpQuaternion(pRotations[KeyIdx], pRotations[KeyIdx + 1], Factor);
+					}
+
+					if (!NodeAnim.TranslationKeyTimes.empty())
+					{
+						const auto [KeyIdx, Factor] = CalcKeyframeSamplingParams(NodeAnim.TranslationKeyTimes, Time);
+						auto pTranslations = reinterpret_cast<const gltf::Vector3*>(NodeAnim.TranslationValues.data());
+						Translation = (Factor == 0.f) ? pTranslations[KeyIdx] : LerpVector3(pTranslations[KeyIdx], pTranslations[KeyIdx + 1], Factor);
 					}
 				}
 
