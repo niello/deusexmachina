@@ -29,6 +29,7 @@ enum class EItemStorage
 	QuickSlot,
 	Equipment,
 	Ground,
+	Container,
 
 	None
 };

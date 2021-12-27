@@ -1,6 +1,6 @@
 #pragma once
 #include <Data/Metadata.h>
-#include <StdDEM.h>
+#include <Game/ECS/Entity.h>
 
 // Stores an equipment of a character, including quick slots, for a Shantara2 role system
 
