@@ -30,8 +30,10 @@ using HEntity = CEntityStorage::CHandle;
 //!!!FIXME: use template specializations for ToString?!
 inline std::string EntityToString(HEntity EntityID)
 {
-	return std::to_string(EntityID.Raw & CEntityStorage::INDEX_BITS_MASK) + 'v' +
-		std::to_string(EntityID.Raw >> CEntityStorage::INDEX_BITS);
+	return EntityID ?
+		(std::to_string(EntityID.Raw & CEntityStorage::INDEX_BITS_MASK) + 'v' +
+		 std::to_string(EntityID.Raw >> CEntityStorage::INDEX_BITS)) :
+		std::string("empty");
 }
 
 }
