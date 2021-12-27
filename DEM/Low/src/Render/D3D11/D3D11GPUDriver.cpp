@@ -945,7 +945,8 @@ bool CD3D11GPUDriver::SetRenderTarget(UPTR Index, CRenderTarget* pRT)
 #ifdef _DEBUG // Can't set the same RT to more than one slot
 	if (pRT)
 		for (UPTR i = 0; i < CurrRT.size(); ++i)
-			if (CurrRT[i].Get() == pRT) FAIL;
+			if (CurrRT[i].Get() == pRT)
+				FAIL;
 #endif
 
 	CurrRT[Index] = (CD3D11RenderTarget*)pRT;
@@ -1425,6 +1426,62 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 		std::max((int)(D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT * 3), D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT));
 	void* PtrArray[PtrArraySize];
 
+	// Update render targets before SRVs to unbind what is going to be used
+	// All render targets and a depth-stencil buffer are set atomically in D3D11
+	if (Update.IsAny(GPU_Dirty_RT | GPU_Dirty_DS) && CurrDirtyFlags.IsAny(GPU_Dirty_RT | GPU_Dirty_DS))
+	{
+		ID3D11RenderTargetView** pRTV = (ID3D11RenderTargetView**)PtrArray;
+		n_assert(pRTV);
+		CD3D11RenderTarget* pValidRT = nullptr;
+		for (UPTR i = 0; i < CurrRT.size(); ++i)
+		{
+			CD3D11RenderTarget* pRT = CurrRT[i].Get();
+			if (pRT)
+			{
+				pRTV[i] = pRT->GetD3DRTView();
+				pValidRT = pRT;
+			}
+			else pRTV[i] = nullptr;
+		}
+
+		ID3D11DepthStencilView* pDSV = CurrDS.IsValidPtr() ? CurrDS->GetD3DDSView() : nullptr;
+
+		pD3DImmContext->OMSetRenderTargets(CurrRT.size(), pRTV, pDSV);
+		//OMSetRenderTargetsAndUnorderedAccessViews
+
+		// If at least one valid RT and at least one default (unset) VP exist, we check
+		// if RT dimensions are changed, and refill all default (unset) VPs properly.
+		// If no valid RTs and DSs are set, we cancel VP updating as it has no meaning.
+		if (pValidRT)
+		{
+			UPTR RTWidth = pValidRT->GetDesc().Width;
+			UPTR RTHeight = pValidRT->GetDesc().Height;
+			bool UnsetVPFound = false;
+			for (UPTR i = 0; i < MaxViewportCount; ++i)
+			{
+				if (VPSRSetFlags.Is(1 << i)) continue;
+
+				D3D11_VIEWPORT& D3DVP = CurrVP[i];
+				if (!UnsetVPFound)
+				{
+					// All other default values are fixed: X = 0, Y = 0, MinDepth = 0.f, MaxDepth = 1.f
+					if ((UPTR)D3DVP.Width == RTWidth && (UPTR)D3DVP.Height == RTHeight) break;
+					UnsetVPFound = true;
+					CurrDirtyFlags.Set(GPU_Dirty_VP);
+					Update.Set(GPU_Dirty_VP);
+				}
+
+				// If we are here, RT dimensions were changed, so update default VP values
+				D3DVP.Width = (float)RTWidth;
+				D3DVP.Height = (float)RTHeight;
+			}
+		}
+		else if (!pDSV)
+			CurrDirtyFlags.Clear(GPU_Dirty_VP);
+
+		CurrDirtyFlags.Clear(GPU_Dirty_RT | GPU_Dirty_DS);
+	}
+
 	if (Update.Is(GPU_Dirty_SRV) && CurrDirtyFlags.Is(GPU_Dirty_SRV))
 	{
 		if (!CurrSRV.empty())
@@ -1543,61 +1600,6 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 		else pD3DImmContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
 
 		CurrDirtyFlags.Clear(GPU_Dirty_IB);
-	}
-
-	// All render targets and a depth-stencil buffer are set atomically in D3D11
-	if (Update.IsAny(GPU_Dirty_RT | GPU_Dirty_DS) && CurrDirtyFlags.IsAny(GPU_Dirty_RT | GPU_Dirty_DS))
-	{
-		ID3D11RenderTargetView** pRTV = (ID3D11RenderTargetView**)PtrArray;
-		n_assert(pRTV);
-		CD3D11RenderTarget* pValidRT = nullptr;
-		for (UPTR i = 0; i < CurrRT.size(); ++i)
-		{
-			CD3D11RenderTarget* pRT = CurrRT[i].Get();
-			if (pRT)
-			{
-				pRTV[i] = pRT->GetD3DRTView();
-				pValidRT = pRT;
-			}
-			else pRTV[i] = nullptr;
-		}
-
-		ID3D11DepthStencilView* pDSV = CurrDS.IsValidPtr() ? CurrDS->GetD3DDSView() : nullptr;
-
-		pD3DImmContext->OMSetRenderTargets(CurrRT.size(), pRTV, pDSV);
-		//OMSetRenderTargetsAndUnorderedAccessViews
-
-		// If at least one valid RT and at least one default (unset) VP exist, we check
-		// if RT dimensions are changed, and refill all default (unset) VPs properly.
-		// If no valid RTs and DSs are set, we cancel VP updating as it has no meaning.
-		if (pValidRT)
-		{
-			UPTR RTWidth = pValidRT->GetDesc().Width;
-			UPTR RTHeight = pValidRT->GetDesc().Height;
-			bool UnsetVPFound = false;
-			for (UPTR i = 0; i < MaxViewportCount; ++i)
-			{
-				if (VPSRSetFlags.Is(1 << i)) continue;
-				
-				D3D11_VIEWPORT& D3DVP = CurrVP[i];
-				if (!UnsetVPFound)
-				{
-					// All other default values are fixed: X = 0, Y = 0, MinDepth = 0.f, MaxDepth = 1.f
-					if ((UPTR)D3DVP.Width == RTWidth && (UPTR)D3DVP.Height == RTHeight) break;
-					UnsetVPFound = true;
-					CurrDirtyFlags.Set(GPU_Dirty_VP);
-					Update.Set(GPU_Dirty_VP);
-				}
-
-				// If we are here, RT dimensions were changed, so update default VP values
-				D3DVP.Width = (float)RTWidth;
-				D3DVP.Height = (float)RTHeight;
-			}
-		}
-		else if (!pDSV)
-			CurrDirtyFlags.Clear(GPU_Dirty_VP);
-
-		CurrDirtyFlags.Clear(GPU_Dirty_RT | GPU_Dirty_DS);
 	}
 
 	// Viewports

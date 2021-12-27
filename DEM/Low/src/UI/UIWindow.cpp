@@ -13,10 +13,7 @@ FACTORY_CLASS_IMPL(UI::CUIWindow, 'UIWN', Core::CObject);
 
 CUIWindow::~CUIWindow()
 {
-	if (pWnd && pWnd->getParent())
-		pWnd->getParent()->removeChild(pWnd);
-	//???unload / delete?
-	// TODO: ownership of CEGUI window
+	CEGUI::WindowManager::getSingleton().destroyWindow(pWnd);
 }
 //---------------------------------------------------------------------
 
