@@ -287,7 +287,7 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 
 		// Send lights to GPU if global light buffer is not used
 
-		if (LightingEnabled && !Context.UsesGlobalLightBuffer)
+		if (LightingEnabled && LightCount && !Context.UsesGlobalLightBuffer)
 		{
 			NOT_IMPLEMENTED;
 			if (HardwareInstancing)

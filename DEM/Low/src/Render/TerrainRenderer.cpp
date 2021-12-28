@@ -787,7 +787,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 			continue;
 		}
 
-		if (LightingEnabled)
+		if (LightingEnabled && LightCount)
 		{
 			if (CurrMaxLightCount < LightCount) CurrMaxLightCount = LightCount;
 
