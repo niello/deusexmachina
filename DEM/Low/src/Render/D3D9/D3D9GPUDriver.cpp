@@ -1190,6 +1190,7 @@ int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, con
 		SetDefaultRenderState();
 		SetDefaultSamplers();
 
+		SwapChains.push_back({});
 		ItSC = SwapChains.begin();
 		ItSC->pSwapChain = nullptr;
 	}

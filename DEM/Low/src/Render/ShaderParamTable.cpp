@@ -98,58 +98,65 @@ void CShaderConstantParam::SetMatrixArray(CConstantBuffer& CB, const matrix44* p
 	n_assert_dbg(_Info);
 	if (!_Info) return;
 
-	const auto MajorDim = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
-	const auto MinorDim = _Info->IsColumnMajor() ? _Info->GetRowCount() : _Info->GetColumnCount();
-	const auto ComponentCount = MajorDim * MinorDim;
+	const bool Transpose = (ColumnMajor != _Info->IsColumnMajor());
+	const auto ComponentCount = _Info->GetColumnCount() * _Info->GetRowCount();
 
-	if (ComponentCount == 16)
+	if (!Transpose && ComponentCount == 16)
 	{
-		// Can set whole matrices (16 floats a time) or even all floats at once
+		// Shader matrix array layout perfectly matches C++ matrix44[] layout
+		SetArray(_Info, CB, _Offset, pValues, Count, StartIndex);
+		return;
+	}
 
-		if (ColumnMajor == _Info->IsColumnMajor())
+	// Calculate metrics for source data
+	const auto Rows = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
+	const auto RowComponentCount = _Info->IsColumnMajor() ? _Info->GetRowCount() : _Info->GetColumnCount();
+
+	auto Offset = _Offset + StartIndex * _Info->GetElementStride();
+	const auto* pEnd = pValues + Count;
+
+	if (RowComponentCount == 4)
+	{
+		// Write matrix by matrix
+		if (Transpose)
 		{
-			SetArray(_Info, CB, _Offset, pValues, Count, StartIndex);
-		}
-		else
-		{
-			// Transpose and set one by one
-			auto Offset = _Offset + StartIndex * _Info->GetElementStride();
-			const auto* pEnd = pValues + Count;
 			for (; pValues < pEnd; ++pValues)
 			{
 				_Info->SetFloats(CB, Offset, *pValues->transposed().m, ComponentCount);
 				Offset += _Info->GetElementStride();
 			}
 		}
-	}
-	else if (MajorDim == 4)
-	{
-		// Can set row by row (4 floats a time) or even whole matrices (4 * MinorDim floats a time)
-
-		if (ColumnMajor == _Info->IsColumnMajor())
-		{
-			// Set one by one
-			NOT_IMPLEMENTED;
-		}
 		else
 		{
-			// Set one by one transposed
-			NOT_IMPLEMENTED;
+			for (; pValues < pEnd; ++pValues)
+			{
+				_Info->SetFloats(CB, Offset, *pValues->m, ComponentCount);
+				Offset += _Info->GetElementStride();
+			}
 		}
 	}
 	else
 	{
-		// Must set row by row (MajorDim / MinorDim floats a time)
-
-		if (ColumnMajor == _Info->IsColumnMajor())
+		// Write row by row
+		const UPTR RowBytes = RowComponentCount * sizeof(float);
+		if (Transpose)
 		{
-			// Set one by one
-			NOT_IMPLEMENTED;
+			for (; pValues < pEnd; ++pValues)
+			{
+				const matrix44 Transposed = pValues->transposed();
+				for (UPTR Row = 0; Row < Rows; ++Row)
+					_Info->SetFloats(CB, Offset + Row * RowBytes, Transposed.m[Row], RowComponentCount);
+				Offset += _Info->GetElementStride();
+			}
 		}
 		else
 		{
-			// Set one by one transposed
-			NOT_IMPLEMENTED;
+			for (; pValues < pEnd; ++pValues)
+			{
+				for (UPTR Row = 0; Row < Rows; ++Row)
+					_Info->SetFloats(CB, Offset + Row * RowBytes, pValues->m[Row], RowComponentCount);
+				Offset += _Info->GetElementStride();
+			}
 		}
 	}
 }
@@ -157,15 +164,17 @@ void CShaderConstantParam::SetMatrixArray(CConstantBuffer& CB, const matrix44* p
 
 void CShaderConstantParam::InternalSetMatrix(CConstantBuffer& CB, const matrix44& Value) const
 {
-	const auto MajorDim = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
-	const auto MinorDim = _Info->IsColumnMajor() ? _Info->GetRowCount() : _Info->GetColumnCount();
-	if (MajorDim == 4)
-		_Info->SetFloats(CB, _Offset, *Value.m, MajorDim * MinorDim);
+	const auto Rows = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
+	const auto RowComponentCount = _Info->IsColumnMajor() ? _Info->GetRowCount() : _Info->GetColumnCount();
+	if (RowComponentCount == 4)
+	{
+		_Info->SetFloats(CB, _Offset, *Value.m, RowComponentCount * Rows);
+	}
 	else
 	{
-		U32 Offset = _Offset;
-		for (size_t Min = 0; Min < MinorDim; ++Min, Offset += 4 * sizeof(float))
-			_Info->SetFloats(CB, Offset, *Value.m, MajorDim);
+		const UPTR RowBytes = RowComponentCount * sizeof(float);
+		for (UPTR Row = 0; Row < Rows; ++Row)
+			_Info->SetFloats(CB, _Offset + Row * RowBytes, Value.m[Row], RowComponentCount);
 	}
 }
 //---------------------------------------------------------------------
