@@ -2476,9 +2476,8 @@ PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 
 		if (pData)
 		{
+			UPTR MipLevels = Desc.MipLevels;
 			UPTR BlockSize = CD3D9DriverFactory::D3DFormatBlockSize(D3DFormat);
-
-			if (Data->MipDataProvided) NOT_IMPLEMENTED_MSG("D3D9 cube texture mip levels uploading\n");
 
 			// D3DPOOL_DEFAULT non-D3DUSAGE_DYNAMIC textures can't be locked, but must be
 			// modified by calling IDirect3DDevice9::UpdateTexture (from temporary D3DPOOL_SYSTEMMEM texture)
@@ -2489,7 +2488,7 @@ PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 				D3DLOCKED_RECT LockedRect = { 0 };
 				if (SUCCEEDED(pD3DTex->LockRect(Face, 0, &LockedRect, nullptr, D3DLOCK_NOSYSLOCK)))
 				{
-					UPTR DataSize = LockedRect.Pitch * ((Desc.Height + BlockSize - 1) / BlockSize);
+					const UPTR DataSize = LockedRect.Pitch * ((Desc.Height + BlockSize - 1) / BlockSize);
 					memcpy(LockedRect.pBits, pCurrFaceData, DataSize);
 					n_verify(SUCCEEDED(pD3DTex->UnlockRect(Face, 0)));
 					pCurrFaceData += DataSize;
@@ -2498,6 +2497,25 @@ PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 				{
 					pD3DTex->Release();
 					return nullptr;
+				}
+
+				if (!Data->MipDataProvided) continue;
+
+				for (UPTR Mip = 1; Mip < MipLevels; ++Mip)
+				{
+					const UPTR MipHeight = std::max(1u, Desc.Height >> Mip);
+					if (SUCCEEDED(pD3DTex->LockRect(Face, Mip, &LockedRect, nullptr, D3DLOCK_NOSYSLOCK)))
+					{
+						const UPTR DataSize = LockedRect.Pitch * ((MipHeight + BlockSize - 1) / BlockSize);
+						memcpy(LockedRect.pBits, pCurrFaceData, DataSize);
+						n_verify(SUCCEEDED(pD3DTex->UnlockRect(Face, Mip)));
+						pCurrFaceData += DataSize;
+					}
+					else
+					{
+						pD3DTex->Release();
+						return nullptr;
+					}
 				}
 			}
 		}
