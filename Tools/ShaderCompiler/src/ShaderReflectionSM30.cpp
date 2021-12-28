@@ -63,7 +63,7 @@ bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pD
 
 		CSM30StructMeta StructMeta;
 
-		switch (D3D9StructDesc.Members[0].RegisterSet) //???D3D9StructDesc.Type)
+		switch (D3D9StructDesc.Members[0].RegisterSet)
 		{
 			case RS_FLOAT4:	StructMeta.RegisterSet = RS_Float4; break;
 			case RS_INT4:	StructMeta.RegisterSet = RS_Int4; break;
@@ -84,6 +84,25 @@ bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pD
 
 			MemberMeta.Name = D3D9ConstDesc.Name;
 			MemberMeta.StructIndex = (ItStruct == StructIDToIndex.cend()) ? (uint32_t(-1)) : ItStruct->second;
+
+			switch (D3D9ConstDesc.RegisterSet)
+			{
+				case RS_FLOAT4:	MemberMeta.RegisterSet = RS_Float4; break;
+				case RS_INT4:	MemberMeta.RegisterSet = RS_Int4; break;
+				case RS_BOOL:	MemberMeta.RegisterSet = RS_Bool; break;
+				default:
+				{
+					if (pLog) pLog->LogError(("Unsupported SM3.0 register set " + std::to_string(D3D9ConstDesc.RegisterSet)).c_str());
+					return false;
+				}
+			};
+
+			if (MemberMeta.RegisterSet != StructMeta.RegisterSet)
+			{
+				if (pLog) pLog->LogError(("SM3.0 structure member '" + MemberMeta.Name + "' has a register set incompatible with its structure").c_str());
+				return false;
+			}
+
 			MemberMeta.RegisterStart = D3D9ConstDesc.RegisterIndex;
 			MemberMeta.ElementRegisterCount = D3D9ConstDesc.Type.ElementRegisterCount;
 			MemberMeta.ElementCount = D3D9ConstDesc.Type.Elements;

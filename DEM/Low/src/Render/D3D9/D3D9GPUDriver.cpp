@@ -2934,6 +2934,8 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 			if (StructIndex != static_cast<U32>(-1))
 				Member.Struct = Structs[StructIndex];
 
+			Member.RegisterSet = RegisterSet;
+
 			U32 RegisterStart, ElementRegisterCount;
 			if (!R.Read(RegisterStart)) return nullptr;
 			if (!R.Read(ElementRegisterCount)) return nullptr;

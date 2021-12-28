@@ -91,6 +91,7 @@ std::ostream& operator <<(std::ostream& Stream, const CSM30StructMeta& Value)
 	{
 		WriteStream(Stream, Member.Name);
 		WriteStream(Stream, Member.StructIndex);
+		// NB: Member.RegisterSet is not saved because it must be the same for all struct members
 		WriteStream(Stream, Member.RegisterStart);
 		WriteStream(Stream, Member.ElementRegisterCount);
 		WriteStream(Stream, Member.ElementCount);
