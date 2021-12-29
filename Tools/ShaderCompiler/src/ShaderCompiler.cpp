@@ -15,7 +15,7 @@ namespace fs = std::filesystem;
 #undef DeleteFile
 
 bool ExtractUSMMetaFromBinary(const void* pData, size_t Size, CUSMShaderMeta& OutMeta, uint32_t& OutMinFeatureLevel, uint64_t& OutRequiresFlags, DEMShaderCompiler::ILogDelegate* pLog);
-bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pData, size_t Size, const char* pSource, size_t SourceSize, ID3DInclude* pInclude, const char* pSourcePath, const D3D_SHADER_MACRO* pDefines, DEMShaderCompiler::ILogDelegate* pLog);
+bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pData, size_t Size, const std::string& Source, DEMShaderCompiler::ILogDelegate* pLog);
 
 struct CTargetParams
 {
@@ -98,7 +98,7 @@ static bool FillTargetParams(EShaderType ShaderType, uint32_t Target, CTargetPar
 // If base path is set, all other paths except absolute are relative to it, and all paths written to DB are relative to base too.
 // If no base path is set (null or empty), all paths must be absolute or relative to CWD, and DB stores absolute paths.
 // This allows to make content library movable and CWD-independent.
-static void MakePathes(const char* pBasePath, const char* pPath, fs::path& OutFSPath, fs::path& OutDBPath)
+static void MakePaths(const char* pBasePath, const char* pPath, fs::path& OutFSPath, fs::path& OutDBPath)
 {
 	OutDBPath = fs::path(pPath).lexically_normal();
 	OutFSPath = OutDBPath;
@@ -129,7 +129,7 @@ static int ProcessInputSignature(const char* pBasePath, const char* pInputSigDir
 	if (!DB::FindSignatureRecord(Rec.InputSigFile, pBasePath, pInputSig->GetBufferPointer()))
 	{
 		fs::path PathDB, PathFS;
-		MakePathes(pBasePath, pInputSigDir, PathFS, PathDB);
+		MakePaths(pBasePath, pInputSigDir, PathFS, PathDB);
 
 		Rec.InputSigFile.Folder = PathDB.generic_string();
 
@@ -201,7 +201,7 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 	*/
 
 	fs::path DestPathDB, DestPathFS;
-	MakePathes(pBasePath, pDestPath, DestPathFS, DestPathDB);
+	MakePaths(pBasePath, pDestPath, DestPathFS, DestPathDB);
 
 	fs::create_directories(DestPathFS.parent_path());
 
@@ -272,7 +272,7 @@ static int ProcessShaderBinarySM30(const char* pBasePath, const char* pDestPath,
 	*/
 
 	fs::path DestPathDB, DestPathFS;
-	MakePathes(pBasePath, pDestPath, DestPathFS, DestPathDB);
+	MakePaths(pBasePath, pDestPath, DestPathFS, DestPathDB);
 
 	fs::create_directories(DestPathFS.parent_path());
 
@@ -330,13 +330,11 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 	CTargetParams TargetParams;
 	if (!FillTargetParams(ShaderType, Target, TargetParams)) return DEM_SHADER_COMPILER_INVALID_ARGS;
 
-	// Build source paths
+	// Read the source file if not read yet
 
 	fs::path SrcPathDB, SrcPathFS;
-	MakePathes(pBasePath, pSrcPath, SrcPathFS, SrcPathDB);
+	MakePaths(pBasePath, pSrcPath, SrcPathFS, SrcPathDB);
 	const std::string SrcPathFSStr = SrcPathFS.string();
-
-	// Read the source file if not read yet
 
 	std::vector<char> SrcData;
 	if (!pSrcData || !SrcDataSize)
@@ -344,27 +342,6 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 		if (!ReadAllFile(SrcPathFSStr.c_str(), SrcData)) return DEM_SHADER_COMPILER_IO_READ_ERROR;
 		pSrcData = SrcData.data();
 		SrcDataSize = SrcData.size();
-	}
-
-	// Setup compiler flags
-
-	// D3DCOMPILE_IEEE_STRICTNESS
-	// D3DCOMPILE_AVOID_FLOW_CONTROL, D3DCOMPILE_PREFER_FLOW_CONTROL
-
-	//DWORD Flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR; // (more efficient, vec*mtx dots) //???does touch CPU-side const binding code?
-	DWORD Flags = D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;
-	if (Target >= 0x0400)
-	{
-		Flags |= D3DCOMPILE_ENABLE_STRICTNESS; // Deny deprecated syntax
-	}
-
-	if (Debug)
-	{
-		Flags |= (D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION);
-	}
-	else
-	{
-		Flags |= (D3DCOMPILE_OPTIMIZATION_LEVEL3); // | D3DCOMPILE_SKIP_VALIDATION);
 	}
 
 	// Build the compilation task description
@@ -375,7 +352,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 	Rec.Target = Target;
 	Rec.EntryPoint = pEntryPoint;
 
-	// Parse define string
+	// Parse preprocessor macro definitions
 
 	if (pDefines)
 	{
@@ -390,7 +367,64 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 		}
 	}
 
-	// Check whether there were changes since the last conversion
+	std::vector<D3D_SHADER_MACRO> D3DMacros;
+	if (Rec.Defines.size())
+	{
+		D3DMacros.reserve(Rec.Defines.size() + 1);
+
+		for (const auto& Macro : Rec.Defines)
+			D3DMacros.push_back({ Macro.first.c_str(), Macro.second.c_str() });
+
+		// Terminating macro
+		D3DMacros.push_back({ nullptr, nullptr });
+	}
+	const D3D_SHADER_MACRO* pD3DMacros = D3DMacros.empty() ? nullptr : D3DMacros.data();
+
+	// Preprocess the source code
+
+	//CDEMD3DInclude IncHandler(ExtractDirName(SrcPathFSStr), std::string{}); //RootPath);
+	ID3DInclude* pInclude = D3D_COMPILE_STANDARD_FILE_INCLUDE;
+
+	ID3DBlob* pCodeText = nullptr;
+	ID3DBlob* pErrorMsgs = nullptr;
+	HRESULT hr = D3DPreprocess(pSrcData, SrcDataSize, SrcPathFSStr.c_str(), pD3DMacros, pInclude, &pCodeText, &pErrorMsgs);
+
+	if (FAILED(hr) || !pCodeText)
+	{
+		if (pLog) pLog->LogError(pErrorMsgs ? (const char*)pErrorMsgs->GetBufferPointer() : "<No D3D error message>");
+		if (pCodeText) pCodeText->Release();
+		if (pErrorMsgs) pErrorMsgs->Release();
+		return false;
+	}
+	else if (pErrorMsgs)
+	{
+		if (pLog)
+		{
+			pLog->LogWarning("Preprocessed with warnings:\n");
+			pLog->LogWarning((const char*)pErrorMsgs->GetBufferPointer());
+		}
+		pErrorMsgs->Release();
+	}
+
+	const std::string Source = static_cast<const char*>(pCodeText->GetBufferPointer());
+	pCodeText->Release();
+
+	// Setup compiler flags
+
+	// D3DCOMPILE_IEEE_STRICTNESS
+	// D3DCOMPILE_AVOID_FLOW_CONTROL, D3DCOMPILE_PREFER_FLOW_CONTROL
+
+	//!!!TODO: Flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR; // (more efficient, vec*mtx dots) //???does touch CPU-side const binding code?
+	DWORD Flags = D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;
+	if (Target >= 0x0400)
+		Flags |= D3DCOMPILE_ENABLE_STRICTNESS; // Deny deprecated syntax
+
+	if (Debug)
+		Flags |= (D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION);
+	else
+		Flags |= (D3DCOMPILE_OPTIMIZATION_LEVEL3); // | D3DCOMPILE_SKIP_VALIDATION);
+
+	// Check whether there were changes since the last compilation
 
 	uint64_t CurrWriteTime = 0;
 	{
@@ -399,13 +433,13 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 			CurrWriteTime = FileStat.st_mtime;
 	}
 
-	const size_t SrcCRC = CalcCRC((const uint8_t*)pSrcData, SrcDataSize);
+	const size_t SrcCRC = CalcCRC(reinterpret_cast<const uint8_t*>(Source.c_str()), Source.size());
 
 	if (!Recompile &&
 		DB::FindShaderRecord(Rec) &&
 		Rec.CompilerVersion == D3D_COMPILER_VERSION &&
 		Rec.CompilerFlags == Flags &&
-		Rec.SrcFile.Size == SrcDataSize &&
+		Rec.SrcFile.Size == Source.size() &&
 		Rec.SrcFile.CRC == SrcCRC &&
 		CurrWriteTime &&
 		Rec.SrcModifyTimestamp == CurrWriteTime)
@@ -416,42 +450,20 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 
 	// We need to do the conversion, so update the description with current details
 
+	// TODO: add our tool version too?
 	Rec.CompilerVersion = D3D_COMPILER_VERSION;
 	Rec.CompilerFlags = Flags;
-	Rec.SrcFile.Size = SrcDataSize;
+	Rec.SrcFile.Size = Source.size();
 	Rec.SrcFile.CRC = SrcCRC;
 	Rec.SrcModifyTimestamp = CurrWriteTime;
 
-	// Setup D3D shader macros
-
-	std::vector<D3D_SHADER_MACRO> D3DMacros;
-	D3D_SHADER_MACRO* pD3DMacros = nullptr;
-	if (Rec.Defines.size())
-	{
-		D3DMacros.reserve(Rec.Defines.size() + 1);
-
-		for (const auto& Macro : Rec.Defines)
-			D3DMacros.push_back({ Macro.first.c_str(), Macro.second.c_str() });
-
-		// Terminating macro
-		D3DMacros.push_back({ nullptr, nullptr });
-
-		pD3DMacros = &D3DMacros[0];
-	}
-
 	// Compile shader
-
-	// TODO: try D3D_COMPILE_STANDARD_FILE_INCLUDE!
-	//CDEMD3DInclude IncHandler(ExtractDirName(SrcPathFSStr), std::string{}); //RootPath);
-	ID3DInclude* pInclude = D3D_COMPILE_STANDARD_FILE_INCLUDE;
 
 	// There is also D3DCompile2 with 'secondary data' optional args but it is not useful for us now
 	// TODO: RAII class for COM pointers? Would simplify the code.
 	ID3DBlob* pCode = nullptr;
-	ID3DBlob* pErrorMsgs = nullptr;
-	HRESULT hr = D3DCompile(pSrcData, SrcDataSize, SrcPathFSStr.c_str(),
-		pD3DMacros, pInclude, pEntryPoint, TargetParams.pD3DTarget,
-		Flags, 0, &pCode, &pErrorMsgs);
+	hr = D3DCompile(Source.c_str(), Source.size(), SrcPathFSStr.c_str(), nullptr, nullptr,
+		pEntryPoint, TargetParams.pD3DTarget, Flags, 0, &pCode, &pErrorMsgs);
 
 	if (FAILED(hr) || !pCode)
 	{
@@ -501,7 +513,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 		{
 			// SM30 shaders can't rely on a shader blob only, because some metadata is stored in annotations
 			CSM30ShaderMeta Meta;
-			if (ExtractSM30MetaFromBinaryAndSource(Meta, pCode->GetBufferPointer(), pCode->GetBufferSize(), pSrcData, SrcDataSize, pInclude, SrcPathFSStr.c_str(), pD3DMacros, pLog))
+			if (ExtractSM30MetaFromBinaryAndSource(Meta, pCode->GetBufferPointer(), pCode->GetBufferSize(), Source, pLog))
 				ResultCode = ProcessShaderBinarySM30(pBasePath, pDestPath, pCode, Rec, std::move(Meta), TargetParams, pLog);
 			else
 				ResultCode = DEM_SHADER_COMPILER_REFLECTION_ERROR;

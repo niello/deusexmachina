@@ -10,40 +10,13 @@
 #undef max
 
 bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pData, size_t Size,
-	const char* pSource, size_t SourceSize, ID3DInclude* pInclude, const char* pSourcePath,
-	const D3D_SHADER_MACRO* pDefines, DEMShaderCompiler::ILogDelegate* pLog)
+	const std::string& Source, DEMShaderCompiler::ILogDelegate* pLog)
 {
 	std::vector<CD3D9ConstantDesc> D3D9Consts;
 	std::map<uint32_t, CD3D9StructDesc> D3D9Structs;
 	std::string Creator;
 
 	if (!D3D9Reflect(pData, Size, D3D9Consts, D3D9Structs, Creator)) return false;
-
-	// Preprocess the source code
-
-	ID3DBlob* pCodeText = nullptr;
-	ID3DBlob* pErrorMsgs = nullptr;
-	HRESULT hr = D3DPreprocess(pSource, SourceSize, pSourcePath, pDefines, pInclude, &pCodeText, &pErrorMsgs);
-
-	if (FAILED(hr) || !pCodeText)
-	{
-		if (pLog) pLog->LogError(pErrorMsgs ? (const char*)pErrorMsgs->GetBufferPointer() : "<No D3D error message>");
-		if (pCodeText) pCodeText->Release();
-		if (pErrorMsgs) pErrorMsgs->Release();
-		return false;
-	}
-	else if (pErrorMsgs)
-	{
-		if (pLog)
-		{
-			pLog->LogWarning("Preprocessed with warnings:\n");
-			pLog->LogWarning((const char*)pErrorMsgs->GetBufferPointer());
-		}
-		pErrorMsgs->Release();
-	}
-
-	const std::string Source = static_cast<const char*>(pCodeText->GetBufferPointer());
-	pCodeText->Release();
 
 	// Collect structure layout metadata
 
