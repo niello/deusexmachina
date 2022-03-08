@@ -30,8 +30,9 @@
 #include "CEGUI/RenderingWindow.h"
 #include "CEGUI/WindowManager.h"
 #include "CEGUI/FontManager.h"
-#include "CEGUI/widgets/Tooltip.h"
+#include "CEGUI/Window.h"
 #include "CEGUI/WindowNavigator.h"
+#include "CEGUI/GlobalEventSet.h"
 
 namespace CEGUI
 {
@@ -39,6 +40,9 @@ namespace CEGUI
 const String GUIContext::EventRootWindowChanged("RootWindowChanged");
 const String GUIContext::EventRenderTargetChanged("RenderTargetChanged");
 const String GUIContext::EventDefaultFontChanged("DefaultFontChanged");
+const String GUIContext::EventTooltipActive("TooltipActive");
+const String GUIContext::EventTooltipInactive("TooltipInactive");
+const String GUIContext::EventTooltipTransition("TooltipTransition");
 
 //----------------------------------------------------------------------------//
 GUIContext::GUIContext(RenderTarget& target) :
@@ -49,37 +53,27 @@ GUIContext::GUIContext(RenderTarget& target) :
         target.subscribeEvent(
             RenderTarget::EventAreaChanged,
             Event::Subscriber(&GUIContext::areaChangedHandler, this))),
-    d_windowDestroyedEventConnection(
-        WindowManager::getSingleton().subscribeEvent(
-            WindowManager::EventWindowDestroyed,
-            Event::Subscriber(&GUIContext::windowDestroyedHandler, this)))
+    d_fontRenderSizeChangeConnection(
+        GlobalEventSet::getSingleton().subscribeEvent(
+            "Font/RenderSizeChanged",
+            Event::Subscriber(&GUIContext::fontRenderSizeChangedHandler, this)))
 {
     d_cursor.resetPositionToDefault();
-    resetWindowContainingCursor();
     initializeSemanticEventHandlers();
-}
-
-//----------------------------------------------------------------------------//
-void GUIContext::resetWindowContainingCursor()
-{
-    d_windowContainingCursor = nullptr;
-    d_windowContainingCursorIsUpToDate = true;
 }
 
 //----------------------------------------------------------------------------//
 GUIContext::~GUIContext()
 {
-    destroyDefaultTooltipWindowInstance();
-    deleteSemanticEventHandlers();
-
     if (d_rootWindow)
-        d_rootWindow->setGUIContext(nullptr);
-}
+        d_rootWindow->attachToGUIContext(nullptr);
 
-//----------------------------------------------------------------------------//
-Window* GUIContext::getRootWindow() const
-{
-    return d_rootWindow;
+    for (auto record : d_tooltips)
+        if (WindowManager::getSingleton().isAlive(record.second))
+            WindowManager::getSingleton().destroyWindow(record.second);
+
+    for (auto it = d_semanticEventHandlers.begin(); it != d_semanticEventHandlers.end(); ++it)
+        delete it->second;
 }
 
 //----------------------------------------------------------------------------//
@@ -88,23 +82,18 @@ void GUIContext::setRootWindow(Window* new_root)
     if (d_rootWindow == new_root)
         return;
 
-    setInputCaptureWindow(nullptr);
-    setModalWindow(nullptr);
-    updateWindowContainingCursor();
-
-    if (d_rootWindow)
-        d_rootWindow->setGUIContext(nullptr);
-
     // Remember previous root for the event
     WindowEventArgs args(d_rootWindow);
 
+    // NB: all tracked windows will be cleared by onWindowDetached
+    if (d_rootWindow)
+        d_rootWindow->attachToGUIContext(nullptr);
+
     d_rootWindow = new_root;
+	d_windowContainingCursorIsUpToDate = false;
 
     if (d_rootWindow)
-    {
-        d_rootWindow->setGUIContext(this);
-        d_rootWindow->notifyScreenAreaChanged(true);
-    }
+        d_rootWindow->attachToGUIContext(this);
 
     markAsDirty();
 
@@ -112,111 +101,155 @@ void GUIContext::setRootWindow(Window* new_root)
 }
 
 //----------------------------------------------------------------------------//
-Window* GUIContext::getInputCaptureWindow() const
+bool GUIContext::setActiveWindow(Window* window, bool moveToFront)
 {
-    return d_captureWindow;
-}
+    if (window && (window->getGUIContextPtr() != this || !window->canFocus() || !window->isEffectiveVisible()))
+        return false;
 
-//----------------------------------------------------------------------------//
-void GUIContext::setInputCaptureWindow(Window* window)
-{
-    d_captureWindow = window;
-}
+    // Enforce moving to front if requested, even for already active window
+    const bool zOrderChanged = moveToFront && window && window->moveToFront();
 
-//----------------------------------------------------------------------------//
-void GUIContext::setDefaultTooltipObject(Tooltip* tooltip)
-{
-    destroyDefaultTooltipWindowInstance();
+    if (window == d_activeWindow)
+        return zOrderChanged;
 
-    d_defaultTooltipObject = tooltip;
+    Window* prevActiveWindow = d_activeWindow;
+    const Window* commonAncestor = Window::getCommonAncestor(window, prevActiveWindow);
 
-    if (d_defaultTooltipObject)
-        d_defaultTooltipObject->setWritingXMLAllowed(false);
-}
-
-//----------------------------------------------------------------------------//
-void GUIContext::setDefaultTooltipType(const String& tooltip_type)
-{
-    destroyDefaultTooltipWindowInstance();
-
-    d_defaultTooltipType = tooltip_type;
-}
-
-//----------------------------------------------------------------------------//
-void GUIContext::destroyDefaultTooltipWindowInstance()
-{
-    if (d_defaultTooltipObject && d_weCreatedTooltipObject)
+    // Deactivate branch from d_activeWindow to commonAncestor
+    if (prevActiveWindow && prevActiveWindow != commonAncestor)
     {
-        WindowManager::getSingleton().destroyWindow(d_defaultTooltipObject);
-        d_defaultTooltipObject = nullptr;
+        Window* curr = prevActiveWindow;
+        do
+        {
+            releaseInputCapture(false, curr);
+
+            ActivationEventArgs args(curr);
+            args.otherWindow = window;
+            curr->onDeactivated(args);
+
+            curr = curr->getParent();
+        }
+        while (curr != commonAncestor);
     }
 
-    d_weCreatedTooltipObject = false;
-}
+    d_activeWindow = window;
 
-//----------------------------------------------------------------------------//
-Tooltip* GUIContext::getDefaultTooltipObject() const
-{
-    if (!d_defaultTooltipObject && !d_defaultTooltipType.empty())
-        createDefaultTooltipWindowInstance();
-
-    return d_defaultTooltipObject;
-}
-
-//----------------------------------------------------------------------------//
-void GUIContext::createDefaultTooltipWindowInstance() const
-{
-    WindowManager& winmgr(WindowManager::getSingleton());
-
-    if (winmgr.isLocked())
-        return;
-
-    d_defaultTooltipObject = dynamic_cast<Tooltip*>(
-        winmgr.createWindow(d_defaultTooltipType,
-                            "CEGUI::System::default__auto_tooltip__"));
-
-    if (d_defaultTooltipObject)
+    if (window)
     {
-        d_defaultTooltipObject->setAutoWindow(true);
-        d_defaultTooltipObject->setWritingXMLAllowed(false);
-        d_weCreatedTooltipObject = true;
+        if (window == commonAncestor)
+        {
+            // The window became focused (active leaf) and may require redrawing
+            window->invalidate();
+        }
+        else
+        {
+            // Activate branch from commonAncestor to window
+            std::vector<Window*> reversedList;
+            reversedList.reserve(16);
+            Window* curr = window;
+            do
+            {
+                reversedList.push_back(curr);
+                curr = curr->getParent();
+            }
+            while (curr != commonAncestor);
+
+            for (auto it = reversedList.rbegin(); it != reversedList.rend(); ++it)
+            {
+                ActivationEventArgs args((*it));
+                args.otherWindow = prevActiveWindow;
+                (*it)->onActivated(args);
+            }
+        }
     }
+
+    return zOrderChanged;
+}
+
+//----------------------------------------------------------------------------//
+bool GUIContext::isWindowActive(const Window* window) const
+{
+    return d_activeWindow && d_activeWindow->isInHierarchyOf(window);
 }
 
 //----------------------------------------------------------------------------//
 void GUIContext::setModalWindow(Window* window)
 {
-    d_modalWindow = window;
+    // TODO: need stack to show one modal dialog inside of another?
+    if (!d_modalWindow || setActiveWindow(d_modalWindow, true))
+        d_modalWindow = window;
 }
 
 //----------------------------------------------------------------------------//
-Window* GUIContext::getModalWindow() const
+bool GUIContext::captureInput(Window* window)
 {
-    return d_modalWindow;
-}
+    // We can only capture if we are the active window (LEAVE THIS ALONE!)
+    if (!window || !window->isActive())
+        return false;
 
-//----------------------------------------------------------------------------//
-Window* GUIContext::getWindowContainingCursor() const
-{
-    if (!d_windowContainingCursorIsUpToDate)
+    if (d_captureWindow == window)
+        return true;
+
+    WindowEventArgs args(window);
+
+    if (d_captureWindow)
     {
-        updateWindowContainingCursor_impl();
-        d_windowContainingCursorIsUpToDate = true;
+        if (window->restoresOldCapture())
+            d_oldCaptureWindow = d_captureWindow;
+
+        d_captureWindow->onCaptureLost(args);
+        args.handled = 0;
+
+        d_repeatPointerSource = CursorInputSource::NotSpecified;
+        d_windowContainingCursorIsUpToDate = false;
     }
 
+    d_captureWindow = window;
+    window->onCaptureGained(args);
+
+    return true;
+}
+
+//----------------------------------------------------------------------------//
+void GUIContext::releaseInputCapture(bool allowRestoreOld, Window* exactWindow)
+{
+    // Nothing captured
+    if (!d_captureWindow)
+        return;
+
+    // Exact window specified and it is not the capturing one
+    if (exactWindow && d_captureWindow != exactWindow)
+        return;
+
+    WindowEventArgs args(d_captureWindow);
+    d_captureWindow->onCaptureLost(args);
+
+    d_repeatPointerSource = CursorInputSource::NotSpecified;
+    d_windowContainingCursorIsUpToDate = false;
+
+    if (allowRestoreOld && d_oldCaptureWindow && d_captureWindow->restoresOldCapture())
+    {
+        d_captureWindow = d_oldCaptureWindow;
+        d_captureWindow->moveToFront();
+
+        args.handled = 0;
+        d_captureWindow->onCaptureGained(args);
+    }
+    else
+    {
+        d_captureWindow = nullptr;
+    }
+
+    d_oldCaptureWindow = nullptr;
+}
+
+//----------------------------------------------------------------------------//
+Window* GUIContext::getWindowContainingCursor()
+{
+    if (!d_windowContainingCursorIsUpToDate)
+        updateWindowContainingCursor_impl(getTargetWindow(d_cursor.getPosition(), true));
+
     return d_windowContainingCursor;
-}
-
-//----------------------------------------------------------------------------//
-const Sizef& GUIContext::getSurfaceSize() const
-{
-    return d_surfaceSize;
-}
-
-//----------------------------------------------------------------------------//
-void GUIContext::markAsDirty(std::uint32_t drawModeMask)
-{
-    d_dirtyDrawModeMask |= drawModeMask;
 }
 
 //----------------------------------------------------------------------------//
@@ -276,132 +309,120 @@ void GUIContext::drawWindowContentToTarget(std::uint32_t drawModeMask)
 }
 
 //----------------------------------------------------------------------------//
-Cursor& GUIContext::getCursor()
-{
-    return const_cast<Cursor&>(
-        static_cast<const GUIContext*>(this)->getCursor());
-}
-
-//----------------------------------------------------------------------------//
-const Cursor& GUIContext::getCursor() const
-{
-    return d_cursor;
-}
-
-//----------------------------------------------------------------------------//
 bool GUIContext::areaChangedHandler(const EventArgs&)
 {
     d_surfaceSize = d_target->getArea().getSize();
     d_cursor.notifyTargetSizeChanged(d_surfaceSize);
 
     if (d_rootWindow)
-        d_rootWindow->notifyScreenAreaChanged(true);
+    {
+        d_rootWindow->notifyScreenAreaChanged();
+        positionTooltip();
+    }
 
     return true;
 }
 
 //----------------------------------------------------------------------------//
-bool GUIContext::windowDestroyedHandler(const EventArgs& args)
+bool GUIContext::fontRenderSizeChangedHandler(const EventArgs& args)
 {
-    const Window* const window =
-        static_cast<const WindowEventArgs&>(args).window;
+    const Font* font = static_cast<const FontEventArgs&>(args).font;
+    return font && d_rootWindow && d_rootWindow->notifyFontRenderSizeChanged(*font);
+}
+
+//----------------------------------------------------------------------------//
+void GUIContext::onWindowDetached(Window* window)
+{
+    if (!window)
+        return;
+
+    if (window == d_tooltipSource)
+    {
+        hideTooltip(true);
+        d_tooltipSource = nullptr;
+    }
+
+    // Handle external deletion of a tooltip but don't delete it if only detached but alive
+    auto itTooltip = d_tooltips.find(window->getType());
+    if (itTooltip != d_tooltips.cend() && window == itTooltip->second)
+    {
+        // TODO: can use Window::d_destructionStarted for faster check?
+        if (!WindowManager::getSingleton().isAlive(window))
+            d_tooltips.erase(itTooltip);
+    }
+
+    if (window == d_activeWindow)
+        setActiveWindow(window->getParent(), false);
+
+    if (window == d_windowContainingCursor)
+    {
+        d_windowContainingCursor = nullptr;
+        d_windowContainingCursorIsUpToDate = false;
+    }
 
     if (window == d_rootWindow)
         d_rootWindow = nullptr;
 
-    if (window == getWindowContainingCursor())
-        resetWindowContainingCursor();
-
     if (window == d_modalWindow)
         d_modalWindow = nullptr;
 
-    if (window == d_captureWindow)
-        d_captureWindow = nullptr;
+    if (window == d_oldCaptureWindow)
+        d_oldCaptureWindow = nullptr;
 
-    if (window == d_defaultTooltipObject)
-    {
-        d_defaultTooltipObject = nullptr;
-        d_weCreatedTooltipObject = false;
-    }
-
-    return true;
+    releaseInputCapture(true, window);
 }
 
 //----------------------------------------------------------------------------//
-void GUIContext::updateWindowContainingCursor()
+void GUIContext::updateWindowContainingCursor_impl(Window* windowWithCursor)
 {
-    d_windowContainingCursorIsUpToDate = false;
-}
+    d_windowContainingCursorIsUpToDate = true;
 
-//----------------------------------------------------------------------------//
-bool GUIContext::updateWindowContainingCursor_impl() const
-{
-    CursorInputEventArgs ciea(nullptr);
-    const glm::vec2 cursor_pos(d_cursor.getPosition());
-
-    Window* const window_with_cursor = getTargetWindow(cursor_pos, true);
-
-    // exit if window containing cursor has not changed.
-    if (window_with_cursor == d_windowContainingCursor)
-        return false;
-
-    ciea.scroll = 0;
-    ciea.source = CursorInputSource::NotSpecified;
+    if (windowWithCursor == d_windowContainingCursor)
+        return;
 
     Window* oldWindow = d_windowContainingCursor;
-    d_windowContainingCursor = window_with_cursor;
+    d_windowContainingCursor = windowWithCursor;
 
-    // inform previous window the cursor has left it
+    // Change the tooltip source only if the cursor is not over the tooltip itself
+    if (d_tooltipSource != windowWithCursor &&
+        (!windowWithCursor || !windowWithCursor->isInHierarchyOf(d_tooltipWindow)))
+    {
+        d_tooltipSource = windowWithCursor;
+        d_tooltipTimer = 0.f;
+
+        // If the tooltip is already visible, update it immediately
+        if (d_tooltipWindow)
+        {
+            hideTooltip(true);
+            showTooltip(true);
+        }
+    }
+
+    // For 'area' version of events
+    Window* root = Window::getCommonAncestor(oldWindow, windowWithCursor);
+
     if (oldWindow)
     {
-        ciea.window = oldWindow;
-        ciea.position = oldWindow->getUnprojectedPosition(cursor_pos);
+        // Inform the previous window that the cursor has left it
+        CursorInputEventArgs ciea(oldWindow);
+        ciea.position = oldWindow->getUnprojectedPosition(d_cursor.getPosition());
         oldWindow->onCursorLeaves(ciea);
-    }
-
-    // inform window containing cursor that cursor has entered it
-    if (d_windowContainingCursor)
-    {
-        ciea.handled = 0;
-        ciea.window = d_windowContainingCursor;
-        ciea.position = d_windowContainingCursor->getUnprojectedPosition(cursor_pos);
-        d_windowContainingCursor->onCursorEnters(ciea);
-    }
-
-    // do the 'area' version of the events
-    Window* root = getCommonAncestor(oldWindow, d_windowContainingCursor);
-
-    if (oldWindow)
         notifyCursorTransition(root, oldWindow, &Window::onCursorLeavesArea, ciea);
-
-    if (d_windowContainingCursor)
-        notifyCursorTransition(root, d_windowContainingCursor, &Window::onCursorEntersArea, ciea);
-
-    return true;
-}
-
-//----------------------------------------------------------------------------//
-Window* GUIContext::getCommonAncestor(Window* w1, Window* w2) const
-{
-    if (!w2)
-        return w2;
-
-    if (w1 == w2)
-        return w1;
-
-    // make sure w1 is always further up
-    if (w1 && w1->isAncestor(w2))
-        return w2;
-
-    while (w1)
-    {
-        if (w2->isAncestor(w1))
-            break;
-
-        w1 = w1->getParent();
     }
 
-    return w1;
+    // Set the new cursor
+    d_cursor.setImage((windowWithCursor && windowWithCursor->getCursor()) ?
+        windowWithCursor->getCursor() :
+        d_cursor.getDefaultImage());
+
+    if (windowWithCursor)
+    {
+        // Inform window containing cursor that cursor has entered it
+        CursorInputEventArgs ciea(windowWithCursor);
+        ciea.position = windowWithCursor->getUnprojectedPosition(d_cursor.getPosition());
+        windowWithCursor->onCursorEnters(ciea);
+        notifyCursorTransition(root, windowWithCursor, &Window::onCursorEntersArea, ciea);
+    }
 }
 
 //----------------------------------------------------------------------------//
@@ -424,74 +445,347 @@ void GUIContext::notifyCursorTransition(Window* top, Window* bottom,
 }
 
 //----------------------------------------------------------------------------//
-Window* GUIContext::getTargetWindow(const glm::vec2& pt,
-                                    const bool allow_disabled) const
+Window* GUIContext::getTooltipObject(const String& type) const
+{
+    auto it = d_tooltips.find(type);
+    return (it == d_tooltips.cend()) ? nullptr : it->second;
+}
+
+//----------------------------------------------------------------------------//
+Window* GUIContext::getOrCreateTooltipObject(const String& type)
+{
+    if (type.empty())
+        return nullptr;
+
+    if (auto tooltip = getTooltipObject(type))
+        return tooltip;
+
+    if (WindowManager::getSingleton().isLocked())
+        return nullptr;
+
+    Window* tooltip = WindowManager::getSingleton().createWindow(
+        type, "__auto_tooltip__" + type);
+
+    if (!tooltip)
+        return nullptr;
+
+    tooltip->setAutoWindow(true);
+    tooltip->setWritingXMLAllowed(false);
+    tooltip->setClippedByParent(false);
+    tooltip->setDestroyedByParent(false);
+    tooltip->setAlwaysOnTop(true);
+    tooltip->setCursorPassThroughEnabled(true);
+    tooltip->hide(true);
+
+    d_tooltips.emplace(type, tooltip);
+    return tooltip;
+}
+
+//----------------------------------------------------------------------------//
+void GUIContext::showTooltip(bool force)
+{
+    if (!d_tooltipSource)
+        return;
+
+    const bool wasShown = !!d_tooltipWindow;
+
+    if (!d_tooltipWindow)
+    {
+        const String& tooltipType = !d_tooltipSource->getTooltipType().empty() ?
+            d_tooltipSource->getTooltipType() :
+            d_defaultTooltipType;
+
+        d_tooltipWindow = getOrCreateTooltipObject(tooltipType);
+
+        // Avoid trying again every frame if there is no certain tooltip type registered
+        if (!d_tooltipWindow)
+        {
+            d_tooltipSource = nullptr;
+            return;
+        }
+    }
+
+    d_tooltipEventConnections.clear();
+
+    d_rootWindow->addChild(d_tooltipWindow);
+
+    d_tooltipWindow->setText(d_tooltipSource->getTooltipTextIncludingInheritance());
+    positionTooltip();
+
+    d_tooltipEventConnections.push_back(d_tooltipSource->subscribeEvent(
+        Window::EventTooltipTextChanged, [this](const EventArgs& args)
+    {
+        if (d_tooltipWindow && d_tooltipSource)
+            d_tooltipWindow->setText(d_tooltipSource->getTooltipTextIncludingInheritance());
+    }));
+
+    d_tooltipEventConnections.push_back(d_tooltipSource->subscribeEvent(
+        Window::EventSized, [this](const EventArgs& args)
+    {
+        positionTooltip();
+    }));
+
+    d_tooltipEventConnections.push_back(d_cursor.subscribeEvent(
+        Cursor::EventImageChanged, [this](const EventArgs& args)
+    {
+        positionTooltip();
+    }));
+
+    WindowEventArgs args(d_tooltipWindow);
+    if (wasShown)
+    {
+        fireEvent(EventTooltipTransition, args, EventNamespace);
+    }
+    else
+    {
+        d_tooltipWindow->show(force);
+        fireEvent(EventTooltipActive, args, EventNamespace);
+    }
+}
+
+//----------------------------------------------------------------------------//
+void GUIContext::hideTooltip(bool force)
+{
+    if (!d_tooltipWindow)
+        return;
+
+    // Prevent repeated hiding
+    auto tooltipWnd = d_tooltipWindow;
+    d_tooltipWindow = nullptr;
+
+    d_tooltipEventConnections.clear();
+
+    // Wait until the optional tooltip window hide animation is finished. Subscribe before hide()!
+    d_tooltipEventConnections.push_back(tooltipWnd->subscribeEvent(
+        Window::EventHidden, [this](const EventArgs& args)
+    {
+        d_tooltipEventConnections.clear();
+
+        if (auto wnd = static_cast<const WindowEventArgs&>(args).window)
+        {
+            // Context fields will be cleared in removeChild -> onWindowDetached
+            if (wnd->getParent())
+                wnd->getParent()->removeChild(wnd);
+
+            // NB: resetting a text is important for triggering auto-sizing for certain tooltip widgets.
+            // If we had kept the text, it may match the next one and EventTextChanged wouldn't happen.
+            wnd->setText(String::GetEmpty());
+        }
+    }));
+
+    tooltipWnd->hide(force);
+
+    WindowEventArgs args(tooltipWnd);
+    fireEvent(EventTooltipInactive, args, EventNamespace);
+}
+
+//----------------------------------------------------------------------------//
+void GUIContext::positionTooltip()
+{
+    if (!d_tooltipWindow)
+        return;
+
+    glm::vec2 pos = d_cursor.getPosition();
+    if (auto cursorImage = d_cursor.getImage())
+    {
+        pos.x += cursorImage->getRenderedSize().d_width;
+        pos.y += cursorImage->getRenderedSize().d_height;
+    }
+
+    const Rectf tipRect(pos, d_tooltipWindow->getUnclippedOuterRect().get().getSize());
+
+    // if the tooltip would be off more at the right side of the screen,
+    // reposition to the other side of the cursor.
+    if (d_surfaceSize.d_width - tipRect.right() < tipRect.left() - tipRect.getWidth())
+        pos.x = d_cursor.getPosition().x - tipRect.getWidth() - 5;
+
+    // if the tooltip would be off more at the bottom side of the screen,
+    // reposition to the other side of the cursor.
+    if (d_surfaceSize.d_height - tipRect.bottom() < tipRect.top() - tipRect.getHeight())
+        pos.y = d_cursor.getPosition().y - tipRect.getHeight() - 5;
+
+    // prevent being cut off at edges
+    pos.x = std::max(0.0f, std::min(pos.x, d_surfaceSize.d_width - tipRect.getWidth()));
+    pos.y = std::max(0.0f, std::min(pos.y, d_surfaceSize.d_height - tipRect.getHeight()));
+
+    // set final position of tooltip window.
+    d_tooltipWindow->setPosition(UVector2(cegui_absdim(pos.x), cegui_absdim(pos.y)));
+}
+
+//----------------------------------------------------------------------------//
+void GUIContext::updateTooltipState(float timeElapsed)
+{
+    // TODO: allow creating nonstandard tooltips without specifying the text?
+    const bool needTooltip = d_tooltipSource &&
+        d_tooltipSource->isTooltipEnabled() &&
+        !d_tooltipSource->getTooltipTextIncludingInheritance().empty();
+
+    if (!needTooltip)
+    {
+        hideTooltip(true);
+        d_tooltipSource = nullptr;
+        return;
+    }
+
+    d_tooltipTimer += timeElapsed;
+    if (d_tooltipWindow)
+    {
+        // Don't update while hidden, e.g. by holding the mouse button
+        if (!d_tooltipWindow->isVisible())
+            return;
+
+        // TODO: add an option to calculate d_tooltipDisplayTime from text? avgTextReadingTime(lang, text)
+        if (d_tooltipDisplayTime > 0.f && d_tooltipTimer >= d_tooltipDisplayTime)
+        {
+            hideTooltip(false);
+            d_tooltipTimer = 0.f;
+            d_tooltipSource = nullptr;
+        }
+        else
+        {
+            // Update the tooltip if its type has changed on the fly
+            const String& tooltipType = !d_tooltipSource->getTooltipType().empty() ?
+                d_tooltipSource->getTooltipType() :
+                d_defaultTooltipType;
+
+            if (d_tooltipWindow->getType() != tooltipType)
+            {
+                hideTooltip(true);
+                showTooltip(true);
+            }
+        }
+    }
+    else if (d_tooltipTimer >= d_tooltipHoverTime)
+    {
+        d_tooltipTimer = 0.f;
+        showTooltip(false);
+    }
+}
+
+//----------------------------------------------------------------------------//
+void GUIContext::updateInputAutoRepeating(float timeElapsed)
+{
+    if (!d_captureWindow || d_repeatPointerSource == CursorInputSource::NotSpecified)
+        return;
+
+    const float repeatRate = d_captureWindow->getAutoRepeatRate();
+
+    // Stop auto-repeating if the window wants it no more
+    if (!d_captureWindow->isCursorAutoRepeatEnabled() || repeatRate <= 0.f)
+    {
+        releaseInputCapture(true);
+        return;
+    }
+
+    d_repeatElapsed += timeElapsed;
+
+    if (!d_repeating)
+    {
+        if (d_repeatElapsed < d_captureWindow->getAutoRepeatDelay())
+            return;
+
+        d_repeating = true;
+        d_repeatElapsed = repeatRate;
+    }
+    else if (d_repeatElapsed < repeatRate)
+        return;
+
+    CursorInputEventArgs ciea(d_captureWindow);
+    ciea.position = d_captureWindow->getUnprojectedPosition(d_cursor.getPosition());
+    ciea.source = d_repeatPointerSource;
+
+    do
+    {
+        ciea.handled = 0;
+        d_captureWindow->onCursorPressHold(ciea);
+        d_repeatElapsed -= repeatRate;
+    }
+    while (d_repeatElapsed >= repeatRate);
+}
+
+//----------------------------------------------------------------------------//
+Window* GUIContext::getTargetWindow(const glm::vec2& pt, bool allow_disabled) const
 {
     // if there is no GUI sheet visible, then there is nowhere to send input
     if (!d_rootWindow || !d_rootWindow->isEffectiveVisible())
         return nullptr;
 
-    Window* dest_window = d_captureWindow;
-
-    if (!dest_window)
+    Window* destWnd;
+    if (d_captureWindow)
     {
-        dest_window = d_rootWindow->
-            getTargetChildAtPosition(pt, allow_disabled);
-
-        if (!dest_window)
-            dest_window = d_rootWindow;
+        destWnd = d_captureWindow;
+        if (destWnd->distributesCapturedInputs())
+            if (auto childWnd = destWnd->getTargetChildAtPosition(pt, allow_disabled))
+                destWnd = childWnd;
     }
     else
     {
-        if (dest_window->distributesCapturedInputs())
-        {
-            Window* child_window = dest_window->
-                getTargetChildAtPosition(pt, allow_disabled);
-
-            if (child_window)
-                dest_window = child_window;
-        }
+        destWnd = d_rootWindow->getTargetChildAtPosition(pt, allow_disabled);
+        if (!destWnd)
+            destWnd = d_rootWindow;
     }
 
     // modal target overrules
-    if (d_modalWindow && dest_window != d_modalWindow)
-        if (!dest_window->isAncestor(d_modalWindow))
-            dest_window = d_modalWindow;
+    if (destWnd->isInHierarchyOf(d_modalWindow))
+        destWnd = d_modalWindow;
 
-    return dest_window;
+    return destWnd;
 }
 
 //----------------------------------------------------------------------------//
 Window* GUIContext::getInputTargetWindow() const
 {
-    // if no active sheet, there is no target widow.
+    // if no active sheet, there is no target window.
     if (!d_rootWindow || !d_rootWindow->isEffectiveVisible())
         return nullptr;
 
-    // handle normal non-modal situations
-    if (!d_modalWindow)
-        return d_rootWindow->getActiveChild();
+    if (d_captureWindow)
+        return (d_activeWindow && d_activeWindow->isInHierarchyOf(d_captureWindow)) ? d_activeWindow : d_captureWindow;
 
-    // handle possible modal window.
-    Window* const target = d_modalWindow->getActiveChild();
-    return target ? target : d_modalWindow;
+    return d_activeWindow ? d_activeWindow : d_modalWindow;
 }
 
 //----------------------------------------------------------------------------//
 bool GUIContext::injectInputEvent(const InputEvent& event)
 {
     if (event.d_eventType == InputEventType::TextInputEventType)
-        return handleTextInputEvent(static_cast<const TextInputEvent&>(event));
-
-    if (event.d_eventType == InputEventType::SemanticInputEventType)
     {
-        const SemanticInputEvent& semantic_event =
-            static_cast<const SemanticInputEvent&>(event);
+        if (Window* targetWindow = getInputTargetWindow())
+        {
+            TextEventArgs args(targetWindow);
+            args.d_character = static_cast<const TextInputEvent&>(event).d_character;
+            targetWindow->onCharacter(args);
+            return args.handled != 0;
+        }
+    }
+    else if (event.d_eventType == InputEventType::SemanticInputEventType)
+    {
+        auto& semantic_event = static_cast<const SemanticInputEvent&>(event);
 
-        if (d_windowNavigator != nullptr)
-            d_windowNavigator->handleSemanticEvent(semantic_event);
+        // Dispatch to a handler if we have one
+        auto it = d_semanticEventHandlers.find(semantic_event.d_value);
+        if (it != d_semanticEventHandlers.end())
+            return (*(*it).second)(semantic_event);
 
-        return handleSemanticInputEvent(semantic_event);
+        // Send a raw event
+        if (Window* targetWindow = getInputTargetWindow())
+        {
+            SemanticEventArgs args(targetWindow);
+            args.d_payload = semantic_event.d_payload;
+            args.d_semanticValue = semantic_event.d_value;
+            targetWindow->onSemanticInputEvent(args);
+            if (args.handled)
+                return true;
+        }
+
+        // Try to process an event in a window navigator
+        if (d_windowNavigator)
+        {
+            // Activate a window. Treat as a handling action if there were changes in Z-order.
+            auto newWnd = d_windowNavigator->getWindow(d_activeWindow, semantic_event.d_value);
+            if (setActiveWindow(newWnd, d_moveToFrontOnActivateAllowed && newWnd && newWnd->isRiseOnCursorActivationEnabled()))
+                return true;
+        }
     }
 
     return false;
@@ -500,16 +794,18 @@ bool GUIContext::injectInputEvent(const InputEvent& event)
 //----------------------------------------------------------------------------//
 bool GUIContext::injectTimePulse(float timeElapsed)
 {
-    // if no visible active sheet, input can't be handled
+    // If no visible active sheet, input can't be handled
     if (!d_rootWindow || !d_rootWindow->isEffectiveVisible())
         return false;
 
-    // ensure window containing cursor is now valid
+    // Ensure window containing cursor is now valid
     getWindowContainingCursor();
 
-    // else pass to sheet for distribution.
+    updateTooltipState(timeElapsed);
+    updateInputAutoRepeating(timeElapsed);
+
+    // Pass to sheet for distribution. This input is then /always/ considered handled.
     d_rootWindow->update(timeElapsed);
-    // this input is then /always/ considered handled.
     return true;
 }
 
@@ -557,7 +853,6 @@ void GUIContext::setRenderTarget(RenderTarget& target)
     RenderTarget* const old_target = d_target;
     d_target = &target;
 
-    d_areaChangedEventConnection.disconnect();
     d_areaChangedEventConnection = d_target->subscribeEvent(
             RenderTarget::EventAreaChanged,
             Event::Subscriber(&GUIContext::areaChangedHandler, this));
@@ -566,31 +861,28 @@ void GUIContext::setRenderTarget(RenderTarget& target)
     areaChangedHandler(area_args);
 
     GUIContextRenderTargetEventArgs change_args(this, old_target);
-    onRenderTargetChanged(change_args);
-}
-
-//----------------------------------------------------------------------------//
-void GUIContext::onRenderTargetChanged(GUIContextRenderTargetEventArgs& args)
-{
-    fireEvent(EventRenderTargetChanged, args, EventNamespace);
+    fireEvent(EventRenderTargetChanged, change_args, EventNamespace);
 }
 
 //----------------------------------------------------------------------------//
 void GUIContext::setDefaultFont(const String& name)
 {
-    if (name.empty())
-        setDefaultFont(nullptr);
-    else
-        setDefaultFont(&FontManager::getSingleton().get(name));
+    setDefaultFont(name.empty() ? nullptr  : &FontManager::getSingleton().get(name));
 }
 
 //----------------------------------------------------------------------------//
 void GUIContext::setDefaultFont(Font* font)
 {
+    if (d_defaultFont == font)
+        return;
+
     d_defaultFont = font;
 
+    if (d_rootWindow)
+        d_rootWindow->notifyDefaultFontChanged();
+
     EventArgs args;
-    onDefaultFontChanged(args);
+    fireEvent(EventDefaultFontChanged, args, EventNamespace);
 }
 
 //----------------------------------------------------------------------------//
@@ -599,68 +891,10 @@ Font* GUIContext::getDefaultFont() const
     if (d_defaultFont)
         return d_defaultFont;
 
-    // if no explicit default, we will return the first font we can get from
-    // the font manager
-    const FontManager::FontRegistry& registeredFonts = FontManager::getSingleton().getRegisteredFonts();
-
-    FontManager::FontRegistry::const_iterator iter = registeredFonts.begin();
-
-    return (iter != registeredFonts.end()) ? iter->second : 0;
-}
-
-//----------------------------------------------------------------------------//
-void GUIContext::onDefaultFontChanged(EventArgs& args)
-{
-    if (d_rootWindow)
-        d_rootWindow->notifyDefaultFontChanged();
-
-    fireEvent(EventDefaultFontChanged, args, EventNamespace);
-}
-
-//----------------------------------------------------------------------------//
-bool GUIContext::handleTextInputEvent(const TextInputEvent& event)
-{
-    TextEventArgs args(getInputTargetWindow());
-
-    // if there's no destination window, input can't be handled.
-    if (!args.window)
-        return false;
-
-    args.d_character = event.d_character;
-
-    args.window->onCharacter(args);
-    return args.handled != 0;
-}
-
-//----------------------------------------------------------------------------//
-bool GUIContext::handleSemanticInputEvent(const SemanticInputEvent& event)
-{
-    // dispatch to a handler if we have one
-    std::map<SemanticValue, SlotFunctorBase<InputEvent>*>::const_iterator itor =
-        d_semanticEventHandlers.find(event.d_value);
-    if (itor != d_semanticEventHandlers.end())
-    {
-        return (*(*itor).second)(event);
-    }
-
-    Window* targetWindow = getInputTargetWindow();
-    // window navigator's window takes precedence
-    if (d_windowNavigator != nullptr)
-        targetWindow = d_windowNavigator->getCurrentFocusedWindow();
-
-    if (targetWindow != nullptr)
-    {
-        SemanticEventArgs args(targetWindow);
-
-        args.d_payload = event.d_payload;
-        args.d_semanticValue = event.d_value;
-
-        args.window->onSemanticInputEvent(args);
-
-        return args.handled != 0;
-    }
-
-    return false;
+    // if no explicit default, return the first font we can get from the font manager
+    const auto& registeredFonts = FontManager::getSingleton().getRegisteredFonts();
+    auto iter = registeredFonts.cbegin();
+    return (iter != registeredFonts.end()) ? iter->second : nullptr;
 }
 
 //----------------------------------------------------------------------------//
@@ -706,204 +940,145 @@ void GUIContext::initializeSemanticEventHandlers()
 }
 
 //----------------------------------------------------------------------------//
-void GUIContext::deleteSemanticEventHandlers()
+bool GUIContext::handleCursorPressHoldEvent(const SemanticInputEvent& event)
 {
-    for (std::map<SemanticValue, SlotFunctorBase<InputEvent>*>::iterator itor = d_semanticEventHandlers.begin();
-        itor != d_semanticEventHandlers.end(); ++itor)
+    auto window = getTargetWindow(d_cursor.getPosition(), false);
+    if (!window)
+        return false;
+
+    if (d_tooltipWindow)
+        d_tooltipWindow->hide(true);
+
+    CursorInputEventArgs ciea(window);
+    ciea.position = ciea.window->getUnprojectedPosition(d_cursor.getPosition());
+    ciea.source = event.d_payload.source;
+
+    // Activate a window. Treat as a handling action if there were changes in Z-order.
+    if (ciea.source == CursorInputSource::Left)
+        if (setActiveWindow(window, d_moveToFrontOnActivateAllowed && window->isRiseOnCursorActivationEnabled()))
+            ++ciea.handled;
+
+    window->onCursorPressHold(ciea);
+
+    if (window->isCursorAutoRepeatEnabled())
     {
-        delete itor->second;
+        if (d_repeatPointerSource == CursorInputSource::NotSpecified)
+            captureInput(window);
+
+        if (d_repeatPointerSource != ciea.source && d_captureWindow == window)
+        {
+            d_repeatPointerSource = ciea.source;
+            d_repeatElapsed = 0.f;
+            d_repeating = false;
+        }
     }
+
+    return ciea.handled != 0;
 }
 
 //----------------------------------------------------------------------------//
 bool GUIContext::handleCursorActivateEvent(const SemanticInputEvent& event)
 {
-    CursorInputEventArgs ciea(nullptr);
-    ciea.position = d_cursor.getPosition();
-    ciea.moveDelta = glm::vec2(0, 0);
-    ciea.source = event.d_payload.source;
-    ciea.scroll = 0;
-    ciea.window = getTargetWindow(ciea.position, false);
-    // make cursor position sane for this target window
-    if (ciea.window)
-        ciea.position = ciea.window->getUnprojectedPosition(ciea.position);
-
-    // if there is no target window, input can not be handled.
-    if (!ciea.window)
+    auto window = getTargetWindow(d_cursor.getPosition(), false);
+    if (!window)
         return false;
 
-    if (d_windowNavigator != nullptr)
-        d_windowNavigator->setCurrentFocusedWindow(ciea.window);
+    if (d_tooltipWindow)
+    {
+        d_tooltipWindow->show(true);
+        d_tooltipTimer = 0.f;
+    }
 
-    ciea.window->onCursorActivate(ciea);
-    return ciea.handled != 0;
-}
+    if (d_repeatPointerSource != CursorInputSource::NotSpecified)
+        releaseInputCapture(true, window);
 
-//----------------------------------------------------------------------------//
-bool GUIContext::handleCursorPressHoldEvent(const SemanticInputEvent& event)
-{
-    CursorInputEventArgs ciea(nullptr);
-    ciea.position = d_cursor.getPosition();
-    ciea.moveDelta = glm::vec2(0, 0);
+    CursorInputEventArgs ciea(window);
+    ciea.position = ciea.window->getUnprojectedPosition(d_cursor.getPosition());
     ciea.source = event.d_payload.source;
-    ciea.scroll = 0;
-    ciea.window = getTargetWindow(ciea.position, false);
-    // make cursor position sane for this target window
-    if (ciea.window)
-        ciea.position = ciea.window->getUnprojectedPosition(ciea.position);
-
-    // if there is no target window, input can not be handled.
-    if (!ciea.window)
-        return false;
-
-    if (d_windowNavigator != nullptr)
-        d_windowNavigator->setCurrentFocusedWindow(ciea.window);
-
-    ciea.window->onCursorPressHold(ciea);
+    window->onCursorActivate(ciea);
     return ciea.handled != 0;
 }
 
 //----------------------------------------------------------------------------//
 bool GUIContext::handleSelectWord(const SemanticInputEvent& event)
 {
-    CursorInputEventArgs ciea(nullptr);
-    ciea.position = d_cursor.getPosition();
-    ciea.moveDelta = glm::vec2(0, 0);
-    ciea.source = event.d_payload.source;
-    ciea.scroll = 0;
-    ciea.window = getTargetWindow(ciea.position, false);
-    // make cursor position sane for this target window
-    if (ciea.window)
-        ciea.position = ciea.window->getUnprojectedPosition(ciea.position);
-
-    // if there is no target window, input can not be handled.
-    if (!ciea.window)
+    auto window = getTargetWindow(d_cursor.getPosition(), false);
+    if (!window)
         return false;
 
-    if (d_windowNavigator != nullptr)
-        d_windowNavigator->setCurrentFocusedWindow(ciea.window);
-
-    ciea.window->onSelectWord(ciea);
+    CursorInputEventArgs ciea(window);
+    ciea.position = window->getUnprojectedPosition(d_cursor.getPosition());
+    ciea.source = event.d_payload.source;
+    window->onSelectWord(ciea);
     return ciea.handled != 0;
 }
 
 //----------------------------------------------------------------------------//
 bool GUIContext::handleSelectAll(const SemanticInputEvent& event)
 {
-    CursorInputEventArgs ciea(nullptr);
-    ciea.position = d_cursor.getPosition();
-    ciea.moveDelta = glm::vec2(0, 0);
-    ciea.source = event.d_payload.source;
-    ciea.scroll = 0;
-    ciea.window = getTargetWindow(ciea.position, false);
-    // make cursor position sane for this target window
-    if (ciea.window)
-        ciea.position = ciea.window->getUnprojectedPosition(ciea.position);
-
-    // if there is no target window, input can not be handled.
-    if (!ciea.window)
+    auto window = getTargetWindow(d_cursor.getPosition(), false);
+    if (!window)
         return false;
 
-    if (d_windowNavigator != nullptr)
-        d_windowNavigator->setCurrentFocusedWindow(ciea.window);
-
-    ciea.window->onSelectAll(ciea);
+    CursorInputEventArgs ciea(window);
+    ciea.position = window->getUnprojectedPosition(d_cursor.getPosition());
+    ciea.source = event.d_payload.source;
+    window->onSelectAll(ciea);
     return ciea.handled != 0;
 }
 
 //----------------------------------------------------------------------------//
 bool GUIContext::handleScrollEvent(const SemanticInputEvent& event)
 {
-    CursorInputEventArgs ciea(nullptr);
-    ciea.position = d_cursor.getPosition();
-    ciea.moveDelta = glm::vec2(0, 0);
-    ciea.source = CursorInputSource::NotSpecified;
+    auto window = getTargetWindow(d_cursor.getPosition(), false);
+    if (!window)
+        return false;
+
+    CursorInputEventArgs ciea(window);
+    ciea.position = window->getUnprojectedPosition(d_cursor.getPosition());
     ciea.scroll = event.d_payload.single;
-    ciea.window = getTargetWindow(ciea.position, false);
-    // make cursor position sane for this target window
-    if (ciea.window)
-        ciea.position = ciea.window->getUnprojectedPosition(ciea.position);
-
-    // if there is no target window, input can not be handled.
-    if (!ciea.window)
-        return false;
-
-    ciea.window->onScroll(ciea);
+    window->onScroll(ciea);
     return ciea.handled != 0;
-}
-
-//----------------------------------------------------------------------------//
-bool GUIContext::handleCursorMove_impl(CursorInputEventArgs& pa)
-{
-    updateWindowContainingCursor();
-
-    // input can't be handled if there is no window to handle it.
-    if (!getWindowContainingCursor())
-        return false;
-
-    // make cursor position sane for this target window
-    pa.position = getWindowContainingCursor()->getUnprojectedPosition(pa.position);
-    // inform window about the input.
-    pa.window = getWindowContainingCursor();
-    pa.handled = 0;
-    pa.window->onCursorMove(pa);
-
-    // return whether window handled the input.
-    return pa.handled != 0;
 }
 
 //----------------------------------------------------------------------------//
 bool GUIContext::handleCursorMoveEvent(const SemanticInputEvent& event)
 {
-    const glm::vec2 new_position(
-        event.d_payload.array[0],
-        event.d_payload.array[1]);
+    const glm::vec2 newPos(event.d_payload.array[0], event.d_payload.array[1]);
+    const glm::vec2 moveDelta = newPos - d_cursor.getPosition();
 
-    // setup cursor movement event args object.
-    CursorInputEventArgs ciea(nullptr);
-    ciea.moveDelta = new_position - d_cursor.getPosition();
-
-    // no movement means no event
-    if ((ciea.moveDelta.x == 0) && (ciea.moveDelta.y == 0))
+    // No movement means no event
+    if (moveDelta.x == 0 && moveDelta.y == 0)
         return false;
 
-    ciea.scroll = 0;
-    ciea.source = CursorInputSource::NotSpecified;
+    // Move cursor to new position. Constraining is possible inside.
+    d_cursor.setPosition(newPos);
+
+    // Delay tooltip appearance
+    if (!d_tooltipWindow)
+        d_tooltipTimer = 0.f;
+    else if (d_tooltipFollowsCursor)
+        positionTooltip();
+
+    // Update window under cursor and use it as an event receiver
+    d_windowContainingCursorIsUpToDate = false;
+    auto window = getWindowContainingCursor();
+    if (!window)
+        return false;
+
+    CursorInputEventArgs ciea(window);
+    ciea.moveDelta = moveDelta;
     ciea.state = d_cursorsState;
-
-    // move cursor to new position
-    d_cursor.setPosition(new_position);
-    // update position in args (since actual position may be constrained)
-    ciea.position = d_cursor.getPosition();
-
-    return handleCursorMove_impl(ciea);
+    ciea.position = window->getUnprojectedPosition(d_cursor.getPosition());
+    window->onCursorMove(ciea);
+    return ciea.handled != 0;
 }
 
 //----------------------------------------------------------------------------//
 bool GUIContext::handleCursorLeave(const SemanticInputEvent&)
 {
-    if (!getWindowContainingCursor())
-        return false;
-
-    CursorInputEventArgs ciea(nullptr);
-    ciea.position = getWindowContainingCursor()->getUnprojectedPosition(
-        d_cursor.getPosition());
-    ciea.moveDelta = glm::vec2(0, 0);
-    ciea.source = CursorInputSource::NotSpecified;
-    ciea.scroll = 0;
-    ciea.window = getWindowContainingCursor();
-
-    getWindowContainingCursor()->onCursorLeaves(ciea);
-    resetWindowContainingCursor();
-
-    return ciea.handled != 0;
-}
-
-//----------------------------------------------------------------------------//
-void GUIContext::setWindowNavigator(WindowNavigator* navigator)
-{
-    d_windowNavigator = navigator;
+    updateWindowContainingCursor_impl(nullptr);
+    return true;
 }
 
 }
-

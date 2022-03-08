@@ -29,6 +29,7 @@
 
 #include "../VerticalAlignment.h"
 #include "../HorizontalAlignment.h"
+#include "../text/DefaultParagraphDirection.h"
 #include "../Exceptions.h"
 #include "CEGUI/falagard/Enums.h"
 
@@ -372,29 +373,28 @@ public:
     {
         switch (val)
         {
-        case HorizontalTextFormatting::RightAligned:
-            return RightAligned;
+            case HorizontalTextFormatting::RightAligned:
+                return RightAligned;
+            case HorizontalTextFormatting::CentreAligned:
+                return CentreAligned;
+            case HorizontalTextFormatting::Justified:
+                return Justified;
+            case HorizontalTextFormatting::Bidi:
+                return Bidi;
 
-        case HorizontalTextFormatting::CentreAligned:
-            return CentreAligned;
+            // TODO: deprecated, remove later when users migrate their data
+            case HorizontalTextFormatting::WordWrapLeftAligned:
+                return WordWrapLeftAligned;
+            case HorizontalTextFormatting::WordWrapCentreAligned:
+                return WordWrapCentreAligned;
+            case HorizontalTextFormatting::WordWrapRightAligned:
+                return WordWrapRightAligned;
+            case HorizontalTextFormatting::WordWrapJustified:
+                return WordWrapJustified;
+            ////////////////////////////////////////////////////////////////
 
-        case HorizontalTextFormatting::Justified:
-            return Justified;
-
-        case HorizontalTextFormatting::WordWrapLeftAligned:
-            return WordWrapLeftAligned;
-
-        case HorizontalTextFormatting::WordWrapRightAligned:
-            return WordWrapRightAligned;
-
-        case HorizontalTextFormatting::WordWrapCentreAligned:
-            return WordWrapCentreAligned;
-
-        case HorizontalTextFormatting::WordWraperJustified:
-            return WordWrapJustified;
-
-        default:
-            return LeftAligned;
+            default:
+                return LeftAligned;
         }
     }
 
@@ -402,24 +402,23 @@ public:
     {
         if (str == CentreAligned)
             return HorizontalTextFormatting::CentreAligned;
-
         else if (str == RightAligned)
             return HorizontalTextFormatting::RightAligned;
-
         else if (str == Justified)
             return HorizontalTextFormatting::Justified;
+        else if (str == Bidi)
+            return HorizontalTextFormatting::Bidi;
 
+        // TODO: deprecated, remove later when users migrate their data
         else if (str == WordWrapLeftAligned)
             return HorizontalTextFormatting::WordWrapLeftAligned;
-
         else if (str == WordWrapCentreAligned)
             return HorizontalTextFormatting::WordWrapCentreAligned;
-
         else if (str == WordWrapRightAligned)
             return HorizontalTextFormatting::WordWrapRightAligned;
-
         else if (str == WordWrapJustified)
-            return HorizontalTextFormatting::WordWraperJustified;
+            return HorizontalTextFormatting::WordWrapJustified;
+        ////////////////////////////////////////////////////////////////
 
         else
             return HorizontalTextFormatting::LeftAligned;
@@ -430,10 +429,48 @@ public:
     static const CEGUI::String CentreAligned;
     static const CEGUI::String RightAligned;
     static const CEGUI::String Justified;
+    static const CEGUI::String Bidi;
+
+    // TODO: deprecated, remove later when users migrate their data
     static const CEGUI::String WordWrapLeftAligned;
     static const CEGUI::String WordWrapRightAligned;
     static const CEGUI::String WordWrapCentreAligned;
     static const CEGUI::String WordWrapJustified;
+};
+
+template<>
+class CEGUIEXPORT FalagardXMLHelper<DefaultParagraphDirection>
+{
+public:
+    typedef DefaultParagraphDirection return_type;
+    typedef DefaultParagraphDirection pass_type;
+
+    static return_type fromString(const String& str)
+    {
+        if (str == "RightToLeft")
+        {
+            return DefaultParagraphDirection::RightToLeft;
+        }
+
+        if (str == "Automatic")
+        {
+            return DefaultParagraphDirection::Automatic;
+        }
+
+        return DefaultParagraphDirection::LeftToRight;
+    }
+
+    static String toString(pass_type val)
+    {
+        if (val == DefaultParagraphDirection::LeftToRight)
+            return "LeftToRight";
+        else if (val == DefaultParagraphDirection::RightToLeft)
+            return "RightToLeft";
+        else if (val == DefaultParagraphDirection::Automatic)
+            return "Automatic";
+        else
+            return "LeftToRight";
+    }
 };
 
 template<>
@@ -763,8 +800,33 @@ public:
 
     static const String& getDataTypeName()
     {
-        static String type("HorizontalTextFormatting");
+        static const String type("HorizontalTextFormatting");
+        return type;
+    }
 
+    static return_type fromString(const String& str)
+    {
+        return FalagardXMLHelper<return_type>::fromString(str);
+    }
+
+    static string_return_type toString(pass_type val)
+    {
+        return FalagardXMLHelper<return_type>::toString(val);
+    }
+};
+
+template<>
+class CEGUIEXPORT PropertyHelper<DefaultParagraphDirection>
+{
+public:
+    typedef DefaultParagraphDirection return_type;
+    typedef return_type safe_method_return_type;
+    typedef DefaultParagraphDirection pass_type;
+    typedef String string_return_type;
+
+    static const String& getDataTypeName()
+    {
+        static const String type("DefaultParagraphDirection");
         return type;
     }
 

@@ -8,18 +8,18 @@ find_package(Fribidi QUIET)
 find_package(Harfbuzz QUIET)
 
 
-find_path(RAQM_H_PATH NAMES raqm.h PATH_SUFFIXES libraqm/src)
-find_library(RAQM_LIB NAMES raqm PATH_SUFFIXES dynamic)
-find_library(RAQM_LIB_DBG NAMES raqm_d PATH_SUFFIXES dynamic)
+find_path(RAQM_H_PATH NAMES raqm.h PATH_SUFFIXES raqm)
+find_library(RAQM_LIB NAMES raqm PATH_SUFFIXES dynamic/${CEGUI_ARCH_SUFFIX})
+find_library(RAQM_LIB_DBG NAMES raqm_d PATH_SUFFIXES dynamic/${CEGUI_ARCH_SUFFIX})
 mark_as_advanced(RAQM_H_PATH RAQM_LIB RAQM_LIB_DBG)
 
 if (WIN32 OR APPLE)
-    find_library(RAQM_LIB_STATIC NAMES raqm PATH_SUFFIXES static)
-    find_library(RAQM_LIB_DBG_STATIC NAMES raqm_d PATH_SUFFIXES static)
+    find_library(RAQM_LIB_STATIC NAMES raqm PATH_SUFFIXES static/${CEGUI_ARCH_SUFFIX})
+    find_library(RAQM_LIB_DBG_STATIC NAMES raqm_d PATH_SUFFIXES static/${CEGUI_ARCH_SUFFIX})
     mark_as_advanced(RAQM_LIB_STATIC RAQM_LIB_DBG_STATIC)
 endif ()
 
-cegui_find_package_handle_standard_args(raqm RAQM_LIB RAQM_H_PATH)
+cegui_find_package_handle_standard_args(Raqm RAQM_LIB RAQM_H_PATH)
 
 set(RAQM_DEPS_FOUND TRUE)
 

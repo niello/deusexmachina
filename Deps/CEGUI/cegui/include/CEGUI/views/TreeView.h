@@ -29,9 +29,10 @@
 #ifndef _CEGUITreeView_h_
 #define _CEGUITreeView_h_
 
+#include "CEGUI/views/ItemView.h"
 #include "CEGUI/EventArgs.h"
 #include "CEGUI/InputEvent.h"
-#include "CEGUI/views/ItemView.h"
+#include "CEGUI/text/RenderedText.h"
 #include <vector>
 
 #if defined (_MSC_VER)
@@ -84,6 +85,17 @@ public:
 class CEGUIEXPORT TreeViewItemRenderingState
 {
 public:
+
+    TreeViewItemRenderingState(TreeView* attached_tree_view);
+    TreeViewItemRenderingState(const TreeViewItemRenderingState&) = delete;
+    TreeViewItemRenderingState(TreeViewItemRenderingState&&) = default;
+
+    TreeViewItemRenderingState& operator =(const TreeViewItemRenderingState&) = delete;
+    TreeViewItemRenderingState& operator =(TreeViewItemRenderingState&&) = default;
+
+    bool operator <(const TreeViewItemRenderingState& other) const;
+    bool operator >(const TreeViewItemRenderingState& other) const;
+
     //! These children are rendered via the renderer. If sorting is enabled,
     //! this vector will be sorted.
     std::vector<TreeViewItemRenderingState*> d_renderedChildren;
@@ -95,7 +107,7 @@ public:
     String d_text;
     //! The name of the image that represents the icon
     String d_icon;
-    RenderedString d_string;
+    RenderedText d_renderedText;
     Sizef d_size;
     bool d_isSelected;
     ModelIndex d_parentIndex;
@@ -104,10 +116,6 @@ public:
     int d_nestedLevel;
 
     TreeView* d_attachedTreeView;
-
-    TreeViewItemRenderingState(TreeView* attached_tree_view);
-    bool operator< (const TreeViewItemRenderingState& other) const;
-    bool operator> (const TreeViewItemRenderingState& other) const;
 
 protected:
     //! Holds the unsorted children on which all tree operations are done.
@@ -184,7 +192,6 @@ protected:
 private:
     typedef void (TreeView::*TreeViewItemAction)(
         TreeViewItemRenderingState& item, bool toggles_expander);
-    typedef std::vector<TreeViewItemRenderingState> ItemStateVector;
 
     TreeViewItemRenderingState d_rootItemState;
     TreeViewItemRenderingState computeRenderingStateForIndex(

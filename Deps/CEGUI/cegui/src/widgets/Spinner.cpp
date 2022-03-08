@@ -27,6 +27,7 @@
 #include "CEGUI/widgets/Spinner.h"
 #include "CEGUI/widgets/PushButton.h"
 #include "CEGUI/widgets/Editbox.h"
+#include "CEGUI/GUIContext.h"
 #include "CEGUI/SharedStringStream.h"
 #include <iomanip>
 
@@ -267,7 +268,7 @@ String Spinner::getTextFromValue() const
 //----------------------------------------------------------------------------//
 void Spinner::onFontChanged(WindowEventArgs& e)
 {
-    getEditbox()->setFont(getActualFont());
+    getEditbox()->setFont(getEffectiveFont());
     Window::onFontChanged(e);
 }
 
@@ -291,14 +292,11 @@ void Spinner::onTextChanged(WindowEventArgs& e)
 //----------------------------------------------------------------------------//
 void Spinner::onActivated(ActivationEventArgs& e)
 {
-    if (!isActive())
-    {
-        Window::onActivated(e);
+    Window::onActivated(e);
 
-        Editbox* editbox = getEditbox();
-        if (!editbox->isActive())
-            editbox->activate();
-    }
+    // When receiving input focus, forward it to the editbox
+    if (isFocused())
+        getEditbox()->activate();
 }
 
 //----------------------------------------------------------------------------//
@@ -309,6 +307,27 @@ void Spinner::onScroll(CursorInputEventArgs& e)
     setCurrentValue(d_currentValue + d_stepSize * e.scroll);
     if (prevValue != d_currentValue)
         ++e.handled;
+}
+
+//----------------------------------------------------------------------------//
+void Spinner::onSemanticInputEvent(SemanticEventArgs& e)
+{
+    switch (e.d_semanticValue)
+    {
+        case SemanticValue::GoUp:
+            setCurrentValue(d_currentValue + d_stepSize);
+            getEditbox()->setCaretIndex(0);
+            ++e.handled;
+            return;
+
+        case SemanticValue::GoDown:
+            setCurrentValue(d_currentValue - d_stepSize);
+            getEditbox()->setCaretIndex(0);
+            ++e.handled;
+            return;
+    }
+
+    Window::onSemanticInputEvent(e);
 }
 
 //----------------------------------------------------------------------------//

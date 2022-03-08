@@ -200,7 +200,7 @@ public:
         ConstBaseIterator<T, typename T::mapped_type>(start_iter, end_iter)
     {}
 
-    typename const ConstBaseIterator<T, typename T::mapped_type>::value_type&
+    const typename ConstBaseIterator<T, typename T::mapped_type>::value_type&
     getCurrentValue() const override
     {
         return this->d_currIter->second;
@@ -210,7 +210,7 @@ public:
     \brief
         Return the key for the item at the current iterator position.
     */
-    typename T::key_type getCurrentKey() const
+    typename const T::key_type& getCurrentKey() const
     {
         return this->d_currIter->first;
     }
@@ -291,7 +291,7 @@ public:
         ConstBaseIterator<T>(start_iter, end_iter)
     {}
 
-    typename const ConstBaseIterator<T>::value_type&
+    const typename ConstBaseIterator<T>::value_type&
     getCurrentValue() const override
     {
         return *this->d_currIter;

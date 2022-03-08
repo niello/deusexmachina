@@ -8,6 +8,8 @@ using namespace CEGUI;
 #pragma GCC diagnostic ignored "-Wcast-function-type"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wunused-label"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#pragma GCC diagnostic ignored "-Wunused-variable"
 #endif
 %}
 
@@ -79,6 +81,8 @@ using namespace CEGUI;
 %}
 
 // events, poperty
+%ignore CEGUI::Event::final;
+%ignore CEGUI::final;
 %include "CEGUI/Event.h"
 %include "CEGUI/EventArgs.h"
 %include "CEGUI/EventSet.h"
@@ -123,7 +127,6 @@ using namespace CEGUI;
 
 // element and window
 %include "CEGUI/Element.h"
-%include "CEGUI/NamedElement.h"
 %include "CEGUI/Window.h"
 
 // some base classes (must be before derived classes)

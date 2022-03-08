@@ -200,7 +200,7 @@ bool Combobox::isReadOnly(void) const
 	return true if the Editbox text is valid given the currently set
 	validation string.
 *************************************************************************/
-Combobox::MatchState Combobox::getTextMatchState() const
+RegexMatchState Combobox::getTextMatchState() const
 {
 	return getEditbox()->getTextMatchState();
 }
@@ -218,7 +218,7 @@ const String& Combobox::getValidationString(void) const
 /*************************************************************************
 	return the current position of the caret.
 *************************************************************************/
-size_t Combobox::getCaretIndex(void) const
+size_t Combobox::getCaretIndex() const
 {
 	return getEditbox()->getCaretIndex();
 }
@@ -923,33 +923,14 @@ void Combobox::addComboboxProperties(void)
     );
 }
 
-
-/*************************************************************************
-	Activate the edit box component of the Combobox.
-*************************************************************************/
-void Combobox::activateEditbox(void)
-{
-    Editbox* editbox = getEditbox();
-
-	if (!editbox->isActive())
-	{
-		editbox->activate();
-	}
-}
-
-
-
-/*************************************************************************
-	Widget activation handler
-*************************************************************************/
+//----------------------------------------------------------------------------//
 void Combobox::onActivated(ActivationEventArgs& e)
 {
-	if (!isActive())
-	{
-		Window::onActivated(e);
-		activateEditbox();
-	}
+	Window::onActivated(e);
 
+    // When receiving input focus, forward it to the editbox
+    if (isFocused())
+        getEditbox()->activate();
 }
 
 //----------------------------------------------------------------------------//

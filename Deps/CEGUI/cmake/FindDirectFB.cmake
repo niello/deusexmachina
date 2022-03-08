@@ -4,17 +4,17 @@
 include(FindPackageHandleStandardArgs)
 
 find_path(DIRECTFB_H_PATH NAMES directfb.h PATH_SUFFIXES directfb)
-find_library(DIRECTFB_LIB NAMES directfb PATH_SUFFIXES dynamic)
-find_library(DIRECTFB_LIB_DBG NAMES directfb_d PATH_SUFFIXES dynamic)
+find_library(DIRECTFB_LIB NAMES directfb PATH_SUFFIXES dynamic/${CEGUI_ARCH_SUFFIX})
+find_library(DIRECTFB_LIB_DBG NAMES directfb_d PATH_SUFFIXES dynamic/${CEGUI_ARCH_SUFFIX})
 mark_as_advanced(DIRECTFB_H_PATH DIRECTFB_LIB DIRECTFB_LIB_DBG)
 
 if (WIN32)
-    find_library(DIRECTFB_LIB_STATIC NAMES directfb PATH_SUFFIXES static)
-    find_library(DIRECTFB_LIB_STATIC_DBG NAMES directfb_d PATH_SUFFIXES static)
+    find_library(DIRECTFB_LIB_STATIC NAMES directfb PATH_SUFFIXES static/${CEGUI_ARCH_SUFFIX})
+    find_library(DIRECTFB_LIB_STATIC_DBG NAMES directfb_d PATH_SUFFIXES static/${CEGUI_ARCH_SUFFIX})
     mark_as_advanced(DIRECTFB_LIB_STATIC DIRECTFB_LIB_STATIC_DBG)
 endif()
 
-cegui_find_package_handle_standard_args(DIRECTFB DIRECTFB_LIB DIRECTFB_H_PATH)
+cegui_find_package_handle_standard_args(DirectFB DIRECTFB_LIB DIRECTFB_H_PATH)
 
 
 # set up output vars

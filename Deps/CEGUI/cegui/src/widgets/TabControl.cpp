@@ -29,7 +29,7 @@
 #include "CEGUI/widgets/TabControl.h"
 #include "CEGUI/widgets/TabButton.h"
 #include "CEGUI/widgets/PushButton.h"
-#include "CEGUI/Font.h"
+#include "CEGUI/text/Font.h"
 #include "CEGUI/WindowManager.h"
 #include "CEGUI/CoordConverter.h"
 #include "CEGUI/Logger.h"
@@ -261,7 +261,7 @@ void TabControl::addTab(Window* wnd)
 
 	// when adding the 1st page, autosize tab pane height
     if (d_tabHeight.d_scale == 0 && d_tabHeight.d_offset == -1)
-        d_tabHeight.d_offset = 8 + getActualFont()->getFontHeight ();
+        d_tabHeight.d_offset = 8 + getEffectiveFont()->getFontHeight();
 
     // Just request redraw
     performChildLayout(false, false);
@@ -298,7 +298,7 @@ void TabControl::addButtonForTabContent(Window* wnd)
     // Create the button
     TabButton* tb = createTabButton(makeButtonName(wnd));
     // Copy font
-    tb->setFont(getActualFont());
+    tb->setFont(getEffectiveFont());
     // Set target window
     tb->setTargetWindow(wnd);
     // Instert into map
@@ -507,7 +507,7 @@ void TabControl::onFontChanged(WindowEventArgs&)
     // Propagate font change to buttons
     for (size_t i = 0; i < d_tabButtonVector.size(); ++i)
     {
-        d_tabButtonVector[i]->setFont(getActualFont());
+        d_tabButtonVector[i]->setFont(getEffectiveFont());
         calculateTabButtonSizePosition(i);
     }
 }
@@ -517,55 +517,41 @@ void TabControl::onFontChanged(WindowEventArgs&)
 void TabControl::calculateTabButtonSizePosition(size_t index)
 {
     TabButton* btn = d_tabButtonVector[index];
-    // relative height is always 1.0 for buttons since they are embedded in a
-    // panel of the correct height already
-    UVector2 position(cegui_absdim(0.0f), cegui_absdim(0.0f));
-    USize size(cegui_absdim(0.0f), cegui_reldim(1.0f));
 
     // x position is based on previous button
-    if (!index)
-    {
-        // First button
-        position.d_x = cegui_absdim(d_firstTabOffset);
-    }
-    else
-    {
-        Window* prevButton = d_tabButtonVector [index - 1];
+    const UVector2 position(
+        index ? (d_tabButtonVector[index - 1]->getArea().d_max.d_x) : cegui_absdim(d_firstTabOffset),
+        cegui_absdim(0.0f));
 
-        // position is prev pos + width
-        position.d_x = prevButton->getArea().d_max.d_x;
-    }
+    // height is always 100% for buttons since they are embedded in a panel of the correct height already
+    const USize size(cegui_absdim(btn->getContentSize().d_width) + d_tabPadding + d_tabPadding, cegui_reldim(1.0f));
 
-    size.d_width =
-        cegui_absdim(btn->getRenderedString().getHorizontalExtent(btn)) +
-            getTabTextPadding() + getTabTextPadding();
+    btn->setArea(position, size);
 
-    btn->setPosition(position);
-    btn->setSize(size);
-
-    const float left_x = position.d_x.d_offset;
-    btn->setVisible ((left_x < getPixelSize ().d_width) &&
-                     (left_x + btn->getPixelSize ().d_width > 0));
+    const float x = position.d_x.d_offset;
+    btn->setVisible((x < getPixelSize().d_width) && (x + btn->getPixelSize().d_width > 0));
     btn->invalidate();
 }
 /*************************************************************************
 Layout the widgets
 *************************************************************************/
 void TabControl::performChildLayout(bool client, bool nonClient)
-
 {
+    if (d_initialising)
+        return;
+
     Window* tabButtonPane = getTabButtonPane();
     Window* tabContentPane = getTabPane();
 
     // Enable top/bottom edges of the tabPane control, if supported by looknfeel
-    if (tabContentPane->isPropertyPresent (EnableTop))
-        tabContentPane->setProperty (EnableTop, (d_tabPanePos == TabPanePosition::Top) ? n0 : n1);
-    if (tabContentPane->isPropertyPresent (EnableBottom))
-        tabContentPane->setProperty (EnableBottom, (d_tabPanePos == TabPanePosition::Top) ? n1 : n0);
-    if (tabButtonPane->isPropertyPresent (EnableTop))
-        tabButtonPane->setProperty (EnableTop, (d_tabPanePos == TabPanePosition::Top) ? n0 : n1);
-    if (tabButtonPane->isPropertyPresent (EnableBottom))
-        tabButtonPane->setProperty (EnableBottom, (d_tabPanePos == TabPanePosition::Top) ? n1 : n0);
+    if (tabContentPane->isPropertyPresent(EnableTop))
+        tabContentPane->setProperty(EnableTop, (d_tabPanePos == TabPanePosition::Top) ? n0 : n1);
+    if (tabContentPane->isPropertyPresent(EnableBottom))
+        tabContentPane->setProperty(EnableBottom, (d_tabPanePos == TabPanePosition::Top) ? n1 : n0);
+    if (tabButtonPane->isPropertyPresent(EnableTop))
+        tabButtonPane->setProperty(EnableTop, (d_tabPanePos == TabPanePosition::Top) ? n0 : n1);
+    if (tabButtonPane->isPropertyPresent(EnableBottom))
+        tabButtonPane->setProperty(EnableBottom, (d_tabPanePos == TabPanePosition::Top) ? n1 : n0);
 
     Window::performChildLayout(client, nonClient);
 
@@ -827,14 +813,14 @@ void TabControl::removeTab_impl(Window* window)
     invalidate();
 }
 
-NamedElement* TabControl::getChildByNamePath_impl(const String& name_path) const
+Window* TabControl::findChildByNamePath_impl(const String& name_path) const
 {
     // FIXME: This is horrible
     //
     if (name_path.substr(0, 7) == "__auto_")
-        return Window::getChildByNamePath_impl(name_path);
+        return Window::findChildByNamePath_impl(name_path);
     else
-        return Window::getChildByNamePath_impl(ContentPaneName + '/' + name_path);
+        return Window::findChildByNamePath_impl(ContentPaneName + '/' + name_path);
 }
 
 } // End of  CEGUI namespace section

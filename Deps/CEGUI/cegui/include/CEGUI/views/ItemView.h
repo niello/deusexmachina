@@ -169,7 +169,7 @@ class CEGUIEXPORT ItemView : public Window
 public:
     ItemView(const String& type, const String& name);
 
-    virtual ~ItemView();
+    virtual ~ItemView() override;
 
     static const Colour DefaultTextColour;
     static const Colour DefaultSelectionColour;
@@ -363,6 +363,7 @@ protected:
     bool d_needsFullRender;
     std::vector<ModelIndexSelectionState> d_indexSelectionStates;
     ModelIndex d_lastSelectedIndex;
+    ModelIndex d_lastHoveredIndex;
     const Image* d_selectionBrush;
     ScrollbarDisplayMode d_vertScrollbarDisplayMode;
     ScrollbarDisplayMode d_horzScrollbarDisplayMode;
@@ -375,6 +376,10 @@ protected:
     //TODO: move this into the renderer instead?
     float d_renderedMaxWidth;
     float d_renderedTotalHeight;
+
+    //!!!FIXME: remove duplication with TextComponent! And maybe move into renderer?!
+    //! helper to get a rendered string parser for the current window
+    TextParser* getTextParser() const;
 
     void addItemViewProperties();
     virtual void updateScrollbars();
@@ -418,7 +423,6 @@ protected:
     void disconnectModelEvents();
 
     void handleOnScroll(Scrollbar* scrollbar, float scroll);
-    void setupTooltip(glm::vec2 position);
     int getSelectedIndexPosition(const ModelIndex& index) const;
     virtual bool handleSelection(const glm::vec2& position, bool should_select,
         bool is_cumulative, bool is_range);

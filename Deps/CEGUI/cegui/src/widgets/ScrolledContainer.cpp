@@ -32,7 +32,6 @@
 #   pragma warning(disable : 4355)
 #endif
 
-// Start of CEGUI namespace section
 namespace CEGUI
 {
 //----------------------------------------------------------------------------//
@@ -44,17 +43,13 @@ ScrolledContainer::ScrolledContainer(const String& type, const String& name) :
     Window(type, name),
     d_childContentArea(this, static_cast<Element::CachedRectf::DataGenerator>(&ScrolledContainer::getChildContentArea_impl))
 {
+    setCursorPassThroughEnabled(true); // Improves swipe scrolling experience in a ScrollablePane
     setCursorInputPropagationEnabled(true);
-    setRiseOnClickEnabled(false);
+    setRiseOnCursorActivationEnabled(false);
 
     d_isWidthAdjustedToContent = true;
     d_isHeightAdjustedToContent = true;
     setSize(USize::zero());
-}
-
-//----------------------------------------------------------------------------//
-ScrolledContainer::~ScrolledContainer(void)
-{
 }
 
 //----------------------------------------------------------------------------//
@@ -269,29 +264,18 @@ void ScrolledContainer::cleanupChildren(void)
 }
 
 //----------------------------------------------------------------------------//
-uint8_t ScrolledContainer::handleAreaChanges(bool moved, bool sized)
+uint8_t ScrolledContainer::handleAreaChanges(bool movedOnScreen, bool movedInParent, bool sized)
 {
     // NB: inner rect is invalidated here because it depends on a parent and may
     // change even if our area didn't change. Window::handleAreaChanges doesn't
     // invalidate it in this case which may lead to inactual inner rect cache.
     d_childContentArea.invalidateCache();
     d_unclippedInnerRect.invalidateCache();
-    return Window::handleAreaChanges(moved, sized);
+    return Window::handleAreaChanges(movedOnScreen, movedInParent, sized);
 }
 
-//----------------------------------------------------------------------------//
-bool ScrolledContainer::moveToFront_impl(bool byClick)
-{
-    Window::moveToFront_impl(byClick);
-
-    // Improves swipe scrolling experience in a ScrollablePane
-    return false;
-}
-
-//----------------------------------------------------------------------------//
+} // End of  CEGUI namespace section
 
 #if defined(_MSC_VER)
 #   pragma warning(pop)
 #endif
-
-} // End of  CEGUI namespace section

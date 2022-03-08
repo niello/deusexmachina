@@ -1,4 +1,4 @@
-﻿/***********************************************************************
+/***********************************************************************
     created:    30th July 2013
     author:     Lukas Meindl
 *************************************************************************/
@@ -103,56 +103,31 @@ SVGData* SVGImage::getSVGData()
 }
 
 //----------------------------------------------------------------------------//
-std::vector<GeometryBuffer*> SVGImage::createRenderGeometry(
-    const ImageRenderSettings& render_settings) const
+void SVGImage::createRenderGeometry(std::vector<GeometryBuffer*>& out,
+    const ImageRenderSettings& renderSettings, size_t /*canCombineFromIdx*/) const
 {
-    Rectf dest(render_settings.d_destArea);
-    // apply rendering offset to the destination Rect
-    dest.offset(d_scaledOffset);
-
-    const CEGUI::Rectf*const&  clip_area = render_settings.d_clipArea;
-    // Calculate the actual (clipped) area to which we want to render to
-    Rectf final_rect(clip_area ? dest.getIntersection(*clip_area) : dest );
-
-    // check if our Image is totally clipped and return if it is
-    if ((final_rect.getWidth() == 0) || (final_rect.getHeight() == 0))
-        return std::vector<GeometryBuffer*>();
-
-    // Calculate the scale factor for our Image which is the scaling of the Image
-    // area to the destination area of our render call
-    const glm::vec2 scale_factor(dest.getWidth() / d_imageArea.getWidth(), dest.getHeight() / d_imageArea.getHeight());
-
-    // URGENT FIXME: Shouldn't this be in the hands of the user?
-    final_rect.d_min.x = CoordConverter::alignToPixels(final_rect.d_min.x);
-    final_rect.d_min.y = CoordConverter::alignToPixels(final_rect.d_min.y);
-    final_rect.d_max.x = CoordConverter::alignToPixels(final_rect.d_max.x);
-    final_rect.d_max.y = CoordConverter::alignToPixels(final_rect.d_max.y);
-
-    SVGImageRenderSettings svg_render_settings(render_settings,
-                                               scale_factor,
-                                               d_useGeometryAntialiasing);
-
-    std::vector<GeometryBuffer*> geometryBuffers;
-    const std::vector<SVGBasicShape*>& shapes = d_svgData->getShapes();
-    
-    for(SVGBasicShape* currentShape : shapes)
+    //!!!FIXME: not used for anything but early exit! Is it intended?!
     {
-        std::vector<GeometryBuffer*> currentRenderGeometry =
-            currentShape->createRenderGeometry(svg_render_settings);
+        Rectf dest = renderSettings.d_destArea;
+        dest.offset(d_scaledOffset);
 
-        geometryBuffers.insert(geometryBuffers.end(), currentRenderGeometry.begin(),
-            currentRenderGeometry.end());
+        if (renderSettings.d_clipArea)
+            dest = dest.getIntersection(*renderSettings.d_clipArea);
+
+        if (renderSettings.d_alignToPixels)
+            dest.round();
+
+        if (dest.empty())
+            return;
     }
 
-    return geometryBuffers;
-}
+    const glm::vec2 scaleImgToDest(renderSettings.d_destArea.getWidth() / d_imageArea.getWidth(),
+        renderSettings.d_destArea.getHeight() / d_imageArea.getHeight());
+    const SVGImageRenderSettings svgSettings(renderSettings, scaleImgToDest, d_useGeometryAntialiasing);
 
-void SVGImage::addToRenderGeometry(
-    GeometryBuffer&, const Rectf& /*renderArea*/,
-    const Rectf* /*clipArea*/, const ColourRect& /*colours*/
-    ) const
-{
-    throw std::runtime_error("not implemented");
+    // TODO: can use single buffer or at least combine something?
+    for (const SVGBasicShape* currentShape : d_svgData->getShapes())
+        currentShape->createRenderGeometry(out, svgSettings);
 }
 
 //----------------------------------------------------------------------------//

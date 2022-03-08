@@ -61,8 +61,10 @@ public:
         d_max(pos.x + size.d_width, pos.y + size.d_height)
     {}
 
-    Rectf(const Rectf& r) = default;
-    Rectf& operator =(const Rectf& rhs) = default;
+    Rectf(const Rectf&) = default;
+    Rectf(Rectf&&) noexcept = default;
+    Rectf& operator =(const Rectf&) = default;
+    Rectf& operator =(Rectf&&) noexcept = default;
 
     inline void left(float v)
     {
@@ -166,6 +168,24 @@ public:
         return d_max.y - d_min.y;
     }
 
+    inline void set(const glm::vec2& pos, const Sizef& size)
+    {
+        d_min.x = pos.x;
+        d_min.y = pos.y;
+        d_max.x = pos.x + size.d_width;
+        d_max.y = pos.y + size.d_height;
+    }
+
+    bool empty() const { return d_max.x <= d_min.x || d_max.y <= d_min.y; }
+
+    void round()
+    {
+        d_min.x = std::round(d_min.x);
+        d_min.y = std::round(d_min.y);
+        d_max.x = std::round(d_max.x);
+        d_max.y = std::round(d_max.y);
+    }
+
     /*!
     \    
         return a Rectf that is the intersection of 'this' Rectf with the Rectf 'rect'
@@ -198,6 +218,39 @@ public:
     }
 
     /*!
+    \brief
+        Intersects this rect with other rect in place
+
+    \return
+        Whether the rect was changed by an intersection
+    */
+    bool intersect(const Rectf& other)
+    {
+        bool changed = false;
+        if (d_min.x < other.d_min.x)
+        {
+            d_min.x = other.d_min.x;
+            changed = true;
+        }
+        if (d_min.y < other.d_min.y)
+        {
+            d_min.y = other.d_min.y;
+            changed = true;
+        }
+        if (d_max.x > other.d_max.x)
+        {
+            d_max.x = other.d_max.x;
+            changed = true;
+        }
+        if (d_max.y > other.d_max.y)
+        {
+            d_max.y = other.d_max.y;
+            changed = true;
+        }
+        return changed;
+    }
+
+    /*!
     \    
         Applies an offset the Rectf object
 
@@ -211,6 +264,14 @@ public:
     {
         d_min += v;
         d_max += v;
+    }
+
+    inline void offset(float x, float y)
+    {
+        d_min.x += x;
+        d_min.y += y;
+        d_max.x += x;
+        d_max.y += y;
     }
 
     /*!
@@ -339,15 +400,22 @@ public:
         return Rectf(d_min * scalar, d_max * scalar);
     }
 
-    inline Rectf operator*(glm::vec2 vector) const
+    inline Rectf operator*(const glm::vec2& vector) const
     {
         return Rectf(d_min * vector, d_max * vector);
     }
 
-    const Rectf& operator*=(float scalar)
+    Rectf& operator*=(float scalar)
     {
         d_min *= scalar;
         d_max *= scalar;
+        return *this;
+    }
+
+    Rectf& operator*=(const glm::vec2& vector)
+    {
+        d_min *= vector;
+        d_max *= vector;
         return *this;
     }
 
@@ -359,6 +427,13 @@ public:
     Rectf operator-(const Rectf& r) const
     {
         return Rectf(d_min - r.d_min, d_max - r.d_max);
+    }
+
+    Rectf& operator+=(const Rectf& r)
+    {
+        d_min += r.d_min;
+        d_max += r.d_max;
+        return *this;
     }
 
     /*!
@@ -390,8 +465,8 @@ public:
     /*************************************************************************
         Data Fields
     *************************************************************************/
-    glm::vec2 d_min; // x is former d_left, y is former d_top
-    glm::vec2 d_max; // x is former d_right, y is former d_bottom
+    glm::vec2 d_min = glm::vec2(0.f, 0.f);
+    glm::vec2 d_max = glm::vec2(0.f, 0.f);
 };
 
 }

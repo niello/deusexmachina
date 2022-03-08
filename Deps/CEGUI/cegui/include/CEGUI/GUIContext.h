@@ -45,9 +45,8 @@ class WindowNavigator;
 class CEGUIEXPORT GUIContextEventArgs : public EventArgs
 {
 public:
-    GUIContextEventArgs(GUIContext* context):
-        context(context)
-    {}
+
+    GUIContextEventArgs(GUIContext* context) : context(context) {}
 
     //! pointer to the GUIContext that triggered the event.
     GUIContext* context;
@@ -85,32 +84,79 @@ public:
      * Handlers are passed a const reference to a generic EventArgs struct.
      */
     static const String EventDefaultFontChanged;
+    /** Event fired when the tooltip is about to get activated.
+        * Handlers are passed a const WindowEventArgs reference with
+        * WindowEventArgs::window set to the Tooltip that is about to become
+        * active.
+        */
+    static const String EventTooltipActive;
+    /** Event fired when the tooltip has been deactivated.
+        * Handlers are passed a const WindowEventArgs reference with
+        * WindowEventArgs::window set to the Tooltip that has become inactive.
+        */
+    static const String EventTooltipInactive;
+    /** Event fired when the tooltip changes target window but stays active.
+        * Handlers are passed a const WindowEventArgs reference with
+        * WindowEventArgs::window set to the Tooltip that has transitioned.
+        */
+    static const String EventTooltipTransition;
 
     GUIContext(RenderTarget& target);
-    ~GUIContext();
+    virtual ~GUIContext() override;
 
-    Window* getRootWindow() const;
+    Window* getRootWindow() const { return d_rootWindow; }
     void setRootWindow(Window* new_root);
 
     /*!
     \brief
-        Internal function to directly set the current modal window.
+        Activate the window giving it input focus.
+
+    \param window
+        Window to activate or nullptr to clear an active window.
+
+    \return
+        true if activation led to changes in Z-order
+    */
+    bool setActiveWindow(Window* window, bool moveToFront);
+
+    //! Gets an active leaf window that owns an input focus when not overridden.
+    Window* getActiveWindow() const { return d_activeWindow; }
+
+    //! Checks if a window is in an active branch of the tree
+    bool isWindowActive(const Window* window) const;
+
+    //! \brief Controls whether the tooltip will follow the cursor
+    void setMoveToFrontOnActivateAllowed(bool value) { d_moveToFrontOnActivateAllowed = value; }
+
+    /*!
+    \brief
+        Set the modal state for this Window.
 
     \note
-        This function is called internally by Window, and should not be called
-        by client code.  Doing so will likely not give the expected results.
+        This returns the previous modal window into normal state.
+
+    \param state
+        Boolean value defining if this Window should be the modal target.
+        - true if this Window should be activated and set as the modal target.
+        - false if the modal target should be cleared if this Window is
+          currently the modal target.
     */
     void setModalWindow(Window* window);
 
     //! Return a pointer to the Window that is currently set as modal.
-    Window* getModalWindow() const;
+    Window* getModalWindow() const { return d_modalWindow; }
 
-    Window* getWindowContainingCursor() const;
+    Window* getInputCaptureWindow() const { return d_captureWindow; }
+    bool captureInput(Window* window);
+    void releaseInputCapture(bool allowRestoreOld = true, Window* exactWindow = nullptr);
 
-    const Sizef& getSurfaceSize() const;
+    Window* getTargetWindow(const glm::vec2& pt, bool allow_disabled) const;
+    Window* getWindowContainingCursor();
+
+    const Sizef& getSurfaceSize() const { return d_surfaceSize; }
 
     //! call to indicate that some redrawing is required.
-    void markAsDirty(std::uint32_t drawModeMask = DrawModeMaskAll);
+    void markAsDirty(std::uint32_t drawModeMask = DrawModeMaskAll) { d_dirtyDrawModeMask |= drawModeMask; }
     bool isDirty() const { return d_dirtyDrawModeMask != 0; }
     std::uint32_t getDirtyDrawModeMask() const { return d_dirtyDrawModeMask; }
 
@@ -125,48 +171,24 @@ public:
         a reference via this method and call a method on the reference
         (in our example that's setDefaultImage).
     */
-    Cursor& getCursor();
-    const Cursor& getCursor() const;
-
+    Cursor& getCursor() { return d_cursor; }
+    const Cursor& getCursor() const { return d_cursor; }
 
     //! Tell the context to reconsider which window it thinks the cursor is in.
-    void updateWindowContainingCursor();
-
-    Window* getInputCaptureWindow() const;
-    void setInputCaptureWindow(Window* window);
-
-    /*!
-    \brief
-        Set the default Tooltip object for this GUIContext. This value may be 0
-        to indicate that no default Tooltip object will be available.
-
-    \param tooltip
-        Pointer to a valid Tooltip based object which should be used as the
-        default tooltip for the GUIContext, or 0 to indicate that no default
-        Tooltip is required.
-
-    \note
-        When passing a cursor to a Tooltip object, ownership of the Tooltip
-        does not pass to the GUIContext.
-    */
-    void setDefaultTooltipObject(Tooltip* tooltip);
+    void updateWindowContainingCursor() { d_windowContainingCursorIsUpToDate = false; }
 
     /*!
     \brief
         Set the default Tooltip to be used by specifying a Window type.
 
-        The GUIContext will internally attempt to create an instance of the
-        specified window type (which must be derived from the base Tooltip
-        class).  If the Tooltip creation fails, the error is logged and no
-        default Tooltip will be available on the GUIContext.
-
     \param tooltipType
         String holding the name of a Tooltip based Window type.
     */
-    void setDefaultTooltipType(const String& tooltip_type);
+    void setDefaultTooltipType(const String& tooltip_type) { d_defaultTooltipType = tooltip_type; }
 
-    //! Returns a pointer to the context's default tooltip object.  May return 0.
-    Tooltip* getDefaultTooltipObject() const;
+    const String& getDefaultTooltipType() const { return d_defaultTooltipType; }
+    Window* getTooltipObject(const String& type) const;
+    Window* getOrCreateTooltipObject(const String& type);
 
     void setRenderTarget(RenderTarget& target);
 
@@ -217,53 +239,78 @@ public:
     // public overrides
     void draw(std::uint32_t drawMode = DrawModeMaskAll) override;
 
+    //! \brief Sets a window navigator to be used for navigating in this context
+    void setWindowNavigator(WindowNavigator* navigator) { d_windowNavigator = navigator; }
+
     /*!
     \brief
-        Sets a window navigator to be used for navigating in this context
+        Return the number of seconds the cursor should hover stationary
+        over the target window before the tooltip gets activated.
     */
-    void setWindowNavigator(WindowNavigator* navigator);
+    float getTooltipHoverTime() const { return d_tooltipHoverTime; }
+
+    /*!
+    \brief
+        Set the number of seconds the cursor should hover stationary over
+        the target window before the tooltip gets activated.
+    */
+    void setTooltipHoverTime(float seconds) { d_tooltipHoverTime = seconds; }
+
+    /*!
+    \brief
+        Return the number of seconds the tooltip should be displayed for before it automatically
+        de-activates itself. 0 indicates that the tooltip never timeout and auto-deactivates.
+    */
+    float getTooltipDisplayTime() const { return d_tooltipDisplayTime; }
+
+    /*!
+    \brief
+        Set the number of seconds the tooltip should be displayed for before it automatically
+        de-activates itself. 0 indicates that the tooltip should never timeout and auto-deactivate.
+    */
+    void setTooltipDisplayTime(float seconds) { d_tooltipDisplayTime = seconds; }
+
+    //! \brief Controls whether the tooltip will follow the cursor
+    void setTooltipFollowsCursor(bool value) { d_tooltipFollowsCursor = value; }
+
+    //! \brief Immediately updates a tooltip position according to the cursor
+    void positionTooltip();
+
+    void onWindowDetached(Window* window);
 
 protected:
+
     void drawWindowContentToTarget(std::uint32_t drawModeMask);
 
-    void createDefaultTooltipWindowInstance() const;
-    void destroyDefaultTooltipWindowInstance();
-
-    Window* getTargetWindow(const glm::vec2& pt, const bool allow_disabled) const;
     //! returns the window used as input target
     Window* getInputTargetWindow() const;
-    Window* getCommonAncestor(Window* w1, Window* w2) const;
     //! call some function for a chain of windows: (top, bottom]
     void notifyCursorTransition(Window* top, Window* bottom,
                                void (Window::*func)(CursorInputEventArgs&),
                                CursorInputEventArgs& args) const;
 
+    void showTooltip(bool force);
+    void hideTooltip(bool force);
+    void updateTooltipState(float timeElapsed);
+
+    void updateInputAutoRepeating(float timeElapsed);
+
     bool areaChangedHandler(const EventArgs& args);
-    bool windowDestroyedHandler(const EventArgs& args);
+    bool fontRenderSizeChangedHandler(const EventArgs& args);
 
     //! returns whether the window containing the cursor had changed.
-    bool updateWindowContainingCursor_impl() const;
-    void resetWindowContainingCursor();
-
-    // event trigger functions.
-    virtual void onRenderTargetChanged(GUIContextRenderTargetEventArgs& args);
-    virtual void onDefaultFontChanged(EventArgs& args);
+    void updateWindowContainingCursor_impl(Window* windowWithCursor);
 
     // protected overrides
     void drawContent(std::uint32_t drawModeMask = DrawModeMaskAll) override;
 
     // Input event handlers
     void initializeSemanticEventHandlers();
-    void deleteSemanticEventHandlers();
-
-    bool handleTextInputEvent(const TextInputEvent& event);
-    bool handleSemanticInputEvent(const SemanticInputEvent& event);
     bool handleCopyRequest(const SemanticInputEvent& event);
     bool handleCutRequest(const SemanticInputEvent& event);
     bool handlePasteRequest(const SemanticInputEvent& event);
     bool handleScrollEvent(const SemanticInputEvent& event);
     bool handleCursorMoveEvent(const SemanticInputEvent& event);
-    bool handleCursorMove_impl(CursorInputEventArgs& pa);
     bool handleCursorLeave(const SemanticInputEvent& event);
     bool handleCursorActivateEvent(const SemanticInputEvent& event);
     bool handleCursorPressHoldEvent(const SemanticInputEvent& event);
@@ -273,33 +320,43 @@ protected:
     bool handleRedoRequest(const SemanticInputEvent& event);
 
     Window* d_rootWindow = nullptr;
-    Cursor d_cursor;
-
-    mutable Tooltip* d_defaultTooltipObject = nullptr;
-    mutable bool d_weCreatedTooltipObject = false;
-    String d_defaultTooltipType;
-
-    Font* d_defaultFont = nullptr;
-
-    //! a cache of the target surface size, allows returning by ref.
-    Sizef d_surfaceSize;
-
-    mutable Window* d_windowContainingCursor;
-    mutable bool d_windowContainingCursorIsUpToDate;
+    Window* d_windowContainingCursor = nullptr;
     Window* d_modalWindow = nullptr;
     Window* d_captureWindow = nullptr;
+    Window* d_oldCaptureWindow = nullptr;
+    Window* d_tooltipWindow = nullptr;
+    Window* d_tooltipSource = nullptr;
+    Window* d_activeWindow = nullptr;
+    WindowNavigator* d_windowNavigator = nullptr;
+
+    Font* d_defaultFont = nullptr;
+    Cursor d_cursor;
+    CursorsState d_cursorsState;
+
+    String d_defaultTooltipType;
+    std::map<String, Window*> d_tooltips;
+
+    Sizef d_surfaceSize; //!< a cache of the target surface size, allows returning by ref.
 
     //! The mask of draw modes that must be redrawn
     std::uint32_t d_dirtyDrawModeMask = 0;
 
-    CursorsState d_cursorsState;
+    float d_tooltipTimer = 0.f;
+    float d_tooltipHoverTime = 0.4f;   //!< seconds cursor must stay stationary before tip shows
+    float d_tooltipDisplayTime = 7.5f; //!< seconds that tip is shown for
+
+    float d_repeatElapsed = 0.f;
+    CursorInputSource d_repeatPointerSource = CursorInputSource::NotSpecified;
 
     Event::ScopedConnection d_areaChangedEventConnection;
-    Event::ScopedConnection d_windowDestroyedEventConnection;
+    Event::ScopedConnection d_fontRenderSizeChangeConnection;
+    std::vector<Event::ScopedConnection> d_tooltipEventConnections;
     std::map<SemanticValue, SlotFunctorBase<InputEvent>*> d_semanticEventHandlers;
 
-    //! the window navigator (if any) used to navigate the GUI
-    WindowNavigator* d_windowNavigator = nullptr;
+    bool d_windowContainingCursorIsUpToDate = true;
+    bool d_tooltipFollowsCursor = false;
+    bool d_moveToFrontOnActivateAllowed = true;
+    bool d_repeating = false;
 };
 
 }
@@ -309,4 +366,3 @@ protected:
 #endif
 
 #endif
-

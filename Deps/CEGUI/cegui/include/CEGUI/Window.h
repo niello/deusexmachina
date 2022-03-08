@@ -26,20 +26,16 @@
  *   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  *   OTHER DEALINGS IN THE SOFTWARE.
  ***************************************************************************/
-
 #ifndef _CEGUIWindow_h_
 #define _CEGUIWindow_h_
 
-#include "CEGUI/NamedElement.h"
-#include "CEGUI/RenderedString.h"
+#include "CEGUI/Element.h"
 #include "CEGUI/InputEvent.h"
-#include <unordered_set>
 
 #if defined(_MSC_VER)
 #   pragma warning(push)
 #   pragma warning(disable : 4251)
 #endif
-
 
 namespace CEGUI
 {
@@ -52,7 +48,7 @@ namespace CEGUI
     not called, then no child window will have it's update function called
     either - even if it specifies WindowUpdateMode::ALWAYS as it's WindowUpdateMode.
 */
-enum class WindowUpdateMode : int
+enum class WindowUpdateMode : std::uint8_t
 {
     //! Always call the Window::update function for this window.
     Always,
@@ -66,6 +62,7 @@ template<>
 class PropertyHelper<WindowUpdateMode>
 {
 public:
+
     typedef WindowUpdateMode return_type;
     typedef return_type safe_method_return_type;
     typedef WindowUpdateMode pass_type;
@@ -73,47 +70,31 @@ public:
 
     static const String& getDataTypeName()
     {
-        static String type("WindowUpdateMode");
-
+        static const String type("WindowUpdateMode");
         return type;
     }
 
     static return_type fromString(const String& str)
     {
-
         if (str == "Always")
-        {
             return WindowUpdateMode::Always;
-        }
         else if (str == "Never")
-        {
             return WindowUpdateMode::Never;
-        }
         else
-        {
             return WindowUpdateMode::Visible;
-        }
     }
 
     static string_return_type toString(pass_type val)
     {
         if (val == WindowUpdateMode::Always)
-        {
             return "Always";
-        }
         else if (val == WindowUpdateMode::Never)
-        {
             return "Never";
-        }
         else if (val == WindowUpdateMode::Visible)
-        {
             return "Visible";
-        }
-        else
-        {
-            assert(false && "Invalid Window Update Mode");
-            return "Always";
-        }
+
+        assert(false && "Invalid Window Update Mode");
+        return "Always";
     }
 };
 
@@ -131,8 +112,7 @@ public:
     and specifies the minimal interface required to be implemented by derived
     classes.
 */
-class CEGUIEXPORT Window :
-    public NamedElement
+class CEGUIEXPORT Window : public Element
 {
 public:
     /*************************************************************************
@@ -190,8 +170,6 @@ public:
     static const String AutoRenderingSurfacePropertyName;
     //! Name of property to access for the Window whether texture caching should have a stencil buffer attached for stencil operations, as used in SVG and Custom Shape rendering.
     static const String AutoRenderingSurfaceStencilEnabledPropertyName;
-    //! Name of property to access for the text parsing setting for the Window.
-    static const String TextParsingEnabledPropertyName;
     //! Name of property to access for the margin for the Window.
     static const String MarginPropertyName;
     //! Name of property to access for the window update mode setting.
@@ -215,6 +193,11 @@ public:
      */
     static const String EventUpdated;
 
+    /** Event fired when the Window name has changed.
+     * Handlers are passed a const WindowEventArgs reference with
+     * WindowEventArgs::window set to the Element whose name was changed.
+     */
+    static const String EventNameChanged;
     /** Event fired when the text string for the Window has changed.
      * Handlers are passed a const WindowEventArgs reference with
      * WindowEventArgs::window set to the Window whose text was changed.
@@ -225,6 +208,10 @@ public:
      * WindowEventArgs::window set to the Window whose font was changed.
      */
     static const String EventFontChanged;
+    //! Fired when the window type for the associated tooltip changes.
+    static const String EventTooltipTypeChanged;
+    //! Fired when the effective tooltip text changes, taking inheritance into account.
+    static const String EventTooltipTextChanged;
     /** Event fired when the Alpha blend value for the Window has changed.
      * Handlers are passed a const WindowEventArgs reference with
      * WindowEventArgs::window set to the Window whose alpha value was changed.
@@ -374,13 +361,6 @@ public:
      * detached from it.
      */
     static const String EventWindowRendererDetached;
-    /** Event fired when the Window's setting controlling parsing of it's text
-     * string is changed.
-     * Handlers are passed a const WindowEventArgs reference with
-     * WindowEventArgs::window set to the Window whose text parsing setting was
-     * changed.
-     */
-    static const String EventTextParsingChanged;
     /** Event fired when the Window's margin has changed (any of the four margins)
      * Handlers are passed a const WindowEventArgs reference with
      * WindowEventArgs::window set to the Window whose margin was
@@ -461,12 +441,6 @@ public:
      */
     static const String EventSemanticEvent;
 
-    /*************************************************************************
-        Child Widget name suffix constants
-    *************************************************************************/
-    //! Widget name suffix for automatically created tooltip widgets.
-    static const String TooltipNameSuffix;
-
     // XML element and attribute names that relate to Window.
     static const String WindowXMLElementName;
     static const String AutoWindowXMLElementName;
@@ -476,6 +450,23 @@ public:
     static const String AutoWindowNamePathXMLAttributeName;
     static const String UserStringNameXMLAttributeName;
     static const String UserStringValueXMLAttributeName;
+
+    //! \copydoc Element::getSiblingsInCommonAncestor
+    static inline std::pair<Window*, Window*> getSiblingsInCommonAncestor(const Window* w1, const Window* w2)
+    {
+        const auto siblings = Element::getSiblingsInCommonAncestor(w1, w2);
+        return { static_cast<Window*>(siblings.first), static_cast<Window*>(siblings.second) };
+    }
+
+    //! \copydoc Element::getCommonAncestor
+    static inline Window* getCommonAncestor(const Window* w1, const Window* w2)
+    {
+        return static_cast<Window*>(Element::getCommonAncestor(w1, w2));
+    }
+
+    using Element::isChild;
+    using Element::removeChild;
+    using Element::isDescendantOf;
 
     /*!
     \brief
@@ -502,19 +493,56 @@ public:
     \return
         String object holding the Window type.
     */
-    inline const String& getType() const
-    {
-        return d_falagardType.empty() ? d_type : d_falagardType;
-    }
+    const String& getType() const { return d_falagardType.empty() ? d_type : d_falagardType; }
 
     /*!
     \brief
         return a String object holding the factory type name for this Window without Falagard mapping.
     */
-    inline const String& getFactoryType() const
-    {
-        return d_type;
-    }
+    const String& getFactoryType() const { return d_type; }
+
+    /*!
+    \brief
+        Sets the internal 'initialising' flag to true.
+        This can be use to optimize initialisation of some widgets, and is called
+        automatically by the layout XML handler when it has created a window.
+        That is just after the window has been created, but before any children or
+        properties are read.
+    */
+    virtual void beginInitialisation() { d_initialising = true; }
+
+    /*!
+    \brief
+        Sets the internal 'initialising' flag to false.
+        This is called automatically by the layout XML handler when it is done
+        creating a window. That is after all properties and children have been
+        loaded and just before the next sibling gets created.
+    */
+    virtual void endInitialisation();
+
+    bool isInitializing() const { return d_initialising; }
+
+    /*!
+    \brief
+        Initialises the Window based object ready for use.
+
+    \note
+        This must be called for every window created.  Normally this is handled
+        automatically by the WindowManager.
+    */
+    virtual void initialiseComponents() {}
+
+    /*!
+    \brief
+        Set whether or not this Window will automatically be destroyed when its
+        parent Window is destroyed.
+
+    \param setting
+        - true to have the Window auto-destroyed when its parent is destroyed
+          (default behaviour)
+        - false to have the Window remain after its parent is destroyed.
+    */
+    void setDestroyedByParent(bool setting);
 
     /*!
     \brief
@@ -525,18 +553,7 @@ public:
         - true if the Window will be destroyed when its parent is destroyed.
         - false if the Window will remain when its parent is destroyed.
     */
-    bool isDestroyedByParent() const {return d_destroyedByParent;}
-
-    /*!
-    \brief
-        returns whether or not this Window is an always on top Window.  Also
-        known as a top-most window.
-
-    \return
-        - true if this Window is always drawn on top of other normal windows.
-        - false if the Window has normal z-order behaviour.
-    */
-    bool isAlwaysOnTop() const {return d_alwaysOnTop;}
+    bool isDestroyedByParent() const { return d_destroyedByParent; }
 
     /*!
     \brief
@@ -550,10 +567,7 @@ public:
         - true if the window is disabled.
         - false if the window is enabled.
     */
-    inline bool isDisabled() const
-    {
-        return !d_enabled;
-    }
+    bool isDisabled() const { return !d_enabled; }
 
     /*!
     \brief
@@ -567,10 +581,7 @@ public:
         - true if the window is disabled.
         - false if the window is enabled.
     */
-    inline bool isEffectiveDisabled() const
-    {
-        return !d_enabled || (d_parent && getParent()->isEffectiveDisabled());
-    }
+    bool isEffectiveDisabled() const;
 
     /*!
     \brief
@@ -588,10 +599,7 @@ public:
         - true if the window is set as visible.
         - false if the window is set as hidden.
     */
-    inline bool isVisible() const
-    {
-        return d_visible;
-    }
+    bool isVisible() const { return d_visible; }
 
     /*!
     \brief
@@ -609,29 +617,7 @@ public:
         - true if the window will be drawn.
         - false if the window is hidden and therefore ignored when rendering.
     */
-    inline bool isEffectiveVisible() const
-    {
-        return d_visible && (!d_parent || getParent()->isEffectiveVisible());
-    }
-
-    /*!
-    \brief
-        return true if this is the active Window.  An active window is a window
-        that may receive user inputs.
-
-        Cursor events are always sent to the window containing the cursor
-        regardless of what this function reports (unless a window has
-        captured inputs). The active state mainly determines where send other,
-        for example keyboard inputs.
-
-    \return
-        - true if the window is active and may be sent inputs by the system.
-        - false if the window is inactive and will not be sent inputs.
-    */
-    inline bool isActive() const
-    {
-        return d_active && (!d_parent || getParent()->isActive());
-    }
+    bool isEffectiveVisible() const;
 
     /*!
     \brief
@@ -652,49 +638,6 @@ public:
         unsigned int value equal to the currently assigned ID code for this Window.
     */
     unsigned int getID() const { return d_ID; }
-
-    using NamedElement::isChild;
-    /*!
-    \brief
-        returns whether at least one window with the given ID code is attached
-        to this Window as a child.
-
-    \note
-        ID codes are client assigned and may or may not be unique, and as such,
-        the return from this function will only have meaning to the client code.
-
-    \param ID
-        unsigned int ID code to look for.
-
-    \return
-        - true if at least one child window was found with the ID code \a ID
-        - false if no child window was found with the ID code \a ID.
-    */
-    bool isChild(unsigned int ID) const;
-
-    using NamedElement::isChildRecursive;
-    /*!
-    \brief
-        returns whether at least one window with the given ID code is attached
-        to this Window or any of it's children as a child.
-
-    \note
-        ID codes are client assigned and may or may not be unique, and as such,
-        the return from this function will only have meaning to the client code.
-
-        WARNING! This function can be very expensive and should only be used
-        when you have no other option available. If you decide to use it anyway,
-        make sure the window hierarchy from the entry point is small.
-
-    \param ID
-        unsigned int ID code to look for.
-
-    \return
-        - true if at least one child window was found with the ID code \a ID
-        - false if no child window was found with the ID code \a ID.
-    */
-    bool isChildRecursive(unsigned int ID) const;
-
 
     /*!
     \brief
@@ -735,7 +678,7 @@ public:
         thrown if \a name_path does not reference a Window attached to this
         Window.
     */
-    Window* getChild(const String& name_path) const { return static_cast<Window*>(getChildElement(name_path)); }
+    Window* getChild(const String& name_path) const;
 
     /*!
     \brief
@@ -757,7 +700,7 @@ public:
         Pointer to the Window object referenced by \a name_path.
         If no child is found with the name \a name, 0 is returned.
     */
-    Window* findChild(const String& name_path) const { return static_cast<Window*>(findChildElement(name_path)); }
+    Window* findChild(const String& name_path) const { return findChildByNamePath_impl(name_path); }
 
     /*!
     \brief
@@ -780,7 +723,60 @@ public:
         the name \a name.
         If no child is found with the name \a name, 0 is returned.
     */
-    Window* getChildRecursive(const String& name) const { return static_cast<Window*>(getChildElementRecursive(name)); }
+    Window* getChildRecursive(const String& name) const;
+
+    /*!
+    \brief Checks whether given name path references a Window that is attached to this Element.
+
+    \param name_path
+        String object holding the name path of the child element to test.
+
+    \return
+         - true if the element referenced by \a name_path is attached.
+         - false if the element referenced by \a name_path is not attached.
+    */
+    bool isChild(const String& name_path) const { return !!findChild(name_path); }
+
+    /*!
+    \brief
+        returns whether at least one window with the given name is attached
+        to this Window or any of it's children as a child.
+
+    \note
+        WARNING! This function can be very expensive and should only be used
+        when you have no other option available. If you decide to use it anyway,
+        make sure the window hierarchy from the entry point is small.
+
+    \param name
+        Name of the child to look for.
+
+    \return
+       - true if at least one child window was found with the name \a name
+        - false if no child window was found with the name \a name.
+    */
+    bool isChildRecursive(const String& name) const { return !!getChildRecursive(name); }
+
+    /*!
+    \brief Return true if the specified element name is a name of some ancestor of this Window
+
+    \param name
+        String object holding the name to check for.
+
+    \return
+        true if an window named \a name is an ancestor (parent, or parent of
+        parent, etc) of this element, false otherwise.
+    */
+    bool isDescendantOf(const String& name) const;
+
+    /*!
+    \brief
+        Set the current ID for the Window.
+
+    \param ID
+        Client assigned ID code for this Window.  The GUI system assigns no
+        meaning to any IDs, they are a device purely for client code usage.
+    */
+    void setID(unsigned int ID);
 
     /*!
     \brief
@@ -842,23 +838,46 @@ public:
         If no child is found with the ID code \a ID, 0 is returned.
     */
     Window* getChildRecursive(unsigned int ID) const;
+    /*!
+    \brief
+        returns whether at least one window with the given ID code is attached
+        to this Window as a child.
+
+    \note
+        ID codes are client assigned and may or may not be unique, and as such,
+        the return from this function will only have meaning to the client code.
+
+    \param ID
+        unsigned int ID code to look for.
+
+    \return
+        - true if at least one child window was found with the ID code \a ID
+        - false if no child window was found with the ID code \a ID.
+    */
+    bool isChild(unsigned int ID) const { return !!findChild(ID); }
 
     /*!
     \brief
-        return a pointer to the Window that currently has input focus starting
-        with this Window.
+        returns whether at least one window with the given ID code is attached
+        to this Window or any of it's children as a child.
+
+    \note
+        ID codes are client assigned and may or may not be unique, and as such,
+        the return from this function will only have meaning to the client code.
+
+        WARNING! This function can be very expensive and should only be used
+        when you have no other option available. If you decide to use it anyway,
+        make sure the window hierarchy from the entry point is small.
+
+    \param ID
+        unsigned int ID code to look for.
 
     \return
-        Pointer to the window that is active (has input focus) starting at this
-        window.  The function will return 'this' if this Window is active
-        and either no children are attached or if none of the attached children
-        are active.  Returns NULL if this Window (and therefore all children)
-        are not active.
+        - true if at least one child window was found with the ID code \a ID
+        - false if no child window was found with the ID code \a ID.
     */
-    Window* getActiveChild();
-    const Window* getActiveChild() const;
+    bool isChildRecursive(unsigned int ID) const { return !!getChildRecursive(ID); }
 
-    using NamedElement::isAncestor;
     /*!
     \brief
         return true if any Window with the given ID is some ancestor of this
@@ -872,78 +891,20 @@ public:
           the ID code \a ID.
         - false if no ancestor window has the ID code \a ID.
     */
-    bool isAncestor(unsigned int ID) const;
+    bool isDescendantOf(unsigned int ID) const;
 
     /*!
     \brief
-        return the active Font object for the Window.
+        Returns an effective Font object for the Window.
 
     \return
-        Pointer to the Font being used by this Window.  If the window has no
-        assigned font, and \a useDefault is true, then the default system font
-        is returned.
+        Pointer to the Font being used by this Window. If the window has no
+        assigned font, then the default font of the GUI context is returned.
     */
-    const Font* getActualFont() const;
+    Font* getEffectiveFont() const;
 
     //! Returns the font set for this window, nullptr means that a default font will be used
-    const Font* getFont() const { return d_font; }
-
-    /*!
-    \brief
-        return the current text for the Window
-
-    \return
-        The String object that holds the current text for this Window.
-    */
-    const String& getText() const { return d_textLogical; }
-
-    /*!
-    \brief
-        Return text string with \e visual ordering of glyphs. This
-        only returns meaningful data if using only bidi. Will return
-        the regular text String if using raqm or no bidi.
-    */
-    const String& getTextVisual() const;
-
-    /*!
-    \brief
-        return true if the Window inherits alpha from its parent(s).
-
-    \return
-        - true if the Window inherits alpha from its parent(s)
-        - false if the alpha for this Window is independant from its parents.
-    */
-    bool inheritsAlpha() const  {return d_inheritsAlpha;}
-
-    /*!
-    \brief
-        return the current alpha value set for this Window
-
-    \note
-        The alpha value set for any given window may or may not be the final
-        alpha value that is used when rendering.  All window objects, by
-        default, inherit alpha from thier parent window(s) - this will blend
-        child windows, relatively, down the line of inheritance.  This behaviour
-        can be overridden via the setInheritsAlpha() method.  To return the true
-        alpha value that will be applied when rendering, use the
-        getEffectiveAlpha() method.
-
-    \return
-        the currently set alpha value for this Window.  The value returned Will
-        be between 0.0f and 1.0f.
-    */
-    float getAlpha() const { return d_alpha; }
-
-    /*!
-    \brief
-        return the effective alpha value that will be used when rendering this
-        window, taking into account inheritance of parent window(s) alpha.
-
-    \return
-        the effective alpha that will be applied to this Window when rendering.
-        The value returned Will be between 0.0f and 1.0f.
-    */
-    float getEffectiveAlpha() const;
+    Font* getFont() const { return d_font; }
 
     /*!
     \brief
@@ -1013,47 +974,6 @@ public:
 
     /*!
     \brief
-        return the Window that currently has inputs captured.
-
-    \return
-        Pointer to the Window object that currently has inputs captured, or NULL
-        if no Window has captured input.
-    */
-    Window* getCaptureWindow() const;
-
-    /*!
-    \brief
-        return true if this Window has input captured.
-
-    \return
-        - true if this Window has captured inputs.
-        - false if some other Window, or no Window, has captured inputs.
-    */
-    bool isCapturedByThis() const { return getCaptureWindow() == this; }
-
-    /*!
-    \brief
-        return true if an ancestor window has captured inputs.
-
-    \return
-        - true if input is captured by a Window that is some ancestor (parent,
-          parent of parent, etc) of this Window.
-        - false if no ancestor of this window has captured input.
-    */
-    bool isCapturedByAncestor() const { return isAncestor(getCaptureWindow()); }
-
-    /*!
-    \brief
-        return true if a child window has captured inputs.
-
-    \return
-        - true if input is captured by a Window that is a child of this Window.
-        - false if no child of this window has not captured input.
-    */
-    bool isCapturedByChild() const  {return isChild(getCaptureWindow());}
-
-    /*!
-    \brief
         check if the given pixel position would hit this window.
 
     \param position
@@ -1117,14 +1037,11 @@ public:
         Pointer to the Window object that is the parent of this Window.
         This value can be NULL, in which case the Window is a GUI sheet / root.
     */
-    inline Window* getParent() const
-    {
-        return static_cast<Window*>(getParentElement());
-    }
+    Window* getParent() const { return static_cast<Window*>(getParentElement()); }
 
     /*!
     \brief
-        Return a pointer to the cursor image to use when the cursor
+        Returns a pointer to the cursor image to use when the cursor
         indicator is within this window's area.
 
     \return
@@ -1132,7 +1049,7 @@ public:
         enters this window's area. May return NULL indicating no indicator will
         be drawn for this window.
     */
-    const Image* getActualCursor() const;
+    const Image* getEffectiveCursor() const;
 
     //! Returns the cursor set for this window, nullptr means that a default cursor will be used
     const Image* getCursor() const { return d_cursor; }
@@ -1152,56 +1069,13 @@ public:
 
     /*!
     \brief
-        Return whether this window is set to restore old input capture when it
-        loses input capture.
-
-        This is only really useful for certain sub-components for widget
-        writers.
-
-    \return
-        - true if the window will restore the previous capture window when it
-          loses input capture.
-        - false if the window will set the capture window to NULL when it loses
-          input capture (this is the default behaviour).
-    */
-    bool restoresOldCapture() const { return d_restoreOldCapture; }
-
-    /*!
-    \brief
-        Return whether z-order changes are enabled or disabled for this Window.
-
-    \note
-        This is distinguished from the is/setRiseOnClickEnabled setting in that
-        if rise on click is disabled it only affects the users ability to affect
-        the z order of the Window by clicking the cursor; is still possible to
-        programmatic alter the Window z-order by calling the moveToFront,
-        moveToBack, moveInFront and moveBehind member functions.  Whereas if z
-        ordering is disabled those functions are also precluded from affecting
-        the Window z position.
-
-    \return
-        - true if z-order changes are enabled for this window.
-          moveToFront, moveToBack, moveInFront and moveBehind work normally.
-        - false: z-order changes are disabled for this window.
-          moveToFront, moveToBack, moveInFront and moveBehind are ignored.
-    */
-    inline bool isZOrderingEnabled() const
-    {
-        return d_zOrderingEnabled;
-    }
-
-    /*!
-    \brief
         Return whether cursor down event autorepeat is enabled for this
         window.
 
     \note
         Clicks are not repeated because they require down & up.
     */
-    inline bool isCursorAutoRepeatEnabled() const
-    {
-        return d_autoRepeat;
-    }
+    bool isCursorAutoRepeatEnabled() const { return d_autoRepeat; }
 
     /*!
     \brief
@@ -1211,10 +1085,7 @@ public:
         float value indicating the delay, in seconds, before the first repeat
         cursor press event will be triggered when autorepeat is enabled.
     */
-    inline float getAutoRepeatDelay() const
-    {
-        return d_repeatDelay;
-    }
+    float getAutoRepeatDelay() const { return d_repeatDelay; }
 
     /*!
     \brief
@@ -1224,49 +1095,7 @@ public:
         float value indicating the rate, in seconds, at which repeat cursor press
         events will be generated after the initial delay has expired.
     */
-    inline float getAutoRepeatRate() const
-    {
-        return d_repeatRate;
-    }
-
-    /*!
-    \brief
-        Return whether the window wants inputs passed to its attached
-        child windows when the window has inputs captured.
-
-    \return
-        - true if System should pass captured input events to child windows.
-        - false if System should pass captured input events to this window only.
-    */
-    inline bool distributesCapturedInputs() const
-    {
-        return d_distCapturedInputs;
-    }
-
-    /*!
-    \brief
-        Return whether this Window is using the system default Tooltip for its
-        Tooltip window.
-
-    \return
-        - true if the Window will use the system default tooltip.
-        - false if the window has a custom Tooltip object.
-    */
-    inline bool isUsingDefaultTooltip() const
-    {
-        return !d_customTip;
-    }
-
-    /*!
-    \brief
-        Return a pointer to the Tooltip object used by this Window.  The value
-        returned may point to the system default Tooltip, a custom Window
-        specific Tooltip, or be NULL.
-
-    \return
-        Pointer to a Tooltip based object, or NULL.
-    */
-    Tooltip* getTooltip() const;
+    float getAutoRepeatRate() const { return d_repeatRate; }
 
     /*!
     \brief
@@ -1276,7 +1105,7 @@ public:
         String object holding the current custom tooltip window type, or an
         empty string if no custom tooltip is set.
      */
-    String getTooltipType() const;
+    const String& getTooltipType() const { return d_tooltipType; }
 
     /*!
     \brief
@@ -1285,10 +1114,7 @@ public:
     \return
         String object holding the current tooltip text set for this window.
      */
-    inline const String& getTooltipText() const
-    {
-        return d_tooltipText;
-    }
+    const String& getTooltipText() const { return d_tooltipText; }
 
     /*!
     \brief
@@ -1313,32 +1139,50 @@ public:
         - false if the window does not inherit tooltip text from its parent
           (and shows no tooltip when no text is set).
      */
-    inline bool inheritsTooltipText() const
-    {
-        return d_inheritsTipText;
-    }
+    bool inheritsTooltipText() const { return d_inheritsTooltipText; }
 
     /*!
     \brief
-        Return whether this window will rise to the top of the z-order when
-        activated with the left cursor source.
+        Set the custom Tooltip to be used by this Window by specifying a Window
+        type.
 
-    \note
-        This is distinguished from the is/setZOrderingEnabled setting in that
-        if rise on click is disabled it only affects the users ability to affect
-        the z order of the Window by activating the cursor; is still possible to
-        programmatic alter the Window z-order by calling the moveToFront,
-        moveToBack, moveInFront and moveBehind member functions.  Whereas if z
-        ordering is disabled those functions are also precluded from affecting
-        the Window z position.
+        The Window will internally attempt to create an instance of the
+        specified window type (which must be derived from the base Tooltip
+        class).  If the Tooltip creation fails, the error is logged and the
+        Window will revert to using either the existing custom Tooltip or the
+        system default Tooltip.
 
-    \return
-        - true if the window will come to the top of other windows when the left
-          cursor source is activated within its area.
-        - false if the window does not change z-order position when the left
-          cursor source is activated within its area.
+    \param tooltipType
+        String object holding the name of the Tooltip based Window type which
+        should be used as the Tooltip for this Window.
+    */
+    void setTooltipType(const String& tooltipType);
+
+    /*!
+    \brief
+        Set the tooltip text for this window.
+
+    \param tip
+        String object holding the text to be displayed in the tooltip for this
+        Window.
+    */
+    void setTooltipText(const String& tip);
+
+    void setTooltipEnabled(bool enable) { d_tooltipEnabled = enable; }
+    bool isTooltipEnabled() const { return d_tooltipEnabled; }
+
+    /*!
+    \brief
+        Set whether this window inherits Tooltip text from its parent when its
+        own tooltip text is not set.
+
+    \param setting
+        - true if the window should inherit tooltip text from its parent when
+          its own text is not set.
+        - false if the window should not inherit tooltip text from its parent
+          (and so show no tooltip when no text is set).
      */
-    bool isRiseOnPointerActivationEnabled() const { return d_riseOnPointerActivation; }
+    void setInheritsTooltipText(bool setting) { d_inheritsTooltipText = setting; }
 
     /*!
     \brief
@@ -1347,19 +1191,7 @@ public:
     \return
         Reference to the list of GeometryBuffer objects for this Window.
     */
-    inline std::vector<GeometryBuffer*>& getGeometryBuffers()
-    {
-        return d_geometryBuffers;
-    }
-    
-    /*!
-    \brief
-        Adds GeometryBuffers to the end of the list of GeometryBuffers of this Window.
-
-    \param appendingGeomBuffers
-        The GeometryBuffers that will be appended to the window's GeometryBuffers
-    */
-    void appendGeometryBuffers(std::vector<GeometryBuffer*>& geomBuffers);
+    std::vector<GeometryBuffer*>& getGeometryBuffers() { return d_geometryBuffers; }
 
     /*!
     \brief
@@ -1369,16 +1201,24 @@ public:
         String object holding the name of the look assigned to this window.
         Returns the empty string if no look is assigned.
     */
-    inline const String& getLookNFeel() const { return d_lookName; }
+    const String& getLookNFeel() const { return d_lookName; }
 
     /*!
-    \brief
-        Get whether or not this Window is the modal target.
+    \brief Renames the window.
 
-    \return
-        Returns true if this Window is the modal target, otherwise false.
+    \param name
+        String object holding the new name for the window.
+
+    \exception AlreadyExistsException
+        thrown if an element named \a name already exists in the parent of this window.
     */
-    bool getModalState() const;
+    virtual void setName(const String& name);
+
+    //! \brief Return a String object holding the name of this window.
+    const String& getName() const { return d_name; }
+
+    //! \brief Return a String object that describes the name path for this window.
+    String getNamePath() const;
 
     /*!
     \brief
@@ -1407,23 +1247,6 @@ public:
         - false if no such user string exists.
     */
     bool isUserStringDefined(const String& name) const;
-
-    /*!
-    \brief
-        Returns the active sibling window.
-
-        This searches the immediate children of this window's parent, and
-        returns a pointer to the active window.  The method will return this if
-        we are the immediate child of our parent that is active.  If our parent
-        is not active, or if no immediate child of our parent is active then 0
-        is returned.  If this window has no parent, and this window is not
-        active then 0 is returned, else this is returned.
-
-    \return
-        A pointer to the immediate child window attached to our parent that is
-        currently active, or 0 if no immediate child of our parent is active.
-    */
-    Window* getActiveSibling();
 
     /*!
     \brief
@@ -1461,10 +1284,7 @@ public:
         - true if the Window is enabled as a drag and drop target.
         - false if the window is not enabled as a drag and drop target.
     */
-    inline bool isDragDropTarget() const
-    {
-        return d_dragDropTarget;
-    }
+    bool isDragDropTarget() const { return d_dragDropTarget; }
 
     /*!
     \brief
@@ -1481,10 +1301,7 @@ public:
         return the RenderingSurface currently set for this window.  May return
         0.
     */
-    inline RenderingSurface* getRenderingSurface() const
-    {
-        return d_surface;
-    }
+    RenderingSurface* getRenderingSurface() const { return d_surface; }
 
     /*!
     \brief
@@ -1504,14 +1321,11 @@ public:
         - true if automatic use of a caching RenderingSurface is enabled.
         - false if automatic use of a caching RenderTarget is not enabled.
     */
-    inline bool isUsingAutoRenderingSurface() const
-    {
-        return d_autoRenderingWindow;
-    }
+    bool isUsingAutoRenderingSurface() const { return d_autoRenderingWindow; }
 
     /*!
     \brief
-        Returns whether the Window's texture caching (if activated) will have a stencil buffer
+        Returns whether the Window's texture caching (if enabled) will have a stencil buffer
         attached or not. This may be required for proper rendering of SVG images and Custom Shapes.
         For example, polygons with internal overlap in SVG require this in order to be correctly rendered.
 
@@ -1519,10 +1333,7 @@ public:
     - true to provide stencil buffer functionality with the texture caching.
     - false to not provide a stencil buffer functionality with the texture caching.
     */
-    inline bool isAutoRenderingSurfaceStencilEnabled() const
-    {
-        return d_autoRenderingSurfaceStencilEnabled;
-    }
+    bool isAutoRenderingSurfaceStencilEnabled() const { return d_autoRenderingSurfaceStencilEnabled; }
 
     /*!
     \brief
@@ -1534,33 +1345,8 @@ public:
         A pointer to the root window of the hierarchy that this window is
         attached to.
     */
-    const Window* getRootWindow() const;
-    Window* getRootWindow();
-
-    /*!
-    \brief
-        Initialises the Window based object ready for use.
-
-    \note
-        This must be called for every window created.  Normally this is handled
-        automatically by the WindowManager.
-    */
-    virtual void initialiseComponents() {}
-
-    /*!
-    \brief
-        Set whether or not this Window will automatically be destroyed when its
-        parent Window is destroyed.
-
-    \param setting
-        - true to have the Window auto-destroyed when its parent is destroyed
-          (default behaviour)
-        - false to have the Window remain after its parent is destroyed.
-
-    \return
-        Nothing
-    */
-    void setDestroyedByParent(bool setting);
+    const Window* getRootWindow() const { return d_parent ? getParent()->getRootWindow() : this; }
+    Window* getRootWindow() { return d_parent ? getParent()->getRootWindow() : this; }
 
     /*!
     \brief
@@ -1570,34 +1356,14 @@ public:
     \param setting
         - true to enable the Window
         - false to disable the Window.
-
-    \return
-        Nothing
     */
     virtual void setEnabled(bool enabled);
 
-    /*!
-    \brief
-        Set whether this window is enabled or disabled.  A disabled window
-        normally can not be interacted with, and may have different rendering.
+    //! \brief enable the Window to allow interaction.
+    void enable() { setEnabled(true); }
 
-    \param setting
-        - true to disable the Window
-        - false to enable the Window.
-    */
-    void setDisabled(bool disabled) { setEnabled(!disabled); }
-
-    /*!
-    \brief
-        enable the Window to allow interaction.
-    */
-    void enable()   { setEnabled(true); }
-
-    /*!
-    \brief
-        disable the Window to prevent interaction.
-    */
-    void disable()  { setEnabled(false); }
+    //! \brief disable the Window to prevent interaction.
+    void disable() { setEnabled(false); }
 
     /*!
     \brief
@@ -1612,11 +1378,8 @@ public:
         Showing a window does not, however, automatically cause that window to
         become the active window (call Window::activate after making the window
         visible to activate it).
-
-    \return
-        Nothing
     */
-    void setVisible(bool setting);
+    void setVisible(bool setting, bool force = false);
 
     /*!
     \brief
@@ -1626,11 +1389,8 @@ public:
         Showing a window does not automatically activate the window.  If you
         want the window to also become active you will need to call the
         Window::activate member also.
-
-    \return
-        Nothing
     */
-    void show() { setVisible(true); }
+    void show(bool force = false) { setVisible(true, force); }
 
     /*!
     \brief
@@ -1638,11 +1398,13 @@ public:
     \note
         If the window is the active window, it will become deactivated as a
         result of being hidden.
-
-    \return
-        Nothing
     */
-    void hide() { setVisible(false); }
+    void hide(bool force = false) { setVisible(false, force); }
+
+    void setShowAnimationName(const String& animName);
+    const String& getShowAnimationName() const;
+    void setHideAnimationName(const String& animName);
+    const String& getHideAnimationName() const;
 
     /*!
     \brief
@@ -1657,22 +1419,15 @@ public:
         window is not already active.  The window must be already visible in 
         order to activate it otherwise it will have no effect.  
         When deactivating, all active children will also be deactivated.
-
-    \return
-        Nothing
     */
-
     void setActive(bool setting);
 
     /*!
     \brief
         Activate the Window giving it input focus and bringing it to the top of
         all windows with the same always-on-top settig as this Window.
-
-    \return
-        Nothing
     */
-    void activate() { activate_impl(false); }
+    bool activate();
 
     /*!
     \brief
@@ -1684,259 +1439,35 @@ public:
 
     /*!
     \brief
-        Set whether this Window will be clipped by its parent window(s).
+        return true if this is the active Window.  An active window is a window
+        that may receive user inputs.
 
-    \param setting
-        - true to have the Window clipped so that rendering is constrained to
-          within the area of its parent(s).
-        - false to have rendering constrained to the screen only.
-
-    \return
-        Nothing
-    */
-    void setClippedByParent(bool setting);
-
-    /*!
-    \brief
-        Set the current ID for the Window.
-
-    \param ID
-        Client assigned ID code for this Window.  The GUI system assigns no
-        meaning to any IDs, they are a device purely for client code usage.
+        Cursor events are always sent to the window containing the cursor
+        regardless of what this function reports (unless a window has
+        captured inputs). The active state mainly determines where send other,
+        for example keyboard inputs.
 
     \return
-        Nothing
+        - true if the window is active and may be sent inputs by the system.
+        - false if the window is inactive and will not be sent inputs.
     */
-    void setID(unsigned int ID);
+    bool isActive() const;
 
     /*!
     \brief
-        Set the current text string for the Window.
+        Return whether Window can be focused or not.
 
-    \param text
-        String object containing the text that is to be set as the Window text.
-
-    \return
-        Nothing
+        A Window cannot be usually focused when it's disabled. Other widgets
+        can override this method based on their own behaviour.
     */
-    void setText(const String& text);
+    virtual bool canFocus() const;
 
     /*!
     \brief
-        Insert the text string \a text into the current text string for the
-        Window object at the position specified by \a position.
-
-    \param text
-        String object holding the text that is to be inserted into the Window
-        object's current text string.
-
-    \param position
-        The characted index position where the string \a text should be
-        inserted.
+        Return whether this window is focused or not. A window is focused when
+        it is the active leaf inside the current GUIContext.
     */
-    void insertText(const String& text, const String::size_type position);
-
-    /*!
-    \brief
-        Append the string \a text to the currect text string for the Window
-        object.
-
-    \param text
-        String object holding the text that is to be appended to the Window
-        object's current text string.
-    */
-    void appendText(const String& text);
-
-    /*!
-    \brief
-        Set the font used by this Window.
-
-    \param font
-        Pointer to the Font object to be used by this Window.
-        If \a font is NULL, the default font will be used.
-
-    \return
-        Nothing
-    */
-    void setFont(const Font* font);
-
-    /*!
-    \brief
-        Set the font used by this Window.
-
-    \param name
-        String object holding the name of the Font object to be used by this
-        Window.  If \a name == "", the default font will be used.
-
-    \return
-        Nothing
-
-    \exception UnknownObjectException
-        thrown if the specified Font is unknown within the system.
-    */
-    void setFont(const String& name);
-
-    using NamedElement::removeChild;
-    /*!
-    \brief
-        Remove the first child Window with the specified ID.  If there is more
-        than one attached Window objects with the specified ID, only the fist
-        one encountered will be removed.
-
-    \param ID
-        ID number assigned to the Window to be removed.  If no Window with ID
-        code \a ID is attached, nothing happens.
-
-    \return
-        Nothing.
-    */
-    void removeChild(unsigned int ID);
-
-    /*!
-    \brief
-        Creates a child window attached to this window.
-
-    \param type
-        String that describes the type of Window to be created.  A valid
-        WindowFactory for the specified type must be registered.
-
-    \param name
-        String that holds the name that is to be given to the new window.  If
-        this string is empty, a name will be generated for the window.
-
-    \return
-        Pointer to the newly created child Window object.
-    */
-    Window* createChild(const String& type, const String& name = "");
-
-    /*!
-    \brief
-        Destroys a child window of this window
-
-    \param wnd
-        The child window to destroy
-    */
-    void destroyChild(Window* wnd);
-
-    /*!
-    \brief
-        Destroys a child window of this window
-
-    \param name_path
-        Name path that references the window to destroy
-    */
-    void destroyChild(const String& name_path);
-
-    /*!
-    \brief
-        Move the Window to the top of the z order.
-
-        - If the Window is a non always-on-top window it is moved the the top of
-          all other non always-on-top sibling windows, and the process repeated
-          for all ancestors.
-        - If the Window is an always-on-top window it is moved to the of of all
-          sibling Windows, and the process repeated for all ancestors.
-
-    \return
-        Nothing
-    */
-    void moveToFront();
-
-    /*!
-    \brief
-        Move the Window to the bottom of the Z order.
-
-        - If the window is non always-on-top the Window is sent to the very
-          bottom of its sibling windows and the process repeated for all
-          ancestors.
-        - If the window is always-on-top, the Window is sent to the bottom of
-          all sibling always-on-top windows and the process repeated for all
-          ancestors.
-
-    \return
-        Nothing
-    */
-    void moveToBack();
-
-    /*!
-    \brief
-        Move this window immediately above it's sibling \a window in the z order.
-
-        No action will be taken under the following conditions:
-        - \a window is 0.
-        - \a window is not a sibling of this window.
-        - \a window and this window have different AlwaysOnTop settings.
-        - z-ordering is disabled for this window.
-
-    \param window
-        The sibling window that this window will be moved in front of.
-    */
-    void moveInFront(const Window* const window);
-
-    /*!
-    \brief
-        Move this window immediately behind it's sibling \a window in the z
-        order.
-
-        No action will be taken under the following conditions:
-        - \a window is 0.
-        - \a window is not a sibling of this window.
-        - \a window and this window have different AlwaysOnTop settings.
-        - z-ordering is disabled for this window.
-
-    \param window
-        The sibling window that this window will be moved behind.
-    */
-    void moveBehind(const Window* const window);
-
-    /*!
-    \brief
-        Return whether /a this Window is in front of the given window.
-
-    \note
-        Here 'in front' just means that one window is drawn after the other, it
-        is not meant to imply that the windows are overlapping nor that one
-        window is obscured by the other.
-    */
-    bool isInFront(const Window& wnd) const;
-
-    /*!
-    \brief
-        Return whether /a this Window is behind the given window.
-
-    \note
-        Here 'behind' just means that one window is drawn before the other, it
-        is not meant to imply that the windows are overlapping nor that one
-        window is obscured by the other.
-    */
-    inline bool isBehind(const Window& wnd) const
-    {
-        return !isInFront(wnd);
-    }
-
-    /*!
-    \brief
-        Return the (visual) z index of the window on it's parent.
-
-        The z index is a number that indicates the order that windows will be
-        drawn (but is not a 'z co-ordinate', as such).  Higher numbers are in
-        front of lower numbers.
-
-        The number returned will not be stable, and generally should be used to
-        compare with the z index of sibling windows (and only sibling windows)
-        to discover the current z-ordering of those windows.
-    */
-    size_t getZIndex() const;
-
-    /*!
-    \brief
-        Set whether this window is always on top, or not.
-
-    \param setting
-        - true to have the Window appear on top of all normal (non-topmost) windows.
-        - false to allow the window to be covered by other normal windows.
-    */
-    void setAlwaysOnTop(bool setting);
+    bool isFocused() const;
 
     /*!
     \brief
@@ -1975,6 +1506,400 @@ public:
 
     /*!
     \brief
+        Return whether this window is set to restore old input capture when it
+        loses input capture.
+
+        This is only really useful for certain sub-components for widget
+        writers.
+
+    \return
+        - true if the window will restore the previous capture window when it
+          loses input capture.
+        - false if the window will set the capture window to NULL when it loses
+          input capture (this is the default behaviour).
+    */
+    bool restoresOldCapture() const { return d_restoreOldCapture; }
+
+    /*!
+    \brief
+        Set whether the window wants inputs passed to its attached
+        child windows when the window has inputs captured.
+
+    \param setting
+        - true if System should pass captured input events to child windows.
+        - false if System should pass captured input events to this window only.
+    */
+    void setDistributesCapturedInputs(bool setting) { d_distCapturedInputs = setting; }
+
+    /*!
+    \brief
+        Return whether the window wants inputs passed to its attached
+        child windows when the window has inputs captured.
+
+    \return
+        - true if System should pass captured input events to child windows.
+        - false if System should pass captured input events to this window only.
+    */
+    bool distributesCapturedInputs() const { return d_distCapturedInputs; }
+
+    /*!
+    \brief
+        Return whether z-order changes are enabled or disabled for this Window.
+
+    \note
+        This is distinguished from the is/setRiseOnClickEnabled setting in that
+        if rise on click is disabled it only affects the users ability to affect
+        the z order of the Window by clicking the cursor; is still possible to
+        programmatic alter the Window z-order by calling the moveToFront,
+        moveToBack, moveInFront and moveBehind member functions.  Whereas if z
+        ordering is disabled those functions are also precluded from affecting
+        the Window z position.
+
+    \return
+        - true if z-order changes are enabled for this window.
+          moveToFront, moveToBack, moveInFront and moveBehind work normally.
+        - false: z-order changes are disabled for this window.
+          moveToFront, moveToBack, moveInFront and moveBehind are ignored.
+    */
+    bool isZOrderingEnabled() const { return d_zOrderingEnabled; }
+
+    /*!
+    \brief
+        Set whether z-order changes are enabled or disabled for this Window.
+
+    \note
+        This is distinguished from the is/setRiseOnClickEnabled setting in that
+        if rise on click is disabled it only affects the users ability to affect
+        the z order of the Window by activating the cursor; is still possible to
+        programmatic alter the Window z-order by calling the moveToFront,
+        moveToBack, moveInFront and moveBehind member functions.  Whereas if z
+        ordering is disabled those functions are also precluded from affecting
+        the Window z position.
+
+    \param setting
+        - true if z-order changes are enabled for this window.
+          moveToFront, moveToBack, moveInFront and moveBehind work normally.
+        - false: z-order changes are disabled for this window.
+          moveToFront, moveToBack, moveInFront and moveBehind are ignored.
+    */
+    void setZOrderingEnabled(bool setting) { d_zOrderingEnabled = setting; }
+
+    /*!
+    \brief
+        Return whether this window will rise to the top of the z-order when
+        activated with the left cursor source.
+
+    \note
+        This is distinguished from the is/setZOrderingEnabled setting in that
+        if rise on click is disabled it only affects the users ability to affect
+        the z order of the Window by activating the cursor; is still possible to
+        programmatic alter the Window z-order by calling the moveToFront,
+        moveToBack, moveInFront and moveBehind member functions.  Whereas if z
+        ordering is disabled those functions are also precluded from affecting
+        the Window z position.
+
+    \return
+        true if the window should come to the top of other windows when the left
+        cursor source is activated within its area, false otherwise
+     */
+    bool isRiseOnCursorActivationEnabled() const { return d_riseOnCursorActivation; }
+
+    /*!
+    \brief
+        Set whether this window will rise to the top of the z-order when clicked
+        with the left cursor source.
+
+    \note
+        This is distinguished from the is/setZOrderingEnabled setting in that
+        if rise on cursor activation is disabled it only affects the users ability to affect
+        the z order of the Window by activating the left cursor source; is still
+        possible to programmatic alter the Window z-order by calling the moveToFront,
+        moveToBack, moveInFront and moveBehind member functions.  Whereas if z
+        ordering is disabled those functions are also precluded from affecting
+        the Window z position.
+
+    \param setting
+        true if the window should come to the top of other windows when the
+        left cursor source is activated within its area, false otherwise
+     */
+    void setRiseOnCursorActivationEnabled(bool setting) { d_riseOnCursorActivation = setting; }
+
+    /*!
+    \brief
+        Move the Window to the top of the z order.
+
+        - If the Window is a non always-on-top window it is moved the the top of
+          all other non always-on-top sibling windows, and the process repeated
+          for all ancestors.
+        - If the Window is an always-on-top window it is moved to the of of all
+          sibling Windows, and the process repeated for all ancestors.
+
+    \return
+        true if there were changes in Z-order, false otherwise. Windows with
+        d_cursorPassThroughEnabled are intentionally ignored.
+    */
+    bool moveToFront();
+
+    /*!
+    \brief
+        Move the Window to the bottom of the Z order.
+
+        - If the window is non always-on-top the Window is sent to the very
+          bottom of its sibling windows and the process repeated for all
+          ancestors.
+        - If the window is always-on-top, the Window is sent to the bottom of
+          all sibling always-on-top windows and the process repeated for all
+          ancestors.
+    */
+    void moveToBack();
+
+    /*!
+    \brief
+        Move this window immediately above it's sibling \a window in the z order.
+
+        No action will be taken under the following conditions:
+        - \a window is 0.
+        - \a window is not a sibling of this window.
+        - \a window and this window have different AlwaysOnTop settings.
+        - z-ordering is disabled for this window.
+
+    \param window
+        The sibling window that this window will be moved in front of.
+    */
+    void moveInFront(const Window* window);
+
+    /*!
+    \brief
+        Move this window immediately behind it's sibling \a window in the z
+        order.
+
+        No action will be taken under the following conditions:
+        - \a window is 0.
+        - \a window is not a sibling of this window.
+        - \a window and this window have different AlwaysOnTop settings.
+        - z-ordering is disabled for this window.
+
+    \param window
+        The sibling window that this window will be moved behind.
+    */
+    void moveBehind(const Window* window);
+
+    /*!
+    \brief
+        Return whether this window is in front of the given window.
+
+    \note
+        Here 'in front' just means that one window is drawn after the other, it
+        is not meant to imply that the windows are overlapping nor that one
+        window is obscured by the other.
+    */
+    bool isInFront(const Window& wnd) const;
+
+    /*!
+    \brief
+        Return whether the window is at the top of the Z-Order.  This will
+        correctly take into account 'Always on top' windows as needed.
+
+    \return
+        true if the Window is at the top of the z-order in relation to sibling
+        windows with the same 'always on top' setting, false otherwise
+    */
+    bool isInFront() const;
+
+    /*!
+    \brief
+        Return the (visual) z index of the window on it's parent.
+
+        The z index is a number that indicates the order that windows will be
+        drawn (but is not a 'z co-ordinate', as such).  Higher numbers are in
+        front of lower numbers.
+
+        The number returned will not be stable, and generally should be used to
+        compare with the z index of sibling windows (and only sibling windows)
+        to discover the current z-ordering of those windows.
+    */
+    size_t getZIndex() const;
+
+    /*!
+    \brief
+        Set whether this window is always on top, or not.
+
+    \param setting
+        - true to have the Window appear on top of all normal (non-topmost) windows.
+        - false to allow the window to be covered by other normal windows.
+    */
+    void setAlwaysOnTop(bool setting);
+
+    /*!
+    \brief
+        returns whether or not this Window is an always on top Window.  Also
+        known as a top-most window.
+
+    \return
+        - true if this Window is always drawn on top of other normal windows.
+        - false if the Window has normal z-order behaviour.
+    */
+    bool isAlwaysOnTop() const { return d_alwaysOnTop; }
+
+    /*!
+    \brief
+        Set whether this Window will be clipped by its parent window(s).
+
+    \param setting
+        - true to have the Window clipped so that rendering is constrained to
+          within the area of its parent(s).
+        - false to have rendering constrained to the screen only.
+    */
+    void setClippedByParent(bool setting);
+
+    /*!
+    \brief
+        return the current text for the Window
+
+    \return
+        The String object that holds the current text for this Window.
+    */
+    const String& getText() const;
+
+    /*!
+    \brief
+        Set the current text string for the Window.
+
+    \param text
+        String object containing the text that is to be set as the Window text.
+    */
+    void setText(const String& text);
+
+    /*!
+    \brief
+        Insert the text string \a text into the current text string for the
+        Window object at the position specified by \a position.
+
+    \param text
+        String object holding the text that is to be inserted into the Window
+        object's current text string.
+
+    \param position
+        The characted index position where the string \a text should be
+        inserted.
+    */
+    void insertText(const String& text, const String::size_type position);
+
+    /*!
+    \brief
+        Append the string \a text to the currect text string for the Window
+        object.
+
+    \param text
+        String object holding the text that is to be appended to the Window
+        object's current text string.
+    */
+    void appendText(const String& text);
+
+    /*!
+    \brief
+        Set the font used by this Window.
+
+    \param font
+        Pointer to the Font object to be used by this Window.
+        If \a font is nullptr, the default font will be used.
+    */
+    void setFont(Font* font);
+
+    /*!
+    \brief
+        Set the font used by this Window.
+
+    \param name
+        String object holding the name of the Font object to be used by this
+        Window.  If \a name == "", the default font will be used.
+
+    \exception UnknownObjectException
+        thrown if the specified Font is unknown within the system.
+    */
+    void setFont(const String& name);
+
+    /*!
+    \brief
+        Remove the Element referenced by the given name path from this Element's
+        child list.
+
+    \param name_path
+        String the name path that references the the Element to be removed.
+        If the Element specified is not attached to this Window,
+        UnknownObjectException is thrown
+    */
+    void removeChild(const String& name_path) { if (auto child = findChild(name_path)) removeChild(child); }
+
+    /*!
+    \brief
+        Remove the first child Window with the specified ID.  If there is more
+        than one attached Window objects with the specified ID, only the fist
+        one encountered will be removed.
+
+    \param ID
+        ID number assigned to the Window to be removed.  If no Window with ID
+        code \a ID is attached, nothing happens.
+    */
+    void removeChild(unsigned int ID) { if (auto child = findChild(ID)) removeChild(child); }
+
+    /*!
+    \brief
+        Creates a child window attached to this window.
+
+    \param type
+        String that describes the type of Window to be created.  A valid
+        WindowFactory for the specified type must be registered.
+
+    \param name
+        String that holds the name that is to be given to the new window.  If
+        this string is empty, a name will be generated for the window.
+
+    \return
+        Pointer to the newly created child Window object.
+    */
+    Window* createChild(const String& type, const String& name = String::GetEmpty());
+
+    /*!
+    \brief
+        Destroys a child window of this window
+
+    \param wnd
+        The child window to destroy
+    */
+    void destroyChild(Window* wnd);
+
+    /*!
+    \brief
+        Destroys a child window of this window
+
+    \param name_path
+        Name path that references the window to destroy
+    */
+    void destroyChild(const String& name_path) { destroyChild(getChild(name_path)); }
+
+    /*!
+    \brief
+        Sets whether this Window will inherit alpha from its parent windows.
+
+    \param setting
+        - true if the Window should use inherited alpha.
+        - false if the Window should have an independant alpha value.
+    */
+    void setInheritsAlpha(bool setting);
+
+    /*!
+    \brief
+        return true if the Window inherits alpha from its parent(s).
+
+    \return
+        - true if the Window inherits alpha from its parent(s)
+        - false if the alpha for this Window is independant from its parents.
+    */
+    bool inheritsAlpha() const { return d_inheritsAlpha; }
+
+    /*!
+    \brief
         Set the current alpha value for this window.
 
     \note
@@ -1994,13 +1919,33 @@ public:
 
     /*!
     \brief
-        Sets whether this Window will inherit alpha from its parent windows.
+        return the current alpha value set for this Window
 
-    \param setting
-        - true if the Window should use inherited alpha.
-        - false if the Window should have an independant alpha value.
+    \note
+        The alpha value set for any given window may or may not be the final
+        alpha value that is used when rendering.  All window objects, by
+        default, inherit alpha from thier parent window(s) - this will blend
+        child windows, relatively, down the line of inheritance.  This behaviour
+        can be overridden via the setInheritsAlpha() method.  To return the true
+        alpha value that will be applied when rendering, use the
+        getEffectiveAlpha() method.
+
+    \return
+        the currently set alpha value for this Window.  The value returned Will
+        be between 0.0f and 1.0f.
     */
-    void setInheritsAlpha(bool setting);
+    float getAlpha() const { return d_alpha; }
+
+    /*!
+    \brief
+        return the effective alpha value that will be used when rendering this
+        window, taking into account inheritance of parent window(s) alpha.
+
+    \return
+        the effective alpha that will be applied to this Window when rendering.
+        The value returned Will be between 0.0f and 1.0f.
+    */
+    float getEffectiveAlpha() const;
 
     /*!
     \brief
@@ -2053,28 +1998,7 @@ public:
     \param user_data
         pointer to the user data that is to be set for this window.
     */
-    void setUserData(void* user_data)   {d_userData = user_data;}
-
-    /*!
-    \brief
-        Set whether z-order changes are enabled or disabled for this Window.
-
-    \note
-        This is distinguished from the is/setRiseOnClickEnabled setting in that
-        if rise on click is disabled it only affects the users ability to affect
-        the z order of the Window by activating the cursor; is still possible to
-        programmatic alter the Window z-order by calling the moveToFront,
-        moveToBack, moveInFront and moveBehind member functions.  Whereas if z
-        ordering is disabled those functions are also precluded from affecting
-        the Window z position.
-
-    \param setting
-        - true if z-order changes are enabled for this window.
-          moveToFront, moveToBack, moveInFront and moveBehind work normally.
-        - false: z-order changes are disabled for this window.
-          moveToFront, moveToBack, moveInFront and moveBehind are ignored.
-    */
-    void    setZOrderingEnabled(bool setting);
+    void setUserData(void* user_data) { d_userData = user_data; }
 
     /*!
     \brief
@@ -2084,7 +2008,7 @@ public:
     \note
         Clicks are not repeated because they require down & up.
     */
-    void setCursorAutoRepeatEnabled(bool setting);
+    void setCursorAutoRepeatEnabled(bool setting) { d_autoRepeat = setting; }
 
     /*!
     \brief
@@ -2094,7 +2018,7 @@ public:
         float value indicating the delay, in seconds, before the first repeat
         cursor press event should be triggered when autorepeat is enabled.
     */
-    void setAutoRepeatDelay(float delay);
+    void setAutoRepeatDelay(float delay) { d_repeatDelay = delay; }
 
     /*!
     \brief
@@ -2104,18 +2028,7 @@ public:
         float value indicating the rate, in seconds, at which repeat cursor press
         events should be generated after the initial delay has expired.
     */
-    void setAutoRepeatRate(float rate);
-
-    /*!
-    \brief
-        Set whether the window wants inputs passed to its attached
-        child windows when the window has inputs captured.
-
-    \param setting
-        - true if System should pass captured input events to child windows.
-        - false if System should pass captured input events to this window only.
-    */
-    void setDistributesCapturedInputs(bool setting);
+    void setAutoRepeatRate(float rate) { d_repeatRate = rate; }
 
     /*!
     \brief
@@ -2159,100 +2072,6 @@ public:
 
     /*!
     \brief
-        Set the custom Tooltip object for this Window.  This value may be 0 to
-        indicate that the Window should use the system default Tooltip object.
-
-    \param tooltip
-        Pointer to a valid Tooltip based object which should be used as the
-        tooltip for this Window, or 0 to indicate that the Window should use the
-        system default Tooltip object.  Note that when passing a pointer to a
-        Tooltip object, ownership of the Tooltip does not pass to this Window
-        object.
-
-    \return
-        Nothing.
-    */
-    void setTooltip(Tooltip* tooltip);
-
-    /*!
-    \brief
-        Set the custom Tooltip to be used by this Window by specifying a Window
-        type.
-
-        The Window will internally attempt to create an instance of the
-        specified window type (which must be derived from the base Tooltip
-        class).  If the Tooltip creation fails, the error is logged and the
-        Window will revert to using either the existing custom Tooltip or the
-        system default Tooltip.
-
-    \param tooltipType
-        String object holding the name of the Tooltip based Window type which
-        should be used as the Tooltip for this Window.
-
-    \return
-        Nothing.
-    */
-    void setTooltipType(const String& tooltipType);
-
-    /*!
-    \brief
-        Set the tooltip text for this window.
-
-    \param tip
-        String object holding the text to be displayed in the tooltip for this
-        Window.
-
-    \return
-        Nothing.
-    */
-    void setTooltipText(const String& tip);
-
-    void setTooltipEnabled(bool enable) { d_tooltipEnabled = enable; }
-    bool isTooltipEnabled() const { return d_tooltipEnabled; }
-
-    /*!
-    \brief
-        Set whether this window inherits Tooltip text from its parent when its
-        own tooltip text is not set.
-
-    \param setting
-        - true if the window should inherit tooltip text from its parent when
-          its own text is not set.
-        - false if the window should not inherit tooltip text from its parent
-          (and so show no tooltip when no text is set).
-
-    \return
-        Nothing.
-     */
-    void setInheritsTooltipText(bool setting);
-
-    /*!
-    \brief
-        Set whether this window will rise to the top of the z-order when clicked
-        with the left cursor source.
-
-    \note
-        This is distinguished from the is/setZOrderingEnabled setting in that
-        if rise on cursor activation is disabled it only affects the users ability to affect
-        the z order of the Window by activating the left cursor source; is still
-        possible to programmatic alter the Window z-order by calling the moveToFront,
-        moveToBack, moveInFront and moveBehind member functions.  Whereas if z
-        ordering is disabled those functions are also precluded from affecting
-        the Window z position.
-
-    \param setting
-        - true if the window should come to the top of other windows when the
-          left cursor source is activated within its area.
-        - false if the window should not change z-order position when the left
-          cursor source is activated within its area.
-
-    \return
-        Nothing.
-     */
-    void setRiseOnClickEnabled(bool setting)    { d_riseOnPointerActivation = setting; }
-
-    /*!
-    \brief
         Set the LookNFeel that shoule be used for this window.
 
     \param look
@@ -2286,21 +2105,6 @@ public:
 
     /*!
     \brief
-        Set the modal state for this Window.
-
-    \param state
-        Boolean value defining if this Window should be the modal target.
-        - true if this Window should be activated and set as the modal target.
-        - false if the modal target should be cleared if this Window is
-          currently the modal target.
-
-    \return
-        Nothing.
-    */
-    void setModalState(bool state);
-
-    /*!
-    \brief
        Sets the value a named user string, creating it as required.
 
     \param name
@@ -2308,9 +2112,6 @@ public:
 
     \param value
         String object holding the value to be assigned to the user string.
-
-    \return
-        Nothing.
     */
     void setUserString(const String& name, const String& value);
 
@@ -2340,9 +2141,6 @@ public:
     \param elapsed
         float value indicating the number of seconds passed since the last
         update.
-
-    \return
-        Nothing.
     */
     virtual void update(float elapsed);
 
@@ -2356,7 +2154,7 @@ public:
     \return
         true if the copy was successful and allowed, false otherwise
     */
-    virtual bool performCopy(Clipboard& clipboard);
+    virtual bool performCopy(Clipboard& /*clipboard*/) { return false; }
 
     /*!
     \brief
@@ -2368,7 +2166,7 @@ public:
     \return
         true if the cut was successful and allowed, false otherwise
     */
-    virtual bool performCut(Clipboard& clipboard);
+    virtual bool performCut(Clipboard& /*clipboard*/) { return false; }
 
     /*!
     \brief
@@ -2380,7 +2178,7 @@ public:
     \return
         true if the paste was successful and allowed, false otherwise
      */
-    virtual bool performPaste(Clipboard& clipboard);
+    virtual bool performPaste(Clipboard& /*clipboard*/) { return false; }
 
     /*!
     \brief
@@ -2389,7 +2187,7 @@ public:
     \return
         true if the undo was successful and allowed, false otherwise
      */
-    virtual bool performUndo();
+    virtual bool performUndo() { return false; }
 
     /*!
     \brief
@@ -2398,7 +2196,7 @@ public:
     \return
         true if the redo was successful and allowed, false otherwise
      */
-    virtual bool performRedo();
+    virtual bool performRedo() { return false; }
 
     /*!
     \brief
@@ -2406,32 +2204,8 @@ public:
 
     \param xml_stream
         Stream where xml data should be output.
-
-    \return
-        Nothing.
     */
     virtual void writeXMLToStream(XMLSerializer& xml_stream) const;
-
-    /*!
-    \brief
-        Sets the internal 'initialising' flag to true.
-        This can be use to optimize initialisation of some widgets, and is called
-        automatically by the layout XML handler when it has created a window.
-        That is just after the window has been created, but before any children or
-        properties are read.
-    */
-    virtual void beginInitialisation() { d_initialising = true; }
-
-    /*!
-    \brief
-        Sets the internal 'initialising' flag to false.
-        This is called automatically by the layout XML handler when it is done
-        creating a window. That is after all properties and children have been
-        loaded and just before the next sibling gets created.
-    */
-    virtual void endInitialisation();
-
-    bool isInitializing() const { return d_initialising; }
 
     /*!
     \brief
@@ -2447,7 +2221,7 @@ public:
     \return
         the Window object for the auto window referenced by \a name.
     */
-    virtual Window* getChildAutoWindow(const String& name);
+    virtual Window* getChildAutoWindow(const String& name) { return getChild(name); }
 
     /*!
     \brief
@@ -2459,7 +2233,7 @@ public:
         true if cursor pass through is enabled.
         false if cursor pass through is not enabled.
     */
-    void setCursorPassThroughEnabled(bool setting)   {d_cursorPassThroughEnabled = setting;}
+    void setCursorPassThroughEnabled(bool setting) { d_cursorPassThroughEnabled = setting; }
 
     /*!
     \brief
@@ -2485,10 +2259,7 @@ public:
         A pointer to the assigned window renderer object.
         0 if no window renderer is assigned.
     */
-    inline WindowRenderer* getWindowRenderer() const
-    {
-        return d_windowRenderer;
-    }
+    WindowRenderer* getWindowRenderer() const { return d_windowRenderer; }
 
     /*!
     \brief
@@ -2505,7 +2276,7 @@ public:
     \brief
         Sets whether this window is allowed to write XML
     */
-    void setWritingXMLAllowed(bool allow)   {d_allowWriteXML = allow;}
+    void setWritingXMLAllowed(bool allow) { d_allowWriteXML = allow; }
 
     /*!
     \brief
@@ -2529,7 +2300,7 @@ public:
         - true to enable the Window as a drag and drop target.
         - false to disable the Window as a drag and drop target.
     */
-    void setDragDropTarget(bool setting);
+    void setDragDropTarget(bool setting) { d_dragDropTarget = setting; }
 
     /*!
     \brief
@@ -2615,43 +2386,14 @@ public:
         - false to not provide a stencil buffer functionality with the texture caching.
     */
     void setAutoRenderingSurfaceStencilEnabled(bool setting);
-  
-
-    //! Return the parsed RenderedString object for this window.
-    const RenderedString& getRenderedString() const;
-    //! Return a pointer to any custom RenderedStringParser set, or 0 if none.
-    inline RenderedStringParser* getCustomRenderedStringParser() const
-    {
-        return d_customStringParser;
-    }
-    //! Set a custom RenderedStringParser, or 0 to remove an existing one.
-    void setCustomRenderedStringParser(RenderedStringParser* parser);
-    //! return the active RenderedStringParser to be used
-    virtual RenderedStringParser& getRenderedStringParser() const;
-    //! return whether text parsing is enabled for this window.
-    inline bool isTextParsingEnabled() const
-    {
-        return d_textParsingEnabled;
-    }
-    //! set whether text parsing is enabled for this window.
-    void setTextParsingEnabled(const bool setting);
 
     //! set margin
     virtual void setMargin(const UBox& margin);
     //! retrieves currently set margin
-    inline const UBox& getMargin() const
-    {
-        return d_margin;
-    }
+    const UBox& getMargin() const { return d_margin; }
 
     //! return glm::vec2 \a pos after being fully unprojected for this Window.
     glm::vec2 getUnprojectedPosition(const glm::vec2& pos) const;
-
-#ifdef CEGUI_BIDI_SUPPORT
-    //! return the pointer to the BidiVisualMapping for this window, if any.
-    const BidiVisualMapping* getBidiVisualMapping() const
-        {return d_bidiVisualMapping;}
-#endif
 
     /*!
     \brief
@@ -2662,10 +2404,10 @@ public:
         Please note that properties that are not writable (read-only properties) are
         implicitly/automatically banned from XML, no need to ban them manually.
 
-    \param property_name 
+    \param propertyName 
         Name of the property you want to ban
     */
-    void banPropertyFromXML(const String& property_name);
+    void banPropertyFromXML(const String& propertyName);
 
     /*!
     \brief
@@ -2676,10 +2418,10 @@ public:
         Please note that properties that are not writable (read-only properties) are
         implicitly/automatically banned from XML, no need to ban them manually.
 
-    \param property_name 
+    \param propertyName 
         Name of the property you want to ban
     */
-    void banPropertyFromXMLRecursive(const String& property_name);
+    void banPropertyFromXMLRecursive(const String& propertyName);
 
     /*!
     \brief
@@ -2689,10 +2431,10 @@ public:
         Please note that properties that are not writable (read-only properties) are
         implicitly/automatically banned from XML.
 
-    \param property_name 
+    \param propertyName 
         Name of the property you want to unban
     */
-    void unbanPropertyFromXML(const String& property_name);
+    void unbanPropertyFromXML(const String& propertyName);
 
     /*!
     \brief
@@ -2702,10 +2444,10 @@ public:
         Please note that properties that are not writable (read-only properties) are
         implicitly/automatically banned from XML.
 
-    \param property_name 
+    \param propertyName 
         Name of the property you want to unban
     */
-    void unbanPropertyFromXMLRecursive(const String& property_name);
+    void unbanPropertyFromXMLRecursive(const String& propertyName);
     
 
     /*!
@@ -2716,13 +2458,7 @@ public:
         Read-only properties and properties that can't write to XML streams
         are implicitly banned. This method will return true for them.
     */
-    bool isPropertyBannedFromXML(const String& property_name) const;
-
-    //! Add the given property to the XML ban list for this window.
-    void banPropertyFromXML(const Property* property);
-
-    //! Remove the given property from the XML ban list for this window.
-    void unbanPropertyFromXML(const Property* property);
+    bool isPropertyBannedFromXML(const String& propertyName) const;
 
     /*!
     \brief
@@ -2751,7 +2487,7 @@ public:
         One of the WindowUpdateMode enumerated values indicating the mode to
         set for this Window.
     */
-    void setUpdateMode(const WindowUpdateMode mode);
+    void setUpdateMode(const WindowUpdateMode mode) { d_updateMode = mode; }
 
     /*!
     \brief
@@ -2770,10 +2506,7 @@ public:
         One of the WindowUpdateMode enumerated values indicating the current
         mode set for this Window.
     */
-    inline WindowUpdateMode getUpdateMode() const
-    {
-        return d_updateMode;
-    }
+    WindowUpdateMode getUpdateMode() const { return d_updateMode; }
 
     /*!
     \brief
@@ -2781,7 +2514,7 @@ public:
         (including it's event subscribers) should be propagated back to the
         Window's parent.
     */
-    void setCursorInputPropagationEnabled(const bool enabled);
+    void setCursorInputPropagationEnabled(const bool enabled) { d_propagatePointerInputs = enabled; }
 
     /*!
     \brief
@@ -2789,10 +2522,7 @@ public:
         (including it's event subscribers) should be propagated back to the
         Window's parent.
     */
-    inline bool isCursorInputPropagationEnabled() const
-    {
-        return d_propagatePointerInputs;
-    }
+    bool isCursorInputPropagationEnabled() const { return d_propagatePointerInputs; }
 
     /*!
     \brief
@@ -2804,7 +2534,7 @@ public:
     \return
         the cloned Window
     */
-    Window* clone(const bool deepCopy = true) const;
+    Window* clone(bool deepCopy = true) const;
 
     //! copies this widget's properties to given target widget
     virtual void clonePropertiesTo(Window& target) const;
@@ -2813,8 +2543,8 @@ public:
 
     //! return the GUIContext this window is associated with.
     GUIContext& getGUIContext() const;
-    //! function used internally.  Do not call this from client code.
-    void setGUIContext(GUIContext* context);
+    //! return the GUIContext pointer this window is associated with.
+    GUIContext* getGUIContextPtr() const { return d_guiContext; }
 
     /*!
     \brief
@@ -2835,52 +2565,10 @@ public:
         returned here may be inaccurate - this is not a bug, but is required
         to ensure correct handling of certain events.
     */
-    inline bool isPointerContainedInArea() const
-    {
-        return d_containsPointer;
-    }
+    bool isPointerContainedInArea() const { return d_containsPointer; }
 
     // overridden from Element
     Sizef getRootContainerSize() const override;
-
-    /*!
-    \brief
-        Return whether this Window is focused or not.
-
-        A window is focused when it is the active Window inside the current
-        GUIContext.
-    */
-    inline bool isFocused() const
-    {
-        return d_isFocused;
-    }
-
-    /*!
-    \brief
-        Makes this Window be focused.
-
-        Focusing a Window means activating it and setting the focused flag.
-        This will also trigger the activated event. Focusing works only on
-        non-disabled widgets.
-    */
-    void focus();
-
-    /*!
-    \brief
-        Unfocus this Window.
-
-        This will trigger the deactivated event if this was an active window.
-    */
-    void unfocus();
-
-    /*!
-    \brief
-        Return whether Window can be focused or not.
-
-        A Window cannot be usually focused when it's disabled. Other widgets
-        can override this method based on their own behaviour.
-    */
-    virtual bool canFocus() const;
     
     /*!
     \brief
@@ -2904,10 +2592,7 @@ public:
     \return
         The drawMode bitmask that is set for this Window.
     */
-    inline std::uint32_t getDrawModeMask() const
-    {
-        return d_drawModeMask;
-    }
+    std::uint32_t getDrawModeMask() const { return d_drawModeMask; }
 
     /*!
     \brief
@@ -2920,13 +2605,12 @@ public:
     \return
         True if a bitwise and between the masks return non-zero.
     */
-    inline bool checkIfDrawMaskAllowsDrawing(std::uint32_t drawModeMask) const
+    bool checkIfDrawMaskAllowsDrawing(std::uint32_t drawModeMask) const
     {
         return (getDrawModeMask() & drawModeMask) != 0;
     }
 
-    float getContentWidth() const override;
-    float getContentHeight() const override;
+    Sizef getContentSize() const override;
     UDim getWidthOfAreaReservedForContentLowerBoundAsFuncOfElementWidth() const override;
     UDim getHeightOfAreaReservedForContentLowerBoundAsFuncOfElementHeight() const override;
     void adjustSizeToContent() override;
@@ -2965,7 +2649,7 @@ protected:
     *************************************************************************/
 
     //! \copydoc Element::handleAreaChanges
-    virtual uint8_t handleAreaChanges(bool moved, bool sized) override;
+    virtual uint8_t handleAreaChanges(bool movedOnScreen, bool movedInParent, bool sized) override;
 
     /*!
     \brief
@@ -2979,6 +2663,15 @@ protected:
     void onMoved(ElementEventArgs& e) override;
 
     void onRotated(ElementEventArgs& e) override;
+
+    /*!
+    \brief Handler called when the window name changes.
+
+    \param e
+        WindowEventArgs object whose 'window' pointer field is set to the window
+        that triggered the event. For this event the window is always 'this'.
+    */
+    virtual void onNameChanged(WindowEventArgs& e);
 
     /*!
     \brief
@@ -3001,6 +2694,10 @@ protected:
         'this'.
     */
     virtual void onFontChanged(WindowEventArgs& e);
+
+    virtual void onTooltipTypeChanged(WindowEventArgs& e);
+
+    virtual void onTooltipTextChanged(WindowEventArgs& e);
 
     /*!
     \brief
@@ -3416,18 +3113,6 @@ protected:
     */
     virtual void onWindowRendererDetached(WindowEventArgs& e);
 
-    /*!
-    \brief
-        Handler called when the window's setting for whether text parsing is
-        enabled is changed.
-
-    \param e
-        WindowEventArgs object whose 'window' pointer field is set to the window
-        that triggered the event.  For this event the trigger window is always
-        'this'.
-    */
-    virtual void onTextParsingChanged(WindowEventArgs& e);
-
     virtual void onMarginChanged(WindowEventArgs& e);
 
     /*************************************************************************
@@ -3440,9 +3125,6 @@ protected:
     \param elapsed
         float value indicating the number of seconds elapsed since the last
         update call.
-
-    \return
-        Nothing.
     */
     virtual void updateSelf(float elapsed);
 
@@ -3453,9 +3135,6 @@ protected:
     \param ctx
         RenderingContext holding the details of the RenderingSurface to be
         used for the Window rendering operations.
-
-    \return
-        Nothing
     */
     virtual void drawSelf(const RenderingContext& ctx, std::uint32_t drawModeMask);
 
@@ -3473,35 +3152,11 @@ protected:
 
     /*!
     \brief
-        Perform drawing operations concerned with positioning, clipping and
-        queueing of window geometry to RenderingSurfaces.
-
-    \note
-        This function is a sub-function of drawSelf and is provided to make it
-        easier to override drawSelf without needing to duplicate large sections
-        of the code from the default implementation.
-    */
-    void queueGeometry(const RenderingContext& ctx);
-
-    /*!
-    \brief
-        Destroys the geometry buffers of this Window.
-    */
-    void destroyGeometryBuffers();
-
-    /*!
-    \brief
         Update the rendering cache.
 
         Populates the Window's GeometryBuffer ready for rendering.
     */
-    virtual void populateGeometryBuffer()  {}
-
-    /*!
-    \brief
-        Fires off a repeated cursor press event for this window.
-    */
-    void generateAutoRepeatEvent(CursorInputSource source);
+    virtual void populateGeometryBuffer() {}
 
     /*!
     \brief
@@ -3514,7 +3169,7 @@ protected:
         Returns true if the given WindowRenderer class name is valid for this window.
         False if not.
     */
-    virtual bool validateWindowRenderer(const WindowRenderer* renderer) const;
+    virtual bool validateWindowRenderer(const WindowRenderer* /*renderer*/) const { return true; }
 
     /*!
     \brief
@@ -3534,14 +3189,14 @@ protected:
     //! notify windows in a hierarchy when the default font changes
     void notifyDefaultFontChanged();
 
+    //! Internal notification about render size change of any font
+    bool notifyFontRenderSizeChanged(const Font& font);
+
     /*!
     \brief
         Recursively updates all rendering surfaces and windows to work with a new host surface.
     */
     virtual void onTargetSurfaceChanged(RenderingSurface* newSurface);
-
-    //! return the GUIContext this window is associated with.
-    GUIContext* getGUIContextPtr() const;
 
     //! helper to create and setup the auto RenderingWindow surface
     void allocateRenderingWindow(bool addStencilBuffer);
@@ -3549,49 +3204,20 @@ protected:
     //! helper to clean up the auto RenderingWindow surface
     void releaseRenderingWindow();
 
-    /*!
-    \brief
-        Cleanup child windows
-    */
+    //! \brief Cleanup child windows
     virtual void cleanupChildren();
 
-    /*!
-    \copydoc Element::addChild_impl
-    */
+    //! \copydoc Element::addChild_impl
     void addChild_impl(Element* element) override;
 
-    /*!
-    \copydoc Element::removeChild_impl
-    */
+    //! \copydoc Element::removeChild_impl
     void removeChild_impl(Element* element) override;
 
-    /*!
-    \brief
-        Notify 'this' and all siblings of a ZOrder change event
-    */
+    //! \brief Notify 'this' and all siblings of a ZOrder change event
     virtual void onZChange_impl();
 
-    /*!
-    \brief
-        Add standard CEGUI::Window properties.
-    */
-    void    addWindowProperties();
-
-    /*!
-    \brief
-        A helper function for internal activation logic.
-    */
-    bool activate_impl(bool byClick);
-
-    /*!
-    \brief
-        Implements move to front behavior.
-
-    \return
-        Should return true if some action was taken, or false if there was
-        nothing to be done.
-    */
-    virtual bool moveToFront_impl(bool byClick);
+    //! \brief Add standard CEGUI::Window properties.
+    void addWindowProperties();
 
     /*!
     \brief
@@ -3608,9 +3234,6 @@ protected:
         Indicates whether the window should be placed at the back of other
         windows in the same group. If this is false, the window is placed in
         front of other windows in the group.
-
-    \return
-        Nothing.
     */
     void addWindowToDrawList(Window& wnd, bool at_back = false);
 
@@ -3621,38 +3244,14 @@ protected:
 
     \param wnd
         Window object to be removed from the drawing list.
-
-    \return
-        Nothing.
     */
     void removeWindowFromDrawList(const Window& wnd);
-
-    /*!
-    \brief
-        Return whether the window is at the top of the Z-Order.  This will
-        correctly take into account 'Always on top' windows as needed.
-
-    \return
-        - true if the Window is at the top of the z-order in relation to sibling
-          windows with the same 'always on top' setting.
-        - false if the Window is not at the top of the z-order in relation to
-          sibling windows with the same 'always on top' setting.
-    */
-    bool isTopOfZOrder() const;
 
     //! transfer RenderingSurfaces to be owned by our target RenderingSurface.
     void transferChildSurfaces();
 
     //! helper function to invalidate window and optionally child windows.
     void invalidate_impl(const bool recursive);
-
-    /*!
-    \brief
-        Helper function to return the ancestor Window of /a wnd that is attached
-        as a child to a window that is also an ancestor of /a this.  Returns 0
-        if /a wnd and /a this are not part of the same hierachy.
-     */
-    const Window* getWindowAttachedToCommonAncestor(const Window& wnd) const;
 
     Rectf getUnclippedInnerRect_impl(bool skipAllPixelAlignment) const override;
     //! Default implementation of function to return Window outer clipper area.
@@ -3669,7 +3268,11 @@ protected:
     virtual void banPropertiesForAutoWindow();
 
     //! handler function for when font render size changes.
-    virtual bool handleFontRenderSizeChange(const EventArgs& args);
+    virtual bool handleFontRenderSizeChange(const Font& font);
+
+    // FIXME: this is needed only for very dirty HACK!
+    //! \brief Retrieves a child at \a name_path or 0 if none such exists
+    virtual Window* findChildByNamePath_impl(const String& name_path) const;
 
     Window* getChildAtPosition(const glm::vec2& position,
                                bool (Window::*hittestfunc)(const glm::vec2&, bool)
@@ -3680,7 +3283,10 @@ protected:
                                bool allow_disabled = false,
                                const Window* const exclude = nullptr) const;
 
-    bool isHitTargetWindow(const glm::vec2& position, bool allow_disabled) const;
+    bool isHitTargetWindow(const glm::vec2& position, bool allow_disabled) const
+    {
+        return !isCursorPassThroughEnabled() && isHit(position, allow_disabled);
+    }
 
     /*************************************************************************
         Properties for Window base class
@@ -3730,88 +3336,57 @@ protected:
         Implementation Data
     *************************************************************************/
 
-    //! GUIContext.  Set when this window is used as a root window.
-    GUIContext* d_guiContext;
+    //! GUIContext this window is currently living in.
+    GUIContext* d_guiContext = nullptr;
     //! The WindowRenderer module that implements the Look'N'Feel specification
-    WindowRenderer* d_windowRenderer;
-    //! RenderingSurface owned by this window (may be 0)
-    RenderingSurface* d_surface;
+    WindowRenderer* d_windowRenderer = nullptr;
+    //! RenderingSurface owned by this window (may be nullptr)
+    RenderingSurface* d_surface = nullptr;
     //! Holds pointer to the Window objects current cursor image.
-    const Image* d_cursor;
-    //! Possible custom Tooltip for this window.
-    Tooltip* d_customTip;
+    const Image* d_cursor = nullptr;
     //! Holds pointer to the Window objects current Font.
-    const Font* d_font;
-    //! Pointer to a custom (user assigned) RenderedStringParser object.
-    RenderedStringParser* d_customStringParser;
-    //! The Window that previously had capture (used for restoreOldCapture mode)
-    Window* d_oldCapture;
+    Font* d_font = nullptr;
+    //! Animations that play when the window visibility is changed
+    AnimationInstance* d_showAnimInst = nullptr;
+    AnimationInstance* d_hideAnimInst = nullptr;
     //! Holds pointer to some user assigned data.
-    void* d_userData;
+    void* d_userData = nullptr;
 
-#ifdef CEGUI_BIDI_SUPPORT
-    //! pointer to bidirection support object
-    BidiVisualMapping* d_bidiVisualMapping;
-#endif
-
-#ifdef CEGUI_USE_RAQM
-    //! raqm text object
-    std::unique_ptr<RaqmTextData> d_raqmTextData;
-#endif
-
-    // FIXME: why GUI context doesn't propagate this to its window hierarchy?
-    //! connection for event listener for font render size changes.
-    Event::ScopedConnection d_fontRenderSizeChangeConnection;
+    Event::ScopedConnection d_visibilityAnimEndConnection;
 
     //! outer area clipping rect in screen pixels
-    mutable Rectf d_outerRectClipper;
+    mutable Rectf d_outerRectClipper = Rectf(0.f, 0.f, 0.f, 0.f);
     //! inner area clipping rect in screen pixels
-    mutable Rectf d_innerRectClipper;
+    mutable Rectf d_innerRectClipper = Rectf(0.f, 0.f, 0.f, 0.f);
     //! area rect used for hit-testing against this window
-    mutable Rectf d_hitTestRect;
-    //! The clipping region which was set for this window.
-    Rectf d_clippingRegion;
+    mutable Rectf d_hitTestRect = Rectf(0.f, 0.f, 0.f, 0.f);
     //! Margin, only used when the Window is inside LayoutContainer class
     //!!!FIXME: move to LC? Too much memory wasted.
-    UBox d_margin;
+    UBox d_margin = UBox(UDim(0, 0));
     /*!
         Contains the draw mode mask, for this window, specifying
         a the bit flags that determine if the Window will be drawn or not
         in the draw calls, depending on the bitmask passed to the calls.
     */
-    std::uint32_t d_drawModeMask;
+    std::uint32_t d_drawModeMask = DrawModeFlagWindowRegular;
     //! User ID assigned to this Window
-    unsigned int d_ID;
-    //! Cursor source we're tracking for auto-repeat purposes.
-    CursorInputSource d_repeatPointerSource;
-    //! The mode to use for calling Window::update
-    WindowUpdateMode d_updateMode;
-    //! The translation which was set for this window.
-    glm::vec3 d_translation;
+    unsigned int d_ID = 0;
     //! Alpha transparency setting for the Window
-    float d_alpha;
+    float d_alpha = 1.f;
     //! seconds before first repeat event is fired
-    float d_repeatDelay;
+    float d_repeatDelay = 0.3f;
     //! seconds between further repeats after delay has expired.
-    float d_repeatRate;
-    //! implements repeating - tracks time elapsed.
-    float d_repeatElapsed;
+    float d_repeatRate = 0.06f;
 
     //! Holds a collection of named user string values.
-    std::unordered_map<String, String> d_userStrings;
-    //! collection of properties not to be written to XML for this window.
-    std::unordered_set<String> d_bannedXMLProperties;
+    // TODO: StringAtom key!
+    std::map<String, String> d_userStrings;
+    //! sorted vector of properties not to be written to XML for this window.
+    std::vector<String> d_bannedXMLProperties;
     //! List of geometry buffers that cache the geometry drawn by this Window.
     std::vector<GeometryBuffer*> d_geometryBuffers;
     //! Child window objects arranged in rendering order.
     std::vector<Window*> d_drawList;
-
-    //! RenderedString representation of text string as ouput from a parser.
-    mutable RenderedString d_renderedString;
-    //! Shared instance of a parser to be used in most instances.
-    static BasicRenderedStringParser d_basicStringParser;
-    //! Shared instance of a parser to be used when rendering text verbatim.
-    static DefaultRenderedStringParser d_defaultStringParser;
 
     //! type of Window (also the name of the WindowFactory that created us)
     const String d_type;
@@ -3819,11 +3394,15 @@ protected:
     String d_falagardType;
     //! Name of the Look assigned to this window (if any).
     String d_lookName;
-
-    //! Holds the text / label / caption for this Window.
-    String d_textLogical;
-    //! Text string used as tip for this window.
+    //! The name of the window, unique in its parent
+    String d_name;
+    //! Type of the tooltip object used for this window.
+    String d_tooltipType;
+    //! Text string used as tooltip for this window.
     String d_tooltipText;
+
+    //! The mode to use for calling Window::update
+    WindowUpdateMode d_updateMode = WindowUpdateMode::Visible;
 
     //! true when this window is an auto-window
     bool d_autoWindow : 1;
@@ -3835,8 +3414,6 @@ protected:
     bool d_enabled : 1;
     //! is window visible (i.e. it will be rendered, but may still be obscured)
     bool d_visible : 1;
-    //! true when Window is the active Window (receiving inputs).
-    bool d_active : 1;
     //! true when Window will be auto-destroyed by parent.
     bool d_destroyedByParent : 1;
     //! true when Window will be clipped by parent Window area Rect.
@@ -3854,32 +3431,27 @@ protected:
     //! Whether to distribute captured inputs to child windows.
     bool d_distCapturedInputs : 1;
 
-    //! true if d_renderedString is valid, false if needs re-parse.
-    mutable bool d_renderedStringValid : 1;
-    //! true if use of parser other than d_defaultStringParser is enabled
-    bool d_textParsingEnabled : 1;
-
     //! true if Window will be drawn on top of all other Windows
     bool d_alwaysOnTop : 1;
     //! whether window should rise in the z order when left cursor source is activated.
-    bool d_riseOnPointerActivation : 1;
+    bool d_riseOnCursorActivation : 1;
     //! true if the Window responds to z-order change requests.
     bool d_zOrderingEnabled : 1;
 
     //! whether (most) cursor events pass through this window
     bool d_cursorPassThroughEnabled : 1;
+    //! specifies whether cursor inputs should be propagated to parent(s)
+    bool d_propagatePointerInputs : 1;
     //! whether pressed cursor will auto-repeat the down event.
     bool d_autoRepeat : 1;
-    //! implements repeating - is true after delay has elapsed,
-    bool d_repeating : 1;
+    //! true when cursor is contained within this Window's area.
+    bool d_containsPointer : 1;
 
     //! true if window will receive drag and drop related notifications
     bool d_dragDropTarget : 1;
 
-    //! true if this Window created the custom Tooltip.
-    bool d_weOwnTip : 1;
     //! whether tooltip text may be inherited from parent.
-    bool d_inheritsTipText : 1;
+    bool d_inheritsTooltipText : 1;
     bool d_tooltipEnabled : 1;
 
     //! true if this window is allowed to write XML, false if not
@@ -3889,39 +3461,26 @@ protected:
     mutable bool d_innerRectClipperValid : 1;
     mutable bool d_hitTestRectValid : 1;
 
-    //! specifies whether cursor inputs should be propagated to parent(s)
-    bool d_propagatePointerInputs : 1;
-
-    //! true when cursor is contained within this Window's area.
-    bool d_containsPointer : 1;
-
-    //! true when this window is focused.
-    bool d_isFocused : 1;
-
-#ifdef CEGUI_BIDI_SUPPORT
-    //! whether bidi visual mapping has been updated since last text change.
-    mutable bool d_bidiDataValid : 1;
-#endif
-
-#ifdef CEGUI_USE_RAQM
-    /*! Stores whether raqm text is up-to-date or if the logical text has changed since
-     the last update
-    */
-    mutable bool d_raqmTextNeedsUpdate : 1;
-#endif
-
 private:
 
-    void updateTransformAndClipping();
-    void updatePivot();
+    // For properties
+    void setDisabled(bool value) { setEnabled(!value); }
+    void setVisibleForced(bool value) { setVisible(value, true); }
+
+    void changeVisibility(bool setting);
+
+    void setGUIContextRecursively(GUIContext* context);
+    void attachToGUIContext(GUIContext* context);
+
+    void updateRenderingWindow(bool updateSize);
+    void updateGeometryTransformAndClipping();
+    void updateGeometryAlpha();
 };
 
 } // End of  CEGUI namespace section
-
 
 #if defined(_MSC_VER)
 #   pragma warning(pop)
 #endif
 
 #endif  // end of guard _CEGUIWindow_h_
-

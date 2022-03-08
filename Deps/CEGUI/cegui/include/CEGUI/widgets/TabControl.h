@@ -350,7 +350,7 @@ protected:
     \return
         Nothing
     */
-    void drawSelf(const RenderingContext&, std::uint32_t) override { /* do nothing; rendering handled by children */ }
+    void drawSelf(const RenderingContext&, std::uint32_t) override { /* do nothing; rendering is handled by children */ }
 
     /*!
     \brief
@@ -493,8 +493,8 @@ protected:
     void addChild_impl(Element* element) override;
     void removeChild_impl(Element* element) override;
 
-    //! \copydoc Window::getChildByNamePath_impl
-    NamedElement* getChildByNamePath_impl(const String& name_path) const override;
+    //! \copydoc Window::findChildByNamePath_impl
+    Window* findChildByNamePath_impl(const String& name_path) const override;
 
     /*************************************************************************
     Event handlers

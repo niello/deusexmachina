@@ -27,7 +27,6 @@
  *   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  *   OTHER DEALINGS IN THE SOFTWARE.
  ***************************************************************************/
-
 #ifndef _CEGUIElement_h_
 #define _CEGUIElement_h_
 
@@ -35,6 +34,8 @@
 #include "CEGUI/EventSet.h"
 #include "CEGUI/EventArgs.h"
 #include "CEGUI/Rectf.h"
+
+#include <vector>
 
 #if defined(_MSC_VER)
 #   pragma warning(push)
@@ -82,9 +83,7 @@ class directly. You most likely want to use CEGUI::Window.
     that deriving classes can easily make their getParent and return the proper
     casted type (Window* for example).
 */
-class CEGUIEXPORT Element :
-    public PropertySet,
-    public EventSet
+class CEGUIEXPORT Element : public PropertySet, public EventSet
 {
 public:
     //! Namespace for global events
@@ -144,18 +143,8 @@ public:
      * changed.
      */
     static const String EventNonClientChanged;
-    /*!
-    \brief
-        Fired when any of the properties "AdjustWidthToContent" and
-        "AdjustHeightToContent" changes.
-    */
+    //! \brief Fired when "AdjustWidthToContent" or "AdjustHeightToContent" changes.
     static const String EventIsSizeAdjustedToContentChanged;
-
-    /*!
-    \brief
-        Fired when the "DefaultParagraphDirection" changes.
-    */
-    static const String EventDefaultParagraphDirectionChanged;
 
     /*!
     \brief A tiny wrapper to hide some of the dirty work of rect caching
@@ -173,14 +162,13 @@ public:
         If the bool is true all PixelAlignment settings will be overridden
         and no pixel alignment will take place.
         */
-        typedef Rectf (Element::*DataGenerator)(bool) const;
+        typedef Rectf(Element::* DataGenerator)(bool) const;
 
-        CachedRectf(Element const* element, DataGenerator generator):
+        CachedRectf(Element const* element, DataGenerator generator) :
             d_element(element),
-            d_generator(generator),
+            d_generator(generator)
             // we don't have to initialise d_cachedData here, it will get
             // regenerated and reset anyways
-            d_cacheValid(false)
         {}
 
         /*!
@@ -189,9 +177,7 @@ public:
         inline const Rectf& get() const
         {
             if (!d_cacheValid)
-            {
                 regenerateCache();
-            }
 
             return d_cachedData;
         }
@@ -207,20 +193,13 @@ public:
             // if the cache is not valid we will use this chance to regenerate it
             // of course this is only applicable if we are allowed to use pixel alignment where applicable
             if (!d_cacheValid && !skipAllPixelAlignment)
-            {
                 return get();
-            }
 
             return ((*d_element).*d_generator)(skipAllPixelAlignment);
         }
 
-        /*!
-        \brief Retrieves cached Rectf even if the cache is invalid
-        */
-        inline const Rectf& getCurrent() const
-        {
-            return d_cachedData;
-        }
+        //! \brief Retrieves cached Rectf even if the cache is invalid
+        const Rectf& getCurrent() const { return d_cachedData; }
 
         /*!
         \brief Invalidates the cached Rectf causing it to be regenerated
@@ -228,44 +207,53 @@ public:
         The regeneration will not happen immediately, it will happen when user
         requests the data.
         */
-        inline void invalidateCache() const
-        {
-            d_cacheValid = false;
-        }
+        void invalidateCache() const { d_cacheValid = false; }
 
-        inline bool isCacheValid() const
-        {
-            return d_cacheValid;
-        }
+        bool isCacheValid() const { return d_cacheValid; }
 
         inline void regenerateCache() const
         {
             // false, since when we are caching we don't want to skip anything, we want everything to act
             // exactly as it was setup
             d_cachedData = (*d_element.*d_generator)(false);
-
             d_cacheValid = true;
         }
 
     private:
+
         Element const* d_element;
         const DataGenerator d_generator;
 
         mutable Rectf d_cachedData;
-        mutable bool  d_cacheValid;
+        mutable bool  d_cacheValid = false;
     };
 
     /*!
-    \brief Constructor
-    */
-    Element();
+    \brief
+        Retrieves parents of given elements that are siblings of
+        their lowest common ancestor
 
+    \returns
+        - two different siblings if there is a lowest common ancestor
+        - both elements equal to one of input elements if it is an ancestor of another
+        - both nullptrs if there is no common ancestor
+    */
+    static std::pair<Element*, Element*> getSiblingsInCommonAncestor(const Element* e1, const Element* e2);
+
+    //! Retrieves the lowest common ancestor of two elements (may be nullptr)
+    static inline Element* getCommonAncestor(const Element* e1, const Element* e2)
+    {
+        const auto siblings = getSiblingsInCommonAncestor(e1, e2);
+        return (siblings.first == siblings.second) ? siblings.first : siblings.first->getParentElement();
+    }
+
+    Element();
     Element(const Element&) = delete;
     Element& operator=(const Element&) = delete;
 
     /*!
     \brief Retrieves parent of this element
-   
+
     \returns
         pointer to parent or 0, 0 means that this Element is a root of
         the subtree it represents
@@ -300,23 +288,16 @@ public:
     void setArea(const UVector2& pos, const USize& size, bool adjust_size_to_content);
 
     //! \overload
-    inline void setArea(const UDim& xpos, const UDim& ypos,
-                        const UDim& width, const UDim& height)
+    void setArea(const UDim& xpos, const UDim& ypos, const UDim& width, const UDim& height)
     {
         setArea(UVector2(xpos, ypos), USize(width, height));
     }
 
     //! \overload
-    inline void setArea(const UVector2& pos, const USize& size)
-    {
-        setArea(pos, size, true);
-    }
+    void setArea(const UVector2& pos, const USize& size) { setArea(pos, size, true); }
 
     //! \overload
-    inline void setArea(const URect& area)
-    {
-        setArea(area.d_min, area.getSize());
-    }
+    void setArea(const URect& area) { setArea(area.d_min, area.getSize()); }
 
     /*!
     \brief
@@ -332,10 +313,7 @@ public:
 
     \see UDim
     */
-    inline const URect& getArea() const
-    {
-        return d_area;
-    }
+    const URect& getArea() const { return d_area; }
 
     /*!
     \brief
@@ -352,28 +330,19 @@ public:
     \see UDim
     \see Element::setArea(const UVector2& pos, const USize& size)
     */
-    inline void setPosition(const UVector2& pos)
-    {
-        setArea(pos, getSize(), true);
-    }
+    void setPosition(const UVector2& pos) { setArea(pos, getSize(), true); }
 
     //! \overload
-    inline void setXPosition(const UDim& pos)
-    {
-        setPosition(UVector2(pos, getYPosition()));
-    }
+    void setXPosition(const UDim& pos) { setPosition(UVector2(pos, getYPosition())); }
 
     //! \overload
-    inline void setYPosition(const UDim& pos)
-    {
-        setPosition(UVector2(getXPosition(), pos));
-    }
+    void setYPosition(const UDim& pos) { setPosition(UVector2(getXPosition(), pos)); }
 
     /*!
     \brief
         Get the element's position.
 
-        Sets the position of the area occupied by this element. The position is offset from
+        Gets the position of the area occupied by this element. The position is offset from
         one of the corners of this Element's parent element (depending on alignments)
         or from the top-left corner of the display if this element has no parent
         (i.e. it is the root element).
@@ -383,22 +352,13 @@ public:
 
     \see UDim
     */
-    inline const UVector2& getPosition() const
-    {
-        return d_area.getPosition();
-    }
+    const UVector2& getPosition() const { return d_area.getPosition(); }
 
     //! \overload
-    inline const UDim& getXPosition() const
-    {
-        return getPosition().d_x;
-    }
+    const UDim& getXPosition() const { return getPosition().d_x; }
 
     //! \overload
-    inline const UDim& getYPosition() const
-    {
-        return getPosition().d_y;
-    }
+    const UDim& getYPosition() const { return getPosition().d_y; }
 
     /*!
     \brief
@@ -422,10 +382,7 @@ public:
     \return
         One of the HorizontalAlignment enumerated values.
      */
-    inline HorizontalAlignment getHorizontalAlignment() const
-    {
-        return d_horizontalAlignment;
-    }
+    HorizontalAlignment getHorizontalAlignment() const { return d_horizontalAlignment; }
 
     /*!
     \brief
@@ -449,10 +406,7 @@ public:
     \return
         One of the VerticalAlignment enumerated values.
      */
-    inline VerticalAlignment getVerticalAlignment() const
-    {
-        return d_verticalAlignment;
-    }
+    VerticalAlignment getVerticalAlignment() const { return d_verticalAlignment; }
 
     /*!
     \brief
@@ -465,10 +419,7 @@ public:
 
     \see UDim
     */
-    inline void setSize(const USize& size)
-    {
-        setSize(size, true);
-    }
+    void setSize(const USize& size) { setSize(size, true); }
 
     /*!
     \brief
@@ -487,22 +438,16 @@ public:
 
     \see UDim
     */
-    inline void setSize(const USize& size, bool adjust_size_to_content)
+    void setSize(const USize& size, bool adjust_size_to_content)
     {
         setArea(getPosition(), size, adjust_size_to_content);
     }
 
     //! \overload
-    inline void setWidth(const UDim& width)
-    {
-        setSize(USize(width, getSize().d_height));
-    }
+    void setWidth(const UDim& width) { setSize(USize(width, getSize().d_height)); }
 
     //! \overload
-    inline void setHeight(const UDim& height)
-    {
-        setSize(USize(getSize().d_width, height));
-    }
+    void setHeight(const UDim& height) { setSize(USize(getSize().d_width, height)); }
 
     /*!
     \brief
@@ -515,22 +460,13 @@ public:
 
     \see UDim
     */
-    inline USize getSize() const
-    {
-        return d_area.getSize();
-    }
+    USize getSize() const { return d_area.getSize(); }
 
     //! \overload
-    inline UDim getWidth() const
-    {
-        return getSize().d_width;
-    }
+    UDim getWidth() const { return getSize().d_width; }
 
     //! \overload
-    inline UDim getHeight() const
-    {
-        return getSize().d_height;
-    }
+    UDim getHeight() const { return getSize().d_height; }
 
     /*!
     \brief
@@ -564,10 +500,7 @@ public:
 
     \see Element::setMinSize
     */
-    inline const USize& getMinSize() const
-    {
-        return d_minSize;
-    }
+    const USize& getMinSize() const { return d_minSize; }
 
     /*!
     \brief
@@ -603,10 +536,7 @@ public:
 
     \see Element::setMaxSize
      */
-    inline const USize& getMaxSize() const
-    {
-        return d_maxSize;
-    }
+    const USize& getMaxSize() const { return d_maxSize; }
 
     /*!
     \brief Sets current aspect mode and recalculates the area rect
@@ -624,10 +554,7 @@ public:
 
     \see Element::setAspectMode
     */
-    inline AspectMode getAspectMode() const
-    {
-        return d_aspectMode;
-    }
+    AspectMode getAspectMode() const { return d_aspectMode; }
 
     /*!
     \brief
@@ -650,15 +577,12 @@ public:
 
     \see Element::setAspectRatio
     */
-    inline float getAspectRatio() const
-    {
-        return d_aspectRatio;
-    }
+    float getAspectRatio() const { return d_aspectRatio; }
 
     /*!
     \brief
         Sets whether this Element is pixel aligned (both position and size, basically the 4 "corners").
-        
+
     \par Impact on the element tree
         Lets say we have Element A with child Element B, A is pixel aligned
         and it's position is 99.5, 99.5 px in screenspace. This gives us
@@ -681,14 +605,11 @@ public:
     /*!
     \brief
         Checks whether this Element is pixel aligned
-        
+
     \see
         Element::setPixelAligned
     */
-    inline bool isPixelAligned() const
-    {
-        return d_pixelAligned;
-    }
+    bool isPixelAligned() const { return d_pixelAligned; }
 
     /*!
     \brief
@@ -697,10 +618,7 @@ public:
     \return
         glm::vec2 object describing this element's absolute position in pixels.
     */
-    inline glm::vec2 getPixelPosition() const
-    {
-        return getUnclippedOuterRect().get().d_min;
-    }
+    glm::vec2 getPixelPosition() const { return getUnclippedOuterRect().get().d_min; }
 
     /*!
     \brief
@@ -709,15 +627,12 @@ public:
     \return
         Size object describing this element's size in pixels.
     */
-    inline const Sizef& getPixelSize() const
-    {
-        return d_pixelSize;
-    }
+    const Sizef& getPixelSize() const { return d_pixelSize; }
 
     /*!
     \brief Calculates this element's pixel size
 
-    \param skipAllPixelAlignment 
+    \param skipAllPixelAlignment
         Should all pixel-alignment be skipped when calculating the pixel size?
 
     If you want to get the pixel size you most probably want to use the
@@ -763,10 +678,7 @@ public:
 
     \see Element::setRotation
     */
-    inline const glm::quat& getRotation() const
-    {
-        return d_rotation;
-    }
+    const glm::quat& getRotation() const { return d_rotation; }
 
     /*!
     \brief
@@ -781,10 +693,7 @@ public:
     \see Element::setPivot
     \see Element::getRotation
     */
-    inline UVector3 getPivot() const
-    {
-        return d_pivot;
-    }
+    const UVector3& getPivot() const { return d_pivot; }
 
     /*!
     \brief
@@ -901,7 +810,7 @@ public:
     \return
         Pointer to the child element currently attached at index position \a idx
     */
-    inline Element* getChildElementAtIndex(size_t idx) const { return d_children[idx]; }
+    Element* getChildElementAtIndex(size_t idx) const { return d_children[idx]; }
 
     /*!
     \brief
@@ -918,14 +827,10 @@ public:
     */
     size_t getChildIndex(const Element* child) const;
 
-    /*!
-    \brief Returns number of child elements attached to this Element
-    */
-    inline size_t getChildCount() const { return d_children.size(); }
+    //! \brief Returns number of child elements attached to this Element
+    size_t getChildCount() const { return d_children.size(); }
 
-    /*!
-    \brief Checks whether given element is attached to this Element
-    */
+    //! \brief Checks whether given element is attached to this Element
     bool isChild(const Element* element) const;
 
     /*!
@@ -941,11 +846,10 @@ public:
           parent, etc) of this Element.
         - false if \a element is not an ancestor of this element.
     */
-    inline bool isAncestor(const Element* element) const
-    {
-        // no parent - no ancestor at all
-        return d_parent && (d_parent == element || d_parent->isAncestor(element));
-    }
+    bool isDescendantOf(const Element* element) const;
+
+    //! \brief Checks whether the element is in a subtree starting at the given root
+    bool isInHierarchyOf(const Element* root) const { return root && (root == this || isDescendantOf(root)); }
 
     /*!
     \brief Set whether the Element is non-client.
@@ -967,10 +871,7 @@ public:
 
     \see Element::setNonClient
     */
-    inline bool isNonClient() const
-    {
-        return d_nonClient;
-    }
+    bool isNonClient() const { return d_nonClient; }
 
     /*!
     \brief
@@ -1027,10 +928,7 @@ public:
     \see onIsSizeAdjustedToContentChanged
     \see onSized
     */
-    inline bool isWidthAdjustedToContent() const
-    {
-        return d_isWidthAdjustedToContent;
-    }
+    bool isWidthAdjustedToContent() const { return d_isWidthAdjustedToContent; }
 
     /*!
     \brief
@@ -1060,10 +958,7 @@ public:
     \see onIsSizeAdjustedToContentChanged
     \see onSized
     */
-    inline bool isHeightAdjustedToContent() const
-    {
-        return d_isHeightAdjustedToContent;
-    }
+    bool isHeightAdjustedToContent() const { return d_isHeightAdjustedToContent; }
 
     /*!
     \brief
@@ -1073,10 +968,7 @@ public:
     \see isWidthAdjustedToContent
     \see isHeightAdjustedToContent
     */
-    inline bool isSizeAdjustedToContent() const
-    {
-        return isWidthAdjustedToContent() || isHeightAdjustedToContent();
-    }
+    bool isSizeAdjustedToContent() const { return isWidthAdjustedToContent() || isHeightAdjustedToContent(); }
 
     /*!
     \brief Return a Rect that describes the unclipped outer rect area of the Element
@@ -1091,10 +983,7 @@ public:
         If you take position of the result rectangle it is the same as pixel
         position of the Element in screenspace.
     */
-    inline const CachedRectf& getUnclippedOuterRect() const
-    {
-        return d_unclippedOuterRect;
-    }
+    const CachedRectf& getUnclippedOuterRect() const { return d_unclippedOuterRect; }
 
     /*!
     \brief Return a Rect that describes the unclipped inner rect area of the Element
@@ -1109,10 +998,7 @@ public:
         Rect object that describes, in unclipped screen pixel co-ordinates, the
         element object's inner rect area.
     */
-    inline const CachedRectf& getUnclippedInnerRect() const
-    {
-        return d_unclippedInnerRect;
-    }
+    const CachedRectf& getUnclippedInnerRect() const { return d_unclippedInnerRect; }
 
     /*!
     \brief Return a Rect that is used to position and size child elements
@@ -1145,11 +1031,20 @@ public:
 
     \param adjust_size_to_content
         - true - call adjustSizeToContent() if our size is changed.
-
-    \param forceLayoutChildren
-        - true - call children layout code even if we are not resized.
     */
-    void notifyScreenAreaChanged(bool adjust_size_to_content, bool forceLayoutChildren = false);
+    void notifyScreenAreaChanged(bool adjust_size_to_content = true);
+
+    /*!
+    \brief
+        Layout child widgets inside our content areas.
+
+    \param client
+        - true to process client children
+
+    \param nonClient
+        - true to process non-client children
+    */
+    virtual void performChildLayout(bool client, bool nonClient);
 
     /*!
     \brief Return the size of the root container (such as screen size).
@@ -1208,24 +1103,12 @@ public:
 
     /*!
     \brief
-        Get the width of the content of the element.
+        Get width and height of the content of the element.
 
         The meaning of "content" depends on the type of element. For instance,
         the content of a "FalagardStaticText" widget is its text.
-        This method is used by "adjustSizeToContent_direct".
     */
-    virtual float getContentWidth() const;
-
-    /*!
-    \brief
-        Get the height of the content of the element.
-
-        The meaning of "content" depends on the type of element. For instance,
-        the content of a "FalagardStaticText" widget is its text.
-
-        This method is used by "adjustSizeToContent_direct".
-    */
-    virtual float getContentHeight() const;
+    virtual Sizef getContentSize() const;
     
     /*!
     \brief
@@ -1512,44 +1395,15 @@ public:
     */
     virtual bool contentFits() const;
 
-    //! Gets the default paragraph direction for the displayed text of this Element.
-    inline DefaultParagraphDirection getDefaultParagraphDirection() const
-    {
-        return d_defaultParagraphDirection;
-    }
-
-    //! Sets the default paragraph direction for the displayed text of this Element.
-    void setDefaultParagraphDirection(DefaultParagraphDirection defaultParagraphDirection);
-
-    /*!
-    \brief
-        Layout child widgets inside our content areas.
-
-    \param client
-        - true to process client children
-
-    \param nonClient
-        - true to process non-client children
-    */
-    virtual void performChildLayout(bool client, bool nonClient);
-
 protected:
-    /*!
-    \brief
-        Add standard CEGUI::Element properties.
-    */
+
+    //! \brief Add standard CEGUI::Element properties.
     void addElementProperties();
 
-    /*!
-    \brief
-        Add given element to child list at an appropriate position
-    */
+    //! \brief Add given element to child list at an appropriate position
     virtual void addChild_impl(Element* element);
 
-    /*!
-    \brief
-        Remove given element from child list
-    */
+    //! \brief Remove given element from child list
     virtual void removeChild_impl(Element* element);
 
     //! Default implementation of function to return Element's outer rect area.
@@ -1572,8 +1426,11 @@ protected:
         Handles an actual screen area changes for this widget. This typically leads
         to invalidation of cached imagery and areas.
 
-    \param moved
+    \param movedOnScreen
         - true if a widget moved on screen
+
+    \param movedInParent
+        - true if a widget moved inside its parent
 
     \param sized
         - true if a widget pixel size has changed
@@ -1582,7 +1439,7 @@ protected:
         Flags that represent child area changes (ClientMoved, ClientSized, ClientClippingChanged
         NonClientMoved, NonClientSized, NonClientClippingChanged)
     */
-    virtual uint8_t handleAreaChanges(bool moved, bool sized);
+    virtual uint8_t handleAreaChanges(bool movedOnScreen, bool movedInParent, bool sized);
 
     /*!
     \brief
@@ -1591,10 +1448,10 @@ protected:
     \note
         This is a lighter version of notifyScreenAreaChanged for widgets whose parent's size didn't change
 
-    \param moved
-        - notification from the parent that this child could be moved
+    \param movedOnScreen
+        - notification from the parent that this child could be moved on screen
     */
-    void handleAreaChangesRecursively(bool moved);
+    void handleAreaChangesRecursively(bool movedOnScreen);
 
     /*************************************************************************
         Event trigger methods
@@ -1694,11 +1551,7 @@ protected:
     */
     virtual void onNonClientChanged(ElementEventArgs& e);
 
-    /*!
-    \brief
-        Called whenever any of the properties "AdjustWidthToContent" and
-        "AdjustHeightToContent" change.
-    */
+    //! \brief Called whenever "AdjustWidthToContent" or "AdjustHeightToContent" change.
     virtual void onIsSizeAdjustedToContentChanged(ElementEventArgs&);
 
     /*************************************************************************
@@ -1708,7 +1561,7 @@ protected:
     //! The list of child element objects attached to this.
     std::vector<Element*> d_children;
     //! Holds pointer to the parent element.
-    Element* d_parent;
+    Element* d_parent = nullptr;
 
     URect d_area;
     //! current minimum size for the element.
@@ -1718,25 +1571,20 @@ protected:
     //! Current constrained pixel size of the element.
     Sizef d_pixelSize;
     //! Rotation of this element (relative to the parent)
+    glm::vec2 d_offsetInParent = glm::vec2(0.f, 0.f);
+    //! Rotation of this element (relative to the parent)
     glm::quat d_rotation;
     //! Pivot point (the point around which the widget is rotated).
     UVector3 d_pivot;
     //! The target aspect ratio
-    float d_aspectRatio;
+    float d_aspectRatio = 1.f;
 
     //! Specifies the base for horizontal alignment.
-    HorizontalAlignment d_horizontalAlignment;
+    HorizontalAlignment d_horizontalAlignment = HorizontalAlignment::Left;
     //! Specifies the base for vertical alignment.
-    VerticalAlignment d_verticalAlignment;
+    VerticalAlignment d_verticalAlignment = VerticalAlignment::Top;
     //! How to satisfy current aspect ratio
-    AspectMode d_aspectMode;
-
-    /*!
-    \brief
-        Default direction of the paragraph, relevant for bidirectional text.
-    \see DefaultParagraphDirection
-    */
-    DefaultParagraphDirection d_defaultParagraphDirection = DefaultParagraphDirection::LeftToRight;
+    AspectMode d_aspectMode = AspectMode::Ignore;
 
     //! outer area rect in screen pixels
     CachedRectf d_unclippedOuterRect;
@@ -1744,7 +1592,7 @@ protected:
     CachedRectf d_unclippedInnerRect;
 
     //! true if element is in non-client (outside InnerRect) area of parent.
-    bool d_nonClient;
+    bool d_nonClient = false;
 
     /*!
     \brief
@@ -1759,7 +1607,7 @@ protected:
     \see isWidthAdjustedToContent
     \see d_isHeightAdjustedToContent
     */
-    bool d_isWidthAdjustedToContent;
+    bool d_isWidthAdjustedToContent = false;
 
     /*!
     \brief
@@ -1774,14 +1622,13 @@ protected:
     \see isHeightAdjustedToContent
     \see d_isWidthAdjustedToContent
     */
-    bool d_isHeightAdjustedToContent;
+    bool d_isHeightAdjustedToContent = false;
 
     //! If true, the position and size are pixel aligned
-    bool d_pixelAligned;
+    bool d_pixelAligned = true;
 };
 
 } // End of  CEGUI namespace section
-
 
 #if defined(_MSC_VER)
 #   pragma warning(pop)

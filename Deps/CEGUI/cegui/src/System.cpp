@@ -37,6 +37,7 @@
 #include "CEGUI/RenderEffectManager.h"
 #include "CEGUI/AnimationManager.h"
 #include "CEGUI/GUIContext.h"
+#include "CEGUI/Clipboard.h"
 #include "CEGUI/ScriptModule.h"
 #include "CEGUI/Config_xmlHandler.h"
 #include "CEGUI/GlobalEventSet.h"
@@ -44,17 +45,13 @@
 #include "CEGUI/WindowRendererManager.h"
 #include "CEGUI/DynamicModule.h"
 #include "CEGUI/XMLParser.h"
+#include "CEGUI/text/LegacyTextParser.h"
 #include "CEGUI/RenderingWindow.h"
 #include "CEGUI/DefaultResourceProvider.h"
 #include "CEGUI/ImageCodec.h"
 #include "CEGUI/widgets/All.h"
 #include "CEGUI/SharedStringStream.h"
 #include "CEGUI/svg/SVGDataManager.h"
-#if defined(CEGUI_HAS_PCRE_REGEX)
-#   include "CEGUI/PCRERegexMatcher.h"
-#elif defined(CEGUI_HAS_STD11_REGEX)
-#   include "CEGUI/StdRegexMatcher.h"
-#endif
 #if defined(__WIN32__) || defined(_WIN32)
 #    include "CEGUI/Win32ClipboardProvider.h"
 #endif
@@ -95,7 +92,7 @@ const IconvStringTranscoder System::d_stringTranscoder;
 
 // event names
 const String System::EventDisplaySizeChanged( "DisplaySizeChanged" );
-const String System::EventRenderedStringParserChanged("RenderedStringParserChanged");
+const String System::EventTextParserChanged("TextParserChanged");
 
 // Holds name of default XMLParser
 String System::d_defaultXMLParserName(STRINGIZE(CEGUI_DEFAULT_XMLPARSER));
@@ -112,23 +109,24 @@ System::System(Renderer& renderer,
                ImageCodec* imageCodec,
                ScriptModule* scriptModule,
                const String& configFile,
-               const String& logFile)
-
-: d_renderer(&renderer),
-  d_resourceProvider(resourceProvider),
-  d_ourResourceProvider(false),
-  d_clipboard(new Clipboard()),
-  d_nativeClipboardProvider(nullptr),
-  d_scriptModule(scriptModule),
-  d_xmlParser(xmlParser),
-  d_ourXmlParser(false),
-  d_parserModule(nullptr),
-  d_imageCodec(imageCodec),
-  d_ourImageCodec(false),
-  d_imageCodecModule(nullptr),
-  d_ourLogger(Logger::getSingletonPtr() == nullptr),
-  d_customRenderedStringParser(nullptr)
+               const String& logFile):
+    d_renderer(&renderer),
+    d_resourceProvider(resourceProvider),
+    d_ourResourceProvider(false),
+    d_clipboard(new Clipboard()),
+    d_nativeClipboardProvider(nullptr),
+    d_scriptModule(scriptModule),
+    d_xmlParser(xmlParser),
+    d_ourXmlParser(false),
+    d_parserModule(nullptr),
+    d_imageCodec(imageCodec),
+    d_ourImageCodec(false),
+    d_imageCodecModule(nullptr),
+    d_ourLogger(Logger::getSingletonPtr() == nullptr),
+    d_fallbackTextParser(std::make_unique<LegacyTextParser>())
 {
+    d_defaultTextParser = d_fallbackTextParser.get();
+
     // Start out by fixing the numeric locale to C (we depend on this behaviour)
     // consider a UVector2 as a property {{0.5,0},{0.5,0}} could become {{0,5,0},{0,5,0}}
     setlocale(LC_NUMERIC, "C");
@@ -931,22 +929,21 @@ void System::destroy()
 }
 
 //----------------------------------------------------------------------------//
-RenderedStringParser* System::getDefaultCustomRenderedStringParser() const
+TextParser* System::getDefaultTextParser() const
 {
-    return d_customRenderedStringParser;
+    return d_defaultTextParser;
 }
 
 //----------------------------------------------------------------------------//
-void System::setDefaultCustomRenderedStringParser(RenderedStringParser* parser)
+void System::setDefaultTextParser(TextParser* parser)
 {
-    if (parser != d_customRenderedStringParser)
-    {
-        d_customRenderedStringParser = parser;
+    if (parser == d_defaultTextParser)
+        return;
 
-        // fire event
-        EventArgs args;
-        fireEvent(EventRenderedStringParserChanged, args, EventNamespace);
-    }
+    d_defaultTextParser = parser ? parser : d_fallbackTextParser.get();
+
+    EventArgs args;
+    fireEvent(EventTextParserChanged, args, EventNamespace);
 }
 
 //----------------------------------------------------------------------------//
@@ -971,24 +968,6 @@ void System::invalidateAllWindows()
         if (rs != nullptr && rs->isRenderingWindow())
             static_cast<RenderingWindow*>(rs)->invalidateGeometry();
     }
-}
-
-//----------------------------------------------------------------------------//
-RegexMatcher* System::createRegexMatcher() const
-{
-#if defined(CEGUI_HAS_PCRE_REGEX)
-    return new PCRERegexMatcher();
-#elif defined(CEGUI_HAS_STD11_REGEX)
-    return new StdRegexMatcher();
-#else
-    return nullptr;
-#endif
-}
-
-//----------------------------------------------------------------------------//
-void System::destroyRegexMatcher(RegexMatcher* rm) const
-{
-    delete rm;
 }
 
 //----------------------------------------------------------------------------//

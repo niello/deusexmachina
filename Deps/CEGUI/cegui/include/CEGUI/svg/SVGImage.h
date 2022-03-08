@@ -1,4 +1,4 @@
-﻿/***********************************************************************
+/***********************************************************************
     created:    30th July 2013
     author:     Lukas Meindl
 *************************************************************************/
@@ -70,15 +70,7 @@ public:
     SVGImage(const String& name, SVGData& svg_data);
     SVGImage(const XMLAttributes& attributes);
 
-    // Implement CEGUI::Image interface
-    std::vector<GeometryBuffer*> createRenderGeometry(
-        const ImageRenderSettings& render_settings) const override;
-
-    void addToRenderGeometry(
-        GeometryBuffer& geomBuffer,
-        const Rectf& renderArea,
-        const Rectf* clipArea,
-        const ColourRect& colours) const override;
+    void createRenderGeometry(std::vector<GeometryBuffer*>& out, const ImageRenderSettings& renderSettings, size_t canCombineFromIdx) const override;
 
     /*!
     \brief

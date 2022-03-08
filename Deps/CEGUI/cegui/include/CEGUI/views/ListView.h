@@ -30,6 +30,8 @@
 #define _CEGUIListView_h_
 
 #include "CEGUI/views/ItemView.h"
+#include "CEGUI/falagard/Enums.h"
+#include "CEGUI/text/RenderedText.h"
 
 #if defined (_MSC_VER)
 #   pragma warning(push)
@@ -38,7 +40,6 @@
 
 namespace CEGUI
 {
-enum class HorizontalTextFormatting : int;
 
 /*!
 \brief
@@ -50,31 +51,26 @@ enum class HorizontalTextFormatting : int;
     shouldn't use this struct for interacting with the list, but rather use the
     attached ItemModel.
 */
-struct CEGUIEXPORT ListViewItemRenderingState
+struct CEGUIEXPORT ListViewItemRenderingState final
 {
-    RenderedString* d_string;
-    FormattedRenderedString* d_formattedString;
-    //! The name of the image that represents the icon
-    String d_icon;
-    Sizef d_size;
-    bool d_isSelected;
-    ModelIndex d_index;
-    String d_text;
-    ListView* d_attachedListView;
-
     ListViewItemRenderingState(ListView* list_view);
+    ListViewItemRenderingState(const ListViewItemRenderingState&) = delete;
+    ListViewItemRenderingState(ListViewItemRenderingState&&) noexcept;
     ~ListViewItemRenderingState();
 
-    ListViewItemRenderingState(ListViewItemRenderingState&&) noexcept;
-    ListViewItemRenderingState& operator=(ListViewItemRenderingState&&) noexcept;
+    ListViewItemRenderingState& operator =(const ListViewItemRenderingState&) = delete;
+    ListViewItemRenderingState& operator =(ListViewItemRenderingState&&) noexcept;
 
-    ListViewItemRenderingState(const ListViewItemRenderingState&) = delete;
-    ListViewItemRenderingState& operator=(const ListViewItemRenderingState&) = delete;
+    bool operator <(const ListViewItemRenderingState& other) const;
+    bool operator >(const ListViewItemRenderingState& other) const;
 
-    void setStringAndFormatting(const RenderedString& string, HorizontalTextFormatting h_fmt);
-
-    bool operator< (const ListViewItemRenderingState& other) const;
-    bool operator> (const ListViewItemRenderingState& other) const;
+    RenderedText d_renderedText;
+    String d_icon; //!< The name of the image that represents the icon
+    Sizef d_size;
+    ModelIndex d_index;
+    String d_text;
+    ListView* d_attachedListView = nullptr;
+    bool d_isSelected = false;
 };
 
 /*!
@@ -90,13 +86,14 @@ struct CEGUIEXPORT ListViewItemRenderingState
 class CEGUIEXPORT ListView : public ItemView
 {
 public:
+
     //! Window factory name
     static const String WidgetTypeName;
     //! Namespace for global events
     static const String EventNamespace;
 
     ListView(const String& type, const String& name);
-    virtual ~ListView();
+    virtual ~ListView() override;
 
     const std::vector<ListViewItemRenderingState*>& getItems() const;
 
@@ -104,28 +101,16 @@ public:
 
     ModelIndex indexAt(const glm::vec2& position) override;
 
-    /*!
-    \brief
-        Return the current horizontal formatting option set for this widget.
-    */
-    HorizontalTextFormatting getHorizontalFormatting(void) const   {return    d_horzFormatting;}
+    HorizontalTextFormatting getHorizontalFormatting() const { return d_horzFormatting; }
+    void setHorizontalFormatting(HorizontalTextFormatting h_fmt);
 
-    /*!
-    \brief
-        Set the horizontal formatting required for the text.
-    */
-    void    setHorizontalFormatting(HorizontalTextFormatting h_fmt);
+    bool isWordWrapEnabled() const { return d_wordWrap; }
+    void setWordWrapEnabled(bool wrap);
 
 protected:
+
     bool onChildrenAdded(const EventArgs& args) override;
     bool onChildrenRemoved(const EventArgs& args) override;
-
-    //! Horizontal formatting to be applied to the text.
-    HorizontalTextFormatting d_horzFormatting;
-
-private:
-    std::vector<ListViewItemRenderingState> d_items;
-    std::vector<ListViewItemRenderingState*> d_sortedItems;
 
     void resortListView();
     void resortView() override;
@@ -136,6 +121,12 @@ private:
         float& max_width, float& total_height);
 
     Rectf getIndexRect(const ModelIndex& index) override;
+
+    std::vector<ListViewItemRenderingState> d_items;
+    std::vector<ListViewItemRenderingState*> d_sortedItems;
+
+    HorizontalTextFormatting d_horzFormatting = HorizontalTextFormatting::LeftAligned;
+    bool d_wordWrap = false;
 };
 
 }

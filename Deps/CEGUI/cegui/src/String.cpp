@@ -37,53 +37,39 @@
 
 namespace CEGUI
 {
-
-std::u32string String::convertUtf8ToUtf32(const char* utf8String)
+static const String emptyString;
+const String& String::GetEmpty()
 {
-    if(utf8String == nullptr)
-        return std::u32string();
-
-    std::size_t codeUnitCount = std::char_traits<char>::length(utf8String);
-    return convertUtf8ToUtf32(utf8String, codeUnitCount);
+    return emptyString;
 }
 
-std::u32string String::convertUtf8ToUtf32(const char* utf8StringStart, const char* utf8StringEnd)
+std::u32string String::convertUtf8ToUtf32(const char* utf8String, const size_t stringLength, std::vector<size_t>* mapping)
 {
-    if (utf8StringStart == nullptr)
-        return std::u32string();
-
-    return convertUtf8ToUtf32(utf8StringStart, utf8StringEnd - utf8StringStart);
-}
-
-std::u32string String::convertUtf8ToUtf32(const std::string& utf8String)
-{
-    return convertUtf8ToUtf32(utf8String.data(), utf8String.size());
-}
-
-std::u32string String::convertUtf8ToUtf32(const char utf8Char)
-{
-    return convertUtf8ToUtf32(&utf8Char, 1);
-}
-
-std::u32string String::convertUtf8ToUtf32(const char* utf8String, const size_t stringLength)
-{
-    if (utf8String == nullptr)
-        return std::u32string();
+    if (mapping)
+    {
+        mapping->clear();
+        mapping->reserve(stringLength); // May be excessive
+    }
 
     std::u32string utf32String;
+
+    if (!utf8String || !stringLength)
+        return utf32String;
 
     // Go through every UTF-8 code unit
     size_t currentCharIndex = 0;
     while (currentCharIndex < stringLength)
     {
-        size_t remainingCodeUnits = stringLength - currentCharIndex;
+        const size_t remainingCodeUnits = stringLength - currentCharIndex;
         size_t usedCodeUnits;
-        char32_t utf32CodePoint = getCodePointFromCodeUnits(utf8String + currentCharIndex,
-                                                            remainingCodeUnits,
-                                                            usedCodeUnits);
-        currentCharIndex += usedCodeUnits;
+        const char32_t utf32CodePoint = getCodePointFromCodeUnits(
+            utf8String + currentCharIndex, remainingCodeUnits, usedCodeUnits);
 
         utf32String.push_back(utf32CodePoint);
+        if (mapping)
+            mapping->push_back(currentCharIndex);
+
+        currentCharIndex += usedCodeUnits;
     }
 
     return utf32String;
@@ -126,7 +112,7 @@ std::string String::convertUtf32ToUtf8(const char32_t* utf32String, const size_t
     // Go through every UTF-32 code unit
     for (size_t currentCharIndex = 0; currentCharIndex < stringLength; ++currentCharIndex)
     {
-        const char32_t& currentCodeUnit = utf32String[currentCharIndex];
+        const char32_t currentCodeUnit = utf32String[currentCharIndex];
 
         // Check if the UTF-32 code unit can be represented by a single UTF-8 code-unit
         if (currentCodeUnit < 0x80) 
@@ -155,30 +141,6 @@ std::string String::convertUtf32ToUtf8(const char32_t* utf32String, const size_t
     }
 
     return utf8EncodedString;
-}
-
-size_t String::getCodePointSize(const char initialCodeUnit)
-{
-    if( (initialCodeUnit & 0x80) == 0x00)
-    {
-        return 1;
-    }
-    else if ( (initialCodeUnit & 0xE0) == 0xC0)
-    {
-        return 2;
-    }
-    else if ( (initialCodeUnit & 0xF0) == 0xE0)
-    {
-        return 3;
-    }
-    else if ( (initialCodeUnit & 0xF8) == 0xF0)
-    {
-        return 4;
-    }
-    else
-    {
-        return 0;
-    }
 }
 
 char32_t String::convertCodePoint(const char firstCodeUnit, const char secondCodeUnit)
@@ -569,7 +531,7 @@ String operator+(const std::u32string& lhs, String&& rhs)
 
 String operator+(String&& lhs, String&& rhs)
 {
-    return std::move(lhs.append(rhs));
+    return std::move(lhs.append(std::move(rhs)));
 }
 
 String operator+(const char32_t* lhs, String&& rhs)

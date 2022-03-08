@@ -29,24 +29,15 @@
 #include "CEGUI/widgets/TabButton.h"
 #include "CEGUI/GUIContext.h"
 
-// Start of CEGUI namespace section
 namespace CEGUI
 {
 const String TabButton::EventNamespace("TabButton");
 const String TabButton::WidgetTypeName("CEGUI/TabButton");
-
-
-/*************************************************************************
-	Event name constants
-*************************************************************************/
 const String TabButton::EventClicked( "Clicked" );
 const String TabButton::EventDragged( "Dragged" );
 const String TabButton::EventScrolled( "Scrolled" );
 
-
-/*************************************************************************
-	Constructor
-*************************************************************************/
+//----------------------------------------------------------------------------//
 TabButton::TabButton(const String& type, const String& name) :
 	ButtonBase(type, name),
     d_selected(false),
@@ -75,7 +66,6 @@ void TabButton::setTargetWindow(Window* wnd)
     // Parent control will keep text up to date, since changes affect layout
 }
 
-
 /*************************************************************************
 	handler invoked internally when the button is clicked.
 *************************************************************************/
@@ -92,11 +82,13 @@ void TabButton::onCursorPressHold(CursorInputEventArgs& e)
 {
     if (e.source == CursorInputSource::Middle)
     {
-        captureInput ();
-        ++e.handled;
-        d_dragging = true;
-
-        fireEvent(EventDragged, e, EventNamespace);
+        activate();
+        if (captureInput())
+        {
+            ++e.handled;
+            d_dragging = true;
+            fireEvent(EventDragged, e, EventNamespace);
+        }
     }
 
 	// default handling
@@ -107,9 +99,7 @@ void TabButton::onCursorActivate(CursorInputEventArgs& e)
 {
     if ((e.source == CursorInputSource::Left) && isPushed())
 	{
-		Window* sheet = getGUIContext().getRootWindow();
-
-		if (sheet)
+		if (auto sheet = getGUIContext().getRootWindow())
 		{
             // if cursor was released over this widget
             // (use cursor position, as e.position has been unprojected)
@@ -127,7 +117,7 @@ void TabButton::onCursorActivate(CursorInputEventArgs& e)
     else if (e.source == CursorInputSource::Middle)
     {
         d_dragging = false;
-        releaseInput ();
+        releaseInput();
         ++e.handled;
     }
 
@@ -152,7 +142,7 @@ void TabButton::onScroll(CursorInputEventArgs& e)
     fireEvent(EventScrolled, e, EventNamespace);
 
 	// default handling
-	ButtonBase::onCursorMove(e);
+	ButtonBase::onScroll(e);
 }
 
 } // End of  CEGUI namespace section

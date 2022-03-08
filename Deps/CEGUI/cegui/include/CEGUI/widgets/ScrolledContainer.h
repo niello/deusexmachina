@@ -55,9 +55,6 @@ public:
     //! Constructor for ScrolledContainer objects.
     ScrolledContainer(const String& type, const String& name);
 
-    //! Destructor for ScrolledContainer objects.
-    ~ScrolledContainer(void) override;
-
     /*!
     \brief
         Return the current content pane area for the ScrolledContainer.
@@ -95,14 +92,13 @@ protected:
     void onIsSizeAdjustedToContentChanged(ElementEventArgs& e) override;
 
     // overridden from Window.
-    void drawSelf(const RenderingContext&, std::uint32_t) override {}
+    void drawSelf(const RenderingContext&, std::uint32_t) override { /* do nothing; rendering is handled by children */ }
     Rectf getInnerRectClipper_impl() const override;
     Rectf getHitTestRect_impl() const override;
     void onChildAdded(ElementEventArgs& e) override;
     void onChildRemoved(ElementEventArgs& e) override;
     void cleanupChildren(void) override;
-    bool moveToFront_impl(bool byClick) override;
-    uint8_t handleAreaChanges(bool moved, bool sized) override;
+    uint8_t handleAreaChanges(bool movedOnScreen, bool movedInParent, bool sized) override;
 
     //! type definition for collection used to track event connections.
     typedef std::multimap<Window*, Event::Connection> ConnectionTracker;

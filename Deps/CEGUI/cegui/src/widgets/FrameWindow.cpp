@@ -477,29 +477,29 @@ void FrameWindow::setCursorForSizingLocation(SizingLocation location) const
 {
     switch(location)
     {
-    case SizingLocation::Top:
-    case SizingLocation::Bottom:
-        getGUIContext().getCursor().setImage(d_nsSizingCursor);
-        break;
+        case SizingLocation::Top:
+        case SizingLocation::Bottom:
+            getGUIContext().getCursor().setImage(d_nsSizingCursor);
+            break;
 
-    case SizingLocation::Left:
-    case SizingLocation::Right:
-        getGUIContext().getCursor().setImage(d_ewSizingCursor);
-        break;
+        case SizingLocation::Left:
+        case SizingLocation::Right:
+            getGUIContext().getCursor().setImage(d_ewSizingCursor);
+            break;
 
-    case SizingLocation::TopLeft:
-    case SizingLocation::BottomRight:
-        getGUIContext().getCursor().setImage(d_nwseSizingCursor);
-        break;
+        case SizingLocation::TopLeft:
+        case SizingLocation::BottomRight:
+            getGUIContext().getCursor().setImage(d_nwseSizingCursor);
+            break;
 
-    case SizingLocation::TopRight:
-    case SizingLocation::BottomLeft:
-        getGUIContext().getCursor().setImage(d_neswSizingCursor);
-        break;
+        case SizingLocation::TopRight:
+        case SizingLocation::BottomLeft:
+            getGUIContext().getCursor().setImage(d_neswSizingCursor);
+            break;
 
-    default:
-        getGUIContext().getCursor().setImage(getActualCursor());
-        break;
+        default:
+            getGUIContext().getCursor().setImage(getEffectiveCursor());
+            break;
     }
 }
 
@@ -511,7 +511,9 @@ void FrameWindow::setCursorForSizingLocation(SizingLocation location) const
 void FrameWindow::onRollupToggled(WindowEventArgs& e)
 {
     invalidate(!d_rolledup);
-    notifyScreenAreaChanged(false, false);
+
+    // TODO: need to check necessity of auto-sizing disabling
+    notifyScreenAreaChanged(false);
 
     fireEvent(EventRollupToggled, e, EventNamespace);
 }
@@ -537,9 +539,7 @@ void FrameWindow::onCursorMove(CursorInputEventArgs& e)
     // if we are not the window containing the cursor, do NOT change the indicator
     const Window* wndUnderCursor = getGUIContext().getWindowContainingCursor();
     if (wndUnderCursor != this && wndUnderCursor != getTitlebar())
-    {
         return;
-    }
 
     if (isSizingEnabled())
     {
@@ -566,7 +566,7 @@ void FrameWindow::onCursorMove(CursorInputEventArgs& e)
             else if (isBottomSizingLocation(dragEdge))
                 moveBottomEdge(deltaY, newArea);
 
-            setArea(newArea.d_min, newArea.getSize(), true);
+            setArea(newArea);
         }
         else
         {
@@ -624,12 +624,10 @@ void FrameWindow::onCursorPressHold(CursorInputEventArgs& e)
 *************************************************************************/
 void FrameWindow::onCursorActivate(CursorInputEventArgs& e)
 {
-    // default processing (this is now essential as it controls event firing).
     Window::onCursorActivate(e);
 
-    if (e.source == CursorInputSource::Left && isCapturedByThis())
+    if (e.source == CursorInputSource::Left)
     {
-        // release our capture on the input data
         releaseInput();
         ++e.handled;
     }

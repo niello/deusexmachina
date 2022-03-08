@@ -383,14 +383,15 @@ protected:
     void addImageRenderGeometryToWindow_impl(
         Window& srcWindow, Rectf& destRect,
         const CEGUI::ColourRect* modColours,
-        const Rectf* clipper, bool clipToDisplay) const override;
+        const Rectf* clipper) const override;
 
-    std::vector<GeometryBuffer*> createRenderGeometryForImage(
+    void createRenderGeometryForImage(
+        std::vector<GeometryBuffer*>& out,
         const Image* image,
         VerticalImageFormatting vertFmt,
         HorizontalFormatting horzFmt,
         Rectf& destRect, const ColourRect& colours,
-        const Rectf* clipper, bool clipToDisplay) const;
+        const Rectf* clipper, size_t canCombineFromIdx) const;
 
     FormattingSetting<VerticalImageFormatting>   d_leftEdgeFormatting;
     FormattingSetting<VerticalImageFormatting>   d_rightEdgeFormatting;

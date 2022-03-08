@@ -64,6 +64,8 @@ namespace CEGUI
     const String Falagard_xmlHandler::ColoursElement("Colours");
     const String Falagard_xmlHandler::VertFormatElement("VertFormat");
     const String Falagard_xmlHandler::HorzFormatElement("HorzFormat");
+    const String Falagard_xmlHandler::WordWrapElement("WordWrap");
+    const String Falagard_xmlHandler::ParagraphDirElement("ParagraphDir");
     const String Falagard_xmlHandler::VertAlignmentElement("VertAlignment");
     const String Falagard_xmlHandler::HorzAlignmentElement("HorzAlignment");
     const String Falagard_xmlHandler::PropertyElement("Property");
@@ -85,6 +87,7 @@ namespace CEGUI
     const String Falagard_xmlHandler::OperatorDimElement("OperatorDim");
     const String Falagard_xmlHandler::VertFormatPropertyElement("VertFormatProperty");
     const String Falagard_xmlHandler::HorzFormatPropertyElement("HorzFormatProperty");
+    const String Falagard_xmlHandler::ParagraphDirPropertyElement("ParagraphDirProperty");
     const String Falagard_xmlHandler::AreaPropertyElement("AreaProperty");
     const String Falagard_xmlHandler::ImagePropertyElement("ImageProperty");
     const String Falagard_xmlHandler::TextPropertyElement("TextProperty");
@@ -255,6 +258,8 @@ namespace CEGUI
         registerElementStartHandler(ColoursElement, &Falagard_xmlHandler::elementColoursStart);
         registerElementStartHandler(VertFormatElement, &Falagard_xmlHandler::elementVertFormatStart);
         registerElementStartHandler(HorzFormatElement, &Falagard_xmlHandler::elementHorzFormatStart);
+        registerElementStartHandler(WordWrapElement, &Falagard_xmlHandler::elementWordWrapStart);
+        registerElementStartHandler(ParagraphDirElement, &Falagard_xmlHandler::elementParagraphDirStart);
         registerElementStartHandler(VertAlignmentElement, &Falagard_xmlHandler::elementVertAlignmentStart);
         registerElementStartHandler(HorzAlignmentElement, &Falagard_xmlHandler::elementHorzAlignmentStart);
         registerElementStartHandler(PropertyElement, &Falagard_xmlHandler::elementPropertyStart);
@@ -275,6 +280,7 @@ namespace CEGUI
         registerElementStartHandler(OperatorDimElement, &Falagard_xmlHandler::elementOperatorDimStart);
         registerElementStartHandler(VertFormatPropertyElement, &Falagard_xmlHandler::elementVertFormatPropertyStart);
         registerElementStartHandler(HorzFormatPropertyElement, &Falagard_xmlHandler::elementHorzFormatPropertyStart);
+        registerElementStartHandler(ParagraphDirPropertyElement, &Falagard_xmlHandler::elementParagraphDirPropertyStart);
         registerElementStartHandler(AreaPropertyElement, &Falagard_xmlHandler::elementAreaPropertyStart);
         registerElementStartHandler(ImagePropertyElement, &Falagard_xmlHandler::elementImagePropertyStart);
         registerElementStartHandler(TextPropertyElement, &Falagard_xmlHandler::elementTextPropertyStart);
@@ -770,6 +776,33 @@ namespace CEGUI
                 FalagardXMLHelper<HorizontalTextFormatting>::fromString(
                     attributes.getValueAsString(TypeAttribute)));
         }
+    }
+
+    /*************************************************************************
+        Method that handles the opening WordWrap XML element.
+    *************************************************************************/
+    void Falagard_xmlHandler::elementWordWrapStart(const XMLAttributes& attributes)
+    {
+        if (!d_textcomponent)
+            throwExceptionNotChildOfNode(d_widgetlook, WordWrapElement, TextComponentElement);
+
+        if (attributes.exists(PropertyAttribute))
+            d_textcomponent->setWordWrapProperty(attributes.getValueAsString(PropertyAttribute));
+        else
+            d_textcomponent->setWordWrapEnabled(PropertyHelper<bool>::fromString(attributes.getValueAsString(ValueAttribute)));
+    }
+
+    /*************************************************************************
+        Method that handles the opening ParagraphDir XML element.
+    *************************************************************************/
+    void Falagard_xmlHandler::elementParagraphDirStart(const XMLAttributes& attributes)
+    {
+        if (!d_textcomponent)
+            throwExceptionNotChildOfNode(d_widgetlook, ParagraphDirElement, TextComponentElement);
+
+        d_textcomponent->setParagraphDir(
+            FalagardXMLHelper<DefaultParagraphDirection>::fromString(
+                attributes.getValueAsString(TypeAttribute)));
     }
 
     /*************************************************************************
@@ -1350,6 +1383,17 @@ namespace CEGUI
     }
 
     /*************************************************************************
+        Method that handles the opening HorzFormatProperty XML element.
+    *************************************************************************/
+    void Falagard_xmlHandler::elementParagraphDirPropertyStart(const XMLAttributes& attributes)
+    {
+        if (!d_textcomponent)
+            throwExceptionNotChildOfNode(d_widgetlook, FontPropertyElement, attributes.getValueAsString(NameAttribute), ParagraphDirPropertyElement);
+
+        d_textcomponent->setParagraphDirPropertySource(attributes.getValueAsString(NameAttribute));
+    }
+
+    /*************************************************************************
         Method that handles the opening AreaProperty XML element.
     *************************************************************************/
     void Falagard_xmlHandler::elementAreaPropertyStart(const XMLAttributes& attributes)
@@ -1442,7 +1486,7 @@ namespace CEGUI
         assert(d_widgetlook != nullptr);
 
         Logger::getSingleton().logEvent("---< End of definition for widget look '" + d_widgetlook->getName() + "'.", LoggingLevel::Informative);
-        d_manager->addWidgetLook(*d_widgetlook);
+        d_manager->addWidgetLook(std::move(*d_widgetlook));
         delete d_widgetlook;
         d_widgetlook = nullptr;
     }
@@ -1478,7 +1522,7 @@ namespace CEGUI
         }
 
         CEGUI_LOGINSANE("-----< End of definition for imagery section '" + d_imagerysection->getName() + "'.");
-        d_widgetlook->addImagerySection(*d_imagerysection);
+        d_widgetlook->addImagerySection(std::move(*d_imagerysection));
         delete d_imagerysection;
         d_imagerysection = nullptr;
     }
@@ -1566,7 +1610,7 @@ namespace CEGUI
             throwExceptionNotChildOfNode(d_widgetlook, TextComponentElement, ImagerySectionElement);
         }
 
-        d_imagerysection->addTextComponent(*d_textcomponent);
+        d_imagerysection->addTextComponent(std::move(*d_textcomponent));
         delete d_textcomponent;
         d_textcomponent = nullptr;
     }
@@ -1772,37 +1816,24 @@ namespace CEGUI
         }
     }
 
-    void Falagard_xmlHandler::elementAnimationDefinitionStart(
-                                            const XMLAttributes& attributes)
+    void Falagard_xmlHandler::elementAnimationDefinitionStart(const XMLAttributes& attributes)
     {
-        if (d_widgetlook == nullptr)
+        if (!d_widgetlook)
         {
             throwExceptionNotChildOfNode(d_widgetlook, AnimationDefinitionHandler::ElementName, attributes.getValueAsString(NameAttribute), WidgetLookElement);
+            return;
         }
 
-        String anim_name_prefix(d_widgetlook->getName());
-        anim_name_prefix.append("/");
+        const String animNamePrefix = d_widgetlook->getName() + '/';
+        const String animName(animNamePrefix + attributes.getValueAsString(NameAttribute));
 
-        const String anim_name(anim_name_prefix +
-                        attributes.getValueAsString(NameAttribute));
-
-
-        if (AnimationManager::getSingleton().isAnimationPresent(anim_name))
-        {
-            Logger::getSingleton().logEvent(
-                "[XMLHandler] WARNING: Using existing Animation :" + anim_name);
-        }
+        if (AnimationManager::getSingleton().isAnimationPresent(animName))
+            Logger::getSingleton().logEvent("[XMLHandler] WARNING: Using existing Animation :" + animName);
         else
-        {
-            d_chainedHandler = new AnimationDefinitionHandler(
-                attributes, anim_name_prefix);
-        }
+            d_chainedHandler = new AnimationDefinitionHandler(attributes, animNamePrefix);
 
-        // This is a little bit of abuse here, ideally we would get the name
-        // somewhere else.
-        d_widgetlook->addAnimationName(
-            anim_name_prefix +
-            attributes.getValueAsString("name"));
+        // This is a little bit of abuse here, ideally we would get the name somewhere else.
+        d_widgetlook->addAnimationName(animName);
     }
 
 

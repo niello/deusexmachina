@@ -30,7 +30,7 @@
 
 #include "CEGUI/Colour.h"
 #include "CEGUI/CoordConverter.h"
-#include "CEGUI/Font.h"
+#include "CEGUI/text/Font.h"
 #include "CEGUI/ImageManager.h"
 
 namespace CEGUI
@@ -93,21 +93,17 @@ void FalagardListView::createRenderGeometry(ListView* list_view)
 
             Rectf icon_clipper(icon_rect.getIntersection(items_area));
 
-            ImageRenderSettings renderSettings(
-                icon_rect, &icon_clipper,
-                true, ICON_COLOUR_RECT, 1.0f);
+            ImageRenderSettings renderSettings(icon_rect, &icon_clipper, ICON_COLOUR_RECT, 1.0f);
 
-            auto imgGeomBuffers = img.createRenderGeometry(renderSettings);
-
-            list_view->appendGeometryBuffers(imgGeomBuffers);
+            img.createRenderGeometry(list_view->getGeometryBuffers(), renderSettings);
 
             item_rect.left(item_rect.left() + icon_rect.getWidth());
         }
 
         Rectf item_clipper(item_rect.getIntersection(items_area));
 
-        createRenderGeometryAndAddToItemView(list_view, item->d_formattedString,
-            item_rect, list_view->getActualFont(), &item_clipper, item->d_isSelected);
+        createRenderGeometryAndAddToItemView(list_view, item->d_renderedText,
+            item_rect, list_view->getEffectiveFont(), &list_view->getTextColourRect(), &item_clipper, item->d_isSelected);
 
         item_pos.y += size.d_height;
     }

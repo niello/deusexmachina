@@ -30,6 +30,7 @@
 #include "CEGUI/views/ItemModel.h"
 #include "CEGUI/Exceptions.h"
 #include <vector>
+#include <algorithm>
 
 #if defined (_MSC_VER)
 #   pragma warning(push)
@@ -366,7 +367,7 @@ int GenericItemModel<TGenericItem>::getChildId(const GenericItem* item) const
     if (itor == parent_item->getChildren().end())
         return -1;
 
-    return std::distance(parent_item->getChildren().begin(), itor);
+    return static_cast<int>(std::distance(parent_item->getChildren().begin(), itor));
 }
 
 //----------------------------------------------------------------------------//

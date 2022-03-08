@@ -52,12 +52,9 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ogg" "${CMAKE_CURRENT_BINARY_DIR}/
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/theora" "${CMAKE_CURRENT_BINARY_DIR}/theora")
 
-# Dependency: TinyXML2 (all unnecessary stuff is stripped out, so we don't use subdirectory's CMakeLists.txt)
-
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/tinyxml2" "${CMAKE_CURRENT_BINARY_DIR}/tinyxml2")
-
 # Dependency: CEGUI
 
+set(CEGUI_BUILD_RENDERER_DIRECT3D11 OFF CACHE INTERNAL "" FORCE)
 set(CEGUI_BUILD_PYTHON_MODULES_SWIG OFF CACHE INTERNAL "" FORCE)
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/CEGUI/dependencies/lib")

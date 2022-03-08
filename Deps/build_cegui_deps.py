@@ -10,7 +10,7 @@ import zipfile
 
 
 PROJECT_FOLDER = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-EXPECTED_SHA256 = "55c0b811d1e86986b5ebb45e6779cf2ec25a68aceb5d059a70f3432eedb4bb73"
+EXPECTED_SHA256 = "2b47286035ea96706288a79b842e4c03125e07905ec81858c658d5d090a4e549"
 HAS_ROOT_DIR = True
 DEPS_URL = 'https://github.com/niello/cegui-dependencies/archive/dem_minimal.zip'
 #DEPS_URL = 'https://codeload.github.com/niello/cegui-dependencies/zip/dem_minimal'
@@ -78,6 +78,7 @@ if __name__ == "__main__":
 
     build_folder = os.path.join(dest_folder, 'build')
 
+	# TODO: can try -DCEGUI_BUILD_HARFBUZZ=OFF to reduce the number of dependencies
     check_call(['cmake', '-G', cmake_generator_name, '-A', cmake_generator_arch, '-DCMAKE_CONFIGURATION_TYPES:STRING=Debug;Release', '-S', dest_folder, '-B' + build_folder])
     check_call(['cmake', '--build', build_folder, '--target', 'ALL_BUILD', '--config', 'Debug'])
     check_call(['cmake', '--build', build_folder, '--target', 'ALL_BUILD', '--config', 'Release'])

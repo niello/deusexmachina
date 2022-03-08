@@ -32,7 +32,7 @@
 #include "CEGUI/ImageManager.h"
 #include "CEGUI/Image.h"
 #include "CEGUI/FontManager.h"
-#include "CEGUI/Font.h"
+#include "CEGUI/text/Font.h"
 #include "CEGUI/CoordConverter.h"
 #include "CEGUI/Logger.h"
 
@@ -747,7 +747,7 @@ float FontDim::getValue(const Window& wnd) const
     // get window to use.
     const Window& sourceWindow = d_childName.empty() ? wnd : *wnd.getChild(d_childName);
     // get font to use
-    const Font* fontObj = getFontObject(sourceWindow);
+    Font* fontObj = getFontObject(sourceWindow);
 
     if (fontObj)
     {
@@ -776,10 +776,9 @@ float FontDim::getValue(const Window& wnd) const
 }
 
 //----------------------------------------------------------------------------//
-const Font* FontDim::getFontObject(const Window& window) const
+Font* FontDim::getFontObject(const Window& window) const
 {
-    return d_font.empty() ? window.getActualFont() :
-                            &FontManager::getSingleton().get(d_font);
+    return d_font.empty() ? window.getEffectiveFont() : &FontManager::getSingleton().get(d_font);
 }
 
 //----------------------------------------------------------------------------//

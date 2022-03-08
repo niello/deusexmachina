@@ -29,8 +29,7 @@
 #include "CEGUI/falagard/WidgetLookFeel.h"
 #include "CEGUI/widgets/Scrollbar.h"
 #include "CEGUI/CoordConverter.h"
-#include "CEGUI/Font.h"
-#include "CEGUI/FormattedRenderedString.h"
+#include "CEGUI/text/Font.h"
 
 namespace CEGUI
 {
@@ -87,65 +86,20 @@ Rectf ItemViewRenderer::getViewRenderArea(const ItemView* item_view,
 
 //----------------------------------------------------------------------------//
 void ItemViewRenderer::createRenderGeometryAndAddToItemView(
-    ItemView* view, RenderedString& rendered_string,
-    Rectf draw_rect, const Font* font, const Rectf* item_clipper, bool is_selected)
+    ItemView* view, const RenderedText& renderedText, const Rectf& draw_rect, const Font* font,
+    const ColourRect* modColours, const Rectf* item_clipper, bool is_selected)
 {
-    if (view->getSelectionBrushImage() != nullptr && is_selected)
+    // Draw selection brush
+    if (is_selected && view->getSelectionBrushImage())
     {
-        ImageRenderSettings renderSettings(
-            draw_rect,
-            item_clipper,
-            true,
-            view->getSelectionColourRect());
-
-        auto brushGeomBuffers = view->getSelectionBrushImage()->createRenderGeometry(
-            renderSettings);
-
-        view->appendGeometryBuffers(brushGeomBuffers);
+        ImageRenderSettings renderSettings(draw_rect, item_clipper, view->getSelectionColourRect());
+        view->getSelectionBrushImage()->createRenderGeometry(view->getGeometryBuffers(), renderSettings);
     }
 
+    // Draw text
     glm::vec2 draw_pos(draw_rect.getPosition());
-    for (size_t i = 0; i < rendered_string.getLineCount(); ++i)
-    {
-        draw_pos.y += CoordConverter::alignToPixels(
-            (font->getLineSpacing() - font->getFontHeight()) * 0.5f);
-
-        auto stringGeomBuffers = rendered_string.createRenderGeometry(
-            view, i,
-            draw_pos, nullptr, item_clipper, 0.0f);
-
-        view->appendGeometryBuffers(stringGeomBuffers);
-
-        draw_pos.y += rendered_string.getPixelSize(view, i).d_height;
-    }
-}
-
-void ItemViewRenderer::createRenderGeometryAndAddToItemView(
-    ItemView* view, FormattedRenderedString* formated_rendered_string,
-    Rectf draw_rect, const Font* font, const Rectf* item_clipper, bool is_selected)
-{
-    if (view->getSelectionBrushImage() != nullptr && is_selected)
-    {
-        ImageRenderSettings renderSettings(
-            draw_rect,
-            item_clipper,
-            true,
-            view->getSelectionColourRect());
-
-        auto brushGeomBuffers = view->getSelectionBrushImage()->createRenderGeometry(
-            renderSettings);
-
-        view->appendGeometryBuffers(brushGeomBuffers);
-    }
-
-    glm::vec2 draw_pos(draw_rect.getPosition());
-    draw_pos.y += CoordConverter::alignToPixels(
-        (font->getLineSpacing() - font->getFontHeight()) * 0.5f);
-
-    auto stringGeomBuffers = formated_rendered_string->createRenderGeometry(
-        view, draw_pos, nullptr, item_clipper);
-
-    view->appendGeometryBuffers(stringGeomBuffers);
+    draw_pos.y += CoordConverter::alignToPixels((font->getLineSpacing() - font->getFontHeight()) * 0.5f);
+    renderedText.createRenderGeometry(view->getGeometryBuffers(), draw_pos, modColours, item_clipper);
 }
 
 //----------------------------------------------------------------------------//

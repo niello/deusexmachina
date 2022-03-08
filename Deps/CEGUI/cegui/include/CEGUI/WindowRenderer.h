@@ -30,6 +30,7 @@
 #define _CEGUIWindowRenderer_h_
 
 #include "CEGUI/String.h"
+#include "CEGUI/Colour.h"
 #include <vector>
 
 #if defined(_MSC_VER)
@@ -39,10 +40,9 @@
 
 namespace CEGUI
 {
-/*!
-\brief
-    Base-class for the assignable WindowRenderer object
-*/
+class TextParser;
+
+//! \brief Base class for the assignable WindowRenderer object
 class CEGUIEXPORT WindowRenderer
 {
 public:
@@ -107,6 +107,20 @@ public:
 
     /*!
     \brief
+        Set the given ColourRect to the colour(s) fetched from the named
+        property if it exists, else the default colour of black.
+
+    \param propertyName
+        String object holding the name of the property to be accessed if it
+        exists.
+
+    \param colour_rect
+        Reference to a ColourRect that will be set.
+    */
+    ColourRect getOptionalColour(const String& propertyName, const Colour& defaultColour = 0x00000000) const;
+
+    /*!
+    \brief
         Get unclipped inner rectangle that our window should return from its
         member function with the same name.
     */
@@ -151,25 +165,21 @@ public:
     */
     virtual bool handleFontRenderSizeChange(const Font* const font);
 
-    /*!
-    \brief
-        Get the width of the content of the window.
+    //! Override this to provide an ability to assign custom rendered string parser to the window
+    virtual TextParser* getTextParser() const { return nullptr; }
 
-        See the documentaion for "Window::getContentWidth" for more details.
-
-    \see Window::getContentWidth
-    */
-    virtual float getContentWidth() const;
+    //! Override this to provide an ability to control visual text parsing
+    virtual bool isTextParsingEnabled() const { return true; }
 
     /*!
     \brief
-        Get the height of the content of the window.
+        Get width and height of the content of the window.
 
-        See the documentaion for "Window::getContentHeight" for more details.
+        See the documentaion for "Window::getContentSize" for more details.
 
-    \see Window::getContentHeight
+    \see Window::getContentSize
     */
-    virtual float getContentHeight() const;
+    virtual Sizef getContentSize() const;
 
     /*!
     \brief
@@ -296,11 +306,7 @@ protected:
     const String d_name;    //!< Name of the factory type used to create this window renderer.
     const String d_class;   //!< Name of the widget class that is the "minimum" requirement.
 
-    //! type used for entries in the PropertyList.
-    typedef std::pair<Property*, bool> PropertyEntry;
-    //! type to use for the property list.
-    typedef std::vector<PropertyEntry> PropertyList;
-    PropertyList d_properties;  //!< The list of properties that this windowrenderer will be handling.
+    std::vector<std::pair<Property*, bool>> d_properties; //!< The list of properties that this windowrenderer will be handling.
 
     // Window is friend so it can manipulate our 'd_window' member directly.
     // We don't want users fiddling with this so no public interface.

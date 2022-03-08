@@ -29,6 +29,7 @@
 #include "CEGUI/RenderingContext.h"
 #include "CEGUI/ImageManager.h"
 #include "CEGUI/GUIContext.h"
+#include <cmath>
 
 namespace CEGUI
 {
@@ -101,7 +102,8 @@ void DragContainer::setDragAlpha(float alpha)
 const Image* DragContainer::getDragIndicatorImage() const
 {
     return d_dragIndicatorImage ? d_dragIndicatorImage :
-        getGUIContext().getCursor().getDefaultImage();
+        d_guiContext ? d_guiContext->getCursor().getDefaultImage() :
+        nullptr;
 }
 
 //----------------------------------------------------------------------------//
@@ -170,8 +172,8 @@ void DragContainer::addDragContainerProperties()
 //----------------------------------------------------------------------------//
 bool DragContainer::isDraggingThresholdExceeded(const glm::vec2& local_cursor)
 {
-    return d_dragThreshold < std::fabsf(local_cursor.x - CoordConverter::asAbsolute(d_dragPoint.d_x, d_pixelSize.d_width)) ||
-        d_dragThreshold < std::fabsf(local_cursor.y - CoordConverter::asAbsolute(d_dragPoint.d_y, d_pixelSize.d_height));
+    return d_dragThreshold < std::fabs(local_cursor.x - CoordConverter::asAbsolute(d_dragPoint.d_x, d_pixelSize.d_width)) ||
+        d_dragThreshold < std::fabs(local_cursor.y - CoordConverter::asAbsolute(d_dragPoint.d_y, d_pixelSize.d_height));
 }
 
 //----------------------------------------------------------------------------//
@@ -201,8 +203,8 @@ void DragContainer::cancelDragging()
 //----------------------------------------------------------------------------//
 void DragContainer::updateActiveCursorImage() const
 {
-    if (auto ctx = getGUIContextPtr())
-        ctx->getCursor().setImage(d_dragging ? getDragIndicatorImage() : getActualCursor());
+    if (d_guiContext)
+        d_guiContext->getCursor().setImage(d_dragging ? getDragIndicatorImage() : getEffectiveCursor());
 }
 
 //----------------------------------------------------------------------------//
@@ -380,7 +382,7 @@ void DragContainer::onDragStarted(WindowEventArgs& e)
 
     // Immediately update position relative to the cursor
     const glm::vec2 localPointerPos(CoordConverter::screenToWindow(*this,
-        getGUIContext().getCursor().getPosition()));
+        d_guiContext->getCursor().getPosition()));
     doDragging(localPointerPos);
 }
 
@@ -401,17 +403,16 @@ void DragContainer::onDragPositionChanged(WindowEventArgs& e)
 //----------------------------------------------------------------------------//
 void DragContainer::updateDropTarget()
 {
-    GUIContext* ctx = getGUIContextPtr();
-    if (!ctx || !ctx->getRootWindow())
+    if (!d_guiContext || !d_guiContext->getRootWindow())
         return;
 
     // find out which child of root window has the cursor in it
-    Window* target = ctx->getRootWindow()->getTargetChildAtPosition(
-        ctx->getCursor().getPosition(), false, this);
+    Window* target = d_guiContext->getRootWindow()->getTargetChildAtPosition(
+        d_guiContext->getCursor().getPosition(), false, this);
 
     // use root itself if no child was hit
     if (!target)
-        target = ctx->getRootWindow();
+        target = d_guiContext->getRootWindow();
 
     // if the window with the cursor is different to current drop target
     if (target != d_dropTarget)
@@ -518,35 +519,32 @@ bool DragContainer::pickUp(bool force_sticky /*= false*/)
     if (d_pickedUp)
         return true;
 
-    if (!d_draggingEnabled)
+    if (!d_draggingEnabled || !d_guiContext)
         return false;
 
     // see if we need to force sticky mode switch
-    if (!d_stickyMode && force_sticky)
-        setStickyModeEnabled(true);
-
     // can only pick up if sticky
-    if (d_stickyMode)
+    if (!d_stickyMode)
     {
-        // force immediate release of any current input capture (unless it's us)
-        if (getCaptureWindow() && getCaptureWindow() != this)
-            getCaptureWindow()->releaseInput();
+        if (force_sticky)
+            d_stickyMode = true;
+        else
+            return false;
+    }
 
-        // activate ourselves and try to capture input
-        activate();
+    activate();
 
-        if (captureInput())
-        {
-            // set the dragging point to the centre of the container.
-            d_dragPoint.d_x = cegui_absdim(d_pixelSize.d_width / 2);
-            d_dragPoint.d_y = cegui_absdim(d_pixelSize.d_height / 2);
+    if (captureInput())
+    {
+        // set the dragging point to the centre of the container.
+        d_dragPoint.d_x = cegui_absdim(d_pixelSize.d_width / 2.f);
+        d_dragPoint.d_y = cegui_absdim(d_pixelSize.d_height / 2.f);
 
-            // initialise the dragging state
-            WindowEventArgs args(this);
-            onDragStarted(args);
-            if (d_dragging)
-                d_pickedUp = true;
-        }
+        // initialise the dragging state
+        WindowEventArgs args(this);
+        onDragStarted(args);
+        if (d_dragging)
+            d_pickedUp = true;
     }
 
     return d_pickedUp;

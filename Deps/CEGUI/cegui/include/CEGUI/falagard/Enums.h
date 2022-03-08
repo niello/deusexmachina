@@ -27,7 +27,8 @@
 #ifndef _CEGUIFalEnums_h_
 #define _CEGUIFalEnums_h_
 
-// Start of CEGUI namespace section
+#include <cstdint>
+
 namespace CEGUI
 {
     /*!
@@ -53,7 +54,7 @@ namespace CEGUI
     \brief
         Enumeration of possible values to indicate the vertical formatting to be used for an image component.
     */
-    enum class VerticalImageFormatting : int
+    enum class VerticalImageFormatting : uint8_t
     {
         TopAligned,         //!< Top of Image should be aligned with the top of the destination area.
         CentreAligned,      //!< Image should be vertically centred within the destination area.
@@ -66,7 +67,7 @@ namespace CEGUI
     \brief
         Enumeration of possible values to indicate the horizontal formatting to be used for an image component.
     */
-    enum class HorizontalFormatting : int
+    enum class HorizontalFormatting : uint8_t
     {
         LeftAligned,        //!< Left of Image should be aligned with the left of the destination area.
         CentreAligned,      //!< Image should be horizontally centred within the destination area.
@@ -79,7 +80,7 @@ namespace CEGUI
     \brief
         Enumeration of possible values to indicate the vertical formatting to be used for a text component.
     */
-    enum class VerticalTextFormatting : int
+    enum class VerticalTextFormatting : uint8_t
     {
         TopAligned,         //!< Top of text should be aligned with the top of the destination area.
         CentreAligned,      //!< text should be vertically centred within the destination area.
@@ -90,17 +91,44 @@ namespace CEGUI
     \brief
         Enumeration of possible values to indicate the horizontal formatting to be used for a text component.
     */
-    enum class HorizontalTextFormatting : int
+    enum class HorizontalTextFormatting : uint8_t
     {
-        LeftAligned,                //!< Left of text should be aligned with the left of the destination area (single line of text only).
-        RightAligned,               //!< Right of text should be aligned with the right of the destination area  (single line of text only).
-        CentreAligned,              //!< text should be horizontally centred within the destination area  (single line of text only).
-        Justified,                  //!< text should be spaced so that it takes the full width of the destination area (single line of text only).
-        WordWrapLeftAligned,        //!< Left of text should be aligned with the left of the destination area (word wrapped to multiple lines as needed).
-        WordWrapRightAligned,       //!< Right of text should be aligned with the right of the destination area  (word wrapped to multiple lines as needed).
-        WordWrapCentreAligned,      //!< text should be horizontally centred within the destination area  (word wrapped to multiple lines as needed).
-        WordWraperJustified         //!< text should be spaced so that it takes the full width of the destination area (word wrapped to multiple lines as needed).
+        LeftAligned,        //!< Left of text should be aligned with the left of the destination area.
+        RightAligned,       //!< Right of text should be aligned with the right of the destination area.
+        CentreAligned,      //!< Text should be horizontally centred within the destination area.
+        Justified,          //!< Text should be spaced so that it takes the full width of the destination area.
+        Bidi,               //!< LeftAligned or RightAligned based on the paragraph BIDI direction.
+
+        // TODO: deprecated, remove later when users migrate their data
+        WordWrapLeftAligned,
+        WordWrapRightAligned,
+        WordWrapCentreAligned,
+        WordWrapJustified
     };
+
+    // TODO: deprecated, remove later when users migrate their data
+    inline HorizontalTextFormatting decomposeHorizontalFormatting(HorizontalTextFormatting fmt, bool* wordWrap = nullptr)
+    {
+        if (wordWrap)
+            *wordWrap = true;
+
+        switch (fmt)
+        {
+            case HorizontalTextFormatting::WordWrapLeftAligned:
+                return HorizontalTextFormatting::LeftAligned;
+            case HorizontalTextFormatting::WordWrapRightAligned:
+                return HorizontalTextFormatting::RightAligned;
+            case HorizontalTextFormatting::WordWrapCentreAligned:
+                return HorizontalTextFormatting::CentreAligned;
+            case HorizontalTextFormatting::WordWrapJustified:
+                return HorizontalTextFormatting::Justified;
+        }
+
+        if (wordWrap)
+            *wordWrap = false;
+
+        return fmt;
+    }
 
     /*!
     \brief

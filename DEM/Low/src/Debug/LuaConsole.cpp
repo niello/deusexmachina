@@ -5,7 +5,7 @@
 #include <Data/Params.h>
 #include <Core/Factory.h>
 
-#include <UI/CEGUI/FormattedListboxTextItem.h>
+#include <CEGUI/widgets/ListboxTextItem.h>
 #include <CEGUI/widgets/Editbox.h>
 #include <CEGUI/widgets/MultiColumnList.h>
 #include <CEGUI/widgets/Scrollbar.h>
@@ -57,7 +57,7 @@ void CLuaConsole::Print(const char* pMsg, U32 ColorARGB)
 	if (pOutputWnd->getRowCount() >= MAX_LINES)
 	{
 		//???can just move from one index to another?
-		pNewItem = (CEGUI::FormattedListboxTextItem*)pOutputWnd->getChildElementAtIndex(0);
+		pNewItem = (CEGUI::ListboxTextItem*)pOutputWnd->getChildElementAtIndex(0);
 		n_assert(pNewItem);
 		pOutputWnd->removeRow(0);
 		pNewItem->setText(pMsg);
@@ -65,8 +65,8 @@ void CLuaConsole::Print(const char* pMsg, U32 ColorARGB)
 	else
 	{
 		//!!!NEED TO DELETE AFTER USE!
-		pNewItem = n_new(CEGUI::FormattedListboxTextItem(
-			pMsg, CEGUI::HorizontalTextFormatting::WordWrapLeftAligned, 0, 0, true, false));
+		pNewItem = n_new(CEGUI::ListboxTextItem(
+			pMsg, /*CEGUI::HorizontalTextFormatting::WordWrapLeftAligned,*/ 0, 0, true, false));
 		n_assert(pNewItem);
 		pNewItem->setTextParsingEnabled(false);
 	}

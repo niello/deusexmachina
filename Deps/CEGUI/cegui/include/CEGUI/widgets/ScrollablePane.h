@@ -146,7 +146,7 @@ public:
         USize object that details the current size of the content
         pane attached to this ScrollablePane.
     */
-    USize getContentSize() const;
+    USize getContentPaneSize() const;
 
     /*!
     \brief
@@ -160,7 +160,7 @@ public:
         USize object that details the size to use for the content
         pane attached to this ScrollablePane.
     */
-    void setContentSize(const USize& size);
+    void setContentPaneSize(const USize& size);
 
     /*!
     \brief
@@ -557,8 +557,8 @@ protected:
     void onIsSizeAdjustedToContentChanged(ElementEventArgs& e) override;
     void adjustSizeToContent() override {}
 
-    //! \copydoc Window::getChildByNamePath_impl
-    NamedElement* getChildByNamePath_impl(const String& name_path) const override;
+    //! \copydoc Window::findChildByNamePath_impl
+    Window* findChildByNamePath_impl(const String& name_path) const override;
 
     // Swipe scroll support
     void onCursorPressHold(CursorInputEventArgs& e) override;

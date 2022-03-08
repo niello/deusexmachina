@@ -31,12 +31,16 @@
 #include "CEGUI/CoordConverter.h"
 #include "CEGUI/widgets/Scrollbar.h"
 #include "CEGUI/widgets/ListHeader.h"
-#include "CEGUI/widgets/ListboxItem.h"
+#include "CEGUI/widgets/ListboxTextItem.h"
 
 // Start of CEGUI namespace section
 namespace CEGUI
 {
     const String FalagardMultiColumnList::TypeName("Core/MultiColumnList");
+    const String FalagardMultiColumnList::UnselectedTextColourPropertyName("NormalTextColour");
+    const String FalagardMultiColumnList::SelectedTextColourPropertyName("SelectedTextColour");
+    const String FalagardMultiColumnList::ActiveSelectionColourPropertyName("ActiveSelectionColour");
+    const String FalagardMultiColumnList::InactiveSelectionColourPropertyName("InactiveSelectionColour");
 
 
     FalagardMultiColumnList::FalagardMultiColumnList(const String& type) :
@@ -102,6 +106,11 @@ namespace CEGUI
         itemPos.z = 0.0f;
 
         const float alpha = w->getEffectiveAlpha();
+        const ColourRect normalTextCol = getOptionalColour(UnselectedTextColourPropertyName, ListboxTextItem::DefaultTextColour);
+        const ColourRect selectedTextCol = getOptionalColour(SelectedTextColourPropertyName, ListboxTextItem::DefaultTextColour);
+        const ColourRect selectionBgCol = getOptionalColour(
+            w->isActive() ? ActiveSelectionColourPropertyName : InactiveSelectionColourPropertyName,
+            ListboxItem::DefaultSelectionColour);
 
         // loop through the items
         for (unsigned int i = 0; i < w->getRowCount(); ++i)
@@ -137,9 +146,10 @@ namespace CEGUI
                     }
 
                     // Create render geometry for this item and add it to the Window
-                    auto geomBuffers = item->createRenderGeometry(itemRect, alpha, &itemClipper);
-
-                    w->appendGeometryBuffers(geomBuffers);
+                    item->setSelectionColours(selectionBgCol);
+                    if (auto textItem = dynamic_cast<ListboxTextItem*>(item))
+                        textItem->setTextColours(textItem->isSelected() ? selectedTextCol : normalTextCol);
+                    item->createRenderGeometry(w->getGeometryBuffers(), itemRect, alpha, &itemClipper);
                 }
 
                 // update position for next column.
@@ -153,15 +163,11 @@ namespace CEGUI
 
     void FalagardMultiColumnList::cacheListboxBaseImagery()
     {
-        const StateImagery* imagery;
-
-        // get WidgetLookFeel for the assigned look.
         const WidgetLookFeel& wlf = getLookNFeel();
-        // try and get imagery for our current state
-        imagery = &wlf.getStateImagery(d_window->isEffectiveDisabled() ? "Disabled"
-            : (d_window->isFocused() ? "EnabledFocused" : "Enabled"));
-        // perform the rendering operation.
-        imagery->render(*d_window);
+        const auto& imagery = wlf.getStateImagery(d_window->isEffectiveDisabled() ? "Disabled"
+            : ((d_window->isFocused() && wlf.isStateImageryPresent("EnabledFocused")) ? "EnabledFocused" :
+                "Enabled"));
+        imagery.render(*d_window);
     }
 
-} // End of  CEGUI namespace section
+}

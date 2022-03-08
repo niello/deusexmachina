@@ -57,11 +57,14 @@ class PropertyDefinitionBase;
 class CEGUIEXPORT WidgetLookFeel
 {
 public:
-    WidgetLookFeel(const String& name, const String& inheritedLookName);
-    WidgetLookFeel() {}
-    WidgetLookFeel(const WidgetLookFeel& other);
 
-    WidgetLookFeel& operator=(const WidgetLookFeel& other);
+    WidgetLookFeel() = default;
+    WidgetLookFeel(const String& name, const String& inheritedLookName);
+    WidgetLookFeel(const WidgetLookFeel&) = delete;
+    WidgetLookFeel(WidgetLookFeel&& other) noexcept = default;
+
+    WidgetLookFeel& operator =(const WidgetLookFeel&) = delete;
+    WidgetLookFeel& operator =(WidgetLookFeel&& other) noexcept = default;
 
     virtual ~WidgetLookFeel();
 
@@ -203,7 +206,7 @@ public:
     \param section
         ImagerySection object to be added.
     */
-    void addImagerySection(const ImagerySection& section);
+    void addImagerySection(ImagerySection&& section);
 
     //! \deprecated This function is to be replaced by a new renameImagerySection function in the new version, which considers inheritance and accepts more appropriate parameters.
     void renameImagerySection(const String& oldName, const String& newName);
@@ -418,6 +421,22 @@ public:
         - false, if no such element is present.
     */
     bool isEventLinkDefinitionPresent(const String& name, bool includeInheritedLook = true) const;
+
+    /*!
+    \brief
+        Returns if an Animation with the given name is present in this look.
+
+    \param name
+        The name of the Animation to look for.
+
+    \param includeInheritedLook
+       If set to true, this function will try to also include elements from the inherited WidgetLookFeel.
+
+    \return
+        - true, if the element with the given name is present,
+        - false, if no such element is present.
+    */
+    bool isAnimationPresent(const String& name, bool includeInheritedLook = true) const;
 
     /*!
     \brief
@@ -782,66 +801,30 @@ private:
     */
     WidgetLookFeel* getInheritedWidgetLookFeel();
 
-    /*!
-    \brief
-        Copies the PropertyDefinitions from another WidgetLookFeel.
-
-    \param widgetLook
-        WidgetLookFeel object to copy the PropertyDefinitions from.
-    */
-    void copyPropertyDefinitionsFrom(const WidgetLookFeel& widgetLook);
-
-    /*!
-    \brief
-        Copies the PropertyLinkDefinitions from another WidgetLookFeel.
-
-    \param widgetLook
-        WidgetLookFeel object to copy the PropertyLinkDefinitions from.
-    */
-    void copyPropertyLinkDefinitionsFrom(const WidgetLookFeel& widgetLook);
-
-
-    //! Map types for the Falagard elements that this WidgetLookFeel can own. The keys are the names of the corresponding elements, as CEGUI::String.
-    typedef std::unordered_map<String, StateImagery> StateImageryMap;
-    typedef std::unordered_map<String, ImagerySection> ImagerySectionMap;
-    typedef std::unordered_map<String, NamedArea> NamedAreaMap;
-
-    typedef std::unordered_map<String, PropertyInitialiser> PropertyInitialiserMap;
-    typedef std::unordered_map<String, PropertyDefinitionBase*> PropertyDefinitionMap;
-    typedef std::unordered_map<String, PropertyDefinitionBase*> PropertyLinkDefinitionMap;
-
-    typedef std::unordered_map<String, WidgetComponent> WidgetComponentMap;
-    typedef std::unordered_map<String, EventLinkDefinition> EventLinkDefinitionMap;
-
-    //! List of animation names
-    typedef std::vector<String> AnimationList;
-    //! Map of Windows to AnimationInstances
-    typedef std::multimap<Window*, AnimationInstance*, std::less<Window*> > AnimationInstanceMap;
-
     //! Name of this WidgetLookFeel.
     CEGUI::String d_lookName;
     //! Name of a WidgetLookFeel inherited by this WidgetLookFeel.
     CEGUI::String d_inheritedLookName;
     //! Map of ImagerySection objects.
-    ImagerySectionMap d_imagerySectionMap;
+    std::unordered_map<String, ImagerySection> d_imagerySectionMap;
     //! Map of WidgetComponent objects.
-    WidgetComponentMap d_widgetComponentMap;
+    std::unordered_map<String, WidgetComponent> d_widgetComponentMap;
     //! Map of StateImagery objects.
-    StateImageryMap d_stateImageryMap;
+    std::unordered_map<String, StateImagery> d_stateImageryMap;
     //! Map of PropertyInitialser objects.
-    PropertyInitialiserMap d_propertyInitialiserMap;
+    std::unordered_map<String, PropertyInitialiser> d_propertyInitialiserMap;
     //! Map of NamedArea objects.
-    NamedAreaMap d_namedAreaMap;
+    std::unordered_map<String, NamedArea> d_namedAreaMap;
     //! Map of PropertyDefinition objects.
-    mutable PropertyDefinitionMap d_propertyDefinitionMap;
+    mutable std::unordered_map<String, PropertyDefinitionBase*> d_propertyDefinitionMap;
     //! Map of PropertyLinkDefinition objects.
-    mutable PropertyLinkDefinitionMap d_propertyLinkDefinitionMap;
+    mutable std::unordered_map<String, PropertyDefinitionBase*> d_propertyLinkDefinitionMap;
     //! List of animation names associated with this WidgetLookFeel.
-    AnimationList d_animations;
+    std::vector<String> d_animations;
     //! Map of windows and their associated animation instances
-    mutable AnimationInstanceMap d_animationInstances;
+    mutable std::multimap<Window*, AnimationInstance*> d_animationInstances;
     //! Collection of EventLinkDefinition objects.
-    EventLinkDefinitionMap d_eventLinkDefinitionMap;
+    std::unordered_map<String, EventLinkDefinition> d_eventLinkDefinitionMap;
 
     // these are container types used when composing final collections of
     // objects that come via inheritence.
@@ -850,7 +833,6 @@ private:
     typedef NamedDefinitionCollator<String, PropertyDefinitionBase*> PropertyLinkDefinitionCollator;
     typedef NamedDefinitionCollator<String, const PropertyInitialiser*> PropertyInitialiserCollator;
     typedef NamedDefinitionCollator<String, const EventLinkDefinition*> EventLinkDefinitionCollator;
-    typedef std::unordered_set<String> AnimationNameSet;
 
     // functions to populate containers with collections of objects that we
     // gain through inheritence.
@@ -859,9 +841,7 @@ private:
     void appendPropertyLinkDefinitions(PropertyLinkDefinitionCollator& col, bool inherits = true) const;
     void appendPropertyInitialisers(PropertyInitialiserCollator& col, bool inherits = true) const;
     void appendEventLinkDefinitions(EventLinkDefinitionCollator& col, bool inherits = true) const;
-    void appendAnimationNames(AnimationNameSet& set, bool inherits = true) const;
-
-    void swap(WidgetLookFeel& other);
+    void appendAnimationNames(std::unordered_set<String>& set, bool inherits = true) const;
 };
 
 }

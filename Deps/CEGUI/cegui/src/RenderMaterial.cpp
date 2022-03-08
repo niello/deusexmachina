@@ -25,42 +25,42 @@
  *   OTHER DEALINGS IN THE SOFTWARE.
  ***************************************************************************/
 #include "CEGUI/RenderMaterial.h"
-#include "CEGUI/ShaderParameterBindings.h"
 #include "CEGUI/ShaderWrapper.h"
 
 namespace CEGUI
 {
+const std::string MainTextureParameterName("texture0");
+
 //----------------------------------------------------------------------------//
 RenderMaterial::RenderMaterial(ShaderWrapper* shaderWrapper)
     : d_shaderWrapper(shaderWrapper)
 {
-    d_shaderParamBindings = new ShaderParameterBindings();
-}
-
-//----------------------------------------------------------------------------//
-RenderMaterial::~RenderMaterial()
-{
-    delete d_shaderParamBindings;
-}
-
-//----------------------------------------------------------------------------//
-ShaderParameterBindings* RenderMaterial::getShaderParamBindings() const
-{
-    return d_shaderParamBindings;
 }
 
 //----------------------------------------------------------------------------//
 void RenderMaterial::prepareForRendering() const
 {
-    d_shaderWrapper->prepareForRendering(d_shaderParamBindings);
+    d_shaderWrapper->prepareForRendering(&d_shaderParamBindings);
 }
 
 //----------------------------------------------------------------------------//
-const ShaderWrapper* RenderMaterial::getShaderWrapper() const
+void RenderMaterial::setMainTexture(const Texture* texture)
 {
-    return d_shaderWrapper;
+    if (d_mainTextureParam)
+    {
+        d_mainTextureParam->d_parameterValue = texture;
+    }
+    else
+    {
+        d_shaderParamBindings.setParameter(MainTextureParameterName, texture);
+        d_mainTextureParam = static_cast<ShaderParameterTexture*>(d_shaderParamBindings.getParameter(MainTextureParameterName));
+    }
 }
 
 //----------------------------------------------------------------------------//
+const Texture* RenderMaterial::getMainTexture() const
+{
+    return d_mainTextureParam ? d_mainTextureParam->d_parameterValue : nullptr;
 }
 
+}

@@ -27,41 +27,28 @@
 #include "CEGUI/PCRERegexMatcher.h"
 #include "CEGUI/Exceptions.h"
 #include "CEGUI/PropertyHelper.h"
-
 #include <cstring>
 
-// Start of CEGUI namespace section
 namespace CEGUI
 {
-//----------------------------------------------------------------------------//
-PCRERegexMatcher::PCRERegexMatcher() :
-    d_regex(nullptr)
-{
-}
 
 //----------------------------------------------------------------------------//
 PCRERegexMatcher::~PCRERegexMatcher()
 {
-    release();
+    if (d_regex)
+        pcre_free(d_regex);
 }
 
 //----------------------------------------------------------------------------//
 void PCRERegexMatcher::setRegexString(const String& regex)
 {
-    // release old regex string.
-    release();
+    if (d_regex)
+        pcre_free(d_regex);
+
     d_string.clear();
     // try to compile this new regex string
     const char* prce_error;
     int pcre_erroff;
-#if (CEGUI_STRING_CLASS == CEGUI_STRING_CLASS_ASCII) || (CEGUI_STRING_CLASS == CEGUI_STRING_CLASS_UTF_8)
-    d_regex = pcre_compile(regex.c_str(), PCRE_UTF8,
-                           &prce_error, &pcre_erroff, 0);
-#elif CEGUI_STRING_CLASS == CEGUI_STRING_CLASS_UTF_32
-    d_regex = pcre_compile(String::convertUtf32ToUtf8(regex.getString()).c_str(), PCRE_UTF8,
-        &prce_error, &pcre_erroff, nullptr);
-#endif
-
 #if (CEGUI_STRING_CLASS == CEGUI_STRING_CLASS_ASCII) || (CEGUI_STRING_CLASS == CEGUI_STRING_CLASS_UTF_8)
     d_regex = pcre_compile(regex.c_str(), PCRE_UTF8,
         &prce_error, &pcre_erroff, 0);
@@ -81,14 +68,7 @@ void PCRERegexMatcher::setRegexString(const String& regex)
 }
 
 //----------------------------------------------------------------------------//
-const String& PCRERegexMatcher::getRegexString() const
-{
-    return d_string;
-}
-
-//----------------------------------------------------------------------------//
-RegexMatcher::MatchState PCRERegexMatcher::getMatchStateOfString(
-                                                        const String& str) const
+RegexMatchState PCRERegexMatcher::getMatchStateOfString(const String& str) const
 {
     // if the regex is not valid, then an exception is thrown
     if (!d_regex)
@@ -121,15 +101,15 @@ RegexMatcher::MatchState PCRERegexMatcher::getMatchStateOfString(
 #endif
 
     if (result == PCRE_ERROR_PARTIAL)
-        return MatchState::Partial;
+        return RegexMatchState::Partial;
 
     // a match must be for the entire string
     if (result >= 0)
-        return (match[1] - match[0] == len) ? MatchState::Valid : MatchState::Invalid;
+        return (match[1] - match[0] == len) ? RegexMatchState::Valid : RegexMatchState::Invalid;
 
     // no match found or if test string or regex is 0
     if (result == PCRE_ERROR_NOMATCH || result == PCRE_ERROR_NULL)
-        return MatchState::Invalid;
+        return RegexMatchState::Invalid;
 
     // anything else is an error
     throw InvalidRequestException(
@@ -138,14 +118,4 @@ RegexMatcher::MatchState PCRERegexMatcher::getMatchStateOfString(
         d_string + "'.");
 }
 
-//----------------------------------------------------------------------------//
-void PCRERegexMatcher::release()
-{
-    if (d_regex)
-    {
-        pcre_free(d_regex);
-        d_regex = nullptr;
-    }
 }
-
-} // End of  CEGUI namespace section

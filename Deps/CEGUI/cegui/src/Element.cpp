@@ -36,15 +36,15 @@
 #include "CEGUI/Renderer.h" // FIXME: only for root container size - display size
 #include "CEGUI/Logger.h"
 
+#include <algorithm>
+
 #if defined(_MSC_VER)
 #   pragma warning(push)
 #   pragma warning(disable : 4355) // 'this' is used to init unclipped rects
 #endif
 
-// Start of CEGUI namespace section
 namespace CEGUI
 {
-
 const String Element::EventNamespace("Element");
 
 const String Element::EventSized("Sized");
@@ -58,28 +58,77 @@ const String Element::EventChildOrderChanged("ChildOrderChanged");
 const String Element::EventZOrderChanged("ZOrderChanged");
 const String Element::EventNonClientChanged("NonClientChanged");
 const String Element::EventIsSizeAdjustedToContentChanged("IsSizeAdjustedToContentChanged");
-const String Element::EventDefaultParagraphDirectionChanged("DefaultParagraphDirectionChanged");
+
+//----------------------------------------------------------------------------//
+// NB: we promised not to change incoming elements, but we don't want to prevent users from changing return values
+std::pair<Element*, Element*> Element::getSiblingsInCommonAncestor(const Element* e1, const Element* e2)
+{
+    if (!e1 || !e2)
+        return { nullptr, nullptr };
+
+    if (e1 == e2)
+        return { const_cast<Element*>(e1), const_cast<Element*>(e1) };
+
+    // Calculate depth of e1 and check if e2 is its ancestor
+    size_t depth1 = 0;
+    auto curr = e1;
+    do
+    {
+        ++depth1;
+        curr = curr->getParentElement();
+        if (curr == e2)
+            return { const_cast<Element*>(e2), const_cast<Element*>(e2) };
+    }
+    while (curr);
+
+    // Calculate depth of e2 and check if e1 is its ancestor
+    size_t depth2 = 0;
+    curr = e2;
+    do
+    {
+        ++depth2;
+        curr = curr->getParentElement();
+        if (curr == e1)
+            return { const_cast<Element*>(e1), const_cast<Element*>(e1) };
+    }
+    while (curr);
+
+    // Common ancestor is inherently at the same level in both branches.
+    // Prepare to search by moving both branches to the shallowest level.
+    while (depth2 > depth1)
+    {
+        e2 = e2->getParentElement();
+        --depth2;
+    }
+    while (depth1 > depth2)
+    {
+        e1 = e1->getParentElement();
+        --depth1;
+    }
+
+    // Now compare branches at the same level, starting from parents because
+    // we already know that e1 and e2 are not parents of each other.
+    while (depth1)
+    {
+        if (e1->getParentElement() == e2->getParentElement())
+            return { const_cast<Element*>(e1), const_cast<Element*>(e2) };
+
+        e1 = e1->getParentElement();
+        e2 = e2->getParentElement();
+        --depth1;
+    }
+
+    return { nullptr, nullptr };
+}
 
 //----------------------------------------------------------------------------//
 Element::Element():
-    d_parent(nullptr),
-
-    d_nonClient(false),
-    d_isWidthAdjustedToContent(false),
-    d_isHeightAdjustedToContent(false),
-
     d_area(cegui_reldim(0), cegui_reldim(0), cegui_reldim(0), cegui_reldim(0)),
-    d_horizontalAlignment(HorizontalAlignment::Left),
-    d_verticalAlignment(VerticalAlignment::Top),
     d_minSize(cegui_reldim(0), cegui_reldim(0)),
     d_maxSize(cegui_reldim(0), cegui_reldim(0)),
-    d_aspectMode(AspectMode::Ignore),
-    d_aspectRatio(1.0 / 1.0),
-    d_pixelAligned(true),
     d_pixelSize(0.0f, 0.0f),
     d_rotation(1.f, 0.f, 0.f, 0.f), // <-- IDENTITY
-    d_pivot(UVector3(cegui_reldim(1./2), cegui_reldim(1./2), cegui_reldim(1./2))),
-
+    d_pivot(UVector3(cegui_reldim(0.5f), cegui_reldim(0.5f), cegui_reldim(0.5f))),
     d_unclippedOuterRect(this, &Element::getUnclippedOuterRect_impl),
     d_unclippedInnerRect(this, &Element::getUnclippedInnerRect_impl)
 {
@@ -96,7 +145,7 @@ void Element::setArea(const UVector2& pos, const USize& size, bool adjust_size_t
 }
 
 //----------------------------------------------------------------------------//
-void Element::notifyScreenAreaChanged(bool adjust_size_to_content, bool forceLayoutChildren)
+void Element::notifyScreenAreaChanged(bool adjust_size_to_content)
 {
     // Update pixel size and detect resizing
     const Sizef oldSize = d_pixelSize;
@@ -105,21 +154,31 @@ void Element::notifyScreenAreaChanged(bool adjust_size_to_content, bool forceLay
 
     // Update outer rect to detect moving
     // NB: pixel size must be already updated
-    const glm::vec2 oldPos = getUnclippedOuterRect().getCurrent().getPosition();
+    const glm::vec2 oldPos = d_unclippedOuterRect.getCurrent().d_min;
     d_unclippedOuterRect.invalidateCache();
-    const bool moved = (getUnclippedOuterRect().get().getPosition() != oldPos);
+    const glm::vec2 newPos = d_unclippedOuterRect.get().d_min;
+    const bool movedOnScreen = (newPos != oldPos);
+
+    // Check movement inside a parent
+    bool movedInParent = movedOnScreen;
+    if (d_parent)
+    {
+        const glm::vec2 newOffsetInParent = d_parent->d_unclippedOuterRect.get().d_min;
+        movedInParent = ((newPos - newOffsetInParent) != (oldPos - d_offsetInParent));
+        d_offsetInParent = newOffsetInParent;
+    }
 
     // Handle outer rect changes and check if child content rects changed
-    const uint8_t flags = handleAreaChanges(moved, sized);
+    const uint8_t flags = handleAreaChanges(movedOnScreen, movedInParent, sized);
 
     if (!d_children.empty())
     {
-        const bool needClientLayout = forceLayoutChildren || (flags & ClientSized);
-        const bool needNonClientLayout = forceLayoutChildren || (flags & NonClientSized);
+        const bool needClientLayout = (flags & ClientSized);
+        const bool needNonClientLayout = (flags & NonClientSized);
         if (needClientLayout || needNonClientLayout)
         {
             // We need full layouting when child area size changed or when explicitly requested
-            performChildLayout(needClientLayout, needNonClientLayout); //???propagate adjust_size_to_content?
+            performChildLayout(needClientLayout, needNonClientLayout);
         }
         else if (flags)
         {
@@ -134,7 +193,7 @@ void Element::notifyScreenAreaChanged(bool adjust_size_to_content, bool forceLay
         }
     }
 
-    if (moved)
+    if (movedInParent)
     {
         ElementEventArgs eventArgs(this);
         onMoved(eventArgs);
@@ -151,11 +210,11 @@ void Element::notifyScreenAreaChanged(bool adjust_size_to_content, bool forceLay
 }
 
 //----------------------------------------------------------------------------//
-uint8_t Element::handleAreaChanges(bool moved, bool sized)
+uint8_t Element::handleAreaChanges(bool movedOnScreen, bool /*movedInParent*/, bool sized)
 {
     // Element has inner == outer, so all children are affected by outer rect changes
     const uint8_t flags =
-        (moved ? (NonClientMoved | ClientMoved) : 0) |
+        (movedOnScreen ? (NonClientMoved | ClientMoved) : 0) |
         (sized ? (NonClientSized | ClientSized) : 0);
 
     if (flags)
@@ -167,12 +226,14 @@ uint8_t Element::handleAreaChanges(bool moved, bool sized)
 //----------------------------------------------------------------------------//
 // Lightweight version of notifyScreenAreaChanged
 // TODO: can somehow merge with notifyScreenAreaChanged or at least rename consistently?
-void Element::handleAreaChangesRecursively(bool moved)
+void Element::handleAreaChangesRecursively(bool movedOnScreen)
 {
     d_unclippedOuterRect.invalidateCache();
 
-    // There is a guarantee that the parent size didn't change so our size didn't change too
-    const uint8_t flags = handleAreaChanges(moved, false);
+    // There are guarantees:
+    // - our size didn't change because the parent size didn't
+    // - our offset in the parent didn't change because our area and its size didn't
+    const uint8_t flags = handleAreaChanges(movedOnScreen, false, false);
 
     if (flags)
     {
@@ -184,12 +245,6 @@ void Element::handleAreaChangesRecursively(bool moved)
             if (child->isNonClient() ? nonClient : client)
                 child->handleAreaChangesRecursively(child->isNonClient() ? nonClientMoved : clientMoved);
     }
-
-    if (moved)
-    {
-        ElementEventArgs eventArgs(this);
-        onMoved(eventArgs);
-    }
 }
 
 //----------------------------------------------------------------------------//
@@ -198,7 +253,7 @@ void Element::performChildLayout(bool client, bool nonClient)
     if (client || nonClient)
         for (Element* child : d_children)
             if (child->isNonClient() ? nonClient : client)
-                child->notifyScreenAreaChanged(true);
+                child->notifyScreenAreaChanged();
 }
 
 //----------------------------------------------------------------------------//
@@ -229,14 +284,14 @@ void Element::setVerticalAlignment(const VerticalAlignment alignment)
 void Element::setMinSize(const USize& size)
 {
     d_minSize = size;
-    notifyScreenAreaChanged(true);
+    notifyScreenAreaChanged();
 }
 
 //----------------------------------------------------------------------------//
 void Element::setMaxSize(const USize& size)
 {
     d_maxSize = size;
-    notifyScreenAreaChanged(true);
+    notifyScreenAreaChanged();
 }
 
 //----------------------------------------------------------------------------//
@@ -252,7 +307,7 @@ void Element::setAspectMode(AspectMode mode)
     // Ensure the area is calculated with the new aspect mode
     // TODO: This potentially wastes effort, we should just mark it as dirty
     //       and postpone the calculation for as long as possible
-    notifyScreenAreaChanged(true);
+    notifyScreenAreaChanged();
 }
 
 //----------------------------------------------------------------------------//
@@ -268,7 +323,7 @@ void Element::setAspectRatio(float ratio)
     // Ensure the area is calculated with the new aspect ratio
     // TODO: This potentially wastes effort, we should just mark it as dirty
     //       and postpone the calculation for as long as possible
-    notifyScreenAreaChanged(true);
+    notifyScreenAreaChanged();
 }
 
 //----------------------------------------------------------------------------//
@@ -284,7 +339,7 @@ void Element::setPixelAligned(const bool setting)
     // Ensure the area is calculated with the new pixel aligned setting
     // TODO: This potentially wastes effort, we should just mark it as dirty
     //       and postpone the calculation for as long as possible
-    notifyScreenAreaChanged(true);
+    notifyScreenAreaChanged();
 }
 
 //----------------------------------------------------------------------------//
@@ -410,13 +465,7 @@ void Element::adjustSizeToContent()
 }
 
 //----------------------------------------------------------------------------//
-float Element::getContentWidth() const
-{
-    throw InvalidRequestException("This function isn't implemented for this type of element.");
-}
-
-//----------------------------------------------------------------------------//
-float Element::getContentHeight() const
+Sizef Element::getContentSize() const
 {
     throw InvalidRequestException("This function isn't implemented for this type of element.");
 }
@@ -501,20 +550,22 @@ void Element::adjustSizeToContent_direct()
 {
     if (!isSizeAdjustedToContent())
         return;
+
     const float epsilon = adjustSizeToContent_getEpsilon();
     USize size_func(UDim(-1.f, -1.f), UDim(-1.f, -1.f));
     Sizef new_pixel_size(getPixelSize());
+    const Sizef contentSize = getContentSize();
     if (isWidthAdjustedToContent())
     {
         size_func.d_width = getElementWidthLowerBoundAsFuncOfWidthOfAreaReservedForContent();
-        new_pixel_size.d_width = std::ceil((getContentWidth()+epsilon)*size_func.d_width.d_scale  +
-                                            size_func.d_width.d_offset);
+        new_pixel_size.d_width = std::ceil(
+            (contentSize.d_width + epsilon) * size_func.d_width.d_scale + size_func.d_width.d_offset);
     }
     if (isHeightAdjustedToContent())
     {
         size_func.d_height = getElementHeightLowerBoundAsFuncOfHeightOfAreaReservedForContent();
-        new_pixel_size.d_height = std::ceil((getContentHeight()+epsilon)*size_func.d_height.d_scale  +
-                                             size_func.d_height.d_offset);
+        new_pixel_size.d_height = std::ceil(
+            (contentSize.d_height + epsilon) * size_func.d_height.d_scale + size_func.d_height.d_offset);
     }
     if (getAspectMode() != AspectMode::Ignore)
     {
@@ -664,9 +715,6 @@ void Element::addChild(Element* element)
 
     addChild_impl(element);
 
-    // Update child rects after all class-specific child initialization
-    element->notifyScreenAreaChanged(true, true);
-
     ElementEventArgs args(element);
     onChildAdded(args);
 }
@@ -786,6 +834,21 @@ size_t Element::getChildIndex(const Element* child) const
 bool Element::isChild(const Element* element) const
 {
     return std::find(d_children.begin(), d_children.end(), element) != d_children.end();
+}
+
+//----------------------------------------------------------------------------//
+bool Element::isDescendantOf(const Element* element) const
+{
+    const Element* current = d_parent;
+    while (current)
+    {
+        if (current == element)
+            return true;
+
+        current = current->d_parent;
+    }
+
+    return false;
 }
 
 //----------------------------------------------------------------------------//
@@ -915,23 +978,6 @@ void Element::addElementProperties()
         "Value is either \"true\" or \"false\".",
         &Element::setAdjustHeightToContent, &Element::isHeightAdjustedToContent, false
     );
-
-    CEGUI_DEFINE_PROPERTY(Element, DefaultParagraphDirection,
-        "DefaultParagraphDirection", "Property to get/set the default paragraph direction. "
-        "This is only in effect if raqm is linked and activated. It sets the default order of the "
-        "words in a paragraph, which is relevant when having sentences in a RightToLeft language that "
-        "may start with a word (or to be specific: first character of a word) from a LeftToRight language. "
-        "Example: If the mode is set to Automatic and the first word of a paragraph in Hebrew is a German "
-        "company name, written in German alphabet, the German word will end up left, whereas the rest of "
-        "the Hebrew sentences starts from the righ, continuing towards the left. With the setting RightToLeft "
-        "the sentence will start on the very right with the German word, as would be expected in a mainly "
-        "RightToLeft written paragraph. If the language of the UI user is known, then either LeftToRight "
-        "or RightToLeft should be chosen for the paragraphs. Default is LeftToRight."
-        "Value is one of \"LeftToRight\", \"RightToLeft\" or \"Automatic\".",
-        &Element::setDefaultParagraphDirection, &Element::getDefaultParagraphDirection,
-        DefaultParagraphDirection::LeftToRight
-    );
-
 }
 
 //----------------------------------------------------------------------------//
@@ -953,10 +999,7 @@ void Element::removeChild_impl(Element* element)
 {
     // NB: it is intentionally valid to remove an element that is not in the list
 
-    // find this element in the child list
-    std::vector<Element*>::iterator it = std::find(d_children.begin(), d_children.end(), element);
-
-    // if the element was found in the child list, remove it from there
+    auto it = std::find(d_children.begin(), d_children.end(), element);
     if (it != d_children.end())
         d_children.erase(it);
 
@@ -1001,7 +1044,7 @@ Rectf Element::getUnclippedOuterRect_impl(bool skipAllPixelAlignment) const
 //----------------------------------------------------------------------------//
 Rectf Element::getUnclippedInnerRect_impl(bool skipAllPixelAlignment) const
 {
-    return skipAllPixelAlignment ? getUnclippedOuterRect().getFresh(true) : getUnclippedOuterRect().get();
+    return skipAllPixelAlignment ? d_unclippedOuterRect.getFresh(true) : d_unclippedOuterRect.get();
 }
 
 //----------------------------------------------------------------------------//
@@ -1019,7 +1062,7 @@ void Element::onMoved(ElementEventArgs& e)
 //----------------------------------------------------------------------------//
 void Element::onHorizontalAlignmentChanged(ElementEventArgs& e)
 {
-    notifyScreenAreaChanged(true);
+    notifyScreenAreaChanged();
 
     fireEvent(EventHorizontalAlignmentChanged, e, EventNamespace);
 }
@@ -1027,7 +1070,7 @@ void Element::onHorizontalAlignmentChanged(ElementEventArgs& e)
 //----------------------------------------------------------------------------//
 void Element::onVerticalAlignmentChanged(ElementEventArgs& e)
 {
-    notifyScreenAreaChanged(true);
+    notifyScreenAreaChanged();
 
     fireEvent(EventVerticalAlignmentChanged, e, EventNamespace);
 }
@@ -1059,24 +1102,9 @@ void Element::onChildOrderChanged(ElementEventArgs& e)
 //----------------------------------------------------------------------------//
 void Element::onNonClientChanged(ElementEventArgs& e)
 {
-    notifyScreenAreaChanged(true);
+    notifyScreenAreaChanged();
 
     fireEvent(EventNonClientChanged, e, EventNamespace);
-}
-
-//----------------------------------------------------------------------------//
-void Element::setDefaultParagraphDirection(DefaultParagraphDirection defaultParagraphDirection)
-{
-    if(defaultParagraphDirection != d_defaultParagraphDirection)
-    {
-        d_defaultParagraphDirection = defaultParagraphDirection;
-
-        notifyScreenAreaChanged(true);
-
-        ElementEventArgs eventArgs(this);
-        fireEvent(EventDefaultParagraphDirectionChanged, eventArgs, EventNamespace);
-    }
-    
 }
 
 #if defined(_MSC_VER)

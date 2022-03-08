@@ -31,6 +31,8 @@
 #define _String_h_
 
 #include "CEGUI/Base.h"
+#include <vector>
+#include <stdexcept>
 
 #if (CEGUI_STRING_CLASS == CEGUI_STRING_CLASS_UTF_8) || (CEGUI_STRING_CLASS == CEGUI_STRING_CLASS_UTF_32)
 
@@ -171,7 +173,13 @@ public:
     \return
         Returns an UTF-32 string (std::u32string) converted from the ASCII or UTF-8 encoded string or char array.
     */
-    static std::u32string convertUtf8ToUtf32(const char* utf8String);
+    static inline std::u32string convertUtf8ToUtf32(const char* utf8String, std::vector<size_t>* mapping = nullptr)
+    {
+        if (!utf8String)
+            return std::u32string();
+
+        return convertUtf8ToUtf32(utf8String, std::char_traits<char>::length(utf8String), mapping);
+    }
 
     /*
     \brief
@@ -187,7 +195,13 @@ public:
         Returns an UTF-32 string (std::u32string) converted
         from the ASCII or UTF-8 encoded string or char array.
     */
-    static std::u32string convertUtf8ToUtf32(const char* utf8StringStart, const char* utf8StringEnd);
+    static inline std::u32string convertUtf8ToUtf32(const char* utf8StringStart, const char* utf8StringEnd, std::vector<size_t>* mapping = nullptr)
+    {
+        if (!utf8StringStart)
+            return std::u32string();
+
+        return convertUtf8ToUtf32(utf8StringStart, utf8StringEnd - utf8StringStart, mapping);
+    }
 
     /*
     \brief
@@ -200,7 +214,10 @@ public:
         Returns an UTF-32 string (std::u32string) converted from
         the ASCII or UTF-8 encoded string or char array.
     */
-    static std::u32string convertUtf8ToUtf32(const std::string& utf8String);
+    static inline std::u32string convertUtf8ToUtf32(const std::string& utf8String, std::vector<size_t>* mapping = nullptr)
+    {
+        return convertUtf8ToUtf32(utf8String.data(), utf8String.size(), mapping);
+    }
 
     /*
     \brief
@@ -210,7 +227,10 @@ public:
     \return
         Returns an UTF-32 string (std::u32string) converted from the UTF-8 code unit.
     */
-    static std::u32string convertUtf8ToUtf32(const char utf8Char);
+    static inline std::u32string convertUtf8ToUtf32(const char utf8Char)
+    {
+        return convertUtf8ToUtf32(&utf8Char, 1);
+    }
 
     /*
     \brief
@@ -227,7 +247,7 @@ public:
         Returns an UTF-32 string (std::u32string)
         converted from the ASCII or UTF-8 encoded char array.
     */
-    static std::u32string convertUtf8ToUtf32(const char* utf8String, const size_t stringLength);
+    static std::u32string convertUtf8ToUtf32(const char* utf8String, const size_t stringLength, std::vector<size_t>* mapping = nullptr);
 
     /*
     \brief
@@ -332,10 +352,33 @@ public:
         The initial code unit to be used for determining the
         UTF-32 code point.
     \return
-        Returns the prospective size of the code point, or -1
+        Returns the prospective size of the code point, or 0
         if the supplied initial byte is of an invalid code point.
     */
-    static size_t getCodePointSize(const char initialCodeUnit);
+    static size_t getCodePointSize(const char initialCodeUnit)
+    {
+        if ((initialCodeUnit & 0x80) == 0x00)
+            return 1;
+        else if ((initialCodeUnit & 0xE0) == 0xC0)
+            return 2;
+        else if ((initialCodeUnit & 0xF0) == 0xE0)
+            return 3;
+        else if ((initialCodeUnit & 0xF8) == 0xF0)
+            return 4;
+        else
+            return 0;
+    }
+
+    static size_t getCodePointUtf8Size(char32_t currentCodeUnit)
+    {
+        if (currentCodeUnit < 0x80)
+            return 1;
+        if (currentCodeUnit < 0x800)
+            return 2;
+        if (currentCodeUnit < 0x10000)
+            return 3;
+        return 4;
+    }
 
     static char32_t convertCodePoint(const char firstCodeUnit,
                                      const char secondCodeUnit);
@@ -351,6 +394,7 @@ public:
 
     static bool isContinuingUTF8CodeUnit(const char codeUnit);
 
+    static const String& GetEmpty();
 
     //////////////////////////////////////////////////////////////////////////
     // Default constructors and destructors
@@ -496,7 +540,7 @@ public:
         Move constructor. The String "other" is left in valid but unspecified state.
     */
     String(CEGUI::String&& other) noexcept
-        : d_string(other.d_string)
+        : d_string(std::move(other.d_string))
     {}
 
     /*!
@@ -504,7 +548,7 @@ public:
         Move constructor. The String "other" is left in valid but unspecified state.
     */
     String(std::basic_string<value_type>&& other)
-        : d_string(other)
+        : d_string(std::move(other))
     {}
 
 #if defined(CEGUI_STRING_CPP_11)
@@ -513,7 +557,7 @@ public:
         Move constructor. The String "other" is left in valid but unspecified state.
     */
     String(CEGUI::String&& other, const std::allocator<value_type>& alloc)
-        : d_string(other.d_string, alloc)
+        : d_string(std::move(other.d_string), alloc)
     {}
 
 
@@ -522,7 +566,7 @@ public:
         Move constructor. The String "other" is left in valid but unspecified state.
     */
     String(std::basic_string<value_type>&& other, const std::allocator<value_type>& alloc)
-        : d_string(other, alloc)
+        : d_string(std::move(other), alloc)
     {}
 
     /*!
@@ -691,7 +735,7 @@ public:
     */
     String& operator=(String&& str) noexcept
     {
-        d_string = str.d_string;
+        d_string = std::move(str.d_string);
         return *this;
     }
 
@@ -911,7 +955,7 @@ public:
     */ 
     String& assign(String&& str)
     {
-        d_string.assign(str.d_string);
+        d_string.assign(std::move(str.d_string));
         return *this;
     }
 
@@ -4512,14 +4556,9 @@ public:
         Returns the underlying std::basic_string that
         is used to store the code units for this
         String class.
-    \return
-        A const reference to the std::basic_string stored in
-        this String class.
     */
-    const std::basic_string<value_type>& getString() const
-    {
-        return d_string;
-    }
+    const std::basic_string<value_type>& getString() const { return d_string; }
+    std::basic_string<value_type>& getString() { return d_string; }
 
 #if (CEGUI_STRING_CLASS == CEGUI_STRING_CLASS_UTF_8)
     /*
@@ -4568,7 +4607,9 @@ public:
             return *this;
         }
 
-        bool isAtEnd()
+        operator bool() const { return m_iter != m_rangeEnd; }
+
+        bool isAtEnd() const
         {
             return m_iter == m_rangeEnd;
         }

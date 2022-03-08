@@ -39,15 +39,12 @@ class Affector;
 class Animation;
 class AnimationInstance;
 class AnimationManager;
-class BasicRenderedStringParser;
 class BidiVisualMapping;
-class CentredRenderedString;
 class Clipboard;
 class Colour;
 class ColourRect;
 class CoordConverter;
 class DefaultLogger;
-class DefaultRenderedStringParser;
 class DefaultResourceProvider;
 class DynamicModule;
 class Element;
@@ -61,7 +58,6 @@ class FactoryModule;
 class Font;
 class FontGlyph;
 class FontManager;
-class FormattedRenderedString;
 class GeometryBuffer;
 class GlobalEventSet;
 class GUIContext;
@@ -72,15 +68,11 @@ class ImagerySection;
 class Interpolator;
 class InputAggregator;
 class InputEvent;
-class JustifiedRenderedString;
 class KeyFrame;
-class LeftAlignedRenderedString;
 class LinkedEvent;
 class LinkedEventArgs;
 class Logger;
 class Cursor;
-class NamedElement;
-class NamedElementEventArgs;
 class NativeClipboardProvider;
 class Property;
 template<typename T> class PropertyHelper;
@@ -89,12 +81,6 @@ class PropertySet;
 class RawDataContainer;
 class Rectf;
 class RegexMatcher;
-class RenderedString;
-class RenderedStringComponent;
-class RenderedStringImageComponent;
-class RenderedStringParser;
-class RenderedStringTextComponent;
-class RenderedStringWidgetComponent;
 class Renderer;
 class RenderEffect;
 class RenderEffectManager;
@@ -105,7 +91,6 @@ class RenderQueue;
 class RenderTarget;
 class ResourceEventSet;
 class ResourceProvider;
-class RightAlignedRenderedString;
 class Scheme;
 class SchemeManager;
 class ScriptFunctor;
@@ -226,15 +211,6 @@ class SVGRect;
 
 class SVGPaint;
 class SVGPaintStyle;
-
-
-/*************************************************************************
-    Dependency-specific classes.
-*************************************************************************/
-#ifdef CEGUI_USE_RAQM
-class RaqmTextData;
-#endif
-
 
 } // End of  CEGUI namespace section
 

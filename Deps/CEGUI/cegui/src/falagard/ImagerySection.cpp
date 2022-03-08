@@ -43,7 +43,7 @@ namespace CEGUI
         d_masterColours(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF)
     {}
 
-    void ImagerySection::render(Window& srcWindow, const CEGUI::ColourRect* modColours, const Rectf* clipper, bool clipToDisplay) const
+    void ImagerySection::render(Window& srcWindow, const CEGUI::ColourRect* modColours, const Rectf* clipper) const
     {
         // decide what to do as far as colours go
         ColourRect finalCols;
@@ -54,24 +54,17 @@ namespace CEGUI
 
         ColourRect* finalColsPtr = (finalCols.isMonochromatic() && finalCols.d_top_left.getARGB() == 0xFFFFFFFF) ? 0 : &finalCols;
 
-        // render all frame components in this section
-        for(FrameComponentList::const_iterator frame = d_frames.begin(); frame != d_frames.end(); ++frame)
-        {
-            (*frame).createRenderGeometryAndAddToWindow(srcWindow, finalColsPtr, clipper, clipToDisplay);
-        }
-        // render all image components in this section
-        for(ImageryComponentList::const_iterator image = d_images.begin(); image != d_images.end(); ++image)
-        {
-            (*image).createRenderGeometryAndAddToWindow(srcWindow, finalColsPtr, clipper, clipToDisplay);
-        }
-        // render all text components in this section
-        for(TextComponentList::const_iterator text = d_texts.begin(); text != d_texts.end(); ++text)
-        {
-            (*text).createRenderGeometryAndAddToWindow(srcWindow, finalColsPtr, clipper, clipToDisplay);
-        }
+        for (const auto& frame : d_frames)
+            frame.createRenderGeometryAndAddToWindow(srcWindow, finalColsPtr, clipper);
+
+        for (const auto& image : d_images)
+            image.createRenderGeometryAndAddToWindow(srcWindow, finalColsPtr, clipper);
+
+        for (const auto& text : d_texts)
+            text.createRenderGeometryAndAddToWindow(srcWindow, finalColsPtr, clipper);
     }
 
-    void ImagerySection::render(Window& srcWindow, const Rectf& baseRect, const CEGUI::ColourRect* modColours, const Rectf* clipper, bool clipToDisplay) const
+    void ImagerySection::render(Window& srcWindow, const Rectf& baseRect, const CEGUI::ColourRect* modColours, const Rectf* clipper) const
     {
         // decide what to do as far as colours go
         ColourRect finalCols;
@@ -85,18 +78,16 @@ namespace CEGUI
         // render all frame components in this section
         for(FrameComponentList::const_iterator frame = d_frames.begin(); frame != d_frames.end(); ++frame)
         {
-            (*frame).createRenderGeometryAndAddToWindow(srcWindow, baseRect, finalColsPtr, clipper, clipToDisplay);
+            (*frame).createRenderGeometryAndAddToWindow(srcWindow, baseRect, finalColsPtr, clipper);
         }
         // render all image components in this section
         for(ImageryComponentList::const_iterator image = d_images.begin(); image != d_images.end(); ++image)
         {
-            (*image).createRenderGeometryAndAddToWindow(srcWindow, baseRect, finalColsPtr, clipper, clipToDisplay);
+            (*image).createRenderGeometryAndAddToWindow(srcWindow, baseRect, finalColsPtr, clipper);
         }
         // render all text components in this section
-        for(TextComponentList::const_iterator text = d_texts.begin(); text != d_texts.end(); ++text)
-        {
-            (*text).createRenderGeometryAndAddToWindow(srcWindow, baseRect, finalColsPtr, clipper, clipToDisplay);
-        }
+        for (const auto& text : d_texts)
+            text.createRenderGeometryAndAddToWindow(srcWindow, baseRect, finalColsPtr, clipper);
     }
 
     void ImagerySection::addImageryComponent(const ImageryComponent& imageryComponent)
@@ -128,28 +119,19 @@ namespace CEGUI
         d_images.clear();
     }
 
-    void ImagerySection::addTextComponent(const TextComponent& textComponent)
+    void ImagerySection::addTextComponent(TextComponent&& textComponent)
     {
-        d_texts.push_back(textComponent);
+        d_texts.push_back(std::move(textComponent));
     }
 
     void ImagerySection::removeTextComponent(const TextComponent& textComponent)
     {
-        TextComponentList::iterator textComponentIter = d_texts.begin();
-        TextComponentList::iterator textComponentIterEnd = d_texts.end();
-        while(textComponentIter != textComponentIterEnd)
-        {
-            if(&(*textComponentIter) == &textComponent)
-            {
-                d_texts.erase(textComponentIter);
-                return;
-            }
-
-            ++textComponentIter;
-        }
-
-        Logger::getSingleton().logEvent("ImagerySection::removeTextComponent: The TextComponent that has been supplied  "
-            "could not be found in this ImagerySection. No element has been removed");
+        auto it = std::find_if(d_texts.begin(), d_texts.end(), [b = &textComponent](const TextComponent& a) { return &a == b; });
+        if (it != d_texts.end())
+            d_texts.erase(it);
+        else
+            Logger::getSingleton().logEvent("ImagerySection::removeTextComponent: The TextComponent that has been supplied  "
+                "could not be found in this ImagerySection. No element has been removed");
     }
 
     void ImagerySection::clearTextComponents()
@@ -260,9 +242,9 @@ namespace CEGUI
             bounds.bottom(std::max(bounds.bottom(), compRect.bottom()));
         }
         // measure all text components
-        for(TextComponentList::const_iterator text = d_texts.begin(); text != d_texts.end(); ++text)
+        for (const auto& text : d_texts)
         {
-            compRect = (*text).getComponentArea().getPixelRect(wnd);
+            compRect = text.getComponentArea().getPixelRect(wnd);
 
             bounds.left(std::min(bounds.left(), compRect.left()));
             bounds.top(std::min(bounds.top(), compRect.top()));
@@ -302,9 +284,9 @@ namespace CEGUI
             bounds.bottom(std::max(bounds.bottom(), compRect.bottom()));
         }
         // measure all text components
-        for(TextComponentList::const_iterator text = d_texts.begin(); text != d_texts.end(); ++text)
+        for (const auto& text : d_texts)
         {
-            compRect = (*text).getComponentArea().getPixelRect(wnd, rect);
+            compRect = text.getComponentArea().getPixelRect(wnd, rect);
 
             bounds.left(std::min(bounds.left(), compRect.left()));
             bounds.top(std::min(bounds.top(), compRect.top()));
@@ -351,10 +333,8 @@ namespace CEGUI
         }
 
         // output all text components
-        for(TextComponentList::const_iterator text = d_texts.begin(); text != d_texts.end(); ++text)
-        {
-            (*text).writeXMLToStream(xml_stream);
-        }
+        for (const auto& text : d_texts)
+            text.writeXMLToStream(xml_stream);
 
         // output closing tag
         xml_stream.closeTag();
@@ -364,14 +344,8 @@ namespace CEGUI
                                                     const Font* font) const
     {
         bool result = false;
-
-        for(TextComponentList::const_iterator text = d_texts.begin();
-            text != d_texts.end();
-            ++text)
-        {
-            result |= (*text).handleFontRenderSizeChange(window, font);
-        }
-
+        for (const auto& text : d_texts)
+            result |= text.handleFontRenderSizeChange(window, font);
         return result;
     }
 
@@ -390,17 +364,12 @@ namespace CEGUI
         return pointerList;
     }
 
-    ImagerySection::TextComponentPointerList ImagerySection::getTextComponentPointers()
+    std::vector<TextComponent*> ImagerySection::getTextComponentPointers()
     {
-        ImagerySection::TextComponentPointerList pointerList;
+        std::vector<TextComponent*> pointerList;
 
-        TextComponentList::iterator textComponentIter = d_texts.begin();
-        TextComponentList::iterator textComponentEnd = d_texts.end();
-        while( textComponentIter != textComponentEnd )
-        {
-            pointerList.push_back(&(*textComponentIter));
-            ++textComponentIter;
-        }
+        for (auto& text : d_texts)
+            pointerList.push_back(&text);
 
         return pointerList;
     }
@@ -418,21 +387,6 @@ namespace CEGUI
         }
 
         return pointerList;
-    }
-
-    const ImagerySection::ImageryComponentList& ImagerySection::getImageryComponents() const
-    {
-        return d_images;
-    }
-
-    const ImagerySection::TextComponentList& ImagerySection::getTextComponents() const
-    {
-        return d_texts;
-    }
-
-    const ImagerySection::FrameComponentList& ImagerySection::getFrameComponents() const
-    {
-        return d_frames;
     }
 
 } // End of  CEGUI namespace section

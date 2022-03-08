@@ -25,44 +25,49 @@
  *   OTHER DEALINGS IN THE SOFTWARE.
  ***************************************************************************/
 #include "CEGUI/WindowRendererSets/Core/Tooltip.h"
-#include "CEGUI/falagard/WidgetLookManager.h"
 #include "CEGUI/falagard/WidgetLookFeel.h"
 #include "CEGUI/CoordConverter.h"
 
-// Start of CEGUI namespace section
 namespace CEGUI
 {
-    const String FalagardTooltip::TypeName("Core/Tooltip");
+const String FalagardTooltip::TypeName("Core/Tooltip");
 
-    FalagardTooltip::FalagardTooltip(const String& type) :
-        TooltipWindowRenderer(type)
+//----------------------------------------------------------------------------//
+void FalagardTooltip::createRenderGeometry()
+{
+    auto& imagery = getLookNFeel().getStateImagery(d_window->isEffectiveDisabled() ? "Disabled" : "Enabled");
+    imagery.render(*d_window);
+}
+
+//----------------------------------------------------------------------------//
+Sizef FalagardTooltip::getContentSize() const
+{
+    auto& lnf = getLookNFeel();
+    Sizef sz = getTextComponentExtents(lnf);
+    const Rectf textArea(lnf.getNamedArea("TextArea").getArea().getPixelRect(*d_window));
+    const Rectf wndArea(CoordConverter::asAbsolute(d_window->getArea(), d_window->getParentPixelSize()));
+    sz.d_width = CoordConverter::alignToPixels(sz.d_width + wndArea.getWidth() - textArea.getWidth());
+    sz.d_height = CoordConverter::alignToPixels(sz.d_height + wndArea.getHeight() - textArea.getHeight());
+    return sz;
+}
+
+//----------------------------------------------------------------------------//
+Sizef FalagardTooltip::getTextComponentExtents(const WidgetLookFeel& lnf) const
+{
+    // Find a text component responsible for a tooltip text
+    const auto& layerSpecs = lnf.getStateImagery("Enabled").getLayerSpecifications();
+    for (auto& layerSpec : layerSpecs)
     {
+        const auto& sectionSpecs = layerSpec.getSectionSpecifications();
+        for (auto& sectionSpec : sectionSpecs)
+        {
+            const auto& texts = lnf.getImagerySection(sectionSpec.getSectionName()).getTextComponents();
+            if (!texts.empty())
+                return texts.front().getTextExtent(*d_window);
+        }
     }
 
-    void FalagardTooltip::createRenderGeometry()
-    {
-        // get WidgetLookFeel for the assigned look.
-        const WidgetLookFeel& wlf = getLookNFeel();
-        // try and get imagery for our current state
-        const StateImagery* imagery = &wlf.getStateImagery(d_window->isEffectiveDisabled() ? "Disabled" : "Enabled");
-        // peform the rendering operation.
-        imagery->render(*d_window);
-    }
+    return d_window->getPixelSize();
+}
 
-    Sizef FalagardTooltip::getTextSize() const
-    {
-        Tooltip* w = static_cast<Tooltip*>(d_window);
-        Sizef sz(w->getTextSize_impl());
-
-        // get WidgetLookFeel for the assigned look.
-        const WidgetLookFeel& wlf = getLookNFeel();
-
-        const Rectf textArea(wlf.getNamedArea("TextArea").getArea().getPixelRect(*w));
-        const Rectf wndArea(CoordConverter::asAbsolute(w->getArea(), w->getParentPixelSize()));
-
-        sz.d_width  = CoordConverter::alignToPixels(sz.d_width + wndArea.getWidth() - textArea.getWidth());
-        sz.d_height = CoordConverter::alignToPixels(sz.d_height + wndArea.getHeight() - textArea.getHeight());
-        return sz;
-    }
-
-} // End of  CEGUI namespace section
+}

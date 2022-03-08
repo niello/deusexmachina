@@ -60,6 +60,15 @@ const WidgetLookFeel& WindowRenderer::getLookNFeel() const
     return WidgetLookManager::getSingleton().getWidgetLook(d_window->getLookNFeel());
 }
 
+//----------------------------------------------------------------------------//
+ColourRect WindowRenderer::getOptionalColour(const String& propertyName, const Colour& defaultColour) const
+{
+    ColourRect rect(defaultColour);
+    if (d_window->isPropertyPresent(propertyName))
+        rect = d_window->getProperty<ColourRect>(propertyName);
+    return rect;
+}
+
 /************************************************************************
     Get unclipped inner rectangle.
 *************************************************************************/
@@ -93,15 +102,12 @@ void WindowRenderer::registerProperty(Property* property)
 *************************************************************************/
 void WindowRenderer::onAttach()
 {
-    PropertyList::iterator i = d_properties.begin();
-    while (i != d_properties.end())
+    for (const auto& pair : d_properties)
     {
-        d_window->addProperty((*i).first);
+        d_window->addProperty(pair.first);
         // ban from xml if neccessary
-        if ((*i).second)
-            d_window->banPropertyFromXML((*i).first);
-
-        ++i;
+        if (pair.second)
+            d_window->banPropertyFromXML(pair.first->getName());
     }
 }
 
@@ -110,15 +116,13 @@ void WindowRenderer::onAttach()
 *************************************************************************/
 void WindowRenderer::onDetach()
 {
-    PropertyList::reverse_iterator i = d_properties.rbegin();
-    while (i != d_properties.rend())
+    for (const auto& pair : d_properties)
     {
         // unban from xml if neccessary
-        if ((*i).second)
-            d_window->unbanPropertyFromXML((*i).first);
+        if (pair.second)
+            d_window->unbanPropertyFromXML(pair.first->getName());
 
-        d_window->removeProperty((*i).first->getName());
-        ++i;
+        d_window->removeProperty(pair.first->getName());
     }
 }
 
@@ -132,18 +136,11 @@ void WindowRenderer::getRenderingContext(RenderingContext& ctx) const
 //----------------------------------------------------------------------------//
 bool WindowRenderer::handleFontRenderSizeChange(const Font* const font)
 {
-    const WidgetLookFeel& lf(getLookNFeel());
-    return lf.handleFontRenderSizeChange(*d_window, font);
+    return getLookNFeel().handleFontRenderSizeChange(*d_window, font);
 }
 
 //----------------------------------------------------------------------------//
-float WindowRenderer::getContentWidth() const
-{
-    throw InvalidRequestException("This function isn't implemented for this type of window renderer.");
-}
-
-//----------------------------------------------------------------------------//
-float WindowRenderer::getContentHeight() const
+Sizef WindowRenderer::getContentSize() const
 {
     throw InvalidRequestException("This function isn't implemented for this type of window renderer.");
 }

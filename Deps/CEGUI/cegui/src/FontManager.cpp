@@ -29,17 +29,17 @@
 #endif
 
 #include "CEGUI/FontManager.h"
-#include "CEGUI/Font_xmlHandler.h"
+#include "CEGUI/text/Font_xmlHandler.h"
+#include "CEGUI/text/PixmapFont.h"
 #include "CEGUI/XMLSerializer.h"
 #include "CEGUI/Logger.h"
 #include "CEGUI/System.h"
 #include "CEGUI/ResourceProvider.h"
 #include "CEGUI/InputEvent.h"
-#include "CEGUI/PixmapFont.h"
 #include "CEGUI/SharedStringStream.h"
 
 #ifdef CEGUI_HAS_FREETYPE
-#   include "CEGUI/FreeTypeFont.h"
+#   include "CEGUI/text/FreeTypeFont.h"
 #endif
 
 namespace CEGUI
@@ -130,7 +130,6 @@ Font& FontManager::createFreeTypeFont(
     const AutoScaledMode auto_scaled,
     const Sizef& native_res,
     float specificLineSpacing,
-    const FreeTypeFontLayerVector& fontLayers,
     XmlResourceExistsAction resourceExistsAction)
 {
 #ifdef CEGUI_HAS_FREETYPE
@@ -149,7 +148,6 @@ Font& FontManager::createFreeTypeFont(
     fontObject = new FreeTypeFont(
         font_name, size, sizeUnit,
         anti_aliased, font_filename,
-        fontLayers,
         resource_group, auto_scaled,
         native_res, specificLineSpacing);
 

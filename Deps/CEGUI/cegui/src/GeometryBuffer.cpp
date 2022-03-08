@@ -30,148 +30,127 @@
 #include "CEGUI/RenderTarget.h"
 #include "CEGUI/Renderer.h" // for BlendMode
 #include "CEGUI/RenderMaterial.h"
+#include "CEGUI/ColourRect.h"
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace CEGUI
 {
+constexpr size_t COLORED_VERTEX_FLOAT_COUNT = sizeof(ColouredVertex) / sizeof(float);
+constexpr size_t TEXTURED_VERTEX_FLOAT_COUNT = sizeof(TexturedColouredVertex) / sizeof(float);
+
 //---------------------------------------------------------------------------//
 GeometryBuffer::GeometryBuffer(RefCounted<RenderMaterial> renderMaterial):
-    d_renderMaterial(renderMaterial),
-    d_vertexCount(0),
-    d_translation(0, 0, 0),
-    d_rotation(1, 0, 0, 0), // <-- IDENTITY
-    d_scale(1.0f, 1.0f, 1.0f),
-    d_pivot(0, 0, 0),
-    d_customTransform(1.0f),
-    d_matrixValid(false),
-    d_lastRenderTarget(nullptr),
-    d_lastRenderTargetActivationCount(0),
-    d_blendMode(BlendMode::Normal),
-    d_polygonFillRule(PolygonFillRule::NoFilling),
-    d_postStencilVertexCount(0),
-    d_effect(nullptr),
-    d_clippingRegion(0, 0, 0, 0),
-    d_preparedClippingRegion(0, 0, 0, 0),
-    d_clippingActive(false),
-    d_alpha(1.0f)
-{}
-
-//---------------------------------------------------------------------------//
-GeometryBuffer::~GeometryBuffer()
-{}
-
-//---------------------------------------------------------------------------//
-void GeometryBuffer::setBlendMode(const BlendMode mode)
+    d_renderMaterial(std::move(renderMaterial)),
+    d_translation(0.f, 0.f, 0.f),
+    d_rotation(1.f, 0.f, 0.f, 0.f), // <-- IDENTITY
+    d_scale(1.f, 1.f, 1.f),
+    d_pivot(0.f, 0.f, 0.f),
+    d_customTransform(1.f),
+    d_blendMode(BlendMode::Normal)
 {
-    d_blendMode = mode;
 }
 
 //---------------------------------------------------------------------------//
-BlendMode GeometryBuffer::getBlendMode() const
+GeometryBuffer::~GeometryBuffer() = default;
+
+//----------------------------------------------------------------------------//
+void GeometryBuffer::clear()
 {
-    return d_blendMode;
+    reset();
+
+    d_vertexData.clear();
+    d_vertexCount = 0;
+    d_postStencilVertexCount = 0;
+
+    d_lastRenderTarget = nullptr;
+    d_lastRenderTargetActivationCount = 0;
+
+    d_translation = glm::vec3(0.f, 0.f, 0.f);
+    d_rotation = glm::quat(1.f, 0.f, 0.f, 0.f);
+    d_scale = glm::vec3(1.f, 1.f, 1.f);
+    d_pivot = glm::vec3(0.f, 0.f, 0.f);
+    d_customTransform = glm::mat4x4(1.f);
+    d_clippingRegion = Rectf();
+    d_preparedClippingRegion = Rectf();
+
+    d_effect = nullptr;
+    d_alpha = 1.f;
+    d_blendMode = BlendMode::Normal;
+    d_polygonFillRule = PolygonFillRule::NoFilling;
+    d_clippingActive = false;
+    d_matrixValid = false;
 }
 
 //---------------------------------------------------------------------------//
 void GeometryBuffer::appendGeometry(const std::vector<ColouredVertex>& coloured_vertices)
 {
-    if(coloured_vertices.empty())
-        return;
-
-    appendGeometry(&coloured_vertices[0], coloured_vertices.size());
+    if (!coloured_vertices.empty())
+        appendGeometry(coloured_vertices.data(), coloured_vertices.size());
 }
 
 //---------------------------------------------------------------------------//
-void GeometryBuffer::appendGeometry(const ColouredVertex* vertex_array,
-                                    std::size_t vertex_count)
+void GeometryBuffer::appendGeometry(const ColouredVertex* vertexArray,
+                                    std::size_t vertexCount)
 {
-    // Create a temporary array to contain our data
-    constexpr std::size_t VERTEX_FLOAT_COUNT = 7;
-    const std::size_t fullArraySize = VERTEX_FLOAT_COUNT * vertex_count;
-    float* vertexData = new float[fullArraySize];
-
-    // Add the vertex data in their default order into an array
-    const ColouredVertex* vs = vertex_array;
-    for (std::size_t i = 0; i < vertex_count; ++i, ++vs)
-    {
-        // Add all the elements in the default order for coloured
-        // geometry into the vector
-        const std::size_t currentIndex = i * VERTEX_FLOAT_COUNT;
-
-        vertexData[currentIndex + 0] = vs->d_position.x;
-        vertexData[currentIndex + 1] = vs->d_position.y;
-        vertexData[currentIndex + 2] = vs->d_position.z;
-        vertexData[currentIndex + 3] = vs->d_colour.x;
-        vertexData[currentIndex + 4] = vs->d_colour.y;
-        vertexData[currentIndex + 5] = vs->d_colour.z;
-        vertexData[currentIndex + 6] = vs->d_colour.w;
-    }
-
-    // Append the prepared geometry data
-    appendGeometry(vertexData, fullArraySize);
-
-    delete[] vertexData;
+    const size_t addedFloatCount = COLORED_VERTEX_FLOAT_COUNT * vertexCount;
+    appendGeometry(reinterpret_cast<const float*>(vertexArray), addedFloatCount);
 }
 
 //---------------------------------------------------------------------------//
 void GeometryBuffer::appendGeometry(const std::vector<TexturedColouredVertex>& textured_vertices)
 {
-    if(textured_vertices.empty())
+    if (!textured_vertices.empty())
+        appendGeometry(textured_vertices.data(), textured_vertices.size());
+}
+
+//---------------------------------------------------------------------------//
+void GeometryBuffer::appendGeometry(const TexturedColouredVertex* vertexArray,
+                                    std::size_t vertexCount)
+{
+    const size_t addedFloatCount = TEXTURED_VERTEX_FLOAT_COUNT * vertexCount;
+    appendGeometry(reinterpret_cast<const float*>(vertexArray), addedFloatCount);
+}
+
+//---------------------------------------------------------------------------//
+void GeometryBuffer::appendGeometry(const float* vertexArray, std::size_t arraySize)
+{
+    const size_t prevFloatCount = d_vertexData.size();
+    d_vertexData.resize(prevFloatCount + arraySize);
+
+    float* dest = d_vertexData.data() + prevFloatCount;
+    std::memcpy(dest, vertexArray, arraySize * sizeof(float));
+
+    d_vertexCount = d_vertexData.size() / static_cast<size_t>(getVertexAttributeElementCount());
+}
+
+//---------------------------------------------------------------------------//
+void GeometryBuffer::appendSolidRect(const Rectf& rect, const ColourRect& colours)
+{
+    if (rect.empty())
         return;
 
-    appendGeometry(&textured_vertices[0], textured_vertices.size());
-}
+    ColouredVertex v[6];
+    v[0].setColour(colours.d_top_left);
+    v[0].d_position = glm::vec3(rect.left(), rect.top(), 0.0f);
+    v[1].setColour(colours.d_bottom_left);
+    v[1].d_position = glm::vec3(rect.left(), rect.bottom(), 0.0f);
+    v[2].setColour(colours.d_bottom_right);
+    v[2].d_position = glm::vec3(rect.right(), rect.bottom(), 0.0f);
+    v[3].setColour(colours.d_top_right);
+    v[3].d_position = glm::vec3(rect.right(), rect.top(), 0.0f);
+    v[4].setColour(colours.d_top_left);
+    v[4].d_position = glm::vec3(rect.left(), rect.top(), 0.0f);
+    v[5].setColour(colours.d_bottom_right);
+    v[5].d_position = glm::vec3(rect.right(), rect.bottom(), 0.0f);
 
-//---------------------------------------------------------------------------//
-void GeometryBuffer::appendGeometry(const TexturedColouredVertex* vertex_array,
-                                    std::size_t vertex_count)
-{
-    // Create a temporary array to contain our data
-    constexpr std::size_t VERTEX_FLOAT_COUNT = 9;
-    const std::size_t fullArraySize = VERTEX_FLOAT_COUNT * vertex_count;
-    float* vertexData = new float[fullArraySize];
-
-    // Add the vertex data in their default order into an array
-    const TexturedColouredVertex* vs = vertex_array;
-    for (std::size_t i = 0; i < vertex_count; ++i, ++vs)
-    {
-        // Add all the elements in the default order for textured and coloured
-        // geometry into the vector
-        const std::size_t currentIndex = i * VERTEX_FLOAT_COUNT;
-        
-        vertexData[currentIndex + 0] = vs->d_position.x;
-        vertexData[currentIndex + 1] = vs->d_position.y;
-        vertexData[currentIndex + 2] = vs->d_position.z;
-        vertexData[currentIndex + 3] = vs->d_colour.x;
-        vertexData[currentIndex + 4] = vs->d_colour.y;
-        vertexData[currentIndex + 5] = vs->d_colour.z;
-        vertexData[currentIndex + 6] = vs->d_colour.w;
-        vertexData[currentIndex + 7] = vs->d_texCoords.x;
-        vertexData[currentIndex + 8] = vs->d_texCoords.y;
-    }
-
-    // Append the prepared geometry data
-    appendGeometry(vertexData, fullArraySize);
-
-    delete[] vertexData;
-}
-
-//---------------------------------------------------------------------------//
-void GeometryBuffer::appendGeometry(const float* vertex_data,
-                                    std::size_t array_size)
-{
-    d_vertexData.reserve(d_vertexData.size() + array_size);
-    std::copy(vertex_data, vertex_data + array_size, std::back_inserter(d_vertexData));
-
-    // Update size of geometry buffer
-    d_vertexCount = d_vertexData.size() / getVertexAttributeElementCount();
+    appendGeometry(v, 6);
 }
 
 //---------------------------------------------------------------------------//
 void GeometryBuffer::appendVertex(const TexturedColouredVertex& vertex)
 {
     // Add the vertex data in their default order into an array
-    float vertexData[9];
+    float vertexData[TEXTURED_VERTEX_FLOAT_COUNT];
 
     // Copy the vertex attributes into the array
     vertexData[0] = vertex.d_position.x;
@@ -184,14 +163,14 @@ void GeometryBuffer::appendVertex(const TexturedColouredVertex& vertex)
     vertexData[7] = vertex.d_texCoords.x;
     vertexData[8] = vertex.d_texCoords.y;
 
-    appendGeometry(vertexData, 9);
+    appendGeometry(vertexData, TEXTURED_VERTEX_FLOAT_COUNT);
 }
 
 //---------------------------------------------------------------------------//
 void GeometryBuffer::appendVertex(const ColouredVertex& vertex)
 {
     // Add the vertex data in their default order into an array
-    float vertexData[7];
+    float vertexData[COLORED_VERTEX_FLOAT_COUNT];
 
     // Copy the vertex attributes into the array
     vertexData[0] = vertex.d_position.x;
@@ -202,7 +181,7 @@ void GeometryBuffer::appendVertex(const ColouredVertex& vertex)
     vertexData[5] = vertex.d_colour.z;
     vertexData[6] = vertex.d_colour.w;
 
-    appendGeometry(vertexData, 7);
+    appendGeometry(vertexData, COLORED_VERTEX_FLOAT_COUNT);
 }
 
 //---------------------------------------------------------------------------//
@@ -210,10 +189,10 @@ int GeometryBuffer::getVertexAttributeElementCount() const
 {
     int count = 0;
 
-    const unsigned int attribute_count = d_vertexAttributes.size();
-    for (unsigned int i = 0; i < attribute_count; ++i)
+    const auto attribute_count = d_vertexAttributes.size();
+    for (size_t i = 0; i < attribute_count; ++i)
     {
-        switch(d_vertexAttributes.at(i))
+        switch (d_vertexAttributes.at(i))
         {
             case VertexAttributeType::Position0:
                 count += 3;
@@ -245,39 +224,15 @@ void GeometryBuffer::addVertexAttribute(VertexAttributeType attribute)
 }
 
 //---------------------------------------------------------------------------//
-RefCounted<RenderMaterial> GeometryBuffer::getRenderMaterial() const
+RenderMaterial* GeometryBuffer::getRenderMaterial() const
 {
-    return d_renderMaterial;
+    return d_renderMaterial.get();
 }
 
 //---------------------------------------------------------------------------//
 void GeometryBuffer::setRenderMaterial(RefCounted<RenderMaterial> render_material)
 {
     d_renderMaterial = render_material;
-}
-
-//---------------------------------------------------------------------------//
-void GeometryBuffer::setStencilRenderingActive(PolygonFillRule fill_rule)
-{
-    d_polygonFillRule = fill_rule;
-}
-
-//---------------------------------------------------------------------------//
-void GeometryBuffer::setStencilPostRenderingVertexCount(unsigned int vertex_count)
-{
-    d_postStencilVertexCount = vertex_count;
-}
-
-//----------------------------------------------------------------------------//
-void GeometryBuffer::setRenderEffect(RenderEffect* effect)
-{
-    d_effect = effect;
-}
-
-//----------------------------------------------------------------------------//
-RenderEffect* GeometryBuffer::getRenderEffect()
-{
-    return d_effect;
 }
 
 //----------------------------------------------------------------------------//
@@ -313,7 +268,7 @@ void GeometryBuffer::setScale(const glm::vec3& scale)
 //----------------------------------------------------------------------------//
 void GeometryBuffer::setScale(const glm::vec2& scale)
 {
-    setScale(glm::vec3(scale, 0));
+    setScale(glm::vec3(scale, 0.f));
 }
 
 //----------------------------------------------------------------------------//
@@ -329,13 +284,14 @@ void GeometryBuffer::setPivot(const glm::vec3& p)
 //----------------------------------------------------------------------------//
 void GeometryBuffer::setCustomTransform(const glm::mat4x4& transformation)
 {
-    if(d_customTransform != transformation)
+    if (d_customTransform != transformation)
     {
         d_customTransform = transformation;
         d_matrixValid = false;
     }
 }
 
+//----------------------------------------------------------------------------//
 void GeometryBuffer::setClippingRegion(const Rectf& region)
 {
     d_clippingRegion = region;
@@ -344,35 +300,6 @@ void GeometryBuffer::setClippingRegion(const Rectf& region)
     d_preparedClippingRegion.bottom(std::max(0.0f, region.bottom()));
     d_preparedClippingRegion.left(std::max(0.0f, region.left()));
     d_preparedClippingRegion.right(std::max(0.0f, region.right()));
-}
-
-const Rectf& GeometryBuffer::getClippingRegion() const
-{
-    return d_clippingRegion;
-}
-
-const Rectf& GeometryBuffer::getPreparedClippingRegion() const
-{
-    return d_preparedClippingRegion;
-}
-
-//----------------------------------------------------------------------------//
-void GeometryBuffer::setClippingActive(const bool active)
-{
-    d_clippingActive = active;
-}
-
-//----------------------------------------------------------------------------//
-bool GeometryBuffer::isClippingActive() const
-{
-    return d_clippingActive;
-}
-
-
-//----------------------------------------------------------------------------//
-std::size_t GeometryBuffer::getVertexCount() const
-{
-    return d_vertexCount;
 }
 
 //----------------------------------------------------------------------------//
@@ -385,32 +312,40 @@ void GeometryBuffer::reset()
 //----------------------------------------------------------------------------//
 void GeometryBuffer::setTexture(const std::string& parameterName, const Texture* texture)
 {
-    CEGUI::ShaderParameterBindings* shaderParameterBindings = (*d_renderMaterial).getShaderParamBindings();
-    shaderParameterBindings->setParameter(parameterName, texture);
+    d_renderMaterial->getShaderParamBindings()->setParameter(parameterName, texture);
 }
 
-//---------------------------------------------------------------------------//
-void GeometryBuffer::setAlpha(float alpha)
+//--------------------------------------------------------------------------//
+const Texture* GeometryBuffer::getTexture(const std::string& parameterName) const
 {
-    d_alpha = alpha;
+    auto shaderParam = d_renderMaterial->getShaderParamBindings()->getParameter(parameterName);
+    return shaderParam ? static_cast<ShaderParameterTexture*>(shaderParam)->d_parameterValue : nullptr;
 }
 
-//---------------------------------------------------------------------------//
-float GeometryBuffer::getAlpha() const
+//--------------------------------------------------------------------------//
+void GeometryBuffer::setMainTexture(const Texture* texture)
 {
-    return d_alpha;
+    d_renderMaterial->setMainTexture(texture);
 }
 
-//---------------------------------------------------------------------------//
-void GeometryBuffer::invalidateMatrix()
+//--------------------------------------------------------------------------//
+const Texture* GeometryBuffer::getMainTexture() const
 {
-    d_matrixValid = false;
+    return d_renderMaterial->getMainTexture();
 }
 
-//---------------------------------------------------------------------------//
-const RenderTarget* GeometryBuffer::getLastRenderTarget() const
+//--------------------------------------------------------------------------//
+void GeometryBuffer::updateTextureCoordinates(const Texture* texture, float scaleFactor)
 {
-    return d_lastRenderTarget;
+    // Check that the buffer is textured and uses the given texture
+    if (!texture || getMainTexture() != texture)
+        return;
+
+    for (size_t i = 0; i < d_vertexCount; ++i)
+    {
+        d_vertexData[i * TEXTURED_VERTEX_FLOAT_COUNT + 7] *= scaleFactor;
+        d_vertexData[i * TEXTURED_VERTEX_FLOAT_COUNT + 8] *= scaleFactor;
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -429,7 +364,6 @@ void GeometryBuffer::updateRenderTargetData(const RenderTarget* activeRenderTarg
     d_lastRenderTargetActivationCount = activeRenderTarget->getActivationCounter();
 }
 
-
 //----------------------------------------------------------------------------//
 glm::mat4 GeometryBuffer::getModelMatrix() const
 {
@@ -442,39 +376,6 @@ glm::mat4 GeometryBuffer::getModelMatrix() const
     modelMatrix *=  translMatrix * d_customTransform;
 
     return modelMatrix;
-}
-
-const Texture* GeometryBuffer::getTexture(const std::string& parameterName) const
-{
-    auto renderMaterial = getRenderMaterial();
-    ShaderParameterBindings* shaderParamBindings = (*renderMaterial).getShaderParamBindings();
-    ShaderParameter* shaderParam = shaderParamBindings->getParameter(parameterName);
-    ShaderParameterTexture* texture0ShaderParam = static_cast<ShaderParameterTexture*>(shaderParam);
-    if (texture0ShaderParam == nullptr)
-    {
-        return nullptr;
-    }
-
-    return texture0ShaderParam->d_parameterValue;
-}
-
-void GeometryBuffer::updateTextureCoordinates(const Texture* texture, const float scaleFactor)
-{
-    const Texture* geomBuffTex0 = getTexture("texture0");
- 
-    if (!geomBuffTex0 || geomBuffTex0 != texture)
-        return;
-
-    size_t vertexCount = d_vertexData.size() / 9;
-    for(size_t i = 0; i < vertexCount; ++i)
-    {
-        d_vertexData[i * 9 + 7] *= scaleFactor;
-        d_vertexData[i * 9 + 8] *= scaleFactor;
-    }
-
-    std::vector<float> tempVertexData;
-    std::swap(tempVertexData, d_vertexData);
-    appendGeometry(tempVertexData.data(), tempVertexData.size());
 }
 
 }

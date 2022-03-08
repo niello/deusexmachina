@@ -30,27 +30,23 @@
 #define _CEGUIWindowNavigator_h_
 
 #include "CEGUI/SemanticInputEvent.h"
-#include <map>
-
-#if defined (_MSC_VER)
-#   pragma warning(push)
-#   pragma warning(disable : 4251)
-#endif
 
 namespace CEGUI
 {
 
 /*!
 \brief
-    Provides a strategy for navigating the GUI based on a specified mapping.
+    Provides a strategy for navigating the GUI with input events.
+    Inherit it to implement different strategies and event mappings.
 
     For a brief tutorial on how to use the GUI navigation please refer
     to the @ref gui_navigation_tutorial
 */
-class CEGUIEXPORT NavigationStrategy
+class CEGUIEXPORT WindowNavigator
 {
 public:
-    virtual ~NavigationStrategy() {}
+
+    virtual ~WindowNavigator() = default;
 
     /*!
     \brief
@@ -59,77 +55,12 @@ public:
     \param neighbour
         The neighbour window relative to which the new window is requested
 
-    \param payload
-        A string payload value to help decide what window to return
-    */
-    virtual Window* getWindow(Window* neighbour, const String& payload) = 0;
-};
-
-/*!
-\brief
-    Provides a way of navigating the GUI by means of focusing windows
-
-    For a brief tutorial on how to use the GUI navigation please refer
-    to the @ref gui_navigation_tutorial
-*/
-class CEGUIEXPORT WindowNavigator
-{
-public:
-    typedef std::map<SemanticValue, String> SemanticMappingsMap;
-    ~WindowNavigator() {}
-
-    /*!
-    \brief
-        Creates a new navigator with the specified event <-> payload mapping and
-        the specified strategy
-
-    \param mapping
-        A mapping from semantic input events to certain strategy-specific payloads
-
-    \param strategy
-        The navigation strategy to be used
-    */
-    WindowNavigator(SemanticMappingsMap mappings, NavigationStrategy* strategy);
-
-    /*!
-    \brief
-        Handles the specified semantic input event and generate a navigation if
-        that is the case (a mapping matches)
-
     \param event
-        The semantic input event
+        A semantic event type to process
     */
-    void handleSemanticEvent(const SemanticInputEvent& event);
-
-    /*!
-    \brief
-        Sets a new current focused window
-
-    \param window
-        The window to be the new focused one
-    */
-    void setCurrentFocusedWindow(Window* window);
-
-    /*!
-    \brief
-        Gets the current focused window
-
-    \return
-        An instance of Window
-    */
-    Window* getCurrentFocusedWindow();
-
-private:
-    SemanticMappingsMap d_mappings;
-    NavigationStrategy* d_strategy;
-
-    Window* d_currentFocusedWindow;
+    virtual Window* getWindow(Window* neighbour, const SemanticValue& event) = 0;
 };
 
 }
 
-#if defined (_MSC_VER)
-#   pragma warning(pop)
 #endif
-
-#endif    // end of guard _CEGUIWindowNavigator_h_

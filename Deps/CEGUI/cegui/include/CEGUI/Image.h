@@ -154,48 +154,34 @@ public:
 };
 
 
-/*!
-\brief
-    A struct that contains the render settings for the Image class.
-*/
+//! \brief Rendering settings for the Image class.
 struct ImageRenderSettings
 {
-    //! Constructor
     ImageRenderSettings(const Rectf& dest_area,
                         const Rectf* clip_area = nullptr,
-                        bool clipping_enabled = false,
-                        const ColourRect& multiplication_colours = ColourRect(0XFFFFFFFF),
-                        float alpha = 1.0f) :
-        d_destArea(dest_area),
-        d_clipArea(clip_area),
-        d_clippingEnabled(clipping_enabled),
-        d_multiplyColours(multiplication_colours),
-        d_alpha(alpha)
-    {
-    }
-
-    ImageRenderSettings(const ImageRenderSettings& source) :
-        d_destArea(source.d_destArea),
-        d_clipArea(source.d_clipArea),
-        d_clippingEnabled(source.d_clippingEnabled),
-        d_multiplyColours(source.d_multiplyColours),
-        d_alpha(source.d_alpha)
+                        const ColourRect& multiplication_colours = ColourRect(0xFFFFFFFF),
+                        float alpha = 1.0f,
+                        bool alignToPixels = false)
+        : d_destArea(dest_area)
+        , d_clipArea(clip_area)
+        , d_multiplyColours(multiplication_colours)
+        , d_alpha(alpha)
+        , d_alignToPixels(alignToPixels)
     {
     }
 
     //! The destination area for the Image.
     Rectf d_destArea;
-    //! The clipping area of the Image.
-    const Rectf* d_clipArea;
-    //! True of clipping should be enabled for the geometry of this Image.
-    bool d_clippingEnabled;
+    //! The clipping area of the Image, nullptr if clipping should be disabled.
+    const Rectf* d_clipArea = nullptr;
     //! The colour rectangle set for this Image. The colours of the rectangle will be multiplied with
     //! the Image's colours when rendered, i.e. if the colours are all '0xFFFFFFFF' no effect will be seen.
     //! If this will be used depends on the underlying image.
-    ColourRect d_multiplyColours;
-    //! The alpha value for this image, should be set as the GeometryBuffer's
-    //! alpha by the underlying image class
-    float d_alpha;
+    ColourRect d_multiplyColours = 0xFFFFFFFF;
+    //! The alpha value for this image, should be set as the GeometryBuffer's alpha by the image class
+    float d_alpha = 1.f;
+    //! True to round drawn image portion to whole pixels
+    bool d_alignToPixels = false;
 };
 
 /*!
@@ -223,33 +209,22 @@ public:
         Creates a container of GeometryBuffers based on the Image, providing the 
         geometry data needed for rendering.
 
-    \param render_settings
+    \param renderSettings
         The ImageRenderSettings that contain render settings for new GeometryBuffers.
+
+    \param canCombineFromIdx
+        An index in 'out' from which we are allowed to try combining the current
+        image geoetry into an existing geometry buffer instead of allocating a new one.
     */
-    virtual std::vector<GeometryBuffer*> createRenderGeometry(
-        const ImageRenderSettings& render_settings) const = 0;
+    virtual void createRenderGeometry(std::vector<GeometryBuffer*>& out,
+        const ImageRenderSettings& renderSettings, size_t canCombineFromIdx) const = 0;
 
-    /*!
-    \brief
-        Appends additional render geometry for this image to an GeometryBuffers.
-        The GeometryBuffer must be created beforehand and must feature render
-        settings that allow adding this image geometry into the same render batch.
-        Batching compatibility has to be ensured before this call.
-
-    \param geomBuffer
-        The existing GeometryBuffers to which the new render geometry will be appended.
-
-    \param renderArea
-        The target area at which the image should be rendered.
-
-    \param colours
-        Multiplicative colours to be applied to the text.
-    */
-    virtual void addToRenderGeometry(
-        GeometryBuffer& geomBuffer,
-        const Rectf& renderArea,
-        const Rectf* clipArea,
-        const ColourRect& colours) const = 0;
+    //! \overload
+    void createRenderGeometry(std::vector<GeometryBuffer*>& out,
+        const ImageRenderSettings& renderSettings) const
+    {
+        createRenderGeometry(out, renderSettings, out.size());
+    }
         
     /*!
     \brief
@@ -258,7 +233,7 @@ public:
     \return
         The name of the Image.
     */
-    virtual const String& getName() const;
+    const String& getName() const { return d_name; }
         
     /*!
     \brief
@@ -268,7 +243,7 @@ public:
     \return
         The rendered size of this Image.
     */
-    virtual const Sizef& getRenderedSize() const;
+    const Sizef& getRenderedSize() const { return d_scaledSize; }
 
         
     /*!
@@ -279,7 +254,7 @@ public:
     \return
         The rendered offset of this Image.
     */
-    virtual const glm::vec2& getRenderedOffset() const;
+    const glm::vec2& getRenderedOffset() const { return d_scaledOffset; }
 
     /*!
     \brief
@@ -307,7 +282,7 @@ public:
     \return
         The rectangular image area of this Image.
      */
-    Rectf getImageArea() const;
+    const Rectf& getImageArea() const { return d_imageArea; }
 
     /*!
     \brief

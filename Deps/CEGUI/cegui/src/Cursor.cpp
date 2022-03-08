@@ -114,7 +114,7 @@ void Cursor::setDefaultImage(const Image* image)
     // update the current image if it is the default image
     if (d_indicatorImage == d_defaultIndicatorImage)
     {
-        auto* window = d_context.getWindowContainingCursor();
+        auto* window = d_context.getTargetWindow(d_position, true);
         if (!window || !window->getCursor())
         {
             setImage(image);
@@ -329,22 +329,13 @@ void Cursor::cacheGeometry()
     if (d_customSize.d_width != 0.0f || d_customSize.d_height != 0.0f)
     {
         calculateCustomOffset();
-
-        ImageRenderSettings imgRenderSettings(
-            Rectf(d_customOffset, d_customSize));
-
-        auto geomBuffers = d_indicatorImage->createRenderGeometry(imgRenderSettings);
-
-        d_geometryBuffers.insert(d_geometryBuffers.end(), geomBuffers.begin(), geomBuffers.end());
+        ImageRenderSettings imgRenderSettings(Rectf(d_customOffset, d_customSize));
+        d_indicatorImage->createRenderGeometry(d_geometryBuffers, imgRenderSettings);
     }
     else
     {
-        ImageRenderSettings imgRenderSettings(
-            Rectf(glm::vec2(0, 0), d_indicatorImage->getRenderedSize()));
-
-        auto geomBuffers = d_indicatorImage->createRenderGeometry(imgRenderSettings);
-
-        d_geometryBuffers.insert(d_geometryBuffers.end(), geomBuffers.begin(), geomBuffers.end());
+        ImageRenderSettings imgRenderSettings(Rectf(glm::vec2(0, 0), d_indicatorImage->getRenderedSize()));
+        d_indicatorImage->createRenderGeometry(d_geometryBuffers, imgRenderSettings);
     }
 
     const Rectf clipping_area(glm::vec2(0, 0), d_context.getSurfaceSize());

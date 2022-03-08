@@ -30,69 +30,30 @@
 #define _CEGUIDefaultWindow_h_
 
 #include "../Window.h"
-#include "../WindowFactory.h"
 
-
-// Start of CEGUI namespace section
 namespace CEGUI
 {
 /*!
 \brief
     Window class intended to be used as a simple, generic Window.
-
-    This class does no rendering and so appears totally transparent.  This window defaults
-    to position 0.0f, 0.0f with a size of 1.0f x 1.0f.
-
-    /par
-    This Window has been used as the root GUI-sheet (root window) but it's usage has been extended
-    beyond that. That's why it's name has been changed to "DefaultWindow" for 0.8.
+    It has no explicit graphics but may be used as a base for Falagard windows.
 */
 class CEGUIEXPORT DefaultWindow : public Window
 {
 public:
-    /*************************************************************************
-        Constants
-    *************************************************************************/
-    // type name for this widget
-    static const String WidgetTypeName;             //!< The unique typename of this widget
 
+    static const String WidgetTypeName; //!< The unique typename of this widget
 
-    /*************************************************************************
-        Construction and Destruction
-    *************************************************************************/
-    /*!
-    \brief
-        Constructor for DefaultWindows.
-    */
     DefaultWindow(const String& type, const String& name);
 
-
-    /*!
-    \brief
-        Destructor for DefaultWindows.
-    */
-    virtual ~DefaultWindow(void) {}
-
-    bool canFocus() const override;
+    // Can't focus something that doesn't have an explicit visual appearance
+    bool canFocus() const override { return !!d_windowRenderer; }
 
 protected:
-    //! helper to update cursor input handled state
-    void updatePointerEventHandled(CursorInputEventArgs& e) const;
 
-    // overridden functions from Window base class
-    bool moveToFront_impl(bool byClick) override;
-
-    // override the cursor event handlers
-    void onCursorMove(CursorInputEventArgs& e) override;
-    void onScroll(CursorInputEventArgs& e) override;
-    void onCursorPressHold(CursorInputEventArgs& e) override;
-    void onSelectWord(CursorInputEventArgs& e) override;
-    void onSelectAll(CursorInputEventArgs& e) override;
-    void onCursorActivate(CursorInputEventArgs& e) override;
-
-    void onSemanticInputEvent(SemanticEventArgs& e) override;
+    void drawSelf(const RenderingContext& ctx, std::uint32_t drawModeMask) override;
 };
 
-} // End of  CEGUI namespace section
+}
 
-#endif  // end of guard _CEGUIDefaultWindow_h_
+#endif

@@ -97,9 +97,7 @@ void ListHeaderSegment::setSizingEnabled(bool setting)
 
 		// if sizing is now disabled, ensure sizing operation is cancelled
 		if (!d_sizingEnabled && d_dragSizing)
-		{
 			releaseInput();
-		}
 
 		WindowEventArgs args(this);
 		onSizingSettingChanged(args);
@@ -371,7 +369,7 @@ void ListHeaderSegment::initSegmentHoverState(void)
 	if (d_splitterHover)
 	{
 		d_splitterHover = false;
-        getGUIContext().getCursor().setImage(getActualCursor());
+        getGUIContext().getCursor().setImage(getEffectiveCursor());
 		invalidate();
 	}
 
@@ -458,7 +456,7 @@ void ListHeaderSegment::onCursorMove(CursorInputEventArgs& e)
 		if (d_splitterHover)
 		{
 			d_splitterHover = false;
-            getGUIContext().getCursor().setImage(getActualCursor());
+            getGUIContext().getCursor().setImage(getEffectiveCursor());
 			invalidate();
 		}
 
@@ -530,7 +528,7 @@ void ListHeaderSegment::onCursorActivate(CursorInputEventArgs& e)
 		}
 		else if (d_dragMoving)
 		{
-            getGUIContext().getCursor().setImage(getActualCursor());
+            getGUIContext().getCursor().setImage(getEffectiveCursor());
 
 			WindowEventArgs args(this);
 			onSegmentDragStop(args);

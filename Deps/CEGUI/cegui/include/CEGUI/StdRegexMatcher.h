@@ -29,6 +29,11 @@
 
 #include "CEGUI/RegexMatcher.h"
 
+#if defined(_MSC_VER)
+#   pragma warning(push)
+#   pragma warning(disable : 4251)
+#endif
+
 #if (__cplusplus >= 201103L) || (_MSC_VER >= 1600)
 #include <regex>
 #else
@@ -38,28 +43,28 @@ namespace std { using namespace tr1; }
 
 namespace CEGUI
 {
+
 //! Implementation of RegexMatcher using std::regex
-class StdRegexMatcher : public RegexMatcher
+class CEGUIEXPORT StdRegexMatcher : public RegexMatcher
 {
 public:
-    //! Constructor.
-    StdRegexMatcher();
-    //! Destructor.
-    virtual ~StdRegexMatcher() override;
 
-    // implement required interface
     virtual void setRegexString(const String& regex) override;
     virtual const String& getRegexString() const override;
-    bool matchRegex(const String& str) const;
-    virtual MatchState getMatchStateOfString(const String& str) const override;
+    virtual RegexMatchState getMatchStateOfString(const String& str) const override;
 
 private:
+
     //! Copy of the regex string assigned.
     String d_string;
     //! Pointer to std::regex compiled RegEx.
     std::regex d_regex;
 };
 
-} // End of  CEGUI namespace section
+}
 
-#endif  // end of guard _CEGUIStdRegexMatcher_h_
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
+
+#endif

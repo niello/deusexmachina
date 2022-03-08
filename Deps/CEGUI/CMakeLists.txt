@@ -2,13 +2,6 @@
 # Top-level CMakeLists.txt file for Crazy Eddie's GUI System
 ################################################################################
 cmake_minimum_required(VERSION 3.1)
-if (POLICY CMP0017)
-    cmake_policy(SET CMP0017 OLD)
-endif()
-
-if (POLICY CMP0045)
-    cmake_policy(SET CMP0045 OLD)
-endif()
 
 if (APPLE AND NOT CMAKE_OSX_ARCHITECTURES)
     set( CMAKE_OSX_ARCHITECTURES x86_64 CACHE STRING "Build architectures for Mac OS X")
@@ -59,6 +52,12 @@ set( CEGUI_ABI_AGE 4)
 MATH( EXPR CEGUI_SOVERSION ${CEGUI_ABI_CURRENT}-${CEGUI_ABI_AGE} )
 set( CEGUI_ABI_VERSION ${CEGUI_SOVERSION}.${CEGUI_ABI_AGE}.${CEGUI_ABI_REVISION} )
 
+if (CMAKE_SIZEOF_VOID_P EQUAL 4)
+	set(CEGUI_ARCH_SUFFIX x86)
+else()
+	set(CEGUI_ARCH_SUFFIX x64)
+endif()
+
 ################################################################################
 # Check for unsupported compilers
 ################################################################################
@@ -80,15 +79,11 @@ if(ANDROID)
     set (CMAKE_LIBRARY_ARCHITECTURE ${ANDROID_ABI})
 endif()
 
-if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-elseif (NOT CMAKE_VERSION VERSION_LESS "3.1")
-    set (CMAKE_C_STANDARD_REQUIRED TRUE)
-    set (CMAKE_C_STANDARD "11")
-    set (CMAKE_CXX_STANDARD_REQUIRED TRUE)
-    set (CMAKE_CXX_STANDARD "11")
-endif ()
+# Look for packages with CMake default Find* modules to prevent messing up our variables from CMake modules.
+# GTK2 finds freetype inside and sets FREETYPE_FOUND, so we must call our find_package(Freetype) after this.
+find_package(GTK2 COMPONENTS gtk)
+# set for consistency with other deps
+set (GTK2_INCLUDE_DIR ${GTK2_INCLUDE_DIRS})
 
 # Look for packages
 find_package(PCRE)
@@ -147,17 +142,8 @@ find_package(Epoxy)
 find_package(EXPAT)
 find_package(XercesC)
 find_package(LibXml2)
-find_package(TinyXML)
 find_package(TinyXML2)
 find_package(RapidXML)
-
-# DEM: use tinyxml2 from DEM dependencies
-if(NOT TINYXML2_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../tinyxml2")
-    set(TINYXML2_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../tinyxml2/tinyxml2")
-    set(TINYXML2_FOUND TRUE)
-    message("DEM: TinyXML2 found at " ${TINYXML2_INCLUDE_DIR})
-endif()
-# /DEM
 
 find_package(DevIL)
 find_package(FreeImage)
@@ -190,9 +176,6 @@ find_package(Boost 1.36.0 COMPONENTS python unit_test_framework system timer)
 find_package(SWIG 3.0.8)
 
 find_package(Doxygen)
-find_package(GTK2 COMPONENTS gtk)
-# set for consistency with other deps
-set (GTK2_INCLUDE_DIR ${GTK2_INCLUDE_DIRS})
 
 ## Search for ccache
 find_program(CCACHE_FOUND ccache)
@@ -232,21 +215,12 @@ if (NOT CEGUI_BUILD_DYNAMIC_CONFIGURATION AND NOT ANDROID)
 endif()
 # /DEM
 
-set( CEGUI_STRING_CLASS "2" CACHE STRING "CEGUI offers three CEGUI::String class configurations
-1 - UTF-8 : ASCII, UTF-8 and UTF-32 aware, minimal storage, slightly less efficient, stores code units as char (std::string) internally - mind this fact when manipulating the String
-2 - UTF-32 : ASCII, UTF-8 and UTF-32 aware, stores 32 bit per character, stores code points as char32_t (std::u32string) internally
-3 - std::string : regular std::string used as CEGUI::String, not Unicode aware"
-)
-
 if (PCRE_FOUND)
     set (CEGUI_NEED_STD11_REGEX FALSE)
 else ()
     set (CEGUI_NEED_STD11_REGEX TRUE)
 endif ()
 
-option( CEGUI_FONT_USE_GLYPH_PAGE_LOAD "Specifies whether to let fonts use glyph page load" TRUE )
-option( CEGUI_HAS_FREETYPE "Specifies whether to include Freetype font support" ${FREETYPE_FOUND} )
-option( CEGUI_HAS_FREETYPE_TEMPORARY_BUFFER "Specifies whether to let Freetype font use temporary buffer." FALSE )
 option( CEGUI_HAS_PCRE_REGEX "Specifies whether to include PCRE regexp matching for editbox string validation" ${PCRE_FOUND} )
 option( CEGUI_HAS_STD11_REGEX "Specifies whether to include C++11 Regular expressions library for editbox string validation" ${CEGUI_NEED_STD11_REGEX} )
 option( CEGUI_HAS_MINIZIP_RESOURCE_PROVIDER "Specifies whether to build the minizip based resource provider" ${MINIZIP_FOUND} )
@@ -258,11 +232,10 @@ option( CEGUI_BUILD_XMLPARSER_EXPAT "Specifies whether to build the Expat based 
 option( CEGUI_BUILD_XMLPARSER_XERCES "Specifies whether to build the Xerces-C++ based XMLParser module" ${XERCESC_FOUND} )
 option( CEGUI_BUILD_XMLPARSER_LIBXML2 "Specifies whether to build the libxml2 based XMLParser module" ${LIBXML2_FOUND} )
 option( CEGUI_BUILD_XMLPARSER_RAPIDXML "Specifies whether to build the RapidXML based XMLParser module" ${RAPIDXML_FOUND} )
-option( CEGUI_BUILD_XMLPARSER_TINYXML "Specifies whether to build the TinyXML based XMLParser module" ${TINYXML_FOUND} )
 option( CEGUI_BUILD_XMLPARSER_TINYXML2 "Specifies whether to build the TinyXML2 based XMLParser module" ${TINYXML2_FOUND} )
 
 option( CEGUI_BUILD_IMAGECODEC_SILLY "Specifies whether to build the SILLY based ImageCodec module" ${SILLY_FOUND} )
-option( CEGUI_BUILD_IMAGECODEC_DEVIL "Specifies whether to build the DevIL based ImageCodec module" ${IL_FOUND} )
+option( CEGUI_BUILD_IMAGECODEC_DEVIL "Specifies whether to build the DevIL based ImageCodec module" ${DEVIL_FOUND} )
 option( CEGUI_BUILD_IMAGECODEC_FREEIMAGE "Specifies whether to build the FreeImage based ImageCodec module" ${FREEIMAGE_FOUND} )
 option( CEGUI_BUILD_IMAGECODEC_CORONA "Specifies whether to build the Corona based ImageCodec module" ${CORONA_FOUND} )
 option( CEGUI_BUILD_IMAGECODEC_STB "Specifies whether to build the STB based ImageCodec module" FALSE )
@@ -280,26 +253,57 @@ option( CEGUI_BUILD_RENDERER_NULL "Specifies whether to build the null renderer 
 option( CEGUI_BUILD_RENDERER_OPENGLES "Specifies whether to build the OpenGL ES 1 renderer module" ${OPENGLES_FOUND} )
 option( CEGUI_BUILD_RENDERER_OPENGLES2_ALTERNATE "Specifies whether to build the alternate OpenGL ES 2.0 renderer module" ${OPENGLES2_FOUND})
 option( CEGUI_BUILD_RENDERER_OPENGLES2_ALTERNATE_WITH_GLES3_SUPPORT "Specifies whether to build build the alternate OpenGL ES 2.0 renderer module with OpenGL ES 3.0 features" ${OPENGLES3_FOUND})
-cegui_dependent_option( CEGUI_BUILD_LUA_MODULE "Specifies whether to build the Lua based script module" "LUA51_FOUND;TOLUAPP_FOUND" )
-cegui_dependent_option( CEGUI_BUILD_LUA_GENERATOR "Specifies whether to build the custom tolua binding generator 'toluappcegui'" "LUA51_FOUND;TOLUAPP_FOUND" )
+
+# FIXME: defaulted to FALSE because the Lua module is outdated and doesn't compile
+cegui_dependent_option( CEGUI_BUILD_LUA_MODULE "Specifies whether to build the Lua based script module" FALSE) #"LUA51_FOUND;TOLUAPP_FOUND" )
+cegui_dependent_option( CEGUI_BUILD_LUA_GENERATOR "Specifies whether to build the custom tolua binding generator 'toluappcegui'" FALSE) #"LUA51_FOUND;TOLUAPP_FOUND" )
 
 cegui_dependent_option( CEGUI_BUILD_PYTHON_MODULES_PYPLUSPLUS "Specifies whether to build the Python extension module(s) via boost and Py++" "PYTHONINTERP_FOUND;PYTHONLIBS_FOUND;Boost_PYTHON_FOUND" )
 cegui_dependent_option( CEGUI_BUILD_PYTHON_MODULES_SWIG "Specifies whether to build the Python extension module(s) via SWIG" "PYTHON3LIBS_FOUND;SWIG_FOUND" )
 
 option( CEGUI_OPTION_SAFE_LUA_MODULE "Specifies whether to enable extra validation in the Lua script module in non-debug builds" FALSE )
 
-cegui_dependent_option( CEGUI_USE_FRIBIDI "Specifies whether bi-directional text will be supported via the fribidi library." FALSE )
-cegui_dependent_option( CEGUI_USE_MINIBIDI "Specifies whether bi-directional text will be supported via the embedded minibidi." FALSE )
+set( CEGUI_STRING_CLASS "UTF-32" CACHE STRING "CEGUI offers three CEGUI::String class configurations
+UTF-8 : ASCII, UTF-8 and UTF-32 aware, minimal storage, slightly less efficient, stores code units as char (std::string) internally - mind this fact when manipulating the String
+UTF-32 : ASCII, UTF-8 and UTF-32 aware, stores 32 bit per character, stores code points as char32_t (std::u32string) internally
+std : regular std::string used as CEGUI::String, not Unicode aware"
+)
+set_property(CACHE CEGUI_STRING_CLASS PROPERTY STRINGS "UTF-8" "UTF-32" "std")
 
+if (CEGUI_STRING_CLASS STREQUAL "UTF-8")
+    set(CEGUI_STRING_CLASS 1)
+elseif (CEGUI_STRING_CLASS STREQUAL "std")
+    set(CEGUI_STRING_CLASS 3)
+else()
+    set(CEGUI_STRING_CLASS 2) # UTF-32 by default
+endif()
+
+# Text rendering, BIDI
+
+option( CEGUI_HAS_FREETYPE "Specifies whether to include Freetype font support" ${FREETYPE_FOUND} )
+option( CEGUI_USE_FRIBIDI "Specifies whether bi-directional text will be supported via the fribidi library." OFF )
+option( CEGUI_USE_MINIBIDI "Specifies whether bi-directional text will be supported via the embedded minibidi." OFF )
 cegui_dependent_option( CEGUI_USE_RAQM "Specifies whether to include support for kerning and for complex text layout using in CEGUI. This requires libraqm, harfbuzz, freetype and fribidi" "RAQM_FOUND;HARFBUZZ_FOUND;FREETYPE_FOUND;FRIBIDI_FOUND" )
 
-# sanity check on bidi options
+if (CEGUI_USE_RAQM AND NOT CEGUI_USE_FRIBIDI)
+    set(CEGUI_USE_FRIBIDI ON)
+endif()
+if (CEGUI_USE_FRIBIDI AND NOT FRIBIDI_FOUND)
+    message(WARNING "CEGUI_USE_FRIBIDI was disabled because Fribidi is not found.")
+    set(CEGUI_USE_FRIBIDI OFF)
+endif()
 if (CEGUI_USE_MINIBIDI AND CEGUI_USE_FRIBIDI)
-    message(SEND_ERROR "You may not enable both CEGUI_USE_FRIBIDI and CEGUI_USE_MINIBIDI. Please choose only one of these options.")
+    message(WARNING "You may not enable both CEGUI_USE_FRIBIDI and CEGUI_USE_MINIBIDI. Only CEGUI_USE_FRIBIDI will be left.")
+    set(CEGUI_USE_MINIBIDI OFF)
 endif()
-if (CEGUI_USE_RAQM AND (CEGUI_USE_FRIBIDI OR CEGUI_USE_MINIBIDI))
-    message(SEND_ERROR "You may not enable both CEGUI_USE_RAQM and one of the bidi options (CEGUI_USE_FRIBIDI or CEGUI_USE_MINIBIDI). Please choose only libraqm, which internally uses fribidi, if you want the latest layouting AND kerning support.")
+if (CEGUI_USE_FRIBIDI OR CEGUI_USE_MINIBIDI OR CEGUI_USE_RAQM)
+    set(CEGUI_BIDI_SUPPORT 1)
 endif()
+if (CEGUI_USE_FRIBIDI)
+    list(APPEND FRIBIDI_DEFINITIONS FRIBIDI_NO_DEPRECATED) # FIXME: fribidi doesn't check this through config.h
+endif()
+
+# Samples
 
 set( CEGUI_SAMPLES_DESKTOP_OPENGL_CONTEXT_CREATION_API NONE )
 if (CEGUI_BUILD_RENDERER_OPENGL OR CEGUI_BUILD_RENDERER_OPENGL3)
@@ -540,7 +544,6 @@ cegui_set_library_name( CEGUI_DIRECTFB_RENDERER_LIBNAME CEGUIDirectFBRenderer )
 
 # XML parser module names
 cegui_set_module_name( CEGUI_EXPAT_PARSER_LIBNAME CEGUIExpatParser )
-cegui_set_module_name( CEGUI_TINYXML_PARSER_LIBNAME CEGUITinyXMLParser )
 cegui_set_module_name( CEGUI_TINYXML2_PARSER_LIBNAME CEGUITinyXML2Parser )
 cegui_set_module_name( CEGUI_XERCES_PARSER_LIBNAME CEGUIXercesParser )
 cegui_set_module_name( CEGUI_RAPIDXML_PARSER_LIBNAME CEGUIRapidXMLParser )
@@ -578,7 +581,7 @@ cegui_set_library_name( CEGUI_COMMON_DIALOGS_LIBNAME CEGUICommonDialogs )
 # Select one of the XML parser modules to be the default, warning if none are
 # available.
 ################################################################################
-set(CEGUI_DEFAULT_XMLPARSER_TOOLTIP "Specifies the XMLParser module to use as the default (e.g.: ExpatParser, XercesParser, LibXMLParser, RapidXMLParser or TinyXMLParser)")
+set(CEGUI_DEFAULT_XMLPARSER_TOOLTIP "Specifies the XMLParser module to use as the default")
 
 if (CEGUI_BUILD_XMLPARSER_EXPAT)
     set( CEGUI_OPTION_DEFAULT_XMLPARSER "ExpatParser" CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
@@ -592,24 +595,23 @@ elseif (CEGUI_BUILD_XMLPARSER_LIBXML2)
 elseif (CEGUI_BUILD_XMLPARSER_RAPIDXML)
     set( CEGUI_OPTION_DEFAULT_XMLPARSER "RapidXMLParser" CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
     set( CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_RAPIDXML_PARSER_LIBNAME} CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
-elseif (CEGUI_BUILD_XMLPARSER_TINYXML)
-    set( CEGUI_OPTION_DEFAULT_XMLPARSER "TinyXMLParser" CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
-    set( CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_TINYXML_PARSER_LIBNAME} CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
 elseif (CEGUI_BUILD_XMLPARSER_TINYXML2)
-    set( CEGUI_OPTION_DEFAULT_XMLPARSER "TinyXML2Parser" CACHE STRING "Specifies the XMLParser module to use as the default" )
-    set( CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_TINYXML2_PARSER_LIBNAME} CACHE STRING "Specifies xml parser library to link to samples in static builds." )
+    set( CEGUI_OPTION_DEFAULT_XMLPARSER "TinyXML2Parser" CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
+    set( CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_TINYXML2_PARSER_LIBNAME} CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
 else()
     message(WARNING "None of the XML parser modules are going to be built.
 You should ensure that CEGUI_OPTION_DEFAULT_XMLPARSER is set to something
 appropriate.")
 endif()
 
+set_property(CACHE CEGUI_OPTION_DEFAULT_XMLPARSER PROPERTY STRINGS "ExpatParser" "XercesParser" "LibXMLParser" "RapidXMLParser" "TinyXML2Parser")
+set_property(CACHE CEGUI_STATIC_XMLPARSER_MODULE PROPERTY STRINGS "${CEGUI_EXPAT_PARSER_LIBNAME}" "${CEGUI_XERCES_PARSER_LIBNAME}" "${CEGUI_LIBXML2_PARSER_LIBNAME}" "${CEGUI_RAPIDXML_PARSER_LIBNAME}" "${CEGUI_TINYXML2_PARSER_LIBNAME}")
+
 if(CEGUI_BUILD_DYNAMIC_CONFIGURATION)
     cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "ExpatParser" CEGUI_BUILD_XMLPARSER_EXPAT)
     cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "XercesParser" CEGUI_BUILD_XMLPARSER_XERCES)
     cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "LibXMLParser" CEGUI_BUILD_XMLPARSER_LIBXML2)
     cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "RapidXMLParser" CEGUI_BUILD_XMLPARSER_RAPIDXML)
-    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "TinyXMLParser" CEGUI_BUILD_XMLPARSER_TINYXML)
     cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "TinyXML2Parser" CEGUI_BUILD_XMLPARSER_TINYXML2)
 endif()
 
@@ -618,7 +620,6 @@ if (CEGUI_BUILD_STATIC_CONFIGURATION)
     cegui_defaultmodule_sanity_test(CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_XERCES_PARSER_LIBNAME} CEGUI_BUILD_XMLPARSER_XERCES)
     cegui_defaultmodule_sanity_test(CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_LIBXML2_PARSER_LIBNAME} CEGUI_BUILD_XMLPARSER_LIBXML2)
     cegui_defaultmodule_sanity_test(CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_RAPIDXML_PARSER_LIBNAME} CEGUI_BUILD_XMLPARSER_RAPIDXML)
-    cegui_defaultmodule_sanity_test(CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_TINYXML_PARSER_LIBNAME} CEGUI_BUILD_XMLPARSER_TINYXML)
     cegui_defaultmodule_sanity_test(CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_TINYXML2_PARSER_LIBNAME} CEGUI_BUILD_XMLPARSER_TINYXML2)
 endif()
 
@@ -647,11 +648,17 @@ elseif (CEGUI_BUILD_IMAGECODEC_SDL2)
 elseif (CEGUI_BUILD_IMAGECODEC_TGA)
     set( CEGUI_OPTION_DEFAULT_IMAGECODEC "TGAImageCodec" CACHE STRING "Specifies the ImageCodec module to use as the default" )
     set( CEGUI_STATIC_IMAGECODEC_MODULE ${CEGUI_TGA_IMAGECODEC_LIBNAME} CACHE STRING "Specifies image codec library to link to samples in static builds." )
+elseif (CEGUI_BUILD_IMAGECODEC_PVR)
+    set( CEGUI_OPTION_DEFAULT_IMAGECODEC "PVRImageCodec" CACHE STRING "Specifies the ImageCodec module to use as the default" )
+    set( CEGUI_STATIC_IMAGECODEC_MODULE ${CEGUI_PVR_IMAGECODEC_LIBNAME} CACHE STRING "Specifies image codec library to link to samples in static builds." )
 else()
-message(WARNING "None of the image codec modules are going to be built.
+    message(WARNING "None of the image codec modules are going to be built.
 You should ensure that CEGUI_OPTION_DEFAULT_IMAGECODEC is set to something
 appropriate.")
 endif()
+
+set_property(CACHE CEGUI_OPTION_DEFAULT_IMAGECODEC PROPERTY STRINGS "SILLYImageCodec" "DevILImageCodec" "FreeImageImageCodec" "STBImageCodec" "CoronaImageCodec" "SDL2ImageCodec" "TGAImageCodec" "PVRImageCodec")
+set_property(CACHE CEGUI_STATIC_IMAGECODEC_MODULE PROPERTY STRINGS "${CEGUI_SILLY_IMAGECODEC_LIBNAME}" "${CEGUI_DEVIL_IMAGECODEC_LIBNAME}" "${CEGUI_FREEIMAGE_IMAGECODEC_LIBNAME}" "${CEGUI_STB_IMAGECODEC_LIBNAME}" "${CEGUI_CORONA_IMAGECODEC_LIBNAME}" "${CEGUI_SDL2_IMAGECODEC_LIBNAME}" "${CEGUI_TGA_IMAGECODEC_LIBNAME}" "${CEGUI_PVR_IMAGECODEC_LIBNAME}")
 
 if(CEGUI_BUILD_DYNAMIC_CONFIGURATION)
     cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "SILLYImageCodec" CEGUI_BUILD_IMAGECODEC_SILLY)
@@ -771,6 +778,17 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/samples")
 endif()
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/doc")
     configure_file( doc/doxygen/doxyfile.in doc/doxygen/doxyfile )
+endif()
+
+################################################################################
+# Copy dependency binaries to the target bin folder
+################################################################################
+if (CEGUI_SAMPLES_ENABLED)
+    set(DEPS_BIN_PATH "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/bin/${CEGUI_ARCH_SUFFIX}")
+    file(GLOB DEPS_BIN_FILES LIST_DIRECTORIES false RELATIVE "${DEPS_BIN_PATH}" "${DEPS_BIN_PATH}/*")
+    foreach(_FILE_NAME ${DEPS_BIN_FILES})
+        configure_file("${DEPS_BIN_PATH}/${_FILE_NAME}" "${CMAKE_BINARY_DIR}/bin/${_FILE_NAME}" COPYONLY)
+    endforeach()
 endif()
 
 ################################################################################

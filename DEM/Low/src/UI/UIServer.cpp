@@ -12,7 +12,7 @@
 #include <UI/CEGUI/DEMViewportTarget.h>
 
 #include <CEGUI/System.h>
-#include <CEGUI/Font.h>
+#include <CEGUI/text/Font.h>
 #include <CEGUI/Scheme.h>
 #include <CEGUI/SchemeManager.h>
 #include <CEGUI/falagard/WidgetLookManager.h>

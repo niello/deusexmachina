@@ -34,7 +34,6 @@
 #include "CEGUI/System.h" // this being here is a bit nasty IMO
 #include "CEGUI/CoordConverter.h"
 
-// Start of CEGUI namespace section
 namespace CEGUI
 {
 const String ImageTypeAttribute( "type" );
@@ -52,14 +51,13 @@ const String ImageNativeVertResAttribute( "nativeVertRes" );
 
 //----------------------------------------------------------------------------//
 BitmapImage::BitmapImage(const String& name) :
-    Image(name),
-    d_texture(nullptr)
+    Image(name)
 {
 }
 
 //----------------------------------------------------------------------------//
-BitmapImage::BitmapImage(const XMLAttributes& attributes) :
-    Image(attributes.getValueAsString(ImageNameAttribute),
+BitmapImage::BitmapImage(const XMLAttributes& attributes)
+    : Image(attributes.getValueAsString(ImageNameAttribute),
           glm::vec2(static_cast<float>(attributes.getValueAsInteger(ImageXOffsetAttribute, 0)),
                     static_cast<float>(attributes.getValueAsInteger(ImageYOffsetAttribute, 0))),
           Rectf(glm::vec2(static_cast<float>(attributes.getValueAsInteger(ImageXPosAttribute, 0)),
@@ -77,167 +75,127 @@ BitmapImage::BitmapImage(const XMLAttributes& attributes) :
 //----------------------------------------------------------------------------//
 BitmapImage::BitmapImage(const String& name, Texture* texture,
                        const Rectf& pixel_area, const glm::vec2& pixel_offset,
-                       const AutoScaledMode autoscaled, const Sizef& native_res) :
-    Image(name,
-          pixel_offset,
-          pixel_area,
-          autoscaled,
-          native_res),
-    d_texture(texture)
+                       const AutoScaledMode autoscaled, const Sizef& native_res)
+    : Image(name, pixel_offset, pixel_area, autoscaled, native_res)
+    , d_texture(texture)
 {}
 
 //----------------------------------------------------------------------------//
-void BitmapImage::setTexture(Texture* texture)
+void BitmapImage::createRenderGeometry(std::vector<GeometryBuffer*>& out,
+    const ImageRenderSettings& renderSettings, size_t canCombineFromIdx) const
 {
-    d_texture = texture;
+    TexturedColouredVertex vbuffer[6];
+    if (!createVertices(vbuffer, renderSettings))
+        return;
+
+    // Try to find an existing buffer suitable for combining. Note that we
+    // don't check the whole 'out' because geometry ordering may be important.
+    GeometryBuffer* buffer = nullptr;
+    if (canCombineFromIdx < out.size())
+    {
+        // TODO: need more checks than just a texture? Clipping region, alpha.
+        auto it = std::find_if(out.cbegin() + canCombineFromIdx, out.cend(),
+            [tex = d_texture](const GeometryBuffer* buffer)
+        {
+            return tex == buffer->getMainTexture();
+        });
+        if (it != out.end())
+            buffer = *it;
+    }
+
+    if (!buffer)
+    {
+        buffer = &System::getSingleton().getRenderer()->createGeometryBufferTextured();
+        buffer->setClippingActive(!!renderSettings.d_clipArea);
+        if (renderSettings.d_clipArea)
+            buffer->setClippingRegion(*renderSettings.d_clipArea);
+        buffer->setMainTexture(d_texture);
+        buffer->setAlpha(renderSettings.d_alpha);
+        out.push_back(buffer);
+    }
+
+    buffer->appendGeometry(vbuffer, 6);
 }
 
 //----------------------------------------------------------------------------//
-std::vector<GeometryBuffer*> BitmapImage::createRenderGeometry(const ImageRenderSettings& render_settings) const
+bool BitmapImage::createVertices(TexturedColouredVertex* out, const ImageRenderSettings& renderSettings) const
 {
-    Rectf texRect;
-    Rectf finalRect;
+    Rectf destRect = renderSettings.d_destArea;
+    destRect.offset(d_scaledOffset);
 
-    bool isFullClipped = calculateTextureAreaAndRenderArea(
-        render_settings.d_destArea, render_settings.d_clipArea,
-        finalRect, texRect);
-
-    if(isFullClipped)
+    if (renderSettings.d_alignToPixels)
     {
-        return std::vector<GeometryBuffer*>();
+        destRect.round();
+
+        // Rounding might shrink a very small rect into an empty one
+        if (destRect.empty())
+            return false;
     }
 
-    TexturedColouredVertex vbuffer[6];
-    const CEGUI::ColourRect& colours = render_settings.d_multiplyColours;
+    // When not clipped, we draw the whole image
+    Rectf texRect = d_imageArea;
 
-    createTexturedQuadVertices(vbuffer, colours, finalRect, texRect);
-
-
-    CEGUI::GeometryBuffer& buffer = System::getSingleton().getRenderer()->createGeometryBufferTextured();
-
-    buffer.setClippingActive(render_settings.d_clippingEnabled);
-    if(render_settings.d_clippingEnabled)
-        buffer.setClippingRegion(*render_settings.d_clipArea);
-    buffer.setTexture("texture0", d_texture);
-    buffer.appendGeometry(vbuffer, 6);
-    buffer.setAlpha(render_settings.d_alpha);
-
-    std::vector<GeometryBuffer*> geomBuffers;
-    geomBuffers.push_back(&buffer);
-    return geomBuffers;
-}
-
-
-void BitmapImage::addToRenderGeometry(
-    GeometryBuffer& geomBuffer,
-    const Rectf& renderArea,
-    const Rectf* clipArea,
-    const ColourRect& colours) const
-{
-    Rectf texRect;
-    Rectf finalRect;
-
-    bool isFullClipped = calculateTextureAreaAndRenderArea(
-        renderArea, clipArea,
-        finalRect, texRect);
-
-    if (isFullClipped)
+    // Apply clipping if needed
+    if (renderSettings.d_clipArea)
     {
-        return;
+        const Rectf unclippedDestRect = destRect;
+        if (destRect.intersect(*renderSettings.d_clipArea))
+        {
+            if (destRect.empty())
+                return false;
+
+            const glm::vec2 scaleDestToImg(
+                d_imageArea.getWidth() / unclippedDestRect.getWidth(),
+                d_imageArea.getHeight() / unclippedDestRect.getHeight());
+
+            texRect += (destRect - unclippedDestRect) * scaleDestToImg;
+        }
     }
-    
-    TexturedColouredVertex vbuffer[6];
-    createTexturedQuadVertices(vbuffer, colours, finalRect, texRect);
 
-    geomBuffer.appendGeometry(vbuffer, 6);
-}
+    // Turn pixels into normalized texture coords
+    texRect *= d_texture->getTexelScaling();
 
-
-bool BitmapImage::calculateTextureAreaAndRenderArea(
-    const Rectf& renderSettingDestArea,
-    const Rectf* clippingArea,
-    Rectf& finalRect, Rectf& texRect) const
-{
-    Rectf dest(renderSettingDestArea);
-    // apply rendering offset to the destination Rect
-    dest.offset(d_scaledOffset);
-
-    // get the rect area that we will actually draw to (i.e. perform clipping)
-    finalRect = Rectf(clippingArea ? dest.getIntersection(*clippingArea) : dest);
-
-    // check if rect was totally clipped
-    if ((finalRect.getWidth() == 0) || (finalRect.getHeight() == 0))
-        return true;
-
-    // Obtain correct scale values from the texture
-    const glm::vec2& texel_scale = d_texture->getTexelScaling();
-    const glm::vec2 tex_per_pix(d_imageArea.getWidth() / dest.getWidth(), d_imageArea.getHeight() / dest.getHeight());
-
-    // calculate final, clipped, texture co-ordinates
-    texRect = Rectf((d_imageArea + ((finalRect - dest) * tex_per_pix)) * texel_scale);
-
-    // Positions have to be rounded because the glyphs images have to be grid-aligned
-    finalRect.d_min.x = CoordConverter::alignToPixels(finalRect.d_min.x);
-    finalRect.d_min.y = CoordConverter::alignToPixels(finalRect.d_min.y);
-    finalRect.d_max.x = CoordConverter::alignToPixels(finalRect.d_max.x);
-    finalRect.d_max.y = CoordConverter::alignToPixels(finalRect.d_max.y);
-
-    return false;
-}
-
-void BitmapImage::createTexturedQuadVertices(
-    TexturedColouredVertex* vbuffer,
-    const CEGUI::ColourRect &colours,
-    Rectf &finalRect,
-    const Rectf &texRect) const
-{
     // vertex 0
-    vbuffer[0].setColour(colours.d_top_left);
-    vbuffer[0].d_position = glm::vec3(finalRect.left(), finalRect.top(), 0.0f);
-    vbuffer[0].d_texCoords = glm::vec2(texRect.left(), texRect.top());
+    out[0].setColour(renderSettings.d_multiplyColours.d_top_left);
+    out[0].d_position = glm::vec3(destRect.left(), destRect.top(), 0.0f);
+    out[0].d_texCoords = glm::vec2(texRect.left(), texRect.top());
 
     // vertex 1
-    vbuffer[1].setColour(colours.d_bottom_left);
-    vbuffer[1].d_position = glm::vec3(finalRect.left(), finalRect.bottom(), 0.0f);
-    vbuffer[1].d_texCoords = glm::vec2(texRect.left(), texRect.bottom());
+    out[1].setColour(renderSettings.d_multiplyColours.d_bottom_left);
+    out[1].d_position = glm::vec3(destRect.left(), destRect.bottom(), 0.0f);
+    out[1].d_texCoords = glm::vec2(texRect.left(), texRect.bottom());
 
     // vertex 2
-    vbuffer[2].setColour(colours.d_bottom_right);
-    vbuffer[2].d_position.x = finalRect.right();
-    vbuffer[2].d_position.z = 0.0f;
-    vbuffer[2].d_texCoords.x = texRect.right();
+    out[2].setColour(renderSettings.d_multiplyColours.d_bottom_right);
+    out[2].d_position.x = destRect.right();
+    out[2].d_position.z = 0.0f;
+    out[2].d_texCoords.x = texRect.right();
 
     // Quad splitting done from top-left to bottom-right diagonal
-    vbuffer[2].d_position.y = finalRect.bottom();
-    vbuffer[2].d_texCoords.y = texRect.bottom();
-
+    out[2].d_position.y = destRect.bottom();
+    out[2].d_texCoords.y = texRect.bottom();
 
     // vertex 3
-    vbuffer[3].setColour(colours.d_top_right);
-    vbuffer[3].d_position = glm::vec3(finalRect.right(), finalRect.top(), 0.0f);
-    vbuffer[3].d_texCoords = glm::vec2(texRect.right(), texRect.top());
+    out[3].setColour(renderSettings.d_multiplyColours.d_top_right);
+    out[3].d_position = glm::vec3(destRect.right(), destRect.top(), 0.0f);
+    out[3].d_texCoords = glm::vec2(texRect.right(), texRect.top());
 
     // vertex 4
-    vbuffer[4].setColour(colours.d_top_left);
-    vbuffer[4].d_position.x = finalRect.left();
-    vbuffer[4].d_position.z = 0.0f;
-    vbuffer[4].d_texCoords.x = texRect.left();
+    out[4].setColour(renderSettings.d_multiplyColours.d_top_left);
+    out[4].d_position.x = destRect.left();
+    out[4].d_position.z = 0.0f;
+    out[4].d_texCoords.x = texRect.left();
 
     // Quad splitting done from top-left to bottom-right diagonal
-    vbuffer[4].d_position.y = finalRect.top();
-    vbuffer[4].d_texCoords.y = texRect.top();
+    out[4].d_position.y = destRect.top();
+    out[4].d_texCoords.y = texRect.top();
 
     // vertex 5
-    vbuffer[5].setColour(colours.d_bottom_right);
-    vbuffer[5].d_position = glm::vec3(finalRect.right(), finalRect.bottom(), 0.0f);
-    vbuffer[5].d_texCoords = glm::vec2(texRect.right(), texRect.bottom());
+    out[5].setColour(renderSettings.d_multiplyColours.d_bottom_right);
+    out[5].d_position = glm::vec3(destRect.right(), destRect.bottom(), 0.0f);
+    out[5].d_texCoords = glm::vec2(texRect.right(), texRect.bottom());
+
+    return true;
 }
 
-//----------------------------------------------------------------------------//
-const Texture* BitmapImage::getTexture() const
-{
-    return d_texture;
 }
-
-} // End of  CEGUI namespace section
-

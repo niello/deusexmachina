@@ -68,12 +68,17 @@ void ButtonBase::updateInternalState(const glm::vec2& cursor_pos)
 //----------------------------------------------------------------------------//
 bool ButtonBase::calculateCurrentHoverState(const glm::vec2& cursor_pos)
 {
-	if (const Window* capture_wnd = getCaptureWindow())
+    if (!d_guiContext)
+        return false;
+
+    if (auto captureWnd = d_guiContext->getInputCaptureWindow())
+    {
         return
-            (capture_wnd == this ||
-            (capture_wnd->distributesCapturedInputs() && isAncestor(capture_wnd))) && isHit(cursor_pos);
-    else
-	    return getGUIContext().getWindowContainingCursor() == this;
+            ((captureWnd == this) || (captureWnd->distributesCapturedInputs() && isDescendantOf(captureWnd))) &&
+            isHit(cursor_pos);
+    }
+
+	return d_guiContext->getWindowContainingCursor() == this;
 }
 
 /*************************************************************************
@@ -136,14 +141,11 @@ void ButtonBase::setPushedState(const bool pushed)
 *************************************************************************/
 void ButtonBase::onCursorActivate(CursorInputEventArgs& e)
 {
-	// default processing
     Window::onCursorActivate(e);
 
     if (e.source == CursorInputSource::Left)
 	{
 		releaseInput();
-
-		// event was handled by us.
 		++e.handled;
 	}
 

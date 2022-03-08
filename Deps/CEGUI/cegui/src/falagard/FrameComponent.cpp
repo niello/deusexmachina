@@ -276,7 +276,7 @@ const String& FrameComponent::getImagePropertySource(
 void FrameComponent::addImageRenderGeometryToWindow_impl(
     Window& srcWindow, Rectf& destRect,
     const CEGUI::ColourRect* modColours,
-    const Rectf* clipper, bool clipToDisplay) const
+    const Rectf* clipper) const
 {
     Rectf backgroundRect(destRect);
     Sizef imageSize;
@@ -295,12 +295,14 @@ void FrameComponent::addImageRenderGeometryToWindow_impl(
     initColoursRect(srcWindow, modColours, renderSettingFinalColours);
 
     ImageRenderSettings renderSettings(
-        Rectf(), clipper, !clipToDisplay, renderSettingFinalColours);
+        Rectf(), clipper, renderSettingFinalColours);
 
     Rectf& renderSettingDestArea = renderSettings.d_destArea;
     ColourRect& renderSettingMultiplyColours = renderSettings.d_multiplyColours;
 
     calcColoursPerImage = !renderSettingFinalColours.isMonochromatic();
+
+    const auto canCombineFromIdx = srcWindow.getGeometryBuffers().size();
     
     // top-left image
     if (const Image* const componentImage = getImage(FrameImageComponent::TopLeftCorner, srcWindow))
@@ -330,10 +332,7 @@ void FrameComponent::addImageRenderGeometryToWindow_impl(
         }
 
         // create render geometry for this element and append it to the Window's geometry
-        std::vector<GeometryBuffer*> imageGeomBuffers = 
-            componentImage->createRenderGeometry(renderSettings);
-
-        srcWindow.appendGeometryBuffers(imageGeomBuffers);
+        componentImage->createRenderGeometry(srcWindow.getGeometryBuffers(), renderSettings, canCombineFromIdx);
     }
 
     // top-right image
@@ -364,10 +363,7 @@ void FrameComponent::addImageRenderGeometryToWindow_impl(
         }
 
         // create render geometry for this element and append it to the Window's geometry
-        std::vector<GeometryBuffer*> imageGeomBuffers =
-            componentImage->createRenderGeometry(renderSettings);
-
-        srcWindow.appendGeometryBuffers(imageGeomBuffers);
+        componentImage->createRenderGeometry(srcWindow.getGeometryBuffers(), renderSettings, canCombineFromIdx);
     }
 
     // bottom-left image
@@ -398,10 +394,7 @@ void FrameComponent::addImageRenderGeometryToWindow_impl(
         }
 
         // create render geometry for this element and append it to the Window's geometry
-        std::vector<GeometryBuffer*> imageGeomBuffers =
-            componentImage->createRenderGeometry(renderSettings);
-
-        srcWindow.appendGeometryBuffers(imageGeomBuffers);
+        componentImage->createRenderGeometry(srcWindow.getGeometryBuffers(), renderSettings, canCombineFromIdx);
     }
 
     // bottom-right image
@@ -431,10 +424,7 @@ void FrameComponent::addImageRenderGeometryToWindow_impl(
         }
 
         // create render geometry for this element and append it to the Window's geometry
-        std::vector<GeometryBuffer*> imageGeomBuffers =
-            componentImage->createRenderGeometry(renderSettings);
-
-        srcWindow.appendGeometryBuffers(imageGeomBuffers);
+        componentImage->createRenderGeometry(srcWindow.getGeometryBuffers(), renderSettings, canCombineFromIdx);
     }
 
     // top image
@@ -463,12 +453,9 @@ void FrameComponent::addImageRenderGeometryToWindow_impl(
         }
 
         // create render geometry for this image and append it to the Window's geometry
-        std::vector<GeometryBuffer*> imageGeomBuffers =
-            createRenderGeometryForImage(componentImage,
-                VerticalImageFormatting::TopAligned, d_topEdgeFormatting.get(srcWindow),
-                renderSettingDestArea, renderSettingMultiplyColours, clipper, clipToDisplay);
-
-        srcWindow.appendGeometryBuffers(imageGeomBuffers);
+        createRenderGeometryForImage(srcWindow.getGeometryBuffers(), componentImage,
+            VerticalImageFormatting::TopAligned, d_topEdgeFormatting.get(srcWindow),
+                renderSettingDestArea, renderSettingMultiplyColours, clipper, canCombineFromIdx);
     }
 
     // bottom image
@@ -497,12 +484,9 @@ void FrameComponent::addImageRenderGeometryToWindow_impl(
         }
 
         // create render geometry for this image and append it to the Window's geometry
-        std::vector<GeometryBuffer*> imageGeomBuffers =
-            createRenderGeometryForImage(componentImage,
-                VerticalImageFormatting::BottomAligned, d_bottomEdgeFormatting.get(srcWindow),
-                renderSettingDestArea, renderSettingMultiplyColours, clipper, clipToDisplay);
-
-        srcWindow.appendGeometryBuffers(imageGeomBuffers);
+        createRenderGeometryForImage(srcWindow.getGeometryBuffers(), componentImage,
+            VerticalImageFormatting::BottomAligned, d_bottomEdgeFormatting.get(srcWindow),
+                renderSettingDestArea, renderSettingMultiplyColours, clipper, canCombineFromIdx);
     }
 
     // left image
@@ -531,12 +515,9 @@ void FrameComponent::addImageRenderGeometryToWindow_impl(
         }
 
         // create render geometry for this image and append it to the Window's geometry
-        std::vector<GeometryBuffer*> imageGeomBuffers =
-            createRenderGeometryForImage(componentImage,
-                d_leftEdgeFormatting.get(srcWindow), HorizontalFormatting::LeftAligned,
-                renderSettingDestArea, renderSettingMultiplyColours, clipper, clipToDisplay);
-
-        srcWindow.appendGeometryBuffers(imageGeomBuffers);
+        createRenderGeometryForImage(srcWindow.getGeometryBuffers(), componentImage,
+            d_leftEdgeFormatting.get(srcWindow), HorizontalFormatting::LeftAligned,
+                renderSettingDestArea, renderSettingMultiplyColours, clipper, canCombineFromIdx);
     }
 
     // right image
@@ -565,12 +546,9 @@ void FrameComponent::addImageRenderGeometryToWindow_impl(
         }
 
         // create render geometry for this image and append it to the Window's geometry
-        std::vector<GeometryBuffer*> imageGeomBuffers =
-            createRenderGeometryForImage(componentImage,
-                d_rightEdgeFormatting.get(srcWindow), HorizontalFormatting::RightAligned,
-                renderSettingDestArea, renderSettingMultiplyColours, clipper, clipToDisplay);
-
-        srcWindow.appendGeometryBuffers(imageGeomBuffers);
+        createRenderGeometryForImage(srcWindow.getGeometryBuffers(), componentImage,
+            d_rightEdgeFormatting.get(srcWindow), HorizontalFormatting::RightAligned,
+                renderSettingDestArea, renderSettingMultiplyColours, clipper, canCombineFromIdx);
     }
 
     if (const Image* const componentImage = getImage(FrameImageComponent::Background, srcWindow))
@@ -593,22 +571,20 @@ void FrameComponent::addImageRenderGeometryToWindow_impl(
             d_backgroundVertFormatting.get(srcWindow);
 
         // create render geometry for this image and append it to the Window's geometry
-        std::vector<GeometryBuffer*> imageGeomBuffers =
-            createRenderGeometryForImage(componentImage,
+        createRenderGeometryForImage(srcWindow.getGeometryBuffers(), componentImage,
                 vertFormatting, horzFormatting,
-                backgroundRect, renderSettingMultiplyColours, clipper, clipToDisplay);
-
-        srcWindow.appendGeometryBuffers(imageGeomBuffers);
+                backgroundRect, renderSettingMultiplyColours, clipper, canCombineFromIdx);
     }
 }
 
 //----------------------------------------------------------------------------//
-std::vector<GeometryBuffer*> FrameComponent::createRenderGeometryForImage(
+void FrameComponent::createRenderGeometryForImage(
+    std::vector<GeometryBuffer*>& out,
     const Image* image,
     VerticalImageFormatting vertFmt,
     HorizontalFormatting horzFmt,
     Rectf& destRect, const ColourRect& colours,
-    const Rectf* clipper, bool clip_to_display) const
+    const Rectf* clipper, size_t canCombineFromIdx) const
 {
     unsigned int horzTiles, vertTiles;
     float xpos, ypos;
@@ -685,10 +661,7 @@ std::vector<GeometryBuffer*> FrameComponent::createRenderGeometryForImage(
                 "An unknown VerticalFormatting value was specified.");
     }
 
-    // Create the render geometry
-    std::vector<GeometryBuffer*> geomBuffers;
-
-    ImageRenderSettings renderSettings(Rectf(), nullptr, !clip_to_display, colours);
+    ImageRenderSettings renderSettings(Rectf(), nullptr, colours);
 
     Rectf& renderSettingDestArea = renderSettings.d_destArea;
     renderSettingDestArea.d_min.y = ypos;
@@ -723,11 +696,7 @@ std::vector<GeometryBuffer*> FrameComponent::createRenderGeometryForImage(
                 renderSettings.d_clipArea = clipper;
             }
 
-            std::vector<GeometryBuffer*> currentRenderGeometry =
-                image->createRenderGeometry(renderSettings);
-
-            geomBuffers.insert(geomBuffers.end(), currentRenderGeometry.begin(),
-                currentRenderGeometry.end());
+            image->createRenderGeometry(out, renderSettings, canCombineFromIdx);
 
             renderSettingDestArea.d_min.x += imgSz.d_width;
             renderSettingDestArea.d_max.x += imgSz.d_width;
@@ -736,8 +705,6 @@ std::vector<GeometryBuffer*> FrameComponent::createRenderGeometryForImage(
         renderSettingDestArea.d_min.y += imgSz.d_height;
         renderSettingDestArea.d_max.y += imgSz.d_height;
     }
-
-    return geomBuffers;
 }
 
 //----------------------------------------------------------------------------//

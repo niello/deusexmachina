@@ -35,16 +35,14 @@
 #	pragma warning(disable : 4251)
 #endif
 
-// Start of CEGUI namespace section
 namespace CEGUI
 {
-enum class HorizontalTextFormatting : int;
 
 /*!
 \brief
     Editbox class for the FalagardBase module.
 
-    This class requires LookNFeel to be assigned.  The LookNFeel should provide
+    This class requires LookNFeel to be assigned. The LookNFeel should provide
     the following:
 
     States:
@@ -57,12 +55,6 @@ enum class HorizontalTextFormatting : int;
         - ReadOnlyFocused: Rendering for when the editbox is focused and is in
                     read-only mode.
         - Disabled: Rendering for when the editbox is disabled.
-        - ActiveSelection: additional state rendered for text selection
-                           (the imagery in this section is rendered within the
-                           selection area.)
-        - InactiveSelection: additional state rendered for text selection
-                             (the imagery in this section is rendered within the
-                             selection area.)
 
     NamedAreas:
         - TextArea: area where text, selection, and caret imagery will appear.
@@ -81,8 +73,8 @@ enum class HorizontalTextFormatting : int;
 class COREWRSET_API FalagardEditbox : public EditboxWindowRenderer
 {
 public:
-    //! type name for this widget.
-    static const String TypeName;
+    
+    static const String TypeName; //!< type name for this widget.
 
     //! Name of the optional property to access for the unselected text colour.
     static const String UnselectedTextColourPropertyName;
@@ -95,133 +87,61 @@ public:
     //! The default timeout (in seconds) used when blinking the caret.
     static const float DefaultCaretBlinkTimeout;
 
-    /*!
-    \brief
-        Constructor
-    */
     FalagardEditbox(const String& type);
 
-    /*!
-    \brief
-        Set the given ColourRect to the colour to be used for rendering Editbox
-        text oustside of the selected region.
-    */
-    void setColourRectToUnselectedTextColour(ColourRect& colour_rect) const;
-
-    /*!
-    \brief
-        Set the given ColourRect to the colour to be used for rendering Editbox
-        text falling within the selected region.
-    */
-    void setColourRectToSelectedTextColour(ColourRect& colour_rect) const;
-
-    /*!
-    \brief
-        Set the given ColourRect to the colour(s) fetched from the named
-        property if it exists, else the default colour of black.
-
-    \param propertyName
-        String object holding the name of the property to be accessed if it
-        exists.
-
-    \param colour_rect
-        Reference to a ColourRect that will be set.
-    */
-    void setColourRectToOptionalPropertyColour(const String& propertyName,
-                                            ColourRect& colour_rect) const;
-
     //! return whether the blinking caret is enabled.
-    bool isCaretBlinkEnabled() const;
+    bool isCaretBlinkEnabled() const { return d_blinkCaret; }
     //! return the caret blink timeout period (only used if blink is enabled).
-    float getCaretBlinkTimeout() const;
+    float getCaretBlinkTimeout() const { return d_caretBlinkTimeout; }
     //! set whether the blinking caret is enabled.
-    void setCaretBlinkEnabled(bool enable);
+    void setCaretBlinkEnabled(bool enable) { d_blinkCaret = enable; }
     //! set the caret blink timeout period (only used if blink is enabled).
-    void setCaretBlinkTimeout(float seconds);
+    void setCaretBlinkTimeout(float seconds) { d_caretBlinkTimeout = seconds; }
 
     /*!
     \brief
-        Sets the horizontal text formatting to be used from now onwards.
+        Sets a selection brush Image
 
-    \param format
-        Specifies the formatting to use.  Currently can only be one of the
-        following HorizontalTextFormatting values:
-            - HorizontalTextFormatting::LEFT_ALIGNED (default)
-            - HorizontalTextFormatting::RIGHT_ALIGNED
-            - HorizontalTextFormatting::CENTRE_ALIGNED
+    \param image
+        The brush image to be used for selections
     */
-    void setTextFormatting(const HorizontalTextFormatting format);
-    HorizontalTextFormatting getTextFormatting() const;
+    void setSelectionBrushImage(const Image* image);
+
+    /*!
+    \brief
+        Returns the selection brush Image
+
+    \return
+        The brush image currently used for selections
+    */
+    const Image* getSelectionBrushImage() const { return d_selectionBrush; }
+
+    Rectf getTextRenderArea() const override;
+    Rectf getCaretRect() const override;
+    float getCaretWidth() const override;
 
     void createRenderGeometry() override;
-
-    // overridden from EditboxWindowRenderer base class.
-    size_t getTextIndexFromPosition(const glm::vec2& pt) const override;
-    // overridden from WindowRenderer class
     void update(float elapsed) override;
-    bool handleFontRenderSizeChange(const Font* const font) override;
 
 protected:
+
     //! helper to draw the base imagery (container and what have you)
-    void renderBaseImagery(const WidgetLookFeel& wlf) const;
-    //! helper to set 'visual' to the string we will render (part of)
-    void setupVisualString(String& visual) const;
-    size_t getCaretIndex(const String& visual_text) const;
+    void renderBaseImagery() const;
 
-    /*!
-    \brief
-        "Logical" here means that if the text is e.g. right aligned, then it's measured from the right end of the text,
-        whereas "visual" is always measured from the left end of the text.
-    */
-    float extentToCarretLogical(const float extent_to_caret_visual, const float text_extent,
-                                const float caret_width) const;
+    void createRenderGeometryForText(const Rectf& textArea);
 
-    float calculateTextOffset(const Rectf& text_area,
-                              const float text_extent,
-                              const float caret_width,
-                              const float extent_to_caret);
-
-    /*!
-    \brief
-        "Visual" here means that it's always measured from the right end of the text area rect, whereas "logical" means
-        that if the text is e.g. right aligned, then it's measured from the right end of the text area rect.
-    */
-    float textOffsetVisual(const Rectf& text_area, const float text_extent) const;
-
-    void createRenderGeometryForTextWithoutBidi(const WidgetLookFeel& wlf,
-                          const String& text,
-                          const Rectf& text_area,
-                          float text_offset);
-#ifdef CEGUI_BIDI_SUPPORT
-    void renderTextBidi(const WidgetLookFeel& wlf,
-                        const String& text,
-                        const Rectf& text_area,
-                        float text_offset);
-#endif
-    bool editboxIsFocussed() const;
-    bool editboxIsReadOnly() const;
-    void renderCaret(const ImagerySection& imagery,
-                     const Rectf& text_area,
-                     const float text_offset,
-                     const float extent_to_caret) const;
-
-    bool isUnsupportedFormat(const HorizontalTextFormatting format);
-
-    //! x rendering offset used last time we drew the widget.
-    float d_lastTextOffset;
-    //! true if the caret imagery should blink.
-    bool d_blinkCaret;
+    const Image* d_selectionBrush = nullptr;  //!< Image to use as the selection brush (should be set by derived class).
     //! time-out in seconds used for blinking the caret.
-    float d_caretBlinkTimeout;
+    float d_caretBlinkTimeout = DefaultCaretBlinkTimeout;
     //! current time elapsed since last caret blink state change.
-    float d_caretBlinkElapsed;
+    float d_caretBlinkElapsed = 0.f;
     //! true if caret should be shown.
-    bool d_showCaret;
-    //! horizontal formatting.  Only supports left, right, and centred.
-    HorizontalTextFormatting d_textFormatting;
+    bool d_showCaret = true;
+    //! true if the caret imagery should blink.
+    bool d_blinkCaret = false;
 };
 
-} // End of  CEGUI namespace section
+}
 
 #if defined(_MSC_VER)
 #	pragma warning(pop)

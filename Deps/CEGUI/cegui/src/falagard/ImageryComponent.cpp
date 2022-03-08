@@ -122,8 +122,7 @@ namespace CEGUI
 
     void ImageryComponent::addImageRenderGeometryToWindow_impl(
         Window& srcWindow, Rectf& destRect,
-        const CEGUI::ColourRect* modColours, const Rectf* clipper,
-        bool clip_to_display) const
+        const CEGUI::ColourRect* modColours, const Rectf* clipper) const
     {
         // get final image to use.
         const Image* img = isImageFetchedFromProperty() ?
@@ -217,13 +216,13 @@ namespace CEGUI
         }
 
         // perform final rendering (actually is now a caching of the images which will be drawn)
-        ImageRenderSettings imgRenderSettings(
-            Rectf(), nullptr,
-            !clip_to_display, finalColours);
+        ImageRenderSettings imgRenderSettings(Rectf(), nullptr, finalColours);
 
         Rectf& renderSettingDestArea = imgRenderSettings.d_destArea;
         renderSettingDestArea.top(ypos);
         renderSettingDestArea.bottom(ypos + imgSz.d_height);
+
+        const auto canCombineFromIdx = srcWindow.getGeometryBuffers().size();
 
         for (unsigned int row = 0; row < vertTiles; ++row)
         {
@@ -255,10 +254,7 @@ namespace CEGUI
                 }
 
                 // add geometry for image to the target window.
-                std::vector<GeometryBuffer*> geomBuffers = 
-                    img->createRenderGeometry(imgRenderSettings);
-
-                srcWindow.appendGeometryBuffers(geomBuffers);
+                img->createRenderGeometry(srcWindow.getGeometryBuffers(), imgRenderSettings, canCombineFromIdx);
 
                 renderSettingDestArea.d_min.x += imgSz.d_width;
                 renderSettingDestArea.d_max.x += imgSz.d_width;

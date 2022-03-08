@@ -27,9 +27,9 @@
  *   OTHER DEALINGS IN THE SOFTWARE.
 ***************************************************************************/
 #include "CEGUI/views/ItemView.h"
+#include "CEGUI/System.h" // FIXME: needed for duplicated code from TextComponent, remove when fixed!
 #include "CEGUI/ImageManager.h"
 #include "CEGUI/GUIContext.h"
-#include "CEGUI/widgets/Tooltip.h"
 #include "CEGUI/widgets/Scrollbar.h"
 
 namespace CEGUI
@@ -151,6 +151,24 @@ ItemView::ItemView(const String& type, const String& name) :
 ItemView::~ItemView()
 {
     disconnectModelEvents();
+}
+
+//----------------------------------------------------------------------------//
+TextParser* ItemView::getTextParser() const
+{
+    if (auto renderer = getWindowRenderer())
+    {
+        // Don't parse text if it is explicitly disabled
+        if (!renderer->isTextParsingEnabled())
+            return nullptr;
+
+        // Prefer a custom parser assigned to this Window
+        if (auto parser = renderer->getTextParser())
+            return parser;
+    }
+
+    // Otherwise use a global default parser
+    return CEGUI::System::getSingleton().getDefaultTextParser();
 }
 
 //----------------------------------------------------------------------------//
@@ -402,15 +420,28 @@ void ItemView::onCursorPressHold(CursorInputEventArgs& e)
 void ItemView::onCursorMove(CursorInputEventArgs& e)
 {
     Window::onCursorMove(e);
-    if (d_isItemTooltipsEnabled)
-        setupTooltip(e.position);
 
     ++e.handled;
+
+    if (!d_isItemTooltipsEnabled || !d_itemModel)
+        return;
+
+    ModelIndex index = indexAt(e.position);
+    if (d_itemModel->areIndicesEqual(index, d_lastHoveredIndex))
+        return;
+
+    d_lastHoveredIndex = index;
+
+    setTooltipText(d_itemModel->isValidIndex(index) ? d_itemModel->getData(index, ItemDataRole::Tooltip) : "");
+
+    if (d_guiContext)
+        d_guiContext->positionTooltip();
 }
 
-static void disconnectIfNotNull(Event::Connection& connection)
+//----------------------------------------------------------------------------//
+static inline void disconnectIfNotNull(Event::Connection& connection)
 {
-    if (connection != nullptr)
+    if (connection)
         connection->disconnect();
 }
 
@@ -504,7 +535,7 @@ int ItemView::getSelectedIndexPosition(const ModelIndex& index) const
     for (size_t i = 0; i < d_indexSelectionStates.size(); ++i)
     {
         if (d_itemModel->areIndicesEqual(index, d_indexSelectionStates.at(i).d_selectedIndex))
-            return i;
+            return static_cast<uint32_t>(i);
     }
 
     return -1;
@@ -682,35 +713,6 @@ void ItemView::setItemTooltipsEnabled(bool enabled)
 }
 
 //----------------------------------------------------------------------------//
-void ItemView::setupTooltip(glm::vec2 position)
-{
-    if (d_itemModel == nullptr)
-        return;
-
-    static ModelIndex last_model_index;
-
-    ModelIndex index = indexAt(position);
-    if (d_itemModel->areIndicesEqual(index, last_model_index))
-        return;
-
-    Tooltip* tooltip = getTooltip();
-    if (tooltip == nullptr)
-        return;
-
-    if (tooltip->getTargetWindow() != this)
-        tooltip->setTargetWindow(this);
-    else
-        tooltip->positionSelf();
-
-    last_model_index = index;
-
-    if (!d_itemModel->isValidIndex(index))
-        setTooltipText("");
-    else
-        setTooltipText(d_itemModel->getData(index, ItemDataRole::Tooltip));
-}
-
-//----------------------------------------------------------------------------//
 bool ItemView::isMultiSelectEnabled() const
 {
     return d_isMultiSelectEnabled;
@@ -750,11 +752,11 @@ void ItemView::onSemanticInputEvent(SemanticEventArgs& e)
     {
         handleSelection(getGUIContext().getCursor().getPosition(),
             true, d_isMultiSelectEnabled, e.d_semanticValue == SemanticValue::SelectRange);
+        ++e.handled;
     }
 
     handleSelectionNavigation(e);
 
-    ++e.handled;
     Window::onSemanticInputEvent(e);
 }
 
@@ -777,7 +779,7 @@ void ItemView::onFontChanged(WindowEventArgs& e)
 void ItemView::onTargetSurfaceChanged(RenderingSurface* newSurface)
 {
     Window::onTargetSurfaceChanged(newSurface);
-    if (getGUIContextPtr())
+    if (d_guiContext)
     {
         performChildLayout(false, false);
         updateScrollbars();
@@ -895,7 +897,7 @@ void ItemView::clearSelections()
 void ItemView::handleSelectionNavigation(SemanticEventArgs& e)
 {
     ModelIndex parent_index = d_itemModel->getRootIndex();
-    int last_selected_child_id = -1;
+    ptrdiff_t last_selected_child_id = -1;
     if (!d_indexSelectionStates.empty())
     {
         ModelIndexSelectionState last_selection = d_indexSelectionStates.back();
@@ -907,17 +909,17 @@ void ItemView::handleSelectionNavigation(SemanticEventArgs& e)
     if (children_count == 0)
         return;
 
-    int next_selected_child_id = last_selected_child_id;
+    auto next_selected_child_id = last_selected_child_id;
     if (e.d_semanticValue == SemanticValue::GoDown)
     {
         next_selected_child_id = std::min(
             next_selected_child_id + 1,
-            static_cast<int>(children_count)-1
+            static_cast<ptrdiff_t>(children_count)-1
             );
     }
     else if (e.d_semanticValue == SemanticValue::GoUp)
     {
-        next_selected_child_id = std::max(0, next_selected_child_id - 1);
+        next_selected_child_id = std::max<ptrdiff_t>(0, next_selected_child_id - 1);
     }
 
     if (next_selected_child_id == -1 ||
@@ -926,6 +928,7 @@ void ItemView::handleSelectionNavigation(SemanticEventArgs& e)
 
     setSelectedIndex(d_itemModel->makeIndex(
         static_cast<size_t>(next_selected_child_id), parent_index));
+    ++e.handled;
 }
 
 //----------------------------------------------------------------------------//

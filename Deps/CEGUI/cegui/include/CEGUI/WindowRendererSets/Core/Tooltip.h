@@ -28,41 +28,39 @@
 #define _FalTooltip_h_
 
 #include "CEGUI/WindowRendererSets/Core/Module.h"
-#include "CEGUI/widgets/Tooltip.h"
 
-// Start of CEGUI namespace section
 namespace CEGUI
 {
-    /*!
-    \brief
-        Tooltip class for the FalagardBase module.
+/*!
+\brief
+    Tooltip class for the FalagardBase module.
 
-        This class requires LookNFeel to be assigned.  The LookNFeel should provide the following:
+    This class requires LookNFeel to be assigned. The LookNFeel should provide the following:
 
-        States:
-            - Enabled
-            - Disabled
+    States:
+        - Enabled
+        - Disabled
 
-        Named Areas:
-            TextArea    - Typically this would be the same area as the TextComponent you define to receive the tooltip text.  This
-                            named area is used when deciding how to dynamically size the Tooltip so that text is not clipped.
-    */
-    class COREWRSET_API FalagardTooltip : public TooltipWindowRenderer
-    {
-    public:
-        static const String TypeName;       //!< type name for this widget.
+    Named Areas:
+        TextArea - Typically this would be the same area as the TextComponent you define to receive the tooltip text. This
+                   named area is used when deciding how to dynamically size the Tooltip so that the text is not clipped.
+*/
+class COREWRSET_API FalagardTooltip : public WindowRenderer
+{
+public:
 
-        /*!
-        \brief
-            Constructor
-        */
-        FalagardTooltip(const String& type);
+    static const String TypeName; //!< type name for this widget.
 
-        void createRenderGeometry() override;
-        Sizef getTextSize() const override;
-    };
+    FalagardTooltip(const String& type) : WindowRenderer(type, "Tooltip") {}
 
-} // End of  CEGUI namespace section
+    void createRenderGeometry() override;
+    Sizef getContentSize() const override;
 
+protected:
 
-#endif  // end of guard _FalTooltip_h_
+    Sizef getTextComponentExtents(const WidgetLookFeel& lnf) const;
+};
+
+}
+
+#endif

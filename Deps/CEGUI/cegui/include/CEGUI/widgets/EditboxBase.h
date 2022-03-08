@@ -29,20 +29,44 @@
 #ifndef _CEGUIEditboxBase_h_
 #define _CEGUIEditboxBase_h_
 
-#include "CEGUI/Base.h"
 #include "CEGUI/Window.h"
-
-#include <cstdint>
+#include "CEGUI/text/RenderedText.h"
+#include "CEGUI/falagard/Enums.h"
+#include "CEGUI/RegexMatcher.h"
+#include "CEGUI/WindowRenderer.h"
 
 #if defined(_MSC_VER)
 #   pragma warning(push)
 #   pragma warning(disable : 4251)
 #endif
 
-// Start of CEGUI namespace section
 namespace CEGUI
 {
 class UndoHandler;
+
+//! Base class for editbox window renderers
+class CEGUIEXPORT EditboxWindowRenderer : public WindowRenderer
+{
+public:
+
+    EditboxWindowRenderer(const String& name);
+
+    //! Editbox text parsing is forcefully disabled
+    virtual bool isTextParsingEnabled() const override { return false; }
+
+    /*!
+    \brief
+        Return a Rect object describing, in un-clipped pixels, the window relative area
+        that the text should be rendered in to.
+
+    \return
+        Rect object describing the area of the Window to be used for rendering text.
+    */
+    virtual Rectf getTextRenderArea() const = 0;
+
+    virtual Rectf getCaretRect() const = 0;
+    virtual float getCaretWidth() const = 0;
+};
 
 //----------------------------------------------------------------------------//
 
@@ -50,9 +74,8 @@ class UndoHandler;
 class CEGUIEXPORT EditboxBase : public Window
 {
 public:
-    //! Namespace for global events
+
     static const String EventNamespace;
-    //! Window factory name
     static const String WidgetTypeName;
            
     /** Event fired when the read-only mode for the edit box is changed.
@@ -74,32 +97,14 @@ public:
      * has been changed.
      */
     static const String EventTextMaskingCodepointChanged;
-    /** Event fired when the validation string is changed.
-     * Handlers are passed a const WindowEventArgs reference with
-     * WindowEventArgs::window set to the Editbox whose validation string has
-     * been changed.
-     */
-    static const String EventValidationStringChanged;
     /** Event fired when the maximum allowable string length is changed.
      * Handlers are passed a const WindowEventArgs reference with
      * WindowEventArgs::window set to the Editbox whose maximum string length
      * has been changed.
      */
     static const String EventMaximumTextLengthChanged;
-    /** Event fired when the validity of the Exitbox text (as determined by a
-     * RegexMatcher object) has changed.
-     * Handlers are passed a const RegexMatchStateEventArgs reference with
-     * WindowEventArgs::window set to the Editbox whose text validity has
-     * changed and RegexMatchStateEventArgs::matchState set to the new match
-     * validity. Handler return is significant, as follows:
-     * - true indicates the new state - and therfore text - is to be accepted.
-     * - false indicates the new state is not acceptable, and the previous text
-     *   should remain in place. NB: This is only possible when the validity
-     *   change is due to a change in the text, if the validity change is due to
-     *   a change in the validation regular expression string, then returning
-     *   false will have no effect.
-     */
-    static const String EventTextValidityChanged;
+    //! Fired when the default paragraph direction of this window changes.
+    static const String EventDefaultParagraphDirectionChanged;
     /** Event fired when the text caret position / insertion point is changed.
      * Handlers are passed a const WindowEventArgs reference with
      * WindowEventArgs::window set to the Editbox whose current insertion point
@@ -118,23 +123,21 @@ public:
      * WindowEventArgs::window set to the Editbox that has become full.
      */
     static const String EventEditboxFull;
-    /** Event fired when the user accepts the current text by pressing Return,
-     * Enter, or Tab.
+    /** Event fired when the read-only mode for the edit box is changed.
      * Handlers are passed a const WindowEventArgs reference with
-     * WindowEventArgs::window set to the Editbox in which the user has accepted
-     * the current text.
+     * WindowEventArgs::window set to the Editbox whose read only setting
+     * has been changed.
      */
-    static const String EventTextAccepted;
-    /** Mouse cursor image property name to use when the edit box is
-     * in read-only mode.
+    static const String EventValidationStringChanged;
+    /** Event fired when the maximum allowable string length is changed.
+     * Handlers are passed a const WindowEventArgs reference with
+     * WindowEventArgs::window set to the Editbox whose maximum string length
+     * has been changed.
      */
-    static const String ReadOnlyCursorImagePropertyName;
+    static const String EventTextValidityChanged;
 
-    //! Constructor for Editbox class.
     EditboxBase(const String& type, const String& name);
-
-    //! Destructor for Editbox class.
-    virtual ~EditboxBase();
+    virtual ~EditboxBase() override;
 
     /*!
     \brief
@@ -144,9 +147,7 @@ public:
         - true if the Editbox has input focus.
         - false if the Editbox does not have input focus.
     */
-    virtual bool hasInputFocus() const;
-
-    bool performPaste(Clipboard& clipboard) override = 0;
+    virtual bool hasInputFocus() const { return isFocused(); }
 
     /*!
     \brief
@@ -169,7 +170,6 @@ public:
     */
     bool isTextMaskingEnabled() const { return d_textMaskingEnabled; }
 
-
     /*!
     \brief
         return the current position of the caret.
@@ -177,7 +177,7 @@ public:
     \return
         Index of the insert caret relative to the start of the text.
     */
-    size_t getCaretIndex() const;
+    size_t getCaretIndex() const { return d_caretPos; }
 
     /*!
     \brief
@@ -188,7 +188,7 @@ public:
         If no selection is defined this function returns the position of the
         caret.
     */
-    size_t getSelectionStart() const;
+    size_t getSelectionStart() const { return (d_selectionStart != d_selectionEnd) ? d_selectionStart : d_caretPos; }
 
     /*!
     \brief
@@ -198,7 +198,7 @@ public:
         Index of the selection end point relative to the start of the text.  If
         no selection is defined this function returns the position of the caret.
     */
-    size_t getSelectionEnd() const;
+    size_t getSelectionEnd() const { return (d_selectionStart != d_selectionEnd) ? d_selectionEnd : d_caretPos; }
 
     /*!
     \brief
@@ -209,7 +209,7 @@ public:
         Number of code points (or characters) contained within the currently
         defined selection.
     */
-    size_t getSelectionLength() const;
+    size_t getSelectionLength() const { return d_selectionEnd - d_selectionStart; }
 
     /*!
     \brief
@@ -249,6 +249,9 @@ public:
     */
     void setReadOnly(bool setting);
 
+    void setDragPanningEnabled(bool setting);
+    bool isDragPanningEnabled() const { return d_dragPanningEnabled; }
+
     /*!
     \brief
         Specify whether the text for the Editbox will be rendered masked.
@@ -275,7 +278,10 @@ public:
     \return
         Nothing.
     */
-    virtual void setCaretIndex(size_t caret_pos) = 0;
+    void setCaretIndex(size_t caretPos);
+
+    //! Scroll the view so that the current caret position is visible.
+    virtual void ensureCaretIsVisible() = 0;
 
     /*!
     \brief
@@ -350,26 +356,133 @@ public:
     \return
         Nothing.
     */
-    virtual void setMaxTextLength(size_t max_len) = 0;
+    virtual void setMaxTextLength(size_t maxLen);
 
-    //! \copydoc Window::performCopy
-    bool performCopy(Clipboard& clipboard) override;
+    virtual float getTextOffsetX() const = 0;
+    virtual float getTextOffsetY() const = 0;
+    virtual void setTextOffsetX(float value) = 0;
+    virtual void setTextOffsetY(float value) = 0;
 
-    //! \copydoc Window::performCut
-    bool performCut(Clipboard& clipboard) override;
+    void setTextOffset(const glm::vec2& offset) { setTextOffsetX(offset.x); setTextOffsetY(offset.y); }
+    glm::vec2 getTextOffset() const { return glm::vec2(getTextOffsetX(), getTextOffsetY()); }
 
-    //! \copydoc Window::setEnabled
+    RenderedText& getRenderedText();
+    const RenderedText& getRenderedText() const { return d_renderedText; }
+
+    /*!
+    \brief
+        Sets the horizontal text formatting to be used from now onwards.
+
+    \param format
+        Specifies the formatting to use.  Currently can only be one of the
+        following HorizontalTextFormatting values:
+            - HorizontalTextFormatting::LeftAligned (default)
+            - HorizontalTextFormatting::RightAligned
+            - HorizontalTextFormatting::CentreAligned
+    */
+    virtual void setTextFormatting(HorizontalTextFormatting format);
+    HorizontalTextFormatting getTextFormatting() const;
+
+    //! Sets the default paragraph direction for the displayed text.
+    void setDefaultParagraphDirection(DefaultParagraphDirection defaultParagraphDirection);
+    //! Gets the default paragraph direction for the displayed text.
+    DefaultParagraphDirection getDefaultParagraphDirection() const { return d_defaultParagraphDirection; }
+
+    /*!
+    \brief
+        return the validation RegexMatchState for the current Editbox text, given the
+        currently set validation string.
+
+    \note
+        Validation is performed by means of a regular expression.  If the text
+        matches the regex, the text is said to have passed validation.  If the
+        text does not match with the regex then the text fails validation.
+        The default RegexMatcher uses the pcre library to perform regular
+        expression operations, details about the pattern syntax can be found
+        on unix-like systems by way of <tt>man pcrepattern</tt> (or online at
+        http://www.pcre.org/pcre.txt (scroll / search "PCREPATTERN(3)").
+        Alternatively, see the perl regex documentation at
+        http://perldoc.perl.org/perlre.html
+
+    \return
+        One of the RegexMatchState enumerated values indicating the current match state.
+    */
+    RegexMatchState getTextMatchState() const { return d_validatorMatchState; }
+
+    /*!
+    \brief
+        return the currently set validation string
+
+    \note
+        Validation is performed by means of a regular expression.  If the text
+        matches the regex, the text is said to have passed validation.  If the
+        text does not match with the regex then the text fails validation.
+        The default RegexMatcher uses the pcre library to perform regular
+        expression operations, details about the pattern syntax can be found
+        on unix-like systems by way of <tt>man pcrepattern</tt> (or online at
+        http://www.pcre.org/pcre.txt (scroll / search "PCREPATTERN(3)").
+        Alternatively, see the perl regex documentation at
+        http://perldoc.perl.org/perlre.html
+
+    \return
+        String object containing the current validation regex data
+    */
+    const String& getValidationString() const { return d_validationString; }
+
+    /*!
+    \brief
+        Set the text validation string.
+
+    \note
+        Validation is performed by means of a regular expression.  If the text
+        matches the regex, the text is said to have passed validation.  If the
+        text does not match with the regex then the text fails validation.
+        The default RegexMatcher uses the pcre library to perform regular
+        expression operations, details about the pattern syntax can be found
+        on unix-like systems by way of <tt>man pcrepattern</tt> (or online at
+        http://www.pcre.org/pcre.txt (scroll / search "PCREPATTERN(3)").
+        Alternatively, see the perl regex documentation at
+        http://perldoc.perl.org/perlre.html
+
+    \param validation_string
+        String object containing the validation regex data to be used.
+
+    \return
+        Nothing.
+    */
+    void setValidationString(const String& validation_string);
+
+    /*!
+    \brief
+        Set the RegexMatcher based validator for this Editbox.
+
+    \param matcher
+        Pointer to an object that implements the RegexMatcher interface, or 0
+        to restore a system supplied RegexMatcher (if support is available).
+
+    \note
+        If the previous RegexMatcher validator is one supplied via the system,
+        it is deleted and replaced with the given RegexMatcher.  User supplied
+        RegexMatcher objects will never be deleted by the system and you must
+        ensure that the object is not deleted while the Editbox holds a pointer
+        to it.  Once the Editbox is destroyed or the validator is set to
+        something else it is the responsibility of client code to ensure any
+        previous custom validator is deleted.
+    */
+    void setValidator(RegexMatcher* matcher);
+
     void setEnabled(bool enabled) override;
- 
-    //! \copydoc Window::performUndo
-    bool performUndo() override;
 
-    //! \copydoc Window::performRedo
+    bool performCopy(Clipboard& clipboard) override;
+    bool performCut(Clipboard& clipboard) override;
+    bool performPaste(Clipboard& clipboard) override;
+    bool performUndo() override;
     bool performRedo() override;
 
 protected:
-    // Inherited methods
-    bool validateWindowRenderer(const WindowRenderer* renderer) const override = 0;
+
+    void updateRenderedText();
+    virtual void updateFormatting() = 0;
 
     /*!
     \brief
@@ -383,93 +496,22 @@ protected:
         Code point index into the text that is rendered closest to screen
         position \a pt.
     */
-    virtual size_t getTextIndexFromPosition(const glm::vec2& pt) const = 0;
+    size_t getTextIndexFromPosition(const glm::vec2& pt);
 
-    /*!
-    \brief
-        Erase the currently selected text.
-
-    \param modify_text
-        when true, the actual text will be modified.  When false, everything is
-        done except erasing the characters.
-    */
-    virtual void eraseSelectedText(bool modify_text = true) = 0;
-
-	/*!
-	\brief
-		Processing for Backspace key
-	*/
-    virtual void handleBackspace() = 0;
-
-	/*!
-	\brief
-		Processing for Delete key
-	*/
-    virtual void handleDelete() = 0;
+    virtual bool validateWindowRenderer(const WindowRenderer* renderer) const override;
+    virtual bool handleFontRenderSizeChange(const Font& font) override;
 
     //! Clear the currently defined selection (just the region, not the text).
     void clearSelection();
 
-    /*!
-    \brief
-        Processing to move caret one character left
+    size_t getPrevTextIndex(size_t idx) const;
+    size_t getNextTextIndex(size_t idx) const;
 
-    \param select
-        when true, the left character will be also selected
-    */
-    void handleCharLeft(bool select);
+    virtual bool insertString(String&& strToInsert);
+    void deleteRange(size_t start, size_t length);
+    void handleCaretMovement(size_t newIndex, bool select);
 
-    /*!
-    \brief
-        Processing to move caret one character right
-
-    \param select
-        when true, the right character will be also selected
-    */
-    void handleCharRight(bool select);
-
-    /*!
-    \brief
-        Processing to move caret one word left
-
-    \param select
-        If true the left word will be also selected
-    */
-    void handleWordLeft(bool select);
-
-    /*!
-    \brief
-        Processing to move caret one word right
-
-    \param select
-        when true, the right word will be also selected
-    */
-    void handleWordRight(bool select);
-
-    /*!
-    \brief
-        Processing to move caret to the start of the entire text.
-
-    \param select
-        When true, the text until the beginning of the entire text will be also selected
-    */
-    void handleHome(bool select);
-
-    /*!
-    \brief
-        Processing to move caret to the end of the entire text.
-
-    \param select
-        When true, the text until the end of the entire text will be also selected
-    */
-    void handleEnd(bool select);
-
-    /*!
-    \brief
-        Selects the entire text.
-    */
     void handleSelectAll();
-    
 
     /*!
     \brief
@@ -516,6 +558,35 @@ protected:
     */
     virtual void onEditboxFullEvent(WindowEventArgs& e);
 
+    /*!
+    \brief
+        Event fired internally when the validation string is changed.
+    */
+    virtual void onValidationStringChanged(WindowEventArgs& e);
+
+    /*!
+    \brief
+        Handler called when something has caused the validity state of the
+        current text to change.
+    */
+    virtual void onTextValidityChanged(RegexMatchStateEventArgs& e);
+
+    /*!
+    \brief
+        return the match state of the given string for the validation regular
+        expression.
+    */
+    RegexMatchState getStringMatchState(const String& str) const;
+
+    /** Helper to update validator match state as needed for the given string
+     * and event handler return codes.
+     *
+     * This effectively asks permission from event handlers to proceed with the
+     * change, updates d_validatorMatchState and returns an appropriate bool.
+     * The return value basically says whether or not to set the input string
+     * as the current text for the Editbox.
+     */
+    bool handleValidityChangeForString(const String& str);
 
     /*!
     \brief
@@ -533,64 +604,81 @@ protected:
     */
     void setReadOnlyCursorImage(const Image* image) { d_readOnlyCursorImage = image; }
 
-    /*!
-    \brief
-        Processes Semantic Value that can be handled the same way for all Editboxes. If a
-        general Semantic Value was handled this will return true, otherwise it returns false.
-    \param e
-        The SemanticEventArgs with the semantic input event to handle
-    \return
-        True if a Semantic Value was of a general type and thus handled, False if not.
-    */
-    bool handleBasicSemanticValue(SemanticEventArgs& e);
-
     // Overridden event handlers
     void onCursorPressHold(CursorInputEventArgs& e) override;
     void onCursorActivate(CursorInputEventArgs& e) override;
     void onCursorMove(CursorInputEventArgs& e) override;
     void onCaptureLost(WindowEventArgs& e) override;
+    void onSelectWord(CursorInputEventArgs& e) override;
+    void onSelectAll(CursorInputEventArgs& e) override;
+    void onSized(ElementEventArgs& e) override;
 
-    void onCharacter(TextEventArgs& e) override = 0;
-    void onTextChanged(WindowEventArgs& e) override = 0;
-    void onSemanticInputEvent(SemanticEventArgs& e) override = 0;
+    void onFontChanged(WindowEventArgs& e) override;
+    void onTextChanged(WindowEventArgs& e) override;
+    void onCharacter(TextEventArgs& e) override;
+    void onSemanticInputEvent(SemanticEventArgs& e) override;
 
-    //! True if the editbox is in read-only mode
-    bool d_readOnly;
+    virtual bool processSemanticInputEvent(const SemanticEventArgs& e);
+
+    RenderedText d_renderedText;
+
     //! The read only mouse cursor image.
-    const Image* d_readOnlyCursorImage;
-    //! True if the editbox text should be rendered masked.
-    bool d_textMaskingEnabled;
-    //! Code point to use when rendering masked text.
-    std::uint32_t d_textMaskingCodepoint;
+    const Image* d_readOnlyCursorImage = nullptr;
     //! Maximum number of characters for this Editbox.
     size_t d_maxTextLen;
     /*! Position of the caret / insert-point, relative to the beginning
         of the string and measured in Unicode code units (or ASCII characters).
     */
-    size_t d_caretPos;
+    size_t d_caretPos = 0;
     //! Start of selection area.
-    size_t d_selectionStart;
+    size_t d_selectionStart = 0;
     //! End of selection area.
-    size_t d_selectionEnd;
-    //! true when a selection is being dragged.
-    bool d_dragging;
+    size_t d_selectionEnd = 0;
     //! Selection index for drag selection anchor point.
-    size_t d_dragAnchorIdx;
+    size_t d_dragAnchorIdx = 0;
     //! Undo handler
-    UndoHandler *d_undoHandler;
+    std::unique_ptr<UndoHandler> d_undoHandler;
+
+    //! Pointer to class used for validation of text.
+    RegexMatcher* d_validator = nullptr;
+    //! Copy of validation reg-ex string.
+    String d_validationString;
+    //! Current match state of EditboxText
+    RegexMatchState d_validatorMatchState = RegexMatchState::Valid;
+
+    //! Code point to use when rendering masked text.
+    std::uint32_t d_textMaskingCodepoint = '*';
+
+    //! Default direction of the paragraph, relevant for bidirectional text.
+    DefaultParagraphDirection d_defaultParagraphDirection = DefaultParagraphDirection::LeftToRight;
+    //! True if the editbox is in read-only mode
+    bool d_readOnly = false;
+    //! True if the editbox text should be rendered masked.
+    bool d_textMaskingEnabled = false;
+    //! true when a selection is being dragged.
+    bool d_dragSelecting = false;
+    //! true when a selection is being dragged.
+    bool d_dragPanning = false;
+    //! true when a selection is being dragged.
+    bool d_dragPanningEnabled = true;
+
+    bool d_renderedTextDirty = true;
+    bool d_formattingDirty = true;
+
+    //! specifies whether validator was created by us, or supplied by user.
+    bool d_weOwnValidator = true;
+    //! Previous match state change response
+    bool d_previousValidityChangeResponse = true;
 
 private:
+
     void addEditboxBaseProperties();
 };
 
-#ifndef SWIG
-bool isSelectionSemanticValue(SemanticValue value);
-#endif
-
-} // End of  CEGUI namespace section
+}
 
 #if defined(_MSC_VER)
 #   pragma warning(pop)
 #endif
 
-#endif  // end of guard _CEGUIEditbox_h_
+#endif

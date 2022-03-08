@@ -95,13 +95,13 @@ Rectf ScrollablePane::getContentPixelRect(void) const
 }
 
 //----------------------------------------------------------------------------//
-USize ScrollablePane::getContentSize(void) const
+USize ScrollablePane::getContentPaneSize(void) const
 {
     return getScrolledContainer()->getSize();
 }
 
 //----------------------------------------------------------------------------//
-void ScrollablePane::setContentSize(const USize& size)
+void ScrollablePane::setContentPaneSize(const USize& size)
 {
     getScrolledContainer()->setSize(size);
 }
@@ -257,7 +257,7 @@ void ScrollablePane::initialiseComponents()
     // do a bit of initialisation
     horzScrollbar->setAlwaysOnTop(true);
     vertScrollbar->setAlwaysOnTop(true);
-    container->setCursor(getActualCursor());
+    container->setCursor(getEffectiveCursor());
 
     // subscribe to events we need to hear about
     vertScrollbar->subscribeEvent(
@@ -297,7 +297,7 @@ void ScrollablePane::configureScrollbars()
         if (vertScrollbar->isVisible() != show)
         {
             vertScrollbar->setVisible(show);
-            notifyScreenAreaChanged(true);
+            notifyScreenAreaChanged();
         }
     }
 
@@ -310,7 +310,7 @@ void ScrollablePane::configureScrollbars()
         if (wasVisibleHorz != show)
         {
             horzScrollbar->setVisible(show);
-            notifyScreenAreaChanged(true);
+            notifyScreenAreaChanged();
         }
     }
 
@@ -324,7 +324,7 @@ void ScrollablePane::configureScrollbars()
         if (vertScrollbar->isVisible() != show)
         {
             vertScrollbar->setVisible(show);
-            notifyScreenAreaChanged(true);
+            notifyScreenAreaChanged();
         }
     }
     
@@ -589,7 +589,7 @@ void ScrollablePane::addScrollablePaneProperties(void)
     CEGUI_DEFINE_PROPERTY(ScrollablePane, USize,
         "ContentSize", "Property to get/set the content pane area size. Will not set dimensions that are "
         "adjusted to the content.",
-        &ScrollablePane::setContentSize, &ScrollablePane::getContentSize, USize(UDim(0, 0), UDim(0, 0))
+        &ScrollablePane::setContentPaneSize, &ScrollablePane::getContentPaneSize, USize(UDim(0, 0), UDim(0, 0))
     );
 
     CEGUI_DEFINE_PROPERTY(ScrollablePane, bool,
@@ -683,14 +683,14 @@ void ScrollablePane::destroy(void)
 }
 
 //----------------------------------------------------------------------------//
-NamedElement* ScrollablePane::getChildByNamePath_impl(const String& name_path) const
+Window* ScrollablePane::findChildByNamePath_impl(const String& name_path) const
 {
     // FIXME: This is horrible
     //
     if (name_path.substr(0, 7) == "__auto_")
-        return Window::getChildByNamePath_impl(name_path);
+        return Window::findChildByNamePath_impl(name_path);
     else
-        return Window::getChildByNamePath_impl(ScrolledContainerName + '/' + name_path);
+        return Window::findChildByNamePath_impl(ScrolledContainerName + '/' + name_path);
 }
 
 //----------------------------------------------------------------------------//
