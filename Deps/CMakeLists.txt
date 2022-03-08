@@ -62,6 +62,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/CEGUI/dependencies/lib")
 else()
 	find_package(PythonInterp)
 	if(PYTHONINTERP_FOUND)
+		execute_process(COMMAND "pip" "install" "-r" "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/requirements.txt")
 		execute_process(COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/build_cegui_deps.py" "${CMAKE_GENERATOR}" "${CMAKE_GENERATOR_PLATFORM}"
 			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 			RESULT_VARIABLE DEM_CEGUI_DEPS_BUILD_RESULT
