@@ -173,15 +173,21 @@ bool GUIContext::isWindowActive(const Window* window) const
 }
 
 //----------------------------------------------------------------------------//
-void GUIContext::setModalWindow(Window* window)
+// TODO: need stack to show one modal dialog inside of another?
+bool GUIContext::setModalWindow(Window* window)
 {
-    // TODO: need stack to show one modal dialog inside of another?
-    if (!d_modalWindow)
+    if (window)
     {
-        setActiveWindow(d_modalWindow, true);
+        setActiveWindow(window, true);
         if (d_activeWindow == window)
             d_modalWindow = window;
     }
+    else
+    {
+        d_modalWindow = nullptr;
+    }
+
+    return d_modalWindow == window;
 }
 
 //----------------------------------------------------------------------------//
@@ -715,7 +721,7 @@ void GUIContext::updateInputAutoRepeating(float timeElapsed)
 //----------------------------------------------------------------------------//
 Window* GUIContext::getTargetWindow(const glm::vec2& pt, bool allow_disabled) const
 {
-    // if there is no GUI sheet visible, then there is nowhere to send input
+    // If there is no GUI sheet visible, then there is nowhere to send input
     if (!d_rootWindow || !d_rootWindow->isEffectiveVisible())
         return nullptr;
 
@@ -734,8 +740,8 @@ Window* GUIContext::getTargetWindow(const glm::vec2& pt, bool allow_disabled) co
             destWnd = d_rootWindow;
     }
 
-    // modal target overrules
-    if (destWnd->isInHierarchyOf(d_modalWindow))
+    // Modal target overrules
+    if (d_modalWindow && !destWnd->isInHierarchyOf(d_modalWindow))
         destWnd = d_modalWindow;
 
     return destWnd;
@@ -751,7 +757,10 @@ Window* GUIContext::getInputTargetWindow() const
     if (d_captureWindow)
         return (d_activeWindow && d_activeWindow->isInHierarchyOf(d_captureWindow)) ? d_activeWindow : d_captureWindow;
 
-    return d_activeWindow ? d_activeWindow : d_modalWindow;
+    if (d_modalWindow)
+        return (d_activeWindow && d_activeWindow->isInHierarchyOf(d_modalWindow)) ? d_activeWindow : d_modalWindow;
+
+    return d_activeWindow;
 }
 
 //----------------------------------------------------------------------------//

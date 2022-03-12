@@ -17,6 +17,8 @@ protected:
 	mutable bool					d_bufferIsSync = false;
 	mutable glm::mat4				d_matrix;
 
+	virtual void onGeometryChanged() override { d_bufferIsSync = false; }
+
 public:
 
 	CDEMGeometryBuffer(CDEMRenderer& owner, RefCounted<RenderMaterial> renderMaterial);
@@ -26,7 +28,6 @@ public:
 
 	// Implement GeometryBuffer interface.
 	virtual void draw(std::uint32_t drawModeMask = DrawModeMaskAll) const override;
-	virtual void appendGeometry(const float* vertex_data, std::size_t array_size) override;
 };
 
 }

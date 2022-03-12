@@ -148,11 +148,4 @@ void CDEMGeometryBuffer::draw(std::uint32_t drawModeMask) const
 }
 //--------------------------------------------------------------------
 
-void CDEMGeometryBuffer::appendGeometry(const float* vertex_data, std::size_t array_size)
-{
-	GeometryBuffer::appendGeometry(vertex_data, array_size);
-	d_bufferIsSync = false;
-}
-//--------------------------------------------------------------------
-
 }
