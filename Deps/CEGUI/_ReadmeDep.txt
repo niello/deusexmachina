@@ -7,11 +7,11 @@ https://github.com/cegui/cegui
 
 Current version used:
 master
-https://github.com/cegui/cegui/commit/e454786dcf4cf5324cdef64cd7965eabe516a4d5
+https://github.com/cegui/cegui/commit/2b4a468c30bd397eec989c29237be8e4428e6dd6
 Dependencies from https://github.com/niello/cegui-dependencies/archive/dem_minimal.zip
 
 Local modifications:
-CMake - settings defaulted to static linking only, TinyXML2 is linked from DEM dependencies
+None
 
 Purpose in DEM:
 Main and debug GUI

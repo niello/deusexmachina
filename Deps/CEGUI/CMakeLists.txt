@@ -17,7 +17,7 @@ endif()
 ################################################################################
 project(cegui)
 
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(CEGUIMacros)
 include(CMakeDependentOption)
 
@@ -53,9 +53,9 @@ MATH( EXPR CEGUI_SOVERSION ${CEGUI_ABI_CURRENT}-${CEGUI_ABI_AGE} )
 set( CEGUI_ABI_VERSION ${CEGUI_SOVERSION}.${CEGUI_ABI_AGE}.${CEGUI_ABI_REVISION} )
 
 if (CMAKE_SIZEOF_VOID_P EQUAL 4)
-	set(CEGUI_ARCH_SUFFIX x86)
+    set(CEGUI_ARCH_SUFFIX x86)
 else()
-	set(CEGUI_ARCH_SUFFIX x64)
+    set(CEGUI_ARCH_SUFFIX x64)
 endif()
 
 ################################################################################
@@ -68,15 +68,14 @@ cegui_check_msvc()
 # Check for libs and other packages we might use.
 ################################################################################
 # be sure to search the provided dependencies on Win32 and Mac OS X platforms
-if ((WIN32 OR APPLE) AND NOT CMAKE_PREFIX_PATH)
-    set (CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/dependencies" CACHE PATH "Path to dependencies")
+set(CEGUI_DEPENDENCIES_DIR "${PROJECT_SOURCE_DIR}/dependencies" CACHE PATH "")
+if (WIN32 OR APPLE)
+    list(APPEND CMAKE_PREFIX_PATH ${CEGUI_DEPENDENCIES_DIR})
     # prefer the dylib deps in the dependencies over some other framework
-    set (CMAKE_FIND_FRAMEWORK LAST)
-endif()
-
-if(ANDROID)
+    set(CMAKE_FIND_FRAMEWORK LAST)
+elseif (ANDROID)
     set(CMAKE_FIND_ROOT_PATH ${CEGUI_DEPENDENCIES_DIR} "${CMAKE_FIND_ROOT_PATH}")
-    set (CMAKE_LIBRARY_ARCHITECTURE ${ANDROID_ABI})
+    set(CMAKE_LIBRARY_ARCHITECTURE ${ANDROID_ABI})
 endif()
 
 # Look for packages with CMake default Find* modules to prevent messing up our variables from CMake modules.
@@ -116,19 +115,16 @@ find_package(Irrlicht)
 
 find_package(OGRE CONFIG)
 if(NOT ${OGRE_FOUND})
+    unset(OGRE_FOUND CACHE)
+    unset(OGRE_DIR CACHE)
     find_package(Ogre)
 endif()
 if(${OGRE_FOUND})
     if (${OGRE_VERSION} VERSION_GREATER 1.11)
-        set(CMAKE_CXX_STANDARD 11)
-        set(CMAKE_CXX_STANDARD_REQUIRED ON)
-        set(CMAKE_CXX_EXTENSIONS OFF)
-
         set(CEGUI_FOUND_OGRE_VERSION_MAJOR ${OGRE_VERSION_MAJOR})
         set(CEGUI_FOUND_OGRE_VERSION_MINOR ${OGRE_VERSION_MINOR})
         set(CEGUI_FOUND_OGRE_VERSION_PATCH ${OGRE_VERSION_PATCH})
-    endif()
-    if(${OGRE_VERSION} VERSION_LESS 1.10)
+    elseif (${OGRE_VERSION} VERSION_LESS 1.10)
         find_package(OIS)
     endif()
 endif()
@@ -139,11 +135,11 @@ find_package(OpenGLES2)
 find_package(OpenGLES3)
 find_package(Epoxy)
 
+find_package(PugiXML)
 find_package(EXPAT)
 find_package(XercesC)
 find_package(LibXml2)
 find_package(TinyXML2)
-find_package(RapidXML)
 
 find_package(DevIL)
 find_package(FreeImage)
@@ -184,6 +180,7 @@ if(CCACHE_FOUND)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 endif(CCACHE_FOUND)
+mark_as_advanced(CCACHE_FOUND)
 
 if (GLEW_FOUND OR EPOXY_FOUND)
     set (OPENGL_LOADER_FOUND TRUE)
@@ -201,37 +198,38 @@ dependency libs over the shared/dynamic ones.  NOTE: On Windows you also need to
 be mindful of which C/C++ runtime setting has been used to compile the various
 components - they must all match or you will get crashes, heap corruption and/or
 other issues." FALSE "WIN32 OR APPLE" FALSE)
-
-# DEM: build only static configuration
-option( CEGUI_BUILD_STATIC_CONFIGURATION "Specifies whether the static configs will be built." TRUE)
-option( CEGUI_BUILD_DYNAMIC_CONFIGURATION "Dynamic libs to be built.  Always true except for Android" FALSE)
-option( CEGUI_BUILD_STATIC_FACTORY_MODULE "For static CEGUI builds, specifies whether to include the getWindowFactoryModule method.  When false, the developer must provide a custom implementation of the method" ${CEGUI_BUILD_STATIC_CONFIGURATION})
+option( CEGUI_BUILD_STATIC_CONFIGURATION "Specifies whether the static configs will be built. (NB: Shared configs are always built)" FALSE)
+option( CEGUI_BUILD_DYNAMIC_CONFIGURATION "Dynamic libs to be built. Always true except for Android" TRUE)
+option( CEGUI_BUILD_STATIC_FACTORY_MODULE "For static CEGUI builds, specifies whether to include the getWindowFactoryModule method.  When false, the developer must provide a custom implementation of the method" FALSE)
 # sanity check on static build option for factory method
 if (CEGUI_BUILD_STATIC_FACTORY_MODULE AND NOT CEGUI_BUILD_STATIC_CONFIGURATION)
-    message(SEND_ERROR "You may not enable CEGUI_BUILD_STATIC_FACTORY_MODULE without CEGUI_BUILD_STATIC_CONFIGURATION enabled.  CEGUI needs to be built statically if building the static factory method.")
+    message(WARNING "CEGUI needs to be built statically (CEGUI_BUILD_STATIC_CONFIGURATION) if building the static factory method. CEGUI_BUILD_STATIC_FACTORY_MODULE is disabled.")
+    set(CEGUI_BUILD_STATIC_FACTORY_MODULE FALSE)
 endif()
-if (NOT CEGUI_BUILD_DYNAMIC_CONFIGURATION AND NOT ANDROID)
-    #message(SEND_ERROR "You may not disable CEGUI_BUILD_DYNAMIC_CONFIGURATION in any scenario except android builds.")
-endif()
-# /DEM
 
 if (PCRE_FOUND)
-    set (CEGUI_NEED_STD11_REGEX FALSE)
+    set(CEGUI_REGEX_MATCHER "PCRE" CACHE STRING "Specifies a regular expression matcher used for editbox string validation")
+    set_property(CACHE CEGUI_REGEX_MATCHER PROPERTY STRINGS "PCRE" "std" "None")
 else ()
-    set (CEGUI_NEED_STD11_REGEX TRUE)
+    set(CEGUI_REGEX_MATCHER "std" CACHE STRING "Specifies a regular expression matcher used for editbox string validation")
+    set_property(CACHE CEGUI_REGEX_MATCHER PROPERTY STRINGS "std" "None")
 endif ()
 
-option( CEGUI_HAS_PCRE_REGEX "Specifies whether to include PCRE regexp matching for editbox string validation" ${PCRE_FOUND} )
-option( CEGUI_HAS_STD11_REGEX "Specifies whether to include C++11 Regular expressions library for editbox string validation" ${CEGUI_NEED_STD11_REGEX} )
-option( CEGUI_HAS_MINIZIP_RESOURCE_PROVIDER "Specifies whether to build the minizip based resource provider" ${MINIZIP_FOUND} )
-option( CEGUI_HAS_DEFAULT_LOGGER "Specifies whether to build the DefaultLogger implementation" TRUE)
+if (CEGUI_REGEX_MATCHER STREQUAL "PCRE")
+    set(CEGUI_REGEX_MATCHER_PCRE TRUE)
+elseif (CEGUI_REGEX_MATCHER STREQUAL "std")
+    set(CEGUI_REGEX_MATCHER_STD TRUE)
+endif()
+
+option( CEGUI_BUILD_RESOURCE_PROVIDER_MINIZIP "Specifies whether to build the minizip based resource provider" ${MINIZIP_FOUND} )
+option( CEGUI_USE_DEFAULT_LOGGER "Specifies whether to build and use the DefaultLogger implementation" TRUE)
 
 option( CEGUI_BUILD_COMMON_DIALOGS "Specifies whether to build the CommonDialogs library, which contains the code for the ColourPicker and other dialogs" TRUE)
 
+option( CEGUI_BUILD_XMLPARSER_PUGIXML "Specifies whether to build the PugiXML based XMLParser module" ${PUGIXML_FOUND} )
 option( CEGUI_BUILD_XMLPARSER_EXPAT "Specifies whether to build the Expat based XMLParser module" ${EXPAT_FOUND} )
 option( CEGUI_BUILD_XMLPARSER_XERCES "Specifies whether to build the Xerces-C++ based XMLParser module" ${XERCESC_FOUND} )
 option( CEGUI_BUILD_XMLPARSER_LIBXML2 "Specifies whether to build the libxml2 based XMLParser module" ${LIBXML2_FOUND} )
-option( CEGUI_BUILD_XMLPARSER_RAPIDXML "Specifies whether to build the RapidXML based XMLParser module" ${RAPIDXML_FOUND} )
 option( CEGUI_BUILD_XMLPARSER_TINYXML2 "Specifies whether to build the TinyXML2 based XMLParser module" ${TINYXML2_FOUND} )
 
 option( CEGUI_BUILD_IMAGECODEC_SILLY "Specifies whether to build the SILLY based ImageCodec module" ${SILLY_FOUND} )
@@ -280,7 +278,7 @@ endif()
 
 # Text rendering, BIDI
 
-option( CEGUI_HAS_FREETYPE "Specifies whether to include Freetype font support" ${FREETYPE_FOUND} )
+option( CEGUI_USE_FREETYPE "Specifies whether to include Freetype font support" ${FREETYPE_FOUND} )
 option( CEGUI_USE_FRIBIDI "Specifies whether bi-directional text will be supported via the fribidi library." OFF )
 option( CEGUI_USE_MINIBIDI "Specifies whether bi-directional text will be supported via the embedded minibidi." OFF )
 cegui_dependent_option( CEGUI_USE_RAQM "Specifies whether to include support for kerning and for complex text layout using in CEGUI. This requires libraqm, harfbuzz, freetype and fribidi" "RAQM_FOUND;HARFBUZZ_FOUND;FREETYPE_FOUND;FRIBIDI_FOUND" )
@@ -323,6 +321,7 @@ if (CEGUI_BUILD_RENDERER_OPENGL OR CEGUI_BUILD_RENDERER_OPENGL3)
     set( CEGUI_USE_GLFW_VER none )
     if (NOT ANDROID)
         set (CEGUI_GLFW_VER "" CACHE STRING "Specifies which major version of GLFW to use for the samples (2 or 3). The default is to look for both, giving priority to version 2.")
+        set_property(CACHE CEGUI_GLFW_VER PROPERTY STRINGS "" "2" "3")
 
         if (((CEGUI_GLFW_VER STREQUAL "2") OR (CEGUI_GLFW_VER STREQUAL "")) AND GLFW_FOUND)
             set (CEGUI_USE_GLFW_VER "2")
@@ -343,7 +342,7 @@ if (CEGUI_BUILD_RENDERER_OPENGL3 AND CEGUI_USE_EPOXY)
     mark_as_advanced (CEGUI_OPENGL_VER_MAJOR_FORCE)
     set (CEGUI_OPENGL_VER_MINOR_FORCE "0" CACHE STRING "Run the samples as if a specific OpenGL (desktop or ES) minor version is used. Useful for testing.")
     mark_as_advanced (CEGUI_OPENGL_VER_MINOR_FORCE)
-    if( CEGUI_GLFW_VER STREQUAL 3 )
+    if( CEGUI_GLFW_VER STREQUAL "3" )
         set( CEGUI_SAMPLES_OPENGL_ES_2_CONTEXT_CREATION_API EGL CACHE STRING "In the sample framework, which API to use for OpenGL ES 2.0 context creation. Possible values are \"EGL\" (default) and \"NATIVE\". This variable is only used with GLFW >= 3.2." )
         mark_as_advanced( CEGUI_SAMPLES_OPENGL_ES_2_CONTEXT_CREATION_API )
     endif()
@@ -430,7 +429,7 @@ endif()
 
 # Ogre and OpenGL have dependencies for the sample browser, if these are not available then the samples will be OFF by default
 if (CEGUI_BUILD_RENDERER_OGRE AND NOT CEGUI_OGRE_DEPS_AVAILABLE)
-    set (_CEGUI_SAMPLES_ENABLED_DEFAULT FALSE)
+    set (_CEGUI_BUILD_SAMPLES_DEFAULT FALSE)
     if (${OGRE_VERSION} VERSION_LESS 1.10 AND NOT OIS_FOUND)
         message(WARNING "The SampleFramework is deactivated due to missing Ogre dependencies (OIS not found)")
     else()
@@ -445,16 +444,16 @@ endif()
 
 # If we use a Renderer then our samples should be ON by default
 if (CEGUI_SAMPLES_RENDERER_OPENGL_ACTIVE OR CEGUI_SAMPLES_RENDERER_OGRE_ACTIVE OR CEGUI_SAMPLES_RENDERER_IRRLICHT_ACTIVE OR CEGUI_SAMPLES_RENDERER_DIRECT3D11_ACTIVE OR CEGUI_SAMPLES_RENDERER_DIRECTFB_ACTIVE OR CEGUI_SAMPLES_RENDERER_OPENGLES2_ALTERNATE_ACTIVE)
-    set (_CEGUI_SAMPLES_ENABLED_DEFAULT TRUE)
+    set (_CEGUI_BUILD_SAMPLES_DEFAULT TRUE)
 else()
-    set (_CEGUI_SAMPLES_ENABLED_DEFAULT FALSE)
+    set (_CEGUI_BUILD_SAMPLES_DEFAULT FALSE)
 endif()
 
 # We set the Samples to the default value
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/samples")
-    option( CEGUI_SAMPLES_ENABLED "Specifies whether to build the CEGUI sample applications" ${_CEGUI_SAMPLES_ENABLED_DEFAULT} )
+    option( CEGUI_BUILD_SAMPLES "Specifies whether to build the CEGUI sample applications" ${_CEGUI_BUILD_SAMPLES_DEFAULT} )
 else()
-    unset(CEGUI_SAMPLES_ENABLED CACHE)
+    unset(CEGUI_BUILD_SAMPLES CACHE)
 endif()
 
 if (UNIX AND NOT APPLE AND NOT WIN32)
@@ -517,13 +516,13 @@ cmake_dependent_option( CEGUI_BUILD_DATAFILES_TEST "Specifies whether to build t
 option( CEGUI_INSTALL_WITH_RPATH "Specifies whether to install with RPATH set to the install location (TRUE) or with no RPATH set (FALSE)." FALSE )
 
 # custom install locations
-option( CEGUI_LIB_INSTALL_DIR "Specifies custom location for CEGUI_LIB_INSTALL_DIR"  )
-option( CEGUI_DATA_INSTALL_DIR "Specifies custom location for CEGUI_DATA_INSTALL_DIR" )
-option( CEGUI_DOC_INSTALL_DIR "Specifies custom location for CEGUI_DOC_INSTALL_DIR" )
-option( CEGUI_PKGCONFIG_INSTALL_DIR "Specifies custom location for CEGUI_PKGCONFIG_INSTALL_DIR" )
-option( CEGUI_MODULE_INSTALL_DIR "Specifies custom location for CEGUI_MODULE_INSTALL_DIR" )
-option( CEGUI_SAMPLE_INSTALL_DIR "Specifies custom location for CEGUI_SAMPLE_INSTALL_DIR" ) # TODO: put into /samples subdir!
-option( CEGUI_INCLUDE_INSTALL_DIR "Specifies custom location for CEGUI_INCLUDE_INSTALL_DIR" )
+set(CEGUI_INSTALL_INCLUDE_DIR "" CACHE PATH "Specifies custom location for CEGUI includes")
+set(CEGUI_INSTALL_LIB_DIR "" CACHE PATH "Specifies custom location for CEGUI libraries")
+set(CEGUI_INSTALL_DATA_DIR "" CACHE PATH "Specifies custom location for CEGUI datafiles")
+set(CEGUI_INSTALL_DOC_DIR "" CACHE PATH "Specifies custom location for CEGUI docs")
+set(CEGUI_INSTALL_PKGCONFIG_DIR "" CACHE PATH "Specifies custom location for CEGUI pkgconfig")
+set(CEGUI_INSTALL_MODULE_DIR "" CACHE PATH "Specifies custom location for CEGUI module")
+set(CEGUI_INSTALL_SAMPLE_DIR "" CACHE PATH "Specifies custom location for CEGUI samples") # TODO: put into /samples subdir!
 
 
 ################################################################################
@@ -543,10 +542,10 @@ cegui_set_library_name( CEGUI_OPENGLES2_RENDERER_ALTERNATE_LIBNAME CEGUIOpenglEs
 cegui_set_library_name( CEGUI_DIRECTFB_RENDERER_LIBNAME CEGUIDirectFBRenderer )
 
 # XML parser module names
+cegui_set_module_name( CEGUI_PUGIXML_PARSER_LIBNAME CEGUIPugiXMLParser )
 cegui_set_module_name( CEGUI_EXPAT_PARSER_LIBNAME CEGUIExpatParser )
 cegui_set_module_name( CEGUI_TINYXML2_PARSER_LIBNAME CEGUITinyXML2Parser )
 cegui_set_module_name( CEGUI_XERCES_PARSER_LIBNAME CEGUIXercesParser )
-cegui_set_module_name( CEGUI_RAPIDXML_PARSER_LIBNAME CEGUIRapidXMLParser )
 cegui_set_module_name( CEGUI_LIBXML2_PARSER_LIBNAME CEGUILibXMLParser )
 
 # ImageCodec module names
@@ -583,7 +582,10 @@ cegui_set_library_name( CEGUI_COMMON_DIALOGS_LIBNAME CEGUICommonDialogs )
 ################################################################################
 set(CEGUI_DEFAULT_XMLPARSER_TOOLTIP "Specifies the XMLParser module to use as the default")
 
-if (CEGUI_BUILD_XMLPARSER_EXPAT)
+if (CEGUI_BUILD_XMLPARSER_PUGIXML)
+    set( CEGUI_OPTION_DEFAULT_XMLPARSER "PugiXMLParser" CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
+    set( CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_PUGIXML_PARSER_LIBNAME} CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
+elseif (CEGUI_BUILD_XMLPARSER_EXPAT)
     set( CEGUI_OPTION_DEFAULT_XMLPARSER "ExpatParser" CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
     set( CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_EXPAT_PARSER_LIBNAME} CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
 elseif (CEGUI_BUILD_XMLPARSER_XERCES)
@@ -592,9 +594,6 @@ elseif (CEGUI_BUILD_XMLPARSER_XERCES)
 elseif (CEGUI_BUILD_XMLPARSER_LIBXML2)
     set( CEGUI_OPTION_DEFAULT_XMLPARSER "LibXMLParser" CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
     set( CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_LIBXML2_PARSER_LIBNAME} CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
-elseif (CEGUI_BUILD_XMLPARSER_RAPIDXML)
-    set( CEGUI_OPTION_DEFAULT_XMLPARSER "RapidXMLParser" CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
-    set( CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_RAPIDXML_PARSER_LIBNAME} CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
 elseif (CEGUI_BUILD_XMLPARSER_TINYXML2)
     set( CEGUI_OPTION_DEFAULT_XMLPARSER "TinyXML2Parser" CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
     set( CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_TINYXML2_PARSER_LIBNAME} CACHE STRING "${CEGUI_DEFAULT_XMLPARSER_TOOLTIP}" )
@@ -604,22 +603,22 @@ You should ensure that CEGUI_OPTION_DEFAULT_XMLPARSER is set to something
 appropriate.")
 endif()
 
-set_property(CACHE CEGUI_OPTION_DEFAULT_XMLPARSER PROPERTY STRINGS "ExpatParser" "XercesParser" "LibXMLParser" "RapidXMLParser" "TinyXML2Parser")
-set_property(CACHE CEGUI_STATIC_XMLPARSER_MODULE PROPERTY STRINGS "${CEGUI_EXPAT_PARSER_LIBNAME}" "${CEGUI_XERCES_PARSER_LIBNAME}" "${CEGUI_LIBXML2_PARSER_LIBNAME}" "${CEGUI_RAPIDXML_PARSER_LIBNAME}" "${CEGUI_TINYXML2_PARSER_LIBNAME}")
+set_property(CACHE CEGUI_OPTION_DEFAULT_XMLPARSER PROPERTY STRINGS "PugiXMLParser" "ExpatParser" "XercesParser" "LibXMLParser" "TinyXML2Parser")
+set_property(CACHE CEGUI_STATIC_XMLPARSER_MODULE PROPERTY STRINGS "${CEGUI_PUGIXML_PARSER_LIBNAME}" "${CEGUI_EXPAT_PARSER_LIBNAME}" "${CEGUI_XERCES_PARSER_LIBNAME}" "${CEGUI_LIBXML2_PARSER_LIBNAME}" "${CEGUI_TINYXML2_PARSER_LIBNAME}")
 
 if(CEGUI_BUILD_DYNAMIC_CONFIGURATION)
+    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "PugiXMLParser" CEGUI_BUILD_XMLPARSER_PUGIXML)
     cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "ExpatParser" CEGUI_BUILD_XMLPARSER_EXPAT)
     cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "XercesParser" CEGUI_BUILD_XMLPARSER_XERCES)
     cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "LibXMLParser" CEGUI_BUILD_XMLPARSER_LIBXML2)
-    cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "RapidXMLParser" CEGUI_BUILD_XMLPARSER_RAPIDXML)
     cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "TinyXML2Parser" CEGUI_BUILD_XMLPARSER_TINYXML2)
 endif()
 
 if (CEGUI_BUILD_STATIC_CONFIGURATION)
+    cegui_defaultmodule_sanity_test(CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_PUGIXML_PARSER_LIBNAME} CEGUI_BUILD_XMLPARSER_PUGIXML)
     cegui_defaultmodule_sanity_test(CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_EXPAT_PARSER_LIBNAME} CEGUI_BUILD_XMLPARSER_EXPAT)
     cegui_defaultmodule_sanity_test(CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_XERCES_PARSER_LIBNAME} CEGUI_BUILD_XMLPARSER_XERCES)
     cegui_defaultmodule_sanity_test(CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_LIBXML2_PARSER_LIBNAME} CEGUI_BUILD_XMLPARSER_LIBXML2)
-    cegui_defaultmodule_sanity_test(CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_RAPIDXML_PARSER_LIBNAME} CEGUI_BUILD_XMLPARSER_RAPIDXML)
     cegui_defaultmodule_sanity_test(CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_TINYXML2_PARSER_LIBNAME} CEGUI_BUILD_XMLPARSER_TINYXML2)
 endif()
 
@@ -731,40 +730,40 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 # set up install sub-directories
-if (NOT CEGUI_LIB_INSTALL_DIR)
+if (NOT CEGUI_INSTALL_LIB_DIR)
   if (CMAKE_SIZEOF_VOID_P EQUAL 8 AND EXISTS "${CMAKE_INSTALL_PREFIX}/lib64")
-    set( CEGUI_LIB_INSTALL_DIR lib64 )
+    set( CEGUI_INSTALL_LIB_DIR lib64 )
   elseif (CMAKE_SIZEOF_VOID_P EQUAL 4 AND EXISTS "${CMAKE_INSTALL_PREFIX}/lib32")
-    set( CEGUI_LIB_INSTALL_DIR lib32 )
+    set( CEGUI_INSTALL_LIB_DIR lib32 )
   else()
-    set( CEGUI_LIB_INSTALL_DIR lib )
+    set( CEGUI_INSTALL_LIB_DIR lib )
   endif()
 endif()
 
 set( CEGUI_VER_INSTALL_SUBDIR "/${CMAKE_PROJECT_NAME}-${CEGUI_VERSION_MAJOR}" )
 
-if (NOT CEGUI_DATA_INSTALL_DIR)
-  set( CEGUI_DATA_INSTALL_DIR "share${CEGUI_VER_INSTALL_SUBDIR}" )
+if (NOT CEGUI_INSTALL_DATA_DIR)
+  set( CEGUI_INSTALL_DATA_DIR "share${CEGUI_VER_INSTALL_SUBDIR}" )
 endif()
 
-if (NOT CEGUI_DOC_INSTALL_DIR)
-  set( CEGUI_DOC_INSTALL_DIR "share/doc${CEGUI_VER_INSTALL_SUBDIR}" )
+if (NOT CEGUI_INSTALL_DOC_DIR)
+  set( CEGUI_INSTALL_DOC_DIR "share/doc${CEGUI_VER_INSTALL_SUBDIR}" )
 endif()
 
-if (NOT CEGUI_PKGCONFIG_INSTALL_DIR)
-  set( CEGUI_PKGCONFIG_INSTALL_DIR "${CEGUI_LIB_INSTALL_DIR}/pkgconfig" )
+if (NOT CEGUI_INSTALL_PKGCONFIG_DIR)
+  set( CEGUI_INSTALL_PKGCONFIG_DIR "${CEGUI_INSTALL_LIB_DIR}/pkgconfig" )
 endif()
 
-if (NOT CEGUI_MODULE_INSTALL_DIR)
-  set( CEGUI_MODULE_INSTALL_DIR "${CEGUI_LIB_INSTALL_DIR}/${CMAKE_PROJECT_NAME}-${CEGUI_VERSION_MAJOR}.${CEGUI_VERSION_MINOR}" )
+if (NOT CEGUI_INSTALL_MODULE_DIR)
+  set( CEGUI_INSTALL_MODULE_DIR "${CEGUI_INSTALL_LIB_DIR}/${CMAKE_PROJECT_NAME}-${CEGUI_VERSION_MAJOR}.${CEGUI_VERSION_MINOR}" )
 endif()
 
-if (NOT CEGUI_SAMPLE_INSTALL_DIR)
-  set( CEGUI_SAMPLE_INSTALL_DIR "${CEGUI_MODULE_INSTALL_DIR}" ) # TODO: put into /samples subdir!
+if (NOT CEGUI_INSTALL_SAMPLE_DIR)
+  set( CEGUI_INSTALL_SAMPLE_DIR "${CEGUI_INSTALL_MODULE_DIR}" ) # TODO: put into /samples subdir!
 endif()
 
-if (NOT CEGUI_INCLUDE_INSTALL_DIR)
-  set( CEGUI_INCLUDE_INSTALL_DIR "include${CEGUI_VER_INSTALL_SUBDIR}" )
+if (NOT CEGUI_INSTALL_INCLUDE_DIR)
+  set( CEGUI_INSTALL_INCLUDE_DIR "include${CEGUI_VER_INSTALL_SUBDIR}" )
 endif()
 
 ################################################################################
@@ -783,8 +782,8 @@ endif()
 ################################################################################
 # Copy dependency binaries to the target bin folder
 ################################################################################
-if (CEGUI_SAMPLES_ENABLED)
-    set(DEPS_BIN_PATH "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/bin/${CEGUI_ARCH_SUFFIX}")
+if ((WIN32 OR APPLE) AND (CEGUI_BUILD_SAMPLES OR CEGUI_BUILD_APPLICATION_TEMPLATES))
+    set(DEPS_BIN_PATH "${CEGUI_DEPENDENCIES_DIR}/bin/${CEGUI_ARCH_SUFFIX}")
     file(GLOB DEPS_BIN_FILES LIST_DIRECTORIES false RELATIVE "${DEPS_BIN_PATH}" "${DEPS_BIN_PATH}/*")
     foreach(_FILE_NAME ${DEPS_BIN_FILES})
         configure_file("${DEPS_BIN_PATH}/${_FILE_NAME}" "${CMAKE_BINARY_DIR}/bin/${_FILE_NAME}" COPYONLY)
@@ -798,31 +797,31 @@ cegui_dependent_option( CEGUI_INSTALL_PKGCONFIG "Whether to install pkg-config (
 mark_as_advanced( CEGUI_INSTALL_PKGCONFIG )
 if( CEGUI_INSTALL_PKGCONFIG )
     configure_file( cegui/CEGUI.pc.in cegui/CEGUI-${CEGUI_VERSION_MAJOR}.pc @ONLY )
-    install(FILES ${PROJECT_BINARY_DIR}/cegui/CEGUI-${CEGUI_VERSION_MAJOR}.pc DESTINATION ${CEGUI_PKGCONFIG_INSTALL_DIR} COMPONENT cegui_pkgconfig)
+    install(FILES ${PROJECT_BINARY_DIR}/cegui/CEGUI-${CEGUI_VERSION_MAJOR}.pc DESTINATION ${CEGUI_INSTALL_PKGCONFIG_DIR} COMPONENT cegui_pkgconfig)
 
     if (CEGUI_BUILD_RENDERER_NULL)
         configure_file( cegui/CEGUI-NULL.pc.in cegui/CEGUI-${CEGUI_VERSION_MAJOR}-NULL.pc @ONLY )
-        install(FILES ${PROJECT_BINARY_DIR}/cegui/CEGUI-${CEGUI_VERSION_MAJOR}-NULL.pc DESTINATION ${CEGUI_PKGCONFIG_INSTALL_DIR} COMPONENT cegui_pkgconfig)
+        install(FILES ${PROJECT_BINARY_DIR}/cegui/CEGUI-${CEGUI_VERSION_MAJOR}-NULL.pc DESTINATION ${CEGUI_INSTALL_PKGCONFIG_DIR} COMPONENT cegui_pkgconfig)
     endif()
     if (CEGUI_BUILD_RENDERER_IRRLICHT)
         configure_file( cegui/CEGUI-IRRLICHT.pc.in cegui/CEGUI-${CEGUI_VERSION_MAJOR}-IRRLICHT.pc @ONLY )
-        install(FILES ${PROJECT_BINARY_DIR}/cegui/CEGUI-${CEGUI_VERSION_MAJOR}-IRRLICHT.pc DESTINATION ${CEGUI_PKGCONFIG_INSTALL_DIR} COMPONENT cegui_pkgconfig)
+        install(FILES ${PROJECT_BINARY_DIR}/cegui/CEGUI-${CEGUI_VERSION_MAJOR}-IRRLICHT.pc DESTINATION ${CEGUI_INSTALL_PKGCONFIG_DIR} COMPONENT cegui_pkgconfig)
     endif()
     if (CEGUI_BUILD_RENDERER_OGRE)
         configure_file( cegui/CEGUI-OGRE.pc.in cegui/CEGUI-${CEGUI_VERSION_MAJOR}-OGRE.pc @ONLY )
-        install(FILES ${PROJECT_BINARY_DIR}/cegui/CEGUI-${CEGUI_VERSION_MAJOR}-OGRE.pc DESTINATION ${CEGUI_PKGCONFIG_INSTALL_DIR} COMPONENT cegui_pkgconfig)
+        install(FILES ${PROJECT_BINARY_DIR}/cegui/CEGUI-${CEGUI_VERSION_MAJOR}-OGRE.pc DESTINATION ${CEGUI_INSTALL_PKGCONFIG_DIR} COMPONENT cegui_pkgconfig)
     endif()
     if (CEGUI_BUILD_RENDERER_OPENGL)
         configure_file( cegui/CEGUI-OPENGL.pc.in cegui/CEGUI-${CEGUI_VERSION_MAJOR}-OPENGL.pc @ONLY )
-        install(FILES ${PROJECT_BINARY_DIR}/cegui/CEGUI-${CEGUI_VERSION_MAJOR}-OPENGL.pc DESTINATION ${CEGUI_PKGCONFIG_INSTALL_DIR} COMPONENT cegui_pkgconfig)
+        install(FILES ${PROJECT_BINARY_DIR}/cegui/CEGUI-${CEGUI_VERSION_MAJOR}-OPENGL.pc DESTINATION ${CEGUI_INSTALL_PKGCONFIG_DIR} COMPONENT cegui_pkgconfig)
     endif()
     if (CEGUI_BUILD_RENDERER_OPENGL3)
         configure_file( cegui/CEGUI-OPENGL3.pc.in cegui/CEGUI-${CEGUI_VERSION_MAJOR}-OPENGL3.pc @ONLY )
-        install(FILES ${PROJECT_BINARY_DIR}/cegui/CEGUI-${CEGUI_VERSION_MAJOR}-OPENGL3.pc DESTINATION ${CEGUI_PKGCONFIG_INSTALL_DIR} COMPONENT cegui_pkgconfig)
+        install(FILES ${PROJECT_BINARY_DIR}/cegui/CEGUI-${CEGUI_VERSION_MAJOR}-OPENGL3.pc DESTINATION ${CEGUI_INSTALL_PKGCONFIG_DIR} COMPONENT cegui_pkgconfig)
     endif()
     if (CEGUI_BUILD_LUA_MODULE)
         configure_file( cegui/CEGUI-LUA.pc.in cegui/CEGUI-${CEGUI_VERSION_MAJOR}-LUA.pc @ONLY )
-        install(FILES ${PROJECT_BINARY_DIR}/cegui/CEGUI-${CEGUI_VERSION_MAJOR}-LUA.pc DESTINATION ${CEGUI_PKGCONFIG_INSTALL_DIR} COMPONENT cegui_pkgconfig)
+        install(FILES ${PROJECT_BINARY_DIR}/cegui/CEGUI-${CEGUI_VERSION_MAJOR}-LUA.pc DESTINATION ${CEGUI_INSTALL_PKGCONFIG_DIR} COMPONENT cegui_pkgconfig)
     endif()
 endif()
 
@@ -845,7 +844,7 @@ if(CEGUI_BUILD_COMMON_DIALOGS)
     add_subdirectory(cegui/src/CommonDialogs)
 endif()
 
-if (CEGUI_SAMPLES_ENABLED)
+if (CEGUI_BUILD_SAMPLES)
     add_subdirectory(samples)
 endif()
 
