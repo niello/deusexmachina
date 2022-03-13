@@ -3,14 +3,13 @@
 #define __DEM_L1_XML_DOCUMENT_H__
 
 #include <Data/RefCounted.h>
-#include <tinyxml2/tinyxml2.h>
 
 // TinyXML-2 document wrapper with refcounting
 
 namespace Data
 {
 
-class CXMLDocument: public tinyxml2::XMLDocument, public Data::CRefCounted
+class CXMLDocument: /*public tinyxml2::XMLDocument,*/ public Data::CRefCounted
 {
 public:
 };

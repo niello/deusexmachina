@@ -10,7 +10,7 @@ import zipfile
 
 
 PROJECT_FOLDER = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-EXPECTED_SHA256 = "2b47286035ea96706288a79b842e4c03125e07905ec81858c658d5d090a4e549"
+EXPECTED_SHA256 = "e32272b47008410e5aa6713dda0c6372d005c946fc81f62f0ba12e99d28d8a9f"
 HAS_ROOT_DIR = True
 DEPS_URL = 'https://github.com/niello/cegui-dependencies/archive/dem_minimal.zip'
 #DEPS_URL = 'https://codeload.github.com/niello/cegui-dependencies/zip/dem_minimal'

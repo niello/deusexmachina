@@ -12,7 +12,7 @@ namespace CEGUI
 	class CDEMLogger;
 	class CDEMRenderer;
 	class CDEMResourceProvider;
-	class TinyXML2Parser;
+	class XMLParser;
 	class System;
 }
 
@@ -44,7 +44,7 @@ private:
 	CEGUI::System*						CEGUISystem;
 	CEGUI::CDEMLogger*					Logger;
 	CEGUI::CDEMResourceProvider*		ResourceProvider;
-	CEGUI::TinyXML2Parser*				XMLParser;
+	CEGUI::XMLParser*				    XMLParser;
 
 	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
 	DECLARE_EVENT_HANDLER(OnRenderDeviceReset, OnDeviceReset);

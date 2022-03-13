@@ -19,7 +19,7 @@
 #include <CEGUI/WindowManager.h>
 #include <CEGUI/FontManager.h>
 #include <CEGUI/ImageManager.h>
-#include <CEGUI/XMLParserModules/TinyXML2/XMLParser.h>
+#include <CEGUI/XMLParserModules/PugiXML/XMLParser.h>
 
 namespace UI
 {
@@ -44,7 +44,7 @@ CUIServer::CUIServer(Render::CGPUDriver& GPU, const Data::CParams* pSettings)
 	Renderer->setDisplaySize(CEGUI::Sizef(1024.f, 768.f));
 
 	ResourceProvider = n_new(CEGUI::CDEMResourceProvider);
-	XMLParser = n_new(CEGUI::TinyXML2Parser);
+	XMLParser = n_new(CEGUI::PugiXMLParser);
 
 	CEGUI::System::create(*Renderer, ResourceProvider, XMLParser);
 	CEGUISystem = CEGUI::System::getSingletonPtr();
@@ -69,12 +69,6 @@ CUIServer::CUIServer(Render::CGPUDriver& GPU, const Data::CParams* pSettings)
 	if (pSettings && pSettings->TryGet<Data::PParams>(LoadOnStartup, CStrID("LoadOnStartup")))
 	{
 		Data::PDataArray ResourcesToLoad;
-
-		// TODO: move to CEGUI scheme, it already has capability of font autoloading
-		if (LoadOnStartup->TryGet<Data::PDataArray>(ResourcesToLoad, CStrID("Fonts")))
-			for (UPTR i = 0; i < ResourcesToLoad->GetCount(); ++i)
-				LoadFont(ResourcesToLoad->Get<CString>(i).CStr());
-
 		if (LoadOnStartup->TryGet<Data::PDataArray>(ResourcesToLoad, CStrID("Schemes")))
 			for (UPTR i = 0; i < ResourcesToLoad->GetCount(); ++i)
 				LoadScheme(ResourcesToLoad->Get<CString>(i).CStr());
@@ -87,6 +81,10 @@ CUIServer::CUIServer(Render::CGPUDriver& GPU, const Data::CParams* pSettings)
 	const CString& DefaultTooltip = pSettings ? pSettings->Get<CString>(CStrID("DefaultTooltip"), CString::Empty) : CString::Empty;
 	if (DefaultTooltip.IsValid())
 		CEGUISystem->setDefaultTooltipType(DefaultTooltip.CStr());
+
+	const CString& DefaultFont = pSettings ? pSettings->Get<CString>(CStrID("DefaultFont"), CString::Empty) : CString::Empty;
+	if (DefaultFont.IsValid())
+		CEGUISystem->setDefaultFontName(DefaultFont.CStr());
 
 	SUBSCRIBE_PEVENT(OnRenderDeviceLost, CUIServer, OnDeviceLost);
 	SUBSCRIBE_PEVENT(OnRenderDeviceReset, CUIServer, OnDeviceReset);
