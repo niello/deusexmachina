@@ -1,25 +1,17 @@
-#include <StdCfg.h>
 #include "DEMGeometryBuffer.h"
-
-#include <Data/Regions.h>
 #include <Render/GPUDriver.h>
 #include <Render/VertexBuffer.h>
-#include <Render/Texture.h>
 #include <UI/CEGUI/DEMRenderer.h>
-#include <UI/CEGUI/DEMTexture.h>
 #include <UI/CEGUI/DEMShaderWrapper.h>
 #include <UI/UIFwd.h>
-
 #include <CEGUI/RenderMaterial.h>
 #include <CEGUI/RenderEffect.h>
-#include <CEGUI/Vertex.h>
-#include "CEGUI/ShaderParameterBindings.h"
 
 namespace CEGUI
 {
 
 CDEMGeometryBuffer::CDEMGeometryBuffer(CDEMRenderer& owner, RefCounted<RenderMaterial> renderMaterial)
-	: GeometryBuffer(renderMaterial)
+	: GeometryBuffer(std::move(renderMaterial))
 	, d_owner(owner)
 {
 }
@@ -39,17 +31,22 @@ void CDEMGeometryBuffer::setVertexLayout(Render::PVertexLayout newLayout)
 
 void CDEMGeometryBuffer::draw(std::uint32_t drawModeMask) const
 {
-	if (d_vertexData.empty()) return;
+	if (d_vertexData.empty() || !d_vertexLayout || !d_owner.getGPUDriver()) return;
+
+	auto pShaderWrapper = static_cast<const CDEMShaderWrapper*>(d_renderMaterial->getShaderWrapper());
+	if (!pShaderWrapper)
+	{
+		::Sys::Error("CDEMGeometryBuffer::draw() > there is no shader in the material");
+		return;
+	}
 
 	Render::CGPUDriver* pGPU = d_owner.getGPUDriver();
-	n_assert_dbg(pGPU);
-	if (!pGPU) return;
 
 	if (d_clippingActive)
 	{
 		// Skip completely clipped geometry
-		const UPTR W = static_cast<UPTR>(d_preparedClippingRegion.getWidth());
-		const UPTR H = static_cast<UPTR>(d_preparedClippingRegion.getHeight());
+		const auto W = static_cast<UPTR>(d_preparedClippingRegion.getWidth());
+		const auto H = static_cast<UPTR>(d_preparedClippingRegion.getHeight());
 		if (!W || !H) return;
 
 		Data::CRect SR
@@ -66,22 +63,13 @@ void CDEMGeometryBuffer::draw(std::uint32_t drawModeMask) const
 	{
 		d_bufferIsSync = true;
 
-		const UPTR DataSize = d_vertexData.size() * sizeof(float);
-		if (!DataSize || !d_vertexLayout)
-		{
-			d_vertexBuffer = nullptr;
-			d_bufferSize = 0;
-			return; // Nothing to draw
-		}
-
-		const float* pVertexData = d_vertexData.empty() ? nullptr : &d_vertexData[0];
-
+		const auto DataSize = d_vertexData.size() * sizeof(float);
 		if (d_bufferSize < DataSize)
 		{
-			d_vertexBuffer = pGPU->CreateVertexBuffer(*d_vertexLayout, d_vertexCount, Render::Access_GPU_Read | Render::Access_CPU_Write, pVertexData);
+			d_vertexBuffer = pGPU->CreateVertexBuffer(*d_vertexLayout, d_vertexCount, Render::Access_GPU_Read | Render::Access_CPU_Write, d_vertexData.data());
 			d_bufferSize = DataSize;
 		}
-		else pGPU->WriteToResource(*d_vertexBuffer, pVertexData, DataSize);
+		else pGPU->WriteToResource(*d_vertexBuffer, d_vertexData.data(), DataSize);
 	}
 
 	pGPU->SetVertexBuffer(0, d_vertexBuffer.Get());
@@ -89,27 +77,16 @@ void CDEMGeometryBuffer::draw(std::uint32_t drawModeMask) const
 
 	if (!d_matrixValid || !isRenderTargetDataValid(d_owner.getActiveRenderTarget()))
 	{
-		// Apply the view projection matrix to the model matrix and save the result as cached matrix
 		d_matrix = d_owner.getViewProjectionMatrix() * getModelMatrix();
 		d_matrixValid = true;
 	}
 
-	CEGUI::ShaderParameterBindings* shaderParameterBindings = (*d_renderMaterial).getShaderParamBindings();
-
 	// Set the uniform variables for this GeometryBuffer in the Shader
-	shaderParameterBindings->setParameter("WVP", d_matrix);
-
-	// Prepare for the rendering process according to the used render material
-	auto pShaderWrapper = static_cast<const CDEMShaderWrapper*>(d_renderMaterial->getShaderWrapper());
-	if (!pShaderWrapper)
-	{
-		::Sys::Error("CDEMGeometryBuffer::draw() > there is no shader in the material");
-		return;
-	}
+	d_renderMaterial->getShaderParamBindings()->setParameter("WVP", d_matrix);
 
 	if (drawModeMask & (DrawModeFlagWindowRegular | DrawModeFlagMouseCursor))
 	{
-		shaderParameterBindings->setParameter("AlphaPercentage", d_alpha);
+		d_renderMaterial->getShaderParamBindings()->setParameter("AlphaPercentage", d_alpha);
 		const_cast<CDEMShaderWrapper*>(pShaderWrapper)->setInputSet(d_blendMode, d_clippingActive, false);
 	}
 	else if (drawModeMask & UI::DrawModeFlagWindowOpaque)
@@ -134,15 +111,17 @@ void CDEMGeometryBuffer::draw(std::uint32_t drawModeMask) const
 	primGroup.Topology = Render::Prim_TriList;
 	// We don't use AABB
 
-	const int pass_count = d_effect ? d_effect->getPassCount() : 1;
-	for (int pass = 0; pass < pass_count; ++pass)
+	const int passCount = d_effect ? d_effect->getPassCount() : 1;
+	for (int pass = 0; pass < passCount; ++pass)
 	{
-		if (d_effect) d_effect->performPreRenderFunctions(pass);
+		if (d_effect)
+			d_effect->performPreRenderFunctions(pass);
 
 		pGPU->Draw(primGroup);
 	}
 
-	if (d_effect) d_effect->performPostRenderFunctions();
+	if (d_effect)
+		d_effect->performPostRenderFunctions();
 
 	updateRenderTargetData(d_owner.getActiveRenderTarget());
 }

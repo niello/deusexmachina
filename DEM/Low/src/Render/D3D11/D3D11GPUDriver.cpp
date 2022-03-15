@@ -3267,15 +3267,18 @@ bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, UP
 {
 	if (!pBuf || Usage == D3D11_USAGE_IMMUTABLE || !pData || !BufferSize) FAIL;
 
-	UPTR RequestedSize = Size ? Size : BufferSize;
-	UPTR SizeToCopy = std::min(RequestedSize, BufferSize - Offset);
+	const UPTR RequestedSize = Size ? Size : BufferSize;
+	const UPTR SizeToCopy = std::min(RequestedSize, BufferSize - Offset);
 	if (!SizeToCopy) OK;
 
-	const int UpdateWhole = (!Offset && SizeToCopy == BufferSize);
+	const bool UpdateWhole = (!Offset && SizeToCopy == BufferSize);
 
 	if (Usage == D3D11_USAGE_DEFAULT) //???update staging here too? need perf test!
 	{
-		if (UpdateWhole) pD3DImmContext->UpdateSubresource(pBuf, 0, nullptr, pData, 0, 0);
+		if (UpdateWhole)
+		{
+			pD3DImmContext->UpdateSubresource(pBuf, 0, nullptr, pData, 0, 0);
+		}
 		else
 		{
 			D3D11_BOX D3DBox;
@@ -3290,12 +3293,8 @@ bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, UP
 	}
 	else
 	{
-		const int IsDynamic = (Usage == D3D11_USAGE_DYNAMIC);
-#if defined(_DEBUG) && DEM_RENDER_DEBUG
-		if (IsDynamic && !UpdateWhole)
-			Sys::Log("Render, Warning: partial write-discard to D3D11 dynamic buffer\n");
-#endif
-		D3D11_MAP MapType = IsDynamic ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE;
+		// NB: when writing with discard, make sure you access only data you wrote!
+		const D3D11_MAP MapType = (Usage == D3D11_USAGE_DYNAMIC) ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE;
 		D3D11_MAPPED_SUBRESOURCE D3DData;
 		if (FAILED(pD3DImmContext->Map(pBuf, 0, MapType, 0, &D3DData))) FAIL;
 		memcpy(((char*)D3DData.pData) + Offset, pData, SizeToCopy);
