@@ -21,6 +21,12 @@ bool CKeyboardWin32::Init(HANDLE hDevice, const CString& DeviceName, const RID_D
 }
 //---------------------------------------------------------------------
 
+bool CKeyboardWin32::CanHandleRawInput(const RAWINPUT& Data) const
+{
+	return Data.header.dwType == RIM_TYPEKEYBOARD;
+}
+//---------------------------------------------------------------------
+
 // Logic is taken almost as is from: https://blog.molecular-matters.com/2011/09/05/properly-handling-keyboard-input/
 // Thanks a lot! Comments are preserved for clarity.
 bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)

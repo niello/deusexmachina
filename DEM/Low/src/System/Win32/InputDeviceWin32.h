@@ -23,6 +23,7 @@ public:
 	virtual const char*	GetName() const override { return Name.CStr(); }
 	virtual bool		IsOperational() const override { return Operational; }
 
+	virtual bool		CanHandleRawInput(const RAWINPUT& Data) const = 0;
 	virtual bool		HandleRawInput(const RAWINPUT& Data) = 0;
 	virtual bool		HandleCharMessage(WPARAM Char) { FAIL; }
 

@@ -22,6 +22,7 @@ public:
 
 	bool				Init(HANDLE hDevice, const CString& DeviceName, const RID_DEVICE_INFO_KEYBOARD& DeviceInfo);
 
+	virtual bool		CanHandleRawInput(const RAWINPUT& Data) const override;
 	virtual bool		HandleRawInput(const RAWINPUT& Data) override;
 	virtual bool		HandleCharMessage(WPARAM Char) override;
 

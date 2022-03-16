@@ -124,14 +124,36 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		const bool IsForeground = (GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT); // Can enable background input for some cases
 		if (IsForeground)
 		{
-			for (auto& Device : pSelf->InputDevices)
+			Input::CInputDeviceWin32* pDevice = nullptr;
+			if (hDevice)
 			{
-				if (Device->GetWin32Handle() == hDevice)
+				for (auto& Device : pSelf->InputDevices)
 				{
-					n_assert_dbg(Device->IsOperational());
-					Handled = Device->HandleRawInput(*pData);
-					break;
+					if (Device->GetWin32Handle() == hDevice)
+					{
+						pDevice = Device.Get();
+						break;
+					}
 				}
+			}
+			else
+			{
+				// Some drivers, like a precision touchpad, may return empty hDevice. Find the first device capable to
+				// send similar input, and send this input like it came from it. I couldn't find better solution yet.
+				for (auto& Device : pSelf->InputDevices)
+				{
+					if (Device->CanHandleRawInput(*pData))
+					{
+						pDevice = Device.Get();
+						break;
+					}
+				}
+			}
+
+			if (pDevice)
+			{
+				n_assert_dbg(pDevice->IsOperational());
+				Handled = pDevice->HandleRawInput(*pData);
 			}
 		}
 

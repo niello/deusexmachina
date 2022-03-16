@@ -24,6 +24,7 @@ public:
 
 	bool				Init(HANDLE hDevice, const CString& DeviceName, const RID_DEVICE_INFO_MOUSE& DeviceInfo);
 
+	virtual bool		CanHandleRawInput(const RAWINPUT& Data) const override;
 	virtual bool		HandleRawInput(const RAWINPUT& Data) override;
 
 	virtual EDeviceType	GetType() const override { return Device_Mouse; }

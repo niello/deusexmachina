@@ -30,6 +30,27 @@ bool CMouseWin32::Init(HANDLE hDevice, const CString& DeviceName, const RID_DEVI
 }
 //---------------------------------------------------------------------
 
+bool CMouseWin32::CanHandleRawInput(const RAWINPUT& Data) const
+{
+	if (Data.header.dwType != RIM_TYPEMOUSE) return false;
+
+	const RAWMOUSE& MouseData = Data.data.mouse;
+	const U32 RequiredButtonCount =
+		(MouseData.usButtonFlags & (RI_MOUSE_BUTTON_5_DOWN | RI_MOUSE_BUTTON_5_UP)) ? 5 :
+		(MouseData.usButtonFlags & (RI_MOUSE_BUTTON_4_DOWN | RI_MOUSE_BUTTON_4_UP)) ? 4 :
+		(MouseData.usButtonFlags & (RI_MOUSE_MIDDLE_BUTTON_DOWN | RI_MOUSE_MIDDLE_BUTTON_UP)) ? 3 :
+		(MouseData.usButtonFlags & (RI_MOUSE_RIGHT_BUTTON_DOWN | RI_MOUSE_RIGHT_BUTTON_UP)) ? 2 :
+		(MouseData.usButtonFlags & (RI_MOUSE_LEFT_BUTTON_DOWN | RI_MOUSE_LEFT_BUTTON_UP)) ? 1 : 0;
+	if (ButtonCount < RequiredButtonCount) return false;
+
+	const U32 RequiredAxisCount =
+		(MouseData.usButtonFlags & (RI_MOUSE_HWHEEL | RI_MOUSE_WHEEL)) ? 3 :
+		MouseData.lLastY ? 2 :
+		MouseData.lLastX ? 1 : 0;
+	return AxisCount >= RequiredAxisCount;
+}
+//---------------------------------------------------------------------
+
 bool CMouseWin32::HandleRawInput(const RAWINPUT& Data)
 {
 	if (Data.header.dwType != RIM_TYPEMOUSE) FAIL;
