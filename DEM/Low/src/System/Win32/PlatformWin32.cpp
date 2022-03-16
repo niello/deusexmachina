@@ -118,7 +118,7 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		// to ::DefWindowProc to perform a cleanup (see WM_INPUT docs)
 
 		PRAWINPUT pData = (PRAWINPUT)pSelf->pRawInputBuffer;
-		HANDLE hDevice = pData->header.hDevice;
+		const HANDLE hDevice = pData->header.hDevice;
 
 		bool Handled = false;
 		const bool IsForeground = (GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT); // Can enable background input for some cases
@@ -287,7 +287,7 @@ CPlatformWin32::CPlatformWin32(HINSTANCE hInstance)
 	Acc[0].fVirt = FALT | FVIRTKEY;
 	Acc[0].key = VK_RETURN;
 	Acc[0].cmd = ACCEL_TOGGLEFULLSCREEN;
-	hAccel = CreateAcceleratorTable(Acc, 1);
+	hAccel = ::CreateAcceleratorTable(Acc, 1);
 }
 //---------------------------------------------------------------------
 
@@ -301,7 +301,7 @@ CPlatformWin32::~CPlatformWin32()
 
 	if (hAccel)
 	{
-		DestroyAcceleratorTable(hAccel);
+		::DestroyAcceleratorTable(hAccel);
 		hAccel = 0;
 	}
 
@@ -709,7 +709,9 @@ bool CPlatformWin32::Update()
 		}
 
 		// Process accelerators of our own windows (now GUI-only, may be extended)
-		if (hAccel && aGUIWndClass && Msg.hwnd && ::GetClassWord(Msg.hwnd, GCW_ATOM) == aGUIWndClass)
+		if (hAccel && aGUIWndClass && Msg.hwnd &&
+			(Msg.message == WM_KEYDOWN || Msg.message == WM_SYSKEYDOWN) &&
+			::GetClassWord(Msg.hwnd, GCW_ATOM) == aGUIWndClass)
 		{
 			if (::TranslateAccelerator(Msg.hwnd, hAccel, &Msg) != FALSE) continue;
 		}

@@ -24,19 +24,19 @@ COSWindowWin32::COSWindowWin32(HINSTANCE hInstance, ATOM aWndClass, COSWindowWin
 		n_assert(pParentWnd->GetHWND());
 		WndStyle = STYLE_CHILD;
 		::GetClientRect(pParentWnd->GetHWND(), &r);
-		Flags.Clear(Wnd_Fullscreen);
+		_Fullscreen = false;
 	}
 	else
 	{
-		WndStyle = Flags.Is(Wnd_Fullscreen) ? STYLE_FULLSCREEN : STYLE_WINDOWED;
-		r.left = Rect.Left();
-		r.top = Rect.Top();
-		r.right = Rect.Right();
-		r.bottom = Rect.Bottom();
+		WndStyle = _Fullscreen ? STYLE_FULLSCREEN : STYLE_WINDOWED;
+		r.left = _Rect.Left();
+		r.top = _Rect.Top();
+		r.right = _Rect.Right();
+		r.bottom = _Rect.Bottom();
 		::AdjustWindowRect(&r, WndStyle, FALSE);
 	}
 
-	hWnd = ::CreateWindowEx(Flags.Is(Wnd_Topmost) ? WS_EX_TOPMOST : 0,
+	hWnd = ::CreateWindowEx(_Topmost ? WS_EX_TOPMOST : 0,
 		(const char*)(DWORD_PTR)aWndClass, "", WndStyle,
 		r.left, r.top, r.right - r.left, r.bottom - r.top,
 		pParentWnd ? pParentWnd->GetHWND() : nullptr, nullptr, hInstance, nullptr);
@@ -48,19 +48,19 @@ COSWindowWin32::COSWindowWin32(HINSTANCE hInstance, ATOM aWndClass, COSWindowWin
 	::SetWindowLongPtr(hWnd, 0, (LONG_PTR)this);
 
 	::GetClientRect(hWnd, &r);
-	Rect.W = r.right - r.left;
-	Rect.H = r.bottom - r.top;
+	_Rect.W = r.right - r.left;
+	_Rect.H = r.bottom - r.top;
 
 	POINT p;
 	p.x = r.left;
 	p.y = r.top;
 	::ClientToScreen(hWnd, &p);
-	Rect.X = p.x;
-	Rect.Y = p.y;
+	_Rect.X = p.x;
+	_Rect.Y = p.y;
 
 	// Set to initial state
 	::ShowWindow(hWnd, SW_SHOWDEFAULT);
-	Flags.SetTo(Wnd_Minimized, ::IsIconic(hWnd) == TRUE);
+	_Minimized = (::IsIconic(hWnd) == TRUE);
 
 	FireEvent(CStrID("OnOpened"));
 }
@@ -110,7 +110,7 @@ void COSWindowWin32::Close()
 void COSWindowWin32::Minimize()
 {
 	n_assert_dbg(hWnd);
-	if (hWnd && !Flags.Is(Wnd_Minimized) && !pParent)
+	if (hWnd && !_Minimized && !pParent)
 		::ShowWindow(hWnd, SW_MINIMIZE);
 }
 //---------------------------------------------------------------------
@@ -137,7 +137,8 @@ bool COSWindowWin32::SetRect(const Data::CRect& NewRect, bool FullscreenMode)
 	if (NewWndStyle != PrevWndStyle)
 	{
 		if (::SetWindowLongPtr(hWnd, GWL_STYLE, NewWndStyle) == 0) FAIL;
-		Flags.SetTo(Wnd_Fullscreen, FullscreenMode && !pParent);
+
+		_Fullscreen = FullscreenMode && !pParent;
 
 		SWPFlags |= SWP_FRAMECHANGED;
 
@@ -145,8 +146,8 @@ bool COSWindowWin32::SetRect(const Data::CRect& NewRect, bool FullscreenMode)
 		if (PrevWndStyle == STYLE_FULLSCREEN) ::SetWindowTheme(hWnd, nullptr, nullptr);
 	}
 
-	if (Rect.X == NewRect.X && Rect.Y == NewRect.Y) SWPFlags |= SWP_NOMOVE;
-	if (Rect.W == NewRect.W && Rect.H == NewRect.H) SWPFlags |= SWP_NOSIZE;
+	if (_Rect.X == NewRect.X && _Rect.Y == NewRect.Y) SWPFlags |= SWP_NOMOVE;
+	if (_Rect.W == NewRect.W && _Rect.H == NewRect.H) SWPFlags |= SWP_NOSIZE;
 
 	RECT r = { NewRect.Left(), NewRect.Top(), NewRect.Right(), NewRect.Bottom() };
 	::AdjustWindowRect(&r, NewWndStyle, FALSE);
@@ -194,12 +195,12 @@ bool COSWindowWin32::GetCursorPosition(IPTR& OutX, IPTR& OutY) const
 
 void COSWindowWin32::SetIcon(const char* pIconName)
 {
-	IconName = pIconName;
-	if (hWnd && IconName.IsValid())
+	_IconName = pIconName;
+	if (hWnd && !_IconName.empty())
 	{
 		//???delete prev icon?
 		HINSTANCE hInst = (HINSTANCE)::GetWindowLongPtr(hWnd, GWL_HINSTANCE);
-		HICON hIcon = ::LoadIcon(hInst, IconName.CStr());
+		HICON hIcon = ::LoadIcon(hInst, _IconName.c_str());
 		if (hIcon) ::SendMessage(hWnd, WM_SETICON, ICON_BIG, (LONG_PTR)hIcon);
 	}
 }
@@ -216,7 +217,7 @@ bool COSWindowWin32::SetCursor(const char* pCursorName)
 bool COSWindowWin32::SetTopmost(bool Topmost)
 {
 	if (pParent && Topmost) FAIL; //???or allow?
-	if (Flags.Is(Wnd_Topmost) == Topmost) OK;
+	if (_Topmost == Topmost) OK;
 
 	if (hWnd)
 	{
@@ -228,14 +229,14 @@ bool COSWindowWin32::SetTopmost(bool Topmost)
 		if (::SetWindowPos(hWnd, hWndInsertAfter, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE) == FALSE) FAIL;
 	}
 
-	Flags.SetTo(Wnd_Topmost, Topmost);
+	_Topmost = Topmost;
 	OK;
 }
 //---------------------------------------------------------------------
 
 bool COSWindowWin32::SetInputFocus()
 {
-	return hWnd && (::SetFocus(hWnd) != nullptr);
+	return hWnd && (::SetFocus(hWnd) != 0);
 }
 //---------------------------------------------------------------------
 
@@ -266,7 +267,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 	{
 		case WM_SYSCOMMAND:
 			// Prevent moving/sizing and power loss in fullscreen mode
-			if (Flags.Is(Wnd_Fullscreen))
+			if (_Fullscreen)
 			{
 				switch (wParam)
 				{
@@ -304,10 +305,10 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			IPTR X = (IPTR)LOWORD(lParam);
 			IPTR Y = (IPTR)HIWORD(lParam);
 
-			if (Rect.X != X || Rect.Y != Y)
+			if (_Rect.X != X || _Rect.Y != Y)
 			{
-				Rect.X = X;
-				Rect.Y = Y;
+				_Rect.X = X;
+				_Rect.Y = Y;
 				FireEvent(CStrID("OnMoved"));
 			}
 
@@ -319,18 +320,18 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		{
 			if (wParam == SIZE_MAXHIDE || wParam == SIZE_MINIMIZED)
 			{
-				if (!Flags.Is(Wnd_Minimized))
+				if (!_Minimized)
 				{
-					Flags.Set(Wnd_Minimized);
+					_Minimized = true;
 					FireEvent(CStrID("OnMinimized"));
 					::ReleaseCapture();
 				}
 			}
 			else
 			{
-				if (Flags.Is(Wnd_Minimized))
+				if (_Minimized)
 				{
-					Flags.Clear(Wnd_Minimized);
+					_Minimized = false;
 					FireEvent(CStrID("OnRestored"));
 					::ReleaseCapture();
 				}
@@ -338,12 +339,12 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 				const UPTR W = static_cast<UPTR>(LOWORD(lParam));
 				const UPTR H = static_cast<UPTR>(HIWORD(lParam));
 
-				if (Rect.W != W || Rect.H != H)
+				if (_Rect.W != W || _Rect.H != H)
 				{
-					Event::OSWindowResized Ev(Rect.W, Rect.H, W, H, ManualResizingInProgress);
+					Event::OSWindowResized Ev(_Rect.W, _Rect.H, W, H, ManualResizingInProgress);
 					
-					Rect.W = W;
-					Rect.H = H;
+					_Rect.W = W;
+					_Rect.H = H;
 					
 					FireEvent(Ev);
 				}
@@ -354,8 +355,8 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 
 		case WM_ENTERSIZEMOVE:
 		{
-			PrevWidth = Rect.W;
-			PrevHeight = Rect.H;
+			PrevWidth = _Rect.W;
+			PrevHeight = _Rect.H;
 			ManualResizingInProgress = true;
 			break;
 		}
@@ -363,8 +364,8 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		case WM_EXITSIZEMOVE:
 		{
 			ManualResizingInProgress = false;
-			if (PrevWidth != Rect.W || PrevHeight != Rect.H)
-				FireEvent(Event::OSWindowResized(PrevWidth, PrevHeight, Rect.W, Rect.H, false));
+			if (PrevWidth != _Rect.W || PrevHeight != _Rect.H)
+				FireEvent(Event::OSWindowResized(PrevWidth, PrevHeight, _Rect.W, _Rect.H, false));
 			break;
 		}
 

@@ -21,10 +21,11 @@ protected:
 		Wnd_Fullscreen = 0x08
 	};
 
-	CString			IconName;
-
-	Data::CRect		Rect;   // Client rect
-	Data::CFlags	Flags;
+	std::string _IconName;
+	Data::CRect _Rect;   // Client rect
+	bool        _Minimized = false;
+	bool        _Topmost = false;
+	bool        _Fullscreen = false;
 
 public:
 
@@ -49,13 +50,13 @@ public:
 	bool					IsChild() const { return !!GetParent(); }
 
 	//???what is virtual, what is not? make it a pure interface?
-	const char*				GetIcon() const { return IconName; }
-	const Data::CRect&		GetRect() const { return Rect; }
-	unsigned int			GetWidth() const { return Rect.W; }
-	unsigned int			GetHeight() const { return Rect.H; }
-	bool					IsMinimized() const { return Flags.Is(Wnd_Minimized); }
-	bool					IsTopmost() const { return Flags.Is(Wnd_Topmost); }
-	bool					IsFullscreen() const { return Flags.Is(Wnd_Fullscreen); }
+	const char*				GetIcon() const { return _IconName.c_str(); }
+	const Data::CRect&		GetRect() const { return _Rect; }
+	unsigned int			GetWidth() const { return _Rect.W; }
+	unsigned int			GetHeight() const { return _Rect.H; }
+	bool					IsMinimized() const { return _Minimized; }
+	bool					IsTopmost() const { return _Topmost; }
+	bool					IsFullscreen() const { return _Fullscreen; }
 };
 
 }
