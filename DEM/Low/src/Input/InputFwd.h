@@ -126,7 +126,7 @@ enum EKey
 	NumpadMul       =0x37,    /* * on numeric keypad */
 	LeftAlt         =0x38,
 	Space           =0x39,
-	Capital         =0x3A,
+	CapsLock        =0x3A,
 	F1              =0x3B,
 	F2              =0x3C,
 	F3              =0x3D,

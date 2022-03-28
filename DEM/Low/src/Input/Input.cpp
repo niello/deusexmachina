@@ -255,7 +255,7 @@ static U8 pKeyCode[] =
 	NumpadMul,
 	LeftAlt,
 	Space,
-	Capital,
+	CapsLock,
 	F1,
 	F2,
 	F3,

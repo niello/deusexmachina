@@ -106,7 +106,8 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 		case VK_DOWN:		ResultCode = IsE0 ? EKey::ArrowDown : EKey::Numpad2; break;
 
 		// NUMPAD 5 doesn't have its e0 bit set
-		case VK_CLEAR:		if (!IsE0) ResultCode = EKey::Numpad5; break;
+		//case VK_CLEAR:		ResultCode = IsE0 ? EKey::Clear : EKey::Numpad5; break;
+		case VK_CLEAR:		ResultCode = EKey::Numpad5; break;
 
 		default:			ResultCode = ScanCode; break;
 	}
