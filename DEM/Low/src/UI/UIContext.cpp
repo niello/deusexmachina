@@ -98,18 +98,8 @@ void CUIContext::SetRootWindow(CUIWindow* pWindow)
 {
 	if (!pCtx) return;
 
-	//???configure in data and never touch in code?
-	//May need input-opaque screens, like modal windows
-	if (!WasPassThroughEnabledInRoot)
-	{
-		CEGUI::Window* pPrevRoot = pCtx->getRootWindow();
-		if (pPrevRoot) pPrevRoot->setCursorPassThroughEnabled(false);
-	}
-
 	if (pWindow && pWindow->GetWnd())
 	{
-		WasPassThroughEnabledInRoot = pWindow->GetWnd()->isCursorPassThroughEnabled();
-		pWindow->GetWnd()->setCursorPassThroughEnabled(true);
 		pCtx->setRootWindow(pWindow->GetWnd());
 
 		//!!!DBG TMP! FIXME: need better way to pass CEGUI input state to UI screens!
@@ -233,9 +223,15 @@ bool CUIContext::GetCursorPositionRel(float& X, float& Y) const
 
 bool CUIContext::IsMouseOverGUI() const
 {
-	if (!pCtx) FAIL;
+	if (!pCtx) return false;
+
 	CEGUI::Window* pMouseWnd = pCtx->getWindowContainingCursor();
-	return pMouseWnd && pMouseWnd != pCtx->getRootWindow();
+	if (!pMouseWnd) return false;
+
+	if (pMouseWnd != pCtx->getRootWindow()) return true;
+
+	// FIXME: root window is always considered containing cursor although it is incorrect!
+	return !pMouseWnd->isCursorPassThroughEnabled() && pMouseWnd->isHit(pCtx->getCursor().getPosition());
 }
 //---------------------------------------------------------------------
 

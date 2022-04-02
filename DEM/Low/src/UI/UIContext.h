@@ -26,7 +26,6 @@ private:
 	CEGUI::GUIContext*		pCtx = nullptr;
 	CEGUI::InputAggregator*	pInput = nullptr;
 	bool					InputEventsOnKeyUp = true;
-	bool					WasPassThroughEnabledInRoot = false;
 
 	void				SetRootWindow(CUIWindow* pWindow);
 
