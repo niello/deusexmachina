@@ -132,7 +132,7 @@ U32 AddItemsIntoQuickSlots(Game::CGameWorld& World, Game::HEntity Receiver, Game
 			auto pMergeTo = World.FindComponent<CItemStackComponent>(MergeAcceptorID);
 
 			// Skip immediately if count limit is reached, no matter what item is there
-			if (pMergeTo->Count >= ItemsPerSlot) continue;
+			if (!pMergeTo || pMergeTo->Count >= ItemsPerSlot) continue;
 
 			if (CanMergeStacks(*pStack, pMergeTo))
 			{
@@ -177,19 +177,18 @@ U32 AddItemsIntoQuickSlots(Game::CGameWorld& World, Game::HEntity Receiver, Game
 }
 //---------------------------------------------------------------------
 
-static bool StoreItemStack(Game::CGameWorld& World, Game::HEntity Receiver, EItemStorage Storage, Game::HEntity StackID, bool Merge, bool Split)
+// Returns not transferred count
+static U32 StoreItemStack(Game::CGameWorld& World, Game::HEntity Receiver, EItemStorage Storage, Game::HEntity StackID, bool Merge, bool Split)
 {
 	switch (Storage)
 	{
 		case EItemStorage::Inventory:
 		{
-			if (!AddItemsIntoContainer(World, Receiver, StackID, Merge, Split)) return true;
-			break;
+			return AddItemsIntoContainer(World, Receiver, StackID, Merge, Split);
 		}
 		case EItemStorage::QuickSlot:
 		{
-			if (!AddItemsIntoQuickSlots(World, Receiver, StackID, Merge, Split)) return true;
-			break;
+			return AddItemsIntoQuickSlots(World, Receiver, StackID, Merge, Split);
 		}
 		case EItemStorage::Equipment:
 		{
@@ -214,43 +213,52 @@ static bool StoreItemStack(Game::CGameWorld& World, Game::HEntity Receiver, EIte
 		}
 	}
 
-	return false;
+	auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
+	return pStack ? pStack->Count : 0;
 }
 //---------------------------------------------------------------------
 
 //!!!TODO: use std::span for the storage order!
-static bool StoreItemStack(Game::CGameWorld& World, Game::HEntity Receiver, const EItemStorage* pStorageOrder, UPTR StorageCount, Game::HEntity StackID, bool Merge, bool Split)
+// Returns not transferred count
+static U32 StoreItemStack(Game::CGameWorld& World, Game::HEntity Receiver, const EItemStorage* pStorageOrder, UPTR StorageCount, Game::HEntity StackID, bool Merge, bool Split)
 {
-	if (!pStorageOrder) return false;
+	auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
+	if (!pStack || !pStack->Count) return 0;
 
-	for (UPTR i = 0; i < StorageCount; ++i)
-		if (StoreItemStack(World, Receiver, pStorageOrder[i], StackID, Merge, Split))
-			return true;
+	if (pStorageOrder)
+		for (UPTR i = 0; i < StorageCount; ++i)
+			if (!StoreItemStack(World, Receiver, pStorageOrder[i], StackID, Merge, Split))
+				return 0;
 
-	return false;
+	return pStack->Count;
 }
 //---------------------------------------------------------------------
 
-bool AddItemsToCharacter(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EItemStorage PreferredStorage, bool AllowGround, bool Merge, bool Split)
+// Returns not transferred count
+U32 AddItemsToCharacter(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EItemStorage PreferredStorage, bool AllowGround, bool Merge, bool Split)
 {
 	const EItemStorage* pStorageOrder = nullptr;
-	UPTR Count = 0;
+	UPTR StorageCount = 0;
 
 	constexpr EItemStorage StorageOrderEquipment[] = { EItemStorage::Equipment, EItemStorage::Inventory, EItemStorage::QuickSlot };
 	constexpr EItemStorage StorageOrderInventory[] = { EItemStorage::Inventory, EItemStorage::QuickSlot };
 	constexpr EItemStorage StorageOrderQuickSlot[] = { EItemStorage::QuickSlot, EItemStorage::Inventory };
 	switch (PreferredStorage)
 	{
-		case EItemStorage::Equipment: pStorageOrder = StorageOrderEquipment; Count = sizeof_array(StorageOrderEquipment); break;
-		case EItemStorage::Inventory: pStorageOrder = StorageOrderInventory; Count = sizeof_array(StorageOrderInventory); break;
-		case EItemStorage::QuickSlot: pStorageOrder = StorageOrderQuickSlot; Count = sizeof_array(StorageOrderQuickSlot); break;
+		case EItemStorage::Equipment: pStorageOrder = StorageOrderEquipment; StorageCount = sizeof_array(StorageOrderEquipment); break;
+		case EItemStorage::Inventory: pStorageOrder = StorageOrderInventory; StorageCount = sizeof_array(StorageOrderInventory); break;
+		case EItemStorage::QuickSlot: pStorageOrder = StorageOrderQuickSlot; StorageCount = sizeof_array(StorageOrderQuickSlot); break;
 		case EItemStorage::Ground: break;
 		default: return false;
 	}
 
-	if (StoreItemStack(World, Receiver, pStorageOrder, Count, StackID, Merge, Split)) return true;
+	if (!StoreItemStack(World, Receiver, pStorageOrder, StorageCount, StackID, Merge, Split)) return 0;
 
-	return AllowGround && StoreItemStack(World, Receiver, EItemStorage::Ground, StackID, Merge, Split);
+	if (AllowGround)
+		return StoreItemStack(World, Receiver, EItemStorage::Ground, StackID, Merge, Split);
+
+	auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
+	return pStack ? pStack->Count : 0;
 }
 //---------------------------------------------------------------------
 
