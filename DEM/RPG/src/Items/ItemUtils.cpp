@@ -451,6 +451,7 @@ U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, Ga
 	switch (DestStorage)
 	{
 		case EItemStorage::Inventory:
+		case EItemStorage::Container:
 		{
 			auto pInventory = World.FindComponent<const CItemContainerComponent>(Receiver);
 			if (!pInventory) return 0;
