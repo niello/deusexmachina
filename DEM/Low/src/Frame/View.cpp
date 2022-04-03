@@ -437,9 +437,6 @@ bool CView::OnOSWindowResized(Events::CEventDispatcher* pDispatcher, const Event
 
 	if (!GPU || Ev.ManualResizingInProgress) FAIL;
 
-	// May not be fired in fullscreen mode by design. If happened, related code may need rewriting.
-	n_assert_dbg(!GPU->IsFullscreen(_SwapChainID));
-
 	GPU->SetDepthStencilBuffer(nullptr);
 
 	GPU->ResizeSwapChain(_SwapChainID, Ev.NewWidth, Ev.NewHeight);
