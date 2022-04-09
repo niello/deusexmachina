@@ -17,7 +17,7 @@ typedef Ptr<class CGameLevel> PGameLevel;
 
 struct CEntity final
 {
-	CStrID LevelID;         // Is never empty for a valid entity. Cached level ptr gives access to the world.
+	CStrID LevelID;         // FIXME: really need? Items in containers, entity templates etc don't use it.
 	CStrID TemplateID;      // Empty if this entity is not created from a template
 	CStrID Name;            // Useful for editors, debug and scripting. Can be used in serialization.
 	bool   IsActive = true;
@@ -31,8 +31,8 @@ using HEntity = CEntityStorage::CHandle;
 inline std::string EntityToString(HEntity EntityID)
 {
 	return EntityID ?
-		(std::to_string(EntityID.Raw & CEntityStorage::INDEX_BITS_MASK) + 'v' +
-		 std::to_string(EntityID.Raw >> CEntityStorage::INDEX_BITS)) :
+		('e' + std::to_string(EntityID.Raw & CEntityStorage::INDEX_BITS_MASK) +
+		 'v' + std::to_string(EntityID.Raw >> CEntityStorage::INDEX_BITS)) :
 		std::string("empty");
 }
 
