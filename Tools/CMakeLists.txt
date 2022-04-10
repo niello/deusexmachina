@@ -3,6 +3,12 @@ project(DEM-Tools)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+if (CMAKE_SIZEOF_VOID_P EQUAL 4)
+    set(DEM_TOOLS_ARCH_SUFFIX x86)
+else()
+    set(DEM_TOOLS_ARCH_SUFFIX x64)
+endif()
+
 # We don't disable exceptions & RTTI in tools, because they aren't runtime.
 # If required, sample setup can be found in engine dependencies CMakeLists.txt.
 

@@ -36,20 +36,19 @@ bool CRenderPhaseGUI::Init(const CRenderPath& Owner, CGraphicsResourceManager& G
 	else DrawMode = UI::DrawMode_All;
 
 	const auto EffectID = CStrID(Desc.Get<CString>(CStrID("Effect"), CString::Empty));
-	Render::PEffect Effect = GfxMgr.GetEffect(CStrID(EffectID));
+	if (Render::PEffect Effect = GfxMgr.GetEffect(CStrID(EffectID)))
+	{
+		// TODO: move to effect declaration as a default value
+		Render::CSamplerDesc SampDesc;
+		SampDesc.SetDefaults();
+		SampDesc.AddressU = Render::TexAddr_Clamp;
+		SampDesc.AddressV = Render::TexAddr_Clamp;
+		SampDesc.Filter = Render::TexFilter_MinMagMip_Linear;
+		Render::PSampler LinearSampler = GfxMgr.GetGPU()->CreateSampler(SampDesc);
 
-	// TODO: move to effect declaration as a default value
-	Render::CSamplerDesc SampDesc;
-	SampDesc.SetDefaults();
-	SampDesc.AddressU = Render::TexAddr_Clamp;
-	SampDesc.AddressV = Render::TexAddr_Clamp;
-	SampDesc.Filter = Render::TexFilter_MinMagMip_Linear;
-	Render::PSampler LinearSampler = GfxMgr.GetGPU()->CreateSampler(SampDesc);
-
-	ShaderWrapperTextured.reset(new CEGUI::CDEMShaderWrapper(GfxMgr.GetGPU(), *Effect, LinearSampler));
-
-	//!!!TODO: non-textured shaders!
-	//ShaderWrapperColoured = new CDEMShaderWrapper(*ShaderColoured, this);
+		ShaderWrapperTextured.reset(new CEGUI::CDEMShaderWrapper(GfxMgr.GetGPU(), *Effect, LinearSampler));
+		ShaderWrapperColored.reset(new CEGUI::CDEMShaderWrapper(GfxMgr.GetGPU(), *Effect, nullptr));
+	}
 
 	OK;
 }

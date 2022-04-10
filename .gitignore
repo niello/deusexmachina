@@ -25,3 +25,6 @@ Tools/Obj/
 *_d.dll
 *_d.exp
 *_d.lib
+
+# TODO: can forcefully disable it?
+/Tools/bin/pugixml-shared.dll

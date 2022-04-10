@@ -38,9 +38,9 @@ target_link_libraries(SceneCommon PUBLIC ToolsCommon)
 target_link_libraries(SceneCommon PRIVATE meshoptimizer IL LinearMath)
 # Instead of setting PNG_LIBRARIES for DevIL, link here to handle debug/release versions
 target_link_libraries(SceneCommon PRIVATE
-	debug "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/CEGUI/dependencies/lib/static/libpng_d.lib"
-	optimized "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/CEGUI/dependencies/lib/static/libpng.lib"
-	debug "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/CEGUI/dependencies/lib/static/zlib_d.lib"
-	optimized "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/CEGUI/dependencies/lib/static/zlib.lib"
+	debug "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/CEGUI/dependencies/lib/static/${DEM_TOOLS_ARCH_SUFFIX}/libpng_d.lib"
+	optimized "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/CEGUI/dependencies/lib/static/${DEM_TOOLS_ARCH_SUFFIX}/libpng.lib"
+	debug "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/CEGUI/dependencies/lib/static/${DEM_TOOLS_ARCH_SUFFIX}/zlib_d.lib"
+	optimized "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/CEGUI/dependencies/lib/static/${DEM_TOOLS_ARCH_SUFFIX}/zlib.lib"
 )
 set_target_properties(SceneCommon PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem

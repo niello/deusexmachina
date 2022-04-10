@@ -26,20 +26,41 @@ CDEMShaderWrapper::~CDEMShaderWrapper() = default;
 
 void CDEMShaderWrapper::setInputSet(BlendMode BlendMode, bool Clipped, bool Opaque)
 {
-	static const CStrID RegularUnclipped("RegularUnclippedUI");
-	static const CStrID PremultipliedUnclipped("PremultipliedUnclippedUI");
-	static const CStrID OpaqueUnclipped("OpaqueUnclippedUI");
-	static const CStrID RegularClipped("RegularClippedUI");
-	static const CStrID PremultipliedClipped("PremultipliedClippedUI");
-	static const CStrID OpaqueClipped("OpaqueClippedUI");
+	// TODO CEGUI: use small opaque white texture for not textured geometry for batching everything together?
+	static const CStrID TexturedRegularUnclipped("TexturedRegularUnclippedUI");
+	static const CStrID TexturedPremultipliedUnclipped("TexturedPremultipliedUnclippedUI");
+	static const CStrID TexturedOpaqueUnclipped("TexturedOpaqueUnclippedUI");
+	static const CStrID TexturedRegularClipped("TexturedRegularClippedUI");
+	static const CStrID TexturedPremultipliedClipped("TexturedPremultipliedClippedUI");
+	static const CStrID TexturedOpaqueClipped("TexturedOpaqueClippedUI");
+	static const CStrID ColoredRegularUnclipped("ColoredRegularUnclippedUI");
+	static const CStrID ColoredPremultipliedUnclipped("ColoredPremultipliedUnclippedUI");
+	static const CStrID ColoredOpaqueUnclipped("ColoredOpaqueUnclippedUI");
+	static const CStrID ColoredRegularClipped("ColoredRegularClippedUI");
+	static const CStrID ColoredPremultipliedClipped("ColoredPremultipliedClippedUI");
+	static const CStrID ColoredOpaqueClipped("ColoredOpaqueClippedUI");
 
 	CStrID NewInputSet;
-	if (Opaque)
-		NewInputSet = Clipped ? OpaqueClipped : OpaqueUnclipped;
-	else if (BlendMode == BlendMode::RttPremultiplied)
-		NewInputSet = Clipped ? PremultipliedClipped : PremultipliedUnclipped;
+	if (_LinearSampler)
+	{
+		// Textured materials
+		if (Opaque)
+			NewInputSet = Clipped ? TexturedOpaqueClipped : TexturedOpaqueUnclipped;
+		else if (BlendMode == BlendMode::RttPremultiplied)
+			NewInputSet = Clipped ? TexturedPremultipliedClipped : TexturedPremultipliedUnclipped;
+		else
+			NewInputSet = Clipped ? TexturedRegularClipped : TexturedRegularUnclipped;
+	}
 	else
-		NewInputSet = Clipped ? RegularClipped : RegularUnclipped;
+	{
+		// Colored materials
+		if (Opaque)
+			NewInputSet = Clipped ? ColoredOpaqueClipped : ColoredOpaqueUnclipped;
+		else if (BlendMode == BlendMode::RttPremultiplied)
+			NewInputSet = Clipped ? ColoredPremultipliedClipped : ColoredPremultipliedUnclipped;
+		else
+			NewInputSet = Clipped ? ColoredRegularClipped : ColoredRegularUnclipped;
+	}
 
 	if (_CurrInputSet == NewInputSet) return;
 
@@ -54,10 +75,13 @@ void CDEMShaderWrapper::setInputSet(BlendMode BlendMode, bool Clipped, bool Opaq
 		static const CStrID sidAlphaPercentage("AlphaPercentage");
 
 		const auto* pTech = _Effect->GetTechByInputSet(_CurrInputSet);
-		Render::IResourceParam* pMainTextureParam = pTech ? pTech->GetParamTable().GetResource(sidTextureID) : nullptr;
-		Render::ISamplerParam* pLinearSamplerParam = pTech ? pTech->GetParamTable().GetSampler(sidSamplerID) : nullptr;
-		Render::CShaderConstantParam WVPParam = pTech ? pTech->GetParamTable().GetConstant(sidWVP) : Render::CShaderConstantParam();
-		Render::CShaderConstantParam AlphaPercentageParam = pTech ? pTech->GetParamTable().GetConstant(sidAlphaPercentage) : Render::CShaderConstantParam();
+		n_assert_dbg(pTech);
+		if (!pTech) return;
+
+		Render::IResourceParam* pMainTextureParam = pTech->GetParamTable().GetResource(sidTextureID);
+		Render::ISamplerParam* pLinearSamplerParam = pTech->GetParamTable().GetSampler(sidSamplerID);
+		Render::CShaderConstantParam WVPParam = pTech->GetParamTable().GetConstant(sidWVP);
+		Render::CShaderConstantParam AlphaPercentageParam = pTech->GetParamTable().GetConstant(sidAlphaPercentage);
 
 		CTechCache NewCache
 		{
@@ -73,8 +97,6 @@ void CDEMShaderWrapper::setInputSet(BlendMode BlendMode, bool Clipped, bool Opaq
 	}
 	
 	_pCurrCache = &It->second;
-
-	if (!_pCurrCache || !_pCurrCache->pTech) return;
 
 	// FIXME: no multipass support for now, CEGUI does multiple passes in its effects
 	UPTR LightCount = 0;

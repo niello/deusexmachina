@@ -4,7 +4,12 @@ project(cf-fbx)
 # Setup default path to make user's life easier. Another version of SDK can still be specified.
 set(FBX_SDK_PATH "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2020.0/" CACHE PATH "FBX SDK path")
 
-if(${MSVC_TOOLSET_VERSION} EQUAL 142)
+if(${MSVC_TOOLSET_VERSION} EQUAL 143)
+  # FBX SDK doesn't support VS2022 as of time, but VS2019 libraries are binary compatible
+  #set(FBX_SDK_COMPILER_SUBFOLDER vs2022)
+  set(FBX_SDK_COMPILER_SUBFOLDER vs2019)
+elseif(${MSVC_TOOLSET_VERSION} EQUAL 142)
+  # TODO: detect vs2019 support, FBX SDK 2020.3 has it!
   # FBX SDK doesn't support VS2019 as of time, but VS2017 libraries are binary compatible
   #set(FBX_SDK_COMPILER_SUBFOLDER vs2019)
   set(FBX_SDK_COMPILER_SUBFOLDER vs2017)
