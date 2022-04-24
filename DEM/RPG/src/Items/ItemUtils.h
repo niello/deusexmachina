@@ -25,13 +25,11 @@ constexpr float QUICK_SLOT_VOLUME = 1.f;
 
 enum class EItemStorage
 {
-	Inventory,
-	QuickSlot,
-	Equipment,
-	Ground,
-	Container,
-
-	None
+	None,      // A stack is registered as an entity but is not contained anywhere
+	World,     // A stack is located as a separate object in a game scene
+	Container, // A stack is stored in CItemContainerComponent
+	QuickSlot, // A stack is stored in one of quick slots inside CEquipmentComponent
+	Equipment  // A stack is equipped to one of equipment slots inside CEquipmentComponent
 };
 
 enum class EEquipmentSlotType
@@ -69,8 +67,12 @@ bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, const M
 void RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
 void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, Sh2::EEquipmentSlot Slot, bool ForceHide = false);
 void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& Container, CContainerStats& OutStats);
+const Game::HEntity* GetItemSlot(Game::CGameWorld& World, Game::HEntity ReceiverID, EItemStorage Storage, UPTR Index);
+Game::HEntity* GetItemSlotWritable(Game::CGameWorld& World, Game::HEntity ReceiverID, EItemStorage Storage, UPTR Index);
+bool CanMergeItems(Game::HEntity ProtoID, const CItemStackComponent* pDestStack);
 bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackComponent* pDestStack);
-U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EItemStorage DestStorage, UPTR DestIndex);
+U32 CalcCapacityForItemProto(Game::CGameWorld& World, Game::HEntity ProtoID, Game::HEntity ReceiverID, EItemStorage Storage, UPTR Index);
+U32 CalcCapacityForItemStack(Game::CGameWorld& World, Game::HEntity StackID, Game::HEntity ReceiverID, EItemStorage Storage, UPTR Index);
 Game::HEntity TransferItems(Game::CGameWorld& World, U32 Count, Game::HEntity& SrcSlot, Game::HEntity& DestSlot);
 bool CanEquipItem(const Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EEquipmentSlotType SlotType);
 

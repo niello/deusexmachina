@@ -9,6 +9,165 @@
 namespace DEM::RPG
 {
 
+//!!!FIXME: where to place?! Next to EEquipmentSlot enum?
+constexpr EEquipmentSlotType EEquipmentSlot_Type[] =
+{
+	EEquipmentSlotType::Torso,
+	EEquipmentSlotType::Shoulders,
+	EEquipmentSlotType::Head,
+	EEquipmentSlotType::Arms,
+	EEquipmentSlotType::Hands,
+	EEquipmentSlotType::Legs,
+	EEquipmentSlotType::Feet,
+	EEquipmentSlotType::Belt,
+	EEquipmentSlotType::Backpack,
+	EEquipmentSlotType::Neck,
+	EEquipmentSlotType::Bracelet,
+	EEquipmentSlotType::Bracelet,
+	EEquipmentSlotType::Ring,
+	EEquipmentSlotType::Ring,
+	EEquipmentSlotType::Ring,
+	EEquipmentSlotType::Ring,
+	EEquipmentSlotType::HandItem,
+	EEquipmentSlotType::HandItem,
+	EEquipmentSlotType::HandItem,
+	EEquipmentSlotType::HandItem
+};
+
+// Returns a number of items actually added
+U32 AddItemsToEntity(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, Game::HEntity ReceiverID, EItemStorage Storage, size_t Index, bool Merge)
+{
+	if (!ReceiverID || Storage == EItemStorage::None || Storage == EItemStorage::World) return;
+
+	const Game::HEntity* pSlot = GetItemSlot(World, ReceiverID, Storage, Index);
+	if (!pSlot) return 0;
+
+	const auto DestStackID = *pSlot;
+
+	// Can't add to slot occupied by an incompatible item stack
+	U32 CountInSlot = 0;
+	if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
+	{
+		if (!CanMergeItems(ProtoID, pDestStack)) return 0;
+		CountInSlot = pDestStack->Count;
+	}
+
+	//???TODO: make internal version where this is passed from outside? to optimize frequent access.
+	auto pItem = World.FindComponent<const CItemComponent>(ProtoID);
+	if (!pItem) return 0;
+
+	U32 MaxCountInSlot = 0;
+	if (pItem->Volume <= 0.f)
+	{
+		MaxCountInSlot = std::numeric_limits<U32>().max();
+	}
+	else
+	{
+		switch (Storage)
+		{
+			case EItemStorage::Container:
+			{
+				//???TODO: make internal version where this is passed from outside? to optimize frequent access.
+				auto pInventory = World.FindComponent<const CItemContainerComponent>(ReceiverID);
+				if (!pInventory) return 0;
+
+				CContainerStats Stats;
+				CalcContainerStats(World, *pInventory, Stats);
+				MaxCountInSlot = Stats.FreeVolume / pItem->Volume + CountInSlot;
+				break;
+			}
+			case EItemStorage::QuickSlot:
+			{
+				MaxCountInSlot = QUICK_SLOT_VOLUME / pItem->Volume;
+				break;
+			}
+			case EItemStorage::Equipment:
+			{
+				//!!!TODO: CEquippableComponent must contain stack size! if < 1, default to 1.
+				//!!!CanEquipItem requires no StackID, only proto ID? or equippable may be a stack attr? Pass CEquippableComponent to it instead?
+				MaxCountInSlot = CanEquipItem(World, ReceiverID, StackID, EEquipmentSlot_Type[Index]) ? 1 : 0;
+				break;
+			}
+			case EItemStorage::World:
+			{
+				MaxCountInSlot = std::numeric_limits<U32>().max();
+				break;
+			}
+		}
+	}
+
+	const U32 AddCount = std::min(Count, MaxCountInSlot - CountInSlot);
+
+	// Items are always new here, no need to check if this stack is already in the storage
+	// Calculate how many items can be added to the dest slot if it was empty
+	// Exit if zero
+	// If merge allowed, check mergeability with a stack in the dest slot (NB: our new items are unmodified by design)
+	// If dest slot is not empty and is not mergeable, exit
+	// If merge to non-empty dest stack, reduce a number of items created, clamp to Count and add them to that stack (skip if zero)
+	// Else create a new stack with max allowed count (clamp to Count) and add it to the dest slot
+	// Return an amount of really added items
+}
+
+// TODO: optional merge radius? < 0.f means no merge allowed
+void AddItemsToWorld(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, Math::CTransform Tfm)
+{
+	// merge if allowed and possible
+	// create new stack
+	// init world components for it and position where requested
+}
+
+
+// AddItems(HEntity ProtoID, U32 Count, HEntity ReceiverID, vector<EItemStorage> Storages, bool Merge)
+//-
+// for Storage in Storages and Count > 0
+//   Count -= AddItems(ProtoID, Count, ReceiverID, Storage, Merge)
+
+// AddItems(HEntity ProtoID, U32 Count, HEntity ReceiverID, EItemStorage Storage, bool Merge)
+// * probably separate methods per storage because of different slot allocation and access logic!
+//-
+// if Merge
+//   for each mergeable slot (StackID) and Count > 0
+//     Count -= AddItemsToStack(StackID, min(Count, SlotCapacity - StackID.Count))
+//
+// for each empty slot and Count > 0
+//   Count -= CreateItemStack(out StackID, min(Count, SlotCapacity))
+//
+// while can add slots to storage and Count > 0
+//   AddSlot
+//   Count -= CreateItemStack(out StackID, min(Count, SlotCapacity))
+
+// RemoveItems(HEntity ProtoID, U32 Count, HEntity OwnerID, vector<EItemStorage> Storages, bool AllowModified)
+//-
+// for Storage in Storages and Count > 0
+//   Count -= RemoveItems(ProtoID, Count, ReceiverID, Storage, AllowModified)
+
+// RemoveItems(HEntity ProtoID, U32 Count, HEntity OwnerID, EItemStorage Storage, bool AllowModified)
+// * probably separate methods per storage because of different slot allocation and access logic!
+//-
+// for each (slot with proto == ProtoID) and (not modified or AllowModified) and Count > 0
+//   Count -= RemoveItemsFromStack(StackID, min(Count, StackID.Count))
+//   if StackID.Count == 0, slot = null, destroy StackID
+
+// MoveItemStack(StackID, Count)
+// -
+// if transferring to the same stack (= the same slot), it is a no-op
+// if transferring to the same receiver and storage, it is internal moving without storage capacity limits but with slot capacity limits
+// if no dest slot specified, transfer is split to sub-operations based on the whole storage and individual slot capacities
+// each sub-operation is:
+// whole or part (desired move count, stack count, receiver capacity)
+// merge or copy (is dest slot mergeable and is merging allowed)
+// replace or not (replace when dest slot is not empty and contains non-mergeable stack; only when dest slot is strictly defined)
+// based on this:
+// - source stack may be destroyed when fully merged
+// - source stack count may be decremented if transferred partially
+// - source slot may be cleared if fully transferred (not necessarily merged)
+// - source stack may be cloned (split) if not fully transferred and not merged)
+// - non-null dest stack may be supplanted or may forbid transferring if can't merge source stack with it
+
+// Slot address: EntityID + Storage type + Index (slot ID) -> HEntity& (slot is always a cell that stores HEntity)
+// struct CItemSlot for item slot, implicit constructors from HEntity, HEntity + EItemStorage, HEntity + EItemStorage + index
+
+
 static U32 GetContainerCapacityInItems(const Game::CGameWorld& World, const CItemContainerComponent& Container,
 	const CItemComponent* pItem, U32 MinItemCount, Game::HEntity ExcludeStackID)
 {
@@ -182,7 +341,7 @@ static U32 StoreItemStack(Game::CGameWorld& World, Game::HEntity Receiver, EItem
 {
 	switch (Storage)
 	{
-		case EItemStorage::Inventory:
+		case EItemStorage::Container:
 		{
 			return AddItemsIntoContainer(World, Receiver, StackID, Merge, Split);
 		}
@@ -195,7 +354,7 @@ static U32 StoreItemStack(Game::CGameWorld& World, Game::HEntity Receiver, EItem
 			// limit - single item. Equipment is not a general purpose slot, these are QuickSlots.
 			break;
 		}
-		case EItemStorage::Ground:
+		case EItemStorage::World:
 		{
 			NOT_IMPLEMENTED;
 
@@ -240,22 +399,22 @@ U32 AddItemsToCharacter(Game::CGameWorld& World, Game::HEntity Receiver, Game::H
 	const EItemStorage* pStorageOrder = nullptr;
 	UPTR StorageCount = 0;
 
-	constexpr EItemStorage StorageOrderEquipment[] = { EItemStorage::Equipment, EItemStorage::Inventory, EItemStorage::QuickSlot };
-	constexpr EItemStorage StorageOrderInventory[] = { EItemStorage::Inventory, EItemStorage::QuickSlot };
-	constexpr EItemStorage StorageOrderQuickSlot[] = { EItemStorage::QuickSlot, EItemStorage::Inventory };
+	constexpr EItemStorage StorageOrderEquipment[] = { EItemStorage::Equipment, EItemStorage::Container, EItemStorage::QuickSlot };
+	constexpr EItemStorage StorageOrderInventory[] = { EItemStorage::Container, EItemStorage::QuickSlot };
+	constexpr EItemStorage StorageOrderQuickSlot[] = { EItemStorage::QuickSlot, EItemStorage::Container };
 	switch (PreferredStorage)
 	{
 		case EItemStorage::Equipment: pStorageOrder = StorageOrderEquipment; StorageCount = sizeof_array(StorageOrderEquipment); break;
-		case EItemStorage::Inventory: pStorageOrder = StorageOrderInventory; StorageCount = sizeof_array(StorageOrderInventory); break;
+		case EItemStorage::Container: pStorageOrder = StorageOrderInventory; StorageCount = sizeof_array(StorageOrderInventory); break;
 		case EItemStorage::QuickSlot: pStorageOrder = StorageOrderQuickSlot; StorageCount = sizeof_array(StorageOrderQuickSlot); break;
-		case EItemStorage::Ground: break;
+		case EItemStorage::World: break;
 		default: return false;
 	}
 
 	if (!StoreItemStack(World, Receiver, pStorageOrder, StorageCount, StackID, Merge, Split)) return 0;
 
 	if (AllowGround)
-		return StoreItemStack(World, Receiver, EItemStorage::Ground, StackID, Merge, Split);
+		return StoreItemStack(World, Receiver, EItemStorage::World, StackID, Merge, Split);
 
 	auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
 	return pStack ? pStack->Count : 0;
@@ -446,6 +605,64 @@ void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& 
 }
 //---------------------------------------------------------------------
 
+Game::HEntity* GetItemSlotWritable(Game::CGameWorld& World, Game::HEntity ReceiverID, EItemStorage Storage, UPTR Index)
+{
+	switch (Storage)
+	{
+		case EItemStorage::Container:
+		{
+			auto pInventory = World.FindComponent<CItemContainerComponent>(ReceiverID);
+			return (pInventory && Index < pInventory->Items.size()) ? &pInventory->Items[Index] : nullptr;
+		}
+		case EItemStorage::QuickSlot:
+		{
+			auto pEquipment = World.FindComponent<Sh2::CEquipmentComponent>(ReceiverID);
+			return (pEquipment && Index < pEquipment->QuickSlots.size()) ? &pEquipment->QuickSlots[Index] : nullptr;
+		}
+		case EItemStorage::Equipment:
+		{
+			if (Index >= Sh2::EEquipmentSlot::COUNT) return nullptr;
+			auto pEquipment = World.FindComponent<Sh2::CEquipmentComponent>(ReceiverID);
+			return (pEquipment && (pEquipment->SlotEnabledBits & (1 << Index))) ? &pEquipment->Equipment[Index] : nullptr;
+		}
+	}
+
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
+const Game::HEntity* GetItemSlot(Game::CGameWorld& World, Game::HEntity ReceiverID, EItemStorage Storage, UPTR Index)
+{
+	switch (Storage)
+	{
+		case EItemStorage::Container:
+		{
+			auto pInventory = World.FindComponent<const CItemContainerComponent>(ReceiverID);
+			return (pInventory && Index < pInventory->Items.size()) ? &pInventory->Items[Index] : nullptr;
+		}
+		case EItemStorage::QuickSlot:
+		{
+			auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ReceiverID);
+			return (pEquipment && Index < pEquipment->QuickSlots.size()) ? &pEquipment->QuickSlots[Index] : nullptr;
+		}
+		case EItemStorage::Equipment:
+		{
+			if (Index >= Sh2::EEquipmentSlot::COUNT) return nullptr;
+			auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ReceiverID);
+			return (pEquipment && (pEquipment->SlotEnabledBits & (1 << Index))) ? &pEquipment->Equipment[Index] : nullptr;
+		}
+	}
+
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
+bool CanMergeItems(Game::HEntity ProtoID, const CItemStackComponent* pDestStack)
+{
+	return pDestStack && pDestStack->Prototype == ProtoID && !pDestStack->Modified;
+}
+//---------------------------------------------------------------------
+
 bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackComponent* pDestStack)
 {
 	//???TODO: don't merge items with different owners?!
@@ -454,11 +671,94 @@ bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackCompone
 }
 //---------------------------------------------------------------------
 
-U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EItemStorage DestStorage, UPTR DestIndex)
+U32 CalcCapacityForItemProto(Game::CGameWorld& World, Game::HEntity ProtoID, Game::HEntity ReceiverID, EItemStorage Storage, UPTR Index)
 {
+	switch (Storage)
+	{
+		case EItemStorage::Container:
+		{
+			auto pInventory = World.FindComponent<const CItemContainerComponent>(ReceiverID);
+			if (!pInventory) return 0;
+
+			if (pInventory->MaxVolume < 0.f) return std::numeric_limits<U32>().max();
+
+			if (std::find(pInventory->Items.cbegin(), pInventory->Items.cend(), StackID) != pInventory->Items.cend())
+				return std::numeric_limits<U32>().max();
+
+			auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
+			if (!pStack || !pStack->Count) return 0;
+
+			// We will not replace the stack if we merge with it
+			auto ReplacedStackID = (Index < pInventory->Items.size()) ? pInventory->Items[Index] : Game::HEntity{};
+			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
+			if (CanMergeItems(*pStack, pReplacedStack))
+				ReplacedStackID = {};
+
+			auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
+			return GetContainerCapacityInItems(World, *pInventory, pItem, 1, ReplacedStackID);
+		}
+		case EItemStorage::QuickSlot:
+		{
+			auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ReceiverID);
+			if (!pEquipment || Index >= pEquipment->QuickSlots.size()) return 0;
+
+			auto ReplacedStackID = pEquipment->QuickSlots[Index];
+			if (StackID == ReplacedStackID) return std::numeric_limits<U32>().max();
+
+			auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
+			if (!pStack || !pStack->Count) return 0;
+
+			auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
+			if (!pItem || pItem->Volume <= 0.f) return std::numeric_limits<U32>().max();
+
+			float FreeVolume = QUICK_SLOT_VOLUME;
+
+			// Subtract volume of the element to be merged with
+			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
+			if (CanMergeStacks(*pStack, pReplacedStack))
+				FreeVolume -= (pReplacedStack->Count * pItem->Volume);
+
+			return static_cast<U32>(FreeVolume / pItem->Volume);
+		}
+		case EItemStorage::Equipment:
+		{
+			if (Index >= Sh2::EEquipmentSlot::COUNT) return 0;
+
+			auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ReceiverID);
+			if (!pEquipment || !(pEquipment->SlotEnabledBits & (1 << Index))) return 0;
+
+			auto ReplacedStackID = pEquipment->Equipment[Index];
+			if (StackID == ReplacedStackID) return std::numeric_limits<U32>().max();
+
+			auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
+			if (!pStack || !pStack->Count) return 0;
+
+			// Merging equipment is forbidden
+			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
+			if (CanMergeStacks(*pStack, pReplacedStack)) return 0;
+
+			return CanEquipItem(World, ReceiverID, StackID, EEquipmentSlot_Type[Index]) ? 1 : 0;
+		}
+		case EItemStorage::World:
+		{
+			return std::numeric_limits<U32>().max();
+		}
+	}
+
+	return 0;
+}
+//---------------------------------------------------------------------
+
+U32 CalcCapacityForItemStack(Game::CGameWorld& World, Game::HEntity StackID, Game::HEntity ReceiverID, EItemStorage Storage, UPTR Index)
+{
+	const Game::HEntity* pSlot = GetItemSlot(World, ReceiverID, Storage, Index);
+	if (pSlot && *pSlot == StackID) return std::numeric_limits<U32>().max();
+
+	// get DestStackID from Receiver, DestStorage and DestIndex
+	// if the same as src ID, ret max
+
 	switch (DestStorage)
 	{
-		case EItemStorage::Inventory:
 		case EItemStorage::Container:
 		{
 			auto pInventory = World.FindComponent<const CItemContainerComponent>(Receiver);
@@ -521,34 +821,9 @@ U32 CalcItemTransferCapacity(Game::CGameWorld& World, Game::HEntity Receiver, Ga
 			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
 			if (CanMergeStacks(*pStack, pReplacedStack)) return 0;
 
-			//!!!FIXME: where to place?! Next to EEquipmentSlot enum?
-			constexpr EEquipmentSlotType EEquipmentSlot_Type[] =
-			{
-				EEquipmentSlotType::Torso,
-				EEquipmentSlotType::Shoulders,
-				EEquipmentSlotType::Head,
-				EEquipmentSlotType::Arms,
-				EEquipmentSlotType::Hands,
-				EEquipmentSlotType::Legs,
-				EEquipmentSlotType::Feet,
-				EEquipmentSlotType::Belt,
-				EEquipmentSlotType::Backpack,
-				EEquipmentSlotType::Neck,
-				EEquipmentSlotType::Bracelet,
-				EEquipmentSlotType::Bracelet,
-				EEquipmentSlotType::Ring,
-				EEquipmentSlotType::Ring,
-				EEquipmentSlotType::Ring,
-				EEquipmentSlotType::Ring,
-				EEquipmentSlotType::HandItem,
-				EEquipmentSlotType::HandItem,
-				EEquipmentSlotType::HandItem,
-				EEquipmentSlotType::HandItem
-			};
-
 			return CanEquipItem(World, Receiver, StackID, EEquipmentSlot_Type[DestIndex]) ? 1 : 0;
 		}
-		case EItemStorage::Ground:
+		case EItemStorage::World:
 		{
 			return std::numeric_limits<U32>().max();
 		}
