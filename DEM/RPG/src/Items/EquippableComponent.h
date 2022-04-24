@@ -13,6 +13,8 @@ struct CEquippableComponent
 	U32 IncludeBits = 0;
 	U32 ExcludeBits = 0;
 
+	U32 MaxStack = 1;
+
 	//???bool TryScript?
 };
 

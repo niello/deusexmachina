@@ -37,24 +37,25 @@ constexpr EEquipmentSlotType EEquipmentSlot_Type[] =
 // Returns a number of items actually added
 U32 AddItemsToEntity(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, Game::HEntity ReceiverID, EItemStorage Storage, size_t Index, bool Merge)
 {
-	if (!ReceiverID || Storage == EItemStorage::None || Storage == EItemStorage::World) return;
+	if (!ReceiverID || !ProtoID || !Count || Storage == EItemStorage::None || Storage == EItemStorage::World) return 0;
 
-	const Game::HEntity* pSlot = GetItemSlot(World, ReceiverID, Storage, Index);
-	if (!pSlot) return 0;
+	//???TODO: make internal version where this is passed from outside? to optimize frequent access.
+	auto pItem = World.FindComponent<const CItemComponent>(ProtoID);
+	if (!pItem) return 0;
 
-	const auto DestStackID = *pSlot;
+	const Game::HEntity* pSlotConst = GetItemSlot(World, ReceiverID, Storage, Index);
+	if (!pSlotConst) return 0;
+
+	const auto DestStackID = *pSlotConst;
 
 	// Can't add to slot occupied by an incompatible item stack
+	// NB: dest stack is accessed for reading
 	U32 CountInSlot = 0;
 	if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
 	{
 		if (!CanMergeItems(ProtoID, pDestStack)) return 0;
 		CountInSlot = pDestStack->Count;
 	}
-
-	//???TODO: make internal version where this is passed from outside? to optimize frequent access.
-	auto pItem = World.FindComponent<const CItemComponent>(ProtoID);
-	if (!pItem) return 0;
 
 	U32 MaxCountInSlot = 0;
 	if (pItem->Volume <= 0.f)
@@ -78,14 +79,15 @@ U32 AddItemsToEntity(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, 
 			}
 			case EItemStorage::QuickSlot:
 			{
+				auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ReceiverID);
+				if (!pEquipment || Index >= pEquipment->QuickSlots.size()) return 0;
 				MaxCountInSlot = QUICK_SLOT_VOLUME / pItem->Volume;
 				break;
 			}
 			case EItemStorage::Equipment:
 			{
-				//!!!TODO: CEquippableComponent must contain stack size! if < 1, default to 1.
-				//!!!CanEquipItem requires no StackID, only proto ID? or equippable may be a stack attr? Pass CEquippableComponent to it instead?
-				MaxCountInSlot = CanEquipItem(World, ReceiverID, StackID, EEquipmentSlot_Type[Index]) ? 1 : 0;
+				if (Index >= Sh2::EEquipmentSlot::COUNT) return 0;
+				MaxCountInSlot = CanEquipItems(World, ReceiverID, ProtoID, EEquipmentSlot_Type[Index]);
 				break;
 			}
 			case EItemStorage::World:
@@ -97,16 +99,38 @@ U32 AddItemsToEntity(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, 
 	}
 
 	const U32 AddCount = std::min(Count, MaxCountInSlot - CountInSlot);
+	if (!AddCount) return 0;
 
-	// Items are always new here, no need to check if this stack is already in the storage
-	// Calculate how many items can be added to the dest slot if it was empty
-	// Exit if zero
-	// If merge allowed, check mergeability with a stack in the dest slot (NB: our new items are unmodified by design)
-	// If dest slot is not empty and is not mergeable, exit
-	// If merge to non-empty dest stack, reduce a number of items created, clamp to Count and add them to that stack (skip if zero)
-	// Else create a new stack with max allowed count (clamp to Count) and add it to the dest slot
-	// Return an amount of really added items
+	// Now access destination for writing
+	if (auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID))
+	{
+		pDestStack->Count += AddCount;
+	}
+	else if (auto pSlot = GetItemSlotWritable(World, ReceiverID, Storage, Index))
+	{
+		CStrID LevelID; //???!!!need? can copy from Receiver or leave empty!
+
+		//???!!!pass CStrID ItemID or HEntity ProtoID?!
+		//*pSlot = CItemManager::CreateStack(ProtoID, AddCount, LevelID);
+
+		// FIXME: duplication, see CItemManager::CreateStack!
+		Game::HEntity StackID = World.CreateEntity(LevelID);
+		auto pStack = World.AddComponent<CItemStackComponent>(StackID);
+		if (!pStack)
+		{
+			World.DeleteEntity(StackID);
+			return 0;
+		}
+
+		pStack->Prototype = ProtoID;
+		pStack->Count = AddCount;
+
+		*pSlot = StackID;
+	}
+
+	return AddCount;
 }
+//---------------------------------------------------------------------
 
 // TODO: optional merge radius? < 0.f means no merge allowed
 void AddItemsToWorld(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, Math::CTransform Tfm)
@@ -115,58 +139,7 @@ void AddItemsToWorld(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, 
 	// create new stack
 	// init world components for it and position where requested
 }
-
-
-// AddItems(HEntity ProtoID, U32 Count, HEntity ReceiverID, vector<EItemStorage> Storages, bool Merge)
-//-
-// for Storage in Storages and Count > 0
-//   Count -= AddItems(ProtoID, Count, ReceiverID, Storage, Merge)
-
-// AddItems(HEntity ProtoID, U32 Count, HEntity ReceiverID, EItemStorage Storage, bool Merge)
-// * probably separate methods per storage because of different slot allocation and access logic!
-//-
-// if Merge
-//   for each mergeable slot (StackID) and Count > 0
-//     Count -= AddItemsToStack(StackID, min(Count, SlotCapacity - StackID.Count))
-//
-// for each empty slot and Count > 0
-//   Count -= CreateItemStack(out StackID, min(Count, SlotCapacity))
-//
-// while can add slots to storage and Count > 0
-//   AddSlot
-//   Count -= CreateItemStack(out StackID, min(Count, SlotCapacity))
-
-// RemoveItems(HEntity ProtoID, U32 Count, HEntity OwnerID, vector<EItemStorage> Storages, bool AllowModified)
-//-
-// for Storage in Storages and Count > 0
-//   Count -= RemoveItems(ProtoID, Count, ReceiverID, Storage, AllowModified)
-
-// RemoveItems(HEntity ProtoID, U32 Count, HEntity OwnerID, EItemStorage Storage, bool AllowModified)
-// * probably separate methods per storage because of different slot allocation and access logic!
-//-
-// for each (slot with proto == ProtoID) and (not modified or AllowModified) and Count > 0
-//   Count -= RemoveItemsFromStack(StackID, min(Count, StackID.Count))
-//   if StackID.Count == 0, slot = null, destroy StackID
-
-// MoveItemStack(StackID, Count)
-// -
-// if transferring to the same stack (= the same slot), it is a no-op
-// if transferring to the same receiver and storage, it is internal moving without storage capacity limits but with slot capacity limits
-// if no dest slot specified, transfer is split to sub-operations based on the whole storage and individual slot capacities
-// each sub-operation is:
-// whole or part (desired move count, stack count, receiver capacity)
-// merge or copy (is dest slot mergeable and is merging allowed)
-// replace or not (replace when dest slot is not empty and contains non-mergeable stack; only when dest slot is strictly defined)
-// based on this:
-// - source stack may be destroyed when fully merged
-// - source stack count may be decremented if transferred partially
-// - source slot may be cleared if fully transferred (not necessarily merged)
-// - source stack may be cloned (split) if not fully transferred and not merged)
-// - non-null dest stack may be supplanted or may forbid transferring if can't merge source stack with it
-
-// Slot address: EntityID + Storage type + Index (slot ID) -> HEntity& (slot is always a cell that stores HEntity)
-// struct CItemSlot for item slot, implicit constructors from HEntity, HEntity + EItemStorage, HEntity + EItemStorage + index
-
+//---------------------------------------------------------------------
 
 static U32 GetContainerCapacityInItems(const Game::CGameWorld& World, const CItemContainerComponent& Container,
 	const CItemComponent* pItem, U32 MinItemCount, Game::HEntity ExcludeStackID)
@@ -737,7 +710,7 @@ U32 CalcCapacityForItemProto(Game::CGameWorld& World, Game::HEntity ProtoID, Gam
 			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
 			if (CanMergeStacks(*pStack, pReplacedStack)) return 0;
 
-			return CanEquipItem(World, ReceiverID, StackID, EEquipmentSlot_Type[Index]) ? 1 : 0;
+			return CanEquipItems(World, ReceiverID, StackID, EEquipmentSlot_Type[Index]);
 		}
 		case EItemStorage::World:
 		{
@@ -821,7 +794,7 @@ U32 CalcCapacityForItemStack(Game::CGameWorld& World, Game::HEntity StackID, Gam
 			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
 			if (CanMergeStacks(*pStack, pReplacedStack)) return 0;
 
-			return CanEquipItem(World, Receiver, StackID, EEquipmentSlot_Type[DestIndex]) ? 1 : 0;
+			return CanEquipItems(World, Receiver, StackID, EEquipmentSlot_Type[DestIndex]);
 		}
 		case EItemStorage::World:
 		{
@@ -878,16 +851,20 @@ Game::HEntity TransferItems(Game::CGameWorld& World, U32 Count, Game::HEntity& S
 }
 //---------------------------------------------------------------------
 
-bool CanEquipItem(const Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EEquipmentSlotType SlotType)
+U32 CanEquipItems(const Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EEquipmentSlotType SlotType)
 {
+	U32 MaxStack = 1;
+
 	if (auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
 	{
 		// TODO: if scripted, try to find CanEquip function in the script
 		// Return value will be true, false or nil. The latter is to proceed to the C++ logic.
 
+		MaxStack = std::max(1u, pEquippable->MaxStack);
+
 		const auto CheckBit = (1 << static_cast<int>(SlotType));
-		if (pEquippable->IncludeBits & CheckBit) return true;
-		if (pEquippable->ExcludeBits & CheckBit) return false;
+		if (pEquippable->IncludeBits & CheckBit) return MaxStack;
+		if (pEquippable->ExcludeBits & CheckBit) return 0;
 	}
 
 	switch (SlotType)
@@ -895,11 +872,11 @@ bool CanEquipItem(const Game::CGameWorld& World, Game::HEntity Receiver, Game::H
 		case EEquipmentSlotType::HandItem:
 		{
 			// TODO: allow only Weapon or Shield, don't allow to equip to the slot blocked by a two-handed item
-			return true;
+			return MaxStack;
 		}
 	}
 
-	return false;
+	return 0;
 }
 //---------------------------------------------------------------------
 
