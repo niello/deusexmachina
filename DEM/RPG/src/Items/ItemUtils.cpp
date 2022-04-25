@@ -34,18 +34,63 @@ constexpr EEquipmentSlotType EEquipmentSlot_Type[] =
 	EEquipmentSlotType::HandItem
 };
 
+static U32 GetSlotMaxCapacity(Game::CGameWorld& World, Game::HEntity ProtoID, Game::HEntity ReceiverID, EItemStorage Storage, size_t Index)
+{
+	auto pItem = World.FindComponent<const CItemComponent>(ProtoID);
+	if (!pItem) return 0;
+	if (pItem->Volume <= 0.f) return std::numeric_limits<U32>().max();
+
+	switch (Storage)
+	{
+		case EItemStorage::Container:
+		{
+			auto pContainer = World.FindComponent<const CItemContainerComponent>(ReceiverID);
+			if (!pContainer) return 0;
+
+			float UsedVolume = 0.f;
+			for (size_t i = 0; i < pContainer->Items.size(); ++i)
+			{
+				if (i == Index) continue;
+
+				const auto StackID = pContainer->Items[i];
+
+				if (auto pStack = World.FindComponent<const CItemStackComponent>(StackID))
+					if (auto pContainedItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack))
+						UsedVolume += pStack->Count * pContainedItem->Volume;
+			}
+
+			return (pContainer->MaxVolume - UsedVolume) / pItem->Volume;
+		}
+		case EItemStorage::QuickSlot:
+		{
+			auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ReceiverID);
+			return (pEquipment && Index < pEquipment->QuickSlots.size()) ? (QUICK_SLOT_VOLUME / pItem->Volume) : 0;
+		}
+		case EItemStorage::Equipment:
+		{
+			//???need to check equipment component?!
+			return (Index < Sh2::EEquipmentSlot::COUNT) ? CanEquipItems(World, ReceiverID, ProtoID, EEquipmentSlot_Type[Index]) : 0;
+		}
+		case EItemStorage::World:
+		{
+			return std::numeric_limits<U32>().max();
+		}
+	}
+
+	return 0;
+}
+//---------------------------------------------------------------------
+
 // Returns a number of items actually added
 U32 AddItemsToEntity(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, Game::HEntity ReceiverID, EItemStorage Storage, size_t Index, bool Merge)
 {
 	if (!ReceiverID || !ProtoID || !Count || Storage == EItemStorage::None || Storage == EItemStorage::World) return 0;
 
-	//???TODO: make internal version where this is passed from outside? to optimize frequent access.
-	auto pItem = World.FindComponent<const CItemComponent>(ProtoID);
-	if (!pItem) return 0;
+	const U32 MaxCountInSlot = GetSlotMaxCapacity(World, ProtoID, ReceiverID, Storage, Index);
+	if (!MaxCountInSlot) return 0;
 
 	const Game::HEntity* pSlotConst = GetItemSlot(World, ReceiverID, Storage, Index);
 	if (!pSlotConst) return 0;
-
 	const auto DestStackID = *pSlotConst;
 
 	// Can't add to slot occupied by an incompatible item stack
@@ -55,47 +100,6 @@ U32 AddItemsToEntity(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, 
 	{
 		if (!CanMergeItems(ProtoID, pDestStack)) return 0;
 		CountInSlot = pDestStack->Count;
-	}
-
-	U32 MaxCountInSlot = 0;
-	if (pItem->Volume <= 0.f)
-	{
-		MaxCountInSlot = std::numeric_limits<U32>().max();
-	}
-	else
-	{
-		switch (Storage)
-		{
-			case EItemStorage::Container:
-			{
-				//???TODO: make internal version where this is passed from outside? to optimize frequent access.
-				auto pInventory = World.FindComponent<const CItemContainerComponent>(ReceiverID);
-				if (!pInventory) return 0;
-
-				CContainerStats Stats;
-				CalcContainerStats(World, *pInventory, Stats);
-				MaxCountInSlot = Stats.FreeVolume / pItem->Volume + CountInSlot;
-				break;
-			}
-			case EItemStorage::QuickSlot:
-			{
-				auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ReceiverID);
-				if (!pEquipment || Index >= pEquipment->QuickSlots.size()) return 0;
-				MaxCountInSlot = QUICK_SLOT_VOLUME / pItem->Volume;
-				break;
-			}
-			case EItemStorage::Equipment:
-			{
-				if (Index >= Sh2::EEquipmentSlot::COUNT) return 0;
-				MaxCountInSlot = CanEquipItems(World, ReceiverID, ProtoID, EEquipmentSlot_Type[Index]);
-				break;
-			}
-			case EItemStorage::World:
-			{
-				MaxCountInSlot = std::numeric_limits<U32>().max();
-				break;
-			}
-		}
 	}
 
 	const U32 AddCount = std::min(Count, MaxCountInSlot - CountInSlot);
