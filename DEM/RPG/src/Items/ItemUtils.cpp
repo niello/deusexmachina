@@ -117,12 +117,17 @@ U32 AddItemsToEntity(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, 
 	const auto DestStackID = *pSlotReadOnly;
 
 	// Can't add to slot occupied by an incompatible item stack
-	// NB: dest stack is accessed for reading
 	U32 CountInSlot = 0;
-	if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
+	if (DestStackID)
 	{
-		if (!CanMergeItems(ProtoID, pDestStack)) return 0;
-		CountInSlot = pDestStack->Count;
+		if (!Merge) return 0;
+
+		// NB: dest stack is accessed for reading
+		if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
+		{
+			if (!CanMergeItems(ProtoID, pDestStack)) return 0;
+			CountInSlot = pDestStack->Count;
+		}
 	}
 
 	const U32 AddCount = std::min(Count, MaxCountInSlot - CountInSlot);
