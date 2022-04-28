@@ -61,18 +61,7 @@ Game::HEntity CItemManager::CreateStack(CStrID ItemID, U32 Count, CStrID LevelID
 	}
 	else ProtoEntity = It->second;
 
-	Game::HEntity StackEntity = pWorld->CreateEntity(LevelID);
-	auto pStack = pWorld->AddComponent<CItemStackComponent>(StackEntity);
-	if (!pStack)
-	{
-		pWorld->DeleteEntity(StackEntity);
-		return {};
-	}
-
-	pStack->Prototype = ProtoEntity;
-	pStack->Count = Count;
-
-	return StackEntity;
+	return CreateItemStack(*pWorld, ProtoEntity, Count, LevelID);
 }
 //---------------------------------------------------------------------
 

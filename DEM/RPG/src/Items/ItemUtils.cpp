@@ -81,6 +81,27 @@ static U32 GetSlotMaxCapacity(Game::CGameWorld& World, Game::HEntity ProtoID, Ga
 }
 //---------------------------------------------------------------------
 
+Game::HEntity CreateItemStack(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, CStrID LevelID)
+{
+	//???!!!pass CStrID ItemID or HEntity ProtoID?!
+	//*pSlot = CItemManager::CreateStack(ProtoID, AddCount, LevelID);
+
+	// FIXME: duplication, see CItemManager::CreateStack!
+	Game::HEntity StackID = World.CreateEntity(LevelID);
+	auto pStack = World.AddComponent<CItemStackComponent>(StackID);
+	if (!pStack)
+	{
+		World.DeleteEntity(StackID);
+		return {};
+	}
+
+	pStack->Prototype = ProtoID;
+	pStack->Count = Count;
+
+	return StackID;
+}
+//---------------------------------------------------------------------
+
 // Returns a number of items actually added
 U32 AddItemsToEntity(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, Game::HEntity ReceiverID, EItemStorage Storage, size_t Index, bool Merge)
 {
@@ -112,23 +133,8 @@ U32 AddItemsToEntity(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, 
 	}
 	else if (auto pSlot = GetItemSlotWritable(World, ReceiverID, Storage, Index))
 	{
-		CStrID LevelID; //???!!!need? can copy from Receiver or leave empty!
-
-		//???!!!pass CStrID ItemID or HEntity ProtoID?!
-		//*pSlot = CItemManager::CreateStack(ProtoID, AddCount, LevelID);
-
-		// FIXME: duplication, see CItemManager::CreateStack!
-		Game::HEntity StackID = World.CreateEntity(LevelID);
-		auto pStack = World.AddComponent<CItemStackComponent>(StackID);
-		if (!pStack)
-		{
-			World.DeleteEntity(StackID);
-			return 0;
-		}
-
-		pStack->Prototype = ProtoID;
-		pStack->Count = AddCount;
-
+		const auto StackID = CreateItemStack(World, ProtoID, AddCount);
+		if (!StackID) return 0;
 		*pSlot = StackID;
 	}
 

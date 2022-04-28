@@ -58,6 +58,7 @@ struct CContainerStats
 };
 
 //???vector or set of entities instead?
+Game::HEntity CreateItemStack(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, CStrID LevelID = CStrID::Empty);
 U32 AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, bool Merge = true, bool Split = true);
 U32 AddItemsIntoQuickSlots(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, bool Merge = true, bool Split = true);
 U32 AddItemsToCharacter(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EItemStorage PreferredStorage, bool AllowGround, bool Merge = true, bool Split = true);
