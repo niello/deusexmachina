@@ -36,6 +36,18 @@ constexpr EEquipmentSlotType EEquipmentSlot_Type[] =
 
 static U32 GetSlotMaxCapacity(Game::CGameWorld& World, Game::HEntity ProtoID, Game::HEntity ReceiverID, EItemStorage Storage, size_t Index)
 {
+	// World has unlimited capacity
+	if (Storage == EItemStorage::World)
+		return std::numeric_limits<U32>().max();
+
+	// Count-based limit
+	if (Storage == EItemStorage::Equipment)
+	{
+		auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ReceiverID);
+		return (pEquipment && Index < Sh2::EEquipmentSlot::COUNT) ? CanEquipItems(World, ReceiverID, ProtoID, EEquipmentSlot_Type[Index]) : 0;
+	}
+
+	// Volume-based limit
 	auto pItem = World.FindComponent<const CItemComponent>(ProtoID);
 	if (!pItem) return 0;
 	if (pItem->Volume <= 0.f) return std::numeric_limits<U32>().max();
@@ -44,8 +56,10 @@ static U32 GetSlotMaxCapacity(Game::CGameWorld& World, Game::HEntity ProtoID, Ga
 	{
 		case EItemStorage::Container:
 		{
+			// Container is limited by a total volume of stacks inside it
 			auto pContainer = World.FindComponent<const CItemContainerComponent>(ReceiverID);
 			if (!pContainer) return 0;
+			if (pContainer->MaxVolume < 0.f) return std::numeric_limits<U32>().max();
 
 			float UsedVolume = 0.f;
 			for (size_t i = 0; i < pContainer->Items.size(); ++i)
@@ -59,21 +73,13 @@ static U32 GetSlotMaxCapacity(Game::CGameWorld& World, Game::HEntity ProtoID, Ga
 						UsedVolume += pStack->Count * pContainedItem->Volume;
 			}
 
-			return (pContainer->MaxVolume - UsedVolume) / pItem->Volume;
+			return (pContainer->MaxVolume > UsedVolume) ? ((pContainer->MaxVolume - UsedVolume) / pItem->Volume) : 0;
 		}
 		case EItemStorage::QuickSlot:
 		{
+			// Each quick slot has its independent capacity
 			auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ReceiverID);
 			return (pEquipment && Index < pEquipment->QuickSlots.size()) ? (QUICK_SLOT_VOLUME / pItem->Volume) : 0;
-		}
-		case EItemStorage::Equipment:
-		{
-			//???need to check equipment component?!
-			return (Index < Sh2::EEquipmentSlot::COUNT) ? CanEquipItems(World, ReceiverID, ProtoID, EEquipmentSlot_Type[Index]) : 0;
-		}
-		case EItemStorage::World:
-		{
-			return std::numeric_limits<U32>().max();
 		}
 	}
 
@@ -83,10 +89,6 @@ static U32 GetSlotMaxCapacity(Game::CGameWorld& World, Game::HEntity ProtoID, Ga
 
 Game::HEntity CreateItemStack(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, CStrID LevelID)
 {
-	//???!!!pass CStrID ItemID or HEntity ProtoID?!
-	//*pSlot = CItemManager::CreateStack(ProtoID, AddCount, LevelID);
-
-	// FIXME: duplication, see CItemManager::CreateStack!
 	Game::HEntity StackID = World.CreateEntity(LevelID);
 	auto pStack = World.AddComponent<CItemStackComponent>(StackID);
 	if (!pStack)
@@ -110,9 +112,9 @@ U32 AddItemsToEntity(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, 
 	const U32 MaxCountInSlot = GetSlotMaxCapacity(World, ProtoID, ReceiverID, Storage, Index);
 	if (!MaxCountInSlot) return 0;
 
-	const Game::HEntity* pSlotConst = GetItemSlot(World, ReceiverID, Storage, Index);
-	if (!pSlotConst) return 0;
-	const auto DestStackID = *pSlotConst;
+	const Game::HEntity* pSlotReadOnly = GetItemSlot(World, ReceiverID, Storage, Index);
+	if (!pSlotReadOnly) return 0;
+	const auto DestStackID = *pSlotReadOnly;
 
 	// Can't add to slot occupied by an incompatible item stack
 	// NB: dest stack is accessed for reading
@@ -145,7 +147,7 @@ U32 AddItemsToEntity(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, 
 // TODO: optional merge radius? < 0.f means no merge allowed
 void AddItemsToWorld(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, Math::CTransform Tfm)
 {
-	// merge if allowed and possible
+	// merge if allowed and possible - pass optional vector with cached nearby stacks? scan here if nullptr (no cache provided).
 	// create new stack
 	// init world components for it and position where requested
 }
