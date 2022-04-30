@@ -109,15 +109,14 @@ U32 AddItemsToEntity(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, 
 {
 	if (!ReceiverID || !ProtoID || !Count || Storage == EItemStorage::None || Storage == EItemStorage::World) return 0;
 
-	const U32 MaxCountInSlot = GetSlotMaxCapacity(World, ProtoID, ReceiverID, Storage, Index);
+	U32 MaxCountInSlot = GetSlotMaxCapacity(World, ProtoID, ReceiverID, Storage, Index);
 	if (!MaxCountInSlot) return 0;
 
 	const Game::HEntity* pSlotReadOnly = GetItemSlot(World, ReceiverID, Storage, Index);
 	if (!pSlotReadOnly) return 0;
 	const auto DestStackID = *pSlotReadOnly;
 
-	// Can't add to slot occupied by an incompatible item stack
-	U32 CountInSlot = 0;
+	// Can't add to a full slot or a slot occupied by an incompatible item stack
 	if (DestStackID)
 	{
 		if (!Merge) return 0;
@@ -125,27 +124,24 @@ U32 AddItemsToEntity(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, 
 		// NB: dest stack is accessed for reading
 		if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
 		{
-			if (!CanMergeItems(ProtoID, pDestStack)) return 0;
-			CountInSlot = pDestStack->Count;
+			if (MaxCountInSlot <= pDestStack->Count || !CanMergeItems(ProtoID, pDestStack)) return 0;
+			Count = std::min(Count, MaxCountInSlot - pDestStack->Count);
 		}
 	}
-
-	const U32 AddCount = std::min(Count, MaxCountInSlot - CountInSlot);
-	if (!AddCount) return 0;
 
 	// Now access destination for writing
 	if (auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID))
 	{
-		pDestStack->Count += AddCount;
+		pDestStack->Count += Count;
+		return Count;
 	}
 	else if (auto pSlot = GetItemSlotWritable(World, ReceiverID, Storage, Index))
 	{
-		const auto StackID = CreateItemStack(World, ProtoID, AddCount);
-		if (!StackID) return 0;
-		*pSlot = StackID;
+		*pSlot = CreateItemStack(World, ProtoID, Count);
+		return *pSlot ? Count : 0;
 	}
 
-	return AddCount;
+	return 0;
 }
 //---------------------------------------------------------------------
 
