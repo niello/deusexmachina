@@ -444,17 +444,10 @@ U32 AddItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::
 
 			if (auto pDestStackWritable = World.FindComponent<CItemStackComponent>(DestStackID))
 			{
-				const U32 RemainingCapacity = SlotCapacity - pDestStack->Count;
-				if (RemainingCapacity >= RemainingCount)
-				{
-					pDestStackWritable->Count += RemainingCount;
-					return Count;
-				}
-				else
-				{
-					pDestStackWritable->Count += RemainingCapacity;
-					RemainingCount -= RemainingCapacity;
-				}
+				const auto RemainingCapacity = SlotCapacity - pDestStack->Count;
+				pDestStackWritable->Count += std::min(RemainingCapacity, RemainingCount);
+				if (RemainingCapacity >= RemainingCount) return Count;
+				RemainingCount -= RemainingCapacity;
 			}
 		}
 	}
