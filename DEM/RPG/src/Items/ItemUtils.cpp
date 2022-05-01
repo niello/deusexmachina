@@ -34,6 +34,242 @@ constexpr EEquipmentSlotType EEquipmentSlot_Type[] =
 	EEquipmentSlotType::HandItem
 };
 
+static U32 GetContainerCapacityInItems(const Game::CGameWorld& World, const CItemContainerComponent& Container,
+	const CItemComponent* pItem, U32 MinItemCount, Game::HEntity ExcludeStackID = {})
+{
+	if (!pItem || pItem->Volume <= 0.f || Container.MaxVolume < 0.f) return std::numeric_limits<U32>().max();
+
+	const float MinRequiredVolume = pItem->Volume * MinItemCount;
+	float FreeVolume = Container.MaxVolume;
+	for (auto StoredStackID : Container.Items)
+	{
+		if (StoredStackID == ExcludeStackID) continue;
+
+		auto pStoredStack = World.FindComponent<const CItemStackComponent>(StoredStackID);
+		if (!pStoredStack || !pStoredStack->Count) continue;
+
+		if (auto pStoredItem = FindItemComponent<const CItemComponent>(World, StoredStackID, *pStoredStack))
+		{
+			FreeVolume -= (pStoredStack->Count * pStoredItem->Volume);
+			if (FreeVolume < MinRequiredVolume) return 0;
+		}
+	}
+
+	return static_cast<U32>(FreeVolume / pItem->Volume);
+}
+//---------------------------------------------------------------------
+
+static size_t GetFirstEmptySlotIndex(CItemContainerComponent& Container)
+{
+	size_t SlotIndex = 0;
+	for (; SlotIndex < Container.Items.size(); ++SlotIndex)
+		if (!Container.Items[SlotIndex])
+			break;
+
+	if (SlotIndex == Container.Items.size())
+		Container.Items.push_back({});
+
+	return SlotIndex;
+}
+//---------------------------------------------------------------------
+
+static size_t GetFirstMergeableSlotIndex(const Game::CGameWorld& World, const CItemContainerComponent& Container, Game::HEntity ItemProtoID)
+{
+	size_t SlotIndex = 0;
+	for (; SlotIndex < Container.Items.size(); ++SlotIndex)
+		if (auto pDestStack = World.FindComponent<const CItemStackComponent>(Container.Items[SlotIndex]))
+			if (CanMergeItems(ItemProtoID, pDestStack))
+				break;
+
+	return SlotIndex;
+}
+//---------------------------------------------------------------------
+
+// Returns a number of items actually added
+U32 AddItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, Game::HEntity ItemProtoID, U32 Count, bool Merge)
+{
+	if (!ContainerID || !ItemProtoID || !Count) return 0;
+
+	auto pContainer = World.FindComponent<const CItemContainerComponent>(ContainerID);
+	if (!pContainer && SlotIndex >= pContainer->Items.size()) return 0;
+
+	auto pItem = World.FindComponent<const CItemComponent>(ItemProtoID);
+	if (!pItem) return 0;
+
+	auto DestStackID = pContainer->Items[SlotIndex];
+
+	// Can't add to a slot occupied by an incompatible item stack
+	// NB: dest stack is accessed for reading
+	if (DestStackID)
+	{
+		if (!Merge) return 0;
+
+		if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
+			if (!CanMergeItems(ItemProtoID, pDestStack)) return 0;
+	}
+
+	Count = std::min(Count, GetContainerCapacityInItems(World, *pContainer, pItem, 1));
+	if (!Count) return 0;
+
+	// Now access destination for writing
+	if (auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID))
+	{
+		pDestStack->Count += Count;
+		return Count;
+	}
+	else if (auto NewStackID = CreateItemStack(World, ItemProtoID, Count))
+	{
+		if (auto pContainerWriteable = World.FindComponent<CItemContainerComponent>(ContainerID))
+		{
+			pContainerWriteable->Items[SlotIndex] = NewStackID;
+			return Count;
+		}
+		World.DeleteEntity(NewStackID);
+	}
+
+	return 0;
+}
+//---------------------------------------------------------------------
+
+U32 AddItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity ItemProtoID, U32 Count, bool Merge)
+{
+	if (!ContainerID || !ItemProtoID || !Count) return 0;
+
+	auto pContainer = World.FindComponent<const CItemContainerComponent>(ContainerID);
+	if (!pContainer) return 0;
+
+	auto pItem = World.FindComponent<const CItemComponent>(ItemProtoID);
+	if (!pItem) return 0;
+
+	Count = std::min(Count, GetContainerCapacityInItems(World, *pContainer, pItem, 1));
+	if (!Count) return 0;
+
+	// Try to merge into an existing stack first
+	if (Merge)
+	{
+		const auto SlotIndex = GetFirstMergeableSlotIndex(World, *pContainer, ItemProtoID);
+		if (SlotIndex < pContainer->Items.size())
+		{
+			if (auto pDestStack = World.FindComponent<CItemStackComponent>(pContainer->Items[SlotIndex]))
+			{
+				pDestStack->Count += Count;
+				return Count;
+			}
+			return 0;
+		}
+	}
+
+	// Put remaining count into an empty slot
+	if (auto NewStackID = CreateItemStack(World, ItemProtoID, Count))
+	{
+		if (auto pContainerWriteable = World.FindComponent<CItemContainerComponent>(ContainerID))
+		{
+			const auto SlotIndex = GetFirstEmptySlotIndex(*pContainerWriteable);
+			if (SlotIndex < pContainerWriteable->Items.size())
+			{
+				pContainerWriteable->Items[SlotIndex] = NewStackID;
+				return Count;
+			}
+		}
+		World.DeleteEntity(NewStackID);
+	}
+
+	return 0;
+}
+//---------------------------------------------------------------------
+
+// Returns a number of items actually removed
+U32 RemoveItemsFromContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, U32 Count)
+{
+	if (!ContainerID || !Count) return 0;
+
+	auto pContainer = World.FindComponent<const CItemContainerComponent>(ContainerID);
+	if (!pContainer || SlotIndex >= pContainer->Items.size()) return 0;
+
+	// Don't optimize with constant access because a stack will be altered or deleted anyway
+	auto pStack = World.FindComponent<CItemStackComponent>(pContainer->Items[SlotIndex]);
+	if (!pStack) return 0;
+
+	if (pStack->Count > Count)
+	{
+		pStack->Count -= Count;
+		return Count;
+	}
+	else
+	{
+		const auto RemovedCount = pStack->Count;
+		World.DeleteEntity(pContainer->Items[SlotIndex]);
+		if (auto pContainerWriteable = World.FindComponent<CItemContainerComponent>(ContainerID))
+		{
+			if (SlotIndex + 1 == pContainerWriteable->Items.size())
+				pContainerWriteable->Items.pop_back();
+			else
+				pContainerWriteable->Items[SlotIndex] = {};
+		}
+		return RemovedCount;
+	}
+}
+//---------------------------------------------------------------------
+
+// Returns a number of items actually removed
+U32 RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity ItemProtoID, U32 Count, bool AllowModified)
+{
+	if (!ContainerID || !ItemProtoID || !Count) return 0;
+
+	auto pContainer = World.FindComponent<CItemContainerComponent>(ContainerID);
+	if (!pContainer) return 0;
+
+	U32 RemainingCount = Count;
+	for (auto& StackID : pContainer->Items)
+	{
+		auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
+		if (!pStack || pStack->Prototype != ItemProtoID || (!AllowModified && pStack->Modified)) continue;
+
+		if (pStack->Count > RemainingCount)
+		{
+			if (auto pStackWriteable = World.FindComponent<CItemStackComponent>(StackID))
+			{
+				pStackWriteable->Count -= RemainingCount;
+				RemainingCount = 0;
+				break;
+			}
+		}
+		else
+		{
+			RemainingCount -= pStack->Count;
+			World.DeleteEntity(StackID);
+			StackID = {};
+			if (!RemainingCount) break;
+		}
+	}
+
+	while (!pContainer->Items.empty() && !pContainer->Items.back())
+		pContainer->Items.pop_back();
+
+	return Count - RemainingCount;
+}
+//---------------------------------------------------------------------
+
+// Returns a number of items actually moved out
+U32 MoveItemsFromContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, U32 Count)
+{
+	// like remove, but:
+	// - if the stack is removed completely, don't destroy its entity
+	// - outside code needs to know whether complete removal happened (can it reuse StackID or should clone)
+	// - if moved partially, subtraction from stack is like in Remove, items are lost and should be restored somewhere by calling code
+
+	//???does container have adding/removal posteffects? need to call everywhere if so!
+}
+//---------------------------------------------------------------------
+
+// Returns a number of items actually moved in
+U32 MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, Game::HEntity StackID, U32 Count)
+{
+	//???how to detect whole stack moved? Count is already subtracted from stack and even Stack curr size + Count may not be equal to old count.
+	//can pass as a bool argument
+}
+//---------------------------------------------------------------------
+
 static U32 GetSlotMaxCapacity(Game::CGameWorld& World, Game::HEntity ProtoID, Game::HEntity ReceiverID, EItemStorage Storage, size_t Index)
 {
 	// World has unlimited capacity
@@ -112,6 +348,7 @@ U32 AddItemsToEntity(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, 
 	U32 MaxCountInSlot = GetSlotMaxCapacity(World, ProtoID, ReceiverID, Storage, Index);
 	if (!MaxCountInSlot) return 0;
 
+	// FIXME: can manually mark entity / component as modified and avoid searching twice?
 	const Game::HEntity* pSlotReadOnly = GetItemSlot(World, ReceiverID, Storage, Index);
 	if (!pSlotReadOnly) return 0;
 	const auto DestStackID = *pSlotReadOnly;
@@ -154,28 +391,35 @@ void AddItemsToWorld(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, 
 }
 //---------------------------------------------------------------------
 
-static U32 GetContainerCapacityInItems(const Game::CGameWorld& World, const CItemContainerComponent& Container,
-	const CItemComponent* pItem, U32 MinItemCount, Game::HEntity ExcludeStackID)
+// Returns a number of items actually removed
+U32 RemoveItemsFromEntity(Game::CGameWorld& World, U32 Count, Game::HEntity OwnerID, EItemStorage Storage, size_t Index)
 {
-	if (!pItem || pItem->Volume <= 0.f || Container.MaxVolume < 0.f) return std::numeric_limits<U32>().max();
+	if (!OwnerID || !Count || Storage == EItemStorage::None || Storage == EItemStorage::World) return 0;
 
-	const float MinRequiredVolume = pItem->Volume * MinItemCount;
-	float FreeVolume = Container.MaxVolume;
-	for (auto StoredStackID : Container.Items)
-	{
-		if (StoredStackID == ExcludeStackID) continue;
+	const Game::HEntity* pSlotReadOnly = GetItemSlot(World, OwnerID, Storage, Index);
+	if (!pSlotReadOnly) return 0;
 
-		auto pStoredStack = World.FindComponent<const CItemStackComponent>(StoredStackID);
-		if (!pStoredStack || !pStoredStack->Count) continue;
+	//???need to pass ProtoID or it must be checked outside before calling RemoveItemsFromEntity? AllowModified check is then outside too.
+	auto pDestStack = World.FindComponent<CItemStackComponent>(*pSlotReadOnly);
+	if (!pDestStack) return 0;
 
-		if (auto pStoredItem = FindItemComponent<const CItemComponent>(World, StoredStackID, *pStoredStack))
-		{
-			FreeVolume -= (pStoredStack->Count * pStoredItem->Volume);
-			if (FreeVolume < MinRequiredVolume) return 0;
-		}
-	}
+	Count = std::min(Count, pDestStack->Count);
+	pDestStack->Count -= Count;
 
-	return static_cast<U32>(FreeVolume / pItem->Volume);
+	if (!pDestStack->Count)
+		if (auto pSlot = GetItemSlotWritable(World, OwnerID, Storage, Index))
+			*pSlot = {};
+
+	return Count;
+}
+//---------------------------------------------------------------------
+
+// Returns a number of items actually moved
+U32 MoveItems(Game::CGameWorld& World, U32 Count, Game::HEntity SrcID, EItemStorage SrcStorage, size_t SrcIndex, bool Merge)
+{
+	//!!!HERE WILL BE PROBLEM:
+	// if entity storage is separated from world, combinatory explosion will happen
+	// move entity -> entity, entity -> world, world -> entity, world -> world would have to be separate functions
 }
 //---------------------------------------------------------------------
 
@@ -198,7 +442,7 @@ U32 AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Receiver, Game:
 	if (pContainer->MaxVolume >= 0.f)
 	{
 		auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
-		const auto Capacity = GetContainerCapacityInItems(World, *pContainer, pItem, Split ? 1 : pStack->Count, {});
+		const auto Capacity = GetContainerCapacityInItems(World, *pContainer, pItem, Split ? 1 : pStack->Count);
 		if (!Capacity) return pStack->Count;
 		TransferCount = std::min(TransferCount, Capacity);
 	}
