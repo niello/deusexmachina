@@ -59,6 +59,14 @@ static U32 GetContainerCapacityInItems(const Game::CGameWorld& World, const CIte
 }
 //---------------------------------------------------------------------
 
+static U32 GetQuickSlotCapacity(const CItemComponent* pItem)
+{
+	return (pItem && pItem->Volume > 0.f) ?
+		static_cast<U32>(QUICK_SLOT_VOLUME / pItem->Volume) :
+		std::numeric_limits<U32>().max();
+}
+//---------------------------------------------------------------------
+
 static size_t GetFirstEmptySlotIndex(CItemContainerComponent& Container)
 {
 	size_t SlotIndex = 0;
@@ -95,6 +103,20 @@ static size_t GetFirstMergeableSlotIndex(const Game::CGameWorld& World, const CI
 	}
 
 	return SlotIndex;
+}
+//---------------------------------------------------------------------
+
+static void MoveItemsToStack(Game::CGameWorld& World, CItemStackComponent& DestStack, Game::HEntity SrcStackID, U32 Count)
+{
+	if (auto pSrcStack = World.FindComponent<CItemStackComponent>(SrcStackID))
+	{
+		if (pSrcStack->Count <= Count)
+			World.DeleteEntity(SrcStackID);
+		else
+			pSrcStack->Count -= Count;
+	}
+
+	DestStack.Count += Count;
 }
 //---------------------------------------------------------------------
 
@@ -230,19 +252,21 @@ std::pair<Game::HEntity, U32> MoveItemsFromContainerSlot(Game::CGameWorld& World
 	{
 		if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
 		{
+			pContainerWritable->Items[SlotIndex] = {};
 			if (SlotIndex + 1 == pContainerWritable->Items.size())
-				pContainerWritable->Items.pop_back();
-			else
-				pContainerWritable->Items[SlotIndex] = {};
+				ShrinkItemCollection(pContainerWritable->Items);
 		}
 		return { StackID, 0 };
 	}
 }
 //---------------------------------------------------------------------
 
+//!!!TODO
+//U32 MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, Game::HEntity StackID, U32 Count, bool Merge)
+
 // Returns a number of items actually moved in.
 // Zero Count means that the whole stack should be moved. In this case we own this stack and should handle it here.
-U32 MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, Game::HEntity StackID, U32 Count, bool Merge)
+U32 MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity StackID, U32 Count, bool Merge)
 {
 	if (!ContainerID || !StackID) return 0;
 
@@ -255,7 +279,9 @@ U32 MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID,
 	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
 	if (!pItem) return 0;
 
-	const bool HandleSourceStack = !Count;
+	// Use source stack as donor only if it its ownership passed to us
+	const auto SrcStackID = Count ? Game::HEntity{} : StackID;
+
 	Count = std::min(Count ? Count : pSrcStack->Count, GetContainerCapacityInItems(World, *pContainer, pItem, 1));
 	if (!Count) return 0;
 
@@ -267,15 +293,7 @@ U32 MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID,
 		{
 			if (auto pDestStack = World.FindComponent<CItemStackComponent>(pContainer->Items[SlotIndex]))
 			{
-				if (HandleSourceStack)
-				{
-					if (pSrcStack->Count == Count)
-						World.DeleteEntity(StackID);
-					else if (auto pSrcStackWritable = World.FindComponent<CItemStackComponent>(StackID))
-						pSrcStackWritable->Count -= Count;
-				}
-
-				pDestStack->Count += Count;
+				MoveItemsToStack(World, *pDestStack, SrcStackID, Count);
 				return Count;
 			}
 			return 0;
@@ -288,7 +306,7 @@ U32 MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID,
 		const auto SlotIndex = GetFirstEmptySlotIndex(*pContainerWritable);
 		if (SlotIndex < pContainerWritable->Items.size())
 		{
-			if (HandleSourceStack && pSrcStack->Count == Count)
+			if (SrcStackID && pSrcStack->Count == Count)
 			{
 				pContainerWritable->Items[SlotIndex] = StackID;
 				return Count;
@@ -299,9 +317,8 @@ U32 MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID,
 				if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
 					pNewStack->Count = Count;
 
-				if (HandleSourceStack)
-					if (auto pSrcStackWritable = World.FindComponent<CItemStackComponent>(StackID))
-						pSrcStackWritable->Count -= Count;
+				if (auto pSrcStackWritable = World.FindComponent<CItemStackComponent>(SrcStackID))
+					pSrcStackWritable->Count -= Count;
 
 				pContainerWritable->Items[SlotIndex] = NewStackID;
 				return Count;
@@ -357,8 +374,7 @@ U32 RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity ContainerID,
 		}
 	}
 
-	while (!pContainer->Items.empty() && !pContainer->Items.back())
-		pContainer->Items.pop_back();
+	ShrinkItemCollection(pContainer->Items);
 
 	return Count - RemainingCount;
 }
@@ -375,9 +391,8 @@ U32 AddItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t 
 	auto pItem = World.FindComponent<const CItemComponent>(ItemProtoID);
 	if (!pItem) return 0;
 
-	U32 SlotCapacity = (pItem && pItem->Volume > 0.f) ?
-		static_cast<U32>(QUICK_SLOT_VOLUME / pItem->Volume) :
-		std::numeric_limits<U32>().max();
+	U32 SlotCapacity = GetQuickSlotCapacity(pItem);
+	if (!SlotCapacity) return 0;
 
 	auto DestStackID = pEquipment->QuickSlots[SlotIndex];
 
@@ -395,7 +410,6 @@ U32 AddItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t 
 	}
 
 	Count = std::min(Count, SlotCapacity);
-	if (!Count) return 0;
 
 	// Now access destination for writing
 	if (auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID))
@@ -428,9 +442,8 @@ U32 AddItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::
 	auto pItem = World.FindComponent<const CItemComponent>(ItemProtoID);
 	if (!pItem) return 0;
 
-	const U32 SlotCapacity = (pItem && pItem->Volume > 0.f) ?
-		static_cast<U32>(QUICK_SLOT_VOLUME / pItem->Volume) :
-		std::numeric_limits<U32>().max();
+	const U32 SlotCapacity = GetQuickSlotCapacity(pItem);
+	if (!SlotCapacity) return 0;
 
 	U32 RemainingCount = Count;
 
@@ -465,6 +478,118 @@ U32 AddItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::
 	}
 
 	return Count - RemainingCount;
+}
+//---------------------------------------------------------------------
+
+// Returns a source stack ID if movement happened and a number of moved items (zero if the whole stack is moved)
+std::pair<Game::HEntity, U32> MoveItemsFromQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, U32 Count)
+{
+	if (!EntityID || !Count) return { {}, 0 };
+
+	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
+	if (!pEquipment && SlotIndex >= pEquipment->QuickSlots.size()) return { {}, 0 };
+
+	// Don't optimize with constant access because a stack will be altered or deleted anyway
+	const auto StackID = pEquipment->QuickSlots[SlotIndex];
+	auto pStack = World.FindComponent<CItemStackComponent>(StackID);
+	if (!pStack) return { {}, 0 };
+
+	if (pStack->Count > Count)
+	{
+		pStack->Count -= Count;
+		return { StackID, Count };
+	}
+	else
+	{
+		if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
+			pEquipmentWritable->QuickSlots[SlotIndex] = {};
+		return { StackID, 0 };
+	}
+}
+//---------------------------------------------------------------------
+
+//!!!TODO
+//U32 MoveItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity StackID, U32 Count, bool Merge)
+
+// Returns a number of items actually moved in.
+// Zero Count means that the whole stack should be moved. In this case we own this stack and should handle it here.
+U32 MoveItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, U32 Count, bool Merge)
+{
+	if (!EntityID || !StackID) return 0;
+
+	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
+	if (!pEquipment) return 0;
+
+	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
+	if (!pSrcStack || !pSrcStack->Count) return 0;
+
+	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
+	if (!pItem) return 0;
+
+	const auto SlotCapacity = GetQuickSlotCapacity(pItem);
+	if (!SlotCapacity) return 0;
+
+	// Use source stack as donor only if it its ownership passed to us
+	const auto SrcStackID = Count ? Game::HEntity{} : StackID;
+
+	if (!Count)	Count = pSrcStack->Count;
+
+	U32 RemainingCount = Count;
+
+	// Try to merge into an existing stack first
+	if (Merge)
+	{
+		for (auto DestStackID : pEquipment->QuickSlots)
+		{
+			auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID);
+			if (!pDestStack || pDestStack->Count >= SlotCapacity || !CanMergeStacks(*pSrcStack, pDestStack)) continue;
+
+			if (auto pDestStackWritable = World.FindComponent<CItemStackComponent>(DestStackID))
+			{
+				const auto RemainingCapacity = SlotCapacity - pDestStack->Count;
+				MoveItemsToStack(World, *pDestStackWritable, SrcStackID, std::min(RemainingCapacity, RemainingCount));
+				if (RemainingCapacity >= RemainingCount) return Count;
+				RemainingCount -= RemainingCapacity;
+			}
+		}
+	}
+
+	// Put remaining count into an empty slot
+	if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
+	{
+		const auto SlotIndex = GetFirstEmptySlotIndex(*pContainerWritable);
+		if (SlotIndex < pContainerWritable->Items.size())
+		{
+			if (SrcStackID && pSrcStack->Count == RemainingCount)
+			{
+				pContainerWritable->Items[SlotIndex] = StackID;
+				return Count;
+			}
+			else if (auto NewStackID = World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(StackID))
+			{
+				// Split a source stack into two parts and store the new one in a container
+				if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
+					pNewStack->Count = RemainingCount;
+
+				if (auto pSrcStackWritable = World.FindComponent<CItemStackComponent>(SrcStackID))
+					pSrcStackWritable->Count -= RemainingCount;
+
+				pContainerWritable->Items[SlotIndex] = NewStackID;
+				return Count;
+			}
+		}
+	}
+
+	return Count - RemainingCount;
+}
+//---------------------------------------------------------------------
+
+// Returns a number of items actually removed
+U32 RemoveItemsFromQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, U32 Count)
+{
+	const auto [StackID, RemovedCount] = MoveItemsFromQuickSlot(World, EntityID, SlotIndex, Count);
+	if (StackID && !RemovedCount) World.DeleteEntity(StackID);
+	return RemovedCount;
 }
 //---------------------------------------------------------------------
 
