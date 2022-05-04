@@ -106,17 +106,23 @@ static size_t GetFirstMergeableSlotIndex(const Game::CGameWorld& World, const CI
 }
 //---------------------------------------------------------------------
 
-static void MoveItemsToStack(Game::CGameWorld& World, CItemStackComponent& DestStack, Game::HEntity SrcStackID, U32 Count)
+static U32 MoveItemsToStack(Game::CGameWorld& World, CItemStackComponent& DestStack, Game::HEntity SrcStackID, U32 Count)
 {
 	if (auto pSrcStack = World.FindComponent<CItemStackComponent>(SrcStackID))
 	{
 		if (pSrcStack->Count <= Count)
+		{
+			Count = pSrcStack->Count;
 			World.DeleteEntity(SrcStackID);
+		}
 		else
+		{
 			pSrcStack->Count -= Count;
+		}
 	}
 
 	DestStack.Count += Count;
+	return Count;
 }
 //---------------------------------------------------------------------
 
@@ -134,6 +140,40 @@ Game::HEntity CreateItemStack(Game::CGameWorld& World, Game::HEntity ProtoID, U3
 	pStack->Count = Count;
 
 	return StackID;
+}
+//---------------------------------------------------------------------
+
+static Game::HEntity CloneItemStack(Game::CGameWorld& World, Game::HEntity StackID, U32 Count)
+{
+	auto NewStackID = World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(StackID);
+	if (!NewStackID) return {};
+
+	if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
+		pNewStack->Count = Count;
+
+	return NewStackID;
+}
+//---------------------------------------------------------------------
+
+static Game::HEntity SplitItemStack(Game::CGameWorld& World, Game::HEntity StackID, U32 Count)
+{
+	auto pSrcStack = World.FindComponent<CItemStackComponent>(StackID);
+	if (!pSrcStack) return {};
+
+	// No splitting required, move the whole source stack
+	if (pSrcStack->Count <= Count) return StackID;
+
+	auto NewStackID = World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(StackID);
+
+	if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
+	{
+		pSrcStack->Count -= Count;
+		pNewStack->Count = Count;
+		return NewStackID;
+	}
+
+	World.DeleteEntity(NewStackID);
+	return {};
 }
 //---------------------------------------------------------------------
 
@@ -292,10 +332,7 @@ U32 MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Gam
 		if (SlotIndex < pContainer->Items.size())
 		{
 			if (auto pDestStack = World.FindComponent<CItemStackComponent>(pContainer->Items[SlotIndex]))
-			{
-				MoveItemsToStack(World, *pDestStack, SrcStackID, Count);
-				return Count;
-			}
+				return MoveItemsToStack(World, *pDestStack, SrcStackID, Count);
 			return 0;
 		}
 	}
@@ -306,23 +343,8 @@ U32 MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Gam
 		const auto SlotIndex = GetFirstEmptySlotIndex(*pContainerWritable);
 		if (SlotIndex < pContainerWritable->Items.size())
 		{
-			if (SrcStackID && pSrcStack->Count == Count)
-			{
-				pContainerWritable->Items[SlotIndex] = StackID;
-				return Count;
-			}
-			else if (auto NewStackID = World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(StackID))
-			{
-				// Split a source stack into two parts and store the new one in a container
-				if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
-					pNewStack->Count = Count;
-
-				if (auto pSrcStackWritable = World.FindComponent<CItemStackComponent>(SrcStackID))
-					pSrcStackWritable->Count -= Count;
-
-				pContainerWritable->Items[SlotIndex] = NewStackID;
-				return Count;
-			}
+			pContainerWritable->Items[SlotIndex] = SrcStackID ? SplitItemStack(World, StackID, Count) : CloneItemStack(World, StackID, Count);
+			return pContainerWritable->Items[SlotIndex] ? Count : 0;
 		}
 	}
 
@@ -536,7 +558,7 @@ U32 MoveItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game:
 
 	U32 RemainingCount = Count;
 
-	// Try to merge into an existing stack first
+	// First try to merge into existing stacks of the same item
 	if (Merge)
 	{
 		for (auto DestStackID : pEquipment->QuickSlots)
@@ -546,37 +568,24 @@ U32 MoveItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game:
 
 			if (auto pDestStackWritable = World.FindComponent<CItemStackComponent>(DestStackID))
 			{
-				const auto RemainingCapacity = SlotCapacity - pDestStack->Count;
-				MoveItemsToStack(World, *pDestStackWritable, SrcStackID, std::min(RemainingCapacity, RemainingCount));
-				if (RemainingCapacity >= RemainingCount) return Count;
-				RemainingCount -= RemainingCapacity;
+				const auto MovedCount = MoveItemsToStack(World, *pDestStackWritable, SrcStackID, std::min(SlotCapacity - pDestStack->Count, RemainingCount));
+				if (MovedCount >= RemainingCount) return Count;
+				RemainingCount -= MovedCount;
 			}
 		}
 	}
 
-	// Put remaining count into an empty slot
+	// Put remaining count into free slots
 	if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
 	{
-		const auto SlotIndex = GetFirstEmptySlotIndex(*pContainerWritable);
-		if (SlotIndex < pContainerWritable->Items.size())
+		for (auto& DestSlot : pEquipmentWritable->QuickSlots)
 		{
-			if (SrcStackID && pSrcStack->Count == RemainingCount)
-			{
-				pContainerWritable->Items[SlotIndex] = StackID;
-				return Count;
-			}
-			else if (auto NewStackID = World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(StackID))
-			{
-				// Split a source stack into two parts and store the new one in a container
-				if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
-					pNewStack->Count = RemainingCount;
-
-				if (auto pSrcStackWritable = World.FindComponent<CItemStackComponent>(SrcStackID))
-					pSrcStackWritable->Count -= RemainingCount;
-
-				pContainerWritable->Items[SlotIndex] = NewStackID;
-				return Count;
-			}
+			if (DestSlot) continue;
+			const auto MovedCount = std::min(SlotCapacity, RemainingCount);
+			DestSlot = SrcStackID ? SplitItemStack(World, StackID, MovedCount) : CloneItemStack(World, StackID, MovedCount);
+			if (!DestSlot) continue;
+			if (MovedCount >= RemainingCount) return Count;
+			RemainingCount -= MovedCount;
 		}
 	}
 
