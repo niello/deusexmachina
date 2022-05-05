@@ -35,6 +35,31 @@ constexpr EEquipmentSlotType EEquipmentSlot_Type[] =
 	EEquipmentSlotType::HandItem
 };
 
+// TODO: to CGameLevel?
+template<typename TPredicate>
+static Game::HEntity FindClosestEntity(const vector3& Center, float Radius, TPredicate Predicate)
+{
+	float ClosestDistanceSq = std::numeric_limits<float>().max();
+	Game::HEntity ClosestEntityID;
+
+	//!!!FIXME: need to set "Interactable" collision flag in all interactable entity colliders!
+	pLevel->EnumEntitiesInSphere(Center, Radius, /*CStrID("Interactable")*/ CStrID::Empty,
+		[&ClosestDistanceSq, &ClosestEntityID, Center](DEM::Game::HEntity EntityID, const vector3& Pos)
+	{
+		const auto DistanceSq = vector3::SqDistance(Pos, Center);
+		if (ClosestDistanceSq < DistanceSq) return true;
+
+		if (!Predicate || Predicate(EntityID))
+		{
+			ClosestDistanceSq = DistanceSq;
+			ClosestEntityID = EntityID;
+		}
+
+		return true;
+	});
+}
+//---------------------------------------------------------------------
+
 static U32 GetContainerCapacityInItems(const Game::CGameWorld& World, const CItemContainerComponent& Container,
 	const CItemComponent* pItem, U32 MinItemCount, Game::HEntity ExcludeStackID = {})
 {
@@ -224,6 +249,7 @@ U32 AddItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, 
 }
 //---------------------------------------------------------------------
 
+// Returns a number of items actually added
 U32 AddItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity ItemProtoID, U32 Count, bool Merge)
 {
 	if (!ContainerID || !ItemProtoID || !Count) return 0;
@@ -606,33 +632,26 @@ U32 RemoveItemsFromQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, si
 // Returns a number of items actually added
 U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius)
 {
-	if (!ItemProtoID || !Count) return 0;
+	if (!LevelID || !ItemProtoID || !Count) return 0;
 
 	auto pItem = World.FindComponent<const CItemComponent>(ItemProtoID);
 	if (!pItem) return 0;
 
+	// Try to merge into an existing stack or item pile container first
 	if (MergeRadius > 0.f)
 	{
 		if (auto pLevel = World.FindLevel(LevelID))
 		{
-			float ClosestDistanceSq = std::numeric_limits<float>().max();
-			Game::HEntity DestStackID;
-
-			//!!!FIXME: need to set "Interactable" collision flag in all interactable entity colliders!
-			pLevel->EnumEntitiesInSphere(Tfm.Translation, MergeRadius, /*CStrID("Interactable")*/ CStrID::Empty,
-				[&World, &ClosestDistanceSq, &DestStackID, ItemProtoID, CenterPos = Tfm.Translation](DEM::Game::HEntity EntityID, const vector3& Pos)
+			// TODO:
+			// Query item stacks and tmp item containers in accessible range, not owned by someone else (check ownership in CanMergeItems?)
+			// If tmp item containers are found, add the stack to the closest one (take lookat dir into account?)
+			// Else if stacks are found, try to merge into the closest one (take lookat dir into account?)
+			// If not merged, create tmp item container and add found stack and our stack to it
+			const auto DestStackID = FindClosestEntity(Tfm.Translation, MergeRadius,
+				[&World, ItemProtoID](Game::HEntity EntityID)
 			{
-				const auto DistanceSq = vector3::SqDistance(Pos, CenterPos);
-				if (ClosestDistanceSq < DistanceSq) return true;
-
 				auto pGroundStack = World.FindComponent<const CItemStackComponent>(EntityID);
-				if (pGroundStack && CanMergeItems(ItemProtoID, pGroundStack))
-				{
-					ClosestDistanceSq = DistanceSq;
-					DestStackID = EntityID;
-				}
-
-				return true;
+				return pGroundStack && CanMergeItems(ItemProtoID, pGroundStack);
 			});
 
 			if (auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID))
@@ -643,23 +662,86 @@ U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 C
 		}
 	}
 
-	// Now access destination for writing
-	if (auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID))
+	//???TODO: rename to OnStackAddedToLocation or like that? The same name pattern for posteffects of every storage.
+	return DropItemsToLocation(World, CreateItemStack(World, ItemProtoID, Count, LevelID), Tfm) ? Count : 0;
+}
+//---------------------------------------------------------------------
+
+// Returns a source stack ID if movement happened and a number of moved items (zero if the whole stack is moved)
+std::pair<Game::HEntity, U32> MoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count)
+{
+	if (!StackID || !Count) return { {}, 0 };
+
+	auto pStack = World.FindComponent<CItemStackComponent>(StackID);
+	if (!pStack) return { {}, 0 };
+
+	if (pStack->Count > Count)
 	{
-		pDestStack->Count += Count;
-		return Count;
+		pStack->Count -= Count;
+		return { StackID, Count };
 	}
-	else if (auto NewStackID = CreateItemStack(World, ItemProtoID, Count))
+	else
 	{
-		if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
+		RemoveItemsFromLocation(World, StackID);
+		return { StackID, 0 };
+	}
+}
+//---------------------------------------------------------------------
+
+// Returns a number of items actually moved in.
+// Zero Count means that the whole stack should be moved. In this case we own this stack and should handle it here.
+U32 MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius)
+{
+	if (!LevelID || !StackID) return 0;
+
+	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
+	if (!pSrcStack || !pSrcStack->Count) return 0;
+
+	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
+	if (!pItem) return 0;
+
+	// Use source stack as donor only if it its ownership passed to us
+	const auto SrcStackID = Count ? Game::HEntity{} : StackID;
+
+	if (!Count)	Count = pSrcStack->Count;
+
+	// Try to merge into an existing stack or item pile container first
+	if (MergeRadius > 0.f)
+	{
+		if (auto pLevel = World.FindLevel(LevelID))
 		{
-			pContainerWritable->Items[SlotIndex] = NewStackID;
-			return Count;
+			// TODO:
+			// Query item stacks and tmp item containers in accessible range, not owned by someone else (check ownership in CanMergeItems?)
+			// If tmp item containers are found, add the stack to the closest one (take lookat dir into account?)
+			// Else if stacks are found, try to merge into the closest one (take lookat dir into account?)
+			// If not merged, create tmp item container and add found stack and our stack to it
+			const auto DestStackID = FindClosestEntity(Tfm.Translation, MergeRadius,
+				[&World, pSrcStack](Game::HEntity EntityID)
+			{
+				auto pGroundStack = World.FindComponent<const CItemStackComponent>(EntityID);
+				return pGroundStack && CanMergeStacks(*pSrcStack, pGroundStack);
+			});
+
+			auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID);
+			return pDestStack ? MoveItemsToStack(World, *pDestStack, SrcStackID, Count) : 0;
 		}
-		World.DeleteEntity(NewStackID);
 	}
 
-	return 0;
+	// Put remaining count into an empty slot
+	//!!!TODO: ensure that the stack was splitted.cloned into the correct game level!
+	const auto NewStackID = SrcStackID ? SplitItemStack(World, StackID, Count) : CloneItemStack(World, StackID, Count);
+
+	//???TODO: rename to OnStackAddedToLocation or like that? The same name pattern for posteffects of every storage.
+	return DropItemsToLocation(World, NewStackID, Tfm) ? Count : 0;
+}
+//---------------------------------------------------------------------
+
+// Returns a number of items actually removed
+U32 RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count)
+{
+	const auto [StackID, RemovedCount] = MoveItemsFromLocation(World, StackID, Count);
+	if (StackID && !RemovedCount) World.DeleteEntity(StackID);
+	return RemovedCount;
 }
 //---------------------------------------------------------------------
 
@@ -993,25 +1075,17 @@ void ShrinkItemCollection(std::vector<Game::HEntity>& Collection)
 }
 //---------------------------------------------------------------------
 
-//!!!check dropping near another item stack or pile (temporary container)! bool flag 'allow merging'?
-bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemStackEntity, const Math::CTransformSRT& Tfm)
+bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, const Math::CTransformSRT& Tfm)
 {
-	auto pItemStack = World.FindComponent<CItemStackComponent>(ItemStackEntity);
+	auto pItemStack = World.FindComponent<const CItemStackComponent>(StackID);
 	if (!pItemStack) return false;
 
-	const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, ItemStackEntity, *pItemStack);
+	const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, StackID, *pItemStack);
 	if (!pItem) return false;
-
-	// TODO:
-	// If merging enabled, query item stacks and tmp item containers in accessible range, not owned by someone else
-	// If tmp item containers are found, add the stack to the closest one (take lookat dir into account?)
-	// Else if stacks are found, try to merge into the closest one (take lookat dir into account?)
-	// If not merged, create tmp item container and add found stack and our stack to it
-	// If nothing found, drop a new item object into location (create scene and RB)
 
 	if (pItem->WorldModelID)
 	{
-		auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(ItemStackEntity);
+		auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(StackID);
 		pSceneComponent->RootNode->RemoveFromParent();
 		pSceneComponent->AssetID = pItem->WorldModelID;
 		pSceneComponent->SetLocalTransform(Tfm);
@@ -1019,7 +1093,7 @@ bool DropItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemStackEntity,
 
 	if (pItem->WorldPhysicsID)
 	{
-		auto pPhysicsComponent = World.AddComponent<Game::CRigidBodyComponent>(ItemStackEntity);
+		auto pPhysicsComponent = World.AddComponent<Game::CRigidBodyComponent>(StackID);
 		pPhysicsComponent->ShapeAssetID = pItem->WorldPhysicsID;
 		pPhysicsComponent->Mass = pItemStack->Count * pItem->Weight;
 		pPhysicsComponent->CollisionGroupID = CStrID("PhysicalDynamic|Interactable");
