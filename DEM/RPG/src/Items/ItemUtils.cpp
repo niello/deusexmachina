@@ -3,6 +3,7 @@
 #include <Items/ItemContainerComponent.h>
 #include <Items/EquipmentComponent.h>
 #include <Items/EquippableComponent.h>
+#include <Game/GameLevel.h>
 #include <Scene/SceneComponent.h>
 #include <Physics/RigidBodyComponent.h>
 
@@ -126,7 +127,7 @@ static U32 MoveItemsToStack(Game::CGameWorld& World, CItemStackComponent& DestSt
 }
 //---------------------------------------------------------------------
 
-Game::HEntity CreateItemStack(Game::CGameWorld& World, Game::HEntity ProtoID, U32 Count, CStrID LevelID)
+Game::HEntity CreateItemStack(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID)
 {
 	Game::HEntity StackID = World.CreateEntity(LevelID);
 	auto pStack = World.AddComponent<CItemStackComponent>(StackID);
@@ -136,7 +137,7 @@ Game::HEntity CreateItemStack(Game::CGameWorld& World, Game::HEntity ProtoID, U3
 		return {};
 	}
 
-	pStack->Prototype = ProtoID;
+	pStack->Prototype = ItemProtoID;
 	pStack->Count = Count;
 
 	return StackID;
@@ -331,9 +332,8 @@ U32 MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Gam
 		const auto SlotIndex = GetFirstMergeableSlotIndex(World, *pContainer, StackID);
 		if (SlotIndex < pContainer->Items.size())
 		{
-			if (auto pDestStack = World.FindComponent<CItemStackComponent>(pContainer->Items[SlotIndex]))
-				return MoveItemsToStack(World, *pDestStack, SrcStackID, Count);
-			return 0;
+			auto pDestStack = World.FindComponent<CItemStackComponent>(pContainer->Items[SlotIndex]);
+			return pDestStack ? MoveItemsToStack(World, *pDestStack, SrcStackID, Count) : 0;
 		}
 	}
 
@@ -353,6 +353,7 @@ U32 MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Gam
 //---------------------------------------------------------------------
 
 //???need a separate optimized method for moving from slot to slot inside the same container? main optimization is avoiding on add/ on remove posteffects.
+//not needed for other storage types? or Q-slots may benefit of their version?
 //U32 MoveItemsBetweenContainerSlots(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SrcSlotIndex, size_t DestSlotIndex, U32 Count)
 
 // Returns a number of items actually removed
@@ -601,6 +602,71 @@ U32 RemoveItemsFromQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, si
 	return RemovedCount;
 }
 //---------------------------------------------------------------------
+
+// Returns a number of items actually added
+U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius)
+{
+	if (!ItemProtoID || !Count) return 0;
+
+	auto pItem = World.FindComponent<const CItemComponent>(ItemProtoID);
+	if (!pItem) return 0;
+
+	if (MergeRadius > 0.f)
+	{
+		if (auto pLevel = World.FindLevel(LevelID))
+		{
+			float ClosestDistanceSq = std::numeric_limits<float>().max();
+			Game::HEntity DestStackID;
+
+			//!!!FIXME: need to set "Interactable" collision flag in all interactable entity colliders!
+			pLevel->EnumEntitiesInSphere(Tfm.Translation, MergeRadius, /*CStrID("Interactable")*/ CStrID::Empty,
+				[&World, &ClosestDistanceSq, &DestStackID, ItemProtoID, CenterPos = Tfm.Translation](DEM::Game::HEntity EntityID, const vector3& Pos)
+			{
+				const auto DistanceSq = vector3::SqDistance(Pos, CenterPos);
+				if (ClosestDistanceSq < DistanceSq) return true;
+
+				auto pGroundStack = World.FindComponent<const CItemStackComponent>(EntityID);
+				if (pGroundStack && CanMergeItems(ItemProtoID, pGroundStack))
+				{
+					ClosestDistanceSq = DistanceSq;
+					DestStackID = EntityID;
+				}
+
+				return true;
+			});
+
+			if (auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID))
+			{
+				pDestStack->Count += Count;
+				return Count;
+			}
+		}
+	}
+
+	// Now access destination for writing
+	if (auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID))
+	{
+		pDestStack->Count += Count;
+		return Count;
+	}
+	else if (auto NewStackID = CreateItemStack(World, ItemProtoID, Count))
+	{
+		if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
+		{
+			pContainerWritable->Items[SlotIndex] = NewStackID;
+			return Count;
+		}
+		World.DeleteEntity(NewStackID);
+	}
+
+	return 0;
+}
+//---------------------------------------------------------------------
+
+
+/////////////////////////////
+
+
 
 static U32 GetSlotMaxCapacity(Game::CGameWorld& World, Game::HEntity ProtoID, Game::HEntity ReceiverID, EItemStorage Storage, size_t Index)
 {
