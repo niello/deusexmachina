@@ -152,6 +152,27 @@ static U32 MoveItemsToStack(Game::CGameWorld& World, CItemStackComponent& DestSt
 }
 //---------------------------------------------------------------------
 
+// Returns true if the stack is emptied and deleted
+static bool RemoveItemsFromStack(Game::CGameWorld& World, Game::HEntity StackID, U32& Count)
+{
+	auto pStack = World.FindComponent<CItemStackComponent>(StackID);
+	if (!pStack) return false;
+
+	if (pStack->Count > Count)
+	{
+		pStack->Count -= Count;
+		Count = 0;
+		return false;
+	}
+	else
+	{
+		Count -= pStack->Count;
+		World.DeleteEntity(StackID);
+		return true;
+	}
+}
+//---------------------------------------------------------------------
+
 Game::HEntity CreateItemStack(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID)
 {
 	Game::HEntity StackID = World.CreateEntity(LevelID);
@@ -209,7 +230,7 @@ U32 AddItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, 
 	if (!ContainerID || !ItemProtoID || !Count) return 0;
 
 	auto pContainer = World.FindComponent<const CItemContainerComponent>(ContainerID);
-	if (!pContainer && SlotIndex >= pContainer->Items.size()) return 0;
+	if (!pContainer || SlotIndex >= pContainer->Items.size()) return 0;
 
 	auto pItem = World.FindComponent<const CItemComponent>(ItemProtoID);
 	if (!pItem) return 0;
@@ -450,22 +471,10 @@ U32 RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity ContainerID,
 		auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
 		if (!pStack || pStack->Prototype != ItemProtoID || (!AllowModified && pStack->Modified)) continue;
 
-		if (pStack->Count > RemainingCount)
-		{
-			if (auto pStackWritable = World.FindComponent<CItemStackComponent>(StackID))
-			{
-				pStackWritable->Count -= RemainingCount;
-				RemainingCount = 0;
-				break;
-			}
-		}
-		else
-		{
-			RemainingCount -= pStack->Count;
-			World.DeleteEntity(StackID);
+		if (RemoveItemsFromStack(World, StackID, RemainingCount))
 			StackID = {};
-			if (!RemainingCount) break;
-		}
+
+		if (!RemainingCount) break;
 	}
 
 	ShrinkItemCollection(pContainer->Items);
@@ -480,7 +489,7 @@ U32 AddItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t 
 	if (!EntityID || !ItemProtoID || !Count) return 0;
 
 	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
-	if (!pEquipment && SlotIndex >= pEquipment->QuickSlots.size()) return 0;
+	if (!pEquipment || SlotIndex >= pEquipment->QuickSlots.size()) return 0;
 
 	auto pItem = World.FindComponent<const CItemComponent>(ItemProtoID);
 	if (!pItem) return 0;
@@ -724,6 +733,30 @@ U32 RemoveItemsFromQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, si
 }
 //---------------------------------------------------------------------
 
+// Returns a number of items actually removed
+U32 RemoveItemsFromQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count, bool AllowModified)
+{
+	if (!EntityID || !ItemProtoID || !Count) return 0;
+
+	auto pEquipment = World.FindComponent<Sh2::CEquipmentComponent>(EntityID);
+	if (!pEquipment) return 0;
+
+	U32 RemainingCount = Count;
+	for (auto& StackID : pEquipment->QuickSlots)
+	{
+		auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
+		if (!pStack || pStack->Prototype != ItemProtoID || (!AllowModified && pStack->Modified)) continue;
+
+		if (RemoveItemsFromStack(World, StackID, RemainingCount))
+			StackID = {};
+
+		if (!RemainingCount) break;
+	}
+
+	return Count - RemainingCount;
+}
+//---------------------------------------------------------------------
+
 // Returns a number of items actually added
 U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius)
 {
@@ -837,6 +870,56 @@ U32 RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 
 	const auto [RemovedStackID, RemovedCount] = MoveItemsFromLocation(World, StackID, Count);
 	if (RemovedStackID && !RemovedCount) World.DeleteEntity(RemovedStackID);
 	return RemovedCount;
+}
+//---------------------------------------------------------------------
+
+// FIXME: major code duplication with AddItemsToQuickSlot!
+// Returns a number of items actually added
+U32 AddItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity ItemProtoID, U32 Count, bool Merge)
+{
+	if (!EntityID || !ItemProtoID || !Count || SlotIndex >= Sh2::EEquipmentSlot::COUNT) return 0;
+
+	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
+	if (!pEquipment) return 0;
+
+	U32 SlotCapacity = CanEquipItems(World, EntityID, ItemProtoID, EEquipmentSlot_Type[SlotIndex]);
+	if (!SlotCapacity) return 0;
+
+	auto DestStackID = pEquipment->Equipment[SlotIndex];
+
+	// Can't add to a slot occupied by an incompatible item stack
+	// NB: dest stack is accessed for reading
+	if (DestStackID)
+	{
+		if (!Merge) return 0;
+
+		if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
+		{
+			if (SlotCapacity <= pDestStack->Count || !CanMergeItems(ItemProtoID, pDestStack)) return 0;
+			SlotCapacity -= pDestStack->Count;
+		}
+	}
+
+	Count = std::min(Count, SlotCapacity);
+
+	// Now access destination for writing
+	if (auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID))
+	{
+		pDestStack->Count += Count;
+		return Count;
+	}
+	else if (auto NewStackID = CreateItemStack(World, ItemProtoID, Count))
+	{
+		if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
+		{
+			pEquipmentWritable->Equipment[SlotIndex] = NewStackID;
+			UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(SlotIndex));
+			return Count;
+		}
+		World.DeleteEntity(NewStackID);
+	}
+
+	return 0;
 }
 //---------------------------------------------------------------------
 
