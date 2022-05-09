@@ -37,26 +37,25 @@ constexpr EEquipmentSlotType EEquipmentSlot_Type[] =
 
 // TODO: to CGameLevel?
 template<typename TPredicate>
-static Game::HEntity FindClosestEntity(const vector3& Center, float Radius, TPredicate Predicate)
+static Game::HEntity FindClosestEntity(const Game::CGameLevel& Level, const vector3& Center, float Radius, TPredicate Predicate)
 {
 	float ClosestDistanceSq = std::numeric_limits<float>().max();
 	Game::HEntity ClosestEntityID;
 
 	//!!!FIXME: need to set "Interactable" collision flag in all interactable entity colliders!
-	pLevel->EnumEntitiesInSphere(Center, Radius, /*CStrID("Interactable")*/ CStrID::Empty,
-		[&ClosestDistanceSq, &ClosestEntityID, Center](DEM::Game::HEntity EntityID, const vector3& Pos)
+	Level.EnumEntitiesInSphere(Center, Radius, /*CStrID("Interactable")*/ CStrID::Empty,
+		[&ClosestDistanceSq, &ClosestEntityID, Center, Predicate](DEM::Game::HEntity EntityID, const vector3& Pos)
 	{
 		const auto DistanceSq = vector3::SqDistance(Pos, Center);
-		if (ClosestDistanceSq < DistanceSq) return true;
-
-		if (!Predicate || Predicate(EntityID))
+		if (ClosestDistanceSq > DistanceSq && Predicate(EntityID))
 		{
 			ClosestDistanceSq = DistanceSq;
 			ClosestEntityID = EntityID;
 		}
-
 		return true;
 	});
+
+	return ClosestEntityID;
 }
 //---------------------------------------------------------------------
 
@@ -411,6 +410,11 @@ U32 MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Gam
 
 	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
 	if (!pItem) return 0;
+
+	// TODO: need?
+	//// Check that we don't insert already contained stack
+	//if (std::find(pContainer->Items.cbegin(), pContainer->Items.cend(), StackID) != pContainer->Items.cend())
+	//	return 0;
 
 	// Use source stack as donor only if it its ownership passed to us
 	const auto SrcStackID = Count ? Game::HEntity{} : StackID;
@@ -775,7 +779,7 @@ U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 C
 			// If tmp item containers are found, add the stack to the closest one (take lookat dir into account?)
 			// Else if stacks are found, try to merge into the closest one (take lookat dir into account?)
 			// If not merged, create tmp item container and add found stack and our stack to it
-			const auto DestStackID = FindClosestEntity(Tfm.Translation, MergeRadius,
+			const auto DestStackID = FindClosestEntity(*pLevel, Tfm.Translation, MergeRadius,
 				[&World, ItemProtoID](Game::HEntity EntityID)
 			{
 				auto pGroundStack = World.FindComponent<const CItemStackComponent>(EntityID);
@@ -843,7 +847,7 @@ U32 MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Coun
 			// If tmp item containers are found, add the stack to the closest one (take lookat dir into account?)
 			// Else if stacks are found, try to merge into the closest one (take lookat dir into account?)
 			// If not merged, create tmp item container and add found stack and our stack to it
-			const auto DestStackID = FindClosestEntity(Tfm.Translation, MergeRadius,
+			const auto DestStackID = FindClosestEntity(*pLevel, Tfm.Translation, MergeRadius,
 				[&World, pSrcStack](Game::HEntity EntityID)
 			{
 				auto pGroundStack = World.FindComponent<const CItemStackComponent>(EntityID);
@@ -923,204 +927,283 @@ U32 AddItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, siz
 }
 //---------------------------------------------------------------------
 
-
-/////////////////////////////
-
-
-
-static U32 GetSlotMaxCapacity(Game::CGameWorld& World, Game::HEntity ProtoID, Game::HEntity ReceiverID, EItemStorage Storage, size_t Index)
+// Returns a number of items actually added
+U32 AddItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count, bool Merge)
 {
-	// World has unlimited capacity
-	if (Storage == EItemStorage::World)
-		return std::numeric_limits<U32>().max();
+	if (!EntityID || !ItemProtoID || !Count) return 0;
 
-	// Count-based limit
-	if (Storage == EItemStorage::Equipment)
+	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
+	if (!pEquipment) return 0;
+
+	U32 RemainingCount = Count;
+
+	// First try to merge into existing stacks of the same item
+	if (Merge)
 	{
-		auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ReceiverID);
-		return (pEquipment && Index < Sh2::EEquipmentSlot::COUNT) ? CanEquipItems(World, ReceiverID, ProtoID, EEquipmentSlot_Type[Index]) : 0;
+		for (size_t i = 0; i < Sh2::EEquipmentSlot::COUNT; ++i)
+		{
+			const auto DestStackID = pEquipment->Equipment[i];
+			auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID);
+			if (!pDestStack || !CanMergeItems(ItemProtoID, pDestStack)) continue;
+
+			const U32 SlotCapacity = CanEquipItems(World, EntityID, ItemProtoID, EEquipmentSlot_Type[i]);
+			if (pDestStack->Count >= SlotCapacity) continue;
+
+			if (auto pDestStackWritable = World.FindComponent<CItemStackComponent>(DestStackID))
+			{
+				const auto RemainingCapacity = SlotCapacity - pDestStack->Count;
+				pDestStackWritable->Count += std::min(RemainingCapacity, RemainingCount);
+				if (RemainingCapacity >= RemainingCount) return Count;
+				RemainingCount -= RemainingCapacity;
+			}
+		}
 	}
 
-	// Volume-based limit
-	auto pItem = World.FindComponent<const CItemComponent>(ProtoID);
-	if (!pItem) return 0;
-	if (pItem->Volume <= 0.f) return std::numeric_limits<U32>().max();
-
-	switch (Storage)
+	// Put remaining count into free slots
+	if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
 	{
-		case EItemStorage::Container:
+		for (size_t i = 0; i < Sh2::EEquipmentSlot::COUNT; ++i)
 		{
-			// Container is limited by a total volume of stacks inside it
-			auto pContainer = World.FindComponent<const CItemContainerComponent>(ReceiverID);
-			if (!pContainer) return 0;
-			if (pContainer->MaxVolume < 0.f) return std::numeric_limits<U32>().max();
-
-			float UsedVolume = 0.f;
-			for (size_t i = 0; i < pContainer->Items.size(); ++i)
-			{
-				if (i == Index) continue;
-
-				const auto StackID = pContainer->Items[i];
-
-				if (auto pStack = World.FindComponent<const CItemStackComponent>(StackID))
-					if (auto pContainedItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack))
-						UsedVolume += pStack->Count * pContainedItem->Volume;
-			}
-
-			return (pContainer->MaxVolume > UsedVolume) ? ((pContainer->MaxVolume - UsedVolume) / pItem->Volume) : 0;
+			auto& DestSlot = pEquipmentWritable->Equipment[i];
+			if (DestSlot) continue;
+			const U32 SlotCapacity = CanEquipItems(World, EntityID, ItemProtoID, EEquipmentSlot_Type[i]);
+			DestSlot = CreateItemStack(World, ItemProtoID, std::min(SlotCapacity, RemainingCount));
+			UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(i));
+			if (SlotCapacity >= RemainingCount) return Count;
+			RemainingCount -= SlotCapacity;
 		}
-		case EItemStorage::QuickSlot:
+	}
+
+	return Count - RemainingCount;
+}
+//---------------------------------------------------------------------
+
+//???size_t FindEquipmentSlotForItem(item) - to check if we can equip something before we do that! E.g. for UI prompt "Equip immediately?".
+
+// Returns a source stack ID if movement happened and a number of moved items (zero if the whole stack is moved)
+std::pair<Game::HEntity, U32> MoveItemsFromEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, U32 Count)
+{
+	if (!EntityID || !Count || SlotIndex >= Sh2::EEquipmentSlot::COUNT) return { {}, 0 };
+
+	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
+	if (!pEquipment) return { {}, 0 };
+
+	// Don't optimize with constant access because a stack will be altered or deleted anyway
+	const auto StackID = pEquipment->QuickSlots[SlotIndex];
+	auto pStack = World.FindComponent<CItemStackComponent>(StackID);
+	if (!pStack) return { {}, 0 };
+
+	if (pStack->Count > Count)
+	{
+		pStack->Count -= Count;
+		return { StackID, Count };
+	}
+	else
+	{
+		if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
 		{
-			// Each quick slot has its independent capacity
-			auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ReceiverID);
-			return (pEquipment && Index < pEquipment->QuickSlots.size()) ? (QUICK_SLOT_VOLUME / pItem->Volume) : 0;
+			pEquipmentWritable->QuickSlots[SlotIndex] = {};
+			UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(SlotIndex));
 		}
+		return { StackID, 0 };
+	}
+}
+//---------------------------------------------------------------------
+
+// Returns a number of items actually moved in.
+// Zero Count means that the whole stack should be moved. In this case we own this stack and should handle it here.
+U32 MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity StackID, U32 Count, bool Merge)
+{
+	if (!EntityID || !StackID || !Count || SlotIndex >= Sh2::EEquipmentSlot::COUNT) return 0;
+
+	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
+	if (!pEquipment) return 0;
+
+	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
+	if (!pSrcStack || !pSrcStack->Count) return 0;
+
+	// Use source stack as donor only if it its ownership passed to us
+	const auto SrcStackID = Count ? Game::HEntity{} : StackID;
+
+	U32 SlotCapacity = CanEquipItems(World, EntityID, StackID, EEquipmentSlot_Type[SlotIndex]);
+	if (!SlotCapacity) return 0;
+
+	auto DestStackID = pEquipment->QuickSlots[SlotIndex];
+
+	// Can't add to a slot occupied by an incompatible item stack
+	// NB: dest stack is accessed for reading
+	if (DestStackID)
+	{
+		if (!Merge) return 0;
+
+		if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
+		{
+			if (SlotCapacity <= pDestStack->Count || !CanMergeStacks(*pSrcStack, pDestStack)) return 0;
+			SlotCapacity -= pDestStack->Count;
+		}
+	}
+
+	Count = std::min(Count, SlotCapacity);
+
+	// Now access destination for writing
+	if (auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID))
+	{
+		return MoveItemsToStack(World, *pDestStack, SrcStackID, Count);
+	}
+	else if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
+	{
+		pEquipmentWritable->QuickSlots[SlotIndex] = SrcStackID ? SplitItemStack(World, StackID, Count) : CloneItemStack(World, StackID, Count);
+		UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(SlotIndex));
+		return pEquipmentWritable->QuickSlots[SlotIndex] ? Count : 0;
 	}
 
 	return 0;
 }
 //---------------------------------------------------------------------
 
-// Returns not transferred count
-U32 AddItemsIntoContainer(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, bool Merge, bool Split)
+// Returns a number of items actually moved in.
+// Zero Count means that the whole stack should be moved. In this case we own this stack and should handle it here.
+U32 MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, U32 Count, bool Merge)
 {
-	auto pStack = World.FindComponent<CItemStackComponent>(StackID);
-	n_assert_dbg(pStack && pStack->Count);
-	if (!pStack || !pStack->Count) return 0;
+	if (!EntityID || !StackID) return 0;
 
-	auto pContainer = World.FindComponent<CItemContainerComponent>(Receiver);
-	if (!pContainer) return pStack->Count;
+	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
+	if (!pEquipment) return 0;
 
-	// Check that we don't insert already contained stack
-	if (std::find(pContainer->Items.cbegin(), pContainer->Items.cend(), StackID) != pContainer->Items.cend())
-		return 0;
+	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
+	if (!pSrcStack || !pSrcStack->Count) return 0;
 
-	// Check volume limits. Weight doesn't block adding items, only carrying them.
-	auto TransferCount = pStack->Count;
-	if (pContainer->MaxVolume >= 0.f)
-	{
-		auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
-		const auto Capacity = GetContainerCapacityInItems(World, *pContainer, pItem, Split ? 1 : pStack->Count);
-		if (!Capacity) return pStack->Count;
-		TransferCount = std::min(TransferCount, Capacity);
-	}
+	// Use source stack as donor only if it its ownership passed to us
+	const auto SrcStackID = Count ? Game::HEntity{} : StackID;
 
-	// Items inside a container are always hidden from the view
-	const U32 RemainingCount = pStack->Count - TransferCount;
-	if (!RemainingCount)
-		RemoveItemsFromLocation(World, StackID);
+	if (!Count)	Count = pSrcStack->Count;
 
-	// Try to merge new items into existing stack
-	// TODO: maybe will need to remove "!pStack->Modified" in the future. See comments inside CanMergeStacks()!
-	if (Merge && !pStack->Modified)
-	{
-		for (auto MergeAcceptorID : pContainer->Items)
-		{
-			auto pMergeTo = World.FindComponent<CItemStackComponent>(MergeAcceptorID);
-			if (CanMergeStacks(*pStack, pMergeTo))
-			{
-				pMergeTo->Count += TransferCount;
-				if (RemainingCount)
-					pStack->Count = RemainingCount;
-				else
-					World.DeleteEntity(StackID);
-				return RemainingCount;
-			}
-		}
-	}
-
-	// Split the stack if needed
-	auto NewStackID = StackID;
-	if (RemainingCount)
-	{
-		pStack->Count = RemainingCount;
-		NewStackID = World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(StackID);
-		if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
-			pNewStack->Count = TransferCount;
-	}
-
-	// Put the stack into the container
-	auto It = std::find(pContainer->Items.begin(), pContainer->Items.end(), DEM::Game::HEntity{});
-	if (It == pContainer->Items.cend())
-		pContainer->Items.push_back(NewStackID);
-	else
-		(*It) = NewStackID;
-
-	return RemainingCount;
-}
-//---------------------------------------------------------------------
-
-// Returns not transferred count
-U32 AddItemsIntoQuickSlots(Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, bool Merge, bool Split)
-{
-	auto pStack = World.FindComponent<CItemStackComponent>(StackID);
-	n_assert_dbg(pStack && pStack->Count);
-	if (!pStack || !pStack->Count) return 0;
-
-	auto pEquipment = World.FindComponent<Sh2::CEquipmentComponent>(Receiver);
-	if (!pEquipment) return pStack->Count;
-
-	// Check that we don't insert already contained stack
-	if (std::find(pEquipment->QuickSlots.cbegin(), pEquipment->QuickSlots.cend(), StackID) != pEquipment->QuickSlots.cend())
-		return 0;
-
-	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
-	const U32 ItemsPerSlot = (pItem && pItem->Volume > 0.f) ?
-		static_cast<U32>(QUICK_SLOT_VOLUME / pItem->Volume) :
-		std::numeric_limits<U32>().max();
-
-	if (ItemsPerSlot < pStack->Count && !Split) return pStack->Count;
+	U32 RemainingCount = Count;
 
 	// First try to merge into existing stacks of the same item
 	if (Merge)
 	{
-		for (auto MergeAcceptorID : pEquipment->QuickSlots)
+		for (size_t i = 0; i < Sh2::EEquipmentSlot::COUNT; ++i)
 		{
-			auto pMergeTo = World.FindComponent<CItemStackComponent>(MergeAcceptorID);
+			const auto DestStackID = pEquipment->Equipment[i];
+			auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID);
+			if (!pDestStack || !CanMergeStacks(*pSrcStack, pDestStack)) continue;
 
-			// Skip immediately if count limit is reached, no matter what item is there
-			if (!pMergeTo || pMergeTo->Count >= ItemsPerSlot) continue;
+			const U32 SlotCapacity = CanEquipItems(World, EntityID, StackID, EEquipmentSlot_Type[i]);
+			if (pDestStack->Count >= SlotCapacity) continue;
 
-			if (CanMergeStacks(*pStack, pMergeTo))
+			if (auto pDestStackWritable = World.FindComponent<CItemStackComponent>(DestStackID))
 			{
-				const U32 RemainingCount = ItemsPerSlot - pMergeTo->Count;
-				if (pStack->Count <= RemainingCount)
-				{
-					pMergeTo->Count += pStack->Count;
-					World.DeleteEntity(StackID);
-					return 0;
-				}
-				else if (Split)
-				{
-					pStack->Count -= RemainingCount;
-					pMergeTo->Count += RemainingCount;
-				}
+				const auto MovedCount = MoveItemsToStack(World, *pDestStackWritable, SrcStackID, std::min(SlotCapacity - pDestStack->Count, RemainingCount));
+				if (MovedCount >= RemainingCount) return Count;
+				RemainingCount -= MovedCount;
 			}
 		}
 	}
 
-	// Put not merged items into free slots
-	for (auto& DestSlot : pEquipment->QuickSlots)
+	// Put remaining count into free slots
+	if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
 	{
-		if (DestSlot) continue;
-
-		if (pStack->Count <= ItemsPerSlot)
+		for (size_t i = 0; i < Sh2::EEquipmentSlot::COUNT; ++i)
 		{
-			DestSlot = StackID;
-			return 0;
-		}
-		else
-		{
-			pStack->Count -= ItemsPerSlot;
-			const auto NewStackID =
-				World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(StackID);
-			if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
-				pNewStack->Count = ItemsPerSlot;
-			DestSlot = NewStackID;
+			auto& DestSlot = pEquipmentWritable->Equipment[i];
+			if (DestSlot) continue;
+			const U32 SlotCapacity = CanEquipItems(World, EntityID, StackID, EEquipmentSlot_Type[i]);
+			const auto MovedCount = std::min(SlotCapacity, RemainingCount);
+			DestSlot = SrcStackID ? SplitItemStack(World, StackID, MovedCount) : CloneItemStack(World, StackID, MovedCount);
+			if (!DestSlot) continue;
+			UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(i));
+			if (MovedCount >= RemainingCount) return Count;
+			RemainingCount -= MovedCount;
 		}
 	}
 
-	return pStack->Count;
+	return Count - RemainingCount;
+}
+//---------------------------------------------------------------------
+
+// Returns a number of items actually removed
+U32 RemoveItemsFromEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, U32 Count)
+{
+	const auto [StackID, RemovedCount] = MoveItemsFromEquipmentSlot(World, EntityID, SlotIndex, Count);
+	if (StackID && !RemovedCount) World.DeleteEntity(StackID);
+	return RemovedCount;
+}
+//---------------------------------------------------------------------
+
+//!!!FIXME: major code duplication with quick slots!
+// Returns a number of items actually removed
+U32 RemoveItemsFromEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count, bool AllowModified)
+{
+	if (!EntityID || !ItemProtoID || !Count) return 0;
+
+	auto pEquipment = World.FindComponent<Sh2::CEquipmentComponent>(EntityID);
+	if (!pEquipment) return 0;
+
+	U32 RemainingCount = Count;
+	for (size_t i = 0; i < Sh2::EEquipmentSlot::COUNT; ++i)
+	{
+		auto& StackID = pEquipment->Equipment[i];
+		auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
+		if (!pStack || pStack->Prototype != ItemProtoID || (!AllowModified && pStack->Modified)) continue;
+
+		if (RemoveItemsFromStack(World, StackID, RemainingCount))
+		{
+			StackID = {};
+			UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(i));
+		}
+
+		if (!RemainingCount) break;
+	}
+
+	return Count - RemainingCount;
+}
+//---------------------------------------------------------------------
+
+/////////////////////////////
+
+Game::HEntity TransferItems(Game::CGameWorld& World, U32 Count, Game::HEntity& SrcSlot, Game::HEntity& DestSlot)
+{
+	const auto SrcStackID = SrcSlot;
+	const auto DestStackID = DestSlot;
+
+	if (!Count || !SrcStackID || SrcStackID == DestStackID) return SrcStackID;
+
+	auto pSrcStack = World.FindComponent<CItemStackComponent>(SrcStackID);
+	if (!pSrcStack) return {};
+
+	const bool TransferWholeStack = (pSrcStack->Count == Count);
+	if (TransferWholeStack)
+		SrcSlot = {};
+	else
+		pSrcStack->Count -= Count;
+
+	auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID);
+	if (CanMergeStacks(*pSrcStack, pDestStack))
+	{
+		pDestStack->Count += Count;
+		if (TransferWholeStack) World.DeleteEntity(SrcStackID);
+	}
+	else
+	{
+		if (TransferWholeStack)
+		{
+			DestSlot = SrcStackID;
+		}
+		else
+		{
+			const auto NewStackID =
+				World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(SrcStackID);
+			if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
+				pNewStack->Count = Count;
+			DestSlot = NewStackID;
+		}
+
+		// If we replaced some stack, start dragging it instead of the source stack
+		if (DestStackID) return DestStackID;
+	}
+
+	return SrcStackID;
 }
 //---------------------------------------------------------------------
 
@@ -1385,58 +1468,6 @@ void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& 
 }
 //---------------------------------------------------------------------
 
-Game::HEntity* GetItemSlotWritable(Game::CGameWorld& World, Game::HEntity ReceiverID, EItemStorage Storage, UPTR Index)
-{
-	switch (Storage)
-	{
-		case EItemStorage::Container:
-		{
-			auto pInventory = World.FindComponent<CItemContainerComponent>(ReceiverID);
-			return (pInventory && Index < pInventory->Items.size()) ? &pInventory->Items[Index] : nullptr;
-		}
-		case EItemStorage::QuickSlot:
-		{
-			auto pEquipment = World.FindComponent<Sh2::CEquipmentComponent>(ReceiverID);
-			return (pEquipment && Index < pEquipment->QuickSlots.size()) ? &pEquipment->QuickSlots[Index] : nullptr;
-		}
-		case EItemStorage::Equipment:
-		{
-			if (Index >= Sh2::EEquipmentSlot::COUNT) return nullptr;
-			auto pEquipment = World.FindComponent<Sh2::CEquipmentComponent>(ReceiverID);
-			return (pEquipment && (pEquipment->SlotEnabledBits & (1 << Index))) ? &pEquipment->Equipment[Index] : nullptr;
-		}
-	}
-
-	return nullptr;
-}
-//---------------------------------------------------------------------
-
-const Game::HEntity* GetItemSlot(Game::CGameWorld& World, Game::HEntity ReceiverID, EItemStorage Storage, UPTR Index)
-{
-	switch (Storage)
-	{
-		case EItemStorage::Container:
-		{
-			auto pInventory = World.FindComponent<const CItemContainerComponent>(ReceiverID);
-			return (pInventory && Index < pInventory->Items.size()) ? &pInventory->Items[Index] : nullptr;
-		}
-		case EItemStorage::QuickSlot:
-		{
-			auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ReceiverID);
-			return (pEquipment && Index < pEquipment->QuickSlots.size()) ? &pEquipment->QuickSlots[Index] : nullptr;
-		}
-		case EItemStorage::Equipment:
-		{
-			if (Index >= Sh2::EEquipmentSlot::COUNT) return nullptr;
-			auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ReceiverID);
-			return (pEquipment && (pEquipment->SlotEnabledBits & (1 << Index))) ? &pEquipment->Equipment[Index] : nullptr;
-		}
-	}
-
-	return nullptr;
-}
-//---------------------------------------------------------------------
-
 bool CanMergeItems(Game::HEntity ProtoID, const CItemStackComponent* pDestStack)
 {
 	return pDestStack && pDestStack->Prototype == ProtoID && !pDestStack->Modified;
@@ -1448,213 +1479,6 @@ bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackCompone
 	//???TODO: don't merge items with different owners?!
 	//???TODO: can add more possibilities for merging? deep comparison of components?
 	return pDestStack && pDestStack->Prototype == SrcStack.Prototype && !SrcStack.Modified && !pDestStack->Modified;
-}
-//---------------------------------------------------------------------
-
-U32 CalcCapacityForItemProto(Game::CGameWorld& World, Game::HEntity ProtoID, Game::HEntity ReceiverID, EItemStorage Storage, UPTR Index)
-{
-	switch (Storage)
-	{
-		case EItemStorage::Container:
-		{
-			auto pInventory = World.FindComponent<const CItemContainerComponent>(ReceiverID);
-			if (!pInventory) return 0;
-
-			if (pInventory->MaxVolume < 0.f) return std::numeric_limits<U32>().max();
-
-			if (std::find(pInventory->Items.cbegin(), pInventory->Items.cend(), StackID) != pInventory->Items.cend())
-				return std::numeric_limits<U32>().max();
-
-			auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
-			if (!pStack || !pStack->Count) return 0;
-
-			// We will not replace the stack if we merge with it
-			auto ReplacedStackID = (Index < pInventory->Items.size()) ? pInventory->Items[Index] : Game::HEntity{};
-			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
-			if (CanMergeItems(*pStack, pReplacedStack))
-				ReplacedStackID = {};
-
-			auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
-			return GetContainerCapacityInItems(World, *pInventory, pItem, 1, ReplacedStackID);
-		}
-		case EItemStorage::QuickSlot:
-		{
-			auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ReceiverID);
-			if (!pEquipment || Index >= pEquipment->QuickSlots.size()) return 0;
-
-			auto ReplacedStackID = pEquipment->QuickSlots[Index];
-			if (StackID == ReplacedStackID) return std::numeric_limits<U32>().max();
-
-			auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
-			if (!pStack || !pStack->Count) return 0;
-
-			auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
-			if (!pItem || pItem->Volume <= 0.f) return std::numeric_limits<U32>().max();
-
-			float FreeVolume = QUICK_SLOT_VOLUME;
-
-			// Subtract volume of the element to be merged with
-			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
-			if (CanMergeStacks(*pStack, pReplacedStack))
-				FreeVolume -= (pReplacedStack->Count * pItem->Volume);
-
-			return static_cast<U32>(FreeVolume / pItem->Volume);
-		}
-		case EItemStorage::Equipment:
-		{
-			if (Index >= Sh2::EEquipmentSlot::COUNT) return 0;
-
-			auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ReceiverID);
-			if (!pEquipment || !(pEquipment->SlotEnabledBits & (1 << Index))) return 0;
-
-			auto ReplacedStackID = pEquipment->Equipment[Index];
-			if (StackID == ReplacedStackID) return std::numeric_limits<U32>().max();
-
-			auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
-			if (!pStack || !pStack->Count) return 0;
-
-			// Merging equipment is forbidden
-			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
-			if (CanMergeStacks(*pStack, pReplacedStack)) return 0;
-
-			return CanEquipItems(World, ReceiverID, StackID, EEquipmentSlot_Type[Index]);
-		}
-		case EItemStorage::World:
-		{
-			return std::numeric_limits<U32>().max();
-		}
-	}
-
-	return 0;
-}
-//---------------------------------------------------------------------
-
-U32 CalcCapacityForItemStack(Game::CGameWorld& World, Game::HEntity StackID, Game::HEntity ReceiverID, EItemStorage Storage, UPTR Index)
-{
-	const Game::HEntity* pSlot = GetItemSlot(World, ReceiverID, Storage, Index);
-	if (pSlot && *pSlot == StackID) return std::numeric_limits<U32>().max();
-
-	// get DestStackID from Receiver, DestStorage and DestIndex
-	// if the same as src ID, ret max
-
-	switch (DestStorage)
-	{
-		case EItemStorage::Container:
-		{
-			auto pInventory = World.FindComponent<const CItemContainerComponent>(Receiver);
-			if (!pInventory) return 0;
-
-			if (pInventory->MaxVolume < 0.f) return std::numeric_limits<U32>().max();
-
-			if (std::find(pInventory->Items.cbegin(), pInventory->Items.cend(), StackID) != pInventory->Items.cend())
-				return std::numeric_limits<U32>().max();
-
-			auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
-			if (!pStack || !pStack->Count) return 0;
-
-			// We will not replace the stack if we merge with it
-			auto ReplacedStackID = (DestIndex < pInventory->Items.size()) ? pInventory->Items[DestIndex] : Game::HEntity{};
-			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
-			if (CanMergeStacks(*pStack, pReplacedStack))
-				ReplacedStackID = {};
-
-			auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
-			return GetContainerCapacityInItems(World, *pInventory, pItem, 1, ReplacedStackID);
-		}
-		case EItemStorage::QuickSlot:
-		{
-			auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(Receiver);
-			if (!pEquipment || DestIndex >= pEquipment->QuickSlots.size()) return 0;
-
-			auto ReplacedStackID = pEquipment->QuickSlots[DestIndex];
-			if (StackID == ReplacedStackID) return std::numeric_limits<U32>().max();
-
-			auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
-			if (!pStack || !pStack->Count) return 0;
-
-			auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack);
-			if (!pItem || pItem->Volume <= 0.f) return std::numeric_limits<U32>().max();
-
-			float FreeVolume = QUICK_SLOT_VOLUME;
-
-			// Subtract volume of the element to be merged with
-			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
-			if (CanMergeStacks(*pStack, pReplacedStack))
-				FreeVolume -= (pReplacedStack->Count * pItem->Volume);
-
-			return static_cast<U32>(FreeVolume / pItem->Volume);
-		}
-		case EItemStorage::Equipment:
-		{
-			if (DestIndex >= Sh2::EEquipmentSlot::COUNT) return 0;
-
-			auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(Receiver);
-			if (!pEquipment || !(pEquipment->SlotEnabledBits & (1 << DestIndex))) return 0;
-
-			auto ReplacedStackID = pEquipment->Equipment[DestIndex];
-			if (StackID == ReplacedStackID) return std::numeric_limits<U32>().max();
-
-			auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
-			if (!pStack || !pStack->Count) return 0;
-
-			// Merging equipment is forbidden
-			auto pReplacedStack = World.FindComponent<const CItemStackComponent>(ReplacedStackID);
-			if (CanMergeStacks(*pStack, pReplacedStack)) return 0;
-
-			return CanEquipItems(World, Receiver, StackID, EEquipmentSlot_Type[DestIndex]);
-		}
-		case EItemStorage::World:
-		{
-			return std::numeric_limits<U32>().max();
-		}
-	}
-
-	return 0;
-}
-//---------------------------------------------------------------------
-
-Game::HEntity TransferItems(Game::CGameWorld& World, U32 Count, Game::HEntity& SrcSlot, Game::HEntity& DestSlot)
-{
-	const auto SrcStackID = SrcSlot;
-	const auto DestStackID = DestSlot;
-
-	if (!Count || !SrcStackID || SrcStackID == DestStackID) return SrcStackID;
-
-	auto pSrcStack = World.FindComponent<CItemStackComponent>(SrcStackID);
-	if (!pSrcStack) return {};
-
-	const bool TransferWholeStack = (pSrcStack->Count == Count);
-	if (TransferWholeStack)
-		SrcSlot = {};
-	else
-		pSrcStack->Count -= Count;
-
-	auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID);
-	if (CanMergeStacks(*pSrcStack, pDestStack))
-	{
-		pDestStack->Count += Count;
-		if (TransferWholeStack) World.DeleteEntity(SrcStackID);
-	}
-	else
-	{
-		if (TransferWholeStack)
-		{
-			DestSlot = SrcStackID;
-		}
-		else
-		{
-			const auto NewStackID =
-				World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(SrcStackID);
-			if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
-				pNewStack->Count = Count;
-			DestSlot = NewStackID;
-		}
-
-		// If we replaced some stack, start dragging it instead of the source stack
-		if (DestStackID) return DestStackID;
-	}
-
-	return SrcStackID;
 }
 //---------------------------------------------------------------------
 
