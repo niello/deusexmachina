@@ -46,7 +46,7 @@ public:
 };
 
 // Make this class a default transform representation
-typedef CTransformSRT CTransform;
+using CTransform = CTransformSRT;
 
 inline void CTransformSRT::ToMatrix(matrix44& Out) const
 {
