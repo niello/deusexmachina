@@ -120,10 +120,9 @@ void CPickItemAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance
 	// TODO: equip if a) default equipping makes sense, like for weapons b) inventory is full but equipment slot isn't
 	// NB: equipped things ignore volume limitations, but not weight
 
-	const auto [RemovedStackID, RemovedCount] = MoveItemsFromLocation(*pWorld, Instance.Targets[0].Entity);
-	MoveItemsToContainer(*pWorld, Instance.Actor, RemovedStackID, RemovedCount);
-
-	//!!!FIXME: need MoveItemsToCharacter instead!? or manually write chain of additions here?
+	const auto [AddedCount, MovedCompletely] = MoveItemsToContainer(*pWorld, Instance.Actor, Instance.Targets[0].Entity);
+	if (MovedCompletely)
+		RemoveItemVisualsFromLocation(*pWorld, Instance.Targets[0].Entity);
 }
 //---------------------------------------------------------------------
 
