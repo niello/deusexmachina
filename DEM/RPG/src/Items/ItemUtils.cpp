@@ -267,15 +267,12 @@ U32 AddItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, 
 	if (!ContainerID || !ItemProtoID || !Count) return 0;
 
 	auto pContainer = World.FindComponent<const CItemContainerComponent>(ContainerID);
-	if (!pContainer || SlotIndex >= pContainer->Items.size()) return 0;
+	if (!pContainer) return 0;
 
 	auto pItem = World.FindComponent<const CItemComponent>(ItemProtoID);
 	if (!pItem) return 0;
 
-	auto DestStackID = pContainer->Items[SlotIndex];
-
-	// Can't add to a slot occupied by an incompatible item stack
-	// NB: dest stack is accessed for reading
+	auto DestStackID = (SlotIndex < pContainer->Items.size()) ? pContainer->Items[SlotIndex] : Game::HEntity{};
 	if (DestStackID)
 	{
 		if (!Merge) return 0;
@@ -297,6 +294,8 @@ U32 AddItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, 
 	{
 		if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
 		{
+			if (SlotIndex >= pContainerWritable->Items.size())
+				pContainerWritable->Items.resize(SlotIndex + 1);
 			pContainerWritable->Items[SlotIndex] = NewStackID;
 			return Count;
 		}
@@ -392,9 +391,15 @@ std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEn
 	if (!ContainerID || !StackID || !Count) return { 0, false };
 
 	auto pContainer = World.FindComponent<const CItemContainerComponent>(ContainerID);
-	if (!pContainer || SlotIndex >= pContainer->Items.size() || (!Merge && pContainer->Items[SlotIndex])) return { 0, false };
+	if (!pContainer) return { 0, false };
 
-	if (StackID == pContainer->Items[SlotIndex]) return { Count, false };
+	Game::HEntity DestStackID;
+	if (SlotIndex < pContainer->Items.size())
+	{
+		DestStackID = pContainer->Items[SlotIndex];
+		if (!Merge && DestStackID) return { 0, false };
+		if (StackID == DestStackID) return { Count, false };
+	}
 
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
 	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
@@ -402,10 +407,10 @@ std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEn
 	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
 	if (!pItem) return { 0, false };
 
-	Count = std::min({ Count, pSrcStack->Count, GetContainerCapacityInItems(World, *pContainer, pItem) });
+	Count = std::min({ Count, pSrcStack->Count, GetContainerCapacityInItems(World, *pContainer, pItem, 1, StackID) });
 	if (!Count) return { 0, false };
 
-	if (auto DestStackID = pContainer->Items[SlotIndex])
+	if (DestStackID)
 	{
 		auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID);
 		if (!pDestStack || !CanMergeStacks(*pSrcStack, pDestStack)) return { 0, false };
@@ -414,6 +419,9 @@ std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEn
 
 	if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
 	{
+		if (SlotIndex >= pContainerWritable->Items.size())
+			pContainerWritable->Items.resize(SlotIndex + 1);
+
 		// TODO: to wrapper function that fills abstract slot (HEntity&) and returns pair?
 		//???return pair from SplitItemStack? everything needed is calculated inside!
 		//assignment may become less convenient, need to evaluate pros and cons!
@@ -445,7 +453,7 @@ std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity
 	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
 	if (!pItem) return { 0, false };
 
-	Count = std::min({ Count, pSrcStack->Count, GetContainerCapacityInItems(World, *pContainer, pItem) });
+	Count = std::min({ Count, pSrcStack->Count, GetContainerCapacityInItems(World, *pContainer, pItem, 1, StackID) });
 	if (!Count) return { 0, false };
 
 	// Try to merge into an existing stack first
@@ -472,6 +480,17 @@ std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity
 	}
 
 	return { 0, false };
+}
+//---------------------------------------------------------------------
+
+void ClearContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex)
+{
+	auto pContainer = World.FindComponent<CItemContainerComponent>(ContainerID);
+	if (!pContainer || SlotIndex >= pContainer->Items.size()) return;
+
+	pContainer->Items[SlotIndex] = {};
+	if (SlotIndex + 1 == pContainer->Items.size())
+		ShrinkItemCollection(pContainer->Items);
 }
 //---------------------------------------------------------------------
 
