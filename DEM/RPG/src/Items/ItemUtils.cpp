@@ -135,23 +135,28 @@ size_t GetFirstMergeableSlotIndex(const Game::CGameWorld& World, const CItemCont
 }
 //---------------------------------------------------------------------
 
-U32 MoveItemsToStack(Game::CGameWorld& World, CItemStackComponent& DestStack, Game::HEntity SrcStackID, U32 Count)
+std::pair<U32, bool> MoveItemsToStack(Game::CGameWorld& World, Game::HEntity DestStackID, Game::HEntity SrcStackID, U32 Count)
 {
-	if (auto pSrcStack = World.FindComponent<CItemStackComponent>(SrcStackID))
+	if (!Count || SrcStackID == DestStackID) return { Count, false };
+
+	auto pSrcStack = World.FindComponent<CItemStackComponent>(SrcStackID);
+	if (!pSrcStack) return { 0, false };
+
+	auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID);
+	if (!pDestStack) return { 0, false };
+
+	// Handle complete transfer of the source stack
+	if (pSrcStack->Count <= Count)
 	{
-		if (pSrcStack->Count <= Count)
-		{
-			Count = pSrcStack->Count;
-			World.DeleteEntity(SrcStackID);
-		}
-		else
-		{
-			pSrcStack->Count -= Count;
-		}
+		const auto AvailableCount = pSrcStack->Count;
+		pDestStack->Count += AvailableCount;
+		World.DeleteEntity(SrcStackID);
+		return { AvailableCount, true };
 	}
 
-	DestStack.Count += Count;
-	return Count;
+	pDestStack->Count += Count;
+	pSrcStack->Count -= Count;
+	return { Count, false };
 }
 //---------------------------------------------------------------------
 
@@ -209,6 +214,8 @@ Game::HEntity CloneItemStack(Game::CGameWorld& World, Game::HEntity StackID, U32
 
 Game::HEntity SplitItemStack(Game::CGameWorld& World, Game::HEntity StackID, U32 Count)
 {
+	if (!Count) return {};
+
 	auto pSrcStack = World.FindComponent<CItemStackComponent>(StackID);
 	if (!pSrcStack) return {};
 
@@ -379,59 +386,50 @@ std::pair<Game::HEntity, U32> MoveItemsFromContainerSlot(Game::CGameWorld& World
 }
 //---------------------------------------------------------------------
 
-// Returns a number of items actually moved in.
-// Zero Count means that the whole stack should be moved. In this case we own this stack and should handle it here.
-U32 MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, Game::HEntity StackID, U32 Count, bool Merge)
+// Returns a number of items actually moved in and a 'need to clear source storage' flag
+std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, Game::HEntity StackID, U32 Count, bool Merge)
 {
-	if (!ContainerID || !StackID || !Count) return 0;
+	if (!ContainerID || !StackID || !Count) return { 0, false };
 
 	auto pContainer = World.FindComponent<const CItemContainerComponent>(ContainerID);
-	if (!pContainer && SlotIndex >= pContainer->Items.size()) return 0;
+	if (!pContainer || SlotIndex >= pContainer->Items.size() || (!Merge && pContainer->Items[SlotIndex])) return { 0, false };
+
+	if (StackID == pContainer->Items[SlotIndex]) return { Count, false };
 
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
-	if (!pSrcStack || !pSrcStack->Count) return 0;
+	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
 
 	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
-	if (!pItem) return 0;
+	if (!pItem) return { 0, false };
 
-	// Use source stack as donor only if it its ownership passed to us
-	const auto SrcStackID = Count ? Game::HEntity{} : StackID;
+	Count = std::min({ Count, pSrcStack->Count, GetContainerCapacityInItems(World, *pContainer, pItem) });
+	if (!Count) return { 0, false };
 
-	Count = std::min(Count ? Count : pSrcStack->Count, GetContainerCapacityInItems(World, *pContainer, pItem));
-	if (!Count) return 0;
-
-	auto DestStackID = pContainer->Items[SlotIndex];
-
-	// Can't add to a slot occupied by an incompatible item stack
-	// NB: dest stack is accessed for reading
-	if (DestStackID)
+	if (auto DestStackID = pContainer->Items[SlotIndex])
 	{
-		if (!Merge) return 0;
-
-		if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
-			if (!CanMergeStacks(*pSrcStack, pDestStack)) return 0;
+		auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID);
+		if (!pDestStack || !CanMergeStacks(*pSrcStack, pDestStack)) return { 0, false };
+		return MoveItemsToStack(World, DestStackID, StackID, Count);
 	}
 
-	// Now access destination for writing
-	if (auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID))
+	if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
 	{
-		return MoveItemsToStack(World, *pDestStack, SrcStackID, Count);
-	}
-	else if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
-	{
-		pContainerWritable->Items[SlotIndex] = SrcStackID ? SplitItemStack(World, StackID, Count) : CloneItemStack(World, StackID, Count);
-		return pContainerWritable->Items[SlotIndex] ? Count : 0;
+		// TODO: to wrapper function that fills abstract slot (HEntity&) and returns pair?
+		//???return pair from SplitItemStack? everything needed is calculated inside!
+		//assignment may become less convenient, need to evaluate pros and cons!
+		pContainerWritable->Items[SlotIndex] = SplitItemStack(World, StackID, Count);
+		if (!pContainerWritable->Items[SlotIndex]) return { 0, false };
+		return { Count, pContainerWritable->Items[SlotIndex] == StackID };
 	}
 
-	return 0;
+	return { 0, false };
 }
 //---------------------------------------------------------------------
 
-// Returns a number of items actually moved in and a 'need to clear source storage' flag.
-// Zero Count means that the whole stack should be moved. In this case we own this stack and should handle it here.
+// Returns a number of items actually moved in and a 'need to clear source storage' flag
 std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity StackID, U32 Count, bool Merge)
 {
-	if (!ContainerID || !StackID) return { 0, false };
+	if (!ContainerID || !StackID || !Count) return { 0, false };
 
 	auto pContainer = World.FindComponent<const CItemContainerComponent>(ContainerID);
 	if (!pContainer) return { 0, false };
@@ -447,25 +445,15 @@ std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity
 	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
 	if (!pItem) return { 0, false };
 
-	//Count = std::min(Count ? Count : pSrcStack->Count, GetContainerCapacityInItems(World, *pContainer, pItem));
 	Count = std::min({ Count, pSrcStack->Count, GetContainerCapacityInItems(World, *pContainer, pItem) });
 	if (!Count) return { 0, false };
-
-	const bool MovedCompletely = (Count == pSrcStack->Count);
 
 	// Try to merge into an existing stack first
 	if (Merge)
 	{
 		const auto SlotIndex = GetFirstMergeableSlotIndex(World, *pContainer, StackID);
 		if (SlotIndex < pContainer->Items.size())
-		{
-			//!!!FIXME: pDestStack is always accessed right before MoveItemsToStack. Pass DestStackID there and resolve inside? Return 0 on failure!
-			//!!!Check MoveItemsToContainerSlot case, maybe should move some code into "Merge" branch!
-			//???pass StackID by ref to retuan empty ID if stack was merged and deleted?
-			auto pDestStack = World.FindComponent<CItemStackComponent>(pContainer->Items[SlotIndex]);
-			if (!pDestStack) return { 0, false };
-			return { MoveItemsToStack(World, *pDestStack, StackID, Count), MovedCompletely };
-		}
+			return MoveItemsToStack(World, pContainer->Items[SlotIndex], StackID, Count);
 	}
 
 	// Put remaining count into an empty slot
@@ -474,9 +462,12 @@ std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity
 		const auto SlotIndex = GetFirstEmptySlotIndex(*pContainerWritable);
 		if (SlotIndex < pContainerWritable->Items.size())
 		{
+			// TODO: to wrapper function that fills abstract slot (HEntity&) and returns pair?
+			//???return pair from SplitItemStack? everything needed is calculated inside!
+			//assignment may become less convenient, need to evaluate pros and cons!
 			pContainerWritable->Items[SlotIndex] = SplitItemStack(World, StackID, Count);
 			if (!pContainerWritable->Items[SlotIndex]) return { 0, false };
-			return { Count, MovedCompletely };
+			return { Count, pContainerWritable->Items[SlotIndex] == StackID };
 		}
 	}
 
@@ -652,7 +643,7 @@ std::pair<Game::HEntity, U32> MoveItemsFromQuickSlot(Game::CGameWorld& World, Ga
 	if (!EntityID || !Count) return { {}, 0 };
 
 	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
-	if (!pEquipment && SlotIndex >= pEquipment->QuickSlots.size()) return { {}, 0 };
+	if (!pEquipment || SlotIndex >= pEquipment->QuickSlots.size()) return { {}, 0 };
 
 	// Don't optimize with constant access because a stack will be altered or deleted anyway
 	const auto StackID = pEquipment->QuickSlots[SlotIndex];
@@ -673,82 +664,65 @@ std::pair<Game::HEntity, U32> MoveItemsFromQuickSlot(Game::CGameWorld& World, Ga
 }
 //---------------------------------------------------------------------
 
-// Returns a number of items actually moved in.
-// Zero Count means that the whole stack should be moved. In this case we own this stack and should handle it here.
-U32 MoveItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity StackID, U32 Count, bool Merge)
+// Returns a number of items actually moved in and a 'need to clear source storage' flag
+std::pair<U32, bool> MoveItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity StackID, U32 Count, bool Merge)
 {
-	if (!EntityID || !StackID || !Count) return 0;
+	if (!EntityID || !StackID || !Count) return { 0, false };
 
 	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
-	if (!pEquipment && SlotIndex >= pEquipment->QuickSlots.size()) return 0;
+	if (!pEquipment || SlotIndex >= pEquipment->QuickSlots.size() || (!Merge && pEquipment->QuickSlots[SlotIndex])) return { 0, false };
+
+	if (StackID == pEquipment->QuickSlots[SlotIndex]) return { Count, false };
 
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
-	if (!pSrcStack || !pSrcStack->Count) return 0;
+	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
 
 	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
-	if (!pItem) return 0;
+	if (!pItem) return { 0, false };
 
-	// Use source stack as donor only if it its ownership passed to us
-	const auto SrcStackID = Count ? Game::HEntity{} : StackID;
+	const U32 SlotCapacity = GetQuickSlotCapacity(pItem);
+	if (!SlotCapacity) return { 0, false };
 
-	U32 SlotCapacity = GetQuickSlotCapacity(pItem);
-	if (!SlotCapacity) return 0;
-
-	auto DestStackID = pEquipment->QuickSlots[SlotIndex];
-
-	// Can't add to a slot occupied by an incompatible item stack
-	// NB: dest stack is accessed for reading
-	if (DestStackID)
+	if (auto DestStackID = pEquipment->QuickSlots[SlotIndex])
 	{
-		if (!Merge) return 0;
-
-		if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
-		{
-			if (SlotCapacity <= pDestStack->Count || !CanMergeStacks(*pSrcStack, pDestStack)) return 0;
-			SlotCapacity -= pDestStack->Count;
-		}
+		auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID);
+		if (!pDestStack || pDestStack->Count >= SlotCapacity || !CanMergeStacks(*pSrcStack, pDestStack)) return { 0, false };
+		return MoveItemsToStack(World, DestStackID, StackID, std::min(Count, SlotCapacity - pDestStack->Count));
 	}
 
-	Count = std::min(Count, SlotCapacity);
-
-	// Now access destination for writing
-	if (auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID))
+	if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
 	{
-		return MoveItemsToStack(World, *pDestStack, SrcStackID, Count);
-	}
-	else if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
-	{
-		pEquipmentWritable->QuickSlots[SlotIndex] = SrcStackID ? SplitItemStack(World, StackID, Count) : CloneItemStack(World, StackID, Count);
-		return pEquipmentWritable->QuickSlots[SlotIndex] ? Count : 0;
+		// TODO: to wrapper function that fills abstract slot (HEntity&) and returns pair?
+		//???return pair from SplitItemStack? everything needed is calculated inside!
+		//assignment may become less convenient, need to evaluate pros and cons!
+		if (Count > SlotCapacity) Count = SlotCapacity;
+		pEquipmentWritable->QuickSlots[SlotIndex] = SplitItemStack(World, StackID, Count);
+		if (!pEquipmentWritable->QuickSlots[SlotIndex]) return { 0, false };
+		return { Count, pEquipmentWritable->QuickSlots[SlotIndex] == StackID };
 	}
 
-	return 0;
+	return { 0, false };
 }
 //---------------------------------------------------------------------
 
-// Returns a number of items actually moved in.
-// Zero Count means that the whole stack should be moved. In this case we own this stack and should handle it here.
-U32 MoveItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, U32 Count, bool Merge)
+// Returns a number of items actually moved in and a 'need to clear source storage' flag
+std::pair<U32, bool> MoveItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, U32 Count, bool Merge)
 {
-	if (!EntityID || !StackID) return 0;
+	if (!EntityID || !StackID || !Count) return { 0, false };
 
 	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
-	if (!pEquipment) return 0;
+	if (!pEquipment) return { 0, false };
 
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
-	if (!pSrcStack || !pSrcStack->Count) return 0;
+	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
 
 	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
-	if (!pItem) return 0;
+	if (!pItem) return { 0, false };
 
 	const auto SlotCapacity = GetQuickSlotCapacity(pItem);
-	if (!SlotCapacity) return 0;
+	if (!SlotCapacity) return { 0, false };
 
-	// Use source stack as donor only if it its ownership passed to us
-	const auto SrcStackID = Count ? Game::HEntity{} : StackID;
-
-	if (!Count)	Count = pSrcStack->Count;
-
+	if (Count > pSrcStack->Count) Count = pSrcStack->Count;
 	U32 RemainingCount = Count;
 
 	// First try to merge into existing stacks of the same item
@@ -759,12 +733,9 @@ U32 MoveItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game:
 			auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID);
 			if (!pDestStack || pDestStack->Count >= SlotCapacity || !CanMergeStacks(*pSrcStack, pDestStack)) continue;
 
-			if (auto pDestStackWritable = World.FindComponent<CItemStackComponent>(DestStackID))
-			{
-				const auto MovedCount = MoveItemsToStack(World, *pDestStackWritable, SrcStackID, std::min(SlotCapacity - pDestStack->Count, RemainingCount));
-				if (MovedCount >= RemainingCount) return Count;
-				RemainingCount -= MovedCount;
-			}
+			const auto [MovedCount, MovedCompletely] = MoveItemsToStack(World, DestStackID, StackID, std::min(RemainingCount, SlotCapacity - pDestStack->Count));
+			if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
+			RemainingCount -= MovedCount;
 		}
 	}
 
@@ -775,14 +746,14 @@ U32 MoveItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game:
 		{
 			if (DestSlot) continue;
 			const auto MovedCount = std::min(SlotCapacity, RemainingCount);
-			DestSlot = SrcStackID ? SplitItemStack(World, StackID, MovedCount) : CloneItemStack(World, StackID, MovedCount);
+			DestSlot = SplitItemStack(World, StackID, MovedCount);
 			if (!DestSlot) continue;
-			if (MovedCount >= RemainingCount) return Count;
+			if (MovedCount >= RemainingCount) return { Count, DestSlot == StackID };
 			RemainingCount -= MovedCount;
 		}
 	}
 
-	return Count - RemainingCount;
+	return { Count - RemainingCount, false };
 }
 //---------------------------------------------------------------------
 
@@ -952,74 +923,57 @@ std::pair<Game::HEntity, U32> MoveItemsFromEquipmentSlot(Game::CGameWorld& World
 }
 //---------------------------------------------------------------------
 
-// Returns a number of items actually moved in.
-// Zero Count means that the whole stack should be moved. In this case we own this stack and should handle it here.
-U32 MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity StackID, U32 Count, bool Merge)
+// Returns a number of items actually moved in and a 'need to clear source storage' flag
+std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity StackID, U32 Count, bool Merge)
 {
-	if (!EntityID || !StackID || !Count || SlotIndex >= Sh2::EEquipmentSlot::COUNT) return 0;
+	if (!EntityID || !StackID || !Count || SlotIndex >= Sh2::EEquipmentSlot::COUNT) return { 0, false };
 
 	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
-	if (!pEquipment) return 0;
+	if (!pEquipment || (!Merge && pEquipment->Equipment[SlotIndex])) return { 0, false };
+
+	if (StackID == pEquipment->Equipment[SlotIndex]) return { Count, false };
 
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
-	if (!pSrcStack || !pSrcStack->Count) return 0;
+	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
 
-	// Use source stack as donor only if it its ownership passed to us
-	const auto SrcStackID = Count ? Game::HEntity{} : StackID;
+	const U32 SlotCapacity = CanEquipItems(World, EntityID, StackID, EEquipmentSlot_Type[SlotIndex]);
+	if (!SlotCapacity) return { 0, false };
 
-	U32 SlotCapacity = CanEquipItems(World, EntityID, StackID, EEquipmentSlot_Type[SlotIndex]);
-	if (!SlotCapacity) return 0;
-
-	auto DestStackID = pEquipment->QuickSlots[SlotIndex];
-
-	// Can't add to a slot occupied by an incompatible item stack
-	// NB: dest stack is accessed for reading
-	if (DestStackID)
+	if (auto DestStackID = pEquipment->Equipment[SlotIndex])
 	{
-		if (!Merge) return 0;
-
-		if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
-		{
-			if (SlotCapacity <= pDestStack->Count || !CanMergeStacks(*pSrcStack, pDestStack)) return 0;
-			SlotCapacity -= pDestStack->Count;
-		}
+		auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID);
+		if (!pDestStack || pDestStack->Count >= SlotCapacity || !CanMergeStacks(*pSrcStack, pDestStack)) return { 0, false };
+		return MoveItemsToStack(World, DestStackID, StackID, std::min(Count, SlotCapacity - pDestStack->Count));
 	}
 
-	Count = std::min(Count, SlotCapacity);
-
-	// Now access destination for writing
-	if (auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID))
+	if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
 	{
-		return MoveItemsToStack(World, *pDestStack, SrcStackID, Count);
-	}
-	else if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
-	{
-		pEquipmentWritable->QuickSlots[SlotIndex] = SrcStackID ? SplitItemStack(World, StackID, Count) : CloneItemStack(World, StackID, Count);
+		// TODO: to wrapper function that fills abstract slot (HEntity&) and returns pair?
+		//???return pair from SplitItemStack? everything needed is calculated inside!
+		//assignment may become less convenient, need to evaluate pros and cons!
+		if (Count > SlotCapacity) Count = SlotCapacity;
+		pEquipmentWritable->Equipment[SlotIndex] = SplitItemStack(World, StackID, Count);
+		if (!pEquipmentWritable->Equipment[SlotIndex]) return { 0, false };
 		UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(SlotIndex));
-		return pEquipmentWritable->QuickSlots[SlotIndex] ? Count : 0;
+		return { Count, pEquipmentWritable->Equipment[SlotIndex] == StackID };
 	}
 
-	return 0;
+	return { 0, false };
 }
 //---------------------------------------------------------------------
 
-// Returns a number of items actually moved in.
-// Zero Count means that the whole stack should be moved. In this case we own this stack and should handle it here.
-U32 MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, U32 Count, bool Merge)
+// Returns a number of items actually moved in and a 'need to clear source storage' flag
+std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, U32 Count, bool Merge)
 {
-	if (!EntityID || !StackID) return 0;
+	if (!EntityID || !StackID || !Count) return { 0, false };
 
 	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
-	if (!pEquipment) return 0;
+	if (!pEquipment) return { 0, false };
 
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
-	if (!pSrcStack || !pSrcStack->Count) return 0;
+	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
 
-	// Use source stack as donor only if it its ownership passed to us
-	const auto SrcStackID = Count ? Game::HEntity{} : StackID;
-
-	if (!Count)	Count = pSrcStack->Count;
-
+	if (Count > pSrcStack->Count) Count = pSrcStack->Count;
 	U32 RemainingCount = Count;
 
 	// First try to merge into existing stacks of the same item
@@ -1034,12 +988,9 @@ U32 MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::
 			const U32 SlotCapacity = CanEquipItems(World, EntityID, StackID, EEquipmentSlot_Type[i]);
 			if (pDestStack->Count >= SlotCapacity) continue;
 
-			if (auto pDestStackWritable = World.FindComponent<CItemStackComponent>(DestStackID))
-			{
-				const auto MovedCount = MoveItemsToStack(World, *pDestStackWritable, SrcStackID, std::min(SlotCapacity - pDestStack->Count, RemainingCount));
-				if (MovedCount >= RemainingCount) return Count;
-				RemainingCount -= MovedCount;
-			}
+			const auto [MovedCount, MovedCompletely] = MoveItemsToStack(World, DestStackID, StackID, std::min(RemainingCount, SlotCapacity - pDestStack->Count));
+			if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
+			RemainingCount -= MovedCount;
 		}
 	}
 
@@ -1050,17 +1001,21 @@ U32 MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::
 		{
 			auto& DestSlot = pEquipmentWritable->Equipment[i];
 			if (DestSlot) continue;
-			const U32 SlotCapacity = CanEquipItems(World, EntityID, StackID, EEquipmentSlot_Type[i]);
-			const auto MovedCount = std::min(SlotCapacity, RemainingCount);
-			DestSlot = SrcStackID ? SplitItemStack(World, StackID, MovedCount) : CloneItemStack(World, StackID, MovedCount);
+
+			const auto MovedCount = std::min(RemainingCount, CanEquipItems(World, EntityID, StackID, EEquipmentSlot_Type[i]));
+			if (!MovedCount) continue;
+
+			DestSlot = SplitItemStack(World, StackID, MovedCount);
 			if (!DestSlot) continue;
+
 			UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(i));
-			if (MovedCount >= RemainingCount) return Count;
+
+			if (MovedCount >= RemainingCount) return { Count, DestSlot == StackID };
 			RemainingCount -= MovedCount;
 		}
 	}
 
-	return Count - RemainingCount;
+	return { Count - RemainingCount, false };
 }
 //---------------------------------------------------------------------
 
@@ -1264,22 +1219,15 @@ std::pair<Game::HEntity, U32> MoveItemsFromLocation(Game::CGameWorld& World, Gam
 }
 //---------------------------------------------------------------------
 
-// Returns a number of items actually moved in.
-// Zero Count means that the whole stack should be moved. In this case we own this stack and should handle it here.
-U32 MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius)
+// Returns a number of items actually moved in and a 'need to clear source storage' flag
+std::pair<U32, bool> MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius)
 {
-	if (!LevelID || !StackID) return 0;
+	if (!LevelID || !StackID || !Count) return { 0, false };
 
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
-	if (!pSrcStack || !pSrcStack->Count) return 0;
+	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
 
-	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
-	if (!pItem) return 0;
-
-	// Use source stack as donor only if it its ownership passed to us
-	const auto SrcStackID = Count ? Game::HEntity{} : StackID;
-
-	if (!Count)	Count = pSrcStack->Count;
+	if (Count > pSrcStack->Count) Count = pSrcStack->Count;
 
 	// Try to merge into an existing stack or item pile container first
 	if (MergeRadius > 0.f)
@@ -1298,17 +1246,16 @@ U32 MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Coun
 				return pGroundStack && CanMergeStacks(*pSrcStack, pGroundStack);
 			});
 
-			auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID);
-			return pDestStack ? MoveItemsToStack(World, *pDestStack, SrcStackID, Count) : 0;
+			return MoveItemsToStack(World, DestStackID, StackID, Count);
 		}
 	}
 
 	// Put remaining count into an empty slot
-	//!!!TODO: ensure that the stack was splitted.cloned into the correct game level!
-	const auto NewStackID = SrcStackID ? SplitItemStack(World, StackID, Count) : CloneItemStack(World, StackID, Count);
-
-	//???TODO: rename to OnStackAddedToLocation or like that? The same name pattern for posteffects of every storage.
-	return AddItemVisualsToLocation(World, NewStackID, Tfm) ? Count : 0;
+	//!!!TODO: SplitItemStack - ensure that the stack was created in the correct game level!
+	//???TODO: rename AddItemVisualsToLocation to OnStackAddedToLocation or like that? The same name pattern for posteffects of every storage.
+	const auto NewStackID = SplitItemStack(World, StackID, Count);
+	if (!AddItemVisualsToLocation(World, NewStackID, Tfm)) return { 0, false };
+	return { Count, NewStackID == StackID };
 }
 //---------------------------------------------------------------------
 
@@ -1358,51 +1305,6 @@ void RemoveItemVisualsFromLocation(Game::CGameWorld& World, Game::HEntity StackI
 //---------------------------------------------------------------------
 
 /////////////////////////////
-
-Game::HEntity TransferItems(Game::CGameWorld& World, U32 Count, Game::HEntity& SrcSlot, Game::HEntity& DestSlot)
-{
-	const auto SrcStackID = SrcSlot;
-	const auto DestStackID = DestSlot;
-
-	if (!Count || !SrcStackID || SrcStackID == DestStackID) return SrcStackID;
-
-	auto pSrcStack = World.FindComponent<CItemStackComponent>(SrcStackID);
-	if (!pSrcStack) return {};
-
-	const bool TransferWholeStack = (pSrcStack->Count == Count);
-	if (TransferWholeStack)
-		SrcSlot = {};
-	else
-		pSrcStack->Count -= Count;
-
-	auto pDestStack = World.FindComponent<CItemStackComponent>(DestStackID);
-	if (CanMergeStacks(*pSrcStack, pDestStack))
-	{
-		pDestStack->Count += Count;
-		if (TransferWholeStack) World.DeleteEntity(SrcStackID);
-	}
-	else
-	{
-		if (TransferWholeStack)
-		{
-			DestSlot = SrcStackID;
-		}
-		else
-		{
-			const auto NewStackID =
-				World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(SrcStackID);
-			if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
-				pNewStack->Count = Count;
-			DestSlot = NewStackID;
-		}
-
-		// If we replaced some stack, start dragging it instead of the source stack
-		if (DestStackID) return DestStackID;
-	}
-
-	return SrcStackID;
-}
-//---------------------------------------------------------------------
 
 // Returns not transferred count
 static U32 StoreItemStack(Game::CGameWorld& World, Game::HEntity Receiver, EItemStorage Storage, Game::HEntity StackID, bool Merge, bool Split)
