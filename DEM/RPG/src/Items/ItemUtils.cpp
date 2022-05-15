@@ -386,7 +386,8 @@ std::pair<Game::HEntity, U32> MoveItemsFromContainerSlot(Game::CGameWorld& World
 //---------------------------------------------------------------------
 
 // Returns a number of items actually moved in and a 'need to clear source storage' flag
-std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, Game::HEntity StackID, U32 Count, bool Merge)
+std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, Game::HEntity StackID,
+	U32 Count, bool Merge, Game::HEntity* pReplaced)
 {
 	if (!ContainerID || !StackID || !Count) return { 0, false };
 
@@ -397,8 +398,8 @@ std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEn
 	if (SlotIndex < pContainer->Items.size())
 	{
 		DestStackID = pContainer->Items[SlotIndex];
-		if (!Merge && DestStackID) return { 0, false };
 		if (StackID == DestStackID) return { Count, false };
+		if (!Merge && !*pReplaced && DestStackID) return { 0, false };
 	}
 
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
@@ -410,11 +411,13 @@ std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEn
 	Count = std::min({ Count, pSrcStack->Count, GetContainerCapacityInItems(World, *pContainer, pItem, 1, StackID) });
 	if (!Count) return { 0, false };
 
-	if (DestStackID)
+	// Consider destination occupied only if the destination stack is valid
+	if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
 	{
-		auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID);
-		if (!pDestStack || !CanMergeStacks(*pSrcStack, pDestStack)) return { 0, false };
-		return MoveItemsToStack(World, DestStackID, StackID, Count);
+		if (Merge && CanMergeStacks(*pSrcStack, pDestStack))
+			return MoveItemsToStack(World, DestStackID, StackID, Count);
+
+		if (!pReplaced) return { 0, false };
 	}
 
 	if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
@@ -425,9 +428,12 @@ std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEn
 		// TODO: to wrapper function that fills abstract slot (HEntity&) and returns pair?
 		//???return pair from SplitItemStack? everything needed is calculated inside!
 		//assignment may become less convenient, need to evaluate pros and cons!
-		pContainerWritable->Items[SlotIndex] = SplitItemStack(World, StackID, Count);
-		if (!pContainerWritable->Items[SlotIndex]) return { 0, false };
-		return { Count, pContainerWritable->Items[SlotIndex] == StackID };
+		if (const auto NewStackID = SplitItemStack(World, StackID, Count))
+		{
+			if (pReplaced) *pReplaced = DestStackID;
+			pContainerWritable->Items[SlotIndex] = NewStackID;
+			return { Count, pContainerWritable->Items[SlotIndex] == StackID };
+		}
 	}
 
 	return { 0, false };
@@ -689,9 +695,10 @@ std::pair<U32, bool> MoveItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity
 	if (!EntityID || !StackID || !Count) return { 0, false };
 
 	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
-	if (!pEquipment || SlotIndex >= pEquipment->QuickSlots.size() || (!Merge && pEquipment->QuickSlots[SlotIndex])) return { 0, false };
+	if (!pEquipment || SlotIndex >= pEquipment->QuickSlots.size()) return { 0, false };
 
 	if (StackID == pEquipment->QuickSlots[SlotIndex]) return { Count, false };
+	if (!Merge && pEquipment->QuickSlots[SlotIndex]) return { 0, false };
 
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
 	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
@@ -948,9 +955,10 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 	if (!EntityID || !StackID || !Count || SlotIndex >= Sh2::EEquipmentSlot::COUNT) return { 0, false };
 
 	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
-	if (!pEquipment || (!Merge && pEquipment->Equipment[SlotIndex])) return { 0, false };
+	if (!pEquipment) return { 0, false };
 
 	if (StackID == pEquipment->Equipment[SlotIndex]) return { Count, false };
+	if (!Merge && pEquipment->Equipment[SlotIndex]) return { 0, false };
 
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
 	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
