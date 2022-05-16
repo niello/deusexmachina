@@ -48,7 +48,7 @@ Game::HEntity FindClosestEntity(const Game::CGameLevel& Level, const vector3& Ce
 
 	//!!!FIXME: need to set "Interactable" collision flag in all interactable entity colliders!
 	Level.EnumEntitiesInSphere(Center, Radius, /*CStrID("Interactable")*/ CStrID::Empty,
-		[&ClosestDistanceSq, &ClosestEntityID, Center, Predicate](DEM::Game::HEntity EntityID, const vector3& Pos)
+		[&ClosestDistanceSq, &ClosestEntityID, Center, Predicate](Game::HEntity EntityID, const vector3& Pos)
 	{
 		const auto DistanceSq = vector3::SqDistance(Pos, Center);
 		if (ClosestDistanceSq > DistanceSq && Predicate(EntityID))
@@ -422,17 +422,18 @@ std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEn
 
 	if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
 	{
-		if (SlotIndex >= pContainerWritable->Items.size())
-			pContainerWritable->Items.resize(SlotIndex + 1);
-
 		// TODO: to wrapper function that fills abstract slot (HEntity&) and returns pair?
 		//???return pair from SplitItemStack? everything needed is calculated inside!
 		//assignment may become less convenient, need to evaluate pros and cons!
 		if (const auto NewStackID = SplitItemStack(World, StackID, Count))
 		{
 			if (pReplaced) *pReplaced = DestStackID;
+
+			if (SlotIndex >= pContainerWritable->Items.size())
+				pContainerWritable->Items.resize(SlotIndex + 1);
 			pContainerWritable->Items[SlotIndex] = NewStackID;
-			return { Count, pContainerWritable->Items[SlotIndex] == StackID };
+
+			return { Count, NewStackID == StackID };
 		}
 	}
 
@@ -783,6 +784,14 @@ std::pair<U32, bool> MoveItemsToQuickSlots(Game::CGameWorld& World, Game::HEntit
 }
 //---------------------------------------------------------------------
 
+void ClearQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex)
+{
+	auto pEquipment = World.FindComponent<Sh2::CEquipmentComponent>(EntityID);
+	if (!pEquipment || SlotIndex >= pEquipment->QuickSlots.size()) return;
+	pEquipment->QuickSlots[SlotIndex] = {};
+}
+//---------------------------------------------------------------------
+
 // Returns a number of items actually removed
 U32 RemoveItemsFromQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, U32 Count)
 {
@@ -1046,6 +1055,16 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 }
 //---------------------------------------------------------------------
 
+void ClearEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex)
+{
+	if (SlotIndex >= Sh2::EEquipmentSlot::COUNT) return;
+	auto pEquipment = World.FindComponent<Sh2::CEquipmentComponent>(EntityID);
+	if (!pEquipment) return;
+	pEquipment->Equipment[SlotIndex] = {};
+	UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(SlotIndex));
+}
+//---------------------------------------------------------------------
+
 // Returns a number of items actually removed
 U32 RemoveItemsFromEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, U32 Count)
 {
@@ -1151,7 +1170,7 @@ void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerI
 
 	const auto StackID = pEquipment->Equipment[Slot];
 
-	auto pOwnerScene = World.FindComponent<const DEM::Game::CSceneComponent>(OwnerID);
+	auto pOwnerScene = World.FindComponent<const Game::CSceneComponent>(OwnerID);
 	if (!pOwnerScene || !pOwnerScene->RootNode) return;
 
 	auto pBone = pOwnerScene->RootNode->GetChildRecursively(CStrID(pBoneName));
@@ -1246,6 +1265,54 @@ std::pair<Game::HEntity, U32> MoveItemsFromLocation(Game::CGameWorld& World, Gam
 }
 //---------------------------------------------------------------------
 
+std::pair<U32, bool> MoveItemsToLocationSlot(Game::CGameWorld& World, std::vector<Game::HEntity>& GroundItems, size_t SlotIndex, Game::HEntity StackID,
+	U32 Count, CStrID LevelID, const Math::CTransform& Tfm, bool Merge, Game::HEntity* pReplaced)
+{
+	if (!StackID || !Count) return { 0, false };
+
+	Game::HEntity DestStackID;
+	if (SlotIndex < GroundItems.size())
+	{
+		DestStackID = GroundItems[SlotIndex];
+		if (StackID == DestStackID) return { Count, false };
+		if (!Merge && !*pReplaced && DestStackID) return { 0, false };
+	}
+
+	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
+	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
+
+	if (Count > pSrcStack->Count) Count = pSrcStack->Count;
+
+	// Consider destination occupied only if the destination stack is valid
+	if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
+	{
+		if (Merge && CanMergeStacks(*pSrcStack, pDestStack))
+			return MoveItemsToStack(World, DestStackID, StackID, Count);
+
+		if (!pReplaced) return { 0, false };
+	}
+
+	//!!!TODO: SplitItemStack - ensure that the stack was created in the correct game level!
+	// TODO: to wrapper function that fills abstract slot (HEntity&) and returns pair?
+	//???return pair from SplitItemStack? everything needed is calculated inside!
+	//assignment may become less convenient, need to evaluate pros and cons!
+	if (const auto NewStackID = SplitItemStack(World, StackID, Count))
+	{
+		if (!AddItemVisualsToLocation(World, NewStackID, Tfm)) return { 0, false };
+
+		if (pReplaced) *pReplaced = DestStackID;
+
+		if (SlotIndex >= GroundItems.size())
+			GroundItems.resize(SlotIndex + 1);
+		GroundItems[SlotIndex] = NewStackID;
+
+		return { Count, NewStackID == StackID };
+	}
+
+	return { 0, false };
+}
+//---------------------------------------------------------------------
+
 // Returns a number of items actually moved in and a 'need to clear source storage' flag
 std::pair<U32, bool> MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius)
 {
@@ -1283,6 +1350,18 @@ std::pair<U32, bool> MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity 
 	const auto NewStackID = SplitItemStack(World, StackID, Count);
 	if (!AddItemVisualsToLocation(World, NewStackID, Tfm)) return { 0, false };
 	return { Count, NewStackID == StackID };
+}
+//---------------------------------------------------------------------
+
+void ClearLocationSlot(Game::CGameWorld& World, std::vector<Game::HEntity>& GroundItems, size_t SlotIndex)
+{
+	if (SlotIndex >= GroundItems.size()) return;
+
+	RemoveItemVisualsFromLocation(World, GroundItems[SlotIndex]);
+
+	GroundItems[SlotIndex] = {};
+	if (SlotIndex == GroundItems.size() - 1)
+		ShrinkItemCollection(GroundItems);
 }
 //---------------------------------------------------------------------
 
@@ -1361,7 +1440,7 @@ static U32 StoreItemStack(Game::CGameWorld& World, Game::HEntity Receiver, EItem
 
 			//!!!DUPLICATED CODE, SEE OnSlotDropped! Must be in a single place where tmp container creation etc is handled!
 			Math::CTransformSRT Tfm;
-			if (auto pOwnerScene = World.FindComponent<const DEM::Game::CSceneComponent>(Owner))
+			if (auto pOwnerScene = World.FindComponent<const Game::CSceneComponent>(Owner))
 				Tfm.Translation = pOwnerScene->RootNode->GetWorldMatrix().transform_coord(-vector3::AxisZ);
 			AddItemVisualsToLocation(World, StackID, Tfm);
 			*/
