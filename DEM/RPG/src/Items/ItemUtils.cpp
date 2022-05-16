@@ -691,7 +691,8 @@ std::pair<Game::HEntity, U32> MoveItemsFromQuickSlot(Game::CGameWorld& World, Ga
 //---------------------------------------------------------------------
 
 // Returns a number of items actually moved in and a 'need to clear source storage' flag
-std::pair<U32, bool> MoveItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity StackID, U32 Count, bool Merge)
+std::pair<U32, bool> MoveItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity StackID,
+	U32 Count, bool Merge, Game::HEntity* pReplaced)
 {
 	if (!EntityID || !StackID || !Count) return { 0, false };
 
@@ -699,7 +700,7 @@ std::pair<U32, bool> MoveItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity
 	if (!pEquipment || SlotIndex >= pEquipment->QuickSlots.size()) return { 0, false };
 
 	if (StackID == pEquipment->QuickSlots[SlotIndex]) return { Count, false };
-	if (!Merge && pEquipment->QuickSlots[SlotIndex]) return { 0, false };
+	if (!Merge && !*pReplaced && pEquipment->QuickSlots[SlotIndex]) return { 0, false };
 
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
 	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
@@ -710,11 +711,13 @@ std::pair<U32, bool> MoveItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity
 	const U32 SlotCapacity = GetQuickSlotCapacity(pItem);
 	if (!SlotCapacity) return { 0, false };
 
-	if (auto DestStackID = pEquipment->QuickSlots[SlotIndex])
+	const auto DestStackID = pEquipment->QuickSlots[SlotIndex];
+	if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
 	{
-		auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID);
-		if (!pDestStack || pDestStack->Count >= SlotCapacity || !CanMergeStacks(*pSrcStack, pDestStack)) return { 0, false };
-		return MoveItemsToStack(World, DestStackID, StackID, std::min(Count, SlotCapacity - pDestStack->Count));
+		if (pDestStack->Count < SlotCapacity && CanMergeStacks(*pSrcStack, pDestStack))
+			return MoveItemsToStack(World, DestStackID, StackID, std::min(Count, SlotCapacity - pDestStack->Count));
+
+		if (!pReplaced) return { 0, false };
 	}
 
 	if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
@@ -725,6 +728,7 @@ std::pair<U32, bool> MoveItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity
 		if (Count > SlotCapacity) Count = SlotCapacity;
 		pEquipmentWritable->QuickSlots[SlotIndex] = SplitItemStack(World, StackID, Count);
 		if (!pEquipmentWritable->QuickSlots[SlotIndex]) return { 0, false };
+		if (pReplaced) *pReplaced = DestStackID;
 		return { Count, pEquipmentWritable->QuickSlots[SlotIndex] == StackID };
 	}
 
@@ -959,7 +963,8 @@ std::pair<Game::HEntity, U32> MoveItemsFromEquipmentSlot(Game::CGameWorld& World
 //---------------------------------------------------------------------
 
 // Returns a number of items actually moved in and a 'need to clear source storage' flag
-std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity StackID, U32 Count, bool Merge)
+std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity StackID,
+	U32 Count, bool Merge, Game::HEntity* pReplaced)
 {
 	if (!EntityID || !StackID || !Count || SlotIndex >= Sh2::EEquipmentSlot::COUNT) return { 0, false };
 
@@ -967,7 +972,7 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 	if (!pEquipment) return { 0, false };
 
 	if (StackID == pEquipment->Equipment[SlotIndex]) return { Count, false };
-	if (!Merge && pEquipment->Equipment[SlotIndex]) return { 0, false };
+	if (!Merge && !*pReplaced && pEquipment->Equipment[SlotIndex]) return { 0, false };
 
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
 	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
@@ -975,11 +980,13 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 	const U32 SlotCapacity = CanEquipItems(World, EntityID, StackID, EEquipmentSlot_Type[SlotIndex]);
 	if (!SlotCapacity) return { 0, false };
 
-	if (auto DestStackID = pEquipment->Equipment[SlotIndex])
+	const auto DestStackID = pEquipment->Equipment[SlotIndex];
+	if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
 	{
-		auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID);
-		if (!pDestStack || pDestStack->Count >= SlotCapacity || !CanMergeStacks(*pSrcStack, pDestStack)) return { 0, false };
-		return MoveItemsToStack(World, DestStackID, StackID, std::min(Count, SlotCapacity - pDestStack->Count));
+		if (pDestStack->Count < SlotCapacity && CanMergeStacks(*pSrcStack, pDestStack))
+			return MoveItemsToStack(World, DestStackID, StackID, std::min(Count, SlotCapacity - pDestStack->Count));
+
+		if (!pReplaced) return { 0, false };
 	}
 
 	if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
@@ -990,6 +997,7 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 		if (Count > SlotCapacity) Count = SlotCapacity;
 		pEquipmentWritable->Equipment[SlotIndex] = SplitItemStack(World, StackID, Count);
 		if (!pEquipmentWritable->Equipment[SlotIndex]) return { 0, false };
+		if (pReplaced) *pReplaced = DestStackID;
 		UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(SlotIndex));
 		return { Count, pEquipmentWritable->Equipment[SlotIndex] == StackID };
 	}
