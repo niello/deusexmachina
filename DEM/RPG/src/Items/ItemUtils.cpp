@@ -96,20 +96,6 @@ U32 GetQuickSlotCapacity(const CItemComponent* pItem)
 }
 //---------------------------------------------------------------------
 
-size_t GetFirstEmptySlotIndex(CItemContainerComponent& Container)
-{
-	size_t SlotIndex = 0;
-	for (; SlotIndex < Container.Items.size(); ++SlotIndex)
-		if (!Container.Items[SlotIndex])
-			break;
-
-	if (SlotIndex == Container.Items.size())
-		Container.Items.push_back({});
-
-	return SlotIndex;
-}
-//---------------------------------------------------------------------
-
 size_t GetFirstMergeableSlotIndex(const Game::CGameWorld& World, const CItemContainerComponent& Container, Game::HEntity StackOrProtoID)
 {
 	size_t SlotIndex = 0;
@@ -258,6 +244,20 @@ bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackCompone
 }
 //---------------------------------------------------------------------
 
+size_t GetFirstEmptySlotIndex(std::vector<Game::HEntity>& Collection)
+{
+	size_t SlotIndex = 0;
+	for (; SlotIndex < Collection.size(); ++SlotIndex)
+		if (!Collection[SlotIndex])
+			break;
+
+	if (SlotIndex == Collection.size())
+		Collection.push_back({});
+
+	return SlotIndex;
+}
+//---------------------------------------------------------------------
+
 //???needs to be external? or always handle here? then move to "static" namespace. Temporary ground collection code - move here?
 void ShrinkItemCollection(std::vector<Game::HEntity>& Collection)
 {
@@ -348,7 +348,7 @@ U32 AddItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game
 	{
 		if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
 		{
-			const auto SlotIndex = GetFirstEmptySlotIndex(*pContainerWritable);
+			const auto SlotIndex = GetFirstEmptySlotIndex(pContainerWritable->Items);
 			if (SlotIndex < pContainerWritable->Items.size())
 			{
 				pContainerWritable->Items[SlotIndex] = NewStackID;
@@ -446,7 +446,7 @@ std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEn
 //---------------------------------------------------------------------
 
 // Returns a number of items actually moved in and a 'need to clear source storage' flag
-std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity StackID, U32 Count, bool Merge)
+std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity StackID, U32 Count, bool Merge/*, U32 MinCount*/)
 {
 	if (!ContainerID || !StackID || !Count) return { 0, false };
 
@@ -465,7 +465,7 @@ std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity
 	if (!pItem) return { 0, false };
 
 	Count = std::min({ Count, pSrcStack->Count, GetContainerCapacityInItems(World, *pContainer, pItem, 1, StackID) });
-	if (!Count) return { 0, false };
+	if (Count < 1 /*std::max(1u, MinCount)*/) return { 0, false };
 
 	// Try to merge into an existing stack first
 	if (Merge)
@@ -478,12 +478,58 @@ std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity
 	// Put remaining count into an empty slot
 	if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
 	{
-		const auto SlotIndex = GetFirstEmptySlotIndex(*pContainerWritable);
+		const auto SlotIndex = GetFirstEmptySlotIndex(pContainerWritable->Items);
 		if (SlotIndex < pContainerWritable->Items.size())
 			return SplitItemsToSlot(World, pContainerWritable->Items[SlotIndex], StackID, Count);
 	}
 
 	return { 0, false };
+}
+//---------------------------------------------------------------------
+
+Game::HEntity MoveWholeStackToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity StackID, bool Merge)
+{
+	if (!ContainerID || !StackID) return {};
+
+	auto pContainer = World.FindComponent<const CItemContainerComponent>(ContainerID);
+	if (!pContainer) return {};
+
+	// TODO: need?
+	//// Check that we don't insert already contained stack
+	//if (std::find(pContainer->Items.cbegin(), pContainer->Items.cend(), StackID) != pContainer->Items.cend())
+	//	return StackID;
+
+	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
+	if (!pSrcStack || !pSrcStack->Count) return {};
+
+	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
+	if (!pItem) return {};
+
+	if (pSrcStack->Count > GetContainerCapacityInItems(World, *pContainer, pItem, 1, StackID)) return {};
+
+	// Try to merge into an existing stack first
+	if (Merge)
+	{
+		const auto SlotIndex = GetFirstMergeableSlotIndex(World, *pContainer, StackID);
+		if (SlotIndex < pContainer->Items.size())
+		{
+			if (!MoveItemsToStack(World, pContainer->Items[SlotIndex], StackID, pSrcStack->Count).first) return {};
+			return pContainer->Items[SlotIndex];
+		}
+	}
+
+	// Put remaining count into an empty slot
+	if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
+	{
+		const auto SlotIndex = GetFirstEmptySlotIndex(pContainerWritable->Items);
+		if (SlotIndex < pContainerWritable->Items.size())
+		{
+			if (!SplitItemsToSlot(World, pContainerWritable->Items[SlotIndex], StackID, pSrcStack->Count).first) return {};
+			return pContainerWritable->Items[SlotIndex];
+		}
+	}
+
+	return {};
 }
 //---------------------------------------------------------------------
 
@@ -778,6 +824,49 @@ std::pair<U32, bool> MoveItemsToQuickSlots(Game::CGameWorld& World, Game::HEntit
 	}
 
 	return { Count - RemainingCount, false };
+}
+//---------------------------------------------------------------------
+
+Game::HEntity MoveWholeStackToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, bool Merge)
+{
+	if (!EntityID || !StackID) return {};
+
+	auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(EntityID);
+	if (!pEquipment) return {};
+
+	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
+	if (!pSrcStack || !pSrcStack->Count) return {};
+
+	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
+	if (!pItem) return {};
+
+	const auto SlotCapacity = GetQuickSlotCapacity(pItem);
+	if (pSrcStack->Count > SlotCapacity) return {};
+
+	// First try to merge into existing stacks of the same item
+	if (Merge)
+	{
+		for (auto DestStackID : pEquipment->QuickSlots)
+		{
+			auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID);
+			if (!pDestStack || (pSrcStack->Count + pDestStack->Count > SlotCapacity) || !CanMergeStacks(*pSrcStack, pDestStack)) continue;
+			if (!MoveItemsToStack(World, DestStackID, StackID, pSrcStack->Count).first) return {};
+			return DestStackID;
+		}
+	}
+
+	// Put remaining count into free slots
+	if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
+	{
+		for (auto& DestSlot : pEquipmentWritable->QuickSlots)
+		{
+			if (DestSlot) continue;
+			if (!SplitItemsToSlot(World, DestSlot, StackID, pSrcStack->Count).first) return {};
+			return DestSlot;
+		}
+	}
+
+	return {};
 }
 //---------------------------------------------------------------------
 
@@ -1332,12 +1421,42 @@ std::pair<U32, bool> MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity 
 		}
 	}
 
-	// Put remaining count into an empty slot
+	// Allocate in the world
 	//!!!TODO: SplitItemStack - ensure that the stack was created in the correct game level!
 	//???TODO: rename AddItemVisualsToLocation to OnStackAddedToLocation or like that? The same name pattern for posteffects of every storage.
 	const auto NewStackID = SplitItemStack(World, StackID, Count);
 	if (!AddItemVisualsToLocation(World, NewStackID, Tfm)) return { 0, false };
 	return { Count, NewStackID == StackID };
+}
+//---------------------------------------------------------------------
+
+Game::HEntity MoveWholeStackToLocation(Game::CGameWorld& World, Game::HEntity StackID, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius)
+{
+	if (!LevelID || !StackID) return {};
+
+	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
+	if (!pSrcStack || !pSrcStack->Count) return {};
+
+	// Try to merge into an existing stack or item pile container first
+	if (MergeRadius > 0.f)
+	{
+		if (auto pLevel = World.FindLevel(LevelID))
+		{
+			// TODO: see the comment for the same call inside MoveItemsToLocation
+			const auto DestStackID = FindClosestEntity(*pLevel, Tfm.Translation, MergeRadius,
+				[&World, pSrcStack](Game::HEntity EntityID)
+			{
+				auto pGroundStack = World.FindComponent<const CItemStackComponent>(EntityID);
+				return pGroundStack && CanMergeStacks(*pSrcStack, pGroundStack);
+			});
+
+			if (!MoveItemsToStack(World, DestStackID, StackID, pSrcStack->Count).first) return {};
+			return DestStackID;
+		}
+	}
+
+	// Allocate in the world
+	return AddItemVisualsToLocation(World, StackID, Tfm) ? StackID : Game::HEntity{};
 }
 //---------------------------------------------------------------------
 
