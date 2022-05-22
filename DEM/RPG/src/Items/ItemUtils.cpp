@@ -160,6 +160,14 @@ std::pair<U32, bool> MoveItemsToStack(Game::CGameWorld& World, Game::HEntity Des
 }
 //---------------------------------------------------------------------
 
+inline std::pair<U32, bool> SplitItemsToSlot(Game::CGameWorld& World, Game::HEntity& DestSlot, Game::HEntity StackID, U32 Count)
+{
+	DestSlot = SplitItemStack(World, StackID, Count);
+	if (!DestSlot) return { 0, false };
+	return { Count, DestSlot == StackID };
+}
+//---------------------------------------------------------------------
+
 // Returns true if the stack is emptied and deleted
 bool RemoveItemsFromStack(Game::CGameWorld& World, Game::HEntity StackID, U32& Count)
 {
@@ -422,18 +430,14 @@ std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEn
 
 	if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
 	{
-		// TODO: to wrapper function that fills abstract slot (HEntity&) and returns pair?
-		//???return pair from SplitItemStack? everything needed is calculated inside!
-		//assignment may become less convenient, need to evaluate pros and cons!
-		if (const auto NewStackID = SplitItemStack(World, StackID, Count))
+		if (SlotIndex >= pContainerWritable->Items.size())
+			pContainerWritable->Items.resize(SlotIndex + 1);
+
+		const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, pContainerWritable->Items[SlotIndex], StackID, Count);
+		if (MovedCount)
 		{
 			if (pReplaced) *pReplaced = DestStackID;
-
-			if (SlotIndex >= pContainerWritable->Items.size())
-				pContainerWritable->Items.resize(SlotIndex + 1);
-			pContainerWritable->Items[SlotIndex] = NewStackID;
-
-			return { Count, NewStackID == StackID };
+			return { MovedCount, MovedCompletely };
 		}
 	}
 
@@ -476,14 +480,7 @@ std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity
 	{
 		const auto SlotIndex = GetFirstEmptySlotIndex(*pContainerWritable);
 		if (SlotIndex < pContainerWritable->Items.size())
-		{
-			// TODO: to wrapper function that fills abstract slot (HEntity&) and returns pair?
-			//???return pair from SplitItemStack? everything needed is calculated inside!
-			//assignment may become less convenient, need to evaluate pros and cons!
-			pContainerWritable->Items[SlotIndex] = SplitItemStack(World, StackID, Count);
-			if (!pContainerWritable->Items[SlotIndex]) return { 0, false };
-			return { Count, pContainerWritable->Items[SlotIndex] == StackID };
-		}
+			return SplitItemsToSlot(World, pContainerWritable->Items[SlotIndex], StackID, Count);
 	}
 
 	return { 0, false };
@@ -722,14 +719,12 @@ std::pair<U32, bool> MoveItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity
 
 	if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
 	{
-		// TODO: to wrapper function that fills abstract slot (HEntity&) and returns pair?
-		//???return pair from SplitItemStack? everything needed is calculated inside!
-		//assignment may become less convenient, need to evaluate pros and cons!
-		if (Count > SlotCapacity) Count = SlotCapacity;
-		pEquipmentWritable->QuickSlots[SlotIndex] = SplitItemStack(World, StackID, Count);
-		if (!pEquipmentWritable->QuickSlots[SlotIndex]) return { 0, false };
-		if (pReplaced) *pReplaced = DestStackID;
-		return { Count, pEquipmentWritable->QuickSlots[SlotIndex] == StackID };
+		const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, pEquipmentWritable->QuickSlots[SlotIndex], StackID, std::min(Count, SlotCapacity));
+		if (MovedCount)
+		{
+			if (pReplaced) *pReplaced = DestStackID;
+			return { MovedCount, MovedCompletely };
+		}
 	}
 
 	return { 0, false };
@@ -776,10 +771,8 @@ std::pair<U32, bool> MoveItemsToQuickSlots(Game::CGameWorld& World, Game::HEntit
 		for (auto& DestSlot : pEquipmentWritable->QuickSlots)
 		{
 			if (DestSlot) continue;
-			const auto MovedCount = std::min(SlotCapacity, RemainingCount);
-			DestSlot = SplitItemStack(World, StackID, MovedCount);
-			if (!DestSlot) continue;
-			if (MovedCount >= RemainingCount) return { Count, DestSlot == StackID };
+			const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, DestSlot, StackID, std::min(RemainingCount, SlotCapacity));
+			if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
 			RemainingCount -= MovedCount;
 		}
 	}
@@ -991,15 +984,13 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 
 	if (auto pEquipmentWritable = World.FindComponent<Sh2::CEquipmentComponent>(EntityID))
 	{
-		// TODO: to wrapper function that fills abstract slot (HEntity&) and returns pair?
-		//???return pair from SplitItemStack? everything needed is calculated inside!
-		//assignment may become less convenient, need to evaluate pros and cons!
-		if (Count > SlotCapacity) Count = SlotCapacity;
-		pEquipmentWritable->Equipment[SlotIndex] = SplitItemStack(World, StackID, Count);
-		if (!pEquipmentWritable->Equipment[SlotIndex]) return { 0, false };
-		if (pReplaced) *pReplaced = DestStackID;
-		UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(SlotIndex));
-		return { Count, pEquipmentWritable->Equipment[SlotIndex] == StackID };
+		const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, pEquipmentWritable->Equipment[SlotIndex], StackID, std::min(Count, SlotCapacity));
+		if (MovedCount)
+		{
+			if (pReplaced) *pReplaced = DestStackID;
+			UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(SlotIndex));
+			return { MovedCount, MovedCompletely };
+		}
 	}
 
 	return { 0, false };
@@ -1046,15 +1037,10 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 			auto& DestSlot = pEquipmentWritable->Equipment[i];
 			if (DestSlot) continue;
 
-			const auto MovedCount = std::min(RemainingCount, CanEquipItems(World, EntityID, StackID, EEquipmentSlot_Type[i]));
-			if (!MovedCount) continue;
-
-			DestSlot = SplitItemStack(World, StackID, MovedCount);
-			if (!DestSlot) continue;
-
-			UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(i));
-
-			if (MovedCount >= RemainingCount) return { Count, DestSlot == StackID };
+			const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, DestSlot, StackID, std::min(RemainingCount, CanEquipItems(World, EntityID, StackID, EEquipmentSlot_Type[i])));
+			if (MovedCount)
+				UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(i));
+			if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
 			RemainingCount -= MovedCount;
 		}
 	}
@@ -1300,21 +1286,15 @@ std::pair<U32, bool> MoveItemsToLocationSlot(Game::CGameWorld& World, std::vecto
 		if (!pReplaced) return { 0, false };
 	}
 
-	//!!!TODO: SplitItemStack - ensure that the stack was created in the correct game level!
-	// TODO: to wrapper function that fills abstract slot (HEntity&) and returns pair?
-	//???return pair from SplitItemStack? everything needed is calculated inside!
-	//assignment may become less convenient, need to evaluate pros and cons!
-	if (const auto NewStackID = SplitItemStack(World, StackID, Count))
+	if (SlotIndex >= GroundItems.size())
+		GroundItems.resize(SlotIndex + 1);
+
+	const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, GroundItems[SlotIndex], StackID, Count);
+	if (MovedCount)
 	{
-		if (!AddItemVisualsToLocation(World, NewStackID, Tfm)) return { 0, false };
-
+		if (!AddItemVisualsToLocation(World, GroundItems[SlotIndex], Tfm)) return { 0, false };
 		if (pReplaced) *pReplaced = DestStackID;
-
-		if (SlotIndex >= GroundItems.size())
-			GroundItems.resize(SlotIndex + 1);
-		GroundItems[SlotIndex] = NewStackID;
-
-		return { Count, NewStackID == StackID };
+		return { MovedCount, MovedCompletely };
 	}
 
 	return { 0, false };
