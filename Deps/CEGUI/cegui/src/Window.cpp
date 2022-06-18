@@ -2507,13 +2507,14 @@ uint8_t Window::handleAreaChanges(bool movedOnScreen, bool movedInParent, bool s
     // imagery cache surface does. But update is skipped and cache becomes wrong.
     // Hack solution: roughly detect possible shift in imagery cache here and patch an argument.
     // Good solution: rework an algorithm to consider this case out of the box.
-    if (!d_needsRedraw && !d_geometryBuffers.empty() && (!d_surface || !d_surface->isRenderingWindow()))
     {
         RenderingContext ctx;
         getRenderingContext(ctx);
-        const glm::vec3 translation = glm::vec3(getUnclippedOuterRect().get().getPosition() - ctx.offset, 0.f);
-        if (ctx.surface && ctx.surface->isRenderingWindow() && translation != d_geometryBuffers.front()->getTranslation())
+        if (ctx.surface && ctx.surface->isRenderingWindow() &&
+            (d_geometryBuffers.empty() || glm::vec3(getUnclippedOuterRect().get().getPosition() - ctx.offset, 0.f) != d_geometryBuffers.front()->getTranslation()))
+        {
             movedOnScreen = true;
+        }
     }
 
     if (movedOnScreen || sized)
