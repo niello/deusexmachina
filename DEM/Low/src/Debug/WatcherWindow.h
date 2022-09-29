@@ -59,7 +59,7 @@ protected:
 	bool OnClearClick(const CEGUI::EventArgs& e);
 	bool OnAddVarsClick(const CEGUI::EventArgs& e);
 	bool OnNewWatchedAccept(const CEGUI::EventArgs& e);
-	bool OnListSemanticEvent(const CEGUI::EventArgs& e);
+	bool OnKeyDown(const CEGUI::EventArgs& e);
 
 	DECLARE_EVENT_HANDLER(OnUIUpdate, OnUIUpdate);
 

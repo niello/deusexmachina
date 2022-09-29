@@ -24,8 +24,6 @@ private:
 	DEM::Sys::POSWindow		OSWindow;
 	CArray<Events::PSub>	InputSubs;
 	CEGUI::GUIContext*		pCtx = nullptr;
-	CEGUI::InputAggregator*	pInput = nullptr;
-	bool					InputEventsOnKeyUp = true;
 
 	void				SetRootWindow(CUIWindow* pWindow);
 

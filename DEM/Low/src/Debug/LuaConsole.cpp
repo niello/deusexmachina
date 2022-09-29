@@ -39,8 +39,8 @@ void CLuaConsole::Init()
 	pInputLine = (CEGUI::Editbox*)pWnd->getChild("InputLine");
 	pInputLine->subscribeEvent(CEGUI::Editbox::EventTextAccepted,
 		CEGUI::Event::Subscriber(&CLuaConsole::OnCommand, this));
-	pInputLine->subscribeEvent(CEGUI::Editbox::EventSemanticEvent,
-		CEGUI::Event::Subscriber(&CLuaConsole::OnSemanticEvent, this));
+	pInputLine->subscribeEvent(CEGUI::Editbox::EventKeyDown,
+		CEGUI::Event::Subscriber(&CLuaConsole::OnKeyDown, this));
 	pInputLine->activate();
 
 	pOutputWnd = (CEGUI::MultiColumnList*)pWnd->getChild("OutputList");
@@ -159,11 +159,11 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 }
 //---------------------------------------------------------------------
 
-bool CLuaConsole::OnSemanticEvent(const CEGUI::EventArgs& e)
+bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 {
-	const CEGUI::SemanticEventArgs& ke = static_cast<const CEGUI::SemanticEventArgs&>(e);
+	const auto& ke = static_cast<const CEGUI::KeyEventArgs&>(e);
 
-	if (ke.d_semanticValue == CEGUI::SemanticValue::GoDown)
+	if (ke.d_key == CEGUI::Key::Scan::ArrowDown)
 	{
 		if (CmdHistory.GetCount() > CmdHistoryCursor + 1)
 		{
@@ -184,7 +184,7 @@ bool CLuaConsole::OnSemanticEvent(const CEGUI::EventArgs& e)
 		}
 		OK;
 	}
-	else if (ke.d_semanticValue == CEGUI::SemanticValue::GoUp)
+	else if (ke.d_key == CEGUI::Key::Scan::ArrowUp)
 	{
 		if (CmdHistory.GetCount())
 		{

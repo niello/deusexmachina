@@ -29,6 +29,7 @@
 #include "CEGUI/falagard/Enums.h"
 #include "CEGUI/ColourRect.h"
 #include <vector>
+#include <memory>
 
 #if defined(_MSC_VER)
 #   pragma warning(push)
@@ -89,7 +90,7 @@ public:
 protected:
 
     Font*                   d_font = nullptr;
-    ColourRect              d_backgroundColours = 0x00000000;
+    ColourRect              d_backgroundColours = ColourRect(0x00000000);
     Rectf                   d_padding = Rectf(0.f, 0.f, 0.f, 0.f);
     VerticalImageFormatting d_verticalFormatting = VerticalImageFormatting::BottomAligned;
 };

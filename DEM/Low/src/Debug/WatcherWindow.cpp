@@ -54,8 +54,8 @@ void CWatcherWindow::Init()
 	pList->addColumn("Type", COL_TYPE, CEGUI::UDim(0, 100));
 	pList->addColumn("Value", COL_VALUE, CEGUI::UDim(0, 200));
 	pList->setSelectionMode(CEGUI::MultiColumnList::SelectionMode::RowSingle);
-	pList->subscribeEvent(CEGUI::MultiColumnList::EventSemanticEvent,
-		CEGUI::Event::Subscriber(&CWatcherWindow::OnListSemanticEvent, this));
+	pList->subscribeEvent(CEGUI::MultiColumnList::EventKeyDown,
+		CEGUI::Event::Subscriber(&CWatcherWindow::OnKeyDown, this));
 
 	CEGUI::RadioButton* pRBNEnv = (CEGUI::RadioButton*)pWnd->getChild("RBNEnv");
 	pRBNEnv->setGroupID(0);
@@ -144,11 +144,11 @@ bool CWatcherWindow::OnNewWatchedAccept(const CEGUI::EventArgs& e)
 }
 //---------------------------------------------------------------------
 
-bool CWatcherWindow::OnListSemanticEvent(const CEGUI::EventArgs& e)
+bool CWatcherWindow::OnKeyDown(const CEGUI::EventArgs& e)
 {
-	const CEGUI::SemanticEventArgs& ke = static_cast<const CEGUI::SemanticEventArgs&>(e);
+	const auto& ke = static_cast<const CEGUI::KeyEventArgs&>(e);
 
-	if (ke.d_semanticValue == CEGUI::SemanticValue::DeleteNextCharacter)
+	if (ke.d_key == CEGUI::Key::Scan::DeleteKey)
 	{
 		CEGUI::ListboxItem* pSel = pList->getFirstSelectedItem();
 		if (pSel)

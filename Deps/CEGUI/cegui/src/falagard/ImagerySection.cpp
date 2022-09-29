@@ -30,6 +30,8 @@
 #include "CEGUI/Logger.h"
 #include <iostream>
 #include <limits>
+#include <cstring>
+#include <algorithm>
 
 // Start of CEGUI namespace section
 namespace CEGUI

@@ -30,6 +30,7 @@
 #include "CEGUI/ColourRect.h"
 #include "CEGUI/Rectf.h"
 #include <vector>
+#include <memory>
 
 // NB: these are internal classes, please use RenderedText in the client code
 
@@ -40,8 +41,8 @@ using RenderedTextElementPtr = std::unique_ptr<class RenderedTextElement>;
 struct CEGUIEXPORT SelectionInfo
 {
     const Image* bgBrush = nullptr;
-    ColourRect   bgColours = 0x800080FF;
-    ColourRect   textColours = 0;         //!< Zero means keeping an existing text colour
+    ColourRect   bgColours = ColourRect(0x800080FF);
+    ColourRect   textColours = ColourRect(0);         //!< Zero means keeping an existing text colour
     size_t       start = 0;
     size_t       end = 0;
 };

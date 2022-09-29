@@ -18,7 +18,7 @@ public:
 
 	// implement parts of RenderTarget interface
 	virtual void			activate() override;
-	virtual void			unprojectPoint(const GeometryBuffer& buff, const glm::vec2& p_in, glm::vec2& p_out) const override;
+	virtual void            updateMatrix() const override;
 	virtual CDEMRenderer&	getOwner() override { return d_owner; }
 };
 

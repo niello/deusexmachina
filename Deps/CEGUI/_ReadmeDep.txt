@@ -7,7 +7,7 @@ https://github.com/cegui/cegui
 
 Current version used:
 master
-https://github.com/cegui/cegui/commit/8001eebdd934b7e82cc79c62e89bb91f997d3c8b
+https://github.com/cegui/cegui/commit/82d94ac35acc6d99ebaa165f46a7aad9d49ad948
 Dependencies from https://github.com/niello/cegui-dependencies/archive/dem_minimal.zip
 
 Local modifications:
