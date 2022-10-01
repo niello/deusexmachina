@@ -22,6 +22,7 @@ CUIContext::CUIContext(float Width, float Height, DEM::Sys::COSWindow* pHostWind
 	auto pRenderer = static_cast<CEGUI::CDEMRenderer*>(CEGUI::System::getSingleton().getRenderer());
 	CEGUI::RenderTarget* pTarget = pRenderer->createViewportTarget(Width, Height);
 	pCtx = &CEGUI::System::getSingleton().createGUIContext(*pTarget);
+	pCtx->initDefaultInputSemantics();
 
 	if (pHostWindow)
 	{
