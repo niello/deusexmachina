@@ -1195,7 +1195,7 @@ U32 CanEquipItems(const Game::CGameWorld& World, Game::HEntity Receiver, Game::H
 		// TODO: if scripted, try to find CanEquip function in the script
 		// Return value will be true, false or nil. The latter is to proceed to the C++ logic.
 
-		MaxStack = std::max(1u, pEquippable->MaxStack);
+		MaxStack = std::max<U32>(1, pEquippable->MaxStack);
 
 		const auto CheckBit = (1 << static_cast<int>(SlotType));
 		if (pEquippable->IncludeBits & CheckBit) return MaxStack;
@@ -1514,6 +1514,21 @@ void RemoveItemVisualsFromLocation(Game::CGameWorld& World, Game::HEntity StackI
 {
 	World.RemoveComponent<Game::CSceneComponent>(StackID);
 	World.RemoveComponent<Game::CRigidBodyComponent>(StackID);
+}
+//---------------------------------------------------------------------
+
+bool IsContainerEmpty(const Game::CGameWorld& World, Game::HEntity ContainerID)
+{
+	const CItemContainerComponent* pContainer = World.FindComponent<const CItemContainerComponent>(ContainerID);
+	if (!pContainer) return true;
+
+	for (auto StackID : pContainer->Items)
+	{
+		auto pItemStack = World.FindComponent<const CItemStackComponent>(StackID);
+		if (pItemStack && pItemStack->Prototype && pItemStack->Count > 0) return false;
+	}
+
+	return true;
 }
 //---------------------------------------------------------------------
 
