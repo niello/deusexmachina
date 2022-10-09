@@ -81,7 +81,7 @@ U32 AddItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t 
 U32 AddItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count, bool Merge = true);
 std::pair<Game::HEntity, U32> MoveItemsFromQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, U32 Count);
 std::pair<U32, bool> MoveItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity StackID, U32 Count, bool Merge = true, Game::HEntity* pReplaced = nullptr);
-std::pair<U32, bool> MoveItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, U32 Count, bool Merge = true);
+std::pair<U32, bool> MoveItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, U32 Count = std::numeric_limits<U32>().max(), bool Merge = true);
 Game::HEntity MoveWholeStackToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, bool Merge = true);
 void ClearQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex);
 U32 RemoveItemsFromQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, U32 Count);
