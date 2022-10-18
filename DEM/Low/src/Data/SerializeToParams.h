@@ -12,6 +12,7 @@ namespace DEM
 
 template<typename T>
 constexpr bool is_string_compatible_v =
+	std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, CStrID> ||
 	std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, std::string> ||
 	std::is_convertible_v<T, const char*>;
 
@@ -249,13 +250,13 @@ struct ParamsFormat
 		{
 			auto pArray = pArrayPtr->Get();
 
-			if constexpr (std::is_same_v<std::vector<T::value_type>, T>)
+			if constexpr (std::is_same_v<std::vector<T::value_type>, T>) // FIXME: WTF is checked here?
 				Vector.resize(pArray->GetCount());
 
 			for (size_t i = 0; i < pArray->GetCount(); ++i)
 			{
 				const auto& ValueData = pArray->At(i);
-				if constexpr (std::is_same_v<std::vector<T::value_type>, T>)
+				if constexpr (std::is_same_v<std::vector<T::value_type>, T>) // FIXME: WTF is checked here?
 				{
 					Deserialize(ValueData, Vector[i]);
 				}
@@ -266,6 +267,12 @@ struct ParamsFormat
 					Vector.insert(std::move(Value));
 				}
 			}
+		}
+		else
+		{
+			// Try to deserialize the value as a vector of a single element
+			Vector.resize(1);
+			Deserialize(Input, Vector[0]);
 		}
 	}
 	//---------------------------------------------------------------------
