@@ -33,23 +33,6 @@ enum class EItemStorage
 	Equipment  // A stack is equipped to one of equipment slots inside CEquipmentComponent
 };
 
-enum class EEquipmentSlotType
-{
-	Torso,
-	Shoulders,
-	Head,
-	Arms,
-	Hands,     // Hand wear - gloves etc
-	Legs,
-	Feet,
-	Belt,
-	Backpack,
-	Neck,
-	Bracelet,
-	Ring,
-	HandItem   // Items held in hands - primarily weapons and shields
-};
-
 struct CContainerStats
 {
 	float  UsedWeight = 0.f;
@@ -87,6 +70,8 @@ void ClearQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t Slot
 U32 RemoveItemsFromQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, U32 Count);
 U32 RemoveItemsFromQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count, bool AllowModified);
 
+std::pair<CStrID, size_t> DecodeEquipmentSlot(const Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex);
+size_t EncodeEquipmentSlot(const Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotType, size_t SlotIndex);
 U32 AddItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity ItemProtoID, U32 Count, bool Merge = true);
 U32 AddItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count, bool Merge = true);
 std::pair<Game::HEntity, U32> MoveItemsFromEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, U32 Count);
@@ -95,7 +80,7 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 void ClearEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex);
 U32 RemoveItemsFromEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, U32 Count);
 U32 RemoveItemsFromEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count, bool AllowModified);
-U32 CanEquipItems(const Game::CGameWorld& World, Game::HEntity Receiver, Game::HEntity StackID, EEquipmentSlotType SlotType);
+U32 CanEquipItems(const Game::CGameWorld& World, Game::HEntity ReceiverID, Game::HEntity StackID, CStrID SlotType);
 void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, Sh2::EEquipmentSlot Slot, bool ForceHide = false);
 
 U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius);

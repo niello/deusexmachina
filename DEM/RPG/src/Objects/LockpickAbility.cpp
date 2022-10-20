@@ -14,7 +14,6 @@
 
 namespace DEM::RPG
 {
-constexpr Sh2::EEquipmentSlot ToolSlots[] = { Sh2::EEquipmentSlot::MainHandA, Sh2::EEquipmentSlot::MainHandB, Sh2::EEquipmentSlot::OffHandA, Sh2::EEquipmentSlot::OffHandB };
 
 static std::pair<Game::HEntity, int> FindBestLockpick(const Game::CGameWorld& World, Game::HEntity ActorID)
 {
@@ -22,21 +21,31 @@ static std::pair<Game::HEntity, int> FindBestLockpick(const Game::CGameWorld& Wo
 	int BestModifier = std::numeric_limits<int>().min();
 	if (auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ActorID))
 	{
+		// TODO: find "ItemInHand" in the scheme, then iterate its slots and find corresponding records in pEquipment->Equipment
 		for (auto Slot : ToolSlots)
-			if (auto pTool = FindItemComponent<const Sh2::CLockpickComponent>(World, pEquipment->Equipment[Slot]))
-				if (BestModifier < pTool->Modifier)
-				{
-					BestModifier = pTool->Modifier;
-					BestLockpick = pEquipment->Equipment[Slot];
-				}
-
-		for (auto StackID : pEquipment->QuickSlots)
+		{
+			const auto StackID = pEquipment->Equipment[Slot];
 			if (auto pTool = FindItemComponent<const Sh2::CLockpickComponent>(World, StackID))
-				if (BestModifier < pTool->Modifier)
+			{
+				if (BestLockpick != StackID && BestModifier < pTool->Modifier)
 				{
 					BestModifier = pTool->Modifier;
 					BestLockpick = StackID;
 				}
+			}
+		}
+
+		for (auto StackID : pEquipment->QuickSlots)
+		{
+			if (auto pTool = FindItemComponent<const Sh2::CLockpickComponent>(World, StackID))
+			{
+				if (BestLockpick != StackID && BestModifier < pTool->Modifier)
+				{
+					BestModifier = pTool->Modifier;
+					BestLockpick = StackID;
+				}
+			}
+		}
 	}
 
 	return { BestLockpick, BestModifier };
