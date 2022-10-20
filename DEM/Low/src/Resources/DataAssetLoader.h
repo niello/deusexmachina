@@ -3,6 +3,7 @@
 #include <Data/Buffer.h>
 #include <Data/HRDParser.h>
 #include <Data/SerializeToParams.h>
+#include <Data/FunctionTraits.h>
 
 // A template for loading arbitrary C++ object from HRD using metadata defined with DEM::Meta.
 // Example of usage:
@@ -26,13 +27,14 @@
 
 namespace Resources
 {
+HAS_METHOD_WITH_SIGNATURE_TRAIT(OnPostLoad);
 
 template<typename T>
 class CDataAssetLoaderHRD : public Resources::CResourceLoader
 {
 public:
 
-	static_assert(std::is_base_of_v<T, Core::CObject>, "Resource class must be derived from Core::CObject");
+	static_assert(std::is_base_of_v<Core::CObject, T>, "Resource class must be derived from Core::CObject");
 
 	CDataAssetLoaderHRD(Resources::CResourceManager& ResourceManager) : CResourceLoader(ResourceManager) {}
 
@@ -60,6 +62,11 @@ public:
 		// Deserialize HRD to the C++ object using metadata
 		Ptr<T> NewObject(n_new(T()));
 		DEM::ParamsFormat::Deserialize(Data::CData(Params), *NewObject);
+
+		// Do optional postprocessing
+		if constexpr (has_method_with_signature_OnPostLoad_v<T, void>)
+			NewObject->OnPostLoad();
+
 		return NewObject;
 	}
 };
