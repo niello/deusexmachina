@@ -64,7 +64,7 @@ public:
 		DEM::ParamsFormat::Deserialize(Data::CData(Params), *NewObject);
 
 		// Do optional postprocessing
-		if constexpr (has_method_with_signature_OnPostLoad_v<T, void>)
+		if constexpr (has_method_with_signature_OnPostLoad_v<T, void()>)
 			NewObject->OnPostLoad();
 
 		return NewObject;
