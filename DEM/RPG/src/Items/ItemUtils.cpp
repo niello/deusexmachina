@@ -886,62 +886,19 @@ U32 RemoveItemsFromQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, G
 }
 //---------------------------------------------------------------------
 
-static std::pair<CStrID, size_t> DecodeEquipmentSlot(const CEquipmentComponent& Equipment, size_t SlotIndex)
-{
-	size_t Accum = 0;
-	for (const auto [ID, Count] : Equipment.Scheme)
-	{
-		Accum += Count;
-		if (SlotIndex < Accum) return { ID, SlotIndex - (Accum - Count) };
-	}
-
-	return {};
-}
-//---------------------------------------------------------------------
-
-std::pair<CStrID, size_t> DecodeEquipmentSlot(const Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex)
-{
-	auto pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID);
-	return pEquipment ? DecodeEquipmentSlot(*pEquipment, SlotIndex) : std::pair<CStrID, size_t>{};
-}
-//---------------------------------------------------------------------
-
-static size_t EncodeEquipmentSlot(const CEquipmentComponent& Equipment, CStrID SlotType, size_t SlotIndex)
-{
-	size_t Accum = 0;
-	for (const auto [ID, Count] : Equipment.Scheme)
-	{
-		if (ID == SlotType) return Accum + SlotIndex;
-		Accum += Count;
-	}
-
-	return std::numeric_limits<size_t>().max();
-}
-//---------------------------------------------------------------------
-
-size_t EncodeEquipmentSlot(const Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotType, size_t SlotIndex)
-{
-	auto pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID);
-	return pEquipment ? EncodeEquipmentSlot(*pEquipment, SlotType, SlotIndex) : std::numeric_limits<size_t>().max();
-}
-//---------------------------------------------------------------------
-
 // FIXME: major code duplication with AddItemsToQuickSlot!
 // Returns a number of items actually added
-U32 AddItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity ItemProtoID, U32 Count, bool Merge)
+U32 AddItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID, Game::HEntity ItemProtoID, U32 Count, bool Merge)
 {
 	if (!EntityID || !ItemProtoID || !Count) return 0;
 
 	auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID);
-	if (!pEquipment || SlotIndex >= pEquipment->Equipment.size()) return 0;
+	if (!pEquipment) return 0;
 
-	auto [SlotType, Index] = DecodeEquipmentSlot(*pEquipment, SlotIndex);
-	if (!SlotType) return 0;
-
-	U32 SlotCapacity = CanEquipItems(World, EntityID, ItemProtoID, SlotType);
+	U32 SlotCapacity = CanEquipItems(World, EntityID, ItemProtoID, SlotID);
 	if (!SlotCapacity) return 0;
 
-	auto DestStackID = pEquipment->Equipment[SlotIndex];
+	auto DestStackID = pEquipment->Equipment.at(SlotID);
 
 	// Can't add to a slot occupied by an incompatible item stack
 	// NB: dest stack is accessed for reading
@@ -968,8 +925,8 @@ U32 AddItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, siz
 	{
 		if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 		{
-			pEquipmentWritable->Equipment[SlotIndex] = NewStackID;
-			UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(SlotIndex));
+			pEquipmentWritable->Equipment.emplace(SlotID, NewStackID);
+			UpdateCharacterModelEquipment(World, EntityID, SlotID);
 			return Count;
 		}
 		World.DeleteEntity(NewStackID);
@@ -997,7 +954,7 @@ U32 AddItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::H
 			auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID);
 			if (!pDestStack || !CanMergeItems(ItemProtoID, pDestStack)) continue;
 
-			const U32 SlotCapacity = CanEquipItems(World, EntityID, ItemProtoID, SlotType);
+			const U32 SlotCapacity = CanEquipItems(World, EntityID, ItemProtoID, SlotID);
 			if (pDestStack->Count >= SlotCapacity) continue;
 
 			if (auto pDestStackWritable = World.FindComponent<CItemStackComponent>(DestStackID))
@@ -1016,7 +973,7 @@ U32 AddItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::H
 		for (auto& [SlotID, DestSlot] : pEquipmentWritable->Equipment)
 		{
 			if (DestSlot) continue;
-			const U32 SlotCapacity = CanEquipItems(World, EntityID, ItemProtoID, SlotType);
+			const U32 SlotCapacity = CanEquipItems(World, EntityID, ItemProtoID, SlotID);
 			DestSlot = CreateItemStack(World, ItemProtoID, std::min(SlotCapacity, RemainingCount));
 			UpdateCharacterModelEquipment(World, EntityID, SlotID);
 			if (SlotCapacity >= RemainingCount) return Count;
@@ -1031,15 +988,18 @@ U32 AddItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::H
 //???size_t FindEquipmentSlotForItem(item) - to check if we can equip something before we do that! E.g. for UI prompt "Equip immediately?".
 
 // Returns a source stack ID if movement happened and a number of moved items (zero if the whole stack is moved)
-std::pair<Game::HEntity, U32> MoveItemsFromEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, U32 Count)
+std::pair<Game::HEntity, U32> MoveItemsFromEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID, U32 Count)
 {
 	if (!EntityID || !Count) return { {}, 0 };
 
 	auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID);
-	if (!pEquipment || SlotIndex >= pEquipment->Equipment.size()) return { {}, 0 };
+	if (!pEquipment) return { {}, 0 };
+
+	auto It = pEquipment->Equipment.find(SlotID);
+	if (It == pEquipment->Equipment.cend()) return { {}, 0 };
 
 	// Don't optimize with constant access because a stack will be altered or deleted anyway
-	const auto StackID = pEquipment->Equipment[SlotIndex];
+	const auto StackID = It->second;
 	auto pStack = World.FindComponent<CItemStackComponent>(StackID);
 	if (!pStack) return { {}, 0 };
 
@@ -1052,8 +1012,8 @@ std::pair<Game::HEntity, U32> MoveItemsFromEquipmentSlot(Game::CGameWorld& World
 	{
 		if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 		{
-			pEquipmentWritable->Equipment[SlotIndex] = {};
-			UpdateCharacterModelEquipment(World, EntityID, static_cast<Sh2::EEquipmentSlot>(SlotIndex));
+			pEquipmentWritable->Equipment.emplace(SlotID, Game::HEntity{});
+			UpdateCharacterModelEquipment(World, EntityID, SlotID);
 		}
 		return { StackID, 0 };
 	}
@@ -1061,7 +1021,7 @@ std::pair<Game::HEntity, U32> MoveItemsFromEquipmentSlot(Game::CGameWorld& World
 //---------------------------------------------------------------------
 
 // Returns a number of items actually moved in and a 'need to clear source storage' flag
-std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity StackID,
+std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID, Game::HEntity StackID,
 	U32 Count, bool Merge, Game::HEntity* pReplaced)
 {
 	if (!EntityID || !StackID || !Count) return { 0, false };
@@ -1157,7 +1117,7 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 }
 //---------------------------------------------------------------------
 
-void ClearEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex)
+void ClearEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID)
 {
 	auto pEquipment = World.FindComponent<CEquipmentComponent>(EntityID);
 	if (!pEquipment || SlotIndex >= pEquipment->Equipment.size()) return;
@@ -1167,7 +1127,7 @@ void ClearEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t 
 //---------------------------------------------------------------------
 
 // Returns a number of items actually removed
-U32 RemoveItemsFromEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, U32 Count)
+U32 RemoveItemsFromEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID, U32 Count)
 {
 	const auto [StackID, RemovedCount] = MoveItemsFromEquipmentSlot(World, EntityID, SlotIndex, Count);
 	if (StackID && !RemovedCount) World.DeleteEntity(StackID);
@@ -1204,7 +1164,7 @@ U32 RemoveItemsFromEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Ga
 }
 //---------------------------------------------------------------------
 
-U32 CanEquipItems(const Game::CGameWorld& World, Game::HEntity ReceiverID, Game::HEntity StackID, CStrID SlotType)
+U32 CanEquipItems(const Game::CGameWorld& World, Game::HEntity ReceiverID, Game::HEntity StackID, CStrID SlotID)
 {
 	auto pEquipment = World.FindComponent<const CEquipmentComponent>(ReceiverID);
 	if (!pEquipment) return 0;
@@ -1214,6 +1174,9 @@ U32 CanEquipItems(const Game::CGameWorld& World, Game::HEntity ReceiverID, Game:
 
 	// TODO: if scripted, try to find CanEquip function in the script
 	// Return value will be true, false or nil. The latter is to proceed to the C++ logic below.
+
+	auto It = pEquipment->Scheme->SlotToType.find(SlotID);
+	if (It == pEquipment->Scheme->SlotToType.cend()) return 0;
 
 	for (const auto [BlockedSlotType, Count] : pEquippable->Slots) //???turn into vector<pair<type, count>> on load?
 	{
@@ -1230,7 +1193,7 @@ U32 CanEquipItems(const Game::CGameWorld& World, Game::HEntity ReceiverID, Game:
 }
 //---------------------------------------------------------------------
 
-void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, Sh2::EEquipmentSlot Slot, bool ForceHide)
+void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, CStrID SlotID, bool ForceHide)
 {
 	if (Slot >= Sh2::EEquipmentSlot::COUNT) return;
 

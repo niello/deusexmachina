@@ -9,11 +9,10 @@ namespace DEM::RPG
 
 struct CEquipmentComponent
 {
-	//std::map<CStrID, Game::HEntity> Equipment;
-	std::vector<Game::HEntity> Equipment;
-	std::vector<Game::HEntity> QuickSlots;
-	CStrID                     SchemeID; // FIXME: ID to resource directly!
-	PEquipmentScheme           Scheme;
+	std::map<CStrID, Game::HEntity> Equipment;
+	std::vector<Game::HEntity>      QuickSlots;
+	CStrID                          SchemeID; // FIXME: ID to resource directly!
+	PEquipmentScheme                Scheme;
 
 	// TODO: active items/slots (current set of items in hands, active quickslots, e.g. current ammo)
 };
