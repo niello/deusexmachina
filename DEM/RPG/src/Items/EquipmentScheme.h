@@ -15,20 +15,21 @@ class CEquipmentScheme : public ::Core::CObject
 
 public:
 
-	std::map<CStrID, size_t> Slots;
-	std::map<CStrID, CStrID> SlotToType;
+	std::map<CStrID, size_t> SlotTypes; // Slot type -> number of slots
+	std::map<CStrID, CStrID> Slots;     // Slot ID -> slot type
 
 	void OnPostLoad()
 	{
-		for (const auto [Type, Count] : Slots)
+		// Generate slots from types and numbers
+		for (const auto [Type, Count] : SlotTypes)
 		{
 			if (!Count) continue;
 
 			if (Count == 1)
-				SlotToType.emplace(Type, Type);
+				Slots.emplace(Type, Type);
 			else
 				for (size_t i = 1; i <= Count; ++i)
-					SlotToType.emplace(CStrID((Type.ToString() + std::to_string(i)).c_str()), Type);
+					Slots.emplace(CStrID((Type.ToString() + std::to_string(i)).c_str()), Type);
 		}
 	}
 };
@@ -45,7 +46,7 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CEquipmentScheme>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CEquipmentScheme, 1, Slots)
+		DEM_META_MEMBER_FIELD(RPG::CEquipmentScheme, 1, SlotTypes)
 	);
 }
 
