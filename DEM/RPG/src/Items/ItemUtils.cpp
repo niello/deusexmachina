@@ -1204,38 +1204,39 @@ U32 CanEquipItems(const Game::CGameWorld& World, Game::HEntity ReceiverID, Game:
 void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, CStrID SlotID, bool ForceHide)
 {
 	//!!!FIXME: where to place?! Or require bones to be named as slots!
-	constexpr const char* EEquipmentSlot_Bone[] =
+	static const std::map<CStrID, const char*> EEquipmentSlot_Bone
 	{
-		"body",
-		"shoulders_cloak",
-		"head",
-		"arms",
-		"hands",
-		"legs",
-		"feet",
-		"belt",
-		"backpack",
-		"neck",
-		"bracelet",
-		"bracelet",
-		"ring",
-		"ring",
-		"ring",
-		"ring",
-		"mixamorig_RightHandMiddle1",
-		"mixamorig_LeftHandMiddle1",
-		"mixamorig_RightHandMiddle1",
-		"mixamorig_LeftHandMiddle1"
+		{ CStrID("Body"), "body"},
+		{ CStrID("Shoulders"), "shoulders_cloak"},
+		{ CStrID("Head"), "head"},
+		{ CStrID("Arms"), "arms"},
+		{ CStrID("Hands"), "hands"},
+		{ CStrID("Legs"), "legs"},
+		{ CStrID("Feet"), "feet"},
+		{ CStrID("Belt"), "belt"},
+		{ CStrID("Backpack"), "backpack"},
+		{ CStrID("Neck"), "neck"},
+		{ CStrID("Bracelet1"), "bracelet"},
+		{ CStrID("Bracelet2"), "bracelet"},
+		{ CStrID("Ring1"), "ring"},
+		{ CStrID("Ring2"), "ring"},
+		{ CStrID("Ring3"), "ring"},
+		{ CStrID("Ring4"), "ring"},
+		{ CStrID("ItemInHand1"), "mixamorig_RightHandMiddle1"},
+		{ CStrID("ItemInHand2"), "mixamorig_LeftHandMiddle1"},
+		{ CStrID("ItemInHand3"), "mixamorig_RightHandMiddle1"},
+		{ CStrID("ItemInHand4"), "mixamorig_LeftHandMiddle1"}
 	};
 
 	//!!!FIXME: constexpr CStrID?! Or at least pre-init once!
-	const auto pBoneName = EEquipmentSlot_Bone[Slot];
+	const auto pBoneName = EEquipmentSlot_Bone.at(SlotID);
 	if (!pBoneName || !*pBoneName) return;
 
 	auto pEquipment = World.FindComponent<const CEquipmentComponent>(OwnerID);
 	if (!pEquipment) return;
 
-	const auto StackID = pEquipment->Equipment[Slot];
+	auto It = pEquipment->Equipment.find(SlotID);
+	const auto StackID = (It == pEquipment->Equipment.cend()) ? Game::HEntity{} : It->second;
 
 	auto pOwnerScene = World.FindComponent<const Game::CSceneComponent>(OwnerID);
 	if (!pOwnerScene || !pOwnerScene->RootNode) return;
