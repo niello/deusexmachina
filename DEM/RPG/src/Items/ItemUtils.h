@@ -1,5 +1,6 @@
 #pragma once
 #include <Items/ItemStackComponent.h>
+#include <Items/EquipmentComponent.h>
 #include <Game/ECS/GameWorld.h>
 
 // Utilities and algorithms for item manipulation
@@ -41,6 +42,13 @@ struct CContainerStats
 	size_t Price = 0;
 };
 
+inline Game::HEntity GetEquippedStack(const CEquipmentComponent& Component, CStrID SlotID)
+{
+	auto It = Component.Equipment.find(SlotID);
+	return (It == Component.Equipment.cend()) ? Game::HEntity{} : It->second;
+}
+//---------------------------------------------------------------------
+
 Game::HEntity CreateItemStack(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID = CStrID::Empty);
 Game::HEntity CloneItemStack(Game::CGameWorld& World, Game::HEntity StackID, U32 Count);
 Game::HEntity SplitItemStack(Game::CGameWorld& World, Game::HEntity StackID, U32 Count);
@@ -80,6 +88,7 @@ U32 RemoveItemsFromEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID
 U32 RemoveItemsFromEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count, bool AllowModified);
 U32 CanEquipItems(const Game::CGameWorld& World, Game::HEntity ReceiverID, Game::HEntity StackID, CStrID SlotID);
 void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, CStrID SlotID, bool ForceHide = false);
+Game::HEntity GetEquippedStack(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID);
 
 U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius);
 std::pair<Game::HEntity, U32> MoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count = std::numeric_limits<U32>().max());

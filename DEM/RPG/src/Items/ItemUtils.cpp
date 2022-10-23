@@ -1181,20 +1181,30 @@ U32 CanEquipItems(const Game::CGameWorld& World, Game::HEntity ReceiverID, Game:
 	// TODO: if scripted, try to find CanEquip function in the script
 	// Return value will be true, false or nil. The latter is to proceed to the C++ logic below.
 
-	//// Check if the destination slot exists
-	//auto It = pEquipment->Scheme->Slots.find(SlotID);
-	//if (It == pEquipment->Scheme->Slots.cend()) return 0;
+	// Check if requested destination slot exists and matches the required slot type of the equippable item
+	auto ItSlotInfo = pEquipment->Scheme->Slots.find(SlotID);
+	if (ItSlotInfo == pEquipment->Scheme->Slots.cend() || pEquippable->Slots.find(ItSlotInfo->second) == pEquippable->Slots.cend()) return 0;
 
-	// Check if all required slots exist and are not busy
-	for (const auto [BlockedSlotType, Count] : pEquippable->Slots) //???turn into vector<pair<type, count>> on load?
+	// The item in the destination slot can be replaced, so we consider slots blocked by it free
+	const Game::HEntity ExcludedStackID = GetEquippedStack(*pEquipment, SlotID);
+
+	// Find slots to equip the item into
+	for (auto [RequiredSlotType, RequiredSlotCount] : pEquippable->Slots)
 	{
-		auto It = pEquipment->Scheme.find(BlockedSlotType);
-		if (It == pEquipment->Scheme.cend() || It->second < Count) return 0;
+		if (!RequiredSlotCount) continue;
 
-		// TODO:
-		// if slots are occupied by different items, fail
-		//???what to do if self found in the slot?
-		// Only one item can be replaced - UI logic, must not be here? Or check by bool arg? or pass here an entity ID to ignore?!
+		for (auto [CurrSlotID, CurrSlotType] : pEquipment->Scheme->Slots)
+		{
+			if (CurrSlotType != RequiredSlotType) continue;
+
+			auto It = pEquipment->Equipment.find(CurrSlotID);
+			if (It == pEquipment->Equipment.cend() || !It->second || It->second == ExcludedStackID)
+				if (--RequiredSlotCount == 0)
+					break;
+		}
+
+		// We failed to find enough free slots of this type
+		if (RequiredSlotCount) return 0;
 	}
 
 	return std::max<U32>(1, pEquippable->MaxStack);

@@ -14,17 +14,21 @@
 
 namespace DEM::RPG
 {
+static const CStrID sidItemInHand("ItemInHand");
+static const CStrID sidItemInHand1("ItemInHand1");
 
 static std::pair<Game::HEntity, int> FindBestLockpick(const Game::CGameWorld& World, Game::HEntity ActorID)
 {
 	Game::HEntity BestLockpick;
 	int BestModifier = std::numeric_limits<int>().min();
-	if (auto pEquipment = World.FindComponent<const Sh2::CEquipmentComponent>(ActorID))
+	if (auto pEquipment = World.FindComponent<const CEquipmentComponent>(ActorID))
 	{
 		// TODO: find "ItemInHand" in the scheme, then iterate its slots and find corresponding records in pEquipment->Equipment
-		for (auto Slot : ToolSlots)
+		for (auto [SlotID, SlotType] : pEquipment->Scheme->Slots)
 		{
-			const auto StackID = pEquipment->Equipment[Slot];
+			if (SlotType != sidItemInHand) continue;
+
+			const auto StackID = GetEquippedStack(*pEquipment, SlotID);
 			if (auto pTool = FindItemComponent<const Sh2::CLockpickComponent>(World, StackID))
 			{
 				if (BestLockpick != StackID && BestModifier < pTool->Modifier)
@@ -121,10 +125,10 @@ bool CLockpickAbility::IsTargetValid(const Game::CGameSession& Session, U32 Inde
 		if (!pSkills || pSkills->Lockpicking <= 0) continue;
 
 		// Must have a lockpicking tool equipped or in a quick slot
-		if (auto pEquipment = pWorld->FindComponent<const Sh2::CEquipmentComponent>(ActorID))
+		if (auto pEquipment = pWorld->FindComponent<const CEquipmentComponent>(ActorID))
 		{
-			for (auto Slot : ToolSlots)
-				if (FindItemComponent<const Sh2::CLockpickComponent>(*pWorld, pEquipment->Equipment[Slot])) return true;
+			for (auto [SlotID, SlotType] : pEquipment->Scheme->Slots)
+				if (SlotType == sidItemInHand && FindItemComponent<const Sh2::CLockpickComponent>(*pWorld, GetEquippedStack(*pEquipment, SlotID))) return true;
 			for (auto StackID : pEquipment->QuickSlots)
 				if (FindItemComponent<const Sh2::CLockpickComponent>(*pWorld, StackID)) return true;
 		}
@@ -228,7 +232,7 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 		pAnimComponent->Controller.SetString(CStrID("Action"), AnimAction);
 
 		//!!!model equipment must operate on MainHand, and select currently active set automatically!
-		UpdateCharacterModelEquipment(*pWorld, Instance.Actor, Sh2::EEquipmentSlot::MainHandA, true);
+		UpdateCharacterModelEquipment(*pWorld, Instance.Actor, sidItemInHand1, true);
 	}
 
 	// If this object is owned to other faction, create crime stimulus
@@ -270,7 +274,7 @@ void CLockpickAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance
 		pAnimComponent->Controller.SetString(CStrID("Action"), CStrID::Empty);
 
 		//!!!model equipment must operate on MainHand, and select currently active set automatically!
-		UpdateCharacterModelEquipment(*pWorld, Instance.Actor, Sh2::EEquipmentSlot::MainHandA);
+		UpdateCharacterModelEquipment(*pWorld, Instance.Actor, sidItemInHand1);
 	}
 
 	// TODO:
