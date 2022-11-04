@@ -1033,18 +1033,16 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 	auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID);
 	if (!pEquipment) return { 0, false };
 
-	auto It = pEquipment->Equipment.find(SlotID);
-	if (It == pEquipment->Equipment.cend()) return { 0, false };
-	const auto DestStackID = It->second;
+	const U32 SlotCapacity = CanEquipItems(World, EntityID, StackID, SlotID);
+	if (!SlotCapacity) return { 0, false };
+
+	const auto DestStackID = GetEquippedStack(*pEquipment, SlotID);
 
 	if (StackID == DestStackID) return { Count, false };
 	if (!Merge && !*pReplaced && DestStackID) return { 0, false };
 
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
 	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
-
-	const U32 SlotCapacity = CanEquipItems(World, EntityID, StackID, SlotID);
-	if (!SlotCapacity) return { 0, false };
 
 	if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
 	{
@@ -1216,7 +1214,7 @@ void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerI
 	//!!!FIXME: where to place?! Or require bones to be named as slots!
 	static const std::map<CStrID, const char*> EEquipmentSlot_Bone
 	{
-		{ CStrID("Body"), "body"},
+		{ CStrID("Torso"), "torso"},
 		{ CStrID("Shoulders"), "shoulders_cloak"},
 		{ CStrID("Head"), "head"},
 		{ CStrID("Arms"), "arms"},

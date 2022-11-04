@@ -14,8 +14,6 @@
 
 namespace DEM::RPG
 {
-static const CStrID sidItemInHand("ItemInHand");
-static const CStrID sidItemInHand1("ItemInHand1");
 
 static std::pair<Game::HEntity, int> FindBestLockpick(const Game::CGameWorld& World, Game::HEntity ActorID)
 {
@@ -23,7 +21,8 @@ static std::pair<Game::HEntity, int> FindBestLockpick(const Game::CGameWorld& Wo
 	int BestModifier = std::numeric_limits<int>().min();
 	if (auto pEquipment = World.FindComponent<const CEquipmentComponent>(ActorID))
 	{
-		// TODO: find "ItemInHand" in the scheme, then iterate its slots and find corresponding records in pEquipment->Equipment
+		static const CStrID sidItemInHand("ItemInHand");
+
 		for (auto [SlotID, SlotType] : pEquipment->Scheme->Slots)
 		{
 			if (SlotType != sidItemInHand) continue;
@@ -114,6 +113,7 @@ bool CLockpickAbility::IsTargetValid(const Game::CGameSession& Session, U32 Inde
 	if (pLock->Difficulty < 5) return true;
 
 	// An actor must be able to interact and must have a lockpicking skill opened
+	static const CStrID sidItemInHand("ItemInHand");
 	for (auto ActorID : Context.Actors)
 	{
 		// Must be able to interact with objects
@@ -232,6 +232,7 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 		pAnimComponent->Controller.SetString(CStrID("Action"), AnimAction);
 
 		//!!!model equipment must operate on MainHand, and select currently active set automatically!
+		static const CStrID sidItemInHand1("ItemInHand1");
 		UpdateCharacterModelEquipment(*pWorld, Instance.Actor, sidItemInHand1, true);
 	}
 
@@ -274,6 +275,7 @@ void CLockpickAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance
 		pAnimComponent->Controller.SetString(CStrID("Action"), CStrID::Empty);
 
 		//!!!model equipment must operate on MainHand, and select currently active set automatically!
+		static const CStrID sidItemInHand1("ItemInHand1");
 		UpdateCharacterModelEquipment(*pWorld, Instance.Actor, sidItemInHand1);
 	}
 
