@@ -1237,8 +1237,8 @@ void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerI
 	};
 
 	//!!!FIXME: constexpr CStrID?! Or at least pre-init once!
-	const auto pBoneName = EEquipmentSlot_Bone.at(SlotID);
-	if (!pBoneName || !*pBoneName) return;
+	const auto ItBoneName = EEquipmentSlot_Bone.find(SlotID);
+	if (ItBoneName == EEquipmentSlot_Bone.cend() || !ItBoneName->second || !*ItBoneName->second) return;
 
 	auto pEquipment = World.FindComponent<const CEquipmentComponent>(OwnerID);
 	if (!pEquipment) return;
@@ -1249,7 +1249,7 @@ void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerI
 	auto pOwnerScene = World.FindComponent<const Game::CSceneComponent>(OwnerID);
 	if (!pOwnerScene || !pOwnerScene->RootNode) return;
 
-	auto pBone = pOwnerScene->RootNode->GetChildRecursively(CStrID(pBoneName));
+	auto pBone = pOwnerScene->RootNode->GetChildRecursively(CStrID(ItBoneName->second));
 	if (!pBone) return;
 
 	if (StackID && !ForceHide)
