@@ -2,7 +2,7 @@
 #include <Core/RTTIBaseClass.h>
 #include <Data/RefCounted.h>
 #include <Data/StringID.h>
-#include <sol/sol.hpp>
+#include <Scripting/Sol.h>
 #include <map>
 
 // Central object of the game logic and state. Registers and gives

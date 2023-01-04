@@ -81,6 +81,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Scene/SceneComponent.h
 	DEM/Game/src/Scripting/EntityScriptObject.h
 	DEM/Game/src/Scripting/PropScriptable.h
+	DEM/Game/src/Scripting/Sol.h
 	DEM/Game/src/SI/SI_L2.h
 )
 
