@@ -11807,7 +11807,8 @@ namespace sol {
 					meta::neg<is_value_semantic_for_function<T>>
 #if SOL_IS_OFF(SOL_FUNCTION_CALL_VALUE_SEMANTICS)
 					, std::is_lvalue_reference<T>,
-					meta::neg<std::is_const<std::remove_reference_t<T>>>,
+					//meta::neg<std::is_const<std::remove_reference_t<T>>>, // DEM FIXME: big and refcounted objects are unintentionally copied
+					meta::neg<std::is_const<T>>,
 					meta::neg<is_lua_primitive<meta::unqualified_t<T>>>,
 					meta::neg<is_unique_usertype<meta::unqualified_t<T>>>
 #endif
