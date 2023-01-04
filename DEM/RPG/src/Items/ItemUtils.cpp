@@ -59,7 +59,12 @@ U32 GetContainerCapacityInItems(const Game::CGameWorld& World, const CItemContai
 		}
 	}
 
-	return static_cast<U32>(FreeVolume / pItem->Volume);
+	// NB: float error is accumulated for every slot counted
+	constexpr float MAX_INSIGNIFICANT_VOLUME = 0.0001f;
+	const auto Capacity = static_cast<U32>(FreeVolume / pItem->Volume);
+	const float Remainder = FreeVolume - Capacity * pItem->Volume;
+
+	return Capacity + ((pItem->Volume - Remainder < MAX_INSIGNIFICANT_VOLUME) ? 1 : 0);
 }
 //---------------------------------------------------------------------
 
