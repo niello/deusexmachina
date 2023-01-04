@@ -1,5 +1,6 @@
 #pragma once
 #include <Data/FourCC.h>
+#include <string>
 
 // Implements the runtime type information system of Mangalore. Every class derived
 // from CRTTIBaseClass should define a static RTTI object which is initialized

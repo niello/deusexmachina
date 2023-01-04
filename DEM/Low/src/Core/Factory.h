@@ -1,5 +1,6 @@
 #pragma once
 #include <StdCfg.h>
+#include <string>
 #include <unordered_map>
 
 // Allows RTTI-enabled object creation by type name or FourCC code

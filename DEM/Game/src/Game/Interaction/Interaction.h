@@ -1,5 +1,6 @@
 #pragma once
 #include <StdDEM.h>
+#include <string>
 
 // Base class for all player->world and character->world interactions.
 // Each interaction accepts one or more targets, some of which may be optional.

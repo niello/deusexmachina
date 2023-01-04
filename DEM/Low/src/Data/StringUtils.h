@@ -1,6 +1,7 @@
 #pragma once
 #include <Data/String.h>
 #include <Math/Matrix44.h>
+#include <string>
 
 // String manipulation and utility functions
 
