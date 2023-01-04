@@ -5,8 +5,8 @@ URLs:
 https://pybullet.org
 
 Current version used:
-3.17+
-https://github.com/bulletphysics/bullet3/commit/ce26271923e48c297b623285421ac1c2ad06e623
+3.24+
+https://github.com/bulletphysics/bullet3/commit/2c204c49e56ed15ec5fcfa71d199ab6d6570b3f5
 
 Local modifications:
 Unused CMake targets commented out in CMakeLists.txt and src/CMakeLists.txt

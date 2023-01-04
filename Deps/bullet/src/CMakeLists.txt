@@ -4,6 +4,7 @@ IF(BUILD_BULLET3)
 ENDIF(BUILD_BULLET3)
 
 
+# DEM: don't enable unused modules
 #SUBDIRS(   BulletInverseDynamics BulletSoftBody BulletCollision BulletDynamics LinearMath Bullet3Common)
 SUBDIRS(BulletCollision BulletDynamics LinearMath)
 
