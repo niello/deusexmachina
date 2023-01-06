@@ -91,8 +91,8 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 					else if (ModeStr == "RewindToEnd") InterruptionMode = DEM::Game::ETransitionInterruptionMode::RewindToEnd;
 					else if (ModeStr == "Proportional") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Proportional;
 					else if (ModeStr == "Forbid") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Forbid;
-					//else if (ModeStr == "Force") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Force;
-					//else if (ModeStr == "Wait") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Wait;
+					else if (ModeStr == "Force") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Force;
+					else if (ModeStr == "Wait") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Wait;
 					else if (ModeStr.IsValid()) ::Sys::Error("CSmartObjectLoader::CreateResource() > Unknown transition interruption mode");
 
 					StateInfo.Transitions.push_back({ TransitionParam.GetName(), std::move(Task), InterruptionMode });

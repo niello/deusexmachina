@@ -183,7 +183,8 @@ void UpdateSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 		if (SOComponent.NextState && SOComponent.CurrState == SOComponent.NextState)
 			SOComponent.NextState = CStrID::Empty;
 
-		if (SOComponent.RequestedState) ProcessStateChangeRequest(World, Lua, EntityID, SOComponent, *pSOAsset);
+		if (SOComponent.RequestedState)
+			ProcessStateChangeRequest(World, Lua, EntityID, SOComponent, *pSOAsset);
 
 		// Advance player time even if no timeline is associated with the state.
 		// This time may be used in game logic and means how long we are in this state.
