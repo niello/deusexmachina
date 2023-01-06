@@ -12,16 +12,16 @@ class CInputConditionMove: public CInputConditionEvent
 {
 protected:
 
-	EDeviceType	_DeviceType;
-	U8			_Axis;
-	float		_Threshold = 0.f;
-	float		_Accumulated = 0.f;
+	EDeviceType _DeviceType;
+	U8          _Axis;
+	float       _Threshold = 0.f;
+	float       _Accumulated = 0.f;
 
 public:
 
 	CInputConditionMove(EDeviceType DeviceType, U8 Axis, float Threshold = 0.f);
 
-	virtual bool OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) override;
+	virtual UPTR OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) override;
 };
 
 }

@@ -1,7 +1,6 @@
 #include "InputConditionAnyOfEvents.h"
 #include <Input/InputEvents.h>
 #include <Input/InputDevice.h>
-#include <Input/InputConditionUp.h>
 
 namespace Input
 {
@@ -35,43 +34,48 @@ void CInputConditionAnyOfEvents::Reset()
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionAnyOfEvents::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
+UPTR CInputConditionAnyOfEvents::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
 {
+	UPTR Count = 0;
 	for (auto& Child : Children)
-		if (Child->OnAxisMove(pDevice, Event)) OK;
-	FAIL;
+		Count = std::max(Count, Child->OnAxisMove(pDevice, Event));
+	return Count;
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionAnyOfEvents::OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event)
+UPTR CInputConditionAnyOfEvents::OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event)
 {
+	UPTR Count = 0;
 	for (auto& Child : Children)
-		if (Child->OnButtonDown(pDevice, Event)) OK;
-	FAIL;
+		Count = std::max(Count, Child->OnButtonDown(pDevice, Event));
+	return Count;
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionAnyOfEvents::OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event)
+UPTR CInputConditionAnyOfEvents::OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event)
 {
+	UPTR Count = 0;
 	for (auto& Child : Children)
-		if (Child->OnButtonUp(pDevice, Event)) OK;
-	FAIL;
+		Count = std::max(Count, Child->OnButtonUp(pDevice, Event));
+	return Count;
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionAnyOfEvents::OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event)
+UPTR CInputConditionAnyOfEvents::OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event)
 {
+	UPTR Count = 0;
 	for (auto& Child : Children)
-		if (Child->OnTextInput(pDevice, Event)) OK;
-	FAIL;
+		Count = std::max(Count, Child->OnTextInput(pDevice, Event));
+	return Count;
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionAnyOfEvents::OnTimeElapsed(float ElapsedTime)
+UPTR CInputConditionAnyOfEvents::OnTimeElapsed(float ElapsedTime)
 {
+	UPTR Count = 0;
 	for (auto& Child : Children)
-		if (Child->OnTimeElapsed(ElapsedTime)) OK;
-	FAIL;
+		Count = std::max(Count, Child->OnTimeElapsed(ElapsedTime));
+	return Count;
 }
 //---------------------------------------------------------------------
 

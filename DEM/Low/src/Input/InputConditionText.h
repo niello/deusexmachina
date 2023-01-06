@@ -18,7 +18,7 @@ public:
 
 	CInputConditionText(std::string Text, bool AllowPartial = false);
 
-	virtual bool OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event) override;
+	virtual UPTR OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event) override;
 };
 
 }

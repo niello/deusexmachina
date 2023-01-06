@@ -14,15 +14,13 @@ class CInputConditionEvent: public Core::CRTTIBaseClass
 
 public:
 
-	virtual ~CInputConditionEvent() = default;
-
-	virtual bool	UpdateParams(std::function<std::string(const char*)> ParamGetter, std::set<std::string>* pOutParams) { OK; }
-	virtual void	Reset() {}
-	virtual bool	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) { FAIL; }
-	virtual bool	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) { FAIL; }
-	virtual bool	OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event) { FAIL; }
-	virtual bool	OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event) { FAIL; }
-	virtual bool	OnTimeElapsed(float ElapsedTime) { FAIL; }
+	virtual bool UpdateParams(std::function<std::string(const char*)> ParamGetter, std::set<std::string>* pOutParams) { OK; }
+	virtual void Reset() { /* Most of events are stateless */ }
+	virtual UPTR OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) { return 0; }
+	virtual UPTR OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) { return 0; }
+	virtual UPTR OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event) { return 0; }
+	virtual UPTR OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event) { return 0; }
+	virtual UPTR OnTimeElapsed(float ElapsedTime) { return 0; }
 };
 
 typedef std::unique_ptr<CInputConditionEvent> PInputConditionEvent;

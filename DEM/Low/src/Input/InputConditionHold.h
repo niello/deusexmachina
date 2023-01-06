@@ -16,7 +16,7 @@ protected:
 	EDeviceType	_DeviceType;
 	U8			_Button;
 	float		_Time;
-	float		_TimeSinceDown;
+	float		_TimeSinceDown = 0.f;
 	bool		_Repeat = false;
 	bool		_Waiting = false;
 
@@ -25,9 +25,9 @@ public:
 	CInputConditionHold(EDeviceType DeviceType, U8 Button, float Time, bool Repeat = false);
 
 	virtual void Reset() override { _Waiting = false; }
-	virtual bool OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;
-	virtual bool OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event) override;
-	virtual bool OnTimeElapsed(float ElapsedTime) override;
+	virtual UPTR OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;
+	virtual UPTR OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event) override;
+	virtual UPTR OnTimeElapsed(float ElapsedTime) override;
 };
 
 }

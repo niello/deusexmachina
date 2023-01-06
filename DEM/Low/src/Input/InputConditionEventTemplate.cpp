@@ -45,33 +45,33 @@ void CInputConditionEventTemplate::Reset()
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionEventTemplate::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
+UPTR CInputConditionEventTemplate::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
 {
-	return _Impl ? _Impl->OnAxisMove(pDevice, Event) : false;
+	return _Impl ? _Impl->OnAxisMove(pDevice, Event) : 0;
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionEventTemplate::OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event)
+UPTR CInputConditionEventTemplate::OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event)
 {
-	return _Impl ? _Impl->OnButtonDown(pDevice, Event) : false;
+	return _Impl ? _Impl->OnButtonDown(pDevice, Event) : 0;
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionEventTemplate::OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event)
+UPTR CInputConditionEventTemplate::OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event)
 {
-	return _Impl ? _Impl->OnButtonUp(pDevice, Event) : false;
+	return _Impl ? _Impl->OnButtonUp(pDevice, Event) : 0;
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionEventTemplate::OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event)
+UPTR CInputConditionEventTemplate::OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event)
 {
-	return _Impl ? _Impl->OnTextInput(pDevice, Event) : false;
+	return _Impl ? _Impl->OnTextInput(pDevice, Event) : 0;
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionEventTemplate::OnTimeElapsed(float ElapsedTime)
+UPTR CInputConditionEventTemplate::OnTimeElapsed(float ElapsedTime)
 {
-	return _Impl ? _Impl->OnTimeElapsed(ElapsedTime) : false;
+	return _Impl ? _Impl->OnTimeElapsed(ElapsedTime) : 0;
 }
 //---------------------------------------------------------------------
 

@@ -1,10 +1,9 @@
 #pragma once
 #include <Events/EventDispatcher.h>
 #include <Data/StringID.h>
-#include <Data/Array.h>
 
-// Input translator receives events from input devices and translates it into
-// general-purpose events accompanied with a user ID to which a translator belongs.
+// Input translator receives events from input devices and translates them into
+// general purpose events accompanied with a user ID to which a translator belongs.
 // Mappings are separated into input contexts which can be enabled or disabled individually.
 
 namespace DEM { namespace Core
@@ -23,15 +22,14 @@ private:
 
 	struct CInputContext
 	{
-		CStrID			ID;
-		CControlLayout*	pLayout;
-		bool			Enabled;
+		CStrID                          ID;
+		std::unique_ptr<CControlLayout> Layout;
+		bool                            Enabled = false;
 	};
 
-	CStrID					_UserID;
-	CArray<CInputContext>	Contexts;
-	CArray<Events::PSub>	DeviceSubs;
-	CArray<Events::CEvent>	EventQueue;
+	CStrID                     _UserID;
+	std::vector<CInputContext> _Contexts;
+	std::vector<Events::PSub>  _DeviceSubs;
 
 	void			Clear();
 
@@ -43,7 +41,7 @@ private:
 public:
 
 	CInputTranslator(CStrID UserID);
-	virtual ~CInputTranslator();
+	virtual ~CInputTranslator() override = default;
 
 	bool			LoadSettings(const Data::CParams& Desc);
 	bool			UpdateParams(const DEM::Core::CApplication& App, std::set<std::string>* pOutParams = nullptr);
@@ -61,12 +59,11 @@ public:
 
 	void			ConnectToDevice(IInputDevice* pDevice, U16 Priority = 100);
 	void			DisconnectFromDevice(const IInputDevice* pDevice);
-	UPTR			GetConnectedDevices(CArray<IInputDevice*>& OutDevices) const;
+	UPTR			GetConnectedDevices(std::vector<IInputDevice*>& OutDevices) const;
 	bool            IsConnectedToDevice(const IInputDevice* pDevice) const;
 	void            TransferAllDevices(CInputTranslator* pNewOwner);
 
 	void			UpdateTime(float ElapsedTime);
-	void			FireQueuedEvents(/*max count*/);
 	bool			CheckState(CStrID StateID) const;
 	void			Reset(/*device type*/);
 };

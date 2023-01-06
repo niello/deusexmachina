@@ -11,9 +11,9 @@ CInputConditionDown::CInputConditionDown(EDeviceType DeviceType, U8 Button)
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionDown::OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event)
+UPTR CInputConditionDown::OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event)
 {
-	return pDevice->GetType() == _DeviceType && Event.Code == _Button;
+	return (pDevice->GetType() == _DeviceType && Event.Code == _Button) ? 1 : 0;
 }
 //---------------------------------------------------------------------
 

@@ -37,38 +37,36 @@ void CInputConditionSequence::Reset()
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionSequence::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
+UPTR CInputConditionSequence::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
 {
-	if (CurrChild >= Children.size()) FAIL;
+	if (CurrChild >= Children.size()) return 0;
 
 	if (Children[CurrChild]->OnAxisMove(pDevice, Event))
 	{
-		++CurrChild;
-		if (CurrChild == Children.size())
+		if (++CurrChild == Children.size())
 		{
 			CurrChild = 0;
-			OK;
+			return 1;
 		}
 	}
 
 	// We never reset on AxisMove for now to prevent sequence breaking on unintended mouse moves etc
 
-	FAIL;
+	return 0;
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionSequence::OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event)
+UPTR CInputConditionSequence::OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event)
 {
-	if (CurrChild >= Children.size()) FAIL;
+	if (CurrChild >= Children.size()) return 0;
 
 	CInputConditionEvent* pCurrEvent = Children[CurrChild].get();
 	if (pCurrEvent->OnButtonDown(pDevice, Event))
 	{
-		++CurrChild;
-		if (CurrChild == Children.size())
+		if (++CurrChild == Children.size())
 		{
 			CurrChild = 0;
-			OK;
+			return 1;
 		}
 	}
 	else
@@ -83,65 +81,62 @@ bool CInputConditionSequence::OnButtonDown(const IInputDevice* pDevice, const Ev
 		CurrChild = 0; // Reset on any other unexpected ButtonDown
 	}
 
-	FAIL;
+	return 0;
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionSequence::OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event)
+UPTR CInputConditionSequence::OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event)
 {
-	if (CurrChild >= Children.size()) FAIL;
+	if (CurrChild >= Children.size()) return 0;
 
 	if (Children[CurrChild]->OnButtonUp(pDevice, Event))
 	{
-		++CurrChild;
-		if (CurrChild == Children.size())
+		if (++CurrChild == Children.size())
 		{
 			CurrChild = 0;
-			OK;
+			return 1;
 		}
 	}
 	else CurrChild = 0; // Reset on any unexpected ButtonUp
 
-	FAIL;
+	return 0;
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionSequence::OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event)
+UPTR CInputConditionSequence::OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event)
 {
-	if (CurrChild >= Children.size()) FAIL;
+	if (CurrChild >= Children.size()) return 0;
 
 	if (Children[CurrChild]->OnTextInput(pDevice, Event))
 	{
-		++CurrChild;
-		if (CurrChild == Children.size())
+		if (++CurrChild == Children.size())
 		{
 			CurrChild = 0;
-			OK;
+			return 1;
 		}
 	}
 	else CurrChild = 0; // Reset on any unexpected TextInput
 
-	FAIL;
+	return 0;
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionSequence::OnTimeElapsed(float ElapsedTime)
+UPTR CInputConditionSequence::OnTimeElapsed(float ElapsedTime)
 {
-	if (CurrChild >= Children.size()) FAIL;
+	if (CurrChild >= Children.size()) return 0;
 
 	if (Children[CurrChild]->OnTimeElapsed(ElapsedTime))
 	{
-		++CurrChild;
-		if (CurrChild == Children.size())
+		if (++CurrChild == Children.size())
 		{
 			CurrChild = 0;
-			OK;
+			return 1;
 		}
 	}
 
 	// Sequence timeout can be added, then reset will be performed here
 
-	FAIL;
+	return 0;
 }
 //---------------------------------------------------------------------
 

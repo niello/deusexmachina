@@ -1,5 +1,4 @@
 #include "InputTranslator.h"
-
 #include <Input/InputEvents.h>
 #include <Input/InputDevice.h>
 #include <Input/ControlLayout.h>
@@ -12,23 +11,13 @@ namespace Input
 CInputTranslator::CInputTranslator(CStrID UserID)
 	: _UserID(UserID)
 {
-	Contexts.SetKeepOrder(true);
-}
-//---------------------------------------------------------------------
-
-CInputTranslator::~CInputTranslator()
-{
-	Clear();
 }
 //---------------------------------------------------------------------
 
 void CInputTranslator::Clear()
 {
-	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
-		if (Contexts[i].pLayout) n_delete(Contexts[i].pLayout);
-	Contexts.Clear();
-	DeviceSubs.Clear();
-	EventQueue.Clear();
+	_Contexts.clear();
+	_DeviceSubs.clear();
 }
 //---------------------------------------------------------------------
 
@@ -61,9 +50,9 @@ bool CInputTranslator::UpdateParams(const DEM::Core::CApplication& App, std::set
 
 	bool Result = true;
 
-	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+	for (const auto& Context : _Contexts)
 	{
-		if (auto pLayout = Contexts[i].pLayout)
+		if (auto pLayout = Context.Layout.get())
 		{
 			for (auto& Pair : pLayout->States)
 				Result &= Pair.second->UpdateParams(ParamGetter, pOutParams);
@@ -79,32 +68,35 @@ bool CInputTranslator::UpdateParams(const DEM::Core::CApplication& App, std::set
 
 bool CInputTranslator::CreateContext(CStrID ID, bool Bypass)
 {
-	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
-		if (Contexts[i].ID == ID) FAIL;
-	CInputContext& NewCtx = *Contexts.Add();
+	for (const auto& Context : _Contexts)
+		if (Context.ID == ID) FAIL;
+
+	CInputContext NewCtx;
 	NewCtx.ID = ID;
 	NewCtx.Enabled = false;
-	NewCtx.pLayout = Bypass ? nullptr : n_new(CControlLayout);
+	NewCtx.Layout = Bypass ? nullptr : std::make_unique<CControlLayout>();
+	_Contexts.push_back(std::move(NewCtx));
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CInputTranslator::DestroyContext(CStrID ID)
 {
-	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
-		if (Contexts[i].ID == ID)
+	for (auto It = _Contexts.begin(); It != _Contexts.end(); ++It)
+	{
+		if ((*It).ID == ID)
 		{
-			n_delete(Contexts[i].pLayout);
-			Contexts.RemoveAt(i);
+			_Contexts.erase(It);
 			break;
 		}
+	}
 }
 //---------------------------------------------------------------------
 
 bool CInputTranslator::HasContext(CStrID ID) const
 {
-	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
-		if (Contexts[i].ID == ID)
+	for (const auto& Context : _Contexts)
+		if (Context.ID == ID)
 			return true;
 
 	return false;
@@ -113,33 +105,38 @@ bool CInputTranslator::HasContext(CStrID ID) const
 
 CControlLayout* CInputTranslator::GetContextLayout(CStrID ID)
 {
-	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
-		if (Contexts[i].ID == ID) return Contexts[i].pLayout;
+	for (const auto& Context : _Contexts)
+		if (Context.ID == ID)
+			return Context.Layout.get();
 	return nullptr;
 }
 //---------------------------------------------------------------------
 
 void CInputTranslator::EnableContext(CStrID ID)
 {
-	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
-		if (Contexts[i].ID == ID)
+	for (auto& Context : _Contexts)
+	{
+		if (Context.ID == ID)
 		{
-			Contexts[i].Enabled = true;
+			Context.Enabled = true;
 			break;
 		}
+	}
 }
 //---------------------------------------------------------------------
 
 void CInputTranslator::DisableContext(CStrID ID)
 {
-	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
-		if (Contexts[i].ID == ID)
+	for (auto& Context : _Contexts)
+	{
+		if (Context.ID == ID)
 		{
-			Contexts[i].Enabled = false;
-			if (Contexts[i].pLayout)
-				Contexts[i].pLayout->Reset();
+			Context.Enabled = false;
+			if (Context.Layout)
+				Context.Layout->Reset();
 			break;
 		}
+	}
 }
 //---------------------------------------------------------------------
 
@@ -148,46 +145,45 @@ void CInputTranslator::ConnectToDevice(IInputDevice* pDevice, U16 Priority)
 	if (!pDevice || IsConnectedToDevice(pDevice)) return;
 
 	if (pDevice->GetAxisCount() > 0)
-		DeviceSubs.Add(pDevice->Subscribe(&Event::AxisMove::RTTI, this, &CInputTranslator::OnAxisMove));
+		_DeviceSubs.push_back(pDevice->Subscribe(&Event::AxisMove::RTTI, this, &CInputTranslator::OnAxisMove));
 
 	if (pDevice->GetButtonCount() > 0)
 	{
-		DeviceSubs.Add(pDevice->Subscribe(&Event::ButtonDown::RTTI, this, &CInputTranslator::OnButtonDown));
-		DeviceSubs.Add(pDevice->Subscribe(&Event::ButtonUp::RTTI, this, &CInputTranslator::OnButtonUp));
+		_DeviceSubs.push_back(pDevice->Subscribe(&Event::ButtonDown::RTTI, this, &CInputTranslator::OnButtonDown));
+		_DeviceSubs.push_back(pDevice->Subscribe(&Event::ButtonUp::RTTI, this, &CInputTranslator::OnButtonUp));
 	}
 
 	if (pDevice->CanInputText())
-		DeviceSubs.Add(pDevice->Subscribe(&Event::TextInput::RTTI, this, &CInputTranslator::OnTextInput));
+		_DeviceSubs.push_back(pDevice->Subscribe(&Event::TextInput::RTTI, this, &CInputTranslator::OnTextInput));
 }
 //---------------------------------------------------------------------
 
 void CInputTranslator::DisconnectFromDevice(const IInputDevice* pDevice)
 {
-	for (UPTR i = 0; i < DeviceSubs.GetCount(); )
+	auto It = std::remove_if(_DeviceSubs.begin(), _DeviceSubs.end(), [pDevice](const Events::PSub& Sub)
 	{
-		if (DeviceSubs[i]->GetDispatcher() == pDevice)
-			DeviceSubs.RemoveAt(i);
-		else ++i;
-	}
+		return Sub->GetDispatcher() == pDevice;
+	});
+	_DeviceSubs.erase(It, _DeviceSubs.end());
 }
 //---------------------------------------------------------------------
 
-UPTR CInputTranslator::GetConnectedDevices(CArray<IInputDevice*>& OutDevices) const
+UPTR CInputTranslator::GetConnectedDevices(std::vector<IInputDevice*>& OutDevices) const
 {
-	const UPTR PrevCount = OutDevices.GetCount();
-	for (const auto& Sub : DeviceSubs)
+	const UPTR PrevCount = OutDevices.size();
+	for (const auto& Sub : _DeviceSubs)
 	{
 		auto pDevice = static_cast<IInputDevice*>(Sub->GetDispatcher());
-		if (!OutDevices.Contains(pDevice))
-			OutDevices.Add(pDevice);
+		if (std::find(OutDevices.cbegin(), OutDevices.cend(), pDevice) == OutDevices.cend())
+			OutDevices.push_back(pDevice);
 	}
-	return OutDevices.GetCount() - PrevCount;
+	return OutDevices.size() - PrevCount;
 }
 //---------------------------------------------------------------------
 
 bool CInputTranslator::IsConnectedToDevice(const IInputDevice* pDevice) const
 {
-	for (const auto& Sub : DeviceSubs)
+	for (const auto& Sub : _DeviceSubs)
 		if (Sub->GetDispatcher() == pDevice)
 			return true;
 
@@ -199,11 +195,11 @@ void CInputTranslator::TransferAllDevices(CInputTranslator* pNewOwner)
 {
 	if (pNewOwner)
 	{
-		for (const auto& Sub : DeviceSubs)
+		for (const auto& Sub : _DeviceSubs)
 			pNewOwner->ConnectToDevice(static_cast<IInputDevice*>(Sub->GetDispatcher()));
 	}
 
-	DeviceSubs.Clear();
+	_DeviceSubs.clear();
 }
 //---------------------------------------------------------------------
 
@@ -211,37 +207,40 @@ bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const E
 {
 	const Event::AxisMove& Ev = static_cast<const Event::AxisMove&>(Event);
 
-	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+	UPTR Handled = 0;
+
+	for (const auto& Ctx : _Contexts)
 	{
-		CInputContext& Ctx = Contexts[i];
 		if (!Ctx.Enabled) continue;
 
-		if (auto pLayout = Ctx.pLayout)
+		if (auto pLayout = Ctx.Layout.get())
 		{
 			for (auto& Pair : pLayout->States)
 				Pair.second->OnAxisMove(Ev.Device, Ev);
 
 			for (auto& Rec : pLayout->Events)
 			{
-				if (Rec.Event->OnAxisMove(Ev.Device, Ev))
+				const auto Count = Rec.Event->OnAxisMove(Ev.Device, Ev);
+				if (Count && !Handled)
 				{
-					Events::CEvent& NewEvent = *EventQueue.Add();
+					Events::CEvent NewEvent;
 					NewEvent.ID = Rec.OutEventID;
 					NewEvent.Params = n_new(Data::CParams(1));
 					NewEvent.Params->Set<float>(CStrID("Amount"), Ev.Amount);
-					if (FireEvent(NewEvent, Events::Event_TermOnHandled) > 0) OK;
+					for (UPTR i = 0; i < Count; ++i)
+						Handled += FireEvent(NewEvent, Events::Event_TermOnHandled);
 				}
 			}
 		}
-		else
+		else if (!Handled)
 		{
 			// Bypass context
 			Event::AxisMove BypassEvent(Ev.Device, Ev.Code, Ev.Amount, _UserID);
-			if (FireEvent(BypassEvent, Events::Event_TermOnHandled) > 0) OK;
+			Handled += FireEvent(BypassEvent, Events::Event_TermOnHandled);
 		}
 	}
 
-	FAIL;
+	return Handled > 0;
 }
 //---------------------------------------------------------------------
 
@@ -249,35 +248,38 @@ bool CInputTranslator::OnButtonDown(Events::CEventDispatcher* pDispatcher, const
 {
 	const Event::ButtonDown& Ev = static_cast<const Event::ButtonDown&>(Event);
 
-	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+	UPTR Handled = 0;
+
+	for (const auto& Ctx : _Contexts)
 	{
-		CInputContext& Ctx = Contexts[i];
 		if (!Ctx.Enabled) continue;
 
-		if (auto pLayout = Ctx.pLayout)
+		if (auto pLayout = Ctx.Layout.get())
 		{
 			for (auto& Pair : pLayout->States)
 				Pair.second->OnButtonDown(Ev.Device, Ev);
 
 			for (auto& Rec : pLayout->Events)
 			{
-				if (Rec.Event->OnButtonDown(Ev.Device, Ev))
+				const auto Count = Rec.Event->OnButtonDown(Ev.Device, Ev);
+				if (Count && !Handled)
 				{
-					Events::CEvent& NewEvent = *EventQueue.Add();
+					Events::CEvent NewEvent;
 					NewEvent.ID = Rec.OutEventID;
-					if (FireEvent(NewEvent, Events::Event_TermOnHandled) > 0) OK;
+					for (UPTR i = 0; i < Count; ++i)
+						Handled += FireEvent(NewEvent, Events::Event_TermOnHandled);
 				}
 			}
 		}
-		else
+		else if (!Handled)
 		{
 			// Bypass context
 			Event::ButtonDown BypassEvent(Ev.Device, Ev.Code, _UserID);
-			if (FireEvent(BypassEvent, Events::Event_TermOnHandled) > 0) OK;
+			Handled += FireEvent(BypassEvent, Events::Event_TermOnHandled);
 		}
 	}
 
-	FAIL;
+	return Handled > 0;
 }
 //---------------------------------------------------------------------
 
@@ -285,35 +287,38 @@ bool CInputTranslator::OnButtonUp(Events::CEventDispatcher* pDispatcher, const E
 {
 	const Event::ButtonUp& Ev = static_cast<const Event::ButtonUp&>(Event);
 
-	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+	UPTR Handled = 0;
+
+	for (const auto& Ctx : _Contexts)
 	{
-		CInputContext& Ctx = Contexts[i];
 		if (!Ctx.Enabled) continue;
 
-		if (auto pLayout = Ctx.pLayout)
+		if (auto pLayout = Ctx.Layout.get())
 		{
 			for (auto& Pair : pLayout->States)
 				Pair.second->OnButtonUp(Ev.Device, Ev);
 
 			for (auto& Rec : pLayout->Events)
 			{
-				if (Rec.Event->OnButtonUp(Ev.Device, Ev))
+				const auto Count = Rec.Event->OnButtonUp(Ev.Device, Ev);
+				if (Count && !Handled)
 				{
-					Events::CEvent& NewEvent = *EventQueue.Add();
+					Events::CEvent NewEvent;
 					NewEvent.ID = Rec.OutEventID;
-					if (FireEvent(NewEvent, Events::Event_TermOnHandled) > 0) OK;
+					for (UPTR i = 0; i < Count; ++i)
+						Handled += FireEvent(NewEvent, Events::Event_TermOnHandled);
 				}
 			}
 		}
-		else
+		else if (!Handled)
 		{
 			// Bypass context
 			Event::ButtonUp BypassEvent(Ev.Device, Ev.Code, _UserID);
-			if (FireEvent(BypassEvent, Events::Event_TermOnHandled) > 0) OK;
+			Handled += FireEvent(BypassEvent, Events::Event_TermOnHandled);
 		}
 	}
 
-	FAIL;
+	return Handled > 0;
 }
 //---------------------------------------------------------------------
 
@@ -321,46 +326,48 @@ bool CInputTranslator::OnTextInput(Events::CEventDispatcher* pDispatcher, const 
 {
 	const Event::TextInput& Ev = static_cast<const Event::TextInput&>(Event);
 
-	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+	UPTR Handled = 0;
+
+	for (const auto& Ctx : _Contexts)
 	{
-		CInputContext& Ctx = Contexts[i];
 		if (!Ctx.Enabled) continue;
 
-		if (auto pLayout = Ctx.pLayout)
+		if (auto pLayout = Ctx.Layout.get())
 		{
 			for (auto& Pair : pLayout->States)
 				Pair.second->OnTextInput(Ev.Device, Ev);
 
 			for (auto& Rec : pLayout->Events)
 			{
-				if (Rec.Event->OnTextInput(Ev.Device, Ev))
+				const auto Count = Rec.Event->OnTextInput(Ev.Device, Ev);
+				if (Count && !Handled)
 				{
-					Events::CEvent& NewEvent = *EventQueue.Add();
+					Events::CEvent NewEvent;
 					NewEvent.ID = Rec.OutEventID;
-					if (FireEvent(NewEvent, Events::Event_TermOnHandled) > 0) OK;
+					for (UPTR i = 0; i < Count; ++i)
+						Handled += FireEvent(NewEvent, Events::Event_TermOnHandled);
 				}
 			}
 		}
-		else
+		else if (!Handled)
 		{
 			// Bypass context
 			Event::TextInput BypassEvent(Ev.Device, Ev.Text, Ev.CaseSensitive, _UserID);
-			if (FireEvent(BypassEvent, Events::Event_TermOnHandled) > 0) OK;
+			Handled += FireEvent(BypassEvent, Events::Event_TermOnHandled);
 		}
 	}
 
-	FAIL;
+	return Handled > 0;
 }
 //---------------------------------------------------------------------
 
 void CInputTranslator::UpdateTime(float ElapsedTime)
 {
-	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+	for (const auto& Ctx : _Contexts)
 	{
-		CInputContext& Ctx = Contexts[i];
 		if (!Ctx.Enabled) continue;
 
-		if (auto pLayout = Ctx.pLayout)
+		if (auto pLayout = Ctx.Layout.get())
 		{
 			for (auto& Pair : pLayout->States)
 				Pair.second->OnTimeElapsed(ElapsedTime);
@@ -369,7 +376,7 @@ void CInputTranslator::UpdateTime(float ElapsedTime)
 			{
 				if (Rec.Event->OnTimeElapsed(ElapsedTime))
 				{
-					Events::CEvent& NewEvent = *EventQueue.Add();
+					Events::CEvent NewEvent;
 					NewEvent.ID = Rec.OutEventID;
 					FireEvent(NewEvent, Events::Event_TermOnHandled);
 				}
@@ -379,22 +386,13 @@ void CInputTranslator::UpdateTime(float ElapsedTime)
 }
 //---------------------------------------------------------------------
 
-void CInputTranslator::FireQueuedEvents(/*max count*/)
-{
-	for (UPTR i = 0; i < EventQueue.GetCount(); ++i)
-		FireEvent(EventQueue[i]);
-	EventQueue.Clear();
-}
-//---------------------------------------------------------------------
-
 bool CInputTranslator::CheckState(CStrID StateID) const
 {
-	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+	for (const auto& Ctx : _Contexts)
 	{
-		const CInputContext& Ctx = Contexts[i];
 		if (!Ctx.Enabled) continue;
 
-		if (auto pLayout = Ctx.pLayout)
+		if (auto pLayout = Ctx.Layout.get())
 		{
 			auto It = pLayout->States.find(StateID);
 			if (It != pLayout->States.cend() && It->second->IsOn()) OK;
@@ -407,9 +405,9 @@ bool CInputTranslator::CheckState(CStrID StateID) const
 
 void CInputTranslator::Reset(/*device type*/)
 {
-	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
-		if (Contexts[i].Enabled && Contexts[i].pLayout)
-			Contexts[i].pLayout->Reset();
+	for (const auto& Ctx : _Contexts)
+		if (Ctx.Enabled && Ctx.Layout)
+			Ctx.Layout->Reset();
 }
 //---------------------------------------------------------------------
 

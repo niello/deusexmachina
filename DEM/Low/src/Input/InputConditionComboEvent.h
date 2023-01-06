@@ -17,20 +17,20 @@ protected:
 	PInputConditionEvent _Event;
 	PInputConditionState _State;
 
-	void			Clear();
+	void         Clear();
 
 public:
 
-	void			AddChild(PInputConditionEvent&& NewChild);
-	void			AddChild(PInputConditionState&& NewChild);
+	void         AddChild(PInputConditionEvent&& NewChild);
+	void         AddChild(PInputConditionState&& NewChild);
 
-	virtual bool	UpdateParams(std::function<std::string(const char*)> ParamGetter, std::set<std::string>* pOutParams) override;
-	virtual void	Reset() override;
-	virtual bool	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) override;
-	virtual bool	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;
-	virtual bool	OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event) override;
-	virtual bool	OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event) override;
-	virtual bool	OnTimeElapsed(float ElapsedTime) override;
+	virtual bool UpdateParams(std::function<std::string(const char*)> ParamGetter, std::set<std::string>* pOutParams) override;
+	virtual void Reset() override;
+	virtual UPTR OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) override;
+	virtual UPTR OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;
+	virtual UPTR OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event) override;
+	virtual UPTR OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event) override;
+	virtual UPTR OnTimeElapsed(float ElapsedTime) override;
 };
 
 }

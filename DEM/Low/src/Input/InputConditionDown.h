@@ -17,7 +17,7 @@ public:
 
 	CInputConditionDown(EDeviceType DeviceType, U8 Button);
 
-	virtual bool OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;
+	virtual UPTR OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;
 };
 
 }

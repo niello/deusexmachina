@@ -17,10 +17,10 @@ public:
 
 	CInputConditionUp(EDeviceType DeviceType, U8 Button);
 
-	virtual bool	OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event) override;
+	virtual UPTR OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event) override;
 
-	EDeviceType		GetDeviceType() const { return _DeviceType; }
-	U8				GetButton() const { return _Button; }
+	EDeviceType  GetDeviceType() const { return _DeviceType; }
+	U8           GetButton() const { return _Button; }
 };
 
 }

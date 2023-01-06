@@ -12,17 +12,19 @@ CInputConditionMove::CInputConditionMove(EDeviceType DeviceType, U8 Axis, float 
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionMove::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
+UPTR CInputConditionMove::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
 {
-	if (pDevice->GetType() != _DeviceType || Event.Code != _Axis) FAIL;
+	if (pDevice->GetType() != _DeviceType || Event.Code != _Axis) return 0;
 
-	if (_Threshold <= 0.f) OK;
+	if (_Threshold <= 0.f) return 1;
 
 	_Accumulated += Event.Amount;
-	if (_Accumulated < _Threshold) FAIL;
 
-	_Accumulated -= _Threshold;
-	OK;
+	if (_Accumulated < _Threshold) return 0;
+
+	const UPTR Count = static_cast<UPTR>(_Accumulated / _Threshold);
+	_Accumulated -= Count * _Threshold;
+	return Count;
 }
 //---------------------------------------------------------------------
 

@@ -17,6 +17,7 @@ void CInputConditionComboEvent::AddChild(PInputConditionEvent&& NewChild)
 		{
 			pSequence = new CInputConditionSequence();
 			pSequence->AddChild(std::move(_Event));
+			_Event.reset(pSequence);
 		}
 		pSequence->AddChild(std::move(NewChild));
 	}
@@ -36,6 +37,7 @@ void CInputConditionComboEvent::AddChild(PInputConditionState&& NewChild)
 		{
 			pCombo = new CInputConditionComboState();
 			pCombo->AddChild(std::move(_State));
+			_State.reset(pCombo);
 		}
 		pCombo->AddChild(std::move(NewChild));
 	}
@@ -66,56 +68,56 @@ void CInputConditionComboEvent::Reset()
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionComboEvent::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
+UPTR CInputConditionComboEvent::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
 {
 	if (_State)
 	{
 		_State->OnAxisMove(pDevice, Event);
-		if (!_State->IsOn()) FAIL;
+		if (!_State->IsOn()) return 0;
 	}
 	return _Event->OnAxisMove(pDevice, Event);
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionComboEvent::OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event)
+UPTR CInputConditionComboEvent::OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event)
 {
 	if (_State)
 	{
 		_State->OnButtonDown(pDevice, Event);
-		if (!_State->IsOn()) FAIL;
+		if (!_State->IsOn()) return 0;
 	}
 	return _Event->OnButtonDown(pDevice, Event);
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionComboEvent::OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event)
+UPTR CInputConditionComboEvent::OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event)
 {
 	if (_State)
 	{
 		_State->OnButtonUp(pDevice, Event);
-		if (!_State->IsOn()) FAIL;
+		if (!_State->IsOn()) return 0;
 	}
 	return _Event->OnButtonUp(pDevice, Event);
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionComboEvent::OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event)
+UPTR CInputConditionComboEvent::OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event)
 {
 	if (_State)
 	{
 		_State->OnTextInput(pDevice, Event);
-		if (!_State->IsOn()) FAIL;
+		if (!_State->IsOn()) return 0;
 	}
 	return _Event->OnTextInput(pDevice, Event);
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionComboEvent::OnTimeElapsed(float ElapsedTime)
+UPTR CInputConditionComboEvent::OnTimeElapsed(float ElapsedTime)
 {
 	if (_State)
 	{
 		_State->OnTimeElapsed(ElapsedTime);
-		if (!_State->IsOn()) FAIL;
+		if (!_State->IsOn()) return 0;
 	}
 	return _Event->OnTimeElapsed(ElapsedTime);
 }
