@@ -527,6 +527,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Scripting/LuaEventHandler.cpp
 	DEM/Low/src/Scripting/ScriptObject.cpp
 	DEM/Low/src/Scripting/ScriptServer.cpp
+	DEM/Low/src/Scripting/SolLow.cpp
 	DEM/Low/src/SI/SIEventServer.cpp
 	DEM/Low/src/SI/SIGlobals.cpp
 	DEM/Low/src/SI/SITime.cpp

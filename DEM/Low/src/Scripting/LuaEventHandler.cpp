@@ -6,15 +6,12 @@ namespace Events
 
 bool CLuaEventHandler::Invoke(CEventDispatcher* pDispatcher, const CEventBase& Event)
 {
-	// TODO: pass event objet to Lua as is?!
 	const auto pEvent = Event.As<const CEvent>();
 	if (!pEvent) return false;
 
-	//!!!TODO: pass event args to the handler!
-
 	if (_Fn.valid())
 	{
-		auto Result = _Fn();
+		auto Result = _Fn(pEvent);
 		if (!Result.valid())
 		{
 			sol::error Error = Result;
