@@ -2,6 +2,9 @@
 #include "SolLow.h"
 #include <Math/Vector3.h>
 #include <Data/DataArray.h>
+#include <Data/Buffer.h>
+#include <IO/HRDWriter.h>
+#include <IO/Streams/MemStream.h>
 #include <Events/Event.h>
 
 namespace DEM::Scripting
@@ -77,6 +80,15 @@ void RegisterBasicTypes(sol::state& State)
 			return sol::object();
 		}
 		, sol::meta_function::new_index, [](Data::CParams& Self, const char* pKey, sol::object Value) {}
+		, sol::meta_function::to_string, [](const Data::CParams& Self)
+		{
+			// TODO: need to improve API for writing into memory (string)!
+			IO::CMemStream Stream;
+			IO::CHRDWriter Writer(Stream);
+			if (!Writer.WriteParams(Self)) return std::string{};
+			auto Buf = Stream.Detach();
+			return std::string(static_cast<const char*>(Buf->GetConstPtr()), Buf->GetSize());
+		}
 	);
 
 	State.new_usertype<Data::CDataArray>("CDataArray"
