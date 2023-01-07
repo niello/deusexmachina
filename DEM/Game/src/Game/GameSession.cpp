@@ -17,9 +17,6 @@ CGameSession::CGameSession()
 			, static_cast<::Core::CRTTIBaseClass* (CGameSession::*)(CStrID) const>(&CGameSession::FindFeature))
 		);
 
-	//sol::table StrIDClassTable = _ScriptState["CStrID"];
-	//StrIDClassTable.set("Empty", CStrID::Empty);
-
 	_ScriptFields = _ScriptState.create_table();
 	_ScriptState["Session"] = this;
 }

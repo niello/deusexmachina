@@ -9,8 +9,6 @@
 // access to game features, i.e. different pieces of game logic.
 // Only one feature of each type can be registered in a session.
 
-// TODO: Lua binding! Bind registered systems as named fields + GetSystem(ClassName)!
-
 namespace DEM::Game
 {
 using PGameSession = Ptr<class CGameSession>;
@@ -23,12 +21,10 @@ protected:
 	inline static uint32_t FeatureTypeCount = 0;
 	template<typename T> inline static const uint32_t FeatureTypeIndex = FeatureTypeCount++;
 
-	using PFeature = std::unique_ptr<::Core::CRTTIBaseClass>;
-
-	std::vector<PFeature>                     _Features;
-	std::map<CStrID, ::Core::CRTTIBaseClass*> _FeaturesByName;
-	sol::state                                _ScriptState;
-	sol::table                                _ScriptFields;
+	std::vector<std::unique_ptr<::Core::CRTTIBaseClass>> _Features;
+	std::map<CStrID, ::Core::CRTTIBaseClass*>            _FeaturesByName;
+	sol::state                                           _ScriptState;
+	sol::table                                           _ScriptFields;
 
 public:
 
