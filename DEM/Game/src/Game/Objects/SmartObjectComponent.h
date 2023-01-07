@@ -4,7 +4,7 @@
 #include <Animation/TimelineTrack.h> // For inlined destructor CSmartObjectComponent -> CTimelinePlayer
 #include <Data/Metadata.h>
 #include <Data/StringID.h>
-#include <Scripting/Sol.h>
+#include <Scripting/SolGame.h>
 
 // Smart object instance that can switch between different states and offer available interactions
 

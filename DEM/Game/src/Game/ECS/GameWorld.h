@@ -5,7 +5,7 @@
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Math/AABB.h>
-#include <Scripting/Sol.h>
+#include <Scripting/SolGame.h>
 
 // A complete game world with objects, time and space. Space is subdivided into levels.
 // All levels share the same time. Objects (or entities) can move between levels, but

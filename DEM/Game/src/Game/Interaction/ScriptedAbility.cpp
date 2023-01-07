@@ -21,7 +21,7 @@ static bool LuaCall(const sol::function& Fn, TArgs&&... Args)
 		return false;
 	}
 
-	auto Type = Result.get_type();
+	const auto Type = Result.get_type();
 	return Type != sol::type::nil && Type != sol::type::none && Result;
 }
 //---------------------------------------------------------------------
@@ -65,9 +65,10 @@ ESoftBool CScriptedAbility::NeedMoreTargets(const CInteractionContext& Context) 
 		return ESoftBool::False;
 	}
 
-	if (Result.get_type() == sol::type::boolean) return Result ? ESoftBool::True : ESoftBool::False;
+	const auto Type = Result.get_type();
+	if (Type == sol::type::none || Type == sol::type::nil) return ESoftBool::Maybe;
 
-	return Result;
+	return Result ? ESoftBool::True : ESoftBool::False;
 }
 //---------------------------------------------------------------------
 

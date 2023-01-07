@@ -1,6 +1,6 @@
 #pragma once
 #include <Game/Interaction/Ability.h>
-#include <Scripting/Sol.h>
+#include <Scripting/SolGame.h>
 
 // Actor's ability implemented fully in script
 

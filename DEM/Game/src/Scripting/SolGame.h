@@ -1,8 +1,8 @@
 #pragma once
-#include <sol/sol.hpp>
+#include <Scripting/SolLow.h>
 #include <Game/ECS/Entity.h>
 
-// Wrapper for Sol header with template overrides required for DEM
+// Wrapper for Sol header with template overrides required for DEM Game layer
 
 namespace sol
 {
@@ -11,8 +11,4 @@ template <> struct is_value_semantic_for_function<DEM::Game::HEntity> : std::tru
 template <> struct is_value_semantic_for_function<const DEM::Game::HEntity> : std::true_type {};
 template <> struct is_value_semantic_for_function<DEM::Game::HEntity&> : std::true_type {};
 template <> struct is_value_semantic_for_function<const DEM::Game::HEntity&> : std::true_type {};
-template <> struct is_value_semantic_for_function<CStrID> : std::true_type {};
-template <> struct is_value_semantic_for_function<const CStrID> : std::true_type {};
-template <> struct is_value_semantic_for_function<CStrID&> : std::true_type {};
-template <> struct is_value_semantic_for_function<const CStrID&> : std::true_type {};
 }

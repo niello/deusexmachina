@@ -255,7 +255,10 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 				::Sys::Error(Error.what());
 				continue;
 			}
-			else if (Result.get_type() == sol::type::nil || !Result) continue; //???SOL: why nil can't be negated? https://www.lua.org/pil/3.3.html
+
+			//???SOL: why nil can't be negated? https://www.lua.org/pil/3.3.html
+			const auto Type = Result.get_type();
+			if (Type == sol::type::none || Type == sol::type::nil || !Result) continue;
 		}
 
 		// Allow a smart object to override an interaction by ID

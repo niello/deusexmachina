@@ -2,7 +2,7 @@
 #include <Game/GameLevel.h>
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/Objects/SmartObject.h>
-#include <Scripting/Sol.h>
+#include <Scripting/SolGame.h>
 
 //!!!DBG TMP!
 #include <Animation/Skeleton.h>

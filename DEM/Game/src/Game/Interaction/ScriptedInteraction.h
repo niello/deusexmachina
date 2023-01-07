@@ -1,6 +1,6 @@
 #pragma once
 #include <Game/Interaction/Interaction.h>
-#include <Scripting/Sol.h>
+#include <Scripting/SolGame.h>
 
 // Interaction implemented fully in script
 

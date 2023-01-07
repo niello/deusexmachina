@@ -1,6 +1,6 @@
 #pragma once
 #include <Data/StringID.h>
-#include <Scripting/Sol.h>
+#include <Scripting/SolGame.h>
 #include <vector>
 #include <set>
 
