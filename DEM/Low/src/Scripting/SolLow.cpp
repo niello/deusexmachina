@@ -1,12 +1,12 @@
 #pragma once
 #include "SolLow.h"
+#include <Input/InputTranslator.h>
+#include <Scripting/LuaEventHandler.h>
 #include <Math/Vector3.h>
 #include <Data/DataArray.h>
 #include <Data/Buffer.h>
 #include <IO/HRDWriter.h>
 #include <IO/Streams/MemStream.h>
-#include <Events/Event.h>
-#include <Events/Subscription.h>
 
 namespace DEM::Scripting
 {
@@ -119,6 +119,13 @@ void RegisterBasicTypes(sol::state& State)
 		, sol::meta_function::equal_to, [](const Events::CSubscription& a, const Events::CSubscription& b) { return &a == &b; }
 	);
 
+	State.new_usertype<Events::CEventDispatcher>("CEventDispatcher"
+		, "Subscribe", [](Events::CEventDispatcher& Self, const char* pEventID, sol::function Handler)
+		{
+			return Self.Subscribe(CStrID(pEventID), n_new(Events::CLuaEventHandler(std::move(Handler))));
+		}
+	);
+
 	// TODO: add to namespace (table) DEM?
 	State.set_function("UnsubscribeEvent", [](sol::object Arg)
 	{
@@ -134,6 +141,10 @@ void RegisterBasicTypes(sol::state& State)
 			return Arg;
 		}
 	});
+
+	State.new_usertype<Input::CInputTranslator>("CInputTranslator"
+		, sol::base_classes, sol::bases<Events::CEventDispatcher>()
+	);
 }
 //---------------------------------------------------------------------
 
