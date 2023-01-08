@@ -25,8 +25,6 @@ public:
 	CSubscription(CEventDispatcher* d, CEventID e, CEventHandler* h) : pDispatcher(d), Event(e), pHandler(h) {}
 	virtual ~CSubscription() override;
 
-	void Unsubscribe(); // Mostly for Lua, garbage collector there keeps a RAII subscription for longer than needed
-
 	CEventID				GetEvent() const { return Event; }
 	const CEventHandler*	GetHandler() const { return pHandler; }
 	CEventDispatcher*		GetDispatcher() const { return pDispatcher; }

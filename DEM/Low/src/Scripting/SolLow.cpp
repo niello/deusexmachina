@@ -117,8 +117,26 @@ void RegisterBasicTypes(sol::state& State)
 		, sol::meta_function::less_than, [](const Events::CSubscription& a, const Events::CSubscription& b) { return &a < &b; }
 		, sol::meta_function::less_than_or_equal_to, [](const Events::CSubscription& a, const Events::CSubscription& b) { return &a <= &b; }
 		, sol::meta_function::equal_to, [](const Events::CSubscription& a, const Events::CSubscription& b) { return &a == &b; }
-		, "Unsubscribe", &Events::CSubscription::Unsubscribe
 	);
+
+	// TODO: add to namespace (table) DEM?
+	State.set_function("UnsubscribeEvent", [](sol::object Arg)
+	{
+		if (Arg.is<Events::PSub>())
+		{
+			Events::PSub& Sub = Arg.as<Events::PSub&>();
+			Sub = nullptr;
+			return sol::object{};
+		}
+		else
+		{
+#ifdef _DEBUG
+			if (Arg.get_type() != sol::type::nil)
+				::Sys::Log("Lua UnsubscribeEvent() binding received neither PSub nor nil, check your script for logic errors!");
+#endif
+			return Arg;
+		}
+	});
 }
 //---------------------------------------------------------------------
 
