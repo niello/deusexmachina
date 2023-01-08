@@ -130,7 +130,7 @@ void RegisterBasicTypes(sol::state& State)
 		}
 		else
 		{
-			n_assert2_dbg(Arg.get_type() == sol::type::nil, "Lua UnsubscribeEvent() binding received neither PSub nor nil, check your script for logic errors!");
+			n_assert2_dbg(Arg.get_type() == sol::type::nil, "Lua UnsubscribeEvent() binding received neither PSub nor nil, check your scripts for logic errors!");
 			return Arg;
 		}
 	});

@@ -8,6 +8,8 @@ namespace Input
 
 class CInputConditionUp: public CInputConditionEvent
 {
+	RTTI_CLASS_DECL(Input::CInputConditionUp, Input::CInputConditionEvent);
+
 protected:
 
 	EDeviceType	_DeviceType;

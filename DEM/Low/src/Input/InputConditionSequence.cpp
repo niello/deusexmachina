@@ -2,6 +2,7 @@
 #include <Input/InputEvents.h>
 #include <Input/InputDevice.h>
 #include <Input/InputConditionUp.h>
+#include <Input/InputConditionText.h>
 
 namespace Input
 {
@@ -75,7 +76,7 @@ UPTR CInputConditionSequence::OnButtonDown(const IInputDevice* pDevice, const Ev
 		// FIXME: Down-and-Up event needed, CInputConditionClick
 		if (auto pUpEvent = pCurrEvent->As<CInputConditionUp>())
 		{
-			if (pUpEvent->GetDeviceType() == pDevice->GetType() && pUpEvent->GetButton() == Event.Code) FAIL;
+			if (pUpEvent->GetDeviceType() == pDevice->GetType() && pUpEvent->GetButton() == Event.Code) return 0;
 		}
 
 		CurrChild = 0; // Reset on any other unexpected ButtonDown
@@ -115,7 +116,11 @@ UPTR CInputConditionSequence::OnTextInput(const IInputDevice* pDevice, const Eve
 			return 1;
 		}
 	}
-	else CurrChild = 0; // Reset on any unexpected TextInput
+	else if (Children[CurrChild]->IsA<CInputConditionText>()) // TODO: keys generate char events too. Need to check handled or bind char to key event?
+	{
+		// Reset on any unexpected TextInput
+		CurrChild = 0;
+	}
 
 	return 0;
 }

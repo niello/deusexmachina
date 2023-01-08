@@ -8,6 +8,8 @@ namespace Input
 
 class CInputConditionText: public CInputConditionEvent
 {
+	RTTI_CLASS_DECL(Input::CInputConditionText, Input::CInputConditionEvent);
+
 protected:
 
 	std::string _Text;
