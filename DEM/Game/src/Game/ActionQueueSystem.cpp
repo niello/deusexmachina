@@ -20,14 +20,14 @@ void ProcessActionQueue(CGameWorld& World)
 			case EActionStatus::Succeeded:
 			{
 				if (RootAction)
-					::Sys::Log((std::to_string(EntityID.Raw) + ": " + RootAction.Get()->GetClassName() + " action succeeded\n").c_str());
+					::Sys::Log((EntityToString(EntityID) + ": " + RootAction.Get()->GetClassName() + " action succeeded\n").c_str());
 				Queue.RunNextAction();
 				break;
 			}
 			case EActionStatus::Failed:
 			case EActionStatus::Cancelled:
 			{
-				::Sys::Log((std::to_string(EntityID.Raw) + ": " + RootAction.Get()->GetClassName() + " action failed or was cancelled\n").c_str());
+				::Sys::Log((EntityToString(EntityID) + ": " + RootAction.Get()->GetClassName() + " action failed or was cancelled\n").c_str());
 				Queue.Reset(RootStatus);
 				break;
 			}

@@ -9,7 +9,7 @@
 namespace DEM::Game
 {
 using PAbility = std::unique_ptr<class CAbility>;
-class CAbilityInstance;
+using PAbilityInstance = Ptr<class CAbilityInstance>;
 class CZone;
 class CGameWorld;
 
@@ -33,6 +33,8 @@ class CAbility : public CInteraction
 protected:
 
 	bool                  PushStandardExecuteAction(CGameWorld& World, HEntity Actor, const CInteractionContext& Context, bool Enqueue, bool PushChild) const;
+
+	virtual PAbilityInstance CreateInstance(const CInteractionContext& Context) const;
 
 public:
 

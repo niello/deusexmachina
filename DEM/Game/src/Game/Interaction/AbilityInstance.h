@@ -46,7 +46,6 @@ public:
 	HEntity                   Source; // E.g. item
 	HEntity                   Actor;
 	std::vector<CTargetInfo>  Targets;
-	Data::CParams             Params;
 
 	std::vector<const CZone*> InitialZones;
 	std::vector<const CZone*> AvailableZones;

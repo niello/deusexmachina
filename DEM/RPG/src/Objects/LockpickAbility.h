@@ -1,13 +1,27 @@
 #pragma once
 #include <Game/Interaction/Ability.h>
+#include <Game/Interaction/AbilityInstance.h>
 
 // Lockpick a locked object, e.g. door or container
 
 namespace DEM::RPG
 {
 
+class CSkillCheckAbilityInstance : public Game::CAbilityInstance
+{
+public:
+
+	int Difference = 0;
+
+	using CAbilityInstance::CAbilityInstance;
+};
+
 class CLockpickAbility : public Game::CAbility
 {
+protected:
+
+	virtual Game::PAbilityInstance CreateInstance(const Game::CInteractionContext& Context) const override;
+
 public:
 
 	CLockpickAbility(std::string_view CursorImage = {});

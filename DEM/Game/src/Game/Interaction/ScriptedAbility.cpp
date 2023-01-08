@@ -1,6 +1,5 @@
 #include "ScriptedAbility.h"
 #include <Game/ECS/GameWorld.h>
-#include <Game/Interaction/AbilityInstance.h>
 #include <Game/Interaction/Zone.h>
 
 namespace DEM::Game
@@ -26,7 +25,8 @@ static bool LuaCall(const sol::function& Fn, TArgs&&... Args)
 }
 //---------------------------------------------------------------------
 
-CScriptedAbility::CScriptedAbility(const sol::table& Table)
+CScriptedAbility::CScriptedAbility(sol::state_view Lua, const sol::table& Table)
+	: _Lua(Lua)
 {
 	_FnIsAvailable = Table.get<sol::function>("IsAvailable");
 	_FnIsTargetValid = Table.get<sol::function>("IsTargetValid");
@@ -40,6 +40,14 @@ CScriptedAbility::CScriptedAbility(const sol::table& Table)
 	_FnOnEnd = Table.get<sol::function>("OnEnd");
 
 	_CursorImage = Table.get<std::string>("CursorImage"); //???to method? pass target index?
+}
+//---------------------------------------------------------------------
+
+PAbilityInstance CScriptedAbility::CreateInstance(const CInteractionContext& Context) const
+{
+	Ptr<CScriptedAbilityInstance> Instance(n_new(CScriptedAbilityInstance(*this)));
+	Instance->Custom = sol::table(_Lua, sol::create);
+	return Instance;
 }
 //---------------------------------------------------------------------
 
@@ -102,27 +110,27 @@ bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Conte
 
 bool CScriptedAbility::GetZones(const Game::CGameSession& Session, const CAbilityInstance& Instance, std::vector<const CZone*>& Out) const
 {
-	return LuaCall(_FnGetZones, Instance, Out);
+	return LuaCall(_FnGetZones, static_cast<const CScriptedAbilityInstance&>(Instance), Out);
 }
 //---------------------------------------------------------------------
 
 bool CScriptedAbility::GetFacingParams(const Game::CGameSession& Session, const CAbilityInstance& Instance, CFacingParams& Out) const
 {
 	if (!_FnGetFacingParams) return false;
-	LuaCall(_FnGetFacingParams, Instance, Out);
+	LuaCall(_FnGetFacingParams, static_cast<const CScriptedAbilityInstance&>(Instance), Out);
 	return Out.Mode != EFacingMode::None;
 }
 //---------------------------------------------------------------------
 
 void CScriptedAbility::OnStart(Game::CGameSession& Session, CAbilityInstance& Instance) const
 {
-	LuaCall(_FnOnStart, Instance);
+	LuaCall(_FnOnStart, static_cast<const CScriptedAbilityInstance&>(Instance));
 }
 //---------------------------------------------------------------------
 
 EActionStatus CScriptedAbility::OnUpdate(Game::CGameSession& Session, CAbilityInstance& Instance) const
 {
-	auto UpdateResult = _FnOnUpdate(Instance);
+	auto UpdateResult = _FnOnUpdate(static_cast<const CScriptedAbilityInstance&>(Instance));
 	if (!UpdateResult.valid())
 	{
 		sol::error Error = UpdateResult;
@@ -143,7 +151,7 @@ EActionStatus CScriptedAbility::OnUpdate(Game::CGameSession& Session, CAbilityIn
 
 void CScriptedAbility::OnEnd(Game::CGameSession& Session, CAbilityInstance& Instance, EActionStatus Status) const
 {
-	LuaCall(_FnOnEnd, Instance, Status);
+	LuaCall(_FnOnEnd, static_cast<const CScriptedAbilityInstance&>(Instance), Status);
 }
 //---------------------------------------------------------------------
 

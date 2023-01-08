@@ -77,6 +77,12 @@ CLockpickAbility::CLockpickAbility(std::string_view CursorImage)
 }
 //---------------------------------------------------------------------
 
+Game::PAbilityInstance CLockpickAbility::CreateInstance(const Game::CInteractionContext& Context) const
+{
+	return Game::PAbilityInstance(n_new(CSkillCheckAbilityInstance(*this)));
+}
+//---------------------------------------------------------------------
+
 bool CLockpickAbility::IsAvailable(const Game::CGameSession& Session, const Game::CInteractionContext& Context) const
 {
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
@@ -203,7 +209,7 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 	//!!!remember difference (or result?) in an ability instance params!
 	CStrID AnimAction;
 	const int Difference = Math::RandomU32(1, 20) + SkillRollModifier - pLock->Difficulty;
-	Instance.Params.Set(CStrID("Difference"), Difference);
+	static_cast<CSkillCheckAbilityInstance&>(Instance).Difference = Difference;
 	if (Difference > 0)
 	{
 		// success
@@ -255,7 +261,7 @@ Game::EActionStatus CLockpickAbility::OnUpdate(Game::CGameSession& Session, Game
 	// (optional) check if assistant cancelled its action, and if so, remove its bonus
 
 	// TODO: make duration based on skill and dexterity?
-	const int Difference = Instance.Params[CStrID("Difference")].GetValue<int>();
+	const int Difference = static_cast<CSkillCheckAbilityInstance&>(Instance).Difference;
 	float Duration;
 	if (Difference > 0) Duration = 3.f;
 	else if (Difference > -5) Duration = 1.5f;
@@ -284,7 +290,7 @@ void CLockpickAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance
 	// if character is not in stealth, play result phrase
 	// remove crime stimulus
 
-	const int Difference = Instance.Params[CStrID("Difference")].GetValue<int>();
+	const int Difference = static_cast<CSkillCheckAbilityInstance&>(Instance).Difference;
 	if (Status == Game::EActionStatus::Succeeded && Difference > 0)
 		pWorld->RemoveComponent<CLockComponent>(Instance.Targets[0].Entity);
 }

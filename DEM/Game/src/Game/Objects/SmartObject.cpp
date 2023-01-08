@@ -91,7 +91,7 @@ bool CSmartObject::InitInSession(CGameSession& Session) const
 			if (IactTable.get<sol::function>("Execute"))
 				Iact.reset(n_new(CScriptedInteraction(IactTable)));
 			else
-				Iact.reset(n_new(CScriptedAbility(IactTable)));
+				Iact.reset(n_new(CScriptedAbility(Lua, IactTable)));
 
 			if (Iact)
 			{

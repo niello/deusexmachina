@@ -1,17 +1,27 @@
 #pragma once
 #include <Game/Interaction/Ability.h>
+#include <Game/Interaction/AbilityInstance.h>
 #include <Scripting/SolGame.h>
 
 // Actor's ability implemented fully in script
 
-//???need CScriptedAbilityInstance with Lua table for arbitrary state?
-
 namespace DEM::Game
 {
+
+class CScriptedAbilityInstance : public CAbilityInstance
+{
+public:
+
+	sol::table Custom;
+
+	using CAbilityInstance::CAbilityInstance;
+};
 
 class CScriptedAbility : public CAbility
 {
 protected:
+
+	sol::state_view _Lua;
 
 	sol::function _FnIsAvailable;
 	sol::function _FnIsTargetValid;
@@ -24,9 +34,11 @@ protected:
 	sol::function _FnOnUpdate;
 	sol::function _FnOnEnd;
 
+	virtual PAbilityInstance CreateInstance(const CInteractionContext& Context) const override;
+
 public:
 
-	CScriptedAbility(const sol::table& Table);
+	CScriptedAbility(sol::state_view Lua, const sol::table& Table);
 
 	virtual bool          IsAvailable(const CGameSession& Session, const CInteractionContext& Context) const override;
 	virtual bool          IsTargetValid(const CGameSession& Session, U32 Index, const CInteractionContext& Context) const override;

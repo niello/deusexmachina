@@ -5,22 +5,30 @@
 namespace DEM::Game
 {
 
+PAbilityInstance CAbility::CreateInstance(const CInteractionContext& Context) const
+{
+	return PAbilityInstance(n_new(CAbilityInstance(*this)));
+}
+//---------------------------------------------------------------------
+
 bool CAbility::PushStandardExecuteAction(CGameWorld& World, HEntity Actor, const CInteractionContext& Context, bool Enqueue, bool PushChild) const
 {
 	if (auto pQueue = World.FindComponent<CActionQueueComponent>(Actor))
 	{
-		PAbilityInstance AbilityInstance(n_new(CAbilityInstance(*this)));
-		AbilityInstance->Source = Context.Source;
-		AbilityInstance->Targets = Context.Targets;
-
-		// TODO: move to queue method?
-		if (PushChild && pQueue->GetCurrent()) pQueue->PushOrUpdateChild<ExecuteAbility>(pQueue->GetCurrent(), std::move(AbilityInstance));
-		else
+		if (PAbilityInstance AbilityInstance = CreateInstance(Context))
 		{
-			if (!Enqueue) pQueue->Reset();
-			pQueue->EnqueueAction<ExecuteAbility>(std::move(AbilityInstance));
+			AbilityInstance->Source = Context.Source;
+			AbilityInstance->Targets = Context.Targets;
+
+			// TODO: move to queue method?
+			if (PushChild && pQueue->GetCurrent()) pQueue->PushOrUpdateChild<ExecuteAbility>(pQueue->GetCurrent(), std::move(AbilityInstance));
+			else
+			{
+				if (!Enqueue) pQueue->Reset();
+				pQueue->EnqueueAction<ExecuteAbility>(std::move(AbilityInstance));
+			}
+			return true;
 		}
-		return true;
 	}
 
 	return false;

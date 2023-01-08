@@ -98,21 +98,14 @@ bool CPickItemAbility::GetFacingParams(const Game::CGameSession& Session, const 
 
 void CPickItemAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
 {
+	// TODO: animation?
 }
 //---------------------------------------------------------------------
 
 Game::EActionStatus CPickItemAbility::OnUpdate(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
 {
-	return Game::EActionStatus::Succeeded;
-}
-//---------------------------------------------------------------------
-
-void CPickItemAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, Game::EActionStatus Status) const
-{
-	if (Status != Game::EActionStatus::Succeeded) return;
-
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
-	if (!pWorld) return;
+	if (!pWorld) return Game::EActionStatus::Failed;
 
 	// TODO: if owned by another faction, create crime stimulus/signal based on Steal skill check,
 	// it may even interrupt item picking (in OnStart()?)
@@ -123,6 +116,14 @@ void CPickItemAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance
 	const auto [AddedCount, MovedCompletely] = MoveItemsToContainer(*pWorld, Instance.Actor, Instance.Targets[0].Entity);
 	if (MovedCompletely)
 		RemoveItemVisualsFromLocation(*pWorld, Instance.Targets[0].Entity);
+
+	return AddedCount ? Game::EActionStatus::Succeeded : Game::EActionStatus::Failed;
+}
+//---------------------------------------------------------------------
+
+void CPickItemAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, Game::EActionStatus Status) const
+{
+	// TODO: animation?
 }
 //---------------------------------------------------------------------
 
