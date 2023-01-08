@@ -55,7 +55,7 @@ protected:
 
 	std::vector<::Events::PEventBase> _Stack;
 	std::deque<::Events::PEventBase>  _Queue;
-	EActionStatus                   _Status = EActionStatus::NotQueued;
+	EActionStatus                     _Status = EActionStatus::NotQueued;
 
 	template<typename T, typename... TNext>
 	inline bool IsActionOneOf(::Events::CEventID ID) const

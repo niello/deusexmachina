@@ -185,9 +185,9 @@ void CGameWorld::RegisterComponent(CStrID Name, UPTR InitialCapacity)
 	// If scripting is enabled, add component getter for scripts
 	if (_ScriptFields.valid())
 	{
-		_ScriptFields[Name.CStr()] = [pStorage = _Storages[TypeIndex].get()](HEntity EntityID)
+		_ScriptFields[Name.CStr()] = [pStorage = _Storages[TypeIndex].get()](std::optional<HEntity> EntityID)
 		{
-			return static_cast<TComponentTraits<T>::TStorage*>(pStorage)->Find(EntityID);
+			return static_cast<TComponentTraits<T>::TStorage*>(pStorage)->Find(EntityID.value_or(HEntity{}));
 		};
 	}
 }

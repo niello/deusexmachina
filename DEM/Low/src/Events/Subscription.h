@@ -16,14 +16,16 @@ class CSubscription: public Data::CRefCounted
 {
 private:
 
-	CEventDispatcher*	pDispatcher;
-	CEventID			Event;
-	CEventHandler*		pHandler;
+	CEventDispatcher* pDispatcher;
+	CEventHandler*    pHandler;
+	CEventID          Event;
 
 public:
 
 	CSubscription(CEventDispatcher* d, CEventID e, CEventHandler* h) : pDispatcher(d), Event(e), pHandler(h) {}
 	virtual ~CSubscription() override;
+
+	void Unsubscribe(); // Mostly for Lua, garbage collector there keeps a RAII subscription for longer than needed
 
 	CEventID				GetEvent() const { return Event; }
 	const CEventHandler*	GetHandler() const { return pHandler; }

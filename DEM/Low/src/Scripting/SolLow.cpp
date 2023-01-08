@@ -6,6 +6,7 @@
 #include <IO/HRDWriter.h>
 #include <IO/Streams/MemStream.h>
 #include <Events/Event.h>
+#include <Events/Subscription.h>
 
 namespace DEM::Scripting
 {
@@ -110,6 +111,13 @@ void RegisterBasicTypes(sol::state& State)
 			static const Data::CParams EmptyParams;
 			return &EmptyParams;
 		}
+	);
+
+	State.new_usertype<Events::CSubscription>("CSubscription"
+		, sol::meta_function::less_than, [](const Events::CSubscription& a, const Events::CSubscription& b) { return &a < &b; }
+		, sol::meta_function::less_than_or_equal_to, [](const Events::CSubscription& a, const Events::CSubscription& b) { return &a <= &b; }
+		, sol::meta_function::equal_to, [](const Events::CSubscription& a, const Events::CSubscription& b) { return &a == &b; }
+		, "Unsubscribe", &Events::CSubscription::Unsubscribe
 	);
 }
 //---------------------------------------------------------------------

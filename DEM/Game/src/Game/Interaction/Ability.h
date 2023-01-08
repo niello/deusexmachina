@@ -4,7 +4,7 @@
 #include <Game/ECS/Components/ActionQueueComponent.h> // FIXME: for EActionStatus. Or define queue action type here too?!
 #include <Math/Vector3.h>
 
-// Ability is an interaction performed by a actors in a game world
+// Ability is an interaction performed by actors in a game world
 
 namespace DEM::Game
 {

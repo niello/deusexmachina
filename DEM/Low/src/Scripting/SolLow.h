@@ -1,5 +1,6 @@
 #pragma once
 #include <sol/sol.hpp>
+#include <Data/Ptr.h>
 #include <Data/StringID.h>
 
 // Wrapper for Sol header with template overrides required for DEM Low layer
@@ -11,6 +12,25 @@ template <> struct is_value_semantic_for_function<CStrID> : std::true_type {};
 template <> struct is_value_semantic_for_function<const CStrID> : std::true_type {};
 template <> struct is_value_semantic_for_function<CStrID&> : std::true_type {};
 template <> struct is_value_semantic_for_function<const CStrID&> : std::true_type {};
+
+template <typename T>
+struct unique_usertype_traits<Ptr<T>>
+{
+	typedef T type;
+	typedef Ptr<T> actual_type;
+	static constexpr bool value = true;
+
+	static bool is_null(const actual_type& ptr)
+	{
+		return !ptr;
+	}
+
+	static type* get(const actual_type& ptr)
+	{
+		return ptr.Get();
+	}
+};
+
 }
 
 namespace DEM::Scripting

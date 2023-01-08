@@ -109,5 +109,5 @@ template<class T> inline bool operator !=(std::nullptr_t, Ptr<T> const& p) noexc
 
 template<class T> inline bool operator <(Ptr<T> const& a, Ptr<T> const& b) noexcept
 {
-	return std::less<T *>()(a.Get(), b.Get());
+	return std::less<T*>()(a.Get(), b.Get());
 }
