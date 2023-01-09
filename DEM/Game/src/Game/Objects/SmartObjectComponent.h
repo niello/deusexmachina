@@ -2,8 +2,8 @@
 #include <Resources/Resource.h>
 #include <Animation/TimelinePlayer.h>
 #include <Animation/TimelineTrack.h> // For inlined destructor CSmartObjectComponent -> CTimelinePlayer
+#include <Events/Signal.h>
 #include <Data/Metadata.h>
-#include <Data/StringID.h>
 #include <Scripting/SolGame.h>
 
 // Smart object instance that can switch between different states and offer available interactions
@@ -24,6 +24,12 @@ struct CSmartObjectComponent
 	bool                       Force = false; // Force-set requested state immediately?
 
 	sol::function              UpdateScript; // Cache for faster per-frame access
+
+	// Args are: our entity, state before, state after
+	Events::CSignal<void(HEntity, CStrID, CStrID)> OnTransitionStart;
+	Events::CSignal<void(HEntity, CStrID, CStrID)> OnTransitionEnd;
+	Events::CSignal<void(HEntity, CStrID, CStrID)> OnTransitionCancel;
+	Events::CSignal<void(HEntity, CStrID, CStrID)> OnStateForceSet;
 
 	//???transition progress / current state timer (one multipurpose time float)? or inside timeline player?
 	//!!!NB: if time is in TL in player, must save/return prev time, not curr, or some TL part may be skipped on game reload!

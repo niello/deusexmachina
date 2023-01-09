@@ -135,6 +135,7 @@ void ProcessStateChangeRequest(CGameWorld& World, sol::state& Lua, HEntity Entit
 		if (pTransitionCN) pPrevTask = &pTransitionCN->TimelineTask;
 
 		CallTransitionScript(SOAsset.GetScriptFunction(Lua, "OnTransitionCancel"), EntityID, SOComponent.CurrState, SOComponent.NextState);
+		SOComponent.OnTransitionCancel(EntityID, SOComponent.CurrState, SOComponent.NextState);
 		SOComponent.NextState = CStrID::Empty;
 	}
 
@@ -146,6 +147,7 @@ void ProcessStateChangeRequest(CGameWorld& World, sol::state& Lua, HEntity Entit
 			SOComponent.CurrState = FromState;
 			SOComponent.NextState = RequestedState;
 			CallTransitionScript(SOAsset.GetScriptFunction(Lua, "OnTransitionStart"), EntityID, SOComponent.CurrState, SOComponent.NextState);
+			SOComponent.OnTransitionStart(EntityID, SOComponent.CurrState, SOComponent.NextState);
 			RunTimelineTask(World, EntityID, SOComponent.Player, pTransitionCR->TimelineTask, pPrevTask, InitialProgress);
 		}
 		else
@@ -161,6 +163,7 @@ void ProcessStateChangeRequest(CGameWorld& World, sol::state& Lua, HEntity Entit
 		if (auto pState = SOAsset.FindState(RequestedState))
 		{
 			CallTransitionScript(SOAsset.GetScriptFunction(Lua, "OnStateForceSet"), EntityID, FromState, RequestedState);
+			SOComponent.OnStateForceSet(EntityID, FromState, RequestedState);
 			RunTimelineTask(World, EntityID, SOComponent.Player, pState->TimelineTask, pPrevTask);
 			SOComponent.CurrState = RequestedState;
 			SOComponent.UpdateScript = SOAsset.GetScriptFunction(Lua, "OnStateUpdate");
@@ -205,6 +208,7 @@ void UpdateSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 
 					// End transition, enter the destination state
 					CallTransitionScript(pSOAsset->GetScriptFunction(Lua, "OnTransitionEnd"), EntityID, SOComponent.CurrState, SOComponent.NextState);
+					SOComponent.OnTransitionEnd(EntityID, SOComponent.CurrState, SOComponent.NextState);
 					RunTimelineTask(World, EntityID, SOComponent.Player, pState->TimelineTask, pPrevTask);
 					SOComponent.CurrState = SOComponent.NextState;
 					SOComponent.UpdateScript = pSOAsset->GetScriptFunction(Lua, "OnStateUpdate");
@@ -213,6 +217,7 @@ void UpdateSmartObjects(CGameWorld& World, sol::state& Lua, float dt)
 				{
 					// State was deleted from asset at runtime, cancel to source state
 					CallTransitionScript(pSOAsset->GetScriptFunction(Lua, "OnTransitionCancel"), EntityID, SOComponent.CurrState, SOComponent.NextState);
+					SOComponent.OnTransitionCancel(EntityID, SOComponent.CurrState, SOComponent.NextState);
 					SOComponent.Player.SetTrack(nullptr);
 				}
 
