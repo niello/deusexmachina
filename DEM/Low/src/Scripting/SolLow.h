@@ -38,6 +38,19 @@ namespace DEM::Scripting
 
 void RegisterBasicTypes(sol::state& State);
 
+template<typename T>
+void RegisterSignalType(sol::state& State)
+{
+	using TSignal = DEM::Events::CSignal<T>;
+	State.new_usertype<TSignal>(sol::detail::demangle<TSignal>()
+		, "Subscribe", &TSignal::Subscribe<sol::function>
+		, "SubscribeAndForget", &TSignal::SubscribeAndForget<sol::function>
+		, "UnsubscribeAll", &TSignal::UnsubscribeAll
+		, "Empty", &TSignal::Empty
+	);
+}
+//---------------------------------------------------------------------
+
 template<typename F>
 void ObjectToString(const sol::object& Object, sol::state_view& State, F Callback)
 {
@@ -73,5 +86,6 @@ void ObjectToString(const sol::object& Object, sol::state_view& State, F Callbac
 		}
 	}
 }
+//---------------------------------------------------------------------
 
 }

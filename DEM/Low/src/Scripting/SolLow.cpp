@@ -1,7 +1,9 @@
 #pragma once
 #include "SolLow.h"
 #include <Input/InputTranslator.h>
+#include <UI/UIWindow.h>
 #include <Scripting/LuaEventHandler.h>
+#include <Events/Signal.h>
 #include <Math/Vector3.h>
 #include <Data/DataArray.h>
 #include <Data/Buffer.h>
@@ -101,9 +103,9 @@ void RegisterBasicTypes(sol::state& State)
 		, sol::meta_function::new_index, [](Data::CDataArray& Self, size_t i, sol::object Value) {}
 	);
 
-	State.new_usertype<Events::CEvent>("CEvent"
-		, "ID", &Events::CEvent::ID
-		, "Params", [](const Events::CEvent& Self) // FIXME: can make e.Params. instead of e.Params(). ? Make C++ field of type CParams, not PParams?
+	State.new_usertype<::Events::CEvent>("CEvent"
+		, "ID", &::Events::CEvent::ID
+		, "Params", [](const ::Events::CEvent& Self) // FIXME: can make e.Params. instead of e.Params(). ? Make C++ field of type CParams, not PParams?
 		{
 			if (auto pParams = Self.Params.Get())
 				return static_cast<const Data::CParams*>(pParams);
@@ -113,25 +115,25 @@ void RegisterBasicTypes(sol::state& State)
 		}
 	);
 
-	State.new_usertype<Events::CSubscription>("CSubscription"
-		, sol::meta_function::less_than, [](const Events::CSubscription& a, const Events::CSubscription& b) { return &a < &b; }
-		, sol::meta_function::less_than_or_equal_to, [](const Events::CSubscription& a, const Events::CSubscription& b) { return &a <= &b; }
-		, sol::meta_function::equal_to, [](const Events::CSubscription& a, const Events::CSubscription& b) { return &a == &b; }
+	State.new_usertype<::Events::CSubscription>("CSubscription"
+		, sol::meta_function::less_than, [](const ::Events::CSubscription& a, const ::Events::CSubscription& b) { return &a < &b; }
+		, sol::meta_function::less_than_or_equal_to, [](const ::Events::CSubscription& a, const ::Events::CSubscription& b) { return &a <= &b; }
+		, sol::meta_function::equal_to, [](const ::Events::CSubscription& a, const ::Events::CSubscription& b) { return &a == &b; }
 	);
 
-	State.new_usertype<Events::CEventDispatcher>("CEventDispatcher"
-		, "Subscribe", [](Events::CEventDispatcher& Self, const char* pEventID, sol::function Handler)
+	State.new_usertype<::Events::CEventDispatcher>("CEventDispatcher"
+		, "Subscribe", [](::Events::CEventDispatcher& Self, const char* pEventID, sol::function Handler)
 		{
-			return Self.Subscribe(CStrID(pEventID), n_new(Events::CLuaEventHandler(std::move(Handler))));
+			return Self.Subscribe(CStrID(pEventID), n_new(::Events::CLuaEventHandler(std::move(Handler))));
 		}
 	);
 
 	// TODO: add to namespace (table) DEM?
 	State.set_function("UnsubscribeEvent", [](sol::object Arg)
 	{
-		if (Arg.is<Events::PSub>())
+		if (Arg.is<::Events::PSub>())
 		{
-			Events::PSub& Sub = Arg.as<Events::PSub&>();
+			::Events::PSub& Sub = Arg.as<::Events::PSub&>();
 			Sub = nullptr;
 			return sol::object{};
 		}
@@ -143,8 +145,29 @@ void RegisterBasicTypes(sol::state& State)
 	});
 
 	State.new_usertype<Input::CInputTranslator>("CInputTranslator"
-		, sol::base_classes, sol::bases<Events::CEventDispatcher>()
+		, sol::base_classes, sol::bases<::Events::CEventDispatcher>()
 	);
+
+	State.new_usertype<Events::CConnection>("CConnection"
+		, "IsConnected", &Events::CConnection::IsConnected
+		, "Disconnect", &Events::CConnection::Disconnect
+	);
+
+	// TODO: add to namespace (table) DEM?
+	State.set_function("DisconnectFromSignal", [](sol::object Arg)
+	{
+		if (Arg.is<Events::CConnection>())
+		{
+			Events::CConnection& Conn = Arg.as<Events::CConnection&>();
+			Conn.Disconnect();
+			return sol::object{};
+		}
+		else
+		{
+			n_assert2_dbg(Arg.get_type() == sol::type::nil, "Lua DisconnectFromSignal() binding received neither CConnection nor nil, check your scripts for logic errors!");
+			return Arg;
+		}
+	});
 }
 //---------------------------------------------------------------------
 
