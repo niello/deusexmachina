@@ -146,6 +146,9 @@ void RegisterBasicTypes(sol::state& State)
 
 	State.new_usertype<Input::CInputTranslator>("CInputTranslator"
 		, sol::base_classes, sol::bases<::Events::CEventDispatcher>()
+		, "HasContext", &Input::CInputTranslator::HasContext
+		, "EnableContext", &Input::CInputTranslator::EnableContext
+		, "DisableContext", &Input::CInputTranslator::DisableContext
 	);
 
 	State.new_usertype<Events::CConnection>("CConnection"
