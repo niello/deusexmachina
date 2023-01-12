@@ -268,16 +268,16 @@ public:
 		CNode* pPrev = nullptr;
 		while (pCurr)
 		{
-			if (!pCurr->Connected)
+			if (pCurr->Connected)
+			{
+				pPrev = pCurr;
+				pCurr = pCurr->Next.get();
+			}
+			else
 			{
 				auto& SharedCurr = pPrev ? pPrev->Next : Slots;
 				CollectNode(SharedCurr);
 				pCurr = SharedCurr.get();
-			}
-			else
-			{
-				pPrev = pCurr;
-				pCurr = pCurr->Next.get();
 			}
 		}
 	}
@@ -302,18 +302,20 @@ public:
 		CNode* pPrev = nullptr;
 		while (pCurr)
 		{
-			if (!pCurr->Connected)
+			if (pCurr->Connected)
+				pCurr->Slot(Args...);
+
+			// Check again because the connection could be broken in the handler
+			if (pCurr->Connected)
+			{
+				pPrev = pCurr;
+				pCurr = pCurr->Next.get();
+			}
+			else
 			{
 				auto& SharedCurr = pPrev ? pPrev->Next : Slots;
 				CollectNode(SharedCurr);
 				pCurr = SharedCurr.get();
-			}
-			else
-			{
-				pCurr->Slot(Args...);
-
-				pPrev = pCurr;
-				pCurr = pCurr->Next.get();
 			}
 		}
 	}
