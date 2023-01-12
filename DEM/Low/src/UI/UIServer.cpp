@@ -132,7 +132,8 @@ PUIWindow CUIServer::FindReusableWindow(const Core::CRTTI* Type)
 
 void CUIServer::ReleaseWindow(PUIWindow Wnd)
 {
-	if (!Wnd) return;
+	n_assert_dbg(Wnd && !Wnd->GetParent() && !Wnd->GetContext());
+	if (!Wnd || Wnd->GetParent() || Wnd->GetContext()) return;
 	WindowPool[Wnd->GetRTTI()].push_back(std::move(Wnd));
 }
 //---------------------------------------------------------------------

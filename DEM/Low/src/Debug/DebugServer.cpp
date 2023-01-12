@@ -80,18 +80,18 @@ void CDebugServer::TogglePluginWindow(CStrID Name)
 	UI::CUIWindow& UI = *pPlugin->Window;
 	UI::CUIWindow& RootWnd = *UIContext->GetRootWindow();
 
-	if (UI.GetWnd() && UI.GetWnd()->getParent() == RootWnd.GetWnd())
+	if (UI.GetCEGUIWindow() && UI.GetCEGUIWindow()->getParent() == RootWnd.GetCEGUIWindow())
 		UI.ToggleVisibility();
 	else
 	{
-		if (!UI.GetWnd())
+		if (!UI.GetCEGUIWindow())
 		{
 			UI.Load(CString(pPlugin->UIResource.c_str()));
-			n_assert(UI.GetWnd());
+			n_assert(UI.GetCEGUIWindow());
 		}
-		if (UI.GetWnd()->getParent() != RootWnd.GetWnd())
+		if (UI.GetCEGUIWindow()->getParent() != RootWnd.GetCEGUIWindow())
 		{
-			RootWnd.GetWnd()->addChild(UI.GetWnd());
+			RootWnd.GetCEGUIWindow()->addChild(UI.GetCEGUIWindow());
 			UI.Hide(); // To force OnShow event
 			UI.Show();
 		}

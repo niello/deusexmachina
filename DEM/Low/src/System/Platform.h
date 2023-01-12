@@ -26,7 +26,7 @@ enum ESystemFolder
 	SysFolder_Programs		// OS folder where applications are installed
 };
 
-class IPlatform : public Events::CEventDispatcher
+class IPlatform : public ::Events::CEventDispatcher
 {
 public:
 

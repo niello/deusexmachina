@@ -44,6 +44,8 @@ CUIContext::CUIContext(float Width, float Height, DEM::Sys::COSWindow* pHostWind
 
 CUIContext::~CUIContext()
 {
+	ClearRootWindowStack();
+
 	if (pCtx)
 		CEGUI::System::getSingleton().destroyGUIContext(*pCtx);
 }
@@ -84,24 +86,30 @@ void CUIContext::SetRootWindow(CUIWindow* pWindow)
 {
 	if (!pCtx) return;
 
-	pCtx->setRootWindow(pWindow ? pWindow->GetWnd() : nullptr);
+	pCtx->setRootWindow(pWindow ? pWindow->GetCEGUIWindow() : nullptr);
 }
 //---------------------------------------------------------------------
 
-void CUIContext::ClearWindowStack()
+void CUIContext::DetachRootWindow(PUIWindow&& Window)
 {
-	SetRootWindow(nullptr);
-	RootWindows.clear();
+	Window->OnDetachedFromContext();
+	Window->OnReleasedByOwner(std::move(Window));
 }
 //---------------------------------------------------------------------
 
 void CUIContext::PushRootWindow(CUIWindow* pWindow)
 {
-	if (!pWindow) return;
+	n_assert_dbg(pWindow && !pWindow->_pParent && !pWindow->_pCtx);
 
-	if (!RootWindows.empty() && RootWindows.back() == pWindow) return;
+	if (!pWindow || pWindow->_pParent || pWindow->_pCtx) return;
+
+	auto It = std::find(RootWindows.cbegin(), RootWindows.cend(), pWindow);
+	if (It != RootWindows.cend()) return;
 
 	RootWindows.push_back(pWindow);
+
+	pWindow->OnAttachedToContext(this);
+
 	SetRootWindow(pWindow);
 }
 //---------------------------------------------------------------------
@@ -111,10 +119,36 @@ PUIWindow CUIContext::PopRootWindow()
 	if (RootWindows.empty()) return nullptr;
 
 	PUIWindow CurrWnd = std::move(RootWindows.back());
+	DetachRootWindow(PUIWindow(CurrWnd)); // NB: if using unique_ptr, orphan handler may steal return value of PopRootWindow!
+
 	RootWindows.pop_back();
 	SetRootWindow(GetRootWindow());
 
 	return CurrWnd;
+}
+//---------------------------------------------------------------------
+
+void CUIContext::RemoveRootWindow(CUIWindow* pWindow)
+{
+	auto It = std::find(RootWindows.begin(), RootWindows.end(), pWindow);
+	if (It == RootWindows.cend()) return;
+
+	// Detach the root from CEGUI before destroying it
+	if (pWindow == RootWindows.back()) SetRootWindow(nullptr);
+
+	DetachRootWindow(std::move(*It));
+
+	RootWindows.erase(It);
+	SetRootWindow(GetRootWindow());
+}
+//---------------------------------------------------------------------
+
+void CUIContext::ClearRootWindowStack()
+{
+	SetRootWindow(nullptr);
+	for (auto& Window : RootWindows)
+		DetachRootWindow(std::move(Window));
+	RootWindows.clear();
 }
 //---------------------------------------------------------------------
 

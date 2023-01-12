@@ -173,14 +173,25 @@ void RegisterBasicTypes(sol::state& State)
 		}
 	});
 
-	//_Session->GetScriptState().new_usertype<UI::CUIWindow>("UI::CUIWindow"
-	// signals!!! add child!!!
-	//);
-	State.new_usertype<UI::CUIContext>("UI::CUIContext"
+	DEM::Scripting::RegisterSignalType<void()>(State);
+	DEM::Scripting::RegisterSignalType<void(UI::PUIWindow)>(State);
+
+	State.new_usertype<UI::CUIWindow>("CUIWindow"
+		, "AddChild", &UI::CUIWindow::AddChild
+		, "RemoveChild", &UI::CUIWindow::RemoveChild
+		, "Close", &UI::CUIWindow::Close
+		, "Show", &UI::CUIWindow::Show
+		, "Hide", &UI::CUIWindow::Hide
+		, "SetFocus", &UI::CUIWindow::SetFocus
+		, "OnClosed", &UI::CUIWindow::OnClosed
+		, "OnOrphaned", &UI::CUIWindow::OnOrphaned
+	);
+	State.new_usertype<UI::CUIContext>("CUIContext"
 		, "PushRootWindow", &UI::CUIContext::PushRootWindow
 		, "PopRootWindow", &UI::CUIContext::PopRootWindow
 		, "GetRootWindow", &UI::CUIContext::GetRootWindow
-		, "ClearWindowStack", &UI::CUIContext::ClearWindowStack
+		, "RemoveRootWindow", &UI::CUIContext::RemoveRootWindow
+		, "ClearRootWindowStack", &UI::CUIContext::ClearRootWindowStack
 	);
 }
 //---------------------------------------------------------------------

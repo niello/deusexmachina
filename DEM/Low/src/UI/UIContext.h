@@ -26,6 +26,7 @@ private:
 	CEGUI::GUIContext*        pCtx = nullptr;
 
 	void				SetRootWindow(CUIWindow* pWindow);
+	void                DetachRootWindow(PUIWindow&& Window);
 
 	bool				OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool				OnButtonDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
@@ -46,9 +47,10 @@ public:
 	bool				SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Priority);
 	void				UnsubscribeFromInput(Events::CEventDispatcher* pDispatcher = nullptr);
 
-	void				ClearWindowStack();
 	void				PushRootWindow(CUIWindow* pWindow);
 	PUIWindow			PopRootWindow();
+	void                RemoveRootWindow(CUIWindow* pWindow);
+	void				ClearRootWindowStack();
 	CUIWindow*			GetRootWindow() const;
 
 	void				ShowGUI();

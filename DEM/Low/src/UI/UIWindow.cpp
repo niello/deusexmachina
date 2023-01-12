@@ -13,6 +13,15 @@ FACTORY_CLASS_IMPL(UI::CUIWindow, 'UIWN', Core::CObject);
 
 CUIWindow::~CUIWindow()
 {
+	n_assert_dbg(!_pCtx && !_pParent);
+
+	auto ChildWindows = std::move(_ChildWindows);
+	for (auto& ChildWnd : ChildWindows)
+	{
+		if (_pCtx) ChildWnd->OnDetachedFromContext();
+		ChildWnd->OnReleasedByOwner(std::move(ChildWnd));
+	}
+
 	CEGUI::WindowManager::getSingleton().destroyWindow(pWnd);
 }
 //---------------------------------------------------------------------
@@ -104,6 +113,87 @@ bool CUIWindow::SubscribeButtonClick(const char* pPath, std::function<void()> Ca
 	}
 
 	FAIL;
+}
+//---------------------------------------------------------------------
+
+void CUIWindow::AddChild(CUIWindow* pChildWindow)
+{
+	n_assert_dbg(pChildWindow && !pChildWindow->_pParent && !pChildWindow->_pCtx);
+
+	if (!pChildWindow || pChildWindow->_pParent || pChildWindow->_pCtx) return;
+
+	auto It = std::find(_ChildWindows.cbegin(), _ChildWindows.cend(), pChildWindow);
+	if (It != _ChildWindows.cend()) return;
+
+	_ChildWindows.push_back(pChildWindow);
+
+	pWnd->addChild(pChildWindow->GetCEGUIWindow());
+
+	if (_pCtx) pChildWindow->OnAttachedToContext(_pCtx);
+}
+//---------------------------------------------------------------------
+
+void CUIWindow::RemoveChild(CUIWindow* pChildWindow)
+{
+	if (!pChildWindow) return;
+
+	auto It = std::find(_ChildWindows.begin(), _ChildWindows.end(), pChildWindow);
+	if (It == _ChildWindows.cend()) return;
+
+	auto ChildWnd = std::move(*It);
+	pWnd->removeChild(ChildWnd->GetCEGUIWindow());
+
+	_ChildWindows.erase(It);
+
+	if (_pCtx) ChildWnd->OnDetachedFromContext();
+	ChildWnd->OnReleasedByOwner(std::move(ChildWnd));
+}
+//---------------------------------------------------------------------
+
+void CUIWindow::Close()
+{
+	if (_pParent)
+		_pParent->RemoveChild(this);
+	else if (_pCtx)
+		_pCtx->RemoveRootWindow(this);
+}
+//---------------------------------------------------------------------
+
+void CUIWindow::OnAttachedToContext(CUIContext* pCtx)
+{
+	n_assert_dbg(!_pCtx && pCtx);
+
+	_pCtx = pCtx;
+
+	// TODO: signal?
+
+	for (auto& ChildWnd : _ChildWindows)
+		ChildWnd->OnAttachedToContext(pCtx);
+}
+//---------------------------------------------------------------------
+
+void CUIWindow::OnDetachedFromContext()
+{
+	n_assert_dbg(_pCtx);
+
+	for (auto& ChildWnd : _ChildWindows)
+		ChildWnd->OnDetachedFromContext();
+
+	OnClosed();
+
+	_pCtx = nullptr;
+}
+//---------------------------------------------------------------------
+
+void CUIWindow::OnReleasedByOwner(PUIWindow&& Self)
+{
+	n_assert_dbg(!_pCtx);
+
+	_pParent = nullptr;
+
+	// If no one claims the ownership in a signal handler, the window may be destroyed after leaving OnReleasedByOwner()
+	PUIWindow PossiblyLastRef = std::move(Self);
+	OnOrphaned(std::move(PossiblyLastRef));
 }
 //---------------------------------------------------------------------
 
