@@ -1,7 +1,7 @@
 #include "UIWindow.h"
 
 #include <Core/Factory.h>
-#include <Data/String.h>
+#include <UI/UIContext.h>
 #include <CEGUI/WindowManager.h>
 #include <CEGUI/CoordConverter.h>
 #include <CEGUI/GUIContext.h>
@@ -21,6 +21,7 @@ void CUIWindow::Load(const char* pResourceFile)
 {
 	n_assert(!pWnd);
 	pWnd = CEGUI::WindowManager::getSingleton().loadLayoutFromFile(pResourceFile);
+	pWnd->setDestroyedByParent(false); // We control our window and don't want it to be occasionally deleted from outside
 }
 //---------------------------------------------------------------------
 
@@ -33,7 +34,7 @@ void CUIWindow::SetDrawMode(EDrawMode Mode)
 }
 //---------------------------------------------------------------------
 
-vector2 CUIWindow::GetSizeRel()
+vector2 CUIWindow::GetSizeRel() const
 {
 	if (!pWnd) return vector2::zero;
 
@@ -71,21 +72,20 @@ bool CUIWindow::SetWidgetEnabled(const char* pPath, bool Enabled)
 }
 //---------------------------------------------------------------------
 
-bool CUIWindow::SetWidgetText(const char* pPath, const CString& Text)
+bool CUIWindow::SetWidgetText(const char* pPath, std::string_view Text)
 {
 	if (!pPath) FAIL;
 
 	CEGUI::Window* pChild = pWnd->getChild(pPath);
 	if (!pChild) FAIL;
 
-	pChild->setText(Text.CStr());
+	// FIXME: support string views in CEGUI!
+	pChild->setText(std::string(Text));
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-// TODO: SubscribeWidgetClick instead, without type restriction?
-// Or other widgets don't send EventClicked?
 bool CUIWindow::SubscribeButtonClick(const char* pPath, std::function<void()> Callback)
 {
 	if (!pPath) FAIL;

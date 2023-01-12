@@ -34,6 +34,7 @@ CUIContext::CUIContext(float Width, float Height, DEM::Sys::COSWindow* pHostWind
 		const CEGUI::Sizef RectSize(static_cast<float>(WndRect.W), static_cast<float>(WndRect.H));
 		CEGUI::System::getSingleton().notifyDisplaySizeChanged(RectSize);
 
+		// FIXME: work with the frame view instead of the OS window?! View may occupy only a part of a window.
 		DISP_SUBSCRIBE_PEVENT(pHostWindow, OnFocusSet, CUIContext, OnFocusSet);
 		DISP_SUBSCRIBE_PEVENT(pHostWindow, OnToggleFullscreen, CUIContext, OnViewportSizeChanged);
 		DISP_SUBSCRIBE_NEVENT(pHostWindow, OSWindowResized, CUIContext, OnViewportSizeChanged);
@@ -61,10 +62,10 @@ bool CUIContext::SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Pri
 {
 	if (!pDispatcher || !pCtx) FAIL;
 
-	InputSubs.Add(pDispatcher->Subscribe(&Event::AxisMove::RTTI, this, &CUIContext::OnAxisMove, Priority));
-	InputSubs.Add(pDispatcher->Subscribe(&Event::ButtonDown::RTTI, this, &CUIContext::OnButtonDown, Priority));
-	InputSubs.Add(pDispatcher->Subscribe(&Event::ButtonUp::RTTI, this, &CUIContext::OnButtonUp, Priority));
-	InputSubs.Add(pDispatcher->Subscribe(&Event::TextInput::RTTI, this, &CUIContext::OnTextInput, Priority));
+	InputSubs.push_back(pDispatcher->Subscribe(&Event::AxisMove::RTTI, this, &CUIContext::OnAxisMove, Priority));
+	InputSubs.push_back(pDispatcher->Subscribe(&Event::ButtonDown::RTTI, this, &CUIContext::OnButtonDown, Priority));
+	InputSubs.push_back(pDispatcher->Subscribe(&Event::ButtonUp::RTTI, this, &CUIContext::OnButtonUp, Priority));
+	InputSubs.push_back(pDispatcher->Subscribe(&Event::TextInput::RTTI, this, &CUIContext::OnTextInput, Priority));
 
 	OK;
 }
@@ -72,20 +73,10 @@ bool CUIContext::SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Pri
 
 void CUIContext::UnsubscribeFromInput(Events::CEventDispatcher* pDispatcher)
 {
-	if (!pDispatcher) return;
-
-	for (UPTR i = 0; i < InputSubs.GetCount(); /**/)
-	{
-		if (InputSubs[i]->GetDispatcher() == pDispatcher)
-			InputSubs.RemoveAt(i);
-		else ++i;
-	}
-}
-//---------------------------------------------------------------------
-
-void CUIContext::UnsubscribeFromInput()
-{
-	InputSubs.Clear();
+	if (pDispatcher)
+		InputSubs.erase(std::remove_if(InputSubs.begin(), InputSubs.end(), [pDispatcher](const Events::PSub& Sub) { return Sub->GetDispatcher() == pDispatcher; }), InputSubs.end());
+	else
+		InputSubs.clear();
 }
 //---------------------------------------------------------------------
 
@@ -93,10 +84,7 @@ void CUIContext::SetRootWindow(CUIWindow* pWindow)
 {
 	if (!pCtx) return;
 
-	if (pWindow && pWindow->GetWnd())
-		pCtx->setRootWindow(pWindow->GetWnd());
-	else
-		pCtx->setRootWindow(nullptr);
+	pCtx->setRootWindow(pWindow ? pWindow->GetWnd() : nullptr);
 }
 //---------------------------------------------------------------------
 
@@ -122,7 +110,7 @@ PUIWindow CUIContext::PopRootWindow()
 {
 	if (RootWindows.empty()) return nullptr;
 
-	PUIWindow CurrWnd = GetRootWindow();
+	PUIWindow CurrWnd = std::move(RootWindows.back());
 	RootWindows.pop_back();
 	SetRootWindow(GetRootWindow());
 

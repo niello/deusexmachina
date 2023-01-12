@@ -93,6 +93,8 @@ CUIServer::CUIServer(Render::CGPUDriver& GPU, const Data::CParams* pSettings)
 
 CUIServer::~CUIServer()
 {
+	WindowPool.clear();
+
 	CEGUI::System::destroy();
 	n_delete(XMLParser);
 	n_delete(ResourceProvider);
@@ -114,6 +116,30 @@ void CUIServer::Trigger(float FrameTime)
 PUIContext CUIServer::CreateContext(float Width, float Height, DEM::Sys::COSWindow* pHostWindow)
 {
 	return n_new(CUIContext(Width, Height, pHostWindow));
+}
+//---------------------------------------------------------------------
+
+PUIWindow CUIServer::FindReusableWindow(const Core::CRTTI* Type)
+{
+	auto It = WindowPool.find(Type);
+	if (It == WindowPool.cend() || It->second.empty()) return {};
+
+	auto Result = std::move(It->second.back());
+	It->second.pop_back();
+	return std::move(Result);
+}
+//---------------------------------------------------------------------
+
+void CUIServer::ReleaseWindow(PUIWindow Wnd)
+{
+	if (!Wnd) return;
+	WindowPool[Wnd->GetRTTI()].push_back(std::move(Wnd));
+}
+//---------------------------------------------------------------------
+
+void CUIServer::DestroyAllReusableWindows()
+{
+	WindowPool.clear();
 }
 //---------------------------------------------------------------------
 

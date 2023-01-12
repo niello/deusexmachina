@@ -2,6 +2,7 @@
 #include "SolLow.h"
 #include <Input/InputTranslator.h>
 #include <UI/UIWindow.h>
+#include <UI/UIContext.h>
 #include <Scripting/LuaEventHandler.h>
 #include <Events/Signal.h>
 #include <Math/Vector3.h>
@@ -171,6 +172,16 @@ void RegisterBasicTypes(sol::state& State)
 			return Arg;
 		}
 	});
+
+	//_Session->GetScriptState().new_usertype<UI::CUIWindow>("UI::CUIWindow"
+	// signals!!! add child!!!
+	//);
+	State.new_usertype<UI::CUIContext>("UI::CUIContext"
+		, "PushRootWindow", &UI::CUIContext::PushRootWindow
+		, "PopRootWindow", &UI::CUIContext::PopRootWindow
+		, "GetRootWindow", &UI::CUIContext::GetRootWindow
+		, "ClearWindowStack", &UI::CUIContext::ClearWindowStack
+	);
 }
 //---------------------------------------------------------------------
 

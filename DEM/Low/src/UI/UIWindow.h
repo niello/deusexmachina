@@ -14,6 +14,7 @@ namespace Events
 
 namespace UI
 {
+using PUIWindow = Ptr<class CUIWindow>;
 
 class CUIWindow: public Core::CObject
 {
@@ -46,11 +47,11 @@ public:
 	void			SetPosition(const vector2& Pos) { n_assert(pWnd); pWnd->setPosition(CEGUI::UVector2(CEGUI::UDim(0.f, Pos.x), CEGUI::UDim(0.f, Pos.y))); }
 	void			SetPositionRel(const vector2& Pos) { n_assert(pWnd); pWnd->setPosition(CEGUI::UVector2(CEGUI::UDim(Pos.x, 0.f), CEGUI::UDim(Pos.y, 0.f))); }
 	void			SetPositionRel(float x, float y) { n_assert(pWnd); pWnd->setPosition(CEGUI::UVector2(CEGUI::UDim(x, 0.f), CEGUI::UDim(y, 0.f))); }
-	vector2			GetSizeRel();
+	vector2			GetSizeRel() const;
 	void			SetFocus() { pWnd->activate(); }
 
 	bool			SetWidgetEnabled(const char* pPath, bool Enabled);
-	bool			SetWidgetText(const char* pPath, const CString& Text);
+	bool			SetWidgetText(const char* pPath, std::string_view Text);
 	bool			SubscribeButtonClick(const char* pPath, std::function<void()> Callback);
 
 	virtual bool	OnAxisMove(Events::CEventDispatcher* /*pDispatcher*/, const Event::AxisMove& /*Event*/) { FAIL; }
@@ -62,7 +63,5 @@ public:
 
 	inline bool		operator ==(const CUIWindow& Other) const { return this == &Other || (pWnd && pWnd == Other.pWnd); }
 };
-
-typedef Ptr<CUIWindow> PUIWindow;
 
 }
