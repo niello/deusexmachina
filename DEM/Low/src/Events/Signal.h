@@ -286,21 +286,14 @@ public:
 
 	void operator()(TArgs... Args) const
 	{
-		const CNode* pCurr = Slots.get();
-		while (pCurr)
-		{
-			if (pCurr->Connected)
-			{
-				auto Slot = std::move(pCurr->Slot);
-				Slot(Args...);
-				if (pCurr->Connected)
-					pCurr->Slot = std::move(Slot);
-			}
-			pCurr = pCurr->Next.get();
-		}
+		// This may look awful at the beginning, but this is just how our signal should work.
+		// Constant signal must be triggerable. We need to manipulate slots and nodes
+		// during the invocation. Another way would be to declare all fields as mutable.
+		// The main use case is triggering a signal stored by value in a constant class instance.
+		// Note that subscribing to a constant signal is not allowed.
+		const_cast<CSignal<TRet(TArgs...)>*>(this)->operator()(Args...);
 	}
 
-	// operator() const + CollectGarbage() merged into a single pass for speed-up
 	void operator()(TArgs... Args)
 	{
 		CNode* pCurr = Slots.get();
