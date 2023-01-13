@@ -81,6 +81,8 @@ void __cdecl Error(const char* pMsg, ...)
 
 void __cdecl Log(const char* pMsg, ...)
 {
+	if (!pMsg || !*pMsg) return;
+
 	CString Buffer;
 	va_list Args;
 	va_start(Args, pMsg);

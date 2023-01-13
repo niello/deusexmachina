@@ -15,8 +15,10 @@ namespace DEM::Events
 struct CConnectionRecordBase
 {
 	// TODO: strong and weak counters for intrusive?
-	uint16_t ConnectionCount = 0;
-	bool     Connected = false; //???can use one byte from strong counter if 32 bits will be used?
+	uint16_t ConnectionCount = 0; //???TODO: could check existense of weak_ptrs instead?
+
+	virtual bool IsConnected() const = 0;
+	virtual void Disconnect() = 0;
 };
 
 class CConnection
@@ -55,7 +57,7 @@ public:
 		//???only CScopedConnection must auto-disconnect?
 		const auto SharedRecord = _Record.lock();
 		if (SharedRecord && --SharedRecord->ConnectionCount == 0)
-			SharedRecord->Connected = false;
+			SharedRecord->Disconnect();
 	}
 
 	CConnection& operator =(const CConnection& Other) noexcept
@@ -69,7 +71,7 @@ public:
 		if (NewSharedRecord) ++NewSharedRecord->ConnectionCount;
 
 		if (OldSharedRecord && --OldSharedRecord->ConnectionCount == 0)
-			OldSharedRecord->Connected = false;
+			OldSharedRecord->Disconnect();
 
 		_Record = Other._Record;
 
@@ -84,7 +86,7 @@ public:
 		if (OldSharedRecord != Other._Record.lock())
 		{
 			if (OldSharedRecord && --OldSharedRecord->ConnectionCount == 0)
-				OldSharedRecord->Connected = false;
+				OldSharedRecord->Disconnect();
 
 			_Record = std::move(Other._Record);
 		}
@@ -97,15 +99,15 @@ public:
 	bool IsConnected() const
 	{
 		const auto SharedRecord = _Record.lock();
-		return SharedRecord && SharedRecord->Connected;
+		return SharedRecord && SharedRecord->IsConnected();
 	}
 
 	void Disconnect()
 	{
 		if (auto SharedRecord = _Record.lock())
 		{
-			SharedRecord->Connected = false;
 			--SharedRecord->ConnectionCount;
+			SharedRecord->Disconnect();
 		}
 		_Record.reset();
 	}
@@ -120,13 +122,16 @@ class CSignal<TRet(TArgs...)> final
 protected:
 
 	struct CNode;
-	using TSlot = std::function<TRet(TArgs...)>;
 	using PNode = std::shared_ptr<CNode>;
 
-	struct CNode : public CConnectionRecordBase
+	struct CNode final : public CConnectionRecordBase
 	{
-		TSlot Slot;
+		std::function<TRet(TArgs...)> Slot;
 		PNode Next;
+		bool Connected = false; // Needed only due to VERY poor performance of "Slot != nullptr" checks, even in Release
+
+		virtual bool IsConnected() const override { return Connected; }
+		virtual void Disconnect() override { Slot = nullptr; Connected = false; }
 	};
 
 	PNode Slots;
@@ -193,8 +198,6 @@ protected:
 		else
 			Node = std::make_shared<CNode>();
 
-		Node->Connected = true;
-
 		Node->Next = std::move(Slots);
 		Slots = std::move(Node);
 	}
@@ -206,6 +209,7 @@ protected:
 		Node = std::move(FreeNode->Next);
 
 		FreeNode->Slot = nullptr;
+		FreeNode->Connected = false;
 
 		// Attach extracted node to the free list as a new head
 		PNode& Dest = FreeNode->ConnectionCount ? Referenced : Pool;
@@ -234,6 +238,7 @@ public:
 	{
 		PrepareNode();
 		Slots->Slot = std::move(f);
+		Slots->Connected = true;
 		return CConnection(Slots);
 	}
 
@@ -242,15 +247,12 @@ public:
 	{
 		PrepareNode();
 		Slots->Slot = std::move(f);
+		Slots->Connected = true;
 	}
 
 	void UnsubscribeAll()
 	{
-		while (Slots)
-		{
-			Slots->Connected = false;
-			CollectNode(Slots);
-		}
+		while (Slots) CollectNode(Slots);
 	}
 
 	void ReleaseMemory()
@@ -284,39 +286,43 @@ public:
 
 	void operator()(TArgs... Args) const
 	{
-		//???hold strong ref? what is necessary to protect invoked list and node from destructive changes?
-		const CNode* pNode = Slots.get();
-		while (pNode)
+		const CNode* pCurr = Slots.get();
+		while (pCurr)
 		{
-			if (pNode->Connected)
-				pNode->Slot(Args...);
-			pNode = pNode->Next.get();
+			if (pCurr->Connected)
+			{
+				auto Slot = std::move(pCurr->Slot);
+				Slot(Args...);
+				if (pCurr->Connected)
+					pCurr->Slot = std::move(Slot);
+			}
+			pCurr = pCurr->Next.get();
 		}
 	}
 
 	// operator() const + CollectGarbage() merged into a single pass for speed-up
 	void operator()(TArgs... Args)
 	{
-		//???hold strong ref? what is necessary to protect invoked list and node from destructive changes?
 		CNode* pCurr = Slots.get();
 		CNode* pPrev = nullptr;
 		while (pCurr)
 		{
 			if (pCurr->Connected)
-				pCurr->Slot(Args...);
+			{
+				auto Slot = std::move(pCurr->Slot);
+				Slot(Args...);
+				if (pCurr->Connected)
+				{
+					pCurr->Slot = std::move(Slot);
+					pPrev = pCurr;
+					pCurr = pCurr->Next.get();
+					continue;
+				}
+			}
 
-			// Check again because the connection could be broken in the handler
-			if (pCurr->Connected)
-			{
-				pPrev = pCurr;
-				pCurr = pCurr->Next.get();
-			}
-			else
-			{
-				auto& SharedCurr = pPrev ? pPrev->Next : Slots;
-				CollectNode(SharedCurr);
-				pCurr = SharedCurr.get();
-			}
+			auto& SharedCurr = pPrev ? pPrev->Next : Slots;
+			CollectNode(SharedCurr);
+			pCurr = SharedCurr.get();
 		}
 	}
 
