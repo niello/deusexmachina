@@ -54,6 +54,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/Dictionary.h
 	DEM/Low/src/Data/DynamicEnum.h
 	DEM/Low/src/Data/FixedArray.h
+	DEM/Low/src/Data/FixedOrderMap.h
 	DEM/Low/src/Data/Flags.h
 	DEM/Low/src/Data/FourCC.h
 	DEM/Low/src/Data/FunctionTraits.h

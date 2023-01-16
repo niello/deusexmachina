@@ -1,5 +1,6 @@
 #pragma once
 #include <Data/Metadata.h>
+#include <Data/FixedOrderMap.h>
 #include <StdDEM.h>
 
 // Generic equippable settings. They override implicit equipment rules like 'all weapons can be equipped to hands'.
@@ -9,7 +10,8 @@ namespace DEM::RPG
 
 struct CEquippableComponent
 {
-	std::map<CStrID, U32> Slots;        // A list of slot types blocked by this entity when equipped, with count for each type
+	CFixedOrderMap<CStrID, U32> Slots;        // A list of slot types blocked by this entity when equipped, with count for each type
+	//std::map<CStrID, U32> Slots;        // A list of slot types blocked by this entity when equipped, with count for each type
 	U32                   MaxStack = 1; // Maximum count of these items in the equipment slot
 	//???bool TryScript?
 };
