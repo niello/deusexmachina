@@ -52,6 +52,15 @@ inline Game::HEntity GetEquippedStack(const CEquipmentComponent& Component, CStr
 }
 //---------------------------------------------------------------------
 
+inline bool IsStackEquipped(const CEquipmentComponent& Component, Game::HEntity StackID)
+{
+	for (auto [SlotID, StackInSlotID] : Component.Equipment)
+		if (StackInSlotID == StackID)
+			return true;
+	return false;
+}
+//---------------------------------------------------------------------
+
 Game::HEntity CreateItemStack(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID = CStrID::Empty);
 Game::HEntity CloneItemStack(Game::CGameWorld& World, Game::HEntity StackID, U32 Count);
 Game::HEntity SplitItemStack(Game::CGameWorld& World, Game::HEntity StackID, U32 Count);
@@ -70,6 +79,7 @@ void ClearContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size
 U32 RemoveItemsFromContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, U32 Count);
 U32 RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity ItemProtoID, U32 Count, bool AllowModified);
 void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& Container, CContainerStats& OutStats);
+bool IsContainerEmpty(const Game::CGameWorld& World, Game::HEntity ContainerID);
 
 U32 AddItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity ItemProtoID, U32 Count, bool Merge = true);
 U32 AddItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count, bool Merge = true);
@@ -91,7 +101,8 @@ U32 RemoveItemsFromEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID
 U32 RemoveItemsFromEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count, bool AllowModified);
 U32 CanEquipItems(const Game::CGameWorld& World, Game::HEntity ReceiverID, Game::HEntity StackID, CStrID SlotID);
 void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, CStrID SlotID, bool ForceHide = false);
-Game::HEntity GetEquippedStack(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID);
+//???Game::HEntity GetEquippedStack(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID);
+//???size_t FindEquipmentSlotForItem(item) - to check if we can equip something before we do that! E.g. for UI prompt "Equip immediately?".
 
 U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius);
 std::pair<Game::HEntity, U32> MoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count = std::numeric_limits<U32>().max());
@@ -103,8 +114,6 @@ U32 RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 
 void CleanupItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
 bool AddItemVisualsToLocation(Game::CGameWorld& World, Game::HEntity StackID, const Math::CTransformSRT& Tfm);
 void RemoveItemVisualsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
-
-bool IsContainerEmpty(const Game::CGameWorld& World, Game::HEntity ContainerID);
 
 // TODO:
 // void QueryItemsInShape(Game::CGameWorld& World /*collision shape - sphere, capsule etc*/ /*, T Filter*/); //!!!including piles!

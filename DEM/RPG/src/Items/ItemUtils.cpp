@@ -649,6 +649,21 @@ void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& 
 }
 //---------------------------------------------------------------------
 
+bool IsContainerEmpty(const Game::CGameWorld& World, Game::HEntity ContainerID)
+{
+	const CItemContainerComponent* pContainer = World.FindComponent<const CItemContainerComponent>(ContainerID);
+	if (!pContainer) return true;
+
+	for (auto StackID : pContainer->Items)
+	{
+		auto pItemStack = World.FindComponent<const CItemStackComponent>(StackID);
+		if (pItemStack && pItemStack->Prototype && pItemStack->Count > 0) return false;
+	}
+
+	return true;
+}
+//---------------------------------------------------------------------
+
 // Returns a number of items actually added
 U32 AddItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity ItemProtoID, U32 Count, bool Merge)
 {
@@ -1077,8 +1092,6 @@ U32 AddItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::H
 }
 //---------------------------------------------------------------------
 
-//???size_t FindEquipmentSlotForItem(item) - to check if we can equip something before we do that! E.g. for UI prompt "Equip immediately?".
-
 // Returns a source stack ID if movement happened and a number of moved items (zero if the whole stack is moved)
 std::pair<Game::HEntity, U32> MoveItemsFromEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID, U32 Count)
 {
@@ -1132,11 +1145,20 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
 	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
 
+	// Check if the stack is moved within the same storage
+	const bool IsAlreadyEquipped = IsStackEquipped(*pEquipment, StackID);
+
 	// Try to merge items to the existing stack
 	if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
 	{
-		if (pDestStack->Count < SlotCapacity && CanMergeStacks(*pSrcStack, pDestStack))
-			return MoveItemsToStack(World, DestStackID, StackID, std::min(Count, SlotCapacity - pDestStack->Count));
+		if (Merge && pDestStack->Count < SlotCapacity && CanMergeStacks(*pSrcStack, pDestStack))
+		{
+			const auto [MovedCount, MovedCompletely] = MoveItemsToStack(World, DestStackID, StackID, std::min(Count, SlotCapacity - pDestStack->Count));
+			if (MovedCompletely && IsAlreadyEquipped)
+				if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
+					UnblockEquipmentSlots(*pEquipmentWritable, StackID);
+			return { MovedCount, MovedCompletely };
+		}
 
 		// Fail if the target slot is not empty and replacement is not allowed
 		if (!pReplaced) return { 0, false };
@@ -1145,16 +1167,28 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 	// Put our stack to the slot, replacing prevoius contents if needed
 	if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 	{
-		auto& DestSlot = pEquipmentWritable->Equipment[SlotID];
-		const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, DestSlot, StackID, std::min(Count, SlotCapacity));
+		const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, pEquipmentWritable->Equipment[SlotID], StackID, std::min(Count, SlotCapacity));
 		if (MovedCount)
 		{
+			// Replaced item is no longer equipped
+			//!!!FIXME: need to pass stack ID to UpdateCharacterModelEquipment and process all affected slots!
+			//E.g. we can replace longsleeve chainmail with high gauntlets, intersecting at Arms slot, need to update Torso and Hands too!
 			if (pReplaced)
 			{
 				*pReplaced = DestStackID;
 				UnblockEquipmentSlots(*pEquipmentWritable, DestStackID);
 			}
-			BlockEquipmentSlots(World, *pEquipmentWritable, DestSlot);
+
+			// Clear all additional slots and redo blocking from scratch
+			const auto FinalStackID = pEquipmentWritable->Equipment[SlotID];
+			if (MovedCompletely && IsAlreadyEquipped)
+			{
+				n_assert_dbg(FinalStackID == StackID);
+				UnblockEquipmentSlots(*pEquipmentWritable, StackID);
+				pEquipmentWritable->Equipment[SlotID] = StackID;
+			}
+
+			BlockEquipmentSlots(World, *pEquipmentWritable, FinalStackID);
 			UpdateCharacterModelEquipment(World, EntityID, SlotID);
 			return { MovedCount, MovedCompletely };
 		}
@@ -1171,6 +1205,9 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 
 	auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID);
 	if (!pEquipment) return { 0, false };
+
+	// Skip if the stack is already contained in this storage
+	if (IsStackEquipped(*pEquipment, StackID)) return { Count, false };
 
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
 	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
@@ -1477,11 +1514,18 @@ std::pair<U32, bool> MoveItemsToLocationSlot(Game::CGameWorld& World, std::vecto
 
 	if (Count > pSrcStack->Count) Count = pSrcStack->Count;
 
+	// Check if the stack is moved within the same storage
+	const auto FoundIndex = static_cast<size_t>(std::distance(GroundItems.cbegin(), std::find(GroundItems.cbegin(), GroundItems.cend(), StackID)));
+
 	// Consider destination occupied only if the destination stack is valid
 	if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
 	{
 		if (Merge && CanMergeStacks(*pSrcStack, pDestStack))
-			return MoveItemsToStack(World, DestStackID, StackID, Count);
+		{
+			const auto [MovedCount, MovedCompletely] = MoveItemsToStack(World, DestStackID, StackID, Count);
+			if (MovedCompletely) ClearItemCollectionSlot(GroundItems, FoundIndex); // Don't remove world visuals
+			return { MovedCount, MovedCompletely };
+		}
 
 		if (!pReplaced) return { 0, false };
 	}
@@ -1492,8 +1536,10 @@ std::pair<U32, bool> MoveItemsToLocationSlot(Game::CGameWorld& World, std::vecto
 	const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, GroundItems[SlotIndex], StackID, Count);
 	if (MovedCount)
 	{
+		// TODO: what to do with replaced stack visuals? How to handle moving of the item that already was on the ground? Needs testing!
 		if (!AddItemVisualsToLocation(World, GroundItems[SlotIndex], Tfm)) return { 0, false };
 		if (pReplaced) *pReplaced = DestStackID;
+		if (MovedCompletely) ClearItemCollectionSlot(GroundItems, FoundIndex); // Don't remove world visuals
 		return { MovedCount, MovedCompletely };
 	}
 
@@ -1561,8 +1607,7 @@ Game::HEntity MoveWholeStackToLocation(Game::CGameWorld& World, Game::HEntity St
 				return pGroundStack && CanMergeStacks(*pSrcStack, pGroundStack);
 			});
 
-			if (!MoveItemsToStack(World, DestStackID, StackID, pSrcStack->Count).first) return {};
-			return DestStackID;
+			return MoveItemsToStack(World, DestStackID, StackID, pSrcStack->Count).first ? DestStackID : Game::HEntity{};
 		}
 	}
 
@@ -1574,12 +1619,8 @@ Game::HEntity MoveWholeStackToLocation(Game::CGameWorld& World, Game::HEntity St
 void ClearLocationSlot(Game::CGameWorld& World, std::vector<Game::HEntity>& GroundItems, size_t SlotIndex)
 {
 	if (SlotIndex >= GroundItems.size()) return;
-
 	RemoveItemVisualsFromLocation(World, GroundItems[SlotIndex]);
-
-	GroundItems[SlotIndex] = {};
-	if (SlotIndex == GroundItems.size() - 1)
-		ShrinkItemCollection(GroundItems);
+	ClearItemCollectionSlot(GroundItems, SlotIndex);
 }
 //---------------------------------------------------------------------
 
@@ -1625,21 +1666,6 @@ void RemoveItemVisualsFromLocation(Game::CGameWorld& World, Game::HEntity StackI
 {
 	World.RemoveComponent<Game::CSceneComponent>(StackID);
 	World.RemoveComponent<Game::CRigidBodyComponent>(StackID);
-}
-//---------------------------------------------------------------------
-
-bool IsContainerEmpty(const Game::CGameWorld& World, Game::HEntity ContainerID)
-{
-	const CItemContainerComponent* pContainer = World.FindComponent<const CItemContainerComponent>(ContainerID);
-	if (!pContainer) return true;
-
-	for (auto StackID : pContainer->Items)
-	{
-		auto pItemStack = World.FindComponent<const CItemStackComponent>(StackID);
-		if (pItemStack && pItemStack->Prototype && pItemStack->Count > 0) return false;
-	}
-
-	return true;
 }
 //---------------------------------------------------------------------
 
