@@ -11,8 +11,7 @@ namespace DEM::RPG
 struct CEquippableComponent
 {
 	CFixedOrderMap<CStrID, U32> Slots;        // A list of slot types blocked by this entity when equipped, with count for each type
-	//std::map<CStrID, U32> Slots;        // A list of slot types blocked by this entity when equipped, with count for each type
-	U32                   MaxStack = 1; // Maximum count of these items in the equipment slot
+	U32                         MaxStack = 1; // Maximum count of these items in the equipment slot
 	//???bool TryScript?
 };
 
