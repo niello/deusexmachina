@@ -4,6 +4,9 @@
 #include <Game/ECS/GameWorld.h>
 
 // Utilities and algorithms for item manipulation
+// NB: storage manipulation functions maintain data integrity inside the single storage, but not across them.
+// I.e. if the item is moved inside one container or equipment, it will never be lost or duplicated. If the item
+// is moved from one container (or other storage) to another then the calling code is obliged to maintain integrity.
 
 namespace Math
 {
@@ -61,7 +64,7 @@ U32 AddItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, 
 U32 AddItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity ItemProtoID, U32 Count, bool Merge = true);
 std::pair<Game::HEntity, U32> MoveItemsFromContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, U32 Count);
 std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, Game::HEntity StackID, U32 Count, bool Merge = true, Game::HEntity* pReplaced = nullptr);
-std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity StackID, U32 Count = std::numeric_limits<U32>().max(), bool Merge = true/*, U32 MinCount = 1*/);
+std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity StackID, U32 Count = std::numeric_limits<U32>().max(), bool Merge = true);
 Game::HEntity MoveWholeStackToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity StackID, bool Merge = true);
 void ClearContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex);
 U32 RemoveItemsFromContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, U32 Count);
