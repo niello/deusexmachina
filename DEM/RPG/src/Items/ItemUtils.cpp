@@ -484,11 +484,13 @@ std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEn
 	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
 	if (!pItem) return { 0, false };
 
-	Count = std::min({ Count, pSrcStack->Count, GetContainerCapacityInItems(World, *pContainer, pItem, 1, StackID) });
-	if (!Count) return { 0, false };
-
 	// Check if the stack is moved within the same storage
 	const auto FoundIndex = static_cast<size_t>(std::distance(Items.cbegin(), std::find(Items.cbegin(), Items.cend(), StackID)));
+	const auto IsInternalMove = (FoundIndex < Items.size());
+
+	const auto Capacity = IsInternalMove ? pSrcStack->Count : GetContainerCapacityInItems(World, *pContainer, pItem, 1, StackID);
+	Count = std::min({ Count, pSrcStack->Count, Capacity });
+	if (!Count) return { 0, false };
 
 	// Consider destination occupied only if the destination stack is valid
 	if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
@@ -496,7 +498,7 @@ std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEn
 		if (Merge && CanMergeStacks(*pSrcStack, pDestStack))
 		{
 			const auto [MovedCount, MovedCompletely] = MoveItemsToStack(World, DestStackID, StackID, Count);
-			if (MovedCompletely) ClearContainerSlot(World, ContainerID, FoundIndex);
+			if (MovedCompletely && IsInternalMove) ClearContainerSlot(World, ContainerID, FoundIndex);
 			return { MovedCount, MovedCompletely };
 		}
 
@@ -514,7 +516,7 @@ std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEn
 		if (MovedCount)
 		{
 			if (pReplaced) *pReplaced = DestStackID;
-			if (MovedCompletely) ClearItemCollectionSlot(WritableItems, FoundIndex);
+			if (MovedCompletely && IsInternalMove) ClearItemCollectionSlot(WritableItems, FoundIndex);
 			return { MovedCount, MovedCompletely };
 		}
 	}
@@ -838,13 +840,14 @@ std::pair<U32, bool> MoveItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity
 
 	// Check if the stack is moved within the same storage
 	const auto FoundIndex = static_cast<size_t>(std::distance(pEquipment->QuickSlots.cbegin(), std::find(pEquipment->QuickSlots.cbegin(), pEquipment->QuickSlots.cend(), StackID)));
+	const auto IsInternalMove = (FoundIndex < pEquipment->QuickSlots.size());
 
 	if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
 	{
 		if (Merge && pDestStack->Count < SlotCapacity && CanMergeStacks(*pSrcStack, pDestStack))
 		{
 			const auto [MovedCount, MovedCompletely] = MoveItemsToStack(World, DestStackID, StackID, std::min(Count, SlotCapacity - pDestStack->Count));
-			if (MovedCompletely && FoundIndex < pEquipment->QuickSlots.size())
+			if (MovedCompletely && IsInternalMove)
 				if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 					pEquipmentWritable->QuickSlots[FoundIndex] = {};
 			return { MovedCount, MovedCompletely };
@@ -859,7 +862,7 @@ std::pair<U32, bool> MoveItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity
 		if (MovedCount)
 		{
 			if (pReplaced) *pReplaced = DestStackID;
-			if (MovedCompletely && FoundIndex < pEquipment->QuickSlots.size())
+			if (MovedCompletely && IsInternalMove)
 				pEquipmentWritable->QuickSlots[FoundIndex] = {};
 			return { MovedCount, MovedCompletely };
 		}
@@ -1554,6 +1557,7 @@ std::pair<U32, bool> MoveItemsToLocationSlot(Game::CGameWorld& World, std::vecto
 
 	// Check if the stack is moved within the same storage
 	const auto FoundIndex = static_cast<size_t>(std::distance(GroundItems.cbegin(), std::find(GroundItems.cbegin(), GroundItems.cend(), StackID)));
+	const auto IsInternalMove = (FoundIndex < GroundItems.size());
 
 	// Consider destination occupied only if the destination stack is valid
 	if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
@@ -1561,7 +1565,7 @@ std::pair<U32, bool> MoveItemsToLocationSlot(Game::CGameWorld& World, std::vecto
 		if (Merge && CanMergeStacks(*pSrcStack, pDestStack))
 		{
 			const auto [MovedCount, MovedCompletely] = MoveItemsToStack(World, DestStackID, StackID, Count);
-			if (MovedCompletely) ClearItemCollectionSlot(GroundItems, FoundIndex); // Don't remove world visuals
+			if (MovedCompletely && IsInternalMove) ClearItemCollectionSlot(GroundItems, FoundIndex); // Don't remove world visuals
 			return { MovedCount, MovedCompletely };
 		}
 
@@ -1577,7 +1581,7 @@ std::pair<U32, bool> MoveItemsToLocationSlot(Game::CGameWorld& World, std::vecto
 		// TODO: what to do with replaced stack visuals? How to handle moving of the item that already was on the ground? Needs testing!
 		if (!AddItemVisualsToLocation(World, GroundItems[SlotIndex], Tfm)) return { 0, false };
 		if (pReplaced) *pReplaced = DestStackID;
-		if (MovedCompletely) ClearItemCollectionSlot(GroundItems, FoundIndex); // Don't remove world visuals
+		if (MovedCompletely && IsInternalMove) ClearItemCollectionSlot(GroundItems, FoundIndex); // Don't remove world visuals
 		return { MovedCount, MovedCompletely };
 	}
 
