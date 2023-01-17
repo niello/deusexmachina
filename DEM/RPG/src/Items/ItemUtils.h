@@ -14,12 +14,6 @@ namespace Math
 	using CTransform = CTransformSRT;
 }
 
-//!!!FIXME: move all enums etc to proper places!
-namespace DEM::Sh2
-{
-	enum EEquipmentSlot;
-}
-
 namespace DEM::RPG
 {
 struct CItemContainerComponent;

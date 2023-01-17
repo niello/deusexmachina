@@ -123,6 +123,7 @@ public:
 
 	template<class T> void        RegisterComponent(CStrID Name, UPTR InitialCapacity = 0);
 	template<class T> T*          AddComponent(HEntity EntityID);
+	template<class T> T*          FindOrAddComponent(HEntity EntityID);
 	template<class T> bool        RemoveComponent(HEntity EntityID);
 	template<class T> void        RemoveAllComponents();
 	template<class T> size_t      GetComponentCount() const;
@@ -199,6 +200,14 @@ T* CGameWorld::AddComponent(HEntity EntityID)
 	if (!EntityID || !_Entities.GetValue(EntityID)) return nullptr;
 	auto pStorage = FindComponentStorage<T>();
 	return pStorage ? pStorage->Add(EntityID) : nullptr;
+}
+//---------------------------------------------------------------------
+
+template<class T>
+DEM_FORCE_INLINE T* CGameWorld::FindOrAddComponent(HEntity EntityID)
+{
+	auto pComponent = FindComponent<T>(EntityID);
+	return pComponent ? pComponent : AddComponent<T>(EntityID);
 }
 //---------------------------------------------------------------------
 

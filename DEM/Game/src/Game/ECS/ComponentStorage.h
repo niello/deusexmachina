@@ -920,6 +920,8 @@ public:
 
 	virtual void ClearAll() override
 	{
+		if (_Data.empty()) return;
+
 		for (auto& IndexRecord : _IndexByEntity)
 		{
 			if constexpr (ExternalDeinit) ClearComponent(IndexRecord);

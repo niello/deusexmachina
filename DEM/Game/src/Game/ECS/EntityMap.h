@@ -222,6 +222,8 @@ public:
 
 	void clear()
 	{
+		if (!_Size) return;
+
 		for (CRecord*& pHead : _Records)
 		{
 			CRecord* pRecord = pHead;
@@ -233,6 +235,7 @@ public:
 			}
 			pHead = nullptr;
 		}
+
 		_Size = 0;
 	}
 

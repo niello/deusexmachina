@@ -23,11 +23,13 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Dlg/PropTalking.h
 	DEM/RPG/src/Factions/Faction.h
 	DEM/RPG/src/Factions/FactionManager.h
+	DEM/RPG/src/Items/EquipmentChangesComponent.h
 	DEM/RPG/src/Items/EquipmentComponent.h
 	DEM/RPG/src/Items/EquipmentScheme.h
 	DEM/RPG/src/Items/EquippableComponent.h
 	DEM/RPG/src/Items/ItemComponent.h
 	DEM/RPG/src/Items/ItemContainerComponent.h
+	DEM/RPG/src/Items/ItemCountMonitorComponent.h
 	DEM/RPG/src/Items/ItemManager.h
 	DEM/RPG/src/Items/ItemStackComponent.h
 	DEM/RPG/src/Items/ItemUtils.h
