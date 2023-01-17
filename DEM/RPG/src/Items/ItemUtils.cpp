@@ -226,7 +226,7 @@ void RecordEquipmentChange(Game::CGameWorld& World, Game::HEntity CharacterID, G
 {
 	if (!CharacterID || !StackID || PrevSlot == NewSlot) return;
 
-	//???FIXME: record the main slot or any of blocked slots? Or any is ok and
+	//???FIXME: record the main slot or any of blocked slots? Maybe any slot is ok and
 	//everything must be handled in listeners, like UpdateCharacterModelEquipment etc?
 
 	if (auto pChanges = World.FindOrAddComponent<CEquipmentChangesComponent>(CharacterID))
@@ -234,8 +234,10 @@ void RecordEquipmentChange(Game::CGameWorld& World, Game::HEntity CharacterID, G
 		auto It = pChanges->Records.find(StackID);
 		if (It == pChanges->Records.cend())
 			pChanges->Records.emplace(StackID, CEquipmentChangesComponent::CRecord{ PrevSlot, NewSlot });
-		else
+		else if (It->second.PrevSlot != NewSlot)
 			It->second.NewSlot = NewSlot;
+		else
+			pChanges->Records.erase(It);
 	}
 }
 //---------------------------------------------------------------------
