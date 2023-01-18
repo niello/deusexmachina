@@ -35,6 +35,7 @@ public:
 
 	void						SetName(CStrID name) { Name = name; }
 	void						SetValue(const CData& value) { Value = value; }
+	void						SetValue(CData&& value) { Value = std::move(value); }
 	template<class T> void		SetValue(const T& value) { Value.SetTypeValue(value); } //!!!SetValue!
 	template<class T> void		Set(CStrID name, const T& value) { Name = name; Value.SetTypeValue(value); } //!!!SetValue!
 	void						Clone(const CParam& Src) { Name = Src.Name; Value.SetTypeValue(Src.Value); } //!!!SetValue!

@@ -50,12 +50,12 @@ struct ParamsFormat
 	template<typename TKey, typename TValue>
 	static inline void SerializeKeyValue(Data::CParams& Output, TKey Key, const TValue& Value)
 	{
+		static_assert(is_string_compatible_v<TKey>, "CData serialization supports only string map keys");
+
 		Data::CData ValueData;
 		Serialize(ValueData, Value);
 
-		if constexpr (!is_string_compatible_v<TKey>)
-			static_assert(false, "CData serialization supports only string map keys");
-		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, CStrID>)
+		if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, CStrID>)
 			Output.Set(Key, std::move(ValueData));
 		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, std::string>)
 			Output.Set(CStrID(Key.c_str()), std::move(ValueData));
@@ -74,7 +74,11 @@ struct ParamsFormat
 	template<typename T, typename std::enable_if_t<Meta::is_single_collection_v<T>>* = nullptr>
 	static inline void Serialize(Data::CData& Output, const T& Vector)
 	{
-		Data::PDataArray Out(n_new(Data::CDataArray(Vector.size())));
+		Data::PDataArray Out;
+		if constexpr (std::is_array_v<T>)
+			Out = n_new(Data::CDataArray(std::extent_v<T>));
+		else
+			Out = n_new(Data::CDataArray(Vector.size()));
 		for (const auto& Value : Vector)
 		{
 			Data::CData ValueData;
@@ -98,12 +102,12 @@ struct ParamsFormat
 	template<typename TKey, typename TValue>
 	static inline bool SerializeKeyValueDiff(Data::CParams& Output, TKey Key, const TValue& Value, const TValue& BaseValue)
 	{
+		static_assert(is_string_compatible_v<TKey>, "CData serialization supports only string map keys");
+
 		Data::CData ValueData;
 		if (!SerializeDiff(ValueData, Value, BaseValue)) return false;
 
-		if constexpr (!is_string_compatible_v<TKey>)
-			static_assert(false, "CData serialization supports only string map keys");
-		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, CStrID>)
+		if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, CStrID>)
 			Output.Set(Key, std::move(ValueData));
 		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, std::string>)
 			Output.Set(CStrID(Key.c_str()), std::move(ValueData));
@@ -132,6 +136,28 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
+	template<typename T, typename std::enable_if_t<std::is_array_v<T>>* = nullptr>
+	static inline bool SerializeDiff(Data::CData& Output, const T& Vector, const T& BaseVector)
+	{
+		constexpr auto ArraySize = std::extent_v<T>;
+
+		// Vector diff is a vector with length of the new value and nulls for equal elements.
+		Data::PDataArray Out(n_new(Data::CDataArray(ArraySize)));
+
+		// Save new value of element or null if element didn't change
+		bool HasChanges = false;
+		for (size_t i = 0; i < ArraySize; ++i)
+		{
+			Data::CData Elm;
+			HasChanges |= SerializeDiff(Elm, Vector[i], BaseVector[i]);
+			Out->Add(std::move(Elm));
+		}
+
+		Output = std::move(Out);
+		return HasChanges;
+	}
+	//---------------------------------------------------------------------
+
 	template<typename T, typename std::enable_if_t<Meta::is_std_vector_v<T>>* = nullptr>
 	static inline bool SerializeDiff(Data::CData& Output, const T& Vector, const T& BaseVector)
 	{
@@ -145,7 +171,7 @@ struct ParamsFormat
 		{
 			Data::CData Elm;
 			HasChanges |= SerializeDiff(Elm, Vector[i], BaseVector[i]);
-			Out->Add(Elm);
+			Out->Add(std::move(Elm));
 		}
 
 		if (!HasChanges) return false;
@@ -155,7 +181,7 @@ struct ParamsFormat
 		{
 			Data::CData Elm;
 			Serialize(Elm, Vector[i]);
-			Out->Add(Elm);
+			Out->Add(std::move(Elm));
 		}
 
 		Output = std::move(Out);
@@ -242,7 +268,25 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_single_collection_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<std::is_array_v<T>>* = nullptr>
+	static inline void Deserialize(const Data::CData& Input, T& Vector)
+	{
+		if (auto pArrayPtr = Input.As<Data::PDataArray>())
+		{
+			auto pArray = pArrayPtr->Get();
+			const auto MinSize = std::min(pArray->GetCount(), std::extent_v<T>);
+			for (size_t i = 0; i < MinSize; ++i)
+				Deserialize(pArray->At(i), Vector[i]);
+		}
+		else
+		{
+			// Try to deserialize the value to the first element of the array
+			Deserialize(Input, Vector[0]);
+		}
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<Meta::is_single_collection_v<T> && !std::is_array_v<T>>* = nullptr>
 	static inline void Deserialize(const Data::CData& Input, T& Vector)
 	{
 		Vector.clear();
@@ -250,13 +294,13 @@ struct ParamsFormat
 		{
 			auto pArray = pArrayPtr->Get();
 
-			if constexpr (std::is_same_v<std::vector<T::value_type>, T>) // FIXME: WTF is checked here?
+			if constexpr (std::is_same_v<std::vector<T::value_type>, T>) // Check that the collection is std vector
 				Vector.resize(pArray->GetCount());
 
 			for (size_t i = 0; i < pArray->GetCount(); ++i)
 			{
 				const auto& ValueData = pArray->At(i);
-				if constexpr (std::is_same_v<std::vector<T::value_type>, T>) // FIXME: WTF is checked here?
+				if constexpr (std::is_same_v<std::vector<T::value_type>, T>) // Check that the collection is std vector
 				{
 					Deserialize(ValueData, Vector[i]);
 				}
@@ -280,21 +324,23 @@ struct ParamsFormat
 	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
 	static inline void Deserialize(const Data::CData& Input, T& Map)
 	{
+		static_assert(is_string_compatible_v<T::key_type>, "CData deserialization supports only string map keys");
+
+		constexpr bool IsStrIDKey = std::is_same_v<std::remove_cv_t<std::remove_reference_t<T::key_type>>, CStrID>;
+
 		Map.clear();
 		if (auto pParamsPtr = Input.As<Data::PParams>())
 		{
 			auto pParams = pParamsPtr->Get();
 			for (const auto& Param : *pParams)
 			{
-				typename T::mapped_type Value;
-				Deserialize(Param.GetRawValue(), Value);
-
-				if constexpr (!is_string_compatible_v<T::key_type>)
-					static_assert(false, "CData deserialization supports only string map keys");
-				else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T::key_type>>, CStrID>)
-					Map.emplace(Param.GetName(), std::move(Value));
+				typename T::mapped_type* pValue;
+				if constexpr (IsStrIDKey)
+					pValue = &Map[Param.GetName()];
 				else
-					Map.emplace(Param.GetName().CStr(), std::move(Value));
+					pValue = &Map[Param.GetName().CStr()];
+
+				Deserialize(Param.GetRawValue(), *pValue);
 			}
 		}
 	}
@@ -362,6 +408,10 @@ struct ParamsFormat
 	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
 	static inline void DeserializeDiff(const Data::CData& Input, T& Map)
 	{
+		static_assert(is_string_compatible_v<T::key_type>, "CData deserialization supports only string map keys");
+
+		constexpr bool IsStrIDKey = std::is_same_v<std::remove_cv_t<std::remove_reference_t<T::key_type>>, CStrID>;
+
 		if (auto pParamsPtr = Input.As<Data::PParams>())
 		{
 			auto pParams = pParamsPtr->Get();
@@ -369,24 +419,20 @@ struct ParamsFormat
 			{
 				if (Param.GetRawValue().IsVoid())
 				{
-					if constexpr (!is_string_compatible_v<T::key_type>)
-						static_assert(false, "CData deserialization supports only string map keys");
-					else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T::key_type>>, CStrID>)
+					if constexpr (IsStrIDKey)
 						Map.erase(Param.GetName());
 					else
 						Map.erase(Param.GetName().CStr());
 				}
 				else
 				{
-					typename T::mapped_type Value;
-					Deserialize(Param.GetRawValue(), Value);
-
-					if constexpr (!is_string_compatible_v<T::key_type>)
-						static_assert(false, "CData deserialization supports only string map keys");
-					else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T::key_type>>, CStrID>)
-						Map.insert_or_assign(Param.GetName(), std::move(Value));
+					typename T::mapped_type* pValue;
+					if constexpr (IsStrIDKey)
+						pValue = &Map[Param.GetName()];
 					else
-						Map.insert_or_assign(Param.GetName().CStr(), std::move(Value));
+						pValue = &Map[Param.GetName().CStr()];
+
+					Deserialize(Param.GetRawValue(), *pValue);
 				}
 			}
 		}

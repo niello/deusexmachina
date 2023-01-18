@@ -27,7 +27,15 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_single_collection_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<std::is_array_v<T>>* = nullptr>
+	static inline void Serialize(IO::CBinaryWriter& Output, const T& Vector)
+	{
+		for (const auto& Value : Vector)
+			Serialize(Output, Value);
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<Meta::is_single_collection_v<T> && !std::is_array_v<T>>* = nullptr>
 	static inline void Serialize(IO::CBinaryWriter& Output, const T& Vector)
 	{
 		Output << static_cast<uint32_t>(Vector.size());
@@ -86,6 +94,42 @@ struct BinaryFormat
 			return true;
 		}
 		return false;
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<std::is_array_v<T>>* = nullptr>
+	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Vector, const T& BaseVector)
+	{
+		constexpr auto ArraySize = std::extent_v<T>;
+
+		// Only 32 bits are saved
+		static_assert(ArraySize <= std::numeric_limits<uint32_t>().max());
+
+		size_t FirstChange = 0;
+		for (; FirstChange < ArraySize; ++FirstChange)
+			if (Vector[FirstChange] != BaseVector[FirstChange]) break;
+
+		if (FirstChange == ArraySize) return false;
+
+		for (size_t i = FirstChange; i < ArraySize; ++i)
+		{
+			// Write the index to identify the element. If values are equal in both objects, this will be reverted.
+			// TODO: PROFILE! See writing member code SerializeDiff(in is_not_collection_v), the same situation.
+			const auto CurrPos = Output.GetStream().Tell();
+			Output << static_cast<uint32_t>(i);
+
+			if (!SerializeDiff(Output, Vector[i], BaseVector[i]))
+			{
+				// "Unwrite" index
+				Output.GetStream().Seek(CurrPos, IO::Seek_Begin);
+				Output.GetStream().Truncate();
+			}
+		}
+
+		// End the list of changed elements (much like a trailing \0).
+		Output << std::numeric_limits<uint32_t>().max();
+
+		return true;
 	}
 	//---------------------------------------------------------------------
 
@@ -252,20 +296,28 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_single_collection_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<std::is_array_v<T>>* = nullptr>
+	static inline void Deserialize(IO::CBinaryReader& Input, T& Vector)
+	{
+		for (size_t i = 0; i < std::extent_v<T>; ++i)
+			Deserialize(Input, Vector[i]);
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<Meta::is_single_collection_v<T> && !std::is_array_v<T>>* = nullptr>
 	static inline void Deserialize(IO::CBinaryReader& Input, T& Vector)
 	{
 		uint32_t Count;
 		Input >> Count;
 
-		if constexpr (std::is_same_v<std::vector<T::value_type>, T>)
+		if constexpr (std::is_same_v<std::vector<T::value_type>, T>) // Check that the collection is std vector
 			Vector.resize(Count);
 		else
 			Vector.clear();
 
 		for (size_t i = 0; i < Count; ++i)
 		{
-			if constexpr (std::is_same_v<std::vector<T::value_type>, T>)
+			if constexpr (std::is_same_v<std::vector<T::value_type>, T>) // Check that the collection is std vector
 			{
 				Deserialize(Input, Vector[i]);
 			}
@@ -288,11 +340,9 @@ struct BinaryFormat
 		Input >> Count;
 		for (size_t i = 0; i < Count; ++i)
 		{
-			T::key_type Key;
-			T::mapped_type Value;
+			typename T::key_type Key;
 			Deserialize(Input, Key);
-			Deserialize(Input, Value);
-			Map.emplace(std::move(Key), std::move(Value));
+			Deserialize(Input, Map[std::move(Key)]);
 		}
 	}
 	//---------------------------------------------------------------------
@@ -330,6 +380,18 @@ struct BinaryFormat
 		{
 			// If we're here, there is diff data to load
 			Input >> Value;
+		}
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<std::is_array_v<T>>* = nullptr>
+	static inline void DeserializeDiff(IO::CBinaryReader& Input, T& Vector)
+	{
+		uint32_t ChangedIndex = Input.Read<uint32_t>();
+		while (ChangedIndex < std::numeric_limits<uint32_t>().max())
+		{
+			DeserializeDiff(Input, Vector[ChangedIndex]);
+			ChangedIndex = Input.Read<uint32_t>();
 		}
 	}
 	//---------------------------------------------------------------------
@@ -391,29 +453,15 @@ struct BinaryFormat
 		{
 			typename T::key_type Key;
 			Deserialize(Input, Key);
-
-			auto It = Map.find(Key);
-			if (It != Map.cend())
-			{
-				DeserializeDiff(Input, It->second);
-			}
-			else
-			{
-				// Must not happen normally, but let's handle it
-				typename T::mapped_type Value;
-				DeserializeDiff(Input, Value);
-				Map.emplace(std::move(Key), std::move(Value));
-			}
+			DeserializeDiff(Input, Map[std::move(Key)]);
 		}
 
 		const auto AddedSize = Input.Read<uint32_t>();
 		for (size_t i = 0; i < AddedSize; ++i)
 		{
 			typename T::key_type Key;
-			typename T::mapped_type Value;
 			Deserialize(Input, Key);
-			Deserialize(Input, Value);
-			Map.emplace(std::move(Key), std::move(Value));
+			Deserialize(Input, Map[std::move(Key)]);
 		}
 	}
 	//---------------------------------------------------------------------

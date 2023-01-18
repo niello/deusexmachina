@@ -72,4 +72,16 @@ public:
 				return It;
 		return cend();
 	}
+
+	mapped_type& operator[](key_type&& Key)
+	{
+		auto It = find(Key);
+		if (It == cend())
+		{
+			emplace_back(std::forward<key_type>(Key), mapped_type{});
+			It = std::prev(end());
+		}
+
+		return It->second;
+	}
 };

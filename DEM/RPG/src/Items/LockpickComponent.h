@@ -22,7 +22,7 @@ template<> inline constexpr auto RegisterMembers<DEM::Sh2::CLockpickComponent>()
 {
 	return std::make_tuple
 	(
-		Member(1, "Modifier", &DEM::Sh2::CLockpickComponent::Modifier, &DEM::Sh2::CLockpickComponent::Modifier)
+		DEM_META_MEMBER_FIELD(Sh2::CLockpickComponent, 1, Modifier)
 	);
 }
 

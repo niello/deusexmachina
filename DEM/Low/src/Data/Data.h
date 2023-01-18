@@ -43,7 +43,8 @@ protected:
 public:
 
 	CData() = default;
-	CData(const CData& Data) { SetTypeValue(Data); }
+	CData(const CData& Src) { SetTypeValue(Src); }
+	CData(CData&& Src) noexcept;
 	template<class T> CData(const T& Val) { Type = DATA_TYPE(T); DATA_TYPE_NV(T)::NewT(&Value, &Val); }
 	explicit CData(const CType* type) : Type(type) { if (Type) Type->New(&Value); }
 	~CData() { if (Type) Type->Delete(&Value); }
@@ -79,6 +80,8 @@ public:
 
 	const char*					ToString() const { return Type ? Type->ToString(Value) : nullptr; }
 
+	CData&                      operator =(const CData& Src) { SetTypeValue(Src); return *this; }
+	CData&                      operator =(CData&& Src);
 	template<class T> CData&	operator =(const T& Src) { SetTypeValue(Src); return *this; }
 	template<class T> CData&	operator =(T& Src) { SetTypeValue(Src); return *this; }
 	template<class T> CData&	operator =(T&& Src);
@@ -97,6 +100,16 @@ public:
 
 	//!!!save, load!
 };
+//---------------------------------------------------------------------
+
+inline CData::CData(CData&& Src) noexcept
+	: Type(Src.Type)
+	, Value(Src.Value)
+
+{
+	Src.Type = nullptr;
+	Src.Value = nullptr;
+}
 //---------------------------------------------------------------------
 
 template<class T> inline T& CData::New()
@@ -220,12 +233,12 @@ template<class T> inline CData& CData::operator =(T&& Src)
 }
 //---------------------------------------------------------------------
 
-template<> inline CData& CData::operator =(const CData& Src)
-{
-	SetTypeValue(Src);
-	return *this;
-}
-//---------------------------------------------------------------------
+//template<> inline CData& CData::operator =(const CData& Src)
+//{
+//	SetTypeValue(Src);
+//	return *this;
+//}
+////---------------------------------------------------------------------
 
 template<> inline CData& CData::operator =(CData& Src)
 {
@@ -234,10 +247,24 @@ template<> inline CData& CData::operator =(CData& Src)
 }
 //---------------------------------------------------------------------
 
-template<> inline CData& CData::operator =(CData&& Src)
+//template<> inline CData& CData::operator =(CData&& Src)
+//{
+//	Clear();
+//	Type = Src.Type;
+//	Value = Src.Value;
+//	Src.Type = nullptr;
+//	Src.Value = nullptr;
+//	return *this;
+//}
+////---------------------------------------------------------------------
+
+inline CData& CData::operator =(CData&& Src)
 {
-	// FIXME: move instead of copying!
-	SetTypeValue(Src);
+	Clear();
+	Type = Src.Type;
+	Value = Src.Value;
+	Src.Type = nullptr;
+	Src.Value = nullptr;
 	return *this;
 }
 //---------------------------------------------------------------------

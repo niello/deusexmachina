@@ -54,6 +54,9 @@ struct is_single_iterable<T, std::enable_if_t<
 	>> : std::true_type {};
 
 template<typename T>
+struct is_single_iterable<T, std::enable_if_t<std::is_array_v<T>>> : std::true_type {};
+
+template<typename T>
 constexpr bool is_single_iterable_v = is_single_iterable<T>::value;
 
 template<typename T>
