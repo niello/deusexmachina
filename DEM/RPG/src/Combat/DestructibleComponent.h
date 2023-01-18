@@ -18,6 +18,7 @@ struct CDestructibleComponent
 
 	//!!!FIXME: need something like SerializeAs<CDamageAbsorption>! Transparent conversion from and to the serializable type. Or provide explicit methods for get and set.
 	// Could use it instead of RegisterMembers, i.e. like it has only one member - itself. Metadata::Copy will work correctly then.
+	// Or maybe that must be per field, not per type?
 	//!!!FIXME: serialization fails to compile if move setter is used, although it should benefit from it!
 	//void SetDamageAbsorption(CDamageAbsorption&& Value) { DamageAbsorption = std::move(Value); }
 	void SetDamageAbsorption(const CDamageAbsorption& Value) { DamageAbsorption = Value; }

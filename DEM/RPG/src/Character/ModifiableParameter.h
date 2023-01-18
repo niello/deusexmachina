@@ -52,20 +52,20 @@ public:
 		T FinalValue = _BaseValue;
 
 		CParameterModifier<T>* pPrev = nullptr;
-		CParameterModifier<T>* pCurr = _FirstModifier;
+		CParameterModifier<T>* pCurr = _FirstModifier.get();
 		while (pCurr)
 		{
 			if (pCurr->Apply(FinalValue))
 			{
 				pPrev = pCurr;
-				pCurr = pCurr->NextModifier;
+				pCurr = pCurr->NextModifier.get();
 			}
 			else
 			{
 				// Remove an expired modifier from the list
 				auto& CurrTail = pPrev ? pPrev->NextModifier : _FirstModifier;
 				CurrTail = std::move(CurrTail->NextModifier);
-				pCurr = CurrTail;
+				pCurr = CurrTail.get();
 			}
 		}
 
