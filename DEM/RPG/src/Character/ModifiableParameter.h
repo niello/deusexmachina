@@ -26,8 +26,8 @@ public:
 	CModifiableParameter() = default;
 	CModifiableParameter(const CModifiableParameter<T>& Other) = delete;
 	CModifiableParameter(CModifiableParameter<T>&& Other) = default;
-	CModifiableParameter(const T& BaseValue) : _BaseValue(BaseValue) {}
-	CModifiableParameter(T&& BaseValue) : _BaseValue(std::move(BaseValue)) {}
+	CModifiableParameter(const T& BaseValue) : _BaseValue(BaseValue), _LastFinalValue(BaseValue) {}
+	CModifiableParameter(T&& BaseValue) : _BaseValue(std::move(BaseValue)) { _LastFinalValue = BaseValue; }
 	virtual ~CModifiableParameter() { ClearAllModifiers(); }
 
 	CModifiableParameter<T>& operator =(const CModifiableParameter<T>& Other) = delete;
@@ -71,6 +71,9 @@ public:
 
 		std::swap(_LastFinalValue, FinalValue);
 
+		//!!!FIXME: after default construction and SetBaseValue, _LastFinalValue is empty and not _BaseValue. False change report!
+		//could store a flag 'was calculated', but it is used only once and after that it just takes space.
+		//!!!FIXME: in CDamageAbsorption, comparing int[] is always false! False change report!
 		if (_LastFinalValue != FinalValue) OnChanged(FinalValue, _LastFinalValue);
 	}
 
