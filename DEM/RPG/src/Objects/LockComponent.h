@@ -25,8 +25,8 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CLockComponent>()
 {
 	return std::make_tuple
 	(
-		Member(1, "Difficulty", &DEM::RPG::CLockComponent::Difficulty, &DEM::RPG::CLockComponent::Difficulty),
-		Member(2, "Jamming", &DEM::RPG::CLockComponent::Jamming, &DEM::RPG::CLockComponent::Jamming)
+		DEM_META_MEMBER_FIELD(RPG::CLockComponent, 1, Difficulty),
+		DEM_META_MEMBER_FIELD(RPG::CLockComponent, 2, Jamming)
 	);
 }
 

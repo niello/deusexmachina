@@ -13,8 +13,11 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/AI/Stimuli/StimulusSound.h
 	DEM/RPG/src/AI/Stimuli/StimulusVisible.h
 	DEM/RPG/src/Character/CharacterSheet.h
+	DEM/RPG/src/Character/ModifiableParameter.h
+	DEM/RPG/src/Character/ParameterModifier.h
 	DEM/RPG/src/Character/SkillsComponent.h
 	DEM/RPG/src/Character/StatsComponent.h
+	DEM/RPG/src/Combat/Damage.h
 	DEM/RPG/src/Combat/DestructibleComponent.h
 	DEM/RPG/src/Dlg/DialogueManager.h
 	DEM/RPG/src/Dlg/DlgContext.h

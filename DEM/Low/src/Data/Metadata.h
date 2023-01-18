@@ -68,6 +68,12 @@ public:
 		std::apply([&From, &To](auto& ...Members) { (..., Members.SetValue(To, Members.GetConstValue(From))); }, _Members);
 	}
 
+	// TODO: TSetter doesn't allow to get mutable pointer and alter the source this way. Need to improve.
+	//static inline constexpr void Move(T&& From, T& To)
+	//{
+	//	std::apply([&From, &To](auto& ...Members) { (..., Members.SetValue(To, std::move(Members.GetValueRef(From)))); }, _Members);
+	//}
+
 	template<typename TCallback>
 	static inline constexpr bool WithMember(std::string_view Name, TCallback Callback)
 	{

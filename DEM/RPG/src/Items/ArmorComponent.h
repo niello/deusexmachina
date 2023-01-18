@@ -1,28 +1,15 @@
 #pragma once
 #include <Data/Metadata.h>
-#include <StdDEM.h>
-#include <map>
+#include <Combat/Damage.h>
 
 // Armor stats for an item
 
 namespace DEM::RPG
 {
 
-enum class EDamageType : U8
-{
-	Piercing = 0,
-	Slashing,
-	Bludgeoning,
-	Energetic,
-	Chemical,
-
-	COUNT
-};
-constexpr size_t DamageTypeCount = static_cast<size_t>(EDamageType::COUNT);
-
 struct CArmorComponent
 {
-	std::map<CStrID, int[DamageTypeCount]> Absorption; // Zone -> AbsorptionValue[DamageType]
+	CDamageAbsorption Absorption; // Zone -> AbsorptionValue[DamageType]
 };
 
 }

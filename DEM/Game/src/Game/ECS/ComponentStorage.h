@@ -667,6 +667,8 @@ public:
 			}
 			else
 			{
+				// TODO: how to handle non-copyable? Write CMetadata<T>::Move or load another copy of BaseComponent?
+				// TODO: need CMetadata<T>::IsCopyable, depends on registered members!
 				T Component;
 				DEM::Meta::CMetadata<T>::Copy(BaseComponent, Component);
 
