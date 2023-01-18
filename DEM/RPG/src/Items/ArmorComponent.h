@@ -8,9 +8,21 @@
 namespace DEM::RPG
 {
 
+enum class EDamageType : U8
+{
+	Piercing = 0,
+	Slashing,
+	Bludgeoning,
+	Energetic,
+	Chemical,
+
+	COUNT
+};
+constexpr size_t DamageTypeCount = static_cast<size_t>(EDamageType::COUNT);
+
 struct CArmorComponent
 {
-	std::map<CStrID, int[5]> Absorption; // Zone -> AbsorptionValue[DamageType]
+	std::map<CStrID, int[DamageTypeCount]> Absorption; // Zone -> AbsorptionValue[DamageType]
 };
 
 }
