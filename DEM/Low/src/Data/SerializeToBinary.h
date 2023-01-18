@@ -27,7 +27,7 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<std::is_array_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_fixed_single_collection_v<T>>* = nullptr>
 	static inline void Serialize(IO::CBinaryWriter& Output, const T& Vector)
 	{
 		for (const auto& Value : Vector)
@@ -35,7 +35,7 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_single_collection_v<T> && !std::is_array_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_resizable_single_collection_v<T>>* = nullptr>
 	static inline void Serialize(IO::CBinaryWriter& Output, const T& Vector)
 	{
 		Output << static_cast<uint32_t>(Vector.size());
@@ -97,10 +97,10 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<std::is_array_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_fixed_single_collection_v<T>>* = nullptr>
 	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Vector, const T& BaseVector)
 	{
-		constexpr auto ArraySize = std::extent_v<T>;
+		constexpr auto ArraySize = Meta::fixed_array_size_v<T>;
 
 		// Only 32 bits are saved
 		static_assert(ArraySize <= std::numeric_limits<uint32_t>().max());
@@ -296,15 +296,15 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<std::is_array_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_fixed_single_collection_v<T>>* = nullptr>
 	static inline void Deserialize(IO::CBinaryReader& Input, T& Vector)
 	{
-		for (size_t i = 0; i < std::extent_v<T>; ++i)
+		for (size_t i = 0; i < Meta::fixed_array_size_v<T>; ++i)
 			Deserialize(Input, Vector[i]);
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_single_collection_v<T> && !std::is_array_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_resizable_single_collection_v<T>>* = nullptr>
 	static inline void Deserialize(IO::CBinaryReader& Input, T& Vector)
 	{
 		uint32_t Count;
@@ -384,7 +384,7 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<std::is_array_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_fixed_single_collection_v<T>>* = nullptr>
 	static inline void DeserializeDiff(IO::CBinaryReader& Input, T& Vector)
 	{
 		uint32_t ChangedIndex = Input.Read<uint32_t>();

@@ -3,7 +3,7 @@
 #include <StdDEM.h>
 #include <map>
 
-// An entity with a destructible component will be logically destroyed (killed) when it runs out of HP
+// Data structures and algorithms related to damage infliction
 
 namespace DEM::RPG
 {
@@ -20,8 +20,7 @@ enum class EDamageType : U8
 };
 constexpr size_t DamageTypeCount = static_cast<size_t>(EDamageType::COUNT);
 
-//using CDamageAbsorption = std::map<CStrID, int[DamageTypeCount]>;
-class CDamageAbsorption : public std::map<CStrID, int[DamageTypeCount]> {};
+class CDamageAbsorption : public std::map<CStrID, std::array<int, DamageTypeCount>> {};
 
 }
 

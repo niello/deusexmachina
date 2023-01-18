@@ -75,8 +75,8 @@ struct ParamsFormat
 	static inline void Serialize(Data::CData& Output, const T& Vector)
 	{
 		Data::PDataArray Out;
-		if constexpr (std::is_array_v<T>)
-			Out = n_new(Data::CDataArray(std::extent_v<T>));
+		if constexpr (Meta::is_fixed_single_collection_v<T>)
+			Out = n_new(Data::CDataArray(Meta::fixed_array_size_v<T>));
 		else
 			Out = n_new(Data::CDataArray(Vector.size()));
 		for (const auto& Value : Vector)
@@ -136,10 +136,10 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<std::is_array_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_fixed_single_collection_v<T>>* = nullptr>
 	static inline bool SerializeDiff(Data::CData& Output, const T& Vector, const T& BaseVector)
 	{
-		constexpr auto ArraySize = std::extent_v<T>;
+		constexpr auto ArraySize = Meta::fixed_array_size_v<T>;
 
 		// Vector diff is a vector with length of the new value and nulls for equal elements.
 		Data::PDataArray Out(n_new(Data::CDataArray(ArraySize)));
@@ -268,13 +268,13 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<std::is_array_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_fixed_single_collection_v<T>>* = nullptr>
 	static inline void Deserialize(const Data::CData& Input, T& Vector)
 	{
 		if (auto pArrayPtr = Input.As<Data::PDataArray>())
 		{
 			auto pArray = pArrayPtr->Get();
-			const auto MinSize = std::min(pArray->GetCount(), std::extent_v<T>);
+			const auto MinSize = std::min(pArray->GetCount(), Meta::fixed_array_size_v<T>);
 			for (size_t i = 0; i < MinSize; ++i)
 				Deserialize(pArray->At(i), Vector[i]);
 		}
@@ -286,7 +286,7 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_single_collection_v<T> && !std::is_array_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_resizable_single_collection_v<T>>* = nullptr>
 	static inline void Deserialize(const Data::CData& Input, T& Vector)
 	{
 		Vector.clear();

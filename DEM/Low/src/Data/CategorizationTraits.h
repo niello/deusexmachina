@@ -26,6 +26,15 @@ template<typename T> \
 constexpr bool is_bool_flag_##TAG##_v = is_bool_flag_##TAG<T>::value;
 
 template<typename T>
+struct is_std_array : std::false_type {};
+
+template<typename T, size_t N>
+struct is_std_array<std::array<T, N>> : std::true_type {};
+
+template<typename T>
+constexpr bool is_std_array_v = is_std_array<T>::value;
+
+template<typename T>
 struct is_pair : std::false_type {};
 
 template<typename T, typename U>
@@ -66,7 +75,22 @@ template<typename T>
 constexpr bool is_single_collection_v = is_single_iterable_v<T> && !std::is_same_v<T, std::string>;
 
 template<typename T>
+constexpr bool is_fixed_single_collection_v = std::is_array_v<T> || is_std_array_v<T>;
+
+template<typename T>
+constexpr bool is_resizable_single_collection_v = is_single_collection_v<T> && !is_fixed_single_collection_v<T>;
+
+template<typename T>
 constexpr bool is_not_collection_v = is_not_iterable_v<T> || std::is_same_v<T, std::string>;
+
+template<typename T>
+struct fixed_array_size : std::extent<T> {};
+
+template<typename T, size_t N>
+struct fixed_array_size<std::array<T, N>> : std::tuple_size<std::array<T, N>> {};
+
+template<typename T>
+constexpr auto fixed_array_size_v = fixed_array_size<T>::value;
 
 #define STD_SINGLE_CONTAINER_TRAIT(trait_type) \
 template<typename T> \
