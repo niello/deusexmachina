@@ -41,6 +41,8 @@ public:
 		n_assert_dbg(Modifier && !Modifier->NextModifier);
 
 		//???is modification order important? Now added to the head!
+		//???add priorities to explicitly control order of application?! could be very convenient for any role system!
+		//???templated compile-time priority per class or per-instance runtime field?
 		Modifier->NextModifier = std::move(_FirstModifier);
 		_FirstModifier = std::move(Modifier);
 	}
