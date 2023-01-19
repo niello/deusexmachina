@@ -171,6 +171,9 @@ public:
 		return MemberAccess<TClass, T, TSetter>::Ref(_pSetter, Instance);
 	}
 
+	// TODO: need to disable for plain C arrays (std::is_array_v)
+	//template<typename TT = T>
+	//constexpr typename std::enable_if_t<!std::is_array_v<TT>, T> GetValueCopy(const TClass& Instance) const
 	constexpr T GetValueCopy(const TClass& Instance) const
 	{
 		static_assert(CanRead(), "Member is write-only");

@@ -20,6 +20,7 @@ enum class EDamageType : U8
 };
 constexpr size_t DamageTypeCount = static_cast<size_t>(EDamageType::COUNT);
 
+// Zone -> AbsorptionValue[DamageType]
 class CDamageAbsorption : public std::map<CStrID, std::array<int, DamageTypeCount>> {};
 
 }

@@ -9,7 +9,7 @@ namespace DEM::RPG
 
 struct CArmorComponent
 {
-	CDamageAbsorption Absorption; // Zone -> AbsorptionValue[DamageType]
+	CDamageAbsorption Absorption;
 };
 
 }
