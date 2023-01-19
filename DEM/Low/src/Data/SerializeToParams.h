@@ -122,11 +122,11 @@ struct ParamsFormat
 	static inline bool SerializeDiff(Data::CData& Output, const T& Value, const T& BaseValue)
 	{
 		// FIXME: TMP HACK! Need to call Serialize<T> with != check for SerializeDiff of each T without metadata and explicit specialization!
-		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
+		if constexpr (Meta::CMetadata<T>::IsRegistered)
 		{
 			return Serialization::ParamsFormat<T>::SerializeDiff(Output, Value, BaseValue);
 		}
-		else if (Value != BaseValue)
+		else if (!Meta::IsEqualByValue(Value, BaseValue))
 		{
 			Serialization::ParamsFormat<T>::Serialize(Output, Value);
 			return true;

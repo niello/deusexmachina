@@ -24,6 +24,15 @@ template<typename T> inline constexpr auto RegisterClassName() { return "<no cla
 // Specialize this to add more meta info to your types
 template<typename T> struct CTypeMetadata {};
 
+// TODO: move to more appropriate header?
+template<typename T, typename U> inline bool IsEqualByValue(const T& a, const U& b)
+{
+	if constexpr (std::is_same_v<T, U> && std::is_array_v<T>)
+		return !std::memcmp(a, b, sizeof(T));
+	else
+		return a == b;
+}
+
 // Access this to work with registered types
 template<typename T>
 class CMetadata final
@@ -60,7 +69,7 @@ public:
 
 	static inline constexpr bool IsEqual(const T& a, const T& b)
 	{
-		return std::apply([&a, &b](auto& ...Members) { return (... && (Members.GetConstValue(a) == Members.GetConstValue(b))); }, _Members);
+		return std::apply([&a, &b](auto& ...Members) { return (... && IsEqualByValue(Members.GetConstValue(a), Members.GetConstValue(b))); }, _Members);
 	}
 
 	static inline constexpr void Copy(const T& From, T& To)

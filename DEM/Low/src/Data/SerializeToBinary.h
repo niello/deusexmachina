@@ -88,7 +88,7 @@ struct BinaryFormat
 
 			return HasDiff;
 		}
-		else if (BaseValue != Value)
+		else if (!Meta::IsEqualByValue(BaseValue, Value))
 		{
 			Output << Value;
 			return true;
@@ -107,7 +107,7 @@ struct BinaryFormat
 
 		size_t FirstChange = 0;
 		for (; FirstChange < ArraySize; ++FirstChange)
-			if (Vector[FirstChange] != BaseVector[FirstChange]) break;
+			if (!Meta::IsEqualByValue(Vector[FirstChange], BaseVector[FirstChange])) break;
 
 		if (FirstChange == ArraySize) return false;
 
@@ -143,7 +143,7 @@ struct BinaryFormat
 		size_t FirstChange = 0;
 		const size_t MinSize = std::min(Vector.size(), BaseVector.size());
 		for (; FirstChange < MinSize; ++FirstChange)
-			if (Vector[FirstChange] != BaseVector[FirstChange]) break;
+			if (!Meta::IsEqualByValue(Vector[FirstChange], BaseVector[FirstChange])) break;
 
 		if (FirstChange == MinSize && Vector.size() == BaseVector.size()) return false;
 
@@ -222,7 +222,7 @@ struct BinaryFormat
 		{
 			auto BaseIt = BaseMap.find(Key);
 			if (BaseIt == BaseMap.cend()) ++ AddedCount;
-			else if (BaseIt->second != Value) ++ModifiedCount;
+			else if (!Meta::IsEqualByValue(BaseIt->second, Value)) ++ModifiedCount;
 		}
 		for (const auto& [Key, Value] : BaseMap)
 			if (Map.find(Key) == Map.cend()) ++DeletedCount;
@@ -253,7 +253,7 @@ struct BinaryFormat
 			for (const auto& [Key, Value] : Map)
 			{
 				auto BaseIt = BaseMap.find(Key);
-				if (BaseIt != BaseMap.cend() && BaseIt->second != Value)
+				if (BaseIt != BaseMap.cend() && !Meta::IsEqualByValue(BaseIt->second, Value))
 				{
 					Serialize(Output, Key);
 					SerializeDiff(Output, Value, BaseIt->second);
