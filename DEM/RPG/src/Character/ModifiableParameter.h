@@ -16,7 +16,7 @@ class CModifiableParameter
 {
 protected:
 
-	std::unique_ptr<CParameterModifier<T>> _FirstModifier;
+	Ptr<CParameterModifier<T>> _FirstModifier;
 
 	T _BaseValue = {};
 	T _LastFinalValue = {};
@@ -36,13 +36,14 @@ public:
 	Events::CSignal<void(const T&, const T&)> OnChanged; // Args: prev value, new value
 
 	//???!!!how to remove a certain modifier?! e.g. when the item is unequipped! Need to somehow know the source!
-	void AddModifier(std::unique_ptr<CParameterModifier<T>>&& Modifier)
+	void AddModifier(Ptr<CParameterModifier<T>>&& Modifier)
 	{
 		n_assert_dbg(Modifier && !Modifier->NextModifier);
 
 		//???is modification order important? Now added to the head!
 		//???add priorities to explicitly control order of application?! could be very convenient for any role system!
 		//???templated compile-time priority per class or per-instance runtime field?
+		//!!!insert templated and at the same time remove expired!
 		Modifier->NextModifier = std::move(_FirstModifier);
 		_FirstModifier = std::move(Modifier);
 	}
@@ -54,20 +55,20 @@ public:
 		T FinalValue = _BaseValue;
 
 		CParameterModifier<T>* pPrev = nullptr;
-		CParameterModifier<T>* pCurr = _FirstModifier.get();
+		CParameterModifier<T>* pCurr = _FirstModifier.Get();
 		while (pCurr)
 		{
-			if (pCurr->Apply(FinalValue))
+			if (pCurr->IsConnected() && pCurr->Apply(FinalValue))
 			{
 				pPrev = pCurr;
-				pCurr = pCurr->NextModifier.get();
+				pCurr = pCurr->NextModifier.Get();
 			}
 			else
 			{
 				// Remove an expired modifier from the list
 				auto& CurrTail = pPrev ? pPrev->NextModifier : _FirstModifier;
 				CurrTail = std::move(CurrTail->NextModifier);
-				pCurr = CurrTail.get();
+				pCurr = CurrTail.Get();
 			}
 		}
 

@@ -111,3 +111,10 @@ template<class T> inline bool operator <(Ptr<T> const& a, Ptr<T> const& b) noexc
 {
 	return std::less<T*>()(a.Get(), b.Get());
 }
+
+template<typename T, typename... TArgs>
+inline Ptr<T> MakePtr(TArgs&&... Args)
+{
+	return Ptr<T>(n_new(T)(std::forward<TArgs>(Args)...));
+}
+//---------------------------------------------------------------------

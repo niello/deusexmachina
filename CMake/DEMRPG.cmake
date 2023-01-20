@@ -31,6 +31,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Items/EquipmentComponent.h
 	DEM/RPG/src/Items/EquipmentScheme.h
 	DEM/RPG/src/Items/EquippableComponent.h
+	DEM/RPG/src/Items/EquippedComponent.h
 	DEM/RPG/src/Items/ItemComponent.h
 	DEM/RPG/src/Items/ItemContainerComponent.h
 	DEM/RPG/src/Items/ItemCountMonitorComponent.h
