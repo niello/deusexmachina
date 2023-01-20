@@ -1,6 +1,6 @@
 #pragma once
 #include <Data/Metadata.h>
-#include <Game/ECS/Entity.h>
+#include <Items/ItemUtils.h>
 
 // Tracks changes in equipment, including equipping and unequipping items as long as
 // changes in a set of components attached to the equipped item.
@@ -13,8 +13,10 @@ struct CEquipmentChangesComponent
 {
 	struct CRecord
 	{
-		CStrID PrevSlot;
-		CStrID NewSlot;
+		CStrID       PrevSlot;
+		CStrID       NewSlot;
+		EItemStorage PrevStorage = EItemStorage::None;
+		EItemStorage NewStorage = EItemStorage::None;
 	};
 
 	std::map<Game::HEntity, CRecord> Records;

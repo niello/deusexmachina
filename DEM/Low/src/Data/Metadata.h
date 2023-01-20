@@ -267,13 +267,13 @@ inline constexpr auto Member(std::uint32_t Code, const char* pName, T TClass::* 
 // Default equality comparison for objects with registered metadata.
 // Must be in the global namespace in order to be available everywhere on operator resolution.
 template<typename T>
-inline typename std::enable_if_t<DEM::Meta::CMetadata<T>::IsRegistered, bool> operator ==(const T& a, const T& b)
+inline constexpr typename std::enable_if_t<DEM::Meta::CMetadata<T>::IsRegistered, bool> operator ==(const T& a, const T& b)
 {
 	return DEM::Meta::CMetadata<T>::IsEqual(a, b);
 }
 
 template<typename T>
-inline typename std::enable_if_t<DEM::Meta::CMetadata<T>::IsRegistered, bool> operator !=(const T& a, const T& b)
+inline constexpr typename std::enable_if_t<DEM::Meta::CMetadata<T>::IsRegistered, bool> operator !=(const T& a, const T& b)
 {
 	return !DEM::Meta::CMetadata<T>::IsEqual(a, b);
 }

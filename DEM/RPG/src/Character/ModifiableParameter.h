@@ -5,11 +5,6 @@
 // A parameter of a character or an object. Has a base value and can be temporarily modified
 // from different sources of modification (eqipment, consumables and areas to name a few).
 
-//!!!!TODO: write serialization and deserialization! Can exploit constructors and assignment operators?
-//???can write wrapper "SerializeAs<T>"?! Can do:
-// using TValue = T;
-// template<T> Serializer<CModifiableParameter<T>> { SerializeAs<T> or SerializeAs<CModifiableParameter::TValue> }
-
 namespace DEM::RPG
 {
 
@@ -108,3 +103,43 @@ public:
 };
 
 }
+
+
+//!!!DBG TMP!
+//!!!!TODO: write serialization and deserialization! Can exploit constructors and assignment operators?
+//???can write wrapper "SerializeAs<T>"?! Can do:
+// using TValue = T;
+// template<T> Serializer<CModifiableParameter<T>> { SerializeAs<T> or SerializeAs<CModifiableParameter::TValue> }
+//!!!SerializeAs<T> must work for any serialization format!
+//Format must be an archive type, a wrapper must be around it!?
+//???or should handle it in Metadata, not in serialization!? Need redesigning the system! Analyze well known reflection and serialization APIs.
+
+//???instead of overriding serialization, need to override member access? Now MemberAccess tries to work with base type, but must instead
+//use proxy getter and setter to work as with underlying type! Then serialization will start working as needed too!
+
+/*
+#include <Data/SerializeToParams.h>
+
+namespace DEM::Serialization
+{
+
+template<typename T>
+struct ParamsFormat<RPG::CModifiableParameter<T>>
+{
+	static inline void Serialize(Data::CData& Output, const RPG::CModifiableParameter<T>& Value)
+	{
+		Serialize(Output, Value.GetBaseValue());
+	}
+
+	static inline void Deserialize(const Data::CData& Input, RPG::CModifiableParameter<T>& Value)
+	{
+		T BaseValue;
+		Deserialize(Input, BaseValue);
+		Value.SetBaseValue(std::move(BaseValue)); //!!!???reset final value to base?! deserialization is reconstruction, seems logical!
+	}
+};
+
+//!!!TODO: binary format!
+
+}
+*/

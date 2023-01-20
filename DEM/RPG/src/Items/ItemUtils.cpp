@@ -223,24 +223,78 @@ void UnblockEquipmentSlots(CEquipmentComponent& Equipment, Game::HEntity StackID
 //---------------------------------------------------------------------
 
 // Monitored and processed by the special system
-void RecordEquipmentChange(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, CStrID PrevSlot, CStrID NewSlot)
+void RecordEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, EItemStorage Storage, CStrID Slot)
 {
-	if (!EntityID || !StackID || PrevSlot == NewSlot) return;
-
-	//???FIXME: record the main slot or any of blocked slots? Maybe any slot is ok and
-	//everything must be handled in listeners, like UpdateCharacterModelEquipment etc?
+	if (!EntityID || !StackID) return;
 
 	if (auto pChanges = World.FindOrAddComponent<CEquipmentChangesComponent>(EntityID))
 	{
 		auto It = pChanges->Records.find(StackID);
 		if (It == pChanges->Records.cend())
-			pChanges->Records.emplace(StackID, CEquipmentChangesComponent::CRecord{ PrevSlot, NewSlot });
-		else if (It->second.PrevSlot == It->second.NewSlot)
-			It->second = CEquipmentChangesComponent::CRecord{ PrevSlot, NewSlot }; // Turn re-equipment into more important regular record
-		else if (It->second.PrevSlot != NewSlot)
-			It->second.NewSlot = NewSlot;
-		else
+		{
+			// Register the first operation for the stack
+			pChanges->Records.emplace(StackID, CEquipmentChangesComponent::CRecord{ CStrID::Empty, Slot, EItemStorage::None, Storage });
+		}
+		else if (It->second.PrevSlot == It->second.NewSlot && It->second.PrevStorage == It->second.NewStorage)
+		{
+			// Turn re-equipment into more important regular record
+			It->second = CEquipmentChangesComponent::CRecord{ CStrID::Empty, Slot, EItemStorage::None, Storage };
+		}
+		else if (It->second.PrevSlot == Slot && It->second.PrevStorage == Storage)
+		{
+			// Collapse the no-op record, re-equipment to the same slot must be requested explicitly with RecordReequipment()
 			pChanges->Records.erase(It);
+		}
+		else
+		{
+			// Override final destination, no matter what source is
+			It->second.NewSlot = Slot;
+			It->second.NewStorage = Storage;
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+// Monitored and processed by the special system
+void RecordUnequipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, EItemStorage Storage, CStrID Slot)
+{
+	if (!EntityID || !StackID) return;
+
+	if (auto pChanges = World.FindOrAddComponent<CEquipmentChangesComponent>(EntityID))
+	{
+		auto It = pChanges->Records.find(StackID);
+		if (It == pChanges->Records.cend())
+		{
+			// Register the first operation for the stack
+			pChanges->Records.emplace(StackID, CEquipmentChangesComponent::CRecord{ Slot, CStrID::Empty, Storage, EItemStorage::None });
+		}
+		else if (It->second.PrevSlot == It->second.NewSlot && It->second.PrevStorage == It->second.NewStorage)
+		{
+			// Turn re-equipment into more important regular record
+			It->second = CEquipmentChangesComponent::CRecord{ Slot, CStrID::Empty, Storage, EItemStorage::None };
+		}
+		else
+		{
+			// Must be able to handle inverted order of operations, e.g. add to equipment -> remove from Q-slots
+			if (It->second.PrevStorage == Storage)
+			{
+				// Override final destination
+				It->second.NewSlot = CStrID::Empty;
+				It->second.NewStorage = EItemStorage::None;
+			}
+			else if (It->second.PrevStorage == EItemStorage::None)
+			{
+				// Record initial source
+				It->second.PrevSlot = Slot;
+				It->second.PrevStorage = Storage;
+			}
+
+			if (It->second.PrevSlot == It->second.NewSlot && It->second.PrevStorage == It->second.NewStorage)
+			{
+				// Collapse the no-op record, re-equipment to the same slot must be requested explicitly with RecordReequipment()
+				pChanges->Records.erase(It);
+			}
+		}
 	}
 }
 //---------------------------------------------------------------------
@@ -254,10 +308,10 @@ void RecordReequipment(Game::CGameWorld& World, Game::HEntity StackID)
 		{
 			// Schedule re-equipment only if other changes for this stack are not scheduled.
 			// Re-equipment request is any record with PrevSlot == NewSlot, the exact slot doesn't matter.
-			// Empty slot is even better because it doesn't trigger the character model update.
+			// Empty slot is even better because it doesn't trigger character model updating.
 			auto It = pChanges->Records.find(StackID);
 			if (It == pChanges->Records.cend())
-				pChanges->Records.emplace(StackID, CEquipmentChangesComponent::CRecord{ CStrID::Empty, CStrID::Empty });
+				pChanges->Records.emplace(StackID, CEquipmentChangesComponent::CRecord{});
 		}
 	}
 }
@@ -1074,7 +1128,7 @@ U32 AddItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, CSt
 		{
 			pEquipmentWritable->Equipment.emplace(SlotID, NewStackID);
 			BlockEquipmentSlots(World, *pEquipmentWritable, NewStackID);
-			RecordEquipmentChange(World, EntityID, NewStackID, CStrID::Empty, SlotID);
+			RecordEquipment(World, EntityID, NewStackID, EItemStorage::Equipment, SlotID);
 			return Count;
 		}
 		World.DeleteEntity(NewStackID);
@@ -1128,7 +1182,7 @@ U32 AddItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::H
 			const U32 SlotCapacity = CanEquipItems(World, EntityID, ItemProtoID, SlotID);
 			DestSlot = CreateItemStack(World, ItemProtoID, std::min(SlotCapacity, RemainingCount));
 			BlockEquipmentSlots(World, *pEquipmentWritable, DestSlot);
-			RecordEquipmentChange(World, EntityID, DestSlot, CStrID::Empty, SlotID);
+			RecordEquipment(World, EntityID, DestSlot, EItemStorage::Equipment, SlotID);
 			if (SlotCapacity >= RemainingCount) return Count;
 			RemainingCount -= SlotCapacity;
 		}
@@ -1164,7 +1218,7 @@ std::pair<Game::HEntity, U32> MoveItemsFromEquipmentSlot(Game::CGameWorld& World
 		if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 		{
 			UnblockEquipmentSlots(*pEquipmentWritable, StackID);
-			RecordEquipmentChange(World, EntityID, StackID, SlotID, CStrID::Empty);
+			RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, SlotID);
 		}
 		return { StackID, 0 };
 	}
@@ -1204,7 +1258,7 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 			{
 				if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 					UnblockEquipmentSlots(*pEquipmentWritable, StackID);
-				RecordEquipmentChange(World, EntityID, StackID, SlotID, CStrID::Empty);
+				RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, SlotID);
 			}
 			return { MovedCount, MovedCompletely };
 		}
@@ -1226,7 +1280,7 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 			{
 				*pReplaced = DestStackID;
 				UnblockEquipmentSlots(*pEquipmentWritable, DestStackID);
-				RecordEquipmentChange(World, EntityID, DestStackID, SlotID, CStrID::Empty);
+				RecordUnequipment(World, EntityID, DestStackID, EItemStorage::Equipment, SlotID);
 			}
 
 			// Clear all blocked slots except explicitly chosen, they can be incorrect after item moving
@@ -1239,7 +1293,7 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 
 			// Redo blocking of additional slots from scratch, now they will be correct
 			BlockEquipmentSlots(World, *pEquipmentWritable, FinalStackID);
-			RecordEquipmentChange(World, EntityID, FinalStackID, CStrID::Empty, SlotID);
+			RecordEquipment(World, EntityID, FinalStackID, EItemStorage::Equipment, SlotID);
 			return { MovedCount, MovedCompletely };
 		}
 	}
@@ -1287,7 +1341,7 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 			{
 				if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 					UnblockEquipmentSlots(*pEquipmentWritable, StackID);
-				RecordEquipmentChange(World, EntityID, StackID, SlotID, CStrID::Empty);
+				RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, SlotID);
 			}
 			if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
 			RemainingCount -= MovedCount;
@@ -1306,7 +1360,7 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 			if (MovedCount)
 			{
 				BlockEquipmentSlots(World, *pEquipmentWritable, DestSlot);
-				RecordEquipmentChange(World, EntityID, DestSlot, CStrID::Empty, SlotID);
+				RecordEquipment(World, EntityID, DestSlot, EItemStorage::Equipment, SlotID);
 			}
 			if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
 			RemainingCount -= MovedCount;
@@ -1325,7 +1379,7 @@ void ClearEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, CStrID 
 	if (It == pEquipment->Equipment.cend()) return;
 	const auto StackID = It->second;
 	UnblockEquipmentSlots(*pEquipment, StackID);
-	RecordEquipmentChange(World, EntityID, StackID, SlotID, CStrID::Empty);
+	RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, SlotID);
 }
 //---------------------------------------------------------------------
 
@@ -1369,7 +1423,7 @@ U32 RemoveItemsFromEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Ga
 		if (RemoveItemsFromStack(World, StackID, RemainingCount))
 		{
 			StacksToUnblock.insert(StackID);
-			RecordEquipmentChange(World, EntityID, StackID, SlotID, CStrID::Empty);
+			RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, SlotID);
 			It = pEquipment->Equipment.erase(It);
 		}
 
