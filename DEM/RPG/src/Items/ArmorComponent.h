@@ -9,6 +9,9 @@ namespace DEM::RPG
 
 struct CArmorComponent
 {
+	// Need to apply/remove modifiers for equipped instances
+	static constexpr bool Signals = true;
+
 	CDamageAbsorption Absorption;
 };
 

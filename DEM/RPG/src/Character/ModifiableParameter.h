@@ -6,7 +6,9 @@
 // from different sources of modification (eqipment, consumables and areas to name a few).
 
 //!!!!TODO: write serialization and deserialization! Can exploit constructors and assignment operators?
-//???can write wrapper "SerializeAs<T>"?!
+//???can write wrapper "SerializeAs<T>"?! Can do:
+// using TValue = T;
+// template<T> Serializer<CModifiableParameter<T>> { SerializeAs<T> or SerializeAs<CModifiableParameter::TValue> }
 
 namespace DEM::RPG
 {
@@ -35,17 +37,33 @@ public:
 
 	Events::CSignal<void(const T&, const T&)> OnChanged; // Args: prev value, new value
 
-	//???!!!how to remove a certain modifier?! e.g. when the item is unequipped! Need to somehow know the source!
 	void AddModifier(Ptr<CParameterModifier<T>>&& Modifier)
 	{
 		n_assert_dbg(Modifier && !Modifier->NextModifier);
 
-		//???is modification order important? Now added to the head!
-		//???add priorities to explicitly control order of application?! could be very convenient for any role system!
-		//???templated compile-time priority per class or per-instance runtime field?
-		//!!!insert templated and at the same time remove expired!
-		Modifier->NextModifier = std::move(_FirstModifier);
-		_FirstModifier = std::move(Modifier);
+		CParameterModifier<T>* pPrev = nullptr;
+		CParameterModifier<T>* pCurr = _FirstModifier.Get();
+		while (pCurr)
+		{
+			if (pCurr->IsConnected())
+			{
+				// Find the insertion place according to priority
+				if (pCurr->GetPriority() < Modifier->GetPriority()) break;
+				pPrev = pCurr;
+				pCurr = pCurr->NextModifier.Get();
+			}
+			else
+			{
+				// Remove an expired modifier from the list
+				auto& CurrTail = pPrev ? pPrev->NextModifier : _FirstModifier;
+				CurrTail = std::move(CurrTail->NextModifier);
+				pCurr = CurrTail.Get();
+			}
+		}
+
+		auto& CurrTail = pPrev ? pPrev->NextModifier : _FirstModifier;
+		Modifier->NextModifier = std::move(CurrTail);
+		CurrTail = std::move(Modifier);
 	}
 
 	void ClearAllModifiers() { while (_FirstModifier) _FirstModifier = std::move(_FirstModifier->NextModifier); } // Prevent recursion

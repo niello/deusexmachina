@@ -17,13 +17,15 @@ class CParameterModifier : public Data::CRefCounted
 {
 public:
 
+	using TParam = T;
+
 	Ptr<CParameterModifier<T>> NextModifier;
 
 	virtual ~CParameterModifier() = default;
 
-	virtual bool Apply(T& Value) = 0; // Returns false if the modifier has expired
-
-	bool IsConnected() const { return GetRefCount() > 1; }
+	virtual I32  GetPriority() const = 0; // Higher priority modifiers applied first
+	virtual bool Apply(T& Value) = 0;     // Returns false if the modifier has expired
+	bool         IsConnected() const { return GetRefCount() > 1; }
 };
 
 }

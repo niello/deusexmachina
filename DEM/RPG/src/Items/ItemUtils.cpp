@@ -3,6 +3,7 @@
 #include <Items/ItemContainerComponent.h>
 #include <Items/EquipmentComponent.h>
 #include <Items/EquippableComponent.h>
+#include <Items/EquippedComponent.h>
 #include <Items/EquipmentChangesComponent.h>
 #include <Game/GameLevel.h>
 #include <Scene/SceneComponent.h>
@@ -221,15 +222,15 @@ void UnblockEquipmentSlots(CEquipmentComponent& Equipment, Game::HEntity StackID
 }
 //---------------------------------------------------------------------
 
-// Will be monitored and processed by the special system
-void RecordEquipmentChange(Game::CGameWorld& World, Game::HEntity CharacterID, Game::HEntity StackID, CStrID PrevSlot, CStrID NewSlot)
+// Monitored and processed by the special system
+void RecordEquipmentChange(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, CStrID PrevSlot, CStrID NewSlot)
 {
-	if (!CharacterID || !StackID || PrevSlot == NewSlot) return;
+	if (!EntityID || !StackID || PrevSlot == NewSlot) return;
 
 	//???FIXME: record the main slot or any of blocked slots? Maybe any slot is ok and
 	//everything must be handled in listeners, like UpdateCharacterModelEquipment etc?
 
-	if (auto pChanges = World.FindOrAddComponent<CEquipmentChangesComponent>(CharacterID))
+	if (auto pChanges = World.FindOrAddComponent<CEquipmentChangesComponent>(EntityID))
 	{
 		auto It = pChanges->Records.find(StackID);
 		if (It == pChanges->Records.cend())
@@ -238,6 +239,24 @@ void RecordEquipmentChange(Game::CGameWorld& World, Game::HEntity CharacterID, G
 			It->second.NewSlot = NewSlot;
 		else
 			pChanges->Records.erase(It);
+	}
+}
+//---------------------------------------------------------------------
+
+// Monitored and processed by the special system
+void RecordReequipment(Game::CGameWorld& World, Game::HEntity StackID)
+{
+	if (auto pEqupped = World.FindComponent<const CEquippedComponent>(StackID))
+	{
+		if (auto pChanges = World.FindOrAddComponent<CEquipmentChangesComponent>(pEqupped->OwnerID))
+		{
+			// Schedule re-equipment only if other changes for this stack are not scheduled.
+			// Re-equipment request is any record with PrevSlot == NewSlot, the exact slot doesn't matter.
+			// Empty slot is even better because it doesn't trigger the character model update.
+			auto It = pChanges->Records.find(StackID);
+			if (It == pChanges->Records.cend())
+				pChanges->Records.emplace(StackID, CEquipmentChangesComponent::CRecord{ CStrID::Empty, CStrID::Empty });
+		}
 	}
 }
 //---------------------------------------------------------------------
@@ -1708,6 +1727,24 @@ void RemoveItemVisualsFromLocation(Game::CGameWorld& World, Game::HEntity StackI
 {
 	World.RemoveComponent<Game::CSceneComponent>(StackID);
 	World.RemoveComponent<Game::CRigidBodyComponent>(StackID);
+}
+//---------------------------------------------------------------------
+
+void ScheduleReequipment(Game::CGameWorld& World, Game::HEntity ItemID)
+{
+	if (!ItemID) return;
+
+	if (World.FindComponent<const CItemStackComponent>(ItemID))
+	{
+		RecordReequipment(World, ItemID);
+	}
+	else
+	{
+		World.ForEachComponent<const CItemStackComponent>([&World, ItemID](auto StackID, const CItemStackComponent& Stack)
+		{
+			if (Stack.Prototype == ItemID) RecordReequipment(World, ItemID);
+		});
+	}
 }
 //---------------------------------------------------------------------
 
