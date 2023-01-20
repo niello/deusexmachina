@@ -235,6 +235,8 @@ void RecordEquipmentChange(Game::CGameWorld& World, Game::HEntity EntityID, Game
 		auto It = pChanges->Records.find(StackID);
 		if (It == pChanges->Records.cend())
 			pChanges->Records.emplace(StackID, CEquipmentChangesComponent::CRecord{ PrevSlot, NewSlot });
+		else if (It->second.PrevSlot == It->second.NewSlot)
+			It->second = CEquipmentChangesComponent::CRecord{ PrevSlot, NewSlot }; // Turn re-equipment into more important regular record
 		else if (It->second.PrevSlot != NewSlot)
 			It->second.NewSlot = NewSlot;
 		else
