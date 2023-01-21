@@ -1184,8 +1184,8 @@ U32 AddItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, CSt
 		if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 		{
 			pEquipmentWritable->Equipment.emplace(SlotID, NewStackID);
-			BlockEquipmentSlots(World, *pEquipmentWritable, NewStackID);
-			RecordEquipment(World, EntityID, NewStackID, EItemStorage::Equipment, SlotID);
+			const auto MainSlotID = BlockEquipmentSlots(World, *pEquipmentWritable, NewStackID);
+			RecordEquipment(World, EntityID, NewStackID, EItemStorage::Equipment, MainSlotID);
 			return Count;
 		}
 		World.DeleteEntity(NewStackID);
@@ -1238,8 +1238,8 @@ U32 AddItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::H
 			if (DestSlot) continue;
 			const U32 SlotCapacity = CanEquipItems(World, EntityID, ItemProtoID, SlotID);
 			DestSlot = CreateItemStack(World, ItemProtoID, std::min(SlotCapacity, RemainingCount));
-			BlockEquipmentSlots(World, *pEquipmentWritable, DestSlot);
-			RecordEquipment(World, EntityID, DestSlot, EItemStorage::Equipment, SlotID);
+			const auto MainSlotID = BlockEquipmentSlots(World, *pEquipmentWritable, DestSlot);
+			RecordEquipment(World, EntityID, DestSlot, EItemStorage::Equipment, MainSlotID);
 			if (SlotCapacity >= RemainingCount) return Count;
 			RemainingCount -= SlotCapacity;
 		}
@@ -1274,8 +1274,8 @@ std::pair<Game::HEntity, U32> MoveItemsFromEquipmentSlot(Game::CGameWorld& World
 	{
 		if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 		{
-			UnblockEquipmentSlots(World, *pEquipmentWritable, StackID);
-			RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, SlotID);
+			const auto MainSlotID = UnblockEquipmentSlots(World, *pEquipmentWritable, StackID);
+			RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, MainSlotID);
 		}
 		return { StackID, 0 };
 	}
@@ -1315,8 +1315,8 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 			{
 				if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 				{
-					UnblockEquipmentSlots(World, *pEquipmentWritable, StackID);
-					RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, CurrSlotID);
+					const auto MainSlotID = UnblockEquipmentSlots(World, *pEquipmentWritable, StackID);
+					RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, MainSlotID);
 				}
 			}
 			return { MovedCount, MovedCompletely };
@@ -1338,8 +1338,8 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 			if (pReplaced)
 			{
 				*pReplaced = DestStackID;
-				UnblockEquipmentSlots(World, *pEquipmentWritable, DestStackID);
-				RecordUnequipment(World, EntityID, DestStackID, EItemStorage::Equipment, SlotID);
+				const auto MainSlotID = UnblockEquipmentSlots(World, *pEquipmentWritable, DestStackID);
+				RecordUnequipment(World, EntityID, DestStackID, EItemStorage::Equipment, MainSlotID);
 			}
 
 			// Clear all blocked slots except explicitly chosen, they can be incorrect after item moving
@@ -1351,8 +1351,8 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 			}
 
 			// Redo blocking of additional slots from scratch, now they will be correct
-			BlockEquipmentSlots(World, *pEquipmentWritable, FinalStackID);
-			RecordEquipment(World, EntityID, FinalStackID, EItemStorage::Equipment, SlotID);
+			const auto MainSlotID = BlockEquipmentSlots(World, *pEquipmentWritable, FinalStackID);
+			RecordEquipment(World, EntityID, FinalStackID, EItemStorage::Equipment, MainSlotID);
 			return { MovedCount, MovedCompletely };
 		}
 	}
@@ -1397,8 +1397,8 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 			{
 				if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 				{
-					UnblockEquipmentSlots(World, *pEquipmentWritable, StackID);
-					RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, CurrSlotID);
+					const auto MainSlotID = UnblockEquipmentSlots(World, *pEquipmentWritable, StackID);
+					RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, MainSlotID);
 				}
 			}
 			if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
@@ -1417,8 +1417,8 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 			const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, DestSlot, StackID, std::min(RemainingCount, CanEquipItems(World, EntityID, StackID, SlotID)));
 			if (MovedCount)
 			{
-				BlockEquipmentSlots(World, *pEquipmentWritable, DestSlot);
-				RecordEquipment(World, EntityID, DestSlot, EItemStorage::Equipment, SlotID);
+				const auto MainSlotID = BlockEquipmentSlots(World, *pEquipmentWritable, DestSlot);
+				RecordEquipment(World, EntityID, DestSlot, EItemStorage::Equipment, MainSlotID);
 			}
 			if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
 			RemainingCount -= MovedCount;
@@ -1436,8 +1436,8 @@ void ClearEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, CStrID 
 	auto It = pEquipment->Equipment.find(SlotID);
 	if (It == pEquipment->Equipment.cend()) return;
 	const auto StackID = It->second;
-	UnblockEquipmentSlots(World, *pEquipment, StackID);
-	RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, SlotID);
+	const auto MainSlotID = UnblockEquipmentSlots(World, *pEquipment, StackID);
+	RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, MainSlotID);
 }
 //---------------------------------------------------------------------
 
@@ -1491,6 +1491,8 @@ U32 RemoveItemsFromEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Ga
 
 		if (!RemainingCount) break;
 	}
+
+	//!!!FIXME: const auto MainSlotID = UnblockEquipmentSlots
 
 	// Unblock all slots occupied by removed stacks. We cleared them in advance to optimize an operation.
 	UnblockEquipmentSlots(World, *pEquipment, {});

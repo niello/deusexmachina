@@ -15,8 +15,8 @@ protected:
 
 	Ptr<CParameterModifier<T>> _FirstModifier;
 
-	T _BaseValue = {};
-	T _LastFinalValue = {};
+	T         _BaseValue = {};
+	mutable T _LastFinalValue = {};
 
 public:
 
@@ -63,7 +63,7 @@ public:
 
 	void ClearAllModifiers() { while (_FirstModifier) _FirstModifier = std::move(_FirstModifier->NextModifier); } // Prevent recursion
 
-	void UpdateFinalValue()
+	void UpdateFinalValue() const
 	{
 		T FinalValue = _BaseValue;
 
@@ -95,7 +95,7 @@ public:
 	void SetBaseValue(const T& NewBaseValue) { _BaseValue = NewBaseValue; }
 	void SetBaseValue(T&& NewBaseValue) { _BaseValue = std::move(NewBaseValue); }
 	const T& GetBaseValue() const { return _BaseValue; }
-	const T& GetFinalValue() { UpdateFinalValue(); return _LastFinalValue; }
+	const T& GetFinalValue() const { UpdateFinalValue(); return _LastFinalValue; }
 	const T& GetLastCalculatedFinalValue() const { return _LastFinalValue; } // NB: may be already not actual
 
 	CModifiableParameter<T>& operator =(const T& BaseValue) { SetBaseValue(BaseValue); return *this; }
