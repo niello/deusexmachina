@@ -46,12 +46,12 @@ inline Game::HEntity GetEquippedStack(const CEquipmentComponent& Component, CStr
 }
 //---------------------------------------------------------------------
 
-inline bool IsStackEquipped(const CEquipmentComponent& Component, Game::HEntity StackID)
+inline CStrID FindSlotWhereStackIsEquipped(const CEquipmentComponent& Component, Game::HEntity StackID)
 {
 	for (auto [SlotID, StackInSlotID] : Component.Equipment)
 		if (StackInSlotID == StackID)
-			return true;
-	return false;
+			return SlotID;
+	return CStrID::Empty;
 }
 //---------------------------------------------------------------------
 

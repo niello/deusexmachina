@@ -40,6 +40,14 @@ Game::HEntity FindClosestEntity(const Game::CGameLevel& Level, const vector3& Ce
 }
 //---------------------------------------------------------------------
 
+// FIXME: create once, return from mapping? Can precreate!
+CStrID GetQuickSlotID(size_t SlotIndex)
+{
+	const std::string ID = "Q" + std::to_string(SlotIndex + 1);
+	return CStrID(ID.c_str());
+}
+//---------------------------------------------------------------------
+
 U32 GetContainerCapacityInItems(const Game::CGameWorld& World, const CItemContainerComponent& Container,
 	const CItemComponent* pItem, U32 MinItemCount = 1, Game::HEntity ExcludeStackID = {})
 {
@@ -167,12 +175,16 @@ bool RemoveItemsFromStack(Game::CGameWorld& World, Game::HEntity StackID, U32& C
 }
 //---------------------------------------------------------------------
 
-void BlockEquipmentSlots(Game::CGameWorld& World, CEquipmentComponent& Equipment, Game::HEntity StackID)
+// Returns main slot ID
+CStrID BlockEquipmentSlots(Game::CGameWorld& World, CEquipmentComponent& Equipment, Game::HEntity StackID)
 {
 	auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID);
-	if (!pEquippable) return;
+	if (!pEquippable || pEquippable->Slots.empty()) return CStrID::Empty;
+
+	CStrID MainSlotID;
 
 	// Process blocked slot types one by one
+	const auto MainSlotType = pEquippable->Slots.front().first;
 	for (auto [RequiredSlotType, RequiredSlotCount] : pEquippable->Slots)
 	{
 		if (!RequiredSlotCount) continue;
@@ -184,14 +196,15 @@ void BlockEquipmentSlots(Game::CGameWorld& World, CEquipmentComponent& Equipment
 
 			auto It = Equipment.Equipment.find(CurrSlotID);
 			if (It != Equipment.Equipment.cend() && It->second == StackID)
-				if (--RequiredSlotCount == 0)
-					break;
+			{
+				if (!MainSlotID && RequiredSlotType == MainSlotType) MainSlotID = CurrSlotID;
+				if (--RequiredSlotCount == 0) break;
+			}
 		}
 
 		if (!RequiredSlotCount) continue;
 
 		// Block remaining number of slots
-
 		for (auto [CurrSlotID, CurrSlotType] : Equipment.Scheme->Slots)
 		{
 			if (CurrSlotType != RequiredSlotType) continue;
@@ -200,6 +213,7 @@ void BlockEquipmentSlots(Game::CGameWorld& World, CEquipmentComponent& Equipment
 			if (!DestSlot)
 			{
 				DestSlot = StackID;
+				if (!MainSlotID && RequiredSlotType == MainSlotType) MainSlotID = CurrSlotID;
 				if (--RequiredSlotCount == 0) break;
 			}
 		}
@@ -207,18 +221,32 @@ void BlockEquipmentSlots(Game::CGameWorld& World, CEquipmentComponent& Equipment
 		// Check if we failed to find enough free slots of this type. This must not happen normally.
 		n_assert(!RequiredSlotCount);
 	}
+
+	return MainSlotID;
 }
 //---------------------------------------------------------------------
 
-void UnblockEquipmentSlots(CEquipmentComponent& Equipment, Game::HEntity StackID)
+// Returns main slot ID
+CStrID UnblockEquipmentSlots(Game::CGameWorld& World, CEquipmentComponent& Equipment, Game::HEntity StackID)
 {
+	auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID);
+	const auto MainSlotType = (pEquippable && !pEquippable->Slots.empty()) ? pEquippable->Slots.front().first : CStrID::Empty;
+	CStrID MainSlotID;
+
 	for (auto It = Equipment.Equipment.begin(); It != Equipment.Equipment.end(); /**/)
 	{
 		if (It->second == StackID)
+		{
+			if (!MainSlotID && MainSlotType == Equipment.Scheme->Slots[It->first]) MainSlotID = It->first;
 			It = Equipment.Equipment.erase(It);
+		}
 		else
+		{
 			++It;
+		}
 	}
+
+	return MainSlotID;
 }
 //---------------------------------------------------------------------
 
@@ -805,6 +833,7 @@ U32 AddItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t 
 		if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 		{
 			pEquipmentWritable->QuickSlots[SlotIndex] = NewStackID;
+			RecordEquipment(World, EntityID, NewStackID, EItemStorage::QuickSlot, GetQuickSlotID(SlotIndex));
 			return Count;
 		}
 		World.DeleteEntity(NewStackID);
@@ -851,10 +880,12 @@ U32 AddItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::
 	// Put remaining count into free slots
 	if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 	{
-		for (auto& DestSlot : pEquipmentWritable->QuickSlots)
+		for (size_t SlotIndex = 0; SlotIndex < pEquipmentWritable->QuickSlots.size(); ++SlotIndex)
 		{
+			auto& DestSlot = pEquipmentWritable->QuickSlots[SlotIndex];
 			if (DestSlot) continue;
 			DestSlot = CreateItemStack(World, ItemProtoID, std::min(SlotCapacity, RemainingCount));
+			RecordEquipment(World, EntityID, DestSlot, EItemStorage::QuickSlot, GetQuickSlotID(SlotIndex));
 			if (SlotCapacity >= RemainingCount) return Count;
 			RemainingCount -= SlotCapacity;
 		}
@@ -885,7 +916,10 @@ std::pair<Game::HEntity, U32> MoveItemsFromQuickSlot(Game::CGameWorld& World, Ga
 	else
 	{
 		if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
+		{
 			pEquipmentWritable->QuickSlots[SlotIndex] = {};
+			RecordUnequipment(World, EntityID, StackID, EItemStorage::QuickSlot, GetQuickSlotID(SlotIndex));
+		}
 		return { StackID, 0 };
 	}
 }
@@ -923,8 +957,11 @@ std::pair<U32, bool> MoveItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity
 		{
 			const auto [MovedCount, MovedCompletely] = MoveItemsToStack(World, DestStackID, StackID, std::min(Count, SlotCapacity - pDestStack->Count));
 			if (MovedCompletely && IsInternalMove)
+			{
 				if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 					pEquipmentWritable->QuickSlots[FoundIndex] = {};
+				RecordUnequipment(World, EntityID, StackID, EItemStorage::QuickSlot, GetQuickSlotID(FoundIndex));
+			}
 			return { MovedCount, MovedCompletely };
 		}
 
@@ -936,9 +973,19 @@ std::pair<U32, bool> MoveItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity
 		const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, pEquipmentWritable->QuickSlots[SlotIndex], StackID, std::min(Count, SlotCapacity));
 		if (MovedCount)
 		{
-			if (pReplaced) *pReplaced = DestStackID;
+			if (pReplaced)
+			{
+				*pReplaced = DestStackID;
+				RecordUnequipment(World, EntityID, DestStackID, EItemStorage::QuickSlot, GetQuickSlotID(SlotIndex));
+			}
+
 			if (MovedCompletely && IsInternalMove)
+			{
 				pEquipmentWritable->QuickSlots[FoundIndex] = {};
+				RecordUnequipment(World, EntityID, StackID, EItemStorage::QuickSlot, GetQuickSlotID(FoundIndex));
+			}
+
+			RecordEquipment(World, EntityID, StackID, EItemStorage::QuickSlot, GetQuickSlotID(SlotIndex));
 			return { MovedCount, MovedCompletely };
 		}
 	}
@@ -987,10 +1034,12 @@ std::pair<U32, bool> MoveItemsToQuickSlots(Game::CGameWorld& World, Game::HEntit
 	// Put remaining count into free slots
 	if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 	{
-		for (auto& DestSlot : pEquipmentWritable->QuickSlots)
+		for (size_t SlotIndex = 0; SlotIndex < pEquipmentWritable->QuickSlots.size(); ++SlotIndex)
 		{
+			auto& DestSlot = pEquipmentWritable->QuickSlots[SlotIndex];
 			if (DestSlot) continue;
 			const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, DestSlot, StackID, std::min(RemainingCount, SlotCapacity));
+			RecordEquipment(World, EntityID, DestSlot, EItemStorage::QuickSlot, GetQuickSlotID(SlotIndex));
 			if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
 			RemainingCount -= MovedCount;
 		}
@@ -1034,10 +1083,12 @@ Game::HEntity MoveWholeStackToQuickSlots(Game::CGameWorld& World, Game::HEntity 
 	// Put remaining count into free slots
 	if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 	{
-		for (auto& DestSlot : pEquipmentWritable->QuickSlots)
+		for (size_t SlotIndex = 0; SlotIndex < pEquipmentWritable->QuickSlots.size(); ++SlotIndex)
 		{
+			auto& DestSlot = pEquipmentWritable->QuickSlots[SlotIndex];
 			if (DestSlot) continue;
 			if (!SplitItemsToSlot(World, DestSlot, StackID, pSrcStack->Count).first) return {};
+			RecordEquipment(World, EntityID, DestSlot, EItemStorage::QuickSlot, GetQuickSlotID(SlotIndex));
 			return DestSlot;
 		}
 	}
@@ -1050,7 +1101,9 @@ void ClearQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t Slot
 {
 	auto pEquipment = World.FindComponent<CEquipmentComponent>(EntityID);
 	if (!pEquipment || SlotIndex >= pEquipment->QuickSlots.size()) return;
+	const auto StackID = pEquipment->QuickSlots[SlotIndex];
 	pEquipment->QuickSlots[SlotIndex] = {};
+	RecordUnequipment(World, EntityID, StackID, EItemStorage::QuickSlot, GetQuickSlotID(SlotIndex));
 }
 //---------------------------------------------------------------------
 
@@ -1072,13 +1125,17 @@ U32 RemoveItemsFromQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, G
 	if (!pEquipment) return 0;
 
 	U32 RemainingCount = Count;
-	for (auto& StackID : pEquipment->QuickSlots)
+	for (size_t SlotIndex = 0; SlotIndex < pEquipment->QuickSlots.size(); ++SlotIndex)
 	{
+		const auto StackID = pEquipment->QuickSlots[SlotIndex];
 		auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
 		if (!pStack || pStack->Prototype != ItemProtoID || (!AllowModified && pStack->Modified)) continue;
 
 		if (RemoveItemsFromStack(World, StackID, RemainingCount))
-			StackID = {};
+		{
+			pEquipment->QuickSlots[SlotIndex] = {};
+			RecordUnequipment(World, EntityID, StackID, EItemStorage::QuickSlot, GetQuickSlotID(SlotIndex));
+		}
 
 		if (!RemainingCount) break;
 	}
@@ -1217,7 +1274,7 @@ std::pair<Game::HEntity, U32> MoveItemsFromEquipmentSlot(Game::CGameWorld& World
 	{
 		if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 		{
-			UnblockEquipmentSlots(*pEquipmentWritable, StackID);
+			UnblockEquipmentSlots(World, *pEquipmentWritable, StackID);
 			RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, SlotID);
 		}
 		return { StackID, 0 };
@@ -1246,7 +1303,7 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
 
 	// Check if the stack is moved within the same storage
-	const bool IsAlreadyEquipped = IsStackEquipped(*pEquipment, StackID);
+	const auto CurrSlotID = FindSlotWhereStackIsEquipped(*pEquipment, StackID);
 
 	// Try to merge items to the existing stack
 	if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
@@ -1254,11 +1311,13 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 		if (Merge && pDestStack->Count < SlotCapacity && CanMergeStacks(*pSrcStack, pDestStack))
 		{
 			const auto [MovedCount, MovedCompletely] = MoveItemsToStack(World, DestStackID, StackID, std::min(Count, SlotCapacity - pDestStack->Count));
-			if (MovedCompletely && IsAlreadyEquipped)
+			if (MovedCompletely && CurrSlotID)
 			{
 				if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
-					UnblockEquipmentSlots(*pEquipmentWritable, StackID);
-				RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, SlotID);
+				{
+					UnblockEquipmentSlots(World, *pEquipmentWritable, StackID);
+					RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, CurrSlotID);
+				}
 			}
 			return { MovedCount, MovedCompletely };
 		}
@@ -1279,15 +1338,15 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 			if (pReplaced)
 			{
 				*pReplaced = DestStackID;
-				UnblockEquipmentSlots(*pEquipmentWritable, DestStackID);
+				UnblockEquipmentSlots(World, *pEquipmentWritable, DestStackID);
 				RecordUnequipment(World, EntityID, DestStackID, EItemStorage::Equipment, SlotID);
 			}
 
 			// Clear all blocked slots except explicitly chosen, they can be incorrect after item moving
-			if (MovedCompletely && IsAlreadyEquipped)
+			if (MovedCompletely && CurrSlotID)
 			{
 				n_assert_dbg(FinalStackID == StackID);
-				UnblockEquipmentSlots(*pEquipmentWritable, StackID);
+				UnblockEquipmentSlots(World, *pEquipmentWritable, StackID);
 				pEquipmentWritable->Equipment[SlotID] = FinalStackID;
 			}
 
@@ -1310,21 +1369,18 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 	auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID);
 	if (!pEquipment) return { 0, false };
 
-	// Skip if the stack is already contained in this storage
-	if (IsStackEquipped(*pEquipment, StackID)) return { Count, false };
-
 	auto pSrcStack = World.FindComponent<const CItemStackComponent>(StackID);
 	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
 
 	if (Count > pSrcStack->Count) Count = pSrcStack->Count;
 	U32 RemainingCount = Count;
 
-	// Check if the stack is moved within the same storage
-	const bool IsAlreadyEquipped = IsStackEquipped(*pEquipment, StackID);
-
 	// First try to merge into existing stacks of the same item
 	if (Merge)
 	{
+		// Check if the stack is moved within the same storage
+		const auto CurrSlotID = FindSlotWhereStackIsEquipped(*pEquipment, StackID);
+
 		for (auto [SlotID, SlotType] : pEquipment->Scheme->Slots)
 		{
 			auto It = pEquipment->Equipment.find(SlotID);
@@ -1337,11 +1393,13 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 			if (pDestStack->Count >= SlotCapacity) continue;
 
 			const auto [MovedCount, MovedCompletely] = MoveItemsToStack(World, It->second, StackID, std::min(RemainingCount, SlotCapacity - pDestStack->Count));
-			if (MovedCompletely && IsAlreadyEquipped)
+			if (MovedCompletely && CurrSlotID)
 			{
 				if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
-					UnblockEquipmentSlots(*pEquipmentWritable, StackID);
-				RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, SlotID);
+				{
+					UnblockEquipmentSlots(World, *pEquipmentWritable, StackID);
+					RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, CurrSlotID);
+				}
 			}
 			if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
 			RemainingCount -= MovedCount;
@@ -1378,7 +1436,7 @@ void ClearEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, CStrID 
 	auto It = pEquipment->Equipment.find(SlotID);
 	if (It == pEquipment->Equipment.cend()) return;
 	const auto StackID = It->second;
-	UnblockEquipmentSlots(*pEquipment, StackID);
+	UnblockEquipmentSlots(World, *pEquipment, StackID);
 	RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, SlotID);
 }
 //---------------------------------------------------------------------
@@ -1401,13 +1459,17 @@ U32 RemoveItemsFromEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Ga
 	auto pEquipment = World.FindComponent<CEquipmentComponent>(EntityID);
 	if (!pEquipment) return 0;
 
+	auto pEquippable = FindItemComponent<const CEquippableComponent>(World, ItemProtoID);
+	const auto MainSlotType = (pEquippable && !pEquippable->Slots.empty()) ? pEquippable->Slots.front().first : CStrID::Empty;
+
 	// Delay slot unblocking to prevent iterator invalidation
 	std::set<Game::HEntity> StacksToUnblock;
+	CStrID MainSlotID;
 
 	U32 RemainingCount = Count;
 	for (auto It = pEquipment->Equipment.begin(); It != pEquipment->Equipment.end(); /**/)
 	{
-		auto [SlotID, StackID] = *It;
+		const auto [SlotID, StackID] = *It;
 
 		// Already counted and scheduled for unblocking
 		// NB: we clear stack ID to optimize unblocking. One iteration of UnblockEquipmentSlots will be enough then.
@@ -1431,7 +1493,7 @@ U32 RemoveItemsFromEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Ga
 	}
 
 	// Unblock all slots occupied by removed stacks. We cleared them in advance to optimize an operation.
-	UnblockEquipmentSlots(*pEquipment, {});
+	UnblockEquipmentSlots(World, *pEquipment, {});
 
 	return Count - RemainingCount;
 }
