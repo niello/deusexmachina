@@ -1,6 +1,8 @@
 #pragma once
 #include <Items/ItemStackComponent.h>
 #include <Items/EquipmentComponent.h>
+#include <Items/EquippedComponent.h>
+#include <Character/ModifiableParameter.h>
 #include <Game/ECS/GameWorld.h>
 
 // Utilities and algorithms for item manipulation
@@ -38,6 +40,32 @@ struct CContainerStats
 	float  FreeVolume = 0.f;
 	size_t Price = 0;
 };
+
+//???TODO: move to more appropriate place?
+template<typename T>
+class CIncreaseModifier : public CParameterModifier<T>
+{
+public:
+
+	T   _Increase = {};
+	I32 _Priority = 0;
+
+	CIncreaseModifier(T Increase = {}, I32 Priority = 0) : _Increase(Increase), _Priority(Priority) {}
+
+	virtual I32  GetPriority() const override { return _Priority; }
+	virtual bool Apply(T& Value) override { Value += _Increase; return true; }
+};
+
+//???TODO: move to more appropriate place?
+template<typename TModifier, typename... TArgs>
+void AddEquipmentModifier(CEquippedComponent& Source, CModifiableParameter<typename TModifier::TParam>& Param, TArgs&&... Args)
+{
+	auto Mod = MakePtr<TModifier>(std::forward<TArgs>(Args)...);
+	Source.Modifiers.push_back(Mod);
+	Param.AddModifier(std::move(Mod));
+	//Param.UpdateFinalValue();
+}
+//---------------------------------------------------------------------
 
 inline Game::HEntity GetEquippedStack(const CEquipmentComponent& Component, CStrID SlotID)
 {
