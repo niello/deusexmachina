@@ -67,9 +67,9 @@ void RegisterBasicTypes(sol::state& State)
 		, sol::meta_function::length, [](CStrID ID) { return ID.CStr() ? strlen(ID.CStr()) : 0; }
 		, sol::meta_function::index, [](CStrID ID, size_t i) { return ID.CStr() ? ID.CStr()[i - 1] : '\0'; }
 		, sol::meta_function::concatenation, sol::overload(
-			[](const char* a, CStrID b) { return std::string(a) + b.CStr(); }
-			, [](CStrID a, const char* b) { return std::string(a.CStr()) + b; }
-			, [](CStrID a, CStrID b) { return std::string(a.CStr()) + b.CStr(); })
+			[](const char* a, CStrID b) { return std::string(a) + (b.CStr() ? b.CStr() : ""); }
+			, [](CStrID a, const char* b) { return std::string(a.CStr() ? a.CStr() : "") + b; }
+			, [](CStrID a, CStrID b) { return std::string(a.CStr() ? a.CStr() : "") + (b.CStr() ? b.CStr() : ""); })
 		, sol::meta_function::equal_to, [](CStrID a, CStrID b) { return a == b; }
 	);
 	sol::table CStrIDTable = State["CStrID"];

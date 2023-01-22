@@ -76,15 +76,9 @@ struct ParamsFormat<DEM::RPG::CEquipmentComponent>
 		if (auto QuickSlotsDesc = Desc->Find(CStrID("QuickSlots")))
 			DEM::ParamsFormat::Deserialize(QuickSlotsDesc->GetRawValue(), Value.QuickSlots);
 
-		//Value.SlotEnabledBits = 0;
-		//if (Data::PParams EquipmentDesc = Desc->Get<Data::PDataArray>(CStrID("Equipment")))
-		//{
-		//	if (auto pParam = Desc->Find(CStrID(RPG::EEquipmentSlot_Name[i])))
-		//	{
-		//		ParamsFormat<Game::HEntity>::Deserialize(pParam->GetRawValue(), Value.Equipment[i]);
-		//		Value.SlotEnabledBits |= (1 << i);
-		//	}
-		//}
+		// FIXME: fall back to default code
+		if (auto EquipmentDesc = Desc->Find(CStrID("Equipment")))
+			DEM::ParamsFormat::Deserialize(EquipmentDesc->GetRawValue(), Value.Equipment);
 	}
 };
 

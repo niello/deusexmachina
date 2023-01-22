@@ -69,6 +69,7 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/Dlg/PropTalkingSI.cpp
 	DEM/RPG/src/Factions/Faction.cpp
 	DEM/RPG/src/Factions/FactionManager.cpp
+	DEM/RPG/src/Items/EquipmentSystem.cpp
 	DEM/RPG/src/Items/ItemManager.cpp
 	DEM/RPG/src/Items/ItemUtils.cpp
 	DEM/RPG/src/Items/PickItemAbility.cpp

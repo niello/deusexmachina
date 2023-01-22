@@ -307,7 +307,7 @@ static void EndCurrentInteraction(CGameSession& Session, EActionStatus NewStatus
 }
 //---------------------------------------------------------------------
 
-void UpdateAbilityInteractions(DEM::Game::CGameSession& Session, CGameWorld& World, float dt)
+void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float dt)
 {
 	World.ForEachEntityWith<CActionQueueComponent, AI::CAIStateComponent>(
 		[&Session, &World, dt](auto EntityID, auto& Entity, CActionQueueComponent& Queue, AI::CAIStateComponent& AIState)
