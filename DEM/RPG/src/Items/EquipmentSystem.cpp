@@ -45,17 +45,18 @@ void InitEquipment(Game::CGameWorld& World, Resources::CResourceManager& ResMgr)
 			if (auto pEquipped = World.AddComponent<CEquippedComponent>(StackID))
 			{
 				pEquipped->OwnerID = EntityID;
-				ScheduleReequipment(World, StackID);
+				ScheduleStackReequipment(World, StackID, EItemStorage::Equipment, FindMainOccupiedSlot(World, EntityID, StackID));
 			}
 		}
 
 		// Request application of equipment effects for already equipped stacks in quick slots
-		for (const auto StackID : Component.QuickSlots)
+		for (size_t i = 0; i < Component.QuickSlots.size(); ++i)
 		{
+			const auto StackID = Component.QuickSlots[i];
 			if (auto pEquipped = World.AddComponent<CEquippedComponent>(StackID))
 			{
 				pEquipped->OwnerID = EntityID;
-				ScheduleReequipment(World, StackID);
+				ScheduleStackReequipment(World, StackID, EItemStorage::QuickSlot, GetQuickSlotID(i));
 			}
 		}
 	});
@@ -71,9 +72,14 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 
 		for (auto& [StackID, Rec] : Changes.Records)
 		{
+			const bool IsReequipped = (Rec.NewStorage == Rec.PrevStorage && Rec.NewSlot == Rec.PrevSlot);
+
 			// Remember affected slots for owner 3D model updating
-			if (Rec.PrevSlot) SlotsToUpdate.insert(Rec.PrevSlot);
-			if (Rec.NewSlot) SlotsToUpdate.insert(Rec.NewSlot);
+			if (!IsReequipped)
+			{
+				if (Rec.PrevSlot) SlotsToUpdate.insert(Rec.PrevSlot);
+				if (Rec.NewSlot) SlotsToUpdate.insert(Rec.NewSlot);
+			}
 
 			//!!!DBG TMP!
 			{
@@ -88,7 +94,6 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 			}
 
 			// Check for equipment or re-equipment request
-			const bool IsReequipped = (Rec.NewStorage == Rec.PrevStorage && Rec.NewSlot == Rec.PrevSlot);
 			if (Rec.NewStorage != EItemStorage::None || IsReequipped)
 			{
 				auto pEquipped = World.FindComponent<CEquippedComponent>(StackID);

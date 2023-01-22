@@ -74,15 +74,6 @@ inline Game::HEntity GetEquippedStack(const CEquipmentComponent& Component, CStr
 }
 //---------------------------------------------------------------------
 
-inline CStrID FindSlotWhereStackIsEquipped(const CEquipmentComponent& Component, Game::HEntity StackID)
-{
-	for (auto [SlotID, StackInSlotID] : Component.Equipment)
-		if (StackInSlotID == StackID)
-			return SlotID;
-	return CStrID::Empty;
-}
-//---------------------------------------------------------------------
-
 Game::HEntity CreateItemStack(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID = CStrID::Empty);
 Game::HEntity CloneItemStack(Game::CGameWorld& World, Game::HEntity StackID, U32 Count);
 Game::HEntity SplitItemStack(Game::CGameWorld& World, Game::HEntity StackID, U32 Count);
@@ -103,6 +94,7 @@ U32 RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity ContainerID,
 void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& Container, CContainerStats& OutStats);
 bool IsContainerEmpty(const Game::CGameWorld& World, Game::HEntity ContainerID);
 
+CStrID GetQuickSlotID(size_t SlotIndex);
 U32 AddItemsToQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, Game::HEntity ItemProtoID, U32 Count, bool Merge = true);
 U32 AddItemsToQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count, bool Merge = true);
 std::pair<Game::HEntity, U32> MoveItemsFromQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, U32 Count);
@@ -123,6 +115,8 @@ U32 RemoveItemsFromEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID
 U32 RemoveItemsFromEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count, bool AllowModified);
 U32 CanEquipItems(const Game::CGameWorld& World, Game::HEntity ReceiverID, Game::HEntity StackID, CStrID SlotID);
 void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, CStrID SlotID, bool ForceHide = false);
+CStrID FindMainOccupiedSlot(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID);
+void ScheduleStackReequipment(Game::CGameWorld& World, Game::HEntity StackID, EItemStorage Storage = EItemStorage::None, CStrID SlotID = CStrID::Empty);
 void ScheduleReequipment(Game::CGameWorld& World, Game::HEntity ItemID);
 //???Game::HEntity GetEquippedStack(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID);
 //???size_t FindEquipmentSlotForItem(item) - to check if we can equip something before we do that! E.g. for UI prompt "Equip immediately?".
