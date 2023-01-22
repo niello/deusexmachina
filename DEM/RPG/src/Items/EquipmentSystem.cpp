@@ -45,7 +45,7 @@ void InitEquipment(Game::CGameWorld& World, Resources::CResourceManager& ResMgr)
 			if (auto pEquipped = World.AddComponent<CEquippedComponent>(StackID))
 			{
 				pEquipped->OwnerID = EntityID;
-				ScheduleStackReequipment(World, StackID, EItemStorage::Equipment, FindMainOccupiedSlot(World, EntityID, StackID));
+				ScheduleStackReequipment(World, StackID, EItemStorage::Equipment, FindMainOccupiedSlot(World, Component, StackID));
 			}
 		}
 

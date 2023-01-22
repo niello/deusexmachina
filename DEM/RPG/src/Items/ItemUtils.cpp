@@ -1473,17 +1473,16 @@ U32 RemoveItemsFromEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Ga
 		auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
 		if (!pStack || pStack->Prototype != ItemProtoID || (!AllowModified && pStack->Modified)) continue;
 
+		const auto MainSlotID = FindMainOccupiedSlot(World, *pEquipment, StackID);
 		if (RemoveItemsFromStack(World, StackID, RemainingCount))
 		{
 			StacksToUnblock.insert(StackID);
-			RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, SlotID);
+			RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, MainSlotID);
 			It = pEquipment->Equipment.erase(It);
 		}
 
 		if (!RemainingCount) break;
 	}
-
-	//!!!FIXME: const auto MainSlotID = UnblockEquipmentSlots
 
 	// Unblock all slots occupied by removed stacks. We cleared them in advance to optimize an operation.
 	UnblockEquipmentSlots(World, *pEquipment, {});
@@ -1608,20 +1607,24 @@ void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerI
 }
 //---------------------------------------------------------------------
 
-CStrID FindMainOccupiedSlot(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID)
+CStrID FindMainOccupiedSlot(const Game::CGameWorld& World, const CEquipmentComponent& Equipment, Game::HEntity StackID)
 {
 	auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID);
 	if (!pEquippable || pEquippable->Slots.empty()) return CStrID::Empty;
 
-	auto pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID);
-	if (!pEquipment) return CStrID::Empty;
-
 	const auto MainSlotType = pEquippable->Slots.front().first;
-	for (const auto [SlotID, StackInSlotID] : pEquipment->Equipment)
-		if (StackID == StackInSlotID && MainSlotType == pEquipment->Scheme->Slots[SlotID])
+	for (const auto [SlotID, StackInSlotID] : Equipment.Equipment)
+		if (StackID == StackInSlotID && MainSlotType == Equipment.Scheme->Slots[SlotID])
 			return SlotID;
 
 	return CStrID::Empty;
+}
+//---------------------------------------------------------------------
+
+CStrID FindMainOccupiedSlot(const Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID)
+{
+	auto pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID);
+	return pEquipment ? FindMainOccupiedSlot(World, *pEquipment, StackID) : CStrID::Empty;
 }
 //---------------------------------------------------------------------
 
@@ -1639,12 +1642,11 @@ void ScheduleStackReequipment(Game::CGameWorld& World, Game::HEntity StackID, EI
 	{
 		// Find storage and slot
 		// TODO: to utility function?
+		auto pEquipment = World.FindComponent<const CEquipmentComponent>(pEqupped->OwnerID);
+		if (!pEquipment) return;
 
 		if (Storage == EItemStorage::None || Storage == EItemStorage::QuickSlot)
 		{
-			auto pEquipment = World.FindComponent<const CEquipmentComponent>(pEqupped->OwnerID);
-			if (!pEquipment) return;
-
 			const auto FoundIndex = static_cast<size_t>(std::distance(pEquipment->QuickSlots.cbegin(), std::find(pEquipment->QuickSlots.cbegin(), pEquipment->QuickSlots.cend(), StackID)));
 			if (FoundIndex < pEquipment->QuickSlots.size())
 			{
@@ -1656,7 +1658,7 @@ void ScheduleStackReequipment(Game::CGameWorld& World, Game::HEntity StackID, EI
 		if (!SlotID && (Storage == EItemStorage::None || Storage == EItemStorage::Equipment))
 		{
 			Storage = EItemStorage::Equipment;
-			SlotID = FindMainOccupiedSlot(World, pEqupped->OwnerID, StackID);
+			SlotID = FindMainOccupiedSlot(World, *pEquipment, StackID);
 		}
 
 		if (!SlotID) return;
