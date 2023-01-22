@@ -290,6 +290,8 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Scene/SPS.h
 	DEM/Low/src/Scripting/EventHandlerScript.h
 	DEM/Low/src/Scripting/LuaEventHandler.h
+	DEM/Low/src/Scripting/ScriptAsset.h
+	DEM/Low/src/Scripting/ScriptAssetLoader.h
 	DEM/Low/src/Scripting/ScriptObject.h
 	DEM/Low/src/Scripting/ScriptServer.h
 	DEM/Low/src/Scripting/SolLow.h
@@ -526,6 +528,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Scene/SPS.cpp
 	DEM/Low/src/Scripting/EventHandlerScript.cpp
 	DEM/Low/src/Scripting/LuaEventHandler.cpp
+	DEM/Low/src/Scripting/ScriptAssetLoader.cpp
 	DEM/Low/src/Scripting/ScriptObject.cpp
 	DEM/Low/src/Scripting/ScriptServer.cpp
 	DEM/Low/src/Scripting/SolLow.cpp

@@ -2,6 +2,7 @@
 #include <Core/RTTIBaseClass.h>
 #include <Data/RefCounted.h>
 #include <Data/StringID.h>
+#include <Resources/ResourceManager.h> // FIXME: for script loading, may be moved to application later!
 #include <Scripting/SolGame.h>
 #include <map>
 
@@ -21,17 +22,22 @@ protected:
 	inline static uint32_t FeatureTypeCount = 0;
 	template<typename T> inline static const uint32_t FeatureTypeIndex = FeatureTypeCount++;
 
+	Resources::CResourceManager&                         _ResMgr;
+
 	std::vector<std::unique_ptr<::Core::CRTTIBaseClass>> _Features;
 	std::map<CStrID, ::Core::CRTTIBaseClass*>            _FeaturesByName;
-	sol::state                                           _ScriptState;
+	sol::state                                           _ScriptState; //???or pass it as a constructor argument and reuse for multiple sessions?!
 	sol::table                                           _ScriptFields;
+	std::map<CStrID, sol::table>                         _LoadedScripts; // For faster lookup
 
 public:
 
-	CGameSession();
+	CGameSession(Resources::CResourceManager& ResMgr);
 	~CGameSession();
 
 	sol::state& GetScriptState() { return _ScriptState; }
+
+	sol::table GetScript(CStrID ID, bool ForceReload = false);
 
 	template<class T, typename... TArgs> T* RegisterFeature(CStrID Name, TArgs&&... Args)
 	{

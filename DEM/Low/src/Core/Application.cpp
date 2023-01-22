@@ -59,6 +59,8 @@
 #include <Physics/CollisionShape.h>
 #include <Scene/SceneNode.h>
 #include <Scene/SceneNodeLoaderSCN.h>
+#include <Scripting/ScriptAsset.h>
+#include <Scripting/ScriptAssetLoader.h>
 
 namespace DEM::Core
 {
@@ -654,6 +656,7 @@ Frame::PGraphicsResourceManager CApplication::BootstrapGraphics(Render::PVideoDr
 	ResMgr->RegisterDefaultCreator("skn", &Render::CSkinInfo::RTTI, n_new(Resources::CSkinInfoLoaderSKN(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("dds", &Render::CTextureData::RTTI, n_new(Resources::CTextureLoaderDDS(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("tga", &Render::CTextureData::RTTI, n_new(Resources::CTextureLoaderTGA(*ResMgr)));
+	ResMgr->RegisterDefaultCreator("lua", &DEM::Scripting::CScriptAsset::RTTI, n_new(Resources::CScriptAssetLoader(*ResMgr)));
 
 	// Return graphics resource manager object, which allows to create frame views
 

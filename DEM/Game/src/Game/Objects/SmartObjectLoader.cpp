@@ -1,11 +1,7 @@
 #include "SmartObjectLoader.h"
 #include <Game/Objects/SmartObject.h>
-#include <Resources/ResourceManager.h>
-#include <Animation/TimelineTrack.h>
 #include <IO/Stream.h>
-#include <Data/Params.h>
 #include <Data/Buffer.h>
-#include <Data/DataArray.h>
 #include <Data/HRDParser.h>
 
 namespace Resources
@@ -34,18 +30,9 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 	Data::CHRDParser Parser;
 	if (!Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), Params)) return nullptr;
 
-	// Read script source
-	const auto ScriptPath = Params.Get(CStrID("Script"), CString::Empty);
-	{
-		IO::PStream Stream = _ResMgr.CreateResourceStream(ScriptPath, pOutSubId, IO::SAP_SEQUENTIAL);
-		if (!Stream || !Stream->IsOpened()) return nullptr;
-		Buffer = Stream->ReadAll();
-		if (!Buffer) return nullptr;
-	}
-	std::string_view ScriptSource(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize());
-
 	const CStrID ID = Params.Get(CStrID("ID"), CStrID::Empty);
 	const CStrID DefaultState = Params.Get(CStrID("DefaultState"), CStrID::Empty);
+	const CStrID ScriptAssetID = Params.Get(CStrID("Script"), CStrID::Empty);
 
 	// Load object states and transitions
 	std::vector<DEM::Game::CSmartObjectStateInfo> States;
@@ -154,7 +141,7 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 		}
 	}
 
-	return n_new(DEM::Game::CSmartObject(ID, DefaultState, ScriptSource, std::move(States), std::move(Zones), std::move(Overrides)));
+	return n_new(DEM::Game::CSmartObject(ID, DefaultState, ScriptAssetID, std::move(States), std::move(Zones), std::move(Overrides)));
 }
 //---------------------------------------------------------------------
 

@@ -53,14 +53,14 @@ protected:
 
 	CStrID                                _ID;
 	CStrID                                _DefaultState;
-	std::string                           _ScriptSource;
+	CStrID                                _ScriptAssetID;
 	std::vector<CSmartObjectStateInfo>    _States;
 	std::vector<CZone>                    _InteractionZones;
 	std::map<CStrID, CFixedArray<CStrID>> _InteractionOverrides;
 
 public:
 
-	CSmartObject(CStrID ID, CStrID DefaultState, std::string_view ScriptSource,
+	CSmartObject(CStrID ID, CStrID DefaultState, CStrID ScriptAssetID,
 		std::vector<CSmartObjectStateInfo>&& States, std::vector<CZone>&& Zones,
 		std::map<CStrID, CFixedArray<CStrID>>&& InteractionOverrides);
 
@@ -73,7 +73,7 @@ public:
 	const auto&                       GetInteractionZone(U8 ZoneIdx) const { return _InteractionZones[ZoneIdx]; }
 	const CFixedArray<CStrID>*        GetInteractionOverrides(CStrID ID) const;
 
-	sol::function                     GetScriptFunction(sol::state& Lua, std::string_view Name) const;
+	sol::function                     GetScriptFunction(CGameSession& Session, std::string_view Name) const;
 	CStrID                            GetID() const { return _ID; }
 	CStrID                            GetDefaultState() const { return _DefaultState; }
 };

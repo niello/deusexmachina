@@ -7,12 +7,12 @@
 namespace DEM::Game
 {
 
-CSmartObject::CSmartObject(CStrID ID, CStrID DefaultState, std::string_view ScriptSource,
+CSmartObject::CSmartObject(CStrID ID, CStrID DefaultState, CStrID ScriptAssetID,
 	std::vector<CSmartObjectStateInfo>&& States, std::vector<CZone>&& Zones,
 	std::map<CStrID, CFixedArray<CStrID>>&& InteractionOverrides)
 	: _ID(ID)
 	, _DefaultState(DefaultState)
-	, _ScriptSource(ScriptSource)
+	, _ScriptAssetID(ScriptAssetID)
 	, _States(std::move(States))
 	, _InteractionZones(std::move(Zones))
 	, _InteractionOverrides(std::move(InteractionOverrides))
@@ -56,27 +56,10 @@ const CFixedArray<CStrID>* CSmartObject::GetInteractionOverrides(CStrID ID) cons
 // CSmartObject is shared between sessions, and here we initlialize per-session data
 bool CSmartObject::InitInSession(CGameSession& Session) const
 {
-	if (_ScriptSource.empty() || !_ID) return true;
+	if (!_ScriptAssetID || !_ID) return true;
 
-	auto& Lua = Session.GetScriptState();
-
-	//???cache ScriptObject as field? or functions are enough? or don't cache functions, only env?
-	sol::environment ScriptObject(Lua, sol::create, Lua.globals());
-	auto Result = Lua.script(_ScriptSource, ScriptObject); //!!!chunk name conflicts with another signature! , std::string(_ID.CStr()));
-	if (!Result.valid())
-	{
-		sol::error Error = Result;
-		::Sys::Error(Error.what());
-		return false;
-	}
-
-	//???use sol::this_environment for calls as a Self ref?
-
-	//???need to add new_usertype for CSmartObject to ScriptObject or to global table?
-
-	// Write new script object into a smart object registry
-	auto SmartObjectsRegistry = Lua["SmartObjects"].get_or_create<sol::table>();
-	SmartObjectsRegistry[_ID.CStr()] = ScriptObject;
+	auto ScriptObject = Session.GetScript(_ScriptAssetID);
+	if (!ScriptObject) return false;
 
 	if (auto pInteractionMgr = Session.FindFeature<CInteractionManager>())
 	{
@@ -91,7 +74,7 @@ bool CSmartObject::InitInSession(CGameSession& Session) const
 			if (IactTable.get<sol::function>("Execute"))
 				Iact.reset(n_new(CScriptedInteraction(IactTable)));
 			else
-				Iact.reset(n_new(CScriptedAbility(Lua, IactTable)));
+				Iact.reset(n_new(CScriptedAbility(Session.GetScriptState(), IactTable)));
 
 			if (Iact)
 			{
@@ -106,13 +89,11 @@ bool CSmartObject::InitInSession(CGameSession& Session) const
 //---------------------------------------------------------------------
 
 // NB: can't cache Lua objects here because Lua state is per-session and resource is per-application
-sol::function CSmartObject::GetScriptFunction(sol::state& Lua, std::string_view Name) const
+// TODO: could turn GetScriptFunction() to CScriptAsset::GetFunction() if make script assets loadable per-application
+sol::function CSmartObject::GetScriptFunction(CGameSession& Session, std::string_view Name) const
 {
-	//???FIXME: can write shorter?
-	auto ObjProxy = Lua["SmartObjects"][_ID.CStr()];
-	if (ObjProxy.get_type() == sol::type::table)
+	if (auto ScriptObject = Session.GetScript(_ScriptAssetID))
 	{
-		sol::table ScriptObject = ObjProxy;
 		auto FnProxy = ScriptObject[Name];
 		if (FnProxy.get_type() == sol::type::function) return FnProxy;
 	}
