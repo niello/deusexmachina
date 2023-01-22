@@ -38,6 +38,8 @@ CGameSession::~CGameSession()
 // TODO: can move it to script asset loading if script state will be per application and not per session
 sol::table CGameSession::GetScript(CStrID ID, bool ForceReload)
 {
+	if (!ID) return sol::nil;
+
 	if (!ForceReload)
 	{
 		const auto It = _LoadedScripts.find(ID);

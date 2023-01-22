@@ -89,7 +89,7 @@ bool CSmartObject::InitInSession(CGameSession& Session) const
 //---------------------------------------------------------------------
 
 // NB: can't cache Lua objects here because Lua state is per-session and resource is per-application
-// TODO: could turn GetScriptFunction() to CScriptAsset::GetFunction() if make script assets loadable per-application
+// TODO: could turn GetScriptFunction() to CScriptAsset::GetFunction() (or even SafeCall<>(...)) if make script assets loadable per-application
 sol::function CSmartObject::GetScriptFunction(CGameSession& Session, std::string_view Name) const
 {
 	if (auto ScriptObject = Session.GetScript(_ScriptAssetID))

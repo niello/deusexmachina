@@ -10,9 +10,9 @@ namespace DEM::RPG
 
 struct CEquippableComponent
 {
+	CStrID                      ScriptAssetID;
 	CFixedOrderMap<CStrID, U32> Slots;        // A list of slot types blocked by this entity when equipped, with count for each type
 	U32                         MaxStack = 1; // Maximum count of these items in the equipment slot
-	//???bool TryScript?
 };
 
 }
@@ -26,7 +26,8 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CEquippableComponent>
 	return std::make_tuple
 	(
 		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, 1, Slots),
-		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, 2, MaxStack)
+		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, 2, MaxStack),
+		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, 3, ScriptAssetID)
 	);
 }
 
