@@ -33,6 +33,7 @@ endif()
 
 add_library(acl INTERFACE)
 target_include_directories(acl INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/acl/includes")
+# TODO (to show in Visual Studio): add_custom_target(acl_ SOURCES ${ACL_FILES})
 
 # Dependency: Lua
 
