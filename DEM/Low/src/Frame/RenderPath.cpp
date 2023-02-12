@@ -62,19 +62,13 @@ bool CRenderPath::Render(CView& View)
 
 	// Do rendering
 
+	bool AllPhasesSucceeded = true;
 	for (auto& Phase : Phases)
-	{
-		if (!Phase->Render(View))
-		{
-			//???clear tmp view data?
-			pGPU->EndFrame();
-			FAIL;
-		}
-	}
+		AllPhasesSucceeded |= Phase->Render(View);
 
 	//???clear tmp view data?
 	pGPU->EndFrame();
-	OK;
+	return AllPhasesSucceeded;
 }
 //---------------------------------------------------------------------
 
