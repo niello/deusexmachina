@@ -1,8 +1,10 @@
 #pragma once
 #include "SolLow.h"
 #include <Input/InputTranslator.h>
+#include <Animation/AnimationController.h>
 #include <UI/UIWindow.h>
 #include <UI/UIContext.h>
+#include <UI/UIServer.h>
 #include <Scripting/LuaEventHandler.h>
 #include <Events/Signal.h>
 #include <Math/Vector3.h>
@@ -193,6 +195,16 @@ void RegisterBasicTypes(sol::state& State)
 		, "RemoveRootWindow", &UI::CUIContext::RemoveRootWindow
 		, "ClearRootWindowStack", &UI::CUIContext::ClearRootWindowStack
 	);
+	State.new_usertype<UI::CUIServer>("CUIServer"
+		, "ReleaseWindow", [](UI::CUIServer& Self, UI::CUIWindow* pWnd) { Self.ReleaseWindow(Ptr(pWnd)); } // FIXME: sol - bind Ptr<Derived> to Ptr<Base>!
+		, "DestroyAllReusableWindows", & UI::CUIServer::DestroyAllReusableWindows
+	);
+
+	State.new_usertype<DEM::Anim::CAnimationController>("CAnimationController"
+		, "SetString", sol::overload(
+			sol::resolve<bool(UPTR, CStrID)>(&DEM::Anim::CAnimationController::SetString),
+			sol::resolve<bool(CStrID, CStrID)>(&DEM::Anim::CAnimationController::SetString))
+		);
 }
 //---------------------------------------------------------------------
 

@@ -11,6 +11,9 @@ CGameWorld::CGameWorld(Resources::CResourceManager& ResMgr)
 }
 //---------------------------------------------------------------------
 
+CGameWorld::~CGameWorld() = default; // To destroy PGameLevel
+//---------------------------------------------------------------------
+
 // TODO: notify systems
 void CGameWorld::Start()
 {

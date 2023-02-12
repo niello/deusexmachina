@@ -78,6 +78,7 @@ protected:
 public:
 
 	CGameWorld(Resources::CResourceManager& ResMgr);
+	~CGameWorld();
 
 	void Start();
 	void Stop();
