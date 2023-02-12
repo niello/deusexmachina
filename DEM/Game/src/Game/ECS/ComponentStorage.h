@@ -74,31 +74,6 @@ template<typename T> struct CStoragePool
 };
 struct CStorageNoPool {};
 
-// Conditional dead component storage
-template<typename T> struct CStorageDead
-{
-	Data::CSparseArray<std::pair<T, HEntity>, U32> _Dead;
-	CEntityMap<U32>                                _DeadIndex;
-
-	~CStorageDead() { n_assert(_Dead.empty()); }
-
-	void FreeDead(HEntity EntityID)
-	{
-		if (DeadIt = _DeadIndex.find(EntityID))
-		{
-			_Dead.erase(DeadIt->Value);
-			_DeadIndex.erase(DeadIt);
-		}
-	}
-
-	void FreeAllDead()
-	{
-		_Dead.clear();
-		_DeadIndex.clear();
-	}
-};
-struct CStorageNoDead {};
-
 // Conditional signals mixin
 template<typename T> struct CStorageSignals
 {
@@ -109,13 +84,10 @@ template<typename T> struct CStorageSignals
 };
 struct CStorageNoSignals {};
 
-// ExternalDeinit flag prevents components from being deleted on remove. Use it when the component
-// requires external deinitialization logic, e.g. cancelling async operations or freeing resources.
-template<typename T, bool Signals = false, bool ExternalDeinit = false>
+template<typename T, bool Signals = false>
 class CSparseComponentStorage : public IComponentStorage,
 	std::conditional_t<STORAGE_USE_DIFF_POOL<T>, CStoragePool<T>, CStorageNoPool>,
-	public std::conditional_t<Signals, CStorageSignals<T>, CStorageNoSignals>,
-	public std::conditional_t<ExternalDeinit, CStorageDead<T>, CStorageNoDead>
+	public std::conditional_t<Signals, CStorageSignals<T>, CStorageNoSignals>
 {
 protected:
 
@@ -143,22 +115,11 @@ protected:
 	TInnerStorage            _Data;
 	CEntityMap<CIndexRecord> _IndexByEntity;
 
-	bool ValidateComponent(HEntity EntityID, CIndexRecord& Record)
+	void ValidateComponent(HEntity EntityID, CIndexRecord& Record)
 	{
 		n_assert_dbg(Record.Index == INVALID_INDEX && !Record.DiffDirty);
-
-		if constexpr (ExternalDeinit)
-		{
-			if (_DeadIndex.find(EntityID))
-			{
-				::Sys::Error("CSparseComponentStorage::ValidateComponent() > can't set new component while dead awaits deinitialization");
-				return false;
-			}
-		}
-
 		Record.Index = _Data.emplace(LoadComponent(EntityID, Record), EntityID);
 		n_assert_dbg(Record.Index != INVALID_INDEX);
-		return true;
 	}
 	//---------------------------------------------------------------------
 
@@ -167,13 +128,6 @@ protected:
 		if (Record.Index == INVALID_INDEX) return;
 
 		if constexpr (Signals) OnDestroy(_Data[Record.Index].second, &_Data[Record.Index].first);
-
-		if constexpr (ExternalDeinit)
-		{
-			auto EntityID = _Data[Record.Index].second;
-			n_assert_dbg(!_DeadIndex.find(EntityID)); // Can't normally happen
-			_DeadIndex.emplace(EntityID, _Dead.insert(std::move(_Data[Record.Index])));
-		}
 
 		_Data.erase(Record.Index);
 		Record.Index = INVALID_INDEX;
@@ -397,8 +351,6 @@ public:
 		n_assert_dbg(InitialCapacity <= TInnerStorage::MAX_CAPACITY);
 	}
 
-	virtual ~CSparseComponentStorage() override { if constexpr (ExternalDeinit) { n_assert(_Data.empty()); } }
-
 	// Explicitly adds a component. If templated one is present, detaches it from the template.
 	T* Add(HEntity EntityID)
 	{
@@ -413,21 +365,9 @@ public:
 		}
 		else
 		{
-			if constexpr (ExternalDeinit)
-			{
-				if (auto DeadIt = _DeadIndex.find(EntityID))
-				{
-					// Resurrect dead, but not yet destroyed component
-					Index = _Data.emplace(std::move(_Dead[DeadIt->Value]));
-					_Dead.erase(DeadIt->Value);
-					_DeadIndex.erase(DeadIt);
-				}
-				else Index = _Data.emplace(T{}, EntityID);
-			}
-			else Index = _Data.emplace(T{}, EntityID);
-
-			if (Index != INVALID_INDEX) _IndexByEntity.emplace(EntityID,
-				CIndexRecord{ NO_BASE_DATA, {}, 0, Index, EComponentState::Explicit, EComponentState::NoBase, true });
+			Index = _Data.emplace(T{}, EntityID);
+			if (Index != INVALID_INDEX)
+				_IndexByEntity.emplace(EntityID, CIndexRecord{ NO_BASE_DATA, {}, 0, Index, EComponentState::Explicit, EComponentState::NoBase, true });
 		}
 
 		if (Index == INVALID_INDEX) return nullptr;
@@ -567,15 +507,6 @@ public:
 
 		if (!In.IsA<Data::PParams>()) return false;
 
-		if constexpr (ExternalDeinit)
-		{
-			if (_DeadIndex.find(EntityID))
-			{
-				::Sys::Error("CSparseComponentStorage::AddFromParams() > can't set new component while dead awaits deinitialization");
-				return false;
-			}
-		}
-
 		// Distinguish templated components from explicit
 		const bool Templated = In.GetValue<Data::PParams>()->Get(CStrID("__UseTpl"), false);
 		const auto State = Templated ? EComponentState::Templated : EComponentState::Explicit;
@@ -584,12 +515,6 @@ public:
 		auto It = _IndexByEntity.find(EntityID);
 		if (It)
 		{
-			if constexpr (ExternalDeinit)
-			{
-				::Sys::Error("CSparseComponentStorage::AddFromParams() > can't replace component which requires external deinitialization");
-				return false;
-			}
-
 			It->Value.State = State;
 		}
 		else
@@ -929,7 +854,10 @@ public:
 
 		for (auto& IndexRecord : _IndexByEntity)
 		{
-			if constexpr (ExternalDeinit) ClearComponent(IndexRecord);
+			if constexpr (Signals)
+				if (IndexRecord.Index != INVALID_INDEX)
+					OnDestroy(_Data[IndexRecord.Index].second, &_Data[IndexRecord.Index].first);
+
 			ClearDiffBuffer(IndexRecord);
 		}
 		_IndexByEntity.clear();
@@ -1030,6 +958,7 @@ public:
 // Default storage for empty components (flags)
 ///////////////////////////////////////////////////////////////////////
 
+// NB: this storage doesn't fire OnDestroy signals because components here have no data
 template<typename T, bool Signals = false>
 class CEmptyComponentStorage : public IComponentStorage,
 	public std::conditional_t<Signals, CStorageSignals<T>, CStorageNoSignals>
@@ -1327,14 +1256,13 @@ public:
 ///////////////////////////////////////////////////////////////////////
 
 META_DECLARE_BOOL_FLAG(Signals);
-META_DECLARE_BOOL_FLAG(ExternalDeinit);
 
 template<typename T>
 struct TComponentTraits
 {
 	using TStorage = std::conditional_t<std::is_empty_v<T>,
 		CEmptyComponentStorage<T, is_bool_flag_Signals_v<T>>,
-		CSparseComponentStorage<T, is_bool_flag_Signals_v<T>, is_bool_flag_ExternalDeinit_v<T>>>;
+		CSparseComponentStorage<T, is_bool_flag_Signals_v<T>>>;
 };
 
 template<typename T>

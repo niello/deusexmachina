@@ -154,8 +154,6 @@ public:
 	void ForEachEntityWith(TCallback Callback, TFilter Filter);
 	template<typename TComponent, typename TCallback>
 	void ForEachComponent(TCallback Callback);
-	template<typename TComponent, typename TCallback>
-	void FreeDead(TCallback DeinitCallback);
 
 	//???TMP?
 	//???create world based on session (constructor arg) and init fields table in a constructor?
@@ -448,21 +446,6 @@ inline void CGameWorld::ForEachComponent(TCallback Callback)
 			else
 				Callback(EntityID, std::ref(Component));
 		}
-	}
-}
-//---------------------------------------------------------------------
-
-// Delayed deinitialization for components with ExternalDeinit-enabled storage
-// Callback args: entity ID, component ref
-template<typename TComponent, typename TCallback>
-inline void CGameWorld::FreeDead(TCallback DeinitCallback)
-{
-	if (auto pStorage = FindComponentStorage<just_type_t<TComponent>>())
-	{
-		for (auto&& [Component, EntityID] : pStorage->_Dead)
-			DeinitCallback(EntityID, std::ref(Component));
-
-		pStorage->FreeAllDead();
 	}
 }
 //---------------------------------------------------------------------
