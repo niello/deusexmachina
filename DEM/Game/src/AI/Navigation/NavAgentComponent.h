@@ -45,7 +45,7 @@ enum class ENavigationMode : U8
 struct CNavAgentComponent
 {
 	// Must cancel async pathfinding task
-	static constexpr bool ExternalDeinit = true;
+	static constexpr bool Signals = true;
 
 	dtPathCorridor       Corridor;
 	dtNavMeshQuery*      pNavQuery = nullptr; //???need per-agent or can use pool in path queue or navmesh?

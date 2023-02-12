@@ -104,6 +104,7 @@ template<typename T> struct CStorageSignals
 {
 	Events::CSignal<void(HEntity, T*)> OnAdd;
 	Events::CSignal<void(HEntity, T*)> OnRemove;
+	Events::CSignal<void(HEntity, T*)> OnDestroy;
 	//???OnModify / OnGetMutable?
 };
 struct CStorageNoSignals {};
@@ -164,6 +165,8 @@ protected:
 	void ClearComponent(CIndexRecord& Record)
 	{
 		if (Record.Index == INVALID_INDEX) return;
+
+		if constexpr (Signals) OnDestroy(_Data[Record.Index].second, &_Data[Record.Index].first);
 
 		if constexpr (ExternalDeinit)
 		{

@@ -684,36 +684,37 @@ void RenderDebugNavigation(Game::CGameWorld& World, Debug::CDebugDraw& DebugDraw
 }
 //---------------------------------------------------------------------
 
+void DestroyNavigationAgent(Game::CGameWorld& World, ::AI::CPathRequestQueue& PathQueue, Game::HEntity EntityID, CNavAgentComponent& Agent)
+{
+	// Cancel active navigation tasks
+	if (auto pQueue = World.FindComponent<Game::CActionQueueComponent>(EntityID))
+	{
+		Game::HAction TopNavAction;
+		while (auto NavAction = pQueue->FindCurrent<Navigate>(TopNavAction))
+			TopNavAction = NavAction;
+
+		if (TopNavAction && pQueue->GetStatus(TopNavAction) == Game::EActionStatus::Active)
+			pQueue->SetStatus(TopNavAction, Game::EActionStatus::Cancelled);
+	}
+
+	// Need to shutdown async tasks before deleting agent components
+	if (Agent.AsyncTaskID)
+	{
+		PathQueue.CancelRequest(Agent.AsyncTaskID);
+		Agent.AsyncTaskID = 0;
+	}
+
+	if (Agent.pNavQuery)
+	{
+		dtFreeNavMeshQuery(Agent.pNavQuery);
+		Agent.pNavQuery = nullptr;
+	}
+}
+//---------------------------------------------------------------------
+
 void DestroyNavigation(Game::CGameWorld& World, ::AI::CPathRequestQueue& PathQueue)
 {
 	World.RemoveAllComponents<CNavAgentComponent>();
-
-	World.FreeDead<CNavAgentComponent>([&World, &PathQueue](auto EntityID, CNavAgentComponent& Agent)
-	{
-		// Cancel active navigation tasks
-		if (auto pQueue = World.FindComponent<Game::CActionQueueComponent>(EntityID))
-		{
-			Game::HAction TopNavAction;
-			while (auto NavAction = pQueue->FindCurrent<Navigate>(TopNavAction))
-				TopNavAction = NavAction;
-
-			if (TopNavAction && pQueue->GetStatus(TopNavAction) == Game::EActionStatus::Active)
-				pQueue->SetStatus(TopNavAction, Game::EActionStatus::Cancelled);
-		}
-
-		// Need to shutdown async tasks before deleting agent components
-		if (Agent.AsyncTaskID)
-		{
-			PathQueue.CancelRequest(Agent.AsyncTaskID);
-			Agent.AsyncTaskID = 0;
-		}
-
-		if (Agent.pNavQuery)
-		{
-			dtFreeNavMeshQuery(Agent.pNavQuery);
-			Agent.pNavQuery = nullptr;
-		}
-	});
 }
 //---------------------------------------------------------------------
 

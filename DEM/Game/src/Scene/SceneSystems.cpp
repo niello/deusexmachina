@@ -56,14 +56,4 @@ void InitNewSceneComponents(CGameWorld& World, Resources::CResourceManager& Rsrc
 }
 //---------------------------------------------------------------------
 
-void TermDeletedSceneComponents(CGameWorld& World)
-{
-	World.FreeDead<CSceneComponent>([](auto EntityID, CSceneComponent& SceneComponent)
-	{
-		if (SceneComponent.RootNode && SceneComponent.RootNode->GetParent())
-			SceneComponent.RootNode->RemoveFromParent();
-	});
-}
-//---------------------------------------------------------------------
-
 }

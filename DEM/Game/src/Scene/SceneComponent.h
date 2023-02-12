@@ -11,11 +11,8 @@ namespace DEM::Game
 
 struct CSceneComponent
 {
-	// Scene nodes need to be detached from the scene
-	// TODO: has no external dependencies, so may call optional Finalizer() embedded into the component class
-	static constexpr bool ExternalDeinit = true;
-
-	// New scene nodes need to be attached to the scene
+	// New scene nodes need to be attached to the scene.
+	// Deleted entity scene nodes need to be detached from the scene.
 	static constexpr bool Signals = true;
 
 	Scene::PSceneNode RootNode;
