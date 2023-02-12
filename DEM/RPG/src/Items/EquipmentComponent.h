@@ -14,7 +14,8 @@ struct CEquipmentComponent
 	CStrID                          SchemeID; // FIXME: ID to resource directly!
 	PEquipmentScheme                Scheme;
 
-	// TODO: active items/slots (current set of items in hands, active quickslots, e.g. current ammo)
+	// TODO: active items/slots (current set of items in hands and active quickslots, e.g. current ammo)
+	// TODO: default visuals for different body parts - only meshes or scene assets with possible sub-hierarchies? Controls scene component!
 };
 
 }

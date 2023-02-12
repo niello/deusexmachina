@@ -5,7 +5,7 @@
 #include <Data/SerializeToParams.h>
 #include <Data/FunctionTraits.h>
 
-// A template for loading arbitrary C++ object from HRD using metadata defined with DEM::Meta.
+// A template for loading arbitrary C++ object as a DEM resource from HRD using metadata defined with DEM::Meta.
 // Example of usage:
 //
 // class CAsset : public Core::CObject
@@ -23,7 +23,6 @@
 // }
 //
 // App.ResourceManager().RegisterDefaultCreator("hrd", &CAsset::RTTI, n_new(Resources::CDataAssetLoaderHRD<CAsset>(App.ResourceManager())));
-
 
 namespace Resources
 {
