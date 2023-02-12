@@ -1,9 +1,11 @@
 #include <Game/ECS/GameWorld.h>
 #include <Game/GameSession.h>
+#include <Items/ItemComponent.h>
 #include <Items/ArmorComponent.h>
 #include <Items/EquipmentChangesComponent.h>
 #include <Items/EquippableComponent.h>
 #include <Combat/DestructibleComponent.h>
+#include <Scene/SceneComponent.h>
 
 // A set of ECS systems required for functioning of the equipment logic
 
@@ -63,10 +65,87 @@ void InitEquipment(Game::CGameWorld& World, Resources::CResourceManager& ResMgr)
 }
 //---------------------------------------------------------------------
 
+void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, CStrID SlotID, bool ForceHide)
+{
+	if (!OwnerID || !SlotID) return;
+
+	//!!!FIXME: where to place?! Or require bones to be named as slots!
+	static const std::map<CStrID, const char*> EEquipmentSlot_Bone
+	{
+		{ CStrID("Torso"), "torso"},
+		{ CStrID("Shoulders"), "shoulders_cloak"},
+		{ CStrID("Head"), "head"},
+		{ CStrID("Arms"), "arms"},
+		{ CStrID("Hands"), "hands"},
+		{ CStrID("Legs"), "legs"},
+		{ CStrID("Feet"), "feet"},
+		{ CStrID("Belt"), "belt"},
+		{ CStrID("Backpack"), "backpack"},
+		{ CStrID("Neck"), "neck"},
+		{ CStrID("Bracelet1"), "bracelet"},
+		{ CStrID("Bracelet2"), "bracelet"},
+		{ CStrID("Ring1"), "ring"},
+		{ CStrID("Ring2"), "ring"},
+		{ CStrID("Ring3"), "ring"},
+		{ CStrID("Ring4"), "ring"},
+		{ CStrID("ItemInHand1"), "mixamorig_RightHandMiddle1"},
+		{ CStrID("ItemInHand2"), "mixamorig_LeftHandMiddle1"},
+		{ CStrID("ItemInHand3"), "mixamorig_RightHandMiddle1"},
+		{ CStrID("ItemInHand4"), "mixamorig_LeftHandMiddle1"}
+	};
+
+	//!!!FIXME: constexpr CStrID?! Or at least pre-init once!
+	const auto ItBoneName = EEquipmentSlot_Bone.find(SlotID);
+	if (ItBoneName == EEquipmentSlot_Bone.cend() || !ItBoneName->second || !*ItBoneName->second) return;
+
+	auto pEquipment = World.FindComponent<const CEquipmentComponent>(OwnerID);
+	if (!pEquipment) return;
+
+	auto It = pEquipment->Equipment.find(SlotID);
+	const auto StackID = (It == pEquipment->Equipment.cend()) ? Game::HEntity{} : It->second;
+
+	auto pOwnerScene = World.FindComponent<const Game::CSceneComponent>(OwnerID);
+	if (!pOwnerScene || !pOwnerScene->RootNode) return;
+
+	auto pBone = pOwnerScene->RootNode->GetChildRecursively(CStrID(ItBoneName->second));
+	if (!pBone) return;
+
+	if (StackID && !ForceHide)
+	{
+		const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, StackID);
+		if (!pItem || !pItem->WorldModelID) return;
+
+		if (pBone->IsWorldTransformDirty()) pBone->UpdateTransform();
+
+		// Undo scaling
+		Math::CTransformSRT Tfm(pBone->GetWorldMatrix());
+		Tfm.Scale.ReciprocalInplace();
+		Tfm.Rotation = quaternion::Identity;
+		Tfm.Translation = vector3::Zero;
+
+		//!!!TODO: store desired attachment local rotation and translation (and scaling?) somewhere?
+
+		//!!!DBG TMP!
+		Tfm.Rotation.set_rotate_x(HALF_PI);
+
+		auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(StackID);
+		pBone->AddChild(CStrID("Equipment"), pSceneComponent->RootNode, true);
+		pSceneComponent->AssetID = pItem->WorldModelID;
+		pSceneComponent->SetLocalTransform(Tfm);
+	}
+	else
+	{
+		pBone->RemoveChild(CStrID("Equipment"));
+	}
+}
+//---------------------------------------------------------------------
+
 void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Session)
 {
 	World.ForEachComponent<const CEquipmentChangesComponent>([&World, &Session](auto EntityID, const CEquipmentChangesComponent& Changes)
 	{
+		n_assert2_dbg(!Changes.Records.empty(), "DEM::RPG::ProcessEquipmentChanges() > CEquipmentChangesComponent must be removed when empty!");
+
 		// TODO: reusable set outside ForEachComponent? std::vector with unique check on insert?
 		std::set<CStrID> SlotsToUpdate;
 
@@ -107,7 +186,7 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 					// Apply custom logic from the script
 					if (!IsReequipped)
 					{
-						if (auto pEquippable = FindItemComponent<CEquippableComponent>(World, StackID))
+						if (auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
 						{
 							if (auto ScriptObject = Session.GetScript(pEquippable->ScriptAssetID))
 							{
@@ -141,7 +220,7 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 				// ...
 
 				// Apply custom logic from the script
-				if (auto pEquippable = FindItemComponent<CEquippableComponent>(World, StackID))
+				if (auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
 				{
 					if (auto ScriptObject = Session.GetScript(pEquippable->ScriptAssetID))
 					{
@@ -159,7 +238,7 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 					::Sys::Log("Item unequipped\n");
 
 					// Apply custom logic from the script
-					if (auto pEquippable = FindItemComponent<CEquippableComponent>(World, StackID))
+					if (auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
 					{
 						if (auto ScriptObject = Session.GetScript(pEquippable->ScriptAssetID))
 						{
@@ -176,8 +255,45 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 			}
 		}
 
+		if (auto pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID))
+		{
+			std::map<CStrID, CStrID> BodyParts; // Part -> AssetID
+			std::set<Game::HEntity> ProcessedStacks;
+			for (const auto& [SlotID, StackID] : pEquipment->Equipment)
+			{
+				if (ProcessedStacks.find(StackID) != ProcessedStacks.cend()) continue;
+
+				if (auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
+				{
+					ProcessedStacks.insert(StackID);
+
+					for (auto& VisualPart : pEquippable->Visuals)
+					{
+						// It is OK if some parts will be assigned to empty asset explicitly, this is a way to hide them without replacing with something else
+						for (CStrID BodyPart : VisualPart.BodyParts)
+						{
+							if (BodyParts.find(BodyPart) != BodyParts.cend())
+								::Sys::Log("FIXME: improve this message! Body part is defined by more than one equipped item\n");
+							else
+								BodyParts.emplace(BodyPart, VisualPart.AssetID); //!!!???remember bone too?! or always skeleton root?!
+						}
+					}
+				}
+			}
+
+			// Add default parts for all body parts not explicitly defined
+			// Rebuild the body optimally, apply material overrides/constants to new parts
+
+			// Scan equipment and Q-slots for attachments (visuals without body parts, items without visuals but with models etc)
+			// Don't process the same stack multiple times, consider the main blocked slot to be an attachment slot for this stack
+			// For each attachment remember a desired path to the parent bone
+			// Compare with the current attachment configuration
+			// Add/remove/reparent/replace attachments optimally
+			int xxx = 0;
+		}
+
 		for (CStrID SlotID : SlotsToUpdate)
-			UpdateCharacterModelEquipment(World, EntityID, SlotID);
+			UpdateCharacterModelEquipment(World, EntityID, SlotID, false);
 	});
 
 	World.RemoveAllComponents<CEquipmentChangesComponent>();

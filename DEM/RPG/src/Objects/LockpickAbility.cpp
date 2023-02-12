@@ -14,6 +14,7 @@
 
 namespace DEM::RPG
 {
+void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, CStrID SlotID, bool ForceHide);
 
 static std::pair<Game::HEntity, int> FindBestLockpick(const Game::CGameWorld& World, Game::HEntity ActorID)
 {
@@ -282,7 +283,7 @@ void CLockpickAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance
 
 		//!!!model equipment must operate on MainHand, and select currently active set automatically!
 		static const CStrID sidItemInHand1("ItemInHand1");
-		UpdateCharacterModelEquipment(*pWorld, Instance.Actor, sidItemInHand1);
+		UpdateCharacterModelEquipment(*pWorld, Instance.Actor, sidItemInHand1, false);
 	}
 
 	// TODO:
