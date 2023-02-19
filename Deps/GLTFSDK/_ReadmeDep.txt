@@ -8,7 +8,7 @@ License:
 MIT
 
 Current version used:
-r1.9.5.5
+r1.9.6.0
 
 Purpose in DEM:
 glTF converter part
