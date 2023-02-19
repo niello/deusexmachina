@@ -265,7 +265,7 @@ std::unique_ptr<Extension> KHR::Lights::DeserializeLightsPunctual(const std::str
 			if (rangeIt != lightIt->MemberEnd())
 				light.range = rangeIt->value.GetFloat();
 
-			// Stop
+			// Spot
 
 			if (light.type == Type::Spot)
 			{

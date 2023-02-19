@@ -257,6 +257,8 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 
 		if (auto pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID))
 		{
+			//!!!can collect set of assets and set of parts separately! anyway need a set of assets to load each once!
+
 			std::map<CStrID, CStrID> BodyParts; // Part -> AssetID
 			std::set<Game::HEntity> ProcessedStacks;
 			for (const auto& [SlotID, StackID] : pEquipment->Equipment)

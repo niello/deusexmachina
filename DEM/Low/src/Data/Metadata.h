@@ -260,9 +260,10 @@ inline constexpr auto Member(std::uint32_t Code, const char* pName, T TClass::* 
 	return CMember<TClass, T, T TClass::*, T TClass::*>(Code, pName, pGetter, pSetter);
 }
 
-#define DEM_META_MEMBER_FIELD(Class, Code, Name) Member(Code, #Name, &Class::Name, &Class::Name)
-
 }
+
+#define DEM_META_REGISTER_CLASS_NAME(Class) template<> inline constexpr auto RegisterClassName<Class>() { return #Class; }
+#define DEM_META_MEMBER_FIELD(Class, Code, Name) Member(Code, #Name, &Class::Name, &Class::Name)
 
 // Default equality comparison for objects with registered metadata.
 // Must be in the global namespace in order to be available everywhere on operator resolution.

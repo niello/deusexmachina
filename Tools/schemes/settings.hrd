@@ -3,7 +3,7 @@ Effects
 {
 	MetallicRoughnessOpaqueCulled = "Data:effects/pbr_opaque.eff"
 	MetallicRoughnessAlphaTestCulled = "Data:effects/pbr_atest.eff"
-	//MetallicRoughnessAlphaCulled = "Data:effects/pbr_alpha.eff"
+	MetallicRoughnessAlphaCulled = "Data:effects/pbr_alpha.eff"
 	MetallicRoughnessTerrain = "Data:effects/pbr_splatting.eff"
 	MetallicRoughnessSkybox = "Data:effects/skybox.eff"
 

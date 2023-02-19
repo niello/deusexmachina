@@ -18,6 +18,42 @@ namespace acl
 
 namespace fs = std::filesystem;
 
+static const char* GetDevILErrorText(ILenum ErrorCode)
+{
+	switch (ErrorCode)
+	{
+		case IL_NO_ERROR: return "No error";
+		case IL_INVALID_ENUM: return "Invalid enum";
+		case IL_OUT_OF_MEMORY: return "Out of memory";
+		case IL_FORMAT_NOT_SUPPORTED: return "Format not supported";
+		case IL_INTERNAL_ERROR: return "Internal error";
+		case IL_INVALID_VALUE: return "Invalid value";
+		case IL_ILLEGAL_OPERATION: return "Illegal operation";
+		case IL_ILLEGAL_FILE_VALUE: return "Illegal file value";
+		case IL_INVALID_FILE_HEADER: return "Invalid file header";
+		case IL_INVALID_PARAM: return "Invalid param";
+		case IL_COULD_NOT_OPEN_FILE: return "Couldn't open file";
+		case IL_INVALID_EXTENSION: return "Invalid extension";
+		case IL_FILE_ALREADY_EXISTS: return "File already exists";
+		case IL_OUT_FORMAT_SAME: return "Out format same";
+		case IL_STACK_OVERFLOW: return "Stack overflow";
+		case IL_STACK_UNDERFLOW: return "Stack underflow";
+		case IL_INVALID_CONVERSION: return "Invalid conversion";
+		case IL_BAD_DIMENSIONS: return "Bad dimensions";
+		case IL_FILE_READ_ERROR: return "File read or write error"; // IL_FILE_WRITE_ERROR is the same code
+		case IL_LIB_GIF_ERROR: return "GIF error";
+		case IL_LIB_JPEG_ERROR: return "JPEG error";
+		case IL_LIB_PNG_ERROR: return "PNG error";
+		case IL_LIB_TIFF_ERROR: return "TIFF error";
+		case IL_LIB_MNG_ERROR: return "MNG error";
+		case IL_LIB_JP2_ERROR: return "JP2 error";
+		case IL_LIB_EXR_ERROR: return "EXR error";
+		case IL_UNKNOWN_ERROR: return "Unknown DevIL error";
+		default: return "Unknown DevIL error code";
+	}
+}
+//---------------------------------------------------------------------
+
 std::string GetRelativeNodePath(std::vector<std::string>&& From, std::vector<std::string>&& To)
 {
 	std::string RelPath;
@@ -655,44 +691,62 @@ std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesy
 
 		if (!ilLoadImage(SrcPath.string().c_str()))
 		{
-			Log.LogError("Can't load " + SrcPath.generic_string() + " for export, error: " + std::to_string(ilGetError()));
+			Log.LogError("Can't load " + SrcPath.generic_string() + " for export, error: " + std::string(GetDevILErrorText(ilGetError())));
 			return {};
 		}
 
+		fs::create_directories(DestPath.parent_path());
+
 		ilEnable(IL_FILE_OVERWRITE);
+
+		ILboolean Result = IL_FALSE;
 
 		if (DestFormat == "DXT5")
 		{
 			DestPath /= (RsrcName + ".dds");
 			ilSetInteger(IL_DXTC_FORMAT, IL_DXT5);
-			ilSave(IL_DDS, DestPath.string().c_str());
+			Result = ilSave(IL_DDS, DestPath.string().c_str());
+
+			Log.LogDebug("Save as DDS DXT5: " + DestPath.generic_string());
 		}
 		else if (DestFormat == "DXT5nm")
 		{
 			// FIXME: no normal map compression for now. Use NV texture tools or the like?
 			DestPath /= (RsrcName + ".dds");
-			ilSave(IL_DDS, DestPath.string().c_str());
+			Result = ilSave(IL_DDS, DestPath.string().c_str());
+
+			Log.LogDebug("Save as DDS DXT5: " + DestPath.generic_string());
 		}
 		else if (DestFormat == "DDS")
 		{
 			DestPath /= (RsrcName + ".dds");
-			ilSave(IL_DDS, DestPath.string().c_str());
+			Result = ilSave(IL_DDS, DestPath.string().c_str());
+
+			Log.LogDebug("Save as DDS DXT5: " + DestPath.generic_string());
 		}
 		else if (DestFormat == "TGA")
 		{
 			DestPath /= (RsrcName + ".tga");
 			ilSetInteger(IL_TGA_RLE, IL_TRUE); //???!!!per-texture (per-rule) setting?
-			ilSave(IL_TGA, DestPath.string().c_str());
+			Result = ilSave(IL_TGA, DestPath.string().c_str());
+
+			Log.LogDebug("Save as DDS DXT5: " + DestPath.generic_string());
 		}
 		else
 		{
 			Log.LogWarning("Format " + DestFormat + " unknown, used for " + SrcPath.generic_string() + ", will copy as is");
 
 			DestPath /= (RsrcName + SrcExtension);
-			ilSaveImage(DestPath.string().c_str());
+			Result = ilSaveImage(DestPath.string().c_str());
 		}
 
 		ilDeleteImages(1, &ImgId);
+
+		if (!Result)
+		{
+			Log.LogError("Error saving converted " + SrcPath.generic_string() + " to " + DestPath.generic_string()+ ", error: " + std::string(GetDevILErrorText(ilGetError())));
+			return {};
+		}
 	}
 
 	return DestPath.generic_string();
