@@ -34,6 +34,41 @@ static const gltf::Node* GetParentNode(const gltf::Document& Doc, const std::str
 }
 //---------------------------------------------------------------------
 
+static const gltf::Node* FindLastCommonNode(const gltf::Document& Doc, const std::string& NodeA, const std::string& NodeB)
+{
+	const gltf::Node* pNodeA = &Doc.nodes.Get(NodeA);
+	const gltf::Node* pNodeB = &Doc.nodes.Get(NodeB);
+
+	std::vector<const gltf::Node*> ChainA;
+	const gltf::Node* pCurrNode = pNodeA;
+	while (pCurrNode)
+	{
+		if (pCurrNode == pNodeB) return pNodeB;
+		ChainA.push_back(pCurrNode);
+		pCurrNode = GetParentNode(Doc, pCurrNode->id);
+	}
+	ChainA.push_back(nullptr);
+	std::reverse(ChainA.begin(), ChainA.end());
+
+	std::vector<const gltf::Node*> ChainB;
+	pCurrNode = pNodeB;
+	while (pCurrNode)
+	{
+		if (pCurrNode == pNodeA) return pNodeA;
+		ChainB.push_back(pCurrNode);
+		pCurrNode = GetParentNode(Doc, pCurrNode->id);
+	}
+	ChainB.push_back(nullptr);
+	std::reverse(ChainB.begin(), ChainB.end());
+
+	// Start from 
+	const size_t Depth = std::min(ChainA.size(), ChainB.size());
+	for (size_t i = 1; i < Depth; ++i)
+		if (ChainA[i] != ChainB[i]) return ChainA[i - 1];
+	return ChainA[Depth - 1];
+}
+//---------------------------------------------------------------------
+
 static void BuildNodePath(const gltf::Document& Doc, const gltf::Node* pNode, const std::string& TaskName, std::vector<std::string>& OutPath)
 {
 	const gltf::Node* pCurrNode = pNode;
@@ -1137,6 +1172,9 @@ public:
 		std::vector<CBone> Bones;
 		Bones.reserve(Skin.jointIds.size());
 
+		std::string SkinRootID = Skin.skeletonId;
+		const bool CalcRoot = SkinRootID.empty();
+
 		// glTF matrices are column-major, like in DEM
 		auto InvBindMatrices = gltf::AnimationUtils::GetInverseBindMatrices(Ctx.Doc, *Ctx.ResourceReader, Skin);
 		const float* pInvBindMatrix = InvBindMatrices.data();
@@ -1153,6 +1191,26 @@ public:
 				const auto It = std::find(Skin.jointIds.cbegin(), Skin.jointIds.cend(), pParent->id);
 				if (It != Skin.jointIds.cend())
 					NewBone.ParentBoneIndex = static_cast<uint16_t>(std::distance(Skin.jointIds.cbegin(), It));
+			}
+
+			if (CalcRoot)
+			{
+				if (SkinRootID.empty())
+				{
+					SkinRootID = Joint.id;
+				}
+				else
+				{
+					if (auto pNode = FindLastCommonNode(Ctx.Doc, SkinRootID, Joint.id))
+					{
+						SkinRootID = pNode->id;
+					}
+					else
+					{
+						Ctx.Log.LogError("Skin " + SkinNode.skinId + ": can't find a common node for bones, skeleton is separated and can't be processed!");
+						return nullptr;
+					}
+				}
 			}
 
 			auto InvBindMatrix = acl::unaligned_load<acl::AffineMatrix_32>(pInvBindMatrix);
@@ -1176,14 +1234,14 @@ public:
 		// Calculate relative path from the skin node to the root joint
 
 		std::string RootSearchPath;
-		if (SkinNode.id != Skin.skeletonId)
+		if (SkinNode.id != SkinRootID)
 		{
 			std::vector<std::string> CurrNodePath;
 			BuildNodePath(Ctx.Doc, &SkinNode, Ctx.TaskName, CurrNodePath);
 
 			std::vector<std::string> SkeletonRootNodePath;
-			if (!Skin.skeletonId.empty())
-				BuildNodePath(Ctx.Doc, &Ctx.Doc.nodes[Skin.skeletonId], Ctx.TaskName, SkeletonRootNodePath);
+			if (!SkinRootID.empty())
+				BuildNodePath(Ctx.Doc, &Ctx.Doc.nodes[SkinRootID], Ctx.TaskName, SkeletonRootNodePath);
 
 			RootSearchPath = GetRelativeNodePath(std::move(CurrNodePath), std::move(SkeletonRootNodePath));
 		}
