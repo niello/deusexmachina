@@ -326,6 +326,7 @@ protected:
 
 		std::unordered_map<std::string, CMeshAttrInfo> ProcessedMeshes;
 		std::unordered_map<std::string, CSkinAttrInfo> ProcessedSkins;
+		std::unordered_map<std::string, std::vector<CBone>> ProcessedSkinBones;
 		std::unordered_map<std::string, std::string> ProcessedMaterials;
 		std::unordered_map<std::string, std::string> ProcessedTextures;
 	};
@@ -1224,12 +1225,31 @@ public:
 			Bones.push_back(std::move(NewBone));
 		}
 
+		// Check if we already saved the same skin. This is oftenly the case with multipart character models.
+
+		std::string SkinID;
+		for (const auto& [ExistingID, ExistingBones] : Ctx.ProcessedSkinBones)
+		{
+			if (ExistingBones == Bones)
+			{
+				SkinID = ExistingID;
+				Ctx.Log.LogInfo("Skin " + SkinNode.skinId + " reuses identical asset " + ExistingID);
+				break;
+			}
+		}
+
 		// Write resulting file
 
-		const auto RsrcName = GetValidResourceName(Skin.name.empty() ? Ctx.TaskName + '_' + SkinNode.skinId : Skin.name);
-		const auto DestPath = Ctx.SkinPath / (RsrcName + ".skn");
+		if (SkinID.empty())
+		{
+			const auto RsrcName = GetValidResourceName(Skin.name.empty() ? Ctx.TaskName + '_' + SkinNode.skinId : Skin.name);
+			const auto DestPath = Ctx.SkinPath / (RsrcName + ".skn");
 
-		if (!WriteDEMSkin(DestPath, Bones, Ctx.Log)) return nullptr;
+			if (!WriteDEMSkin(DestPath, Bones, Ctx.Log)) return nullptr;
+
+			SkinID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+			Ctx.ProcessedSkinBones.emplace(SkinID, std::move(Bones));
+		}
 
 		// Calculate relative path from the skin node to the root joint
 
@@ -1248,7 +1268,6 @@ public:
 
 		// Remember the skin for node attribute creation
 
-		std::string SkinID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 		It = Ctx.ProcessedSkins.emplace(SkinNode.skinId, CSkinAttrInfo{ std::move(SkinID), std::move(RootSearchPath) }).first;
 
 		return &It->second;

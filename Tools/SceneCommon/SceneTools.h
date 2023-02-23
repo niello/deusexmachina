@@ -114,6 +114,17 @@ struct CBone
 	std::string ID;
 	uint16_t    ParentBoneIndex = NoParentBone;
 	// TODO: bone object-space or local-space AABB
+
+	bool operator ==(const CBone& Other) const
+	{
+		if (ParentBoneIndex != Other.ParentBoneIndex || ID != Other.ID) return false;
+
+		for (size_t i = 0; i < 16; ++i)
+			if (std::fabs(InvLocalBindPose[i] - Other.InvLocalBindPose[i]) > 0.00001f)
+				return false;
+
+		return true;
+	}
 };
 
 struct CLocomotionInfo
