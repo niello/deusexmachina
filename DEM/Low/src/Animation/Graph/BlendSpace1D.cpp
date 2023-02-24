@@ -60,6 +60,8 @@ void CBlendSpace1D::Update(CAnimationUpdateContext& Context, float dt)
 	if (_Samples.size() == 1)
 	{
 		_Samples[0].Source->Update(Context, dt);
+		_pFirst = _Samples[0].Source.get();
+		_pSecond = nullptr;
 		return;
 	}
 
@@ -69,6 +71,8 @@ void CBlendSpace1D::Update(CAnimationUpdateContext& Context, float dt)
 	if (It == _Samples.cbegin() || (It != _Samples.cend() && n_fequal(It->Value, Input, SAMPLE_MATCH_TOLERANCE)))
 	{
 		It->Source->Update(Context, dt);
+		_pFirst = It->Source.get();
+		_pSecond = nullptr;
 		return;
 	}
 
@@ -76,6 +80,8 @@ void CBlendSpace1D::Update(CAnimationUpdateContext& Context, float dt)
 	if (n_fequal(PrevIt->Value, Input, SAMPLE_MATCH_TOLERANCE) || (It == _Samples.cend() && PrevIt->Value < Input))
 	{
 		PrevIt->Source->Update(Context, dt);
+		_pFirst = PrevIt->Source.get();
+		_pSecond = nullptr;
 		return;
 	}
 

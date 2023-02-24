@@ -214,6 +214,9 @@ void CBlendSpace2D::Update(CAnimationUpdateContext& Context, float dt)
 	{
 		//???!!!after fixind dt due to scaling based on distance from input to sample?! See 1D.
 		_Samples[0].Source->Update(Context, dt);
+		_pActiveSamples[0] = _Samples[0].Source.get();
+		_pActiveSamples[1] = nullptr;
+		_pActiveSamples[2] = nullptr;
 		return;
 	}
 
