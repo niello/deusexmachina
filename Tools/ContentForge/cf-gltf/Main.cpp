@@ -1553,6 +1553,12 @@ public:
 		for (size_t BoneIdx = 0; BoneIdx < Nodes.size(); ++BoneIdx)
 			NodeNames[BoneIdx] = (Nodes[BoneIdx]->name.empty() ? Ctx.TaskName + '_' + Nodes[BoneIdx]->id : Nodes[BoneIdx]->name);
 
+		// Don't delete this, can be useful sometimes
+		//Ctx.Log.LogDebug("Clip " + RsrcName + ":");
+		//for (size_t BoneIdx = 0; BoneIdx < Nodes.size(); ++BoneIdx)
+		//	Ctx.Log.LogDebug(" - Bone " + std::to_string(BoneIdx) + " (" + NodeNames[BoneIdx] + "), parent " + std::to_string(Bones[BoneIdx].parent_index));
+
+		// NB: ACL consumes Bones here
 		acl::RigidSkeletonPtr Skeleton = acl::make_unique<acl::RigidSkeleton>(
 			Ctx.ACLAllocator, Ctx.ACLAllocator, Bones.data(), static_cast<uint16_t>(Bones.size()));
 

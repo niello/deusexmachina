@@ -56,9 +56,9 @@ struct CMappedPoseBufferWriter : public acl::OutputWriter
 
 	CMappedPoseBufferWriter(CPoseBuffer& Output, U16* pMapping) : _Output(Output), _pMapping(pMapping) {}
 
-	void write_bone_rotation(uint16_t bone_index, const acl::Quat_32& rotation) { _Output[bone_index].rotation = rotation; }
-	void write_bone_translation(uint16_t bone_index, const acl::Vector4_32& translation) { _Output[bone_index].translation = translation; }
-	void write_bone_scale(uint16_t bone_index, const acl::Vector4_32& scale) { _Output[bone_index].scale = scale; }
+	void write_bone_rotation(uint16_t bone_index, const acl::Quat_32& rotation) { _Output[_pMapping[bone_index]].rotation = rotation; }
+	void write_bone_translation(uint16_t bone_index, const acl::Vector4_32& translation) { _Output[_pMapping[bone_index]].translation = translation; }
+	void write_bone_scale(uint16_t bone_index, const acl::Vector4_32& scale) { _Output[_pMapping[bone_index]].scale = scale; }
 
 	bool skip_bone_rotation(uint16_t bone_index) const { return _pMapping[bone_index] == CSkeletonInfo::EmptyPort; }
 	bool skip_bone_translation(uint16_t bone_index) const { return _pMapping[bone_index] == CSkeletonInfo::EmptyPort; }

@@ -95,7 +95,7 @@ void CBlendSpace1D::Update(CAnimationUpdateContext& Context, float dt)
 
 	// TODO: playback rate must be correctly calculated for blend spaces (see CRY and UE4?)
 	//???need blend space _NormalizedTime? can always get from master animation
-	AdvanceNormalizedTime(dt, GetAnimationLengthScaled(), _NormalizedTime);
+	//AdvanceNormalizedTime(dt, GetAnimationLengthScaled(), _NormalizedTime);
 
 	_pFirst->Update(Context, dt);
 	_pSecond->Update(Context, dt);
