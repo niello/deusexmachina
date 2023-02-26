@@ -464,6 +464,11 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 	else
 		EffectType = Render::EffectType_Other;
 
+#ifdef _DEBUG
+	if (EffectType == Render::EffectType_Other)
+		::Sys::DbgOut(("Effect type not determined for " + UID.ToString()).c_str());
+#endif
+
 	U32 ShaderFormatCount;
 	if (!Reader.Read<U32>(ShaderFormatCount) || !ShaderFormatCount) return nullptr;
 

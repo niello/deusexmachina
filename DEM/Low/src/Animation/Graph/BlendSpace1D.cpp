@@ -31,18 +31,6 @@ void CBlendSpace1D::Init(CAnimationInitContext& Context)
 }
 //---------------------------------------------------------------------
 
-static inline void AdvanceNormalizedTime(float dt, float AnimLength, float& NormalizedTime)
-{
-	if (AnimLength)
-	{
-		NormalizedTime += (dt / AnimLength);
-		if (NormalizedTime < 0.f) NormalizedTime += (1.f - std::truncf(NormalizedTime));
-		else if (NormalizedTime > 1.f) NormalizedTime -= std::truncf(NormalizedTime);
-	}
-	else NormalizedTime = 0.f;
-}
-//---------------------------------------------------------------------
-
 void CBlendSpace1D::Update(CAnimationUpdateContext& Context, float dt)
 {
 	if (_Samples.empty()) return;
@@ -57,48 +45,41 @@ void CBlendSpace1D::Update(CAnimationUpdateContext& Context, float dt)
 	const float ClampedInput = std::clamp(Input, _Samples.front().Value, _Samples.back().Value);
 	if (ClampedInput && ClampedInput != Input) dt *= (Input / ClampedInput);
 
-	if (_Samples.size() == 1)
-	{
-		_Samples[0].Source->Update(Context, dt);
-		_pFirst = _Samples[0].Source.get();
-		_pSecond = nullptr;
-		return;
-	}
-
 	const auto It = std::lower_bound(_Samples.cbegin(), _Samples.cend(), Input,
 		[](const auto& Elm, float Val) { return Elm.Value < Val; });
 
 	if (It == _Samples.cbegin() || (It != _Samples.cend() && n_fequal(It->Value, Input, SAMPLE_MATCH_TOLERANCE)))
 	{
-		It->Source->Update(Context, dt);
 		_pFirst = It->Source.get();
 		_pSecond = nullptr;
-		return;
+		_BlendFactor = 0.f;
 	}
-
-	const auto PrevIt = std::prev(It);
-	if (n_fequal(PrevIt->Value, Input, SAMPLE_MATCH_TOLERANCE) || (It == _Samples.cend() && PrevIt->Value < Input))
+	else
 	{
-		PrevIt->Source->Update(Context, dt);
-		_pFirst = PrevIt->Source.get();
-		_pSecond = nullptr;
-		return;
+		const auto PrevIt = std::prev(It);
+		if (n_fequal(PrevIt->Value, Input, SAMPLE_MATCH_TOLERANCE) || (It == _Samples.cend() && PrevIt->Value < Input))
+		{
+			_pFirst = PrevIt->Source.get();
+			_pSecond = nullptr;
+			_BlendFactor = 0.f;
+		}
+		else
+		{
+			//!!!???TODO: check if samples reference the same animation with the same speed etc!? or blend speeds?
+			_pFirst = PrevIt->Source.get();
+			_pSecond = It->Source.get();
+			_BlendFactor = (Input - PrevIt->Value) / (It->Value - PrevIt->Value);
+		}
 	}
-
-	//!!!???TODO: check if samples reference the same animation with the same speed etc!? or blend speeds?
-
-	_BlendFactor = (Input - PrevIt->Value) / (It->Value - PrevIt->Value);
-	_pFirst = PrevIt->Source.get();
-	_pSecond = It->Source.get();
 
 	// Update sample playback cursors
 
 	// TODO: playback rate must be correctly calculated for blend spaces (see CRY and UE4?)
 	//???need blend space _NormalizedTime? can always get from master animation
-	//AdvanceNormalizedTime(dt, GetAnimationLengthScaled(), _NormalizedTime);
+	//AdvanceNormalizedTime(dt, GetAnimationLengthScaled(), _NormalizedTime); // Current time normalized to [0..1]
 
 	_pFirst->Update(Context, dt);
-	_pSecond->Update(Context, dt);
+	if (_pSecond) _pSecond->Update(Context, dt);
 
 	//::Sys::DbgOut("***CBlendSpace1D: time %lf, input %lf, ipol (%d-%d) %lf\n", _NormalizedTime, Input,
 	//	std::distance(_Samples.cbegin(), PrevIt), std::distance(_Samples.cbegin(), It), BlendFactor);

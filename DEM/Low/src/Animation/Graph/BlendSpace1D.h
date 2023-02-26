@@ -35,8 +35,6 @@ protected:
 
 	CTimedFilter<float>  _Filter;
 
-	//float                _NormalizedTime = 0.f; // Current time normalized to [0..1]
-
 public:
 
 	CBlendSpace1D(CStrID ParamID, float SmoothTime = 0.f);
