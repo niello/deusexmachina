@@ -8,6 +8,7 @@
 #include <Frame/AmbientLightAttribute.h>
 #include <Frame/LightAttribute.h>
 #include <Frame/SkinAttribute.h>
+#include <Frame/SkinProcessorAttribute.h>
 #include <Render/Renderable.h>
 #include <Render/Renderer.h>
 #include <Render/Material.h>
@@ -121,8 +122,11 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 		if (auto pSkinAttr = pAttr->GetNode()->FindFirstAttribute<Frame::CSkinAttribute>())
 		{
-			pNode->pSkinPalette = pSkinAttr->GetSkinPalette();
-			pNode->BoneCount = pSkinAttr->GetSkinInfo()->GetBoneCount();
+			if (const auto& Palette = pSkinAttr->GetSkinPalette())
+			{
+				pNode->pSkinPalette = Palette->GetSkinPalette();
+				pNode->BoneCount = Palette->GetSkinInfo()->GetBoneCount();
+			}
 		}
 		else pNode->pSkinPalette = nullptr;
 

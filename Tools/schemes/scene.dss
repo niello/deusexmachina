@@ -39,7 +39,6 @@ SceneNodeAttr
 	Material		{ FourCC = "MTRL" Type = "string" }
 	Mesh			{ FourCC = "MESH" Type = "string" }
 	MeshGroupIndex	{ FourCC = "MSGR" Type = "int" }
-	JointPalette	{ FourCC = "JPLT" Type = "int" }		// Array
 
 	// Skin
 	SkinInfo		{ FourCC = "SKIF" Type = "string" }

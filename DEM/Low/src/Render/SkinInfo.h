@@ -26,7 +26,7 @@ public:
 	std::vector<CBoneInfo> Bones;
 	//???root and terminal node indices?
 
-	virtual ~CSkinInfo() override { Destroy(); }
+	virtual ~CSkinInfo() override;
 
 	bool				Create(UPTR BoneCount);
 	void				Destroy();

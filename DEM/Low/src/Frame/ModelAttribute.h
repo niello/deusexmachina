@@ -1,6 +1,5 @@
 #pragma once
 #include <Frame/RenderableAttribute.h>
-#include <Data/FixedArray.h>
 
 // Scene node attribute with renderable model
 
@@ -21,7 +20,6 @@ protected:
 	CStrID            _MeshUID;
 	CStrID            _MaterialUID;
 	U32               _MeshGroupIndex = 0;
-	CFixedArray<int>  _BoneIndices;        // For skinning splits due to shader constants limit
 
 	Render::PMeshData _MeshData;
 

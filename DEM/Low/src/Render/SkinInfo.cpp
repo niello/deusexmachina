@@ -6,6 +6,12 @@ namespace Render
 {
 FACTORY_CLASS_IMPL(Render::CSkinInfo, 'SKIF', ::Core::CObject);
 
+CSkinInfo::~CSkinInfo()
+{
+	Destroy();
+}
+//---------------------------------------------------------------------
+
 bool CSkinInfo::Create(UPTR BoneCount)
 {
 	if (pInvBindPose) FAIL;

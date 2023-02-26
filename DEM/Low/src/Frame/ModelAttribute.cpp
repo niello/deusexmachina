@@ -43,14 +43,6 @@ bool CModelAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 				if (!DataReader.Read(_MeshGroupIndex)) FAIL;
 				break;
 			}
-			case 'JPLT':
-			{
-				U16 Count;
-				if (!DataReader.Read(Count)) FAIL;
-				_BoneIndices.SetSize(Count);
-				if (DataReader.GetStream().Read(_BoneIndices.data(), Count * sizeof(int)) != Count * sizeof(int)) FAIL;
-				break;
-			}
 			default: FAIL;
 		}
 	}
@@ -65,7 +57,6 @@ Scene::PNodeAttribute CModelAttribute::Clone()
 	ClonedAttr->_MeshUID = _MeshUID;
 	ClonedAttr->_MaterialUID = _MaterialUID;
 	ClonedAttr->_MeshGroupIndex = _MeshGroupIndex;
-	ClonedAttr->_BoneIndices = _BoneIndices;
 	ClonedAttr->_MeshData = _MeshData;
 	return ClonedAttr;
 }
@@ -87,12 +78,9 @@ Render::PRenderable CModelAttribute::CreateRenderable(CGraphicsResourceManager& 
 {
 	auto pModel = n_new(Render::CModel());
 
-	// TODO: don't copy, store once!
-	pModel->BoneIndices = _BoneIndices;
-	pModel->MeshGroupIndex = _MeshGroupIndex;
-
 	pModel->Mesh = _MeshUID ? ResMgr.GetMesh(_MeshUID) : nullptr;
 	pModel->Material = _MaterialUID ? ResMgr.GetMaterial(_MaterialUID) : nullptr;
+	pModel->MeshGroupIndex = _MeshGroupIndex;
 
 	return Render::PRenderable(pModel);
 }

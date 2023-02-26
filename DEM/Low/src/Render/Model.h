@@ -1,7 +1,6 @@
 #pragma once
 #include <Render/Renderable.h>
 #include <Data/Ptr.h>
-#include <Data/FixedArray.h>
 #include <Data/StringID.h>
 
 // Model represents a piece of visible polygonal geometry.
@@ -21,7 +20,6 @@ public:
 	PMaterial        Material; //???!!!materialset!?
 	PMesh            Mesh;
 	U32              MeshGroupIndex = 0;
-	CFixedArray<int> BoneIndices;        // For skinning splits due to shader constants limit only
 
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling (Skinned, EnableInstancing etc too?)
 };

@@ -228,9 +228,11 @@ PSceneNode CSceneNode::Clone(CSceneNode* pNewParent, bool CloneChildren)
 	ClonedNode->SetActive(IsActiveSelf());
 	ClonedNode->SetLocalTransform(LocalTfm);
 
+	// NB: some of attributes may be intentionally not cloned, e.g. CSkinProcessorAttribute
 	ClonedNode->Attrs.reserve(Attrs.size());
 	for (const auto& Attr : Attrs)
-		ClonedNode->AddAttribute(*Attr->Clone());
+		if (PNodeAttribute ClonedAttr = Attr->Clone())
+			ClonedNode->AddAttribute(*ClonedAttr);
 
 	const auto ChildCount = Children.size();
 	if (CloneChildren && ChildCount)

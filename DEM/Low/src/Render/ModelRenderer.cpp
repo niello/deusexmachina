@@ -62,12 +62,8 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 	Node.pMesh = pModel->Mesh.Get();
 	Node.pGroup = pModel->Mesh->GetGroup(pModel->MeshGroupIndex, Context.MeshLOD);
 
-	if (pModel->BoneIndices.size())
-	{
-		Node.pSkinMapping = pModel->BoneIndices.data();
-		Node.BoneCount = pModel->BoneIndices.size();
-	}
-	else Node.pSkinMapping = nullptr;
+	// FIXME SKINS: need?
+	Node.pSkinMapping = nullptr;
 
 	U8 LightCount = 0;
 

@@ -120,6 +120,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Frame/RenderPhase.h
 	DEM/Low/src/Frame/RenderPhaseGeometry.h
 	DEM/Low/src/Frame/SkinAttribute.h
+	DEM/Low/src/Frame/SkinProcessorAttribute.h
 	DEM/Low/src/Frame/SkyboxAttribute.h
 	DEM/Low/src/Frame/TerrainAttribute.h
 	DEM/Low/src/Frame/View.h
@@ -402,6 +403,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Frame/RenderPhase.cpp
 	DEM/Low/src/Frame/RenderPhaseGeometry.cpp
 	DEM/Low/src/Frame/SkinAttribute.cpp
+	DEM/Low/src/Frame/SkinProcessorAttribute.cpp
 	DEM/Low/src/Frame/SkyboxAttribute.cpp
 	DEM/Low/src/Frame/TerrainAttribute.cpp
 	DEM/Low/src/Frame/View.cpp

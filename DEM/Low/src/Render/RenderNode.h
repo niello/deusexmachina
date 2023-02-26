@@ -27,7 +27,7 @@ struct CRenderNode
 	const CPrimitiveGroup*	pGroup;
 
 	const matrix44*			pSkinPalette;		// nullptr if no skin
-	const int*				pSkinMapping;		// If nullptr, no remapping needed
+	const int*				pSkinMapping;		// If nullptr, no remapping needed // FIXME SKINS: need?
 	UPTR					BoneCount;			// Undefined if no skin
 
 	U16						LightIndexBase;		// Memory is actually allocated inside a CView, we store index, not ptr, to handle reallocations
