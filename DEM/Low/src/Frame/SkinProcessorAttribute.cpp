@@ -84,8 +84,10 @@ void CSkinProcessorAttribute::UpdateAfterChildren(const vector3* pCOIArray, UPTR
 {
 	CNodeAttribute::UpdateAfterChildren(pCOIArray, COICount);
 
+	// Update palettes currently used by skinned meshes
 	for (auto& Palette : _Palettes)
-		Palette->Update();
+		if (Palette->GetRefCount() > 1)
+			Palette->Update();
 }
 //---------------------------------------------------------------------
 
