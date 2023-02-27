@@ -559,6 +559,7 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 					}
 				}
 
+				// TODO: could reuse constant buffer with the same pSkinPalette without resetting the palette redundantly
 				if (ConstSkinPalette && pRenderNode->pSkinPalette)
 				{
 					const UPTR BoneCount = std::min(pRenderNode->BoneCount, ConstSkinPalette.GetElementCount());

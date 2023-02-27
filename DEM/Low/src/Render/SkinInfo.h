@@ -31,6 +31,8 @@ public:
 	bool				Create(UPTR BoneCount);
 	void				Destroy();
 
+	UPTR                GetBoneMatchingLength(const CSkinInfo& Other) const;
+
 	const matrix44&		GetInvBindPose(UPTR BoneIndex) const { return pInvBindPose[BoneIndex]; }
 	const CBoneInfo&	GetBoneInfo(UPTR BoneIndex) const { return Bones[BoneIndex]; }
 	UPTR				GetBoneCount() const { return Bones.size(); }

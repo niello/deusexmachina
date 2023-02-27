@@ -5,25 +5,29 @@
 namespace Frame
 {
 
-CSkinPalette::CSkinPalette(Render::PSkinInfo SkinInfo, Scene::CSceneNode& RootParentNode, bool CreateMissingBones)
-	: _SkinInfo(std::move(SkinInfo))
-{
-	if (!_SkinInfo) return;
-
-	const UPTR BoneCount = _SkinInfo->GetBoneCount();
-	_BoneNodes = std::make_unique<CBoneInfo[]>(BoneCount);
-
-	// Allocate aligned to 16 for faster transfer to VRAM
-	_pSkinPalette = static_cast<matrix44*>(n_malloc_aligned(BoneCount * sizeof(matrix44), 16));
-
-	// Setup root bone(s) and recurse down the hierarchy
-	SetupBoneNodes(INVALID_INDEX, RootParentNode, CreateMissingBones);
-}
-//---------------------------------------------------------------------
-
 CSkinPalette::~CSkinPalette()
 {
 	SAFE_FREE_ALIGNED(_pSkinPalette); // TODO: use aligned unique array ptr?
+}
+//---------------------------------------------------------------------
+
+void CSkinPalette::SetSkinInfo(Render::PSkinInfo SkinInfo)
+{
+	if (!SkinInfo || _SkinInfo == SkinInfo) return;
+
+	const UPTR BoneCount = SkinInfo->GetBoneCount();
+	const UPTR PrevBoneCount = _SkinInfo ? _SkinInfo->GetBoneCount() : 0;
+
+	_SkinInfo = std::move(SkinInfo);
+
+	if (BoneCount != PrevBoneCount)
+	{
+		SAFE_FREE_ALIGNED(_pSkinPalette); // TODO: use aligned unique array ptr?
+
+		// Allocate aligned to 16 for faster transfer to VRAM
+		_pSkinPalette = static_cast<matrix44*>(n_malloc_aligned(BoneCount * sizeof(matrix44), 16));
+		_BoneNodes = std::make_unique<CBoneInfo[]>(BoneCount);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -32,11 +36,12 @@ void CSkinPalette::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentNod
 	const UPTR BoneCount = _SkinInfo->GetBoneCount();
 	for (UPTR i = 0; i < BoneCount; ++i)
 	{
-		// Reset palette just in case some nodes are not found
-		_pSkinPalette[i].ident();
-
+		// Skip if already bound
 		auto& pBoneNode = _BoneNodes[i].pNode;
 		if (pBoneNode) continue;
+
+		// Reset palette just in case some nodes are not found
+		_pSkinPalette[i].ident();
 
 		const auto& BoneInfo = _SkinInfo->GetBoneInfo(i);
 		if (BoneInfo.ParentIndex != ParentIndex) continue;
@@ -85,7 +90,7 @@ void CSkinProcessorAttribute::UpdateAfterChildren(const vector3* pCOIArray, UPTR
 	CNodeAttribute::UpdateAfterChildren(pCOIArray, COICount);
 
 	// Update palettes currently used by skinned meshes
-	for (auto& Palette : _Palettes)
+	for (auto& [SkinInfo, Palette] : _Palettes)
 		if (Palette->GetRefCount() > 1)
 			Palette->Update();
 }
@@ -93,23 +98,48 @@ void CSkinProcessorAttribute::UpdateAfterChildren(const vector3* pCOIArray, UPTR
 
 PSkinPalette CSkinProcessorAttribute::GetSkinPalette(Render::PSkinInfo SkinInfo, bool CreateMissingBones)
 {
-	if (!SkinInfo) return nullptr;
+	if (!SkinInfo || !_pNode) return nullptr;
 
-	auto It = std::lower_bound(_Palettes.begin(), _Palettes.end(), SkinInfo.Get(),
-		[](const PSkinPalette& Palette, const Render::CSkinInfo* pSkin) { return Palette->GetSkinInfo() < pSkin; });
-	if (It != _Palettes.end() && (*It)->GetSkinInfo() == SkinInfo)
+	// Try to find an existing palette for this skin
+	auto It = _Palettes.find(SkinInfo);
+	if (It == _Palettes.end())
 	{
-		if (CreateMissingBones)
+		// Try to find a palette for a fully compatible skin. This is highly likely that we find it because
+		// a skeleton is shared between skins and they may be equal even if exported to different assets.
+		for (auto It2 = _Palettes.begin(); It2 != _Palettes.end(); ++It2)
 		{
-			// TODO: check if some bones are unbound, create them and rebind their subtrees
+			const UPTR MatchLength = SkinInfo->GetBoneMatchingLength(*It2->second->GetSkinInfo());
+			if (MatchLength == SkinInfo->GetBoneCount())
+			{
+				// We can reuse an existing palette
+				It = It2;
+				break;
+			}
+			else if (MatchLength == It2->second->GetSkinInfo()->GetBoneCount())
+			{
+				// We can extend an existing palette
+				It2->second->SetSkinInfo(SkinInfo);
+				It = It2;
+				break;
+			}
 		}
 
-		return *It;
+		// Explicitly associate this skin with matching palette so that we immediately find it instead of matching again
+		if (It != _Palettes.end())
+			_Palettes.emplace(std::move(SkinInfo), It->second).first;
 	}
 
-	PSkinPalette Palette = n_new(CSkinPalette)(SkinInfo, *_pNode, CreateMissingBones);
-	_Palettes.insert(It, Palette);
-	return Palette;
+	// If not found, register a new skin palette
+	if (It == _Palettes.end())
+	{
+		It = _Palettes.emplace(SkinInfo, PSkinPalette(n_new(CSkinPalette))).first;
+		It->second->SetSkinInfo(std::move(SkinInfo));
+	}
+
+	// Bind new bones and create missing ones if we hadn't yet
+	It->second->SetupBoneNodes(INVALID_INDEX, *_pNode, CreateMissingBones);
+
+	return It->second;
 }
 //---------------------------------------------------------------------
 

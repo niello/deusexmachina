@@ -1,6 +1,7 @@
 #pragma once
 #include <Scene/NodeAttribute.h>
 #include <Math/Matrix44.h>
+#include <map>
 
 // Dynamically created attribute that provides skin palettes for different skins based on the underlying node hierarchy
 
@@ -26,12 +27,12 @@ protected:
 	matrix44*                    _pSkinPalette = nullptr;
 	std::unique_ptr<CBoneInfo[]> _BoneNodes;
 
-	void SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentNode, bool CreateMissingBones);
-
 public:
 
-	CSkinPalette(Render::PSkinInfo SkinInfo, Scene::CSceneNode& RootParentNode, bool CreateMissingBones);
 	virtual ~CSkinPalette() override;
+
+	void SetSkinInfo(Render::PSkinInfo SkinInfo);
+	void SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentNode, bool CreateMissingBones);
 
 	void Update();
 
@@ -47,7 +48,7 @@ class CSkinProcessorAttribute : public Scene::CNodeAttribute
 
 protected:
 
-	std::vector<PSkinPalette> _Palettes;
+	std::map<Render::PSkinInfo, PSkinPalette> _Palettes;
 
 	virtual void UpdateAfterChildren(const vector3* pCOIArray, UPTR COICount) override;
 
