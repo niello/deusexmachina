@@ -106,34 +106,33 @@ PSkinPalette CSkinProcessorAttribute::GetSkinPalette(Render::PSkinInfo SkinInfo,
 	{
 		// Try to find a palette for a fully compatible skin. This is highly likely that we find it because
 		// a skeleton is shared between skins and they may be equal even if exported to different assets.
-		for (auto It2 = _Palettes.begin(); It2 != _Palettes.end(); ++It2)
+		for (It = _Palettes.begin(); It != _Palettes.end(); ++It)
 		{
-			const UPTR MatchLength = SkinInfo->GetBoneMatchingLength(*It2->second->GetSkinInfo());
+			const UPTR MatchLength = SkinInfo->GetBoneMatchingLength(*It->second->GetSkinInfo());
 			if (MatchLength == SkinInfo->GetBoneCount())
 			{
 				// We can reuse an existing palette
-				It = It2;
 				break;
 			}
-			else if (MatchLength == It2->second->GetSkinInfo()->GetBoneCount())
+			else if (MatchLength == It->second->GetSkinInfo()->GetBoneCount())
 			{
 				// We can extend an existing palette
-				It2->second->SetSkinInfo(SkinInfo);
-				It = It2;
+				It->second->SetSkinInfo(SkinInfo);
 				break;
 			}
 		}
 
-		// Explicitly associate this skin with matching palette so that we immediately find it instead of matching again
 		if (It != _Palettes.end())
+		{
+			// Explicitly associate this skin with matching palette so that we immediately find it instead of matching again
 			_Palettes.emplace(std::move(SkinInfo), It->second).first;
-	}
-
-	// If not found, register a new skin palette
-	if (It == _Palettes.end())
-	{
-		It = _Palettes.emplace(SkinInfo, PSkinPalette(n_new(CSkinPalette))).first;
-		It->second->SetSkinInfo(std::move(SkinInfo));
+		}
+		else
+		{
+			// If not found, register a new skin palette
+			It = _Palettes.emplace(SkinInfo, PSkinPalette(n_new(CSkinPalette))).first;
+			It->second->SetSkinInfo(std::move(SkinInfo));
+		}
 	}
 
 	// Bind new bones and create missing ones if we hadn't yet
