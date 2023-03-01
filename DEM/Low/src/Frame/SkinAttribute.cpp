@@ -46,27 +46,42 @@ bool CSkinAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 
 bool CSkinAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
-	if (!_pNode) return false;
+	Resources::PResource Rsrc = ResMgr.RegisterResource<Render::CSkinInfo>(_SkinInfoUID.CStr());
+	if (!Rsrc) return false;
+	_SkinInfo = Rsrc->ValidateObject<Render::CSkinInfo>();
+	if (IsActive())
+		InitSkinPalette();
+	return !!_SkinInfo;
+}
+//---------------------------------------------------------------------
+
+void CSkinAttribute::OnActivityChanged(bool Active)
+{
+	// Reference a palette only when active. Unreferenced palettes are not updated.
+	if (Active)
+		InitSkinPalette();
+	else
+		_SkinPalette = nullptr;
+}
+//---------------------------------------------------------------------
+
+void CSkinAttribute::InitSkinPalette()
+{
+	if (_SkinPalette || !_pNode || !_SkinInfo) return;
 
 	auto pRootParent = _pNode->FindNodeByPath(_RootSearchPath.c_str());
-	if (!pRootParent) return false;
+	if (!pRootParent) return;
 
 	auto pSkinProcessor = pRootParent->FindFirstAttribute<CSkinProcessorAttribute>();
 	if (!pSkinProcessor)
 	{
-		PSkinProcessorAttribute SkinProcessor = n_new(CSkinProcessorAttribute);
+		PSkinProcessorAttribute SkinProcessor(n_new(CSkinProcessorAttribute));
 		if (pRootParent->AddAttribute(*SkinProcessor))
 			pSkinProcessor = SkinProcessor.Get();
 	}
-	if (!pSkinProcessor) return false;
+	if (!pSkinProcessor) return;
 
-	Resources::PResource Rsrc = ResMgr.RegisterResource<Render::CSkinInfo>(_SkinInfoUID.CStr());
-	if (!Rsrc) return false;
-	Render::PSkinInfo SkinInfo = Rsrc->ValidateObject<Render::CSkinInfo>();
-	if (!SkinInfo) return false;
-
-	_SkinPalette = pSkinProcessor->GetSkinPalette(SkinInfo, _Flags.Is(Skin_AutocreateBones));
-	return !!_SkinPalette;
+	_SkinPalette = pSkinProcessor->GetSkinPalette(_SkinInfo, _Flags.Is(Skin_AutocreateBones));
 }
 //---------------------------------------------------------------------
 

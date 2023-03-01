@@ -26,9 +26,14 @@ protected:
 		Skin_AutocreateBones = 0x10
 	};
 
-	std::string  _RootSearchPath;
-	CStrID       _SkinInfoUID;
-	PSkinPalette _SkinPalette;
+	std::string       _RootSearchPath;
+	CStrID            _SkinInfoUID; // TODO: store asset reference instead of ID+object! Use PResource or something like that.
+	Render::PSkinInfo _SkinInfo;
+	PSkinPalette      _SkinPalette;
+
+	virtual void OnActivityChanged(bool Active) override;
+
+	void InitSkinPalette();
 
 public:
 

@@ -48,7 +48,8 @@ class CSkinProcessorAttribute : public Scene::CNodeAttribute
 
 protected:
 
-	std::map<Render::PSkinInfo, PSkinPalette> _Palettes;
+	std::vector<PSkinPalette>                  _Palettes;
+	std::map<Render::PSkinInfo, CSkinPalette*> _SkinToPalette;
 
 	virtual void UpdateAfterChildren(const vector3* pCOIArray, UPTR COICount) override;
 
