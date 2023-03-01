@@ -596,6 +596,7 @@ bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name
 			Result.emplace_back(CStrID("Translation"), Vec3Value);
 	}
 
+	//???control by flag in .meta?
 	//if (Nodes.size() == 1)
 	//{
 	//	// TODO: Is it a good idea to save its only child as a root instead?

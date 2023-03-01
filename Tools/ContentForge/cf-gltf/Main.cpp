@@ -80,6 +80,28 @@ static void BuildNodePath(const gltf::Document& Doc, const gltf::Node* pNode, co
 }
 //---------------------------------------------------------------------
 
+static const gltf::Node* FindNodeByPath(const gltf::Document& Doc, const gltf::Scene& Scene, const std::string& Path)
+{
+	if (Path.empty()) return nullptr;
+
+	const gltf::Node* pNode = nullptr;
+	const std::vector<std::string>* pNodes = &Scene.nodes;
+
+	std::string CurrNodeName;
+	std::stringstream Stream{ Path };
+	while (std::getline(Stream, CurrNodeName, '.'))
+	{
+		auto It = std::find_if(pNodes->cbegin(), pNodes->cend(), [&](const std::string& ID) { return Doc.nodes[ID].name == CurrNodeName; });
+		if (It == pNodes->cend()) return nullptr;
+
+		pNode = &Doc.nodes[*It];
+		pNodes = &pNode->children;
+	}
+
+	return pNode;
+}
+//---------------------------------------------------------------------
+
 static acl::Transform_32 GetNodeTransform(const gltf::Node& Node)
 {
 	if (Node.matrix != gltf::Matrix4::IDENTITY)
@@ -489,9 +511,22 @@ public:
 
 		Data::CParams Nodes;
 
-		for (const auto& Node : Scene.nodes)
-			if (!ExportNode(Node, Ctx, Nodes, acl::transform_identity_32()))
-				return ETaskResult::Failure;
+		const Data::CDataArray* pNodes = nullptr;
+		if (ParamsUtils::TryGetParam(pNodes, Ctx.TaskParams, "Nodes"))
+		{
+			// Export only selected nodes
+			for (const auto& NodePathData : *pNodes)
+				if (auto pNode = FindNodeByPath(Ctx.Doc, Scene, NodePathData.GetValue<std::string>()))
+					if (!ExportNode(pNode->id, Ctx, Nodes, acl::transform_identity_32()))
+						return ETaskResult::Failure;
+		}
+		else
+		{
+			// Export all nodes
+			for (const auto& Node : Scene.nodes)
+				if (!ExportNode(Node, Ctx, Nodes, acl::transform_identity_32()))
+					return ETaskResult::Failure;
+		}
 
 		// Export animations
 

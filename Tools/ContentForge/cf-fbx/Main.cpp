@@ -479,11 +479,25 @@ public:
 		// Must be identity, but let's ensure all is correct
 		const auto RootTfm = GetNodeTransform(pScene->GetRootNode());
 
-		for (int i = 0; i < pScene->GetRootNode()->GetChildCount(); ++i)
-			if (!ExportNode(pScene->GetRootNode()->GetChild(i), Ctx, Nodes, RootTfm))
-			{
-				return ETaskResult::Failure;
-			}
+		const Data::CDataArray* pNodes = nullptr;
+		if (ParamsUtils::TryGetParam(pNodes, Ctx.TaskParams, "Nodes"))
+		{
+			assert(false && "NOT IMPLEMENTED!!!");
+			//// Export only selected nodes
+			//for (const auto& NodePathData : *pNodes)
+			//	if (auto pNode = FindNodeByPath(Ctx.Doc, Scene, NodePathData.GetValue<std::string>()))
+			//		if (!ExportNode(pNode->id, Ctx, Nodes, acl::transform_identity_32()))
+			//			return ETaskResult::Failure;
+		}
+		else
+		{
+			// Export all nodes
+			for (int i = 0; i < pScene->GetRootNode()->GetChildCount(); ++i)
+				if (!ExportNode(pScene->GetRootNode()->GetChild(i), Ctx, Nodes, RootTfm))
+				{
+					return ETaskResult::Failure;
+				}
+		}
 
 		// Export animations
 
