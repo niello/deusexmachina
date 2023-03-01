@@ -530,10 +530,12 @@ public:
 
 		// Finalize and save the scene
 
+		const bool CreateRoot = ParamsUtils::GetParam(Ctx.TaskParams, "CreateRoot", true);
+
 		bool Result = true;
 		if (!Ctx.ScenePath.empty())
 			Result = WriteDEMScene(Ctx.ScenePath, Task.TaskID.ToString(), std::move(Nodes), _SceneSchemes, Task.Params,
-				_OutputHRD, _OutputBin, Task.Log);
+				_OutputHRD, _OutputBin, CreateRoot, Task.Log);
 		return Result ? ETaskResult::Success : ETaskResult::Failure;
 	}
 

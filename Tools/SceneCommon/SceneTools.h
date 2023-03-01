@@ -221,7 +221,7 @@ bool WriteDEMMesh(const std::filesystem::path& DestPath, const std::map<std::str
 bool ReadDEMMeshVertexPositions(const std::filesystem::path& Path, std::vector<float3>& Out, CThreadSafeLog& Log);
 bool WriteDEMSkin(const std::filesystem::path& DestPath, const std::vector<CBone>& Bones, CThreadSafeLog& Log);
 bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& ACLAllocator, const acl::AnimationClip& Clip, const std::vector<std::string>& NodeNames, const CLocomotionInfo* pLocomotionInfo, CThreadSafeLog& Log);
-bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name, Data::CParams&& Nodes, const Data::CSchemeSet& Schemes, const Data::CParams& TaskParams, bool HRD, bool Binary, CThreadSafeLog& Log);
+bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name, Data::CParams&& Nodes, const Data::CSchemeSet& Schemes, const Data::CParams& TaskParams, bool HRD, bool Binary, bool CreateRoot, CThreadSafeLog& Log);
 void InitImageProcessing();
 void TermImageProcessing();
 std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesystem::path& DestDir, const Data::CParams& TaskParams, CThreadSafeLog& Log);

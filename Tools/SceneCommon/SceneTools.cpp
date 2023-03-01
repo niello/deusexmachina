@@ -577,7 +577,7 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 // TaskParams = Task.Params
 // DestDir = GetPath(Task.Params, "Output");
 bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name, Data::CParams&& Nodes,
-	const Data::CSchemeSet& Schemes, const Data::CParams& TaskParams, bool HRD, bool Binary, CThreadSafeLog& Log)
+	const Data::CSchemeSet& Schemes, const Data::CParams& TaskParams, bool HRD, bool Binary, bool CreateRoot, CThreadSafeLog& Log)
 {
 	const std::string TaskName = GetValidResourceName(Name);
 
@@ -586,6 +586,12 @@ bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name
 	const Data::CParams* pTfmParams;
 	if (ParamsUtils::TryGetParam(pTfmParams, TaskParams, "Transform"))
 	{
+		if (!CreateRoot)
+		{
+			Log.LogError(TaskName + " contains Transform but CreateRoot is false, can't save a scene");
+			return false;
+		}
+
 		float3 Vec3Value;
 		float4 Vec4Value;
 		if (ParamsUtils::TryGetParam(Vec3Value, *pTfmParams, "S"))
@@ -596,16 +602,22 @@ bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name
 			Result.emplace_back(CStrID("Translation"), Vec3Value);
 	}
 
-	//???control by flag in .meta?
-	//if (Nodes.size() == 1)
-	//{
-	//	// TODO: Is it a good idea to save its only child as a root instead?
-	//	Result = std::move(Nodes[0].second.GetValue<Data::CParams>());
-	//}
-	//else
-	if (!Nodes.empty())
+	if (Nodes.size() == 1 && !CreateRoot)
 	{
-		Result.emplace_back(CStrID("Children"), std::move(Nodes));
+		Result = std::move(Nodes[0].second.GetValue<Data::CParams>());
+	}
+	else
+	{
+		if (!CreateRoot)
+		{
+			Log.LogError(TaskName + " node count is not exactly 1 but CreateRoot is false, can't save a scene");
+			return false;
+		}
+
+		if (!Nodes.empty())
+		{
+			Result.emplace_back(CStrID("Children"), std::move(Nodes));
+		}
 	}
 
 	if (HRD)
