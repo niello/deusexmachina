@@ -8,6 +8,7 @@
 #include <Character/AppearanceComponent.h>
 #include <Character/AppearanceAsset.h>
 #include <Scene/SceneComponent.h>
+#include <Scene/NodeAttribute.h>
 
 // A set of ECS systems required for functioning of the equipment logic
 
@@ -106,14 +107,18 @@ static size_t ApplyAppearance(std::set<std::pair<Resources::PResource, std::stri
 				if (!Match) continue;
 			}
 
-			//!!!???TODO:
-			// detect target bone from SlotID if no explicit path specified?
-			//!!!use main slot ID for the item, not just the first met slot!
-			// how to handle sheathed and unsheathed weapons? a bool flag in a character appearance component? just as 'hide helmet'
-			//!!!can patch empty RootBonePath by SlotID in a postprocessing pass, to reuse main part of the loop for the base look!
+			if (Variant.Asset)
+			{
+				//!!!???TODO:
+				// detect target bone from SlotID if no explicit path specified?
+				//!!!use main slot ID for the item, not just the first met slot!
+				// how to handle sheathed and unsheathed weapons? a bool flag in a character appearance component? just as 'hide helmet'
+				//!!!can patch empty RootBonePath by SlotID in a postprocessing pass, to reuse main part of the loop for the base look!
 
-			// Match found, remember this scene asset for instantiation
-			Look.emplace(Variant.Asset, VisualPart.RootBonePath);
+				// Match found, remember this scene asset for instantiation
+				Look.emplace(Variant.Asset, VisualPart.RootBonePath);
+			}
+
 			break;
 		}
 	}
@@ -122,7 +127,7 @@ static size_t ApplyAppearance(std::set<std::pair<Resources::PResource, std::stri
 }
 //---------------------------------------------------------------------
 
-void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID, CAppearanceComponent& AppearanceComponent)
+void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID, CAppearanceComponent& AppearanceComponent, Resources::CResourceManager& RsrcMgr)
 {
 	std::set<std::pair<Resources::PResource, std::string>> NewLook;
 	std::set<CStrID> FilledBodyParts;
@@ -171,27 +176,27 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 	// detach attachments parented to altered parts
 	// delete parts not needed anymore
 	// reparent parts that are instantiated but now changed their parent bone (see below for attachment, can generalize this)
-	// create missing parts
+	// create missing parts, apply material overrides and constants from AppearanceComponent (can even cache materials there)
 	// destroy detached attachments that are not longer needed
 	// for each of remaining detached attachments, reattach if target bone exists, destroy otherwise
 	// create missing attachments
 	// record a new current state to AppearanceComponent
+	// set a new look to appearance component for tracking and optimizations
 
-	//!!!TODO: apply material overrides/constants to newly instantiated parts
+	if (auto pSceneComponent = World.FindComponent<const Game::CSceneComponent>(EntityID))
+	{
+		for (const auto& [SceneRsrc, RootPath] : NewLook)
+			if (auto NodeTpl = SceneRsrc->ValidateObject<Scene::CSceneNode>())
+				pSceneComponent->RootNode->FindNodeByPath("asset.f_hum_avatar")->AddChild(CStrID("Body2"), NodeTpl->Clone());
 
-	//void InitNewSceneComponents(CGameWorld& World, Resources::CResourceManager& RsrcMgr)
-	//{
-	//	World.ForEachEntityWith<CSceneComponent>(
-	//		[&World, &RsrcMgr](auto EntityID, auto& Entity, CSceneComponent& SceneComponent)
-	//	{
-	//		InitNewSceneComponent(EntityID, Entity, SceneComponent, World, RsrcMgr);
-	//	});
-	//}
-	//auto Rsrc = RsrcMgr.RegisterResource<Scene::CSceneNode>(SceneComponent.AssetID.CStr());
-	//if (auto NodeTpl = Rsrc->ValidateObject<Scene::CSceneNode>()) return;
-	//	SceneComponent.RootNode->AddChild(sidAsset, NodeTpl->Clone());
-
-	int xxx = 0;
+		// Validate resources
+		pSceneComponent->RootNode->Visit([&RsrcMgr](Scene::CSceneNode& Node)
+		{
+			for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
+				Node.GetAttribute(i)->ValidateResources(RsrcMgr);
+			return true;
+		});
+	}
 }
 //---------------------------------------------------------------------
 
@@ -270,9 +275,9 @@ void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerI
 }
 //---------------------------------------------------------------------
 
-void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Session)
+void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Session, Resources::CResourceManager& RsrcMgr)
 {
-	World.ForEachComponent<const CEquipmentChangesComponent>([&World, &Session](auto EntityID, const CEquipmentChangesComponent& Changes)
+	World.ForEachComponent<const CEquipmentChangesComponent>([&World, &Session, &RsrcMgr](auto EntityID, const CEquipmentChangesComponent& Changes)
 	{
 		n_assert2_dbg(!Changes.Records.empty(), "DEM::RPG::ProcessEquipmentChanges() > CEquipmentChangesComponent must be removed when empty!");
 
@@ -390,7 +395,7 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 			UpdateCharacterModelEquipment(World, EntityID, SlotID, false);
 
 		if (auto pAppearance = FindItemComponent<CAppearanceComponent>(World, EntityID))
-			RebuildCharacterAppearance(World, EntityID, *pAppearance);
+			RebuildCharacterAppearance(World, EntityID, *pAppearance, RsrcMgr);
 	});
 
 	World.RemoveAllComponents<CEquipmentChangesComponent>();
