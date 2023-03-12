@@ -91,9 +91,6 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 			{
 				// TODO: skip ignored assets
 
-				// FIXME: not here!
-				//ResMgr.RegisterResource<CAppearanceAsset>(AppearanceRsrc);
-
 				if (auto pAppearanceAsset = AppearanceRsrc->ValidateObject<CAppearanceAsset>())
 				{
 					for (const auto& VisualPart : pAppearanceAsset->Visuals)
