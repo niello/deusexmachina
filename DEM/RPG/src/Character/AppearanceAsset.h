@@ -27,7 +27,7 @@ public:
 		std::string                     RootBonePath;
 	};
 
-	std::vector<CVisualPart> VisualParts;
+	std::vector<CVisualPart> Visuals;
 };
 
 using PAppearanceAsset = Ptr<CAppearanceAsset>;
@@ -63,7 +63,7 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CAppearanceAsset>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset, 1, VisualParts)
+		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset, 1, Visuals)
 	);
 }
 
