@@ -5,6 +5,7 @@
 #include <Items/EquipmentChangesComponent.h>
 #include <Items/EquippableComponent.h>
 #include <Combat/DestructibleComponent.h>
+#include <Character/AppearanceComponent.h>
 #include <Scene/SceneComponent.h>
 
 // A set of ECS systems required for functioning of the equipment logic
@@ -17,10 +18,10 @@ class CArmorAbsorptionModifier : public CParameterModifier<CDamageAbsorption>
 {
 public:
 
-	DEM::Game::CGameWorld& _World;
-	DEM::Game::HEntity _SourceID;
+	Game::CGameWorld& _World;
+	Game::HEntity _SourceID;
 
-	CArmorAbsorptionModifier(DEM::Game::CGameWorld& World, DEM::Game::HEntity SourceID) : _World(World), _SourceID(SourceID) {}
+	CArmorAbsorptionModifier(Game::CGameWorld& World, Game::HEntity SourceID) : _World(World), _SourceID(SourceID) {}
 
 	virtual I32 GetPriority() const override { return 0; }
 
@@ -62,6 +63,62 @@ void InitEquipment(Game::CGameWorld& World, Resources::CResourceManager& ResMgr)
 			}
 		}
 	});
+}
+//---------------------------------------------------------------------
+
+void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID, CAppearanceComponent& AppearanceComponent)
+{
+	if (auto pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID))
+	{
+		std::set<Game::HEntity> ProcessedStacks;
+
+		// TODO: process slots in order of priority!
+		for (const auto& [SlotID, StackID] : pEquipment->Equipment)
+		{
+			if (ProcessedStacks.find(StackID) != ProcessedStacks.cend()) continue;
+
+			ProcessedStacks.insert(StackID);
+
+			auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID);
+			if (!pEquippable) continue;
+
+			for (auto& AppearanceAsset : pEquippable->AppearanceAssets)
+			{
+				// apply all visual parts, combining everything from this list of assets and skipping what is already ignored
+			}
+
+			// after this, add all defined body parts to ignore list
+			// for attachments, remember target bone
+			// how to handle sheathed and unsheathed weapons? a bool flag in a character appearance component? just as 'hide helmet'
+		}
+	}
+
+	for (auto& AppearanceAsset : AppearanceComponent.AppearanceAssets)
+	{
+		// apply all visual parts, combining everything from this list of assets and skipping what is already ignored
+	}
+
+	// now we must have a vector<pair<SCNAssetID, TargetBone>>
+	// detach attachments parented to altered parts
+	// delete parts not needed anymore
+	// create missing parts
+	// destroy detached attachments that are not longer needed
+	// for each of remaining detached attachments, reattach if target bone exists, destroy otherwise
+	// create missing attachments
+	// record a new current state to AppearanceComponent
+
+	if (auto pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID))
+	{
+		// Add default parts for all body parts not explicitly defined
+		// Rebuild the body optimally, apply material overrides/constants to new parts
+
+		// Scan equipment and Q-slots for attachments (visuals without body parts, items without visuals but with models etc)
+		// Don't process the same stack multiple times, consider the main blocked slot to be an attachment slot for this stack
+		// For each attachment remember a desired path to the parent bone
+		// Compare with the current attachment configuration
+		// Add/remove/reparent/replace attachments optimally
+		int xxx = 0;
+	}
 }
 //---------------------------------------------------------------------
 
@@ -149,6 +206,7 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 		// TODO: reusable set outside ForEachComponent? std::vector with unique check on insert?
 		std::set<CStrID> SlotsToUpdate;
 
+		// Apply and remove equipment effects
 		for (auto& [StackID, Rec] : Changes.Records)
 		{
 			const bool IsReequipped = (Rec.NewStorage == Rec.PrevStorage && Rec.NewSlot == Rec.PrevSlot);
@@ -255,47 +313,11 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 			}
 		}
 
-		if (auto pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID))
-		{
-			//!!!can collect set of assets and set of parts separately! anyway need a set of assets to load each once!
-
-			std::map<CStrID, CStrID> BodyParts; // Part -> AssetID
-			std::set<Game::HEntity> ProcessedStacks;
-			for (const auto& [SlotID, StackID] : pEquipment->Equipment)
-			{
-				if (ProcessedStacks.find(StackID) != ProcessedStacks.cend()) continue;
-
-				if (auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
-				{
-					ProcessedStacks.insert(StackID);
-
-					//for (auto& VisualPart : pEquippable->AppearanceAssets)
-					//{
-					//	// It is OK if some parts will be assigned to empty asset explicitly, this is a way to hide them without replacing with something else
-					//	for (CStrID BodyPart : VisualPart.BodyParts)
-					//	{
-					//		if (BodyParts.find(BodyPart) != BodyParts.cend())
-					//			::Sys::Log("FIXME: improve this message! Body part is defined by more than one equipped item\n");
-					//		else
-					//			BodyParts.emplace(BodyPart, VisualPart.AssetID); //!!!???remember bone too?! or always skeleton root?!
-					//	}
-					//}
-				}
-			}
-
-			// Add default parts for all body parts not explicitly defined
-			// Rebuild the body optimally, apply material overrides/constants to new parts
-
-			// Scan equipment and Q-slots for attachments (visuals without body parts, items without visuals but with models etc)
-			// Don't process the same stack multiple times, consider the main blocked slot to be an attachment slot for this stack
-			// For each attachment remember a desired path to the parent bone
-			// Compare with the current attachment configuration
-			// Add/remove/reparent/replace attachments optimally
-			int xxx = 0;
-		}
-
 		for (CStrID SlotID : SlotsToUpdate)
 			UpdateCharacterModelEquipment(World, EntityID, SlotID, false);
+
+		if (auto pAppearance = FindItemComponent<CAppearanceComponent>(World, EntityID))
+			RebuildCharacterAppearance(World, EntityID, *pAppearance);
 	});
 
 	World.RemoveAllComponents<CEquipmentChangesComponent>();

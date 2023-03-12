@@ -12,11 +12,7 @@ struct CAppearanceComponent
 	Data::PParams       Params; // FIXME: must not be shared!!!
 	std::vector<CStrID> AppearanceAssets; // TODO: store asset reference here instead of ID?!
 
-	// anyway need gender, constitution etc to choose equipment
-	// use them to choose default parts too?
-
-	// additional parts/accessories
-	// current state of the appearance - parts and attachments
+	// TODO: store currently instantiated visual parts (ID + parent bone -> node ptr), non-serializable
 };
 
 }
