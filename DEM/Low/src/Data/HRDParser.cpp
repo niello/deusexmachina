@@ -641,13 +641,23 @@ bool CHRDParser::ParseTokenStream(const CArray<CToken>& Tokens, CParams& Output)
 // PARAM = ID [ '=' ] DATA
 bool CHRDParser::ParseParam(const CArray<CToken>& Tokens, CParams& Output)
 {
+	CStrID Key;
+
 	CToken& CurrToken = Tokens[ParserCursor];
-	if (CurrToken.Table != TBL_ID)
+	if (CurrToken.Table == TBL_ID)
+	{
+		Key = CStrID(TableID[CurrToken.Index].CStr());
+	}
+	else if (CurrToken.Table == TBL_CONST && TableConst[CurrToken.Index].IsA<CStrID>())
+	{
+		Key = TableConst[CurrToken.Index].GetValue<CStrID>();
+	}
+	else
 	{
 		if (pErr)
 		{
 			CString S;
-			S.Format("ID expected (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
+			S.Format("ID or CStrID constant expected (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
 			pErr->Add(S);
 		}
 		FAIL;
@@ -677,7 +687,7 @@ bool CHRDParser::ParseParam(const CArray<CToken>& Tokens, CParams& Output)
 		}
 
 		//!!!can check duplicates here!
-		Output.Set(CStrID(TableID[CurrToken.Index].CStr()), Data);
+		Output.Set(Key, Data);
 		OK;
 	}
 	
