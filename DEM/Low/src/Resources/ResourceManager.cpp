@@ -24,24 +24,52 @@ PResource CResourceManager::RegisterResource(const char* pUID, const Core::CRTTI
 {
 	if (!pUID || !*pUID) return nullptr;
 
-	CStrID UID = pIO ? CStrID(pIO->ResolveAssigns(pUID).CStr()): CStrID(pUID);
+	const CStrID UID = pIO ? CStrID(pIO->ResolveAssigns(pUID).CStr()): CStrID(pUID);
 	auto It = Registry.find(UID);
 	if (It != Registry.cend()) return It->second;
 
-	CString Ext(PathUtils::GetExtension(UID.CStr()));
-	if (Ext.IsValid())
-	{
-		IPTR SharpIdx = Ext.FindIndex('#');
-		if (SharpIdx >= 0) Ext.TruncateRight(Ext.GetLength() - SharpIdx);
-	}
-
-	auto pCreator = GetDefaultCreator(Ext, &RsrcType).Get();
+	auto pCreator = GetDefaultCreator(UID, RsrcType).Get();
 	if (!pCreator) return nullptr;
 
 	PResource Rsrc = n_new(CResource(UID));
 	Rsrc->SetCreator(pCreator);
 	Registry.emplace(UID, Rsrc);
 	return Rsrc;
+}
+//---------------------------------------------------------------------
+
+// NB: does not change creator for existing resource
+void CResourceManager::RegisterResource(PResource& Resource, const Core::CRTTI& RsrcType)
+{
+	if (!Resource || !Resource->GetUID())
+	{
+		Resource = nullptr;
+		return;
+	}
+
+	const CStrID UID = pIO ? CStrID(pIO->ResolveAssigns(Resource->GetUID().CStr()).CStr()) : Resource->GetUID();
+	auto It = Registry.find(UID);
+	if (It != Registry.cend())
+	{
+		Resource = It->second;
+		return;
+	}
+
+	IResourceCreator* pCreator = Resource->GetCreator();
+	if (!pCreator)
+	{
+		pCreator = GetDefaultCreator(UID, RsrcType).Get();
+		if (!pCreator)
+		{
+			Resource = nullptr;
+			return;
+		}
+	}
+
+	if (Resource->GetUID() != UID)
+		Resource = n_new(CResource(UID));
+	Resource->SetCreator(pCreator);
+	Registry.emplace(UID, Resource);
 }
 //---------------------------------------------------------------------
 
@@ -121,7 +149,20 @@ bool CResourceManager::RegisterDefaultCreator(const char* pFmtExtension, const C
 }
 //---------------------------------------------------------------------
 
-PResourceCreator CResourceManager::GetDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType)
+PResourceCreator CResourceManager::GetDefaultCreator(CStrID UID, const Core::CRTTI& RsrcType) const
+{
+	CString Ext(PathUtils::GetExtension(UID.CStr()));
+	if (Ext.IsValid())
+	{
+		IPTR SharpIdx = Ext.FindIndex('#');
+		if (SharpIdx >= 0) Ext.TruncateRight(Ext.GetLength() - SharpIdx);
+	}
+
+	return GetDefaultCreator(Ext, &RsrcType);
+}
+//---------------------------------------------------------------------
+
+PResourceCreator CResourceManager::GetDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType) const
 {
 	CString ExtStr(pFmtExtension);
 	ExtStr.Trim();

@@ -1,6 +1,7 @@
 #pragma once
 #include <Core/Object.h>
 #include <Data/StringID.h>
+#include <Data/SerializeToParams.h>
 
 // A container that wraps some actual resource object along with any information
 // required for its management. This class is not intended to be a base class for
@@ -70,6 +71,30 @@ public:
 	bool              IsLoaded() const { return _State == EResourceState::Loaded; } //!!!must be thread-safe!
 	IResourceCreator* GetCreator() const { return _Creator.Get(); }
 	void              SetCreator(IResourceCreator* pNewCreator);
+};
+
+}
+
+namespace DEM::Serialization
+{
+
+template<>
+struct ParamsFormat<Resources::PResource>
+{
+	static inline void Serialize(Data::CData& Output, Resources::PResource Value)
+	{
+		Output = Value ? Value->GetUID() : CStrID{};
+	}
+
+	static inline void Deserialize(const Data::CData& Input, Resources::PResource& Value)
+	{
+		if (auto pStrID = Input.As<CStrID>())
+			Value = (*pStrID) ? n_new(Resources::CResource(*pStrID)) : nullptr;
+		else if (auto pString = Input.As<CString>())
+			Value = pString->IsValid() ? n_new(Resources::CResource(CStrID(pString->CStr()))) : nullptr;
+		else
+			Value = nullptr;
+	}
 };
 
 }

@@ -16,8 +16,8 @@ public:
 
 	struct CVisualPartVariant
 	{
-		CStrID        ID;         // TODO: store asset reference here instead of ID?!
-		Data::PParams Conditions;
+		Resources::PResource Asset;
+		Data::PParams        Conditions;
 	};
 
 	struct CVisualPart
@@ -42,7 +42,7 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CAppearanceAsset::CVi
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset::CVisualPartVariant, 1, ID),
+		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset::CVisualPartVariant, 1, Asset),
 		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset::CVisualPartVariant, 2, Conditions)
 	);
 }

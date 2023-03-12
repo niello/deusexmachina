@@ -10,10 +10,10 @@ namespace DEM::RPG
 
 struct CEquippableComponent
 {
-	CStrID                      ScriptAssetID;
-	std::vector<CStrID>         AppearanceAssets; // TODO: store asset reference here instead of ID?!
-	CFixedOrderMap<CStrID, U32> Slots;        // A list of slot types blocked by this entity when equipped, with count for each type
-	U32                         MaxStack = 1; // Maximum count of these items in the equipment slot
+	CStrID                            ScriptAssetID;
+	std::vector<Resources::PResource> AppearanceAssets;
+	CFixedOrderMap<CStrID, U32>       Slots;        // A list of slot types blocked by this entity when equipped, with count for each type
+	U32                               MaxStack = 1; // Maximum count of these items in the equipment slot
 };
 
 }

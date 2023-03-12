@@ -39,6 +39,8 @@ protected:
 	std::unordered_map<CStrID, PResource> Registry;
 	std::vector<CDefaultCreatorRecord>    DefaultCreators;
 
+	PResourceCreator GetDefaultCreator(CStrID UID, const Core::CRTTI& RsrcType) const;
+
 public:
 
 	CResourceManager(IO::CIOServer* pIOServer, UPTR InitialCapacity = 256);
@@ -48,13 +50,16 @@ public:
 	CResourceManager& operator =(const CResourceManager&) = delete;
 
 	bool				RegisterDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType, IResourceCreator* pCreator);
-	PResourceCreator	GetDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType = nullptr);
+	PResourceCreator	GetDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType = nullptr) const;
 	template<class TRsrc>
-	PResourceCreator	GetDefaultCreatorFor(const char* pFmtExtension) { return GetDefaultCreator(pFmtExtension, &TRsrc::RTTI); }
+	PResourceCreator	GetDefaultCreatorFor(const char* pFmtExtension) const { return GetDefaultCreator(pFmtExtension, &TRsrc::RTTI); }
 
 	template<class TRsrc>
 	PResource			RegisterResource(const char* pUID) { return RegisterResource(pUID, TRsrc::RTTI); }
+	template<class TRsrc>
+	void                RegisterResource(PResource& Resource) { return RegisterResource(Resource, TRsrc::RTTI); }
 	PResource			RegisterResource(const char* pUID, const Core::CRTTI& RsrcType);
+	void                RegisterResource(PResource& Resource, const Core::CRTTI& RsrcType);
 	PResource			RegisterResource(const char* pUID, IResourceCreator* pCreator);
 	CResource*			FindResource(const char* pUID) const;
 	CResource*			FindResource(CStrID UID) const;

@@ -9,8 +9,8 @@ namespace DEM::RPG
 
 struct CAppearanceComponent
 {
-	Data::PParams       Params; // FIXME: must not be shared!!!
-	std::vector<CStrID> AppearanceAssets; // TODO: store asset reference here instead of ID?!
+	Data::PParams                     Params; // FIXME: must not be shared!!!
+	std::vector<Resources::PResource> AppearanceAssets;
 
 	// TODO: store currently instantiated visual parts (ID + parent bone -> node ptr), non-serializable
 };
