@@ -1,6 +1,5 @@
 #pragma once
 #include <Data/Metadata.h>
-//#include <Character/AppearanceAsset.h>
 
 // Character or creature appearance data for building a visual model
 
@@ -12,7 +11,7 @@ struct CAppearanceComponent
 	Data::PParams                     Params; // FIXME: must not be shared!!!
 	std::vector<Resources::PResource> AppearanceAssets;
 
-	// TODO: store currently instantiated visual parts (ID + parent bone -> node ptr), non-serializable
+	//std::map<std::pair<Resources::PResource, std::string>, PSceneNode> CurrentLook; // Not serialized
 };
 
 }

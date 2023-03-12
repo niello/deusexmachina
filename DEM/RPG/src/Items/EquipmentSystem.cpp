@@ -67,13 +67,72 @@ void InitEquipment(Game::CGameWorld& World, Resources::CResourceManager& ResMgr)
 }
 //---------------------------------------------------------------------
 
+static size_t ApplyAppearance(std::set<std::pair<Resources::PResource, std::string>>& Look, const CAppearanceAsset* pAppearanceAsset, const Data::PParams& AppearanceParams,
+	const std::set<CStrID>& IgnoredBodyParts)
+{
+	if (!pAppearanceAsset) return 0;
+
+	size_t OldCount = Look.size();
+	for (const auto& VisualPart : pAppearanceAsset->Visuals)
+	{
+		// Skip explicitly ignored body parts and body parts already overridden by higher priority assets.
+		// Asset is added either if it is not associated with body parts or it has at least one not ignored part.
+		if (!VisualPart.BodyParts.empty() &&
+			!std::any_of(VisualPart.BodyParts.cbegin(), VisualPart.BodyParts.cend(),
+				[&IgnoredBodyParts](CStrID BodyPart) { return IgnoredBodyParts.find(BodyPart) == IgnoredBodyParts.cend(); }))
+		{
+			continue;
+		}
+
+		// Apply first matching variant, if any
+		for (const auto& Variant : VisualPart.Variants)
+		{
+			// Check appearance parameter conditions
+			if (Variant.Conditions && Variant.Conditions->GetCount())
+			{
+				if (!AppearanceParams) continue;
+
+				bool Match = true;
+				for (const auto& Condition : *Variant.Conditions)
+				{
+					auto pParam = AppearanceParams->Find(Condition.GetName());
+					if (!pParam || pParam->GetRawValue() != Condition.GetRawValue())
+					{
+						Match = false;
+						break;
+					}
+				}
+
+				if (!Match) continue;
+			}
+
+			//!!!???TODO:
+			// detect target bone from SlotID if no explicit path specified?
+			//!!!use main slot ID for the item, not just the first met slot!
+			// how to handle sheathed and unsheathed weapons? a bool flag in a character appearance component? just as 'hide helmet'
+			//!!!can patch empty RootBonePath by SlotID in a postprocessing pass, to reuse main part of the loop for the base look!
+
+			// Match found, remember this scene asset for instantiation
+			Look.emplace(Variant.Asset, VisualPart.RootBonePath);
+			break;
+		}
+	}
+
+	return Look.size() - OldCount;
+}
+//---------------------------------------------------------------------
+
 void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID, CAppearanceComponent& AppearanceComponent)
 {
-	std::vector<std::pair<Resources::PResource, std::string>> NewLook;
+	std::set<std::pair<Resources::PResource, std::string>> NewLook;
 	std::set<CStrID> FilledBodyParts;
 
 	if (auto pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID))
 	{
+		// The same as FilledBodyParts but with explicitly ignored parts. Affects only equipment.
+		std::set<CStrID> IgnoredBodyParts;
+		// TODO: if (AppearanceComponent.HideHelmet) IgnoredBodyParts.insert('Head');
+
 		std::set<Game::HEntity> ProcessedStacks;
 
 		// TODO: process slots in order of priority!
@@ -86,124 +145,29 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 			auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID);
 			if (!pEquippable) continue;
 
-			std::set<CStrID> LocalBodyParts;
+			// TODO: skip ignored assets
 			for (const auto& AppearanceRsrc : pEquippable->AppearanceAssets)
 			{
-				// TODO: skip ignored assets
-
 				if (auto pAppearanceAsset = AppearanceRsrc->ValidateObject<CAppearanceAsset>())
 				{
+					ApplyAppearance(NewLook, pAppearanceAsset, AppearanceComponent.Params, IgnoredBodyParts);
+
+					// Consider body parts filled even if no scene asset was added. Can change this by checking ApplyAppearance return value.
 					for (const auto& VisualPart : pAppearanceAsset->Visuals)
 					{
-						// Skip if all body parts are already overridden by higher priority assets
-						if (!VisualPart.BodyParts.empty() &&
-							!std::any_of(VisualPart.BodyParts.cbegin(), VisualPart.BodyParts.cend(),
-								[&FilledBodyParts](CStrID BodyPart) { return FilledBodyParts.find(BodyPart) == FilledBodyParts.cend(); }))
-						{
-							continue;
-						}
-
-						// TODO: skip ignored body parts (maybe only overrides, e.g. helmet)
-
-						LocalBodyParts.insert(VisualPart.BodyParts.cbegin(), VisualPart.BodyParts.cend());
-
-						// Apply first matching variant, if any
-						for (const auto& Variant : VisualPart.Variants)
-						{
-							// Check appearance parameter conditions
-							if (Variant.Conditions && Variant.Conditions->GetCount())
-							{
-								if (!AppearanceComponent.Params) continue;
-
-								bool Match = true;
-								for (const auto& Condition : *Variant.Conditions)
-								{
-									auto pParam = AppearanceComponent.Params->Find(Condition.GetName());
-									if (!pParam || pParam->GetRawValue() != Condition.GetRawValue())
-									{
-										Match = false;
-										break;
-									}
-								}
-
-								if (!Match) continue;
-							}
-
-							// Match found, remember this scene asset for instantiation
-							NewLook.emplace_back(Variant.Asset, VisualPart.RootBonePath);
-
-							//!!!???TODO:
-							// detect target bone from SlotID if no explicit path specified?
-							// how to handle sheathed and unsheathed weapons? a bool flag in a character appearance component? just as 'hide helmet'
-							//!!!can patch empty RootBonePath by SlotID in a postprocessing pass, to reuse main part of the loop for the base look!
-						}
+						FilledBodyParts.insert(VisualPart.BodyParts.cbegin(), VisualPart.BodyParts.cend());
+						IgnoredBodyParts.insert(VisualPart.BodyParts.cbegin(), VisualPart.BodyParts.cend());
 					}
 				}
 			}
-
-			//???or insert directly into FilledBodyParts in a separate loop? Allows reusing the first loop for base look!
-			FilledBodyParts.merge(std::move(LocalBodyParts));
 		}
 	}
 
-	//!!!TODO: REMOVE CODE DUPLICATION!
+	// Apply base look, ignoring only filled body parts but not explicit ignores
+	// TODO: skip ignored assets
 	for (const auto& AppearanceRsrc : AppearanceComponent.AppearanceAssets)
-	{
-		// TODO: skip ignored assets
+		ApplyAppearance(NewLook, AppearanceRsrc->ValidateObject<CAppearanceAsset>(), AppearanceComponent.Params, FilledBodyParts);
 
-		if (auto pAppearanceAsset = AppearanceRsrc->ValidateObject<CAppearanceAsset>())
-		{
-			for (const auto& VisualPart : pAppearanceAsset->Visuals)
-			{
-				// Skip if all body parts are already overridden by higher priority assets
-				if (!VisualPart.BodyParts.empty() &&
-					!std::any_of(VisualPart.BodyParts.cbegin(), VisualPart.BodyParts.cend(),
-						[&FilledBodyParts](CStrID BodyPart) { return FilledBodyParts.find(BodyPart) == FilledBodyParts.cend(); }))
-				{
-					continue;
-				}
-
-				// TODO: skip ignored body parts (maybe only overrides, e.g. helmet), then no need in this for base look. Pass empty ignore list there!
-
-				//LocalBodyParts.insert(VisualPart.BodyParts.cbegin(), VisualPart.BodyParts.cend());
-
-				// Apply first matching variant, if any
-				for (const auto& Variant : VisualPart.Variants)
-				{
-					// Check appearance parameter conditions
-					if (Variant.Conditions && Variant.Conditions->GetCount())
-					{
-						if (!AppearanceComponent.Params) continue;
-
-						bool Match = true;
-						for (const auto& Condition : *Variant.Conditions)
-						{
-							auto pParam = AppearanceComponent.Params->Find(Condition.GetName());
-							if (!pParam || pParam->GetRawValue() != Condition.GetRawValue())
-							{
-								Match = false;
-								break;
-							}
-						}
-
-						if (!Match) continue;
-					}
-
-					//!!!???TODO:
-					// detect target bone from SlotID if no explicit path specified?
-					//!!!use main slot ID for the item, not just the first met slot!
-					// how to handle sheathed and unsheathed weapons? a bool flag in a character appearance component? just as 'hide helmet'
-					//!!!can patch empty RootBonePath by SlotID in a postprocessing pass, to reuse main part of the loop for the base look!
-
-					// Match found, remember this scene asset for instantiation
-					NewLook.emplace_back(Variant.Asset, VisualPart.RootBonePath);
-					break;
-				}
-			}
-		}
-	}
-
-	// now we must have a vector<pair<PResource<SCNAsset>, TargetBone>>
 	// detach attachments parented to altered parts
 	// delete parts not needed anymore
 	// reparent parts that are instantiated but now changed their parent bone (see below for attachment, can generalize this)
@@ -214,6 +178,18 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 	// record a new current state to AppearanceComponent
 
 	//!!!TODO: apply material overrides/constants to newly instantiated parts
+
+	//void InitNewSceneComponents(CGameWorld& World, Resources::CResourceManager& RsrcMgr)
+	//{
+	//	World.ForEachEntityWith<CSceneComponent>(
+	//		[&World, &RsrcMgr](auto EntityID, auto& Entity, CSceneComponent& SceneComponent)
+	//	{
+	//		InitNewSceneComponent(EntityID, Entity, SceneComponent, World, RsrcMgr);
+	//	});
+	//}
+	//auto Rsrc = RsrcMgr.RegisterResource<Scene::CSceneNode>(SceneComponent.AssetID.CStr());
+	//if (auto NodeTpl = Rsrc->ValidateObject<Scene::CSceneNode>()) return;
+	//	SceneComponent.RootNode->AddChild(sidAsset, NodeTpl->Clone());
 
 	int xxx = 0;
 }
