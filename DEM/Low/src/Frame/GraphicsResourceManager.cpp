@@ -466,7 +466,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 
 #ifdef _DEBUG
 	if (EffectType == Render::EffectType_Other)
-		::Sys::DbgOut(("Effect type not determined for " + UID.ToString()).c_str());
+		::Sys::DbgOut(("Effect type not determined for " + UID.ToString() + "\n").c_str());
 #endif
 
 	U32 ShaderFormatCount;

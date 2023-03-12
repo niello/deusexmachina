@@ -1,6 +1,6 @@
 #pragma once
 #include <Data/Metadata.h>
-#include <Character/AppearanceScheme.h>
+//#include <Character/AppearanceAsset.h>
 
 // Character or creature appearance data for building a visual model
 
@@ -9,8 +9,11 @@ namespace DEM::RPG
 
 struct CAppearanceComponent
 {
-	CStrID            SchemeID; // FIXME: ID to resource directly!
-	PAppearanceScheme Scheme;
+	Data::PParams       Params; // FIXME: must not be shared!!!
+	std::vector<CStrID> AppearanceAssets; // TODO: store asset reference here instead of ID?!
+
+	// anyway need gender, constitution etc to choose equipment
+	// use them to choose default parts too?
 
 	// additional parts/accessories
 	// current state of the appearance - parts and attachments
@@ -26,7 +29,8 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CAppearanceComponent>
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CAppearanceComponent, 1, SchemeID)
+		DEM_META_MEMBER_FIELD(RPG::CAppearanceComponent, 1, Params),
+		DEM_META_MEMBER_FIELD(RPG::CAppearanceComponent, 2, AppearanceAssets)
 	);
 }
 

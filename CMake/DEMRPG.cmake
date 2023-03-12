@@ -12,8 +12,8 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/AI/Sensors/SensorVision.h
 	DEM/RPG/src/AI/Stimuli/StimulusSound.h
 	DEM/RPG/src/AI/Stimuli/StimulusVisible.h
+	DEM/RPG/src/Character/AppearanceAsset.h
 	DEM/RPG/src/Character/AppearanceComponent.h
-	DEM/RPG/src/Character/AppearanceScheme.h
 	DEM/RPG/src/Character/CharacterSheet.h
 	DEM/RPG/src/Character/ModifiableParameter.h
 	DEM/RPG/src/Character/ParameterModifier.h

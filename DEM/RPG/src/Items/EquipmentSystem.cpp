@@ -269,17 +269,17 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 				{
 					ProcessedStacks.insert(StackID);
 
-					for (auto& VisualPart : pEquippable->Visuals)
-					{
-						// It is OK if some parts will be assigned to empty asset explicitly, this is a way to hide them without replacing with something else
-						for (CStrID BodyPart : VisualPart.BodyParts)
-						{
-							if (BodyParts.find(BodyPart) != BodyParts.cend())
-								::Sys::Log("FIXME: improve this message! Body part is defined by more than one equipped item\n");
-							else
-								BodyParts.emplace(BodyPart, VisualPart.AssetID); //!!!???remember bone too?! or always skeleton root?!
-						}
-					}
+					//for (auto& VisualPart : pEquippable->AppearanceAssets)
+					//{
+					//	// It is OK if some parts will be assigned to empty asset explicitly, this is a way to hide them without replacing with something else
+					//	for (CStrID BodyPart : VisualPart.BodyParts)
+					//	{
+					//		if (BodyParts.find(BodyPart) != BodyParts.cend())
+					//			::Sys::Log("FIXME: improve this message! Body part is defined by more than one equipped item\n");
+					//		else
+					//			BodyParts.emplace(BodyPart, VisualPart.AssetID); //!!!???remember bone too?! or always skeleton root?!
+					//	}
+					//}
 				}
 			}
 

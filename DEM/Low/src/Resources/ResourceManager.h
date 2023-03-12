@@ -42,7 +42,10 @@ protected:
 public:
 
 	CResourceManager(IO::CIOServer* pIOServer, UPTR InitialCapacity = 256);
+	CResourceManager(const CResourceManager&) = delete;
 	~CResourceManager();
+
+	CResourceManager& operator =(const CResourceManager&) = delete;
 
 	bool				RegisterDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType, IResourceCreator* pCreator);
 	PResourceCreator	GetDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType = nullptr);

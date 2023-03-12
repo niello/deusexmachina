@@ -10,16 +10,9 @@ namespace DEM::RPG
 
 struct CEquippableComponent
 {
-	struct CVisualPart
-	{
-		std::vector<CStrID> BodyParts;
-		CStrID              AssetID;       // TODO: store asset reference here instead of ID?!
-		std::string         RootBonePath;
-	};
-
 	CStrID                      ScriptAssetID;
+	std::vector<CStrID>         AppearanceAssets; // TODO: store asset reference here instead of ID?!
 	CFixedOrderMap<CStrID, U32> Slots;        // A list of slot types blocked by this entity when equipped, with count for each type
-	std::vector<CVisualPart>    Visuals;
 	U32                         MaxStack = 1; // Maximum count of these items in the equipment slot
 };
 
@@ -27,17 +20,6 @@ struct CEquippableComponent
 
 namespace DEM::Meta
 {
-
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CEquippableComponent::CVisualPart>() { return "DEM::RPG::CEquippableComponent::CVisualPart"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CEquippableComponent::CVisualPart>()
-{
-	return std::make_tuple
-	(
-		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent::CVisualPart, 1, BodyParts),
-		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent::CVisualPart, 2, AssetID),
-		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent::CVisualPart, 3, RootBonePath)
-	);
-}
 
 template<> inline constexpr auto RegisterClassName<DEM::RPG::CEquippableComponent>() { return "DEM::RPG::CEquippableComponent"; }
 template<> inline constexpr auto RegisterMembers<DEM::RPG::CEquippableComponent>()
@@ -47,7 +29,7 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CEquippableComponent>
 		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, 1, Slots),
 		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, 2, MaxStack),
 		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, 3, ScriptAssetID),
-		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, 4, Visuals)
+		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, 4, AppearanceAssets)
 	);
 }
 
