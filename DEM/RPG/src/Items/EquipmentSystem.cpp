@@ -183,25 +183,29 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 	CAppearanceComponent::CLookMap Detached;
 	SortedDifference(AppearanceComponent.CurrentLook, NewLook, [&AppearanceComponent, &Detached](CAppearanceComponent::CLookMap::const_iterator It)
 	{
-		Detached.insert(AppearanceComponent.CurrentLook.extract(It));
+		auto LookNode = AppearanceComponent.CurrentLook.extract(It);
+		if (LookNode.mapped()) Detached.insert(std::move(LookNode));
 	});
 
 	// Also mark as detached all elements that are attached to detached parts of the hierarchy
 	for (auto It = AppearanceComponent.CurrentLook.cbegin(); It != AppearanceComponent.CurrentLook.cend(); /**/)
 	{
-		for (const auto& LookNode : Detached)
+		if (auto pNode = It->second.Get())
 		{
-			if (It->second && It->second->IsChildOf(LookNode.second))
+			auto ItDetached = std::find_if(Detached.cbegin(), Detached.cend(), [pNode](const auto& Rec) { return pNode->IsChildOf(Rec.second); });
+			if (ItDetached != Detached.cend())
+			{
 				Detached.insert(AppearanceComponent.CurrentLook.extract(It++));
-			else
-				++It;
+				continue;
+			}
 		}
+
+		++It;
 	}
 
 	// Effectively detach nodes
 	for (const auto& LookNode : Detached)
-		if (LookNode.second)
-			LookNode.second->RemoveFromParent();
+		LookNode.second->RemoveFromParent();
 
 	// Attach nodes for the new look that are not in the current look yet
 	SortedDifference(NewLook, AppearanceComponent.CurrentLook, [&NewLook, &AppearanceComponent, &Detached, pRootNode](CAppearanceComponent::CLookMap::const_iterator It)
@@ -214,15 +218,18 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 		auto ItCache = std::find_if(Detached.begin(), Detached.end(), [pSceneAsset](const auto& CacheRec) { return CacheRec.first.first == pSceneAsset; });
 		if (ItCache != Detached.cend())
 		{
-			// Reuse cached visual part from the previous look
+			// Reuse already instantiated visual part from the previous look
 			LookNode.mapped() = std::move(ItCache->second);
+			Detached.erase(ItCache);
 		}
 		else if (auto NodeTpl = pSceneAsset->ValidateObject<Scene::CSceneNode>())
 		{
-			// Instantiate new visual part
+			// Instantiate a new visual part
 			LookNode.mapped() = NodeTpl->Clone();
-			pRootNode->FindNodeByPath(LookNode.key().second.c_str())->AddChild(pSceneAsset->GetUID(), LookNode.mapped());
 		}
+
+		if (LookNode.mapped())
+			pRootNode->FindNodeByPath(LookNode.key().second.c_str())->AddChild(pSceneAsset->GetUID(), LookNode.mapped());
 
 		AppearanceComponent.CurrentLook.insert(std::move(LookNode));
 	});
