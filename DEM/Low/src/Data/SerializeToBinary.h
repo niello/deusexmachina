@@ -183,8 +183,8 @@ struct BinaryFormat
 	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Set, const T& BaseSet)
 	{
 		size_t AddedCount = 0, DeletedCount = 0;
-		SetDifference(Set, BaseSet, [&AddedCount](const auto&) { ++AddedCount; });
-		SetDifference(BaseSet, Set, [&DeletedCount](const auto&) { ++DeletedCount; });
+		SetDifference(Set, BaseSet, [&AddedCount](auto) { ++AddedCount; });
+		SetDifference(BaseSet, Set, [&DeletedCount](auto) { ++DeletedCount; });
 
 		if (!AddedCount && !DeletedCount) return false;
 
@@ -194,17 +194,17 @@ struct BinaryFormat
 
 		Output << static_cast<uint32_t>(DeletedCount);
 		if (DeletedCount)
-			SetDifference(BaseSet, Set, [&Output, &DeletedCount](const auto& Value)
+			SetDifference(BaseSet, Set, [&Output, &DeletedCount](auto It)
 			{
-				Serialize(Output, Value);
+				Serialize(Output, *It);
 				return --DeletedCount > 0;
 			});
 
 		Output << static_cast<uint32_t>(AddedCount);
 		if (AddedCount)
-			SetDifference(Set, BaseSet, [&Output, &AddedCount](const auto& Value)
+			SetDifference(Set, BaseSet, [&Output, &AddedCount](auto It)
 			{
-				Serialize(Output, Value);
+				Serialize(Output, *It);
 				return --AddedCount > 0;
 			});
 

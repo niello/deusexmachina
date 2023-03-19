@@ -15,8 +15,9 @@ namespace DEM
 //}
 ////---------------------------------------------------------------------
 
-template<typename T, typename TCallback>
-void SetDifference(const std::set<T>& a, const std::set<T>& b, TCallback Callback)
+// Calls a Callback with iterators to elements from 'a' that do not appear in 'b'
+template<typename TCollection, typename TCallback>
+void SortedDifference(const TCollection& a, const TCollection& b, TCallback Callback)
 {
 	auto ItCurrA = a.cbegin();
 	auto ItCurrB = b.cbegin();
@@ -24,15 +25,15 @@ void SetDifference(const std::set<T>& a, const std::set<T>& b, TCallback Callbac
 	{
 		if (*ItCurrA < *ItCurrB)
 		{
-			if constexpr (std::is_invocable_r_v<bool, TCallback, const T&>)
+			if constexpr (std::is_invocable_r_v<bool, TCallback, typename TCollection::const_iterator>)
 			{
-				if (!Callback(*ItCurrA++)) return;
+				if (!Callback(ItCurrA++)) return;
 			}
-			else if constexpr (std::is_invocable_r_v<void, TCallback, const T&>)
+			else if constexpr (std::is_invocable_r_v<void, TCallback, typename TCollection::const_iterator>)
 			{
-				Callback(*ItCurrA++);
-			} 
-			else static_assert(false, "Callback must accept const T& and return void or bool");
+				Callback(ItCurrA++);
+			}
+			else static_assert(false, "Callback must accept const_iterator and return void or bool");
 		}
 		else
 		{
@@ -43,16 +44,23 @@ void SetDifference(const std::set<T>& a, const std::set<T>& b, TCallback Callbac
 
 	while (ItCurrA != a.cend())
 	{
-		if constexpr (std::is_invocable_r_v<bool, TCallback, const T&>)
+		if constexpr (std::is_invocable_r_v<bool, TCallback, typename TCollection::const_iterator>)
 		{
-			if (!Callback(*ItCurrA++)) return;
+			if (!Callback(ItCurrA++)) return;
 		}
-		else if constexpr (std::is_invocable_r_v<void, TCallback, const T&>)
+		else if constexpr (std::is_invocable_r_v<void, TCallback, typename TCollection::const_iterator>)
 		{
-			Callback(*ItCurrA++);
-		} 
-		else static_assert(false, "Callback must accept const T& and return void or bool");
+			Callback(ItCurrA++);
+		}
+		else static_assert(false, "Callback must accept const_iterator and return void or bool");
 	}
+}
+//---------------------------------------------------------------------
+
+template<typename T, typename TCallback>
+void SetDifference(const std::set<T>& a, const std::set<T>& b, TCallback Callback)
+{
+	SortedDifference(a, b, std::forward(Callback));
 }
 //---------------------------------------------------------------------
 

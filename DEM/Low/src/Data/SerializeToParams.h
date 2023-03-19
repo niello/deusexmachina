@@ -194,18 +194,18 @@ struct ParamsFormat
 	{
 		Data::CData Added;
 		Data::CData Deleted;
-		SetDifference(Set, BaseSet, [&Added](const auto& Value)
+		SetDifference(Set, BaseSet, [&Added](auto It)
 		{
 			if (Added.IsVoid()) Added = Data::PDataArray(n_new(Data::CDataArray()));
 			Data::CData ValueData;
-			Serialize(ValueData, Value);
+			Serialize(ValueData, *It);
 			Added.As<Data::PDataArray>()->Get()->Add(std::move(ValueData));
 		});
-		SetDifference(BaseSet, Set, [&Deleted](const auto& Value)
+		SetDifference(BaseSet, Set, [&Deleted](auto It)
 		{
 			if (Deleted.IsVoid()) Deleted = Data::PDataArray(n_new(Data::CDataArray()));
 			Data::CData ValueData;
-			Serialize(ValueData, Value);
+			Serialize(ValueData, *It);
 			Deleted.As<Data::PDataArray>()->Get()->Add(std::move(ValueData));
 		});
 
