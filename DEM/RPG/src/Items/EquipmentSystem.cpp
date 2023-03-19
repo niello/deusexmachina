@@ -203,8 +203,8 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 		if (LookNode.second)
 			LookNode.second->RemoveFromParent();
 
-	// Attach nodes for the new look tat are not in the current look yet
-	SortedDifference(NewLook, AppearanceComponent.CurrentLook, [&NewLook, &AppearanceComponent, &Detached, pSceneComponent](CAppearanceComponent::CLookMap::const_iterator It)
+	// Attach nodes for the new look that are not in the current look yet
+	SortedDifference(NewLook, AppearanceComponent.CurrentLook, [&NewLook, &AppearanceComponent, &Detached, pRootNode](CAppearanceComponent::CLookMap::const_iterator It)
 	{
 		const auto pSceneAsset = It->first.first.Get();
 		if (!pSceneAsset) return;
@@ -221,7 +221,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 		{
 			// Instantiate new visual part
 			LookNode.mapped() = NodeTpl->Clone();
-			pSceneComponent->RootNode->FindNodeByPath("asset.f_hum_avatar")->AddChild(CStrID("Body2"), LookNode.mapped());
+			pRootNode->FindNodeByPath(LookNode.key().second.c_str())->AddChild(pSceneAsset->GetUID(), LookNode.mapped());
 		}
 
 		AppearanceComponent.CurrentLook.insert(std::move(LookNode));
