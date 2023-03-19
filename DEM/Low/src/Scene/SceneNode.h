@@ -93,7 +93,7 @@ public:
 	template<class T> T*	FindFirstAttribute() const;
 
 	bool					IsRoot() const { return !pParent; }
-	bool					IsChild(const CSceneNode* pParentNode) const;
+	bool					IsChildOf(const CSceneNode* pParentNode) const;
 	bool					IsActiveSelf() const { return Flags.Is(SelfActive); }
 	bool					IsActive() const { return Flags.Is(EffectivelyActive); }
 	void					SetActive(bool Enable) { Flags.SetTo(SelfActive, Enable); UpdateActivity(); }

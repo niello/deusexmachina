@@ -370,7 +370,7 @@ CSceneNode* CSceneNode::GetChildRecursively(CStrID ChildName) const
 }
 //---------------------------------------------------------------------
 
-bool CSceneNode::IsChild(const CSceneNode* pParentNode) const
+bool CSceneNode::IsChildOf(const CSceneNode* pParentNode) const
 {
 	const CSceneNode* pCurr = pParent;
 	while (pCurr)

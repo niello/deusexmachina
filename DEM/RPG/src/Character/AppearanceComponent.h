@@ -3,15 +3,21 @@
 
 // Character or creature appearance data for building a visual model
 
+namespace Scene
+{
+	typedef Ptr<class CSceneNode> PSceneNode;
+}
+
 namespace DEM::RPG
 {
 
 struct CAppearanceComponent
 {
+	using CLookMap = std::map<std::pair<Resources::PResource, std::string>, Scene::PSceneNode>;
+
 	Data::PParams                     Params; // FIXME: must not be shared!!!
 	std::vector<Resources::PResource> AppearanceAssets;
-
-	//std::map<std::pair<Resources::PResource, std::string>, PSceneNode> CurrentLook; // Not serialized
+	CLookMap                          CurrentLook; // Not serialized
 };
 
 }

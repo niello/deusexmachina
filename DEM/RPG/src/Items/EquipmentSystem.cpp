@@ -9,6 +9,7 @@
 #include <Character/AppearanceAsset.h>
 #include <Scene/SceneComponent.h>
 #include <Scene/NodeAttribute.h>
+#include <Data/Algorithms.h>
 
 // A set of ECS systems required for functioning of the equipment logic
 
@@ -68,7 +69,7 @@ void InitEquipment(Game::CGameWorld& World, Resources::CResourceManager& ResMgr)
 }
 //---------------------------------------------------------------------
 
-static size_t ApplyAppearance(std::set<std::pair<Resources::PResource, std::string>>& Look, const CAppearanceAsset* pAppearanceAsset, const Data::PParams& AppearanceParams,
+static size_t ApplyAppearance(CAppearanceComponent::CLookMap& Look, const CAppearanceAsset* pAppearanceAsset, const Data::PParams& AppearanceParams,
 	const std::set<CStrID>& IgnoredBodyParts)
 {
 	if (!pAppearanceAsset) return 0;
@@ -116,7 +117,7 @@ static size_t ApplyAppearance(std::set<std::pair<Resources::PResource, std::stri
 				//!!!can patch empty RootBonePath by SlotID in a postprocessing pass, to reuse main part of the loop for the base look!
 
 				// Match found, remember this scene asset for instantiation
-				Look.emplace(Variant.Asset, VisualPart.RootBonePath);
+				Look.emplace(std::make_pair(Variant.Asset, VisualPart.RootBonePath), Scene::PSceneNode{});
 			}
 
 			break;
@@ -129,7 +130,12 @@ static size_t ApplyAppearance(std::set<std::pair<Resources::PResource, std::stri
 
 void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID, CAppearanceComponent& AppearanceComponent, Resources::CResourceManager& RsrcMgr)
 {
-	std::set<std::pair<Resources::PResource, std::string>> NewLook;
+	auto pSceneComponent = World.FindComponent<const Game::CSceneComponent>(EntityID);
+	if (!pSceneComponent || !pSceneComponent->RootNode) return;
+	auto pRootNode = pSceneComponent->RootNode->FindNodeByPath("asset.f_hum_avatar"); // FIXME: how to determine??? Some convention needed?!
+	if (!pRootNode) return;
+
+	CAppearanceComponent::CLookMap NewLook;
 	std::set<CStrID> FilledBodyParts;
 
 	if (auto pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID))
@@ -173,30 +179,64 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 	for (const auto& AppearanceRsrc : AppearanceComponent.AppearanceAssets)
 		ApplyAppearance(NewLook, AppearanceRsrc->ValidateObject<CAppearanceAsset>(), AppearanceComponent.Params, FilledBodyParts);
 
-	// detach attachments parented to altered parts
-	// delete parts not needed anymore
-	// reparent parts that are instantiated but now changed their parent bone (see below for attachment, can generalize this)
-	// create missing parts, apply material overrides and constants from AppearanceComponent (can even cache materials there)
-	// destroy detached attachments that are not longer needed
-	// for each of remaining detached attachments, reattach if target bone exists, destroy otherwise
-	// create missing attachments
-	// record a new current state to AppearanceComponent
-	// set a new look to appearance component for tracking and optimizations
-
-	if (auto pSceneComponent = World.FindComponent<const Game::CSceneComponent>(EntityID))
+	// Mark as detached all elements that do not match the new look
+	CAppearanceComponent::CLookMap Detached;
+	SortedDifference(AppearanceComponent.CurrentLook, NewLook, [&AppearanceComponent, &Detached](CAppearanceComponent::CLookMap::const_iterator It)
 	{
-		for (const auto& [SceneRsrc, RootPath] : NewLook)
-			if (auto NodeTpl = SceneRsrc->ValidateObject<Scene::CSceneNode>())
-				pSceneComponent->RootNode->FindNodeByPath("asset.f_hum_avatar")->AddChild(CStrID("Body2"), NodeTpl->Clone());
+		Detached.insert(AppearanceComponent.CurrentLook.extract(It));
+	});
 
-		// Validate resources
-		pSceneComponent->RootNode->Visit([&RsrcMgr](Scene::CSceneNode& Node)
+	// Also mark as detached all elements that are attached to detached parts of the hierarchy
+	for (auto It = AppearanceComponent.CurrentLook.cbegin(); It != AppearanceComponent.CurrentLook.cend(); /**/)
+	{
+		for (const auto& LookNode : Detached)
 		{
-			for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
-				Node.GetAttribute(i)->ValidateResources(RsrcMgr);
-			return true;
-		});
+			if (It->second && It->second->IsChildOf(LookNode.second))
+				Detached.insert(AppearanceComponent.CurrentLook.extract(It++));
+			else
+				++It;
+		}
 	}
+
+	// Effectively detach nodes
+	for (const auto& LookNode : Detached)
+		if (LookNode.second)
+			LookNode.second->RemoveFromParent();
+
+	// Attach nodes for the new look tat are not in the current look yet
+	SortedDifference(NewLook, AppearanceComponent.CurrentLook, [&NewLook, &AppearanceComponent, &Detached, pSceneComponent](CAppearanceComponent::CLookMap::const_iterator It)
+	{
+		const auto pSceneAsset = It->first.first.Get();
+		if (!pSceneAsset) return;
+
+		auto LookNode = NewLook.extract(It);
+
+		auto ItCache = std::find_if(Detached.begin(), Detached.end(), [pSceneAsset](const auto& CacheRec) { return CacheRec.first.first == pSceneAsset; });
+		if (ItCache != Detached.cend())
+		{
+			// Reuse cached visual part from the previous look
+			LookNode.mapped() = std::move(ItCache->second);
+		}
+		else if (auto NodeTpl = pSceneAsset->ValidateObject<Scene::CSceneNode>())
+		{
+			// Instantiate new visual part
+			LookNode.mapped() = NodeTpl->Clone();
+			pSceneComponent->RootNode->FindNodeByPath("asset.f_hum_avatar")->AddChild(CStrID("Body2"), LookNode.mapped());
+		}
+
+		AppearanceComponent.CurrentLook.insert(std::move(LookNode));
+	});
+
+	// Discard not reused nodes
+	Detached.clear();
+
+	// Validate resources
+	pRootNode->Visit([&RsrcMgr](Scene::CSceneNode& Node)
+	{
+		for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
+			Node.GetAttribute(i)->ValidateResources(RsrcMgr);
+		return true;
+	});
 }
 //---------------------------------------------------------------------
 
