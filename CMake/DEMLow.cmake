@@ -95,6 +95,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/XMLDocument.h
 	DEM/Low/src/Debug/DebugDraw.h
 	DEM/Low/src/Debug/DebugServer.h
+	DEM/Low/src/Debug/DebugUtils.h
 	DEM/Low/src/Debug/LuaConsole.h
 	DEM/Low/src/Debug/Profiler.h
 	DEM/Low/src/Debug/RenderPhaseDebugDraw.h
@@ -386,6 +387,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Data/StringUtils.cpp
 	DEM/Low/src/Debug/DebugDraw.cpp
 	DEM/Low/src/Debug/DebugServer.cpp
+	DEM/Low/src/Debug/DebugUtils.cpp
 	DEM/Low/src/Debug/LuaConsole.cpp
 	DEM/Low/src/Debug/RenderPhaseDebugDraw.cpp
 	DEM/Low/src/Debug/WatcherWindow.cpp

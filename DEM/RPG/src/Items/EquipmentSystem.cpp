@@ -132,7 +132,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 {
 	auto pSceneComponent = World.FindComponent<const Game::CSceneComponent>(EntityID);
 	if (!pSceneComponent || !pSceneComponent->RootNode) return;
-	auto pRootNode = pSceneComponent->RootNode->FindNodeByPath("asset.f_hum_avatar"); // FIXME: how to determine??? Some convention needed?!
+	auto pRootNode = pSceneComponent->RootNode->FindNodeByPath("asset.f_hum_skeleton"); // FIXME: how to determine??? Some convention needed?!
 	if (!pRootNode) return;
 
 	CAppearanceComponent::CLookMap NewLook;
