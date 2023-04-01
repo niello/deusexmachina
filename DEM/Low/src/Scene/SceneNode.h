@@ -24,6 +24,10 @@ typedef Ptr<class CNodeAttribute> PNodeAttribute;
 
 class CSceneNode: public ::Core::CObject
 {
+public:
+
+	inline static constexpr U32 DIRTY_TRANSFORM_VERSION = 0; // Node with updated transformation never has this version. Use to force update.
+
 protected:
 
 	enum
@@ -37,8 +41,8 @@ protected:
 
 	CStrID						Name;
 	Data::CFlags				Flags;
-	U32                         TransformVersion = 1;
-	U32                         LastParentTransformVersion = 0;
+	U32                         TransformVersion = DIRTY_TRANSFORM_VERSION + 1;
+	U32                         LastParentTransformVersion = DIRTY_TRANSFORM_VERSION;
 
 	//!!!can write special 4x3 tfm matrix without 0,0,0,1 column to save memory! is good for SSE?
 	Math::CTransform			LocalTfm;
@@ -54,6 +58,8 @@ protected:
 
 	void                    SetParent(CSceneNode* pNewParent);
 	void                    UpdateActivity(bool OnDetach = false);
+
+	DEM_FORCE_INLINE void IncrementTransformVersion() { if (++TransformVersion == DIRTY_TRANSFORM_VERSION) ++TransformVersion; }
 
 public:
 

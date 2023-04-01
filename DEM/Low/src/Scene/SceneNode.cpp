@@ -157,7 +157,7 @@ void CSceneNode::SetWorldPosition(const vector3& Value)
 
 	Flags.Set(LocalTransformDirty);
 	Flags.Clear(WorldTransformDirty);
-	++TransformVersion;
+	IncrementTransformVersion();
 }
 //---------------------------------------------------------------------
 
@@ -166,7 +166,7 @@ void CSceneNode::SetWorldTransform(const matrix44& Value)
 	WorldMatrix = Value;
 	Flags.Set(LocalTransformDirty);
 	Flags.Clear(WorldTransformDirty);
-	++TransformVersion;
+	IncrementTransformVersion();
 }
 //---------------------------------------------------------------------
 
@@ -187,7 +187,7 @@ void CSceneNode::UpdateWorldTransform()
 		LocalTfm.ToMatrix(WorldMatrix);
 	}
 
-	++TransformVersion;
+	IncrementTransformVersion();
 
 	// It is strange to update already valid world transform from an invalid local
 	n_assert_dbg(!IsLocalTransformDirty());
@@ -466,7 +466,7 @@ void CSceneNode::SetParent(CSceneNode* pNewParent)
 	if (pParent == pNewParent) return;
 
 	pParent = pNewParent;
-	if (pParent) LastParentTransformVersion = pParent->TransformVersion - 1;
+	LastParentTransformVersion = DIRTY_TRANSFORM_VERSION;
 	UpdateActivity(!pParent);
 }
 //---------------------------------------------------------------------
