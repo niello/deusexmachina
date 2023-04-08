@@ -6,7 +6,8 @@
 // and reused on subsequent insertions. Provides O(1) insertion and deletion without data
 // movement. Elements aren't guaranteed to be inserted in order.
 
-// TODO: vacuum (invalidate indices), shrink_to_fit (keep indices valid)
+// TODO: compact (invalidate indices), shrink_to_fit (keep indices valid)
+// TODO: make a linked list inside free nodes instead of separate _FreeIndices?
 
 namespace Data
 {
@@ -25,8 +26,8 @@ protected:
 		bool Free = false; // For faster iteration and indexed access control
 	};
 
-	std::vector<CCell> _Data;
-	std::vector<U32>   _FreeIndices;
+	std::vector<CCell>  _Data;
+	std::vector<TIndex> _FreeIndices;
 
 public:
 
@@ -100,6 +101,8 @@ public:
 
 		auto& Cell = _Data[Index];
 		n_assert(!Cell.Free);
+
+		//???!!!TODO: if erasing the last element, pop it back instead of recording as free?!
 
 		// Clear the record value to default, this clears freed object resources
 		Cell.Value = {};

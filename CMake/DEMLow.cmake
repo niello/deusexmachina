@@ -83,6 +83,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/SerializeToParams.h
 	DEM/Low/src/Data/Singleton.h
 	DEM/Low/src/Data/SparseArray.hpp
+	DEM/Low/src/Data/SparseArray2.hpp
 	DEM/Low/src/Data/Stack.h
 	DEM/Low/src/Data/String.h
 	DEM/Low/src/Data/StringID.h
