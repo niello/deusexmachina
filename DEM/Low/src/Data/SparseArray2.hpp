@@ -27,10 +27,10 @@ public:
 
 protected:
 
-	constexpr static inline bool RED = true;
-	constexpr static inline bool BLACK = false;
+	constexpr static inline TIndex RED = 1;
+	constexpr static inline TIndex BLACK = 0;
 	constexpr static inline size_t LEFT = 0;
-	constexpr static inline size_t RIGHT = 0;
+	constexpr static inline size_t RIGHT = 1;
 
 	union CCell
 	{
@@ -116,6 +116,62 @@ protected:
 		return Result;
 	}
 
+	TIndex TreeMinNode(TIndex SubtreeRootIndex) const noexcept
+	{
+		if (SubtreeRootIndex >= _Data.size()) return INVALID_INDEX;
+
+		while (_Data[SubtreeRootIndex]._Child[LEFT] != INVALID_INDEX)
+			SubtreeRootIndex = _Data[SubtreeRootIndex]._Child[LEFT];
+
+		return SubtreeRootIndex;
+	}
+
+	TIndex TreeMaxNode(TIndex SubtreeRootIndex) const noexcept
+	{
+		if (SubtreeRootIndex >= _Data.size()) return INVALID_INDEX;
+
+		while (_Data[SubtreeRootIndex]._Child[RIGHT] != INVALID_INDEX)
+			SubtreeRootIndex = _Data[SubtreeRootIndex]._Child[RIGHT];
+
+		return SubtreeRootIndex;
+	}
+
+	TIndex TreeNextNode(TIndex Index) const noexcept
+	{
+		if (Index >= _Data.size()) return INVALID_INDEX;
+
+		auto& Node = _Data[Index];
+		if (Node._Child[RIGHT] != INVALID_INDEX) return TreeMinNode(Node._Child[RIGHT]);
+
+		// Search for the unvisited right subtree in parents
+		TIndex ParentIndex = Node._Parent;
+		while (ParentIndex != INVALID_INDEX && _Data[ParentIndex]._Child[RIGHT] == Index)
+		{
+			Index = ParentIndex;
+			ParentIndex = _Data[ParentIndex]._Parent;
+		}
+
+		return ParentIndex;
+	}
+
+	TIndex TreePrevNode(TIndex Index) const noexcept
+	{
+		if (Index >= _Data.size()) return _LastFreeIndex;
+
+		auto& Node = _Data[Index];
+		if (Node._Child[LEFT] != INVALID_INDEX) return TreeMaxNode(Node._Child[LEFT]);
+
+		// Search for the unvisited left subtree in parents
+		TIndex ParentIndex = Node._Parent;
+		while (ParentIndex != INVALID_INDEX && _Data[ParentIndex]._Child[LEFT] == Index)
+		{
+			Index = ParentIndex;
+			ParentIndex = _Data[ParentIndex]._Parent;
+		}
+
+		return ParentIndex;
+	}
+
 	void TreeRotate(TIndex Index, size_t Dir) noexcept
 	{
 		const auto OppositeDir = 1 - Dir;
@@ -145,7 +201,9 @@ protected:
 		Node._Parent = ChildNodeIndex;
 	}
 
-	void TreeInsert(TIndex Index, TIndex Parent, bool AddToTheRight)
+	static DEM_FORCE_INLINE bool TreeNodeIsBlack(TIndex Index) const noexcept { return (Index == INVALID_INDEX || _Data[Index]._Color == BLACK); }
+
+	void TreeInsert(TIndex Index, TIndex Parent, bool AddToTheRight) noexcept
 	{
 		auto& Node = _Data[Index];
 		Node._Child[LEFT] = INVALID_INDEX;
@@ -181,7 +239,7 @@ protected:
 		// Fix red-violations
 		TIndex CurrIndex = Index;
 		TIndex CurrParentIndex = Parent;
-		while (CurrParentIndex != INVALID_INDEX && _Data[CurrParentIndex]._Color == RED)
+		while (!TreeNodeIsBlack(CurrParentIndex))
 		{
 			//!!!DBG TMP! Check grandparent existence. Is an invariant?
 			n_assert_dbg(_Data[CurrParentIndex]._Parent != INVALID_INDEX);
@@ -194,17 +252,9 @@ protected:
 			const auto OppositeDir = 1 - Dir;
 
 			const auto ParentSiblingIndex = CurrGrandParent._Child[OppositeDir];
-			if (ParentSiblingIndex != INVALID_INDEX && _Data[ParentSiblingIndex]._Color == RED)
+			if (TreeNodeIsBlack(ParentSiblingIndex))
 			{
-				// Both of grandparent's children are red. Make them black and push red up.
-				CurrParent._Color = BLACK;
-				_Data[ParentSiblingIndex]._Color = BLACK;
-				CurrGrandParent._Color = RED;
-				CurrIndex = CurrGrandParentIndex;
-			}
-			else
-			{
-				// Only one of grandparent's children is red. Make tree rotations and push red up.
+				// Parent is red but its sibling is black. Make tree rotations and push red up.
 				if (CurrIndex == CurrParent._Child[OppositeDir])
 				{
 					CurrIndex = CurrParentIndex;
@@ -216,20 +266,155 @@ protected:
 				_Data[ParentAfterRotation._Parent]._Color = RED;
 				TreeRotate(ParentAfterRotation._Parent, OppositeDir);
 			}
+			else
+			{
+				// Both of grandparent's children are red. Make them black and push red up.
+				CurrParent._Color = BLACK;
+				_Data[ParentSiblingIndex]._Color = BLACK;
+				CurrGrandParent._Color = RED;
+				CurrIndex = CurrGrandParentIndex;
+			}
 
 			CurrParentIndex = _Data[CurrIndex]._Parent;
 		}
-
-		//!!!DBG TMP! Can be red here?
-		n_assert_dbg(_Data[_TreeRootIndex]._Color == BLACK);
 
 		// Ensure that the root is always black
 		_Data[_TreeRootIndex]._Color = BLACK;
 	}
 
+	// NB: this method assumes that Index is a valid tree node index
+	void TreeRemove(TIndex Index) noexcept
+	{
+		TIndex SubtreeIndex;
+		TIndex ParentIndex;
+		auto& Node = _Data[Index];
+		if (Node._Child[LEFT] == INVALID_INDEX || Node._Child[RIGHT] == INVALID_INDEX)
+		{
+			// A single subtree, relink it to the parent of the erased node
+			SubtreeIndex = (Node._Child[LEFT] == INVALID_INDEX) ? Node._Child[RIGHT] : Node._Child[LEFT];
+			ParentIndex = Node._Parent;
+			if (SubtreeIndex != INVALID_INDEX)
+				_Data[SubtreeIndex]._Parent = ParentIndex;
+
+			if (_TreeRootIndex == Index)
+				_TreeRootIndex = SubtreeIndex;
+			else if (_Data[ParentIndex]._Child[LEFT] == Index)
+				_Data[ParentIndex]._Child[LEFT] = SubtreeIndex;
+			else
+				_Data[ParentIndex]._Child[RIGHT] = SubtreeIndex;
+
+			// Update cached min-max values
+			if (_FirstFreeIndex == Index)
+				_FirstFreeIndex = (SubtreeIndex != INVALID_INDEX) ? TreeMinNode(SubtreeIndex) : ParentIndex;
+			if (_LastFreeIndex == Index)
+				_LastFreeIndex = (SubtreeIndex != INVALID_INDEX) ? TreeMaxNode(SubtreeIndex) : ParentIndex;
+		}
+		else
+		{
+			// Two subtrees, lift up the successor
+			const auto SubtreeParentIndex = TreeNextNode(Index);
+			auto& SuccessorNode = _Data[SubtreeParentIndex];
+			SubtreeIndex = SuccessorNode._Child[RIGHT];
+
+			// Relink the left subtree of the erased node as the left subtree to the successor
+			_Data[Node._Child[LEFT]]._Parent = SubtreeParentIndex;
+			SuccessorNode._Child[LEFT] = Node._Child[LEFT];
+
+			if (SubtreeParentIndex == Node._Child[RIGHT])
+			{
+				// A successor is a direct child of the erased node
+				ParentIndex = SubtreeParentIndex;
+			}
+			else
+			{
+				// Lift the right subtree of the successor as the left subtree of its parent
+				ParentIndex = SuccessorNode._Parent;
+				if (SubtreeIndex != INVALID_INDEX)
+					_Data[SubtreeIndex]._Parent = ParentIndex;
+
+				_Data[ParentIndex]._Child[LEFT] = SubtreeIndex;
+
+				// Relink the right subtree of the erased node as the right subtree to the successor
+				_Data[Node._Child[RIGHT]]._Parent = SubtreeParentIndex;
+				SuccessorNode._Child[RIGHT] = Node._Child[RIGHT];
+			}
+
+			// Link the successor to the parent of the erased node
+			if (_TreeRootIndex == Index)
+				_TreeRootIndex = SubtreeParentIndex;
+			else if (_Data[Node._Parent]._Child[LEFT] == Index)
+				_Data[Node._Parent]._Child[LEFT] = SubtreeParentIndex;
+			else
+				_Data[Node._Parent]._Child[RIGHT] = SubtreeParentIndex;
+
+			SuccessorNode._Parent = Node._Parent;
+
+			// Exchange colors of the erased node and the successor linked to its place
+			std::swap(SuccessorNode._Color, Node._Color);
+		}
+
+		// If the erasing a black node, the tree must be rebalanced
+		if (Node._Color == BLACK)
+		{
+			while (SubtreeIndex != _TreeRootIndex && _Data[SubtreeIndex]._Color == BLACK)
+			{
+				auto& ParentNode = _Data[ParentIndex];
+
+				// Determine a subtree that requires rebalancing
+				const auto Dir = (SubtreeIndex == ParentNode._Child[LEFT]) ? LEFT : RIGHT;
+				const auto OppositeDir = 1 - Dir;
+
+				auto SiblingIndex = ParentNode._Child[OppositeDir];
+				auto pSiblingNode = &_Data[SiblingIndex];
+				if (pSiblingNode->_Color == RED)
+				{
+					// Propagate red up from the sibling subtree
+					pSiblingNode->_Color = BLACK;
+					ParentNode._Color = RED;
+					Rotate(ParentIndex, Dir);
+					SiblingIndex = ParentNode._Child[OppositeDir];
+					pSiblingNode = &_Data[SiblingIndex];
+				}
+
+				auto SiblingChildDir = pSiblingNode->_Child[Dir];
+				auto SiblingChildOpposite = pSiblingNode->_Child[OppositeDir];
+				const bool SiblingChildOppositeIsBlack = TreeNodeIsBlack(SiblingChildOpposite);
+				if (SiblingChildOppositeIsBlack && TreeNodeIsBlack(SiblingChildDir))
+				{
+					// When both children are black, the node itself is painted red
+					pSiblingNode->_Color = RED;
+					SubtreeIndex = ParentIndex;
+				}
+				else
+				{
+					if (SiblingChildOppositeIsBlack)
+					{
+						// Propagate red up from our subtree's child
+						_Data[SiblingChildDir]._Color = BLACK;
+						pSiblingNode->_Color = RED;
+						Rotate(SiblingIndex, OppositeDir);
+						SiblingIndex = ParentNode._Child[OppositeDir];
+						pSiblingNode = &_Data[SiblingIndex];
+					}
+
+					// Finish rebalancing
+					pSiblingNode->_Color = ParentNode._Color;
+					ParentNode._Color = BLACK;
+					_Data[pSiblingNode->_Child[OppositeDir]]._Color = BLACK;
+					Rotate(ParentIndex, Dir);
+					break;
+				}
+
+				ParentIndex = _Data[SubtreeIndex]._Parent;
+			}
+
+			_Data[SubtreeIndex]._Color = BLACK;
+		}
+	}
+
 	TIndex AllocateFirstFreeCell()
 	{
-		const auto InternalSize = _Data.size();
+		const auto InternalSize = static_cast<TIndex>(_Data.size());
 		if (_FirstFreeIndex >= InternalSize)
 		{
 			if (InternalSize == MAX_CAPACITY)
@@ -239,13 +424,11 @@ protected:
 			}
 
 			_Data.push_back();
-			return static_cast<TIndex>(InternalSize);
+			return InternalSize;
 		}
 
 		const auto FreeIndex = _FirstFreeIndex;
-
-		// TODO: remove _FirstFreeIndex from the tree "by iterator", update min or max or both if equal
-
+		TreeRemove(FreeIndex);
 		return FreeIndex;
 	}
 
@@ -253,7 +436,7 @@ protected:
 	TIndex FreeAllocatedCell(TIndex Index) noexcept
 	{
 		// If erasing at the tail, pop it from _Data instead of adding to the tree
-		if (Index == _Data.size() - 1 && Index != _LastFreeIndex)
+		if (Index + 1 == _Data.size() && Index != _LastFreeIndex)
 		{
 			--_Size;
 			UnsafeAt(Index).~T();
@@ -261,16 +444,25 @@ protected:
 			return INVALID_INDEX;
 		}
 
-		// Silently skip an already inserted node. Should never happen.
+		// Silently skip inserting an already free node
 		const auto Found = TreeFindLowerBound(Index);
-		if (Found.Node == Index) return;
+		if (Found.Node != Index)
+		{
+			--_Size;
+			UnsafeAt(Index).~T();
+			TreeInsert(Index, Found.Parent, Found.IsRightChild);
+		}
 
-		--_Size;
-		UnsafeAt(Index).~T();
-		TreeInsert(Index, Found.Parent, Found.IsRightChild);
+		// Given the Index is free, find next busy cell (a gap between free cells)
+		TIndex NextCell = Index + 1;
+		TIndex NextFree = TreeNextNode(Index);
+		while (NextFree != INVALID_INDEX && NextFree == NextCell)
+		{
+			NextCell = NextFree + 1;
+			NextFree = TreeNextNode(NextFree);
+		}
 
-		//!!!TODO: find first node after Index not in the tree! Any index > _Data.size() is end().
-		return XXX;
+		return (NextCell < _Data.size()) ? NextCell : INVALID_INDEX;
 	}
 
 public:
@@ -279,7 +471,7 @@ public:
 
 	void reserve(TIndex NewCapacity) { _Data.reserve(NewCapacity); }
 
-	bool is_filled(TIndex Index) const noexcept { return TreeFindLowerBound(Index).Node == Index; }
+	bool is_filled(TIndex Index) const noexcept { return TreeFindLowerBound(Index).Node != Index; }
 
 	iterator insert(const T& Value) { return emplace(Value); }
 	iterator insert(T&& Value) { return emplace(std::move(Value)); }

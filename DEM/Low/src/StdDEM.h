@@ -6,6 +6,9 @@
 #include <set>
 #include <functional>
 #include <algorithm>
+#if __cplusplus >= 202002L
+#include <bit>
+#endif
 
 #define OK   return true
 #define FAIL return false
@@ -115,35 +118,68 @@ auto tuple_pop_front(const T& tuple)
 //---------------------------------------------------------------------
 //  Kernel and aux functions and enums
 //---------------------------------------------------------------------
-inline bool IsPow2(unsigned int Value) { return Value > 0 && (Value & (Value - 1)) == 0; }
+DEM_FORCE_INLINE bool IsPow2(unsigned int Value) { return Value > 0 && (Value & (Value - 1)) == 0; }
 
 template <class T>
-inline T NextPow2(T x)
+DEM_FORCE_INLINE T NextPow2(T x)
 {
+#if __cplusplus >= 202002L
+	return std::bit_ceil(x);
+#else
 	if constexpr (std::is_signed_v<T>)
 	{
 		if (x < 0) return 0;
 	}
 
 	--x;
-	x |= x >> 1;
-	x |= x >> 2;
-	x |= x >> 4;
-	x |= x >> 8;
-	x |= x >> 16;
+	x |= (x >> 1);
+	x |= (x >> 2);
+	x |= (x >> 4);
+	x |= (x >> 8);
+	x |= (x >> 16);
 
 	if constexpr (sizeof(T) > 4)
-		x |= x >> 32;
+		x |= (x >> 32);
 
 	return x + 1;
+#endif
+}
+
+template <class T>
+DEM_FORCE_INLINE T PrevPow2(T x)
+{
+#if __cplusplus >= 202002L
+	return std::bit_floor(x);
+#else
+	if constexpr (std::is_signed_v<T>)
+	{
+		if (x <= 0) return 0;
+	}
+	else
+	{
+		if (!x) return 0;
+	}
+
+	//--x; // Uncomment this to have a strictly less result
+	x |= (x >> 1);
+	x |= (x >> 2);
+	x |= (x >> 4);
+	x |= (x >> 8);
+	x |= (x >> 16);
+
+	if constexpr (sizeof(T) > 4)
+		x |= (x >> 32);
+
+	return x - (x >> 1);
+#endif
 }
 
 // Only for power-of-2 alignment //!!!C++11 static_assert may help!
-template <unsigned int Alignment> inline bool IsAligned(const void* Pointer) { return !(((unsigned int)Pointer) & (Alignment - 1)); }
-inline bool IsAligned16(const void* Pointer) { return !(((unsigned int)Pointer) & 0x0000000f); }
+template <unsigned int Alignment> DEM_FORCE_INLINE bool IsAligned(const void* Pointer) { return !(((unsigned int)Pointer) & (Alignment - 1)); }
+DEM_FORCE_INLINE bool IsAligned16(const void* Pointer) { return !(((unsigned int)Pointer) & 0x0000000f); }
 
 template<typename T>
-inline bool VectorFastErase(std::vector<T>& Self, UPTR Index)
+DEM_FORCE_INLINE bool VectorFastErase(std::vector<T>& Self, UPTR Index)
 {
 	if (Index >= Self.size()) return false;
 	if (Index < Self.size() - 1) std::swap(Self[Index], Self[Self.size() - 1]);
@@ -152,7 +188,7 @@ inline bool VectorFastErase(std::vector<T>& Self, UPTR Index)
 }
 
 template<typename T>
-inline bool VectorFastErase(std::vector<T>& Self, typename std::vector<T>::iterator It)
+DEM_FORCE_INLINE bool VectorFastErase(std::vector<T>& Self, typename std::vector<T>::iterator It)
 {
 	if (It == Self.cend()) return false;
 	if (It != --Self.cend())
@@ -162,7 +198,7 @@ inline bool VectorFastErase(std::vector<T>& Self, typename std::vector<T>::itera
 }
 
 template<typename T>
-inline bool VectorFastErase(std::vector<T>& Self, const T& Value)
+DEM_FORCE_INLINE bool VectorFastErase(std::vector<T>& Self, const T& Value)
 {
 	return VectorFastErase(Self, std::find(Self.begin(), Self.end(), Value));
 }
@@ -175,7 +211,7 @@ const UPTR Running = 2;
 const UPTR Error = 3;
 // Use values bigger than Error to specify errors
 
-inline bool ExecResultIsError(UPTR Result) { return Result >= Error; }
+DEM_FORCE_INLINE bool ExecResultIsError(UPTR Result) { return Result >= Error; }
 
 //
 
