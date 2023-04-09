@@ -46,7 +46,12 @@ protected:
 		};
 	};
 
-	using TUnderlyingVector = std::vector<CCell>;
+	struct CBound
+	{
+		TIndex Parent;
+		TIndex Node;
+		bool IsRightChild;
+	};
 
 	class CConstantIterator
 	{
@@ -54,7 +59,30 @@ protected:
 
 		const CSparseArray2<T, TIndex>* _pOwner = nullptr;
 		TIndex _CurrIndex = INVALID_INDEX;
+		TIndex _PrevFreeIndex = INVALID_INDEX;
 		TIndex _NextFreeIndex = INVALID_INDEX;
+
+		void RewindToNextBusyCell()
+		{
+			while (_CurrIndex < Owner.sparse_size() && _CurrIndex == _NextFreeIndex)
+			{
+				++_CurrIndex;
+				_PrevFreeIndex = _NextFreeIndex;
+				_NextFreeIndex = Owner.TreeNextNode(_NextFreeIndex);
+			}
+		}
+
+		void RewindToPrevBusyCell()
+		{
+			// NB: the iterator can be positioned at '0' when it is free, but this should
+			// never happen and is treated similarly to decrementing vector::begin()
+			while (_CurrIndex > 0 && _CurrIndex == _PrevFreeIndex)
+			{
+				--_CurrIndex;
+				_NextFreeIndex = _PrevFreeIndex;
+				_PrevFreeIndex = Owner.TreePrevNode(_PrevFreeIndex);
+			}
+		}
 
 	public:
 
@@ -62,16 +90,35 @@ protected:
 
 		CConstantIterator(TIndex Index, const CSparseArray2<T, TIndex>& Owner)
 			: _pOwner(&Owner)
-			, _CurrIndex(0)
-			, _NextFreeIndex(Owner._FirstFreeIndex)
+			, _CurrIndex(std::min(Index, Owner.sparse_size()))
 		{
-			//!!!TODO: handle corner cases! INVALID_INDEX! Reset _CurrIndex to INVALID_INDEX when at the end!
-			// Creation of end() iterator by passing INVALID_INDEX as index!
-			while (_CurrIndex == _NextFreeIndex)
+			if (_CurrIndex == 0)
 			{
-				++_CurrIndex;
-				_NextFreeIndex = Owner.TreeNextNode(_NextFreeIndex);
+				_PrevFreeIndex = INVALID_INDEX;
+				_NextFreeIndex = Owner._FirstFreeIndex;
 			}
+			else if (_CurrIndex >= _CurrIndex < Owner.sparse_size())
+			{
+				_PrevFreeIndex = Owner._LastFreeIndex;
+				_NextFreeIndex = INVALID_INDEX;
+			}
+			else
+			{
+				// Find the first free index not before the _CurrIndex
+				_NextFreeIndex = Owner.TreeFindLowerBound(_CurrIndex).Node;
+				if (_NextFreeIndex < _CurrIndex)
+				{
+					_PrevFreeIndex = _NextFreeIndex;
+					_NextFreeIndex = Owner.TreeNextNode(_NextFreeIndex);
+				}
+				else
+				{
+					_PrevFreeIndex = Owner.TreePrevNode(_NextFreeIndex);
+				}
+			}
+
+			// This will turn us into end() for an empty array
+			RewindToNextBusyCell();
 		}
 
 		using iterator_category = std::bidirectional_iterator_tag;
@@ -83,30 +130,12 @@ protected:
 		reference operator*() const noexcept { return _pOwner->UnsafeAt(_CurrIndex); }
 		pointer operator->() const noexcept { return &_pOwner->UnsafeAt(_CurrIndex); }
 
-		CConstantIterator& operator++() noexcept
-		{
-			//TIndex NextFreeIndex = TreeNextNode(Index);
-
-			// curr stop = _FirstFreeIndex
-			// iterate to min(curr stop, _Data.size)
-			//   process elements
-			// skip curr stop, read new curr stop (next free cell) and repeat
-			// iterator could consist of vector iterator and index of next free element
-
-			return *this;
-		}
-
-		CConstantIterator& operator--() noexcept
-		{
-			//TIndex PrevFreeIndex = TreePrevNode(Index);
-
-			return *this;
-		}
-
+		CConstantIterator& operator ++() noexcept { ++_CurrIndex; RewindToNextBusyCell(); return *this; }
+		CConstantIterator& operator --() noexcept { --_CurrIndex; RewindToPrevBusyCell(); return *this; }
 		CConstantIterator operator --(int) noexcept { CConstantIterator Tmp = *this; --(*this); return Tmp; }
 		CConstantIterator operator ++(int) noexcept { CConstantIterator Tmp = *this; ++(*this); return Tmp; }
 
-		bool operator==(const CConstantIterator& Other) const noexcept { /*n_assert_dbg(_pOwner == Other._pOwner);*/ return _CurrIndex == Other._CurrIndex; }
+		bool operator ==(const CConstantIterator& Other) const noexcept { /*n_assert_dbg(_pOwner == Other._pOwner);*/ return _CurrIndex == Other._CurrIndex; }
 	};
 
 	class CIterator : public CConstantIterator
@@ -138,7 +167,7 @@ public:
 
 protected:
 
-	TUnderlyingVector _Data;
+	std::vector<CCell> _Data;
 
 	TIndex _FirstFreeIndex = INVALID_INDEX;
 	TIndex _LastFreeIndex = INVALID_INDEX;
@@ -148,13 +177,6 @@ protected:
 
 	T& UnsafeAt(TIndex Index) noexcept { return *reinterpret_cast<T*>(&_Data[Index].ElementStorage); }
 	const T& UnsafeAt(TIndex Index) const noexcept { return *reinterpret_cast<T*>(&_Data[Index].ElementStorage); }
-
-	struct CBound
-	{
-		TIndex Parent;
-		TIndex Node;
-		bool IsRightChild;
-	};
 
 	CBound TreeFindLowerBound(TIndex Index) const noexcept
 	{
@@ -548,7 +570,7 @@ public:
 		return iterator(Index);
 	}
 
-	iterator erase(const_iterator Where) noexcept { return erase(static_cast<TIndex>(std::distance(_Data.cbegin(), Where.It))); }
+	iterator erase(const_iterator It) noexcept { return erase(It._CurrIndex); }
 	iterator erase(TIndex Index) noexcept { return iterator(FreeAllocatedCell(Index)); }
 
 	void clear()
@@ -565,8 +587,11 @@ public:
 
 	void shrink_to_fit()
 	{
-		// TODO: shrink tail of free cells!
-		// while (!_Data.empty() && _LastFreeIndex == _Data.size() - 1) remove _LastFreeIndex from the tree "by iterator"
+		while (!_Data.empty() && _LastFreeIndex == _Data.size() - 1)
+		{
+			TreeRemove(_LastFreeIndex);
+			_Data.pop_back();
+		}
 
 		_Data.shrink_to_fit();
 	}
@@ -593,8 +618,8 @@ public:
 
 	iterator begin() noexcept { return iterator(0, *this); }
 	const_iterator begin() const noexcept { return const_iterator(0, *this); }
-	iterator end() noexcept { return iterator(INVALID_INDEX, *this); }
-	const_iterator end() const noexcept { return const_iterator(INVALID_INDEX, *this); }
+	iterator end() noexcept { return iterator(sparse_size(), *this); }
+	const_iterator end() const noexcept { return const_iterator(sparse_size(), *this); }
 	reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
 	const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator(end()); }
 	reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
