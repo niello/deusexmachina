@@ -23,8 +23,8 @@ class CSparseArray2
 
 public:
 
-	constexpr static inline auto INVALID_INDEX = std::numeric_limits<TIndex>().max();
 	constexpr static inline auto INDEX_BITS = sizeof(TIndex) * 8 - 1; // One bit is reserved for a tree node color
+	constexpr static inline auto INVALID_INDEX = static_cast<TIndex>(1 << INDEX_BITS) - 1;
 	constexpr static inline auto MAX_CAPACITY = static_cast<TIndex>(1 << INDEX_BITS);
 
 protected:
@@ -56,6 +56,8 @@ protected:
 	class CConstantIterator
 	{
 	protected:
+
+		friend class CSparseArray2<T, TIndex>;
 
 		const CSparseArray2<T, TIndex>* _pOwner = nullptr;
 		TIndex _CurrIndex = INVALID_INDEX;
@@ -136,6 +138,7 @@ protected:
 		CConstantIterator operator ++(int) noexcept { CConstantIterator Tmp = *this; ++(*this); return Tmp; }
 
 		bool operator ==(const CConstantIterator& Other) const noexcept { /*n_assert_dbg(_pOwner == Other._pOwner);*/ return _CurrIndex == Other._CurrIndex; }
+		bool operator !=(const CConstantIterator& Other) const noexcept { return !(*this == Other); }
 	};
 
 	class CIterator : public CConstantIterator
@@ -175,8 +178,8 @@ protected:
 
 	TIndex _Size = 0;
 
-	T& UnsafeAt(TIndex Index) noexcept { return *reinterpret_cast<T*>(&_Data[Index].ElementStorage); }
-	const T& UnsafeAt(TIndex Index) const noexcept { return *reinterpret_cast<T*>(&_Data[Index].ElementStorage); }
+	T& UnsafeAt(TIndex Index) noexcept { return *reinterpret_cast<T*>(_Data[Index].ElementStorage); }
+	const T& UnsafeAt(TIndex Index) const noexcept { return *reinterpret_cast<const T*>(_Data[Index].ElementStorage); }
 
 	CBound TreeFindLowerBound(TIndex Index) const noexcept
 	{
@@ -518,8 +521,7 @@ protected:
 		return FreeIndex;
 	}
 
-	// Returns the next busy cell index
-	TIndex FreeAllocatedCell(TIndex Index) noexcept
+	void FreeAllocatedCell(TIndex Index) noexcept
 	{
 		// If erasing at the tail, pop it from _Data instead of adding to the tree
 		if (Index + 1 == _Data.size() && Index != _LastFreeIndex)
@@ -527,28 +529,16 @@ protected:
 			--_Size;
 			UnsafeAt(Index).~T();
 			_Data.pop_back();
-			return INVALID_INDEX;
+			return;
 		}
 
 		// Silently skip inserting an already free node
 		const auto Found = TreeFindLowerBound(Index);
-		if (Found.Node != Index)
-		{
-			--_Size;
-			UnsafeAt(Index).~T();
-			TreeInsert(Index, Found.Parent, Found.IsRightChild);
-		}
+		if (Found.Node == Index) return;
 
-		// Given the Index is free, find next busy cell (a gap between free cells)
-		TIndex NextCell = Index + 1;
-		TIndex NextFree = TreeNextNode(Index);
-		while (NextFree != INVALID_INDEX && NextFree == NextCell)
-		{
-			NextCell = NextFree + 1;
-			NextFree = TreeNextNode(NextFree);
-		}
-
-		return (NextCell < _Data.size()) ? NextCell : INVALID_INDEX;
+		--_Size;
+		UnsafeAt(Index).~T();
+		TreeInsert(Index, Found.Parent, Found.IsRightChild);
 	}
 
 public:
@@ -557,7 +547,7 @@ public:
 
 	void reserve(TIndex NewCapacity) { _Data.reserve(NewCapacity); }
 
-	bool is_filled(TIndex Index) const noexcept { return TreeFindLowerBound(Index).Node != Index; }
+	bool is_filled(TIndex Index) const noexcept { return Index < sparse_size() && TreeFindLowerBound(Index).Node != Index; }
 
 	iterator insert(const T& Value) { return emplace(Value); }
 	iterator insert(T&& Value) { return emplace(std::move(Value)); }
@@ -572,8 +562,9 @@ public:
 		return iterator(Index, *this);
 	}
 
-	iterator erase(const_iterator It) noexcept { return erase(It._CurrIndex); }
-	iterator erase(TIndex Index) noexcept { return iterator(FreeAllocatedCell(Index)); }
+	const_iterator erase(const_iterator It) noexcept { auto It2 = It; ++It2; FreeAllocatedCell(It._CurrIndex); return It2; }
+	iterator erase(iterator It) noexcept { auto It2 = It; ++It2; FreeAllocatedCell(It._CurrIndex); return It2; }
+	void erase(TIndex Index) noexcept { if (Index < sparse_size()) FreeAllocatedCell(Index); }
 
 	void clear()
 	{
