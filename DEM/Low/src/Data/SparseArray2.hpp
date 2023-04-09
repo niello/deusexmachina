@@ -201,7 +201,7 @@ protected:
 		Node._Parent = ChildNodeIndex;
 	}
 
-	static DEM_FORCE_INLINE bool TreeNodeIsBlack(TIndex Index) const noexcept { return (Index == INVALID_INDEX || _Data[Index]._Color == BLACK); }
+	static DEM_FORCE_INLINE bool TreeNodeIsBlack(TIndex Index) noexcept { return (Index == INVALID_INDEX || _Data[Index]._Color == BLACK); }
 
 	void TreeInsert(TIndex Index, TIndex Parent, bool AddToTheRight) noexcept
 	{
