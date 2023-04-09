@@ -10,6 +10,8 @@
 // the cheapest possible Compact() with minimized amount of element moves, and also improves
 // CPU cache utilization.
 
+//???TODO: for non-constant at(), might allocate a cell if it is free!
+
 namespace Data
 {
 
@@ -46,25 +48,83 @@ protected:
 
 	using TUnderlyingVector = std::vector<CCell>;
 
-	class CIterator
+	class CConstantIterator
 	{
-	private:
+	protected:
 
-		// curr stop = _FirstFreeIndex
-		// iterate to min(curr stop, _Data.size)
-		//   process elements
-		// skip curr stop, read new curr stop (next free cell) and repeat
-		// iterator could consist of vector iterator and index of next free element
-
-		typename TUnderlyingVector::iterator It;
+		const CSparseArray2<T, TIndex>* _pOwner = nullptr;
+		TIndex _CurrIndex = INVALID_INDEX;
+		TIndex _NextFreeIndex = INVALID_INDEX;
 
 	public:
 
-		using pointer = T*; // TODO: const pointer for const iterator
-		using reference = T&; // TODO: const reference for const iterator
+		CConstantIterator() = default;
 
-		reference operator*() const noexcept; //{ return _Ptr->_Myval; }
-		pointer operator->() const noexcept; //{ return pointer_traits<pointer>::pointer_to(**this); }
+		CConstantIterator(TIndex Index, const CSparseArray2<T, TIndex>& Owner)
+			: _pOwner(&Owner)
+			, _CurrIndex(0)
+			, _NextFreeIndex(Owner._FirstFreeIndex)
+		{
+			//!!!TODO: handle corner cases! INVALID_INDEX! Reset _CurrIndex to INVALID_INDEX when at the end!
+			// Creation of end() iterator by passing INVALID_INDEX as index!
+			while (_CurrIndex == _NextFreeIndex)
+			{
+				++_CurrIndex;
+				_NextFreeIndex = Owner.TreeNextNode(_NextFreeIndex);
+			}
+		}
+
+		using iterator_category = std::bidirectional_iterator_tag;
+		using value_type = T;
+		using difference_type = ptrdiff_t;
+		using pointer = const value_type*;
+		using reference = const value_type&;
+
+		reference operator*() const noexcept { return _pOwner->UnsafeAt(_CurrIndex); }
+		pointer operator->() const noexcept { return &_pOwner->UnsafeAt(_CurrIndex); }
+
+		CConstantIterator& operator++() noexcept
+		{
+			//TIndex NextFreeIndex = TreeNextNode(Index);
+
+			// curr stop = _FirstFreeIndex
+			// iterate to min(curr stop, _Data.size)
+			//   process elements
+			// skip curr stop, read new curr stop (next free cell) and repeat
+			// iterator could consist of vector iterator and index of next free element
+
+			return *this;
+		}
+
+		CConstantIterator& operator--() noexcept
+		{
+			//TIndex PrevFreeIndex = TreePrevNode(Index);
+
+			return *this;
+		}
+
+		CConstantIterator operator --(int) noexcept { CConstantIterator Tmp = *this; --(*this); return Tmp; }
+		CConstantIterator operator ++(int) noexcept { CConstantIterator Tmp = *this; ++(*this); return Tmp; }
+
+		bool operator==(const CConstantIterator& Other) const noexcept { /*n_assert_dbg(_pOwner == Other._pOwner);*/ return _CurrIndex == Other._CurrIndex; }
+	};
+
+	class CIterator : public CConstantIterator
+	{
+	public:
+
+		using pointer = value_type*;
+		using reference = value_type&;
+
+		using CConstantIterator::CConstantIterator;
+
+		reference operator*() const noexcept { return const_cast<reference>(CConstantIterator::operator *()); }
+		pointer operator->() const noexcept { return const_cast<pointer>(CConstantIterator::operator ->()); }
+
+		CIterator& operator ++() noexcept { CConstantIterator::operator ++(); return *this; }
+		CIterator& operator --() noexcept { CConstantIterator::operator --(); return *this; }
+		CIterator operator --(int) noexcept { CIterator Tmp = *this; CConstantIterator::operator --(); return Tmp; }
+		CIterator operator ++(int) noexcept { CIterator Tmp = *this; CConstantIterator::operator ++(); return Tmp; }
 	};
 
 public:
@@ -72,7 +132,9 @@ public:
 	using size_type = TIndex;
 	using value_type = T;
 	using iterator = CIterator;
-	using const_iterator = CIterator; // FIXME: constant version
+	using const_iterator = CConstantIterator;
+	using reverse_iterator = std::reverse_iterator<iterator>;
+	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 protected:
 
@@ -529,14 +591,18 @@ public:
 	TIndex capacity() const noexcept { return static_cast<TIndex>(_Data.capacity()); }
 	bool empty() const noexcept { return !_Size; }
 
-	//reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
-	//const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator(end()); }
-	//reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
-	//const_reverse_iterator rend() const noexcept { return const_reverse_iterator(begin()); }
-	//const_iterator cbegin() const noexcept { return begin(); }
-	//const_iterator cend() const noexcept { return end(); }
-	//const_reverse_iterator crbegin() const noexcept { return rbegin(); }
-	//const_reverse_iterator crend() const noexcept { return rend(); }
+	iterator begin() noexcept { return iterator(0, *this); }
+	const_iterator begin() const noexcept { return const_iterator(0, *this); }
+	iterator end() noexcept { return iterator(INVALID_INDEX, *this); }
+	const_iterator end() const noexcept { return const_iterator(INVALID_INDEX, *this); }
+	reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+	const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator(end()); }
+	reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+	const_reverse_iterator rend() const noexcept { return const_reverse_iterator(begin()); }
+	const_iterator cbegin() const noexcept { return begin(); }
+	const_iterator cend() const noexcept { return end(); }
+	const_reverse_iterator crbegin() const noexcept { return rbegin(); }
+	const_reverse_iterator crend() const noexcept { return rend(); }
 
 	T& operator[](TIndex Index) noexcept { return UnsafeAt(Index); }
 	const T& operator[](const TIndex Index) const noexcept { return UnsafeAt(Index); }
