@@ -64,11 +64,11 @@ protected:
 
 		void RewindToNextBusyCell()
 		{
-			while (_CurrIndex < Owner.sparse_size() && _CurrIndex == _NextFreeIndex)
+			while (_CurrIndex < _pOwner->sparse_size() && _CurrIndex == _NextFreeIndex)
 			{
 				++_CurrIndex;
 				_PrevFreeIndex = _NextFreeIndex;
-				_NextFreeIndex = Owner.TreeNextNode(_NextFreeIndex);
+				_NextFreeIndex = _pOwner->TreeNextNode(_NextFreeIndex);
 			}
 		}
 
@@ -80,7 +80,7 @@ protected:
 			{
 				--_CurrIndex;
 				_NextFreeIndex = _PrevFreeIndex;
-				_PrevFreeIndex = Owner.TreePrevNode(_PrevFreeIndex);
+				_PrevFreeIndex = _pOwner->TreePrevNode(_PrevFreeIndex);
 			}
 		}
 
@@ -97,7 +97,7 @@ protected:
 				_PrevFreeIndex = INVALID_INDEX;
 				_NextFreeIndex = Owner._FirstFreeIndex;
 			}
-			else if (_CurrIndex >= _CurrIndex < Owner.sparse_size())
+			else if (_CurrIndex >= Owner.sparse_size())
 			{
 				_PrevFreeIndex = Owner._LastFreeIndex;
 				_NextFreeIndex = INVALID_INDEX;
@@ -285,7 +285,7 @@ protected:
 		Node._Parent = ChildNodeIndex;
 	}
 
-	static DEM_FORCE_INLINE bool TreeNodeIsBlack(TIndex Index) noexcept { return (Index == INVALID_INDEX || _Data[Index]._Color == BLACK); }
+	DEM_FORCE_INLINE bool TreeNodeIsBlack(TIndex Index) noexcept { return (Index == INVALID_INDEX || _Data[Index]._Color == BLACK); }
 
 	void TreeInsert(TIndex Index, TIndex Parent, bool AddToTheRight) noexcept
 	{
@@ -433,8 +433,10 @@ protected:
 
 			SuccessorNode._Parent = Node._Parent;
 
-			// Exchange colors of the erased node and the successor linked to its place
-			std::swap(SuccessorNode._Color, Node._Color);
+			// Exchange colors of the erased node and the successor linked to its place. NB: std::swap can't handle bit fields.
+			const auto TmpColor = SuccessorNode._Color;
+			SuccessorNode._Color = Node._Color;
+			Node._Color = TmpColor;
 		}
 
 		// If the erasing a black node, the tree must be rebalanced
@@ -455,7 +457,7 @@ protected:
 					// Propagate red up from the sibling subtree
 					pSiblingNode->_Color = BLACK;
 					ParentNode._Color = RED;
-					Rotate(ParentIndex, Dir);
+					TreeRotate(ParentIndex, Dir);
 					SiblingIndex = ParentNode._Child[OppositeDir];
 					pSiblingNode = &_Data[SiblingIndex];
 				}
@@ -476,7 +478,7 @@ protected:
 						// Propagate red up from our subtree's child
 						_Data[SiblingChildDir]._Color = BLACK;
 						pSiblingNode->_Color = RED;
-						Rotate(SiblingIndex, OppositeDir);
+						TreeRotate(SiblingIndex, OppositeDir);
 						SiblingIndex = ParentNode._Child[OppositeDir];
 						pSiblingNode = &_Data[SiblingIndex];
 					}
@@ -485,7 +487,7 @@ protected:
 					pSiblingNode->_Color = ParentNode._Color;
 					ParentNode._Color = BLACK;
 					_Data[pSiblingNode->_Child[OppositeDir]]._Color = BLACK;
-					Rotate(ParentIndex, Dir);
+					TreeRotate(ParentIndex, Dir);
 					break;
 				}
 
@@ -507,7 +509,7 @@ protected:
 				return INVALID_INDEX;
 			}
 
-			_Data.push_back();
+			_Data.push_back({});
 			return InternalSize;
 		}
 
@@ -567,7 +569,7 @@ public:
 		if (Index == INVALID_INDEX) return end();
 		++_Size;
 		new (_Data[Index].ElementStorage) T(std::forward<TArgs>(ValueConstructionArgs)...);
-		return iterator(Index);
+		return iterator(Index, *this);
 	}
 
 	iterator erase(const_iterator It) noexcept { return erase(It._CurrIndex); }
