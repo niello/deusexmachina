@@ -34,7 +34,7 @@ protected:
 
 	union CCell
 	{
-		alignas(T) std::byte ElementStorage[sizeof(T)];
+		alignas(T) std::byte _ElementStorage[sizeof(T)];
 
 		struct // Could store a single uint64 = 21 bit * 3 indices + 1 bit of color, max 2M elements in the array
 		{
@@ -591,7 +591,7 @@ protected:
 			}
 			else
 			{
-				new (Cell.ElementStorage) T(Other.UnsafeAt(Index));
+				new (Cell._ElementStorage) T(Other.UnsafeAt(Index));
 			}
 		}
 	}
@@ -599,12 +599,12 @@ protected:
 	DEM_FORCE_INLINE void MoveUnsafe(TIndex BusyIndex, TIndex FreeIndex) noexcept
 	{
 		T& Object = UnsafeAt(BusyIndex);
-		new (_Data[FreeIndex].ElementStorage) T(std::move(Object));
+		new (_Data[FreeIndex]._ElementStorage) T(std::move(Object));
 		Object.~T();
 	}
 
-	T& UnsafeAt(TIndex Index) noexcept { return *reinterpret_cast<T*>(_Data[Index].ElementStorage); }
-	const T& UnsafeAt(TIndex Index) const noexcept { return *reinterpret_cast<const T*>(_Data[Index].ElementStorage); }
+	T& UnsafeAt(TIndex Index) noexcept { return *reinterpret_cast<T*>(_Data[Index]._ElementStorage); }
+	const T& UnsafeAt(TIndex Index) const noexcept { return *reinterpret_cast<const T*>(_Data[Index]._ElementStorage); }
 
 public:
 
@@ -692,7 +692,7 @@ public:
 		const auto Index = (_FirstFreeIndex == INVALID_INDEX) ? sparse_size() : _FirstFreeIndex;
 		if (!AllocateCell(Index)) return end();
 		++_Size;
-		new (_Data[Index].ElementStorage) T(std::forward<TArgs>(ValueConstructionArgs)...);
+		new (_Data[Index]._ElementStorage) T(std::forward<TArgs>(ValueConstructionArgs)...);
 		return iterator(Index, *this);
 	}
 
@@ -819,7 +819,7 @@ public:
 			if (!is_filled(Index) && AllocateCell(Index)) // AllocateCell asserts inside if capacity reached
 			{
 				++_Size;
-				new (_Data[Index].ElementStorage) T();
+				new (_Data[Index]._ElementStorage) T();
 			}
 		}
 		else
