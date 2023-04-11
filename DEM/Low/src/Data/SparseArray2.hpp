@@ -72,6 +72,9 @@ protected:
 				_PrevFreeIndex = _NextFreeIndex;
 				_NextFreeIndex = _pOwner->TreeNextNode(_NextFreeIndex);
 			}
+
+			// Use INVALID_INDEX for all end() iterators to protect from sparse_size() changes during iteration
+			if (_CurrIndex >= _pOwner->sparse_size()) _CurrIndex = INVALID_INDEX;
 		}
 
 		void RewindToPrevBusyCell()
@@ -132,8 +135,24 @@ protected:
 		reference operator*() const noexcept { return _pOwner->UnsafeAt(_CurrIndex); }
 		pointer operator->() const noexcept { return &_pOwner->UnsafeAt(_CurrIndex); }
 
-		CConstantIterator& operator ++() noexcept { ++_CurrIndex; RewindToNextBusyCell(); return *this; }
-		CConstantIterator& operator --() noexcept { --_CurrIndex; RewindToPrevBusyCell(); return *this; }
+		CConstantIterator& operator ++() noexcept
+		{
+			n_assert_dbg(_CurrIndex != INVALID_INDEX);
+			++_CurrIndex;
+			RewindToNextBusyCell();
+			return *this;
+		}
+
+		CConstantIterator& operator --() noexcept
+		{
+			n_assert_dbg(_CurrIndex != 0);
+			// Restore the index from INVALID_INDEX for reverse iterators to work
+			if (_CurrIndex > _pOwner->sparse_size()) _CurrIndex = _pOwner->sparse_size();
+			--_CurrIndex;
+			RewindToPrevBusyCell();
+			return *this;
+		}
+
 		CConstantIterator operator --(int) noexcept { CConstantIterator Tmp = *this; --(*this); return Tmp; }
 		CConstantIterator operator ++(int) noexcept { CConstantIterator Tmp = *this; ++(*this); return Tmp; }
 
@@ -443,7 +462,7 @@ protected:
 		}
 
 		// If the erasing a black node, the tree must be rebalanced
-		if (Node._Color == BLACK)
+		if (Node._Color == BLACK && SubtreeIndex != INVALID_INDEX)
 		{
 			while (SubtreeIndex != _TreeRootIndex && _Data[SubtreeIndex]._Color == BLACK)
 			{
@@ -541,9 +560,102 @@ protected:
 		TreeInsert(Index, Found.Parent, Found.IsRightChild);
 	}
 
+	void CopyDataFrom(const CSparseArray2& Other)
+	{
+		TIndex Index = 0;
+		TIndex NextFreeIndex = _FirstFreeIndex;
+		for (TIndex Index = 0; Index < Other._Data.size(); ++Index)
+		{
+			auto& Cell = _Data[Index];
+			if (Index == NextFreeIndex)
+			{
+				const auto& OtherCell = Other._Data[Index];
+				Cell._Child[0] = OtherCell._Child[0];
+				Cell._Child[1] = OtherCell._Child[1];
+				Cell._Parent = OtherCell._Parent;
+				Cell._Color = OtherCell._Color;
+
+				NextFreeIndex = Other.TreeNextNode(NextFreeIndex);
+			}
+			else
+			{
+				new (Cell.ElementStorage) T(Other.UnsafeAt(Index));
+			}
+		}
+	}
+
 public:
 
 	CSparseArray2() = default;
+
+	CSparseArray2(const CSparseArray2& Other)
+		: _Data(Other._Data.size())
+		, _FirstFreeIndex(Other._FirstFreeIndex)
+		, _LastFreeIndex(Other._LastFreeIndex)
+		, _TreeRootIndex(Other._TreeRootIndex)
+		, _Size(Other._Size)
+	{
+		CopyDataFrom(Other);
+	}
+
+	CSparseArray2(CSparseArray2&& Other) noexcept
+		: _Data(std::move(Other._Data))
+		, _FirstFreeIndex(Other._FirstFreeIndex)
+		, _LastFreeIndex(Other._LastFreeIndex)
+		, _TreeRootIndex(Other._TreeRootIndex)
+		, _Size(Other._Size)
+	{
+		Other._FirstFreeIndex = INVALID_INDEX;
+		Other._LastFreeIndex = INVALID_INDEX;
+		Other._TreeRootIndex = INVALID_INDEX;
+		Other._Size = 0;
+	}
+
+	CSparseArray2& operator =(const CSparseArray2& Other)
+	{
+		for (auto it = begin(); it != end(); ++it)
+			(*it).~T();
+
+		_FirstFreeIndex = Other._FirstFreeIndex;
+		_LastFreeIndex = Other._LastFreeIndex;
+		_TreeRootIndex = Other._TreeRootIndex;
+		_Size = Other._Size;
+
+		_Data.resize(Other._Data.size());
+		CopyDataFrom(Other);
+	}
+
+	CSparseArray2& operator =(CSparseArray2&& Other) noexcept
+	{
+		for (auto it = begin(); it != end(); ++it)
+			(*it).~T();
+
+		_Data = std::move(Other._Data);
+
+		_FirstFreeIndex = Other._FirstFreeIndex;
+		_LastFreeIndex = Other._LastFreeIndex;
+		_TreeRootIndex = Other._TreeRootIndex;
+		_Size = Other._Size;
+
+		Other._FirstFreeIndex = INVALID_INDEX;
+		Other._LastFreeIndex = INVALID_INDEX;
+		Other._TreeRootIndex = INVALID_INDEX;
+		Other._Size = 0;
+
+		return *this;
+	}
+
+	void swap(CSparseArray2& Other) noexcept
+	{
+		if (this != std::addressof(Other))
+		{
+			std::swap(_Data, Other._Data);
+			std::swap(_FirstFreeIndex, Other._FirstFreeIndex);
+			std::swap(_LastFreeIndex, Other._LastFreeIndex);
+			std::swap(_TreeRootIndex, Other._TreeRootIndex);
+			std::swap(_Size, Other._Size);
+		}
+	}
 
 	void reserve(TIndex NewCapacity) { _Data.reserve(NewCapacity); }
 
@@ -589,20 +701,22 @@ public:
 		_Data.shrink_to_fit();
 	}
 
-	void compact()
+	void compact() noexcept
 	{
 		// minimize swaps - iterate free cells forward and busy cells backwards
 		// shrink after compacting
 		// clear free tree
 	}
 
-	void compact_ordered()
+	void compact_ordered() noexcept
 	{
 		// don't change order of valid elements - offset busy cells by running sum of holes
 		// shrink after compacting
 		// clear free tree
 	}
 
+	TIndex min_busy_index() const noexcept { return cbegin()._CurrIndex; }
+	TIndex max_busy_index() const noexcept { return (--cend())._CurrIndex; }
 	constexpr TIndex max_size() const noexcept { return MAX_CAPACITY; }
 	TIndex size() const noexcept { return _Size; }
 	TIndex sparse_size() const noexcept { return static_cast<TIndex>(_Data.size()); }
