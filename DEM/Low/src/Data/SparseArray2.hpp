@@ -596,7 +596,7 @@ protected:
 		}
 	}
 
-	void MoveUnsafe(TIndex BusyIndex, TIndex FreeIndex) noexcept
+	DEM_FORCE_INLINE void MoveUnsafe(TIndex BusyIndex, TIndex FreeIndex) noexcept
 	{
 		T& Object = UnsafeAt(BusyIndex);
 		new (_Data[FreeIndex].ElementStorage) T(std::move(Object));
@@ -728,6 +728,7 @@ public:
 	{
 		if (_FirstFreeIndex < _Size)
 		{
+			// Iterate busy cells back to front and free cells front to back, stop when overlap
 			auto PrevFreeIndex = _LastFreeIndex;
 			auto BusyIndex = PrevBusyCell(sparse_size(), PrevFreeIndex);
 			while (PrevFreeIndex >= _FirstFreeIndex)
@@ -751,9 +752,40 @@ public:
 	// Preserves element ordering
 	void compact_ordered() noexcept
 	{
-		// don't change order of valid elements - offset busy cells by running sum of holes
-		// shrink after compacting (size, not capacity!)
-		// clear free tree
+		auto InsertPos = _FirstFreeIndex;
+		while (InsertPos < _Size)
+		{
+			// Find a range of busy cells to shift
+			TIndex RangeStartIndex;
+			TIndex RangeEndIndex;
+			do
+			{
+				RangeStartIndex = _FirstFreeIndex + 1;
+				TreeRemove(_FirstFreeIndex);
+				RangeEndIndex = (_FirstFreeIndex == INVALID_INDEX) ? sparse_size() : _FirstFreeIndex;
+			}
+			while (RangeStartIndex == RangeEndIndex && _FirstFreeIndex != INVALID_INDEX);
+
+			// Move cell data if the range is not empty
+			if (RangeStartIndex < RangeEndIndex)
+			{
+				if constexpr (std::is_trivially_copyable_v<T>)
+				{
+					std::memmove(&_Data[InsertPos], &_Data[RangeStartIndex], (RangeEndIndex - RangeStartIndex) * sizeof(CCell));
+					InsertPos += (RangeEndIndex - RangeStartIndex);
+				}
+				else
+				{
+					while (RangeStartIndex < RangeEndIndex)
+						MoveUnsafe(RangeStartIndex++, InsertPos++);
+				}
+			}
+		}
+
+		_Data.resize(_Size);
+		_FirstFreeIndex = INVALID_INDEX;
+		_LastFreeIndex = INVALID_INDEX;
+		_TreeRootIndex = INVALID_INDEX;
 	}
 
 	TIndex min_busy_index() const noexcept { return _Size ? cbegin()._CurrIndex : INVALID_INDEX; }
