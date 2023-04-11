@@ -10,8 +10,6 @@
 // the cheapest possible Compact() with minimized amount of element moves, and also improves
 // CPU cache utilization.
 
-//???TODO: for non-constant at(), might allocate a cell if it is free!
-
 namespace Data
 {
 
@@ -344,7 +342,6 @@ protected:
 		TIndex CurrParentIndex = Parent;
 		while (!TreeNodeIsBlack(CurrParentIndex))
 		{
-			//!!!DBG TMP! Check grandparent existence. Is an invariant?
 			n_assert_dbg(_Data[CurrParentIndex]._Parent != INVALID_INDEX);
 
 			auto& CurrParent = _Data[CurrParentIndex];
@@ -532,24 +529,27 @@ protected:
 		return Index;
 	}
 
-	TIndex AllocateFirstFreeCell()
+	// NB: this method assumes that Index is a free cell
+	bool AllocateCell(TIndex Index)
 	{
-		const auto InternalSize = static_cast<TIndex>(_Data.size());
-		if (_FirstFreeIndex >= InternalSize)
+		const auto InternalSize = sparse_size();
+		if (Index < InternalSize)
 		{
-			if (InternalSize == MAX_CAPACITY)
-			{
-				n_assert2(false, "CSparseArray2 max capacity exceeded");
-				return INVALID_INDEX;
-			}
-
-			_Data.push_back({});
-			return InternalSize;
+			TreeRemove(Index);
+			return true;
 		}
 
-		const auto FreeIndex = _FirstFreeIndex;
-		TreeRemove(FreeIndex);
-		return FreeIndex;
+		if (Index + 1 >= MAX_CAPACITY)
+		{
+			n_assert2(false, "CSparseArray2 max capacity exceeded");
+			return false;
+		}
+
+		_Data.resize(Index + 1);
+		for (auto i = InternalSize; i < Index; ++i)
+			TreeInsert(i, _LastFreeIndex, true);
+
+		return true;
 	}
 
 	void FreeAllocatedCell(TIndex Index) noexcept
@@ -689,8 +689,8 @@ public:
 	template <class... TArgs>
 	iterator emplace(TArgs&&... ValueConstructionArgs)
 	{
-		auto Index = AllocateFirstFreeCell();
-		if (Index == INVALID_INDEX) return end();
+		const auto Index = (_FirstFreeIndex == INVALID_INDEX) ? sparse_size() : _FirstFreeIndex;
+		if (!AllocateCell(Index)) return end();
 		++_Size;
 		new (_Data[Index].ElementStorage) T(std::forward<TArgs>(ValueConstructionArgs)...);
 		return iterator(Index, *this);
@@ -812,7 +812,24 @@ public:
 	T& operator[](TIndex Index) noexcept { return UnsafeAt(Index); }
 	const T& operator[](const TIndex Index) const noexcept { return UnsafeAt(Index); }
 
-	T& at(const TIndex Index) { n_assert(is_filled(Index)); return UnsafeAt(Index); }
+	T& at(const TIndex Index) //noexcept(std::is_nothrow_default_constructible_v<T>) - AllocateCell can throw if capacity reached
+	{
+		if constexpr (std::is_default_constructible_v<T>)
+		{
+			if (!is_filled(Index) && AllocateCell(Index)) // AllocateCell asserts inside if capacity reached
+			{
+				++_Size;
+				new (_Data[Index].ElementStorage) T();
+			}
+		}
+		else
+		{
+			n_assert(is_filled(Index));
+		}
+
+		return UnsafeAt(Index);
+	}
+
 	const T& at(const TIndex Index) const { n_assert(is_filled(Index)); return UnsafeAt(Index); }
 };
 
