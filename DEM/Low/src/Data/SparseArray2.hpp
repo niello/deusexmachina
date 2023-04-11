@@ -79,14 +79,14 @@ protected:
 
 		void RewindToPrevBusyCell()
 		{
-			// NB: the iterator can be positioned at '0' when it is free, but this should
-			// never happen and is treated similarly to decrementing vector::begin()
 			while (_CurrIndex > 0 && _CurrIndex == _PrevFreeIndex)
 			{
 				--_CurrIndex;
 				_NextFreeIndex = _PrevFreeIndex;
 				_PrevFreeIndex = _pOwner->TreePrevNode(_PrevFreeIndex);
 			}
+
+			if (_CurrIndex == 0 && _PrevFreeIndex == 0) _CurrIndex = INVALID_INDEX;
 		}
 
 	public:
@@ -196,9 +196,6 @@ protected:
 	TIndex _TreeRootIndex = INVALID_INDEX;
 
 	TIndex _Size = 0;
-
-	T& UnsafeAt(TIndex Index) noexcept { return *reinterpret_cast<T*>(_Data[Index].ElementStorage); }
-	const T& UnsafeAt(TIndex Index) const noexcept { return *reinterpret_cast<const T*>(_Data[Index].ElementStorage); }
 
 	CBound TreeFindLowerBound(TIndex Index) const noexcept
 	{
@@ -520,6 +517,21 @@ protected:
 		}
 	}
 
+	TIndex PrevBusyCell(TIndex Index, TIndex& PrevFreeIndex) const noexcept
+	{
+		if (Index == 0) return INVALID_INDEX;
+		--Index;
+
+		while (Index == PrevFreeIndex)
+		{
+			if (Index == 0) return INVALID_INDEX;
+			--Index;
+			PrevFreeIndex = TreePrevNode(PrevFreeIndex);
+		}
+
+		return Index;
+	}
+
 	TIndex AllocateFirstFreeCell()
 	{
 		const auto InternalSize = static_cast<TIndex>(_Data.size());
@@ -583,6 +595,16 @@ protected:
 			}
 		}
 	}
+
+	void MoveUnsafe(TIndex BusyIndex, TIndex FreeIndex) noexcept
+	{
+		T& Object = UnsafeAt(BusyIndex);
+		new (_Data[FreeIndex].ElementStorage) T(std::move(Object));
+		Object.~T();
+	}
+
+	T& UnsafeAt(TIndex Index) noexcept { return *reinterpret_cast<T*>(_Data[Index].ElementStorage); }
+	const T& UnsafeAt(TIndex Index) const noexcept { return *reinterpret_cast<const T*>(_Data[Index].ElementStorage); }
 
 public:
 
@@ -701,22 +723,41 @@ public:
 		_Data.shrink_to_fit();
 	}
 
+	// Minimizes moves
 	void compact() noexcept
 	{
-		// minimize swaps - iterate free cells forward and busy cells backwards
-		// shrink after compacting
-		// clear free tree
+		if (_FirstFreeIndex < _Size)
+		{
+			auto PrevFreeIndex = _LastFreeIndex;
+			auto BusyIndex = PrevBusyCell(sparse_size(), PrevFreeIndex);
+			while (PrevFreeIndex >= _FirstFreeIndex)
+			{
+				const auto FreeIndex = _FirstFreeIndex;
+				TreeRemove(_FirstFreeIndex);
+				MoveUnsafe(BusyIndex, FreeIndex);
+
+				if (PrevFreeIndex == FreeIndex) break;
+
+				BusyIndex = PrevBusyCell(BusyIndex, PrevFreeIndex);
+			}
+		}
+
+		_Data.resize(_Size);
+		_FirstFreeIndex = INVALID_INDEX;
+		_LastFreeIndex = INVALID_INDEX;
+		_TreeRootIndex = INVALID_INDEX;
 	}
 
+	// Preserves element ordering
 	void compact_ordered() noexcept
 	{
 		// don't change order of valid elements - offset busy cells by running sum of holes
-		// shrink after compacting
+		// shrink after compacting (size, not capacity!)
 		// clear free tree
 	}
 
-	TIndex min_busy_index() const noexcept { return cbegin()._CurrIndex; }
-	TIndex max_busy_index() const noexcept { return (--cend())._CurrIndex; }
+	TIndex min_busy_index() const noexcept { return _Size ? cbegin()._CurrIndex : INVALID_INDEX; }
+	TIndex max_busy_index() const noexcept { return _Size ? (--cend())._CurrIndex : INVALID_INDEX; }
 	constexpr TIndex max_size() const noexcept { return MAX_CAPACITY; }
 	TIndex size() const noexcept { return _Size; }
 	TIndex sparse_size() const noexcept { return static_cast<TIndex>(_Data.size()); }
