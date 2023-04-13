@@ -1,9 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_SCENE_SPS_H__
-#define __DEM_L1_SCENE_SPS_H__
-
 #include <Data/QuadTree.h>
 #include <Data/Array.h>
+#include <Data/SparseArray2.hpp>
 #include <System/Allocators/PoolAllocator.h>
 
 // Spatial partitioning structure for accelerated spatial queries on a scene
@@ -75,15 +73,51 @@ struct CSPSRecord
 	CSPSNode*		pSPSNode = nullptr;
 	CNodeAttribute*	pUserData = nullptr;
 	CAABB			GlobalBox;
+
+	///////// NEW RENDER /////////
+	//float CenterX;
+	//float CenterZ;
+	//float HalfExtentX;
+	//float HalfExtentZ;
+	U32 NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, then 100, 101, 110, 111 etc
+	U32 NodeIndex;
 };
 
-class CSPS
+class CSPS //???rename to CGfxLevel? CRenderLevel etc? Not exactly SPS, but a thing one step above it.
 {
 protected:
 
 	CPool<CSPSRecord, 512> RecordPool;
 
 	void		QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, CArray<CNodeAttribute*>& OutObjects, EClipStatus Clip) const;
+
+	///////// NEW RENDER /////////
+
+	struct CTreeNode
+	{
+		U32 MortonCode;
+		U32 ParentIndex;
+		U32 SubtreeObjectCount;
+	};
+
+	Data::CSparseArray2<CTreeNode, U32> _TreeNodes;
+	std::unordered_map<U32, U32> _MortonToIndex; //???TODO PERF: map or unordered_map?
+
+	//!!!TODO: separate by type - renderables, lights, ambient etc!
+	//SPSRecord is not a renderable cache node! They are per view, and here we have per-scene thing!
+	//Render cache can be pre-sorted e.g. by material, and re-sort parts FtB/BtF based on camera when needed, making additional index lists.
+	//???need to sort records here?
+	//Visibility flag inside render cache node or in a separate array in a CView? But still not here!
+	//???!!!store object's AABB in center/half-extents form?!
+	std::vector<CSPSRecord> _Records;
+	CAABB _WorldBounds; //???store half-size? optimize storage format for calculations!
+	U8 _MaxDepth = 0;
+
+	//!!!uniform vs non-uniform tree! Uniform requires slightly less math.
+
+	// for overlap test in a loose tree need to check neighbours, and therefore need to get the deepest common ancestor of 2 nodes with Morton codes
+	// in a loose tree need to check our node and all neighbours, including diagonal!
+	// for lights-objects overlap it is easier to scan through all lights and check HasLooseIntersection of light tree node against the object tree node
 
 public:
 
@@ -92,7 +126,7 @@ public:
 	float					SceneMinY = 0.f;
 	float					SceneMaxY = 0.f;
 
-	void		Init(const vector3& Center, const vector3& Size, UPTR HierarchyDepth);
+	void		Init(const vector3& Center, const vector3& Size, U8 HierarchyDepth);
 	CSPSRecord*	AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData);
 	void		UpdateRecord(CSPSRecord* pRecord);
 	void		RemoveRecord(CSPSRecord* pRecord);
@@ -148,14 +182,6 @@ inline CSPSCell::CIterator CSPSCell::CIterator::operator --(int)
 }
 //---------------------------------------------------------------------
 
-inline void CSPS::Init(const vector3& Center, const vector3& Size, UPTR HierarchyDepth)
-{
-	SceneMinY = Center.y - Size.y * 0.5f;
-	SceneMaxY = Center.y + Size.y * 0.5f;
-	QuadTree.Build(Center.x, Center.z, Size.x, Size.z, HierarchyDepth);
-}
-//---------------------------------------------------------------------
-
 inline void CSPS::UpdateRecord(CSPSRecord* pRecord)
 {
 	float CenterX, CenterZ, HalfSizeX, HalfSizeZ;
@@ -187,5 +213,3 @@ inline Scene::CSPSCell::CIterator Scene::CSPSQuadTree::MoveElement(Scene::CSPSCe
 //---------------------------------------------------------------------
 
 }
-
-#endif

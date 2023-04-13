@@ -2,8 +2,8 @@
 #include <vector>
 
 // Array which doesn't shift when elements are deleted. Instead free cells are remembered
-// and reused on subsequent insertions. This implementation preserves ordering of free
-// slots by building a red-black tree from them, and provides O(1) insertion to
+// and reused on subsequent insertions. This implementation preserves ordering of free slots
+// by index by building a red-black tree from them, and provides amortized O(1) insertion to
 // highest or lowest free index. As long as sizeof(T) >= sizeof(3 * TIndex), this implementation
 // consumes no additional O(n) storage compared to the regular vector, and keeps O(n) forward
 // and backward iteration complexity. Allocating at the lowest free index by default provides
@@ -129,6 +129,8 @@ protected:
 		using difference_type = ptrdiff_t;
 		using pointer = const value_type*;
 		using reference = const value_type&;
+
+		TIndex get_index() const noexcept { return _CurrIndex; }
 
 		reference operator*() const noexcept { return _pOwner->UnsafeAt(_CurrIndex); }
 		pointer operator->() const noexcept { return &_pOwner->UnsafeAt(_CurrIndex); }
@@ -529,8 +531,7 @@ protected:
 		return Index;
 	}
 
-	// NB: this method assumes that Index is a free cell
-	bool AllocateCell(TIndex Index)
+	bool AllocateFreeCell(TIndex Index)
 	{
 		const auto InternalSize = sparse_size();
 		if (Index < InternalSize)
@@ -601,6 +602,15 @@ protected:
 		T& Object = UnsafeAt(BusyIndex);
 		new (_Data[FreeIndex]._ElementStorage) T(std::move(Object));
 		Object.~T();
+	}
+
+	template <class... TArgs>
+	bool EmplaceAtFree(TIndex FreeIndex, TArgs&&... ValueConstructionArgs)
+	{
+		if (!AllocateFreeCell(FreeIndex)) return false;
+		++_Size;
+		new (_Data[FreeIndex]._ElementStorage) T(std::forward<TArgs>(ValueConstructionArgs)...);
+		return true;
 	}
 
 	T& UnsafeAt(TIndex Index) noexcept { return *reinterpret_cast<T*>(_Data[Index]._ElementStorage); }
@@ -683,17 +693,34 @@ public:
 
 	bool is_filled(TIndex Index) const noexcept { return Index < sparse_size() && TreeFindLowerBound(Index).Node != Index; }
 
+	TIndex first_free_index(TIndex From = 0) const noexcept
+	{
+		if (From <= _FirstFreeIndex) return _FirstFreeIndex;
+		if (From > _LastFreeIndex) return INVALID_INDEX;
+		const auto Lower = TreeFindLowerBound(From).Node;
+		return (Lower < From) ? TreeNextNode(Lower) : Lower;
+	}
+
+	TIndex next_free_index(TIndex FreeIndex) const noexcept { return TreeNextNode(FreeIndex); }
+	TIndex prev_free_index(TIndex FreeIndex) const noexcept { return TreePrevNode(FreeIndex); }
+
 	iterator insert(const T& Value) { return emplace(Value); }
 	iterator insert(T&& Value) { return emplace(std::move(Value)); }
+	iterator insert_at_free(TIndex FreeIndex, const T& Value) { return emplace_at_free(FreeIndex, Value); }
+	iterator insert_at_free(TIndex FreeIndex, T&& Value) { return emplace_at_free(FreeIndex, std::move(Value)); }
 
 	template <class... TArgs>
 	iterator emplace(TArgs&&... ValueConstructionArgs)
 	{
-		const auto Index = (_FirstFreeIndex == INVALID_INDEX) ? sparse_size() : _FirstFreeIndex;
-		if (!AllocateCell(Index)) return end();
-		++_Size;
-		new (_Data[Index]._ElementStorage) T(std::forward<TArgs>(ValueConstructionArgs)...);
-		return iterator(Index, *this);
+		return emplace_at_free(_FirstFreeIndex, std::forward<TArgs>(ValueConstructionArgs)...);
+	}
+
+	// NB: this method assumes that FreeIndex is pointing to freed or inexistent cell. INVALID_INDEX is treated as push_back.
+	template <class... TArgs>
+	iterator emplace_at_free(TIndex FreeIndex, TArgs&&... ValueConstructionArgs)
+	{
+		const auto Index = (FreeIndex == INVALID_INDEX) ? sparse_size() : FreeIndex;
+		return EmplaceAtFree(Index, std::forward<TArgs>(ValueConstructionArgs)...) ? iterator(Index, *this) : end();
 	}
 
 	const_iterator erase(const_iterator It) noexcept { auto It2 = It; ++It2; FreeAllocatedCell(It._CurrIndex); return It2; }
@@ -809,18 +836,12 @@ public:
 	const_reverse_iterator crbegin() const noexcept { return rbegin(); }
 	const_reverse_iterator crend() const noexcept { return rend(); }
 
-	T& operator[](TIndex Index) noexcept { return UnsafeAt(Index); }
-	const T& operator[](const TIndex Index) const noexcept { return UnsafeAt(Index); }
-
-	T& at(const TIndex Index) //noexcept(std::is_nothrow_default_constructible_v<T>) - AllocateCell can throw if capacity reached
+	T& at(const TIndex Index) //noexcept(std::is_nothrow_default_constructible_v<T>) - EmplaceAtFree can throw if capacity reached
 	{
 		if constexpr (std::is_default_constructible_v<T>)
 		{
-			if (!is_filled(Index) && AllocateCell(Index)) // AllocateCell asserts inside if capacity reached
-			{
-				++_Size;
-				new (_Data[Index]._ElementStorage) T();
-			}
+			if (!is_filled(Index))
+				n_verify(EmplaceAtFree(Index));
 		}
 		else
 		{
@@ -831,6 +852,20 @@ public:
 	}
 
 	const T& at(const TIndex Index) const { n_assert(is_filled(Index)); return UnsafeAt(Index); }
+
+	T& operator[](TIndex Index) noexcept { return UnsafeAt(Index); }
+	const T& operator[](const TIndex Index) const noexcept { return UnsafeAt(Index); }
+
+	bool operator ==(const CSparseArray2<T, TIndex>& Other) const
+	{
+		return _FirstFreeIndex == Other._FirstFreeIndex &&
+			_LastFreeIndex == Other._LastFreeIndex &&
+			_TreeRootIndex == Other._TreeRootIndex &&
+			_Size == Other._Size &&
+			_Data == Other._Data;
+	}
+
+	bool operator !=(const CSparseArray2<T, TIndex>& Other) const { return !(a == b); }
 };
 
 }

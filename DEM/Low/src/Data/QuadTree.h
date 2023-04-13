@@ -70,6 +70,8 @@ public:
 		bool	SharesSpaceWith(const CNode& Other) const;
 		void	GetBounds(CAABB& Box) const;
 
+		U16		GetCol() const { return Col; }
+		U16		GetRow() const { return Row; }
 		U8		GetLevel() const { return Level; }
 		CNode*	GetParent() const { return pParent; }
 		CNode*	GetChild(UPTR Index) const { n_assert(Index < 4); return pChild + Index; }
@@ -89,7 +91,9 @@ public:
 
 	CNode*			GetNode(UPTR Col, UPTR Row, UPTR Level) const;
 	CNode*			GetRootNode() const { return Nodes.size() ? &Nodes[0] : nullptr; }
+	const vector2&	GetCenter() const { return Center; }
 	const vector2&	GetSize() const { return Size; }
+	U8              GetDepth() const { return Depth; }
 
 	//!!!Test against circle (center, r) & 2d box (two corners or center & half)
 	//???or visitors?

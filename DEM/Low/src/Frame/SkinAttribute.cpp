@@ -65,6 +65,7 @@ void CSkinAttribute::OnActivityChanged(bool Active)
 }
 //---------------------------------------------------------------------
 
+// TODO: ensure that the palette is updated on reparenting us to another scene node!
 void CSkinAttribute::InitSkinPalette()
 {
 	if (_SkinPalette || !_pNode || !_SkinInfo) return;
