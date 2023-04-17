@@ -93,7 +93,7 @@ Render::PRenderable CTerrainAttribute::CreateRenderable(CGraphicsResourceManager
 	auto pTerrain = n_new(Render::CTerrain());
 
 	const auto PatchSize = _CDLODData->GetPatchSize();
-	if (!IsPow2(PatchSize) || PatchSize < 4) FAIL;
+	if (!Math::IsPow2(PatchSize) || PatchSize < 4) FAIL;
 
 	// TODO: don't copy, store once!
 	pTerrain->InvSplatSizeX = _InvSplatSizeX;

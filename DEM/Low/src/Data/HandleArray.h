@@ -1,5 +1,5 @@
 #pragma once
-#include <type_traits>
+#include <Data/CategorizationTraits.h>
 #include <vector>
 
 // Handle array combines a growable array and a pool allocator. For element referencing
@@ -24,8 +24,7 @@ namespace Data
 template<typename T, typename H = uint32_t, size_t IndexBits = 20, bool ResetOnOverflow = false>
 class CHandleArray
 {
-	static_assert(std::is_unsigned_v<H> && std::is_integral_v<H> && !std::is_same_v<H, bool>,
-		"CHandleArray > H must be an unsigned integral type other than bool");
+	static_assert(DEM::Meta::is_unsigned_integer_v<H>, "CHandleArray > H must be an unsigned integral type other than bool");
 	static_assert(IndexBits > 0, "CHandleArray > IndexBits must not be 0");
 	static_assert((sizeof(H) * 8 - IndexBits) > 1, "CHandleArray > too few reuse bits, try less IndexBits or bigger H");
 	static_assert(sizeof(size_t) * 8 > IndexBits, "CHandleArray > too many index bits, not supported by underlying structure");

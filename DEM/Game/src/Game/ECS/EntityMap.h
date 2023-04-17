@@ -39,7 +39,7 @@ private:
 
 	void Rehash(size_t BucketCount)
 	{
-		BucketCount = NextPow2(std::clamp(BucketCount, MIN_BUCKETS, MAX_BUCKETS));
+		BucketCount = Math::NextPow2(std::clamp(BucketCount, MIN_BUCKETS, MAX_BUCKETS));
 		if (BucketCount == _Records.size()) return;
 
 		std::vector<CRecord*> OldRecords;

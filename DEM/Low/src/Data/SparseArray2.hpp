@@ -16,7 +16,7 @@ namespace Data
 template<typename T, typename TIndex = size_t>
 class CSparseArray2
 {
-	static_assert(std::is_unsigned_v<TIndex>&& std::is_integral_v<TIndex> && !std::is_same_v<TIndex, bool>,
+	static_assert(std::is_unsigned_v<TIndex> && std::is_integral_v<TIndex> && !std::is_same_v<TIndex, bool>,
 		"DEM::Data::CSparseArray2 > TIndex must be an unsigned integral type other than bool");
 
 public:

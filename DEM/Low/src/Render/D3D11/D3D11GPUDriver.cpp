@@ -1915,7 +1915,7 @@ PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(IConstantBufferPa
 
 	// We create temporary buffers sized by powers of 2, to make reuse easier (the same
 	// principle as for a small allocator). 16 bytes is the smallest possible buffer.
-	UPTR NextPow2Size = std::max<U32>(16, NextPow2(pUSMParam->GetSize())/* * ElementCount; //!!!for StructuredBuffer!*/); 
+	UPTR NextPow2Size = std::max<U32>(16, Math::NextPow2(pUSMParam->GetSize())/* * ElementCount; //!!!for StructuredBuffer!*/);
 	auto& BufferPool = 
 		(pUSMParam->GetType() == USMBuffer_Structured) ? TmpStructuredBuffers :
 		(pUSMParam->GetType() == USMBuffer_Texture) ? TmpTextureBuffers :
@@ -1945,7 +1945,7 @@ void CD3D11GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& Buffer)
 
 	UPTR BufferSize = CB11.GetSizeInBytes();
 #ifdef _DEBUG
-	n_assert(BufferSize == NextPow2(CB11.GetSizeInBytes()));
+	n_assert(BufferSize == Math::NextPow2(CB11.GetSizeInBytes()));
 #endif
 
 	CTmpCB* pNewNode = TmpCBPool.Construct();
@@ -2042,7 +2042,7 @@ void CD3D11GPUDriver::FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pBu
 			else pPendingCBHead = pCurrNode->pNext;
 
 			UPTR BufferSize = pBuffer->GetSizeInBytes();
-			n_assert_dbg(BufferSize == NextPow2(pBuffer->GetSizeInBytes()));
+			n_assert_dbg(BufferSize == Math::NextPow2(pBuffer->GetSizeInBytes()));
 			auto It = BufferPool.find(BufferSize);
 			if (It != BufferPool.cend())
 			{

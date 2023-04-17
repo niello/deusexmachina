@@ -1,5 +1,5 @@
 #pragma once
-#include <type_traits>
+#include <Data/CategorizationTraits.h>
 #include <vector>
 
 // Array which doesn't shift when elements are deleted. Instead free cells are remembered
@@ -15,8 +15,7 @@ namespace Data
 template<typename T, typename TIndex = size_t>
 class CSparseArray
 {
-	static_assert(std::is_unsigned_v<TIndex> && std::is_integral_v<TIndex> && !std::is_same_v<TIndex, bool>,
-		"CSparseArray > TIndex must be an unsigned integral type other than bool");
+	static_assert(DEM::Meta::is_unsigned_integer_v<TIndex>, "CSparseArray > TIndex must be an unsigned integral type other than bool");
 
 protected:
 

@@ -1,11 +1,15 @@
 #pragma once
 #include <unordered_set>
 #include <map>
+#include <type_traits>
 
 // Helpers for compile-time type categorization
 
 namespace DEM::Meta
 {
+
+template<typename T>
+constexpr bool is_unsigned_integer_v = std::is_unsigned_v<T> && std::is_integral_v<T> && !std::is_same_v<T, bool>;
 
 // Classify as true if type has `using TAG = std::true_type;` (or other type with value = true), false otherwise
 #define META_DECLARE_TYPEDEF_FLAG(TAG) \

@@ -1,6 +1,15 @@
 #pragma once
 #include <StdDEM.h>
 #include <math.h>
+#include <type_traits>
+
+#if defined(_MSC_VER)
+#include <intrin.h>
+#pragma intrinsic(_BitScanReverse)
+#if DEM_X64
+#pragma intrinsic(_BitScanReverse64)
+#endif
+#endif
 
 // Declarations and utility functions
 
@@ -254,21 +263,211 @@ inline UPTR SolveQuadraticEquation(float a, float b, float c, float* pOutX1 = nu
 //---------------------------------------------------------------------
 
 // Returns random float in [0; 1) range
-inline float RandomFloat()
+DEM_FORCE_INLINE float RandomFloat()
 {
-	return ((I32)RandomU32()) * M_RAN_INVM32 + 0.5f;
+	return static_cast<I32>(RandomU32()) * M_RAN_INVM32 + 0.5f;
 }
 //---------------------------------------------------------------------
 
-inline float RandomFloat(float Min, float Max)
+DEM_FORCE_INLINE float RandomFloat(float Min, float Max)
 {
 	return Min + RandomFloat() * (Max - Min);
 }
 //---------------------------------------------------------------------
 
-inline U32 RandomU32(U32 Min, U32 Max)
+DEM_FORCE_INLINE U32 RandomU32(U32 Min, U32 Max)
 {
 	return Min + RandomU32() % (Max - Min + 1);
+}
+//---------------------------------------------------------------------
+
+template <typename T, typename U>
+DEM_FORCE_INLINE constexpr T CeilToMultiple(T x, U y) noexcept
+{
+	return ((x + y - 1) / y) * y;
+}
+//---------------------------------------------------------------------
+
+// This version requires y to be power-of-2 but performs faster than the general one
+template <typename T, typename U>
+DEM_FORCE_INLINE constexpr T CeilToMultipleOfPow2(T x, U y) noexcept
+{
+	return (x + (y - 1)) & ~(y - 1);
+}
+//---------------------------------------------------------------------
+
+template <typename T>
+DEM_FORCE_INLINE constexpr T CeilToEven(T x) noexcept
+{
+	return x + (x & 1);
+}
+//---------------------------------------------------------------------
+
+template <typename T>
+DEM_FORCE_INLINE constexpr bool IsPow2(T x) noexcept
+{
+	return x > 0 && (x & (x - 1)) == 0;
+}
+//---------------------------------------------------------------------
+
+template <typename T>
+DEM_FORCE_INLINE constexpr T NextPow2(T x) noexcept
+{
+#if __cplusplus >= 202002L
+	return std::bit_ceil(x);
+#else
+	if constexpr (std::is_signed_v<T>)
+	{
+		if (x < 0) return 0;
+	}
+
+	--x;
+	x |= (x >> 1);
+	x |= (x >> 2);
+	x |= (x >> 4);
+	x |= (x >> 8);
+	x |= (x >> 16);
+
+	if constexpr (sizeof(T) > 4)
+		x |= (x >> 32);
+
+	return x + 1;
+#endif
+}
+//---------------------------------------------------------------------
+
+template <typename T>
+DEM_FORCE_INLINE constexpr T PrevPow2(T x) noexcept
+{
+#if __cplusplus >= 202002L
+	return std::bit_floor(x);
+#else
+	if constexpr (std::is_signed_v<T>)
+	{
+		if (x <= 0) return 0;
+	}
+	else
+	{
+		if (!x) return 0;
+	}
+
+	//--x; // Uncomment this to have a strictly less result
+	x |= (x >> 1);
+	x |= (x >> 2);
+	x |= (x >> 4);
+	x |= (x >> 8);
+	x |= (x >> 16);
+
+	if constexpr (sizeof(T) > 4)
+		x |= (x >> 32);
+
+	return x - (x >> 1);
+#endif
+}
+//---------------------------------------------------------------------
+
+/*
+size_t Octree::GetNodeTreeDepth(const OctreeNode *node)
+{
+	assert(node->LocCode); // at least flag bit must be set
+	// for (uint32_t lc=node->LocCode, depth=0; lc!=1; lc>>=3, depth++);
+	// return depth;
+
+#if defined(__GNUC__)
+	return (31-__builtin_clz(node->LocCode))/3; __builtin_clzl, __builtin_clzll
+#elif defined(_MSC_VER)
+	long msb;
+	_BitScanReverse(&msb, node->LocCode);
+	return msb/3;
+#endif
+}
+
+static FORCEINLINE uint64 CountLeadingZeros64(uint64 Value)
+{
+	if ( ! _BitScanReverse64(&BitIndex, Value) ) BitIndex = -1;
+	return 63 - BitIndex;
+}
+static FORCEINLINE uint32 CountLeadingZeros(uint32 Value)
+{
+	_BitScanReverse64(&BitIndex, uint64(Value)*2 + 1);
+	return 32 - BitIndex;
+}
+static FORCEINLINE uint32 CountLeadingZeros(uint32 Value)
+{
+	if ( ! _BitScanReverse(&BitIndex, Value) ) BitIndex = -1;
+	return 31 - BitIndex;
+}
+*/
+
+template <typename T>
+DEM_FORCE_INLINE constexpr int CountLeadingZeros(T x) noexcept
+{
+	static_assert(sizeof(T) <= 8 && std::is_unsigned_v<T> && std::is_integral_v<T> && !std::is_same_v<T, bool>);
+
+#if __cplusplus >= 202002L
+	return std::countl_zero(x);
+#elif defined(__GNUC__)
+	if constexpr (sizeof(T) == sizeof(unsigned long long))
+		return __builtin_clzll(x);
+	else if constexpr (sizeof(T) == sizeof(unsigned long))
+		return __builtin_clzl(x);
+	else
+		return __builtin_clz(x);
+#elif defined(_MSC_VER)
+	unsigned long Bit;
+#if DEM_X64
+	if constexpr (sizeof(T) == 8)
+	{
+		if (!_BitScanReverse64(&Bit, x)) Bit = -1;
+		return 63 - Bit;
+	}
+	if constexpr (sizeof(T) == 4)
+	{
+		_BitScanReverse64(&Bit, static_cast<uint64_t>(x) * 2 + 1);
+		return 32 - Bit;
+	}
+#else
+	if constexpr (sizeof(T) == 8)
+	{
+		int Bits = 64;
+		while (x)
+		{
+			--Bits;
+			x >>= 1;
+		}
+		return Bits;
+	}
+	if constexpr (sizeof(T) == 4)
+	{
+		if (!_BitScanReverse(&Bit, x)) Bit = -1;
+		return 31 - Bit;
+	}
+#endif
+	if constexpr (sizeof(T) < 4)
+	{
+		_BitScanReverse(&Bit, static_cast<uint32_t>(x) * 2 + 1);
+		return static_cast<T>(sizeof(T) * 8 - Bit);
+	}
+#else
+	int Bits = sizeof(T) * 8;
+	while (x)
+	{
+		--Bits;
+		x >>= 1;
+	}
+	return Bits;
+#endif
+}
+//---------------------------------------------------------------------
+
+template <typename T>
+DEM_FORCE_INLINE constexpr int BitWidth(T x) noexcept
+{
+#if __cplusplus >= 202002L
+	return std::bit_width(x);
+#else
+	return std::numeric_limits<T>::digits - CountLeadingZeros(x);
+#endif
 }
 //---------------------------------------------------------------------
 

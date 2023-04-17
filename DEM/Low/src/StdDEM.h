@@ -21,6 +21,12 @@ constexpr size_t INVALID_INDEX = ~static_cast<size_t>(0);
 template<typename T, size_t N>
 constexpr size_t sizeof_array(const T(&)[N]) { return N; }
 
+#if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64)
+#define DEM_X64 (1)
+#else
+#define DEM_X86 (1)
+#endif
+
 #if defined(_MSC_VER) // __FUNCTION__ ## "()"
 #   define DEM_FUNCTION_NAME __FUNCSIG__
 #elif defined(__GNUC__)
@@ -118,61 +124,6 @@ auto tuple_pop_front(const T& tuple)
 //---------------------------------------------------------------------
 //  Kernel and aux functions and enums
 //---------------------------------------------------------------------
-DEM_FORCE_INLINE bool IsPow2(unsigned int Value) { return Value > 0 && (Value & (Value - 1)) == 0; }
-
-template <class T>
-DEM_FORCE_INLINE T NextPow2(T x)
-{
-#if __cplusplus >= 202002L
-	return std::bit_ceil(x);
-#else
-	if constexpr (std::is_signed_v<T>)
-	{
-		if (x < 0) return 0;
-	}
-
-	--x;
-	x |= (x >> 1);
-	x |= (x >> 2);
-	x |= (x >> 4);
-	x |= (x >> 8);
-	x |= (x >> 16);
-
-	if constexpr (sizeof(T) > 4)
-		x |= (x >> 32);
-
-	return x + 1;
-#endif
-}
-
-template <class T>
-DEM_FORCE_INLINE T PrevPow2(T x)
-{
-#if __cplusplus >= 202002L
-	return std::bit_floor(x);
-#else
-	if constexpr (std::is_signed_v<T>)
-	{
-		if (x <= 0) return 0;
-	}
-	else
-	{
-		if (!x) return 0;
-	}
-
-	//--x; // Uncomment this to have a strictly less result
-	x |= (x >> 1);
-	x |= (x >> 2);
-	x |= (x >> 4);
-	x |= (x >> 8);
-	x |= (x >> 16);
-
-	if constexpr (sizeof(T) > 4)
-		x |= (x >> 32);
-
-	return x - (x >> 1);
-#endif
-}
 
 // Only for power-of-2 alignment //!!!C++11 static_assert may help!
 template <unsigned int Alignment> DEM_FORCE_INLINE bool IsAligned(const void* Pointer) { return !(((unsigned int)Pointer) & (Alignment - 1)); }
