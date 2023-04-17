@@ -471,4 +471,27 @@ DEM_FORCE_INLINE constexpr int BitWidth(T x) noexcept
 }
 //---------------------------------------------------------------------
 
+DEM_FORCE_INLINE U32 PartBits1By1(U16 Value) noexcept
+{
+	U32 x = static_cast<U32>(Value);
+	x = (x ^ (x << 8)) & 0x00ff00ff;
+	x = (x ^ (x << 4)) & 0x0f0f0f0f;
+	x = (x ^ (x << 2)) & 0x33333333;
+	x = (x ^ (x << 1)) & 0x55555555;
+	return x;
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE U64 PartBits1By1(U32 Value) noexcept
+{
+	U64 x = static_cast<U64>(Value);
+	x = (x ^ (x << 16)) & 0x0000ffff0000ffff;
+	x = (x ^ (x << 8)) & 0x00ff00ff00ff00ff;
+	x = (x ^ (x << 4)) & 0x0f0f0f0f0f0f0f0f;
+	x = (x ^ (x << 2)) & 0x3333333333333333;
+	x = (x ^ (x << 1)) & 0x5555555555555555;
+	return x;
+}
+//---------------------------------------------------------------------
+
 }

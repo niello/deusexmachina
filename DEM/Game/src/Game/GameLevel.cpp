@@ -18,19 +18,12 @@ namespace DEM::Game
 {
 bool GetTargetFromPhysicsObject(const Physics::CPhysicsObject& Object, CTargetInfo& OutTarget);
 
-// FIXME: calculate based on size, 1 unit = 1 meter
-static UPTR GetDefaultHierarchyDepth(const vector3& Size)
-{
-	return 5;
-}
-//---------------------------------------------------------------------
-
 CGameLevel::CGameLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds, UPTR SubdivisionDepth)
 	: _ID(ID)
 	, _SceneRoot(n_new(Scene::CSceneNode(ID)))
 	, _PhysicsLevel(n_new(Physics::CPhysicsLevel(Bounds)))
 {
-	_SPS.Init(Bounds.Center(), Bounds.Size(), SubdivisionDepth ? SubdivisionDepth : GetDefaultHierarchyDepth(Bounds.Size()));
+	_SPS.Init(Bounds.Center(), std::max({ Bounds.Size().x, Bounds.Size().y, Bounds.Size().z }), SubdivisionDepth ? SubdivisionDepth : 5);
 }
 //---------------------------------------------------------------------
 

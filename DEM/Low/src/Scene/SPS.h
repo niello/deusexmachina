@@ -110,16 +110,15 @@ protected:
 	//Render cache can be pre-sorted e.g. by material, and re-sort parts FtB/BtF based on camera when needed, making additional index lists.
 	//???need to sort records here?
 	//Visibility flag inside render cache node or in a separate array in a CView? But still not here!
-	//???!!!store object's AABB in center/half-extents form?!
+	//???!!!store object's AABB in center/half-extents form even outside here?! would save calculations, and in a frustum test too!
 	std::vector<CSPSRecord> _Records;
-	CAABB _WorldBounds; //???store half-size? optimize storage format for calculations!
+	vector3 _WorldCenter;
+	float _WorldHalfExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic
 	U8 _MaxDepth = 0;
 
-	//!!!uniform vs non-uniform tree! Uniform requires slightly less math.
-
-	// for overlap test in a loose tree need to check neighbours, and therefore need to get the deepest common ancestor of 2 nodes with Morton codes
-	// in a loose tree need to check our node and all neighbours, including diagonal!
-	// for lights-objects overlap it is easier to scan through all lights and check HasLooseIntersection of light tree node against the object tree node
+	U32 CalculateQuadtreeMortonCode(float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const noexcept;
+	U32 AddSingleObject(U32 NodeMortonCode, U32 StopMortonCode);
+	void RemoveSingleObject(U32 NodeIndex, U32 NodeMortonCode, U32 StopMortonCode);
 
 public:
 
@@ -128,7 +127,7 @@ public:
 	float					SceneMinY = 0.f;
 	float					SceneMaxY = 0.f;
 
-	void		Init(const vector3& Center, const vector3& Size, U8 HierarchyDepth);
+	void		Init(const vector3& Center, float Size, U8 HierarchyDepth);
 	CSPSRecord*	AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData);
 	void		UpdateRecord(CSPSRecord* pRecord);
 	void		RemoveRecord(CSPSRecord* pRecord);

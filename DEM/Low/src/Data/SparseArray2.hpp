@@ -469,44 +469,50 @@ protected:
 				const auto OppositeDir = 1 - Dir;
 
 				auto SiblingIndex = ParentNode._Child[OppositeDir];
-				auto pSiblingNode = &_Data[SiblingIndex];
-				if (pSiblingNode->_Color == RED)
+				if (!TreeNodeIsBlack(SiblingIndex))
 				{
 					// Propagate red up from the sibling subtree
-					pSiblingNode->_Color = BLACK;
+					_Data[SiblingIndex]._Color = BLACK;
 					ParentNode._Color = RED;
 					TreeRotate(ParentIndex, Dir);
 					SiblingIndex = ParentNode._Child[OppositeDir];
-					pSiblingNode = &_Data[SiblingIndex];
 				}
 
-				auto SiblingChildDir = pSiblingNode->_Child[Dir];
-				auto SiblingChildOpposite = pSiblingNode->_Child[OppositeDir];
-				const bool SiblingChildOppositeIsBlack = TreeNodeIsBlack(SiblingChildOpposite);
-				if (SiblingChildOppositeIsBlack && TreeNodeIsBlack(SiblingChildDir))
+				if (SiblingIndex == INVALID_INDEX)
 				{
-					// When both children are black, the node itself is painted red
-					pSiblingNode->_Color = RED;
 					SubtreeIndex = ParentIndex;
 				}
 				else
 				{
-					if (SiblingChildOppositeIsBlack)
+					auto pSiblingNode = &_Data[SiblingIndex];
+					auto SiblingChildDir = pSiblingNode->_Child[Dir];
+					auto SiblingChildOpposite = pSiblingNode->_Child[OppositeDir];
+					const bool SiblingChildOppositeIsBlack = TreeNodeIsBlack(SiblingChildOpposite);
+					if (SiblingChildOppositeIsBlack && TreeNodeIsBlack(SiblingChildDir))
 					{
-						// Propagate red up from our subtree's child
-						_Data[SiblingChildDir]._Color = BLACK;
+						// When both children are black, the node itself is painted red
 						pSiblingNode->_Color = RED;
-						TreeRotate(SiblingIndex, OppositeDir);
-						SiblingIndex = ParentNode._Child[OppositeDir];
-						pSiblingNode = &_Data[SiblingIndex];
+						SubtreeIndex = ParentIndex;
 					}
+					else
+					{
+						if (SiblingChildOppositeIsBlack)
+						{
+							// Propagate red up from our subtree's child
+							_Data[SiblingChildDir]._Color = BLACK;
+							pSiblingNode->_Color = RED;
+							TreeRotate(SiblingIndex, OppositeDir);
+							SiblingIndex = ParentNode._Child[OppositeDir];
+							pSiblingNode = &_Data[SiblingIndex];
+						}
 
-					// Finish rebalancing
-					pSiblingNode->_Color = ParentNode._Color;
-					ParentNode._Color = BLACK;
-					_Data[pSiblingNode->_Child[OppositeDir]]._Color = BLACK;
-					TreeRotate(ParentIndex, Dir);
-					break;
+						// Finish rebalancing
+						pSiblingNode->_Color = ParentNode._Color;
+						ParentNode._Color = BLACK;
+						_Data[pSiblingNode->_Child[OppositeDir]]._Color = BLACK;
+						TreeRotate(ParentIndex, Dir);
+						break;
+					}
 				}
 
 				ParentIndex = _Data[SubtreeIndex]._Parent;
