@@ -66,14 +66,14 @@ public:
 typedef Data::CQuadTree<CSPSRecord*, CSPSCell> CSPSQuadTree;
 typedef CSPSQuadTree::CNode CSPSNode;
 
-struct CTreeNode
+struct CSpatialTreeNode
 {
 	U32 MortonCode;
 	U32 ParentIndex;
 	U32 SubtreeObjectCount;
 };
 
-constexpr auto NO_NODE = Data::CSparseArray2<CTreeNode, U32>::INVALID_INDEX;
+constexpr auto NO_NODE = Data::CSparseArray2<CSpatialTreeNode, U32>::INVALID_INDEX;
 
 struct CSPSRecord
 {
@@ -101,9 +101,9 @@ protected:
 	void		QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, CArray<CNodeAttribute*>& OutObjects, EClipStatus Clip) const;
 
 	///////// NEW RENDER /////////
-
-	Data::CSparseArray2<CTreeNode, U32> _TreeNodes;
+	Data::CSparseArray2<CSpatialTreeNode, U32> _TreeNodes;
 	std::unordered_map<U32, U32> _MortonToIndex; //???TODO PERF: map or unordered_map?
+	std::vector<std::unordered_map<U32, U32>::node_type> _MappingPool;
 
 	//!!!TODO: separate by type - renderables, lights, ambient etc!
 	//SPSRecord is not a renderable cache node! They are per view, and here we have per-scene thing!
@@ -117,8 +117,10 @@ protected:
 	U8 _MaxDepth = 0;
 
 	U32 CalculateQuadtreeMortonCode(float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const noexcept;
+	U32 CreateNode(U32 FreeIndex, U32 MortonCode, U32 ParentIndex);
 	U32 AddSingleObject(U32 NodeMortonCode, U32 StopMortonCode);
 	void RemoveSingleObject(U32 NodeIndex, U32 NodeMortonCode, U32 StopMortonCode);
+	//////////////////////////////
 
 public:
 
@@ -134,6 +136,11 @@ public:
 
 	void		QueryObjectsInsideFrustum(const matrix44& ViewProj, CArray<CNodeAttribute*>& OutObjects) const;
 	//!!!add inside sphere for omni (point) lights!
+
+	///////// NEW RENDER /////////
+	//!!!TODO: use prepared frustum planes instead of matrix!
+	void TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>& NodeVisibility) const;
+	//////////////////////////////
 };
 
 inline void GetDimensions(const CAABB& Box, float& CenterX, float& CenterZ, float& HalfSizeX, float& HalfSizeZ)

@@ -170,25 +170,47 @@ void CSPS::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 
 U32 CSPS::CalculateQuadtreeMortonCode(float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const noexcept
 {
-	//!!!TODO: skip insertion if oversized or if outside root node, insert to deepest level if AABB is zero sized at any dimension!
-	//???store oversized objects in the root or at 0?
-
 	// Our level is where the non-loose node size is not less than our size in any of dimensions.
 	// Too small and degenerate AABBs sink to the deepest possible level to save us from division errors.
 	U32 NodeSizeCoeff = static_cast<U32>(1 << (_MaxDepth - 1));
 	if (HalfSizeX > 0.0001f && HalfSizeZ > 0.0001f)
 	{
-		const auto HighestShare = std::min(static_cast<U32>(_WorldHalfExtent / HalfSizeX), static_cast<U32>(_WorldHalfExtent / HalfSizeZ));
-		NodeSizeCoeff = std::min(Math::NextPow2(HighestShare), NodeSizeCoeff);
+		const auto HighestSharePow2 = Math::NextPow2(static_cast<U32>(_WorldHalfExtent / std::max(HalfSizeX, HalfSizeZ)));
+		if (NodeSizeCoeff > HighestSharePow2) NodeSizeCoeff = HighestSharePow2;
 	}
 
 	const float CellCoeff = static_cast<float>(NodeSizeCoeff) / (_WorldHalfExtent + _WorldHalfExtent);
 
+	// TODO: use SIMD. Can almost unify quadtree and octree with that.
 	const auto Col = static_cast<U16>((CenterX - _WorldCenter.x + _WorldHalfExtent) * CellCoeff);
 	const auto Row = static_cast<U16>((CenterZ - _WorldCenter.z + _WorldHalfExtent) * CellCoeff);
 
 	// NodeSizeCoeff bit is offset by Depth bits. Its square is offset 2x bits, making a room for 2D Morton code.
 	return (NodeSizeCoeff * NodeSizeCoeff) | MortonCode2(Col, Row);
+}
+//---------------------------------------------------------------------
+
+U32 CSPS::CreateNode(U32 FreeIndex, U32 MortonCode, U32 ParentIndex)
+{
+	auto ItNew = _TreeNodes.emplace_at_free(FreeIndex);
+	ItNew->MortonCode = MortonCode;
+	ItNew->ParentIndex = ParentIndex;
+	ItNew->SubtreeObjectCount = 1;
+
+	if (_MappingPool.empty())
+	{
+		_MortonToIndex.emplace(MortonCode, ItNew.get_index());
+	}
+	else
+	{
+		auto& MappingNode = _MappingPool.back();
+		MappingNode.key() = MortonCode;
+		MappingNode.mapped() = ItNew.get_index();
+		_MortonToIndex.insert(std::move(MappingNode));
+		_MappingPool.pop_back();
+	}
+
+	return ItNew.get_index();
 }
 //---------------------------------------------------------------------
 
@@ -224,26 +246,13 @@ U32 CSPS::AddSingleObject(U32 NodeMortonCode, U32 StopMortonCode)
 	auto FreeIndex = _TreeNodes.first_free_index(ParentIndex);
 	while (--MissingNodes)
 	{
-		const auto MortonCode = NodeMortonCode >> (MissingNodes * TREE_DIMENSIONS);
 		const auto NextFreeIndex = _TreeNodes.next_free_index(FreeIndex);
-
-		auto ItNew = _TreeNodes.emplace_at_free(FreeIndex);
-		ItNew->MortonCode = MortonCode;
-		ItNew->ParentIndex = ParentIndex;
-		ItNew->SubtreeObjectCount = 1;
-		_MortonToIndex.emplace(MortonCode, ItNew.get_index());
-
-		ParentIndex = ItNew.get_index();
+		ParentIndex = CreateNode(FreeIndex, NodeMortonCode >> (MissingNodes * TREE_DIMENSIONS), ParentIndex);
 		FreeIndex = NextFreeIndex;
 	}
 
 	// Create missing leaf node
-	auto ItNew = _TreeNodes.emplace_at_free(FreeIndex);
-	ItNew->MortonCode = NodeMortonCode;
-	ItNew->ParentIndex = ParentIndex;
-	ItNew->SubtreeObjectCount = 1;
-	_MortonToIndex.emplace(NodeMortonCode, ItNew.get_index());
-	return ItNew.get_index();
+	return CreateNode(FreeIndex, NodeMortonCode, ParentIndex);
 }
 //---------------------------------------------------------------------
 
@@ -255,7 +264,7 @@ void CSPS::RemoveSingleObject(U32 NodeIndex, U32 NodeMortonCode, U32 StopMortonC
 		auto ParentIndex = Node.ParentIndex;
 		if (--Node.SubtreeObjectCount == 0)
 		{
-			_MortonToIndex.erase(Node.MortonCode);
+			_MappingPool.push_back(_MortonToIndex.extract(Node.MortonCode));
 			_TreeNodes.erase(NodeIndex);
 		}
 		NodeIndex = ParentIndex;
@@ -276,6 +285,7 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 	QuadTree.AddObject(pRecord, CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);
 
 	///////// NEW RENDER /////////
+	//!!!TODO: skip insertion if oversized or if outside root node ???store oversized objects in the root or at 0?
 	const U32 NodeMortonCode = CalculateQuadtreeMortonCode(CenterX, CenterZ, HalfSizeX, HalfSizeZ);
 	pRecord->NodeIndex = AddSingleObject(NodeMortonCode, 0);
 	pRecord->NodeMortonCode = NodeMortonCode;
@@ -378,6 +388,12 @@ void CSPS::QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, 
 			if (pChildNode->GetTotalObjCount())
 				QueryObjectsInsideFrustum(pChildNode, ViewProj, OutObjects, Clip);
 		}
+}
+//---------------------------------------------------------------------
+
+void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>& NodeVisibility) const
+{
+	//
 }
 //---------------------------------------------------------------------
 
