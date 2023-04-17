@@ -66,6 +66,15 @@ public:
 typedef Data::CQuadTree<CSPSRecord*, CSPSCell> CSPSQuadTree;
 typedef CSPSQuadTree::CNode CSPSNode;
 
+struct CTreeNode
+{
+	U32 MortonCode;
+	U32 ParentIndex;
+	U32 SubtreeObjectCount;
+};
+
+constexpr auto NO_NODE = Data::CSparseArray2<CTreeNode, U32>::INVALID_INDEX;
+
 struct CSPSRecord
 {
 	CSPSRecord*		pNext = nullptr;
@@ -80,7 +89,7 @@ struct CSPSRecord
 	//float HalfExtentX;
 	//float HalfExtentZ;
 	U32 NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, then 100, 101, 110, 111 etc
-	U32 NodeIndex;
+	U32 NodeIndex = NO_NODE;
 };
 
 class CSPS //???rename to CGfxLevel? CRenderLevel etc? Not exactly SPS, but a thing one step above it.
@@ -92,13 +101,6 @@ protected:
 	void		QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, CArray<CNodeAttribute*>& OutObjects, EClipStatus Clip) const;
 
 	///////// NEW RENDER /////////
-
-	struct CTreeNode
-	{
-		U32 MortonCode;
-		U32 ParentIndex;
-		U32 SubtreeObjectCount;
-	};
 
 	Data::CSparseArray2<CTreeNode, U32> _TreeNodes;
 	std::unordered_map<U32, U32> _MortonToIndex; //???TODO PERF: map or unordered_map?
@@ -179,21 +181,6 @@ inline CSPSCell::CIterator CSPSCell::CIterator::operator --(int)
 	CIterator Tmp(pNode);
 	pNode = pNode->pPrev;
 	return Tmp;
-}
-//---------------------------------------------------------------------
-
-inline void CSPS::UpdateRecord(CSPSRecord* pRecord)
-{
-	float CenterX, CenterZ, HalfSizeX, HalfSizeZ;
-	GetDimensions(pRecord->GlobalBox, CenterX, CenterZ, HalfSizeX, HalfSizeZ);
-	QuadTree.UpdateHandle(CSPSCell::CIterator(pRecord), CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);
-}
-//---------------------------------------------------------------------
-
-inline void CSPS::RemoveRecord(CSPSRecord* pRecord)
-{
-	if (pRecord->pSPSNode) pRecord->pSPSNode->RemoveByHandle(CSPSCell::CIterator(pRecord));
-	RecordPool.Destroy(pRecord);
 }
 //---------------------------------------------------------------------
 

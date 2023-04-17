@@ -1,4 +1,5 @@
 #include <Scene/SPS.h>
+#include <Math/Math.h>
 
 namespace Scene
 {
@@ -61,7 +62,7 @@ CSPSCell::CIterator CSPSCell::Find(CSPSRecord* Object) const
 
 ///////// NEW RENDER /////////
 // FIXME: move to math!!!
-DEM_FORCE_INLINE U32 MortonCode2(U32 x)
+DEM_FORCE_INLINE U32 MortonCode2(U32 x) noexcept
 {
 	x &= 0x0000ffff;
 	x = (x ^ (x << 8)) & 0x00ff00ff;
@@ -69,6 +70,35 @@ DEM_FORCE_INLINE U32 MortonCode2(U32 x)
 	x = (x ^ (x << 2)) & 0x33333333;
 	x = (x ^ (x << 1)) & 0x55555555;
 	return x;
+}
+//---------------------------------------------------------------------
+
+constexpr size_t TREE_DIMENSIONS = 2;
+
+template<typename T>
+DEM_FORCE_INLINE T MortonLCA(T MortonCode1, T MortonCode2) noexcept
+{
+	// Shrink longer code so that both codes represent nodes on the same level
+	const auto Bits1 = Math::BitWidth(MortonCode1);
+	const auto Bits2 = Math::BitWidth(MortonCode2);
+	if (Bits1 < Bits2)
+		MortonCode2 >>= (Bits2 - Bits1);
+	else
+		MortonCode1 >>= (Bits1 - Bits2);
+
+	// LCA is the equal prefix of both nodes. Find the place where equality breaks.
+	auto HighestUnequalBit = Math::BitWidth(MortonCode1 ^ MortonCode2);
+
+	// Each level uses TREE_DIMENSIONS bits and we must shift by whole levels
+	if constexpr (TREE_DIMENSIONS == 2)
+		HighestUnequalBit = Math::CeilToEven(HighestUnequalBit);
+	else if constexpr (Math::IsPow2(TREE_DIMENSIONS))
+		HighestUnequalBit = Math::CeilToMultipleOfPow2(HighestUnequalBit, TREE_DIMENSIONS);
+	else
+		HighestUnequalBit = Math::CeilToMultiple(HighestUnequalBit, TREE_DIMENSIONS);
+
+	// Shift any of codes to obtain the common prefix which is the LCA of two nodes
+	return MortonCode1 >> HighestUnequalBit;
 }
 //---------------------------------------------------------------------
 
@@ -95,7 +125,7 @@ return (uint32)((t >> 31) + (t & 0x0ffffffff));
 //Morton FindCommonParent() - shift longer one to be the same length as shorter one, then compare with & or ^? Matching part is a common parent.
 // BFSToDFS, DFSToBFS index conversion
 // Also can add a function ForEachIntersectingLooseNode(NodeA, [](){}), at each level will determine a range and iterate it
-bool HasLooseIntersection(/*Bounds, Morton*/)
+bool HasLooseIntersection(/*Bounds, Morton*/) noexcept
 {
 	// Depth = GetDepth(Morton);
 	// InvDepth = MaxDepth - Depth;
@@ -130,7 +160,7 @@ void CSPS::Init(const vector3& Center, const vector3& Size, U8 HierarchyDepth)
 	// Set object count to fake 1 to keep the root alive forever.
 	auto& Root = *_TreeNodes.emplace();
 	Root.MortonCode = 1;
-	Root.ParentIndex = Data::CSparseArray2<CTreeNode, U32>::INVALID_INDEX;
+	Root.ParentIndex = NO_NODE;
 	Root.SubtreeObjectCount = 1;
 	_MortonToIndex.emplace(1, 0);
 }
@@ -150,7 +180,6 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 	///////// NEW RENDER /////////
 	//!!!TODO: skip insertion if oversized or if outside root node, insert to deepest level if AABB is zero sized at any dimension!
 	//???for moving objects, can benefit from knowing the previous node on reinsertion?
-	constexpr size_t TREE_DIMENSIONS = 2;
 
 	//???store world bounds as center & half-extents? could help saving some calculations.
 	const float RootSizeX = _WorldBounds.Max.x - _WorldBounds.Min.x;
@@ -159,7 +188,7 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 	// Our level is where the non-loose node size is not less than our size in any of dimensions.
 	// Since dividing full size on half size, we additionally divide result by 2.
 	const auto HighestShare = std::min(static_cast<U32>(RootSizeX / HalfSizeX), static_cast<U32>(RootSizeZ / HalfSizeZ)) >> 1;
-	const auto NodeSizeCoeff = std::min(NextPow2(HighestShare), static_cast<U32>(1 << (_MaxDepth - 1)));
+	const auto NodeSizeCoeff = std::min(Math::NextPow2(HighestShare), static_cast<U32>(1 << (_MaxDepth - 1)));
 
 	// FIXME: can calc something like int(center-worldcenter) and shift with Depth?
 	const auto Col = static_cast<U32>((CenterX - _WorldBounds.Min.x) * NodeSizeCoeff / RootSizeX);
@@ -168,20 +197,13 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 	// NodeSizeCoeff is offset by Depth. Its square is offset 2x bits, making a room for 2D Morton code.
 	const U32 NodeMortonCode = (NodeSizeCoeff * NodeSizeCoeff) | MortonCode2(Col) | (MortonCode2(Row) << 1);
 
-	// TODO: could find-or-create node in Morton->Index map, save Index for direct access and increment subtree node count through all parents (shifted morton codes)
-	// Parents may not exist too, find-or-create for them too! Nodes[Index] is a tight array. Store morton code, subtree obj count and optionally an object [id] list there.
-	// Then could avoid storing morton code in a record. Store index here and access Morton in Nodes[Index].
-	// Visibility 2-bit map can be indexed the same way and then must be updated when a new node is added.
-	// Update indices and invalidate visibility map when call compact_ordered(). Otherwise indices are valid.
-	// Compact when busy cell / total cell ratio is too low and absolute cell count is big enough to bother.
-
 	// Find the deepest existing parent. The root always exists as a fallback.
-	U32 CreationDepth = 0; //!!!for empty tree, need to calc depth!
+	U32 MissingNodes = 0;
 	auto CurrMortonCode = NodeMortonCode;
 	auto It = _MortonToIndex.find(CurrMortonCode);
 	while (It == _MortonToIndex.end())
 	{
-		++CreationDepth;
+		++MissingNodes;
 		CurrMortonCode >>= TREE_DIMENSIONS;
 		It = _MortonToIndex.find(CurrMortonCode);
 	}
@@ -190,22 +212,22 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 
 	// Increment all existing nodes' object counts
 	auto NodeIndex = ExistingNodeIndex;
-	while (NodeIndex != Data::CSparseArray2<CTreeNode, U32>::INVALID_INDEX)
+	while (NodeIndex != NO_NODE)
 	{
 		auto& Node = _TreeNodes[NodeIndex];
 		++Node.SubtreeObjectCount;
 		NodeIndex = Node.ParentIndex;
 	}
 
-	if (CreationDepth)
+	if (MissingNodes)
 	{
 		// Create missing nodes
 		auto ParentIndex = ExistingNodeIndex;
 		auto FreeIndex = _TreeNodes.first_free_index(ParentIndex);
 		while (true)
 		{
-			--CreationDepth;
-			const auto MortonCode = NodeMortonCode >> (CreationDepth * TREE_DIMENSIONS);
+			--MissingNodes;
+			const auto MortonCode = NodeMortonCode >> (MissingNodes * TREE_DIMENSIONS);
 			const auto NextFreeIndex = _TreeNodes.next_free_index(FreeIndex);
 
 			auto It = _TreeNodes.emplace_at_free(FreeIndex);
@@ -214,7 +236,7 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 			It->SubtreeObjectCount = 1;
 			_MortonToIndex.emplace(MortonCode, It.get_index());
 
-			if (!CreationDepth)
+			if (!MissingNodes)
 			{
 				pRecord->NodeIndex = It.get_index();
 				break;
@@ -234,6 +256,81 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 	//////////////////////////////
 
 	return pRecord;
+}
+//---------------------------------------------------------------------
+
+void CSPS::UpdateRecord(CSPSRecord* pRecord)
+{
+	float CenterX, CenterZ, HalfSizeX, HalfSizeZ;
+	GetDimensions(pRecord->GlobalBox, CenterX, CenterZ, HalfSizeX, HalfSizeZ);
+	QuadTree.UpdateHandle(CSPSCell::CIterator(pRecord), CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);
+
+	///////// NEW RENDER /////////
+	//!!!TODO: call UpdateRecord only when AABB changes! Check in the calling code!
+	//!!!TODO: skip insertion if oversized or if outside root node, insert to deepest level if AABB is zero sized at any dimension!
+	//???for moving objects, can benefit from knowing the previous node on reinsertion?
+	constexpr size_t TREE_DIMENSIONS = 2;
+
+	//???store world bounds as center & half-extents? could help saving some calculations.
+	const float RootSizeX = _WorldBounds.Max.x - _WorldBounds.Min.x;
+	const float RootSizeZ = _WorldBounds.Max.z - _WorldBounds.Min.z;
+
+	// Our level is where the non-loose node size is not less than our size in any of dimensions.
+	// Since dividing full size on half size, we additionally divide result by 2.
+	const auto HighestShare = std::min(static_cast<U32>(RootSizeX / HalfSizeX), static_cast<U32>(RootSizeZ / HalfSizeZ)) >> 1;
+	const auto NodeSizeCoeff = std::min(Math::NextPow2(HighestShare), static_cast<U32>(1 << (_MaxDepth - 1)));
+
+	// FIXME: can calc something like int(center-worldcenter) and shift with Depth?
+	const auto Col = static_cast<U32>((CenterX - _WorldBounds.Min.x) * NodeSizeCoeff / RootSizeX);
+	const auto Row = static_cast<U32>((CenterZ - _WorldBounds.Min.z) * NodeSizeCoeff / RootSizeZ);
+
+	// NodeSizeCoeff is offset by Depth. Its square is offset 2x bits, making a room for 2D Morton code.
+	const U32 NodeMortonCode = (NodeSizeCoeff * NodeSizeCoeff) | MortonCode2(Col) | (MortonCode2(Row) << 1);
+
+	//!!!DBG TMP! UNCOMMENT!
+	//if (pRecord->NodeMortonCode == NodeMortonCode) return;
+
+	// Find LCA of the current and the new node
+	const auto LCAMortonCode = MortonLCA(pRecord->NodeMortonCode, NodeMortonCode);
+
+
+	//shrink longer to shorter
+	//XOR
+	//find first nonzero bit
+	//shrink any of codes to shift out that bit
+	//LCA found!
+
+	// from current node to LCA exclusive
+	//   decrement object count
+	//   if object count became 0, erase in _MortonToIndex and _TreeNodes
+	// from new node to LCA exclusive
+	//   create missing nodes, then
+	//   increment count of existing nodes
+	// update node indices in the object record
+}
+//---------------------------------------------------------------------
+
+void CSPS::RemoveRecord(CSPSRecord* pRecord)
+{
+	if (pRecord->pSPSNode) pRecord->pSPSNode->RemoveByHandle(CSPSCell::CIterator(pRecord));
+	RecordPool.Destroy(pRecord);
+
+	///////// NEW RENDER /////////
+	auto NodeIndex = pRecord->NodeIndex;
+	while (NodeIndex != NO_NODE)
+	{
+		auto& Node = _TreeNodes[NodeIndex];
+		auto ParentIndex = Node.ParentIndex;
+		if (--Node.SubtreeObjectCount == 0)
+		{
+			_MortonToIndex.erase(Node.MortonCode);
+			_TreeNodes.erase(NodeIndex);
+		}
+		NodeIndex = ParentIndex;
+	}
+
+	pRecord->NodeMortonCode = 0;
+	pRecord->NodeIndex = NO_NODE;
 }
 //---------------------------------------------------------------------
 
