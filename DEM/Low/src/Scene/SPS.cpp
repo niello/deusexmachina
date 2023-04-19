@@ -400,25 +400,29 @@ struct CSIMDFourPlanes
 	acl::Vector4_32	Z;
 	acl::Vector4_32	W;
 };
+// https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
 DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixLRBT(const matrix44& m)
 {
-	// FIXME: check correctness of ABCD calculation for our RH matrix and Z-range!
 	// TODO: vectorize matrix, SIMDify these operations?! Use acl::vector_length_reciprocal3. Then transpose to store PlanesX/Y/Z/W?
+
 	const float ALeft = m.m[0][3] + m.m[0][0];
 	const float BLeft = m.m[1][3] + m.m[1][0];
 	const float CLeft = m.m[2][3] + m.m[2][0];
 	const float DLeft = m.m[3][3] + m.m[3][0];
 	const float InvLengthLeft = acl::sqrt_reciprocal(ALeft * ALeft + BLeft * BLeft + CLeft * CLeft);
+
 	const float ARight = m.m[0][3] - m.m[0][0];
 	const float BRight = m.m[1][3] - m.m[1][0];
 	const float CRight = m.m[2][3] - m.m[2][0];
 	const float DRight = m.m[3][3] - m.m[3][0];
 	const float InvLengthRight = acl::sqrt_reciprocal(ARight * ARight + BRight * BRight + CRight * CRight);
+
 	const float ABottom = m.m[0][3] + m.m[0][1];
 	const float BBottom = m.m[1][3] + m.m[1][1];
 	const float CBottom = m.m[2][3] + m.m[2][1];
 	const float DBottom = m.m[3][3] + m.m[3][1];
 	const float InvLengthBottom = acl::sqrt_reciprocal(ABottom * ABottom + BBottom * BBottom + CBottom * CBottom);
+
 	const float ATop = m.m[0][3] - m.m[0][1];
 	const float BTop = m.m[1][3] - m.m[1][1];
 	const float CTop = m.m[2][3] - m.m[2][1];
@@ -426,6 +430,8 @@ DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixLRBT(const matrix44& m)
 	const float InvLengthTop = acl::sqrt_reciprocal(ATop * ATop + BTop * BTop + CTop * CTop);
 
 	const auto InvLengths = acl::vector_set(InvLengthLeft, InvLengthRight, InvLengthBottom, InvLengthTop);
+
+	//???!!!TODO: can put As, Bs, Cs and Ds into SIMD vectors and calc InvLengths vectorized? Would need rtm::vector_sqrt_reciprocal!
 
 	//???!!!inverse negations to obtain values with desired sign immediately?! can't do it for sum! Negation will be required anyway!
 	auto PlanesX = acl::vector_mul(acl::vector_set(-ALeft, -ARight, -ABottom, -ATop), InvLengths);
@@ -436,19 +442,22 @@ DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixLRBT(const matrix44& m)
 }
 //---------------------------------------------------------------------
 
+// https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
 DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixNF(const matrix44& m)
 {
-	// FIXME: check correctness of ABCD calculation for our RH matrix and Z-range!
 	// TODO: vectorize matrix, SIMDify these operations?! Use acl::vector_length_reciprocal3. Then transpose to store PlanesX/Y/Z/W?
-	const float ANear = m.m[0][3] - m.m[0][2];
-	const float BNear = m.m[1][3] - m.m[1][2];
-	const float CNear = m.m[2][3] - m.m[2][2];
-	const float DNear = m.m[3][3] - m.m[3][2];
+
+	// D3D style projection matrix, near Z limit is 0 instead of -W
+	const float ANear = m.m[0][2];
+	const float BNear = m.m[1][2];
+	const float CNear = m.m[2][2];
+	const float DNear = m.m[3][2];
 	const float InvLengthNear = acl::sqrt_reciprocal(ANear * ANear + BNear * BNear + CNear * CNear);
-	const float AFar = m.m[0][2];
-	const float BFar = m.m[1][2];
-	const float CFar = m.m[2][2];
-	const float DFar = m.m[3][2];
+
+	const float AFar = m.m[0][3] - m.m[0][2];
+	const float BFar = m.m[1][3] - m.m[1][2];
+	const float CFar = m.m[2][3] - m.m[2][2];
+	const float DFar = m.m[3][3] - m.m[3][2];
 	const float InvLengthFar = acl::sqrt_reciprocal(AFar * AFar + BFar * BFar + CFar * CFar);
 
 	const auto InvLengths = acl::vector_set(InvLengthNear, InvLengthFar, InvLengthNear, InvLengthNear);
