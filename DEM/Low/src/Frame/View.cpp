@@ -192,6 +192,12 @@ void CView::UpdateVisibilityCache()
 
 	if (_pSPS && pCamera)
 	{
+		///////// NEW RENDER /////////
+		//!!!FIXME: store in class for persistence!
+		std::vector<bool> NodeVisibility;
+		_pSPS->TestSpatialTreeVisibility(pCamera->GetViewProjMatrix(), NodeVisibility);
+		//////////////////////////////
+
 		_pSPS->QueryObjectsInsideFrustum(pCamera->GetViewProjMatrix(), VisibilityCache);
 
 		for (UPTR i = 0; i < VisibilityCache.GetCount(); /**/)

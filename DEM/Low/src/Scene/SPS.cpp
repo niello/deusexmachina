@@ -1,5 +1,6 @@
 #include <Scene/SPS.h>
 #include <Math/Math.h>
+#include <acl/math/vector4_32.h>
 
 namespace Scene
 {
@@ -391,9 +392,151 @@ void CSPS::QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, 
 }
 //---------------------------------------------------------------------
 
+//!!!TODO: to Math!
+struct CSIMDFourPlanes
+{
+	acl::Vector4_32	X;
+	acl::Vector4_32	Y;
+	acl::Vector4_32	Z;
+	acl::Vector4_32	W;
+};
+DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixLRBT(const matrix44& m)
+{
+	// FIXME: check correctness of ABCD calculation for our RH matrix and Z-range!
+	// TODO: vectorize matrix, SIMDify these operations?! Use acl::vector_length_reciprocal3. Then transpose to store PlanesX/Y/Z/W?
+	const float ALeft = m.m[0][3] + m.m[0][0];
+	const float BLeft = m.m[1][3] + m.m[1][0];
+	const float CLeft = m.m[2][3] + m.m[2][0];
+	const float DLeft = m.m[3][3] + m.m[3][0];
+	const float InvLengthLeft = acl::sqrt_reciprocal(ALeft * ALeft + BLeft * BLeft + CLeft * CLeft);
+	const float ARight = m.m[0][3] - m.m[0][0];
+	const float BRight = m.m[1][3] - m.m[1][0];
+	const float CRight = m.m[2][3] - m.m[2][0];
+	const float DRight = m.m[3][3] - m.m[3][0];
+	const float InvLengthRight = acl::sqrt_reciprocal(ARight * ARight + BRight * BRight + CRight * CRight);
+	const float ABottom = m.m[0][3] + m.m[0][1];
+	const float BBottom = m.m[1][3] + m.m[1][1];
+	const float CBottom = m.m[2][3] + m.m[2][1];
+	const float DBottom = m.m[3][3] + m.m[3][1];
+	const float InvLengthBottom = acl::sqrt_reciprocal(ABottom * ABottom + BBottom * BBottom + CBottom * CBottom);
+	const float ATop = m.m[0][3] - m.m[0][1];
+	const float BTop = m.m[1][3] - m.m[1][1];
+	const float CTop = m.m[2][3] - m.m[2][1];
+	const float DTop = m.m[3][3] - m.m[3][1];
+	const float InvLengthTop = acl::sqrt_reciprocal(ATop * ATop + BTop * BTop + CTop * CTop);
+
+	const auto InvLengths = acl::vector_set(InvLengthLeft, InvLengthRight, InvLengthBottom, InvLengthTop);
+
+	//???!!!inverse negations to obtain values with desired sign immediately?! can't do it for sum! Negation will be required anyway!
+	auto PlanesX = acl::vector_mul(acl::vector_set(-ALeft, -ARight, -ABottom, -ATop), InvLengths);
+	auto PlanesY = acl::vector_mul(acl::vector_set(-BLeft, -BRight, -BBottom, -BTop), InvLengths);
+	auto PlanesZ = acl::vector_mul(acl::vector_set(-CLeft, -CRight, -CBottom, -CTop), InvLengths);
+	auto PlanesW = acl::vector_mul(acl::vector_set(DLeft, DRight, DBottom, DTop), InvLengths);
+	return CSIMDFourPlanes{ PlanesX, PlanesY, PlanesZ, PlanesW };
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixNF(const matrix44& m)
+{
+	// FIXME: check correctness of ABCD calculation for our RH matrix and Z-range!
+	// TODO: vectorize matrix, SIMDify these operations?! Use acl::vector_length_reciprocal3. Then transpose to store PlanesX/Y/Z/W?
+	const float ANear = m.m[0][3] - m.m[0][2];
+	const float BNear = m.m[1][3] - m.m[1][2];
+	const float CNear = m.m[2][3] - m.m[2][2];
+	const float DNear = m.m[3][3] - m.m[3][2];
+	const float InvLengthNear = acl::sqrt_reciprocal(ANear * ANear + BNear * BNear + CNear * CNear);
+	const float AFar = m.m[0][2];
+	const float BFar = m.m[1][2];
+	const float CFar = m.m[2][2];
+	const float DFar = m.m[3][2];
+	const float InvLengthFar = acl::sqrt_reciprocal(AFar * AFar + BFar * BFar + CFar * CFar);
+
+	const auto InvLengths = acl::vector_set(InvLengthNear, InvLengthFar, InvLengthNear, InvLengthNear);
+
+	//???!!!inverse negations to obtain values with desired sign immediately?! can't do it for sum! Negation will be required anyway!
+	auto PlanesX = acl::vector_mul(acl::vector_set(-ANear, -AFar, -ANear, -ANear), InvLengths);
+	auto PlanesY = acl::vector_mul(acl::vector_set(-BNear, -BFar, -BNear, -BNear), InvLengths);
+	auto PlanesZ = acl::vector_mul(acl::vector_set(-CNear, -CFar, -CNear, -CNear), InvLengths);
+	auto PlanesW = acl::vector_mul(acl::vector_set(DNear, DFar, DNear, DNear), InvLengths);
+	return CSIMDFourPlanes{ PlanesX, PlanesY, PlanesZ, PlanesW };
+}
+//---------------------------------------------------------------------
+
 void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>& NodeVisibility) const
 {
-	//
+	n_assert2_dbg(!_TreeNodes.empty(), "CSPS::TestSpatialTreeVisibility() should not be called before CSPS::Init()!");
+
+	// Cell can have 4 frustum culling states, for which 2 bits are enough. And we use clever meanings for
+	// individual bits inspired by UE, 'is inside' and 'is outside', so that we have the next states:
+	// not checked (00), completely inside (01), completely outside (10), partially inside (11).
+	NodeVisibility.resize(_TreeNodes.sparse_size() * 2, false);
+
+	/*
+	float NodeSizeX, NodeSizeZ;
+
+	const vector2& RootSize = pOwner->GetSize();
+
+	if (Level > 0)
+	{
+		float SizeCoeff = 1.f / (1 << Level);
+		NodeSizeX = RootSize.x * SizeCoeff;
+		NodeSizeZ = RootSize.y * SizeCoeff;
+	}
+	else
+	{
+		NodeSizeX = RootSize.x;
+		NodeSizeZ = RootSize.y;
+	}
+
+	Box.Min.x = pOwner->Center.x + Col * NodeSizeX - RootSize.x * 0.5f;
+	Box.Min.z = pOwner->Center.y + Row * NodeSizeZ - RootSize.y * 0.5f;
+	Box.Max.x = Box.Min.x + NodeSizeX;
+	Box.Max.z = Box.Min.z + NodeSizeZ;
+	Box.Min.y = SceneMinY;
+	Box.Max.y = SceneMaxY;
+	*/
+
+
+	//CSIMDFourPlanes Planes = PlanesFromMatrixLRBT(ViewProj);
+	//// ...
+	//Planes = PlanesFromMatrixNF(ViewProj);
+	//// ...
+
+	// build frustum planes for SIMD from ViewProj
+	// to simplify the test, use the fact that we have the same extent in all directions for a node
+	// test inside and outside at once
+
+	// Process the root outside the loop to simplify conditions inside
+	auto ItNode = _TreeNodes.cbegin();
+	//const bool IsVisible = IntersectBox8Plane(NodeBounds.Center, NodeBounds.Extent, View.ViewFrustum.PermutedPlanes.GetData());
+	//NodeVisibility[0] = IsVisible
+	//NodeVisibility[1] = IsVisible && TestBoxFrustum(NodeBounds.Center, NodeBounds.Extent).GetOutside();
+	++ItNode;
+
+	//???!!!TODO: don't recalculate cached values from previous frames?! recalc only nodes with 'not checked' state?
+	//???use 00 for invisibles and write only visibility because invisibles are already memset?
+	for (; ItNode != _TreeNodes.cend(); ++ItNode)
+	{
+		//!!!DBG TMP! CSparseArray2 guarantees the order, but we check twice.
+		n_assert_dbg(ItNode->ParentIndex < ItNode.get_index());
+
+		const bool IsParentInside = NodeVisibility[ItNode->ParentIndex * 2];
+		const bool IsParentOutside = NodeVisibility[ItNode->ParentIndex * 2 + 1];
+		if (IsParentInside != IsParentOutside)
+		{
+			// If the parent is completely visible or completely invisible, all its children have the same state
+			// TODO: use special array of 2-bit values to optimize number of read and write operations?
+			NodeVisibility[ItNode.get_index() * 2] = IsParentInside;
+			NodeVisibility[ItNode.get_index() * 2 + 1] = IsParentOutside;
+		}
+		else
+		{
+			// If the parent is partially visible
+			//const bool IsVisible = IntersectBox8Plane(NodeBounds.Center, NodeBounds.Extent, View.ViewFrustum.PermutedPlanes.GetData());
+			//NodeVisibility[ItNode.get_index() * 2] = IsVisible
+			//NodeVisibility[ItNode.get_index() * 2 + 1] = IsVisible && TestBoxFrustum(NodeBounds.Center, NodeBounds.Extent).GetOutside();
+		}
+	}
 }
 //---------------------------------------------------------------------
 
