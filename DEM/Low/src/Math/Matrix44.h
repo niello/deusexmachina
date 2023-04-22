@@ -3,7 +3,13 @@
 #include <Math/Matrix33.h>
 #include <memory.h>
 
-// Matrix 4x4 class. Row-major.
+// Matrix 4x4 class. Row-major, i.e. for affine transforms it is filled this way:
+// Axx Axy Axz  0  -> X axis
+// Ayx Ayy Ayz  0  -> Y axis
+// Azx Azy Azz  0  -> Z axis
+// Trx Try Trz  1  -> Translation
+// [x] [y] [z] [w] - components of vectors
+// In-memory storage order is vector by vector, i.e. Ax, Ay, Az, Tr.
 
 class matrix44
 {

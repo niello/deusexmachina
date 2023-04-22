@@ -1,6 +1,7 @@
 #include <Scene/SPS.h>
 #include <Math/Math.h>
 #include <acl/math/vector4_32.h>
+#include <acl/math/affine_matrix_32.h>
 
 namespace Scene
 {
@@ -400,44 +401,53 @@ struct CSIMDFourPlanes
 	acl::Vector4_32	Z;
 	acl::Vector4_32	W;
 };
-// https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
+// FIXME: need 2 iterations? matches acl::sqrt_reciprocal on 1. Maybe I was lucky with data.
+DEM_FORCE_INLINE acl::Vector4_32 vector_sqrt_reciprocal(acl::Vector4_32 input)
+{
+#if defined(ACL_SSE2_INTRINSICS)
+	// Perform two passes of Newton-Raphson iteration on the hardware estimate
+	__m128 half = _mm_set_ps1(0.5F);
+	__m128 input_half_v = _mm_mul_ps(input, half);
+	__m128 x0 = _mm_rsqrt_ps(input);
+
+	// First iteration
+	__m128 x1 = _mm_mul_ps(x0, x0);
+	x1 = _mm_sub_ps(half, _mm_mul_ps(input_half_v, x1));
+	x1 = _mm_add_ps(_mm_mul_ps(x0, x1), x0);
+
+	// Second iteration
+	__m128 x2 = _mm_mul_ps(x1, x1);
+	x2 = _mm_sub_ps(half, _mm_mul_ps(input_half_v, x2));
+	x2 = _mm_add_ps(_mm_mul_ps(x1, x2), x1);
+
+	return x2;
+#else
+	return acl::vector_set(
+		1.0F / sqrt(acl::vector_get_x(input)),
+		1.0F / sqrt(acl::vector_get_y(input)),
+		1.0F / sqrt(acl::vector_get_z(input)),
+		1.0F / sqrt(acl::vector_get_w(input)));
+#endif
+}
+//---------------------------------------------------------------------
+
+// See e.g. https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
 DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixLRBT(const matrix44& m)
 {
-	// TODO: vectorize matrix, SIMDify these operations?! Use acl::vector_length_reciprocal3. Then transpose to store PlanesX/Y/Z/W?
+	auto NegAs = acl::vector_add(acl::vector_set(-m.m[0][0], m.m[0][0], -m.m[0][1], m.m[0][1]), acl::vector_set(-m.m[0][3]));
+	auto NegBs = acl::vector_add(acl::vector_set(-m.m[1][0], m.m[1][0], -m.m[1][1], m.m[1][1]), acl::vector_set(-m.m[1][3]));
+	auto NegCs = acl::vector_add(acl::vector_set(-m.m[2][0], m.m[2][0], -m.m[2][1], m.m[2][1]), acl::vector_set(-m.m[2][3]));
+	auto Ds = acl::vector_add(acl::vector_set(m.m[3][0], -m.m[3][0], m.m[3][1], -m.m[3][1]), acl::vector_set(m.m[3][3]));
 
-	const float ALeft = m.m[0][3] + m.m[0][0];
-	const float BLeft = m.m[1][3] + m.m[1][0];
-	const float CLeft = m.m[2][3] + m.m[2][0];
-	const float DLeft = m.m[3][3] + m.m[3][0];
-	const float InvLengthLeft = acl::sqrt_reciprocal(ALeft * ALeft + BLeft * BLeft + CLeft * CLeft);
+	auto InvLengths = acl::vector_mul(NegAs, NegAs);
+	InvLengths = acl::vector_mul_add(NegBs, NegBs, InvLengths);
+	InvLengths = acl::vector_mul_add(NegCs, NegCs, InvLengths);
+	InvLengths = vector_sqrt_reciprocal(InvLengths);
 
-	const float ARight = m.m[0][3] - m.m[0][0];
-	const float BRight = m.m[1][3] - m.m[1][0];
-	const float CRight = m.m[2][3] - m.m[2][0];
-	const float DRight = m.m[3][3] - m.m[3][0];
-	const float InvLengthRight = acl::sqrt_reciprocal(ARight * ARight + BRight * BRight + CRight * CRight);
-
-	const float ABottom = m.m[0][3] + m.m[0][1];
-	const float BBottom = m.m[1][3] + m.m[1][1];
-	const float CBottom = m.m[2][3] + m.m[2][1];
-	const float DBottom = m.m[3][3] + m.m[3][1];
-	const float InvLengthBottom = acl::sqrt_reciprocal(ABottom * ABottom + BBottom * BBottom + CBottom * CBottom);
-
-	const float ATop = m.m[0][3] - m.m[0][1];
-	const float BTop = m.m[1][3] - m.m[1][1];
-	const float CTop = m.m[2][3] - m.m[2][1];
-	const float DTop = m.m[3][3] - m.m[3][1];
-	const float InvLengthTop = acl::sqrt_reciprocal(ATop * ATop + BTop * BTop + CTop * CTop);
-
-	const auto InvLengths = acl::vector_set(InvLengthLeft, InvLengthRight, InvLengthBottom, InvLengthTop);
-
-	//???!!!TODO: can put As, Bs, Cs and Ds into SIMD vectors and calc InvLengths vectorized? Would need rtm::vector_sqrt_reciprocal!
-
-	//???!!!inverse negations to obtain values with desired sign immediately?! can't do it for sum! Negation will be required anyway!
-	auto PlanesX = acl::vector_mul(acl::vector_set(-ALeft, -ARight, -ABottom, -ATop), InvLengths);
-	auto PlanesY = acl::vector_mul(acl::vector_set(-BLeft, -BRight, -BBottom, -BTop), InvLengths);
-	auto PlanesZ = acl::vector_mul(acl::vector_set(-CLeft, -CRight, -CBottom, -CTop), InvLengths);
-	auto PlanesW = acl::vector_mul(acl::vector_set(DLeft, DRight, DBottom, DTop), InvLengths);
+	auto PlanesX = acl::vector_mul(NegAs, InvLengths);
+	auto PlanesY = acl::vector_mul(NegBs, InvLengths);
+	auto PlanesZ = acl::vector_mul(NegCs, InvLengths);
+	auto PlanesW = acl::vector_mul(Ds, InvLengths);
 	return CSIMDFourPlanes{ PlanesX, PlanesY, PlanesZ, PlanesW };
 }
 //---------------------------------------------------------------------
@@ -445,9 +455,7 @@ DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixLRBT(const matrix44& m)
 // https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
 DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixNF(const matrix44& m)
 {
-	// TODO: vectorize matrix, SIMDify these operations?! Use acl::vector_length_reciprocal3. Then transpose to store PlanesX/Y/Z/W?
-
-	// D3D style projection matrix, near Z limit is 0 instead of -W
+	// We use D3D style projection matrix, near Z limit is 0 instead of OpenGL's -W
 	const float ANear = m.m[0][2];
 	const float BNear = m.m[1][2];
 	const float CNear = m.m[2][2];
@@ -462,7 +470,6 @@ DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixNF(const matrix44& m)
 
 	const auto InvLengths = acl::vector_set(InvLengthNear, InvLengthFar, InvLengthNear, InvLengthNear);
 
-	//???!!!inverse negations to obtain values with desired sign immediately?! can't do it for sum! Negation will be required anyway!
 	auto PlanesX = acl::vector_mul(acl::vector_set(-ANear, -AFar, -ANear, -ANear), InvLengths);
 	auto PlanesY = acl::vector_mul(acl::vector_set(-BNear, -BFar, -BNear, -BNear), InvLengths);
 	auto PlanesZ = acl::vector_mul(acl::vector_set(-CNear, -CFar, -CNear, -CNear), InvLengths);
@@ -505,11 +512,12 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 	Box.Max.y = SceneMaxY;
 	*/
 
+	const CSIMDFourPlanes PlanesLRBT = PlanesFromMatrixLRBT(ViewProj);
+	//???need? check directly w (clip-space z) against znear & zfar? const CSIMDFourPlanes PlanesNF = PlanesFromMatrixNF(ViewProj);
 
-	//CSIMDFourPlanes Planes = PlanesFromMatrixLRBT(ViewProj);
-	//// ...
-	//Planes = PlanesFromMatrixNF(ViewProj);
-	//// ...
+	//!!!DBG TMP!
+	//if (acl::vector_all_greater_equal(PlanesLRBT.X, PlanesLRBT.Y)) return;
+	//if (acl::vector_all_greater_equal(PlanesLRBT.Z, PlanesLRBT.W)) return;
 
 	// build frustum planes for SIMD from ViewProj
 	// to simplify the test, use the fact that we have the same extent in all directions for a node
