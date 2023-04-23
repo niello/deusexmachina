@@ -151,6 +151,8 @@ bool HasLooseIntersection(/*Bounds, Morton*/) noexcept
 
 void CSPS::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 {
+	n_assert2_dbg(Size >= 0.f, "CSPS::Init() > negative world extent is not allowed!");
+
 	SceneMinY = Center.y - Size * 0.5f;
 	SceneMaxY = Center.y + Size * 0.5f;
 	QuadTree.Build(Center.x, Center.z, Size, Size, HierarchyDepth);
@@ -402,7 +404,7 @@ struct CSIMDFourPlanes
 	acl::Vector4_32	W;
 };
 // FIXME: need 2 iterations? matches acl::sqrt_reciprocal on 1. Maybe I was lucky with data.
-DEM_FORCE_INLINE acl::Vector4_32 vector_sqrt_reciprocal(acl::Vector4_32 input)
+inline acl::Vector4_32 ACL_SIMD_CALL vector_sqrt_reciprocal(acl::Vector4_32 input)
 {
 #if defined(ACL_SSE2_INTRINSICS)
 	// Perform two passes of Newton-Raphson iteration on the hardware estimate
@@ -431,9 +433,26 @@ DEM_FORCE_INLINE acl::Vector4_32 vector_sqrt_reciprocal(acl::Vector4_32 input)
 }
 //---------------------------------------------------------------------
 
-// See e.g. https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
+inline bool ACL_SIMD_CALL vector_any_greater_than(acl::Vector4_32Arg0 lhs, acl::Vector4_32Arg1 rhs)
+{
+#if defined(ACL_SSE2_INTRINSICS)
+	return _mm_movemask_ps(_mm_cmpgt_ps(lhs, rhs)) != 0;
+#elif defined(ACL_NEON_INTRINSICS)
+	uint32x4_t mask = vcgtq_f32(lhs, rhs);
+	uint8x8x2_t mask_0_8_1_9_2_10_3_11_4_12_5_13_6_14_7_15 = vzip_u8(vget_low_u8(mask), vget_high_u8(mask));
+	uint16x4x2_t mask_0_8_4_12_1_9_5_13_2_10_6_14_3_11_7_15 = vzip_u16(mask_0_8_1_9_2_10_3_11_4_12_5_13_6_14_7_15.val[0], mask_0_8_1_9_2_10_3_11_4_12_5_13_6_14_7_15.val[1]);
+	return vget_lane_u32(mask_0_8_4_12_1_9_5_13_2_10_6_14_3_11_7_15.val[0], 0) != 0;
+#else
+	return lhs.x >= rhs.x || lhs.y >= rhs.y || lhs.z >= rhs.z || lhs.w >= rhs.w;
+#endif
+}
+//---------------------------------------------------------------------
+
+// See https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
 DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixLRBT(const matrix44& m)
 {
+	// Calculate A, B, C & D plane coefficients each for 4 planes at once. Negate because it saves operations later in a box-plane test.
+	// Left = W + X, Right = W - X, Bottom = W + Y, Top = W - Y
 	auto NegAs = acl::vector_add(acl::vector_set(-m.m[0][0], m.m[0][0], -m.m[0][1], m.m[0][1]), acl::vector_set(-m.m[0][3]));
 	auto NegBs = acl::vector_add(acl::vector_set(-m.m[1][0], m.m[1][0], -m.m[1][1], m.m[1][1]), acl::vector_set(-m.m[1][3]));
 	auto NegCs = acl::vector_add(acl::vector_set(-m.m[2][0], m.m[2][0], -m.m[2][1], m.m[2][1]), acl::vector_set(-m.m[2][3]));
@@ -444,15 +463,10 @@ DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixLRBT(const matrix44& m)
 	InvLengths = acl::vector_mul_add(NegCs, NegCs, InvLengths);
 	InvLengths = vector_sqrt_reciprocal(InvLengths);
 
-	auto PlanesX = acl::vector_mul(NegAs, InvLengths);
-	auto PlanesY = acl::vector_mul(NegBs, InvLengths);
-	auto PlanesZ = acl::vector_mul(NegCs, InvLengths);
-	auto PlanesW = acl::vector_mul(Ds, InvLengths);
-	return CSIMDFourPlanes{ PlanesX, PlanesY, PlanesZ, PlanesW };
+	return CSIMDFourPlanes{ acl::vector_mul(NegAs, InvLengths), acl::vector_mul(NegBs, InvLengths), acl::vector_mul(NegCs, InvLengths), acl::vector_mul(Ds, InvLengths) };
 }
 //---------------------------------------------------------------------
 
-// https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
 DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixNF(const matrix44& m)
 {
 	// We use D3D style projection matrix, near Z limit is 0 instead of OpenGL's -W
@@ -475,6 +489,77 @@ DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixNF(const matrix44& m)
 	auto PlanesZ = acl::vector_mul(acl::vector_set(-CNear, -CFar, -CNear, -CNear), InvLengths);
 	auto PlanesW = acl::vector_mul(acl::vector_set(DNear, DFar, DNear, DNear), InvLengths);
 	return CSIMDFourPlanes{ PlanesX, PlanesY, PlanesZ, PlanesW };
+}
+//---------------------------------------------------------------------
+
+// See https://fgiesen.wordpress.com/2010/10/17/view-frustum-culling/
+//!!!TODO: make also a cube version with one extent for all!
+DEM_FORCE_INLINE EClipStatus /*ACL_SIMD_CALL*/ ClipAABB4Planes(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent,
+	acl::Vector4_32Arg2 PlanesX, acl::Vector4_32Arg3 PlanesY, acl::Vector4_32Arg4 PlanesZ, acl::Vector4_32Arg5 PlanesW)
+{
+	//float d = max(aabb->min.x * plane.x, aabb->max.x * plane.x)
+	//	+ max(aabb->min.y * plane.y, aabb->max.y * plane.y)
+	//	+ max(aabb->min.z * plane.z, aabb->max.z * plane.z)
+	//	+ plane.w;
+	//bool inside = d > 0; // or skip the add and test >-plane.w
+
+	//Note that this implicitly picks whichever vertex of the box is “most inside” the plane and uses that.
+	//If you replace all the “max” calls with “min”, you get the vertex that’s “most outside”.If the dot product
+	//is still positive, the box is completely inside the plane.Or you can compute both at once(do the multiplies once,
+	//then a pair of min / max operations) and get a full tri - state test result(inside, outside, intersecting).
+	//To test box against frustum, you simply do this 6 times, once for each of the frustum planes.
+
+	//d = dot(center, plane) + extent.x * fabs(plane.x) + extent.y * fabs(plane.y) + extent.z * fabs(plane.z);
+
+	//and since plane is(expected to be) constant for some number of boxes, we can compute the abs once(it’s just
+	//an and with a constant anyway) and keep the results in a register – it boils down to having a second vector,
+	//absPlane, that’s just the componentwise abs of plane.Using this notation, we get :
+
+	//float d = dot(center, plane);
+	//float r = dot(extent, absPlane);
+	//if (d + r > 0) // partially inside
+	//if (d - r >= 0) // fully inside
+
+	//Just as in the previous method, you probably don’t want to add plane.w to d, but just compare d+r against -plane.w instead.
+
+	//For example, you can exploit that the near and far plane are usually parallel (we implicitly used this for Method 3).
+	//This saves some work with the Method 4-style tests, but it’s a wash for this variant.
+
+	// Final:
+	// dot3(center, plane) + dot3(extent, absPlane) > -plane.w;
+	// dot3(center, plane) - dot3(extent, absPlane) >= -plane.w;
+
+	// Optimize dots, useful when need only Inside/Outside detection without partial check:
+	// dot3(center + extent * signFlip, plane) > -plane.w;
+	//->
+	// signFlip = componentwise_and(plane, 0x80000000); // must be faster than acl::vector_sign
+	// dot3(center + xor(extent, signFlip), plane) > -plane.w;
+	//???for partial, can use dot3(center - xor(extent, signFlip), plane) >= -plane.w;???
+
+	//Of course, it doesn’t compute the clip - space coordinates in the process either – if that’s important to you, it definitely
+	//makes sense to go with the homogeneous approach(though you should still consider dropping the z until you actually need it).
+
+	//???!!!can prepare mix* vectors from scalars instead of saving Center and Extent in SSE vectors first?
+
+	//!!!instead of vector_mul+vector_sub can try to do FMA! To turn sub into add, can calc PlanesW negated just as all other vectors (A,B,C)!!!
+	// (Cx * Px) + (Cy * Py) + (Cz * Pz) - Pw
+	auto Distance = acl::vector_mul(acl::vector_mix_xxxx(BoxCenter), PlanesX);
+	Distance = acl::vector_mul_add(acl::vector_mix_yyyy(BoxCenter), PlanesY, Distance);
+	Distance = acl::vector_mul_add(acl::vector_mix_zzzz(BoxCenter), PlanesZ, Distance);
+	Distance = acl::vector_sub(Distance, PlanesW);
+
+	// Ex * abs(Px) + Ey * abs(Py) + Ez * abs(Pz)
+	auto PushOut = acl::vector_mul(acl::vector_mix_xxxx(BoxExtent), acl::vector_abs(PlanesX));
+	PushOut = acl::vector_mul_add(acl::vector_mix_yyyy(BoxExtent), acl::vector_abs(PlanesY), PushOut);
+	PushOut = acl::vector_mul_add(acl::vector_mix_zzzz(BoxExtent), acl::vector_abs(PlanesZ), PushOut);
+
+	if (vector_any_greater_than(Distance, PushOut))
+		return EClipStatus::Outside;
+
+	if (vector_any_greater_than(Distance, acl::vector_neg(PushOut)))
+		return EClipStatus::Clipped;
+
+	return EClipStatus::Inside;
 }
 //---------------------------------------------------------------------
 
@@ -529,6 +614,11 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 	//NodeVisibility[0] = IsVisible
 	//NodeVisibility[1] = IsVisible && TestBoxFrustum(NodeBounds.Center, NodeBounds.Extent).GetOutside();
 	++ItNode;
+
+	//???could use 4 separate _TreeNodes arrays for 4 quadrants of the field and parallelize.
+	//But this will be potentially very unbalanced. Can balance?
+
+	//!!!need to compare quadtree with octree regarding computations. Quadtree nodes are not cubes even when the world extent is a cube! Octree nodes are.
 
 	//???!!!TODO: don't recalculate cached values from previous frames?! recalc only nodes with 'not checked' state?
 	//???use 00 for invisibles and write only visibility because invisibles are already memset?
