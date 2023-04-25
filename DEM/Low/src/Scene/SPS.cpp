@@ -113,6 +113,13 @@ DEM_FORCE_INLINE T MortonLCA(T MortonCodeA, T MortonCodeB) noexcept
 }
 //---------------------------------------------------------------------
 
+template<size_t DIMENSIONS, typename T>
+DEM_FORCE_INLINE T GetDepthLevel(T MortonCode) noexcept
+{
+	return Math::BitWidth(MortonCode) / DIMENSIONS;
+}
+//---------------------------------------------------------------------
+
 //!!!DBG TMP! Move out of here!
 // LinearTree<Dim, MaxDepth, IndexType/bits> - static class, could be a namespace but needs templating
 // constexpr constants for fast calculations, e.g. float multiplier for the size of smallest node etc, or methods like CalcNodeSize(RootSize, Depth)
@@ -160,7 +167,7 @@ void CSPS::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 	///////// NEW RENDER /////////
 	_MaxDepth = 12; // Required Morton bits = 2 * _MaxDepth + 1 or 3 * _MaxDepth + 1, col/row index bits = _MaxDepth
 	_WorldCenter = Center;
-	_WorldHalfExtent = Size * 0.5f;
+	_WorldExtent = Size * 0.5f;
 
 	// Create a root node. This simplifies object insertion logic.
 	// Set object count to fake 1 to keep the root alive forever.
@@ -179,15 +186,15 @@ U32 CSPS::CalculateQuadtreeMortonCode(float CenterX, float CenterZ, float HalfSi
 	U32 NodeSizeCoeff = static_cast<U32>(1 << (_MaxDepth - 1));
 	if (HalfSizeX > 0.0001f && HalfSizeZ > 0.0001f)
 	{
-		const auto HighestSharePow2 = Math::NextPow2(static_cast<U32>(_WorldHalfExtent / std::max(HalfSizeX, HalfSizeZ)));
+		const auto HighestSharePow2 = Math::NextPow2(static_cast<U32>(_WorldExtent / std::max(HalfSizeX, HalfSizeZ)));
 		if (NodeSizeCoeff > HighestSharePow2) NodeSizeCoeff = HighestSharePow2;
 	}
 
-	const float CellCoeff = static_cast<float>(NodeSizeCoeff) / (_WorldHalfExtent + _WorldHalfExtent);
+	const float CellCoeff = static_cast<float>(NodeSizeCoeff) / (_WorldExtent + _WorldExtent);
 
 	// TODO: use SIMD. Can almost unify quadtree and octree with that.
-	const auto Col = static_cast<U16>((CenterX - _WorldCenter.x + _WorldHalfExtent) * CellCoeff);
-	const auto Row = static_cast<U16>((CenterZ - _WorldCenter.z + _WorldHalfExtent) * CellCoeff);
+	const auto Col = static_cast<U16>((CenterX - _WorldCenter.x + _WorldExtent) * CellCoeff);
+	const auto Row = static_cast<U16>((CenterZ - _WorldCenter.z + _WorldExtent) * CellCoeff);
 
 	// NodeSizeCoeff bit is offset by Depth bits. Its square is offset 2x bits, making a room for 2D Morton code.
 	return (NodeSizeCoeff * NodeSizeCoeff) | MortonCode2(Col, Row);
@@ -451,19 +458,29 @@ inline bool ACL_SIMD_CALL vector_any_greater_than(acl::Vector4_32Arg0 lhs, acl::
 // See https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
 DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixLRBT(const matrix44& m)
 {
-	// Calculate A, B, C & D plane coefficients each for 4 planes at once. Negate because it saves operations later in a box-plane test.
+	// Calculate A, B, C & D plane coefficients each for 4 planes at once
 	// Left = W + X, Right = W - X, Bottom = W + Y, Top = W - Y
+
+	//???why negating A, B, C? really needed? because we return from clip space into the object space?
 	auto NegAs = acl::vector_add(acl::vector_set(-m.m[0][0], m.m[0][0], -m.m[0][1], m.m[0][1]), acl::vector_set(-m.m[0][3]));
 	auto NegBs = acl::vector_add(acl::vector_set(-m.m[1][0], m.m[1][0], -m.m[1][1], m.m[1][1]), acl::vector_set(-m.m[1][3]));
 	auto NegCs = acl::vector_add(acl::vector_set(-m.m[2][0], m.m[2][0], -m.m[2][1], m.m[2][1]), acl::vector_set(-m.m[2][3]));
-	auto Ds = acl::vector_add(acl::vector_set(m.m[3][0], -m.m[3][0], m.m[3][1], -m.m[3][1]), acl::vector_set(m.m[3][3]));
+
+	// Negate D to turn mul & sub into a single fma later in the plane/AABB test
+	auto NegDs = acl::vector_add(acl::vector_set(-m.m[3][0], m.m[3][0], -m.m[3][1], m.m[3][1]), acl::vector_set(-m.m[3][3]));
 
 	auto InvLengths = acl::vector_mul(NegAs, NegAs);
 	InvLengths = acl::vector_mul_add(NegBs, NegBs, InvLengths);
 	InvLengths = acl::vector_mul_add(NegCs, NegCs, InvLengths);
 	InvLengths = vector_sqrt_reciprocal(InvLengths);
 
-	return CSIMDFourPlanes{ acl::vector_mul(NegAs, InvLengths), acl::vector_mul(NegBs, InvLengths), acl::vector_mul(NegCs, InvLengths), acl::vector_mul(Ds, InvLengths) };
+	return CSIMDFourPlanes
+	{
+		acl::vector_mul(NegAs, InvLengths),
+		acl::vector_mul(NegBs, InvLengths),
+		acl::vector_mul(NegCs, InvLengths),
+		acl::vector_mul(NegDs, InvLengths)
+	};
 }
 //---------------------------------------------------------------------
 
@@ -484,79 +501,46 @@ DEM_FORCE_INLINE CSIMDFourPlanes PlanesFromMatrixNF(const matrix44& m)
 
 	const auto InvLengths = acl::vector_set(InvLengthNear, InvLengthFar, InvLengthNear, InvLengthNear);
 
-	auto PlanesX = acl::vector_mul(acl::vector_set(-ANear, -AFar, -ANear, -ANear), InvLengths);
-	auto PlanesY = acl::vector_mul(acl::vector_set(-BNear, -BFar, -BNear, -BNear), InvLengths);
-	auto PlanesZ = acl::vector_mul(acl::vector_set(-CNear, -CFar, -CNear, -CNear), InvLengths);
+	//auto PlanesX = acl::vector_mul(acl::vector_set(-ANear, -AFar, -ANear, -ANear), InvLengths);
+	//auto PlanesY = acl::vector_mul(acl::vector_set(-BNear, -BFar, -BNear, -BNear), InvLengths);
+	//auto PlanesZ = acl::vector_mul(acl::vector_set(-CNear, -CFar, -CNear, -CNear), InvLengths);
+	auto PlanesX = acl::vector_mul(acl::vector_set(ANear, AFar, ANear, ANear), InvLengths);
+	auto PlanesY = acl::vector_mul(acl::vector_set(BNear, BFar, BNear, BNear), InvLengths);
+	auto PlanesZ = acl::vector_mul(acl::vector_set(CNear, CFar, CNear, CNear), InvLengths);
 	auto PlanesW = acl::vector_mul(acl::vector_set(DNear, DFar, DNear, DNear), InvLengths);
 	return CSIMDFourPlanes{ PlanesX, PlanesY, PlanesZ, PlanesW };
 }
 //---------------------------------------------------------------------
 
-// See https://fgiesen.wordpress.com/2010/10/17/view-frustum-culling/
-//!!!TODO: make also a cube version with one extent for all!
+// See https://fgiesen.wordpress.com/2010/10/17/view-frustum-culling/ or Real-Time Collision Detection 5.2.3
 DEM_FORCE_INLINE EClipStatus /*ACL_SIMD_CALL*/ ClipAABB4Planes(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent,
 	acl::Vector4_32Arg2 PlanesX, acl::Vector4_32Arg3 PlanesY, acl::Vector4_32Arg4 PlanesZ, acl::Vector4_32Arg5 PlanesW)
 {
-	//float d = max(aabb->min.x * plane.x, aabb->max.x * plane.x)
-	//	+ max(aabb->min.y * plane.y, aabb->max.y * plane.y)
-	//	+ max(aabb->min.z * plane.z, aabb->max.z * plane.z)
-	//	+ plane.w;
-	//bool inside = d > 0; // or skip the add and test >-plane.w
+	//!!!TODO: can make also a cube version with one extent for all! For octree that will save some cycles.
+	//!!!can store quadtree node (Cx, Cz, Exz, Ey) or octree node (Cx, Cy, Cz, Exyz) in one SIMD and load aligned quickly!
+	//!!!per node quadtree y could be extended to AABBs of objects in the node, better node culling at cost of y update.
 
-	//Note that this implicitly picks whichever vertex of the box is “most inside” the plane and uses that.
-	//If you replace all the “max” calls with “min”, you get the vertex that’s “most outside”.If the dot product
-	//is still positive, the box is completely inside the plane.Or you can compute both at once(do the multiplies once,
-	//then a pair of min / max operations) and get a full tri - state test result(inside, outside, intersecting).
-	//To test box against frustum, you simply do this 6 times, once for each of the frustum planes.
-
-	//d = dot(center, plane) + extent.x * fabs(plane.x) + extent.y * fabs(plane.y) + extent.z * fabs(plane.z);
-
-	//and since plane is(expected to be) constant for some number of boxes, we can compute the abs once(it’s just
-	//an and with a constant anyway) and keep the results in a register – it boils down to having a second vector,
-	//absPlane, that’s just the componentwise abs of plane.Using this notation, we get :
-
-	//float d = dot(center, plane);
-	//float r = dot(extent, absPlane);
-	//if (d + r > 0) // partially inside
-	//if (d - r >= 0) // fully inside
-
-	//Just as in the previous method, you probably don’t want to add plane.w to d, but just compare d+r against -plane.w instead.
-
-	//For example, you can exploit that the near and far plane are usually parallel (we implicitly used this for Method 3).
-	//This saves some work with the Method 4-style tests, but it’s a wash for this variant.
-
-	// Final:
-	// dot3(center, plane) + dot3(extent, absPlane) > -plane.w;
-	// dot3(center, plane) - dot3(extent, absPlane) >= -plane.w;
-
-	// Optimize dots, useful when need only Inside/Outside detection without partial check:
+	// Optimize dots, useful when need only Inside/Outside detection without partial check (when testing objects, not octree nodes):
 	// dot3(center + extent * signFlip, plane) > -plane.w;
 	//->
 	// signFlip = componentwise_and(plane, 0x80000000); // must be faster than acl::vector_sign
 	// dot3(center + xor(extent, signFlip), plane) > -plane.w;
-	//???for partial, can use dot3(center - xor(extent, signFlip), plane) >= -plane.w;???
 
-	//Of course, it doesn’t compute the clip - space coordinates in the process either – if that’s important to you, it definitely
-	//makes sense to go with the homogeneous approach(though you should still consider dropping the z until you actually need it).
+	// Distance of box center from plane: (Cx * Pnx) + (Cy * Pny) + (Cz * Pnz) - Pd
+	// PlanesW is already negated, so we turn "-Pd" into "+NegativePd" and use fma instead of mul & sub
+	auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(BoxCenter), PlanesX, PlanesW);
+	CenterDistance = acl::vector_mul_add(acl::vector_mix_yyyy(BoxCenter), PlanesY, CenterDistance);
+	CenterDistance = acl::vector_mul_add(acl::vector_mix_zzzz(BoxCenter), PlanesZ, CenterDistance);
 
-	//???!!!can prepare mix* vectors from scalars instead of saving Center and Extent in SSE vectors first?
+	// Projection radius of the most inside vertex: Ex * abs(Pnx) + Ey * abs(Pny) + Ez * abs(Pnz)
+	auto ProjectedExtent = acl::vector_mul(acl::vector_mix_xxxx(BoxExtent), acl::vector_abs(PlanesX));
+	ProjectedExtent = acl::vector_mul_add(acl::vector_mix_yyyy(BoxExtent), acl::vector_abs(PlanesY), ProjectedExtent);
+	ProjectedExtent = acl::vector_mul_add(acl::vector_mix_zzzz(BoxExtent), acl::vector_abs(PlanesZ), ProjectedExtent);
 
-	//!!!instead of vector_mul+vector_sub can try to do FMA! To turn sub into add, can calc PlanesW negated just as all other vectors (A,B,C)!!!
-	// (Cx * Px) + (Cy * Py) + (Cz * Pz) - Pw
-	auto Distance = acl::vector_mul(acl::vector_mix_xxxx(BoxCenter), PlanesX);
-	Distance = acl::vector_mul_add(acl::vector_mix_yyyy(BoxCenter), PlanesY, Distance);
-	Distance = acl::vector_mul_add(acl::vector_mix_zzzz(BoxCenter), PlanesZ, Distance);
-	Distance = acl::vector_sub(Distance, PlanesW);
-
-	// Ex * abs(Px) + Ey * abs(Py) + Ez * abs(Pz)
-	auto PushOut = acl::vector_mul(acl::vector_mix_xxxx(BoxExtent), acl::vector_abs(PlanesX));
-	PushOut = acl::vector_mul_add(acl::vector_mix_yyyy(BoxExtent), acl::vector_abs(PlanesY), PushOut);
-	PushOut = acl::vector_mul_add(acl::vector_mix_zzzz(BoxExtent), acl::vector_abs(PlanesZ), PushOut);
-
-	if (vector_any_greater_than(Distance, PushOut))
+	if (acl::vector_any_greater_equal(CenterDistance, ProjectedExtent))
 		return EClipStatus::Outside;
 
-	if (vector_any_greater_than(Distance, acl::vector_neg(PushOut)))
+	if (acl::vector_any_greater_equal(CenterDistance, acl::vector_neg(ProjectedExtent)))
 		return EClipStatus::Clipped;
 
 	return EClipStatus::Inside;
@@ -567,62 +551,63 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 {
 	n_assert2_dbg(!_TreeNodes.empty(), "CSPS::TestSpatialTreeVisibility() should not be called before CSPS::Init()!");
 
+	//???!!!TODO: don't recalculate cached values from previous frames?! recalc only nodes with 'not checked' state?
+	//???use 00 for invisibles and write only visibility because invisibles are already memset?
+	//!!!need to compare quadtree with octree regarding computations. Quadtree nodes are not cubes even when the world extent is a cube! Octree nodes are.
+
 	// Cell can have 4 frustum culling states, for which 2 bits are enough. And we use clever meanings for
 	// individual bits inspired by UE, 'is inside' and 'is outside', so that we have the next states:
 	// not checked (00), completely inside (01), completely outside (10), partially inside (11).
 	NodeVisibility.resize(_TreeNodes.sparse_size() * 2, false);
 
-	/*
-	float NodeSizeX, NodeSizeZ;
+	// Extract Left, Right, Bottom & Top frustum planes using Gribb-Hartmann method.
+	// Left = W + X, Right = W - X, Bottom = W + Y, Top = W - Y. Normals look inside the frustum, i.e. positive halfspace means 'inside'.
+	// LRBT_w is a -d, i.e. -dot(PlaneNormal, PlaneOrigin). +w instead of -d allows us using a single fma instead of separate mul & sub in a box test.
+	// See https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
+	// See https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
+	const auto LRBT_Nx = acl::vector_add(acl::vector_set(ViewProj.m[0][3]), acl::vector_set(ViewProj.m[0][0], -ViewProj.m[0][0], ViewProj.m[0][1], -ViewProj.m[0][1]));
+	const auto LRBT_Ny = acl::vector_add(acl::vector_set(ViewProj.m[1][3]), acl::vector_set(ViewProj.m[1][0], -ViewProj.m[1][0], ViewProj.m[1][1], -ViewProj.m[1][1]));
+	const auto LRBT_Nz = acl::vector_add(acl::vector_set(ViewProj.m[2][3]), acl::vector_set(ViewProj.m[2][0], -ViewProj.m[2][0], ViewProj.m[2][1], -ViewProj.m[2][1]));
+	const auto LRBT_w =  acl::vector_add(acl::vector_set(ViewProj.m[3][3]), acl::vector_set(ViewProj.m[3][0], -ViewProj.m[3][0], ViewProj.m[3][1], -ViewProj.m[3][1]));
 
-	const vector2& RootSize = pOwner->GetSize();
+	// Cache abs plane normals for using in a box test. x64 may manage to store these vectors in xmm registers. // TODO: PERF check!
+	const auto LRBT_Abs_Nx = acl::vector_abs(LRBT_Nx);
+	const auto LRBT_Abs_Ny = acl::vector_abs(LRBT_Ny);
+	const auto LRBT_Abs_Nz = acl::vector_abs(LRBT_Nz);
 
-	if (Level > 0)
-	{
-		float SizeCoeff = 1.f / (1 << Level);
-		NodeSizeX = RootSize.x * SizeCoeff;
-		NodeSizeZ = RootSize.y * SizeCoeff;
-	}
-	else
-	{
-		NodeSizeX = RootSize.x;
-		NodeSizeZ = RootSize.y;
-	}
+	const float NegWorldExtent = -_WorldExtent;
 
-	Box.Min.x = pOwner->Center.x + Col * NodeSizeX - RootSize.x * 0.5f;
-	Box.Min.z = pOwner->Center.y + Row * NodeSizeZ - RootSize.y * 0.5f;
-	Box.Max.x = Box.Min.x + NodeSizeX;
-	Box.Max.z = Box.Min.z + NodeSizeZ;
-	Box.Min.y = SceneMinY;
-	Box.Max.y = SceneMaxY;
-	*/
-
-	const CSIMDFourPlanes PlanesLRBT = PlanesFromMatrixLRBT(ViewProj);
-	//???need? check directly w (clip-space z) against znear & zfar? const CSIMDFourPlanes PlanesNF = PlanesFromMatrixNF(ViewProj);
-
-	//!!!DBG TMP!
-	//if (acl::vector_all_greater_equal(PlanesLRBT.X, PlanesLRBT.Y)) return;
-	//if (acl::vector_all_greater_equal(PlanesLRBT.Z, PlanesLRBT.W)) return;
-
-	// build frustum planes for SIMD from ViewProj
-	// to simplify the test, use the fact that we have the same extent in all directions for a node
-	// test inside and outside at once
+	// TODO: near and far planes have the similar axis, only the sign differs. Can optimize calculations for them!
+	// cache axis and origins of near and far planes along it. Normalize. Also need abs axis cached.
 
 	// Process the root outside the loop to simplify conditions inside
-	auto ItNode = _TreeNodes.cbegin();
-	//const bool IsVisible = IntersectBox8Plane(NodeBounds.Center, NodeBounds.Extent, View.ViewFrustum.PermutedPlanes.GetData());
-	//NodeVisibility[0] = IsVisible
-	//NodeVisibility[1] = IsVisible && TestBoxFrustum(NodeBounds.Center, NodeBounds.Extent).GetOutside();
-	++ItNode;
+	// Test AABB vs frustum planes intersection for positive halfspace treated as 'inside'
+	{
+		const auto NegWorldExtent4 = acl::vector_set(NegWorldExtent);
 
-	//???could use 4 separate _TreeNodes arrays for 4 quadrants of the field and parallelize.
-	//But this will be potentially very unbalanced. Can balance?
+		// Distance of box center from plane (s): (Cx * Nx) + (Cy * Ny) + (Cz * Nz) - d, where "- d" is "+ w"
+		auto CenterDistance = acl::vector_mul_add(acl::vector_set(_WorldCenter.x), LRBT_Nx, LRBT_w);
+		CenterDistance = acl::vector_mul_add(acl::vector_set(_WorldCenter.y), LRBT_Ny, CenterDistance);
+		CenterDistance = acl::vector_mul_add(acl::vector_set(_WorldCenter.z), LRBT_Nz, CenterDistance);
 
-	//!!!need to compare quadtree with octree regarding computations. Quadtree nodes are not cubes even when the world extent is a cube! Octree nodes are.
+		// Projection radius of the most outside vertex (-r): -Ex * abs(Pnx) + -Ey * abs(Pny) + -Ez * abs(Pnz)
+		auto ProjectedExtent = acl::vector_mul(NegWorldExtent4, LRBT_Abs_Nx);
+		ProjectedExtent = acl::vector_mul_add(NegWorldExtent4, LRBT_Abs_Ny, ProjectedExtent);
+		ProjectedExtent = acl::vector_mul_add(NegWorldExtent4, LRBT_Abs_Nz, ProjectedExtent);
 
-	//???!!!TODO: don't recalculate cached values from previous frames?! recalc only nodes with 'not checked' state?
-	//???use 00 for invisibles and write only visibility because invisibles are already memset?
-	for (; ItNode != _TreeNodes.cend(); ++ItNode)
+		const bool HasVisiblePart_LRBT = acl::vector_all_greater_equal(CenterDistance, ProjectedExtent);
+
+		// TODO: near and far planes
+		// Can project onto the same axis and use near/far plane values to check depth
+		//!!!if no visible part, can skip checking near/far!!!
+
+		const bool HasVisiblePart = HasVisiblePart_LRBT; // && HasVisiblePartNearFar
+		NodeVisibility[0] = HasVisiblePart;
+		NodeVisibility[1] = !HasVisiblePart || acl::vector_any_less_than(CenterDistance, acl::vector_neg(ProjectedExtent)); // || HasInvisiblePartNearFar
+	}
+
+	// Skip the root as it is already processed
+	for (auto ItNode = ++_TreeNodes.cbegin(); ItNode != _TreeNodes.cend(); ++ItNode)
 	{
 		//!!!DBG TMP! CSparseArray2 guarantees the order, but we check twice.
 		n_assert_dbg(ItNode->ParentIndex < ItNode.get_index());
@@ -632,13 +617,14 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 		if (IsParentInside != IsParentOutside)
 		{
 			// If the parent is completely visible or completely invisible, all its children have the same state
-			// TODO: use special array of 2-bit values to optimize number of read and write operations?
 			NodeVisibility[ItNode.get_index() * 2] = IsParentInside;
 			NodeVisibility[ItNode.get_index() * 2 + 1] = IsParentOutside;
 		}
 		else
 		{
-			// If the parent is partially visible
+			// If the parent is partially visible, its children must be tested
+			const auto Level = GetDepthLevel<TREE_DIMENSIONS>(ItNode->MortonCode); //???is full decode faster?
+
 			//const bool IsVisible = IntersectBox8Plane(NodeBounds.Center, NodeBounds.Extent, View.ViewFrustum.PermutedPlanes.GetData());
 			//NodeVisibility[ItNode.get_index() * 2] = IsVisible
 			//NodeVisibility[ItNode.get_index() * 2 + 1] = IsVisible && TestBoxFrustum(NodeBounds.Center, NodeBounds.Extent).GetOutside();

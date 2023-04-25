@@ -113,7 +113,7 @@ protected:
 	//???!!!store object's AABB in center/half-extents form even outside here?! would save calculations, and in a frustum test too!
 	std::vector<CSPSRecord> _Records;
 	vector3 _WorldCenter;
-	float _WorldHalfExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic
+	float _WorldExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic
 	U8 _MaxDepth = 0;
 
 	U32 CalculateQuadtreeMortonCode(float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const noexcept;
