@@ -176,7 +176,7 @@ void CSPS::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 
 	///////// NEW RENDER /////////
 	_MaxDepth = 12; // Required Morton bits = 2 * _MaxDepth + 1 or 3 * _MaxDepth + 1, col/row index bits = _MaxDepth
-	_WorldBounds = acl::vector_set(Center.x, Center.y, Center.z, 1.f);
+	_WorldCenter = Center; //_WorldBounds = acl::vector_set(Center.x, Center.y, Center.z, 1.f);
 	_WorldExtent = Size * 0.5f;
 
 	// Create a root node. This simplifies object insertion logic.
@@ -203,8 +203,10 @@ U32 CSPS::CalculateQuadtreeMortonCode(float CenterX, float CenterZ, float HalfSi
 	const float CellCoeff = static_cast<float>(NodeSizeCoeff) / (_WorldExtent + _WorldExtent);
 
 	// TODO: use SIMD. Can almost unify quadtree and octree with that.
-	const auto x = static_cast<U16>((CenterX - acl::vector_get_x(_WorldBounds) + _WorldExtent) * CellCoeff);
-	const auto z = static_cast<U16>((CenterZ - acl::vector_get_z(_WorldBounds) + _WorldExtent) * CellCoeff);
+	//const auto x = static_cast<U16>((CenterX - acl::vector_get_x(_WorldBounds) + _WorldExtent) * CellCoeff);
+	//const auto z = static_cast<U16>((CenterZ - acl::vector_get_z(_WorldBounds) + _WorldExtent) * CellCoeff);
+	const auto x = static_cast<U16>((CenterX - _WorldCenter.x + _WorldExtent) * CellCoeff);
+	const auto z = static_cast<U16>((CenterZ - _WorldCenter.z + _WorldExtent) * CellCoeff);
 
 	// NodeSizeCoeff bit is offset by Depth bits. Its square is offset 2x bits, making a room for 2D Morton code.
 	return (NodeSizeCoeff * NodeSizeCoeff) | MortonCode2(x, z);
@@ -453,7 +455,8 @@ DEM_FORCE_INLINE EClipStatus /*ACL_SIMD_CALL*/ ClipAABB4Planes(acl::Vector4_32Ar
 }
 //---------------------------------------------------------------------
 
-static DEM_FORCE_INLINE std::tuple<bool, bool> ClipCube(acl::Vector4_32Arg0 Bounds, acl::Vector4_32Arg1 ProjectedNegWorldExtent,
+// Test AABB vs frustum planes intersection for positive halfspace treated as 'inside'
+static DEM_FORCE_INLINE U8 ClipCube(acl::Vector4_32Arg0 Bounds, acl::Vector4_32Arg1 ProjectedNegWorldExtent,
 	acl::Vector4_32Arg2 LRBT_Nx, acl::Vector4_32Arg3 LRBT_Ny, acl::Vector4_32Arg4 LRBT_Nz, acl::Vector4_32Arg5 LRBT_w,
 	acl::Vector4_32ArgN LookAxis, float NegWorldExtentAlongLookAxis, float NearPlane, float FarPlane)
 {
@@ -479,7 +482,9 @@ static DEM_FORCE_INLINE std::tuple<bool, bool> ClipCube(acl::Vector4_32Arg0 Boun
 		HasInvisiblePart = !HasVisiblePart || (FarthestPoint > FarPlane || ClosestPoint < NearPlane);
 	}
 
-	return { HasVisiblePart, HasInvisiblePart || acl::vector_any_less_than(CenterDistance, acl::vector_neg(ProjectedNegExtent)) };
+	HasInvisiblePart = HasInvisiblePart || acl::vector_any_less_than(CenterDistance, acl::vector_neg(ProjectedNegExtent));
+
+	return static_cast<U8>(HasVisiblePart) | (static_cast<U8>(HasInvisiblePart) << 1);
 }
 //---------------------------------------------------------------------
 
@@ -530,33 +535,11 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 	const float NegWorldExtentAlongLookAxis = acl::vector_dot3(acl::vector_abs(LookAxis), NegWorldExtent4);
 
 	// Process the root outside the loop to simplify conditions inside
-	// Test AABB vs frustum planes intersection for positive halfspace treated as 'inside'
-	{
-		//!!!TODO: store world bounds in ACL/RTM vector too, as for explicit nodes? Working with _WorldCenter will be better in different places!
-		//std::tie(NodeVisibility[0], NodeVisibility[1]) =
-		//	ClipCube(_WorldBounds, ProjectedNegWorldExtent, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NegWorldExtentAlongLookAxis, NearPlane, FarPlane);
-
-		// Distance of box center from plane (s): (Cx * Nx) + (Cy * Ny) + (Cz * Nz) - d, where "- d" is "+ w"
-		auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(_WorldBounds), LRBT_Nx, LRBT_w);
-		CenterDistance = acl::vector_mul_add(acl::vector_mix_yyyy(_WorldBounds), LRBT_Ny, CenterDistance);
-		CenterDistance = acl::vector_mul_add(acl::vector_mix_zzzz(_WorldBounds), LRBT_Nz, CenterDistance);
-
-		// Check intersection with LRTB planes
-		bool HasVisiblePart = acl::vector_all_greater_equal(CenterDistance, ProjectedNegWorldExtent); //!!!need strictly greater (RTM?)!
-		bool HasInvisiblePart = false;
-		if (HasVisiblePart)
-		{
-			// If inside LRTB, check intersection with NF planes
-			const float CenterAlongLookAxis = acl::vector_dot3(LookAxis, _WorldBounds);
-			const float ClosestPoint = CenterAlongLookAxis + NegWorldExtentAlongLookAxis;
-			const float FarthestPoint = CenterAlongLookAxis - NegWorldExtentAlongLookAxis;
-			HasVisiblePart = (FarthestPoint > NearPlane && ClosestPoint < FarPlane);
-			HasInvisiblePart = !HasVisiblePart || (FarthestPoint > FarPlane || ClosestPoint < NearPlane);
-		}
-
-		NodeVisibility[0] = HasVisiblePart;
-		NodeVisibility[1] = HasInvisiblePart || acl::vector_any_less_than(CenterDistance, acl::vector_neg(ProjectedNegWorldExtent));
-	}
+	// FIXME: improve writing, clip mask already has both bits for NodeVisibility element
+	const auto _WorldBounds = acl::vector_set(_WorldCenter.x, _WorldCenter.y, _WorldCenter.z, 1.f);
+	const auto ClipRoot = ClipCube(_WorldBounds, ProjectedNegWorldExtent, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NegWorldExtentAlongLookAxis, NearPlane, FarPlane);
+	NodeVisibility[0] = ClipRoot & 0x01;
+	NodeVisibility[1] = ClipRoot & 0x02;
 
 	// Skip the root as it is already processed
 	for (auto ItNode = ++_TreeNodes.cbegin(); ItNode != _TreeNodes.cend(); ++ItNode)
@@ -575,33 +558,10 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 		else
 		{
 			// If the parent is partially visible, its children must be tested
-			//std::tie(NodeVisibility[ItNode.get_index() * 2], NodeVisibility[ItNode.get_index() * 2 + 1]) =
-			//	ClipCube(ItNode->Bounds, ProjectedNegWorldExtent, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NegWorldExtentAlongLookAxis, NearPlane, FarPlane);
-
-			// Distance of box center from plane (s): (Cx * Nx) + (Cy * Ny) + (Cz * Nz) - d, where "- d" is "+ w"
-			auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(ItNode->Bounds), LRBT_Nx, LRBT_w);
-			CenterDistance = acl::vector_mul_add(acl::vector_mix_yyyy(ItNode->Bounds), LRBT_Ny, CenterDistance);
-			CenterDistance = acl::vector_mul_add(acl::vector_mix_zzzz(ItNode->Bounds), LRBT_Nz, CenterDistance);
-
-			// Projection radius of the most outside vertex (-r)
-			const auto ProjectedNegExtent = acl::vector_mul(ProjectedNegWorldExtent, acl::vector_mix_wwww(ItNode->Bounds));
-
-			// Check intersection with LRTB planes
-			bool HasVisiblePart = acl::vector_all_greater_equal(CenterDistance, ProjectedNegExtent); //!!!need strictly greater (RTM?)!
-			bool HasInvisiblePart = false;
-			if (HasVisiblePart)
-			{
-				// If inside LRTB, check intersection with NF planes
-				const float CenterAlongLookAxis = acl::vector_dot3(LookAxis, ItNode->Bounds);
-				const float NegExtentAlongLookAxis = NegWorldExtentAlongLookAxis * acl::vector_get_w(ItNode->Bounds);
-				const float ClosestPoint = CenterAlongLookAxis + NegExtentAlongLookAxis;
-				const float FarthestPoint = CenterAlongLookAxis - NegExtentAlongLookAxis;
-				HasVisiblePart = (FarthestPoint > NearPlane && ClosestPoint < FarPlane);
-				HasInvisiblePart = !HasVisiblePart || (FarthestPoint > FarPlane || ClosestPoint < NearPlane);
-			}
-
-			NodeVisibility[ItNode.get_index() * 2] = HasVisiblePart;
-			NodeVisibility[ItNode.get_index() * 2 + 1] = HasInvisiblePart || acl::vector_any_less_than(CenterDistance, acl::vector_neg(ProjectedNegExtent));
+			// FIXME: improve writing, clip mask already has both bits for NodeVisibility element
+			const auto ClipNode = ClipCube(ItNode->Bounds, ProjectedNegWorldExtent, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NegWorldExtentAlongLookAxis, NearPlane, FarPlane);
+			NodeVisibility[ItNode.get_index() * 2] = ClipNode & 0x01;
+			NodeVisibility[ItNode.get_index() * 2 + 1] = ClipNode & 0x02;
 		}
 	}
 }

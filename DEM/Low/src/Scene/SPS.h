@@ -114,7 +114,7 @@ protected:
 	//Visibility flag inside render cache node or in a separate array in a CView? But still not here!
 	//???!!!store object's AABB in center/half-extents form even outside here?! would save calculations, and in a frustum test too!
 	std::vector<CSPSRecord> _Records;
-	acl::Vector4_32 _WorldBounds; // Cx, Cy, Cz, Ecoeff = 1.f
+	vector3 _WorldCenter; // TODO: requires allocation alignment! acl::Vector4_32 _WorldBounds; // Cx, Cy, Cz, Ecoeff = 1.f
 	float _WorldExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic
 	U8 _MaxDepth = 0;
 
