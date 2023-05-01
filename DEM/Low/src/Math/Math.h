@@ -366,39 +366,6 @@ DEM_FORCE_INLINE constexpr T PrevPow2(T x) noexcept
 }
 //---------------------------------------------------------------------
 
-/*
-size_t Octree::GetNodeTreeDepth(const OctreeNode *node)
-{
-	assert(node->LocCode); // at least flag bit must be set
-	// for (uint32_t lc=node->LocCode, depth=0; lc!=1; lc>>=3, depth++);
-	// return depth;
-
-#if defined(__GNUC__)
-	return (31-__builtin_clz(node->LocCode))/3; __builtin_clzl, __builtin_clzll
-#elif defined(_MSC_VER)
-	long msb;
-	_BitScanReverse(&msb, node->LocCode);
-	return msb/3;
-#endif
-}
-
-static FORCEINLINE uint64 CountLeadingZeros64(uint64 Value)
-{
-	if ( ! _BitScanReverse64(&BitIndex, Value) ) BitIndex = -1;
-	return 63 - BitIndex;
-}
-static FORCEINLINE uint32 CountLeadingZeros(uint32 Value)
-{
-	_BitScanReverse64(&BitIndex, uint64(Value)*2 + 1);
-	return 32 - BitIndex;
-}
-static FORCEINLINE uint32 CountLeadingZeros(uint32 Value)
-{
-	if ( ! _BitScanReverse(&BitIndex, Value) ) BitIndex = -1;
-	return 31 - BitIndex;
-}
-*/
-
 template <typename T>
 DEM_FORCE_INLINE constexpr int CountLeadingZeros(T x) noexcept
 {

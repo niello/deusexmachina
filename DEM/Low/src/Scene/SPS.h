@@ -3,6 +3,7 @@
 #include <Data/Array.h>
 #include <Data/SparseArray2.hpp>
 #include <System/Allocators/PoolAllocator.h>
+#include <acl/math/math_types.h>
 
 // Spatial partitioning structure for accelerated spatial queries on a scene
 // CSPS       - spatial partitioning structure, that stores objects spatially arranged
@@ -68,9 +69,10 @@ typedef CSPSQuadTree::CNode CSPSNode;
 
 struct CSpatialTreeNode
 {
-	U32 MortonCode;
-	U32 ParentIndex;
-	U32 SubtreeObjectCount;
+	acl::Vector4_32 Bounds; // Cx, Cy, Cz, Ecoeff for an octree
+	U32             MortonCode;
+	U32             ParentIndex;
+	U32             SubtreeObjectCount;
 };
 
 constexpr auto NO_NODE = Data::CSparseArray2<CSpatialTreeNode, U32>::INVALID_INDEX;
@@ -112,7 +114,7 @@ protected:
 	//Visibility flag inside render cache node or in a separate array in a CView? But still not here!
 	//???!!!store object's AABB in center/half-extents form even outside here?! would save calculations, and in a frustum test too!
 	std::vector<CSPSRecord> _Records;
-	vector3 _WorldCenter;
+	acl::Vector4_32 _WorldBounds; // Cx, Cy, Cz, Ecoeff = 1.f
 	float _WorldExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic
 	U8 _MaxDepth = 0;
 
