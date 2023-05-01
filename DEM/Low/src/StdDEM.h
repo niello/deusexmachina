@@ -22,9 +22,13 @@ template<typename T, size_t N>
 constexpr size_t sizeof_array(const T(&)[N]) { return N; }
 
 #if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64)
-#define DEM_X64 (1)
+#define DEM_64 (1)
 #else
-#define DEM_X86 (1)
+#define DEM_32 (1)
+#endif
+
+#if defined(__BMI2__) || defined(__AVX2__)
+#define DEM_BMI2 (1)
 #endif
 
 #if defined(_MSC_VER) // __FUNCTION__ ## "()"

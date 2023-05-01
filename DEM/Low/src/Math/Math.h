@@ -6,9 +6,13 @@
 #if defined(_MSC_VER)
 #include <intrin.h>
 #pragma intrinsic(_BitScanReverse)
-#if DEM_X64
+#if DEM_64
 #pragma intrinsic(_BitScanReverse64)
 #endif
+#endif
+
+#if DEM_BMI2
+#include <immintrin.h>
 #endif
 
 // Declarations and utility functions
@@ -382,7 +386,7 @@ DEM_FORCE_INLINE constexpr int CountLeadingZeros(T x) noexcept
 		return __builtin_clz(x);
 #elif defined(_MSC_VER)
 	unsigned long Bit;
-#if DEM_X64
+#if DEM_64
 	if constexpr (sizeof(T) == 8)
 	{
 		if (!_BitScanReverse64(&Bit, x)) Bit = -1;
@@ -441,23 +445,112 @@ DEM_FORCE_INLINE constexpr int BitWidth(T x) noexcept
 DEM_FORCE_INLINE U32 PartBits1By1(U16 Value) noexcept
 {
 	U32 x = static_cast<U32>(Value);
+#if DEM_BMI2
+	return _pdep_u32(x, 0x55555555);
+#else
 	x = (x ^ (x << 8)) & 0x00ff00ff;
 	x = (x ^ (x << 4)) & 0x0f0f0f0f;
 	x = (x ^ (x << 2)) & 0x33333333;
 	x = (x ^ (x << 1)) & 0x55555555;
 	return x;
+#endif
 }
 //---------------------------------------------------------------------
 
 DEM_FORCE_INLINE U64 PartBits1By1(U32 Value) noexcept
 {
 	U64 x = static_cast<U64>(Value);
+#if DEM_BMI2 && DEM_64
+	return _pdep_u64(x, 0x5555555555555555);
+#else
 	x = (x ^ (x << 16)) & 0x0000ffff0000ffff;
 	x = (x ^ (x << 8)) & 0x00ff00ff00ff00ff;
 	x = (x ^ (x << 4)) & 0x0f0f0f0f0f0f0f0f;
 	x = (x ^ (x << 2)) & 0x3333333333333333;
 	x = (x ^ (x << 1)) & 0x5555555555555555;
 	return x;
+#endif
+}
+//---------------------------------------------------------------------
+
+// NB: max 10 bits allowed for a Value
+DEM_FORCE_INLINE U32 PartBits1By2(U16 Value) noexcept
+{
+	U32 x = static_cast<U32>(Value);
+	//x &= 0x000003ff; - explicitly clamp to 10 bits
+#if DEM_BMI2
+	return _pdep_u32(x, 0x09249249);
+#else
+	x = (x ^ (x << 16)) & 0x30000ff;
+	x = (x ^ (x << 8)) & 0x0300f00f;
+	x = (x ^ (x << 4)) & 0x030c30c3;
+	x = (x ^ (x << 2)) & 0x09249249;
+	return x;
+#endif
+}
+//---------------------------------------------------------------------
+
+// NB: max 21 bit allowed for a Value
+DEM_FORCE_INLINE U64 PartBits1By2(U32 Value) noexcept
+{
+	U64 x = static_cast<U64>(Value);
+	//x &= 0x1fffff; - explicitly clamp to 21 bits
+#if DEM_BMI2 && DEM_64
+	return _pdep_u64(x, 0x9249249249249249);
+#else
+	x = (x ^ (x << 32)) & 0x1f00000000ffff;
+	x = (x ^ (x << 16)) & 0x1f0000ff0000ff;
+	x = (x ^ (x << 8)) & 0x100f00f00f00f00f;
+	x = (x ^ (x << 4)) & 0x10c30c30c30c30c3;
+	x = (x ^ (x << 2)) & 0x1249249249249249;
+	return x;
+#endif
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE U32 MortonCode2(U16 x, U16 y) noexcept
+{
+#if DEM_BMI2
+	return _pdep_u32(x, 0x55555555) | _pdep_u32(y, 0xaaaaaaaa);
+#elif DEM_64
+	const U32 Mixed = (static_cast<U32>(y) << 16) | x;
+	const U64 MixedParted = Math::PartBits1By1(Mixed);
+	return static_cast<U32>((MixedParted >> 31) | (MixedParted & 0x0ffffffff));
+#else
+	return Math::PartBits1By1(x) | (Math::PartBits1By1(y) << 1);
+#endif
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE U64 MortonCode2(U32 x, U32 y) noexcept
+{
+#if DEM_BMI2 && DEM_64
+	return _pdep_u64(x, 0x5555555555555555) | _pdep_u64(y, 0xaaaaaaaaaaaaaaaa);
+#else
+	return Math::PartBits1By1(x) | (Math::PartBits1By1(y) << 1);
+#endif
+}
+//---------------------------------------------------------------------
+
+// NB: max 10 bits allowed per component
+DEM_FORCE_INLINE U32 MortonCode3_10bit(U16 x, U16 y, U16 z) noexcept
+{
+#if DEM_BMI2
+	return _pdep_u32(x, 0x09249249) | _pdep_u32(y, 0x12492492) | _pdep_u32(z, 0x24924924);
+#else
+	return Math::PartBits1By2(x) | (Math::PartBits1By2(y) << 1) | (Math::PartBits1By2(z) << 2);
+#endif
+}
+//---------------------------------------------------------------------
+
+// NB: max 21 bits allowed per component
+DEM_FORCE_INLINE U64 MortonCode3_21bit(U32 x, U32 y, U32 z) noexcept
+{
+#if DEM_BMI2 && DEM_64
+	return _pdep_u64(x, 0x9249249249249249) | _pdep_u64(y, 0x2492492492492492) | _pdep_u64(z, 0x4924924924924924);
+#else
+	return Math::PartBits1By2(x) | (Math::PartBits1By2(y) << 1) | (Math::PartBits1By2(z) << 2);
+#endif
 }
 //---------------------------------------------------------------------
 

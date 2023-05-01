@@ -65,34 +65,6 @@ CSPSCell::CIterator CSPSCell::Find(CSPSRecord* Object) const
 ///////// NEW RENDER /////////
 // FIXME: move to math!!!
 
-DEM_FORCE_INLINE U32 MortonCode2(U16 x, U16 y) noexcept
-{
-#if DEM_X64
-	const U32 Mixed = (static_cast<U32>(y) << 16) | x;
-	const U64 MixedParted = Math::PartBits1By1(Mixed);
-	return static_cast<U32>((MixedParted >> 31) | (MixedParted & 0x0ffffffff));
-#else
-	return Math::PartBits1By1(x) | (Math::PartBits1By1(y) << 1);
-#endif
-}
-//---------------------------------------------------------------------
-
-//DEM_FORCE_INLINE U32 MortonCode3(U16 x, U16 y, U16 z) noexcept
-//{
-//#if DEM_X64
-// ...
-//#else
-//	return Math::PartBits1By2(x) | (Math::PartBits1By2(y) << 1) | (Math::PartBits1By2(z) << 2);
-//#endif
-//}
-////---------------------------------------------------------------------
-
-DEM_FORCE_INLINE U64 MortonCode2(U32 x, U32 y) noexcept
-{
-	return Math::PartBits1By1(x) | (Math::PartBits1By1(y) << 1);
-}
-//---------------------------------------------------------------------
-
 constexpr size_t TREE_DIMENSIONS = 2;
 
 // Finds the Least Common Ancestor of two nodes represented by Morton codes
@@ -203,13 +175,15 @@ U32 CSPS::CalculateQuadtreeMortonCode(float CenterX, float CenterZ, float HalfSi
 	const float CellCoeff = static_cast<float>(NodeSizeCoeff) / (_WorldExtent + _WorldExtent);
 
 	// TODO: use SIMD. Can almost unify quadtree and octree with that.
-	//const auto x = static_cast<U16>((CenterX - acl::vector_get_x(_WorldBounds) + _WorldExtent) * CellCoeff);
-	//const auto z = static_cast<U16>((CenterZ - acl::vector_get_z(_WorldBounds) + _WorldExtent) * CellCoeff);
 	const auto x = static_cast<U16>((CenterX - _WorldCenter.x + _WorldExtent) * CellCoeff);
+	const auto y = -100500.f;// FIXME: static_cast<U16>((CenterY - _WorldCenter.y + _WorldExtent) * CellCoeff);
 	const auto z = static_cast<U16>((CenterZ - _WorldCenter.z + _WorldExtent) * CellCoeff);
 
-	// NodeSizeCoeff bit is offset by Depth bits. Its square is offset 2x bits, making a room for 2D Morton code.
-	return (NodeSizeCoeff * NodeSizeCoeff) | MortonCode2(x, z);
+	// NodeSizeCoeff bit is offset by Depth bits. Its pow(N) is a bit offset to N*Depth, making a room for N-dimensional Morton code.
+	//return (NodeSizeCoeff * NodeSizeCoeff) | Math::MortonCode2(x, z);
+	return (NodeSizeCoeff * NodeSizeCoeff * NodeSizeCoeff) | Math::MortonCode3_10bit(x, y, z);
+
+	//!!!FIXME: need U64 and 21bit based codes! Only for DEM_64? Limit tree depth to 10 on 32-bit DEM?
 }
 //---------------------------------------------------------------------
 
