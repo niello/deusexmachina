@@ -148,6 +148,7 @@ void CSPS::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 	_MaxDepth = std::min(static_cast<U8>(12), TREE_MAX_DEPTH); // TODO: pass as an arg, assert and clamp if requested more than possible.
 	_WorldCenter = Center; //_WorldBounds = acl::vector_set(Center.x, Center.y, Center.z, 1.f);
 	_WorldExtent = Size * 0.5f;
+	_InvWorldSize = 1.f / Size;
 
 	// Create a root node. This simplifies object insertion logic.
 	// Set object count to fake 1 to keep the root alive forever.
@@ -159,23 +160,35 @@ void CSPS::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 }
 //---------------------------------------------------------------------
 
-TMorton CSPS::CalculateQuadtreeMortonCode(float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const noexcept
+TMorton CSPS::CalculateQuadtreeMortonCode(const CAABB& AABB) const noexcept
 {
+	// FIXME: store world bounds in a SIMD vector!
+	const auto WorldCenter = acl::vector_set(_WorldCenter.x, _WorldCenter.y, _WorldCenter.z);
+	const auto WorldExtent = acl::vector_set(_WorldExtent);
+
+	// FIXME: can initially store AABB as SIMD center & extent?
+	const auto HalfMin = acl::vector_mul(acl::vector_set(AABB.Min.x, AABB.Min.y, AABB.Min.z), 0.5f);
+	const auto HalfMax = acl::vector_mul(acl::vector_set(AABB.Max.x, AABB.Max.y, AABB.Max.z), 0.5f);
+	const auto Center = acl::vector_add(HalfMax, HalfMin);
+	const auto Extent = acl::vector_sub(HalfMax, HalfMin);
+
 	// Our level is where the non-loose node size is not less than our size in any of dimensions.
 	// Too small and degenerate AABBs sink to the deepest possible level to save us from division errors.
-	U32 NodeSizeCoeff = static_cast<U32>(1 << (_MaxDepth - 1));
-	if (HalfSizeX > 0.0001f && HalfSizeZ > 0.0001f)
+	TMorton NodeSizeCoeff = static_cast<TMorton>(1 << (_MaxDepth - 1));
+	if (acl::vector_all_greater_equal3(Extent, acl::vector_set(0.0001f)))
 	{
-		const auto HighestSharePow2 = Math::NextPow2(static_cast<U32>(_WorldExtent / std::max(HalfSizeX, HalfSizeZ)));
+		// TODO: can make better with SIMD?
+		const float MaxDim = std::max({ acl::vector_get_x(Extent), acl::vector_get_y(Extent), acl::vector_get_z(Extent) });
+		const TMorton HighestSharePow2 = Math::NextPow2(static_cast<TMorton>(_WorldExtent / MaxDim));
 		if (NodeSizeCoeff > HighestSharePow2) NodeSizeCoeff = HighestSharePow2;
 	}
 
-	const float CellCoeff = static_cast<float>(NodeSizeCoeff) / (_WorldExtent + _WorldExtent);
+	const float CellCoeff = static_cast<float>(NodeSizeCoeff) * _InvWorldSize;
+	const auto Cell = acl::vector_mul(acl::vector_add(acl::vector_sub(Center, WorldCenter), WorldExtent), CellCoeff); // (C - Wc + We) * Coeff
 
-	// TODO: use SIMD. Can almost unify quadtree and octree with that.
-	const auto x = static_cast<U16>((CenterX - _WorldCenter.x + _WorldExtent) * CellCoeff);
-	const auto y = static_cast<U16>(666);// FIXME: static_cast<U16>((CenterY - _WorldCenter.y + _WorldExtent) * CellCoeff);
-	const auto z = static_cast<U16>((CenterZ - _WorldCenter.z + _WorldExtent) * CellCoeff);
+	const auto x = static_cast<TCellDim>(acl::vector_get_x(Cell));
+	const auto y = static_cast<TCellDim>(acl::vector_get_y(Cell));
+	const auto z = static_cast<TCellDim>(acl::vector_get_z(Cell));
 
 	// NodeSizeCoeff bit is offset by Depth bits. Its pow(N) is a bit offset to N*Depth, making a room for N-dimensional Morton code.
 	if constexpr (TREE_DIMENSIONS == 2)
@@ -189,22 +202,34 @@ TMorton CSPS::CalculateQuadtreeMortonCode(float CenterX, float CenterZ, float Ha
 
 U32 CSPS::CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex)
 {
+	// FIXME: store world bounds in a SIMD vector!
+	const auto WorldCenter = acl::vector_set(_WorldCenter.x, _WorldCenter.y, _WorldCenter.z);
+
+	// Unpack Morton code back into cell coords and depth
+	const auto Bits = Math::BitWidth(MortonCode);
+	const auto MortonCodeNoSentinel = MortonCode ^ (1 << (Bits - 1));
+	TCellDim x = 0, y = 0, z = 0;
+	if constexpr (TREE_DIMENSIONS == 2)
+		Math::MortonDecode2(MortonCodeNoSentinel, x, z);
+	else
+		Math::MortonDecode3(MortonCodeNoSentinel, x, y, z);
+
+	// Calculate node bounds - center and extent
+	const float ExtentCoeff = 1.f / static_cast<float>(1 << (Bits / TREE_DIMENSIONS)); // 1 / 2^Depth
+	const auto Cell = acl::vector_set(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
+	auto Center = acl::vector_mul_add(Cell, 2.f, acl::vector_set(1.f)); // A = 2 * xyz + 1
+	Center = acl::vector_mul_add(Center, ExtentCoeff, acl::vector_set(-1.f)); // B = A * Ecoeff - 1.f
+	Center = acl::vector_mul_add(Center, _WorldExtent, WorldCenter); // Center = B * We + Wc
+
+	// Set extent coeff to W
+	Center = acl::vector_mix<acl::VectorMix::X, acl::VectorMix::Y, acl::VectorMix::Z, acl::VectorMix::A>(Center, acl::vector_set(ExtentCoeff));
+
+	// Create a node
 	auto ItNew = _TreeNodes.emplace_at_free(FreeIndex);
 	ItNew->MortonCode = MortonCode;
 	ItNew->ParentIndex = ParentIndex;
 	ItNew->SubtreeObjectCount = 1;
-
-	// calc bounds:
-	// Ecoeff = 1.f / static_cast<float>(1 << Depth);
-	// C = (2 * xyz + 1) * We * Ecoeff + Wc - We
-	// improve with fma:
-	// C = (2 * xyz + 1) * We * Ecoeff - We + Wc
-	// ->
-	// C = ((2 * xyz + 1) * Ecoeff - 1.f) * We + Wc
-	//???what is faster, doing 2 * xyz + 1 as 3 scalar ops, xyz << 1 + 1 as 3 scalar ops or 2.f * xyz + 1.f as a SIMD fma?
-
-	//???when creating a parent-child chain, instead of full calc could calc parent bounds from child?
-	//!!!bounds must be loose!!!
+	ItNew->Bounds = Center;
 
 	if (_MappingPool.empty())
 	{
@@ -295,7 +320,7 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 
 	///////// NEW RENDER /////////
 	//!!!TODO: skip insertion if oversized or if outside root node ???store oversized objects in the root or at 0?
-	const auto NodeMortonCode = CalculateQuadtreeMortonCode(CenterX, CenterZ, HalfSizeX, HalfSizeZ);
+	const auto NodeMortonCode = CalculateQuadtreeMortonCode(GlobalBox);
 	pRecord->NodeIndex = AddSingleObject(NodeMortonCode, 0);
 	pRecord->NodeMortonCode = NodeMortonCode;
 	//???TODO: remember in pRecord the number of the last frame where the node changed?
@@ -313,7 +338,7 @@ void CSPS::UpdateRecord(CSPSRecord* pRecord)
 	QuadTree.UpdateHandle(CSPSCell::CIterator(pRecord), CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);
 
 	///////// NEW RENDER /////////
-	const auto NodeMortonCode = CalculateQuadtreeMortonCode(CenterX, CenterZ, HalfSizeX, HalfSizeZ);
+	const auto NodeMortonCode = CalculateQuadtreeMortonCode(pRecord->GlobalBox);
 
 	if (pRecord->NodeMortonCode == NodeMortonCode) return;
 
@@ -430,6 +455,8 @@ DEM_FORCE_INLINE EClipStatus /*ACL_SIMD_CALL*/ ClipAABB4Planes(acl::Vector4_32Ar
 //---------------------------------------------------------------------
 
 // Test AABB vs frustum planes intersection for positive halfspace treated as 'inside'
+constexpr U8 INSIDE = 0x01;
+constexpr U8 OUTSIDE = 0x02;
 static DEM_FORCE_INLINE U8 ClipCube(acl::Vector4_32Arg0 Bounds, acl::Vector4_32Arg1 ProjectedNegWorldExtent,
 	acl::Vector4_32Arg2 LRBT_Nx, acl::Vector4_32Arg3 LRBT_Ny, acl::Vector4_32Arg4 LRBT_Nz, acl::Vector4_32Arg5 LRBT_w,
 	acl::Vector4_32ArgN LookAxis, float NegWorldExtentAlongLookAxis, float NearPlane, float FarPlane)
@@ -468,9 +495,7 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 {
 	n_assert2_dbg(!_TreeNodes.empty(), "CSPS::TestSpatialTreeVisibility() should not be called before CSPS::Init()!");
 
-	//???!!!TODO: don't recalculate cached values from previous frames?! recalc only nodes with 'not checked' state?
-	//???use 00 for invisibles and write only visibility because invisibles are already memset?
-	//!!!need to compare quadtree with octree regarding computations. Quadtree nodes are not cubes even when the world extent is a cube! Octree nodes are.
+	//const size_t CachedCount = NodeVisibility.size() / 2;
 
 	// Cell can have 4 frustum culling states, for which 2 bits are enough. And we use clever meanings for
 	// individual bits inspired by UE, 'is inside' and 'is outside', so that we have the next states:
@@ -495,11 +520,10 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 	ProjectedNegWorldExtent = acl::vector_mul_add(NegWorldExtent4, acl::vector_abs(LRBT_Ny), ProjectedNegWorldExtent);
 	ProjectedNegWorldExtent = acl::vector_mul_add(NegWorldExtent4, acl::vector_abs(LRBT_Nz), ProjectedNegWorldExtent);
 
-	// Near and far planes are parallel, which enables us to save some work. Planes are +d (-w) along the axis,
-	// so NearPlane is negated once and FarPlane is negated twice (once to make it -w, once to invert the axis).
+	// Near and far planes are parallel, which enables us to save some work. Near & far planes are +d (-w) along the look
+	// axis, so NearPlane is negated once and FarPlane is negated twice (once to make it -w, once to invert the axis).
 	// We use D3D style projection matrix, near Z limit is 0 instead of OpenGL's -W.
-	// TODO: check if it is really faster than making NF_Nx etc. At leat less registers used? Also could use AVX to handle all 6 planes at once.
-	//       Maybe normalization and per axis calculations require more effort in the end than it worth!
+	// TODO: check if it is really faster than making NF_Nx etc. At least less registers used? Also could use AVX to handle all 6 planes at once.
 	const auto NearAxis = acl::vector_set(ViewProj.m[0][2], ViewProj.m[1][2], ViewProj.m[2][2], 0.f);
 	const auto FarAxis = acl::vector_sub(acl::vector_set(ViewProj.m[0][3], ViewProj.m[1][3], ViewProj.m[2][3], 0.f), NearAxis);
 	const float InvNearLen = acl::sqrt_reciprocal(acl::vector_length_squared3(NearAxis));
@@ -510,16 +534,21 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 
 	// Process the root outside the loop to simplify conditions inside
 	// FIXME: improve writing, clip mask already has both bits for NodeVisibility element
-	const auto _WorldBounds = acl::vector_set(_WorldCenter.x, _WorldCenter.y, _WorldCenter.z, 1.f);
-	const auto ClipRoot = ClipCube(_WorldBounds, ProjectedNegWorldExtent, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NegWorldExtentAlongLookAxis, NearPlane, FarPlane);
-	NodeVisibility[0] = ClipRoot & 0x01;
-	NodeVisibility[1] = ClipRoot & 0x02;
+	const auto WorldBounds = acl::vector_set(_WorldCenter.x, _WorldCenter.y, _WorldCenter.z, 1.f);
+	const auto ClipRoot = ClipCube(WorldBounds, ProjectedNegWorldExtent, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NegWorldExtentAlongLookAxis, NearPlane, FarPlane);
+	NodeVisibility[0] = ClipRoot & INSIDE;
+	NodeVisibility[1] = ClipRoot & OUTSIDE;
 
 	// Skip the root as it is already processed
 	for (auto ItNode = ++_TreeNodes.cbegin(); ItNode != _TreeNodes.cend(); ++ItNode)
 	{
 		//!!!DBG TMP! CSparseArray2 guarantees the order, but we check twice.
 		n_assert_dbg(ItNode->ParentIndex < ItNode.get_index());
+
+		// FIXME: what if node is removed and another node is added at the same index. Cache needs to be invalidated. Skip caching for now.
+		//// Don't update nodes cached from previous frames
+		//if (ItNode.get_index() < CachedCount && (NodeVisibility[ItNode.get_index() * 2] || NodeVisibility[ItNode.get_index() * 2 + 1]))
+		//	continue;
 
 		const bool IsParentInside = NodeVisibility[ItNode->ParentIndex * 2];
 		const bool IsParentOutside = NodeVisibility[ItNode->ParentIndex * 2 + 1];
@@ -535,8 +564,8 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 			// If the parent is partially visible, its children must be tested
 			// FIXME: improve writing, clip mask already has both bits for NodeVisibility element
 			const auto ClipNode = ClipCube(ItNode->Bounds, ProjectedNegWorldExtent, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NegWorldExtentAlongLookAxis, NearPlane, FarPlane);
-			NodeVisibility[ItNode.get_index() * 2] = ClipNode & 0x01;
-			NodeVisibility[ItNode.get_index() * 2 + 1] = ClipNode & 0x02;
+			NodeVisibility[ItNode.get_index() * 2] = ClipNode & INSIDE;
+			NodeVisibility[ItNode.get_index() * 2 + 1] = ClipNode & OUTSIDE;
 		}
 	}
 }

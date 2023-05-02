@@ -70,8 +70,10 @@ typedef CSPSQuadTree::CNode CSPSNode;
 // TODO: make template class TTree<DIMENSIONS, CODE_TYPE> and move these constants and quadtree/octree utility methods into it?
 #if DEM_64
 using TMorton = U64;
+using TCellDim = U32; // Max 31 bits for quadtree, 21 bits for octree
 #else
 using TMorton = U32;
+using TCellDim = U16; // Max 15 bits for quadtree, 10 bits for octree
 #endif
 static inline constexpr size_t TREE_DIMENSIONS = 3;
 static inline constexpr U8 TREE_MAX_DEPTH = (sizeof(TMorton) * 8 - 1) / TREE_DIMENSIONS;
@@ -125,9 +127,10 @@ protected:
 	std::vector<CSPSRecord> _Records;
 	vector3 _WorldCenter; // TODO: requires allocation alignment! acl::Vector4_32 _WorldBounds; // Cx, Cy, Cz, Ecoeff = 1.f
 	float _WorldExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic
+	float _InvWorldSize = 0.f; // Cached 1 / (2 * _WorldExtent)
 	U8 _MaxDepth = 0;
 
-	TMorton CalculateQuadtreeMortonCode(float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const noexcept;
+	TMorton CalculateQuadtreeMortonCode(const CAABB& AABB) const noexcept;
 	U32 CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex);
 	U32 AddSingleObject(TMorton NodeMortonCode, TMorton StopMortonCode);
 	void RemoveSingleObject(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode);

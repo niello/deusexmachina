@@ -457,6 +457,21 @@ DEM_FORCE_INLINE U32 PartBits1By1(U16 Value) noexcept
 }
 //---------------------------------------------------------------------
 
+DEM_FORCE_INLINE U16 CompactBits1By1(U32 x) noexcept
+{
+#if DEM_BMI2
+	return _pext_u32(x, 0x55555555);
+#else
+	x &= 0x55555555;
+	x = (x ^ (x >> 1)) & 0x33333333;
+	x = (x ^ (x >> 2)) & 0x0f0f0f0f;
+	x = (x ^ (x >> 4)) & 0x00ff00ff;
+	x = (x ^ (x >> 8)) & 0x0000ffff;
+	return static_cast<U16>(x);
+#endif
+}
+//---------------------------------------------------------------------
+
 DEM_FORCE_INLINE U64 PartBits1By1(U32 Value) noexcept
 {
 	U64 x = static_cast<U64>(Value);
@@ -469,6 +484,22 @@ DEM_FORCE_INLINE U64 PartBits1By1(U32 Value) noexcept
 	x = (x ^ (x << 2)) & 0x3333333333333333;
 	x = (x ^ (x << 1)) & 0x5555555555555555;
 	return x;
+#endif
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE U32 CompactBits1By1(U64 x) noexcept
+{
+#if DEM_BMI2 && DEM_64
+	return _pext_u64(x, 0x5555555555555555);
+#else
+	x &= 0x5555555555555555;
+	x = (x ^ (x >> 1)) & 0x3333333333333333;
+	x = (x ^ (x >> 2)) & 0x0f0f0f0f0f0f0f0f;
+	x = (x ^ (x >> 4)) & 0x00ff00ff00ff00ff;
+	x = (x ^ (x >> 8)) & 0x0000ffff0000ffff;
+	x = (x ^ (x >> 16)) & 0x00000000ffffffff;
+	return static_cast<U32>(x);
 #endif
 }
 //---------------------------------------------------------------------
@@ -486,6 +517,21 @@ DEM_FORCE_INLINE U32 PartBits1By2(U16 Value) noexcept
 	x = (x ^ (x << 4)) & 0x030c30c3;
 	x = (x ^ (x << 2)) & 0x09249249;
 	return x;
+#endif
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE U16 CompactBits1By2(U32 x) noexcept
+{
+#if DEM_BMI2
+	return _pext_u32(x, 0x09249249);
+#else
+	x &= 0x09249249;
+	x = (x ^ (x >> 2)) & 0x030c30c3;
+	x = (x ^ (x >> 4)) & 0x0300f00f;
+	x = (x ^ (x >> 8)) & 0x30000ff;
+	x = (x ^ (x >> 16)) & 0x000003ff;
+	return static_cast<U16>(x);
 #endif
 }
 //---------------------------------------------------------------------
@@ -508,6 +554,22 @@ DEM_FORCE_INLINE U64 PartBits1By2(U32 Value) noexcept
 }
 //---------------------------------------------------------------------
 
+DEM_FORCE_INLINE U32 CompactBits1By2(U64 x) noexcept
+{
+#if DEM_BMI2 && DEM_64
+	return _pext_u64(x, 0x9249249249249249);
+#else
+	x &= 0x1249249249249249;
+	x = (x ^ (x >> 2)) & 0x10c30c30c30c30c3;
+	x = (x ^ (x >> 4)) & 0x100f00f00f00f00f;
+	x = (x ^ (x >> 8)) & 0x1f0000ff0000ff;
+	x = (x ^ (x >> 16)) & 0x1f00000000ffff;
+	x = (x ^ (x >> 32)) & 0x1fffff;
+	return static_cast<U32>(x);
+#endif
+}
+//---------------------------------------------------------------------
+
 DEM_FORCE_INLINE U32 MortonCode2(U16 x, U16 y) noexcept
 {
 #if DEM_BMI2
@@ -522,12 +584,40 @@ DEM_FORCE_INLINE U32 MortonCode2(U16 x, U16 y) noexcept
 }
 //---------------------------------------------------------------------
 
+DEM_FORCE_INLINE void MortonDecode2(U32 Code, U16& x, U16& y) noexcept
+{
+#if DEM_BMI2
+	x = _pext_u32(x, 0x55555555);
+	y = _pext_u32(y, 0xaaaaaaaa);
+//#elif DEM_64 //!!!TODO!
+//	const U32 Mixed = (static_cast<U32>(y) << 16) | x;
+//	const U64 MixedParted = Math::PartBits1By1(Mixed);
+//	return static_cast<U32>((MixedParted >> 31) | (MixedParted & 0x0ffffffff));
+#else
+	x = Math::CompactBits1By1(Code);
+	y = Math::CompactBits1By1(Code >> 1);
+#endif
+}
+//---------------------------------------------------------------------
+
 DEM_FORCE_INLINE U64 MortonCode2(U32 x, U32 y) noexcept
 {
 #if DEM_BMI2 && DEM_64
 	return _pdep_u64(x, 0x5555555555555555) | _pdep_u64(y, 0xaaaaaaaaaaaaaaaa);
 #else
 	return Math::PartBits1By1(x) | (Math::PartBits1By1(y) << 1);
+#endif
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE void MortonDecode2(U64 Code, U32& x, U32& y) noexcept
+{
+#if DEM_BMI2
+	x = _pext_u64(x, 0x5555555555555555);
+	y = _pext_u64(y, 0xaaaaaaaaaaaaaaaa);
+#else
+	x = Math::CompactBits1By1(Code);
+	y = Math::CompactBits1By1(Code >> 1);
 #endif
 }
 //---------------------------------------------------------------------
@@ -543,6 +633,20 @@ DEM_FORCE_INLINE U32 MortonCode3_10bit(U16 x, U16 y, U16 z) noexcept
 }
 //---------------------------------------------------------------------
 
+DEM_FORCE_INLINE void MortonDecode3(U32 Code, U16& x, U16& y, U16& z) noexcept
+{
+#if DEM_BMI2
+	x = _pext_u32(x, 0x09249249);
+	y = _pext_u32(y, 0x12492492);
+	z = _pext_u32(y, 0x24924924);
+#else
+	x = Math::CompactBits1By2(Code);
+	y = Math::CompactBits1By2(Code >> 1);
+	z = Math::CompactBits1By2(Code >> 2);
+#endif
+}
+//---------------------------------------------------------------------
+
 // NB: max 21 bits allowed per component
 DEM_FORCE_INLINE U64 MortonCode3_21bit(U32 x, U32 y, U32 z) noexcept
 {
@@ -550,6 +654,20 @@ DEM_FORCE_INLINE U64 MortonCode3_21bit(U32 x, U32 y, U32 z) noexcept
 	return _pdep_u64(x, 0x9249249249249249) | _pdep_u64(y, 0x2492492492492492) | _pdep_u64(z, 0x4924924924924924);
 #else
 	return Math::PartBits1By2(x) | (Math::PartBits1By2(y) << 1) | (Math::PartBits1By2(z) << 2);
+#endif
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE void MortonDecode3(U64 Code, U32& x, U32& y, U32& z) noexcept
+{
+#if DEM_BMI2
+	x = _pext_u64(x, 0x9249249249249249);
+	y = _pext_u64(y, 0x2492492492492492);
+	z = _pext_u64(y, 0x4924924924924924);
+#else
+	x = Math::CompactBits1By2(Code);
+	y = Math::CompactBits1By2(Code >> 1);
+	z = Math::CompactBits1By2(Code >> 2);
 #endif
 }
 //---------------------------------------------------------------------
