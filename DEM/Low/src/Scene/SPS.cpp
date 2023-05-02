@@ -65,8 +65,6 @@ CSPSCell::CIterator CSPSCell::Find(CSPSRecord* Object) const
 ///////// NEW RENDER /////////
 // FIXME: move to math!!!
 
-constexpr size_t TREE_DIMENSIONS = 2;
-
 // Finds the Least Common Ancestor of two nodes represented by Morton codes
 template<size_t DIMENSIONS, typename T>
 DEM_FORCE_INLINE T MortonLCA(T MortonCodeA, T MortonCodeB) noexcept
@@ -147,7 +145,7 @@ void CSPS::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 	QuadTree.Build(Center.x, Center.z, Size, Size, HierarchyDepth);
 
 	///////// NEW RENDER /////////
-	_MaxDepth = 12; // Required Morton bits = 2 * _MaxDepth + 1 or 3 * _MaxDepth + 1, col/row index bits = _MaxDepth
+	_MaxDepth = std::min(static_cast<U8>(12), TREE_MAX_DEPTH); // TODO: pass as an arg, assert and clamp if requested more than possible.
 	_WorldCenter = Center; //_WorldBounds = acl::vector_set(Center.x, Center.y, Center.z, 1.f);
 	_WorldExtent = Size * 0.5f;
 
@@ -161,7 +159,7 @@ void CSPS::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 }
 //---------------------------------------------------------------------
 
-U32 CSPS::CalculateQuadtreeMortonCode(float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const noexcept
+TMorton CSPS::CalculateQuadtreeMortonCode(float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const noexcept
 {
 	// Our level is where the non-loose node size is not less than our size in any of dimensions.
 	// Too small and degenerate AABBs sink to the deepest possible level to save us from division errors.
@@ -176,18 +174,20 @@ U32 CSPS::CalculateQuadtreeMortonCode(float CenterX, float CenterZ, float HalfSi
 
 	// TODO: use SIMD. Can almost unify quadtree and octree with that.
 	const auto x = static_cast<U16>((CenterX - _WorldCenter.x + _WorldExtent) * CellCoeff);
-	const auto y = -100500.f;// FIXME: static_cast<U16>((CenterY - _WorldCenter.y + _WorldExtent) * CellCoeff);
+	const auto y = static_cast<U16>(666);// FIXME: static_cast<U16>((CenterY - _WorldCenter.y + _WorldExtent) * CellCoeff);
 	const auto z = static_cast<U16>((CenterZ - _WorldCenter.z + _WorldExtent) * CellCoeff);
 
 	// NodeSizeCoeff bit is offset by Depth bits. Its pow(N) is a bit offset to N*Depth, making a room for N-dimensional Morton code.
-	//return (NodeSizeCoeff * NodeSizeCoeff) | Math::MortonCode2(x, z);
-	return (NodeSizeCoeff * NodeSizeCoeff * NodeSizeCoeff) | Math::MortonCode3_10bit(x, y, z);
-
-	//!!!FIXME: need U64 and 21bit based codes! Only for DEM_64? Limit tree depth to 10 on 32-bit DEM?
+	if constexpr (TREE_DIMENSIONS == 2)
+		return (NodeSizeCoeff * NodeSizeCoeff) | Math::MortonCode2(x, z);
+	else if constexpr (sizeof(TMorton) >= 8)
+		return (NodeSizeCoeff * NodeSizeCoeff * NodeSizeCoeff) | Math::MortonCode3_21bit(x, y, z);
+	else
+		return (NodeSizeCoeff * NodeSizeCoeff * NodeSizeCoeff) | Math::MortonCode3_10bit(x, y, z);
 }
 //---------------------------------------------------------------------
 
-U32 CSPS::CreateNode(U32 FreeIndex, U32 MortonCode, U32 ParentIndex)
+U32 CSPS::CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex)
 {
 	auto ItNew = _TreeNodes.emplace_at_free(FreeIndex);
 	ItNew->MortonCode = MortonCode;
@@ -195,7 +195,7 @@ U32 CSPS::CreateNode(U32 FreeIndex, U32 MortonCode, U32 ParentIndex)
 	ItNew->SubtreeObjectCount = 1;
 
 	// calc bounds:
-	// Ecoeff = 1 / (1 << Depth)
+	// Ecoeff = 1.f / static_cast<float>(1 << Depth);
 	// C = (2 * xyz + 1) * We * Ecoeff + Wc - We
 	// improve with fma:
 	// C = (2 * xyz + 1) * We * Ecoeff - We + Wc
@@ -223,7 +223,7 @@ U32 CSPS::CreateNode(U32 FreeIndex, U32 MortonCode, U32 ParentIndex)
 }
 //---------------------------------------------------------------------
 
-U32 CSPS::AddSingleObject(U32 NodeMortonCode, U32 StopMortonCode)
+U32 CSPS::AddSingleObject(TMorton NodeMortonCode, TMorton StopMortonCode)
 {
 	// Find the deepest existing parent. The root always exists as a fallback.
 	U32 MissingNodes = 0;
@@ -265,7 +265,7 @@ U32 CSPS::AddSingleObject(U32 NodeMortonCode, U32 StopMortonCode)
 }
 //---------------------------------------------------------------------
 
-void CSPS::RemoveSingleObject(U32 NodeIndex, U32 NodeMortonCode, U32 StopMortonCode)
+void CSPS::RemoveSingleObject(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode)
 {
 	while (NodeMortonCode != StopMortonCode)
 	{
@@ -295,7 +295,7 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 
 	///////// NEW RENDER /////////
 	//!!!TODO: skip insertion if oversized or if outside root node ???store oversized objects in the root or at 0?
-	const U32 NodeMortonCode = CalculateQuadtreeMortonCode(CenterX, CenterZ, HalfSizeX, HalfSizeZ);
+	const auto NodeMortonCode = CalculateQuadtreeMortonCode(CenterX, CenterZ, HalfSizeX, HalfSizeZ);
 	pRecord->NodeIndex = AddSingleObject(NodeMortonCode, 0);
 	pRecord->NodeMortonCode = NodeMortonCode;
 	//???TODO: remember in pRecord the number of the last frame where the node changed?
@@ -313,7 +313,7 @@ void CSPS::UpdateRecord(CSPSRecord* pRecord)
 	QuadTree.UpdateHandle(CSPSCell::CIterator(pRecord), CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);
 
 	///////// NEW RENDER /////////
-	const U32 NodeMortonCode = CalculateQuadtreeMortonCode(CenterX, CenterZ, HalfSizeX, HalfSizeZ);
+	const auto NodeMortonCode = CalculateQuadtreeMortonCode(CenterX, CenterZ, HalfSizeX, HalfSizeZ);
 
 	if (pRecord->NodeMortonCode == NodeMortonCode) return;
 
@@ -526,6 +526,7 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 		if (IsParentInside != IsParentOutside)
 		{
 			// If the parent is completely visible or completely invisible, all its children have the same state
+			// FIXME: improve writing, parent state can be read as 2 bits mask in one(?) op
 			NodeVisibility[ItNode.get_index() * 2] = IsParentInside;
 			NodeVisibility[ItNode.get_index() * 2 + 1] = IsParentOutside;
 		}

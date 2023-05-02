@@ -67,10 +67,19 @@ public:
 typedef Data::CQuadTree<CSPSRecord*, CSPSCell> CSPSQuadTree;
 typedef CSPSQuadTree::CNode CSPSNode;
 
+// TODO: make template class TTree<DIMENSIONS, CODE_TYPE> and move these constants and quadtree/octree utility methods into it?
+#if DEM_64
+using TMorton = U64;
+#else
+using TMorton = U32;
+#endif
+static inline constexpr size_t TREE_DIMENSIONS = 3;
+static inline constexpr U8 TREE_MAX_DEPTH = (sizeof(TMorton) * 8 - 1) / TREE_DIMENSIONS;
+
 struct CSpatialTreeNode
 {
 	acl::Vector4_32 Bounds; // Cx, Cy, Cz, Ecoeff for an octree
-	U32             MortonCode;
+	TMorton         MortonCode;
 	U32             ParentIndex;
 	U32             SubtreeObjectCount;
 };
@@ -90,8 +99,8 @@ struct CSPSRecord
 	//float CenterZ;
 	//float HalfExtentX;
 	//float HalfExtentZ;
-	U32 NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, then 100, 101, 110, 111 etc
-	U32 NodeIndex = NO_NODE;
+	TMorton NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, then 100, 101, 110, 111 etc
+	U32     NodeIndex = NO_NODE;
 };
 
 class CSPS //???rename to CGfxLevel? CRenderLevel etc? Not exactly SPS, but a thing one step above it.
@@ -104,7 +113,7 @@ protected:
 
 	///////// NEW RENDER /////////
 	Data::CSparseArray2<CSpatialTreeNode, U32> _TreeNodes;
-	std::unordered_map<U32, U32> _MortonToIndex; //???TODO PERF: map or unordered_map?
+	std::unordered_map<TMorton, U32> _MortonToIndex; //???TODO PERF: map or unordered_map?
 	std::vector<std::unordered_map<U32, U32>::node_type> _MappingPool;
 
 	//!!!TODO: separate by type - renderables, lights, ambient etc!
@@ -118,10 +127,10 @@ protected:
 	float _WorldExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic
 	U8 _MaxDepth = 0;
 
-	U32 CalculateQuadtreeMortonCode(float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const noexcept;
-	U32 CreateNode(U32 FreeIndex, U32 MortonCode, U32 ParentIndex);
-	U32 AddSingleObject(U32 NodeMortonCode, U32 StopMortonCode);
-	void RemoveSingleObject(U32 NodeIndex, U32 NodeMortonCode, U32 StopMortonCode);
+	TMorton CalculateQuadtreeMortonCode(float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ) const noexcept;
+	U32 CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex);
+	U32 AddSingleObject(TMorton NodeMortonCode, TMorton StopMortonCode);
+	void RemoveSingleObject(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode);
 	//////////////////////////////
 
 public:
