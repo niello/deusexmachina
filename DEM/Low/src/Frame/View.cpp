@@ -320,14 +320,15 @@ bool CView::Render()
 	{
 		//???view - can compare tfm version, but how to check projection change? compare final matrices? or source values?
 		//!!!to compare projection without view, can check only certain matrix values, because most of them are 0.f for any projection, 5 floats are not.
-		// const bool ViewProjChanged = ...;
+		const bool ViewProjChanged = true; // TODO: IMPLEMENT!!!
 
 		//!!!clear cache only if ViewProjChanged! but also need to invalidate cache of changed nodes, when one node takes index of another!
 		//???re-sort the node array in SPS at that moment? or notify all views to invalidate the whole cache? or can notify for only changed nodes?
 		_pSPS->TestSpatialTreeVisibility(pCamera->GetViewProjMatrix(), _TreeNodeVisibility);
 
 		// Synchronize scene objects with their renderable mirrors
-		DEM::SortedUnion(_pSPS->GetRecords(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; }, [this](auto ItSceneObject, auto ItRenderObject)
+		DEM::SortedUnion(_pSPS->GetRecords(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
+			[this, ViewProjChanged](auto ItSceneObject, auto ItRenderObject)
 		{
 			if (ItSceneObject == _pSPS->GetRecords().cend())
 			{
@@ -360,8 +361,11 @@ bool CView::Render()
 					ItRenderObject->second = pAttr->CreateRenderable(*_GraphicsMgr);
 				}
 
-				const Render::IRenderable* pRenderable = ItRenderObject->second.get();
-				// update visibility and remember bounds version
+				Render::IRenderable* pRenderable = ItRenderObject->second.get();
+
+				// update visibility
+				pRenderable->BoundsVersion = pRecord->BoundsVersion;
+
 				// add to sorted queues
 				//!!!an object may be added not to all queues. E.g. alpha objects don't participate in Z prepass and can ignore FrontToBack queue!
 				//???what if combining queues in some phases? E.g. make OpaqueMaterial, AlphaBackToFront, sort there only by that factor, and in a phase
@@ -370,9 +374,25 @@ bool CView::Render()
 			else
 			{
 				const Scene::CSPSRecord* pRecord = ItSceneObject->second;
-				const Render::IRenderable* pRenderable = ItRenderObject->second.get();
+				Render::IRenderable* pRenderable = ItRenderObject->second.get();
 
-				// if bounds version changed or ViewProjChanged, update visibility and remember bounds version
+				if (ViewProjChanged || pRenderable->BoundsVersion != pRecord->BoundsVersion)
+				{
+					// Update visibility
+					//!!!???TODO: to inline function?!
+					if (_TreeNodeVisibility[pRecord->NodeIndex * 2]) // Check if node has a visible part
+					{
+						//!!!need pRecord->Bounds!
+						//pRenderable->IsVisible = !_TreeNodeVisibility[pRecord->NodeIndex * 2 + 1] || bounds test;
+					}
+					else
+					{
+						pRenderable->IsVisible = false;
+					}
+
+					pRenderable->BoundsVersion = pRecord->BoundsVersion;
+				}
+
 				// if sorted queue includes distance to camera and bounds changed or ViewProjChanged, mark sorted queue dirty
 				// if sorted queue includes material etc which has changed, mark sorted queue dirty
 			}
