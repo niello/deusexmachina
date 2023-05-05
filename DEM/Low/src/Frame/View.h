@@ -73,6 +73,11 @@ protected:
 
 	std::unordered_map<const CRenderableAttribute*, Render::PRenderable> _RenderObjects;
 
+	std::vector<bool> _TreeNodeVisibility;
+	std::map<UPTR, Render::PRenderable> _Renderables; //???visibility etc - store in renderable itself? need to rename it to CRenderCache or now is good?
+	std::vector<decltype(_Renderables)::node_type> _RenderableNodePool;
+	//???separate maps for meshes, lights etc?
+
 	CArray<Scene::CNodeAttribute*>				VisibilityCache;
 	CArray<Render::CLightRecord>				LightCache;
 	CArray<CAmbientLightAttribute*>				EnvironmentCache;

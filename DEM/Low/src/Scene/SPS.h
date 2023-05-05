@@ -4,6 +4,7 @@
 #include <Data/SparseArray2.hpp>
 #include <System/Allocators/PoolAllocator.h>
 #include <acl/math/math_types.h>
+#include <map>
 
 // Spatial partitioning structure for accelerated spatial queries on a scene
 // CSPS       - spatial partitioning structure, that stores objects spatially arranged
@@ -97,12 +98,14 @@ struct CSPSRecord
 	CAABB			GlobalBox;
 
 	///////// NEW RENDER /////////
-	//float CenterX;
-	//float CenterZ;
-	//float HalfExtentX;
-	//float HalfExtentZ;
+	UPTR    UID = 0; //???store here or in attr to be able to unregister it?! then no need to store here, _Records map key is enough!
 	TMorton NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, then 100, 101, 110, 111 etc
 	U32     NodeIndex = NO_NODE;
+	U32     BoundsVersion = 1;
+
+	//???!!!store object's AABB or even OBB in center/half-extents SIMD form?! here or in attr? would save calculations, and in a frustum test too!
+
+	//inline bool operator <(const CSPSRecord& Other) const noexcept { return UID < Other.UID; }
 };
 
 class CSPS //???rename to CGfxLevel? CRenderLevel etc? Not exactly SPS, but a thing one step above it.
@@ -115,25 +118,22 @@ protected:
 
 	///////// NEW RENDER /////////
 	Data::CSparseArray2<CSpatialTreeNode, U32> _TreeNodes;
-	std::unordered_map<TMorton, U32> _MortonToIndex; //???TODO PERF: map or unordered_map?
-	std::vector<std::unordered_map<U32, U32>::node_type> _MappingPool;
+	std::unordered_map<TMorton, U32> _MortonToIndex;
+	std::vector<std::unordered_map<TMorton, U32>::node_type> _MortonToIndexPool;
 
 	//!!!TODO: separate by type - renderables, lights, ambient etc!
-	//SPSRecord is not a renderable cache node! They are per view, and here we have per-scene thing!
-	//Render cache can be pre-sorted e.g. by material, and re-sort parts FtB/BtF based on camera when needed, making additional index lists.
-	//???need to sort records here?
-	//Visibility flag inside render cache node or in a separate array in a CView? But still not here!
-	//???!!!store object's AABB in center/half-extents form even outside here?! would save calculations, and in a frustum test too!
-	std::vector<CSPSRecord> _Records;
+	std::map<UPTR, CSPSRecord*> _Records; // TODO: could try to use std::set
 	vector3 _WorldCenter; // TODO: requires allocation alignment! acl::Vector4_32 _WorldBounds; // Cx, Cy, Cz, Ecoeff = 1.f
 	float _WorldExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic
 	float _InvWorldSize = 0.f; // Cached 1 / (2 * _WorldExtent)
 	U8 _MaxDepth = 0;
 
-	TMorton CalculateQuadtreeMortonCode(const CAABB& AABB) const noexcept;
-	U32 CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex);
-	U32 AddSingleObject(TMorton NodeMortonCode, TMorton StopMortonCode);
-	void RemoveSingleObject(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode);
+	UPTR _NextUID = 1; // UID 0 means no UID assigned, so start from 1
+
+	TMorton CalculateMortonCode(const CAABB& AABB) const noexcept;
+	U32     CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex);
+	U32     AddSingleObject(TMorton NodeMortonCode, TMorton StopMortonCode);
+	void    RemoveSingleObject(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode);
 	//////////////////////////////
 
 public:
@@ -148,8 +148,10 @@ public:
 	void		UpdateRecord(CSPSRecord* pRecord);
 	void		RemoveRecord(CSPSRecord* pRecord);
 
+	const auto& GetRecords() const { return _Records; }
+
 	void		QueryObjectsInsideFrustum(const matrix44& ViewProj, CArray<CNodeAttribute*>& OutObjects) const;
-	//!!!add inside sphere for omni (point) lights!
+	//!!!add InsideSphere for querying objects touching omni (point) lights! take into account only visible tree nodes!
 
 	///////// NEW RENDER /////////
 	//!!!TODO: use prepared frustum planes instead of matrix!

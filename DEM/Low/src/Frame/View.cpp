@@ -15,6 +15,7 @@
 #include <Render/Sampler.h>
 #include <Render/SamplerDesc.h>
 #include <Debug/DebugDraw.h>
+#include <Data/Algorithms.h>
 #include <UI/UIContext.h>
 #include <UI/UIServer.h>
 #include <System/OSWindow.h>
@@ -192,12 +193,6 @@ void CView::UpdateVisibilityCache()
 
 	if (_pSPS && pCamera)
 	{
-		///////// NEW RENDER /////////
-		//!!!FIXME: store in class for persistence!
-		std::vector<bool> NodeVisibility;
-		_pSPS->TestSpatialTreeVisibility(pCamera->GetViewProjMatrix(), NodeVisibility);
-		//////////////////////////////
-
 		_pSPS->QueryObjectsInsideFrustum(pCamera->GetViewProjMatrix(), VisibilityCache);
 
 		for (UPTR i = 0; i < VisibilityCache.GetCount(); /**/)
@@ -319,6 +314,74 @@ bool CView::Render()
 	LightCache.Clear();
 	EnvironmentCache.Clear();
 	VisibilityCacheDirty = true;
+
+	///////// NEW RENDER /////////
+	if (_pSPS && pCamera)
+	{
+		//???view - can compare tfm version, but how to check projection change? compare final matrices? or source values?
+		//!!!to compare projection without view, can check only certain matrix values, because most of them are 0.f for any projection, 5 floats are not.
+		// const bool ViewProjChanged = ...;
+
+		//!!!clear cache only if ViewProjChanged! but also need to invalidate cache of changed nodes, when one node takes index of another!
+		//???re-sort the node array in SPS at that moment? or notify all views to invalidate the whole cache? or can notify for only changed nodes?
+		_pSPS->TestSpatialTreeVisibility(pCamera->GetViewProjMatrix(), _TreeNodeVisibility);
+
+		// Synchronize scene objects with their renderable mirrors
+		DEM::SortedUnion(_pSPS->GetRecords(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; }, [this](auto ItSceneObject, auto ItRenderObject)
+		{
+			if (ItSceneObject == _pSPS->GetRecords().cend())
+			{
+				// An object was removed from a scene, remove its renderable
+				// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one
+				ItRenderObject->second.reset();
+				_RenderableNodePool.push_back(_Renderables.extract(ItRenderObject));
+
+				// erase from sorted queues
+			}
+			else if (ItRenderObject == _Renderables.cend())
+			{
+				// A new object in a scene
+				const auto UID = ItSceneObject->first;
+				const Scene::CSPSRecord* pRecord = ItSceneObject->second;
+
+				//!!!FIXME: need to guarantee this! Split GetRecords by type on insertion? Lights etc don't need renderables and sync!
+				n_assert_dbg(pRecord->pUserData->As<Frame::CRenderableAttribute>());
+				auto pAttr = static_cast<const Frame::CRenderableAttribute*>(pRecord->pUserData);
+
+				// UIDs always grow (unless overflowed), and therefore adding to the end is always the right hint which gives us O(1) insertion
+				if (_RenderableNodePool.empty())
+				{
+					ItRenderObject = _Renderables.emplace_hint(ItRenderObject, UID, pAttr->CreateRenderable(*_GraphicsMgr));
+				}
+				else
+				{
+					ItRenderObject = _Renderables.insert(ItRenderObject, std::move(_RenderableNodePool.back()));
+					_RenderableNodePool.pop_back();
+					ItRenderObject->second = pAttr->CreateRenderable(*_GraphicsMgr);
+				}
+
+				const Render::IRenderable* pRenderable = ItRenderObject->second.get();
+				// update visibility and remember bounds version
+				// add to sorted queues
+				//!!!an object may be added not to all queues. E.g. alpha objects don't participate in Z prepass and can ignore FrontToBack queue!
+				//???what if combining queues in some phases? E.g. make OpaqueMaterial, AlphaBackToFront, sort there only by that factor, and in a phase
+				//just render one queue and then another!? Could make sorting faster than for the whole pool of objects.
+			}
+			else
+			{
+				const Scene::CSPSRecord* pRecord = ItSceneObject->second;
+				const Render::IRenderable* pRenderable = ItRenderObject->second.get();
+
+				// if bounds version changed or ViewProjChanged, update visibility and remember bounds version
+				// if sorted queue includes distance to camera and bounds changed or ViewProjChanged, mark sorted queue dirty
+				// if sorted queue includes material etc which has changed, mark sorted queue dirty
+			}
+
+			// update dirty sorted queues with insertion sort, O(n) for almost sorted arrays. Fallback to qsort for major reorderings or first init.
+			//!!!from huge camera changes can mark a flag 'MajorChanges' camera-dependent (FrontToBack etc) queue, and use qsort instead of almost-sorted.
+		});
+	}
+	//////////////////////////////
 
 	return _RenderPath->Render(*this);
 }

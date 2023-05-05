@@ -160,7 +160,7 @@ void CSPS::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 }
 //---------------------------------------------------------------------
 
-TMorton CSPS::CalculateQuadtreeMortonCode(const CAABB& AABB) const noexcept
+TMorton CSPS::CalculateMortonCode(const CAABB& AABB) const noexcept
 {
 	// FIXME: store world bounds in a SIMD vector!
 	const auto WorldCenter = acl::vector_set(_WorldCenter.x, _WorldCenter.y, _WorldCenter.z);
@@ -231,17 +231,17 @@ U32 CSPS::CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex)
 	ItNew->SubtreeObjectCount = 1;
 	ItNew->Bounds = Center;
 
-	if (_MappingPool.empty())
+	if (_MortonToIndexPool.empty())
 	{
 		_MortonToIndex.emplace(MortonCode, ItNew.get_index());
 	}
 	else
 	{
-		auto& MappingNode = _MappingPool.back();
+		auto& MappingNode = _MortonToIndexPool.back();
 		MappingNode.key() = MortonCode;
 		MappingNode.mapped() = ItNew.get_index();
 		_MortonToIndex.insert(std::move(MappingNode));
-		_MappingPool.pop_back();
+		_MortonToIndexPool.pop_back();
 	}
 
 	return ItNew.get_index();
@@ -250,6 +250,8 @@ U32 CSPS::CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex)
 
 U32 CSPS::AddSingleObject(TMorton NodeMortonCode, TMorton StopMortonCode)
 {
+	if (!NodeMortonCode) return NO_NODE;
+
 	// Find the deepest existing parent. The root always exists as a fallback.
 	U32 MissingNodes = 0;
 	auto CurrMortonCode = NodeMortonCode;
@@ -298,7 +300,7 @@ void CSPS::RemoveSingleObject(U32 NodeIndex, TMorton NodeMortonCode, TMorton Sto
 		auto ParentIndex = Node.ParentIndex;
 		if (--Node.SubtreeObjectCount == 0)
 		{
-			_MappingPool.push_back(_MortonToIndex.extract(Node.MortonCode));
+			_MortonToIndexPool.push_back(_MortonToIndex.extract(Node.MortonCode));
 			_TreeNodes.erase(NodeIndex);
 		}
 		NodeIndex = ParentIndex;
@@ -320,17 +322,18 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 
 	///////// NEW RENDER /////////
 	//!!!TODO: skip insertion if oversized or if outside root node ???store oversized objects in the root or at 0?
-	const auto NodeMortonCode = CalculateQuadtreeMortonCode(GlobalBox);
+	const auto NodeMortonCode = CalculateMortonCode(GlobalBox);
 	pRecord->NodeIndex = AddSingleObject(NodeMortonCode, 0);
 	pRecord->NodeMortonCode = NodeMortonCode;
-	//???TODO: remember in pRecord the number of the last frame where the node changed?
+	pRecord->UID = _NextUID++;
+	pRecord->BoundsVersion = 1;
+	_Records.emplace_hint(_Records.cend(), pRecord->UID, pRecord); //!!!TODO: insert (hint, std::move(node))
 	//////////////////////////////
 
 	return pRecord;
 }
 //---------------------------------------------------------------------
 
-//!!!TODO: call UpdateRecord only when AABB changes! Check in the calling code!
 void CSPS::UpdateRecord(CSPSRecord* pRecord)
 {
 	float CenterX, CenterZ, HalfSizeX, HalfSizeZ;
@@ -338,7 +341,8 @@ void CSPS::UpdateRecord(CSPSRecord* pRecord)
 	QuadTree.UpdateHandle(CSPSCell::CIterator(pRecord), CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);
 
 	///////// NEW RENDER /////////
-	const auto NodeMortonCode = CalculateQuadtreeMortonCode(pRecord->GlobalBox);
+	//!!!pass box as an arg! can skip update if the box is the same. Easy to compare using SIMD Center&Extent.
+	const auto NodeMortonCode = CalculateMortonCode(pRecord->GlobalBox);
 
 	if (pRecord->NodeMortonCode == NodeMortonCode) return;
 
@@ -347,7 +351,7 @@ void CSPS::UpdateRecord(CSPSRecord* pRecord)
 	RemoveSingleObject(pRecord->NodeIndex, pRecord->NodeMortonCode, LCAMortonCode);
 	pRecord->NodeIndex = AddSingleObject(NodeMortonCode, LCAMortonCode);
 	pRecord->NodeMortonCode = NodeMortonCode;
-	//???TODO: remember in pRecord the number of the last frame where the node changed?
+	++pRecord->BoundsVersion;
 	//////////////////////////////
 }
 //---------------------------------------------------------------------
@@ -361,6 +365,7 @@ void CSPS::RemoveRecord(CSPSRecord* pRecord)
 	RemoveSingleObject(pRecord->NodeIndex, pRecord->NodeMortonCode, 0);
 	pRecord->NodeMortonCode = 0;
 	pRecord->NodeIndex = NO_NODE;
+	//!!!clear UID in the attribute if it is saved there! (and it is likely that it should be)
 	//////////////////////////////
 }
 //---------------------------------------------------------------------
@@ -455,8 +460,6 @@ DEM_FORCE_INLINE EClipStatus /*ACL_SIMD_CALL*/ ClipAABB4Planes(acl::Vector4_32Ar
 //---------------------------------------------------------------------
 
 // Test AABB vs frustum planes intersection for positive halfspace treated as 'inside'
-constexpr U8 INSIDE = 0x01;
-constexpr U8 OUTSIDE = 0x02;
 static DEM_FORCE_INLINE U8 ClipCube(acl::Vector4_32Arg0 Bounds, acl::Vector4_32Arg1 ProjectedNegWorldExtent,
 	acl::Vector4_32Arg2 LRBT_Nx, acl::Vector4_32Arg3 LRBT_Ny, acl::Vector4_32Arg4 LRBT_Nz, acl::Vector4_32Arg5 LRBT_w,
 	acl::Vector4_32ArgN LookAxis, float NegWorldExtentAlongLookAxis, float NearPlane, float FarPlane)
@@ -536,8 +539,8 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 	// FIXME: improve writing, clip mask already has both bits for NodeVisibility element
 	const auto WorldBounds = acl::vector_set(_WorldCenter.x, _WorldCenter.y, _WorldCenter.z, 1.f);
 	const auto ClipRoot = ClipCube(WorldBounds, ProjectedNegWorldExtent, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NegWorldExtentAlongLookAxis, NearPlane, FarPlane);
-	NodeVisibility[0] = ClipRoot & INSIDE;
-	NodeVisibility[1] = ClipRoot & OUTSIDE;
+	NodeVisibility[0] = ClipRoot & EClipStatus::Inside;
+	NodeVisibility[1] = ClipRoot & EClipStatus::Outside;
 
 	// Skip the root as it is already processed
 	for (auto ItNode = ++_TreeNodes.cbegin(); ItNode != _TreeNodes.cend(); ++ItNode)
@@ -564,8 +567,8 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 			// If the parent is partially visible, its children must be tested
 			// FIXME: improve writing, clip mask already has both bits for NodeVisibility element
 			const auto ClipNode = ClipCube(ItNode->Bounds, ProjectedNegWorldExtent, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NegWorldExtentAlongLookAxis, NearPlane, FarPlane);
-			NodeVisibility[ItNode.get_index() * 2] = ClipNode & INSIDE;
-			NodeVisibility[ItNode.get_index() * 2 + 1] = ClipNode & OUTSIDE;
+			NodeVisibility[ItNode.get_index() * 2] = ClipNode & EClipStatus::Inside;
+			NodeVisibility[ItNode.get_index() * 2 + 1] = ClipNode & EClipStatus::Outside;
 		}
 	}
 }

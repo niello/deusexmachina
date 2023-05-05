@@ -179,8 +179,8 @@ enum class ESoftBool : U8
 
 enum EClipStatus
 {
-	Outside = 0x01,
-	Inside = 0x02,
+	Inside = 0x01,
+	Outside = 0x02,
 	Clipped = (Outside | Inside),
 	//InvalidClipStatus - Clipped is used instead now
 };
