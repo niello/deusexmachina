@@ -1,11 +1,10 @@
 #if DEM_PLATFORM_WIN32
 
 #include "Memory.h"
+#include <System/System.h>
 
 #define CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
-
-#include <System/System.h>
 
 // Debug memory management functions
 
@@ -62,91 +61,6 @@ void n_free_aligned_dbg(void* memblock, const char* filename, int line)
 {
 	_aligned_free_dbg(memblock);
 	if (DEM_LogMemory) Sys::Log("n_free_aligned(ptr=%lx, file=%s, line=%d)\n", memblock, filename, line);
-}
-//---------------------------------------------------------------------
-
-// Replacement global new operator without location reporting. This
-// catches calls which don't use n_new for some reason.
-// FIXME: VS2019 has annotations _NODISCARD _Ret_notnull_ _Post_writable_byte_size_(_Size) _VCRT_ALLOCATOR
-void* operator new(size_t size)
-{
-	void* res = _malloc_dbg(size, _NORMAL_BLOCK, __FILE__, __LINE__);
-	if (DEM_LogMemory) Sys::Log("%lx = new(size=%d)\n", res, size);
-	return res;
-}
-//---------------------------------------------------------------------
-
-// Replacement global new operator with location reporting (redirected from n_new()).
-void* operator new(size_t size, const char* file, int line)
-{
-	void* res = _malloc_dbg(size, _NORMAL_BLOCK, file, line);
-	if (DEM_LogMemory) Sys::Log("%lx = new(size=%d, file=%s, line=%d)\n", res, size, file, line);
-	return res;
-}
-//---------------------------------------------------------------------
-
-// Placement global new operator without location reporting. This
-// catches calls which don't use n_new for some reason.
-void* operator new(size_t size, void *place, const char* file, int line)
-{
-	void *res = place;
-	if (DEM_LogMemory) Sys::Log("%lx = new(size=%d, place=0x%x, file=%s, line=%d)\n", res, size, place, file, line);
-	return res;
-}
-//---------------------------------------------------------------------
-
-// Replacement global new[] operator without location reporting.
-void* operator new[](size_t size)
-{
-	void* res = _malloc_dbg(size, _NORMAL_BLOCK, __FILE__, __LINE__);
-	if (DEM_LogMemory) Sys::Log("%lx = new[](size=%d)\n", res, size);
-	return res;
-}
-//---------------------------------------------------------------------
-
-// Replacement global new[] operator with location reporting.
-void* operator new[](size_t size, const char* file, int line)
-{
-	void* res = _malloc_dbg(size, _NORMAL_BLOCK, file, line);
-	if (DEM_LogMemory) Sys::Log("%lx = new[](size=%d, file=%s, line=%d)\n", res, size, file, line);
-	return res;
-}
-//---------------------------------------------------------------------
-
-void operator delete(void* p)
-{
-	if (DEM_LogMemory) Sys::Log("delete(ptr=%lx)\n", p);
-	_free_dbg(p, _NORMAL_BLOCK);
-}
-//---------------------------------------------------------------------
-
-// Replacement global delete operator to match the new with location reporting.
-void operator delete(void* p, const char* /*file*/, int /*line*/)
-{
-	if (DEM_LogMemory) Sys::Log("delete(ptr=%lx)\n", p);
-	_free_dbg(p, _NORMAL_BLOCK);
-}
-//---------------------------------------------------------------------
-
-// Placement global delete operator to match the new with location reporting. do nothing
-void operator delete(void*, void*, const char* /*file*/, int /*line*/)
-{
-}
-//---------------------------------------------------------------------
-
-// Replacement global delete[] operator.
-void operator delete[](void* p)
-{
-	if (DEM_LogMemory) Sys::Log("delete[](ptr=%lx)\n", p);
-	_free_dbg(p, _NORMAL_BLOCK);
-}
-//---------------------------------------------------------------------
-
-// Replacement global delete[] operator to match the new with location reporting.
-void operator delete[](void* p, const char* /*file*/, int /*line*/)
-{
-	if (DEM_LogMemory) Sys::Log("delete[](ptr=%lx)\n", p);
-	_free_dbg(p, _NORMAL_BLOCK);
 }
 //---------------------------------------------------------------------
 

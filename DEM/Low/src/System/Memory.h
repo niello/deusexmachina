@@ -17,24 +17,6 @@ int n_dbgmemdumpleaks();
 void n_dbgmeminit();                // initialize memory debugging system
 CMemoryStats n_dbgmemgetstats();    // defined in ndbgalloc.cc
 
-#ifdef new
-#undef new
-#endif
-
-#ifdef delete
-#undef delete
-#endif
-
-void* operator new(size_t size);
-void* operator new(size_t size, const char* file, int line);
-void* operator new(size_t size, void* place, const char* file, int line);
-void* operator new[](size_t size);
-void* operator new[](size_t size, const char* file, int line);
-void operator delete(void* p);
-void operator delete(void* p, const char* file, int line);
-void operator delete(void*, void*, const char* file, int line);
-void operator delete[](void* p);
-void operator delete[](void* p, const char* file, int line);
 void* n_malloc_dbg(size_t size, const char* file, int line);
 void* n_malloc_aligned_dbg(size_t size, size_t Alignment, const char* filename, int line);
 void* n_calloc_dbg(size_t num, size_t size, const char* file, int line);
@@ -43,12 +25,14 @@ void* n_realloc_aligned_dbg(void* memblock, size_t size, size_t Alignment, const
 void n_free_dbg(void* memblock, const char* file, int line);
 void n_free_aligned_dbg(void* memblock, const char* filename, int line);
 
-#if defined(_DEBUG) && DEM_PLATFORM_WIN32
-#define n_new(type) new(__FILE__,__LINE__) type
-#define n_placement_new(place, type) new(place, __FILE__,__LINE__) type
-#define n_new_array(type,size) new(__FILE__,__LINE__) type[size]
+// FIXME: get rid of this
+#define n_new(type) new type
+#define n_placement_new(place, type) new(place) type
+#define n_new_array(type,size) new type[size]
 #define n_delete(ptr) delete ptr
 #define n_delete_array(ptr) delete[] ptr
+
+#if defined(_DEBUG) && DEM_PLATFORM_WIN32
 #define n_malloc(size) n_malloc_dbg(size, __FILE__, __LINE__)
 #define n_malloc_aligned(size, alignment) n_malloc_aligned_dbg(size, alignment, __FILE__, __LINE__)
 #define n_calloc(num, size) n_calloc_dbg(num, size, __FILE__, __LINE__)
@@ -57,11 +41,6 @@ void n_free_aligned_dbg(void* memblock, const char* filename, int line);
 #define n_free(memblock) n_free_dbg(memblock, __FILE__, __LINE__)
 #define n_free_aligned(memblock) n_free_aligned_dbg(memblock, __FILE__, __LINE__)
 #else
-#define n_new(type) new type
-#define n_placement_new(place, type) new(place) type
-#define n_new_array(type,size) new type[size]
-#define n_delete(ptr) delete ptr
-#define n_delete_array(ptr) delete[] ptr
 #define n_malloc(size) malloc(size)
 #define n_malloc_aligned(size, alignment) _aligned_malloc(size, alignment)
 #define n_calloc(num, size) calloc(num, size)
