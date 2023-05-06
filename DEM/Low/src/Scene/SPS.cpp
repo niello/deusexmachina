@@ -328,6 +328,10 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 	pRecord->NodeIndex = AddSingleObject(NodeMortonCode, 0);
 	pRecord->NodeMortonCode = NodeMortonCode;
 
+	//!!!DBG TMP!
+	n_assert_dbg(GetNodeBoundsByIndex(pRecord->NodeIndex, true).contains(GlobalBox));
+	n_assert_dbg(GetNodeBoundsByIndex(pRecord->NodeIndex, false).contains(GlobalBox.Center()));
+
 	_Objects.emplace_hint(_Objects.cend(), _NextUID++, pRecord); //!!!TODO: insert (hint, std::move(node))
 
 	// If this assert is ever triggered, compacting of existing UIDs may be implemented to keep fast insertions to the map end.
@@ -369,6 +373,10 @@ void CSPS::UpdateRecord(CSPSRecord* pRecord)
 		RemoveSingleObject(pRecord->NodeIndex, pRecord->NodeMortonCode, LCAMortonCode);
 		pRecord->NodeIndex = AddSingleObject(NodeMortonCode, LCAMortonCode);
 		pRecord->NodeMortonCode = NodeMortonCode;
+
+		//!!!DBG TMP!
+		n_assert_dbg(GetNodeBoundsByIndex(pRecord->NodeIndex, true).contains(pRecord->GlobalBox));
+		n_assert_dbg(GetNodeBoundsByIndex(pRecord->NodeIndex, false).contains(pRecord->GlobalBox.Center()));
 	}
 	//////////////////////////////
 }
@@ -563,6 +571,35 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 			NodeVisibility[ItNode.get_index() * 2 + 1] = ClipNode & EClipStatus::Outside;
 		}
 	}
+}
+//---------------------------------------------------------------------
+
+////!!!FIXME: DUPLICATION!
+//CAABB CSPS::GetNodeBounds(TMorton MortonCode) const
+//{
+//	const auto Bits = Math::BitWidth(MortonCode);
+//	const auto MortonCodeNoSentinel = MortonCode ^ (1 << (Bits - 1));
+//	TCellDim x = 0, y = 0, z = 0;
+//	if constexpr (TREE_DIMENSIONS == 2)
+//		Math::MortonDecode2(MortonCodeNoSentinel, x, z);
+//	else
+//		Math::MortonDecode3(MortonCodeNoSentinel, x, y, z);
+//
+//	// Calculate node bounds - center and extent
+//	const float ExtentCoeff = 1.f / static_cast<float>(1 << (Bits / TREE_DIMENSIONS)); // 1 / 2^Depth
+//	const auto Cell = acl::vector_set(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
+//	auto Center = acl::vector_mul_add(Cell, 2.f, acl::vector_set(1.f)); // A = 2 * xyz + 1
+//	Center = acl::vector_mul_add(Center, ExtentCoeff, acl::vector_set(-1.f)); // B = A * Ecoeff - 1.f
+//	Center = acl::vector_mul_add(Center, _WorldExtent, WorldCenter); // Center = B * We + Wc
+//}
+////---------------------------------------------------------------------
+
+CAABB CSPS::GetNodeBoundsByIndex(U32 NodeIndex, bool Loose) const
+{
+	const auto Bounds = _TreeNodes[NodeIndex].Bounds;
+	const vector3 Center(acl::vector_get_x(Bounds), acl::vector_get_y(Bounds), acl::vector_get_z(Bounds));
+	const float Extent = _WorldExtent * acl::vector_get_w(Bounds) * (Loose ? 2.f : 1.f);
+	return CAABB(Center, vector3(Extent, Extent, Extent));
 }
 //---------------------------------------------------------------------
 

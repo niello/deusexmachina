@@ -194,11 +194,14 @@ void CView::UpdateVisibilityCache()
 
 	if (_pSPS && pCamera)
 	{
-		_pSPS->QueryObjectsInsideFrustum(pCamera->GetViewProjMatrix(), VisibilityCache);
+		//!!!DBG TMP!
+		CArray<Scene::CNodeAttribute*> VisibilityCache2;
 
-		for (UPTR i = 0; i < VisibilityCache.GetCount(); /**/)
+		_pSPS->QueryObjectsInsideFrustum(pCamera->GetViewProjMatrix(), VisibilityCache2);
+
+		for (UPTR i = 0; i < VisibilityCache2.GetCount(); /**/)
 		{
-			Scene::CNodeAttribute* pAttr = VisibilityCache[i];
+			Scene::CNodeAttribute* pAttr = VisibilityCache2[i];
 			if (pAttr->IsA<CLightAttribute>())
 			{
 				Render::CLightRecord& Rec = *LightCache.Add();
@@ -207,14 +210,14 @@ void CView::UpdateVisibilityCache()
 				Rec.UseCount = 0;
 				Rec.GPULightIndex = INVALID_INDEX;
 
-				VisibilityCache.RemoveAt(i);
+				//VisibilityCache.RemoveAt(i);
 			}
 			else if (pAttr->IsA<CAmbientLightAttribute>())
 			{
 				EnvironmentCache.Add(pAttr->As<CAmbientLightAttribute>());
-				VisibilityCache.RemoveAt(i);
+				//VisibilityCache.RemoveAt(i);
 			}
-			else ++i;
+			/*else*/ ++i;
 		}
 	}
 	else
@@ -321,12 +324,15 @@ bool CView::Render()
 	{
 		bool ViewProjChanged = false;
 		{
+			// View changes are detected easily with a camera node transform version
 			const auto CameraTfmVersion = pCamera->GetNode()->GetTransformVersion();
 			if (_CameraTfmVersion != CameraTfmVersion)
 			{
 				ViewProjChanged = true;
 				_CameraTfmVersion = CameraTfmVersion;
 			}
+
+			// Both perspective and orthographic projections are characterized by just few matrix elements, compare only them
 			const auto& Proj = pCamera->GetProjMatrix();
 			const vector4 ProjectionParams(Proj.m[0][0], Proj.m[1][1], Proj.m[2][2], Proj.m[3][2]);
 			if (_ProjectionParams != ProjectionParams)
@@ -493,6 +499,19 @@ bool CView::Render()
 			// update dirty sorted queues with insertion sort, O(n) for almost sorted arrays. Fallback to qsort for major reorderings or first init.
 			//!!!from huge camera changes can mark a flag 'MajorChanges' camera-dependent (FrontToBack etc) queue, and use qsort instead of almost-sorted.
 		});
+
+		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		//!!!DBG TMP!
+		//VisibilityCacheDirty = false;
+		for (const auto& [UID, Renderable] : _Renderables)
+		{
+			VisibilityCache.push_back(_pSPS->GetObjects().find(UID)->second->pUserData);
+		}
+		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	}
 	//////////////////////////////
 

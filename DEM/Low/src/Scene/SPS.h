@@ -147,6 +147,8 @@ public:
 	void		RemoveRecord(CSPSRecord* pRecord);
 
 	const auto& GetObjects() const { return _Objects; }
+	//CAABB       GetNodeBounds(TMorton MortonCode) const;
+	CAABB       GetNodeBoundsByIndex(U32 NodeIndex, bool Loose = false) const;
 
 	void		QueryObjectsInsideFrustum(const matrix44& ViewProj, CArray<CNodeAttribute*>& OutObjects) const;
 	//!!!add InsideSphere for querying objects touching omni (point) lights! take into account only visible tree nodes!

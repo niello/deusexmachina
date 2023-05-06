@@ -93,7 +93,11 @@ void CRenderableAttribute::OnActivityChanged(bool Active)
 void CRenderableAttribute::RenderDebug(Debug::CDebugDraw& DebugDraw) const
 {
 	CAABB AABB;
-	if (GetGlobalAABB(AABB)) DebugDraw.DrawBoxWireframe(AABB, Render::ColorRGBA(160, 220, 255, 255), 1.f);
+	if (GetGlobalAABB(AABB))
+		DebugDraw.DrawBoxWireframe(AABB, Render::ColorRGBA(160, 220, 255, 255), 1.f);
+
+	if (pSPS && pSPSRecord)
+		DebugDraw.DrawBoxWireframe(pSPS->GetNodeBoundsByIndex(pSPSRecord->NodeIndex, true), Render::ColorRGBA(160, 255, 160, 255), 1.f);
 }
 //---------------------------------------------------------------------
 
