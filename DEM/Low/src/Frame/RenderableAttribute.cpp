@@ -1,6 +1,7 @@
 #include "RenderableAttribute.h"
 #include <Scene/SPS.h>
 #include <Scene/SceneNode.h>
+#include <Debug/DebugDraw.h>
 
 namespace Frame
 {
@@ -86,6 +87,13 @@ void CRenderableAttribute::OnActivityChanged(bool Active)
 		}
 		pSPS = nullptr;
 	}
+}
+//---------------------------------------------------------------------
+
+void CRenderableAttribute::RenderDebug(Debug::CDebugDraw& DebugDraw) const
+{
+	CAABB AABB;
+	if (GetGlobalAABB(AABB)) DebugDraw.DrawBoxWireframe(AABB, Render::ColorRGBA(160, 220, 255, 255), 1.f);
 }
 //---------------------------------------------------------------------
 

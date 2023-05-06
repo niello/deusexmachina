@@ -42,6 +42,8 @@ public:
 	virtual bool                GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
 	bool                        GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const;
 	void                        UpdateInSPS(Scene::CSPS& SPS);
+
+	virtual void                RenderDebug(Debug::CDebugDraw& DebugDraw) const override;
 };
 
 typedef Ptr<CRenderableAttribute> PRenderableAttribute;
