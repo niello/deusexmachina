@@ -181,7 +181,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 
 	// Mark as detached all elements that do not match the new look
 	CAppearanceComponent::CLookMap Detached;
-	SortedDifference(AppearanceComponent.CurrentLook, NewLook, [&AppearanceComponent, &Detached](CAppearanceComponent::CLookMap::const_iterator It)
+	Algo::SortedDifference(AppearanceComponent.CurrentLook, NewLook, [&AppearanceComponent, &Detached](CAppearanceComponent::CLookMap::const_iterator It)
 	{
 		auto LookNode = AppearanceComponent.CurrentLook.extract(It);
 		if (LookNode.mapped()) Detached.insert(std::move(LookNode));
@@ -208,7 +208,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 		LookNode.second->RemoveFromParent();
 
 	// Attach nodes for the new look that are not in the current look yet
-	SortedDifference(NewLook, AppearanceComponent.CurrentLook, [&NewLook, &AppearanceComponent, &Detached, pRootNode](CAppearanceComponent::CLookMap::const_iterator It)
+	Algo::SortedDifference(NewLook, AppearanceComponent.CurrentLook, [&NewLook, &AppearanceComponent, &Detached, pRootNode](CAppearanceComponent::CLookMap::const_iterator It)
 	{
 		const auto pSceneAsset = It->first.first.Get();
 		if (!pSceneAsset) return;

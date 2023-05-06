@@ -353,7 +353,7 @@ bool CView::Render()
 		_pSPS->TestSpatialTreeVisibility(ViewProj, _TreeNodeVisibility);
 
 		// Synchronize scene objects with their renderable mirrors
-		DEM::SortedUnion(_pSPS->GetObjects(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
+		DEM::Algo::SortedUnion(_pSPS->GetObjects(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
 			[this, ViewProjChanged](auto ItSceneObject, auto ItRenderObject)
 		{
 			const Scene::CSPSRecord* pRecord = nullptr;

@@ -6,7 +6,7 @@
 
 // Utility algorithms and wrappers over std algorithms
 
-namespace DEM
+namespace DEM::Algo
 {
 
 //template<typename T>
