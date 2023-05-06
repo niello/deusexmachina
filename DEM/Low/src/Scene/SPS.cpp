@@ -325,9 +325,12 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 	const auto NodeMortonCode = CalculateMortonCode(GlobalBox);
 	pRecord->NodeIndex = AddSingleObject(NodeMortonCode, 0);
 	pRecord->NodeMortonCode = NodeMortonCode;
-	pRecord->UID = _NextUID++;
 	pRecord->BoundsVersion = 1;
-	_Records.emplace_hint(_Records.cend(), pRecord->UID, pRecord); //!!!TODO: insert (hint, std::move(node))
+	_Objects.emplace_hint(_Objects.cend(), _NextUID++, pRecord); //!!!TODO: insert (hint, std::move(node))
+
+	// If this assert is ever triggered, compacting of existing UIDs may be implemented to keep fast insertions to the map end.
+	// Compacting must change UIDs in _Objects and broadcast changes to all views. Try to make it sorted and preserve iterators to avoid logN searches.
+	n_assert_dbg(_NextUID < std::numeric_limits<decltype(_NextUID)>().max());
 	//////////////////////////////
 
 	return pRecord;
@@ -351,7 +354,7 @@ void CSPS::UpdateRecord(CSPSRecord* pRecord)
 	RemoveSingleObject(pRecord->NodeIndex, pRecord->NodeMortonCode, LCAMortonCode);
 	pRecord->NodeIndex = AddSingleObject(NodeMortonCode, LCAMortonCode);
 	pRecord->NodeMortonCode = NodeMortonCode;
-	++pRecord->BoundsVersion;
+	if (++pRecord->BoundsVersion == 0) ++pRecord->BoundsVersion; // 0 is a special invalid version
 	//////////////////////////////
 }
 //---------------------------------------------------------------------
@@ -365,7 +368,8 @@ void CSPS::RemoveRecord(CSPSRecord* pRecord)
 	RemoveSingleObject(pRecord->NodeIndex, pRecord->NodeMortonCode, 0);
 	pRecord->NodeMortonCode = 0;
 	pRecord->NodeIndex = NO_NODE;
-	//!!!clear UID in the attribute if it is saved there! (and it is likely that it should be)
+	//extract from _Objects to pool! By UID stored in the attr itself? Then need also to clear UID in the attr here.
+	//!!!could also store iterator instead of UID in attr, it is less safe but O(1) extract instead of O(logN)! Clear all iterators before _Objects.clear() then!
 	//////////////////////////////
 }
 //---------------------------------------------------------------------
@@ -427,35 +431,6 @@ void CSPS::QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, 
 			if (pChildNode->GetTotalObjCount())
 				QueryObjectsInsideFrustum(pChildNode, ViewProj, OutObjects, Clip);
 		}
-}
-//---------------------------------------------------------------------
-
-// Optimize dots, useful when need only Inside/Outside detection without partial check (when testing objects, not octree nodes):
-// dot3(center + extent * signFlip, plane) > -plane.w;
-//->
-// signFlip = componentwise_and(plane, 0x80000000); // must be faster than acl::vector_sign
-// dot3(center + xor(extent, signFlip), plane) > -plane.w;
-DEM_FORCE_INLINE EClipStatus /*ACL_SIMD_CALL*/ ClipAABB4Planes(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent,
-	acl::Vector4_32Arg2 PlanesX, acl::Vector4_32Arg3 PlanesY, acl::Vector4_32Arg4 PlanesZ, acl::Vector4_32Arg5 PlanesW)
-{
-	// Distance of box center from plane: (Cx * Pnx) + (Cy * Pny) + (Cz * Pnz) - Pd
-	// PlanesW is already negated, so we turn "-Pd" into "+NegativePd" and use fma instead of mul & sub
-	auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(BoxCenter), PlanesX, PlanesW);
-	CenterDistance = acl::vector_mul_add(acl::vector_mix_yyyy(BoxCenter), PlanesY, CenterDistance);
-	CenterDistance = acl::vector_mul_add(acl::vector_mix_zzzz(BoxCenter), PlanesZ, CenterDistance);
-
-	// Projection radius of the most inside vertex: Ex * abs(Pnx) + Ey * abs(Pny) + Ez * abs(Pnz)
-	auto ProjectedExtent = acl::vector_mul(acl::vector_mix_xxxx(BoxExtent), acl::vector_abs(PlanesX));
-	ProjectedExtent = acl::vector_mul_add(acl::vector_mix_yyyy(BoxExtent), acl::vector_abs(PlanesY), ProjectedExtent);
-	ProjectedExtent = acl::vector_mul_add(acl::vector_mix_zzzz(BoxExtent), acl::vector_abs(PlanesZ), ProjectedExtent);
-
-	if (acl::vector_any_greater_equal(CenterDistance, ProjectedExtent))
-		return EClipStatus::Outside;
-
-	if (acl::vector_any_greater_equal(CenterDistance, acl::vector_neg(ProjectedExtent)))
-		return EClipStatus::Clipped;
-
-	return EClipStatus::Inside;
 }
 //---------------------------------------------------------------------
 

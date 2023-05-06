@@ -98,7 +98,6 @@ struct CSPSRecord
 	CAABB			GlobalBox;
 
 	///////// NEW RENDER /////////
-	UPTR    UID = 0; //???store here or in attr to be able to unregister it?! then no need to store here, _Records map key is enough!
 	TMorton NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, then 100, 101, 110, 111 etc
 	U32     NodeIndex = NO_NODE;
 	U32     BoundsVersion = 1;
@@ -122,7 +121,7 @@ protected:
 	std::vector<std::unordered_map<TMorton, U32>::node_type> _MortonToIndexPool;
 
 	//!!!TODO: separate by type - renderables, lights, ambient etc!
-	std::map<UPTR, CSPSRecord*> _Records; // TODO: could try to use std::set
+	std::map<UPTR, CSPSRecord*> _Objects; // TODO: could try to use std::set
 	vector3 _WorldCenter; // TODO: requires allocation alignment! acl::Vector4_32 _WorldBounds; // Cx, Cy, Cz, Ecoeff = 1.f
 	float _WorldExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic
 	float _InvWorldSize = 0.f; // Cached 1 / (2 * _WorldExtent)
@@ -148,7 +147,7 @@ public:
 	void		UpdateRecord(CSPSRecord* pRecord);
 	void		RemoveRecord(CSPSRecord* pRecord);
 
-	const auto& GetRecords() const { return _Records; }
+	const auto& GetObjects() const { return _Objects; }
 
 	void		QueryObjectsInsideFrustum(const matrix44& ViewProj, CArray<CNodeAttribute*>& OutObjects) const;
 	//!!!add InsideSphere for querying objects touching omni (point) lights! take into account only visible tree nodes!

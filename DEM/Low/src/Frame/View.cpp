@@ -20,6 +20,7 @@
 #include <UI/UIServer.h>
 #include <System/OSWindow.h>
 #include <System/SystemEvents.h>
+#include <acl/math/vector4_32.h>
 
 namespace Frame
 {
@@ -318,19 +319,48 @@ bool CView::Render()
 	///////// NEW RENDER /////////
 	if (_pSPS && pCamera)
 	{
+		const auto& ViewProj = pCamera->GetViewProjMatrix();
+
 		//???view - can compare tfm version, but how to check projection change? compare final matrices? or source values?
 		//!!!to compare projection without view, can check only certain matrix values, because most of them are 0.f for any projection, 5 floats are not.
 		const bool ViewProjChanged = true; // TODO: IMPLEMENT!!!
 
-		//!!!clear cache only if ViewProjChanged! but also need to invalidate cache of changed nodes, when one node takes index of another!
-		//???re-sort the node array in SPS at that moment? or notify all views to invalidate the whole cache? or can notify for only changed nodes?
-		_pSPS->TestSpatialTreeVisibility(pCamera->GetViewProjMatrix(), _TreeNodeVisibility);
+		//!!!TODO: could build planes from GetViewProjMatrix() here and pass to TestSpatialTreeVisibility and also use here for object visibility tests!
+		//???could even keep values from the prev frame if viewproj didn't change!
+		// Extract Left, Right, Bottom & Top frustum planes using Gribb-Hartmann method.
+		// Left = W + X, Right = W - X, Bottom = W + Y, Top = W - Y. Normals look inside the frustum, i.e. positive halfspace means 'inside'.
+		// LRBT_w is a -d, i.e. -dot(PlaneNormal, PlaneOrigin). +w instead of -d allows us using a single fma instead of separate mul & sub in a box test.
+		// See https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
+		// See https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
+		const auto LRBT_Nx = acl::vector_add(acl::vector_set(ViewProj.m[0][3]), acl::vector_set(ViewProj.m[0][0], -ViewProj.m[0][0], ViewProj.m[0][1], -ViewProj.m[0][1]));
+		const auto LRBT_Ny = acl::vector_add(acl::vector_set(ViewProj.m[1][3]), acl::vector_set(ViewProj.m[1][0], -ViewProj.m[1][0], ViewProj.m[1][1], -ViewProj.m[1][1]));
+		const auto LRBT_Nz = acl::vector_add(acl::vector_set(ViewProj.m[2][3]), acl::vector_set(ViewProj.m[2][0], -ViewProj.m[2][0], ViewProj.m[2][1], -ViewProj.m[2][1]));
+		const auto LRBT_w = acl::vector_add(acl::vector_set(ViewProj.m[3][3]), acl::vector_set(ViewProj.m[3][0], -ViewProj.m[3][0], ViewProj.m[3][1], -ViewProj.m[3][1]));
+
+		// Near and far planes are parallel, which enables us to save some work. Near & far planes are +d (-w) along the look
+		// axis, so NearPlane is negated once and FarPlane is negated twice (once to make it -w, once to invert the axis).
+		// We use D3D style projection matrix, near Z limit is 0 instead of OpenGL's -W.
+		// TODO: check if it is really faster than making NF_Nx etc. At least less registers used? Also could use AVX to handle all 6 planes at once.
+		const auto NearAxis = acl::vector_set(ViewProj.m[0][2], ViewProj.m[1][2], ViewProj.m[2][2], 0.f);
+		const auto FarAxis = acl::vector_sub(acl::vector_set(ViewProj.m[0][3], ViewProj.m[1][3], ViewProj.m[2][3], 0.f), NearAxis);
+		const float InvNearLen = acl::sqrt_reciprocal(acl::vector_length_squared3(NearAxis));
+		const auto LookAxis = acl::vector_mul(NearAxis, InvNearLen);
+		const float NearPlane = -ViewProj.m[3][2] * InvNearLen;
+		const float FarPlane = (ViewProj.m[3][3] - ViewProj.m[3][2]) * acl::sqrt_reciprocal(acl::vector_length_squared3(FarAxis));
+
+		//!!!FIXME: also need to invalidate cache of changed nodes when one node takes index of another! //???notify SPS->All views for invalidated indices?
+		/*if (ViewProjChanged)*/ _TreeNodeVisibility.clear();
+		_pSPS->TestSpatialTreeVisibility(ViewProj, _TreeNodeVisibility);
 
 		// Synchronize scene objects with their renderable mirrors
-		DEM::SortedUnion(_pSPS->GetRecords(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
+		DEM::SortedUnion(_pSPS->GetObjects(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
 			[this, ViewProjChanged](auto ItSceneObject, auto ItRenderObject)
 		{
-			if (ItSceneObject == _pSPS->GetRecords().cend())
+			const Scene::CSPSRecord* pRecord = nullptr;
+			Render::IRenderable* pRenderable = nullptr;
+			bool TestVisibility = false;
+
+			if (ItSceneObject == _pSPS->GetObjects().cend())
 			{
 				// An object was removed from a scene, remove its renderable
 				// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one
@@ -343,13 +373,15 @@ bool CView::Render()
 			{
 				// A new object in a scene
 				const auto UID = ItSceneObject->first;
-				const Scene::CSPSRecord* pRecord = ItSceneObject->second;
+				pRecord = ItSceneObject->second;
 
-				//!!!FIXME: need to guarantee this! Split GetRecords by type on insertion? Lights etc don't need renderables and sync!
+				//!!!FIXME: need to guarantee this! Split GetObjects by type on insertion? Lights etc don't need renderables and sync!
 				n_assert_dbg(pRecord->pUserData->As<Frame::CRenderableAttribute>());
 				auto pAttr = static_cast<const Frame::CRenderableAttribute*>(pRecord->pUserData);
 
 				// UIDs always grow (unless overflowed), and therefore adding to the end is always the right hint which gives us O(1) insertion
+				//???!!!could compact UIDs when close to overflow! Do in SPS and broadcast changes OldUID->NewUID to all views. With guarantee of
+				//doing this in order, we can keep an iterator and avoid logarithmic searches for each change!
 				if (_RenderableNodePool.empty())
 				{
 					ItRenderObject = _Renderables.emplace_hint(ItRenderObject, UID, pAttr->CreateRenderable(*_GraphicsMgr));
@@ -361,42 +393,65 @@ bool CView::Render()
 					ItRenderObject->second = pAttr->CreateRenderable(*_GraphicsMgr);
 				}
 
-				Render::IRenderable* pRenderable = ItRenderObject->second.get();
+				pRenderable = ItRenderObject->second.get();
+				TestVisibility = true;
 
-				// update visibility
-				pRenderable->BoundsVersion = pRecord->BoundsVersion;
-
-				// add to sorted queues
+				// add to sorted queues (or test visibility first and delay adding to queues until visible the first time?)
 				//!!!an object may be added not to all queues. E.g. alpha objects don't participate in Z prepass and can ignore FrontToBack queue!
 				//???what if combining queues in some phases? E.g. make OpaqueMaterial, AlphaBackToFront, sort there only by that factor, and in a phase
 				//just render one queue and then another!? Could make sorting faster than for the whole pool of objects.
 			}
 			else
 			{
-				const Scene::CSPSRecord* pRecord = ItSceneObject->second;
-				Render::IRenderable* pRenderable = ItRenderObject->second.get();
+				pRecord = ItSceneObject->second;
+				pRenderable = ItRenderObject->second.get();
 
-				if (ViewProjChanged || pRenderable->BoundsVersion != pRecord->BoundsVersion)
-				{
-					// Update visibility
-					//!!!???TODO: to inline function?!
-					if (_TreeNodeVisibility[pRecord->NodeIndex * 2]) // Check if node has a visible part
-					{
-						//!!!need pRecord->Bounds!
-						//pRenderable->IsVisible = !_TreeNodeVisibility[pRecord->NodeIndex * 2 + 1] || bounds test;
-					}
-					else
-					{
-						pRenderable->IsVisible = false;
-					}
+				TestVisibility = (ViewProjChanged || pRenderable->BoundsVersion != pRecord->BoundsVersion);
 
-					pRenderable->BoundsVersion = pRecord->BoundsVersion;
-				}
-
-				// if sorted queue includes distance to camera and bounds changed or ViewProjChanged, mark sorted queue dirty
+				// if sorted queue includes distance to camera and bounds changed, mark sorted queue dirty
 				// if sorted queue includes material etc which has changed, mark sorted queue dirty
 			}
 
+			if (TestVisibility)
+			{
+				// Update visibility
+				//!!!???TODO: to inline function?!
+				if (_TreeNodeVisibility[pRecord->NodeIndex * 2]) // Check if node has a visible part
+				{
+					if (_TreeNodeVisibility[pRecord->NodeIndex * 2 + 1]) // Check if node has an invisible part
+					{
+						//???check AABB or OBB? for OBB, can make WVP matrix and do the same for it? Probably more expensive, can't reuse planes!
+						// OBB:  float r = b.e[0]*Abs(Dot(p.n, b.u[0])) + b.e[1]*Abs(Dot(p.n, b.u[1])) + b.e[2]*Abs(Dot(p.n, b.u[2]));
+						// AABB: float r = b.e[0]*Abs(p.n[0])           + b.e[1]*Abs(p.n[1])           + b.e[2]*Abs(p.n[2]);
+
+						//// Distance of box center from plane: (Cx * Pnx) + (Cy * Pny) + (Cz * Pnz) - Pd
+						//// PlanesW is already negated, so we turn "-Pd" into "+NegativePd" and use fma instead of mul & sub
+						//auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(BoxCenter), PlanesX, PlanesW);
+						//CenterDistance = acl::vector_mul_add(acl::vector_mix_yyyy(BoxCenter), PlanesY, CenterDistance);
+						//CenterDistance = acl::vector_mul_add(acl::vector_mix_zzzz(BoxCenter), PlanesZ, CenterDistance);
+
+						//// Projection radius of the most inside vertex: Ex * abs(Pnx) + Ey * abs(Pny) + Ez * abs(Pnz)
+						//auto ProjectedExtent = acl::vector_mul(acl::vector_mix_xxxx(BoxExtent), acl::vector_abs(PlanesX));
+						//ProjectedExtent = acl::vector_mul_add(acl::vector_mix_yyyy(BoxExtent), acl::vector_abs(PlanesY), ProjectedExtent);
+						//ProjectedExtent = acl::vector_mul_add(acl::vector_mix_zzzz(BoxExtent), acl::vector_abs(PlanesZ), ProjectedExtent);
+
+						//if (acl::vector_any_greater_equal(CenterDistance, ProjectedExtent))
+						//	return false;
+
+						//return true;
+
+						//!!!add near-far check!
+
+						// pRenderable->IsVisible = make bounds test
+					}
+					else pRenderable->IsVisible = true;
+				}
+				else pRenderable->IsVisible = false;
+
+				pRenderable->BoundsVersion = pRecord->BoundsVersion;
+			}
+
+			// if ViewProjChanged, mark all queues which use distance to camera dirty
 			// update dirty sorted queues with insertion sort, O(n) for almost sorted arrays. Fallback to qsort for major reorderings or first init.
 			//!!!from huge camera changes can mark a flag 'MajorChanges' camera-dependent (FrontToBack etc) queue, and use qsort instead of almost-sorted.
 		});
