@@ -83,6 +83,9 @@ protected:
 	CArray<CAmbientLightAttribute*>				EnvironmentCache;
 	bool										VisibilityCacheDirty = true; //???to flags?
 
+	U32                                         _CameraTfmVersion = 0;
+	vector4                                     _ProjectionParams; // FIXME: use acl/rtm vector! alignment will be needed for frustum plane cache anyway
+
 	ELODType									MeshLODType = LOD_None;
 	CFixedArray<float>							MeshLODScale;
 	ELODType									MaterialLODType = LOD_None;

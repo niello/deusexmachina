@@ -319,16 +319,29 @@ bool CView::Render()
 	///////// NEW RENDER /////////
 	if (_pSPS && pCamera)
 	{
-		const auto& ViewProj = pCamera->GetViewProjMatrix();
-
-		//???view - can compare tfm version, but how to check projection change? compare final matrices? or source values?
-		//!!!to compare projection without view, can check only certain matrix values, because most of them are 0.f for any projection, 5 floats are not.
-		const bool ViewProjChanged = true; // TODO: IMPLEMENT!!!
+		bool ViewProjChanged = false;
+		{
+			const auto CameraTfmVersion = pCamera->GetNode()->GetTransformVersion();
+			if (_CameraTfmVersion != CameraTfmVersion)
+			{
+				ViewProjChanged = true;
+				_CameraTfmVersion = CameraTfmVersion;
+			}
+			const auto& Proj = pCamera->GetProjMatrix();
+			const vector4 ProjectionParams(Proj.m[0][0], Proj.m[1][1], Proj.m[2][2], Proj.m[3][2]);
+			if (_ProjectionParams != ProjectionParams)
+			{
+				ViewProjChanged = true;
+				_ProjectionParams = ProjectionParams;
+			}
+		}
 
 		//!!!TODO: could build planes from GetViewProjMatrix() here and pass to TestSpatialTreeVisibility and also use here for object visibility tests!
 		//Make a struct for ViewFrustumPlanes and inside make 2 impls, for SSE and for AVX (ymm, 6 planes at once). forceinline test(struct, box) with 2 impls inside.
 
-		//!!!???TODO: could even keep values from the prev frame if viewproj didn't change!?
+		//!!!???TODO: could even keep values from the prev frame if !ViewProjChanged!?
+
+		const auto& ViewProj = pCamera->GetViewProjMatrix();
 
 		// Extract Left, Right, Bottom & Top frustum planes using Gribb-Hartmann method.
 		// Left = W + X, Right = W - X, Bottom = W + Y, Top = W - Y. Normals look inside the frustum, i.e. positive halfspace means 'inside'.
@@ -340,6 +353,7 @@ bool CView::Render()
 		const auto LRBT_Nz = acl::vector_add(acl::vector_set(ViewProj.m[2][3]), acl::vector_set(ViewProj.m[2][0], -ViewProj.m[2][0], ViewProj.m[2][1], -ViewProj.m[2][1]));
 		const auto LRBT_w = acl::vector_add(acl::vector_set(ViewProj.m[3][3]), acl::vector_set(ViewProj.m[3][0], -ViewProj.m[3][0], ViewProj.m[3][1], -ViewProj.m[3][1]));
 
+		//???!!!TODO PERF: rtm::vector_abs & rtm::vector_neg are bit-based! Is it better to recalc in a loop than caching abs axes with potential store in memory?
 		const auto LRBT_Abs_Nx = acl::vector_abs(LRBT_Nx);
 		const auto LRBT_Abs_Ny = acl::vector_abs(LRBT_Ny);
 		const auto LRBT_Abs_Nz = acl::vector_abs(LRBT_Nz);
@@ -352,6 +366,7 @@ bool CView::Render()
 		const auto FarAxis = acl::vector_sub(acl::vector_set(ViewProj.m[0][3], ViewProj.m[1][3], ViewProj.m[2][3], 0.f), NearAxis);
 		const float InvNearLen = acl::sqrt_reciprocal(acl::vector_length_squared3(NearAxis));
 		const auto LookAxis = acl::vector_mul(NearAxis, InvNearLen);
+		const auto AbsLookAxis = acl::vector_abs(LookAxis);
 		const float NearPlane = -ViewProj.m[3][2] * InvNearLen;
 		const float FarPlane = (ViewProj.m[3][3] - ViewProj.m[3][2]) * acl::sqrt_reciprocal(acl::vector_length_squared3(FarAxis));
 
@@ -362,7 +377,7 @@ bool CView::Render()
 		// Synchronize scene objects with their renderable mirrors
 		DEM::Algo::SortedUnion(_pSPS->GetObjects(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
 			// FIXME: this will be shorter when frustum will live in a struct. But check inlining of the lambda!
-			[this, ViewProjChanged, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LRBT_Abs_Nx, LRBT_Abs_Ny, LRBT_Abs_Nz, LookAxis, NearPlane, FarPlane](auto ItSceneObject, auto ItRenderObject)
+			[this, ViewProjChanged, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LRBT_Abs_Nx, LRBT_Abs_Ny, LRBT_Abs_Nz, LookAxis, AbsLookAxis, NearPlane, FarPlane](auto ItSceneObject, auto ItRenderObject)
 		{
 			const Scene::CSPSRecord* pRecord = nullptr;
 			Render::IRenderable* pRenderable = nullptr;
@@ -375,6 +390,7 @@ bool CView::Render()
 				ItRenderObject->second.reset();
 				_RenderableNodePool.push_back(_Renderables.extract(ItRenderObject));
 
+				// TODO:
 				// erase from sorted queues
 			}
 			else if (ItRenderObject == _Renderables.cend())
@@ -404,6 +420,7 @@ bool CView::Render()
 				pRenderable = ItRenderObject->second.get();
 				TestVisibility = true;
 
+				// TODO:
 				// add to sorted queues (or test visibility first and delay adding to queues until visible the first time?)
 				//!!!an object may be added not to all queues. E.g. alpha objects don't participate in Z prepass and can ignore FrontToBack queue!
 				//???what if combining queues in some phases? E.g. make OpaqueMaterial, AlphaBackToFront, sort there only by that factor, and in a phase
@@ -416,10 +433,13 @@ bool CView::Render()
 
 				TestVisibility = (ViewProjChanged || pRenderable->BoundsVersion != pRecord->BoundsVersion);
 
+				// TODO:
 				// if sorted queue includes distance to camera and bounds changed, mark sorted queue dirty
 				// if sorted queue includes material etc which has changed, mark sorted queue dirty
 			}
 
+			//???TODO PERF: won't a separate loop over _Renderables for visibility be faster because of better cache locality?
+			//new renderables have BoundsVersion == 0, can check (ViewProjChanged || pRenderable->BoundsVersion != pRecord->BoundsVersion) for all objects!
 			if (TestVisibility)
 			{
 				// Update visibility
@@ -428,12 +448,13 @@ bool CView::Render()
 				{
 					if (_TreeNodeVisibility[pRecord->NodeIndex * 2 + 1]) // Check if node has an invisible part
 					{
-						const auto BoxCenter = pRecord->BoxCenter;
-						const auto BoxExtent = pRecord->BoxExtent;
-
-						//???check AABB or OBB? for OBB, can make WVP matrix and do the same for it? Probably more expensive, can't reuse planes!
+						//???check AABB or OBB? now AABB.
 						// OBB:  float r = b.e[0]*Abs(Dot(p.n, b.u[0])) + b.e[1]*Abs(Dot(p.n, b.u[1])) + b.e[2]*Abs(Dot(p.n, b.u[2]));
 						// AABB: float r = b.e[0]*Abs(p.n[0])           + b.e[1]*Abs(p.n[1])           + b.e[2]*Abs(p.n[2]);
+
+						// FIXME: what is better, negate each box or invert frustum plane normals once?! If second, need to fix octree node culling!
+						const auto BoxCenter = pRecord->BoxCenter;
+						const auto BoxNegExtent = acl::vector_neg(pRecord->BoxExtent);
 
 						// Distance of box center from plane (s): (Cx * Nx) + (Cy * Ny) + (Cz * Nz) - d, where "- d" is "+ w"
 						auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(BoxCenter), LRBT_Nx, LRBT_w);
@@ -441,18 +462,24 @@ bool CView::Render()
 						CenterDistance = acl::vector_mul_add(acl::vector_mix_zzzz(BoxCenter), LRBT_Nz, CenterDistance);
 
 						// Projection radius of the most inside vertex: Ex * abs(Nx) + Ey * abs(Ny) + Ez * abs(Nz)
-						auto ProjectedExtent = acl::vector_mul(acl::vector_mix_xxxx(BoxExtent), LRBT_Abs_Nx);
-						ProjectedExtent = acl::vector_mul_add(acl::vector_mix_yyyy(BoxExtent), LRBT_Abs_Ny, ProjectedExtent);
-						ProjectedExtent = acl::vector_mul_add(acl::vector_mix_zzzz(BoxExtent), LRBT_Abs_Nz, ProjectedExtent);
+						auto ProjectedNegExtent = acl::vector_mul(acl::vector_mix_xxxx(BoxNegExtent), LRBT_Abs_Nx);
+						ProjectedNegExtent = acl::vector_mul_add(acl::vector_mix_yyyy(BoxNegExtent), LRBT_Abs_Ny, ProjectedNegExtent);
+						ProjectedNegExtent = acl::vector_mul_add(acl::vector_mix_zzzz(BoxNegExtent), LRBT_Abs_Nz, ProjectedNegExtent);
 
-						//if (acl::vector_any_greater_equal(CenterDistance, ProjectedExtent))
-						//	return false;
-
-						//return true;
-
-						//!!!add near-far check!
-
-						// pRenderable->IsVisible = make bounds test
+						// Plane normals look inside the frustum
+						if (acl::vector_any_less_equal(CenterDistance, ProjectedNegExtent))
+						{
+							pRenderable->IsVisible = false;
+						}
+						else
+						{
+							// If inside LRTB, check intersection with NF planes
+							const float CenterAlongLookAxis = acl::vector_dot3(LookAxis, BoxCenter);
+							const float NegExtentAlongLookAxis = acl::vector_dot3(AbsLookAxis, BoxNegExtent);
+							const float ClosestPoint = CenterAlongLookAxis + NegExtentAlongLookAxis;
+							const float FarthestPoint = CenterAlongLookAxis - NegExtentAlongLookAxis;
+							pRenderable->IsVisible = (FarthestPoint > NearPlane && ClosestPoint < FarPlane);
+						}
 					}
 					else pRenderable->IsVisible = true;
 				}
@@ -461,6 +488,7 @@ bool CView::Render()
 				pRenderable->BoundsVersion = pRecord->BoundsVersion;
 			}
 
+			// TODO:
 			// if ViewProjChanged, mark all queues which use distance to camera dirty
 			// update dirty sorted queues with insertion sort, O(n) for almost sorted arrays. Fallback to qsort for major reorderings or first init.
 			//!!!from huge camera changes can mark a flag 'MajorChanges' camera-dependent (FrontToBack etc) queue, and use qsort instead of almost-sorted.

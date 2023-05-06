@@ -354,7 +354,7 @@ void CSPS::UpdateRecord(CSPSRecord* pRecord)
 	const auto BoxCenter = acl::vector_add(HalfMax, HalfMin);
 	const auto BoxExtent = acl::vector_sub(HalfMax, HalfMin);
 
-	// TODO: check if this is useful
+	// TODO PERF: check if this is useful. Also may want to rewrite for strict equality because near equal involves much more operations.
 	if (acl::vector_all_near_equal3(BoxCenter, pRecord->BoxCenter) && acl::vector_all_near_equal3(BoxExtent, pRecord->BoxExtent))
 		return;
 
