@@ -91,20 +91,19 @@ constexpr auto NO_NODE = Data::CSparseArray2<CSpatialTreeNode, U32>::INVALID_IND
 
 struct CSPSRecord
 {
+	///////// NEW RENDER /////////
+	acl::Vector4_32 BoxCenter;
+	acl::Vector4_32 BoxExtent;
+	TMorton         NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes for child nodes
+	U32             NodeIndex = NO_NODE;
+	U32             BoundsVersion = 1;
+	//////////////////////////////
+
 	CSPSRecord*		pNext = nullptr;
 	CSPSRecord*		pPrev = nullptr;
 	CSPSNode*		pSPSNode = nullptr;
 	CNodeAttribute*	pUserData = nullptr;
 	CAABB			GlobalBox;
-
-	///////// NEW RENDER /////////
-	TMorton NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, then 100, 101, 110, 111 etc
-	U32     NodeIndex = NO_NODE;
-	U32     BoundsVersion = 1;
-
-	//???!!!store object's AABB or even OBB in center/half-extents SIMD form?! here or in attr? would save calculations, and in a frustum test too!
-
-	//inline bool operator <(const CSPSRecord& Other) const noexcept { return UID < Other.UID; }
 };
 
 class CSPS //???rename to CGfxLevel? CRenderLevel etc? Not exactly SPS, but a thing one step above it.
@@ -129,7 +128,7 @@ protected:
 
 	UPTR _NextUID = 1; // UID 0 means no UID assigned, so start from 1
 
-	TMorton CalculateMortonCode(const CAABB& AABB) const noexcept;
+	TMorton CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const noexcept;
 	U32     CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex);
 	U32     AddSingleObject(TMorton NodeMortonCode, TMorton StopMortonCode);
 	void    RemoveSingleObject(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode);

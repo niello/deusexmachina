@@ -160,31 +160,25 @@ void CSPS::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 }
 //---------------------------------------------------------------------
 
-TMorton CSPS::CalculateMortonCode(const CAABB& AABB) const noexcept
+TMorton CSPS::CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const noexcept
 {
 	// FIXME: store world bounds in a SIMD vector!
 	const auto WorldCenter = acl::vector_set(_WorldCenter.x, _WorldCenter.y, _WorldCenter.z);
 	const auto WorldExtent = acl::vector_set(_WorldExtent);
 
-	// FIXME: can initially store AABB as SIMD center & extent?
-	const auto HalfMin = acl::vector_mul(acl::vector_set(AABB.Min.x, AABB.Min.y, AABB.Min.z), 0.5f);
-	const auto HalfMax = acl::vector_mul(acl::vector_set(AABB.Max.x, AABB.Max.y, AABB.Max.z), 0.5f);
-	const auto Center = acl::vector_add(HalfMax, HalfMin);
-	const auto Extent = acl::vector_sub(HalfMax, HalfMin);
-
 	// Our level is where the non-loose node size is not less than our size in any of dimensions.
 	// Too small and degenerate AABBs sink to the deepest possible level to save us from division errors.
 	TMorton NodeSizeCoeff = static_cast<TMorton>(1 << (_MaxDepth - 1));
-	if (acl::vector_all_greater_equal3(Extent, acl::vector_set(0.0001f)))
+	if (acl::vector_all_greater_equal3(BoxExtent, acl::vector_set(0.0001f)))
 	{
 		// TODO: can make better with SIMD?
-		const float MaxDim = std::max({ acl::vector_get_x(Extent), acl::vector_get_y(Extent), acl::vector_get_z(Extent) });
+		const float MaxDim = std::max({ acl::vector_get_x(BoxExtent), acl::vector_get_y(BoxExtent), acl::vector_get_z(BoxExtent) });
 		const TMorton HighestSharePow2 = Math::NextPow2(static_cast<TMorton>(_WorldExtent / MaxDim));
 		if (NodeSizeCoeff > HighestSharePow2) NodeSizeCoeff = HighestSharePow2;
 	}
 
 	const float CellCoeff = static_cast<float>(NodeSizeCoeff) * _InvWorldSize;
-	const auto Cell = acl::vector_mul(acl::vector_add(acl::vector_sub(Center, WorldCenter), WorldExtent), CellCoeff); // (C - Wc + We) * Coeff
+	const auto Cell = acl::vector_mul(acl::vector_add(acl::vector_sub(BoxCenter, WorldCenter), WorldExtent), CellCoeff); // (C - Wc + We) * Coeff
 
 	const auto x = static_cast<TCellDim>(acl::vector_get_x(Cell));
 	const auto y = static_cast<TCellDim>(acl::vector_get_y(Cell));
@@ -322,10 +316,18 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 
 	///////// NEW RENDER /////////
 	//!!!TODO: skip insertion if oversized or if outside root node ???store oversized objects in the root or at 0?
-	const auto NodeMortonCode = CalculateMortonCode(GlobalBox);
+
+	// TODO: store AABB as SIMD center-extents everywhere?!
+	const auto HalfMin = acl::vector_mul(acl::vector_set(GlobalBox.Min.x, GlobalBox.Min.y, GlobalBox.Min.z), 0.5f);
+	const auto HalfMax = acl::vector_mul(acl::vector_set(GlobalBox.Max.x, GlobalBox.Max.y, GlobalBox.Max.z), 0.5f);
+	pRecord->BoxCenter = acl::vector_add(HalfMax, HalfMin);
+	pRecord->BoxExtent = acl::vector_sub(HalfMax, HalfMin);
+	pRecord->BoundsVersion = 1;
+
+	const auto NodeMortonCode = CalculateMortonCode(pRecord->BoxCenter, pRecord->BoxExtent);
 	pRecord->NodeIndex = AddSingleObject(NodeMortonCode, 0);
 	pRecord->NodeMortonCode = NodeMortonCode;
-	pRecord->BoundsVersion = 1;
+
 	_Objects.emplace_hint(_Objects.cend(), _NextUID++, pRecord); //!!!TODO: insert (hint, std::move(node))
 
 	// If this assert is ever triggered, compacting of existing UIDs may be implemented to keep fast insertions to the map end.
@@ -344,17 +346,30 @@ void CSPS::UpdateRecord(CSPSRecord* pRecord)
 	QuadTree.UpdateHandle(CSPSCell::CIterator(pRecord), CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);
 
 	///////// NEW RENDER /////////
-	//!!!pass box as an arg! can skip update if the box is the same. Easy to compare using SIMD Center&Extent.
-	const auto NodeMortonCode = CalculateMortonCode(pRecord->GlobalBox);
+	//???TODO: skip oversized and outside-the-world? if became such, must erase from old node but don't add to new! Check how it works now!
 
-	if (pRecord->NodeMortonCode == NodeMortonCode) return;
+	// TODO: store AABB as SIMD center-extents everywhere?!
+	const auto HalfMin = acl::vector_mul(acl::vector_set(pRecord->GlobalBox.Min.x, pRecord->GlobalBox.Min.y, pRecord->GlobalBox.Min.z), 0.5f);
+	const auto HalfMax = acl::vector_mul(acl::vector_set(pRecord->GlobalBox.Max.x, pRecord->GlobalBox.Max.y, pRecord->GlobalBox.Max.z), 0.5f);
+	const auto BoxCenter = acl::vector_add(HalfMax, HalfMin);
+	const auto BoxExtent = acl::vector_sub(HalfMax, HalfMin);
 
-	const auto LCAMortonCode = MortonLCA<TREE_DIMENSIONS>(pRecord->NodeMortonCode, NodeMortonCode);
+	// TODO: check if this is useful
+	if (acl::vector_all_near_equal3(BoxCenter, pRecord->BoxCenter) && acl::vector_all_near_equal3(BoxExtent, pRecord->BoxExtent))
+		return;
 
-	RemoveSingleObject(pRecord->NodeIndex, pRecord->NodeMortonCode, LCAMortonCode);
-	pRecord->NodeIndex = AddSingleObject(NodeMortonCode, LCAMortonCode);
-	pRecord->NodeMortonCode = NodeMortonCode;
+	pRecord->BoxCenter = BoxCenter;
+	pRecord->BoxExtent = BoxExtent;
 	if (++pRecord->BoundsVersion == 0) ++pRecord->BoundsVersion; // 0 is a special invalid version
+
+	const auto NodeMortonCode = CalculateMortonCode(pRecord->BoxCenter, pRecord->BoxExtent);
+	if (pRecord->NodeMortonCode != NodeMortonCode)
+	{
+		const auto LCAMortonCode = MortonLCA<TREE_DIMENSIONS>(pRecord->NodeMortonCode, NodeMortonCode);
+		RemoveSingleObject(pRecord->NodeIndex, pRecord->NodeMortonCode, LCAMortonCode);
+		pRecord->NodeIndex = AddSingleObject(NodeMortonCode, LCAMortonCode);
+		pRecord->NodeMortonCode = NodeMortonCode;
+	}
 	//////////////////////////////
 }
 //---------------------------------------------------------------------
@@ -370,6 +385,8 @@ void CSPS::RemoveRecord(CSPSRecord* pRecord)
 	pRecord->NodeIndex = NO_NODE;
 	//extract from _Objects to pool! By UID stored in the attr itself? Then need also to clear UID in the attr here.
 	//!!!could also store iterator instead of UID in attr, it is less safe but O(1) extract instead of O(logN)! Clear all iterators before _Objects.clear() then!
+	//!!!it is just like pSPSRecord was previously saved in an attr!
+	//???need to save pSPS in attr or can pass it on Update iterations?!
 	//////////////////////////////
 }
 //---------------------------------------------------------------------

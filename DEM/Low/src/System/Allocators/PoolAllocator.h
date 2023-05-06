@@ -5,7 +5,7 @@
 // CPoolAllocator allows to mix any number of types as long as all of them have sizeof <= ObjectByteSize.
 // CPool is a wrapper for a single type pool.
 
-template <UPTR ObjectByteSize, UPTR ObjectsPerChunk = 128>
+template <UPTR ObjectByteSize, UPTR Alignment = 0, UPTR ObjectsPerChunk = 128>
 class CPoolAllocator final
 {
 	static_assert(ObjectByteSize > 0 && ObjectsPerChunk > 0);
@@ -14,21 +14,21 @@ protected:
 
 	union CRecord
 	{
-		U8       Object[ObjectByteSize];
+		alignas(Alignment) std::byte Object[ObjectByteSize];
 		CRecord* pNext;
 	};
 
 	struct CChunkNode
 	{
 		std::unique_ptr<CChunkNode> Next;
-		CRecord                     ChunkRecords[ObjectsPerChunk] = {};
+		CRecord ChunkRecords[ObjectsPerChunk];
 	};
 
 	std::unique_ptr<CChunkNode> Chunks;
-	CRecord*                    pFreeRecords = nullptr;
+	CRecord* pFreeRecords = nullptr;
 
 #ifdef _DEBUG
-	UPTR       CurrAllocatedCount = 0;
+	UPTR CurrAllocatedCount = 0;
 #endif
 
 public:
@@ -104,7 +104,7 @@ public:
 	{
 		static_assert(sizeof(T) <= ObjectByteSize);
 		auto pNew = static_cast<T*>(Allocate());
-		n_placement_new(pNew, T)(std::forward<TArgs>(Args)...);
+		new (pNew) T(std::forward<TArgs>(Args)...);
 		return pNew;
 	}
 
@@ -124,7 +124,7 @@ class CPool final
 {
 private:
 
-	CPoolAllocator<sizeof(T), ObjectsPerChunk> _Allocator;
+	CPoolAllocator<sizeof(T), alignof(T), ObjectsPerChunk> _Allocator;
 
 public:
 

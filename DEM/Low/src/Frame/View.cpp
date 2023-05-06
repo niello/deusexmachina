@@ -326,7 +326,10 @@ bool CView::Render()
 		const bool ViewProjChanged = true; // TODO: IMPLEMENT!!!
 
 		//!!!TODO: could build planes from GetViewProjMatrix() here and pass to TestSpatialTreeVisibility and also use here for object visibility tests!
-		//???could even keep values from the prev frame if viewproj didn't change!
+		//Make a struct for ViewFrustumPlanes and inside make 2 impls, for SSE and for AVX (ymm, 6 planes at once). forceinline test(struct, box) with 2 impls inside.
+
+		//!!!???TODO: could even keep values from the prev frame if viewproj didn't change!?
+
 		// Extract Left, Right, Bottom & Top frustum planes using Gribb-Hartmann method.
 		// Left = W + X, Right = W - X, Bottom = W + Y, Top = W - Y. Normals look inside the frustum, i.e. positive halfspace means 'inside'.
 		// LRBT_w is a -d, i.e. -dot(PlaneNormal, PlaneOrigin). +w instead of -d allows us using a single fma instead of separate mul & sub in a box test.
@@ -336,6 +339,10 @@ bool CView::Render()
 		const auto LRBT_Ny = acl::vector_add(acl::vector_set(ViewProj.m[1][3]), acl::vector_set(ViewProj.m[1][0], -ViewProj.m[1][0], ViewProj.m[1][1], -ViewProj.m[1][1]));
 		const auto LRBT_Nz = acl::vector_add(acl::vector_set(ViewProj.m[2][3]), acl::vector_set(ViewProj.m[2][0], -ViewProj.m[2][0], ViewProj.m[2][1], -ViewProj.m[2][1]));
 		const auto LRBT_w = acl::vector_add(acl::vector_set(ViewProj.m[3][3]), acl::vector_set(ViewProj.m[3][0], -ViewProj.m[3][0], ViewProj.m[3][1], -ViewProj.m[3][1]));
+
+		const auto LRBT_Abs_Nx = acl::vector_abs(LRBT_Nx);
+		const auto LRBT_Abs_Ny = acl::vector_abs(LRBT_Ny);
+		const auto LRBT_Abs_Nz = acl::vector_abs(LRBT_Nz);
 
 		// Near and far planes are parallel, which enables us to save some work. Near & far planes are +d (-w) along the look
 		// axis, so NearPlane is negated once and FarPlane is negated twice (once to make it -w, once to invert the axis).
@@ -354,7 +361,8 @@ bool CView::Render()
 
 		// Synchronize scene objects with their renderable mirrors
 		DEM::Algo::SortedUnion(_pSPS->GetObjects(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
-			[this, ViewProjChanged](auto ItSceneObject, auto ItRenderObject)
+			// FIXME: this will be shorter when frustum will live in a struct. But check inlining of the lambda!
+			[this, ViewProjChanged, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LRBT_Abs_Nx, LRBT_Abs_Ny, LRBT_Abs_Nz, LookAxis, NearPlane, FarPlane](auto ItSceneObject, auto ItRenderObject)
 		{
 			const Scene::CSPSRecord* pRecord = nullptr;
 			Render::IRenderable* pRenderable = nullptr;
@@ -420,20 +428,22 @@ bool CView::Render()
 				{
 					if (_TreeNodeVisibility[pRecord->NodeIndex * 2 + 1]) // Check if node has an invisible part
 					{
+						const auto BoxCenter = pRecord->BoxCenter;
+						const auto BoxExtent = pRecord->BoxExtent;
+
 						//???check AABB or OBB? for OBB, can make WVP matrix and do the same for it? Probably more expensive, can't reuse planes!
 						// OBB:  float r = b.e[0]*Abs(Dot(p.n, b.u[0])) + b.e[1]*Abs(Dot(p.n, b.u[1])) + b.e[2]*Abs(Dot(p.n, b.u[2]));
 						// AABB: float r = b.e[0]*Abs(p.n[0])           + b.e[1]*Abs(p.n[1])           + b.e[2]*Abs(p.n[2]);
 
-						//// Distance of box center from plane: (Cx * Pnx) + (Cy * Pny) + (Cz * Pnz) - Pd
-						//// PlanesW is already negated, so we turn "-Pd" into "+NegativePd" and use fma instead of mul & sub
-						//auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(BoxCenter), PlanesX, PlanesW);
-						//CenterDistance = acl::vector_mul_add(acl::vector_mix_yyyy(BoxCenter), PlanesY, CenterDistance);
-						//CenterDistance = acl::vector_mul_add(acl::vector_mix_zzzz(BoxCenter), PlanesZ, CenterDistance);
+						// Distance of box center from plane (s): (Cx * Nx) + (Cy * Ny) + (Cz * Nz) - d, where "- d" is "+ w"
+						auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(BoxCenter), LRBT_Nx, LRBT_w);
+						CenterDistance = acl::vector_mul_add(acl::vector_mix_yyyy(BoxCenter), LRBT_Ny, CenterDistance);
+						CenterDistance = acl::vector_mul_add(acl::vector_mix_zzzz(BoxCenter), LRBT_Nz, CenterDistance);
 
-						//// Projection radius of the most inside vertex: Ex * abs(Pnx) + Ey * abs(Pny) + Ez * abs(Pnz)
-						//auto ProjectedExtent = acl::vector_mul(acl::vector_mix_xxxx(BoxExtent), acl::vector_abs(PlanesX));
-						//ProjectedExtent = acl::vector_mul_add(acl::vector_mix_yyyy(BoxExtent), acl::vector_abs(PlanesY), ProjectedExtent);
-						//ProjectedExtent = acl::vector_mul_add(acl::vector_mix_zzzz(BoxExtent), acl::vector_abs(PlanesZ), ProjectedExtent);
+						// Projection radius of the most inside vertex: Ex * abs(Nx) + Ey * abs(Ny) + Ez * abs(Nz)
+						auto ProjectedExtent = acl::vector_mul(acl::vector_mix_xxxx(BoxExtent), LRBT_Abs_Nx);
+						ProjectedExtent = acl::vector_mul_add(acl::vector_mix_yyyy(BoxExtent), LRBT_Abs_Ny, ProjectedExtent);
+						ProjectedExtent = acl::vector_mul_add(acl::vector_mix_zzzz(BoxExtent), LRBT_Abs_Nz, ProjectedExtent);
 
 						//if (acl::vector_any_greater_equal(CenterDistance, ProjectedExtent))
 						//	return false;
