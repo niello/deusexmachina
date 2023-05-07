@@ -97,6 +97,7 @@ protected:
 
 	DECLARE_EVENT_HANDLER(OSWindowResized, OnOSWindowResized);
 
+	void SynchronizeObjects();
 	void UpdateObjectVisibility(bool ViewProjChanged);
 
 public:

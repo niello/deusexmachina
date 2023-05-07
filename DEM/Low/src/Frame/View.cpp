@@ -311,6 +311,72 @@ void CView::Update(float dt)
 }
 //---------------------------------------------------------------------
 
+void CView::SynchronizeObjects()
+{
+	// Synchronize scene objects with their renderable mirrors
+	DEM::Algo::SortedUnion(_pSPS->GetObjects(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
+		[this](auto ItSceneObject, auto ItRenderObject)
+	{
+		const Scene::CSPSRecord* pRecord = nullptr;
+		Render::IRenderable* pRenderable = nullptr;
+
+		if (ItSceneObject == _pSPS->GetObjects().cend())
+		{
+			// An object was removed from a scene, remove its renderable
+			// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one
+			ItRenderObject->second.reset();
+			_RenderableNodePool.push_back(_Renderables.extract(ItRenderObject));
+
+			// TODO:
+			// erase from sorted queues
+		}
+		else if (ItRenderObject == _Renderables.cend())
+		{
+			// A new object in a scene
+			const auto UID = ItSceneObject->first;
+			pRecord = ItSceneObject->second;
+
+			//!!!FIXME: need to guarantee this! Split GetObjects by type on insertion? Lights etc don't need renderables and sync! But lights may need IsVisible!
+			n_assert_dbg(pRecord->pUserData->As<Frame::CRenderableAttribute>());
+			auto pAttr = static_cast<const Frame::CRenderableAttribute*>(pRecord->pUserData);
+
+			// UIDs always grow (unless overflowed), and therefore adding to the end is always the right hint which gives us O(1) insertion
+			//???!!!could compact UIDs when close to overflow! Do in SPS and broadcast changes OldUID->NewUID to all views. With guarantee of
+			//doing this in order, we can keep an iterator and avoid logarithmic searches for each change!
+			if (_RenderableNodePool.empty())
+			{
+				ItRenderObject = _Renderables.emplace_hint(_Renderables.cend(), UID, pAttr->CreateRenderable(*_GraphicsMgr));
+			}
+			else
+			{
+				auto& Node = _RenderableNodePool.back();
+				Node.key() = UID;
+				Node.mapped() = pAttr->CreateRenderable(*_GraphicsMgr);
+				ItRenderObject = _Renderables.insert(_Renderables.cend(), std::move(Node));
+				_RenderableNodePool.pop_back();
+			}
+
+			pRenderable = ItRenderObject->second.get();
+
+			// TODO:
+			// add to sorted queues (or test visibility first and delay adding to queues until visible the first time?)
+			//!!!an object may be added not to all queues. E.g. alpha objects don't participate in Z prepass and can ignore FrontToBack queue!
+			//???what if combining queues in some phases? E.g. make OpaqueMaterial, AlphaBackToFront, sort there only by that factor, and in a phase
+			//just render one queue and then another!? Could make sorting faster than for the whole pool of objects.
+		}
+		else
+		{
+			pRecord = ItSceneObject->second;
+			pRenderable = ItRenderObject->second.get();
+
+			// TODO:
+			// if sorted queue includes distance to camera and bounds changed, mark sorted queue dirty
+			// if sorted queue includes material etc which has changed, mark sorted queue dirty
+		}
+	});
+}
+//---------------------------------------------------------------------
+
 void CView::UpdateObjectVisibility(bool ViewProjChanged)
 {
 	//!!!???TODO: could keep Frustum from the prev frame if !ViewProjChanged!?
@@ -382,68 +448,7 @@ bool CView::Render()
 			}
 		}
 
-		// Synchronize scene objects with their renderable mirrors
-		DEM::Algo::SortedUnion(_pSPS->GetObjects(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
-			[this](auto ItSceneObject, auto ItRenderObject)
-		{
-			const Scene::CSPSRecord* pRecord = nullptr;
-			Render::IRenderable* pRenderable = nullptr;
-
-			if (ItSceneObject == _pSPS->GetObjects().cend())
-			{
-				// An object was removed from a scene, remove its renderable
-				// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one
-				ItRenderObject->second.reset();
-				_RenderableNodePool.push_back(_Renderables.extract(ItRenderObject));
-
-				// TODO:
-				// erase from sorted queues
-			}
-			else if (ItRenderObject == _Renderables.cend())
-			{
-				// A new object in a scene
-				const auto UID = ItSceneObject->first;
-				pRecord = ItSceneObject->second;
-
-				//!!!FIXME: need to guarantee this! Split GetObjects by type on insertion? Lights etc don't need renderables and sync!
-				n_assert_dbg(pRecord->pUserData->As<Frame::CRenderableAttribute>());
-				auto pAttr = static_cast<const Frame::CRenderableAttribute*>(pRecord->pUserData);
-
-				// UIDs always grow (unless overflowed), and therefore adding to the end is always the right hint which gives us O(1) insertion
-				//???!!!could compact UIDs when close to overflow! Do in SPS and broadcast changes OldUID->NewUID to all views. With guarantee of
-				//doing this in order, we can keep an iterator and avoid logarithmic searches for each change!
-				if (_RenderableNodePool.empty())
-				{
-					ItRenderObject = _Renderables.emplace_hint(_Renderables.cend(), UID, pAttr->CreateRenderable(*_GraphicsMgr));
-				}
-				else
-				{
-					auto& Node = _RenderableNodePool.back();
-					Node.key() = UID;
-					Node.mapped() = pAttr->CreateRenderable(*_GraphicsMgr);
-					ItRenderObject = _Renderables.insert(_Renderables.cend(), std::move(Node));
-					_RenderableNodePool.pop_back();
-				}
-
-				pRenderable = ItRenderObject->second.get();
-
-				// TODO:
-				// add to sorted queues (or test visibility first and delay adding to queues until visible the first time?)
-				//!!!an object may be added not to all queues. E.g. alpha objects don't participate in Z prepass and can ignore FrontToBack queue!
-				//???what if combining queues in some phases? E.g. make OpaqueMaterial, AlphaBackToFront, sort there only by that factor, and in a phase
-				//just render one queue and then another!? Could make sorting faster than for the whole pool of objects.
-			}
-			else
-			{
-				pRecord = ItSceneObject->second;
-				pRenderable = ItRenderObject->second.get();
-
-				// TODO:
-				// if sorted queue includes distance to camera and bounds changed, mark sorted queue dirty
-				// if sorted queue includes material etc which has changed, mark sorted queue dirty
-			}
-		});
-
+		SynchronizeObjects();
 		UpdateObjectVisibility(ViewProjChanged);
 
 		// TODO:
