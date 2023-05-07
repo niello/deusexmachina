@@ -184,7 +184,7 @@ TMorton CSPS::CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32
 	}
 
 	const float CellCoeff = static_cast<float>(NodeSizeCoeff) * _InvWorldSize;
-	const auto Cell = acl::vector_mul(acl::vector_add(acl::vector_sub(BoxCenter, WorldCenter), WorldExtent), CellCoeff); // (C - Wc + We) * Coeff
+	const auto Cell = acl::vector_mul(acl::vector_add(BoxCenter, acl::vector_sub(WorldExtent, WorldCenter)), CellCoeff); // (C + (We - Wc)) * Coeff
 
 	const auto x = static_cast<TCellDim>(acl::vector_get_x(Cell));
 	const auto y = static_cast<TCellDim>(acl::vector_get_y(Cell));
