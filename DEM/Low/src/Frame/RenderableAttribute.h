@@ -1,5 +1,6 @@
 #pragma once
 #include <Scene/NodeAttribute.h>
+#include <Scene/SPS.h>
 
 // Base attribute class for any renderable scene objects. Initialization is done in two
 // phases. First all plain data is initialized on loading. After that the attribute can
@@ -30,9 +31,9 @@ class CRenderableAttribute: public Scene::CNodeAttribute
 
 protected:
 
-	Scene::CSPS*		pSPS = nullptr;
-	Scene::CSPSRecord*	pSPSRecord = nullptr;
-	U32                 LastTransformVersion = 0;
+	Scene::CSPS*		 pSPS = nullptr;
+	Scene::CSPS::HObject ObjectHandle = {};
+	U32                  LastTransformVersion = 0;
 
 	virtual void OnActivityChanged(bool Active) override;
 

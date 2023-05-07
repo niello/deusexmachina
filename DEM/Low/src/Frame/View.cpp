@@ -329,16 +329,20 @@ void CView::UpdateObjectVisibility(bool ViewProjChanged)
 		Render::IRenderable* pRenderable = ItRenderObject->second.get();
 		if (ViewProjChanged || pRenderable->BoundsVersion != pRecord->BoundsVersion)
 		{
-			const bool NoTreeNode = (pRecord->NodeIndex == Scene::NO_SPATIAL_TREE_NODE);
-			if (NoTreeNode || _TreeNodeVisibility[pRecord->NodeIndex * 2]) // Check if node has a visible part
+			if (pRecord->BoundsValid)
 			{
-				if (NoTreeNode || _TreeNodeVisibility[pRecord->NodeIndex * 2 + 1]) // Check if node has an invisible part
+				const bool NoTreeNode = (pRecord->NodeIndex == Scene::NO_SPATIAL_TREE_NODE);
+				if (NoTreeNode || _TreeNodeVisibility[pRecord->NodeIndex * 2]) // Check if node has a visible part
 				{
-					pRenderable->IsVisible = Math::ClipAABB(pRecord->BoxCenter, pRecord->BoxExtent, Frustum);
+					if (NoTreeNode || _TreeNodeVisibility[pRecord->NodeIndex * 2 + 1]) // Check if node has an invisible part
+					{
+						pRenderable->IsVisible = Math::ClipAABB(pRecord->BoxCenter, pRecord->BoxExtent, Frustum);
+					}
+					else pRenderable->IsVisible = true;
 				}
-				else pRenderable->IsVisible = true;
+				else pRenderable->IsVisible = false;
 			}
-			else pRenderable->IsVisible = false;
+			else pRenderable->IsVisible = true; // Objects with invalid bounds are always visible. E.g. skybox.
 
 			pRenderable->BoundsVersion = pRecord->BoundsVersion;
 		}

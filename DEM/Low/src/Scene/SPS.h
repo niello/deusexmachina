@@ -99,15 +99,16 @@ struct CSPSRecord
 	///////// NEW RENDER /////////
 	acl::Vector4_32 BoxCenter;
 	acl::Vector4_32 BoxExtent;
+	CNodeAttribute* pUserData = nullptr;
 	TMorton         NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes for child nodes
 	U32             NodeIndex = NO_SPATIAL_TREE_NODE;
 	U32             BoundsVersion = 1;
+	bool            BoundsValid = false;
 	//////////////////////////////
 
 	CSPSRecord*		pNext = nullptr;
 	CSPSRecord*		pPrev = nullptr;
 	CSPSNode*		pSPSNode = nullptr;
-	CNodeAttribute*	pUserData = nullptr;
 	CAABB			GlobalBox;
 };
 
@@ -122,10 +123,12 @@ protected:
 	///////// NEW RENDER /////////
 	Data::CSparseArray2<CSpatialTreeNode, U32> _TreeNodes;
 	std::unordered_map<TMorton, U32> _MortonToIndex;
-	std::vector<std::unordered_map<TMorton, U32>::node_type> _MortonToIndexPool;
+	std::vector<decltype(_MortonToIndex)::node_type> _MortonToIndexPool;
 
 	//!!!TODO: separate by type - renderables, lights, ambient etc!
-	std::map<UPTR, CSPSRecord*> _Objects; // TODO: could try to use std::set
+	std::map<UPTR, CSPSRecord*> _Objects; // TODO: if cleared, need to clear iterators in attributes first!
+	std::vector<decltype(_Objects)::node_type> _ObjectNodePool;
+
 	vector3 _WorldCenter;
 	float _WorldExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic
 	float _InvWorldSize = 0.f; // Cached 1 / (2 * _WorldExtent)
@@ -136,11 +139,13 @@ protected:
 
 	TMorton CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const noexcept;
 	U32     CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex);
-	U32     AddSingleObject(TMorton NodeMortonCode, TMorton StopMortonCode);
-	void    RemoveSingleObject(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode);
+	U32     AddSingleObjectToNode(TMorton NodeMortonCode, TMorton StopMortonCode);
+	void    RemoveSingleObjectFromNode(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode);
 	//////////////////////////////
 
 public:
+
+	using HObject = decltype(_Objects)::const_iterator;
 
 	CArray<CNodeAttribute*>	OversizedObjects;
 	CSPSQuadTree			QuadTree;
@@ -151,6 +156,11 @@ public:
 	CSPSRecord*	AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData);
 	void		UpdateRecord(CSPSRecord* pRecord);
 	void		RemoveRecord(CSPSRecord* pRecord);
+
+	HObject AddObject(const CAABB& GlobalBox, CNodeAttribute* pUserData);
+	void    UpdateObject(HObject Handle, const CAABB& GlobalBox);
+	void    RemoveObject(HObject Handle);
+	HObject GetInvalidObjectHandle() const { return _Objects.cend(); }
 
 	const auto&     GetObjects() const { return _Objects; }
 	acl::Vector4_32 CalcNodeBounds(TMorton MortonCode) const;

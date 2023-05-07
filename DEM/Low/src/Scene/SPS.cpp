@@ -226,7 +226,7 @@ U32 CSPS::CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex)
 }
 //---------------------------------------------------------------------
 
-U32 CSPS::AddSingleObject(TMorton NodeMortonCode, TMorton StopMortonCode)
+U32 CSPS::AddSingleObjectToNode(TMorton NodeMortonCode, TMorton StopMortonCode)
 {
 	if (!NodeMortonCode) return NO_SPATIAL_TREE_NODE;
 
@@ -270,7 +270,7 @@ U32 CSPS::AddSingleObject(TMorton NodeMortonCode, TMorton StopMortonCode)
 }
 //---------------------------------------------------------------------
 
-void CSPS::RemoveSingleObject(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode)
+void CSPS::RemoveSingleObjectFromNode(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode)
 {
 	while (NodeMortonCode != StopMortonCode)
 	{
@@ -297,9 +297,14 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 	float CenterX, CenterZ, HalfSizeX, HalfSizeZ;
 	GetDimensions(GlobalBox, CenterX, CenterZ, HalfSizeX, HalfSizeZ);
 	QuadTree.AddObject(pRecord, CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);
+	return pRecord;
+}
+//---------------------------------------------------------------------
 
-	///////// NEW RENDER /////////
-	//!!!TODO: skip insertion if oversized or if outside root node ???store oversized objects in the root or at 0?
+CSPS::HObject CSPS::AddObject(const CAABB& GlobalBox, CNodeAttribute* pUserData)
+{
+	CSPSRecord* pRecord = RecordPool.Construct();
+	pRecord->pUserData = pUserData;
 
 	// TODO: store AABB as SIMD center-extents everywhere?!
 	const auto HalfMin = acl::vector_mul(acl::vector_set(GlobalBox.Min.x, GlobalBox.Min.y, GlobalBox.Min.z), 0.5f);
@@ -307,10 +312,20 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 	pRecord->BoxCenter = acl::vector_add(HalfMax, HalfMin);
 	pRecord->BoxExtent = acl::vector_sub(HalfMax, HalfMin);
 	pRecord->BoundsVersion = 1;
+	pRecord->BoundsValid = !acl::vector_any_less_equal3(pRecord->BoxExtent, acl::vector_set(0.f));
 
-	const auto NodeMortonCode = CalculateMortonCode(pRecord->BoxCenter, pRecord->BoxExtent);
-	pRecord->NodeIndex = AddSingleObject(NodeMortonCode, 0);
-	pRecord->NodeMortonCode = NodeMortonCode;
+	if (pRecord->BoundsValid)
+	{
+		const auto NodeMortonCode = CalculateMortonCode(pRecord->BoxCenter, pRecord->BoxExtent);
+		pRecord->NodeIndex = AddSingleObjectToNode(NodeMortonCode, 0);
+		pRecord->NodeMortonCode = NodeMortonCode;
+	}
+	else
+	{
+		// Objects with empty and invalid bounds are considered being outside the spatial tree
+		pRecord->NodeIndex = NO_SPATIAL_TREE_NODE;
+		pRecord->NodeMortonCode = 0;
+	}
 
 	//!!!DBG TMP!
 	if (pRecord->NodeIndex != NO_SPATIAL_TREE_NODE)
@@ -321,14 +336,24 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 		n_assert_dbg(NodeBox.contains(GlobalBox.Center()));
 	}
 
-	_Objects.emplace_hint(_Objects.cend(), _NextUID++, pRecord); //!!!TODO: insert (hint, std::move(node))
+	const auto UID = _NextUID++;
 
 	// If this assert is ever triggered, compacting of existing UIDs may be implemented to keep fast insertions to the map end.
 	// Compacting must change UIDs in _Objects and broadcast changes to all views. Try to make it sorted and preserve iterators to avoid logN searches.
 	n_assert_dbg(_NextUID < std::numeric_limits<decltype(_NextUID)>().max());
-	//////////////////////////////
 
-	return pRecord;
+	if (_ObjectNodePool.empty())
+	{
+		return _Objects.emplace_hint(_Objects.cend(), UID, pRecord);
+	}
+	else
+	{
+		auto Node = std::move(_ObjectNodePool.back());
+		_ObjectNodePool.pop_back();
+		Node.key() = UID;
+		Node.mapped() = pRecord;
+		return _Objects.insert(_Objects.cend(), std::move(Node));
+	}
 }
 //---------------------------------------------------------------------
 
@@ -337,30 +362,34 @@ void CSPS::UpdateRecord(CSPSRecord* pRecord)
 	float CenterX, CenterZ, HalfSizeX, HalfSizeZ;
 	GetDimensions(pRecord->GlobalBox, CenterX, CenterZ, HalfSizeX, HalfSizeZ);
 	QuadTree.UpdateHandle(CSPSCell::CIterator(pRecord), CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);
+}
+//---------------------------------------------------------------------
 
-	///////// NEW RENDER /////////
-	//???TODO: skip oversized and outside-the-world? if became such, must erase from old node but don't add to new! Check how it works now!
+void CSPS::UpdateObject(HObject Handle, const CAABB& GlobalBox)
+{
+	auto pRecord = Handle->second;
 
 	// TODO: store AABB as SIMD center-extents everywhere?!
-	const auto HalfMin = acl::vector_mul(acl::vector_set(pRecord->GlobalBox.Min.x, pRecord->GlobalBox.Min.y, pRecord->GlobalBox.Min.z), 0.5f);
-	const auto HalfMax = acl::vector_mul(acl::vector_set(pRecord->GlobalBox.Max.x, pRecord->GlobalBox.Max.y, pRecord->GlobalBox.Max.z), 0.5f);
+	const auto HalfMin = acl::vector_mul(acl::vector_set(GlobalBox.Min.x, GlobalBox.Min.y, GlobalBox.Min.z), 0.5f);
+	const auto HalfMax = acl::vector_mul(acl::vector_set(GlobalBox.Max.x, GlobalBox.Max.y, GlobalBox.Max.z), 0.5f);
 	const auto BoxCenter = acl::vector_add(HalfMax, HalfMin);
 	const auto BoxExtent = acl::vector_sub(HalfMax, HalfMin);
 
-	// TODO PERF: check if this is useful. Also may want to rewrite for strict equality because near equal involves much more operations.
+	// TODO PERF: check if this is useful. Also may want to rewrite for strict equality because near_equal involves much more operations!
 	if (acl::vector_all_near_equal3(BoxCenter, pRecord->BoxCenter) && acl::vector_all_near_equal3(BoxExtent, pRecord->BoxExtent))
 		return;
 
 	pRecord->BoxCenter = BoxCenter;
 	pRecord->BoxExtent = BoxExtent;
-	if (++pRecord->BoundsVersion == 0) ++pRecord->BoundsVersion; // 0 is a special invalid version
+	if (++pRecord->BoundsVersion == 0) ++pRecord->BoundsVersion; // 0 is used for a forced update, don't assign it as a valid version
+	pRecord->BoundsValid = !acl::vector_any_less_equal3(pRecord->BoxExtent, acl::vector_set(0.f));
 
-	const auto NodeMortonCode = CalculateMortonCode(pRecord->BoxCenter, pRecord->BoxExtent);
+	const auto NodeMortonCode = pRecord->BoundsValid ? CalculateMortonCode(pRecord->BoxCenter, pRecord->BoxExtent) : 0;
 	if (pRecord->NodeMortonCode != NodeMortonCode)
 	{
 		const auto LCAMortonCode = MortonLCA<TREE_DIMENSIONS>(pRecord->NodeMortonCode, NodeMortonCode);
-		RemoveSingleObject(pRecord->NodeIndex, pRecord->NodeMortonCode, LCAMortonCode);
-		pRecord->NodeIndex = AddSingleObject(NodeMortonCode, LCAMortonCode);
+		RemoveSingleObjectFromNode(pRecord->NodeIndex, pRecord->NodeMortonCode, LCAMortonCode);
+		pRecord->NodeIndex = AddSingleObjectToNode(NodeMortonCode, LCAMortonCode);
 		pRecord->NodeMortonCode = NodeMortonCode;
 
 		//!!!DBG TMP!
@@ -368,11 +397,10 @@ void CSPS::UpdateRecord(CSPSRecord* pRecord)
 		{
 			auto NodeBoxLoose = GetNodeAABB(pRecord->NodeIndex, true);
 			auto NodeBox = GetNodeAABB(pRecord->NodeIndex, false);
-			n_assert_dbg(NodeBoxLoose.contains(pRecord->GlobalBox));
-			n_assert_dbg(NodeBox.contains(pRecord->GlobalBox.Center()));
+			n_assert_dbg(NodeBoxLoose.contains(GlobalBox));
+			n_assert_dbg(NodeBox.contains(GlobalBox.Center()));
 		}
 	}
-	//////////////////////////////
 }
 //---------------------------------------------------------------------
 
@@ -380,16 +408,19 @@ void CSPS::RemoveRecord(CSPSRecord* pRecord)
 {
 	if (pRecord->pSPSNode) pRecord->pSPSNode->RemoveByHandle(CSPSCell::CIterator(pRecord));
 	RecordPool.Destroy(pRecord);
+}
+//---------------------------------------------------------------------
 
-	///////// NEW RENDER /////////
-	RemoveSingleObject(pRecord->NodeIndex, pRecord->NodeMortonCode, 0);
-	pRecord->NodeMortonCode = 0;
-	pRecord->NodeIndex = NO_SPATIAL_TREE_NODE;
-	//extract from _Objects to pool! By UID stored in the attr itself? Then need also to clear UID in the attr here.
-	//!!!could also store iterator instead of UID in attr, it is less safe but O(1) extract instead of O(logN)! Clear all iterators before _Objects.clear() then!
-	//!!!it is just like pSPSRecord was previously saved in an attr!
-	//???need to save pSPS in attr or can pass it on Update iterations?!
-	//////////////////////////////
+// TODO: check safety. If causes issues, can use UID instead of an iterator, but this makes erase logarithmic instead of constant.
+void CSPS::RemoveObject(HObject Handle)
+{
+	if (Handle == _Objects.cend()) return;
+
+	//???TODO: instead of using a record pool, allocate CSPSRecord by value, _Objects will be std::map<UPTR, CSPSRecord>?
+	//!!!then need to clear references from CSPSRecord, if any! call destructor?
+	RemoveSingleObjectFromNode(Handle->second->NodeIndex, Handle->second->NodeMortonCode, 0);
+	RecordPool.Destroy(Handle->second);
+	_ObjectNodePool.push_back(_Objects.extract(Handle));
 }
 //---------------------------------------------------------------------
 
