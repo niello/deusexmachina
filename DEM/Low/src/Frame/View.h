@@ -97,6 +97,8 @@ protected:
 
 	DECLARE_EVENT_HANDLER(OSWindowResized, OnOSWindowResized);
 
+	void UpdateObjectVisibility(bool ViewProjChanged);
+
 public:
 
 	//???add viewport settings here? to render multiple views into one RT

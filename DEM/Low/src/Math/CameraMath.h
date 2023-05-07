@@ -12,15 +12,15 @@ namespace Math
 struct CSIMDFrustum
 {
 	// x, y and z components of Left, Right, Bottom and Top plane normals
-	acl::Vector4_32Arg2 LRBT_Nx;
-	acl::Vector4_32Arg3 LRBT_Ny;
-	acl::Vector4_32Arg4 LRBT_Nz;
+	acl::Vector4_32 LRBT_Nx;
+	acl::Vector4_32 LRBT_Ny;
+	acl::Vector4_32 LRBT_Nz;
 
 	// w component of planes, which is -d, i.e. -dot(PlaneOrigin, PlaneNormal), see CalcFrustumParams for a comment
-	acl::Vector4_32Arg5 LRBT_w;
+	acl::Vector4_32 LRBT_w;
 
 	// Separate params for near and far planes. They are considered parallel and use the same normal vector.
-	acl::Vector4_32ArgN LookAxis;
+	acl::Vector4_32 LookAxis;
 	float NearPlane;
 	float FarPlane;
 };

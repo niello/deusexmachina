@@ -311,6 +311,41 @@ void CView::Update(float dt)
 }
 //---------------------------------------------------------------------
 
+void CView::UpdateObjectVisibility(bool ViewProjChanged)
+{
+	//!!!???TODO: could keep Frustum from the prev frame if !ViewProjChanged!?
+	const auto Frustum = Math::CalcFrustumParams(pCamera->GetViewProjMatrix());
+
+	//!!!FIXME: also need to invalidate cache of changed nodes when one node takes index of another! //???notify SPS->All views for invalidated indices?
+	/*if (ViewProjChanged)*/ _TreeNodeVisibility.clear();
+	_pSPS->TestSpatialTreeVisibility(Frustum, _TreeNodeVisibility);
+
+	// Update visibility of renderables. Iterate synchronized collections side by side.
+	auto ItSceneObject = _pSPS->GetObjects().cbegin();
+	auto ItRenderObject = _Renderables.cbegin();
+	for (; ItRenderObject != _Renderables.cend(); ++ItSceneObject, ++ItRenderObject)
+	{
+		const Scene::CSPSRecord* pRecord = ItSceneObject->second;
+		Render::IRenderable* pRenderable = ItRenderObject->second.get();
+		if (ViewProjChanged || pRenderable->BoundsVersion != pRecord->BoundsVersion)
+		{
+			const bool NoTreeNode = (pRecord->NodeIndex == Scene::NO_SPATIAL_TREE_NODE);
+			if (NoTreeNode || _TreeNodeVisibility[pRecord->NodeIndex * 2]) // Check if node has a visible part
+			{
+				if (NoTreeNode || _TreeNodeVisibility[pRecord->NodeIndex * 2 + 1]) // Check if node has an invisible part
+				{
+					pRenderable->IsVisible = Math::ClipAABB(pRecord->BoxCenter, pRecord->BoxExtent, Frustum);
+				}
+				else pRenderable->IsVisible = true;
+			}
+			else pRenderable->IsVisible = false;
+
+			pRenderable->BoundsVersion = pRecord->BoundsVersion;
+		}
+	}
+}
+//---------------------------------------------------------------------
+
 bool CView::Render()
 {
 	if (!_RenderPath) FAIL;
@@ -343,25 +378,12 @@ bool CView::Render()
 			}
 		}
 
-		//!!!TODO: could build planes from GetViewProjMatrix() here and pass to TestSpatialTreeVisibility and also use here for object visibility tests!
-		//Make a struct for ViewFrustumPlanes and inside make 2 impls, for SSE and for AVX (ymm, 6 planes at once). forceinline test(struct, box) with 2 impls inside.
-
-		//!!!???TODO: could even keep values from the prev frame if !ViewProjChanged!?
-
-		const auto Frustum = Math::CalcFrustumParams(pCamera->GetViewProjMatrix());
-
-		//!!!FIXME: also need to invalidate cache of changed nodes when one node takes index of another! //???notify SPS->All views for invalidated indices?
-		/*if (ViewProjChanged)*/ _TreeNodeVisibility.clear();
-		_pSPS->TestSpatialTreeVisibility(Frustum, _TreeNodeVisibility);
-
 		// Synchronize scene objects with their renderable mirrors
 		DEM::Algo::SortedUnion(_pSPS->GetObjects(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
-			// FIXME: this will be shorter when frustum will live in a struct. But check inlining of the lambda!
-			[this, ViewProjChanged, Frustum](auto ItSceneObject, auto ItRenderObject)
+			[this](auto ItSceneObject, auto ItRenderObject)
 		{
 			const Scene::CSPSRecord* pRecord = nullptr;
 			Render::IRenderable* pRenderable = nullptr;
-			bool TestVisibility = false;
 
 			if (ItSceneObject == _pSPS->GetObjects().cend())
 			{
@@ -388,17 +410,18 @@ bool CView::Render()
 				//doing this in order, we can keep an iterator and avoid logarithmic searches for each change!
 				if (_RenderableNodePool.empty())
 				{
-					ItRenderObject = _Renderables.emplace_hint(ItRenderObject, UID, pAttr->CreateRenderable(*_GraphicsMgr));
+					ItRenderObject = _Renderables.emplace_hint(_Renderables.cend(), UID, pAttr->CreateRenderable(*_GraphicsMgr));
 				}
 				else
 				{
-					ItRenderObject = _Renderables.insert(ItRenderObject, std::move(_RenderableNodePool.back()));
+					auto& Node = _RenderableNodePool.back();
+					Node.key() = UID;
+					Node.mapped() = pAttr->CreateRenderable(*_GraphicsMgr);
+					ItRenderObject = _Renderables.insert(_Renderables.cend(), std::move(Node));
 					_RenderableNodePool.pop_back();
-					ItRenderObject->second = pAttr->CreateRenderable(*_GraphicsMgr);
 				}
 
 				pRenderable = ItRenderObject->second.get();
-				TestVisibility = true;
 
 				// TODO:
 				// add to sorted queues (or test visibility first and delay adding to queues until visible the first time?)
@@ -411,34 +434,13 @@ bool CView::Render()
 				pRecord = ItSceneObject->second;
 				pRenderable = ItRenderObject->second.get();
 
-				TestVisibility = (ViewProjChanged || pRenderable->BoundsVersion != pRecord->BoundsVersion);
-
 				// TODO:
 				// if sorted queue includes distance to camera and bounds changed, mark sorted queue dirty
 				// if sorted queue includes material etc which has changed, mark sorted queue dirty
 			}
-
-			//???TODO PERF: won't a separate loop over _Renderables for visibility be faster because of better cache locality?
-			//!!!FIXME: lots of movaps and movups each iteration!
-			//new renderables have BoundsVersion == 0, can check (ViewProjChanged || pRenderable->BoundsVersion != pRecord->BoundsVersion) for all objects!
-			//but has no record there! store the record pointer inside the renderable for fast access?
-			if (TestVisibility)
-			{
-				// Update object visibility
-				const bool NoTreeNode = (pRecord->NodeIndex == Scene::NO_SPATIAL_TREE_NODE);
-				if (NoTreeNode || _TreeNodeVisibility[pRecord->NodeIndex * 2]) // Check if node has a visible part
-				{
-					if (NoTreeNode || _TreeNodeVisibility[pRecord->NodeIndex * 2 + 1]) // Check if node has an invisible part
-					{
-						pRenderable->IsVisible = Math::ClipAABB(pRecord->BoxCenter, pRecord->BoxExtent, Frustum);
-					}
-					else pRenderable->IsVisible = true;
-				}
-				else pRenderable->IsVisible = false;
-
-				pRenderable->BoundsVersion = pRecord->BoundsVersion;
-			}
 		});
+
+		UpdateObjectVisibility(ViewProjChanged);
 
 		// TODO:
 		// if ViewProjChanged, mark all queues which use distance to camera dirty
@@ -519,6 +521,14 @@ void CView::SetScene(Scene::CSPS* pSPS)
 	_pSPS = pSPS;
 	_RenderObjects.clear();
 	VisibilityCacheDirty = true;
+
+	///////// NEW RENDER /////////
+	while (!_Renderables.empty())
+	{
+		auto It = _Renderables.begin();
+		It->second.reset();
+		_RenderableNodePool.push_back(_Renderables.extract(It));
+	}
 }
 //---------------------------------------------------------------------
 
