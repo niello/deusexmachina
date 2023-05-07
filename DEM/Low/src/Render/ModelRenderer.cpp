@@ -500,8 +500,7 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 				ConstSkinPalette = pTech->GetParamTable().GetConstant(CStrID("SkinPalette"));
 
 				// PERF: can be optimized if necessary (pool allocation, element and member caches, whole buffer construction & commit)
-				if (ConstInstanceDataVS)
-					ConstWorldMatrix = ConstInstanceDataVS[sidWorldMatrix];
+				ConstWorldMatrix = ConstInstanceDataVS ? ConstInstanceDataVS[sidWorldMatrix] : CShaderConstantParam{};
 
 				TechLightCount = 0;
 				if (LightingEnabled && ConstInstanceDataPS)
