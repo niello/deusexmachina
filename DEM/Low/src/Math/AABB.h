@@ -200,8 +200,38 @@ inline void CAABB::Transform(const matrix44& m)
 	Set(extentMatrix);
 	*/
 
+	// TODO: consider this one. Or write something SIMD-based.
+	//vector3 AMin, AMax;
+	//f32     a, b;
+	//s32     i, j;
+	//// Copy box A into min and max array.
+	//AMin = Min;
+	//AMax = Max;
+	//// Begin at T.
+	//Min = Max = M.GetTranslation();
+	//// Find extreme points by considering product of
+	//// min and max with each component of M.
+	//for( j=0; j<3; j++ )
+	//{
+	//	for( i=0; i<3; i++ )
+	//	{
+	//		a = M(i,j) * AMin;
+	//		b = M(i,j) * AMax;
+	//		if( a < b )
+	//		{
+	//			Min[j] += a;
+	//			Max[j] += b;
+	//		}
+	//		else
+	//		{
+	//			Min[j] += b;
+	//			Max[j] += a;
+	//		}
+	//	}
+	//}
+
 	vector3 NewMin = m * GetCorner(0);
-	vector3 NewMax = Min;
+	vector3 NewMax = NewMin;
 	for (int i = 1; i < 8; ++i)
 	{
 		vector3 OBBCorner = m * GetCorner(i);
