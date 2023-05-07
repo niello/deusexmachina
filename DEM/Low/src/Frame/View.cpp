@@ -419,19 +419,17 @@ bool CView::Render()
 			}
 
 			//???TODO PERF: won't a separate loop over _Renderables for visibility be faster because of better cache locality?
+			//!!!FIXME: lots of movaps and movups each iteration!
 			//new renderables have BoundsVersion == 0, can check (ViewProjChanged || pRenderable->BoundsVersion != pRecord->BoundsVersion) for all objects!
+			//but has no record there! store the record pointer inside the renderable for fast access?
 			if (TestVisibility)
 			{
-				// Update visibility
-				//!!!???TODO: to inline function?!
+				// Update object visibility
 				const bool NoTreeNode = (pRecord->NodeIndex == Scene::NO_SPATIAL_TREE_NODE);
 				if (NoTreeNode || _TreeNodeVisibility[pRecord->NodeIndex * 2]) // Check if node has a visible part
 				{
 					if (NoTreeNode || _TreeNodeVisibility[pRecord->NodeIndex * 2 + 1]) // Check if node has an invisible part
 					{
-						//???check AABB or OBB? now AABB.
-						// OBB:  float r = b.e[0]*Abs(Dot(p.n, b.u[0])) + b.e[1]*Abs(Dot(p.n, b.u[1])) + b.e[2]*Abs(Dot(p.n, b.u[2]));
-						// AABB: float r = b.e[0]*Abs(p.n[0])           + b.e[1]*Abs(p.n[1])           + b.e[2]*Abs(p.n[2]);
 						pRenderable->IsVisible = Math::ClipAABB(pRecord->BoxCenter, pRecord->BoxExtent, Frustum);
 					}
 					else pRenderable->IsVisible = true;
@@ -440,12 +438,12 @@ bool CView::Render()
 
 				pRenderable->BoundsVersion = pRecord->BoundsVersion;
 			}
-
-			// TODO:
-			// if ViewProjChanged, mark all queues which use distance to camera dirty
-			// update dirty sorted queues with insertion sort, O(n) for almost sorted arrays. Fallback to qsort for major reorderings or first init.
-			//!!!from huge camera changes can mark a flag 'MajorChanges' camera-dependent (FrontToBack etc) queue, and use qsort instead of almost-sorted.
 		});
+
+		// TODO:
+		// if ViewProjChanged, mark all queues which use distance to camera dirty
+		// update dirty sorted queues with insertion sort, O(n) for almost sorted arrays. Fallback to qsort for major reorderings or first init.
+		//!!!from huge camera changes can mark a flag 'MajorChanges' camera-dependent (FrontToBack etc) queue, and use qsort instead of almost-sorted.
 
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
