@@ -12,6 +12,11 @@
 // CSPSCell   - user data storage incapsulated in a node
 // CSPSRecord - user data with its spatial properties and some additional fields
 
+namespace Math
+{
+	struct CSIMDFrustum;
+}
+
 namespace Scene
 {
 class CNodeAttribute;
@@ -157,7 +162,7 @@ public:
 
 	///////// NEW RENDER /////////
 	//!!!TODO: use prepared frustum planes instead of matrix!
-	void TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>& NodeVisibility) const;
+	void TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum, std::vector<bool>& NodeVisibility) const;
 	//////////////////////////////
 };
 

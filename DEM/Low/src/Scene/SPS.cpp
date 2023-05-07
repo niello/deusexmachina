@@ -1,5 +1,6 @@
 #include <Scene/SPS.h>
 #include <Math/Math.h>
+#include <Math/CameraMath.h>
 #include <acl/math/vector4_32.h>
 #include <acl/math/affine_matrix_32.h>
 
@@ -452,42 +453,9 @@ void CSPS::QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, 
 }
 //---------------------------------------------------------------------
 
-// Test AABB vs frustum planes intersection for positive halfspace treated as 'inside'
-static DEM_FORCE_INLINE U8 ClipCube(acl::Vector4_32Arg0 Bounds, acl::Vector4_32Arg1 ProjectedNegWorldExtent,
-	acl::Vector4_32Arg2 LRBT_Nx, acl::Vector4_32Arg3 LRBT_Ny, acl::Vector4_32Arg4 LRBT_Nz, acl::Vector4_32Arg5 LRBT_w,
-	acl::Vector4_32ArgN LookAxis, float NegWorldExtentAlongLookAxis, float NearPlane, float FarPlane)
-{
-	// Distance of box center from plane (s): (Cx * Nx) + (Cy * Ny) + (Cz * Nz) - d, where "- d" is "+ w"
-	auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(Bounds), LRBT_Nx, LRBT_w);
-	CenterDistance = acl::vector_mul_add(acl::vector_mix_yyyy(Bounds), LRBT_Ny, CenterDistance);
-	CenterDistance = acl::vector_mul_add(acl::vector_mix_zzzz(Bounds), LRBT_Nz, CenterDistance);
-
-	// Projection radius of the most outside vertex (-r)
-	const auto ProjectedNegExtent = acl::vector_mul(ProjectedNegWorldExtent, acl::vector_mix_wwww(Bounds));
-
-	// Check intersection with LRTB planes
-	bool HasVisiblePart = acl::vector_all_greater_equal(CenterDistance, ProjectedNegExtent); //!!!need strictly greater (RTM?)!
-	bool HasInvisiblePart = false;
-	if (HasVisiblePart)
-	{
-		// If inside LRTB, check intersection with NF planes
-		const float CenterAlongLookAxis = acl::vector_dot3(LookAxis, Bounds);
-		const float NegExtentAlongLookAxis = NegWorldExtentAlongLookAxis * acl::vector_get_w(Bounds);
-		const float ClosestPoint = CenterAlongLookAxis + NegExtentAlongLookAxis;
-		const float FarthestPoint = CenterAlongLookAxis - NegExtentAlongLookAxis;
-		HasVisiblePart = (FarthestPoint > NearPlane && ClosestPoint < FarPlane);
-		HasInvisiblePart = !HasVisiblePart || (FarthestPoint > FarPlane || ClosestPoint < NearPlane);
-	}
-
-	HasInvisiblePart = HasInvisiblePart || acl::vector_any_less_than(CenterDistance, acl::vector_neg(ProjectedNegExtent));
-
-	return static_cast<U8>(HasVisiblePart) | (static_cast<U8>(HasInvisiblePart) << 1);
-}
-//---------------------------------------------------------------------
-
 // See Real-Time Collision Detection 5.2.3
 // See https://fgiesen.wordpress.com/2010/10/17/view-frustum-culling/
-void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>& NodeVisibility) const
+void CSPS::TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum, std::vector<bool>& NodeVisibility) const
 {
 	n_assert2_dbg(!_TreeNodes.empty(), "CSPS::TestSpatialTreeVisibility() should not be called before CSPS::Init()!");
 
@@ -498,39 +466,19 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 	// not checked (00), completely inside (01), completely outside (10), partially inside (11).
 	NodeVisibility.resize(_TreeNodes.sparse_size() * 2, false);
 
-	// Extract Left, Right, Bottom & Top frustum planes using Gribb-Hartmann method.
-	// Left = W + X, Right = W - X, Bottom = W + Y, Top = W - Y. Normals look inside the frustum, i.e. positive halfspace means 'inside'.
-	// LRBT_w is a -d, i.e. -dot(PlaneNormal, PlaneOrigin). +w instead of -d allows us using a single fma instead of separate mul & sub in a box test.
-	// See https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
-	// See https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
-	const auto LRBT_Nx = acl::vector_add(acl::vector_set(ViewProj.m[0][3]), acl::vector_set(ViewProj.m[0][0], -ViewProj.m[0][0], ViewProj.m[0][1], -ViewProj.m[0][1]));
-	const auto LRBT_Ny = acl::vector_add(acl::vector_set(ViewProj.m[1][3]), acl::vector_set(ViewProj.m[1][0], -ViewProj.m[1][0], ViewProj.m[1][1], -ViewProj.m[1][1]));
-	const auto LRBT_Nz = acl::vector_add(acl::vector_set(ViewProj.m[2][3]), acl::vector_set(ViewProj.m[2][0], -ViewProj.m[2][0], ViewProj.m[2][1], -ViewProj.m[2][1]));
-	const auto LRBT_w =  acl::vector_add(acl::vector_set(ViewProj.m[3][3]), acl::vector_set(ViewProj.m[3][0], -ViewProj.m[3][0], ViewProj.m[3][1], -ViewProj.m[3][1]));
-
 	// Projection radius of the most outside vertex (-r): -Ex * abs(Pnx) + -Ey * abs(Pny) + -Ez * abs(Pnz).
 	// In our case we take as a rule that Ex = Ey = Ez. Since our tree is loose, we double all extents.
 	// Extents of tree nodes are obtained by multiplying this by a node size coefficient.
 	const auto NegWorldExtent4 = acl::vector_set(-2.f * _WorldExtent);
-	auto ProjectedNegWorldExtent = acl::vector_mul(NegWorldExtent4, acl::vector_abs(LRBT_Nx));
-	ProjectedNegWorldExtent = acl::vector_mul_add(NegWorldExtent4, acl::vector_abs(LRBT_Ny), ProjectedNegWorldExtent);
-	ProjectedNegWorldExtent = acl::vector_mul_add(NegWorldExtent4, acl::vector_abs(LRBT_Nz), ProjectedNegWorldExtent);
+	auto ProjectedNegWorldExtent = acl::vector_mul(NegWorldExtent4, acl::vector_abs(Frustum.LRBT_Nx));
+	ProjectedNegWorldExtent = acl::vector_mul_add(NegWorldExtent4, acl::vector_abs(Frustum.LRBT_Ny), ProjectedNegWorldExtent);
+	ProjectedNegWorldExtent = acl::vector_mul_add(NegWorldExtent4, acl::vector_abs(Frustum.LRBT_Nz), ProjectedNegWorldExtent);
 
-	// Near and far planes are parallel, which enables us to save some work. Near & far planes are +d (-w) along the look
-	// axis, so NearPlane is negated once and FarPlane is negated twice (once to make it -w, once to invert the axis).
-	// We use D3D style projection matrix, near Z limit is 0 instead of OpenGL's -W.
-	// TODO: check if it is really faster than making NF_Nx etc. At least less registers used? Also could use AVX to handle all 6 planes at once.
-	const auto NearAxis = acl::vector_set(ViewProj.m[0][2], ViewProj.m[1][2], ViewProj.m[2][2], 0.f);
-	const auto FarAxis = acl::vector_sub(acl::vector_set(ViewProj.m[0][3], ViewProj.m[1][3], ViewProj.m[2][3], 0.f), NearAxis);
-	const float InvNearLen = acl::sqrt_reciprocal(acl::vector_length_squared3(NearAxis));
-	const auto LookAxis = acl::vector_mul(NearAxis, InvNearLen);
-	const float NearPlane = -ViewProj.m[3][2] * InvNearLen;
-	const float FarPlane = (ViewProj.m[3][3] - ViewProj.m[3][2]) * acl::sqrt_reciprocal(acl::vector_length_squared3(FarAxis));
-	const float NegWorldExtentAlongLookAxis = acl::vector_dot3(acl::vector_abs(LookAxis), NegWorldExtent4);
+	const float NegWorldExtentAlongLookAxis = acl::vector_dot3(acl::vector_abs(Frustum.LookAxis), NegWorldExtent4);
 
 	// Process the root outside the loop to simplify conditions inside
 	// FIXME: improve writing, clip mask already has both bits for NodeVisibility element
-	const auto ClipRoot = ClipCube(_TreeNodes[0].Bounds, ProjectedNegWorldExtent, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NegWorldExtentAlongLookAxis, NearPlane, FarPlane);
+	const auto ClipRoot = ClipCube(_TreeNodes[0].Bounds, ProjectedNegWorldExtent, NegWorldExtentAlongLookAxis, Frustum);
 	NodeVisibility[0] = ClipRoot & EClipStatus::Inside;
 	NodeVisibility[1] = ClipRoot & EClipStatus::Outside;
 
@@ -558,7 +506,7 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 		{
 			// If the parent is partially visible, its children must be tested
 			// FIXME: improve writing, clip mask already has both bits for NodeVisibility element
-			const auto ClipNode = ClipCube(ItNode->Bounds, ProjectedNegWorldExtent, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NegWorldExtentAlongLookAxis, NearPlane, FarPlane);
+			const auto ClipNode = ClipCube(ItNode->Bounds, ProjectedNegWorldExtent, NegWorldExtentAlongLookAxis, Frustum);
 			NodeVisibility[ItNode.get_index() * 2] = ClipNode & EClipStatus::Inside;
 			NodeVisibility[ItNode.get_index() * 2 + 1] = ClipNode & EClipStatus::Outside;
 		}

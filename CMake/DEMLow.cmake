@@ -165,6 +165,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/IO/Streams/MemStream.h
 	DEM/Low/src/IO/Streams/ScopedStream.h
 	DEM/Low/src/Math/AABB.h
+	DEM/Low/src/Math/CameraMath.h
 	DEM/Low/src/Math/DelaunayTriangulation.hpp
 	DEM/Low/src/Math/EnvelopeCurve.h
 	DEM/Low/src/Math/Euler.h
