@@ -97,7 +97,7 @@ void CRenderableAttribute::RenderDebug(Debug::CDebugDraw& DebugDraw) const
 		DebugDraw.DrawBoxWireframe(AABB, Render::ColorRGBA(160, 220, 255, 255), 1.f);
 
 	if (pSPS && pSPSRecord)
-		DebugDraw.DrawBoxWireframe(pSPS->GetNodeBoundsByIndex(pSPSRecord->NodeIndex, true), Render::ColorRGBA(160, 255, 160, 255), 1.f);
+		DebugDraw.DrawBoxWireframe(pSPS->GetNodeAABB(pSPSRecord->NodeIndex, true), Render::ColorRGBA(160, 255, 160, 255), 1.f);
 }
 //---------------------------------------------------------------------
 

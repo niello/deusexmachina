@@ -201,31 +201,12 @@ TMorton CSPS::CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32
 
 U32 CSPS::CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex)
 {
-	// Unpack Morton code back into cell coords and depth
-	const auto Bits = Math::BitWidth(MortonCode);
-	const auto MortonCodeNoSentinel = MortonCode ^ (1 << (Bits - 1));
-	TCellDim x = 0, y = 0, z = 0;
-	if constexpr (TREE_DIMENSIONS == 2)
-		Math::MortonDecode2(MortonCodeNoSentinel, x, z);
-	else
-		Math::MortonDecode3(MortonCodeNoSentinel, x, y, z);
-
-	// Calculate node bounds - center and extent
-	const float ExtentCoeff = 1.f / static_cast<float>(1 << (Bits / TREE_DIMENSIONS)); // 1 / 2^Depth
-	const auto Cell = acl::vector_set(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
-	auto Center = acl::vector_mul_add(Cell, 2.f, acl::vector_set(1.f)); // A = 2 * xyz + 1
-	Center = acl::vector_mul_add(Center, ExtentCoeff, acl::vector_set(-1.f)); // B = A * Ecoeff - 1.f
-	Center = acl::vector_mul_add(Center, _WorldExtent, _TreeNodes[0].Bounds); // Center = B * We + Wc
-
-	// Set extent coeff to W
-	Center = acl::vector_mix<acl::VectorMix::X, acl::VectorMix::Y, acl::VectorMix::Z, acl::VectorMix::A>(Center, acl::vector_set(ExtentCoeff));
-
 	// Create a node
 	auto ItNew = _TreeNodes.emplace_at_free(FreeIndex);
 	ItNew->MortonCode = MortonCode;
 	ItNew->ParentIndex = ParentIndex;
 	ItNew->SubtreeObjectCount = 1;
-	ItNew->Bounds = Center;
+	ItNew->Bounds = CalcNodeBounds(MortonCode);
 
 	if (_MortonToIndexPool.empty())
 	{
@@ -333,8 +314,8 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 	//!!!DBG TMP!
 	if (pRecord->NodeIndex != NO_SPATIAL_TREE_NODE)
 	{
-		auto NodeBoxLoose = GetNodeBoundsByIndex(pRecord->NodeIndex, true);
-		auto NodeBox = GetNodeBoundsByIndex(pRecord->NodeIndex, false);
+		auto NodeBoxLoose = GetNodeAABB(pRecord->NodeIndex, true);
+		auto NodeBox = GetNodeAABB(pRecord->NodeIndex, false);
 		n_assert_dbg(NodeBoxLoose.contains(GlobalBox));
 		n_assert_dbg(NodeBox.contains(GlobalBox.Center()));
 	}
@@ -384,8 +365,8 @@ void CSPS::UpdateRecord(CSPSRecord* pRecord)
 		//!!!DBG TMP!
 		if (pRecord->NodeIndex != NO_SPATIAL_TREE_NODE)
 		{
-			auto NodeBoxLoose = GetNodeBoundsByIndex(pRecord->NodeIndex, true);
-			auto NodeBox = GetNodeBoundsByIndex(pRecord->NodeIndex, false);
+			auto NodeBoxLoose = GetNodeAABB(pRecord->NodeIndex, true);
+			auto NodeBox = GetNodeAABB(pRecord->NodeIndex, false);
 			n_assert_dbg(NodeBoxLoose.contains(pRecord->GlobalBox));
 			n_assert_dbg(NodeBox.contains(pRecord->GlobalBox.Center()));
 		}
@@ -585,37 +566,43 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 }
 //---------------------------------------------------------------------
 
-////!!!FIXME: DUPLICATION!
-//CAABB CSPS::GetNodeBounds(TMorton MortonCode) const
-//{
-//	const auto Bits = Math::BitWidth(MortonCode);
-//	const auto MortonCodeNoSentinel = MortonCode ^ (1 << (Bits - 1));
-//	TCellDim x = 0, y = 0, z = 0;
-//	if constexpr (TREE_DIMENSIONS == 2)
-//		Math::MortonDecode2(MortonCodeNoSentinel, x, z);
-//	else
-//		Math::MortonDecode3(MortonCodeNoSentinel, x, y, z);
-//
-//	// Calculate node bounds - center and extent
-//	const float ExtentCoeff = 1.f / static_cast<float>(1 << (Bits / TREE_DIMENSIONS)); // 1 / 2^Depth
-//	const auto Cell = acl::vector_set(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
-//	auto Center = acl::vector_mul_add(Cell, 2.f, acl::vector_set(1.f)); // A = 2 * xyz + 1
-//	Center = acl::vector_mul_add(Center, ExtentCoeff, acl::vector_set(-1.f)); // B = A * Ecoeff - 1.f
-//	Center = acl::vector_mul_add(Center, _WorldExtent, WorldCenter); // Center = B * We + Wc
-//}
-////---------------------------------------------------------------------
+acl::Vector4_32 CSPS::CalcNodeBounds(TMorton MortonCode) const
+{
+	// Unpack Morton code back into cell coords and depth
+	const auto Bits = Math::BitWidth(MortonCode);
+	const auto MortonCodeNoSentinel = MortonCode ^ (1 << (Bits - 1));
+	TCellDim x = 0, y = 0, z = 0;
+	if constexpr (TREE_DIMENSIONS == 2)
+		Math::MortonDecode2(MortonCodeNoSentinel, x, z);
+	else
+		Math::MortonDecode3(MortonCodeNoSentinel, x, y, z);
 
-CAABB CSPS::GetNodeBoundsByIndex(U32 NodeIndex, bool Loose) const
+	// Calculate node bounds - center and extent
+	const float ExtentCoeff = 1.f / static_cast<float>(1 << (Bits / TREE_DIMENSIONS)); // 1 / 2^Depth
+	const auto Cell = acl::vector_set(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
+	auto Center = acl::vector_mul_add(Cell, 2.f, acl::vector_set(1.f)); // A = 2 * xyz + 1
+	Center = acl::vector_mul_add(Center, ExtentCoeff, acl::vector_set(-1.f)); // B = A * Ecoeff - 1.f
+	Center = acl::vector_mul_add(Center, _WorldExtent, _TreeNodes[0].Bounds); // Center = B * We + Wc
+
+	// Set extent coeff to W
+	return acl::vector_mix<acl::VectorMix::X, acl::VectorMix::Y, acl::VectorMix::Z, acl::VectorMix::A>(Center, acl::vector_set(ExtentCoeff));
+}
+//---------------------------------------------------------------------
+
+CAABB CSPS::GetNodeAABB(U32 NodeIndex, bool Loose) const
 {
 	CAABB Box;
 	if (NodeIndex != NO_SPATIAL_TREE_NODE)
-	{
-		const auto Bounds = _TreeNodes[NodeIndex].Bounds;
-		const vector3 Center(acl::vector_get_x(Bounds), acl::vector_get_y(Bounds), acl::vector_get_z(Bounds));
-		const float Extent = _WorldExtent * acl::vector_get_w(Bounds) * (Loose ? 2.f : 1.f);
-		Box.Set(Center, vector3(Extent, Extent, Extent));
-	}
+		Box = GetNodeAABB(_TreeNodes[NodeIndex].Bounds, Loose);
 	return Box;
+}
+//---------------------------------------------------------------------
+
+CAABB CSPS::GetNodeAABB(acl::Vector4_32Arg0 Bounds, bool Loose) const
+{
+	const vector3 Center(acl::vector_get_x(Bounds), acl::vector_get_y(Bounds), acl::vector_get_z(Bounds));
+	const float Extent = _WorldExtent * acl::vector_get_w(Bounds) * (Loose ? 2.f : 1.f);
+	return CAABB(Center, vector3(Extent, Extent, Extent));
 }
 //---------------------------------------------------------------------
 
