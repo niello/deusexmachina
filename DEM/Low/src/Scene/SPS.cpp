@@ -327,15 +327,6 @@ CSPS::HObject CSPS::AddObject(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 		pRecord->NodeMortonCode = 0;
 	}
 
-	//!!!DBG TMP!
-	if (pRecord->NodeIndex != NO_SPATIAL_TREE_NODE)
-	{
-		auto NodeBoxLoose = GetNodeAABB(pRecord->NodeIndex, true);
-		auto NodeBox = GetNodeAABB(pRecord->NodeIndex, false);
-		n_assert_dbg(NodeBoxLoose.contains(GlobalBox));
-		n_assert_dbg(NodeBox.contains(GlobalBox.Center()));
-	}
-
 	const auto UID = _NextUID++;
 
 	// If this assert is ever triggered, compacting of existing UIDs may be implemented to keep fast insertions to the map end.
@@ -391,15 +382,6 @@ void CSPS::UpdateObject(HObject Handle, const CAABB& GlobalBox)
 		RemoveSingleObjectFromNode(pRecord->NodeIndex, pRecord->NodeMortonCode, LCAMortonCode);
 		pRecord->NodeIndex = AddSingleObjectToNode(NodeMortonCode, LCAMortonCode);
 		pRecord->NodeMortonCode = NodeMortonCode;
-
-		//!!!DBG TMP!
-		if (pRecord->NodeIndex != NO_SPATIAL_TREE_NODE)
-		{
-			auto NodeBoxLoose = GetNodeAABB(pRecord->NodeIndex, true);
-			auto NodeBox = GetNodeAABB(pRecord->NodeIndex, false);
-			n_assert_dbg(NodeBoxLoose.contains(GlobalBox));
-			n_assert_dbg(NodeBox.contains(GlobalBox.Center()));
-		}
 	}
 }
 //---------------------------------------------------------------------
