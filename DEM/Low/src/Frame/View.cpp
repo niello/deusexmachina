@@ -452,9 +452,11 @@ bool CView::Render()
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		//!!!DBG TMP!
 		//VisibilityCacheDirty = false;
+		VisibilityCache.Clear();
 		for (const auto& [UID, Renderable] : _Renderables)
 		{
-			VisibilityCache.push_back(_pSPS->GetObjects().find(UID)->second->pUserData);
+			if (Renderable->IsVisible)
+				VisibilityCache.push_back(_pSPS->GetObjects().find(UID)->second->pUserData);
 		}
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
