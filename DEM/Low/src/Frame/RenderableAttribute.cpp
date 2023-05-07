@@ -46,8 +46,8 @@ bool CRenderableAttribute::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 	if (pSPS && _pNode->GetTransformVersion() == LastTransformVersion) //!!! && LocalBox not changed!
 	{
 		// TODO: use Center+Extents SIMD AABB everywhere?!
-		const auto Center = ObjectHandle->second->BoxCenter;
-		const auto Extent = ObjectHandle->second->BoxExtent;
+		const auto Center = ObjectHandle->second.BoxCenter;
+		const auto Extent = ObjectHandle->second.BoxExtent;
 		OutBox.Set(
 			vector3(acl::vector_get_x(Center), acl::vector_get_y(Center), acl::vector_get_z(Center)),
 			vector3(acl::vector_get_x(Extent), acl::vector_get_y(Extent), acl::vector_get_z(Extent)));
@@ -80,7 +80,7 @@ void CRenderableAttribute::RenderDebug(Debug::CDebugDraw& DebugDraw) const
 		DebugDraw.DrawBoxWireframe(AABB, Render::ColorRGBA(160, 220, 255, 255), 1.f);
 
 	if (pSPS && ObjectHandle != pSPS->GetInvalidObjectHandle())
-		DebugDraw.DrawBoxWireframe(pSPS->GetNodeAABB(ObjectHandle->second->NodeIndex, true), Render::ColorRGBA(160, 255, 160, 255), 1.f);
+		DebugDraw.DrawBoxWireframe(pSPS->GetNodeAABB(ObjectHandle->second.NodeIndex, true), Render::ColorRGBA(160, 255, 160, 255), 1.f);
 }
 //---------------------------------------------------------------------
 

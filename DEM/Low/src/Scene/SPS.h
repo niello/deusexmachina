@@ -96,20 +96,23 @@ constexpr auto NO_SPATIAL_TREE_NODE = Data::CSparseArray2<CSpatialTreeNode, U32>
 
 struct CSPSRecord
 {
-	///////// NEW RENDER /////////
-	acl::Vector4_32 BoxCenter;
-	acl::Vector4_32 BoxExtent;
-	CNodeAttribute* pUserData = nullptr;
-	TMorton         NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes for child nodes
-	U32             NodeIndex = NO_SPATIAL_TREE_NODE;
-	U32             BoundsVersion = 1;
-	bool            BoundsValid = false;
-	//////////////////////////////
-
 	CSPSRecord*		pNext = nullptr;
 	CSPSRecord*		pPrev = nullptr;
 	CSPSNode*		pSPSNode = nullptr;
+	CNodeAttribute* pUserData = nullptr;
 	CAABB			GlobalBox;
+};
+
+// TODO: rename!
+struct CObjectRecord
+{
+	acl::Vector4_32 BoxCenter;
+	acl::Vector4_32 BoxExtent;
+	CNodeAttribute* pUserData = nullptr;
+	TMorton         NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
+	U32             NodeIndex = NO_SPATIAL_TREE_NODE;
+	U32             BoundsVersion = 1;
+	bool            BoundsValid = false;
 };
 
 class CSPS //???rename to CGfxLevel? CRenderLevel etc? Not exactly SPS, but a thing one step above it.
@@ -125,8 +128,8 @@ protected:
 	std::unordered_map<TMorton, U32> _MortonToIndex;
 	std::vector<decltype(_MortonToIndex)::node_type> _MortonToIndexPool;
 
-	//!!!TODO: separate by type - renderables, lights, ambient etc!
-	std::map<UPTR, CSPSRecord*> _Objects; // TODO: if cleared, need to clear iterators in attributes first!
+	//!!!TODO: separate by type - renderables, lights!
+	std::map<UPTR, CObjectRecord> _Objects; // TODO: if cleared, need to clear iterators in attributes first!
 	std::vector<decltype(_Objects)::node_type> _ObjectNodePool;
 
 	vector3 _WorldCenter;
@@ -145,7 +148,7 @@ protected:
 
 public:
 
-	using HObject = decltype(_Objects)::const_iterator;
+	using HObject = decltype(_Objects)::iterator;
 
 	CArray<CNodeAttribute*>	OversizedObjects;
 	CSPSQuadTree			QuadTree;
@@ -160,7 +163,7 @@ public:
 	HObject AddObject(const CAABB& GlobalBox, CNodeAttribute* pUserData);
 	void    UpdateObject(HObject Handle, const CAABB& GlobalBox);
 	void    RemoveObject(HObject Handle);
-	HObject GetInvalidObjectHandle() const { return _Objects.cend(); }
+	auto    GetInvalidObjectHandle() const { return _Objects.cend(); }
 
 	const auto&     GetObjects() const { return _Objects; }
 	acl::Vector4_32 CalcNodeBounds(TMorton MortonCode) const;

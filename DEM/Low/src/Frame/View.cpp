@@ -317,7 +317,7 @@ void CView::SynchronizeObjects()
 	DEM::Algo::SortedUnion(_pSPS->GetObjects(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
 		[this](auto ItSceneObject, auto ItRenderObject)
 	{
-		const Scene::CSPSRecord* pRecord = nullptr;
+		const Scene::CObjectRecord* pRecord = nullptr;
 		Render::IRenderable* pRenderable = nullptr;
 
 		if (ItSceneObject == _pSPS->GetObjects().cend())
@@ -334,7 +334,7 @@ void CView::SynchronizeObjects()
 		{
 			// A new object in a scene
 			const auto UID = ItSceneObject->first;
-			pRecord = ItSceneObject->second;
+			pRecord = &ItSceneObject->second;
 
 			//!!!FIXME: need to guarantee this! Split GetObjects by type on insertion? Lights etc don't need renderables and sync! But lights may need IsVisible!
 			n_assert_dbg(pRecord->pUserData->As<Frame::CRenderableAttribute>());
@@ -366,7 +366,7 @@ void CView::SynchronizeObjects()
 		}
 		else
 		{
-			pRecord = ItSceneObject->second;
+			pRecord = &ItSceneObject->second;
 			pRenderable = ItRenderObject->second.get();
 
 			// TODO:
@@ -391,18 +391,18 @@ void CView::UpdateObjectVisibility(bool ViewProjChanged)
 	auto ItRenderObject = _Renderables.cbegin();
 	for (; ItRenderObject != _Renderables.cend(); ++ItSceneObject, ++ItRenderObject)
 	{
-		const Scene::CSPSRecord* pRecord = ItSceneObject->second;
+		const Scene::CObjectRecord& Record = ItSceneObject->second;
 		Render::IRenderable* pRenderable = ItRenderObject->second.get();
-		if (ViewProjChanged || pRenderable->BoundsVersion != pRecord->BoundsVersion)
+		if (ViewProjChanged || pRenderable->BoundsVersion != Record.BoundsVersion)
 		{
-			if (pRecord->BoundsValid)
+			if (Record.BoundsValid)
 			{
-				const bool NoTreeNode = (pRecord->NodeIndex == Scene::NO_SPATIAL_TREE_NODE);
-				if (NoTreeNode || _TreeNodeVisibility[pRecord->NodeIndex * 2]) // Check if node has a visible part
+				const bool NoTreeNode = (Record.NodeIndex == Scene::NO_SPATIAL_TREE_NODE);
+				if (NoTreeNode || _TreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
 				{
-					if (NoTreeNode || _TreeNodeVisibility[pRecord->NodeIndex * 2 + 1]) // Check if node has an invisible part
+					if (NoTreeNode || _TreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
 					{
-						pRenderable->IsVisible = Math::ClipAABB(pRecord->BoxCenter, pRecord->BoxExtent, Frustum);
+						pRenderable->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, Frustum);
 					}
 					else pRenderable->IsVisible = true;
 				}
@@ -410,7 +410,7 @@ void CView::UpdateObjectVisibility(bool ViewProjChanged)
 			}
 			else pRenderable->IsVisible = true; // Objects with invalid bounds are always visible. E.g. skybox.
 
-			pRenderable->BoundsVersion = pRecord->BoundsVersion;
+			pRenderable->BoundsVersion = Record.BoundsVersion;
 		}
 	}
 }
@@ -465,7 +465,7 @@ bool CView::Render()
 		for (const auto& [UID, Renderable] : _Renderables)
 		{
 			if (Renderable->IsVisible)
-				VisibilityCache.push_back(_pSPS->GetObjects().find(UID)->second->pUserData);
+				VisibilityCache.push_back(_pSPS->GetObjects().find(UID)->second.pUserData);
 		}
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

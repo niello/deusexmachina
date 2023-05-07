@@ -303,28 +303,28 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 
 CSPS::HObject CSPS::AddObject(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 {
-	CSPSRecord* pRecord = RecordPool.Construct();
-	pRecord->pUserData = pUserData;
+	CObjectRecord Record;
+	Record.pUserData = pUserData;
 
 	// TODO: store AABB as SIMD center-extents everywhere?!
 	const auto HalfMin = acl::vector_mul(acl::vector_set(GlobalBox.Min.x, GlobalBox.Min.y, GlobalBox.Min.z), 0.5f);
 	const auto HalfMax = acl::vector_mul(acl::vector_set(GlobalBox.Max.x, GlobalBox.Max.y, GlobalBox.Max.z), 0.5f);
-	pRecord->BoxCenter = acl::vector_add(HalfMax, HalfMin);
-	pRecord->BoxExtent = acl::vector_sub(HalfMax, HalfMin);
-	pRecord->BoundsVersion = 1;
-	pRecord->BoundsValid = !acl::vector_any_less_equal3(pRecord->BoxExtent, acl::vector_set(0.f));
+	Record.BoxCenter = acl::vector_add(HalfMax, HalfMin);
+	Record.BoxExtent = acl::vector_sub(HalfMax, HalfMin);
+	Record.BoundsVersion = 1;
+	Record.BoundsValid = !acl::vector_any_less_equal3(Record.BoxExtent, acl::vector_set(0.f));
 
-	if (pRecord->BoundsValid)
+	if (Record.BoundsValid)
 	{
-		const auto NodeMortonCode = CalculateMortonCode(pRecord->BoxCenter, pRecord->BoxExtent);
-		pRecord->NodeIndex = AddSingleObjectToNode(NodeMortonCode, 0);
-		pRecord->NodeMortonCode = NodeMortonCode;
+		const auto NodeMortonCode = CalculateMortonCode(Record.BoxCenter, Record.BoxExtent);
+		Record.NodeIndex = AddSingleObjectToNode(NodeMortonCode, 0);
+		Record.NodeMortonCode = NodeMortonCode;
 	}
 	else
 	{
 		// Objects with empty and invalid bounds are considered being outside the spatial tree
-		pRecord->NodeIndex = NO_SPATIAL_TREE_NODE;
-		pRecord->NodeMortonCode = 0;
+		Record.NodeIndex = NO_SPATIAL_TREE_NODE;
+		Record.NodeMortonCode = 0;
 	}
 
 	const auto UID = _NextUID++;
@@ -335,14 +335,14 @@ CSPS::HObject CSPS::AddObject(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 
 	if (_ObjectNodePool.empty())
 	{
-		return _Objects.emplace_hint(_Objects.cend(), UID, pRecord);
+		return _Objects.emplace_hint(_Objects.cend(), UID, std::move(Record));
 	}
 	else
 	{
 		auto Node = std::move(_ObjectNodePool.back());
 		_ObjectNodePool.pop_back();
 		Node.key() = UID;
-		Node.mapped() = pRecord;
+		new (&Node.mapped()) CObjectRecord(std::move(Record));
 		return _Objects.insert(_Objects.cend(), std::move(Node));
 	}
 }
@@ -358,7 +358,9 @@ void CSPS::UpdateRecord(CSPSRecord* pRecord)
 
 void CSPS::UpdateObject(HObject Handle, const CAABB& GlobalBox)
 {
-	auto pRecord = Handle->second;
+	//if (Handle == _Objects.cend()) return;
+
+	auto& Record = Handle->second;
 
 	// TODO: store AABB as SIMD center-extents everywhere?!
 	const auto HalfMin = acl::vector_mul(acl::vector_set(GlobalBox.Min.x, GlobalBox.Min.y, GlobalBox.Min.z), 0.5f);
@@ -367,21 +369,21 @@ void CSPS::UpdateObject(HObject Handle, const CAABB& GlobalBox)
 	const auto BoxExtent = acl::vector_sub(HalfMax, HalfMin);
 
 	// TODO PERF: check if this is useful. Also may want to rewrite for strict equality because near_equal involves much more operations!
-	if (acl::vector_all_near_equal3(BoxCenter, pRecord->BoxCenter) && acl::vector_all_near_equal3(BoxExtent, pRecord->BoxExtent))
+	if (acl::vector_all_near_equal3(BoxCenter, Record.BoxCenter) && acl::vector_all_near_equal3(BoxExtent, Record.BoxExtent))
 		return;
 
-	pRecord->BoxCenter = BoxCenter;
-	pRecord->BoxExtent = BoxExtent;
-	if (++pRecord->BoundsVersion == 0) ++pRecord->BoundsVersion; // 0 is used for a forced update, don't assign it as a valid version
-	pRecord->BoundsValid = !acl::vector_any_less_equal3(pRecord->BoxExtent, acl::vector_set(0.f));
+	Record.BoxCenter = BoxCenter;
+	Record.BoxExtent = BoxExtent;
+	if (++Record.BoundsVersion == 0) ++Record.BoundsVersion; // 0 is used for a forced update, don't assign it as a valid version
+	Record.BoundsValid = !acl::vector_any_less_equal3(Record.BoxExtent, acl::vector_set(0.f));
 
-	const auto NodeMortonCode = pRecord->BoundsValid ? CalculateMortonCode(pRecord->BoxCenter, pRecord->BoxExtent) : 0;
-	if (pRecord->NodeMortonCode != NodeMortonCode)
+	const auto NodeMortonCode = Record.BoundsValid ? CalculateMortonCode(Record.BoxCenter, Record.BoxExtent) : 0;
+	if (Record.NodeMortonCode != NodeMortonCode)
 	{
-		const auto LCAMortonCode = MortonLCA<TREE_DIMENSIONS>(pRecord->NodeMortonCode, NodeMortonCode);
-		RemoveSingleObjectFromNode(pRecord->NodeIndex, pRecord->NodeMortonCode, LCAMortonCode);
-		pRecord->NodeIndex = AddSingleObjectToNode(NodeMortonCode, LCAMortonCode);
-		pRecord->NodeMortonCode = NodeMortonCode;
+		const auto LCAMortonCode = MortonLCA<TREE_DIMENSIONS>(Record.NodeMortonCode, NodeMortonCode);
+		RemoveSingleObjectFromNode(Record.NodeIndex, Record.NodeMortonCode, LCAMortonCode);
+		Record.NodeIndex = AddSingleObjectToNode(NodeMortonCode, LCAMortonCode);
+		Record.NodeMortonCode = NodeMortonCode;
 	}
 }
 //---------------------------------------------------------------------
@@ -396,13 +398,11 @@ void CSPS::RemoveRecord(CSPSRecord* pRecord)
 // TODO: check safety. If causes issues, can use UID instead of an iterator, but this makes erase logarithmic instead of constant.
 void CSPS::RemoveObject(HObject Handle)
 {
-	if (Handle == _Objects.cend()) return;
+	//if (Handle == _Objects.cend()) return;
 
-	//???TODO: instead of using a record pool, allocate CSPSRecord by value, _Objects will be std::map<UPTR, CSPSRecord>?
-	//!!!then need to clear references from CSPSRecord, if any! call destructor?
-	RemoveSingleObjectFromNode(Handle->second->NodeIndex, Handle->second->NodeMortonCode, 0);
-	RecordPool.Destroy(Handle->second);
+	RemoveSingleObjectFromNode(Handle->second.NodeIndex, Handle->second.NodeMortonCode, 0);
 	_ObjectNodePool.push_back(_Objects.extract(Handle));
+	_ObjectNodePool.back().mapped().~CObjectRecord();
 }
 //---------------------------------------------------------------------
 
