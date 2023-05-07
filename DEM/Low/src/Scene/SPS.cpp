@@ -453,6 +453,44 @@ void CSPS::QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, 
 }
 //---------------------------------------------------------------------
 
+// Test AABB cube vs frustum planes containment or intersection for positive halfspace treated as 'inside'.
+// Returns a 2 bit mask with bit0 set if the cube is present inside and bit1 set if the cube is present outside.
+// TODO: add an alternative implementation for AVX (ymm register can hold all 6 planes at once)
+static DEM_FORCE_INLINE U8 ClipCube(acl::Vector4_32Arg0 Bounds, acl::Vector4_32Arg1 ProjectedNegWorldExtent,
+	float NegWorldExtentAlongLookAxis, const Math::CSIMDFrustum& Frustum) noexcept
+{
+	// Distance of box center from plane (s): (Cx * Nx) + (Cy * Ny) + (Cz * Nz) - d, where "- d" is "+ w"
+	auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(Bounds), Frustum.LRBT_Nx, Frustum.LRBT_w);
+	CenterDistance = acl::vector_mul_add(acl::vector_mix_yyyy(Bounds), Frustum.LRBT_Ny, CenterDistance);
+	CenterDistance = acl::vector_mul_add(acl::vector_mix_zzzz(Bounds), Frustum.LRBT_Nz, CenterDistance);
+
+	// Projection radius of the most outside vertex (-r)
+	const auto ProjectedNegExtent = acl::vector_mul(ProjectedNegWorldExtent, acl::vector_mix_wwww(Bounds));
+
+	// Check intersection with LRTB planes
+	bool HasVisiblePart = acl::vector_all_greater_equal(CenterDistance, ProjectedNegExtent); //!!!need strictly greater (RTM?)!
+	bool HasInvisiblePart = false;
+	if (HasVisiblePart)
+	{
+		// If inside LRTB, check intersection with NF planes
+		const float CenterAlongLookAxis = acl::vector_dot3(Frustum.LookAxis, Bounds);
+		const float NegExtentAlongLookAxis = NegWorldExtentAlongLookAxis * acl::vector_get_w(Bounds);
+		const float ClosestPoint = CenterAlongLookAxis + NegExtentAlongLookAxis;
+		const float FarthestPoint = CenterAlongLookAxis - NegExtentAlongLookAxis;
+		HasVisiblePart = (FarthestPoint > Frustum.NearPlane && ClosestPoint < Frustum.FarPlane);
+		HasInvisiblePart = !HasVisiblePart || (FarthestPoint > Frustum.FarPlane || ClosestPoint < Frustum.NearPlane);
+
+		//!!!DBG TMP! Comment when happens and is expected. Delete when fully commented.
+		n_assert2_dbg(FarthestPoint > Frustum.NearPlane, "ClipCube: Culling by the near plane happened!");
+		n_assert2_dbg(ClosestPoint < Frustum.FarPlane, "ClipCube: Culling by the far plane happened!");
+	}
+
+	HasInvisiblePart = HasInvisiblePart || acl::vector_any_less_than(CenterDistance, acl::vector_neg(ProjectedNegExtent));
+
+	return static_cast<U8>(HasVisiblePart) | (static_cast<U8>(HasInvisiblePart) << 1);
+}
+//---------------------------------------------------------------------
+
 // See Real-Time Collision Detection 5.2.3
 // See https://fgiesen.wordpress.com/2010/10/17/view-frustum-culling/
 void CSPS::TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum, std::vector<bool>& NodeVisibility) const
