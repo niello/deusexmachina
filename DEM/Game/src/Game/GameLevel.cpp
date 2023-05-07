@@ -23,7 +23,7 @@ CGameLevel::CGameLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveB
 	, _SceneRoot(n_new(Scene::CSceneNode(ID)))
 	, _PhysicsLevel(n_new(Physics::CPhysicsLevel(Bounds)))
 {
-	_SPS.Init(Bounds.Center(), std::max({ Bounds.Size().x, Bounds.Size().y, Bounds.Size().z }), SubdivisionDepth ? SubdivisionDepth : 5);
+	_SPS.Init(Bounds.Center(), std::max({ Bounds.Size().x, Bounds.Size().y, Bounds.Size().z }), SubdivisionDepth ? SubdivisionDepth : 12);
 }
 //---------------------------------------------------------------------
 

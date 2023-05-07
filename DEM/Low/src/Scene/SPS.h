@@ -87,7 +87,7 @@ struct CSpatialTreeNode
 	U32             SubtreeObjectCount;
 };
 
-constexpr auto NO_NODE = Data::CSparseArray2<CSpatialTreeNode, U32>::INVALID_INDEX;
+constexpr auto NO_SPATIAL_TREE_NODE = Data::CSparseArray2<CSpatialTreeNode, U32>::INVALID_INDEX;
 
 struct CSPSRecord
 {
@@ -95,7 +95,7 @@ struct CSPSRecord
 	acl::Vector4_32 BoxCenter;
 	acl::Vector4_32 BoxExtent;
 	TMorton         NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes for child nodes
-	U32             NodeIndex = NO_NODE;
+	U32             NodeIndex = NO_SPATIAL_TREE_NODE;
 	U32             BoundsVersion = 1;
 	//////////////////////////////
 
@@ -121,9 +121,10 @@ protected:
 
 	//!!!TODO: separate by type - renderables, lights, ambient etc!
 	std::map<UPTR, CSPSRecord*> _Objects; // TODO: could try to use std::set
-	vector3 _WorldCenter; // TODO: requires allocation alignment! acl::Vector4_32 _WorldBounds; // Cx, Cy, Cz, Ecoeff = 1.f
+	vector3 _WorldCenter;
 	float _WorldExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic
 	float _InvWorldSize = 0.f; // Cached 1 / (2 * _WorldExtent)
+	float _SmallestExtent = 0.f; // Cached _WorldExtent / (1 << _MaxDepth), smallest extent that requires depth calculation on insertion
 	U8 _MaxDepth = 0;
 
 	UPTR _NextUID = 1; // UID 0 means no UID assigned, so start from 1

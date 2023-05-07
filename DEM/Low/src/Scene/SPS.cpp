@@ -142,19 +142,21 @@ void CSPS::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 
 	SceneMinY = Center.y - Size * 0.5f;
 	SceneMaxY = Center.y + Size * 0.5f;
-	QuadTree.Build(Center.x, Center.z, Size, Size, HierarchyDepth);
+	QuadTree.Build(Center.x, Center.z, Size, Size, std::min<U8>(5, HierarchyDepth));
 
 	///////// NEW RENDER /////////
-	_MaxDepth = std::min(static_cast<U8>(12), TREE_MAX_DEPTH); // TODO: pass as an arg, assert and clamp if requested more than possible.
-	_WorldCenter = Center; //_WorldBounds = acl::vector_set(Center.x, Center.y, Center.z, 1.f);
+	_MaxDepth = std::min(HierarchyDepth, TREE_MAX_DEPTH);
+	_WorldCenter = Center;
 	_WorldExtent = Size * 0.5f;
 	_InvWorldSize = 1.f / Size;
+	_SmallestExtent = _WorldExtent / static_cast<float>(1 << _MaxDepth);
 
 	// Create a root node. This simplifies object insertion logic.
 	// Set object count to fake 1 to keep the root alive forever.
 	auto& Root = *_TreeNodes.emplace();
+	Root.Bounds = acl::vector_set(_WorldCenter.x, _WorldCenter.y, _WorldCenter.z, 1.f);
 	Root.MortonCode = 1;
-	Root.ParentIndex = NO_NODE;
+	Root.ParentIndex = NO_SPATIAL_TREE_NODE;
 	Root.SubtreeObjectCount = 1;
 	_MortonToIndex.emplace(1, 0);
 }
@@ -162,18 +164,21 @@ void CSPS::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 
 TMorton CSPS::CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const noexcept
 {
-	// FIXME: store world bounds in a SIMD vector!
-	const auto WorldCenter = acl::vector_set(_WorldCenter.x, _WorldCenter.y, _WorldCenter.z);
+	const auto WorldCenter = _TreeNodes[0].Bounds;
 	const auto WorldExtent = acl::vector_set(_WorldExtent);
+
+	// Check for location outside the world bounds. Loose tree requires only the center being inside.
+	const auto CenterDiff = acl::vector_abs(acl::vector_sub(BoxCenter, WorldCenter));
+	if (acl::vector_any_greater_equal3(CenterDiff, WorldExtent)) return 0;
 
 	// Our level is where the non-loose node size is not less than our size in any of dimensions.
 	// Too small and degenerate AABBs sink to the deepest possible level to save us from division errors.
-	TMorton NodeSizeCoeff = static_cast<TMorton>(1 << (_MaxDepth - 1));
-	if (acl::vector_all_greater_equal3(BoxExtent, acl::vector_set(0.0001f)))
+	TMorton NodeSizeCoeff = static_cast<TMorton>(1 << _MaxDepth);
+	if (acl::vector_any_greater_equal3(BoxExtent, acl::vector_set(_SmallestExtent)))
 	{
 		// TODO: can make better with SIMD?
 		const float MaxDim = std::max({ acl::vector_get_x(BoxExtent), acl::vector_get_y(BoxExtent), acl::vector_get_z(BoxExtent) });
-		const TMorton HighestSharePow2 = Math::NextPow2(static_cast<TMorton>(_WorldExtent / MaxDim));
+		const TMorton HighestSharePow2 = Math::PrevPow2(static_cast<TMorton>(_WorldExtent / MaxDim));
 		if (NodeSizeCoeff > HighestSharePow2) NodeSizeCoeff = HighestSharePow2;
 	}
 
@@ -196,9 +201,6 @@ TMorton CSPS::CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32
 
 U32 CSPS::CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex)
 {
-	// FIXME: store world bounds in a SIMD vector!
-	const auto WorldCenter = acl::vector_set(_WorldCenter.x, _WorldCenter.y, _WorldCenter.z);
-
 	// Unpack Morton code back into cell coords and depth
 	const auto Bits = Math::BitWidth(MortonCode);
 	const auto MortonCodeNoSentinel = MortonCode ^ (1 << (Bits - 1));
@@ -213,7 +215,7 @@ U32 CSPS::CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex)
 	const auto Cell = acl::vector_set(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
 	auto Center = acl::vector_mul_add(Cell, 2.f, acl::vector_set(1.f)); // A = 2 * xyz + 1
 	Center = acl::vector_mul_add(Center, ExtentCoeff, acl::vector_set(-1.f)); // B = A * Ecoeff - 1.f
-	Center = acl::vector_mul_add(Center, _WorldExtent, WorldCenter); // Center = B * We + Wc
+	Center = acl::vector_mul_add(Center, _WorldExtent, _TreeNodes[0].Bounds); // Center = B * We + Wc
 
 	// Set extent coeff to W
 	Center = acl::vector_mix<acl::VectorMix::X, acl::VectorMix::Y, acl::VectorMix::Z, acl::VectorMix::A>(Center, acl::vector_set(ExtentCoeff));
@@ -244,7 +246,7 @@ U32 CSPS::CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex)
 
 U32 CSPS::AddSingleObject(TMorton NodeMortonCode, TMorton StopMortonCode)
 {
-	if (!NodeMortonCode) return NO_NODE;
+	if (!NodeMortonCode) return NO_SPATIAL_TREE_NODE;
 
 	// Find the deepest existing parent. The root always exists as a fallback.
 	U32 MissingNodes = 0;
@@ -329,8 +331,13 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 	pRecord->NodeMortonCode = NodeMortonCode;
 
 	//!!!DBG TMP!
-	n_assert_dbg(GetNodeBoundsByIndex(pRecord->NodeIndex, true).contains(GlobalBox));
-	n_assert_dbg(GetNodeBoundsByIndex(pRecord->NodeIndex, false).contains(GlobalBox.Center()));
+	if (pRecord->NodeIndex != NO_SPATIAL_TREE_NODE)
+	{
+		auto NodeBoxLoose = GetNodeBoundsByIndex(pRecord->NodeIndex, true);
+		auto NodeBox = GetNodeBoundsByIndex(pRecord->NodeIndex, false);
+		n_assert_dbg(NodeBoxLoose.contains(GlobalBox));
+		n_assert_dbg(NodeBox.contains(GlobalBox.Center()));
+	}
 
 	_Objects.emplace_hint(_Objects.cend(), _NextUID++, pRecord); //!!!TODO: insert (hint, std::move(node))
 
@@ -375,8 +382,13 @@ void CSPS::UpdateRecord(CSPSRecord* pRecord)
 		pRecord->NodeMortonCode = NodeMortonCode;
 
 		//!!!DBG TMP!
-		n_assert_dbg(GetNodeBoundsByIndex(pRecord->NodeIndex, true).contains(pRecord->GlobalBox));
-		n_assert_dbg(GetNodeBoundsByIndex(pRecord->NodeIndex, false).contains(pRecord->GlobalBox.Center()));
+		if (pRecord->NodeIndex != NO_SPATIAL_TREE_NODE)
+		{
+			auto NodeBoxLoose = GetNodeBoundsByIndex(pRecord->NodeIndex, true);
+			auto NodeBox = GetNodeBoundsByIndex(pRecord->NodeIndex, false);
+			n_assert_dbg(NodeBoxLoose.contains(pRecord->GlobalBox));
+			n_assert_dbg(NodeBox.contains(pRecord->GlobalBox.Center()));
+		}
 	}
 	//////////////////////////////
 }
@@ -390,7 +402,7 @@ void CSPS::RemoveRecord(CSPSRecord* pRecord)
 	///////// NEW RENDER /////////
 	RemoveSingleObject(pRecord->NodeIndex, pRecord->NodeMortonCode, 0);
 	pRecord->NodeMortonCode = 0;
-	pRecord->NodeIndex = NO_NODE;
+	pRecord->NodeIndex = NO_SPATIAL_TREE_NODE;
 	//extract from _Objects to pool! By UID stored in the attr itself? Then need also to clear UID in the attr here.
 	//!!!could also store iterator instead of UID in attr, it is less safe but O(1) extract instead of O(logN)! Clear all iterators before _Objects.clear() then!
 	//!!!it is just like pSPSRecord was previously saved in an attr!
@@ -537,8 +549,7 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 
 	// Process the root outside the loop to simplify conditions inside
 	// FIXME: improve writing, clip mask already has both bits for NodeVisibility element
-	const auto WorldBounds = acl::vector_set(_WorldCenter.x, _WorldCenter.y, _WorldCenter.z, 1.f);
-	const auto ClipRoot = ClipCube(WorldBounds, ProjectedNegWorldExtent, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NegWorldExtentAlongLookAxis, NearPlane, FarPlane);
+	const auto ClipRoot = ClipCube(_TreeNodes[0].Bounds, ProjectedNegWorldExtent, LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NegWorldExtentAlongLookAxis, NearPlane, FarPlane);
 	NodeVisibility[0] = ClipRoot & EClipStatus::Inside;
 	NodeVisibility[1] = ClipRoot & EClipStatus::Outside;
 
@@ -596,10 +607,15 @@ void CSPS::TestSpatialTreeVisibility(const matrix44& ViewProj, std::vector<bool>
 
 CAABB CSPS::GetNodeBoundsByIndex(U32 NodeIndex, bool Loose) const
 {
-	const auto Bounds = _TreeNodes[NodeIndex].Bounds;
-	const vector3 Center(acl::vector_get_x(Bounds), acl::vector_get_y(Bounds), acl::vector_get_z(Bounds));
-	const float Extent = _WorldExtent * acl::vector_get_w(Bounds) * (Loose ? 2.f : 1.f);
-	return CAABB(Center, vector3(Extent, Extent, Extent));
+	CAABB Box;
+	if (NodeIndex != NO_SPATIAL_TREE_NODE)
+	{
+		const auto Bounds = _TreeNodes[NodeIndex].Bounds;
+		const vector3 Center(acl::vector_get_x(Bounds), acl::vector_get_y(Bounds), acl::vector_get_z(Bounds));
+		const float Extent = _WorldExtent * acl::vector_get_w(Bounds) * (Loose ? 2.f : 1.f);
+		Box.Set(Center, vector3(Extent, Extent, Extent));
+	}
+	return Box;
 }
 //---------------------------------------------------------------------
 

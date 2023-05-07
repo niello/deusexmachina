@@ -450,9 +450,10 @@ bool CView::Render()
 			{
 				// Update visibility
 				//!!!???TODO: to inline function?!
-				if (_TreeNodeVisibility[pRecord->NodeIndex * 2]) // Check if node has a visible part
+				const bool NoTreeNode = (pRecord->NodeIndex == Scene::NO_SPATIAL_TREE_NODE);
+				if (NoTreeNode || _TreeNodeVisibility[pRecord->NodeIndex * 2]) // Check if node has a visible part
 				{
-					if (_TreeNodeVisibility[pRecord->NodeIndex * 2 + 1]) // Check if node has an invisible part
+					if (NoTreeNode || _TreeNodeVisibility[pRecord->NodeIndex * 2 + 1]) // Check if node has an invisible part
 					{
 						//???check AABB or OBB? now AABB.
 						// OBB:  float r = b.e[0]*Abs(Dot(p.n, b.u[0])) + b.e[1]*Abs(Dot(p.n, b.u[1])) + b.e[2]*Abs(Dot(p.n, b.u[2]));
