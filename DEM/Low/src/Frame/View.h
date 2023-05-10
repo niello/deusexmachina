@@ -38,6 +38,7 @@ namespace Debug
 
 namespace Frame
 {
+class CGraphicsScene;
 class CCameraAttribute;
 class CAmbientLightAttribute;
 class CRenderableAttribute;
@@ -62,8 +63,7 @@ protected:
 	int											_SwapChainID = INVALID_INDEX;
 	CCameraAttribute*							pCamera = nullptr; //???smart ptr?
 
-	//???scene start node? if nullptr, render all nodes, else only that and its children
-	Scene::CSPS*								_pSPS = nullptr;
+	CGraphicsScene*								_pScene = nullptr;
 
 	UI::PUIContext								_UIContext;
 	Debug::PDebugDraw                           _DebugDraw;
@@ -144,8 +144,8 @@ public:
 	Render::CRenderTarget*			GetRenderTarget(CStrID ID) const;
 	bool							SetDepthStencilBuffer(CStrID ID, Render::PDepthStencilBuffer DS);
 	Render::CDepthStencilBuffer*	GetDepthStencilBuffer(CStrID ID) const;
-	void                            SetScene(Scene::CSPS* pSPS);
-	Scene::CSPS*                    GetScene() const { return _pSPS; }
+	void                            SetScene(CGraphicsScene* pScene);
+	CGraphicsScene*                 GetScene() const { return _pScene; }
 	bool							SetCamera(CCameraAttribute* pNewCamera);
 	CCameraAttribute*               GetCamera() const { return pCamera; }
 	CGraphicsResourceManager*		GetGraphicsManager() const;

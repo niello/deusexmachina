@@ -115,6 +115,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Frame/CameraAttribute.h
 	DEM/Low/src/Frame/CameraController.h
 	DEM/Low/src/Frame/GraphicsResourceManager.h
+	DEM/Low/src/Frame/GraphicsScene.h
 	DEM/Low/src/Frame/LightAttribute.h
 	DEM/Low/src/Frame/ModelAttribute.h
 	DEM/Low/src/Frame/RenderableAttribute.h
@@ -291,7 +292,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Scene/NodeAttribute.h
 	DEM/Low/src/Scene/SceneNode.h
 	DEM/Low/src/Scene/SceneNodeLoaderSCN.h
-	DEM/Low/src/Scene/SPS.h
 	DEM/Low/src/Scripting/EventHandlerScript.h
 	DEM/Low/src/Scripting/LuaEventHandler.h
 	DEM/Low/src/Scripting/ScriptAsset.h
@@ -400,6 +400,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Frame/CameraAttribute.cpp
 	DEM/Low/src/Frame/CameraController.cpp
 	DEM/Low/src/Frame/GraphicsResourceManager.cpp
+	DEM/Low/src/Frame/GraphicsScene.cpp
 	DEM/Low/src/Frame/LightAttribute.cpp
 	DEM/Low/src/Frame/ModelAttribute.cpp
 	DEM/Low/src/Frame/RenderableAttribute.cpp
@@ -531,7 +532,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Scene/NodeAttribute.cpp
 	DEM/Low/src/Scene/SceneNode.cpp
 	DEM/Low/src/Scene/SceneNodeLoaderSCN.cpp
-	DEM/Low/src/Scene/SPS.cpp
 	DEM/Low/src/Scripting/EventHandlerScript.cpp
 	DEM/Low/src/Scripting/LuaEventHandler.cpp
 	DEM/Low/src/Scripting/ScriptAssetLoader.cpp

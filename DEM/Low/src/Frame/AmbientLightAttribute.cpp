@@ -1,6 +1,5 @@
 #include "AmbientLightAttribute.h"
 #include <Frame/GraphicsResourceManager.h>
-#include <Scene/SPS.h>
 #include <Render/GPUDriver.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
@@ -69,7 +68,7 @@ void CAmbientLightAttribute::OnActivityChanged(bool Active)
 }
 //---------------------------------------------------------------------
 
-void CAmbientLightAttribute::UpdateInSPS(Scene::CSPS& SPS)
+void CAmbientLightAttribute::UpdateInGraphicsScene(CGraphicsScene& Scene)
 {
 	const bool Global = true;
 	if (Global)

@@ -1,4 +1,5 @@
 #pragma once
+#include <System/System.h> // DEM_FORCE_INLINE, n_assert_dbg
 #include <vector>
 
 // Array which doesn't shift when elements are deleted. Instead free cells are remembered

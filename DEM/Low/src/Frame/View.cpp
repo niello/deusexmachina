@@ -5,7 +5,6 @@
 #include <Frame/RenderableAttribute.h>
 #include <Frame/RenderPath.h>
 #include <Frame/GraphicsResourceManager.h>
-#include <Scene/SPS.h>
 #include <Render/Renderable.h>
 #include <Render/RenderTarget.h>
 #include <Render/ConstantBuffer.h>
@@ -193,33 +192,33 @@ void CView::UpdateVisibilityCache()
 {
 	if (!VisibilityCacheDirty) return;
 
-	if (_pSPS && pCamera)
+	if (_pScene && pCamera)
 	{
-		//!!!DBG TMP!
-		CArray<Scene::CNodeAttribute*> VisibilityCache2;
+		NOT_IMPLEMENTED;
+		//CArray<Scene::CNodeAttribute*> VisibilityCache2;
 
-		_pSPS->QueryObjectsInsideFrustum(pCamera->GetViewProjMatrix(), VisibilityCache2);
+		//_pScene->QueryObjectsInsideFrustum(pCamera->GetViewProjMatrix(), VisibilityCache2);
 
-		for (UPTR i = 0; i < VisibilityCache2.GetCount(); /**/)
-		{
-			Scene::CNodeAttribute* pAttr = VisibilityCache2[i];
-			if (pAttr->IsA<CLightAttribute>())
-			{
-				Render::CLightRecord& Rec = *LightCache.Add();
-				Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
-				Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
-				Rec.UseCount = 0;
-				Rec.GPULightIndex = INVALID_INDEX;
+		//for (UPTR i = 0; i < VisibilityCache2.GetCount(); /**/)
+		//{
+		//	Scene::CNodeAttribute* pAttr = VisibilityCache2[i];
+		//	if (pAttr->IsA<CLightAttribute>())
+		//	{
+		//		Render::CLightRecord& Rec = *LightCache.Add();
+		//		Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
+		//		Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
+		//		Rec.UseCount = 0;
+		//		Rec.GPULightIndex = INVALID_INDEX;
 
-				//VisibilityCache.RemoveAt(i);
-			}
-			else if (pAttr->IsA<CAmbientLightAttribute>())
-			{
-				EnvironmentCache.Add(pAttr->As<CAmbientLightAttribute>());
-				//VisibilityCache.RemoveAt(i);
-			}
-			/*else*/ ++i;
-		}
+		//		//VisibilityCache.RemoveAt(i);
+		//	}
+		//	else if (pAttr->IsA<CAmbientLightAttribute>())
+		//	{
+		//		EnvironmentCache.Add(pAttr->As<CAmbientLightAttribute>());
+		//		//VisibilityCache.RemoveAt(i);
+		//	}
+		//	/*else*/ ++i;
+		//}
 	}
 	else
 	{
@@ -314,13 +313,13 @@ void CView::Update(float dt)
 void CView::SynchronizeObjects()
 {
 	// Synchronize scene objects with their renderable mirrors
-	DEM::Algo::SortedUnion(_pSPS->GetObjects(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
+	DEM::Algo::SortedUnion(_pScene->GetRenderables(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
 		[this](auto ItSceneObject, auto ItRenderObject)
 	{
-		const Scene::CObjectRecord* pRecord = nullptr;
+		const CGraphicsScene::CRenderableRecord* pRecord = nullptr;
 		Render::IRenderable* pRenderable = nullptr;
 
-		if (ItSceneObject == _pSPS->GetObjects().cend())
+		if (ItSceneObject == _pScene->GetRenderables().cend())
 		{
 			// An object was removed from a scene, remove its renderable
 			// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one
@@ -384,20 +383,20 @@ void CView::UpdateObjectVisibility(bool ViewProjChanged)
 
 	//!!!FIXME: also need to invalidate cache of changed nodes when one node takes index of another! //???notify SPS->All views for invalidated indices?
 	/*if (ViewProjChanged)*/ _TreeNodeVisibility.clear();
-	_pSPS->TestSpatialTreeVisibility(Frustum, _TreeNodeVisibility);
+	_pScene->TestSpatialTreeVisibility(Frustum, _TreeNodeVisibility);
 
 	// Update visibility of renderables. Iterate synchronized collections side by side.
-	auto ItSceneObject = _pSPS->GetObjects().cbegin();
+	auto ItSceneObject = _pScene->GetRenderables().cbegin();
 	auto ItRenderObject = _Renderables.cbegin();
 	for (; ItRenderObject != _Renderables.cend(); ++ItSceneObject, ++ItRenderObject)
 	{
-		const Scene::CObjectRecord& Record = ItSceneObject->second;
+		const CGraphicsScene::CRenderableRecord& Record = ItSceneObject->second;
 		Render::IRenderable* pRenderable = ItRenderObject->second.get();
 		if (ViewProjChanged || pRenderable->BoundsVersion != Record.BoundsVersion)
 		{
 			if (Record.BoundsValid)
 			{
-				const bool NoTreeNode = (Record.NodeIndex == Scene::NO_SPATIAL_TREE_NODE);
+				const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
 				if (NoTreeNode || _TreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
 				{
 					if (NoTreeNode || _TreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
@@ -426,7 +425,7 @@ bool CView::Render()
 	VisibilityCacheDirty = true;
 
 	///////// NEW RENDER /////////
-	if (_pSPS && pCamera)
+	if (_pScene && pCamera)
 	{
 		bool ViewProjChanged = false;
 		{
@@ -465,7 +464,7 @@ bool CView::Render()
 		for (const auto& [UID, Renderable] : _Renderables)
 		{
 			if (Renderable->IsVisible)
-				VisibilityCache.push_back(_pSPS->GetObjects().find(UID)->second.pUserData);
+				VisibilityCache.push_back(_pScene->GetRenderables().find(UID)->second.pUserData);
 		}
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -525,11 +524,11 @@ Render::CDepthStencilBuffer* CView::GetDepthStencilBuffer(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-void CView::SetScene(Scene::CSPS* pSPS)
+void CView::SetScene(CGraphicsScene* pScene)
 {
-	if (_pSPS == pSPS) return;
+	if (_pScene == pScene) return;
 
-	_pSPS = pSPS;
+	_pScene = pScene;
 	_RenderObjects.clear();
 	VisibilityCacheDirty = true;
 

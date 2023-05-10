@@ -15,6 +15,7 @@ namespace Scene
 
 namespace Frame
 {
+class CGraphicsScene;
 
 class CLightAttribute: public Scene::CNodeAttribute
 {
@@ -23,8 +24,7 @@ class CLightAttribute: public Scene::CNodeAttribute
 protected:
 
 	Render::CLight     Light;
-	Scene::CSPS*       pSPS = nullptr;
-	Scene::CSPSRecord* pSPSRecord = nullptr;
+	CGraphicsScene*    pScene = nullptr;
 	U32                LastTransformVersion = 0;
 
 	virtual void                  OnActivityChanged(bool Active) override;
@@ -33,7 +33,7 @@ public:
 
 	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
 	virtual Scene::PNodeAttribute Clone();
-	void                          UpdateInSPS(Scene::CSPS& SPS);
+	void                          UpdateInGraphicsScene(CGraphicsScene& Scene);
 
 	void                          CalcFrustum(matrix44& OutFrustum) const;
 	bool                          GetGlobalAABB(CAABB& OutBox) const;

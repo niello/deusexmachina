@@ -1,71 +1,11 @@
-#include <Scene/SPS.h>
+#include "GraphicsScene.h"
 #include <Math/Math.h>
 #include <Math/CameraMath.h>
-#include <acl/math/vector4_32.h>
-#include <acl/math/affine_matrix_32.h>
 
-namespace Scene
+namespace Frame
 {
 
-CSPSCell::CIterator CSPSCell::Add(CSPSRecord* Object)
-{
-	n_assert_dbg(Object && !Object->pPrev);
-	if (pFront)
-	{
-		Object->pNext = pFront;
-		pFront->pPrev = Object;
-	}
-	pFront = Object;
-	return CIterator(Object);
-}
-//---------------------------------------------------------------------
-
-void CSPSCell::Remove(CSPSRecord* pRec)
-{
-	n_assert_dbg(pRec);
-	CSPSRecord* pPrev = pRec->pPrev;
-	CSPSRecord* pNext = pRec->pNext;
-	if (pPrev) pPrev->pNext = pNext;
-	if (pNext) pNext->pPrev = pPrev;
-	if (pRec == pFront) pFront = pNext;
-	pRec->pNext = nullptr;
-	pRec->pPrev = nullptr;
-}
-//---------------------------------------------------------------------
-
-bool CSPSCell::RemoveByValue(CSPSRecord* Object)
-{
-	CSPSRecord* pRec = Object;
-	CSPSRecord* pCurr = pFront;
-	while (pCurr)
-	{
-		if (pCurr == pRec)
-		{
-			Remove(pCurr);
-			OK;
-		}
-		pCurr = pCurr->pNext;
-	}
-	FAIL;
-}
-//---------------------------------------------------------------------
-
-CSPSCell::CIterator CSPSCell::Find(CSPSRecord* Object) const
-{
-	CSPSRecord* pRec = Object;
-	CSPSRecord* pCurr = pFront;
-	while (pCurr)
-	{
-		if (pCurr == pRec) return CIterator(pCurr);
-		pCurr = pCurr->pNext;
-	}
-	return CIterator(nullptr);
-}
-//---------------------------------------------------------------------
-
-///////// NEW RENDER /////////
 // FIXME: move to math!!!
-
 // Finds the Least Common Ancestor of two nodes represented by Morton codes
 template<size_t DIMENSIONS, typename T>
 DEM_FORCE_INLINE T MortonLCA(T MortonCodeA, T MortonCodeB) noexcept
@@ -137,15 +77,10 @@ bool HasLooseIntersection(/*Bounds, Morton*/) noexcept
 }
 //---------------------------------------------------------------------
 
-void CSPS::Init(const vector3& Center, float Size, U8 HierarchyDepth)
+void CGraphicsScene::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 {
-	n_assert2_dbg(Size >= 0.f, "CSPS::Init() > negative world extent is not allowed!");
+	n_assert2_dbg(Size >= 0.f, "CGraphicsScene::Init() > negative world extent is not allowed!");
 
-	SceneMinY = Center.y - Size * 0.5f;
-	SceneMaxY = Center.y + Size * 0.5f;
-	QuadTree.Build(Center.x, Center.z, Size, Size, std::min<U8>(5, HierarchyDepth));
-
-	///////// NEW RENDER /////////
 	_MaxDepth = std::min(HierarchyDepth, TREE_MAX_DEPTH);
 	_WorldCenter = Center;
 	_WorldExtent = Size * 0.5f;
@@ -163,7 +98,7 @@ void CSPS::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 }
 //---------------------------------------------------------------------
 
-TMorton CSPS::CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const noexcept
+TMorton CGraphicsScene::CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const noexcept
 {
 	const auto WorldCenter = _TreeNodes[0].Bounds;
 	const auto WorldExtent = acl::vector_set(_WorldExtent);
@@ -200,7 +135,7 @@ TMorton CSPS::CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32
 }
 //---------------------------------------------------------------------
 
-U32 CSPS::CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex)
+U32 CGraphicsScene::CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex)
 {
 	// Create a node
 	auto ItNew = _TreeNodes.emplace_at_free(FreeIndex);
@@ -226,7 +161,7 @@ U32 CSPS::CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex)
 }
 //---------------------------------------------------------------------
 
-U32 CSPS::AddSingleObjectToNode(TMorton NodeMortonCode, TMorton StopMortonCode)
+U32 CGraphicsScene::AddSingleObjectToNode(TMorton NodeMortonCode, TMorton StopMortonCode)
 {
 	if (!NodeMortonCode) return NO_SPATIAL_TREE_NODE;
 
@@ -270,7 +205,7 @@ U32 CSPS::AddSingleObjectToNode(TMorton NodeMortonCode, TMorton StopMortonCode)
 }
 //---------------------------------------------------------------------
 
-void CSPS::RemoveSingleObjectFromNode(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode)
+void CGraphicsScene::RemoveSingleObjectFromNode(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode)
 {
 	while (NodeMortonCode != StopMortonCode)
 	{
@@ -287,23 +222,9 @@ void CSPS::RemoveSingleObjectFromNode(U32 NodeIndex, TMorton NodeMortonCode, TMo
 }
 //---------------------------------------------------------------------
 
-CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
+CGraphicsScene::HObject CGraphicsScene::AddRenderable(const CAABB& GlobalBox, CRenderableAttribute* pUserData)
 {
-	CSPSRecord* pRecord = RecordPool.Construct();
-	pRecord->GlobalBox = GlobalBox;
-	pRecord->pUserData = pUserData;
-	pRecord->pPrev = nullptr;
-	pRecord->pNext = nullptr;
-	float CenterX, CenterZ, HalfSizeX, HalfSizeZ;
-	GetDimensions(GlobalBox, CenterX, CenterZ, HalfSizeX, HalfSizeZ);
-	QuadTree.AddObject(pRecord, CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);
-	return pRecord;
-}
-//---------------------------------------------------------------------
-
-CSPS::HObject CSPS::AddObject(const CAABB& GlobalBox, CNodeAttribute* pUserData)
-{
-	CObjectRecord Record;
+	CRenderableRecord Record;
 	Record.pUserData = pUserData;
 
 	// TODO: store AABB as SIMD center-extents everywhere?!
@@ -330,35 +251,27 @@ CSPS::HObject CSPS::AddObject(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 	const auto UID = _NextUID++;
 
 	// If this assert is ever triggered, compacting of existing UIDs may be implemented to keep fast insertions to the map end.
-	// Compacting must change UIDs in _Objects and broadcast changes to all views. Try to make it sorted and preserve iterators to avoid logN searches.
+	// Compacting must change UIDs in _Renderables and broadcast changes to all views. Try to make it sorted and preserve iterators to avoid logN searches.
 	n_assert_dbg(_NextUID < std::numeric_limits<decltype(_NextUID)>().max());
 
 	if (_ObjectNodePool.empty())
 	{
-		return _Objects.emplace_hint(_Objects.cend(), UID, std::move(Record));
+		return _Renderables.emplace_hint(_Renderables.cend(), UID, std::move(Record));
 	}
 	else
 	{
 		auto Node = std::move(_ObjectNodePool.back());
 		_ObjectNodePool.pop_back();
 		Node.key() = UID;
-		new (&Node.mapped()) CObjectRecord(std::move(Record));
-		return _Objects.insert(_Objects.cend(), std::move(Node));
+		new (&Node.mapped()) CRenderableRecord(std::move(Record));
+		return _Renderables.insert(_Renderables.cend(), std::move(Node));
 	}
 }
 //---------------------------------------------------------------------
 
-void CSPS::UpdateRecord(CSPSRecord* pRecord)
+void CGraphicsScene::UpdateRenderable(HObject Handle, const CAABB& GlobalBox)
 {
-	float CenterX, CenterZ, HalfSizeX, HalfSizeZ;
-	GetDimensions(pRecord->GlobalBox, CenterX, CenterZ, HalfSizeX, HalfSizeZ);
-	QuadTree.UpdateHandle(CSPSCell::CIterator(pRecord), CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);
-}
-//---------------------------------------------------------------------
-
-void CSPS::UpdateObject(HObject Handle, const CAABB& GlobalBox)
-{
-	//if (Handle == _Objects.cend()) return;
+	//if (Handle == _Renderables.cend()) return;
 
 	auto& Record = Handle->second;
 
@@ -388,81 +301,14 @@ void CSPS::UpdateObject(HObject Handle, const CAABB& GlobalBox)
 }
 //---------------------------------------------------------------------
 
-void CSPS::RemoveRecord(CSPSRecord* pRecord)
-{
-	if (pRecord->pSPSNode) pRecord->pSPSNode->RemoveByHandle(CSPSCell::CIterator(pRecord));
-	RecordPool.Destroy(pRecord);
-}
-//---------------------------------------------------------------------
-
 // TODO: check safety. If causes issues, can use UID instead of an iterator, but this makes erase logarithmic instead of constant.
-void CSPS::RemoveObject(HObject Handle)
+void CGraphicsScene::RemoveRenderable(HObject Handle)
 {
-	//if (Handle == _Objects.cend()) return;
+	//if (Handle == _Renderables.cend()) return;
 
 	RemoveSingleObjectFromNode(Handle->second.NodeIndex, Handle->second.NodeMortonCode, 0);
-	_ObjectNodePool.push_back(_Objects.extract(Handle));
-	_ObjectNodePool.back().mapped().~CObjectRecord();
-}
-//---------------------------------------------------------------------
-
-void CSPS::QueryObjectsInsideFrustum(const matrix44& ViewProj, CArray<CNodeAttribute*>& OutObjects) const
-{
-	// TODO: oversized and always visible are two different things. Oversized must be AABB-tested, always visible must not.
-	if (OversizedObjects.GetCount())
-		OutObjects.AddArray(OversizedObjects);
-
-	CSPSNode* pRootNode = QuadTree.GetRootNode();
-	if (pRootNode && pRootNode->GetTotalObjCount())
-		QueryObjectsInsideFrustum(pRootNode, ViewProj, OutObjects, EClipStatus::Clipped);
-}
-//---------------------------------------------------------------------
-
-void CSPS::QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, CArray<CNodeAttribute*>& OutObjects, EClipStatus Clip) const
-{
-	n_assert_dbg(pNode && pNode->GetTotalObjCount() && Clip != EClipStatus::Outside);
-
-	if (Clip == EClipStatus::Clipped)
-	{
-		CAABB NodeBox;
-		pNode->GetBounds(NodeBox); //!!!can pass node box as arg and calculate for children, this will save some calculations!
-		NodeBox.Min.y = SceneMinY;
-		NodeBox.Max.y = SceneMaxY;
-		Clip = NodeBox.GetClipStatus(ViewProj);
-		if (Clip == EClipStatus::Outside) return;
-		if (Clip == EClipStatus::Inside)
-		{
-			// Make room for all underlying objects, including those in child nodes
-			UPTR MinRoomRequired = OutObjects.GetCount() + pNode->GetTotalObjCount();
-			if (OutObjects.GetAllocSize() < MinRoomRequired)
-				OutObjects.Resize(MinRoomRequired);
-		}
-	}
-
-	if (!pNode->Data.IsEmpty())
-	{
-		CSPSCell::CIterator ItObj = pNode->Data.Begin();
-		CSPSCell::CIterator ItEnd = pNode->Data.End();
-		if (Clip == EClipStatus::Inside)
-		{
-			for (; ItObj != ItEnd; ++ItObj)
-				OutObjects.Add((*ItObj)->pUserData);
-		}
-		else // Clipped
-		{
-			for (; ItObj != ItEnd; ++ItObj)
-				if ((*ItObj)->GlobalBox.GetClipStatus(ViewProj) != EClipStatus::Outside)
-					OutObjects.Add((*ItObj)->pUserData);
-		}
-	}
-
-	if (pNode->HasChildren())
-		for (UPTR i = 0; i < 4; ++i)
-		{
-			CSPSNode* pChildNode = pNode->GetChild(i);
-			if (pChildNode->GetTotalObjCount())
-				QueryObjectsInsideFrustum(pChildNode, ViewProj, OutObjects, Clip);
-		}
+	_ObjectNodePool.push_back(_Renderables.extract(Handle));
+	_ObjectNodePool.back().mapped().~CRenderableRecord();
 }
 //---------------------------------------------------------------------
 
@@ -506,9 +352,9 @@ static DEM_FORCE_INLINE U8 ClipCube(acl::Vector4_32Arg0 Bounds, acl::Vector4_32A
 
 // See Real-Time Collision Detection 5.2.3
 // See https://fgiesen.wordpress.com/2010/10/17/view-frustum-culling/
-void CSPS::TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum, std::vector<bool>& NodeVisibility) const
+void CGraphicsScene::TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum, std::vector<bool>& NodeVisibility) const
 {
-	n_assert2_dbg(!_TreeNodes.empty(), "CSPS::TestSpatialTreeVisibility() should not be called before CSPS::Init()!");
+	n_assert2_dbg(!_TreeNodes.empty(), "CGraphicsScene::TestSpatialTreeVisibility() should not be called before CGraphicsScene::Init()!");
 
 	//const size_t CachedCount = NodeVisibility.size() / 2;
 
@@ -565,7 +411,7 @@ void CSPS::TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum, std::vec
 }
 //---------------------------------------------------------------------
 
-acl::Vector4_32 CSPS::CalcNodeBounds(TMorton MortonCode) const
+acl::Vector4_32 CGraphicsScene::CalcNodeBounds(TMorton MortonCode) const
 {
 	// Unpack Morton code back into cell coords and depth
 	const auto Bits = Math::BitWidth(MortonCode);
@@ -588,7 +434,7 @@ acl::Vector4_32 CSPS::CalcNodeBounds(TMorton MortonCode) const
 }
 //---------------------------------------------------------------------
 
-CAABB CSPS::GetNodeAABB(U32 NodeIndex, bool Loose) const
+CAABB CGraphicsScene::GetNodeAABB(U32 NodeIndex, bool Loose) const
 {
 	CAABB Box;
 	if (NodeIndex != NO_SPATIAL_TREE_NODE)
@@ -597,7 +443,7 @@ CAABB CSPS::GetNodeAABB(U32 NodeIndex, bool Loose) const
 }
 //---------------------------------------------------------------------
 
-CAABB CSPS::GetNodeAABB(acl::Vector4_32Arg0 Bounds, bool Loose) const
+CAABB CGraphicsScene::GetNodeAABB(acl::Vector4_32Arg0 Bounds, bool Loose) const
 {
 	const vector3 Center(acl::vector_get_x(Bounds), acl::vector_get_y(Bounds), acl::vector_get_z(Bounds));
 	const float Extent = _WorldExtent * acl::vector_get_w(Bounds) * (Loose ? 2.f : 1.f);

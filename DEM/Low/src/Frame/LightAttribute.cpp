@@ -1,6 +1,6 @@
 #include "LightAttribute.h"
-#include <Scene/SPS.h>
 #include <Render/Light.h>
+#include <Math/AABB.h>
 #include <Core/Factory.h>
 #include <IO/BinaryReader.h>
 
@@ -83,7 +83,7 @@ void CLightAttribute::OnActivityChanged(bool Active)
 }
 //---------------------------------------------------------------------
 
-void CLightAttribute::UpdateInSPS(Scene::CSPS& SPS)
+void CLightAttribute::UpdateInGraphicsScene(CGraphicsScene& Scene)
 {
 	if (Light.Type == Render::Light_Directional)
 	{

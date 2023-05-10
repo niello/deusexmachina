@@ -2,7 +2,7 @@
 #include <Data/RefCounted.h>
 #include <Data/Regions.h>
 #include <Game/ECS/Entity.h>
-#include <Scene/SPS.h>
+#include <Frame/GraphicsScene.h>
 #include <Math/AABB.h>
 
 // Represents one game location. Consists of subsystem worlds (scene, graphics, physics, AI).
@@ -51,7 +51,7 @@ protected:
 	CStrID                 _ID;
 
 	Scene::PSceneNode      _SceneRoot;
-	Scene::CSPS            _SPS;
+	Frame::CGraphicsScene  _GraphicsScene;
 	Physics::PPhysicsLevel _PhysicsLevel;
 	::AI::PAILevel         _AILevel;
 
@@ -81,7 +81,7 @@ public:
 	CStrID                   GetID() const { return _ID; }
 
 	Scene::CSceneNode&       GetSceneRoot() { return *_SceneRoot.Get(); }
-	Scene::CSPS&             GetSPS() { return _SPS; }
+	Frame::CGraphicsScene&   GetGraphics() { return _GraphicsScene; }
 	Physics::CPhysicsLevel*  GetPhysics() const { return _PhysicsLevel.Get(); }
 	::AI::CAILevel*          GetAI() const { return _AILevel.Get(); }
 	DEM::AI::CNavMap*        GetNavMap(float AgentRadius, float AgentHeight) const;
@@ -128,7 +128,7 @@ protected:
 	Scripting::PScriptObject	Script;
 
 	Scene::PSceneNode			SceneRoot;
-	Scene::CSPS					SPS;			// Spatial partitioning structure
+	//Scene::CSPS					SPS;			// Spatial partitioning structure
 	Physics::PPhysicsLevel		PhysicsLevel;
 	AI::PAILevel				AILevel;
 
@@ -153,7 +153,7 @@ public:
 	const CString&			GetName() const { return Name; }
 
 	Scene::CSceneNode*		GetSceneRoot() { return SceneRoot.Get(); }
-	Scene::CSPS&			GetSPS() { return SPS; }
+	//Scene::CSPS&			GetSPS() { return SPS; }
 	Physics::CPhysicsLevel*	GetPhysics() const { return PhysicsLevel.Get(); }
 	AI::CAILevel*			GetAI() const { return AILevel.Get(); }
 };

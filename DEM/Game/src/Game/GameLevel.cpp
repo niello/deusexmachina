@@ -23,7 +23,7 @@ CGameLevel::CGameLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveB
 	, _SceneRoot(n_new(Scene::CSceneNode(ID)))
 	, _PhysicsLevel(n_new(Physics::CPhysicsLevel(Bounds)))
 {
-	_SPS.Init(Bounds.Center(), std::max({ Bounds.Size().x, Bounds.Size().y, Bounds.Size().z }), SubdivisionDepth ? SubdivisionDepth : 12);
+	_GraphicsScene.Init(Bounds.Center(), std::max({ Bounds.Size().x, Bounds.Size().y, Bounds.Size().z }), SubdivisionDepth ? SubdivisionDepth : 12);
 }
 //---------------------------------------------------------------------
 
@@ -153,11 +153,11 @@ void CGameLevel::Update(float dt, const vector3* pCOIArray, UPTR COICount)
 			if (!Attr.IsActive()) continue;
 
 			if (auto pAttr = Attr.As<Frame::CRenderableAttribute>())
-				pAttr->UpdateInSPS(_SPS);
+				pAttr->UpdateInGraphicsScene(_GraphicsScene);
 			else if (auto pAttr = Attr.As<Frame::CLightAttribute>())
-				pAttr->UpdateInSPS(_SPS);
+				pAttr->UpdateInGraphicsScene(_GraphicsScene);
 			else if (auto pAttr = Attr.As<Frame::CAmbientLightAttribute>())
-				pAttr->UpdateInSPS(_SPS);
+				pAttr->UpdateInGraphicsScene(_GraphicsScene);
 		}
 
 		OK;

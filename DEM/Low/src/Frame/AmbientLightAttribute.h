@@ -26,6 +26,7 @@ namespace Render
 namespace Frame
 {
 class CGraphicsResourceManager;
+class CGraphicsScene;
 
 class CAmbientLightAttribute: public Scene::CNodeAttribute
 {
@@ -37,8 +38,7 @@ protected:
 	CStrID             RadianceEnvMapUID;
 	Render::PTexture   IrradianceMap;
 	Render::PTexture   RadianceEnvMap;
-	Scene::CSPS*       pSPS = nullptr;
-	Scene::CSPSRecord* pSPSRecord = nullptr; // remains nullptr if oversized (global)
+	CGraphicsScene*    pScene = nullptr;
 
 	virtual void                  OnActivityChanged(bool Active) override;
 
@@ -46,7 +46,7 @@ public:
 
 	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
 	virtual Scene::PNodeAttribute Clone() override;
-	void                          UpdateInSPS(Scene::CSPS& SPS);
+	void                          UpdateInGraphicsScene(CGraphicsScene& Scene);
 
 	void                          SetIrradianceMap(CStrID UID) { IrradianceMapUID = UID; IrradianceMap = nullptr; }
 	void                          SetRadianceEnvMap(CStrID UID) { RadianceEnvMapUID = UID; RadianceEnvMap = nullptr; }

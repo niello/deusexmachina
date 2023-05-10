@@ -1,6 +1,6 @@
 #pragma once
 #include <Scene/NodeAttribute.h>
-#include <Scene/SPS.h>
+#include <Frame/GraphicsScene.h>
 
 // Base attribute class for any renderable scene objects. Initialization is done in two
 // phases. First all plain data is initialized on loading. After that the attribute can
@@ -24,6 +24,7 @@ namespace Render
 namespace Frame
 {
 class CGraphicsResourceManager;
+class CGraphicsScene;
 
 class CRenderableAttribute: public Scene::CNodeAttribute
 {
@@ -31,9 +32,9 @@ class CRenderableAttribute: public Scene::CNodeAttribute
 
 protected:
 
-	Scene::CSPS*		 pSPS = nullptr;
-	Scene::CSPS::HObject ObjectHandle = {};
-	U32                  LastTransformVersion = 0;
+	CGraphicsScene*		    pScene = nullptr;
+	CGraphicsScene::HObject SceneRecordHandle = {};
+	U32                     LastTransformVersion = 0;
 
 	virtual void OnActivityChanged(bool Active) override;
 
@@ -42,7 +43,7 @@ public:
 	virtual Render::PRenderable CreateRenderable(CGraphicsResourceManager& ResMgr) const = 0;
 	virtual bool                GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
 	bool                        GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const;
-	void                        UpdateInSPS(Scene::CSPS& SPS);
+	void                        UpdateInGraphicsScene(CGraphicsScene& Scene);
 
 	virtual void                RenderDebug(Debug::CDebugDraw& DebugDraw) const override;
 };
