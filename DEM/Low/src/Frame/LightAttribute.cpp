@@ -1,134 +1,46 @@
 #include "LightAttribute.h"
-#include <Render/Light.h>
+#include <Scene/SceneNode.h>
 #include <Math/AABB.h>
-#include <Core/Factory.h>
-#include <IO/BinaryReader.h>
 
 namespace Frame
 {
-FACTORY_CLASS_IMPL(Frame::CLightAttribute, 'LGTA', Scene::CNodeAttribute);
 
-bool CLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
+CLightAttribute::CLightAttribute()
+	: _CastsShadow(false)
+	, _DoOcclusionCulling(true)
 {
-	for (UPTR j = 0; j < Count; ++j)
-	{
-		const uint32_t Code = DataReader.Read<uint32_t>();
-		switch (Code)
-		{
-			case 'LGHT':
-			{
-				Light.Type = static_cast<Render::ELightType>(DataReader.Read<int>());
-				break;
-			}
-			case 'CSHD':
-			{
-				//!!!Light.Flags.SetTo(ShadowCaster, DataReader.Read<bool>());!
-				DataReader.Read<bool>();
-				break;
-			}
-			case 'LINT':
-			{
-				DataReader.Read(Light.Intensity);
-				break;
-			}
-			case 'LCLR':
-			{
-				DataReader.Read(Light.Color);
-				break;
-			}
-			case 'LRNG':
-			{
-				Light.SetRange(DataReader.Read<float>());
-				break;
-			}
-			case 'LCIN':
-			{
-				Light.SetSpotInnerAngle(n_deg2rad(DataReader.Read<float>()));
-				break;
-			}
-			case 'LCOU':
-			{
-				Light.SetSpotOuterAngle(n_deg2rad(DataReader.Read<float>()));
-				break;
-			}
-			default: FAIL;
-		}
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-Scene::PNodeAttribute CLightAttribute::Clone()
-{
-	PLightAttribute ClonedAttr = n_new(CLightAttribute());
-	ClonedAttr->Light = Light;
-	return ClonedAttr;
-}
-//---------------------------------------------------------------------
-
-void CLightAttribute::OnActivityChanged(bool Active)
-{
-	if (!Active && pSPS)
-	{
-		if (pSPSRecord)
-		{
-			pSPS->RemoveRecord(pSPSRecord);
-			pSPSRecord = nullptr;
-		}
-		else pSPS->OversizedObjects.RemoveByValue(this);
-
-		pSPS = nullptr;
-	}
 }
 //---------------------------------------------------------------------
 
 void CLightAttribute::UpdateInGraphicsScene(CGraphicsScene& Scene)
 {
-	if (Light.Type == Render::Light_Directional)
-	{
-		if (pSPSRecord)
-		{
-			pSPS->RemoveRecord(pSPSRecord);
-			pSPSRecord = nullptr;
-		}
+	n_assert_dbg(IsActive());
 
-		if (!pSPS)
-		{
-			pSPS = &SPS;
-			SPS.OversizedObjects.Add(this);
-		}
+	CAABB AABB;
+	const bool IsAABBValid = GetLocalAABB(AABB);
+	const bool SceneChanged = (pScene != &Scene);
+
+	if (pScene && (SceneChanged || !IsAABBValid))
+		pScene->RemoveLight(SceneRecordHandle);
+
+	if (!IsAABBValid) //???need this branch or can use it for handling omnipresent lights like directional and global IBL?
+	{
+		// This light currently has no bounds at all, it can't be added to the level
+		pScene = nullptr;
+		SceneRecordHandle = {};
 	}
-	else
+	else if (SceneChanged)
 	{
-		if (pSPS != &SPS)
-		{
-			if (pSPS)
-			{
-				if (pSPSRecord)
-				{
-					pSPS->RemoveRecord(pSPSRecord);
-					pSPSRecord = nullptr;
-				}
-				else pSPS->OversizedObjects.RemoveByValue(this);
-			}
-
-			pSPS = &SPS;
-		}
-		
-		if (!pSPSRecord)
-		{
-			CAABB Box;
-			GetGlobalAABB(Box); //???calc cached and reuse here?
-			pSPSRecord = SPS.AddRecord(Box, this);
-			LastTransformVersion = _pNode->GetTransformVersion();
-		}
-		else if (_pNode->GetTransformVersion() != LastTransformVersion) //!!! || Range/Cone changed
-		{
-			GetGlobalAABB(pSPSRecord->GlobalBox);
-			SPS.UpdateRecord(pSPSRecord);
-			LastTransformVersion = _pNode->GetTransformVersion();
-		}
+		pScene = &Scene;
+		AABB.Transform(_pNode->GetWorldMatrix());
+		SceneRecordHandle = Scene.AddLight(AABB, this);
+		LastTransformVersion = _pNode->GetTransformVersion();
+	}
+	else if (_pNode->GetTransformVersion() != LastTransformVersion) //!!! || LocalBox changed!
+	{
+		AABB.Transform(_pNode->GetWorldMatrix());
+		Scene.UpdateLight(SceneRecordHandle, AABB);
+		LastTransformVersion = _pNode->GetTransformVersion();
 	}
 }
 //---------------------------------------------------------------------
@@ -136,41 +48,35 @@ void CLightAttribute::UpdateInGraphicsScene(CGraphicsScene& Scene)
 //!!!GetGlobalAABB & CalcBox must be separate!
 bool CLightAttribute::GetGlobalAABB(CAABB& OutBox) const
 {
-	//!!!If local params changed, recompute AABB
-	//!!!If transform of host node changed, update global space AABB (rotate, scale)
-	switch (Light.Type)
-	{
-		case Render::Light_Directional:	FAIL;
-		case Render::Light_Point:
-		{
-			float Range = Light.GetRange();
-			OutBox.Set(GetPosition(), vector3(Range, Range, Range));
-			OK;
-		}
-		case Render::Light_Spot:
-		{
-			//!!!can cache local box! or HalfFarExtent (1 float instead of 6)
-			float Range = Light.GetRange();
-			float ConeOuter = Light.GetSpotOuterAngle();
-			float HalfFarExtent = Range * n_tan(ConeOuter * 0.5f);
-			OutBox.Min.set(-HalfFarExtent, -HalfFarExtent, -Range);
-			OutBox.Max.set(HalfFarExtent, HalfFarExtent, 0.f);
-			OutBox.Transform(_pNode->GetWorldMatrix());
-			OK;
-		}
-		default:	Sys::Error("Invalid light type!");
-	};
+	if (!_pNode) return false;
 
-	FAIL;
+	//if (pScene && _pNode->GetTransformVersion() == LastTransformVersion) //!!! && LocalBox not changed!
+	//{
+	//	// TODO: use Center+Extents SIMD AABB everywhere?!
+	//	const auto Center = SceneRecordHandle->second.BoxCenter;
+	//	const auto Extent = SceneRecordHandle->second.BoxExtent;
+	//	OutBox.Set(
+	//		vector3(acl::vector_get_x(Center), acl::vector_get_y(Center), acl::vector_get_z(Center)),
+	//		vector3(acl::vector_get_x(Extent), acl::vector_get_y(Extent), acl::vector_get_z(Extent)));
+	//}
+	//else
+	{
+		if (GetLocalAABB(OutBox)) return false;
+		OutBox.Transform(_pNode->GetWorldMatrix());
+	}
+
+	return true;
 }
 //---------------------------------------------------------------------
 
-void CLightAttribute::CalcFrustum(matrix44& OutFrustum) const
+void CLightAttribute::OnActivityChanged(bool Active)
 {
-	matrix44 LocalFrustum;
-	Light.CalcLocalFrustum(LocalFrustum);
-	_pNode->GetWorldMatrix().invert_simple(OutFrustum);
-	OutFrustum *= LocalFrustum;
+	if (!Active && pScene)
+	{
+		pScene->RemoveLight(SceneRecordHandle);
+		pScene = nullptr;
+		SceneRecordHandle = {};
+	}
 }
 //---------------------------------------------------------------------
 

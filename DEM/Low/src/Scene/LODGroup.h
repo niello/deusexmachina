@@ -11,7 +11,6 @@
 
 namespace Scene
 {
-struct CSPSRecord;
 
 class CLODGroup: public CNodeAttribute
 {

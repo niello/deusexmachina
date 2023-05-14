@@ -4,11 +4,8 @@
 #include <acl/math/math_types.h>
 #include <map>
 
-// Spatial partitioning structure for accelerated spatial queries on a scene
-// CSPS       - spatial partitioning structure, that stores objects spatially arranged
-// CSPSNode   - SPS hierarchy building block, internal
-// CSPSCell   - user data storage incapsulated in a node
-// CSPSRecord - user data with its spatial properties and some additional fields
+// Container for graphics objects - renderables and lights. Accelerated with a spatial partitioning tree.
+// A loose octree is used currently.
 
 namespace Math
 {
@@ -18,6 +15,7 @@ namespace Math
 namespace Frame
 {
 class CRenderableAttribute;
+class CLightAttribute;
 
 // TODO: make template class TTree<DIMENSIONS, CODE_TYPE> and move these constants and quadtree/octree utility methods into it?
 #if DEM_64
@@ -48,11 +46,15 @@ public:
 	{
 		acl::Vector4_32 BoxCenter;
 		acl::Vector4_32 BoxExtent;
-		CRenderableAttribute* pUserData = nullptr;
+		CRenderableAttribute* pRenderableAttr = nullptr;
 		TMorton         NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
 		U32             NodeIndex = NO_SPATIAL_TREE_NODE;
 		U32             BoundsVersion = 1;
 		bool            BoundsValid = false;
+	};
+
+	struct CLightRecord
+	{
 	};
 
 protected:
@@ -61,9 +63,11 @@ protected:
 	std::unordered_map<TMorton, U32> _MortonToIndex;
 	std::vector<decltype(_MortonToIndex)::node_type> _MortonToIndexPool;
 
-	//!!!TODO: separate by type - renderables, lights!
 	std::map<UPTR, CRenderableRecord> _Renderables; // TODO: if cleared, need to clear iterators in attributes first!
-	std::vector<decltype(_Renderables)::node_type> _ObjectNodePool;
+	std::vector<decltype(_Renderables)::node_type> _RenderableNodePool;
+
+	std::map<UPTR, CLightRecord> _Lights; // TODO: if cleared, need to clear iterators in attributes first!
+	std::vector<decltype(_Lights)::node_type> _LightNodePool;
 
 	vector3 _WorldCenter;
 	float _WorldExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic
@@ -80,14 +84,20 @@ protected:
 
 public:
 
-	using HObject = decltype(_Renderables)::iterator;
+	using HRenderable = decltype(_Renderables)::iterator;
+	using HLight = decltype(_Lights)::iterator;
 
 	void            Init(const vector3& Center, float Size, U8 HierarchyDepth);
 
-	HObject         AddRenderable(const CAABB& GlobalBox, CRenderableAttribute* pUserData);
-	void            UpdateRenderable(HObject Handle, const CAABB& GlobalBox);
-	void            RemoveRenderable(HObject Handle);
+	HRenderable     AddRenderable(const CAABB& GlobalBox, CRenderableAttribute* pRenderableAttr);
+	void            UpdateRenderable(HRenderable Handle, const CAABB& GlobalBox);
+	void            RemoveRenderable(HRenderable Handle);
 	auto            GetInvalidRenderableRecordHandle() const { return _Renderables.cend(); }
+
+	HLight          AddLight(const CAABB& GlobalBox, CLightAttribute* pLightAttr);
+	void            UpdateLight(HLight Handle, const CAABB& GlobalBox);
+	void            RemoveLight(HLight Handle);
+	auto            GetInvalidLightRecordHandle() const { return _Lights.cend(); }
 
 	const auto&     GetRenderables() const { return _Renderables; }
 	acl::Vector4_32 CalcNodeBounds(TMorton MortonCode) const;

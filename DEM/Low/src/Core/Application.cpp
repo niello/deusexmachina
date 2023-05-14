@@ -36,10 +36,13 @@
 #include <Render/TerrainRenderer.h>
 //
 #include <Frame/RenderPath.h>
-#include <Frame/ModelAttribute.h>
-#include <Frame/TerrainAttribute.h>
-#include <Frame/SkyboxAttribute.h>
-#include <Frame/AmbientLightAttribute.h>
+#include <Frame/Renderables/ModelAttribute.h>
+#include <Frame/Renderables/TerrainAttribute.h>
+#include <Frame/Renderables/SkyboxAttribute.h>
+#include <Frame/Lights/DirectionalLightAttribute.h>
+#include <Frame/Lights/PointLightAttribute.h>
+#include <Frame/Lights/SpotLightAttribute.h>
+#include <Frame/Lights/IBLAmbientLightAttribute.h>
 #include <Render/SkinInfo.h>
 #include <Render/SkinInfoLoaderSKN.h>
 #include <Render/MeshData.h>
@@ -619,7 +622,7 @@ Frame::PGraphicsResourceManager CApplication::BootstrapGraphics(Render::PVideoDr
 	Frame::CModelAttribute::ForceFactoryRegistration();
 	Frame::CTerrainAttribute::ForceFactoryRegistration();
 	Frame::CSkyboxAttribute::ForceFactoryRegistration();
-	Frame::CAmbientLightAttribute::ForceFactoryRegistration();
+	Frame::CIBLAmbientLightAttribute::ForceFactoryRegistration();
 	Physics::CCollisionAttribute::ForceFactoryRegistration();
 	Render::CModel::ForceFactoryRegistration();
 	Render::CModelRenderer::ForceFactoryRegistration();

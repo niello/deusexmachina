@@ -1,8 +1,7 @@
 #include "GameLevel.h"
 #include <Game/Interaction/InteractionContext.h>
 #include <Frame/RenderableAttribute.h>
-#include <Frame/LightAttribute.h>
-#include <Frame/AmbientLightAttribute.h>
+#include <Frame/Lights/IBLAmbientLightAttribute.h>
 #include <Scene/SceneNode.h>
 #include <Scene/NodeAttribute.h>
 #include <Physics/PhysicsLevel.h>
@@ -156,7 +155,7 @@ void CGameLevel::Update(float dt, const vector3* pCOIArray, UPTR COICount)
 				pAttr->UpdateInGraphicsScene(_GraphicsScene);
 			else if (auto pAttr = Attr.As<Frame::CLightAttribute>())
 				pAttr->UpdateInGraphicsScene(_GraphicsScene);
-			else if (auto pAttr = Attr.As<Frame::CAmbientLightAttribute>())
+			else if (auto pAttr = Attr.As<Frame::CIBLAmbientLightAttribute>())
 				pAttr->UpdateInGraphicsScene(_GraphicsScene);
 		}
 

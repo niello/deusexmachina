@@ -1,17 +1,11 @@
 #pragma once
 #include <Scene/NodeAttribute.h>
-#include <Scene/SceneNode.h>
-#include <Render/Light.h>
+#include <Frame/GraphicsScene.h>
 
-// Light attribute is a scene node attribute that stores a light source inside
+// Light attribute is a scene node attribute that contains light source params.
+// See subclasses for different light source types.
 
 class CAABB;
-
-namespace Scene
-{
-	class CSPS;
-	struct CSPSRecord;
-}
 
 namespace Frame
 {
@@ -19,28 +13,30 @@ class CGraphicsScene;
 
 class CLightAttribute: public Scene::CNodeAttribute
 {
-	FACTORY_CLASS_DECL;
+	RTTI_CLASS_DECL(Frame::CLightAttribute, Scene::CNodeAttribute);
 
 protected:
 
-	Render::CLight     Light;
-	CGraphicsScene*    pScene = nullptr;
-	U32                LastTransformVersion = 0;
+	CGraphicsScene*        pScene = nullptr;
+	CGraphicsScene::HLight SceneRecordHandle = {};
+	U32                    LastTransformVersion = 0;
+	bool                   _CastsShadow : 1;
+	bool                   _DoOcclusionCulling : 1;
 
 	virtual void                  OnActivityChanged(bool Active) override;
 
 public:
 
-	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
-	virtual Scene::PNodeAttribute Clone();
+	CLightAttribute();
+
+	virtual bool                  GetLocalAABB(CAABB& OutBox) const = 0;
+	bool                          GetGlobalAABB(CAABB& OutBox) const;
 	void                          UpdateInGraphicsScene(CGraphicsScene& Scene);
 
-	void                          CalcFrustum(matrix44& OutFrustum) const;
-	bool                          GetGlobalAABB(CAABB& OutBox) const;
-	const vector3&                GetPosition() const { return _pNode->GetWorldMatrix().Translation(); }
-	vector3                       GetDirection() const { return -_pNode->GetWorldMatrix().AxisZ(); }
-	const vector3&                GetReverseDirection() const { return _pNode->GetWorldMatrix().AxisZ(); }
-	const Render::CLight&         GetLight() const { return Light; }
+	//virtual Render::PLight CreateLight(CGraphicsResourceManager& ResMgr) const = 0;
+
+	// get intensity at point
+	// calc intersection / influence for AABB or OBB - get max intensity for box (= get intensity at closest point)
 };
 
 typedef Ptr<CLightAttribute> PLightAttribute;

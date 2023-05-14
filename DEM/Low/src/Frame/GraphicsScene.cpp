@@ -222,10 +222,10 @@ void CGraphicsScene::RemoveSingleObjectFromNode(U32 NodeIndex, TMorton NodeMorto
 }
 //---------------------------------------------------------------------
 
-CGraphicsScene::HObject CGraphicsScene::AddRenderable(const CAABB& GlobalBox, CRenderableAttribute* pUserData)
+CGraphicsScene::HRenderable CGraphicsScene::AddRenderable(const CAABB& GlobalBox, CRenderableAttribute* pRenderableAttr)
 {
 	CRenderableRecord Record;
-	Record.pUserData = pUserData;
+	Record.pRenderableAttr = pRenderableAttr;
 
 	// TODO: store AABB as SIMD center-extents everywhere?!
 	const auto HalfMin = acl::vector_mul(acl::vector_set(GlobalBox.Min.x, GlobalBox.Min.y, GlobalBox.Min.z), 0.5f);
@@ -254,14 +254,14 @@ CGraphicsScene::HObject CGraphicsScene::AddRenderable(const CAABB& GlobalBox, CR
 	// Compacting must change UIDs in _Renderables and broadcast changes to all views. Try to make it sorted and preserve iterators to avoid logN searches.
 	n_assert_dbg(_NextUID < std::numeric_limits<decltype(_NextUID)>().max());
 
-	if (_ObjectNodePool.empty())
+	if (_RenderableNodePool.empty())
 	{
 		return _Renderables.emplace_hint(_Renderables.cend(), UID, std::move(Record));
 	}
 	else
 	{
-		auto Node = std::move(_ObjectNodePool.back());
-		_ObjectNodePool.pop_back();
+		auto Node = std::move(_RenderableNodePool.back());
+		_RenderableNodePool.pop_back();
 		Node.key() = UID;
 		new (&Node.mapped()) CRenderableRecord(std::move(Record));
 		return _Renderables.insert(_Renderables.cend(), std::move(Node));
@@ -269,7 +269,7 @@ CGraphicsScene::HObject CGraphicsScene::AddRenderable(const CAABB& GlobalBox, CR
 }
 //---------------------------------------------------------------------
 
-void CGraphicsScene::UpdateRenderable(HObject Handle, const CAABB& GlobalBox)
+void CGraphicsScene::UpdateRenderable(HRenderable Handle, const CAABB& GlobalBox)
 {
 	//if (Handle == _Renderables.cend()) return;
 
@@ -302,13 +302,13 @@ void CGraphicsScene::UpdateRenderable(HObject Handle, const CAABB& GlobalBox)
 //---------------------------------------------------------------------
 
 // TODO: check safety. If causes issues, can use UID instead of an iterator, but this makes erase logarithmic instead of constant.
-void CGraphicsScene::RemoveRenderable(HObject Handle)
+void CGraphicsScene::RemoveRenderable(HRenderable Handle)
 {
 	//if (Handle == _Renderables.cend()) return;
 
 	RemoveSingleObjectFromNode(Handle->second.NodeIndex, Handle->second.NodeMortonCode, 0);
-	_ObjectNodePool.push_back(_Renderables.extract(Handle));
-	_ObjectNodePool.back().mapped().~CRenderableRecord();
+	_RenderableNodePool.push_back(_Renderables.extract(Handle));
+	_RenderableNodePool.back().mapped().~CRenderableRecord();
 }
 //---------------------------------------------------------------------
 

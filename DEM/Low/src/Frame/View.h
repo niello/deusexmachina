@@ -16,7 +16,6 @@
 
 namespace Scene
 {
-	class CSPS;
 	class CSceneNode;
 	class CNodeAttribute;
 }
@@ -40,7 +39,7 @@ namespace Frame
 {
 class CGraphicsScene;
 class CCameraAttribute;
-class CAmbientLightAttribute;
+class CIBLAmbientLightAttribute;
 class CRenderableAttribute;
 typedef Ptr<class CRenderPath> PRenderPath;
 typedef Ptr<class CGraphicsResourceManager> PGraphicsResourceManager;
@@ -73,14 +72,13 @@ protected:
 
 	std::unordered_map<const CRenderableAttribute*, Render::PRenderable> _RenderObjects;
 
-	std::vector<bool> _TreeNodeVisibility;
-	std::map<UPTR, Render::PRenderable> _Renderables; //???visibility etc - store in renderable itself? need to rename it to CRenderCache or now is good?
+	std::vector<bool>                              _SpatialTreeNodeVisibility;
+	std::map<UPTR, Render::PRenderable>            _Renderables;
 	std::vector<decltype(_Renderables)::node_type> _RenderableNodePool;
-	//???separate maps for meshes, lights etc?
 
 	CArray<Scene::CNodeAttribute*>				VisibilityCache;
 	CArray<Render::CLightRecord>				LightCache;
-	CArray<CAmbientLightAttribute*>				EnvironmentCache;
+	CArray<CIBLAmbientLightAttribute*>				EnvironmentCache;
 	bool										VisibilityCacheDirty = true; //???to flags?
 
 	U32                                         _CameraTfmVersion = 0;
@@ -130,7 +128,7 @@ public:
 	void							UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; }
 	CArray<Render::CLightRecord>&	GetLightCache() { return LightCache; }
-	CArray<CAmbientLightAttribute*>&	GetEnvironmentCache() { return EnvironmentCache; }
+	CArray<CIBLAmbientLightAttribute*>&	GetEnvironmentCache() { return EnvironmentCache; }
 	UPTR							GetMeshLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
 	UPTR							GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
 	bool							RequiresObjectScreenSize() const { return MeshLODType == LOD_ScreenSizeRelative || MeshLODType == LOD_ScreenSizeAbsolute || MaterialLODType == LOD_ScreenSizeRelative || MaterialLODType == LOD_ScreenSizeAbsolute; }

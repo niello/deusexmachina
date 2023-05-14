@@ -111,22 +111,25 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Events/EventsFwd.h
 	DEM/Low/src/Events/Signal.h
 	DEM/Low/src/Events/Subscription.h
-	DEM/Low/src/Frame/AmbientLightAttribute.h
 	DEM/Low/src/Frame/CameraAttribute.h
 	DEM/Low/src/Frame/CameraController.h
 	DEM/Low/src/Frame/GraphicsResourceManager.h
 	DEM/Low/src/Frame/GraphicsScene.h
 	DEM/Low/src/Frame/LightAttribute.h
-	DEM/Low/src/Frame/ModelAttribute.h
 	DEM/Low/src/Frame/RenderableAttribute.h
 	DEM/Low/src/Frame/RenderPath.h
 	DEM/Low/src/Frame/RenderPhase.h
 	DEM/Low/src/Frame/RenderPhaseGeometry.h
 	DEM/Low/src/Frame/SkinAttribute.h
 	DEM/Low/src/Frame/SkinProcessorAttribute.h
-	DEM/Low/src/Frame/SkyboxAttribute.h
-	DEM/Low/src/Frame/TerrainAttribute.h
 	DEM/Low/src/Frame/View.h
+	DEM/Low/src/Frame/Lights/DirectionalLightAttribute.h
+	DEM/Low/src/Frame/Lights/IBLAmbientLightAttribute.h
+	DEM/Low/src/Frame/Lights/PointLightAttribute.h
+	DEM/Low/src/Frame/Lights/SpotLightAttribute.h
+	DEM/Low/src/Frame/Renderables/ModelAttribute.h
+	DEM/Low/src/Frame/Renderables/SkyboxAttribute.h
+	DEM/Low/src/Frame/Renderables/TerrainAttribute.h
 	DEM/Low/src/Input/ControlLayout.h
 	DEM/Low/src/Input/InputConditionAnyOfEvents.h
 	DEM/Low/src/Input/InputConditionAnyOfStates.h
@@ -396,22 +399,25 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Events/EventDispatcher.cpp
 	DEM/Low/src/Events/EventServer.cpp
 	DEM/Low/src/Events/Subscription.cpp
-	DEM/Low/src/Frame/AmbientLightAttribute.cpp
 	DEM/Low/src/Frame/CameraAttribute.cpp
 	DEM/Low/src/Frame/CameraController.cpp
 	DEM/Low/src/Frame/GraphicsResourceManager.cpp
 	DEM/Low/src/Frame/GraphicsScene.cpp
 	DEM/Low/src/Frame/LightAttribute.cpp
-	DEM/Low/src/Frame/ModelAttribute.cpp
 	DEM/Low/src/Frame/RenderableAttribute.cpp
 	DEM/Low/src/Frame/RenderPath.cpp
 	DEM/Low/src/Frame/RenderPhase.cpp
 	DEM/Low/src/Frame/RenderPhaseGeometry.cpp
 	DEM/Low/src/Frame/SkinAttribute.cpp
 	DEM/Low/src/Frame/SkinProcessorAttribute.cpp
-	DEM/Low/src/Frame/SkyboxAttribute.cpp
-	DEM/Low/src/Frame/TerrainAttribute.cpp
 	DEM/Low/src/Frame/View.cpp
+	DEM/Low/src/Frame/Lights/DirectionalLightAttribute.cpp
+	DEM/Low/src/Frame/Lights/IBLAmbientLightAttribute.cpp
+	DEM/Low/src/Frame/Lights/PointLightAttribute.cpp
+	DEM/Low/src/Frame/Lights/SpotLightAttribute.cpp
+	DEM/Low/src/Frame/Renderables/ModelAttribute.cpp
+	DEM/Low/src/Frame/Renderables/SkyboxAttribute.cpp
+	DEM/Low/src/Frame/Renderables/TerrainAttribute.cpp
 	DEM/Low/src/Input/ControlLayout.cpp
 	DEM/Low/src/Input/Input.cpp
 	DEM/Low/src/Input/InputConditionAnyOfEvents.cpp

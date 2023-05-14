@@ -5,8 +5,7 @@
 #include <Frame/RenderPath.h>
 #include <Frame/CameraAttribute.h>
 #include <Frame/RenderableAttribute.h>
-#include <Frame/AmbientLightAttribute.h>
-#include <Frame/LightAttribute.h>
+#include <Frame/Lights/IBLAmbientLightAttribute.h>
 #include <Frame/SkinAttribute.h>
 #include <Frame/SkinProcessorAttribute.h>
 #include <Render/Renderable.h>
@@ -17,6 +16,8 @@
 #include <Render/GPUDriver.h>
 #include <Render/RenderTarget.h>
 #include <Render/DepthStencilBuffer.h>
+#include <Render/Light.h>
+#include <Scene/SceneNode.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/ResourceCreator.h>
@@ -238,10 +239,10 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 		//???need visibility check for env maps? or select through separate spatial query?! SPS.FindClosest(COI, AttrRTTI, MaxCount)!
 		//may refresh only when COI changes, because maps are considered static
-		CArray<CAmbientLightAttribute*>& EnvCache = View.GetEnvironmentCache();
+		CArray<CIBLAmbientLightAttribute*>& EnvCache = View.GetEnvironmentCache();
 		if (EnvCache.GetCount())
 		{
-			CAmbientLightAttribute* pGlobalAmbientLight = EnvCache[0];
+			CIBLAmbientLightAttribute* pGlobalAmbientLight = EnvCache[0];
 
 			if (RsrcIrradianceMap)
 				RsrcIrradianceMap->Apply(*pGPU, pGlobalAmbientLight->GetIrradianceMap());

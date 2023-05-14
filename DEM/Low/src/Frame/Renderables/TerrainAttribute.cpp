@@ -80,7 +80,7 @@ Render::PRenderable CTerrainAttribute::CreateRenderable(CGraphicsResourceManager
 {
 	if (!_CDLODData)
 	{
-		n_assert2(false, "CTerrainAttribute::ValidateGPUResources() > ValidateResources must be called before this!");
+		n_assert2(false, "CTerrainAttribute::CreateRenderable() > ValidateResources must be called before this!");
 		FAIL;
 	}
 

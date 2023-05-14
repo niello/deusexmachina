@@ -107,17 +107,6 @@ namespace Game
 {
 class CEntity;
 
-// Information about a world surface at the given point/region
-struct CSurfaceInfo
-{
-	//float					TerrainHeight;
-	float					WorldHeight;
-	// Physics material or at least its ID
-	//???where to ignore dynamic/AI objects, where not to?
-	//???how to check multilevel ground (bridge above a road etc)?
-	//???how to check is point inside world geom?
-};
-
 class CGameLevel: public Events::CEventDispatcher, public Data::CRefCounted
 {
 protected:
@@ -128,7 +117,6 @@ protected:
 	Scripting::PScriptObject	Script;
 
 	Scene::PSceneNode			SceneRoot;
-	//Scene::CSPS					SPS;			// Spatial partitioning structure
 	Physics::PPhysicsLevel		PhysicsLevel;
 	AI::PAILevel				AILevel;
 
@@ -153,7 +141,6 @@ public:
 	const CString&			GetName() const { return Name; }
 
 	Scene::CSceneNode*		GetSceneRoot() { return SceneRoot.Get(); }
-	//Scene::CSPS&			GetSPS() { return SPS; }
 	Physics::CPhysicsLevel*	GetPhysics() const { return PhysicsLevel.Get(); }
 	AI::CAILevel*			GetAI() const { return AILevel.Get(); }
 };

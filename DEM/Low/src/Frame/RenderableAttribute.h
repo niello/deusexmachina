@@ -10,12 +10,6 @@
 
 class CAABB;
 
-namespace Scene
-{
-	class CSPS;
-	struct CSPSRecord;
-}
-
 namespace Render
 {
 	typedef std::unique_ptr<class IRenderable> PRenderable;
@@ -32,9 +26,9 @@ class CRenderableAttribute: public Scene::CNodeAttribute
 
 protected:
 
-	CGraphicsScene*		    pScene = nullptr;
-	CGraphicsScene::HObject SceneRecordHandle = {};
-	U32                     LastTransformVersion = 0;
+	CGraphicsScene*		        pScene = nullptr;
+	CGraphicsScene::HRenderable SceneRecordHandle = {};
+	U32                         LastTransformVersion = 0;
 
 	virtual void OnActivityChanged(bool Active) override;
 

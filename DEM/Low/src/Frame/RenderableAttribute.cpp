@@ -41,7 +41,7 @@ void CRenderableAttribute::UpdateInGraphicsScene(CGraphicsScene& Scene)
 
 bool CRenderableAttribute::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 {
-	if (!_pNode) FAIL;
+	if (!_pNode) return false;
 
 	if (pScene && _pNode->GetTransformVersion() == LastTransformVersion) //!!! && LocalBox not changed!
 	{
@@ -54,11 +54,11 @@ bool CRenderableAttribute::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 	}
 	else
 	{
-		if (GetLocalAABB(OutBox, LOD)) FAIL;
+		if (GetLocalAABB(OutBox, LOD)) return false;
 		OutBox.Transform(_pNode->GetWorldMatrix());
 	}
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 

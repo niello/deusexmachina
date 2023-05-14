@@ -1,7 +1,7 @@
 #pragma once
 #include <Data/Flags.h>
-#include <Data/FourCC.h>
 #include <Math/Vector3.h>
+#include <System/System.h>
 
 // Light describes light source properties, including type, color, range, shadow casting flags etc
 

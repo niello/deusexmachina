@@ -1,6 +1,6 @@
 #include "View.h"
 #include <Frame/CameraAttribute.h>
-#include <Frame/AmbientLightAttribute.h>
+#include <Frame/Lights/IBLAmbientLightAttribute.h>
 #include <Frame/LightAttribute.h>
 #include <Frame/RenderableAttribute.h>
 #include <Frame/RenderPath.h>
@@ -13,6 +13,7 @@
 #include <Render/DepthStencilBuffer.h>
 #include <Render/Sampler.h>
 #include <Render/SamplerDesc.h>
+#include <Scene/SceneNode.h>
 #include <Debug/DebugDraw.h>
 #include <Data/Algorithms.h>
 #include <UI/UIContext.h>
@@ -157,11 +158,13 @@ bool CView::PrecreateRenderObjects(Scene::CSceneNode& RootNode)
 			{
 				if (!GetRenderObject(*pAttrTyped)) FAIL;
 			}
-			else if (auto pAttrTyped = Attr.As<Frame::CAmbientLightAttribute>())
+			else if (auto pAttrTyped = Attr.As<Frame::CIBLAmbientLightAttribute>())
 			{
 				//???as renderable? or to separate cache? Use as a light type? Global IBL is much like
 				//directional light, and local is much like omni with ith influence volume!
 				if (!pAttrTyped->ValidateGPUResources(*_GraphicsMgr)) FAIL;
+				//	IrradianceMap = ResMgr.GetTexture(IrradianceMapUID, Render::Access_GPU_Read);
+				//RadianceEnvMap = ResMgr.GetTexture(RadianceEnvMapUID, Render::Access_GPU_Read);
 			}
 		}
 		OK;
@@ -212,9 +215,9 @@ void CView::UpdateVisibilityCache()
 
 		//		//VisibilityCache.RemoveAt(i);
 		//	}
-		//	else if (pAttr->IsA<CAmbientLightAttribute>())
+		//	else if (pAttr->IsA<CIBLAmbientLightAttribute>())
 		//	{
-		//		EnvironmentCache.Add(pAttr->As<CAmbientLightAttribute>());
+		//		EnvironmentCache.Add(pAttr->As<CIBLAmbientLightAttribute>());
 		//		//VisibilityCache.RemoveAt(i);
 		//	}
 		//	/*else*/ ++i;
@@ -314,7 +317,7 @@ void CView::SynchronizeObjects()
 {
 	// Synchronize scene objects with their renderable mirrors
 	DEM::Algo::SortedUnion(_pScene->GetRenderables(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
-		[this](auto ItSceneObject, auto ItRenderObject)
+		[this](auto ItSceneObject, auto ItViewObject)
 	{
 		const CGraphicsScene::CRenderableRecord* pRecord = nullptr;
 		Render::IRenderable* pRenderable = nullptr;
@@ -323,39 +326,35 @@ void CView::SynchronizeObjects()
 		{
 			// An object was removed from a scene, remove its renderable
 			// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one
-			ItRenderObject->second.reset();
-			_RenderableNodePool.push_back(_Renderables.extract(ItRenderObject));
+			ItViewObject->second.reset();
+			_RenderableNodePool.push_back(_Renderables.extract(ItViewObject));
 
 			// TODO:
 			// erase from sorted queues
 		}
-		else if (ItRenderObject == _Renderables.cend())
+		else if (ItViewObject == _Renderables.cend())
 		{
 			// A new object in a scene
 			const auto UID = ItSceneObject->first;
 			pRecord = &ItSceneObject->second;
-
-			//!!!FIXME: need to guarantee this! Split GetObjects by type on insertion? Lights etc don't need renderables and sync! But lights may need IsVisible!
-			n_assert_dbg(pRecord->pUserData->As<Frame::CRenderableAttribute>());
-			auto pAttr = static_cast<const Frame::CRenderableAttribute*>(pRecord->pUserData);
 
 			// UIDs always grow (unless overflowed), and therefore adding to the end is always the right hint which gives us O(1) insertion
 			//???!!!could compact UIDs when close to overflow! Do in SPS and broadcast changes OldUID->NewUID to all views. With guarantee of
 			//doing this in order, we can keep an iterator and avoid logarithmic searches for each change!
 			if (_RenderableNodePool.empty())
 			{
-				ItRenderObject = _Renderables.emplace_hint(_Renderables.cend(), UID, pAttr->CreateRenderable(*_GraphicsMgr));
+				ItViewObject = _Renderables.emplace_hint(_Renderables.cend(), UID, pRecord->pUserData->CreateRenderable(*_GraphicsMgr));
 			}
 			else
 			{
 				auto& Node = _RenderableNodePool.back();
 				Node.key() = UID;
-				Node.mapped() = pAttr->CreateRenderable(*_GraphicsMgr);
-				ItRenderObject = _Renderables.insert(_Renderables.cend(), std::move(Node));
+				Node.mapped() = pRecord->pUserData->CreateRenderable(*_GraphicsMgr);
+				ItViewObject = _Renderables.insert(_Renderables.cend(), std::move(Node));
 				_RenderableNodePool.pop_back();
 			}
 
-			pRenderable = ItRenderObject->second.get();
+			pRenderable = ItViewObject->second.get();
 
 			// TODO:
 			// add to sorted queues (or test visibility first and delay adding to queues until visible the first time?)
@@ -366,7 +365,7 @@ void CView::SynchronizeObjects()
 		else
 		{
 			pRecord = &ItSceneObject->second;
-			pRenderable = ItRenderObject->second.get();
+			pRenderable = ItViewObject->second.get();
 
 			// TODO:
 			// if sorted queue includes distance to camera and bounds changed, mark sorted queue dirty
@@ -382,24 +381,24 @@ void CView::UpdateObjectVisibility(bool ViewProjChanged)
 	const auto Frustum = Math::CalcFrustumParams(pCamera->GetViewProjMatrix());
 
 	//!!!FIXME: also need to invalidate cache of changed nodes when one node takes index of another! //???notify SPS->All views for invalidated indices?
-	/*if (ViewProjChanged)*/ _TreeNodeVisibility.clear();
-	_pScene->TestSpatialTreeVisibility(Frustum, _TreeNodeVisibility);
+	/*if (ViewProjChanged)*/ _SpatialTreeNodeVisibility.clear();
+	_pScene->TestSpatialTreeVisibility(Frustum, _SpatialTreeNodeVisibility);
 
 	// Update visibility of renderables. Iterate synchronized collections side by side.
 	auto ItSceneObject = _pScene->GetRenderables().cbegin();
-	auto ItRenderObject = _Renderables.cbegin();
-	for (; ItRenderObject != _Renderables.cend(); ++ItSceneObject, ++ItRenderObject)
+	auto ItViewObject = _Renderables.cbegin();
+	for (; ItViewObject != _Renderables.cend(); ++ItSceneObject, ++ItViewObject)
 	{
 		const CGraphicsScene::CRenderableRecord& Record = ItSceneObject->second;
-		Render::IRenderable* pRenderable = ItRenderObject->second.get();
+		Render::IRenderable* pRenderable = ItViewObject->second.get();
 		if (ViewProjChanged || pRenderable->BoundsVersion != Record.BoundsVersion)
 		{
 			if (Record.BoundsValid)
 			{
 				const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
-				if (NoTreeNode || _TreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
+				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
 				{
-					if (NoTreeNode || _TreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
+					if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
 					{
 						pRenderable->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, Frustum);
 					}
@@ -464,7 +463,7 @@ bool CView::Render()
 		for (const auto& [UID, Renderable] : _Renderables)
 		{
 			if (Renderable->IsVisible)
-				VisibilityCache.push_back(_pScene->GetRenderables().find(UID)->second.pUserData);
+				VisibilityCache.push_back(_pScene->GetRenderables().find(UID)->second.pRenderableAttr);
 		}
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
