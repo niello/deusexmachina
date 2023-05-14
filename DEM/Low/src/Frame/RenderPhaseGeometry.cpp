@@ -75,7 +75,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	if (!View.GetGraphicsManager()) FAIL;
 
-	View.UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>& VisibleObjects = View.GetVisibilityCache();
 
 	if (!VisibleObjects.GetCount()) OK;
@@ -244,11 +243,12 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		{
 			CIBLAmbientLightAttribute* pGlobalAmbientLight = EnvCache[0];
 
-			if (RsrcIrradianceMap)
-				RsrcIrradianceMap->Apply(*pGPU, pGlobalAmbientLight->GetIrradianceMap());
+			NOT_IMPLEMENTED;
+			//if (RsrcIrradianceMap)
+			//	RsrcIrradianceMap->Apply(*pGPU, pGlobalAmbientLight->GetIrradianceMap());
 
-			if (RsrcRadianceEnvMap)
-				RsrcRadianceEnvMap->Apply(*pGPU, pGlobalAmbientLight->GetRadianceEnvMap());
+			//if (RsrcRadianceEnvMap)
+			//	RsrcRadianceEnvMap->Apply(*pGPU, pGlobalAmbientLight->GetRadianceEnvMap());
 
 			if (SampTrilinearCube)
 				SampTrilinearCube->Apply(*pGPU, View.TrilinearCubeSampler);

@@ -146,29 +146,14 @@ CCameraAttribute* CView::CreateDefaultCamera(CStrID RenderTargetID, Scene::CScen
 }
 //---------------------------------------------------------------------
 
-bool CView::PrecreateRenderObjects(Scene::CSceneNode& RootNode)
+bool CView::PrecreateRenderObjects()
 {
-	return RootNode.Visit([this](Scene::CSceneNode& Node)
-	{
-		for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
-		{
-			Scene::CNodeAttribute& Attr = *Node.GetAttribute(i);
+	if (!_pScene) return false;
 
-			if (auto pAttrTyped = Attr.As<Frame::CRenderableAttribute>())
-			{
-				if (!GetRenderObject(*pAttrTyped)) FAIL;
-			}
-			else if (auto pAttrTyped = Attr.As<Frame::CIBLAmbientLightAttribute>())
-			{
-				//???as renderable? or to separate cache? Use as a light type? Global IBL is much like
-				//directional light, and local is much like omni with ith influence volume!
-				if (!pAttrTyped->ValidateGPUResources(*_GraphicsMgr)) FAIL;
-				//	IrradianceMap = ResMgr.GetTexture(IrradianceMapUID, Render::Access_GPU_Read);
-				//RadianceEnvMap = ResMgr.GetTexture(RadianceEnvMapUID, Render::Access_GPU_Read);
-			}
-		}
-		OK;
-	});
+	SynchronizeRenderables();
+	SynchronizeLights();
+
+	return true;
 }
 //---------------------------------------------------------------------
 
@@ -188,49 +173,6 @@ Render::IRenderable* CView::GetRenderObject(const CRenderableAttribute& Attr)
 	}
 
 	return It->second.get();
-}
-//---------------------------------------------------------------------
-
-void CView::UpdateVisibilityCache()
-{
-	if (!VisibilityCacheDirty) return;
-
-	if (_pScene && pCamera)
-	{
-		NOT_IMPLEMENTED;
-		//CArray<Scene::CNodeAttribute*> VisibilityCache2;
-
-		//_pScene->QueryObjectsInsideFrustum(pCamera->GetViewProjMatrix(), VisibilityCache2);
-
-		//for (UPTR i = 0; i < VisibilityCache2.GetCount(); /**/)
-		//{
-		//	Scene::CNodeAttribute* pAttr = VisibilityCache2[i];
-		//	if (pAttr->IsA<CLightAttribute>())
-		//	{
-		//		Render::CLightRecord& Rec = *LightCache.Add();
-		//		Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
-		//		Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
-		//		Rec.UseCount = 0;
-		//		Rec.GPULightIndex = INVALID_INDEX;
-
-		//		//VisibilityCache.RemoveAt(i);
-		//	}
-		//	else if (pAttr->IsA<CIBLAmbientLightAttribute>())
-		//	{
-		//		EnvironmentCache.Add(pAttr->As<CIBLAmbientLightAttribute>());
-		//		//VisibilityCache.RemoveAt(i);
-		//	}
-		//	/*else*/ ++i;
-		//}
-	}
-	else
-	{
-		VisibilityCache.Clear();
-		LightCache.Clear();
-		EnvironmentCache.Clear();
-	}
-
-	VisibilityCacheDirty = false;
 }
 //---------------------------------------------------------------------
 
@@ -313,13 +255,13 @@ void CView::Update(float dt)
 }
 //---------------------------------------------------------------------
 
-void CView::SynchronizeObjects()
+void CView::SynchronizeRenderables()
 {
 	// Synchronize scene objects with their renderable mirrors
 	DEM::Algo::SortedUnion(_pScene->GetRenderables(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
 		[this](auto ItSceneObject, auto ItViewObject)
 	{
-		const CGraphicsScene::CRenderableRecord* pRecord = nullptr;
+		const CGraphicsScene::CObjectRecord* pRecord = nullptr;
 		Render::IRenderable* pRenderable = nullptr;
 
 		if (ItSceneObject == _pScene->GetRenderables().cend())
@@ -338,18 +280,20 @@ void CView::SynchronizeObjects()
 			const auto UID = ItSceneObject->first;
 			pRecord = &ItSceneObject->second;
 
+			auto pAttr = static_cast<CRenderableAttribute*>(pRecord->pAttr);
+
 			// UIDs always grow (unless overflowed), and therefore adding to the end is always the right hint which gives us O(1) insertion
 			//???!!!could compact UIDs when close to overflow! Do in SPS and broadcast changes OldUID->NewUID to all views. With guarantee of
 			//doing this in order, we can keep an iterator and avoid logarithmic searches for each change!
 			if (_RenderableNodePool.empty())
 			{
-				ItViewObject = _Renderables.emplace_hint(_Renderables.cend(), UID, pRecord->pUserData->CreateRenderable(*_GraphicsMgr));
+				ItViewObject = _Renderables.emplace_hint(_Renderables.cend(), UID, pAttr->CreateRenderable(*_GraphicsMgr));
 			}
 			else
 			{
 				auto& Node = _RenderableNodePool.back();
 				Node.key() = UID;
-				Node.mapped() = pRecord->pUserData->CreateRenderable(*_GraphicsMgr);
+				Node.mapped() = pAttr->CreateRenderable(*_GraphicsMgr);
 				ItViewObject = _Renderables.insert(_Renderables.cend(), std::move(Node));
 				_RenderableNodePool.pop_back();
 			}
@@ -375,6 +319,52 @@ void CView::SynchronizeObjects()
 }
 //---------------------------------------------------------------------
 
+void CView::SynchronizeLights()
+{
+	// ligths without octree node are saved to global, others - to local
+	// visibility and intersection with renderables will be calculated only for local lights
+	// prioritization will be made for all lights, but global lights have the same intensity at every point in space
+	// maybe global lights must bypass prioritization, as they use different constants and algorithms in the shader!
+
+	// Synchronize scene lights with their GPU mirrors
+	//DEM::Algo::SortedUnion(_pScene->GetLights(), _Lights, [](const auto& a, const auto& b) { return a.first < b.first; },
+	//	[this](auto ItSceneObject, auto ItViewObject)
+	//{
+	//	//...
+	//});
+
+	//CArray<Scene::CNodeAttribute*> VisibilityCache2;
+
+	//_pScene->QueryObjectsInsideFrustum(pCamera->GetViewProjMatrix(), VisibilityCache2);
+
+	//for (UPTR i = 0; i < VisibilityCache2.GetCount(); /**/)
+	//{
+	//	Scene::CNodeAttribute* pAttr = VisibilityCache2[i];
+	//	if (pAttr->IsA<CLightAttribute>())
+	//	{
+	//		Render::CLightRecord& Rec = *LightCache.Add();
+	//		Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
+	//		Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
+	//		Rec.UseCount = 0;
+	//		Rec.GPULightIndex = INVALID_INDEX;
+
+	//		//VisibilityCache.RemoveAt(i);
+	//	}
+	//	else if (pAttr->IsA<CIBLAmbientLightAttribute>())
+	//	{
+	//		EnvironmentCache.Add(pAttr->As<CIBLAmbientLightAttribute>());
+	//		//VisibilityCache.RemoveAt(i);
+	//	}
+	//	/*else*/ ++i;
+	//}
+
+	// CIBLAmbientLightAttribute:
+	//if (!pAttrTyped->ValidateGPUResources(*_GraphicsMgr)) FAIL;
+	//IrradianceMap = ResMgr.GetTexture(IrradianceMapUID, Render::Access_GPU_Read);
+	//RadianceEnvMap = ResMgr.GetTexture(RadianceEnvMapUID, Render::Access_GPU_Read);
+}
+//---------------------------------------------------------------------
+
 void CView::UpdateObjectVisibility(bool ViewProjChanged)
 {
 	//!!!???TODO: could keep Frustum from the prev frame if !ViewProjChanged!?
@@ -389,7 +379,7 @@ void CView::UpdateObjectVisibility(bool ViewProjChanged)
 	auto ItViewObject = _Renderables.cbegin();
 	for (; ItViewObject != _Renderables.cend(); ++ItSceneObject, ++ItViewObject)
 	{
-		const CGraphicsScene::CRenderableRecord& Record = ItSceneObject->second;
+		const CGraphicsScene::CObjectRecord& Record = ItSceneObject->second;
 		Render::IRenderable* pRenderable = ItViewObject->second.get();
 		if (ViewProjChanged || pRenderable->BoundsVersion != Record.BoundsVersion)
 		{
@@ -446,7 +436,7 @@ bool CView::Render()
 			}
 		}
 
-		SynchronizeObjects();
+		SynchronizeRenderables();
 		UpdateObjectVisibility(ViewProjChanged);
 
 		// TODO:
@@ -463,7 +453,7 @@ bool CView::Render()
 		for (const auto& [UID, Renderable] : _Renderables)
 		{
 			if (Renderable->IsVisible)
-				VisibilityCache.push_back(_pScene->GetRenderables().find(UID)->second.pRenderableAttr);
+				VisibilityCache.push_back(_pScene->GetRenderables().find(UID)->second.pAttr);
 		}
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

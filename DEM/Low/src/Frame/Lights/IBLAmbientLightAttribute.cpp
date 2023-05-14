@@ -23,6 +23,11 @@ bool CIBLAmbientLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UP
 				_RadianceEnvMapUID = CStrID(DataReader.Read<CString>());
 				break;
 			}
+			case 'LRNG':
+			{
+				DataReader.Read(_Range);
+				break;
+			}
 			default: FAIL;
 		}
 	}
@@ -36,15 +41,25 @@ Scene::PNodeAttribute CIBLAmbientLightAttribute::Clone()
 	PIBLAmbientLightAttribute ClonedAttr = n_new(CIBLAmbientLightAttribute());
 	ClonedAttr->_IrradianceMapUID = _IrradianceMapUID;
 	ClonedAttr->_RadianceEnvMapUID = _RadianceEnvMapUID;
+	ClonedAttr->_Range = _Range;
 	return ClonedAttr;
 }
 //---------------------------------------------------------------------
 
 bool CIBLAmbientLightAttribute::GetLocalAABB(CAABB& OutBox) const
 {
-	// TODO: global IBL has no AABB, just like a directional light. Local IBL has cubic AABB like a point light.
-	NOT_IMPLEMENTED;
-	FAIL;
+	// Negative range is a special value for global IBL
+	if (std::signbit(_Range))
+	{
+		//???or simply return false and consider it as an omnipresent light?!
+		OutBox.Set(vector3::Zero, vector3::Zero);
+		return true;
+	}
+	else
+	{
+		OutBox.Set(vector3::Zero, vector3(_Range, _Range, _Range));
+		return true;
+	}
 }
 //---------------------------------------------------------------------
 

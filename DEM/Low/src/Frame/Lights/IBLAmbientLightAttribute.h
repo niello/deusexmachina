@@ -27,6 +27,7 @@ protected:
 
 	CStrID _IrradianceMapUID;
 	CStrID _RadianceEnvMapUID;
+	float  _Range = -1.f;
 
 public:
 

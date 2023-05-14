@@ -33,7 +33,7 @@ void CLightAttribute::UpdateInGraphicsScene(CGraphicsScene& Scene)
 	{
 		pScene = &Scene;
 		AABB.Transform(_pNode->GetWorldMatrix());
-		SceneRecordHandle = Scene.AddLight(AABB, this);
+		SceneRecordHandle = Scene.AddLight(AABB, *this);
 		LastTransformVersion = _pNode->GetTransformVersion();
 	}
 	else if (_pNode->GetTransformVersion() != LastTransformVersion) //!!! || LocalBox changed!

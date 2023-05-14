@@ -26,9 +26,9 @@ class CRenderableAttribute: public Scene::CNodeAttribute
 
 protected:
 
-	CGraphicsScene*		        pScene = nullptr;
-	CGraphicsScene::HRenderable SceneRecordHandle = {};
-	U32                         LastTransformVersion = 0;
+	CGraphicsScene*		    pScene = nullptr;
+	CGraphicsScene::HRecord SceneRecordHandle = {};
+	U32                     LastTransformVersion = 0;
 
 	virtual void OnActivityChanged(bool Active) override;
 

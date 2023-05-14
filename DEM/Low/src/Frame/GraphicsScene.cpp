@@ -1,4 +1,6 @@
 #include "GraphicsScene.h"
+#include <Frame/RenderableAttribute.h> // for casting to CNodeAttribute
+#include <Frame/LightAttribute.h> // for casting to CNodeAttribute
 #include <Math/Math.h>
 #include <Math/CameraMath.h>
 
@@ -82,7 +84,6 @@ void CGraphicsScene::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 	n_assert2_dbg(Size >= 0.f, "CGraphicsScene::Init() > negative world extent is not allowed!");
 
 	_MaxDepth = std::min(HierarchyDepth, TREE_MAX_DEPTH);
-	_WorldCenter = Center;
 	_WorldExtent = Size * 0.5f;
 	_InvWorldSize = 1.f / Size;
 	_SmallestExtent = _WorldExtent / static_cast<float>(1 << _MaxDepth);
@@ -90,7 +91,7 @@ void CGraphicsScene::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 	// Create a root node. This simplifies object insertion logic.
 	// Set object count to fake 1 to keep the root alive forever.
 	auto& Root = *_TreeNodes.emplace();
-	Root.Bounds = acl::vector_set(_WorldCenter.x, _WorldCenter.y, _WorldCenter.z, 1.f);
+	Root.Bounds = acl::vector_set(Center.x, Center.y, Center.z, 1.f);
 	Root.MortonCode = 1;
 	Root.ParentIndex = NO_SPATIAL_TREE_NODE;
 	Root.SubtreeObjectCount = 1;
@@ -222,10 +223,10 @@ void CGraphicsScene::RemoveSingleObjectFromNode(U32 NodeIndex, TMorton NodeMorto
 }
 //---------------------------------------------------------------------
 
-CGraphicsScene::HRenderable CGraphicsScene::AddRenderable(const CAABB& GlobalBox, CRenderableAttribute* pRenderableAttr)
+CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CObjectRecord>& Storage, UPTR UID, const CAABB& GlobalBox, Scene::CNodeAttribute& Attr)
 {
-	CRenderableRecord Record;
-	Record.pRenderableAttr = pRenderableAttr;
+	CObjectRecord Record;
+	Record.pAttr = &Attr;
 
 	// TODO: store AABB as SIMD center-extents everywhere?!
 	const auto HalfMin = acl::vector_mul(acl::vector_set(GlobalBox.Min.x, GlobalBox.Min.y, GlobalBox.Min.z), 0.5f);
@@ -248,31 +249,23 @@ CGraphicsScene::HRenderable CGraphicsScene::AddRenderable(const CAABB& GlobalBox
 		Record.NodeMortonCode = 0;
 	}
 
-	const auto UID = _NextUID++;
-
-	// If this assert is ever triggered, compacting of existing UIDs may be implemented to keep fast insertions to the map end.
-	// Compacting must change UIDs in _Renderables and broadcast changes to all views. Try to make it sorted and preserve iterators to avoid logN searches.
-	n_assert_dbg(_NextUID < std::numeric_limits<decltype(_NextUID)>().max());
-
-	if (_RenderableNodePool.empty())
+	if (_ObjectNodePool.empty())
 	{
-		return _Renderables.emplace_hint(_Renderables.cend(), UID, std::move(Record));
+		return Storage.emplace_hint(Storage.cend(), UID, std::move(Record));
 	}
 	else
 	{
-		auto Node = std::move(_RenderableNodePool.back());
-		_RenderableNodePool.pop_back();
+		auto Node = std::move(_ObjectNodePool.back());
+		_ObjectNodePool.pop_back();
 		Node.key() = UID;
-		new (&Node.mapped()) CRenderableRecord(std::move(Record));
-		return _Renderables.insert(_Renderables.cend(), std::move(Node));
+		new (&Node.mapped()) CObjectRecord(std::move(Record));
+		return Storage.insert(Storage.cend(), std::move(Node));
 	}
 }
 //---------------------------------------------------------------------
 
-void CGraphicsScene::UpdateRenderable(HRenderable Handle, const CAABB& GlobalBox)
+void CGraphicsScene::UpdateObject(HRecord Handle, const CAABB& GlobalBox)
 {
-	//if (Handle == _Renderables.cend()) return;
-
 	auto& Record = Handle->second;
 
 	// TODO: store AABB as SIMD center-extents everywhere?!
@@ -302,13 +295,37 @@ void CGraphicsScene::UpdateRenderable(HRenderable Handle, const CAABB& GlobalBox
 //---------------------------------------------------------------------
 
 // TODO: check safety. If causes issues, can use UID instead of an iterator, but this makes erase logarithmic instead of constant.
-void CGraphicsScene::RemoveRenderable(HRenderable Handle)
+void CGraphicsScene::RemoveObject(std::map<UPTR, CObjectRecord>& Storage, HRecord Handle)
 {
-	//if (Handle == _Renderables.cend()) return;
+	//if (Handle == Storage.cend()) return;
 
 	RemoveSingleObjectFromNode(Handle->second.NodeIndex, Handle->second.NodeMortonCode, 0);
-	_RenderableNodePool.push_back(_Renderables.extract(Handle));
-	_RenderableNodePool.back().mapped().~CRenderableRecord();
+	_ObjectNodePool.push_back(Storage.extract(Handle));
+	_ObjectNodePool.back().mapped().~CObjectRecord();
+}
+//---------------------------------------------------------------------
+
+CGraphicsScene::HRecord CGraphicsScene::AddRenderable(const CAABB& GlobalBox, CRenderableAttribute& RenderableAttr)
+{
+	const auto UID = _NextRenderableUID++;
+
+	// If this assert is ever triggered, compacting of existing UIDs may be implemented to keep fast insertions to the map end.
+	// Compacting must change UIDs in map keys and broadcast changes to all views. Try to make it sorted and preserve iterators to avoid logN searches.
+	n_assert_dbg(_NextRenderableUID < std::numeric_limits<decltype(_NextRenderableUID)>().max());
+
+	return AddObject(_Renderables, UID, GlobalBox, RenderableAttr);
+}
+//---------------------------------------------------------------------
+
+CGraphicsScene::HRecord CGraphicsScene::AddLight(const CAABB& GlobalBox, CLightAttribute& LightAttr)
+{
+	const auto UID = _NextLightUID++;
+
+	// If this assert is ever triggered, compacting of existing UIDs may be implemented to keep fast insertions to the map end.
+	// Compacting must change UIDs in map keys and broadcast changes to all views. Try to make it sorted and preserve iterators to avoid logN searches.
+	n_assert_dbg(_NextLightUID < std::numeric_limits<decltype(_NextLightUID)>().max());
+
+	return AddObject(_Lights, UID, GlobalBox, LightAttr);
 }
 //---------------------------------------------------------------------
 

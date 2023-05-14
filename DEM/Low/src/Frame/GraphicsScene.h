@@ -12,6 +12,11 @@ namespace Math
 	struct CSIMDFrustum;
 }
 
+namespace Scene
+{
+	class CNodeAttribute;
+}
+
 namespace Frame
 {
 class CRenderableAttribute;
@@ -42,64 +47,60 @@ class CGraphicsScene
 {
 public:
 
-	struct CRenderableRecord
+	struct CObjectRecord
 	{
-		acl::Vector4_32 BoxCenter;
-		acl::Vector4_32 BoxExtent;
-		CRenderableAttribute* pRenderableAttr = nullptr;
-		TMorton         NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
-		U32             NodeIndex = NO_SPATIAL_TREE_NODE;
-		U32             BoundsVersion = 1;
-		bool            BoundsValid = false;
+		acl::Vector4_32        BoxCenter;
+		acl::Vector4_32        BoxExtent;
+		Scene::CNodeAttribute* pAttr = nullptr;
+		TMorton                NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
+		U32                    NodeIndex = NO_SPATIAL_TREE_NODE;
+		U32                    BoundsVersion = 1;
+		bool                   BoundsValid = false;
 	};
 
-	struct CLightRecord
-	{
-	};
+	using HRecord = std::map<UPTR, CObjectRecord>::iterator;
 
 protected:
 
-	Data::CSparseArray2<CSpatialTreeNode, U32> _TreeNodes;
-	std::unordered_map<TMorton, U32> _MortonToIndex;
+	Data::CSparseArray2<CSpatialTreeNode, U32>       _TreeNodes;
+	std::unordered_map<TMorton, U32>                 _MortonToIndex;
 	std::vector<decltype(_MortonToIndex)::node_type> _MortonToIndexPool;
 
-	std::map<UPTR, CRenderableRecord> _Renderables; // TODO: if cleared, need to clear iterators in attributes first!
-	std::vector<decltype(_Renderables)::node_type> _RenderableNodePool;
+	std::map<UPTR, CObjectRecord>                    _Renderables; // TODO: if cleared, need to clear iterators in attributes first!
+	std::map<UPTR, CObjectRecord>                    _Lights; // TODO: if cleared, need to clear iterators in attributes first!
+	std::vector<decltype(_Renderables)::node_type>   _ObjectNodePool;
 
-	std::map<UPTR, CLightRecord> _Lights; // TODO: if cleared, need to clear iterators in attributes first!
-	std::vector<decltype(_Lights)::node_type> _LightNodePool;
-
-	vector3 _WorldCenter;
 	float _WorldExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic
 	float _InvWorldSize = 0.f; // Cached 1 / (2 * _WorldExtent)
 	float _SmallestExtent = 0.f; // Cached _WorldExtent / (1 << _MaxDepth), smallest extent that requires depth calculation on insertion
-	U8 _MaxDepth = 0;
+	U8    _MaxDepth = 0;
 
-	UPTR _NextUID = 1; // UID 0 means no UID assigned, so start from 1
+	UPTR  _NextRenderableUID = 1; // UID 0 means no UID assigned, so start from 1
+	UPTR  _NextLightUID = 1;      // UID 0 means no UID assigned, so start from 1
 
 	TMorton CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const noexcept;
 	U32     CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex);
 	U32     AddSingleObjectToNode(TMorton NodeMortonCode, TMorton StopMortonCode);
 	void    RemoveSingleObjectFromNode(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode);
 
-public:
+	HRecord AddObject(std::map<UPTR, CObjectRecord>& Storage, UPTR UID, const CAABB& GlobalBox, Scene::CNodeAttribute& Attr);
+	void    UpdateObject(HRecord Handle, const CAABB& GlobalBox);
+	void    RemoveObject(std::map<UPTR, CObjectRecord>& Storage, HRecord Handle);
 
-	using HRenderable = decltype(_Renderables)::iterator;
-	using HLight = decltype(_Lights)::iterator;
+public:
 
 	void            Init(const vector3& Center, float Size, U8 HierarchyDepth);
 
-	HRenderable     AddRenderable(const CAABB& GlobalBox, CRenderableAttribute* pRenderableAttr);
-	void            UpdateRenderable(HRenderable Handle, const CAABB& GlobalBox);
-	void            RemoveRenderable(HRenderable Handle);
-	auto            GetInvalidRenderableRecordHandle() const { return _Renderables.cend(); }
-
-	HLight          AddLight(const CAABB& GlobalBox, CLightAttribute* pLightAttr);
-	void            UpdateLight(HLight Handle, const CAABB& GlobalBox);
-	void            RemoveLight(HLight Handle);
-	auto            GetInvalidLightRecordHandle() const { return _Lights.cend(); }
-
+	HRecord         AddRenderable(const CAABB& GlobalBox, CRenderableAttribute& RenderableAttr);
+	void            UpdateRenderable(HRecord Handle, const CAABB& GlobalBox) { UpdateObject(Handle, GlobalBox); }
+	void            RemoveRenderable(HRecord Handle) { RemoveObject(_Renderables, Handle); }
 	const auto&     GetRenderables() const { return _Renderables; }
+
+	HRecord         AddLight(const CAABB& GlobalBox, CLightAttribute& LightAttr);
+	void            UpdateLight(HRecord Handle, const CAABB& GlobalBox) { UpdateObject(Handle, GlobalBox); }
+	void            RemoveLight(HRecord Handle) { RemoveObject(_Lights, Handle); }
+	const auto&     GetLights() const { return _Lights; }
+
 	acl::Vector4_32 CalcNodeBounds(TMorton MortonCode) const;
 	CAABB           GetNodeAABB(U32 NodeIndex, bool Loose = false) const;
 	CAABB           GetNodeAABB(acl::Vector4_32Arg0 Bounds, bool Loose = false) const;

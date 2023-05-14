@@ -76,6 +76,8 @@ protected:
 	std::map<UPTR, Render::PRenderable>            _Renderables;
 	std::vector<decltype(_Renderables)::node_type> _RenderableNodePool;
 
+	//!!!local lights, global lights!
+
 	CArray<Scene::CNodeAttribute*>				VisibilityCache;
 	CArray<Render::CLightRecord>				LightCache;
 	CArray<CIBLAmbientLightAttribute*>				EnvironmentCache;
@@ -95,7 +97,8 @@ protected:
 
 	DECLARE_EVENT_HANDLER(OSWindowResized, OnOSWindowResized);
 
-	void SynchronizeObjects();
+	void SynchronizeRenderables();
+	void SynchronizeLights();
 	void UpdateObjectVisibility(bool ViewProjChanged);
 
 public:
@@ -123,9 +126,8 @@ public:
 	bool                            CreateMatchingDepthStencilBuffer(CStrID RenderTargetID, CStrID BufferID, Render::EPixelFormat Format = Render::PixelFmt_DefaultDepthBuffer);
 	CCameraAttribute*               CreateDefaultCamera(CStrID RenderTargetID, Scene::CSceneNode& ParentNode, bool SetAsCurrent = true);
 
-	bool                            PrecreateRenderObjects(Scene::CSceneNode& RootNode);
+	bool                            PrecreateRenderObjects();
 	Render::IRenderable*            GetRenderObject(const CRenderableAttribute& Attr);
-	void							UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; }
 	CArray<Render::CLightRecord>&	GetLightCache() { return LightCache; }
 	CArray<CIBLAmbientLightAttribute*>&	GetEnvironmentCache() { return EnvironmentCache; }

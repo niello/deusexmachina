@@ -17,11 +17,11 @@ class CLightAttribute: public Scene::CNodeAttribute
 
 protected:
 
-	CGraphicsScene*        pScene = nullptr;
-	CGraphicsScene::HLight SceneRecordHandle = {};
-	U32                    LastTransformVersion = 0;
-	bool                   _CastsShadow : 1;
-	bool                   _DoOcclusionCulling : 1;
+	CGraphicsScene*         pScene = nullptr;
+	CGraphicsScene::HRecord SceneRecordHandle = {};
+	U32                     LastTransformVersion = 0;
+	bool                    _CastsShadow : 1;
+	bool                    _DoOcclusionCulling : 1;
 
 	virtual void                  OnActivityChanged(bool Active) override;
 

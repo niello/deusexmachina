@@ -27,7 +27,7 @@ void CRenderableAttribute::UpdateInGraphicsScene(CGraphicsScene& Scene)
 	{
 		pScene = &Scene;
 		AABB.Transform(_pNode->GetWorldMatrix());
-		SceneRecordHandle = Scene.AddRenderable(AABB, this);
+		SceneRecordHandle = Scene.AddRenderable(AABB, *this);
 		LastTransformVersion = _pNode->GetTransformVersion();
 	}
 	else if (_pNode->GetTransformVersion() != LastTransformVersion) //!!! || LocalBox changed!
@@ -79,7 +79,7 @@ void CRenderableAttribute::RenderDebug(Debug::CDebugDraw& DebugDraw) const
 	if (GetGlobalAABB(AABB))
 		DebugDraw.DrawBoxWireframe(AABB, Render::ColorRGBA(160, 220, 255, 255), 1.f);
 
-	if (pScene && SceneRecordHandle != pScene->GetInvalidRenderableRecordHandle())
+	if (pScene)
 		DebugDraw.DrawBoxWireframe(pScene->GetNodeAABB(SceneRecordHandle->second.NodeIndex, true), Render::ColorRGBA(160, 255, 160, 255), 1.f);
 }
 //---------------------------------------------------------------------
