@@ -523,7 +523,7 @@ Render::CDepthStencilBuffer* CView::GetDepthStencilBuffer(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-void CView::SetScene(CGraphicsScene* pScene)
+void CView::SetGraphicsScene(CGraphicsScene* pScene)
 {
 	if (_pScene == pScene) return;
 

@@ -142,8 +142,8 @@ public:
 	Render::CRenderTarget*			GetRenderTarget(CStrID ID) const;
 	bool							SetDepthStencilBuffer(CStrID ID, Render::PDepthStencilBuffer DS);
 	Render::CDepthStencilBuffer*	GetDepthStencilBuffer(CStrID ID) const;
-	void                            SetScene(CGraphicsScene* pScene);
-	CGraphicsScene*                 GetScene() const { return _pScene; }
+	void                            SetGraphicsScene(CGraphicsScene* pScene);
+	CGraphicsScene*                 GetGraphicsScene() const { return _pScene; }
 	bool							SetCamera(CCameraAttribute* pNewCamera);
 	CCameraAttribute*               GetCamera() const { return pCamera; }
 	CGraphicsResourceManager*		GetGraphicsManager() const;
