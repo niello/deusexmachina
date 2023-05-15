@@ -25,9 +25,9 @@ protected:
 
 public:
 
+	// FIXME: with fields it is a base class and not an interface!
 	bool IsVisible = true;
 	U32  BoundsVersion = 0;
-
 };
 
 }

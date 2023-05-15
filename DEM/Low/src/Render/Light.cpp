@@ -5,13 +5,13 @@
 namespace Render
 {
 
-void CLight::CalcLocalFrustum(matrix44& OutFrustum) const
+void CLight_OLD_DELETE::CalcLocalFrustum(matrix44& OutFrustum) const
 {
 	OutFrustum.perspFovRh(ConeOuter, 1.f, 0.f, Range);
 }
 //---------------------------------------------------------------------
 
-float CLight::CalcLightPriority(const vector3& ObjectPos, const vector3& LightPos, const vector3& LightInvDir) const
+float CLight_OLD_DELETE::CalcLightPriority(const vector3& ObjectPos, const vector3& LightPos, const vector3& LightInvDir) const
 {
 	float SqIntensity = Intensity * Intensity;
 	if (Type == Light_Directional) return SqIntensity;

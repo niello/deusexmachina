@@ -6,6 +6,7 @@
 #include <Frame/RenderPath.h>
 #include <Frame/GraphicsResourceManager.h>
 #include <Render/Renderable.h>
+#include <Render/Light.h>
 #include <Render/RenderTarget.h>
 #include <Render/ConstantBuffer.h>
 #include <Render/GPUDriver.h>
@@ -311,6 +312,8 @@ void CView::SynchronizeRenderables()
 			pRecord = &ItSceneObject->second;
 			pRenderable = ItViewObject->second.get();
 
+			//???where and when to update world matrix? store it cached in a PRenderable or get from scene object on parallel iteration?
+
 			// TODO:
 			// if sorted queue includes distance to camera and bounds changed, mark sorted queue dirty
 			// if sorted queue includes material etc which has changed, mark sorted queue dirty
@@ -321,25 +324,61 @@ void CView::SynchronizeRenderables()
 
 void CView::SynchronizeLights()
 {
-	// ligths without octree node are saved to global, others - to local
-	// visibility and intersection with renderables will be calculated only for local lights
-	// prioritization will be made for all lights, but global lights have the same intensity at every point in space
-	// maybe global lights must bypass prioritization, as they use different constants and algorithms in the shader!
-
 	// Synchronize scene lights with their GPU mirrors
-	//DEM::Algo::SortedUnion(_pScene->GetLights(), _Lights, [](const auto& a, const auto& b) { return a.first < b.first; },
-	//	[this](auto ItSceneObject, auto ItViewObject)
+	DEM::Algo::SortedUnion(_pScene->GetLights(), _Lights, [](const auto& a, const auto& b) { return a.first < b.first; },
+		[this](auto ItSceneObject, auto ItViewObject)
+	{
+		const CGraphicsScene::CObjectRecord* pRecord = nullptr;
+		Render::CLight* pLight = nullptr;
+
+		if (ItSceneObject == _pScene->GetLights().cend())
+		{
+			// An attribute was removed from a scene, remove its associated GPU light instance
+			// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one
+			ItViewObject->second.reset();
+			_LightNodePool.push_back(_Lights.extract(ItViewObject));
+		}
+		else if (ItViewObject == _Lights.cend())
+		{
+			// A new object in a scene
+			const auto UID = ItSceneObject->first;
+			pRecord = &ItSceneObject->second;
+
+			auto pAttr = static_cast<CLightAttribute*>(pRecord->pAttr);
+
+			// UIDs always grow (unless overflowed), and therefore adding to the end is always the right hint which gives us O(1) insertion
+			//???!!!could compact UIDs when close to overflow! Do in SPS and broadcast changes OldUID->NewUID to all views. With guarantee of
+			//doing this in order, we can keep an iterator and avoid logarithmic searches for each change!
+			if (_LightNodePool.empty())
+			{
+				ItViewObject = _Lights.emplace_hint(_Lights.cend(), UID, pAttr->CreateLight(*_GraphicsMgr));
+			}
+			else
+			{
+				auto& Node = _LightNodePool.back();
+				Node.key() = UID;
+				Node.mapped() = pAttr->CreateLight(*_GraphicsMgr);
+				ItViewObject = _Lights.insert(_Lights.cend(), std::move(Node));
+				_LightNodePool.pop_back();
+			}
+
+			pLight = ItViewObject->second.get();
+
+			// ligths without octree node are saved to global, others - to local
+			// visibility and intersection with renderables will be calculated only for local lights
+			// prioritization will be made for all lights, but global lights have the same intensity at every point in space
+			// maybe global lights must bypass prioritization, as they use different constants and algorithms in the shader!
+		}
+		else
+		{
+			pRecord = &ItSceneObject->second;
+			pLight = ItViewObject->second.get();
+		}
+	});
+
+	//for (UPTR i = 0; i < VisibilityCache.GetCount(); /**/)
 	//{
-	//	//...
-	//});
-
-	//CArray<Scene::CNodeAttribute*> VisibilityCache2;
-
-	//_pScene->QueryObjectsInsideFrustum(pCamera->GetViewProjMatrix(), VisibilityCache2);
-
-	//for (UPTR i = 0; i < VisibilityCache2.GetCount(); /**/)
-	//{
-	//	Scene::CNodeAttribute* pAttr = VisibilityCache2[i];
+	//	Scene::CNodeAttribute* pAttr = VisibilityCache[i];
 	//	if (pAttr->IsA<CLightAttribute>())
 	//	{
 	//		Render::CLightRecord& Rec = *LightCache.Add();
@@ -357,11 +396,6 @@ void CView::SynchronizeLights()
 	//	}
 	//	/*else*/ ++i;
 	//}
-
-	// CIBLAmbientLightAttribute:
-	//if (!pAttrTyped->ValidateGPUResources(*_GraphicsMgr)) FAIL;
-	//IrradianceMap = ResMgr.GetTexture(IrradianceMapUID, Render::Access_GPU_Read);
-	//RadianceEnvMap = ResMgr.GetTexture(RadianceEnvMapUID, Render::Access_GPU_Read);
 }
 //---------------------------------------------------------------------
 

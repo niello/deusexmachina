@@ -230,7 +230,7 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 		for (UPTR i = 0; i < Lights.GetCount(); ++i)
 		{
 			CLightRecord& LightRec = Lights[i];
-			const CLight* pLight = LightRec.pLight;
+			const CLight_OLD_DELETE* pLight = LightRec.pLight;
 
 			switch (pLight->Type)
 			{
@@ -323,7 +323,7 @@ void CTerrainRenderer::FillNodeLightIndices(const CProcessTerrainNodeArgs& Args,
 	for (; ItIdx != ItEnd; ++ItIdx)
 	{
 		const CLightRecord& LightRec = Lights[(*ItIdx)];
-		const CLight* pLight = LightRec.pLight;
+		const CLight_OLD_DELETE* pLight = LightRec.pLight;
 		switch (pLight->Type)
 		{
 			case Light_Point:

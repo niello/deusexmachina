@@ -1,16 +1,35 @@
 #pragma once
+#include <Core/RTTIBaseClass.h>
 #include <Data/Flags.h>
 #include <Math/Vector3.h>
 #include <System/System.h>
 
-// Light describes light source properties, including type, color, range, shadow casting flags etc
+// A base class for light source instances used for rendering. This is a GPU-friendly implementation
+// created from CLightAttribute found in a 3D scene. Subclass for different source types.
+
+namespace Render
+{
+typedef std::unique_ptr<class CLight> PLight;
+
+class CLight : public Core::CRTTIBaseClass
+{
+	RTTI_CLASS_DECL(Render::CLight, Core::CRTTIBaseClass);
+
+protected:
+
+	// ...
+
+public:
+
+	bool IsVisible = true;
+	U32  BoundsVersion = 0;
+
+	//???shadow casting flag etc here?
+};
+
+}
 
 class matrix44;
-
-namespace IO
-{
-	class CBinaryReader;
-}
 
 namespace Render
 {
@@ -22,7 +41,7 @@ enum ELightType
 	Light_Spot			= 2
 };
 
-class CLight
+class CLight_OLD_DELETE
 {
 protected:
 
@@ -50,7 +69,7 @@ public:
 	vector3				Color;		//???What with alpha color? place intensity there?
 	float				Intensity;
 
-	CLight();
+	CLight_OLD_DELETE();
 
 	void			CalcLocalFrustum(matrix44& OutFrustum) const; // Spot only
 	float			CalcLightPriority(const vector3& ObjectPos, const vector3& LightPos, const vector3& LightInvDir) const;
@@ -66,7 +85,7 @@ public:
 	float			GetCosHalfPhi() const { return CosHalfOuter; }
 };
 
-inline CLight::CLight():
+inline CLight_OLD_DELETE::CLight_OLD_DELETE():
 	Type(Light_Directional),
 	Color(1.f, 1.f, 1.f),
 	Intensity(0.5f),
@@ -80,7 +99,7 @@ inline CLight::CLight():
 }
 //---------------------------------------------------------------------
 
-inline void CLight::SetRange(float NewRange)
+inline void CLight_OLD_DELETE::SetRange(float NewRange)
 {
 	n_assert(NewRange > 0.f);
 	Range = NewRange;
@@ -88,7 +107,7 @@ inline void CLight::SetRange(float NewRange)
 }
 //---------------------------------------------------------------------
 
-inline void CLight::SetSpotInnerAngle(float NewAngle)
+inline void CLight_OLD_DELETE::SetSpotInnerAngle(float NewAngle)
 {
 	n_assert(NewAngle > 0.f && NewAngle < PI);
 	n_assert_dbg(NewAngle < ConeOuter);
@@ -97,7 +116,7 @@ inline void CLight::SetSpotInnerAngle(float NewAngle)
 }
 //---------------------------------------------------------------------
 
-inline void CLight::SetSpotOuterAngle(float NewAngle)
+inline void CLight_OLD_DELETE::SetSpotOuterAngle(float NewAngle)
 {
 	n_assert(NewAngle > 0.f && NewAngle < PI);
 	ConeOuter = NewAngle;

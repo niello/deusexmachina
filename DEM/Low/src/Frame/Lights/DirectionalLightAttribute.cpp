@@ -48,6 +48,14 @@ Scene::PNodeAttribute CDirectionalLightAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
+Render::PLight CDirectionalLightAttribute::CreateLight(CGraphicsResourceManager& ResMgr) const
+{
+	//Ptr<Render::CDirectionalLight> Light = n_new(Render::CDirectionalLight());
+	//Light->... = ...;
+	//return Light;
+}
+//---------------------------------------------------------------------
+
 bool CDirectionalLightAttribute::GetLocalAABB(CAABB& OutBox) const
 {
 	//???or simply return false and consider it as an omnipresent light?!

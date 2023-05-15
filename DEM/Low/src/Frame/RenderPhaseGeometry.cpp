@@ -197,7 +197,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 				Render::CLightRecord& LightRec = VisibleLights[i];
 				if (LightRec.UseCount)
 				{
-					const Render::CLight& Light = *LightRec.pLight;
+					const Render::CLight_OLD_DELETE& Light = *LightRec.pLight;
 
 					struct
 					{

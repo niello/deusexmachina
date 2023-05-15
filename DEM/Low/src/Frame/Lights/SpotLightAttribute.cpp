@@ -71,6 +71,14 @@ Scene::PNodeAttribute CSpotLightAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
+Render::PLight CSpotLightAttribute::CreateLight(CGraphicsResourceManager& ResMgr) const
+{
+	//Ptr<Render::CSpotLight> Light = n_new(Render::CSpotLight());
+	//Light->... = ...;
+	//return Light;
+}
+//---------------------------------------------------------------------
+
 bool CSpotLightAttribute::GetLocalAABB(CAABB& OutBox) const
 {
 	//!!!can cache HalfFarExtent!

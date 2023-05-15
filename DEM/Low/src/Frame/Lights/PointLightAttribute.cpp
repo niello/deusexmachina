@@ -59,6 +59,14 @@ Scene::PNodeAttribute CPointLightAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
+Render::PLight CPointLightAttribute::CreateLight(CGraphicsResourceManager& ResMgr) const
+{
+	//Ptr<Render::CPointLight> Light = n_new(Render::CPointLight());
+	//Light->... = ...;
+	//return Light;
+}
+//---------------------------------------------------------------------
+
 bool CPointLightAttribute::GetLocalAABB(CAABB& OutBox) const
 {
 	OutBox.Set(vector3::Zero, vector3(_Range, _Range, _Range));

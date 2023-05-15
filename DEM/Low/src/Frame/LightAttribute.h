@@ -7,8 +7,14 @@
 
 class CAABB;
 
+namespace Render
+{
+	typedef std::unique_ptr<class CLight> PLight;
+}
+
 namespace Frame
 {
+class CGraphicsResourceManager;
 class CGraphicsScene;
 
 class CLightAttribute: public Scene::CNodeAttribute
@@ -23,18 +29,18 @@ protected:
 	bool                    _CastsShadow : 1;
 	bool                    _DoOcclusionCulling : 1;
 
-	virtual void                  OnActivityChanged(bool Active) override;
+	virtual void           OnActivityChanged(bool Active) override;
 
 public:
 
 	CLightAttribute();
 
-	virtual bool                  GetLocalAABB(CAABB& OutBox) const = 0;
-	bool                          GetGlobalAABB(CAABB& OutBox) const;
-	void                          UpdateInGraphicsScene(CGraphicsScene& Scene);
+	virtual Render::PLight CreateLight(CGraphicsResourceManager& ResMgr) const = 0;
+	virtual bool           GetLocalAABB(CAABB& OutBox) const = 0;
+	bool                   GetGlobalAABB(CAABB& OutBox) const;
+	void                   UpdateInGraphicsScene(CGraphicsScene& Scene);
 
-	//virtual Render::PLight CreateLight(CGraphicsResourceManager& ResMgr) const = 0;
-
+	//???in attr or GPU light?
 	// get intensity at point
 	// calc intersection / influence for AABB or OBB - get max intensity for box (= get intensity at closest point)
 };

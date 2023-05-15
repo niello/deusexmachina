@@ -46,6 +46,15 @@ Scene::PNodeAttribute CIBLAmbientLightAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
+Render::PLight CIBLAmbientLightAttribute::CreateLight(CGraphicsResourceManager& ResMgr) const
+{
+	//Ptr<Render::CIBLAmbientLight> Light = n_new(Render::CIBLAmbientLight());
+	//Light->IrradianceMap = ResMgr.GetTexture(_IrradianceMapUID, Render::Access_GPU_Read);
+	//Light->RadianceEnvMap = ResMgr.GetTexture(_RadianceEnvMapUID, Render::Access_GPU_Read);
+	//return Light;
+}
+//---------------------------------------------------------------------
+
 bool CIBLAmbientLightAttribute::GetLocalAABB(CAABB& OutBox) const
 {
 	// Negative range is a special value for global IBL

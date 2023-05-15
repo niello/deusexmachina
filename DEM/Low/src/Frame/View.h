@@ -20,6 +20,11 @@ namespace Scene
 	class CNodeAttribute;
 }
 
+namespace Render
+{
+	typedef std::unique_ptr<class CLight> PLight;
+}
+
 namespace DEM::Sys
 {
 	class COSWindow;
@@ -76,7 +81,9 @@ protected:
 	std::map<UPTR, Render::PRenderable>            _Renderables;
 	std::vector<decltype(_Renderables)::node_type> _RenderableNodePool;
 
-	//!!!local lights, global lights!
+	//???!!!separate local and global lights?!
+	std::map<UPTR, Render::PLight>                 _Lights;
+	std::vector<decltype(_Lights)::node_type>      _LightNodePool;
 
 	CArray<Scene::CNodeAttribute*>				VisibilityCache;
 	CArray<Render::CLightRecord>				LightCache;

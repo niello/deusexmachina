@@ -36,7 +36,7 @@ struct CRenderNode
 
 struct CLightRecord
 {
-	const Render::CLight*	pLight;
+	const Render::CLight_OLD_DELETE*	pLight;
 	matrix44				Transform;
 	UPTR					UseCount;
 	IPTR					GPULightIndex;
