@@ -210,10 +210,12 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/CDLODDataLoader.h
 	DEM/Low/src/Render/ConstantBuffer.h
 	DEM/Low/src/Render/DepthStencilBuffer.h
+	DEM/Low/src/Render/DirectionalLight.h
 	DEM/Low/src/Render/DisplayDriver.h
 	DEM/Low/src/Render/DisplayMode.h
 	DEM/Low/src/Render/Effect.h
 	DEM/Low/src/Render/GPUDriver.h
+	DEM/Low/src/Render/ImageBasedLight.h
 	DEM/Low/src/Render/ImageUtils.h
 	DEM/Low/src/Render/IndexBuffer.h
 	DEM/Low/src/Render/Light.h
@@ -225,6 +227,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/MeshLoaderNVX2.h
 	DEM/Low/src/Render/Model.h
 	DEM/Low/src/Render/ModelRenderer.h
+	DEM/Low/src/Render/PointLight.h
 	DEM/Low/src/Render/Renderable.h
 	DEM/Low/src/Render/Renderer.h
 	DEM/Low/src/Render/RenderFwd.h
@@ -242,6 +245,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/SkinInfoLoaderSKN.h
 	DEM/Low/src/Render/Skybox.h
 	DEM/Low/src/Render/SkyboxRenderer.h
+	DEM/Low/src/Render/SpotLight.h
 	DEM/Low/src/Render/SwapChain.h
 	DEM/Low/src/Render/Technique.h
 	DEM/Low/src/Render/Terrain.h
@@ -470,8 +474,10 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Physics/StaticCollider.cpp
 	DEM/Low/src/Physics/StaticMeshShape.cpp
 	DEM/Low/src/Render/CDLODDataLoader.cpp
+	DEM/Low/src/Render/DirectionalLight.cpp
 	DEM/Low/src/Render/Effect.cpp
 	DEM/Low/src/Render/GPUDriver.cpp
+	DEM/Low/src/Render/ImageBasedLight.cpp
 	DEM/Low/src/Render/ImageUtils.cpp
 	DEM/Low/src/Render/Light.cpp
 	DEM/Low/src/Render/LoadMaterialFromPRM.cpp
@@ -483,6 +489,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/MeshLoaderNVX2.cpp
 	DEM/Low/src/Render/Model.cpp
 	DEM/Low/src/Render/ModelRenderer.cpp
+	DEM/Low/src/Render/PointLight.cpp
 	DEM/Low/src/Render/RenderStateDesc.cpp
 	DEM/Low/src/Render/SamplerDesc.cpp
 	DEM/Low/src/Render/ShaderConstantInfo.cpp
@@ -492,6 +499,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/SkinInfoLoaderSKN.cpp
 	DEM/Low/src/Render/Skybox.cpp
 	DEM/Low/src/Render/SkyboxRenderer.cpp
+	DEM/Low/src/Render/SpotLight.cpp
 	DEM/Low/src/Render/SwapChain.cpp
 	DEM/Low/src/Render/Technique.cpp
 	DEM/Low/src/Render/Terrain.cpp

@@ -1,4 +1,5 @@
 #include "IBLAmbientLightAttribute.h"
+#include <Render/ImageBasedLight.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -48,10 +49,11 @@ Scene::PNodeAttribute CIBLAmbientLightAttribute::Clone()
 
 Render::PLight CIBLAmbientLightAttribute::CreateLight(CGraphicsResourceManager& ResMgr) const
 {
+	auto Light = std::make_unique<Render::CImageBasedLight>();
 	//Ptr<Render::CIBLAmbientLight> Light = n_new(Render::CIBLAmbientLight());
 	//Light->IrradianceMap = ResMgr.GetTexture(_IrradianceMapUID, Render::Access_GPU_Read);
 	//Light->RadianceEnvMap = ResMgr.GetTexture(_RadianceEnvMapUID, Render::Access_GPU_Read);
-	//return Light;
+	return Light;
 }
 //---------------------------------------------------------------------
 

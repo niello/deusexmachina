@@ -24,7 +24,11 @@ public:
 	bool IsVisible = true;
 	U32  BoundsVersion = 0;
 
+	// color and intensity? even for IBL?
 	//???shadow casting flag etc here?
+
+	// get bounds / test intersection / test visibility in a frustum
+	// calculate intensity at point? for prioritization. or process all lights?
 };
 
 }

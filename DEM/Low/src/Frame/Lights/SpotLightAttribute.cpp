@@ -1,4 +1,5 @@
 #include "SpotLightAttribute.h"
+#include <Render/SpotLight.h>
 #include <Math/AABB.h>
 #include <Core/Factory.h>
 #include <IO/BinaryReader.h>
@@ -73,9 +74,9 @@ Scene::PNodeAttribute CSpotLightAttribute::Clone()
 
 Render::PLight CSpotLightAttribute::CreateLight(CGraphicsResourceManager& ResMgr) const
 {
-	//Ptr<Render::CSpotLight> Light = n_new(Render::CSpotLight());
+	auto Light = std::make_unique<Render::CSpotLight>();
 	//Light->... = ...;
-	//return Light;
+	return Light;
 }
 //---------------------------------------------------------------------
 

@@ -1,4 +1,5 @@
 #include "PointLightAttribute.h"
+#include <Render/PointLight.h>
 #include <Math/AABB.h>
 #include <Core/Factory.h>
 #include <IO/BinaryReader.h>
@@ -61,9 +62,9 @@ Scene::PNodeAttribute CPointLightAttribute::Clone()
 
 Render::PLight CPointLightAttribute::CreateLight(CGraphicsResourceManager& ResMgr) const
 {
-	//Ptr<Render::CPointLight> Light = n_new(Render::CPointLight());
+	auto Light = std::make_unique<Render::CPointLight>();
 	//Light->... = ...;
-	//return Light;
+	return Light;
 }
 //---------------------------------------------------------------------
 

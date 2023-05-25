@@ -373,6 +373,9 @@ void CView::SynchronizeLights()
 		{
 			pRecord = &ItSceneObject->second;
 			pLight = ItViewObject->second.get();
+
+			// update light transform if it changed
+			// mark visibility and intersections dirty if bounds version changed
 		}
 	});
 
