@@ -364,6 +364,9 @@ void CView::SynchronizeLights()
 
 			pLight = ItViewObject->second.get();
 
+			//???!!!check tfm version?!
+			pLight->UpdateTransform(pAttr->GetNode()->GetWorldMatrix());
+
 			// ligths without octree node are saved to global, others - to local
 			// visibility and intersection with renderables will be calculated only for local lights
 			// prioritization will be made for all lights, but global lights have the same intensity at every point in space
@@ -373,6 +376,9 @@ void CView::SynchronizeLights()
 		{
 			pRecord = &ItSceneObject->second;
 			pLight = ItViewObject->second.get();
+
+			//???!!!check tfm version?!
+			pLight->UpdateTransform(pRecord->pAttr->GetNode()->GetWorldMatrix());
 
 			// update light transform if it changed
 			// mark visibility and intersections dirty if bounds version changed

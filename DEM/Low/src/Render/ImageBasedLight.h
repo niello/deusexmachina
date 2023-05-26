@@ -22,11 +22,15 @@ class CImageBasedLight : public CLight
 
 protected:
 
-	//Render::PTexture _IrradianceMap;
-	//Render::PTexture _RadianceEnvMap;
-
 public:
 
+	Render::PTexture _IrradianceMap;
+	Render::PTexture _RadianceEnvMap;
+
+	CImageBasedLight();
+	virtual ~CImageBasedLight() override;
+
+	virtual void UpdateTransform(const matrix44& Tfm) override;
 };
 
 }

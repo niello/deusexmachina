@@ -1,5 +1,6 @@
 #pragma once
 #include <Render/Light.h>
+#include <acl/math/vector4_32.h>
 
 // Spot light source used for rendering
 
@@ -13,7 +14,8 @@ class CSpotLight : public CLight
 
 protected:
 
-	// vector3 or acl::Vector4_32 _Direction;
+	acl::Vector4_32 _Direction; //!!!use w for something! each light params can be just passed to array of float4 registers. or can use common structure for structured buffer.
+
 	// position
 	// range
 	// cone angles
@@ -23,6 +25,7 @@ protected:
 
 public:
 
+	virtual void UpdateTransform(const matrix44& Tfm) override;
 };
 
 }

@@ -3,10 +3,15 @@
 namespace Render
 {
 
-//void CLight_OLD_DELETE::CalcLocalFrustum(matrix44& OutFrustum) const
-//{
-//	OutFrustum.perspFovRh(ConeOuter, 1.f, 0.f, Range);
-//}
-////---------------------------------------------------------------------
+CImageBasedLight::CImageBasedLight() = default;
+CImageBasedLight::~CImageBasedLight() = default;
+//---------------------------------------------------------------------
+
+void CImageBasedLight::UpdateTransform(const matrix44& Tfm)
+{
+	// if global, do nothing
+	// if local, update bounds and mark them dirty
+}
+//---------------------------------------------------------------------
 
 }

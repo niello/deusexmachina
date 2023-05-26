@@ -7,6 +7,8 @@
 // A base class for light source instances used for rendering. This is a GPU-friendly implementation
 // created from CLightAttribute found in a 3D scene. Subclass for different source types.
 
+class matrix44;
+
 namespace Render
 {
 typedef std::unique_ptr<class CLight> PLight;
@@ -29,11 +31,11 @@ public:
 
 	// get bounds / test intersection / test visibility in a frustum
 	// calculate intensity at point? for prioritization. or process all lights?
+
+	virtual void UpdateTransform(const matrix44& Tfm) = 0;
 };
 
 }
-
-class matrix44;
 
 namespace Render
 {

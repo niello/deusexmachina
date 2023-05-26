@@ -22,6 +22,7 @@ protected:
 
 public:
 
+	virtual void UpdateTransform(const matrix44& Tfm) override;
 };
 
 }

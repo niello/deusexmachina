@@ -5,7 +5,7 @@
 
 namespace Frame
 {
-FACTORY_CLASS_IMPL(Frame::CIBLAmbientLightAttribute, 'NAAL', Scene::CNodeAttribute);
+FACTORY_CLASS_IMPL(Frame::CIBLAmbientLightAttribute, 'NAAL', Frame::CLightAttribute);
 
 bool CIBLAmbientLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
@@ -43,6 +43,8 @@ Scene::PNodeAttribute CIBLAmbientLightAttribute::Clone()
 	ClonedAttr->_IrradianceMapUID = _IrradianceMapUID;
 	ClonedAttr->_RadianceEnvMapUID = _RadianceEnvMapUID;
 	ClonedAttr->_Range = _Range;
+	ClonedAttr->_CastsShadow = _CastsShadow;
+	ClonedAttr->_DoOcclusionCulling = _DoOcclusionCulling;
 	return ClonedAttr;
 }
 //---------------------------------------------------------------------
@@ -50,7 +52,6 @@ Scene::PNodeAttribute CIBLAmbientLightAttribute::Clone()
 Render::PLight CIBLAmbientLightAttribute::CreateLight(CGraphicsResourceManager& ResMgr) const
 {
 	auto Light = std::make_unique<Render::CImageBasedLight>();
-	//Ptr<Render::CIBLAmbientLight> Light = n_new(Render::CIBLAmbientLight());
 	//Light->IrradianceMap = ResMgr.GetTexture(_IrradianceMapUID, Render::Access_GPU_Read);
 	//Light->RadianceEnvMap = ResMgr.GetTexture(_RadianceEnvMapUID, Render::Access_GPU_Read);
 	return Light;

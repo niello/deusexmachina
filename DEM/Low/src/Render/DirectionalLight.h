@@ -1,5 +1,6 @@
 #pragma once
 #include <Render/Light.h>
+#include <acl/math/vector4_32.h>
 
 // Directional light source used for rendering. Always global.
 
@@ -13,10 +14,11 @@ class CDirectionalLight : public CLight
 
 protected:
 
-	// vector3 or acl::Vector4_32 _Direction;
+	acl::Vector4_32 _Direction;
 
 public:
 
+	virtual void UpdateTransform(const matrix44& Tfm) override;
 };
 
 }

@@ -1,12 +1,13 @@
 #include "DirectionalLight.h"
+#include <Math/Matrix44.h>
 
 namespace Render
 {
 
-//void CLight_OLD_DELETE::CalcLocalFrustum(matrix44& OutFrustum) const
-//{
-//	OutFrustum.perspFovRh(ConeOuter, 1.f, 0.f, Range);
-//}
-////---------------------------------------------------------------------
+void CDirectionalLight::UpdateTransform(const matrix44& Tfm)
+{
+	_Direction = acl::vector_set(-Tfm.AxisZ().x, -Tfm.AxisZ().y, -Tfm.AxisZ().z);
+}
+//---------------------------------------------------------------------
 
 }
