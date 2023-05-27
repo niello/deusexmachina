@@ -26,7 +26,7 @@ protected:
 
 public:
 
-	//!!!TODO: protected!
+	//!!!TODO: protected! And add virtual function to setup renderer? Or handle different lights externally based on type? Not good, dynamic casting or type switch-case.
 	Render::PTexture _IrradianceMap;
 	Render::PTexture _RadianceEnvMap;
 

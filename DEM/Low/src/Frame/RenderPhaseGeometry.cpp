@@ -75,7 +75,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	if (!View.GetGraphicsManager()) FAIL;
 
-	CArray<Scene::CNodeAttribute*>& VisibleObjects = View.GetVisibilityCache();
+	auto& VisibleObjects = View.GetVisibilityCache();
 
 	if (!VisibleObjects.GetCount()) OK;
 
@@ -105,12 +105,11 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		Context.pLightIndices = nullptr;
 	}
 
-	for (CArray<Scene::CNodeAttribute*>::CIterator It = VisibleObjects.Begin(); It != VisibleObjects.End(); ++It)
+	for (auto UID : VisibleObjects)
 	{
-		auto pAttr = (*It)->As<Frame::CRenderableAttribute>();
-		if (!pAttr) continue;
-
-		Render::IRenderable* pRenderable = View.GetRenderObject(*pAttr);
+		//!!!DBG TMP!
+		auto pAttr = static_cast<Frame::CRenderableAttribute*>(View.GetGraphicsScene()->GetRenderables().find(UID)->second.pAttr);
+		Render::IRenderable* pRenderable = View.GetRenderable(UID);
 
 		auto ItRenderer = RenderersByObjectType.find(pRenderable->GetRTTI());
 		if (ItRenderer == RenderersByObjectType.cend()) continue;

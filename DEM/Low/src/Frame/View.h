@@ -76,17 +76,14 @@ protected:
 	std::map<CStrID, Render::PRenderTarget>			RTs;
 	std::map<CStrID, Render::PDepthStencilBuffer>	DSBuffers;
 
-	std::unordered_map<const CRenderableAttribute*, Render::PRenderable> _RenderObjects;
-
 	std::vector<bool>                              _SpatialTreeNodeVisibility;
 	std::map<UPTR, Render::PRenderable>            _Renderables;
 	std::vector<decltype(_Renderables)::node_type> _RenderableNodePool;
 
-	//???!!!separate local and global lights?!
 	std::map<UPTR, Render::PLight>                 _Lights;
 	std::vector<decltype(_Lights)::node_type>      _LightNodePool;
 
-	CArray<Scene::CNodeAttribute*>				VisibilityCache;
+	CArray<UPTR>								VisibilityCache;
 	CArray<Render::CLightRecord>				LightCache;
 	CArray<Render::CImageBasedLight*>			EnvironmentCache;
 	bool										VisibilityCacheDirty = true; //???to flags?
@@ -135,8 +132,8 @@ public:
 	CCameraAttribute*               CreateDefaultCamera(CStrID RenderTargetID, Scene::CSceneNode& ParentNode, bool SetAsCurrent = true);
 
 	bool                            PrecreateRenderObjects();
-	Render::IRenderable*            GetRenderObject(const CRenderableAttribute& Attr);
-	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; }
+	auto&							GetVisibilityCache() { return VisibilityCache; }
+	Render::IRenderable*			GetRenderable(UPTR UID) { auto It = _Renderables.find(UID); return (It == _Renderables.cend()) ? nullptr : It->second.get(); }
 	CArray<Render::CLightRecord>&	GetLightCache() { return LightCache; }
 	auto&							GetEnvironmentCache() { return EnvironmentCache; }
 	UPTR							GetMeshLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;

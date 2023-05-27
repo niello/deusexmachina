@@ -1,6 +1,7 @@
 #include "LightAttribute.h"
 #include <Scene/SceneNode.h>
 #include <Math/AABB.h>
+#include <acl/math/vector4_32.h>
 
 namespace Frame
 {
@@ -50,16 +51,16 @@ bool CLightAttribute::GetGlobalAABB(CAABB& OutBox) const
 {
 	if (!_pNode) return false;
 
-	//if (pScene && _pNode->GetTransformVersion() == LastTransformVersion) //!!! && LocalBox not changed!
-	//{
-	//	// TODO: use Center+Extents SIMD AABB everywhere?!
-	//	const auto Center = SceneRecordHandle->second.BoxCenter;
-	//	const auto Extent = SceneRecordHandle->second.BoxExtent;
-	//	OutBox.Set(
-	//		vector3(acl::vector_get_x(Center), acl::vector_get_y(Center), acl::vector_get_z(Center)),
-	//		vector3(acl::vector_get_x(Extent), acl::vector_get_y(Extent), acl::vector_get_z(Extent)));
-	//}
-	//else
+	if (pScene && _pNode->GetTransformVersion() == LastTransformVersion) //!!! && LocalBox not changed!
+	{
+		// TODO: use Center+Extents SIMD AABB everywhere?!
+		const auto Center = SceneRecordHandle->second.BoxCenter;
+		const auto Extent = SceneRecordHandle->second.BoxExtent;
+		OutBox.Set(
+			vector3(acl::vector_get_x(Center), acl::vector_get_y(Center), acl::vector_get_z(Center)),
+			vector3(acl::vector_get_x(Extent), acl::vector_get_y(Extent), acl::vector_get_z(Extent)));
+	}
+	else
 	{
 		if (GetLocalAABB(OutBox)) return false;
 		OutBox.Transform(_pNode->GetWorldMatrix());

@@ -158,25 +158,6 @@ bool CView::PrecreateRenderObjects()
 }
 //---------------------------------------------------------------------
 
-//!!!IRenderable children may now serve as parts of the rendering cache / render nodes!
-Render::IRenderable* CView::GetRenderObject(const CRenderableAttribute& Attr)
-{
-	auto It = _RenderObjects.find(&Attr);
-	if (It == _RenderObjects.cend())
-	{
-		// Different views on the same GPU will create different renderables,
-		// which is not necessary. Render object cache might be stored in a
-		// graphics manager, but it seems wrong for now. Anyway, GPU resources
-		// are shared between these objects and views.
-		auto Renderable = Attr.CreateRenderable(*_GraphicsMgr);
-		if (!Renderable) return nullptr;
-		It = _RenderObjects.emplace(&Attr, std::move(Renderable)).first;
-	}
-
-	return It->second.get();
-}
-//---------------------------------------------------------------------
-
 UPTR CView::GetMeshLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const
 {
 	switch (MeshLODType)
@@ -475,30 +456,28 @@ bool CView::Render()
 		for (const auto& [UID, Renderable] : _Renderables)
 		{
 			if (Renderable->IsVisible)
-				VisibilityCache.push_back(_pScene->GetRenderables().find(UID)->second.pAttr);
+				VisibilityCache.push_back(UID);
 		}
 
 		EnvironmentCache.Clear();
 		for (const auto& [UID, Light] : _Lights)
 		{
+			//!!!
 			//if (Light->IsVisible)
+
 			if (auto pAttr = _pScene->GetLights().find(UID)->second.pAttr->As<CIBLAmbientLightAttribute>())
 				EnvironmentCache.Add(static_cast<Render::CImageBasedLight*>(Light.get()));
-		}
-		//for (UPTR i = 0; i < VisibilityCache.GetCount(); /**/)
-		//{
-		//	Scene::CNodeAttribute* pAttr = VisibilityCache[i];
-		//	if (pAttr->IsA<CLightAttribute>())
-		//	{
-		//		Render::CLightRecord& Rec = *LightCache.Add();
-		//		Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
-		//		Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
-		//		Rec.UseCount = 0;
-		//		Rec.GPULightIndex = INVALID_INDEX;
 
-		//		//VisibilityCache.RemoveAt(i);
-		//	}
-		//}
+			//	Scene::CNodeAttribute* pAttr = VisibilityCache[i];
+			//	if (pAttr->IsA<CLightAttribute>())
+			//	{
+			//		Render::CLightRecord& Rec = *LightCache.Add();
+			//		Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
+			//		Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
+			//		Rec.UseCount = 0;
+			//		Rec.GPULightIndex = INVALID_INDEX;
+			//	}
+		}
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -562,7 +541,6 @@ void CView::SetGraphicsScene(CGraphicsScene* pScene)
 	if (_pScene == pScene) return;
 
 	_pScene = pScene;
-	_RenderObjects.clear();
 	VisibilityCacheDirty = true;
 
 	///////// NEW RENDER /////////
@@ -571,6 +549,12 @@ void CView::SetGraphicsScene(CGraphicsScene* pScene)
 		auto It = _Renderables.begin();
 		It->second.reset();
 		_RenderableNodePool.push_back(_Renderables.extract(It));
+	}
+	while (!_Lights.empty())
+	{
+		auto It = _Lights.begin();
+		It->second.reset();
+		_LightNodePool.push_back(_Lights.extract(It));
 	}
 }
 //---------------------------------------------------------------------
