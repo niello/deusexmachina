@@ -6,7 +6,7 @@
 #include <Frame/RenderPath.h>
 #include <Frame/GraphicsResourceManager.h>
 #include <Render/Renderable.h>
-#include <Render/Light.h>
+#include <Render/ImageBasedLight.h>
 #include <Render/RenderTarget.h>
 #include <Render/ConstantBuffer.h>
 #include <Render/GPUDriver.h>
@@ -338,73 +338,51 @@ void CView::SynchronizeLights()
 			ItViewObject->second.reset();
 			_LightNodePool.push_back(_Lights.extract(ItViewObject));
 		}
-		else if (ItViewObject == _Lights.cend())
+		else
 		{
-			// A new object in a scene
-			const auto UID = ItSceneObject->first;
-			pRecord = &ItSceneObject->second;
-
-			auto pAttr = static_cast<CLightAttribute*>(pRecord->pAttr);
-
-			// UIDs always grow (unless overflowed), and therefore adding to the end is always the right hint which gives us O(1) insertion
-			//???!!!could compact UIDs when close to overflow! Do in SPS and broadcast changes OldUID->NewUID to all views. With guarantee of
-			//doing this in order, we can keep an iterator and avoid logarithmic searches for each change!
-			if (_LightNodePool.empty())
+			if (ItViewObject == _Lights.cend())
 			{
-				ItViewObject = _Lights.emplace_hint(_Lights.cend(), UID, pAttr->CreateLight(*_GraphicsMgr));
+				// A new object in a scene
+				const auto UID = ItSceneObject->first;
+				pRecord = &ItSceneObject->second;
+
+				auto pAttr = static_cast<CLightAttribute*>(pRecord->pAttr);
+
+				// UIDs always grow (unless overflowed), and therefore adding to the end is always the right hint which gives us O(1) insertion
+				//???!!!could compact UIDs when close to overflow! Do in SPS and broadcast changes OldUID->NewUID to all views. With guarantee of
+				//doing this in order, we can keep an iterator and avoid logarithmic searches for each change!
+				if (_LightNodePool.empty())
+				{
+					ItViewObject = _Lights.emplace_hint(_Lights.cend(), UID, pAttr->CreateLight(*_GraphicsMgr));
+				}
+				else
+				{
+					auto& Node = _LightNodePool.back();
+					Node.key() = UID;
+					Node.mapped() = pAttr->CreateLight(*_GraphicsMgr);
+					ItViewObject = _Lights.insert(_Lights.cend(), std::move(Node));
+					_LightNodePool.pop_back();
+				}
+
+				pLight = ItViewObject->second.get();
+
+				// ligths without octree node are saved to global, others - to local
+				// visibility and intersection with renderables will be calculated only for local lights
+				// prioritization will be made for all lights, but global lights have the same intensity at every point in space
+				// maybe global lights must bypass prioritization, as they use different constants and algorithms in the shader!
 			}
 			else
 			{
-				auto& Node = _LightNodePool.back();
-				Node.key() = UID;
-				Node.mapped() = pAttr->CreateLight(*_GraphicsMgr);
-				ItViewObject = _Lights.insert(_Lights.cend(), std::move(Node));
-				_LightNodePool.pop_back();
+				pRecord = &ItSceneObject->second;
+				pLight = ItViewObject->second.get();
+
+				// mark visibility and intersections dirty if bounds version changed
 			}
-
-			pLight = ItViewObject->second.get();
-
-			//???!!!check tfm version?!
-			pLight->UpdateTransform(pAttr->GetNode()->GetWorldMatrix());
-
-			// ligths without octree node are saved to global, others - to local
-			// visibility and intersection with renderables will be calculated only for local lights
-			// prioritization will be made for all lights, but global lights have the same intensity at every point in space
-			// maybe global lights must bypass prioritization, as they use different constants and algorithms in the shader!
-		}
-		else
-		{
-			pRecord = &ItSceneObject->second;
-			pLight = ItViewObject->second.get();
 
 			//???!!!check tfm version?!
 			pLight->UpdateTransform(pRecord->pAttr->GetNode()->GetWorldMatrix());
-
-			// update light transform if it changed
-			// mark visibility and intersections dirty if bounds version changed
 		}
 	});
-
-	//for (UPTR i = 0; i < VisibilityCache.GetCount(); /**/)
-	//{
-	//	Scene::CNodeAttribute* pAttr = VisibilityCache[i];
-	//	if (pAttr->IsA<CLightAttribute>())
-	//	{
-	//		Render::CLightRecord& Rec = *LightCache.Add();
-	//		Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
-	//		Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
-	//		Rec.UseCount = 0;
-	//		Rec.GPULightIndex = INVALID_INDEX;
-
-	//		//VisibilityCache.RemoveAt(i);
-	//	}
-	//	else if (pAttr->IsA<CIBLAmbientLightAttribute>())
-	//	{
-	//		EnvironmentCache.Add(pAttr->As<CIBLAmbientLightAttribute>());
-	//		//VisibilityCache.RemoveAt(i);
-	//	}
-	//	/*else*/ ++i;
-	//}
 }
 //---------------------------------------------------------------------
 
@@ -480,6 +458,7 @@ bool CView::Render()
 		}
 
 		SynchronizeRenderables();
+		SynchronizeLights();
 		UpdateObjectVisibility(ViewProjChanged);
 
 		// TODO:
@@ -498,6 +477,28 @@ bool CView::Render()
 			if (Renderable->IsVisible)
 				VisibilityCache.push_back(_pScene->GetRenderables().find(UID)->second.pAttr);
 		}
+
+		EnvironmentCache.Clear();
+		for (const auto& [UID, Light] : _Lights)
+		{
+			//if (Light->IsVisible)
+			if (auto pAttr = _pScene->GetLights().find(UID)->second.pAttr->As<CIBLAmbientLightAttribute>())
+				EnvironmentCache.Add(static_cast<Render::CImageBasedLight*>(Light.get()));
+		}
+		//for (UPTR i = 0; i < VisibilityCache.GetCount(); /**/)
+		//{
+		//	Scene::CNodeAttribute* pAttr = VisibilityCache[i];
+		//	if (pAttr->IsA<CLightAttribute>())
+		//	{
+		//		Render::CLightRecord& Rec = *LightCache.Add();
+		//		Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
+		//		Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
+		//		Rec.UseCount = 0;
+		//		Rec.GPULightIndex = INVALID_INDEX;
+
+		//		//VisibilityCache.RemoveAt(i);
+		//	}
+		//}
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

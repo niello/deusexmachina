@@ -22,7 +22,8 @@ namespace Scene
 
 namespace Render
 {
-	typedef std::unique_ptr<class CLight> PLight;
+	using PLight = std::unique_ptr<class CLight>;
+	using PImageBasedLight = std::unique_ptr<class CImageBasedLight>;
 }
 
 namespace DEM::Sys
@@ -87,7 +88,7 @@ protected:
 
 	CArray<Scene::CNodeAttribute*>				VisibilityCache;
 	CArray<Render::CLightRecord>				LightCache;
-	CArray<CIBLAmbientLightAttribute*>				EnvironmentCache;
+	CArray<Render::CImageBasedLight*>			EnvironmentCache;
 	bool										VisibilityCacheDirty = true; //???to flags?
 
 	U32                                         _CameraTfmVersion = 0;
@@ -137,7 +138,7 @@ public:
 	Render::IRenderable*            GetRenderObject(const CRenderableAttribute& Attr);
 	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; }
 	CArray<Render::CLightRecord>&	GetLightCache() { return LightCache; }
-	CArray<CIBLAmbientLightAttribute*>&	GetEnvironmentCache() { return EnvironmentCache; }
+	auto&							GetEnvironmentCache() { return EnvironmentCache; }
 	UPTR							GetMeshLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
 	UPTR							GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
 	bool							RequiresObjectScreenSize() const { return MeshLODType == LOD_ScreenSizeRelative || MeshLODType == LOD_ScreenSizeAbsolute || MaterialLODType == LOD_ScreenSizeRelative || MaterialLODType == LOD_ScreenSizeAbsolute; }

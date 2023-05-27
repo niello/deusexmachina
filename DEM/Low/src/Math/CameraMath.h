@@ -87,11 +87,6 @@ DEM_FORCE_INLINE bool ClipAABB(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg
 	const float NegExtentAlongLookAxis = acl::vector_dot3(AbsLookAxis, BoxNegExtent);
 	const float ClosestPoint = CenterAlongLookAxis + NegExtentAlongLookAxis;
 	const float FarthestPoint = CenterAlongLookAxis - NegExtentAlongLookAxis;
-
-	//!!!DBG TMP! Comment when happens and is expected. Delete when fully commented.
-	n_assert2_dbg(FarthestPoint > Frustum.NearPlane, "ClipAABB: Culling by the near plane happened!");
-	n_assert2_dbg(ClosestPoint < Frustum.FarPlane, "ClipAABB: Culling by the far plane happened!");
-
 	return (FarthestPoint > Frustum.NearPlane && ClosestPoint < Frustum.FarPlane);
 }
 //---------------------------------------------------------------------

@@ -1,4 +1,5 @@
 #include "ImageBasedLight.h"
+#include <Render/Texture.h>
 
 namespace Render
 {

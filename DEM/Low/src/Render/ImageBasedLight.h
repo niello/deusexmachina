@@ -1,4 +1,5 @@
 #pragma once
+#include <Data/Ptr.h>
 #include <Render/Light.h>
 
 // Image-based light (IBL) source used for rendering. Typically used for
@@ -14,7 +15,8 @@
 
 namespace Render
 {
-typedef std::unique_ptr<class CImageBasedLight> PImageBasedLight;
+using PTexture = Ptr<class CTexture>;
+using PImageBasedLight = std::unique_ptr<class CImageBasedLight>;
 
 class CImageBasedLight : public CLight
 {
@@ -24,6 +26,7 @@ protected:
 
 public:
 
+	//!!!TODO: protected!
 	Render::PTexture _IrradianceMap;
 	Render::PTexture _RadianceEnvMap;
 

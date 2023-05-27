@@ -355,10 +355,6 @@ static DEM_FORCE_INLINE U8 ClipCube(acl::Vector4_32Arg0 Bounds, acl::Vector4_32A
 		const float FarthestPoint = CenterAlongLookAxis - NegExtentAlongLookAxis;
 		HasVisiblePart = (FarthestPoint > Frustum.NearPlane && ClosestPoint < Frustum.FarPlane);
 		HasInvisiblePart = !HasVisiblePart || (FarthestPoint > Frustum.FarPlane || ClosestPoint < Frustum.NearPlane);
-
-		//!!!DBG TMP! Comment when happens and is expected. Delete when fully commented.
-		n_assert2_dbg(FarthestPoint > Frustum.NearPlane, "ClipCube: Culling by the near plane happened!");
-		n_assert2_dbg(ClosestPoint < Frustum.FarPlane, "ClipCube: Culling by the far plane happened!");
 	}
 
 	HasInvisiblePart = HasInvisiblePart || acl::vector_any_less_than(CenterDistance, acl::vector_neg(ProjectedNegExtent));

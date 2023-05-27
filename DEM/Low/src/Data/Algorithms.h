@@ -74,13 +74,13 @@ DEM_FORCE_INLINE void SortedUnion(TCollectionA&& a, TCollectionB&& b, TLess Less
 	{
 		TIteratorA ItA;
 		TIteratorB ItB;
-		if (IsEndB || Less(*ItCurrA, *ItCurrB))
+		if (IsEndB || (!IsEndA && Less(*ItCurrA, *ItCurrB)))
 		{
 			ItA = ItCurrA++;
 			ItB = b.end();
 			IsEndA = (ItCurrA == a.cend());
 		}
-		else if (IsEndA || Less(*ItCurrB, *ItCurrA))
+		else if (IsEndA || (!IsEndB && Less(*ItCurrB, *ItCurrA)))
 		{
 			ItA = a.end();
 			ItB = ItCurrB++;

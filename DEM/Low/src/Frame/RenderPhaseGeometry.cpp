@@ -16,7 +16,7 @@
 #include <Render/GPUDriver.h>
 #include <Render/RenderTarget.h>
 #include <Render/DepthStencilBuffer.h>
-#include <Render/Light.h>
+#include <Render/ImageBasedLight.h>
 #include <Scene/SceneNode.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
@@ -238,17 +238,16 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 		//???need visibility check for env maps? or select through separate spatial query?! SPS.FindClosest(COI, AttrRTTI, MaxCount)!
 		//may refresh only when COI changes, because maps are considered static
-		CArray<CIBLAmbientLightAttribute*>& EnvCache = View.GetEnvironmentCache();
+		auto& EnvCache = View.GetEnvironmentCache();
 		if (EnvCache.GetCount())
 		{
-			CIBLAmbientLightAttribute* pGlobalAmbientLight = EnvCache[0];
+			auto* pGlobalAmbientLight = EnvCache[0];
 
-			NOT_IMPLEMENTED;
-			//if (RsrcIrradianceMap)
-			//	RsrcIrradianceMap->Apply(*pGPU, pGlobalAmbientLight->GetIrradianceMap());
+			if (RsrcIrradianceMap)
+				RsrcIrradianceMap->Apply(*pGPU, pGlobalAmbientLight->_IrradianceMap);
 
-			//if (RsrcRadianceEnvMap)
-			//	RsrcRadianceEnvMap->Apply(*pGPU, pGlobalAmbientLight->GetRadianceEnvMap());
+			if (RsrcRadianceEnvMap)
+				RsrcRadianceEnvMap->Apply(*pGPU, pGlobalAmbientLight->_RadianceEnvMap);
 
 			if (SampTrilinearCube)
 				SampTrilinearCube->Apply(*pGPU, View.TrilinearCubeSampler);
