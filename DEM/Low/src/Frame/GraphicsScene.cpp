@@ -265,7 +265,7 @@ CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CSpatialRecord>
 }
 //---------------------------------------------------------------------
 
-void CGraphicsScene::UpdateObject(HRecord Handle, const CAABB& GlobalBox)
+void CGraphicsScene::UpdateObjectBounds(HRecord Handle, const CAABB& GlobalBox)
 {
 	auto& Record = Handle->second;
 

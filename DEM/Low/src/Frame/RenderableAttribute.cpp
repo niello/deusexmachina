@@ -33,7 +33,7 @@ void CRenderableAttribute::UpdateInGraphicsScene(CGraphicsScene& Scene)
 	else if (_pNode->GetTransformVersion() != LastTransformVersion) //!!! || LocalBox changed!
 	{
 		AABB.Transform(_pNode->GetWorldMatrix());
-		Scene.UpdateRenderable(SceneRecordHandle, AABB);
+		Scene.UpdateRenderableBounds(SceneRecordHandle, AABB);
 		LastTransformVersion = _pNode->GetTransformVersion();
 	}
 }

@@ -83,7 +83,7 @@ protected:
 	void    RemoveSingleObjectFromNode(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode);
 
 	HRecord AddObject(std::map<UPTR, CSpatialRecord>& Storage, UPTR UID, const CAABB& GlobalBox, Scene::CNodeAttribute& Attr);
-	void    UpdateObject(HRecord Handle, const CAABB& GlobalBox);
+	void    UpdateObjectBounds(HRecord Handle, const CAABB& GlobalBox);
 	void    RemoveObject(std::map<UPTR, CSpatialRecord>& Storage, HRecord Handle);
 
 public:
@@ -91,12 +91,12 @@ public:
 	void            Init(const vector3& Center, float Size, U8 HierarchyDepth);
 
 	HRecord         AddRenderable(const CAABB& GlobalBox, CRenderableAttribute& RenderableAttr);
-	void            UpdateRenderable(HRecord Handle, const CAABB& GlobalBox) { UpdateObject(Handle, GlobalBox); }
+	void            UpdateRenderableBounds(HRecord Handle, const CAABB& GlobalBox) { UpdateObjectBounds(Handle, GlobalBox); }
 	void            RemoveRenderable(HRecord Handle) { RemoveObject(_Renderables, Handle); }
 	const auto&     GetRenderables() const { return _Renderables; }
 
 	HRecord         AddLight(const CAABB& GlobalBox, CLightAttribute& LightAttr);
-	void            UpdateLight(HRecord Handle, const CAABB& GlobalBox) { UpdateObject(Handle, GlobalBox); }
+	void            UpdateLightBounds(HRecord Handle, const CAABB& GlobalBox) { UpdateObjectBounds(Handle, GlobalBox); }
 	void            RemoveLight(HRecord Handle) { RemoveObject(_Lights, Handle); }
 	const auto&     GetLights() const { return _Lights; }
 
