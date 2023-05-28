@@ -75,10 +75,12 @@ void CRenderableAttribute::OnActivityChanged(bool Active)
 
 void CRenderableAttribute::RenderDebug(Debug::CDebugDraw& DebugDraw) const
 {
+	// Draw world-space AABB
 	CAABB AABB;
 	if (GetGlobalAABB(AABB))
 		DebugDraw.DrawBoxWireframe(AABB, Render::ColorRGBA(160, 220, 255, 255), 1.f);
 
+	// Draw spatial tree node bounds
 	if (pScene)
 		DebugDraw.DrawBoxWireframe(pScene->GetNodeAABB(SceneRecordHandle->second.NodeIndex, true), Render::ColorRGBA(160, 255, 160, 255), 1.f);
 }

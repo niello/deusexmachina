@@ -41,7 +41,13 @@ Scene::PNodeAttribute CSkyboxAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
-Render::PRenderable CSkyboxAttribute::CreateRenderable(CGraphicsResourceManager& ResMgr) const
+Render::PRenderable CSkyboxAttribute::CreateRenderable() const
+{
+	return std::make_unique<Render::CSkybox>();
+}
+//---------------------------------------------------------------------
+
+void CSkyboxAttribute::UpdateRenderable(CGraphicsResourceManager& ResMgr, Render::IRenderable& Renderable) const
 {
 	CStrID MeshUID("#Mesh_BoxCW");
 	if (!ResMgr.GetResourceManager()->FindResource(MeshUID))
@@ -50,12 +56,9 @@ Render::PRenderable CSkyboxAttribute::CreateRenderable(CGraphicsResourceManager&
 		ResMgr.GetResourceManager()->RegisterResource(MeshUID.CStr(), n_new(Resources::CMeshGeneratorBox(true)));
 	}
 
-	auto pSkybox = n_new(Render::CSkybox());
-
+	auto pSkybox = static_cast<Render::CSkybox*>(&Renderable);
 	pSkybox->Mesh = MeshUID ? ResMgr.GetMesh(MeshUID) : nullptr;
 	pSkybox->Material = _MaterialUID ? ResMgr.GetMaterial(_MaterialUID) : nullptr;
-
-	return Render::PRenderable(pSkybox);
 }
 //---------------------------------------------------------------------
 

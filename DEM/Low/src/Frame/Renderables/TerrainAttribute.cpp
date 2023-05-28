@@ -76,24 +76,19 @@ bool CTerrainAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 }
 //---------------------------------------------------------------------
 
-Render::PRenderable CTerrainAttribute::CreateRenderable(CGraphicsResourceManager& ResMgr) const
+Render::PRenderable CTerrainAttribute::CreateRenderable() const
 {
-	if (!_CDLODData)
-	{
-		n_assert2(false, "CTerrainAttribute::CreateRenderable() > ValidateResources must be called before this!");
-		FAIL;
-	}
+	return std::make_unique<Render::CTerrain>();
+}
+//---------------------------------------------------------------------
 
-	if (!ResMgr.GetGPU()) FAIL;
-
+void CTerrainAttribute::UpdateRenderable(CGraphicsResourceManager& ResMgr, Render::IRenderable& Renderable) const
+{
 	// HeightMap support check
 	//!!!write R32F variant!
-	if (!ResMgr.GetGPU()->CheckCaps(Render::Caps_VSTex_R16)) FAIL;
+	if (!ResMgr.GetGPU() || !ResMgr.GetGPU()->CheckCaps(Render::Caps_VSTex_R16)) return;
 
-	auto pTerrain = n_new(Render::CTerrain());
-
-	const auto PatchSize = _CDLODData->GetPatchSize();
-	if (!Math::IsPow2(PatchSize) || PatchSize < 4) FAIL;
+	auto pTerrain = static_cast<Render::CTerrain*>(&Renderable);
 
 	// TODO: don't copy, store once!
 	pTerrain->InvSplatSizeX = _InvSplatSizeX;
@@ -103,23 +98,32 @@ Render::PRenderable CTerrainAttribute::CreateRenderable(CGraphicsResourceManager
 	pTerrain->Material = _MaterialUID ? ResMgr.GetMaterial(_MaterialUID) : nullptr;
 	pTerrain->HeightMap = _HeightMapUID ? ResMgr.GetTexture(_HeightMapUID, Render::Access_GPU_Read) : nullptr;
 
-	CString PatchName;
-	PatchName.Format("#Mesh_Patch%dx%d", PatchSize, PatchSize);
-	CStrID MeshUID(PatchName);
-	if (!ResMgr.GetResourceManager()->FindResource(MeshUID))
-		ResMgr.GetResourceManager()->RegisterResource(MeshUID.CStr(), n_new(Resources::CMeshGeneratorQuadPatch(PatchSize)));
+	if (_CDLODData)
+	{
+		const auto PatchSize = _CDLODData->GetPatchSize();
+		//if (!Math::IsPow2(PatchSize) || PatchSize < 4) FAIL;
 
-	pTerrain->PatchMesh = ResMgr.GetMesh(MeshUID);
+		CString PatchName;
+		PatchName.Format("#Mesh_Patch%dx%d", PatchSize, PatchSize);
+		CStrID MeshUID(PatchName);
+		if (!ResMgr.GetResourceManager()->FindResource(MeshUID))
+			ResMgr.GetResourceManager()->RegisterResource(MeshUID.CStr(), n_new(Resources::CMeshGeneratorQuadPatch(PatchSize)));
 
-	const auto QPatchSize = (PatchSize >> 1);
-	PatchName.Format("#Mesh_Patch%dx%d", QPatchSize, QPatchSize);
-	CStrID QuarterMeshUID(PatchName);
-	if (!ResMgr.GetResourceManager()->FindResource(QuarterMeshUID))
-		ResMgr.GetResourceManager()->RegisterResource(QuarterMeshUID.CStr(), n_new(Resources::CMeshGeneratorQuadPatch(QPatchSize)));
+		pTerrain->PatchMesh = ResMgr.GetMesh(MeshUID);
 
-	pTerrain->QuarterPatchMesh = ResMgr.GetMesh(QuarterMeshUID);
+		const auto QPatchSize = (PatchSize >> 1);
+		PatchName.Format("#Mesh_Patch%dx%d", QPatchSize, QPatchSize);
+		CStrID QuarterMeshUID(PatchName);
+		if (!ResMgr.GetResourceManager()->FindResource(QuarterMeshUID))
+			ResMgr.GetResourceManager()->RegisterResource(QuarterMeshUID.CStr(), n_new(Resources::CMeshGeneratorQuadPatch(QPatchSize)));
 
-	return Render::PRenderable(pTerrain);
+		pTerrain->QuarterPatchMesh = ResMgr.GetMesh(QuarterMeshUID);
+	}
+	else
+	{
+		pTerrain->PatchMesh = nullptr;
+		pTerrain->QuarterPatchMesh = nullptr;
+	}
 }
 //---------------------------------------------------------------------
 

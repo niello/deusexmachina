@@ -4,9 +4,9 @@
 namespace Render
 {
 
-void CDirectionalLight::UpdateTransform(const matrix44& Tfm)
+void CDirectionalLight::SetDirection(const vector3& Dir)
 {
-	_Direction = acl::vector_set(-Tfm.AxisZ().x, -Tfm.AxisZ().y, -Tfm.AxisZ().z);
+	_Direction = acl::vector_set(Dir.x, Dir.y, Dir.z);
 }
 //---------------------------------------------------------------------
 

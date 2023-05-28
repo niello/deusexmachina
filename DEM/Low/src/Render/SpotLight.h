@@ -25,7 +25,7 @@ protected:
 
 public:
 
-	virtual void UpdateTransform(const matrix44& Tfm) override;
+	void SetDirection(const vector3& Dir);
 };
 
 }

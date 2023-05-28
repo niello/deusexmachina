@@ -22,7 +22,8 @@ public:
 
 	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
 	virtual Scene::PNodeAttribute Clone() override;
-	virtual Render::PLight        CreateLight(CGraphicsResourceManager& ResMgr) const override;
+	virtual Render::PLight        CreateLight() const override;
+	virtual void                  UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const override;
 	virtual bool                  GetLocalAABB(CAABB& OutBox) const override;
 };
 

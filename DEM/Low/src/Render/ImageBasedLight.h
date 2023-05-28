@@ -32,8 +32,6 @@ public:
 
 	CImageBasedLight();
 	virtual ~CImageBasedLight() override;
-
-	virtual void UpdateTransform(const matrix44& Tfm) override;
 };
 
 }

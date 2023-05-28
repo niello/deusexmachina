@@ -9,7 +9,7 @@ class CAABB;
 
 namespace Render
 {
-	typedef std::unique_ptr<class CLight> PLight;
+	using PLight = std::unique_ptr<class CLight>;
 }
 
 namespace Frame
@@ -35,16 +35,16 @@ public:
 
 	CLightAttribute();
 
-	virtual Render::PLight CreateLight(CGraphicsResourceManager& ResMgr) const = 0;
+	virtual Render::PLight CreateLight() const = 0;
+	virtual void           UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const = 0;
 	virtual bool           GetLocalAABB(CAABB& OutBox) const = 0;
 	bool                   GetGlobalAABB(CAABB& OutBox) const;
 	void                   UpdateInGraphicsScene(CGraphicsScene& Scene);
 
-	//???in attr or GPU light?
 	// get intensity at point
 	// calc intersection / influence for AABB or OBB - get max intensity for box (= get intensity at closest point)
 };
 
-typedef Ptr<CLightAttribute> PLightAttribute;
+using PLightAttribute = Ptr<CLightAttribute>;
 
 }

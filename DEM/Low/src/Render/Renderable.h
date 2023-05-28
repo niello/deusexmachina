@@ -7,6 +7,7 @@ namespace Render
 {
 typedef std::unique_ptr<class IRenderable> PRenderable;
 
+// FIXME: with fields it is a base class and not an interface!
 class IRenderable: public Core::CRTTIBaseClass
 {
 	RTTI_CLASS_DECL(Render::IRenderable, Core::CRTTIBaseClass);
@@ -25,7 +26,6 @@ protected:
 
 public:
 
-	// FIXME: with fields it is a base class and not an interface!
 	bool IsVisible = true;
 	U32  BoundsVersion = 0;
 };

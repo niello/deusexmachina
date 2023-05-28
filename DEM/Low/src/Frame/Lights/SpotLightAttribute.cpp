@@ -72,11 +72,16 @@ Scene::PNodeAttribute CSpotLightAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
-Render::PLight CSpotLightAttribute::CreateLight(CGraphicsResourceManager& ResMgr) const
+Render::PLight CSpotLightAttribute::CreateLight() const
 {
-	auto Light = std::make_unique<Render::CSpotLight>();
-	//Light->... = ...;
-	return Light;
+	return std::make_unique<Render::CSpotLight>();
+}
+//---------------------------------------------------------------------
+
+void CSpotLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const
+{
+	//auto pLight = static_cast<Render::CSpotLight*>(&Light);
+	//if (_pNode) pLight->SetDirection(-_pNode->GetWorldMatrix().AxisZ());
 }
 //---------------------------------------------------------------------
 

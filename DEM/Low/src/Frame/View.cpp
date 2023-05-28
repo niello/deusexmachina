@@ -243,7 +243,7 @@ void CView::SynchronizeRenderables()
 	DEM::Algo::SortedUnion(_pScene->GetRenderables(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
 		[this](auto ItSceneObject, auto ItViewObject)
 	{
-		const CGraphicsScene::CObjectRecord* pRecord = nullptr;
+		const CGraphicsScene::CSpatialRecord* pRecord = nullptr;
 		Render::IRenderable* pRenderable = nullptr;
 
 		if (ItSceneObject == _pScene->GetRenderables().cend())
@@ -269,18 +269,22 @@ void CView::SynchronizeRenderables()
 			//doing this in order, we can keep an iterator and avoid logarithmic searches for each change!
 			if (_RenderableNodePool.empty())
 			{
-				ItViewObject = _Renderables.emplace_hint(_Renderables.cend(), UID, pAttr->CreateRenderable(*_GraphicsMgr));
+				ItViewObject = _Renderables.emplace_hint(_Renderables.cend(), UID, pAttr->CreateRenderable());
 			}
 			else
 			{
 				auto& Node = _RenderableNodePool.back();
 				Node.key() = UID;
-				Node.mapped() = pAttr->CreateRenderable(*_GraphicsMgr);
+				Node.mapped() = pAttr->CreateRenderable();
 				ItViewObject = _Renderables.insert(_Renderables.cend(), std::move(Node));
 				_RenderableNodePool.pop_back();
 			}
 
 			pRenderable = ItViewObject->second.get();
+
+			// TODO: if attr data version changed!
+			// FIXME: do only for visible objects!
+			pAttr->UpdateRenderable(*_GraphicsMgr, *pRenderable);
 
 			// TODO:
 			// add to sorted queues (or test visibility first and delay adding to queues until visible the first time?)
@@ -292,6 +296,12 @@ void CView::SynchronizeRenderables()
 		{
 			pRecord = &ItSceneObject->second;
 			pRenderable = ItViewObject->second.get();
+
+			//!!!CODE DUPLICATION, SEE UpdateRenderable ABOVE! IF OK, FIX IN LIGHTS TOO!
+			// TODO: if attr data version changed!
+			// FIXME: do only for visible objects!
+			auto pAttr = static_cast<CRenderableAttribute*>(pRecord->pAttr);
+			pAttr->UpdateRenderable(*_GraphicsMgr, *pRenderable);
 
 			//???where and when to update world matrix? store it cached in a PRenderable or get from scene object on parallel iteration?
 
@@ -309,7 +319,7 @@ void CView::SynchronizeLights()
 	DEM::Algo::SortedUnion(_pScene->GetLights(), _Lights, [](const auto& a, const auto& b) { return a.first < b.first; },
 		[this](auto ItSceneObject, auto ItViewObject)
 	{
-		const CGraphicsScene::CObjectRecord* pRecord = nullptr;
+		const CGraphicsScene::CSpatialRecord* pRecord = nullptr;
 		Render::CLight* pLight = nullptr;
 
 		if (ItSceneObject == _pScene->GetLights().cend())
@@ -334,13 +344,13 @@ void CView::SynchronizeLights()
 				//doing this in order, we can keep an iterator and avoid logarithmic searches for each change!
 				if (_LightNodePool.empty())
 				{
-					ItViewObject = _Lights.emplace_hint(_Lights.cend(), UID, pAttr->CreateLight(*_GraphicsMgr));
+					ItViewObject = _Lights.emplace_hint(_Lights.cend(), UID, pAttr->CreateLight());
 				}
 				else
 				{
 					auto& Node = _LightNodePool.back();
 					Node.key() = UID;
-					Node.mapped() = pAttr->CreateLight(*_GraphicsMgr);
+					Node.mapped() = pAttr->CreateLight();
 					ItViewObject = _Lights.insert(_Lights.cend(), std::move(Node));
 					_LightNodePool.pop_back();
 				}
@@ -358,10 +368,14 @@ void CView::SynchronizeLights()
 				pLight = ItViewObject->second.get();
 
 				// mark visibility and intersections dirty if bounds version changed
+				// NB: for spot light this needs to be updated when tfm changes too, if cone is used for isect. Other lights are transform independent.
+				//!!!also remember that intersection with objects is view independent, but in view we can update only visible objects and lights.
 			}
 
-			//???!!!check tfm version?!
-			pLight->UpdateTransform(pRecord->pAttr->GetNode()->GetWorldMatrix());
+			// TODO: if attr data version changed!
+			// FIXME: do only for visible objects!
+			auto pAttr = static_cast<CLightAttribute*>(pRecord->pAttr);
+			pAttr->UpdateLight(*_GraphicsMgr, *pLight);
 		}
 	});
 }
@@ -381,24 +395,26 @@ void CView::UpdateObjectVisibility(bool ViewProjChanged)
 	auto ItViewObject = _Renderables.cbegin();
 	for (; ItViewObject != _Renderables.cend(); ++ItSceneObject, ++ItViewObject)
 	{
-		const CGraphicsScene::CObjectRecord& Record = ItSceneObject->second;
+		const CGraphicsScene::CSpatialRecord& Record = ItSceneObject->second;
 		Render::IRenderable* pRenderable = ItViewObject->second.get();
-		if (ViewProjChanged || pRenderable->BoundsVersion != Record.BoundsVersion)
+		if (!Record.BoundsVersion)
 		{
-			if (Record.BoundsValid)
+			// Objects with invalid bounds are always visible. E.g. skybox.
+			pRenderable->IsVisible = true;
+			pRenderable->BoundsVersion = 0;
+		}
+		else if (ViewProjChanged || pRenderable->BoundsVersion != Record.BoundsVersion)
+		{
+			const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
+			if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
 			{
-				const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
-				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
+				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
 				{
-					if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
-					{
-						pRenderable->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, Frustum);
-					}
-					else pRenderable->IsVisible = true;
+					pRenderable->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, Frustum);
 				}
-				else pRenderable->IsVisible = false;
+				else pRenderable->IsVisible = true;
 			}
-			else pRenderable->IsVisible = true; // Objects with invalid bounds are always visible. E.g. skybox.
+			else pRenderable->IsVisible = false;
 
 			pRenderable->BoundsVersion = Record.BoundsVersion;
 		}

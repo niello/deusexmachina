@@ -21,8 +21,6 @@ protected:
 	//!!!can store data so that it is easily copied into the GPU buffer! aligned 16, with paddings.
 
 public:
-
-	virtual void UpdateTransform(const matrix44& Tfm) override;
 };
 
 }

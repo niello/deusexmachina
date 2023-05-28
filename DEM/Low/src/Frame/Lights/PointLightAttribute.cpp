@@ -60,11 +60,17 @@ Scene::PNodeAttribute CPointLightAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
-Render::PLight CPointLightAttribute::CreateLight(CGraphicsResourceManager& ResMgr) const
+Render::PLight CPointLightAttribute::CreateLight() const
 {
-	auto Light = std::make_unique<Render::CPointLight>();
-	//Light->... = ...;
-	return Light;
+	return std::make_unique<Render::CPointLight>();
+}
+//---------------------------------------------------------------------
+
+void CPointLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const
+{
+	//auto pLight = static_cast<Render::CPointLight*>(&Light);
+	// update pos
+	//???apply scale?
 }
 //---------------------------------------------------------------------
 

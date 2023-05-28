@@ -1,5 +1,6 @@
 #include "DirectionalLightAttribute.h"
 #include <Render/DirectionalLight.h>
+#include <Scene/SceneNode.h>
 #include <Math/AABB.h>
 #include <Core/Factory.h>
 #include <IO/BinaryReader.h>
@@ -49,13 +50,18 @@ Scene::PNodeAttribute CDirectionalLightAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
-Render::PLight CDirectionalLightAttribute::CreateLight(CGraphicsResourceManager& ResMgr) const
+Render::PLight CDirectionalLightAttribute::CreateLight() const
 {
-	auto Light = std::make_unique<Render::CDirectionalLight>();
-	//Light->Direction = ...; //???or delay to transform update? or call initial Light->UpdateTransform(_pNode->GetWorldMatrix())?
-	//Light->Color
-	//Light->Intensity
-	return Light;
+	return std::make_unique<Render::CDirectionalLight>();
+}
+//---------------------------------------------------------------------
+
+void CDirectionalLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const
+{
+	auto pLight = static_cast<Render::CDirectionalLight*>(&Light);
+	if (_pNode) pLight->SetDirection(-_pNode->GetWorldMatrix().AxisZ());
+	//pLight->Color
+	//pLight->Intensity
 }
 //---------------------------------------------------------------------
 

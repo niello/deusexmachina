@@ -50,19 +50,28 @@ Scene::PNodeAttribute CIBLAmbientLightAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
-Render::PLight CIBLAmbientLightAttribute::CreateLight(CGraphicsResourceManager& ResMgr) const
+Render::PLight CIBLAmbientLightAttribute::CreateLight() const
 {
-	auto Light = std::make_unique<Render::CImageBasedLight>();
-	Light->_IrradianceMap = ResMgr.GetTexture(_IrradianceMapUID, Render::Access_GPU_Read);
-	Light->_RadianceEnvMap = ResMgr.GetTexture(_RadianceEnvMapUID, Render::Access_GPU_Read);
-	return Light;
+	return std::make_unique<Render::CImageBasedLight>();
+}
+//---------------------------------------------------------------------
+
+void CIBLAmbientLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const
+{
+	auto pLight = static_cast<Render::CImageBasedLight*>(&Light);
+	pLight->_IrradianceMap = ResMgr.GetTexture(_IrradianceMapUID, Render::Access_GPU_Read);
+	pLight->_RadianceEnvMap = ResMgr.GetTexture(_RadianceEnvMapUID, Render::Access_GPU_Read);
+
+	if (!IsGlobal())
+	{
+		// update bounds and mark them dirty
+	}
 }
 //---------------------------------------------------------------------
 
 bool CIBLAmbientLightAttribute::GetLocalAABB(CAABB& OutBox) const
 {
-	// Negative range is a special value for global IBL
-	if (std::signbit(_Range))
+	if (IsGlobal())
 	{
 		//???or simply return false and consider it as an omnipresent light?!
 		OutBox.Set(vector3::Zero, vector3::Zero);

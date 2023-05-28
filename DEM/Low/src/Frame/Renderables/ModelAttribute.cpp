@@ -74,15 +74,18 @@ bool CModelAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 }
 //---------------------------------------------------------------------
 
-Render::PRenderable CModelAttribute::CreateRenderable(CGraphicsResourceManager& ResMgr) const
+Render::PRenderable CModelAttribute::CreateRenderable() const
 {
-	auto pModel = n_new(Render::CModel());
+	return std::make_unique<Render::CModel>();
+}
+//---------------------------------------------------------------------
 
+void CModelAttribute::UpdateRenderable(CGraphicsResourceManager& ResMgr, Render::IRenderable& Renderable) const
+{
+	auto pModel = static_cast<Render::CModel*>(&Renderable);
 	pModel->Mesh = _MeshUID ? ResMgr.GetMesh(_MeshUID) : nullptr;
 	pModel->Material = _MaterialUID ? ResMgr.GetMaterial(_MaterialUID) : nullptr;
 	pModel->MeshGroupIndex = _MeshGroupIndex;
-
-	return Render::PRenderable(pModel);
 }
 //---------------------------------------------------------------------
 

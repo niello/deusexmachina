@@ -28,11 +28,6 @@ public:
 
 	// color and intensity? even for IBL?
 	//???shadow casting flag etc here?
-
-	// get bounds / test intersection / test visibility in a frustum
-	// calculate intensity at point? for prioritization. or process all lights?
-
-	virtual void UpdateTransform(const matrix44& Tfm) = 0;
 };
 
 }

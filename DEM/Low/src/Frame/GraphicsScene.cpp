@@ -223,9 +223,9 @@ void CGraphicsScene::RemoveSingleObjectFromNode(U32 NodeIndex, TMorton NodeMorto
 }
 //---------------------------------------------------------------------
 
-CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CObjectRecord>& Storage, UPTR UID, const CAABB& GlobalBox, Scene::CNodeAttribute& Attr)
+CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CSpatialRecord>& Storage, UPTR UID, const CAABB& GlobalBox, Scene::CNodeAttribute& Attr)
 {
-	CObjectRecord Record;
+	CSpatialRecord Record;
 	Record.pAttr = &Attr;
 
 	// TODO: store AABB as SIMD center-extents everywhere?!
@@ -233,20 +233,21 @@ CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CObjectRecord>&
 	const auto HalfMax = acl::vector_mul(acl::vector_set(GlobalBox.Max.x, GlobalBox.Max.y, GlobalBox.Max.z), 0.5f);
 	Record.BoxCenter = acl::vector_add(HalfMax, HalfMin);
 	Record.BoxExtent = acl::vector_sub(HalfMax, HalfMin);
-	Record.BoundsVersion = 1;
-	Record.BoundsValid = !acl::vector_any_less_equal3(Record.BoxExtent, acl::vector_set(0.f));
 
-	if (Record.BoundsValid)
+	// Check bounds validity
+	if (!acl::vector_any_less_equal3(Record.BoxExtent, acl::vector_set(0.f)))
 	{
 		const auto NodeMortonCode = CalculateMortonCode(Record.BoxCenter, Record.BoxExtent);
 		Record.NodeIndex = AddSingleObjectToNode(NodeMortonCode, 0);
 		Record.NodeMortonCode = NodeMortonCode;
+		Record.BoundsVersion = 1;
 	}
 	else
 	{
 		// Objects with empty and invalid bounds are considered being outside the spatial tree
 		Record.NodeIndex = NO_SPATIAL_TREE_NODE;
 		Record.NodeMortonCode = 0;
+		Record.BoundsVersion = 0;
 	}
 
 	if (_ObjectNodePool.empty())
@@ -258,7 +259,7 @@ CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CObjectRecord>&
 		auto Node = std::move(_ObjectNodePool.back());
 		_ObjectNodePool.pop_back();
 		Node.key() = UID;
-		new (&Node.mapped()) CObjectRecord(std::move(Record));
+		new (&Node.mapped()) CSpatialRecord(std::move(Record));
 		return Storage.insert(Storage.cend(), std::move(Node));
 	}
 }
@@ -278,12 +279,13 @@ void CGraphicsScene::UpdateObject(HRecord Handle, const CAABB& GlobalBox)
 	if (acl::vector_all_near_equal3(BoxCenter, Record.BoxCenter) && acl::vector_all_near_equal3(BoxExtent, Record.BoxExtent))
 		return;
 
+	const bool BoundsValid = !acl::vector_any_less_equal3(Record.BoxExtent, acl::vector_set(0.f));
+
 	Record.BoxCenter = BoxCenter;
 	Record.BoxExtent = BoxExtent;
-	if (++Record.BoundsVersion == 0) ++Record.BoundsVersion; // 0 is used for a forced update, don't assign it as a valid version
-	Record.BoundsValid = !acl::vector_any_less_equal3(Record.BoxExtent, acl::vector_set(0.f));
+	Record.BoundsVersion = BoundsValid ? std::max<U32>(1, Record.BoundsVersion + 1) : 0;
 
-	const auto NodeMortonCode = Record.BoundsValid ? CalculateMortonCode(Record.BoxCenter, Record.BoxExtent) : 0;
+	const auto NodeMortonCode = BoundsValid ? CalculateMortonCode(Record.BoxCenter, Record.BoxExtent) : 0;
 	if (Record.NodeMortonCode != NodeMortonCode)
 	{
 		const auto LCAMortonCode = MortonLCA<TREE_DIMENSIONS>(Record.NodeMortonCode, NodeMortonCode);
@@ -295,13 +297,13 @@ void CGraphicsScene::UpdateObject(HRecord Handle, const CAABB& GlobalBox)
 //---------------------------------------------------------------------
 
 // TODO: check safety. If causes issues, can use UID instead of an iterator, but this makes erase logarithmic instead of constant.
-void CGraphicsScene::RemoveObject(std::map<UPTR, CObjectRecord>& Storage, HRecord Handle)
+void CGraphicsScene::RemoveObject(std::map<UPTR, CSpatialRecord>& Storage, HRecord Handle)
 {
 	//if (Handle == Storage.cend()) return;
 
 	RemoveSingleObjectFromNode(Handle->second.NodeIndex, Handle->second.NodeMortonCode, 0);
 	_ObjectNodePool.push_back(Storage.extract(Handle));
-	_ObjectNodePool.back().mapped().~CObjectRecord();
+	_ObjectNodePool.back().mapped().~CSpatialRecord();
 }
 //---------------------------------------------------------------------
 

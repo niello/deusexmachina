@@ -47,18 +47,17 @@ class CGraphicsScene
 {
 public:
 
-	struct CObjectRecord
+	struct CSpatialRecord
 	{
 		acl::Vector4_32        BoxCenter;
 		acl::Vector4_32        BoxExtent;
 		Scene::CNodeAttribute* pAttr = nullptr;
 		TMorton                NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
 		U32                    NodeIndex = NO_SPATIAL_TREE_NODE;
-		U32                    BoundsVersion = 1;
-		bool                   BoundsValid = false;
+		U32                    BoundsVersion = 1;  // 0 for invalid bounds (e.g. infinite)
 	};
 
-	using HRecord = std::map<UPTR, CObjectRecord>::iterator;
+	using HRecord = std::map<UPTR, CSpatialRecord>::iterator;
 
 protected:
 
@@ -66,8 +65,8 @@ protected:
 	std::unordered_map<TMorton, U32>                 _MortonToIndex;
 	std::vector<decltype(_MortonToIndex)::node_type> _MortonToIndexPool;
 
-	std::map<UPTR, CObjectRecord>                    _Renderables; // TODO: if cleared, need to clear iterators in attributes first!
-	std::map<UPTR, CObjectRecord>                    _Lights; // TODO: if cleared, need to clear iterators in attributes first!
+	std::map<UPTR, CSpatialRecord>                   _Renderables; // TODO: if cleared, need to clear iterators in attributes first!
+	std::map<UPTR, CSpatialRecord>                   _Lights; // TODO: if cleared, need to clear iterators in attributes first!
 	std::vector<decltype(_Renderables)::node_type>   _ObjectNodePool;
 
 	float _WorldExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic
@@ -83,9 +82,9 @@ protected:
 	U32     AddSingleObjectToNode(TMorton NodeMortonCode, TMorton StopMortonCode);
 	void    RemoveSingleObjectFromNode(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode);
 
-	HRecord AddObject(std::map<UPTR, CObjectRecord>& Storage, UPTR UID, const CAABB& GlobalBox, Scene::CNodeAttribute& Attr);
+	HRecord AddObject(std::map<UPTR, CSpatialRecord>& Storage, UPTR UID, const CAABB& GlobalBox, Scene::CNodeAttribute& Attr);
 	void    UpdateObject(HRecord Handle, const CAABB& GlobalBox);
-	void    RemoveObject(std::map<UPTR, CObjectRecord>& Storage, HRecord Handle);
+	void    RemoveObject(std::map<UPTR, CSpatialRecord>& Storage, HRecord Handle);
 
 public:
 
