@@ -864,7 +864,7 @@ bool CGraphicsResourceManager::InitUI(const Data::CParams* pSettings)
 
 PView CGraphicsResourceManager::CreateView(CStrID RenderPathID, int SwapChainID, CStrID SwapChainRenderTargetID)
 {
-	return PView(n_new(CView(*this, RenderPathID, SwapChainID, SwapChainRenderTargetID)));
+	return PView(new CView(*this, RenderPathID, SwapChainID, SwapChainRenderTargetID));
 }
 //---------------------------------------------------------------------
 

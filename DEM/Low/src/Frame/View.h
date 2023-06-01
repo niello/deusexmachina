@@ -7,6 +7,7 @@
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
 #include <System/Allocators/PoolAllocator.h>
+#include <Math/CameraMath.h>
 #include <map>
 
 // View is a data context required to render a frame. It is defined by a scene (what to render),
@@ -63,6 +64,9 @@ class CView final
 {
 protected:
 
+	Math::CSIMDFrustum                          _LastViewFrustum;
+	acl::Vector4_32                             _ProjectionParams;
+
 	PRenderPath									_RenderPath;
 	PGraphicsResourceManager					_GraphicsMgr;
 	int											_SwapChainID = INVALID_INDEX;
@@ -86,10 +90,8 @@ protected:
 	CArray<UPTR>								VisibilityCache;
 	CArray<Render::CLightRecord>				LightCache;
 	CArray<Render::CImageBasedLight*>			EnvironmentCache;
-	bool										VisibilityCacheDirty = true; //???to flags?
 
 	U32                                         _CameraTfmVersion = 0;
-	vector4                                     _ProjectionParams; // FIXME: use acl/rtm vector! alignment will be needed for frustum plane cache anyway
 
 	ELODType									MeshLODType = LOD_None;
 	CFixedArray<float>							MeshLODScale;
@@ -151,7 +153,7 @@ public:
 	Render::CDepthStencilBuffer*	GetDepthStencilBuffer(CStrID ID) const;
 	void                            SetGraphicsScene(CGraphicsScene* pScene);
 	CGraphicsScene*                 GetGraphicsScene() const { return _pScene; }
-	bool							SetCamera(CCameraAttribute* pNewCamera);
+	void							SetCamera(CCameraAttribute* pNewCamera);
 	CCameraAttribute*               GetCamera() const { return pCamera; }
 	CGraphicsResourceManager*		GetGraphicsManager() const;
 	Render::CGPUDriver*				GetGPU() const;

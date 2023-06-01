@@ -19,7 +19,6 @@
 #include <Data/Algorithms.h>
 #include <UI/UIContext.h>
 #include <UI/UIServer.h>
-#include <Math/CameraMath.h>
 #include <System/OSWindow.h>
 #include <System/SystemEvents.h>
 #include <acl/math/vector4_32.h>
@@ -154,6 +153,8 @@ bool CView::PrecreateRenderObjects()
 	SynchronizeRenderables();
 	SynchronizeLights();
 
+	//!!!TODO: update GPU resources etc for all objects including currently invisible! Rename to Preload? Make async?
+
 	return true;
 }
 //---------------------------------------------------------------------
@@ -282,10 +283,6 @@ void CView::SynchronizeRenderables()
 
 			pRenderable = ItViewObject->second.get();
 
-			// TODO: if attr data version changed!
-			// FIXME: do only for visible objects!
-			pAttr->UpdateRenderable(*_GraphicsMgr, *pRenderable);
-
 			// TODO:
 			// add to sorted queues (or test visibility first and delay adding to queues until visible the first time?)
 			//!!!an object may be added not to all queues. E.g. alpha objects don't participate in Z prepass and can ignore FrontToBack queue!
@@ -296,12 +293,6 @@ void CView::SynchronizeRenderables()
 		{
 			pRecord = &ItSceneObject->second;
 			pRenderable = ItViewObject->second.get();
-
-			//!!!CODE DUPLICATION, SEE UpdateRenderable ABOVE! IF OK, FIX IN LIGHTS TOO!
-			// TODO: if attr data version changed!
-			// FIXME: do only for visible objects!
-			auto pAttr = static_cast<CRenderableAttribute*>(pRecord->pAttr);
-			pAttr->UpdateRenderable(*_GraphicsMgr, *pRenderable);
 
 			//???where and when to update world matrix? store it cached in a PRenderable or get from scene object on parallel iteration?
 
@@ -328,54 +319,48 @@ void CView::SynchronizeLights()
 			// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one
 			ItViewObject->second.reset();
 			_LightNodePool.push_back(_Lights.extract(ItViewObject));
+
+			// TODO: erase this light from hardawre constant buffer and from all objects' light lists!
 		}
-		else
+		else if (ItViewObject == _Lights.cend())
 		{
-			if (ItViewObject == _Lights.cend())
+			// A new object in a scene
+			const auto UID = ItSceneObject->first;
+			pRecord = &ItSceneObject->second;
+
+			auto pAttr = static_cast<CLightAttribute*>(pRecord->pAttr);
+
+			// UIDs always grow (unless overflowed), and therefore adding to the end is always the right hint which gives us O(1) insertion
+			//???!!!could compact UIDs when close to overflow! Do in SPS and broadcast changes OldUID->NewUID to all views. With guarantee of
+			//doing this in order, we can keep an iterator and avoid logarithmic searches for each change!
+			if (_LightNodePool.empty())
 			{
-				// A new object in a scene
-				const auto UID = ItSceneObject->first;
-				pRecord = &ItSceneObject->second;
-
-				auto pAttr = static_cast<CLightAttribute*>(pRecord->pAttr);
-
-				// UIDs always grow (unless overflowed), and therefore adding to the end is always the right hint which gives us O(1) insertion
-				//???!!!could compact UIDs when close to overflow! Do in SPS and broadcast changes OldUID->NewUID to all views. With guarantee of
-				//doing this in order, we can keep an iterator and avoid logarithmic searches for each change!
-				if (_LightNodePool.empty())
-				{
-					ItViewObject = _Lights.emplace_hint(_Lights.cend(), UID, pAttr->CreateLight());
-				}
-				else
-				{
-					auto& Node = _LightNodePool.back();
-					Node.key() = UID;
-					Node.mapped() = pAttr->CreateLight();
-					ItViewObject = _Lights.insert(_Lights.cend(), std::move(Node));
-					_LightNodePool.pop_back();
-				}
-
-				pLight = ItViewObject->second.get();
-
-				// ligths without octree node are saved to global, others - to local
-				// visibility and intersection with renderables will be calculated only for local lights
-				// prioritization will be made for all lights, but global lights have the same intensity at every point in space
-				// maybe global lights must bypass prioritization, as they use different constants and algorithms in the shader!
+				ItViewObject = _Lights.emplace_hint(_Lights.cend(), UID, pAttr->CreateLight());
 			}
 			else
 			{
-				pRecord = &ItSceneObject->second;
-				pLight = ItViewObject->second.get();
-
-				// mark visibility and intersections dirty if bounds version changed
-				// NB: for spot light this needs to be updated when tfm changes too, if cone is used for isect. Other lights are transform independent.
-				//!!!also remember that intersection with objects is view independent, but in view we can update only visible objects and lights.
+				auto& Node = _LightNodePool.back();
+				Node.key() = UID;
+				Node.mapped() = pAttr->CreateLight();
+				ItViewObject = _Lights.insert(_Lights.cend(), std::move(Node));
+				_LightNodePool.pop_back();
 			}
 
-			// TODO: if attr data version changed!
-			// FIXME: do only for visible objects!
-			auto pAttr = static_cast<CLightAttribute*>(pRecord->pAttr);
-			pAttr->UpdateLight(*_GraphicsMgr, *pLight);
+			pLight = ItViewObject->second.get();
+
+			// ligths without octree node are saved to global, others - to local
+			// visibility and intersection with renderables will be calculated only for local lights
+			// prioritization will be made for all lights, but global lights have the same intensity at every point in space
+			// maybe global lights must bypass prioritization, as they use different constants and algorithms in the shader!
+		}
+		else
+		{
+			pRecord = &ItSceneObject->second;
+			pLight = ItViewObject->second.get();
+
+			// mark visibility and intersections dirty if bounds version changed
+			// NB: for spot light this needs to be updated when tfm changes too, if cone is used for isect. Other lights are transform independent.
+			//!!!also remember that intersection with objects is view independent, but in view we can update only visible objects and lights.
 		}
 	});
 }
@@ -383,40 +368,69 @@ void CView::SynchronizeLights()
 
 void CView::UpdateObjectVisibility(bool ViewProjChanged)
 {
-	//!!!???TODO: could keep Frustum from the prev frame if !ViewProjChanged!?
-	const auto Frustum = Math::CalcFrustumParams(pCamera->GetViewProjMatrix());
-
-	//!!!FIXME: also need to invalidate cache of changed nodes when one node takes index of another! //???notify SPS->All views for invalidated indices?
-	/*if (ViewProjChanged)*/ _SpatialTreeNodeVisibility.clear();
-	_pScene->TestSpatialTreeVisibility(Frustum, _SpatialTreeNodeVisibility);
-
 	// Update visibility of renderables. Iterate synchronized collections side by side.
-	auto ItSceneObject = _pScene->GetRenderables().cbegin();
-	auto ItViewObject = _Renderables.cbegin();
-	for (; ItViewObject != _Renderables.cend(); ++ItSceneObject, ++ItViewObject)
 	{
-		const CGraphicsScene::CSpatialRecord& Record = ItSceneObject->second;
-		Render::IRenderable* pRenderable = ItViewObject->second.get();
-		if (!Record.BoundsVersion)
+		auto ItSceneObject = _pScene->GetRenderables().cbegin();
+		auto ItViewObject = _Renderables.cbegin();
+		for (; ItViewObject != _Renderables.cend(); ++ItSceneObject, ++ItViewObject)
 		{
-			// Objects with invalid bounds are always visible. E.g. skybox.
-			pRenderable->IsVisible = true;
-			pRenderable->BoundsVersion = 0;
-		}
-		else if (ViewProjChanged || pRenderable->BoundsVersion != Record.BoundsVersion)
-		{
-			const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
-			if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
+			const CGraphicsScene::CSpatialRecord& Record = ItSceneObject->second;
+			Render::IRenderable* pRenderable = ItViewObject->second.get();
+			if (!Record.BoundsVersion)
 			{
-				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
-				{
-					pRenderable->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, Frustum);
-				}
-				else pRenderable->IsVisible = true;
+				// Objects with invalid bounds are always visible. E.g. skybox.
+				pRenderable->IsVisible = true;
 			}
-			else pRenderable->IsVisible = false;
+			else if (ViewProjChanged || pRenderable->BoundsVersion != Record.BoundsVersion)
+			{
+				const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
+				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
+				{
+					if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
+					{
+						pRenderable->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, _LastViewFrustum);
+					}
+					else pRenderable->IsVisible = true;
+				}
+				else pRenderable->IsVisible = false;
+			}
+			else continue;
 
 			pRenderable->BoundsVersion = Record.BoundsVersion;
+		}
+	}
+
+	//!!!FIXME: MAJOR CODE DUPLICATION!
+	// Update visibility of lights. Iterate synchronized collections side by side.
+	{
+		auto ItSceneObject = _pScene->GetLights().cbegin();
+		auto ItViewObject = _Lights.cbegin();
+		for (; ItViewObject != _Lights.cend(); ++ItSceneObject, ++ItViewObject)
+		{
+			const CGraphicsScene::CSpatialRecord& Record = ItSceneObject->second;
+			Render::CLight* pLight = ItViewObject->second.get();
+			if (!Record.BoundsVersion)
+			{
+				// Objects with invalid bounds are always visible. E.g. skybox.
+				pLight->IsVisible = true;
+			}
+			else if (ViewProjChanged || pLight->BoundsVersion != Record.BoundsVersion)
+			{
+				const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
+				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
+				{
+					if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
+					{
+						//!!!FIXME: for lights maybe better is to use spheres! Octree insertion is identical for AABB-Sphere & AABB-AABB, but here spheres are faster!
+						pLight->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, _LastViewFrustum);
+					}
+					else pLight->IsVisible = true;
+				}
+				else pLight->IsVisible = false;
+			}
+			else continue;
+
+			pLight->BoundsVersion = Record.BoundsVersion;
 		}
 	}
 }
@@ -424,81 +438,104 @@ void CView::UpdateObjectVisibility(bool ViewProjChanged)
 
 bool CView::Render()
 {
-	if (!_RenderPath) FAIL;
+	if (!_RenderPath || !_pScene || !pCamera) return false;
 
-	VisibilityCache.Clear();
-	LightCache.Clear();
-	EnvironmentCache.Clear();
-	VisibilityCacheDirty = true;
+	// Synchronize objects from scene to this view
+	SynchronizeRenderables();
+	SynchronizeLights();
 
-	///////// NEW RENDER /////////
-	if (_pScene && pCamera)
+	// Check for camera frustum changes
+	bool ViewProjChanged = false;
 	{
-		bool ViewProjChanged = false;
+		// View changes are detected easily with a camera node transform version
+		const auto CameraTfmVersion = pCamera->GetNode()->GetTransformVersion();
+		if (_CameraTfmVersion != CameraTfmVersion)
 		{
-			// View changes are detected easily with a camera node transform version
-			const auto CameraTfmVersion = pCamera->GetNode()->GetTransformVersion();
-			if (_CameraTfmVersion != CameraTfmVersion)
-			{
-				ViewProjChanged = true;
-				_CameraTfmVersion = CameraTfmVersion;
-			}
-
-			// Both perspective and orthographic projections are characterized by just few matrix elements, compare only them
-			const auto& Proj = pCamera->GetProjMatrix();
-			const vector4 ProjectionParams(Proj.m[0][0], Proj.m[1][1], Proj.m[2][2], Proj.m[3][2]);
-			if (_ProjectionParams != ProjectionParams)
-			{
-				ViewProjChanged = true;
-				_ProjectionParams = ProjectionParams;
-			}
+			ViewProjChanged = true;
+			_CameraTfmVersion = CameraTfmVersion;
 		}
 
-		SynchronizeRenderables();
-		SynchronizeLights();
-		UpdateObjectVisibility(ViewProjChanged);
-
-		// TODO:
-		// if ViewProjChanged, mark all queues which use distance to camera dirty
-		// update dirty sorted queues with insertion sort, O(n) for almost sorted arrays. Fallback to qsort for major reorderings or first init.
-		//!!!from huge camera changes can mark a flag 'MajorChanges' camera-dependent (FrontToBack etc) queue, and use qsort instead of almost-sorted.
-
-		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		//!!!DBG TMP!
-		//VisibilityCacheDirty = false;
-		VisibilityCache.Clear();
-		for (const auto& [UID, Renderable] : _Renderables)
+		// Both perspective and orthographic projections are characterized by just few matrix elements, compare only them
+		const auto& Proj = pCamera->GetProjMatrix();
+		const auto ProjectionParams = acl::vector_set(Proj.m[0][0], Proj.m[1][1], Proj.m[2][2], Proj.m[3][2]);
+		if (!acl::vector_all_near_equal(_ProjectionParams, ProjectionParams))
 		{
-			if (Renderable->IsVisible)
-				VisibilityCache.push_back(UID);
+			ViewProjChanged = true;
+			_ProjectionParams = ProjectionParams;
 		}
-
-		EnvironmentCache.Clear();
-		for (const auto& [UID, Light] : _Lights)
-		{
-			//!!!
-			//if (Light->IsVisible)
-
-			if (auto pAttr = _pScene->GetLights().find(UID)->second.pAttr->As<CIBLAmbientLightAttribute>())
-				EnvironmentCache.Add(static_cast<Render::CImageBasedLight*>(Light.get()));
-
-			//	Scene::CNodeAttribute* pAttr = VisibilityCache[i];
-			//	if (pAttr->IsA<CLightAttribute>())
-			//	{
-			//		Render::CLightRecord& Rec = *LightCache.Add();
-			//		Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
-			//		Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
-			//		Rec.UseCount = 0;
-			//		Rec.GPULightIndex = INVALID_INDEX;
-			//	}
-		}
-		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	}
-	//////////////////////////////
+
+	if (ViewProjChanged) _LastViewFrustum = Math::CalcFrustumParams(pCamera->GetViewProjMatrix());
+
+	//!!!FIXME: also need to invalidate cache of changed nodes when one node takes index of another! //???notify SPS->All views for invalidated indices?
+	/*if (ViewProjChanged)*/ _SpatialTreeNodeVisibility.clear();
+	_pScene->TestSpatialTreeVisibility(_LastViewFrustum, _SpatialTreeNodeVisibility);
+
+	UpdateObjectVisibility(ViewProjChanged);
+
+	// 4. For visible objects and lights:
+	//    - update tfm from attr
+	//    - calc LODs
+	//    - update renderable/light params from attr
+	//    - cache GPU things etc
+	//    - when needed, _pScene->UpdateRenderableLightIntersecions(renderable/light) //???mark first, then update, to optimize with spatial queries?
+	//    - update objects in queues if required
+
+	// For rendering use queues and light lists (and main _Lights collection)
+
+	//???use dirty flags in IRenderable and CLight?! would help to choose update stages and decouple scene->view sync from heavy update.
+
+	//// TODO: if attr data version changed!
+	//// FIXME: do only for visible objects!
+	//auto pAttr = static_cast<CRenderableAttribute*>(pRecord->pAttr);
+	//pAttr->UpdateRenderable(*_GraphicsMgr, *pRenderable);
+
+	//// TODO: if attr data version changed!
+	//// FIXME: do only for visible objects!
+	//auto pAttr = static_cast<CLightAttribute*>(pRecord->pAttr);
+	//pAttr->UpdateLight(*_GraphicsMgr, *pLight);
+
+	// TODO:
+	// if ViewProjChanged, mark all queues which use distance to camera dirty
+	// update dirty sorted queues with insertion sort, O(n) for almost sorted arrays. Fallback to qsort for major reorderings or first init.
+	//!!!from huge camera changes can mark a flag 'MajorChanges' camera-dependent (FrontToBack etc) queue, and use qsort instead of almost-sorted.
+
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//!!!DBG TMP!
+	VisibilityCache.Clear();
+	for (const auto& [UID, Renderable] : _Renderables)
+	{
+		if (Renderable->IsVisible)
+			VisibilityCache.push_back(UID);
+	}
+
+	LightCache.Clear();
+	// ...
+
+	EnvironmentCache.Clear();
+	for (const auto& [UID, Light] : _Lights)
+	{
+		//!!!
+		//if (Light->IsVisible)
+
+		if (auto pAttr = _pScene->GetLights().find(UID)->second.pAttr->As<CIBLAmbientLightAttribute>())
+			EnvironmentCache.Add(static_cast<Render::CImageBasedLight*>(Light.get()));
+
+		//	Scene::CNodeAttribute* pAttr = VisibilityCache[i];
+		//	if (pAttr->IsA<CLightAttribute>())
+		//	{
+		//		Render::CLightRecord& Rec = *LightCache.Add();
+		//		Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
+		//		Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
+		//		Rec.UseCount = 0;
+		//		Rec.GPULightIndex = INVALID_INDEX;
+		//	}
+	}
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	return _RenderPath->Render(*this);
 }
@@ -557,39 +594,32 @@ void CView::SetGraphicsScene(CGraphicsScene* pScene)
 	if (_pScene == pScene) return;
 
 	_pScene = pScene;
-	VisibilityCacheDirty = true;
 
-	///////// NEW RENDER /////////
 	while (!_Renderables.empty())
 	{
 		auto It = _Renderables.begin();
 		It->second.reset();
 		_RenderableNodePool.push_back(_Renderables.extract(It));
 	}
+
 	while (!_Lights.empty())
 	{
 		auto It = _Lights.begin();
 		It->second.reset();
 		_LightNodePool.push_back(_Lights.extract(It));
 	}
+
+	// TODO: clear render queues etc!
 }
 //---------------------------------------------------------------------
 
-bool CView::SetCamera(CCameraAttribute* pNewCamera)
+void CView::SetCamera(CCameraAttribute* pNewCamera)
 {
-	if (pCamera == pNewCamera) OK;
-	if (!pNewCamera)
+	if (pCamera != pNewCamera)
 	{
-		pCamera = nullptr;
-		OK;
+		pCamera = pNewCamera;
+		_CameraTfmVersion = 0;
 	}
-
-	Scene::CSceneNode* pNode = pNewCamera->GetNode();
-	if (!pNode) FAIL;
-
-	pCamera = pNewCamera;
-	VisibilityCacheDirty = true;
-	OK;
 }
 //---------------------------------------------------------------------
 
