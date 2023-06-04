@@ -366,71 +366,128 @@ void CView::SynchronizeLights()
 }
 //---------------------------------------------------------------------
 
-void CView::UpdateObjectVisibility(bool ViewProjChanged)
+// For visible lights:
+// - update tfm from attr
+// - update light params from attr
+// - cache GPU things etc
+// - if needed, mark light for updating object intersections
+void CView::UpdateLights(bool ViewProjChanged)
 {
-	// Update visibility of renderables. Iterate synchronized collections side by side.
+	// Iterate synchronized collections side by side
+	auto ItSceneObject = _pScene->GetLights().cbegin();
+	auto ItViewObject = _Lights.cbegin();
+	for (; ItViewObject != _Lights.cend(); ++ItSceneObject, ++ItViewObject)
 	{
-		auto ItSceneObject = _pScene->GetRenderables().cbegin();
-		auto ItViewObject = _Renderables.cbegin();
-		for (; ItViewObject != _Renderables.cend(); ++ItSceneObject, ++ItViewObject)
+		const CGraphicsScene::CSpatialRecord& Record = ItSceneObject->second;
+		Render::CLight* pLight = ItViewObject->second.get();
+		auto pAttr = static_cast<CLightAttribute*>(Record.pAttr);
+
+		//!!!FIXME: point or spot light with zero range must not be always visible!
+		if (!Record.BoundsVersion)
 		{
-			const CGraphicsScene::CSpatialRecord& Record = ItSceneObject->second;
-			Render::IRenderable* pRenderable = ItViewObject->second.get();
-			if (!Record.BoundsVersion)
+			// Objects with invalid bounds are always visible. E.g. skybox.
+			pLight->IsVisible = true;
+			pLight->BoundsVersion = Record.BoundsVersion;
+		}
+		else if (ViewProjChanged || pLight->BoundsVersion != Record.BoundsVersion)
+		{
+			const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
+			if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
 			{
-				// Objects with invalid bounds are always visible. E.g. skybox.
-				pRenderable->IsVisible = true;
-			}
-			else if (ViewProjChanged || pRenderable->BoundsVersion != Record.BoundsVersion)
-			{
-				const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
-				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
+				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
 				{
-					if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
-					{
-						pRenderable->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, _LastViewFrustum);
-					}
-					else pRenderable->IsVisible = true;
+					//!!!FIXME: for lights maybe better is to use spheres! Octree insertion is identical for AABB-Sphere & AABB-AABB, but here spheres are faster!
+					pLight->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, _LastViewFrustum);
 				}
-				else pRenderable->IsVisible = false;
+				else pLight->IsVisible = true;
 			}
-			else continue;
+			else pLight->IsVisible = false;
+
+			pLight->BoundsVersion = Record.BoundsVersion;
+		}
+
+		// Light sources that emit no light or that are too far away are considered invisible
+		//!!!TODO: if could get intensity & color from the light source, can calculate HasEffectiveIntensity here, logic is always the same!
+		if (pLight->IsVisible && (!pAttr->HasEffectiveIntensity() || DistanceToLight > pAttr->GetMaxDistance()))
+			pLight->IsVisible = false;
+
+		if (pLight->IsVisible)
+		{
+			pAttr->UpdateLight(*_GraphicsMgr, *pLight);
+
+			//!!!FIXME: don't search IBL textures each frame, use cache until UID changes! Update only when nullptr? Or store UID in GPU resource for comparison?
+
+			// update cached GPU structures for dirty parts (or for lights just refill everything?)
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+// For visible objects:
+// - update tfm from attr
+// - calc LODs
+// - update renderable/light params from attr
+// - cache GPU things etc
+// - if needed, mark object for updating light intersections
+// - update in queues if order or filter fields changed (hardcode queue types? OpaqueMaterial, AlphaBackToFront, OpaqueFrontToBack. No need in extra flexibility.)
+void CView::UpdateRenderables(bool ViewProjChanged)
+{
+	// Iterate synchronized collections side by side
+	auto ItSceneObject = _pScene->GetRenderables().cbegin();
+	auto ItViewObject = _Renderables.cbegin();
+	for (; ItViewObject != _Renderables.cend(); ++ItSceneObject, ++ItViewObject)
+	{
+		const CGraphicsScene::CSpatialRecord& Record = ItSceneObject->second;
+		Render::IRenderable* pRenderable = ItViewObject->second.get();
+		auto pAttr = static_cast<CRenderableAttribute*>(Record.pAttr);
+		const bool WasVisible = pRenderable->IsVisible;
+
+		//!!!FIXME: regular object with empty bounds must be invisible!
+		if (!Record.BoundsVersion)
+		{
+			// Objects with invalid bounds are always visible. E.g. skybox.
+			pRenderable->IsVisible = true;
+			pRenderable->BoundsVersion = Record.BoundsVersion;
+		}
+		else if (ViewProjChanged || pRenderable->BoundsVersion != Record.BoundsVersion)
+		{
+			const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
+			if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
+			{
+				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
+				{
+					pRenderable->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, _LastViewFrustum);
+				}
+				else pRenderable->IsVisible = true;
+			}
+			else pRenderable->IsVisible = false;
 
 			pRenderable->BoundsVersion = Record.BoundsVersion;
 		}
-	}
 
-	//!!!FIXME: MAJOR CODE DUPLICATION!
-	// Update visibility of lights. Iterate synchronized collections side by side.
-	{
-		auto ItSceneObject = _pScene->GetLights().cbegin();
-		auto ItViewObject = _Lights.cbegin();
-		for (; ItViewObject != _Lights.cend(); ++ItSceneObject, ++ItViewObject)
+		if (pRenderable->IsVisible)
 		{
-			const CGraphicsScene::CSpatialRecord& Record = ItSceneObject->second;
-			Render::CLight* pLight = ItViewObject->second.get();
-			if (!Record.BoundsVersion)
-			{
-				// Objects with invalid bounds are always visible. E.g. skybox.
-				pLight->IsVisible = true;
-			}
-			else if (ViewProjChanged || pLight->BoundsVersion != Record.BoundsVersion)
-			{
-				const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
-				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
-				{
-					if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
-					{
-						//!!!FIXME: for lights maybe better is to use spheres! Octree insertion is identical for AABB-Sphere & AABB-AABB, but here spheres are faster!
-						pLight->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, _LastViewFrustum);
-					}
-					else pLight->IsVisible = true;
-				}
-				else pLight->IsVisible = false;
-			}
-			else continue;
+			// calculate geometry and material LODs
+			// if LODs changed, apply these changes or at least mark related things dirty
+			// if LOD disables the object, set it invisible (typically the last LOD)
+		}
 
-			pLight->BoundsVersion = Record.BoundsVersion;
+		if (pRenderable->IsVisible)
+		{
+			pAttr->UpdateRenderable(*_GraphicsMgr, *pRenderable);
+
+			// update cached GPU structures for dirty parts (tfm, material etc)
+
+			//???update sorting key for queues?! store it in queue nodes?
+		}
+
+		if (WasVisible != pRenderable->IsVisible)
+		{
+			// if became visible, insert to queues (use sorted insertion? what if order was already broken?), else remove from them
+			//???after syncing lists, first sort queues as is, then insert and remove due to visibility?
+			//then easier to insert to the end here and sort once after all processing!
+			//???or maybe try to insert sorted with possible violation, and then resort as almost sorted and everything will be fixed?
+			//but sorted insertion has a cost, it is easier to sort only once!
 		}
 	}
 }
@@ -471,29 +528,10 @@ bool CView::Render()
 	/*if (ViewProjChanged)*/ _SpatialTreeNodeVisibility.clear();
 	_pScene->TestSpatialTreeVisibility(_LastViewFrustum, _SpatialTreeNodeVisibility);
 
-	UpdateObjectVisibility(ViewProjChanged);
+	UpdateLights(ViewProjChanged);
+	UpdateRenderables(ViewProjChanged);
 
-	// 4. For visible objects and lights:
-	//    - update tfm from attr
-	//    - calc LODs
-	//    - update renderable/light params from attr
-	//    - cache GPU things etc
-	//    - when needed, _pScene->UpdateRenderableLightIntersecions(renderable/light) //???mark first, then update, to optimize with spatial queries?
-	//    - update objects in queues if required
-
-	// For rendering use queues and light lists (and main _Lights collection)
-
-	//???use dirty flags in IRenderable and CLight?! would help to choose update stages and decouple scene->view sync from heavy update.
-
-	//// TODO: if attr data version changed!
-	//// FIXME: do only for visible objects!
-	//auto pAttr = static_cast<CRenderableAttribute*>(pRecord->pAttr);
-	//pAttr->UpdateRenderable(*_GraphicsMgr, *pRenderable);
-
-	//// TODO: if attr data version changed!
-	//// FIXME: do only for visible objects!
-	//auto pAttr = static_cast<CLightAttribute*>(pRecord->pAttr);
-	//pAttr->UpdateLight(*_GraphicsMgr, *pLight);
+	// _pScene->UpdateRenderableLightIntersecions() for marked objects and lights
 
 	// TODO:
 	// if ViewProjChanged, mark all queues which use distance to camera dirty

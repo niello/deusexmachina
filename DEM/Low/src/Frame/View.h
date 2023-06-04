@@ -106,7 +106,8 @@ protected:
 
 	void SynchronizeRenderables();
 	void SynchronizeLights();
-	void UpdateObjectVisibility(bool ViewProjChanged);
+	void UpdateLights(bool ViewProjChanged);
+	void UpdateRenderables(bool ViewProjChanged);
 
 public:
 

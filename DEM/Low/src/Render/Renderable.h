@@ -26,7 +26,7 @@ protected:
 
 public:
 
-	bool IsVisible = true;
+	bool IsVisible = false;
 	U32  BoundsVersion = 0;
 };
 
