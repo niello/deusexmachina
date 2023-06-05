@@ -366,11 +366,6 @@ void CView::SynchronizeLights()
 }
 //---------------------------------------------------------------------
 
-// For visible lights:
-// - update tfm from attr
-// - update light params from attr
-// - cache GPU things etc
-// - if needed, mark light for updating object intersections
 void CView::UpdateLights(bool ViewProjChanged)
 {
 	// Iterate synchronized collections side by side
@@ -382,7 +377,6 @@ void CView::UpdateLights(bool ViewProjChanged)
 		Render::CLight* pLight = ItViewObject->second.get();
 		auto pAttr = static_cast<CLightAttribute*>(Record.pAttr);
 
-		//!!!FIXME: point or spot light with zero range must not be always visible!
 		if (!Record.BoundsVersion)
 		{
 			// Objects with invalid bounds are always visible. E.g. skybox.
@@ -391,6 +385,8 @@ void CView::UpdateLights(bool ViewProjChanged)
 		}
 		else if (ViewProjChanged || pLight->BoundsVersion != Record.BoundsVersion)
 		{
+			//???TODO: need to test for empty bounds and set invisible to save resources on further processing?!
+
 			const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
 			if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
 			{
@@ -407,29 +403,26 @@ void CView::UpdateLights(bool ViewProjChanged)
 		}
 
 		// Light sources that emit no light or that are too far away are considered invisible
-		//!!!TODO: if could get intensity & color from the light source, can calculate HasEffectiveIntensity here, logic is always the same!
-		if (pLight->IsVisible && (!pAttr->HasEffectiveIntensity() || DistanceToLight > pAttr->GetMaxDistance()))
-			pLight->IsVisible = false;
+		const bool IsVisible = pLight->IsVisible &&
+			pAttr->DoesEmitAnyEnergy() /*&&
+			DistanceCameraPosToLightSphere <= pAttr->GetMaxDistanceSquared()*/;
 
-		if (pLight->IsVisible)
+		//!!!has CAABB::SqDistance for point, use it or sphere distance for distance to camera calc?! can vectorize?!
+
+		if (IsVisible)
 		{
+			//!!!TODO: inside UpdateLight:
+			// - update tfm from attr
+			// - update light params from attr
+			// - update cached GPU structures for dirty parts (constant buffer element, IBL textures etc)
 			pAttr->UpdateLight(*_GraphicsMgr, *pLight);
 
-			//!!!FIXME: don't search IBL textures each frame, use cache until UID changes! Update only when nullptr? Or store UID in GPU resource for comparison?
-
-			// update cached GPU structures for dirty parts (or for lights just refill everything?)
+			// if needed, mark light for updating object intersections
 		}
 	}
 }
 //---------------------------------------------------------------------
 
-// For visible objects:
-// - update tfm from attr
-// - calc LODs
-// - update renderable/light params from attr
-// - cache GPU things etc
-// - if needed, mark object for updating light intersections
-// - update in queues if order or filter fields changed (hardcode queue types? OpaqueMaterial, AlphaBackToFront, OpaqueFrontToBack. No need in extra flexibility.)
 void CView::UpdateRenderables(bool ViewProjChanged)
 {
 	// Iterate synchronized collections side by side
@@ -442,15 +435,16 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 		auto pAttr = static_cast<CRenderableAttribute*>(Record.pAttr);
 		const bool WasVisible = pRenderable->IsVisible;
 
-		//!!!FIXME: regular object with empty bounds must be invisible!
 		if (!Record.BoundsVersion)
 		{
-			// Objects with invalid bounds are always visible. E.g. skybox.
+			// Objects with invalid bounds are always visible. E.g. skybox. LOD is not applicable.
 			pRenderable->IsVisible = true;
 			pRenderable->BoundsVersion = Record.BoundsVersion;
 		}
 		else if (ViewProjChanged || pRenderable->BoundsVersion != Record.BoundsVersion)
 		{
+			//???TODO: need to test for empty bounds and set invisible to save resources on further processing?!
+
 			const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
 			if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
 			{
@@ -463,20 +457,26 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			else pRenderable->IsVisible = false;
 
 			pRenderable->BoundsVersion = Record.BoundsVersion;
+
+			// Calculate LOD. It is based on camera and object bounds so it can be recalculated here only when something of that changes.
+			if (pRenderable->IsVisible)
+			{
+				// calculate geometry and material LODs
+				// if LODs changed, apply these changes or at least mark related things dirty
+				// if LOD disables the object, set it invisible (typically the last LOD): pRenderable->IsVisible = false;
+				//???or calc LOD inside UpdateRenderable? and skip some ops if LOD resolves to object hiding?
+			}
 		}
 
 		if (pRenderable->IsVisible)
 		{
-			// calculate geometry and material LODs
-			// if LODs changed, apply these changes or at least mark related things dirty
-			// if LOD disables the object, set it invisible (typically the last LOD)
-		}
-
-		if (pRenderable->IsVisible)
-		{
+			//!!!TODO: inside UpdateRenderable:
+			// - update tfm from attr
+			// - update renderable/light params from attr
+			// - update cached GPU structures for dirty parts (tfm, material etc)
 			pAttr->UpdateRenderable(*_GraphicsMgr, *pRenderable);
 
-			// update cached GPU structures for dirty parts (tfm, material etc)
+			// if needed, mark object for updating light intersections
 
 			//???update sorting key for queues?! store it in queue nodes?
 		}
@@ -531,7 +531,11 @@ bool CView::Render()
 	UpdateLights(ViewProjChanged);
 	UpdateRenderables(ViewProjChanged);
 
-	// _pScene->UpdateRenderableLightIntersecions() for marked objects and lights
+	// _pScene->UpdateRenderableLightIntersections() for marked objects and lights
+	//???for each light could store a full list of morton codes or at least top level morton codes that are intersecting it!
+	//???or is it easier to test against object AABB directly?
+	//???does tracking intersections on insert or tracking objects inside node / intersecting the node a good idea?
+	//!!!NB: if object and light don't move their intersection doesn't change!
 
 	// TODO:
 	// if ViewProjChanged, mark all queues which use distance to camera dirty

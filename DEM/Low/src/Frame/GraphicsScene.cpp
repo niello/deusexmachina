@@ -7,35 +7,6 @@
 namespace Frame
 {
 
-// FIXME: move to math!!!
-// Finds the Least Common Ancestor of two nodes represented by Morton codes
-template<size_t DIMENSIONS, typename T>
-DEM_FORCE_INLINE T MortonLCA(T MortonCodeA, T MortonCodeB) noexcept
-{
-	// Shrink longer code so that both codes represent nodes on the same level
-	const auto Bits1 = Math::BitWidth(MortonCodeA);
-	const auto Bits2 = Math::BitWidth(MortonCodeB);
-	if (Bits1 < Bits2)
-		MortonCodeB >>= (Bits2 - Bits1);
-	else
-		MortonCodeA >>= (Bits1 - Bits2);
-
-	// LCA is the equal prefix of both nodes. Find the place where equality breaks.
-	auto HighestUnequalBit = Math::BitWidth(MortonCodeA ^ MortonCodeB);
-
-	// Each level uses DIMENSIONS bits and we must shift by whole levels
-	if constexpr (DIMENSIONS == 2)
-		HighestUnequalBit = Math::CeilToEven(HighestUnequalBit);
-	else if constexpr (Math::IsPow2(DIMENSIONS))
-		HighestUnequalBit = Math::CeilToMultipleOfPow2(HighestUnequalBit, DIMENSIONS);
-	else
-		HighestUnequalBit = Math::CeilToMultiple(HighestUnequalBit, DIMENSIONS);
-
-	// Shift any of codes to obtain the common prefix which is the LCA of two nodes
-	return MortonCodeA >> HighestUnequalBit;
-}
-//---------------------------------------------------------------------
-
 template<size_t DIMENSIONS, typename T>
 DEM_FORCE_INLINE T GetDepthLevel(T MortonCode) noexcept
 {
@@ -60,7 +31,7 @@ DEM_FORCE_INLINE T GetDepthLevel(T MortonCode) noexcept
 // for lights-objects overlap it is easier to scan through all lights and check HasLooseIntersection of light tree node against the object tree node
 bool HasLooseIntersection(/*Bounds, Morton*/) noexcept
 {
-	// Depth = GetDepth(Morton);
+	// Depth = GetDepthLevel(Morton);
 	// InvDepth = MaxDepth - Depth;
 	// HalfSize = 1 << InvDepth;    // LUT[Depth]?
 
@@ -235,7 +206,7 @@ CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CSpatialRecord>
 	Record.BoxExtent = acl::vector_sub(HalfMax, HalfMin);
 
 	// Check bounds validity
-	if (!acl::vector_any_less_equal3(Record.BoxExtent, acl::vector_set(0.f)))
+	if (!acl::vector_any_less_than3(Record.BoxExtent, acl::vector_set(0.f))) //!!!TODO: can check negative sign bits by mask!
 	{
 		const auto NodeMortonCode = CalculateMortonCode(Record.BoxCenter, Record.BoxExtent);
 		Record.NodeIndex = AddSingleObjectToNode(NodeMortonCode, 0);
@@ -244,7 +215,7 @@ CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CSpatialRecord>
 	}
 	else
 	{
-		// Objects with empty and invalid bounds are considered being outside the spatial tree
+		// Objects with invalid bounds are considered being outside the spatial tree
 		Record.NodeIndex = NO_SPATIAL_TREE_NODE;
 		Record.NodeMortonCode = 0;
 		Record.BoundsVersion = 0;
@@ -279,7 +250,7 @@ void CGraphicsScene::UpdateObjectBounds(HRecord Handle, const CAABB& GlobalBox)
 	if (acl::vector_all_near_equal3(BoxCenter, Record.BoxCenter) && acl::vector_all_near_equal3(BoxExtent, Record.BoxExtent))
 		return;
 
-	const bool BoundsValid = !acl::vector_any_less_equal3(Record.BoxExtent, acl::vector_set(0.f));
+	const bool BoundsValid = !acl::vector_any_less_than3(Record.BoxExtent, acl::vector_set(0.f)); //!!!TODO: can check negative sign bits by mask!
 
 	Record.BoxCenter = BoxCenter;
 	Record.BoxExtent = BoxExtent;
@@ -288,7 +259,7 @@ void CGraphicsScene::UpdateObjectBounds(HRecord Handle, const CAABB& GlobalBox)
 	const auto NodeMortonCode = BoundsValid ? CalculateMortonCode(Record.BoxCenter, Record.BoxExtent) : 0;
 	if (Record.NodeMortonCode != NodeMortonCode)
 	{
-		const auto LCAMortonCode = MortonLCA<TREE_DIMENSIONS>(Record.NodeMortonCode, NodeMortonCode);
+		const auto LCAMortonCode = Math::MortonLCA<TREE_DIMENSIONS>(Record.NodeMortonCode, NodeMortonCode);
 		RemoveSingleObjectFromNode(Record.NodeIndex, Record.NodeMortonCode, LCAMortonCode);
 		Record.NodeIndex = AddSingleObjectToNode(NodeMortonCode, LCAMortonCode);
 		Record.NodeMortonCode = NodeMortonCode;

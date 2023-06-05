@@ -58,6 +58,7 @@ Render::PLight CIBLAmbientLightAttribute::CreateLight() const
 
 void CIBLAmbientLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const
 {
+	//!!!FIXME: don't search IBL textures each frame, use cache until UID changes! Update only when nullptr? Or store UID in GPU resource for comparison?
 	auto pLight = static_cast<Render::CImageBasedLight*>(&Light);
 	pLight->_IrradianceMap = ResMgr.GetTexture(_IrradianceMapUID, Render::Access_GPU_Read);
 	pLight->_RadianceEnvMap = ResMgr.GetTexture(_RadianceEnvMapUID, Render::Access_GPU_Read);
@@ -71,17 +72,9 @@ void CIBLAmbientLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Re
 
 bool CIBLAmbientLightAttribute::GetLocalAABB(CAABB& OutBox) const
 {
-	if (IsGlobal())
-	{
-		//???or simply return false and consider it as an omnipresent light?!
-		OutBox.Set(vector3::Zero, vector3::Zero);
-		return true;
-	}
-	else
-	{
-		OutBox.Set(vector3::Zero, vector3(_Range, _Range, _Range));
-		return true;
-	}
+	// Negative range is treated as invalid bounds which is desired for global IBL source
+	OutBox.Set(vector3::Zero, vector3(_Range, _Range, _Range));
+	return true;
 }
 //---------------------------------------------------------------------
 

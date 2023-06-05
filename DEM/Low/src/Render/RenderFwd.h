@@ -49,7 +49,8 @@ typedef Ptr<class CSampler> PSampler;
 typedef Ptr<class CMesh> PMesh;
 typedef Ptr<class CMeshData> PMeshData;
 typedef Ptr<class CMaterial> PMaterial;
-typedef std::unique_ptr<class IRenderable> PRenderable;
+using PRenderable = std::unique_ptr<class IRenderable>;
+using PLight = std::unique_ptr<class CLight>;
 
 const UPTR Adapter_AutoSelect = (UPTR)-2;
 const UPTR Adapter_None = (UPTR)-1;
@@ -402,6 +403,30 @@ constexpr inline U32 ColorRGBANorm(float r, float g, float b, float a = 1.f)
 		static_cast<uint8_t>(g * 255.0f + 0.5f),
 		static_cast<uint8_t>(b * 255.0f + 0.5f),
 		static_cast<uint8_t>(a * 255.0f + 0.5f));
+}
+//---------------------------------------------------------------------
+
+constexpr inline U8 ColorGetRed(U32 Color)
+{
+	return Color & 0xff;
+}
+//---------------------------------------------------------------------
+
+constexpr inline U8 ColorGetGreen(U32 Color)
+{
+	return (Color >> 8) & 0xff;
+}
+//---------------------------------------------------------------------
+
+constexpr inline U8 ColorGetBlue(U32 Color)
+{
+	return (Color >> 16) & 0xff;
+}
+//---------------------------------------------------------------------
+
+constexpr inline U8 ColorGetAlpha(U32 Color)
+{
+	return (Color >> 24) & 0xff;
 }
 //---------------------------------------------------------------------
 

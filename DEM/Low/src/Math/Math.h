@@ -672,4 +672,32 @@ DEM_FORCE_INLINE void MortonDecode3(U64 Code, U32& x, U32& y, U32& z) noexcept
 }
 //---------------------------------------------------------------------
 
+// Finds the Least Common Ancestor of two nodes represented by Morton codes
+template<size_t DIMENSIONS, typename T>
+DEM_FORCE_INLINE T MortonLCA(T MortonCodeA, T MortonCodeB) noexcept
+{
+	// Shrink longer code so that both codes represent nodes on the same level
+	const auto Bits1 = BitWidth(MortonCodeA);
+	const auto Bits2 = BitWidth(MortonCodeB);
+	if (Bits1 < Bits2)
+		MortonCodeB >>= (Bits2 - Bits1);
+	else
+		MortonCodeA >>= (Bits1 - Bits2);
+
+	// LCA is the equal prefix of both nodes. Find the place where equality breaks.
+	auto HighestUnequalBit = BitWidth(MortonCodeA ^ MortonCodeB);
+
+	// Each level uses DIMENSIONS bits and we must shift by whole levels
+	if constexpr (DIMENSIONS == 2)
+		HighestUnequalBit = CeilToEven(HighestUnequalBit);
+	else if constexpr (IsPow2(DIMENSIONS))
+		HighestUnequalBit = CeilToMultipleOfPow2(HighestUnequalBit, DIMENSIONS);
+	else
+		HighestUnequalBit = CeilToMultiple(HighestUnequalBit, DIMENSIONS);
+
+	// Shift any of codes to obtain the common prefix which is the LCA of two nodes
+	return MortonCodeA >> HighestUnequalBit;
+}
+//---------------------------------------------------------------------
+
 }

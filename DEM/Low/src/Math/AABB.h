@@ -11,6 +11,7 @@ class CAABB
 public:
 
 	static const CAABB Empty;
+	static const CAABB Invalid;
 
 	enum
 	{
@@ -54,6 +55,7 @@ public:
 	void		GetClipPlanes(const matrix44& ViewProj, plane outPlanes[6]) const;
 
 	bool		IsEmpty() const;
+	bool		IsValid() const;
 	bool		contains(const CAABB& box) const;
 	bool		contains(const vector3& pos) const;
 	EClipStatus	GetClipStatus(const CAABB& other) const;
@@ -230,6 +232,9 @@ inline void CAABB::Transform(const matrix44& m)
 	//	}
 	//}
 
+	// Don't transform invalid AABBs, they are used for special purposes and transforming them makes no sense
+	if (!IsValid()) return;
+
 	vector3 NewMin = m * GetCorner(0);
 	vector3 NewMax = NewMin;
 	for (int i = 1; i < 8; ++i)
@@ -294,7 +299,13 @@ inline bool CAABB::intersects(const CAABB& box) const
 
 inline bool CAABB::IsEmpty() const
 {
-	return Min.x >= Max.x || Min.y >= Max.y || Min.z >= Max.z;
+	return Min.x == Max.x || Min.y == Max.y || Min.z == Max.z;
+}
+//---------------------------------------------------------------------
+
+inline bool CAABB::IsValid() const
+{
+	return Min.x <= Max.x && Min.y <= Max.y && Min.z <= Max.z;
 }
 //---------------------------------------------------------------------
 

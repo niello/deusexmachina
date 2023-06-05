@@ -68,7 +68,7 @@ void CDirectionalLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, R
 bool CDirectionalLightAttribute::GetLocalAABB(CAABB& OutBox) const
 {
 	//???or simply return false and consider it as an omnipresent light?!
-	OutBox.Set(vector3::Zero, vector3::Zero);
+	OutBox = CAABB::Invalid;
 	return true;
 }
 //---------------------------------------------------------------------

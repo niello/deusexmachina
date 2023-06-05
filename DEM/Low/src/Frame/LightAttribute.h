@@ -1,16 +1,12 @@
 #pragma once
 #include <Scene/NodeAttribute.h>
 #include <Frame/GraphicsScene.h>
+#include <Render/RenderFwd.h>
 
 // Light attribute is a scene node attribute that contains light source params.
 // See subclasses for different light source types.
 
 class CAABB;
-
-namespace Render
-{
-	using PLight = std::unique_ptr<class CLight>;
-}
 
 namespace Frame
 {
@@ -26,6 +22,7 @@ protected:
 	CGraphicsScene*         pScene = nullptr;
 	CGraphicsScene::HRecord SceneRecordHandle = {};
 	U32                     LastTransformVersion = 0;
+	float                   _MaxDistanceSq = std::numeric_limits<float>().max(); //!!!TODO: load from settings!
 	bool                    _CastsShadow : 1;
 	bool                    _DoOcclusionCulling : 1;
 
@@ -40,6 +37,9 @@ public:
 	virtual bool           GetLocalAABB(CAABB& OutBox) const = 0;
 	bool                   GetGlobalAABB(CAABB& OutBox) const;
 	void                   UpdateInGraphicsScene(CGraphicsScene& Scene);
+
+	float                  GetMaxDistanceSquared() const { return _MaxDistanceSq; }
+	virtual bool           DoesEmitAnyEnergy() const = 0;
 
 	// get intensity at point
 	// calc intersection / influence for AABB or OBB - get max intensity for box (= get intensity at closest point)

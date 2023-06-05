@@ -12,7 +12,7 @@ class CPointLightAttribute : public CLightAttribute
 
 protected:
 
-	U32   _Color = 0xffffffff;
+	U32   _Color = Render::Color_White;
 	float _Intensity = 1.f;
 	float _Range = 1.f;
 
@@ -23,6 +23,7 @@ public:
 	virtual Render::PLight        CreateLight() const override;
 	virtual void                  UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const override;
 	virtual bool                  GetLocalAABB(CAABB& OutBox) const override;
+	virtual bool                  DoesEmitAnyEnergy() const override { return (_Color & 0x00ffffff) && _Intensity > 0.f; }
 };
 
 typedef Ptr<CPointLightAttribute> PPointLightAttribute;
