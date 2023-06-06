@@ -458,10 +458,18 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			// Calculate LOD. It is based on camera and object bounds so it can be recalculated here only when something of that changes.
 			if (pRenderable->IsVisible)
 			{
+				//const float SqDistanceToCamera = Math::SqDistancePointAABB(_EyePos, Record.BoxCenter, Record.BoxExtent);
+				// and/or screen size
+
 				// calculate geometry and material LODs
 				// if LODs changed, apply these changes or at least mark related things dirty
 				// if LOD disables the object, set it invisible (typically the last LOD): pRenderable->IsVisible = false;
 				//???or calc LOD inside UpdateRenderable? and skip some ops if LOD resolves to object hiding?
+				//???or calc LOD here and pass to UpdateRenderable? What is better? Pass view pos and viewproj matrix from here or just calculated LOD?
+				//???or calc some LOD metric(s) here, e.g. sq distance and screen coverage, and send them to UpdateRenderable?
+
+				//!!!store calculated LOD somewhere!
+				//!!!???use one LOD value for both geometry and material, but can actually change something only when required?!
 			}
 		}
 
