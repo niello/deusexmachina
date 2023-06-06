@@ -377,6 +377,7 @@ void CView::UpdateLights(bool ViewProjChanged)
 		Render::CLight* pLight = ItViewObject->second.get();
 		auto pAttr = static_cast<CLightAttribute*>(Record.pAttr);
 
+		float SqDistanceToCamera = -1.f;
 		if (!Record.BoundsVersion)
 		{
 			// Objects with invalid bounds are always visible. E.g. skybox.
@@ -396,6 +397,8 @@ void CView::UpdateLights(bool ViewProjChanged)
 					pLight->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, _LastViewFrustum);
 				}
 				else pLight->IsVisible = true;
+
+				if (pLight->IsVisible) SqDistanceToCamera = Math::SqDistancePointAABB(_EyePos, Record.BoxCenter, Record.BoxExtent);
 			}
 			else pLight->IsVisible = false;
 
@@ -403,13 +406,7 @@ void CView::UpdateLights(bool ViewProjChanged)
 		}
 
 		// Light sources that emit no light or that are too far away are considered invisible
-		const bool IsVisible = pLight->IsVisible &&
-			pAttr->DoesEmitAnyEnergy() /*&&
-			DistanceCameraPosToLightSphere <= pAttr->GetMaxDistanceSquared()*/;
-
-		//!!!has CAABB::SqDistance for point, use it or sphere distance for distance to camera calc?! can vectorize?!
-
-		if (IsVisible)
+		if (pLight->IsVisible && pAttr->DoesEmitAnyEnergy() && SqDistanceToCamera <= pAttr->GetMaxDistanceSquared())
 		{
 			//!!!TODO: inside UpdateLight:
 			// - update tfm from attr
@@ -510,6 +507,9 @@ bool CView::Render()
 		{
 			ViewProjChanged = true;
 			_CameraTfmVersion = CameraTfmVersion;
+
+			const auto& EyePos = pCamera->GetPosition();
+			_EyePos = acl::vector_set(EyePos.x, EyePos.y, EyePos.z);
 		}
 
 		// Both perspective and orthographic projections are characterized by just few matrix elements, compare only them

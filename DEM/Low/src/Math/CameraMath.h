@@ -91,4 +91,24 @@ DEM_FORCE_INLINE bool ClipAABB(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg
 }
 //---------------------------------------------------------------------
 
+DEM_FORCE_INLINE acl::Vector4_32 ClosestPtPointAABB(acl::Vector4_32Arg0 Point, acl::Vector4_32Arg1 BoxCenter, acl::Vector4_32Arg2 BoxExtent) noexcept
+{
+	// Clamp Point to Min and Max of AABB
+	return acl::vector_min(acl::vector_max(Point, acl::vector_sub(BoxCenter, BoxExtent)), acl::vector_add(BoxCenter, BoxExtent));
+}
+//---------------------------------------------------------------------
+
+// Returns 0 if the point is inside
+DEM_FORCE_INLINE float SqDistancePointAABB(acl::Vector4_32Arg0 Point, acl::Vector4_32Arg1 BoxCenter, acl::Vector4_32Arg2 BoxExtent) noexcept
+{
+	const auto BoxMin = acl::vector_sub(BoxCenter, BoxExtent);
+	const auto BoxMax = acl::vector_add(BoxCenter, BoxExtent);
+
+	if (acl::vector_all_greater_equal3(Point, BoxMin) && acl::vector_all_less_equal3(Point, BoxMax))
+		return 0.f;
+
+	return acl::vector_dot3(Point, acl::vector_min(acl::vector_max(Point, BoxMin), BoxMax));
+}
+//---------------------------------------------------------------------
+
 }

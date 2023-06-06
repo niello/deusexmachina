@@ -66,6 +66,7 @@ protected:
 
 	Math::CSIMDFrustum                          _LastViewFrustum;
 	acl::Vector4_32                             _ProjectionParams;
+	acl::Vector4_32                             _EyePos;
 
 	PRenderPath									_RenderPath;
 	PGraphicsResourceManager					_GraphicsMgr;
