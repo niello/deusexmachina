@@ -18,16 +18,18 @@ class CMaterial: public Data::CRefCounted
 {
 protected:
 
+	CStrID              _UID;
 	PEffect             _Effect;
 	CShaderParamStorage _Values;
 
 public:
 
-	CMaterial(CEffect& Effect, CShaderParamStorage&& Values);
+	CMaterial(CStrID UID, CEffect& Effect, CShaderParamStorage&& Values);
 	virtual ~CMaterial() override;
 
 	bool     Apply() { return _Values.Apply(); }
 
+	CStrID   GetUID() const { return _UID; }
 	bool     IsValid() const { return _Effect.IsValidPtr(); }
 	CEffect* GetEffect() const { return _Effect.Get(); }
 };

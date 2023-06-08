@@ -14,16 +14,17 @@ CMesh::~CMesh()
 }
 //---------------------------------------------------------------------
 
-bool CMesh::Create(PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer IndexBuffer, bool HoldRAMCopy)
+bool CMesh::Create(CStrID UID, PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer IndexBuffer, bool HoldRAMCopy)
 {
 	if (!VertexBuffer || !Data || !Data->GetSubMeshCount() || !Data->GetLODCount()) FAIL;
 
-	MeshData = Data;
-	VB = VertexBuffer;
-	IB = IndexBuffer;
+	_UID = UID;
+	_MeshData = Data;
+	_VB = VertexBuffer;
+	_IB = IndexBuffer;
 
-	HoldRAMBackingData = HoldRAMCopy;
-	if (HoldRAMCopy) n_verify(MeshData->UseBuffer());
+	_HoldRAMBackingData = HoldRAMCopy;
+	if (HoldRAMCopy) n_verify(_MeshData->UseBuffer());
 
 	OK;
 }
@@ -31,16 +32,16 @@ bool CMesh::Create(PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer Inde
 
 void CMesh::Destroy()
 {
-	IB = nullptr;
-	VB = nullptr;
-	if (HoldRAMBackingData) MeshData->ReleaseBuffer();
-	MeshData = nullptr;
+	_IB = nullptr;
+	_VB = nullptr;
+	if (_HoldRAMBackingData) _MeshData->ReleaseBuffer();
+	_MeshData = nullptr;
 }
 //---------------------------------------------------------------------
 
 const CPrimitiveGroup* CMesh::GetGroup(UPTR SubMeshIdx, UPTR LOD) const
 {
-	return MeshData ? MeshData->GetGroup(SubMeshIdx, LOD) : nullptr;
+	return _MeshData ? _MeshData->GetGroup(SubMeshIdx, LOD) : nullptr;
 }
 //---------------------------------------------------------------------
 

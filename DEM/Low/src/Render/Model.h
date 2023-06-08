@@ -8,18 +8,19 @@
 
 namespace Render
 {
-typedef Ptr<class CMesh> PMesh;
-typedef Ptr<class CMaterial> PMaterial;
+using PMesh = Ptr<class CMesh>;
+using PMaterial = Ptr<class CMaterial>;
+struct CPrimitiveGroup;
 
-class CModel: public IRenderable
+class CModel : public IRenderable
 {
 	FACTORY_CLASS_DECL;
 
 public:
 
-	PMaterial        Material; //???!!!materialset!?
-	PMesh            Mesh;
-	U32              MeshGroupIndex = 0;
+	PMaterial                      Material; //???!!!materialset!?
+	PMesh                          Mesh;
+	const Render::CPrimitiveGroup* pGroup = nullptr;
 
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling (Skinned, EnableInstancing etc too?)
 };

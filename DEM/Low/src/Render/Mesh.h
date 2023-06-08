@@ -16,26 +16,28 @@ class CMesh: public ::Core::CObject
 
 protected:
 
-	PMeshData		MeshData;
-	PVertexBuffer	VB;
-	PIndexBuffer	IB;
+	CStrID          _UID;
+	PMeshData		_MeshData;
+	PVertexBuffer	_VB;
+	PIndexBuffer	_IB;
 
 	// For sharing GPU buffers between multiple meshes
 	//UPTR VBOffset;
 	//UPTR IBOffset;
 
-	bool HoldRAMBackingData = false;
+	bool _HoldRAMBackingData = false;
 
 public:
 
 	CMesh();
 	virtual ~CMesh();
 
-	bool					Create(PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer IndexBuffer, bool HoldRAMCopy = false);
+	bool					Create(CStrID UID, PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer IndexBuffer, bool HoldRAMCopy = false);
 	void					Destroy();
 
-	PVertexBuffer			GetVertexBuffer() const { return VB; }
-	PIndexBuffer			GetIndexBuffer() const { return IB; }
+	CStrID                  GetUID() const { return _UID; }
+	PVertexBuffer			GetVertexBuffer() const { return _VB; }
+	PIndexBuffer			GetIndexBuffer() const { return _IB; }
 	const CPrimitiveGroup*	GetGroup(UPTR SubMeshIdx, UPTR LOD = 0) const;
 };
 

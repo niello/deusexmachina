@@ -82,10 +82,44 @@ Render::PRenderable CModelAttribute::CreateRenderable() const
 
 void CModelAttribute::UpdateRenderable(CGraphicsResourceManager& ResMgr, Render::IRenderable& Renderable) const
 {
+	//!!!TODO: pass LOD from outside!
+	//???pass only LOD metric and calc LODs for geom & mtl from it and from attr settings?!
+	UPTR LOD = 0;
+
 	auto pModel = static_cast<Render::CModel*>(&Renderable);
-	pModel->Mesh = _MeshUID ? ResMgr.GetMesh(_MeshUID) : nullptr;
-	pModel->Material = _MaterialUID ? ResMgr.GetMaterial(_MaterialUID) : nullptr;
-	pModel->MeshGroupIndex = _MeshGroupIndex;
+
+	//!!!TODO: setup renderer!
+
+	// Initialize geometry
+	if (!_MeshUID)
+	{
+		if (pModel->Mesh)
+		{
+			pModel->Mesh = nullptr;
+			pModel->pGroup = nullptr;
+		}
+	}
+	else if (!pModel->Mesh || pModel->Mesh->GetUID() != _MeshUID)
+	{
+		pModel->Mesh = ResMgr.GetMesh(_MeshUID);
+		pModel->pGroup = _MeshData->GetGroup(_MeshGroupIndex, LOD);
+	}
+
+	// Initialize material
+	if (!_MaterialUID)
+	{
+		if (pModel->Material)
+		{
+			pModel->Material = nullptr;
+			// erase effect & tech cache
+		}
+	}
+	else if (!pModel->Material || pModel->Material->GetUID() != _MaterialUID)
+	{
+		// TODO: use LOD to choose a material from set!
+		pModel->Material = ResMgr.GetMaterial(_MaterialUID);
+		// init effect & tech cache, using input set from renderer! do everything inside renderer, passing only us and the material? return tech record index.
+	}
 }
 //---------------------------------------------------------------------
 

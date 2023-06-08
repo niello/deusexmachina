@@ -60,7 +60,7 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 	if (!Node.pTech) FAIL;
 
 	Node.pMesh = pModel->Mesh.Get();
-	Node.pGroup = pModel->Mesh->GetGroup(pModel->MeshGroupIndex, Context.MeshLOD);
+	Node.pGroup = pModel->pGroup;
 
 	// FIXME SKINS: need?
 	Node.pSkinMapping = nullptr;

@@ -68,8 +68,8 @@ Render::PMesh CGraphicsResourceManager::GetMesh(CStrID UID)
 	if (MeshData->IndexCount)
 		IB = GPU->CreateIndexBuffer(MeshData->IndexType, MeshData->IndexCount, Render::Access_GPU_Read, MeshData->IBData->GetPtr());
 
-	Render::PMesh Mesh = n_new(Render::CMesh);
-	const bool Result = Mesh->Create(MeshData, VB, IB);
+	Render::PMesh Mesh(new Render::CMesh());
+	const bool Result = Mesh->Create(UID, MeshData, VB, IB);
 
 	MeshData->ReleaseBuffer();
 
@@ -705,7 +705,7 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 		Storage.SetSampler(i, (It != Values.SamplerValues.cend()) ? It->second.Get() : Effect->GetSamplerDefaultValue(ID));
 	}
 
-	return n_new(Render::CMaterial(*Effect, std::move(Storage)));
+	return new Render::CMaterial(UID, *Effect, std::move(Storage));
 }
 //---------------------------------------------------------------------
 
