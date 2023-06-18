@@ -28,6 +28,8 @@ public:
 	float					InvSplatSizeX = 1.f;
 	float					InvSplatSizeZ = 1.f;
 
+	U32                     ShaderTechIndex = INVALID_INDEX_T<U32>;
+
 	CTerrain();
 	virtual ~CTerrain() override;
 

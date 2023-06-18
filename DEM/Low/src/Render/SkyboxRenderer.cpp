@@ -25,6 +25,9 @@ bool CSkyboxRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& C
 	Node.pTech = Context.pShaderTechCache[pSkybox->ShaderTechIndex];
 	if (!Node.pTech) FAIL;
 
+	Node.pMesh = pSkybox->Mesh.Get();
+	Node.pGroup = nullptr;
+
 	OK;
 }
 //---------------------------------------------------------------------

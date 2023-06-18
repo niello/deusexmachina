@@ -93,16 +93,44 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 
 	auto pTerrain = static_cast<Render::CTerrain*>(&Renderable);
 
-	// TODO: don't copy, store once!
 	pTerrain->InvSplatSizeX = _InvSplatSizeX;
 	pTerrain->InvSplatSizeZ = _InvSplatSizeZ;
-	pTerrain->CDLODData = _CDLODData;
 
-	pTerrain->Material = _MaterialUID ? ResMgr.GetMaterial(_MaterialUID) : nullptr;
-	pTerrain->HeightMap = _HeightMapUID ? ResMgr.GetTexture(_HeightMapUID, Render::Access_GPU_Read) : nullptr;
+	// Setup heightmap texture
+	if (!_HeightMapUID)
+		pTerrain->HeightMap = nullptr;
+	if (!pTerrain->HeightMap) //!!!FIXME: store UID inside and check changes as with other gfx resources?!
+		pTerrain->HeightMap = ResMgr.GetTexture(_HeightMapUID, Render::Access_GPU_Read);
 
-	if (_CDLODData)
+	// Initialize material
+	if (!_MaterialUID)
 	{
+		if (pTerrain->Material)
+		{
+			pTerrain->Material = nullptr;
+			pTerrain->ShaderTechIndex = INVALID_INDEX_T<U32>;
+		}
+	}
+	else if (!pTerrain->Material || pTerrain->Material->GetUID() != _MaterialUID) //!!! || LOD != RememberedLOD? Or terrain manages its material LOD in a renderer?
+	{
+		static const CStrID InputSet_CDLOD("CDLOD");
+
+		pTerrain->Material = View.GetGraphicsManager()->GetMaterial(_MaterialUID);
+		if (pTerrain->Material && pTerrain->Material->GetEffect())
+			pTerrain->ShaderTechIndex = View.RegisterEffect(*pTerrain->Material->GetEffect(), InputSet_CDLOD);
+	}
+
+	// Initialize CDLOD data and meshes
+	if (!_CDLODData)
+	{
+		pTerrain->CDLODData = nullptr;
+		pTerrain->PatchMesh = nullptr;
+		pTerrain->QuarterPatchMesh = nullptr;
+	}
+	else if (!pTerrain->CDLODData || pTerrain->CDLODData != _CDLODData)
+	{
+		pTerrain->CDLODData = _CDLODData;
+
 		const auto PatchSize = _CDLODData->GetPatchSize();
 		//if (!Math::IsPow2(PatchSize) || PatchSize < 4) FAIL;
 
@@ -121,11 +149,6 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 			ResMgr.GetResourceManager()->RegisterResource(QuarterMeshUID.CStr(), n_new(Resources::CMeshGeneratorQuadPatch(QPatchSize)));
 
 		pTerrain->QuarterPatchMesh = ResMgr.GetMesh(QuarterMeshUID);
-	}
-	else
-	{
-		pTerrain->PatchMesh = nullptr;
-		pTerrain->QuarterPatchMesh = nullptr;
 	}
 }
 //---------------------------------------------------------------------

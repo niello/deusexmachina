@@ -88,13 +88,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	n_assert_dbg(!View.LightIndices.GetCount());
 
 	Render::CRenderNodeContext Context;
-
-	// Find override effects for the current GPU
-	Context.EffectOverrides.clear();
-	if (_ShaderTechCacheIndex > 0)
-		for (const auto& [Key, EffectUID] : View.GetRenderPath()->EffectOverrides[_ShaderTechCacheIndex - 1])
-			Context.EffectOverrides.emplace(Key, View.GetGraphicsManager()->GetEffect(EffectUID));
-
 	Context.pShaderTechCache = View.GetShaderTechCache(_ShaderTechCacheIndex);
 
 	if (EnableLighting)

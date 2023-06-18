@@ -44,9 +44,7 @@ struct CRenderNodeContext
 	CAABB					AABB;
 	CArray<CLightRecord>*	pLights;
 	CArray<U16>*			pLightIndices;
-
-	std::map<Render::EEffectType, Render::PEffect> EffectOverrides;
-	const Render::CTechnique* const* pShaderTechCache = nullptr; //!!!DBG TMP!
+	const Render::CTechnique* const* pShaderTechCache = nullptr;
 };
 
 }

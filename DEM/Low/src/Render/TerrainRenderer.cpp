@@ -182,20 +182,14 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 	CMaterial* pMaterial = pTerrain->GetMaterial(); //!!!Get by MaterialLOD!
 	if (!pMaterial) FAIL;
 
-	auto OverrideIt = Context.EffectOverrides.find(pMaterial->GetEffect()->GetType());
-	CEffect* pEffect = (OverrideIt == Context.EffectOverrides.cend()) ? pMaterial->GetEffect() : OverrideIt->second.Get();
-	if (!pEffect) FAIL;
-
-	static const CStrID InputSet_CDLOD("CDLOD");
-
 	Node.pMaterial = pMaterial;
-	Node.pTech = pEffect->GetTechByInputSet(InputSet_CDLOD);
+	Node.pTech = Context.pShaderTechCache[pTerrain->ShaderTechIndex];
 	if (!Node.pTech) FAIL;
 
 	// For sorting, different terrain objects with the same mesh will be rendered sequentially.
 	// NB: doesn't save redundant sets because of quarter patches. Still need or set nullptrs?
 	Node.pMesh = pTerrain->GetPatchMesh();
-	Node.pGroup = Node.pMesh ? pTerrain->GetPatchMesh()->GetGroup(0, 0) : nullptr;
+	Node.pGroup = nullptr;
 
 	U8 LightCount = 0;
 
