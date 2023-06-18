@@ -98,6 +98,12 @@ void CModelAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rendera
 	//???pass only LOD metric and calc LODs for geom & mtl from it and from attr settings?!
 	UPTR LOD = 0;
 
+	//!!!TODO: here if tfm changed could store it directly in a view's uniform buffer, like:
+	// if (LastTfmVer != _pNode->TfmVer)
+	//   View.GetRenderableDataFromGlobalUniformBuffer(SceneRecordHandle->first)["WorldMatrix"] = _pNode->GetWorldTransform();
+	//???or is it a job of a renderer? it knows if we need vertex stream or constant instancing. Can do smth like:
+	// pRenderer->UpdateRenderableData(this, View, ...)
+
 	auto pModel = static_cast<Render::CModel*>(&Renderable);
 
 	// Initialize geometry

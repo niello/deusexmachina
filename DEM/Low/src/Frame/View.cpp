@@ -383,60 +383,6 @@ void CView::SynchronizeLights()
 }
 //---------------------------------------------------------------------
 
-void CView::UpdateLights(bool ViewProjChanged)
-{
-	// Iterate synchronized collections side by side
-	auto ItSceneObject = _pScene->GetLights().cbegin();
-	auto ItViewObject = _Lights.cbegin();
-	for (; ItViewObject != _Lights.cend(); ++ItSceneObject, ++ItViewObject)
-	{
-		const CGraphicsScene::CSpatialRecord& Record = ItSceneObject->second;
-		Render::CLight* pLight = ItViewObject->second.get();
-		auto pAttr = static_cast<CLightAttribute*>(Record.pAttr);
-
-		float SqDistanceToCamera = -1.f;
-		if (!Record.BoundsVersion)
-		{
-			// Objects with invalid bounds are always visible. E.g. skybox.
-			pLight->IsVisible = true;
-			pLight->BoundsVersion = Record.BoundsVersion;
-		}
-		else if (ViewProjChanged || pLight->BoundsVersion != Record.BoundsVersion)
-		{
-			//???TODO: need to test for empty bounds and set invisible to save resources on further processing?!
-
-			const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
-			if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
-			{
-				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
-				{
-					//!!!FIXME: for lights maybe better is to use spheres! Octree insertion is identical for AABB-Sphere & AABB-AABB, but here spheres are faster!
-					pLight->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, _LastViewFrustum);
-				}
-				else pLight->IsVisible = true;
-
-				if (pLight->IsVisible) SqDistanceToCamera = Math::SqDistancePointAABB(_EyePos, Record.BoxCenter, Record.BoxExtent);
-			}
-			else pLight->IsVisible = false;
-
-			pLight->BoundsVersion = Record.BoundsVersion;
-		}
-
-		// Light sources that emit no light or that are too far away are considered invisible
-		if (pLight->IsVisible && pAttr->DoesEmitAnyEnergy() && SqDistanceToCamera <= pAttr->GetMaxDistanceSquared())
-		{
-			//!!!TODO: inside UpdateLight:
-			// - update tfm from attr
-			// - update light params from attr
-			// - update cached GPU structures for dirty parts (constant buffer element, IBL textures etc)
-			pAttr->UpdateLight(*_GraphicsMgr, *pLight);
-
-			// if needed, mark light for updating object intersections
-		}
-	}
-}
-//---------------------------------------------------------------------
-
 void CView::UpdateRenderables(bool ViewProjChanged)
 {
 	// Iterate synchronized collections side by side
@@ -510,6 +456,60 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			//then easier to insert to the end here and sort once after all processing!
 			//???or maybe try to insert sorted with possible violation, and then resort as almost sorted and everything will be fixed?
 			//but sorted insertion has a cost, it is easier to sort only once!
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+void CView::UpdateLights(bool ViewProjChanged)
+{
+	// Iterate synchronized collections side by side
+	auto ItSceneObject = _pScene->GetLights().cbegin();
+	auto ItViewObject = _Lights.cbegin();
+	for (; ItViewObject != _Lights.cend(); ++ItSceneObject, ++ItViewObject)
+	{
+		const CGraphicsScene::CSpatialRecord& Record = ItSceneObject->second;
+		Render::CLight* pLight = ItViewObject->second.get();
+		auto pAttr = static_cast<CLightAttribute*>(Record.pAttr);
+
+		float SqDistanceToCamera = -1.f;
+		if (!Record.BoundsVersion)
+		{
+			// Objects with invalid bounds are always visible. E.g. skybox.
+			pLight->IsVisible = true;
+			pLight->BoundsVersion = Record.BoundsVersion;
+		}
+		else if (ViewProjChanged || pLight->BoundsVersion != Record.BoundsVersion)
+		{
+			//???TODO: need to test for empty bounds and set invisible to save resources on further processing?!
+
+			const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
+			if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
+			{
+				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
+				{
+					//!!!FIXME: for lights maybe better is to use spheres! Octree insertion is identical for AABB-Sphere & AABB-AABB, but here spheres are faster!
+					pLight->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, _LastViewFrustum);
+				}
+				else pLight->IsVisible = true;
+
+				if (pLight->IsVisible) SqDistanceToCamera = Math::SqDistancePointAABB(_EyePos, Record.BoxCenter, Record.BoxExtent);
+			}
+			else pLight->IsVisible = false;
+
+			pLight->BoundsVersion = Record.BoundsVersion;
+		}
+
+		// Light sources that emit no light or that are too far away are considered invisible
+		if (pLight->IsVisible && pAttr->DoesEmitAnyEnergy() && SqDistanceToCamera <= pAttr->GetMaxDistanceSquared())
+		{
+			//!!!TODO: inside UpdateLight:
+			// - update tfm from attr
+			// - update light params from attr
+			// - update cached GPU structures for dirty parts (constant buffer element, IBL textures etc)
+			pAttr->UpdateLight(*_GraphicsMgr, *pLight);
+
+			// if needed, mark light for updating object intersections
 		}
 	}
 }
