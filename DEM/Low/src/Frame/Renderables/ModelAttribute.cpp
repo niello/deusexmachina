@@ -141,7 +141,7 @@ void CModelAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rendera
 		if (pModel->Material)
 		{ 
 			pModel->Material = nullptr;
-			// erase effect & tech cache
+			pModel->ShaderTechIndex = INVALID_INDEX_T<U32>;
 		}
 	}
 	else if (!pModel->Material || pModel->Material->GetUID() != _MaterialUID || PrevInputSet != InputSet) //!!! || LOD != RememberedLOD

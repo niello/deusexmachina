@@ -57,9 +57,6 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 	Node.pMesh = pModel->Mesh.Get();
 	Node.pGroup = pModel->pGroup;
 
-	// FIXME SKINS: need?
-	Node.pSkinMapping = nullptr;
-
 	U8 LightCount = 0;
 
 	if (Context.pLights && MAX_LIGHT_COUNT_PER_OBJECT)
@@ -201,6 +198,9 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 
 		if (pRenderNode->pRenderer != this) return ItCurr;
 
+		CModel* pModel = pRenderNode->pRenderable->As<CModel>();
+		n_assert_dbg(pModel);
+
 		const CTechnique* pTech = pRenderNode->pTech;
 		const CPrimitiveGroup* pGroup = pRenderNode->pGroup;
 		n_assert_dbg(pGroup && pTech);
@@ -237,14 +237,14 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 
 		bool HardwareInstancing = false;
 		CRenderQueueIterator ItInstEnd = ItCurr + 1;
-		if (!pRenderNode->pSkinPalette && (ConstInstanceDataVS || InstanceVBSize > 1))
+		if (!pModel->pSkinPalette && (ConstInstanceDataVS || InstanceVBSize > 1))
 		{
 			while (ItInstEnd != ItEnd &&
 				   (*ItInstEnd)->pRenderer == this &&
 				   (*ItInstEnd)->pMaterial == pMaterial &&
 				   (*ItInstEnd)->pTech == pTech &&
 				   (*ItInstEnd)->pGroup == pGroup &&
-				   !(*ItInstEnd)->pSkinPalette)
+				   !(*ItInstEnd)->pRenderable->As<CModel>()->pSkinPalette)
 			{
 				// We don't try to find an instanced tech version here, and don't break if
 				// it is not found, because if we did, the next object will try to do all
@@ -554,23 +554,8 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 				}
 
 				// TODO: could reuse constant buffer with the same pSkinPalette without resetting the palette redundantly
-				if (ConstSkinPalette && pRenderNode->pSkinPalette)
-				{
-					const UPTR BoneCount = std::min(pRenderNode->BoneCount, ConstSkinPalette.GetElementCount());
-					if (pRenderNode->pSkinMapping)
-					{
-						for (UPTR BoneIdxIdx = 0; BoneIdxIdx < BoneCount; ++BoneIdxIdx)
-						{
-							const matrix44* pBoneMatrix = pRenderNode->pSkinPalette + pRenderNode->pSkinMapping[BoneIdxIdx];
-							PerInstance.SetMatrix(ConstSkinPalette[BoneIdxIdx], *pBoneMatrix);
-						}
-					}
-					else
-					{
-						// No mapping, use skin palette directly
-						PerInstance.SetMatrixArray(ConstSkinPalette, pRenderNode->pSkinPalette, BoneCount);
-					}
-				}
+				if (ConstSkinPalette && pModel->pSkinPalette)
+					PerInstance.SetMatrixArray(ConstSkinPalette, pModel->pSkinPalette, std::min(pModel->BoneCount, ConstSkinPalette.GetElementCount()));
 
 				PerInstance.Apply();
 

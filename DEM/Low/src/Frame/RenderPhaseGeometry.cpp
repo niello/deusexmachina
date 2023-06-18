@@ -122,16 +122,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		pNode->pRenderer = ItRenderer->second;
 		pNode->Transform = pAttr->GetNode()->GetWorldMatrix();
 
-		if (auto pSkinAttr = pAttr->GetNode()->FindFirstAttribute<Frame::CSkinAttribute>())
-		{
-			if (const auto& Palette = pSkinAttr->GetSkinPalette())
-			{
-				pNode->pSkinPalette = Palette->GetSkinPalette();
-				pNode->BoneCount = Palette->GetSkinInfo()->GetBoneCount();
-			}
-		}
-		else pNode->pSkinPalette = nullptr;
-
 		if (pAttr->GetGlobalAABB(Context.AABB, 0))
 		{
 			float ScreenSizeRel;
