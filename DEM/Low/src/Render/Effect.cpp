@@ -5,23 +5,22 @@
 namespace Render
 {
 
-CEffect::CEffect(EEffectType Type, PShaderParamTable MaterialParams, CShaderParamValues&& MaterialDefaults)
+CEffect::CEffect(EEffectType Type, PShaderParamTable MaterialParams, CShaderParamValues&& MaterialDefaults, std::map<CStrID, PTechnique>&& Techs)
 	: _Type(Type)
+	, _TechsByInputSet(std::move(Techs))
 	, _MaterialParams(MaterialParams)
 	, _MaterialDefaults(std::move(MaterialDefaults))
 {
+	for (const auto& [InputSet, Tech] : _TechsByInputSet)
+	{
+		Tech->_pOwner = this;
+		if (Tech->GetName())
+			_TechsByName[Tech->GetName()] = Tech;
+	}
 }
 //---------------------------------------------------------------------
 
 CEffect::~CEffect() = default;
-//---------------------------------------------------------------------
-
-void CEffect::SetTechnique(CStrID InputSet, PTechnique Tech)
-{
-	_TechsByInputSet[InputSet] = Tech;
-
-	if (Tech->GetName()) _TechsByName[Tech->GetName()] = Tech;
-}
 //---------------------------------------------------------------------
 
 const CTechnique* CEffect::GetTechByName(CStrID Name) const

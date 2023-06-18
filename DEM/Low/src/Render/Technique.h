@@ -17,6 +17,7 @@ class CTechnique: public Data::CRefCounted
 {
 private:
 
+	const CEffect*            _pOwner = nullptr;
 	CStrID                    _Name;
 	std::vector<PRenderState> _Passes;
 	IPTR                      _MaxLightCount;
@@ -29,6 +30,7 @@ public:
 	CTechnique(CStrID Name, std::vector<PRenderState>&& Passes, IPTR MaxLights, PShaderParamTable Params);
 	virtual ~CTechnique() override;
 
+	const CEffect*     GetEffect() const { return _pOwner; }
 	CStrID             GetName() const { return _Name; }
 	const auto&        GetPasses(UPTR& LightCount) const { return _Passes; }
 	const auto&        GetPasses() const { return _Passes; }

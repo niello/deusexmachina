@@ -95,6 +95,8 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		for (const auto& [Key, EffectUID] : View.GetRenderPath()->EffectOverrides[_ShaderTechCacheIndex - 1])
 			Context.EffectOverrides.emplace(Key, View.GetGraphicsManager()->GetEffect(EffectUID));
 
+	Context.pShaderTechCache = View.GetShaderTechCache(_ShaderTechCacheIndex);
+
 	if (EnableLighting)
 	{
 		Context.pLights = &View.GetLightCache();

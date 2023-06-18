@@ -598,7 +598,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 			for (auto RSIndex : Pair.second.RSIndices)
 				Passes.push_back(RenderStates[RSIndex]);
 
-			Techs.emplace(Pair.first, n_new(Render::CTechnique(CStrID::Empty, std::move(Passes), -1, Pair.second.Params)));
+			Techs.emplace(Pair.first, new Render::CTechnique(CStrID::Empty, std::move(Passes), -1, Pair.second.Params));
 		}
 
 		break;
@@ -616,12 +616,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 
 	// Create an effect from the loaded data
 
-	Render::PEffect Effect = n_new(Render::CEffect(EffectType, MaterialParams, std::move(MaterialDefaults)));
-
-	for (const auto& Pair : Techs)
-		Effect->SetTechnique(Pair.first, Pair.second);
-
-	return Effect;
+	return Render::PEffect(new Render::CEffect(EffectType, MaterialParams, std::move(MaterialDefaults), std::move(Techs)));
 }
 //---------------------------------------------------------------------
 

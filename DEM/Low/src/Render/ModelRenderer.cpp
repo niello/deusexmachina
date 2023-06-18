@@ -47,16 +47,11 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 	CMaterial* pMaterial = pModel->Material.Get(); //!!!Get by MaterialLOD!
 	if (!pMaterial || !pMaterial->GetEffect()) FAIL;
 
-	auto OverrideIt = Context.EffectOverrides.find(pMaterial->GetEffect()->GetType());
-	CEffect* pEffect = (OverrideIt == Context.EffectOverrides.cend()) ? pMaterial->GetEffect() : OverrideIt->second.Get();
-	if (!pEffect) FAIL;
-
 	static const CStrID InputSet_Model("Model");
 	static const CStrID InputSet_ModelSkinned("ModelSkinned");
 
 	Node.pMaterial = pMaterial;
-	Node.pEffect = pEffect;
-	Node.pTech = pEffect->GetTechByInputSet(Node.pSkinPalette ? InputSet_ModelSkinned : InputSet_Model);
+	Node.pTech = Context.pShaderTechCache[pModel->ShaderTechIndex];
 	if (!Node.pTech) FAIL;
 
 	Node.pMesh = pModel->Mesh.Get();
@@ -263,7 +258,7 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 			if (ItInstEnd - ItCurr > 1)
 			{
 				static const CStrID InputSet_ModelInstanced("ModelInstanced");
-				const CTechnique* pInstancedTech = pRenderNode->pEffect->GetTechByInputSet(InputSet_ModelInstanced);
+				const CTechnique* pInstancedTech = pRenderNode->pTech->GetEffect()->GetTechByInputSet(InputSet_ModelInstanced);
 				if (pInstancedTech)
 				{
 					pTech = pInstancedTech;

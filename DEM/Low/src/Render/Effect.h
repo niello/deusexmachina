@@ -41,11 +41,8 @@ protected:
 
 public:
 
-	CEffect(EEffectType Type, PShaderParamTable MaterialParams, CShaderParamValues&& MaterialDefaults);
+	CEffect(EEffectType Type, PShaderParamTable MaterialParams, CShaderParamValues&& MaterialDefaults, std::map<CStrID, PTechnique>&& Techs);
 	virtual ~CEffect() override;
-
-	// For creation
-	void                     SetTechnique(CStrID InputSet, PTechnique Tech);
 
 	bool                     IsValid() const { return !_TechsByInputSet.empty(); }
 

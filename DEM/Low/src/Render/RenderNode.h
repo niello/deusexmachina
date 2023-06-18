@@ -21,7 +21,6 @@ struct CRenderNode
 	float					SqDistanceToCamera;
 
 	CMaterial*              pMaterial;          // Non-constant because of temporary buffers in a shader param storage
-	const CEffect*			pEffect;			// For searching instanced tech in a model renderer only (for now)
 	const CTechnique*		pTech;
 	const CMesh*			pMesh;
 	const CPrimitiveGroup*	pGroup;
@@ -51,6 +50,7 @@ struct CRenderNodeContext
 	CArray<U16>*			pLightIndices;
 
 	std::map<Render::EEffectType, Render::PEffect> EffectOverrides;
+	const Render::CTechnique* const* pShaderTechCache = nullptr; //!!!DBG TMP!
 };
 
 }

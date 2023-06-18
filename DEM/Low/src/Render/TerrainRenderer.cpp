@@ -189,7 +189,6 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 	static const CStrID InputSet_CDLOD("CDLOD");
 
 	Node.pMaterial = pMaterial;
-	Node.pEffect = pEffect;
 	Node.pTech = pEffect->GetTechByInputSet(InputSet_CDLOD);
 	if (!Node.pTech) FAIL;
 

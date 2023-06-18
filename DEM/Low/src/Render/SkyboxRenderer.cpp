@@ -28,7 +28,6 @@ bool CSkyboxRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& C
 	static const CStrID InputSet_Skybox("Skybox");
 
 	Node.pMaterial = pMaterial;
-	Node.pEffect = pEffect;
 	Node.pTech = pEffect->GetTechByInputSet(InputSet_Skybox);
 	if (!Node.pTech) FAIL;
 
