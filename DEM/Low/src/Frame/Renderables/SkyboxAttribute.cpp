@@ -48,18 +48,40 @@ Render::PRenderable CSkyboxAttribute::CreateRenderable() const
 }
 //---------------------------------------------------------------------
 
+// NB: LOD is not used for skyboxes
 void CSkyboxAttribute::UpdateRenderable(CView& View, Render::IRenderable& Renderable) const
 {
-	CStrID MeshUID("#Mesh_BoxCW");
-	if (!View.GetGraphicsManager()->GetResourceManager()->FindResource(MeshUID))
+	auto pSkybox = static_cast<Render::CSkybox*>(&Renderable);
+
+	if (!pSkybox->Mesh)
 	{
-		// NB: CW box is created, because rendering is CCW, but front sides of polygons must be inside the skybox
-		View.GetGraphicsManager()->GetResourceManager()->RegisterResource(MeshUID.CStr(), n_new(Resources::CMeshGeneratorBox(true)));
+		CStrID MeshUID("#Mesh_BoxCW");
+		if (!View.GetGraphicsManager()->GetResourceManager()->FindResource(MeshUID))
+		{
+			// NB: CW box is created, because rendering is CCW, but front sides of polygons must be inside the skybox
+			View.GetGraphicsManager()->GetResourceManager()->RegisterResource(MeshUID.CStr(), n_new(Resources::CMeshGeneratorBox(true)));
+		}
+
+		pSkybox->Mesh = View.GetGraphicsManager()->GetMesh(MeshUID);
 	}
 
-	auto pSkybox = static_cast<Render::CSkybox*>(&Renderable);
-	pSkybox->Mesh = MeshUID ? View.GetGraphicsManager()->GetMesh(MeshUID) : nullptr;
-	pSkybox->Material = _MaterialUID ? View.GetGraphicsManager()->GetMaterial(_MaterialUID) : nullptr;
+	// Initialize material
+	if (!_MaterialUID)
+	{
+		if (pSkybox->Material)
+		{
+			pSkybox->Material = nullptr;
+			pSkybox->ShaderTechIndex = INVALID_INDEX_T<U32>;
+		}
+	}
+	else if (!pSkybox->Material || pSkybox->Material->GetUID() != _MaterialUID)
+	{
+		static const CStrID InputSet_Skybox("Skybox");
+
+		pSkybox->Material = View.GetGraphicsManager()->GetMaterial(_MaterialUID);
+		if (pSkybox->Material && pSkybox->Material->GetEffect())
+			pSkybox->ShaderTechIndex = View.RegisterEffect(*pSkybox->Material->GetEffect(), InputSet_Skybox);
+	}
 }
 //---------------------------------------------------------------------
 

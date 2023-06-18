@@ -4,11 +4,6 @@
 
 // Skybox is a piece of generated geometry that draws backgroung of a scene (typically sky)
 
-namespace Resources
-{
-	typedef Ptr<class CResource> PResource;
-}
-
 namespace Render
 {
 
@@ -18,8 +13,9 @@ class CSkybox: public IRenderable
 
 public:
 
-	PMaterial				Material;
-	PMesh					Mesh;
+	PMaterial Material;
+	PMesh     Mesh;
+	U32       ShaderTechIndex = INVALID_INDEX_T<U32>;
 };
 
 typedef Ptr<CSkybox> PSkybox;

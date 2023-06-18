@@ -21,18 +21,9 @@ bool CSkyboxRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& C
 	CMaterial* pMaterial = pSkybox->Material.Get(); //!!!Get by MaterialLOD / quality level!
 	if (!pMaterial) FAIL;
 
-	auto OverrideIt = Context.EffectOverrides.find(pMaterial->GetEffect()->GetType());
-	CEffect* pEffect = (OverrideIt == Context.EffectOverrides.cend()) ? pMaterial->GetEffect() : OverrideIt->second.Get();
-	if (!pEffect) FAIL;
-
-	static const CStrID InputSet_Skybox("Skybox");
-
 	Node.pMaterial = pMaterial;
-	Node.pTech = pEffect->GetTechByInputSet(InputSet_Skybox);
+	Node.pTech = Context.pShaderTechCache[pSkybox->ShaderTechIndex];
 	if (!Node.pTech) FAIL;
-
-	Node.pMesh = pSkybox->Mesh;
-	Node.pGroup = pSkybox->Mesh->GetGroup(0, 0);
 
 	OK;
 }
@@ -54,6 +45,9 @@ CRenderQueueIterator CSkyboxRenderer::Render(const CRenderContext& Context, CRen
 		CRenderNode* pRenderNode = *ItCurr;
 
 		if (pRenderNode->pRenderer != this) return ItCurr;
+
+		CSkybox* pSkybox = pRenderNode->pRenderable->As<CSkybox>();
+		n_assert_dbg(pSkybox);
 
 		auto pMaterial = pRenderNode->pMaterial;
 		if (pMaterial != pCurrMaterial)
@@ -88,7 +82,7 @@ CRenderQueueIterator CSkyboxRenderer::Render(const CRenderContext& Context, CRen
 		}
 		n_verify_dbg(PerInstance.Apply());
 
-		const CMesh* pMesh = pRenderNode->pMesh;
+		const CMesh* pMesh = pSkybox->Mesh.Get();
 		n_assert_dbg(pMesh);
 		CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
 		n_assert_dbg(pVB);
