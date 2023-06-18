@@ -46,6 +46,9 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 	for (const auto& Const : GlobalParams.GetConstants())
 		Globals.CreatePermanentConstantBuffer(Const.GetConstantBufferIndex(), Render::Access_CPU_Write | Render::Access_GPU_Read);
 
+	// Allocate caches for original effects and for all overrides
+	_ShaderTechCache.resize(1 + _RenderPath->EffectOverrideCount);
+
 	// Create linear cube sampler for image-based lighting
 	//???FIXME: declarative in RP? as material defaults in the effect!
 
@@ -156,6 +159,19 @@ bool CView::PrecreateRenderObjects()
 	//!!!TODO: update GPU resources etc for all objects including currently invisible! Rename to Preload? Make async?
 
 	return true;
+}
+//---------------------------------------------------------------------
+
+U32 CView::RegisterEffect(const Render::CEffect& Effect, CStrID InputSet)
+{
+	// View only tracks unique combinations of a source material and an input set. Passes may
+	// apply material overrides when resolveng these pairs into actual shader techniques.
+	auto Key = std::make_pair(&Effect, InputSet);
+	auto It = _EffectMap.find(Key);
+	if (It != _EffectMap.cend()) return It->second;
+	const auto NewIndex = static_cast<U32>(_EffectMap.size());
+	_EffectMap.emplace(std::move(Key), NewIndex);
+	return NewIndex;
 }
 //---------------------------------------------------------------------
 
@@ -479,7 +495,7 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			// - update tfm from attr
 			// - update renderable/light params from attr
 			// - update cached GPU structures for dirty parts (tfm, material etc)
-			pAttr->UpdateRenderable(*_GraphicsMgr, *pRenderable);
+			pAttr->UpdateRenderable(*this, *pRenderable);
 
 			// if needed, mark object for updating light intersections
 

@@ -17,7 +17,7 @@ namespace Render
 
 namespace Frame
 {
-class CGraphicsResourceManager;
+class CView;
 class CGraphicsScene;
 
 class CRenderableAttribute: public Scene::CNodeAttribute
@@ -35,7 +35,7 @@ protected:
 public:
 
 	virtual Render::PRenderable CreateRenderable() const = 0;
-	virtual void                UpdateRenderable(CGraphicsResourceManager& ResMgr, Render::IRenderable& Renderable) const = 0;
+	virtual void                UpdateRenderable(CView& View, Render::IRenderable& Renderable) const = 0;
 	virtual bool                GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
 	bool                        GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const;
 	void                        UpdateInGraphicsScene(CGraphicsScene& Scene);

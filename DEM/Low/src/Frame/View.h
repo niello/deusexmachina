@@ -88,6 +88,9 @@ protected:
 	std::map<UPTR, Render::PLight>                 _Lights;
 	std::vector<decltype(_Lights)::node_type>      _LightNodePool;
 
+	std::map<std::pair<const Render::CEffect*, CStrID>, U32> _EffectMap; // Source effect & input set -> index in a _ShaderTechCache
+	std::vector<std::vector<Render::CTechnique*>>  _ShaderTechCache;       // First index is an override index (0 is no override), second is from _MaterialMap
+
 	CArray<UPTR>								VisibilityCache;
 	CArray<Render::CLightRecord>				LightCache;
 	CArray<Render::CImageBasedLight*>			EnvironmentCache;
@@ -136,6 +139,7 @@ public:
 	CCameraAttribute*               CreateDefaultCamera(CStrID RenderTargetID, Scene::CSceneNode& ParentNode, bool SetAsCurrent = true);
 
 	bool                            PrecreateRenderObjects();
+	U32                             RegisterEffect(const Render::CEffect& Effect, CStrID InputSet);
 	auto&							GetVisibilityCache() { return VisibilityCache; }
 	Render::IRenderable*			GetRenderable(UPTR UID) { auto It = _Renderables.find(UID); return (It == _Renderables.cend()) ? nullptr : It->second.get(); }
 	CArray<Render::CLightRecord>&	GetLightCache() { return LightCache; }

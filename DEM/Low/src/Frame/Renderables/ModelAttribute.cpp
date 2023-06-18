@@ -1,11 +1,16 @@
 #include "ModelAttribute.h"
+#include <Frame/View.h>
 #include <Frame/GraphicsResourceManager.h>
+#include <Frame/SkinAttribute.h>
+#include <Frame/SkinProcessorAttribute.h>
+#include <Scene/SceneNode.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Render/Model.h>
 #include <Render/Mesh.h>
 #include <Render/MeshData.h>
 #include <Render/Material.h>
+#include <Render/SkinInfo.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -77,18 +82,23 @@ bool CModelAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 Render::PRenderable CModelAttribute::CreateRenderable() const
 {
 	return std::make_unique<Render::CModel>();
+
+	//!!!TODO: setup renderer! it can be done once, as a renderable is created per view, and changing RP in view will erase all cached objects.
+	//!!!if renderer not found, return nullptr from here?! it is necessary, e.g. skybox is never rendered in a depth phase
+	// In phase:
+	//auto ItRenderer = RenderersByObjectType.find(pRenderable->GetRTTI());
+	//if (ItRenderer == RenderersByObjectType.cend()) continue;
+	//???use the same renderer for all phases? how to store different overrides then?
 }
 //---------------------------------------------------------------------
 
-void CModelAttribute::UpdateRenderable(CGraphicsResourceManager& ResMgr, Render::IRenderable& Renderable) const
+void CModelAttribute::UpdateRenderable(CView& View, Render::IRenderable& Renderable) const
 {
 	//!!!TODO: pass LOD from outside!
 	//???pass only LOD metric and calc LODs for geom & mtl from it and from attr settings?!
 	UPTR LOD = 0;
 
 	auto pModel = static_cast<Render::CModel*>(&Renderable);
-
-	//!!!TODO: setup renderer!
 
 	// Initialize geometry
 	if (!_MeshUID)
@@ -99,26 +109,47 @@ void CModelAttribute::UpdateRenderable(CGraphicsResourceManager& ResMgr, Render:
 			pModel->pGroup = nullptr;
 		}
 	}
-	else if (!pModel->Mesh || pModel->Mesh->GetUID() != _MeshUID)
+	else if (!pModel->Mesh || pModel->Mesh->GetUID() != _MeshUID) //!!! || LOD != RememberedLOD
 	{
-		pModel->Mesh = ResMgr.GetMesh(_MeshUID);
+		pModel->Mesh = View.GetGraphicsManager()->GetMesh(_MeshUID);
 		pModel->pGroup = _MeshData->GetGroup(_MeshGroupIndex, LOD);
 	}
+
+	static const CStrID InputSet_Model("Model");
+	static const CStrID InputSet_ModelSkinned("ModelSkinned");
+	const auto PrevInputSet = pModel->pSkinPalette ? InputSet_ModelSkinned : InputSet_Model;
+
+	// Find a skin palette
+	// FIXME: when to update? Don't want to check this each frame! Could check in CreateRenderable(), but then need to detect
+	// CSkinAttribute destruction and also can't react on adding or changing it on the fly!
+	//???embed optional skin into a CModelAttribute? Or even make a subclass CSkinnedModelAttribute : public CModelAttribute?
+	if (auto pSkinAttr = _pNode->FindFirstAttribute<Frame::CSkinAttribute>())
+	{
+		if (const auto& Palette = pSkinAttr->GetSkinPalette())
+		{
+			pModel->pSkinPalette = Palette->GetSkinPalette();
+			pModel->BoneCount = Palette->GetSkinInfo()->GetBoneCount();
+		}
+	}
+	else pModel->pSkinPalette = nullptr;
+
+	const auto InputSet = pModel->pSkinPalette ? InputSet_ModelSkinned : InputSet_Model;
 
 	// Initialize material
 	if (!_MaterialUID)
 	{
 		if (pModel->Material)
-		{
+		{ 
 			pModel->Material = nullptr;
 			// erase effect & tech cache
 		}
 	}
-	else if (!pModel->Material || pModel->Material->GetUID() != _MaterialUID)
+	else if (!pModel->Material || pModel->Material->GetUID() != _MaterialUID || PrevInputSet != InputSet) //!!! || LOD != RememberedLOD
 	{
 		// TODO: use LOD to choose a material from set!
-		pModel->Material = ResMgr.GetMaterial(_MaterialUID);
-		// init effect & tech cache, using input set from renderer! do everything inside renderer, passing only us and the material? return tech record index.
+		pModel->Material = View.GetGraphicsManager()->GetMaterial(_MaterialUID);
+		if (pModel->Material && pModel->Material->GetEffect())
+			pModel->ShaderTechIndex = View.RegisterEffect(*pModel->Material->GetEffect(), InputSet);
 	}
 }
 //---------------------------------------------------------------------

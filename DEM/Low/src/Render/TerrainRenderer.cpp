@@ -33,7 +33,7 @@ bool CTerrainRenderer::Init(bool LightingEnabled, const Data::CParams& Params)
 	HMSamplerDesc.Filter = TexFilter_MinMag_Linear_Mip_Point;
 
 	InstanceVBSize = std::max(0, Params.Get<int>(CStrID("InstanceVBSize"), 128));
-	VisibilityRange = std::max(0.f, Params.Get(CStrID("VisibilityRange"), 1000.f));
+	VisibilityRange = std::max(0.f, Params.Get(CStrID("VisibilityRange"), 1000.f)); //!!!FIXME: get from CView!
 	MorphStartRatio = std::clamp(Params.Get(CStrID("MorphStartRatio"), 0.7f), 0.5f, 0.95f);
 
 	if (LightingEnabled)

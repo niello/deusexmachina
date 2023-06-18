@@ -35,6 +35,7 @@ protected:
 	std::vector<Render::PRenderer>                   Renderers;
 	std::map<const Core::CRTTI*, Render::IRenderer*> RenderersByObjectType;
 	std::map<Render::EEffectType, CStrID>			 EffectOverrides;
+	UPTR                                             _ShaderTechCacheIndex = 0;
 	bool											 EnableLighting = false;
 
 	Render::CShaderConstantParam					 ConstGlobalLightBuffer;
@@ -47,7 +48,7 @@ public:
 	CRenderPhaseGeometry();
 	virtual ~CRenderPhaseGeometry() override;
 
-	virtual bool Init(const CRenderPath& Owner, CGraphicsResourceManager& GfxMgr, CStrID PhaseName, const Data::CParams& Desc) override;
+	virtual bool Init(CRenderPath& Owner, CGraphicsResourceManager& GfxMgr, CStrID PhaseName, const Data::CParams& Desc) override;
 	virtual bool Render(CView& View) override;
 };
 

@@ -1,4 +1,5 @@
 #include "TerrainAttribute.h"
+#include <Frame/View.h>
 #include <Frame/GraphicsResourceManager.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
@@ -82,8 +83,10 @@ Render::PRenderable CTerrainAttribute::CreateRenderable() const
 }
 //---------------------------------------------------------------------
 
-void CTerrainAttribute::UpdateRenderable(CGraphicsResourceManager& ResMgr, Render::IRenderable& Renderable) const
+void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Renderable) const
 {
+	auto& ResMgr = *View.GetGraphicsManager();
+
 	// HeightMap support check
 	//!!!write R32F variant!
 	if (!ResMgr.GetGPU() || !ResMgr.GetGPU()->CheckCaps(Render::Caps_VSTex_R16)) return;

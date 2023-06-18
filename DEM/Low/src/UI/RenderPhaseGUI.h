@@ -27,7 +27,7 @@ public:
 
 	virtual ~CRenderPhaseGUI() override;
 
-	virtual bool Init(const CRenderPath& Owner, CGraphicsResourceManager& GfxMgr, CStrID PhaseName, const Data::CParams& Desc) override;
+	virtual bool Init(CRenderPath& Owner, CGraphicsResourceManager& GfxMgr, CStrID PhaseName, const Data::CParams& Desc) override;
 	virtual bool Render(CView& View) override;
 };
 

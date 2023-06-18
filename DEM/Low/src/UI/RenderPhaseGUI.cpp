@@ -20,7 +20,7 @@ FACTORY_CLASS_IMPL(Frame::CRenderPhaseGUI, 'PHUI', Frame::CRenderPhase);
 
 CRenderPhaseGUI::~CRenderPhaseGUI() = default;
 
-bool CRenderPhaseGUI::Init(const CRenderPath& Owner, CGraphicsResourceManager& GfxMgr, CStrID PhaseName, const Data::CParams& Desc)
+bool CRenderPhaseGUI::Init(CRenderPath& Owner, CGraphicsResourceManager& GfxMgr, CStrID PhaseName, const Data::CParams& Desc)
 {
 	if (!CRenderPhase::Init(Owner, GfxMgr, PhaseName, Desc)) FAIL;
 

@@ -6,10 +6,8 @@
 
 namespace Frame
 {
-
-CRenderPath::CRenderPath() {}
-
-CRenderPath::~CRenderPath() {}
+CRenderPath::CRenderPath() = default;
+CRenderPath::~CRenderPath() = default;
 
 void CRenderPath::AddRenderTargetSlot(CStrID ID, vector4 ClearValue)
 {

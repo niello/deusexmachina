@@ -319,7 +319,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 }
 //---------------------------------------------------------------------
 
-bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CGraphicsResourceManager& GfxMgr, CStrID PhaseName, const Data::CParams& Desc)
+bool CRenderPhaseGeometry::Init(CRenderPath& Owner, CGraphicsResourceManager& GfxMgr, CStrID PhaseName, const Data::CParams& Desc)
 {
 	if (!CRenderPhase::Init(Owner, GfxMgr, PhaseName, Desc)) FAIL;
 
@@ -395,9 +395,6 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CGraphicsResourceManag
 		Renderers.push_back(std::move(Renderer));
 	}
 
-	//!!!remember only IDs here, load effect in a View, as they reference a GPU!
-	//anyway only one loaded copy of resource if possible now, so there can't be
-	//two effect instances created with different GPUs
 	n_assert_dbg(EffectOverrides.empty());
 	Data::PParams EffectsDesc;
 	if (Desc.TryGet(EffectsDesc, CStrID("Effects")))
@@ -417,6 +414,12 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CGraphicsResourceManag
 
 			EffectOverrides.emplace(EffectType, Prm.GetRawValue().IsNull() ? CStrID::Empty : Prm.GetValue<CStrID>());
 		}
+
+		// Index 0 is used for original effects, 1 and above are for overrides
+		if (!EffectOverrides.empty())
+			_ShaderTechCacheIndex = ++Owner.EffectOverrideCount;
+		else
+			_ShaderTechCacheIndex = 0;
 	}
 
 	// Cache global shader parameter descriptions

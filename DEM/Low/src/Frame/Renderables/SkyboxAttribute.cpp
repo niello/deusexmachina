@@ -1,4 +1,5 @@
 #include "SkyboxAttribute.h"
+#include <Frame/View.h>
 #include <Frame/GraphicsResourceManager.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
@@ -47,18 +48,18 @@ Render::PRenderable CSkyboxAttribute::CreateRenderable() const
 }
 //---------------------------------------------------------------------
 
-void CSkyboxAttribute::UpdateRenderable(CGraphicsResourceManager& ResMgr, Render::IRenderable& Renderable) const
+void CSkyboxAttribute::UpdateRenderable(CView& View, Render::IRenderable& Renderable) const
 {
 	CStrID MeshUID("#Mesh_BoxCW");
-	if (!ResMgr.GetResourceManager()->FindResource(MeshUID))
+	if (!View.GetGraphicsManager()->GetResourceManager()->FindResource(MeshUID))
 	{
 		// NB: CW box is created, because rendering is CCW, but front sides of polygons must be inside the skybox
-		ResMgr.GetResourceManager()->RegisterResource(MeshUID.CStr(), n_new(Resources::CMeshGeneratorBox(true)));
+		View.GetGraphicsManager()->GetResourceManager()->RegisterResource(MeshUID.CStr(), n_new(Resources::CMeshGeneratorBox(true)));
 	}
 
 	auto pSkybox = static_cast<Render::CSkybox*>(&Renderable);
-	pSkybox->Mesh = MeshUID ? ResMgr.GetMesh(MeshUID) : nullptr;
-	pSkybox->Material = _MaterialUID ? ResMgr.GetMaterial(_MaterialUID) : nullptr;
+	pSkybox->Mesh = MeshUID ? View.GetGraphicsManager()->GetMesh(MeshUID) : nullptr;
+	pSkybox->Material = _MaterialUID ? View.GetGraphicsManager()->GetMaterial(_MaterialUID) : nullptr;
 }
 //---------------------------------------------------------------------
 

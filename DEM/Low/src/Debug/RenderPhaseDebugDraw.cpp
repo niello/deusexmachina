@@ -15,7 +15,7 @@ FACTORY_CLASS_IMPL(Frame::CRenderPhaseDebugDraw, 'PHDD', Frame::CRenderPhase);
 
 CRenderPhaseDebugDraw::~CRenderPhaseDebugDraw() = default;
 
-bool CRenderPhaseDebugDraw::Init(const CRenderPath& Owner, CGraphicsResourceManager& GfxMgr, CStrID PhaseName, const Data::CParams& Desc)
+bool CRenderPhaseDebugDraw::Init(CRenderPath& Owner, CGraphicsResourceManager& GfxMgr, CStrID PhaseName, const Data::CParams& Desc)
 {
 	if (!CRenderPhase::Init(Owner, GfxMgr, PhaseName, Desc)) FAIL;
 
