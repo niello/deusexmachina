@@ -89,7 +89,7 @@ protected:
 	std::vector<decltype(_Lights)::node_type>      _LightNodePool;
 
 	std::map<std::pair<const Render::CEffect*, CStrID>, U32> _EffectMap; // Source effect & input set -> index in a _ShaderTechCache
-	std::vector<std::vector<Render::CTechnique*>>  _ShaderTechCache;       // First index is an override index (0 is no override), second is from _MaterialMap
+	std::vector<std::vector<const Render::CTechnique*>> _ShaderTechCache;       // First index is an override index (0 is no override), second is from _MaterialMap
 
 	CArray<UPTR>								VisibilityCache;
 	CArray<Render::CLightRecord>				LightCache;
@@ -112,6 +112,7 @@ protected:
 	void SynchronizeLights();
 	void UpdateLights(bool ViewProjChanged);
 	void UpdateRenderables(bool ViewProjChanged);
+	void UpdateShaderTechCache();
 
 public:
 

@@ -52,7 +52,7 @@ public:
 	Render::PShaderParamTable           Globals;
 	Render::CShaderConstantParam        ViewProjection;
 	Render::CShaderConstantParam        CameraPosition;
-	UPTR                                EffectOverrideCount = 0;
+	std::vector<std::map<Render::EEffectType, CStrID>> EffectOverrides;
 
 	CRenderPath();
 	virtual ~CRenderPath() override;

@@ -91,8 +91,9 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	// Find override effects for the current GPU
 	Context.EffectOverrides.clear();
-	for (const auto& [Key, EffectUID] : EffectOverrides)
-		Context.EffectOverrides.emplace(Key, View.GetGraphicsManager()->GetEffect(EffectUID));
+	if (_ShaderTechCacheIndex > 0)
+		for (const auto& [Key, EffectUID] : View.GetRenderPath()->EffectOverrides[_ShaderTechCacheIndex - 1])
+			Context.EffectOverrides.emplace(Key, View.GetGraphicsManager()->GetEffect(EffectUID));
 
 	if (EnableLighting)
 	{
@@ -395,10 +396,10 @@ bool CRenderPhaseGeometry::Init(CRenderPath& Owner, CGraphicsResourceManager& Gf
 		Renderers.push_back(std::move(Renderer));
 	}
 
-	n_assert_dbg(EffectOverrides.empty());
 	Data::PParams EffectsDesc;
 	if (Desc.TryGet(EffectsDesc, CStrID("Effects")))
 	{
+		std::map<Render::EEffectType, CStrID> EffectOverrides;
 		for (UPTR i = 0; i < EffectsDesc->GetCount(); ++i)
 		{
 			const Data::CParam& Prm = EffectsDesc->Get(i);
@@ -415,11 +416,16 @@ bool CRenderPhaseGeometry::Init(CRenderPath& Owner, CGraphicsResourceManager& Gf
 			EffectOverrides.emplace(EffectType, Prm.GetRawValue().IsNull() ? CStrID::Empty : Prm.GetValue<CStrID>());
 		}
 
-		// Index 0 is used for original effects, 1 and above are for overrides
+		// _ShaderTechCacheIndex 0 is used for original effects, 1 and above are for overrides
 		if (!EffectOverrides.empty())
-			_ShaderTechCacheIndex = ++Owner.EffectOverrideCount;
+		{
+			Owner.EffectOverrides.push_back(std::move(EffectOverrides));
+			_ShaderTechCacheIndex = Owner.EffectOverrides.size();
+		}
 		else
+		{
 			_ShaderTechCacheIndex = 0;
+		}
 	}
 
 	// Cache global shader parameter descriptions

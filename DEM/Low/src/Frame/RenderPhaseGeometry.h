@@ -34,7 +34,6 @@ protected:
 	CStrID											 DepthStencilID;
 	std::vector<Render::PRenderer>                   Renderers;
 	std::map<const Core::CRTTI*, Render::IRenderer*> RenderersByObjectType;
-	std::map<Render::EEffectType, CStrID>			 EffectOverrides;
 	UPTR                                             _ShaderTechCacheIndex = 0;
 	bool											 EnableLighting = false;
 

@@ -14,6 +14,7 @@
 #include <Render/DepthStencilBuffer.h>
 #include <Render/Sampler.h>
 #include <Render/SamplerDesc.h>
+#include <Render/Effect.h>
 #include <Scene/SceneNode.h>
 #include <Debug/DebugDraw.h>
 #include <Data/Algorithms.h>
@@ -47,7 +48,7 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 		Globals.CreatePermanentConstantBuffer(Const.GetConstantBufferIndex(), Render::Access_CPU_Write | Render::Access_GPU_Read);
 
 	// Allocate caches for original effects and for all overrides
-	_ShaderTechCache.resize(1 + _RenderPath->EffectOverrideCount);
+	_ShaderTechCache.resize(1 + _RenderPath->EffectOverrides.size());
 
 	// Create linear cube sampler for image-based lighting
 	//???FIXME: declarative in RP? as material defaults in the effect!
@@ -514,6 +515,38 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 }
 //---------------------------------------------------------------------
 
+void CView::UpdateShaderTechCache()
+{
+	// Resolve techniques for newly registered effects
+	for (UPTR ShaderTechCacheIndex = 0; ShaderTechCacheIndex < _ShaderTechCache.size(); ++ShaderTechCacheIndex)
+	{
+		auto& TechCache = _ShaderTechCache[ShaderTechCacheIndex];
+		const auto CacheSize = TechCache.size();
+		if (CacheSize < _EffectMap.size())
+		{
+			TechCache.resize(_EffectMap.size(), nullptr);
+			for (const auto& [EffectAndInputSet, Index] : _EffectMap)
+			{
+				if (Index >= CacheSize)
+				{
+					const Render::CEffect* pEffect = EffectAndInputSet.first;
+					if (ShaderTechCacheIndex > 0)
+					{
+						const auto& EffectOverrides = _RenderPath->EffectOverrides[ShaderTechCacheIndex - 1];
+						auto OverrideIt = EffectOverrides.find(pEffect->GetType());
+						if (OverrideIt != EffectOverrides.cend())
+							pEffect = _GraphicsMgr->GetEffect(OverrideIt->second).Get();
+					}
+
+					if (pEffect)
+						TechCache[Index] = pEffect->GetTechByInputSet(EffectAndInputSet.second);
+				}
+			}
+		}
+	}
+}
+//---------------------------------------------------------------------
+
 bool CView::Render()
 {
 	if (!_RenderPath || !_pScene || !pCamera) return false;
@@ -565,6 +598,8 @@ bool CView::Render()
 	// if ViewProjChanged, mark all queues which use distance to camera dirty
 	// update dirty sorted queues with insertion sort, O(n) for almost sorted arrays. Fallback to qsort for major reorderings or first init.
 	//!!!from huge camera changes can mark a flag 'MajorChanges' camera-dependent (FrontToBack etc) queue, and use qsort instead of almost-sorted.
+
+	UpdateShaderTechCache();
 
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
