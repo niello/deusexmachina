@@ -266,13 +266,12 @@ void CView::SynchronizeRenderables()
 
 		if (ItSceneObject == _pScene->GetRenderables().cend())
 		{
-			// An object was removed from a scene, remove its renderable
+			// An object was removed from a scene, remove its renderable from queues and from a sync list
+			_RenderQueue.Remove(ItViewObject->second.get());
+
 			// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one
 			ItViewObject->second.reset();
 			_RenderableNodePool.push_back(_Renderables.extract(ItViewObject));
-
-			// TODO:
-			// erase from sorted queues
 		}
 		else if (ItViewObject == _Renderables.cend())
 		{
@@ -300,11 +299,9 @@ void CView::SynchronizeRenderables()
 
 			pRenderable = ItViewObject->second.get();
 
-			// TODO:
-			// add to sorted queues (or test visibility first and delay adding to queues until visible the first time?)
-			//!!!an object may be added not to all queues. E.g. alpha objects don't participate in Z prepass and can ignore FrontToBack queue!
-			//???what if combining queues in some phases? E.g. make OpaqueMaterial, AlphaBackToFront, sort there only by that factor, and in a phase
-			//just render one queue and then another!? Could make sorting faster than for the whole pool of objects.
+			//???or test visibility first and delay adding to queues until visible the first time?
+			//???contain only visible objects in queues? need to profile what works better!
+			_RenderQueue.Add(pRenderable);
 		}
 		else
 		{
@@ -588,6 +585,9 @@ bool CView::Render()
 	UpdateLights(ViewProjChanged);
 	UpdateRenderables(ViewProjChanged);
 
+	//???FIXME: fill queue in visibility update instead of lists sync? contain only visible objects. faster sorting, less iteration and checks, but frequent rebuild.
+	_RenderQueue.Update();
+
 	// _pScene->UpdateRenderableLightIntersections() for marked objects and lights
 	//???for each light could store a full list of morton codes or at least top level morton codes that are intersecting it!
 	//???or is it easier to test against object AABB directly?
@@ -598,6 +598,9 @@ bool CView::Render()
 	// if ViewProjChanged, mark all queues which use distance to camera dirty
 	// update dirty sorted queues with insertion sort, O(n) for almost sorted arrays. Fallback to qsort for major reorderings or first init.
 	//!!!from huge camera changes can mark a flag 'MajorChanges' camera-dependent (FrontToBack etc) queue, and use qsort instead of almost-sorted.
+
+	// Draw call ordering:
+	// 
 
 	UpdateShaderTechCache();
 

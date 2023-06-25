@@ -3,6 +3,7 @@
 #include <Render/RenderNode.h>
 #include <Render/Renderer.h>
 #include <Render/ShaderParamStorage.h>
+#include <Frame/RenderQueue.h>
 #include <Events/EventsFwd.h>
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
@@ -80,6 +81,9 @@ protected:
 
 	std::map<CStrID, Render::PRenderTarget>			RTs;
 	std::map<CStrID, Render::PDepthStencilBuffer>	DSBuffers;
+
+	//!!!DBG TMP! Need a set of queues defined in RP!
+	CRenderQueue<>                              _RenderQueue;
 
 	std::vector<bool>                              _SpatialTreeNodeVisibility;
 	std::map<UPTR, Render::PRenderable>            _Renderables;

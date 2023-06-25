@@ -10,6 +10,7 @@
 #include <Render/Mesh.h>
 #include <Render/MeshData.h>
 #include <Render/Material.h>
+#include <Render/Effect.h>
 #include <Render/SkinInfo.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
@@ -148,6 +149,7 @@ void CModelAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rendera
 		{ 
 			pModel->Material = nullptr;
 			pModel->ShaderTechIndex = INVALID_INDEX_T<U32>;
+			pModel->RenderQueueMask = 0;
 		}
 	}
 	else if (!pModel->Material || pModel->Material->GetUID() != _MaterialUID || PrevInputSet != InputSet) //!!! || LOD != RememberedLOD
@@ -155,7 +157,10 @@ void CModelAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rendera
 		// TODO: use LOD to choose a material from set!
 		pModel->Material = View.GetGraphicsManager()->GetMaterial(_MaterialUID);
 		if (pModel->Material && pModel->Material->GetEffect())
+		{
 			pModel->ShaderTechIndex = View.RegisterEffect(*pModel->Material->GetEffect(), InputSet);
+			pModel->RenderQueueMask = (1 << pModel->Material->GetEffect()->GetType());
+		}
 	}
 }
 //---------------------------------------------------------------------

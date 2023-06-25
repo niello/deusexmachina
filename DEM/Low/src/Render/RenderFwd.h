@@ -354,7 +354,7 @@ struct CPrimitiveGroup
 };
 
 // Renderables are queued and filtered by this type. For example, opaque objects are typically
-// rendered before alpha-blended ones, and are not included in a depth pre-pass at all. This enum
+// rendered before alpha-blended ones, and alpha-blended are not included in a depth pre-pass. This enum
 // is designed with no runtime extensibility in mind, although it is possible. I see no benefit in
 // this, because after this enum is established during a development, it is very unlikely to change.
 // Also I don't like hacks like "render A after B and C for no reason". But you may implement it.

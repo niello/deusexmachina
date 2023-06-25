@@ -5,7 +5,7 @@
 
 namespace Render
 {
-typedef std::unique_ptr<class IRenderable> PRenderable;
+using PRenderable = std::unique_ptr<class IRenderable>;
 
 // FIXME: with fields it is a base class and not an interface!
 class IRenderable: public Core::CRTTIBaseClass
@@ -26,8 +26,9 @@ protected:
 
 public:
 
-	bool IsVisible = false;
+	U32  RenderQueueMask = 0; // Cached mask for fast access. Calculated from an effect type in a material.
 	U32  BoundsVersion = 0;
+	bool IsVisible = false;
 };
 
 }

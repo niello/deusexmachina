@@ -7,6 +7,7 @@
 #include <Render/Skybox.h>
 #include <Render/Mesh.h>
 #include <Render/Material.h>
+#include <Render/Effect.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -72,6 +73,7 @@ void CSkyboxAttribute::UpdateRenderable(CView& View, Render::IRenderable& Render
 		{
 			pSkybox->Material = nullptr;
 			pSkybox->ShaderTechIndex = INVALID_INDEX_T<U32>;
+			pSkybox->RenderQueueMask = 0;
 		}
 	}
 	else if (!pSkybox->Material || pSkybox->Material->GetUID() != _MaterialUID)
@@ -80,7 +82,10 @@ void CSkyboxAttribute::UpdateRenderable(CView& View, Render::IRenderable& Render
 
 		pSkybox->Material = View.GetGraphicsManager()->GetMaterial(_MaterialUID);
 		if (pSkybox->Material && pSkybox->Material->GetEffect())
+		{
 			pSkybox->ShaderTechIndex = View.RegisterEffect(*pSkybox->Material->GetEffect(), InputSet_Skybox);
+			pSkybox->RenderQueueMask = (1 << pSkybox->Material->GetEffect()->GetType());
+		}
 	}
 }
 //---------------------------------------------------------------------

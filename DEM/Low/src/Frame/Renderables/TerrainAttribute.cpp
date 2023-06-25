@@ -9,6 +9,7 @@
 #include <Render/CDLODData.h>
 #include <Render/Mesh.h>
 #include <Render/Material.h>
+#include <Render/Effect.h>
 #include <Render/Texture.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
@@ -109,6 +110,7 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 		{
 			pTerrain->Material = nullptr;
 			pTerrain->ShaderTechIndex = INVALID_INDEX_T<U32>;
+			pTerrain->RenderQueueMask = 0;
 		}
 	}
 	else if (!pTerrain->Material || pTerrain->Material->GetUID() != _MaterialUID) //!!! || LOD != RememberedLOD? Or terrain manages its material LOD in a renderer?
@@ -117,7 +119,10 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 
 		pTerrain->Material = View.GetGraphicsManager()->GetMaterial(_MaterialUID);
 		if (pTerrain->Material && pTerrain->Material->GetEffect())
+		{
 			pTerrain->ShaderTechIndex = View.RegisterEffect(*pTerrain->Material->GetEffect(), InputSet_CDLOD);
+			pTerrain->RenderQueueMask = (1 << pTerrain->Material->GetEffect()->GetType());
+		}
 	}
 
 	// Initialize CDLOD data and meshes
