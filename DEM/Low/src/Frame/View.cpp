@@ -595,9 +595,7 @@ bool CView::Render()
 	//!!!NB: if object and light don't move their intersection doesn't change!
 
 	// TODO:
-	// if ViewProjChanged, mark all queues which use distance to camera dirty
-	// update dirty sorted queues with insertion sort, O(n) for almost sorted arrays. Fallback to qsort for major reorderings or first init.
-	//!!!from huge camera changes can mark a flag 'MajorChanges' camera-dependent (FrontToBack etc) queue, and use qsort instead of almost-sorted.
+	// if ViewProjChanged, recalculate distance to camera for all objects, not only for ones with changed bounds.
 
 	// Draw call ordering:
 	// 

@@ -63,8 +63,8 @@ public:
 		std::sort(_ToRemove.begin(), _ToRemove.end());
 
 		constexpr TKeyBuilder KeyBuilder{};
-
 		auto RemoveStartIt = _ToRemove.begin();
+		size_t KeysChanged = (_Queue.size() - _SortedSize) + _ToRemove.size();
 
 		// Update or remove existing elements. This part of a queue is sorted by Key on the previous update.
 		for (size_t i = 0; i < _SortedSize; ++i)
@@ -93,11 +93,18 @@ public:
 				++RemoveIt;
 			}
 
-			//!!!if removed, must skip update!
+			//!!!if removed, must skip update! now removed ones leak here!!!
 			//???move removal to a separate function?! it is not templated and it is long enough!
 
-			// Objects that stopped matching the queue are marked for removal
+			//???check current frame's change flags in pRenderable and decide if need to recalc key? or recalc always? can be too slow and worth flag-based optimization?
+
+			// Update sorting key. Objects that stopped matching the queue are marked for removal.
+			const auto PrevKey = Record.Key;
 			Record.Key = (FilterMask & Record.pRenderable->RenderQueueMask) ? KeyBuilder(Record.pRenderable) : NO_KEY;
+
+			// TODO PERF: profile! Branching cost vs more instructions.
+			//if (Record.Key != PrevKey) ++KeysChanged;
+			KeysChanged += (Record.Key != PrevKey);
 		}
 
 		// Setup added elements
@@ -105,7 +112,14 @@ public:
 			_Queue[i].Key = KeyBuilder(_Queue[i].pRenderable);
 
 		// Sort ascending, so that records marked for removal with NO_KEY are moved to the tail
-		std::sort(_Queue.begin(), _Queue.end());
+		if (KeysChanged)
+		{
+			//!!!TODO:
+			//if (KeysChanged >= GeneralPurposeSortThreshold)
+			std::sort(_Queue.begin(), _Queue.end());
+			//else
+			// SortByAlmostSortedAlgorithm()
+		}
 
 		// cut the tail with NO_KEY (or calc number of deleted records? O(1) tail search instead of O(log n)!
 		//???or one search for lower_bound of NO_KEY is better than calculating all NO_KEY records during iteration?!
