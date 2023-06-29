@@ -64,45 +64,36 @@ public:
 
 		constexpr TKeyBuilder KeyBuilder{};
 		auto RemoveStartIt = _ToRemove.begin();
-		size_t KeysChanged = (_Queue.size() - _SortedSize) + _ToRemove.size();
+		size_t KeysChanged = (_Queue.size() - _SortedSize); // Count all added records at once
 
 		// Update or remove existing elements. This part of a queue is sorted by Key on the previous update.
 		for (size_t i = 0; i < _SortedSize; ++i)
 		{
 			auto& Record = _Queue[i];
+			const auto PrevKey = Record.Key;
 
 			// Should never fail if the queue is used correctly. Failure means that we try to remove something not added.
-			n_assert_dbg(RemoveStartIt == _ToRemove.cend() || RemoveStartIt->Key >= Record.Key);
+			n_assert_dbg(RemoveStartIt == _ToRemove.cend() || RemoveStartIt->Key >= PrevKey);
 
-			//!!!!!!!!RemoveIt must be reset to range start until the key has changed!
-			//if remove the first record, can advance 1 rec as optimization!
-
-			auto RemoveIt = RemoveStartIt;
-
-			// Records to remove are sorted by key, so it is guaranteed that all matching keys can be only in a single range starting at RemoveIt
-			while (RemoveIt != _ToRemove.cend() && RemoveIt->Key == Record.Key)
+			// Records to remove are sorted by key, so it is guaranteed that all matching keys can be only in a single range starting at RemoveStartIt
+			bool Removed = false;
+			for (auto It = RemoveStartIt; It != _ToRemove.cend() && It->Key == PrevKey; ++It)
 			{
-				if (RemoveIt->pRenderable == Record.pRenderable)
+				if (It->pRenderable == Record.pRenderable)
 				{
-					// Mark the record for removal
-					if (RemoveIt == RemoveStartIt) ++RemoveStartIt;
-					Record.Key = NO_KEY;
+					// Mark the record for removal and skip a sequence of removed records at the beginning of the list
+					Removed = true;
+					It->pRenderable = nullptr;
+					while (RemoveStartIt != _ToRemove.cend() && !RemoveStartIt->pRenderable) ++RemoveStartIt;
 					break;
 				}
-
-				++RemoveIt;
 			}
 
-			//!!!if removed, must skip update! now removed ones leak here!!!
-			//???move removal to a separate function?! it is not templated and it is long enough!
-
 			//???check current frame's change flags in pRenderable and decide if need to recalc key? or recalc always? can be too slow and worth flag-based optimization?
-
 			// Update sorting key. Objects that stopped matching the queue are marked for removal.
-			const auto PrevKey = Record.Key;
-			Record.Key = (FilterMask & Record.pRenderable->RenderQueueMask) ? KeyBuilder(Record.pRenderable) : NO_KEY;
+			Record.Key = (!Removed && (FilterMask & Record.pRenderable->RenderQueueMask)) ? KeyBuilder(Record.pRenderable) : NO_KEY;
 
-			// TODO PERF: profile! Branching cost vs more instructions.
+			//!!!TODO PERF: profile! Branching cost vs more instructions.
 			//if (Record.Key != PrevKey) ++KeysChanged;
 			KeysChanged += (Record.Key != PrevKey);
 		}
@@ -114,27 +105,25 @@ public:
 		// Sort ascending, so that records marked for removal with NO_KEY are moved to the tail
 		if (KeysChanged)
 		{
-			//!!!TODO:
+			//!!!TODO PERF:
 			//if (KeysChanged >= GeneralPurposeSortThreshold)
-			std::sort(_Queue.begin(), _Queue.end());
+			std::sort(_Queue.begin(), _Queue.end()); //???try radix sort?
 			//else
 			// SortByAlmostSortedAlgorithm()
 		}
 
-		// cut the tail with NO_KEY (or calc number of deleted records? O(1) tail search instead of O(log n)!
-		//???or one search for lower_bound of NO_KEY is better than calculating all NO_KEY records during iteration?!
-		//???use resize instead of erase range?
+		// Сut the tail with NO_KEY
 		auto NoKeyIt = std::lower_bound(_Queue.begin(), _Queue.end(), NO_KEY, [](const auto& Elm, TKey Value) { return Elm.Key < Value; });
-		if (NoKeyIt != _Queue.cend()) _Queue.erase(NoKeyIt, _Queue.cend());
+		if (NoKeyIt != _Queue.cend() && NoKeyIt->Key == NO_KEY) _Queue.erase(NoKeyIt, _Queue.cend());
+
+		//???TODO PERF: use resize instead of erase range?	
+		//if (NoKeyIt != _Queue.cend() && NoKeyIt->Key == NO_KEY) _Queue.resize(_Queue.size() - static_cast<size_t>(std::distance(NoKeyIt, _Queue.cend())));
 
 		_SortedSize = _Queue.size();
 
 		n_assert_dbg(RemoveStartIt == _ToRemove.cend());
 		_ToRemove.clear();
 	}
-
-	//???!!!sort only by key or by pair? erase needs to check not only key because it is not unique!!! but maybe checking more records on erase is OK
-	// instead of making the whole sorting more expensive.
 };
 
 }
