@@ -12,25 +12,28 @@ namespace Render
 
 namespace Frame
 {
-//using PRenderQueue = Ptr<class CRenderQueue>; // std::unique_ptr
+using PRenderQueue = std::unique_ptr<class IRenderQueue>;
 
-//!!!DBG TMP!
-struct CDummyKey32
+// Make the whole queue polymorphic for sort key generation inlining in the Update() loop
+class IRenderQueue
 {
-	using TKey = U32;
+public:
 
-	TKey operator()(Render::IRenderable* /*pRenderable*/) const { return 0; }
+	virtual ~IRenderQueue() = default;
+
+	virtual void Add(Render::IRenderable* pRenderable) = 0;
+	virtual void Remove(Render::IRenderable* pRenderable) = 0;
+	virtual void Update() = 0;
 };
 
-//???on update, check filter only at records up to _SortedSize? next ones are just added and therefore already filtered by insertion code.
-//???use CRTP to inject templated key generation into the shared algorithm?
-template<typename TKeyBuilder = CDummyKey32, U32 FilterMask = 0>
-class CRenderQueue
+// TKeyBuilder must define TKey type and TKey operator()(const Render::IRenderable*) const.
+template<typename TKeyBuilder, U32 FilterMask = 0>
+class CRenderQueue : public IRenderQueue
 {
 public:
 
 	using TKey = typename TKeyBuilder::TKey;
-	static inline constexpr TKey NO_KEY = INVALID_INDEX_T<TKey>; // Key builder guarantees that no valid key will be equal to this
+	static inline constexpr TKey NO_KEY = INVALID_INDEX_T<TKey>; // Implementation must guarantee that no valid key will be equal to this
 
 	struct CRecord
 	{
@@ -45,26 +48,28 @@ public:
 	size_t               _SortedSize = 0;
 
 	// Add to the end of the queue with an empty key. It will be calculated on update, just before sorting.
-	void Add(Render::IRenderable* pRenderable)
+	virtual void Add(Render::IRenderable* pRenderable) override
 	{
-		if (FilterMask & pRenderable->RenderQueueMask)
+		// FIXME: now first update of a renderable happens after adding it to the queue but before updating the queue, so this check is moved to Update()
+		//if (FilterMask & pRenderable->RenderQueueMask)
 			_Queue.push_back({ pRenderable, NO_KEY });
 	}
 
 	// Remember a key calculated from the not updated state, so it equal to the key currently in a queue.
-	void Remove(Render::IRenderable* pRenderable)
+	virtual void Remove(Render::IRenderable* pRenderable) override
 	{
 		if (FilterMask & pRenderable->RenderQueueMask)
-			_ToRemove.push_back({ pRenderable, TKeyBuilder{}(pRenderable) });
+			_ToRemove.push_back({ pRenderable, TKeyBuilder{}(std::as_const(pRenderable)) });
 	}
 
-	void Update()
+	virtual void Update() override
 	{
+		// Sort removal list for faster matching, see the loop below
 		std::sort(_ToRemove.begin(), _ToRemove.end());
 
 		constexpr TKeyBuilder KeyBuilder{};
 		auto RemoveStartIt = _ToRemove.begin();
-		size_t KeysChanged = (_Queue.size() - _SortedSize); // Count all added records at once
+		size_t KeysChanged = (_Queue.size() - _SortedSize);
 
 		// Update or remove existing elements. This part of a queue is sorted by Key on the previous update.
 		for (size_t i = 0; i < _SortedSize; ++i)
@@ -91,37 +96,39 @@ public:
 
 			//???check current frame's change flags in pRenderable and decide if need to recalc key? or recalc always? can be too slow and worth flag-based optimization?
 			// Update sorting key. Objects that stopped matching the queue are marked for removal.
-			Record.Key = (!Removed && (FilterMask & Record.pRenderable->RenderQueueMask)) ? KeyBuilder(Record.pRenderable) : NO_KEY;
+			Record.Key = (!Removed && (FilterMask & Record.pRenderable->RenderQueueMask)) ? KeyBuilder(std::as_const(Record.pRenderable)) : NO_KEY;
 
 			//!!!TODO PERF: profile! Branching cost vs more instructions.
 			//if (Record.Key != PrevKey) ++KeysChanged;
 			KeysChanged += (Record.Key != PrevKey);
 		}
 
-		// Setup added elements
-		for (size_t i = _SortedSize; i < _Queue.size(); ++i)
-			_Queue[i].Key = KeyBuilder(_Queue[i].pRenderable);
+		n_assert_dbg(RemoveStartIt == _ToRemove.cend());
 
-		// Sort ascending, so that records marked for removal with NO_KEY are moved to the tail
-		if (KeysChanged)
+		// No records have changed, wee can skip all further processing
+		if (!KeysChanged) return;
+
+		// Calculate keys for added elements. They are already counted in KeysChanged.
+		for (size_t i = _SortedSize; i < _Queue.size(); ++i)
 		{
-			//!!!TODO PERF:
-			//if (KeysChanged >= GeneralPurposeSortThreshold)
-			std::sort(_Queue.begin(), _Queue.end()); //???try radix sort?
-			//else
-			// SortByAlmostSortedAlgorithm()
+			auto& Record = _Queue[i];
+			if (FilterMask & Record.pRenderable->RenderQueueMask)
+				Record.Key = KeyBuilder(std::as_const(Record.pRenderable));
 		}
 
-		// Сut the tail with NO_KEY
+		// Sort ascending, so that records marked for removal with NO_KEY are moved to the tail
+		//!!!TODO PERF:
+		//if (KeysChanged >= GeneralPurposeSortThreshold)
+		std::sort(_Queue.begin(), _Queue.end()); //???try radix sort?
+		//else
+		// SortByAlmostSortedAlgorithm()
+
+		// Сut the tail where elements marked for removal with NO_KEY are located after sorting
 		auto NoKeyIt = std::lower_bound(_Queue.begin(), _Queue.end(), NO_KEY, [](const auto& Elm, TKey Value) { return Elm.Key < Value; });
 		if (NoKeyIt != _Queue.cend() && NoKeyIt->Key == NO_KEY) _Queue.erase(NoKeyIt, _Queue.cend());
 
-		//???TODO PERF: use resize instead of erase range?	
-		//if (NoKeyIt != _Queue.cend() && NoKeyIt->Key == NO_KEY) _Queue.resize(_Queue.size() - static_cast<size_t>(std::distance(NoKeyIt, _Queue.cend())));
-
 		_SortedSize = _Queue.size();
 
-		n_assert_dbg(RemoveStartIt == _ToRemove.cend());
 		_ToRemove.clear();
 	}
 };

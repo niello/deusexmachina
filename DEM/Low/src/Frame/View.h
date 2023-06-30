@@ -79,11 +79,9 @@ protected:
 	UI::PUIContext								_UIContext;
 	Debug::PDebugDraw                           _DebugDraw;
 
-	std::map<CStrID, Render::PRenderTarget>			RTs;
-	std::map<CStrID, Render::PDepthStencilBuffer>	DSBuffers;
-
-	//!!!DBG TMP! Need a set of queues defined in RP!
-	CRenderQueue<>                              _RenderQueue;
+	std::map<CStrID, Render::PRenderTarget>        RTs;
+	std::map<CStrID, Render::PDepthStencilBuffer>  DSBuffers;
+	std::vector<PRenderQueue>                      _RenderQueues;
 
 	std::vector<bool>                              _SpatialTreeNodeVisibility;
 	std::map<UPTR, Render::PRenderable>            _Renderables;

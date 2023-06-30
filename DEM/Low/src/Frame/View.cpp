@@ -27,6 +27,14 @@
 namespace Frame
 {
 
+//!!!DBG TMP!
+struct CDummyKey32
+{
+	using TKey = U32;
+
+	TKey operator()(const Render::IRenderable* /*pRenderable*/) const { return 0; }
+};
+
 CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int SwapChainID, CStrID SwapChainRTID)
 	: _GraphicsMgr(&GraphicsMgr)
 	, _SwapChainID(SwapChainID)
@@ -70,6 +78,9 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 		if (auto pOSWindow = GetTargetWindow())
 			DISP_SUBSCRIBE_NEVENT(pOSWindow, OSWindowResized, CView, OnOSWindowResized);
 	}
+
+	//!!!DBG TMP!
+	_RenderQueues.push_back(std::make_unique<CRenderQueue<CDummyKey32, (1 << Render::EEffectType::EffectType_Opaque)>>());
 }
 //---------------------------------------------------------------------
 
@@ -267,9 +278,10 @@ void CView::SynchronizeRenderables()
 		if (ItSceneObject == _pScene->GetRenderables().cend())
 		{
 			// An object was removed from a scene, remove its renderable from queues and from a sync list
-			_RenderQueue.Remove(ItViewObject->second.get());
+			for (auto& Queue : _RenderQueues)
+				Queue->Remove(ItViewObject->second.get());
 
-			// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one
+			// NB: erasing a map doesn't affect other iterators, and DEM::Algo::SortedUnion already cached the next one, so nothing will break
 			ItViewObject->second.reset();
 			_RenderableNodePool.push_back(_Renderables.extract(ItViewObject));
 		}
@@ -301,7 +313,8 @@ void CView::SynchronizeRenderables()
 
 			//???or test visibility first and delay adding to queues until visible the first time?
 			//???contain only visible objects in queues? need to profile what works better!
-			_RenderQueue.Add(pRenderable);
+			for (auto& Queue : _RenderQueues)
+				Queue->Add(pRenderable);
 		}
 		else
 		{
@@ -586,7 +599,9 @@ bool CView::Render()
 	UpdateRenderables(ViewProjChanged);
 
 	//???FIXME: fill queue in visibility update instead of lists sync? contain only visible objects. faster sorting, less iteration and checks, but frequent rebuild.
-	_RenderQueue.Update();
+	//!!!TODO PERF: queues are independent, no write access to renderables is needed, can parallelize!
+	for (auto& Queue : _RenderQueues)
+		Queue->Update();
 
 	// _pScene->UpdateRenderableLightIntersections() for marked objects and lights
 	//???for each light could store a full list of morton codes or at least top level morton codes that are intersecting it!
