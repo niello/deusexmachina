@@ -11,23 +11,6 @@
 namespace Render
 {
 
-struct CRenderNode
-{
-	matrix44				Transform;
-	IRenderable*			pRenderable;
-	IRenderer*				pRenderer;
-
-	float					SqDistanceToCamera;
-
-	CMaterial*              pMaterial;          // Non-constant because of temporary buffers in a shader param storage
-	const CTechnique*		pTech;
-	const CMesh*			pMesh;
-	const CPrimitiveGroup*	pGroup;
-
-	U16						LightIndexBase;		// Memory is actually allocated inside a CView, we store index, not ptr, to handle reallocations
-	U8						LightCount;			// If zero, LightIndexBase is undefined
-};
-
 struct CLightRecord
 {
 	const Render::CLight_OLD_DELETE*	pLight;

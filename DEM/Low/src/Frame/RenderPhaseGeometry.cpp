@@ -30,37 +30,6 @@ namespace Frame
 {
 FACTORY_CLASS_IMPL(Frame::CRenderPhaseGeometry, 'PHGE', Frame::CRenderPhase);
 
-struct CRenderQueueCmp_FrontToBack
-{
-	inline bool operator()(const Render::CRenderNode* a, const Render::CRenderNode* b) const
-	{
-		//if (a->Order != b->Order) return a->Order < b->Order;
-		return a->SqDistanceToCamera < b->SqDistanceToCamera;
-	}
-};
-//---------------------------------------------------------------------
-
-struct CRenderQueueCmp_Material
-{
-	inline bool operator()(const Render::CRenderNode* a, const Render::CRenderNode* b) const
-	{
-		//if (a->Order != b->Order) return a->Order < b->Order;
-		//if (a->Order >= AlphaBlendStartOrder)
-		//{
-		//	return a->SqDistanceToCamera > b->SqDistanceToCamera;
-		//}
-		//else
-		{
-			if (a->pTech != b->pTech) return a->pTech < b->pTech;
-			if (a->pMaterial != b->pMaterial) return a->pMaterial < b->pMaterial;
-			if (a->pMesh != b->pMesh) return a->pMesh < b->pMesh;
-			if (a->pGroup != b->pGroup) return a->pGroup < b->pGroup;
-			return a->SqDistanceToCamera < b->SqDistanceToCamera;
-		}
-	}
-};
-//---------------------------------------------------------------------
-
 CRenderPhaseGeometry::CRenderPhaseGeometry() = default;
 //---------------------------------------------------------------------
 
@@ -73,15 +42,8 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	if (!View.GetGraphicsManager()) FAIL;
 
-	auto& VisibleObjects = View.GetVisibilityCache();
-
-	if (!VisibleObjects.GetCount()) OK;
-
 	const vector3& CameraPos = View.GetCamera()->GetPosition();
 	const bool CalcScreenSize = View.RequiresObjectScreenSize();
-
-	auto& RenderQueue = View.RenderQueue;
-	RenderQueue.Resize(VisibleObjects.GetCount());
 
 	n_assert_dbg(!View.LightIndices.GetCount());
 
@@ -101,65 +63,14 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	for (const U32 QueueIndex : _RenderQueueIndices)
 	{
-		//!!!DBG TMP!
-		::Sys::DbgOut(("Queue " + std::to_string(QueueIndex) + "\n").c_str());
-
-		View.ForEachRenderableInQueue(QueueIndex, [](Render::IRenderable* pRenderable)
+		View.ForEachRenderableInQueue(QueueIndex, [this, &Context](Render::IRenderable* pRenderable)
 		{
-			//!!!DBG TMP!
-			::Sys::DbgOut(("  Object " + std::to_string((UPTR)pRenderable) + "\n").c_str());
+			auto ItRenderer = RenderersByObjectType.find(pRenderable->GetRTTI());
+			if (ItRenderer == RenderersByObjectType.cend()) return; // continue
+			pRenderable->pRenderer = ItRenderer->second;
 
+			if (!pRenderable->pRenderer->PrepareNode(*pRenderable, Context)) return; // continue
 		});
-	}
-
-	for (auto UID : VisibleObjects)
-	{
-		//!!!DBG TMP!
-		auto pAttr = static_cast<Frame::CRenderableAttribute*>(View.GetGraphicsScene()->GetRenderables().find(UID)->second.pAttr);
-		Render::IRenderable* pRenderable = View.GetRenderable(UID);
-
-		auto ItRenderer = RenderersByObjectType.find(pRenderable->GetRTTI());
-		if (ItRenderer == RenderersByObjectType.cend()) continue;
-
-		Render::CRenderNode* pNode = View.RenderNodePool.Construct();
-		pNode->pRenderable = pRenderable;
-		pNode->pRenderer = ItRenderer->second;
-		pNode->Transform = pAttr->GetNode()->GetWorldMatrix();
-
-		if (pAttr->GetGlobalAABB(Context.AABB, 0))
-		{
-			float ScreenSizeRel;
-			if (CalcScreenSize)
-			{
-				NOT_IMPLEMENTED_MSG("OBJECT SCREEN SIZE CALCULATION!");
-				ScreenSizeRel = 0.f;
-			}
-			else ScreenSizeRel = 0.f;
-
-			float SqDistanceToCamera = Context.AABB.SqDistance(CameraPos);
-			pNode->SqDistanceToCamera = SqDistanceToCamera;
-			Context.MeshLOD = View.GetMeshLOD(SqDistanceToCamera, ScreenSizeRel);
-			Context.MaterialLOD = View.GetMaterialLOD(SqDistanceToCamera, ScreenSizeRel);
-		}
-		else
-		{
-			pNode->SqDistanceToCamera = 0.f;
-			Context.MeshLOD = 0;
-			Context.MaterialLOD = 0;
-		}
-
-		//!!!PERF: needs testing!
-		//!!!may send lights subset selected by:
-		//if (pAttrRenderable->pSPSRecord->pSPSNode->SharesSpaceWith(*pAttrLight->pSPSRecord->pSPSNode))
-		//if (pAttrRenderable->CheckPotentialIntersection(*pAttrLight / pSPSNode)) // true if some of pSPSNodes is nullptr
-
-		if (!pNode->pRenderer->PrepareNode(*pNode, Context))
-		{
-			View.RenderNodePool.Destroy(pNode);
-			continue;
-		}
-
-		RenderQueue.Add(pNode);
 	}
 
 	// Setup global lighting params, both ambient and direct
@@ -284,10 +195,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	//!!!hide in a private method of CView!
 	View.LightIndices.Clear(false);
-	for (UPTR i = 0; i < RenderQueue.GetCount(); ++i)
-		View.RenderNodePool.Destroy(RenderQueue[i]);
-	RenderQueue.Clear(false);
-	//???may store render queue in cache for other phases? or completely unreusable? some info like a distance to a camera may be shared
 
 	// Unbind render target(s) etc
 	//???allow each phase to declare all its RTs and clear unused ones by itself?

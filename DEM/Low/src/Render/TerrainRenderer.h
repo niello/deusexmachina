@@ -98,7 +98,7 @@ public:
 	virtual ~CTerrainRenderer() override;
 
 	virtual bool                 Init(bool LightingEnabled, const Data::CParams& Params) override;
-	virtual bool                 PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context) override;
+	virtual bool                 PrepareNode(IRenderable& Node, const CRenderNodeContext& Context) override;
 	virtual CRenderQueueIterator Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr) override;
 };
 

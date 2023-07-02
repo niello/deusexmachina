@@ -39,23 +39,10 @@ bool CModelRenderer::Init(bool LightingEnabled, const Data::CParams& Params)
 }
 //---------------------------------------------------------------------
 
-bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context)
+bool CModelRenderer::PrepareNode(IRenderable& Node, const CRenderNodeContext& Context)
 {
-	CModel* pModel = Node.pRenderable->As<CModel>();
+	CModel* pModel = Node.As<CModel>();
 	n_assert_dbg(pModel);
-
-	CMaterial* pMaterial = pModel->Material.Get(); //!!!Get by MaterialLOD!
-	if (!pMaterial || !pMaterial->GetEffect()) FAIL;
-
-	static const CStrID InputSet_Model("Model");
-	static const CStrID InputSet_ModelSkinned("ModelSkinned");
-
-	Node.pMaterial = pMaterial;
-	Node.pTech = Context.pShaderTechCache[pModel->ShaderTechIndex];
-	if (!Node.pTech) FAIL;
-
-	Node.pMesh = pModel->Mesh.Get();
-	Node.pGroup = pModel->pGroup;
 
 	U8 LightCount = 0;
 
@@ -194,20 +181,20 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 	CRenderQueueIterator ItEnd = RenderQueue.End();
 	while (ItCurr != ItEnd)
 	{
-		CRenderNode* pRenderNode = *ItCurr;
+		IRenderable* pRenderNode = *ItCurr;
 
 		if (pRenderNode->pRenderer != this) return ItCurr;
 
-		CModel* pModel = pRenderNode->pRenderable->As<CModel>();
+		CModel* pModel = pRenderNode->As<CModel>();
 		n_assert_dbg(pModel);
 
-		const CTechnique* pTech = pRenderNode->pTech;
-		const CPrimitiveGroup* pGroup = pRenderNode->pGroup;
+		const CTechnique* pTech = pShaderTechCache[pModel->ShaderTechIndex];
+		const CPrimitiveGroup* pGroup = pModel->pGroup;
 		n_assert_dbg(pGroup && pTech);
 
 		// Apply material, if changed
 
-		auto pMaterial = pRenderNode->pMaterial;
+		auto pMaterial = pModel->Material.Get();
 		if (pMaterial != pCurrMaterial)
 		{
 			n_assert_dbg(pMaterial);
@@ -217,7 +204,7 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 
 		// Apply geometry, if changed
 
-		const CMesh* pMesh = pRenderNode->pMesh;
+		const CMesh* pMesh = pModel->Mesh.Get();
 		if (pMesh != pCurrMesh)
 		{
 			n_assert_dbg(pMesh);
@@ -240,11 +227,12 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 		if (!pModel->pSkinPalette && (ConstInstanceDataVS || InstanceVBSize > 1))
 		{
 			while (ItInstEnd != ItEnd &&
-				   (*ItInstEnd)->pRenderer == this &&
-				   (*ItInstEnd)->pMaterial == pMaterial &&
-				   (*ItInstEnd)->pTech == pTech &&
-				   (*ItInstEnd)->pGroup == pGroup &&
-				   !(*ItInstEnd)->pRenderable->As<CModel>()->pSkinPalette)
+				(*ItInstEnd)->IsA<CModel>() &&
+				   static_cast<CModel*>(*ItInstEnd)->pRenderer == this &&
+				   static_cast<CModel*>(*ItInstEnd)->Material == pMaterial &&
+				   static_cast<CModel*>(*ItInstEnd)->ShaderTechIndex == pModel->ShaderTechIndex &&
+				   static_cast<CModel*>(*ItInstEnd)->pGroup == pGroup &&
+				   !static_cast<CModel*>(*ItInstEnd)->pSkinPalette)
 			{
 				// We don't try to find an instanced tech version here, and don't break if
 				// it is not found, because if we did, the next object will try to do all
@@ -258,8 +246,7 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 			if (ItInstEnd - ItCurr > 1)
 			{
 				static const CStrID InputSet_ModelInstanced("ModelInstanced");
-				const CTechnique* pInstancedTech = pRenderNode->pTech->GetEffect()->GetTechByInputSet(InputSet_ModelInstanced);
-				if (pInstancedTech)
+				if (const auto pInstancedTech = pTech->GetEffect()->GetTechByInputSet(InputSet_ModelInstanced))
 				{
 					pTech = pInstancedTech;
 					HardwareInstancing = true;

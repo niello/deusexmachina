@@ -462,20 +462,47 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 
 				//!!!store calculated LOD somewhere!
 				//!!!???use one LOD value for both geometry and material, but can actually change something only when required?!
+
+				/*
+				if (pAttr->GetGlobalAABB(Context.AABB, 0))
+				{
+					float ScreenSizeRel;
+					if (CalcScreenSize)
+					{
+						NOT_IMPLEMENTED_MSG("OBJECT SCREEN SIZE CALCULATION!");
+						ScreenSizeRel = 0.f;
+					}
+					else ScreenSizeRel = 0.f;
+
+					float SqDistanceToCamera = Context.AABB.SqDistance(CameraPos);
+					pNode->SqDistanceToCamera = SqDistanceToCamera;
+					Context.MeshLOD = View.GetMeshLOD(SqDistanceToCamera, ScreenSizeRel);
+					Context.MaterialLOD = View.GetMaterialLOD(SqDistanceToCamera, ScreenSizeRel);
+				}
+				else
+				{
+					pNode->SqDistanceToCamera = 0.f;
+					Context.MeshLOD = 0;
+					Context.MaterialLOD = 0;
+				}
+				*/
 			}
 		}
 
 		if (pRenderable->IsVisible)
 		{
 			//!!!TODO: inside UpdateRenderable:
+			//!!!remember transform if changed! maybe write directly to constant buffers?!
 			// - update tfm from attr
 			// - update renderable/light params from attr
 			// - update cached GPU structures for dirty parts (tfm, material etc)
+			// - ???setup renderer? or is it per phase? how to store renderer-specific cache then? can setup renderer once in CreateRenderable!
 			pAttr->UpdateRenderable(*this, *pRenderable);
 
 			// if needed, mark object for updating light intersections
 
-			//???update sorting key for queues?! store it in queue nodes?
+			//!!!DBG TMP!
+			pRenderable->Transform = pAttr->GetNode()->GetWorldMatrix();
 		}
 
 		if (WasVisible != pRenderable->IsVisible)

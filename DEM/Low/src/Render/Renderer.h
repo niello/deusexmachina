@@ -15,12 +15,12 @@ namespace Data
 
 namespace Render
 {
-struct CRenderNode;
+class IRenderable;
 struct CRenderNodeContext;
 struct CLightRecord;
 class CGPUDriver;
-typedef CArray<CRenderNode*> CRenderQueue;
-typedef CArray<CRenderNode*>::CIterator CRenderQueueIterator;
+typedef CArray<IRenderable*> CRenderQueue;
+typedef CArray<IRenderable*>::CIterator CRenderQueueIterator;
 using PRenderer = std::unique_ptr<class IRenderer>;
 
 class IRenderer: public Core::CRTTIBaseClass
@@ -40,7 +40,7 @@ public:
 	};
 
 	virtual bool                 Init(bool LightingEnabled, const Data::CParams& Params) = 0;
-	virtual bool                 PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context) = 0;
+	virtual bool                 PrepareNode(IRenderable& Node, const CRenderNodeContext& Context) = 0;
 	virtual CRenderQueueIterator Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr) = 0;
 };
 

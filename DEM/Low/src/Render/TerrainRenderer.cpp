@@ -174,22 +174,10 @@ bool CTerrainRenderer::CheckNodeFrustumIntersection(const CLightTestArgs& Args, 
 }
 //---------------------------------------------------------------------
 
-bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context)
+bool CTerrainRenderer::PrepareNode(IRenderable& Node, const CRenderNodeContext& Context)
 {
-	const CTerrain* pTerrain = Node.pRenderable->As<CTerrain>();
+	const CTerrain* pTerrain = Node.As<CTerrain>();
 	n_assert_dbg(pTerrain);
-
-	CMaterial* pMaterial = pTerrain->GetMaterial(); //!!!Get by MaterialLOD!
-	if (!pMaterial) FAIL;
-
-	Node.pMaterial = pMaterial;
-	Node.pTech = Context.pShaderTechCache[pTerrain->ShaderTechIndex];
-	if (!Node.pTech) FAIL;
-
-	// For sorting, different terrain objects with the same mesh will be rendered sequentially.
-	// NB: doesn't save redundant sets because of quarter patches. Still need or set nullptrs?
-	Node.pMesh = pTerrain->GetPatchMesh();
-	Node.pGroup = nullptr;
 
 	U8 LightCount = 0;
 
@@ -671,11 +659,11 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 
 	while (ItCurr != ItEnd)
 	{
-		CRenderNode* pRenderNode = *ItCurr;
+		IRenderable* pRenderNode = *ItCurr;
 
 		if (pRenderNode->pRenderer != this) return ItCurr;
 
-		CTerrain* pTerrain = pRenderNode->pRenderable->As<CTerrain>();
+		CTerrain* pTerrain = pRenderNode->As<CTerrain>();
 
 		if (!pTerrain->GetPatchMesh() || !pTerrain->GetQuarterPatchMesh() || !pTerrain->GetCDLODData())
 		{
@@ -772,7 +760,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 		// Select tech for the maximal light count used per-patch
 
 		UPTR LightCount = MaxLightCount;
-		const CTechnique* pTech = pRenderNode->pTech;
+		const CTechnique* pTech = pShaderTechCache[pTerrain->ShaderTechIndex];
 		const auto& Passes = pTech->GetPasses(LightCount);
 		if (Passes.empty())
 		{
@@ -792,7 +780,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 
 		// Apply material, if changed
 
-		auto pMaterial = pRenderNode->pMaterial;
+		auto pMaterial = pTerrain->Material.Get();
 		if (pMaterial != pCurrMaterial)
 		{
 			n_assert_dbg(pMaterial);

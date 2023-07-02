@@ -13,21 +13,8 @@ FACTORY_CLASS_IMPL(Render::CSkyboxRenderer, 'SBXR', Render::IRenderer);
 CSkyboxRenderer::CSkyboxRenderer() = default;
 //---------------------------------------------------------------------
 
-bool CSkyboxRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context)
+bool CSkyboxRenderer::PrepareNode(IRenderable& Node, const CRenderNodeContext& Context)
 {
-	CSkybox* pSkybox = Node.pRenderable->As<CSkybox>();
-	n_assert_dbg(pSkybox);
-
-	CMaterial* pMaterial = pSkybox->Material.Get(); //!!!Get by MaterialLOD / quality level!
-	if (!pMaterial) FAIL;
-
-	Node.pMaterial = pMaterial;
-	Node.pTech = Context.pShaderTechCache[pSkybox->ShaderTechIndex];
-	if (!Node.pTech) FAIL;
-
-	Node.pMesh = pSkybox->Mesh.Get();
-	Node.pGroup = nullptr;
-
 	OK;
 }
 //---------------------------------------------------------------------
@@ -45,14 +32,14 @@ CRenderQueueIterator CSkyboxRenderer::Render(const CRenderContext& Context, CRen
 
 	while (ItCurr != ItEnd)
 	{
-		CRenderNode* pRenderNode = *ItCurr;
+		IRenderable* pRenderNode = *ItCurr;
 
 		if (pRenderNode->pRenderer != this) return ItCurr;
 
-		CSkybox* pSkybox = pRenderNode->pRenderable->As<CSkybox>();
+		CSkybox* pSkybox = pRenderNode->As<CSkybox>();
 		n_assert_dbg(pSkybox);
 
-		auto pMaterial = pRenderNode->pMaterial;
+		auto pMaterial = pSkybox->Material.Get();
 		if (pMaterial != pCurrMaterial)
 		{
 			n_assert_dbg(pMaterial);
@@ -60,7 +47,7 @@ CRenderQueueIterator CSkyboxRenderer::Render(const CRenderContext& Context, CRen
 			pCurrMaterial = pMaterial;
 		}
 
-		const CTechnique* pTech = pRenderNode->pTech;
+		const CTechnique* pTech = pShaderTechCache[pSkybox->ShaderTechIndex];
 		if (pTech != pCurrTech)
 		{
 			pCurrTech = pTech;
