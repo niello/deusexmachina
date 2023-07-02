@@ -47,7 +47,7 @@ CRenderQueueIterator CSkyboxRenderer::Render(const CRenderContext& Context, CRen
 			pCurrMaterial = pMaterial;
 		}
 
-		const CTechnique* pTech = pShaderTechCache[pSkybox->ShaderTechIndex];
+		const CTechnique* pTech = Context.pShaderTechCache[pSkybox->ShaderTechIndex];
 		if (pTech != pCurrTech)
 		{
 			pCurrTech = pTech;

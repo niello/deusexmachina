@@ -760,7 +760,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 		// Select tech for the maximal light count used per-patch
 
 		UPTR LightCount = MaxLightCount;
-		const CTechnique* pTech = pShaderTechCache[pTerrain->ShaderTechIndex];
+		const CTechnique* pTech = Context.pShaderTechCache[pTerrain->ShaderTechIndex];
 		const auto& Passes = pTech->GetPasses(LightCount);
 		if (Passes.empty())
 		{

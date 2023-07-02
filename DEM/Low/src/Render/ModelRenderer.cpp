@@ -188,7 +188,7 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 		CModel* pModel = pRenderNode->As<CModel>();
 		n_assert_dbg(pModel);
 
-		const CTechnique* pTech = pShaderTechCache[pModel->ShaderTechIndex];
+		const CTechnique* pTech = Context.pShaderTechCache[pModel->ShaderTechIndex];
 		const CPrimitiveGroup* pGroup = pModel->pGroup;
 		n_assert_dbg(pGroup && pTech);
 

@@ -21,12 +21,9 @@ struct CLightRecord
 
 struct CRenderNodeContext
 {
-	UPTR					MeshLOD;
-	UPTR					MaterialLOD;
 	CAABB					AABB;
 	CArray<CLightRecord>*	pLights;
-	CArray<U16>*			pLightIndices;
-	const Render::CTechnique* const* pShaderTechCache = nullptr;
+	const CArray<U16>*		pLightIndices;
 };
 
 }

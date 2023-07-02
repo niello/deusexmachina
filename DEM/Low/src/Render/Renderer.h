@@ -19,8 +19,6 @@ class IRenderable;
 struct CRenderNodeContext;
 struct CLightRecord;
 class CGPUDriver;
-typedef CArray<IRenderable*> CRenderQueue;
-typedef CArray<IRenderable*>::CIterator CRenderQueueIterator;
 using PRenderer = std::unique_ptr<class IRenderer>;
 
 class IRenderer: public Core::CRTTIBaseClass
@@ -32,6 +30,7 @@ public:
 	struct CRenderContext
 	{
 		Render::CGPUDriver*		pGPU;
+		const Render::CTechnique* const* pShaderTechCache = nullptr;
 		vector3					CameraPosition;
 		matrix44				ViewProjection;
 		CArray<CLightRecord>*	pLights;

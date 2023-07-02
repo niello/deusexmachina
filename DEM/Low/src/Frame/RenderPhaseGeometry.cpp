@@ -47,32 +47,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	n_assert_dbg(!View.LightIndices.GetCount());
 
-	Render::CRenderNodeContext Context;
-	Context.pShaderTechCache = View.GetShaderTechCache(_ShaderTechCacheIndex);
-
-	if (EnableLighting)
-	{
-		Context.pLights = &View.GetLightCache();
-		Context.pLightIndices = &View.LightIndices;
-	}
-	else
-	{
-		Context.pLights = nullptr;
-		Context.pLightIndices = nullptr;
-	}
-
-	for (const U32 QueueIndex : _RenderQueueIndices)
-	{
-		View.ForEachRenderableInQueue(QueueIndex, [this, &Context](Render::IRenderable* pRenderable)
-		{
-			auto ItRenderer = RenderersByObjectType.find(pRenderable->GetRTTI());
-			if (ItRenderer == RenderersByObjectType.cend()) return; // continue
-			pRenderable->pRenderer = ItRenderer->second;
-
-			if (!pRenderable->pRenderer->PrepareNode(*pRenderable, Context)) return; // continue
-		});
-	}
-
 	// Setup global lighting params, both ambient and direct
 
 	auto pGPU = View.GetGPU();
@@ -173,6 +147,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	Render::IRenderer::CRenderContext Ctx;
 	Ctx.pGPU = pGPU;
+	Ctx.pShaderTechCache = View.GetShaderTechCache(_ShaderTechCacheIndex);
 	Ctx.CameraPosition = CameraPos;
 	Ctx.ViewProjection = View.GetCamera()->GetViewProjMatrix();
 	if (EnableLighting)
@@ -186,6 +161,22 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		Ctx.pLights = nullptr;
 		Ctx.pLightIndices = nullptr;
 		Ctx.UsesGlobalLightBuffer = false;
+	}
+
+	Render::CRenderNodeContext NodeCtx;
+	NodeCtx.pLights = Ctx.pLights;
+	NodeCtx.pLightIndices = Ctx.pLightIndices;
+
+	for (const U32 QueueIndex : _RenderQueueIndices)
+	{
+		View.ForEachRenderableInQueue(QueueIndex, [this, &NodeCtx](Render::IRenderable* pRenderable)
+		{
+			auto ItRenderer = RenderersByObjectType.find(pRenderable->GetRTTI());
+			if (ItRenderer == RenderersByObjectType.cend()) return; // continue
+			pRenderable->pRenderer = ItRenderer->second;
+
+			if (!pRenderable->pRenderer->PrepareNode(*pRenderable, NodeCtx)) return; // continue
+		});
 	}
 
 	Render::CRenderQueueIterator ItCurr = RenderQueue.Begin();

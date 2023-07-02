@@ -123,7 +123,6 @@ public:
 	Render::CShaderParamStorage					Globals;
 	Render::PSampler							TrilinearCubeSampler; // For IBL
 
-	Render::CRenderQueue        				RenderQueue;	// Cached to avoid per-frame allocations
 	CArray<U16>									LightIndices;	// Cached to avoid per-frame allocations
 
 	~CView();
