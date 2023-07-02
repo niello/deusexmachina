@@ -81,7 +81,7 @@ protected:
 
 	std::map<CStrID, Render::PRenderTarget>        RTs;
 	std::map<CStrID, Render::PDepthStencilBuffer>  DSBuffers;
-	std::vector<PRenderQueue>                      _RenderQueues;
+	std::vector<PRenderQueueBaseT<UPTR>>           _RenderQueues;
 
 	std::vector<bool>                              _SpatialTreeNodeVisibility;
 	std::map<UPTR, Render::PRenderable>            _Renderables;
@@ -153,10 +153,10 @@ public:
 	bool							RequiresObjectScreenSize() const { return MeshLODType == LOD_ScreenSizeRelative || MeshLODType == LOD_ScreenSizeAbsolute || MaterialLODType == LOD_ScreenSizeRelative || MaterialLODType == LOD_ScreenSizeAbsolute; }
 
 	template<typename TCallback>
-	void                            ForEachRenderableInQueue(U32 QueueIndex, TCallback Callback)
+	DEM_FORCE_INLINE void ForEachRenderableInQueue(U32 QueueIndex, TCallback Callback)
 	{
-		// TODO: can add queue data to IRenderQueue for inlining callback? or not worth it?
-		NOT_IMPLEMENTED;
+		if (QueueIndex < _RenderQueues.size() && _RenderQueues[QueueIndex])
+			_RenderQueues[QueueIndex]->ForEachRenderable(Callback);
 	}
 
 	void                            Update(float dt);

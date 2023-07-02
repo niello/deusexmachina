@@ -12,27 +12,13 @@ namespace Render
 
 namespace Frame
 {
-using PRenderQueue = std::unique_ptr<class IRenderQueue>;
 
 // Make the whole queue polymorphic instead of sort key generation for better inlining in the Update() loop
-class IRenderQueue
+template<typename TKey, typename = std::enable_if_t<std::is_integral_v<TKey> && !std::is_signed_v<TKey>>>
+class CRenderQueueBaseT
 {
-public:
+protected:
 
-	virtual ~IRenderQueue() = default;
-
-	virtual void Add(Render::IRenderable* pRenderable) = 0;
-	virtual void Remove(Render::IRenderable* pRenderable) = 0;
-	virtual void Update() = 0;
-};
-
-// TKeyBuilder must define TKey type and TKey operator()(const Render::IRenderable*) const.
-template<typename TKeyBuilder, U32 FilterMask = 0>
-class CRenderQueue : public IRenderQueue
-{
-public:
-
-	using TKey = typename TKeyBuilder::TKey;
 	static inline constexpr TKey NO_KEY = INVALID_INDEX_T<TKey>; // Implementation must guarantee that no valid key will be equal to this
 
 	struct CRecord
@@ -46,21 +32,50 @@ public:
 	std::vector<CRecord> _Queue;
 	std::vector<CRecord> _ToRemove;
 	size_t               _SortedSize = 0;
+	U32                  _FilterMask = 0;
+
+public:
+
+	CRenderQueueBaseT(U32 FilterMask = ~static_cast<U32>(0)) : _FilterMask(FilterMask) {}
+	virtual ~CRenderQueueBaseT() = default;
+
+	virtual void Remove(Render::IRenderable* pRenderable) = 0;
+	virtual void Update() = 0;
 
 	// Add to the end of the queue with an empty key. It will be calculated on update, just before sorting.
-	virtual void Add(Render::IRenderable* pRenderable) override
+	void Add(Render::IRenderable* pRenderable)
 	{
 		// FIXME: now first update of a renderable happens after adding it to the queue but before updating the queue, so this check is moved to Update()
 		//???will be fixed when start adding objects on their first visible. not even necessary to remove on becoming invisible if don't want.
 		//don't forget to relax condition in Update for new items, as filter mask will be already checked.
-		//if (FilterMask & pRenderable->RenderQueueMask)
-			_Queue.push_back({ pRenderable, NO_KEY });
+		//if (_FilterMask & pRenderable->RenderQueueMask)
+		_Queue.push_back({ pRenderable, NO_KEY });
 	}
+
+	template<typename TCallback>
+	DEM_FORCE_INLINE void ForEachRenderable(TCallback Callback)
+	{
+		for (const auto& Rec : _Queue)
+			Callback(Rec.pRenderable);
+	}
+};
+
+template<typename TKey>
+using PRenderQueueBaseT = std::unique_ptr<CRenderQueueBaseT<TKey>>;
+
+// TKeyBuilder must define TKey operator()(const Render::IRenderable*) const.
+// TKey can be defined explicitly, and a key builder's return type is used by default.
+template<typename TKeyBuilder, typename TKey = decltype(std::declval<TKeyBuilder>()(nullptr))>
+class CRenderQueue : public CRenderQueueBaseT<TKey>
+{
+public:
+
+	using CRenderQueueBaseT::CRenderQueueBaseT;
 
 	// Remember a key calculated from the not updated state, so it equal to the key currently in a queue.
 	virtual void Remove(Render::IRenderable* pRenderable) override
 	{
-		if (FilterMask & pRenderable->RenderQueueMask)
+		if (_FilterMask & pRenderable->RenderQueueMask)
 			_ToRemove.push_back({ pRenderable, TKeyBuilder{}(std::as_const(pRenderable)) });
 	}
 
@@ -98,7 +113,7 @@ public:
 
 			//???check current frame's change flags in pRenderable and decide if need to recalc key? or recalc always? can be too slow and worth flag-based optimization?
 			// Update sorting key. Objects that stopped matching the queue are marked for removal.
-			Record.Key = (!Removed && (FilterMask & Record.pRenderable->RenderQueueMask)) ? KeyBuilder(std::as_const(Record.pRenderable)) : NO_KEY;
+			Record.Key = (!Removed && (_FilterMask & Record.pRenderable->RenderQueueMask)) ? KeyBuilder(std::as_const(Record.pRenderable)) : NO_KEY;
 
 			//!!!TODO PERF: profile! Branching cost vs more instructions.
 			//if (Record.Key != PrevKey) ++KeysChanged;
@@ -114,7 +129,7 @@ public:
 		for (size_t i = _SortedSize; i < _Queue.size(); ++i)
 		{
 			auto& Record = _Queue[i];
-			if (FilterMask & Record.pRenderable->RenderQueueMask)
+			if (_FilterMask & Record.pRenderable->RenderQueueMask)
 				Record.Key = KeyBuilder(std::as_const(Record.pRenderable));
 		}
 

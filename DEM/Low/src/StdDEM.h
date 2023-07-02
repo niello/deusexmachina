@@ -13,7 +13,7 @@
 #define OK   return true
 #define FAIL return false
 
-template<typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
+template<typename T, typename = std::enable_if_t<std::is_integral_v<T> && !std::is_signed_v<T>>>
 constexpr T INVALID_INDEX_T = ~static_cast<T>(0);
 
 constexpr size_t INVALID_INDEX = ~static_cast<size_t>(0);
@@ -132,6 +132,13 @@ auto tuple_pop_front(const T& tuple)
 // Only for power-of-2 alignment //!!!C++11 static_assert may help!
 template <unsigned int Alignment> DEM_FORCE_INLINE bool IsAligned(const void* Pointer) { return !(((unsigned int)Pointer) & (Alignment - 1)); }
 DEM_FORCE_INLINE bool IsAligned16(const void* Pointer) { return !(((unsigned int)Pointer) & 0x0000000f); }
+
+template<typename... T>
+DEM_FORCE_INLINE constexpr decltype(auto) ENUM_MASK(T... Values)
+{
+	return ((1 << Values) | ...);
+}
+//---------------------------------------------------------------------
 
 template<typename T>
 DEM_FORCE_INLINE bool VectorFastErase(std::vector<T>& Self, UPTR Index)

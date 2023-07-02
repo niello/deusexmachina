@@ -101,10 +101,14 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	for (const U32 QueueIndex : _RenderQueueIndices)
 	{
-		View.ForEachRenderableInQueue(QueueIndex, []()
+		//!!!DBG TMP!
+		::Sys::DbgOut(("Queue " + std::to_string(QueueIndex) + "\n").c_str());
+
+		View.ForEachRenderableInQueue(QueueIndex, [](Render::IRenderable* pRenderable)
 		{
-			//
-			NOT_IMPLEMENTED;
+			//!!!DBG TMP!
+			::Sys::DbgOut(("  Object " + std::to_string((UPTR)pRenderable) + "\n").c_str());
+
 		});
 	}
 

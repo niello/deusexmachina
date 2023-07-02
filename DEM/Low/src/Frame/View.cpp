@@ -30,10 +30,11 @@ namespace Frame
 //!!!DBG TMP!
 struct CDummyKey32
 {
-	using TKey = U32;
+	//using TKey = U32;
 
-	TKey operator()(const Render::IRenderable* /*pRenderable*/) const { return 0; }
+	U32 operator()(const Render::IRenderable* /*pRenderable*/) const { return 0; }
 };
+//---------------------------------------------------------------------
 
 CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int SwapChainID, CStrID SwapChainRTID)
 	: _GraphicsMgr(&GraphicsMgr)
@@ -85,15 +86,15 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 	{
 		//???move to factory later? it is not yet well suited for templated classes.
 		if (Type == "OpaqueDepthPrePass")
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32, (1 << Render::EEffectType::EffectType_Opaque)>>();
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque));
 		else if (Type == "AlphaTestDepthPrePass")
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32, (1 << Render::EEffectType::EffectType_AlphaTest)>>();
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaTest));
 		else if (Type == "OpaqueMaterial")
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32, (1 << Render::EEffectType::EffectType_Opaque)>>();
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque));
 		else if (Type == "AlphaTestMaterial")
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32, (1 << Render::EEffectType::EffectType_AlphaTest)>>();
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaTest));
 		else if (Type == "AlphaBackToFront")
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32, (1 << Render::EEffectType::EffectType_AlphaBlend)>>();
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaBlend));
 		else
 		{
 			::Sys::Error("CView::CView() > Unknown render queue type!");
