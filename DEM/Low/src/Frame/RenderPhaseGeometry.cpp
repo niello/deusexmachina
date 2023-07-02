@@ -30,13 +30,11 @@ namespace Frame
 {
 FACTORY_CLASS_IMPL(Frame::CRenderPhaseGeometry, 'PHGE', Frame::CRenderPhase);
 
-constexpr UPTR AlphaBlendStartOrder = 40;
-
 struct CRenderQueueCmp_FrontToBack
 {
 	inline bool operator()(const Render::CRenderNode* a, const Render::CRenderNode* b) const
 	{
-		if (a->Order != b->Order) return a->Order < b->Order;
+		//if (a->Order != b->Order) return a->Order < b->Order;
 		return a->SqDistanceToCamera < b->SqDistanceToCamera;
 	}
 };
@@ -46,12 +44,12 @@ struct CRenderQueueCmp_Material
 {
 	inline bool operator()(const Render::CRenderNode* a, const Render::CRenderNode* b) const
 	{
-		if (a->Order != b->Order) return a->Order < b->Order;
-		if (a->Order >= AlphaBlendStartOrder)
-		{
-			return a->SqDistanceToCamera > b->SqDistanceToCamera;
-		}
-		else
+		//if (a->Order != b->Order) return a->Order < b->Order;
+		//if (a->Order >= AlphaBlendStartOrder)
+		//{
+		//	return a->SqDistanceToCamera > b->SqDistanceToCamera;
+		//}
+		//else
 		{
 			if (a->pTech != b->pTech) return a->pTech < b->pTech;
 			if (a->pMaterial != b->pMaterial) return a->pMaterial < b->pMaterial;
@@ -99,6 +97,15 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	{
 		Context.pLights = nullptr;
 		Context.pLightIndices = nullptr;
+	}
+
+	for (const U32 QueueIndex : _RenderQueueIndices)
+	{
+		View.ForEachRenderableInQueue(QueueIndex, []()
+		{
+			//
+			NOT_IMPLEMENTED;
+		});
 	}
 
 	for (auto UID : VisibleObjects)
@@ -149,17 +156,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		}
 
 		RenderQueue.Add(pNode);
-
-		n_assert_dbg(pNode->pMaterial);
-		Render::EEffectType Type = pNode->pMaterial->GetEffect()->GetType();
-		switch (Type)
-		{
-			case Render::EffectType_Opaque:		pNode->Order = 10; break;
-			case Render::EffectType_AlphaTest:	pNode->Order = 20; break;
-			case Render::EffectType_Skybox:		pNode->Order = 30; break;
-			case Render::EffectType_AlphaBlend:	pNode->Order = AlphaBlendStartOrder; break;
-			default:							pNode->Order = 100; break;
-		}
 	}
 
 	// Setup global lighting params, both ambient and direct
@@ -239,14 +235,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		}
 	}
 
-	// Sort render queue if requested
-
-	switch (SortingType)
-	{
-		case Sort_FrontToBack:	RenderQueue.Sort<CRenderQueueCmp_FrontToBack>(); break;
-		case Sort_Material:		RenderQueue.Sort<CRenderQueueCmp_Material>(); break;
-	}
-
 	// Bind render targets and a depth-stencil buffer
 
 	const UPTR RenderTargetCount = RenderTargetIDs.size();
@@ -311,13 +299,6 @@ bool CRenderPhaseGeometry::Init(CRenderPath& Owner, CGraphicsResourceManager& Gf
 
 	EnableLighting = Desc.Get<bool>(CStrID("EnableLighting"), false);
 
-	CString SortStr = Desc.Get<CString>(CStrID("Sort"), CString::Empty);
-	SortStr.Trim();
-	SortStr.ToLower();
-	if (SortStr == "ftb" || SortStr == "fronttoback") SortingType = Sort_FrontToBack;
-	else if (SortStr == "material") SortingType = Sort_Material;
-	else SortingType = Sort_None;
-
 	const Data::CData& RTValue = Desc.Get(CStrID("RenderTarget")).GetRawValue();
 	if (RTValue.IsNull()) RenderTargetIDs.SetSize(0);
 	else if (RTValue.IsA<Data::PDataArray>())
@@ -346,6 +327,17 @@ bool CRenderPhaseGeometry::Init(CRenderPath& Owner, CGraphicsResourceManager& Gf
 		DepthStencilID = DSValue.GetValue<CStrID>();
 	}
 	else FAIL;
+
+	const auto& RenderQueuesDesc = *Desc.Get<Data::PDataArray>(CStrID("RenderQueues"));
+	_RenderQueueIndices.resize(RenderQueuesDesc.GetCount());
+	for (UPTR i = 0; i < RenderQueuesDesc.GetCount(); ++i)
+	{
+		const CStrID RenderQueueType = RenderQueuesDesc.Get<CStrID>(i);
+		auto It = Owner._RenderQueues.find(RenderQueueType);
+		if (It == Owner._RenderQueues.cend())
+			It = Owner._RenderQueues.emplace(RenderQueueType, Owner._RenderQueues.size()).first;
+		_RenderQueueIndices[i] = It->second;
+	}
 
 	Data::CDataArray& RenderersDesc = *Desc.Get<Data::PDataArray>(CStrID("Renderers"));
 	for (UPTR i = 0; i < RenderersDesc.GetCount(); ++i)

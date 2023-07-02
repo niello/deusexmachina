@@ -152,6 +152,13 @@ public:
 	UPTR							GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
 	bool							RequiresObjectScreenSize() const { return MeshLODType == LOD_ScreenSizeRelative || MeshLODType == LOD_ScreenSizeAbsolute || MaterialLODType == LOD_ScreenSizeRelative || MaterialLODType == LOD_ScreenSizeAbsolute; }
 
+	template<typename TCallback>
+	void                            ForEachRenderableInQueue(U32 QueueIndex, TCallback Callback)
+	{
+		// TODO: can add queue data to IRenderQueue for inlining callback? or not worth it?
+		NOT_IMPLEMENTED;
+	}
+
 	void                            Update(float dt);
 	bool							Render();
 	bool							Present() const;

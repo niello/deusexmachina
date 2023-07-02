@@ -14,7 +14,7 @@ namespace Frame
 {
 using PRenderQueue = std::unique_ptr<class IRenderQueue>;
 
-// Make the whole queue polymorphic for sort key generation inlining in the Update() loop
+// Make the whole queue polymorphic instead of sort key generation for better inlining in the Update() loop
 class IRenderQueue
 {
 public:
@@ -51,6 +51,8 @@ public:
 	virtual void Add(Render::IRenderable* pRenderable) override
 	{
 		// FIXME: now first update of a renderable happens after adding it to the queue but before updating the queue, so this check is moved to Update()
+		//???will be fixed when start adding objects on their first visible. not even necessary to remove on becoming invisible if don't want.
+		//don't forget to relax condition in Update for new items, as filter mask will be already checked.
 		//if (FilterMask & pRenderable->RenderQueueMask)
 			_Queue.push_back({ pRenderable, NO_KEY });
 	}

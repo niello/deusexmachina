@@ -22,14 +22,7 @@ class CRenderPhaseGeometry: public CRenderPhase
 
 protected:
 
-	enum ESortingType
-	{
-		Sort_None,
-		Sort_FrontToBack,
-		Sort_Material
-	};
-
-	ESortingType									 SortingType;
+	std::vector<U32>                                 _RenderQueueIndices;
 	CFixedArray<CStrID>								 RenderTargetIDs;
 	CStrID											 DepthStencilID;
 	std::vector<Render::PRenderer>                   Renderers;

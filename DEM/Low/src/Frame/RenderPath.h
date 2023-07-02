@@ -53,6 +53,7 @@ public:
 	Render::CShaderConstantParam        ViewProjection;
 	Render::CShaderConstantParam        CameraPosition;
 	std::vector<std::map<Render::EEffectType, CStrID>> EffectOverrides;
+	std::map<CStrID, U32>               _RenderQueues;
 
 	CRenderPath();
 	virtual ~CRenderPath() override;

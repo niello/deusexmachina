@@ -79,8 +79,26 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 			DISP_SUBSCRIBE_NEVENT(pOSWindow, OSWindowResized, CView, OnOSWindowResized);
 	}
 
-	//!!!DBG TMP!
-	_RenderQueues.push_back(std::make_unique<CRenderQueue<CDummyKey32, (1 << Render::EEffectType::EffectType_Opaque)>>());
+	// Create render queues used by this render path
+	_RenderQueues.resize(_RenderPath->_RenderQueues.size());
+	for (auto [Type, Index] : _RenderPath->_RenderQueues)
+	{
+		//???move to factory later? it is not yet well suited for templated classes.
+		if (Type == "OpaqueDepthPrePass")
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32, (1 << Render::EEffectType::EffectType_Opaque)>>();
+		else if (Type == "AlphaTestDepthPrePass")
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32, (1 << Render::EEffectType::EffectType_AlphaTest)>>();
+		else if (Type == "OpaqueMaterial")
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32, (1 << Render::EEffectType::EffectType_Opaque)>>();
+		else if (Type == "AlphaTestMaterial")
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32, (1 << Render::EEffectType::EffectType_AlphaTest)>>();
+		else if (Type == "AlphaBackToFront")
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32, (1 << Render::EEffectType::EffectType_AlphaBlend)>>();
+		else
+		{
+			::Sys::Error("CView::CView() > Unknown render queue type!");
+		}
+	}
 }
 //---------------------------------------------------------------------
 

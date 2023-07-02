@@ -17,7 +17,6 @@ struct CRenderNode
 	IRenderable*			pRenderable;
 	IRenderer*				pRenderer;
 
-	UPTR					Order;				// Rendering order, used to sort by alpha etc
 	float					SqDistanceToCamera;
 
 	CMaterial*              pMaterial;          // Non-constant because of temporary buffers in a shader param storage
