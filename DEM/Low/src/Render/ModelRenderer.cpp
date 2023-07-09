@@ -249,11 +249,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 	// Select tech variation for the current instancing mode and light count
 
 	const auto& Passes = pTech->GetPasses(LightCount);
-	if (Passes.empty())
-	{
-		ItCurr = ItInstEnd;
-		continue;
-	}
+	if (Passes.empty()) return;
 
 	// Send lights to GPU if global light buffer is not used
 
@@ -312,7 +308,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 
 				// Setup instance transformation
 
-				PerInstance.SetMatrix(CurrInstanceDataVS[sidWorldMatrix], pRenderNode->Transform);
+				PerInstance.SetMatrix(CurrInstanceDataVS[sidWorldMatrix], Model.Transform);
 
 				// Setup instance lights
 
@@ -326,7 +322,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 					if (LightCount == 0)
 					{
 						// If tech is variable-light-count, set it per instance
-						ActualLightCount = std::min(TechLightCount, static_cast<UPTR>(pRenderNode->LightCount));
+						ActualLightCount = std::min(TechLightCount, static_cast<UPTR>(Model.LightCount));
 						PerInstance.SetUInt(CurrInstanceDataPS[sidLightCount], ActualLightCount);
 					}
 					else ActualLightCount = std::min(LightCount, TechLightCount);
@@ -334,9 +330,9 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 					// Set per-instance light indices
 					if (ActualLightCount)
 					{
-						CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(pRenderNode->LightIndexBase);
+						CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(Model.LightIndexBase);
 						U32 InstLightIdx;
-						for (InstLightIdx = 0; InstLightIdx < pRenderNode->LightCount; ++InstLightIdx, ++ItIdx)
+						for (InstLightIdx = 0; InstLightIdx < Model.LightCount; ++InstLightIdx, ++ItIdx)
 						{
 							if (!Context.UsesGlobalLightBuffer)
 							{
@@ -434,7 +430,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 			UPTR InstanceCount = 0;
 			while (ItCurr != ItInstEnd)
 			{
-				memcpy(pInstData, pRenderNode->Transform.m, sizeof(matrix44));
+				memcpy(pInstData, Model.Transform.m, sizeof(matrix44));
 				pInstData = (char*)pInstData + sizeof(matrix44);
 				++InstanceCount;
 				++ItCurr;
@@ -496,7 +492,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 
 			// Setup per-instance information
 
-			PerInstance.SetMatrix(ConstWorldMatrix, pRenderNode->Transform);
+			PerInstance.SetMatrix(ConstWorldMatrix, Model.Transform);
 
 			if (TechLightCount)
 			{
@@ -505,7 +501,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 				if (LightCount == 0)
 				{
 					// If tech is variable-light-count, set it per instance
-					ActualLightCount = std::min(TechLightCount, static_cast<UPTR>(pRenderNode->LightCount));
+					ActualLightCount = std::min(TechLightCount, static_cast<UPTR>(Model.LightCount));
 					PerInstance.SetUInt(ConstLightCount, ActualLightCount);
 				}
 				else ActualLightCount = std::min(LightCount, TechLightCount);
@@ -513,9 +509,9 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 				// Set per-instance light indices
 				if (ActualLightCount)
 				{
-					CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(pRenderNode->LightIndexBase);
+					CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(Model.LightIndexBase);
 					U32 InstLightIdx;
-					for (InstLightIdx = 0; InstLightIdx < pRenderNode->LightCount; ++InstLightIdx, ++ItIdx)
+					for (InstLightIdx = 0; InstLightIdx < Model.LightCount; ++InstLightIdx, ++ItIdx)
 					{
 						if (!Context.UsesGlobalLightBuffer)
 						{
@@ -533,8 +529,8 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 			}
 
 			// TODO: could reuse constant buffer with the same pSkinPalette without resetting the palette redundantly
-			if (ConstSkinPalette && pModel->pSkinPalette)
-				PerInstance.SetMatrixArray(ConstSkinPalette, pModel->pSkinPalette, std::min(pModel->BoneCount, ConstSkinPalette.GetElementCount()));
+			if (ConstSkinPalette && Model.pSkinPalette)
+				PerInstance.SetMatrixArray(ConstSkinPalette, Model.pSkinPalette, std::min(Model.BoneCount, ConstSkinPalette.GetElementCount()));
 
 			PerInstance.Apply();
 
