@@ -2,6 +2,7 @@
 #include <Render/Renderer.h>
 #include <Render/VertexComponent.h>
 #include <Render/SamplerDesc.h>
+#include <Render/ShaderParamTable.h>
 #include <Data/FixedArray.h>
 #include <Data/Ptr.h>
 #include <map>
@@ -87,6 +88,21 @@ protected:
 	float                                   VisibilityRange = 1000.f;
 	float                                   MorphStartRatio = 0.7f;
 
+	const CMaterial* pCurrMaterial = nullptr;
+	const CTechnique* pCurrTech = nullptr;
+
+	CShaderConstantParam ConstVSCDLODParams;
+	CShaderConstantParam ConstGridConsts;
+	CShaderConstantParam ConstFirstInstanceIndex;
+	CShaderConstantParam ConstInstanceDataVS;
+	CShaderConstantParam ConstInstanceDataPS;
+	PResourceParam ResourceHeightMap;
+
+	// Subsequent shader constants for single-instance case
+	CShaderConstantParam ConstWorldMatrix;
+	CShaderConstantParam ConstLightCount;
+	CShaderConstantParam ConstLightIndices;
+
 	static ENodeStatus	ProcessTerrainNode(const CProcessTerrainNodeArgs& Args, U32 X, U32 Z, U32 LOD, float LODRange, U32& PatchCount, U32& QPatchCount, U8& MaxLightCount, EClipStatus Clip = EClipStatus::Clipped);
 	static bool			CheckNodeSphereIntersection(const CLightTestArgs& Args, const sphere& Sphere, U32 X, U32 Z, U32 LOD, UPTR& AABBTestCounter);
 	static bool			CheckNodeFrustumIntersection(const CLightTestArgs& Args, const matrix44& Frustum, U32 X, U32 Z, U32 LOD, UPTR& AABBTestCounter);
@@ -97,9 +113,12 @@ public:
 	CTerrainRenderer();
 	virtual ~CTerrainRenderer() override;
 
-	virtual bool                 Init(bool LightingEnabled, const Data::CParams& Params) override;
-	virtual bool                 PrepareNode(IRenderable& Node, const CRenderNodeContext& Context) override;
-	virtual CRenderQueueIterator Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr) override;
+	virtual bool Init(bool LightingEnabled, const Data::CParams& Params) override;
+	virtual bool PrepareNode(IRenderable& Node, const CRenderNodeContext& Context) override;
+
+	virtual bool BeginRange(const CRenderContext& Context) override;
+	virtual void Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/) override;
+	virtual void EndRange(const CRenderContext& Context) override;
 };
 
 }

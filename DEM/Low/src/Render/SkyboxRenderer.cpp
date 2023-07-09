@@ -19,80 +19,76 @@ bool CSkyboxRenderer::PrepareNode(IRenderable& Node, const CRenderNodeContext& C
 }
 //---------------------------------------------------------------------
 
-CRenderQueueIterator CSkyboxRenderer::Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr)
+bool CSkyboxRenderer::BeginRange(const CRenderContext& Context)
 {
+	_pCurrMaterial = nullptr;
+	_pCurrTech = nullptr;
+	_ConstWorldMatrix = {};
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CSkyboxRenderer::Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/)
+{
+	CSkybox& Skybox = static_cast<CSkybox&>(Renderable);
+
+	const CTechnique* pTech = Context.pShaderTechCache[Skybox.ShaderTechIndex];
+	n_assert_dbg(pTech);
+	if (!pTech) return;
+
+	if (pTech != _pCurrTech)
+	{
+		_pCurrTech = pTech;
+		_pCurrMaterial = nullptr;
+		_ConstWorldMatrix = pTech->GetParamTable().GetConstant(CStrID("WorldMatrix"));
+	}
+
+	auto pMaterial = Skybox.Material.Get();
+	n_assert_dbg(pMaterial);
+	if (!pMaterial) return;
+
+	if (pMaterial != _pCurrMaterial)
+	{
+		_pCurrMaterial = pMaterial;
+		n_verify_dbg(pMaterial->Apply());
+	}
+
+	UPTR LightCount = 0;
+	const auto& Passes = pTech->GetPasses(LightCount);
+	if (Passes.empty()) return;
+
 	CGPUDriver& GPU = *Context.pGPU;
 
-	CRenderQueueIterator ItEnd = RenderQueue.End();
-
-	const CMaterial* pCurrMaterial = nullptr;
-	const CTechnique* pCurrTech = nullptr;
-
-	CShaderConstantParam ConstWorldMatrix;
-
-	while (ItCurr != ItEnd)
+	if (_ConstWorldMatrix)
 	{
-		IRenderable* pRenderNode = *ItCurr;
-
-		if (pRenderNode->pRenderer != this) return ItCurr;
-
-		CSkybox* pSkybox = pRenderNode->As<CSkybox>();
-		n_assert_dbg(pSkybox);
-
-		auto pMaterial = pSkybox->Material.Get();
-		if (pMaterial != pCurrMaterial)
-		{
-			n_assert_dbg(pMaterial);
-			n_verify_dbg(pMaterial->Apply());
-			pCurrMaterial = pMaterial;
-		}
-
-		const CTechnique* pTech = Context.pShaderTechCache[pSkybox->ShaderTechIndex];
-		if (pTech != pCurrTech)
-		{
-			pCurrTech = pTech;
-			ConstWorldMatrix = pTech->GetParamTable().GetConstant(CStrID("WorldMatrix"));
-		}
-
-		UPTR LightCount = 0;
-		const auto& Passes = pTech->GetPasses(LightCount);
-		if (Passes.empty())
-		{
-			++ItCurr;
-			continue;
-		}
-
 		CShaderParamStorage PerInstance(pTech->GetParamTable(), GPU);
-
-		if (ConstWorldMatrix)
-		{
-			matrix44 Tfm = pRenderNode->Transform;
-			Tfm.set_translation(Context.CameraPosition);
-			PerInstance.SetMatrix(ConstWorldMatrix, Tfm);
-		}
+		matrix44 Tfm = Skybox.Transform;
+		Tfm.set_translation(Context.CameraPosition);
+		PerInstance.SetMatrix(_ConstWorldMatrix, Tfm);
 		n_verify_dbg(PerInstance.Apply());
+	}
 
-		const CMesh* pMesh = pSkybox->Mesh.Get();
-		n_assert_dbg(pMesh);
-		CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
-		n_assert_dbg(pVB);
+	const CMesh* pMesh = Skybox.Mesh.Get();
+	n_assert_dbg(pMesh);
+	CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
+	n_assert_dbg(pVB);
 
-		GPU.SetVertexLayout(pVB->GetVertexLayout());
-		GPU.SetVertexBuffer(0, pVB);
-		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
+	GPU.SetVertexLayout(pVB->GetVertexLayout());
+	GPU.SetVertexBuffer(0, pVB);
+	GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 
-		// NB: rendered at the far clipping plane due to .xyww position swizzling in a shader
-		const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
-		for (const auto& Pass : Passes)
-		{
-			GPU.SetRenderState(Pass);
-			GPU.Draw(*pGroup);
-		}
+	// NB: rendered at the far clipping plane due to .xyww position swizzling in a shader
+	const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
+	for (const auto& Pass : Passes)
+	{
+		GPU.SetRenderState(Pass);
+		GPU.Draw(*pGroup);
+	}
+}
+//---------------------------------------------------------------------
 
-		++ItCurr;
-	};
-
-	return ItEnd;
+void CSkyboxRenderer::EndRange(const CRenderContext& Context)
+{
 }
 //---------------------------------------------------------------------
 

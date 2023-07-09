@@ -615,37 +615,34 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 }
 //---------------------------------------------------------------------
 
-CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr)
+bool CTerrainRenderer::BeginRange(const CRenderContext& Context)
 {
+	// Skip terrain rendering. Can fall back to manual 4-sample filtering in a shader instead.
+	if (!Context.pGPU->CheckCaps(Caps_VSTexFiltering_Linear)) return false;
+
+	pCurrMaterial = nullptr;
+	pCurrTech = nullptr;
+
+	//???!!!can cache for each tech by tech index and don't search constants each frame?
+	ConstVSCDLODParams = {};
+	ConstGridConsts = {};
+	ConstFirstInstanceIndex = {};
+	ConstInstanceDataVS = {};
+	ConstInstanceDataPS = {};
+	ResourceHeightMap = {};
+	ConstWorldMatrix = {};
+	ConstLightCount = {};
+	ConstLightIndices = {};
+
+	return true;
+}
+//---------------------------------------------------------------------
+
+void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/)
+{
+	CTerrain& Terrain = static_cast<CTerrain&>(Renderable);
+
 	CGPUDriver& GPU = *Context.pGPU;
-
-	CRenderQueueIterator ItEnd = RenderQueue.End();
-
-	if (!GPU.CheckCaps(Caps_VSTexFiltering_Linear))
-	{
-		// Skip terrain rendering. Can fall back to manual 4-sample filtering in a shader instead.
-		while (ItCurr != ItEnd)
-		{
-			if ((*ItCurr)->pRenderer != this) return ItCurr;
-			++ItCurr;
-		}
-		return ItEnd;
-	}
-
-	const CMaterial* pCurrMaterial = nullptr;
-	const CTechnique* pCurrTech = nullptr;
-
-	CShaderConstantParam ConstVSCDLODParams;
-	CShaderConstantParam ConstGridConsts;
-	CShaderConstantParam ConstFirstInstanceIndex;
-	CShaderConstantParam ConstInstanceDataVS;
-	CShaderConstantParam ConstInstanceDataPS;
-	PResourceParam ResourceHeightMap;
-
-	// Subsequent shader constants for single-instance case
-	CShaderConstantParam ConstWorldMatrix;
-	CShaderConstantParam ConstLightCount;
-	CShaderConstantParam ConstLightIndices;
 
 	const bool LightingEnabled = (Context.pLights != nullptr);
 	UPTR TechLightCount;
@@ -655,472 +652,452 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 	static const CStrID sidLightIndices("LightIndices");
 	const I32 EMPTY_LIGHT_INDEX = -1;
 
+	//!!!to Init()! do once per view!
 	if (HMSampler.IsNullPtr()) HMSampler = GPU.CreateSampler(HMSamplerDesc);
 
-	while (ItCurr != ItEnd)
+	if (!Terrain.GetPatchMesh() || !Terrain.GetQuarterPatchMesh() || !Terrain.GetCDLODData()) return;
+
+	// Calculate morph constants
+
+	const CCDLODData& CDLOD = *Terrain.GetCDLODData();
+	const U32 LODCount = CDLOD.GetLODCount();
+
+	constexpr UPTR MAX_LOD_COUNT = 32;
+	n_assert_dbg(LODCount <= MAX_LOD_COUNT);
+
+	//!!!PERF: may recalculate only when LODCount / VisibilityRange changes!
+	float MorphStart = 0.f;
+	float CurrVisRange = VisibilityRange / (float)(1 << (LODCount - 1));
+	float MorphConsts[2 * MAX_LOD_COUNT];
+	float* pCurrMorphConst = MorphConsts;
+	for (U32 j = 0; j < std::min(LODCount, MAX_LOD_COUNT); ++j)
 	{
-		IRenderable* pRenderNode = *ItCurr;
+		float MorphEnd = j ? CurrVisRange : CurrVisRange * 0.9f;
+		MorphStart = MorphStart + (MorphEnd - MorphStart) * MorphStartRatio;
+		MorphEnd = n_lerp(MorphEnd, MorphStart, 0.01f);
+		float MorphConst2 = 1.0f / (MorphEnd - MorphStart);
+		*pCurrMorphConst++ = MorphEnd * MorphConst2;
+		*pCurrMorphConst++ = MorphConst2;
+		CurrVisRange *= 2.f;
+	}
 
-		if (pRenderNode->pRenderer != this) return ItCurr;
+	// Fill instance data with patches and quarter-patches to render
 
-		CTerrain* pTerrain = pRenderNode->As<CTerrain>();
+	//!!!PERF: for D3D11 const instancing can create CB without a RAM copy and update whole!
+	if (!pInstances)
+	{
+		pInstances = (CPatchInstance*)n_malloc_aligned(sizeof(CPatchInstance) * InstanceVBSize, 16);
+		n_assert_dbg(pInstances);
+	}
 
-		if (!pTerrain->GetPatchMesh() || !pTerrain->GetQuarterPatchMesh() || !pTerrain->GetCDLODData())
+	CAABB AABB = CDLOD.GetAABB();
+	AABB.Transform(Terrain.Transform);
+	float AABBMinX = AABB.Min.x;
+	float AABBMinZ = AABB.Min.z;
+	float AABBSizeX = AABB.Max.x - AABBMinX;
+	float AABBSizeZ = AABB.Max.z - AABBMinZ;
+
+	CProcessTerrainNodeArgs Args;
+	Args.pCDLOD = &CDLOD;
+	Args.pInstances = pInstances;
+	Args.pMorphConsts = MorphConsts;
+	Args.pRenderContext = &Context;
+	Args.MaxInstanceCount = InstanceVBSize;
+	Args.AABBMinX = AABBMinX;
+	Args.AABBMinZ = AABBMinZ;
+	Args.ScaleBaseX = AABBSizeX / (float)(CDLOD.GetHeightMapWidth() - 1);
+	Args.ScaleBaseZ = AABBSizeZ / (float)(CDLOD.GetHeightMapHeight() - 1);
+	Args.LightIndexBase = Terrain.LightIndexBase;
+	Args.LightCount = Terrain.LightCount;
+
+	U32 PatchCount = 0;
+	U32 QuarterPatchCount = 0;
+	U8 MaxLightCount = 0;
+	const U32 TopPatchesW = CDLOD.GetTopPatchCountW();
+	const U32 TopPatchesH = CDLOD.GetTopPatchCountH();
+	const U32 TopLOD = LODCount - 1;
+	for (U32 Z = 0; Z < TopPatchesH; ++Z)
+		for (U32 X = 0; X < TopPatchesW; ++X)
+			ProcessTerrainNode(Args, X, Z, TopLOD, VisibilityRange, PatchCount, QuarterPatchCount, MaxLightCount);
+
+	// Since we allocate instance stream based on maximum light count, we never reallocate it when frame max light count
+	// drops compared to the previous frame, to avoid per-frame VB recreation. Instead we remember the biggest light
+	// count ever requested, allocate VB for it, and live without VB reallocations until more lights are required.
+	// The first unused light index is always equal to -1 so no matter how much lights are, all unused ones are ignored.
+	// For constant instancing this value never gets used, tech with LightCount = 0 is always selected.
+	if (CurrMaxLightCount > MaxLightCount) MaxLightCount = CurrMaxLightCount;
+
+	if (!PatchCount && !QuarterPatchCount) return;
+
+	// Sort patches
+
+	// We sort by LOD (the more is scale, the coarser is LOD), and therefore we
+	// almost sort by distance to the camera, as LOD depends solely on it.
+	if (PatchCount)
+		std::sort(pInstances, pInstances + PatchCount, [](const CPatchInstance& a, const CPatchInstance& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
+	if (QuarterPatchCount)
+		std::sort(pInstances + InstanceVBSize - QuarterPatchCount, pInstances + InstanceVBSize, [](const CPatchInstance& a, const CPatchInstance& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
+
+	// Select tech for the maximal light count used per-patch
+
+	UPTR LightCount = MaxLightCount;
+	const CTechnique* pTech = Context.pShaderTechCache[Terrain.ShaderTechIndex];
+	const auto& Passes = pTech->GetPasses(LightCount);
+	if (Passes.empty()) return;
+
+	if (LightingEnabled && LightCount)
+	{
+		if (CurrMaxLightCount < LightCount) CurrMaxLightCount = LightCount;
+
+		if (!Context.UsesGlobalLightBuffer)
 		{
-			//::Sys::Error("CTerrainRenderer::Render() > terrain object resources are not initialized!");
-			++ItCurr;
-			continue;
+			NOT_IMPLEMENTED;
+		}
+	}
+
+	// Apply material, if changed
+
+	auto pMaterial = Terrain.Material.Get();
+	if (pMaterial != pCurrMaterial)
+	{
+		n_assert_dbg(pMaterial);
+		n_verify_dbg(pMaterial->Apply());
+		pCurrMaterial = pMaterial;
+	}
+
+	// Pass tech params to GPU
+
+	if (pTech != pCurrTech)
+	{
+		pCurrTech = pTech;
+
+		const CShaderParamTable& ParamTable = pTech->GetParamTable();
+
+		ConstVSCDLODParams = ParamTable.GetConstant(CStrID("VSCDLODParams"));
+		ConstGridConsts = ParamTable.GetConstant(CStrID("GridConsts"));
+		ConstFirstInstanceIndex = ParamTable.GetConstant(CStrID("FirstInstanceIndex"));
+		ConstInstanceDataVS = ParamTable.GetConstant(CStrID("InstanceDataVS"));
+		ConstInstanceDataPS = ParamTable.GetConstant(CStrID("InstanceDataPS"));
+		ResourceHeightMap = ParamTable.GetResource(CStrID("HeightMapVS"));
+
+		TechLightCount = 0;
+		if (LightingEnabled && ConstInstanceDataPS)
+		{
+			ConstLightIndices = ConstInstanceDataPS[0][sidLightIndices];
+			TechLightCount = ConstLightIndices.GetTotalComponentCount();
 		}
 
-		// Calculate morph constants
+		auto pVSLinearSampler = ParamTable.GetSampler(CStrID("VSLinearSampler"));
+		if (pVSLinearSampler)
+			pVSLinearSampler->Apply(GPU, HMSampler.Get());
+	}
 
-		const CCDLODData& CDLOD = *pTerrain->GetCDLODData();
-		const U32 LODCount = CDLOD.GetLODCount();
+	if (ResourceHeightMap)
+		ResourceHeightMap->Apply(GPU, Terrain.GetHeightMap());
 
-		constexpr UPTR MAX_LOD_COUNT = 32;
-		n_assert_dbg(LODCount <= MAX_LOD_COUNT);
+	CShaderParamStorage PerInstance(pTech->GetParamTable(), GPU);
 
-		//!!!PERF: may recalculate only when LODCount / VisibilityRange changes!
-		float MorphStart = 0.f;
-		float CurrVisRange = VisibilityRange / (float)(1 << (LODCount - 1));
-		float MorphConsts[2 * MAX_LOD_COUNT];
-		float* pCurrMorphConst = MorphConsts;
-		for (U32 j = 0; j < std::min(LODCount, MAX_LOD_COUNT); ++j)
+	if (ConstVSCDLODParams)
+	{
+		struct
 		{
-			float MorphEnd = j ? CurrVisRange : CurrVisRange * 0.9f;
-			MorphStart = MorphStart + (MorphEnd - MorphStart) * MorphStartRatio;
-			MorphEnd = n_lerp(MorphEnd, MorphStart, 0.01f);
-			float MorphConst2 = 1.0f / (MorphEnd - MorphStart);
-			*pCurrMorphConst++ = MorphEnd * MorphConst2;
-			*pCurrMorphConst++ = MorphConst2;
-			CurrVisRange *= 2.f;
-		}
+			float WorldToHM[4];
+			float TerrainYScale;
+			float TerrainYOffset;
+			float InvSplatSizeX;
+			float InvSplatSizeZ;
+			float TexelSize[2];
+			//float TextureSize[2]; // For manual bilinear filtering in VS
+		} CDLODParams;
 
-		// Fill instance data with patches and quarter-patches to render
+		CDLODParams.WorldToHM[0] = 1.f / AABBSizeX;
+		CDLODParams.WorldToHM[1] = 1.f / AABBSizeZ;
+		CDLODParams.WorldToHM[2] = -AABBMinX * CDLODParams.WorldToHM[0];
+		CDLODParams.WorldToHM[3] = -AABBMinZ * CDLODParams.WorldToHM[1];
+		CDLODParams.TerrainYScale = 65535.f * CDLOD.GetVerticalScale();
+		CDLODParams.TerrainYOffset = -32767.f * CDLOD.GetVerticalScale() + Terrain.Transform.m[3][1]; // [3][1] = Translation.y
+		CDLODParams.InvSplatSizeX = Terrain.GetInvSplatSizeX();
+		CDLODParams.InvSplatSizeZ = Terrain.GetInvSplatSizeZ();
+		CDLODParams.TexelSize[0] = 1.f / (float)CDLOD.GetHeightMapWidth();
+		CDLODParams.TexelSize[1] = 1.f / (float)CDLOD.GetHeightMapHeight();
 
-		//!!!PERF: for D3D11 const instancing can create CB without a RAM copy and update whole!
-		if (!pInstances)
+		PerInstance.SetRawConstant(ConstVSCDLODParams, &CDLODParams, sizeof(CDLODParams));
+	}
+
+	//!!!implement looping if instance buffer is too small!
+	if (ConstInstanceDataVS)
+	{
+		UPTR MaxInstanceCountConst = ConstInstanceDataVS.GetElementCount();
+		if (ConstInstanceDataPS)
 		{
-			pInstances = (CPatchInstance*)n_malloc_aligned(sizeof(CPatchInstance) * InstanceVBSize, 16);
-			n_assert_dbg(pInstances);
+			const UPTR MaxInstanceCountConstPS = ConstInstanceDataPS.GetElementCount();
+			if (MaxInstanceCountConst < MaxInstanceCountConstPS)
+				MaxInstanceCountConst = MaxInstanceCountConstPS;
 		}
-
-		CAABB AABB = CDLOD.GetAABB();
-		AABB.Transform(pRenderNode->Transform);
-		float AABBMinX = AABB.Min.x;
-		float AABBMinZ = AABB.Min.z;
-		float AABBSizeX = AABB.Max.x - AABBMinX;
-		float AABBSizeZ = AABB.Max.z - AABBMinZ;
-
-		CProcessTerrainNodeArgs Args;
-		Args.pCDLOD = &CDLOD;
-		Args.pInstances = pInstances;
-		Args.pMorphConsts = MorphConsts;
-		Args.pRenderContext = &Context;
-		Args.MaxInstanceCount = InstanceVBSize;
-		Args.AABBMinX = AABBMinX;
-		Args.AABBMinZ = AABBMinZ;
-		Args.ScaleBaseX = AABBSizeX / (float)(CDLOD.GetHeightMapWidth() - 1);
-		Args.ScaleBaseZ = AABBSizeZ / (float)(CDLOD.GetHeightMapHeight() - 1);
-		Args.LightIndexBase = pRenderNode->LightIndexBase;
-		Args.LightCount = pRenderNode->LightCount;
-
-		U32 PatchCount = 0;
-		U32 QuarterPatchCount = 0;
-		U8 MaxLightCount = 0;
-		const U32 TopPatchesW = CDLOD.GetTopPatchCountW();
-		const U32 TopPatchesH = CDLOD.GetTopPatchCountH();
-		const U32 TopLOD = LODCount - 1;
-		for (U32 Z = 0; Z < TopPatchesH; ++Z)
-			for (U32 X = 0; X < TopPatchesW; ++X)
-				ProcessTerrainNode(Args, X, Z, TopLOD, VisibilityRange, PatchCount, QuarterPatchCount, MaxLightCount);
-
-		// Since we allocate instance stream based on maximum light count, we never reallocate it when frame max light count
-		// drops compared to the previous frame, to avoid per-frame VB recreation. Instead we remember the biggest light
-		// count ever requested, allocate VB for it, and live without VB reallocations until more lights are required.
-		// The first unused light index is always equal to -1 so no matter how much lights are, all unused ones are ignored.
-		// For constant instancing this value never gets used, tech with LightCount = 0 is always selected.
-		if (CurrMaxLightCount > MaxLightCount) MaxLightCount = CurrMaxLightCount;
-
-		if (!PatchCount && !QuarterPatchCount)
-		{
-			++ItCurr;
-			continue;
-		}
-
-		// Sort patches
-
-		// We sort by LOD (the more is scale, the coarser is LOD), and therefore we
-		// almost sort by distance to the camera, as LOD depends solely on it.
-		if (PatchCount)
-			std::sort(pInstances, pInstances + PatchCount, [](const CPatchInstance& a, const CPatchInstance& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
-		if (QuarterPatchCount)
-			std::sort(pInstances + InstanceVBSize - QuarterPatchCount, pInstances + InstanceVBSize, [](const CPatchInstance& a, const CPatchInstance& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
-
-		// Select tech for the maximal light count used per-patch
-
-		UPTR LightCount = MaxLightCount;
-		const CTechnique* pTech = Context.pShaderTechCache[pTerrain->ShaderTechIndex];
-		const auto& Passes = pTech->GetPasses(LightCount);
-		if (Passes.empty())
-		{
-			++ItCurr;
-			continue;
-		}
-
-		if (LightingEnabled && LightCount)
-		{
-			if (CurrMaxLightCount < LightCount) CurrMaxLightCount = LightCount;
-
-			if (!Context.UsesGlobalLightBuffer)
-			{
-				NOT_IMPLEMENTED;
-			}
-		}
-
-		// Apply material, if changed
-
-		auto pMaterial = pTerrain->Material.Get();
-		if (pMaterial != pCurrMaterial)
-		{
-			n_assert_dbg(pMaterial);
-			n_verify_dbg(pMaterial->Apply());
-			pCurrMaterial = pMaterial;
-		}
-
-		// Pass tech params to GPU
-
-		if (pTech != pCurrTech)
-		{
-			pCurrTech = pTech;
-
-			const CShaderParamTable& ParamTable = pTech->GetParamTable();
-
-			ConstVSCDLODParams = ParamTable.GetConstant(CStrID("VSCDLODParams"));
-			ConstGridConsts = ParamTable.GetConstant(CStrID("GridConsts"));
-			ConstFirstInstanceIndex = ParamTable.GetConstant(CStrID("FirstInstanceIndex"));
-			ConstInstanceDataVS = ParamTable.GetConstant(CStrID("InstanceDataVS"));
-			ConstInstanceDataPS = ParamTable.GetConstant(CStrID("InstanceDataPS"));
-			ResourceHeightMap = ParamTable.GetResource(CStrID("HeightMapVS"));
-
-			TechLightCount = 0;
-			if (LightingEnabled && ConstInstanceDataPS)
-			{
-				ConstLightIndices = ConstInstanceDataPS[0][sidLightIndices];
-				TechLightCount = ConstLightIndices.GetTotalComponentCount();
-			}
-
-			auto pVSLinearSampler = ParamTable.GetSampler(CStrID("VSLinearSampler"));
-			if (pVSLinearSampler)
-				pVSLinearSampler->Apply(GPU, HMSampler.Get());
-		}
-
-		if (ResourceHeightMap)
-			ResourceHeightMap->Apply(GPU, pTerrain->GetHeightMap());
-
-		CShaderParamStorage PerInstance(pTech->GetParamTable(), GPU);
-
-		if (ConstVSCDLODParams)
-		{
-			struct
-			{
-				float WorldToHM[4];
-				float TerrainYScale;
-				float TerrainYOffset;
-				float InvSplatSizeX;
-				float InvSplatSizeZ;
-				float TexelSize[2];
-				//float TextureSize[2]; // For manual bilinear filtering in VS
-			} CDLODParams;
-
-			CDLODParams.WorldToHM[0] = 1.f / AABBSizeX;
-			CDLODParams.WorldToHM[1] = 1.f / AABBSizeZ;
-			CDLODParams.WorldToHM[2] = -AABBMinX * CDLODParams.WorldToHM[0];
-			CDLODParams.WorldToHM[3] = -AABBMinZ * CDLODParams.WorldToHM[1];
-			CDLODParams.TerrainYScale = 65535.f * CDLOD.GetVerticalScale();
-			CDLODParams.TerrainYOffset = -32767.f * CDLOD.GetVerticalScale() + pRenderNode->Transform.m[3][1]; // [3][1] = Translation.y
-			CDLODParams.InvSplatSizeX = pTerrain->GetInvSplatSizeX();
-			CDLODParams.InvSplatSizeZ = pTerrain->GetInvSplatSizeZ();
-			CDLODParams.TexelSize[0] = 1.f / (float)CDLOD.GetHeightMapWidth();
-			CDLODParams.TexelSize[1] = 1.f / (float)CDLOD.GetHeightMapHeight();
-
-			PerInstance.SetRawConstant(ConstVSCDLODParams, &CDLODParams, sizeof(CDLODParams));
-		}
+		n_assert_dbg(MaxInstanceCountConst > 1);
 
 		//!!!implement looping if instance buffer is too small!
-		if (ConstInstanceDataVS)
+		n_assert_dbg(MaxInstanceCountConst >= (PatchCount + QuarterPatchCount));
+
+		const bool UploadLightInfo = LightingEnabled && ConstInstanceDataPS && TechLightCount;
+		U32 AvailableLightCount = (LightCount == 0) ? TechLightCount : std::min(LightCount, TechLightCount);
+		if (AvailableLightCount > INSTANCE_MAX_LIGHT_COUNT) AvailableLightCount = INSTANCE_MAX_LIGHT_COUNT;
+
+		//???PERF: optimize uploading? use paddings to maintain align16?
+		//???PERF: use 2 different CPatchInstance structures for stream and const instancing?
+		UPTR InstanceCount = 0;
+		for (UPTR PatchIdx = 0; PatchIdx < PatchCount; ++PatchIdx, ++InstanceCount)
 		{
-			UPTR MaxInstanceCountConst = ConstInstanceDataVS.GetElementCount();
-			if (ConstInstanceDataPS)
+			const CPatchInstance& CurrPatch = pInstances[PatchIdx];
+
+			// Setup instance patch constants
+
+			PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], &CurrPatch, 6 * sizeof(float));
+
+			// Setup instance lights
+
+			if (UploadLightInfo)
 			{
-				const UPTR MaxInstanceCountConstPS = ConstInstanceDataPS.GetElementCount();
-				if (MaxInstanceCountConst < MaxInstanceCountConstPS)
-					MaxInstanceCountConst = MaxInstanceCountConstPS;
-			}
-			n_assert_dbg(MaxInstanceCountConst > 1);
+				CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
+				CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
 
-			//!!!implement looping if instance buffer is too small!
-			n_assert_dbg(MaxInstanceCountConst >= (PatchCount + QuarterPatchCount));
-
-			const bool UploadLightInfo = LightingEnabled && ConstInstanceDataPS && TechLightCount;
-			U32 AvailableLightCount = (LightCount == 0) ? TechLightCount : std::min(LightCount, TechLightCount);
-			if (AvailableLightCount > INSTANCE_MAX_LIGHT_COUNT) AvailableLightCount = INSTANCE_MAX_LIGHT_COUNT;
-
-			//???PERF: optimize uploading? use paddings to maintain align16?
-			//???PERF: use 2 different CPatchInstance structures for stream and const instancing?
-			UPTR InstanceCount = 0;
-			for (UPTR PatchIdx = 0; PatchIdx < PatchCount; ++PatchIdx, ++InstanceCount)
-			{
-				const CPatchInstance& CurrPatch = pInstances[PatchIdx];
-
-				// Setup instance patch constants
-
-				PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], &CurrPatch, 6 * sizeof(float));
-
-				// Setup instance lights
-
-				if (UploadLightInfo)
+				U32 InstLightIdx;
+				for (InstLightIdx = 0; InstLightIdx < AvailableLightCount; ++InstLightIdx)
 				{
-					CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
-					CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
-
-					U32 InstLightIdx;
-					for (InstLightIdx = 0; InstLightIdx < AvailableLightCount; ++InstLightIdx)
-					{
-						I32 CurrGPUIdx = CurrPatch.LightIndex[InstLightIdx];
-						if (CurrGPUIdx < 0) break;
-						PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), CurrGPUIdx);
-					}
-
-					if (LightCount)
-					{
-						// If tech is fixed-light-count, fill the first unused light index with the special value
-						if (InstLightIdx < TechLightCount)
-							PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), EMPTY_LIGHT_INDEX);
-					}
-					else
-					{
-						// If tech is variable-light-count, set light count explicitly
-						PerInstance.SetUInt(CurrInstanceDataPS[sidLightCount], InstLightIdx);
-					}
+					I32 CurrGPUIdx = CurrPatch.LightIndex[InstLightIdx];
+					if (CurrGPUIdx < 0) break;
+					PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), CurrGPUIdx);
 				}
-			}
 
-			const CPatchInstance* pQInstances = pInstances + InstanceVBSize - QuarterPatchCount;
-			for (UPTR PatchIdx = 0; PatchIdx < QuarterPatchCount; ++PatchIdx, ++InstanceCount)
-			{
-				const CPatchInstance& CurrPatch = pQInstances[PatchIdx];
-
-				// Setup instance patch constants
-
-				PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], &CurrPatch, 6 * sizeof(float));
-
-				// Setup instance lights
-
-				if (UploadLightInfo)
+				if (LightCount)
 				{
-					CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
-					CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
-
-					U32 InstLightIdx;
-					for (InstLightIdx = 0; InstLightIdx < AvailableLightCount; ++InstLightIdx)
-					{
-						I32 CurrGPUIdx = CurrPatch.LightIndex[InstLightIdx];
-						if (CurrGPUIdx < 0) break;
-						PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), CurrGPUIdx);
-					}
-
-					if (LightCount)
-					{
-						// If tech is fixed-light-count, fill the first unused light index with the special value
-						if (InstLightIdx < TechLightCount)
-							PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), EMPTY_LIGHT_INDEX);
-					}
-					else
-					{
-						// If tech is variable-light-count, set light count explicitly
-						PerInstance.SetUInt(CurrInstanceDataPS[sidLightCount], InstLightIdx);
-					}
-				}
-			}
-		}
-		else
-		{
-			// Calculate int4 light index vector count supported by both tech and vertex declaration.
-			// Vertex declaration size will be 2 elements for VS data + one element per vector.
-			const UPTR LightVectorCount = (LightCount + 3) / 4;
-			const UPTR DeclSize = 2 + LightVectorCount;
-			n_assert_dbg(DeclSize <= InstanceDataDecl.size());
-
-			// If current buffer doesn't suit the tech, recreate it. Since we only grow tech LightCount and never
-			// shrink it, buffer reallocation will be requested only if can't handle desired light count.
-			if (!InstanceVB || InstanceVB->GetVertexLayout()->GetComponentCount() != DeclSize)
-			{
-				PVertexLayout VLInstanceData = GPU.CreateVertexLayout(InstanceDataDecl.data(), DeclSize);
-				InstanceVB = nullptr; // Drop before allocating new buffer
-				InstanceVB = GPU.CreateVertexBuffer(*VLInstanceData, InstanceVBSize, Access_CPU_Write | Access_GPU_Read);
-			}
-
-			// Upload instance data to IA stream
-
-			//???what about D3D11_APPEND_ALIGNED_ELEMENT in D3D11 and float2?
-			const UPTR InstanceElementSize = InstanceVB->GetVertexLayout()->GetVertexSizeInBytes();
-
-			void* pInstData;
-			n_verify(GPU.MapResource(&pInstData, *InstanceVB, Map_WriteDiscard));
-			
-			if (PatchCount)
-			{
-				UPTR InstDataSize = InstanceElementSize * PatchCount;
-				if (sizeof(CPatchInstance) == InstanceElementSize)
-				{
-					memcpy(pInstData, pInstances, InstDataSize);
+					// If tech is fixed-light-count, fill the first unused light index with the special value
+					if (InstLightIdx < TechLightCount)
+						PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), EMPTY_LIGHT_INDEX);
 				}
 				else
 				{
-					char* pCurrInstData = (char*)pInstData;
-					for (UPTR PatchIdx = 0; PatchIdx < PatchCount; ++PatchIdx)
-					{
-						memcpy(pCurrInstData, pInstances + PatchIdx, InstanceElementSize);
-						pCurrInstData += InstanceElementSize;
-					}
+					// If tech is variable-light-count, set light count explicitly
+					PerInstance.SetUInt(CurrInstanceDataPS[sidLightCount], InstLightIdx);
 				}
-				pInstData = (char*)pInstData + InstDataSize;
 			}
-			
-			if (QuarterPatchCount)
+		}
+
+		const CPatchInstance* pQInstances = pInstances + InstanceVBSize - QuarterPatchCount;
+		for (UPTR PatchIdx = 0; PatchIdx < QuarterPatchCount; ++PatchIdx, ++InstanceCount)
+		{
+			const CPatchInstance& CurrPatch = pQInstances[PatchIdx];
+
+			// Setup instance patch constants
+
+			PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], &CurrPatch, 6 * sizeof(float));
+
+			// Setup instance lights
+
+			if (UploadLightInfo)
 			{
-				const CPatchInstance* pQInstances = pInstances + InstanceVBSize - QuarterPatchCount;
-				if (sizeof(CPatchInstance) == InstanceElementSize)
+				CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
+				CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
+
+				U32 InstLightIdx;
+				for (InstLightIdx = 0; InstLightIdx < AvailableLightCount; ++InstLightIdx)
 				{
-					memcpy(pInstData, pQInstances, InstanceElementSize * QuarterPatchCount);
+					I32 CurrGPUIdx = CurrPatch.LightIndex[InstLightIdx];
+					if (CurrGPUIdx < 0) break;
+					PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), CurrGPUIdx);
+				}
+
+				if (LightCount)
+				{
+					// If tech is fixed-light-count, fill the first unused light index with the special value
+					if (InstLightIdx < TechLightCount)
+						PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), EMPTY_LIGHT_INDEX);
 				}
 				else
 				{
-					char* pCurrInstData = (char*)pInstData;
-					for (UPTR PatchIdx = 0; PatchIdx < QuarterPatchCount; ++PatchIdx)
-					{
-						memcpy(pCurrInstData, pQInstances + PatchIdx, InstanceElementSize);
-						pCurrInstData += InstanceElementSize;
-					}
+					// If tech is variable-light-count, set light count explicitly
+					PerInstance.SetUInt(CurrInstanceDataPS[sidLightCount], InstLightIdx);
 				}
 			}
-
-			GPU.UnmapResource(*InstanceVB);
 		}
+	}
+	else
+	{
+		// Calculate int4 light index vector count supported by both tech and vertex declaration.
+		// Vertex declaration size will be 2 elements for VS data + one element per vector.
+		const UPTR LightVectorCount = (LightCount + 3) / 4;
+		const UPTR DeclSize = 2 + LightVectorCount;
+		n_assert_dbg(DeclSize <= InstanceDataDecl.size());
 
-		// Set vertex layout
-
-		// In the real world we don't want to use differently laid out meshes
-		n_assert_dbg(pTerrain->GetPatchMesh()->GetVertexBuffer()->GetVertexLayout() == pTerrain->GetQuarterPatchMesh()->GetVertexBuffer()->GetVertexLayout());
-
-		const CMesh* pMesh = pTerrain->GetPatchMesh();
-		n_assert_dbg(pMesh);
-		CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
-		n_assert_dbg(pVB);
-		CVertexLayout* pVL = pVB->GetVertexLayout();
-
-		if (ConstInstanceDataVS) GPU.SetVertexLayout(pVL);
-		else
+		// If current buffer doesn't suit the tech, recreate it. Since we only grow tech LightCount and never
+		// shrink it, buffer reallocation will be requested only if can't handle desired light count.
+		if (!InstanceVB || InstanceVB->GetVertexLayout()->GetComponentCount() != DeclSize)
 		{
-			auto It = InstancedLayouts.find(pVL);
-			if (It == InstancedLayouts.cend())
-			{
-				constexpr UPTR MAX_COMPONENTS = 64;
-
-				UPTR BaseComponentCount = pVL->GetComponentCount();
-				UPTR InstComponentCount = InstanceVB->GetVertexLayout()->GetComponentCount();
-				UPTR DescComponentCount = BaseComponentCount + InstComponentCount;
-
-				if (DescComponentCount > MAX_COMPONENTS)
-				{
-					::Sys::Error("CModelRenderer::Render() > too many vertex layout components");
-					BaseComponentCount = std::min(BaseComponentCount, MAX_COMPONENTS);
-					DescComponentCount = std::min(DescComponentCount, MAX_COMPONENTS);
-					InstComponentCount = DescComponentCount - BaseComponentCount;
-				}
-
-				CVertexComponent InstancedDecl[MAX_COMPONENTS];
-				memcpy(InstancedDecl, pVL->GetComponent(0), BaseComponentCount * sizeof(CVertexComponent));
-				memcpy(InstancedDecl + BaseComponentCount, InstanceDataDecl.data(), InstComponentCount * sizeof(CVertexComponent));
-
-				PVertexLayout VLInstanced = GPU.CreateVertexLayout(InstancedDecl, DescComponentCount);
-
-				n_assert_dbg(VLInstanced.IsValidPtr());
-				InstancedLayouts.emplace(pVL, VLInstanced);
-
-				GPU.SetVertexLayout(VLInstanced.Get());
-			}
-			else GPU.SetVertexLayout(It->second.Get());
+			PVertexLayout VLInstanceData = GPU.CreateVertexLayout(InstanceDataDecl.data(), DeclSize);
+			InstanceVB = nullptr; // Drop before allocating new buffer
+			InstanceVB = GPU.CreateVertexBuffer(*VLInstanceData, InstanceVBSize, Access_CPU_Write | Access_GPU_Read);
 		}
 
-		// Render patches //!!!may collect patches of different CTerrains if material is the same and instance buffer is big enough!
+		// Upload instance data to IA stream
+
+		//???what about D3D11_APPEND_ALIGNED_ELEMENT in D3D11 and float2?
+		const UPTR InstanceElementSize = InstanceVB->GetVertexLayout()->GetVertexSizeInBytes();
+
+		void* pInstData;
+		n_verify(GPU.MapResource(&pInstData, *InstanceVB, Map_WriteDiscard));
 
 		if (PatchCount)
 		{
-			if (ConstGridConsts)
+			UPTR InstDataSize = InstanceElementSize * PatchCount;
+			if (sizeof(CPatchInstance) == InstanceElementSize)
 			{
-				float GridConsts[2];
-				GridConsts[0] = CDLOD.GetPatchSize() * 0.5f;
-				GridConsts[1] = 1.f / GridConsts[0];
-				PerInstance.SetRawConstant(ConstGridConsts, &GridConsts, sizeof(GridConsts));
+				memcpy(pInstData, pInstances, InstDataSize);
 			}
-
-			PerInstance.SetUInt(ConstFirstInstanceIndex, 0);
-
-			PerInstance.Apply();
-
-			GPU.SetVertexBuffer(0, pVB);
-			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
-
-			if (!ConstInstanceDataVS)
-				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.Get(), 0);
-
-			const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
-			for (const auto& Pass : Passes)
+			else
 			{
-				GPU.SetRenderState(Pass);
-				GPU.DrawInstanced(*pGroup, PatchCount);
+				char* pCurrInstData = (char*)pInstData;
+				for (UPTR PatchIdx = 0; PatchIdx < PatchCount; ++PatchIdx)
+				{
+					memcpy(pCurrInstData, pInstances + PatchIdx, InstanceElementSize);
+					pCurrInstData += InstanceElementSize;
+				}
 			}
+			pInstData = (char*)pInstData + InstDataSize;
 		}
 
 		if (QuarterPatchCount)
 		{
-			if (ConstGridConsts)
+			const CPatchInstance* pQInstances = pInstances + InstanceVBSize - QuarterPatchCount;
+			if (sizeof(CPatchInstance) == InstanceElementSize)
 			{
-				float GridConsts[2];
-				GridConsts[0] = CDLOD.GetPatchSize() * 0.25f;
-				GridConsts[1] = 1.f / GridConsts[0];
-				PerInstance.SetRawConstant(ConstGridConsts, &GridConsts, sizeof(GridConsts));
+				memcpy(pInstData, pQInstances, InstanceElementSize * QuarterPatchCount);
 			}
-
-			PerInstance.SetUInt(ConstFirstInstanceIndex, PatchCount);
-
-			PerInstance.Apply();
-
-			pMesh = pTerrain->GetQuarterPatchMesh();
-			n_assert_dbg(pMesh);
-			pVB = pMesh->GetVertexBuffer().Get();
-			n_assert_dbg(pVB);
-
-			GPU.SetVertexBuffer(0, pVB);
-			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
-
-			if (!ConstInstanceDataVS)
-				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.Get(), PatchCount);
-
-			const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
-			for (const auto& Pass : Passes)
+			else
 			{
-				GPU.SetRenderState(Pass);
-				GPU.DrawInstanced(*pGroup, QuarterPatchCount);
+				char* pCurrInstData = (char*)pInstData;
+				for (UPTR PatchIdx = 0; PatchIdx < QuarterPatchCount; ++PatchIdx)
+				{
+					memcpy(pCurrInstData, pQInstances + PatchIdx, InstanceElementSize);
+					pCurrInstData += InstanceElementSize;
+				}
 			}
 		}
 
-		++ItCurr;
-	};
+		GPU.UnmapResource(*InstanceVB);
+	}
 
-	return ItEnd;
+	// Set vertex layout
+
+	// In the real world we don't want to use differently laid out meshes
+	n_assert_dbg(Terrain.GetPatchMesh()->GetVertexBuffer()->GetVertexLayout() == Terrain.GetQuarterPatchMesh()->GetVertexBuffer()->GetVertexLayout());
+
+	const CMesh* pMesh = Terrain.GetPatchMesh();
+	n_assert_dbg(pMesh);
+	CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
+	n_assert_dbg(pVB);
+	CVertexLayout* pVL = pVB->GetVertexLayout();
+
+	if (ConstInstanceDataVS) GPU.SetVertexLayout(pVL);
+	else
+	{
+		auto It = InstancedLayouts.find(pVL);
+		if (It == InstancedLayouts.cend())
+		{
+			constexpr UPTR MAX_COMPONENTS = 64;
+
+			UPTR BaseComponentCount = pVL->GetComponentCount();
+			UPTR InstComponentCount = InstanceVB->GetVertexLayout()->GetComponentCount();
+			UPTR DescComponentCount = BaseComponentCount + InstComponentCount;
+
+			if (DescComponentCount > MAX_COMPONENTS)
+			{
+				::Sys::Error("CModelRenderer::Render() > too many vertex layout components");
+				BaseComponentCount = std::min(BaseComponentCount, MAX_COMPONENTS);
+				DescComponentCount = std::min(DescComponentCount, MAX_COMPONENTS);
+				InstComponentCount = DescComponentCount - BaseComponentCount;
+			}
+
+			CVertexComponent InstancedDecl[MAX_COMPONENTS];
+			memcpy(InstancedDecl, pVL->GetComponent(0), BaseComponentCount * sizeof(CVertexComponent));
+			memcpy(InstancedDecl + BaseComponentCount, InstanceDataDecl.data(), InstComponentCount * sizeof(CVertexComponent));
+
+			PVertexLayout VLInstanced = GPU.CreateVertexLayout(InstancedDecl, DescComponentCount);
+
+			n_assert_dbg(VLInstanced.IsValidPtr());
+			InstancedLayouts.emplace(pVL, VLInstanced);
+
+			GPU.SetVertexLayout(VLInstanced.Get());
+		}
+		else GPU.SetVertexLayout(It->second.Get());
+	}
+
+	// Render patches //!!!may collect patches of different CTerrains if material is the same and instance buffer is big enough!
+
+	if (PatchCount)
+	{
+		if (ConstGridConsts)
+		{
+			float GridConsts[2];
+			GridConsts[0] = CDLOD.GetPatchSize() * 0.5f;
+			GridConsts[1] = 1.f / GridConsts[0];
+			PerInstance.SetRawConstant(ConstGridConsts, &GridConsts, sizeof(GridConsts));
+		}
+
+		PerInstance.SetUInt(ConstFirstInstanceIndex, 0);
+
+		PerInstance.Apply();
+
+		GPU.SetVertexBuffer(0, pVB);
+		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
+
+		if (!ConstInstanceDataVS)
+			GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.Get(), 0);
+
+		const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
+		for (const auto& Pass : Passes)
+		{
+			GPU.SetRenderState(Pass);
+			GPU.DrawInstanced(*pGroup, PatchCount);
+		}
+	}
+
+	if (QuarterPatchCount)
+	{
+		if (ConstGridConsts)
+		{
+			float GridConsts[2];
+			GridConsts[0] = CDLOD.GetPatchSize() * 0.25f;
+			GridConsts[1] = 1.f / GridConsts[0];
+			PerInstance.SetRawConstant(ConstGridConsts, &GridConsts, sizeof(GridConsts));
+		}
+
+		PerInstance.SetUInt(ConstFirstInstanceIndex, PatchCount);
+
+		PerInstance.Apply();
+
+		pMesh = Terrain.GetQuarterPatchMesh();
+		n_assert_dbg(pMesh);
+		pVB = pMesh->GetVertexBuffer().Get();
+		n_assert_dbg(pVB);
+
+		GPU.SetVertexBuffer(0, pVB);
+		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
+
+		if (!ConstInstanceDataVS)
+			GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.Get(), PatchCount);
+
+		const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
+		for (const auto& Pass : Passes)
+		{
+			GPU.SetRenderState(Pass);
+			GPU.DrawInstanced(*pGroup, QuarterPatchCount);
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+void CTerrainRenderer::EndRange(const CRenderContext& Context)
+{
 }
 //---------------------------------------------------------------------
 

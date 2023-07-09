@@ -163,26 +163,40 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		Ctx.UsesGlobalLightBuffer = false;
 	}
 
+	// FIXME: remove PrepareNode, set pRenderer in CreateRenderable!
 	Render::CRenderNodeContext NodeCtx;
 	NodeCtx.pLights = Ctx.pLights;
 	NodeCtx.pLightIndices = Ctx.pLightIndices;
-
 	for (const U32 QueueIndex : _RenderQueueIndices)
 	{
 		View.ForEachRenderableInQueue(QueueIndex, [this, &NodeCtx](Render::IRenderable* pRenderable)
 		{
 			auto ItRenderer = RenderersByObjectType.find(pRenderable->GetRTTI());
-			if (ItRenderer == RenderersByObjectType.cend()) return; // continue
-			pRenderable->pRenderer = ItRenderer->second;
-
-			if (!pRenderable->pRenderer->PrepareNode(*pRenderable, NodeCtx)) return; // continue
+			if (ItRenderer != RenderersByObjectType.cend())
+			{
+				pRenderable->pRenderer = ItRenderer->second;
+				pRenderable->pRenderer->PrepareNode(*pRenderable, NodeCtx);
+			}
 		});
 	}
 
-	Render::CRenderQueueIterator ItCurr = RenderQueue.Begin();
-	Render::CRenderQueueIterator ItEnd = RenderQueue.End();
-	while (ItCurr != ItEnd)
-		ItCurr = (*ItCurr)->pRenderer->Render(Ctx, RenderQueue, ItCurr);
+	Render::IRenderer* pCurrRenderer = nullptr;
+	bool ValidRenderer = false;
+	for (const U32 QueueIndex : _RenderQueueIndices)
+	{
+		View.ForEachRenderableInQueue(QueueIndex, [this, &Ctx, &pCurrRenderer, &ValidRenderer](Render::IRenderable* pRenderable)
+		{
+			if (pCurrRenderer != pRenderable->pRenderer)
+			{
+				if (ValidRenderer) pCurrRenderer->EndRange(Ctx);
+				pCurrRenderer = pRenderable->pRenderer;
+				ValidRenderer = pCurrRenderer && pCurrRenderer->BeginRange(Ctx);
+			}
+
+			if (ValidRenderer) pCurrRenderer->Render(Ctx, *pRenderable);
+		});
+	}
+	if (ValidRenderer) pCurrRenderer->EndRange(Ctx);
 
 	//!!!hide in a private method of CView!
 	View.LightIndices.Clear(false);

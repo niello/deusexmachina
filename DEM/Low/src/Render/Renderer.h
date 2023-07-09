@@ -19,6 +19,7 @@ class IRenderable;
 struct CRenderNodeContext;
 struct CLightRecord;
 class CGPUDriver;
+class CTechnique;
 using PRenderer = std::unique_ptr<class IRenderer>;
 
 class IRenderer: public Core::CRTTIBaseClass
@@ -34,13 +35,16 @@ public:
 		vector3					CameraPosition;
 		matrix44				ViewProjection;
 		CArray<CLightRecord>*	pLights;
-		const CArray<U16>*		pLightIndices;
+		CArray<U16>*			pLightIndices;
 		bool					UsesGlobalLightBuffer;
 	};
 
-	virtual bool                 Init(bool LightingEnabled, const Data::CParams& Params) = 0;
-	virtual bool                 PrepareNode(IRenderable& Node, const CRenderNodeContext& Context) = 0;
-	virtual CRenderQueueIterator Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr) = 0;
+	virtual bool Init(bool LightingEnabled, const Data::CParams& Params) = 0;
+	virtual bool PrepareNode(IRenderable& Node, const CRenderNodeContext& Context) = 0;
+
+	virtual bool BeginRange(const CRenderContext& Context) = 0;
+	virtual void Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/) = 0;
+	virtual void EndRange(const CRenderContext& Context) = 0;
 };
 
 }

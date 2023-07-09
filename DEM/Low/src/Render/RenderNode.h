@@ -23,7 +23,7 @@ struct CRenderNodeContext
 {
 	CAABB					AABB;
 	CArray<CLightRecord>*	pLights;
-	const CArray<U16>*		pLightIndices;
+	CArray<U16>*			pLightIndices;
 };
 
 }
