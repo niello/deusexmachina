@@ -310,6 +310,8 @@ CShaderParamTable::CShaderParamTable(std::vector<CShaderConstantParam>&& Constan
 	{
 		return a->GetID() < b->GetID();
 	});
+
+	_HasParams = !_Constants.empty() || !_Resources.empty() || !_Samplers.empty();
 }
 //---------------------------------------------------------------------
 

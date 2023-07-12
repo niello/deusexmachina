@@ -124,6 +124,7 @@ protected:
 	std::vector<PConstantBufferParam> _ConstantBuffers;
 	std::vector<PResourceParam>       _Resources;
 	std::vector<PSamplerParam>        _Samplers;
+	bool                              _HasParams;
 
 public:
 
@@ -131,6 +132,8 @@ public:
 		std::vector<PConstantBufferParam>&& ConstantBuffers,
 		std::vector<PResourceParam>&& Resources,
 		std::vector<PSamplerParam>&& Samplers);
+
+	bool                        HasParams() const { return _HasParams; }
 
 	size_t                      GetConstantIndex(CStrID ID) const;
 	size_t                      GetConstantBufferIndex(CStrID ID) const;

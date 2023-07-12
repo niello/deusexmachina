@@ -16,25 +16,12 @@ namespace Render
 {
 FACTORY_CLASS_IMPL(Render::CModelRenderer, 'MDLR', Render::IRenderer);
 
+static const CStrID sidWorldMatrix("WorldMatrix");
+static const CStrID sidLightCount("LightCount");
+static const CStrID sidLightIndices("LightIndices");
+
 bool CModelRenderer::Init(bool LightingEnabled, const Data::CParams& Params)
 {
-	InstanceDataDecl.SetSize(4);
-
-	// World matrix
-	for (U32 i = 0; i < 4; ++i)
-	{
-		CVertexComponent& Cmp = InstanceDataDecl[i];
-		Cmp.Semantic = EVertexComponentSemantic::TexCoord;
-		Cmp.UserDefinedName = nullptr;
-		Cmp.Index = i + 4;
-		Cmp.Format = EVertexComponentFormat::Float32_4;
-		Cmp.Stream = INSTANCE_BUFFER_STREAM_INDEX;
-		Cmp.OffsetInVertex = VertexComponentOffsetAuto;
-		Cmp.PerInstanceData = true;
-	}
-
-	InstanceVBSize = std::max(0, Params.Get<int>(CStrID("InstanceVBSize"), 30));
-
 	OK;
 }
 //---------------------------------------------------------------------
@@ -46,6 +33,7 @@ bool CModelRenderer::PrepareNode(IRenderable& Node, const CRenderNodeContext& Co
 
 	U8 LightCount = 0;
 
+	/*
 	if (Context.pLights && MAX_LIGHT_COUNT_PER_OBJECT)
 	{
 		n_assert_dbg(Context.pLightIndices);
@@ -138,6 +126,7 @@ bool CModelRenderer::PrepareNode(IRenderable& Node, const CRenderNodeContext& Co
 			}
 		}
 	}
+	*/
 
 	Node.LightCount = LightCount;
 
@@ -147,9 +136,9 @@ bool CModelRenderer::PrepareNode(IRenderable& Node, const CRenderNodeContext& Co
 
 bool CModelRenderer::BeginRange(const CRenderContext& Context)
 {
-	pCurrMaterial = nullptr;
-	pCurrMesh = nullptr;
-	pCurrTech = nullptr;
+	_pCurrMaterial = nullptr;
+	_pCurrMesh = nullptr;
+	_pCurrTech = nullptr;
 	pVL = nullptr;
 	pVLInstanced = nullptr;
 
@@ -169,381 +158,142 @@ bool CModelRenderer::BeginRange(const CRenderContext& Context)
 void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/)
 {
 	CModel& Model = static_cast<CModel&>(Renderable);
-
-	const bool LightingEnabled = (Context.pLights != nullptr);
-	UPTR TechLightCount;
-
-	static const CStrID sidWorldMatrix("WorldMatrix");
-	static const CStrID sidLightCount("LightCount");
-	static const CStrID sidLightIndices("LightIndices");
-	const I32 EMPTY_LIGHT_INDEX = -1;
-
 	CGPUDriver& GPU = *Context.pGPU;
 
 	const CTechnique* pTech = Context.pShaderTechCache[Model.ShaderTechIndex];
-	const CPrimitiveGroup* pGroup = Model.pGroup;
-	n_assert_dbg(pGroup && pTech);
-
-	// Apply material, if changed
+	n_assert_dbg(pTech);
+	if (!pTech) return;
 
 	auto pMaterial = Model.Material.Get();
-	if (pMaterial != pCurrMaterial)
-	{
-		n_assert_dbg(pMaterial);
-		n_verify_dbg(pMaterial->Apply());
-		pCurrMaterial = pMaterial;
-	}
-
-	// Apply geometry, if changed
+	n_assert_dbg(pMaterial);
+	if (!pMaterial) return;
 
 	const CMesh* pMesh = Model.Mesh.Get();
-	if (pMesh != pCurrMesh)
+	n_assert_dbg(pMesh);
+	if (!pMesh) return;
+
+	const CPrimitiveGroup* pGroup = Model.pGroup;
+	n_assert_dbg(pGroup);
+	if (!pGroup) return;
+
+	//!!!if something changes or instance limit has been reached, commit collected instances to rendering here before changing bindings!
+
+	if (pTech != _pCurrTech)
 	{
-		n_assert_dbg(pMesh);
-		CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
-		n_assert_dbg(pVB);
+		_pCurrTech = pTech;
+		_pCurrMaterial = nullptr;
+
+		//!!!add member offsets for AoS! indexing struct by member will provide its field by very quick O(1). or fill whole structures in C++ and copy to GPU?
+		// TODO: could cache all below in a vector/set of structs by Model.ShaderTechIndex or pTech, small amount of items will make search quick
+		// New search is needed only here, not per renderable!
+		_TechNeedsMaterial = pTech->GetEffect()->GetMaterialParamTable().HasParams();
+		//ConstInstanceDataVS = pTech->GetParamTable().GetConstant(CStrID("InstanceDataVS"));
+		//ConstInstanceDataPS = pTech->GetParamTable().GetConstant(CStrID("InstanceDataPS"));
+		//ConstWorldMatrix = pTech->GetParamTable().GetConstant(CStrID("WorldMatrix"));
+		//ConstWorldMatrix = ConstInstanceDataVS ? ConstInstanceDataVS[sidWorldMatrix] : CShaderConstantParam{};
+		//ConstLightIndices = ConstInstanceDataPS[0][sidLightIndices];
+		//ConstLightIndices = ConstInstanceDataPS.GetMember(sidLightIndices);
+		//ConstLightCount = ConstInstanceDataPS.GetMember(sidLightCount);
+		//TechLightCount = ConstLightIndices.GetTotalComponentCount();
+		//ConstSkinPalette = pTech->GetParamTable().GetConstant(CStrID("SkinPalette"));
+		//
+		//UPTR MaxInstanceCountConst = ConstInstanceDataVS.GetElementCount();
+		//if (ConstInstanceDataPS)
+		//{
+		//	const UPTR MaxInstanceCountConstPS = ConstInstanceDataPS.GetElementCount();
+		//	if (MaxInstanceCountConst < MaxInstanceCountConstPS)
+		//		MaxInstanceCountConst = MaxInstanceCountConstPS;
+		//}
+	}
+
+	if (pMaterial != _pCurrMaterial)
+	{
+		_pCurrMaterial = pMaterial;
+		if (_TechNeedsMaterial) n_verify_dbg(pMaterial->Apply());
+	}
+
+	if (pMesh != _pCurrMesh)
+	{
+		auto pVB = pMesh->GetVertexBuffer().Get();
+		GPU.SetVertexLayout(pVB->GetVertexLayout());
 		GPU.SetVertexBuffer(0, pVB);
 		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
-		pCurrMesh = pMesh;
-
-		pVL = pVB->GetVertexLayout();
-		pVLInstanced = nullptr;
+		_pCurrMesh = pMesh;
 	}
 
-	// Gather instances (no skinned instancing supported)
+	// build per-instance data: world matrix, light indices (if any), skinning palette, animated material params (defaults from material)
+	// use different techs for single & instanced or use DrwaIndexedInstanced(1) or use DrawIndexed and hope that SV_InstanceID will be 0. Need testing.
 
-	UPTR LightCount = Model.LightCount;
+	//???can pack instance world matrix as 4x3 and then unpack in a shader adding 0001?
 
-	bool HardwareInstancing = false;
-	CRenderQueueIterator ItInstEnd = ItCurr + 1;
-	if (!Model.pSkinPalette && (ConstInstanceDataVS || InstanceVBSize > 1))
-	{
-		while (ItInstEnd != ItEnd &&
-			(*ItInstEnd)->IsA<CModel>() &&
-			static_cast<CModel*>(*ItInstEnd)->pRenderer == this &&
-			static_cast<CModel*>(*ItInstEnd)->Material == pMaterial &&
-			static_cast<CModel*>(*ItInstEnd)->ShaderTechIndex == Model.ShaderTechIndex &&
-			static_cast<CModel*>(*ItInstEnd)->pGroup == pGroup &&
-			!static_cast<CModel*>(*ItInstEnd)->pSkinPalette)
-		{
-			// We don't try to find an instanced tech version here, and don't break if
-			// it is not found, because if we did, the next object will try to do all
-			// this again, not knowing that there is no chance to success. If there is
-			// no instanced tech version, we render instances in a loop manually instead.
-			const U8 CurrInstLightCount = (*ItInstEnd)->LightCount;
-			if (LightCount < CurrInstLightCount) LightCount = CurrInstLightCount;
-			++ItInstEnd;
-		}
+	//const bool LightingEnabled = (Context.pLights != nullptr);
+	//UPTR LightCount = Model.LightCount;
+	//const auto& Passes = pTech->GetPasses(LightCount);
+	//if (Passes.empty()) return;
 
-		if (ItInstEnd - ItCurr > 1)
-		{
-			static const CStrID InputSet_ModelInstanced("ModelInstanced");
-			if (const auto pInstancedTech = pTech->GetEffect()->GetTechByInputSet(InputSet_ModelInstanced))
-			{
-				pTech = pInstancedTech;
-				HardwareInstancing = true;
-			}
-		}
-	}
+	//static_cast<CModel*>(*ItInstEnd)->Material == pMaterial &&
+	//static_cast<CModel*>(*ItInstEnd)->ShaderTechIndex == Model.ShaderTechIndex &&
+	//static_cast<CModel*>(*ItInstEnd)->pGroup == pGroup &&
+	//!static_cast<CModel*>(*ItInstEnd)->pSkinPalette)
 
-	// Select tech variation for the current instancing mode and light count
+	//!!!FIXME: need reusable CShaderParamStorage! Store one per tech in a tech cache structure? or even add one right into the tech for one shot rendering calls, will use tmp buffers.
+	//CShaderParamStorage PerInstance(pTech->GetParamTable(), GPU);
+	//auto CurrInstanceDataVS = ConstInstanceDataVS[InstanceCount];
+	//PerInstance.SetMatrix(CurrInstanceDataVS[sidWorldMatrix], Model.Transform);
+	//PerInstance.SetMatrix(ConstWorldMatrix, Model.Transform);
+	//if (ConstSkinPalette && Model.pSkinPalette)
+	//	PerInstance.SetMatrixArray(ConstSkinPalette, Model.pSkinPalette, std::min(Model.BoneCount, ConstSkinPalette.GetElementCount()));
+	//CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS.GetElement(InstanceCount);
+	//CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
+	//if (TechLightCount)
+	//{
+	//	U32 ActualLightCount;
+	//	if (LightCount == 0)
+	//	{
+	//		// If tech is variable-light-count, set it per instance
+	//		ActualLightCount = std::min(TechLightCount, static_cast<UPTR>(Model.LightCount));
+	//		PerInstance.SetUInt(CurrInstanceDataPS[sidLightCount], ActualLightCount);
+	//	}
+	//	else ActualLightCount = std::min(LightCount, TechLightCount);
 
-	const auto& Passes = pTech->GetPasses(LightCount);
-	if (Passes.empty()) return;
+	//	// Set per-instance light indices
+	//	if (ActualLightCount)
+	//	{
+	//		CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(Model.LightIndexBase);
+	//		U32 InstLightIdx;
+	//		for (InstLightIdx = 0; InstLightIdx < Model.LightCount; ++InstLightIdx, ++ItIdx)
+	//		{
+	//			const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
+	//			PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), LightRec.GPULightIndex);
+	//		}
 
-	// Send lights to GPU if global light buffer is not used
+	//		// If tech is fixed-light-count, fill the first unused light index with the special value
+	//		if (LightCount && InstLightIdx < TechLightCount)
+	//			PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), EMPTY_LIGHT_INDEX);
+	//	}
+	//}
 
-	if (LightingEnabled && LightCount && !Context.UsesGlobalLightBuffer)
-	{
-		NOT_IMPLEMENTED;
-		if (HardwareInstancing)
-		{
-			//collect the most used lights for the instance block (or split instances)
-			//send these most important lights to GPU (up to max supported by tech)
-			//fill pLights' GPULightIndex with batch-local light indices
-		}
-		else
-		{
-			//send referenced lights to GPU (up to max supported by tech)
-		}
-	}
+	//PerInstance.Apply();
 
-	// Upload per-instance data and draw object(s)
+	//for (const auto& Pass : Passes)
+	//{
+	//	GPU.SetRenderState(Pass);
+	//	GPU.Draw(*pGroup);
+	//	GPU.DrawInstanced(*pGroup, InstanceCount);
+	//}
 
-	if (HardwareInstancing)
-	{
-		if (pTech != pCurrTech)
-		{
-			ConstInstanceDataVS = pTech->GetParamTable().GetConstant(CStrID("InstanceDataVS"));
-			ConstInstanceDataPS = pTech->GetParamTable().GetConstant(CStrID("InstanceDataPS"));
-			pCurrTech = pTech;
 
-			TechLightCount = 0;
-			if (LightingEnabled && ConstInstanceDataPS)
-			{
-				ConstLightIndices = ConstInstanceDataPS[0][sidLightIndices];
-				TechLightCount = ConstLightIndices.GetTotalComponentCount();
-			}
-		}
+	//???need multipass techs or move that to another layer of logic?! multipass tech kills shader sorting and leads to render state switches.
+	//but it keeps material and mesh, and maybe even cached intermediate data like GPU skinned vertices buffer.
+	//???what effects use multipass techs at all? is there any not implementable with different render phases?
+	//may remove pass arrays from tech and leave there only one render state, or at least a set of states for different factor (instance limit etc)
 
-		if (ConstInstanceDataVS)
-		{
-			UPTR MaxInstanceCountConst = ConstInstanceDataVS.GetElementCount();
-			if (ConstInstanceDataPS)
-			{
-				const UPTR MaxInstanceCountConstPS = ConstInstanceDataPS.GetElementCount();
-				if (MaxInstanceCountConst < MaxInstanceCountConstPS)
-					MaxInstanceCountConst = MaxInstanceCountConstPS;
-			}
-			n_assert_dbg(MaxInstanceCountConst > 1);
+	// recommended: 1 CB for globals, 1 CB for material, 1CB for per-instance data, but random-access in a warp (e.g. skinning better in tbuffer/structured buffer)
+	//???use the same obe per-instance buffer for VS and PS? One send, two binds.
 
-			GPU.SetVertexLayout(pVL);
-
-			CShaderParamStorage PerInstance(pTech->GetParamTable(), GPU);
-
-			UPTR InstanceCount = 0;
-			while (ItCurr != ItInstEnd)
-			{
-				auto CurrInstanceDataVS = ConstInstanceDataVS[InstanceCount];
-
-				// Setup instance transformation
-
-				PerInstance.SetMatrix(CurrInstanceDataVS[sidWorldMatrix], Model.Transform);
-
-				// Setup instance lights
-
-				if (TechLightCount)
-				{
-					CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS.GetElement(InstanceCount);
-					CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
-
-					U32 ActualLightCount;
-
-					if (LightCount == 0)
-					{
-						// If tech is variable-light-count, set it per instance
-						ActualLightCount = std::min(TechLightCount, static_cast<UPTR>(Model.LightCount));
-						PerInstance.SetUInt(CurrInstanceDataPS[sidLightCount], ActualLightCount);
-					}
-					else ActualLightCount = std::min(LightCount, TechLightCount);
-
-					// Set per-instance light indices
-					if (ActualLightCount)
-					{
-						CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(Model.LightIndexBase);
-						U32 InstLightIdx;
-						for (InstLightIdx = 0; InstLightIdx < Model.LightCount; ++InstLightIdx, ++ItIdx)
-						{
-							if (!Context.UsesGlobalLightBuffer)
-							{
-								NOT_IMPLEMENTED;
-								//!!!???what with batch-local indices?!
-							}
-							const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-							PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), LightRec.GPULightIndex);
-						}
-
-						// If tech is fixed-light-count, fill the first unused light index with the special value
-						if (LightCount && InstLightIdx < TechLightCount)
-							PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), EMPTY_LIGHT_INDEX);
-					}
-				}
-
-				++InstanceCount;
-				++ItCurr;
-				pRenderNode = *ItCurr;
-
-				// If instance buffer is full, render it
-
-				if (InstanceCount == MaxInstanceCountConst)
-				{
-					PerInstance.Apply();
-					for (const auto& Pass : Passes)
-					{
-						GPU.SetRenderState(Pass);
-						GPU.DrawInstanced(*pGroup, InstanceCount);
-					}
-					InstanceCount = 0;
-					if (ItCurr == ItInstEnd) break;
-				}
-			}
-
-			// If instance buffer has instances to render, render them
-
-			if (InstanceCount)
-			{
-				PerInstance.Apply();
-				for (const auto& Pass : Passes)
-				{
-					GPU.SetRenderState(Pass);
-					GPU.DrawInstanced(*pGroup, InstanceCount);
-				}
-			}
-		}
-		else
-		{
-			n_assert_dbg(InstanceVBSize > 1);
-
-			// We create this buffer lazy because for D3D11 possibility is high to use only constant-based instancing
-			if (InstanceVB.IsNullPtr())
-			{
-				PVertexLayout VLInstanceData = GPU.CreateVertexLayout(InstanceDataDecl.data(), InstanceDataDecl.size());
-				InstanceVB = GPU.CreateVertexBuffer(*VLInstanceData, InstanceVBSize, Access_CPU_Write | Access_GPU_Read);
-			}
-
-			if (!pVLInstanced)
-			{
-				auto It = InstancedLayouts.find(pVL);
-				if (It == InstancedLayouts.cend())
-				{
-					constexpr UPTR MAX_COMPONENTS = 64;
-
-					UPTR BaseComponentCount = pVL->GetComponentCount();
-					UPTR InstComponentCount = InstanceDataDecl.size();
-					UPTR DescComponentCount = BaseComponentCount + InstComponentCount;
-
-					if (DescComponentCount > MAX_COMPONENTS)
-					{
-						::Sys::Error("CModelRenderer::Render() > too many vertex layout components");
-						BaseComponentCount = std::min(BaseComponentCount, MAX_COMPONENTS);
-						DescComponentCount = std::min(DescComponentCount, MAX_COMPONENTS);
-						InstComponentCount = DescComponentCount - BaseComponentCount;
-					}
-
-					CVertexComponent InstancedDecl[MAX_COMPONENTS];
-					memcpy(InstancedDecl, pVL->GetComponent(0), BaseComponentCount * sizeof(CVertexComponent));
-					memcpy(InstancedDecl + BaseComponentCount, InstanceDataDecl.data(), InstComponentCount * sizeof(CVertexComponent));
-
-					PVertexLayout VLInstanced = GPU.CreateVertexLayout(InstancedDecl, DescComponentCount);
-
-					pVLInstanced = VLInstanced.Get();
-					InstancedLayouts.emplace(pVL, VLInstanced);
-				}
-				else pVLInstanced = It->second.Get();
-			}
-
-			GPU.SetVertexLayout(pVLInstanced);
-			GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.Get());
-
-			void* pInstData;
-			n_verify(GPU.MapResource(&pInstData, *InstanceVB, Map_WriteDiscard)); //???use big buffer + no overwrite?
-			UPTR InstanceCount = 0;
-			while (ItCurr != ItInstEnd)
-			{
-				memcpy(pInstData, Model.Transform.m, sizeof(matrix44));
-				pInstData = (char*)pInstData + sizeof(matrix44);
-				++InstanceCount;
-				++ItCurr;
-				pRenderNode = *ItCurr;
-
-				if (InstanceCount == InstanceVBSize)
-				{
-					GPU.UnmapResource(*InstanceVB);
-					for (const auto& Pass : Passes)
-					{
-						GPU.SetRenderState(Pass);
-						GPU.DrawInstanced(*pGroup, InstanceCount);
-					}
-					InstanceCount = 0;
-					if (ItCurr == ItInstEnd) break;
-					n_verify(GPU.MapResource(&pInstData, *InstanceVB, Map_WriteDiscard)); //???use big buffer + no overwrite?
-				}
-			}
-
-			if (InstanceCount)
-			{
-				GPU.UnmapResource(*InstanceVB);
-				for (const auto& Pass : Passes)
-				{
-					GPU.SetRenderState(Pass);
-					GPU.DrawInstanced(*pGroup, InstanceCount);
-				}
-			}
-		}
-	}
-	else
-	{
-		if (pTech != pCurrTech)
-		{
-			ConstInstanceDataVS = pTech->GetParamTable().GetConstant(CStrID("InstanceDataVS"));
-			ConstInstanceDataPS = pTech->GetParamTable().GetConstant(CStrID("InstanceDataPS"));
-			ConstSkinPalette = pTech->GetParamTable().GetConstant(CStrID("SkinPalette"));
-
-			// PERF: can be optimized if necessary (pool allocation, element and member caches, whole buffer construction & commit)
-			ConstWorldMatrix = ConstInstanceDataVS ? ConstInstanceDataVS[sidWorldMatrix] : CShaderConstantParam{};
-
-			TechLightCount = 0;
-			if (LightingEnabled && ConstInstanceDataPS)
-			{
-				ConstLightCount = ConstInstanceDataPS.GetMember(sidLightCount);
-				ConstLightIndices = ConstInstanceDataPS.GetMember(sidLightIndices);
-				TechLightCount = ConstLightIndices.GetTotalComponentCount();
-			}
-
-			pCurrTech = pTech;
-		}
-
-		GPU.SetVertexLayout(pVL);
-
-		for (; ItCurr != ItInstEnd; ++ItCurr, pRenderNode = *ItCurr)
-		{
-			//???use persistent, create once and store associatively Tech->Values?
-			CShaderParamStorage PerInstance(pTech->GetParamTable(), GPU);
-
-			// Setup per-instance information
-
-			PerInstance.SetMatrix(ConstWorldMatrix, Model.Transform);
-
-			if (TechLightCount)
-			{
-				U32 ActualLightCount;
-
-				if (LightCount == 0)
-				{
-					// If tech is variable-light-count, set it per instance
-					ActualLightCount = std::min(TechLightCount, static_cast<UPTR>(Model.LightCount));
-					PerInstance.SetUInt(ConstLightCount, ActualLightCount);
-				}
-				else ActualLightCount = std::min(LightCount, TechLightCount);
-
-				// Set per-instance light indices
-				if (ActualLightCount)
-				{
-					CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(Model.LightIndexBase);
-					U32 InstLightIdx;
-					for (InstLightIdx = 0; InstLightIdx < Model.LightCount; ++InstLightIdx, ++ItIdx)
-					{
-						if (!Context.UsesGlobalLightBuffer)
-						{
-							NOT_IMPLEMENTED;
-							//!!!???what with batch-local indices?!
-						}
-						const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-						PerInstance.SetInt(ConstLightIndices.GetComponent(InstLightIdx), LightRec.GPULightIndex);
-					}
-
-					// If tech is fixed-light-count, fill the first unused light index with the special value
-					if (LightCount && InstLightIdx < TechLightCount)
-						PerInstance.SetInt(ConstLightIndices.GetComponent(InstLightIdx), EMPTY_LIGHT_INDEX);
-				}
-			}
-
-			// TODO: could reuse constant buffer with the same pSkinPalette without resetting the palette redundantly
-			if (ConstSkinPalette && Model.pSkinPalette)
-				PerInstance.SetMatrixArray(ConstSkinPalette, Model.pSkinPalette, std::min(Model.BoneCount, ConstSkinPalette.GetElementCount()));
-
-			PerInstance.Apply();
-
-			// Rendering
-
-			//???loop by pass, then by instance? possibly less render state switches, but possibly more data binding. Does order matter?
-			for (const auto& Pass : Passes)
-			{
-				GPU.SetRenderState(Pass);
-				GPU.Draw(*pGroup);
-			}
-		}
-	}
+	//???send all or only visible lights to GPU? how to detect that something have changed, to avoid resending each frame? set flag when testing
+	// lights against frustum and visibility of one actually changes?
+	//!!!also don't forget to try filling rendering queues only on renderable object visibility change!
 }
 //---------------------------------------------------------------------
 

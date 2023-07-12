@@ -36,16 +36,16 @@ void CSkyboxRenderer::Render(const CRenderContext& Context, IRenderable& Rendera
 	n_assert_dbg(pTech);
 	if (!pTech) return;
 
+	auto pMaterial = Skybox.Material.Get();
+	n_assert_dbg(pMaterial);
+	if (!pMaterial) return;
+
 	if (pTech != _pCurrTech)
 	{
 		_pCurrTech = pTech;
 		_pCurrMaterial = nullptr;
 		_ConstWorldMatrix = pTech->GetParamTable().GetConstant(CStrID("WorldMatrix"));
 	}
-
-	auto pMaterial = Skybox.Material.Get();
-	n_assert_dbg(pMaterial);
-	if (!pMaterial) return;
 
 	if (pMaterial != _pCurrMaterial)
 	{

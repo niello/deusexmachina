@@ -19,19 +19,12 @@ class CModelRenderer: public IRenderer
 
 protected:
 
-	static const U32						INSTANCE_BUFFER_STREAM_INDEX = 1;
-	static const U16						MAX_LIGHT_COUNT_PER_OBJECT = 8; //???to setting?
-
-	CFixedArray<CVertexComponent>           InstanceDataDecl;
-	std::map<CVertexLayout*, PVertexLayout> InstancedLayouts;	//!!!duplicate in different instances of the same renderer!
-	PVertexBuffer                           InstanceVB;        //!!!binds an RP to a specific GPU!
-	UPTR                                    InstanceVBSize = 0;
-
-	const CMaterial* pCurrMaterial = nullptr;
-	const CMesh* pCurrMesh = nullptr;
-	const CTechnique* pCurrTech = nullptr;
+	const CMaterial* _pCurrMaterial = nullptr;
+	const CMesh* _pCurrMesh = nullptr;
+	const CTechnique* _pCurrTech = nullptr;
 	CVertexLayout* pVL = nullptr;
 	CVertexLayout* pVLInstanced = nullptr;
+	bool _TechNeedsMaterial = false;
 
 	// Effect constants
 	CShaderConstantParam ConstInstanceDataVS; // Model, ModelSkinned, ModelInstanced

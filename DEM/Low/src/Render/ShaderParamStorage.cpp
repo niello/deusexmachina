@@ -247,8 +247,7 @@ bool CShaderParamStorage::Apply()
 {
 	for (size_t i = 0; i < _ConstantBuffers.size(); ++i)
 	{
-		auto* pCB = _ConstantBuffers[i].Get();
-		if (pCB)
+		if (auto* pCB = _ConstantBuffers[i].Get())
 		{
 			//???only if pCB->IsDirty()?
 			if (pCB->IsInWriteMode())
