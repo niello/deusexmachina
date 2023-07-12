@@ -52,6 +52,13 @@ public:
 		_Queue.push_back({ pRenderable, NO_KEY });
 	}
 
+	void Clear()
+	{
+		_Queue.clear();
+		_ToRemove.clear();
+		_SortedSize = 0;
+	}
+
 	template<typename TCallback>
 	DEM_FORCE_INLINE void ForEachRenderable(TCallback Callback)
 	{

@@ -84,13 +84,13 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 	_RenderQueues.resize(_RenderPath->_RenderQueues.size());
 	for (auto [Type, Index] : _RenderPath->_RenderQueues)
 	{
-		//???move to factory later? it is not yet well suited for templated classes.
+		//???TODO: move to factory later? it is not yet well suited for templated classes.
 		if (Type == "OpaqueDepthPrePass")
 			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque));
 		else if (Type == "AlphaTestDepthPrePass")
 			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaTest));
 		else if (Type == "OpaqueMaterial")
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque));
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque, Render::EEffectType::EffectType_Skybox));
 		else if (Type == "AlphaTestMaterial")
 			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaTest));
 		else if (Type == "AlphaBackToFront")
@@ -772,7 +772,8 @@ void CView::SetGraphicsScene(CGraphicsScene* pScene)
 		_LightNodePool.push_back(_Lights.extract(It));
 	}
 
-	// TODO: clear render queues etc!
+	for (auto& Queue : _RenderQueues)
+		Queue->Clear();
 }
 //---------------------------------------------------------------------
 
