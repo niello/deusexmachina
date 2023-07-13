@@ -17,7 +17,7 @@ protected:
 
 	PShaderParamTable            _Table;
 	PGPUDriver                   _GPU;
-	bool                         _UnapplyOnDestruction;
+	bool                         _UnapplyOnDestruction; // FIXME: handle in assignments!
 
 	std::vector<PConstantBuffer> _ConstantBuffers;
 	std::vector<PTexture>        _Resources;
@@ -47,7 +47,7 @@ public:
 	bool                     SetVector(const CShaderConstantParam& Param, const vector3& Value);
 	bool                     SetVector(const CShaderConstantParam& Param, const vector4& Value);
 	bool                     SetMatrix(const CShaderConstantParam& Param, const matrix44& Value, bool ColumnMajor = false);
-	bool                     SetMatrixArray(const CShaderConstantParam& Param, const matrix44* pValues, UPTR Count, bool ColumnMajor = false);
+	bool                     SetMatrixArray(const CShaderConstantParam& Param, const matrix44* pValues, UPTR Count, U32 StartIndex = 0, bool ColumnMajor = false);
 
 	bool                     SetResource(CStrID ID, CTexture* pTexture);
 	bool                     SetResource(size_t Index, CTexture* pTexture);

@@ -43,6 +43,9 @@ public:
 	U32    GetElementCount() const { return _Info ? _Info->GetElementCount() : 0; }
 	U32    GetTotalComponentCount() const { return _Info ? _Info->GetElementCount() * _Info->GetRowCount() * _Info->GetColumnCount() : 0; }
 
+	// The cheapest possible way to switch between array elements, useful e.g. for setting member values in arrays of structures
+	void   Shift(const CShaderConstantParam& ContainingArray, U32 Index) { _Offset = ContainingArray._Offset + Index * ContainingArray._Info->GetElementStride() + _Info->GetLocalOffset(); }
+
 	void   SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const { n_assert_dbg(_Info); if (_Info) _Info->SetRawValue(CB, _Offset, pValue, Size); }
 
 	void   SetFloat(CConstantBuffer& CB, float Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, &Value, 1); }
@@ -78,10 +81,11 @@ public:
 	CShaderConstantParam Z() const { return GetComponent(2); }
 	CShaderConstantParam W() const { return GetComponent(3); }
 
-	CShaderConstantParam operator [](const std::string_view& Name) const { return GetMember(CStrID(Name.data())); }
+	CShaderConstantParam operator [](const std::string_view& Name) const { return GetMember(CStrID(Name.data())); } //!!!FIXME: no need in CStrID for comparison!
 	CShaderConstantParam operator [](CStrID Name) const { return GetMember(Name); }
 	CShaderConstantParam operator [](U32 Index) const;
 	CShaderConstantParam operator ()(U32 Row, U32 Column) const { return GetComponent(Row, Column); }
+	CShaderConstantParam operator ()(U32 Index, const CShaderConstantParam& Member) const;
 
 	operator bool() const noexcept { return _Info.IsValidPtr(); }
 };

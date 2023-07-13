@@ -1,17 +1,11 @@
 #pragma once
 #include <Render/Renderer.h>
-#include <Render/VertexComponent.h>
 #include <Render/ShaderParamTable.h>
-#include <Data/FixedArray.h>
-#include <Data/Ptr.h>
-#include <map>
 
 // Default renderer for CModel render objects
 
 namespace Render
 {
-typedef Ptr<class CVertexLayout> PVertexLayout;
-typedef Ptr<class CVertexBuffer> PVertexBuffer;
 
 class CModelRenderer: public IRenderer
 {
@@ -19,22 +13,26 @@ class CModelRenderer: public IRenderer
 
 protected:
 
+	const CTechnique* _pCurrTech = nullptr;
 	const CMaterial* _pCurrMaterial = nullptr;
 	const CMesh* _pCurrMesh = nullptr;
-	const CTechnique* _pCurrTech = nullptr;
-	CVertexLayout* pVL = nullptr;
-	CVertexLayout* pVLInstanced = nullptr;
+	const CPrimitiveGroup* _pCurrGroup = nullptr;
+	UPTR _CurrBoneCount = 0;
+	UPTR _InstanceCount = 0;
+	UPTR _TechMaxInstanceCount = 1;
 	bool _TechNeedsMaterial = false;
 
-	// Effect constants
-	CShaderConstantParam ConstInstanceDataVS; // Model, ModelSkinned, ModelInstanced
-	CShaderConstantParam ConstInstanceDataPS; // Model, ModelSkinned, ModelInstanced
-	CShaderConstantParam ConstSkinPalette;    // ModelSkinned
+	CShaderConstantParam _ConstInstanceData;
+	CShaderConstantParam _ConstSkinPalette;
+	CShaderConstantParam _MemberWorldMatrix;
+	CShaderConstantParam _MemberFirstBoneIndex;
 
 	// Subsequent shader constants for single-instance case
-	CShaderConstantParam ConstWorldMatrix;
 	CShaderConstantParam ConstLightCount;
 	CShaderConstantParam ConstLightIndices;
+
+	void CalculateMaxInstanceCount();
+	void CommitCollectedInstances();
 
 public:
 

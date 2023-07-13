@@ -199,7 +199,7 @@ bool CShaderParamStorage::SetMatrix(const CShaderConstantParam& Param, const mat
 }
 //---------------------------------------------------------------------
 
-bool CShaderParamStorage::SetMatrixArray(const CShaderConstantParam& Param, const matrix44* pValues, UPTR Count, bool ColumnMajor)
+bool CShaderParamStorage::SetMatrixArray(const CShaderConstantParam& Param, const matrix44* pValues, UPTR Count, U32 StartIndex, bool ColumnMajor)
 {
 	if (!Param) FAIL;
 	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
@@ -208,7 +208,7 @@ bool CShaderParamStorage::SetMatrixArray(const CShaderConstantParam& Param, cons
 	if (!pCB->IsInWriteMode())
 		_GPU->BeginShaderConstants(*pCB);
 
-	Param.SetMatrixArray(*pCB, pValues, Count, ColumnMajor);
+	Param.SetMatrixArray(*pCB, pValues, Count, StartIndex, ColumnMajor);
 
 	OK;
 }

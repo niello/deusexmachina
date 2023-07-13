@@ -76,6 +76,7 @@ if(WIN32)
 	target_link_libraries(DEMLow PUBLIC UxTheme.lib Secur32.lib DbgHelp.lib) # Win32 platform, window and stack trace
 	target_link_libraries(DEMLow PUBLIC DXGI.lib D3D11.lib) # TODO: only when D3D11 renderer is built
 	target_link_libraries(DEMLow PUBLIC D3d9.lib dxguid.lib) # TODO: only when D3D9 renderer is built
+	#TODO: move DEM_RENDER_DEBUG to cmake, link D3D11d.lib, use CMake target_link_libraries with debug/optimized/general
 endif()
 if(DEM_DISABLE_CXX_EXCEPTIONS)
 	target_compile_definitions(DEMLow PUBLIC _HAS_EXCEPTIONS=0)

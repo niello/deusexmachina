@@ -261,6 +261,14 @@ CShaderConstantParam CShaderConstantParam::operator [](U32 Index) const
 }
 //---------------------------------------------------------------------
 
+// Get a field for a given member in a given array element without searching it by ID.
+CShaderConstantParam CShaderConstantParam::operator ()(U32 Index, const CShaderConstantParam& Member) const
+{
+	if (!_Info || !_Info->Struct || _Info->GetElementCount() <= Index) return CShaderConstantParam();
+	return CShaderConstantParam(Member._Info, _Offset + Index * _Info->GetElementStride() + Member._Info->GetLocalOffset());
+}
+//---------------------------------------------------------------------
+
 CShaderParamTable::CShaderParamTable(std::vector<CShaderConstantParam>&& Constants,
 	std::vector<PConstantBufferParam>&& ConstantBuffers,
 	std::vector<PResourceParam>&& Resources,
