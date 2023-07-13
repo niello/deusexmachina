@@ -190,14 +190,8 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 
 		_ConstInstanceData = pTech->GetParamTable().GetConstant(sidInstanceData);
 		_ConstSkinPalette = pTech->GetParamTable().GetConstant(sidSkinPalette);
-		if (_ConstSkinPalette)
-		{
-			_MemberFirstBoneIndex = _ConstInstanceData[0][sidFirstBoneIndex];
-		}
-		else
-		{
-			_MemberWorldMatrix = _ConstInstanceData[0][sidWorldMatrix];
-		}
+		_MemberFirstBoneIndex = _ConstInstanceData[0][sidFirstBoneIndex];
+		_MemberWorldMatrix = _ConstInstanceData[0][sidWorldMatrix];
 
 		if (LightingEnabled)
 		{
@@ -263,8 +257,12 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 
 	if (Model.pSkinPalette)
 	{
-		_MemberFirstBoneIndex.Shift(_ConstInstanceData, _InstanceCount);
-		PerInstance.SetUInt(_MemberWorldMatrix, _CurrBoneCount);
+		if (_MemberFirstBoneIndex)
+		{
+			_MemberFirstBoneIndex.Shift(_ConstInstanceData, _InstanceCount);
+			PerInstance.SetUInt(_MemberFirstBoneIndex, _CurrBoneCount);
+		}
+		//!!!TODO: else can't render skinned geometry instanced, must handle that!!!
 
 		//!!!this allows using _ConstSkinPalette curcularly with no_overwrite! if out of space, wrap and discard and start filling from beginning. Hide inside CShaderParamStorage?
 		//!!!make sure that only a part of the buffer is updated and submitted to GPU!
@@ -286,6 +284,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 			GPU.Draw(*pGroup); //!!!TODO PERF: check if this is better for a single object! DrawInstanced(1) works either! Maybe there is no profit in branching here!
 	}
 	_InstanceCount = 0;
+	_CurrBoneCount = 0;
 	//////////////
 
 	// build per-instance data: world matrix, light indices (if any), skinning palette, animated material params (defaults from material)
@@ -361,6 +360,10 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 	//Q: How much can I improve my frame rate if I only upload my character's bones once per frame instead of once per pass/draw?
 	//A: You can improve frame rate between 8 percent and 50 percent depending on the amount of redundant data.In the worst case, performance will not be reduced.
 	//https://learn.microsoft.com/en-us/windows/win32/dxtecharts/direct3d10-frequently-asked-questions
+
+	//???go further and pack instance world matrices into skin palette?! de facto it is just the same but without actual skinning (degenerate skinning w/1 bone).
+	//But cbuffer is better than tbuffer when indexing the same element. Or not anymore? At least can use cbuffer in non-skinned shader and tbuffer
+	//in skinned, but with the same name "world matrices" or like that, and thus simplify the logic here. Need to think it over.
 }
 //---------------------------------------------------------------------
 

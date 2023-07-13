@@ -2,7 +2,10 @@
 #include <Render/Renderer.h>
 #include <Render/ShaderParamTable.h>
 
-// Default renderer for CModel render objects
+// Default renderer for CModel render objects.
+// Implements "Model" and "ModelSkinned" input sets.
+
+// TODO: describe input sets!!!
 
 namespace Render
 {

@@ -125,6 +125,24 @@ public:
 			//!!!TODO PERF: profile! Branching cost vs more instructions.
 			//if (Record.Key != PrevKey) ++KeysChanged;
 			KeysChanged += (Record.Key != PrevKey);
+
+			/*
+			void Test(unsigned int &,int) PROC                             ; Test
+					cmp     DWORD PTR _rnd$[esp-4], 1
+					jne     SHORT $LN2@Test
+					mov     eax, DWORD PTR _val$[esp-4]
+					inc     DWORD PTR [eax]
+			$LN2@Test:
+
+			===========================================
+
+			void Test(unsigned int &,int) PROC                             ; Test
+					mov     eax, DWORD PTR _val$[esp-4]
+					xor     ecx, ecx
+					cmp     DWORD PTR _rnd$[esp-4], 1
+					sete    cl
+					add     DWORD PTR [eax], ecx
+			*/
 		}
 
 		n_assert_dbg(RemoveStartIt == _ToRemove.cend());
