@@ -367,12 +367,14 @@ void CloseConnection()
 
 bool FindShaderRecord(CShaderRecord& InOut)
 {
+	// Build the filter for the cache query
 	Data::CParams Params;
 	Params.emplace_back(CStrID("Path"), InOut.SrcFile.Path);
 	Params.emplace_back(CStrID("Type"), static_cast<int>(InOut.ShaderType));
 	Params.emplace_back(CStrID("Target"), static_cast<int>(InOut.Target));
 	Params.emplace_back(CStrID("Entry"), InOut.EntryPoint);
 
+	// Find all shaders for the given set of known params
 	constexpr char* pSQLSelect =
 		"SELECT ID, CompilerVersion, CompilerFlags, SrcModifyTimestamp, SrcSize, SrcCRC, BinaryFileID, InputSigFileID "
 		"FROM Shaders "
@@ -381,11 +383,9 @@ bool FindShaderRecord(CShaderRecord& InOut)
 	CValueTable Shaders;
 	if (!ExecuteSQLQuery(pSQLSelect, &Shaders, &Params)) return false;
 
-	Data::CParams DefineParams;
-
-	bool Found = false;
-
+	// Multiple shaders can match the filter because of different defines. Find the one with exact match.
 	const int Col_ID = Shaders.GetColumnIndex(CStrID("ID"));
+	Data::CParams DefineParams;
 	for (size_t ShIdx = 0; ShIdx < Shaders.GetRowCount(); ++ShIdx)
 	{
 		DefineParams.emplace_back(CStrID("ShaderID"), Shaders.Get<int>(Col_ID, ShIdx));
@@ -395,13 +395,9 @@ bool FindShaderRecord(CShaderRecord& InOut)
 
 		const size_t DBDefineCount = Defines.GetRowCount();
 		const size_t LocalDefineCount = InOut.Defines.size();
-		if (DBDefineCount != LocalDefineCount)
-		{
-			Found = false;
-			break;
-		}
+		if (DBDefineCount != LocalDefineCount) continue;
 
-		Found = true;
+		bool AllDefinitionsMatch = true;
 
 		int Col_Name = Defines.GetColumnIndex(CStrID("Name"));
 		int Col_Value = Defines.GetColumnIndex(CStrID("Value"));
@@ -410,6 +406,7 @@ bool FindShaderRecord(CShaderRecord& InOut)
 			const auto& DBDefineName = Defines.Get<std::string>(Col_Name, DefIdx);
 			assert(!DBDefineName.empty());
 
+			// Find the value of the current definition from DB among local definitions passed as input
 			//???TODO: compare through INNER JOIN / WHERE?
 			for (const auto& NewDefine : InOut.Defines)
 			{
@@ -419,17 +416,16 @@ bool FindShaderRecord(CShaderRecord& InOut)
 					Defines.GetValue(Col_Value, DefIdx, Value);
 					const std::string DBDefineValue = Value.IsNull() ? std::string{} : Value.GetValue<std::string>();
 					if (NewDefine.second != DBDefineValue)
-					{
-						Found = false;
-					}
+						AllDefinitionsMatch = false;
 					break;
 				}
 			}
 
-			if (!Found) break;
+			// No reason to continue comparison
+			if (!AllDefinitionsMatch) break;
 		}
 
-		if (Found)
+		if (AllDefinitionsMatch)
 		{
 			InOut.ID = Shaders.Get<int>(Col_ID, ShIdx);
 			InOut.CompilerVersion = Shaders.Get<int>(CStrID("CompilerVersion"), ShIdx);

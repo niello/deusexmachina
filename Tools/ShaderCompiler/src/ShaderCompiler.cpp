@@ -435,17 +435,55 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 
 	const size_t SrcCRC = CalcCRC(reinterpret_cast<const uint8_t*>(Source.c_str()), Source.size());
 
-	if (!Recompile &&
-		DB::FindShaderRecord(Rec) &&
-		Rec.CompilerVersion == D3D_COMPILER_VERSION &&
-		Rec.CompilerFlags == Flags &&
-		Rec.SrcFile.Size == Source.size() &&
-		Rec.SrcFile.CRC == SrcCRC &&
-		CurrWriteTime &&
-		Rec.SrcModifyTimestamp == CurrWriteTime)
+	bool Skip = true;
+	std::string CompilationReason = "Compiling because:";
+	if (Recompile)
+	{
+		Skip = false;
+		CompilationReason += "\n - Forced recompliation requested";
+	}
+	else if (!DB::FindShaderRecord(Rec))
+	{
+		Skip = false;
+		CompilationReason += "\n - Not found in cache DB";
+	}
+	else
+	{
+		if (Rec.CompilerVersion != D3D_COMPILER_VERSION)
+		{
+			Skip = false;
+			CompilationReason += "\n - Compiler version changed";
+		}
+		if (Rec.CompilerFlags != Flags)
+		{
+			Skip = false;
+			CompilationReason += "\n - Compiler flags changed";
+		}
+		if (Rec.SrcFile.Size != Source.size())
+		{
+			Skip = false;
+			CompilationReason += "\n - Source size changed";
+		}
+		if (Rec.SrcFile.CRC != SrcCRC)
+		{
+			Skip = false;
+			CompilationReason += "\n - Source CRC changed";
+		}
+		if (!CurrWriteTime || Rec.SrcModifyTimestamp != CurrWriteTime)
+		{
+			Skip = false;
+			CompilationReason += "\n - Source file modification timestamp is newer or invalid";
+		}
+	}
+
+	if (Skip)
 	{
 		if (pLog) pLog->LogInfo("No recompilation required, task skipped");
 		return DEM_SHADER_COMPILER_UP_TO_DATE;
+	}
+	else
+	{
+		if (pLog) pLog->LogInfo(CompilationReason.c_str());
 	}
 
 	// We need to do the conversion, so update the description with current details
