@@ -22,10 +22,23 @@ CShaderParamStorage::CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& G
 }
 //---------------------------------------------------------------------
 
-CShaderParamStorage::CShaderParamStorage(CShaderParamStorage&& Other) = default;
+CShaderParamStorage::CShaderParamStorage(CShaderParamStorage&& Other) noexcept = default;
 //---------------------------------------------------------------------
 
-CShaderParamStorage& CShaderParamStorage::operator =(CShaderParamStorage&& Other) = default;
+// Implemented non-default because of _UnapplyOnDestruction. Could be default otherwise.
+CShaderParamStorage& CShaderParamStorage::operator =(CShaderParamStorage&& Other) noexcept
+{
+	if (_UnapplyOnDestruction) Unapply();
+
+	_Table = std::move(Other._Table);
+	_GPU = std::move(Other._GPU);
+	_ConstantBuffers = std::move(Other._ConstantBuffers);
+	_Resources = std::move(Other._Resources);
+	_Samplers = std::move(Other._Samplers);
+	_UnapplyOnDestruction = Other._UnapplyOnDestruction;
+
+	return *this;
+}
 //---------------------------------------------------------------------
 
 CShaderParamStorage::~CShaderParamStorage()

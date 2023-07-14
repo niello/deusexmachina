@@ -17,7 +17,7 @@ protected:
 
 	PShaderParamTable            _Table;
 	PGPUDriver                   _GPU;
-	bool                         _UnapplyOnDestruction; // FIXME: handle in assignments!
+	bool                         _UnapplyOnDestruction;
 
 	std::vector<PConstantBuffer> _ConstantBuffers;
 	std::vector<PTexture>        _Resources;
@@ -27,10 +27,12 @@ public:
 
 	CShaderParamStorage();
 	CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& GPU, bool UnapplyOnDestruction = false);
-	CShaderParamStorage(CShaderParamStorage&& Other);
+	CShaderParamStorage(const CShaderParamStorage& Other) = delete;
+	CShaderParamStorage(CShaderParamStorage&& Other) noexcept;
 	~CShaderParamStorage();
 
-	CShaderParamStorage& operator =(CShaderParamStorage&& Other);
+	CShaderParamStorage& operator =(CShaderParamStorage&& Other) noexcept;
+	CShaderParamStorage& operator =(const CShaderParamStorage& Other) = delete;
 
 	bool                     SetConstantBuffer(CStrID ID, CConstantBuffer* pBuffer);
 	bool                     SetConstantBuffer(size_t Index, CConstantBuffer* pBuffer);

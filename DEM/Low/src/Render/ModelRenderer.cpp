@@ -142,6 +142,7 @@ bool CModelRenderer::BeginRange(const CRenderContext& Context)
 	_pCurrMaterial = nullptr;
 	_pCurrMesh = nullptr;
 	_pCurrGroup = nullptr;
+	_pGPU = nullptr;
 	_InstanceCount = 0;
 	_TechMaxInstanceCount = 1;
 	_TechNeedsMaterial = false;
@@ -153,8 +154,9 @@ bool CModelRenderer::BeginRange(const CRenderContext& Context)
 void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/)
 {
 	CModel& Model = static_cast<CModel&>(Renderable);
-	CGPUDriver& GPU = *Context.pGPU;
 	const bool LightingEnabled = (Context.pLights != nullptr);
+
+	_pGPU = Context.pGPU;
 
 	const CTechnique* pTech = Context.pShaderTechCache[Model.ShaderTechIndex];
 	n_assert_dbg(pTech);
@@ -197,6 +199,8 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 			_MemberLightIndices = _ConstInstanceData[0][sidLightIndices];
 		}
 
+		_PerInstance = CShaderParamStorage(pTech->GetParamTable(), *_pGPU); // TODO: store in a tech cache too!
+
 		_TechMaxInstanceCount = _ConstInstanceData ? _ConstInstanceData.GetElementCount() : std::numeric_limits<U32>::max();
 
 		// Verify that tech is selected correctly. Can remove later if never asserts. It shouldn't.
@@ -204,17 +208,17 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 	}
 	else
 	{
-		// Check if the limit of per-instance data for the tech is reached
+		// Check if the limit of per-instance data for the tech is reached. Commit if either:
+		// - constant buffer with instance data structures is filled
+		// - the model is skinned and the tech doesn't support skinned instancing
+		// - model's bones do not fit into the remaining part of the shader skin palette buffer which is already not empty
 		if (_InstanceCount == _TechMaxInstanceCount ||
-			(Model.BoneCount <= _ConstSkinPalette.GetElementCount() && Model.BoneCount > _ConstSkinPalette.GetElementCount() - _CurrBoneCount))
+			(_InstanceCount && Model.BoneCount && !_MemberFirstBoneIndex) ||
+			(_BufferedBoneCount && Model.BoneCount > _ConstSkinPalette.GetElementCount() - _BufferedBoneCount))
 		{
 			CommitCollectedInstances();
 		}
 	}
-
-	UPTR LightCount = Model.LightCount;
-	const auto& Passes = pTech->GetPasses(LightCount);
-	if (Passes.empty()) return;
 
 	if (_TechNeedsMaterial && pMaterial != _pCurrMaterial)
 	{
@@ -229,9 +233,9 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 		if (_InstanceCount) CommitCollectedInstances();
 
 		auto pVB = pMesh->GetVertexBuffer().Get();
-		GPU.SetVertexLayout(pVB->GetVertexLayout());
-		GPU.SetVertexBuffer(0, pVB);
-		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
+		_pGPU->SetVertexLayout(pVB->GetVertexLayout());
+		_pGPU->SetVertexBuffer(0, pVB);
+		_pGPU->SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 		_pCurrMesh = pMesh;
 	}
 
@@ -244,13 +248,10 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 
 	// Setup per-instance data
 
-	//!!!FIXME: need reusable CShaderParamStorage! Store one per tech in a tech cache structure? or even add one right into the tech for one shot rendering calls, will use tmp buffers.
-	CShaderParamStorage PerInstance(pTech->GetParamTable(), GPU);
-
 	if (_MemberWorldMatrix)
 	{
 		_MemberWorldMatrix.Shift(_ConstInstanceData, _InstanceCount);
-		PerInstance.SetMatrix(_MemberWorldMatrix, Model.Transform);
+		_PerInstance.SetMatrix(_MemberWorldMatrix, Model.Transform);
 	}
 
 	if (Model.pSkinPalette)
@@ -258,15 +259,14 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 		if (_MemberFirstBoneIndex)
 		{
 			_MemberFirstBoneIndex.Shift(_ConstInstanceData, _InstanceCount);
-			PerInstance.SetUInt(_MemberFirstBoneIndex, _CurrBoneCount);
+			_PerInstance.SetUInt(_MemberFirstBoneIndex, _BufferedBoneCount);
 		}
-		//!!!TODO: else can't render skinned geometry instanced, must handle that!!!
 
 		//!!!this allows using _ConstSkinPalette curcularly with no_overwrite! if out of space, wrap and discard and start filling from beginning. Hide inside CShaderParamStorage?
 		//!!!make sure that only a part of the buffer is updated and submitted to GPU!
-		const auto InstanceBoneCount = std::min(Model.BoneCount, _ConstSkinPalette.GetElementCount() - _CurrBoneCount);
-		PerInstance.SetMatrixArray(_ConstSkinPalette, Model.pSkinPalette, InstanceBoneCount, _CurrBoneCount);
-		_CurrBoneCount += InstanceBoneCount;
+		const auto InstanceBoneCount = std::min(Model.BoneCount, _ConstSkinPalette.GetElementCount() - _BufferedBoneCount);
+		_PerInstance.SetMatrixArray(_ConstSkinPalette, Model.pSkinPalette, InstanceBoneCount, _BufferedBoneCount);
+		_BufferedBoneCount += InstanceBoneCount;
 	}
 
 	if (_MemberLightCount)
@@ -276,24 +276,10 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 		const auto LightCount = 0;
 
 		_MemberLightCount.Shift(_ConstInstanceData, _InstanceCount);
-		PerInstance.SetUInt(_MemberLightCount, LightCount);
+		_PerInstance.SetUInt(_MemberLightCount, LightCount);
 	}
 
 	++_InstanceCount;
-
-	//!!!DBG TMP!
-	PerInstance.Apply();
-	for (const auto& Pass : Passes)
-	{
-		GPU.SetRenderState(Pass);
-		if (_InstanceCount > 1)
-			GPU.DrawInstanced(*pGroup, _InstanceCount);
-		else
-			GPU.Draw(*pGroup); //!!!TODO PERF: check if this is better for a single object! DrawInstanced(1) works either! Maybe there is no profit in branching here!
-	}
-	_InstanceCount = 0;
-	_CurrBoneCount = 0;
-	//////////////
 
 	// build per-instance data: world matrix, light indices (if any), skinning palette, animated material params (defaults from material)
 	// use different techs for single & instanced or use DrwaIndexedInstanced(1) or use DrawIndexed and hope that SV_InstanceID will be 0. Need testing.
@@ -380,6 +366,8 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 void CModelRenderer::EndRange(const CRenderContext& Context)
 {
 	if (_InstanceCount) CommitCollectedInstances();
+
+	_PerInstance = {}; // FIXME: remove when moved to tech cache!
 }
 //---------------------------------------------------------------------
 
@@ -388,17 +376,22 @@ void CModelRenderer::CommitCollectedInstances()
 	//!!!PERF: needs testing on big scene. Check is moved outside the call to reduce redundant call count, but is it necessary?
 	n_assert_dbg(_InstanceCount);
 
-	//PerInstance.Apply();
+	// FIXME: get rid of light count variations? Or use them?
+	UPTR LightCount = 0;
+	const auto& Passes = _pCurrTech->GetPasses(LightCount);
 
-	//for (const auto& Pass : Passes)
-	//{
-	//	GPU.SetRenderState(Pass);
-	//	GPU.Draw(*pGroup);
-	//	GPU.DrawInstanced(*pGroup, InstanceCount);
-	//}
+	_PerInstance.Apply();
+	for (const auto& Pass : Passes)
+	{
+		_pGPU->SetRenderState(Pass);
+		if (_InstanceCount > 1)
+			_pGPU->DrawInstanced(*_pCurrGroup, _InstanceCount);
+		else
+			_pGPU->Draw(*_pCurrGroup); //!!!TODO PERF: check if this is better for a single object! DrawInstanced(1) works either! Maybe there is no profit in branching here!
+	}
 
 	_InstanceCount = 0;
-	_CurrBoneCount = 0;
+	_BufferedBoneCount = 0;
 }
 //---------------------------------------------------------------------
 

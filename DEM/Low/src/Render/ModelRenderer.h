@@ -1,6 +1,6 @@
 #pragma once
 #include <Render/Renderer.h>
-#include <Render/ShaderParamTable.h>
+#include <Render/ShaderParamStorage.h>
 
 // Default renderer for CModel render objects.
 // Implements "Model" and "ModelSkinned" input sets.
@@ -20,10 +20,13 @@ protected:
 	const CMaterial* _pCurrMaterial = nullptr;
 	const CMesh* _pCurrMesh = nullptr;
 	const CPrimitiveGroup* _pCurrGroup = nullptr;
-	UPTR _CurrBoneCount = 0;
+	CGPUDriver* _pGPU = nullptr;
+	UPTR _BufferedBoneCount = 0;
 	UPTR _InstanceCount = 0;
 	UPTR _TechMaxInstanceCount = 1;
 	bool _TechNeedsMaterial = false;
+
+	CShaderParamStorage  _PerInstance;
 
 	CShaderConstantParam _ConstInstanceData;
 	CShaderConstantParam _ConstSkinPalette;
