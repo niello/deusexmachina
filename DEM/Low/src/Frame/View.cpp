@@ -285,6 +285,38 @@ void CView::Update(float dt)
 }
 //---------------------------------------------------------------------
 
+// Returns true if the frustum changed
+bool CView::UpdateCameraFrustum()
+{
+	bool ViewProjChanged = false;
+
+	// View changes are detected easily with a camera node transform version
+	const auto CameraTfmVersion = _pCamera->GetNode()->GetTransformVersion();
+	if (_CameraTfmVersion != CameraTfmVersion)
+	{
+		ViewProjChanged = true;
+		_CameraTfmVersion = CameraTfmVersion;
+
+		const auto& EyePos = _pCamera->GetPosition();
+		_EyePos = acl::vector_set(EyePos.x, EyePos.y, EyePos.z);
+	}
+
+	// Both perspective and orthographic projections are characterized by just few matrix elements, compare only them
+	const auto& Proj = _pCamera->GetProjMatrix();
+	const auto ProjectionParams = acl::vector_set(Proj.m[0][0], Proj.m[1][1], Proj.m[2][2], Proj.m[3][2]);
+	if (!acl::vector_all_near_equal(_ProjectionParams, ProjectionParams))
+	{
+		ViewProjChanged = true;
+		_ProjectionParams = ProjectionParams;
+	}
+
+	if (ViewProjChanged)
+		_LastViewFrustum = Math::CalcFrustumParams(_pCamera->GetViewProjMatrix());
+
+	return ViewProjChanged;
+}
+//---------------------------------------------------------------------
+
 void CView::SynchronizeRenderables()
 {
 	// Synchronize scene objects with their renderable mirrors
@@ -605,37 +637,14 @@ void CView::UpdateShaderTechCache()
 
 bool CView::Render()
 {
-	if (!_RenderPath || !_pScene || !pCamera) return false;
+	if (!_RenderPath || !_pScene || !_pCamera) return false;
 
 	// Synchronize objects from scene to this view
 	SynchronizeRenderables();
 	SynchronizeLights();
 
 	// Check for camera frustum changes
-	bool ViewProjChanged = false;
-	{
-		// View changes are detected easily with a camera node transform version
-		const auto CameraTfmVersion = pCamera->GetNode()->GetTransformVersion();
-		if (_CameraTfmVersion != CameraTfmVersion)
-		{
-			ViewProjChanged = true;
-			_CameraTfmVersion = CameraTfmVersion;
-
-			const auto& EyePos = pCamera->GetPosition();
-			_EyePos = acl::vector_set(EyePos.x, EyePos.y, EyePos.z);
-		}
-
-		// Both perspective and orthographic projections are characterized by just few matrix elements, compare only them
-		const auto& Proj = pCamera->GetProjMatrix();
-		const auto ProjectionParams = acl::vector_set(Proj.m[0][0], Proj.m[1][1], Proj.m[2][2], Proj.m[3][2]);
-		if (!acl::vector_all_near_equal(_ProjectionParams, ProjectionParams))
-		{
-			ViewProjChanged = true;
-			_ProjectionParams = ProjectionParams;
-		}
-	}
-
-	if (ViewProjChanged) _LastViewFrustum = Math::CalcFrustumParams(pCamera->GetViewProjMatrix());
+	const bool ViewProjChanged = UpdateCameraFrustum();
 
 	//!!!FIXME: also need to invalidate cache of changed nodes when one node takes index of another! //???notify SPS->All views for invalidated indices?
 	/*if (ViewProjChanged)*/ _SpatialTreeNodeVisibility.clear();
@@ -643,6 +652,9 @@ bool CView::Render()
 
 	UpdateLights(ViewProjChanged);
 	UpdateRenderables(ViewProjChanged);
+
+	// TODO:
+	// if ViewProjChanged, recalculate distance to camera for all objects, not only for ones with changed bounds.
 
 	//???FIXME: fill queue in visibility update instead of lists sync? contain only visible objects. faster sorting, less iteration and checks, but frequent rebuild.
 	//!!!TODO PERF: queues are independent, no write access to renderables is needed, can parallelize!
@@ -652,14 +664,8 @@ bool CView::Render()
 	// _pScene->UpdateRenderableLightIntersections() for marked objects and lights
 	//???for each light could store a full list of morton codes or at least top level morton codes that are intersecting it!
 	//???or is it easier to test against object AABB directly?
-	//???does tracking intersections on insert or tracking objects inside node / intersecting the node a good idea?
-	//!!!NB: if object and light don't move their intersection doesn't change!
-
-	// TODO:
-	// if ViewProjChanged, recalculate distance to camera for all objects, not only for ones with changed bounds.
-
-	// Draw call ordering:
-	// 
+	//???is tracking intersections on insert or tracking objects inside node / intersecting the node a good idea?
+	//!!!NB: if object and light don't move or resize, their intersection doesn't change! Even if their visibility changes!
 
 	UpdateShaderTechCache();
 
@@ -667,34 +673,25 @@ bool CView::Render()
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!!!DBG TMP!
-	VisibilityCache.Clear();
-	for (const auto& [UID, Renderable] : _Renderables)
-	{
-		if (Renderable->IsVisible)
-			VisibilityCache.push_back(UID);
-	}
-
 	LightCache.Clear();
-	// ...
-
 	EnvironmentCache.Clear();
 	for (const auto& [UID, Light] : _Lights)
 	{
-		//!!!
-		//if (Light->IsVisible)
-
-		if (auto pAttr = _pScene->GetLights().find(UID)->second.pAttr->As<CIBLAmbientLightAttribute>())
-			EnvironmentCache.Add(static_cast<Render::CImageBasedLight*>(Light.get()));
-
-		//	Scene::CNodeAttribute* pAttr = VisibilityCache[i];
-		//	if (pAttr->IsA<CLightAttribute>())
-		//	{
-		//		Render::CLightRecord& Rec = *LightCache.Add();
-		//		Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
-		//		Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
-		//		Rec.UseCount = 0;
-		//		Rec.GPULightIndex = INVALID_INDEX;
-		//	}
+		if (Light->IsVisible)
+		{
+			if (_pScene->GetLights().find(UID)->second.pAttr->IsA<CIBLAmbientLightAttribute>())
+			{
+				EnvironmentCache.Add(static_cast<Render::CImageBasedLight*>(Light.get()));
+			}
+			else
+			{
+				//Render::CLightRecord& Rec = *LightCache.Add();
+				//Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
+				//Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
+				//Rec.UseCount = 0;
+				//Rec.GPULightIndex = INVALID_INDEX;
+			}
+		}
 	}
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -779,9 +776,9 @@ void CView::SetGraphicsScene(CGraphicsScene* pScene)
 
 void CView::SetCamera(CCameraAttribute* pNewCamera)
 {
-	if (pCamera != pNewCamera)
+	if (_pCamera != pNewCamera)
 	{
-		pCamera = pNewCamera;
+		_pCamera = pNewCamera;
 		_CameraTfmVersion = 0;
 	}
 }
@@ -847,10 +844,10 @@ bool CView::OnOSWindowResized(Events::CEventDispatcher* pDispatcher, const Event
 		DS = GPU->CreateDepthStencilBuffer(Desc);
 	}
 
-	if (pCamera)
+	if (_pCamera)
 	{
-		pCamera->SetWidth(Ev.NewWidth);
-		pCamera->SetHeight(Ev.NewHeight);
+		_pCamera->SetWidth(Ev.NewWidth);
+		_pCamera->SetHeight(Ev.NewHeight);
 	}
 
 	OK;

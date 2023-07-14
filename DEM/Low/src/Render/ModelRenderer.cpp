@@ -151,6 +151,7 @@ bool CModelRenderer::BeginRange(const CRenderContext& Context)
 }
 //---------------------------------------------------------------------
 
+// For constant buffer handling see https://learn.microsoft.com/en-us/windows/win32/dxtecharts/direct3d10-frequently-asked-questions
 void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/)
 {
 	CModel& Model = static_cast<CModel&>(Renderable);
@@ -275,8 +276,25 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 		//const auto LightCount = LightingEnabled ? std::min<U32>(Model.LightCount, _MemberLightIndices.GetElementCount()) : 0;
 		const auto LightCount = 0;
 
+		//???need or use INVALID_INDEX to stop iterating light index array in a shader? possibly uses less shader consts!
 		_MemberLightCount.Shift(_ConstInstanceData, _InstanceCount);
 		_PerInstance.SetUInt(_MemberLightCount, LightCount);
+
+		//???send all or only visible lights to GPU? how to detect that something have changed, to avoid resending each frame? set flag when testing
+		// lights against frustum and visibility of one actually changes?
+		//!!!also don't forget to try filling rendering queues only on renderable object visibility change!
+
+		//// Set per-instance light indices
+		//if (LightCount)
+		//{
+		//	CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(Model.LightIndexBase);
+		//	U32 InstLightIdx;
+		//	for (InstLightIdx = 0; InstLightIdx < Model.LightCount; ++InstLightIdx, ++ItIdx)
+		//	{
+		//		const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
+		//		PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), LightRec.GPULightIndex);
+		//	}
+		//}
 	}
 
 	++_InstanceCount;
@@ -284,62 +302,9 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 	// build per-instance data: world matrix, light indices (if any), skinning palette, animated material params (defaults from material)
 	// use different techs for single & instanced or use DrwaIndexedInstanced(1) or use DrawIndexed and hope that SV_InstanceID will be 0. Need testing.
 
-	//???can pack instance world matrix as 4x3 and then unpack in a shader adding 0001?
-
-
-	//static_cast<CModel*>(*ItInstEnd)->Material == pMaterial &&
-	//static_cast<CModel*>(*ItInstEnd)->ShaderTechIndex == Model.ShaderTechIndex &&
-	//static_cast<CModel*>(*ItInstEnd)->pGroup == pGroup &&
-	//!static_cast<CModel*>(*ItInstEnd)->pSkinPalette)
-
-	//CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS.GetElement(InstanceCount);
-	//CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
-	//if (TechLightCount)
-	//{
-	//	U32 ActualLightCount;
-	//	if (LightCount == 0)
-	//	{
-	//		// If tech is variable-light-count, set it per instance
-	//		ActualLightCount = std::min(TechLightCount, static_cast<UPTR>(Model.LightCount));
-	//		PerInstance.SetUInt(CurrInstanceDataPS[sidLightCount], ActualLightCount);
-	//	}
-	//	else ActualLightCount = std::min(LightCount, TechLightCount);
-
-	//	// Set per-instance light indices
-	//	if (ActualLightCount)
-	//	{
-	//		CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(Model.LightIndexBase);
-	//		U32 InstLightIdx;
-	//		for (InstLightIdx = 0; InstLightIdx < Model.LightCount; ++InstLightIdx, ++ItIdx)
-	//		{
-	//			const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-	//			PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), LightRec.GPULightIndex);
-	//		}
-
-	//		// If tech is fixed-light-count, fill the first unused light index with the special value
-	//		if (LightCount && InstLightIdx < TechLightCount)
-	//			PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), EMPTY_LIGHT_INDEX);
-	//	}
-	//}
-
-
-	//???need multipass techs or move that to another layer of logic?! multipass tech kills shader sorting and leads to render state switches.
-	//but it keeps material and mesh, and maybe even cached intermediate data like GPU skinned vertices buffer.
-	//???what effects use multipass techs at all? is there any not implementable with different render phases?
-	//may remove pass arrays from tech and leave there only one render state, or at least a set of states for different factor (instance limit etc)
-
-	// recommended: 1 CB for globals, 1 CB for material, 1CB for per-instance data, but random-access in a warp (e.g. skinning better in tbuffer/structured buffer)
-	//???use the same obe per-instance buffer for VS and PS? One send, two binds.
-	//!!!Sharing constant buffers between shaders (binding the same CB to the VS and PS) also can improve performance. (c)
-
 	//!!!when skinning, skin position and normal in the same loop! Need only one fetch per bone matrix then, and less control instructions! or check optimization!
-	//!!!use float4x3 for skinning! and for world matrix too?
+	//!!!use float4x3 for skinning! and for world matrix too? can pack instance world matrix as 4x3 and then unpack in a shader adding 0001? or simplify mul?
 	//???tbuffer or StructuredBuffer for bones? the second can change its size in runtime?
-	//for skinned instancing can pass bone count to shader and index as BoneCount*InstanceID+i! Instance count will be calculated from shader consts!
-
-	//???send all or only visible lights to GPU? how to detect that something have changed, to avoid resending each frame? set flag when testing
-	// lights against frustum and visibility of one actually changes?
-	//!!!also don't forget to try filling rendering queues only on renderable object visibility change!
 
 	//!!!updating big CB loads the bus with unnecessary bytes. Using big per-instance data array for few instances will pass too many unnecessary traffic.
 	//what about UpdateSubresource? Can it make this better? Could exploit no-overwrite and offsets to avoid stalls drawing from previous region!
@@ -349,11 +314,11 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 	//   If you already have your data stored in memory in one contiguous block, use UpdateSubresource.If you need to accumulate data from other places, use Map with Discard.
 
 	//???calc skinned normal with float3x3 or as vOutput.vNor += mul( float4(vInput.vNor, 0.0f), amPalette[ aiIndices[ iBone  ] ] ) * fWeight; ?
+	//see Khronos shaders, Skinning10 example shaders etc.
 
 	//!!!skin palettes can be pre-uploaded in z prepass and reused in color pass! But may not work well with instancing.
 	//Q: How much can I improve my frame rate if I only upload my character's bones once per frame instead of once per pass/draw?
 	//A: You can improve frame rate between 8 percent and 50 percent depending on the amount of redundant data.In the worst case, performance will not be reduced.
-	//https://learn.microsoft.com/en-us/windows/win32/dxtecharts/direct3d10-frequently-asked-questions
 
 	//???go further and pack instance world matrices into skin palette?! de facto it is just the same but without actual skinning (degenerate skinning w/1 bone).
 	//But cbuffer is better than tbuffer when indexing the same element. Or not anymore? At least can use cbuffer in non-skinned shader and tbuffer
@@ -376,11 +341,15 @@ void CModelRenderer::CommitCollectedInstances()
 	//!!!PERF: needs testing on big scene. Check is moved outside the call to reduce redundant call count, but is it necessary?
 	n_assert_dbg(_InstanceCount);
 
+	_PerInstance.Apply();
+
+	//???need multipass techs or move that to another layer of logic?! multipass tech kills shader sorting and leads to render state switches.
+	//but it keeps material and mesh, and maybe even cached intermediate data like GPU skinned vertices buffer.
+	//???what effects use multipass techs at all? is there any not implementable with different render phases?
+	//may remove pass arrays from tech and leave there only one render state, or at least a set of states for different factor (instance limit etc)
 	// FIXME: get rid of light count variations? Or use them?
 	UPTR LightCount = 0;
 	const auto& Passes = _pCurrTech->GetPasses(LightCount);
-
-	_PerInstance.Apply();
 	for (const auto& Pass : Passes)
 	{
 		_pGPU->SetRenderState(Pass);

@@ -143,7 +143,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		pGPU->SetViewport(0, &Render::GetRenderTargetViewport(pDepthStencliBuffer->GetDesc()));
 	pGPU->SetDepthStencilBuffer(pDepthStencliBuffer);
 
-	// Render the phase
+	// Render objects from queues
 
 	Render::IRenderer::CRenderContext Ctx;
 	Ctx.pGPU = pGPU;
@@ -186,6 +186,9 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	{
 		View.ForEachRenderableInQueue(QueueIndex, [this, &Ctx, &pCurrRenderer, &ValidRenderer](Render::IRenderable* pRenderable)
 		{
+			//!!!FIXME: remove when filling queues with visible objects only! Maybe IsVisible flag will disappear and this will stop compiling, but not for sure.
+			if (!pRenderable->IsVisible) return;
+
 			if (pCurrRenderer != pRenderable->pRenderer)
 			{
 				if (ValidRenderer) pCurrRenderer->EndRange(Ctx);

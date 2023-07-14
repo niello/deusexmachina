@@ -72,7 +72,7 @@ protected:
 	PRenderPath									_RenderPath;
 	PGraphicsResourceManager					_GraphicsMgr;
 	int											_SwapChainID = INVALID_INDEX;
-	CCameraAttribute*							pCamera = nullptr; //???smart ptr?
+	CCameraAttribute*							_pCamera = nullptr; //???smart ptr?
 
 	CGraphicsScene*								_pScene = nullptr;
 
@@ -93,7 +93,6 @@ protected:
 	std::map<std::pair<const Render::CEffect*, CStrID>, U32> _EffectMap; // Source effect & input set -> index in a _ShaderTechCache
 	std::vector<std::vector<const Render::CTechnique*>> _ShaderTechCache;       // First index is an override index (0 is no override), second is from _MaterialMap
 
-	CArray<UPTR>								VisibilityCache;
 	CArray<Render::CLightRecord>				LightCache;
 	CArray<Render::CImageBasedLight*>			EnvironmentCache;
 
@@ -110,6 +109,7 @@ protected:
 
 	DECLARE_EVENT_HANDLER(OSWindowResized, OnOSWindowResized);
 
+	bool UpdateCameraFrustum();
 	void SynchronizeRenderables();
 	void SynchronizeLights();
 	void UpdateRenderables(bool ViewProjChanged);
@@ -142,7 +142,6 @@ public:
 	bool                            PrecreateRenderObjects();
 	U32                             RegisterEffect(const Render::CEffect& Effect, CStrID InputSet);
 	const Render::CTechnique* const* GetShaderTechCache(UPTR OverrideIndex = 0) const { return (OverrideIndex < _ShaderTechCache.size()) ? _ShaderTechCache[OverrideIndex].data() : nullptr; }
-	auto&							GetVisibilityCache() { return VisibilityCache; }
 	Render::IRenderable*			GetRenderable(UPTR UID) { auto It = _Renderables.find(UID); return (It == _Renderables.cend()) ? nullptr : It->second.get(); }
 	CArray<Render::CLightRecord>&	GetLightCache() { return LightCache; }
 	auto&							GetEnvironmentCache() { return EnvironmentCache; }
@@ -169,7 +168,7 @@ public:
 	void                            SetGraphicsScene(CGraphicsScene* pScene);
 	CGraphicsScene*                 GetGraphicsScene() const { return _pScene; }
 	void							SetCamera(CCameraAttribute* pNewCamera);
-	CCameraAttribute*               GetCamera() const { return pCamera; }
+	CCameraAttribute*               GetCamera() const { return _pCamera; }
 	CGraphicsResourceManager*		GetGraphicsManager() const;
 	Render::CGPUDriver*				GetGPU() const;
 	UI::CUIContext*                 GetUIContext() const { return _UIContext.Get(); }
