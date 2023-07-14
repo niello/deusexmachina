@@ -45,11 +45,8 @@ public:
 	// Add to the end of the queue with an empty key. It will be calculated on update, just before sorting.
 	void Add(Render::IRenderable* pRenderable)
 	{
-		// FIXME: now first update of a renderable happens after adding it to the queue but before updating the queue, so this check is moved to Update()
-		//???will be fixed when start adding objects on their first visible. not even necessary to remove on becoming invisible if don't want.
-		//don't forget to relax condition in Update for new items, as filter mask will be already checked.
-		//if (_FilterMask & pRenderable->RenderQueueMask)
-		_Queue.push_back({ pRenderable, NO_KEY });
+		if (_FilterMask & pRenderable->RenderQueueMask)
+			_Queue.push_back({ pRenderable, NO_KEY });
 	}
 
 	void Clear()
@@ -154,8 +151,7 @@ public:
 		for (size_t i = _SortedSize; i < _Queue.size(); ++i)
 		{
 			auto& Record = _Queue[i];
-			if (_FilterMask & Record.pRenderable->RenderQueueMask)
-				Record.Key = KeyBuilder(std::as_const(Record.pRenderable));
+			Record.Key = KeyBuilder(std::as_const(Record.pRenderable));
 		}
 
 		// Sort ascending, so that records marked for removal with NO_KEY are moved to the tail

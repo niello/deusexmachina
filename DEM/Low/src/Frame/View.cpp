@@ -360,17 +360,12 @@ void CView::SynchronizeRenderables()
 				_RenderableNodePool.pop_back();
 			}
 
-			pRenderable = ItViewObject->second.get();
-
-			//???or test visibility first and delay adding to queues until visible the first time?
-			//???contain only visible objects in queues? need to profile what works better!
-			for (auto& Queue : _RenderQueues)
-				Queue->Add(pRenderable);
+			//pRenderable = ItViewObject->second.get();
 		}
 		else
 		{
-			pRecord = &ItSceneObject->second;
-			pRenderable = ItViewObject->second.get();
+			//pRecord = &ItSceneObject->second;
+			//pRenderable = ItViewObject->second.get();
 
 			//???where and when to update world matrix? store it cached in a PRenderable or get from scene object on parallel iteration?
 
@@ -484,6 +479,7 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			{
 				//const float SqDistanceToCamera = Math::SqDistancePointAABB(_EyePos, Record.BoxCenter, Record.BoxExtent);
 				// and/or screen size
+				// if ViewProjChanged, recalculate distance to camera for all objects, not only for ones with changed bounds.
 
 				// calculate geometry and material LODs
 				// if LODs changed, apply these changes or at least mark related things dirty
@@ -531,19 +527,25 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			// - ???setup renderer? or is it per phase? how to store renderer-specific cache then? can setup renderer once in CreateRenderable!
 			pAttr->UpdateRenderable(*this, *pRenderable);
 
-			// if needed, mark object for updating light intersections
-
 			//!!!DBG TMP!
 			pRenderable->Transform = pAttr->GetNode()->GetWorldMatrix();
+
+			// TODO: if needed, mark object for updating light intersections
 		}
 
+		// Handle object visibility change
 		if (WasVisible != pRenderable->IsVisible)
 		{
-			// if became visible, insert to queues (use sorted insertion? what if order was already broken?), else remove from them
-			//???after syncing lists, first sort queues as is, then insert and remove due to visibility?
-			//then easier to insert to the end here and sort once after all processing!
-			//???or maybe try to insert sorted with possible violation, and then resort as almost sorted and everything will be fixed?
-			//but sorted insertion has a cost, it is easier to sort only once!
+			if (WasVisible)
+			{
+				for (auto& Queue : _RenderQueues)
+					Queue->Remove(pRenderable);
+			}
+			else
+			{
+				for (auto& Queue : _RenderQueues)
+					Queue->Add(pRenderable);
+			}
 		}
 	}
 }
@@ -597,7 +599,7 @@ void CView::UpdateLights(bool ViewProjChanged)
 			// - update cached GPU structures for dirty parts (constant buffer element, IBL textures etc)
 			pAttr->UpdateLight(*_GraphicsMgr, *pLight);
 
-			// if needed, mark light for updating object intersections
+			// TODO: if needed, mark light for updating object intersections
 		}
 	}
 }
@@ -652,9 +654,6 @@ bool CView::Render()
 
 	UpdateLights(ViewProjChanged);
 	UpdateRenderables(ViewProjChanged);
-
-	// TODO:
-	// if ViewProjChanged, recalculate distance to camera for all objects, not only for ones with changed bounds.
 
 	//???FIXME: fill queue in visibility update instead of lists sync? contain only visible objects. faster sorting, less iteration and checks, but frequent rebuild.
 	//!!!TODO PERF: queues are independent, no write access to renderables is needed, can parallelize!

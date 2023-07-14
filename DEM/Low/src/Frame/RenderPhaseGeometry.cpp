@@ -186,8 +186,8 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	{
 		View.ForEachRenderableInQueue(QueueIndex, [this, &Ctx, &pCurrRenderer, &ValidRenderer](Render::IRenderable* pRenderable)
 		{
-			//!!!FIXME: remove when filling queues with visible objects only! Maybe IsVisible flag will disappear and this will stop compiling, but not for sure.
-			if (!pRenderable->IsVisible) return;
+			// This is guaranteed by CView, it fills queues with visible objects only
+			n_assert_dbg(pRenderable->IsVisible);
 
 			if (pCurrRenderer != pRenderable->pRenderer)
 			{
