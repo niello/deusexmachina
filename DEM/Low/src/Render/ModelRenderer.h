@@ -29,12 +29,9 @@ protected:
 	CShaderConstantParam _ConstSkinPalette;
 	CShaderConstantParam _MemberWorldMatrix;
 	CShaderConstantParam _MemberFirstBoneIndex;
+	CShaderConstantParam _MemberLightCount;
+	CShaderConstantParam _MemberLightIndices;
 
-	// Subsequent shader constants for single-instance case
-	CShaderConstantParam ConstLightCount;
-	CShaderConstantParam ConstLightIndices;
-
-	void CalculateMaxInstanceCount();
 	void CommitCollectedInstances();
 
 public:

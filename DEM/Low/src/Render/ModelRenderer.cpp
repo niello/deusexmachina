@@ -172,9 +172,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 	n_assert_dbg(pGroup);
 	if (!pGroup) return;
 
-	// Detect batch breaking and commit collected instances to GPU
-
-	if (_InstanceCount == _TechMaxInstanceCount) CommitCollectedInstances();
+	// Detect batch breaking, commit collected instances to GPU and prepare the new batch
 
 	if (pTech != _pCurrTech)
 	{
@@ -195,25 +193,24 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 
 		if (LightingEnabled)
 		{
-			// ... try to find per-instance light shader constants ...
+			_MemberLightCount = _ConstInstanceData[0][sidLightCount];
+			_MemberLightIndices = _ConstInstanceData[0][sidLightIndices];
 		}
 
-		CalculateMaxInstanceCount();
+		_TechMaxInstanceCount = _ConstInstanceData ? _ConstInstanceData.GetElementCount() : std::numeric_limits<U32>::max();
 
 		// Verify that tech is selected correctly. Can remove later if never asserts. It shouldn't.
 		n_assert_dbg(static_cast<bool>(Model.BoneCount) == static_cast<bool>(_ConstSkinPalette));
 	}
-
-	//!!!FIXME: now need to commit if skinning buffer remaining count is less than current object bone count!
-	//!!!Handle case when whole buffer is less than object's skin palette! BooneCount = min(Model.BoneCount, tech's buffer size), but need tech first!!!
-	//!!!set _CurrBoneCount = 0 when commit or only when wrap the buffer?!
-	//if (Model.BoneCount != _CurrBoneCount)
-	//{
-	//	if (_InstanceCount) CommitCollectedInstances();
-
-	//	_CurrBoneCount = Model.BoneCount;
-	//	CalculateMaxInstanceCount();
-	//}
+	else
+	{
+		// Check if the limit of per-instance data for the tech is reached
+		if (_InstanceCount == _TechMaxInstanceCount ||
+			(Model.BoneCount <= _ConstSkinPalette.GetElementCount() && Model.BoneCount > _ConstSkinPalette.GetElementCount() - _CurrBoneCount))
+		{
+			CommitCollectedInstances();
+		}
+	}
 
 	UPTR LightCount = Model.LightCount;
 	const auto& Passes = pTech->GetPasses(LightCount);
@@ -249,6 +246,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 
 	//!!!FIXME: need reusable CShaderParamStorage! Store one per tech in a tech cache structure? or even add one right into the tech for one shot rendering calls, will use tmp buffers.
 	CShaderParamStorage PerInstance(pTech->GetParamTable(), GPU);
+
 	if (_MemberWorldMatrix)
 	{
 		_MemberWorldMatrix.Shift(_ConstInstanceData, _InstanceCount);
@@ -269,6 +267,16 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 		const auto InstanceBoneCount = std::min(Model.BoneCount, _ConstSkinPalette.GetElementCount() - _CurrBoneCount);
 		PerInstance.SetMatrixArray(_ConstSkinPalette, Model.pSkinPalette, InstanceBoneCount, _CurrBoneCount);
 		_CurrBoneCount += InstanceBoneCount;
+	}
+
+	if (_MemberLightCount)
+	{
+		//!!!FIXME: need to set correct light count and _MemberLightIndices
+		//const auto LightCount = LightingEnabled ? std::min<U32>(Model.LightCount, _MemberLightIndices.GetElementCount()) : 0;
+		const auto LightCount = 0;
+
+		_MemberLightCount.Shift(_ConstInstanceData, _InstanceCount);
+		PerInstance.SetUInt(_MemberLightCount, LightCount);
 	}
 
 	++_InstanceCount;
@@ -364,25 +372,14 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 	//???go further and pack instance world matrices into skin palette?! de facto it is just the same but without actual skinning (degenerate skinning w/1 bone).
 	//But cbuffer is better than tbuffer when indexing the same element. Or not anymore? At least can use cbuffer in non-skinned shader and tbuffer
 	//in skinned, but with the same name "world matrices" or like that, and thus simplify the logic here. Need to think it over.
+
+	//!!!register all groups of a mesh as sequential codes, will save bits for sorting key, because will not waste group space for max possible groups!
 }
 //---------------------------------------------------------------------
 
 void CModelRenderer::EndRange(const CRenderContext& Context)
 {
 	if (_InstanceCount) CommitCollectedInstances();
-}
-//---------------------------------------------------------------------
-
-void CModelRenderer::CalculateMaxInstanceCount()
-{
-	_TechMaxInstanceCount = _ConstInstanceData.GetElementCount();
-	if (_ConstSkinPalette && _CurrBoneCount)
-	{
-		const UPTR MaxSkinInstanceCount = _ConstSkinPalette.GetElementCount() / _CurrBoneCount;
-		if (_TechMaxInstanceCount > MaxSkinInstanceCount)
-			_TechMaxInstanceCount = MaxSkinInstanceCount;
-	}
-	if (!_TechMaxInstanceCount) _TechMaxInstanceCount = 1;
 }
 //---------------------------------------------------------------------
 
@@ -399,6 +396,9 @@ void CModelRenderer::CommitCollectedInstances()
 	//	GPU.Draw(*pGroup);
 	//	GPU.DrawInstanced(*pGroup, InstanceCount);
 	//}
+
+	_InstanceCount = 0;
+	_CurrBoneCount = 0;
 }
 //---------------------------------------------------------------------
 
