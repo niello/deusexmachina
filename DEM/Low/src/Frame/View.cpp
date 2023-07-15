@@ -359,19 +359,6 @@ void CView::SynchronizeRenderables()
 				ItViewObject = _Renderables.insert(_Renderables.cend(), std::move(Node));
 				_RenderableNodePool.pop_back();
 			}
-
-			//pRenderable = ItViewObject->second.get();
-		}
-		else
-		{
-			//pRecord = &ItSceneObject->second;
-			//pRenderable = ItViewObject->second.get();
-
-			//???where and when to update world matrix? store it cached in a PRenderable or get from scene object on parallel iteration?
-
-			// TODO:
-			// if sorted queue includes distance to camera and bounds changed, mark sorted queue dirty
-			// if sorted queue includes material etc which has changed, mark sorted queue dirty
 		}
 	});
 }
@@ -519,18 +506,19 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 
 		if (pRenderable->IsVisible)
 		{
-			//!!!TODO: inside UpdateRenderable:
-			//!!!remember transform if changed! maybe write directly to constant buffers?!
-			// - update tfm from attr
-			// - update renderable/light params from attr
-			// - update cached GPU structures for dirty parts (tfm, material etc)
-			// - ???setup renderer? or is it per phase? how to store renderer-specific cache then? can setup renderer once in CreateRenderable!
 			pAttr->UpdateRenderable(*this, *pRenderable);
 
-			//!!!DBG TMP!
+			//!!!DBG TMP! Or is it the preferred way to do this? Or handle in UpdateRenderable? But every renderable stores tfm identically. Or no?
 			pRenderable->Transform = pAttr->GetNode()->GetWorldMatrix();
 
 			// TODO: if needed, mark object for updating light intersections
+
+			// TODO:
+			// if sorted queue includes distance to camera and bounds changed, mark sorted queue dirty
+			// if sorted queue includes material etc which has changed, mark sorted queue dirty
+			//???or instead of marking the queue can recalc key, and if key changed, sort queue. Optimization for key updating in CRenderQueue::Update()?
+			//Could track changes in a renderable and update key only if changes requre that. Return set of dirty flags from UpdateRenderable? Or store in renderable?
+			//Can be "changes in last update", and clear if no changes happened.
 		}
 
 		// Handle object visibility change
@@ -620,6 +608,8 @@ void CView::UpdateShaderTechCache()
 				if (Index >= CacheSize)
 				{
 					const Render::CEffect* pEffect = EffectAndInputSet.first;
+
+					// Process overrides
 					if (ShaderTechCacheIndex > 0)
 					{
 						const auto& EffectOverrides = _RenderPath->EffectOverrides[ShaderTechCacheIndex - 1];
@@ -648,14 +638,17 @@ bool CView::Render()
 	// Check for camera frustum changes
 	const bool ViewProjChanged = UpdateCameraFrustum();
 
-	//!!!FIXME: also need to invalidate cache of changed nodes when one node takes index of another! //???notify SPS->All views for invalidated indices?
+	//!!!FIXME: could enable the condition below, but also need to invalidate cache of changed nodes when one node takes index of another!
+	//???notify SPS->All views for invalidated indices? If enabling condinion, check that TestSpatialTreeVisibility benefits from filled _SpatialTreeNodeVisibility!
+	//???can invalidate the cache starting only from certain index?
 	/*if (ViewProjChanged)*/ _SpatialTreeNodeVisibility.clear();
 	_pScene->TestSpatialTreeVisibility(_LastViewFrustum, _SpatialTreeNodeVisibility);
 
 	UpdateLights(ViewProjChanged);
 	UpdateRenderables(ViewProjChanged);
 
-	//???FIXME: fill queue in visibility update instead of lists sync? contain only visible objects. faster sorting, less iteration and checks, but frequent rebuild.
+	UpdateShaderTechCache();
+
 	//!!!TODO PERF: queues are independent, no write access to renderables is needed, can parallelize!
 	for (auto& Queue : _RenderQueues)
 		Queue->Update();
@@ -665,8 +658,6 @@ bool CView::Render()
 	//???or is it easier to test against object AABB directly?
 	//???is tracking intersections on insert or tracking objects inside node / intersecting the node a good idea?
 	//!!!NB: if object and light don't move or resize, their intersection doesn't change! Even if their visibility changes!
-
-	UpdateShaderTechCache();
 
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
