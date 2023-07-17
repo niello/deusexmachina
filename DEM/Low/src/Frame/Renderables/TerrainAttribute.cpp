@@ -139,6 +139,7 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 		const auto PatchSize = _CDLODData->GetPatchSize();
 		//if (!Math::IsPow2(PatchSize) || PatchSize < 4) FAIL;
 
+		//!!!TODO: store both patches in one mesh, only use different primitive groups (can vary only indices!)
 		CString PatchName;
 		PatchName.Format("#Mesh_Patch%dx%d", PatchSize, PatchSize);
 		CStrID MeshUID(PatchName);

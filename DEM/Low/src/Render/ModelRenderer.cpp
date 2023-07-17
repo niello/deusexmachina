@@ -272,39 +272,29 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 
 	if (_MemberLightCount)
 	{
-		//!!!FIXME: need to set correct light count and _MemberLightIndices
-		//const auto LightCount = LightingEnabled ? std::min<U32>(Model.LightCount, _MemberLightIndices.GetElementCount()) : 0;
-		const auto LightCount = 0;
+		const auto LightCount = LightingEnabled ? std::min<U32>(Model.LightCount, _MemberLightIndices.GetElementCount()) : 0;
 
 		//???need or use INVALID_INDEX to stop iterating light index array in a shader? possibly uses less shader consts!
 		_MemberLightCount.Shift(_ConstInstanceData, _InstanceCount);
 		_PerInstance.SetUInt(_MemberLightCount, LightCount);
 
-		//???send all or only visible lights to GPU? how to detect that something have changed, to avoid resending each frame? set flag when testing
-		// lights against frustum and visibility of one actually changes?
-		//!!!also don't forget to try filling rendering queues only on renderable object visibility change!
+		//???send all or only visible lights to GPU? how to detect that something have changed, to avoid resending each frame?
+		//set flag when testing lights against frustum and visibility of one actually changes?
 
-		//// Set per-instance light indices
-		//if (LightCount)
-		//{
-		//	CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(Model.LightIndexBase);
-		//	U32 InstLightIdx;
-		//	for (InstLightIdx = 0; InstLightIdx < Model.LightCount; ++InstLightIdx, ++ItIdx)
-		//	{
-		//		const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-		//		PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), LightRec.GPULightIndex);
-		//	}
-		//}
+		// Set per-instance light indices
+		if (LightCount)
+		{
+			//CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(Model.LightIndexBase);
+			//U32 InstLightIdx;
+			//for (InstLightIdx = 0; InstLightIdx < Model.LightCount; ++InstLightIdx, ++ItIdx)
+			//{
+			//	const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
+			//	PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), LightRec.GPULightIndex);
+			//}
+		}
 	}
 
 	++_InstanceCount;
-
-	// build per-instance data: world matrix, light indices (if any), skinning palette, animated material params (defaults from material)
-	// use different techs for single & instanced or use DrwaIndexedInstanced(1) or use DrawIndexed and hope that SV_InstanceID will be 0. Need testing.
-
-	//!!!when skinning, skin position and normal in the same loop! Need only one fetch per bone matrix then, and less control instructions! or check optimization!
-	//!!!use float4x3 for skinning! and for world matrix too? can pack instance world matrix as 4x3 and then unpack in a shader adding 0001? or simplify mul?
-	//???tbuffer or StructuredBuffer for bones? the second can change its size in runtime?
 
 	//!!!updating big CB loads the bus with unnecessary bytes. Using big per-instance data array for few instances will pass too many unnecessary traffic.
 	//what about UpdateSubresource? Can it make this better? Could exploit no-overwrite and offsets to avoid stalls drawing from previous region!
@@ -312,9 +302,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 	//Q: What is the best way to update constant buffers?
 	//A: UpdateSubresource and Map with Discard should be about the same speed. Choose between them depending on which one copies the least amount of memory.
 	//   If you already have your data stored in memory in one contiguous block, use UpdateSubresource.If you need to accumulate data from other places, use Map with Discard.
-
-	//???calc skinned normal with float3x3 or as vOutput.vNor += mul( float4(vInput.vNor, 0.0f), amPalette[ aiIndices[ iBone  ] ] ) * fWeight; ?
-	//see Khronos shaders, Skinning10 example shaders etc.
+	// From McDonald: UpdateSubresource requires more CPU time. When possible, prefer Map / Unmap. WTF?
 
 	//!!!skin palettes can be pre-uploaded in z prepass and reused in color pass! But may not work well with instancing.
 	//Q: How much can I improve my frame rate if I only upload my character's bones once per frame instead of once per pass/draw?
@@ -324,7 +312,11 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 	//But cbuffer is better than tbuffer when indexing the same element. Or not anymore? At least can use cbuffer in non-skinned shader and tbuffer
 	//in skinned, but with the same name "world matrices" or like that, and thus simplify the logic here. Need to think it over.
 
-	//!!!register all groups of a mesh as sequential codes, will save bits for sorting key, because will not waste group space for max possible groups!
+	//???calc skinned normal with float3x3 or as vOutput.vNor += mul( float4(vInput.vNor, 0.0f), amPalette[ aiIndices[ iBone  ] ] ) * fWeight; ?
+	//see Khronos shaders, Skinning10 example shaders etc.
+	//!!!when skinning, skin position and normal in the same loop! Need only one fetch per bone matrix then, and less control instructions! or check optimization!
+	//!!!use float4x3 for skinning! and for world matrix too? can pack instance world matrix as 4x3 and then unpack in a shader adding 0001? or simplify mul?
+	//???tbuffer or StructuredBuffer for bones? the second can change its size in runtime?
 }
 //---------------------------------------------------------------------
 

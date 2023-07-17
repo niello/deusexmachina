@@ -461,64 +461,26 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 
 			pRenderable->BoundsVersion = Record.BoundsVersion;
 
-			// Calculate LOD. It is based on camera and object bounds so it can be recalculated here only when something of that changes.
+			// Calculate LOD prerequisites. They depend only on camera and object bounds.
 			if (pRenderable->IsVisible)
 			{
-				//const float SqDistanceToCamera = Math::SqDistancePointAABB(_EyePos, Record.BoxCenter, Record.BoxExtent);
-				// and/or screen size
-				// if ViewProjChanged, recalculate distance to camera for all objects, not only for ones with changed bounds.
+				pRenderable->SqDistanceToCamera = Math::SqDistancePointAABB(_EyePos, Record.BoxCenter, Record.BoxExtent);
 
-				// calculate geometry and material LODs
-				// if LODs changed, apply these changes or at least mark related things dirty
-				// if LOD disables the object, set it invisible (typically the last LOD): pRenderable->IsVisible = false;
-				//???or calc LOD inside UpdateRenderable? and skip some ops if LOD resolves to object hiding?
-				//???or calc LOD here and pass to UpdateRenderable? What is better? Pass view pos and viewproj matrix from here or just calculated LOD?
-				//???or calc some LOD metric(s) here, e.g. sq distance and screen coverage, and send them to UpdateRenderable?
-
-				//!!!store calculated LOD somewhere!
-				//!!!???use one LOD value for both geometry and material, but can actually change something only when required?!
-
-				/*
-				if (pAttr->GetGlobalAABB(Context.AABB, 0))
-				{
-					float ScreenSizeRel;
-					if (CalcScreenSize)
-					{
-						NOT_IMPLEMENTED_MSG("OBJECT SCREEN SIZE CALCULATION!");
-						ScreenSizeRel = 0.f;
-					}
-					else ScreenSizeRel = 0.f;
-
-					float SqDistanceToCamera = Context.AABB.SqDistance(CameraPos);
-					pNode->SqDistanceToCamera = SqDistanceToCamera;
-					Context.MeshLOD = View.GetMeshLOD(SqDistanceToCamera, ScreenSizeRel);
-					Context.MaterialLOD = View.GetMaterialLOD(SqDistanceToCamera, ScreenSizeRel);
-				}
-				else
-				{
-					pNode->SqDistanceToCamera = 0.f;
-					Context.MeshLOD = 0;
-					Context.MaterialLOD = 0;
-				}
-				*/
+				// TODO: calc screen size for LOD, see UE, there is some very simple code for sphere. Called "screen radius" or so.
 			}
 		}
 
+		// Update a renderable from its scene attribute. NB: IsVisible may be set to false inside.
 		if (pRenderable->IsVisible)
-		{
 			pAttr->UpdateRenderable(*this, *pRenderable);
 
+		if (pRenderable->IsVisible)
+		{
 			//!!!DBG TMP! Or is it the preferred way to do this? Or handle in UpdateRenderable? But every renderable stores tfm identically. Or no?
+			//???could store directly in per-instance data? or it depends on a renderer too strongly?
 			pRenderable->Transform = pAttr->GetNode()->GetWorldMatrix();
 
 			// TODO: if needed, mark object for updating light intersections
-
-			// TODO:
-			// if sorted queue includes distance to camera and bounds changed, mark sorted queue dirty
-			// if sorted queue includes material etc which has changed, mark sorted queue dirty
-			//???or instead of marking the queue can recalc key, and if key changed, sort queue. Optimization for key updating in CRenderQueue::Update()?
-			//Could track changes in a renderable and update key only if changes requre that. Return set of dirty flags from UpdateRenderable? Or store in renderable?
-			//Can be "changes in last update", and clear if no changes happened.
 		}
 
 		// Handle object visibility change

@@ -95,15 +95,9 @@ Render::PRenderable CModelAttribute::CreateRenderable() const
 
 void CModelAttribute::UpdateRenderable(CView& View, Render::IRenderable& Renderable) const
 {
-	//!!!TODO: pass LOD from outside!
-	//???pass only LOD metric and calc LODs for geom & mtl from it and from attr settings?!
-	UPTR LOD = 0;
-
-	//!!!TODO: here if tfm changed could store it directly in a view's uniform buffer, like:
-	// if (LastTfmVer != _pNode->TfmVer)
-	//   View.GetRenderableDataFromGlobalUniformBuffer(SceneRecordHandle->first)["WorldMatrix"] = _pNode->GetWorldTransform();
-	//???or is it a job of a renderer? it knows if we need vertex stream or constant instancing. Can do smth like:
-	// pRenderer->UpdateRenderableData(this, View, ...)
+	//!!!TODO: calc LOD from Renderable.SqDistanceToCamera and from screen radius (to be added to Renderable)!
+	//!!!NB: object can be culled by LOD (i.e. by distance or screen size). Then need to set Renderable.IsVisible here to false and return.
+	UPTR LOD = 0;	
 
 	auto pModel = static_cast<Render::CModel*>(&Renderable);
 
@@ -116,7 +110,7 @@ void CModelAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rendera
 			pModel->pGroup = nullptr;
 		}
 	}
-	else if (!pModel->Mesh || pModel->Mesh->GetUID() != _MeshUID) //!!! || LOD != RememberedLOD
+	else if (!pModel->Mesh || pModel->Mesh->GetUID() != _MeshUID) //!!! || LOD != _LOD
 	{
 		pModel->Mesh = View.GetGraphicsManager()->GetMesh(_MeshUID);
 		pModel->pGroup = _MeshData->GetGroup(_MeshGroupIndex, LOD);
