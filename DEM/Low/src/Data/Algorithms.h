@@ -9,11 +9,58 @@
 namespace DEM::Algo
 {
 
-//template<typename T>
-//auto Erase(std::vector<T>& Vector, typename std::vector<T>::iterator It)
-//{
-//}
-////---------------------------------------------------------------------
+template<typename T>
+DEM_FORCE_INLINE bool VectorFastErase(std::vector<T>& Self, UPTR Index)
+{
+	if (Index >= Self.size()) return false;
+	if (Index < Self.size() - 1) std::swap(Self[Index], Self[Self.size() - 1]);
+	Self.pop_back();
+	return true;
+}
+//---------------------------------------------------------------------
+
+template<typename T>
+DEM_FORCE_INLINE bool VectorFastErase(std::vector<T>& Self, typename std::vector<T>::iterator It)
+{
+	if (It == Self.cend()) return false;
+	if (It != --Self.cend())
+		std::swap(*It, Self.back());
+	Self.pop_back();
+	return true;
+}
+//---------------------------------------------------------------------
+
+template<typename T>
+DEM_FORCE_INLINE bool VectorFastErase(std::vector<T>& Self, const T& Value)
+{
+	return VectorFastErase(Self, std::find(Self.begin(), Self.end(), Value));
+}
+//---------------------------------------------------------------------
+
+// The preferred one for almost sorted collections
+template<typename TCollection>
+void InsertionSort(TCollection& Data)
+{
+	const size_t Size = Data.size();
+	for (size_t i = 1; i < Size; ++i)
+	{
+		size_t j = i - 1;
+		if (Data[i] < Data[j])
+		{
+			auto Value = std::move(Data[i]);
+			do
+			{
+				Data[j + 1] = std::move(Data[j]);
+				if (j == 0) break;
+				--j;
+			}
+			while (Value < Data[j]);
+
+			Data[j + 1] = std::move(Value);
+		}
+	}
+}
+//---------------------------------------------------------------------
 
 // Calls a Callback with iterators to elements from 'a' that do not appear in 'b'
 template<typename TCollection, typename TCallback>

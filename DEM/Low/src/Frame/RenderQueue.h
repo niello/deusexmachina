@@ -119,27 +119,8 @@ public:
 			// Update sorting key. Objects that stopped matching the queue are marked for removal.
 			Record.Key = (!Removed && (_FilterMask & Record.pRenderable->RenderQueueMask)) ? KeyBuilder(std::as_const(Record.pRenderable)) : NO_KEY;
 
-			//!!!TODO PERF: profile! Branching cost vs more instructions.
-			//if (Record.Key != PrevKey) ++KeysChanged;
+			// Bool -> int is always 0 or 1
 			KeysChanged += (Record.Key != PrevKey);
-
-			/*
-			void Test(unsigned int &,int) PROC                             ; Test
-					cmp     DWORD PTR _rnd$[esp-4], 1
-					jne     SHORT $LN2@Test
-					mov     eax, DWORD PTR _val$[esp-4]
-					inc     DWORD PTR [eax]
-			$LN2@Test:
-
-			===========================================
-
-			void Test(unsigned int &,int) PROC                             ; Test
-					mov     eax, DWORD PTR _val$[esp-4]
-					xor     ecx, ecx
-					cmp     DWORD PTR _rnd$[esp-4], 1
-					sete    cl
-					add     DWORD PTR [eax], ecx
-			*/
 		}
 
 		n_assert_dbg(RemoveStartIt == _ToRemove.cend());
@@ -154,12 +135,13 @@ public:
 			Record.Key = KeyBuilder(std::as_const(Record.pRenderable));
 		}
 
-		// Sort ascending, so that records marked for removal with NO_KEY are moved to the tail
-		//!!!TODO PERF:
-		//if (KeysChanged >= GeneralPurposeSortThreshold)
-		std::sort(_Queue.begin(), _Queue.end()); //???try radix sort?
-		//else
-		// SortByAlmostSortedAlgorithm()
+		// Sort ascending, so records marked for removal with NO_KEY will be moved to the tail.
+		// If no more than 1/INV_SHARE_THRESHOLD of keys changed, use optimization for almost sorted _Queue.
+		constexpr size_t INV_SHARE_THRESHOLD = 20;
+		if (KeysChanged * INV_SHARE_THRESHOLD > _Queue.size())
+			std::sort(_Queue.begin(), _Queue.end());
+		else
+			DEM::Algo::InsertionSort(_Queue);
 
 		// Сut the tail where elements marked for removal with NO_KEY are located after sorting
 		auto NoKeyIt = std::lower_bound(_Queue.begin(), _Queue.end(), NO_KEY, [](const auto& Elm, TKey Value) { return Elm.Key < Value; });

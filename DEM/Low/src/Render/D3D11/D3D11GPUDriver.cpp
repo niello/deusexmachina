@@ -1697,7 +1697,7 @@ PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pCompo
 			case EVertexComponentSemantic::BoneWeights:	DeclElement.SemanticName = "BLENDWEIGHT"; break;
 			case EVertexComponentSemantic::BoneIndices:	DeclElement.SemanticName = "BLENDINDICES"; break;
 			case EVertexComponentSemantic::UserDefined:	DeclElement.SemanticName = Component.UserDefinedName; break;
-			default:				return nullptr;
+			default: return nullptr;
 		}
 
 		DeclElement.SemanticIndex = Component.Index;
@@ -1710,7 +1710,7 @@ PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pCompo
 			case EVertexComponentFormat::Float32_4:		DeclElement.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
 			case EVertexComponentFormat::Float16_2:		DeclElement.Format = DXGI_FORMAT_R16G16_FLOAT; break;
 			case EVertexComponentFormat::Float16_4:		DeclElement.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
-			case EVertexComponentFormat::UInt8_4:			DeclElement.Format = DXGI_FORMAT_R8G8B8A8_UINT; break;
+			case EVertexComponentFormat::UInt8_4:		DeclElement.Format = DXGI_FORMAT_R8G8B8A8_UINT; break;
 			case EVertexComponentFormat::UInt8_4_Norm:	DeclElement.Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
 			case EVertexComponentFormat::SInt16_2:		DeclElement.Format = DXGI_FORMAT_R16G16_SINT; break;
 			case EVertexComponentFormat::SInt16_4:		DeclElement.Format = DXGI_FORMAT_R16G16B16A16_SINT; break;
@@ -1718,7 +1718,7 @@ PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pCompo
 			case EVertexComponentFormat::SInt16_4_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16B16A16_SNORM; break;
 			case EVertexComponentFormat::UInt16_2_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16_UNORM; break;
 			case EVertexComponentFormat::UInt16_4_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16B16A16_UNORM; break;
-			default:					return nullptr;
+			default: return nullptr;
 		}
 
 		DeclElement.InputSlot = StreamIndex;

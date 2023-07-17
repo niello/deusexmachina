@@ -140,31 +140,6 @@ DEM_FORCE_INLINE constexpr decltype(auto) ENUM_MASK(T... Values)
 }
 //---------------------------------------------------------------------
 
-template<typename T>
-DEM_FORCE_INLINE bool VectorFastErase(std::vector<T>& Self, UPTR Index)
-{
-	if (Index >= Self.size()) return false;
-	if (Index < Self.size() - 1) std::swap(Self[Index], Self[Self.size() - 1]);
-	Self.pop_back();
-	return true;
-}
-
-template<typename T>
-DEM_FORCE_INLINE bool VectorFastErase(std::vector<T>& Self, typename std::vector<T>::iterator It)
-{
-	if (It == Self.cend()) return false;
-	if (It != --Self.cend())
-		std::swap(*It, Self.back());
-	Self.pop_back();
-	return true;
-}
-
-template<typename T>
-DEM_FORCE_INLINE bool VectorFastErase(std::vector<T>& Self, const T& Value)
-{
-	return VectorFastErase(Self, std::find(Self.begin(), Self.end(), Value));
-}
-
 // Execution results
 
 const UPTR Failure = 0;

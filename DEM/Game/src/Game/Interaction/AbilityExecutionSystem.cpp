@@ -145,7 +145,7 @@ static EActionStatus MoveToTarget(CGameSession& Session, CAbilityInstance& Abili
 		}
 
 		// Movement failed. Current zone can't be reached, try another one.
-		VectorFastErase(AbilityInstance.AvailableZones, AbilityInstance.CurrZoneIndex);
+		Algo::VectorFastErase(AbilityInstance.AvailableZones, AbilityInstance.CurrZoneIndex);
 	}
 
 	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
@@ -200,7 +200,7 @@ static EActionStatus MoveToTarget(CGameSession& Session, CAbilityInstance& Abili
 
 			if (!ObjPolyRef || dtVdist2DSqr(ActionPos.v, NavigablePos) > Radius * Radius)
 			{
-				VectorFastErase(AbilityInstance.AvailableZones, AbilityInstance.CurrZoneIndex);
+				Algo::VectorFastErase(AbilityInstance.AvailableZones, AbilityInstance.CurrZoneIndex);
 				continue;
 			}
 

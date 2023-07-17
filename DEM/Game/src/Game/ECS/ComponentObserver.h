@@ -31,7 +31,7 @@ protected:
 		if (Collected)
 		{
 			_Started.push_back(EntityID);
-			VectorFastErase(_Stopped, EntityID);
+			Algo::VectorFastErase(_Stopped, EntityID);
 		}
 	}
 
@@ -39,7 +39,7 @@ protected:
 	void OnComponentRemoved(HEntity EntityID)
 	{
 		// Check if this removal breaks a full set of observed components for this entity
-		const bool HadAllComponents = VectorFastErase(_Started, EntityID) ||
+		const bool HadAllComponents = Algo::VectorFastErase(_Started, EntityID) ||
 			((std::is_same_v<TComponent, TComponents> || _World.FindComponent<const TComponents>(EntityID))
 				&& ...);
 
