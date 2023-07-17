@@ -20,6 +20,7 @@ protected:
 	PMeshData		_MeshData;
 	PVertexBuffer	_VB;
 	PIndexBuffer	_IB;
+	U32             _SortingKey;
 
 	// For sharing GPU buffers between multiple meshes
 	//UPTR VBOffset;
@@ -32,13 +33,14 @@ public:
 	CMesh();
 	virtual ~CMesh();
 
-	bool					Create(CStrID UID, PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer IndexBuffer, bool HoldRAMCopy = false);
+	bool					Create(CStrID UID, U16 SortingKey, PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer IndexBuffer, bool HoldRAMCopy = false);
 	void					Destroy();
 
 	CStrID                  GetUID() const { return _UID; }
 	PVertexBuffer			GetVertexBuffer() const { return _VB; }
 	PIndexBuffer			GetIndexBuffer() const { return _IB; }
-	const CPrimitiveGroup*	GetGroup(UPTR SubMeshIdx, UPTR LOD = 0) const;
+	const CPrimitiveGroup*  GetGroup(UPTR SubMeshIdx, UPTR LOD = 0) const;
+	U16                     GetSortingKey() const { return _SortingKey; }
 };
 
 typedef Ptr<CMesh> PMesh;

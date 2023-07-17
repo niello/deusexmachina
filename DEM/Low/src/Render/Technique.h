@@ -22,12 +22,13 @@ private:
 	std::vector<PRenderState> _Passes;
 	IPTR                      _MaxLightCount;
 	PShaderParamTable         _Params;
+	U8                        _SortingKey = 0;
 
 	friend class CEffect;
 
 public:
 
-	CTechnique(CStrID Name, std::vector<PRenderState>&& Passes, IPTR MaxLights, PShaderParamTable Params);
+	CTechnique(CStrID Name, U8 SortingKey, std::vector<PRenderState>&& Passes, IPTR MaxLights, PShaderParamTable Params);
 	virtual ~CTechnique() override;
 
 	const CEffect*     GetEffect() const { return _pOwner; }
@@ -36,6 +37,7 @@ public:
 	const auto&        GetPasses() const { return _Passes; }
 	IPTR               GetMaxLightCount() const { return _MaxLightCount; }
 	CShaderParamTable& GetParamTable() const { return *_Params; }
+	U8                 GetSortingKey() const { return _SortingKey; }
 };
 
 typedef Ptr<CTechnique> PTechnique;

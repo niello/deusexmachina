@@ -4,10 +4,11 @@
 namespace Render
 {
 
-CMaterial::CMaterial(CStrID UID, CEffect& Effect, CShaderParamStorage&& Values)
+CMaterial::CMaterial(CStrID UID, U16 SortingKey, CEffect& Effect, CShaderParamStorage&& Values)
 	: _UID(UID)
 	, _Effect(&Effect)
 	, _Values(std::move(Values))
+	, _SortingKey(SortingKey)
 {
 	n_assert(&_Effect->GetMaterialParamTable() == &_Values.GetParamTable());
 }

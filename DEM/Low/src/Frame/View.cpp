@@ -30,9 +30,45 @@ namespace Frame
 //!!!DBG TMP!
 struct CDummyKey32
 {
-	//using TKey = U32;
+	DEM_FORCE_INLINE U32 operator()(const Render::IRenderable* /*pRenderable*/) const { return 0; }
+};
+//---------------------------------------------------------------------
 
-	U32 operator()(const Render::IRenderable* /*pRenderable*/) const { return 0; }
+//???how to sort opaques for depth prepass?!
+// - use base material and accept suboptimality
+// - pass CView into key generator and use overrides
+// - add info about skinning to base renderable and use it to separate static and skinned tech into exactly 2 ranges (the only difference in opaques for depth)
+//!!!later skinning might be made with StreamOutput, and in depth prepass all will be processed as static! Don't complicate things now?!
+//???maybe for cross-type sortings like distance use the current scheme, and for type-specific, like with models, materials etc,
+//can use more separate queues splitted by type. But how to bucket objects based on type without dynamic cast?! Probably no way.
+
+struct CBackToFrontKey32
+{
+	DEM_FORCE_INLINE U32 operator()(const Render::IRenderable* pRenderable) const
+	{
+		// Exploit the trick that we can compare valid positive floats as integers for speed-up
+		// TODO C++20: use std::bit_cast
+		static_assert(sizeof(float) == sizeof(U32));
+		union { float f; U32 i; } Tmp;
+		Tmp.f = pRenderable->SqDistanceToCamera;
+
+		// For back to front sorting we invert values
+		return std::numeric_limits<U32>().max() - Tmp.i;
+	}
+};
+//---------------------------------------------------------------------
+
+// TODO: look at http://programming.sirrida.de/calcperm.php for possible improvements
+struct CMaterialKey32
+{
+	DEM_FORCE_INLINE U32 operator()(const Render::IRenderable* pRenderable) const
+	{
+		// Sorting order:
+		// 1. ( 8 bits) Tech, with all techs of the same effect being next to each other
+		// 2. (12 bits) Material, with index unique inside the effect, but we are already sorted by tech and therefore by effect
+		// 3. (12 bits) Primitive group, with almost guaranteed globally unique key and all groups of the same VB+IB being next to each other
+		return (pRenderable->GeometryKey & 0xfff);
+	}
 };
 //---------------------------------------------------------------------
 
@@ -85,16 +121,17 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 	for (auto [Type, Index] : _RenderPath->_RenderQueues)
 	{
 		//???TODO: move to factory later? it is not yet well suited for templated classes.
+		//???need separated opaque and atest in a color phase?!
 		if (Type == "OpaqueDepthPrePass")
 			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque));
 		else if (Type == "AlphaTestDepthPrePass")
 			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaTest));
 		else if (Type == "OpaqueMaterial")
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque, Render::EEffectType::EffectType_Skybox));
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque, Render::EEffectType::EffectType_Skybox));
 		else if (Type == "AlphaTestMaterial")
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaTest));
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaTest));
 		else if (Type == "AlphaBackToFront")
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaBlend));
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CBackToFrontKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaBlend));
 		else
 		{
 			::Sys::Error("CView::CView() > Unknown render queue type!");

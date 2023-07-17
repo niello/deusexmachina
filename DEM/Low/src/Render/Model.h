@@ -26,9 +26,6 @@ public:
 	const matrix44*                pSkinPalette = nullptr; // nullptr if no skin
 	U32                            BoneCount = 0;
 	U32                            ShaderTechIndex = INVALID_INDEX_T<U32>;
-
-
-	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling (Skinned, EnableInstancing etc too?)
 };
 
 }

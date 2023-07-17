@@ -131,6 +131,7 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 		pTerrain->CDLODData = nullptr;
 		pTerrain->PatchMesh = nullptr;
 		pTerrain->QuarterPatchMesh = nullptr;
+		pTerrain->GeometryKey = 0;
 	}
 	else if (!pTerrain->CDLODData || pTerrain->CDLODData != _CDLODData)
 	{
@@ -155,6 +156,8 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 			ResMgr.GetResourceManager()->RegisterResource(QuarterMeshUID.CStr(), n_new(Resources::CMeshGeneratorQuadPatch(QPatchSize)));
 
 		pTerrain->QuarterPatchMesh = ResMgr.GetMesh(QuarterMeshUID);
+
+		pTerrain->GeometryKey = pTerrain->PatchMesh->GetSortingKey();
 	}
 }
 //---------------------------------------------------------------------

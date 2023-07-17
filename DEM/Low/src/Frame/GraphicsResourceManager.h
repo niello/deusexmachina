@@ -52,13 +52,17 @@ private:
 	std::unordered_map<CStrID, Render::PEffect>   Effects;
 	std::unordered_map<CStrID, Render::PMaterial> Materials;
 	std::unordered_map<CStrID, PRenderPath>       RenderPaths;
+	std::unordered_map<CStrID, U16>               _MaterialKeyCounters; // Per effect
+
+	U16 _MeshKeyCounter = 1;
+	U8  _TechKeyCounter = 1;
 
 	bool LoadShaderParamValues(IO::CBinaryReader& Reader, const Render::CShaderParamTable& MaterialTable, Render::CShaderParamValues& Out);
 	bool LoadRenderStateDesc(IO::CBinaryReader& Reader, Render::CRenderStateDesc& Out, bool LoadParamTables);
 
-	Render::PEffect           LoadEffect(CStrID UID);
-	Render::PMaterial         LoadMaterial(CStrID UID);
-	PRenderPath               LoadRenderPath(CStrID UID);
+	Render::PEffect LoadEffect(CStrID UID);
+	Render::PMaterial LoadMaterial(CStrID UID);
+	PRenderPath LoadRenderPath(CStrID UID);
 
 public:
 

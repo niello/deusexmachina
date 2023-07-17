@@ -16,28 +16,23 @@ class IRenderable: public Core::CRTTIBaseClass
 
 protected:
 
-	//enum //???not all flags applicable to all renderables?
-	//{
-	//	//AddedAsAlwaysVisible	= 0x04,	// To avoid searching in SPS AlwaysVisible array at each UpdateInSPS() call
-	//	DoOcclusionCulling		= 0x08,
-	//	CastShadow				= 0x10,
-	//	ReceiveShadow			= 0x20 //???needed for some particle systems?
-	//};
-
-	//Data::CFlags Flags;
+	// TODO: bitflags ShadowCaster, ShadowReceiver, DoOcclusionCulling
 
 public:
 
-	U32  RenderQueueMask = 0; // Cached mask for fast access. Calculated from an effect type in a material.
-	U32  BoundsVersion = 0;
-	bool IsVisible = false;
+	//???move material here? everything needs a material - texture or customization params. Or not everything?
+
+	float SqDistanceToCamera = 0.f; // For LOD, distance culling, render queue sorting and custom use
+	U32   RenderQueueMask = 0;      // Cached mask for fast access. Calculated from an effect type in a material.
+	U32   BoundsVersion = 0;
+	U16   GeometryKey = 0; // For render queue sorting. Optimal as long as groups aren't added to existing meshes
+	bool  IsVisible = false;
 
 	//!!!DBG TMP! Check transform version before rewriting, to save unnecessary ops? Also need better representation!
 	matrix44 Transform;
 
 	//!!!DBG TMP! clean! what is renderer specific? what is renderable specific?
-	IRenderer* pRenderer;
-	float SqDistanceToCamera;
+	IRenderer* pRenderer; //!!!instead of renderer pointer could store U8 index and phase would pick renderers by index. More cache friendliness!
 	U16 LightIndexBase;		// Memory is actually allocated inside a CView, we store index, not ptr, to handle reallocations
 	U8 LightCount;			// If zero, LightIndexBase is undefined
 };

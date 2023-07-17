@@ -109,7 +109,7 @@ enum EClearFlag
 };
 
 // Don't change order and starting index
-enum EPrimitiveTopology
+enum EPrimitiveTopology : U8
 {
 	Prim_PointList,
 	Prim_LineList,
@@ -350,6 +350,7 @@ struct CPrimitiveGroup
 	UPTR				FirstIndex;
 	UPTR				IndexCount;
 	EPrimitiveTopology	Topology;
+	U8                  IndexInMesh; // A sequential index of this group in a mesh, used for sorting in a renderer
 	CAABB				AABB;
 };
 

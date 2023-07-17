@@ -21,10 +21,11 @@ protected:
 	CStrID              _UID;
 	PEffect             _Effect;
 	CShaderParamStorage _Values;
+	U16                 _SortingKey = 0;
 
 public:
 
-	CMaterial(CStrID UID, CEffect& Effect, CShaderParamStorage&& Values);
+	CMaterial(CStrID UID, U16 SortingKey, CEffect& Effect, CShaderParamStorage&& Values);
 	virtual ~CMaterial() override;
 
 	bool     Apply() { return _Values.Apply(); }
@@ -32,6 +33,7 @@ public:
 	CStrID   GetUID() const { return _UID; }
 	bool     IsValid() const { return _Effect.IsValidPtr(); }
 	CEffect* GetEffect() const { return _Effect.Get(); }
+	U16      GetSortingKey() const { return _SortingKey; }
 };
 
 }

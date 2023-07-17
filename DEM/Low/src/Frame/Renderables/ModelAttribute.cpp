@@ -108,12 +108,14 @@ void CModelAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rendera
 		{
 			pModel->Mesh = nullptr;
 			pModel->pGroup = nullptr;
+			pModel->GeometryKey = 0;
 		}
 	}
 	else if (!pModel->Mesh || pModel->Mesh->GetUID() != _MeshUID) //!!! || LOD != _LOD
 	{
 		pModel->Mesh = View.GetGraphicsManager()->GetMesh(_MeshUID);
 		pModel->pGroup = _MeshData->GetGroup(_MeshGroupIndex, LOD);
+		pModel->GeometryKey = pModel->Mesh->GetSortingKey() + pModel->pGroup->IndexInMesh;
 	}
 
 	static const CStrID InputSet_Model("Model");

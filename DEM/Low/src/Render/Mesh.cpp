@@ -14,11 +14,12 @@ CMesh::~CMesh()
 }
 //---------------------------------------------------------------------
 
-bool CMesh::Create(CStrID UID, PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer IndexBuffer, bool HoldRAMCopy)
+bool CMesh::Create(CStrID UID, U16 SortingKey, PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer IndexBuffer, bool HoldRAMCopy)
 {
 	if (!VertexBuffer || !Data || !Data->GetSubMeshCount() || !Data->GetLODCount()) FAIL;
 
 	_UID = UID;
+	_SortingKey = SortingKey;
 	_MeshData = Data;
 	_VB = VertexBuffer;
 	_IB = IndexBuffer;

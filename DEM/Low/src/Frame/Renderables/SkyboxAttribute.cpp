@@ -56,7 +56,7 @@ void CSkyboxAttribute::UpdateRenderable(CView& View, Render::IRenderable& Render
 
 	if (!pSkybox->Mesh)
 	{
-		CStrID MeshUID("#Mesh_BoxCW");
+		static const CStrID MeshUID("#Mesh_BoxCW");
 		if (!View.GetGraphicsManager()->GetResourceManager()->FindResource(MeshUID))
 		{
 			// NB: CW box is created, because rendering is CCW, but front sides of polygons must be inside the skybox
@@ -64,6 +64,7 @@ void CSkyboxAttribute::UpdateRenderable(CView& View, Render::IRenderable& Render
 		}
 
 		pSkybox->Mesh = View.GetGraphicsManager()->GetMesh(MeshUID);
+		pSkybox->GeometryKey = pSkybox->Mesh->GetSortingKey();
 	}
 
 	// Initialize material

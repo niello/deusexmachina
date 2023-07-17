@@ -21,6 +21,9 @@ void CMeshData::Destroy()
 
 void CMeshData::InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount, UPTR LODCount, bool UseMapping, bool UpdateAABBs)
 {
+	pGroupLODMapping = nullptr;
+	SAFE_FREE(pGroups);
+
 	_SubMeshCount = SubMeshCount;
 	_LODCount = LODCount;
 
@@ -88,6 +91,9 @@ void CMeshData::InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount
 	pGroups = (CPrimitiveGroup*)n_malloc(TotalSize);
 	memcpy(pGroups, pData, TotalSize);
 	if (UseMapping) pGroupLODMapping = (CPrimitiveGroup**)(pGroups + _GroupCount);
+
+	for (U8 i = 0; i < Count; ++i)
+		pGroups[i].IndexInMesh = i;
 }
 //---------------------------------------------------------------------
 

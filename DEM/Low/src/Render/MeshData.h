@@ -56,6 +56,7 @@ public:
 	const CPrimitiveGroup*	GetGroup(UPTR SubMeshIdx, UPTR LOD = 0) const;
 	UPTR					GetSubMeshCount() const { return _SubMeshCount; }
 	UPTR					GetLODCount() const { return _LODCount; }
+	UPTR					GetGroupCount() const { return _GroupCount; }
 
 	UPTR                    GetVertexSize() const;
 

@@ -69,11 +69,15 @@ Render::PMesh CGraphicsResourceManager::GetMesh(CStrID UID)
 		IB = GPU->CreateIndexBuffer(MeshData->IndexType, MeshData->IndexCount, Render::Access_GPU_Read, MeshData->IBData->GetPtr());
 
 	Render::PMesh Mesh(new Render::CMesh());
-	const bool Result = Mesh->Create(UID, MeshData, VB, IB);
+	const bool Result = Mesh->Create(UID, _MeshKeyCounter, MeshData, VB, IB);
 
 	MeshData->ReleaseBuffer();
 
 	if (!Result) return nullptr;
+
+	// Sorting keys for mesh groups are generated as mesh key + group index.
+	// NB: sorting may be suboptimal if new groups are added to existing meshes because of key clash with other groups.
+	_MeshKeyCounter += MeshData->GetGroupCount();
 
 	Meshes.emplace(UID, Mesh);
 
@@ -490,6 +494,9 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 	std::map<CStrID, Render::PTechnique> Techs;
 	Render::PShaderParamTable MaterialParams;
 
+	// Don't modify _TechKeyCounter until we are sure that the effect will be loaded successfully
+	auto NextFreeTechKey = _TechKeyCounter;
+
 	for (const auto& Pair : Offsets)
 	{
 		MaterialParams.Reset();
@@ -598,7 +605,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 			for (auto RSIndex : Pair.second.RSIndices)
 				Passes.push_back(RenderStates[RSIndex]);
 
-			Techs.emplace(Pair.first, new Render::CTechnique(CStrID::Empty, std::move(Passes), -1, Pair.second.Params));
+			Techs.emplace(Pair.first, new Render::CTechnique(Pair.first, NextFreeTechKey++, std::move(Passes), -1, Pair.second.Params));
 		}
 
 		break;
@@ -612,9 +619,12 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 	Reader.GetStream().Seek(MaterialDefaultsOffset, IO::Seek_Begin);
 
 	Render::CShaderParamValues MaterialDefaults;
-	if (!LoadShaderParamValues(Reader, *MaterialParams, MaterialDefaults)) FAIL;
+	if (!LoadShaderParamValues(Reader, *MaterialParams, MaterialDefaults)) return nullptr;
 
 	// Create an effect from the loaded data
+
+	_TechKeyCounter = NextFreeTechKey;
+	_MaterialKeyCounters.emplace(UID, 1);
 
 	return Render::PEffect(new Render::CEffect(EffectType, MaterialParams, std::move(MaterialDefaults), std::move(Techs)));
 }
@@ -700,7 +710,7 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 		Storage.SetSampler(i, (It != Values.SamplerValues.cend()) ? It->second.Get() : Effect->GetSamplerDefaultValue(ID));
 	}
 
-	return new Render::CMaterial(UID, *Effect, std::move(Storage));
+	return new Render::CMaterial(UID, _MaterialKeyCounters[EffectID]++, *Effect, std::move(Storage));
 }
 //---------------------------------------------------------------------
 
