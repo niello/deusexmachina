@@ -111,6 +111,8 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 			pTerrain->Material = nullptr;
 			pTerrain->ShaderTechIndex = INVALID_INDEX_T<U32>;
 			pTerrain->RenderQueueMask = 0;
+			pTerrain->MaterialKey = 0;
+			pTerrain->ShaderTechKey = 0;
 		}
 	}
 	else if (!pTerrain->Material || pTerrain->Material->GetUID() != _MaterialUID) //!!! || LOD != RememberedLOD? Or terrain manages its material LOD in a renderer?
@@ -122,6 +124,8 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 		{
 			pTerrain->ShaderTechIndex = View.RegisterEffect(*pTerrain->Material->GetEffect(), InputSet_CDLOD);
 			pTerrain->RenderQueueMask = (1 << pTerrain->Material->GetEffect()->GetType());
+			pTerrain->MaterialKey = pTerrain->Material->GetSortingKey();
+			pTerrain->ShaderTechKey = View.GetShaderTechCache()[pTerrain->ShaderTechIndex]->GetSortingKey(); //???FIXME: now we use non-overridden tech key for all phases
 		}
 	}
 

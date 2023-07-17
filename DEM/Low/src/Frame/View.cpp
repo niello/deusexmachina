@@ -27,21 +27,6 @@
 namespace Frame
 {
 
-//!!!DBG TMP!
-struct CDummyKey32
-{
-	DEM_FORCE_INLINE U32 operator()(const Render::IRenderable* /*pRenderable*/) const { return 0; }
-};
-//---------------------------------------------------------------------
-
-//???how to sort opaques for depth prepass?!
-// - use base material and accept suboptimality
-// - pass CView into key generator and use overrides
-// - add info about skinning to base renderable and use it to separate static and skinned tech into exactly 2 ranges (the only difference in opaques for depth)
-//!!!later skinning might be made with StreamOutput, and in depth prepass all will be processed as static! Don't complicate things now?!
-//???maybe for cross-type sortings like distance use the current scheme, and for type-specific, like with models, materials etc,
-//can use more separate queues splitted by type. But how to bucket objects based on type without dynamic cast?! Probably no way.
-
 struct CBackToFrontKey32
 {
 	DEM_FORCE_INLINE U32 operator()(const Render::IRenderable* pRenderable) const
@@ -49,25 +34,49 @@ struct CBackToFrontKey32
 		// Exploit the trick that we can compare valid positive floats as integers for speed-up
 		// TODO C++20: use std::bit_cast
 		static_assert(sizeof(float) == sizeof(U32));
-		union { float f; U32 i; } Tmp;
-		Tmp.f = pRenderable->SqDistanceToCamera;
+		union { float f; U32 i; } Distance;
+		Distance.f = pRenderable->DistanceToCamera;
 
 		// For back to front sorting we invert values
-		return std::numeric_limits<U32>().max() - Tmp.i;
+		return std::numeric_limits<U32>().max() - Distance.i;
 	}
 };
 //---------------------------------------------------------------------
 
-// TODO: look at http://programming.sirrida.de/calcperm.php for possible improvements
 struct CMaterialKey32
 {
 	DEM_FORCE_INLINE U32 operator()(const Render::IRenderable* pRenderable) const
 	{
+		// TODO: if (pRenderable->ChangedFlags & (Material | Mesh))
+
 		// Sorting order:
 		// 1. ( 8 bits) Tech, with all techs of the same effect being next to each other
 		// 2. (12 bits) Material, with index unique inside the effect, but we are already sorted by tech and therefore by effect
 		// 3. (12 bits) Primitive group, with almost guaranteed globally unique key and all groups of the same VB+IB being next to each other
-		return (pRenderable->GeometryKey & 0xfff);
+		return (static_cast<U32>(pRenderable->ShaderTechKey) << 24) |
+			((static_cast<U32>(pRenderable->MaterialKey) & 0xfff) << 12) |
+			(static_cast<U32>(pRenderable->GeometryKey) & 0xfff);
+	}
+};
+//---------------------------------------------------------------------
+
+// Alpha-tested depth pre-pass should benefit from front to back sorting, especially for dense foliage,
+// because Z-fail will prevent redundant pixel shader execution which is necessary for alpha testing.
+// TODO PERF: on x86 we use 64-bit key because we expect the profit to be higher than sorting costs. Needs profiling.
+struct CAlphaTestDepthPrePass64
+{
+	DEM_FORCE_INLINE U64 operator()(const Render::IRenderable* pRenderable) const
+	{
+		// Exploit the trick that we can compare valid positive floats as integers for speed-up
+		// TODO C++20: use std::bit_cast
+		static_assert(sizeof(float) == sizeof(U32));
+		union { float f; U32 i; } Distance;
+		Distance.f = pRenderable->DistanceToCamera;
+
+		return (static_cast<U64>(pRenderable->ShaderTechKey) << 56) |
+			((static_cast<U64>(pRenderable->MaterialKey) & 0xfff) << 44) |
+			((static_cast<U64>(pRenderable->GeometryKey) & 0xfff) << 32) |
+			Distance.i;
 	}
 };
 //---------------------------------------------------------------------
@@ -121,11 +130,13 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 	for (auto [Type, Index] : _RenderPath->_RenderQueues)
 	{
 		//???TODO: move to factory later? it is not yet well suited for templated classes.
-		//???need separated opaque and atest in a color phase?!
+		//!!!TODO: for x64 use 64-bit keys with more counter space for meshes and materials!
+		//???need separated opaque and atest in a color phase?! atest is in render state, sorting by tech already happens.
 		if (Type == "OpaqueDepthPrePass")
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque));
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque));
 		else if (Type == "AlphaTestDepthPrePass")
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CDummyKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaTest));
+			// FIXME: also would benefit from FtB sorting here, see CAlphaTestDepthPrePass64, but can't use on 32-bit!
+			_RenderQueues[Index] = std::make_unique<CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaTest));
 		else if (Type == "OpaqueMaterial")
 			_RenderQueues[Index] = std::make_unique<CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque, Render::EEffectType::EffectType_Skybox));
 		else if (Type == "AlphaTestMaterial")
@@ -233,12 +244,31 @@ bool CView::PrecreateRenderObjects()
 U32 CView::RegisterEffect(const Render::CEffect& Effect, CStrID InputSet)
 {
 	// View only tracks unique combinations of a source material and an input set. Passes may
-	// apply material overrides when resolveng these pairs into actual shader techniques.
+	// apply material overrides when resolving these pairs into actual shader techniques.
 	auto Key = std::make_pair(&Effect, InputSet);
 	auto It = _EffectMap.find(Key);
 	if (It != _EffectMap.cend()) return It->second;
+
 	const auto NewIndex = static_cast<U32>(_EffectMap.size());
 	_EffectMap.emplace(std::move(Key), NewIndex);
+
+	// Resolve techniques for the new effect and input set
+	for (UPTR ShaderTechCacheIndex = 0; ShaderTechCacheIndex < _ShaderTechCache.size(); ++ShaderTechCacheIndex)
+	{
+		const Render::CEffect* pEffect = &Effect;
+
+		// Process overrides
+		if (ShaderTechCacheIndex > 0)
+		{
+			const auto& EffectOverrides = _RenderPath->EffectOverrides[ShaderTechCacheIndex - 1];
+			auto OverrideIt = EffectOverrides.find(pEffect->GetType());
+			if (OverrideIt != EffectOverrides.cend())
+				pEffect = _GraphicsMgr->GetEffect(OverrideIt->second).Get();
+		}
+
+		_ShaderTechCache[ShaderTechCacheIndex].push_back(pEffect ? pEffect->GetTechByInputSet(InputSet) : nullptr);
+	}
+
 	return NewIndex;
 }
 //---------------------------------------------------------------------
@@ -501,9 +531,11 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			// Calculate LOD prerequisites. They depend only on camera and object bounds.
 			if (pRenderable->IsVisible)
 			{
-				pRenderable->SqDistanceToCamera = Math::SqDistancePointAABB(_EyePos, Record.BoxCenter, Record.BoxExtent);
+				pRenderable->DistanceToCamera = std::sqrtf(Math::SqDistancePointAABB(_EyePos, Record.BoxCenter, Record.BoxExtent));
 
-				// TODO: calc screen size for LOD, see UE, there is some very simple code for sphere. Called "screen radius" or so.
+				const auto& Proj = _pCamera->GetProjMatrix();
+				const float ScreenScale = std::max(0.5f * Proj.m[0][0], 0.5f * Proj.m[1][1]);
+				pRenderable->RelScreenRadius = ScreenScale * Record.SphereRadius / std::max(pRenderable->DistanceToCamera, 1.0f);
 			}
 		}
 
@@ -592,40 +624,6 @@ void CView::UpdateLights(bool ViewProjChanged)
 }
 //---------------------------------------------------------------------
 
-void CView::UpdateShaderTechCache()
-{
-	// Resolve techniques for newly registered effects
-	for (UPTR ShaderTechCacheIndex = 0; ShaderTechCacheIndex < _ShaderTechCache.size(); ++ShaderTechCacheIndex)
-	{
-		auto& TechCache = _ShaderTechCache[ShaderTechCacheIndex];
-		const auto CacheSize = TechCache.size();
-		if (CacheSize < _EffectMap.size())
-		{
-			TechCache.resize(_EffectMap.size(), nullptr);
-			for (const auto& [EffectAndInputSet, Index] : _EffectMap)
-			{
-				if (Index >= CacheSize)
-				{
-					const Render::CEffect* pEffect = EffectAndInputSet.first;
-
-					// Process overrides
-					if (ShaderTechCacheIndex > 0)
-					{
-						const auto& EffectOverrides = _RenderPath->EffectOverrides[ShaderTechCacheIndex - 1];
-						auto OverrideIt = EffectOverrides.find(pEffect->GetType());
-						if (OverrideIt != EffectOverrides.cend())
-							pEffect = _GraphicsMgr->GetEffect(OverrideIt->second).Get();
-					}
-
-					if (pEffect)
-						TechCache[Index] = pEffect->GetTechByInputSet(EffectAndInputSet.second);
-				}
-			}
-		}
-	}
-}
-//---------------------------------------------------------------------
-
 bool CView::Render()
 {
 	if (!_RenderPath || !_pScene || !_pCamera) return false;
@@ -645,8 +643,6 @@ bool CView::Render()
 
 	UpdateLights(ViewProjChanged);
 	UpdateRenderables(ViewProjChanged);
-
-	UpdateShaderTechCache();
 
 	//!!!TODO PERF: queues are independent, no write access to renderables is needed, can parallelize!
 	for (auto& Queue : _RenderQueues)

@@ -205,6 +205,9 @@ CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CSpatialRecord>
 	Record.BoxCenter = acl::vector_add(HalfMax, HalfMin);
 	Record.BoxExtent = acl::vector_sub(HalfMax, HalfMin);
 
+	// FIXME: get from outside, as GlobalBox, it will be more optimal, potentially much less space wasted!
+	Record.SphereRadius = acl::vector_length3(Record.BoxExtent);
+
 	// Check bounds validity
 	if (!acl::vector_any_less_than3(Record.BoxExtent, acl::vector_set(0.f))) //!!!TODO: can check negative sign bits by mask!
 	{
@@ -255,6 +258,9 @@ void CGraphicsScene::UpdateObjectBounds(HRecord Handle, const CAABB& GlobalBox)
 	Record.BoxCenter = BoxCenter;
 	Record.BoxExtent = BoxExtent;
 	Record.BoundsVersion = BoundsValid ? std::max<U32>(1, Record.BoundsVersion + 1) : 0;
+
+	// FIXME: get from outside, as GlobalBox, it will be more optimal, potentially much less space wasted!
+	Record.SphereRadius = acl::vector_length3(Record.BoxExtent);
 
 	const auto NodeMortonCode = BoundsValid ? CalculateMortonCode(Record.BoxCenter, Record.BoxExtent) : 0;
 	if (Record.NodeMortonCode != NodeMortonCode)

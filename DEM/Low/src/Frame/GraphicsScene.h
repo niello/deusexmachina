@@ -52,6 +52,7 @@ public:
 		acl::Vector4_32        BoxCenter;
 		acl::Vector4_32        BoxExtent;
 		Scene::CNodeAttribute* pAttr = nullptr;
+		float                  SphereRadius = 0.f;
 		TMorton                NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
 		U32                    NodeIndex = NO_SPATIAL_TREE_NODE;
 		U32                    BoundsVersion = 1;  // 0 for invalid bounds (e.g. infinite)

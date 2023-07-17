@@ -114,7 +114,6 @@ protected:
 	void SynchronizeLights();
 	void UpdateRenderables(bool ViewProjChanged);
 	void UpdateLights(bool ViewProjChanged);
-	void UpdateShaderTechCache();
 
 public:
 

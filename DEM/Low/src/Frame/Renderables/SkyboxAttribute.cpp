@@ -75,6 +75,8 @@ void CSkyboxAttribute::UpdateRenderable(CView& View, Render::IRenderable& Render
 			pSkybox->Material = nullptr;
 			pSkybox->ShaderTechIndex = INVALID_INDEX_T<U32>;
 			pSkybox->RenderQueueMask = 0;
+			pSkybox->MaterialKey = 0;
+			pSkybox->ShaderTechKey = 0;
 		}
 	}
 	else if (!pSkybox->Material || pSkybox->Material->GetUID() != _MaterialUID)
@@ -86,6 +88,8 @@ void CSkyboxAttribute::UpdateRenderable(CView& View, Render::IRenderable& Render
 		{
 			pSkybox->ShaderTechIndex = View.RegisterEffect(*pSkybox->Material->GetEffect(), InputSet_Skybox);
 			pSkybox->RenderQueueMask = (1 << pSkybox->Material->GetEffect()->GetType());
+			pSkybox->MaterialKey = pSkybox->Material->GetSortingKey();
+			pSkybox->ShaderTechKey = View.GetShaderTechCache()[pSkybox->ShaderTechIndex]->GetSortingKey(); //???FIXME: now we use non-overridden tech key for all phases
 		}
 	}
 }

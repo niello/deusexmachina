@@ -146,6 +146,8 @@ void CModelAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rendera
 			pModel->Material = nullptr;
 			pModel->ShaderTechIndex = INVALID_INDEX_T<U32>;
 			pModel->RenderQueueMask = 0;
+			pModel->MaterialKey = 0;
+			pModel->ShaderTechKey = 0;
 		}
 	}
 	else if (!pModel->Material || pModel->Material->GetUID() != _MaterialUID || PrevInputSet != InputSet) //!!! || LOD != RememberedLOD
@@ -156,6 +158,8 @@ void CModelAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rendera
 		{
 			pModel->ShaderTechIndex = View.RegisterEffect(*pModel->Material->GetEffect(), InputSet);
 			pModel->RenderQueueMask = (1 << pModel->Material->GetEffect()->GetType());
+			pModel->MaterialKey = pModel->Material->GetSortingKey();
+			pModel->ShaderTechKey = View.GetShaderTechCache()[pModel->ShaderTechIndex]->GetSortingKey(); //???FIXME: now we use non-overridden tech key for all phases
 		}
 	}
 }
