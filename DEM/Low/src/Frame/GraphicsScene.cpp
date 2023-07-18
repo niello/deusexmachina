@@ -165,6 +165,8 @@ U32 CGraphicsScene::AddSingleObjectToNode(TMorton NodeMortonCode, TMorton StopMo
 	// Create missing parent nodes
 	auto ParentIndex = ExistingNodeIndex;
 	auto FreeIndex = _TreeNodes.first_free_index(ParentIndex);
+	if (FreeIndex != decltype(_TreeNodes)::INVALID_INDEX)
+		_SpatialTreeRebuildVersion = std::max<U32>(1, _SpatialTreeRebuildVersion + 1); // Existing nodes changed
 	while (--MissingNodes)
 	{
 		const auto NextFreeIndex = _TreeNodes.next_free_index(FreeIndex);
@@ -348,7 +350,7 @@ void CGraphicsScene::TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum
 {
 	n_assert2_dbg(!_TreeNodes.empty(), "CGraphicsScene::TestSpatialTreeVisibility() should not be called before CGraphicsScene::Init()!");
 
-	//const size_t CachedCount = NodeVisibility.size() / 2;
+	const size_t CachedCount = NodeVisibility.size() / 2;
 
 	// Cell can have 4 frustum culling states, for which 2 bits are enough. And we use clever meanings for
 	// individual bits inspired by UE, 'is inside' and 'is outside', so that we have the next states:
@@ -365,22 +367,24 @@ void CGraphicsScene::TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum
 
 	const float NegWorldExtentAlongLookAxis = acl::vector_dot3(acl::vector_abs(Frustum.LookAxis), NegWorldExtent4);
 
-	// Process the root outside the loop to simplify conditions inside
-	// FIXME: improve writing, clip mask already has both bits for NodeVisibility element
-	const auto ClipRoot = ClipCube(_TreeNodes[0].Bounds, ProjectedNegWorldExtent, NegWorldExtentAlongLookAxis, Frustum);
-	NodeVisibility[0] = ClipRoot & EClipStatus::Inside;
-	NodeVisibility[1] = ClipRoot & EClipStatus::Outside;
+	// Skip cached nodes. For CachedCount == 0 const_iterator_at is equal to cbegin.
+	auto ItNode = _TreeNodes.const_iterator_at(CachedCount);
+	if (!CachedCount)
+	{
+		// Process the root outside the loop to simplify conditions inside
+		// FIXME: improve writing, clip mask already has both bits for NodeVisibility element
+		const auto ClipRoot = ClipCube(_TreeNodes[0].Bounds, ProjectedNegWorldExtent, NegWorldExtentAlongLookAxis, Frustum);
+		NodeVisibility[0] = ClipRoot & EClipStatus::Inside;
+		NodeVisibility[1] = ClipRoot & EClipStatus::Outside;
 
-	// Skip the root as it is already processed
-	for (auto ItNode = ++_TreeNodes.cbegin(); ItNode != _TreeNodes.cend(); ++ItNode)
+		// Skip the root as it is already processed
+		++ItNode;
+	}
+
+	for (; ItNode != _TreeNodes.cend(); ++ItNode)
 	{
 		//!!!DBG TMP! CSparseArray2 guarantees the order, but we check twice.
 		n_assert_dbg(ItNode->ParentIndex < ItNode.get_index());
-
-		// FIXME: what if node is removed and another node is added at the same index. Cache needs to be invalidated. Skip caching for now.
-		//// Don't update nodes cached from previous frames
-		//if (ItNode.get_index() < CachedCount && (NodeVisibility[ItNode.get_index() * 2] || NodeVisibility[ItNode.get_index() * 2 + 1]))
-		//	continue;
 
 		const bool IsParentInside = NodeVisibility[ItNode->ParentIndex * 2];
 		const bool IsParentOutside = NodeVisibility[ItNode->ParentIndex * 2 + 1];

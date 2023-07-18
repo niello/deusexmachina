@@ -77,6 +77,7 @@ protected:
 
 	UPTR  _NextRenderableUID = 1; // UID 0 means no UID assigned, so start from 1
 	UPTR  _NextLightUID = 1;      // UID 0 means no UID assigned, so start from 1
+	U32   _SpatialTreeRebuildVersion = 1; // Grows when existing nodes in _TreeNodes change, to invalidate visibility caches in views
 
 	TMorton CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const noexcept;
 	U32     CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex);
@@ -104,6 +105,7 @@ public:
 	acl::Vector4_32 CalcNodeBounds(TMorton MortonCode) const;
 	CAABB           GetNodeAABB(U32 NodeIndex, bool Loose = false) const;
 	CAABB           GetNodeAABB(acl::Vector4_32Arg0 Bounds, bool Loose = false) const;
+	U32             GetSpatialTreeRebuildVersion() const { return _SpatialTreeRebuildVersion; }
 
 	void            TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum, std::vector<bool>& NodeVisibility) const;
 };

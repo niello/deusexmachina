@@ -90,6 +90,7 @@ protected:
 	CArray<Render::CLightRecord>				LightCache;
 	CArray<Render::CImageBasedLight*>			EnvironmentCache;
 
+	U32                                         _SpatialTreeRebuildVersion = 0; // For spatial tree node visibility cache invalidation
 	U32                                         _CameraTfmVersion = 0;
 
 	friend class CGraphicsResourceManager;

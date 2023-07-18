@@ -384,25 +384,21 @@ void CView::SynchronizeLights()
 	DEM::Algo::SortedUnion(_pScene->GetLights(), _Lights, [](const auto& a, const auto& b) { return a.first < b.first; },
 		[this](auto ItSceneObject, auto ItViewObject)
 	{
-		const CGraphicsScene::CSpatialRecord* pRecord = nullptr;
-		Render::CLight* pLight = nullptr;
-
 		if (ItSceneObject == _pScene->GetLights().cend())
 		{
+			// TODO: erase this light from hardawre constant buffer and from all objects' light lists!
+
 			// An attribute was removed from a scene, remove its associated GPU light instance
 			// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one
 			ItViewObject->second.reset();
 			_LightNodePool.push_back(_Lights.extract(ItViewObject));
-
-			// TODO: erase this light from hardawre constant buffer and from all objects' light lists!
 		}
 		else if (ItViewObject == _Lights.cend())
 		{
 			// A new object in a scene
 			const auto UID = ItSceneObject->first;
-			pRecord = &ItSceneObject->second;
 
-			auto pAttr = static_cast<CLightAttribute*>(pRecord->pAttr);
+			auto pAttr = static_cast<CLightAttribute*>(ItSceneObject->second.pAttr);
 
 			// UIDs always grow (unless overflowed), and therefore adding to the end is always the right hint which gives us O(1) insertion
 			//???!!!could compact UIDs when close to overflow! Do in SPS and broadcast changes OldUID->NewUID to all views. With guarantee of
@@ -420,21 +416,10 @@ void CView::SynchronizeLights()
 				_LightNodePool.pop_back();
 			}
 
-			pLight = ItViewObject->second.get();
-
 			// ligths without octree node are saved to global, others - to local
 			// visibility and intersection with renderables will be calculated only for local lights
 			// prioritization will be made for all lights, but global lights have the same intensity at every point in space
 			// maybe global lights must bypass prioritization, as they use different constants and algorithms in the shader!
-		}
-		else
-		{
-			pRecord = &ItSceneObject->second;
-			pLight = ItViewObject->second.get();
-
-			// mark visibility and intersections dirty if bounds version changed
-			// NB: for spot light this needs to be updated when tfm changes too, if cone is used for isect. Other lights are transform independent.
-			//!!!also remember that intersection with objects is view independent, but in view we can update only visible objects and lights.
 		}
 	});
 }
@@ -553,6 +538,10 @@ void CView::UpdateLights(bool ViewProjChanged)
 			pLight->BoundsVersion = Record.BoundsVersion;
 		}
 
+		// mark visibility and intersections dirty if bounds version changed
+		// NB: for spot light this needs to be updated when tfm changes too, if cone is used for isect. Other lights are transform independent.
+		//!!!also remember that intersection with objects is view independent, but in view we can update only visible objects and lights.
+
 		// Light sources that emit no light or that are too far away are considered invisible
 		if (pLight->IsVisible && pAttr->DoesEmitAnyEnergy() && SqDistanceToCamera <= pAttr->GetMaxDistanceSquared())
 		{
@@ -579,12 +568,16 @@ bool CView::Render()
 	// Check for camera frustum changes
 	const bool ViewProjChanged = UpdateCameraFrustum();
 
-	//!!!FIXME: could enable the condition below, but also need to invalidate cache of changed nodes when one node takes index of another!
-	//???notify SPS->All views for invalidated indices? If enabling condinion, check that TestSpatialTreeVisibility benefits from filled _SpatialTreeNodeVisibility!
-	//???can invalidate the cache starting only from certain index?
-	/*if (ViewProjChanged)*/ _SpatialTreeNodeVisibility.clear();
+	// Update visibility flags of spatial tree nodes
+	if (ViewProjChanged || _SpatialTreeRebuildVersion != _pScene->GetSpatialTreeRebuildVersion())
+	{
+		// Invalidate the node visibility cache
+		_SpatialTreeNodeVisibility.clear();
+		_SpatialTreeRebuildVersion = _pScene->GetSpatialTreeRebuildVersion();
+	}
 	_pScene->TestSpatialTreeVisibility(_LastViewFrustum, _SpatialTreeNodeVisibility);
 
+	// Update rendering representations of scene objects
 	UpdateLights(ViewProjChanged);
 	UpdateRenderables(ViewProjChanged);
 
@@ -706,6 +699,7 @@ void CView::SetGraphicsScene(CGraphicsScene* pScene)
 	if (_pScene == pScene) return;
 
 	_pScene = pScene;
+	_SpatialTreeRebuildVersion = 0;
 
 	while (!_Renderables.empty())
 	{

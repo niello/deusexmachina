@@ -842,6 +842,9 @@ public:
 	const_iterator cend() const noexcept { return end(); }
 	const_reverse_iterator crbegin() const noexcept { return rbegin(); }
 	const_reverse_iterator crend() const noexcept { return rend(); }
+	iterator iterator_at(TIndex Index) noexcept { return iterator(Index, *this); }
+	const_iterator iterator_at(TIndex Index) const noexcept { return const_iterator(Index, *this); }
+	const_iterator const_iterator_at(TIndex Index) const noexcept { return const_iterator(Index, *this); }
 
 	T& at(const TIndex Index) //noexcept(std::is_nothrow_default_constructible_v<T>) - EmplaceAtFree can throw if capacity reached
 	{
