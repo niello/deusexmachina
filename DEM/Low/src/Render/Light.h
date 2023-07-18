@@ -4,6 +4,9 @@
 #include <Math/Vector3.h>
 #include <System/System.h>
 
+//!!!DBG TMP! for CLightRecord
+#include <Math/Matrix44.h>
+
 // A base class for light source instances used for rendering. This is a GPU-friendly implementation
 // created from CLightAttribute found in a 3D scene. Subclass for different source types.
 
@@ -124,5 +127,14 @@ inline void CLight_OLD_DELETE::SetSpotOuterAngle(float NewAngle)
 	CosHalfOuter = n_cos(ConeOuter * 0.5f);
 }
 //---------------------------------------------------------------------
+
+//!!!DBG TMP!
+struct CLightRecord
+{
+	const Render::CLight_OLD_DELETE* pLight;
+	matrix44				Transform;
+	UPTR					UseCount;
+	IPTR					GPULightIndex;
+};
 
 }

@@ -3,10 +3,7 @@
 #include <Data/Array.h>
 #include <Math/Matrix44.h>
 
-// An object that provides an interface to a rendering algorithm, which operates on render nodes.
-// It renders nodes from the passed one to the first not suitable for it, and returns that unprocessed
-// node as a new head. In case of a render tree, renderer must return node of the same level as a
-// passed node. Therefore, if renderer accepts a render tree node, it must accept all its children.
+// An object that provides an interface to a rendering algorithm which operates on renderables
 
 namespace Data
 {
@@ -16,7 +13,6 @@ namespace Data
 namespace Render
 {
 class IRenderable;
-struct CRenderNodeContext;
 struct CLightRecord;
 class CGPUDriver;
 class CTechnique;
@@ -40,8 +36,6 @@ public:
 	};
 
 	virtual bool Init(const Data::CParams& Params) = 0;
-	virtual bool PrepareNode(IRenderable& Node, const CRenderNodeContext& Context) = 0;
-
 	virtual bool BeginRange(const CRenderContext& Context) = 0;
 	virtual void Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/) = 0;
 	virtual void EndRange(const CRenderContext& Context) = 0;

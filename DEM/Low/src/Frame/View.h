@@ -1,6 +1,5 @@
 #pragma once
 #include <Render/RenderFwd.h>
-#include <Render/RenderNode.h>
 #include <Render/Renderer.h>
 #include <Render/ShaderParamStorage.h>
 #include <Render/RenderQueue.h>

@@ -597,6 +597,29 @@ bool CView::Render()
 	//???or is it easier to test against object AABB directly?
 	//???is tracking intersections on insert or tracking objects inside node / intersecting the node a good idea?
 	//!!!NB: if object and light don't move or resize, their intersection doesn't change! Even if their visibility changes!
+	//!!!store light indices of the object sorted by importance, to filter out lights exceeding the limit of lights per object number!
+	//???how to handle terrain lighting in a forward pipeline? terrain is a tree of AABBs, can optimize intersecions and detect region for each light!
+	/*
+		case Light_Point:
+		{
+			//!!!???avoid object creation, rewrite functions so that testing against vector + float is possible!?
+			sphere LightBounds(LightRec.Transform.Translation(), pLight->GetRange());
+			if (LightBounds.GetClipStatus(Context.AABB) == EClipStatus::Outside) continue;
+			break;
+		}
+		case Light_Spot:
+		{
+			//!!!???PERF: test against sphere before?!
+			//???cache GlobalFrustum in a light record?
+			matrix44 LocalFrustum;
+			pLight->CalcLocalFrustum(LocalFrustum);
+			matrix44 GlobalFrustum;
+			LightRec.Transform.invert_simple(GlobalFrustum);
+			GlobalFrustum *= LocalFrustum;
+			if (Context.AABB.GetClipStatus(GlobalFrustum) == EClipStatus::Outside) continue;
+			break;
+		}
+	*/
 
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -1,6 +1,5 @@
 #include "SkyboxRenderer.h"
 #include <Render/GPUDriver.h>
-#include <Render/RenderNode.h>
 #include <Render/Skybox.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
@@ -11,12 +10,6 @@ namespace Render
 FACTORY_CLASS_IMPL(Render::CSkyboxRenderer, 'SBXR', Render::IRenderer);
 
 CSkyboxRenderer::CSkyboxRenderer() = default;
-//---------------------------------------------------------------------
-
-bool CSkyboxRenderer::PrepareNode(IRenderable& Node, const CRenderNodeContext& Context)
-{
-	OK;
-}
 //---------------------------------------------------------------------
 
 bool CSkyboxRenderer::BeginRange(const CRenderContext& Context)

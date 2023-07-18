@@ -49,7 +49,6 @@ protected:
 public:
 
 	virtual bool Init(const Data::CParams& Params) override { OK; }
-	virtual bool PrepareNode(IRenderable& Node, const CRenderNodeContext& Context) override;
 
 	virtual bool BeginRange(const CRenderContext& Context) override;
 	virtual void Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/) override;

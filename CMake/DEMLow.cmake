@@ -231,7 +231,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/Renderable.h
 	DEM/Low/src/Render/Renderer.h
 	DEM/Low/src/Render/RenderFwd.h
-	DEM/Low/src/Render/RenderNode.h
 	DEM/Low/src/Render/RenderQueue.h
 	DEM/Low/src/Render/RenderState.h
 	DEM/Low/src/Render/RenderStateDesc.h

@@ -114,8 +114,6 @@ public:
 	virtual ~CTerrainRenderer() override;
 
 	virtual bool Init(const Data::CParams& Params) override;
-	virtual bool PrepareNode(IRenderable& Node, const CRenderNodeContext& Context) override;
-
 	virtual bool BeginRange(const CRenderContext& Context) override;
 	virtual void Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/) override;
 	virtual void EndRange(const CRenderContext& Context) override;
