@@ -125,6 +125,26 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 			DISP_SUBSCRIBE_NEVENT(pOSWindow, OSWindowResized, CView, OnOSWindowResized);
 	}
 
+	// Create renderers
+
+	// We use U8 indices for renderers
+	n_assert_dbg(_RenderPath->_RendererSettings.size() <= std::numeric_limits<U8>().max());
+	_Renderers.reserve(_RenderPath->_RendererSettings.size() + 1);
+
+	// Index zero is always an invalid renderer, e.g. for unknown renderable types
+	_Renderers.push_back(nullptr);
+
+	for (const auto& RendererSettings : _RenderPath->_RendererSettings)
+	{
+		Render::PRenderer Renderer(static_cast<Render::IRenderer*>(RendererSettings.pRendererType->CreateClassInstance()));
+		if (!Renderer || !Renderer->Init(*RendererSettings.SettingsDesc)) continue;
+
+		for (const auto pRTTI : RendererSettings.RenderableTypes)
+			_RenderersByRenderableType.emplace(pRTTI, static_cast<U8>(_Renderers.size()));
+
+		_Renderers.push_back(std::move(Renderer));
+	}
+
 	// Create render queues used by this render path
 	_RenderQueues.resize(_RenderPath->_RenderQueues.size());
 	for (auto [Type, Index] : _RenderPath->_RenderQueues)
@@ -133,16 +153,16 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 		//!!!TODO: for x64 use 64-bit keys with more counter space for meshes and materials!
 		//???need separated opaque and atest in a color phase?! atest is in render state, sorting by tech already happens.
 		if (Type == "OpaqueDepthPrePass")
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque));
+			_RenderQueues[Index] = std::make_unique<Render::CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque));
 		else if (Type == "AlphaTestDepthPrePass")
 			// FIXME: also would benefit from FtB sorting here, see CAlphaTestDepthPrePass64, but can't use on 32-bit!
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaTest));
+			_RenderQueues[Index] = std::make_unique<Render::CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaTest));
 		else if (Type == "OpaqueMaterial")
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque, Render::EEffectType::EffectType_Skybox));
+			_RenderQueues[Index] = std::make_unique<Render::CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque, Render::EEffectType::EffectType_Skybox));
 		else if (Type == "AlphaTestMaterial")
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaTest));
+			_RenderQueues[Index] = std::make_unique<Render::CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaTest));
 		else if (Type == "AlphaBackToFront")
-			_RenderQueues[Index] = std::make_unique<CRenderQueue<CBackToFrontKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaBlend));
+			_RenderQueues[Index] = std::make_unique<Render::CRenderQueue<CBackToFrontKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaBlend));
 		else
 		{
 			::Sys::Error("CView::CView() > Unknown render queue type!");
@@ -273,78 +293,6 @@ U32 CView::RegisterEffect(const Render::CEffect& Effect, CStrID InputSet)
 }
 //---------------------------------------------------------------------
 
-UPTR CView::GetMeshLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const
-{
-	switch (MeshLODType)
-	{
-		case LOD_None:
-		{
-			return 0;
-		}
-		case LOD_Distance:
-		{
-			for (UPTR i = 0; i < MeshLODScale.size(); ++i)
-				if (SqDistanceToCamera < MeshLODScale[i]) return i;
-			return MeshLODScale.size();
-		}
-		case LOD_ScreenSizeRelative:
-		{
-			for (UPTR i = 0; i < MeshLODScale.size(); ++i)
-				if (ScreenSpaceOccupiedRel > MeshLODScale[i]) return i;
-			return MeshLODScale.size();
-		}
-		case LOD_ScreenSizeAbsolute:
-		{
-			// FIXME: what render target to use? Not always the first one definitely!
-			if (!RTs.begin()->second) return 0;
-			const Render::CRenderTargetDesc& RTDesc = RTs.begin()->second->GetDesc();
-			const float ScreenSpaceOccupiedAbs = SqDistanceToCamera * RTDesc.Width * RTDesc.Height;
-			for (UPTR i = 0; i < MeshLODScale.size(); ++i)
-				if (ScreenSpaceOccupiedAbs > MeshLODScale[i]) return i;
-			return MeshLODScale.size();
-		}
-	}
-
-	return 0;
-}
-//---------------------------------------------------------------------
-
-UPTR CView::GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const
-{
-	switch (MaterialLODType)
-	{
-		case LOD_None:
-		{
-			return 0;
-		}
-		case LOD_Distance:
-		{
-			for (UPTR i = 0; i < MaterialLODScale.size(); ++i)
-				if (SqDistanceToCamera < MaterialLODScale[i]) return i;
-			return MaterialLODScale.size();
-		}
-		case LOD_ScreenSizeRelative:
-		{
-			for (UPTR i = 0; i < MaterialLODScale.size(); ++i)
-				if (ScreenSpaceOccupiedRel > MaterialLODScale[i]) return i;
-			return MaterialLODScale.size();
-		}
-		case LOD_ScreenSizeAbsolute:
-		{
-			// FIXME: what render target to use? Not always the first one definitely!
-			if (!RTs.begin()->second) return 0;
-			const Render::CRenderTargetDesc& RTDesc = RTs.begin()->second->GetDesc();
-			const float ScreenSpaceOccupiedAbs = SqDistanceToCamera * RTDesc.Width * RTDesc.Height;
-			for (UPTR i = 0; i < MaterialLODScale.size(); ++i)
-				if (ScreenSpaceOccupiedAbs > MaterialLODScale[i]) return i;
-			return MaterialLODScale.size();
-		}
-	}
-
-	return 0;
-}
-//---------------------------------------------------------------------
-
 void CView::Update(float dt)
 {
 	if (_GraphicsMgr) _GraphicsMgr->Update(dt);
@@ -391,9 +339,6 @@ void CView::SynchronizeRenderables()
 	DEM::Algo::SortedUnion(_pScene->GetRenderables(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
 		[this](auto ItSceneObject, auto ItViewObject)
 	{
-		const CGraphicsScene::CSpatialRecord* pRecord = nullptr;
-		Render::IRenderable* pRenderable = nullptr;
-
 		if (ItSceneObject == _pScene->GetRenderables().cend())
 		{
 			// An object was removed from a scene, remove its renderable from queues and from a sync list
@@ -408,9 +353,7 @@ void CView::SynchronizeRenderables()
 		{
 			// A new object in a scene
 			const auto UID = ItSceneObject->first;
-			pRecord = &ItSceneObject->second;
-
-			auto pAttr = static_cast<CRenderableAttribute*>(pRecord->pAttr);
+			const auto pAttr = static_cast<CRenderableAttribute*>(ItSceneObject->second.pAttr);
 
 			// UIDs always grow (unless overflowed), and therefore adding to the end is always the right hint which gives us O(1) insertion
 			//???!!!could compact UIDs when close to overflow! Do in SPS and broadcast changes OldUID->NewUID to all views. With guarantee of
@@ -427,6 +370,9 @@ void CView::SynchronizeRenderables()
 				ItViewObject = _Renderables.insert(_Renderables.cend(), std::move(Node));
 				_RenderableNodePool.pop_back();
 			}
+
+			auto ItRenderer = _RenderersByRenderableType.find(ItViewObject->second->GetRTTI());
+			ItViewObject->second->RendererIndex = (ItRenderer != _RenderersByRenderableType.cend()) ? ItRenderer->second : 0;
 		}
 	});
 }
@@ -579,7 +525,7 @@ void CView::UpdateLights(bool ViewProjChanged)
 		Render::CLight* pLight = ItViewObject->second.get();
 		auto pAttr = static_cast<CLightAttribute*>(Record.pAttr);
 
-		float SqDistanceToCamera = -1.f;
+		float SqDistanceToCamera = 0.f;
 		if (!Record.BoundsVersion)
 		{
 			// Objects with invalid bounds are always visible. E.g. skybox.

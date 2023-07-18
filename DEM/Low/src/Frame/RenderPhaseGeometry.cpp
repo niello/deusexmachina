@@ -42,15 +42,13 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	if (!View.GetGraphicsManager()) FAIL;
 
-	const vector3& CameraPos = View.GetCamera()->GetPosition();
-	const bool CalcScreenSize = View.RequiresObjectScreenSize();
-
 	n_assert_dbg(!View.LightIndices.GetCount());
 
 	// Setup global lighting params, both ambient and direct
 
 	auto pGPU = View.GetGPU();
 
+	// TODO: move to the global part of rendering! Do once for all phases!
 	if (EnableLighting)
 	{
 		if (ConstGlobalLightBuffer)
@@ -103,7 +101,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		}
 
 		// Setup IBL (ambient cubemaps)
-		// Later we can implement local weight-blended parallax-corrected cubemaps selected by COI here
+		// TODO: later can implement local weight-blended parallax-corrected cubemaps selected by COI
 		//https://seblagarde.wordpress.com/2012/09/29/image-based-lighting-approaches-and-parallax-corrected-cubemap/
 
 		//???need visibility check for env maps? or select through separate spatial query?! SPS.FindClosest(COI, AttrRTTI, MaxCount)!
@@ -148,7 +146,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	Render::IRenderer::CRenderContext Ctx;
 	Ctx.pGPU = pGPU;
 	Ctx.pShaderTechCache = View.GetShaderTechCache(_ShaderTechCacheIndex);
-	Ctx.CameraPosition = CameraPos;
+	Ctx.CameraPosition = View.GetCamera()->GetPosition();
 	Ctx.ViewProjection = View.GetCamera()->GetViewProjMatrix();
 	if (EnableLighting)
 	{
@@ -156,50 +154,30 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		Ctx.pLightIndices = &View.LightIndices;
 		Ctx.UsesGlobalLightBuffer = !!ConstGlobalLightBuffer;
 	}
-	else
-	{
-		Ctx.pLights = nullptr;
-		Ctx.pLightIndices = nullptr;
-		Ctx.UsesGlobalLightBuffer = false;
-	}
-
-	// FIXME: remove PrepareNode, set pRenderer in CreateRenderable!
-	Render::CRenderNodeContext NodeCtx;
-	NodeCtx.pLights = Ctx.pLights;
-	NodeCtx.pLightIndices = Ctx.pLightIndices;
-	for (const U32 QueueIndex : _RenderQueueIndices)
-	{
-		View.ForEachRenderableInQueue(QueueIndex, [this, &NodeCtx](Render::IRenderable* pRenderable)
-		{
-			auto ItRenderer = RenderersByObjectType.find(pRenderable->GetRTTI());
-			if (ItRenderer != RenderersByObjectType.cend())
-			{
-				pRenderable->pRenderer = ItRenderer->second;
-				pRenderable->pRenderer->PrepareNode(*pRenderable, NodeCtx);
-			}
-		});
-	}
 
 	Render::IRenderer* pCurrRenderer = nullptr;
-	bool ValidRenderer = false;
+	U8 CurrRendererIndex = 0;
 	for (const U32 QueueIndex : _RenderQueueIndices)
 	{
-		View.ForEachRenderableInQueue(QueueIndex, [this, &Ctx, &pCurrRenderer, &ValidRenderer](Render::IRenderable* pRenderable)
+		View.ForEachRenderableInQueue(QueueIndex, [this, &View, &Ctx, &pCurrRenderer, &CurrRendererIndex](Render::IRenderable* pRenderable)
 		{
 			// This is guaranteed by CView, it fills queues with visible objects only
 			n_assert_dbg(pRenderable->IsVisible);
 
-			if (pCurrRenderer != pRenderable->pRenderer)
+			if (CurrRendererIndex != pRenderable->RendererIndex)
 			{
-				if (ValidRenderer) pCurrRenderer->EndRange(Ctx);
-				pCurrRenderer = pRenderable->pRenderer;
-				ValidRenderer = pCurrRenderer && pCurrRenderer->BeginRange(Ctx);
+				if (pCurrRenderer) pCurrRenderer->EndRange(Ctx);
+				CurrRendererIndex = pRenderable->RendererIndex;
+				pCurrRenderer = View.GetRenderer(CurrRendererIndex);
+				if (pCurrRenderer)
+					if (!pCurrRenderer->BeginRange(Ctx))
+						pCurrRenderer = nullptr;
 			}
 
-			if (ValidRenderer) pCurrRenderer->Render(Ctx, *pRenderable);
+			if (pCurrRenderer) pCurrRenderer->Render(Ctx, *pRenderable);
 		});
 	}
-	if (ValidRenderer) pCurrRenderer->EndRange(Ctx);
+	if (pCurrRenderer) pCurrRenderer->EndRange(Ctx);
 
 	//!!!hide in a private method of CView!
 	View.LightIndices.Clear(false);
@@ -256,40 +234,6 @@ bool CRenderPhaseGeometry::Init(CRenderPath& Owner, CGraphicsResourceManager& Gf
 		if (It == Owner._RenderQueues.cend())
 			It = Owner._RenderQueues.emplace(RenderQueueType, Owner._RenderQueues.size()).first;
 		_RenderQueueIndices[i] = It->second;
-	}
-
-	Data::CDataArray& RenderersDesc = *Desc.Get<Data::PDataArray>(CStrID("Renderers"));
-	for (UPTR i = 0; i < RenderersDesc.GetCount(); ++i)
-	{
-		const Data::CParams& RendererDesc = *RenderersDesc[i].GetValue<Data::PParams>();
-
-		// Renderer is useful only if it can render something
-		const Data::CParam& PrmObject = RendererDesc.Get(CStrID("Objects"));
-		if (!PrmObject.IsA<Data::PDataArray>() || PrmObject.GetValue<Data::PDataArray>()->IsEmpty()) FAIL;
-
-		const Core::CRTTI* pRendererType = nullptr;
-		const Data::CParam& PrmRenderer = RendererDesc.Get(CStrID("Renderer"));
-		if (PrmRenderer.IsA<int>()) pRendererType = Core::CFactory::Instance().GetRTTI(static_cast<uint32_t>(PrmRenderer.GetValue<int>()));
-		else if (PrmRenderer.IsA<CString>()) pRendererType = Core::CFactory::Instance().GetRTTI(PrmRenderer.GetValue<CString>());
-		if (!pRendererType) FAIL;
-
-		Render::PRenderer Renderer(static_cast<Render::IRenderer*>(pRendererType->CreateClassInstance()));
-		if (!Renderer || !Renderer->Init(EnableLighting, RendererDesc)) FAIL;
-
-		const auto& ObjTypes = *PrmObject.GetValue<Data::PDataArray>();
-		for (const auto& ObjTypeData : ObjTypes)
-		{
-			const Core::CRTTI* pObjType = nullptr;
-			if (ObjTypeData.IsA<int>())
-				pObjType = Core::CFactory::Instance().GetRTTI(static_cast<uint32_t>(ObjTypeData.GetValue<int>()));
-			else if (ObjTypeData.IsA<CString>())
-				pObjType = Core::CFactory::Instance().GetRTTI(ObjTypeData.GetValue<CString>());
-			if (!pObjType) FAIL;
-
-			RenderersByObjectType.emplace(pObjType, Renderer.get());
-		}
-
-		Renderers.push_back(std::move(Renderer));
 	}
 
 	Data::PParams EffectsDesc;

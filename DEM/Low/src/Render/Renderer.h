@@ -30,16 +30,16 @@ public:
 
 	struct CRenderContext
 	{
-		Render::CGPUDriver*		pGPU;
+		Render::CGPUDriver*		pGPU = nullptr;
 		const Render::CTechnique* const* pShaderTechCache = nullptr;
 		vector3					CameraPosition;
 		matrix44				ViewProjection;
-		CArray<CLightRecord>*	pLights;
-		CArray<U16>*			pLightIndices;
-		bool					UsesGlobalLightBuffer;
+		CArray<CLightRecord>*	pLights = nullptr;
+		CArray<U16>*			pLightIndices = nullptr;
+		bool					UsesGlobalLightBuffer = false;
 	};
 
-	virtual bool Init(bool LightingEnabled, const Data::CParams& Params) = 0;
+	virtual bool Init(const Data::CParams& Params) = 0;
 	virtual bool PrepareNode(IRenderable& Node, const CRenderNodeContext& Context) = 0;
 
 	virtual bool BeginRange(const CRenderContext& Context) = 0;

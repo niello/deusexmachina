@@ -7,11 +7,7 @@
 
 namespace Render
 {
-	class IRenderable;
-}
-
-namespace Frame
-{
+class IRenderable;
 
 // Make the whole queue polymorphic instead of sort key generation for better inlining in the Update() loop
 template<typename TKey, typename = std::enable_if_t<std::is_integral_v<TKey> && !std::is_signed_v<TKey>>>
@@ -23,8 +19,8 @@ protected:
 
 	struct CRecord
 	{
-		Render::IRenderable* pRenderable;
-		TKey                 Key;
+		IRenderable* pRenderable;
+		TKey         Key;
 
 		bool operator <(const CRecord& Other) const { return Key < Other.Key; }
 	};
@@ -39,11 +35,11 @@ public:
 	CRenderQueueBaseT(U32 FilterMask = ~static_cast<U32>(0)) : _FilterMask(FilterMask) {}
 	virtual ~CRenderQueueBaseT() = default;
 
-	virtual void Remove(Render::IRenderable* pRenderable) = 0;
+	virtual void Remove(IRenderable* pRenderable) = 0;
 	virtual void Update() = 0;
 
 	// Add to the end of the queue with an empty key. It will be calculated on update, just before sorting.
-	void Add(Render::IRenderable* pRenderable)
+	void Add(IRenderable* pRenderable)
 	{
 		if (_FilterMask & pRenderable->RenderQueueMask)
 			_Queue.push_back({ pRenderable, NO_KEY });
@@ -77,7 +73,7 @@ public:
 	using CRenderQueueBaseT::CRenderQueueBaseT;
 
 	// Remember a key calculated from the not updated state, so it equal to the key currently in a queue.
-	virtual void Remove(Render::IRenderable* pRenderable) override
+	virtual void Remove(IRenderable* pRenderable) override
 	{
 		if (_FilterMask & pRenderable->RenderQueueMask)
 			_ToRemove.push_back({ pRenderable, TKeyBuilder{}(std::as_const(pRenderable)) });

@@ -16,7 +16,7 @@
 
 namespace Data
 {
-	class CParams;
+	using PParams = Ptr<class CParams>;
 }
 
 namespace Frame
@@ -47,6 +47,13 @@ protected:
 
 public:
 
+	struct CRendererSettings
+	{
+		const Core::CRTTI*              pRendererType = nullptr;
+		std::vector<const Core::CRTTI*> RenderableTypes;
+		Data::PParams                   SettingsDesc;
+	};
+
 	// FIXME: for loading
 	std::vector<PRenderPhase>           Phases;
 	Render::PShaderParamTable           Globals;
@@ -54,6 +61,7 @@ public:
 	Render::CShaderConstantParam        CameraPosition;
 	std::vector<std::map<Render::EEffectType, CStrID>> EffectOverrides;
 	std::map<CStrID, U32>               _RenderQueues;
+	std::vector<CRendererSettings>      _RendererSettings;
 
 	CRenderPath();
 	virtual ~CRenderPath() override;

@@ -48,7 +48,7 @@ protected:
 
 public:
 
-	virtual bool Init(bool LightingEnabled, const Data::CParams& Params) override;
+	virtual bool Init(const Data::CParams& Params) override { OK; }
 	virtual bool PrepareNode(IRenderable& Node, const CRenderNodeContext& Context) override;
 
 	virtual bool BeginRange(const CRenderContext& Context) override;

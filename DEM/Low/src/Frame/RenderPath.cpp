@@ -3,6 +3,7 @@
 #include <Frame/View.h>
 #include <Frame/CameraAttribute.h>
 #include <Render/GPUDriver.h>
+#include <Data/Params.h> // For the PParams destructor
 
 namespace Frame
 {

@@ -120,7 +120,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Frame/RenderPath.h
 	DEM/Low/src/Frame/RenderPhase.h
 	DEM/Low/src/Frame/RenderPhaseGeometry.h
-	DEM/Low/src/Frame/RenderQueue.h
 	DEM/Low/src/Frame/SkinAttribute.h
 	DEM/Low/src/Frame/SkinProcessorAttribute.h
 	DEM/Low/src/Frame/View.h
@@ -233,6 +232,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/Renderer.h
 	DEM/Low/src/Render/RenderFwd.h
 	DEM/Low/src/Render/RenderNode.h
+	DEM/Low/src/Render/RenderQueue.h
 	DEM/Low/src/Render/RenderState.h
 	DEM/Low/src/Render/RenderStateDesc.h
 	DEM/Low/src/Render/RenderTarget.h
@@ -413,7 +413,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Frame/RenderPath.cpp
 	DEM/Low/src/Frame/RenderPhase.cpp
 	DEM/Low/src/Frame/RenderPhaseGeometry.cpp
-	DEM/Low/src/Frame/RenderQueue.cpp
 	DEM/Low/src/Frame/SkinAttribute.cpp
 	DEM/Low/src/Frame/SkinProcessorAttribute.cpp
 	DEM/Low/src/Frame/View.cpp

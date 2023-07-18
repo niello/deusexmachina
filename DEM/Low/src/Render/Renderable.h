@@ -29,15 +29,15 @@ public:
 	U16   GeometryKey = 0;        // For render queue sorting. Optimal as long as groups aren't added to existing meshes
 	U16   MaterialKey = 0;        // For render queue sorting
 	U8    ShaderTechKey = 0;      // For render queue sorting //???or obtain from view using ShaderTechIndex?
+	U8    RendererIndex = 0;
 	bool  IsVisible = false;
 
 	//!!!DBG TMP! Check transform version before rewriting, to save unnecessary ops? Also need better representation!
 	matrix44 Transform;
 
 	//!!!DBG TMP! clean! what is renderer specific? what is renderable specific?
-	IRenderer* pRenderer; //!!!instead of renderer pointer could store U8 index and phase would pick renderers by index. More cache friendliness!
-	U16 LightIndexBase;		// Memory is actually allocated inside a CView, we store index, not ptr, to handle reallocations
-	U8 LightCount;			// If zero, LightIndexBase is undefined
+	U16 LightIndexBase = 0;		// Memory is actually allocated inside a CView, we store index, not ptr, to handle reallocations
+	U8 LightCount = 0;			// If zero, LightIndexBase is undefined
 };
 
 }

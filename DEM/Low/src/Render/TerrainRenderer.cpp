@@ -25,7 +25,7 @@ CTerrainRenderer::~CTerrainRenderer()
 }
 //---------------------------------------------------------------------
 
-bool CTerrainRenderer::Init(bool LightingEnabled, const Data::CParams& Params)
+bool CTerrainRenderer::Init(const Data::CParams& Params)
 {
 	HMSamplerDesc.SetDefaults();
 	HMSamplerDesc.AddressU = TexAddr_Clamp;
@@ -36,19 +36,19 @@ bool CTerrainRenderer::Init(bool LightingEnabled, const Data::CParams& Params)
 	VisibilityRange = std::max(0.f, Params.Get(CStrID("VisibilityRange"), 1000.f)); //!!!FIXME: get from CView!
 	MorphStartRatio = std::clamp(Params.Get(CStrID("MorphStartRatio"), 0.7f), 0.5f, 0.95f);
 
-	if (LightingEnabled)
-	{
+	//if (LightingEnabled)
+	//{
 		// With stream instancing we add light indices to a vertex declaration, maximum light count is
 		// determined by DEM_LIGHT_COUNT of a tech, lighting stops at the first light index == -1.
 		// Clamp to maximum free VS input/output register count of 10, other 6 are used for other values.
 		const UPTR LightIdxVectorCount = (INSTANCE_MAX_LIGHT_COUNT + 3) / 4;
 		InstanceDataDecl.SetSize(std::min<UPTR>(2 + LightIdxVectorCount, 10));
-	}
-	else
-	{
-		// Only vertex shader data will be added
-		InstanceDataDecl.SetSize(2);
-	}
+	//}
+	//else
+	//{
+	//	// Only vertex shader data will be added
+	//	InstanceDataDecl.SetSize(2);
+	//}
 
 	// Patch offset and scale in XZ
 	CVertexComponent* pCmp = &InstanceDataDecl[0];

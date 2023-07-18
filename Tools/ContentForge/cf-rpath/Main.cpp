@@ -278,6 +278,15 @@ public:
 			GlobalParams.emplace(GlobalPair.first, std::move(Value));
 		}
 
+		// Process renderers
+
+		const Data::CDataArray* pRenderers;
+		if (!ParamsUtils::TryGetParam(pRenderers, Desc, "Renderers"))
+		{
+			Task.Log.LogError("'Renderers' must be an array");
+			return ETaskResult::Failure;
+		}
+
 		// Process phases
 
 		const Data::CParams* pPhases;
@@ -401,6 +410,9 @@ public:
 			WriteStream(File, Name.ToString());
 			WriteStream(File, Value);
 		}
+
+		// Write renderers
+		WriteStream(File, *pRenderers);
 
 		// Write phases
 		WriteStream(File, PhaseDescs);

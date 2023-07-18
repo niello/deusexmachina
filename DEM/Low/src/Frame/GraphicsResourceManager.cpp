@@ -794,6 +794,11 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 		GlobalParams.emplace(std::move(Name), std::move(Value));
 	}
 
+	// Read renderers
+
+	Data::PDataArray RendererDescs = n_new(Data::CDataArray);
+	if (!Reader.ReadDataArray(*RendererDescs)) return nullptr;
+
 	// Read phases
 
 	Data::PParams PhaseDescs = n_new(Data::CParams);
@@ -833,6 +838,45 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 	It = GlobalParams.find("CameraPosition");
 	if (It != GlobalParams.cend())
 		RP->CameraPosition = RP->Globals->GetConstant(It->second);
+
+	// Load renderers
+
+	static const CStrID sidRenderer("Renderer");
+	static const CStrID sidObjects("Objects");
+
+	for (const auto& Elm : *RendererDescs)
+	{
+		CRenderPath::CRendererSettings Settings;
+		Settings.SettingsDesc = Elm.GetValue<Data::PParams>();
+
+		// Find the renderer type
+		const Data::CParam& PrmRenderer = Settings.SettingsDesc->Get(sidRenderer);
+		if (PrmRenderer.IsA<int>()) Settings.pRendererType = Core::CFactory::Instance().GetRTTI(static_cast<uint32_t>(PrmRenderer.GetValue<int>()));
+		else if (PrmRenderer.IsA<CString>()) Settings.pRendererType = Core::CFactory::Instance().GetRTTI(PrmRenderer.GetValue<CString>());
+		if (!Settings.pRendererType) continue;
+
+		// Renderer is useful only if it can render something
+		const Data::CParam& PrmObject = Settings.SettingsDesc->Get(sidObjects);
+		if (!PrmObject.IsA<Data::PDataArray>()) continue;
+		const auto& ObjTypes = *PrmObject.GetValue<Data::PDataArray>();
+		for (const auto& ObjTypeData : ObjTypes)
+		{
+			const Core::CRTTI* pObjType = nullptr;
+			if (ObjTypeData.IsA<int>())
+				pObjType = Core::CFactory::Instance().GetRTTI(static_cast<uint32_t>(ObjTypeData.GetValue<int>()));
+			else if (ObjTypeData.IsA<CString>())
+				pObjType = Core::CFactory::Instance().GetRTTI(ObjTypeData.GetValue<CString>());
+
+			if (pObjType) Settings.RenderableTypes.push_back(pObjType);
+		}
+		if (Settings.RenderableTypes.empty()) continue;
+
+		// Remove processed data to reduce clutter
+		Settings.SettingsDesc->Remove(sidRenderer);
+		Settings.SettingsDesc->Remove(sidObjects);
+
+		RP->_RendererSettings.push_back(std::move(Settings));
+	}
 
 	// Create phases
 	// NB: intentionally created at the end, because they may access global params etc.

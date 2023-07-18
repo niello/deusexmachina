@@ -15,12 +15,6 @@ namespace Render
 {
 FACTORY_CLASS_IMPL(Render::CModelRenderer, 'MDLR', Render::IRenderer);
 
-bool CModelRenderer::Init(bool LightingEnabled, const Data::CParams& Params)
-{
-	OK;
-}
-//---------------------------------------------------------------------
-
 bool CModelRenderer::PrepareNode(IRenderable& Node, const CRenderNodeContext& Context)
 {
 	CModel* pModel = Node.As<CModel>();

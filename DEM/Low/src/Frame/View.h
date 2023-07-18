@@ -3,7 +3,7 @@
 #include <Render/RenderNode.h>
 #include <Render/Renderer.h>
 #include <Render/ShaderParamStorage.h>
-#include <Frame/RenderQueue.h>
+#include <Render/RenderQueue.h>
 #include <Events/EventsFwd.h>
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
@@ -53,14 +53,6 @@ typedef Ptr<class CRenderPath> PRenderPath;
 typedef Ptr<class CGraphicsResourceManager> PGraphicsResourceManager;
 typedef std::unique_ptr<class CView> PView;
 
-enum ELODType
-{
-	LOD_None,				// No LOD, always selects the finest one
-	LOD_Distance,			// Based on a squared distance to camera
-	LOD_ScreenSizeRelative,	// Based on a relative portion of screen occupied by rendered object
-	LOD_ScreenSizeAbsolute	// Based on a number of pixels occupied by rendered object
-};
-
 class CView final
 {
 protected:
@@ -83,27 +75,23 @@ protected:
 
 	std::map<CStrID, Render::PRenderTarget>        RTs;
 	std::map<CStrID, Render::PDepthStencilBuffer>  DSBuffers;
-	std::vector<PRenderQueueBaseT<UPTR>>           _RenderQueues;
+	std::vector<Render::PRenderQueueBaseT<UPTR>>   _RenderQueues;
+	std::vector<Render::PRenderer>                 _Renderers;
+	std::map<const Core::CRTTI*, U8>               _RenderersByRenderableType;
 
 	std::vector<bool>                              _SpatialTreeNodeVisibility;
 	std::map<UPTR, Render::PRenderable>            _Renderables;
 	std::vector<decltype(_Renderables)::node_type> _RenderableNodePool;
-
 	std::map<UPTR, Render::PLight>                 _Lights;
 	std::vector<decltype(_Lights)::node_type>      _LightNodePool;
 
-	std::map<std::pair<const Render::CEffect*, CStrID>, U32> _EffectMap; // Source effect & input set -> index in a _ShaderTechCache
-	std::vector<std::vector<const Render::CTechnique*>> _ShaderTechCache;       // First index is an override index (0 is no override), second is from _MaterialMap
+	std::map<std::pair<const Render::CEffect*, CStrID>, U32> _EffectMap;  // Source effect & input set -> index in a _ShaderTechCache
+	std::vector<std::vector<const Render::CTechnique*>> _ShaderTechCache; // First index is an override index (0 is no override), second is from _EffectMap
 
 	CArray<Render::CLightRecord>				LightCache;
 	CArray<Render::CImageBasedLight*>			EnvironmentCache;
 
 	U32                                         _CameraTfmVersion = 0;
-
-	ELODType									MeshLODType = LOD_None;
-	CFixedArray<float>							MeshLODScale;
-	ELODType									MaterialLODType = LOD_None;
-	CFixedArray<float>							MaterialLODScale;
 
 	friend class CGraphicsResourceManager;
 
@@ -143,12 +131,10 @@ public:
 	bool                            PrecreateRenderObjects();
 	U32                             RegisterEffect(const Render::CEffect& Effect, CStrID InputSet);
 	const Render::CTechnique* const* GetShaderTechCache(UPTR OverrideIndex = 0) const { return (OverrideIndex < _ShaderTechCache.size()) ? _ShaderTechCache[OverrideIndex].data() : nullptr; }
+	Render::IRenderer*              GetRenderer(U8 Index) const { n_assert_dbg(Index < _Renderers.size()); return _Renderers[Index].get(); }
 	Render::IRenderable*			GetRenderable(UPTR UID) { auto It = _Renderables.find(UID); return (It == _Renderables.cend()) ? nullptr : It->second.get(); }
 	CArray<Render::CLightRecord>&	GetLightCache() { return LightCache; }
 	auto&							GetEnvironmentCache() { return EnvironmentCache; }
-	UPTR							GetMeshLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
-	UPTR							GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
-	bool							RequiresObjectScreenSize() const { return MeshLODType == LOD_ScreenSizeRelative || MeshLODType == LOD_ScreenSizeAbsolute || MaterialLODType == LOD_ScreenSizeRelative || MaterialLODType == LOD_ScreenSizeAbsolute; }
 
 	template<typename TCallback>
 	DEM_FORCE_INLINE void ForEachRenderableInQueue(U32 QueueIndex, TCallback Callback)

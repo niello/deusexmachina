@@ -25,8 +25,6 @@ protected:
 	std::vector<U32>                                 _RenderQueueIndices;
 	CFixedArray<CStrID>								 RenderTargetIDs;
 	CStrID											 DepthStencilID;
-	std::vector<Render::PRenderer>                   Renderers;
-	std::map<const Core::CRTTI*, Render::IRenderer*> RenderersByObjectType;
 	UPTR                                             _ShaderTechCacheIndex = 0;
 	bool											 EnableLighting = false;
 
