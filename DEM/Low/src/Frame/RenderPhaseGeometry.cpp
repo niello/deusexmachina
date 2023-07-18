@@ -1,29 +1,14 @@
 #include "RenderPhaseGeometry.h"
-
 #include <Frame/View.h>
-#include <Frame/GraphicsResourceManager.h>
 #include <Frame/RenderPath.h>
 #include <Frame/CameraAttribute.h>
-#include <Frame/RenderableAttribute.h>
-#include <Frame/Lights/IBLAmbientLightAttribute.h>
-#include <Frame/SkinAttribute.h>
-#include <Frame/SkinProcessorAttribute.h>
 #include <Render/Renderable.h>
-#include <Render/Renderer.h>
-#include <Render/Material.h>
-#include <Render/Effect.h>
-#include <Render/SkinInfo.h>
 #include <Render/GPUDriver.h>
 #include <Render/RenderTarget.h>
 #include <Render/DepthStencilBuffer.h>
 #include <Render/ImageBasedLight.h>
-#include <Scene/SceneNode.h>
-#include <Resources/Resource.h>
-#include <Resources/ResourceManager.h>
-#include <Resources/ResourceCreator.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
-#include <IO/PathUtils.h>
 #include <Core/Factory.h>
 
 namespace Frame
