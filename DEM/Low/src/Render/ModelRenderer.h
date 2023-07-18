@@ -1,6 +1,7 @@
 #pragma once
 #include <Render/Renderer.h>
 #include <Render/ShaderParamStorage.h>
+#include <map>
 
 // Default renderer for CModel render objects.
 // Implements "Model" and "ModelSkinned" input sets.
@@ -16,25 +17,33 @@ class CModelRenderer: public IRenderer
 
 protected:
 
+	struct CModelTechInterface
+	{
+		CShaderParamStorage  PerInstanceParams;
+
+		CShaderConstantParam ConstInstanceData;
+		CShaderConstantParam ConstSkinPalette;
+		CShaderConstantParam MemberWorldMatrix;
+		CShaderConstantParam MemberFirstBoneIndex;
+		CShaderConstantParam MemberLightCount;
+		CShaderConstantParam MemberLightIndices;
+
+		UPTR TechMaxInstanceCount = 1;
+		bool TechNeedsMaterial = false;
+	};
+
 	const CTechnique* _pCurrTech = nullptr;
+	CModelTechInterface* _pCurrTechInterface = nullptr;
 	const CMaterial* _pCurrMaterial = nullptr;
 	const CMesh* _pCurrMesh = nullptr;
 	const CPrimitiveGroup* _pCurrGroup = nullptr;
 	CGPUDriver* _pGPU = nullptr;
 	UPTR _BufferedBoneCount = 0;
 	UPTR _InstanceCount = 0;
-	UPTR _TechMaxInstanceCount = 1;
-	bool _TechNeedsMaterial = false;
 
-	CShaderParamStorage  _PerInstance;
+	std::map<const CTechnique*, CModelTechInterface> _TechInterfaces;
 
-	CShaderConstantParam _ConstInstanceData;
-	CShaderConstantParam _ConstSkinPalette;
-	CShaderConstantParam _MemberWorldMatrix;
-	CShaderConstantParam _MemberFirstBoneIndex;
-	CShaderConstantParam _MemberLightCount;
-	CShaderConstantParam _MemberLightIndices;
-
+	CModelTechInterface* GetTechInterface(const CTechnique* pTech);
 	void CommitCollectedInstances();
 
 public:

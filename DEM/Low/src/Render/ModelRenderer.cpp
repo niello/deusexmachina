@@ -15,13 +15,6 @@ namespace Render
 {
 FACTORY_CLASS_IMPL(Render::CModelRenderer, 'MDLR', Render::IRenderer);
 
-static const CStrID sidInstanceData("InstanceData");
-static const CStrID sidSkinPalette("SkinPalette");
-static const CStrID sidWorldMatrix("WorldMatrix");
-static const CStrID sidFirstBoneIndex("FirstBoneIndex");
-static const CStrID sidLightIndices("LightIndices");
-static const CStrID sidLightCount("LightCount");
-
 bool CModelRenderer::Init(bool LightingEnabled, const Data::CParams& Params)
 {
 	OK;
@@ -136,16 +129,52 @@ bool CModelRenderer::PrepareNode(IRenderable& Node, const CRenderNodeContext& Co
 }
 //---------------------------------------------------------------------
 
+CModelRenderer::CModelTechInterface* CModelRenderer::GetTechInterface(const CTechnique* pTech)
+{
+	auto It = _TechInterfaces.find(pTech);
+	if (It != _TechInterfaces.cend()) return &It->second;
+
+	auto& TechInterface = _TechInterfaces[pTech];
+
+	if (pTech->GetParamTable().HasParams())
+	{
+		static const CStrID sidInstanceData("InstanceData");
+		static const CStrID sidSkinPalette("SkinPalette");
+		static const CStrID sidWorldMatrix("WorldMatrix");
+		static const CStrID sidFirstBoneIndex("FirstBoneIndex");
+		static const CStrID sidLightIndices("LightIndices");
+		static const CStrID sidLightCount("LightCount");
+
+		TechInterface.PerInstanceParams = CShaderParamStorage(pTech->GetParamTable(), *_pGPU);
+
+		TechInterface.ConstInstanceData = pTech->GetParamTable().GetConstant(sidInstanceData);
+		TechInterface.ConstSkinPalette = pTech->GetParamTable().GetConstant(sidSkinPalette);
+
+		if (auto Struct = TechInterface.ConstInstanceData[0])
+		{
+			TechInterface.MemberFirstBoneIndex = Struct[sidFirstBoneIndex];
+			TechInterface.MemberWorldMatrix = Struct[sidWorldMatrix];
+			TechInterface.MemberLightCount = Struct[sidLightCount];
+			TechInterface.MemberLightIndices = Struct[sidLightIndices];
+		}
+	}
+
+	TechInterface.TechMaxInstanceCount = TechInterface.ConstInstanceData ? TechInterface.ConstInstanceData.GetElementCount() : std::numeric_limits<U32>::max();
+	TechInterface.TechNeedsMaterial = pTech->GetEffect()->GetMaterialParamTable().HasParams();
+
+	return &TechInterface;
+}
+//---------------------------------------------------------------------
+
 bool CModelRenderer::BeginRange(const CRenderContext& Context)
 {
 	_pCurrTech = nullptr;
+	_pCurrTechInterface = nullptr;
 	_pCurrMaterial = nullptr;
 	_pCurrMesh = nullptr;
 	_pCurrGroup = nullptr;
 	_pGPU = nullptr;
 	_InstanceCount = 0;
-	_TechMaxInstanceCount = 1;
-	_TechNeedsMaterial = false;
 
 	OK;
 }
@@ -182,30 +211,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 		if (_InstanceCount) CommitCollectedInstances();
 
 		_pCurrTech = pTech;
-
-		//!!!add member offsets for AoS! indexing struct by member will provide its field by very quick O(1). or fill whole structures in C++ and copy to GPU?
-		//instead of member offset in struct, can make member array based on offsets, and assign this like AoS: WorldMatrix[i] = mtx. Array with custom stride?
-		// TODO: could cache all below in a vector/set of structs by Model.ShaderTechIndex or pTech, small amount of items will make search quick
-		// New search is needed only here, not per renderable!
-		_TechNeedsMaterial = pTech->GetEffect()->GetMaterialParamTable().HasParams();
-
-		_ConstInstanceData = pTech->GetParamTable().GetConstant(sidInstanceData);
-		_ConstSkinPalette = pTech->GetParamTable().GetConstant(sidSkinPalette);
-		_MemberFirstBoneIndex = _ConstInstanceData[0][sidFirstBoneIndex];
-		_MemberWorldMatrix = _ConstInstanceData[0][sidWorldMatrix];
-
-		if (LightingEnabled)
-		{
-			_MemberLightCount = _ConstInstanceData[0][sidLightCount];
-			_MemberLightIndices = _ConstInstanceData[0][sidLightIndices];
-		}
-
-		_PerInstance = CShaderParamStorage(pTech->GetParamTable(), *_pGPU); // TODO: store in a tech cache too!
-
-		_TechMaxInstanceCount = _ConstInstanceData ? _ConstInstanceData.GetElementCount() : std::numeric_limits<U32>::max();
-
-		// Verify that tech is selected correctly. Can remove later if never asserts. It shouldn't.
-		n_assert_dbg(static_cast<bool>(Model.BoneCount) == static_cast<bool>(_ConstSkinPalette));
+		_pCurrTechInterface = GetTechInterface(pTech);
 	}
 	else
 	{
@@ -213,15 +219,15 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 		// - constant buffer with instance data structures is filled
 		// - the model is skinned and the tech doesn't support skinned instancing
 		// - model's bones do not fit into the remaining part of the shader skin palette buffer which is already not empty
-		if (_InstanceCount == _TechMaxInstanceCount ||
-			(_InstanceCount && Model.BoneCount && !_MemberFirstBoneIndex) ||
-			(_BufferedBoneCount && Model.BoneCount > _ConstSkinPalette.GetElementCount() - _BufferedBoneCount))
+		if (_InstanceCount == _pCurrTechInterface->TechMaxInstanceCount ||
+			(_InstanceCount && Model.BoneCount && !_pCurrTechInterface->MemberFirstBoneIndex) ||
+			(_BufferedBoneCount && Model.BoneCount > _pCurrTechInterface->ConstSkinPalette.GetElementCount() - _BufferedBoneCount))
 		{
 			CommitCollectedInstances();
 		}
 	}
 
-	if (_TechNeedsMaterial && pMaterial != _pCurrMaterial)
+	if (_pCurrTechInterface->TechNeedsMaterial && pMaterial != _pCurrMaterial)
 	{
 		if (_InstanceCount) CommitCollectedInstances();
 
@@ -249,34 +255,34 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 
 	// Setup per-instance data
 
-	if (_MemberWorldMatrix)
+	if (_pCurrTechInterface->MemberWorldMatrix)
 	{
-		_MemberWorldMatrix.Shift(_ConstInstanceData, _InstanceCount);
-		_PerInstance.SetMatrix(_MemberWorldMatrix, Model.Transform);
+		_pCurrTechInterface->MemberWorldMatrix.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
+		_pCurrTechInterface->PerInstanceParams.SetMatrix(_pCurrTechInterface->MemberWorldMatrix, Model.Transform);
 	}
 
 	if (Model.pSkinPalette)
 	{
-		if (_MemberFirstBoneIndex)
+		if (_pCurrTechInterface->MemberFirstBoneIndex)
 		{
-			_MemberFirstBoneIndex.Shift(_ConstInstanceData, _InstanceCount);
-			_PerInstance.SetUInt(_MemberFirstBoneIndex, _BufferedBoneCount);
+			_pCurrTechInterface->MemberFirstBoneIndex.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
+			_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->MemberFirstBoneIndex, _BufferedBoneCount);
 		}
 
 		//!!!this allows using _ConstSkinPalette curcularly with no_overwrite! if out of space, wrap and discard and start filling from beginning. Hide inside CShaderParamStorage?
 		//!!!make sure that only a part of the buffer is updated and submitted to GPU!
-		const auto InstanceBoneCount = std::min(Model.BoneCount, _ConstSkinPalette.GetElementCount() - _BufferedBoneCount);
-		_PerInstance.SetMatrixArray(_ConstSkinPalette, Model.pSkinPalette, InstanceBoneCount, _BufferedBoneCount);
+		const auto InstanceBoneCount = std::min(Model.BoneCount, _pCurrTechInterface->ConstSkinPalette.GetElementCount() - _BufferedBoneCount);
+		_pCurrTechInterface->PerInstanceParams.SetMatrixArray(_pCurrTechInterface->ConstSkinPalette, Model.pSkinPalette, InstanceBoneCount, _BufferedBoneCount);
 		_BufferedBoneCount += InstanceBoneCount;
 	}
 
-	if (_MemberLightCount)
+	if (_pCurrTechInterface->MemberLightCount)
 	{
-		const auto LightCount = LightingEnabled ? std::min<U32>(Model.LightCount, _MemberLightIndices.GetElementCount()) : 0;
+		const auto LightCount = LightingEnabled ? std::min<U32>(Model.LightCount, _pCurrTechInterface->MemberLightIndices.GetElementCount()) : 0;
 
 		//???need or use INVALID_INDEX to stop iterating light index array in a shader? possibly uses less shader consts!
-		_MemberLightCount.Shift(_ConstInstanceData, _InstanceCount);
-		_PerInstance.SetUInt(_MemberLightCount, LightCount);
+		_pCurrTechInterface->MemberLightCount.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
+		_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->MemberLightCount, LightCount);
 
 		//???send all or only visible lights to GPU? how to detect that something have changed, to avoid resending each frame?
 		//set flag when testing lights against frustum and visibility of one actually changes?
@@ -323,8 +329,6 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 void CModelRenderer::EndRange(const CRenderContext& Context)
 {
 	if (_InstanceCount) CommitCollectedInstances();
-
-	_PerInstance = {}; // FIXME: remove when moved to tech cache!
 }
 //---------------------------------------------------------------------
 
@@ -333,7 +337,7 @@ void CModelRenderer::CommitCollectedInstances()
 	//!!!PERF: needs testing on big scene. Check is moved outside the call to reduce redundant call count, but is it necessary?
 	n_assert_dbg(_InstanceCount);
 
-	_PerInstance.Apply();
+	_pCurrTechInterface->PerInstanceParams.Apply();
 
 	//???need multipass techs or move that to another layer of logic?! multipass tech kills shader sorting and leads to render state switches.
 	//but it keeps material and mesh, and maybe even cached intermediate data like GPU skinned vertices buffer.
