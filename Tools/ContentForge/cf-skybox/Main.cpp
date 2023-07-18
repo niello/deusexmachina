@@ -160,9 +160,15 @@ public:
 				const int IEMDimensionSize = ParamsUtils::GetParam(Task.Params, "IEMDimensionSize", 128);
 				const std::string IEMFormat = ParamsUtils::GetParam(Task.Params, "IEMFormat", std::string("A8R8G8B8"));
 
-				const std::string IEMCmdLine = "cubemapgen/mcmg.exe -IrradianceCubemap -importCubeDDS:\"" + Task.SrcFilePath.string() +
-					"\" -exportCubeDDS -exportFilename:\"" + IEMPath.string() + "\" -exportSize:" + std::to_string(IEMDimensionSize) +
-					" -exportPixelFormat:" + IEMFormat + " -consoleErrorOutput -exit";
+				const std::string IEMCmdLine = "cubemapgen/mcmg.exe"
+					" -IrradianceCubemap"
+					" -importCubeDDS:\"" + Task.SrcFilePath.string() + "\""
+					" -exportCubeDDS"
+					" -exportFilename:\"" + IEMPath.string() + "\""
+					" -exportSize:" + std::to_string(IEMDimensionSize) +
+					" -exportPixelFormat:" + IEMFormat +
+					" -consoleErrorOutput"
+					" -exit";
 				if (RunSubprocess(IEMCmdLine, &Task.Log) != 0)
 				{
 					Task.Log.LogError("Error generating irradiance environment map (IEM)");
@@ -182,14 +188,26 @@ public:
 				const float PMREMGlossScale = ParamsUtils::GetParam(Task.Params, "PMREMGlossScale", 10.f);
 				const float PMREMGlossBias = ParamsUtils::GetParam(Task.Params, "PMREMGlossBias", 1.f);
 
-				const std::string PMREMCmdLine = "cubemapgen/mcmg.exe -filterTech:CosinePower -CosinePowerMipmapChainMode:Mipmap"
+				const std::string PMREMCmdLine = "cubemapgen/mcmg.exe"
+					" -filterTech:CosinePower"
+					" -CosinePowerMipmapChainMode:Mipmap"
 					" -NumMipmap:" + std::to_string(PMREMMipCount) +
 					" -GlossScale:" + std::to_string(PMREMGlossScale) +
 					" -GlossBias:" + std::to_string(PMREMGlossBias) +
 					" -importCubeDDS:\"" + Task.SrcFilePath.string() + "\""
-					" -LightingModel:PhongBRDF -ExcludeBase -solidAngleWeighting -edgeFixupTech:Warp -importDegamma:1.0 -exportGamma:1.0 "
-					" -exportCubeDDS -exportFilename:\"" + PMREMPath.string() + "\" -exportSize:" + std::to_string(PMREMDimensionSize) +
-					" -exportPixelFormat:A8R8G8B8 -exportMipChain -consoleErrorOutput -exit";
+					" -LightingModel:PhongBRDF"
+					" -ExcludeBase"
+					" -solidAngleWeighting"
+					" -edgeFixupTech:Warp"
+					" -importDegamma:1.0"
+					" -exportGamma:1.0 "
+					" -exportCubeDDS"
+					" -exportFilename:\"" + PMREMPath.string() + "\""
+					" -exportSize:" + std::to_string(PMREMDimensionSize) +
+					" -exportPixelFormat:" + PMREMFormat +
+					" -exportMipChain"
+					" -consoleErrorOutput"
+					" -exit";
 				if (RunSubprocess(PMREMCmdLine, &Task.Log) != 0)
 				{
 					Task.Log.LogError("Error generating prefiltered mipmaped radiance environment map (PMREM)");
