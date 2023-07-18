@@ -375,6 +375,7 @@ bool CView::UpdateCameraFrustum()
 	{
 		ViewProjChanged = true;
 		_ProjectionParams = ProjectionParams;
+		_ScreenMultiple = std::max(0.5f * Proj.m[0][0], 0.5f * Proj.m[1][1]);
 	}
 
 	if (ViewProjChanged)
@@ -532,11 +533,7 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			if (pRenderable->IsVisible)
 			{
 				pRenderable->DistanceToCamera = std::sqrtf(Math::SqDistancePointAABB(_EyePos, Record.BoxCenter, Record.BoxExtent));
-
-				const auto& Proj = _pCamera->GetProjMatrix();
-				const float ScreenMultiple = std::max(0.5f * Proj.m[0][0], 0.5f * Proj.m[1][1]);
-				const float DistanceToOrigin = acl::vector_distance3(_EyePos, Record.BoxCenter);
-				pRenderable->RelScreenRadius = ScreenMultiple * Record.SphereRadius / std::max(DistanceToOrigin, 1.0f);
+				pRenderable->RelScreenRadius = _ScreenMultiple * Record.SphereRadius / std::max(acl::vector_distance3(_EyePos, Record.BoxCenter), 1.0f);
 			}
 		}
 

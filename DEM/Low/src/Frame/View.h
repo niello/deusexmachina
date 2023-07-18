@@ -68,6 +68,8 @@ protected:
 	Math::CSIMDFrustum                          _LastViewFrustum;
 	acl::Vector4_32                             _ProjectionParams;
 	acl::Vector4_32                             _EyePos;
+	float                                       _ScreenMultiple = 0.f;
+
 
 	PRenderPath									_RenderPath;
 	PGraphicsResourceManager					_GraphicsMgr;
