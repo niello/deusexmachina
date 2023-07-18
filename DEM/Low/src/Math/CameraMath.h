@@ -107,7 +107,8 @@ DEM_FORCE_INLINE float SqDistancePointAABB(acl::Vector4_32Arg0 Point, acl::Vecto
 	if (acl::vector_all_greater_equal3(Point, BoxMin) && acl::vector_all_less_equal3(Point, BoxMax))
 		return 0.f;
 
-	return acl::vector_dot3(Point, acl::vector_min(acl::vector_max(Point, BoxMin), BoxMax));
+	const auto ClosestPt = acl::vector_min(acl::vector_max(Point, BoxMin), BoxMax);
+	return acl::vector_length_squared3(acl::vector_sub(Point, ClosestPt));
 }
 //---------------------------------------------------------------------
 
