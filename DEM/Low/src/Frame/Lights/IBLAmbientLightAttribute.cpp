@@ -58,7 +58,14 @@ Render::PLight CIBLAmbientLightAttribute::CreateLight() const
 
 void CIBLAmbientLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const
 {
-	//!!!FIXME: don't search IBL textures each frame, use cache until UID changes! Update only when nullptr? Or store UID in GPU resource for comparison?
+	// Light sources that emit no light are considered invisible
+	if (!_IrradianceMapUID && !_RadianceEnvMapUID)
+	{
+		Light.IsVisible = false;
+		return;
+	}
+
+	//!!!FIXME: don't search IBL textures each frame, use cache until UID changes! Update only when nullptr? Or store UID in GPU resource / CTextureData for comparison?
 	auto pLight = static_cast<Render::CImageBasedLight*>(&Light);
 	pLight->_IrradianceMap = ResMgr.GetTexture(_IrradianceMapUID, Render::Access_GPU_Read);
 	pLight->_RadianceEnvMap = ResMgr.GetTexture(_RadianceEnvMapUID, Render::Access_GPU_Read);

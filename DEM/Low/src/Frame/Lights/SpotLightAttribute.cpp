@@ -80,6 +80,13 @@ Render::PLight CSpotLightAttribute::CreateLight() const
 
 void CSpotLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const
 {
+	// Light sources that emit no light are considered invisible
+	if (!(_Color & 0x00ffffff) || _Intensity <= 0.f)
+	{
+		Light.IsVisible = false;
+		return;
+	}
+
 	//auto pLight = static_cast<Render::CSpotLight*>(&Light);
 	//if (_pNode) pLight->SetDirection(-_pNode->GetWorldMatrix().AxisZ());
 }

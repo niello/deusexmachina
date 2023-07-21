@@ -66,8 +66,8 @@ protected:
 	std::unordered_map<TMorton, U32>                 _MortonToIndex;
 	std::vector<decltype(_MortonToIndex)::node_type> _MortonToIndexPool;
 
-	std::map<UPTR, CSpatialRecord>                   _Renderables; // TODO: if cleared, need to clear iterators in attributes first!
-	std::map<UPTR, CSpatialRecord>                   _Lights; // TODO: if cleared, need to clear iterators in attributes first!
+	std::map<UPTR, CSpatialRecord>                   _Renderables;
+	std::map<UPTR, CSpatialRecord>                   _Lights;
 	std::vector<decltype(_Renderables)::node_type>   _ObjectNodePool;
 
 	float _WorldExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic

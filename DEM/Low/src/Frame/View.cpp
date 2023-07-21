@@ -415,11 +415,6 @@ void CView::SynchronizeLights()
 				ItViewObject = _Lights.insert(_Lights.cend(), std::move(Node));
 				_LightNodePool.pop_back();
 			}
-
-			// ligths without octree node are saved to global, others - to local
-			// visibility and intersection with renderables will be calculated only for local lights
-			// prioritization will be made for all lights, but global lights have the same intensity at every point in space
-			// maybe global lights must bypass prioritization, as they use different constants and algorithms in the shader!
 		}
 	});
 }
@@ -513,7 +508,7 @@ void CView::UpdateLights(bool ViewProjChanged)
 		float SqDistanceToCamera = 0.f;
 		if (!Record.BoundsVersion)
 		{
-			// Objects with invalid bounds are always visible. E.g. skybox.
+			// Lights with invalid bounds are global and therefore always visible
 			pLight->IsVisible = true;
 			pLight->BoundsVersion = Record.BoundsVersion;
 		}
@@ -538,20 +533,25 @@ void CView::UpdateLights(bool ViewProjChanged)
 			pLight->BoundsVersion = Record.BoundsVersion;
 		}
 
-		// mark visibility and intersections dirty if bounds version changed
-		// NB: for spot light this needs to be updated when tfm changes too, if cone is used for isect. Other lights are transform independent.
-		//!!!also remember that intersection with objects is view independent, but in view we can update only visible objects and lights.
-
-		// Light sources that emit no light or that are too far away are considered invisible
-		if (pLight->IsVisible && pAttr->DoesEmitAnyEnergy() && SqDistanceToCamera <= pAttr->GetMaxDistanceSquared())
+		if (pLight->IsVisible)
 		{
-			//!!!TODO: inside UpdateLight:
-			// - update tfm from attr
-			// - update light params from attr
-			// - update cached GPU structures for dirty parts (constant buffer element, IBL textures etc)
-			pAttr->UpdateLight(*_GraphicsMgr, *pLight);
+			// Light sources that are too far away are considered invisible. UpdateLight can also make a light invisible.
+			// TODO: if store distance to camera in the light itself, can check this inside UpdateLight, as with LOD for renderables.
+			//???also use screen size, everything as for renderables?! can be useful for culling lights that affect few pixels!
+			if (SqDistanceToCamera <= pAttr->GetMaxDistanceSquared())
+				pAttr->UpdateLight(*_GraphicsMgr, *pLight);
+			else
+				pLight->IsVisible = false;
+		}
 
-			// TODO: if needed, mark light for updating object intersections
+		if (pLight->IsVisible)
+		{
+			// TODO: if needed, mark light for updating object intersections. Only for local lights!
+			// NB: for spot light isect and visibility needs to be updated when tfm changes, if cone/frustum is used for isect. Other lights are transform independent.
+			//???could keep BoundsVersion unchanged for non-spot lights if translation and scale didn't change and only rotation did? Worth it?
+			// prioritization of lights if needed only when the object has more lights than supported. Otherwise can omit completely. Calc per object.
+			// only local lights are stored in intersections and therefore only they are prioritized. Global lights have different processing in a shader.
+			// use CLight::FillGPUStructure(DataRef) to avoid RTTI casts, allow each light to fill its structure, incl. type enum.
 		}
 	}
 }
