@@ -62,6 +62,7 @@ public:
 	std::vector<std::map<Render::EEffectType, CStrID>> EffectOverrides;
 	std::map<CStrID, U32>               _RenderQueues;
 	std::vector<CRendererSettings>      _RendererSettings;
+	bool                                _IsForwardLighting = true; // FIXME: load from desc!
 
 	CRenderPath();
 	virtual ~CRenderPath() override;

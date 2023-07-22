@@ -31,6 +31,7 @@ public:
 	U8    ShaderTechKey = 0;      // For render queue sorting //???or obtain from view using ShaderTechIndex?
 	U8    RendererIndex = 0;
 	bool  IsVisible = false;
+	bool  TrackObjectLightIntersections = false;
 
 	//!!!DBG TMP! Check transform version before rewriting, to save unnecessary ops? Also need better representation!
 	matrix44 Transform;

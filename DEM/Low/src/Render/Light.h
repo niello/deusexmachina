@@ -26,8 +26,9 @@ protected:
 
 public:
 
-	bool IsVisible = false;
 	U32  BoundsVersion = 0;
+	bool IsVisible = false;
+	bool TrackObjectLightIntersections = false;
 
 	// color and intensity? even for IBL?
 	//???shadow casting flag etc here?

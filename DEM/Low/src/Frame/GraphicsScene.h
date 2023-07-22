@@ -52,10 +52,11 @@ public:
 		acl::Vector4_32        BoxCenter;
 		acl::Vector4_32        BoxExtent;
 		Scene::CNodeAttribute* pAttr = nullptr;
-		float                  SphereRadius = 0.f;
 		TMorton                NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
+		float                  SphereRadius = 0.f; //!!!optimal center may be different! store acl::Vector4_32 with center and radius?
 		U32                    NodeIndex = NO_SPATIAL_TREE_NODE;
 		U32                    BoundsVersion = 1;  // 0 for invalid bounds (e.g. infinite)
+		U8                     TrackObjectLightIntersections = 0;
 	};
 
 	using HRecord = std::map<UPTR, CSpatialRecord>::iterator;
@@ -102,12 +103,17 @@ public:
 	void            RemoveLight(HRecord Handle) { RemoveObject(_Lights, Handle); }
 	const auto&     GetLights() const { return _Lights; }
 
+	void            TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum, std::vector<bool>& NodeVisibility) const;
+
 	acl::Vector4_32 CalcNodeBounds(TMorton MortonCode) const;
 	CAABB           GetNodeAABB(U32 NodeIndex, bool Loose = false) const;
 	CAABB           GetNodeAABB(acl::Vector4_32Arg0 Bounds, bool Loose = false) const;
 	U32             GetSpatialTreeRebuildVersion() const { return _SpatialTreeRebuildVersion; }
 
-	void            TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum, std::vector<bool>& NodeVisibility) const;
+	void            TrackObjectLightIntersections(CRenderableAttribute& RenderableAttr, bool Track);
+	void            TrackObjectLightIntersections(CLightAttribute& LightAttr, bool Track);
+	void            UpdateObjectLightIntersections(CRenderableAttribute& RenderableAttr);
+	void            UpdateObjectLightIntersections(CLightAttribute& LightAttr);
 };
 
 }

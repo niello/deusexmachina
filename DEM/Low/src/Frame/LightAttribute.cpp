@@ -19,29 +19,29 @@ void CLightAttribute::UpdateInGraphicsScene(CGraphicsScene& Scene)
 
 	CAABB AABB;
 	const bool IsAABBValid = GetLocalAABB(AABB);
-	const bool SceneChanged = (pScene != &Scene);
+	const bool SceneChanged = (_pScene != &Scene);
 
-	if (pScene && (SceneChanged || !IsAABBValid))
-		pScene->RemoveLight(SceneRecordHandle);
+	if (_pScene && (SceneChanged || !IsAABBValid))
+		_pScene->RemoveLight(_SceneRecordHandle);
 
 	if (!IsAABBValid) //???need this branch or can use it for handling omnipresent lights like directional and global IBL?
 	{
 		// This light currently has no bounds at all, it can't be added to the level
-		pScene = nullptr;
-		SceneRecordHandle = {};
+		_pScene = nullptr;
+		_SceneRecordHandle = {};
 	}
 	else if (SceneChanged)
 	{
-		pScene = &Scene;
+		_pScene = &Scene;
 		AABB.Transform(_pNode->GetWorldMatrix());
-		SceneRecordHandle = Scene.AddLight(AABB, *this);
-		LastTransformVersion = _pNode->GetTransformVersion();
+		_SceneRecordHandle = Scene.AddLight(AABB, *this);
+		_LastTransformVersion = _pNode->GetTransformVersion();
 	}
-	else if (_pNode->GetTransformVersion() != LastTransformVersion) //!!! || LocalBox changed!
+	else if (_pNode->GetTransformVersion() != _LastTransformVersion) //!!! || LocalBox changed!
 	{
 		AABB.Transform(_pNode->GetWorldMatrix());
-		Scene.UpdateLightBounds(SceneRecordHandle, AABB);
-		LastTransformVersion = _pNode->GetTransformVersion();
+		Scene.UpdateLightBounds(_SceneRecordHandle, AABB);
+		_LastTransformVersion = _pNode->GetTransformVersion();
 	}
 }
 //---------------------------------------------------------------------
@@ -51,11 +51,11 @@ bool CLightAttribute::GetGlobalAABB(CAABB& OutBox) const
 {
 	if (!_pNode) return false;
 
-	if (pScene && _pNode->GetTransformVersion() == LastTransformVersion) //!!! && LocalBox not changed!
+	if (_pScene && _pNode->GetTransformVersion() == _LastTransformVersion) //!!! && LocalBox not changed!
 	{
 		// TODO: use Center+Extents SIMD AABB everywhere?!
-		const auto Center = SceneRecordHandle->second.BoxCenter;
-		const auto Extent = SceneRecordHandle->second.BoxExtent;
+		const auto Center = _SceneRecordHandle->second.BoxCenter;
+		const auto Extent = _SceneRecordHandle->second.BoxExtent;
 		OutBox.Set(
 			vector3(acl::vector_get_x(Center), acl::vector_get_y(Center), acl::vector_get_z(Center)),
 			vector3(acl::vector_get_x(Extent), acl::vector_get_y(Extent), acl::vector_get_z(Extent)));
@@ -72,11 +72,11 @@ bool CLightAttribute::GetGlobalAABB(CAABB& OutBox) const
 
 void CLightAttribute::OnActivityChanged(bool Active)
 {
-	if (!Active && pScene)
+	if (!Active && _pScene)
 	{
-		pScene->RemoveLight(SceneRecordHandle);
-		pScene = nullptr;
-		SceneRecordHandle = {};
+		_pScene->RemoveLight(_SceneRecordHandle);
+		_pScene = nullptr;
+		_SceneRecordHandle = {};
 	}
 }
 //---------------------------------------------------------------------

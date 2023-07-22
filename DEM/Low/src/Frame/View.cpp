@@ -467,14 +467,10 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 		if (pRenderable->IsVisible)
 			pAttr->UpdateRenderable(*this, *pRenderable);
 
+		//!!!DBG TMP! Or is it the preferred way to do this? Or handle in UpdateRenderable? But every renderable stores tfm identically. Or no?
+		//???could store directly in per-instance data? or it depends on a renderer too strongly?
 		if (pRenderable->IsVisible)
-		{
-			//!!!DBG TMP! Or is it the preferred way to do this? Or handle in UpdateRenderable? But every renderable stores tfm identically. Or no?
-			//???could store directly in per-instance data? or it depends on a renderer too strongly?
 			pRenderable->Transform = pAttr->GetNode()->GetWorldMatrix();
-
-			// TODO: if needed, mark object for updating light intersections
-		}
 
 		// Handle object visibility change
 		if (WasVisible != pRenderable->IsVisible)
@@ -489,6 +485,23 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 				for (auto& Queue : _RenderQueues)
 					Queue->Add(pRenderable);
 			}
+		}
+
+		// Setup object-light intersection tracking
+		// TODO: for pairs of static object and static light might use lightmapping or other optimizations. Exploit physics lib's collision?
+		// TODO: _IsForwardLighting OR shadows / alpha etc, what needs intersections in deferred lighting
+		const bool TrackObjectLightIntersections = pRenderable->IsVisible && Record.BoundsVersion && _RenderPath->_IsForwardLighting;
+		if (TrackObjectLightIntersections != pRenderable->TrackObjectLightIntersections)
+		{
+			_pScene->TrackObjectLightIntersections(*pAttr, TrackObjectLightIntersections);
+			pRenderable->TrackObjectLightIntersections = TrackObjectLightIntersections;
+		}
+		if (TrackObjectLightIntersections)
+		{
+			_pScene->UpdateObjectLightIntersections(*pAttr);
+
+			// if version changed, update light indices
+			// prioritization is running in a renderer if there are too many affecting lights
 		}
 	}
 }
@@ -521,7 +534,7 @@ void CView::UpdateLights(bool ViewProjChanged)
 			{
 				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
 				{
-					//!!!FIXME: for lights maybe better is to use spheres! Octree insertion is identical for AABB-Sphere & AABB-AABB, but here spheres are faster!
+					//!!!FIXME: maybe better is to use Record.SphereRadius, at least for point lights!
 					pLight->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, _LastViewFrustum);
 				}
 				else pLight->IsVisible = true;
@@ -544,9 +557,18 @@ void CView::UpdateLights(bool ViewProjChanged)
 				pLight->IsVisible = false;
 		}
 
-		if (pLight->IsVisible)
+		// Setup object-light intersection tracking
+		// TODO: for pairs of static object and static light might use lightmapping or other optimizations. Exploit physics lib's collision?
+		// TODO: _IsForwardLighting OR shadows / alpha etc, what needs intersections in deferred lighting
+		const bool TrackObjectLightIntersections = pLight->IsVisible && Record.BoundsVersion && _RenderPath->_IsForwardLighting;
+		if (TrackObjectLightIntersections != pLight->TrackObjectLightIntersections)
 		{
-			// TODO: if needed, mark light for updating object intersections. Only for local lights!
+			_pScene->TrackObjectLightIntersections(*pAttr, TrackObjectLightIntersections);
+			pLight->TrackObjectLightIntersections = TrackObjectLightIntersections;
+		}
+		if (TrackObjectLightIntersections)
+		{
+			_pScene->UpdateObjectLightIntersections(*pAttr);
 			// NB: for spot light isect and visibility needs to be updated when tfm changes, if cone/frustum is used for isect. Other lights are transform independent.
 			//???could keep BoundsVersion unchanged for non-spot lights if translation and scale didn't change and only rotation did? Worth it?
 			// prioritization of lights if needed only when the object has more lights than supported. Otherwise can omit completely. Calc per object.
@@ -585,37 +607,7 @@ bool CView::Render()
 	for (auto& Queue : _RenderQueues)
 		Queue->Update();
 
-	// _pScene->UpdateRenderableLightIntersections() for marked objects and lights
-	//???for each light could store a full list of morton codes or at least top level morton codes that are intersecting it!
-	//???or is it easier to test against object AABB directly?
-	//???is tracking intersections on insert or tracking objects inside node / intersecting the node a good idea?
-	//!!!NB: if object and light don't move or resize, their intersection doesn't change! Even if their visibility changes!
-	//!!!store light indices of the object sorted by importance, to filter out lights exceeding the limit of lights per object number!
-	//???how to handle terrain lighting in a forward pipeline? terrain is a tree of AABBs, can optimize intersecions and detect region for each light!
-	/*
-		case Light_Point:
-		{
-			//!!!???avoid object creation, rewrite functions so that testing against vector + float is possible!?
-			sphere LightBounds(LightRec.Transform.Translation(), pLight->GetRange());
-			if (LightBounds.GetClipStatus(Context.AABB) == EClipStatus::Outside) continue;
-			break;
-		}
-		case Light_Spot:
-		{
-			//!!!???PERF: test against sphere before?!
-			//???cache GlobalFrustum in a light record?
-			matrix44 LocalFrustum;
-			pLight->CalcLocalFrustum(LocalFrustum);
-			matrix44 GlobalFrustum;
-			LightRec.Transform.invert_simple(GlobalFrustum);
-			GlobalFrustum *= LocalFrustum;
-			if (Context.AABB.GetClipStatus(GlobalFrustum) == EClipStatus::Outside) continue;
-			break;
-		}
-	*/
-
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// TODO: fill global light list and other globals here or in CRenderPath::Render! Dir lights - to separate GPU structures, choose N most intense/high-priority.
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!!!DBG TMP!
 	LightCache.Clear();
@@ -638,8 +630,6 @@ bool CView::Render()
 			}
 		}
 	}
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	return _RenderPath->Render(*this);

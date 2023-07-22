@@ -26,9 +26,9 @@ class CRenderableAttribute: public Scene::CNodeAttribute
 
 protected:
 
-	CGraphicsScene*		    pScene = nullptr;
-	CGraphicsScene::HRecord SceneRecordHandle = {};
-	U32                     LastTransformVersion = 0;
+	CGraphicsScene*		    _pScene = nullptr;
+	CGraphicsScene::HRecord _SceneRecordHandle = {};
+	U32                     _LastTransformVersion = 0;
 
 	virtual void OnActivityChanged(bool Active) override;
 
@@ -39,6 +39,7 @@ public:
 	virtual bool                GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
 	bool                        GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const;
 	void                        UpdateInGraphicsScene(CGraphicsScene& Scene);
+	CGraphicsScene::HRecord     GetSceneHandle() const { return _SceneRecordHandle; }
 
 	virtual void                RenderDebug(Debug::CDebugDraw& DebugDraw) const override;
 };

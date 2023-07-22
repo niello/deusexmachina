@@ -12,29 +12,29 @@ void CRenderableAttribute::UpdateInGraphicsScene(CGraphicsScene& Scene)
 
 	CAABB AABB;
 	const bool IsAABBValid = GetLocalAABB(AABB);
-	const bool SceneChanged = (pScene != &Scene);
+	const bool SceneChanged = (_pScene != &Scene);
 
-	if (pScene && (SceneChanged || !IsAABBValid))
-		pScene->RemoveRenderable(SceneRecordHandle);
+	if (_pScene && (SceneChanged || !IsAABBValid))
+		_pScene->RemoveRenderable(_SceneRecordHandle);
 
 	if (!IsAABBValid)
 	{
 		// This object currently has no bounds at all, it can't be added to the level
-		pScene = nullptr;
-		SceneRecordHandle = {};
+		_pScene = nullptr;
+		_SceneRecordHandle = {};
 	}
 	else if (SceneChanged)
 	{
-		pScene = &Scene;
+		_pScene = &Scene;
 		AABB.Transform(_pNode->GetWorldMatrix());
-		SceneRecordHandle = Scene.AddRenderable(AABB, *this);
-		LastTransformVersion = _pNode->GetTransformVersion();
+		_SceneRecordHandle = Scene.AddRenderable(AABB, *this);
+		_LastTransformVersion = _pNode->GetTransformVersion();
 	}
-	else if (_pNode->GetTransformVersion() != LastTransformVersion) //!!! || LocalBox changed!
+	else if (_pNode->GetTransformVersion() != _LastTransformVersion) //!!! || LocalBox changed!
 	{
 		AABB.Transform(_pNode->GetWorldMatrix());
-		Scene.UpdateRenderableBounds(SceneRecordHandle, AABB);
-		LastTransformVersion = _pNode->GetTransformVersion();
+		Scene.UpdateRenderableBounds(_SceneRecordHandle, AABB);
+		_LastTransformVersion = _pNode->GetTransformVersion();
 	}
 }
 //---------------------------------------------------------------------
@@ -43,11 +43,11 @@ bool CRenderableAttribute::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 {
 	if (!_pNode) return false;
 
-	if (pScene && _pNode->GetTransformVersion() == LastTransformVersion) //!!! && LocalBox not changed!
+	if (_pScene && _pNode->GetTransformVersion() == _LastTransformVersion) //!!! && LocalBox not changed!
 	{
 		// TODO: use Center+Extents SIMD AABB everywhere?!
-		const auto Center = SceneRecordHandle->second.BoxCenter;
-		const auto Extent = SceneRecordHandle->second.BoxExtent;
+		const auto Center = _SceneRecordHandle->second.BoxCenter;
+		const auto Extent = _SceneRecordHandle->second.BoxExtent;
 		OutBox.Set(
 			vector3(acl::vector_get_x(Center), acl::vector_get_y(Center), acl::vector_get_z(Center)),
 			vector3(acl::vector_get_x(Extent), acl::vector_get_y(Extent), acl::vector_get_z(Extent)));
@@ -64,11 +64,11 @@ bool CRenderableAttribute::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 
 void CRenderableAttribute::OnActivityChanged(bool Active)
 {
-	if (!Active && pScene)
+	if (!Active && _pScene)
 	{
-		pScene->RemoveRenderable(SceneRecordHandle);
-		pScene = nullptr;
-		SceneRecordHandle = {};
+		_pScene->RemoveRenderable(_SceneRecordHandle);
+		_pScene = nullptr;
+		_SceneRecordHandle = {};
 	}
 }
 //---------------------------------------------------------------------
@@ -81,8 +81,8 @@ void CRenderableAttribute::RenderDebug(Debug::CDebugDraw& DebugDraw) const
 		DebugDraw.DrawBoxWireframe(AABB, Render::ColorRGBA(160, 220, 255, 255), 1.f);
 
 	// Draw spatial tree node bounds
-	if (pScene)
-		DebugDraw.DrawBoxWireframe(pScene->GetNodeAABB(SceneRecordHandle->second.NodeIndex, true), Render::ColorRGBA(160, 255, 160, 255), 1.f);
+	if (_pScene)
+		DebugDraw.DrawBoxWireframe(_pScene->GetNodeAABB(_SceneRecordHandle->second.NodeIndex, true), Render::ColorRGBA(160, 255, 160, 255), 1.f);
 }
 //---------------------------------------------------------------------
 
