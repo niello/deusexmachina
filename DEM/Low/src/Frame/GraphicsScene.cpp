@@ -482,60 +482,48 @@ void CGraphicsScene::TrackObjectLightIntersections(CLightAttribute& LightAttr, b
 
 void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& RenderableAttr)
 {
+	auto& RenderableRecord = RenderableAttr.GetSceneHandle()->second;
+	n_assert_dbg(RenderableRecord.TrackObjectLightIntersections && RenderableRecord.BoundsVersion);
+
+	RenderableRecord.IntersectionBoundsVersion = RenderableRecord.BoundsVersion;
+
+	auto pCurrIntersection = RenderableRecord.pObjectLightIntersections;
+
+	// iterate _Lights and existing intersections linked list in parallel, sorted
+	//???how to handle not sorted collection, e.g. data from octree query?
+	//???how UE avoids recreating already existing links? can't find. does it erase the proxy and then refill links when something changes?
+
 	// TODO: instead of iterating through all objects, can query them from octree! Will be much less instances to check!!!
 	// Query by our attr's bounds and octree node. Go to all parents of the node and to only intersecting children, see UE:
 	// - FindElementsWithBoundsTestInternal, GetIntersectingChildren
-	for (auto& [UID, Record] : _Lights)
+	for (auto& [UID, LightRecord] : _Lights)
 	{
 		// Don't erase existing connection in this case, tracking may be re-enabled later and connection may remain valid
-		if (!Record.TrackObjectLightIntersections) continue;
+		//!!!if querying octree, there won't be objects with zero counter, so this condition won't be needed!
+		if (!LightRecord.TrackObjectLightIntersections) continue;
 
-		// if interaction found and interaction bounds version for our object is equal to bounds version in the object, we already updated, skip
-		// else if interaction found, test if it is still active (light is local, intersection happens), erase if no
-		// else if interaction not found, test if it must be created (light is local, intersection happens), create if so
+		// Skip if has up to date intersection (e.g. when both renderable and light get updated at the same frame)
+		if (pCurrIntersection && pCurrIntersection->RenderableBoundsVersion == RenderableRecord.BoundsVersion) continue;
 
-		//!!!light-is-local check is as simple as "if (Record.BoundsVersion)", global lights have invalid bounds
-		//???use the same rule for renderables? e.g. skybox will then skip intersections, which is desired
-
-		// test intersection of object's AABB or sphere with light's shape, light performs the check in a virtual function
-
-		// iterate _Lights and existing intersections linked list in parallel, sorted
-		// create / update / delete intersections
-		//???how to handle not sorted collection, e.g. data from octree query?
-		//???how UE avoids recreating already existing links? can't find. does it erase the proxy and then refill links when something changes?
+		// Only local lights (ones with BoundsVersion > 0) track intersections
+		//???can optimize intersection for terrain? could use AABB tree as an additional pass of light culling.
+		//const bool Intersects = LightRecord.BoundsVersion && static_cast<CLightAttribute*>(LightRecord.pAttr)->HasIntersection(sphere / AABB of RenderableRecord);
+		//if (Intersects)
+		//{
+		//	if (pCurrIntersection)
+		//	{
+		//		// update bounds version(s?) in pCurrIntersection from LightRecord and RenderableRecord (need both or one will always be correct?)
+		//	}
+		//	else
+		//	{
+		//		// create CObjectLightIntersection from pool and insert
+		//	}
+		//}
+		//else if (!Intersects && pCurrIntersection)
+		//{
+		//	// erase and return to pool
+		//}
 	}
-	// find lights intersecting bounds of RenderableAttr, need its scene record for bounds
-	// linear search needs checking light's TrackObjectLightIntersections, spatial acceleration might avoid it by inserting only these enabled objects & lights!
-	//???accelerate only lights, and query light octree with renderable bounds like in UE?
-	//!!!UE accelerates renderable objects to another octree which is queried by the light!
-
-	//???if sort lights by type and sort light indices in objects, can skip submitting Type and simply compare index with threshold? worth it?
-
-	//???is tracking intersections on insert or tracking objects inside node / intersecting the node a good idea?
-	//!!!NB: if object and light don't move or resize, their intersection doesn't change! Even if their visibility changes!
-	//!!!store light indices of the object sorted by importance, to filter out lights exceeding the limit of lights per object number!
-	//???how to handle terrain lighting in a forward pipeline? terrain is a tree of AABBs, can optimize intersections and detect region for each light!
-	/*
-		case Light_Point:
-		{
-			//!!!???avoid object creation, rewrite functions so that testing against vector + float is possible!?
-			sphere LightBounds(LightRec.Transform.Translation(), pLight->GetRange());
-			if (LightBounds.GetClipStatus(Context.AABB) == EClipStatus::Outside) continue;
-			break;
-		}
-		case Light_Spot:
-		{
-			//!!!???PERF: test against sphere before?!
-			//???cache GlobalFrustum in a light record?
-			matrix44 LocalFrustum;
-			pLight->CalcLocalFrustum(LocalFrustum);
-			matrix44 GlobalFrustum;
-			LightRec.Transform.invert_simple(GlobalFrustum);
-			GlobalFrustum *= LocalFrustum;
-			if (Context.AABB.GetClipStatus(GlobalFrustum) == EClipStatus::Outside) continue;
-			break;
-		}
-	*/
 }
 //---------------------------------------------------------------------
 

@@ -43,20 +43,36 @@ struct CSpatialTreeNode
 
 constexpr auto NO_SPATIAL_TREE_NODE = Data::CSparseArray2<CSpatialTreeNode, U32>::INVALID_INDEX;
 
+struct CObjectLightIntersection
+{
+	CLightAttribute*           pLightAttr;
+	CRenderableAttribute*      pRenderableAttr;
+
+	CObjectLightIntersection** ppPrevLightNext;
+	CObjectLightIntersection*  pNextLight;
+	CObjectLightIntersection** ppPrevRenderableNext;
+	CObjectLightIntersection*  pNextRenderable;
+
+	U32                        LightBoundsVersion;
+	U32                        RenderableBoundsVersion;
+};
+
 class CGraphicsScene
 {
 public:
 
 	struct CSpatialRecord
 	{
-		acl::Vector4_32        BoxCenter;
-		acl::Vector4_32        BoxExtent;
-		Scene::CNodeAttribute* pAttr = nullptr;
-		TMorton                NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
-		float                  SphereRadius = 0.f; //!!!optimal center may be different! store acl::Vector4_32 with center and radius?
-		U32                    NodeIndex = NO_SPATIAL_TREE_NODE;
-		U32                    BoundsVersion = 1;  // 0 for invalid bounds (e.g. infinite)
-		U8                     TrackObjectLightIntersections = 0;
+		acl::Vector4_32           BoxCenter;
+		acl::Vector4_32           BoxExtent;
+		Scene::CNodeAttribute*    pAttr = nullptr;
+		CObjectLightIntersection* pObjectLightIntersections = nullptr;
+		TMorton                   NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
+		float                     SphereRadius = 0.f; //!!!optimal center may be different! store acl::Vector4_32 with center and radius?
+		U32                       NodeIndex = NO_SPATIAL_TREE_NODE;
+		U32                       BoundsVersion = 1;  // 0 for invalid bounds (e.g. infinite)
+		U32                       IntersectionBoundsVersion = 0;
+		U8                        TrackObjectLightIntersections = 0;
 	};
 
 	using HRecord = std::map<UPTR, CSpatialRecord>::iterator;

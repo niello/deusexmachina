@@ -231,6 +231,7 @@ void CTerrainRenderer::FillNodeLightIndices(const CProcessTerrainNodeArgs& Args,
 }
 //---------------------------------------------------------------------
 
+//???how to handle terrain lighting in a forward pipeline? terrain is a tree of AABBs, can optimize intersections and detect region for each light!
 //!!!recalculation required only on viewer's position / look vector change!
 CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProcessTerrainNodeArgs& Args,
 																   U32 X, U32 Z, U32 LOD, float LODRange,
