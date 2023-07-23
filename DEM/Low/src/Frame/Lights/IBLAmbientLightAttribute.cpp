@@ -1,8 +1,10 @@
 #include "IBLAmbientLightAttribute.h"
 #include <Frame/GraphicsResourceManager.h>
 #include <Render/ImageBasedLight.h>
+#include <Scene/SceneNode.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
+#include <acl/math/vector4_32.h>
 
 namespace Frame
 {
@@ -82,6 +84,19 @@ bool CIBLAmbientLightAttribute::GetLocalAABB(CAABB& OutBox) const
 	// Negative range is treated as invalid bounds which is desired for global IBL source
 	OutBox.Set(vector3::Zero, vector3(_Range, _Range, _Range));
 	return true;
+}
+//---------------------------------------------------------------------
+
+bool CIBLAmbientLightAttribute::IntersectsWith(acl::Vector4_32 SphereCenter, float SphereRadius) const
+{
+	if (IsGlobal()) return true;
+
+	const auto& Pos = _pNode->GetWorldPosition();
+	const acl::Vector4_32 LightPos = acl::vector_set(Pos.x, Pos.y, Pos.z);
+
+	const float TotalRadius = SphereRadius + _Range;
+
+	return acl::vector_length_squared3(acl::vector_sub(LightPos, SphereCenter)) <= TotalRadius * TotalRadius;
 }
 //---------------------------------------------------------------------
 

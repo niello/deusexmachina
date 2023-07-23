@@ -1,8 +1,10 @@
 #include "PointLightAttribute.h"
 #include <Render/PointLight.h>
+#include <Scene/SceneNode.h>
 #include <Math/AABB.h>
 #include <Core/Factory.h>
 #include <IO/BinaryReader.h>
+#include <acl/math/vector4_32.h>
 
 namespace Frame
 {
@@ -85,6 +87,17 @@ bool CPointLightAttribute::GetLocalAABB(CAABB& OutBox) const
 {
 	OutBox.Set(vector3::Zero, vector3(_Range, _Range, _Range));
 	return true;
+}
+//---------------------------------------------------------------------
+
+bool CPointLightAttribute::IntersectsWith(acl::Vector4_32 SphereCenter, float SphereRadius) const
+{
+	const auto& Pos = _pNode->GetWorldPosition();
+	const acl::Vector4_32 LightPos = acl::vector_set(Pos.x, Pos.y, Pos.z);
+
+	const float TotalRadius = SphereRadius + _Range;
+
+	return acl::vector_length_squared3(acl::vector_sub(LightPos, SphereCenter)) <= TotalRadius * TotalRadius;
 }
 //---------------------------------------------------------------------
 

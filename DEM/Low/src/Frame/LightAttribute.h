@@ -40,10 +40,8 @@ public:
 	CGraphicsScene::HRecord GetSceneHandle() const { return _SceneRecordHandle; }
 
 	float                  GetMaxDistanceSquared() const { return _MaxDistanceSq; }
+	virtual bool           IntersectsWith(acl::Vector4_32 SphereCenter, float SphereRadius) const = 0;
 	virtual bool           DoesEmitAnyEnergy() const = 0;
-
-	// get intensity at point
-	// calc intersection / influence for AABB or OBB - get max intensity for box (= get intensity at closest point)
 };
 
 using PLightAttribute = Ptr<CLightAttribute>;

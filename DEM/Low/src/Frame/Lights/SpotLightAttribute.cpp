@@ -1,5 +1,6 @@
 #include "SpotLightAttribute.h"
 #include <Render/SpotLight.h>
+#include <Scene/SceneNode.h>
 #include <Math/AABB.h>
 #include <Core/Factory.h>
 #include <IO/BinaryReader.h>
@@ -54,6 +55,24 @@ bool CSpotLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Cou
 		}
 	}
 
+	// Clamp angles to valid values
+	_ConeInner = std::clamp(_ConeInner, 0.f, PI);
+	_ConeOuter = std::clamp(_ConeOuter, _ConeInner, PI);
+
+	// Calculate bounding sphere of a cone. Use local offset along the look axis for the sphere center.
+	// See: https://bartwronski.com/2017/04/13/cull-that-cone/
+	acl::sincos(_ConeOuter * 0.5f, _SinHalfOuter, _CosHalfOuter);
+	if (_CosHalfOuter < COS_PI_DIV_4)
+	{
+		_BoundingSphereOffsetAlongDir = _Range * _CosHalfOuter;
+		_BoundingSphereRadius = _Range * _SinHalfOuter;
+	}
+	else
+	{
+		_BoundingSphereOffsetAlongDir = _Range / (2.0f * _CosHalfOuter);
+		_BoundingSphereRadius = _BoundingSphereOffsetAlongDir;
+	}
+
 	return true;
 }
 //---------------------------------------------------------------------
@@ -61,6 +80,8 @@ bool CSpotLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Cou
 Scene::PNodeAttribute CSpotLightAttribute::Clone()
 {
 	PSpotLightAttribute ClonedAttr = n_new(CSpotLightAttribute());
+	ClonedAttr->_BoundingSphereOffsetAlongDir = _BoundingSphereOffsetAlongDir;
+	ClonedAttr->_BoundingSphereRadius = _BoundingSphereRadius;
 	ClonedAttr->_Color = _Color;
 	ClonedAttr->_Intensity = _Intensity;
 	ClonedAttr->_Range = _Range;
@@ -99,6 +120,33 @@ bool CSpotLightAttribute::GetLocalAABB(CAABB& OutBox) const
 	OutBox.Min.set(-HalfFarExtent, -HalfFarExtent, -_Range);
 	OutBox.Max.set(HalfFarExtent, HalfFarExtent, 0.f);
 	return true;
+}
+//---------------------------------------------------------------------
+
+bool CSpotLightAttribute::IntersectsWith(acl::Vector4_32 SphereCenter, float SphereRadius) const
+{
+	const auto& Pos = _pNode->GetWorldPosition();
+	const acl::Vector4_32 LightPos = acl::vector_set(Pos.x, Pos.y, Pos.z);
+
+	const auto AxisZ = _pNode->GetWorldMatrix().AxisZ();
+	const acl::Vector4_32 LightDir = acl::vector_set(-AxisZ.x, -AxisZ.y, -AxisZ.z);
+
+	// Check the bounding sphere of the light first
+	const acl::Vector4_32 BoundingSpherePos = acl::vector_mul_add(LightDir, _BoundingSphereOffsetAlongDir, LightPos);
+	const float TotalRadius = SphereRadius + _BoundingSphereRadius;
+	if (acl::vector_length_squared3(acl::vector_sub(BoundingSpherePos, SphereCenter)) > TotalRadius * TotalRadius) return false;
+
+	// Check sphere-cone intersection
+
+	acl::Vector4_32 DistanceVector = acl::vector_sub(SphereCenter, acl::vector_mul(LightDir, (SphereRadius / _SinHalfOuter)));
+	float SqDistance = acl::vector_length_squared3(DistanceVector);
+	float ProjectedLength = acl::vector_dot3(LightDir, DistanceVector);
+	if (ProjectedLength <= 0.f || ProjectedLength * ProjectedLength < SqDistance * _CosHalfOuter * _CosHalfOuter) return false;
+
+	DistanceVector = acl::vector_sub(SphereCenter, LightPos);
+	SqDistance = acl::vector_length_squared3(DistanceVector);
+	ProjectedLength = -acl::vector_dot3(LightDir, DistanceVector);
+	return ProjectedLength <= 0.f || ProjectedLength * ProjectedLength < SqDistance * _SinHalfOuter * _SinHalfOuter || SqDistance <= SphereRadius * SphereRadius;
 }
 //---------------------------------------------------------------------
 

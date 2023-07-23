@@ -491,6 +491,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 
 	// iterate _Lights and existing intersections linked list in parallel, sorted
 	//???how to handle not sorted collection, e.g. data from octree query?
+	//???query to vector (stored in class to avoid per frame allocations) and sort pefore processing? Will O(query+sort) be better than O(bruteforce)?
 	//???how UE avoids recreating already existing links? can't find. does it erase the proxy and then refill links when something changes?
 
 	// TODO: instead of iterating through all objects, can query them from octree! Will be much less instances to check!!!
@@ -502,27 +503,45 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 		//!!!if querying octree, there won't be objects with zero counter, so this condition won't be needed!
 		if (!LightRecord.TrackObjectLightIntersections) continue;
 
+		// TODO: here must sync pCurrIntersection with UID+LightRecord
+
 		// Skip if has up to date intersection (e.g. when both renderable and light get updated at the same frame)
 		if (pCurrIntersection && pCurrIntersection->RenderableBoundsVersion == RenderableRecord.BoundsVersion) continue;
 
 		// Only local lights (ones with BoundsVersion > 0) track intersections
-		//???can optimize intersection for terrain? could use AABB tree as an additional pass of light culling.
-		//const bool Intersects = LightRecord.BoundsVersion && static_cast<CLightAttribute*>(LightRecord.pAttr)->HasIntersection(sphere / AABB of RenderableRecord);
-		//if (Intersects)
-		//{
-		//	if (pCurrIntersection)
-		//	{
-		//		// update bounds version(s?) in pCurrIntersection from LightRecord and RenderableRecord (need both or one will always be correct?)
-		//	}
-		//	else
-		//	{
-		//		// create CObjectLightIntersection from pool and insert
-		//	}
-		//}
-		//else if (!Intersects && pCurrIntersection)
-		//{
-		//	// erase and return to pool
-		//}
+		//???can optimize intersection for terrain? could use AABB tree as an additional pass of light culling. Or disable tracking for terrain and override manually?
+		const bool Intersects = LightRecord.BoundsVersion && static_cast<CLightAttribute*>(LightRecord.pAttr)->IntersectsWith(RenderableRecord.BoxCenter, RenderableRecord.SphereRadius);
+		if (Intersects)
+		{
+			if (pCurrIntersection)
+			{
+				//!!!DBG TMP! Both are just to check if some of assignments is always redundant (I'm too lazy, I know)
+				n_assert_dbg(pCurrIntersection->LightBoundsVersion == LightRecord.BoundsVersion);
+				n_assert_dbg(pCurrIntersection->RenderableBoundsVersion == RenderableRecord.BoundsVersion);
+
+				pCurrIntersection->LightBoundsVersion = LightRecord.BoundsVersion;
+				pCurrIntersection->RenderableBoundsVersion = RenderableRecord.BoundsVersion;
+			}
+			else
+			{
+				auto pIntersection = _IntersectionPool.Construct();
+				pIntersection->pRenderableAttr = static_cast<CRenderableAttribute*>(RenderableRecord.pAttr);
+				pIntersection->pLightAttr = static_cast<CLightAttribute*>(LightRecord.pAttr);
+				pIntersection->LightBoundsVersion = LightRecord.BoundsVersion;
+				pIntersection->RenderableBoundsVersion = RenderableRecord.BoundsVersion;
+
+				// ... insert intersection to lists, handle sync iterator correctly, if used ...
+				//???preserve sorting in both lists for perfect sync?
+			}
+		}
+		else if (!Intersects && pCurrIntersection)
+		{
+			auto pIntersection = pCurrIntersection;
+
+			// ... remove intersection from lists, advance iterator if used for syncing ...
+
+			_IntersectionPool.Destroy(pCurrIntersection);
+		}
 	}
 }
 //---------------------------------------------------------------------

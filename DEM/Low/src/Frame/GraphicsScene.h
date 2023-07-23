@@ -1,6 +1,7 @@
 #pragma once
 #include <Data/SparseArray2.hpp>
 #include <Math/AABB.h>
+#include <System/Allocators/PoolAllocator.h>
 #include <acl/math/math_types.h>
 #include <map>
 
@@ -68,7 +69,7 @@ public:
 		Scene::CNodeAttribute*    pAttr = nullptr;
 		CObjectLightIntersection* pObjectLightIntersections = nullptr;
 		TMorton                   NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
-		float                     SphereRadius = 0.f; //!!!optimal center may be different! store acl::Vector4_32 with center and radius?
+		float                     SphereRadius = 0.f; //!!!optimal center may be different! store acl::Vector4_32 with center and radius? then fix light intersection calls!
 		U32                       NodeIndex = NO_SPATIAL_TREE_NODE;
 		U32                       BoundsVersion = 1;  // 0 for invalid bounds (e.g. infinite)
 		U32                       IntersectionBoundsVersion = 0;
@@ -86,6 +87,8 @@ protected:
 	std::map<UPTR, CSpatialRecord>                   _Renderables;
 	std::map<UPTR, CSpatialRecord>                   _Lights;
 	std::vector<decltype(_Renderables)::node_type>   _ObjectNodePool;
+
+	CPool<CObjectLightIntersection>                  _IntersectionPool;
 
 	float _WorldExtent = 0.f; // Having all extents the same reduces calculation and makes moving object update frequency isotropic
 	float _InvWorldSize = 0.f; // Cached 1 / (2 * _WorldExtent)
