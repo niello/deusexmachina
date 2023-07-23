@@ -532,6 +532,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 
 				// ... insert intersection to lists, handle sync iterator correctly, if used ...
 				//???preserve sorting in both lists for perfect sync?
+				// ... update intersection state version for renderable (and maybe for light) ...
 			}
 		}
 		else if (!Intersects && pCurrIntersection)
@@ -539,6 +540,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 			auto pIntersection = pCurrIntersection;
 
 			// ... remove intersection from lists, advance iterator if used for syncing ...
+			// ... update intersection state version for renderable (and maybe for light) ...
 
 			_IntersectionPool.Destroy(pCurrIntersection);
 		}

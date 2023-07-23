@@ -42,6 +42,8 @@ CModelRenderer::CModelTechInterface* CModelRenderer::GetTechInterface(const CTec
 			TechInterface.MemberWorldMatrix = Struct[sidWorldMatrix];
 			TechInterface.MemberLightCount = Struct[sidLightCount];
 			TechInterface.MemberLightIndices = Struct[sidLightIndices];
+
+			n_assert_dbg(!TechInterface.MemberLightCount || (TechInterface.MemberLightIndices && TechInterface.MemberLightIndices.GetElementCount()));
 		}
 	}
 
@@ -156,7 +158,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 		}
 
 		//!!!this allows using _ConstSkinPalette curcularly with no_overwrite! if out of space, wrap and discard and start filling from beginning. Hide inside CShaderParamStorage?
-		//!!!make sure that only a part of the buffer is updated and submitted to GPU!
+		//!!!make sure that only a changed part of the buffer is updated and submitted to GPU!
 		const auto InstanceBoneCount = std::min(Model.BoneCount, _pCurrTechInterface->ConstSkinPalette.GetElementCount() - _BufferedBoneCount);
 		_pCurrTechInterface->PerInstanceParams.SetMatrixArray(_pCurrTechInterface->ConstSkinPalette, Model.pSkinPalette, InstanceBoneCount, _BufferedBoneCount);
 		_BufferedBoneCount += InstanceBoneCount;
@@ -166,23 +168,23 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 	{
 		const auto LightCount = LightingEnabled ? std::min<U32>(Model.LightCount, _pCurrTechInterface->MemberLightIndices.GetElementCount()) : 0;
 
-		//???need or use INVALID_INDEX to stop iterating light index array in a shader? possibly uses less shader consts!
 		_pCurrTechInterface->MemberLightCount.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
 		_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->MemberLightCount, LightCount);
-
-		//???send all or only visible lights to GPU? how to detect that something have changed, to avoid resending each frame?
-		//set flag when testing lights against frustum and visibility of one actually changes?
 
 		// Set per-instance light indices
 		if (LightCount)
 		{
-			//CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(Model.LightIndexBase);
-			//U32 InstLightIdx;
-			//for (InstLightIdx = 0; InstLightIdx < Model.LightCount; ++InstLightIdx, ++ItIdx)
-			//{
-			//	const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-			//	PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), LightRec.GPULightIndex);
-			//}
+			// prioritization of lights if needed only when the object has more lights than supported. Otherwise can omit completely. Calc per object.
+			// only local lights are stored in intersections and therefore only they are prioritized. Global lights have different processing in a shader.
+			// use CLight::FillGPUStructure(DataRef) to avoid RTTI casts, allow each light to fill its structure, incl. type enum.
+			//???process intersections not here but in UpdateRenderable?! Makes sense, can make special processing for terrain etc.
+			//!!!track intersections state version to avoid updating and re-prioritizing when nothing has changed. NB: movement can be important, especially
+			// for terrain, as light may be still intersecting with the terrain in a whole but now affecting other patches. Terrain could also remember light's bounds version?
+
+			//_pCurrTechInterface->MemberLightIndices.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
+			// if affecting light count > _pCurrTechInterface->MemberLightIndices.GetElementCount(), clamp by proiritization
+			// for each affecting light
+			//	_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->MemberLightIndices[i], LightIndex);
 		}
 	}
 

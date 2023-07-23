@@ -500,8 +500,7 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 		{
 			_pScene->UpdateObjectLightIntersections(*pAttr);
 
-			// if version changed, update light indices
-			// prioritization is running in a renderer if there are too many affecting lights
+			// TODO: if intersection state version changed, update light indices. Or try to move it into UpdateRenderable or new similar method?
 		}
 	}
 }
@@ -558,7 +557,7 @@ void CView::UpdateLights(bool ViewProjChanged)
 		}
 
 		// Setup object-light intersection tracking
-		// TODO: for pairs of static object and static light might use lightmapping or other optimizations. Exploit physics lib's collision?
+		// TODO: for pairs of static object + static light might use lightmapping or other optimizations. Exploit physics lib's collision? Or calc once? Or preprocess offline?
 		// TODO: _IsForwardLighting OR shadows / alpha etc, what needs intersections in deferred lighting
 		const bool TrackObjectLightIntersections = pLight->IsVisible && Record.BoundsVersion && _RenderPath->_IsForwardLighting;
 		if (TrackObjectLightIntersections != pLight->TrackObjectLightIntersections)
@@ -566,15 +565,7 @@ void CView::UpdateLights(bool ViewProjChanged)
 			_pScene->TrackObjectLightIntersections(*pAttr, TrackObjectLightIntersections);
 			pLight->TrackObjectLightIntersections = TrackObjectLightIntersections;
 		}
-		if (TrackObjectLightIntersections)
-		{
-			_pScene->UpdateObjectLightIntersections(*pAttr);
-			// NB: for spot light isect and visibility needs to be updated when tfm changes, if cone/frustum is used for isect. Other lights are transform independent.
-			//???could keep BoundsVersion unchanged for non-spot lights if translation and scale didn't change and only rotation did? Worth it?
-			// prioritization of lights if needed only when the object has more lights than supported. Otherwise can omit completely. Calc per object.
-			// only local lights are stored in intersections and therefore only they are prioritized. Global lights have different processing in a shader.
-			// use CLight::FillGPUStructure(DataRef) to avoid RTTI casts, allow each light to fill its structure, incl. type enum.
-		}
+		if (TrackObjectLightIntersections) _pScene->UpdateObjectLightIntersections(*pAttr);
 	}
 }
 //---------------------------------------------------------------------
@@ -608,6 +599,8 @@ bool CView::Render()
 		Queue->Update();
 
 	// TODO: fill global light list and other globals here or in CRenderPath::Render! Dir lights - to separate GPU structures, choose N most intense/high-priority.
+	//???send all or only visible lights to GPU? how to detect that something have changed, to avoid resending each frame?
+	//set flag when testing lights against frustum and visibility of one actually changes?
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!!!DBG TMP!
 	LightCache.Clear();

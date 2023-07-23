@@ -39,6 +39,8 @@ void CLightAttribute::UpdateInGraphicsScene(CGraphicsScene& Scene)
 	}
 	else if (_pNode->GetTransformVersion() != _LastTransformVersion) //!!! || LocalBox changed!
 	{
+		// NB: spot light bounds are independent of rotation around dir axis, point - any rotation, dir - any tfm.
+		// Could keep BoundsVersion unchanged in these cases. Worth it? To do this, need to compare prev and new light state, may be light dependent -> virtual call.
 		AABB.Transform(_pNode->GetWorldMatrix());
 		Scene.UpdateLightBounds(_SceneRecordHandle, AABB);
 		_LastTransformVersion = _pNode->GetTransformVersion();
