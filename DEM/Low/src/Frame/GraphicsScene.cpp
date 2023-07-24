@@ -485,42 +485,68 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 	auto& RenderableRecord = RenderableAttr.GetSceneHandle()->second;
 	n_assert_dbg(RenderableRecord.TrackObjectLightIntersections && RenderableRecord.BoundsVersion);
 
+	// Indicate the last update time
 	RenderableRecord.IntersectionBoundsVersion = RenderableRecord.BoundsVersion;
 
-	auto pCurrIntersection = RenderableRecord.pObjectLightIntersections;
-
-	// iterate _Lights and existing intersections linked list in parallel, sorted
+	// TODO: instead of iterating through all _Lights, can query them from octree! Will be much less instances to check!!!
+	// Query by our attr's bounds and octree node. Go to all parents of the node and to only intersecting children, see UE:
+	// - FindElementsWithBoundsTestInternal, GetIntersectingChildren
 	//???how to handle not sorted collection, e.g. data from octree query?
 	//???query to vector (stored in class to avoid per frame allocations) and sort pefore processing? Will O(query+sort) be better than O(bruteforce)?
 	//???how UE avoids recreating already existing links? can't find. does it erase the proxy and then refill links when something changes?
 
-	// TODO: instead of iterating through all objects, can query them from octree! Will be much less instances to check!!!
-	// Query by our attr's bounds and octree node. Go to all parents of the node and to only intersecting children, see UE:
-	// - FindElementsWithBoundsTestInternal, GetIntersectingChildren
-	for (auto& [UID, LightRecord] : _Lights)
+	// An adapted version of DEM::Algo::SortedUnion for syncing with CObjectLightIntersection. Both collections are sorted by UID.
+	auto ItSyncLight = _Lights.begin();
+	auto pSyncIntersection = RenderableRecord.pObjectLightIntersections;
+	bool IsEndLights = (ItSyncLight == _Lights.cend());
+	while (!IsEndLights || pSyncIntersection)
 	{
+		decltype(ItSyncLight) ItLight;
+		CObjectLightIntersection* pMatchingIntersection;
+		if (!pSyncIntersection || (!IsEndLights && ItSyncLight->first < pSyncIntersection->pLightAttr->GetSceneHandle()->first))
+		{
+			ItLight = ItSyncLight++;
+			pMatchingIntersection = nullptr;
+			IsEndLights = (ItSyncLight == _Lights.cend());
+		}
+		else if (IsEndLights || (pSyncIntersection && pSyncIntersection->pLightAttr->GetSceneHandle()->first < ItSyncLight->first))
+		{
+			ItLight = _Lights.end();
+			pMatchingIntersection = pSyncIntersection;
+			pSyncIntersection = pSyncIntersection->pNextLight;
+		}
+		else // equal
+		{
+			ItLight = ItSyncLight++;
+			pMatchingIntersection = pSyncIntersection;
+			pSyncIntersection = pSyncIntersection->pNextLight;
+			IsEndLights = (ItSyncLight == _Lights.cend());
+		}
+
+		//!!!FIXME: if ItLight is end(), the light was deleted from scene! This should not happen because we must clear intersections on its deletion from scene!
+		//???can simplify sync logic above and add assertion to check the invariant?
+		auto& [UID, LightRecord] = *ItLight;
+
 		// Don't erase existing connection in this case, tracking may be re-enabled later and connection may remain valid
 		//!!!if querying octree, there won't be objects with zero counter, so this condition won't be needed!
 		if (!LightRecord.TrackObjectLightIntersections) continue;
 
-		// TODO: here must sync pCurrIntersection with UID+LightRecord
-
 		// Skip if has up to date intersection (e.g. when both renderable and light get updated at the same frame)
-		if (pCurrIntersection && pCurrIntersection->RenderableBoundsVersion == RenderableRecord.BoundsVersion) continue;
+		if (pMatchingIntersection && pMatchingIntersection->RenderableBoundsVersion == RenderableRecord.BoundsVersion) continue;
 
 		// Only local lights (ones with BoundsVersion > 0) track intersections
 		//???can optimize intersection for terrain? could use AABB tree as an additional pass of light culling. Or disable tracking for terrain and override manually?
 		const bool Intersects = LightRecord.BoundsVersion && static_cast<CLightAttribute*>(LightRecord.pAttr)->IntersectsWith(RenderableRecord.BoxCenter, RenderableRecord.SphereRadius);
 		if (Intersects)
 		{
-			if (pCurrIntersection)
+			if (pMatchingIntersection)
 			{
 				//!!!DBG TMP! Both are just to check if some of assignments is always redundant (I'm too lazy, I know)
-				n_assert_dbg(pCurrIntersection->LightBoundsVersion == LightRecord.BoundsVersion);
-				n_assert_dbg(pCurrIntersection->RenderableBoundsVersion == RenderableRecord.BoundsVersion);
+				n_assert_dbg(pMatchingIntersection->LightBoundsVersion == LightRecord.BoundsVersion);
+				n_assert_dbg(pMatchingIntersection->RenderableBoundsVersion == RenderableRecord.BoundsVersion);
 
-				pCurrIntersection->LightBoundsVersion = LightRecord.BoundsVersion;
-				pCurrIntersection->RenderableBoundsVersion = RenderableRecord.BoundsVersion;
+				pMatchingIntersection->LightBoundsVersion = LightRecord.BoundsVersion;
+				pMatchingIntersection->RenderableBoundsVersion = RenderableRecord.BoundsVersion;
 			}
 			else
 			{
@@ -535,14 +561,14 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 				// ... update intersection state version for renderable (and maybe for light) ...
 			}
 		}
-		else if (!Intersects && pCurrIntersection)
+		else if (!Intersects && pMatchingIntersection)
 		{
-			auto pIntersection = pCurrIntersection;
+			auto pIntersection = pMatchingIntersection;
 
 			// ... remove intersection from lists, advance iterator if used for syncing ...
 			// ... update intersection state version for renderable (and maybe for light) ...
 
-			_IntersectionPool.Destroy(pCurrIntersection);
+			_IntersectionPool.Destroy(pMatchingIntersection);
 		}
 	}
 }
