@@ -497,20 +497,22 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 
 	// An adapted version of DEM::Algo::SortedUnion for syncing with CObjectLightIntersection. Both collections are sorted by UID.
 	// The logic is simplified in comparison with original SortedUnion because we guarantee that no intersections exist for removed objects and lights.
-	auto pSyncIntersection = RenderableRecord.pObjectLightIntersections;
+	CObjectLightIntersection** pPrevIntersectionNext = &RenderableRecord.pObjectLightIntersections;
+	CObjectLightIntersection* pNextIntersection = RenderableRecord.pObjectLightIntersections;
 	for (auto& [UID, LightRecord] : _Lights)
 	{
 		CObjectLightIntersection* pMatchingIntersection;
-		if (!pSyncIntersection || UID < pSyncIntersection->pLightAttr->GetSceneHandle()->first)
+		if (!pNextIntersection || UID < pNextIntersection->pLightAttr->GetSceneHandle()->first)
 		{
 			pMatchingIntersection = nullptr;
 		}
 		else // equal UIDs, matching intersection found
 		{
-			n_assert_dbg(pSyncIntersection && pSyncIntersection->pLightAttr->GetSceneHandle()->first == UID);
+			n_assert_dbg(pNextIntersection && pNextIntersection->pLightAttr->GetSceneHandle()->first == UID);
 
-			pMatchingIntersection = pSyncIntersection;
-			pSyncIntersection = pSyncIntersection->pNextLight;
+			pMatchingIntersection = pNextIntersection;
+			pPrevIntersectionNext = pNextIntersection->ppPrevLightNext;
+			pNextIntersection = pNextIntersection->pNextLight;
 
 			// Skip if has up to date intersection (e.g. when both renderable and light get updated at the same frame)
 			if (pMatchingIntersection->RenderableBoundsVersion == RenderableRecord.BoundsVersion) continue;
@@ -543,14 +545,28 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 				pIntersection->LightBoundsVersion = LightRecord.BoundsVersion;
 				pIntersection->RenderableBoundsVersion = RenderableRecord.BoundsVersion;
 
-				// ... insert intersection to lists, handle sync iterator correctly, if used ...
-				//???preserve sorting in both lists for perfect sync?
+				// Insert to the light list preserving sorted order
+				*pPrevIntersectionNext = pIntersection;
+				pIntersection->ppPrevLightNext = pPrevIntersectionNext;
+				pIntersection->pNextLight = pNextIntersection;
+				if (pNextIntersection) pNextIntersection->ppPrevLightNext = &pIntersection->pNextLight;
+
+				//!!!insert to the renderable list of this light!
+				//!!!O(n) due to sorting! is still good? try map with pool of nodes? insertion by hint and will be O(1), for removal could use an iterator (stored in the node itself?)
+				//???or not O(1)? can use renderable links of pNextIntersection? or not helpful because linked to completely different list?
+
 				// ... update intersection state version for renderable (and maybe for light) ...
 			}
 		}
 		else if (!Intersects && pMatchingIntersection)
 		{
-			// ... remove intersection from lists, advance iterator if used for syncing ...
+			// Remove from the light list
+			if (pNextIntersection) pNextIntersection->ppPrevLightNext = pMatchingIntersection->ppPrevLightNext;
+			*pMatchingIntersection->ppPrevLightNext = pMatchingIntersection->pNextLight;
+
+			//!!!remove from the renderable list of this light!
+			//!!!O(n) due to sorting! is still good? try map with pool of nodes? insertion by hint and will be O(1), for removal could use an iterator (stored in the node itself?)
+
 			// ... update intersection state version for renderable (and maybe for light) ...
 
 			_IntersectionPool.Destroy(pMatchingIntersection);
