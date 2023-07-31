@@ -696,14 +696,14 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 				n_assert_dbg(!pNextLight || LightUID < pNextLight->pLightAttr->GetSceneHandle()->first);
 
 				AttachObjectLightIntersection(CreateObjectLightIntersection(LightRecord, RenderableRecord), ppPrevLightNext, pNextLight, ppPrevRenderableNext, pNextRenderable);
-				++LightRecord.ObjectLightIntersectionsVersion;
+				++RenderableRecord.ObjectLightIntersectionsVersion;
 			}
 		}
 		else if (!Intersects && pMatchingIntersection)
 		{
 			DetachObjectLightIntersection(pMatchingIntersection);
 			_IntersectionPool.Destroy(pMatchingIntersection);
-			++LightRecord.ObjectLightIntersectionsVersion;
+			++RenderableRecord.ObjectLightIntersectionsVersion;
 		}
 	}
 }
