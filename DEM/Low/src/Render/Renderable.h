@@ -26,6 +26,7 @@ public:
 	float RelScreenRadius = 0.f;  // For LOD and distance culling
 	U32   RenderQueueMask = 0;    // Cached mask for fast access. Calculated from an effect type in a material.
 	U32   BoundsVersion = 0;
+	U16   ObjectLightIntersectionsVersion = 0;
 	U16   GeometryKey = 0;        // For render queue sorting. Optimal as long as groups aren't added to existing meshes
 	U16   MaterialKey = 0;        // For render queue sorting
 	U8    ShaderTechKey = 0;      // For render queue sorting //???or obtain from view using ShaderTechIndex?

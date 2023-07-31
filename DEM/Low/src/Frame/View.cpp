@@ -500,7 +500,10 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 		{
 			_pScene->UpdateObjectLightIntersections(*pAttr);
 
-			// TODO: if intersection state version changed, update light indices. Or try to move it into UpdateRenderable or new similar method?
+			if (Record.ObjectLightIntersectionsVersion != pRenderable->ObjectLightIntersectionsVersion)
+			{
+				// TODO: update light indices. Or try to move it into UpdateRenderable or new similar method, to handle differently in different renderable types?
+			}
 		}
 	}
 }

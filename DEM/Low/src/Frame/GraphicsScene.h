@@ -73,6 +73,7 @@ public:
 		U32                       NodeIndex = NO_SPATIAL_TREE_NODE;
 		U32                       BoundsVersion = 1;  // 0 for invalid bounds (e.g. infinite)
 		U32                       IntersectionBoundsVersion = 0;
+		U16                       ObjectLightIntersectionsVersion = 0;
 		U8                        TrackObjectLightIntersections = 0;
 	};
 
@@ -108,6 +109,7 @@ protected:
 	void    UpdateObjectBounds(HRecord Handle, const CAABB& GlobalBox);
 	void    RemoveObject(std::map<UPTR, CSpatialRecord>& Storage, HRecord Handle);
 
+	void                      TrackObjectLightIntersections(CSpatialRecord& Record, bool Track);
 	CObjectLightIntersection* CreateObjectLightIntersection(const CSpatialRecord& LightRecord, const CSpatialRecord& RenderableRecord);
 
 public:
