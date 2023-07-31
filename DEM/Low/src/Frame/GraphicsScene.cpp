@@ -480,8 +480,52 @@ void CGraphicsScene::TrackObjectLightIntersections(CLightAttribute& LightAttr, b
 }
 //---------------------------------------------------------------------
 
+static inline void AttachObjectLightIntersection(CObjectLightIntersection* pIntersection,
+	CObjectLightIntersection** ppPrevLightNext, CObjectLightIntersection* pNextLight,
+	CObjectLightIntersection** ppPrevRenderableNext, CObjectLightIntersection* pNextRenderable)
+{
+	// Insert to the light list preserving sorted order
+	*ppPrevLightNext = pIntersection;
+	pIntersection->ppPrevLightNext = ppPrevLightNext;
+	pIntersection->pNextLight = pNextLight;
+	if (pNextLight) pNextLight->ppPrevLightNext = &pIntersection->pNextLight;
+
+	// Insert to the primitive list of this light
+	*ppPrevRenderableNext = pIntersection;
+	pIntersection->ppPrevRenderableNext = ppPrevRenderableNext;
+	pIntersection->pNextRenderable = pNextRenderable;
+	if (pNextRenderable) pNextRenderable->ppPrevRenderableNext = &pIntersection->pNextRenderable;
+}
+//---------------------------------------------------------------------
+
+static inline void DetachObjectLightIntersection(CObjectLightIntersection* pIntersection)
+{
+	// Remove from the light list
+	auto pNextLight = pIntersection->pNextLight;
+	if (pNextLight) pNextLight->ppPrevLightNext = pIntersection->ppPrevLightNext;
+	*pIntersection->ppPrevLightNext = pNextLight;
+
+	// Remove from the primitive list of this light
+	auto pNextRenderable = pIntersection->pNextRenderable;
+	if (pNextRenderable) pNextRenderable->ppPrevRenderableNext = pIntersection->ppPrevRenderableNext;
+	*pIntersection->ppPrevRenderableNext = pNextRenderable;
+}
+//---------------------------------------------------------------------
+
+CObjectLightIntersection* CGraphicsScene::CreateObjectLightIntersection(const CSpatialRecord& LightRecord, const CSpatialRecord& RenderableRecord)
+{
+	auto pIntersection = _IntersectionPool.Construct();
+	pIntersection->pRenderableAttr = static_cast<CRenderableAttribute*>(RenderableRecord.pAttr);
+	pIntersection->pLightAttr = static_cast<CLightAttribute*>(LightRecord.pAttr);
+	pIntersection->LightBoundsVersion = LightRecord.BoundsVersion;
+	pIntersection->RenderableBoundsVersion = RenderableRecord.BoundsVersion;
+	return pIntersection;
+}
+//---------------------------------------------------------------------
+
 void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& RenderableAttr)
 {
+	const auto RenderableUID = RenderableAttr.GetSceneHandle()->first;
 	auto& RenderableRecord = RenderableAttr.GetSceneHandle()->second;
 	n_assert_dbg(RenderableRecord.TrackObjectLightIntersections && RenderableRecord.BoundsVersion);
 
@@ -497,22 +541,22 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 
 	// An adapted version of DEM::Algo::SortedUnion for syncing with CObjectLightIntersection. Both collections are sorted by UID.
 	// The logic is simplified in comparison with original SortedUnion because we guarantee that no intersections exist for removed objects and lights.
-	CObjectLightIntersection** pPrevIntersectionNext = &RenderableRecord.pObjectLightIntersections;
-	CObjectLightIntersection* pNextIntersection = RenderableRecord.pObjectLightIntersections;
-	for (auto& [UID, LightRecord] : _Lights)
+	CObjectLightIntersection** ppPrevLightNext = &RenderableRecord.pObjectLightIntersections;
+	CObjectLightIntersection* pNextLight = RenderableRecord.pObjectLightIntersections;
+	for (auto& [LightUID, LightRecord] : _Lights)
 	{
 		CObjectLightIntersection* pMatchingIntersection;
-		if (!pNextIntersection || UID < pNextIntersection->pLightAttr->GetSceneHandle()->first)
+		if (!pNextLight || LightUID < pNextLight->pLightAttr->GetSceneHandle()->first)
 		{
 			pMatchingIntersection = nullptr;
 		}
 		else // equal UIDs, matching intersection found
 		{
-			n_assert_dbg(pNextIntersection && pNextIntersection->pLightAttr->GetSceneHandle()->first == UID);
+			n_assert_dbg(pNextLight && pNextLight->pLightAttr->GetSceneHandle()->first == LightUID);
 
-			pMatchingIntersection = pNextIntersection;
-			pPrevIntersectionNext = pNextIntersection->ppPrevLightNext;
-			pNextIntersection = pNextIntersection->pNextLight;
+			pMatchingIntersection = pNextLight;
+			ppPrevLightNext = pNextLight->ppPrevLightNext;
+			pNextLight = pNextLight->pNextLight;
 
 			// Skip if has up to date intersection (e.g. when both renderable and light get updated at the same frame)
 			if (pMatchingIntersection->RenderableBoundsVersion == RenderableRecord.BoundsVersion) continue;
@@ -524,8 +568,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 
 		// Only local lights (ones with BoundsVersion > 0) track intersections
 		//???can optimize intersection for terrain? could use AABB tree as an additional pass of light culling. Or disable tracking for terrain and override manually?
-		auto pLightAttr = static_cast<CLightAttribute*>(LightRecord.pAttr);
-		const bool Intersects = LightRecord.BoundsVersion && pLightAttr->IntersectsWith(RenderableRecord.BoxCenter, RenderableRecord.SphereRadius);
+		const bool Intersects = LightRecord.BoundsVersion && static_cast<CLightAttribute*>(LightRecord.pAttr)->IntersectsWith(RenderableRecord.BoxCenter, RenderableRecord.SphereRadius);
 		if (Intersects)
 		{
 			if (pMatchingIntersection)
@@ -539,36 +582,29 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 			}
 			else
 			{
-				auto pIntersection = _IntersectionPool.Construct();
-				pIntersection->pRenderableAttr = static_cast<CRenderableAttribute*>(RenderableRecord.pAttr);
-				pIntersection->pLightAttr = pLightAttr;
-				pIntersection->LightBoundsVersion = LightRecord.BoundsVersion;
-				pIntersection->RenderableBoundsVersion = RenderableRecord.BoundsVersion;
+				// Find the position in the primitive list of this light to preserve UID sorting
+				// TODO PERF: now O(n). If critical, can switch from linked list to std::map for O(logN), but anyway clustered lighting should reduce workload a lot.
+				CObjectLightIntersection** ppPrevRenderableNext = &LightRecord.pObjectLightIntersections;
+				CObjectLightIntersection* pNextRenderable = LightRecord.pObjectLightIntersections;
+				while (pNextRenderable && RenderableUID > pNextRenderable->pRenderableAttr->GetSceneHandle()->first)
+				{
+					ppPrevRenderableNext = pNextRenderable->ppPrevRenderableNext;
+					pNextRenderable = pNextRenderable->pNextRenderable;
+				}
 
-				// Insert to the light list preserving sorted order
-				*pPrevIntersectionNext = pIntersection;
-				pIntersection->ppPrevLightNext = pPrevIntersectionNext;
-				pIntersection->pNextLight = pNextIntersection;
-				if (pNextIntersection) pNextIntersection->ppPrevLightNext = &pIntersection->pNextLight;
+				// The current renderable must not exist in the list of the light, because we are creating an intersection only now
+				n_assert_dbg(!pNextRenderable || RenderableUID < pNextRenderable->pRenderableAttr->GetSceneHandle()->first);
 
-				//!!!insert to the renderable list of this light!
-				//!!!O(n) due to sorting! is still good? try map with pool of nodes? insertion by hint and will be O(1), for removal could use an iterator (stored in the node itself?)
-				//???or not O(1)? can use renderable links of pNextIntersection? or not helpful because linked to completely different list?
+				AttachObjectLightIntersection(CreateObjectLightIntersection(LightRecord, RenderableRecord), ppPrevLightNext, pNextLight, ppPrevRenderableNext, pNextRenderable);
 
-				// ... update intersection state version for renderable (and maybe for light) ...
+				// TODO: ... update intersection state version for renderable (and maybe for light) for re-uploading to GPU ...
 			}
 		}
 		else if (!Intersects && pMatchingIntersection)
 		{
-			// Remove from the light list
-			if (pNextIntersection) pNextIntersection->ppPrevLightNext = pMatchingIntersection->ppPrevLightNext;
-			*pMatchingIntersection->ppPrevLightNext = pMatchingIntersection->pNextLight;
+			// TODO: ... update intersection state version for renderable (and maybe for light) for re-uploading to GPU ...
 
-			//!!!remove from the renderable list of this light!
-			//!!!O(n) due to sorting! is still good? try map with pool of nodes? insertion by hint and will be O(1), for removal could use an iterator (stored in the node itself?)
-
-			// ... update intersection state version for renderable (and maybe for light) ...
-
+			DetachObjectLightIntersection(pMatchingIntersection);
 			_IntersectionPool.Destroy(pMatchingIntersection);
 		}
 	}

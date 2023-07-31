@@ -108,6 +108,8 @@ protected:
 	void    UpdateObjectBounds(HRecord Handle, const CAABB& GlobalBox);
 	void    RemoveObject(std::map<UPTR, CSpatialRecord>& Storage, HRecord Handle);
 
+	CObjectLightIntersection* CreateObjectLightIntersection(const CSpatialRecord& LightRecord, const CSpatialRecord& RenderableRecord);
+
 public:
 
 	void            Init(const vector3& Center, float Size, U8 HierarchyDepth);
