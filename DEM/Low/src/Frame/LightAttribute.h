@@ -22,7 +22,7 @@ protected:
 	CGraphicsScene*         _pScene = nullptr;
 	CGraphicsScene::HRecord _SceneRecordHandle = {};
 	U32                     _LastTransformVersion = 0;
-	float                   _MaxDistanceSq = std::numeric_limits<float>().max(); //!!!TODO: load from settings!
+	float                   _MaxDistance = std::numeric_limits<float>().max(); //!!!TODO: load from settings!
 	bool                    _CastsShadow : 1;
 	bool                    _DoOcclusionCulling : 1;
 
@@ -39,8 +39,8 @@ public:
 	void                    UpdateInGraphicsScene(CGraphicsScene& Scene);
 	CGraphicsScene::HRecord GetSceneHandle() const { return _SceneRecordHandle; }
 
-	float                  GetMaxDistanceSquared() const { return _MaxDistanceSq; }
-	virtual bool           IntersectsWith(acl::Vector4_32 SphereCenter, float SphereRadius) const = 0;
+	float                  GetMaxDistance() const { return _MaxDistance; }
+	virtual bool           IntersectsWith(acl::Vector4_32Arg0 Sphere) const = 0;
 	virtual bool           DoesEmitAnyEnergy() const = 0;
 };
 

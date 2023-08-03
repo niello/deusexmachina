@@ -87,16 +87,16 @@ bool CIBLAmbientLightAttribute::GetLocalAABB(CAABB& OutBox) const
 }
 //---------------------------------------------------------------------
 
-bool CIBLAmbientLightAttribute::IntersectsWith(acl::Vector4_32 SphereCenter, float SphereRadius) const
+bool CIBLAmbientLightAttribute::IntersectsWith(acl::Vector4_32Arg0 Sphere) const
 {
 	if (IsGlobal()) return true;
 
 	const auto& Pos = _pNode->GetWorldPosition();
 	const acl::Vector4_32 LightPos = acl::vector_set(Pos.x, Pos.y, Pos.z);
 
-	const float TotalRadius = SphereRadius + _Range;
+	const float TotalRadius = acl::vector_get_w(Sphere) + _Range;
 
-	return acl::vector_length_squared3(acl::vector_sub(LightPos, SphereCenter)) <= TotalRadius * TotalRadius;
+	return acl::vector_length_squared3(acl::vector_sub(LightPos, Sphere)) <= TotalRadius * TotalRadius;
 }
 //---------------------------------------------------------------------
 

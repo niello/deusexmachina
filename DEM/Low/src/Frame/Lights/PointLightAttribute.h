@@ -23,7 +23,7 @@ public:
 	virtual Render::PLight        CreateLight() const override;
 	virtual void                  UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const override;
 	virtual bool                  GetLocalAABB(CAABB& OutBox) const override;
-	virtual bool                  IntersectsWith(acl::Vector4_32 SphereCenter, float SphereRadius) const override;
+	virtual bool                  IntersectsWith(acl::Vector4_32Arg0 Sphere) const override;
 	virtual bool                  DoesEmitAnyEnergy() const override { return (_Color & 0x00ffffff) && _Intensity > 0.f; }
 };
 

@@ -440,7 +440,7 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 		}
 		else if (ViewProjChanged || pRenderable->BoundsVersion != Record.BoundsVersion)
 		{
-			//???TODO: need to test for empty bounds and set invisible to save resources on further processing?!
+			//???TODO: need to test for zero bounds and set invisible to save resources on further processing?!
 
 			const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
 			if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
@@ -459,7 +459,7 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			if (pRenderable->IsVisible)
 			{
 				pRenderable->DistanceToCamera = std::sqrtf(Math::SqDistancePointAABB(_EyePos, Record.BoxCenter, Record.BoxExtent));
-				pRenderable->RelScreenRadius = _ScreenMultiple * Record.SphereRadius / std::max(acl::vector_distance3(_EyePos, Record.BoxCenter), 1.0f);
+				pRenderable->RelScreenRadius = _ScreenMultiple * acl::vector_get_w(Record.Sphere) / std::max(acl::vector_distance3(_EyePos, Record.BoxCenter), 1.0f);
 			}
 		}
 
@@ -503,6 +503,16 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			if (Record.ObjectLightIntersectionsVersion != pRenderable->ObjectLightIntersectionsVersion)
 			{
 				// TODO: update light indices. Or try to move it into UpdateRenderable or new similar method, to handle differently in different renderable types?
+				std::vector<UPTR> LightUIDs;
+				auto pIntersection = Record.pObjectLightIntersections;
+				while (pIntersection)
+				{
+					LightUIDs.push_back(pIntersection->pLightAttr->GetSceneHandle()->first);
+					pIntersection = pIntersection->pNextLight;
+				}
+
+				//!!!DBG TMP! Just to catch the moment when we detect the first light.
+				n_assert_dbg(LightUIDs.empty());
 			}
 		}
 	}
@@ -520,7 +530,7 @@ void CView::UpdateLights(bool ViewProjChanged)
 		Render::CLight* pLight = ItViewObject->second.get();
 		auto pAttr = static_cast<CLightAttribute*>(Record.pAttr);
 
-		float SqDistanceToCamera = 0.f;
+		float DistanceToCamera = 0.f;
 		if (!Record.BoundsVersion)
 		{
 			// Lights with invalid bounds are global and therefore always visible
@@ -529,19 +539,18 @@ void CView::UpdateLights(bool ViewProjChanged)
 		}
 		else if (ViewProjChanged || pLight->BoundsVersion != Record.BoundsVersion)
 		{
-			//???TODO: need to test for empty bounds and set invisible to save resources on further processing?!
+			//???TODO: need to test for zero bounds and set invisible to save resources on further processing?!
 
 			const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
 			if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
 			{
 				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
 				{
-					//!!!FIXME: maybe better is to use Record.SphereRadius, at least for point lights!
-					pLight->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, _LastViewFrustum);
+					pLight->IsVisible = Math::ClipSphere(Record.Sphere, _LastViewFrustum);
 				}
 				else pLight->IsVisible = true;
 
-				if (pLight->IsVisible) SqDistanceToCamera = Math::SqDistancePointAABB(_EyePos, Record.BoxCenter, Record.BoxExtent);
+				if (pLight->IsVisible) DistanceToCamera = Math::DistancePointSphere(_EyePos, Record.Sphere);
 			}
 			else pLight->IsVisible = false;
 
@@ -553,7 +562,7 @@ void CView::UpdateLights(bool ViewProjChanged)
 			// Light sources that are too far away are considered invisible. UpdateLight can also make a light invisible.
 			// TODO: if store distance to camera in the light itself, can check this inside UpdateLight, as with LOD for renderables.
 			//???also use screen size, everything as for renderables?! can be useful for culling lights that affect few pixels!
-			if (SqDistanceToCamera <= pAttr->GetMaxDistanceSquared())
+			if (DistanceToCamera <= pAttr->GetMaxDistance())
 				pAttr->UpdateLight(*_GraphicsMgr, *pLight);
 			else
 				pLight->IsVisible = false;

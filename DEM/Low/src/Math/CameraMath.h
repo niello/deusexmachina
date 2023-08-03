@@ -28,20 +28,20 @@ struct CSIMDFrustum
 // Extract frustum planes using Gribb-Hartmann method.
 // See https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
 // See https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
-// FIXME: now normals point into the frustum which may be confusing a bit. Can negate _all_ plane components to solve this, but need to fix clipping code then!
 DEM_FORCE_INLINE CSIMDFrustum CalcFrustumParams(const matrix44& m) noexcept
 {
-	// Left = W + X, Right = W - X, Bottom = W + Y, Top = W - Y. Normals look inside the frustum, i.e. positive halfspace means 'inside'.
-	// LRBT_w is a -d, i.e. -dot(PlaneNormal, PlaneOrigin). +w instead of -d allows us using a single fma instead of separate mul & sub in a box test.
-	const auto LRBT_Nx = acl::vector_add(acl::vector_set(m.m[0][3]), acl::vector_set(m.m[0][0], -m.m[0][0], m.m[0][1], -m.m[0][1]));
-	const auto LRBT_Ny = acl::vector_add(acl::vector_set(m.m[1][3]), acl::vector_set(m.m[1][0], -m.m[1][0], m.m[1][1], -m.m[1][1]));
-	const auto LRBT_Nz = acl::vector_add(acl::vector_set(m.m[2][3]), acl::vector_set(m.m[2][0], -m.m[2][0], m.m[2][1], -m.m[2][1]));
-	const auto LRBT_w =  acl::vector_add(acl::vector_set(m.m[3][3]), acl::vector_set(m.m[3][0], -m.m[3][0], m.m[3][1], -m.m[3][1]));
+	// In the paper Left = W + X, Right = W - X, Bottom = W + Y, Top = W - Y. Normals look inside the frustum, i.e. positive halfspace means 'inside'.
+	// We invert this to Left = -X - W, Right = X - W, Bottom = -Y - W, Top = Y - W. Normals look outside the frustum, i.e. positive halfspace means 'outside'.
+	// LRBT_w is a -d, i.e. -dot(PlaneNormal, PlaneOrigin). +w instead of -d allows us using a single fma instead of separate mul & sub in clipping tests.
+	const auto LRBT_Nx = acl::vector_sub(acl::vector_set(-m.m[0][0], m.m[0][0], -m.m[0][1], m.m[0][1]), acl::vector_set(m.m[0][3]));
+	const auto LRBT_Ny = acl::vector_sub(acl::vector_set(-m.m[1][0], m.m[1][0], -m.m[1][1], m.m[1][1]), acl::vector_set(m.m[1][3]));
+	const auto LRBT_Nz = acl::vector_sub(acl::vector_set(-m.m[2][0], m.m[2][0], -m.m[2][1], m.m[2][1]), acl::vector_set(m.m[2][3]));
+	const auto LRBT_w =  acl::vector_sub(acl::vector_set(-m.m[3][0], m.m[3][0], -m.m[3][1], m.m[3][1]), acl::vector_set(m.m[3][3]));
 
 	// Near and far planes are parallel, which enables us to save some work. Near & far planes are +d (-w) along the look
 	// axis, so NearPlane is negated once and FarPlane is negated twice (once to make it -w, once to invert the axis).
 	// We use D3D style projection matrix, near Z limit is 0 instead of OpenGL's -W.
-	// TODO: check if it is really faster than making another vector set for NF_Nx etc. At least less registers used?
+	// TODO: check if it is really faster than making another vector set for NF_Nx etc. At least less SSE registers used?
 	const auto NearAxis = acl::vector_set(m.m[0][2], m.m[1][2], m.m[2][2], 0.f);
 	const auto FarAxis = acl::vector_sub(acl::vector_set(m.m[0][3], m.m[1][3], m.m[2][3], 0.f), NearAxis);
 	const float InvNearLen = acl::sqrt_reciprocal(acl::vector_length_squared3(NearAxis));
@@ -55,38 +55,53 @@ DEM_FORCE_INLINE CSIMDFrustum CalcFrustumParams(const matrix44& m) noexcept
 
 // Test AABB vs frustum planes intersection for positive halfspace treated as 'inside'
 // TODO: add an alternative implementation for AVX (ymm register can hold all 6 planes at once)
+//???!!!TODO PERF: rtm::vector_abs & rtm::vector_neg are bit-based! Is it better to recalc abs axes or cache them in CSIMDFrustum (probably in memory)?
 DEM_FORCE_INLINE bool ClipAABB(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, const CSIMDFrustum& Frustum) noexcept
 {
-	// FIXME: what is better, negate each box or invert frustum plane normals once?! If second, need to fix octree node culling!
-	const auto BoxNegExtent = acl::vector_neg(BoxExtent);
-
-	//???!!!TODO PERF: rtm::vector_abs & rtm::vector_neg are bit-based! Is it better to recalc in a loop or caching abs axes with potential store in memory?
-	const auto LRBT_Abs_Nx = acl::vector_abs(Frustum.LRBT_Nx);
-	const auto LRBT_Abs_Ny = acl::vector_abs(Frustum.LRBT_Ny);
-	const auto LRBT_Abs_Nz = acl::vector_abs(Frustum.LRBT_Nz);
-
 	// Distance of box center from plane (s): (Cx * Nx) + (Cy * Ny) + (Cz * Nz) - d, where "- d" is "+ w"
 	auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(BoxCenter), Frustum.LRBT_Nx, Frustum.LRBT_w);
 	CenterDistance = acl::vector_mul_add(acl::vector_mix_yyyy(BoxCenter), Frustum.LRBT_Ny, CenterDistance);
 	CenterDistance = acl::vector_mul_add(acl::vector_mix_zzzz(BoxCenter), Frustum.LRBT_Nz, CenterDistance);
 
 	// Projection radius of the most inside vertex: Ex * abs(Nx) + Ey * abs(Ny) + Ez * abs(Nz)
-	auto ProjectedNegExtent = acl::vector_mul(acl::vector_mix_xxxx(BoxNegExtent), LRBT_Abs_Nx);
-	ProjectedNegExtent = acl::vector_mul_add(acl::vector_mix_yyyy(BoxNegExtent), LRBT_Abs_Ny, ProjectedNegExtent);
-	ProjectedNegExtent = acl::vector_mul_add(acl::vector_mix_zzzz(BoxNegExtent), LRBT_Abs_Nz, ProjectedNegExtent);
+	auto ProjectedExtent = acl::vector_mul(acl::vector_mix_xxxx(BoxExtent), acl::vector_abs(Frustum.LRBT_Nx));
+	ProjectedExtent = acl::vector_mul_add(acl::vector_mix_yyyy(BoxExtent), acl::vector_abs(Frustum.LRBT_Ny), ProjectedExtent);
+	ProjectedExtent = acl::vector_mul_add(acl::vector_mix_zzzz(BoxExtent), acl::vector_abs(Frustum.LRBT_Nz), ProjectedExtent);
 
-	// Plane normals look inside the frustum
-	if (acl::vector_any_less_equal(CenterDistance, ProjectedNegExtent))
+	// Plane normals look outside the frustum
+	// TODO: rtm::vector_any_greater_then, or leave vector_any_greater_equal?
+	if (acl::vector_any_greater_equal(CenterDistance, ProjectedExtent))
 		return false;
-
-	//???!!!TODO PERF: rtm::vector_abs & rtm::vector_neg are bit-based! Is it better to recalc in a loop or caching abs axes with potential store in memory?
-	const auto AbsLookAxis = acl::vector_abs(Frustum.LookAxis);
 
 	// If inside LRTB, check intersection with NF planes
 	const float CenterAlongLookAxis = acl::vector_dot3(Frustum.LookAxis, BoxCenter);
-	const float NegExtentAlongLookAxis = acl::vector_dot3(AbsLookAxis, BoxNegExtent);
-	const float ClosestPoint = CenterAlongLookAxis + NegExtentAlongLookAxis;
-	const float FarthestPoint = CenterAlongLookAxis - NegExtentAlongLookAxis;
+	const float ExtentAlongLookAxis = acl::vector_dot3(acl::vector_abs(Frustum.LookAxis), BoxExtent);
+	const float ClosestPoint = CenterAlongLookAxis - ExtentAlongLookAxis;
+	const float FarthestPoint = CenterAlongLookAxis + ExtentAlongLookAxis;
+	return (FarthestPoint > Frustum.NearPlane && ClosestPoint < Frustum.FarPlane);
+}
+//---------------------------------------------------------------------
+
+// Test AABB vs frustum planes intersection for positive halfspace treated as 'inside'
+// TODO: add an alternative implementation for AVX (ymm register can hold all 6 planes at once)
+//???!!!TODO PERF: rtm::vector_abs & rtm::vector_neg are bit-based! Is it better to recalc abs axes or cache them in CSIMDFrustum (probably in memory)?
+DEM_FORCE_INLINE bool ClipSphere(acl::Vector4_32Arg0 Sphere, const CSIMDFrustum& Frustum) noexcept
+{
+	// Distance of sphere center from plane (s): (Cx * Nx) + (Cy * Ny) + (Cz * Nz) - d, where "- d" is "+ w"
+	auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(Sphere), Frustum.LRBT_Nx, Frustum.LRBT_w);
+	CenterDistance = acl::vector_mul_add(acl::vector_mix_yyyy(Sphere), Frustum.LRBT_Ny, CenterDistance);
+	CenterDistance = acl::vector_mul_add(acl::vector_mix_zzzz(Sphere), Frustum.LRBT_Nz, CenterDistance);
+
+	// Plane normals look outside the frustum. Sphere.w is its radius.
+	// TODO: rtm::vector_any_greater_then, or leave vector_any_greater_equal?
+	if (acl::vector_any_greater_equal(CenterDistance, acl::vector_mix_wwww(Sphere)))
+		return false;
+
+	// If inside LRTB, check intersection with NF planes
+	const float CenterAlongLookAxis = acl::vector_dot3(Frustum.LookAxis, Sphere);
+	const float Radius = acl::vector_get_w(Sphere);
+	const float ClosestPoint = CenterAlongLookAxis - Radius;
+	const float FarthestPoint = CenterAlongLookAxis + Radius;
 	return (FarthestPoint > Frustum.NearPlane && ClosestPoint < Frustum.FarPlane);
 }
 //---------------------------------------------------------------------
@@ -109,6 +124,15 @@ DEM_FORCE_INLINE float SqDistancePointAABB(acl::Vector4_32Arg0 Point, acl::Vecto
 
 	const auto ClosestPt = acl::vector_min(acl::vector_max(Point, BoxMin), BoxMax);
 	return acl::vector_length_squared3(acl::vector_sub(Point, ClosestPt));
+}
+//---------------------------------------------------------------------
+
+// Returns 0 if the point is inside
+DEM_FORCE_INLINE float DistancePointSphere(acl::Vector4_32Arg0 Point, acl::Vector4_32Arg1 Sphere) noexcept
+{
+	const float DistanceToCenter = acl::vector_distance3(Point, Sphere);
+	const float SphereRadius = acl::vector_get_w(Sphere);
+	return (DistanceToCenter > SphereRadius) ? (DistanceToCenter - SphereRadius) : 0.f;
 }
 //---------------------------------------------------------------------
 

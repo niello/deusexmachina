@@ -123,7 +123,7 @@ bool CSpotLightAttribute::GetLocalAABB(CAABB& OutBox) const
 }
 //---------------------------------------------------------------------
 
-bool CSpotLightAttribute::IntersectsWith(acl::Vector4_32 SphereCenter, float SphereRadius) const
+bool CSpotLightAttribute::IntersectsWith(acl::Vector4_32Arg0 Sphere) const
 {
 	const auto& Pos = _pNode->GetWorldPosition();
 	const acl::Vector4_32 LightPos = acl::vector_set(Pos.x, Pos.y, Pos.z);
@@ -131,19 +131,21 @@ bool CSpotLightAttribute::IntersectsWith(acl::Vector4_32 SphereCenter, float Sph
 	const auto AxisZ = _pNode->GetWorldMatrix().AxisZ();
 	const acl::Vector4_32 LightDir = acl::vector_set(-AxisZ.x, -AxisZ.y, -AxisZ.z);
 
+	const float SphereRadius = acl::vector_get_w(Sphere);
+
 	// Check the bounding sphere of the light first
 	const acl::Vector4_32 BoundingSpherePos = acl::vector_mul_add(LightDir, _BoundingSphereOffsetAlongDir, LightPos);
 	const float TotalRadius = SphereRadius + _BoundingSphereRadius;
-	if (acl::vector_length_squared3(acl::vector_sub(BoundingSpherePos, SphereCenter)) > TotalRadius * TotalRadius) return false;
+	if (acl::vector_length_squared3(acl::vector_sub(BoundingSpherePos, Sphere)) > TotalRadius * TotalRadius) return false;
 
 	// Check sphere-cone intersection
 
-	acl::Vector4_32 DistanceVector = acl::vector_sub(SphereCenter, acl::vector_mul(LightDir, (SphereRadius / _SinHalfOuter)));
+	acl::Vector4_32 DistanceVector = acl::vector_sub(Sphere, acl::vector_mul(LightDir, (SphereRadius / _SinHalfOuter)));
 	float SqDistance = acl::vector_length_squared3(DistanceVector);
 	float ProjectedLength = acl::vector_dot3(LightDir, DistanceVector);
 	if (ProjectedLength <= 0.f || ProjectedLength * ProjectedLength < SqDistance * _CosHalfOuter * _CosHalfOuter) return false;
 
-	DistanceVector = acl::vector_sub(SphereCenter, LightPos);
+	DistanceVector = acl::vector_sub(Sphere, LightPos);
 	SqDistance = acl::vector_length_squared3(DistanceVector);
 	ProjectedLength = -acl::vector_dot3(LightDir, DistanceVector);
 	return ProjectedLength <= 0.f || ProjectedLength * ProjectedLength < SqDistance * _SinHalfOuter * _SinHalfOuter || SqDistance <= SphereRadius * SphereRadius;

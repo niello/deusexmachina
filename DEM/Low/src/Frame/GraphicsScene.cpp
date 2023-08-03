@@ -196,20 +196,14 @@ void CGraphicsScene::RemoveSingleObjectFromNode(U32 NodeIndex, TMorton NodeMorto
 }
 //---------------------------------------------------------------------
 
-CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CSpatialRecord>& Storage, UPTR UID, const CAABB& GlobalBox, Scene::CNodeAttribute& Attr)
+CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CSpatialRecord>& Storage, UPTR UID,
+	acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, acl::Vector4_32Arg2 GlobalSphere, Scene::CNodeAttribute& Attr)
 {
 	CSpatialRecord Record;
 	Record.pAttr = &Attr;
-
-	// TODO: store AABB as SIMD center-extents everywhere?!
-	const auto HalfMin = acl::vector_mul(acl::vector_set(GlobalBox.Min.x, GlobalBox.Min.y, GlobalBox.Min.z), 0.5f);
-	const auto HalfMax = acl::vector_mul(acl::vector_set(GlobalBox.Max.x, GlobalBox.Max.y, GlobalBox.Max.z), 0.5f);
-	Record.BoxCenter = acl::vector_add(HalfMax, HalfMin);
-	Record.BoxExtent = acl::vector_sub(HalfMax, HalfMin);
-
-	// FIXME: get from outside, as GlobalBox, it will be more optimal, potentially much less space wasted!
-	// RTCD 4.3.2 Computing a Bounding Sphere
-	Record.SphereRadius = acl::vector_length3(Record.BoxExtent);
+	Record.BoxCenter = BoxCenter;
+	Record.BoxExtent = BoxExtent;
+	Record.Sphere = GlobalSphere;
 
 	// Check bounds validity
 	if (!acl::vector_any_less_than3(Record.BoxExtent, acl::vector_set(0.f))) //!!!TODO: can check negative sign bits by mask!
@@ -242,15 +236,9 @@ CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CSpatialRecord>
 }
 //---------------------------------------------------------------------
 
-void CGraphicsScene::UpdateObjectBounds(HRecord Handle, const CAABB& GlobalBox)
+void CGraphicsScene::UpdateObjectBounds(HRecord Handle, acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, acl::Vector4_32Arg2 GlobalSphere)
 {
 	auto& Record = Handle->second;
-
-	// TODO: store AABB as SIMD center-extents everywhere?!
-	const auto HalfMin = acl::vector_mul(acl::vector_set(GlobalBox.Min.x, GlobalBox.Min.y, GlobalBox.Min.z), 0.5f);
-	const auto HalfMax = acl::vector_mul(acl::vector_set(GlobalBox.Max.x, GlobalBox.Max.y, GlobalBox.Max.z), 0.5f);
-	const auto BoxCenter = acl::vector_add(HalfMax, HalfMin);
-	const auto BoxExtent = acl::vector_sub(HalfMax, HalfMin);
 
 	// TODO PERF: check if this is useful. Also may want to rewrite for strict equality because near_equal involves much more operations!
 	if (acl::vector_all_near_equal3(BoxCenter, Record.BoxCenter) && acl::vector_all_near_equal3(BoxExtent, Record.BoxExtent))
@@ -260,11 +248,8 @@ void CGraphicsScene::UpdateObjectBounds(HRecord Handle, const CAABB& GlobalBox)
 
 	Record.BoxCenter = BoxCenter;
 	Record.BoxExtent = BoxExtent;
+	Record.Sphere = GlobalSphere;
 	Record.BoundsVersion = BoundsValid ? std::max<U32>(1, Record.BoundsVersion + 1) : 0;
-
-	// FIXME: get from outside, as GlobalBox, it will be more optimal, potentially much less space wasted!
-	// RTCD 4.3.2 Computing a Bounding Sphere
-	Record.SphereRadius = acl::vector_length3(Record.BoxExtent);
 
 	const auto NodeMortonCode = BoundsValid ? CalculateMortonCode(Record.BoxCenter, Record.BoxExtent) : 0;
 	if (Record.NodeMortonCode != NodeMortonCode)
@@ -291,6 +276,24 @@ void CGraphicsScene::RemoveObject(std::map<UPTR, CSpatialRecord>& Storage, HReco
 }
 //---------------------------------------------------------------------
 
+static inline std::tuple<acl::Vector4_32, acl::Vector4_32> ConvertAABBToSIMD(const CAABB& GlobalBox)
+{
+	// TODO: store AABB as SIMD center-extents everywhere?!
+	const auto HalfMin = acl::vector_mul(acl::vector_set(GlobalBox.Min.x, GlobalBox.Min.y, GlobalBox.Min.z), 0.5f);
+	const auto HalfMax = acl::vector_mul(acl::vector_set(GlobalBox.Max.x, GlobalBox.Max.y, GlobalBox.Max.z), 0.5f);
+	const auto BoxCenter = acl::vector_add(HalfMax, HalfMin);
+	const auto BoxExtent = acl::vector_sub(HalfMax, HalfMin);
+	return { BoxCenter, BoxExtent };
+}
+//---------------------------------------------------------------------
+
+static inline acl::Vector4_32 SphereFromBox(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent)
+{
+	const float SphereRadius = acl::vector_length3(BoxExtent);
+	return acl::vector_set(acl::vector_get_x(BoxCenter), acl::vector_get_y(BoxCenter), acl::vector_get_z(BoxCenter), SphereRadius);
+}
+//---------------------------------------------------------------------
+
 CGraphicsScene::HRecord CGraphicsScene::AddRenderable(const CAABB& GlobalBox, CRenderableAttribute& RenderableAttr)
 {
 	const auto UID = _NextRenderableUID++;
@@ -299,11 +302,29 @@ CGraphicsScene::HRecord CGraphicsScene::AddRenderable(const CAABB& GlobalBox, CR
 	// Compacting must change UIDs in map keys and broadcast changes to all views. Try to make it sorted and preserve iterators to avoid logN searches.
 	n_assert_dbg(_NextRenderableUID < std::numeric_limits<decltype(_NextRenderableUID)>().max());
 
-	return AddObject(_Renderables, UID, GlobalBox, RenderableAttr);
+	const auto [BoxCenter, BoxExtent] = ConvertAABBToSIMD(GlobalBox);
+
+	// FIXME: precalculate in tools instead!
+	// See RTCD Chapter 4.3.2: Computing a Bounding Sphere
+	const auto Sphere = SphereFromBox(BoxCenter, BoxExtent);
+
+	return AddObject(_Renderables, UID, BoxCenter, BoxExtent, Sphere, RenderableAttr);
 }
 //---------------------------------------------------------------------
 
-CGraphicsScene::HRecord CGraphicsScene::AddLight(const CAABB& GlobalBox, CLightAttribute& LightAttr)
+void CGraphicsScene::UpdateRenderableBounds(HRecord Handle, const CAABB& GlobalBox)
+{
+	const auto [BoxCenter, BoxExtent] = ConvertAABBToSIMD(GlobalBox);
+
+	// FIXME: precalculate in tools instead!
+	// See RTCD Chapter 4.3.2: Computing a Bounding Sphere
+	const auto Sphere = SphereFromBox(BoxCenter, BoxExtent);
+
+	UpdateObjectBounds(Handle, BoxCenter, BoxExtent, Sphere);
+}
+//---------------------------------------------------------------------
+
+CGraphicsScene::HRecord CGraphicsScene::AddLight(const CAABB& GlobalBox, acl::Vector4_32Arg0 GlobalSphere, CLightAttribute& LightAttr)
 {
 	const auto UID = _NextLightUID++;
 
@@ -311,15 +332,23 @@ CGraphicsScene::HRecord CGraphicsScene::AddLight(const CAABB& GlobalBox, CLightA
 	// Compacting must change UIDs in map keys and broadcast changes to all views. Try to make it sorted and preserve iterators to avoid logN searches.
 	n_assert_dbg(_NextLightUID < std::numeric_limits<decltype(_NextLightUID)>().max());
 
-	return AddObject(_Lights, UID, GlobalBox, LightAttr);
+	const auto [BoxCenter, BoxExtent] = ConvertAABBToSIMD(GlobalBox);
+	return AddObject(_Lights, UID, BoxCenter, BoxExtent, GlobalSphere, LightAttr);
+}
+//---------------------------------------------------------------------
+
+void CGraphicsScene::UpdateLightBounds(HRecord Handle, const CAABB& GlobalBox, acl::Vector4_32Arg0 GlobalSphere)
+{
+	const auto [BoxCenter, BoxExtent] = ConvertAABBToSIMD(GlobalBox);
+	UpdateObjectBounds(Handle, BoxCenter, BoxExtent, GlobalSphere);
 }
 //---------------------------------------------------------------------
 
 // Test AABB cube vs frustum planes containment or intersection for positive halfspace treated as 'inside'.
 // Returns a 2 bit mask with bit0 set if the cube is present inside and bit1 set if the cube is present outside.
 // TODO: add an alternative implementation for AVX (ymm register can hold all 6 planes at once)
-static DEM_FORCE_INLINE U8 ClipCube(acl::Vector4_32Arg0 Bounds, acl::Vector4_32Arg1 ProjectedNegWorldExtent,
-	float NegWorldExtentAlongLookAxis, const Math::CSIMDFrustum& Frustum) noexcept
+static DEM_FORCE_INLINE U8 ClipCube(acl::Vector4_32Arg0 Bounds, acl::Vector4_32Arg1 ProjectedWorldExtent,
+	float WorldExtentAlongLookAxis, const Math::CSIMDFrustum& Frustum) noexcept
 {
 	// Distance of box center from plane (s): (Cx * Nx) + (Cy * Ny) + (Cz * Nz) - d, where "- d" is "+ w"
 	auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(Bounds), Frustum.LRBT_Nx, Frustum.LRBT_w);
@@ -327,23 +356,23 @@ static DEM_FORCE_INLINE U8 ClipCube(acl::Vector4_32Arg0 Bounds, acl::Vector4_32A
 	CenterDistance = acl::vector_mul_add(acl::vector_mix_zzzz(Bounds), Frustum.LRBT_Nz, CenterDistance);
 
 	// Projection radius of the most outside vertex (-r)
-	const auto ProjectedNegExtent = acl::vector_mul(ProjectedNegWorldExtent, acl::vector_mix_wwww(Bounds));
+	const auto ProjectedExtent = acl::vector_mul(ProjectedWorldExtent, acl::vector_mix_wwww(Bounds));
 
 	// Check intersection with LRTB planes
-	bool HasVisiblePart = acl::vector_all_greater_equal(CenterDistance, ProjectedNegExtent); //!!!need strictly greater (RTM?)!
+	bool HasVisiblePart = acl::vector_all_less_equal(CenterDistance, ProjectedExtent);
 	bool HasInvisiblePart = false;
 	if (HasVisiblePart)
 	{
 		// If inside LRTB, check intersection with NF planes
 		const float CenterAlongLookAxis = acl::vector_dot3(Frustum.LookAxis, Bounds);
-		const float NegExtentAlongLookAxis = NegWorldExtentAlongLookAxis * acl::vector_get_w(Bounds);
-		const float ClosestPoint = CenterAlongLookAxis + NegExtentAlongLookAxis;
-		const float FarthestPoint = CenterAlongLookAxis - NegExtentAlongLookAxis;
+		const float ExtentAlongLookAxis = WorldExtentAlongLookAxis * acl::vector_get_w(Bounds);
+		const float ClosestPoint = CenterAlongLookAxis - ExtentAlongLookAxis;
+		const float FarthestPoint = CenterAlongLookAxis + ExtentAlongLookAxis;
 		HasVisiblePart = (FarthestPoint > Frustum.NearPlane && ClosestPoint < Frustum.FarPlane);
 		HasInvisiblePart = !HasVisiblePart || (FarthestPoint > Frustum.FarPlane || ClosestPoint < Frustum.NearPlane);
 	}
 
-	HasInvisiblePart = HasInvisiblePart || acl::vector_any_less_than(CenterDistance, acl::vector_neg(ProjectedNegExtent));
+	HasInvisiblePart = HasInvisiblePart || acl::vector_any_greater_equal(CenterDistance, acl::vector_neg(ProjectedExtent));
 
 	return static_cast<U8>(HasVisiblePart) | (static_cast<U8>(HasInvisiblePart) << 1);
 }
@@ -362,15 +391,16 @@ void CGraphicsScene::TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum
 	// not checked (00), completely inside (01), completely outside (10), partially inside (11).
 	NodeVisibility.resize(_TreeNodes.sparse_size() * 2, false);
 
-	// Projection radius of the most outside vertex (-r): -Ex * abs(Pnx) + -Ey * abs(Pny) + -Ez * abs(Pnz).
+	// Projection radius of the most inside vertex (r): Ex * abs(Pnx) + Ey * abs(Pny) + Ez * abs(Pnz).
 	// In our case we take as a rule that Ex = Ey = Ez. Since our tree is loose, we double all extents.
 	// Extents of tree nodes are obtained by multiplying this by a node size coefficient.
-	const auto NegWorldExtent4 = acl::vector_set(-2.f * _WorldExtent);
-	auto ProjectedNegWorldExtent = acl::vector_mul(NegWorldExtent4, acl::vector_abs(Frustum.LRBT_Nx));
-	ProjectedNegWorldExtent = acl::vector_mul_add(NegWorldExtent4, acl::vector_abs(Frustum.LRBT_Ny), ProjectedNegWorldExtent);
-	ProjectedNegWorldExtent = acl::vector_mul_add(NegWorldExtent4, acl::vector_abs(Frustum.LRBT_Nz), ProjectedNegWorldExtent);
+	constexpr float LOOSE_BOUNDS_MULTIPLIER = 2.f;
+	const auto WorldExtent4 = acl::vector_set(LOOSE_BOUNDS_MULTIPLIER * _WorldExtent);
+	auto ProjectedWorldExtent = acl::vector_mul(WorldExtent4, acl::vector_abs(Frustum.LRBT_Nx));
+	ProjectedWorldExtent = acl::vector_mul_add(WorldExtent4, acl::vector_abs(Frustum.LRBT_Ny), ProjectedWorldExtent);
+	ProjectedWorldExtent = acl::vector_mul_add(WorldExtent4, acl::vector_abs(Frustum.LRBT_Nz), ProjectedWorldExtent);
 
-	const float NegWorldExtentAlongLookAxis = acl::vector_dot3(acl::vector_abs(Frustum.LookAxis), NegWorldExtent4);
+	const float WorldExtentAlongLookAxis = acl::vector_dot3(acl::vector_abs(Frustum.LookAxis), WorldExtent4);
 
 	// Skip cached nodes. For CachedCount == 0 const_iterator_at is equal to cbegin.
 	auto ItNode = _TreeNodes.const_iterator_at(CachedCount);
@@ -378,7 +408,7 @@ void CGraphicsScene::TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum
 	{
 		// Process the root outside the loop to simplify conditions inside
 		// FIXME: improve writing, clip mask already has both bits for NodeVisibility element
-		const auto ClipRoot = ClipCube(_TreeNodes[0].Bounds, ProjectedNegWorldExtent, NegWorldExtentAlongLookAxis, Frustum);
+		const auto ClipRoot = ClipCube(_TreeNodes[0].Bounds, ProjectedWorldExtent, WorldExtentAlongLookAxis, Frustum);
 		NodeVisibility[0] = ClipRoot & EClipStatus::Inside;
 		NodeVisibility[1] = ClipRoot & EClipStatus::Outside;
 
@@ -404,7 +434,7 @@ void CGraphicsScene::TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum
 		{
 			// If the parent is partially visible, its children must be tested
 			// FIXME: improve writing, clip mask already has both bits for NodeVisibility element
-			const auto ClipNode = ClipCube(ItNode->Bounds, ProjectedNegWorldExtent, NegWorldExtentAlongLookAxis, Frustum);
+			const auto ClipNode = ClipCube(ItNode->Bounds, ProjectedWorldExtent, WorldExtentAlongLookAxis, Frustum);
 			NodeVisibility[ItNode.get_index() * 2] = ClipNode & EClipStatus::Inside;
 			NodeVisibility[ItNode.get_index() * 2 + 1] = ClipNode & EClipStatus::Outside;
 		}
@@ -548,8 +578,8 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 	auto& RenderableRecord = RenderableAttr.GetSceneHandle()->second;
 	n_assert_dbg(RenderableRecord.TrackObjectLightIntersections && RenderableRecord.BoundsVersion);
 
-	// Indicate the last update time
-	//!!!FIXME: use or remove!
+	// Remember the last updated bounds, so that different views will not trigger redundant updates in a shared scene
+	if (RenderableRecord.IntersectionBoundsVersion == RenderableRecord.BoundsVersion) return;
 	RenderableRecord.IntersectionBoundsVersion = RenderableRecord.BoundsVersion;
 
 	// TODO: instead of iterating through all _Lights, can query them from octree! Will be much less instances to check!!!
@@ -589,7 +619,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 
 		// Only local lights (ones with BoundsVersion > 0) track intersections
 		//???can optimize intersection for terrain? could use AABB tree as an additional pass of light culling. Or disable tracking for terrain and override manually?
-		const bool Intersects = LightRecord.BoundsVersion && static_cast<CLightAttribute*>(LightRecord.pAttr)->IntersectsWith(RenderableRecord.BoxCenter, RenderableRecord.SphereRadius);
+		const bool Intersects = LightRecord.BoundsVersion && static_cast<CLightAttribute*>(LightRecord.pAttr)->IntersectsWith(RenderableRecord.Sphere);
 		if (Intersects)
 		{
 			if (pMatchingIntersection)
@@ -633,8 +663,8 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 	auto& LightRecord = LightAttr.GetSceneHandle()->second;
 	n_assert_dbg(LightRecord.TrackObjectLightIntersections && LightRecord.BoundsVersion);
 
-	// Indicate the last update time
-	//!!!FIXME: use or remove!
+	// Remember the last updated bounds, so that different views will not trigger redundant updates in a shared scene
+	if (LightRecord.IntersectionBoundsVersion == LightRecord.BoundsVersion) return;
 	LightRecord.IntersectionBoundsVersion = LightRecord.BoundsVersion;
 
 	// TODO: instead of iterating through all _Renderables, can query them from octree! Will be much less instances to check!!!
@@ -672,7 +702,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 		//!!!FIXME: if querying octree, there won't be objects with zero TrackObjectLightIntersections, so this condition won't be needed!
 		if (!RenderableRecord.TrackObjectLightIntersections) continue;
 
-		const bool Intersects = static_cast<CLightAttribute*>(LightRecord.pAttr)->IntersectsWith(RenderableRecord.BoxCenter, RenderableRecord.SphereRadius);
+		const bool Intersects = static_cast<CLightAttribute*>(LightRecord.pAttr)->IntersectsWith(RenderableRecord.Sphere);
 		if (Intersects)
 		{
 			if (pMatchingIntersection)

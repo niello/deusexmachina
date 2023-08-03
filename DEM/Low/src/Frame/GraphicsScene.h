@@ -66,10 +66,10 @@ public:
 	{
 		acl::Vector4_32           BoxCenter;
 		acl::Vector4_32           BoxExtent;
+		acl::Vector4_32           Sphere;
 		Scene::CNodeAttribute*    pAttr = nullptr;
 		CObjectLightIntersection* pObjectLightIntersections = nullptr;
 		TMorton                   NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
-		float                     SphereRadius = 0.f; //!!!optimal center may be different! store acl::Vector4_32 with center and radius? then fix light intersection calls!
 		U32                       NodeIndex = NO_SPATIAL_TREE_NODE;
 		U32                       BoundsVersion = 1;  // 0 for invalid bounds (e.g. infinite)
 		U32                       IntersectionBoundsVersion = 0;
@@ -105,8 +105,8 @@ protected:
 	U32     AddSingleObjectToNode(TMorton NodeMortonCode, TMorton StopMortonCode);
 	void    RemoveSingleObjectFromNode(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode);
 
-	HRecord AddObject(std::map<UPTR, CSpatialRecord>& Storage, UPTR UID, const CAABB& GlobalBox, Scene::CNodeAttribute& Attr);
-	void    UpdateObjectBounds(HRecord Handle, const CAABB& GlobalBox);
+	HRecord AddObject(std::map<UPTR, CSpatialRecord>& Storage, UPTR UID, acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, acl::Vector4_32Arg2 GlobalSphere, Scene::CNodeAttribute& Attr);
+	void    UpdateObjectBounds(HRecord Handle, acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, acl::Vector4_32Arg2 GlobalSphere);
 	void    RemoveObject(std::map<UPTR, CSpatialRecord>& Storage, HRecord Handle);
 
 	void                      TrackObjectLightIntersections(CSpatialRecord& Record, bool Track);
@@ -117,12 +117,12 @@ public:
 	void            Init(const vector3& Center, float Size, U8 HierarchyDepth);
 
 	HRecord         AddRenderable(const CAABB& GlobalBox, CRenderableAttribute& RenderableAttr);
-	void            UpdateRenderableBounds(HRecord Handle, const CAABB& GlobalBox) { UpdateObjectBounds(Handle, GlobalBox); }
+	void            UpdateRenderableBounds(HRecord Handle, const CAABB& GlobalBox);
 	void            RemoveRenderable(HRecord Handle) { RemoveObject(_Renderables, Handle); }
 	const auto&     GetRenderables() const { return _Renderables; }
 
-	HRecord         AddLight(const CAABB& GlobalBox, CLightAttribute& LightAttr);
-	void            UpdateLightBounds(HRecord Handle, const CAABB& GlobalBox) { UpdateObjectBounds(Handle, GlobalBox); }
+	HRecord         AddLight(const CAABB& GlobalBox, acl::Vector4_32Arg0 GlobalSphere, CLightAttribute& LightAttr);
+	void            UpdateLightBounds(HRecord Handle, const CAABB& GlobalBox, acl::Vector4_32Arg0 GlobalSphere);
 	void            RemoveLight(HRecord Handle) { RemoveObject(_Lights, Handle); }
 	const auto&     GetLights() const { return _Lights; }
 
