@@ -1378,12 +1378,12 @@ public:
 
 		const auto& Light = LightsExt.lights[LightIndex];
 
-		int LightType = 0;
+		int LightClassFourCC = 0;
 		switch (Light.type)
 		{
-			case gltf::KHR::Lights::Type::Directional: LightType = 0; break;
-			case gltf::KHR::Lights::Type::Point: LightType = 1; break;
-			case gltf::KHR::Lights::Type::Spot: LightType = 2; break;
+			case gltf::KHR::Lights::Type::Directional: LightClassFourCC = 'DLTA'; break;
+			case gltf::KHR::Lights::Type::Point: LightClassFourCC = 'PLTA'; break;
+			case gltf::KHR::Lights::Type::Spot: LightClassFourCC = 'SLTA'; break;
 			default:
 			{
 				Ctx.Log.LogWarning("Light " + Light.name + " is of unsupported type, skipped");
@@ -1396,12 +1396,11 @@ public:
 		const float Intensity = Light.intensity / BaseIntensity;
 
 		Data::CParams Attribute;
-		Attribute.emplace_back(CStrID("Class"), 'LGTA'); //std::string("Frame::CLightAttribute"));
-		Attribute.emplace_back(CStrID("LightType"), LightType);
+		Attribute.emplace_back(CStrID("Class"), LightClassFourCC);
 		Attribute.emplace_back(CStrID("Color"), float3({ Light.color.r, Light.color.g, Light.color.b }));
 		Attribute.emplace_back(CStrID("Intensity"), Intensity);
 
-		if (LightType != 0)
+		if (LightClassFourCC != 'DLTA')
 		{
 			// attenuation = max( min( 1.0 - ( current_distance / range )^4, 1 ), 0 ) / current_distance^2
 			if (Light.range.HasValue())
@@ -1415,7 +1414,7 @@ public:
 				Attribute.emplace_back(CStrID("Range"), std::sqrtf(Light.intensity) * 100.f);
 			}
 
-			if (LightType == 2)
+			if (LightClassFourCC == 'SLTA')
 			{
 				Attribute.emplace_back(CStrID("ConeInner"), RadToDeg(Light.innerConeAngle));
 				Attribute.emplace_back(CStrID("ConeOuter"), RadToDeg(Light.outerConeAngle));

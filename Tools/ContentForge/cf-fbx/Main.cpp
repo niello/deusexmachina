@@ -1437,12 +1437,12 @@ public:
 	{
 		Ctx.Log.LogDebug("Light");
 
-		int LightType = 0;
+		int LightClassFourCC = 0;
 		switch (pLight->LightType.Get())
 		{
-			case FbxLight::eDirectional: LightType = 0; break;
-			case FbxLight::ePoint: LightType = 1; break;
-			case FbxLight::eSpot: LightType = 2; break;
+			case FbxLight::eDirectional: LightClassFourCC = 'DLTA'; break;
+			case FbxLight::ePoint: LightClassFourCC = 'PLTA'; break;
+			case FbxLight::eSpot: LightClassFourCC = 'SLTA'; break;
 			default:
 			{
 				Ctx.Log.LogWarning(std::string("Light ") + pLight->GetName() + " is of unsupported type, skipped");
@@ -1454,7 +1454,7 @@ public:
 		const float Intensity = static_cast<float>(pLight->Intensity.Get() / 100.0);
 
 		float Range = 0.f;
-		if (LightType != 0)
+		if (LightClassFourCC != 'DLTA')
 		{
 			if (pLight->EnableFarAttenuation.Get())
 			{
@@ -1491,19 +1491,18 @@ public:
 		}
 
 		Data::CParams Attribute;
-		Attribute.emplace_back(CStrID("Class"), 'LGTA'); //std::string("Frame::CLightAttribute"));
-		Attribute.emplace_back(CStrID("LightType"), LightType);
+		Attribute.emplace_back(CStrID("Class"), LightClassFourCC);
 		Attribute.emplace_back(CStrID("Color"), Color);
 		Attribute.emplace_back(CStrID("Intensity"), Intensity);
 
 		if (pLight->CastShadows.Get())
 			Attribute.emplace_back(CStrID("CastShadows"), true);
 
-		if (LightType != 0)
+		if (LightClassFourCC != 'DLTA')
 		{
 			Attribute.emplace_back(CStrID("Range"), Range);
 
-			if (LightType == 2)
+			if (LightClassFourCC == 'SLTA')
 			{
 				Attribute.emplace_back(CStrID("ConeInner"), static_cast<float>(pLight->InnerAngle.Get()));
 				Attribute.emplace_back(CStrID("ConeOuter"), static_cast<float>(pLight->OuterAngle.Get()));
