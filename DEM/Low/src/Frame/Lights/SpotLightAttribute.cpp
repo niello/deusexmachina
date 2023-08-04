@@ -129,7 +129,7 @@ bool CSpotLightAttribute::IntersectsWith(acl::Vector4_32Arg0 Sphere) const
 	const acl::Vector4_32 LightPos = acl::vector_set(Pos.x, Pos.y, Pos.z);
 
 	const auto AxisZ = _pNode->GetWorldMatrix().AxisZ();
-	const acl::Vector4_32 LightDir = acl::vector_set(-AxisZ.x, -AxisZ.y, -AxisZ.z);
+	const acl::Vector4_32 LightDir = acl::vector_normalize3(acl::vector_set(-AxisZ.x, -AxisZ.y, -AxisZ.z));
 
 	const float SphereRadius = acl::vector_get_w(Sphere);
 
