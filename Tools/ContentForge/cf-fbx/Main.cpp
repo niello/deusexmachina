@@ -1016,11 +1016,7 @@ public:
 				{
 					float4 Color;
 					GetVertexElement(Color, pMesh->GetElementVertexColor(), ControlPointIndex, VertexIndex);
-					Vertex.Color =
-						(static_cast<uint8_t>(Color.w * 255.0f + 0.5f) << 24) |
-						(static_cast<uint8_t>(Color.z * 255.0f + 0.5f) << 16) |
-						(static_cast<uint8_t>(Color.y * 255.0f + 0.5f) << 8) |
-						(static_cast<uint8_t>(Color.x * 255.0f + 0.5f));
+					Vertex.Color = ColorRGBANorm(Color.x, Color.y, Color.z, Color.w);
 				}
 
 				for (size_t e = 0; e < VertexFormat.UVCount; ++e)
@@ -1492,7 +1488,7 @@ public:
 
 		Data::CParams Attribute;
 		Attribute.emplace_back(CStrID("Class"), LightClassFourCC);
-		Attribute.emplace_back(CStrID("Color"), Color);
+		Attribute.emplace_back(CStrID("Color"), (int)ColorRGBANorm(Color.x, Color.y, Color.z));
 		Attribute.emplace_back(CStrID("Intensity"), Intensity);
 
 		if (pLight->CastShadows.Get())

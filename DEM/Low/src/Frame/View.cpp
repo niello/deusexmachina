@@ -512,7 +512,7 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 				}
 
 				//!!!DBG TMP! Just to catch the moment when we detect the first light.
-				n_assert_dbg(LightUIDs.empty());
+				//n_assert_dbg(LightUIDs.empty());
 			}
 		}
 	}

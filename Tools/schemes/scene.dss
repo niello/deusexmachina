@@ -18,7 +18,7 @@ SceneNodeAttr
 	LightType		{ FourCC = "LGHT" Type = "int" }
 	CastShadows		{ FourCC = "CSHD" Type = "bool" }
 	Intensity		{ FourCC = "LINT" Type = "float" }
-	Color			{ FourCC = "LCLR" Type = "vector3" }
+	Color			{ FourCC = "LCLR" Type = "int" }
 	Range			{ FourCC = "LRNG" Type = "float" }
 	ConeInner		{ FourCC = "LCIN" Type = "float" }
 	ConeOuter		{ FourCC = "LCOU" Type = "float" }

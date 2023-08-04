@@ -1397,7 +1397,7 @@ public:
 
 		Data::CParams Attribute;
 		Attribute.emplace_back(CStrID("Class"), LightClassFourCC);
-		Attribute.emplace_back(CStrID("Color"), float3({ Light.color.r, Light.color.g, Light.color.b }));
+		Attribute.emplace_back(CStrID("Color"), (int)ColorRGBANorm(Light.color.r, Light.color.g, Light.color.b));
 		Attribute.emplace_back(CStrID("Intensity"), Intensity);
 
 		if (LightClassFourCC != 'DLTA')

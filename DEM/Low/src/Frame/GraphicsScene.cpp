@@ -537,11 +537,6 @@ static inline void AttachObjectLightIntersection(CObjectLightIntersection* pInte
 static inline void UpdateObjectLightIntersection(CObjectLightIntersection* pIntersection,
 	const CGraphicsScene::CSpatialRecord& LightRecord, const CGraphicsScene::CSpatialRecord& RenderableRecord)
 {
-	//!!!DBG TMP! Both are just to check if some of assignments is always redundant (I'm too lazy, I know).
-	// If so, each of two assignments can be moved to its call location and this function will be removed.
-	n_assert_dbg(pIntersection->LightBoundsVersion == LightRecord.BoundsVersion);
-	n_assert_dbg(pIntersection->RenderableBoundsVersion == RenderableRecord.BoundsVersion);
-
 	pIntersection->LightBoundsVersion = LightRecord.BoundsVersion;
 	pIntersection->RenderableBoundsVersion = RenderableRecord.BoundsVersion;
 }
