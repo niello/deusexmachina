@@ -29,22 +29,38 @@ void CLightAttribute::UpdateInGraphicsScene(CGraphicsScene& Scene)
 		// This light currently has no bounds at all, it can't be added to the level
 		_pScene = nullptr;
 		_SceneRecordHandle = {};
+		return;
 	}
-	else if (SceneChanged)
+
+	const bool BoundsChanged = (_pNode->GetTransformVersion() != _LastTransformVersion); //!!! || LocalBox changed!
+	if (!SceneChanged && !BoundsChanged) return;
+
+	// Neutralize scale, we can't use it for lights
+	auto Tfm = _pNode->GetWorldMatrix();
+	Tfm.AxisX().norm();
+	Tfm.AxisY().norm();
+	Tfm.AxisZ().norm();
+
+	AABB.Transform(Tfm);
+
+	const auto LocalSphere = GetLocalSphere();
+	vector3 SpherePos(acl::vector_get_x(LocalSphere), acl::vector_get_y(LocalSphere), acl::vector_get_z(LocalSphere));
+	SpherePos = Tfm.transform_coord(SpherePos);
+	const auto GlobalSphere = acl::vector_set(SpherePos.x, SpherePos.y, SpherePos.z, acl::vector_get_w(LocalSphere));
+
+	if (SceneChanged)
 	{
 		_pScene = &Scene;
-		AABB.Transform(_pNode->GetWorldMatrix());
-		_SceneRecordHandle = Scene.AddLight(AABB, *this);
-		_LastTransformVersion = _pNode->GetTransformVersion();
+		_SceneRecordHandle = Scene.AddLight(AABB, GlobalSphere, *this);
 	}
-	else if (_pNode->GetTransformVersion() != _LastTransformVersion) //!!! || LocalBox changed!
+	else // if (BoundsChanged)
 	{
 		// NB: spot light bounds are independent of rotation around dir axis, point - any rotation, dir - any tfm.
 		// Could keep BoundsVersion unchanged in these cases. Worth it? To do this, need to compare prev and new light state, may be light dependent -> virtual call.
-		AABB.Transform(_pNode->GetWorldMatrix());
-		Scene.UpdateLightBounds(_SceneRecordHandle, AABB);
-		_LastTransformVersion = _pNode->GetTransformVersion();
+		Scene.UpdateLightBounds(_SceneRecordHandle, AABB, GlobalSphere);
 	}
+
+	_LastTransformVersion = _pNode->GetTransformVersion();
 }
 //---------------------------------------------------------------------
 

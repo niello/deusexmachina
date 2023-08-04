@@ -21,6 +21,7 @@ public:
 	virtual Scene::PNodeAttribute Clone() override;
 	virtual Render::PLight        CreateLight() const override;
 	virtual void                  UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const override;
+	virtual acl::Vector4_32       GetLocalSphere() const override { return acl::vector_set(0.f, 0.f, 0.f, -1.f); }
 	virtual bool                  GetLocalAABB(CAABB& OutBox) const override;
 	virtual bool                  IntersectsWith(acl::Vector4_32Arg0 Sphere) const override { return true; }
 	virtual bool                  DoesEmitAnyEnergy() const override { return (_Color & 0x00ffffff) && _Intensity > 0.f; }

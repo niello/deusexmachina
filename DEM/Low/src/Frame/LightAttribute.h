@@ -2,6 +2,7 @@
 #include <Scene/NodeAttribute.h>
 #include <Frame/GraphicsScene.h>
 #include <Render/RenderFwd.h>
+#include <acl/math/vector4_32.h>
 
 // Light attribute is a scene node attribute that contains light source params.
 // See subclasses for different light source types.
@@ -34,6 +35,7 @@ public:
 
 	virtual Render::PLight  CreateLight() const = 0;
 	virtual void            UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const = 0;
+	virtual acl::Vector4_32 GetLocalSphere() const = 0;
 	virtual bool            GetLocalAABB(CAABB& OutBox) const = 0;
 	bool                    GetGlobalAABB(CAABB& OutBox) const;
 	void                    UpdateInGraphicsScene(CGraphicsScene& Scene);
