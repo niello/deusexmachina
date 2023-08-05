@@ -109,8 +109,7 @@ protected:
 	void    UpdateObjectBounds(HRecord Handle, acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, acl::Vector4_32Arg2 GlobalSphere);
 	void    RemoveObject(std::map<UPTR, CSpatialRecord>& Storage, HRecord Handle);
 
-	void                      TrackObjectLightIntersections(CSpatialRecord& Record, bool Track);
-	CObjectLightIntersection* CreateObjectLightIntersection(const CSpatialRecord& LightRecord, const CSpatialRecord& RenderableRecord);
+	void            TrackObjectLightIntersections(CSpatialRecord& Record, bool Track);
 
 public:
 

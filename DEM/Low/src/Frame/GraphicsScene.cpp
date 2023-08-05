@@ -517,28 +517,21 @@ void CGraphicsScene::TrackObjectLightIntersections(CLightAttribute& LightAttr, b
 //---------------------------------------------------------------------
 
 static inline void AttachObjectLightIntersection(CObjectLightIntersection* pIntersection,
-	CObjectLightIntersection** ppPrevLightNext, CObjectLightIntersection* pNextLight,
-	CObjectLightIntersection** ppPrevRenderableNext, CObjectLightIntersection* pNextRenderable)
+	CObjectLightIntersection** ppLightSlot, CObjectLightIntersection** ppRenderableSlot)
 {
 	// Insert to the light list preserving sorted order
-	*ppPrevLightNext = pIntersection;
-	pIntersection->ppPrevLightNext = ppPrevLightNext;
+	const auto pNextLight = *ppLightSlot;
+	*ppLightSlot = pIntersection;
+	pIntersection->ppPrevLightNext = ppLightSlot;
 	pIntersection->pNextLight = pNextLight;
 	if (pNextLight) pNextLight->ppPrevLightNext = &pIntersection->pNextLight;
 
 	// Insert to the renderable list of this light
-	*ppPrevRenderableNext = pIntersection;
-	pIntersection->ppPrevRenderableNext = ppPrevRenderableNext;
+	const auto pNextRenderable = *ppRenderableSlot;
+	*ppRenderableSlot = pIntersection;
+	pIntersection->ppPrevRenderableNext = ppRenderableSlot;
 	pIntersection->pNextRenderable = pNextRenderable;
 	if (pNextRenderable) pNextRenderable->ppPrevRenderableNext = &pIntersection->pNextRenderable;
-}
-//---------------------------------------------------------------------
-
-static inline void UpdateObjectLightIntersection(CObjectLightIntersection* pIntersection,
-	const CGraphicsScene::CSpatialRecord& LightRecord, const CGraphicsScene::CSpatialRecord& RenderableRecord)
-{
-	pIntersection->LightBoundsVersion = LightRecord.BoundsVersion;
-	pIntersection->RenderableBoundsVersion = RenderableRecord.BoundsVersion;
 }
 //---------------------------------------------------------------------
 
@@ -553,17 +546,6 @@ static inline void DetachObjectLightIntersection(CObjectLightIntersection* pInte
 	auto pNextRenderable = pIntersection->pNextRenderable;
 	if (pNextRenderable) pNextRenderable->ppPrevRenderableNext = pIntersection->ppPrevRenderableNext;
 	*pIntersection->ppPrevRenderableNext = pNextRenderable;
-}
-//---------------------------------------------------------------------
-
-CObjectLightIntersection* CGraphicsScene::CreateObjectLightIntersection(const CSpatialRecord& LightRecord, const CSpatialRecord& RenderableRecord)
-{
-	auto pIntersection = _IntersectionPool.Construct();
-	pIntersection->pRenderableAttr = static_cast<CRenderableAttribute*>(RenderableRecord.pAttr);
-	pIntersection->pLightAttr = static_cast<CLightAttribute*>(LightRecord.pAttr);
-	pIntersection->LightBoundsVersion = LightRecord.BoundsVersion;
-	pIntersection->RenderableBoundsVersion = RenderableRecord.BoundsVersion;
-	return pIntersection;
 }
 //---------------------------------------------------------------------
 
@@ -586,7 +568,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 
 	// An adapted version of DEM::Algo::SortedUnion for syncing with CObjectLightIntersection. Both collections are sorted by UID.
 	// The logic is simplified in comparison with original SortedUnion because we guarantee that no intersections exist for removed objects and lights.
-	CObjectLightIntersection** ppPrevLightNext = &RenderableRecord.pObjectLightIntersections;
+	CObjectLightIntersection** ppLightInsertionSlot = &RenderableRecord.pObjectLightIntersections;
 	CObjectLightIntersection* pNextLight = RenderableRecord.pObjectLightIntersections;
 	for (auto& [LightUID, LightRecord] : _Lights)
 	{
@@ -600,7 +582,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 			n_assert_dbg(pNextLight && pNextLight->pLightAttr->GetSceneHandle()->first == LightUID);
 
 			pMatchingIntersection = pNextLight;
-			ppPrevLightNext = pNextLight->ppPrevLightNext;
+			ppLightInsertionSlot = pNextLight->ppPrevLightNext;
 			pNextLight = pNextLight->pNextLight;
 
 			// Skip if has up to date intersection (e.g. when both renderable and light get updated at the same frame)
@@ -617,29 +599,30 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 		const bool Intersects = LightRecord.BoundsVersion && static_cast<CLightAttribute*>(LightRecord.pAttr)->IntersectsWith(RenderableRecord.Sphere);
 		if (Intersects)
 		{
-			if (pMatchingIntersection)
+			if (!pMatchingIntersection)
 			{
-				UpdateObjectLightIntersection(pMatchingIntersection, LightRecord, RenderableRecord);
-			}
-			else
-			{
+				pMatchingIntersection = _IntersectionPool.Construct();
+				pMatchingIntersection->pRenderableAttr = static_cast<CRenderableAttribute*>(RenderableRecord.pAttr);
+				pMatchingIntersection->pLightAttr = static_cast<CLightAttribute*>(LightRecord.pAttr);
+
 				// Find the position in the renderable list of this light to preserve UID sorting
 				// TODO PERF: now O(n). If critical, can switch from linked list to std::map for O(logN), but anyway clustered lighting should reduce workload a lot.
 				// Could break sorting and insert in O(1) like in UE, but then need to clear and refill intersections each frame and resubmit to GPU too.
-				CObjectLightIntersection** ppPrevRenderableNext = &LightRecord.pObjectLightIntersections;
-				CObjectLightIntersection* pNextRenderable = LightRecord.pObjectLightIntersections;
+				auto pNextRenderable = LightRecord.pObjectLightIntersections;
 				while (pNextRenderable && RenderableUID > pNextRenderable->pRenderableAttr->GetSceneHandle()->first)
-				{
-					ppPrevRenderableNext = pNextRenderable->ppPrevRenderableNext;
 					pNextRenderable = pNextRenderable->pNextRenderable;
-				}
 
 				// The current renderable must not exist in the list of the light, because we are creating an intersection only now
 				n_assert_dbg(!pNextRenderable || RenderableUID < pNextRenderable->pRenderableAttr->GetSceneHandle()->first);
 
-				AttachObjectLightIntersection(CreateObjectLightIntersection(LightRecord, RenderableRecord), ppPrevLightNext, pNextLight, ppPrevRenderableNext, pNextRenderable);
+				auto ppRenderableInsertionSlot = pNextRenderable ? pNextRenderable->ppPrevRenderableNext : &LightRecord.pObjectLightIntersections;
+				AttachObjectLightIntersection(pMatchingIntersection, ppLightInsertionSlot, ppRenderableInsertionSlot);
+				ppLightInsertionSlot = &pMatchingIntersection->pNextLight;
 				++RenderableRecord.ObjectLightIntersectionsVersion;
 			}
+
+			pMatchingIntersection->LightBoundsVersion = LightRecord.BoundsVersion;
+			pMatchingIntersection->RenderableBoundsVersion = RenderableRecord.BoundsVersion;
 		}
 		else if (!Intersects && pMatchingIntersection)
 		{
@@ -671,7 +654,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 
 	// An adapted version of DEM::Algo::SortedUnion for syncing with CObjectLightIntersection. Both collections are sorted by UID.
 	// The logic is simplified in comparison with original SortedUnion because we guarantee that no intersections exist for removed objects and lights.
-	CObjectLightIntersection** ppPrevRenderableNext = &LightRecord.pObjectLightIntersections;
+	CObjectLightIntersection** ppRenderableInsertionSlot = &LightRecord.pObjectLightIntersections;
 	CObjectLightIntersection* pNextRenderable = LightRecord.pObjectLightIntersections;
 	for (auto& [RenderableUID, RenderableRecord] : _Renderables)
 	{
@@ -685,7 +668,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 			n_assert_dbg(pNextRenderable && pNextRenderable->pRenderableAttr->GetSceneHandle()->first == RenderableUID);
 
 			pMatchingIntersection = pNextRenderable;
-			ppPrevRenderableNext = pNextRenderable->ppPrevRenderableNext;
+			ppRenderableInsertionSlot = pNextRenderable->ppPrevRenderableNext;
 			pNextRenderable = pNextRenderable->pNextRenderable;
 
 			// Skip if has up to date intersection (e.g. when both renderable and light get updated at the same frame)
@@ -700,29 +683,30 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 		const bool Intersects = static_cast<CLightAttribute*>(LightRecord.pAttr)->IntersectsWith(RenderableRecord.Sphere);
 		if (Intersects)
 		{
-			if (pMatchingIntersection)
+			if (!pMatchingIntersection)
 			{
-				UpdateObjectLightIntersection(pMatchingIntersection, LightRecord, RenderableRecord);
-			}
-			else
-			{
+				pMatchingIntersection = _IntersectionPool.Construct();
+				pMatchingIntersection->pRenderableAttr = static_cast<CRenderableAttribute*>(RenderableRecord.pAttr);
+				pMatchingIntersection->pLightAttr = static_cast<CLightAttribute*>(LightRecord.pAttr);
+
 				// Find the position in the light list of this renderable to preserve UID sorting
 				// TODO PERF: now O(n). If critical, can switch from linked list to std::map for O(logN), but anyway clustered lighting should reduce workload a lot.
 				// Could break sorting and insert in O(1) like in UE, but then need to clear and refill intersections each frame and resubmit to GPU too.
-				CObjectLightIntersection** ppPrevLightNext = &RenderableRecord.pObjectLightIntersections;
-				CObjectLightIntersection* pNextLight = RenderableRecord.pObjectLightIntersections;
+				auto pNextLight = RenderableRecord.pObjectLightIntersections;
 				while (pNextLight && LightUID > pNextLight->pLightAttr->GetSceneHandle()->first)
-				{
-					ppPrevLightNext = pNextLight->ppPrevLightNext;
 					pNextLight = pNextLight->pNextLight;
-				}
 
 				// The current light must not exist in the list of the renderable, because we are creating an intersection only now
 				n_assert_dbg(!pNextLight || LightUID < pNextLight->pLightAttr->GetSceneHandle()->first);
 
-				AttachObjectLightIntersection(CreateObjectLightIntersection(LightRecord, RenderableRecord), ppPrevLightNext, pNextLight, ppPrevRenderableNext, pNextRenderable);
+				auto ppLightInsertionSlot = pNextLight ? pNextLight->ppPrevLightNext : &RenderableRecord.pObjectLightIntersections;
+				AttachObjectLightIntersection(pMatchingIntersection, ppLightInsertionSlot, ppRenderableInsertionSlot);
+				ppRenderableInsertionSlot = &pMatchingIntersection->pNextRenderable;
 				++RenderableRecord.ObjectLightIntersectionsVersion;
 			}
+
+			pMatchingIntersection->LightBoundsVersion = LightRecord.BoundsVersion;
+			pMatchingIntersection->RenderableBoundsVersion = RenderableRecord.BoundsVersion;
 		}
 		else if (!Intersects && pMatchingIntersection)
 		{
