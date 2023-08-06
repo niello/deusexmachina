@@ -117,12 +117,12 @@ public:
 
 	HRecord         AddRenderable(const CAABB& GlobalBox, CRenderableAttribute& RenderableAttr);
 	void            UpdateRenderableBounds(HRecord Handle, const CAABB& GlobalBox);
-	void            RemoveRenderable(HRecord Handle) { RemoveObject(_Renderables, Handle); }
+	void            RemoveRenderable(HRecord Handle);
 	const auto&     GetRenderables() const { return _Renderables; }
 
 	HRecord         AddLight(const CAABB& GlobalBox, acl::Vector4_32Arg0 GlobalSphere, CLightAttribute& LightAttr);
 	void            UpdateLightBounds(HRecord Handle, const CAABB& GlobalBox, acl::Vector4_32Arg0 GlobalSphere);
-	void            RemoveLight(HRecord Handle) { RemoveObject(_Lights, Handle); }
+	void            RemoveLight(HRecord Handle);
 	const auto&     GetLights() const { return _Lights; }
 
 	void            TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum, std::vector<bool>& NodeVisibility) const;

@@ -50,6 +50,65 @@ bool HasLooseIntersection(/*Bounds, Morton*/) noexcept
 }
 //---------------------------------------------------------------------
 
+static inline std::tuple<acl::Vector4_32, acl::Vector4_32> ConvertAABBToSIMD(const CAABB& GlobalBox)
+{
+	// TODO: store AABB as SIMD center-extents everywhere?!
+	const auto HalfMin = acl::vector_mul(acl::vector_set(GlobalBox.Min.x, GlobalBox.Min.y, GlobalBox.Min.z), 0.5f);
+	const auto HalfMax = acl::vector_mul(acl::vector_set(GlobalBox.Max.x, GlobalBox.Max.y, GlobalBox.Max.z), 0.5f);
+	const auto BoxCenter = acl::vector_add(HalfMax, HalfMin);
+	const auto BoxExtent = acl::vector_sub(HalfMax, HalfMin);
+	return { BoxCenter, BoxExtent };
+}
+//---------------------------------------------------------------------
+
+static inline acl::Vector4_32 SphereFromBox(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent)
+{
+	const float SphereRadius = acl::vector_length3(BoxExtent);
+	return acl::vector_set(acl::vector_get_x(BoxCenter), acl::vector_get_y(BoxCenter), acl::vector_get_z(BoxCenter), SphereRadius);
+}
+//---------------------------------------------------------------------
+
+static inline void AttachObjectLightIntersection(CObjectLightIntersection* pIntersection,
+	CObjectLightIntersection** ppLightSlot, CObjectLightIntersection** ppRenderableSlot)
+{
+	// Insert to the light list preserving sorted order
+	const auto pNextLight = *ppLightSlot;
+	*ppLightSlot = pIntersection;
+	pIntersection->ppPrevLightNext = ppLightSlot;
+	pIntersection->pNextLight = pNextLight;
+	if (pNextLight) pNextLight->ppPrevLightNext = &pIntersection->pNextLight;
+
+	// Insert to the renderable list of this light
+	const auto pNextRenderable = *ppRenderableSlot;
+	*ppRenderableSlot = pIntersection;
+	pIntersection->ppPrevRenderableNext = ppRenderableSlot;
+	pIntersection->pNextRenderable = pNextRenderable;
+	if (pNextRenderable) pNextRenderable->ppPrevRenderableNext = &pIntersection->pNextRenderable;
+
+	//!!!DBG TMP!
+	n_assert_dbg(!pNextLight || pIntersection->pLightAttr->GetSceneHandle()->first < pNextLight->pLightAttr->GetSceneHandle()->first);
+	n_assert_dbg(!pNextRenderable || pIntersection->pRenderableAttr->GetSceneHandle()->first < pNextRenderable->pRenderableAttr->GetSceneHandle()->first);
+	::Sys::Log(("***DBG Attach renderable " + std::to_string(pIntersection->pRenderableAttr->GetSceneHandle()->first) + "\n").c_str());
+}
+//---------------------------------------------------------------------
+
+static inline void DetachObjectLightIntersection(CObjectLightIntersection* pIntersection)
+{
+	//!!!DBG TMP!
+	::Sys::Log(("***DBG Detach renderable " + std::to_string(pIntersection->pRenderableAttr->GetSceneHandle()->first) + "\n").c_str());
+
+	// Remove from the light list
+	auto pNextLight = pIntersection->pNextLight;
+	if (pNextLight) pNextLight->ppPrevLightNext = pIntersection->ppPrevLightNext;
+	*pIntersection->ppPrevLightNext = pNextLight;
+
+	// Remove from the renderable list of this light
+	auto pNextRenderable = pIntersection->pNextRenderable;
+	if (pNextRenderable) pNextRenderable->ppPrevRenderableNext = pIntersection->ppPrevRenderableNext;
+	*pIntersection->ppPrevRenderableNext = pNextRenderable;
+}
+//---------------------------------------------------------------------
+
 void CGraphicsScene::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 {
 	n_assert2_dbg(Size >= 0.f, "CGraphicsScene::Init() > negative world extent is not allowed!");
@@ -276,24 +335,6 @@ void CGraphicsScene::RemoveObject(std::map<UPTR, CSpatialRecord>& Storage, HReco
 }
 //---------------------------------------------------------------------
 
-static inline std::tuple<acl::Vector4_32, acl::Vector4_32> ConvertAABBToSIMD(const CAABB& GlobalBox)
-{
-	// TODO: store AABB as SIMD center-extents everywhere?!
-	const auto HalfMin = acl::vector_mul(acl::vector_set(GlobalBox.Min.x, GlobalBox.Min.y, GlobalBox.Min.z), 0.5f);
-	const auto HalfMax = acl::vector_mul(acl::vector_set(GlobalBox.Max.x, GlobalBox.Max.y, GlobalBox.Max.z), 0.5f);
-	const auto BoxCenter = acl::vector_add(HalfMax, HalfMin);
-	const auto BoxExtent = acl::vector_sub(HalfMax, HalfMin);
-	return { BoxCenter, BoxExtent };
-}
-//---------------------------------------------------------------------
-
-static inline acl::Vector4_32 SphereFromBox(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent)
-{
-	const float SphereRadius = acl::vector_length3(BoxExtent);
-	return acl::vector_set(acl::vector_get_x(BoxCenter), acl::vector_get_y(BoxCenter), acl::vector_get_z(BoxCenter), SphereRadius);
-}
-//---------------------------------------------------------------------
-
 CGraphicsScene::HRecord CGraphicsScene::AddRenderable(const CAABB& GlobalBox, CRenderableAttribute& RenderableAttr)
 {
 	const auto UID = _NextRenderableUID++;
@@ -324,6 +365,26 @@ void CGraphicsScene::UpdateRenderableBounds(HRecord Handle, const CAABB& GlobalB
 }
 //---------------------------------------------------------------------
 
+void CGraphicsScene::RemoveRenderable(HRecord Handle)
+{
+	// Erase all intersections from the light list of this renderable
+	auto pIntersection = Handle->second.pObjectLightIntersections;
+	while (pIntersection)
+	{
+		// Remove from the renderable list of the current light
+		auto pNextRenderable = pIntersection->pNextRenderable;
+		if (pNextRenderable) pNextRenderable->ppPrevRenderableNext = pIntersection->ppPrevRenderableNext;
+		*pIntersection->ppPrevRenderableNext = pNextRenderable;
+
+		auto pNextIntersection = pIntersection->pNextLight;
+		_IntersectionPool.Destroy(pIntersection);
+		pIntersection = pNextIntersection;
+	}
+
+	RemoveObject(_Renderables, Handle);
+}
+//---------------------------------------------------------------------
+
 CGraphicsScene::HRecord CGraphicsScene::AddLight(const CAABB& GlobalBox, acl::Vector4_32Arg0 GlobalSphere, CLightAttribute& LightAttr)
 {
 	const auto UID = _NextLightUID++;
@@ -341,6 +402,29 @@ void CGraphicsScene::UpdateLightBounds(HRecord Handle, const CAABB& GlobalBox, a
 {
 	const auto [BoxCenter, BoxExtent] = ConvertAABBToSIMD(GlobalBox);
 	UpdateObjectBounds(Handle, BoxCenter, BoxExtent, GlobalSphere);
+}
+//---------------------------------------------------------------------
+
+void CGraphicsScene::RemoveLight(HRecord Handle)
+{
+	// Erase all intersections from the renderable list of this light
+	auto pIntersection = Handle->second.pObjectLightIntersections;
+	while (pIntersection)
+	{
+		// Remove from the light list of the current renderable
+		auto pNextLight = pIntersection->pNextLight;
+		if (pNextLight) pNextLight->ppPrevLightNext = pIntersection->ppPrevLightNext;
+		*pIntersection->ppPrevLightNext = pNextLight;
+
+		// Notify the current renderable that its light intersection list have changed
+		++pIntersection->pRenderableAttr->GetSceneHandle()->second.ObjectLightIntersectionsVersion;
+
+		auto pNextIntersection = pIntersection->pNextRenderable;
+		_IntersectionPool.Destroy(pIntersection);
+		pIntersection = pNextIntersection;
+	}
+
+	RemoveObject(_Lights, Handle);
 }
 //---------------------------------------------------------------------
 
@@ -513,47 +597,6 @@ void CGraphicsScene::TrackObjectLightIntersections(CRenderableAttribute& Rendera
 void CGraphicsScene::TrackObjectLightIntersections(CLightAttribute& LightAttr, bool Track)
 {
 	TrackObjectLightIntersections(LightAttr.GetSceneHandle()->second, Track);
-}
-//---------------------------------------------------------------------
-
-static inline void AttachObjectLightIntersection(CObjectLightIntersection* pIntersection,
-	CObjectLightIntersection** ppLightSlot, CObjectLightIntersection** ppRenderableSlot)
-{
-	// Insert to the light list preserving sorted order
-	const auto pNextLight = *ppLightSlot;
-	*ppLightSlot = pIntersection;
-	pIntersection->ppPrevLightNext = ppLightSlot;
-	pIntersection->pNextLight = pNextLight;
-	if (pNextLight) pNextLight->ppPrevLightNext = &pIntersection->pNextLight;
-
-	// Insert to the renderable list of this light
-	const auto pNextRenderable = *ppRenderableSlot;
-	*ppRenderableSlot = pIntersection;
-	pIntersection->ppPrevRenderableNext = ppRenderableSlot;
-	pIntersection->pNextRenderable = pNextRenderable;
-	if (pNextRenderable) pNextRenderable->ppPrevRenderableNext = &pIntersection->pNextRenderable;
-
-	//!!!DBG TMP!
-	n_assert_dbg(!pNextLight || pIntersection->pLightAttr->GetSceneHandle()->first < pNextLight->pLightAttr->GetSceneHandle()->first);
-	n_assert_dbg(!pNextRenderable || pIntersection->pRenderableAttr->GetSceneHandle()->first < pNextRenderable->pRenderableAttr->GetSceneHandle()->first);
-	::Sys::Log(("***DBG Attach renderable " + std::to_string(pIntersection->pRenderableAttr->GetSceneHandle()->first) + "\n").c_str());
-}
-//---------------------------------------------------------------------
-
-static inline void DetachObjectLightIntersection(CObjectLightIntersection* pIntersection)
-{
-	//!!!DBG TMP!
-	::Sys::Log(("***DBG Detach renderable " + std::to_string(pIntersection->pRenderableAttr->GetSceneHandle()->first) + "\n").c_str());
-
-	// Remove from the light list
-	auto pNextLight = pIntersection->pNextLight;
-	if (pNextLight) pNextLight->ppPrevLightNext = pIntersection->ppPrevLightNext;
-	*pIntersection->ppPrevLightNext = pNextLight;
-
-	// Remove from the renderable list of this light
-	auto pNextRenderable = pIntersection->pNextRenderable;
-	if (pNextRenderable) pNextRenderable->ppPrevRenderableNext = pIntersection->ppPrevRenderableNext;
-	*pIntersection->ppPrevRenderableNext = pNextRenderable;
 }
 //---------------------------------------------------------------------
 
