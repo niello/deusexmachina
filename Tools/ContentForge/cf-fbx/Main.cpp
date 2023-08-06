@@ -433,6 +433,22 @@ public:
 		//auto AxisSystem = pScene->GetGlobalSettings().GetAxisSystem();
 		//auto OriginalUpAxis = pScene->GetGlobalSettings().GetOriginalUpAxis();
 
+		// Setup scene unit, DEM uses meters, but FBX default is centimeters
+		if (pScene->GetGlobalSettings().GetSystemUnit() != FbxSystemUnit::m)
+		{
+			Task.Log.LogInfo("Scene unit converted from " + std::string(pScene->GetGlobalSettings().GetSystemUnit().GetScaleFactorAsString()) + " to meters");
+
+			FbxSystemUnit::ConversionOptions Options;
+			Options.mConvertRrsNodes = false;
+			Options.mConvertLimits = true;
+			Options.mConvertClusters = true;
+			Options.mConvertLightIntensity = false; // TODO: check if 'true' needed
+			Options.mConvertPhotometricLProperties = true;
+			Options.mConvertCameraClipPlanes = true;
+
+			FbxSystemUnit::m.ConvertScene(pScene, Options);
+		}
+
 		const auto SceneFrameRate = FbxTime::GetFrameRate(FbxTime::GetGlobalTimeMode());
 		if (!FbxEqual(SceneFrameRate, _AnimSamplingRate))
 		{
