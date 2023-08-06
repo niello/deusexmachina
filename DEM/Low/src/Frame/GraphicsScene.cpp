@@ -84,19 +84,11 @@ static inline void AttachObjectLightIntersection(CObjectLightIntersection* pInte
 	pIntersection->ppPrevRenderableNext = ppRenderableSlot;
 	pIntersection->pNextRenderable = pNextRenderable;
 	if (pNextRenderable) pNextRenderable->ppPrevRenderableNext = &pIntersection->pNextRenderable;
-
-	//!!!DBG TMP!
-	n_assert_dbg(!pNextLight || pIntersection->pLightAttr->GetSceneHandle()->first < pNextLight->pLightAttr->GetSceneHandle()->first);
-	n_assert_dbg(!pNextRenderable || pIntersection->pRenderableAttr->GetSceneHandle()->first < pNextRenderable->pRenderableAttr->GetSceneHandle()->first);
-	::Sys::Log(("***DBG Attach renderable " + std::to_string(pIntersection->pRenderableAttr->GetSceneHandle()->first) + "\n").c_str());
 }
 //---------------------------------------------------------------------
 
 static inline void DetachObjectLightIntersection(CObjectLightIntersection* pIntersection)
 {
-	//!!!DBG TMP!
-	::Sys::Log(("***DBG Detach renderable " + std::to_string(pIntersection->pRenderableAttr->GetSceneHandle()->first) + "\n").c_str());
-
 	// Remove from the light list
 	auto pNextLight = pIntersection->pNextLight;
 	if (pNextLight) pNextLight->ppPrevLightNext = pIntersection->ppPrevLightNext;
@@ -265,7 +257,7 @@ CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CSpatialRecord>
 	Record.Sphere = GlobalSphere;
 
 	// Check bounds validity
-	if (!acl::vector_any_less_than3(Record.BoxExtent, acl::vector_set(0.f))) //!!!TODO: can check negative sign bits by mask!
+	if (!acl::vector_any_less_than3(Record.BoxExtent, acl::vector_set(0.f))) //!!!TODO PERF: can check negative sign bits by mask!
 	{
 		const auto NodeMortonCode = CalculateMortonCode(Record.BoxCenter, Record.BoxExtent);
 		Record.NodeIndex = AddSingleObjectToNode(NodeMortonCode, 0);
@@ -325,10 +317,6 @@ void CGraphicsScene::UpdateObjectBounds(HRecord Handle, acl::Vector4_32Arg0 BoxC
 void CGraphicsScene::RemoveObject(std::map<UPTR, CSpatialRecord>& Storage, HRecord Handle)
 {
 	//if (Handle == Storage.cend()) return;
-
-	//!!!TODO: erase linked list of intersections in which this object participates!
-	//!!!for renderables and lights this is different code, need to move to RemoveRenderable and RemoveLight!
-
 	RemoveSingleObjectFromNode(Handle->second.NodeIndex, Handle->second.NodeMortonCode, 0);
 	_ObjectNodePool.push_back(Storage.extract(Handle));
 	_ObjectNodePool.back().mapped().~CSpatialRecord();
