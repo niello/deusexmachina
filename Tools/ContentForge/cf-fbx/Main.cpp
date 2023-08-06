@@ -1474,25 +1474,16 @@ public:
 			}
 			else
 			{
-				// TODO: ensure this algorithm is correct, test on real lights!
+				// When intensity lowers so that it can't change a pixel color, we consider the light completely decayed
+				constexpr float MinIntensity = /*0.5f **/ (1.f / 256.f);
 
-				// Proportion of original intensity at which we consider the light decayed to nothing
-				constexpr float DecayThreshold = 0.01f;
-
-				const float DecayStart = static_cast<float>(pLight->DecayStart.Get());
-				if (CompareFloat(DecayStart, 0.f))
-				{
-					Ctx.Log.LogWarning(std::string("Light ") + pLight->GetName() + " has infinite range, skipped as unsupported");
-					return true;
-				}
-
-				const float LinearRange = Intensity / (DecayStart * DecayThreshold);
+				const float DistanceFactor = Intensity / MinIntensity;
 
 				switch (pLight->DecayType.Get())
 				{
-					case FbxLight::eLinear: Range = LinearRange; break;
-					case FbxLight::eQuadratic: Range = std::sqrtf(LinearRange); break;
-					case FbxLight::eCubic: Range = std::powf(LinearRange, 1.f / 3.f); break;
+					case FbxLight::eLinear: Range = DistanceFactor; break;
+					case FbxLight::eQuadratic: Range = std::sqrtf(DistanceFactor); break;
+					case FbxLight::eCubic: Range = std::powf(DistanceFactor, 1.f / 3.f); break;
 					default:
 					{
 						Ctx.Log.LogWarning(std::string("Light ") + pLight->GetName() + " has unsupported decay type, skipped");

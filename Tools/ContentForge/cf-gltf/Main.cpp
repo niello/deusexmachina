@@ -1409,9 +1409,10 @@ public:
 			}
 			else
 			{
-				// Range is calculated based on link below with intensity in [0; 1]
-				// https://developer.valvesoftware.com/wiki/Constant-Linear-Quadratic_Falloff
-				Attribute.emplace_back(CStrID("Range"), std::sqrtf(Light.intensity) * 100.f);
+				// When intensity lowers so that it can't change a pixel color, we consider the light completely decayed
+				// See also: https://developer.valvesoftware.com/wiki/Constant-Linear-Quadratic_Falloff
+				constexpr float MinIntensity = /*0.5f **/ (1.f / 256.f);
+				Attribute.emplace_back(CStrID("Range"), std::sqrtf(Intensity / MinIntensity));
 			}
 
 			if (LightClassFourCC == 'SLTA')
