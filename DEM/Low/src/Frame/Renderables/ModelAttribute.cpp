@@ -173,6 +173,7 @@ void CModelAttribute::UpdateLightList(Render::IRenderable& Renderable, const COb
 	while (pHead)
 	{
 		//!!!to remap UIDs into GPU indices, need some O(1) map in View!
+		//!!!then will need U32 indices, because it is GPU int size!
 
 		// TODO PERF: check if storing light UID copy in CObjectLightIntersection is better because of less pointer chasing. Also will be less includes.
 		pModel->Lights.push_back(pHead->pLightAttr->GetSceneHandle()->first);
