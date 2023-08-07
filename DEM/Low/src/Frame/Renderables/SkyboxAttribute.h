@@ -20,6 +20,7 @@ public:
 	virtual Scene::PNodeAttribute Clone() override;
 	virtual Render::PRenderable   CreateRenderable() const override;
 	virtual void                  UpdateRenderable(CView& View, Render::IRenderable& Renderable) const override;
+	virtual void                  UpdateLightList(Render::IRenderable& Renderable, const CObjectLightIntersection* pHead) const override { n_assert_dbg(!pHead); }
 	virtual bool                  GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const override;
 };
 

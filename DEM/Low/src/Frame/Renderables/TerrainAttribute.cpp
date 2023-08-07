@@ -163,6 +163,20 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 
 		pTerrain->GeometryKey = pTerrain->PatchMesh->GetSortingKey();
 	}
+
+	//!!!TODO: if camera or heightmap or transform changed, update visible patches!
+}
+//---------------------------------------------------------------------
+
+void CTerrainAttribute::UpdateLightList(Render::IRenderable& Renderable, const CObjectLightIntersection* pHead) const
+{
+	auto pTerrain = static_cast<Render::CTerrain*>(&Renderable);
+	while (pHead)
+	{
+		// TODO: use visible patches calculated in UpdateRenderable and AABB tree to calculate lights per patch
+
+		pHead = pHead->pNextLight;
+	}
 }
 //---------------------------------------------------------------------
 

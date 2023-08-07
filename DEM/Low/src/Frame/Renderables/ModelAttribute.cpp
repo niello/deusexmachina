@@ -3,6 +3,7 @@
 #include <Frame/GraphicsResourceManager.h>
 #include <Frame/SkinAttribute.h>
 #include <Frame/SkinProcessorAttribute.h>
+#include <Frame/LightAttribute.h>
 #include <Scene/SceneNode.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
@@ -161,6 +162,21 @@ void CModelAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rendera
 			pModel->MaterialKey = pModel->Material->GetSortingKey();
 			pModel->ShaderTechKey = View.GetShaderTechCache()[pModel->ShaderTechIndex]->GetSortingKey(); //???FIXME: now we use non-overridden tech key for all phases
 		}
+	}
+}
+//---------------------------------------------------------------------
+
+void CModelAttribute::UpdateLightList(Render::IRenderable& Renderable, const CObjectLightIntersection* pHead) const
+{
+	auto pModel = static_cast<Render::CModel*>(&Renderable);
+	pModel->Lights.clear();
+	while (pHead)
+	{
+		//!!!to remap UIDs into GPU indices, need some O(1) map in View!
+
+		// TODO PERF: check if storing light UID copy in CObjectLightIntersection is better because of less pointer chasing. Also will be less includes.
+		pModel->Lights.push_back(pHead->pLightAttr->GetSceneHandle()->first);
+		pHead = pHead->pNextLight;
 	}
 }
 //---------------------------------------------------------------------

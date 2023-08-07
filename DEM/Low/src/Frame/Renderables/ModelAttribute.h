@@ -33,6 +33,7 @@ public:
 	virtual bool                  ValidateResources(Resources::CResourceManager& ResMgr) override;
 	virtual Render::PRenderable   CreateRenderable() const override;
 	virtual void                  UpdateRenderable(CView& View, Render::IRenderable& Renderable) const override;
+	virtual void                  UpdateLightList(Render::IRenderable& Renderable, const CObjectLightIntersection* pHead) const override;
 	virtual bool                  GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const override;
 };
 

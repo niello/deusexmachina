@@ -166,7 +166,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 
 	if (_pCurrTechInterface->MemberLightCount)
 	{
-		const auto LightCount = LightingEnabled ? std::min<U32>(Model.LightCount, _pCurrTechInterface->MemberLightIndices.GetElementCount()) : 0;
+		const auto LightCount = LightingEnabled ? std::min<U32>(Model.Lights.size(), _pCurrTechInterface->MemberLightIndices.GetElementCount()) : 0;
 
 		_pCurrTechInterface->MemberLightCount.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
 		_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->MemberLightCount, LightCount);

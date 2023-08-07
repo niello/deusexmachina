@@ -36,10 +36,6 @@ public:
 
 	//!!!DBG TMP! Check transform version before rewriting, to save unnecessary ops? Also need better representation!
 	matrix44 Transform;
-
-	//!!!DBG TMP! clean! what is renderer specific? what is renderable specific?
-	U16 LightIndexBase = 0;		// Memory is actually allocated inside a CView, we store index, not ptr, to handle reallocations
-	U8 LightCount = 0;			// If zero, LightIndexBase is undefined
 };
 
 }

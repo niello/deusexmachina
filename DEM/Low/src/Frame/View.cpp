@@ -501,19 +501,7 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			_pScene->UpdateObjectLightIntersections(*pAttr);
 
 			if (Record.ObjectLightIntersectionsVersion != pRenderable->ObjectLightIntersectionsVersion)
-			{
-				// TODO: update light indices. Or try to move it into UpdateRenderable or new similar method, to handle differently in different renderable types?
-				std::vector<UPTR> LightUIDs;
-				auto pIntersection = Record.pObjectLightIntersections;
-				while (pIntersection)
-				{
-					LightUIDs.push_back(pIntersection->pLightAttr->GetSceneHandle()->first);
-					pIntersection = pIntersection->pNextLight;
-				}
-
-				//!!!DBG TMP! Just to catch the moment when we detect the first light.
-				//n_assert_dbg(LightUIDs.empty());
-			}
+				pAttr->UpdateLightList(*pRenderable, Record.pObjectLightIntersections);
 		}
 	}
 }

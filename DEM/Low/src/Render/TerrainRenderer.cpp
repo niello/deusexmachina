@@ -590,8 +590,8 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	Args.AABBMinZ = AABBMinZ;
 	Args.ScaleBaseX = AABBSizeX / (float)(CDLOD.GetHeightMapWidth() - 1);
 	Args.ScaleBaseZ = AABBSizeZ / (float)(CDLOD.GetHeightMapHeight() - 1);
-	Args.LightIndexBase = Terrain.LightIndexBase;
-	Args.LightCount = Terrain.LightCount;
+	Args.LightIndexBase = 0;// Terrain.LightIndexBase;
+	Args.LightCount = 0;// Terrain.LightCount;
 
 	U32 PatchCount = 0;
 	U32 QuarterPatchCount = 0;
