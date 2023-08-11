@@ -166,6 +166,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 
 	if (_pCurrTechInterface->MemberLightCount)
 	{
+		//???prioritize by intensity at object, or just clamp as is?
 		const auto LightCount = LightingEnabled ? std::min<U32>(Model.Lights.size(), _pCurrTechInterface->MemberLightIndices.GetElementCount()) : 0;
 
 		_pCurrTechInterface->MemberLightCount.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
@@ -174,17 +175,12 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 		// Set per-instance light indices
 		if (LightCount)
 		{
-			// prioritization of lights if needed only when the object has more lights than supported. Otherwise can omit completely. Calc per object.
-			// only local lights are stored in intersections and therefore only they are prioritized. Global lights have different processing in a shader.
-			// use CLight::FillGPUStructure(DataRef) to avoid RTTI casts, allow each light to fill its structure, incl. type enum.
-			//???process intersections not here but in UpdateRenderable?! Makes sense, can make special processing for terrain etc.
-			//!!!track intersections state version to avoid updating and re-prioritizing when nothing has changed. NB: movement can be important, especially
-			// for terrain, as light may be still intersecting with the terrain in a whole but now affecting other patches. Terrain could also remember light's bounds version?
+			//!!!need to write to PerInstanceParams U32 ints or smaller, UPTR on x64 is not supported or needed! convert light ID to GPU index here?
+			// if here, need to write with SetUInt one by one!
+			static_assert(std::is_same_v<decltype(Model.Lights)::value_type, U32>);
 
-			//_pCurrTechInterface->MemberLightIndices.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
-			// if affecting light count > _pCurrTechInterface->MemberLightIndices.GetElementCount(), clamp by proiritization
-			// for each affecting light
-			//	_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->MemberLightIndices[i], LightIndex);
+			_pCurrTechInterface->MemberLightIndices.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
+			_pCurrTechInterface->PerInstanceParams.SetRawConstant(_pCurrTechInterface->MemberLightIndices, Model.Lights.data(), LightCount * sizeof(U32));
 		}
 	}
 

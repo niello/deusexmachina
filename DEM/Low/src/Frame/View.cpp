@@ -600,6 +600,7 @@ bool CView::Render()
 		Queue->Update();
 
 	// TODO: fill global light list and other globals here or in CRenderPath::Render! Dir lights - to separate GPU structures, choose N most intense/high-priority.
+	// use CLight::FillGPUStructure(DataRef) to avoid RTTI casts, allow each light to fill its structure, incl. type enum.
 	//???send all or only visible lights to GPU? how to detect that something have changed, to avoid resending each frame?
 	//set flag when testing lights against frustum and visibility of one actually changes?
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

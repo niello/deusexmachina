@@ -173,10 +173,14 @@ void CModelAttribute::UpdateLightList(Render::IRenderable& Renderable, const COb
 	while (pHead)
 	{
 		//!!!to remap UIDs into GPU indices, need some O(1) map in View!
-		//!!!then will need U32 indices, because it is GPU int size!
+		//!!!then will need U32 indices, because it is GPU int size! or can limit to u16 and read from structured buffer?
+		//!!!FIXME: stub!
+		//!!!remap here or in renderers?! if here, need to UpdateLightList each time global GPU light data buffer changes!!! better move conv. to renderers?!
+		//???store Render::CLight pointers instead of scene UPTR UIDs here? then could get GPU indices from Render::CLight!
+		const U32 LightGPUIndex = static_cast<U32>(pHead->pLightAttr->GetSceneHandle()->first);
 
 		// TODO PERF: check if storing light UID copy in CObjectLightIntersection is better because of less pointer chasing. Also will be less includes.
-		pModel->Lights.push_back(pHead->pLightAttr->GetSceneHandle()->first);
+		pModel->Lights.push_back(LightGPUIndex);
 		pHead = pHead->pNextLight;
 	}
 }

@@ -170,6 +170,9 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 
 void CTerrainAttribute::UpdateLightList(Render::IRenderable& Renderable, const CObjectLightIntersection* pHead) const
 {
+	// NB: tfm change can be important for terrain, as light may be still intersecting with the terrain in a whole but now affecting other patches.
+	// Terrain could also remember light's bounds version? Make sure we call UpdateLightList for terrain at any tfm change.
+
 	auto pTerrain = static_cast<Render::CTerrain*>(&Renderable);
 	while (pHead)
 	{

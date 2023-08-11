@@ -24,7 +24,7 @@ public:
 	PMesh                          Mesh;
 	const Render::CPrimitiveGroup* pGroup = nullptr;
 	const matrix44*                pSkinPalette = nullptr; // nullptr if no skin
-	std::vector<UPTR>              Lights;
+	std::vector<U32>               Lights;
 	U32                            BoneCount = 0;
 	U32                            ShaderTechIndex = INVALID_INDEX_T<U32>;
 };
