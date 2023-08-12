@@ -103,7 +103,7 @@ protected:
 	void SynchronizeRenderables();
 	void SynchronizeLights();
 	void UpdateRenderables(bool ViewProjChanged);
-	void UpdateLights(bool ViewProjChanged);
+	bool UpdateLights(bool ViewProjChanged);
 
 public:
 

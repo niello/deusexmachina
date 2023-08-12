@@ -386,7 +386,7 @@ void CView::SynchronizeLights()
 	{
 		if (ItSceneObject == _pScene->GetLights().cend())
 		{
-			// TODO: erase this light from hardawre constant buffer and from all objects' light lists!
+			// TODO: erase this light from hardware constant buffer and from all objects' light lists!
 
 			// An attribute was removed from a scene, remove its associated GPU light instance
 			// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one
@@ -508,8 +508,10 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 }
 //---------------------------------------------------------------------
 
-void CView::UpdateLights(bool ViewProjChanged)
+bool CView::UpdateLights(bool ViewProjChanged)
 {
+	bool VisibleLightsChanged = false;
+
 	// Iterate synchronized collections side by side
 	auto ItSceneObject = _pScene->GetLights().cbegin();
 	auto ItViewObject = _Lights.cbegin();
@@ -518,6 +520,7 @@ void CView::UpdateLights(bool ViewProjChanged)
 		const CGraphicsScene::CSpatialRecord& Record = ItSceneObject->second;
 		Render::CLight* pLight = ItViewObject->second.get();
 		auto pAttr = static_cast<CLightAttribute*>(Record.pAttr);
+		const bool WasVisible = pLight->IsVisible;
 
 		float DistanceToCamera = 0.f;
 		if (!Record.BoundsVersion)
@@ -557,6 +560,8 @@ void CView::UpdateLights(bool ViewProjChanged)
 				pLight->IsVisible = false;
 		}
 
+		VisibleLightsChanged |= (WasVisible != pLight->IsVisible);
+
 		// Setup object-light intersection tracking
 		// TODO: for pairs of static object + static light might use lightmapping or other optimizations. Exploit physics lib's collision? Or calc once? Or preprocess offline?
 		// TODO: _IsForwardLighting OR shadows / alpha etc, what needs intersections in deferred lighting
@@ -568,6 +573,8 @@ void CView::UpdateLights(bool ViewProjChanged)
 		}
 		if (TrackObjectLightIntersections) _pScene->UpdateObjectLightIntersections(*pAttr);
 	}
+
+	return VisibleLightsChanged;
 }
 //---------------------------------------------------------------------
 
@@ -591,41 +598,45 @@ bool CView::Render()
 	}
 	_pScene->TestSpatialTreeVisibility(_LastViewFrustum, _SpatialTreeNodeVisibility);
 
+	// Update rendering representations of scene lights
+	if (UpdateLights(ViewProjChanged))
+	{
+		// TODO: fill global light list and other globals here or in CRenderPath::Render! Dir lights - to separate GPU structures, choose N most intense/high-priority.
+		// use CLight::FillGPUStructure(DataRef) to avoid RTTI casts, allow each light to fill its structure, incl. type enum.
+		//???send all or only visible lights to GPU?
+		//!!!split into global lights (IBL global, directional) which will be prioritized to limited slots, and local lights which will be stored in a GPU buffer
+		//???call UpdateLightList with lights already resolved into Render::CLight?
+		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		//!!!DBG TMP!
+		LightCache.Clear();
+		EnvironmentCache.Clear();
+		for (const auto& [UID, Light] : _Lights)
+		{
+			if (Light->IsVisible)
+			{
+				if (_pScene->GetLights().find(UID)->second.pAttr->IsA<CIBLAmbientLightAttribute>())
+				{
+					EnvironmentCache.Add(static_cast<Render::CImageBasedLight*>(Light.get()));
+				}
+				else
+				{
+					//Render::CLightRecord& Rec = *LightCache.Add();
+					//Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
+					//Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
+					//Rec.UseCount = 0;
+					//Rec.GPULightIndex = INVALID_INDEX;
+				}
+			}
+		}
+		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	}
+
 	// Update rendering representations of scene objects
-	UpdateLights(ViewProjChanged);
 	UpdateRenderables(ViewProjChanged);
 
 	//!!!TODO PERF: queues are independent, no write access to renderables is needed, can parallelize!
 	for (auto& Queue : _RenderQueues)
 		Queue->Update();
-
-	// TODO: fill global light list and other globals here or in CRenderPath::Render! Dir lights - to separate GPU structures, choose N most intense/high-priority.
-	// use CLight::FillGPUStructure(DataRef) to avoid RTTI casts, allow each light to fill its structure, incl. type enum.
-	//???send all or only visible lights to GPU? how to detect that something have changed, to avoid resending each frame?
-	//set flag when testing lights against frustum and visibility of one actually changes?
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//!!!DBG TMP!
-	LightCache.Clear();
-	EnvironmentCache.Clear();
-	for (const auto& [UID, Light] : _Lights)
-	{
-		if (Light->IsVisible)
-		{
-			if (_pScene->GetLights().find(UID)->second.pAttr->IsA<CIBLAmbientLightAttribute>())
-			{
-				EnvironmentCache.Add(static_cast<Render::CImageBasedLight*>(Light.get()));
-			}
-			else
-			{
-				//Render::CLightRecord& Rec = *LightCache.Add();
-				//Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
-				//Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
-				//Rec.UseCount = 0;
-				//Rec.GPULightIndex = INVALID_INDEX;
-			}
-		}
-	}
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	return _RenderPath->Render(*this);
 }
