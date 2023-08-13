@@ -97,23 +97,22 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 	// Setup global shader params, allocate storage
 
 	auto& GlobalParams = _RenderPath->GetGlobalParamTable();
-	Globals = Render::CShaderParamStorage(GlobalParams, *GraphicsMgr.GetGPU(), true);
+	_Globals = Render::CShaderParamStorage(GlobalParams, *GraphicsMgr.GetGPU(), true);
 	for (const auto& Const : GlobalParams.GetConstants())
-		Globals.CreatePermanentConstantBuffer(Const.GetConstantBufferIndex(), Render::Access_CPU_Write | Render::Access_GPU_Read);
+		_Globals.CreatePermanentConstantBuffer(Const.GetConstantBufferIndex(), Render::Access_CPU_Write | Render::Access_GPU_Read);
 
 	// Allocate caches for original effects and for all overrides
 	_ShaderTechCache.resize(1 + _RenderPath->EffectOverrides.size());
 
 	// Create linear cube sampler for image-based lighting
 	//???FIXME: declarative in RP? as material defaults in the effect!
-
 	Render::CSamplerDesc SamplerDesc;
 	SamplerDesc.SetDefaults();
 	SamplerDesc.AddressU = Render::TexAddr_Clamp;
 	SamplerDesc.AddressV = Render::TexAddr_Clamp;
 	SamplerDesc.AddressW = Render::TexAddr_Clamp;
 	SamplerDesc.Filter = Render::TexFilter_MinMagMip_Linear;
-	TrilinearCubeSampler = GraphicsMgr.GetGPU()->CreateSampler(SamplerDesc);
+	_TrilinearCubeSampler = GraphicsMgr.GetGPU()->CreateSampler(SamplerDesc);
 
 	//!!!may fill with default RTs and DSs if descs are provided in RP!
 
@@ -579,6 +578,116 @@ bool CView::UpdateLights(bool ViewProjChanged)
 }
 //---------------------------------------------------------------------
 
+void CView::UploadLightsToGPU()
+{
+	U32 LocalLightCount = 0;
+	U32 MaxLocalLights = 0;
+	if (_RenderPath->ConstLightBuffer)
+	{
+		//!!!for a structured buffer, max count may be not applicable! must then use the same value
+		//as was used to allocate structured buffer instance!
+		// e.g. see https://www.gamedev.net/forums/topic/709796-working-with-structuredbuffer-in-hlsl-directx-11/
+		// StructuredBuffer<Light> lights : register(t9);
+		MaxLocalLights = _RenderPath->ConstLightBuffer.GetElementCount();
+		n_assert_dbg(MaxLocalLights > 0);
+	}
+
+	_pGlobalAmbientLight = nullptr;
+
+	for (const auto& [UID, Light] : _Lights)
+	{
+		if (!Light->IsVisible) continue;
+
+		if (Light->IsA<Render::CImageBasedLight>()) // TODO PERF: if ends up being slow, can add field CLight::Type and check very cheaply!
+		{
+			// Setup IBL (ambient cubemaps)
+			// TODO: later can implement local weight-blended parallax-corrected cubemaps selected by COI
+			// https://seblagarde.wordpress.com/2012/09/29/image-based-lighting-approaches-and-parallax-corrected-cubemap/
+			if (!_pGlobalAmbientLight)
+			{
+				//!!!TODO: for local IBLs find closest one (or several for blending) per instance in a renderer, fall back to global if not found!
+				n_assert_dbg(!Light->BoundsVersion);
+
+				_pGlobalAmbientLight = static_cast<Render::CImageBasedLight*>(Light.get());
+			}
+		}
+		else if (!Light->BoundsVersion)
+		{
+			// global (dir) lights - to separate GPU structures, choose N most intense/high-priority.
+			//!!!TODO: assert that type is Directional!
+		}
+		else if (LocalLightCount < MaxLocalLights)
+		{
+			// local - use CLight::FillGPUStructure(DataRef) to avoid RTTI casts, allow each light to fill its structure, incl. type enum.
+			//!!!TODO: assert that sizeof(C++ struct) == _RenderPath->ConstLightBuffer.Stride!
+
+			/*
+			//Render::CLightRecord& Rec = *LightCache.Add();
+			//Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
+			//Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
+			//Rec.UseCount = 0;
+			//Rec.GPULightIndex = INVALID_INDEX;
+
+			Render::CLightRecord& LightRec = VisibleLights[i];
+			if (LightRec.UseCount)
+			{
+				const Render::CLight_OLD_DELETE& Light = *LightRec.pLight;
+
+				struct
+				{
+					vector3	Color;
+					float	_PAD1;
+					vector3	Position;
+					float	SqInvRange;		// For attenuation
+					vector4	Params;			// Spot: x - cos inner, y - cos outer
+					vector3	InvDirection;
+					U32		Type;
+				} GPULight;
+
+				GPULight.Color = Light.Color * Light.Intensity; //???pre-multiply and don't store separately at all?
+				GPULight.Position = LightRec.Transform.Translation();
+				GPULight.SqInvRange = Light.GetInvRange() * Light.GetInvRange();
+				GPULight.InvDirection = LightRec.Transform.AxisZ();
+				if (Light.Type == Render::Light_Spot)
+				{
+					GPULight.Params.x = Light.GetCosHalfTheta();
+					GPULight.Params.y = Light.GetCosHalfPhi();
+				}
+				GPULight.Type = Light.Type;
+
+				View.Globals.SetRawConstant(ConstGlobalLightBuffer[GlobalLightCount], &GPULight, sizeof(GPULight));
+
+				LightRec.GPULightIndex = GlobalLightCount;
+				++GlobalLightCount;
+				if (GlobalLightCount >= MaxLightCount) break;
+			}
+			*/
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+// Everything might be unbound since the previous frame, so bind even if values didn't change
+void CView::ApplyGlobalShaderParams()
+{
+	Render::CGPUDriver* pGPU = GetGPU();
+
+	_Globals.Apply();
+
+	if (_pGlobalAmbientLight)
+	{
+		if (_RenderPath->RsrcIrradianceMap)
+			_RenderPath->RsrcIrradianceMap->Apply(*pGPU, _pGlobalAmbientLight->_IrradianceMap);
+
+		if (_RenderPath->RsrcRadianceEnvMap)
+			_RenderPath->RsrcRadianceEnvMap->Apply(*pGPU, _pGlobalAmbientLight->_RadianceEnvMap);
+
+		if (_RenderPath->SampTrilinearCube)
+			_RenderPath->SampTrilinearCube->Apply(*pGPU, _TrilinearCubeSampler);
+	}
+}
+//---------------------------------------------------------------------
+
 bool CView::Render()
 {
 	if (!_RenderPath || !_pScene || !_pCamera) return false;
@@ -589,6 +698,11 @@ bool CView::Render()
 
 	// Check for camera frustum changes
 	const bool ViewProjChanged = UpdateCameraFrustum();
+	if (ViewProjChanged)
+	{
+		_Globals.SetMatrix(_RenderPath->ConstViewProjection, GetCamera()->GetViewProjMatrix());
+		_Globals.SetVector(_RenderPath->ConstCameraPosition, GetCamera()->GetPosition());
+	}
 
 	// Update visibility flags of spatial tree nodes
 	if (ViewProjChanged || _SpatialTreeRebuildVersion != _pScene->GetSpatialTreeRebuildVersion())
@@ -602,35 +716,7 @@ bool CView::Render()
 	// Update rendering representations of scene lights
 	if (UpdateLights(ViewProjChanged))
 	{
-		// TODO: fill global light list and other globals here or in CRenderPath::Render! Dir lights - to separate GPU structures, choose N most intense/high-priority.
-		// use CLight::FillGPUStructure(DataRef) to avoid RTTI casts, allow each light to fill its structure, incl. type enum.
-		//???send all or only visible lights to GPU?
-		//!!!split into global lights (IBL global, directional) which will be prioritized to limited slots, and local lights which will be stored in a GPU buffer
-		//???call UpdateLightList with lights already resolved into Render::CLight?
-		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		//!!!DBG TMP!
-		EnvironmentCache.Clear();
-		for (const auto& [UID, Light] : _Lights)
-		{
-			if (Light->IsVisible)
-			{
-				// if (Light->BoundsVersion) ...local... else ...global...
-
-				if (_pScene->GetLights().find(UID)->second.pAttr->IsA<CIBLAmbientLightAttribute>())
-				{
-					EnvironmentCache.Add(static_cast<Render::CImageBasedLight*>(Light.get()));
-				}
-				else
-				{
-					//Render::CLightRecord& Rec = *LightCache.Add();
-					//Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
-					//Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
-					//Rec.UseCount = 0;
-					//Rec.GPULightIndex = INVALID_INDEX;
-				}
-			}
-		}
-		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		UploadLightsToGPU();
 	}
 
 	// Update rendering representations of scene objects

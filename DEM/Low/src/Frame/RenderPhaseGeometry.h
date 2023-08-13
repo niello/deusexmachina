@@ -28,11 +28,6 @@ protected:
 	UPTR                                             _ShaderTechCacheIndex = 0;
 	bool											 EnableLighting = false;
 
-	Render::CShaderConstantParam					 ConstGlobalLightBuffer;
-	Render::PResourceParam							 RsrcIrradianceMap;
-	Render::PResourceParam							 RsrcRadianceEnvMap;
-	Render::PSamplerParam							 SampTrilinearCube;
-
 public:
 
 	CRenderPhaseGeometry();

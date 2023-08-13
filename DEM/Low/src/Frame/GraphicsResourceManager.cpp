@@ -833,11 +833,27 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 
 	auto It = GlobalParams.find("ViewProjection");
 	if (It != GlobalParams.cend())
-		RP->ViewProjection = RP->Globals->GetConstant(It->second);
+		RP->ConstViewProjection = RP->Globals->GetConstant(It->second);
 
 	It = GlobalParams.find("CameraPosition");
 	if (It != GlobalParams.cend())
-		RP->CameraPosition = RP->Globals->GetConstant(It->second);
+		RP->ConstCameraPosition = RP->Globals->GetConstant(It->second);
+
+	It = GlobalParams.find("LightBuffer");
+	if (It != GlobalParams.cend())
+		RP->ConstLightBuffer = RP->Globals->GetConstant(It->second);
+
+	It = GlobalParams.find("IrradianceMap");
+	if (It != GlobalParams.cend())
+		RP->RsrcIrradianceMap = RP->Globals->GetResource(It->second);
+
+	It = GlobalParams.find("RadianceEnvMap");
+	if (It != GlobalParams.cend())
+		RP->RsrcRadianceEnvMap = RP->Globals->GetResource(It->second);
+
+	It = GlobalParams.find("TrilinearCubeSampler");
+	if (It != GlobalParams.cend())
+		RP->SampTrilinearCube = RP->Globals->GetSampler(It->second);
 
 	// Load renderers
 

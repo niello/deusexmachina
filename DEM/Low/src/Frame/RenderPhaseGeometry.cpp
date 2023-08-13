@@ -27,89 +27,9 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	if (!View.GetGraphicsManager()) FAIL;
 
-	n_assert_dbg(!View.LightIndices.GetCount());
-
 	// Setup global lighting params, both ambient and direct
 
 	auto pGPU = View.GetGPU();
-
-	// TODO: move to the global part of rendering! Do once for all phases!
-	if (EnableLighting)
-	{
-		if (ConstGlobalLightBuffer)
-		{
-			//!!!for a structured buffer, max count may be not applicable! must then use the same value
-			//as was used to allocate structured buffer instance!
-			// e.g. see https://www.gamedev.net/forums/topic/709796-working-with-structuredbuffer-in-hlsl-directx-11/
-			// StructuredBuffer<Light> lights : register(t9);
-			UPTR GlobalLightCount = 0;
-			const UPTR MaxLightCount = ConstGlobalLightBuffer.GetElementCount();
-			n_assert_dbg(MaxLightCount > 0);
-
-			/*
-			const CArray<Render::CLightRecord>& VisibleLights = View.GetLightCache();
-			for (size_t i = 0; i < VisibleLights.GetCount(); ++i)
-			{
-				Render::CLightRecord& LightRec = VisibleLights[i];
-				if (LightRec.UseCount)
-				{
-					const Render::CLight_OLD_DELETE& Light = *LightRec.pLight;
-
-					struct
-					{
-						vector3	Color;
-						float	_PAD1;
-						vector3	Position;
-						float	SqInvRange;		// For attenuation
-						vector4	Params;			// Spot: x - cos inner, y - cos outer
-						vector3	InvDirection;
-						U32		Type;
-					} GPULight;
-
-					GPULight.Color = Light.Color * Light.Intensity; //???pre-multiply and don't store separately at all?
-					GPULight.Position = LightRec.Transform.Translation();
-					GPULight.SqInvRange = Light.GetInvRange() * Light.GetInvRange();
-					GPULight.InvDirection = LightRec.Transform.AxisZ();
-					if (Light.Type == Render::Light_Spot)
-					{
-						GPULight.Params.x = Light.GetCosHalfTheta();
-						GPULight.Params.y = Light.GetCosHalfPhi();
-					}
-					GPULight.Type = Light.Type;
-
-					View.Globals.SetRawConstant(ConstGlobalLightBuffer[GlobalLightCount], &GPULight, sizeof(GPULight));
-
-					LightRec.GPULightIndex = GlobalLightCount;
-					++GlobalLightCount;
-					if (GlobalLightCount >= MaxLightCount) break;
-				}
-			}
-			*/
-
-			if (GlobalLightCount) View.Globals.Apply();
-		}
-
-		// Setup IBL (ambient cubemaps)
-		// TODO: later can implement local weight-blended parallax-corrected cubemaps selected by COI
-		//https://seblagarde.wordpress.com/2012/09/29/image-based-lighting-approaches-and-parallax-corrected-cubemap/
-
-		//???need visibility check for env maps? or select through separate spatial query?! SPS.FindClosest(COI, AttrRTTI, MaxCount)!
-		//may refresh only when COI changes, because maps are considered static
-		auto& EnvCache = View.GetEnvironmentCache();
-		if (EnvCache.GetCount())
-		{
-			auto* pGlobalAmbientLight = EnvCache[0];
-
-			if (RsrcIrradianceMap)
-				RsrcIrradianceMap->Apply(*pGPU, pGlobalAmbientLight->_IrradianceMap);
-
-			if (RsrcRadianceEnvMap)
-				RsrcRadianceEnvMap->Apply(*pGPU, pGlobalAmbientLight->_RadianceEnvMap);
-
-			if (SampTrilinearCube)
-				SampTrilinearCube->Apply(*pGPU, View.TrilinearCubeSampler);
-		}
-	}
 
 	// Bind render targets and a depth-stencil buffer
 
@@ -137,12 +57,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	Ctx.pShaderTechCache = View.GetShaderTechCache(_ShaderTechCacheIndex);
 	Ctx.CameraPosition = View.GetCamera()->GetPosition();
 	Ctx.ViewProjection = View.GetCamera()->GetViewProjMatrix();
-	if (EnableLighting)
-	{
-		//Ctx.pLights = &View.GetLightCache();
-		//Ctx.pLightIndices = &View.LightIndices;
-		//Ctx.UsesGlobalLightBuffer = !!ConstGlobalLightBuffer;
-	}
 
 	Render::IRenderer* pCurrRenderer = nullptr;
 	U8 CurrRendererIndex = 0;
@@ -167,9 +81,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		});
 	}
 	if (pCurrRenderer) pCurrRenderer->EndRange(Ctx);
-
-	//!!!hide in a private method of CView!
-	View.LightIndices.Clear(false);
 
 	// Unbind render target(s) etc
 	//???allow each phase to declare all its RTs and clear unused ones by itself?
@@ -256,26 +167,6 @@ bool CRenderPhaseGeometry::Init(CRenderPath& Owner, CGraphicsResourceManager& Gf
 			_ShaderTechCacheIndex = 0;
 		}
 	}
-
-	// Cache global shader parameter descriptions
-
-	const auto& GlobalParams = Owner.GetGlobalParamTable();
-
-	CStrID GlobalLightBufferName = Desc.Get<CStrID>(CStrID("GlobalLightBufferName"), CStrID::Empty);
-	if (GlobalLightBufferName.IsValid())
-		ConstGlobalLightBuffer = GlobalParams.GetConstant(GlobalLightBufferName);
-
-	CStrID IrradianceMapName = Desc.Get<CStrID>(CStrID("IrradianceMapName"), CStrID::Empty);
-	if (IrradianceMapName.IsValid())
-		RsrcIrradianceMap = GlobalParams.GetResource(IrradianceMapName);
-
-	CStrID RadianceEnvMapName = Desc.Get<CStrID>(CStrID("RadianceEnvMapName"), CStrID::Empty);
-	if (RadianceEnvMapName.IsValid())
-		RsrcRadianceEnvMap = GlobalParams.GetResource(RadianceEnvMapName);
-
-	CStrID TrilinearCubeSamplerName = Desc.Get<CStrID>(CStrID("TrilinearCubeSamplerName"), CStrID::Empty);
-	if (TrilinearCubeSamplerName.IsValid())
-		SampTrilinearCube = GlobalParams.GetSampler(TrilinearCubeSamplerName);
 
 	OK;
 }

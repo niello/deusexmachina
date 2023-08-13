@@ -175,7 +175,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 			{
 				if (pLight->GPUIndex != INVALID_INDEX_T<U32>)
 				{
-					// TODO PERF: check array element param creation cost, maybe can reduce it?
+					// TODO PERF: check array element param creation cost, maybe can reduce it? Add SetUInt(Index, Value)? or inline calculator?
 					_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->MemberLightIndices[LightCount], pLight->GPUIndex);
 					if (++LightCount == LightLimit) break;
 				}

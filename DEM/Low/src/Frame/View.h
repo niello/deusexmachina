@@ -61,11 +61,13 @@ protected:
 	acl::Vector4_32                             _EyePos;
 	float                                       _ScreenMultiple = 0.f;
 
-
 	PRenderPath									_RenderPath;
 	PGraphicsResourceManager					_GraphicsMgr;
 	int											_SwapChainID = INVALID_INDEX;
-	CCameraAttribute*							_pCamera = nullptr; //???smart ptr?
+	Render::CShaderParamStorage					_Globals;
+	Render::PSampler							_TrilinearCubeSampler; // For IBL
+	Render::CImageBasedLight*                   _pGlobalAmbientLight = nullptr;
+	CCameraAttribute*                           _pCamera = nullptr; //???smart ptr?
 
 	CGraphicsScene*								_pScene = nullptr;
 
@@ -87,8 +89,6 @@ protected:
 	std::map<std::pair<const Render::CEffect*, CStrID>, U32> _EffectMap;  // Source effect & input set -> index in a _ShaderTechCache
 	std::vector<std::vector<const Render::CTechnique*>> _ShaderTechCache; // First index is an override index (0 is no override), second is from _EffectMap
 
-	CArray<Render::CImageBasedLight*>			EnvironmentCache;
-
 	U32                                         _SpatialTreeRebuildVersion = 0; // For spatial tree node visibility cache invalidation
 	U32                                         _CameraTfmVersion = 0;
 
@@ -103,15 +103,11 @@ protected:
 	void SynchronizeLights();
 	void UpdateRenderables(bool ViewProjChanged);
 	bool UpdateLights(bool ViewProjChanged);
+	void UploadLightsToGPU();
 
 public:
 
 	//???add viewport settings here? to render multiple views into one RT
-
-	Render::CShaderParamStorage					Globals;
-	Render::PSampler							TrilinearCubeSampler; // For IBL
-
-	CArray<U16>									LightIndices;	// Cached to avoid per-frame allocations
 
 	~CView();
 
@@ -133,7 +129,6 @@ public:
 	Render::IRenderer*              GetRenderer(U8 Index) const { n_assert_dbg(Index < _Renderers.size()); return _Renderers[Index].get(); }
 	Render::IRenderable*			GetRenderable(UPTR UID) { auto It = _Renderables.find(UID); return (It == _Renderables.cend()) ? nullptr : It->second.get(); }
 	Render::CLight*			        GetLight(UPTR UID) { auto It = _Lights.find(UID); return (It == _Lights.cend()) ? nullptr : It->second.get(); }
-	auto&							GetEnvironmentCache() { return EnvironmentCache; }
 
 	template<typename TCallback>
 	DEM_FORCE_INLINE void ForEachRenderableInQueue(U32 QueueIndex, TCallback Callback)
@@ -145,6 +140,8 @@ public:
 	void                            Update(float dt);
 	bool							Render();
 	bool							Present() const;
+
+	void                            ApplyGlobalShaderParams(); // For calling by RP
 
 	CRenderPath*					GetRenderPath() const { return _RenderPath.Get(); }
 	bool							SetRenderTarget(CStrID ID, Render::PRenderTarget RT);

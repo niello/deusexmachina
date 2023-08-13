@@ -54,11 +54,17 @@ public:
 		Data::PParams                   SettingsDesc;
 	};
 
-	// FIXME: for loading
+	// FIXME: fields are made public for loading
 	std::vector<PRenderPhase>           Phases;
+
 	Render::PShaderParamTable           Globals;
-	Render::CShaderConstantParam        ViewProjection;
-	Render::CShaderConstantParam        CameraPosition;
+	Render::CShaderConstantParam        ConstViewProjection;
+	Render::CShaderConstantParam        ConstCameraPosition;
+	Render::CShaderConstantParam        ConstLightBuffer;
+	Render::PResourceParam              RsrcIrradianceMap;
+	Render::PResourceParam              RsrcRadianceEnvMap;
+	Render::PSamplerParam               SampTrilinearCube;
+
 	std::vector<std::map<Render::EEffectType, CStrID>> EffectOverrides;
 	std::map<CStrID, U32>               _RenderQueues;
 	std::vector<CRendererSettings>      _RendererSettings;
