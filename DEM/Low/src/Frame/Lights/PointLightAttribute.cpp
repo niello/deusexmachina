@@ -1,5 +1,5 @@
 #include "PointLightAttribute.h"
-#include <Render/PointLight.h>
+#include <Render/AnalyticalLight.h>
 #include <Scene/SceneNode.h>
 #include <Math/AABB.h>
 #include <Core/Factory.h>
@@ -64,7 +64,7 @@ Scene::PNodeAttribute CPointLightAttribute::Clone()
 
 Render::PLight CPointLightAttribute::CreateLight() const
 {
-	return std::make_unique<Render::CPointLight>();
+	return std::make_unique<Render::CAnalyticalLight>(Render::ELightType::Point);
 }
 //---------------------------------------------------------------------
 
@@ -77,11 +77,10 @@ void CPointLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render:
 		return;
 	}
 
-	auto pLight = static_cast<Render::CPointLight*>(&Light);
-	if (_pNode) pLight->SetPosition(_pNode->GetWorldMatrix().Translation());
-	pLight->Color.set(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color));
-	pLight->Intensity = _Intensity;
-	pLight->Range = _Range;
+	auto pLight = static_cast<Render::CAnalyticalLight*>(&Light);
+	pLight->GPUData.Color = vector3(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color)) * _Intensity;
+	pLight->GPUData.Position = _pNode->GetWorldMatrix().Translation();
+	pLight->GPUData.SqInvRange = 1.f / (_Range * _Range);
 }
 //---------------------------------------------------------------------
 

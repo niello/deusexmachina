@@ -1,5 +1,5 @@
 #include "SpotLightAttribute.h"
-#include <Render/SpotLight.h>
+#include <Render/AnalyticalLight.h>
 #include <Scene/SceneNode.h>
 #include <Math/AABB.h>
 #include <Core/Factory.h>
@@ -100,7 +100,7 @@ Scene::PNodeAttribute CSpotLightAttribute::Clone()
 
 Render::PLight CSpotLightAttribute::CreateLight() const
 {
-	return std::make_unique<Render::CSpotLight>();
+	return std::make_unique<Render::CAnalyticalLight>(Render::ELightType::Spot);
 }
 //---------------------------------------------------------------------
 
@@ -113,18 +113,14 @@ void CSpotLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render::
 		return;
 	}
 
-	auto pLight = static_cast<Render::CSpotLight*>(&Light);
-	if (_pNode)
-	{
-		//!!!TODO PERF: SetTransform()! inv dir is used, can avoid redundant negation!
-		pLight->SetDirection(-_pNode->GetWorldMatrix().AxisZ());
-		pLight->SetPosition(_pNode->GetWorldMatrix().Translation());
-	}
-	pLight->Color.set(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color));
-	pLight->Intensity = _Intensity;
-	pLight->Range = _Range;
-	pLight->CosHalfInner = _CosHalfInner;
-	pLight->CosHalfOuter = _CosHalfOuter;
+	auto pLight = static_cast<Render::CAnalyticalLight*>(&Light);
+	pLight->GPUData.Color = vector3(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color)) * _Intensity;
+	pLight->GPUData.Position = _pNode->GetWorldMatrix().Translation();
+	pLight->GPUData.InvDirection = _pNode->GetWorldMatrix().AxisZ();
+	pLight->GPUData.InvDirection.norm();
+	pLight->GPUData.SqInvRange = 1.f / (_Range * _Range);
+	pLight->GPUData.Params.x = _CosHalfInner;
+	pLight->GPUData.Params.y = _CosHalfOuter;
 }
 //---------------------------------------------------------------------
 

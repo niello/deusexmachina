@@ -1,5 +1,5 @@
 #include "DirectionalLightAttribute.h"
-#include <Render/DirectionalLight.h>
+#include <Render/AnalyticalLight.h>
 #include <Scene/SceneNode.h>
 #include <Math/AABB.h>
 #include <Core/Factory.h>
@@ -52,7 +52,7 @@ Scene::PNodeAttribute CDirectionalLightAttribute::Clone()
 
 Render::PLight CDirectionalLightAttribute::CreateLight() const
 {
-	return std::make_unique<Render::CDirectionalLight>();
+	return std::make_unique<Render::CAnalyticalLight>(Render::ELightType::Directional);
 }
 //---------------------------------------------------------------------
 
@@ -65,11 +65,10 @@ void CDirectionalLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, R
 		return;
 	}
 
-	auto pLight = static_cast<Render::CDirectionalLight*>(&Light);
-	//!!!TODO PERF: SetTransform()! inv dir is used, can avoid redundant negation!
-	if (_pNode) pLight->SetDirection(-_pNode->GetWorldMatrix().AxisZ());
-	pLight->Color.set(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color));
-	pLight->Intensity = _Intensity;
+	auto pLight = static_cast<Render::CAnalyticalLight*>(&Light);
+	pLight->GPUData.Color = vector3(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color)) * _Intensity;
+	pLight->GPUData.InvDirection = _pNode->GetWorldMatrix().AxisZ();
+	pLight->GPUData.InvDirection.norm();
 }
 //---------------------------------------------------------------------
 

@@ -4,15 +4,13 @@
 namespace Render
 {
 
-CImageBasedLight::CImageBasedLight() = default;
-CImageBasedLight::~CImageBasedLight() = default;
+CImageBasedLight::CImageBasedLight()
+{
+	GPUData.Type = ELightType::IBL;
+}
 //---------------------------------------------------------------------
 
-void CImageBasedLight::FillGPUInfo(CGPULightInfo& Out) const
-{
-	// Must not be called
-	NOT_IMPLEMENTED;
-}
+CImageBasedLight::~CImageBasedLight() = default;
 //---------------------------------------------------------------------
 
 }

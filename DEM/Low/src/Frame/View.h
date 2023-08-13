@@ -102,7 +102,7 @@ protected:
 	void SynchronizeRenderables();
 	void SynchronizeLights();
 	void UpdateRenderables(bool ViewProjChanged);
-	bool UpdateLights(bool ViewProjChanged);
+	void UpdateLights(bool ViewProjChanged);
 	void UploadLightsToGPU();
 
 public:

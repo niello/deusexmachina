@@ -22,8 +22,6 @@ class CImageBasedLight : public CLight
 {
 	RTTI_CLASS_DECL(CImageBasedLight, CLight);
 
-protected:
-
 public:
 
 	//!!!TODO: protected! And add virtual function to setup renderer? Or handle different lights externally based on type? Not good, dynamic casting or type switch-case.
@@ -32,8 +30,6 @@ public:
 
 	CImageBasedLight();
 	virtual ~CImageBasedLight() override;
-
-	virtual void FillGPUInfo(CGPULightInfo& Out) const override;
 };
 
 }

@@ -508,7 +508,7 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 }
 //---------------------------------------------------------------------
 
-bool CView::UpdateLights(bool ViewProjChanged)
+void CView::UpdateLights(bool ViewProjChanged)
 {
 	bool VisibleLightsChanged = false;
 
@@ -574,7 +574,31 @@ bool CView::UpdateLights(bool ViewProjChanged)
 		if (TrackObjectLightIntersections) _pScene->UpdateObjectLightIntersections(*pAttr);
 	}
 
-	return VisibleLightsChanged;
+	// Update lights on GPU
+	if (VisibleLightsChanged)
+	{
+		// Upload all lights data from scratch
+		UploadLightsToGPU();
+	}
+	else
+	{
+		// Update changed light data from CPU to GPU
+		//???!!!TODO PERF: use Light->GPUDirty flag and set it only when actual changes happen?
+		for (const auto& [UID, Light] : _Lights)
+		{
+			if (Light->IsVisible && Light->GPUIndex != INVALID_INDEX_T<U32>)
+			{
+				if (!Light->BoundsVersion)
+				{
+					// update directional light
+				}
+				else
+				{
+					_Globals.SetRawConstant(_RenderPath->ConstLightBuffer[Light->GPUIndex], &Light->GPUData, sizeof(Light->GPUData));
+				}
+			}
+		}
+	}
 }
 //---------------------------------------------------------------------
 
@@ -597,12 +621,12 @@ void CView::UploadLightsToGPU()
 
 	for (const auto& [UID, Light] : _Lights)
 	{
-		if (!Light->IsVisible)
-		{
-			// Mark the light as not uploaded to GPU
-			Light->GPUIndex = INVALID_INDEX_T<U32>;
-		}
-		else if (Light->IsA<Render::CImageBasedLight>()) // TODO PERF: if ends up being slow, can add field CLight::Type and check very cheaply!
+		// Mark the light as not uploaded to GPU initially
+		Light->GPUIndex = INVALID_INDEX_T<U32>;
+
+		if (!Light->IsVisible) continue;
+
+		if (Light->GPUData.Type == Render::ELightType::IBL)
 		{
 			// Setup IBL (ambient cubemaps)
 			// TODO: later can implement local weight-blended parallax-corrected cubemaps selected by COI
@@ -613,11 +637,12 @@ void CView::UploadLightsToGPU()
 				n_assert_dbg(!Light->BoundsVersion);
 
 				_pGlobalAmbientLight = static_cast<Render::CImageBasedLight*>(Light.get());
+				Light->GPUIndex = 0;
 			}
 		}
 		else if (!Light->BoundsVersion)
 		{
-			// global (dir) lights - to separate GPU structures, choose N most intense/high-priority.
+			// global (dir) lights - to separate GPU structures, choose N most intense/high-priority. set GPUIndex!
 			//!!!TODO: assert that type is Directional!
 
 			NOT_IMPLEMENTED;
@@ -625,15 +650,8 @@ void CView::UploadLightsToGPU()
 		else if (LocalLightCount < MaxLocalLights)
 		{
 			// Upload light to GPU and remember its index in the buffer
-			Render::CGPULightInfo Info;
-			Light->FillGPUInfo(Info);
-			_Globals.SetRawConstant(_RenderPath->ConstLightBuffer[LocalLightCount], &Info, sizeof(Info));
+			_Globals.SetRawConstant(_RenderPath->ConstLightBuffer[LocalLightCount], &Light->GPUData, sizeof(Light->GPUData));
 			Light->GPUIndex = LocalLightCount++;
-		}
-		else
-		{
-			// Mark the light as not uploaded to GPU
-			Light->GPUIndex = INVALID_INDEX_T<U32>;
 		}
 	}
 }
@@ -685,13 +703,8 @@ bool CView::Render()
 	}
 	_pScene->TestSpatialTreeVisibility(_LastViewFrustum, _SpatialTreeNodeVisibility);
 
-	// Update rendering representations of scene lights
-	if (UpdateLights(ViewProjChanged))
-	{
-		UploadLightsToGPU();
-	}
-
 	// Update rendering representations of scene objects
+	UpdateLights(ViewProjChanged);
 	UpdateRenderables(ViewProjChanged);
 
 	//!!!TODO PERF: queues are independent, no write access to renderables is needed, can parallelize!
