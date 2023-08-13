@@ -126,8 +126,7 @@ void CSpotLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render::
 
 bool CSpotLightAttribute::GetLocalAABB(CAABB& OutBox) const
 {
-	//!!!can cache HalfFarExtent!
-	const float HalfFarExtent = _Range * n_tan(_ConeOuter * 0.5f);
+	const float HalfFarExtent = _Range * _SinHalfOuter / _CosHalfOuter;
 	OutBox.Min.set(-HalfFarExtent, -HalfFarExtent, -_Range);
 	OutBox.Max.set(HalfFarExtent, HalfFarExtent, 0.f);
 	return true;
