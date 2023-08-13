@@ -207,15 +207,15 @@ CShaderConstantParam CShaderConstantParam::GetComponent(U32 Index) const
 	const auto Rows = _Info->GetRowCount();
 	const auto Cols = _Info->GetColumnCount();
 	const auto ComponentCount = Rows * Cols;
-	if (Index > ComponentCount)
+	if (_Info->GetElementCount() > 1)
 	{
 		return GetElement(Index / ComponentCount).GetComponent(Index % ComponentCount);
 	}
 	else
 	{
 		return _Info->IsColumnMajor() ?
-			GetComponent(Index / Rows, Index % Rows) :
-			GetComponent(Index % Cols, Index / Cols);
+			GetComponent(Index % Rows, Index / Rows) :
+			GetComponent(Index / Cols, Index % Cols);
 	}
 }
 //---------------------------------------------------------------------
@@ -231,16 +231,11 @@ CShaderConstantParam CShaderConstantParam::GetComponent(U32 Row, U32 Column) con
 		return CShaderConstantParam();
 	}
 
-	if (_Info->IsColumnMajor())
-	{
-		const auto LocalOffset = Column * _Info->GetVectorStride() + Row * _Info->GetComponentSize();
-		return CShaderConstantParam(_Info->GetComponentInfo(), _Offset + LocalOffset);
-	}
-	else
-	{
-		const auto LocalOffset = Row * _Info->GetVectorStride() + Column * _Info->GetComponentSize();
-		return CShaderConstantParam(_Info->GetComponentInfo(), _Offset + LocalOffset);
-	}
+	const auto LocalOffset = _Info->IsColumnMajor() ?
+		Column * _Info->GetVectorStride() + Row * _Info->GetComponentSize() :
+		Row * _Info->GetVectorStride() + Column * _Info->GetComponentSize();
+
+	return CShaderConstantParam(_Info->GetComponentInfo(), _Offset + LocalOffset);
 }
 //---------------------------------------------------------------------
 

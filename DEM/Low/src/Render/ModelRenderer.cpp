@@ -167,7 +167,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 	{
 		// Set per-instance light indices for currently visible lights, clamp by limit
 		U32 LightCount = 0;
-		const auto LightLimit = _pCurrTechInterface->MemberLightIndices.GetElementCount();
+		const auto LightLimit = _pCurrTechInterface->MemberLightIndices.GetTotalComponentCount();
 		if (LightLimit)
 		{
 			_pCurrTechInterface->MemberLightIndices.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
@@ -175,8 +175,8 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 			{
 				if (pLight->GPUIndex != INVALID_INDEX_T<U32>)
 				{
-					// TODO PERF: check array element param creation cost, maybe can reduce it? Add SetUInt(Index, Value)? or inline calculator?
-					_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->MemberLightIndices[LightCount], pLight->GPUIndex);
+					// TODO PERF: check array element param creation cost, maybe can reduce it? Add SetUInt(Index, Value)? or set raw?
+					_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->MemberLightIndices.GetComponent(LightCount), pLight->GPUIndex);
 					if (++LightCount == LightLimit) break;
 				}
 			}

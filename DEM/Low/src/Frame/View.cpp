@@ -583,7 +583,8 @@ void CView::UpdateLights(bool ViewProjChanged)
 	else
 	{
 		// Update changed light data from CPU to GPU
-		//???!!!TODO PERF: use Light->GPUDirty flag and set it only when actual changes happen?
+		//???!!!TODO PERF: use Light->GPUDirty flag and set it only when actual changes happen? only useful if partial
+		//upload of buffers will be possible, because detecting changes requires memcpy + memcmp which costs +- same as SetRawConstant.
 		for (const auto& [UID, Light] : _Lights)
 		{
 			if (Light->IsVisible && Light->GPUIndex != INVALID_INDEX_T<U32>)

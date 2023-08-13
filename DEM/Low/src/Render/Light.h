@@ -38,12 +38,10 @@ class CLight : public Core::CRTTIBaseClass
 
 public:
 
-	//???TODO: move GPUData to CAnalyticalLight and detect IBL by IsA<> instead of type check!?
 	CGPULightInfo GPUData;
 	U32           GPUIndex = INVALID_INDEX_T<U32>;
 	U32           BoundsVersion = 0;
 	bool          IsVisible = false;
-	//bool          GPUDirty = false;
 	bool          TrackObjectLightIntersections = false;
 
 	//???shadow casting flag etc here?
