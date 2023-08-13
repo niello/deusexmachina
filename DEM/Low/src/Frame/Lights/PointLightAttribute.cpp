@@ -77,9 +77,11 @@ void CPointLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render:
 		return;
 	}
 
-	//auto pLight = static_cast<Render::CPointLight*>(&Light);
-	// update pos
-	//???apply scale?
+	auto pLight = static_cast<Render::CPointLight*>(&Light);
+	if (_pNode) pLight->SetPosition(_pNode->GetWorldMatrix().Translation());
+	pLight->Color.set(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color));
+	pLight->Intensity = _Intensity;
+	pLight->Range = _Range;
 }
 //---------------------------------------------------------------------
 

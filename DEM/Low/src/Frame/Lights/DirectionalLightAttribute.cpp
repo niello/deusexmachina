@@ -66,9 +66,10 @@ void CDirectionalLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, R
 	}
 
 	auto pLight = static_cast<Render::CDirectionalLight*>(&Light);
+	//!!!TODO PERF: SetTransform()! inv dir is used, can avoid redundant negation!
 	if (_pNode) pLight->SetDirection(-_pNode->GetWorldMatrix().AxisZ());
-	//pLight->Color
-	//pLight->Intensity
+	pLight->Color.set(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color));
+	pLight->Intensity = _Intensity;
 }
 //---------------------------------------------------------------------
 

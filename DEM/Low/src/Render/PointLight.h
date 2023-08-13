@@ -13,14 +13,15 @@ class CPointLight : public CLight
 
 protected:
 
-	// vector3 or acl::Vector4_32 _Direction;
-	// position
-	// range
-	// cached values
-
-	//!!!can store data so that it is easily copied into the GPU buffer! aligned 16, with paddings.
+	vector3 _Position;
 
 public:
+
+	float Range = 0.f;
+
+	virtual void FillGPUInfo(CGPULightInfo& Out) const override;
+
+	void SetPosition(const vector3& Pos);
 };
 
 }

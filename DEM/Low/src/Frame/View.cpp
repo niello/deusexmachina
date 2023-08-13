@@ -590,15 +590,19 @@ void CView::UploadLightsToGPU()
 		// StructuredBuffer<Light> lights : register(t9);
 		MaxLocalLights = _RenderPath->ConstLightBuffer.GetElementCount();
 		n_assert_dbg(MaxLocalLights > 0);
+		n_assert_dbg(_RenderPath->ConstLightBuffer.GetElementStride() == sizeof(Render::CGPULightInfo));
 	}
 
 	_pGlobalAmbientLight = nullptr;
 
 	for (const auto& [UID, Light] : _Lights)
 	{
-		if (!Light->IsVisible) continue;
-
-		if (Light->IsA<Render::CImageBasedLight>()) // TODO PERF: if ends up being slow, can add field CLight::Type and check very cheaply!
+		if (!Light->IsVisible)
+		{
+			// Mark the light as not uploaded to GPU
+			Light->GPUIndex = INVALID_INDEX_T<U32>;
+		}
+		else if (Light->IsA<Render::CImageBasedLight>()) // TODO PERF: if ends up being slow, can add field CLight::Type and check very cheaply!
 		{
 			// Setup IBL (ambient cubemaps)
 			// TODO: later can implement local weight-blended parallax-corrected cubemaps selected by COI
@@ -615,53 +619,21 @@ void CView::UploadLightsToGPU()
 		{
 			// global (dir) lights - to separate GPU structures, choose N most intense/high-priority.
 			//!!!TODO: assert that type is Directional!
+
+			NOT_IMPLEMENTED;
 		}
 		else if (LocalLightCount < MaxLocalLights)
 		{
-			// local - use CLight::FillGPUStructure(DataRef) to avoid RTTI casts, allow each light to fill its structure, incl. type enum.
-			//!!!TODO: assert that sizeof(C++ struct) == _RenderPath->ConstLightBuffer.Stride!
-
-			/*
-			//Render::CLightRecord& Rec = *LightCache.Add();
-			//Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
-			//Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
-			//Rec.UseCount = 0;
-			//Rec.GPULightIndex = INVALID_INDEX;
-
-			Render::CLightRecord& LightRec = VisibleLights[i];
-			if (LightRec.UseCount)
-			{
-				const Render::CLight_OLD_DELETE& Light = *LightRec.pLight;
-
-				struct
-				{
-					vector3	Color;
-					float	_PAD1;
-					vector3	Position;
-					float	SqInvRange;		// For attenuation
-					vector4	Params;			// Spot: x - cos inner, y - cos outer
-					vector3	InvDirection;
-					U32		Type;
-				} GPULight;
-
-				GPULight.Color = Light.Color * Light.Intensity; //???pre-multiply and don't store separately at all?
-				GPULight.Position = LightRec.Transform.Translation();
-				GPULight.SqInvRange = Light.GetInvRange() * Light.GetInvRange();
-				GPULight.InvDirection = LightRec.Transform.AxisZ();
-				if (Light.Type == Render::Light_Spot)
-				{
-					GPULight.Params.x = Light.GetCosHalfTheta();
-					GPULight.Params.y = Light.GetCosHalfPhi();
-				}
-				GPULight.Type = Light.Type;
-
-				View.Globals.SetRawConstant(ConstGlobalLightBuffer[GlobalLightCount], &GPULight, sizeof(GPULight));
-
-				LightRec.GPULightIndex = GlobalLightCount;
-				++GlobalLightCount;
-				if (GlobalLightCount >= MaxLightCount) break;
-			}
-			*/
+			// Upload light to GPU and remember its index in the buffer
+			Render::CGPULightInfo Info;
+			Light->FillGPUInfo(Info);
+			_Globals.SetRawConstant(_RenderPath->ConstLightBuffer[LocalLightCount], &Info, sizeof(Info));
+			Light->GPUIndex = LocalLightCount++;
+		}
+		else
+		{
+			// Mark the light as not uploaded to GPU
+			Light->GPUIndex = INVALID_INDEX_T<U32>;
 		}
 	}
 }

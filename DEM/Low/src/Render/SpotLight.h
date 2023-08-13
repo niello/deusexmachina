@@ -1,7 +1,5 @@
 #pragma once
 #include <Render/Light.h>
-#include <Math/Vector3.h>
-#include <acl/math/vector4_32.h>
 
 // Spot light source used for rendering
 
@@ -15,17 +13,18 @@ class CSpotLight : public CLight
 
 protected:
 
-	acl::Vector4_32 _Direction; //!!!use w for something! each light params can be just passed to array of float4 registers. or can use common structure for structured buffer.
-
-	// position
-	// range
-	// cone angles
-	// cached values
-
-	//!!!can store data so that it is easily copied into the GPU buffer! aligned 16, with paddings.
+	vector3 _Position;
+	vector3 _Direction;
 
 public:
 
+	float Range = 0.f;
+	float CosHalfInner = 0.f;
+	float CosHalfOuter = 0.f;
+
+	virtual void FillGPUInfo(CGPULightInfo& Out) const override;
+
+	void SetPosition(const vector3& Pos);
 	void SetDirection(const vector3& Dir);
 };
 

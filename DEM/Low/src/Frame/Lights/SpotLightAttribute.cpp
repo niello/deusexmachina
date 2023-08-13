@@ -59,9 +59,11 @@ bool CSpotLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Cou
 	_ConeInner = std::clamp(_ConeInner, 0.f, PI);
 	_ConeOuter = std::clamp(_ConeOuter, _ConeInner, PI);
 
+	_CosHalfInner = acl::cos(0.5f * _ConeInner);
+
 	// Calculate bounding sphere of a cone. Use local offset along the look axis for the sphere center.
 	// See: https://bartwronski.com/2017/04/13/cull-that-cone/
-	acl::sincos(_ConeOuter * 0.5f, _SinHalfOuter, _CosHalfOuter);
+	acl::sincos(0.5f * _ConeOuter, _SinHalfOuter, _CosHalfOuter);
 	if (_CosHalfOuter < COS_PI_DIV_4)
 	{
 		_BoundingSphereOffsetAlongDir = _Range * _CosHalfOuter;
@@ -87,6 +89,9 @@ Scene::PNodeAttribute CSpotLightAttribute::Clone()
 	ClonedAttr->_Range = _Range;
 	ClonedAttr->_ConeInner = _ConeInner;
 	ClonedAttr->_ConeOuter = _ConeOuter;
+	ClonedAttr->_SinHalfOuter = _SinHalfOuter;
+	ClonedAttr->_CosHalfOuter = _CosHalfOuter;
+	ClonedAttr->_CosHalfInner = _CosHalfInner;
 	ClonedAttr->_CastsShadow = _CastsShadow;
 	ClonedAttr->_DoOcclusionCulling = _DoOcclusionCulling;
 	return ClonedAttr;
@@ -108,8 +113,18 @@ void CSpotLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render::
 		return;
 	}
 
-	//auto pLight = static_cast<Render::CSpotLight*>(&Light);
-	//if (_pNode) pLight->SetDirection(-_pNode->GetWorldMatrix().AxisZ());
+	auto pLight = static_cast<Render::CSpotLight*>(&Light);
+	if (_pNode)
+	{
+		//!!!TODO PERF: SetTransform()! inv dir is used, can avoid redundant negation!
+		pLight->SetDirection(-_pNode->GetWorldMatrix().AxisZ());
+		pLight->SetPosition(_pNode->GetWorldMatrix().Translation());
+	}
+	pLight->Color.set(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color));
+	pLight->Intensity = _Intensity;
+	pLight->Range = _Range;
+	pLight->CosHalfInner = _CosHalfInner;
+	pLight->CosHalfOuter = _CosHalfOuter;
 }
 //---------------------------------------------------------------------
 

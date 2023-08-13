@@ -32,6 +32,8 @@ public:
 
 	CImageBasedLight();
 	virtual ~CImageBasedLight() override;
+
+	virtual void FillGPUInfo(CGPULightInfo& Out) const override;
 };
 
 }

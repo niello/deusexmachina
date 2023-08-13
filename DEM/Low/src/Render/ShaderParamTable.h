@@ -41,6 +41,7 @@ public:
 	bool   IsValid() const { return _Info.IsValidPtr(); }
 	size_t GetConstantBufferIndex() const { return _Info ? _Info->GetConstantBufferIndex() : InvalidParamIndex; }
 	U32    GetElementCount() const { return _Info ? _Info->GetElementCount() : 0; }
+	U32    GetElementStride() const { return _Info ? _Info->GetElementStride() : 0; }
 	U32    GetTotalComponentCount() const { return _Info ? _Info->GetElementCount() * _Info->GetRowCount() * _Info->GetColumnCount() : 0; }
 
 	// The cheapest possible way to switch between array elements, useful e.g. for setting member values in arrays of structures

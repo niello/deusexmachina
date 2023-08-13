@@ -21,6 +21,7 @@ protected:
 	float _ConeOuter = n_deg2rad(45.f); // In radians, full angle (not half), Phi
 	float _SinHalfOuter = 0.f;
 	float _CosHalfOuter = 0.f;
+	float _CosHalfInner = 0.f;
 
 public:
 

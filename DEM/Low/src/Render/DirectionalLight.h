@@ -1,7 +1,5 @@
 #pragma once
 #include <Render/Light.h>
-#include <Math/Vector3.h>
-#include <acl/math/vector4_32.h>
 
 // Directional light source used for rendering. Always global.
 
@@ -15,9 +13,11 @@ class CDirectionalLight : public CLight
 
 protected:
 
-	acl::Vector4_32 _Direction;
+	vector3 _Direction;
 
 public:
+
+	virtual void FillGPUInfo(CGPULightInfo& Out) const override;
 
 	void SetDirection(const vector3& Dir);
 };
