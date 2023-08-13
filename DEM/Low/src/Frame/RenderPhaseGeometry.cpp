@@ -40,6 +40,8 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		{
 			//!!!for a structured buffer, max count may be not applicable! must then use the same value
 			//as was used to allocate structured buffer instance!
+			// e.g. see https://www.gamedev.net/forums/topic/709796-working-with-structuredbuffer-in-hlsl-directx-11/
+			// StructuredBuffer<Light> lights : register(t9);
 			UPTR GlobalLightCount = 0;
 			const UPTR MaxLightCount = ConstGlobalLightBuffer.GetElementCount();
 			n_assert_dbg(MaxLightCount > 0);

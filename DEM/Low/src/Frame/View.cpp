@@ -502,7 +502,7 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			_pScene->UpdateObjectLightIntersections(*pAttr);
 
 			if (Record.ObjectLightIntersectionsVersion != pRenderable->ObjectLightIntersectionsVersion)
-				pAttr->UpdateLightList(*pRenderable, Record.pObjectLightIntersections);
+				pAttr->UpdateLightList(*this, *pRenderable, Record.pObjectLightIntersections);
 		}
 	}
 }
@@ -614,6 +614,8 @@ bool CView::Render()
 		{
 			if (Light->IsVisible)
 			{
+				// if (Light->BoundsVersion) ...local... else ...global...
+
 				if (_pScene->GetLights().find(UID)->second.pAttr->IsA<CIBLAmbientLightAttribute>())
 				{
 					EnvironmentCache.Add(static_cast<Render::CImageBasedLight*>(Light.get()));

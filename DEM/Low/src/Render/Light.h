@@ -26,6 +26,7 @@ protected:
 
 public:
 
+	U32  GPUIndex = INVALID_INDEX_T<U32>;
 	U32  BoundsVersion = 0;
 	bool IsVisible = false;
 	bool TrackObjectLightIntersections = false;

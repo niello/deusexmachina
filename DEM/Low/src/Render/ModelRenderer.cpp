@@ -166,22 +166,25 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 
 	if (_pCurrTechInterface->MemberLightCount)
 	{
-		//???prioritize by intensity at object, or just clamp as is?
-		const auto LightCount = LightingEnabled ? std::min<U32>(Model.Lights.size(), _pCurrTechInterface->MemberLightIndices.GetElementCount()) : 0;
+		// Set per-instance light indices for currently visible lights, clamp by limit
+		U32 LightCount = 0;
+		const auto LightLimit = _pCurrTechInterface->MemberLightIndices.GetElementCount();
+		if (LightingEnabled && LightLimit)
+		{
+			_pCurrTechInterface->MemberLightIndices.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
+			for (const auto [UID, pLight] : Model.Lights)
+			{
+				if (pLight->GPUIndex != INVALID_INDEX_T<U32>)
+				{
+					// TODO PERF: check array element param creation cost, maybe can reduce it?
+					_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->MemberLightIndices[LightCount], pLight->GPUIndex);
+					if (++LightCount == LightLimit) break;
+				}
+			}
+		}
 
 		_pCurrTechInterface->MemberLightCount.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
 		_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->MemberLightCount, LightCount);
-
-		// Set per-instance light indices
-		if (LightCount)
-		{
-			//!!!need to write to PerInstanceParams U32 ints or smaller, UPTR on x64 is not supported or needed! convert light ID to GPU index here?
-			// if here, need to write with SetUInt one by one!
-			static_assert(std::is_same_v<decltype(Model.Lights)::value_type, U32>);
-
-			_pCurrTechInterface->MemberLightIndices.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
-			_pCurrTechInterface->PerInstanceParams.SetRawConstant(_pCurrTechInterface->MemberLightIndices, Model.Lights.data(), LightCount * sizeof(U32));
-		}
 	}
 
 	++_InstanceCount;
