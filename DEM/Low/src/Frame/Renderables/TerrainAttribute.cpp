@@ -161,8 +161,32 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 
 		pTerrain->QuarterPatchMesh = ResMgr.GetMesh(QuarterMeshUID);
 
+		n_assert_dbg(pTerrain->PatchMesh->GetVertexBuffer()->GetVertexLayout() == pTerrain->QuarterPatchMesh->GetVertexBuffer()->GetVertexLayout());
+
 		pTerrain->GeometryKey = pTerrain->PatchMesh->GetSortingKey();
 	}
+
+	// calc morph constants and store in pTerrain
+	//!!!also store LOD distance ranges, and instead of float[] make struct[] with better names for consts!
+	//!!!PERF: may recalculate only when LODCount or VisibilityRange changes!
+	//MorphStartRatio - to terrain settings, where to define? in renderer or ...?
+	/*
+	const U32 LODCount = pTerrain->GetCDLODData()->GetLODCount();
+	float MorphStart = 0.f;
+	float CurrVisRange = VisibilityRange / (float)(1 << (LODCount - 1));
+	float MorphConsts[2 * MAX_LOD_COUNT];
+	float* pCurrMorphConst = MorphConsts;
+	for (U32 j = 0; j < std::min(LODCount, MAX_LOD_COUNT); ++j)
+	{
+		float MorphEnd = j ? CurrVisRange : CurrVisRange * 0.9f;
+		MorphStart = MorphStart + (MorphEnd - MorphStart) * MorphStartRatio;
+		MorphEnd = n_lerp(MorphEnd, MorphStart, 0.01f);
+		float MorphConst2 = 1.0f / (MorphEnd - MorphStart);
+		*pCurrMorphConst++ = MorphEnd * MorphConst2;
+		*pCurrMorphConst++ = MorphConst2;
+		CurrVisRange *= 2.f;
+	}
+	*/
 
 	//!!!TODO: if camera or heightmap or transform changed, update visible patches!
 }

@@ -23,7 +23,6 @@ class CTerrainRenderer: public IRenderer
 
 protected:
 
-	static const U32	INSTANCE_BUFFER_STREAM_INDEX = 1;
 	static const U32	INSTANCE_MAX_LIGHT_COUNT = 7;
 	//static const U32	INSTANCE_PADDING_SIZE = (7 - INSTANCE_MAX_LIGHT_COUNT % 8); // To preserve align-16 compatible structure size
 
@@ -41,7 +40,7 @@ protected:
 		Node_Processed
 	};
 
-	struct CPatchInstance
+	struct alignas(16) CPatchInstance
 	{
 		// Vertex shader instance data
 		float	ScaleOffset[4];
@@ -76,15 +75,9 @@ protected:
 		U8						LightCount;
 	};
 
-	CSamplerDesc							HMSamplerDesc;
-	PSampler								HMSampler;			//!!!binds an RP to a specific GPU!
-
-	UPTR									CurrMaxLightCount = 0;
-	CFixedArray<CVertexComponent>			InstanceDataDecl;
-	std::map<CVertexLayout*, PVertexLayout>	InstancedLayouts;	//!!!duplicate in different instances of the same renderer!
-	PVertexBuffer							InstanceVB;			//!!!binds an RP to a specific GPU!
+	PSampler								HeightMapSampler;
 	CPatchInstance*							pInstances = nullptr;
-	U32								        InstanceVBSize = 0;	//???where to define? in a phase? or some setting? or move to CView with a VB?
+	U32								        MaxInstanceCount = 0;	//???where to define? in a phase? or some setting? or move to CView with a VB?
 	float                                   VisibilityRange = 1000.f;
 	float                                   MorphStartRatio = 0.7f;
 
@@ -113,9 +106,9 @@ public:
 	CTerrainRenderer();
 	virtual ~CTerrainRenderer() override;
 
-	virtual bool Init(const Data::CParams& Params) override;
+	virtual bool Init(const Data::CParams& Params, CGPUDriver& GPU) override;
 	virtual bool BeginRange(const CRenderContext& Context) override;
-	virtual void Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/) override;
+	virtual void Render(const CRenderContext& Context, IRenderable& Renderable) override;
 	virtual void EndRange(const CRenderContext& Context) override;
 };
 

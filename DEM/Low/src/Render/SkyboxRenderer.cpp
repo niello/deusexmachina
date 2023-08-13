@@ -21,7 +21,7 @@ bool CSkyboxRenderer::BeginRange(const CRenderContext& Context)
 }
 //---------------------------------------------------------------------
 
-void CSkyboxRenderer::Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/)
+void CSkyboxRenderer::Render(const CRenderContext& Context, IRenderable& Renderable)
 {
 	CSkybox& Skybox = static_cast<CSkybox&>(Renderable);
 

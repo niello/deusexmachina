@@ -23,66 +23,21 @@ CTerrainRenderer::~CTerrainRenderer()
 }
 //---------------------------------------------------------------------
 
-bool CTerrainRenderer::Init(const Data::CParams& Params)
+bool CTerrainRenderer::Init(const Data::CParams& Params, CGPUDriver& GPU)
 {
+	CSamplerDesc HMSamplerDesc;
 	HMSamplerDesc.SetDefaults();
 	HMSamplerDesc.AddressU = TexAddr_Clamp;
 	HMSamplerDesc.AddressV = TexAddr_Clamp;
 	HMSamplerDesc.Filter = TexFilter_MinMag_Linear_Mip_Point;
+	HeightMapSampler = GPU.CreateSampler(HMSamplerDesc);
 
-	InstanceVBSize = std::max(0, Params.Get<int>(CStrID("InstanceVBSize"), 128));
+	MaxInstanceCount = std::max(0, Params.Get<int>(CStrID("InstanceVBSize"), 128));
 	VisibilityRange = std::max(0.f, Params.Get(CStrID("VisibilityRange"), 1000.f)); //!!!FIXME: get from CView!
 	MorphStartRatio = std::clamp(Params.Get(CStrID("MorphStartRatio"), 0.7f), 0.5f, 0.95f);
 
-	//if (LightingEnabled)
-	//{
-		// With stream instancing we add light indices to a vertex declaration, maximum light count is
-		// determined by DEM_LIGHT_COUNT of a tech, lighting stops at the first light index == -1.
-		// Clamp to maximum free VS input/output register count of 10, other 6 are used for other values.
-		const UPTR LightIdxVectorCount = (INSTANCE_MAX_LIGHT_COUNT + 3) / 4;
-		InstanceDataDecl.SetSize(std::min<UPTR>(2 + LightIdxVectorCount, 10));
-	//}
-	//else
-	//{
-	//	// Only vertex shader data will be added
-	//	InstanceDataDecl.SetSize(2);
-	//}
-
-	// Patch offset and scale in XZ
-	CVertexComponent* pCmp = &InstanceDataDecl[0];
-	pCmp->Semantic = EVertexComponentSemantic::TexCoord;
-	pCmp->UserDefinedName = nullptr;
-	pCmp->Index = 0;
-	pCmp->Format = EVertexComponentFormat::Float32_4;
-	pCmp->Stream = INSTANCE_BUFFER_STREAM_INDEX;
-	pCmp->OffsetInVertex = VertexComponentOffsetAuto;
-	pCmp->PerInstanceData = true;
-
-	// Morph constants
-	pCmp = &InstanceDataDecl[1];
-	pCmp->Semantic = EVertexComponentSemantic::TexCoord;
-	pCmp->UserDefinedName = nullptr;
-	pCmp->Index = 1;
-	pCmp->Format = EVertexComponentFormat::Float32_2;
-	pCmp->Stream = INSTANCE_BUFFER_STREAM_INDEX;
-	pCmp->OffsetInVertex = VertexComponentOffsetAuto;
-	pCmp->PerInstanceData = true;
-
-	// Light indices
-	UPTR ElementIdx = 2;
-	while (ElementIdx < InstanceDataDecl.size())
-	{
-		pCmp = &InstanceDataDecl[ElementIdx];
-		pCmp->Semantic = EVertexComponentSemantic::TexCoord;
-		pCmp->UserDefinedName = nullptr;
-		pCmp->Index = ElementIdx;
-		pCmp->Format = EVertexComponentFormat::SInt16_4;
-		pCmp->Stream = INSTANCE_BUFFER_STREAM_INDEX;
-		pCmp->OffsetInVertex = VertexComponentOffsetAuto;
-		pCmp->PerInstanceData = true;
-
-		++ElementIdx;
-	}
+	//!!!PERF: for D3D11 const instancing can create CB without a RAM copy and update whole!
+	pInstances = (CPatchInstance*)n_malloc_aligned(sizeof(CPatchInstance) * MaxInstanceCount, 16);
 
 	OK;
 }
@@ -523,24 +478,22 @@ bool CTerrainRenderer::BeginRange(const CRenderContext& Context)
 }
 //---------------------------------------------------------------------
 
-void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/)
+//???!!!support rendering multiple terrains at once?! could be useful for open worlds and subdividing large levels!
+void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Renderable)
 {
 	CTerrain& Terrain = static_cast<CTerrain&>(Renderable);
 
+	if (!Terrain.GetPatchMesh() || !Terrain.GetQuarterPatchMesh() || !Terrain.GetCDLODData()) return;
+
 	CGPUDriver& GPU = *Context.pGPU;
 
-	const bool LightingEnabled = true; // (Context.pLights != nullptr);
+	const bool LightingEnabled = true; // (Context.pLights != nullptr); //!!!get from material - if has light idx/count constants, then enabled! How with VB instancing?
 	UPTR TechLightCount;
 
 	static const CStrID sidWorldMatrix("WorldMatrix");
 	static const CStrID sidLightCount("LightCount");
 	static const CStrID sidLightIndices("LightIndices");
 	const I32 EMPTY_LIGHT_INDEX = -1;
-
-	//!!!to Init()! do once per view!
-	if (HMSampler.IsNullPtr()) HMSampler = GPU.CreateSampler(HMSamplerDesc);
-
-	if (!Terrain.GetPatchMesh() || !Terrain.GetQuarterPatchMesh() || !Terrain.GetCDLODData()) return;
 
 	// Calculate morph constants
 
@@ -568,13 +521,6 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 	// Fill instance data with patches and quarter-patches to render
 
-	//!!!PERF: for D3D11 const instancing can create CB without a RAM copy and update whole!
-	if (!pInstances)
-	{
-		pInstances = (CPatchInstance*)n_malloc_aligned(sizeof(CPatchInstance) * InstanceVBSize, 16);
-		n_assert_dbg(pInstances);
-	}
-
 	CAABB AABB = CDLOD.GetAABB();
 	AABB.Transform(Terrain.Transform);
 	float AABBMinX = AABB.Min.x;
@@ -587,7 +533,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	Args.pInstances = pInstances;
 	Args.pMorphConsts = MorphConsts;
 	Args.pRenderContext = &Context;
-	Args.MaxInstanceCount = InstanceVBSize;
+	Args.MaxInstanceCount = MaxInstanceCount;
 	Args.AABBMinX = AABBMinX;
 	Args.AABBMinZ = AABBMinZ;
 	Args.ScaleBaseX = AABBSizeX / (float)(CDLOD.GetHeightMapWidth() - 1);
@@ -595,6 +541,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	Args.LightIndexBase = 0;// Terrain.LightIndexBase;
 	Args.LightCount = 0;// Terrain.LightCount;
 
+	//!!!???TODO: bake both patch and quarter-patch to one VB? can draw in one DIP? or at least will reduce state changes!
 	U32 PatchCount = 0;
 	U32 QuarterPatchCount = 0;
 	U8 MaxLightCount = 0;
@@ -605,13 +552,6 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		for (U32 X = 0; X < TopPatchesW; ++X)
 			ProcessTerrainNode(Args, X, Z, TopLOD, VisibilityRange, PatchCount, QuarterPatchCount, MaxLightCount);
 
-	// Since we allocate instance stream based on maximum light count, we never reallocate it when frame max light count
-	// drops compared to the previous frame, to avoid per-frame VB recreation. Instead we remember the biggest light
-	// count ever requested, allocate VB for it, and live without VB reallocations until more lights are required.
-	// The first unused light index is always equal to -1 so no matter how much lights are, all unused ones are ignored.
-	// For constant instancing this value never gets used, tech with LightCount = 0 is always selected.
-	if (CurrMaxLightCount > MaxLightCount) MaxLightCount = CurrMaxLightCount;
-
 	if (!PatchCount && !QuarterPatchCount) return;
 
 	// Sort patches
@@ -621,7 +561,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	if (PatchCount)
 		std::sort(pInstances, pInstances + PatchCount, [](const CPatchInstance& a, const CPatchInstance& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
 	if (QuarterPatchCount)
-		std::sort(pInstances + InstanceVBSize - QuarterPatchCount, pInstances + InstanceVBSize, [](const CPatchInstance& a, const CPatchInstance& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
+		std::sort(pInstances + MaxInstanceCount - QuarterPatchCount, pInstances + MaxInstanceCount, [](const CPatchInstance& a, const CPatchInstance& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
 
 	// Select tech for the maximal light count used per-patch
 
@@ -629,11 +569,6 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	const CTechnique* pTech = Context.pShaderTechCache[Terrain.ShaderTechIndex];
 	const auto& Passes = pTech->GetPasses(LightCount);
 	if (Passes.empty()) return;
-
-	if (LightingEnabled && LightCount)
-	{
-		if (CurrMaxLightCount < LightCount) CurrMaxLightCount = LightCount;
-	}
 
 	// Apply material, if changed
 
@@ -669,7 +604,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 		auto pVSLinearSampler = ParamTable.GetSampler(CStrID("VSLinearSampler"));
 		if (pVSLinearSampler)
-			pVSLinearSampler->Apply(GPU, HMSampler.Get());
+			pVSLinearSampler->Apply(GPU, HeightMapSampler.Get());
 	}
 
 	if (ResourceHeightMap)
@@ -695,7 +630,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		CDLODParams.WorldToHM[2] = -AABBMinX * CDLODParams.WorldToHM[0];
 		CDLODParams.WorldToHM[3] = -AABBMinZ * CDLODParams.WorldToHM[1];
 		CDLODParams.TerrainYScale = 65535.f * CDLOD.GetVerticalScale();
-		CDLODParams.TerrainYOffset = -32767.f * CDLOD.GetVerticalScale() + Terrain.Transform.m[3][1]; // [3][1] = Translation.y
+		CDLODParams.TerrainYOffset = -32767.f * CDLOD.GetVerticalScale() + Terrain.Transform.Translation().y;
 		CDLODParams.InvSplatSizeX = Terrain.GetInvSplatSizeX();
 		CDLODParams.InvSplatSizeZ = Terrain.GetInvSplatSizeZ();
 		CDLODParams.TexelSize[0] = 1.f / (float)CDLOD.GetHeightMapWidth();
@@ -763,7 +698,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			}
 		}
 
-		const CPatchInstance* pQInstances = pInstances + InstanceVBSize - QuarterPatchCount;
+		const CPatchInstance* pQInstances = pInstances + MaxInstanceCount - QuarterPatchCount;
 		for (UPTR PatchIdx = 0; PatchIdx < QuarterPatchCount; ++PatchIdx, ++InstanceCount)
 		{
 			const CPatchInstance& CurrPatch = pQInstances[PatchIdx];
@@ -801,115 +736,15 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			}
 		}
 	}
-	else
-	{
-		// Calculate int4 light index vector count supported by both tech and vertex declaration.
-		// Vertex declaration size will be 2 elements for VS data + one element per vector.
-		const UPTR LightVectorCount = (LightCount + 3) / 4;
-		const UPTR DeclSize = 2 + LightVectorCount;
-		n_assert_dbg(DeclSize <= InstanceDataDecl.size());
-
-		// If current buffer doesn't suit the tech, recreate it. Since we only grow tech LightCount and never
-		// shrink it, buffer reallocation will be requested only if can't handle desired light count.
-		if (!InstanceVB || InstanceVB->GetVertexLayout()->GetComponentCount() != DeclSize)
-		{
-			PVertexLayout VLInstanceData = GPU.CreateVertexLayout(InstanceDataDecl.data(), DeclSize);
-			InstanceVB = nullptr; // Drop before allocating new buffer
-			InstanceVB = GPU.CreateVertexBuffer(*VLInstanceData, InstanceVBSize, Access_CPU_Write | Access_GPU_Read);
-		}
-
-		// Upload instance data to IA stream
-
-		//???what about D3D11_APPEND_ALIGNED_ELEMENT in D3D11 and float2?
-		const UPTR InstanceElementSize = InstanceVB->GetVertexLayout()->GetVertexSizeInBytes();
-
-		void* pInstData;
-		n_verify(GPU.MapResource(&pInstData, *InstanceVB, Map_WriteDiscard));
-
-		if (PatchCount)
-		{
-			UPTR InstDataSize = InstanceElementSize * PatchCount;
-			if (sizeof(CPatchInstance) == InstanceElementSize)
-			{
-				memcpy(pInstData, pInstances, InstDataSize);
-			}
-			else
-			{
-				char* pCurrInstData = (char*)pInstData;
-				for (UPTR PatchIdx = 0; PatchIdx < PatchCount; ++PatchIdx)
-				{
-					memcpy(pCurrInstData, pInstances + PatchIdx, InstanceElementSize);
-					pCurrInstData += InstanceElementSize;
-				}
-			}
-			pInstData = (char*)pInstData + InstDataSize;
-		}
-
-		if (QuarterPatchCount)
-		{
-			const CPatchInstance* pQInstances = pInstances + InstanceVBSize - QuarterPatchCount;
-			if (sizeof(CPatchInstance) == InstanceElementSize)
-			{
-				memcpy(pInstData, pQInstances, InstanceElementSize * QuarterPatchCount);
-			}
-			else
-			{
-				char* pCurrInstData = (char*)pInstData;
-				for (UPTR PatchIdx = 0; PatchIdx < QuarterPatchCount; ++PatchIdx)
-				{
-					memcpy(pCurrInstData, pQInstances + PatchIdx, InstanceElementSize);
-					pCurrInstData += InstanceElementSize;
-				}
-			}
-		}
-
-		GPU.UnmapResource(*InstanceVB);
-	}
 
 	// Set vertex layout
-
-	// In the real world we don't want to use differently laid out meshes
-	n_assert_dbg(Terrain.GetPatchMesh()->GetVertexBuffer()->GetVertexLayout() == Terrain.GetQuarterPatchMesh()->GetVertexBuffer()->GetVertexLayout());
 
 	const CMesh* pMesh = Terrain.GetPatchMesh();
 	n_assert_dbg(pMesh);
 	CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
 	n_assert_dbg(pVB);
-	CVertexLayout* pVL = pVB->GetVertexLayout();
 
-	if (ConstInstanceDataVS) GPU.SetVertexLayout(pVL);
-	else
-	{
-		auto It = InstancedLayouts.find(pVL);
-		if (It == InstancedLayouts.cend())
-		{
-			constexpr UPTR MAX_COMPONENTS = 64;
-
-			UPTR BaseComponentCount = pVL->GetComponentCount();
-			UPTR InstComponentCount = InstanceVB->GetVertexLayout()->GetComponentCount();
-			UPTR DescComponentCount = BaseComponentCount + InstComponentCount;
-
-			if (DescComponentCount > MAX_COMPONENTS)
-			{
-				::Sys::Error("CModelRenderer::Render() > too many vertex layout components");
-				BaseComponentCount = std::min(BaseComponentCount, MAX_COMPONENTS);
-				DescComponentCount = std::min(DescComponentCount, MAX_COMPONENTS);
-				InstComponentCount = DescComponentCount - BaseComponentCount;
-			}
-
-			CVertexComponent InstancedDecl[MAX_COMPONENTS];
-			memcpy(InstancedDecl, pVL->GetComponent(0), BaseComponentCount * sizeof(CVertexComponent));
-			memcpy(InstancedDecl + BaseComponentCount, InstanceDataDecl.data(), InstComponentCount * sizeof(CVertexComponent));
-
-			PVertexLayout VLInstanced = GPU.CreateVertexLayout(InstancedDecl, DescComponentCount);
-
-			n_assert_dbg(VLInstanced.IsValidPtr());
-			InstancedLayouts.emplace(pVL, VLInstanced);
-
-			GPU.SetVertexLayout(VLInstanced.Get());
-		}
-		else GPU.SetVertexLayout(It->second.Get());
-	}
+	GPU.SetVertexLayout(pVB->GetVertexLayout());
 
 	// Render patches //!!!may collect patches of different CTerrains if material is the same and instance buffer is big enough!
 
@@ -929,9 +764,6 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 		GPU.SetVertexBuffer(0, pVB);
 		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
-
-		if (!ConstInstanceDataVS)
-			GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.Get(), 0);
 
 		const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
 		for (const auto& Pass : Passes)
@@ -962,9 +794,6 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 		GPU.SetVertexBuffer(0, pVB);
 		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
-
-		if (!ConstInstanceDataVS)
-			GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.Get(), PatchCount);
 
 		const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
 		for (const auto& Pass : Passes)

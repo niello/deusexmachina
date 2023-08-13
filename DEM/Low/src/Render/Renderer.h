@@ -31,9 +31,9 @@ public:
 		matrix44				ViewProjection;
 	};
 
-	virtual bool Init(const Data::CParams& Params) = 0;
+	virtual bool Init(const Data::CParams& Params, CGPUDriver& GPU) = 0;
 	virtual bool BeginRange(const CRenderContext& Context) = 0;
-	virtual void Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/) = 0;
+	virtual void Render(const CRenderContext& Context, IRenderable& Renderable) = 0;
 	virtual void EndRange(const CRenderContext& Context) = 0;
 };
 

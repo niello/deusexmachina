@@ -69,7 +69,7 @@ bool CModelRenderer::BeginRange(const CRenderContext& Context)
 //---------------------------------------------------------------------
 
 // For constant buffer handling see https://learn.microsoft.com/en-us/windows/win32/dxtecharts/direct3d10-frequently-asked-questions
-void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/)
+void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderable)
 {
 	CModel& Model = static_cast<CModel&>(Renderable);
 
