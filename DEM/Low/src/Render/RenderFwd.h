@@ -21,7 +21,6 @@ struct CRenderStateDesc;
 struct CSamplerDesc;
 struct CVertexComponent;
 class CDisplayMode;
-class CLight_OLD_DELETE;
 class CTechnique;
 class IRenderable;
 class IRenderer;

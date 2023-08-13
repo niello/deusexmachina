@@ -72,7 +72,6 @@ bool CModelRenderer::BeginRange(const CRenderContext& Context)
 void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderable/*, UPTR SortingKey*/)
 {
 	CModel& Model = static_cast<CModel&>(Renderable);
-	const bool LightingEnabled = (Context.pLights != nullptr);
 
 	_pGPU = Context.pGPU;
 
@@ -169,7 +168,7 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 		// Set per-instance light indices for currently visible lights, clamp by limit
 		U32 LightCount = 0;
 		const auto LightLimit = _pCurrTechInterface->MemberLightIndices.GetElementCount();
-		if (LightingEnabled && LightLimit)
+		if (LightLimit)
 		{
 			_pCurrTechInterface->MemberLightIndices.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
 			for (const auto [UID, pLight] : Model.Lights)

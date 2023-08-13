@@ -84,13 +84,6 @@ bool CModelAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 Render::PRenderable CModelAttribute::CreateRenderable() const
 {
 	return std::make_unique<Render::CModel>();
-
-	//!!!TODO: setup renderer! it can be done once, as a renderable is created per view, and changing RP in view will erase all cached objects.
-	//!!!if renderer not found, return nullptr from here?! it is necessary, e.g. skybox is never rendered in a depth phase
-	// In phase:
-	//auto ItRenderer = RenderersByObjectType.find(pRenderable->GetRTTI());
-	//if (ItRenderer == RenderersByObjectType.cend()) continue;
-	//???use the same renderer for all phases? how to store different overrides then?
 }
 //---------------------------------------------------------------------
 

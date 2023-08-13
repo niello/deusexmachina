@@ -479,7 +479,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/GPUDriver.cpp
 	DEM/Low/src/Render/ImageBasedLight.cpp
 	DEM/Low/src/Render/ImageUtils.cpp
-	DEM/Low/src/Render/Light.cpp
 	DEM/Low/src/Render/LoadMaterialFromPRM.cpp
 	DEM/Low/src/Render/Material.cpp
 	DEM/Low/src/Render/Mesh.cpp

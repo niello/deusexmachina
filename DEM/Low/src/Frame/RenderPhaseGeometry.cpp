@@ -46,6 +46,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 			const UPTR MaxLightCount = ConstGlobalLightBuffer.GetElementCount();
 			n_assert_dbg(MaxLightCount > 0);
 
+			/*
 			const CArray<Render::CLightRecord>& VisibleLights = View.GetLightCache();
 			for (size_t i = 0; i < VisibleLights.GetCount(); ++i)
 			{
@@ -83,6 +84,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 					if (GlobalLightCount >= MaxLightCount) break;
 				}
 			}
+			*/
 
 			if (GlobalLightCount) View.Globals.Apply();
 		}
@@ -137,9 +139,9 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	Ctx.ViewProjection = View.GetCamera()->GetViewProjMatrix();
 	if (EnableLighting)
 	{
-		Ctx.pLights = &View.GetLightCache();
-		Ctx.pLightIndices = &View.LightIndices;
-		Ctx.UsesGlobalLightBuffer = !!ConstGlobalLightBuffer;
+		//Ctx.pLights = &View.GetLightCache();
+		//Ctx.pLightIndices = &View.LightIndices;
+		//Ctx.UsesGlobalLightBuffer = !!ConstGlobalLightBuffer;
 	}
 
 	Render::IRenderer* pCurrRenderer = nullptr;

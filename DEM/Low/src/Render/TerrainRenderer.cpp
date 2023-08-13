@@ -174,12 +174,13 @@ bool CTerrainRenderer::CheckNodeFrustumIntersection(const CLightTestArgs& Args, 
 
 void CTerrainRenderer::FillNodeLightIndices(const CProcessTerrainNodeArgs& Args, CPatchInstance& Patch, const CAABB& NodeAABB, U8& MaxLightCount)
 {
+	UPTR PatchLightCount = 0;
+
+	/*
 	n_assert_dbg(Args.pRenderContext->pLightIndices);
 
 	const CArray<U16>& LightIndices = *Args.pRenderContext->pLightIndices;
 	const CArray<CLightRecord>& Lights = *Args.pRenderContext->pLights;
-
-	UPTR PatchLightCount = 0;
 
 	CArray<U16>::CIterator ItIdx = LightIndices.IteratorAt(Args.LightIndexBase);
 	CArray<U16>::CIterator ItEnd = LightIndices.IteratorAt(Args.LightIndexBase + Args.LightCount);
@@ -222,6 +223,7 @@ void CTerrainRenderer::FillNodeLightIndices(const CProcessTerrainNodeArgs& Args,
 		Patch.LightIndex[PatchLightCount] = LightRec.GPULightIndex;
 		++PatchLightCount;
 	}
+	*/
 
 	if (PatchLightCount < INSTANCE_MAX_LIGHT_COUNT)
 		Patch.LightIndex[PatchLightCount] = -1;
@@ -350,7 +352,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 		IsVisible = true;
 	}
 
-	const bool LightingEnabled = (Args.pRenderContext->pLights != nullptr);
+	const bool LightingEnabled = true;// (Args.pRenderContext->pLights != nullptr);
 
 	float* pLODMorphConsts = Args.pMorphConsts + 2 * LOD;
 
@@ -527,7 +529,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 	CGPUDriver& GPU = *Context.pGPU;
 
-	const bool LightingEnabled = (Context.pLights != nullptr);
+	const bool LightingEnabled = true; // (Context.pLights != nullptr);
 	UPTR TechLightCount;
 
 	static const CStrID sidWorldMatrix("WorldMatrix");
@@ -631,11 +633,6 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	if (LightingEnabled && LightCount)
 	{
 		if (CurrMaxLightCount < LightCount) CurrMaxLightCount = LightCount;
-
-		if (!Context.UsesGlobalLightBuffer)
-		{
-			NOT_IMPLEMENTED;
-		}
 	}
 
 	// Apply material, if changed

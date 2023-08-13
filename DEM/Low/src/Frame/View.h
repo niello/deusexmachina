@@ -87,7 +87,6 @@ protected:
 	std::map<std::pair<const Render::CEffect*, CStrID>, U32> _EffectMap;  // Source effect & input set -> index in a _ShaderTechCache
 	std::vector<std::vector<const Render::CTechnique*>> _ShaderTechCache; // First index is an override index (0 is no override), second is from _EffectMap
 
-	CArray<Render::CLightRecord>				LightCache;
 	CArray<Render::CImageBasedLight*>			EnvironmentCache;
 
 	U32                                         _SpatialTreeRebuildVersion = 0; // For spatial tree node visibility cache invalidation
@@ -134,7 +133,6 @@ public:
 	Render::IRenderer*              GetRenderer(U8 Index) const { n_assert_dbg(Index < _Renderers.size()); return _Renderers[Index].get(); }
 	Render::IRenderable*			GetRenderable(UPTR UID) { auto It = _Renderables.find(UID); return (It == _Renderables.cend()) ? nullptr : It->second.get(); }
 	Render::CLight*			        GetLight(UPTR UID) { auto It = _Lights.find(UID); return (It == _Lights.cend()) ? nullptr : It->second.get(); }
-	CArray<Render::CLightRecord>&	GetLightCache() { return LightCache; }
 	auto&							GetEnvironmentCache() { return EnvironmentCache; }
 
 	template<typename TCallback>

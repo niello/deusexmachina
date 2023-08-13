@@ -371,6 +371,7 @@ void CView::SynchronizeRenderables()
 				_RenderableNodePool.pop_back();
 			}
 
+			// Find and assign a renderer for this type of renderable
 			auto ItRenderer = _RenderersByRenderableType.find(ItViewObject->second->GetRTTI());
 			ItViewObject->second->RendererIndex = (ItRenderer != _RenderersByRenderableType.cend()) ? ItRenderer->second : 0;
 		}
@@ -608,7 +609,6 @@ bool CView::Render()
 		//???call UpdateLightList with lights already resolved into Render::CLight?
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		//!!!DBG TMP!
-		LightCache.Clear();
 		EnvironmentCache.Clear();
 		for (const auto& [UID, Light] : _Lights)
 		{

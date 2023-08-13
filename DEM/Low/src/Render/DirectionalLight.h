@@ -1,5 +1,6 @@
 #pragma once
 #include <Render/Light.h>
+#include <Math/Vector3.h>
 #include <acl/math/vector4_32.h>
 
 // Directional light source used for rendering. Always global.

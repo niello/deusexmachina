@@ -13,7 +13,6 @@ namespace Data
 namespace Render
 {
 class IRenderable;
-struct CLightRecord;
 class CGPUDriver;
 class CTechnique;
 using PRenderer = std::unique_ptr<class IRenderer>;
@@ -30,9 +29,6 @@ public:
 		const Render::CTechnique* const* pShaderTechCache = nullptr;
 		vector3					CameraPosition;
 		matrix44				ViewProjection;
-		CArray<CLightRecord>*	pLights = nullptr;
-		CArray<U16>*			pLightIndices = nullptr;
-		bool					UsesGlobalLightBuffer = false;
 	};
 
 	virtual bool Init(const Data::CParams& Params) = 0;
