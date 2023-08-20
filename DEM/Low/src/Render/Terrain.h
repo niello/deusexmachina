@@ -19,12 +19,12 @@ class CTerrain: public IRenderable
 
 protected:
 
+	// Vertex shader instance data
 	struct alignas(16) CPatchInstance
 	{
-		// Vertex shader instance data
 		float ScaleOffset[4];
 		float MorphConsts[2];
-		float _PAD1[2]; // To preserve align-16 of PS data
+		float _PAD1[2];
 	};
 
 	// Pixel shader instance data

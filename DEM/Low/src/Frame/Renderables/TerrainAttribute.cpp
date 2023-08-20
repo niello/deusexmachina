@@ -59,12 +59,12 @@ bool CTerrainAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count
 Scene::PNodeAttribute CTerrainAttribute::Clone()
 {
 	PTerrainAttribute ClonedAttr = n_new(CTerrainAttribute());
+	ClonedAttr->_CDLODData = _CDLODData;
 	ClonedAttr->_MaterialUID = _MaterialUID;
 	ClonedAttr->_CDLODDataUID = _CDLODDataUID;
 	ClonedAttr->_HeightMapUID = _HeightMapUID;
 	ClonedAttr->_InvSplatSizeX = _InvSplatSizeX;
 	ClonedAttr->_InvSplatSizeZ = _InvSplatSizeZ;
-	ClonedAttr->_CDLODData = _CDLODData;
 	return ClonedAttr;
 }
 //---------------------------------------------------------------------

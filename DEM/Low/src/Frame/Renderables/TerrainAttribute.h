@@ -17,13 +17,12 @@ class CTerrainAttribute: public CRenderableAttribute
 
 protected:
 
+	Render::PCDLODData _CDLODData;
 	CStrID             _MaterialUID;
 	CStrID             _CDLODDataUID;
 	CStrID             _HeightMapUID;
 	float              _InvSplatSizeX = 1.f;
 	float              _InvSplatSizeZ = 1.f;
-
-	Render::PCDLODData _CDLODData;
 
 public:
 
