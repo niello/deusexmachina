@@ -436,7 +436,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 // Morphing artifacts test (from the original CDLOD code)
 /*
 #ifdef _DEBUG
-	if (LOD < Terrain.GetLODCount() - 1)
+	if (LOD < Terrain.LODParams.size() - 1)
 	{
 		//!!!Always must check the Main camera!
 		float MaxDistToCameraSq = NodeAABB.MaxDistFromPointSq(RenderSrv->GetCameraPosition());
@@ -492,7 +492,6 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	const I32 EMPTY_LIGHT_INDEX = -1;
 
 	const CCDLODData& CDLOD = *Terrain.GetCDLODData();
-	const U32 LODCount = CDLOD.GetLODCount();
 
 	// Fill instance data with patches and quarter-patches to render
 
@@ -522,7 +521,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	U8 MaxLightCount = 0;
 	const U32 TopPatchesW = CDLOD.GetTopPatchCountW();
 	const U32 TopPatchesH = CDLOD.GetTopPatchCountH();
-	const U32 TopLOD = LODCount - 1;
+	const U32 TopLOD = CDLOD.GetLODCount() - 1;
 	for (U32 Z = 0; Z < TopPatchesH; ++Z)
 		for (U32 X = 0; X < TopPatchesW; ++X)
 			ProcessTerrainNode(Args, X, Z, TopLOD, PatchCount, QuarterPatchCount, MaxLightCount);

@@ -187,15 +187,17 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 		if (LODCount)
 		{
 			float MorphStart = 0.f;
-			float LODRange = VisibilityRange / static_cast<float>(1 << (LODCount - 1));
-			for (U32 LOD = 0; LOD < LODCount; ++LOD, LODRange *= 2.f)
+			for (U32 LOD = 0; LOD < LODCount; ++LOD)
 			{
-				auto& LODParams = pTerrain->LODParams[LOD];
+				float MorphEnd = VisibilityRange / static_cast<float>(1 << (LODCount - 1 - LOD));
 
 				// Hack, see original CDLOD code. LOD 0 range is 0.9 of what is expected.
-				float MorphEnd = LOD ? LODRange : LODRange * 0.9f;
+				if (!LOD) MorphEnd *= 0.9f;
+
 				MorphStart = MorphStart + (MorphEnd - MorphStart) * MorphStartRatio;
 				MorphEnd = n_lerp(MorphEnd, MorphStart, 0.01f);
+
+				auto& LODParams = pTerrain->LODParams[LOD];
 				LODParams.Range = MorphEnd;
 				LODParams.Morph2 = 1.0f / (MorphEnd - MorphStart);
 				LODParams.Morph1 = MorphEnd * LODParams.Morph2;
