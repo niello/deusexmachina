@@ -87,7 +87,7 @@ Render::PRenderable CModelAttribute::CreateRenderable() const
 }
 //---------------------------------------------------------------------
 
-void CModelAttribute::UpdateRenderable(CView& View, Render::IRenderable& Renderable) const
+void CModelAttribute::UpdateRenderable(CView& View, Render::IRenderable& Renderable, bool /*ViewProjChanged*/) const
 {
 	//!!!TODO: calc LOD from Renderable.SqDistanceToCamera and from screen radius (to be added to Renderable)!
 	//!!!NB: object can be culled by LOD (i.e. by distance or screen size). Then need to set Renderable.IsVisible here to false and return.

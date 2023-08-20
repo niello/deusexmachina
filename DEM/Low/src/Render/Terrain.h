@@ -19,16 +19,26 @@ class CTerrain: public IRenderable
 
 public:
 
+	struct CLODParams
+	{
+		float Range;
+		float Morph1;
+		float Morph2;
+	};
+
 	PCDLODData				CDLODData;
 	PMaterial				Material;
 	PTexture				HeightMap;
 	PMesh					PatchMesh;
 	PMesh					QuarterPatchMesh;
+	std::vector<CLODParams> LODParams;
 
 	float					InvSplatSizeX = 1.f;
 	float					InvSplatSizeZ = 1.f;
 
 	U32                     ShaderTechIndex = INVALID_INDEX_T<U32>;
+	U32                     PatchesTransformVersion = 0;
+	float                   VisibilityRange = 0.f;
 
 	CTerrain();
 	virtual ~CTerrain() override;

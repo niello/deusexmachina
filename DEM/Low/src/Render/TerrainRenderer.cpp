@@ -32,9 +32,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Params, CGPUDriver& GPU)
 	HMSamplerDesc.Filter = TexFilter_MinMag_Linear_Mip_Point;
 	HeightMapSampler = GPU.CreateSampler(HMSamplerDesc);
 
-	MaxInstanceCount = std::max(0, Params.Get<int>(CStrID("InstanceVBSize"), 128));
-	VisibilityRange = std::max(0.f, Params.Get(CStrID("VisibilityRange"), 1000.f)); //!!!FIXME: get from CView!
-	MorphStartRatio = std::clamp(Params.Get(CStrID("MorphStartRatio"), 0.7f), 0.5f, 0.95f);
+	MaxInstanceCount = std::max(0, Params.Get<int>(CStrID("InstanceVBSize"), 512));
 
 	//!!!PERF: for D3D11 const instancing can create CB without a RAM copy and update whole!
 	pInstances = (CPatchInstance*)n_malloc_aligned(sizeof(CPatchInstance) * MaxInstanceCount, 16);
@@ -191,7 +189,7 @@ void CTerrainRenderer::FillNodeLightIndices(const CProcessTerrainNodeArgs& Args,
 //???how to handle terrain lighting in a forward pipeline? terrain is a tree of AABBs, can optimize intersections and detect region for each light!
 //!!!recalculation required only on viewer's position / look vector change!
 CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProcessTerrainNodeArgs& Args,
-																   U32 X, U32 Z, U32 LOD, float LODRange,
+																   U32 X, U32 Z, U32 LOD,
 																   U32& PatchCount, U32& QPatchCount,
 																   U8& MaxLightCount, EClipStatus Clip)
 {
@@ -224,8 +222,10 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 		if (Clip == EClipStatus::Outside) return Node_Invisible;
 	}
 
+	const auto& LODParams = Args.pTerrain->LODParams[LOD];
+
 	// NB: Always must check the main frame camera, even if some special camera is used for intermediate rendering
-	sphere LODSphere(Args.pRenderContext->CameraPosition, LODRange);
+	sphere LODSphere(Args.pRenderContext->CameraPosition, LODParams.Range);
 	if (LODSphere.GetClipStatus(NodeAABB) == EClipStatus::Outside) return Node_NotInLOD;
 
 	// Bits 0 to 3 - if set, add quarterpatch for child[0 .. 3]
@@ -243,13 +243,12 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 
 	if (LOD > 0)
 	{
-		// Hack, see original CDLOD code. LOD 0 range is 0.9 of what is expected.
-		float NextLODRange = LODRange * ((LOD == 1) ? 0.45f : 0.5f);
-
 		IsVisible = false;
 
+		const U32 NextLOD = LOD - 1;
+
 		// NB: Always must check the main frame camera, even if some special camera is used for intermediate rendering
-		LODSphere.r = NextLODRange;
+		LODSphere.r = Args.pTerrain->LODParams[NextLOD].Range;
 		if (LODSphere.GetClipStatus(NodeAABB) == EClipStatus::Outside)
 		{
 			// Add the whole node to the current LOD
@@ -259,9 +258,8 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 		{
 			const U32 XNext = X << 1;
 			const U32 ZNext = Z << 1;
-			const U32 NextLOD = LOD - 1;
 
-			ENodeStatus Status = ProcessTerrainNode(Args, XNext, ZNext, NextLOD, NextLODRange, PatchCount, QPatchCount, MaxLightCount, Clip);
+			ENodeStatus Status = ProcessTerrainNode(Args, XNext, ZNext, NextLOD, PatchCount, QPatchCount, MaxLightCount, Clip);
 			if (Status != Node_Invisible)
 			{
 				IsVisible = true;
@@ -270,7 +268,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 
 			if (pCDLOD->HasNode(XNext + 1, ZNext, NextLOD))
 			{
-				Status = ProcessTerrainNode(Args, XNext + 1, ZNext, NextLOD, NextLODRange, PatchCount, QPatchCount, MaxLightCount, Clip);
+				Status = ProcessTerrainNode(Args, XNext + 1, ZNext, NextLOD, PatchCount, QPatchCount, MaxLightCount, Clip);
 				if (Status != Node_Invisible)
 				{
 					IsVisible = true;
@@ -280,7 +278,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 
 			if (pCDLOD->HasNode(XNext, ZNext + 1, NextLOD))
 			{
-				Status = ProcessTerrainNode(Args, XNext, ZNext + 1, NextLOD, NextLODRange, PatchCount, QPatchCount, MaxLightCount, Clip);
+				Status = ProcessTerrainNode(Args, XNext, ZNext + 1, NextLOD, PatchCount, QPatchCount, MaxLightCount, Clip);
 				if (Status != Node_Invisible)
 				{
 					IsVisible = true;
@@ -290,7 +288,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 
 			if (pCDLOD->HasNode(XNext + 1, ZNext + 1, NextLOD))
 			{
-				Status = ProcessTerrainNode(Args, XNext + 1, ZNext + 1, NextLOD, NextLODRange, PatchCount, QPatchCount, MaxLightCount, Clip);
+				Status = ProcessTerrainNode(Args, XNext + 1, ZNext + 1, NextLOD, PatchCount, QPatchCount, MaxLightCount, Clip);
 				if (Status != Node_Invisible)
 				{
 					IsVisible = true;
@@ -309,8 +307,6 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 
 	const bool LightingEnabled = true;// (Args.pRenderContext->pLights != nullptr);
 
-	float* pLODMorphConsts = Args.pMorphConsts + 2 * LOD;
-
 	if (ChildFlags == Child_All)
 	{
 		// Add whole patch
@@ -320,8 +316,8 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 		Patch.ScaleOffset[1] = NodeAABB.Max.z - NodeAABB.Min.z;
 		Patch.ScaleOffset[2] = NodeAABB.Min.x;
 		Patch.ScaleOffset[3] = NodeAABB.Min.z;
-		Patch.MorphConsts[0] = pLODMorphConsts[0];
-		Patch.MorphConsts[1] = pLODMorphConsts[1];
+		Patch.MorphConsts[0] = LODParams.Morph1;
+		Patch.MorphConsts[1] = LODParams.Morph2;
 
 		if (LightingEnabled && INSTANCE_MAX_LIGHT_COUNT)
 			FillNodeLightIndices(Args, Patch, NodeAABB, MaxLightCount);
@@ -352,8 +348,8 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 			Patch.ScaleOffset[1] = HalfScaleZ;
 			Patch.ScaleOffset[2] = NodeMinX;
 			Patch.ScaleOffset[3] = NodeMinZ;
-			Patch.MorphConsts[0] = pLODMorphConsts[0];
-			Patch.MorphConsts[1] = pLODMorphConsts[1];
+			Patch.MorphConsts[0] = LODParams.Morph1;
+			Patch.MorphConsts[1] = LODParams.Morph2;
 
 			if (LightingEnabled && INSTANCE_MAX_LIGHT_COUNT)
 			{
@@ -375,8 +371,8 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 			Patch.ScaleOffset[1] = HalfScaleZ;
 			Patch.ScaleOffset[2] = NodeMinX + HalfScaleX;
 			Patch.ScaleOffset[3] = NodeMinZ;
-			Patch.MorphConsts[0] = pLODMorphConsts[0];
-			Patch.MorphConsts[1] = pLODMorphConsts[1];
+			Patch.MorphConsts[0] = LODParams.Morph1;
+			Patch.MorphConsts[1] = LODParams.Morph2;
 
 			if (LightingEnabled && INSTANCE_MAX_LIGHT_COUNT)
 			{
@@ -398,8 +394,8 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 			Patch.ScaleOffset[1] = HalfScaleZ;
 			Patch.ScaleOffset[2] = NodeMinX;
 			Patch.ScaleOffset[3] = NodeMinZ + HalfScaleZ;
-			Patch.MorphConsts[0] = pLODMorphConsts[0];
-			Patch.MorphConsts[1] = pLODMorphConsts[1];
+			Patch.MorphConsts[0] = LODParams.Morph1;
+			Patch.MorphConsts[1] = LODParams.Morph2;
 
 			if (LightingEnabled && INSTANCE_MAX_LIGHT_COUNT)
 			{
@@ -421,8 +417,8 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 			Patch.ScaleOffset[1] = HalfScaleZ;
 			Patch.ScaleOffset[2] = NodeMinX + HalfScaleX;
 			Patch.ScaleOffset[3] = NodeMinZ + HalfScaleZ;
-			Patch.MorphConsts[0] = pLODMorphConsts[0];
-			Patch.MorphConsts[1] = pLODMorphConsts[1];
+			Patch.MorphConsts[0] = LODParams.Morph1;
+			Patch.MorphConsts[1] = LODParams.Morph2;
 
 			if (LightingEnabled && INSTANCE_MAX_LIGHT_COUNT)
 			{
@@ -495,29 +491,8 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	static const CStrID sidLightIndices("LightIndices");
 	const I32 EMPTY_LIGHT_INDEX = -1;
 
-	// Calculate morph constants
-
 	const CCDLODData& CDLOD = *Terrain.GetCDLODData();
 	const U32 LODCount = CDLOD.GetLODCount();
-
-	constexpr UPTR MAX_LOD_COUNT = 32;
-	n_assert_dbg(LODCount <= MAX_LOD_COUNT);
-
-	//!!!PERF: may recalculate only when LODCount / VisibilityRange changes!
-	float MorphStart = 0.f;
-	float CurrVisRange = VisibilityRange / (float)(1 << (LODCount - 1));
-	float MorphConsts[2 * MAX_LOD_COUNT];
-	float* pCurrMorphConst = MorphConsts;
-	for (U32 j = 0; j < std::min(LODCount, MAX_LOD_COUNT); ++j)
-	{
-		float MorphEnd = j ? CurrVisRange : CurrVisRange * 0.9f;
-		MorphStart = MorphStart + (MorphEnd - MorphStart) * MorphStartRatio;
-		MorphEnd = n_lerp(MorphEnd, MorphStart, 0.01f);
-		float MorphConst2 = 1.0f / (MorphEnd - MorphStart);
-		*pCurrMorphConst++ = MorphEnd * MorphConst2;
-		*pCurrMorphConst++ = MorphConst2;
-		CurrVisRange *= 2.f;
-	}
 
 	// Fill instance data with patches and quarter-patches to render
 
@@ -531,7 +506,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	CProcessTerrainNodeArgs Args;
 	Args.pCDLOD = &CDLOD;
 	Args.pInstances = pInstances;
-	Args.pMorphConsts = MorphConsts;
+	Args.pTerrain = &Terrain;
 	Args.pRenderContext = &Context;
 	Args.MaxInstanceCount = MaxInstanceCount;
 	Args.AABBMinX = AABBMinX;
@@ -550,7 +525,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	const U32 TopLOD = LODCount - 1;
 	for (U32 Z = 0; Z < TopPatchesH; ++Z)
 		for (U32 X = 0; X < TopPatchesW; ++X)
-			ProcessTerrainNode(Args, X, Z, TopLOD, VisibilityRange, PatchCount, QuarterPatchCount, MaxLightCount);
+			ProcessTerrainNode(Args, X, Z, TopLOD, PatchCount, QuarterPatchCount, MaxLightCount);
 
 	if (!PatchCount && !QuarterPatchCount) return;
 

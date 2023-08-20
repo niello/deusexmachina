@@ -65,7 +65,7 @@ protected:
 		const CCDLODData*		pCDLOD;
 		const CRenderContext*	pRenderContext;
 		CPatchInstance*			pInstances;
-		float*					pMorphConsts;
+		CTerrain*				pTerrain;
 		UPTR					MaxInstanceCount;
 		float					AABBMinX;
 		float					AABBMinZ;
@@ -75,11 +75,9 @@ protected:
 		U8						LightCount;
 	};
 
-	PSampler								HeightMapSampler;
-	CPatchInstance*							pInstances = nullptr;
-	U32								        MaxInstanceCount = 0;	//???where to define? in a phase? or some setting? or move to CView with a VB?
-	float                                   VisibilityRange = 1000.f;
-	float                                   MorphStartRatio = 0.7f;
+	PSampler HeightMapSampler;
+	CPatchInstance* pInstances = nullptr;
+	U32 MaxInstanceCount = 0;	//???where to define? in a phase? or some setting? or move to CView with a VB?
 
 	const CMaterial* pCurrMaterial = nullptr;
 	const CTechnique* pCurrTech = nullptr;
@@ -96,7 +94,7 @@ protected:
 	CShaderConstantParam ConstLightCount;
 	CShaderConstantParam ConstLightIndices;
 
-	static ENodeStatus	ProcessTerrainNode(const CProcessTerrainNodeArgs& Args, U32 X, U32 Z, U32 LOD, float LODRange, U32& PatchCount, U32& QPatchCount, U8& MaxLightCount, EClipStatus Clip = EClipStatus::Clipped);
+	static ENodeStatus	ProcessTerrainNode(const CProcessTerrainNodeArgs& Args, U32 X, U32 Z, U32 LOD, U32& PatchCount, U32& QPatchCount, U8& MaxLightCount, EClipStatus Clip = EClipStatus::Clipped);
 	static bool			CheckNodeSphereIntersection(const CLightTestArgs& Args, const sphere& Sphere, U32 X, U32 Z, U32 LOD, UPTR& AABBTestCounter);
 	static bool			CheckNodeFrustumIntersection(const CLightTestArgs& Args, const matrix44& Frustum, U32 X, U32 Z, U32 LOD, UPTR& AABBTestCounter);
 	static void			FillNodeLightIndices(const CProcessTerrainNodeArgs& Args, CPatchInstance& Patch, const CAABB& NodeAABB, U8& MaxLightCount);

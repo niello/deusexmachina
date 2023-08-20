@@ -50,7 +50,7 @@ Render::PRenderable CSkyboxAttribute::CreateRenderable() const
 //---------------------------------------------------------------------
 
 // NB: LOD is not used for skyboxes
-void CSkyboxAttribute::UpdateRenderable(CView& View, Render::IRenderable& Renderable) const
+void CSkyboxAttribute::UpdateRenderable(CView& View, Render::IRenderable& Renderable, bool /*ViewProjChanged*/) const
 {
 	auto pSkybox = static_cast<Render::CSkybox*>(&Renderable);
 

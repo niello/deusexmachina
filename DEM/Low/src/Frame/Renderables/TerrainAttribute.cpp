@@ -1,6 +1,7 @@
 #include "TerrainAttribute.h"
 #include <Frame/View.h>
 #include <Frame/GraphicsResourceManager.h>
+#include <Frame/CameraAttribute.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Render/GPUDriver.h>
@@ -11,6 +12,7 @@
 #include <Render/Material.h>
 #include <Render/Effect.h>
 #include <Render/Texture.h>
+#include <Scene/SceneNode.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -84,7 +86,7 @@ Render::PRenderable CTerrainAttribute::CreateRenderable() const
 }
 //---------------------------------------------------------------------
 
-void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Renderable) const
+void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Renderable, bool ViewProjChanged) const
 {
 	auto& ResMgr = *View.GetGraphicsManager();
 
@@ -130,8 +132,10 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 	}
 
 	// Initialize CDLOD data and meshes
+	bool DataChanged = false;
 	if (!_CDLODData)
 	{
+		DataChanged = true;
 		pTerrain->CDLODData = nullptr;
 		pTerrain->PatchMesh = nullptr;
 		pTerrain->QuarterPatchMesh = nullptr;
@@ -139,6 +143,7 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 	}
 	else if (!pTerrain->CDLODData || pTerrain->CDLODData != _CDLODData)
 	{
+		DataChanged = true;
 		pTerrain->CDLODData = _CDLODData;
 
 		const auto PatchSize = _CDLODData->GetPatchSize();
@@ -166,34 +171,60 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 		pTerrain->GeometryKey = pTerrain->PatchMesh->GetSortingKey();
 	}
 
-	// calc morph constants and store in pTerrain
-	//!!!also store LOD distance ranges, and instead of float[] make struct[] with better names for consts!
-	//!!!PERF: may recalculate only when LODCount or VisibilityRange changes!
-	//MorphStartRatio - to terrain settings, where to define? in renderer or ...?
-	/*
-	const U32 LODCount = pTerrain->GetCDLODData()->GetLODCount();
-	float MorphStart = 0.f;
-	float CurrVisRange = VisibilityRange / (float)(1 << (LODCount - 1));
-	float MorphConsts[2 * MAX_LOD_COUNT];
-	float* pCurrMorphConst = MorphConsts;
-	for (U32 j = 0; j < std::min(LODCount, MAX_LOD_COUNT); ++j)
+	// Precalculate LOD morphing constants
+	const float VisibilityRange = View.GetCamera()->GetFarPlane();
+	if (DataChanged || pTerrain->VisibilityRange != VisibilityRange)
 	{
-		float MorphEnd = j ? CurrVisRange : CurrVisRange * 0.9f;
-		MorphStart = MorphStart + (MorphEnd - MorphStart) * MorphStartRatio;
-		MorphEnd = n_lerp(MorphEnd, MorphStart, 0.01f);
-		float MorphConst2 = 1.0f / (MorphEnd - MorphStart);
-		*pCurrMorphConst++ = MorphEnd * MorphConst2;
-		*pCurrMorphConst++ = MorphConst2;
-		CurrVisRange *= 2.f;
-	}
-	*/
+		pTerrain->VisibilityRange = VisibilityRange;
 
-	//!!!TODO: if camera or heightmap or transform changed, update visible patches!
+		//???!!!to terrain settings or to renderer settings or to view params!?
+		//!!!clamp to range 0.5f .. 0.95f!
+		constexpr float MorphStartRatio = 0.7f;
+
+		const U32 LODCount = pTerrain->GetCDLODData()->GetLODCount();
+		pTerrain->LODParams.resize(LODCount);
+		pTerrain->LODParams.shrink_to_fit();
+		if (LODCount)
+		{
+			float MorphStart = 0.f;
+			float LODRange = VisibilityRange / static_cast<float>(1 << (LODCount - 1));
+			for (U32 LOD = 0; LOD < LODCount; ++LOD, LODRange *= 2.f)
+			{
+				auto& LODParams = pTerrain->LODParams[LOD];
+
+				// Hack, see original CDLOD code. LOD 0 range is 0.9 of what is expected.
+				float MorphEnd = LOD ? LODRange : LODRange * 0.9f;
+				MorphStart = MorphStart + (MorphEnd - MorphStart) * MorphStartRatio;
+				MorphEnd = n_lerp(MorphEnd, MorphStart, 0.01f);
+				LODParams.Range = MorphEnd;
+				LODParams.Morph2 = 1.0f / (MorphEnd - MorphStart);
+				LODParams.Morph1 = MorphEnd * LODParams.Morph2;
+			}
+		}
+	}
+
+	// Update a list of visible patches
+	if (DataChanged || ViewProjChanged || pTerrain->PatchesTransformVersion != _pNode->GetTransformVersion())
+	{
+		pTerrain->PatchesTransformVersion = _pNode->GetTransformVersion();
+
+		//???set all lights dirty? or update now?
+		//could merge / divide existing nodes and/or use finest LOD light grid
+
+		//???store main info about patches in one buffer, lights in another?!
+		// - will save buffer refreshes when only light data changes
+		// - depth will bind only main data, no lights
+		// - more data will fit into constant buffers w/out structured buffers
+		// - maybe better layout
+	}
 }
 //---------------------------------------------------------------------
 
 void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Renderable, const CObjectLightIntersection* pHead) const
 {
+	//???store finest LOD light grid in CTerrainAttribute? scene data, not view! Use in all views then!
+	//!!!need a method without IRenderable for that?! not to repeat this scene based processing per view!
+
 	// NB: tfm change can be important for terrain, as light may be still intersecting with the terrain in a whole but now affecting other patches.
 	// Terrain could also remember light's bounds version? Make sure we call UpdateLightList for terrain at any tfm change.
 

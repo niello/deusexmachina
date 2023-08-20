@@ -36,7 +36,7 @@ protected:
 public:
 
 	virtual Render::PRenderable CreateRenderable() const = 0;
-	virtual void                UpdateRenderable(CView& View, Render::IRenderable& Renderable) const = 0;
+	virtual void                UpdateRenderable(CView& View, Render::IRenderable& Renderable, bool ViewProjChanged) const = 0;
 	virtual void                UpdateLightList(CView& View, Render::IRenderable& Renderable, const CObjectLightIntersection* pHead) const = 0;
 	virtual bool                GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
 	bool                        GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const;
