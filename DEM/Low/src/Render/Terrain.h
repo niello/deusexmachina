@@ -17,6 +17,43 @@ class CTerrain: public IRenderable
 {
 	FACTORY_CLASS_DECL;
 
+protected:
+
+	struct alignas(16) CPatchInstance
+	{
+		// Vertex shader instance data
+		float ScaleOffset[4];
+		float MorphConsts[2];
+		float _PAD1[2]; // To preserve align-16 of PS data
+	};
+
+	// Pixel shader instance data
+	//!!!can store as a simple unstructured buffer of indices!
+	//I16 LightIndex[INSTANCE_MAX_LIGHT_COUNT]; // + INSTANCE_PADDING_SIZE];
+
+	enum class ENodeStatus
+	{
+		Invisible,
+		NotInLOD,
+		Processed
+	};
+
+	struct CNodeProcessingContext
+	{
+		vector3	 MainCameraPos;
+		matrix44 ViewProjection;
+		float    AABBMinX;
+		float    AABBMinZ;
+		float    ScaleBaseX;
+		float    ScaleBaseZ;
+	};
+
+	//!!!???can fill one GPU buffer?! use offset to render first ones, then others.
+	std::vector<CPatchInstance> _Patches;
+	std::vector<CPatchInstance> _QuarterPatches;
+
+	ENodeStatus ProcessTerrainNode(const CNodeProcessingContext& Ctx, U32 X, U32 Z, U32 LOD, EClipStatus Clip);
+
 public:
 
 	struct CLODParams
@@ -43,9 +80,13 @@ public:
 	CTerrain();
 	virtual ~CTerrain() override;
 
+	void UpdatePatches(const vector3& MainCameraPos, const matrix44& ViewProjection);
+
 	CCDLODData*         GetCDLODData() const { return CDLODData.Get(); }
 	CMaterial*          GetMaterial() const { return Material.Get(); }
 	CTexture*           GetHeightMap() const { return HeightMap.Get(); }
+	const auto&         GetPatches() const { return _Patches; }
+	const auto&         GetQuarterPatches() const { return _QuarterPatches; }
 	CMesh*              GetPatchMesh() const { return PatchMesh.Get(); }
 	CMesh*              GetQuarterPatchMesh() const { return QuarterPatchMesh.Get(); }
 	float               GetInvSplatSizeX() const { return InvSplatSizeX; }

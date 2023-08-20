@@ -149,7 +149,7 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 		const auto PatchSize = _CDLODData->GetPatchSize();
 		//if (!Math::IsPow2(PatchSize) || PatchSize < 4) FAIL;
 
-		//!!!TODO: store both patches in one mesh, only use different primitive groups (can vary only indices!)
+		//!!!TODO: store both patches in one mesh, only use different primitive groups (can vary only indices! whole indices and quarter indices)
 		CString PatchName;
 		PatchName.Format("#Mesh_Patch%dx%d", PatchSize, PatchSize);
 		CStrID MeshUID(PatchName);
@@ -173,7 +173,8 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 
 	// Precalculate LOD morphing constants
 	const float VisibilityRange = View.GetCamera()->GetFarPlane();
-	if (DataChanged || pTerrain->VisibilityRange != VisibilityRange)
+	const bool MorphChanged = (DataChanged || pTerrain->VisibilityRange != VisibilityRange);
+	if (MorphChanged)
 	{
 		pTerrain->VisibilityRange = VisibilityRange;
 
@@ -206,9 +207,10 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 	}
 
 	// Update a list of visible patches
-	if (DataChanged || ViewProjChanged || pTerrain->PatchesTransformVersion != _pNode->GetTransformVersion())
+	if (MorphChanged || ViewProjChanged || pTerrain->PatchesTransformVersion != _pNode->GetTransformVersion())
 	{
 		pTerrain->PatchesTransformVersion = _pNode->GetTransformVersion();
+		pTerrain->UpdatePatches(View.GetCamera()->GetPosition(), View.GetCamera()->GetViewProjMatrix());
 
 		//???set all lights dirty? or update now?
 		//could merge / divide existing nodes and/or use finest LOD light grid
@@ -218,6 +220,7 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 		// - depth will bind only main data, no lights
 		// - more data will fit into constant buffers w/out structured buffers
 		// - maybe better layout
+		// - different shaders use it! VS / PS.
 	}
 }
 //---------------------------------------------------------------------

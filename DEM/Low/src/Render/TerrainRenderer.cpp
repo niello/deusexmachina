@@ -125,332 +125,6 @@ bool CTerrainRenderer::CheckNodeFrustumIntersection(const CLightTestArgs& Args, 
 }
 //---------------------------------------------------------------------
 
-void CTerrainRenderer::FillNodeLightIndices(const CProcessTerrainNodeArgs& Args, CPatchInstance& Patch, const CAABB& NodeAABB, U8& MaxLightCount)
-{
-	UPTR PatchLightCount = 0;
-
-	/*
-	n_assert_dbg(Args.pRenderContext->pLightIndices);
-
-	const CArray<U16>& LightIndices = *Args.pRenderContext->pLightIndices;
-	const CArray<CLightRecord>& Lights = *Args.pRenderContext->pLights;
-
-	CArray<U16>::CIterator ItIdx = LightIndices.IteratorAt(Args.LightIndexBase);
-	CArray<U16>::CIterator ItEnd = LightIndices.IteratorAt(Args.LightIndexBase + Args.LightCount);
-	for (; ItIdx != ItEnd; ++ItIdx)
-	{
-		const CLightRecord& LightRec = Lights[(*ItIdx)];
-		const CLight_OLD_DELETE* pLight = LightRec.pLight;
-		switch (pLight->Type)
-		{
-			case Light_Point:
-			{
-				//!!!???avoid object creation, rewrite functions so that testing against vector + float is possible!?
-				sphere LightBounds(LightRec.Transform.Translation(), pLight->GetRange());
-				if (LightBounds.GetClipStatus(NodeAABB) == EClipStatus::Outside) continue;
-				break;
-			}
-			case Light_Spot:
-			{
-				//!!!???PERF: test against sphere before?!
-				//???cache GlobalFrustum in a light record?
-				matrix44 LocalFrustum;
-				pLight->CalcLocalFrustum(LocalFrustum);
-				matrix44 GlobalFrustum;
-				LightRec.Transform.invert_simple(GlobalFrustum);
-				GlobalFrustum *= LocalFrustum;
-				if (NodeAABB.GetClipStatus(GlobalFrustum) == EClipStatus::Outside) continue;
-				break;
-			}
-		}
-
-		// Don't want to calculate priorities, just skip all remaining lights (for simplicity, may rework later)
-		if (PatchLightCount >= INSTANCE_MAX_LIGHT_COUNT) break;
-
-		if (!Args.pRenderContext->UsesGlobalLightBuffer)
-		{
-			NOT_IMPLEMENTED;
-			//!!!???what with batch-local indices?!
-		}
-
-		Patch.LightIndex[PatchLightCount] = LightRec.GPULightIndex;
-		++PatchLightCount;
-	}
-	*/
-
-	if (PatchLightCount < INSTANCE_MAX_LIGHT_COUNT)
-		Patch.LightIndex[PatchLightCount] = -1;
-
-	if (MaxLightCount < PatchLightCount)
-		MaxLightCount = PatchLightCount;
-}
-//---------------------------------------------------------------------
-
-//???how to handle terrain lighting in a forward pipeline? terrain is a tree of AABBs, can optimize intersections and detect region for each light!
-//!!!recalculation required only on viewer's position / look vector change!
-CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProcessTerrainNodeArgs& Args,
-																   U32 X, U32 Z, U32 LOD,
-																   U32& PatchCount, U32& QPatchCount,
-																   U8& MaxLightCount, EClipStatus Clip)
-{
-	const CCDLODData* pCDLOD = Args.pCDLOD;
-
-	I16 MinY, MaxY;
-	pCDLOD->GetMinMaxHeight(X, Z, LOD, MinY, MaxY);
-
-	// Node has no data, skip it completely
-	if (MaxY < MinY) return Node_Invisible;
-
-	const U32 NodeSize = pCDLOD->GetPatchSize() << LOD;
-	const float ScaleX = NodeSize * Args.ScaleBaseX;
-	const float ScaleZ = NodeSize * Args.ScaleBaseZ;
-	const float NodeMinX = Args.AABBMinX + X * ScaleX;
-	const float NodeMinZ = Args.AABBMinZ + Z * ScaleZ;
-
-	CAABB NodeAABB;
-	NodeAABB.Min.x = NodeMinX;
-	NodeAABB.Min.y = MinY * pCDLOD->GetVerticalScale();
-	NodeAABB.Min.z = NodeMinZ;
-	NodeAABB.Max.x = NodeMinX + ScaleX;
-	NodeAABB.Max.y = MaxY * pCDLOD->GetVerticalScale();
-	NodeAABB.Max.z = NodeMinZ + ScaleZ;
-
-	if (Clip == EClipStatus::Clipped)
-	{
-		// NB: Visibility is tested for the current camera, NOT always for the main
-		Clip = NodeAABB.GetClipStatus(Args.pRenderContext->ViewProjection);
-		if (Clip == EClipStatus::Outside) return Node_Invisible;
-	}
-
-	const auto& LODParams = Args.pTerrain->LODParams[LOD];
-
-	// NB: Always must check the main frame camera, even if some special camera is used for intermediate rendering
-	sphere LODSphere(Args.pRenderContext->CameraPosition, LODParams.Range);
-	if (LODSphere.GetClipStatus(NodeAABB) == EClipStatus::Outside) return Node_NotInLOD;
-
-	// Bits 0 to 3 - if set, add quarterpatch for child[0 .. 3]
-	U8 ChildFlags = 0;
-	enum
-	{
-		Child_TopLeft		= 0x01,
-		Child_TopRight		= 0x02,
-		Child_BottomLeft	= 0x04,
-		Child_BottomRight	= 0x08,
-		Child_All			= (Child_TopLeft | Child_TopRight | Child_BottomLeft | Child_BottomRight)
-	};
-
-	bool IsVisible;
-
-	if (LOD > 0)
-	{
-		IsVisible = false;
-
-		const U32 NextLOD = LOD - 1;
-
-		// NB: Always must check the main frame camera, even if some special camera is used for intermediate rendering
-		LODSphere.r = Args.pTerrain->LODParams[NextLOD].Range;
-		if (LODSphere.GetClipStatus(NodeAABB) == EClipStatus::Outside)
-		{
-			// Add the whole node to the current LOD
-			ChildFlags = Child_All;
-		}
-		else
-		{
-			const U32 XNext = X << 1;
-			const U32 ZNext = Z << 1;
-
-			ENodeStatus Status = ProcessTerrainNode(Args, XNext, ZNext, NextLOD, PatchCount, QPatchCount, MaxLightCount, Clip);
-			if (Status != Node_Invisible)
-			{
-				IsVisible = true;
-				if (Status == Node_NotInLOD) ChildFlags |= Child_TopLeft;
-			}
-
-			if (pCDLOD->HasNode(XNext + 1, ZNext, NextLOD))
-			{
-				Status = ProcessTerrainNode(Args, XNext + 1, ZNext, NextLOD, PatchCount, QPatchCount, MaxLightCount, Clip);
-				if (Status != Node_Invisible)
-				{
-					IsVisible = true;
-					if (Status == Node_NotInLOD) ChildFlags |= Child_TopRight;
-				}
-			}
-
-			if (pCDLOD->HasNode(XNext, ZNext + 1, NextLOD))
-			{
-				Status = ProcessTerrainNode(Args, XNext, ZNext + 1, NextLOD, PatchCount, QPatchCount, MaxLightCount, Clip);
-				if (Status != Node_Invisible)
-				{
-					IsVisible = true;
-					if (Status == Node_NotInLOD) ChildFlags |= Child_BottomLeft;
-				}
-			}
-
-			if (pCDLOD->HasNode(XNext + 1, ZNext + 1, NextLOD))
-			{
-				Status = ProcessTerrainNode(Args, XNext + 1, ZNext + 1, NextLOD, PatchCount, QPatchCount, MaxLightCount, Clip);
-				if (Status != Node_Invisible)
-				{
-					IsVisible = true;
-					if (Status == Node_NotInLOD) ChildFlags |= Child_BottomRight;
-				}
-			}
-		}
-
-		if (!ChildFlags) return IsVisible ? Node_Processed : Node_Invisible;
-	}
-	else
-	{
-		ChildFlags = Child_All;
-		IsVisible = true;
-	}
-
-	const bool LightingEnabled = true;// (Args.pRenderContext->pLights != nullptr);
-
-	if (ChildFlags == Child_All)
-	{
-		// Add whole patch
-		n_assert(PatchCount + QPatchCount < Args.MaxInstanceCount);
-		CPatchInstance& Patch = Args.pInstances[PatchCount];
-		Patch.ScaleOffset[0] = NodeAABB.Max.x - NodeAABB.Min.x;
-		Patch.ScaleOffset[1] = NodeAABB.Max.z - NodeAABB.Min.z;
-		Patch.ScaleOffset[2] = NodeAABB.Min.x;
-		Patch.ScaleOffset[3] = NodeAABB.Min.z;
-		Patch.MorphConsts[0] = LODParams.Morph1;
-		Patch.MorphConsts[1] = LODParams.Morph2;
-
-		if (LightingEnabled && INSTANCE_MAX_LIGHT_COUNT)
-			FillNodeLightIndices(Args, Patch, NodeAABB, MaxLightCount);
-
-		++PatchCount;
-	}
-	else
-	{
-		// Add quarterpatches
-
-		float NodeMinX = NodeAABB.Min.x;
-		float NodeMinZ = NodeAABB.Min.z;
-		float ScaleX = (NodeAABB.Max.x - NodeAABB.Min.x);
-		float ScaleZ = (NodeAABB.Max.z - NodeAABB.Min.z);
-		float HalfScaleX = ScaleX * 0.5f;
-		float HalfScaleZ = ScaleZ * 0.5f;
-
-		// For lighting. We don't request minmax Y for quarterpatches, but we could.
-		CAABB QuarterNodeAABB;
-		QuarterNodeAABB.Min.y = NodeAABB.Min.y;
-		QuarterNodeAABB.Max.y = NodeAABB.Max.y;
-
-		if (ChildFlags & Child_TopLeft)
-		{
-			n_assert(PatchCount + QPatchCount < Args.MaxInstanceCount);
-			CPatchInstance& Patch = Args.pInstances[Args.MaxInstanceCount - QPatchCount - 1];
-			Patch.ScaleOffset[0] = HalfScaleX;
-			Patch.ScaleOffset[1] = HalfScaleZ;
-			Patch.ScaleOffset[2] = NodeMinX;
-			Patch.ScaleOffset[3] = NodeMinZ;
-			Patch.MorphConsts[0] = LODParams.Morph1;
-			Patch.MorphConsts[1] = LODParams.Morph2;
-
-			if (LightingEnabled && INSTANCE_MAX_LIGHT_COUNT)
-			{
-				QuarterNodeAABB.Min.x = NodeMinX;
-				QuarterNodeAABB.Min.z = NodeMinZ;
-				QuarterNodeAABB.Max.x = NodeMinX + HalfScaleX;
-				QuarterNodeAABB.Max.z = NodeMinZ + HalfScaleZ;
-				FillNodeLightIndices(Args, Patch, QuarterNodeAABB, MaxLightCount);
-			}
-
-			++QPatchCount;
-		}
-
-		if (ChildFlags & Child_TopRight)
-		{
-			n_assert(PatchCount + QPatchCount < Args.MaxInstanceCount);
-			CPatchInstance& Patch = Args.pInstances[Args.MaxInstanceCount - QPatchCount - 1];
-			Patch.ScaleOffset[0] = HalfScaleX;
-			Patch.ScaleOffset[1] = HalfScaleZ;
-			Patch.ScaleOffset[2] = NodeMinX + HalfScaleX;
-			Patch.ScaleOffset[3] = NodeMinZ;
-			Patch.MorphConsts[0] = LODParams.Morph1;
-			Patch.MorphConsts[1] = LODParams.Morph2;
-
-			if (LightingEnabled && INSTANCE_MAX_LIGHT_COUNT)
-			{
-				QuarterNodeAABB.Min.x = NodeMinX + HalfScaleX;
-				QuarterNodeAABB.Min.z = NodeMinZ;
-				QuarterNodeAABB.Max.x = NodeMinX + ScaleX;
-				QuarterNodeAABB.Max.z = NodeMinZ + HalfScaleZ;
-				FillNodeLightIndices(Args, Patch, QuarterNodeAABB, MaxLightCount);
-			}
-
-			++QPatchCount;
-		}
-
-		if (ChildFlags & Child_BottomLeft)
-		{
-			n_assert(PatchCount + QPatchCount < Args.MaxInstanceCount);
-			CPatchInstance& Patch = Args.pInstances[Args.MaxInstanceCount - QPatchCount - 1];
-			Patch.ScaleOffset[0] = HalfScaleX;
-			Patch.ScaleOffset[1] = HalfScaleZ;
-			Patch.ScaleOffset[2] = NodeMinX;
-			Patch.ScaleOffset[3] = NodeMinZ + HalfScaleZ;
-			Patch.MorphConsts[0] = LODParams.Morph1;
-			Patch.MorphConsts[1] = LODParams.Morph2;
-
-			if (LightingEnabled && INSTANCE_MAX_LIGHT_COUNT)
-			{
-				QuarterNodeAABB.Min.x = NodeMinX;
-				QuarterNodeAABB.Min.z = NodeMinZ + HalfScaleZ;
-				QuarterNodeAABB.Max.x = NodeMinX + HalfScaleX;
-				QuarterNodeAABB.Max.z = NodeMinZ + ScaleZ;
-				FillNodeLightIndices(Args, Patch, QuarterNodeAABB, MaxLightCount);
-			}
-
-			++QPatchCount;
-		}
-
-		if (ChildFlags & Child_BottomRight)
-		{
-			n_assert(PatchCount + QPatchCount < Args.MaxInstanceCount);
-			CPatchInstance& Patch = Args.pInstances[Args.MaxInstanceCount - QPatchCount - 1];
-			Patch.ScaleOffset[0] = HalfScaleX;
-			Patch.ScaleOffset[1] = HalfScaleZ;
-			Patch.ScaleOffset[2] = NodeMinX + HalfScaleX;
-			Patch.ScaleOffset[3] = NodeMinZ + HalfScaleZ;
-			Patch.MorphConsts[0] = LODParams.Morph1;
-			Patch.MorphConsts[1] = LODParams.Morph2;
-
-			if (LightingEnabled && INSTANCE_MAX_LIGHT_COUNT)
-			{
-				QuarterNodeAABB.Min.x = NodeMinX + HalfScaleX;
-				QuarterNodeAABB.Min.z = NodeMinZ + HalfScaleZ;
-				QuarterNodeAABB.Max.x = NodeMinX + ScaleX;
-				QuarterNodeAABB.Max.z = NodeMinZ + ScaleZ;
-				FillNodeLightIndices(Args, Patch, QuarterNodeAABB, MaxLightCount);
-			}
-
-			++QPatchCount;
-		}
-	}
-
-// Morphing artifacts test (from the original CDLOD code)
-/*
-#ifdef _DEBUG
-	if (LOD < Terrain.LODParams.size() - 1)
-	{
-		//!!!Always must check the Main camera!
-		float MaxDistToCameraSq = NodeAABB.MaxDistFromPointSq(RenderSrv->GetCameraPosition());
-		float MorphStart = MorphConsts[LOD + 1].Start;
-		if (MaxDistToCameraSq > MorphStart * MorphStart)
-			Sys::Error("Visibility distance is too small!");
-	}
-#endif
-*/
-
-	return Node_Processed;
-}
-//---------------------------------------------------------------------
-
 bool CTerrainRenderer::BeginRange(const CRenderContext& Context)
 {
 	// Skip terrain rendering. Can fall back to manual 4-sample filtering in a shader instead.
@@ -481,65 +155,15 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 	if (!Terrain.GetPatchMesh() || !Terrain.GetQuarterPatchMesh() || !Terrain.GetCDLODData()) return;
 
-	CGPUDriver& GPU = *Context.pGPU;
-
-	const bool LightingEnabled = true; // (Context.pLights != nullptr); //!!!get from material - if has light idx/count constants, then enabled! How with VB instancing?
-	UPTR TechLightCount;
+	if (Terrain.GetPatches().empty() && Terrain.GetQuarterPatches().empty()) return;
 
 	static const CStrID sidWorldMatrix("WorldMatrix");
 	static const CStrID sidLightCount("LightCount");
 	static const CStrID sidLightIndices("LightIndices");
-	const I32 EMPTY_LIGHT_INDEX = -1;
-
-	const CCDLODData& CDLOD = *Terrain.GetCDLODData();
-
-	// Fill instance data with patches and quarter-patches to render
-
-	CAABB AABB = CDLOD.GetAABB();
-	AABB.Transform(Terrain.Transform);
-	float AABBMinX = AABB.Min.x;
-	float AABBMinZ = AABB.Min.z;
-	float AABBSizeX = AABB.Max.x - AABBMinX;
-	float AABBSizeZ = AABB.Max.z - AABBMinZ;
-
-	CProcessTerrainNodeArgs Args;
-	Args.pCDLOD = &CDLOD;
-	Args.pInstances = pInstances;
-	Args.pTerrain = &Terrain;
-	Args.pRenderContext = &Context;
-	Args.MaxInstanceCount = MaxInstanceCount;
-	Args.AABBMinX = AABBMinX;
-	Args.AABBMinZ = AABBMinZ;
-	Args.ScaleBaseX = AABBSizeX / (float)(CDLOD.GetHeightMapWidth() - 1);
-	Args.ScaleBaseZ = AABBSizeZ / (float)(CDLOD.GetHeightMapHeight() - 1);
-	Args.LightIndexBase = 0;// Terrain.LightIndexBase;
-	Args.LightCount = 0;// Terrain.LightCount;
-
-	//!!!???TODO: bake both patch and quarter-patch to one VB? can draw in one DIP? or at least will reduce state changes!
-	U32 PatchCount = 0;
-	U32 QuarterPatchCount = 0;
-	U8 MaxLightCount = 0;
-	const U32 TopPatchesW = CDLOD.GetTopPatchCountW();
-	const U32 TopPatchesH = CDLOD.GetTopPatchCountH();
-	const U32 TopLOD = CDLOD.GetLODCount() - 1;
-	for (U32 Z = 0; Z < TopPatchesH; ++Z)
-		for (U32 X = 0; X < TopPatchesW; ++X)
-			ProcessTerrainNode(Args, X, Z, TopLOD, PatchCount, QuarterPatchCount, MaxLightCount);
-
-	if (!PatchCount && !QuarterPatchCount) return;
-
-	// Sort patches
-
-	// We sort by LOD (the more is scale, the coarser is LOD), and therefore we
-	// almost sort by distance to the camera, as LOD depends solely on it.
-	if (PatchCount)
-		std::sort(pInstances, pInstances + PatchCount, [](const CPatchInstance& a, const CPatchInstance& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
-	if (QuarterPatchCount)
-		std::sort(pInstances + MaxInstanceCount - QuarterPatchCount, pInstances + MaxInstanceCount, [](const CPatchInstance& a, const CPatchInstance& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
 
 	// Select tech for the maximal light count used per-patch
 
-	UPTR LightCount = MaxLightCount;
+	UPTR LightCount = 0;
 	const CTechnique* pTech = Context.pShaderTechCache[Terrain.ShaderTechIndex];
 	const auto& Passes = pTech->GetPasses(LightCount);
 	if (Passes.empty()) return;
@@ -556,6 +180,8 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 	// Pass tech params to GPU
 
+	CGPUDriver& GPU = *Context.pGPU;
+	UPTR TechLightCount;
 	if (pTech != pCurrTech)
 	{
 		pCurrTech = pTech;
@@ -570,14 +196,13 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		ResourceHeightMap = ParamTable.GetResource(CStrID("HeightMapVS"));
 
 		TechLightCount = 0;
-		if (LightingEnabled && ConstInstanceDataPS)
+		if (ConstInstanceDataPS)
 		{
 			ConstLightIndices = ConstInstanceDataPS[0][sidLightIndices];
 			TechLightCount = ConstLightIndices.GetTotalComponentCount();
 		}
 
-		auto pVSLinearSampler = ParamTable.GetSampler(CStrID("VSLinearSampler"));
-		if (pVSLinearSampler)
+		if (auto pVSLinearSampler = ParamTable.GetSampler(CStrID("VSLinearSampler")))
 			pVSLinearSampler->Apply(GPU, HeightMapSampler.Get());
 	}
 
@@ -585,6 +210,8 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		ResourceHeightMap->Apply(GPU, Terrain.GetHeightMap());
 
 	CShaderParamStorage PerInstance(pTech->GetParamTable(), GPU);
+
+	const CCDLODData& CDLOD = *Terrain.GetCDLODData();
 
 	if (ConstVSCDLODParams)
 	{
@@ -598,6 +225,15 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			float TexelSize[2];
 			//float TextureSize[2]; // For manual bilinear filtering in VS
 		} CDLODParams;
+
+		// Fill instance data with patches and quarter-patches to render
+
+		CAABB AABB = CDLOD.GetAABB();
+		AABB.Transform(Terrain.Transform);
+		float AABBMinX = AABB.Min.x;
+		float AABBMinZ = AABB.Min.z;
+		float AABBSizeX = AABB.Max.x - AABBMinX;
+		float AABBSizeZ = AABB.Max.z - AABBMinZ;
 
 		CDLODParams.WorldToHM[0] = 1.f / AABBSizeX;
 		CDLODParams.WorldToHM[1] = 1.f / AABBSizeZ;
@@ -626,19 +262,17 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		n_assert_dbg(MaxInstanceCountConst > 1);
 
 		//!!!implement looping if instance buffer is too small!
-		n_assert_dbg(MaxInstanceCountConst >= (PatchCount + QuarterPatchCount));
+		n_assert_dbg(MaxInstanceCountConst >= (Terrain.GetPatches().size() + Terrain.GetQuarterPatches().size()));
 
-		const bool UploadLightInfo = LightingEnabled && ConstInstanceDataPS && TechLightCount;
+		const bool UploadLightInfo = ConstInstanceDataPS && TechLightCount;
 		U32 AvailableLightCount = (LightCount == 0) ? TechLightCount : std::min(LightCount, TechLightCount);
 		if (AvailableLightCount > INSTANCE_MAX_LIGHT_COUNT) AvailableLightCount = INSTANCE_MAX_LIGHT_COUNT;
 
 		//???PERF: optimize uploading? use paddings to maintain align16?
 		//???PERF: use 2 different CPatchInstance structures for stream and const instancing?
 		UPTR InstanceCount = 0;
-		for (UPTR PatchIdx = 0; PatchIdx < PatchCount; ++PatchIdx, ++InstanceCount)
+		for (const auto& CurrPatch : Terrain.GetPatches())
 		{
-			const CPatchInstance& CurrPatch = pInstances[PatchIdx];
-
 			// Setup instance patch constants
 
 			PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], &CurrPatch, 6 * sizeof(float));
@@ -649,34 +283,14 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			{
 				CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
 				CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
-
-				U32 InstLightIdx;
-				for (InstLightIdx = 0; InstLightIdx < AvailableLightCount; ++InstLightIdx)
-				{
-					I32 CurrGPUIdx = CurrPatch.LightIndex[InstLightIdx];
-					if (CurrGPUIdx < 0) break;
-					PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), CurrGPUIdx);
-				}
-
-				if (LightCount)
-				{
-					// If tech is fixed-light-count, fill the first unused light index with the special value
-					if (InstLightIdx < TechLightCount)
-						PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), EMPTY_LIGHT_INDEX);
-				}
-				else
-				{
-					// If tech is variable-light-count, set light count explicitly
-					PerInstance.SetUInt(CurrInstanceDataPS[sidLightCount], InstLightIdx);
-				}
+				PerInstance.SetInt(CurrLightIndices.GetComponent(0), -1);
 			}
+
+			++InstanceCount;
 		}
 
-		const CPatchInstance* pQInstances = pInstances + MaxInstanceCount - QuarterPatchCount;
-		for (UPTR PatchIdx = 0; PatchIdx < QuarterPatchCount; ++PatchIdx, ++InstanceCount)
+		for (const auto& CurrPatch : Terrain.GetQuarterPatches())
 		{
-			const CPatchInstance& CurrPatch = pQInstances[PatchIdx];
-
 			// Setup instance patch constants
 
 			PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], &CurrPatch, 6 * sizeof(float));
@@ -687,27 +301,10 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			{
 				CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
 				CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
-
-				U32 InstLightIdx;
-				for (InstLightIdx = 0; InstLightIdx < AvailableLightCount; ++InstLightIdx)
-				{
-					I32 CurrGPUIdx = CurrPatch.LightIndex[InstLightIdx];
-					if (CurrGPUIdx < 0) break;
-					PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), CurrGPUIdx);
-				}
-
-				if (LightCount)
-				{
-					// If tech is fixed-light-count, fill the first unused light index with the special value
-					if (InstLightIdx < TechLightCount)
-						PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), EMPTY_LIGHT_INDEX);
-				}
-				else
-				{
-					// If tech is variable-light-count, set light count explicitly
-					PerInstance.SetUInt(CurrInstanceDataPS[sidLightCount], InstLightIdx);
-				}
+				PerInstance.SetInt(CurrLightIndices.GetComponent(0), -1);
 			}
+
+			++InstanceCount;
 		}
 	}
 
@@ -722,7 +319,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 	// Render patches //!!!may collect patches of different CTerrains if material is the same and instance buffer is big enough!
 
-	if (PatchCount)
+	if (!Terrain.GetPatches().empty())
 	{
 		if (ConstGridConsts)
 		{
@@ -743,11 +340,11 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		for (const auto& Pass : Passes)
 		{
 			GPU.SetRenderState(Pass);
-			GPU.DrawInstanced(*pGroup, PatchCount);
+			GPU.DrawInstanced(*pGroup, Terrain.GetPatches().size());
 		}
 	}
 
-	if (QuarterPatchCount)
+	if (!Terrain.GetQuarterPatches().empty())
 	{
 		if (ConstGridConsts)
 		{
@@ -757,7 +354,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			PerInstance.SetRawConstant(ConstGridConsts, &GridConsts, sizeof(GridConsts));
 		}
 
-		PerInstance.SetUInt(ConstFirstInstanceIndex, PatchCount);
+		PerInstance.SetUInt(ConstFirstInstanceIndex, Terrain.GetPatches().size());
 
 		PerInstance.Apply();
 
@@ -773,7 +370,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		for (const auto& Pass : Passes)
 		{
 			GPU.SetRenderState(Pass);
-			GPU.DrawInstanced(*pGroup, QuarterPatchCount);
+			GPU.DrawInstanced(*pGroup, Terrain.GetQuarterPatches().size());
 		}
 	}
 }
