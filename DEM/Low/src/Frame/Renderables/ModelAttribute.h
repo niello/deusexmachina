@@ -34,6 +34,8 @@ public:
 	virtual Render::PRenderable   CreateRenderable() const override;
 	virtual void                  UpdateRenderable(CView& View, Render::IRenderable& Renderable, bool ViewProjChanged) const override;
 	virtual void                  UpdateLightList(CView& View, Render::IRenderable& Renderable, const CObjectLightIntersection* pHead) const override;
+	virtual void                  OnLightIntersectionsUpdated() override {}
+	virtual U8                    GetLightTrackingFlags() const override { return TrackLightContactChanges; }
 	virtual bool                  GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const override;
 };
 

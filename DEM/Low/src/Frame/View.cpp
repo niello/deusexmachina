@@ -501,8 +501,17 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 		{
 			_pScene->UpdateObjectLightIntersections(*pAttr);
 
-			if (Record.ObjectLightIntersectionsVersion != pRenderable->ObjectLightIntersectionsVersion)
+			// UpdateLights was already executed, and now all light contacts for this renderable are finally actual
+			if (pRenderable->ObjectLightIntersectionsVersion != Record.ObjectLightIntersectionsVersion)
+			{
+				// Update scene level light state specific for the renderable. E.g. terrain caches lights per patch.
+				// Currently the renderable itself should track if actual changes happened and the cache must be updated.
+				// NB: if it fails to check properly, each view will redundantly trigger scene level cache update!
+				pAttr->OnLightIntersectionsUpdated();
+
 				pAttr->UpdateLightList(*this, *pRenderable, Record.pObjectLightIntersections);
+				pRenderable->ObjectLightIntersectionsVersion = Record.ObjectLightIntersectionsVersion;
+			}
 		}
 	}
 }

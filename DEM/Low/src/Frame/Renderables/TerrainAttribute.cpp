@@ -2,6 +2,7 @@
 #include <Frame/View.h>
 #include <Frame/GraphicsResourceManager.h>
 #include <Frame/CameraAttribute.h>
+#include <Frame/LightAttribute.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Render/GPUDriver.h>
@@ -247,11 +248,69 @@ void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Render
 }
 //---------------------------------------------------------------------
 
+//!!!need to detect if light moved OR renderable itself moved! In both cases must update lights in a quadtree!
+void CTerrainAttribute::OnLightIntersectionsUpdated()
+{
+	// Terrain is too big to process all intersecting lights on the whole surface. Here is additional processing
+	// on the scene level to detect affected region for each light. This data is then used by all views.
+	const auto& Record = GetSceneHandle()->second;
+	if (_LightCacheIntersectionsVersion == Record.ObjectLightIntersectionsVersion) return;
+	_LightCacheIntersectionsVersion = Record.ObjectLightIntersectionsVersion;
+
+	const bool TerrainMoved = (_LightCacheBoundsVersion != Record.BoundsVersion);
+	_LightCacheBoundsVersion = Record.BoundsVersion;
+
+	// Sync sorted light list from intersections to renderable. Uses manual specification of DEM::Algo::SortedUnion.
+	auto It = _Lights.begin();
+	const CObjectLightIntersection* pCurrIsect = Record.pObjectLightIntersections;
+	while ((It != _Lights.cend()) || pCurrIsect)
+	{
+		if (!pCurrIsect || ((It != _Lights.cend()) && It->first < pCurrIsect->pLightAttr->GetSceneHandle()->first))
+		{
+			It = _Lights.erase(It); //!!!TODO PERF: use shared node pool!
+
+			// actual changes exist only if the light had non-empty list of patches affected!
+			//???return bool from this function to indicate actual changes? but how to propagate to all views?!
+		}
+		else if ((It == _Lights.cend()) || (pCurrIsect && pCurrIsect->pLightAttr->GetSceneHandle()->first < It->first))
+		{
+			const auto UID = pCurrIsect->pLightAttr->GetSceneHandle()->first;
+
+			//_Lights.emplace_hint(It, UID, View.GetLight(UID)); //!!!TODO PERF: use shared node pool!
+
+			// update light affection zone. unchanged if the light doesn't touch any patch actually (e.g. it is above the ground)
+			//???return bool from this function to indicate actual changes? but how to propagate to all views?!
+
+			pCurrIsect = pCurrIsect->pNextLight;
+		}
+		else // equal
+		{
+			if (TerrainMoved || It->second.BoundsVersion != pCurrIsect->LightBoundsVersion)
+			{
+				// update light affection zone, note that it may remain the same! can avoid resetting values in views then?!
+				//???return bool from this function to indicate actual changes? but how to propagate to all views?!
+			}
+
+			++It;
+			pCurrIsect = pCurrIsect->pNextLight;
+		}
+	}
+}
+//---------------------------------------------------------------------
+
 bool CTerrainAttribute::GetLocalAABB(CAABB& OutBox, UPTR LOD) const
 {
 	if (!_CDLODData) FAIL;
 	OutBox = _CDLODData->GetAABB();
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CTerrainAttribute::OnActivityChanged(bool Active)
+{
+	// Invalidate the light cache as soon as the scene stops updating the terrain
+	if (!Active) _Lights.clear();
+	CRenderableAttribute::OnActivityChanged(Active);
 }
 //---------------------------------------------------------------------
 

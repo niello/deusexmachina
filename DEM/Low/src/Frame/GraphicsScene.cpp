@@ -409,7 +409,8 @@ void CGraphicsScene::RemoveLight(HRecord Handle)
 		*pIntersection->ppPrevLightNext = pNextLight;
 
 		// Notify the current renderable that its light intersection list have changed
-		++pIntersection->pRenderableAttr->GetSceneHandle()->second.ObjectLightIntersectionsVersion;
+		if (pIntersection->pRenderableAttr->GetLightTrackingFlags() & CRenderableAttribute::TrackLightContactChanges)
+			++pIntersection->pRenderableAttr->GetSceneHandle()->second.ObjectLightIntersectionsVersion;
 
 		auto pNextIntersection = pIntersection->pNextRenderable;
 		_IntersectionPool.Destroy(pIntersection);
@@ -596,6 +597,8 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 {
 	const auto RenderableUID = RenderableAttr.GetSceneHandle()->first;
 	auto& RenderableRecord = RenderableAttr.GetSceneHandle()->second;
+
+	// Only light tracking objects with valid non-infinite bounds are expected here
 	n_assert_dbg(RenderableRecord.TrackObjectLightIntersections && RenderableRecord.BoundsVersion);
 
 	// Remember the last updated bounds, so that different views will not trigger redundant updates in a shared scene
@@ -608,6 +611,8 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 	//???how to handle not sorted collection, e.g. data from octree query?
 	//???query to vector (stored in class to avoid per frame allocations) and sort pefore processing? Will O(query+sort) be better than O(bruteforce)?
 	//???how UE avoids recreating already existing links? can't find. does it erase the proxy and then refill links when something changes?
+
+	const auto TrackingFlags = static_cast<CRenderableAttribute*>(RenderableRecord.pAttr)->GetLightTrackingFlags();
 
 	// An adapted version of DEM::Algo::SortedUnion for syncing with CObjectLightIntersection. Both collections are sorted by UID.
 	// The logic is simplified in comparison with original SortedUnion because we guarantee that no intersections exist for removed objects and lights.
@@ -658,7 +663,18 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 
 				AttachObjectLightIntersection(pMatchingIntersection, ppLightInsertionSlot, ppRenderableInsertionSlot);
 				ppLightInsertionSlot = &pMatchingIntersection->pNextLight;
-				++RenderableRecord.ObjectLightIntersectionsVersion;
+				if (TrackingFlags & CRenderableAttribute::TrackLightContactChanges)
+					++RenderableRecord.ObjectLightIntersectionsVersion;
+			}
+			else
+			{
+				// Track relative movement of the contacting light if the renderable wants it (e.g. terrain does)
+				if ((TrackingFlags & CRenderableAttribute::TrackLightRelativeMovement) &&
+					(pMatchingIntersection->LightBoundsVersion != LightRecord.BoundsVersion ||
+					 pMatchingIntersection->RenderableBoundsVersion != RenderableRecord.BoundsVersion))
+				{
+					++RenderableRecord.ObjectLightIntersectionsVersion;
+				}
 			}
 
 			pMatchingIntersection->LightBoundsVersion = LightRecord.BoundsVersion;
@@ -668,7 +684,8 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 		{
 			DetachObjectLightIntersection(pMatchingIntersection);
 			_IntersectionPool.Destroy(pMatchingIntersection);
-			++RenderableRecord.ObjectLightIntersectionsVersion;
+			if (TrackingFlags & CRenderableAttribute::TrackLightContactChanges)
+				++RenderableRecord.ObjectLightIntersectionsVersion;
 		}
 	}
 }
@@ -679,6 +696,8 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 {
 	const auto LightUID = LightAttr.GetSceneHandle()->first;
 	auto& LightRecord = LightAttr.GetSceneHandle()->second;
+
+	// Only trackable lights with valid non-infinite bounds are expected here
 	n_assert_dbg(LightRecord.TrackObjectLightIntersections && LightRecord.BoundsVersion);
 
 	// Remember the last updated bounds, so that different views will not trigger redundant updates in a shared scene
@@ -718,6 +737,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 		//!!!FIXME: if querying octree, there won't be objects with zero TrackObjectLightIntersections, so this condition won't be needed!
 		if (!RenderableRecord.TrackObjectLightIntersections) continue;
 
+		const auto TrackingFlags = static_cast<CRenderableAttribute*>(RenderableRecord.pAttr)->GetLightTrackingFlags();
 		const bool Intersects = static_cast<CLightAttribute*>(LightRecord.pAttr)->IntersectsWith(RenderableRecord.Sphere);
 		if (Intersects)
 		{
@@ -739,7 +759,18 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 
 				AttachObjectLightIntersection(pMatchingIntersection, ppLightInsertionSlot, ppRenderableInsertionSlot);
 				ppRenderableInsertionSlot = &pMatchingIntersection->pNextRenderable;
-				++RenderableRecord.ObjectLightIntersectionsVersion;
+				if (TrackingFlags & CRenderableAttribute::TrackLightContactChanges)
+					++RenderableRecord.ObjectLightIntersectionsVersion;
+			}
+			else
+			{
+				// Track relative movement of the contacting light if the renderable wants it (e.g. terrain does)
+				if ((TrackingFlags & CRenderableAttribute::TrackLightRelativeMovement) &&
+					(pMatchingIntersection->LightBoundsVersion != LightRecord.BoundsVersion ||
+					 pMatchingIntersection->RenderableBoundsVersion != RenderableRecord.BoundsVersion))
+				{
+					++RenderableRecord.ObjectLightIntersectionsVersion;
+				}
 			}
 
 			pMatchingIntersection->LightBoundsVersion = LightRecord.BoundsVersion;
@@ -749,7 +780,8 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 		{
 			DetachObjectLightIntersection(pMatchingIntersection);
 			_IntersectionPool.Destroy(pMatchingIntersection);
-			++RenderableRecord.ObjectLightIntersectionsVersion;
+			if (TrackingFlags & CRenderableAttribute::TrackLightContactChanges)
+				++RenderableRecord.ObjectLightIntersectionsVersion;
 		}
 	}
 }

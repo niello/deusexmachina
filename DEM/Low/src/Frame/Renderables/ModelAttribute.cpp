@@ -170,12 +170,12 @@ void CModelAttribute::UpdateLightList(CView& View, Render::IRenderable& Renderab
 	{
 		if (!pCurrIsect || ((It != pModel->Lights.cend()) && It->first < pCurrIsect->pLightAttr->GetSceneHandle()->first))
 		{
-			It = pModel->Lights.erase(It); //!!!TODO PERF: use shared node pool!
+			It = pModel->Lights.erase(It); //!!!TODO PERF: use shared node pool, one for all models!
 		}
 		else if ((It == pModel->Lights.cend()) || (pCurrIsect && pCurrIsect->pLightAttr->GetSceneHandle()->first < It->first))
 		{
 			const auto UID = pCurrIsect->pLightAttr->GetSceneHandle()->first;
-			pModel->Lights.emplace_hint(It, UID, View.GetLight(UID)); //!!!TODO PERF: use shared node pool!
+			pModel->Lights.emplace_hint(It, UID, View.GetLight(UID)); //!!!TODO PERF: use shared node pool, one for all models!
 
 			pCurrIsect = pCurrIsect->pNextLight;
 		}

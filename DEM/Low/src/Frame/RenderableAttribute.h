@@ -35,9 +35,17 @@ protected:
 
 public:
 
+	enum : U8
+	{
+		TrackLightContactChanges = 0x01,  // Renderable should track lights making or breaking the contact
+		TrackLightRelativeMovement = 0x02 // Renderable should track contacting lights changing their transformation relative to it
+	};
+
 	virtual Render::PRenderable CreateRenderable() const = 0;
 	virtual void                UpdateRenderable(CView& View, Render::IRenderable& Renderable, bool ViewProjChanged) const = 0;
 	virtual void                UpdateLightList(CView& View, Render::IRenderable& Renderable, const CObjectLightIntersection* pHead) const = 0;
+	virtual void                OnLightIntersectionsUpdated() = 0;
+	virtual U8                  GetLightTrackingFlags() const = 0;
 	virtual bool                GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
 	bool                        GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const;
 	void                        UpdateInGraphicsScene(CGraphicsScene& Scene);
