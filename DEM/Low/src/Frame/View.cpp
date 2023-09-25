@@ -491,6 +491,7 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 		// TODO: for pairs of static object and static light might use lightmapping or other optimizations. Exploit physics lib's collision?
 		// TODO: _IsForwardLighting OR shadows / alpha etc, what needs intersections in deferred lighting
 		// TODO: don't search for intersection for unlit materials if not needed for shadow
+		// TODO: check pAttr->GetLightTrackingFlags()? must be > 0, but this is always true now for nonzero BoundsVersion
 		const bool TrackObjectLightIntersections = pRenderable->IsVisible && Record.BoundsVersion && _RenderPath->_IsForwardLighting;
 		if (TrackObjectLightIntersections != pRenderable->TrackObjectLightIntersections)
 		{

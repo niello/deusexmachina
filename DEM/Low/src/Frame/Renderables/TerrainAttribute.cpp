@@ -228,8 +228,8 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 
 void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Renderable, const CObjectLightIntersection* pHead) const
 {
-	//???store finest LOD light grid in CTerrainAttribute? scene data, not view! Use in all views then!
-	//!!!need a method without IRenderable for that?! not to repeat this scene based processing per view!
+	//!!!can limit lighting to certain terrain patch LODs! don't process dynamic lights for huge far patches. Saves lots of work
+	//because big patches tend to intersect with very many lights.
 
 	// NB: tfm change can be important for terrain, as light may be still intersecting with the terrain in a whole but now affecting other patches.
 	// Terrain could also remember light's bounds version? Make sure we call UpdateLightList for terrain at any tfm change.
@@ -261,25 +261,24 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 	_LightCacheBoundsVersion = Record.BoundsVersion;
 
 	// Sync sorted light list from intersections to renderable. Uses manual specification of DEM::Algo::SortedUnion.
+	//bool Changed = false;
 	auto It = _Lights.begin();
 	const CObjectLightIntersection* pCurrIsect = Record.pObjectLightIntersections;
 	while ((It != _Lights.cend()) || pCurrIsect)
 	{
 		if (!pCurrIsect || ((It != _Lights.cend()) && It->first < pCurrIsect->pLightAttr->GetSceneHandle()->first))
-		{
+		{	
+			//Changed |= !It->second.Nodes.empty();
 			It = _Lights.erase(It); //!!!TODO PERF: use shared node pool!
-
-			// actual changes exist only if the light had non-empty list of patches affected!
-			//???return bool from this function to indicate actual changes? but how to propagate to all views?!
 		}
 		else if ((It == _Lights.cend()) || (pCurrIsect && pCurrIsect->pLightAttr->GetSceneHandle()->first < It->first))
 		{
 			const auto UID = pCurrIsect->pLightAttr->GetSceneHandle()->first;
 
-			//_Lights.emplace_hint(It, UID, View.GetLight(UID)); //!!!TODO PERF: use shared node pool!
+			auto& LightInfo = _Lights.emplace_hint(It, UID, CLightInfo{})->second; //!!!TODO PERF: use shared node pool!
 
 			// update light affection zone. unchanged if the light doesn't touch any patch actually (e.g. it is above the ground)
-			//???return bool from this function to indicate actual changes? but how to propagate to all views?!
+			// Changed |= !LightInfo.Nodes.empty();
 
 			pCurrIsect = pCurrIsect->pNextLight;
 		}
@@ -288,13 +287,32 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 			if (TerrainMoved || It->second.BoundsVersion != pCurrIsect->LightBoundsVersion)
 			{
 				// update light affection zone, note that it may remain the same! can avoid resetting values in views then?!
-				//???return bool from this function to indicate actual changes? but how to propagate to all views?!
+				// set Changed = true if Nodes list changes
 			}
 
 			++It;
 			pCurrIsect = pCurrIsect->pNextLight;
 		}
 	}
+
+	// to calc affection zone, find containing quadtree node for light bounds (can be integer math)
+	// then descend to children, throwing out subtrees without a contact, until all contacted LOD0 nodes are traversed
+	// try traversing in such order that LOD0 Morton codes are sorted
+
+	// to test light vs node, can first test light bounds (integer math?) and then search if any of node's LOD0 cells are in the list
+	// could do 2 searches to get lower (first its LOD0) & upper bound (last its LOD0), and if the range is not empty, light affects it
+	// for first bounds test can store integer range in each light info record
+
+	//???track nodes in a light or fill sparse quadtree with lights affecting the quad?
+
+	//???return bool from this function to indicate actual changes? but how to propagate to all views?!
+	// could track coverage version in a terrain attr and in terrain renderable views!
+	//???store version in each light? can update only certain lights! could make everything much cheaper!
+	//instead of Changed flag, need to precalculate NextVersion = CurrVersion + 1 and assign it to changed lights.
+	//it is not an own version for each light, it is the same version marking last change moment of the light
+	//knowing changed lights we know which LOD0 nodes should be updated, others can be kept
+
+	//when light stops affecting some node, need to detect that and clean its index from node's light list.
 }
 //---------------------------------------------------------------------
 

@@ -605,14 +605,15 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 	if (RenderableRecord.IntersectionBoundsVersion == RenderableRecord.BoundsVersion) return;
 	RenderableRecord.IntersectionBoundsVersion = RenderableRecord.BoundsVersion;
 
+	const auto TrackingFlags = static_cast<CRenderableAttribute*>(RenderableRecord.pAttr)->GetLightTrackingFlags();
+	n_assert_dbg(TrackingFlags);
+
 	// TODO: instead of iterating through all _Lights, can query them from octree! Will be much less instances to check!!!
 	// Query by our attr's bounds and octree node. Go to all parents of the node and to only intersecting children, see UE:
 	// - FindElementsWithBoundsTestInternal, GetIntersectingChildren
 	//???how to handle not sorted collection, e.g. data from octree query?
 	//???query to vector (stored in class to avoid per frame allocations) and sort pefore processing? Will O(query+sort) be better than O(bruteforce)?
 	//???how UE avoids recreating already existing links? can't find. does it erase the proxy and then refill links when something changes?
-
-	const auto TrackingFlags = static_cast<CRenderableAttribute*>(RenderableRecord.pAttr)->GetLightTrackingFlags();
 
 	// An adapted version of DEM::Algo::SortedUnion for syncing with CObjectLightIntersection. Both collections are sorted by UID.
 	// The logic is simplified in comparison with original SortedUnion because we guarantee that no intersections exist for removed objects and lights.
@@ -738,6 +739,8 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 		if (!RenderableRecord.TrackObjectLightIntersections) continue;
 
 		const auto TrackingFlags = static_cast<CRenderableAttribute*>(RenderableRecord.pAttr)->GetLightTrackingFlags();
+		n_assert_dbg(TrackingFlags);
+
 		const bool Intersects = static_cast<CLightAttribute*>(LightRecord.pAttr)->IntersectsWith(RenderableRecord.Sphere);
 		if (Intersects)
 		{
