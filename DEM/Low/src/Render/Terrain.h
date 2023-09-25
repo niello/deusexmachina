@@ -40,8 +40,8 @@ protected:
 
 	struct CNodeProcessingContext
 	{
-		vector3	 MainCameraPos;
 		matrix44 ViewProjection;
+		vector3	 MainCameraPos;
 		float    AABBMinX;
 		float    AABBMinZ;
 		float    ScaleBaseX;
