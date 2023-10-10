@@ -13,21 +13,6 @@ namespace fs = std::filesystem;
 // Example args:
 // -s src/terrain -c --path Data ../../../content
 
-static inline bool IsPow2(uint32_t Value) { return Value > 0 && (Value & (Value - 1)) == 0; }
-
-template <class T> inline T NextPow2(T x)
-{
-	// For unsigned only, else uncomment the next line
-	//if (x < 0) return 0;
-	--x;
-	x |= x >> 1;
-	x |= x >> 2;
-	x |= x >> 4;
-	x |= x >> 8;
-	x |= x >> 16;
-	return x + 1;
-}
-
 class CL3DTTool : public CContentForgeTool
 {
 protected:
@@ -97,22 +82,6 @@ public:
 	virtual ETaskResult ProcessTask(CContentForgeTask& Task) override
 	{
 		const std::string TaskName = GetValidResourceName(Task.TaskID.ToString());
-
-		// Validate task params
-
-		uint32_t PatchSize = static_cast<uint32_t>(ParamsUtils::GetParam<int>(Task.Params, "PatchSize", 32));
-		if (!IsPow2(PatchSize) || PatchSize < 4 || PatchSize > 1024)
-		{
-			Task.Log.LogWarning("PatchSize must be power of 2 in range [4 .. 1024]");
-			PatchSize = NextPow2(std::clamp<uint32_t>(PatchSize, 4, 1024));
-		}
-
-		uint32_t LODCount = static_cast<uint32_t>(ParamsUtils::GetParam<int>(Task.Params, "LODCount", 5));
-		if (LODCount < 2 || LODCount > 64)
-		{
-			Task.Log.LogWarning("PatchSize must be in range [2 .. 64]");
-			LODCount = std::clamp<uint32_t>(PatchSize, 2, 64);
-		}
 
 		// Read project XML
 
@@ -227,6 +196,16 @@ public:
 			return ETaskResult::Failure;
 		}
 
+		// Validate task params
+
+		// Terrain is divided into pow2 quad clusters, each of them containing a quadtree for LOD control. Clusters can't be rendered
+		// in lower detail than a single quad mesh but they can be loaded on demand and skipped from processing when not in view.
+		uint32_t ClusterSize = static_cast<uint32_t>(ParamsUtils::GetParam<int>(Task.Params, "ClusterSize", 0));
+
+		// Depth of subdivision for each cluster. 0 and 1 mean no subdivision, i.e. regular grid of clusters. This is not recommeneded.
+		uint32_t LODCount = static_cast<uint32_t>(ParamsUtils::GetParam<int>(Task.Params, "LODCount", 6));
+		if (!LODCount) LODCount = 1;
+
 		// Write CDLOD file
 
 		std::vector<char> HeightfieldFileData;
@@ -251,8 +230,19 @@ public:
 			if (!Height) Height = BTFile.GetHeight();
 			assert(Width == BTFile.GetWidth() && Height == BTFile.GetHeight());
 
-			const uint32_t PatchesW = (Width - 1 + PatchSize - 1) / PatchSize;
-			const uint32_t PatchesH = (Height - 1 + PatchSize - 1) / PatchSize;
+			// Clustering is disabled by default, create a single cluster covering the whole heightmap
+			if (!ClusterSize) ClusterSize = std::max(Width, Height);
+
+			// Cluster size must be pow2 because it is subdivided into a quadtree with integral number of texels per node at each level
+			ClusterSize = NextPow2(ClusterSize);
+
+			// Can't subdivide a cluster further than a single texel
+			// FIXME: or need at least 2x2?
+			const auto SmallestPatchesPerCluster = 1 << (LODCount - 1);
+			if (SmallestPatchesPerCluster > ClusterSize) LODCount = Log2(ClusterSize);
+
+			// Heightmap texel count per smallest and finest quadtree node
+			const auto PatchSize = ClusterSize >> (LODCount - 1);
 
 			// TODO: support float BT!
 			// TODO: there are different possible formats: D3DFMT_R16F, D3DFMT_R32F, D3DFMT_L16
@@ -265,6 +255,9 @@ public:
 			for (uint32_t Row = 0; Row < Height; ++Row)
 				for (uint32_t Col = 0; Col < Width; ++Col)
 					HeightMap[Row * Width + Col] = static_cast<uint16_t>(static_cast<int>(BTFile.GetHeightsS()[Col * Height + Height - 1 - Row]) + 32768);
+
+			const uint32_t PatchesW = (Width - 1 + PatchSize - 1) / PatchSize;
+			const uint32_t PatchesH = (Height - 1 + PatchSize - 1) / PatchSize;
 
 			// Calculate minmax data
 

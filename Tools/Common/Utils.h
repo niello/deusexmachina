@@ -342,3 +342,31 @@ inline std::filesystem::path ResolvePathAliases(const std::string& Path, const s
 	return Result;
 }
 //---------------------------------------------------------------------
+
+inline bool IsPow2(uint32_t Value)
+{
+	return Value > 0 && (Value & (Value - 1)) == 0;
+}
+//---------------------------------------------------------------------
+
+template <class T> inline T NextPow2(T x)
+{
+	// For unsigned only, else uncomment the next line
+	//if (x < 0) return 0;
+	--x;
+	x |= x >> 1;
+	x |= x >> 2;
+	x |= x >> 4;
+	x |= x >> 8;
+	x |= x >> 16;
+	return x + 1;
+}
+//---------------------------------------------------------------------
+
+inline uint32_t Log2(uint32_t x)
+{
+	uint32_t r = 0;
+	while (x >>= 1) ++r;
+	return r;
+}
+//---------------------------------------------------------------------

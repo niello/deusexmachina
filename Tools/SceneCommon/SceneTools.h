@@ -29,7 +29,7 @@ namespace Data
 
 struct CSceneSettings
 {
-	std::map<std::string, std::string>              EffectsByType;
+	std::map<std::string, std::string, std::less<>> EffectsByType;
 	std::map<std::string, std::string, std::less<>> EffectParamAliases;
 
 	std::string GetEffectParamID(const std::string_view Alias) const
