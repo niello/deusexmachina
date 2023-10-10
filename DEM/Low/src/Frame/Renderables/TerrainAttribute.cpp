@@ -213,7 +213,7 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 		pTerrain->PatchesTransformVersion = _pNode->GetTransformVersion();
 		pTerrain->UpdatePatches(View.GetCamera()->GetPosition(), View.GetCamera()->GetViewProjMatrix());
 
-		//???set all lights dirty? or update now?
+		//???set all lights dirty in a CTerrain renderable view? or update now?
 		//could merge / divide existing nodes and/or use finest LOD light grid
 
 		//???store main info about patches in one buffer, lights in another?!
@@ -248,7 +248,6 @@ void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Render
 }
 //---------------------------------------------------------------------
 
-//!!!need to detect if light moved OR renderable itself moved! In both cases must update lights in a quadtree!
 void CTerrainAttribute::OnLightIntersectionsUpdated()
 {
 	// Terrain is too big to process all intersecting lights on the whole surface. Here is additional processing
@@ -261,7 +260,6 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 	_LightCacheBoundsVersion = Record.BoundsVersion;
 
 	// Sync sorted light list from intersections to renderable. Uses manual specification of DEM::Algo::SortedUnion.
-	//bool Changed = false;
 	auto It = _Lights.begin();
 	const CObjectLightIntersection* pCurrIsect = Record.pObjectLightIntersections;
 	while ((It != _Lights.cend()) || pCurrIsect)
@@ -274,30 +272,23 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 		else if ((It == _Lights.cend()) || (pCurrIsect && pCurrIsect->pLightAttr->GetSceneHandle()->first < It->first))
 		{
 			const auto UID = pCurrIsect->pLightAttr->GetSceneHandle()->first;
-
 			auto& LightInfo = _Lights.emplace_hint(It, UID, CLightInfo{})->second; //!!!TODO PERF: use shared node pool!
-
-			// update light affection zone. unchanged if the light doesn't touch any patch actually (e.g. it is above the ground)
-			// Changed |= !LightInfo.Nodes.empty();
-
+			UpdateLightInQuadTree(pCurrIsect->pLightAttr, true);
 			pCurrIsect = pCurrIsect->pNextLight;
 		}
 		else // equal
 		{
 			if (TerrainMoved || It->second.BoundsVersion != pCurrIsect->LightBoundsVersion)
 			{
-				// update light affection zone, note that it may remain the same! can avoid resetting values in views then?!
-				// set Changed = true if Nodes list changes
+				// extract current list of light's nodes
+				UpdateLightInQuadTree(pCurrIsect->pLightAttr, false);
+				// clear light from nodes that are in old list but aren't in new
 			}
 
 			++It;
 			pCurrIsect = pCurrIsect->pNextLight;
 		}
 	}
-
-	// to calc affection zone, find containing quadtree node for light bounds (can be integer math)
-	// then descend to children, throwing out subtrees without a contact, until all contacted LOD0 nodes are traversed
-	// try traversing in such order that LOD0 Morton codes are sorted
 
 	// to test light vs node, can first test light bounds (integer math?) and then search if any of node's LOD0 cells are in the list
 	// could do 2 searches to get lower (first its LOD0) & upper bound (last its LOD0), and if the range is not empty, light affects it
@@ -313,6 +304,136 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 	//knowing changed lights we know which LOD0 nodes should be updated, others can be kept
 
 	//when light stops affecting some node, need to detect that and clean its index from node's light list.
+}
+//---------------------------------------------------------------------
+
+bool CTerrainAttribute::UpdateLightInQuadTree(const CLightAttribute* pLightAttr, bool NewLight)
+{
+	//???make _Nodes a 2D array of unordered maps?! quadtree per patch?!
+
+	constexpr U32 RootMortonCode = 1; // Depth bit at 0th position
+	CAABB AABB = _CDLODData->GetAABB();
+	AABB.Transform(_pNode->GetWorldMatrix());
+
+	/*
+	Ctx.ScaleBaseX = (AABB.Max.x - AABB.Min.x) / static_cast<float>(CDLODData->GetHeightMapWidth() - 1);
+	Ctx.ScaleBaseZ = (AABB.Max.z - AABB.Min.z) / static_cast<float>(CDLODData->GetHeightMapHeight() - 1);
+	*/
+
+	for (U32 Z = 0; Z < _CDLODData->GetTopPatchCountH(); ++Z)
+		for (U32 X = 0; X < _CDLODData->GetTopPatchCountW(); ++X)
+			UpdateLightInQuadTreeNode(pLightAttr, NewLight, RootMortonCode);
+
+	// FIXME: instead of multipatch top level make a single quadtree?! can limit patch grouping to some level to avoid single patch, but is really needed?
+	// Can assemble terrain from multiple patches from different attrs, ensure that renderer batches them correctly and that there are no gaps!
+	// Multiple separate attrs for big terrain will work much better - light culling, visibility, streaming
+	// Will need to setup cf-l3dt to generate multipatch terrain when required, can use setting
+	// Terrain can have different size on x and z dims, but quadtree nodes will be deformed then too
+	// Will need to generate multiple CDLOD data assets? Good for streaming and multithreaded loading.
+	// For my scene can still use a single CDLOD because the terrain is quad.
+	// MinMax map becomes indexable with morton code or other simple formula.
+
+	return false;
+}
+//---------------------------------------------------------------------
+
+// Returns if light list in any of quadtree nodes changed
+bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CLightAttribute* pLightAttr, bool NewLight, U32 MortonCode)
+{
+	/*
+	I16 MinY, MaxY;
+	CDLODData->GetMinMaxHeight(X, Z, LOD, MinY, MaxY);
+
+	// Node has no data, skip it completely
+	if (MaxY < MinY) return ENodeStatus::Invisible;
+
+	const U32 NodeSize = CDLODData->GetPatchSize() << LOD;
+	const float ScaleX = NodeSize * Ctx.ScaleBaseX;
+	const float ScaleZ = NodeSize * Ctx.ScaleBaseZ;
+	const float NodeMinX = Ctx.AABB.Min.x + X * ScaleX;
+	const float NodeMinZ = Ctx.AABB.Min.z + Z * ScaleZ;
+
+	CAABB NodeAABB;
+	NodeAABB.Min.x = NodeMinX;
+	NodeAABB.Min.y = MinY * CDLODData->GetVerticalScale();
+	NodeAABB.Min.z = NodeMinZ;
+	NodeAABB.Max.x = NodeMinX + ScaleX;
+	NodeAABB.Max.y = MaxY * CDLODData->GetVerticalScale();
+	NodeAABB.Max.z = NodeMinZ + ScaleZ;
+	*/
+
+	const auto& LightSceneRecord = pLightAttr->GetSceneHandle()->second;
+
+	bool Intersect;
+	const U32 DeepestLOD = _CDLODData->GetLODCount() - 1;
+	const U32 LeafMortonStart = 1 << DeepestLOD << DeepestLOD;
+	if (MortonCode < LeafMortonStart)
+	{
+		Intersect = false;
+		U32 ChildCode = MortonCode << 2;
+		const U32 ChildEndCode = ChildCode + 4;
+		for (; ChildCode < ChildEndCode; ++ChildCode)
+		{
+			//!!!TODO: if light bounds don't intersect with this child, skip traversing it!
+			//???use Clipped/Inside? If node is inside the light, all children are intersected by this light!
+			//!!!this is not exactly true because children have different Y! the only guarantee is that if there is no isect, children don't isect too!
+
+			Intersect |= UpdateLightInQuadTreeNode(pLightAttr, NewLight, ChildCode);
+		}
+	}
+	else
+	{
+		Intersect = false;
+		//BOX = get quadtree node bounds
+		//Intersect = pLightAttr->IntersectsWith(BOX);
+		//Intersect = Math::ClipSphere(LightSceneRecord.Sphere, BOX);
+	}
+
+	//!!!can skip saving light lists in nodes after some level, regardless of what is the finest LOD with dynamic lights in views.
+	//???could store param in CLightAttribute?! MaxDynamicallyLitLOD. Avoid collecting huge lists in coarsest nodes!
+
+	if (Intersect)
+	{
+		auto ItNode = _Nodes.find(MortonCode);
+		if (ItNode == _Nodes.cend())
+		{
+			// add to _Nodes, get node handle from pool
+		}
+		else
+		{
+			// check if this light already added to this cell
+			//???or will know it when trying to emplace? will implace in this case create and destroy unnecessary map node?
+			//as a fallback can do find and then emplace_hint, but if not found, cend() is not a good hint for sorted insertion! use lower_bound?
+		}
+		// add light to ItNode->second.Lights, get node handle from pool
+		// if added (and didn't already exist), up node version
+	}
+	else if (!NewLight)
+	{
+		auto ItNode = _Nodes.find(MortonCode);
+		if (ItNode != _Nodes.cend())
+		{
+			auto& NodeLights = ItNode->second.Lights;
+			// try remove light from NodeLights
+			// if removed
+			{
+				// put extracted light map node into the pool
+
+				if (NodeLights.empty()) //!!!instead of erasing, put map node handle into the pool!
+				{
+					_Nodes.erase(ItNode);
+				}
+				else
+				{
+					// up node version
+				}
+			}
+		}
+	}
+
+	//???write LightBoundsVersion or ObjectLightIntersectionsVersion or special version to nodes? version must be incremented when terrain moved too!
+
+	return Intersect;
 }
 //---------------------------------------------------------------------
 

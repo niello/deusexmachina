@@ -20,20 +20,31 @@ protected:
 
 	struct CLightInfo
 	{
-		CLightAttribute* pLight = nullptr; //???need light's scene record instead to access bounds? or real shape is enough? or store intersection record?
+		CLightAttribute* pLightAttr = nullptr; //???need light's scene record instead to access bounds? or real shape is enough? or store intersection record?
 		U32              BoundsVersion = 0; // Light's last bounds version for which the coverage was calculated
 		// list of LOD0 node indices (quadtree Morton) //  Affected quadtree nodes of the finest LOD 0
 	};
 
-	Render::PCDLODData         _CDLODData;
-	CStrID                     _MaterialUID;
-	CStrID                     _CDLODDataUID;
-	CStrID                     _HeightMapUID;
-	float                      _InvSplatSizeX = 1.f;
-	float                      _InvSplatSizeZ = 1.f;
-	std::map<UPTR, CLightInfo> _Lights; // UID -> Light
-	U32                        _LightCacheBoundsVersion = 0;        // Renderable bounds version for which _Lights is updated
-	U16                        _LightCacheIntersectionsVersion = 0; // Object-light intersections version for which _Lights is updated
+	struct CQuadTreeNode
+	{
+		std::set<CLightAttribute*> Lights; //???or store UIDs?!
+	};
+
+	Render::PCDLODData _CDLODData;
+	CStrID             _MaterialUID;
+	CStrID             _CDLODDataUID;
+	CStrID             _HeightMapUID;
+	float              _InvSplatSizeX = 1.f;
+	float              _InvSplatSizeZ = 1.f;
+	U32                _LightCacheBoundsVersion = 0;        // Renderable bounds version for which _Lights is updated
+	U16                _LightCacheIntersectionsVersion = 0; // Object-light intersections version for which _Lights is updated
+
+	// Cached information about lights affecting parts of the terrain
+	std::map<UPTR, CLightInfo>             _Lights; // UID -> Light info
+	std::unordered_map<U32, CQuadTreeNode> _Nodes;  // Morton code -> Light list
+
+	bool UpdateLightInQuadTree(const CLightAttribute* pLightAttr, bool NewLight);
+	bool UpdateLightInQuadTreeNode(const CLightAttribute* pLightAttr, bool NewLight, U32 MortonCode);
 
 	virtual void OnActivityChanged(bool Active) override;
 
