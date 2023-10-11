@@ -31,7 +31,7 @@ void CTerrain::UpdatePatches(const vector3& MainCameraPos, const matrix44& ViewP
 
 	ProcessTerrainNode(Ctx, 0, 0, CDLODData->GetLODCount() - 1, EClipStatus::Clipped);
 
-	// We sort by LOD (the more is scale, the coarser is LOD), and therefore we almost sort by distance to the camera, as LOD depends solely on it
+	// We sort by LOD (the higher is scale, the coarser is LOD), and therefore we almost sort by distance to the camera, as LOD depends solely on it
 	std::sort(_Patches.begin(), _Patches.end(), [](const auto& a, const auto& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
 	std::sort(_QuarterPatches.begin(), _QuarterPatches.end(), [](const auto& a, const auto& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
 }

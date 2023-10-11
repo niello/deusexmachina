@@ -309,9 +309,8 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 
 bool CTerrainAttribute::UpdateLightInQuadTree(const CLightAttribute* pLightAttr, bool NewLight)
 {
-	//???make _Nodes a 2D array of unordered maps?! quadtree per patch?!
-
 	constexpr U32 RootMortonCode = 1; // Depth bit at 0th position
+
 	CAABB AABB = _CDLODData->GetAABB();
 	AABB.Transform(_pNode->GetWorldMatrix());
 
@@ -320,18 +319,7 @@ bool CTerrainAttribute::UpdateLightInQuadTree(const CLightAttribute* pLightAttr,
 	Ctx.ScaleBaseZ = (AABB.Max.z - AABB.Min.z) / static_cast<float>(CDLODData->GetHeightMapHeight() - 1);
 	*/
 
-	UpdateLightInQuadTreeNode(pLightAttr, NewLight, RootMortonCode);
-
-	// FIXME: instead of multipatch top level make a single quadtree?! can limit patch grouping to some level to avoid single patch, but is really needed?
-	// Can assemble terrain from multiple patches from different attrs, ensure that renderer batches them correctly and that there are no gaps!
-	// Multiple separate attrs for big terrain will work much better - light culling, visibility, streaming
-	// Will need to setup cf-l3dt to generate multipatch terrain when required, can use setting
-	// Terrain can have different size on x and z dims, but quadtree nodes will be deformed then too
-	// Will need to generate multiple CDLOD data assets? Good for streaming and multithreaded loading.
-	// For my scene can still use a single CDLOD because the terrain is quad.
-	// MinMax map becomes indexable with morton code or other simple formula.
-
-	return false;
+	return UpdateLightInQuadTreeNode(pLightAttr, NewLight, RootMortonCode);
 }
 //---------------------------------------------------------------------
 

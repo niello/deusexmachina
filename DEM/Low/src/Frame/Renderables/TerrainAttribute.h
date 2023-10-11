@@ -40,8 +40,8 @@ protected:
 	U16                _LightCacheIntersectionsVersion = 0; // Object-light intersections version for which _Lights is updated
 
 	// Cached information about lights affecting parts of the terrain
-	std::map<UPTR, CLightInfo>             _Lights; // UID -> Light info
-	std::unordered_map<U32, CQuadTreeNode> _Nodes;  // Morton code -> Light list
+	std::map<UPTR, CLightInfo>             _Lights; // Light UID -> Info
+	std::unordered_map<U32, CQuadTreeNode> _Nodes;  // Morton code -> List of lights affecting the node
 
 	bool UpdateLightInQuadTree(const CLightAttribute* pLightAttr, bool NewLight);
 	bool UpdateLightInQuadTreeNode(const CLightAttribute* pLightAttr, bool NewLight, U32 MortonCode);
