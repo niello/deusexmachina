@@ -64,9 +64,11 @@ Core::PObject CCDLODDataLoader::CreateResource(CStrID UID)
 		PatchesH = (PatchesH + 1) / 2;
 	}
 
+	//!!!DBG TMP! Just for check! Remove redundant data from file when finished rewriting!
 	const UPTR TopPatchSize = Obj->PatchSize << (Obj->LODCount - 1);
-	Obj->TopPatchCountW = (Obj->HFWidth - 1 + TopPatchSize - 1) / TopPatchSize;
-	Obj->TopPatchCountH = (Obj->HFHeight - 1 + TopPatchSize - 1) / TopPatchSize;
+	auto TopPatchCountW = (Obj->HFWidth - 1 + TopPatchSize - 1) / TopPatchSize;
+	auto TopPatchCountH = (Obj->HFHeight - 1 + TopPatchSize - 1) / TopPatchSize;
+	n_assert(TopPatchCountW == 1 && TopPatchCountH == 1);
 
 	return Obj.Get();
 }

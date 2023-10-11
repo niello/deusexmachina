@@ -320,9 +320,7 @@ bool CTerrainAttribute::UpdateLightInQuadTree(const CLightAttribute* pLightAttr,
 	Ctx.ScaleBaseZ = (AABB.Max.z - AABB.Min.z) / static_cast<float>(CDLODData->GetHeightMapHeight() - 1);
 	*/
 
-	for (U32 Z = 0; Z < _CDLODData->GetTopPatchCountH(); ++Z)
-		for (U32 X = 0; X < _CDLODData->GetTopPatchCountW(); ++X)
-			UpdateLightInQuadTreeNode(pLightAttr, NewLight, RootMortonCode);
+	UpdateLightInQuadTreeNode(pLightAttr, NewLight, RootMortonCode);
 
 	// FIXME: instead of multipatch top level make a single quadtree?! can limit patch grouping to some level to avoid single patch, but is really needed?
 	// Can assemble terrain from multiple patches from different attrs, ensure that renderer batches them correctly and that there are no gaps!

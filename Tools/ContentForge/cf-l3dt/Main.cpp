@@ -244,6 +244,9 @@ public:
 			// Heightmap texel count per smallest and finest quadtree node
 			const auto PatchSize = ClusterSize >> (LODCount - 1);
 
+			//!!!DBG TMP! Until support for clustering added!
+			assert(ClusterSize >= std::max(Width, Height));
+
 			// TODO: support float BT!
 			// TODO: there are different possible formats: D3DFMT_R16F, D3DFMT_R32F, D3DFMT_L16
 			//???TODO: unified normals+heightmap? 4-channel, single vertex texture fetch operation.

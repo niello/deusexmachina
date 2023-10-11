@@ -29,9 +29,7 @@ void CTerrain::UpdatePatches(const vector3& MainCameraPos, const matrix44& ViewP
 	Ctx.ScaleBaseX = (AABB.Max.x - AABB.Min.x) / static_cast<float>(CDLODData->GetHeightMapWidth() - 1);
 	Ctx.ScaleBaseZ = (AABB.Max.z - AABB.Min.z) / static_cast<float>(CDLODData->GetHeightMapHeight() - 1);
 
-	for (U32 Z = 0; Z < CDLODData->GetTopPatchCountH(); ++Z)
-		for (U32 X = 0; X < CDLODData->GetTopPatchCountW(); ++X)
-			ProcessTerrainNode(Ctx, X, Z, CDLODData->GetLODCount() - 1, EClipStatus::Clipped);
+	ProcessTerrainNode(Ctx, 0, 0, CDLODData->GetLODCount() - 1, EClipStatus::Clipped);
 
 	// We sort by LOD (the more is scale, the coarser is LOD), and therefore we almost sort by distance to the camera, as LOD depends solely on it
 	std::sort(_Patches.begin(), _Patches.end(), [](const auto& a, const auto& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });

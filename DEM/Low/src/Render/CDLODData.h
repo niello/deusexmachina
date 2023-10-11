@@ -32,8 +32,6 @@ protected:
 	U32						HFWidth;
 	U32						HFHeight;
 	U32						PatchSize;
-	U32						TopPatchCountW;
-	U32						TopPatchCountH;
 	U32						LODCount;
 	float					VerticalScale;
 	CAABB					Box;
@@ -45,8 +43,6 @@ public:
 	U32					GetHeightMapWidth() const { return HFWidth; }
 	U32					GetHeightMapHeight() const { return HFHeight; }
 	U32					GetPatchSize() const { return PatchSize; }
-	U32					GetTopPatchCountW() const { return TopPatchCountW; }
-	U32					GetTopPatchCountH() const { return TopPatchCountH; }
 	U32					GetLODCount() const { return LODCount; }
 	float				GetVerticalScale() const { return VerticalScale; }
 	const CAABB&		GetAABB() const { return Box; }
