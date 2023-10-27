@@ -343,23 +343,138 @@ inline std::filesystem::path ResolvePathAliases(const std::string& Path, const s
 }
 //---------------------------------------------------------------------
 
-inline bool IsPow2(uint32_t Value)
+template <typename T>
+inline constexpr bool IsPow2(T x) noexcept
 {
-	return Value > 0 && (Value & (Value - 1)) == 0;
+	return x > 0 && (x & (x - 1)) == 0;
 }
 //---------------------------------------------------------------------
 
-template <class T> inline T NextPow2(T x)
+template <typename T>
+inline constexpr T NextPow2(T x) noexcept
 {
-	// For unsigned only, else uncomment the next line
-	//if (x < 0) return 0;
+#if __cplusplus >= 202002L
+	return std::bit_ceil(x);
+#else
+	if constexpr (std::is_signed_v<T>)
+	{
+		if (x < 0) return 0;
+	}
+
 	--x;
-	x |= x >> 1;
-	x |= x >> 2;
-	x |= x >> 4;
-	x |= x >> 8;
-	x |= x >> 16;
+	x |= (x >> 1);
+	x |= (x >> 2);
+	x |= (x >> 4);
+	x |= (x >> 8);
+	x |= (x >> 16);
+
+	if constexpr (sizeof(T) > 4)
+		x |= (x >> 32);
+
 	return x + 1;
+#endif
+}
+//---------------------------------------------------------------------
+
+template <typename T>
+inline constexpr T PrevPow2(T x) noexcept
+{
+#if __cplusplus >= 202002L
+	return std::bit_floor(x);
+#else
+	if constexpr (std::is_signed_v<T>)
+	{
+		if (x <= 0) return 0;
+	}
+	else
+	{
+		if (!x) return 0;
+	}
+
+	//--x; // Uncomment this to have a strictly less result
+	x |= (x >> 1);
+	x |= (x >> 2);
+	x |= (x >> 4);
+	x |= (x >> 8);
+	x |= (x >> 16);
+
+	if constexpr (sizeof(T) > 4)
+		x |= (x >> 32);
+
+	return x - (x >> 1);
+#endif
+}
+//---------------------------------------------------------------------
+
+template <typename T>
+inline constexpr int CountLeadingZeros(T x) noexcept
+{
+	static_assert(sizeof(T) <= 8 && std::is_unsigned_v<T> && std::is_integral_v<T> && !std::is_same_v<T, bool>);
+
+#if __cplusplus >= 202002L
+	return std::countl_zero(x);
+#elif defined(__GNUC__)
+	if constexpr (sizeof(T) == sizeof(unsigned long long))
+		return __builtin_clzll(x);
+	else if constexpr (sizeof(T) == sizeof(unsigned long))
+		return __builtin_clzl(x);
+	else
+		return __builtin_clz(x);
+#elif defined(_MSC_VER)
+	unsigned long Bit;
+#if DEM_64
+	if constexpr (sizeof(T) == 8)
+	{
+		if (!_BitScanReverse64(&Bit, x)) Bit = -1;
+		return 63 - Bit;
+	}
+	if constexpr (sizeof(T) == 4)
+	{
+		_BitScanReverse64(&Bit, static_cast<uint64_t>(x) * 2 + 1);
+		return 32 - Bit;
+	}
+#else
+	if constexpr (sizeof(T) == 8)
+	{
+		int Bits = 64;
+		while (x)
+		{
+			--Bits;
+			x >>= 1;
+		}
+		return Bits;
+	}
+	if constexpr (sizeof(T) == 4)
+	{
+		if (!_BitScanReverse(&Bit, x)) Bit = -1;
+		return 31 - Bit;
+	}
+#endif
+	if constexpr (sizeof(T) < 4)
+	{
+		_BitScanReverse(&Bit, static_cast<uint32_t>(x) * 2 + 1);
+		return static_cast<T>(sizeof(T) * 8 - Bit);
+	}
+#else
+	int Bits = sizeof(T) * 8;
+	while (x)
+	{
+		--Bits;
+		x >>= 1;
+	}
+	return Bits;
+#endif
+}
+//---------------------------------------------------------------------
+
+template <typename T>
+inline constexpr int BitWidth(T x) noexcept
+{
+#if __cplusplus >= 202002L
+	return std::bit_width(x);
+#else
+	return std::numeric_limits<T>::digits - CountLeadingZeros(x);
+#endif
 }
 //---------------------------------------------------------------------
 
@@ -368,5 +483,37 @@ inline uint32_t Log2(uint32_t x)
 	uint32_t r = 0;
 	while (x >>= 1) ++r;
 	return r;
+}
+//---------------------------------------------------------------------
+
+// Divide and round up
+template <typename T, typename U, typename = std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>>
+inline decltype(auto) DivCeil(T Numerator, U Denominator)
+{
+	return (Numerator + Denominator - 1) / Denominator;
+}
+//---------------------------------------------------------------------
+
+// Returns the size in the same elements in which Width and Height are expressed.
+inline uint32_t CalcSizeWithMips(uint32_t Width, uint32_t Height, uint32_t LODCount, bool StopAt1x1 = true)
+{
+	uint32_t Total = 0;
+
+	if (Width && Height)
+	{
+		uint32_t CurrW = Width;
+		uint32_t CurrH = Height;
+		for (uint32_t LOD = 0; LOD < LODCount; ++LOD)
+		{
+			Total += CurrW * CurrH;
+
+			if (StopAt1x1 && CurrW == 1 && CurrH == 1) break;
+
+			CurrW = DivCeil(CurrW, 2);
+			CurrH = DivCeil(CurrH, 2);
+		}
+	}
+
+	return Total;
 }
 //---------------------------------------------------------------------

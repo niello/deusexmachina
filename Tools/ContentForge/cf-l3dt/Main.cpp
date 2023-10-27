@@ -107,12 +107,12 @@ public:
 		if (!XMLVersion || XMLVersion.text().as_int() != 1)
 			Task.Log.LogWarning(std::string("Possibly unsupported version of L3DT XML: ") + XMLVersion.text().as_string());
 
-		uint32_t Width = 0, Height = 0;
+		uint32_t HeightmapWidth = 0, HeightmapHeight = 0;
 		float MinY = 0.f, MaxY = 0.f, HorizScale = 1.f;
 		if (auto XMLTerrain = XMLRoot.find_child_by_attribute("name", "MapInfo").find_child_by_attribute("name", "Terrain"))
 		{
-			Width = XMLTerrain.find_child_by_attribute("int", "name", "nx").text().as_int();
-			Height = XMLTerrain.find_child_by_attribute("int", "name", "ny").text().as_int();
+			HeightmapWidth = XMLTerrain.find_child_by_attribute("int", "name", "nx").text().as_int();
+			HeightmapHeight = XMLTerrain.find_child_by_attribute("int", "name", "ny").text().as_int();
 			MinY = XMLTerrain.find_child_by_attribute("float", "name", "MinAlt").text().as_float();
 			MaxY = XMLTerrain.find_child_by_attribute("float", "name", "MaxAlt").text().as_float();
 			HorizScale = XMLTerrain.find_child_by_attribute("float", "name", "HorizScale").text().as_float();
@@ -198,8 +198,11 @@ public:
 
 		// Read terrain subdivision params
 
-		// Terrain is divided into pow2 quad clusters, each of them containing a quadtree for LOD control. Clusters can't be rendered
-		// in lower detail than a single quad mesh but they can be loaded on demand and skipped from processing when not in view.
+		// Terrain is divided into quad clusters, each of them containing a quadtree for LOD control.
+		// At the coarsest LOD the whole cluster is rendered with one grid mesh.
+		// The more LODs, the better CDLOD performs but the more memory and quadtree traversal CPU is required.
+		// Each cluster occupies a separate scene node and can be loaded on demand. View & light culling also use
+		// an AABB of the cluster and not of the whole terrain asset.
 		uint32_t ClusterSize = static_cast<uint32_t>(ParamsUtils::GetParam<int>(Task.Params, "ClusterSize", 0));
 
 		// Depth of subdivision for each cluster. 0 and 1 mean no subdivision, i.e. regular grid of clusters. This is not recommeneded.
@@ -217,191 +220,230 @@ public:
 
 		CBTFile BTFile(HeightfieldFileData.data());
 
-		if (!Width) Width = BTFile.GetWidth();
-		if (!Height) Height = BTFile.GetHeight();
-		assert(Width == BTFile.GetWidth() && Height == BTFile.GetHeight());
+		if (!HeightmapWidth) HeightmapWidth = BTFile.GetWidth();
+		if (!HeightmapHeight) HeightmapHeight = BTFile.GetHeight();
+		assert(HeightmapWidth == BTFile.GetWidth() && HeightmapHeight == BTFile.GetHeight());
 
-		// Clustering is disabled by default, create a single cluster covering the whole heightmap
-		if (!ClusterSize) ClusterSize = std::max(Width, Height);
+		if (!HeightmapWidth || !HeightmapHeight)
+		{
+			Task.Log.LogError("Heightmap with any dimension of 1 will have zero area");
+			return ETaskResult::Failure;
+		}
+
+		const auto RasterQuadsX = HeightmapWidth - 1;
+		const auto RasterQuadsY = HeightmapHeight - 1;
 
 		// Cluster size must be pow2 because it is subdivided into a quadtree with integral number of texels per node at each level
-		ClusterSize = NextPow2(ClusterSize);
-
-		// Can't subdivide a cluster further than a single texel
-		// FIXME: or need at least 2x2?
-		const auto SmallestPatchesPerCluster = 1 << (LODCount - 1);
-		if (SmallestPatchesPerCluster > ClusterSize) LODCount = Log2(ClusterSize);
-
-		// Heightmap texel count per smallest and finest quadtree node
-		const auto PatchSize = ClusterSize >> (LODCount - 1);
-
-		//!!!DBG TMP! Until support for clustering added!
-		assert(ClusterSize >= std::max(Width, Height));
-
-		// TODO: support float BT!
-		// TODO: there are different possible formats: D3DFMT_R16F, D3DFMT_R32F, D3DFMT_L16
-		//???TODO: unified normals+heightmap? 4-channel, single vertex texture fetch operation.
-		//Physics will require separate data, but physics uses CPU RAM, and rendering uses VRAM.
-		//Could create unified texture on loading, combining 3-channel normal map and HF.
-
-		// S->N col-major to N->S row-major, convert to ushort for D3DFMT_L16 texture format
-		std::vector<uint16_t> HeightMap(Width * Height);
-		for (uint32_t Row = 0; Row < Height; ++Row)
-			for (uint32_t Col = 0; Col < Width; ++Col)
-				HeightMap[Row * Width + Col] = static_cast<uint16_t>(static_cast<int>(BTFile.GetHeightsS()[Col * Height + Height - 1 - Row]) + 32768);
-
-		// Process clusters
-
-		if (ClusterSize >= std::max(Width, Height))
+		if (!ClusterSize)
 		{
-			// make single without prefix, use copy_file etc?
+			// Default or 0 means that clustering is disabled. Create a single cluster covering the whole heightmap.
+			ClusterSize = NextPow2(std::max(RasterQuadsX, RasterQuadsY));
 		}
 		else
 		{
-			for (size_t OffsetY = 0; OffsetY < Height; OffsetY += ClusterSize)
-			{
-				for (size_t OffsetX = 0; OffsetX < Width; OffsetX += ClusterSize)
-				{
-					// calculate actuasl range of data for clamped right & bottom edges
-					// calculate patch count in a cluster (W, H)
-					// calculate minmax of each patch in the region (OffsetX, OffsetY) - (OffsetX + ClusterSize, OffsetY + ClusterSize)
-					// aggregate minmax hierarchy up to root, where a single minmax pair will be saved
-					// write CDLOD header (LODCount, ClusterSize, VerticalScale, actual W&H, ...) - actual W&H is needed for clamped right & bottom edges
-					// write minmax data from root to LODs
-					// write heightmap data for the cluster
+			// Clamp unnecessarily big cluster sizes to match source data better. Otherwise empty
+			// quadrants would exist in a quadtree and consume processing power for nothing.
+			ClusterSize = NextPow2(std::min(ClusterSize, std::max(RasterQuadsX, RasterQuadsY)));
+		}
 
-					// 
+		// Clamp LOD count so that smallest patch covers at least 1 raster quad
+		{
+			const uint32_t SmallestPatchesPerCluster = 1 << (LODCount - 1);
+			if (SmallestPatchesPerCluster > ClusterSize) LODCount = Log2(ClusterSize);
+		}
+
+		// Raster quad count per smallest and finest quadtree node
+		const auto PatchSize = ClusterSize >> (LODCount - 1);
+
+		// Process clusters
+
+		const auto ClustersX = DivCeil(HeightmapWidth, ClusterSize);
+		const auto ClustersY = DivCeil(HeightmapHeight, ClusterSize);
+
+		Task.Log.LogInfo("Cluster count: " + std::to_string(ClustersX) + "x" + std::to_string(ClustersY));
+		Task.Log.LogInfo("Cluster size:  " + std::to_string(ClusterSize) + " unit quads");
+		Task.Log.LogInfo("LOD count:     " + std::to_string(LODCount));
+		Task.Log.LogInfo("Patch size:    " + std::to_string(PatchSize) + " unit quads");
+
+		//!!!FIXME: DBG TMP! Search the same var below!
+		std::string CDLODID;
+
+		for (uint32_t ClusterY = 0; ClusterY < ClustersY; ++ClusterY)
+		{
+			for (uint32_t ClusterX = 0; ClusterX < ClustersX; ++ClusterX)
+			{
+				Task.Log.LogInfo("Processing cluster " + std::to_string(ClusterX) + "," + std::to_string(ClusterY) + "...");
+
+				// ClusterSize is in raster quads, but heightmap stores vertices between these quads
+				const auto HeightmapClusterSize = ClusterSize + 1;
+
+				const auto HeightFromX = ClusterX * ClusterSize;
+				const auto HeightFromY = ClusterY * ClusterSize;
+				const auto HeightToX = std::min(HeightmapWidth, HeightFromX + HeightmapClusterSize);
+				const auto HeightToY = std::min(HeightmapHeight, HeightFromY + HeightmapClusterSize);
+
+				// Cluster heightmap data size in texels (vertices) and in raster quads
+				const auto ClusterDataWidth = HeightToX - HeightFromX;
+				const auto ClusterDataHeight = HeightToY - HeightFromY;
+				const auto ClusterDataRasterWidth = ClusterDataWidth - 1;
+				const auto ClusterDataRasterHeight = ClusterDataHeight - 1;
+
+				const uint32_t PatchesX = DivCeil(ClusterDataRasterWidth, PatchSize);
+				const uint32_t PatchesY = DivCeil(ClusterDataRasterHeight, PatchSize);
+
+				Task.Log.LogInfo(" Heights: [" + std::to_string(HeightFromX) + "," + std::to_string(HeightFromY) + " - " + std::to_string(HeightToX - 1) + "," + std::to_string(HeightToY - 1) + "]");
+				Task.Log.LogInfo(" Size:    " + std::to_string(ClusterDataRasterWidth) + "x" + std::to_string(ClusterDataRasterHeight) + " unit quads");
+				Task.Log.LogInfo(" Patches: " + std::to_string(PatchesX) + "x" + std::to_string(PatchesY));
+
+				// Prepare heightmap data for this cluster.
+				// S->N col-major to N->S row-major, convert to ushort for D3DFMT_L16 texture format.
+				std::vector<uint16_t> ClusterHeightMap(ClusterDataWidth * ClusterDataHeight);
+				{
+					// TODO: support float BT!
+					// TODO: there are different possible formats: D3DFMT_R16F, D3DFMT_R32F, D3DFMT_L16
+					//???TODO: unified normals+heightmap? 4-channel, single vertex texture fetch operation.
+					//Physics will require separate data, but physics uses CPU RAM, and rendering uses VRAM.
+					//Could create unified texture on loading, combining 3-channel normal map and HF.
+
+					uint16_t* pDest = ClusterHeightMap.data();
+					for (uint32_t y = HeightFromY; y < HeightToY; ++y)
+						for (uint32_t x = HeightFromX; x < HeightToX; ++x)
+							*pDest++ = static_cast<uint16_t>(static_cast<int>(BTFile.GetHeightsS()[x * HeightmapHeight + HeightmapHeight - 1 - y]) + 32768);
 				}
-			}
-		}
 
-		const uint32_t PatchesW = (Width - 1 + PatchSize - 1) / PatchSize;
-		const uint32_t PatchesH = (Height - 1 + PatchSize - 1) / PatchSize;
+				// Calculate min and max height for each patch in the cluster and build a hierarchy similar to mipmap chain
+				std::vector<std::pair<uint16_t, uint16_t>> MinMaxData(CalcSizeWithMips(PatchesX, PatchesY, LODCount, false));
 
-		// Calculate minmax data
-
-		uint32_t CurrPatchesW = PatchesW;
-		uint32_t CurrPatchesH = PatchesH;
-		uint32_t TotalMinMaxDataCount = CurrPatchesW * CurrPatchesH;
-		for (uint32_t LOD = 1; LOD < LODCount; ++LOD)
-		{
-			CurrPatchesW = (CurrPatchesW + 1) / 2;
-			CurrPatchesH = (CurrPatchesH + 1) / 2;
-			TotalMinMaxDataCount += CurrPatchesW * CurrPatchesH;
-		}
-		TotalMinMaxDataCount *= 2;
-
-		std::vector<uint16_t> MinMaxData(TotalMinMaxDataCount);
-
-		// Generate top-level minmax map
-		for (uint32_t Row = 0; Row < PatchesH; ++Row)
-		{
-			uint32_t StopAtZ = std::min((Row + 1) * PatchSize + 1, Height);
-
-			for (uint32_t Col = 0; Col < PatchesW; ++Col)
-			{
-				uint32_t StopAtX = std::min((Col + 1) * PatchSize + 1, Width);
-
-				// FIXME: if here is NoDataUS, everything will be miscalculated!
-				auto MinHeight = HeightMap[Row * PatchSize * Width + Col * PatchSize];
-				auto MaxHeight = MinHeight;
-				for (uint32_t Z = Row * PatchSize; Z < StopAtZ; ++Z)
+				// Generate top-level minmax map, one record per LOD 0 patch (smallest)
+				for (uint32_t PatchY = 0; PatchY < PatchesY; ++PatchY)
 				{
-					for (uint32_t X = Col * PatchSize; X < StopAtX; ++X)
+					const auto PatchHeightStartY = PatchY * PatchSize;
+					const auto PatchHeightEndY = std::min((PatchY + 1) * PatchSize + 1, ClusterDataHeight);
+
+					for (uint32_t PatchX = 0; PatchX < PatchesX; ++PatchX)
 					{
-						const auto CurrHeight = HeightMap[Z * Width + X];
-						if (CurrHeight != CBTFile::NoDataUS)
+						const auto PatchHeightStartX = PatchX * PatchSize;
+						const auto PatchHeightEndX = std::min((PatchX + 1) * PatchSize + 1, ClusterDataWidth);
+
+						// Find min & max heights in the current patch
+						auto MinHeight = CBTFile::NoDataUS;
+						auto MaxHeight = CBTFile::NoDataUS;
+						for (auto y = PatchHeightStartY; y < PatchHeightEndY; ++y)
 						{
-							if (CurrHeight < MinHeight) MinHeight = CurrHeight;
-							else if (CurrHeight > MaxHeight) MaxHeight = CurrHeight;
+							for (auto x = PatchHeightStartX; x < PatchHeightEndX; ++x)
+							{
+								// Skip vertices without data
+								const auto CurrHeight = ClusterHeightMap[y * ClusterDataWidth + x];
+								if (CurrHeight == CBTFile::NoDataUS) continue;
+
+								if (MinHeight == CBTFile::NoDataUS)
+								{
+									// First vertex with data found
+									MinHeight = CurrHeight;
+									MaxHeight = CurrHeight;
+								}
+								else
+								{
+									if (CurrHeight < MinHeight) MinHeight = CurrHeight;
+									else if (CurrHeight > MaxHeight) MaxHeight = CurrHeight;
+								}
+							}
 						}
+
+						MinMaxData[PatchY * PatchesX + PatchX] = { MinHeight, MaxHeight };
 					}
 				}
 
-				const uint32_t Idx = Row * PatchesW + Col;
-				MinMaxData[Idx * 2] = MinHeight;
-				MinMaxData[Idx * 2 + 1] = MaxHeight;
-			}
-		}
+				// Generate minmax map hierarchy similar to how mipmaps are generated.
+				// Algorithm from the original CDLOD code modified for unsigned values.
+				size_t PrevDataOffset = 0;
+				size_t CurrDataOffset = PatchesX * PatchesY;
+				auto PrevPatchesW = PatchesX;
+				auto PrevPatchesH = PatchesY;
 
-		// Generate minmax map hierarchy
-		size_t PrevDataOffset = 0;
-		size_t CurrDataOffset = PatchesW * PatchesH * 2;
-		auto PrevPatchesW = PatchesW;
-		auto PrevPatchesH = PatchesH;
-		for (uint32_t LOD = 1; LOD < LODCount; ++LOD)
-		{
-			auto CurrPatchesW = (PrevPatchesW + 1) / 2;
-			auto CurrPatchesH = (PrevPatchesH + 1) / 2;
-			auto CurrDataSize = CurrPatchesW * CurrPatchesH * 2;
+				std::fill(MinMaxData.begin() + CurrDataOffset, MinMaxData.end(), std::make_pair<uint16_t, uint16_t>(65535, 0));
 
-			auto* pSrc = MinMaxData.data() + PrevDataOffset;
-			auto* pDst = MinMaxData.data() + CurrDataOffset;
-
-			// Algorithm from the original CDLOD code modified for unsigned values
-
-			for (uint32_t i = 0; i < CurrDataSize; i += 2)
-			{
-				pDst[i] = 65535;
-				pDst[i + 1] = 0;
-			}
-
-			for (uint32_t Z = 0; Z < PrevPatchesH; ++Z)
-			{
-				for (uint32_t X = 0; X < PrevPatchesW; ++X)
+				for (uint32_t LOD = 1; LOD < LODCount; ++LOD)
 				{
-					const int Idx = (X / 2) * 2;
-					pDst[Idx] = std::min(pDst[Idx], pSrc[X * 2]);
-					pDst[Idx + 1] = std::max(pDst[Idx + 1], pSrc[X * 2 + 1]);
+					auto CurrPatchesW = DivCeil(PrevPatchesW, 2);
+					auto CurrPatchesH = DivCeil(PrevPatchesH, 2);
+					auto CurrDataSize = CurrPatchesW * CurrPatchesH;
+
+					auto* pSrc = MinMaxData.data() + PrevDataOffset;
+					auto* pDst = MinMaxData.data() + CurrDataOffset;
+
+					// Consolidate quad of 4 patches from the previous level into 1 patch of the current level.
+					// It also handles cases on edges when only 1 or 2 patches exist due to odd dimension size.
+					for (uint32_t y = 0; y < PrevPatchesH; ++y)
+					{
+						for (uint32_t x = 0; x < PrevPatchesW; ++x)
+						{
+							auto& Dest = pDst[x / 2];
+							Dest.first = std::min(Dest.first, pSrc[x].first);
+							Dest.second = std::max(Dest.second, pSrc[x].second);
+						}
+						pSrc += PrevPatchesW;
+						if (y % 2 == 1) pDst += CurrPatchesW;
+					}
+
+					PrevDataOffset = CurrDataOffset;
+					CurrDataOffset += CurrDataSize;
+					PrevPatchesW = CurrPatchesW;
+					PrevPatchesH = CurrPatchesH;
 				}
-				pSrc += PrevPatchesW * 2;
-				if (Z % 2 == 1) pDst += CurrPatchesW * 2;
+
+				// Write resulting CDLOD file
+				//std::string CDLODID;
+				{
+					std::string Postfix;
+					if (ClustersX > 1 || ClustersY > 1)
+						Postfix = "_" + std::to_string(ClusterX) + "_" + std::to_string(ClusterY);
+
+					auto DestPath = GetPath(Task.Params, "CDLODOutput") / (TaskName + Postfix + ".cdlod");
+					fs::create_directories(DestPath.parent_path());
+
+					std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
+					if (!File)
+					{
+						Task.Log.LogError("Error opening an output file " + DestPath.generic_string());
+						return ETaskResult::Failure;
+					}
+
+					//!!!FIXME: REVISIT WHAT PARAMS ARE NEEDED TO BE SAVED!
+					//???aabb? patch size?
+
+					WriteStream<uint32_t>(File, 'CDLD');        // Format magic value
+					WriteStream<uint32_t>(File, 0x00010000);    // Version 0.1.0.0
+					WriteStream(File, ClusterDataWidth);
+					WriteStream(File, ClusterDataHeight);
+					WriteStream(File, PatchSize);
+					WriteStream(File, LODCount);
+					WriteStream(File, 2 * static_cast<uint32_t>(MinMaxData.size()));
+					WriteStream(File, BTFile.GetVerticalScale());
+					WriteStream(File, static_cast<float>(BTFile.GetLeftExtent())); // Min X
+					WriteStream(File, static_cast<float>(BTFile.GetRightExtent())); // Max X
+					WriteStream(File, static_cast<float>(BTFile.GetBottomExtent())); // Min Z
+					WriteStream(File, static_cast<float>(BTFile.GetTopExtent())); // Max Z
+					WriteStream(File, BTFile.GetMinHeight()); // Min Y
+					WriteStream(File, BTFile.GetMaxHeight()); // Max Y
+
+					// Write heightmap
+					File.write(reinterpret_cast<const char*>(ClusterHeightMap.data()), ClusterHeightMap.size() * sizeof(uint16_t));
+
+					// Write minmax maps converted back to signed int16_t
+					for (const auto& MinMax : MinMaxData)
+					{
+						WriteStream(File, static_cast<int16_t>(static_cast<int>(MinMax.first) - 32768));
+						WriteStream(File, static_cast<int16_t>(static_cast<int>(MinMax.second) - 32768));
+					}
+
+					CDLODID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+
+					Task.Log.LogInfo(" Written CDLOD: " + DestPath.generic_string() + " (" + std::to_string(File.tellp()) + " bytes)");
+				}
+
+				//!!!TODO: process material - UV region or split textures!
 			}
-
-			PrevDataOffset = CurrDataOffset;
-			CurrDataOffset += CurrDataSize;
-			PrevPatchesW = CurrPatchesW;
-			PrevPatchesH = CurrPatchesH;
-		}
-
-		// Write resulting CDLOD file
-
-		std::string CDLODID;
-		{
-			auto DestPath = GetPath(Task.Params, "CDLODOutput") / (TaskName + ".cdlod");
-			fs::create_directories(DestPath.parent_path());
-
-			std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
-			if (!File)
-			{
-				Task.Log.LogError("Error opening an output file " + DestPath.generic_string());
-				return ETaskResult::Failure;
-			}
-
-			WriteStream<uint32_t>(File, 'CDLD');        // Format magic value
-			WriteStream<uint32_t>(File, 0x00010000);    // Version 0.1.0.0
-			WriteStream(File, Width);
-			WriteStream(File, Height);
-			WriteStream(File, PatchSize);
-			WriteStream(File, LODCount);
-			WriteStream(File, TotalMinMaxDataCount);
-			WriteStream(File, BTFile.GetVerticalScale());
-			WriteStream(File, static_cast<float>(BTFile.GetLeftExtent())); // Min X
-			WriteStream(File, static_cast<float>(BTFile.GetRightExtent())); // Max X
-			WriteStream(File, static_cast<float>(BTFile.GetBottomExtent())); // Min Z
-			WriteStream(File, static_cast<float>(BTFile.GetTopExtent())); // Max Z
-			WriteStream(File, BTFile.GetMinHeight()); // Min Y
-			WriteStream(File, BTFile.GetMaxHeight()); // Max Y
-
-			File.write(reinterpret_cast<const char*>(HeightMap.data()), HeightMap.size() * sizeof(uint16_t));
-
-			// Convert minmax back to signed
-			// FIXME: improve?
-			//File.write(reinterpret_cast<const char*>(MinMaxData.data()), MinMaxData.size() * sizeof(uint16_t));
-			for (uint16_t Value : MinMaxData)
-				WriteStream(File, static_cast<int16_t>(static_cast<int>(Value) - 32768));
-
-			CDLODID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 		}
 
 		// Generate material
@@ -546,6 +588,6 @@ public:
 
 int main(int argc, const char** argv)
 {
-	CL3DTTool Tool("cf-l3dt", "L3DT (Large 3D Terrain) to DeusExMachina scene asset converter", { 1, 0, 0 });
+	CL3DTTool Tool("cf-l3dt", "L3DT (Large 3D Terrain) to DeusExMachina scene asset converter", { 0, 2, 0 });
 	return Tool.Execute(argc, argv);
 }
