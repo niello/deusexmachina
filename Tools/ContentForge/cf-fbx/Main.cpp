@@ -1436,7 +1436,7 @@ public:
 		fs::path URI = pTex->GetFileName();
 		Ctx.Log.LogDebug("Texture image: " + URI.generic_string() + (pTex->GetName() ? "" : std::string(", name: ") + pTex->GetName()));
 
-		const auto DestPath = WriteTexture(URI, Ctx.TexturePath, Ctx.TaskParams, Ctx.Log);
+		const auto DestPath = WriteTexture(URI, Ctx.TexturePath, GetTextureDestFormat(URI, Ctx.TaskParams), Ctx.Log);
 		if (DestPath.empty()) return false;
 
 		OutTextureID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();

@@ -1,4 +1,5 @@
 #include "Utils.h"
+#include <Logging.h>
 
 static const uint32_t CRCKey = 0x04c11db7;
 static uint32_t CRCTable[256] = { 0 };
@@ -65,5 +66,18 @@ void WriteData(std::ostream& Stream, const Data::CData& Value)
 	else if (Value.IsA<Data::CParams>()) WriteStream<Data::CParams>(Stream, Value);
 	else if (Value.IsA<Data::CDataArray>()) WriteStream<Data::CDataArray>(Stream, Value);
 	//else assert
+}
+//---------------------------------------------------------------------
+
+bool CopyFile(const std::filesystem::path& SrcPath, const std::filesystem::path& DestPath, CThreadSafeLog* pLog)
+{
+	std::filesystem::create_directories(DestPath.parent_path());
+	std::error_code ec;
+	if (!std::filesystem::copy_file(SrcPath, DestPath, std::filesystem::copy_options::overwrite_existing, ec))
+	{
+		if (pLog) pLog->LogError("Error copying " + SrcPath.generic_string() + " to " + DestPath.generic_string() + ":\n" + ec.message());
+		return false;
+	}
+	return true;
 }
 //---------------------------------------------------------------------

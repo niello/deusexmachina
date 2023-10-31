@@ -5,7 +5,35 @@
 #include <vector>
 #include <filesystem>
 
+#undef CopyFile
+
 // Utility functions and data structures
+
+class CThreadSafeLog;
+
+struct CRect
+{
+	int32_t Left = 0;
+	int32_t Top = 0;
+	int32_t Right = 0;
+	int32_t Bottom = 0;
+
+	CRect(int32_t Left_, int32_t Top_, int32_t Right_, int32_t Bottom_) :
+		Left(Left_), Top(Top_), Right(Right_), Bottom(Bottom_)
+	{}
+
+	bool IsValid() const { return Left <= Right && Top <= Bottom; }
+
+	CRect Intersection(const CRect& Other) const noexcept
+	{
+		return CRect{ std::max(Left, Other.Left), std::max(Top, Other.Top), std::min(Right, Other.Right), std::min(Bottom, Other.Bottom) };
+	}
+
+	bool operator =(const CRect& Other) const noexcept
+	{
+		return Left == Other.Left && Top == Other.Top && Right == Other.Right && Bottom == Other.Bottom;
+	}
+};
 
 struct membuf : std::streambuf
 {
@@ -84,6 +112,8 @@ constexpr inline uint32_t ColorRGBANorm(float r, float g, float b, float a = 1.f
 	return ColorRGBA(NormalizedFloatToByte(r), NormalizedFloatToByte(g), NormalizedFloatToByte(b), NormalizedFloatToByte(a));
 }
 //---------------------------------------------------------------------
+
+bool CopyFile(const std::filesystem::path& SrcPath, const std::filesystem::path& DestPath, CThreadSafeLog* pLog = nullptr);
 
 template<typename T>
 bool ReadAllFile(const char* pPath, std::vector<T>& Out, bool Binary = true)

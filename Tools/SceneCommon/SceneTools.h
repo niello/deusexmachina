@@ -224,7 +224,10 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name, Data::CParams&& Nodes, const Data::CSchemeSet& Schemes, const Data::CParams& TaskParams, bool HRD, bool Binary, bool CreateRoot, CThreadSafeLog& Log);
 void InitImageProcessing();
 void TermImageProcessing();
-std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesystem::path& DestDir, const Data::CParams& TaskParams, CThreadSafeLog& Log);
+bool SaveCurrentILImage(const std::string& DestFormat, fs::path DestPath, CThreadSafeLog& Log);
+std::string GetTextureDestFormat(const std::filesystem::path& SrcPath, const Data::CParams& TaskParams);
+std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesystem::path& DestDir, const std::string& DestFormat, CThreadSafeLog& Log);
+std::string WriteTextureRegion(const std::filesystem::path& SrcPath, const std::filesystem::path& DestPath, const CRect& Rect, const std::string& DestFormat, CThreadSafeLog& Log);
 std::optional<std::string> GenerateCollisionShape(std::string ShapeType, const std::filesystem::path& ShapeDir, const std::string& MeshRsrcName, const CMeshAttrInfo& MeshInfo, const acl::Transform_32& GlobalTfm, const std::map<std::string, std::filesystem::path>& PathAliases, CThreadSafeLog& Log);
 void FillNodeTransform(const acl::Transform_32& Tfm, Data::CParams& NodeSection);
 bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate, acl::Vector4_32 ForwardDir, acl::Vector4_32 UpDir, acl::Vector4_32 SideDir, const std::vector<acl::Vector4_32>& RootPositions, const std::vector<acl::Vector4_32>& LeftFootPositions, const std::vector<acl::Vector4_32>& RightFootPositions);

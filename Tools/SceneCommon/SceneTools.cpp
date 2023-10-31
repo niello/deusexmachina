@@ -18,6 +18,7 @@ namespace acl
 
 namespace fs = std::filesystem;
 
+// TODO: use iluErrorString?
 static const char* GetDevILErrorText(ILenum ErrorCode)
 {
 	switch (ErrorCode)
@@ -656,12 +657,67 @@ void TermImageProcessing()
 }
 //---------------------------------------------------------------------
 
-std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesystem::path& DestDir,
-	const Data::CParams& TaskParams, CThreadSafeLog& Log)
+static bool IsImageFormatSavingSupported(std::string_view Format)
 {
-	const auto RsrcName = GetValidResourceName(SrcPath.stem().string());
-	const auto SrcExtension = SrcPath.extension().generic_string();
+	return Format == "DXT5" || Format == "DXT5nm" || Format == "DDS" || Format == "TGA";
+}
+//---------------------------------------------------------------------
 
+bool SaveCurrentILImage(const std::string& DestFormat, fs::path DestPath, CThreadSafeLog& Log)
+{
+	fs::create_directories(DestPath.parent_path());
+
+	ilEnable(IL_FILE_OVERWRITE);
+
+	ILboolean Result = IL_FALSE;
+	std::string Error;
+
+	if (DestFormat == "DXT5")
+	{
+		DestPath.replace_extension("dds");
+		ilSetInteger(IL_DXTC_FORMAT, IL_DXT5);
+		Result = ilSave(IL_DDS, DestPath.string().c_str());
+		Error = std::string(GetDevILErrorText(ilGetError()));
+	}
+	else if (DestFormat == "DXT5nm")
+	{
+		// FIXME: no normal map compression for now. Use NV texture tools or the like?
+		DestPath.replace_extension("dds");
+		Result = ilSave(IL_DDS, DestPath.string().c_str());
+		Error = std::string(GetDevILErrorText(ilGetError()));
+
+		Log.LogWarning("Save as DDS (no DXT5nm support yet): " + DestPath.generic_string());
+	}
+	else if (DestFormat == "DDS")
+	{
+		DestPath.replace_extension("dds");
+		Result = ilSave(IL_DDS, DestPath.string().c_str());
+		Error = std::string(GetDevILErrorText(ilGetError()));
+	}
+	else if (DestFormat == "TGA")
+	{
+		DestPath.replace_extension("tga");
+		ilSetInteger(IL_TGA_RLE, IL_TRUE);
+		Result = ilSave(IL_TGA, DestPath.string().c_str());
+		Error = std::string(GetDevILErrorText(ilGetError()));
+	}
+	else
+	{
+		Result = IL_FALSE;
+		Error = "Unknown format";
+	}
+
+	if (Result)
+		Log.LogDebug("Saved as " + DestFormat + ": " + DestPath.generic_string());
+	else
+		Log.LogError("Error saving " + DestPath.generic_string() + " as '" + DestFormat + "': " + Error);
+
+	return !!Result;
+}
+//---------------------------------------------------------------------
+
+std::string GetTextureDestFormat(const std::filesystem::path& SrcPath, const Data::CParams& TaskParams)
+{
 	// Search in order for the first matching conversion rule
 	// TODO: preload and store as structs?
 	std::string DestFormat;
@@ -679,22 +735,24 @@ std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesy
 		}
 	}
 
-	fs::path DestPath = DestDir;
+	return DestFormat;
+}
+//---------------------------------------------------------------------
 
-	if (DestFormat.empty())
+std::string WriteTexture(const fs::path& SrcPath, const fs::path& DestDir, const std::string& DestFormat, CThreadSafeLog& Log)
+{
+	const auto RsrcName = GetValidResourceName(SrcPath.stem().string());
+	const auto SrcExtension = SrcPath.extension().generic_string();
+
+	fs::path DestPath = DestDir / (RsrcName + SrcExtension);
+
+	// Check if conversion is requested and possible
+	if (DestFormat.empty() || !IsImageFormatSavingSupported(DestFormat))
 	{
-		// No conversion required, copy file as is
-		DestPath /= (RsrcName + SrcExtension);
-		try
-		{
-			fs::create_directories(DestDir);
-			fs::copy_file(SrcPath, DestPath, fs::copy_options::overwrite_existing);
-		}
-		catch (fs::filesystem_error& e)
-		{
-			Log.LogError("Error copying " + SrcPath.generic_string() + " to " + DestPath.generic_string() + ":\n" + e.what());
-			return {};
-		}
+		if (!DestFormat.empty())
+			Log.LogWarning("Unknown format '" + DestFormat + "' for " + DestPath.generic_string());
+
+		if (!CopyFile(SrcPath, DestPath, &Log)) return {};
 	}
 	else
 	{
@@ -708,61 +766,19 @@ std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesy
 			return {};
 		}
 
-		fs::create_directories(DestPath.parent_path());
-
-		ilEnable(IL_FILE_OVERWRITE);
-
-		ILboolean Result = IL_FALSE;
-
-		if (DestFormat == "DXT5")
-		{
-			DestPath /= (RsrcName + ".dds");
-			ilSetInteger(IL_DXTC_FORMAT, IL_DXT5);
-			Result = ilSave(IL_DDS, DestPath.string().c_str());
-
-			Log.LogDebug("Save as DDS DXT5: " + DestPath.generic_string());
-		}
-		else if (DestFormat == "DXT5nm")
-		{
-			// FIXME: no normal map compression for now. Use NV texture tools or the like?
-			DestPath /= (RsrcName + ".dds");
-			Result = ilSave(IL_DDS, DestPath.string().c_str());
-
-			Log.LogDebug("Save as DDS DXT5: " + DestPath.generic_string());
-		}
-		else if (DestFormat == "DDS")
-		{
-			DestPath /= (RsrcName + ".dds");
-			Result = ilSave(IL_DDS, DestPath.string().c_str());
-
-			Log.LogDebug("Save as DDS DXT5: " + DestPath.generic_string());
-		}
-		else if (DestFormat == "TGA")
-		{
-			DestPath /= (RsrcName + ".tga");
-			ilSetInteger(IL_TGA_RLE, IL_TRUE); //???!!!per-texture (per-rule) setting?
-			Result = ilSave(IL_TGA, DestPath.string().c_str());
-
-			Log.LogDebug("Save as DDS DXT5: " + DestPath.generic_string());
-		}
-		else
-		{
-			Log.LogWarning("Format " + DestFormat + " unknown, used for " + SrcPath.generic_string() + ", will copy as is");
-
-			DestPath /= (RsrcName + SrcExtension);
-			Result = ilSaveImage(DestPath.string().c_str());
-		}
+		const bool Result = SaveCurrentILImage(DestFormat, DestPath, Log);
 
 		ilDeleteImages(1, &ImgId);
 
-		if (!Result)
-		{
-			Log.LogError("Error saving converted " + SrcPath.generic_string() + " to " + DestPath.generic_string()+ ", error: " + std::string(GetDevILErrorText(ilGetError())));
-			return {};
-		}
+		if (!Result) return {};
 	}
 
 	return DestPath.generic_string();
+}
+//---------------------------------------------------------------------
+
+std::string WriteTextureRegion(const std::filesystem::path& SrcPath, const std::filesystem::path& DestPath, const CRect& Rect, const std::string& DestFormat, CThreadSafeLog& Log)
+{
 }
 //---------------------------------------------------------------------
 

@@ -36,6 +36,13 @@ public:
 		// Set default before parsing command line
 		_SchemeFile = "../schemes/scene.dss";
 		_SettingsFile = "../schemes/settings.hrd";
+
+		InitImageProcessing();
+	}
+
+	~CL3DTTool()
+	{
+		TermImageProcessing();
 	}
 
 	virtual bool SupportsMultithreading() const override
@@ -209,7 +216,7 @@ public:
 		uint32_t LODCount = static_cast<uint32_t>(ParamsUtils::GetParam<int>(Task.Params, "LODCount", 6));
 		if (!LODCount) LODCount = 1;
 
-		// Write CDLOD file
+		// Read source heightfield
 
 		std::vector<char> HeightfieldFileData;
 		if (!ReadAllFile(HFPath.string().c_str(), HeightfieldFileData))
@@ -255,6 +262,26 @@ public:
 		// Raster quad count per smallest and finest quadtree node
 		const auto PatchSize = ClusterSize >> (LODCount - 1);
 
+		// Prepare common part of the material
+
+		const auto TexturePath = GetPath(Task.Params, "TextureOutput");
+
+		auto EffectIt = _Settings.EffectsByType.find("MetallicRoughnessTerrain");
+		if (EffectIt == _Settings.EffectsByType.cend() || EffectIt->second.empty())
+		{
+			Task.Log.LogError("Material type MetallicRoughnessTerrain has no mapped DEM effect file in effect settings");
+			return ETaskResult::Failure;
+		}
+
+		CMaterialParams MtlParamTable;
+		auto Path = ResolvePathAliases(EffectIt->second, _PathAliases).generic_string();
+		Task.Log.LogDebug("Opening effect " + Path);
+		if (!GetEffectMaterialParams(MtlParamTable, Path, Task.Log))
+		{
+			Task.Log.LogError("Error reading material param table for effect " + Path);
+			return ETaskResult::Failure;
+		}
+
 		// Process clusters
 
 		const auto ClustersX = DivCeil(HeightmapWidth, ClusterSize);
@@ -264,9 +291,6 @@ public:
 		Task.Log.LogInfo("Cluster size:  " + std::to_string(ClusterSize) + " unit quads");
 		Task.Log.LogInfo("LOD count:     " + std::to_string(LODCount));
 		Task.Log.LogInfo("Patch size:    " + std::to_string(PatchSize) + " unit quads");
-
-		//!!!FIXME: DBG TMP! Search the same var below!
-		std::string CDLODID;
 
 		for (uint32_t ClusterY = 0; ClusterY < ClustersY; ++ClusterY)
 		{
@@ -392,13 +416,14 @@ public:
 					PrevPatchesH = CurrPatchesH;
 				}
 
-				// Write resulting CDLOD file
-				//std::string CDLODID;
-				{
-					std::string Postfix;
-					if (ClustersX > 1 || ClustersY > 1)
-						Postfix = "_" + std::to_string(ClusterX) + "_" + std::to_string(ClusterY);
+				// Use postfix in all file names when split into multiple clusters
+				std::string Postfix;
+				if (ClustersX > 1 || ClustersY > 1)
+					Postfix = "_" + std::to_string(ClusterX) + "_" + std::to_string(ClusterY);
 
+				// Write resulting CDLOD file
+				std::string CDLODID;
+				{
 					auto DestPath = GetPath(Task.Params, "CDLODOutput") / (TaskName + Postfix + ".cdlod");
 					fs::create_directories(DestPath.parent_path());
 
@@ -442,88 +467,64 @@ public:
 					Task.Log.LogInfo(" Written CDLOD: " + DestPath.generic_string() + " (" + std::to_string(File.tellp()) + " bytes)");
 				}
 
-				//!!!TODO: process material - UV region or split textures!
+				// Generate material
+
+				Data::CParams MtlParams;
+
+				const auto GeomNormalTextureID = _Settings.GetEffectParamID("TerrainGeometryNormalTexture");
+				if (!TNPath.empty() && MtlParamTable.HasResource(GeomNormalTextureID))
+				{
+					// save texture region: src, rect, dest format
+					// save UV calc params to CDLOD file or to some other place
+
+					//const auto RsrcName = GetValidResourceName(SrcPath.stem().string());
+					//const auto SrcExtension = SrcPath.extension().generic_string();
+					//fs::path DestPath = DestDir / (RsrcName + SrcExtension);
+
+					auto DestPath = TexturePath / (TaskName + "_tn" + TNPath.extension().string());
+					if (!CopyFile(TNPath, DestPath, &Task.Log)) return ETaskResult::Failure;
+
+					MtlParams.emplace_back(CStrID(GeomNormalTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
+				}
+
+				const auto SplatMapTextureID = _Settings.GetEffectParamID("SplatMapTexture");
+				if (!SplatMapPath.empty() && MtlParamTable.HasResource(SplatMapTextureID))
+				{
+					auto DestPath = TexturePath / (TaskName + "_sm" + SplatMapPath.extension().string());
+					if (!CopyFile(SplatMapPath, DestPath, &Task.Log)) return ETaskResult::Failure;
+
+					MtlParams.emplace_back(CStrID(SplatMapTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
+				}
+
+				//???can be different for different clusters?
+				const auto AlbedoTextureID = _Settings.GetEffectParamID("AlbedoTexture");
+				Data::CDataArray* pAlbedoTextures;
+				if (ParamsUtils::TryGetParam(pAlbedoTextures, Task.Params, "AlbedoTexture"))
+				{
+					const auto Size = pAlbedoTextures->size();
+					for (size_t i = 0; i < Size; ++i)
+					{
+						const std::string TexParamID = AlbedoTextureID + std::to_string(i);
+						if (MtlParamTable.HasResource(TexParamID))
+							MtlParams.emplace_back(CStrID(TexParamID), _ResourceRoot + pAlbedoTextures->at(i).GetValue<std::string>());
+					}
+				}
+
+				// TODO: other per-splat textures - normal, metallic-roughness
+
+				std::string MaterialID;
+				{
+					auto DestPath = GetPath(Task.Params, "MaterialOutput") / (TaskName + ".mtl");
+
+					fs::create_directories(DestPath.parent_path());
+
+					std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
+
+					if (!SaveMaterial(File, EffectIt->second, MtlParamTable, MtlParams, Task.Log)) return ETaskResult::Failure;
+
+					MaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+				}
 			}
-		}
-
-		// Generate material
-
-		const auto TexturePath = GetPath(Task.Params, "TextureOutput");
-
-		auto EffectIt = _Settings.EffectsByType.find("MetallicRoughnessTerrain");
-		if (EffectIt == _Settings.EffectsByType.cend() || EffectIt->second.empty())
-		{
-			Task.Log.LogError("Material type MetallicRoughnessTerrain has no mapped DEM effect file in effect settings");
-			return ETaskResult::Failure;
-		}
-
-		CMaterialParams MtlParamTable;
-		auto Path = ResolvePathAliases(EffectIt->second, _PathAliases).generic_string();
-		Task.Log.LogDebug("Opening effect " + Path);
-		if (!GetEffectMaterialParams(MtlParamTable, Path, Task.Log))
-		{
-			Task.Log.LogError("Error reading material param table for effect " + Path);
-			return ETaskResult::Failure;
-		}
-
-		Data::CParams MtlParams;
-
-		const auto GeomNormalTextureID = _Settings.GetEffectParamID("TerrainGeometryNormalTexture");
-		if (MtlParamTable.HasResource(GeomNormalTextureID))
-		{
-			auto DestPath = TexturePath / (TaskName + "_tn" + TNPath.extension().string());
-			fs::create_directories(DestPath.parent_path());
-			std::error_code ec;
-			if (!fs::copy_file(TNPath, DestPath, fs::copy_options::overwrite_existing, ec))
-			{
-				Task.Log.LogError("Error copying texture from " + TNPath.generic_string() + " to " + DestPath.generic_string() + ": " + ec.message());
-				return ETaskResult::Failure;
-			}
-
-			MtlParams.emplace_back(CStrID(GeomNormalTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
-		}
-
-		const auto SplatMapTextureID = _Settings.GetEffectParamID("SplatMapTexture");
-		if (MtlParamTable.HasResource(SplatMapTextureID))
-		{
-			auto DestPath = TexturePath / (TaskName + "_sm" + SplatMapPath.extension().string());
-			fs::create_directories(DestPath.parent_path());
-			std::error_code ec;
-			if (!fs::copy_file(SplatMapPath, DestPath, fs::copy_options::overwrite_existing, ec))
-			{
-				Task.Log.LogError("Error copying texture from " + SplatMapPath.generic_string() + " to " + DestPath.generic_string() + ": " + ec.message());
-				return ETaskResult::Failure;
-			}
-
-			MtlParams.emplace_back(CStrID(SplatMapTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
-		}
-
-		const auto AlbedoTextureID = _Settings.GetEffectParamID("AlbedoTexture");
-		Data::CDataArray* pAlbedoTextures;
-		if (ParamsUtils::TryGetParam(pAlbedoTextures, Task.Params, "AlbedoTexture"))
-		{
-			const auto Size = pAlbedoTextures->size();
-			for (size_t i = 0; i < Size; ++i)
-			{
-				const std::string TexParamID = AlbedoTextureID + std::to_string(i);
-				if (MtlParamTable.HasResource(TexParamID))
-					MtlParams.emplace_back(CStrID(TexParamID), _ResourceRoot + pAlbedoTextures->at(i).GetValue<std::string>());
-			}
-		}
-
-		// TODO: NormalTexture, MRTexture
-
-		std::string MaterialID;
-		{
-			auto DestPath = GetPath(Task.Params, "MaterialOutput") / (TaskName + ".mtl");
-
-			fs::create_directories(DestPath.parent_path());
-
-			std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
-
-			if (!SaveMaterial(File, EffectIt->second, MtlParamTable, MtlParams, Task.Log)) return ETaskResult::Failure;
-
-			MaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 		}
 
 		// Write scene file

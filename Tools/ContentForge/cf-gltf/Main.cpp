@@ -1187,7 +1187,8 @@ public:
 
 		Ctx.Log.LogDebug("Texture image " + Image.id + ": " + Image.uri + (Image.name.empty() ? "" : ", name: " + Image.name));
 
-		const auto DestPath = WriteTexture(Ctx.SrcFolder / Image.uri, Ctx.TexturePath, Ctx.TaskParams, Ctx.Log);
+		const auto URI = Ctx.SrcFolder / Image.uri;
+		const auto DestPath = WriteTexture(URI, Ctx.TexturePath, GetTextureDestFormat(URI, Ctx.TaskParams), Ctx.Log);
 		if (DestPath.empty()) return false;
 
 		OutTextureID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
