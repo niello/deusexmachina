@@ -156,6 +156,7 @@ public:
 		}
 
 		fs::path TNPath;
+		auto TNImageID = 0;
 		if (auto XMLTNMap = XMLMaps.find_child_by_attribute("name", "TN"))
 		{
 			TNPath = SrcFolder / XMLTNMap.find_child_by_attribute("name", "Filename").text().as_string();
@@ -169,6 +170,9 @@ public:
 				Task.Log.LogError(TNPath.generic_string() + " doesn't exist");
 				return ETaskResult::Failure;
 			}
+
+			TNImageID = LoadILImage(TNPath, Task.Log);
+			if (!TNImageID) return ETaskResult::Failure;
 		}
 		else
 		{
@@ -177,6 +181,7 @@ public:
 		}
 
 		fs::path SplatMapPath;
+		auto SMImageID = 0;
 		if (auto XMLAlpha1Map = XMLMaps.find_child_by_attribute("name", "Alpha_1"))
 		{
 			SplatMapPath = SrcFolder / XMLAlpha1Map.find_child_by_attribute("name", "Filename").text().as_string();
@@ -196,12 +201,18 @@ public:
 				Task.Log.LogWarning("Alpha (splatting) map is one channel. Use L3DT Professional to generate one multichannel map. It is freeware now.");
 			if (XMLMaps.find_child_by_attribute("name", "Alpha_2"))
 				Task.Log.LogWarning("Multiple alpha (splatting) maps are declared. Use L3DT Professional to generate one multichannel map. It is freeware now.");
+
+			SMImageID = LoadILImage(SplatMapPath, Task.Log);
+			if (!SMImageID) return ETaskResult::Failure;
 		}
 		else
 		{
 			Task.Log.LogError(std::string("No Alpha_1 map declared in L3DT XML, use Operations->Alpha maps->Generate maps..."));
 			return ETaskResult::Failure;
 		}
+
+		const auto TNDestFormat = GetTextureDestFormat(TNPath, Task.Params);
+		const auto SMDestFormat = GetTextureDestFormat(SplatMapPath, Task.Params);
 
 		// Read terrain subdivision params
 
@@ -472,15 +483,12 @@ public:
 				Data::CParams MtlParams;
 
 				const auto GeomNormalTextureID = _Settings.GetEffectParamID("TerrainGeometryNormalTexture");
-				if (!TNPath.empty() && MtlParamTable.HasResource(GeomNormalTextureID))
+				if (TNImageID && MtlParamTable.HasResource(GeomNormalTextureID))
 				{
-					//!!!FIXME: avoid resaving when 1x1 cluster?! Copy texture!
-					//!!!FIXME: don't load image in each iteration!
-					//!!!FIXME: delete images when finished!
+					//!!!FIXME: avoid resaving when 1 cluster and no format conversion requested?! Copy texture!
 
-					const auto ImageID = LoadILImage(TNPath, Task.Log);
-					const auto ImageRect = GetCurrentILImageRect();
-
+					// Terrain geometry normals are per-vertex, like heights. Must have exactly one normal per height point.
+					const auto ImageRect = GetILImageRect(TNImageID);
 					if (ImageRect.Width() != HeightmapWidth || ImageRect.Height() != HeightmapHeight)
 					{
 						Task.Log.LogError("Geometry normal texture size doesn't match heightmap dimensions");
@@ -488,54 +496,55 @@ public:
 					}
 
 					CRect ClusterRect(HeightFromX, HeightFromY, HeightToX - 1, HeightToY - 1);
-
 					auto DestPath = TexturePath / (TaskName + Postfix + "_tn" + TNPath.extension().string());
-					if (!SaveILImageRegion(ImageID, GetTextureDestFormat(TNPath, Task.Params), DestPath, ClusterRect, Task.Log))
+					if (!SaveILImageRegion(TNImageID, TNDestFormat, DestPath, ClusterRect, Task.Log))
 					{
 						Task.Log.LogError("Could not save geometry normals texture region for the cluster");
 						return ETaskResult::Failure;
 					}
 
-					// save UV calc params to
-					// - CDLOD header?
-					// - scene attr field?
-					// - material?
-
 					MtlParams.emplace_back(CStrID(GeomNormalTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
 				}
 
 				const auto SplatMapTextureID = _Settings.GetEffectParamID("SplatMapTexture");
-				if (!SplatMapPath.empty() && MtlParamTable.HasResource(SplatMapTextureID))
+				if (SMImageID && MtlParamTable.HasResource(SplatMapTextureID))
 				{
-					//???doesn't need to be divisible? can round to whole pixels expanding and save correct UV mapping constants!
+					//!!!FIXME: avoid resaving when 1 cluster and no format conversion requested?! Copy texture!
 
-					//if (ImageRect.Width() % ClusterDataRasterWidth || ClusterDataRasterWidth % ImageRect.Width() ||
-					//	ImageRect.Height() % ClusterDataRasterHeight || ClusterDataRasterHeight % ImageRect.Height())
-					//{
-					//	Task.Log.LogError("Geometry normal texture size doesn't match heightmap dimensions");
-					//	return ETaskResult::Failure;
-					//}
+					const auto ImageRect = GetILImageRect(SMImageID);
 
-					// determine rect to save
-					// - calculate texel to HM ratio (ClusterDataRasterWidth, ClusterDataRasterHeight), check it is divisible (rect must be whole pixels)
-					// - clamp rect to image size
+					// Splat map texels per raster quad. This can be used to remap UV from HM to SM.
+					const float RatioX = ImageRect.Width() / static_cast<float>(RasterQuadsX);
+					const float RatioY = ImageRect.Height() / static_cast<float>(RasterQuadsY);
+
+					// Project heightmap region onto the splat map
+					const float SMLeft = HeightFromX * RatioX;
+					const float SMTop = HeightFromY * RatioY;
+					const float SMRight = HeightToX * RatioX;
+					const float SMBottom = HeightToY * RatioY;
+
+					// For seamless cluster rendering with linear texture filtration
+					const int32_t BorderSize = 1; // 1 << (MipCount - 1)
+
+					// Round outside to whole pixels
+					CRect ClusterRect(
+						static_cast<int32_t>(SMLeft) - BorderSize,
+						static_cast<int32_t>(SMTop) - BorderSize,
+						static_cast<int32_t>(SMRight + 0.5f) - 1 + BorderSize,
+						static_cast<int32_t>(SMBottom + 0.5f) - 1 + BorderSize);
 
 					// save texture region: src, rect, dest format
-					// - clamp rect to image size
-					// - if dest format is block-compressed (DevIL knows), round right & bottom
-					// - if rect covers only a part of the image, gen new one sized as rect and ilBlit data there
-					// - delete source image (or do it once outside cluster loop)
-					// - save source or new blitted image as the dest, in desired format
-					// - recturn actual saved rect (due to block compression roundings)
-					//???use SaveCurrentILImage and add CRect arg?
+					auto DestPath = TexturePath / (TaskName + Postfix + "_sm" + SplatMapPath.extension().string());
+					if (!SaveILImageRegion(SMImageID, SMDestFormat, DestPath, ClusterRect, Task.Log))
+					{
+						Task.Log.LogError("Could not save splat map texture region for the cluster");
+						return ETaskResult::Failure;
+					}
 
-					// save UV calc params to
+					// calc and save UV remap params to
 					// - CDLOD header?
 					// - scene attr field?
 					// - material?
-
-					auto DestPath = TexturePath / (TaskName + Postfix + "_sm" + SplatMapPath.extension().string());
-					if (!CopyFile(SplatMapPath, DestPath, &Task.Log)) return ETaskResult::Failure;
 
 					MtlParams.emplace_back(CStrID(SplatMapTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
 				}
@@ -570,6 +579,8 @@ public:
 				}
 			}
 		}
+
+		UnloadILImage(TNImageID);
 
 		// Write scene file
 

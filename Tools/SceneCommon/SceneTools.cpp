@@ -679,6 +679,19 @@ ILuint LoadILImage(const std::filesystem::path& SrcPath, CThreadSafeLog& Log)
 }
 //---------------------------------------------------------------------
 
+void UnloadILImage(ILuint ID)
+{
+	if (ID) ilDeleteImage(ID);
+}
+//---------------------------------------------------------------------
+
+CRect GetILImageRect(ILuint ID)
+{
+	ilBindImage(ID);
+	return GetCurrentILImageRect();
+}
+//---------------------------------------------------------------------
+
 CRect GetCurrentILImageRect()
 {
 	return CRect(0, 0, ilGetInteger(IL_IMAGE_WIDTH) - 1, ilGetInteger(IL_IMAGE_HEIGHT) - 1);

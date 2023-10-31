@@ -227,7 +227,9 @@ bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name
 void InitImageProcessing();
 void TermImageProcessing();
 ILuint LoadILImage(const std::filesystem::path& SrcPath, CThreadSafeLog& Log);
+void UnloadILImage(ILuint ID);
 CRect GetCurrentILImageRect();
+CRect GetILImageRect(ILuint ID);
 bool SaveCurrentILImage(const std::string& DestFormat, std::filesystem::path DestPath, CThreadSafeLog& Log);
 bool SaveILImageRegion(ILuint ID, const std::string& DestFormat, std::filesystem::path DestPath, CRect& Region, CThreadSafeLog& Log);
 std::string GetTextureDestFormat(const std::filesystem::path& SrcPath, const Data::CParams& TaskParams);
