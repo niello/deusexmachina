@@ -101,7 +101,7 @@ ILboolean ilRleCompressLine(ILubyte *p, ILuint n, ILubyte bpp,
 			n -= SameCount;
 			RLEBufSize += bpp + 1;
 			p += (SameCount - 1) * bpp;
-			*q++ = *p++;
+			//*q++ = *p++;
 			switch(bpp) {
 				case 4:	*q++ = *p++;
 				case 3: *q++ = *p++;

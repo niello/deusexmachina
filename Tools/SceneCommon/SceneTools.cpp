@@ -709,7 +709,8 @@ bool SaveCurrentILImage(const std::string& DestFormat, std::filesystem::path Des
 
 	if (DestFormat.empty())
 	{
-		// Save in a source format
+		// Save in a source format. Enable some format-specific settings.
+		ilSetInteger(IL_TGA_RLE, IL_TRUE);
 		Result = ilSaveImage(DestPath.string().c_str());
 		Error = std::string(GetDevILErrorText(ilGetError()));
 	}
@@ -782,6 +783,7 @@ bool SaveILImageRegion(ILuint ID, const std::string& DestFormat, std::filesystem
 		BlitImgId = ilGenImage();
 		ilBindImage(BlitImgId);
 		ilTexImage(Region.Width(), Region.Height(), 1, Channels, Format, Type, nullptr);
+		ilDisable(IL_BLIT_BLEND);
 		ilBlit(ID, 0, 0, 0, Region.Left, Region.Top, 0, Region.Width(), Region.Height(), 1);
 	}
 
