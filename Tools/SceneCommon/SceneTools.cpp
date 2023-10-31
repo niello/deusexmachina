@@ -663,7 +663,29 @@ static bool IsImageFormatSavingSupported(std::string_view Format)
 }
 //---------------------------------------------------------------------
 
-bool SaveCurrentILImage(const std::string& DestFormat, fs::path DestPath, CThreadSafeLog& Log)
+ILuint LoadILImage(const std::filesystem::path& SrcPath, CThreadSafeLog& Log)
+{
+	ILuint ImgId = ilGenImage();
+	ilBindImage(ImgId);
+
+	if (!ilLoadImage(SrcPath.string().c_str()))
+	{
+		ilDeleteImage(ImgId);
+		Log.LogError("Can't load image " + SrcPath.generic_string() + ", error: " + std::string(GetDevILErrorText(ilGetError())));
+		return 0;
+	}
+
+	return ImgId;
+}
+//---------------------------------------------------------------------
+
+CRect GetCurrentILImageRect()
+{
+	return CRect(0, 0, ilGetInteger(IL_IMAGE_WIDTH) - 1, ilGetInteger(IL_IMAGE_HEIGHT) - 1);
+}
+//---------------------------------------------------------------------
+
+bool SaveCurrentILImage(const std::string& DestFormat, std::filesystem::path DestPath, CThreadSafeLog& Log)
 {
 	fs::create_directories(DestPath.parent_path());
 
@@ -672,7 +694,13 @@ bool SaveCurrentILImage(const std::string& DestFormat, fs::path DestPath, CThrea
 	ILboolean Result = IL_FALSE;
 	std::string Error;
 
-	if (DestFormat == "DXT5")
+	if (DestFormat.empty())
+	{
+		// Save in a source format
+		Result = ilSaveImage(DestPath.string().c_str());
+		Error = std::string(GetDevILErrorText(ilGetError()));
+	}
+	else if (DestFormat == "DXT5")
 	{
 		DestPath.replace_extension("dds");
 		ilSetInteger(IL_DXTC_FORMAT, IL_DXT5);
@@ -708,11 +736,51 @@ bool SaveCurrentILImage(const std::string& DestFormat, fs::path DestPath, CThrea
 	}
 
 	if (Result)
-		Log.LogDebug("Saved as " + DestFormat + ": " + DestPath.generic_string());
+		Log.LogDebug("Saved" + (DestFormat.empty() ? " in source format" : " as " + DestFormat) + ": " + DestPath.generic_string());
 	else
-		Log.LogError("Error saving " + DestPath.generic_string() + " as '" + DestFormat + "': " + Error);
+		Log.LogError("Error saving " + DestPath.generic_string() + (DestFormat.empty() ? " in source format" : " as " + DestFormat) + ": " + Error);
 
 	return !!Result;
+}
+//---------------------------------------------------------------------
+
+bool SaveILImageRegion(ILuint ID, const std::string& DestFormat, std::filesystem::path DestPath, CRect& Region, CThreadSafeLog& Log)
+{
+	ilBindImage(ID);
+
+	const auto ImageRect = GetCurrentILImageRect();
+	Region = Region.Intersection(ImageRect);
+
+	// If dest format is block-compressed, round right & bottom
+	if (DestFormat == "DXT5")
+	{
+		Region.Right += DivCeil(Region.Width(), 4) * 4 - Region.Width();
+		Region.Bottom += DivCeil(Region.Height(), 4) * 4 - Region.Height();
+	}
+
+	ILuint BlitImgId = 0;
+	const bool NeedBlit = (Region.Intersection(ImageRect) != ImageRect);
+	if (NeedBlit)
+	{
+		const auto Channels = ilGetInteger(IL_IMAGE_CHANNELS);
+		const auto Format = ilGetInteger(IL_IMAGE_FORMAT);
+		const auto Type = ilGetInteger(IL_IMAGE_TYPE);
+
+		BlitImgId = ilGenImage();
+		ilBindImage(BlitImgId);
+		ilTexImage(Region.Width(), Region.Height(), 1, Channels, Format, Type, nullptr);
+		ilBlit(ID, 0, 0, 0, Region.Left, Region.Top, 0, Region.Width(), Region.Height(), 1);
+	}
+
+	const bool Result = SaveCurrentILImage(DestFormat, DestPath, Log);
+
+	if (NeedBlit)
+	{
+		ilDeleteImage(BlitImgId);
+		ilBindImage(ID);
+	}
+
+	return Result;
 }
 //---------------------------------------------------------------------
 
@@ -756,15 +824,8 @@ std::string WriteTexture(const fs::path& SrcPath, const fs::path& DestDir, const
 	}
 	else
 	{
-		ILuint ImgId;
-		ilGenImages(1, &ImgId);
-		ilBindImage(ImgId);
-
-		if (!ilLoadImage(SrcPath.string().c_str()))
-		{
-			Log.LogError("Can't load " + SrcPath.generic_string() + " for export, error: " + std::string(GetDevILErrorText(ilGetError())));
-			return {};
-		}
+		ILuint ImgId = LoadILImage(SrcPath, Log);
+		if (!ImgId) return {};
 
 		const bool Result = SaveCurrentILImage(DestFormat, DestPath, Log);
 
@@ -774,11 +835,6 @@ std::string WriteTexture(const fs::path& SrcPath, const fs::path& DestDir, const
 	}
 
 	return DestPath.generic_string();
-}
-//---------------------------------------------------------------------
-
-std::string WriteTextureRegion(const std::filesystem::path& SrcPath, const std::filesystem::path& DestPath, const CRect& Rect, const std::string& DestFormat, CThreadSafeLog& Log)
-{
 }
 //---------------------------------------------------------------------
 

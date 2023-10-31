@@ -474,15 +474,32 @@ public:
 				const auto GeomNormalTextureID = _Settings.GetEffectParamID("TerrainGeometryNormalTexture");
 				if (!TNPath.empty() && MtlParamTable.HasResource(GeomNormalTextureID))
 				{
-					// save texture region: src, rect, dest format
-					// save UV calc params to CDLOD file or to some other place
+					//!!!FIXME: avoid resaving when 1x1 cluster?! Copy texture!
+					//!!!FIXME: don't load image in each iteration!
+					//!!!FIXME: delete images when finished!
 
-					//const auto RsrcName = GetValidResourceName(SrcPath.stem().string());
-					//const auto SrcExtension = SrcPath.extension().generic_string();
-					//fs::path DestPath = DestDir / (RsrcName + SrcExtension);
+					const auto ImageID = LoadILImage(TNPath, Task.Log);
+					const auto ImageRect = GetCurrentILImageRect();
 
-					auto DestPath = TexturePath / (TaskName + "_tn" + TNPath.extension().string());
-					if (!CopyFile(TNPath, DestPath, &Task.Log)) return ETaskResult::Failure;
+					if (ImageRect.Width() != HeightmapWidth || ImageRect.Height() != HeightmapHeight)
+					{
+						Task.Log.LogError("Geometry normal texture size doesn't match heightmap dimensions");
+						return ETaskResult::Failure;
+					}
+
+					CRect ClusterRect(HeightFromX, HeightFromY, HeightToX - 1, HeightToY - 1);
+
+					auto DestPath = TexturePath / (TaskName + Postfix + "_tn" + TNPath.extension().string());
+					if (!SaveILImageRegion(ImageID, GetTextureDestFormat(TNPath, Task.Params), DestPath, ClusterRect, Task.Log))
+					{
+						Task.Log.LogError("Could not save geometry normals texture region for the cluster");
+						return ETaskResult::Failure;
+					}
+
+					// save UV calc params to
+					// - CDLOD header?
+					// - scene attr field?
+					// - material?
 
 					MtlParams.emplace_back(CStrID(GeomNormalTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
 				}
@@ -490,7 +507,34 @@ public:
 				const auto SplatMapTextureID = _Settings.GetEffectParamID("SplatMapTexture");
 				if (!SplatMapPath.empty() && MtlParamTable.HasResource(SplatMapTextureID))
 				{
-					auto DestPath = TexturePath / (TaskName + "_sm" + SplatMapPath.extension().string());
+					//???doesn't need to be divisible? can round to whole pixels expanding and save correct UV mapping constants!
+
+					//if (ImageRect.Width() % ClusterDataRasterWidth || ClusterDataRasterWidth % ImageRect.Width() ||
+					//	ImageRect.Height() % ClusterDataRasterHeight || ClusterDataRasterHeight % ImageRect.Height())
+					//{
+					//	Task.Log.LogError("Geometry normal texture size doesn't match heightmap dimensions");
+					//	return ETaskResult::Failure;
+					//}
+
+					// determine rect to save
+					// - calculate texel to HM ratio (ClusterDataRasterWidth, ClusterDataRasterHeight), check it is divisible (rect must be whole pixels)
+					// - clamp rect to image size
+
+					// save texture region: src, rect, dest format
+					// - clamp rect to image size
+					// - if dest format is block-compressed (DevIL knows), round right & bottom
+					// - if rect covers only a part of the image, gen new one sized as rect and ilBlit data there
+					// - delete source image (or do it once outside cluster loop)
+					// - save source or new blitted image as the dest, in desired format
+					// - recturn actual saved rect (due to block compression roundings)
+					//???use SaveCurrentILImage and add CRect arg?
+
+					// save UV calc params to
+					// - CDLOD header?
+					// - scene attr field?
+					// - material?
+
+					auto DestPath = TexturePath / (TaskName + Postfix + "_sm" + SplatMapPath.extension().string());
 					if (!CopyFile(SplatMapPath, DestPath, &Task.Log)) return ETaskResult::Failure;
 
 					MtlParams.emplace_back(CStrID(SplatMapTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
@@ -535,6 +579,10 @@ public:
 		Data::CParams Result;
 
 		Data::CDataArray Attributes;
+
+		//!!!DBG TMP!
+		std::string CDLODID;
+		std::string MaterialID;
 
 		{
 			Data::CParams Attribute;

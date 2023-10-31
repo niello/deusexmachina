@@ -6,6 +6,8 @@
 #include <filesystem>
 
 #undef CopyFile
+#undef min
+#undef max
 
 // Utility functions and data structures
 
@@ -23,16 +25,16 @@ struct CRect
 	{}
 
 	bool IsValid() const { return Left <= Right && Top <= Bottom; }
+	int32_t Width() const { return Right - Left + 1; }
+	int32_t Height() const { return Bottom - Top + 1; }
 
 	CRect Intersection(const CRect& Other) const noexcept
 	{
 		return CRect{ std::max(Left, Other.Left), std::max(Top, Other.Top), std::min(Right, Other.Right), std::min(Bottom, Other.Bottom) };
 	}
 
-	bool operator =(const CRect& Other) const noexcept
-	{
-		return Left == Other.Left && Top == Other.Top && Right == Other.Right && Bottom == Other.Bottom;
-	}
+	bool operator ==(const CRect& Other) const noexcept { return Left == Other.Left && Top == Other.Top && Right == Other.Right && Bottom == Other.Bottom; }
+	bool operator !=(const CRect& Other) const noexcept { return !(*this == Other); }
 };
 
 struct membuf : std::streambuf

@@ -17,6 +17,8 @@ constexpr size_t MaxUV = 4;
 constexpr size_t MaxBonesPerVertex = 4;
 constexpr float PI = 3.14159265358979323846f;
 
+typedef unsigned int ILuint;
+
 inline float RadToDeg(float Rad) { return Rad * 180.0f / PI; }
 inline float DegToRad(float Deg) { return Deg * PI / 180.0f; }
 
@@ -224,10 +226,12 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name, Data::CParams&& Nodes, const Data::CSchemeSet& Schemes, const Data::CParams& TaskParams, bool HRD, bool Binary, bool CreateRoot, CThreadSafeLog& Log);
 void InitImageProcessing();
 void TermImageProcessing();
-bool SaveCurrentILImage(const std::string& DestFormat, fs::path DestPath, CThreadSafeLog& Log);
+ILuint LoadILImage(const std::filesystem::path& SrcPath, CThreadSafeLog& Log);
+CRect GetCurrentILImageRect();
+bool SaveCurrentILImage(const std::string& DestFormat, std::filesystem::path DestPath, CThreadSafeLog& Log);
+bool SaveILImageRegion(ILuint ID, const std::string& DestFormat, std::filesystem::path DestPath, CRect& Region, CThreadSafeLog& Log);
 std::string GetTextureDestFormat(const std::filesystem::path& SrcPath, const Data::CParams& TaskParams);
 std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesystem::path& DestDir, const std::string& DestFormat, CThreadSafeLog& Log);
-std::string WriteTextureRegion(const std::filesystem::path& SrcPath, const std::filesystem::path& DestPath, const CRect& Rect, const std::string& DestFormat, CThreadSafeLog& Log);
 std::optional<std::string> GenerateCollisionShape(std::string ShapeType, const std::filesystem::path& ShapeDir, const std::string& MeshRsrcName, const CMeshAttrInfo& MeshInfo, const acl::Transform_32& GlobalTfm, const std::map<std::string, std::filesystem::path>& PathAliases, CThreadSafeLog& Log);
 void FillNodeTransform(const acl::Transform_32& Tfm, Data::CParams& NodeSection);
 bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate, acl::Vector4_32 ForwardDir, acl::Vector4_32 UpDir, acl::Vector4_32 SideDir, const std::vector<acl::Vector4_32>& RootPositions, const std::vector<acl::Vector4_32>& LeftFootPositions, const std::vector<acl::Vector4_32>& RightFootPositions);
