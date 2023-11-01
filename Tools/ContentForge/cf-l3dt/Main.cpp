@@ -349,7 +349,7 @@ public:
 				// Calculate min and max height for each patch in the cluster and build a hierarchy similar to mipmap chain
 				std::vector<std::pair<uint16_t, uint16_t>> MinMaxData(CalcSizeWithMips(PatchesX, PatchesY, LODCount, false));
 
-				// Generate top-level minmax map, one record per LOD 0 patch (smallest)
+				// Generate finest level minmax map, one record per LOD 0 patch
 				for (uint32_t PatchY = 0; PatchY < PatchesY; ++PatchY)
 				{
 					const auto PatchHeightStartY = PatchY * PatchSize;
@@ -427,6 +427,9 @@ public:
 					PrevPatchesH = CurrPatchesH;
 				}
 
+				// Ensure that the minmax map is folded up to 1 sample with global min & max values of the whole cluster
+				assert(PrevPatchesW == 1 && PrevPatchesH == 1);
+
 				// Use postfix in all file names when split into multiple clusters
 				std::string Postfix;
 				if (ClustersX > 1 || ClustersY > 1)
@@ -485,8 +488,6 @@ public:
 				const auto GeomNormalTextureID = _Settings.GetEffectParamID("TerrainGeometryNormalTexture");
 				if (TNImageID && MtlParamTable.HasResource(GeomNormalTextureID))
 				{
-					//!!!FIXME: avoid resaving when 1 cluster and no format conversion requested?! Copy texture!
-
 					// Terrain geometry normals are per-vertex, like heights. Must have exactly one normal per height point.
 					const auto ImageRect = GetILImageRect(TNImageID);
 					if (ImageRect.Width() != HeightmapWidth || ImageRect.Height() != HeightmapHeight)
@@ -506,34 +507,39 @@ public:
 					MtlParams.emplace_back(CStrID(GeomNormalTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
 				}
 
+				float SMUVScaleX = 1.f;
+				float SMUVScaleY = 1.f;
+				float SMUVOffsetX = 0.f;
+				float SMUVOffsetY = 0.f;
 				const auto SplatMapTextureID = _Settings.GetEffectParamID("SplatMapTexture");
 				if (SMImageID && MtlParamTable.HasResource(SplatMapTextureID))
 				{
-					//!!!FIXME: avoid resaving when 1 cluster and no format conversion requested?! Copy texture!
-
 					const auto ImageRect = GetILImageRect(SMImageID);
 
 					// Splat map texels per raster quad. This can be used to remap UV from HM to SM.
 					const float RatioX = ImageRect.Width() / static_cast<float>(RasterQuadsX);
 					const float RatioY = ImageRect.Height() / static_cast<float>(RasterQuadsY);
 
-					// Project heightmap region onto the splat map
-					const float SMLeft = HeightFromX * RatioX;
-					const float SMTop = HeightFromY * RatioY;
-					const float SMRight = HeightToX * RatioX;
-					const float SMBottom = HeightToY * RatioY;
+					// Project heightmap region onto the splat map. This is an effective
+					// rect on the source texture that covers the current cluster.
+					// NB: values can be fractional if the texture is not perfectly mapped.
+					float SMLeft = HeightFromX * RatioX;
+					float SMTop = HeightFromY * RatioY;
+					const float SMWidth = ClusterDataRasterWidth * RatioX;
+					const float SMHeight = ClusterDataRasterHeight * RatioY;
 
 					// For seamless cluster rendering with linear texture filtration
-					const int32_t BorderSize = 1; // 1 << (MipCount - 1)
+					constexpr int32_t MipLevel = 0;
+					const int32_t BorderSize = 1 << MipLevel;
 
 					// Round outside to whole pixels
 					CRect ClusterRect(
 						static_cast<int32_t>(SMLeft) - BorderSize,
 						static_cast<int32_t>(SMTop) - BorderSize,
-						static_cast<int32_t>(SMRight + 0.5f) - 1 + BorderSize,
-						static_cast<int32_t>(SMBottom + 0.5f) - 1 + BorderSize);
+						static_cast<int32_t>(SMLeft + SMWidth + 0.5f) - 1 + BorderSize,
+						static_cast<int32_t>(SMTop + SMHeight + 0.5f) - 1 + BorderSize);
 
-					// save texture region: src, rect, dest format
+					// Save the region
 					auto DestPath = TexturePath / (TaskName + Postfix + "_sm" + SplatMapPath.extension().string());
 					if (!SaveILImageRegion(SMImageID, SMDestFormat, DestPath, ClusterRect, Task.Log))
 					{
@@ -541,10 +547,16 @@ public:
 						return ETaskResult::Failure;
 					}
 
-					// calc and save UV remap params to
-					// - CDLOD header?
-					// - scene attr field?
-					// - material?
+					// Now ClusterRect contains an actually saved region. Let's offset coverage rect
+					// from the source texture to the saved texture. It involves only shifting the rect.
+					SMLeft -= static_cast<float>(ClusterRect.Left);
+					SMTop -= static_cast<float>(ClusterRect.Top);
+
+					// Finally calculate UV coefficients for actual cluater data in an inflated texture
+					SMUVScaleX = SMWidth / static_cast<float>(ClusterRect.Width());
+					SMUVScaleY = SMHeight / static_cast<float>(ClusterRect.Height());
+					SMUVOffsetX = SMLeft / static_cast<float>(ClusterRect.Width());
+					SMUVOffsetY = SMTop / static_cast<float>(ClusterRect.Height());
 
 					MtlParams.emplace_back(CStrID(SplatMapTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
 				}
