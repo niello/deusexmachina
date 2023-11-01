@@ -3,7 +3,6 @@
 #include <Render/CDLODData.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
-#include <BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h>
 
 namespace Resources
 {
@@ -39,22 +38,19 @@ Core::PObject CCollisionLoaderCDLOD::CreateResource(CStrID UID)
 	// Heightfield must have an area
 	if (Header.HFWidth < 2 || Header.HFHeight < 2) return nullptr;
 
-	//!!!DBG TMP!
-	return nullptr;
+	// Skip minmax data to the root minmax pair
+	if (!Stream->Seek((Header.MinMaxDataCount - 2) * sizeof(I16), IO::Seek_Current)) return nullptr;
 
-	/*
-	// Bullet shape is created with an origin at the center of a heightmap AABB.
-	// Calculate an offset between that center and the real origin.
-	float MinX, MaxX, MinZ, MaxZ, MinY, MaxY;
-	if (!Reader.Read(MinX)) return nullptr;
-	if (!Reader.Read(MaxX)) return nullptr;
-	if (!Reader.Read(MinZ)) return nullptr;
-	if (!Reader.Read(MaxZ)) return nullptr;
+	// Read global minmax
+	I16 MinY, MaxY;
 	if (!Reader.Read(MinY)) return nullptr;
 	if (!Reader.Read(MaxY)) return nullptr;
+	const auto MinYF = static_cast<float>(MinY);
+	const auto MaxYF = static_cast<float>(MaxY);
 
-	//// NB: Y must be offset differently, it is not a mistake!
-	//vector3 Offset((MaxX - MinX) * 0.5f, (MinY + MaxY) * 0.5f, (MaxZ - MinZ) * 0.5f);
+	// Bullet shape is created with an origin at the center of a heightmap AABB.
+	// Calculate an offset between that center and the real origin, which is a half extent of the terrain.
+	const vector3 Offset(Header.HFWidth * 0.5f, (MinYF + MaxYF) * 0.5f, Header.HFHeight * 0.5f);
 
 	const UPTR DataSize = Header.HFWidth * Header.HFHeight * sizeof(short);
 	Physics::PHeightfieldData Data(new char[DataSize]);
@@ -69,15 +65,10 @@ Core::PObject CCollisionLoaderCDLOD::CreateResource(CStrID UID)
 		*pCurr = static_cast<I16>(Value);
 	}
 
-	btHeightfieldTerrainShape* pBtShape =
-		new btHeightfieldTerrainShape(Header.HFWidth, Header.HFHeight, Data.get(), VerticalScale, MinY, MaxY, 1, PHY_SHORT, false);
+	auto pBtShape = new btDEMHeightfieldTerrainShape(Header.HFWidth, Header.HFHeight, Data.get(), 1.f, MinYF, MaxYF, 1, PHY_SHORT, false);
+	pBtShape->buildAccelerator();
 
-	// Convert W & H from heightmap samples to 3D units
-	btVector3 LocalScaling((MaxX - MinX) / static_cast<float>(HFWidth - 1), 1.f, (MaxZ - MinZ) / static_cast<float>(HFHeight - 1));
-	pBtShape->setLocalScaling(LocalScaling);
-
-	return n_new(Physics::CHeightfieldShape(pBtShape, std::move(Data), Offset));
-	*/
+	return new Physics::CHeightfieldShape(pBtShape, std::move(Data), Offset);
 }
 //---------------------------------------------------------------------
 

@@ -73,7 +73,7 @@ bool CPhysicsObject::UnshareShapeIfNecessary(const vector3& NewScaling)
 		_pBtObject->setCollisionShape(NewShape->GetBulletShape());
 		_IsShapeShared = false;
 
-		// See ConstructInternal for explaination
+		// See ConstructInternal for explanation
 		pShape->Release();
 		NewShape->AddRef();
 	}

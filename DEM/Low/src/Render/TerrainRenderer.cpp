@@ -181,7 +181,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	// Pass tech params to GPU
 
 	CGPUDriver& GPU = *Context.pGPU;
-	UPTR TechLightCount;
+	UPTR TechLightCount = 0;
 	if (pTech != pCurrTech)
 	{
 		pCurrTech = pTech;
@@ -195,7 +195,6 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		ConstInstanceDataPS = ParamTable.GetConstant(CStrID("InstanceDataPS"));
 		ResourceHeightMap = ParamTable.GetResource(CStrID("HeightMapVS"));
 
-		TechLightCount = 0;
 		if (ConstInstanceDataPS)
 		{
 			ConstLightIndices = ConstInstanceDataPS[0][sidLightIndices];
