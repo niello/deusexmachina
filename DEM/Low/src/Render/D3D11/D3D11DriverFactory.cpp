@@ -214,7 +214,7 @@ DXGI_FORMAT CD3D11DriverFactory::PixelFormatToDXGIFormat(EPixelFormat Format)
 		case PixelFmt_D24:						return DXGI_FORMAT_D24_UNORM_S8_UINT;
 		case PixelFmt_DefaultDepthBuffer:
 		case PixelFmt_D32:						return DXGI_FORMAT_D32_FLOAT;
-		case PixelFmt_D32S8:					return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+		case PixelFmt_D32S8X24:					return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 		case PixelFmt_Invalid:
 		default:								return DXGI_FORMAT_UNKNOWN;
 	}
@@ -236,7 +236,7 @@ EPixelFormat CD3D11DriverFactory::DXGIFormatToPixelFormat(DXGI_FORMAT D3DFormat)
 		case DXGI_FORMAT_BC3_UNORM:				return PixelFmt_DXT5;
 		case DXGI_FORMAT_D24_UNORM_S8_UINT:		return PixelFmt_D24S8;
 		case DXGI_FORMAT_D32_FLOAT:				return PixelFmt_D32;
-		case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:	return PixelFmt_D32S8;
+		case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:	return PixelFmt_D32S8X24;
 		case DXGI_FORMAT_UNKNOWN:
 		default:								return PixelFmt_Invalid;
 	}

@@ -230,7 +230,7 @@ Render::EPixelFormat DDSDX10FormatToPixelFormat(U32 DDSDX10Format)
 		case DXGI_FORMAT_BC3_UNORM:				return Render::PixelFmt_DXT5;
 		//case DXGI_FORMAT_D24_UNORM_S8_UINT:		return Render::PixelFmt_D24S8;
 		//case DXGI_FORMAT_D32_FLOAT:				return Render::PixelFmt_D32;
-		//case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:	return Render::PixelFmt_D32S8;
+		//case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:	return Render::PixelFmt_D32S8X24;
 		case DXGI_FORMAT_UNKNOWN:
 		default:								return Render::PixelFmt_Invalid;
 	}
@@ -306,9 +306,14 @@ Core::PObject CTextureLoaderDDS::CreateResource(CStrID UID)
 		else TexDesc.Type = Render::Texture_2D;
 	}
 
-	U64 DataSize64 = FileSize - Stream->Tell();
-	UPTR DataSize = (UPTR)DataSize64;
-	if ((U64)DataSize != DataSize64) return nullptr;
+	// Some tools write source texture size for block compressed textures, e.g. 1025 instead of 1028 for DXT
+	const auto BlockSize = Render::GetFormatBlockSize(TexDesc.Format);
+	TexDesc.Width = Math::CeilToMultiple(TexDesc.Width, BlockSize.first);
+	TexDesc.Height = Math::CeilToMultiple(TexDesc.Height, BlockSize.second);
+
+	const U64 DataSize64 = FileSize - Stream->Tell();
+	UPTR DataSize = static_cast<UPTR>(DataSize64);
+	if (static_cast<U64>(DataSize) != DataSize64) return nullptr;
 
 	const bool ConversionRequired = (!IsDX10 && Header.ddspf.RGBBitCount == 24 && TexDesc.Format == Render::PixelFmt_B8G8R8X8);
 

@@ -2,6 +2,7 @@
 #include <Core/Object.h>
 #include <Data/FixedArray.h>
 #include <Math/AABB.h>
+#include <array>
 
 // CDLOD heightfield-based terrain rendering data with settings and precalculated aux data
 
@@ -33,18 +34,29 @@ protected:
 	U32						HFHeight;
 	U32						PatchSize;
 	U32						LODCount;
-	float					VerticalScale;
+	std::array<float, 4>	SplatMapUVCoeffs; // xy - scale, zw - offset
 	CAABB					Box;
 
 	friend class Resources::CCDLODDataLoader;
 
 public:
 
+#pragma pack(push, 1)
+	struct CHeader_0_2_0_0
+	{
+		U32                  HFWidth;
+		U32                  HFHeight;
+		U32                  PatchSize;
+		U32                  LODCount;
+		std::array<float, 4> SplatMapUVCoeffs;
+		U32                  MinMaxDataCount;
+	};
+#pragma pack(pop)
+
 	U32					GetHeightMapWidth() const { return HFWidth; }
 	U32					GetHeightMapHeight() const { return HFHeight; }
 	U32					GetPatchSize() const { return PatchSize; }
 	U32					GetLODCount() const { return LODCount; }
-	float				GetVerticalScale() const { return VerticalScale; }
 	const CAABB&		GetAABB() const { return Box; }
 	void				GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, I16& MinY, I16& MaxY) const;
 	bool				HasNode(UPTR X, UPTR Z, UPTR LOD) const;

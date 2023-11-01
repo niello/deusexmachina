@@ -287,16 +287,24 @@ DEM_FORCE_INLINE U32 RandomU32(U32 Min, U32 Max)
 }
 //---------------------------------------------------------------------
 
-template <typename T, typename U>
-DEM_FORCE_INLINE constexpr T CeilToMultiple(T x, U y) noexcept
+// Divide and round up
+template <typename T, typename U, typename = std::enable_if_t<std::is_integral_v<T>&& std::is_integral_v<U>>>
+DEM_FORCE_INLINE decltype(auto) DivCeil(T Numerator, U Denominator)
 {
-	return ((x + y - 1) / y) * y;
+	return (Numerator + Denominator - 1) / Denominator;
+}
+//---------------------------------------------------------------------
+
+template <typename T, typename U>
+DEM_FORCE_INLINE constexpr decltype(auto) CeilToMultiple(T x, U y) noexcept
+{
+	return DivCeil(x, y) * y;
 }
 //---------------------------------------------------------------------
 
 // This version requires y to be power-of-2 but performs faster than the general one
 template <typename T, typename U>
-DEM_FORCE_INLINE constexpr T CeilToMultipleOfPow2(T x, U y) noexcept
+DEM_FORCE_INLINE constexpr decltype(auto) CeilToMultipleOfPow2(T x, U y) noexcept
 {
 	return (x + (y - 1)) & ~(y - 1);
 }

@@ -659,6 +659,7 @@ public:
 		}
 
 		UnloadILImage(TNImageID);
+		UnloadILImage(SMImageID);
 
 		// Write scene file
 

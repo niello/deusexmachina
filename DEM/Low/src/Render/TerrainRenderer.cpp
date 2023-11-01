@@ -50,17 +50,17 @@ bool CTerrainRenderer::CheckNodeSphereIntersection(const CLightTestArgs& Args, c
 	if (MaxY < MinY) FAIL;
 
 	U32 NodeSize = Args.pCDLOD->GetPatchSize() << LOD;
-	float ScaleX = NodeSize * Args.ScaleBaseX;
-	float ScaleZ = NodeSize * Args.ScaleBaseZ;
+	float ScaleX = NodeSize * Args.ScaleBase.x;
+	float ScaleZ = NodeSize * Args.ScaleBase.z;
 	float NodeMinX = Args.AABBMinX + X * ScaleX;
 	float NodeMinZ = Args.AABBMinZ + Z * ScaleZ;
 
 	CAABB NodeAABB;
 	NodeAABB.Min.x = NodeMinX;
-	NodeAABB.Min.y = MinY * Args.pCDLOD->GetVerticalScale();
+	NodeAABB.Min.y = MinY * Args.ScaleBase.y;
 	NodeAABB.Min.z = NodeMinZ;
 	NodeAABB.Max.x = NodeMinX + ScaleX;
-	NodeAABB.Max.y = MaxY * Args.pCDLOD->GetVerticalScale();
+	NodeAABB.Max.y = MaxY * Args.ScaleBase.y;
 	NodeAABB.Max.z = NodeMinZ + ScaleZ;
 
 	if (Sphere.GetClipStatus(NodeAABB) == EClipStatus::Outside) FAIL;
@@ -92,17 +92,17 @@ bool CTerrainRenderer::CheckNodeFrustumIntersection(const CLightTestArgs& Args, 
 	if (MaxY < MinY) FAIL;
 
 	U32 NodeSize = Args.pCDLOD->GetPatchSize() << LOD;
-	float ScaleX = NodeSize * Args.ScaleBaseX;
-	float ScaleZ = NodeSize * Args.ScaleBaseZ;
+	float ScaleX = NodeSize * Args.ScaleBase.x;
+	float ScaleZ = NodeSize * Args.ScaleBase.z;
 	float NodeMinX = Args.AABBMinX + X * ScaleX;
 	float NodeMinZ = Args.AABBMinZ + Z * ScaleZ;
 
 	CAABB NodeAABB;
 	NodeAABB.Min.x = NodeMinX;
-	NodeAABB.Min.y = MinY * Args.pCDLOD->GetVerticalScale();
+	NodeAABB.Min.y = MinY * Args.ScaleBase.y;
 	NodeAABB.Min.z = NodeMinZ;
 	NodeAABB.Max.x = NodeMinX + ScaleX;
-	NodeAABB.Max.y = MaxY * Args.pCDLOD->GetVerticalScale();
+	NodeAABB.Max.y = MaxY * Args.ScaleBase.y;
 	NodeAABB.Max.z = NodeMinZ + ScaleZ;
 
 	if (NodeAABB.GetClipStatus(Frustum) == EClipStatus::Outside) FAIL;
@@ -229,18 +229,18 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		// Fill instance data with patches and quarter-patches to render
 
 		CAABB AABB = CDLOD.GetAABB();
+		const auto LocalSize = AABB.Size();
 		AABB.Transform(Terrain.Transform);
-		float AABBMinX = AABB.Min.x;
-		float AABBMinZ = AABB.Min.z;
-		float AABBSizeX = AABB.Max.x - AABBMinX;
-		float AABBSizeZ = AABB.Max.z - AABBMinZ;
+		const auto WorldSize = AABB.Size();
 
-		CDLODParams.WorldToHM[0] = 1.f / AABBSizeX;
-		CDLODParams.WorldToHM[1] = 1.f / AABBSizeZ;
-		CDLODParams.WorldToHM[2] = -AABBMinX * CDLODParams.WorldToHM[0];
-		CDLODParams.WorldToHM[3] = -AABBMinZ * CDLODParams.WorldToHM[1];
-		CDLODParams.TerrainYScale = 65535.f * CDLOD.GetVerticalScale();
-		CDLODParams.TerrainYOffset = -32767.f * CDLOD.GetVerticalScale() + Terrain.Transform.Translation().y;
+		const float ScaleY = WorldSize.y / LocalSize.y;
+
+		CDLODParams.WorldToHM[0] = 1.f / WorldSize.x;
+		CDLODParams.WorldToHM[1] = 1.f / WorldSize.z;
+		CDLODParams.WorldToHM[2] = -AABB.Min.x * CDLODParams.WorldToHM[0];
+		CDLODParams.WorldToHM[3] = -AABB.Min.z * CDLODParams.WorldToHM[1];
+		CDLODParams.TerrainYScale = 65535.f * ScaleY;
+		CDLODParams.TerrainYOffset = -32767.f * ScaleY + Terrain.Transform.Translation().y;
 		CDLODParams.InvSplatSizeX = Terrain.GetInvSplatSizeX();
 		CDLODParams.InvSplatSizeZ = Terrain.GetInvSplatSizeZ();
 		CDLODParams.TexelSize[0] = 1.f / (float)CDLOD.GetHeightMapWidth();

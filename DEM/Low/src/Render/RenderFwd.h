@@ -3,6 +3,8 @@
 #include <Data/Dictionary.h>
 #include <Data/StringID.h>
 #include <Math/AABB.h>
+//#include <algorithm>
+//#include <memory>
 
 // Render system definitions and forward declarations
 
@@ -159,7 +161,7 @@ enum EPixelFormat
 	PixelFmt_D24,
 	PixelFmt_D24S8,
 	PixelFmt_D32,
-	PixelFmt_D32S8
+	PixelFmt_D32S8X24
 };
 
 enum EMSAAQuality
@@ -381,6 +383,63 @@ inline UPTR GetMipLevelCount(UPTR Width, UPTR Height, UPTR BlockSize = 1)
 		++MipLevels;
 	}
 	return MipLevels;
+}
+//---------------------------------------------------------------------
+
+constexpr inline std::pair<UPTR, UPTR> GetFormatBlockSize(EPixelFormat Format)
+{
+	switch (Format)
+	{
+		case PixelFmt_DXT1:
+		case PixelFmt_DXT3:
+		case PixelFmt_DXT5:
+			return { 4, 4 };
+
+		case PixelFmt_Invalid:
+		case PixelFmt_DefaultBackBuffer:
+		case PixelFmt_DefaultDepthBuffer:
+		case PixelFmt_DefaultDepthStencilBuffer:
+			return { 0, 0 };
+
+		default:
+			return { 1, 1 };
+	}
+}
+//---------------------------------------------------------------------
+
+constexpr inline UPTR GetFormatBitsPerPixel(EPixelFormat Format)
+{
+	switch (Format)
+	{
+		case PixelFmt_DXT1:
+			return 4;
+
+		case PixelFmt_R8:
+		case PixelFmt_DXT3:
+		case PixelFmt_DXT5:
+			return 8;
+
+		case PixelFmt_B5G6R5:
+		case PixelFmt_R16:
+			return 16;
+
+		case PixelFmt_D24:
+			return 24;
+
+		case PixelFmt_R8G8B8X8:
+		case PixelFmt_R8G8B8A8:
+		case PixelFmt_B8G8R8X8:
+		case PixelFmt_B8G8R8A8:
+		case PixelFmt_D24S8:
+		case PixelFmt_D32:
+			return 32;
+
+		case PixelFmt_D32S8X24:
+			return 64;
+
+		default:
+			return 0;
+	}
 }
 //---------------------------------------------------------------------
 

@@ -53,11 +53,10 @@ protected:
 
 	struct CLightTestArgs
 	{
-		const CCDLODData*	pCDLOD;
-		float				AABBMinX;
-		float				AABBMinZ;
-		float				ScaleBaseX;
-		float				ScaleBaseZ;
+		const CCDLODData* pCDLOD;
+		float             AABBMinX;
+		float             AABBMinZ;
+		vector3           ScaleBase;
 	};
 
 	PSampler HeightMapSampler;

@@ -1,6 +1,7 @@
 #include "TextureLoaderCDLOD.h"
 
 #include <Render/TextureData.h>
+#include <Render/CDLODData.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
 #include <Data/Buffer.h>
@@ -30,24 +31,18 @@ Core::PObject CTextureLoaderCDLOD::CreateResource(CStrID UID)
 
 	U32 Version;
 	if (!Reader.Read<U32>(Version)) return nullptr;
+	n_assert_dbg(Version == 0x00020000);
 
-	U32 HFWidth, HFHeight;
-	if (!Reader.Read(HFWidth)) return nullptr;
-	if (!Reader.Read(HFHeight)) return nullptr;
+	Render::CCDLODData::CHeader_0_2_0_0 Header;
+	if (!Reader.Read(Header)) return nullptr;
 
-	const UPTR SkipSize =
-		sizeof(U32) + // PatchSize
-		sizeof(U32) + // LODCount
-		sizeof(U32) + // MinMaxDataSize
-		sizeof(float) + // VerticalScale
-		6 * sizeof(float); // AABB
-	if (!Stream->Seek(SkipSize, IO::Seek_Current)) return nullptr;
+	if (!Stream->Seek(Header.MinMaxDataCount * sizeof(I16), IO::Seek_Current)) return nullptr;
 
 	Data::PBuffer Data;
 	if (Stream->CanBeMapped()) Data.reset(n_new(Data::CBufferMappedStream(Stream)));
 	if (!Data || !Data->GetPtr()) // Not mapped
 	{
-		const UPTR DataSize = HFWidth * HFHeight * sizeof(unsigned short);
+		const UPTR DataSize = Header.HFWidth * Header.HFHeight * sizeof(unsigned short);
 		Data.reset(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 		if (Stream->Read(Data->GetPtr(), DataSize) != DataSize)
 		{
@@ -59,8 +54,8 @@ Core::PObject CTextureLoaderCDLOD::CreateResource(CStrID UID)
 
 	Render::CTextureDesc& TexDesc = TexData->Desc;
 	TexDesc.Type = Render::Texture_2D;
-	TexDesc.Width = HFWidth;
-	TexDesc.Height = HFHeight;
+	TexDesc.Width = Header.HFWidth;
+	TexDesc.Height = Header.HFHeight;
 	TexDesc.Depth = 1;
 	TexDesc.ArraySize = 1;
 	TexDesc.MipLevels = 1;

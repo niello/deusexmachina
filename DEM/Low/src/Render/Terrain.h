@@ -44,8 +44,7 @@ protected:
 		vector3	 MainCameraPos;
 		float    AABBMinX;
 		float    AABBMinZ;
-		float    ScaleBaseX;
-		float    ScaleBaseZ;
+		vector3  ScaleBase;
 	};
 
 	//!!!???can fill one GPU buffer?! use offset to render first ones, then others.

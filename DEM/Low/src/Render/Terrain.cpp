@@ -19,15 +19,16 @@ void CTerrain::UpdatePatches(const vector3& MainCameraPos, const matrix44& ViewP
 	_QuarterPatches.clear();
 
 	CAABB AABB = CDLODData->GetAABB();
+	const auto LocalSize = AABB.Size();
 	AABB.Transform(Transform);
+	const auto WorldSize = AABB.Size();
 
 	CNodeProcessingContext Ctx;
 	Ctx.MainCameraPos = MainCameraPos;
 	Ctx.ViewProjection = ViewProjection;
 	Ctx.AABBMinX = AABB.Min.x;
 	Ctx.AABBMinZ = AABB.Min.z;
-	Ctx.ScaleBaseX = (AABB.Max.x - AABB.Min.x) / static_cast<float>(CDLODData->GetHeightMapWidth() - 1);
-	Ctx.ScaleBaseZ = (AABB.Max.z - AABB.Min.z) / static_cast<float>(CDLODData->GetHeightMapHeight() - 1);
+	Ctx.ScaleBase = WorldSize / LocalSize;
 
 	ProcessTerrainNode(Ctx, 0, 0, CDLODData->GetLODCount() - 1, EClipStatus::Clipped);
 
@@ -46,17 +47,17 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 	if (MaxY < MinY) return ENodeStatus::Invisible;
 
 	const U32 NodeSize = CDLODData->GetPatchSize() << LOD;
-	const float ScaleX = NodeSize * Ctx.ScaleBaseX;
-	const float ScaleZ = NodeSize * Ctx.ScaleBaseZ;
+	const float ScaleX = NodeSize * Ctx.ScaleBase.x;
+	const float ScaleZ = NodeSize * Ctx.ScaleBase.z;
 	const float NodeMinX = Ctx.AABBMinX + X * ScaleX;
 	const float NodeMinZ = Ctx.AABBMinZ + Z * ScaleZ;
 
 	CAABB NodeAABB;
 	NodeAABB.Min.x = NodeMinX;
-	NodeAABB.Min.y = MinY * CDLODData->GetVerticalScale();
+	NodeAABB.Min.y = MinY * Ctx.ScaleBase.y;
 	NodeAABB.Min.z = NodeMinZ;
 	NodeAABB.Max.x = NodeMinX + ScaleX;
-	NodeAABB.Max.y = MaxY * CDLODData->GetVerticalScale();
+	NodeAABB.Max.y = MaxY * Ctx.ScaleBase.y;
 	NodeAABB.Max.z = NodeMinZ + ScaleZ;
 
 	if (Clip == EClipStatus::Clipped)
