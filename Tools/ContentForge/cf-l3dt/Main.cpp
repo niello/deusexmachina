@@ -251,6 +251,11 @@ public:
 		const auto RasterQuadsX = HeightmapWidth - 1;
 		const auto RasterQuadsY = HeightmapHeight - 1;
 
+		const float WorldOffsetX = static_cast<float>(BTFile.GetLeftExtent());
+		const float WorldOffsetZ = static_cast<float>(BTFile.GetBottomExtent());
+		const float WorldSizeX = static_cast<float>(BTFile.GetRightExtent()) - WorldOffsetX;
+		const float WorldSizeZ = static_cast<float>(BTFile.GetTopExtent()) - WorldOffsetZ;
+
 		// Cluster size must be pow2 because it is subdivided into a quadtree with integral number of texels per node at each level
 		if (!ClusterSize)
 		{
@@ -292,6 +297,17 @@ public:
 			Task.Log.LogError("Error reading material param table for effect " + Path);
 			return ETaskResult::Failure;
 		}
+
+		// Prepare root scene node
+
+		static const CStrID sidAttrs("Attrs");
+		static const CStrID sidChildren("Children");
+
+		Data::CParams RootNode;
+		Data::CParams Children;
+
+		const auto SplatSizeX = ParamsUtils::GetParam<float>(Task.Params, "SplatSizeX", 1.f);
+		const auto SplatSizeZ = ParamsUtils::GetParam<float>(Task.Params, "SplatSizeZ", 1.f);
 
 		// Process clusters
 
@@ -435,52 +451,6 @@ public:
 				if (ClustersX > 1 || ClustersY > 1)
 					Postfix = "_" + std::to_string(ClusterX) + "_" + std::to_string(ClusterY);
 
-				// Write resulting CDLOD file
-				std::string CDLODID;
-				{
-					auto DestPath = GetPath(Task.Params, "CDLODOutput") / (TaskName + Postfix + ".cdlod");
-					fs::create_directories(DestPath.parent_path());
-
-					std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
-					if (!File)
-					{
-						Task.Log.LogError("Error opening an output file " + DestPath.generic_string());
-						return ETaskResult::Failure;
-					}
-
-					//!!!FIXME: REVISIT WHAT PARAMS ARE NEEDED TO BE SAVED!
-					//???aabb? patch size?
-
-					WriteStream<uint32_t>(File, 'CDLD');        // Format magic value
-					WriteStream<uint32_t>(File, 0x00010000);    // Version 0.1.0.0
-					WriteStream(File, ClusterDataWidth);
-					WriteStream(File, ClusterDataHeight);
-					WriteStream(File, PatchSize);
-					WriteStream(File, LODCount);
-					WriteStream(File, 2 * static_cast<uint32_t>(MinMaxData.size()));
-					WriteStream(File, BTFile.GetVerticalScale());
-					WriteStream(File, static_cast<float>(BTFile.GetLeftExtent())); // Min X
-					WriteStream(File, static_cast<float>(BTFile.GetRightExtent())); // Max X
-					WriteStream(File, static_cast<float>(BTFile.GetBottomExtent())); // Min Z
-					WriteStream(File, static_cast<float>(BTFile.GetTopExtent())); // Max Z
-					WriteStream(File, BTFile.GetMinHeight()); // Min Y
-					WriteStream(File, BTFile.GetMaxHeight()); // Max Y
-
-					// Write heightmap
-					File.write(reinterpret_cast<const char*>(ClusterHeightMap.data()), ClusterHeightMap.size() * sizeof(uint16_t));
-
-					// Write minmax maps converted back to signed int16_t
-					for (const auto& MinMax : MinMaxData)
-					{
-						WriteStream(File, static_cast<int16_t>(static_cast<int>(MinMax.first) - 32768));
-						WriteStream(File, static_cast<int16_t>(static_cast<int>(MinMax.second) - 32768));
-					}
-
-					CDLODID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
-
-					Task.Log.LogInfo(" Written CDLOD: " + DestPath.generic_string() + " (" + std::to_string(File.tellp()) + " bytes)");
-				}
-
 				// Generate material
 
 				Data::CParams MtlParams;
@@ -552,7 +522,7 @@ public:
 					SMLeft -= static_cast<float>(ClusterRect.Left);
 					SMTop -= static_cast<float>(ClusterRect.Top);
 
-					// Finally calculate UV coefficients for actual cluater data in an inflated texture
+					// Finally calculate UV coefficients for actual cluster data in an inflated texture
 					SMUVScaleX = SMWidth / static_cast<float>(ClusterRect.Width());
 					SMUVScaleY = SMHeight / static_cast<float>(ClusterRect.Height());
 					SMUVOffsetX = SMLeft / static_cast<float>(ClusterRect.Width());
@@ -579,7 +549,7 @@ public:
 
 				std::string MaterialID;
 				{
-					auto DestPath = GetPath(Task.Params, "MaterialOutput") / (TaskName + ".mtl");
+					auto DestPath = GetPath(Task.Params, "MaterialOutput") / (TaskName + Postfix + ".mtl");
 
 					fs::create_directories(DestPath.parent_path());
 
@@ -589,6 +559,102 @@ public:
 
 					MaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 				}
+
+				// Write resulting CDLOD file
+				std::string CDLODID;
+				{
+					auto DestPath = GetPath(Task.Params, "CDLODOutput") / (TaskName + Postfix + ".cdlod");
+					fs::create_directories(DestPath.parent_path());
+
+					std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
+					if (!File)
+					{
+						Task.Log.LogError("Error opening an output file " + DestPath.generic_string());
+						return ETaskResult::Failure;
+					}
+
+					// Write header and main info
+					WriteStream<uint32_t>(File, 'CDLD');        // Format magic value
+					WriteStream<uint32_t>(File, 0x00020000);    // Version 0.2.0.0
+					WriteStream(File, ClusterDataWidth);        // Actual width in vertices
+					WriteStream(File, ClusterDataHeight);       // Actual height in vertices
+					WriteStream(File, PatchSize);               // Size of the LOD 0 patch in raster quads
+					WriteStream(File, LODCount);                // Depth of LOD subdivision. 1 means no subdivision.
+
+					// Write splat map mapping from texture inflated with borders to the cluster
+					// TODO: think about the correct place for this. CDLOD asset, material or scene node attribute?
+					WriteStream(File, SMUVScaleX);
+					WriteStream(File, SMUVScaleY);
+					WriteStream(File, SMUVOffsetX);
+					WriteStream(File, SMUVOffsetY);
+
+					// Write minmax maps converted back to signed int16_t
+					WriteStream(File, 2 * static_cast<uint32_t>(MinMaxData.size()));
+					for (const auto& MinMax : MinMaxData)
+					{
+						WriteStream(File, static_cast<int16_t>(static_cast<int>(MinMax.first) - 32768));
+						WriteStream(File, static_cast<int16_t>(static_cast<int>(MinMax.second) - 32768));
+					}
+
+					// Write heightmap
+					File.write(reinterpret_cast<const char*>(ClusterHeightMap.data()), ClusterHeightMap.size() * sizeof(uint16_t));
+
+					CDLODID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+
+					Task.Log.LogInfo(" Written CDLOD: " + DestPath.generic_string() + " (" + std::to_string(File.tellp()) + " bytes)");
+				}
+
+				// Write scene node
+
+				Data::CParams NodeSection;
+				Data::CDataArray Attributes;
+
+				// Write cluster world transform. At identity transform the cluster will start at 0,0 and end
+				// at ClusterDataRasterWidth,ClusterDataRasterHeight units. The height will be a raw value from heightmap.
+				{
+					const float ClusterOffsetX = WorldSizeX * HeightFromX / static_cast<float>(RasterQuadsX);
+					const float ClusterOffsetZ = WorldSizeZ * HeightFromY / static_cast<float>(RasterQuadsY);
+					const float ClusterScaleX = WorldSizeX / static_cast<float>(RasterQuadsX);
+					const float ClusterScaleZ = WorldSizeZ / static_cast<float>(RasterQuadsY);
+
+					acl::Transform_32 NodeTfm =
+					{
+						{ 0.f, 0.f, 0.f, 1.f },
+						{ WorldOffsetX + ClusterOffsetX, 0.f, WorldOffsetZ + ClusterOffsetZ, 1.f },
+						{ ClusterScaleX, BTFile.GetVerticalScale(), ClusterScaleZ, 0.f }
+					};
+
+					FillNodeTransform(NodeTfm, NodeSection);
+				}
+
+				// Write terrain attribute
+				{
+					Data::CParams Attribute;
+					Attribute.emplace_back(CStrID("Class"), 'TRNA'); // Frame::CTerrainAttribute
+					if (!CDLODID.empty())
+						Attribute.emplace_back(CStrID("CDLODFile"), CDLODID);
+					if (!MaterialID.empty())
+						Attribute.emplace_back(CStrID("Material"), MaterialID);
+					if (SplatSizeX > 0.f && SplatSizeX != 1.f)
+						Attribute.emplace_back(CStrID("SplatSizeX"), SplatSizeX);
+					if (SplatSizeZ > 0.f && SplatSizeZ != 1.f)
+						Attribute.emplace_back(CStrID("SplatSizeZ"), SplatSizeZ);
+					Attributes.push_back(std::move(Attribute));
+				}
+
+				// Write collision shape attribute
+				if (_NeedCollision && !CDLODID.empty())
+				{
+					Data::CParams Attribute;
+					Attribute.emplace_back(CStrID("Class"), 'COLA'); // Physics::CCollisionAttribute
+					Attribute.emplace_back(CStrID("Shape"), CDLODID + "#Collision");
+					Attribute.emplace_back(CStrID("Static"), true);
+					Attributes.push_back(std::move(Attribute));
+				}
+
+				// Add cluster node to the root node of the asset
+				NodeSection.emplace_back(CStrID("Attrs"), std::move(Attributes));
+				Children.emplace_back(CStrID(TaskName + Postfix), std::move(NodeSection));
 			}
 		}
 
@@ -596,48 +662,14 @@ public:
 
 		// Write scene file
 
-		const auto SplatSizeX = ParamsUtils::GetParam<float>(Task.Params, "SplatSizeX", 1.f);
-		const auto SplatSizeZ = ParamsUtils::GetParam<float>(Task.Params, "SplatSizeZ", 1.f);
-
-		Data::CParams Result;
-
-		Data::CDataArray Attributes;
-
-		//!!!DBG TMP!
-		std::string CDLODID;
-		std::string MaterialID;
-
-		{
-			Data::CParams Attribute;
-			Attribute.emplace_back(CStrID("Class"), 'TRNA'); // Frame::CTerrainAttribute
-			if (!CDLODID.empty())
-				Attribute.emplace_back(CStrID("CDLODFile"), CDLODID);
-			if (!MaterialID.empty())
-				Attribute.emplace_back(CStrID("Material"), MaterialID);
-			if (SplatSizeX > 0.f && SplatSizeX != 1.f)
-				Attribute.emplace_back(CStrID("SplatSizeX"), SplatSizeX);
-			if (SplatSizeZ > 0.f && SplatSizeZ != 1.f)
-				Attribute.emplace_back(CStrID("SplatSizeZ"), SplatSizeZ);
-			Attributes.push_back(std::move(Attribute));
-		}
-
-		if (_NeedCollision && !CDLODID.empty())
-		{
-			Data::CParams Attribute;
-			Attribute.emplace_back(CStrID("Class"), 'COLA'); // Physics::CCollisionAttribute
-			Attribute.emplace_back(CStrID("Shape"), CDLODID + "#Collision");
-			Attribute.emplace_back(CStrID("Static"), true);
-			Attributes.push_back(std::move(Attribute));
-		}
-
-		Result.emplace_back(CStrID("Attrs"), std::move(Attributes));
+		RootNode.emplace_back(sidChildren, std::move(Children));
 
 		const fs::path OutPath = GetPath(Task.Params, "Output");
 
 		if (_OutputHRD)
 		{
 			const auto DestPath = OutPath / (TaskName + ".hrd");
-			if (!ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), Result))
+			if (!ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), RootNode))
 			{
 				Task.Log.LogError("Error serializing " + TaskName + " to text");
 				return ETaskResult::Failure;
@@ -647,7 +679,7 @@ public:
 		if (_OutputBin)
 		{
 			const auto DestPath = OutPath / (TaskName + ".scn");
-			if (!ParamsUtils::SaveParamsByScheme(DestPath.string().c_str(), Result, CStrID("SceneNode"), _SceneSchemes))
+			if (!ParamsUtils::SaveParamsByScheme(DestPath.string().c_str(), RootNode, CStrID("SceneNode"), _SceneSchemes))
 			{
 				Task.Log.LogError("Error serializing " + TaskName + " to binary");
 				return ETaskResult::Failure;
