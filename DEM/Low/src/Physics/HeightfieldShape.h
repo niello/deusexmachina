@@ -33,7 +33,7 @@ protected:
 
 public:
 
-	CHeightfieldShape(btDEMHeightfieldTerrainShape* pShape, PHeightfieldData&& HeightfieldData, const vector3& Offset = vector3::Zero);
+	CHeightfieldShape(btDEMHeightfieldTerrainShape* pShape, PHeightfieldData&& HeightfieldData, const vector3& Offset = vector3::Zero, const vector3& Scaling = vector3::One);
 
 	virtual PCollisionShape CloneWithScaling(const vector3& Scaling) const override;
 };

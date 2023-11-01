@@ -54,10 +54,10 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 
 	CAABB NodeAABB;
 	NodeAABB.Min.x = NodeMinX;
-	NodeAABB.Min.y = MinY * Ctx.ScaleBase.y;
+	NodeAABB.Min.y = MinY * Ctx.ScaleBase.y * CDLODData->GetVerticalScale();
 	NodeAABB.Min.z = NodeMinZ;
 	NodeAABB.Max.x = NodeMinX + ScaleX;
-	NodeAABB.Max.y = MaxY * Ctx.ScaleBase.y;
+	NodeAABB.Max.y = MaxY * Ctx.ScaleBase.y * CDLODData->GetVerticalScale();
 	NodeAABB.Max.z = NodeMinZ + ScaleZ;
 
 	if (Clip == EClipStatus::Clipped)

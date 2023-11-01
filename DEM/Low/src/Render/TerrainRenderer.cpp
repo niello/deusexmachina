@@ -57,10 +57,10 @@ bool CTerrainRenderer::CheckNodeSphereIntersection(const CLightTestArgs& Args, c
 
 	CAABB NodeAABB;
 	NodeAABB.Min.x = NodeMinX;
-	NodeAABB.Min.y = MinY * Args.ScaleBase.y;
+	NodeAABB.Min.y = MinY * Args.ScaleBase.y * Args.pCDLOD->GetVerticalScale();
 	NodeAABB.Min.z = NodeMinZ;
 	NodeAABB.Max.x = NodeMinX + ScaleX;
-	NodeAABB.Max.y = MaxY * Args.ScaleBase.y;
+	NodeAABB.Max.y = MaxY * Args.ScaleBase.y * Args.pCDLOD->GetVerticalScale();
 	NodeAABB.Max.z = NodeMinZ + ScaleZ;
 
 	if (Sphere.GetClipStatus(NodeAABB) == EClipStatus::Outside) FAIL;
@@ -99,10 +99,10 @@ bool CTerrainRenderer::CheckNodeFrustumIntersection(const CLightTestArgs& Args, 
 
 	CAABB NodeAABB;
 	NodeAABB.Min.x = NodeMinX;
-	NodeAABB.Min.y = MinY * Args.ScaleBase.y;
+	NodeAABB.Min.y = MinY * Args.ScaleBase.y * Args.pCDLOD->GetVerticalScale();
 	NodeAABB.Min.z = NodeMinZ;
 	NodeAABB.Max.x = NodeMinX + ScaleX;
-	NodeAABB.Max.y = MaxY * Args.ScaleBase.y;
+	NodeAABB.Max.y = MaxY * Args.ScaleBase.y * Args.pCDLOD->GetVerticalScale();
 	NodeAABB.Max.z = NodeMinZ + ScaleZ;
 
 	if (NodeAABB.GetClipStatus(Frustum) == EClipStatus::Outside) FAIL;
@@ -232,7 +232,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		AABB.Transform(Terrain.Transform);
 		const auto WorldSize = AABB.Size();
 
-		const float ScaleY = WorldSize.y / LocalSize.y;
+		const float ScaleY = CDLOD.GetVerticalScale() * WorldSize.y / LocalSize.y;
 
 		CDLODParams.WorldToHM[0] = 1.f / WorldSize.x;
 		CDLODParams.WorldToHM[1] = 1.f / WorldSize.z;

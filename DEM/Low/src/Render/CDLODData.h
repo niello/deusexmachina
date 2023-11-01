@@ -34,6 +34,7 @@ protected:
 	U32						HFHeight;
 	U32						PatchSize;
 	U32						LODCount;
+	float                   VerticalScale;
 	std::array<float, 4>	SplatMapUVCoeffs; // xy - scale, zw - offset
 	CAABB					Box;
 
@@ -48,6 +49,7 @@ public:
 		U32                  HFHeight;
 		U32                  PatchSize;
 		U32                  LODCount;
+		float                VerticalScale;
 		std::array<float, 4> SplatMapUVCoeffs;
 		U32                  MinMaxDataCount;
 	};
@@ -57,6 +59,7 @@ public:
 	U32					GetHeightMapHeight() const { return HFHeight; }
 	U32					GetPatchSize() const { return PatchSize; }
 	U32					GetLODCount() const { return LODCount; }
+	float               GetVerticalScale() const { return VerticalScale; }
 	const CAABB&		GetAABB() const { return Box; }
 	void				GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, I16& MinY, I16& MaxY) const;
 	bool				HasNode(UPTR X, UPTR Z, UPTR LOD) const;

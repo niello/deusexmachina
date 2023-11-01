@@ -45,8 +45,8 @@ Core::PObject CCollisionLoaderCDLOD::CreateResource(CStrID UID)
 	I16 MinY, MaxY;
 	if (!Reader.Read(MinY)) return nullptr;
 	if (!Reader.Read(MaxY)) return nullptr;
-	const auto MinYF = static_cast<float>(MinY);
-	const auto MaxYF = static_cast<float>(MaxY);
+	const auto MinYF = static_cast<float>(MinY) * Header.VerticalScale;
+	const auto MaxYF = static_cast<float>(MaxY) * Header.VerticalScale;
 
 	// Bullet shape is created with an origin at the center of a heightmap AABB.
 	// Calculate an offset between that center and the real origin, which is a half extent of the terrain.
@@ -65,8 +65,7 @@ Core::PObject CCollisionLoaderCDLOD::CreateResource(CStrID UID)
 		*pCurr = static_cast<I16>(Value);
 	}
 
-	auto pBtShape = new btDEMHeightfieldTerrainShape(Header.HFWidth, Header.HFHeight, Data.get(), 1.f, MinYF, MaxYF, 1, PHY_SHORT, false);
-	pBtShape->buildAccelerator();
+	auto pBtShape = new btDEMHeightfieldTerrainShape(Header.HFWidth, Header.HFHeight, Data.get(), Header.VerticalScale, MinYF, MaxYF, 1, PHY_SHORT, false);
 
 	return new Physics::CHeightfieldShape(pBtShape, std::move(Data), Offset);
 }

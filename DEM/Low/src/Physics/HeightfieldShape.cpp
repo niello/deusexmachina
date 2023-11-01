@@ -4,10 +4,12 @@
 namespace Physics
 {
 
-CHeightfieldShape::CHeightfieldShape(btDEMHeightfieldTerrainShape* pShape, PHeightfieldData&& HeightfieldData, const vector3& Offset)
-	: CCollisionShape(pShape, Offset)
+CHeightfieldShape::CHeightfieldShape(btDEMHeightfieldTerrainShape* pShape, PHeightfieldData&& HeightfieldData, const vector3& Offset, const vector3& Scaling)
+	: CCollisionShape(pShape, Offset, Scaling)
 	, _HeightfieldData(std::move(HeightfieldData))
 {
+	// Accelerate raycasting
+	pShape->buildAccelerator();
 }
 //---------------------------------------------------------------------
 
@@ -15,7 +17,7 @@ CHeightfieldShape::CHeightfieldShape(btDEMHeightfieldTerrainShape* pShape, PHeig
 PCollisionShape CHeightfieldShape::CloneWithScaling(const vector3& Scaling) const
 {
 	const auto& CurrScaling = _pBtShape->getLocalScaling();
-	const vector3 Rescale(Scaling.x / CurrScaling.x(), Scaling.y / CurrScaling.y(), Scaling.z / CurrScaling.z());
+	const vector3 UnscaledOffset(_Offset.x / CurrScaling.x(), _Offset.y / CurrScaling.y(), _Offset.z / CurrScaling.z());
 
 	auto pBtHFShape = static_cast<btDEMHeightfieldTerrainShape*>(_pBtShape);
 
@@ -28,16 +30,13 @@ PCollisionShape CHeightfieldShape::CloneWithScaling(const vector3& Scaling) cons
 		pBtHFShape->GetHeightfieldHeight(),
 		NewData.get(),
 		pBtHFShape->GetHeightScale(),
-		pBtHFShape->GetMinHeight() * Rescale.y,
-		pBtHFShape->GetMaxHeight() * Rescale.y,
+		pBtHFShape->GetMinHeight(),
+		pBtHFShape->GetMaxHeight(),
 		1,
 		PHY_SHORT,
 		false);
-	pNewBtShape->setLocalScaling(VectorToBtVector(Scaling));
-	pNewBtShape->buildAccelerator();
 
-	const vector3 NewOffset(_Offset.x * Rescale.x, _Offset.y * Rescale.y, _Offset.z * Rescale.z);
-	return new Physics::CHeightfieldShape(pNewBtShape, std::move(NewData), NewOffset);
+	return new Physics::CHeightfieldShape(pNewBtShape, std::move(NewData), UnscaledOffset, Scaling);
 }
 //---------------------------------------------------------------------
 

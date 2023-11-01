@@ -574,12 +574,13 @@ public:
 					}
 
 					// Write header and main info
-					WriteStream<uint32_t>(File, 'CDLD');        // Format magic value
-					WriteStream<uint32_t>(File, 0x00020000);    // Version 0.2.0.0
-					WriteStream(File, ClusterDataWidth);        // Actual width in vertices
-					WriteStream(File, ClusterDataHeight);       // Actual height in vertices
-					WriteStream(File, PatchSize);               // Size of the LOD 0 patch in raster quads
-					WriteStream(File, LODCount);                // Depth of LOD subdivision. 1 means no subdivision.
+					WriteStream<uint32_t>(File, 'CDLD');          // Format magic value
+					WriteStream<uint32_t>(File, 0x00020000);      // Version 0.2.0.0
+					WriteStream(File, ClusterDataWidth);          // Actual width in vertices
+					WriteStream(File, ClusterDataHeight);         // Actual height in vertices
+					WriteStream(File, PatchSize);                 // Size of the LOD 0 patch in raster quads
+					WriteStream(File, LODCount);                  // Depth of LOD subdivision. 1 means no subdivision.
+					WriteStream(File, BTFile.GetVerticalScale()); // Height scaling is used for restoring real values from quantized short
 
 					// Write splat map mapping from texture inflated with borders to the cluster
 					// TODO: think about the correct place for this. CDLOD asset, material or scene node attribute?
@@ -621,7 +622,7 @@ public:
 					{
 						{ 0.f, 0.f, 0.f, 1.f },
 						{ WorldOffsetX + ClusterOffsetX, 0.f, WorldOffsetZ + ClusterOffsetZ, 1.f },
-						{ ClusterScaleX, BTFile.GetVerticalScale(), ClusterScaleZ, 0.f }
+						{ ClusterScaleX, 1.f, ClusterScaleZ, 0.f }
 					};
 
 					FillNodeTransform(NodeTfm, NodeSection);

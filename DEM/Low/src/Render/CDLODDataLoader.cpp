@@ -36,6 +36,7 @@ Core::PObject CCDLODDataLoader::CreateResource(CStrID UID)
 	Obj->HFHeight = Header.HFHeight;
 	Obj->PatchSize = Header.PatchSize;
 	Obj->LODCount = Header.LODCount;
+	Obj->VerticalScale = Header.VerticalScale;
 	Obj->SplatMapUVCoeffs = Header.SplatMapUVCoeffs;
 
 	Obj->pMinMaxData.reset(n_new_array(I16, Header.MinMaxDataCount));
@@ -62,10 +63,10 @@ Core::PObject CCDLODDataLoader::CreateResource(CStrID UID)
 	Obj->GetMinMaxHeight(0, 0, Obj->LODCount - 1, MinY, MaxY);
 
 	Obj->Box.Min.x = 0.f;
-	Obj->Box.Min.y = static_cast<float>(MinY);
+	Obj->Box.Min.y = static_cast<float>(MinY) * Header.VerticalScale;
 	Obj->Box.Min.z = 0.f;
 	Obj->Box.Max.x = static_cast<float>(Obj->HFWidth - 1);
-	Obj->Box.Max.y = static_cast<float>(MaxY);
+	Obj->Box.Max.y = static_cast<float>(MaxY) * Header.VerticalScale;
 	Obj->Box.Max.z = static_cast<float>(Obj->HFHeight - 1);
 
 	return Obj.Get();
