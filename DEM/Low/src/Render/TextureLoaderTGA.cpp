@@ -36,6 +36,35 @@ struct CTGAFooter
 	U8	Signature[18];
 };
 
+struct CTGA20Extension
+{
+	U16 Size;
+	char AuthorName[41];
+	char AuthorComments[324];
+	U16 Month;
+	U16 Day;
+	U16 Year;
+	U16 Hour;
+	U16 Minute;
+	U16 Second;
+	char JobName[41];
+	U16 JobHours;
+	U16 JobMinutes;
+	U16 JobSeconds;
+	char SoftwareID[41];
+	U16 SoftwareVersionNumber;
+	char SoftwareVersionLetter;
+	U32 KeyColor; // ARGB, A is the most significant byte
+	U16 PixelRatioNumerator;
+	U16 PixelRatioDenominator;
+	U16 GammaNumerator;
+	U16 GammaDenominator;
+	U32 ColorCorrectionOffset;
+	U32 PostageStampOffset;
+	U32 ScanLineOffset;
+	U8 AttributesType;
+};
+
 #pragma pack(pop)
 
 // For CTGAHeader.ImageDescriptor bit checking
@@ -78,10 +107,18 @@ Core::PObject CTextureLoaderTGA::CreateResource(CStrID UID)
 	bool HasAlpha = (Header.ImageDescriptor & TGA_ATTRIBUTE_BITS) || Header.BitsPerPixel == 32;
 	if (!memcmp(Footer.Signature, ReferenceSignature, sizeof(ReferenceSignature) - 1))
 	{
-		// New TGA
+		// TGA 2.0 introduces this.
+		// See https://www.dca.fee.unicamp.br/~martino/disciplinas/ea978/tgaffs.pdf
 		if (Footer.ExtensionAreaOffset)
 		{
-			if (!Stream->Seek(Footer.ExtensionAreaOffset + 494, IO::Seek_Begin)) return nullptr;
+			// Could read the whole extension area here but need only one byte, so don't bother. See below.
+			//static_assert(sizeof(CTGA20Extension) == 495);
+			//if (!Stream->Seek(Footer.ExtensionAreaOffset, IO::Seek_Begin)) return nullptr;
+			//CTGA20Extension Extension;
+			//if (!Reader.Read(Extension)) return nullptr;
+
+			// Seek to "Attributes Type" - Field 24, 1 byte at pos 494 in an extension area
+			if (!Stream->Seek(static_cast<I64>(Footer.ExtensionAreaOffset) + 494, IO::Seek_Begin)) return nullptr;
 
 			U8 AttributesType;
 			if (!Reader.Read(AttributesType)) return nullptr;
