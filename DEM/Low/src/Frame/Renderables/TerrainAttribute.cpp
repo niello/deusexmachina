@@ -120,11 +120,11 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 	}
 	else if (!pTerrain->Material || pTerrain->Material->GetUID() != _MaterialUID) //!!! || LOD != RememberedLOD? Or terrain manages its material LOD in a renderer?
 	{
-		static const CStrID InputSet_CDLOD("CDLOD");
-
-		pTerrain->Material = View.GetGraphicsManager()->GetMaterial(_MaterialUID);
+		pTerrain->Material = ResMgr.GetMaterial(_MaterialUID);
 		if (pTerrain->Material && pTerrain->Material->GetEffect())
 		{
+			static const CStrID InputSet_CDLOD("CDLOD");
+
 			pTerrain->ShaderTechIndex = View.RegisterEffect(*pTerrain->Material->GetEffect(), InputSet_CDLOD);
 			pTerrain->RenderQueueMask = (1 << pTerrain->Material->GetEffect()->GetType());
 			pTerrain->MaterialKey = pTerrain->Material->GetSortingKey();
@@ -148,9 +148,10 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 		pTerrain->CDLODData = _CDLODData;
 
 		const auto PatchSize = _CDLODData->GetPatchSize();
-		//if (!Math::IsPow2(PatchSize) || PatchSize < 4) FAIL;
+		n_assert_dbg(Math::IsPow2(PatchSize));
 
 		//!!!TODO: store both patches in one mesh, only use different primitive groups (can vary only indices! whole indices and quarter indices)
+		//???maybe render 4 quarterpatches instead of 1 whole? then will be 1 DIP per terrain cluster, with a possibility to merge!
 		CString PatchName;
 		PatchName.Format("#Mesh_Patch%dx%d", PatchSize, PatchSize);
 		CStrID MeshUID(PatchName);
@@ -183,7 +184,7 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 		//!!!clamp to range 0.5f .. 0.95f!
 		constexpr float MorphStartRatio = 0.7f;
 
-		const U32 LODCount = pTerrain->GetCDLODData()->GetLODCount();
+		const U32 LODCount = _CDLODData ? _CDLODData->GetLODCount() : 0;
 		pTerrain->LODParams.resize(LODCount);
 		pTerrain->LODParams.shrink_to_fit();
 		if (LODCount)
@@ -210,10 +211,11 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 	// Update a list of visible patches
 	if (MorphChanged || ViewProjChanged || pTerrain->PatchesTransformVersion != _pNode->GetTransformVersion())
 	{
+		// FIXME: mast pass the main camera position, the one used for final frame presentation, not a view camera pos!
 		pTerrain->PatchesTransformVersion = _pNode->GetTransformVersion();
-		pTerrain->UpdatePatches(View.GetCamera()->GetPosition(), View.GetCamera()->GetViewProjMatrix());
+		pTerrain->UpdatePatches(View.GetCamera()->GetPosition(), View.GetViewFrustum());
 
-		//???set all lights dirty in a CTerrain renderable view? or update now?
+		//???set all lights dirty in a CTerrain renderable view for update in UpdateLightList? or update now?
 		//could merge / divide existing nodes and/or use finest LOD light grid
 
 		//???store main info about patches in one buffer, lights in another?!

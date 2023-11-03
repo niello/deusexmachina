@@ -447,7 +447,7 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			{
 				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
 				{
-					pRenderable->IsVisible = Math::ClipAABB(Record.BoxCenter, Record.BoxExtent, _LastViewFrustum);
+					pRenderable->IsVisible = Math::HasIntersection(Record.BoxCenter, Record.BoxExtent, _LastViewFrustum);
 				}
 				else pRenderable->IsVisible = true;
 			}
@@ -548,7 +548,7 @@ void CView::UpdateLights(bool ViewProjChanged)
 			{
 				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
 				{
-					pLight->IsVisible = Math::ClipSphere(Record.Sphere, _LastViewFrustum);
+					pLight->IsVisible = Math::HasIntersection(Record.Sphere, _LastViewFrustum);
 				}
 				else pLight->IsVisible = true;
 

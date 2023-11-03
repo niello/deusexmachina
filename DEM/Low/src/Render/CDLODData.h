@@ -2,6 +2,7 @@
 #include <Core/Object.h>
 #include <Data/FixedArray.h>
 #include <Math/AABB.h>
+#include <acl/math/vector4_32.h>
 #include <array>
 
 // CDLOD heightfield-based terrain rendering data with settings and precalculated aux data
@@ -62,7 +63,9 @@ public:
 	float               GetVerticalScale() const { return VerticalScale; }
 	const CAABB&		GetAABB() const { return Box; }
 	void				GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, I16& MinY, I16& MaxY) const;
+	void				GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, float& MinY, float& MaxY) const;
 	bool				HasNode(UPTR X, UPTR Z, UPTR LOD) const;
+	bool				GetNodeAABB(UPTR X, UPTR Z, UPTR LOD, acl::Vector4_32& BoxCenter, acl::Vector4_32& BoxExtent) const;
 };
 
 typedef Ptr<CCDLODData> PCDLODData;
@@ -77,10 +80,38 @@ inline void CCDLODData::GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, I16& MinY, I16
 }
 //---------------------------------------------------------------------
 
+inline void CCDLODData::GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, float& MinY, float& MaxY) const
+{
+	I16 MinYShort, MaxYShort;
+	GetMinMaxHeight(X, Z, LOD, MinYShort, MaxYShort);
+	MinY = static_cast<float>(MinYShort) * VerticalScale;
+	MaxY = static_cast<float>(MaxYShort) * VerticalScale;
+}
+//---------------------------------------------------------------------
+
 inline bool CCDLODData::HasNode(UPTR X, UPTR Z, UPTR LOD) const
 {
 	CMinMaxMap& MMMap = MinMaxMaps[LOD];
 	return X < MMMap.PatchesW && Z < MMMap.PatchesH;
+}
+//---------------------------------------------------------------------
+
+inline bool CCDLODData::GetNodeAABB(UPTR X, UPTR Z, UPTR LOD, acl::Vector4_32& BoxCenter, acl::Vector4_32& BoxExtent) const
+{
+	I16 MinY, MaxY;
+	GetMinMaxHeight(X, Z, LOD, MinY, MaxY);
+
+	// Node has no data
+	if (MaxY < MinY) return false;
+
+	const float NodeHalfSize = static_cast<float>(PatchSize << LOD) * 0.5f;
+	const float MinYF = MinY * VerticalScale;
+	const float MaxYF = MaxY * VerticalScale;
+
+	BoxCenter = acl::vector_set((2 * X + 1) * NodeHalfSize, (MaxYF + MinYF) * 0.5f, (2 * Z + 1) * NodeHalfSize);
+	BoxExtent = acl::vector_set(NodeHalfSize, (MaxYF - MinYF) * 0.5f, NodeHalfSize);
+
+	return true;
 }
 //---------------------------------------------------------------------
 

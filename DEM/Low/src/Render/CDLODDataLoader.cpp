@@ -26,7 +26,9 @@ Core::PObject CCDLODDataLoader::CreateResource(CStrID UID)
 
 	U32 Version;
 	if (!Reader.Read<U32>(Version)) return nullptr;
+
 	n_assert_dbg(Version == 0x00020000);
+	if (Version != 0x00020000) return nullptr;
 
 	Render::CCDLODData::CHeader_0_2_0_0 Header;
 	if (!Reader.Read(Header)) return nullptr;
@@ -59,14 +61,14 @@ Core::PObject CCDLODDataLoader::CreateResource(CStrID UID)
 	n_assert2_dbg(PatchesW == 1 && PatchesH == 1, "CDLOD minmax map doesn't fold up into a single minmax pair!");
 
 	// Coarsest LOD must be folded up to 1x1 and store global minmax pair
-	I16 MinY, MaxY;
+	float MinY, MaxY;
 	Obj->GetMinMaxHeight(0, 0, Obj->LODCount - 1, MinY, MaxY);
 
 	Obj->Box.Min.x = 0.f;
-	Obj->Box.Min.y = static_cast<float>(MinY) * Header.VerticalScale;
+	Obj->Box.Min.y = MinY;
 	Obj->Box.Min.z = 0.f;
 	Obj->Box.Max.x = static_cast<float>(Obj->HFWidth - 1);
-	Obj->Box.Max.y = static_cast<float>(MaxY) * Header.VerticalScale;
+	Obj->Box.Max.y = MaxY;
 	Obj->Box.Max.z = static_cast<float>(Obj->HFHeight - 1);
 
 	return Obj.Get();

@@ -422,6 +422,8 @@ void CGraphicsScene::RemoveLight(HRecord Handle)
 //---------------------------------------------------------------------
 
 // Test AABB cube vs frustum planes containment or intersection for positive halfspace treated as 'inside'.
+// It is a variant of Math::ClipAABB optimized for very certain conditions.
+// Bounds arg is (x, y, z) origin and w extent of the cube.
 // Returns a 2 bit mask with bit0 set if the cube is present inside and bit1 set if the cube is present outside.
 // TODO: add an alternative implementation for AVX (ymm register can hold all 6 planes at once)
 static DEM_FORCE_INLINE U8 ClipCube(acl::Vector4_32Arg0 Bounds, acl::Vector4_32Arg1 ProjectedWorldExtent,

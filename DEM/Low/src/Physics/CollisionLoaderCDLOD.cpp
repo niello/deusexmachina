@@ -30,7 +30,9 @@ Core::PObject CCollisionLoaderCDLOD::CreateResource(CStrID UID)
 
 	U32 Version;
 	if (!Reader.Read<U32>(Version)) return nullptr;
+
 	n_assert_dbg(Version == 0x00020000);
+	if (Version != 0x00020000) return nullptr;
 
 	Render::CCDLODData::CHeader_0_2_0_0 Header;
 	if (!Reader.Read(Header)) return nullptr;

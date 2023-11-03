@@ -2,6 +2,7 @@
 #include <Render/Renderable.h>
 #include <Data/StringID.h>
 #include <Data/Ptr.h>
+#include <Math/CameraMath.h>
 
 // Terrain represents a CDLOD heightmap-based model. It has special LOD handling
 // and integrated visibility test.
@@ -29,6 +30,7 @@ protected:
 
 	// Pixel shader instance data
 	//!!!can store as a simple unstructured buffer of indices!
+	//???send light count and light start index in that buffer from vertex to pixel shader through interpolators? or bind CB to PS?
 	//I16 LightIndex[INSTANCE_MAX_LIGHT_COUNT]; // + INSTANCE_PADDING_SIZE];
 
 	enum class ENodeStatus
@@ -40,18 +42,17 @@ protected:
 
 	struct CNodeProcessingContext
 	{
-		matrix44 ViewProjection;
-		vector3	 MainCameraPos;
-		float    AABBMinX;
-		float    AABBMinZ;
-		vector3  ScaleBase;
+		Math::CSIMDFrustum ViewFrustum;
+		acl::Vector4_32    Scale;
+		acl::Vector4_32    Offset;
+		vector3	           MainCameraPos;
 	};
 
 	//!!!???can fill one GPU buffer?! use offset to render first ones, then others.
 	std::vector<CPatchInstance> _Patches;
 	std::vector<CPatchInstance> _QuarterPatches;
 
-	ENodeStatus ProcessTerrainNode(const CNodeProcessingContext& Ctx, U32 X, U32 Z, U32 LOD, EClipStatus Clip);
+	ENodeStatus ProcessTerrainNode(const CNodeProcessingContext& Ctx, U32 X, U32 Z, U32 LOD, U8 ParentClipStatus);
 
 public:
 
@@ -79,7 +80,7 @@ public:
 	CTerrain();
 	virtual ~CTerrain() override;
 
-	void UpdatePatches(const vector3& MainCameraPos, const matrix44& ViewProjection);
+	void UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrustum& ViewFrustum);
 
 	CCDLODData*         GetCDLODData() const { return CDLODData.Get(); }
 	CMaterial*          GetMaterial() const { return Material.Get(); }

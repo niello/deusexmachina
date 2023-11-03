@@ -152,6 +152,7 @@ public:
 	CGraphicsScene*                 GetGraphicsScene() const { return _pScene; }
 	void							SetCamera(CCameraAttribute* pNewCamera);
 	CCameraAttribute*               GetCamera() const { return _pCamera; }
+	const Math::CSIMDFrustum&       GetViewFrustum() const { return _LastViewFrustum; }
 	CGraphicsResourceManager*		GetGraphicsManager() const;
 	Render::CGPUDriver*				GetGPU() const;
 	UI::CUIContext*                 GetUIContext() const { return _UIContext.Get(); }

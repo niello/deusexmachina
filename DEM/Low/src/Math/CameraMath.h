@@ -7,6 +7,9 @@
 
 namespace Math
 {
+constexpr U8 ClipInside = (1 << 0);
+constexpr U8 ClipOutside = (1 << 1);
+constexpr U8 ClipIntersect = ClipInside | ClipOutside;
 
 // TODO: add an alternative implementation for AVX (ymm register can hold all 6 planes at once)
 struct CSIMDFrustum
@@ -56,7 +59,7 @@ DEM_FORCE_INLINE CSIMDFrustum CalcFrustumParams(const matrix44& m) noexcept
 // Test AABB vs frustum planes intersection for positive halfspace treated as 'inside'
 // TODO: add an alternative implementation for AVX (ymm register can hold all 6 planes at once)
 //???!!!TODO PERF: rtm::vector_abs & rtm::vector_neg are bit-based! Is it better to recalc abs axes or cache them in CSIMDFrustum (probably in memory)?
-DEM_FORCE_INLINE bool ClipAABB(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, const CSIMDFrustum& Frustum) noexcept
+DEM_FORCE_INLINE bool HasIntersection(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, const CSIMDFrustum& Frustum) noexcept
 {
 	// Distance of box center from plane (s): (Cx * Nx) + (Cy * Ny) + (Cz * Nz) - d, where "- d" is "+ w"
 	auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(BoxCenter), Frustum.LRBT_Nx, Frustum.LRBT_w);
@@ -83,9 +86,45 @@ DEM_FORCE_INLINE bool ClipAABB(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg
 //---------------------------------------------------------------------
 
 // Test AABB vs frustum planes intersection for positive halfspace treated as 'inside'
+// Returns a 2 bit mask with bit0 set if the AABB is present inside and bit1 if outside the frustum.
 // TODO: add an alternative implementation for AVX (ymm register can hold all 6 planes at once)
 //???!!!TODO PERF: rtm::vector_abs & rtm::vector_neg are bit-based! Is it better to recalc abs axes or cache them in CSIMDFrustum (probably in memory)?
-DEM_FORCE_INLINE bool ClipSphere(acl::Vector4_32Arg0 Sphere, const CSIMDFrustum& Frustum) noexcept
+DEM_FORCE_INLINE U8 ClipAABB(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, const CSIMDFrustum& Frustum) noexcept
+{
+	// Distance of box center from plane (s): (Cx * Nx) + (Cy * Ny) + (Cz * Nz) - d, where "- d" is "+ w"
+	auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(BoxCenter), Frustum.LRBT_Nx, Frustum.LRBT_w);
+	CenterDistance = acl::vector_mul_add(acl::vector_mix_yyyy(BoxCenter), Frustum.LRBT_Ny, CenterDistance);
+	CenterDistance = acl::vector_mul_add(acl::vector_mix_zzzz(BoxCenter), Frustum.LRBT_Nz, CenterDistance);
+
+	// Projection radius of the most inside vertex: Ex * abs(Nx) + Ey * abs(Ny) + Ez * abs(Nz)
+	auto ProjectedExtent = acl::vector_mul(acl::vector_mix_xxxx(BoxExtent), acl::vector_abs(Frustum.LRBT_Nx));
+	ProjectedExtent = acl::vector_mul_add(acl::vector_mix_yyyy(BoxExtent), acl::vector_abs(Frustum.LRBT_Ny), ProjectedExtent);
+	ProjectedExtent = acl::vector_mul_add(acl::vector_mix_zzzz(BoxExtent), acl::vector_abs(Frustum.LRBT_Nz), ProjectedExtent);
+
+	// Plane normals look outside the frustum
+	bool HasVisiblePart = acl::vector_all_less_equal(CenterDistance, ProjectedExtent);
+	bool HasInvisiblePart = false;
+	if (HasVisiblePart)
+	{
+		// If inside LRTB, check intersection with NF planes
+		const float CenterAlongLookAxis = acl::vector_dot3(Frustum.LookAxis, BoxCenter);
+		const float ExtentAlongLookAxis = acl::vector_dot3(acl::vector_abs(Frustum.LookAxis), BoxExtent);
+		const float ClosestPoint = CenterAlongLookAxis - ExtentAlongLookAxis;
+		const float FarthestPoint = CenterAlongLookAxis + ExtentAlongLookAxis;
+		HasVisiblePart = (FarthestPoint > Frustum.NearPlane && ClosestPoint < Frustum.FarPlane);
+		HasInvisiblePart = !HasVisiblePart || (FarthestPoint > Frustum.FarPlane || ClosestPoint < Frustum.NearPlane);
+	}
+
+	HasInvisiblePart = HasInvisiblePart || acl::vector_any_greater_equal(CenterDistance, acl::vector_neg(ProjectedExtent));
+
+	return static_cast<U8>(HasVisiblePart) | (static_cast<U8>(HasInvisiblePart) << 1);
+}
+//---------------------------------------------------------------------
+
+// Test AABB vs frustum planes intersection for positive halfspace treated as 'inside'
+// TODO: add an alternative implementation for AVX (ymm register can hold all 6 planes at once)
+//???!!!TODO PERF: rtm::vector_abs & rtm::vector_neg are bit-based! Is it better to recalc abs axes or cache them in CSIMDFrustum (probably in memory)?
+DEM_FORCE_INLINE bool HasIntersection(acl::Vector4_32Arg0 Sphere, const CSIMDFrustum& Frustum) noexcept
 {
 	// Distance of sphere center from plane (s): (Cx * Nx) + (Cy * Ny) + (Cz * Nz) - d, where "- d" is "+ w"
 	auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(Sphere), Frustum.LRBT_Nx, Frustum.LRBT_w);
@@ -133,6 +172,14 @@ DEM_FORCE_INLINE float DistancePointSphere(acl::Vector4_32Arg0 Point, acl::Vecto
 	const float DistanceToCenter = acl::vector_distance3(Point, Sphere);
 	const float SphereRadius = acl::vector_get_w(Sphere);
 	return (DistanceToCenter > SphereRadius) ? (DistanceToCenter - SphereRadius) : 0.f;
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE bool HasIntersection(acl::Vector4_32Arg0 Sphere, acl::Vector4_32Arg1 BoxCenter, acl::Vector4_32Arg2 BoxExtent) noexcept
+{
+	const float SqDistToCenter = SqDistancePointAABB(Sphere, BoxCenter, BoxExtent);
+	const float SphereRadius = acl::vector_get_w(Sphere);
+	return SqDistToCenter <= SphereRadius * SphereRadius;
 }
 //---------------------------------------------------------------------
 
