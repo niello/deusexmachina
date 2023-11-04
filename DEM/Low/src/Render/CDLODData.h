@@ -66,6 +66,7 @@ public:
 	void				  GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, float& MinY, float& MaxY) const;
 	bool				  HasNode(UPTR X, UPTR Z, UPTR LOD) const;
 	std::pair<bool, bool> GetChildExistence(UPTR X, UPTR Z, UPTR LOD) const;
+	std::pair<UPTR, UPTR> GetLODSize(UPTR LOD) const;
 	bool				  GetNodeAABB(UPTR X, UPTR Z, UPTR LOD, acl::Vector4_32& BoxCenter, acl::Vector4_32& BoxExtent) const;
 };
 
@@ -104,6 +105,13 @@ inline std::pair<bool, bool> CCDLODData::GetChildExistence(UPTR X, UPTR Z, UPTR 
 	n_assert_dbg(LOD > 0);
 	const CMinMaxMap& MMMap = MinMaxMaps[LOD - 1];
 	return { ((X << 1) + 1 < MMMap.PatchesW), ((Z << 1) + 1 < MMMap.PatchesH) };
+}
+//---------------------------------------------------------------------
+
+inline std::pair<UPTR, UPTR> CCDLODData::GetLODSize(UPTR LOD) const
+{
+	const CMinMaxMap& MMMap = MinMaxMaps[LOD - 1];
+	return { MMMap.PatchesW, MMMap.PatchesH };
 }
 //---------------------------------------------------------------------
 

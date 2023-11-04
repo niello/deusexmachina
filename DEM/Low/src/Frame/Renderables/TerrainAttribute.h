@@ -38,8 +38,8 @@ protected:
 	{
 		acl::Vector4_32 Scale;
 		acl::Vector4_32 Offset;
-		const CLightAttribute* pLightAttr;
-		bool NewLight;
+		CLightInfo*     pLightInfo;
+		bool            NewLight;
 	};
 
 	Render::PCDLODData _CDLODData;
@@ -56,7 +56,7 @@ protected:
 	std::map<UPTR, CLightInfo>                 _Lights; // Light UID -> Info
 	std::unordered_map<TMorton, CQuadTreeNode> _Nodes;  // Morton code -> List of lights affecting the node
 
-	void UpdateLightInQuadTree(const CLightAttribute* pLightAttr, bool NewLight);
+	void UpdateLightInQuadTree(CLightInfo& LightInfo, bool NewLight);
 	bool UpdateLightInQuadTreeNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD);
 
 	virtual void OnActivityChanged(bool Active) override;

@@ -284,7 +284,7 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 		{
 			const auto UID = pCurrIsect->pLightAttr->GetSceneHandle()->first;
 			auto& LightInfo = _Lights.emplace_hint(It, UID, CLightInfo{})->second; //!!!TODO PERF: use shared node pool!
-			UpdateLightInQuadTree(pCurrIsect->pLightAttr, true);
+			UpdateLightInQuadTree(LightInfo, true);
 			pCurrIsect = pCurrIsect->pNextLight;
 		}
 		else // equal
@@ -294,7 +294,7 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 				// TODO PERF: could have a pool of these vectors and swap with pool record! Or even have one tmp buffer.
 				std::vector<TMorton> PrevAffectedNodes;
 				std::swap(PrevAffectedNodes, It->second.AffectedNodes);
-				UpdateLightInQuadTree(pCurrIsect->pLightAttr, false);
+				UpdateLightInQuadTree(It->second, false);
 				//???need to sort new affected node list?!
 				// clear light from nodes that are in old list but aren't in new
 				// swap lists so the new one is current and old one is destroyed or pooled
@@ -315,7 +315,7 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 }
 //---------------------------------------------------------------------
 
-void CTerrainAttribute::UpdateLightInQuadTree(const CLightAttribute* pLightAttr, bool NewLight)
+void CTerrainAttribute::UpdateLightInQuadTree(CLightInfo& LightInfo, bool NewLight)
 {
 	const auto Scale = _pNode->GetWorldMatrix().ExtractScale();
 	const auto& Translation = _pNode->GetWorldMatrix().Translation();
@@ -323,7 +323,7 @@ void CTerrainAttribute::UpdateLightInQuadTree(const CLightAttribute* pLightAttr,
 	CNodeProcessingContext Ctx;
 	Ctx.Scale = acl::vector_set(Scale.x, Scale.y, Scale.z);
 	Ctx.Offset = acl::vector_set(Translation.x, Translation.y, Translation.z);
-	Ctx.pLightAttr = pLightAttr;
+	Ctx.pLightInfo = &LightInfo;
 	Ctx.NewLight = NewLight;
 
 	UpdateLightInQuadTreeNode(Ctx, 0, 0, _CDLODData->GetLODCount() - 1);
@@ -334,19 +334,13 @@ void CTerrainAttribute::UpdateLightInQuadTree(const CLightAttribute* pLightAttr,
 
 bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD)
 {
-	//!!!DBG TMP!
-	const auto X1 = Math::GetQuadtreeNodeCount(1);
-	const auto X2 = Math::GetQuadtreeNodeCount(2);
-	const auto X3 = Math::GetQuadtreeNodeCount(3);
-	const auto X4 = Math::GetQuadtreeNodeCount(4);
-
 	// Calculate node world space AABB
 	acl::Vector4_32 BoxCenter, BoxExtent;
 	if (!_CDLODData->GetNodeAABB(x, z, LOD, BoxCenter, BoxExtent)) return false;
 	BoxExtent = acl::vector_mul(BoxExtent, Ctx.Scale);
 	BoxCenter = acl::vector_add(BoxCenter, Ctx.Offset);
 
-	const auto ClipStatus = Ctx.pLightAttr->TestBoxClipping(BoxCenter, BoxExtent);
+	const auto ClipStatus = Ctx.pLightInfo->pLightAttr->TestBoxClipping(BoxCenter, BoxExtent);
 
 	// If the whole node is outside the light, skip its subtree as not affected
 	if (ClipStatus == Math::ClipOutside) return false;
@@ -354,14 +348,33 @@ bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& 
 	// If the whole node is inside the light, add the whole subtree and skip its recursive traversal
 	if (ClipStatus == Math::ClipInside)
 	{
-		const auto NodeCount = Math::GetQuadtreeNodeCount(LOD + 1);
-		while (LOD)
+		//!!!FIXME: don't reserve memory for LOD levels which do not track dynamic lights!
+		Ctx.pLightInfo->AffectedNodes.reserve(Math::GetQuadtreeNodeCount(LOD + 1));
+
+		// Add the current node all its existing children.
+		// TODO: investigate ways to optimize this using properties of Morton codes. Need rect.
+		const auto BaseDepth = _CDLODData->GetLODCount() - 1 - LOD;
+		for (U32 SubtreeDepth = 0; SubtreeDepth < LOD; ++SubtreeDepth)
 		{
-			//
+			// FIXME: can make less calculations here? Skip by fixing range in "for"!
+			const auto CurrLOD = LOD - SubtreeDepth;
+			if (CurrLOD > _MaxLODForDynamicLights) continue;
+
+			const auto Depth = BaseDepth + SubtreeDepth;
+			const auto DepthBit = (1 << Depth << Depth);
+
+			const auto [LevelWidth, LevelHeight] = _CDLODData->GetLODSize(LOD - SubtreeDepth);
+			const U16 QuadsDim = (1 << SubtreeDepth);
+			const U16 FromX = x << SubtreeDepth;
+			const U16 FromZ = z << SubtreeDepth;
+			const U16 ToX = std::min<U16>(FromX + QuadsDim, LevelWidth);
+			const U16 ToZ = std::min<U16>(FromZ + QuadsDim, LevelHeight);
+
+			for (auto CurrZ = FromZ; CurrZ <= ToZ; ++CurrZ)
+				for (auto CurrX = FromX; CurrX <= ToX; ++CurrX)
+					Ctx.pLightInfo->AffectedNodes.push_back(DepthBit | Math::MortonCode2(CurrX, CurrZ));
 		}
-		//reserve memory in AffectedNodes
-		//add us and each LOD level to leaves
-		//!!!must skip inexistent nodes on the edge!
+
 		return true;
 	}
 
@@ -389,8 +402,9 @@ bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& 
 	if (LOD > _MaxLODForDynamicLights) return false;
 
 	// If we are here, we are affected by the light
-	const auto MortonCode = (1 << (_CDLODData->GetLODCount() - 1 - LOD)) | Math::MortonCode2(x, z);
-	//!!!add us to AffectedNodes!
+	const auto Depth = _CDLODData->GetLODCount() - 1 - LOD;
+	Ctx.pLightInfo->AffectedNodes.push_back((1 << Depth << Depth) | Math::MortonCode2(x, z));
+	return true;
 
 	//!!!can skip saving light lists in nodes after some level, regardless of what is the finest LOD with dynamic lights in views.
 	//???could store param in CLightAttribute?! or in CTerrainAttribute? MaxDynamicallyLitLOD. Avoid collecting huge lists in coarsest nodes!
@@ -419,7 +433,7 @@ bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& 
 		if (ItNode != _Nodes.cend())
 		{
 			auto& NodeLights = ItNode->second.Lights;
-			if (NodeLights.erase(const_cast<CLightAttribute*>(Ctx.pLightAttr))) // FIXME: const_cast, TODO: extract?
+			if (NodeLights.erase(Ctx.pLightAttr)) // TODO: extract?
 			{
 				// put extracted light map node into the pool
 
@@ -437,8 +451,6 @@ bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& 
 	*/
 
 	//???write LightBoundsVersion or ObjectLightIntersectionsVersion or special version to nodes? version must be incremented when terrain moved too!
-
-	return true;
 }
 //---------------------------------------------------------------------
 
