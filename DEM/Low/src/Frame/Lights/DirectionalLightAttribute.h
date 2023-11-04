@@ -1,5 +1,6 @@
 #pragma once
 #include <Frame/LightAttribute.h>
+#include <Math/CameraMath.h> // Math::ClipInside
 
 // Directional light in a scene
 
@@ -24,6 +25,7 @@ public:
 	virtual acl::Vector4_32       GetLocalSphere() const override { return acl::vector_set(0.f, 0.f, 0.f, -1.f); }
 	virtual bool                  GetLocalAABB(CAABB& OutBox) const override;
 	virtual bool                  IntersectsWith(acl::Vector4_32Arg0 Sphere) const override { return true; }
+	virtual U8                    TestBoxClipping(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const override { return Math::ClipInside; }
 	virtual bool                  DoesEmitAnyEnergy() const override { return (_Color & 0x00ffffff) && _Intensity > 0.f; }
 };
 

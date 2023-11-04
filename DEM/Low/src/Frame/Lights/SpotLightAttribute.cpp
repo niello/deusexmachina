@@ -2,6 +2,7 @@
 #include <Render/AnalyticalLight.h>
 #include <Scene/SceneNode.h>
 #include <Math/AABB.h>
+#include <Math/CameraMath.h>
 #include <Core/Factory.h>
 #include <IO/BinaryReader.h>
 
@@ -159,6 +160,30 @@ bool CSpotLightAttribute::IntersectsWith(acl::Vector4_32Arg0 Sphere) const
 	SqDistance = acl::vector_length_squared3(DistanceVector);
 	ProjectedLength = -acl::vector_dot3(LightDir, DistanceVector);
 	return ProjectedLength <= 0.f || ProjectedLength * ProjectedLength < SqDistance * _SinHalfOuter * _SinHalfOuter || SqDistance <= SphereRadius * SphereRadius;
+}
+//---------------------------------------------------------------------
+
+U8 CSpotLightAttribute::TestBoxClipping(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const
+{
+	const auto& Pos = _pNode->GetWorldPosition();
+
+	// Check the bounding sphere of the light first
+	if (!Math::HasIntersection(acl::vector_set(Pos.x, Pos.y, Pos.z, _Range), BoxCenter, BoxExtent)) return Math::ClipOutside;
+
+	// Update cached world space frustum
+	if (_WorldBoundsCacheVersion != _pNode->GetTransformVersion())
+	{
+		matrix44 LocalFrustum;
+		LocalFrustum.perspFovRh(_ConeOuter, 1.f, 0.f, _Range);
+		matrix44 GlobalFrustum;
+		_pNode->GetWorldMatrix().invert_simple(GlobalFrustum);
+		GlobalFrustum *= LocalFrustum;
+		_WorldFrustum = Math::CalcFrustumParams(GlobalFrustum);
+		_WorldBoundsCacheVersion = _pNode->GetTransformVersion();
+	}
+
+	// Test AABB against the bounding frustum of the spot light
+	return Math::ClipAABB(BoxCenter, BoxExtent, _WorldFrustum);
 }
 //---------------------------------------------------------------------
 

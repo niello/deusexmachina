@@ -18,16 +18,28 @@ class CTerrainAttribute: public CRenderableAttribute
 
 protected:
 
+	using TMorton = U32;
+	using TCellDim = U16; // Max 15 bits for quadtree which is more than enough for terrain subdivision
+
 	struct CLightInfo
 	{
-		CLightAttribute* pLightAttr = nullptr; //???need light's scene record instead to access bounds? or real shape is enough? or store intersection record?
-		U32              BoundsVersion = 0; // Light's last bounds version for which the coverage was calculated
-		// list of LOD0 node indices (quadtree Morton) //  Affected quadtree nodes of the finest LOD 0
+		CLightAttribute*     pLightAttr = nullptr; //???need light's scene record instead to access bounds? or real shape is enough? or store intersection record? or UID?
+		U32                  BoundsVersion = 0; // Light's last bounds version for which the coverage was calculated
+		std::vector<TMorton> AffectedNodes; //  Sorted. Insertion and removal are not needed, so vector is the best choice.
 	};
 
 	struct CQuadTreeNode
 	{
+		U32                        Version = 0; // Version of data in this node. Used for eliminating redundant synchronization with renderable views.
 		std::set<CLightAttribute*> Lights; //???or store UIDs?!
+	};
+
+	struct CNodeProcessingContext
+	{
+		acl::Vector4_32 Scale;
+		acl::Vector4_32 Offset;
+		const CLightAttribute* pLightAttr;
+		bool NewLight;
 	};
 
 	Render::PCDLODData _CDLODData;
@@ -40,11 +52,11 @@ protected:
 	U16                _LightCacheIntersectionsVersion = 0; // Object-light intersections version for which _Lights is updated
 
 	// Cached information about lights affecting parts of the terrain
-	std::map<UPTR, CLightInfo>             _Lights; // Light UID -> Info
-	std::unordered_map<U32, CQuadTreeNode> _Nodes;  // Morton code -> List of lights affecting the node
+	std::map<UPTR, CLightInfo>                 _Lights; // Light UID -> Info
+	std::unordered_map<TMorton, CQuadTreeNode> _Nodes;  // Morton code -> List of lights affecting the node
 
-	bool UpdateLightInQuadTree(const CLightAttribute* pLightAttr, bool NewLight);
-	bool UpdateLightInQuadTreeNode(const CLightAttribute* pLightAttr, bool NewLight, U32 MortonCode);
+	void UpdateLightInQuadTree(const CLightAttribute* pLightAttr, bool NewLight);
+	bool UpdateLightInQuadTreeNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD, U8 ParentClipStatus);
 
 	virtual void OnActivityChanged(bool Active) override;
 

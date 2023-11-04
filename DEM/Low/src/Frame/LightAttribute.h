@@ -43,6 +43,7 @@ public:
 
 	float                  GetMaxDistance() const { return _MaxDistance; }
 	virtual bool           IntersectsWith(acl::Vector4_32Arg0 Sphere) const = 0;
+	virtual U8             TestBoxClipping(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const = 0;
 	virtual bool           DoesEmitAnyEnergy() const = 0;
 };
 

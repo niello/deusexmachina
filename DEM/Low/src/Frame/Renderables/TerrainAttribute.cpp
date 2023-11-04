@@ -267,8 +267,17 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 	while ((It != _Lights.cend()) || pCurrIsect)
 	{
 		if (!pCurrIsect || ((It != _Lights.cend()) && It->first < pCurrIsect->pLightAttr->GetSceneHandle()->first))
-		{	
-			//Changed |= !It->second.Nodes.empty();
+		{
+			//Changed |= !It->second.AffectedNodes.empty();
+
+			// Erase this light from all previously affected nodes
+			for (TMorton NodeCode : It->second.AffectedNodes)
+			{
+				auto NodeIt = _Nodes.find(NodeCode);
+				if (NodeIt != _Nodes.cend())
+					NodeIt->second.Lights.erase(It->second.pLightAttr);
+			}
+
 			It = _Lights.erase(It); //!!!TODO PERF: use shared node pool!
 		}
 		else if ((It == _Lights.cend()) || (pCurrIsect && pCurrIsect->pLightAttr->GetSceneHandle()->first < It->first))
@@ -282,9 +291,14 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 		{
 			if (TerrainMoved || It->second.BoundsVersion != pCurrIsect->LightBoundsVersion)
 			{
-				// extract current list of light's nodes
+				// TODO PERF: could have a pool of these vectors and swap with pool record! Or even have one tmp buffer.
+				std::vector<TMorton> PrevAffectedNodes;
+				std::swap(PrevAffectedNodes, It->second.AffectedNodes);
 				UpdateLightInQuadTree(pCurrIsect->pLightAttr, false);
+				//???need to sort new affected node list?!
 				// clear light from nodes that are in old list but aren't in new
+				// swap lists so the new one is current and old one is destroyed or pooled
+				//!!!NB: list of affected nodes can't be longer than total count of nodes and shorter than LOD depth for which lights are calculated!
 			}
 
 			++It;
@@ -292,96 +306,68 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 		}
 	}
 
-	// to test light vs node, can first test light bounds (integer math?) and then search if any of node's LOD0 cells are in the list
-	// could do 2 searches to get lower (first its LOD0) & upper bound (last its LOD0), and if the range is not empty, light affects it
-	// for first bounds test can store integer range in each light info record
-
-	//???track nodes in a light or fill sparse quadtree with lights affecting the quad?
-
 	//???return bool from this function to indicate actual changes? but how to propagate to all views?!
 	// could track coverage version in a terrain attr and in terrain renderable views!
 	//???store version in each light? can update only certain lights! could make everything much cheaper!
 	//instead of Changed flag, need to precalculate NextVersion = CurrVersion + 1 and assign it to changed lights.
-	//it is not an own version for each light, it is the same version marking last change moment of the light
-	//knowing changed lights we know which LOD0 nodes should be updated, others can be kept
-
-	//when light stops affecting some node, need to detect that and clean its index from node's light list.
+	//it is not an own version for each light, it is the same version marking last change moment of the light.
+	//knowing changed lights we know which nodes should be updated, others can be kept
 }
 //---------------------------------------------------------------------
 
-bool CTerrainAttribute::UpdateLightInQuadTree(const CLightAttribute* pLightAttr, bool NewLight)
+void CTerrainAttribute::UpdateLightInQuadTree(const CLightAttribute* pLightAttr, bool NewLight)
 {
-	constexpr U32 RootMortonCode = 1; // Depth bit at 0th position
+	const auto Scale = _pNode->GetWorldMatrix().ExtractScale();
+	const auto& Translation = _pNode->GetWorldMatrix().Translation();
 
-	CAABB AABB = _CDLODData->GetAABB();
-	AABB.Transform(_pNode->GetWorldMatrix());
+	CNodeProcessingContext Ctx;
+	Ctx.Scale = acl::vector_set(Scale.x, Scale.y, Scale.z);
+	Ctx.Offset = acl::vector_set(Translation.x, Translation.y, Translation.z);
+	Ctx.pLightAttr = pLightAttr;
+	Ctx.NewLight = NewLight;
 
-	/*
-	Ctx.ScaleBaseX = (AABB.Max.x - AABB.Min.x) / static_cast<float>(CDLODData->GetHeightMapWidth() - 1);
-	Ctx.ScaleBaseZ = (AABB.Max.z - AABB.Min.z) / static_cast<float>(CDLODData->GetHeightMapHeight() - 1);
-	*/
-
-	return UpdateLightInQuadTreeNode(pLightAttr, NewLight, RootMortonCode);
+	UpdateLightInQuadTreeNode(Ctx, 0, 0, _CDLODData->GetLODCount() - 1, Math::ClipIntersect);
 }
 //---------------------------------------------------------------------
 
-// Returns if light list in any of quadtree nodes changed
-bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CLightAttribute* pLightAttr, bool NewLight, U32 MortonCode)
+bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD, U8 ParentClipStatus)
 {
-	/*
-	I16 MinY, MaxY;
-	CDLODData->GetMinMaxHeight(X, Z, LOD, MinY, MaxY);
+	//???!!!need full clip status?! for optimization! if node AABB is fully inside light, all children are too!
+	//!!!instead of wrapping this into condition, can make optimized code for inserting this light into
+	//all children in a loop, using only Morton codes without recursion etc!!! and can then reserve required count at once!
+	//???if completely outside, can return and skipp all subtree?! cleanup will happen in node lists sync!
 
-	// Node has no data, skip it completely
-	if (MaxY < MinY) return ENodeStatus::Invisible;
-
-	const U32 NodeSize = CDLODData->GetPatchSize() << LOD;
-	const float ScaleX = NodeSize * Ctx.ScaleBaseX;
-	const float ScaleZ = NodeSize * Ctx.ScaleBaseZ;
-	const float NodeMinX = Ctx.AABB.Min.x + X * ScaleX;
-	const float NodeMinZ = Ctx.AABB.Min.z + Z * ScaleZ;
-
-	CAABB NodeAABB;
-	NodeAABB.Min.x = NodeMinX;
-	NodeAABB.Min.y = MinY * CDLODData->GetVerticalScale();
-	NodeAABB.Min.z = NodeMinZ;
-	NodeAABB.Max.x = NodeMinX + ScaleX;
-	NodeAABB.Max.y = MaxY * CDLODData->GetVerticalScale();
-	NodeAABB.Max.z = NodeMinZ + ScaleZ;
-	*/
-
-	const auto& LightSceneRecord = pLightAttr->GetSceneHandle()->second;
-
-	bool Intersect;
-	const U32 DeepestLOD = _CDLODData->GetLODCount() - 1;
-	const U32 LeafMortonStart = 1 << DeepestLOD << DeepestLOD;
-	if (MortonCode < LeafMortonStart)
+	// Inside and outside statuses are propagated to children as they are, partial intersection requires further testing
+	if (ParentClipStatus == Math::ClipIntersect)
 	{
-		Intersect = false;
-		U32 ChildCode = MortonCode << 2;
-		const U32 ChildEndCode = ChildCode + 4;
-		for (; ChildCode < ChildEndCode; ++ChildCode)
-		{
-			//!!!TODO: if light bounds don't intersect with this child, skip traversing it!
-			//???use Clipped/Inside? If node is inside the light, all children are intersected by this light!
-			//!!!this is not exactly true because children have different Y! the only guarantee is that if there is no isect, children don't isect too!
-
-			Intersect |= UpdateLightInQuadTreeNode(pLightAttr, NewLight, ChildCode);
-		}
+		// Calculate node world space AABB and test its intersection with the light
+		acl::Vector4_32 BoxCenter, BoxExtent;
+		if (!_CDLODData->GetNodeAABB(x, z, LOD, BoxCenter, BoxExtent)) return false;
+		BoxExtent = acl::vector_mul(BoxExtent, Ctx.Scale);
+		BoxCenter = acl::vector_add(BoxCenter, Ctx.Offset);
+		ParentClipStatus = Ctx.pLightAttr->TestBoxClipping(BoxCenter, BoxExtent);
 	}
-	else
+
+	// For non-leaf nodes descend to children. If no children are affected by the light, parent node is neither considered affected.
+	bool Intersect = (ParentClipStatus != Math::ClipOutside);
+	if (Intersect && LOD > 0)
 	{
-		Intersect = false;
-		//BOX = get quadtree node bounds
-		//Intersect = pLightAttr->IntersectsWith(BOX);
-		//Intersect = Math::ClipSphere(LightSceneRecord.Sphere, BOX);
+		const TCellDim NextX = x << 1;
+		const TCellDim NextZ = z << 1;
+		const U32 NextLOD = LOD - 1;
+
+		Intersect = UpdateLightInQuadTreeNode(Ctx, NextX, NextZ, NextLOD, ParentClipStatus);
+		Intersect |= _CDLODData->HasNode(NextX + 1, NextZ, NextLOD) && UpdateLightInQuadTreeNode(Ctx, NextX + 1, NextZ, NextLOD, ParentClipStatus);
+		Intersect |= _CDLODData->HasNode(NextX, NextZ + 1, NextLOD) && UpdateLightInQuadTreeNode(Ctx, NextX, NextZ + 1, NextLOD, ParentClipStatus);
+		Intersect |= _CDLODData->HasNode(NextX + 1, NextZ + 1, NextLOD) && UpdateLightInQuadTreeNode(Ctx, NextX + 1, NextZ + 1, NextLOD, ParentClipStatus);
 	}
 
 	//!!!can skip saving light lists in nodes after some level, regardless of what is the finest LOD with dynamic lights in views.
-	//???could store param in CLightAttribute?! MaxDynamicallyLitLOD. Avoid collecting huge lists in coarsest nodes!
+	//???could store param in CLightAttribute?! or in CTerrainAttribute? MaxDynamicallyLitLOD. Avoid collecting huge lists in coarsest nodes!
 
 	if (Intersect)
 	{
+		const auto MortonCode = (1 << (_CDLODData->GetLODCount() - 1 - LOD)) | Math::MortonCode2(x, z);
 		auto ItNode = _Nodes.find(MortonCode);
 		if (ItNode == _Nodes.cend())
 		{
@@ -396,14 +382,15 @@ bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CLightAttribute* pLightA
 		// add light to ItNode->second.Lights, get node handle from pool
 		// if added (and didn't already exist), up node version
 	}
-	else if (!NewLight)
+	else if (!Ctx.NewLight)
 	{
+		//???!!!need here or make affected node lists sync once after updating in the whole tree?!
+		const auto MortonCode = (1 << (_CDLODData->GetLODCount() - 1 - LOD)) | Math::MortonCode2(x, z);
 		auto ItNode = _Nodes.find(MortonCode);
 		if (ItNode != _Nodes.cend())
 		{
 			auto& NodeLights = ItNode->second.Lights;
-			// try remove light from NodeLights
-			// if removed
+			if (NodeLights.erase(const_cast<CLightAttribute*>(Ctx.pLightAttr))) // FIXME: const_cast, TODO: extract?
 			{
 				// put extracted light map node into the pool
 
@@ -436,7 +423,14 @@ bool CTerrainAttribute::GetLocalAABB(CAABB& OutBox, UPTR LOD) const
 void CTerrainAttribute::OnActivityChanged(bool Active)
 {
 	// Invalidate the light cache as soon as the scene stops updating the terrain
-	if (!Active) _Lights.clear();
+	if (!Active)
+	{
+		_Lights.clear();
+		_Nodes.clear();
+		_LightCacheBoundsVersion = 0;
+		_LightCacheIntersectionsVersion = 0;
+	}
+
 	CRenderableAttribute::OnActivityChanged(Active);
 }
 //---------------------------------------------------------------------

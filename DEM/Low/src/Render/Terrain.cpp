@@ -18,12 +18,7 @@ void CTerrain::UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrus
 	_Patches.clear();
 	_QuarterPatches.clear();
 
-	CAABB AABB = CDLODData->GetAABB();
-	const auto LocalSize = AABB.Size();
-	AABB.Transform(Transform);
-	const auto WorldSize = AABB.Size();
-
-	const auto Scale = WorldSize / LocalSize;
+	const auto Scale = Transform.ExtractScale();
 	const auto& Translation = Transform.Translation();
 
 	// NB: always must use the main camera for LOD selection, even if another camera (ViewFrustum) is used for intermediate rendering
@@ -49,7 +44,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 	BoxExtent = acl::vector_mul(BoxExtent, Ctx.Scale);
 	BoxCenter = acl::vector_add(BoxCenter, Ctx.Offset);
 
-	// 'Inside' and 'Outside' statuses are propagated to children as they are, 'Clipped' requires testing
+	// Inside and outside statuses are propagated to children as they are, partial intersection requires further testing
 	if (ParentClipStatus == Math::ClipIntersect)
 	{
 		// NB: Visibility is tested for the current camera, NOT always for the main
@@ -64,14 +59,11 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 
 	// Bits 0 to 3 - if set, add quarterpatch for child[0 .. 3]
 	U8 ChildFlags = 0;
-	enum
-	{
-		Child_TopLeft = 0x01,
-		Child_TopRight = 0x02,
-		Child_BottomLeft = 0x04,
-		Child_BottomRight = 0x08,
-		Child_All = (Child_TopLeft | Child_TopRight | Child_BottomLeft | Child_BottomRight)
-	};
+	constexpr U8 Child_TopLeft = (1 << 0);
+	constexpr U8 Child_TopRight = (1 << 1);
+	constexpr U8 Child_BottomLeft = (1 << 2);
+	constexpr U8 Child_BottomRight = (1 << 3);
+	constexpr U8 Child_All = (Child_TopLeft | Child_TopRight | Child_BottomLeft | Child_BottomRight);
 
 	if (LOD == 0)
 	{
@@ -92,19 +84,19 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		}
 		else
 		{
-			const U32 XNext = X << 1;
-			const U32 ZNext = Z << 1;
+			const U32 NextX = X << 1;
+			const U32 NextZ = Z << 1;
 
-			ENodeStatus Status = ProcessTerrainNode(Ctx, XNext, ZNext, NextLOD, ParentClipStatus);
+			ENodeStatus Status = ProcessTerrainNode(Ctx, NextX, NextZ, NextLOD, ParentClipStatus);
 			if (Status != ENodeStatus::Invisible)
 			{
 				IsVisible = true;
 				if (Status == ENodeStatus::NotInLOD) ChildFlags |= Child_TopLeft;
 			}
 
-			if (CDLODData->HasNode(XNext + 1, ZNext, NextLOD))
+			if (CDLODData->HasNode(NextX + 1, NextZ, NextLOD))
 			{
-				Status = ProcessTerrainNode(Ctx, XNext + 1, ZNext, NextLOD, ParentClipStatus);
+				Status = ProcessTerrainNode(Ctx, NextX + 1, NextZ, NextLOD, ParentClipStatus);
 				if (Status != ENodeStatus::Invisible)
 				{
 					IsVisible = true;
@@ -112,9 +104,9 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 				}
 			}
 
-			if (CDLODData->HasNode(XNext, ZNext + 1, NextLOD))
+			if (CDLODData->HasNode(NextX, NextZ + 1, NextLOD))
 			{
-				Status = ProcessTerrainNode(Ctx, XNext, ZNext + 1, NextLOD, ParentClipStatus);
+				Status = ProcessTerrainNode(Ctx, NextX, NextZ + 1, NextLOD, ParentClipStatus);
 				if (Status != ENodeStatus::Invisible)
 				{
 					IsVisible = true;
@@ -122,9 +114,9 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 				}
 			}
 
-			if (CDLODData->HasNode(XNext + 1, ZNext + 1, NextLOD))
+			if (CDLODData->HasNode(NextX + 1, NextZ + 1, NextLOD))
 			{
-				Status = ProcessTerrainNode(Ctx, XNext + 1, ZNext + 1, NextLOD, ParentClipStatus);
+				Status = ProcessTerrainNode(Ctx, NextX + 1, NextZ + 1, NextLOD, ParentClipStatus);
 				if (Status != ENodeStatus::Invisible)
 				{
 					IsVisible = true;

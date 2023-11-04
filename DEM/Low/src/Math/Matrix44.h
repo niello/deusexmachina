@@ -61,6 +61,8 @@ public:
     vector3& AxisZ() const { return *(vector3*)&m[2][0]; }
     /// return translate component
 	vector3& Translation() const { return *(vector3*)&m[3][0]; }
+	/// extract scale from matrix
+	vector3 ExtractScale() const { return vector3(AxisX().Length(), AxisY().Length(), AxisZ().Length()); }
     /// rotate around global x
     void rotate_x(const float a);
     /// rotate around global y

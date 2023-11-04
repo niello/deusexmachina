@@ -25,19 +25,19 @@ class CLightAttribute;
 
 // TODO: make template class TTree<DIMENSIONS, CODE_TYPE> and move these constants and quadtree/octree utility methods into it?
 #if DEM_64
-using TMorton = U64;
-using TCellDim = U32; // Max 31 bits for quadtree, 21 bits for octree
+using TSceneMorton = U64;
+using TSceneCellDim = U32; // Max 31 bits for quadtree, 21 bits for octree
 #else
-using TMorton = U32;
-using TCellDim = U16; // Max 15 bits for quadtree, 10 bits for octree
+using TSceneMorton = U32;
+using TSceneCellDim = U16; // Max 15 bits for quadtree, 10 bits for octree
 #endif
 static inline constexpr size_t TREE_DIMENSIONS = 3;
-static inline constexpr U8 TREE_MAX_DEPTH = (sizeof(TMorton) * 8 - 1) / TREE_DIMENSIONS;
+static inline constexpr U8 TREE_MAX_DEPTH = (sizeof(TSceneMorton) * 8 - 1) / TREE_DIMENSIONS;
 
 struct CSpatialTreeNode
 {
 	acl::Vector4_32 Bounds; // Cx, Cy, Cz, Ecoeff for an octree
-	TMorton         MortonCode;
+	TSceneMorton    MortonCode;
 	U32             ParentIndex;
 	U32             SubtreeObjectCount;
 };
@@ -69,7 +69,7 @@ public:
 		acl::Vector4_32           Sphere;
 		Scene::CNodeAttribute*    pAttr = nullptr;
 		CObjectLightIntersection* pObjectLightIntersections = nullptr;
-		TMorton                   NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
+		TSceneMorton              NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
 		U32                       NodeIndex = NO_SPATIAL_TREE_NODE;
 		U32                       BoundsVersion = 1;  // 0 for invalid bounds (e.g. infinite)
 		U32                       IntersectionBoundsVersion = 0;
@@ -82,7 +82,7 @@ public:
 protected:
 
 	Data::CSparseArray2<CSpatialTreeNode, U32>       _TreeNodes;
-	std::unordered_map<TMorton, U32>                 _MortonToIndex;
+	std::unordered_map<TSceneMorton, U32>                 _MortonToIndex;
 	std::vector<decltype(_MortonToIndex)::node_type> _MortonToIndexPool;
 
 	std::map<UPTR, CSpatialRecord>                   _Renderables;
@@ -100,14 +100,14 @@ protected:
 	UPTR  _NextLightUID = 1;      // UID 0 means no UID assigned, so start from 1
 	U32   _SpatialTreeRebuildVersion = 1; // Grows when existing nodes in _TreeNodes change, to invalidate visibility caches in views
 
-	TMorton CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const noexcept;
-	U32     CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex);
-	U32     AddSingleObjectToNode(TMorton NodeMortonCode, TMorton StopMortonCode);
-	void    RemoveSingleObjectFromNode(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode);
+	TSceneMorton    CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const noexcept;
+	U32             CreateNode(U32 FreeIndex, TSceneMorton MortonCode, U32 ParentIndex);
+	U32             AddSingleObjectToNode(TSceneMorton NodeMortonCode, TSceneMorton StopMortonCode);
+	void            RemoveSingleObjectFromNode(U32 NodeIndex, TSceneMorton NodeMortonCode, TSceneMorton StopMortonCode);
 
-	HRecord AddObject(std::map<UPTR, CSpatialRecord>& Storage, UPTR UID, acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, acl::Vector4_32Arg2 GlobalSphere, Scene::CNodeAttribute& Attr);
-	void    UpdateObjectBounds(HRecord Handle, acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, acl::Vector4_32Arg2 GlobalSphere);
-	void    RemoveObject(std::map<UPTR, CSpatialRecord>& Storage, HRecord Handle);
+	HRecord         AddObject(std::map<UPTR, CSpatialRecord>& Storage, UPTR UID, acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, acl::Vector4_32Arg2 GlobalSphere, Scene::CNodeAttribute& Attr);
+	void            UpdateObjectBounds(HRecord Handle, acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, acl::Vector4_32Arg2 GlobalSphere);
+	void            RemoveObject(std::map<UPTR, CSpatialRecord>& Storage, HRecord Handle);
 
 	void            TrackObjectLightIntersections(CSpatialRecord& Record, bool Track);
 
@@ -127,7 +127,7 @@ public:
 
 	void            TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum, std::vector<bool>& NodeVisibility) const;
 
-	acl::Vector4_32 CalcNodeBounds(TMorton MortonCode) const;
+	acl::Vector4_32 CalcNodeBounds(TSceneMorton MortonCode) const;
 	CAABB           GetNodeAABB(U32 NodeIndex, bool Loose = false) const;
 	CAABB           GetNodeAABB(acl::Vector4_32Arg0 Bounds, bool Loose = false) const;
 	U32             GetSpatialTreeRebuildVersion() const { return _SpatialTreeRebuildVersion; }

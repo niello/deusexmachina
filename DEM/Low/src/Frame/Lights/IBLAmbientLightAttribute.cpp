@@ -3,8 +3,8 @@
 #include <Render/ImageBasedLight.h>
 #include <Scene/SceneNode.h>
 #include <IO/BinaryReader.h>
+#include <Math/CameraMath.h>
 #include <Core/Factory.h>
-#include <acl/math/vector4_32.h>
 
 namespace Frame
 {
@@ -97,6 +97,14 @@ bool CIBLAmbientLightAttribute::IntersectsWith(acl::Vector4_32Arg0 Sphere) const
 	const float TotalRadius = acl::vector_get_w(Sphere) + _Range;
 
 	return acl::vector_length_squared3(acl::vector_sub(LightPos, Sphere)) <= TotalRadius * TotalRadius;
+}
+//---------------------------------------------------------------------
+
+U8 CIBLAmbientLightAttribute::TestBoxClipping(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const
+{
+	if (IsGlobal()) return Math::ClipInside;
+	const auto& Pos = _pNode->GetWorldPosition();
+	return Math::ClipAABB(BoxCenter, BoxExtent, acl::vector_set(Pos.x, Pos.y, Pos.z, _Range));
 }
 //---------------------------------------------------------------------
 

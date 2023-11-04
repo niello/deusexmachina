@@ -31,6 +31,7 @@ public:
 	virtual acl::Vector4_32       GetLocalSphere() const override { return acl::vector_set(0.f, 0.f, 0.f, _Range); }
 	virtual bool                  GetLocalAABB(CAABB& OutBox) const override;
 	virtual bool                  IntersectsWith(acl::Vector4_32Arg0 Sphere) const override;
+	virtual U8                    TestBoxClipping(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const override;
 	virtual bool                  DoesEmitAnyEnergy() const override { return _IrradianceMapUID || _RadianceEnvMapUID; }
 
 	bool                          IsGlobal() const { return std::signbit(_Range); }

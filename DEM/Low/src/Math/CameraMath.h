@@ -86,7 +86,7 @@ DEM_FORCE_INLINE bool HasIntersection(acl::Vector4_32Arg0 BoxCenter, acl::Vector
 //---------------------------------------------------------------------
 
 // Test AABB vs frustum planes intersection for positive halfspace treated as 'inside'
-// Returns a 2 bit mask with bit0 set if the AABB is present inside and bit1 if outside the frustum.
+// Returns a 2 bit mask with bit0 / bit1 set if the AABB is present inside / outside the frustum.
 // TODO: add an alternative implementation for AVX (ymm register can hold all 6 planes at once)
 //???!!!TODO PERF: rtm::vector_abs & rtm::vector_neg are bit-based! Is it better to recalc abs axes or cache them in CSIMDFrustum (probably in memory)?
 DEM_FORCE_INLINE U8 ClipAABB(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, const CSIMDFrustum& Frustum) noexcept
@@ -152,17 +152,33 @@ DEM_FORCE_INLINE acl::Vector4_32 ClosestPtPointAABB(acl::Vector4_32Arg0 Point, a
 }
 //---------------------------------------------------------------------
 
-// Returns 0 if the point is inside
-DEM_FORCE_INLINE float SqDistancePointAABB(acl::Vector4_32Arg0 Point, acl::Vector4_32Arg1 BoxCenter, acl::Vector4_32Arg2 BoxExtent) noexcept
+DEM_FORCE_INLINE float SqMaxDistancePointAABBMinMax(acl::Vector4_32Arg0 Point, acl::Vector4_32Arg1 BoxMin, acl::Vector4_32Arg2 BoxMax) noexcept
 {
-	const auto BoxMin = acl::vector_sub(BoxCenter, BoxExtent);
-	const auto BoxMax = acl::vector_add(BoxCenter, BoxExtent);
+	return acl::vector_length_squared3(acl::vector_max(acl::vector_abs(acl::vector_sub(Point, BoxMin)), acl::vector_abs(acl::vector_sub(Point, BoxMax))));
+}
+//---------------------------------------------------------------------
 
+DEM_FORCE_INLINE float SqMaxDistancePointAABB(acl::Vector4_32Arg0 Point, acl::Vector4_32Arg1 BoxCenter, acl::Vector4_32Arg2 BoxExtent) noexcept
+{
+	return SqMaxDistancePointAABBMinMax(Point, acl::vector_sub(BoxCenter, BoxExtent), acl::vector_add(BoxCenter, BoxExtent));
+}
+//---------------------------------------------------------------------
+
+// Returns 0 if the point is inside
+DEM_FORCE_INLINE float SqDistancePointAABBMinMax(acl::Vector4_32Arg0 Point, acl::Vector4_32Arg1 BoxMin, acl::Vector4_32Arg2 BoxMax) noexcept
+{
 	if (acl::vector_all_greater_equal3(Point, BoxMin) && acl::vector_all_less_equal3(Point, BoxMax))
 		return 0.f;
 
 	const auto ClosestPt = acl::vector_min(acl::vector_max(Point, BoxMin), BoxMax);
 	return acl::vector_length_squared3(acl::vector_sub(Point, ClosestPt));
+}
+//---------------------------------------------------------------------
+
+// Returns 0 if the point is inside
+DEM_FORCE_INLINE float SqDistancePointAABB(acl::Vector4_32Arg0 Point, acl::Vector4_32Arg1 BoxCenter, acl::Vector4_32Arg2 BoxExtent) noexcept
+{
+	return SqDistancePointAABBMinMax(Point, acl::vector_sub(BoxCenter, BoxExtent), acl::vector_add(BoxCenter, BoxExtent));
 }
 //---------------------------------------------------------------------
 
@@ -179,7 +195,32 @@ DEM_FORCE_INLINE bool HasIntersection(acl::Vector4_32Arg0 Sphere, acl::Vector4_3
 {
 	const float SqDistToCenter = SqDistancePointAABB(Sphere, BoxCenter, BoxExtent);
 	const float SphereRadius = acl::vector_get_w(Sphere);
-	return SqDistToCenter <= SphereRadius * SphereRadius;
+	return SqDistToCenter < SphereRadius * SphereRadius;
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE bool HasIntersection(acl::Vector4_32Arg0 SphereA, acl::Vector4_32Arg1 SphereB) noexcept
+{
+	const float TotalRadius = acl::vector_get_w(SphereA) + acl::vector_get_w(SphereB);
+	return acl::vector_length_squared3(acl::vector_sub(SphereA, SphereB)) <= TotalRadius * TotalRadius;
+}
+//---------------------------------------------------------------------
+
+// Returns a 2 bit mask with bit0 / bit1 set if the AABB is present inside / outside the sphere.
+DEM_FORCE_INLINE U8 ClipAABB(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, acl::Vector4_32Arg2 Sphere) noexcept
+{
+	// Calculate prerequisites
+	const auto BoxMin = acl::vector_sub(BoxCenter, BoxExtent);
+	const auto BoxMax = acl::vector_add(BoxCenter, BoxExtent);
+	const float SphereRadius = acl::vector_get_w(Sphere);
+
+	// Check if intersection exists
+	const float SqMinDistToCenter = SqDistancePointAABBMinMax(Sphere, BoxMin, BoxMax);
+	if (SqMinDistToCenter >= SphereRadius * SphereRadius) return ClipOutside;
+
+	// If intersecting, check if the box is completely inside the sphere (it is if its farthest point is)
+	const float SqMaxDistToCenter = SqMaxDistancePointAABBMinMax(Sphere, BoxMin, BoxMax);
+	return (SqMaxDistToCenter > SphereRadius * SphereRadius) ? ClipIntersect : ClipInside;
 }
 //---------------------------------------------------------------------
 

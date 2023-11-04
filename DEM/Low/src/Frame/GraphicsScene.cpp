@@ -121,7 +121,8 @@ void CGraphicsScene::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 }
 //---------------------------------------------------------------------
 
-TMorton CGraphicsScene::CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const noexcept
+// O(1) calculation that exploits properties of the loose octree
+TSceneMorton CGraphicsScene::CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const noexcept
 {
 	const auto WorldCenter = _TreeNodes[0].Bounds;
 	const auto WorldExtent = acl::vector_set(_WorldExtent);
@@ -132,33 +133,33 @@ TMorton CGraphicsScene::CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::
 
 	// Our level is where the non-loose node size is not less than our size in any of dimensions.
 	// Too small and degenerate AABBs sink to the deepest possible level to save us from division errors.
-	TMorton NodeSizeCoeff = static_cast<TMorton>(1 << _MaxDepth);
+	TSceneMorton NodeSizeCoeff = static_cast<TSceneMorton>(1 << _MaxDepth);
 	if (acl::vector_any_greater_equal3(BoxExtent, acl::vector_set(_SmallestExtent)))
 	{
-		// TODO: can make better with SIMD?
+		// TODO: can make better horizontal max() with SIMD?
 		const float MaxDim = std::max({ acl::vector_get_x(BoxExtent), acl::vector_get_y(BoxExtent), acl::vector_get_z(BoxExtent) });
-		const TMorton HighestSharePow2 = Math::PrevPow2(static_cast<TMorton>(_WorldExtent / MaxDim));
+		const TSceneMorton HighestSharePow2 = Math::PrevPow2(static_cast<TSceneMorton>(_WorldExtent / MaxDim));
 		if (NodeSizeCoeff > HighestSharePow2) NodeSizeCoeff = HighestSharePow2;
 	}
 
 	const float CellCoeff = static_cast<float>(NodeSizeCoeff) * _InvWorldSize;
 	const auto Cell = acl::vector_mul(acl::vector_add(BoxCenter, acl::vector_sub(WorldExtent, WorldCenter)), CellCoeff); // (C + (We - Wc)) * Coeff
 
-	const auto x = static_cast<TCellDim>(acl::vector_get_x(Cell));
-	const auto y = static_cast<TCellDim>(acl::vector_get_y(Cell));
-	const auto z = static_cast<TCellDim>(acl::vector_get_z(Cell));
+	const auto x = static_cast<TSceneCellDim>(acl::vector_get_x(Cell));
+	const auto y = static_cast<TSceneCellDim>(acl::vector_get_y(Cell));
+	const auto z = static_cast<TSceneCellDim>(acl::vector_get_z(Cell));
 
 	// NodeSizeCoeff bit is offset by Depth bits. Its pow(N) is a bit offset to N*Depth, making a room for N-dimensional Morton code.
 	if constexpr (TREE_DIMENSIONS == 2)
 		return (NodeSizeCoeff * NodeSizeCoeff) | Math::MortonCode2(x, z);
-	else if constexpr (sizeof(TMorton) >= 8)
+	else if constexpr (sizeof(TSceneMorton) >= 8)
 		return (NodeSizeCoeff * NodeSizeCoeff * NodeSizeCoeff) | Math::MortonCode3_21bit(x, y, z);
 	else
 		return (NodeSizeCoeff * NodeSizeCoeff * NodeSizeCoeff) | Math::MortonCode3_10bit(x, y, z);
 }
 //---------------------------------------------------------------------
 
-U32 CGraphicsScene::CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentIndex)
+U32 CGraphicsScene::CreateNode(U32 FreeIndex, TSceneMorton MortonCode, U32 ParentIndex)
 {
 	// Create a node
 	auto ItNew = _TreeNodes.emplace_at_free(FreeIndex);
@@ -184,7 +185,7 @@ U32 CGraphicsScene::CreateNode(U32 FreeIndex, TMorton MortonCode, U32 ParentInde
 }
 //---------------------------------------------------------------------
 
-U32 CGraphicsScene::AddSingleObjectToNode(TMorton NodeMortonCode, TMorton StopMortonCode)
+U32 CGraphicsScene::AddSingleObjectToNode(TSceneMorton NodeMortonCode, TSceneMorton StopMortonCode)
 {
 	if (!NodeMortonCode) return NO_SPATIAL_TREE_NODE;
 
@@ -230,7 +231,7 @@ U32 CGraphicsScene::AddSingleObjectToNode(TMorton NodeMortonCode, TMorton StopMo
 }
 //---------------------------------------------------------------------
 
-void CGraphicsScene::RemoveSingleObjectFromNode(U32 NodeIndex, TMorton NodeMortonCode, TMorton StopMortonCode)
+void CGraphicsScene::RemoveSingleObjectFromNode(U32 NodeIndex, TSceneMorton NodeMortonCode, TSceneMorton StopMortonCode)
 {
 	while (NodeMortonCode != StopMortonCode)
 	{
@@ -521,12 +522,12 @@ void CGraphicsScene::TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum
 }
 //---------------------------------------------------------------------
 
-acl::Vector4_32 CGraphicsScene::CalcNodeBounds(TMorton MortonCode) const
+acl::Vector4_32 CGraphicsScene::CalcNodeBounds(TSceneMorton MortonCode) const
 {
 	// Unpack Morton code back into cell coords and depth
 	const auto Bits = Math::BitWidth(MortonCode);
 	const auto MortonCodeNoSentinel = MortonCode ^ (1 << (Bits - 1));
-	TCellDim x = 0, y = 0, z = 0;
+	TSceneCellDim x = 0, y = 0, z = 0;
 	if constexpr (TREE_DIMENSIONS == 2)
 		Math::MortonDecode2(MortonCodeNoSentinel, x, z);
 	else
@@ -644,7 +645,6 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 		if (!LightRecord.TrackObjectLightIntersections) continue;
 
 		// Only local lights (ones with BoundsVersion > 0) track intersections
-		//???can optimize intersection for terrain? could use AABB tree as an additional pass of light culling. Or disable tracking for terrain and override manually?
 		const bool Intersects = LightRecord.BoundsVersion && static_cast<CLightAttribute*>(LightRecord.pAttr)->IntersectsWith(RenderableRecord.Sphere);
 		if (Intersects)
 		{

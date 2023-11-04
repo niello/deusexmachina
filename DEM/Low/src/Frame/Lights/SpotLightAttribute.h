@@ -1,5 +1,6 @@
 #pragma once
 #include <Frame/LightAttribute.h>
+#include <Math/CameraMath.h>
 
 // Spot light in a scene
 
@@ -11,6 +12,9 @@ class CSpotLightAttribute : public CLightAttribute
 	FACTORY_CLASS_DECL;
 
 protected:
+
+	mutable Math::CSIMDFrustum _WorldFrustum;                // Check validity by _WorldBoundsCacheVersion
+	mutable U32                _WorldBoundsCacheVersion = 0; // Matches _pNode->TransformVersion
 
 	U32   _Color = Render::Color_White;
 	float _Intensity = 1.f;
@@ -32,6 +36,7 @@ public:
 	virtual acl::Vector4_32       GetLocalSphere() const override { return acl::vector_set(0.f, 0.f, -_BoundingSphereOffsetAlongDir, _BoundingSphereRadius); }
 	virtual bool                  GetLocalAABB(CAABB& OutBox) const override;
 	virtual bool                  IntersectsWith(acl::Vector4_32Arg0 Sphere) const override;
+	virtual U8                    TestBoxClipping(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const override;
 	virtual bool                  DoesEmitAnyEnergy() const override { return (_Color & 0x00ffffff) && _Intensity > 0.f; }
 };
 
