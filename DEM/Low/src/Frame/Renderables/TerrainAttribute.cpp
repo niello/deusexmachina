@@ -326,48 +326,78 @@ void CTerrainAttribute::UpdateLightInQuadTree(const CLightAttribute* pLightAttr,
 	Ctx.pLightAttr = pLightAttr;
 	Ctx.NewLight = NewLight;
 
-	UpdateLightInQuadTreeNode(Ctx, 0, 0, _CDLODData->GetLODCount() - 1, Math::ClipIntersect);
+	UpdateLightInQuadTreeNode(Ctx, 0, 0, _CDLODData->GetLODCount() - 1);
+
+	//???sync affected nodes here? fill _Nodes here? sort list by Morton code? swap here before recursive call?
 }
 //---------------------------------------------------------------------
 
-bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD, U8 ParentClipStatus)
+bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD)
 {
-	//???!!!need full clip status?! for optimization! if node AABB is fully inside light, all children are too!
-	//!!!instead of wrapping this into condition, can make optimized code for inserting this light into
-	//all children in a loop, using only Morton codes without recursion etc!!! and can then reserve required count at once!
-	//???if completely outside, can return and skipp all subtree?! cleanup will happen in node lists sync!
+	//!!!DBG TMP!
+	const auto X1 = Math::GetQuadtreeNodeCount(1);
+	const auto X2 = Math::GetQuadtreeNodeCount(2);
+	const auto X3 = Math::GetQuadtreeNodeCount(3);
+	const auto X4 = Math::GetQuadtreeNodeCount(4);
 
-	// Inside and outside statuses are propagated to children as they are, partial intersection requires further testing
-	if (ParentClipStatus == Math::ClipIntersect)
+	// Calculate node world space AABB
+	acl::Vector4_32 BoxCenter, BoxExtent;
+	if (!_CDLODData->GetNodeAABB(x, z, LOD, BoxCenter, BoxExtent)) return false;
+	BoxExtent = acl::vector_mul(BoxExtent, Ctx.Scale);
+	BoxCenter = acl::vector_add(BoxCenter, Ctx.Offset);
+
+	const auto ClipStatus = Ctx.pLightAttr->TestBoxClipping(BoxCenter, BoxExtent);
+
+	// If the whole node is outside the light, skip its subtree as not affected
+	if (ClipStatus == Math::ClipOutside) return false;
+
+	// If the whole node is inside the light, add the whole subtree and skip its recursive traversal
+	if (ClipStatus == Math::ClipInside)
 	{
-		// Calculate node world space AABB and test its intersection with the light
-		acl::Vector4_32 BoxCenter, BoxExtent;
-		if (!_CDLODData->GetNodeAABB(x, z, LOD, BoxCenter, BoxExtent)) return false;
-		BoxExtent = acl::vector_mul(BoxExtent, Ctx.Scale);
-		BoxCenter = acl::vector_add(BoxCenter, Ctx.Offset);
-		ParentClipStatus = Ctx.pLightAttr->TestBoxClipping(BoxCenter, BoxExtent);
+		const auto NodeCount = Math::GetQuadtreeNodeCount(LOD + 1);
+		while (LOD)
+		{
+			//
+		}
+		//reserve memory in AffectedNodes
+		//add us and each LOD level to leaves
+		//!!!must skip inexistent nodes on the edge!
+		return true;
 	}
 
-	// For non-leaf nodes descend to children. If no children are affected by the light, parent node is neither considered affected.
-	bool Intersect = (ParentClipStatus != Math::ClipOutside);
-	if (Intersect && LOD > 0)
+	// For non-leaf nodes descend to children
+	if (LOD > 0)
 	{
+		const auto [HasRightChild, HasBottomChild] = _CDLODData->GetChildExistence(x, z, LOD);
+
 		const TCellDim NextX = x << 1;
 		const TCellDim NextZ = z << 1;
 		const U32 NextLOD = LOD - 1;
 
-		Intersect = UpdateLightInQuadTreeNode(Ctx, NextX, NextZ, NextLOD, ParentClipStatus);
-		Intersect |= _CDLODData->HasNode(NextX + 1, NextZ, NextLOD) && UpdateLightInQuadTreeNode(Ctx, NextX + 1, NextZ, NextLOD, ParentClipStatus);
-		Intersect |= _CDLODData->HasNode(NextX, NextZ + 1, NextLOD) && UpdateLightInQuadTreeNode(Ctx, NextX, NextZ + 1, NextLOD, ParentClipStatus);
-		Intersect |= _CDLODData->HasNode(NextX + 1, NextZ + 1, NextLOD) && UpdateLightInQuadTreeNode(Ctx, NextX + 1, NextZ + 1, NextLOD, ParentClipStatus);
+		const bool IsectLT = UpdateLightInQuadTreeNode(Ctx, NextX, NextZ, NextLOD);
+		const bool IsectRT = (HasRightChild && UpdateLightInQuadTreeNode(Ctx, NextX + 1, NextZ, NextLOD));
+		const bool IsectLB = (HasBottomChild && UpdateLightInQuadTreeNode(Ctx, NextX, NextZ + 1, NextLOD));
+		const bool IsectRB = (HasRightChild && HasBottomChild && UpdateLightInQuadTreeNode(Ctx, NextX + 1, NextZ + 1, NextLOD));
+
+		// If no children are affected by the light, parent node is neither considered affected
+		if (!IsectLT && !IsectRT && !IsectLB && !IsectRB) return false;
 	}
+
+	// Don't track lights for too coarse LODs. It is good for two reasons:
+	// 1. The farther the terrain patch is, the less importaint and less noticeable is its proper lighting with typically relatively small dynamic lights.
+	// 2. Far terrain patches are very big and would have lots of affecting lights, loading light tracker with work for nothing.
+	if (LOD > _MaxLODForDynamicLights) return false;
+
+	// If we are here, we are affected by the light
+	const auto MortonCode = (1 << (_CDLODData->GetLODCount() - 1 - LOD)) | Math::MortonCode2(x, z);
+	//!!!add us to AffectedNodes!
 
 	//!!!can skip saving light lists in nodes after some level, regardless of what is the finest LOD with dynamic lights in views.
 	//???could store param in CLightAttribute?! or in CTerrainAttribute? MaxDynamicallyLitLOD. Avoid collecting huge lists in coarsest nodes!
 
+	/*
 	if (Intersect)
 	{
-		const auto MortonCode = (1 << (_CDLODData->GetLODCount() - 1 - LOD)) | Math::MortonCode2(x, z);
 		auto ItNode = _Nodes.find(MortonCode);
 		if (ItNode == _Nodes.cend())
 		{
@@ -385,7 +415,6 @@ bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& 
 	else if (!Ctx.NewLight)
 	{
 		//???!!!need here or make affected node lists sync once after updating in the whole tree?!
-		const auto MortonCode = (1 << (_CDLODData->GetLODCount() - 1 - LOD)) | Math::MortonCode2(x, z);
 		auto ItNode = _Nodes.find(MortonCode);
 		if (ItNode != _Nodes.cend())
 		{
@@ -405,10 +434,11 @@ bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& 
 			}
 		}
 	}
+	*/
 
 	//???write LightBoundsVersion or ObjectLightIntersectionsVersion or special version to nodes? version must be incremented when terrain moved too!
 
-	return Intersect;
+	return true;
 }
 //---------------------------------------------------------------------
 

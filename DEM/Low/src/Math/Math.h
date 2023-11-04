@@ -287,6 +287,23 @@ DEM_FORCE_INLINE U32 RandomU32(U32 Min, U32 Max)
 }
 //---------------------------------------------------------------------
 
+// Integer pow. See https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int.
+template <typename T, typename U, typename = std::enable_if_t<std::is_integral_v<T>&& std::is_integral_v<U>>>
+DEM_FORCE_INLINE T Pow(T Base, U Exp)
+{
+	T Result = 1;
+	for (;;)
+	{
+		if (Exp & 1) Result *= Base;
+		Exp >>= 1;
+		if (!Exp) break;
+		Base *= Base;
+	}
+
+	return Result;
+}
+//---------------------------------------------------------------------
+
 // Divide and round up
 template <typename T, typename U, typename = std::enable_if_t<std::is_integral_v<T>&& std::is_integral_v<U>>>
 DEM_FORCE_INLINE decltype(auto) DivCeil(T Numerator, U Denominator)
@@ -707,6 +724,12 @@ DEM_FORCE_INLINE T MortonLCA(T MortonCodeA, T MortonCodeB) noexcept
 
 	// Shift any of codes to obtain the common prefix which is the LCA of two nodes
 	return MortonCodeA >> HighestUnequalBit;
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE UPTR GetQuadtreeNodeCount(UPTR Depth)
+{
+	return (Pow(4, Depth) - 1) / 3;
 }
 //---------------------------------------------------------------------
 

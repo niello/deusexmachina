@@ -56,16 +56,17 @@ public:
 	};
 #pragma pack(pop)
 
-	U32					GetHeightMapWidth() const { return HFWidth; }
-	U32					GetHeightMapHeight() const { return HFHeight; }
-	U32					GetPatchSize() const { return PatchSize; }
-	U32					GetLODCount() const { return LODCount; }
-	float               GetVerticalScale() const { return VerticalScale; }
-	const CAABB&		GetAABB() const { return Box; }
-	void				GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, I16& MinY, I16& MaxY) const;
-	void				GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, float& MinY, float& MaxY) const;
-	bool				HasNode(UPTR X, UPTR Z, UPTR LOD) const;
-	bool				GetNodeAABB(UPTR X, UPTR Z, UPTR LOD, acl::Vector4_32& BoxCenter, acl::Vector4_32& BoxExtent) const;
+	U32					  GetHeightMapWidth() const { return HFWidth; }
+	U32					  GetHeightMapHeight() const { return HFHeight; }
+	U32					  GetPatchSize() const { return PatchSize; }
+	U32					  GetLODCount() const { return LODCount; }
+	float                 GetVerticalScale() const { return VerticalScale; }
+	const CAABB&		  GetAABB() const { return Box; }
+	void				  GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, I16& MinY, I16& MaxY) const;
+	void				  GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, float& MinY, float& MaxY) const;
+	bool				  HasNode(UPTR X, UPTR Z, UPTR LOD) const;
+	std::pair<bool, bool> GetChildExistence(UPTR X, UPTR Z, UPTR LOD) const;
+	bool				  GetNodeAABB(UPTR X, UPTR Z, UPTR LOD, acl::Vector4_32& BoxCenter, acl::Vector4_32& BoxExtent) const;
 };
 
 typedef Ptr<CCDLODData> PCDLODData;
@@ -91,8 +92,18 @@ inline void CCDLODData::GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, float& MinY, f
 
 inline bool CCDLODData::HasNode(UPTR X, UPTR Z, UPTR LOD) const
 {
-	CMinMaxMap& MMMap = MinMaxMaps[LOD];
+	const CMinMaxMap& MMMap = MinMaxMaps[LOD];
 	return X < MMMap.PatchesW && Z < MMMap.PatchesH;
+}
+//---------------------------------------------------------------------
+
+// Returns pair of HasRightChild and HasBottomChild
+inline std::pair<bool, bool> CCDLODData::GetChildExistence(UPTR X, UPTR Z, UPTR LOD) const
+{
+	// Don't call this for leaves, they can't have children
+	n_assert_dbg(LOD > 0);
+	const CMinMaxMap& MMMap = MinMaxMaps[LOD - 1];
+	return { ((X << 1) + 1 < MMMap.PatchesW), ((Z << 1) + 1 < MMMap.PatchesH) };
 }
 //---------------------------------------------------------------------
 

@@ -84,6 +84,8 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		}
 		else
 		{
+			const auto [HasRightChild, HasBottomChild] = CDLODData->GetChildExistence(X, Z, LOD);
+
 			const U32 NextX = X << 1;
 			const U32 NextZ = Z << 1;
 
@@ -94,7 +96,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 				if (Status == ENodeStatus::NotInLOD) ChildFlags |= Child_TopLeft;
 			}
 
-			if (CDLODData->HasNode(NextX + 1, NextZ, NextLOD))
+			if (HasRightChild)
 			{
 				Status = ProcessTerrainNode(Ctx, NextX + 1, NextZ, NextLOD, ParentClipStatus);
 				if (Status != ENodeStatus::Invisible)
@@ -104,7 +106,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 				}
 			}
 
-			if (CDLODData->HasNode(NextX, NextZ + 1, NextLOD))
+			if (HasBottomChild)
 			{
 				Status = ProcessTerrainNode(Ctx, NextX, NextZ + 1, NextLOD, ParentClipStatus);
 				if (Status != ENodeStatus::Invisible)
@@ -114,7 +116,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 				}
 			}
 
-			if (CDLODData->HasNode(NextX + 1, NextZ + 1, NextLOD))
+			if (HasRightChild && HasBottomChild)
 			{
 				Status = ProcessTerrainNode(Ctx, NextX + 1, NextZ + 1, NextLOD, ParentClipStatus);
 				if (Status != ENodeStatus::Invisible)
