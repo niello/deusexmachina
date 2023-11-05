@@ -39,7 +39,6 @@ protected:
 		acl::Vector4_32 Scale;
 		acl::Vector4_32 Offset;
 		CLightInfo*     pLightInfo;
-		bool            NewLight;
 	};
 
 	Render::PCDLODData _CDLODData;
@@ -50,13 +49,13 @@ protected:
 	float              _InvSplatSizeZ = 1.f;
 	U32                _LightCacheBoundsVersion = 0;        // Renderable bounds version for which _Lights is updated
 	U16                _LightCacheIntersectionsVersion = 0; // Object-light intersections version for which _Lights is updated
-	U16                _MaxLODForDynamicLights = 3;         // TODO: read from attr settings
+	U16                _MaxLODForDynamicLights = 3;         // LOD 0 can't be disabled on intent. TODO: read from attr settings
 
 	// Cached information about lights affecting parts of the terrain
 	std::map<UPTR, CLightInfo>                 _Lights; // Light UID -> Info
 	std::unordered_map<TMorton, CQuadTreeNode> _Nodes;  // Morton code -> List of lights affecting the node
 
-	void UpdateLightInQuadTree(CLightInfo& LightInfo, bool NewLight);
+	void UpdateLightInQuadTree(CLightInfo& LightInfo);
 	bool UpdateLightInQuadTreeNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD);
 
 	virtual void OnActivityChanged(bool Active) override;

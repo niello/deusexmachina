@@ -37,8 +37,9 @@ public:
 	void					Destroy();
 
 	CStrID                  GetUID() const { return _UID; }
-	PVertexBuffer			GetVertexBuffer() const { return _VB; }
-	PIndexBuffer			GetIndexBuffer() const { return _IB; }
+	const PMeshData&        GetMeshData() const { return _MeshData; }
+	const PVertexBuffer&    GetVertexBuffer() const { return _VB; }
+	const PIndexBuffer&     GetIndexBuffer() const { return _IB; }
 	const CPrimitiveGroup*  GetGroup(UPTR SubMeshIdx, UPTR LOD = 0) const;
 	U16                     GetSortingKey() const { return _SortingKey; }
 };

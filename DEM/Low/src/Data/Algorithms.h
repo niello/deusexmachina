@@ -1,5 +1,5 @@
 #pragma once
-//#include <Data/FunctionTraits.h>
+#include <Data/FunctionTraits.h>
 #include <algorithm>
 #include <set>
 #include <unordered_set>
@@ -154,12 +154,17 @@ DEM_FORCE_INLINE void SortedUnion(TCollectionA&& a, TCollectionB&& b, TLess Less
 }
 //---------------------------------------------------------------------
 
+HAS_METHOD_WITH_SIGNATURE_TRAIT(value_comp);
+
 // Calls a Callback with iterators to elements from 'a' and 'b'. When elements with the same key
 // exist in both sets, the callback is invoked for them once with both elements valid.
 template<typename TCollection, typename TCallback>
 inline void SortedUnion(const TCollection& a, const TCollection& b, TCallback Callback)
 {
-	SortedUnion(a, b, a.value_comp(), std::forward<TCallback>(Callback));
+	if constexpr (has_method_with_signature_value_comp_v<TCollection, void()>)
+		SortedUnion(a, b, a.value_comp(), std::forward<TCallback>(Callback));
+	else
+		SortedUnion(a, b, std::less<typename TCollection::value_type>{}, std::forward<TCallback>(Callback));
 }
 //---------------------------------------------------------------------
 

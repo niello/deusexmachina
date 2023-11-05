@@ -5,6 +5,7 @@
 #include <Math/CameraMath.h>
 #include <Core/Factory.h>
 #include <IO/BinaryReader.h>
+#include <Debug/DebugDraw.h>
 
 namespace Frame
 {
@@ -106,6 +107,12 @@ U8 CPointLightAttribute::TestBoxClipping(acl::Vector4_32Arg0 BoxCenter, acl::Vec
 {
 	const auto& Pos = _pNode->GetWorldPosition();
 	return Math::ClipAABB(BoxCenter, BoxExtent, acl::vector_set(Pos.x, Pos.y, Pos.z, _Range));
+}
+//---------------------------------------------------------------------
+
+void CPointLightAttribute::RenderDebug(Debug::CDebugDraw& DebugDraw) const
+{
+	DebugDraw.DrawSphereWireframe(_pNode->GetWorldPosition(), _Range, Render::ColorRGBA(255, 255, 0, 255));
 }
 //---------------------------------------------------------------------
 

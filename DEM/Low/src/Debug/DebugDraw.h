@@ -126,6 +126,7 @@ public:
 	void DrawArrow(const vector3& From, const vector3& To, float Radius, U32 Color = Render::Color_White);
 	void DrawCross();
 	void DrawBoxWireframe(const CAABB& Box, U32 Color = Render::Color_White, float Thickness = 1.f);
+	void DrawSphereWireframe(const vector3& Pos, float R, U32 Color = Render::Color_White, float Thickness = 1.f);
 	void DrawFrustumWireframe(const matrix44& Frustum, U32 Color = Render::Color_White, float Thickness = 1.f);
 	void DrawArc();
 	void DrawCircleXZ(const vector3& Pos, float Radius, float SegmentCount = 16, U32 Color = Render::Color_White);

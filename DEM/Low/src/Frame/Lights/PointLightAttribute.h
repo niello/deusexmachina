@@ -27,6 +27,7 @@ public:
 	virtual bool                  IntersectsWith(acl::Vector4_32Arg0 Sphere) const override;
 	virtual U8                    TestBoxClipping(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const override;
 	virtual bool                  DoesEmitAnyEnergy() const override { return (_Color & 0x00ffffff) && _Intensity > 0.f; }
+	virtual void                  RenderDebug(Debug::CDebugDraw& DebugDraw) const override;
 };
 
 typedef Ptr<CPointLightAttribute> PPointLightAttribute;

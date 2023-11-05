@@ -4,11 +4,13 @@
 #include <Resources/Resource.h>
 #include <Render/MeshGenerators.h>
 #include <Render/Mesh.h>
+#include <Render/MeshData.h>
 #include <Render/Effect.h>
 #include <Render/GPUDriver.h>
 #include <Render/RenderTarget.h>
 #include <Render/ShaderParamStorage.h>
 #include <Render/VertexComponent.h>
+#include <Data/Buffer.h>
 
 namespace Debug
 {
@@ -19,7 +21,9 @@ CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr)
 	: _GraphicsMgr(&GraphicsMgr)
 {
 	GraphicsMgr.GetResourceManager()->RegisterResource("#Mesh_BoxCCW", n_new(Resources::CMeshGeneratorBox()));
-	GraphicsMgr.GetResourceManager()->RegisterResource("#Mesh_SphereCCW12", n_new(Resources::CMeshGeneratorSphere(12)));
+	auto ShpereRsrc = GraphicsMgr.GetResourceManager()->RegisterResource("#Mesh_SphereCCW12", n_new(Resources::CMeshGeneratorSphere(12)));
+	if (auto pMeshData = ShpereRsrc->ValidateObject<Render::CMeshData>())
+		pMeshData->UseBuffer(); // Used for drawing wireframe sphere
 	GraphicsMgr.GetResourceManager()->RegisterResource("#Mesh_CylinderCCW12", n_new(Resources::CMeshGeneratorCylinder(12)));
 	GraphicsMgr.GetResourceManager()->RegisterResource("#Mesh_ConeCCW12", n_new(Resources::CMeshGeneratorCone(12)));
 
@@ -339,6 +343,26 @@ void CDebugDraw::DrawBoxWireframe(const CAABB& Box, U32 Color, float Thickness)
 	DrawLine(Mmm, MmM, Color, Thickness);
 	DrawLine(mmM, MmM, Color, Thickness);
 	DrawLine(MMm, Mmm, Color);
+}
+//---------------------------------------------------------------------
+
+void CDebugDraw::DrawSphereWireframe(const vector3& Pos, float R, U32 Color, float Thickness)
+{
+	// NB: here we exploit internal knowledge about sphere mesh generator. Could write more robust logic later. Vertex & triangle iterators in CMeshData?
+	if (auto pMeshData = _Shapes[Sphere]->GetMeshData().Get())
+	{
+		const auto pVertices = static_cast<vector3*>(pMeshData->VBData->GetPtr());
+		const auto pIndices = static_cast<U16*>(pMeshData->IBData->GetPtr());
+		for (UPTR i = 0; i < pMeshData->IndexCount; i += 3)
+		{
+			const vector3 v0 = pVertices[pIndices[i + 0]] * R + Pos;
+			const vector3 v1 = pVertices[pIndices[i + 1]] * R + Pos;
+			const vector3 v2 = pVertices[pIndices[i + 2]] * R + Pos;
+			DrawLine(v0, v1, Color, Thickness);
+			DrawLine(v1, v2, Color, Thickness);
+			DrawLine(v2, v0, Color, Thickness);
+		}
+	}
 }
 //---------------------------------------------------------------------
 

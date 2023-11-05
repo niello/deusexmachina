@@ -268,8 +268,6 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 	{
 		if (!pCurrIsect || ((It != _Lights.cend()) && It->first < pCurrIsect->pLightAttr->GetSceneHandle()->first))
 		{
-			//Changed |= !It->second.AffectedNodes.empty();
-
 			// Erase this light from all previously affected nodes
 			for (TMorton NodeCode : It->second.AffectedNodes)
 			{
@@ -284,39 +282,28 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 		{
 			const auto UID = pCurrIsect->pLightAttr->GetSceneHandle()->first;
 			auto& LightInfo = _Lights.emplace_hint(It, UID, CLightInfo{})->second; //!!!TODO PERF: use shared node pool!
-			UpdateLightInQuadTree(LightInfo, true);
+			LightInfo.pLightAttr = pCurrIsect->pLightAttr;
+			UpdateLightInQuadTree(LightInfo);
 			pCurrIsect = pCurrIsect->pNextLight;
 		}
 		else // equal
 		{
 			if (TerrainMoved || It->second.BoundsVersion != pCurrIsect->LightBoundsVersion)
-			{
-				// TODO PERF: could have a pool of these vectors and swap with pool record! Or even have one tmp buffer.
-				std::vector<TMorton> PrevAffectedNodes;
-				std::swap(PrevAffectedNodes, It->second.AffectedNodes);
-				UpdateLightInQuadTree(It->second, false);
-				//???need to sort new affected node list?!
-				// clear light from nodes that are in old list but aren't in new
-				// swap lists so the new one is current and old one is destroyed or pooled
-				//!!!NB: list of affected nodes can't be longer than total count of nodes and shorter than LOD depth for which lights are calculated!
-			}
+				UpdateLightInQuadTree(It->second);
 
 			++It;
 			pCurrIsect = pCurrIsect->pNextLight;
 		}
 	}
-
-	//???return bool from this function to indicate actual changes? but how to propagate to all views?!
-	// could track coverage version in a terrain attr and in terrain renderable views!
-	//???store version in each light? can update only certain lights! could make everything much cheaper!
-	//instead of Changed flag, need to precalculate NextVersion = CurrVersion + 1 and assign it to changed lights.
-	//it is not an own version for each light, it is the same version marking last change moment of the light.
-	//knowing changed lights we know which nodes should be updated, others can be kept
 }
 //---------------------------------------------------------------------
 
-void CTerrainAttribute::UpdateLightInQuadTree(CLightInfo& LightInfo, bool NewLight)
+void CTerrainAttribute::UpdateLightInQuadTree(CLightInfo& LightInfo)
 {
+	// TODO PERF: could have a pool of these vectors and swap with pool record! Or even have one tmp buffer.
+	std::vector<TMorton> PrevAffectedNodes;
+	std::swap(PrevAffectedNodes, LightInfo.AffectedNodes);
+
 	const auto Scale = _pNode->GetWorldMatrix().ExtractScale();
 	const auto& Translation = _pNode->GetWorldMatrix().Translation();
 
@@ -324,11 +311,56 @@ void CTerrainAttribute::UpdateLightInQuadTree(CLightInfo& LightInfo, bool NewLig
 	Ctx.Scale = acl::vector_set(Scale.x, Scale.y, Scale.z);
 	Ctx.Offset = acl::vector_set(Translation.x, Translation.y, Translation.z);
 	Ctx.pLightInfo = &LightInfo;
-	Ctx.NewLight = NewLight;
 
 	UpdateLightInQuadTreeNode(Ctx, 0, 0, _CDLODData->GetLODCount() - 1);
 
-	//???sync affected nodes here? fill _Nodes here? sort list by Morton code? swap here before recursive call?
+	std::sort(LightInfo.AffectedNodes.begin(), LightInfo.AffectedNodes.end());
+
+	DEM::Algo::SortedUnion(PrevAffectedNodes, LightInfo.AffectedNodes,
+		[this, &PrevAffectedNodes, &LightInfo](auto ItPrev, auto ItNew)
+	{
+		if (ItPrev == PrevAffectedNodes.cend())
+		{
+			// Node started being affected
+			::Sys::Log(("**DBG New node affected: " + std::to_string(*ItNew) +"\n").c_str());
+
+			auto ItNode = _Nodes.find(*ItNew);
+			if (ItNode == _Nodes.cend())
+			{
+				// add to _Nodes, get node handle from pool
+				ItNode = _Nodes.emplace().first;
+			}
+			else
+			{
+				// check if this light already added to this cell
+				//???or will know it when trying to emplace? will implace in this case create and destroy unnecessary map node?
+				//as a fallback can do find and then emplace_hint, but if not found, cend() is not a good hint for sorted insertion! use lower_bound?
+			}
+
+			ItNode->second.Lights.emplace(LightInfo.pLightAttr); //!!!TODO: get node handle from pool!
+			++ItNode->second.Version;
+		}
+		else if (ItNew == LightInfo.AffectedNodes.cend())
+		{
+			// Node stopped being affected
+			::Sys::Log(("**DBG Node is no more affected: " + std::to_string(*ItPrev) + "\n").c_str());
+
+			auto ItNode = _Nodes.find(*ItPrev);
+			if (ItNode != _Nodes.cend())
+			{
+				auto& NodeLights = ItNode->second.Lights;
+				if (NodeLights.erase(LightInfo.pLightAttr)) //!!!TODO: extract to pool!
+				{
+					if (NodeLights.empty())
+						_Nodes.erase(ItNode); //!!!TODO: extract to pool!
+					else
+						++ItNode->second.Version;
+				}
+			}
+		}
+	});
+
+	// TODO: return PrevAffectedNodes to the pool / keep as a tmp buffer!
 }
 //---------------------------------------------------------------------
 
@@ -348,27 +380,26 @@ bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& 
 	// If the whole node is inside the light, add the whole subtree and skip its recursive traversal
 	if (ClipStatus == Math::ClipInside)
 	{
-		//!!!FIXME: don't reserve memory for LOD levels which do not track dynamic lights!
-		Ctx.pLightInfo->AffectedNodes.reserve(Math::GetQuadtreeNodeCount(LOD + 1));
+		// Cut subtree top if it is above the max dynamically lit LOD
+		const auto StartSubtreeLevel = LOD - std::min<U32>(LOD, _MaxLODForDynamicLights);
+
+		// Reserve elements for dynamically lit levels. May be a bit excessive because CDLOD levels may contain less cols & rows than pow2.
+		Ctx.pLightInfo->AffectedNodes.reserve(Math::GetQuadtreeNodeCount(LOD + 1) - Math::GetQuadtreeNodeCount(StartSubtreeLevel));
 
 		// Add the current node all its existing children.
-		// TODO: investigate ways to optimize this using properties of Morton codes. Need rect.
+		// TODO: investigate ways to optimize this using properties of Morton codes. Query all Morton codes in a rect.
 		const auto BaseDepth = _CDLODData->GetLODCount() - 1 - LOD;
-		for (U32 SubtreeDepth = 0; SubtreeDepth < LOD; ++SubtreeDepth)
+		for (U32 SubtreeLevel = 0; SubtreeLevel < LOD; ++SubtreeLevel)
 		{
-			// FIXME: can make less calculations here? Skip by fixing range in "for"!
-			const auto CurrLOD = LOD - SubtreeDepth;
-			if (CurrLOD > _MaxLODForDynamicLights) continue;
-
-			const auto Depth = BaseDepth + SubtreeDepth;
+			const auto Depth = BaseDepth + SubtreeLevel;
 			const auto DepthBit = (1 << Depth << Depth);
 
-			const auto [LevelWidth, LevelHeight] = _CDLODData->GetLODSize(LOD - SubtreeDepth);
-			const U16 QuadsDim = (1 << SubtreeDepth);
-			const U16 FromX = x << SubtreeDepth;
-			const U16 FromZ = z << SubtreeDepth;
-			const U16 ToX = std::min<U16>(FromX + QuadsDim, LevelWidth);
-			const U16 ToZ = std::min<U16>(FromZ + QuadsDim, LevelHeight);
+			const auto LODSize = _CDLODData->GetLODSize(LOD - SubtreeLevel);
+			const TCellDim QuadsDim = (1 << SubtreeLevel);
+			const TCellDim FromX = x << SubtreeLevel;
+			const TCellDim FromZ = z << SubtreeLevel;
+			const TCellDim ToX = std::min<TCellDim>(FromX + QuadsDim, LODSize.first);
+			const TCellDim ToZ = std::min<TCellDim>(FromZ + QuadsDim, LODSize.second);
 
 			for (auto CurrZ = FromZ; CurrZ <= ToZ; ++CurrZ)
 				for (auto CurrX = FromX; CurrX <= ToX; ++CurrX)
@@ -394,63 +425,17 @@ bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& 
 
 		// If no children are affected by the light, parent node is neither considered affected
 		if (!IsectLT && !IsectRT && !IsectLB && !IsectRB) return false;
+
+		// Don't track lights for too coarse LODs. It is good for two reasons:
+		// 1. The farther the terrain patch is, the less importaint and less noticeable is its proper lighting with typically relatively small dynamic lights.
+		// 2. Far terrain patches are very big and would have lots of affecting lights, loading the light tracker with unnecessary work.
+		if (LOD > _MaxLODForDynamicLights) return true;
 	}
 
-	// Don't track lights for too coarse LODs. It is good for two reasons:
-	// 1. The farther the terrain patch is, the less importaint and less noticeable is its proper lighting with typically relatively small dynamic lights.
-	// 2. Far terrain patches are very big and would have lots of affecting lights, loading light tracker with work for nothing.
-	if (LOD > _MaxLODForDynamicLights) return false;
-
-	// If we are here, we are affected by the light
+	// If we are here, we are affected by the light and want to track it
 	const auto Depth = _CDLODData->GetLODCount() - 1 - LOD;
 	Ctx.pLightInfo->AffectedNodes.push_back((1 << Depth << Depth) | Math::MortonCode2(x, z));
 	return true;
-
-	//!!!can skip saving light lists in nodes after some level, regardless of what is the finest LOD with dynamic lights in views.
-	//???could store param in CLightAttribute?! or in CTerrainAttribute? MaxDynamicallyLitLOD. Avoid collecting huge lists in coarsest nodes!
-
-	/*
-	if (Intersect)
-	{
-		auto ItNode = _Nodes.find(MortonCode);
-		if (ItNode == _Nodes.cend())
-		{
-			// add to _Nodes, get node handle from pool
-		}
-		else
-		{
-			// check if this light already added to this cell
-			//???or will know it when trying to emplace? will implace in this case create and destroy unnecessary map node?
-			//as a fallback can do find and then emplace_hint, but if not found, cend() is not a good hint for sorted insertion! use lower_bound?
-		}
-		// add light to ItNode->second.Lights, get node handle from pool
-		// if added (and didn't already exist), up node version
-	}
-	else if (!Ctx.NewLight)
-	{
-		//???!!!need here or make affected node lists sync once after updating in the whole tree?!
-		auto ItNode = _Nodes.find(MortonCode);
-		if (ItNode != _Nodes.cend())
-		{
-			auto& NodeLights = ItNode->second.Lights;
-			if (NodeLights.erase(Ctx.pLightAttr)) // TODO: extract?
-			{
-				// put extracted light map node into the pool
-
-				if (NodeLights.empty()) //!!!instead of erasing, put map node handle into the pool!
-				{
-					_Nodes.erase(ItNode);
-				}
-				else
-				{
-					// up node version
-				}
-			}
-		}
-	}
-	*/
-
-	//???write LightBoundsVersion or ObjectLightIntersectionsVersion or special version to nodes? version must be incremented when terrain moved too!
 }
 //---------------------------------------------------------------------
 
