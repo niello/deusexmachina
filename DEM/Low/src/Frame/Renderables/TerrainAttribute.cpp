@@ -230,20 +230,19 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 
 void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Renderable, const CObjectLightIntersection* pHead) const
 {
-	//!!!can limit lighting to certain terrain patch LODs! don't process dynamic lights for huge far patches. Saves lots of work
-	//because big patches tend to intersect with very many lights.
-
-	// NB: tfm change can be important for terrain, as light may be still intersecting with the terrain in a whole but now affecting other patches.
-	// Terrain could also remember light's bounds version? Make sure we call UpdateLightList for terrain at any tfm change.
-
-	//???can update only changed intersections and not all lights each time one of them changed?! use renderable tfm versions from intersections?
-
-	//???sorted sync like in model attr? then mark removed lights for updating indices in patches, and update added lights and lights with changed bounds
+	//!!!can limit lighting to certain terrain patch LODs! Control with LOD. Calc LOD from desired lighting max distance?
 
 	auto pTerrain = static_cast<Render::CTerrain*>(&Renderable);
 	while (pHead)
 	{
-		// TODO: use visible patches calculated in UpdateRenderable and AABB tree to calculate lights per patch
+		// for each visible patch and quarterpatch
+		//  get its Morton code
+		//  find node in _Nodes
+		//  if node not found but patch has lights, clear its lights
+		//  if node version != patch light list version, update lights in a patch from node
+
+		//!!!cache Morton code in patch?! small data, saves calculations! also can help for syncing old & new patches.
+		//Smaller Morton = farther LOD, always! So sorting by them is equal to sorting by LOD -> distance from camera, which is desired!
 
 		pHead = pHead->pNextLight;
 	}
@@ -270,11 +269,7 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 		{
 			// Erase this light from all previously affected nodes
 			for (TMorton NodeCode : It->second.AffectedNodes)
-			{
-				auto NodeIt = _Nodes.find(NodeCode);
-				if (NodeIt != _Nodes.cend())
-					NodeIt->second.Lights.erase(It->second.pLightAttr);
-			}
+				StopAffectingNode(NodeCode, It->second.pLightAttr);
 
 			It = _Lights.erase(It); //!!!TODO PERF: use shared node pool!
 		}
@@ -302,6 +297,32 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 }
 //---------------------------------------------------------------------
 
+void CTerrainAttribute::StartAffectingNode(TMorton NodeCode, CLightAttribute* pLightAttr)
+{
+	auto ItNode = _Nodes.find(NodeCode);
+	if (ItNode == _Nodes.cend())
+		ItNode = _Nodes.emplace().first; //!!!TODO PERF: use shared node pool!
+
+	ItNode->second.Lights.emplace(pLightAttr); //!!!TODO PERF: use shared node pool!
+	++ItNode->second.Version;
+}
+//---------------------------------------------------------------------
+
+void CTerrainAttribute::StopAffectingNode(TMorton NodeCode, CLightAttribute* pLightAttr)
+{
+	auto ItNode = _Nodes.find(NodeCode);
+	if (ItNode == _Nodes.cend()) return;
+
+	if (ItNode->second.Lights.erase(pLightAttr)) //!!!TODO PERF: use shared node pool!
+	{
+		if (ItNode->second.Lights.empty())
+			_Nodes.erase(ItNode); //!!!TODO PERF: use shared node pool!
+		else
+			++ItNode->second.Version;
+	}
+}
+//---------------------------------------------------------------------
+
 void CTerrainAttribute::UpdateLightInQuadTree(CLightInfo& LightInfo)
 {
 	// TODO PERF: could have a pool of these vectors and swap with pool record! Or even have one tmp buffer if only single thread accesses each attr.
@@ -324,35 +345,9 @@ void CTerrainAttribute::UpdateLightInQuadTree(CLightInfo& LightInfo)
 		[this, &PrevAffectedNodes, &LightInfo](auto ItPrev, auto ItNew)
 	{
 		if (ItPrev == PrevAffectedNodes.cend())
-		{
-			// Node started being affected
-			::Sys::Log(("**DBG New node affected: " + std::to_string(*ItNew) +"\n").c_str());
-
-			auto ItNode = _Nodes.find(*ItNew);
-			if (ItNode == _Nodes.cend())
-				ItNode = _Nodes.emplace().first; //!!!TODO: get node handle from pool!
-
-			ItNode->second.Lights.emplace(LightInfo.pLightAttr); //!!!TODO: get node handle from pool!
-			++ItNode->second.Version;
-		}
+			StartAffectingNode(*ItNew, LightInfo.pLightAttr);
 		else if (ItNew == LightInfo.AffectedNodes.cend())
-		{
-			// Node stopped being affected
-			::Sys::Log(("**DBG Node is no more affected: " + std::to_string(*ItPrev) + "\n").c_str());
-
-			auto ItNode = _Nodes.find(*ItPrev);
-			if (ItNode != _Nodes.cend())
-			{
-				auto& NodeLights = ItNode->second.Lights;
-				if (NodeLights.erase(LightInfo.pLightAttr)) //!!!TODO: extract to pool!
-				{
-					if (NodeLights.empty())
-						_Nodes.erase(ItNode); //!!!TODO: extract to pool!
-					else
-						++ItNode->second.Version;
-				}
-			}
-		}
+			StopAffectingNode(*ItPrev, LightInfo.pLightAttr);
 	});
 
 	// TODO: return PrevAffectedNodes to the pool / keep as a tmp buffer!
