@@ -284,12 +284,16 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 			auto& LightInfo = _Lights.emplace_hint(It, UID, CLightInfo{})->second; //!!!TODO PERF: use shared node pool!
 			LightInfo.pLightAttr = pCurrIsect->pLightAttr;
 			UpdateLightInQuadTree(LightInfo);
+			LightInfo.BoundsVersion = pCurrIsect->LightBoundsVersion;
 			pCurrIsect = pCurrIsect->pNextLight;
 		}
 		else // equal
 		{
 			if (TerrainMoved || It->second.BoundsVersion != pCurrIsect->LightBoundsVersion)
+			{
 				UpdateLightInQuadTree(It->second);
+				It->second.BoundsVersion = pCurrIsect->LightBoundsVersion;
+			}
 
 			++It;
 			pCurrIsect = pCurrIsect->pNextLight;
@@ -300,7 +304,7 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 
 void CTerrainAttribute::UpdateLightInQuadTree(CLightInfo& LightInfo)
 {
-	// TODO PERF: could have a pool of these vectors and swap with pool record! Or even have one tmp buffer.
+	// TODO PERF: could have a pool of these vectors and swap with pool record! Or even have one tmp buffer if only single thread accesses each attr.
 	std::vector<TMorton> PrevAffectedNodes;
 	std::swap(PrevAffectedNodes, LightInfo.AffectedNodes);
 
@@ -326,16 +330,7 @@ void CTerrainAttribute::UpdateLightInQuadTree(CLightInfo& LightInfo)
 
 			auto ItNode = _Nodes.find(*ItNew);
 			if (ItNode == _Nodes.cend())
-			{
-				// add to _Nodes, get node handle from pool
-				ItNode = _Nodes.emplace().first;
-			}
-			else
-			{
-				// check if this light already added to this cell
-				//???or will know it when trying to emplace? will implace in this case create and destroy unnecessary map node?
-				//as a fallback can do find and then emplace_hint, but if not found, cend() is not a good hint for sorted insertion! use lower_bound?
-			}
+				ItNode = _Nodes.emplace().first; //!!!TODO: get node handle from pool!
 
 			ItNode->second.Lights.emplace(LightInfo.pLightAttr); //!!!TODO: get node handle from pool!
 			++ItNode->second.Version;
