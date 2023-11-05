@@ -384,7 +384,7 @@ bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& 
 		// Add the current node all its existing children.
 		// TODO: investigate ways to optimize this using properties of Morton codes. Query all Morton codes in a rect.
 		const auto BaseDepth = _CDLODData->GetLODCount() - 1 - LOD;
-		for (U32 SubtreeLevel = 0; SubtreeLevel < LOD; ++SubtreeLevel)
+		for (U32 SubtreeLevel = StartSubtreeLevel; SubtreeLevel < LOD; ++SubtreeLevel)
 		{
 			const auto Depth = BaseDepth + SubtreeLevel;
 			const auto DepthBit = (1 << Depth << Depth);
