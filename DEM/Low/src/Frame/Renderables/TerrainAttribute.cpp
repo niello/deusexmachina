@@ -215,37 +215,23 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 		pTerrain->PatchesTransformVersion = _pNode->GetTransformVersion();
 		pTerrain->UpdatePatches(View.GetCamera()->GetPosition(), View.GetViewFrustum());
 
-		//???set all lights dirty in a CTerrain renderable view for update in UpdateLightList? or update now?
-		//could merge / divide existing nodes and/or use finest LOD light grid
-
-		//???store main info about patches in one buffer, lights in another?!
-		// - will save buffer refreshes when only light data changes
-		// - depth will bind only main data, no lights
-		// - more data will fit into constant buffers w/out structured buffers
-		// - maybe better layout
-		// - different shaders use it! VS / PS.
+		//???how to make sure that UpdateLightList will be called? World state might be unchanged but
+		//patches could be changed due to camera movement. Call sync manually here?
 	}
 }
 //---------------------------------------------------------------------
 
-void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Renderable, const CObjectLightIntersection* pHead) const
+void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Renderable, const CObjectLightIntersection* /*pHead*/) const
 {
-	//!!!can limit lighting to certain terrain patch LODs! Control with LOD. Calc LOD from desired lighting max distance?
-
 	auto pTerrain = static_cast<Render::CTerrain*>(&Renderable);
-	while (pHead)
-	{
-		// for each visible patch and quarterpatch
-		//  get its Morton code
-		//  find node in _Nodes
-		//  if node not found but patch has lights, clear its lights
-		//  if node version != patch light list version, update lights in a patch from node
 
-		//!!!cache Morton code in patch?! small data, saves calculations! also can help for syncing old & new patches.
-		//Smaller Morton = farther LOD, always! So sorting by them is equal to sorting by LOD -> distance from camera, which is desired!
+	// for each visible patch and quarterpatch
+	//  if its LOD > pTerrain->MaxDynamicallyLitLOD, clear light list of the patch by setting invalid GPU index and continue
+	//  find node in _Nodes by patchs Morton code (sorted sync aka left join or unordered map access or something better?)
+	//  if node not found but patch has lights, clear its lights and set version to zero
+	//  if node version != patch light list version, update lights in a patch from node's light UID list and update version
 
-		pHead = pHead->pNextLight;
-	}
+	//???store lights in a CPatchInstance or write directly to CB?! Always sorted before filling lights, so can write by index! Commit CB after sync.
 }
 //---------------------------------------------------------------------
 

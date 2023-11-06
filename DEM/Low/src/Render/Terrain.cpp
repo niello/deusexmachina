@@ -28,15 +28,19 @@ void CTerrain::UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrus
 	Ctx.Offset = acl::vector_set(Translation.x, Translation.y, Translation.z);
 	Ctx.MainCameraPos = MainCameraPos;
 
-	ProcessTerrainNode(Ctx, 0, 0, CDLODData->GetLODCount() - 1, Math::ClipIntersect);
+	constexpr TMorton RootMortonCode = 1;
+	ProcessTerrainNode(Ctx, 0, 0, CDLODData->GetLODCount() - 1, Math::ClipIntersect, RootMortonCode);
 
-	// We sort by LOD (the higher is scale, the coarser is LOD), and therefore we almost sort by distance to the camera, as LOD depends solely on it
-	std::sort(_Patches.begin(), _Patches.end(), [](const auto& a, const auto& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
-	std::sort(_QuarterPatches.begin(), _QuarterPatches.end(), [](const auto& a, const auto& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
+	// We sort by LOD (the shorter is the code, the coarser is LOD), and therefore we almost sort front to back, as LOD depends solely on it
+	const auto PatchInstanceCmp = [](const CPatchInstance& a, const CPatchInstance& b) { return a.MortonCode > b.MortonCode; };
+	std::sort(_Patches.begin(), _Patches.end(), PatchInstanceCmp);
+	std::sort(_QuarterPatches.begin(), _QuarterPatches.end(), PatchInstanceCmp);
+
+	//!!!TODO: sorted sync with prev vectors, use PatchInstanceCmp instead of less! copy light data if found
 }
 //---------------------------------------------------------------------
 
-CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD, U8 ParentClipStatus)
+CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD, U8 ParentClipStatus, TMorton MortonCode)
 {
 	// Calculate node world space AABB
 	acl::Vector4_32 BoxCenter, BoxExtent;
@@ -52,9 +56,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		if (ParentClipStatus == Math::ClipOutside) return ENodeStatus::Invisible;
 	}
 
-	const auto& CurrLODParams = LODParams[LOD];
-
-	const auto LODSphere = acl::vector_set(Ctx.MainCameraPos.x, Ctx.MainCameraPos.y, Ctx.MainCameraPos.z, CurrLODParams.Range);
+	const auto LODSphere = acl::vector_set(Ctx.MainCameraPos.x, Ctx.MainCameraPos.y, Ctx.MainCameraPos.z, LODParams[LOD].Range);
 	if (!Math::HasIntersection(LODSphere, BoxCenter, BoxExtent)) return ENodeStatus::NotInLOD;
 
 	// Bits 0 to 3 - if set, add quarterpatch for child[0 .. 3]
@@ -64,6 +66,9 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 	constexpr U8 Child_BottomLeft = (1 << 2);
 	constexpr U8 Child_BottomRight = (1 << 3);
 	constexpr U8 Child_All = (Child_TopLeft | Child_TopRight | Child_BottomLeft | Child_BottomRight);
+
+	// NB: must use correct mapping [0 .. 3] -> [LT, RT, LB, RB]
+	const TMorton FirstChildMortonCode = (MortonCode << 2);
 
 	if (LOD == 0)
 	{
@@ -86,10 +91,10 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		{
 			const auto [HasRightChild, HasBottomChild] = CDLODData->GetChildExistence(x, z, LOD);
 
-			const U32 NextX = X << 1;
-			const U32 NextZ = Z << 1;
+			const U32 NextX = x << 1;
+			const U32 NextZ = z << 1;
 
-			ENodeStatus Status = ProcessTerrainNode(Ctx, NextX, NextZ, NextLOD, ParentClipStatus);
+			ENodeStatus Status = ProcessTerrainNode(Ctx, NextX, NextZ, NextLOD, ParentClipStatus, FirstChildMortonCode);
 			if (Status != ENodeStatus::Invisible)
 			{
 				IsVisible = true;
@@ -98,7 +103,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 
 			if (HasRightChild)
 			{
-				Status = ProcessTerrainNode(Ctx, NextX + 1, NextZ, NextLOD, ParentClipStatus);
+				Status = ProcessTerrainNode(Ctx, NextX + 1, NextZ, NextLOD, ParentClipStatus, FirstChildMortonCode + 1);
 				if (Status != ENodeStatus::Invisible)
 				{
 					IsVisible = true;
@@ -108,7 +113,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 
 			if (HasBottomChild)
 			{
-				Status = ProcessTerrainNode(Ctx, NextX, NextZ + 1, NextLOD, ParentClipStatus);
+				Status = ProcessTerrainNode(Ctx, NextX, NextZ + 1, NextLOD, ParentClipStatus, FirstChildMortonCode + 2);
 				if (Status != ENodeStatus::Invisible)
 				{
 					IsVisible = true;
@@ -118,7 +123,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 
 			if (HasRightChild && HasBottomChild)
 			{
-				Status = ProcessTerrainNode(Ctx, NextX + 1, NextZ + 1, NextLOD, ParentClipStatus);
+				Status = ProcessTerrainNode(Ctx, NextX + 1, NextZ + 1, NextLOD, ParentClipStatus, FirstChildMortonCode + 3);
 				if (Status != ENodeStatus::Invisible)
 				{
 					IsVisible = true;
@@ -138,14 +143,10 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 	if (ChildFlags == Child_All)
 	{
 		// Add whole patch
-		CPatchInstance Patch;
-		Patch.ScaleOffset[0] = HalfSizeX + HalfSizeX;
-		Patch.ScaleOffset[1] = HalfSizeZ + HalfSizeZ;
-		Patch.ScaleOffset[2] = CenterX - HalfSizeX;
-		Patch.ScaleOffset[3] = CenterZ - HalfSizeZ;
-		Patch.MorphConsts[0] = CurrLODParams.Morph1;
-		Patch.MorphConsts[1] = CurrLODParams.Morph2;
-		_Patches.push_back(std::move(Patch));
+		auto& Patch = _Patches.emplace_back();
+		Patch.ScaleOffset = acl::vector_set(HalfSizeX + HalfSizeX, HalfSizeZ + HalfSizeZ, CenterX - HalfSizeX, CenterZ - HalfSizeZ);
+		Patch.LOD = LOD;
+		Patch.MortonCode = MortonCode;
 	}
 	else
 	{
@@ -153,50 +154,34 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 
 		if (ChildFlags & Child_TopLeft)
 		{
-			CPatchInstance Patch;
-			Patch.ScaleOffset[0] = HalfSizeX;
-			Patch.ScaleOffset[1] = HalfSizeZ;
-			Patch.ScaleOffset[2] = CenterX - HalfSizeX;
-			Patch.ScaleOffset[3] = CenterZ - HalfSizeZ;
-			Patch.MorphConsts[0] = CurrLODParams.Morph1;
-			Patch.MorphConsts[1] = CurrLODParams.Morph2;
-			_QuarterPatches.push_back(std::move(Patch));
+			auto& Patch = _QuarterPatches.emplace_back();
+			Patch.ScaleOffset = acl::vector_set(HalfSizeX, HalfSizeZ, CenterX - HalfSizeX, CenterZ - HalfSizeZ);
+			Patch.LOD = LOD;
+			Patch.MortonCode = FirstChildMortonCode;
 		}
 
 		if (ChildFlags & Child_TopRight)
 		{
-			CPatchInstance Patch;
-			Patch.ScaleOffset[0] = HalfSizeX;
-			Patch.ScaleOffset[1] = HalfSizeZ;
-			Patch.ScaleOffset[2] = CenterX;
-			Patch.ScaleOffset[3] = CenterZ - HalfSizeZ;
-			Patch.MorphConsts[0] = CurrLODParams.Morph1;
-			Patch.MorphConsts[1] = CurrLODParams.Morph2;
-			_QuarterPatches.push_back(std::move(Patch));
+			auto& Patch = _QuarterPatches.emplace_back();
+			Patch.ScaleOffset = acl::vector_set(HalfSizeX, HalfSizeZ, CenterX, CenterZ - HalfSizeZ);
+			Patch.LOD = LOD;
+			Patch.MortonCode = FirstChildMortonCode + 1;
 		}
 
 		if (ChildFlags & Child_BottomLeft)
 		{
-			CPatchInstance Patch;
-			Patch.ScaleOffset[0] = HalfSizeX;
-			Patch.ScaleOffset[1] = HalfSizeZ;
-			Patch.ScaleOffset[2] = CenterX - HalfSizeX;
-			Patch.ScaleOffset[3] = CenterZ;
-			Patch.MorphConsts[0] = CurrLODParams.Morph1;
-			Patch.MorphConsts[1] = CurrLODParams.Morph2;
-			_QuarterPatches.push_back(std::move(Patch));
+			auto& Patch = _QuarterPatches.emplace_back();
+			Patch.ScaleOffset = acl::vector_set(HalfSizeX, HalfSizeZ, CenterX - HalfSizeX, CenterZ);
+			Patch.LOD = LOD;
+			Patch.MortonCode = FirstChildMortonCode + 2;
 		}
 
 		if (ChildFlags & Child_BottomRight)
 		{
-			CPatchInstance Patch;
-			Patch.ScaleOffset[0] = HalfSizeX;
-			Patch.ScaleOffset[1] = HalfSizeZ;
-			Patch.ScaleOffset[2] = CenterX;
-			Patch.ScaleOffset[3] = CenterZ;
-			Patch.MorphConsts[0] = CurrLODParams.Morph1;
-			Patch.MorphConsts[1] = CurrLODParams.Morph2;
-			_QuarterPatches.push_back(std::move(Patch));
+			auto& Patch = _QuarterPatches.emplace_back();
+			Patch.ScaleOffset = acl::vector_set(HalfSizeX, HalfSizeZ, CenterX, CenterZ);
+			Patch.LOD = LOD;
+			Patch.MortonCode = FirstChildMortonCode + 3;
 		}
 	}
 

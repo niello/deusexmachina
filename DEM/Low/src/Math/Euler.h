@@ -5,7 +5,7 @@
 
 /*** Definitions ***/
 typedef struct {float x, y, z, w;} QuatX; /* Quaternion */
-enum QuatPart {X, Y, Z, W};
+enum class QuatPart {X, Y, Z, W};
 typedef float HMatrix[4][4]; /* Right-handed, for column vectors */
 typedef QuatX EulerAngles;    /* (x,y,z)=ang 1,2,3, w=order code  */
 
@@ -40,33 +40,33 @@ typedef QuatX EulerAngles;    /* (x,y,z)=ang 1,2,3, w=order code  */
 #define EulGetOrd(ord,i,j,k,h,n,s,f) {unsigned o=ord;f=o&1;o>>=1;s=o&1;o>>=1;\
     n=o&1;o>>=1;i=EulSafe[o&3];j=EulNext[i+n];k=EulNext[i+1-n];h=s?k:i;}
     /* EulOrd creates an order value between 0 and 23 from 4-tuple choices. */
-#define EulOrd(i,p,r,f)    (((((((i)<<1)+(p))<<1)+(r))<<1)+(f))
+#define EulOrd(i,p,r,f)    ((((((static_cast<unsigned>(i)<<1)+(p))<<1)+(r))<<1)+(f))
     /* Static axes */
-#define EulOrdXYZs    EulOrd(X,EulParEven,EulRepNo,EulFrmS)
-#define EulOrdXYXs    EulOrd(X,EulParEven,EulRepYes,EulFrmS)
-#define EulOrdXZYs    EulOrd(X,EulParOdd,EulRepNo,EulFrmS)
-#define EulOrdXZXs    EulOrd(X,EulParOdd,EulRepYes,EulFrmS)
-#define EulOrdYZXs    EulOrd(Y,EulParEven,EulRepNo,EulFrmS)
-#define EulOrdYZYs    EulOrd(Y,EulParEven,EulRepYes,EulFrmS)
-#define EulOrdYXZs    EulOrd(Y,EulParOdd,EulRepNo,EulFrmS)
-#define EulOrdYXYs    EulOrd(Y,EulParOdd,EulRepYes,EulFrmS)
-#define EulOrdZXYs    EulOrd(Z,EulParEven,EulRepNo,EulFrmS)
-#define EulOrdZXZs    EulOrd(Z,EulParEven,EulRepYes,EulFrmS)
-#define EulOrdZYXs    EulOrd(Z,EulParOdd,EulRepNo,EulFrmS)
-#define EulOrdZYZs    EulOrd(Z,EulParOdd,EulRepYes,EulFrmS)
+#define EulOrdXYZs    EulOrd(QuatPart::X,EulParEven,EulRepNo,EulFrmS)
+#define EulOrdXYXs    EulOrd(QuatPart::X,EulParEven,EulRepYes,EulFrmS)
+#define EulOrdXZYs    EulOrd(QuatPart::X,EulParOdd,EulRepNo,EulFrmS)
+#define EulOrdXZXs    EulOrd(QuatPart::X,EulParOdd,EulRepYes,EulFrmS)
+#define EulOrdYZXs    EulOrd(QuatPart::Y,EulParEven,EulRepNo,EulFrmS)
+#define EulOrdYZYs    EulOrd(QuatPart::Y,EulParEven,EulRepYes,EulFrmS)
+#define EulOrdYXZs    EulOrd(QuatPart::Y,EulParOdd,EulRepNo,EulFrmS)
+#define EulOrdYXYs    EulOrd(QuatPart::Y,EulParOdd,EulRepYes,EulFrmS)
+#define EulOrdZXYs    EulOrd(QuatPart::Z,EulParEven,EulRepNo,EulFrmS)
+#define EulOrdZXZs    EulOrd(QuatPart::Z,EulParEven,EulRepYes,EulFrmS)
+#define EulOrdZYXs    EulOrd(QuatPart::Z,EulParOdd,EulRepNo,EulFrmS)
+#define EulOrdZYZs    EulOrd(QuatPart::Z,EulParOdd,EulRepYes,EulFrmS)
     /* Rotating axes */
-#define EulOrdZYXr    EulOrd(X,EulParEven,EulRepNo,EulFrmR)
-#define EulOrdXYXr    EulOrd(X,EulParEven,EulRepYes,EulFrmR)
-#define EulOrdYZXr    EulOrd(X,EulParOdd,EulRepNo,EulFrmR)
-#define EulOrdXZXr    EulOrd(X,EulParOdd,EulRepYes,EulFrmR)
-#define EulOrdXZYr    EulOrd(Y,EulParEven,EulRepNo,EulFrmR)
-#define EulOrdYZYr    EulOrd(Y,EulParEven,EulRepYes,EulFrmR)
-#define EulOrdZXYr    EulOrd(Y,EulParOdd,EulRepNo,EulFrmR)
-#define EulOrdYXYr    EulOrd(Y,EulParOdd,EulRepYes,EulFrmR)
-#define EulOrdYXZr    EulOrd(Z,EulParEven,EulRepNo,EulFrmR)
-#define EulOrdZXZr    EulOrd(Z,EulParEven,EulRepYes,EulFrmR)
-#define EulOrdXYZr    EulOrd(Z,EulParOdd,EulRepNo,EulFrmR)
-#define EulOrdZYZr    EulOrd(Z,EulParOdd,EulRepYes,EulFrmR)
+#define EulOrdZYXr    EulOrd(QuatPart::X,EulParEven,EulRepNo,EulFrmR)
+#define EulOrdXYXr    EulOrd(QuatPart::X,EulParEven,EulRepYes,EulFrmR)
+#define EulOrdYZXr    EulOrd(QuatPart::X,EulParOdd,EulRepNo,EulFrmR)
+#define EulOrdXZXr    EulOrd(QuatPart::X,EulParOdd,EulRepYes,EulFrmR)
+#define EulOrdXZYr    EulOrd(QuatPart::Y,EulParEven,EulRepNo,EulFrmR)
+#define EulOrdYZYr    EulOrd(QuatPart::Y,EulParEven,EulRepYes,EulFrmR)
+#define EulOrdZXYr    EulOrd(QuatPart::Y,EulParOdd,EulRepNo,EulFrmR)
+#define EulOrdYXYr    EulOrd(QuatPart::Y,EulParOdd,EulRepYes,EulFrmR)
+#define EulOrdYXZr    EulOrd(QuatPart::Z,EulParEven,EulRepNo,EulFrmR)
+#define EulOrdZXZr    EulOrd(QuatPart::Z,EulParEven,EulRepYes,EulFrmR)
+#define EulOrdXYZr    EulOrd(QuatPart::Z,EulParOdd,EulRepNo,EulFrmR)
+#define EulOrdZYZr    EulOrd(QuatPart::Z,EulParOdd,EulRepYes,EulFrmR)
 
 EulerAngles Eul_(float ai, float aj, float ah, int order);
 QuatX Eul_ToQuat(EulerAngles ea);

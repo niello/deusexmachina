@@ -267,17 +267,23 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		U32 AvailableLightCount = (LightCount == 0) ? TechLightCount : std::min(LightCount, TechLightCount);
 		if (AvailableLightCount > INSTANCE_MAX_LIGHT_COUNT) AvailableLightCount = INSTANCE_MAX_LIGHT_COUNT;
 
+		//!!!FIXME: tmp!
+		struct CRec
+		{
+			acl::Vector4_32 ScaleOffset;
+			acl::Vector4_32 MorphConsts;
+		};
+
 		//???PERF: optimize uploading? use paddings to maintain align16?
 		//???PERF: use 2 different CPatchInstance structures for stream and const instancing?
 		UPTR InstanceCount = 0;
 		for (const auto& CurrPatch : Terrain.GetPatches())
 		{
 			// Setup instance patch constants
-
-			PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], &CurrPatch, 6 * sizeof(float));
+			const CRec Rec{ CurrPatch.ScaleOffset, acl::vector_set(Terrain.LODParams[CurrPatch.LOD].Morph1, Terrain.LODParams[CurrPatch.LOD].Morph2, 0.f, 0.f) };
+			PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], Rec);
 
 			// Setup instance lights
-
 			if (UploadLightInfo)
 			{
 				CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
@@ -291,11 +297,10 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		for (const auto& CurrPatch : Terrain.GetQuarterPatches())
 		{
 			// Setup instance patch constants
-
-			PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], &CurrPatch, 6 * sizeof(float));
+			const CRec Rec{ CurrPatch.ScaleOffset, acl::vector_set(Terrain.LODParams[CurrPatch.LOD].Morph1, Terrain.LODParams[CurrPatch.LOD].Morph2, 0.f, 0.f) };
+			PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], Rec);
 
 			// Setup instance lights
-
 			if (UploadLightInfo)
 			{
 				CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];

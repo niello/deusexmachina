@@ -42,6 +42,8 @@ public:
 	bool                     SetRawConstant(CStrID ID, const void* pData, UPTR Size) { return SetRawConstant(_Table->GetConstant(ID), pData, Size); }
 	bool                     SetRawConstant(size_t Index, const void* pData, UPTR Size) { return SetRawConstant(_Table->GetConstant(Index), pData, Size); }
 	bool                     SetRawConstant(const CShaderConstantParam& Param, const void* pData, UPTR Size);
+	template<typename T>
+	bool                     SetRawConstant(const CShaderConstantParam& Param, const T& Data) { return SetRawConstant(Param, &Data, sizeof(T)); }
 	bool                     SetFloat(const CShaderConstantParam& Param, float Value);
 	bool                     SetInt(const CShaderConstantParam& Param, I32 Value);
 	bool                     SetUInt(const CShaderConstantParam& Param, U32 Value);

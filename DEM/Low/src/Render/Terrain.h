@@ -25,16 +25,6 @@ protected:
 	using TMorton = U32;
 	using TCellDim = U16; // Max 15 bits for quadtree which is more than enough for terrain subdivision
 
-	struct alignas(16) CPatch
-	{
-		acl::Vector4_32 ScaleOffset;
-		U32             GPULightIndices[PATCH_MAX_LIGHT_COUNT];
-		U32             LightsVersion = 0;
-		U32             LOD;
-		TMorton         MortonCode;
-		bool            IsQuarterPatch;
-	};
-
 	enum class ENodeStatus
 	{
 		Invisible,
@@ -50,23 +40,28 @@ protected:
 		vector3	           MainCameraPos;
 	};
 
-	//std::vector<CPatch> _Patches;
-	//CB VSInstanceData
-	//CB PSInstanceData
-
 	// Vertex shader instance data
 	struct alignas(16) CPatchInstance
 	{
-		float ScaleOffset[4];
-		float MorphConsts[2];
-		float _PAD1[2];
+		acl::Vector4_32 ScaleOffset;
+		U32             GPULightIndices[PATCH_MAX_LIGHT_COUNT];
+		U32             LightsVersion = 0;
+		U32             LOD;
+		TMorton         MortonCode;
 	};
 
 	//!!!???can fill one GPU buffer?! use offset to render first ones, then others.
 	std::vector<CPatchInstance> _Patches;
 	std::vector<CPatchInstance> _QuarterPatches;
+	//CB or CBs
+	//???store main info about patches in one buffer, lights in another?!
+	// - will save buffer refreshes when only light data changes
+	// - depth will bind only main data, no lights
+	// - more data will fit into constant buffers w/out structured buffers
+	// - maybe better layout
+	// - different shaders use it! VS / PS.
 
-	ENodeStatus ProcessTerrainNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD, U8 ParentClipStatus);
+	ENodeStatus ProcessTerrainNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD, U8 ParentClipStatus, TMorton MortonCode);
 
 public:
 
