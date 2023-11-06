@@ -764,7 +764,7 @@ public:
 				}
 
 			Data::CBufferMalloc NewBuffer(SerializedSize);
-			memcpy(NewBuffer.GetPtr(), pComponentData, SerializedSize);
+			std::memcpy(NewBuffer.GetPtr(), pComponentData, SerializedSize);
 			BinaryData.emplace_back(std::move(NewBuffer), 0);
 
 			EntityToData.push_back({ EntityID, BinaryData.size() - 1, Record.State });

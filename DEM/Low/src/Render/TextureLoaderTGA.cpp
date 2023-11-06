@@ -189,7 +189,7 @@ Core::PObject CTextureLoaderTGA::CreateResource(CStrID UID)
 				const U8 ChunkPixelCount = ChunkHeader - 127; // (ChunkHeader & 0x7f) + 1
 				const U8* pChunkEnd = pCurrPixel + BytesPerTargetPixel * ChunkPixelCount;
 				for (; pCurrPixel < pChunkEnd; pCurrPixel += BytesPerTargetPixel)
-					memcpy(pCurrPixel, &PixelValue, BytesPerTargetPixel);
+					std::memcpy(pCurrPixel, &PixelValue, BytesPerTargetPixel);
 			}
 			else // Raw
 			{

@@ -76,7 +76,7 @@ void CD3D11ConstantBuffer::ResetRAMCopy(const void* pVBuffer)
 {
 	if (Flags.Is(CB11_UsesRAMCopy))
 	{
-		if (pVBuffer) memcpy(pMapped, pVBuffer, SizeInBytes);
+		if (pVBuffer) std::memcpy(pMapped, pVBuffer, SizeInBytes);
 		else memset(pMapped, 0, SizeInBytes);
 		Flags.Clear(CB11_Dirty);
 	}

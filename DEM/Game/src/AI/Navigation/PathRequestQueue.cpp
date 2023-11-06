@@ -148,7 +148,7 @@ dtStatus CPathRequestQueue::GetPathResult(U16 RequestID, dtPolyRef* pOutPath, in
 			Query.RequestID = 0;
 			Query.Status = 0;
 			OutSize = dtMin(Query.PathSize, MaxPath);
-			memcpy(pOutPath, Query.pPath, sizeof(dtPolyRef) * OutSize);
+			std::memcpy(pOutPath, Query.pPath, sizeof(dtPolyRef) * OutSize);
 			return DT_SUCCESS;
 		}
 	return DT_FAILURE;

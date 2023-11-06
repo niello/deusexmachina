@@ -111,7 +111,7 @@ COGGTheoraPlayer::Rewind()
             /* identify the codec: try theora */
             if (!theora_p && theora_decode_header(&ti,&tc,&op)>=0){
             /* it is theora -- save this stream state */
-            memcpy(&to,&test,sizeof(test));
+				std::memcpy(&to,&test,sizeof(test));
             theora_p=1;
             }else{
             /* whatever it is, we don't care about it */
@@ -305,7 +305,7 @@ COGGTheoraPlayer::UpdateTexture()
     // update texture
     int i;
     for (i = 0; i < height; ++i)
-        memcpy(&surfPtr[i*info.surfPitch],&rgbBuffer[i*videoWidth*4],line*4);
+        std::memcpy(&surfPtr[i*info.surfPitch],&rgbBuffer[i*videoWidth*4],line*4);
     // and unlock it
     pTexture->Unlock(0);
 	*/

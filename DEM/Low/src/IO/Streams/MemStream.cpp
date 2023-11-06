@@ -96,7 +96,7 @@ UPTR CMemStream::Read(void* pData, UPTR Size)
 	const UPTR BytesToRead = std::min(Size, _BufferSize - _Pos);
 	if (BytesToRead > 0)
 	{
-		memcpy(pData, _pConstData + _Pos, BytesToRead);
+		std::memcpy(pData, _pConstData + _Pos, BytesToRead);
 		_Pos += BytesToRead;
 	}
 	return BytesToRead;
@@ -126,7 +126,7 @@ UPTR CMemStream::Write(const void* pData, UPTR Size)
 
 	if (Size)
 	{
-		memcpy(_pData + _Pos, pData, Size);
+		std::memcpy(_pData + _Pos, pData, Size);
 		_Pos += Size;
 		if (_Pos > _UnusedStart) _UnusedStart = _Pos;
 	}

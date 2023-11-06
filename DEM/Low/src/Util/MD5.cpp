@@ -125,7 +125,7 @@ void CMD5::Update(U8* chInput, uint4 nInputLen)
     // Transform as many times as possible.
     if (nInputLen >= partLen)
     {
-        memcpy(&m_Buffer[index], chInput, partLen);
+		std::memcpy(&m_Buffer[index], chInput, partLen);
         Transform(m_Buffer);
 
         for (i = partLen; i + 63 < nInputLen; i += 64)
@@ -137,7 +137,7 @@ void CMD5::Update(U8* chInput, uint4 nInputLen)
         i = 0;
 
   // Buffer remaining input
-  memcpy(&m_Buffer[index], &chInput[i], nInputLen-i);
+	std::memcpy(&m_Buffer[index], &chInput[i], nInputLen-i);
 }
 
 /// md5::Finalize

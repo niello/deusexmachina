@@ -46,7 +46,7 @@ CD3D9ConstantBuffer::CD3D9ConstantBuffer(PSM30ConstantBufferParam Meta, const CD
 		const void* pInitDataPtr = pInitData->pFloat4Data ? (const void*)pInitData->pFloat4Data :
 			(pInitData->pInt4Data ? (const void*)pInitData->pInt4Data :
 			(const void*)pInitData->pBoolData);
-		memcpy(pData, pInitDataPtr, TotalSize);
+		std::memcpy(pData, pInitDataPtr, TotalSize);
 	}
 	else
 	{
@@ -121,7 +121,7 @@ void CD3D9ConstantBuffer::WriteData(ESM30RegisterSet RegSet, UPTR OffsetInBytes,
 
 	n_assert_dbg(pDest + Size <= (char*)pFloat4Data + Float4Count * sizeof(float) * 4 + Int4Count * sizeof(int) * 4 + BoolCount * sizeof(BOOL));
 
-	memcpy(pDest, pData, Size);
+	std::memcpy(pDest, pData, Size);
 }
 //---------------------------------------------------------------------
 

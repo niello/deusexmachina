@@ -54,14 +54,14 @@ void __fastcall CopyImage(const CImageData& Src, const CImageData& Dest, UPTR Fl
 	if (WholeSlice)
 	{
 		UPTR DataSize = Src.SlicePitch * Depth;
-		memcpy(pDest, pSrc, DataSize);
+		std::memcpy(pDest, pSrc, DataSize);
 	}
 	else if (WholeRow)
 	{
 		UPTR SlicePartSize = Src.RowPitch * CopyBlocksH;
 		for (UPTR i = 0; i < Depth; ++i)
 		{
-			memcpy(pDest, pSrc, SlicePartSize);
+			std::memcpy(pDest, pSrc, SlicePartSize);
 			pSrc += Src.SlicePitch;
 			pDest += Dest.SlicePitch;
 		}
@@ -75,7 +75,7 @@ void __fastcall CopyImage(const CImageData& Src, const CImageData& Dest, UPTR Fl
 			char* pDestRow = pDest;
 			for (UPTR j = 0; j < CopyBlocksH; ++j)
 			{
-				memcpy(pDestRow, pSrcRow, RowPartSize);
+				std::memcpy(pDestRow, pSrcRow, RowPartSize);
 				pSrcRow += Src.RowPitch;
 				pDestRow += Dest.RowPitch;
 			}

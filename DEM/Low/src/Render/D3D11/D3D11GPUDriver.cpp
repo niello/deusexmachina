@@ -2311,7 +2311,7 @@ PSampler CD3D11GPUDriver::CreateSampler(const CSamplerDesc& Desc)
 	D3DDesc.AddressU = GetD3DTexAddressMode(Desc.AddressU);
 	D3DDesc.AddressV = GetD3DTexAddressMode(Desc.AddressV);
 	D3DDesc.AddressW = GetD3DTexAddressMode(Desc.AddressW);
-	memcpy(D3DDesc.BorderColor, Desc.BorderColorRGBA, sizeof(D3DDesc.BorderColor));
+	std::memcpy(D3DDesc.BorderColor, Desc.BorderColorRGBA, sizeof(D3DDesc.BorderColor));
 	D3DDesc.ComparisonFunc = GetD3DCmpFunc(Desc.CmpFunc);
 	D3DDesc.Filter = GetD3DTexFilter(Desc.Filter, (Desc.CmpFunc != Cmp_Never));
 	D3DDesc.MaxAnisotropy = std::clamp<unsigned int>(Desc.MaxAnisotropy, 1, 16);
@@ -3096,7 +3096,7 @@ bool CD3D11GPUDriver::ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_U
 		FAIL;
 	}
 
-	memcpy(pDest, (char*)D3DData.pData + Offset, SizeToCopy);
+	std::memcpy(pDest, (char*)D3DData.pData + Offset, SizeToCopy);
 
 	pD3DImmContext->Unmap(pBufToMap, 0);
 	if (IsNonMappable) pBufToMap->Release(); // Or return it to the ring buffer
@@ -3297,7 +3297,7 @@ bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, UP
 		const D3D11_MAP MapType = (Usage == D3D11_USAGE_DYNAMIC) ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE;
 		D3D11_MAPPED_SUBRESOURCE D3DData;
 		if (FAILED(pD3DImmContext->Map(pBuf, 0, MapType, 0, &D3DData))) FAIL;
-		memcpy(((char*)D3DData.pData) + Offset, pData, SizeToCopy);
+		std::memcpy(((char*)D3DData.pData) + Offset, pData, SizeToCopy);
 		pD3DImmContext->Unmap(pBuf, 0);
 	}
 
@@ -3434,7 +3434,7 @@ bool CD3D11GPUDriver::WriteToResource(CConstantBuffer& Resource, const void* pDa
 		if (CB11.GetMappedVRAM()) FAIL; // Buffer is already mapped, can't write with a commit
 		D3D11_MAPPED_SUBRESOURCE MappedSubRsrc;
 		if (FAILED(pD3DImmContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedSubRsrc))) FAIL;
-		memcpy(MappedSubRsrc.pData, pData, CB11.GetSizeInBytes());
+		std::memcpy(MappedSubRsrc.pData, pData, CB11.GetSizeInBytes());
 		pD3DImmContext->Unmap(pBuffer, 0);
 	}
 	else FAIL;
@@ -3501,7 +3501,7 @@ bool CD3D11GPUDriver::CommitShaderConstants(CConstantBuffer& Buffer)
 		{
 			D3D11_MAPPED_SUBRESOURCE MappedSubRsrc;
 			if (FAILED(pD3DImmContext->Map(pBuffer, 0, (D3DUsage == D3D11_USAGE_DYNAMIC) ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE, 0, &MappedSubRsrc))) FAIL;
-			memcpy(MappedSubRsrc.pData, CB11.GetRAMCopy(), CB11.GetSizeInBytes());
+			std::memcpy(MappedSubRsrc.pData, CB11.GetRAMCopy(), CB11.GetSizeInBytes());
 			pD3DImmContext->Unmap(pBuffer, 0);
 		}
 		else FAIL;

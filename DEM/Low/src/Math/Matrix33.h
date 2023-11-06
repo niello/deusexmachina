@@ -138,7 +138,7 @@ vector3 operator * (const matrix33& m, const vector3& v)
 inline
 matrix33::matrix33()
 {
-    memcpy(m, _matrix33_ident, sizeof(_matrix33_ident));
+	std::memcpy(m, _matrix33_ident, sizeof(_matrix33_ident));
 }
 
 //------------------------------------------------------------------------------
@@ -158,7 +158,7 @@ matrix33::matrix33(const vector3& v0, const vector3& v1, const vector3& v2)
 inline
 matrix33::matrix33(const matrix33& m1)
 {
-    memcpy(m, m1.m, 9 * sizeof(float));
+	std::memcpy(m, m1.m, 9 * sizeof(float));
 }
 
 //------------------------------------------------------------------------------
@@ -389,7 +389,7 @@ inline
 void
 matrix33::set(const matrix33& m1)
 {
-    memcpy(m, &(m1.m), 9*sizeof(float));
+	std::memcpy(m, &(m1.m), 9*sizeof(float));
 }
 
 //------------------------------------------------------------------------------
@@ -399,7 +399,7 @@ inline
 void
 matrix33::ident()
 {
-    memcpy(m, _matrix33_ident, sizeof(_matrix33_ident));
+	std::memcpy(m, _matrix33_ident, sizeof(_matrix33_ident));
 }
 
 //------------------------------------------------------------------------------

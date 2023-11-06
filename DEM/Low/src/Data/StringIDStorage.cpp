@@ -14,7 +14,7 @@ CStringIDStorage::CStringIDStorage():
 	BlockIndex(0),
 	BlockPosition(0)
 {
-	memset(Block, 0, STR_BLOCK_COUNT * sizeof(const char*));
+	std::memset(Block, 0, STR_BLOCK_COUNT * sizeof(const char*));
 }
 //---------------------------------------------------------------------
 
@@ -38,7 +38,7 @@ const char* CStringIDStorage::StoreString(const char* pString)
 	}
 
 	char* pStoredStr = Block[BlockIndex] + BlockPosition;
-	memcpy(pStoredStr, pString, Len);
+	std::memcpy(pStoredStr, pString, Len);
 	BlockPosition += Len;
 
 	return pStoredStr;

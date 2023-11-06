@@ -127,7 +127,7 @@ Core::PObject CMeshGeneratorBox::CreateResource(CStrID UID)
 	};
 	const UPTR VertexDataSize = sizeof(VBData);
 	MeshData->VBData.reset(n_new(Data::CBufferMallocAligned(VertexDataSize, 16)));
-	memcpy(MeshData->VBData->GetPtr(), VBData, VertexDataSize);
+	std::memcpy(MeshData->VBData->GetPtr(), VBData, VertexDataSize);
 
 	constexpr U16 IBDataCCW[36] =
 	{
@@ -149,7 +149,7 @@ Core::PObject CMeshGeneratorBox::CreateResource(CStrID UID)
 	};
 	const UPTR IndexDataSize = sizeof(IBDataCW);
 	MeshData->IBData.reset(n_new(Data::CBufferMallocAligned(IndexDataSize, 16)));
-	memcpy(MeshData->IBData->GetPtr(), _FrontClockWise ? IBDataCW : IBDataCCW, IndexDataSize);
+	std::memcpy(MeshData->IBData->GetPtr(), _FrontClockWise ? IBDataCW : IBDataCCW, IndexDataSize);
 
 	Render::CPrimitiveGroup Group;
 	Group.Topology = Render::Prim_TriList;
@@ -273,11 +273,11 @@ Core::PObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 
 	const UPTR VertexDataSize = Vertices.size() * MeshData->GetVertexSize();
 	MeshData->VBData.reset(n_new(Data::CBufferMallocAligned(VertexDataSize, 16)));
-	memcpy(MeshData->VBData->GetPtr(), Vertices.data(), VertexDataSize);
+	std::memcpy(MeshData->VBData->GetPtr(), Vertices.data(), VertexDataSize);
 
 	const UPTR IndexDataSize = Indices.size() * sizeof(U16);
 	MeshData->IBData.reset(n_new(Data::CBufferMallocAligned(IndexDataSize, 16)));
-	memcpy(MeshData->IBData->GetPtr(), Indices.data(), IndexDataSize);
+	std::memcpy(MeshData->IBData->GetPtr(), Indices.data(), IndexDataSize);
 
 	Render::CPrimitiveGroup Group;
 	Group.Topology = Render::Prim_TriList;
@@ -379,11 +379,11 @@ Core::PObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
 
 	const UPTR VertexDataSize = Vertices.size() * MeshData->GetVertexSize();
 	MeshData->VBData.reset(n_new(Data::CBufferMallocAligned(VertexDataSize, 16)));
-	memcpy(MeshData->VBData->GetPtr(), Vertices.data(), VertexDataSize);
+	std::memcpy(MeshData->VBData->GetPtr(), Vertices.data(), VertexDataSize);
 
 	const UPTR IndexDataSize = Indices.size() * sizeof(U16);
 	MeshData->IBData.reset(n_new(Data::CBufferMallocAligned(IndexDataSize, 16)));
-	memcpy(MeshData->IBData->GetPtr(), Indices.data(), IndexDataSize);
+	std::memcpy(MeshData->IBData->GetPtr(), Indices.data(), IndexDataSize);
 
 	Render::CPrimitiveGroup Group;
 	Group.Topology = Render::Prim_TriList;
@@ -454,11 +454,11 @@ Core::PObject CMeshGeneratorCone::CreateResource(CStrID UID)
 
 	const UPTR VertexDataSize = Vertices.size() * MeshData->GetVertexSize();
 	MeshData->VBData.reset(n_new(Data::CBufferMallocAligned(VertexDataSize, 16)));
-	memcpy(MeshData->VBData->GetPtr(), Vertices.data(), VertexDataSize);
+	std::memcpy(MeshData->VBData->GetPtr(), Vertices.data(), VertexDataSize);
 
 	const UPTR IndexDataSize = Indices.size() * sizeof(U16);
 	MeshData->IBData.reset(n_new(Data::CBufferMallocAligned(IndexDataSize, 16)));
-	memcpy(MeshData->IBData->GetPtr(), Indices.data(), IndexDataSize);
+	std::memcpy(MeshData->IBData->GetPtr(), Indices.data(), IndexDataSize);
 
 	Render::CPrimitiveGroup Group;
 	Group.Topology = Render::Prim_TriList;

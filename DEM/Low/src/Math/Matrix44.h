@@ -34,7 +34,7 @@ public:
 	matrix33	ToMatrix33() const { return matrix33(AxisX(), AxisY(), AxisZ()); }
 
 	void set(const vector4& v0, const vector4& v1, const vector4& v2, const vector4& v3);
-	void set(const matrix44& m1) { memcpy(m, m1.m, sizeof(matrix44)); }
+	void set(const matrix44& m1) { std::memcpy(m, m1.m, sizeof(matrix44)); }
     void set(float _m11, float _m12, float _m13, float _m14,
              float _m21, float _m22, float _m23, float _m24,
              float _m31, float _m32, float _m33, float _m34,

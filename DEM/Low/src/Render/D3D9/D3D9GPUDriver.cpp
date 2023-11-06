@@ -2240,7 +2240,7 @@ PVertexBuffer CD3D9GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, UP
 			return nullptr;
 		}
 
-		memcpy(pDestData, pData, ByteSize);
+		std::memcpy(pDestData, pData, ByteSize);
 
 		if (FAILED(pD3DBuf->Unlock()))
 		{
@@ -2284,7 +2284,7 @@ PIndexBuffer CD3D9GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR IndexC
 			return nullptr;
 		}
 
-		memcpy(pDestData, pData, ByteSize);
+		std::memcpy(pDestData, pData, ByteSize);
 
 		if (FAILED(pD3DBuf->Unlock()))
 		{
@@ -2419,7 +2419,7 @@ PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 					UPTR MipHeight = Desc.Height >> Mip;
 					if (!MipHeight) MipHeight = 1;
 					UPTR DataSize = LockedRect.Pitch * ((MipHeight + BlockSize - 1) / BlockSize);
-					memcpy(LockedRect.pBits, pCurrLevelData, DataSize);
+					std::memcpy(LockedRect.pBits, pCurrLevelData, DataSize);
 					n_verify(SUCCEEDED(pD3DTex->UnlockRect(Mip)));
 					pCurrLevelData += DataSize;
 				}
@@ -2452,7 +2452,7 @@ PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 			D3DLOCKED_BOX LockedBox = { 0 };
 			if (SUCCEEDED(pD3DTex->LockBox(0, &LockedBox, nullptr, D3DLOCK_NOSYSLOCK)))
 			{
-				memcpy(LockedBox.pBits, pData, LockedBox.SlicePitch * Desc.Depth);
+				std::memcpy(LockedBox.pBits, pData, LockedBox.SlicePitch * Desc.Depth);
 				n_verify(SUCCEEDED(pD3DTex->UnlockBox(0)));
 			}
 			else
@@ -2489,7 +2489,7 @@ PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 				if (SUCCEEDED(pD3DTex->LockRect(Face, 0, &LockedRect, nullptr, D3DLOCK_NOSYSLOCK)))
 				{
 					const UPTR DataSize = LockedRect.Pitch * ((Desc.Height + BlockSize - 1) / BlockSize);
-					memcpy(LockedRect.pBits, pCurrFaceData, DataSize);
+					std::memcpy(LockedRect.pBits, pCurrFaceData, DataSize);
 					n_verify(SUCCEEDED(pD3DTex->UnlockRect(Face, 0)));
 					pCurrFaceData += DataSize;
 				}
@@ -2507,7 +2507,7 @@ PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 					if (SUCCEEDED(pD3DTex->LockRect(Face, Mip, &LockedRect, nullptr, D3DLOCK_NOSYSLOCK)))
 					{
 						const UPTR DataSize = LockedRect.Pitch * ((MipHeight + BlockSize - 1) / BlockSize);
-						memcpy(LockedRect.pBits, pCurrFaceData, DataSize);
+						std::memcpy(LockedRect.pBits, pCurrFaceData, DataSize);
 						n_verify(SUCCEEDED(pD3DTex->UnlockRect(Face, Mip)));
 						pCurrFaceData += DataSize;
 					}
@@ -3200,7 +3200,7 @@ bool CD3D9GPUDriver::ReadFromResource(void* pDest, const CVertexBuffer& Resource
 
 	char* pSrc = nullptr;
 	if (FAILED(pBuf->Lock(Offset, SizeToCopy, (void**)&pSrc, D3DLOCK_READONLY))) FAIL;
-	memcpy(pDest, pSrc, SizeToCopy);
+	std::memcpy(pDest, pSrc, SizeToCopy);
 	if (FAILED(pBuf->Unlock())) FAIL;
 
 	OK;
@@ -3221,7 +3221,7 @@ bool CD3D9GPUDriver::ReadFromResource(void* pDest, const CIndexBuffer& Resource,
 
 	char* pSrc = nullptr;
 	if (FAILED(pBuf->Lock(Offset, SizeToCopy, (void**)&pSrc, D3DLOCK_READONLY))) FAIL;
-	memcpy(pDest, pSrc, SizeToCopy);
+	std::memcpy(pDest, pSrc, SizeToCopy);
 	if (FAILED(pBuf->Unlock())) FAIL;
 
 	OK;
@@ -3351,7 +3351,7 @@ bool CD3D9GPUDriver::WriteToResource(CVertexBuffer& Resource, const void* pData,
 	UINT LockFlags = ((VB9.GetD3DUsage() & D3DUSAGE_DYNAMIC) && UpdateWhole) ? D3DLOCK_DISCARD : 0;
 	char* pDest = nullptr;
 	if (FAILED(pBuf->Lock(Offset, SizeToCopy, (void**)&pDest, LockFlags))) FAIL;
-	memcpy(pDest, pData, SizeToCopy);
+	std::memcpy(pDest, pData, SizeToCopy);
 	if (FAILED(pBuf->Unlock())) FAIL;
 
 	OK;
@@ -3377,7 +3377,7 @@ bool CD3D9GPUDriver::WriteToResource(CIndexBuffer& Resource, const void* pData, 
 	UINT LockFlags = ((IB9.GetD3DUsage() & D3DUSAGE_DYNAMIC) && UpdateWhole) ? D3DLOCK_DISCARD : 0;
 	char* pDest = nullptr;
 	if (FAILED(pBuf->Lock(Offset, SizeToCopy, (void**)&pDest, LockFlags))) FAIL;
-	memcpy(pDest, pData, SizeToCopy);
+	std::memcpy(pDest, pData, SizeToCopy);
 	if (FAILED(pBuf->Unlock())) FAIL;
 
 	OK;

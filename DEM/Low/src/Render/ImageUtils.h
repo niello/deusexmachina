@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_IMAGE_UTILS_H__
-#define __DEM_L1_RENDER_IMAGE_UTILS_H__
-
 #include <StdDEM.h>
 
 // API-independent image processing and attribute calculation utility functions
@@ -25,10 +22,10 @@ enum ECopyImageFlags
 
 struct CCopyImageParams
 {
-	UPTR BitsPerPixel;		// For both source and destination formats
-	UPTR Offset[3];		// Destination offset X, Y, Z in pixels
-	UPTR CopySize[3];		// Size to copy X, Y, Z in pixels
-	UPTR TotalSize[2];		// Destination dimensions X, Y (to detect whole slice / whole row copy)
+	UPTR BitsPerPixel; // For both source and destination formats
+	UPTR Offset[3];    // Destination offset X, Y, Z in pixels
+	UPTR CopySize[3];  // Size to copy X, Y, Z in pixels
+	UPTR TotalSize[2]; // Destination dimensions X, Y (to detect whole slice / whole row copy)
 };
 
 // Source and destination formats must match, no conversion occurs //!!!can use custom memcpy substitutes as arg to allow conversion algorithms!
@@ -57,5 +54,3 @@ inline UPTR __fastcall CalcImageSlicePitch(UPTR RowPitch, UPTR Height, bool IsBl
 //---------------------------------------------------------------------
 
 }
-
-#endif

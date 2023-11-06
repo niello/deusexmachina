@@ -115,7 +115,7 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 						return;
 					}
 
-					memcpy(pInstData, ShapeInsts[i].data() + Offset, BatchSize * sizeof(CDDShapeInst));
+					std::memcpy(pInstData, ShapeInsts[i].data() + Offset, BatchSize * sizeof(CDDShapeInst));
 					GPU.UnmapResource(*_ShapeInstanceBuffer);
 
 					for (const auto& Pass : Passes)
@@ -160,7 +160,7 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 					return;
 				}
 
-				memcpy(pInstData, TriVertices.pData + Offset, BatchSize * sizeof(CDDVertex));
+				std::memcpy(pInstData, TriVertices.pData + Offset, BatchSize * sizeof(CDDVertex));
 				GPU.UnmapResource(*_PrimitiveBuffer);
 
 				for (const auto& Pass : Passes)
@@ -202,7 +202,7 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 					return;
 				}
 
-				memcpy(pInstData, LineVertices.pData + Offset, BatchSize * sizeof(CDDVertex));
+				std::memcpy(pInstData, LineVertices.pData + Offset, BatchSize * sizeof(CDDVertex));
 				GPU.UnmapResource(*_PrimitiveBuffer);
 
 				for (const auto& Pass : Passes)
@@ -243,7 +243,7 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 					return;
 				}
 
-				memcpy(pInstData, Points.pData + Offset, BatchSize * sizeof(CDDVertex));
+				std::memcpy(pInstData, Points.pData + Offset, BatchSize * sizeof(CDDVertex));
 				GPU.UnmapResource(*_PrimitiveBuffer);
 
 				for (const auto& Pass : Passes)

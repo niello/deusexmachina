@@ -21,7 +21,7 @@ CBufferMalloc::CBufferMalloc(const CBufferMalloc& Other)
 	: _pData(Other._Size ? n_malloc(Other._Size) : nullptr)
 	, _Size(Other._Size)
 {
-	if (_Size) memcpy(_pData, Other._pData, _Size);
+	if (_Size) std::memcpy(_pData, Other._pData, _Size);
 }
 //---------------------------------------------------------------------
 
@@ -30,7 +30,7 @@ CBufferMalloc& CBufferMalloc::operator =(const CBufferMalloc& Other)
 	if (_pData) n_free(_pData);
 	_Size = Other._Size;
 	_pData = _Size ? n_malloc(_Size) : nullptr;
-	if (_Size) memcpy(_pData, Other._pData, _Size);
+	if (_Size) std::memcpy(_pData, Other._pData, _Size);
 	return *this;
 }
 //---------------------------------------------------------------------

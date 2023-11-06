@@ -76,7 +76,7 @@ typedef Ptr<CD3D11ConstantBuffer> PD3D11ConstantBuffer;
 inline void CD3D11ConstantBuffer::WriteData(UPTR Offset, const void* pData, UPTR Size)
 {
 	n_assert_dbg(Flags.Is(CB11_InWriteMode) && pData && Size && pMapped && (Offset + Size <= SizeInBytes));
-	memcpy(pMapped + Offset, pData, Size);
+	std::memcpy(pMapped + Offset, pData, Size);
 	Flags.Set(CB11_Dirty);
 }
 //---------------------------------------------------------------------
