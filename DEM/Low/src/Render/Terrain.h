@@ -14,24 +14,26 @@ typedef Ptr<class CMaterial> PMaterial;
 typedef Ptr<class CMesh> PMesh;
 typedef Ptr<class CTexture> PTexture;
 
-class CTerrain: public IRenderable
+class CTerrain : public IRenderable
 {
 	FACTORY_CLASS_DECL;
 
 protected:
 
-	// Vertex shader instance data
-	struct alignas(16) CPatchInstance
-	{
-		float ScaleOffset[4];
-		float MorphConsts[2];
-		float _PAD1[2];
-	};
+	inline static constexpr U32 PATCH_MAX_LIGHT_COUNT = 8;
 
-	// Pixel shader instance data
-	//!!!can store as a simple unstructured buffer of indices!
-	//???send light count and light start index in that buffer from vertex to pixel shader through interpolators? or bind CB to PS?
-	//I16 LightIndex[INSTANCE_MAX_LIGHT_COUNT]; // + INSTANCE_PADDING_SIZE];
+	using TMorton = U32;
+	using TCellDim = U16; // Max 15 bits for quadtree which is more than enough for terrain subdivision
+
+	struct alignas(16) CPatch
+	{
+		acl::Vector4_32 ScaleOffset;
+		U32             GPULightIndices[PATCH_MAX_LIGHT_COUNT];
+		U32             LightsVersion = 0;
+		U32             LOD;
+		TMorton         MortonCode;
+		bool            IsQuarterPatch;
+	};
 
 	enum class ENodeStatus
 	{
@@ -48,11 +50,23 @@ protected:
 		vector3	           MainCameraPos;
 	};
 
+	//std::vector<CPatch> _Patches;
+	//CB VSInstanceData
+	//CB PSInstanceData
+
+	// Vertex shader instance data
+	struct alignas(16) CPatchInstance
+	{
+		float ScaleOffset[4];
+		float MorphConsts[2];
+		float _PAD1[2];
+	};
+
 	//!!!???can fill one GPU buffer?! use offset to render first ones, then others.
 	std::vector<CPatchInstance> _Patches;
 	std::vector<CPatchInstance> _QuarterPatches;
 
-	ENodeStatus ProcessTerrainNode(const CNodeProcessingContext& Ctx, U32 X, U32 Z, U32 LOD, U8 ParentClipStatus);
+	ENodeStatus ProcessTerrainNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD, U8 ParentClipStatus);
 
 public:
 

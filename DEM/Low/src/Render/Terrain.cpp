@@ -36,11 +36,11 @@ void CTerrain::UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrus
 }
 //---------------------------------------------------------------------
 
-CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext& Ctx, U32 X, U32 Z, U32 LOD, U8 ParentClipStatus)
+CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD, U8 ParentClipStatus)
 {
 	// Calculate node world space AABB
 	acl::Vector4_32 BoxCenter, BoxExtent;
-	if (!CDLODData->GetNodeAABB(X, Z, LOD, BoxCenter, BoxExtent)) return ENodeStatus::Invisible;
+	if (!CDLODData->GetNodeAABB(x, z, LOD, BoxCenter, BoxExtent)) return ENodeStatus::Invisible;
 	BoxExtent = acl::vector_mul(BoxExtent, Ctx.Scale);
 	BoxCenter = acl::vector_add(BoxCenter, Ctx.Offset);
 
@@ -84,7 +84,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		}
 		else
 		{
-			const auto [HasRightChild, HasBottomChild] = CDLODData->GetChildExistence(X, Z, LOD);
+			const auto [HasRightChild, HasBottomChild] = CDLODData->GetChildExistence(x, z, LOD);
 
 			const U32 NextX = X << 1;
 			const U32 NextZ = Z << 1;
