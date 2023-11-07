@@ -398,7 +398,7 @@ void CGraphicsScene::UpdateLightBounds(HRecord Handle, const CAABB& GlobalBox, a
 
 void CGraphicsScene::RemoveLight(HRecord Handle)
 {
-	// TODO: if TrackObjectLightIntersections, remove from acceleration structure
+	// TODO: if TrackObjectLightIntersections, remove from acceleration structure (light quadtree or such)
 
 	// Erase all intersections from the renderable list of this light
 	auto pIntersection = Handle->second.pObjectLightIntersections;

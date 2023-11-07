@@ -243,8 +243,12 @@ void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Render
 				for (auto UID : ItNode->second.LightUIDs)
 				{
 					//???better to store lights and get GPUIndex before rendering because it can change? Or it can't? If change, can _renderer_ update indices by tracking version?
-					CurrPatch.GPULightIndices[LightCount] = View.GetLight(UID)->GPUIndex;
-					if (++LightCount >= Render::CTerrain::MAX_LIGHTS_PER_PATCH) break;
+					auto pLight = View.GetLight(UID);
+					if (pLight && pLight->GPUIndex != INVALID_INDEX_T<U32>)
+					{
+						CurrPatch.GPULightIndices[LightCount] = pLight->GPUIndex;
+						if (++LightCount >= Render::CTerrain::MAX_LIGHTS_PER_PATCH) break;
+					}
 				}
 				CurrPatch.LightsVersion = ItNode->second.Version;
 			}

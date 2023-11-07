@@ -386,8 +386,6 @@ void CView::SynchronizeLights()
 	{
 		if (ItSceneObject == _pScene->GetLights().cend())
 		{
-			// TODO: erase this light from hardware constant buffer and from all objects' light lists!
-
 			// An attribute was removed from a scene, remove its associated GPU light instance
 			// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one
 			ItViewObject->second.reset();
@@ -405,14 +403,14 @@ void CView::SynchronizeLights()
 			//doing this in order, we can keep an iterator and avoid logarithmic searches for each change!
 			if (_LightNodePool.empty())
 			{
-				ItViewObject = _Lights.emplace_hint(_Lights.cend(), UID, pAttr->CreateLight());
+				_Lights.emplace_hint(_Lights.cend(), UID, pAttr->CreateLight());
 			}
 			else
 			{
 				auto& Node = _LightNodePool.back();
 				Node.key() = UID;
 				Node.mapped() = pAttr->CreateLight();
-				ItViewObject = _Lights.insert(_Lights.cend(), std::move(Node));
+				_Lights.insert(_Lights.cend(), std::move(Node));
 				_LightNodePool.pop_back();
 			}
 		}
@@ -530,7 +528,7 @@ void CView::UpdateLights(bool ViewProjChanged)
 		const CGraphicsScene::CSpatialRecord& Record = ItSceneObject->second;
 		Render::CLight* pLight = ItViewObject->second.get();
 		auto pAttr = static_cast<CLightAttribute*>(Record.pAttr);
-		const bool WasVisible = pLight->IsVisible;
+		const bool WasVisible = pLight->IsVisible; // NB: new light views are created with 'false'
 
 		float DistanceToCamera = 0.f;
 		if (!Record.BoundsVersion)
@@ -584,7 +582,10 @@ void CView::UpdateLights(bool ViewProjChanged)
 		if (TrackObjectLightIntersections) _pScene->UpdateObjectLightIntersections(*pAttr);
 	}
 
-	// Update lights on GPU
+	// Update lights on GPU.
+	// NB: it is not triggered by removing lights. Should reconsider whether it is desired.
+	// And if it is desired, maybe then don't re-upload lights when become invisible, only when some light became visible?!
+	// TODO: upload only lights with intersections? Otherwise it lights nothing! Set IsVisible = false to them?
 	if (VisibleLightsChanged)
 	{
 		// Upload all lights data from scratch
@@ -597,15 +598,19 @@ void CView::UpdateLights(bool ViewProjChanged)
 		//upload of buffers will be possible, because detecting changes requires memcpy + memcmp which costs +- same as SetRawConstant.
 		for (const auto& [UID, Light] : _Lights)
 		{
-			if (Light->IsVisible && Light->GPUIndex != INVALID_INDEX_T<U32>)
+			if (Light->IsVisible && Light->GPUIndex != INVALID_INDEX_T<U32>) // TODO: and if light has intersections? Otherwise it lights nothing! Set IsVisible = false to them?
 			{
 				if (!Light->BoundsVersion)
 				{
-					// update directional light
+					if (Light->GPUData.Type != Render::ELightType::IBL)
+					{
+						// update directional light
+						NOT_IMPLEMENTED;
+					}
 				}
 				else
 				{
-					_Globals.SetRawConstant(_RenderPath->ConstLightBuffer[Light->GPUIndex], &Light->GPUData, sizeof(Light->GPUData));
+					_Globals.SetRawConstant(_RenderPath->ConstLightBuffer[Light->GPUIndex], Light->GPUData);
 				}
 			}
 		}
@@ -661,7 +666,7 @@ void CView::UploadLightsToGPU()
 		else if (LocalLightCount < MaxLocalLights)
 		{
 			// Upload light to GPU and remember its index in the buffer
-			_Globals.SetRawConstant(_RenderPath->ConstLightBuffer[LocalLightCount], &Light->GPUData, sizeof(Light->GPUData));
+			_Globals.SetRawConstant(_RenderPath->ConstLightBuffer[LocalLightCount], Light->GPUData);
 			Light->GPUIndex = LocalLightCount++;
 		}
 	}
