@@ -2,6 +2,7 @@
 #include <Math/Matrix44.h>
 #include <System/System.h> //!!!DBG TMP! for tmp assertions, check if can be removed!
 #include <acl/math/vector4_32.h>
+#include <acl/math/quat_32.h>
 
 // Math for view and projection calculations
 
@@ -221,6 +222,24 @@ DEM_FORCE_INLINE U8 ClipAABB(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 
 	// If intersecting, check if the box is completely inside the sphere (it is if its farthest point is)
 	const float SqMaxDistToCenter = SqMaxDistancePointAABBMinMax(Sphere, BoxMin, BoxMax);
 	return (SqMaxDistToCenter > SphereRadius * SphereRadius) ? ClipIntersect : ClipInside;
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE acl::Vector4_32 ToSIMD(const vector3& v) noexcept
+{
+	return acl::vector_set(v.x, v.y, v.z);
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE acl::Vector4_32 ToSIMD(const vector4& v) noexcept
+{
+	return acl::vector_set(v.x, v.y, v.z, v.w);
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE acl::Quat_32 ToSIMD(const quaternion& q) noexcept
+{
+	return acl::quat_set(q.x, q.y, q.z, q.w);
 }
 //---------------------------------------------------------------------
 

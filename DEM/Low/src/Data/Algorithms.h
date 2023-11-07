@@ -104,8 +104,11 @@ inline void SortedDifference(const TCollection& a, const TCollection& b, TCallba
 }
 //---------------------------------------------------------------------
 
+HAS_METHOD_WITH_SIGNATURE_TRAIT(value_comp);
+
 // Calls a Callback with iterators to elements from 'a' and 'b'. When elements with the same key
-// exist in both sets, the callback is invoked for them once with both elements valid.
+// exist in both sets, the callback is invoked for them once with both elements valid. Otherwise
+// at least one of iterators is valid. This works similar to SQL "outer join".
 template<typename TCollectionA, typename TCollectionB, typename TLess, typename TCallback>
 DEM_FORCE_INLINE void SortedUnion(TCollectionA&& a, TCollectionB&& b, TLess Less, TCallback Callback)
 {
@@ -154,17 +157,123 @@ DEM_FORCE_INLINE void SortedUnion(TCollectionA&& a, TCollectionB&& b, TLess Less
 }
 //---------------------------------------------------------------------
 
-HAS_METHOD_WITH_SIGNATURE_TRAIT(value_comp);
-
-// Calls a Callback with iterators to elements from 'a' and 'b'. When elements with the same key
-// exist in both sets, the callback is invoked for them once with both elements valid.
 template<typename TCollection, typename TCallback>
-inline void SortedUnion(const TCollection& a, const TCollection& b, TCallback Callback)
+DEM_FORCE_INLINE void SortedUnion(const TCollection& a, const TCollection& b, TCallback Callback)
 {
 	if constexpr (has_method_with_signature_value_comp_v<TCollection, void()>)
 		SortedUnion(a, b, a.value_comp(), std::forward<TCallback>(Callback));
 	else
 		SortedUnion(a, b, std::less<typename TCollection::value_type>{}, std::forward<TCallback>(Callback));
+}
+//---------------------------------------------------------------------
+
+// Calls a Callback with iterators to elements from 'a' and 'b'. When elements with the same key
+// exist in both sets, the callback is invoked for them once with both elements valid. If element exists
+// only in 'a', the first iterator is valid and the second is not. Otherwise a callback is not called.
+// This works similar to SQL "left join".
+template<typename TCollectionA, typename TCollectionB, typename TLess, typename TCallback>
+DEM_FORCE_INLINE void SortedLeftJoin(TCollectionA&& a, TCollectionB&& b, TLess Less, TCallback Callback)
+{
+	// To make this universal for const and non-const
+	using TIteratorA = decltype(a.begin());
+	using TIteratorB = decltype(b.begin());
+
+	TIteratorA ItCurrA = a.begin();
+	TIteratorB ItCurrB = b.begin();
+	bool IsEndB = (ItCurrB == b.cend());
+	while (ItCurrA != a.cend())
+	{
+		TIteratorA ItA;
+		TIteratorB ItB;
+		if (IsEndB || Less(*ItCurrA, *ItCurrB))
+		{
+			ItA = ItCurrA++;
+			ItB = b.end();
+		}
+		else if (Less(*ItCurrB, *ItCurrA))
+		{
+			++ItCurrB;
+			IsEndB = (ItCurrB == b.cend());
+			continue;
+		}
+		else // equal
+		{
+			ItA = ItCurrA++;
+			ItB = ItCurrB++;
+			IsEndB = (ItCurrB == b.cend());
+		}
+
+		if constexpr (std::is_invocable_r_v<bool, TCallback, TIteratorA, TIteratorB>)
+		{
+			if (!Callback(ItA, ItB)) return;
+		}
+		else if constexpr (std::is_invocable_r_v<void, TCallback, TIteratorA, TIteratorB>)
+		{
+			Callback(ItA, ItB);
+		}
+		else static_assert(false, "Callback must accept iterators to a & b and return void or bool");
+	}
+}
+//---------------------------------------------------------------------
+
+template<typename TCollection, typename TCallback>
+DEM_FORCE_INLINE void SortedLeftJoin(const TCollection& a, const TCollection& b, TCallback Callback)
+{
+	if constexpr (has_method_with_signature_value_comp_v<TCollection, void()>)
+		SortedLeftJoin(a, b, a.value_comp(), std::forward<TCallback>(Callback));
+	else
+		SortedLeftJoin(a, b, std::less<typename TCollection::value_type>{}, std::forward<TCallback>(Callback));
+}
+//---------------------------------------------------------------------
+
+// Calls a Callback with iterators to elements from 'a' and 'b'. When elements with the same key
+// exist in both sets, the callback is invoked for them once with both elements valid. Otherwise
+// a callback is not called. This works similar to SQL "inner join".
+template<typename TCollectionA, typename TCollectionB, typename TLess, typename TCallback>
+DEM_FORCE_INLINE void SortedInnerJoin(TCollectionA&& a, TCollectionB&& b, TLess Less, TCallback Callback)
+{
+	// To make this universal for const and non-const
+	using TIteratorA = decltype(a.begin());
+	using TIteratorB = decltype(b.begin());
+
+	TIteratorA ItCurrA = a.begin();
+	TIteratorB ItCurrB = b.begin();
+	while (ItCurrA != a.cend() && ItCurrB != b.cend())
+	{
+		if (Less(*ItCurrA, *ItCurrB))
+		{
+			++ItCurrA;
+		}
+		else if (Less(*ItCurrB, *ItCurrA))
+		{
+			++ItCurrB;
+		}
+		else // equal
+		{
+			if constexpr (std::is_invocable_r_v<bool, TCallback, TIteratorA, TIteratorB>)
+			{
+				if (!Callback(ItCurrA, ItCurrB)) return;
+			}
+			else if constexpr (std::is_invocable_r_v<void, TCallback, TIteratorA, TIteratorB>)
+			{
+				Callback(ItCurrA, ItCurrB);
+			}
+			else static_assert(false, "Callback must accept iterators to a & b and return void or bool");
+
+			++ItCurrA;
+			++ItCurrB;
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+template<typename TCollection, typename TCallback>
+DEM_FORCE_INLINE void SortedInnerJoin(const TCollection& a, const TCollection& b, TCallback Callback)
+{
+	if constexpr (has_method_with_signature_value_comp_v<TCollection, void()>)
+		SortedInnerJoin(a, b, a.value_comp(), std::forward<TCallback>(Callback));
+	else
+		SortedInnerJoin(a, b, std::less<typename TCollection::value_type>{}, std::forward<TCallback>(Callback));
 }
 //---------------------------------------------------------------------
 

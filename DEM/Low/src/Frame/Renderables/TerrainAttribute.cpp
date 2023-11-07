@@ -315,12 +315,9 @@ void CTerrainAttribute::UpdateLightInQuadTree(CLightInfo& LightInfo)
 	std::vector<TMorton> PrevAffectedNodes;
 	std::swap(PrevAffectedNodes, LightInfo.AffectedNodes);
 
-	const auto Scale = _pNode->GetWorldMatrix().ExtractScale();
-	const auto& Translation = _pNode->GetWorldMatrix().Translation();
-
 	CNodeProcessingContext Ctx;
-	Ctx.Scale = acl::vector_set(Scale.x, Scale.y, Scale.z);
-	Ctx.Offset = acl::vector_set(Translation.x, Translation.y, Translation.z);
+	Ctx.Scale = Math::ToSIMD(_pNode->GetWorldMatrix().ExtractScale());
+	Ctx.Offset = Math::ToSIMD(_pNode->GetWorldMatrix().Translation());
 	Ctx.pLightInfo = &LightInfo;
 
 	UpdateLightInQuadTreeNode(Ctx, 0, 0, _CDLODData->GetLODCount() - 1);
