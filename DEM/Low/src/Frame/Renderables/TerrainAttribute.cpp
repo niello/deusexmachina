@@ -351,7 +351,7 @@ void CTerrainAttribute::UpdateLightInQuadTree(UPTR LightUID, CLightInfo& LightIn
 	std::sort(LightInfo.AffectedNodes.begin(), LightInfo.AffectedNodes.end());
 
 	DEM::Algo::SortedUnion(PrevAffectedNodes, LightInfo.AffectedNodes,
-		[this, &PrevAffectedNodes, &LightInfo](auto ItPrev, auto ItNew)
+		[this, &PrevAffectedNodes, LightUID, &LightInfo](auto ItPrev, auto ItNew)
 	{
 		if (ItPrev == PrevAffectedNodes.cend())
 			StartAffectingNode(*ItNew, LightUID);
