@@ -3,7 +3,7 @@
 #include <Render/CDLODData.h>
 #include <Render/Mesh.h>
 #include <Render/Texture.h>
-#include <Math/Sphere.h>
+#include <Data/Algorithms.h>
 #include <Core/Factory.h>
 
 namespace Render
@@ -15,20 +15,20 @@ CTerrain::~CTerrain() = default;
 
 void CTerrain::UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrustum& ViewFrustum)
 {
-	_Patches.clear();
-	_QuarterPatches.clear();
-
-	const auto Scale = Transform.ExtractScale();
-	const auto& Translation = Transform.Translation();
+	constexpr TMorton RootMortonCode = 1;
 
 	// NB: always must use the main camera for LOD selection, even if another camera (ViewFrustum) is used for intermediate rendering
 	CNodeProcessingContext Ctx;
 	Ctx.ViewFrustum = ViewFrustum;
-	Ctx.Scale = acl::vector_set(Scale.x, Scale.y, Scale.z);
-	Ctx.Offset = acl::vector_set(Translation.x, Translation.y, Translation.z);
+	Ctx.Scale = Math::ToSIMD(Transform.ExtractScale());
+	Ctx.Offset = Math::ToSIMD(Transform.Translation());
 	Ctx.MainCameraPos = MainCameraPos;
 
-	constexpr TMorton RootMortonCode = 1;
+	std::swap(_PrevPatches, _Patches);
+	std::swap(_PrevQuarterPatches, _QuarterPatches);
+	_Patches.clear();
+	_QuarterPatches.clear();
+
 	ProcessTerrainNode(Ctx, 0, 0, CDLODData->GetLODCount() - 1, Math::ClipIntersect, RootMortonCode);
 
 	// We sort by LOD (the shorter is the code, the coarser is LOD), and therefore we almost sort front to back, as LOD depends solely on it
@@ -36,7 +36,29 @@ void CTerrain::UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrus
 	std::sort(_Patches.begin(), _Patches.end(), PatchInstanceCmp);
 	std::sort(_QuarterPatches.begin(), _QuarterPatches.end(), PatchInstanceCmp);
 
-	//!!!TODO: sorted sync with prev vectors, use PatchInstanceCmp instead of less! copy light data if found
+	// Copy cached light data where available. This is much cheaper than constructing from scratch it in CTerrainAttribute::UpdateLightList.
+	// FIXME: can use one collection instead of two? Use bool IsQuarterPatch?! Pushing data to GPU is done record by record anyway!
+	// Can allocate GPU CBs of necessary size and don't loop in a terrain renderer sending fixed chunks.
+	DEM::Algo::SortedInnerJoin(_Patches, _PrevPatches, PatchInstanceCmp, [](auto ItNew, auto ItPrev)
+	{
+		ItNew->LightsVersion = ItPrev->LightsVersion;
+		ItNew->GPULightIndices = ItPrev->GPULightIndices;
+	});
+	DEM::Algo::SortedInnerJoin(_Patches, _PrevQuarterPatches, PatchInstanceCmp, [](auto ItNew, auto ItPrev)
+	{
+		ItNew->LightsVersion = ItPrev->LightsVersion;
+		ItNew->GPULightIndices = ItPrev->GPULightIndices;
+	});
+	DEM::Algo::SortedInnerJoin(_QuarterPatches, _PrevPatches, PatchInstanceCmp, [](auto ItNew, auto ItPrev)
+	{
+		ItNew->LightsVersion = ItPrev->LightsVersion;
+		ItNew->GPULightIndices = ItPrev->GPULightIndices;
+	});
+	DEM::Algo::SortedInnerJoin(_QuarterPatches, _PrevQuarterPatches, PatchInstanceCmp, [](auto ItNew, auto ItPrev)
+	{
+		ItNew->LightsVersion = ItPrev->LightsVersion;
+		ItNew->GPULightIndices = ItPrev->GPULightIndices;
+	});
 }
 //---------------------------------------------------------------------
 

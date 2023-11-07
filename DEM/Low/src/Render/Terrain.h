@@ -3,6 +3,7 @@
 #include <Data/StringID.h>
 #include <Data/Ptr.h>
 #include <Math/CameraMath.h>
+#include <array>
 
 // Terrain represents a CDLOD heightmap-based model. It has special LOD handling
 // and integrated visibility test.
@@ -43,17 +44,20 @@ protected:
 	// Vertex shader instance data
 	struct alignas(16) CPatchInstance
 	{
-		acl::Vector4_32 ScaleOffset;
-		U32             GPULightIndices[PATCH_MAX_LIGHT_COUNT];
-		U32             LightsVersion = 0;
-		U32             LOD;
-		TMorton         MortonCode;
+		acl::Vector4_32                        ScaleOffset;
+		std::array<U32, PATCH_MAX_LIGHT_COUNT> GPULightIndices;
+		U32                                    LightsVersion = 0;
+		U32                                    LOD;
+		TMorton                                MortonCode;
 	};
 
-	//!!!???can fill one GPU buffer?! use offset to render first ones, then others.
 	std::vector<CPatchInstance> _Patches;
 	std::vector<CPatchInstance> _QuarterPatches;
+	std::vector<CPatchInstance> _PrevPatches;        // stored here to avoid per frame allocations
+	std::vector<CPatchInstance> _PrevQuarterPatches; // stored here to avoid per frame allocations
+
 	//CB or CBs
+	//!!!???can fill one GPU buffer?! use offset to render first ones, then others.
 	//???store main info about patches in one buffer, lights in another?!
 	// - will save buffer refreshes when only light data changes
 	// - depth will bind only main data, no lights
