@@ -19,12 +19,23 @@ class CTerrain : public IRenderable
 {
 	FACTORY_CLASS_DECL;
 
-protected:
-
-	inline static constexpr U32 PATCH_MAX_LIGHT_COUNT = 8;
+public:
 
 	using TMorton = U32;
 	using TCellDim = U16; // Max 15 bits for quadtree which is more than enough for terrain subdivision
+
+	struct alignas(16) CPatchInstance
+	{
+		acl::Vector4_32    ScaleOffset;
+		std::array<U32, 8> GPULightIndices;
+		U32                LightsVersion = 0;
+		U32                LOD;
+		TMorton            MortonCode;
+	};
+
+	inline static constexpr U32 MAX_LIGHTS_PER_PATCH = std::tuple_size<decltype(CPatchInstance::GPULightIndices)>();
+
+protected:
 
 	enum class ENodeStatus
 	{
@@ -39,16 +50,6 @@ protected:
 		acl::Vector4_32    Scale;
 		acl::Vector4_32    Offset;
 		vector3	           MainCameraPos;
-	};
-
-	// Vertex shader instance data
-	struct alignas(16) CPatchInstance
-	{
-		acl::Vector4_32                        ScaleOffset;
-		std::array<U32, PATCH_MAX_LIGHT_COUNT> GPULightIndices;
-		U32                                    LightsVersion = 0;
-		U32                                    LOD;
-		TMorton                                MortonCode;
 	};
 
 	std::vector<CPatchInstance> _Patches;
@@ -89,6 +90,7 @@ public:
 	U32                     ShaderTechIndex = INVALID_INDEX_T<U32>;
 	U32                     PatchesTransformVersion = 0;
 	float                   VisibilityRange = 0.f;
+	U16                     MaxLODForDynamicLights = 3;         // LOD 0 can't be disabled on intent. TODO: read from view settings?
 
 	CTerrain();
 	virtual ~CTerrain() override;
@@ -100,6 +102,8 @@ public:
 	CTexture*           GetHeightMap() const { return HeightMap.Get(); }
 	const auto&         GetPatches() const { return _Patches; }
 	const auto&         GetQuarterPatches() const { return _QuarterPatches; }
+	auto&               GetPatches() { return _Patches; }
+	auto&               GetQuarterPatches() { return _QuarterPatches; }
 	CMesh*              GetPatchMesh() const { return PatchMesh.Get(); }
 	CMesh*              GetQuarterPatchMesh() const { return QuarterPatchMesh.Get(); }
 	float               GetInvSplatSizeX() const { return InvSplatSizeX; }

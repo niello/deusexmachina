@@ -30,8 +30,8 @@ protected:
 
 	struct CQuadTreeNode
 	{
-		U32                        Version = 0; // Version of data in this node. Used for eliminating redundant synchronization with renderable views.
-		std::set<CLightAttribute*> Lights; //???or store UIDs?!
+		U32            Version = 0; // Version of data in this node. Used for eliminating redundant synchronization with renderable views.
+		std::set<UPTR> LightUIDs;
 	};
 
 	struct CNodeProcessingContext
@@ -55,9 +55,9 @@ protected:
 	std::map<UPTR, CLightInfo>                 _Lights; // Light UID -> Info
 	std::unordered_map<TMorton, CQuadTreeNode> _Nodes;  // Morton code -> List of lights affecting the node
 
-	void StartAffectingNode(TMorton NodeCode, CLightAttribute* pLightAttr);
-	void StopAffectingNode(TMorton NodeCode, CLightAttribute* pLightAttr);
-	void UpdateLightInQuadTree(CLightInfo& LightInfo);
+	void StartAffectingNode(TMorton NodeCode, UPTR LightUID);
+	void StopAffectingNode(TMorton NodeCode, UPTR LightUID);
+	void UpdateLightInQuadTree(UPTR LightUID, CLightInfo& LightInfo);
 	bool UpdateLightInQuadTreeNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD);
 
 	virtual void OnActivityChanged(bool Active) override;

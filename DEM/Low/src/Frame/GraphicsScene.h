@@ -69,12 +69,12 @@ public:
 		acl::Vector4_32           Sphere;
 		Scene::CNodeAttribute*    pAttr = nullptr;
 		CObjectLightIntersection* pObjectLightIntersections = nullptr;
-		TSceneMorton              NodeMortonCode = 0; // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
+		TSceneMorton              NodeMortonCode = 0;                  // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
 		U32                       NodeIndex = NO_SPATIAL_TREE_NODE;
-		U32                       BoundsVersion = 1;  // 0 for invalid bounds (e.g. infinite)
+		U32                       BoundsVersion = 1;                   // 0 for invalid bounds (e.g. infinite)
 		U32                       IntersectionBoundsVersion = 0;
-		U16                       ObjectLightIntersectionsVersion = 0;
-		U8                        TrackObjectLightIntersections = 0;
+		U16                       ObjectLightIntersectionsVersion = 0; // Source, syncs with IRenderable::ObjectLightIntersectionsVersion
+		U8                        TrackObjectLightIntersections = 0;   // A counter for spawned IRenderables with light tracking enabled
 	};
 
 	using HRecord = std::map<UPTR, CSpatialRecord>::iterator;

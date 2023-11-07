@@ -13,6 +13,7 @@
 #include <Render/Material.h>
 #include <Render/Effect.h>
 #include <Render/Texture.h>
+#include <Render/Light.h>
 #include <Scene/SceneNode.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
@@ -225,13 +226,38 @@ void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Render
 {
 	auto pTerrain = static_cast<Render::CTerrain*>(&Renderable);
 
-	// for each visible patch and quarterpatch
-	//  if its LOD > pTerrain->MaxDynamicallyLitLOD, clear light list of the patch by setting invalid GPU index and continue
-	//  find node in _Nodes by patchs Morton code (sorted sync aka left join or unordered map access or something better?)
-	//  if node not found but patch has lights, clear its lights and set version to zero
-	//  if node version != patch light list version, update lights in a patch from node's light UID list and update version
+	auto FIXME_CODE_DUP = [this, pTerrain, &View](Render::CTerrain::CPatchInstance& CurrPatch)
+	{
+		size_t LightCount = 0;
 
-	//???store lights in a CPatchInstance or write directly to CB?! Always sorted before filling lights, so can write by index! Commit CB after sync.
+		// Views can apply stricter LOD limits on terrain dynamic lighting
+		if (CurrPatch.LOD <= pTerrain->MaxLODForDynamicLights)
+		{
+			auto ItNode = _Nodes.find(CurrPatch.MortonCode);
+			if (ItNode != _Nodes.cend())
+			{
+				// Skip up to date node without touching anything
+				if (CurrPatch.LightsVersion == ItNode->second.Version) return; //continue;
+
+				for (auto UID : ItNode->second.LightUIDs)
+				{
+					//???better to store lights and get GPUIndex before rendering because it can change? Or it can't? If change, can _renderer_ update indices by tracking version?
+					CurrPatch.GPULightIndices[LightCount] = View.GetLight(UID)->GPUIndex;
+					if (++LightCount >= Render::CTerrain::MAX_LIGHTS_PER_PATCH) break;
+				}
+				CurrPatch.LightsVersion = ItNode->second.Version;
+			}
+		}
+
+		// Add terminator
+		if (LightCount < Render::CTerrain::MAX_LIGHTS_PER_PATCH)
+			CurrPatch.GPULightIndices[LightCount] = INVALID_INDEX_T<U32>;
+	};
+
+	for (auto& CurrPatch : pTerrain->GetPatches())
+		FIXME_CODE_DUP(CurrPatch);
+	for (auto& CurrPatch : pTerrain->GetQuarterPatches())
+		FIXME_CODE_DUP(CurrPatch);
 }
 //---------------------------------------------------------------------
 
@@ -255,24 +281,24 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 		{
 			// Erase this light from all previously affected nodes
 			for (TMorton NodeCode : It->second.AffectedNodes)
-				StopAffectingNode(NodeCode, It->second.pLightAttr);
+				StopAffectingNode(NodeCode, It->first);
 
 			It = _Lights.erase(It); //!!!TODO PERF: use shared node pool!
 		}
 		else if ((It == _Lights.cend()) || (pCurrIsect && pCurrIsect->pLightAttr->GetSceneHandle()->first < It->first))
 		{
 			const auto UID = pCurrIsect->pLightAttr->GetSceneHandle()->first;
-			auto& LightInfo = _Lights.emplace_hint(It, UID, CLightInfo{})->second; //!!!TODO PERF: use shared node pool!
-			LightInfo.pLightAttr = pCurrIsect->pLightAttr;
-			UpdateLightInQuadTree(LightInfo);
-			LightInfo.BoundsVersion = pCurrIsect->LightBoundsVersion;
+			auto ItNew = _Lights.emplace_hint(It, UID, CLightInfo{}); //!!!TODO PERF: use shared node pool!
+			ItNew->second.pLightAttr = pCurrIsect->pLightAttr;
+			UpdateLightInQuadTree(ItNew->first, ItNew->second);
+			ItNew->second.BoundsVersion = pCurrIsect->LightBoundsVersion;
 			pCurrIsect = pCurrIsect->pNextLight;
 		}
 		else // equal
 		{
 			if (TerrainMoved || It->second.BoundsVersion != pCurrIsect->LightBoundsVersion)
 			{
-				UpdateLightInQuadTree(It->second);
+				UpdateLightInQuadTree(It->first, It->second);
 				It->second.BoundsVersion = pCurrIsect->LightBoundsVersion;
 			}
 
@@ -283,25 +309,25 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 }
 //---------------------------------------------------------------------
 
-void CTerrainAttribute::StartAffectingNode(TMorton NodeCode, CLightAttribute* pLightAttr)
+void CTerrainAttribute::StartAffectingNode(TMorton NodeCode, UPTR LightUID)
 {
 	auto ItNode = _Nodes.find(NodeCode);
 	if (ItNode == _Nodes.cend())
 		ItNode = _Nodes.emplace().first; //!!!TODO PERF: use shared node pool!
 
-	ItNode->second.Lights.emplace(pLightAttr); //!!!TODO PERF: use shared node pool!
+	ItNode->second.LightUIDs.emplace(LightUID); //!!!TODO PERF: use shared node pool!
 	++ItNode->second.Version;
 }
 //---------------------------------------------------------------------
 
-void CTerrainAttribute::StopAffectingNode(TMorton NodeCode, CLightAttribute* pLightAttr)
+void CTerrainAttribute::StopAffectingNode(TMorton NodeCode, UPTR LightUID)
 {
 	auto ItNode = _Nodes.find(NodeCode);
 	if (ItNode == _Nodes.cend()) return;
 
-	if (ItNode->second.Lights.erase(pLightAttr)) //!!!TODO PERF: use shared node pool!
+	if (ItNode->second.LightUIDs.erase(LightUID)) //!!!TODO PERF: use shared node pool!
 	{
-		if (ItNode->second.Lights.empty())
+		if (ItNode->second.LightUIDs.empty())
 			_Nodes.erase(ItNode); //!!!TODO PERF: use shared node pool!
 		else
 			++ItNode->second.Version;
@@ -309,7 +335,7 @@ void CTerrainAttribute::StopAffectingNode(TMorton NodeCode, CLightAttribute* pLi
 }
 //---------------------------------------------------------------------
 
-void CTerrainAttribute::UpdateLightInQuadTree(CLightInfo& LightInfo)
+void CTerrainAttribute::UpdateLightInQuadTree(UPTR LightUID, CLightInfo& LightInfo)
 {
 	// TODO PERF: could have a pool of these vectors and swap with pool record! Or even have one tmp buffer if only single thread accesses each attr.
 	std::vector<TMorton> PrevAffectedNodes;
@@ -328,9 +354,9 @@ void CTerrainAttribute::UpdateLightInQuadTree(CLightInfo& LightInfo)
 		[this, &PrevAffectedNodes, &LightInfo](auto ItPrev, auto ItNew)
 	{
 		if (ItPrev == PrevAffectedNodes.cend())
-			StartAffectingNode(*ItNew, LightInfo.pLightAttr);
+			StartAffectingNode(*ItNew, LightUID);
 		else if (ItNew == LightInfo.AffectedNodes.cend())
-			StopAffectingNode(*ItPrev, LightInfo.pLightAttr);
+			StopAffectingNode(*ItPrev, LightUID);
 	});
 
 	// TODO: return PrevAffectedNodes to the pool / keep as a tmp buffer!

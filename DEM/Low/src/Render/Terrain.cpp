@@ -39,26 +39,39 @@ void CTerrain::UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrus
 	// Copy cached light data where available. This is much cheaper than constructing from scratch it in CTerrainAttribute::UpdateLightList.
 	// FIXME: can use one collection instead of two? Use bool IsQuarterPatch?! Pushing data to GPU is done record by record anyway!
 	// Can allocate GPU CBs of necessary size and don't loop in a terrain renderer sending fixed chunks.
-	DEM::Algo::SortedInnerJoin(_Patches, _PrevPatches, PatchInstanceCmp, [](auto ItNew, auto ItPrev)
+	//???how to apply premade CBs in a renderer alongside other per invocation shader params?!
+	if (TrackObjectLightIntersections)
 	{
-		ItNew->LightsVersion = ItPrev->LightsVersion;
-		ItNew->GPULightIndices = ItPrev->GPULightIndices;
-	});
-	DEM::Algo::SortedInnerJoin(_Patches, _PrevQuarterPatches, PatchInstanceCmp, [](auto ItNew, auto ItPrev)
-	{
-		ItNew->LightsVersion = ItPrev->LightsVersion;
-		ItNew->GPULightIndices = ItPrev->GPULightIndices;
-	});
-	DEM::Algo::SortedInnerJoin(_QuarterPatches, _PrevPatches, PatchInstanceCmp, [](auto ItNew, auto ItPrev)
-	{
-		ItNew->LightsVersion = ItPrev->LightsVersion;
-		ItNew->GPULightIndices = ItPrev->GPULightIndices;
-	});
-	DEM::Algo::SortedInnerJoin(_QuarterPatches, _PrevQuarterPatches, PatchInstanceCmp, [](auto ItNew, auto ItPrev)
-	{
-		ItNew->LightsVersion = ItPrev->LightsVersion;
-		ItNew->GPULightIndices = ItPrev->GPULightIndices;
-	});
+		size_t MatchCount = 0;
+		DEM::Algo::SortedInnerJoin(_Patches, _PrevPatches, PatchInstanceCmp, [&MatchCount](auto ItNew, auto ItPrev)
+		{
+			ItNew->LightsVersion = ItPrev->LightsVersion;
+			ItNew->GPULightIndices = ItPrev->GPULightIndices;
+			++MatchCount;
+		});
+		DEM::Algo::SortedInnerJoin(_Patches, _PrevQuarterPatches, PatchInstanceCmp, [&MatchCount](auto ItNew, auto ItPrev)
+		{
+			ItNew->LightsVersion = ItPrev->LightsVersion;
+			ItNew->GPULightIndices = ItPrev->GPULightIndices;
+			++MatchCount;
+		});
+		DEM::Algo::SortedInnerJoin(_QuarterPatches, _PrevPatches, PatchInstanceCmp, [&MatchCount](auto ItNew, auto ItPrev)
+		{
+			ItNew->LightsVersion = ItPrev->LightsVersion;
+			ItNew->GPULightIndices = ItPrev->GPULightIndices;
+			++MatchCount;
+		});
+		DEM::Algo::SortedInnerJoin(_QuarterPatches, _PrevQuarterPatches, PatchInstanceCmp, [&MatchCount](auto ItNew, auto ItPrev)
+		{
+			ItNew->LightsVersion = ItPrev->LightsVersion;
+			ItNew->GPULightIndices = ItPrev->GPULightIndices;
+			++MatchCount;
+		});
+
+		// If some of new patches could not copy cached lights from prevoius ones, we must force an update of light data
+		if (MatchCount < _Patches.size() + _QuarterPatches.size())
+			ObjectLightIntersectionsVersion = 0;
+	}
 }
 //---------------------------------------------------------------------
 

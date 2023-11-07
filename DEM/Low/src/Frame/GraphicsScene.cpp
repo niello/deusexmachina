@@ -411,7 +411,10 @@ void CGraphicsScene::RemoveLight(HRecord Handle)
 
 		// Notify the current renderable that its light intersection list have changed
 		if (pIntersection->pRenderableAttr->GetLightTrackingFlags() & CRenderableAttribute::TrackLightContactChanges)
-			++pIntersection->pRenderableAttr->GetSceneHandle()->second.ObjectLightIntersectionsVersion;
+		{
+			auto& RenderableRecord = pIntersection->pRenderableAttr->GetSceneHandle()->second;
+			RenderableRecord.ObjectLightIntersectionsVersion = std::max<U32>(1, RenderableRecord.ObjectLightIntersectionsVersion + 1);
+		}
 
 		auto pNextIntersection = pIntersection->pNextRenderable;
 		_IntersectionPool.Destroy(pIntersection);
@@ -667,7 +670,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 				AttachObjectLightIntersection(pMatchingIntersection, ppLightInsertionSlot, ppRenderableInsertionSlot);
 				ppLightInsertionSlot = &pMatchingIntersection->pNextLight;
 				if (TrackingFlags & CRenderableAttribute::TrackLightContactChanges)
-					++RenderableRecord.ObjectLightIntersectionsVersion;
+					RenderableRecord.ObjectLightIntersectionsVersion = std::max<U32>(1, RenderableRecord.ObjectLightIntersectionsVersion + 1);
 			}
 			else
 			{
@@ -676,7 +679,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 					(pMatchingIntersection->LightBoundsVersion != LightRecord.BoundsVersion ||
 					 pMatchingIntersection->RenderableBoundsVersion != RenderableRecord.BoundsVersion))
 				{
-					++RenderableRecord.ObjectLightIntersectionsVersion;
+					RenderableRecord.ObjectLightIntersectionsVersion = std::max<U32>(1, RenderableRecord.ObjectLightIntersectionsVersion + 1);
 				}
 			}
 
@@ -688,7 +691,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 			DetachObjectLightIntersection(pMatchingIntersection);
 			_IntersectionPool.Destroy(pMatchingIntersection);
 			if (TrackingFlags & CRenderableAttribute::TrackLightContactChanges)
-				++RenderableRecord.ObjectLightIntersectionsVersion;
+				RenderableRecord.ObjectLightIntersectionsVersion = std::max<U32>(1, RenderableRecord.ObjectLightIntersectionsVersion + 1);
 		}
 	}
 }
@@ -765,7 +768,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 				AttachObjectLightIntersection(pMatchingIntersection, ppLightInsertionSlot, ppRenderableInsertionSlot);
 				ppRenderableInsertionSlot = &pMatchingIntersection->pNextRenderable;
 				if (TrackingFlags & CRenderableAttribute::TrackLightContactChanges)
-					++RenderableRecord.ObjectLightIntersectionsVersion;
+					RenderableRecord.ObjectLightIntersectionsVersion = std::max<U32>(1, RenderableRecord.ObjectLightIntersectionsVersion + 1);
 			}
 			else
 			{
@@ -774,7 +777,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 					(pMatchingIntersection->LightBoundsVersion != LightRecord.BoundsVersion ||
 					 pMatchingIntersection->RenderableBoundsVersion != RenderableRecord.BoundsVersion))
 				{
-					++RenderableRecord.ObjectLightIntersectionsVersion;
+					RenderableRecord.ObjectLightIntersectionsVersion = std::max<U32>(1, RenderableRecord.ObjectLightIntersectionsVersion + 1);
 				}
 			}
 
@@ -786,7 +789,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 			DetachObjectLightIntersection(pMatchingIntersection);
 			_IntersectionPool.Destroy(pMatchingIntersection);
 			if (TrackingFlags & CRenderableAttribute::TrackLightContactChanges)
-				++RenderableRecord.ObjectLightIntersectionsVersion;
+				RenderableRecord.ObjectLightIntersectionsVersion = std::max<U32>(1, RenderableRecord.ObjectLightIntersectionsVersion + 1);
 		}
 	}
 }

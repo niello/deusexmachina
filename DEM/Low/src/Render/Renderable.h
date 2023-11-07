@@ -22,20 +22,20 @@ public:
 
 	//???move material here? everything needs a material - texture or customization params. Or not everything?
 
-	//!!!DBG TMP! Check transform version before rewriting, to save unnecessary ops? Also need better representation!
+	//!!!DBG TMP! Check transform version before rewriting, to save unnecessary ops? Also need better representation, e.g. ACL/RTM SIMD!
 	matrix44 Transform;
 
-	float DistanceToCamera = 0.f; // For LOD, distance culling, render queue sorting and custom use
-	float RelScreenRadius = 0.f;  // For LOD and distance culling
-	U32   RenderQueueMask = 0;    // Cached mask for fast access. Calculated from an effect type in a material.
+	float DistanceToCamera = 0.f;                // For LOD, distance culling, render queue sorting and custom use
+	float RelScreenRadius = 0.f;                 // For LOD and distance culling
+	U32   RenderQueueMask = 0;                   // Cached mask for fast access. Calculated from an effect type in a material.
 	U32   BoundsVersion = 0;
-	U16   ObjectLightIntersectionsVersion = 0;
-	U16   GeometryKey = 0;        // For render queue sorting. Optimal as long as primitive groups aren't added to existing meshes in runtime.
-	U16   MaterialKey = 0;        // For render queue sorting
-	U8    ShaderTechKey = 0;      // For render queue sorting //???or obtain from view using ShaderTechIndex?
+	U16   ObjectLightIntersectionsVersion = 0;   // Dest, syncs with CGraphicsScene::CSpatialRecord::ObjectLightIntersectionsVersion
+	U16   GeometryKey = 0;                       // For render queue sorting. Optimal as long as primitive groups aren't added to existing meshes in runtime.
+	U16   MaterialKey = 0;                       // For render queue sorting
+	U8    ShaderTechKey = 0;                     // For render queue sorting //???or obtain from view using ShaderTechIndex?
 	U8    RendererIndex = 0;
 	bool  IsVisible = false;
-	bool  TrackObjectLightIntersections = false;
+	bool  TrackObjectLightIntersections = false; // Don't set this flag manually
 };
 
 }
