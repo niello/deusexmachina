@@ -25,7 +25,7 @@ protected:
 	{
 		CLightAttribute*     pLightAttr = nullptr; //???need light's scene record instead to access bounds? or real shape is enough? or store intersection record? or UID?
 		U32                  BoundsVersion = 0; // Light's last bounds version for which the coverage was calculated
-		std::vector<TMorton> AffectedNodes; //  Sorted. Insertion and removal are not needed, so vector is the best choice.
+		std::vector<TMorton> AffectedNodes;     // Sorted. Insertion and removal are not needed, so vector is the best choice.
 	};
 
 	struct CQuadTreeNode
@@ -57,7 +57,6 @@ protected:
 
 	void StartAffectingNode(TMorton NodeCode, UPTR LightUID);
 	void StopAffectingNode(TMorton NodeCode, UPTR LightUID);
-	void UpdateLightInQuadTree(UPTR LightUID, CLightInfo& LightInfo);
 	bool UpdateLightInQuadTreeNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD);
 
 	virtual void OnActivityChanged(bool Active) override;

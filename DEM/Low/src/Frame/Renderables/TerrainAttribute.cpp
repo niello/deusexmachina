@@ -226,6 +226,7 @@ void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Render
 {
 	auto pTerrain = static_cast<Render::CTerrain*>(&Renderable);
 
+	//!!!FIXME: code duplication can be fixed more gracefully!
 	auto FIXME_CODE_DUP = [this, pTerrain, &View](Render::CTerrain::CPatchInstance& CurrPatch)
 	{
 		size_t LightCount = 0;
@@ -284,27 +285,54 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 				StopAffectingNode(NodeCode, It->first);
 
 			It = _Lights.erase(It); //!!!TODO PERF: use shared node pool!
+			continue;
 		}
-		else if ((It == _Lights.cend()) || (pCurrIsect && pCurrIsect->pLightAttr->GetSceneHandle()->first < It->first))
+
+		const auto LightUID = pCurrIsect->pLightAttr->GetSceneHandle()->first;
+		auto ItToProcess = _Lights.end();
+		if ((It == _Lights.cend()) || LightUID < It->first)
 		{
-			const auto UID = pCurrIsect->pLightAttr->GetSceneHandle()->first;
-			auto ItNew = _Lights.emplace_hint(It, UID, CLightInfo{}); //!!!TODO PERF: use shared node pool!
-			ItNew->second.pLightAttr = pCurrIsect->pLightAttr;
-			UpdateLightInQuadTree(ItNew->first, ItNew->second);
-			ItNew->second.BoundsVersion = pCurrIsect->LightBoundsVersion;
-			pCurrIsect = pCurrIsect->pNextLight;
+			ItToProcess = _Lights.emplace_hint(It, LightUID, CLightInfo{ pCurrIsect->pLightAttr }); //!!!TODO PERF: use shared node pool!
 		}
 		else // equal
 		{
 			if (TerrainMoved || It->second.BoundsVersion != pCurrIsect->LightBoundsVersion)
-			{
-				UpdateLightInQuadTree(It->first, It->second);
-				It->second.BoundsVersion = pCurrIsect->LightBoundsVersion;
-			}
-
+				ItToProcess = It;
 			++It;
-			pCurrIsect = pCurrIsect->pNextLight;
 		}
+
+		// Update coverage info for this light using a quadtree
+		if (ItToProcess != _Lights.cend())
+		{
+			auto& LightInfo = ItToProcess->second;
+			LightInfo.BoundsVersion = pCurrIsect->LightBoundsVersion;
+
+			// TODO PERF: could have a pool of these vectors and swap with pool record! Or even have one tmp buffer if only single thread accesses each attr.
+			std::vector<TMorton> PrevAffectedNodes;
+			std::swap(PrevAffectedNodes, LightInfo.AffectedNodes);
+
+			CNodeProcessingContext Ctx;
+			Ctx.Scale = Math::ToSIMD(_pNode->GetWorldMatrix().ExtractScale());
+			Ctx.Offset = Math::ToSIMD(_pNode->GetWorldMatrix().Translation());
+			Ctx.pLightInfo = &LightInfo;
+
+			UpdateLightInQuadTreeNode(Ctx, 0, 0, _CDLODData->GetLODCount() - 1);
+
+			std::sort(LightInfo.AffectedNodes.begin(), LightInfo.AffectedNodes.end());
+
+			DEM::Algo::SortedUnion(PrevAffectedNodes, LightInfo.AffectedNodes,
+				[this, &PrevAffectedNodes, LightUID, &LightInfo](auto ItPrev, auto ItNew)
+			{
+				if (ItPrev == PrevAffectedNodes.cend())
+					StartAffectingNode(*ItNew, LightUID);
+				else if (ItNew == LightInfo.AffectedNodes.cend())
+					StopAffectingNode(*ItPrev, LightUID);
+			});
+
+			// TODO: return PrevAffectedNodes to the pool / keep as a tmp buffer!
+		}
+
+		pCurrIsect = pCurrIsect->pNextLight;
 	}
 }
 //---------------------------------------------------------------------
@@ -332,34 +360,6 @@ void CTerrainAttribute::StopAffectingNode(TMorton NodeCode, UPTR LightUID)
 		else
 			++ItNode->second.Version;
 	}
-}
-//---------------------------------------------------------------------
-
-void CTerrainAttribute::UpdateLightInQuadTree(UPTR LightUID, CLightInfo& LightInfo)
-{
-	// TODO PERF: could have a pool of these vectors and swap with pool record! Or even have one tmp buffer if only single thread accesses each attr.
-	std::vector<TMorton> PrevAffectedNodes;
-	std::swap(PrevAffectedNodes, LightInfo.AffectedNodes);
-
-	CNodeProcessingContext Ctx;
-	Ctx.Scale = Math::ToSIMD(_pNode->GetWorldMatrix().ExtractScale());
-	Ctx.Offset = Math::ToSIMD(_pNode->GetWorldMatrix().Translation());
-	Ctx.pLightInfo = &LightInfo;
-
-	UpdateLightInQuadTreeNode(Ctx, 0, 0, _CDLODData->GetLODCount() - 1);
-
-	std::sort(LightInfo.AffectedNodes.begin(), LightInfo.AffectedNodes.end());
-
-	DEM::Algo::SortedUnion(PrevAffectedNodes, LightInfo.AffectedNodes,
-		[this, &PrevAffectedNodes, LightUID, &LightInfo](auto ItPrev, auto ItNew)
-	{
-		if (ItPrev == PrevAffectedNodes.cend())
-			StartAffectingNode(*ItNew, LightUID);
-		else if (ItNew == LightInfo.AffectedNodes.cend())
-			StopAffectingNode(*ItPrev, LightUID);
-	});
-
-	// TODO: return PrevAffectedNodes to the pool / keep as a tmp buffer!
 }
 //---------------------------------------------------------------------
 

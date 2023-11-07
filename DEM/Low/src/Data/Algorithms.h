@@ -130,7 +130,7 @@ DEM_FORCE_INLINE void SortedUnion(TCollectionA&& a, TCollectionB&& b, TLess Less
 			ItB = b.end();
 			IsEndA = (ItCurrA == a.cend());
 		}
-		else if (IsEndA || (!IsEndB && Less(*ItCurrB, *ItCurrA)))
+		else if (IsEndA || Less(*ItCurrB, *ItCurrA))
 		{
 			ItA = a.end();
 			ItB = ItCurrB++;
