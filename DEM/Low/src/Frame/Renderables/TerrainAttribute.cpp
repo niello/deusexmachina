@@ -209,10 +209,9 @@ void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Render
 
 				for (auto UID : ItNode->second.LightUIDs)
 				{
-					auto pLight = View.GetLight(UID);
-					if (pLight && pLight->GPUIndex != INVALID_INDEX_T<U32>)
+					if (auto pLight = View.GetLight(UID))
 					{
-						CurrPatch.GPULightIndices[LightCount] = pLight->GPUIndex;
+						CurrPatch.Lights[LightCount] = pLight;
 						if (++LightCount >= Render::CTerrain::MAX_LIGHTS_PER_PATCH) break;
 					}
 				}
@@ -222,7 +221,7 @@ void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Render
 
 		// Add terminator
 		if (LightCount < Render::CTerrain::MAX_LIGHTS_PER_PATCH)
-			CurrPatch.GPULightIndices[LightCount] = INVALID_INDEX_T<U32>;
+			CurrPatch.Lights[LightCount] = nullptr;
 	};
 
 	for (auto& CurrPatch : pTerrain->GetPatches())

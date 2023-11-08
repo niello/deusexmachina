@@ -78,10 +78,9 @@ void CPointLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render:
 		return;
 	}
 
-	auto pLight = static_cast<Render::CAnalyticalLight*>(&Light);
-	pLight->GPUData.Color = vector3(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color)) * _Intensity * 0.01f;
-	pLight->GPUData.Position = _pNode->GetWorldMatrix().Translation();
-	pLight->GPUData.SqInvRange = 1.f / (_Range * _Range);
+	Light.GPUData.Color = vector3(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color)) * _Intensity * 0.01f;
+	Light.GPUData.Position = _pNode->GetWorldMatrix().Translation();
+	Light.GPUData.SqInvRange = 1.f / (_Range * _Range);
 }
 //---------------------------------------------------------------------
 

@@ -41,6 +41,7 @@ public:
 	CGPULightInfo GPUData;
 	U32           GPUIndex = INVALID_INDEX_T<U32>;
 	U32           BoundsVersion = 0;
+	bool          GPUDirty = true;
 	bool          IsVisible = false;
 	bool          TrackObjectLightIntersections = false;
 

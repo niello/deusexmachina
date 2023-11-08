@@ -74,25 +74,25 @@ void CTerrain::UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrus
 		DEM::Algo::SortedInnerJoin(_Patches, _PrevPatches, PatchInstanceCmp, [&MatchCount](auto ItNew, auto ItPrev)
 		{
 			ItNew->LightsVersion = ItPrev->LightsVersion;
-			ItNew->GPULightIndices = ItPrev->GPULightIndices;
+			ItNew->Lights = ItPrev->Lights;
 			++MatchCount;
 		});
 		DEM::Algo::SortedInnerJoin(_Patches, _PrevQuarterPatches, PatchInstanceCmp, [&MatchCount](auto ItNew, auto ItPrev)
 		{
 			ItNew->LightsVersion = ItPrev->LightsVersion;
-			ItNew->GPULightIndices = ItPrev->GPULightIndices;
+			ItNew->Lights = ItPrev->Lights;
 			++MatchCount;
 		});
 		DEM::Algo::SortedInnerJoin(_QuarterPatches, _PrevPatches, PatchInstanceCmp, [&MatchCount](auto ItNew, auto ItPrev)
 		{
 			ItNew->LightsVersion = ItPrev->LightsVersion;
-			ItNew->GPULightIndices = ItPrev->GPULightIndices;
+			ItNew->Lights = ItPrev->Lights;
 			++MatchCount;
 		});
 		DEM::Algo::SortedInnerJoin(_QuarterPatches, _PrevQuarterPatches, PatchInstanceCmp, [&MatchCount](auto ItNew, auto ItPrev)
 		{
 			ItNew->LightsVersion = ItPrev->LightsVersion;
-			ItNew->GPULightIndices = ItPrev->GPULightIndices;
+			ItNew->Lights = ItPrev->Lights;
 			++MatchCount;
 		});
 

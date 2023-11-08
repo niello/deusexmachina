@@ -85,6 +85,8 @@ protected:
 	std::vector<decltype(_Renderables)::node_type> _RenderableNodePool;
 	std::map<UPTR, Render::PLight>                 _Lights;
 	std::vector<decltype(_Lights)::node_type>      _LightNodePool;
+	std::vector<U32>                               _FreeLightGPUIndices;
+	U32                                            _NextUnusedLightGPUIndex = 0;
 
 	std::map<std::pair<const Render::CEffect*, CStrID>, U32> _EffectMap;  // Source effect & input set -> index in a _ShaderTechCache
 	std::vector<std::vector<const Render::CTechnique*>> _ShaderTechCache; // First index is an override index (0 is no override), second is from _EffectMap

@@ -485,7 +485,7 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			}
 		}
 
-		// Setup object-light intersection tracking
+		// Setup and perform object-light intersection tracking
 		// TODO: for pairs of static object and static light might use lightmapping or other optimizations. Exploit physics lib's collision?
 		// TODO: _IsForwardLighting OR shadows / alpha etc, what needs intersections in deferred lighting
 		// TODO: don't search for intersection for unlit materials if not needed for shadow
@@ -518,7 +518,8 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 
 void CView::UpdateLights(bool ViewProjChanged)
 {
-	bool VisibleLightsChanged = false;
+	// Just a buffer for change detection inside a loop
+	Render::CGPULightInfo PrevInfo;
 
 	// Iterate synchronized collections side by side
 	auto ItSceneObject = _pScene->GetLights().cbegin();
@@ -530,7 +531,6 @@ void CView::UpdateLights(bool ViewProjChanged)
 		auto pAttr = static_cast<CLightAttribute*>(Record.pAttr);
 		const bool WasVisible = pLight->IsVisible; // NB: new light views are created with 'false'
 
-		float DistanceToCamera = 0.f;
 		if (!Record.BoundsVersion)
 		{
 			// Lights with invalid bounds are global and therefore always visible
@@ -539,38 +539,44 @@ void CView::UpdateLights(bool ViewProjChanged)
 		}
 		else if (ViewProjChanged || pLight->BoundsVersion != Record.BoundsVersion)
 		{
-			//???TODO: need to test for zero bounds and set invisible to save resources on further processing?!
+			//???TODO: need to test for zero bounds (BoxExtent any of xyz <= 0.f) and set invisible to save resources on further processing?! But how often can expect empty bounds?
 
 			const bool NoTreeNode = (Record.NodeIndex == NO_SPATIAL_TREE_NODE);
-			if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if node has a visible part
-			{
-				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
-				{
-					pLight->IsVisible = Math::HasIntersection(Record.Sphere, _LastViewFrustum);
-				}
-				else pLight->IsVisible = true;
-
-				if (pLight->IsVisible) DistanceToCamera = Math::DistancePointSphere(_EyePos, Record.Sphere);
-			}
-			else pLight->IsVisible = false;
+			if (!NoTreeNode && !_SpatialTreeNodeVisibility[Record.NodeIndex * 2]) // Check if spatial tree node is completely outside a view
+				pLight->IsVisible = false;			
+			else if (Math::DistancePointSphere(_EyePos, Record.Sphere) > pAttr->GetMaxDistance()) // Light sources that are too far away are considered invisible
+				pLight->IsVisible = false;
+			else if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if spatial tree node has an invisible part
+				pLight->IsVisible = Math::HasIntersection(Record.Sphere, _LastViewFrustum);
+			else
+				pLight->IsVisible = true;
 
 			pLight->BoundsVersion = Record.BoundsVersion;
 		}
 
+		// Update light view data and detect changes
 		if (pLight->IsVisible)
 		{
-			// Light sources that are too far away are considered invisible. UpdateLight can also make a light invisible.
-			// TODO: if store distance to camera in the light itself, can check this inside UpdateLight, as with LOD for renderables.
-			//???also use screen size, everything as for renderables?! can be useful for culling lights that affect few pixels!
-			if (DistanceToCamera <= pAttr->GetMaxDistance())
-				pAttr->UpdateLight(*_GraphicsMgr, *pLight);
-			else
-				pLight->IsVisible = false;
+			// TODO PERF: this becomes really useful only with partial CB update capability which comes with D3D 11.1!
+			const bool TrackChanges = WasVisible && pLight->BoundsVersion && !pLight->GPUDirty;
+			if (TrackChanges) std::memcpy(&PrevInfo, &pLight->GPUData, sizeof(PrevInfo));
+
+			pAttr->UpdateLight(*_GraphicsMgr, *pLight);
+
+			if (TrackChanges && pLight->IsVisible && !pLight->GPUDirty && std::memcmp(&PrevInfo, &pLight->GPUData, sizeof(PrevInfo)))
+				pLight->GPUDirty = true;
 		}
 
-		VisibleLightsChanged |= (WasVisible != pLight->IsVisible);
+		// Invisible local lights must free their GPU indices. Global lights can't become invisible.
+		// NB: index freeing is done before UploadLightsToGPU, so all free indices are available for new lights to use.
+		if (!pLight->IsVisible && pLight->GPUIndex != INVALID_INDEX_T<U32>)
+		{
+			// TODO: add support for local IBL (pLight->GPUData.Type == Render::ELightType::IBL)
+			_FreeLightGPUIndices.push_back(pLight->GPUIndex);
+			pLight->GPUIndex = INVALID_INDEX_T<U32>;
+		}
 
-		// Setup object-light intersection tracking
+		// Setup and perform object-light intersection tracking
 		// TODO: for pairs of static object + static light might use lightmapping or other optimizations. Exploit physics lib's collision? Or calc once? Or preprocess offline?
 		// TODO: _IsForwardLighting OR shadows / alpha etc, what needs intersections in deferred lighting
 		const bool TrackObjectLightIntersections = pLight->IsVisible && Record.BoundsVersion && _RenderPath->_IsForwardLighting;
@@ -582,46 +588,15 @@ void CView::UpdateLights(bool ViewProjChanged)
 		if (TrackObjectLightIntersections) _pScene->UpdateObjectLightIntersections(*pAttr);
 	}
 
-	// Update lights on GPU.
-	// NB: it is not triggered by removing lights. Should reconsider whether it is desired.
-	// And if it is desired, maybe then don't re-upload lights when become invisible, only when some light became visible?!
-	// TODO: upload only lights with intersections? Otherwise it lights nothing! Set IsVisible = false to them?
-	if (VisibleLightsChanged)
-	{
-		// Upload all lights data from scratch
-		UploadLightsToGPU();
-	}
-	else
-	{
-		// Update changed light data from CPU to GPU
-		//???!!!TODO PERF: use Light->GPUDirty flag and set it only when actual changes happen? only useful if partial
-		//upload of buffers will be possible, because detecting changes requires memcpy + memcmp which costs +- same as SetRawConstant.
-		for (const auto& [UID, Light] : _Lights)
-		{
-			if (Light->IsVisible && Light->GPUIndex != INVALID_INDEX_T<U32>) // TODO: and if light has intersections? Otherwise it lights nothing! Set IsVisible = false to them?
-			{
-				if (!Light->BoundsVersion)
-				{
-					if (Light->GPUData.Type != Render::ELightType::IBL)
-					{
-						// update directional light
-						NOT_IMPLEMENTED;
-					}
-				}
-				else
-				{
-					_Globals.SetRawConstant(_RenderPath->ConstLightBuffer[Light->GPUIndex], Light->GPUData);
-				}
-			}
-		}
-	}
+	// Update lights on GPU
+	UploadLightsToGPU();
 }
 //---------------------------------------------------------------------
 
 void CView::UploadLightsToGPU()
 {
-	U32 LocalLightCount = 0;
 	U32 MaxLocalLights = 0;
+	Render::CShaderConstantParam LocalLightElm;
 	if (_RenderPath->ConstLightBuffer)
 	{
 		//!!!for a structured buffer, max count may be not applicable! must then use the same value
@@ -631,15 +606,13 @@ void CView::UploadLightsToGPU()
 		MaxLocalLights = _RenderPath->ConstLightBuffer.GetElementCount();
 		n_assert_dbg(MaxLocalLights > 0);
 		n_assert_dbg(_RenderPath->ConstLightBuffer.GetElementStride() == sizeof(Render::CGPULightInfo));
+		LocalLightElm = _RenderPath->ConstLightBuffer[0];
 	}
 
 	_pGlobalAmbientLight = nullptr;
 
 	for (const auto& [UID, Light] : _Lights)
 	{
-		// Mark the light as not uploaded to GPU initially
-		Light->GPUIndex = INVALID_INDEX_T<U32>;
-
 		if (!Light->IsVisible) continue;
 
 		if (Light->GPUData.Type == Render::ELightType::IBL)
@@ -658,16 +631,42 @@ void CView::UploadLightsToGPU()
 		}
 		else if (!Light->BoundsVersion)
 		{
-			// global (dir) lights - to separate GPU structures, choose N most intense/high-priority. set GPUIndex!
-			//!!!TODO: assert that type is Directional!
+			// global (dir) lights - to separate GPU structures, but can still use GPUData field. Choose N most intense/high-priority. set GPUIndex!
+			n_assert_dbg(Light->GPUData.Type == Render::ELightType::Directional);
+
+			// if GPUIndex is empty
+			//   if no global light slots left, prioritize this light with existing ones
+			//   if this light didn't get a slot, skip it
+			//   set GPUIndex from free or acquired slot
+			//   set dirty
+
+			// if dirty, update data on GPU and clear dirty flag
 
 			NOT_IMPLEMENTED;
 		}
-		else if (LocalLightCount < MaxLocalLights)
+		else // analytical local lights
 		{
-			// Upload light to GPU and remember its index in the buffer
-			_Globals.SetRawConstant(_RenderPath->ConstLightBuffer[LocalLightCount], Light->GPUData);
-			Light->GPUIndex = LocalLightCount++;
+			if (Light->GPUIndex == INVALID_INDEX_T<U32>)
+			{
+				if (!_FreeLightGPUIndices.empty())
+				{
+					Light->GPUIndex = _FreeLightGPUIndices.back();
+					_FreeLightGPUIndices.pop_back();
+				}
+				else if (_NextUnusedLightGPUIndex < MaxLocalLights)
+					Light->GPUIndex = _NextUnusedLightGPUIndex++;
+				else
+					continue; // skip this light
+
+				Light->GPUDirty = true;
+			}
+
+			if (Light->GPUDirty)
+			{
+				LocalLightElm.Shift(_RenderPath->ConstLightBuffer, Light->GPUIndex);
+				_Globals.SetRawConstant(LocalLightElm, Light->GPUData);
+				Light->GPUDirty = false;
+			}
 		}
 	}
 }

@@ -14,6 +14,7 @@ typedef Ptr<class CCDLODData> PCDLODData;
 typedef Ptr<class CMaterial> PMaterial;
 typedef Ptr<class CMesh> PMesh;
 typedef Ptr<class CTexture> PTexture;
+class CLight;
 
 class CTerrain : public IRenderable
 {
@@ -24,16 +25,16 @@ public:
 	using TMorton = U32;
 	using TCellDim = U16; // Max 15 bits for quadtree which is more than enough for terrain subdivision
 
-	struct alignas(16) CPatchInstance
+	struct CPatchInstance
 	{
-		acl::Vector4_32    ScaleOffset;
-		std::array<U32, 8> GPULightIndices;
-		U32                LightsVersion = 0;
-		U32                LOD;
-		TMorton            MortonCode;
+		acl::Vector4_32        ScaleOffset;
+		std::array<CLight*, 8> Lights;
+		U32                    LightsVersion = 0;
+		U32                    LOD;
+		TMorton                MortonCode;
 	};
 
-	inline static constexpr U32 MAX_LIGHTS_PER_PATCH = std::tuple_size<decltype(CPatchInstance::GPULightIndices)>();
+	inline static constexpr U32 MAX_LIGHTS_PER_PATCH = std::tuple_size<decltype(CPatchInstance::Lights)>();
 
 protected:
 
