@@ -386,11 +386,18 @@ void CView::SynchronizeLights()
 	{
 		if (ItSceneObject == _pScene->GetLights().cend())
 		{
-			// An attribute was removed from a scene, remove its associated GPU light instance.
+			// An attribute was removed from a scene, remove its associated GPU light instance and free its GPU index.
 			// CGraphicsScene::RemoveLight has already incremented ObjectLightIntersectionsVersion for all renderables
 			// that were affected by this light, so CLight pointers will be cleaned up before renderers could access them.
-			// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one.
+			if (ItViewObject->second->GPUIndex != INVALID_INDEX_T<U32>)
+			{
+				// TODO: support freeing slots after other light types
+				n_assert_dbg(ItViewObject->second->BoundsVersion && ItViewObject->second->GPUData.Type != Render::ELightType::IBL);
+				_FreeLightGPUIndices.push_back(ItViewObject->second->GPUIndex);
+			}
 			ItViewObject->second.reset();
+
+			// NB: erasing from an std::map doesn't affect other iterators, and SortedUnion already cached the next one
 			_LightNodePool.push_back(_Lights.extract(ItViewObject));
 		}
 		else if (ItViewObject == _Lights.cend())

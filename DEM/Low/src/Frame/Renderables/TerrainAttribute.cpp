@@ -300,6 +300,17 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 
 		pCurrIsect = pCurrIsect->pNextLight;
 	}
+
+	// Collect empty nodes for reuse. We don't do this in StopAffectingNode because there is a chance that the same
+	// node will be restored with another light but the version will be the same and view cache will be broken.
+	// TODO PERF: count empty nodes in StartAffectingNode / StopAffectingNode to avoid redundant looping over the whole collection each time?
+	for (auto ItNode = _Nodes.begin(); ItNode != _Nodes.end(); /**/)
+	{
+		if (ItNode->second.LightUIDs.empty())
+			ItNode = _Nodes.erase(ItNode); //!!!TODO PERF: use shared node pool!
+		else
+			++ItNode;
+	}
 }
 //---------------------------------------------------------------------
 
@@ -317,15 +328,8 @@ void CTerrainAttribute::StartAffectingNode(TMorton NodeCode, UPTR LightUID)
 void CTerrainAttribute::StopAffectingNode(TMorton NodeCode, UPTR LightUID)
 {
 	auto ItNode = _Nodes.find(NodeCode);
-	if (ItNode == _Nodes.cend()) return;
-
-	if (ItNode->second.LightUIDs.erase(LightUID)) //!!!TODO PERF: use shared node pool!
-	{
-		if (ItNode->second.LightUIDs.empty())
-			_Nodes.erase(ItNode); //!!!TODO PERF: use shared node pool!
-		else
-			++ItNode->second.Version;
-	}
+	if (ItNode != _Nodes.cend() && ItNode->second.LightUIDs.erase(LightUID)) //!!!TODO PERF: use shared node pool!
+		++ItNode->second.Version;
 }
 //---------------------------------------------------------------------
 
