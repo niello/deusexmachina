@@ -163,7 +163,7 @@ void CModelAttribute::UpdateLightList(CView& View, Render::IRenderable& Renderab
 {
 	auto pModel = static_cast<Render::CModel*>(&Renderable);
 
-	// Sync sorted light list from intersections to renderable. Uses manual specification of DEM::Algo::SortedUnion.
+	// Sync sorted light list from intersections to renderable. Uses manual specialization of DEM::Algo::SortedUnion.
 	auto It = pModel->Lights.begin();
 	auto pCurrIsect = pHead;
 	while ((It != pModel->Lights.cend()) || pCurrIsect)
@@ -176,7 +176,6 @@ void CModelAttribute::UpdateLightList(CView& View, Render::IRenderable& Renderab
 		{
 			const auto UID = pCurrIsect->pLightAttr->GetSceneHandle()->first;
 			pModel->Lights.emplace_hint(It, UID, View.GetLight(UID)); //!!!TODO PERF: use shared node pool, one for all models!
-
 			pCurrIsect = pCurrIsect->pNextLight;
 		}
 		else // equal

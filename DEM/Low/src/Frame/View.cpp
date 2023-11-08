@@ -386,8 +386,10 @@ void CView::SynchronizeLights()
 	{
 		if (ItSceneObject == _pScene->GetLights().cend())
 		{
-			// An attribute was removed from a scene, remove its associated GPU light instance
-			// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one
+			// An attribute was removed from a scene, remove its associated GPU light instance.
+			// CGraphicsScene::RemoveLight has already incremented ObjectLightIntersectionsVersion for all renderables
+			// that were affected by this light, so CLight pointers will be cleaned up before renderers could access them.
+			// NB: erasing a map doesn't affect other iterators, and SortedUnion already cached the next one.
 			ItViewObject->second.reset();
 			_LightNodePool.push_back(_Lights.extract(ItViewObject));
 		}

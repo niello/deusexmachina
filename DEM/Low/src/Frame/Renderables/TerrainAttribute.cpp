@@ -242,7 +242,7 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 	const bool TerrainMoved = (_LightCacheBoundsVersion != Record.BoundsVersion);
 	_LightCacheBoundsVersion = Record.BoundsVersion;
 
-	// Sync sorted light list from intersections to renderable. Uses manual specification of DEM::Algo::SortedUnion.
+	// Sync sorted light list from intersections to renderable. Uses manual specialization of DEM::Algo::SortedUnion.
 	auto It = _Lights.begin();
 	const CObjectLightIntersection* pCurrIsect = Record.pObjectLightIntersections;
 	while ((It != _Lights.cend()) || pCurrIsect)
@@ -307,7 +307,7 @@ void CTerrainAttribute::StartAffectingNode(TMorton NodeCode, UPTR LightUID)
 {
 	auto ItNode = _Nodes.find(NodeCode);
 	if (ItNode == _Nodes.cend())
-		ItNode = _Nodes.emplace().first; //!!!TODO PERF: use shared node pool!
+		ItNode = _Nodes.emplace(NodeCode, CQuadTreeNode{}).first; //!!!TODO PERF: use shared node pool!
 
 	ItNode->second.LightUIDs.emplace(LightUID); //!!!TODO PERF: use shared node pool!
 	++ItNode->second.Version;

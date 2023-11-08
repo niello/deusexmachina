@@ -3,9 +3,20 @@
 #include <Frame/LightAttribute.h> // for casting to CNodeAttribute
 #include <Math/Math.h>
 #include <Math/CameraMath.h>
+#include <Data/CategorizationTraits.h>
 
 namespace Frame
 {
+
+// A helper for incrementing source version. Guarantees that the version will newer be 0,
+// so destination can use 0 as an out of sync state indicator for the forced update triggering.
+// TODO: move to utilities
+template<typename T, typename std::enable_if_t<DEM::Meta::is_unsigned_integer_v<T>, void>* = nullptr>
+DEM_FORCE_INLINE void IncrementVersion(T& Version) noexcept
+{
+	Version = std::max<T>(1, Version + 1);
+}
+//---------------------------------------------------------------------
 
 template<size_t DIMENSIONS, typename T>
 DEM_FORCE_INLINE T GetDepthLevel(T MortonCode) noexcept
@@ -218,7 +229,7 @@ U32 CGraphicsScene::AddSingleObjectToNode(TSceneMorton NodeMortonCode, TSceneMor
 	auto ParentIndex = ExistingNodeIndex;
 	auto FreeIndex = _TreeNodes.first_free_index(ParentIndex);
 	if (FreeIndex != decltype(_TreeNodes)::INVALID_INDEX)
-		_SpatialTreeRebuildVersion = std::max<U32>(1, _SpatialTreeRebuildVersion + 1); // Existing nodes changed
+		IncrementVersion(_SpatialTreeRebuildVersion); // Existing nodes changed
 	while (--MissingNodes)
 	{
 		const auto NextFreeIndex = _TreeNodes.next_free_index(FreeIndex);
@@ -301,7 +312,10 @@ void CGraphicsScene::UpdateObjectBounds(HRecord Handle, acl::Vector4_32Arg0 BoxC
 	Record.BoxCenter = BoxCenter;
 	Record.BoxExtent = BoxExtent;
 	Record.Sphere = GlobalSphere;
-	Record.BoundsVersion = BoundsValid ? std::max<U32>(1, Record.BoundsVersion + 1) : 0;
+	if (BoundsValid)
+		IncrementVersion(Record.BoundsVersion);
+	else
+		Record.BoundsVersion = 0;
 
 	const auto NodeMortonCode = BoundsValid ? CalculateMortonCode(Record.BoxCenter, Record.BoxExtent) : 0;
 	if (Record.NodeMortonCode != NodeMortonCode)
@@ -411,10 +425,7 @@ void CGraphicsScene::RemoveLight(HRecord Handle)
 
 		// Notify the current renderable that its light intersection list have changed
 		if (pIntersection->pRenderableAttr->GetLightTrackingFlags() & CRenderableAttribute::TrackLightContactChanges)
-		{
-			auto& RenderableRecord = pIntersection->pRenderableAttr->GetSceneHandle()->second;
-			RenderableRecord.ObjectLightIntersectionsVersion = std::max<U32>(1, RenderableRecord.ObjectLightIntersectionsVersion + 1);
-		}
+			IncrementVersion(pIntersection->pRenderableAttr->GetSceneHandle()->second.ObjectLightIntersectionsVersion);
 
 		auto pNextIntersection = pIntersection->pNextRenderable;
 		_IntersectionPool.Destroy(pIntersection);
@@ -670,7 +681,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 				AttachObjectLightIntersection(pMatchingIntersection, ppLightInsertionSlot, ppRenderableInsertionSlot);
 				ppLightInsertionSlot = &pMatchingIntersection->pNextLight;
 				if (TrackingFlags & CRenderableAttribute::TrackLightContactChanges)
-					RenderableRecord.ObjectLightIntersectionsVersion = std::max<U32>(1, RenderableRecord.ObjectLightIntersectionsVersion + 1);
+					IncrementVersion(RenderableRecord.ObjectLightIntersectionsVersion);
 			}
 			else
 			{
@@ -679,7 +690,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 					(pMatchingIntersection->LightBoundsVersion != LightRecord.BoundsVersion ||
 					 pMatchingIntersection->RenderableBoundsVersion != RenderableRecord.BoundsVersion))
 				{
-					RenderableRecord.ObjectLightIntersectionsVersion = std::max<U32>(1, RenderableRecord.ObjectLightIntersectionsVersion + 1);
+					IncrementVersion(RenderableRecord.ObjectLightIntersectionsVersion);
 				}
 			}
 
@@ -691,7 +702,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 			DetachObjectLightIntersection(pMatchingIntersection);
 			_IntersectionPool.Destroy(pMatchingIntersection);
 			if (TrackingFlags & CRenderableAttribute::TrackLightContactChanges)
-				RenderableRecord.ObjectLightIntersectionsVersion = std::max<U32>(1, RenderableRecord.ObjectLightIntersectionsVersion + 1);
+				IncrementVersion(RenderableRecord.ObjectLightIntersectionsVersion);
 		}
 	}
 }
@@ -768,7 +779,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 				AttachObjectLightIntersection(pMatchingIntersection, ppLightInsertionSlot, ppRenderableInsertionSlot);
 				ppRenderableInsertionSlot = &pMatchingIntersection->pNextRenderable;
 				if (TrackingFlags & CRenderableAttribute::TrackLightContactChanges)
-					RenderableRecord.ObjectLightIntersectionsVersion = std::max<U32>(1, RenderableRecord.ObjectLightIntersectionsVersion + 1);
+					IncrementVersion(RenderableRecord.ObjectLightIntersectionsVersion);
 			}
 			else
 			{
@@ -777,7 +788,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 					(pMatchingIntersection->LightBoundsVersion != LightRecord.BoundsVersion ||
 					 pMatchingIntersection->RenderableBoundsVersion != RenderableRecord.BoundsVersion))
 				{
-					RenderableRecord.ObjectLightIntersectionsVersion = std::max<U32>(1, RenderableRecord.ObjectLightIntersectionsVersion + 1);
+					IncrementVersion(RenderableRecord.ObjectLightIntersectionsVersion);
 				}
 			}
 
@@ -789,7 +800,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CLightAttribute& LightAttr)
 			DetachObjectLightIntersection(pMatchingIntersection);
 			_IntersectionPool.Destroy(pMatchingIntersection);
 			if (TrackingFlags & CRenderableAttribute::TrackLightContactChanges)
-				RenderableRecord.ObjectLightIntersectionsVersion = std::max<U32>(1, RenderableRecord.ObjectLightIntersectionsVersion + 1);
+				IncrementVersion(RenderableRecord.ObjectLightIntersectionsVersion);
 		}
 	}
 }

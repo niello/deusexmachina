@@ -288,7 +288,17 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			{
 				CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
 				CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
-				PerInstance.SetInt(CurrLightIndices.GetComponent(0), -1);
+				for (U32 i = 0; i < CTerrain::MAX_LIGHTS_PER_PATCH; ++i)
+				{
+					if (!CurrPatch.Lights[i])
+					{
+						PerInstance.SetInt(CurrLightIndices.GetComponent(i), -1);
+						break;
+					}
+
+					if (CurrPatch.Lights[i]->GPUIndex != INVALID_INDEX_T<U32>)
+						PerInstance.SetInt(CurrLightIndices.GetComponent(i), CurrPatch.Lights[i]->GPUIndex);
+				}
 			}
 
 			++InstanceCount;
@@ -305,7 +315,17 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			{
 				CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
 				CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
-				PerInstance.SetInt(CurrLightIndices.GetComponent(0), -1);
+				for (U32 i = 0; i < CTerrain::MAX_LIGHTS_PER_PATCH; ++i)
+				{
+					if (!CurrPatch.Lights[i])
+					{
+						PerInstance.SetInt(CurrLightIndices.GetComponent(i), -1);
+						break;
+					}
+
+					if (CurrPatch.Lights[i]->GPUIndex != INVALID_INDEX_T<U32>)
+						PerInstance.SetInt(CurrLightIndices.GetComponent(i), CurrPatch.Lights[i]->GPUIndex);
+				}
 			}
 
 			++InstanceCount;
