@@ -13,6 +13,34 @@ FACTORY_CLASS_IMPL(Render::CTerrain, 'TERR', Render::IRenderable);
 CTerrain::CTerrain() = default;
 CTerrain::~CTerrain() = default;
 
+void CTerrain::UpdateMorphConstants(float VisibilityRange)
+{
+	// NB: recalculate even if this value didn't change
+	_VisibilityRange = VisibilityRange;
+
+	const U32 LODCount = CDLODData ? CDLODData->GetLODCount() : 0;
+	LODParams.resize(LODCount);
+	LODParams.shrink_to_fit();
+
+	float MorphStart = 0.f;
+	for (U32 LOD = 0; LOD < LODCount; ++LOD)
+	{
+		float LODRange = VisibilityRange / static_cast<float>(1 << (LODCount - 1 - LOD));
+
+		// Hack, see original CDLOD code. LOD 0 range is 0.9 of what is expected.
+		if (!LOD) LODRange *= 0.9f;
+
+		MorphStart = n_lerp(MorphStart, LODRange, MorphStartRatio);
+		const float MorphEnd = n_lerp(LODRange, MorphStart, 0.01f);
+
+		auto& CurrLODParams = LODParams[LOD];
+		CurrLODParams.Range = LODRange;
+		CurrLODParams.Morph2 = 1.0f / (MorphEnd - MorphStart);
+		CurrLODParams.Morph1 = MorphEnd * CurrLODParams.Morph2;
+	}
+}
+//---------------------------------------------------------------------
+
 void CTerrain::UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrustum& ViewFrustum)
 {
 	constexpr TMorton RootMortonCode = 1;

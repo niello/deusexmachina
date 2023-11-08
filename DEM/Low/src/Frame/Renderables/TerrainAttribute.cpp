@@ -176,48 +176,15 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 
 	// Precalculate LOD morphing constants
 	const float VisibilityRange = View.GetCamera()->GetFarPlane();
-	const bool MorphChanged = (DataChanged || pTerrain->VisibilityRange != VisibilityRange);
-	if (MorphChanged)
-	{
-		pTerrain->VisibilityRange = VisibilityRange;
-
-		//???!!!to terrain settings or to renderer settings or to view params!?
-		//!!!clamp to range 0.5f .. 0.95f!
-		constexpr float MorphStartRatio = 0.7f;
-
-		const U32 LODCount = _CDLODData ? _CDLODData->GetLODCount() : 0;
-		pTerrain->LODParams.resize(LODCount);
-		pTerrain->LODParams.shrink_to_fit();
-		if (LODCount)
-		{
-			float MorphStart = 0.f;
-			for (U32 LOD = 0; LOD < LODCount; ++LOD)
-			{
-				float LODRange = VisibilityRange / static_cast<float>(1 << (LODCount - 1 - LOD));
-
-				// Hack, see original CDLOD code. LOD 0 range is 0.9 of what is expected.
-				if (!LOD) LODRange *= 0.9f;
-
-				MorphStart = n_lerp(MorphStart, LODRange, MorphStartRatio);
-				const float MorphEnd = n_lerp(LODRange, MorphStart, 0.01f);
-
-				auto& LODParams = pTerrain->LODParams[LOD];
-				LODParams.Range = LODRange;
-				LODParams.Morph2 = 1.0f / (MorphEnd - MorphStart);
-				LODParams.Morph1 = MorphEnd * LODParams.Morph2;
-			}
-		}
-	}
+	const bool MorphChanged = (DataChanged || pTerrain->GetVisibilityRange() != VisibilityRange);
+	if (MorphChanged) pTerrain->UpdateMorphConstants(VisibilityRange);
 
 	// Update a list of visible patches
 	if (MorphChanged || ViewProjChanged || pTerrain->PatchesTransformVersion != _pNode->GetTransformVersion())
 	{
-		// FIXME: mast pass the main camera position, the one used for final frame presentation, not a view camera pos!
-		pTerrain->PatchesTransformVersion = _pNode->GetTransformVersion();
+		// FIXME: must pass the main camera position, the one used for final frame presentation, not a view camera pos!?
 		pTerrain->UpdatePatches(View.GetCamera()->GetPosition(), View.GetViewFrustum());
-
-		//???how to make sure that UpdateLightList will be called? World state might be unchanged but
-		//patches could be changed due to camera movement. Call sync manually here?
+		pTerrain->PatchesTransformVersion = _pNode->GetTransformVersion();
 	}
 }
 //---------------------------------------------------------------------
@@ -238,11 +205,10 @@ void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Render
 			if (ItNode != _Nodes.cend())
 			{
 				// Skip up to date node without touching anything
-				if (CurrPatch.LightsVersion == ItNode->second.Version) return; //continue;
+				if (CurrPatch.LightsVersion == ItNode->second.Version) return; //!!!continue;
 
 				for (auto UID : ItNode->second.LightUIDs)
 				{
-					//???better to store lights and get GPUIndex before rendering because it can change? Or it can't? If change, can _renderer_ update indices by tracking version?
 					auto pLight = View.GetLight(UID);
 					if (pLight && pLight->GPUIndex != INVALID_INDEX_T<U32>)
 					{
@@ -298,7 +264,7 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 		{
 			ItToProcess = _Lights.emplace_hint(It, LightUID, CLightInfo{ pCurrIsect->pLightAttr }); //!!!TODO PERF: use shared node pool!
 		}
-		else // equal
+		else // equal keys, update existing light
 		{
 			if (TerrainMoved || It->second.BoundsVersion != pCurrIsect->LightBoundsVersion)
 				ItToProcess = It;
@@ -311,9 +277,8 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 			auto& LightInfo = ItToProcess->second;
 			LightInfo.BoundsVersion = pCurrIsect->LightBoundsVersion;
 
-			// TODO PERF: could have a pool of these vectors and swap with pool record! Or even have one tmp buffer if only single thread accesses each attr.
-			std::vector<TMorton> PrevAffectedNodes;
-			std::swap(PrevAffectedNodes, LightInfo.AffectedNodes);
+			_PrevAffectedNodes.clear();
+			std::swap(_PrevAffectedNodes, LightInfo.AffectedNodes);
 
 			CNodeProcessingContext Ctx;
 			Ctx.Scale = Math::ToSIMD(_pNode->GetWorldMatrix().ExtractScale());
@@ -324,16 +289,14 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 
 			std::sort(LightInfo.AffectedNodes.begin(), LightInfo.AffectedNodes.end());
 
-			DEM::Algo::SortedUnion(PrevAffectedNodes, LightInfo.AffectedNodes,
-				[this, &PrevAffectedNodes, LightUID, &LightInfo](auto ItPrev, auto ItNew)
+			DEM::Algo::SortedUnion(_PrevAffectedNodes, LightInfo.AffectedNodes,
+				[this, LightUID, &LightInfo](auto ItPrev, auto ItNew)
 			{
-				if (ItPrev == PrevAffectedNodes.cend())
+				if (ItPrev == _PrevAffectedNodes.cend())
 					StartAffectingNode(*ItNew, LightUID);
 				else if (ItNew == LightInfo.AffectedNodes.cend())
 					StopAffectingNode(*ItPrev, LightUID);
 			});
-
-			// TODO: return PrevAffectedNodes to the pool / keep as a tmp buffer!
 		}
 
 		pCurrIsect = pCurrIsect->pNextLight;

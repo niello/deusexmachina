@@ -66,6 +66,8 @@ protected:
 	// - maybe better layout
 	// - different shaders use it! VS / PS.
 
+	float                       _VisibilityRange = 0.f;
+
 	ENodeStatus ProcessTerrainNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD, U8 ParentClipStatus, TMorton MortonCode);
 
 public:
@@ -89,12 +91,13 @@ public:
 
 	U32                     ShaderTechIndex = INVALID_INDEX_T<U32>;
 	U32                     PatchesTransformVersion = 0;
-	float                   VisibilityRange = 0.f;
+	float                   MorphStartRatio = 0.7f;             // TODO: read from view settings? //!!!clamp to range 0.5f .. 0.95f!
 	U16                     MaxLODForDynamicLights = 3;         // LOD 0 can't be disabled on intent. TODO: read from view settings?
 
 	CTerrain();
 	virtual ~CTerrain() override;
 
+	void UpdateMorphConstants(float VisibilityRange);
 	void UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrustum& ViewFrustum);
 
 	CCDLODData*         GetCDLODData() const { return CDLODData.Get(); }
@@ -108,6 +111,7 @@ public:
 	CMesh*              GetQuarterPatchMesh() const { return QuarterPatchMesh.Get(); }
 	float               GetInvSplatSizeX() const { return InvSplatSizeX; }
 	float               GetInvSplatSizeZ() const { return InvSplatSizeZ; }
+	float               GetVisibilityRange() const { return _VisibilityRange; }
 };
 
 typedef Ptr<CTerrain> PTerrain;

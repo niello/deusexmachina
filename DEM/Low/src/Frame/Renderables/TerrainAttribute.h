@@ -55,6 +55,8 @@ protected:
 	std::map<UPTR, CLightInfo>                 _Lights; // Light UID -> Info
 	std::unordered_map<TMorton, CQuadTreeNode> _Nodes;  // Morton code -> List of lights affecting the node
 
+	std::vector<TMorton>                       _PrevAffectedNodes; // Stored here to avoid per frame allocations
+
 	void StartAffectingNode(TMorton NodeCode, UPTR LightUID);
 	void StopAffectingNode(TMorton NodeCode, UPTR LightUID);
 	bool UpdateLightInQuadTreeNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD);
