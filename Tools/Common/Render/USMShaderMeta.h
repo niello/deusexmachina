@@ -55,7 +55,7 @@ struct CUSMBufferMeta
 
 inline bool operator ==(const CUSMBufferMeta& a, const CUSMBufferMeta& b)
 {
-	return a.Register == b.Register && a.Size == b.Size;
+	return a.Register == b.Register && a.Size == b.Size && a.Name == b.Name;
 }
 
 inline bool operator !=(const CUSMBufferMeta& a, const CUSMBufferMeta& b) { return !(a == b); }
