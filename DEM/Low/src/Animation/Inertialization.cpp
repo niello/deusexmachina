@@ -302,7 +302,9 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 			}
 
 			const auto InvCurrRotation = acl::quat_conjugate(CurrTfm.rotation);
-			const auto Rotation = acl::quat_ensure_positive_w(acl::quat_mul(Prev1Tfm.rotation, InvCurrRotation));
+			// Even an author of the math lib normalizes after quat_mul. There was an issue with vector_acos of value > 1.f below -> nan.
+			// https://github.com/nfrechette/acl/blob/dadbbb3890da7c7c064ff11d212ad79da848fcb4/includes/acl/compression/impl/compact.transform.h#L598
+			const auto Rotation = acl::quat_normalize(acl::quat_ensure_positive_w(acl::quat_mul(Prev1Tfm.rotation, InvCurrRotation)));
 			RotationQuatW0[j] = acl::quat_get_w(Rotation);
 			const bool HasRotation = (RotationQuatW0[j] < 1.f); // Angle = 0 when w = 1
 			if (HasRotation)
