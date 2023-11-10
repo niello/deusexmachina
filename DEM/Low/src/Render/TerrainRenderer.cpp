@@ -181,7 +181,6 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	// Pass tech params to GPU
 
 	CGPUDriver& GPU = *Context.pGPU;
-	UPTR TechLightCount = 0;
 	if (pTech != pCurrTech)
 	{
 		pCurrTech = pTech;
@@ -196,10 +195,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		ResourceHeightMap = ParamTable.GetResource(CStrID("HeightMapVS"));
 
 		if (ConstInstanceDataPS)
-		{
 			ConstLightIndices = ConstInstanceDataPS[0][sidLightIndices];
-			TechLightCount = ConstLightIndices.GetTotalComponentCount();
-		}
 
 		if (auto pVSLinearSampler = ParamTable.GetSampler(CStrID("VSLinearSampler")))
 			pVSLinearSampler->Apply(GPU, HeightMapSampler.Get());
@@ -263,6 +259,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		//!!!implement looping if instance buffer is too small!
 		n_assert_dbg(MaxInstanceCountConst >= (Terrain.GetPatches().size() + Terrain.GetQuarterPatches().size()));
 
+		const auto TechLightCount = ConstLightIndices.GetTotalComponentCount();
 		const bool UploadLightInfo = ConstInstanceDataPS && TechLightCount;
 		U32 AvailableLightCount = (LightCount == 0) ? TechLightCount : std::min(LightCount, TechLightCount);
 		if (AvailableLightCount > INSTANCE_MAX_LIGHT_COUNT) AvailableLightCount = INSTANCE_MAX_LIGHT_COUNT;
