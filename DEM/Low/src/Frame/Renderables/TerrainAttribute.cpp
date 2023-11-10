@@ -16,6 +16,7 @@
 #include <Render/Light.h>
 #include <Scene/SceneNode.h>
 #include <IO/BinaryReader.h>
+#include <Util/Utils.h>
 #include <Core/Factory.h>
 
 namespace Frame
@@ -217,6 +218,10 @@ void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Render
 				}
 				CurrPatch.LightsVersion = ItNode->second.Version;
 			}
+			else
+			{
+				CurrPatch.LightsVersion = 0;
+			}
 		}
 
 		// Add terminator
@@ -321,7 +326,7 @@ void CTerrainAttribute::StartAffectingNode(TMorton NodeCode, UPTR LightUID)
 		ItNode = _Nodes.emplace(NodeCode, CQuadTreeNode{}).first; //!!!TODO PERF: use shared node pool!
 
 	ItNode->second.LightUIDs.emplace(LightUID); //!!!TODO PERF: use shared node pool!
-	++ItNode->second.Version;
+	IncrementVersion(ItNode->second.Version);
 }
 //---------------------------------------------------------------------
 
@@ -329,7 +334,7 @@ void CTerrainAttribute::StopAffectingNode(TMorton NodeCode, UPTR LightUID)
 {
 	auto ItNode = _Nodes.find(NodeCode);
 	if (ItNode != _Nodes.cend() && ItNode->second.LightUIDs.erase(LightUID)) //!!!TODO PERF: use shared node pool!
-		++ItNode->second.Version;
+		IncrementVersion(ItNode->second.Version);
 }
 //---------------------------------------------------------------------
 

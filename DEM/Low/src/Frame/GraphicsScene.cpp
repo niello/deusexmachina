@@ -3,20 +3,10 @@
 #include <Frame/LightAttribute.h> // for casting to CNodeAttribute
 #include <Math/Math.h>
 #include <Math/CameraMath.h>
-#include <Data/CategorizationTraits.h>
+#include <Util/Utils.h>
 
 namespace Frame
 {
-
-// A helper for incrementing source version. Guarantees that the version will newer be 0,
-// so destination can use 0 as an out of sync state indicator for the forced update triggering.
-// TODO: move to utilities
-template<typename T, typename std::enable_if_t<DEM::Meta::is_unsigned_integer_v<T>, void>* = nullptr>
-DEM_FORCE_INLINE void IncrementVersion(T& Version) noexcept
-{
-	Version = std::max<T>(1, Version + 1);
-}
-//---------------------------------------------------------------------
 
 template<size_t DIMENSIONS, typename T>
 DEM_FORCE_INLINE T GetDepthLevel(T MortonCode) noexcept
