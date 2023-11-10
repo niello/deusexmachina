@@ -7,8 +7,6 @@
 #include <Render/Material.h>
 #include <Render/Effect.h>
 #include <Render/Sampler.h>
-#include <Math/Sphere.h>
-#include <Data/Params.h>
 #include <Core/Factory.h>
 
 namespace Render
@@ -16,12 +14,7 @@ namespace Render
 FACTORY_CLASS_IMPL(Render::CTerrainRenderer, 'TRNR', Render::IRenderer);
 
 CTerrainRenderer::CTerrainRenderer() = default;
-
-CTerrainRenderer::~CTerrainRenderer()
-{
-	if (pInstances) n_free_aligned(pInstances);
-}
-//---------------------------------------------------------------------
+CTerrainRenderer::~CTerrainRenderer() = default;
 
 bool CTerrainRenderer::Init(const Data::CParams& Params, CGPUDriver& GPU)
 {
@@ -32,96 +25,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Params, CGPUDriver& GPU)
 	HMSamplerDesc.Filter = TexFilter_MinMag_Linear_Mip_Point;
 	HeightMapSampler = GPU.CreateSampler(HMSamplerDesc);
 
-	MaxInstanceCount = std::max(0, Params.Get<int>(CStrID("InstanceVBSize"), 512));
-
-	//!!!PERF: for D3D11 const instancing can create CB without a RAM copy and update whole!
-	pInstances = (CPatchInstance*)n_malloc_aligned(sizeof(CPatchInstance) * MaxInstanceCount, 16);
-
 	OK;
-}
-//---------------------------------------------------------------------
-
-bool CTerrainRenderer::CheckNodeSphereIntersection(const CLightTestArgs& Args, const sphere& Sphere, U32 X, U32 Z, U32 LOD, UPTR& AABBTestCounter)
-{
-	I16 MinY, MaxY;
-	Args.pCDLOD->GetMinMaxHeight(X, Z, LOD, MinY, MaxY);
-
-	// Node has no data, can't intersect with it
-	if (MaxY < MinY) FAIL;
-
-	U32 NodeSize = Args.pCDLOD->GetPatchSize() << LOD;
-	float ScaleX = NodeSize * Args.ScaleBase.x;
-	float ScaleZ = NodeSize * Args.ScaleBase.z;
-	float NodeMinX = Args.AABBMinX + X * ScaleX;
-	float NodeMinZ = Args.AABBMinZ + Z * ScaleZ;
-
-	CAABB NodeAABB;
-	NodeAABB.Min.x = NodeMinX;
-	NodeAABB.Min.y = MinY * Args.ScaleBase.y * Args.pCDLOD->GetVerticalScale();
-	NodeAABB.Min.z = NodeMinZ;
-	NodeAABB.Max.x = NodeMinX + ScaleX;
-	NodeAABB.Max.y = MaxY * Args.ScaleBase.y * Args.pCDLOD->GetVerticalScale();
-	NodeAABB.Max.z = NodeMinZ + ScaleZ;
-
-	if (Sphere.GetClipStatus(NodeAABB) == EClipStatus::Outside) FAIL;
-
-	// Leaf node reached
-	if (LOD == 0) OK;
-
-	++AABBTestCounter;
-	if (AABBTestCounter >= LIGHT_INTERSECTION_COARSE_TEST_MAX_AABBS) OK;
-
-	const U32 XNext = X << 1, ZNext = Z << 1, NextLOD = LOD - 1;
-
-	if (CheckNodeSphereIntersection(Args, Sphere, XNext, ZNext, NextLOD, AABBTestCounter)) OK;
-	if (Args.pCDLOD->HasNode(XNext + 1, ZNext, NextLOD) && CheckNodeSphereIntersection(Args, Sphere, XNext + 1, ZNext, NextLOD, AABBTestCounter)) OK;
-	if (Args.pCDLOD->HasNode(XNext, ZNext + 1, NextLOD) && CheckNodeSphereIntersection(Args, Sphere, XNext, ZNext + 1, NextLOD, AABBTestCounter)) OK;
-	if (Args.pCDLOD->HasNode(XNext + 1, ZNext + 1, NextLOD) && CheckNodeSphereIntersection(Args, Sphere, XNext + 1, ZNext + 1, NextLOD, AABBTestCounter)) OK;
-
-	// No child node touches the volume
-	FAIL;
-}
-//---------------------------------------------------------------------
-
-bool CTerrainRenderer::CheckNodeFrustumIntersection(const CLightTestArgs& Args, const matrix44& Frustum, U32 X, U32 Z, U32 LOD, UPTR& AABBTestCounter)
-{
-	I16 MinY, MaxY;
-	Args.pCDLOD->GetMinMaxHeight(X, Z, LOD, MinY, MaxY);
-
-	// Node has no data, can't intersect with it
-	if (MaxY < MinY) FAIL;
-
-	U32 NodeSize = Args.pCDLOD->GetPatchSize() << LOD;
-	float ScaleX = NodeSize * Args.ScaleBase.x;
-	float ScaleZ = NodeSize * Args.ScaleBase.z;
-	float NodeMinX = Args.AABBMinX + X * ScaleX;
-	float NodeMinZ = Args.AABBMinZ + Z * ScaleZ;
-
-	CAABB NodeAABB;
-	NodeAABB.Min.x = NodeMinX;
-	NodeAABB.Min.y = MinY * Args.ScaleBase.y * Args.pCDLOD->GetVerticalScale();
-	NodeAABB.Min.z = NodeMinZ;
-	NodeAABB.Max.x = NodeMinX + ScaleX;
-	NodeAABB.Max.y = MaxY * Args.ScaleBase.y * Args.pCDLOD->GetVerticalScale();
-	NodeAABB.Max.z = NodeMinZ + ScaleZ;
-
-	if (NodeAABB.GetClipStatus(Frustum) == EClipStatus::Outside) FAIL;
-
-	// Leaf node reached
-	if (LOD == 0) OK;
-
-	++AABBTestCounter;
-	if (AABBTestCounter >= LIGHT_INTERSECTION_COARSE_TEST_MAX_AABBS) OK;
-
-	const U32 XNext = X << 1, ZNext = Z << 1, NextLOD = LOD - 1;
-
-	if (CheckNodeFrustumIntersection(Args, Frustum, XNext, ZNext, NextLOD, AABBTestCounter)) OK;
-	if (Args.pCDLOD->HasNode(XNext + 1, ZNext, NextLOD) && CheckNodeFrustumIntersection(Args, Frustum, XNext + 1, ZNext, NextLOD, AABBTestCounter)) OK;
-	if (Args.pCDLOD->HasNode(XNext, ZNext + 1, NextLOD) && CheckNodeFrustumIntersection(Args, Frustum, XNext, ZNext + 1, NextLOD, AABBTestCounter)) OK;
-	if (Args.pCDLOD->HasNode(XNext + 1, ZNext + 1, NextLOD) && CheckNodeFrustumIntersection(Args, Frustum, XNext + 1, ZNext + 1, NextLOD, AABBTestCounter)) OK;
-
-	// No child node touches the volume
-	FAIL;
 }
 //---------------------------------------------------------------------
 
@@ -183,22 +87,24 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	CGPUDriver& GPU = *Context.pGPU;
 	if (pTech != pCurrTech)
 	{
-		pCurrTech = pTech;
-
 		const CShaderParamTable& ParamTable = pTech->GetParamTable();
+
+		ConstInstanceDataVS = ParamTable.GetConstant(CStrID("InstanceDataVS"));
+		if (!ConstInstanceDataVS) return;
 
 		ConstVSCDLODParams = ParamTable.GetConstant(CStrID("VSCDLODParams"));
 		ConstGridConsts = ParamTable.GetConstant(CStrID("GridConsts"));
 		ConstFirstInstanceIndex = ParamTable.GetConstant(CStrID("FirstInstanceIndex"));
-		ConstInstanceDataVS = ParamTable.GetConstant(CStrID("InstanceDataVS"));
-		ConstInstanceDataPS = ParamTable.GetConstant(CStrID("InstanceDataPS"));
 		ResourceHeightMap = ParamTable.GetResource(CStrID("HeightMapVS"));
 
+		ConstInstanceDataPS = ParamTable.GetConstant(CStrID("InstanceDataPS"));
 		if (ConstInstanceDataPS)
 			ConstLightIndices = ConstInstanceDataPS[0][sidLightIndices];
 
 		if (auto pVSLinearSampler = ParamTable.GetSampler(CStrID("VSLinearSampler")))
 			pVSLinearSampler->Apply(GPU, HeightMapSampler.Get());
+
+		pCurrTech = pTech;
 	}
 
 	if (ResourceHeightMap)
@@ -210,7 +116,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 	if (ConstVSCDLODParams)
 	{
-		struct
+		struct alignas(16)
 		{
 			float WorldToHM[4];
 			float TerrainYScale;
@@ -218,7 +124,6 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			float InvSplatSizeX;
 			float InvSplatSizeZ;
 			float TexelSize[2];
-			//float TextureSize[2]; // For manual bilinear filtering in VS
 		} CDLODParams;
 
 		// Fill instance data with patches and quarter-patches to render
@@ -241,102 +146,88 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		CDLODParams.TexelSize[0] = 1.f / (float)CDLOD.GetHeightMapWidth();
 		CDLODParams.TexelSize[1] = 1.f / (float)CDLOD.GetHeightMapHeight();
 
-		PerInstance.SetRawConstant(ConstVSCDLODParams, &CDLODParams, sizeof(CDLODParams));
+		PerInstance.SetRawConstant(ConstVSCDLODParams, CDLODParams);
 	}
 
 	//!!!implement looping if instance buffer is too small!
-	if (ConstInstanceDataVS)
+	UPTR MaxInstanceCountConst = ConstInstanceDataVS.GetElementCount();
+	if (ConstInstanceDataPS)
 	{
-		UPTR MaxInstanceCountConst = ConstInstanceDataVS.GetElementCount();
-		if (ConstInstanceDataPS)
+		const UPTR MaxInstanceCountConstPS = ConstInstanceDataPS.GetElementCount();
+		if (MaxInstanceCountConst < MaxInstanceCountConstPS)
+			MaxInstanceCountConst = MaxInstanceCountConstPS;
+	}
+	n_assert_dbg(MaxInstanceCountConst > 1);
+
+	//!!!implement looping if instance buffer is too small!
+	n_assert_dbg(MaxInstanceCountConst >= (Terrain.GetPatches().size() + Terrain.GetQuarterPatches().size()));
+
+	const auto TechLightCount = std::min(CTerrain::MAX_LIGHTS_PER_PATCH, ConstLightIndices.GetTotalComponentCount());
+	const bool UploadLightInfo = ConstInstanceDataPS && TechLightCount;
+
+	//!!!FIXME: tmp!
+	struct CRec
+	{
+		acl::Vector4_32 ScaleOffset;
+		acl::Vector4_32 MorphConsts;
+	};
+
+	//???PERF: optimize uploading? use paddings to maintain align16?
+	//???PERF: use 2 different CPatchInstance structures for stream and const instancing?
+	UPTR InstanceCount = 0;
+	for (const auto& CurrPatch : Terrain.GetPatches())
+	{
+		// Setup instance patch constants
+		const CRec Rec{ CurrPatch.ScaleOffset, acl::vector_set(Terrain.LODParams[CurrPatch.LOD].Morph1, Terrain.LODParams[CurrPatch.LOD].Morph2, 0.f, 0.f) };
+		PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], Rec);
+
+		// Setup instance lights
+		if (UploadLightInfo)
 		{
-			const UPTR MaxInstanceCountConstPS = ConstInstanceDataPS.GetElementCount();
-			if (MaxInstanceCountConst < MaxInstanceCountConstPS)
-				MaxInstanceCountConst = MaxInstanceCountConstPS;
-		}
-		n_assert_dbg(MaxInstanceCountConst > 1);
-
-		//!!!implement looping if instance buffer is too small!
-		n_assert_dbg(MaxInstanceCountConst >= (Terrain.GetPatches().size() + Terrain.GetQuarterPatches().size()));
-
-		const auto TechLightCount = ConstLightIndices.GetTotalComponentCount();
-		const bool UploadLightInfo = ConstInstanceDataPS && TechLightCount;
-		U32 AvailableLightCount = (LightCount == 0) ? TechLightCount : std::min(LightCount, TechLightCount);
-		if (AvailableLightCount > INSTANCE_MAX_LIGHT_COUNT) AvailableLightCount = INSTANCE_MAX_LIGHT_COUNT;
-
-		//!!!FIXME: tmp!
-		struct CRec
-		{
-			acl::Vector4_32 ScaleOffset;
-			acl::Vector4_32 MorphConsts;
-		};
-
-		//???PERF: optimize uploading? use paddings to maintain align16?
-		//???PERF: use 2 different CPatchInstance structures for stream and const instancing?
-		UPTR InstanceCount = 0;
-		for (const auto& CurrPatch : Terrain.GetPatches())
-		{
-			// Setup instance patch constants
-			const CRec Rec{ CurrPatch.ScaleOffset, acl::vector_set(Terrain.LODParams[CurrPatch.LOD].Morph1, Terrain.LODParams[CurrPatch.LOD].Morph2, 0.f, 0.f) };
-			PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], Rec);
-
-			// Setup instance lights
-			if (UploadLightInfo)
+			CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
+			CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
+			for (U32 i = 0; i < TechLightCount; ++i)
 			{
-				CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
-				CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
-				for (U32 i = 0; i < CTerrain::MAX_LIGHTS_PER_PATCH; ++i)
+				if (!CurrPatch.Lights[i])
 				{
-					if (!CurrPatch.Lights[i])
-					{
-						PerInstance.SetInt(CurrLightIndices.GetComponent(i), -1);
-						break;
-					}
-
-					if (CurrPatch.Lights[i]->GPUIndex != INVALID_INDEX_T<U32>)
-						PerInstance.SetInt(CurrLightIndices.GetComponent(i), CurrPatch.Lights[i]->GPUIndex);
+					PerInstance.SetInt(CurrLightIndices.GetComponent(i), -1);
+					break;
 				}
-			}
 
-			++InstanceCount;
+				if (CurrPatch.Lights[i]->GPUIndex != INVALID_INDEX_T<U32>)
+					PerInstance.SetInt(CurrLightIndices.GetComponent(i), CurrPatch.Lights[i]->GPUIndex);
+			}
 		}
 
-		for (const auto& CurrPatch : Terrain.GetQuarterPatches())
-		{
-			// Setup instance patch constants
-			const CRec Rec{ CurrPatch.ScaleOffset, acl::vector_set(Terrain.LODParams[CurrPatch.LOD].Morph1, Terrain.LODParams[CurrPatch.LOD].Morph2, 0.f, 0.f) };
-			PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], Rec);
-
-			// Setup instance lights
-			if (UploadLightInfo)
-			{
-				CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
-				CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
-				for (U32 i = 0; i < CTerrain::MAX_LIGHTS_PER_PATCH; ++i)
-				{
-					if (!CurrPatch.Lights[i])
-					{
-						PerInstance.SetInt(CurrLightIndices.GetComponent(i), -1);
-						break;
-					}
-
-					if (CurrPatch.Lights[i]->GPUIndex != INVALID_INDEX_T<U32>)
-						PerInstance.SetInt(CurrLightIndices.GetComponent(i), CurrPatch.Lights[i]->GPUIndex);
-				}
-			}
-
-			++InstanceCount;
-		}
+		++InstanceCount;
 	}
 
-	// Set vertex layout
+	for (const auto& CurrPatch : Terrain.GetQuarterPatches())
+	{
+		// Setup instance patch constants
+		const CRec Rec{ CurrPatch.ScaleOffset, acl::vector_set(Terrain.LODParams[CurrPatch.LOD].Morph1, Terrain.LODParams[CurrPatch.LOD].Morph2, 0.f, 0.f) };
+		PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], Rec);
 
-	const CMesh* pMesh = Terrain.GetPatchMesh();
-	n_assert_dbg(pMesh);
-	CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
-	n_assert_dbg(pVB);
+		// Setup instance lights
+		if (UploadLightInfo)
+		{
+			CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
+			CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
+			for (U32 i = 0; i < TechLightCount; ++i)
+			{
+				if (!CurrPatch.Lights[i])
+				{
+					PerInstance.SetInt(CurrLightIndices.GetComponent(i), -1);
+					break;
+				}
 
-	GPU.SetVertexLayout(pVB->GetVertexLayout());
+				if (CurrPatch.Lights[i]->GPUIndex != INVALID_INDEX_T<U32>)
+					PerInstance.SetInt(CurrLightIndices.GetComponent(i), CurrPatch.Lights[i]->GPUIndex);
+			}
+		}
+
+		++InstanceCount;
+	}
 
 	// Render patches //!!!may collect patches of different CTerrains if material is the same and instance buffer is big enough!
 
@@ -347,13 +238,19 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			float GridConsts[2];
 			GridConsts[0] = CDLOD.GetPatchSize() * 0.5f;
 			GridConsts[1] = 1.f / GridConsts[0];
-			PerInstance.SetRawConstant(ConstGridConsts, &GridConsts, sizeof(GridConsts));
+			PerInstance.SetRawConstant(ConstGridConsts, GridConsts);
 		}
 
 		PerInstance.SetUInt(ConstFirstInstanceIndex, 0);
 
 		PerInstance.Apply();
 
+		const CMesh* pMesh = Terrain.GetPatchMesh();
+		n_assert_dbg(pMesh);
+		CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
+		n_assert_dbg(pVB);
+
+		GPU.SetVertexLayout(pVB->GetVertexLayout());
 		GPU.SetVertexBuffer(0, pVB);
 		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 
@@ -372,18 +269,19 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			float GridConsts[2];
 			GridConsts[0] = CDLOD.GetPatchSize() * 0.25f;
 			GridConsts[1] = 1.f / GridConsts[0];
-			PerInstance.SetRawConstant(ConstGridConsts, &GridConsts, sizeof(GridConsts));
+			PerInstance.SetRawConstant(ConstGridConsts, GridConsts);
 		}
 
 		PerInstance.SetUInt(ConstFirstInstanceIndex, Terrain.GetPatches().size());
 
 		PerInstance.Apply();
 
-		pMesh = Terrain.GetQuarterPatchMesh();
+		const CMesh* pMesh = Terrain.GetQuarterPatchMesh();
 		n_assert_dbg(pMesh);
-		pVB = pMesh->GetVertexBuffer().Get();
+		CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
 		n_assert_dbg(pVB);
 
+		GPU.SetVertexLayout(pVB->GetVertexLayout());
 		GPU.SetVertexBuffer(0, pVB);
 		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 
@@ -394,11 +292,6 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			GPU.DrawInstanced(*pGroup, Terrain.GetQuarterPatches().size());
 		}
 	}
-}
-//---------------------------------------------------------------------
-
-void CTerrainRenderer::EndRange(const CRenderContext& Context)
-{
 }
 //---------------------------------------------------------------------
 
