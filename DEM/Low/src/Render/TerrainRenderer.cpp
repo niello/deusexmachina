@@ -122,6 +122,9 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			float TerrainYOffset;
 			float InvSplatSizeX;
 			float InvSplatSizeZ;
+			std::array<float, 4> SplatMapUVCoeffs;
+			float WorldMaxX;
+			float WorldMaxZ;
 		} CDLODParams;
 
 		// Fill instance data with patches and quarter-patches to render
@@ -143,6 +146,9 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		CDLODParams.TerrainYOffset = -32767.f * ScaleY + Terrain.Transform.Translation().y;
 		CDLODParams.InvSplatSizeX = Terrain.GetInvSplatSizeX();
 		CDLODParams.InvSplatSizeZ = Terrain.GetInvSplatSizeZ();
+		CDLODParams.SplatMapUVCoeffs = CDLOD.GetSplatMapUVCoeffs();
+		CDLODParams.WorldMaxX = AABB.Max.x;
+		CDLODParams.WorldMaxZ = AABB.Max.z;
 
 		PerInstance.SetRawConstant(ConstVSCDLODParams, CDLODParams);
 	}

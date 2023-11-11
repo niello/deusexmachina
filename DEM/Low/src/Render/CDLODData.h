@@ -62,6 +62,7 @@ public:
 	U32					  GetPatchSize() const { return PatchSize; }
 	U32					  GetLODCount() const { return LODCount; }
 	float                 GetVerticalScale() const { return VerticalScale; }
+	const auto&           GetSplatMapUVCoeffs() const { return SplatMapUVCoeffs;}
 	const CAABB&		  GetAABB() const { return Box; }
 	void				  GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, I16& MinY, I16& MaxY) const;
 	void				  GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, float& MinY, float& MaxY) const;
