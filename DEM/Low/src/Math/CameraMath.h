@@ -243,4 +243,7 @@ DEM_FORCE_INLINE acl::Quat_32 ToSIMD(const quaternion& q) noexcept
 }
 //---------------------------------------------------------------------
 
+DEM_FORCE_INLINE acl::Vector4_32 ACL_SIMD_CALL vector_mix_xyxy(acl::Vector4_32Arg0 input) { return acl::vector_mix<acl::VectorMix::X, acl::VectorMix::Y, acl::VectorMix::X, acl::VectorMix::Y>(input, input); }
+//---------------------------------------------------------------------
+
 }

@@ -341,12 +341,12 @@ void CTerrainAttribute::StopAffectingNode(TMorton NodeCode, UPTR LightUID)
 bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD)
 {
 	// Calculate node world space AABB
-	acl::Vector4_32 BoxCenter, BoxExtent;
-	if (!_CDLODData->GetNodeAABB(x, z, LOD, BoxCenter, BoxExtent)) return false;
-	BoxExtent = acl::vector_mul(BoxExtent, Ctx.Scale);
-	BoxCenter = acl::vector_add(BoxCenter, Ctx.Offset);
+	acl::Vector4_32 PatchBoxCenter, PatchBoxExtent;
+	if (!_CDLODData->GetPatchAABB(x, z, LOD, PatchBoxCenter, PatchBoxExtent)) return false;
+	PatchBoxCenter = acl::vector_add(PatchBoxCenter, Ctx.Offset);
+	PatchBoxExtent = acl::vector_mul(PatchBoxExtent, Ctx.Scale);
 
-	const auto ClipStatus = Ctx.pLightInfo->pLightAttr->TestBoxClipping(BoxCenter, BoxExtent);
+	const auto ClipStatus = Ctx.pLightInfo->pLightAttr->TestBoxClipping(PatchBoxCenter, PatchBoxExtent);
 
 	// If the whole node is outside the light, skip its subtree as not affected
 	if (ClipStatus == Math::ClipOutside) return false;

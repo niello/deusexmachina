@@ -106,21 +106,27 @@ void CTerrain::UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrus
 CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD, U8 ParentClipStatus, TMorton MortonCode)
 {
 	// Calculate node world space AABB
-	acl::Vector4_32 BoxCenter, BoxExtent;
-	if (!CDLODData->GetNodeAABB(x, z, LOD, BoxCenter, BoxExtent)) return ENodeStatus::Invisible;
-	BoxExtent = acl::vector_mul(BoxExtent, Ctx.Scale);
-	BoxCenter = acl::vector_add(BoxCenter, Ctx.Offset);
+	acl::Vector4_32 NodeBoxCenter, NodeBoxExtent;
+	if (!CDLODData->GetNodeAABB(x, z, LOD, NodeBoxCenter, NodeBoxExtent)) return ENodeStatus::Invisible;
 
-	// Inside and outside statuses are propagated to children as they are, partial intersection requires further testing
+	// Inside and outside statuses are propagated to children as they are, partial intersection requires further testing.
+	// NB: visibility is tested for the current camera, NOT always for the main.
 	if (ParentClipStatus == Math::ClipIntersect)
 	{
-		// NB: Visibility is tested for the current camera, NOT always for the main
-		ParentClipStatus = Math::ClipAABB(BoxCenter, BoxExtent, Ctx.ViewFrustum);
+		auto PatchBoxCenter = NodeBoxCenter;
+		auto PatchBoxExtent = NodeBoxExtent;
+		CDLODData->ClampNodeToPatchAABB(PatchBoxCenter, PatchBoxExtent);
+		PatchBoxCenter = acl::vector_add(PatchBoxCenter, Ctx.Offset);
+		PatchBoxExtent = acl::vector_mul(PatchBoxExtent, Ctx.Scale);
+		ParentClipStatus = Math::ClipAABB(PatchBoxCenter, PatchBoxExtent, Ctx.ViewFrustum);
 		if (ParentClipStatus == Math::ClipOutside) return ENodeStatus::Invisible;
 	}
 
+	NodeBoxCenter = acl::vector_add(NodeBoxCenter, Ctx.Offset);
+	NodeBoxExtent = acl::vector_mul(NodeBoxExtent, Ctx.Scale);
+
 	const auto LODSphere = acl::vector_set(Ctx.MainCameraPos.x, Ctx.MainCameraPos.y, Ctx.MainCameraPos.z, LODParams[LOD].Range);
-	if (!Math::HasIntersection(LODSphere, BoxCenter, BoxExtent)) return ENodeStatus::NotInLOD;
+	if (!Math::HasIntersection(LODSphere, NodeBoxCenter, NodeBoxExtent)) return ENodeStatus::NotInLOD;
 
 	// Bits 0 to 3 - if set, add quarterpatch for child[0 .. 3]
 	U8 ChildFlags = 0;
@@ -145,7 +151,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		const U32 NextLOD = LOD - 1;
 
 		const auto NextLODSphere = acl::vector_set(Ctx.MainCameraPos.x, Ctx.MainCameraPos.y, Ctx.MainCameraPos.z, LODParams[NextLOD].Range);
-		if (!Math::HasIntersection(NextLODSphere, BoxCenter, BoxExtent))
+		if (!Math::HasIntersection(NextLODSphere, NodeBoxCenter, NodeBoxExtent))
 		{
 			// Add the whole node to the current LOD
 			ChildFlags = Child_All;
@@ -198,16 +204,17 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		if (!ChildFlags) return IsVisible ? ENodeStatus::Processed : ENodeStatus::Invisible;
 	}
 
-	const float CenterX = acl::vector_get_x(BoxCenter);
-	const float CenterZ = acl::vector_get_z(BoxCenter);
-	const float HalfSizeX = acl::vector_get_x(BoxExtent);
-	const float HalfSizeZ = acl::vector_get_z(BoxExtent);
+	// (HalfSizeX, HalfSizeZ, CenterX, CenterZ)
+	const auto HalfSizeXZCenterXZ = acl::vector_mix_xzac(NodeBoxExtent, NodeBoxCenter);
+	// (HalfSizeX, HalfSizeZ, -HalfSizeX, -HalfSizeZ)
+	const auto HalfSizeXZNegHalfSizeXZ = acl::vector_mul(Math::vector_mix_xyxy(HalfSizeXZCenterXZ), acl::vector_set(1.f, 1.f, -1.f, -1.f)); //???can negate sign bit by mask?
 
 	if (ChildFlags == Child_All)
 	{
 		// Add whole patch
+		// (HalfSizeX + HalfSizeX, HalfSizeZ + HalfSizeZ, CenterX - HalfSizeX, CenterZ - HalfSizeZ)
 		auto& Patch = _Patches.emplace_back();
-		Patch.ScaleOffset = acl::vector_set(HalfSizeX + HalfSizeX, HalfSizeZ + HalfSizeZ, CenterX - HalfSizeX, CenterZ - HalfSizeZ);
+		Patch.ScaleOffset = acl::vector_add(HalfSizeXZCenterXZ, HalfSizeXZNegHalfSizeXZ);
 		Patch.LOD = LOD;
 		Patch.MortonCode = MortonCode;
 	}
@@ -217,32 +224,36 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 
 		if (ChildFlags & Child_TopLeft)
 		{
+			// (HalfSizeX, HalfSizeZ, CenterX - HalfSizeX, CenterZ - HalfSizeZ)
 			auto& Patch = _QuarterPatches.emplace_back();
-			Patch.ScaleOffset = acl::vector_set(HalfSizeX, HalfSizeZ, CenterX - HalfSizeX, CenterZ - HalfSizeZ);
+			Patch.ScaleOffset = acl::vector_mul_add(HalfSizeXZNegHalfSizeXZ, acl::vector_set(0.f, 0.f, 1.f, 1.f), HalfSizeXZCenterXZ);
 			Patch.LOD = LOD;
 			Patch.MortonCode = FirstChildMortonCode;
 		}
 
 		if (ChildFlags & Child_TopRight)
 		{
+			// (HalfSizeX, HalfSizeZ, CenterX, CenterZ - HalfSizeZ)
 			auto& Patch = _QuarterPatches.emplace_back();
-			Patch.ScaleOffset = acl::vector_set(HalfSizeX, HalfSizeZ, CenterX, CenterZ - HalfSizeZ);
+			Patch.ScaleOffset = acl::vector_mul_add(HalfSizeXZNegHalfSizeXZ, acl::vector_set(0.f, 0.f, 0.f, 1.f), HalfSizeXZCenterXZ);
 			Patch.LOD = LOD;
 			Patch.MortonCode = FirstChildMortonCode + 1;
 		}
 
 		if (ChildFlags & Child_BottomLeft)
 		{
+			// (HalfSizeX, HalfSizeZ, CenterX - HalfSizeX, CenterZ)
 			auto& Patch = _QuarterPatches.emplace_back();
-			Patch.ScaleOffset = acl::vector_set(HalfSizeX, HalfSizeZ, CenterX - HalfSizeX, CenterZ);
+			Patch.ScaleOffset = acl::vector_mul_add(HalfSizeXZNegHalfSizeXZ, acl::vector_set(0.f, 0.f, 1.f, 0.f), HalfSizeXZCenterXZ);
 			Patch.LOD = LOD;
 			Patch.MortonCode = FirstChildMortonCode + 2;
 		}
 
 		if (ChildFlags & Child_BottomRight)
 		{
+			// (HalfSizeX, HalfSizeZ, CenterX, CenterZ)
 			auto& Patch = _QuarterPatches.emplace_back();
-			Patch.ScaleOffset = acl::vector_set(HalfSizeX, HalfSizeZ, CenterX, CenterZ);
+			Patch.ScaleOffset = HalfSizeXZCenterXZ;
 			Patch.LOD = LOD;
 			Patch.MortonCode = FirstChildMortonCode + 3;
 		}
