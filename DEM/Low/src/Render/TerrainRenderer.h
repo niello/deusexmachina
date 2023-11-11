@@ -30,21 +30,20 @@ protected:
 		Node_Processed
 	};
 
-	PSampler HeightMapSampler;
+	PSampler             HeightMapSampler;
 
-	const CMaterial* pCurrMaterial = nullptr;
-	const CTechnique* pCurrTech = nullptr;
+	const CMaterial*     pCurrMaterial = nullptr;
+	const CTechnique*    pCurrTech = nullptr;
 
 	CShaderConstantParam ConstVSCDLODParams;
 	CShaderConstantParam ConstGridConsts;
 	CShaderConstantParam ConstFirstInstanceIndex;
 	CShaderConstantParam ConstInstanceDataVS;
 	CShaderConstantParam ConstInstanceDataPS;
-	PResourceParam ResourceHeightMap;
+	PResourceParam       ResourceHeightMap;
 
 	// Subsequent shader constants for single-instance case
 	CShaderConstantParam ConstWorldMatrix;
-	CShaderConstantParam ConstLightCount;
 	CShaderConstantParam ConstLightIndices;
 
 public:

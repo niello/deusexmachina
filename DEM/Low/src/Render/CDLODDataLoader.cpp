@@ -44,6 +44,10 @@ Core::PObject CCDLODDataLoader::CreateResource(CStrID UID)
 	Obj->pMinMaxData.reset(n_new_array(I16, Header.MinMaxDataCount));
 	Reader.GetStream().Read(Obj->pMinMaxData.get(), Header.MinMaxDataCount * sizeof(I16));
 
+	// Raster quad size is 1.0f units by default, control the final size with a scene node scaling
+	const float RasterSizeX = static_cast<float>(Header.HFWidth - 1);
+	const float RasterSizeZ = static_cast<float>(Header.HFHeight - 1);
+
 	UPTR PatchesW = Math::DivCeil(Obj->HFWidth - 1, Obj->PatchSize);
 	UPTR PatchesH = Math::DivCeil(Obj->HFHeight - 1, Obj->PatchSize);
 	UPTR Offset = 0;
@@ -67,9 +71,11 @@ Core::PObject CCDLODDataLoader::CreateResource(CStrID UID)
 	Obj->Box.Min.x = 0.f;
 	Obj->Box.Min.y = MinY;
 	Obj->Box.Min.z = 0.f;
-	Obj->Box.Max.x = static_cast<float>(Obj->HFWidth - 1);
+	Obj->Box.Max.x = RasterSizeX;
 	Obj->Box.Max.y = MaxY;
-	Obj->Box.Max.z = static_cast<float>(Obj->HFHeight - 1);
+	Obj->Box.Max.z = RasterSizeZ;
+
+	Obj->BoundsMax = acl::vector_set(RasterSizeX, MaxY, RasterSizeZ);
 
 	return Obj.Get();
 }
