@@ -34,7 +34,7 @@ if(DEM_PREBUILT_DEPS)
 	#set(DEMDeps_ROOT ${DEM_PREBUILT_DEPS_PATH})
 	set(DEMDeps_DIR "${DEM_PREBUILT_DEPS_PATH}" CACHE INTERNAL "" FORCE) # Suppress GUI entry without DEM_ prefix as it is not grouped to DEM
 	find_package(DEMDeps)
-	set(DEM_DEPS_POSSIBLE_TARGETS DEMDeps::lua DEMDeps::ogg DEMDeps::theora DEMDeps::CEGUIBase-0_Static DEMDeps::CEGUIPugiXMLParser_Static DEMDeps::CEGUISILLYImageCodec_Static DEMDeps::CEGUICoreWindowRendererSet_Static DEMDeps::CEGUICommonDialogs-0_Static DEMDeps::LinearMath DEMDeps::BulletCollision DEMDeps::BulletDynamics DEMDeps::DebugUtils DEMDeps::Detour DEMDeps::DetourCrowd DEMDeps::DetourTileCache DEMDeps::Recast)
+	set(DEM_DEPS_POSSIBLE_TARGETS DEMDeps::lua DEMDeps::ogg DEMDeps::theora DEMDeps::CEGUIBase-0_Static DEMDeps::CEGUIPugiXMLParser_Static DEMDeps::CEGUISILLYImageCodec_Static DEMDeps::CEGUICoreWindowRendererSet_Static DEMDeps::CEGUICommonDialogs-0_Static DEMDeps::LinearMath DEMDeps::BulletCollision DEMDeps::BulletDynamics DEMDeps::DebugUtils DEMDeps::Detour DEMDeps::DetourCrowd DEMDeps::DetourTileCache DEMDeps::Recast) # TODO: add acl, rtm, sol, TracyClient and check
 	foreach(_TARGET_NAME IN LISTS DEM_DEPS_POSSIBLE_TARGETS)
 		if(TARGET ${_TARGET_NAME})
 			list(APPEND DEM_DEPS_TARGETS ${_TARGET_NAME})

@@ -45,12 +45,17 @@ add_library(sol INTERFACE)
 target_include_directories(sol INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/sol")
 target_compile_definitions(sol INTERFACE SOL_ALL_SAFETIES_ON) # SOL_NO_EXCEPTIONS)
 
+# Dependency: Tracy profiler
+
+#set(TRACY_ENABLE $<IF:$<CONFIG:RelWithDebInfo>,ON,OFF>) - generator expression is useless at configure step
+option(TRACY_ENABLE "" ON)
+option(TRACY_ON_DEMAND "" ON)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/tracy") # target: TracyClient or alias Tracy::TracyClient
+
 # Dependency: OGG & Theora
 
 set(OGG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/ogg")
-
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ogg" "${CMAKE_CURRENT_BINARY_DIR}/ogg")
-
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/theora" "${CMAKE_CURRENT_BINARY_DIR}/theora")
 
 # Dependency: CEGUI

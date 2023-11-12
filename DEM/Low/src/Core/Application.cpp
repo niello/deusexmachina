@@ -19,6 +19,7 @@
 #include <Render/VideoDriverFactory.h>
 #include <Data/ParamsUtils.h>
 #include <Input/InputTranslator.h>
+#include <tracy/Tracy.hpp> // TRACY
 #include <regex>
 
 // Scene bootstrapper includes
@@ -687,6 +688,8 @@ bool CApplication::Run(PApplicationState InitialState)
 
 bool CApplication::Update()
 {
+	ZoneScoped; // TRACY
+
 	// Update time
 
 	constexpr double MAX_FRAME_TIME = 0.25;
@@ -723,6 +726,8 @@ bool CApplication::Update()
 	if (!_CurrState) return false;
 
 	_RequestedState = _CurrState->Update(FrameTime);
+	
+	FrameMark; // TRACY
 
 	return true;
 }
