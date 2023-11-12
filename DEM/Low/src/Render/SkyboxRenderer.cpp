@@ -82,19 +82,17 @@ void CSkyboxRenderer::Render(const CRenderContext& Context, IRenderable& Rendera
 		n_verify_dbg(_pCurrTechInterface->PerInstanceParams.Apply());
 	}
 
-	CGPUDriver& GPU = *Context.pGPU;
-
 	CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
-	GPU.SetVertexLayout(pVB->GetVertexLayout());
-	GPU.SetVertexBuffer(0, pVB);
-	GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
+	_pGPU->SetVertexLayout(pVB->GetVertexLayout());
+	_pGPU->SetVertexBuffer(0, pVB);
+	_pGPU->SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 
 	// NB: rendered at the far clipping plane due to .xyww position swizzling in a shader
 	const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
 	for (const auto& Pass : Passes)
 	{
-		GPU.SetRenderState(Pass);
-		GPU.Draw(*pGroup);
+		_pGPU->SetRenderState(Pass);
+		_pGPU->Draw(*pGroup);
 	}
 }
 //---------------------------------------------------------------------

@@ -8,6 +8,7 @@
 #include <Render/Effect.h>
 #include <Render/Texture.h>
 #include <Render/Sampler.h>
+#include <Render/SamplerDesc.h>
 #include <Core/Factory.h>
 
 namespace Render
@@ -17,6 +18,52 @@ FACTORY_CLASS_IMPL(Render::CTerrainRenderer, 'TRNR', Render::IRenderer);
 CTerrainRenderer::CTerrainRenderer() = default;
 CTerrainRenderer::~CTerrainRenderer() = default;
 
+CTerrainRenderer::CTerrainTechInterface* CTerrainRenderer::GetTechInterface(const CTechnique* pTech)
+{
+	auto It = _TechInterfaces.find(pTech);
+	if (It != _TechInterfaces.cend()) return &It->second;
+
+	auto& TechInterface = _TechInterfaces[pTech];
+
+	auto& ParamTable = pTech->GetParamTable();
+	if (ParamTable.HasParams())
+	{
+		static const CStrID sidInstanceDataVS("InstanceDataVS");
+		static const CStrID sidVSCDLODParams("VSCDLODParams");
+		static const CStrID sidGridConsts("GridConsts");
+		static const CStrID sidFirstInstanceIndex("FirstInstanceIndex");
+		static const CStrID sidInstanceDataPS("InstanceDataPS");
+		static const CStrID sidLightIndices("LightIndices");
+		static const CStrID sidHeightMapVS("HeightMapVS");
+		static const CStrID sidVSLinearSampler("VSLinearSampler");
+
+		TechInterface.PerInstanceParams = CShaderParamStorage(ParamTable, *_pGPU);
+
+		TechInterface.ConstInstanceDataVS = ParamTable.GetConstant(sidInstanceDataVS);
+		TechInterface.ConstVSCDLODParams = ParamTable.GetConstant(sidVSCDLODParams);
+		TechInterface.ConstGridConsts = ParamTable.GetConstant(sidGridConsts);
+		TechInterface.ConstFirstInstanceIndex = ParamTable.GetConstant(sidFirstInstanceIndex);
+
+		TechInterface.ConstInstanceDataPS = ParamTable.GetConstant(sidInstanceDataPS);
+		if (auto Struct = TechInterface.ConstInstanceDataPS[0])
+			TechInterface.MemberLightIndices = Struct[sidLightIndices];
+
+		TechInterface.ResourceHeightMap = ParamTable.GetResource(sidHeightMapVS);
+		TechInterface.VSLinearSampler = ParamTable.GetSampler(sidVSLinearSampler);
+	}
+
+	TechInterface.TechMaxInstanceCount = TechInterface.ConstInstanceDataVS.GetElementCount();
+	if (TechInterface.ConstInstanceDataPS)
+		TechInterface.TechMaxInstanceCount = std::min(TechInterface.TechMaxInstanceCount, TechInterface.ConstInstanceDataPS.GetElementCount());
+
+	TechInterface.TechLightCount = std::min(CTerrain::MAX_LIGHTS_PER_PATCH, TechInterface.MemberLightIndices.GetTotalComponentCount());
+
+	TechInterface.TechNeedsMaterial = pTech->GetEffect()->GetMaterialParamTable().HasParams();
+
+	return &TechInterface;
+}
+//---------------------------------------------------------------------
+
 bool CTerrainRenderer::Init(const Data::CParams& Params, CGPUDriver& GPU)
 {
 	CSamplerDesc HMSamplerDesc;
@@ -24,7 +71,7 @@ bool CTerrainRenderer::Init(const Data::CParams& Params, CGPUDriver& GPU)
 	HMSamplerDesc.AddressU = TexAddr_Clamp;
 	HMSamplerDesc.AddressV = TexAddr_Clamp;
 	HMSamplerDesc.Filter = TexFilter_MinMag_Linear_Mip_Point;
-	HeightMapSampler = GPU.CreateSampler(HMSamplerDesc);
+	_HeightMapSampler = GPU.CreateSampler(HMSamplerDesc);
 
 	OK;
 }
@@ -35,18 +82,10 @@ bool CTerrainRenderer::BeginRange(const CRenderContext& Context)
 	// Skip terrain rendering. Can fall back to manual 4-sample filtering in a shader instead.
 	if (!Context.pGPU->CheckCaps(Caps_VSTexFiltering_Linear)) return false;
 
-	pCurrMaterial = nullptr;
-	pCurrTech = nullptr;
-
-	//???!!!can cache for each tech by tech index and don't search constants each frame?
-	ConstVSCDLODParams = {};
-	ConstGridConsts = {};
-	ConstFirstInstanceIndex = {};
-	ConstInstanceDataVS = {};
-	ConstInstanceDataPS = {};
-	ResourceHeightMap = {};
-	ConstWorldMatrix = {};
-	ConstLightIndices = {};
+	_pCurrTech = nullptr;
+	_pCurrTechInterface = nullptr;
+	_pCurrMaterial = nullptr;
+	_pGPU = nullptr;
 
 	return true;
 }
@@ -57,13 +96,10 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 {
 	CTerrain& Terrain = static_cast<CTerrain&>(Renderable);
 
-	if (!Terrain.GetPatchMesh() || !Terrain.GetQuarterPatchMesh() || !Terrain.GetCDLODData()) return;
+	if (!Terrain.GetPatchMesh() || !Terrain.GetQuarterPatchMesh() || !Terrain.GetCDLODData() || Terrain.GetPatches().empty()) return;
 
-	if (Terrain.GetPatches().empty()) return;
-
-	static const CStrID sidWorldMatrix("WorldMatrix");
-	static const CStrID sidLightCount("LightCount");
-	static const CStrID sidLightIndices("LightIndices");
+	_pGPU = Context.pGPU;
+	CGPUDriver& GPU = *Context.pGPU;
 
 	// Select tech for the maximal light count used per-patch
 
@@ -72,49 +108,36 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	const auto& Passes = pTech->GetPasses(LightCount);
 	if (Passes.empty()) return;
 
+	auto pMaterial = Terrain.Material.Get();
+	n_assert_dbg(pMaterial);
+	if (!pMaterial) return;
+
 	// Apply material, if changed
 
-	auto pMaterial = Terrain.Material.Get();
-	if (pMaterial != pCurrMaterial)
+	if (pTech != _pCurrTech)
 	{
-		n_assert_dbg(pMaterial);
+		_pCurrTechInterface = GetTechInterface(pTech);
+
+		if (!_pCurrTechInterface->ConstInstanceDataVS || !_pCurrTechInterface->ConstVSCDLODParams) return;
+
+		_pCurrTech = pTech;
+
+		if (_pCurrTechInterface->VSLinearSampler)
+			_pCurrTechInterface->VSLinearSampler->Apply(GPU, _HeightMapSampler.Get());
+	}
+
+	if (_pCurrTechInterface->TechNeedsMaterial && pMaterial != _pCurrMaterial)
+	{
+		_pCurrMaterial = pMaterial;
 		n_verify_dbg(pMaterial->Apply());
-		pCurrMaterial = pMaterial;
 	}
 
 	// Pass tech params to GPU
 
-	CGPUDriver& GPU = *Context.pGPU;
-	if (pTech != pCurrTech)
-	{
-		const CShaderParamTable& ParamTable = pTech->GetParamTable();
-
-		ConstInstanceDataVS = ParamTable.GetConstant(CStrID("InstanceDataVS"));
-		if (!ConstInstanceDataVS) return;
-
-		ConstVSCDLODParams = ParamTable.GetConstant(CStrID("VSCDLODParams"));
-		ConstGridConsts = ParamTable.GetConstant(CStrID("GridConsts"));
-		ConstFirstInstanceIndex = ParamTable.GetConstant(CStrID("FirstInstanceIndex"));
-		ResourceHeightMap = ParamTable.GetResource(CStrID("HeightMapVS"));
-
-		ConstInstanceDataPS = ParamTable.GetConstant(CStrID("InstanceDataPS"));
-		if (ConstInstanceDataPS)
-			ConstLightIndices = ConstInstanceDataPS[0][sidLightIndices];
-
-		if (auto pVSLinearSampler = ParamTable.GetSampler(CStrID("VSLinearSampler")))
-			pVSLinearSampler->Apply(GPU, HeightMapSampler.Get());
-
-		pCurrTech = pTech;
-	}
-
-	if (ResourceHeightMap)
-		ResourceHeightMap->Apply(GPU, Terrain.GetHeightMap());
-
-	CShaderParamStorage PerInstance(pTech->GetParamTable(), GPU);
-
 	const CCDLODData& CDLOD = *Terrain.GetCDLODData();
 
-	if (ConstVSCDLODParams)
+	// VSCDLODParams - params for a vertex shader
+	// TODO: precalculate and store in CTerrain?
 	{
 		struct alignas(16)
 		{
@@ -131,6 +154,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 		// Fill instance data with patches and quarter-patches to render
 
+		// FIXME: can do better?
 		CAABB AABB = CDLOD.GetAABB();
 		const auto LocalSize = AABB.Size();
 		AABB.Transform(Terrain.Transform);
@@ -150,96 +174,90 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		CDLODParams.TerrainYOffset = -32767.f * ScaleY + Terrain.Transform.Translation().y;
 		CDLODParams.InvSplatSizeX = Terrain.GetInvSplatSizeX();
 		CDLODParams.InvSplatSizeZ = Terrain.GetInvSplatSizeZ();
-		if (const auto& Tex = pCurrMaterial->GetValues().GetResource(CStrID("TexGeometryNormalMap")))
+		if (_pCurrMaterial)
 		{
-			// Block compressed textures add extra rows & columns, breaking exact texel -> vertex mapping
-			// TODO: can make better?
-			const auto& Desc = Tex->GetDesc();
-			CDLODParams.NormalMapUVCoeffs[0] = static_cast<float>(CDLOD.GetHeightMapWidth()) / static_cast<float>(Desc.Width);
-			CDLODParams.NormalMapUVCoeffs[1] = static_cast<float>(CDLOD.GetHeightMapHeight()) / static_cast<float>(Desc.Height);
+			if (const auto& Tex = _pCurrMaterial->GetValues().GetResource(CStrID("TexGeometryNormalMap")))
+			{
+				// Block compressed textures add extra rows & columns, breaking exact texel -> vertex mapping
+				// TODO: can make better?
+				const auto& Desc = Tex->GetDesc();
+				CDLODParams.NormalMapUVCoeffs[0] = static_cast<float>(CDLOD.GetHeightMapWidth()) / static_cast<float>(Desc.Width);
+				CDLODParams.NormalMapUVCoeffs[1] = static_cast<float>(CDLOD.GetHeightMapHeight()) / static_cast<float>(Desc.Height);
+			}
 		}
 		CDLODParams.SplatMapUVCoeffs = CDLOD.GetSplatMapUVCoeffs();
 		CDLODParams.WorldMaxX = AABB.Max.x;
 		CDLODParams.WorldMaxZ = AABB.Max.z;
 
-		PerInstance.SetRawConstant(ConstVSCDLODParams, CDLODParams);
+		_pCurrTechInterface->PerInstanceParams.SetRawConstant(_pCurrTechInterface->ConstVSCDLODParams, CDLODParams);
 	}
 
-	//!!!implement looping if instance buffer is too small!
-	UPTR MaxInstanceCountConst = ConstInstanceDataVS.GetElementCount();
-	if (ConstInstanceDataPS)
-	{
-		const UPTR MaxInstanceCountConstPS = ConstInstanceDataPS.GetElementCount();
-		if (MaxInstanceCountConst < MaxInstanceCountConstPS)
-			MaxInstanceCountConst = MaxInstanceCountConstPS;
-	}
-	n_assert_dbg(MaxInstanceCountConst > 1);
+	// Heightmap texture for a vertex shader
+	if (_pCurrTechInterface->ResourceHeightMap)
+		_pCurrTechInterface->ResourceHeightMap->Apply(GPU, Terrain.GetHeightMap());
 
-	//!!!implement looping if instance buffer is too small!
-	n_assert_dbg(MaxInstanceCountConst >= Terrain.GetPatches().size());
-
-	const auto TechLightCount = std::min(CTerrain::MAX_LIGHTS_PER_PATCH, ConstLightIndices.GetTotalComponentCount());
-	const bool UploadLightInfo = ConstInstanceDataPS && TechLightCount;
-
-	//!!!FIXME: tmp!
-	struct CRec
-	{
-		acl::Vector4_32 ScaleOffset;
-		acl::Vector4_32 MorphConsts;
-	};
-
-	//???PERF: optimize uploading? use paddings to maintain align16?
+	// Terrain patch instances and their affecting lights
+	//!!!TODO: implement looping if instance buffer is too small! batch terrain clusters with identical material!
+	n_assert_dbg(_pCurrTechInterface->TechMaxInstanceCount >= Terrain.GetPatches().size());
 	const auto FullInstanceCount = Terrain.GetFullPatchCount();
 	UPTR FullInstanceIndex = 0;
 	UPTR QuarterInstanceIndex = FullInstanceCount;
+	auto ConstVSInstance = _pCurrTechInterface->ConstInstanceDataVS[0];
+	std::array<U32, CTerrain::MAX_LIGHTS_PER_PATCH> LightIndexBuffer;
 	for (const auto& CurrPatch : Terrain.GetPatches())
 	{
 		const auto Index = CurrPatch.IsFullPatch ? FullInstanceIndex++ : QuarterInstanceIndex++;
 
+		//!!!FIXME: tmp! better is to prepare the buffer in advance and don't refill it every frame!
+		struct CRec
+		{
+			acl::Vector4_32 ScaleOffset;
+			acl::Vector4_32 MorphConsts;
+		};
+
 		// Setup instance patch constants
 		const CRec Rec{ CurrPatch.ScaleOffset, acl::vector_set(Terrain.LODParams[CurrPatch.LOD].Morph1, Terrain.LODParams[CurrPatch.LOD].Morph2, 0.f, 0.f) };
-		PerInstance.SetRawConstant(ConstInstanceDataVS[Index], Rec);
+		ConstVSInstance.Shift(_pCurrTechInterface->ConstInstanceDataVS, Index);
+		_pCurrTechInterface->PerInstanceParams.SetRawConstant(ConstVSInstance, Rec);
 
 		// Setup instance lights
-		if (UploadLightInfo)
+		if (_pCurrTechInterface->TechLightCount)
 		{
-			CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[Index];
-			CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
-			for (U32 i = 0; i < TechLightCount; ++i)
+			_pCurrTechInterface->MemberLightIndices.Shift(_pCurrTechInterface->ConstInstanceDataPS, Index);
+			U32 LightCount = 0;
+			for (U32 i = 0; i < _pCurrTechInterface->TechLightCount; ++i)
 			{
 				if (!CurrPatch.Lights[i])
 				{
-					PerInstance.SetInt(CurrLightIndices.GetComponent(i), -1);
+					LightIndexBuffer[LightCount++] = -1;
 					break;
 				}
 
 				if (CurrPatch.Lights[i]->GPUIndex != INVALID_INDEX_T<U32>)
-					PerInstance.SetInt(CurrLightIndices.GetComponent(i), CurrPatch.Lights[i]->GPUIndex);
+					LightIndexBuffer[LightCount++] = CurrPatch.Lights[i]->GPUIndex;
 			}
+			_pCurrTechInterface->PerInstanceParams.SetRawConstant(_pCurrTechInterface->MemberLightIndices, LightIndexBuffer.data(), sizeof(U32) * LightCount);
 		}
 	}
 
-	// Render patches //!!!may collect patches of different CTerrains if material is the same and instance buffer is big enough!
+	// Render patches
 
 	if (FullInstanceCount)
 	{
-		if (ConstGridConsts)
+		if (_pCurrTechInterface->ConstGridConsts)
 		{
 			float GridConsts[2];
 			GridConsts[0] = CDLOD.GetPatchSize() * 0.5f;
 			GridConsts[1] = 1.f / GridConsts[0];
-			PerInstance.SetRawConstant(ConstGridConsts, GridConsts);
+			_pCurrTechInterface->PerInstanceParams.SetRawConstant(_pCurrTechInterface->ConstGridConsts, GridConsts);
 		}
 
-		PerInstance.SetUInt(ConstFirstInstanceIndex, 0);
+		_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->ConstFirstInstanceIndex, 0);
 
-		PerInstance.Apply();
+		_pCurrTechInterface->PerInstanceParams.Apply();
 
 		const CMesh* pMesh = Terrain.GetPatchMesh();
-		n_assert_dbg(pMesh);
 		CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
-		n_assert_dbg(pVB);
-
 		GPU.SetVertexLayout(pVB->GetVertexLayout());
 		GPU.SetVertexBuffer(0, pVB);
 		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
@@ -254,23 +272,20 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 	if (QuarterInstanceIndex > FullInstanceCount)
 	{
-		if (ConstGridConsts)
+		if (_pCurrTechInterface->ConstGridConsts)
 		{
 			float GridConsts[2];
 			GridConsts[0] = CDLOD.GetPatchSize() * 0.25f;
 			GridConsts[1] = 1.f / GridConsts[0];
-			PerInstance.SetRawConstant(ConstGridConsts, GridConsts);
+			_pCurrTechInterface->PerInstanceParams.SetRawConstant(_pCurrTechInterface->ConstGridConsts, GridConsts);
 		}
 
-		PerInstance.SetUInt(ConstFirstInstanceIndex, FullInstanceCount);
+		_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->ConstFirstInstanceIndex, FullInstanceCount);
 
-		PerInstance.Apply();
+		_pCurrTechInterface->PerInstanceParams.Apply();
 
 		const CMesh* pMesh = Terrain.GetQuarterPatchMesh();
-		n_assert_dbg(pMesh);
 		CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
-		n_assert_dbg(pVB);
-
 		GPU.SetVertexLayout(pVB->GetVertexLayout());
 		GPU.SetVertexBuffer(0, pVB);
 		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());

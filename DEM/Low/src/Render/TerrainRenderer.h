@@ -1,21 +1,15 @@
 #pragma once
 #include <Render/Renderer.h>
-#include <Render/VertexComponent.h>
-#include <Render/SamplerDesc.h>
-#include <Render/ShaderParamTable.h>
-#include <Data/FixedArray.h>
-#include <Data/Ptr.h>
+#include <Render/ShaderParamStorage.h>
 #include <map>
 
 // Default renderer for CTerrain render objects.
-// Currently supports only the translation part of the transformation.
+// Currently supports only scaling and translation.
 
 class sphere;
 
 namespace Render
 {
-class CTerrain;
-class CCDLODData;
 
 class CTerrainRenderer: public IRenderer
 {
@@ -23,28 +17,34 @@ class CTerrainRenderer: public IRenderer
 
 protected:
 
-	enum ENodeStatus
+	struct CTerrainTechInterface
 	{
-		Node_Invisible,
-		Node_NotInLOD,
-		Node_Processed
+		CShaderParamStorage  PerInstanceParams;
+
+		CShaderConstantParam ConstVSCDLODParams;
+		CShaderConstantParam ConstGridConsts;
+		CShaderConstantParam ConstFirstInstanceIndex;
+		CShaderConstantParam ConstInstanceDataVS;
+		CShaderConstantParam ConstInstanceDataPS;
+		CShaderConstantParam MemberLightIndices;
+		PResourceParam       ResourceHeightMap;
+		PSamplerParam        VSLinearSampler;
+
+		UPTR TechMaxInstanceCount = 1;
+		U32  TechLightCount = 0;
+		bool TechNeedsMaterial = false;
 	};
 
-	PSampler             HeightMapSampler;
+	const CTechnique*      _pCurrTech = nullptr;
+	CTerrainTechInterface* _pCurrTechInterface = nullptr;
+	const CMaterial*       _pCurrMaterial = nullptr;
+	CGPUDriver*            _pGPU = nullptr;
 
-	const CMaterial*     pCurrMaterial = nullptr;
-	const CTechnique*    pCurrTech = nullptr;
+	PSampler               _HeightMapSampler;
 
-	CShaderConstantParam ConstVSCDLODParams;
-	CShaderConstantParam ConstGridConsts;
-	CShaderConstantParam ConstFirstInstanceIndex;
-	CShaderConstantParam ConstInstanceDataVS;
-	CShaderConstantParam ConstInstanceDataPS;
-	PResourceParam       ResourceHeightMap;
+	std::map<const CTechnique*, CTerrainTechInterface> _TechInterfaces;
 
-	// Subsequent shader constants for single-instance case
-	CShaderConstantParam ConstWorldMatrix;
-	CShaderConstantParam ConstLightIndices;
+	CTerrainTechInterface* GetTechInterface(const CTechnique* pTech);
 
 public:
 
