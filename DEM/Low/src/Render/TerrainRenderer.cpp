@@ -85,7 +85,7 @@ bool CTerrainRenderer::BeginRange(const CRenderContext& Context)
 	_pCurrTech = nullptr;
 	_pCurrTechInterface = nullptr;
 	_pCurrMaterial = nullptr;
-	_pGPU = nullptr;
+	_pGPU = Context.pGPU; // FIXME: could instead pass CRenderContext to accessing methods
 
 	return true;
 }
@@ -97,9 +97,6 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	CTerrain& Terrain = static_cast<CTerrain&>(Renderable);
 
 	if (!Terrain.GetPatchMesh() || !Terrain.GetQuarterPatchMesh() || !Terrain.GetCDLODData() || Terrain.GetPatches().empty()) return;
-
-	_pGPU = Context.pGPU;
-	CGPUDriver& GPU = *Context.pGPU;
 
 	// Select tech for the maximal light count used per-patch
 
@@ -123,7 +120,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		_pCurrTech = pTech;
 
 		if (_pCurrTechInterface->VSLinearSampler)
-			_pCurrTechInterface->VSLinearSampler->Apply(GPU, _HeightMapSampler.Get());
+			_pCurrTechInterface->VSLinearSampler->Apply(*_pGPU, _HeightMapSampler.Get());
 	}
 
 	if (_pCurrTechInterface->TechNeedsMaterial && pMaterial != _pCurrMaterial)
@@ -194,7 +191,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 	// Heightmap texture for a vertex shader
 	if (_pCurrTechInterface->ResourceHeightMap)
-		_pCurrTechInterface->ResourceHeightMap->Apply(GPU, Terrain.GetHeightMap());
+		_pCurrTechInterface->ResourceHeightMap->Apply(*_pGPU, Terrain.GetHeightMap());
 
 	// Terrain patch instances and their affecting lights
 	//!!!TODO: implement looping if instance buffer is too small! batch terrain clusters with identical material!
@@ -258,15 +255,15 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 		const CMesh* pMesh = Terrain.GetPatchMesh();
 		CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
-		GPU.SetVertexLayout(pVB->GetVertexLayout());
-		GPU.SetVertexBuffer(0, pVB);
-		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
+		_pGPU->SetVertexLayout(pVB->GetVertexLayout());
+		_pGPU->SetVertexBuffer(0, pVB);
+		_pGPU->SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 
 		const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
 		for (const auto& Pass : Passes)
 		{
-			GPU.SetRenderState(Pass);
-			GPU.DrawInstanced(*pGroup, FullInstanceCount);
+			_pGPU->SetRenderState(Pass);
+			_pGPU->DrawInstanced(*pGroup, FullInstanceCount);
 		}
 	}
 
@@ -286,15 +283,15 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 		const CMesh* pMesh = Terrain.GetQuarterPatchMesh();
 		CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
-		GPU.SetVertexLayout(pVB->GetVertexLayout());
-		GPU.SetVertexBuffer(0, pVB);
-		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
+		_pGPU->SetVertexLayout(pVB->GetVertexLayout());
+		_pGPU->SetVertexBuffer(0, pVB);
+		_pGPU->SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 
 		const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
 		for (const auto& Pass : Passes)
 		{
-			GPU.SetRenderState(Pass);
-			GPU.DrawInstanced(*pGroup, QuarterInstanceIndex - FullInstanceCount);
+			_pGPU->SetRenderState(Pass);
+			_pGPU->DrawInstanced(*pGroup, QuarterInstanceIndex - FullInstanceCount);
 		}
 	}
 }

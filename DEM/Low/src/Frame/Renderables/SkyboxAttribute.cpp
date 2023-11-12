@@ -1,6 +1,7 @@
 #include "SkyboxAttribute.h"
 #include <Frame/View.h>
 #include <Frame/GraphicsResourceManager.h>
+#include <Frame/CameraAttribute.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Render/MeshGenerators.h>
@@ -8,6 +9,7 @@
 #include <Render/Mesh.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
+#include <Scene/SceneNode.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -50,7 +52,7 @@ Render::PRenderable CSkyboxAttribute::CreateRenderable() const
 //---------------------------------------------------------------------
 
 // NB: LOD is not used for skyboxes
-void CSkyboxAttribute::UpdateRenderable(CView& View, Render::IRenderable& Renderable, bool /*ViewProjChanged*/) const
+void CSkyboxAttribute::UpdateRenderable(CView& View, Render::IRenderable& Renderable, bool ViewProjChanged) const
 {
 	auto pSkybox = static_cast<Render::CSkybox*>(&Renderable);
 
@@ -91,6 +93,14 @@ void CSkyboxAttribute::UpdateRenderable(CView& View, Render::IRenderable& Render
 			pSkybox->MaterialKey = pSkybox->Material->GetSortingKey();
 			pSkybox->ShaderTechKey = View.GetShaderTechCache()[pSkybox->ShaderTechIndex]->GetSortingKey(); //???FIXME: now we use non-overridden tech key for all phases
 		}
+	}
+
+	// Update transform
+	if (ViewProjChanged || pSkybox->TfmVersion != _pNode->GetTransformVersion())
+	{
+		pSkybox->Transform = _pNode->GetWorldMatrix();
+		pSkybox->Transform.set_translation(View.GetCamera()->GetPosition());
+		pSkybox->TfmVersion = _pNode->GetTransformVersion();
 	}
 }
 //---------------------------------------------------------------------

@@ -474,11 +474,6 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 		if (pRenderable->IsVisible)
 			pAttr->UpdateRenderable(*this, *pRenderable, ViewProjChanged);
 
-		//!!!DBG TMP! Or is it the preferred way to sync tfm? Or handle in UpdateRenderable? But every renderable stores tfm identically. Or no?
-		//???could store directly in per-instance data? or it depends on a renderer too strongly?
-		if (pRenderable->IsVisible)
-			pRenderable->Transform = pAttr->GetNode()->GetWorldMatrix();
-
 		// Handle object visibility change
 		if (WasVisible != pRenderable->IsVisible)
 		{

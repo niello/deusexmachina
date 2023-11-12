@@ -180,6 +180,10 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 	const bool MorphChanged = (DataChanged || pTerrain->GetVisibilityRange() != VisibilityRange);
 	if (MorphChanged) pTerrain->UpdateMorphConstants(VisibilityRange);
 
+	// Update transform
+	//!!!TODO: ensure no rotation!
+	pTerrain->Transform = _pNode->GetWorldMatrix();
+
 	// Update a list of visible patches
 	if (MorphChanged || ViewProjChanged || pTerrain->PatchesTransformVersion != _pNode->GetTransformVersion())
 	{

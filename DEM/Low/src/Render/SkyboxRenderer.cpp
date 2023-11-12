@@ -35,7 +35,7 @@ bool CSkyboxRenderer::BeginRange(const CRenderContext& Context)
 	_pCurrTech = nullptr;
 	_pCurrTechInterface = nullptr;
 	_pCurrMaterial = nullptr;
-	_pGPU = nullptr;
+	_pGPU = Context.pGPU; // FIXME: could instead pass CRenderContext to accessing methods
 	OK;
 }
 //---------------------------------------------------------------------
@@ -43,8 +43,6 @@ bool CSkyboxRenderer::BeginRange(const CRenderContext& Context)
 void CSkyboxRenderer::Render(const CRenderContext& Context, IRenderable& Renderable)
 {
 	CSkybox& Skybox = static_cast<CSkybox&>(Renderable);
-
-	_pGPU = Context.pGPU;
 
 	const CTechnique* pTech = Context.pShaderTechCache[Skybox.ShaderTechIndex];
 	n_assert_dbg(pTech);
@@ -76,9 +74,7 @@ void CSkyboxRenderer::Render(const CRenderContext& Context, IRenderable& Rendera
 
 	if (_pCurrTechInterface->ConstWorldMatrix)
 	{
-		matrix44 Tfm = Skybox.Transform;
-		Tfm.set_translation(Context.CameraPosition);
-		_pCurrTechInterface->PerInstanceParams.SetMatrix(_pCurrTechInterface->ConstWorldMatrix, Tfm);
+		_pCurrTechInterface->PerInstanceParams.SetMatrix(_pCurrTechInterface->ConstWorldMatrix, Skybox.Transform);
 		n_verify_dbg(_pCurrTechInterface->PerInstanceParams.Apply());
 	}
 

@@ -16,6 +16,7 @@ public:
 	PMaterial Material;
 	PMesh     Mesh;
 	U32       ShaderTechIndex = INVALID_INDEX_T<U32>;
+	U32       TfmVersion = 0;
 };
 
 typedef Ptr<CSkybox> PSkybox;

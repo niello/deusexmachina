@@ -57,7 +57,7 @@ bool CModelRenderer::BeginRange(const CRenderContext& Context)
 	_pCurrMaterial = nullptr;
 	_pCurrMesh = nullptr;
 	_pCurrGroup = nullptr;
-	_pGPU = nullptr;
+	_pGPU = Context.pGPU; // FIXME: could instead pass CRenderContext to accessing methods
 	_InstanceCount = 0;
 
 	OK;
@@ -68,8 +68,6 @@ bool CModelRenderer::BeginRange(const CRenderContext& Context)
 void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderable)
 {
 	CModel& Model = static_cast<CModel&>(Renderable);
-
-	_pGPU = Context.pGPU;
 
 	const CTechnique* pTech = Context.pShaderTechCache[Model.ShaderTechIndex];
 	n_assert_dbg(pTech);

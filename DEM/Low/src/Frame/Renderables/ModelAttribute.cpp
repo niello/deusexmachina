@@ -156,6 +156,9 @@ void CModelAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rendera
 			pModel->ShaderTechKey = View.GetShaderTechCache()[pModel->ShaderTechIndex]->GetSortingKey(); //???FIXME: now we use non-overridden tech key for all phases
 		}
 	}
+
+	// Update transform
+	pModel->Transform = _pNode->GetWorldMatrix();
 }
 //---------------------------------------------------------------------
 
