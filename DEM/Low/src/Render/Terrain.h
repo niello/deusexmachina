@@ -93,6 +93,7 @@ public:
 	U32                     ShaderTechIndex = INVALID_INDEX_T<U32>;
 	U32                     PatchesTransformVersion = 0;
 	float                   MorphStartRatio = 0.7f;             // TODO: read from view settings? //!!!clamp to range 0.5f .. 0.95f!
+	U16                     DeepestLOD = 0;                     // TODO: read from view settings?
 	U16                     MaxLODForDynamicLights = 3;         // LOD 0 can't be disabled on intent. TODO: read from view settings?
 
 	CTerrain();

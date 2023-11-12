@@ -119,7 +119,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 	// NB: must use correct mapping [0 .. 3] -> [LT, RT, LB, RB]
 	const TMorton FirstChildMortonCode = (MortonCode << 2);
 
-	if (LOD == 0)
+	if (LOD == DeepestLOD)
 	{
 		// Can't subdivide any further, add the whole node
 		ChildFlags = Child_All;
