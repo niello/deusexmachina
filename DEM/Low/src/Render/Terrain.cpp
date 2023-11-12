@@ -195,6 +195,9 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 	// (HalfSizeX, HalfSizeZ, -HalfSizeX, -HalfSizeZ)
 	const auto HalfSizeXZNegHalfSizeXZ = acl::vector_mul(Math::vector_mix_xyxy(HalfSizeXZCenterXZ), acl::vector_set(1.f, 1.f, -1.f, -1.f)); //???can negate sign bit by mask?
 
+	// TODO: it seems to be a bit faster without full patches, using 4 quarters instead and rendering the whole terrain in 1 DIP.
+	// Need to profile further on some specific cases, e.g. rendering when most of items are full. Will 4x instance increase be still negligible?
+	// See https://app.asana.com/0/0/1205876475042330/f
 	if (ChildFlags == Child_All)
 	{
 		// Add whole patch
