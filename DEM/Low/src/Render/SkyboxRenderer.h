@@ -1,6 +1,7 @@
 #pragma once
 #include <Render/Renderer.h>
-#include <Render/ShaderParamTable.h>
+#include <Render/ShaderParamStorage.h>
+#include <map>
 
 // Default renderer for CSkybox render objects.
 
@@ -15,9 +16,20 @@ class CSkyboxRenderer: public IRenderer
 
 protected:
 
-	const CMaterial*     _pCurrMaterial = nullptr;
-	const CTechnique*    _pCurrTech = nullptr;
-	CShaderConstantParam _ConstWorldMatrix;
+	struct CSkyboxTechInterface
+	{
+		CShaderParamStorage  PerInstanceParams;
+		CShaderConstantParam ConstWorldMatrix;
+	};
+
+	const CTechnique*     _pCurrTech = nullptr;
+	CSkyboxTechInterface* _pCurrTechInterface = nullptr;
+	const CMaterial*      _pCurrMaterial = nullptr;
+	CGPUDriver*           _pGPU = nullptr;
+
+	std::map<const CTechnique*, CSkyboxTechInterface> _TechInterfaces;
+
+	CSkyboxTechInterface* GetTechInterface(const CTechnique* pTech);
 
 public:
 

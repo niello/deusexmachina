@@ -1,14 +1,10 @@
 #include "ModelRenderer.h"
-
-#include <Render/RenderFwd.h>
 #include <Render/Model.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
 #include <Render/Mesh.h>
 #include <Render/Light.h>
 #include <Render/GPUDriver.h>
-#include <Math/Sphere.h>	//!!!for light testing only, refactor and optimize!
-#include <Data/Params.h>
 #include <Core/Factory.h>
 
 namespace Render
@@ -171,12 +167,13 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 		if (LightLimit)
 		{
 			_pCurrTechInterface->MemberLightIndices.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
-			for (const auto [UID, pLight] : Model.Lights)
+			for (const auto& Pair : Model.Lights)
 			{
-				if (pLight->GPUIndex != INVALID_INDEX_T<U32>)
+				const auto GPUIndex = Pair.second->GPUIndex;
+				if (GPUIndex != INVALID_INDEX_T<U32>)
 				{
 					// TODO PERF: check array element param creation cost, maybe can reduce it? Add SetUInt(Index, Value)? or set raw?
-					_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->MemberLightIndices.GetComponent(LightCount), pLight->GPUIndex);
+					_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->MemberLightIndices.GetComponent(LightCount), GPUIndex);
 					if (++LightCount == LightLimit) break;
 				}
 			}

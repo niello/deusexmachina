@@ -6,8 +6,6 @@
 // Default renderer for CModel render objects.
 // Implements "Model" and "ModelSkinned" input sets.
 
-// TODO: describe input sets!!!
-
 namespace Render
 {
 
