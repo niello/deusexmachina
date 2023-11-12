@@ -59,7 +59,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 	if (!Terrain.GetPatchMesh() || !Terrain.GetQuarterPatchMesh() || !Terrain.GetCDLODData()) return;
 
-	if (Terrain.GetPatches().empty() && Terrain.GetQuarterPatches().empty()) return;
+	if (Terrain.GetPatches().empty()) return;
 
 	static const CStrID sidWorldMatrix("WorldMatrix");
 	static const CStrID sidLightCount("LightCount");
@@ -176,7 +176,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	n_assert_dbg(MaxInstanceCountConst > 1);
 
 	//!!!implement looping if instance buffer is too small!
-	n_assert_dbg(MaxInstanceCountConst >= (Terrain.GetPatches().size() + Terrain.GetQuarterPatches().size()));
+	n_assert_dbg(MaxInstanceCountConst >= Terrain.GetPatches().size());
 
 	const auto TechLightCount = std::min(CTerrain::MAX_LIGHTS_PER_PATCH, ConstLightIndices.GetTotalComponentCount());
 	const bool UploadLightInfo = ConstInstanceDataPS && TechLightCount;
@@ -189,18 +189,21 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 	};
 
 	//???PERF: optimize uploading? use paddings to maintain align16?
-	//???PERF: use 2 different CPatchInstance structures for stream and const instancing?
-	UPTR InstanceCount = 0;
+	const auto FullInstanceCount = Terrain.GetFullPatchCount();
+	UPTR FullInstanceIndex = 0;
+	UPTR QuarterInstanceIndex = FullInstanceCount;
 	for (const auto& CurrPatch : Terrain.GetPatches())
 	{
+		const auto Index = CurrPatch.IsFullPatch ? FullInstanceIndex++ : QuarterInstanceIndex++;
+
 		// Setup instance patch constants
 		const CRec Rec{ CurrPatch.ScaleOffset, acl::vector_set(Terrain.LODParams[CurrPatch.LOD].Morph1, Terrain.LODParams[CurrPatch.LOD].Morph2, 0.f, 0.f) };
-		PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], Rec);
+		PerInstance.SetRawConstant(ConstInstanceDataVS[Index], Rec);
 
 		// Setup instance lights
 		if (UploadLightInfo)
 		{
-			CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
+			CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[Index];
 			CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
 			for (U32 i = 0; i < TechLightCount; ++i)
 			{
@@ -214,40 +217,11 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 					PerInstance.SetInt(CurrLightIndices.GetComponent(i), CurrPatch.Lights[i]->GPUIndex);
 			}
 		}
-
-		++InstanceCount;
-	}
-
-	for (const auto& CurrPatch : Terrain.GetQuarterPatches())
-	{
-		// Setup instance patch constants
-		const CRec Rec{ CurrPatch.ScaleOffset, acl::vector_set(Terrain.LODParams[CurrPatch.LOD].Morph1, Terrain.LODParams[CurrPatch.LOD].Morph2, 0.f, 0.f) };
-		PerInstance.SetRawConstant(ConstInstanceDataVS[InstanceCount], Rec);
-
-		// Setup instance lights
-		if (UploadLightInfo)
-		{
-			CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
-			CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
-			for (U32 i = 0; i < TechLightCount; ++i)
-			{
-				if (!CurrPatch.Lights[i])
-				{
-					PerInstance.SetInt(CurrLightIndices.GetComponent(i), -1);
-					break;
-				}
-
-				if (CurrPatch.Lights[i]->GPUIndex != INVALID_INDEX_T<U32>)
-					PerInstance.SetInt(CurrLightIndices.GetComponent(i), CurrPatch.Lights[i]->GPUIndex);
-			}
-		}
-
-		++InstanceCount;
 	}
 
 	// Render patches //!!!may collect patches of different CTerrains if material is the same and instance buffer is big enough!
 
-	if (!Terrain.GetPatches().empty())
+	if (FullInstanceCount)
 	{
 		if (ConstGridConsts)
 		{
@@ -274,11 +248,11 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		for (const auto& Pass : Passes)
 		{
 			GPU.SetRenderState(Pass);
-			GPU.DrawInstanced(*pGroup, Terrain.GetPatches().size());
+			GPU.DrawInstanced(*pGroup, FullInstanceCount);
 		}
 	}
 
-	if (!Terrain.GetQuarterPatches().empty())
+	if (QuarterInstanceIndex > FullInstanceCount)
 	{
 		if (ConstGridConsts)
 		{
@@ -288,7 +262,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			PerInstance.SetRawConstant(ConstGridConsts, GridConsts);
 		}
 
-		PerInstance.SetUInt(ConstFirstInstanceIndex, Terrain.GetPatches().size());
+		PerInstance.SetUInt(ConstFirstInstanceIndex, FullInstanceCount);
 
 		PerInstance.Apply();
 
@@ -305,7 +279,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		for (const auto& Pass : Passes)
 		{
 			GPU.SetRenderState(Pass);
-			GPU.DrawInstanced(*pGroup, Terrain.GetQuarterPatches().size());
+			GPU.DrawInstanced(*pGroup, QuarterInstanceIndex - FullInstanceCount);
 		}
 	}
 }

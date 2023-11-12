@@ -194,8 +194,8 @@ void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Render
 {
 	auto pTerrain = static_cast<Render::CTerrain*>(&Renderable);
 
-	//!!!FIXME: code duplication can be fixed more gracefully!
-	auto FIXME_CODE_DUP = [this, pTerrain, &View](Render::CTerrain::CPatchInstance& CurrPatch)
+	// Update light lists in patches
+	for (auto& CurrPatch : pTerrain->GetPatches())
 	{
 		size_t LightCount = 0;
 
@@ -206,7 +206,7 @@ void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Render
 			if (ItNode != _Nodes.cend())
 			{
 				// Skip up to date node without touching anything
-				if (CurrPatch.LightsVersion == ItNode->second.Version) return; //!!!continue;
+				if (CurrPatch.LightsVersion == ItNode->second.Version) continue;
 
 				for (auto UID : ItNode->second.LightUIDs)
 				{
@@ -227,12 +227,7 @@ void CTerrainAttribute::UpdateLightList(CView& View, Render::IRenderable& Render
 		// Add terminator
 		if (LightCount < Render::CTerrain::MAX_LIGHTS_PER_PATCH)
 			CurrPatch.Lights[LightCount] = nullptr;
-	};
-
-	for (auto& CurrPatch : pTerrain->GetPatches())
-		FIXME_CODE_DUP(CurrPatch);
-	for (auto& CurrPatch : pTerrain->GetQuarterPatches())
-		FIXME_CODE_DUP(CurrPatch);
+	}
 }
 //---------------------------------------------------------------------
 

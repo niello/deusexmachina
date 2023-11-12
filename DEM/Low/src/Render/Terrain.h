@@ -32,6 +32,7 @@ public:
 		U32                    LightsVersion = 0;
 		U32                    LOD;
 		TMorton                MortonCode;
+		bool                   IsFullPatch = false;
 	};
 
 	inline static constexpr U32 MAX_LIGHTS_PER_PATCH = std::tuple_size<decltype(CPatchInstance::Lights)>();
@@ -54,11 +55,10 @@ protected:
 	};
 
 	std::vector<CPatchInstance> _Patches;
-	std::vector<CPatchInstance> _QuarterPatches;
-	std::vector<CPatchInstance> _PrevPatches;        // stored here to avoid per frame allocations
-	std::vector<CPatchInstance> _PrevQuarterPatches; // stored here to avoid per frame allocations
+	std::vector<CPatchInstance> _PrevPatches;        // Stored here to avoid per frame allocations
+	size_t                      _FullPatchCount = 0; // Number of full (not quarter) patches in _Patches. Used for minor optimization.
 
-	//CB or CBs
+	//CB or CBs (can add here shadere param storage and make persistent buffers for patch data, get shader meta from saved tech)
 	//!!!???can fill one GPU buffer?! use offset to render first ones, then others.
 	//???store main info about patches in one buffer, lights in another?!
 	// - will save buffer refreshes when only light data changes
@@ -105,9 +105,8 @@ public:
 	CMaterial*          GetMaterial() const { return Material.Get(); }
 	CTexture*           GetHeightMap() const { return HeightMap.Get(); }
 	const auto&         GetPatches() const { return _Patches; }
-	const auto&         GetQuarterPatches() const { return _QuarterPatches; }
 	auto&               GetPatches() { return _Patches; }
-	auto&               GetQuarterPatches() { return _QuarterPatches; }
+	size_t              GetFullPatchCount() const { return _FullPatchCount; }
 	CMesh*              GetPatchMesh() const { return PatchMesh.Get(); }
 	CMesh*              GetQuarterPatchMesh() const { return QuarterPatchMesh.Get(); }
 	float               GetInvSplatSizeX() const { return InvSplatSizeX; }

@@ -53,16 +53,14 @@ void CTerrain::UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrus
 	Ctx.MainCameraPos = MainCameraPos;
 
 	std::swap(_PrevPatches, _Patches);
-	std::swap(_PrevQuarterPatches, _QuarterPatches);
 	_Patches.clear();
-	_QuarterPatches.clear();
+	_FullPatchCount = 0;
 
 	ProcessTerrainNode(Ctx, 0, 0, CDLODData->GetLODCount() - 1, Math::ClipIntersect, RootMortonCode);
 
 	// We sort by LOD (the shorter is the code, the coarser is LOD), and therefore we almost sort front to back, as LOD depends solely on it
 	const auto PatchInstanceCmp = [](const CPatchInstance& a, const CPatchInstance& b) { return a.MortonCode > b.MortonCode; };
 	std::sort(_Patches.begin(), _Patches.end(), PatchInstanceCmp);
-	std::sort(_QuarterPatches.begin(), _QuarterPatches.end(), PatchInstanceCmp);
 
 	// Copy cached light data where available. This is much cheaper than constructing from scratch it in CTerrainAttribute::UpdateLightList.
 	// FIXME: can use one collection instead of two? Use bool IsQuarterPatch?! Pushing data to GPU is done record by record anyway!
@@ -77,27 +75,9 @@ void CTerrain::UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrus
 			ItNew->Lights = ItPrev->Lights;
 			++MatchCount;
 		});
-		DEM::Algo::SortedInnerJoin(_Patches, _PrevQuarterPatches, PatchInstanceCmp, [&MatchCount](auto ItNew, auto ItPrev)
-		{
-			ItNew->LightsVersion = ItPrev->LightsVersion;
-			ItNew->Lights = ItPrev->Lights;
-			++MatchCount;
-		});
-		DEM::Algo::SortedInnerJoin(_QuarterPatches, _PrevPatches, PatchInstanceCmp, [&MatchCount](auto ItNew, auto ItPrev)
-		{
-			ItNew->LightsVersion = ItPrev->LightsVersion;
-			ItNew->Lights = ItPrev->Lights;
-			++MatchCount;
-		});
-		DEM::Algo::SortedInnerJoin(_QuarterPatches, _PrevQuarterPatches, PatchInstanceCmp, [&MatchCount](auto ItNew, auto ItPrev)
-		{
-			ItNew->LightsVersion = ItPrev->LightsVersion;
-			ItNew->Lights = ItPrev->Lights;
-			++MatchCount;
-		});
 
 		// If some of new patches could not copy cached lights from prevoius ones, we must force an update of light data
-		if (MatchCount < _Patches.size() + _QuarterPatches.size())
+		if (MatchCount < _Patches.size())
 			ObjectLightIntersectionsVersion = 0;
 	}
 }
@@ -217,6 +197,8 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		Patch.ScaleOffset = acl::vector_add(HalfSizeXZCenterXZ, HalfSizeXZNegHalfSizeXZ);
 		Patch.LOD = LOD;
 		Patch.MortonCode = MortonCode;
+		Patch.IsFullPatch = true;
+		++_FullPatchCount;
 	}
 	else
 	{
@@ -225,7 +207,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		if (ChildFlags & Child_TopLeft)
 		{
 			// (HalfSizeX, HalfSizeZ, CenterX - HalfSizeX, CenterZ - HalfSizeZ)
-			auto& Patch = _QuarterPatches.emplace_back();
+			auto& Patch = _Patches.emplace_back();
 			Patch.ScaleOffset = acl::vector_mul_add(HalfSizeXZNegHalfSizeXZ, acl::vector_set(0.f, 0.f, 1.f, 1.f), HalfSizeXZCenterXZ);
 			Patch.LOD = LOD;
 			Patch.MortonCode = FirstChildMortonCode;
@@ -234,7 +216,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		if (ChildFlags & Child_TopRight)
 		{
 			// (HalfSizeX, HalfSizeZ, CenterX, CenterZ - HalfSizeZ)
-			auto& Patch = _QuarterPatches.emplace_back();
+			auto& Patch = _Patches.emplace_back();
 			Patch.ScaleOffset = acl::vector_mul_add(HalfSizeXZNegHalfSizeXZ, acl::vector_set(0.f, 0.f, 0.f, 1.f), HalfSizeXZCenterXZ);
 			Patch.LOD = LOD;
 			Patch.MortonCode = FirstChildMortonCode + 1;
@@ -243,7 +225,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		if (ChildFlags & Child_BottomLeft)
 		{
 			// (HalfSizeX, HalfSizeZ, CenterX - HalfSizeX, CenterZ)
-			auto& Patch = _QuarterPatches.emplace_back();
+			auto& Patch = _Patches.emplace_back();
 			Patch.ScaleOffset = acl::vector_mul_add(HalfSizeXZNegHalfSizeXZ, acl::vector_set(0.f, 0.f, 1.f, 0.f), HalfSizeXZCenterXZ);
 			Patch.LOD = LOD;
 			Patch.MortonCode = FirstChildMortonCode + 2;
@@ -252,7 +234,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		if (ChildFlags & Child_BottomRight)
 		{
 			// (HalfSizeX, HalfSizeZ, CenterX, CenterZ)
-			auto& Patch = _QuarterPatches.emplace_back();
+			auto& Patch = _Patches.emplace_back();
 			Patch.ScaleOffset = HalfSizeXZCenterXZ;
 			Patch.LOD = LOD;
 			Patch.MortonCode = FirstChildMortonCode + 3;
