@@ -403,6 +403,8 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback, TFilter Filter)
 {
 	static_assert(!std::is_pointer_v<TComponent>, "First component in ForEachEntityWith must be mandatory!");
 
+	ZoneScopedN(DEM_FUNCTION_NAME);
+
 	// The first component is mandatory
 	// NB: explicit storage type is important here because access to the const storage is optimized
 	if (TComponentStoragePtr<TComponent> pStorage = FindComponentStorage<just_type_t<TComponent>>())

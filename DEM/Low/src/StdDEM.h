@@ -1,6 +1,7 @@
 #pragma once
 #include "StdCfg.h"
 #include <System/Memory.h>
+#include <tracy/Tracy.hpp>
 #include <stdint.h>
 #include <vector>
 #include <set>

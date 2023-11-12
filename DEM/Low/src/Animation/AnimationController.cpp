@@ -110,6 +110,8 @@ void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResource
 
 void CAnimationController::Update(const CSkeleton& Target, float dt)
 {
+	ZoneScoped;
+
 	// update conditions etc
 
 	// TODO:
@@ -133,6 +135,8 @@ void CAnimationController::Update(const CSkeleton& Target, float dt)
 
 void CAnimationController::EvaluatePose(CSkeleton& Target)
 {
+	ZoneScoped;
+
 	Target.ToPoseBuffer(_CurrPose); // TODO: update only if changed externally?
 
 	if (_PoseIndex > 1)

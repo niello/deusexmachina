@@ -48,6 +48,8 @@ static void SetKeyState(BYTE& KeyState, bool IsDown)
 // Window procedure for GUI windows
 LONG WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	ZoneScoped;
+
 	// Some app-wide messages are sent to window directly, so we intercept them here
 	switch (uMsg)
 	{
@@ -84,6 +86,8 @@ LONG WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 // because RIDEV_DEVNOTIFY and WM_INPUT_DEVICE_CHANGE don't work with hWnd=nullptr
 LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	ZoneScoped;
+
 	CPlatformWin32* pSelf = (CPlatformWin32*)::GetWindowLongPtr(hWnd, 0);
 	if (!pSelf) return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
 
@@ -683,6 +687,8 @@ POSWindow CPlatformWin32::CreateGUIWindow()
 
 bool CPlatformWin32::Update()
 {
+	ZoneScoped;
+
 	MSG Msg;
 	while (::PeekMessage(&Msg, nullptr, 0, 0, PM_REMOVE))
 	{

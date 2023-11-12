@@ -139,26 +139,36 @@ bool CGameLevel::Validate(Resources::CResourceManager& RsrcMgr)
 
 void CGameLevel::Update(float dt, const vector3* pCOIArray, UPTR COICount)
 {
+	ZoneScoped;
+
 	if (_PhysicsLevel) _PhysicsLevel->Update(dt);
 
-	_SceneRoot->Update(pCOIArray, COICount);
-
-	// TODO: build some list?
-	_SceneRoot->Visit([this](Scene::CSceneNode& Node)
 	{
-		for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
+		ZoneScopedN("Scene hierarchy update");
+
+		_SceneRoot->Update(pCOIArray, COICount);
+	}
+
+	{
+		ZoneScopedN("Renderable & light transform update");
+
+		// TODO: build some list?
+		_SceneRoot->Visit([this](Scene::CSceneNode& Node)
 		{
-			Scene::CNodeAttribute& Attr = *Node.GetAttribute(i);
-			if (!Attr.IsActive()) continue;
+			for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
+			{
+				Scene::CNodeAttribute& Attr = *Node.GetAttribute(i);
+				if (!Attr.IsActive()) continue;
 
-			if (auto pAttr = Attr.As<Frame::CRenderableAttribute>())
-				pAttr->UpdateInGraphicsScene(_GraphicsScene);
-			else if (auto pAttr = Attr.As<Frame::CLightAttribute>())
-				pAttr->UpdateInGraphicsScene(_GraphicsScene);
-		}
+				if (auto pAttr = Attr.As<Frame::CRenderableAttribute>())
+					pAttr->UpdateInGraphicsScene(_GraphicsScene);
+				else if (auto pAttr = Attr.As<Frame::CLightAttribute>())
+					pAttr->UpdateInGraphicsScene(_GraphicsScene);
+			}
 
-		OK;
-	});
+			OK;
+		});
+	}
 }
 //---------------------------------------------------------------------
 

@@ -194,6 +194,8 @@ CPhysicsLevel::~CPhysicsLevel()
 
 void CPhysicsLevel::Update(float dt)
 {
+	ZoneScoped;
+
 	if (pBtDynWorld) pBtDynWorld->stepSimulation(dt, 10, StepTime);
 }
 //---------------------------------------------------------------------

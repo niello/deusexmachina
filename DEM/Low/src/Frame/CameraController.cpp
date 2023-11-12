@@ -13,6 +13,8 @@ void CCameraController::SetNode(Scene::PSceneNode Node)
 
 void CCameraController::Update(float dt)
 {
+	ZoneScoped;
+
 	if (!_Node) return;
 
 	// Screen edge moving (active zone in pixels & percents?)

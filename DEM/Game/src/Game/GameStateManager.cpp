@@ -12,6 +12,8 @@ CGameStateManager::~CGameStateManager() = default;
 
 void CGameStateManager::Update(double FrameTime)
 {
+	ZoneScoped;
+
 	if (!_Stack.empty()) _Stack.back()->Update(FrameTime);
 }
 //---------------------------------------------------------------------

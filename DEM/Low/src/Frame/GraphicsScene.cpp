@@ -466,6 +466,8 @@ static DEM_FORCE_INLINE U8 ClipCube(acl::Vector4_32Arg0 Bounds, acl::Vector4_32A
 // See https://fgiesen.wordpress.com/2010/10/17/view-frustum-culling/
 void CGraphicsScene::TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum, std::vector<bool>& NodeVisibility) const
 {
+	ZoneScoped;
+
 	n_assert2_dbg(!_TreeNodes.empty(), "CGraphicsScene::TestSpatialTreeVisibility() should not be called before CGraphicsScene::Init()!");
 
 	const size_t CachedCount = NodeVisibility.size() / 2;

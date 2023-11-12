@@ -294,6 +294,8 @@ U32 CView::RegisterEffect(const Render::CEffect& Effect, CStrID InputSet)
 
 void CView::Update(float dt)
 {
+	ZoneScoped;
+
 	if (_GraphicsMgr) _GraphicsMgr->Update(dt);
 	if (_UIContext) _UIContext->Update(dt);
 }
@@ -334,6 +336,8 @@ bool CView::UpdateCameraFrustum()
 
 void CView::SynchronizeRenderables()
 {
+	ZoneScoped;
+
 	// Synchronize scene objects with their renderable mirrors
 	DEM::Algo::SortedUnion(_pScene->GetRenderables(), _Renderables, [](const auto& a, const auto& b) { return a.first < b.first; },
 		[this](auto ItSceneObject, auto ItViewObject)
@@ -380,6 +384,8 @@ void CView::SynchronizeRenderables()
 
 void CView::SynchronizeLights()
 {
+	ZoneScoped;
+
 	// Synchronize scene lights with their GPU mirrors
 	DEM::Algo::SortedUnion(_pScene->GetLights(), _Lights, [](const auto& a, const auto& b) { return a.first < b.first; },
 		[this](auto ItSceneObject, auto ItViewObject)
@@ -429,6 +435,8 @@ void CView::SynchronizeLights()
 
 void CView::UpdateRenderables(bool ViewProjChanged)
 {
+	ZoneScoped;
+
 	// Iterate synchronized collections side by side
 	auto ItSceneObject = _pScene->GetRenderables().cbegin();
 	auto ItViewObject = _Renderables.cbegin();
@@ -522,6 +530,8 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 
 void CView::UpdateLights(bool ViewProjChanged)
 {
+	ZoneScoped;
+
 	// Just a buffer for change detection inside a loop
 	Render::CGPULightInfo PrevInfo;
 
@@ -599,6 +609,8 @@ void CView::UpdateLights(bool ViewProjChanged)
 
 void CView::UploadLightsToGPU()
 {
+	ZoneScoped;
+
 	U32 MaxLocalLights = 0;
 	Render::CShaderConstantParam LocalLightElm;
 	if (_RenderPath->ConstLightBuffer)
@@ -679,6 +691,8 @@ void CView::UploadLightsToGPU()
 // Everything might be unbound since the previous frame, so bind even if values didn't change
 void CView::ApplyGlobalShaderParams()
 {
+	ZoneScoped;
+
 	Render::CGPUDriver* pGPU = GetGPU();
 
 	_Globals.Apply();
@@ -700,6 +714,8 @@ void CView::ApplyGlobalShaderParams()
 bool CView::Render()
 {
 	if (!_RenderPath || !_pScene || !_pCamera) return false;
+
+	ZoneScoped;
 
 	// Synchronize objects from scene to this view
 	SynchronizeRenderables();
@@ -740,6 +756,8 @@ bool CView::Render()
 bool CView::Present() const
 {
 	if (_SwapChainID < 0) FAIL;
+
+	ZoneScoped;
 
 	auto GPU = GetGPU();
 	return GPU && GPU->Present(_SwapChainID);
