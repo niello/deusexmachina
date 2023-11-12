@@ -241,6 +241,19 @@ bool CShaderParamStorage::SetResource(size_t Index, CTexture* pTexture)
 }
 //---------------------------------------------------------------------
 
+const PTexture& CShaderParamStorage::GetResource(CStrID ID) const
+{
+	return GetResource(_Table->GetResourceIndex(ID));
+}
+//---------------------------------------------------------------------
+
+const PTexture& CShaderParamStorage::GetResource(size_t Index) const
+{
+	static const PTexture NoResource{};
+	return (Index < _Resources.size()) ? _Resources[Index] : NoResource;
+}
+//---------------------------------------------------------------------
+
 bool CShaderParamStorage::SetSampler(CStrID ID, CSampler* pSampler)
 {
 	return SetSampler(_Table->GetSamplerIndex(ID), pSampler);
@@ -252,6 +265,19 @@ bool CShaderParamStorage::SetSampler(size_t Index, CSampler* pSampler)
 	if (Index >= _Samplers.size()) FAIL;
 	_Samplers[Index] = pSampler;
 	OK;
+}
+//---------------------------------------------------------------------
+
+const PSampler& CShaderParamStorage::GetSampler(CStrID ID) const
+{
+	return GetSampler(_Table->GetResourceIndex(ID));
+}
+//---------------------------------------------------------------------
+
+const PSampler& CShaderParamStorage::GetSampler(size_t Index) const
+{
+	static const PSampler NoSampler{};
+	return (Index < _Samplers.size()) ? _Samplers[Index] : NoSampler;
 }
 //---------------------------------------------------------------------
 

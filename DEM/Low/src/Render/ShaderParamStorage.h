@@ -55,9 +55,13 @@ public:
 
 	bool                     SetResource(CStrID ID, CTexture* pTexture);
 	bool                     SetResource(size_t Index, CTexture* pTexture);
+	const PTexture&          GetResource(CStrID ID) const;
+	const PTexture&          GetResource(size_t Index) const;
 
 	bool                     SetSampler(CStrID ID, CSampler* pSampler);
 	bool                     SetSampler(size_t Index, CSampler* pSampler);
+	const PSampler&          GetSampler(CStrID ID) const;
+	const PSampler&          GetSampler(size_t Index) const;
 
 	bool                     Apply();
 	void                     Unapply();

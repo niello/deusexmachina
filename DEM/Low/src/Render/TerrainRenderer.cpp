@@ -6,6 +6,7 @@
 #include <Render/Mesh.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
+#include <Render/Texture.h>
 #include <Render/Sampler.h>
 #include <Core/Factory.h>
 
@@ -122,7 +123,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			float TerrainYOffset;
 			float InvSplatSizeX;
 			float InvSplatSizeZ;
-			std::array<float, 4> NormalMapUVCoeffs;
+			std::array<float, 4> NormalMapUVCoeffs = { 1.f, 1.f, 0.f, 0.f };
 			std::array<float, 4> SplatMapUVCoeffs;
 			float WorldMaxX;
 			float WorldMaxZ;
@@ -147,7 +148,14 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		CDLODParams.TerrainYOffset = -32767.f * ScaleY + Terrain.Transform.Translation().y;
 		CDLODParams.InvSplatSizeX = Terrain.GetInvSplatSizeX();
 		CDLODParams.InvSplatSizeZ = Terrain.GetInvSplatSizeZ();
-		CDLODParams.NormalMapUVCoeffs = { 1.f, 1.f, 0.f, 0.f }; // TODO: DXT texture is 1028 instead of 1025, need to detect that! Dig into material?
+		if (const auto& Tex = pCurrMaterial->GetValues().GetResource(CStrID("TexGeometryNormalMap")))
+		{
+			// Block compressed textures add extra rows & columns, breaking exact texel -> vertex mapping
+			// TODO: can make better?
+			const auto& Desc = Tex->GetDesc();
+			CDLODParams.NormalMapUVCoeffs[0] = static_cast<float>(CDLOD.GetHeightMapWidth()) / static_cast<float>(Desc.Width);
+			CDLODParams.NormalMapUVCoeffs[1] = static_cast<float>(CDLOD.GetHeightMapHeight()) / static_cast<float>(Desc.Height);
+		}
 		CDLODParams.SplatMapUVCoeffs = CDLOD.GetSplatMapUVCoeffs();
 		CDLODParams.WorldMaxX = AABB.Max.x;
 		CDLODParams.WorldMaxZ = AABB.Max.z;

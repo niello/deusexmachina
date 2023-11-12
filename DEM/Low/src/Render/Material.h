@@ -34,6 +34,8 @@ public:
 	bool     IsValid() const { return _Effect.IsValidPtr(); }
 	CEffect* GetEffect() const { return _Effect.Get(); }
 	U16      GetSortingKey() const { return _SortingKey; }
+	auto&    GetValues() const { return _Values; }
+	auto&    GetValues() { return _Values; }
 };
 
 }
