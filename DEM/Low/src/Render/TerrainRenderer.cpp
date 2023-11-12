@@ -136,14 +136,16 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		AABB.Transform(Terrain.Transform);
 		const auto WorldSize = AABB.Size();
 
-		const float ScaleY = CDLOD.GetVerticalScale() * WorldSize.y / LocalSize.y;
 		const float HMTextelWidth = 1.f / static_cast<float>(CDLOD.GetHeightMapWidth());
 		const float HMTextelHeight = 1.f / static_cast<float>(CDLOD.GetHeightMapHeight());
 
+		// Map texels to vertices exactly. UV will be in range (0.5 * texelsize, 1 - 0.5 * texelsize).
 		CDLODParams.WorldToHM[0] = (1.f - HMTextelWidth) / WorldSize.x;
 		CDLODParams.WorldToHM[1] = (1.f - HMTextelHeight) / WorldSize.z;
 		CDLODParams.WorldToHM[2] = -AABB.Min.x * CDLODParams.WorldToHM[0] + HMTextelWidth * 0.5f;
 		CDLODParams.WorldToHM[3] = -AABB.Min.z * CDLODParams.WorldToHM[1] + HMTextelHeight * 0.5f;
+
+		const float ScaleY = CDLOD.GetVerticalScale() * WorldSize.y / LocalSize.y;
 		CDLODParams.TerrainYScale = 65535.f * ScaleY;
 		CDLODParams.TerrainYOffset = -32767.f * ScaleY + Terrain.Transform.Translation().y;
 		CDLODParams.InvSplatSizeX = Terrain.GetInvSplatSizeX();
