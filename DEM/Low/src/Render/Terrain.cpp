@@ -69,11 +69,17 @@ void CTerrain::UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrus
 	if (TrackObjectLightIntersections)
 	{
 		size_t MatchCount = 0;
-		DEM::Algo::SortedInnerJoin(_Patches, _PrevPatches, PatchInstanceCmp, [&MatchCount](auto ItNew, auto ItPrev)
+		DEM::Algo::SortedInnerJoin(_Patches, _PrevPatches, PatchInstanceCmp,
+			[&MatchCount, MaxLODForDynamicLights = MaxLODForDynamicLights](auto ItNew, auto ItPrev)
 		{
-			ItNew->LightsVersion = ItPrev->LightsVersion;
-			ItNew->Lights = ItPrev->Lights;
-			++MatchCount;
+			const bool WasLitByLOD = (ItPrev->LOD <= MaxLODForDynamicLights);
+			const bool IsLitByLOD = (ItNew->LOD <= MaxLODForDynamicLights);
+			if (WasLitByLOD == IsLitByLOD)
+			{
+				ItNew->LightsVersion = ItPrev->LightsVersion;
+				ItNew->Lights = ItPrev->Lights;
+				++MatchCount;
+			}
 		});
 
 		// If some of new patches could not copy cached lights from prevoius ones, we must force an update of light data
