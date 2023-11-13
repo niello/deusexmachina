@@ -618,7 +618,7 @@ public:
 					const float ClusterScaleX = WorldSizeX / static_cast<float>(RasterQuadsX);
 					const float ClusterScaleZ = WorldSizeZ / static_cast<float>(RasterQuadsY);
 
-					acl::Transform_32 NodeTfm =
+					rtm::qvvf NodeTfm =
 					{
 						{ 0.f, 0.f, 0.f, 1.f },
 						{ WorldOffsetX + ClusterOffsetX, 0.f, WorldOffsetZ + ClusterOffsetZ, 1.f },

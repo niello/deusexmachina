@@ -1,4 +1,4 @@
-#include <acl/math/vector4_32.h> // FIXME: use RTM only when it becomes available as a separate library
+#include <rtm/vector4f.h>
 #include <vector>
 
 // At least part of the code is from recastnavigation\RecastDemo\Source\ConvexVolumeTool.cpp
@@ -28,12 +28,12 @@ static inline bool cmppt(const float* a, const float* b)
 // Calculates convex hull on xz-plane of points on 'pts',
 // stores the indices of the resulting hull in 'out' and
 // returns number of points on hull.
-static std::vector<size_t> ConvexHull(const std::vector<acl::Vector4_32>& In)
+static std::vector<size_t> ConvexHull(const std::vector<rtm::vector4f>& In)
 {
 	// Find lower-leftmost point.
 	size_t hull = 0;
 	for (size_t i = 1; i < In.size(); ++i)
-		if (cmppt(acl::vector_as_float_ptr(In[i]), acl::vector_as_float_ptr(In[hull])))
+		if (cmppt(rtm::vector_to_pointer(In[i]), rtm::vector_to_pointer(In[hull])))
 			hull = i;
 
 	std::vector<size_t> Result;
@@ -47,9 +47,9 @@ static std::vector<size_t> ConvexHull(const std::vector<acl::Vector4_32>& In)
 		for (size_t i = 1; i < In.size(); ++i)
 		{
 			if (hull == endpt ||
-				left(acl::vector_as_float_ptr(In[hull]),
-					acl::vector_as_float_ptr(In[endpt]),
-					acl::vector_as_float_ptr(In[i])))
+				left(rtm::vector_to_pointer(In[hull]),
+					rtm::vector_to_pointer(In[endpt]),
+					rtm::vector_to_pointer(In[i])))
 			{
 				endpt = i;
 			}
@@ -68,24 +68,24 @@ std::vector<float> OffsetPoly(const float* pSrcVerts, int SrcCount, float Offset
 
 	if (!pSrcVerts || !SrcCount) return Result;
 
-	std::vector<acl::Vector4_32> SrcVerts(SrcCount);
+	std::vector<rtm::vector4f> SrcVerts(SrcCount);
 	for (int i = 0; i < SrcCount; ++i)
 		SrcVerts[i] = { pSrcVerts[i * 3], pSrcVerts[i * 3 + 1], pSrcVerts[i * 3 + 2], 0.f };
 
-	acl::Vector4_32 Center = acl::vector_zero_32();
+	rtm::vector4f Center = rtm::vector_zero();
 	for (auto SrcVertex : SrcVerts)
-		Center = acl::vector_add(Center, SrcVertex);
-	Center = acl::vector_div(Center, { static_cast<float>(SrcCount), static_cast<float>(SrcCount), static_cast<float>(SrcCount) });
+		Center = rtm::vector_add(Center, SrcVertex);
+	Center = rtm::vector_div(Center, { static_cast<float>(SrcCount), static_cast<float>(SrcCount), static_cast<float>(SrcCount) });
 
-	std::vector<acl::Vector4_32> TmpVerts(SrcCount);
+	std::vector<rtm::vector4f> TmpVerts(SrcCount);
 	for (int i = 0; i < SrcCount; ++i)
 	{
-		TmpVerts[i] = acl::vector_sub(SrcVerts[i], Center);
-		const float Len = acl::vector_length3(TmpVerts[i]);
+		TmpVerts[i] = rtm::vector_sub(SrcVerts[i], Center);
+		const float Len = rtm::vector_length3(TmpVerts[i]);
 		if (Len > 0.f)
 		{
 			const float Coeff = std::max(0.f, Len + Offset) / Len;
-			TmpVerts[i] = acl::vector_mul_add(TmpVerts[i], Coeff, Center);
+			TmpVerts[i] = rtm::vector_mul_add(TmpVerts[i], Coeff, Center);
 		}
 	}
 
@@ -98,9 +98,9 @@ std::vector<float> OffsetPoly(const float* pSrcVerts, int SrcCount, float Offset
 	for (auto i : Hull)
 	{
 		const auto& Vertex = TmpVerts[Hull[i]];
-		Result.push_back(acl::vector_get_x(Vertex));
-		Result.push_back(acl::vector_get_y(Vertex));
-		Result.push_back(acl::vector_get_z(Vertex));
+		Result.push_back(rtm::vector_get_x(Vertex));
+		Result.push_back(rtm::vector_get_y(Vertex));
+		Result.push_back(rtm::vector_get_z(Vertex));
 	}
 
 	return Result;
@@ -112,13 +112,13 @@ bool GetPointInPoly(const std::vector<float>& In, float Out[3])
 	// Need at least 3 vertices, 3 floats each
 	if (In.size() < 9) return false;
 
-	acl::Vector4_32 a = { In[0], In[1], In[2], 0.f };
-	a = acl::vector_add(a, { In[3], In[4], In[5], 0.f });
-	a = acl::vector_add(a, { In[6], In[7], In[8], 0.f });
-	a = acl::vector_div(a, acl::vector_set(3.f));
-	Out[0] = acl::vector_get_x(a);
-	Out[1] = acl::vector_get_y(a);
-	Out[2] = acl::vector_get_z(a);
+	rtm::vector4f a = { In[0], In[1], In[2], 0.f };
+	a = rtm::vector_add(a, { In[3], In[4], In[5], 0.f });
+	a = rtm::vector_add(a, { In[6], In[7], In[8], 0.f });
+	a = rtm::vector_div(a, rtm::vector_set(3.f));
+	Out[0] = rtm::vector_get_x(a);
+	Out[1] = rtm::vector_get_y(a);
+	Out[2] = rtm::vector_get_z(a);
 	return true;
 }
 //---------------------------------------------------------------------

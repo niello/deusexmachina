@@ -7,7 +7,7 @@
 #include <DetourNavMesh.h>
 #include <DetourNavMeshQuery.h>
 #include <DetourNavMeshBuilder.h>
-#include <acl/math/transform_32.h> // FIXME: use RTM only when it becomes available as a separate library
+#include <rtm/qvvf.h>
 #include <set>
 
 namespace fs = std::filesystem;
@@ -102,7 +102,7 @@ public:
 			{
 				const auto& GeometryDesc = GeometryRecord.GetValue<Data::CParams>();
 
-				acl::Transform_32 WorldTfm = acl::transform_identity_32();
+				rtm::qvvf WorldTfm = rtm::qvv_identity();
 
 				const Data::CParams* pTfmParams;
 				if (ParamsUtils::TryGetParam(pTfmParams, GeometryDesc, "Transform"))
@@ -548,7 +548,7 @@ public:
 	}
 
 	// TODO: can optimize by reading mesh once even if it is referenced multiple times
-	bool ProcessMeshGeometry(const Data::CParams& Desc, const acl::Transform_32& WorldTfm, std::vector<float>& OutVertices, std::vector<int>& OutIndices, CThreadSafeLog& Log)
+	bool ProcessMeshGeometry(const Data::CParams& Desc, const rtm::qvvf& WorldTfm, std::vector<float>& OutVertices, std::vector<int>& OutIndices, CThreadSafeLog& Log)
 	{
 		const auto ResourceID = ParamsUtils::GetParam(Desc, "Mesh", std::string{});
 		const auto Path = ResolvePathAliases(ResourceID, _PathAliases);
@@ -670,10 +670,10 @@ public:
 			for (uint32_t i = 0; i < Group.VertexCount; ++i)
 			{
 				auto pPos = reinterpret_cast<const float*>(pSrc);
-				const auto Vertex = acl::transform_position(WorldTfm, { pPos[0], pPos[1], pPos[2] });
-				*pCurrVtx++ = acl::vector_get_x(Vertex);
-				*pCurrVtx++ = acl::vector_get_y(Vertex);
-				*pCurrVtx++ = acl::vector_get_z(Vertex);
+				const auto Vertex = rtm::qvv_mul_point3({ pPos[0], pPos[1], pPos[2] }, WorldTfm);
+				*pCurrVtx++ = rtm::vector_get_x(Vertex);
+				*pCurrVtx++ = rtm::vector_get_y(Vertex);
+				*pCurrVtx++ = rtm::vector_get_z(Vertex);
 
 				pSrc += VertexStride;
 			}
@@ -723,7 +723,7 @@ public:
 		return true;
 	}
 
-	bool ProcessTerrainGeometry(const Data::CParams& Desc, const acl::Transform_32& WorldTfm, std::vector<float>& OutVertices, std::vector<int>& OutIndices, CThreadSafeLog& Log)
+	bool ProcessTerrainGeometry(const Data::CParams& Desc, const rtm::qvvf& WorldTfm, std::vector<float>& OutVertices, std::vector<int>& OutIndices, CThreadSafeLog& Log)
 	{
 		const auto ResourceID = ParamsUtils::GetParam(Desc, "Terrain", std::string{});
 		const auto Path = ResolvePathAliases(ResourceID, _PathAliases);
@@ -785,16 +785,17 @@ public:
 			{
 				for (uint32_t i = 0; i < Header.Width; ++i)
 				{
-					const auto Vertex = acl::transform_position(WorldTfm,
+					const auto Vertex = rtm::qvv_mul_point3(
 						// Local vertex
 						{
 							Header.MinX + i * QuadSizeX,
 							(static_cast<int>(HeightMap[j * Header.Width + i]) - 32767) * Header.VerticalScale,
 							Header.MinZ + j * QuadSizeZ
-						});
-					*pCurrVtx++ = acl::vector_get_x(Vertex);
-					*pCurrVtx++ = acl::vector_get_y(Vertex);
-					*pCurrVtx++ = acl::vector_get_z(Vertex);
+						},
+						WorldTfm);
+					*pCurrVtx++ = rtm::vector_get_x(Vertex);
+					*pCurrVtx++ = rtm::vector_get_y(Vertex);
+					*pCurrVtx++ = rtm::vector_get_z(Vertex);
 				}
 			}
 		}
@@ -819,7 +820,7 @@ public:
 		return true;
 	}
 
-	bool ProcessShapeGeometry(const Data::CParams& Desc, const acl::Transform_32& WorldTfm, std::vector<float>& OutVertices, std::vector<int>& OutIndices, CThreadSafeLog& Log)
+	bool ProcessShapeGeometry(const Data::CParams& Desc, const rtm::qvvf& WorldTfm, std::vector<float>& OutVertices, std::vector<int>& OutIndices, CThreadSafeLog& Log)
 	{
 		// TODO: add shape geometry
 		return false;

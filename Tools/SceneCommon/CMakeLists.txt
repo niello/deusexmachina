@@ -34,6 +34,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_SCENE_COMMON_HEADERS
 add_library(SceneCommon STATIC ${DEM_SCENE_COMMON_HEADERS} ${DEM_SCENE_COMMON_SOURCES})
 target_include_directories(SceneCommon PUBLIC
 	"${CMAKE_CURRENT_SOURCE_DIR}"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/rtm/includes"
 	"${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/acl/includes"
 	"${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/DevIL/DevIL/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/bullet/src"

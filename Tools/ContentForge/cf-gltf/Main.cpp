@@ -102,15 +102,15 @@ static const gltf::Node* FindNodeByPath(const gltf::Document& Doc, const gltf::S
 }
 //---------------------------------------------------------------------
 
-static acl::Transform_32 GetNodeTransform(const gltf::Node& Node)
+static rtm::qvvf GetNodeTransform(const gltf::Node& Node)
 {
 	if (Node.matrix != gltf::Matrix4::IDENTITY)
 	{
 		const acl::AffineMatrix_32 ACLMatrix = acl::matrix_set(
-			acl::Vector4_32{ Node.matrix.values[0], Node.matrix.values[1], Node.matrix.values[2], Node.matrix.values[3] },
-			acl::Vector4_32{ Node.matrix.values[4], Node.matrix.values[5], Node.matrix.values[6], Node.matrix.values[7] },
-			acl::Vector4_32{ Node.matrix.values[8], Node.matrix.values[9], Node.matrix.values[10], Node.matrix.values[11] },
-			acl::Vector4_32{ 0.f, 0.f, 0.f, 1.f });
+			rtm::vector4f{ Node.matrix.values[0], Node.matrix.values[1], Node.matrix.values[2], Node.matrix.values[3] },
+			rtm::vector4f{ Node.matrix.values[4], Node.matrix.values[5], Node.matrix.values[6], Node.matrix.values[7] },
+			rtm::vector4f{ Node.matrix.values[8], Node.matrix.values[9], Node.matrix.values[10], Node.matrix.values[11] },
+			rtm::vector4f{ 0.f, 0.f, 0.f, 1.f });
 
 		return
 		{
@@ -136,14 +136,14 @@ static acl::AffineMatrix_32 GetNodeMatrix(const gltf::Node& Node)
 	if (Node.matrix != gltf::Matrix4::IDENTITY)
 	{
 		return acl::matrix_set(
-			acl::Vector4_32{ Node.matrix.values[0], Node.matrix.values[1], Node.matrix.values[2], Node.matrix.values[3] },
-			acl::Vector4_32{ Node.matrix.values[4], Node.matrix.values[5], Node.matrix.values[6], Node.matrix.values[7] },
-			acl::Vector4_32{ Node.matrix.values[8], Node.matrix.values[9], Node.matrix.values[10], Node.matrix.values[11] },
-			acl::Vector4_32{ Node.matrix.values[12], Node.matrix.values[13], Node.matrix.values[14], 1.f });
+			rtm::vector4f{ Node.matrix.values[0], Node.matrix.values[1], Node.matrix.values[2], Node.matrix.values[3] },
+			rtm::vector4f{ Node.matrix.values[4], Node.matrix.values[5], Node.matrix.values[6], Node.matrix.values[7] },
+			rtm::vector4f{ Node.matrix.values[8], Node.matrix.values[9], Node.matrix.values[10], Node.matrix.values[11] },
+			rtm::vector4f{ Node.matrix.values[12], Node.matrix.values[13], Node.matrix.values[14], 1.f });
 	}
 	else
 	{
-		const acl::Transform_32 Tfm =
+		const rtm::qvvf Tfm =
 		{
 			{ Node.rotation.x, Node.rotation.y, Node.rotation.z, Node.rotation.w },
 			{ Node.translation.x, Node.translation.y, Node.translation.z, 1.f },
@@ -543,7 +543,7 @@ public:
 		return Result ? ETaskResult::Success : ETaskResult::Failure;
 	}
 
-	bool ExportNode(const std::string& NodeName, CContext& Ctx, Data::CParams& Nodes, const acl::Transform_32& ParentGlobalTfm)
+	bool ExportNode(const std::string& NodeName, CContext& Ctx, Data::CParams& Nodes, const rtm::qvvf& ParentGlobalTfm)
 	{
 		const auto& Node = Ctx.Doc.nodes[NodeName];
 
@@ -625,7 +625,7 @@ public:
 		return true;
 	}
 
-	bool ExportModel(const std::string& MeshName, CContext& Ctx, Data::CDataArray& Attributes, const acl::Transform_32& GlobalTfm)
+	bool ExportModel(const std::string& MeshName, CContext& Ctx, Data::CDataArray& Attributes, const rtm::qvvf& GlobalTfm)
 	{
 		const auto& Mesh = Ctx.Doc.meshes[MeshName];
 
@@ -773,9 +773,9 @@ public:
 
 					const float Sign = *AttrIt++;
 
-					const acl::Vector4_32 Normal = { Vertex.Normal.x, Vertex.Normal.y, Vertex.Normal.z };
-					const acl::Vector4_32 Tangent = { Vertex.Tangent.x, Vertex.Tangent.y, Vertex.Tangent.z };
-					const acl::Vector4_32 Bitangent = acl::vector_cross3(Normal, Tangent);
+					const rtm::vector4f Normal = { Vertex.Normal.x, Vertex.Normal.y, Vertex.Normal.z };
+					const rtm::vector4f Tangent = { Vertex.Tangent.x, Vertex.Tangent.y, Vertex.Tangent.z };
+					const rtm::vector4f Bitangent = acl::vector_cross3(Normal, Tangent);
 
 					Vertex.Bitangent.x = acl::vector_get_x(Bitangent) * Sign;
 					Vertex.Bitangent.y = acl::vector_get_y(Bitangent) * Sign;

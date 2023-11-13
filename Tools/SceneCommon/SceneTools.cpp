@@ -6,6 +6,7 @@
 #include <acl/core/ansi_allocator.h>
 #include <acl/core/unique_ptr.h>
 #include <acl/algorithm/uniformly_sampled/encoder.h>
+#include <rtm/quatf.h>
 #include <IL/il.h>
 #include <LinearMath/btConvexHullComputer.h>
 #include <regex>
@@ -855,7 +856,7 @@ std::string WriteTexture(const fs::path& SrcPath, const fs::path& DestDir, const
 
 // TODO: check if already created on this launch, don't recreate
 std::optional<std::string> GenerateCollisionShape(std::string ShapeType, const std::filesystem::path& ShapeDir,
-	const std::string& MeshRsrcName, const CMeshAttrInfo& MeshInfo, const acl::Transform_32& GlobalTfm, const std::map<std::string, std::filesystem::path>& PathAliases, CThreadSafeLog& Log)
+	const std::string& MeshRsrcName, const CMeshAttrInfo& MeshInfo, const rtm::qvvf& GlobalTfm, const std::map<std::string, std::filesystem::path>& PathAliases, CThreadSafeLog& Log)
 {
 	trim(ShapeType, " \t\n\r");
 	ToLower(ShapeType);
@@ -872,9 +873,9 @@ std::optional<std::string> GenerateCollisionShape(std::string ShapeType, const s
 		MeshInfo.AABB.Max.y - MeshInfo.AABB.Min.y,
 		MeshInfo.AABB.Max.z - MeshInfo.AABB.Min.z);
 	const float3 Scaling(
-		acl::vector_get_x(GlobalTfm.scale),
-		acl::vector_get_y(GlobalTfm.scale),
-		acl::vector_get_z(GlobalTfm.scale));
+		rtm::vector_get_x(GlobalTfm.scale),
+		rtm::vector_get_y(GlobalTfm.scale),
+		rtm::vector_get_z(GlobalTfm.scale));
 
 	Data::CParams CollisionShape;
 	if (ShapeType == "box")
@@ -959,34 +960,34 @@ std::optional<std::string> GenerateCollisionShape(std::string ShapeType, const s
 }
 //---------------------------------------------------------------------
 
-void FillNodeTransform(const acl::Transform_32& Tfm, Data::CParams& NodeSection)
+void FillNodeTransform(const rtm::qvvf& Tfm, Data::CParams& NodeSection)
 {
 	static const CStrID sidTranslation("Translation");
 	static const CStrID sidRotation("Rotation");
 	static const CStrID sidScale("Scale");
 
-	constexpr acl::Vector4_32 Unit3 = { 1.f, 1.f, 1.f, 0.f };
-	constexpr acl::Vector4_32 Zero3 = { 0.f, 0.f, 0.f, 0.f };
-	constexpr acl::Quat_32 IdentityQuat = { 0.f, 0.f, 0.f, 1.f };
+	constexpr rtm::vector4f Unit3 = { 1.f, 1.f, 1.f, 0.f };
+	constexpr rtm::vector4f Zero3 = { 0.f, 0.f, 0.f, 0.f };
+	constexpr rtm::quatf IdentityQuat = { 0.f, 0.f, 0.f, 1.f };
 
-	if (!acl::vector_all_near_equal3(Tfm.scale, Unit3))
-		NodeSection.emplace_back(sidScale, float3({ acl::vector_get_x(Tfm.scale), acl::vector_get_y(Tfm.scale), acl::vector_get_z(Tfm.scale) }));
+	if (!rtm::vector_all_near_equal3(Tfm.scale, Unit3))
+		NodeSection.emplace_back(sidScale, float3({ rtm::vector_get_x(Tfm.scale), rtm::vector_get_y(Tfm.scale), rtm::vector_get_z(Tfm.scale) }));
 
-	if (!acl::quat_near_equal(Tfm.rotation, IdentityQuat))
-		NodeSection.emplace_back(sidRotation, float4({ acl::quat_get_x(Tfm.rotation), acl::quat_get_y(Tfm.rotation), acl::quat_get_z(Tfm.rotation), acl::quat_get_w(Tfm.rotation) }));
+	if (!rtm::quat_near_equal(Tfm.rotation, IdentityQuat))
+		NodeSection.emplace_back(sidRotation, float4({ rtm::quat_get_x(Tfm.rotation), rtm::quat_get_y(Tfm.rotation), rtm::quat_get_z(Tfm.rotation), rtm::quat_get_w(Tfm.rotation) }));
 
-	if (!acl::vector_all_near_equal3(Tfm.translation, Zero3))
-		NodeSection.emplace_back(sidTranslation, float3({ acl::vector_get_x(Tfm.translation), acl::vector_get_y(Tfm.translation), acl::vector_get_z(Tfm.translation) }));
+	if (!rtm::vector_all_near_equal3(Tfm.translation, Zero3))
+		NodeSection.emplace_back(sidTranslation, float3({ rtm::vector_get_x(Tfm.translation), rtm::vector_get_y(Tfm.translation), rtm::vector_get_z(Tfm.translation) }));
 }
 //---------------------------------------------------------------------
 
-static std::pair<size_t, size_t> FindFootOnGroundFrames(acl::Vector4_32 UpDir, const std::vector<acl::Vector4_32>& FootPositions)
+static std::pair<size_t, size_t> FindFootOnGroundFrames(rtm::vector4f UpDir, const std::vector<rtm::vector4f>& FootPositions)
 {
 	if (FootPositions.empty()) return { std::numeric_limits<size_t>().max(), std::numeric_limits<size_t>().max() };
 
 	std::vector<float> Heights(FootPositions.size());
 	for (size_t i = 0; i < FootPositions.size(); ++i)
-		Heights[i] = acl::vector_dot3(FootPositions[i], UpDir);
+		Heights[i] = rtm::vector_dot3(FootPositions[i], UpDir);
 
 	const auto MinMax = std::minmax_element(Heights.cbegin(), Heights.cend());
 	const float Min = *MinMax.first;
@@ -1012,16 +1013,16 @@ static std::pair<size_t, size_t> FindFootOnGroundFrames(acl::Vector4_32 UpDir, c
 //---------------------------------------------------------------------
 
 bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
-	acl::Vector4_32 ForwardDir, acl::Vector4_32 UpDir, acl::Vector4_32 SideDir,
-	const std::vector<acl::Vector4_32>& RootPositions,
-	const std::vector<acl::Vector4_32>& LeftFootPositions,
-	const std::vector<acl::Vector4_32>& RightFootPositions)
+	rtm::vector4f ForwardDir, rtm::vector4f UpDir, rtm::vector4f SideDir,
+	const std::vector<rtm::vector4f>& RootPositions,
+	const std::vector<rtm::vector4f>& LeftFootPositions,
+	const std::vector<rtm::vector4f>& RightFootPositions)
 {
 	if (LeftFootPositions.empty() || RightFootPositions.empty() || LeftFootPositions.size() != RightFootPositions.size()) return false;
 
-	ForwardDir = acl::vector_normalize3(ForwardDir);
-	UpDir = acl::vector_normalize3(UpDir);
-	SideDir = acl::vector_normalize3(SideDir);
+	ForwardDir = rtm::vector_normalize3(ForwardDir);
+	UpDir = rtm::vector_normalize3(UpDir);
+	SideDir = rtm::vector_normalize3(SideDir);
 
 	const size_t FrameCount = LeftFootPositions.size();
 
@@ -1034,12 +1035,12 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 	for (size_t i = 0; i < FrameCount; ++i)
 	{
 		// Project foot offset onto the locomotion plane (fwd, up) and normalize it to get phase direction
-		const auto Offset = acl::vector_sub(LeftFootPositions[i], RightFootPositions[i]);
-		const auto ProjectedOffset = acl::vector_sub(Offset, acl::vector_mul(SideDir, acl::vector_dot3(Offset, SideDir)));
-		const auto PhaseDir = acl::vector_normalize3(ProjectedOffset);
+		const auto Offset = rtm::vector_sub(LeftFootPositions[i], RightFootPositions[i]);
+		const auto ProjectedOffset = rtm::vector_sub(Offset, rtm::vector_mul(SideDir, rtm::vector_dot3(Offset, SideDir)));
+		const auto PhaseDir = rtm::vector_normalize3(ProjectedOffset);
 
-		const float CosA = acl::vector_dot3(PhaseDir, ForwardDir);
-		const float SinA = acl::vector_dot3(acl::vector_cross3(PhaseDir, ForwardDir), SideDir);
+		const float CosA = rtm::vector_dot3(PhaseDir, ForwardDir);
+		const float SinA = rtm::vector_dot3(rtm::vector_cross3(PhaseDir, ForwardDir), SideDir);
 		const float Angle = std::copysignf(RadToDeg(std::acosf(CosA)), SinA); // Could also use Angle = RadToDeg(std::atan2f(SinA, CosA));
 
 		// Calculate phase in degrees, where:
@@ -1085,7 +1086,7 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 	// Locomotion speed is a speed with which a root moves while a foot stands on the ground.
 	// Here we detect frame ranges with either foot planted. It is also used for "foot down" events.
 
-	acl::Vector4_32 RootDiff = { 0.f, 0.f, 0.f, 0.f };
+	rtm::vector4f RootDiff = { 0.f, 0.f, 0.f, 0.f };
 	size_t FramesOnGround = 0;
 
 	// Accumulate motion during the left foot on the ground...
@@ -1094,9 +1095,9 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 	{
 		Out.LeftFootOnGroundFrame = static_cast<uint32_t>(LeftFoGFrames.first);
 
-		const auto RelRootStart = acl::vector_sub(RootPositions[LeftFoGFrames.first], LeftFootPositions[LeftFoGFrames.first]);
-		const auto RelRootEnd = acl::vector_sub(RootPositions[LeftFoGFrames.second], LeftFootPositions[LeftFoGFrames.second]);
-		RootDiff = acl::vector_add(RootDiff, acl::vector_sub(RelRootEnd, RelRootStart));
+		const auto RelRootStart = rtm::vector_sub(RootPositions[LeftFoGFrames.first], LeftFootPositions[LeftFoGFrames.first]);
+		const auto RelRootEnd = rtm::vector_sub(RootPositions[LeftFoGFrames.second], LeftFootPositions[LeftFoGFrames.second]);
+		RootDiff = rtm::vector_add(RootDiff, rtm::vector_sub(RelRootEnd, RelRootStart));
 
 		FramesOnGround += (LeftFoGFrames.second >= LeftFoGFrames.first) ?
 			(LeftFoGFrames.second - LeftFoGFrames.first) :
@@ -1109,9 +1110,9 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 	{
 		Out.RightFootOnGroundFrame = static_cast<uint32_t>(RightFoGFrames.first);
 
-		const auto RelRootStart = acl::vector_sub(RootPositions[RightFoGFrames.first], RightFootPositions[RightFoGFrames.first]);
-		const auto RelRootEnd = acl::vector_sub(RootPositions[RightFoGFrames.second], RightFootPositions[RightFoGFrames.second]);
-		RootDiff = acl::vector_add(RootDiff, acl::vector_sub(RelRootEnd, RelRootStart));
+		const auto RelRootStart = rtm::vector_sub(RootPositions[RightFoGFrames.first], RightFootPositions[RightFoGFrames.first]);
+		const auto RelRootEnd = rtm::vector_sub(RootPositions[RightFoGFrames.second], RightFootPositions[RightFoGFrames.second]);
+		RootDiff = rtm::vector_add(RootDiff, rtm::vector_sub(RelRootEnd, RelRootStart));
 
 		FramesOnGround += (RightFoGFrames.second >= RightFoGFrames.first) ?
 			(RightFoGFrames.second - RightFoGFrames.first) :
@@ -1121,8 +1122,8 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 	if (FramesOnGround)
 	{
 		//???or project RootDiff onto XZ plane? or store RootDiff as velocity instead of speed?
-		const auto ForwardMovement = acl::vector_mul(ForwardDir, acl::vector_dot3(RootDiff, ForwardDir));
-		Out.SpeedFromFeet = acl::vector_length3(ForwardMovement) * FrameRate / static_cast<float>(FramesOnGround);
+		const auto ForwardMovement = rtm::vector_mul(ForwardDir, rtm::vector_dot3(RootDiff, ForwardDir));
+		Out.SpeedFromFeet = rtm::vector_length3(ForwardMovement) * FrameRate / static_cast<float>(FramesOnGround);
 	}
 	else
 	{
@@ -1133,9 +1134,9 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 	// Note that it can be not equal to SpeedFromFeet and may be even non-constant during the clip.
 	{
 		//???or project FullRootDiff onto XZ plane? or store FullRootDiff as velocity instead of speed?
-		const auto FullRootDiff = acl::vector_sub(RootPositions.back(), RootPositions.front());
-		const auto ForwardMovement = acl::vector_mul(ForwardDir, acl::vector_dot3(FullRootDiff, ForwardDir));
-		Out.SpeedFromRoot = acl::vector_length3(ForwardMovement) * FrameRate / static_cast<float>(FrameCount);
+		const auto FullRootDiff = rtm::vector_sub(RootPositions.back(), RootPositions.front());
+		const auto ForwardMovement = rtm::vector_mul(ForwardDir, rtm::vector_dot3(FullRootDiff, ForwardDir));
+		Out.SpeedFromRoot = rtm::vector_length3(ForwardMovement) * FrameRate / static_cast<float>(FrameCount);
 	}
 
 	return true;

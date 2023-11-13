@@ -9,6 +9,9 @@
 
 namespace Math
 {
+constexpr U8 ClipInside = (1 << 0);
+constexpr U8 ClipOutside = (1 << 1);
+constexpr U8 ClipIntersect = ClipInside | ClipOutside;
 
 // TODO: add an alternative implementation for AVX (ymm register can hold all 6 planes at once)
 struct CSIMDFrustum

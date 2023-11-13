@@ -232,7 +232,7 @@ static void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic 
 }
 //---------------------------------------------------------------------
 
-static acl::Transform_32 GetNodeTransform(FbxNode* pNode)
+static rtm::qvvf GetNodeTransform(FbxNode* pNode)
 {
 	// Raw properties are left for testing purposes
 	constexpr bool UseRawProperties = false;
@@ -555,7 +555,7 @@ public:
 		return Result ? ETaskResult::Success : ETaskResult::Failure;
 	}
 
-	bool ExportNode(FbxNode* pNode, CContext& Ctx, Data::CParams& Nodes, const acl::Transform_32& ParentGlobalTfm)
+	bool ExportNode(FbxNode* pNode, CContext& Ctx, Data::CParams& Nodes, const rtm::qvvf& ParentGlobalTfm)
 	{
 		if (!pNode)
 		{
@@ -671,7 +671,7 @@ public:
 		return true;
 	}
 
-	bool ExportModel(const FbxMesh* pMesh, CContext& Ctx, Data::CDataArray& Attributes, const acl::Transform_32& GlobalTfm)
+	bool ExportModel(const FbxMesh* pMesh, CContext& Ctx, Data::CDataArray& Attributes, const rtm::qvvf& GlobalTfm)
 	{
 		Ctx.Log.LogDebug(std::string("Model ") + pMesh->GetName());
 
@@ -1720,13 +1720,13 @@ public:
 
 			FbxTime FrameTime;
 			constexpr size_t RootIdx = 0;
-			std::vector<acl::Vector4_32> RootPositions(FrameCount);
+			std::vector<rtm::vector4f> RootPositions(FrameCount);
 
 			// Process foot bones for locomotion phase matching
 			size_t LeftFootIdx = std::numeric_limits<size_t>().max();
 			size_t RightFootIdx = std::numeric_limits<size_t>().max();
-			std::vector<acl::Vector4_32> LeftFootPositions;
-			std::vector<acl::Vector4_32> RightFootPositions;
+			std::vector<rtm::vector4f> LeftFootPositions;
+			std::vector<rtm::vector4f> RightFootPositions;
 			if (IsLocomotionClip && !Ctx.LeftFootBoneName.empty() && !Ctx.RightFootBoneName.empty())
 			{
 				auto ItLeft = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](FbxNode* pNode) { return Ctx.LeftFootBoneName == pNode->GetName(); });
@@ -1756,7 +1756,7 @@ public:
 					FrameTime.SetFrame(Frame, FbxTime::GetGlobalTimeMode());
 
 					// Collect global positions of special bones
-					std::vector<acl::Vector4_32>* pPositions =
+					std::vector<rtm::vector4f>* pPositions =
 						(BoneIdx == LeftFootIdx) ? &LeftFootPositions :
 						(BoneIdx == RightFootIdx) ? &RightFootPositions :
 						(BoneIdx == RootIdx) ? &RootPositions :
@@ -1799,13 +1799,13 @@ public:
 				AxisSys.GetMatrix(GlobalTfm);
 
 				const auto Fwd = GlobalTfm.GetColumn(2);
-				acl::Vector4_32 ForwardDir = { static_cast<float>(Fwd[0]), static_cast<float>(Fwd[1]), static_cast<float>(Fwd[2]), 0.0f };
+				rtm::vector4f ForwardDir = { static_cast<float>(Fwd[0]), static_cast<float>(Fwd[1]), static_cast<float>(Fwd[2]), 0.0f };
 
 				const auto Up = GlobalTfm.GetColumn(1);
-				acl::Vector4_32 UpDir = { static_cast<float>(Up[0]), static_cast<float>(Up[1]), static_cast<float>(Up[2]), 0.0f };
+				rtm::vector4f UpDir = { static_cast<float>(Up[0]), static_cast<float>(Up[1]), static_cast<float>(Up[2]), 0.0f };
 
 				const auto Side = GlobalTfm.GetColumn(0);
-				acl::Vector4_32 SideDir = { static_cast<float>(Side[0]), static_cast<float>(Side[1]), static_cast<float>(Side[2]), 0.0f };
+				rtm::vector4f SideDir = { static_cast<float>(Side[0]), static_cast<float>(Side[1]), static_cast<float>(Side[2]), 0.0f };
 
 				ComputeLocomotion(LocomotionInfo, FrameRate, ForwardDir, UpDir, SideDir, RootPositions, LeftFootPositions, RightFootPositions);
 			}

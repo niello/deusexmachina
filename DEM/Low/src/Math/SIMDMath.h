@@ -8,9 +8,6 @@
 
 namespace Math
 {
-constexpr U8 ClipInside = (1 << 0);
-constexpr U8 ClipOutside = (1 << 1);
-constexpr U8 ClipIntersect = ClipInside | ClipOutside;
 
 DEM_FORCE_INLINE rtm::vector4f ToSIMD(const vector3& v) noexcept
 {

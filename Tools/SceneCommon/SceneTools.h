@@ -2,7 +2,7 @@
 #include <Render/RenderEnums.h>
 #include <Utils.h>
 #include <acl/core/unique_ptr.h>
-#include <acl/math/vector4_32.h>
+#include <rtm/vector4f.h>
 #include <vector>
 #include <map>
 #include <filesystem>
@@ -234,6 +234,6 @@ bool SaveCurrentILImage(const std::string& DestFormat, std::filesystem::path Des
 bool SaveILImageRegion(ILuint ID, const std::string& DestFormat, std::filesystem::path DestPath, CRect& Region, CThreadSafeLog& Log);
 std::string GetTextureDestFormat(const std::filesystem::path& SrcPath, const Data::CParams& TaskParams);
 std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesystem::path& DestDir, const std::string& DestFormat, CThreadSafeLog& Log);
-std::optional<std::string> GenerateCollisionShape(std::string ShapeType, const std::filesystem::path& ShapeDir, const std::string& MeshRsrcName, const CMeshAttrInfo& MeshInfo, const acl::Transform_32& GlobalTfm, const std::map<std::string, std::filesystem::path>& PathAliases, CThreadSafeLog& Log);
-void FillNodeTransform(const acl::Transform_32& Tfm, Data::CParams& NodeSection);
-bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate, acl::Vector4_32 ForwardDir, acl::Vector4_32 UpDir, acl::Vector4_32 SideDir, const std::vector<acl::Vector4_32>& RootPositions, const std::vector<acl::Vector4_32>& LeftFootPositions, const std::vector<acl::Vector4_32>& RightFootPositions);
+std::optional<std::string> GenerateCollisionShape(std::string ShapeType, const std::filesystem::path& ShapeDir, const std::string& MeshRsrcName, const CMeshAttrInfo& MeshInfo, const rtm::qvvf& GlobalTfm, const std::map<std::string, std::filesystem::path>& PathAliases, CThreadSafeLog& Log);
+void FillNodeTransform(const rtm::qvvf& Tfm, Data::CParams& NodeSection);
+bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate, rtm::vector4f ForwardDir, rtm::vector4f UpDir, rtm::vector4f SideDir, const std::vector<rtm::vector4f>& RootPositions, const std::vector<rtm::vector4f>& LeftFootPositions, const std::vector<rtm::vector4f>& RightFootPositions);
