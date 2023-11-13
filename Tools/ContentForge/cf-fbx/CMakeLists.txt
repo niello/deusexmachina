@@ -62,3 +62,7 @@ target_link_libraries(cf-fbx PRIVATE
 	debug ${FBX_SDK_LIB_PATH_DEBUG}libxml2-md.lib optimized ${FBX_SDK_LIB_PATH_RELEASE}libxml2-md.lib
 	debug ${FBX_SDK_LIB_PATH_DEBUG}zlib-md.lib optimized ${FBX_SDK_LIB_PATH_RELEASE}zlib-md.lib)
 set_target_properties(cf-fbx PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+# See https://forums.autodesk.com/t5/fbx-forum/pdb-linker-warnings/td-p/9827554
+if(MSVC)
+	set_target_properties(cf-fbx PROPERTIES LINK_FLAGS "/ignore:4099")
+endif()

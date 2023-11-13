@@ -242,7 +242,7 @@ std::vector<uint16_t> GetJointWeights16x4(const gltf::Document& doc, const gltf:
 struct CNodeInfo
 {
 	const gltf::Node* pNode = nullptr;
-	uint32_t ParentIndex;
+	uint32_t ParentIndex = acl::k_invalid_track_index;
 };
 
 static void BuildSkeleton(const std::string& NodeID, uint32_t ParentIndex, const std::multimap<std::string, std::string>& Hierarchy,
@@ -1488,7 +1488,7 @@ public:
 			return true;
 		}
 
-		const auto FrameCount = static_cast<uint32_t>(std::ceilf((MaxTime - MinTime) * _AnimSamplingRate));
+		const auto FrameCount = static_cast<uint32_t>(std::ceilf((MaxTime - MinTime) * _AnimSamplingRate)) + 1;
 
 		// Collect animation data for each animated node
 
@@ -1608,7 +1608,7 @@ public:
 			Desc.parent_index = Nodes[BoneIdx].ParentIndex;
 			Desc.precision = 0.01f;
 			Desc.shell_distance = 3.f; // TODO: metric from per-bone AABBs?
-			Tracks[BoneIdx] = acl::track_qvvf::make_reserve(Desc, Ctx.ACLAllocator, FrameCount + 1, _AnimSamplingRate);
+			Tracks[BoneIdx] = acl::track_qvvf::make_reserve(Desc, Ctx.ACLAllocator, FrameCount, _AnimSamplingRate);
 			const std::string TrackName = Nodes[BoneIdx].pNode->name.empty() ? Ctx.TaskName + '_' + Nodes[BoneIdx].pNode->id : Nodes[BoneIdx].pNode->name;
 			Tracks[BoneIdx].set_name(acl::string(Ctx.ACLAllocator, TrackName.c_str()));
 
@@ -1620,7 +1620,7 @@ public:
 
 		CNodeAnimation NoAnimation;
 
-		for (uint32_t SampleIndex = 0; SampleIndex <= FrameCount; ++SampleIndex)
+		for (uint32_t SampleIndex = 0; SampleIndex < FrameCount; ++SampleIndex)
 		{
 			const float Time = MinTime + static_cast<float>(SampleIndex) / _AnimSamplingRate;
 

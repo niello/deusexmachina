@@ -6,6 +6,7 @@
 #include <CLI11.hpp>
 #include <fbxsdk.h>
 #include <acl/core/ansi_allocator.h>
+#include <acl/compression/track_array.h>
 #include <rtm/qvvf.h>
 
 namespace fs = std::filesystem;
@@ -1605,6 +1606,12 @@ public:
 		return true;
 	}
 
+	struct CNodeInfo
+	{
+		FbxNode* pNode = nullptr;
+		uint32_t ParentIndex = acl::k_invalid_track_index;
+	};
+
 	bool ExportAnimation(FbxAnimStack* pAnimStack, FbxScene* pScene, CContext& Ctx)
 	{
 		// Strip node name from the animation clip name
@@ -1675,26 +1682,12 @@ public:
 
 		// Create rigid skeletons and associate ACL bones with FbxNode instances
 
-		struct CSkeletonACLBinding
-		{
-			acl::RigidSkeletonPtr Skeleton;
-			std::vector<FbxNode*> Nodes; // Indices in this array are used as bone indices in ACL
-		};
-
-		std::vector<CSkeletonACLBinding> Skeletons;
+		std::vector<std::vector<CNodeInfo>> Skeletons; // Indices in CNodeInfo vectors are used as bone indices in ACL
 		for (FbxNode* pRoot : SkeletonRoots)
 		{
-			CSkeletonACLBinding Skeleton;
-
-			std::vector<acl::RigidBone> Bones;
-			BuildACLSkeleton(pAnimStack, pRoot, Skeleton.Nodes, Bones);
-
-			assert(Bones.size() <= std::numeric_limits<uint16_t>().max());
-
-			Skeleton.Skeleton = acl::make_unique<acl::RigidSkeleton>(
-				Ctx.ACLAllocator, Ctx.ACLAllocator, Bones.data(), static_cast<uint16_t>(Bones.size()));
-
-			Skeletons.push_back(std::move(Skeleton));
+			auto& Nodes = Skeletons.emplace_back();
+			BuildSkeleton(pAnimStack, pRoot, Nodes);
+			assert(Nodes.size() <= std::numeric_limits<uint16_t>().max());
 		}
 
 		// Evaluate animation of all skeletons frame by frame and compress with ACL
@@ -1707,16 +1700,24 @@ public:
 		// FIXME: saving clip for each skeleton separately will erase previously saved .anm file
 		assert(Skeletons.size() == 1);
 
-		for (CSkeletonACLBinding& Skeleton : Skeletons)
+		for (auto& Nodes : Skeletons)
 		{
-			auto& Nodes = Skeleton.Nodes;
+			acl::track_array_qvvf Tracks(Ctx.ACLAllocator, Nodes.size());
+			Tracks.set_name(acl::string(Ctx.ACLAllocator, AnimName.c_str()));
+			for (size_t BoneIdx = 0; BoneIdx < Nodes.size(); ++BoneIdx)
+			{
+				acl::track_desc_transformf Desc;
+				Desc.output_index = BoneIdx; // can use output_index to reorder tracks, k_invalid_track_index to strip it out
+				Desc.parent_index = Nodes[BoneIdx].ParentIndex;
+				Desc.precision = 0.01f;
+				Desc.shell_distance = 3.f; // TODO: metric from per-bone AABBs?
+				Tracks[BoneIdx] = acl::track_qvvf::make_reserve(Desc, Ctx.ACLAllocator, FrameCount, FrameRate);
+				const std::string TrackName = GetValidNodeName(Nodes[BoneIdx].pNode->GetName());
+				Tracks[BoneIdx].set_name(acl::string(Ctx.ACLAllocator, TrackName.c_str()));
 
-			acl::String ClipName(Ctx.ACLAllocator, AnimName.c_str());
-			acl::AnimationClip Clip(Ctx.ACLAllocator, *Skeleton.Skeleton, FrameCount, FrameRate, ClipName);
-
-			std::vector<std::string> NodeNames(Skeleton.Nodes.size());
-			for (size_t BoneIdx = 0; BoneIdx < Skeleton.Nodes.size(); ++BoneIdx)
-				NodeNames[BoneIdx] = GetValidNodeName(Skeleton.Nodes[BoneIdx]->GetName());
+				// Don't delete this, it can be useful sometimes
+				//Ctx.Log.LogDebug(" - Bone " + std::to_string(BoneIdx) + " (" + TrackName + "), parent " + std::to_string(Desc.parent_index));
+			}
 
 			FbxTime FrameTime;
 			constexpr size_t RootIdx = 0;
@@ -1729,8 +1730,8 @@ public:
 			std::vector<rtm::vector4f> RightFootPositions;
 			if (IsLocomotionClip && !Ctx.LeftFootBoneName.empty() && !Ctx.RightFootBoneName.empty())
 			{
-				auto ItLeft = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](FbxNode* pNode) { return Ctx.LeftFootBoneName == pNode->GetName(); });
-				auto ItRight = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](FbxNode* pNode) { return Ctx.RightFootBoneName == pNode->GetName(); });
+				auto ItLeft = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](const CNodeInfo& pNode) { return Ctx.LeftFootBoneName == pNode.pNode->GetName(); });
+				auto ItRight = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](const CNodeInfo& pNode) { return Ctx.RightFootBoneName == pNode.pNode->GetName(); });
 				if (ItLeft != Nodes.end() && ItRight != Nodes.end())
 				{
 					LeftFootIdx = std::distance(Nodes.begin(), ItLeft);
@@ -1747,8 +1748,8 @@ public:
 
 			for (size_t BoneIdx = 0; BoneIdx < Nodes.size(); ++BoneIdx)
 			{
-				acl::AnimatedBone& Bone = Clip.get_animated_bone(static_cast<uint16_t>(BoneIdx));
-				FbxNode* pNode = Nodes[BoneIdx];
+				FbxNode* pNode = Nodes[BoneIdx].pNode;
+				auto& Track = Tracks[BoneIdx];
 
 				uint32_t SampleIndex = 0;
 				for (FbxLongLong Frame = StartFrame; Frame <= EndFrame; ++Frame, ++SampleIndex)
@@ -1769,13 +1770,12 @@ public:
 						(*pPositions)[SampleIndex] = { static_cast<float>(GT[0]), static_cast<float>(GT[1]), static_cast<float>(GT[2]), 1.0f };
 					}
 
+					auto& Dest = Track[SampleIndex];
 					if (BoneIdx == RootIdx && DiscardRootMotion && Frame > StartFrame)
 					{
 						// All root transforms will be as in the first frame
 						//???Add options do discard only some components, like translation XZ?
-						Bone.scale_track.set_sample(SampleIndex, Bone.scale_track.get_sample(0));
-						Bone.rotation_track.set_sample(SampleIndex, Bone.rotation_track.get_sample(0));
-						Bone.translation_track.set_sample(SampleIndex, Bone.translation_track.get_sample(0));
+						Dest = Track[0];
 					}
 					else
 					{
@@ -1784,9 +1784,9 @@ public:
 						const auto R = LocalTfm.GetQ();
 						const auto T = LocalTfm.GetT();
 
-						Bone.scale_track.set_sample(SampleIndex, { S[0], S[1], S[2], 1.0 });
-						Bone.rotation_track.set_sample(SampleIndex, { R[0], R[1], R[2], R[3] });
-						Bone.translation_track.set_sample(SampleIndex, { T[0], T[1], T[2], 1.0 });
+						Dest.scale = rtm::vector_set(static_cast<float>(S[0]), static_cast<float>(S[1]), static_cast<float>(S[2]), 1.f);
+						Dest.rotation = rtm::quat_set(static_cast<float>(R[0]), static_cast<float>(R[1]), static_cast<float>(R[2]), static_cast<float>(R[3]));
+						Dest.translation = rtm::vector_set(static_cast<float>(T[0]), static_cast<float>(T[1]), static_cast<float>(T[2]), 1.f);
 					}
 				}
 			}
@@ -1811,7 +1811,7 @@ public:
 			}
 
 			const auto DestPath = Ctx.AnimPath / (AnimName + ".anm");
-			if (!WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, NodeNames, IsLocomotionClip ? &LocomotionInfo : nullptr, Ctx.Log)) return false;
+			if (!WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Tracks, IsLocomotionClip ? &LocomotionInfo : nullptr, Ctx.Log)) return false;
 		}
 
 		return true;
@@ -1850,7 +1850,7 @@ public:
 	}
 
 	// Returns number of animated nodes in this subtree
-	size_t BuildACLSkeleton(FbxAnimStack* pAnimStack, FbxNode* pNode, std::vector<FbxNode*>& Nodes, std::vector<acl::RigidBone>& Bones)
+	size_t BuildSkeleton(FbxAnimStack* pAnimStack, FbxNode* pNode, std::vector<CNodeInfo>& Nodes)
 	{
 		size_t AnimatedCount = 0;
 		if (IsPropertyAnimated(pAnimStack, pNode->LclScaling) ||
@@ -1860,27 +1860,21 @@ public:
 			++AnimatedCount;
 		}
 
-		acl::RigidBone Bone;
+		auto& Node = Nodes.emplace_back();
 		if (Nodes.empty())
 		{
-			Bone.parent_index = acl::k_invalid_bone_index;
+			Node.ParentIndex = acl::k_invalid_track_index;
 		}
 		else
 		{
-			auto It = std::find(Nodes.crbegin(), Nodes.crend(), pNode->GetParent());
+			auto It = std::find_if(Nodes.crbegin(), Nodes.crend(), [pParent = pNode->GetParent()](const CNodeInfo& pCurr) { return pParent == pCurr.pNode; });
 			assert(It != Nodes.crend());
-			Bone.parent_index = static_cast<uint16_t>(std::distance(Nodes.cbegin(), It.base()) - 1);
+			Node.ParentIndex = static_cast<uint32_t>(std::distance(Nodes.cbegin(), It.base()) - 1);
 		}
-
-		// TODO: metric from per-bone AABBs?
-		Bone.vertex_distance = 3.f;
-
-		Nodes.push_back(pNode);
-		Bones.push_back(std::move(Bone));
 
 		for (int i = 0; i < pNode->GetChildCount(); ++i)
 		{
-			AnimatedCount += BuildACLSkeleton(pAnimStack, pNode->GetChild(i), Nodes, Bones);
+			AnimatedCount += BuildSkeleton(pAnimStack, pNode->GetChild(i), Nodes);
 			/*
 			// This was faster than checking IsPropertyAnimated and using AnimatedCount.
 			// Disabled because some models do not have FbxNodeAttribute::eSkeleton on animated nodes, see for example:
@@ -1891,7 +1885,7 @@ public:
 			{
 				if (pNode->GetNodeAttributeByIndex(i)->GetAttributeType() == FbxNodeAttribute::eSkeleton)
 				{
-					BuildACLSkeleton(pNode->GetChild(i), Nodes, Bones);
+					BuildSkeleton(pNode->GetChild(i), Nodes);
 					break;
 				}
 			}
@@ -1902,7 +1896,6 @@ public:
 		{
 			// Subtree isn't animated by this clip, discard the node
 			Nodes.pop_back();
-			Bones.pop_back();
 		}
 
 		return AnimatedCount;
