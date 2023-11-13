@@ -44,10 +44,8 @@ struct CSceneSettings
 // TODO: look at fbx2acl for correct FBX animation export
 namespace acl
 {
-	class IAllocator;
-	class AnimationClip;
-	typedef std::unique_ptr<class RigidSkeleton, Deleter<RigidSkeleton>> RigidSkeletonPtr;
-	struct Transform_32;
+	class iallocator;
+	class track_array;
 }
 
 struct CVertex
@@ -222,7 +220,7 @@ void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic Semanti
 bool WriteDEMMesh(const std::filesystem::path& DestPath, const std::map<std::string, CMeshGroup>& SubMeshes, const CVertexFormat& VertexFormat, size_t BoneCount, CThreadSafeLog& Log);
 bool ReadDEMMeshVertexPositions(const std::filesystem::path& Path, std::vector<float3>& Out, CThreadSafeLog& Log);
 bool WriteDEMSkin(const std::filesystem::path& DestPath, const std::vector<CBone>& Bones, CThreadSafeLog& Log);
-bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& ACLAllocator, const acl::AnimationClip& Clip, const std::vector<std::string>& NodeNames, const CLocomotionInfo* pLocomotionInfo, CThreadSafeLog& Log);
+bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::iallocator& ACLAllocator, acl::track_array& Tracks, const CLocomotionInfo* pLocomotionInfo, CThreadSafeLog& Log);
 bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name, Data::CParams&& Nodes, const Data::CSchemeSet& Schemes, const Data::CParams& TaskParams, bool HRD, bool Binary, bool CreateRoot, CThreadSafeLog& Log);
 void InitImageProcessing();
 void TermImageProcessing();

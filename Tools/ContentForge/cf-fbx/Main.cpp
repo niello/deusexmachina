@@ -6,7 +6,7 @@
 #include <CLI11.hpp>
 #include <fbxsdk.h>
 #include <acl/core/ansi_allocator.h>
-#include <acl/compression/animation_clip.h>
+#include <rtm/qvvf.h>
 
 namespace fs = std::filesystem;
 
@@ -277,7 +277,7 @@ protected:
 		CThreadSafeLog&     Log;
 		Data::CParams&      TaskParams;
 
-		acl::ANSIAllocator  ACLAllocator;
+		acl::ansi_allocator ACLAllocator;
 
 		fs::path            ScenePath;
 		fs::path            MeshPath;
@@ -295,12 +295,6 @@ protected:
 		std::unordered_map<const FbxMesh*, CMeshAttrInfo> ProcessedMeshes;
 		std::unordered_map<const FbxMesh*, CSkinAttrInfo> ProcessedSkins;
 		std::unordered_map<const FbxTexture*, std::string> ProcessedTextures;
-	};
-
-	struct CSkeletonACLBinding
-	{
-		acl::RigidSkeletonPtr Skeleton;
-		std::vector<FbxNode*> Nodes; // Indices in this array are used as bone indices in ACL
 	};
 
 	FbxManager*                pFBXManager = nullptr;
@@ -573,7 +567,7 @@ public:
 		// Process transform
 
 		const auto Tfm = GetNodeTransform(pNode);
-		const auto GlobalTfm = acl::transform_mul(Tfm, ParentGlobalTfm);
+		const auto GlobalTfm = rtm::qvv_mul(Tfm, ParentGlobalTfm);
 
 		// Process attributes
 
@@ -1680,6 +1674,12 @@ public:
 		}
 
 		// Create rigid skeletons and associate ACL bones with FbxNode instances
+
+		struct CSkeletonACLBinding
+		{
+			acl::RigidSkeletonPtr Skeleton;
+			std::vector<FbxNode*> Nodes; // Indices in this array are used as bone indices in ACL
+		};
 
 		std::vector<CSkeletonACLBinding> Skeletons;
 		for (FbxNode* pRoot : SkeletonRoots)

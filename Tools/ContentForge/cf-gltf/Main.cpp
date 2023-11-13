@@ -12,7 +12,9 @@
 #include <GLTFSDK/ExtrasDocument.h>
 #include "GLTFExtensions.h"
 #include <acl/core/ansi_allocator.h>
-#include <acl/compression/animation_clip.h>
+#include <acl/compression/track_array.h>
+#include <rtm/matrix3x4f.h>
+#include <rtm/qvvf.h>
 
 namespace fs = std::filesystem;
 namespace gltf = Microsoft::glTF;
@@ -106,17 +108,22 @@ static rtm::qvvf GetNodeTransform(const gltf::Node& Node)
 {
 	if (Node.matrix != gltf::Matrix4::IDENTITY)
 	{
-		const acl::AffineMatrix_32 ACLMatrix = acl::matrix_set(
+		//!!!DBG TMP!
+		assert(false);
+		// FIXME: rtm uses return matrix3x4f{ x_axis, y_axis, z_axis, translation };!
+		const rtm::matrix3x4f Matrix =
+		{
 			rtm::vector4f{ Node.matrix.values[0], Node.matrix.values[1], Node.matrix.values[2], Node.matrix.values[3] },
 			rtm::vector4f{ Node.matrix.values[4], Node.matrix.values[5], Node.matrix.values[6], Node.matrix.values[7] },
 			rtm::vector4f{ Node.matrix.values[8], Node.matrix.values[9], Node.matrix.values[10], Node.matrix.values[11] },
-			rtm::vector4f{ 0.f, 0.f, 0.f, 1.f });
+			rtm::vector4f{ 0.f, 0.f, 0.f, 1.f }
+		};
 
 		return
 		{
-			acl::quat_from_matrix(acl::matrix_remove_scale(ACLMatrix)),
+			rtm::quat_from_matrix(rtm::matrix_remove_scale(Matrix)),
 			{ Node.matrix.values[12], Node.matrix.values[13], Node.matrix.values[14], 1.f },
-			{ acl::vector_length3(ACLMatrix.x_axis), acl::vector_length3(ACLMatrix.y_axis), acl::vector_length3(ACLMatrix.z_axis), 0.f }
+			{ rtm::vector_length3(Matrix.x_axis), rtm::vector_length3(Matrix.y_axis), rtm::vector_length3(Matrix.z_axis), 0.f }
 		};
 	}
 	else
@@ -131,26 +138,31 @@ static rtm::qvvf GetNodeTransform(const gltf::Node& Node)
 }
 //---------------------------------------------------------------------
 
-static acl::AffineMatrix_32 GetNodeMatrix(const gltf::Node& Node)
+static rtm::matrix3x4f GetNodeMatrix(const gltf::Node& Node)
 {
 	if (Node.matrix != gltf::Matrix4::IDENTITY)
 	{
-		return acl::matrix_set(
+		//!!!DBG TMP!
+		assert(false);
+		// FIXME: rtm uses return matrix3x4f{ x_axis, y_axis, z_axis, translation };!
+		return
+		{
 			rtm::vector4f{ Node.matrix.values[0], Node.matrix.values[1], Node.matrix.values[2], Node.matrix.values[3] },
 			rtm::vector4f{ Node.matrix.values[4], Node.matrix.values[5], Node.matrix.values[6], Node.matrix.values[7] },
 			rtm::vector4f{ Node.matrix.values[8], Node.matrix.values[9], Node.matrix.values[10], Node.matrix.values[11] },
-			rtm::vector4f{ Node.matrix.values[12], Node.matrix.values[13], Node.matrix.values[14], 1.f });
+			rtm::vector4f{ Node.matrix.values[12], Node.matrix.values[13], Node.matrix.values[14], 1.f }
+		};
 	}
 	else
 	{
-		const rtm::qvvf Tfm =
-		{
-			{ Node.rotation.x, Node.rotation.y, Node.rotation.z, Node.rotation.w },
-			{ Node.translation.x, Node.translation.y, Node.translation.z, 1.f },
-			{ Node.scale.x, Node.scale.y, Node.scale.z, 0.f }
-		};
+		const rtm::qvvf Tfm = rtm::qvv_set
+		(
+			rtm::quatf{ Node.rotation.x, Node.rotation.y, Node.rotation.z, Node.rotation.w },
+			rtm::vector4f{ Node.translation.x, Node.translation.y, Node.translation.z, 1.f },
+			rtm::vector4f{ Node.scale.x, Node.scale.y, Node.scale.z, 0.f }
+		);
 
-		return acl::matrix_from_transform(Tfm);
+		return rtm::matrix_from_qvv(Tfm);
 	}
 }
 //---------------------------------------------------------------------
@@ -227,23 +239,24 @@ std::vector<uint16_t> GetJointWeights16x4(const gltf::Document& doc, const gltf:
 }
 //---------------------------------------------------------------------
 
-static void BuildACLSkeleton(const std::string& NodeID, uint16_t ParentIndex, const std::multimap<std::string, std::string>& Hierarchy,
-	std::vector<acl::RigidBone>& Bones, std::vector<const gltf::Node*>& Nodes, const gltf::Document& Doc)
+struct CNodeInfo
 {
-	acl::RigidBone Bone;
-	Bone.parent_index = ParentIndex;
+	const gltf::Node* pNode = nullptr;
+	uint32_t ParentIndex;
+};
 
-	// TODO: metric from per-bone AABBs?
-	Bone.vertex_distance = 3.f;
+static void BuildSkeleton(const std::string& NodeID, uint32_t ParentIndex, const std::multimap<std::string, std::string>& Hierarchy,
+	std::vector<CNodeInfo>& Nodes, const gltf::Document& Doc)
+{
+	const auto BoneIndex = static_cast<uint32_t>(Nodes.size());
 
-	const auto BoneIndex = static_cast<uint16_t>(Bones.size());
-
-	Nodes.push_back(&Doc.nodes[NodeID]);
-	Bones.push_back(std::move(Bone));
+	auto& Node = Nodes.emplace_back();
+	Node.pNode = &Doc.nodes[NodeID];
+	Node.ParentIndex = ParentIndex;
 
 	const auto Range = Hierarchy.equal_range(NodeID);
 	for (auto It = Range.first; It != Range.second; ++It)
-		BuildACLSkeleton(It->second, BoneIndex, Hierarchy, Bones, Nodes, Doc);
+		BuildSkeleton(It->second, BoneIndex, Hierarchy, Nodes, Doc);
 }
 //---------------------------------------------------------------------
 
@@ -335,7 +348,7 @@ protected:
 		gltf::Document Doc;
 		std::unique_ptr<gltf::GLTFResourceReader> ResourceReader;
 
-		acl::ANSIAllocator        ACLAllocator;
+		acl::ansi_allocator       ACLAllocator;
 
 		fs::path                  SrcFolder;
 		fs::path                  MeshPath;
@@ -517,14 +530,14 @@ public:
 			// Export only selected nodes
 			for (const auto& NodePathData : *pNodes)
 				if (auto pNode = FindNodeByPath(Ctx.Doc, Scene, NodePathData.GetValue<std::string>()))
-					if (!ExportNode(pNode->id, Ctx, Nodes, acl::transform_identity_32()))
+					if (!ExportNode(pNode->id, Ctx, Nodes, rtm::qvv_identity()))
 						return ETaskResult::Failure;
 		}
 		else
 		{
 			// Export all nodes
 			for (const auto& Node : Scene.nodes)
-				if (!ExportNode(Node, Ctx, Nodes, acl::transform_identity_32()))
+				if (!ExportNode(Node, Ctx, Nodes, rtm::qvv_identity()))
 					return ETaskResult::Failure;
 		}
 
@@ -559,7 +572,7 @@ public:
 		// Process transform
 
 		const auto Tfm = GetNodeTransform(Node);
-		const auto GlobalTfm = acl::transform_mul(Tfm, ParentGlobalTfm);
+		const auto GlobalTfm = rtm::qvv_mul(Tfm, ParentGlobalTfm);
 
 		FillNodeTransform(Tfm, NodeSection);
 
@@ -775,11 +788,11 @@ public:
 
 					const rtm::vector4f Normal = { Vertex.Normal.x, Vertex.Normal.y, Vertex.Normal.z };
 					const rtm::vector4f Tangent = { Vertex.Tangent.x, Vertex.Tangent.y, Vertex.Tangent.z };
-					const rtm::vector4f Bitangent = acl::vector_cross3(Normal, Tangent);
+					const rtm::vector4f Bitangent = rtm::vector_cross3(Normal, Tangent);
 
-					Vertex.Bitangent.x = acl::vector_get_x(Bitangent) * Sign;
-					Vertex.Bitangent.y = acl::vector_get_y(Bitangent) * Sign;
-					Vertex.Bitangent.z = acl::vector_get_z(Bitangent) * Sign;
+					Vertex.Bitangent.x = rtm::vector_get_x(Bitangent) * Sign;
+					Vertex.Bitangent.y = rtm::vector_get_y(Bitangent) * Sign;
+					Vertex.Bitangent.z = rtm::vector_get_z(Bitangent) * Sign;
 				}
 
 				++VertexFormat.TangentCount;
@@ -1252,7 +1265,7 @@ public:
 				}
 			}
 
-			auto InvBindMatrix = acl::unaligned_load<acl::AffineMatrix_32>(pInvBindMatrix);
+			auto InvBindMatrix = acl::unaligned_load<rtm::matrix3x4f>(pInvBindMatrix);
 
 			acl::unaligned_write(InvBindMatrix, NewBone.InvLocalBindPose);
 
@@ -1579,29 +1592,29 @@ public:
 			if (AnimatedNodes.find(RootNodeID) != AnimatedNodes.cend()) break;
 		}
 
-		// Build ACL skeleton from hierarchy data
+		// Build skeleton from hierarchy data
 
-		std::vector<acl::RigidBone> Bones;
-		std::vector<const gltf::Node*> Nodes;
-		BuildACLSkeleton(RootNodeID, acl::k_invalid_bone_index, Hierarchy, Bones, Nodes, Ctx.Doc);
+		std::vector<CNodeInfo> Nodes;
+		BuildSkeleton(RootNodeID, acl::k_invalid_track_index, Hierarchy, Nodes, Ctx.Doc);
 
-		assert(Bones.size() <= std::numeric_limits<uint16_t>().max());
+		assert(Nodes.size() <= std::numeric_limits<uint16_t>().max());
 
-		std::vector<std::string> NodeNames(Nodes.size());
+		acl::track_array_qvvf Tracks(Ctx.ACLAllocator, Nodes.size());
+		Tracks.set_name(acl::string(Ctx.ACLAllocator, RsrcName.c_str()));
 		for (size_t BoneIdx = 0; BoneIdx < Nodes.size(); ++BoneIdx)
-			NodeNames[BoneIdx] = (Nodes[BoneIdx]->name.empty() ? Ctx.TaskName + '_' + Nodes[BoneIdx]->id : Nodes[BoneIdx]->name);
+		{
+			acl::track_desc_transformf Desc;
+			Desc.output_index = BoneIdx; // can use output_index to reorder tracks, k_invalid_track_index to strip it out
+			Desc.parent_index = Nodes[BoneIdx].ParentIndex;
+			Desc.precision = 0.01f;
+			Desc.shell_distance = 3.f; // TODO: metric from per-bone AABBs?
+			Tracks[BoneIdx] = acl::track_qvvf::make_reserve(Desc, Ctx.ACLAllocator, FrameCount + 1, _AnimSamplingRate);
+			const std::string TrackName = Nodes[BoneIdx].pNode->name.empty() ? Ctx.TaskName + '_' + Nodes[BoneIdx].pNode->id : Nodes[BoneIdx].pNode->name;
+			Tracks[BoneIdx].set_name(acl::string(Ctx.ACLAllocator, TrackName.c_str()));
 
-		// Don't delete this, can be useful sometimes
-		//Ctx.Log.LogDebug("Clip " + RsrcName + ":");
-		//for (size_t BoneIdx = 0; BoneIdx < Nodes.size(); ++BoneIdx)
-		//	Ctx.Log.LogDebug(" - Bone " + std::to_string(BoneIdx) + " (" + NodeNames[BoneIdx] + "), parent " + std::to_string(Bones[BoneIdx].parent_index));
-
-		// NB: ACL consumes Bones here
-		acl::RigidSkeletonPtr Skeleton = acl::make_unique<acl::RigidSkeleton>(
-			Ctx.ACLAllocator, Ctx.ACLAllocator, Bones.data(), static_cast<uint16_t>(Bones.size()));
-
-		acl::String ClipName(Ctx.ACLAllocator, RsrcName.c_str());
-		acl::AnimationClip Clip(Ctx.ACLAllocator, *Skeleton, FrameCount + 1, _AnimSamplingRate, ClipName);
+			// Don't delete this, it can be useful sometimes
+			//Ctx.Log.LogDebug(" - Bone " + std::to_string(BoneIdx) + " (" + TrackName + "), parent " + std::to_string(Desc.parent_index));
+		}
 
 		// Sample animation curves and write into ACL
 
@@ -1613,7 +1626,7 @@ public:
 
 			for (size_t BoneIdx = 0; BoneIdx < Nodes.size(); ++BoneIdx)
 			{
-				const auto pNode = Nodes[BoneIdx];
+				const auto pNode = Nodes[BoneIdx].pNode;
 
 				// Initialize with static node transform by default
 				//???or can ignore completely in ACL if channel is not animated? Would be especially good for completely not animated nodes!
@@ -1654,15 +1667,15 @@ public:
 					}
 				}
 
-				acl::AnimatedBone& Bone = Clip.get_animated_bone(static_cast<uint16_t>(BoneIdx));
-				Bone.scale_track.set_sample(SampleIndex, { Scaling.x, Scaling.y, Scaling.z, 1.0 });
-				Bone.rotation_track.set_sample(SampleIndex, { Rotation.x, Rotation.y, Rotation.z, Rotation.w });
-				Bone.translation_track.set_sample(SampleIndex, { Translation.x, Translation.y, Translation.z, 1.0 });
+				auto& Dest = Tracks[BoneIdx][SampleIndex];
+				Dest.scale = rtm::vector_set(Scaling.x, Scaling.y, Scaling.z, 1.f );
+				Dest.rotation = rtm::quat_set(Rotation.x, Rotation.y, Rotation.z, Rotation.w);
+				Dest.translation = rtm::vector_set(Translation.x, Translation.y, Translation.z, 1.f);
 			}
 		}
 
 		const auto DestPath = Ctx.AnimPath / (RsrcName + ".anm");
-		return WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, NodeNames, nullptr, Ctx.Log);
+		return WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Tracks, nullptr, Ctx.Log);
 	}
 };
 

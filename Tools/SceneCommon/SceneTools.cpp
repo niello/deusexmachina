@@ -5,17 +5,12 @@
 #include <meshoptimizer.h>
 #include <acl/core/ansi_allocator.h>
 #include <acl/core/unique_ptr.h>
-#include <acl/algorithm/uniformly_sampled/encoder.h>
+#include <acl/compression/compress.h>
+#include <acl/compression/pre_process.h>
 #include <rtm/quatf.h>
 #include <IL/il.h>
 #include <LinearMath/btConvexHullComputer.h>
 #include <regex>
-
-namespace acl
-{
-	typedef std::unique_ptr<AnimationClip, Deleter<AnimationClip>> AnimationClipPtr;
-	typedef std::unique_ptr<RigidSkeleton, Deleter<RigidSkeleton>> RigidSkeletonPtr;
-}
 
 namespace fs = std::filesystem;
 
@@ -475,13 +470,22 @@ bool WriteDEMSkin(const fs::path& DestPath, const std::vector<CBone>& Bones, CTh
 }
 //---------------------------------------------------------------------
 
-bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& ACLAllocator,
-	const acl::AnimationClip& Clip, const std::vector<std::string>& NodeNames,
-	const CLocomotionInfo* pLocomotionInfo, CThreadSafeLog& Log)
+static uint32_t ACLTrackGetParentIndex(const acl::track& Track)
+{
+	switch (Track.get_type())
+	{
+		case acl::track_type8::qvvf: return static_cast<const acl::track_qvvf&>(Track).get_description().parent_index;
+		// TODO: add other hierarchical types if will be added. qv, qvs etc.
+	};
+	return acl::k_invalid_track_index;
+}
+//---------------------------------------------------------------------
+
+bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::iallocator& ACLAllocator,
+	acl::track_array& Tracks, const CLocomotionInfo* pLocomotionInfo, CThreadSafeLog& Log)
 {
 	const auto AnimName = DestPath.filename().string();
-	const auto& Skeleton = Clip.get_skeleton();
-	const auto NodeCount = Skeleton.get_num_bones();
+	const auto NodeCount = Tracks.get_num_tracks();
 
 	if (!NodeCount)
 	{
@@ -489,26 +493,35 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 		return true;
 	}
 
-	if (Skeleton.get_bone(0).parent_index != acl::k_invalid_bone_index)
+	if (ACLTrackGetParentIndex(Tracks[0]) != acl::k_invalid_track_index)
 	{
 		Log.LogError("Animation " + AnimName + " doesn't start from the root node (may be broken)!");
 		return false;
 	}
 
-	acl::TransformErrorMetric ACLErrorMetric;
-	acl::CompressionSettings ACLSettings = acl::get_default_compression_settings();
+	acl::pre_process_settings_t settings;
+	settings.actions = acl::pre_process_actions::recommended;
+	settings.precision_policy = acl::pre_process_precision_policy::lossy;
+
+	// TODO: choose the best one for us: https://github.com/nfrechette/acl/blob/develop/docs/error_metrics.md
+	acl::qvvf_transform_error_metric ACLErrorMetric;
+	settings.error_metric = &ACLErrorMetric;
+
+	acl::pre_process_track_list(ACLAllocator, settings, Tracks);
+
+	auto ACLSettings = acl::get_default_compression_settings();
 	ACLSettings.error_metric = &ACLErrorMetric;
 
-	acl::OutputStats Stats;
-	acl::CompressedClip* CompressedClip = nullptr;
-	acl::ErrorResult ErrorResult = acl::uniformly_sampled::compress_clip(ACLAllocator, Clip, ACLSettings, CompressedClip, Stats);
+	acl::output_stats Stats;
+	acl::compressed_tracks* CompressedTracks = nullptr;
+	const auto ErrorResult = acl::compress_track_list(ACLAllocator, Tracks, ACLSettings, CompressedTracks, Stats);
 	if (!ErrorResult.empty())
 	{
 		Log.LogWarning(std::string("ACL failed to compress animation ") + AnimName + " for one of skeletons");
 		return true;
 	}
 
-	Log.LogDebug(std::string("ACL compressed animation ") + AnimName + " to " + std::to_string(CompressedClip->get_size()) + " bytes");
+	Log.LogDebug(std::string("ACL compressed animation ") + AnimName + " to " + std::to_string(CompressedTracks->get_size()) + " bytes");
 
 	fs::create_directories(DestPath.parent_path());
 
@@ -522,20 +535,20 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 	WriteStream<uint32_t>(File, 'ANIM');     // Format magic value
 	WriteStream<uint32_t>(File, 0x00010000); // Version 0.1.0.0
 
-	WriteStream<float>(File, Clip.get_duration());
-	WriteStream<uint32_t>(File, Clip.get_num_samples());
+	WriteStream<float>(File, Tracks.get_duration());
+	WriteStream<uint32_t>(File, Tracks.get_num_samples_per_track());
 
 	WriteStream<uint16_t>(File, NodeCount);
 
 	// Write skeleton info to be able to bind animation to the node hierarchy in DEM
 	// Note that DEM requires all nodes without a parent to have a full path relative
 	// to the root in their IDs. So for the root itself ID must be empty.
-	WriteStream<uint16_t>(File, Skeleton.get_bone(0).parent_index);
+	WriteStream<uint16_t>(File, ACLTrackGetParentIndex(Tracks[0]));
 	WriteStream(File, std::string{});
 	for (uint16_t i = 1; i < NodeCount; ++i)
 	{
-		WriteStream<uint16_t>(File, Skeleton.get_bone(i).parent_index);
-		WriteStream(File, NodeNames[i]);
+		WriteStream<uint16_t>(File, ACLTrackGetParentIndex(Tracks[i]));
+		WriteStream(File, Tracks[i].get_name());
 	}
 
 	// For locomotion clips save locomotion info
@@ -566,7 +579,7 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 
 	assert(!(static_cast<uint32_t>(File.tellp()) % 16));
 
-	File.write(reinterpret_cast<const char*>(CompressedClip), CompressedClip->get_size());
+	File.write(reinterpret_cast<const char*>(CompressedTracks), CompressedTracks->get_size());
 
 	Log.LogInfo(DestPath.filename().generic_string() + " " + std::to_string(File.tellp()) + " bytes saved" + (pLocomotionInfo ? ", including locomotion info" : ""));
 
@@ -1036,7 +1049,8 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 	{
 		// Project foot offset onto the locomotion plane (fwd, up) and normalize it to get phase direction
 		const auto Offset = rtm::vector_sub(LeftFootPositions[i], RightFootPositions[i]);
-		const auto ProjectedOffset = rtm::vector_sub(Offset, rtm::vector_mul(SideDir, rtm::vector_dot3(Offset, SideDir)));
+		const float Dot = rtm::vector_dot3(Offset, SideDir);
+		const auto ProjectedOffset = rtm::vector_sub(Offset, rtm::vector_mul(SideDir, Dot));
 		const auto PhaseDir = rtm::vector_normalize3(ProjectedOffset);
 
 		const float CosA = rtm::vector_dot3(PhaseDir, ForwardDir);
@@ -1122,7 +1136,8 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 	if (FramesOnGround)
 	{
 		//???or project RootDiff onto XZ plane? or store RootDiff as velocity instead of speed?
-		const auto ForwardMovement = rtm::vector_mul(ForwardDir, rtm::vector_dot3(RootDiff, ForwardDir));
+		const float Dot = rtm::vector_dot3(RootDiff, ForwardDir);
+		const auto ForwardMovement = rtm::vector_mul(ForwardDir, Dot);
 		Out.SpeedFromFeet = rtm::vector_length3(ForwardMovement) * FrameRate / static_cast<float>(FramesOnGround);
 	}
 	else
@@ -1135,7 +1150,8 @@ bool ComputeLocomotion(CLocomotionInfo& Out, float FrameRate,
 	{
 		//???or project FullRootDiff onto XZ plane? or store FullRootDiff as velocity instead of speed?
 		const auto FullRootDiff = rtm::vector_sub(RootPositions.back(), RootPositions.front());
-		const auto ForwardMovement = rtm::vector_mul(ForwardDir, rtm::vector_dot3(FullRootDiff, ForwardDir));
+		const float Dot = rtm::vector_dot3(FullRootDiff, ForwardDir);
+		const auto ForwardMovement = rtm::vector_mul(ForwardDir, Dot);
 		Out.SpeedFromRoot = rtm::vector_length3(ForwardMovement) * FrameRate / static_cast<float>(FrameCount);
 	}
 
