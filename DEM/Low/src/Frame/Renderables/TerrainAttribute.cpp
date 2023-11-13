@@ -340,10 +340,10 @@ void CTerrainAttribute::StopAffectingNode(TMorton NodeCode, UPTR LightUID)
 bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD)
 {
 	// Calculate node world space AABB
-	acl::Vector4_32 PatchBoxCenter, PatchBoxExtent;
+	rtm::vector4f PatchBoxCenter, PatchBoxExtent;
 	if (!_CDLODData->GetPatchAABB(x, z, LOD, PatchBoxCenter, PatchBoxExtent)) return false;
-	PatchBoxCenter = acl::vector_add(PatchBoxCenter, Ctx.Offset);
-	PatchBoxExtent = acl::vector_mul(PatchBoxExtent, Ctx.Scale);
+	PatchBoxCenter = rtm::vector_add(PatchBoxCenter, Ctx.Offset);
+	PatchBoxExtent = rtm::vector_mul(PatchBoxExtent, Ctx.Scale);
 
 	const auto ClipStatus = Ctx.pLightInfo->pLightAttr->TestBoxClipping(PatchBoxCenter, PatchBoxExtent);
 

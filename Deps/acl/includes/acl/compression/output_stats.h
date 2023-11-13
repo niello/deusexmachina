@@ -24,35 +24,40 @@
 // SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "acl/core/compiler_utils.h"
+#include "acl/version.h"
+#include "acl/core/impl/compiler_utils.h"
 #include "acl/core/enum_utils.h"
 
-namespace sjson { class ObjectWriter; }
+#if defined(ACL_USE_SJSON)
+#include <sjson/writer.h>
+#endif
 
 ACL_IMPL_FILE_PRAGMA_PUSH
 
 namespace acl
 {
-	enum class StatLogging
+	ACL_IMPL_VERSION_NAMESPACE_BEGIN
+
+	enum class stat_logging
 	{
-		None						= 0x0000,
-		Summary						= 0x0001,
-		Detailed					= 0x0002 | Summary,
-		Exhaustive					= 0x0004 | Detailed,
-		SummaryDecompression		= 0x0010,
-		ExhaustiveDecompression		= 0x0020,
+		none						= 0x0000,
+		summary						= 0x0001,
+		detailed					= 0x0002 | summary,
+		exhaustive					= 0x0004 | detailed,
 	};
 
-	ACL_IMPL_ENUM_FLAGS_OPERATORS(StatLogging)
+	ACL_IMPL_ENUM_FLAGS_OPERATORS(stat_logging)
 
-	struct OutputStats
+	struct output_stats
 	{
-		OutputStats() : logging(StatLogging::None), writer(nullptr) {}
-		OutputStats(StatLogging logging_, sjson::ObjectWriter* writer_) : logging(logging_), writer(writer_) {}
+		stat_logging			logging = stat_logging::none;
 
-		StatLogging				logging;
-		sjson::ObjectWriter*	writer;
+#if defined(ACL_USE_SJSON)
+		sjson::ObjectWriter*	writer = nullptr;
+#endif
 	};
+
+	ACL_IMPL_VERSION_NAMESPACE_END
 }
 
 ACL_IMPL_FILE_PRAGMA_POP

@@ -22,7 +22,6 @@
 #include <UI/UIServer.h>
 #include <System/OSWindow.h>
 #include <System/SystemEvents.h>
-#include <acl/math/vector4_32.h>
 
 namespace Frame
 {
@@ -314,13 +313,13 @@ bool CView::UpdateCameraFrustum()
 		_CameraTfmVersion = CameraTfmVersion;
 
 		const auto& EyePos = _pCamera->GetPosition();
-		_EyePos = acl::vector_set(EyePos.x, EyePos.y, EyePos.z);
+		_EyePos = rtm::vector_set(EyePos.x, EyePos.y, EyePos.z);
 	}
 
 	// Both perspective and orthographic projections are characterized by just few matrix elements, compare only them
 	const auto& Proj = _pCamera->GetProjMatrix();
-	const auto ProjectionParams = acl::vector_set(Proj.m[0][0], Proj.m[1][1], Proj.m[2][2], Proj.m[3][2]);
-	if (!acl::vector_all_near_equal(_ProjectionParams, ProjectionParams))
+	const auto ProjectionParams = rtm::vector_set(Proj.m[0][0], Proj.m[1][1], Proj.m[2][2], Proj.m[3][2]);
+	if (!rtm::vector_all_near_equal(_ProjectionParams, ProjectionParams))
 	{
 		ViewProjChanged = true;
 		_ProjectionParams = ProjectionParams;
@@ -474,7 +473,7 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			if (pRenderable->IsVisible)
 			{
 				pRenderable->DistanceToCamera = std::sqrtf(Math::SqDistancePointAABB(_EyePos, Record.BoxCenter, Record.BoxExtent));
-				pRenderable->RelScreenRadius = _ScreenMultiple * acl::vector_get_w(Record.Sphere) / std::max(acl::vector_distance3(_EyePos, Record.BoxCenter), 1.0f);
+				pRenderable->RelScreenRadius = _ScreenMultiple * rtm::vector_get_w(Record.Sphere) / std::max<float>(rtm::vector_distance3(_EyePos, Record.BoxCenter), 1.0f);
 			}
 		}
 

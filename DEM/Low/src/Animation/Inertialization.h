@@ -1,6 +1,6 @@
 #pragma once
 #include <Data/FixedArray.h>
-#include <acl/math/vector4_32.h>
+#include <rtm/vector4f.h>
 
 // Inertialization blending
 // See:
@@ -14,14 +14,14 @@ class CPoseBuffer;
 // Four quintic curves vectorized
 struct CQuinticCurve4
 {
-	acl::Vector4_32 _Duration;
-	acl::Vector4_32 _a;
-	acl::Vector4_32 _b;
-	acl::Vector4_32 _c;
-	acl::Vector4_32 _d;
-	acl::Vector4_32 _v0;
-	acl::Vector4_32 _x0;
-	acl::Vector4_32 _Sign;
+	rtm::vector4f _Duration;
+	rtm::vector4f _a;
+	rtm::vector4f _b;
+	rtm::vector4f _c;
+	rtm::vector4f _d;
+	rtm::vector4f _v0;
+	rtm::vector4f _x0;
+	rtm::vector4f _Sign;
 };
 
 class CInertializationPoseDiff final
@@ -30,9 +30,9 @@ protected:
 
 	struct CBoneAxes
 	{
-		acl::Vector4_32 ScaleAxis;
-		acl::Vector4_32 RotationAxis;
-		acl::Vector4_32 TranslationDir;
+		rtm::vector4f ScaleAxis;
+		rtm::vector4f RotationAxis;
+		rtm::vector4f TranslationDir;
 
 		DEM_ALLOCATE_ALIGNED(alignof(CBoneAxes));
 	};

@@ -87,24 +87,24 @@ bool CIBLAmbientLightAttribute::GetLocalAABB(CAABB& OutBox) const
 }
 //---------------------------------------------------------------------
 
-bool CIBLAmbientLightAttribute::IntersectsWith(acl::Vector4_32Arg0 Sphere) const
+bool CIBLAmbientLightAttribute::IntersectsWith(rtm::vector4f_arg0 Sphere) const
 {
 	if (IsGlobal()) return true;
 
 	const auto& Pos = _pNode->GetWorldPosition();
-	const acl::Vector4_32 LightPos = acl::vector_set(Pos.x, Pos.y, Pos.z);
+	const rtm::vector4f LightPos = rtm::vector_set(Pos.x, Pos.y, Pos.z);
 
-	const float TotalRadius = acl::vector_get_w(Sphere) + _Range;
+	const float TotalRadius = rtm::vector_get_w(Sphere) + _Range;
 
-	return acl::vector_length_squared3(acl::vector_sub(LightPos, Sphere)) <= TotalRadius * TotalRadius;
+	return rtm::vector_length_squared3(rtm::vector_sub(LightPos, Sphere)) <= TotalRadius * TotalRadius;
 }
 //---------------------------------------------------------------------
 
-U8 CIBLAmbientLightAttribute::TestBoxClipping(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const
+U8 CIBLAmbientLightAttribute::TestBoxClipping(rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent) const
 {
 	if (IsGlobal()) return Math::ClipInside;
 	const auto& Pos = _pNode->GetWorldPosition();
-	return Math::ClipAABB(BoxCenter, BoxExtent, acl::vector_set(Pos.x, Pos.y, Pos.z, _Range));
+	return Math::ClipAABB(BoxCenter, BoxExtent, rtm::vector_set(Pos.x, Pos.y, Pos.z, _Range));
 }
 //---------------------------------------------------------------------
 

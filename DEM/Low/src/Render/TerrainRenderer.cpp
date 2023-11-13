@@ -208,12 +208,12 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		//!!!FIXME: tmp! better is to prepare the buffer in advance and don't refill it every frame!
 		struct CRec
 		{
-			acl::Vector4_32 ScaleOffset;
-			acl::Vector4_32 MorphConsts;
+			rtm::vector4f ScaleOffset;
+			rtm::vector4f MorphConsts;
 		};
 
 		// Setup instance patch constants
-		const CRec Rec{ CurrPatch.ScaleOffset, acl::vector_set(Terrain.LODParams[CurrPatch.LOD].Morph1, Terrain.LODParams[CurrPatch.LOD].Morph2, 0.f, 0.f) };
+		const CRec Rec{ CurrPatch.ScaleOffset, rtm::vector_set(Terrain.LODParams[CurrPatch.LOD].Morph1, Terrain.LODParams[CurrPatch.LOD].Morph2, 0.f, 0.f) };
 		ConstVSInstance.Shift(_pCurrTechInterface->ConstInstanceDataVS, Index);
 		_pCurrTechInterface->PerInstanceParams.SetRawConstant(ConstVSInstance, Rec);
 

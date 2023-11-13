@@ -1,7 +1,6 @@
 #include "LightAttribute.h"
 #include <Scene/SceneNode.h>
 #include <Math/AABB.h>
-#include <acl/math/vector4_32.h>
 
 namespace Frame
 {
@@ -44,9 +43,9 @@ void CLightAttribute::UpdateInGraphicsScene(CGraphicsScene& Scene)
 	AABB.Transform(Tfm);
 
 	const auto LocalSphere = GetLocalSphere();
-	vector3 SpherePos(acl::vector_get_x(LocalSphere), acl::vector_get_y(LocalSphere), acl::vector_get_z(LocalSphere));
+	vector3 SpherePos(rtm::vector_get_x(LocalSphere), rtm::vector_get_y(LocalSphere), rtm::vector_get_z(LocalSphere));
 	SpherePos = Tfm.transform_coord(SpherePos);
-	const auto GlobalSphere = acl::vector_set(SpherePos.x, SpherePos.y, SpherePos.z, acl::vector_get_w(LocalSphere));
+	const auto GlobalSphere = rtm::vector_set(SpherePos.x, SpherePos.y, SpherePos.z, rtm::vector_get_w(LocalSphere));
 
 	if (SceneChanged)
 	{
@@ -75,8 +74,8 @@ bool CLightAttribute::GetGlobalAABB(CAABB& OutBox) const
 		const auto Center = _SceneRecordHandle->second.BoxCenter;
 		const auto Extent = _SceneRecordHandle->second.BoxExtent;
 		OutBox.Set(
-			vector3(acl::vector_get_x(Center), acl::vector_get_y(Center), acl::vector_get_z(Center)),
-			vector3(acl::vector_get_x(Extent), acl::vector_get_y(Extent), acl::vector_get_z(Extent)));
+			vector3(rtm::vector_get_x(Center), rtm::vector_get_y(Center), rtm::vector_get_z(Center)),
+			vector3(rtm::vector_get_x(Extent), rtm::vector_get_y(Extent), rtm::vector_get_z(Extent)));
 	}
 	else
 	{

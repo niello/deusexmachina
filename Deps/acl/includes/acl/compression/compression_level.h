@@ -24,7 +24,9 @@
 // SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "acl/core/compiler_utils.h"
+#include "acl/version.h"
+#include "acl/core/error.h"
+#include "acl/core/impl/compiler_utils.h"
 
 #include <cstdint>
 #include <cstring>
@@ -33,17 +35,26 @@ ACL_IMPL_FILE_PRAGMA_PUSH
 
 namespace acl
 {
+	ACL_IMPL_VERSION_NAMESPACE_BEGIN
+
 	////////////////////////////////////////////////////////////////////////////////
-	// CompressionLevel8 represents how aggressively we attempt to reduce the memory
+	// compression_level8 represents how aggressively we attempt to reduce the memory
 	// footprint. Higher levels will try more permutations and bit rates. The higher
 	// the level, the slower the compression but the smaller the memory footprint.
-	enum class CompressionLevel8 : uint8_t
+	enum class compression_level8 : uint8_t
 	{
-		Lowest		= 0,	// Same as Medium for now
-		Low			= 1,	// Same as Medium for now
-		Medium		= 2,
-		High		= 3,
-		Highest		= 4,
+		lowest		= 0,	// Same as medium for now
+		low			= 1,	// Same as medium for now
+		medium		= 2,
+		high		= 3,
+		highest		= 4,
+
+		// Automatic attempts to pick the best compression level based on various
+		// properties of the input clip: clip length, longest transform chain, etc.
+		// This offers a nice balance between size and speed for the majority of clips.
+		automatic	= 100,
+
+		//lossless	= 255,	// Not implemented, reserved
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -51,60 +62,15 @@ namespace acl
 	////////////////////////////////////////////////////////////////////////////////
 	// Returns a string representing the compression level.
 	// TODO: constexpr
-	inline const char* get_compression_level_name(CompressionLevel8 level)
-	{
-		switch (level)
-		{
-		case CompressionLevel8::Lowest:		return "Lowest";
-		case CompressionLevel8::Low:		return "Low";
-		case CompressionLevel8::Medium:		return "Medium";
-		case CompressionLevel8::High:		return "High";
-		case CompressionLevel8::Highest:	return "Highest";
-		default:							return "<Invalid>";
-		}
-	}
+	inline const char* get_compression_level_name(compression_level8 level);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Returns the compression level from its string representation.
-	inline bool get_compression_level(const char* level_name, CompressionLevel8& out_level)
-	{
-		const char* level_lowest = "Lowest";
-		if (std::strncmp(level_name, level_lowest, std::strlen(level_lowest)) == 0)
-		{
-			out_level = CompressionLevel8::Lowest;
-			return true;
-		}
+	inline bool get_compression_level(const char* level_name, compression_level8& out_level);
 
-		const char* level_low = "Low";
-		if (std::strncmp(level_name, level_low, std::strlen(level_low)) == 0)
-		{
-			out_level = CompressionLevel8::Low;
-			return true;
-		}
-
-		const char* level_medium = "Medium";
-		if (std::strncmp(level_name, level_medium, std::strlen(level_medium)) == 0)
-		{
-			out_level = CompressionLevel8::Medium;
-			return true;
-		}
-
-		const char* level_highest = "Highest";
-		if (std::strncmp(level_name, level_highest, std::strlen(level_highest)) == 0)
-		{
-			out_level = CompressionLevel8::Highest;
-			return true;
-		}
-
-		const char* level_high = "High";
-		if (std::strncmp(level_name, level_high, std::strlen(level_high)) == 0)
-		{
-			out_level = CompressionLevel8::High;
-			return true;
-		}
-
-		return false;
-	}
+	ACL_IMPL_VERSION_NAMESPACE_END
 }
+
+#include "acl/compression/impl/compression_level.impl.h"
 
 ACL_IMPL_FILE_PRAGMA_POP

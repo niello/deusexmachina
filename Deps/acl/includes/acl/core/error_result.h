@@ -24,22 +24,25 @@
 // SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "acl/core/compiler_utils.h"
+#include "acl/version.h"
+#include "acl/core/impl/compiler_utils.h"
 
 ACL_IMPL_FILE_PRAGMA_PUSH
 
 namespace acl
 {
+	ACL_IMPL_VERSION_NAMESPACE_BEGIN
+
 	//////////////////////////////////////////////////////////////////////////
 	// This class is meant to encapsulate a simple error message and easily
 	// coerce with 'bool' in order to simplify and clean up error handling.
 	// In an ideal world, I would love for a C++11 equivalent of std::result in Rust.
 	//////////////////////////////////////////////////////////////////////////
-	class ErrorResult
+	class error_result
 	{
 	public:
-		ErrorResult() : m_error(nullptr) {}
-		explicit ErrorResult(const char* error) : m_error(error) {}
+		error_result() : m_error(nullptr) {}
+		explicit error_result(const char* error) : m_error(error) {}
 
 		bool empty() const { return m_error == nullptr; }
 		bool any() const { return m_error != nullptr; }
@@ -51,6 +54,8 @@ namespace acl
 	private:
 		const char*		m_error;
 	};
+
+	ACL_IMPL_VERSION_NAMESPACE_END
 }
 
 ACL_IMPL_FILE_PRAGMA_POP

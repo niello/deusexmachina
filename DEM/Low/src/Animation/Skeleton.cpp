@@ -55,9 +55,9 @@ void CSkeleton::FromPoseBuffer(const CPoseBuffer& Pose)
 		if (auto pNode = _Nodes[i].Get())
 		{
 			const auto& SrcTfm = Pose[i];
-			Tfm.Scale.set(acl::vector_get_x(SrcTfm.scale), acl::vector_get_y(SrcTfm.scale), acl::vector_get_z(SrcTfm.scale));
-			Tfm.Rotation.set(acl::vector_get_x(SrcTfm.rotation), acl::vector_get_y(SrcTfm.rotation), acl::vector_get_z(SrcTfm.rotation), acl::vector_get_w(SrcTfm.rotation));
-			Tfm.Translation.set(acl::vector_get_x(SrcTfm.translation), acl::vector_get_y(SrcTfm.translation), acl::vector_get_z(SrcTfm.translation));
+			Tfm.Scale.set(rtm::vector_get_x(SrcTfm.scale), rtm::vector_get_y(SrcTfm.scale), rtm::vector_get_z(SrcTfm.scale));
+			Tfm.Rotation.set(rtm::vector_get_x(SrcTfm.rotation), rtm::vector_get_y(SrcTfm.rotation), rtm::vector_get_z(SrcTfm.rotation), rtm::vector_get_w(SrcTfm.rotation));
+			Tfm.Translation.set(rtm::vector_get_x(SrcTfm.translation), rtm::vector_get_y(SrcTfm.translation), rtm::vector_get_z(SrcTfm.translation));
 			pNode->SetLocalTransform(Tfm);
 		}
 	}
@@ -73,9 +73,9 @@ void CSkeleton::ToPoseBuffer(CPoseBuffer& Pose) const
 		if (auto pNode = _Nodes[i].Get())
 		{
 			const auto& SrcTfm = pNode->GetLocalTransform();
-			Pose[i].scale = acl::vector_set(SrcTfm.Scale.x, SrcTfm.Scale.y, SrcTfm.Scale.z);
-			Pose[i].rotation = acl::quat_set(SrcTfm.Rotation.x, SrcTfm.Rotation.y, SrcTfm.Rotation.z, SrcTfm.Rotation.w);
-			Pose[i].translation = acl::vector_set(SrcTfm.Translation.x, SrcTfm.Translation.y, SrcTfm.Translation.z);
+			Pose[i].scale = rtm::vector_set(SrcTfm.Scale.x, SrcTfm.Scale.y, SrcTfm.Scale.z);
+			Pose[i].rotation = rtm::quat_set(SrcTfm.Rotation.x, SrcTfm.Rotation.y, SrcTfm.Rotation.z, SrcTfm.Rotation.w);
+			Pose[i].translation = rtm::vector_set(SrcTfm.Translation.x, SrcTfm.Translation.y, SrcTfm.Translation.z);
 		}
 	}
 }

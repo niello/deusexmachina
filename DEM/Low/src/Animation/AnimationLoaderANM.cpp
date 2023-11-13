@@ -3,7 +3,7 @@
 #include <Animation/SkeletonInfo.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
-#include <acl/core/compressed_clip.h>
+#include <acl/core/compressed_tracks.h>
 
 namespace Resources
 {
@@ -88,7 +88,7 @@ Core::PObject CAnimationLoaderANM::CreateResource(CStrID UID)
 	// Clip size is a part of clip data, so it must be read again as a part of the clip
 	Stream->Seek(-4, IO::Seek_Current);
 
-	void* pBuffer = n_malloc_aligned(ClipDataSize, alignof(acl::CompressedClip));
+	void* pBuffer = n_malloc_aligned(ClipDataSize, alignof(acl::compressed_tracks));
 
 	//!!!clip data is aligned-16 relatively to the file beginning! can use MMF!
 	if (!pBuffer || Stream->Read(pBuffer, ClipDataSize) != ClipDataSize)
@@ -97,7 +97,7 @@ Core::PObject CAnimationLoaderANM::CreateResource(CStrID UID)
 		return nullptr;
 	}
 
-	auto pClip = reinterpret_cast<acl::CompressedClip*>(pBuffer);
+	auto pClip = reinterpret_cast<acl::compressed_tracks*>(pBuffer);
 	if (!pClip->is_valid(true).empty())
 	{
 		SAFE_FREE_ALIGNED(pBuffer);

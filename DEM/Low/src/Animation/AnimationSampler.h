@@ -1,6 +1,6 @@
 #pragma once
 #include <Data/Ptr.h>
-#include <acl/algorithm/uniformly_sampled/decoder.h>
+#include <acl/decompression/decompress.h>
 
 // Transformation source that samples an animation clip
 
@@ -11,7 +11,7 @@ class CPoseBuffer;
 typedef Ptr<class CAnimationClip> PAnimationClip;
 typedef std::unique_ptr<class CAnimationSampler> PAnimationSampler;
 typedef std::unique_ptr<class CStaticPose> PStaticPose;
-typedef acl::uniformly_sampled::DecompressionContext<acl::uniformly_sampled::DefaultDecompressionSettings> CACLContext;
+using CACLContext = acl::decompression_context<acl::default_transform_decompression_settings>;
 
 class alignas(CACLContext) CAnimationSampler final
 {

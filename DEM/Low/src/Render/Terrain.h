@@ -27,7 +27,7 @@ public:
 
 	struct CPatchInstance
 	{
-		acl::Vector4_32        ScaleOffset;
+		rtm::vector4f        ScaleOffset;
 		std::array<CLight*, 8> Lights;
 		U32                    LightsVersion = 0;
 		U32                    LOD;
@@ -49,8 +49,8 @@ protected:
 	struct CNodeProcessingContext
 	{
 		Math::CSIMDFrustum ViewFrustum;
-		acl::Vector4_32    Scale;
-		acl::Vector4_32    Offset;
+		rtm::vector4f    Scale;
+		rtm::vector4f    Offset;
 		vector3	           MainCameraPos;
 	};
 

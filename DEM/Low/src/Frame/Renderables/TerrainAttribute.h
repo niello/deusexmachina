@@ -36,8 +36,8 @@ protected:
 
 	struct CNodeProcessingContext
 	{
-		acl::Vector4_32 Scale;
-		acl::Vector4_32 Offset;
+		rtm::vector4f Scale;
+		rtm::vector4f Offset;
 		CLightInfo*     pLightInfo;
 	};
 

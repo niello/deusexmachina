@@ -280,11 +280,11 @@ float CAnimationController::GetLocomotionPhaseFromPose(const CSkeleton& Skeleton
 
 	/* TODO: use ACL/RTM for poses
 	const auto Fwd = RootCoordSystem.GetColumn(2);
-	acl::Vector4_32 ForwardDir = { static_cast<float>(Fwd[0]), static_cast<float>(Fwd[1]), static_cast<float>(Fwd[2]), 0.0f };
+	rtm::vector4f ForwardDir = { static_cast<float>(Fwd[0]), static_cast<float>(Fwd[1]), static_cast<float>(Fwd[2]), 0.0f };
 	ForwardDir = acl::vector_normalize3(ForwardDir);
 
 	const auto Side = RootCoordSystem.GetColumn(0);
-	acl::Vector4_32 SideDir = { static_cast<float>(Side[0]), static_cast<float>(Side[1]), static_cast<float>(Side[2]), 0.0f };
+	rtm::vector4f SideDir = { static_cast<float>(Side[0]), static_cast<float>(Side[1]), static_cast<float>(Side[2]), 0.0f };
 	SideDir = acl::vector_normalize3(SideDir);
 
 	const auto Offset = acl::vector_sub(LeftFootPositions[i], RightFootPositions[i]);

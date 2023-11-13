@@ -1,7 +1,6 @@
 #include "RenderableAttribute.h"
 #include <Scene/SceneNode.h>
 #include <Debug/DebugDraw.h>
-#include <acl/math/vector4_32.h>
 
 namespace Frame
 {
@@ -49,8 +48,8 @@ bool CRenderableAttribute::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 		const auto Center = _SceneRecordHandle->second.BoxCenter;
 		const auto Extent = _SceneRecordHandle->second.BoxExtent;
 		OutBox.Set(
-			vector3(acl::vector_get_x(Center), acl::vector_get_y(Center), acl::vector_get_z(Center)),
-			vector3(acl::vector_get_x(Extent), acl::vector_get_y(Extent), acl::vector_get_z(Extent)));
+			vector3(rtm::vector_get_x(Center), rtm::vector_get_y(Center), rtm::vector_get_z(Center)),
+			vector3(rtm::vector_get_x(Extent), rtm::vector_get_y(Extent), rtm::vector_get_z(Extent)));
 	}
 	else
 	{

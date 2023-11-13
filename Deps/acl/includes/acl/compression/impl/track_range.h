@@ -24,7 +24,8 @@
 // SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "acl/core/compiler_utils.h"
+#include "acl/version.h"
+#include "acl/core/impl/compiler_utils.h"
 #include "acl/core/iallocator.h"
 #include "acl/core/track_types.h"
 
@@ -34,8 +35,17 @@
 
 ACL_IMPL_FILE_PRAGMA_PUSH
 
+#if defined(RTM_COMPILER_MSVC)
+	#pragma warning(push)
+	// warning C26495: Variable '...' is uninitialized. Always initialize a member variable (type.6).
+	// We explicitly control initialization
+	#pragma warning(disable : 26495)
+#endif
+
 namespace acl
 {
+	ACL_IMPL_VERSION_NAMESPACE_BEGIN
+
 	namespace acl_impl
 	{
 		class scalarf_range
@@ -72,6 +82,9 @@ namespace acl
 				switch (category)
 				{
 				case track_category8::scalarf:	return range.scalarf.is_constant(threshold);
+				case track_category8::scalard:
+				case track_category8::transformf:
+				case track_category8::transformd:
 				default:
 					ACL_ASSERT(false, "Invalid track category");
 					return false;
@@ -93,6 +106,12 @@ namespace acl
 			uint8_t				padding[15];
 		};
 	}
+
+	ACL_IMPL_VERSION_NAMESPACE_END
 }
+
+#if defined(RTM_COMPILER_MSVC)
+	#pragma warning(pop)
+#endif
 
 ACL_IMPL_FILE_PRAGMA_POP

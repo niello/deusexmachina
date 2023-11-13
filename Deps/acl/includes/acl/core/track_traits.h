@@ -24,10 +24,14 @@
 // SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "acl/core/compiler_utils.h"
+#include "acl/version.h"
+#include "acl/core/impl/compiler_utils.h"
+#include "acl/core/track_desc.h"
 #include "acl/core/track_types.h"
 
 #include <rtm/types.h>
+#include <rtm/scalarf.h>
+#include <rtm/vector4f.h>
 
 #include <cstdint>
 
@@ -35,6 +39,8 @@ ACL_IMPL_FILE_PRAGMA_PUSH
 
 namespace acl
 {
+	ACL_IMPL_VERSION_NAMESPACE_BEGIN
+
 	//////////////////////////////////////////////////////////////////////////
 	// Type tracks for tracks.
 	// Each trait contains:
@@ -55,6 +61,8 @@ namespace acl
 
 		using sample_type = float;
 		using desc_type = track_desc_scalarf;
+
+		static rtm::vector4f RTM_SIMD_CALL load_as_vector(const sample_type* ptr) { return rtm::vector_set(*ptr, 0.0F, 0.0F, 0.0F); }
 	};
 
 	template<>
@@ -64,6 +72,8 @@ namespace acl
 
 		using sample_type = rtm::float2f;
 		using desc_type = track_desc_scalarf;
+
+		static rtm::vector4f RTM_SIMD_CALL load_as_vector(const sample_type* ptr) { return rtm::vector_load2(ptr); }
 	};
 
 	template<>
@@ -73,6 +83,8 @@ namespace acl
 
 		using sample_type = rtm::float3f;
 		using desc_type = track_desc_scalarf;
+
+		static rtm::vector4f RTM_SIMD_CALL load_as_vector(const sample_type* ptr) { return rtm::vector_load3(ptr); }
 	};
 
 	template<>
@@ -82,6 +94,8 @@ namespace acl
 
 		using sample_type = rtm::float4f;
 		using desc_type = track_desc_scalarf;
+
+		static rtm::vector4f RTM_SIMD_CALL load_as_vector(const sample_type* ptr) { return rtm::vector_load(ptr); }
 	};
 
 	template<>
@@ -91,7 +105,20 @@ namespace acl
 
 		using sample_type = rtm::vector4f;
 		using desc_type = track_desc_scalarf;
+
+		static rtm::vector4f RTM_SIMD_CALL load_as_vector(const sample_type* ptr) { return *ptr; }
 	};
+
+	template<>
+	struct track_traits<track_type8::qvvf>
+	{
+		static constexpr track_category8 category = track_category8::transformf;
+
+		using sample_type = rtm::qvvf;
+		using desc_type = track_desc_transformf;
+	};
+
+	ACL_IMPL_VERSION_NAMESPACE_END
 }
 
 ACL_IMPL_FILE_PRAGMA_POP

@@ -2,7 +2,7 @@
 #include <Data/SparseArray2.hpp>
 #include <Math/AABB.h>
 #include <System/Allocators/PoolAllocator.h>
-#include <acl/math/math_types.h>
+#include <rtm/vector4f.h>
 #include <map>
 
 // Container for graphics objects - renderables and lights. Accelerated with a spatial partitioning tree.
@@ -36,7 +36,7 @@ static inline constexpr U8 TREE_MAX_DEPTH = (sizeof(TSceneMorton) * 8 - 1) / TRE
 
 struct CSpatialTreeNode
 {
-	acl::Vector4_32 Bounds; // Cx, Cy, Cz, Ecoeff for an octree
+	rtm::vector4f Bounds; // Cx, Cy, Cz, Ecoeff for an octree
 	TSceneMorton    MortonCode;
 	U32             ParentIndex;
 	U32             SubtreeObjectCount;
@@ -64,9 +64,9 @@ public:
 
 	struct CSpatialRecord
 	{
-		acl::Vector4_32           BoxCenter;
-		acl::Vector4_32           BoxExtent;
-		acl::Vector4_32           Sphere;
+		rtm::vector4f           BoxCenter;
+		rtm::vector4f           BoxExtent;
+		rtm::vector4f           Sphere;
 		Scene::CNodeAttribute*    pAttr = nullptr;
 		CObjectLightIntersection* pObjectLightIntersections = nullptr;
 		TSceneMorton              NodeMortonCode = 0;                  // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
@@ -100,13 +100,13 @@ protected:
 	UPTR  _NextLightUID = 1;      // UID 0 means no UID assigned, so start from 1
 	U32   _SpatialTreeRebuildVersion = 1; // Grows when existing nodes in _TreeNodes change, to invalidate visibility caches in views
 
-	TSceneMorton    CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const noexcept;
+	TSceneMorton    CalculateMortonCode(rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent) const noexcept;
 	U32             CreateNode(U32 FreeIndex, TSceneMorton MortonCode, U32 ParentIndex);
 	U32             AddSingleObjectToNode(TSceneMorton NodeMortonCode, TSceneMorton StopMortonCode);
 	void            RemoveSingleObjectFromNode(U32 NodeIndex, TSceneMorton NodeMortonCode, TSceneMorton StopMortonCode);
 
-	HRecord         AddObject(std::map<UPTR, CSpatialRecord>& Storage, UPTR UID, acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, acl::Vector4_32Arg2 GlobalSphere, Scene::CNodeAttribute& Attr);
-	void            UpdateObjectBounds(HRecord Handle, acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, acl::Vector4_32Arg2 GlobalSphere);
+	HRecord         AddObject(std::map<UPTR, CSpatialRecord>& Storage, UPTR UID, rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent, rtm::vector4f_arg2 GlobalSphere, Scene::CNodeAttribute& Attr);
+	void            UpdateObjectBounds(HRecord Handle, rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent, rtm::vector4f_arg2 GlobalSphere);
 	void            RemoveObject(std::map<UPTR, CSpatialRecord>& Storage, HRecord Handle);
 
 	void            TrackObjectLightIntersections(CSpatialRecord& Record, bool Track);
@@ -120,16 +120,16 @@ public:
 	void            RemoveRenderable(HRecord Handle);
 	const auto&     GetRenderables() const { return _Renderables; }
 
-	HRecord         AddLight(const CAABB& GlobalBox, acl::Vector4_32Arg0 GlobalSphere, CLightAttribute& LightAttr);
-	void            UpdateLightBounds(HRecord Handle, const CAABB& GlobalBox, acl::Vector4_32Arg0 GlobalSphere);
+	HRecord         AddLight(const CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere, CLightAttribute& LightAttr);
+	void            UpdateLightBounds(HRecord Handle, const CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere);
 	void            RemoveLight(HRecord Handle);
 	const auto&     GetLights() const { return _Lights; }
 
 	void            TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum, std::vector<bool>& NodeVisibility) const;
 
-	acl::Vector4_32 CalcNodeBounds(TSceneMorton MortonCode) const;
+	rtm::vector4f CalcNodeBounds(TSceneMorton MortonCode) const;
 	CAABB           GetNodeAABB(U32 NodeIndex, bool Loose = false) const;
-	CAABB           GetNodeAABB(acl::Vector4_32Arg0 Bounds, bool Loose = false) const;
+	CAABB           GetNodeAABB(rtm::vector4f_arg0 Bounds, bool Loose = false) const;
 	U32             GetSpatialTreeRebuildVersion() const { return _SpatialTreeRebuildVersion; }
 
 	void            TrackObjectLightIntersections(CRenderableAttribute& RenderableAttr, bool Track);

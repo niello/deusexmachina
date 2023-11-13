@@ -60,11 +60,11 @@ bool CSpotLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Cou
 	_ConeInner = std::clamp(_ConeInner, 0.f, PI);
 	_ConeOuter = std::clamp(_ConeOuter, _ConeInner, PI);
 
-	_CosHalfInner = acl::cos(0.5f * _ConeInner);
+	_CosHalfInner = rtm::scalar_cos(0.5f * _ConeInner);
 
 	// Calculate bounding sphere of a cone. Use local offset along the look axis for the sphere center.
 	// See: https://bartwronski.com/2017/04/13/cull-that-cone/
-	acl::sincos(0.5f * _ConeOuter, _SinHalfOuter, _CosHalfOuter);
+	rtm::scalar_sincos(0.5f * _ConeOuter, _SinHalfOuter, _CosHalfOuter);
 	if (_CosHalfOuter < COS_PI_DIV_4)
 	{
 		_BoundingSphereOffsetAlongDir = _Range * _CosHalfOuter;
@@ -134,41 +134,41 @@ bool CSpotLightAttribute::GetLocalAABB(CAABB& OutBox) const
 }
 //---------------------------------------------------------------------
 
-bool CSpotLightAttribute::IntersectsWith(acl::Vector4_32Arg0 Sphere) const
+bool CSpotLightAttribute::IntersectsWith(rtm::vector4f_arg0 Sphere) const
 {
 	const auto& Pos = _pNode->GetWorldPosition();
-	const acl::Vector4_32 LightPos = acl::vector_set(Pos.x, Pos.y, Pos.z);
+	const rtm::vector4f LightPos = rtm::vector_set(Pos.x, Pos.y, Pos.z);
 
 	const auto AxisZ = _pNode->GetWorldMatrix().AxisZ();
-	const acl::Vector4_32 LightDir = acl::vector_normalize3(acl::vector_set(-AxisZ.x, -AxisZ.y, -AxisZ.z));
+	const rtm::vector4f LightDir = rtm::vector_normalize3(rtm::vector_set(-AxisZ.x, -AxisZ.y, -AxisZ.z));
 
-	const float SphereRadius = acl::vector_get_w(Sphere);
+	const float SphereRadius = rtm::vector_get_w(Sphere);
 
 	// Check the bounding sphere of the light first
-	const acl::Vector4_32 BoundingSpherePos = acl::vector_mul_add(LightDir, _BoundingSphereOffsetAlongDir, LightPos);
+	const rtm::vector4f BoundingSpherePos = rtm::vector_mul_add(LightDir, _BoundingSphereOffsetAlongDir, LightPos);
 	const float TotalRadius = SphereRadius + _BoundingSphereRadius;
-	if (acl::vector_length_squared3(acl::vector_sub(BoundingSpherePos, Sphere)) > TotalRadius * TotalRadius) return false;
+	if (rtm::vector_length_squared3(rtm::vector_sub(BoundingSpherePos, Sphere)) > TotalRadius * TotalRadius) return false;
 
 	// Check sphere-cone intersection
 
-	acl::Vector4_32 DistanceVector = acl::vector_sub(Sphere, acl::vector_mul(LightDir, (SphereRadius / _SinHalfOuter)));
-	float SqDistance = acl::vector_length_squared3(DistanceVector);
-	float ProjectedLength = acl::vector_dot3(LightDir, DistanceVector);
+	rtm::vector4f DistanceVector = rtm::vector_sub(Sphere, rtm::vector_mul(LightDir, (SphereRadius / _SinHalfOuter)));
+	float SqDistance = rtm::vector_length_squared3(DistanceVector);
+	float ProjectedLength = rtm::vector_dot3(LightDir, DistanceVector);
 	if (ProjectedLength <= 0.f || ProjectedLength * ProjectedLength < SqDistance * _CosHalfOuter * _CosHalfOuter) return false;
 
-	DistanceVector = acl::vector_sub(Sphere, LightPos);
-	SqDistance = acl::vector_length_squared3(DistanceVector);
-	ProjectedLength = -acl::vector_dot3(LightDir, DistanceVector);
+	DistanceVector = rtm::vector_sub(Sphere, LightPos);
+	SqDistance = rtm::vector_length_squared3(DistanceVector);
+	ProjectedLength = -rtm::vector_dot3(LightDir, DistanceVector);
 	return ProjectedLength <= 0.f || ProjectedLength * ProjectedLength < SqDistance * _SinHalfOuter * _SinHalfOuter || SqDistance <= SphereRadius * SphereRadius;
 }
 //---------------------------------------------------------------------
 
-U8 CSpotLightAttribute::TestBoxClipping(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const
+U8 CSpotLightAttribute::TestBoxClipping(rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent) const
 {
 	const auto& Pos = _pNode->GetWorldPosition();
 
 	// Check the bounding sphere of the light first
-	if (!Math::HasIntersection(acl::vector_set(Pos.x, Pos.y, Pos.z, _Range), BoxCenter, BoxExtent)) return Math::ClipOutside;
+	if (!Math::HasIntersection(rtm::vector_set(Pos.x, Pos.y, Pos.z, _Range), BoxCenter, BoxExtent)) return Math::ClipOutside;
 
 	// Update cached world space frustum
 	if (_WorldBoundsCacheVersion != _pNode->GetTransformVersion())

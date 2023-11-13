@@ -51,21 +51,21 @@ bool HasLooseIntersection(/*Bounds, Morton*/) noexcept
 }
 //---------------------------------------------------------------------
 
-static inline std::tuple<acl::Vector4_32, acl::Vector4_32> ConvertAABBToSIMD(const CAABB& GlobalBox)
+static inline std::tuple<rtm::vector4f, rtm::vector4f> ConvertAABBToSIMD(const CAABB& GlobalBox)
 {
 	// TODO: store AABB as SIMD center-extents everywhere?!
-	const auto HalfMin = acl::vector_mul(acl::vector_set(GlobalBox.Min.x, GlobalBox.Min.y, GlobalBox.Min.z), 0.5f);
-	const auto HalfMax = acl::vector_mul(acl::vector_set(GlobalBox.Max.x, GlobalBox.Max.y, GlobalBox.Max.z), 0.5f);
-	const auto BoxCenter = acl::vector_add(HalfMax, HalfMin);
-	const auto BoxExtent = acl::vector_sub(HalfMax, HalfMin);
+	const auto HalfMin = rtm::vector_mul(rtm::vector_set(GlobalBox.Min.x, GlobalBox.Min.y, GlobalBox.Min.z), 0.5f);
+	const auto HalfMax = rtm::vector_mul(rtm::vector_set(GlobalBox.Max.x, GlobalBox.Max.y, GlobalBox.Max.z), 0.5f);
+	const auto BoxCenter = rtm::vector_add(HalfMax, HalfMin);
+	const auto BoxExtent = rtm::vector_sub(HalfMax, HalfMin);
 	return { BoxCenter, BoxExtent };
 }
 //---------------------------------------------------------------------
 
-static inline acl::Vector4_32 SphereFromBox(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent)
+static inline rtm::vector4f SphereFromBox(rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent)
 {
-	const float SphereRadius = acl::vector_length3(BoxExtent);
-	return acl::vector_set(acl::vector_get_x(BoxCenter), acl::vector_get_y(BoxCenter), acl::vector_get_z(BoxCenter), SphereRadius);
+	const float SphereRadius = rtm::vector_length3(BoxExtent);
+	return rtm::vector_set(rtm::vector_get_x(BoxCenter), rtm::vector_get_y(BoxCenter), rtm::vector_get_z(BoxCenter), SphereRadius);
 }
 //---------------------------------------------------------------------
 
@@ -114,7 +114,7 @@ void CGraphicsScene::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 	// Create a root node. This simplifies object insertion logic.
 	// Set object count to fake 1 to keep the root alive forever.
 	auto& Root = *_TreeNodes.emplace();
-	Root.Bounds = acl::vector_set(Center.x, Center.y, Center.z, 1.f);
+	Root.Bounds = rtm::vector_set(Center.x, Center.y, Center.z, 1.f);
 	Root.MortonCode = 1;
 	Root.ParentIndex = NO_SPATIAL_TREE_NODE;
 	Root.SubtreeObjectCount = 1;
@@ -123,32 +123,32 @@ void CGraphicsScene::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 //---------------------------------------------------------------------
 
 // O(1) calculation that exploits properties of the loose octree
-TSceneMorton CGraphicsScene::CalculateMortonCode(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const noexcept
+TSceneMorton CGraphicsScene::CalculateMortonCode(rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent) const noexcept
 {
 	const auto WorldCenter = _TreeNodes[0].Bounds;
-	const auto WorldExtent = acl::vector_set(_WorldExtent);
+	const auto WorldExtent = rtm::vector_set(_WorldExtent);
 
 	// Check for location outside the world bounds. Loose tree requires only the center being inside.
-	const auto CenterDiff = acl::vector_abs(acl::vector_sub(BoxCenter, WorldCenter));
-	if (acl::vector_any_greater_equal3(CenterDiff, WorldExtent)) return 0;
+	const auto CenterDiff = rtm::vector_abs(rtm::vector_sub(BoxCenter, WorldCenter));
+	if (rtm::vector_any_greater_equal3(CenterDiff, WorldExtent)) return 0;
 
 	// Our level is where the non-loose node size is not less than our size in any of dimensions.
 	// Too small and degenerate AABBs sink to the deepest possible level to save us from division errors.
 	TSceneMorton NodeSizeCoeff = static_cast<TSceneMorton>(1 << _MaxDepth);
-	if (acl::vector_any_greater_equal3(BoxExtent, acl::vector_set(_SmallestExtent)))
+	if (rtm::vector_any_greater_equal3(BoxExtent, rtm::vector_set(_SmallestExtent)))
 	{
 		// TODO: can make better horizontal max() with SIMD?
-		const float MaxDim = std::max({ acl::vector_get_x(BoxExtent), acl::vector_get_y(BoxExtent), acl::vector_get_z(BoxExtent) });
+		const float MaxDim = std::max<float>({ rtm::vector_get_x(BoxExtent), rtm::vector_get_y(BoxExtent), rtm::vector_get_z(BoxExtent) });
 		const TSceneMorton HighestSharePow2 = Math::PrevPow2(static_cast<TSceneMorton>(_WorldExtent / MaxDim));
 		if (NodeSizeCoeff > HighestSharePow2) NodeSizeCoeff = HighestSharePow2;
 	}
 
 	const float CellCoeff = static_cast<float>(NodeSizeCoeff) * _InvWorldSize;
-	const auto Cell = acl::vector_mul(acl::vector_add(BoxCenter, acl::vector_sub(WorldExtent, WorldCenter)), CellCoeff); // (C + (We - Wc)) * Coeff
+	const auto Cell = rtm::vector_mul(rtm::vector_add(BoxCenter, rtm::vector_sub(WorldExtent, WorldCenter)), CellCoeff); // (C + (We - Wc)) * Coeff
 
-	const auto x = static_cast<TSceneCellDim>(acl::vector_get_x(Cell));
-	const auto y = static_cast<TSceneCellDim>(acl::vector_get_y(Cell));
-	const auto z = static_cast<TSceneCellDim>(acl::vector_get_z(Cell));
+	const auto x = static_cast<TSceneCellDim>(rtm::vector_get_x(Cell));
+	const auto y = static_cast<TSceneCellDim>(rtm::vector_get_y(Cell));
+	const auto z = static_cast<TSceneCellDim>(rtm::vector_get_z(Cell));
 
 	// NodeSizeCoeff bit is offset by Depth bits. Its pow(N) is a bit offset to N*Depth, making a room for N-dimensional Morton code.
 	if constexpr (TREE_DIMENSIONS == 2)
@@ -250,7 +250,7 @@ void CGraphicsScene::RemoveSingleObjectFromNode(U32 NodeIndex, TSceneMorton Node
 //---------------------------------------------------------------------
 
 CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CSpatialRecord>& Storage, UPTR UID,
-	acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, acl::Vector4_32Arg2 GlobalSphere, Scene::CNodeAttribute& Attr)
+	rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent, rtm::vector4f_arg2 GlobalSphere, Scene::CNodeAttribute& Attr)
 {
 	CSpatialRecord Record;
 	Record.pAttr = &Attr;
@@ -259,7 +259,7 @@ CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CSpatialRecord>
 	Record.Sphere = GlobalSphere;
 
 	// Check bounds validity
-	if (!acl::vector_any_less_than3(Record.BoxExtent, acl::vector_set(0.f))) //!!!TODO PERF: can check negative sign bits by mask!
+	if (!rtm::vector_any_less_than3(Record.BoxExtent, rtm::vector_set(0.f))) //!!!TODO PERF: can check negative sign bits by mask!
 	{
 		const auto NodeMortonCode = CalculateMortonCode(Record.BoxCenter, Record.BoxExtent);
 		Record.NodeIndex = AddSingleObjectToNode(NodeMortonCode, 0);
@@ -289,15 +289,15 @@ CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CSpatialRecord>
 }
 //---------------------------------------------------------------------
 
-void CGraphicsScene::UpdateObjectBounds(HRecord Handle, acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent, acl::Vector4_32Arg2 GlobalSphere)
+void CGraphicsScene::UpdateObjectBounds(HRecord Handle, rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent, rtm::vector4f_arg2 GlobalSphere)
 {
 	auto& Record = Handle->second;
 
 	// TODO PERF: check if this is useful. Also may want to rewrite for strict equality because near_equal involves much more operations!
-	if (acl::vector_all_near_equal3(BoxCenter, Record.BoxCenter) && acl::vector_all_near_equal3(BoxExtent, Record.BoxExtent))
+	if (rtm::vector_all_near_equal3(BoxCenter, Record.BoxCenter) && rtm::vector_all_near_equal3(BoxExtent, Record.BoxExtent))
 		return;
 
-	const bool BoundsValid = !acl::vector_any_less_than3(Record.BoxExtent, acl::vector_set(0.f)); //!!!TODO: can check negative sign bits by mask!
+	const bool BoundsValid = !rtm::vector_any_less_than3(Record.BoxExtent, rtm::vector_set(0.f)); //!!!TODO: can check negative sign bits by mask!
 
 	Record.BoxCenter = BoxCenter;
 	Record.BoxExtent = BoxExtent;
@@ -380,7 +380,7 @@ void CGraphicsScene::RemoveRenderable(HRecord Handle)
 }
 //---------------------------------------------------------------------
 
-CGraphicsScene::HRecord CGraphicsScene::AddLight(const CAABB& GlobalBox, acl::Vector4_32Arg0 GlobalSphere, CLightAttribute& LightAttr)
+CGraphicsScene::HRecord CGraphicsScene::AddLight(const CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere, CLightAttribute& LightAttr)
 {
 	const auto UID = _NextLightUID++;
 
@@ -393,7 +393,7 @@ CGraphicsScene::HRecord CGraphicsScene::AddLight(const CAABB& GlobalBox, acl::Ve
 }
 //---------------------------------------------------------------------
 
-void CGraphicsScene::UpdateLightBounds(HRecord Handle, const CAABB& GlobalBox, acl::Vector4_32Arg0 GlobalSphere)
+void CGraphicsScene::UpdateLightBounds(HRecord Handle, const CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere)
 {
 	const auto [BoxCenter, BoxExtent] = ConvertAABBToSIMD(GlobalBox);
 	UpdateObjectBounds(Handle, BoxCenter, BoxExtent, GlobalSphere);
@@ -431,32 +431,32 @@ void CGraphicsScene::RemoveLight(HRecord Handle)
 // Bounds arg is (x, y, z) origin and w extent of the cube.
 // Returns a 2 bit mask with bit0 set if the cube is present inside and bit1 set if the cube is present outside.
 // TODO: add an alternative implementation for AVX (ymm register can hold all 6 planes at once)
-static DEM_FORCE_INLINE U8 ClipCube(acl::Vector4_32Arg0 Bounds, acl::Vector4_32Arg1 ProjectedWorldExtent,
+static DEM_FORCE_INLINE U8 ClipCube(rtm::vector4f_arg0 Bounds, rtm::vector4f_arg1 ProjectedWorldExtent,
 	float WorldExtentAlongLookAxis, const Math::CSIMDFrustum& Frustum) noexcept
 {
 	// Distance of box center from plane (s): (Cx * Nx) + (Cy * Ny) + (Cz * Nz) - d, where "- d" is "+ w"
-	auto CenterDistance = acl::vector_mul_add(acl::vector_mix_xxxx(Bounds), Frustum.LRBT_Nx, Frustum.LRBT_w);
-	CenterDistance = acl::vector_mul_add(acl::vector_mix_yyyy(Bounds), Frustum.LRBT_Ny, CenterDistance);
-	CenterDistance = acl::vector_mul_add(acl::vector_mix_zzzz(Bounds), Frustum.LRBT_Nz, CenterDistance);
+	auto CenterDistance = rtm::vector_mul_add(rtm::vector_dup_x(Bounds), Frustum.LRBT_Nx, Frustum.LRBT_w);
+	CenterDistance = rtm::vector_mul_add(rtm::vector_dup_y(Bounds), Frustum.LRBT_Ny, CenterDistance);
+	CenterDistance = rtm::vector_mul_add(rtm::vector_dup_z(Bounds), Frustum.LRBT_Nz, CenterDistance);
 
 	// Projection radius of the most outside vertex (-r)
-	const auto ProjectedExtent = acl::vector_mul(ProjectedWorldExtent, acl::vector_mix_wwww(Bounds));
+	const auto ProjectedExtent = rtm::vector_mul(ProjectedWorldExtent, rtm::vector_dup_w(Bounds));
 
 	// Check intersection with LRTB planes
-	bool HasVisiblePart = acl::vector_all_less_equal(CenterDistance, ProjectedExtent);
+	bool HasVisiblePart = rtm::vector_all_less_equal(CenterDistance, ProjectedExtent);
 	bool HasInvisiblePart = false;
 	if (HasVisiblePart)
 	{
 		// If inside LRTB, check intersection with NF planes
-		const float CenterAlongLookAxis = acl::vector_dot3(Frustum.LookAxis, Bounds);
-		const float ExtentAlongLookAxis = WorldExtentAlongLookAxis * acl::vector_get_w(Bounds);
+		const float CenterAlongLookAxis = rtm::vector_dot3(Frustum.LookAxis, Bounds);
+		const float ExtentAlongLookAxis = WorldExtentAlongLookAxis * rtm::vector_get_w(Bounds);
 		const float ClosestPoint = CenterAlongLookAxis - ExtentAlongLookAxis;
 		const float FarthestPoint = CenterAlongLookAxis + ExtentAlongLookAxis;
 		HasVisiblePart = (FarthestPoint > Frustum.NearPlane && ClosestPoint < Frustum.FarPlane);
 		HasInvisiblePart = !HasVisiblePart || (FarthestPoint > Frustum.FarPlane || ClosestPoint < Frustum.NearPlane);
 	}
 
-	HasInvisiblePart = HasInvisiblePart || acl::vector_any_greater_equal(CenterDistance, acl::vector_neg(ProjectedExtent));
+	HasInvisiblePart = HasInvisiblePart || rtm::vector_any_greater_equal(CenterDistance, rtm::vector_neg(ProjectedExtent));
 
 	return static_cast<U8>(HasVisiblePart) | (static_cast<U8>(HasInvisiblePart) << 1);
 }
@@ -481,12 +481,12 @@ void CGraphicsScene::TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum
 	// In our case we take as a rule that Ex = Ey = Ez. Since our tree is loose, we double all extents.
 	// Extents of tree nodes are obtained by multiplying this by a node size coefficient.
 	constexpr float LOOSE_BOUNDS_MULTIPLIER = 2.f;
-	const auto WorldExtent4 = acl::vector_set(LOOSE_BOUNDS_MULTIPLIER * _WorldExtent);
-	auto ProjectedWorldExtent = acl::vector_mul(WorldExtent4, acl::vector_abs(Frustum.LRBT_Nx));
-	ProjectedWorldExtent = acl::vector_mul_add(WorldExtent4, acl::vector_abs(Frustum.LRBT_Ny), ProjectedWorldExtent);
-	ProjectedWorldExtent = acl::vector_mul_add(WorldExtent4, acl::vector_abs(Frustum.LRBT_Nz), ProjectedWorldExtent);
+	const auto WorldExtent4 = rtm::vector_set(LOOSE_BOUNDS_MULTIPLIER * _WorldExtent);
+	auto ProjectedWorldExtent = rtm::vector_mul(WorldExtent4, rtm::vector_abs(Frustum.LRBT_Nx));
+	ProjectedWorldExtent = rtm::vector_mul_add(WorldExtent4, rtm::vector_abs(Frustum.LRBT_Ny), ProjectedWorldExtent);
+	ProjectedWorldExtent = rtm::vector_mul_add(WorldExtent4, rtm::vector_abs(Frustum.LRBT_Nz), ProjectedWorldExtent);
 
-	const float WorldExtentAlongLookAxis = acl::vector_dot3(acl::vector_abs(Frustum.LookAxis), WorldExtent4);
+	const float WorldExtentAlongLookAxis = rtm::vector_dot3(rtm::vector_abs(Frustum.LookAxis), WorldExtent4);
 
 	// Skip cached nodes. For CachedCount == 0 const_iterator_at is equal to cbegin.
 	auto ItNode = _TreeNodes.const_iterator_at(CachedCount);
@@ -528,7 +528,7 @@ void CGraphicsScene::TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum
 }
 //---------------------------------------------------------------------
 
-acl::Vector4_32 CGraphicsScene::CalcNodeBounds(TSceneMorton MortonCode) const
+rtm::vector4f CGraphicsScene::CalcNodeBounds(TSceneMorton MortonCode) const
 {
 	// Unpack Morton code back into cell coords and depth
 	const auto Bits = Math::BitWidth(MortonCode);
@@ -541,13 +541,13 @@ acl::Vector4_32 CGraphicsScene::CalcNodeBounds(TSceneMorton MortonCode) const
 
 	// Calculate node bounds - center and extent
 	const float ExtentCoeff = 1.f / static_cast<float>(1 << (Bits / TREE_DIMENSIONS)); // 1 / 2^Depth
-	const auto Cell = acl::vector_set(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
-	auto Center = acl::vector_mul_add(Cell, 2.f, acl::vector_set(1.f)); // A = 2 * xyz + 1
-	Center = acl::vector_mul_add(Center, ExtentCoeff, acl::vector_set(-1.f)); // B = A * Ecoeff - 1.f
-	Center = acl::vector_mul_add(Center, _WorldExtent, _TreeNodes[0].Bounds); // Center = B * We + Wc
+	const auto Cell = rtm::vector_set(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
+	auto Center = rtm::vector_mul_add(Cell, 2.f, rtm::vector_set(1.f)); // A = 2 * xyz + 1
+	Center = rtm::vector_mul_add(Center, ExtentCoeff, rtm::vector_set(-1.f)); // B = A * Ecoeff - 1.f
+	Center = rtm::vector_mul_add(Center, _WorldExtent, _TreeNodes[0].Bounds); // Center = B * We + Wc
 
 	// Set extent coeff to W
-	return acl::vector_mix<acl::VectorMix::X, acl::VectorMix::Y, acl::VectorMix::Z, acl::VectorMix::A>(Center, acl::vector_set(ExtentCoeff));
+	return Math::vector_mix_xyza(Center, rtm::vector_set(ExtentCoeff));
 }
 //---------------------------------------------------------------------
 
@@ -560,10 +560,10 @@ CAABB CGraphicsScene::GetNodeAABB(U32 NodeIndex, bool Loose) const
 }
 //---------------------------------------------------------------------
 
-CAABB CGraphicsScene::GetNodeAABB(acl::Vector4_32Arg0 Bounds, bool Loose) const
+CAABB CGraphicsScene::GetNodeAABB(rtm::vector4f_arg0 Bounds, bool Loose) const
 {
-	const vector3 Center(acl::vector_get_x(Bounds), acl::vector_get_y(Bounds), acl::vector_get_z(Bounds));
-	const float Extent = _WorldExtent * acl::vector_get_w(Bounds) * (Loose ? 2.f : 1.f);
+	const vector3 Center(rtm::vector_get_x(Bounds), rtm::vector_get_y(Bounds), rtm::vector_get_z(Bounds));
+	const float Extent = _WorldExtent * rtm::vector_get_w(Bounds) * (Loose ? 2.f : 1.f);
 	return CAABB(Center, vector3(Extent, Extent, Extent));
 }
 //---------------------------------------------------------------------

@@ -75,7 +75,7 @@ Core::PObject CCDLODDataLoader::CreateResource(CStrID UID)
 	Obj->Box.Max.y = MaxY;
 	Obj->Box.Max.z = RasterSizeZ;
 
-	Obj->BoundsMax = acl::vector_set(RasterSizeX, MaxY, RasterSizeZ);
+	Obj->BoundsMax = rtm::vector_set(RasterSizeX, MaxY, RasterSizeZ);
 
 	return Obj.Get();
 }

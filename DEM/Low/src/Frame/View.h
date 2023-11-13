@@ -57,8 +57,8 @@ class CView final
 protected:
 
 	Math::CSIMDFrustum                          _LastViewFrustum;
-	acl::Vector4_32                             _ProjectionParams;
-	acl::Vector4_32                             _EyePos;
+	rtm::vector4f                               _ProjectionParams;
+	rtm::vector4f                               _EyePos;
 	float                                       _ScreenMultiple = 0.f;
 
 	PRenderPath									_RenderPath;

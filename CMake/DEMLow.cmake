@@ -183,6 +183,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Math/Plane.h
 	DEM/Low/src/Math/Polar.h
 	DEM/Low/src/Math/Quaternion.h
+	DEM/Low/src/Math/SIMDMath.h
 	DEM/Low/src/Math/Sphere.h
 	DEM/Low/src/Math/TransformSRT.h
 	DEM/Low/src/Math/Triangle.h

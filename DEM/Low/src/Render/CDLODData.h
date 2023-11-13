@@ -2,7 +2,7 @@
 #include <Core/Object.h>
 #include <Data/FixedArray.h>
 #include <Math/AABB.h>
-#include <acl/math/vector4_32.h>
+#include <rtm/vector4f.h>
 #include <array>
 
 // CDLOD heightfield-based terrain rendering data with settings and precalculated aux data
@@ -38,7 +38,7 @@ protected:
 	float                   VerticalScale;
 	std::array<float, 4>	SplatMapUVCoeffs; // xy - scale, zw - offset
 	CAABB					Box;
-	acl::Vector4_32         BoundsMax;
+	rtm::vector4f           BoundsMax;
 
 	friend class Resources::CCDLODDataLoader;
 
@@ -69,9 +69,9 @@ public:
 	bool				  HasNode(UPTR X, UPTR Z, UPTR LOD) const;
 	std::pair<bool, bool> GetChildExistence(UPTR X, UPTR Z, UPTR LOD) const;
 	std::pair<UPTR, UPTR> GetLODSize(UPTR LOD) const;
-	bool				  GetNodeAABB(UPTR X, UPTR Z, UPTR LOD, acl::Vector4_32& BoxCenter, acl::Vector4_32& BoxExtent) const;
-	bool				  GetPatchAABB(UPTR X, UPTR Z, UPTR LOD, acl::Vector4_32& BoxCenter, acl::Vector4_32& BoxExtent) const;
-	void				  ClampNodeToPatchAABB(acl::Vector4_32& BoxCenter, acl::Vector4_32& BoxExtent) const;
+	bool				  GetNodeAABB(UPTR X, UPTR Z, UPTR LOD, rtm::vector4f& BoxCenter, rtm::vector4f& BoxExtent) const;
+	bool				  GetPatchAABB(UPTR X, UPTR Z, UPTR LOD, rtm::vector4f& BoxCenter, rtm::vector4f& BoxExtent) const;
+	void				  ClampNodeToPatchAABB(rtm::vector4f& BoxCenter, rtm::vector4f& BoxExtent) const;
 };
 
 typedef Ptr<CCDLODData> PCDLODData;
@@ -120,7 +120,7 @@ inline std::pair<UPTR, UPTR> CCDLODData::GetLODSize(UPTR LOD) const
 //---------------------------------------------------------------------
 
 // Full AABB of the quadtree node
-inline bool CCDLODData::GetNodeAABB(UPTR X, UPTR Z, UPTR LOD, acl::Vector4_32& BoxCenter, acl::Vector4_32& BoxExtent) const
+inline bool CCDLODData::GetNodeAABB(UPTR X, UPTR Z, UPTR LOD, rtm::vector4f& BoxCenter, rtm::vector4f& BoxExtent) const
 {
 	I16 MinY, MaxY;
 	GetMinMaxHeight(X, Z, LOD, MinY, MaxY);
@@ -132,15 +132,15 @@ inline bool CCDLODData::GetNodeAABB(UPTR X, UPTR Z, UPTR LOD, acl::Vector4_32& B
 	const float MinYF = MinY * VerticalScale;
 	const float MaxYF = MaxY * VerticalScale;
 
-	BoxCenter = acl::vector_set(static_cast<float>((2 * X + 1) * NodeHalfSize), (MaxYF + MinYF) * 0.5f, static_cast<float>((2 * Z + 1) * NodeHalfSize));
-	BoxExtent = acl::vector_set(static_cast<float>(NodeHalfSize), (MaxYF - MinYF) * 0.5f, static_cast<float>(NodeHalfSize));
+	BoxCenter = rtm::vector_set(static_cast<float>((2 * X + 1) * NodeHalfSize), (MaxYF + MinYF) * 0.5f, static_cast<float>((2 * Z + 1) * NodeHalfSize));
+	BoxExtent = rtm::vector_set(static_cast<float>(NodeHalfSize), (MaxYF - MinYF) * 0.5f, static_cast<float>(NodeHalfSize));
 
 	return true;
 }
 //---------------------------------------------------------------------
 
 // AABB of a geometry stored in a quadtree node. Can be smaller than node AABB for rightmost and bottommost patches of an imperfectly sized CDLOD.
-inline bool CCDLODData::GetPatchAABB(UPTR X, UPTR Z, UPTR LOD, acl::Vector4_32& BoxCenter, acl::Vector4_32& BoxExtent) const
+inline bool CCDLODData::GetPatchAABB(UPTR X, UPTR Z, UPTR LOD, rtm::vector4f& BoxCenter, rtm::vector4f& BoxExtent) const
 {
 	if (!GetNodeAABB(X, Z, LOD, BoxCenter, BoxExtent)) return false;
 	ClampNodeToPatchAABB(BoxCenter, BoxExtent);
@@ -149,14 +149,14 @@ inline bool CCDLODData::GetPatchAABB(UPTR X, UPTR Z, UPTR LOD, acl::Vector4_32& 
 //---------------------------------------------------------------------
 
 // See GetPatchAABB comment
-inline void CCDLODData::ClampNodeToPatchAABB(acl::Vector4_32& BoxCenter, acl::Vector4_32& BoxExtent) const
+inline void CCDLODData::ClampNodeToPatchAABB(rtm::vector4f& BoxCenter, rtm::vector4f& BoxExtent) const
 {
-	const auto BoxMax = acl::vector_add(BoxCenter, BoxExtent);
-	if (acl::vector_any_less_than(BoundsMax, BoxMax))
+	const auto BoxMax = rtm::vector_add(BoxCenter, BoxExtent);
+	if (rtm::vector_any_less_than(BoundsMax, BoxMax))
 	{
-		const auto HalfExcess = acl::vector_mul(acl::vector_sub(BoxMax, acl::vector_min(BoundsMax, BoxMax)), 0.5f);
-		BoxCenter = acl::vector_sub(BoxCenter, HalfExcess);
-		BoxExtent = acl::vector_sub(BoxExtent, HalfExcess);
+		const auto HalfExcess = rtm::vector_mul(rtm::vector_sub(BoxMax, rtm::vector_min(BoundsMax, BoxMax)), 0.5f);
+		BoxCenter = rtm::vector_sub(BoxCenter, HalfExcess);
+		BoxExtent = rtm::vector_sub(BoxExtent, HalfExcess);
 	}
 }
 //---------------------------------------------------------------------

@@ -9,9 +9,9 @@ CPoseBuffer::CPoseBuffer(const CPoseBuffer& Other)
 {
 	if (_Count)
 	{
-		_Transforms.reset(new acl::Transform_32[_Count]);
+		_Transforms.reset(new rtm::qvvf[_Count]);
 		n_assert_dbg(IsAligned16(_Transforms.get()));
-		std::memcpy(_Transforms.get(), Other._Transforms.get(), sizeof(acl::Transform_32) * _Count);
+		std::memcpy(_Transforms.get(), Other._Transforms.get(), sizeof(rtm::qvvf) * _Count);
 	}
 }
 //---------------------------------------------------------------------
@@ -26,7 +26,7 @@ CPoseBuffer::CPoseBuffer(CPoseBuffer&& Other) noexcept
 CPoseBuffer& CPoseBuffer::operator =(const CPoseBuffer& Other)
 {
 	SetSize(Other._Count);
-	if (_Count) std::memcpy(_Transforms.get(), Other._Transforms.get(), sizeof(acl::Transform_32) * _Count);
+	if (_Count) std::memcpy(_Transforms.get(), Other._Transforms.get(), sizeof(rtm::qvvf) * _Count);
 	return *this;
 }
 //---------------------------------------------------------------------
@@ -43,7 +43,7 @@ void CPoseBuffer::SetSize(UPTR Size)
 {
 	if (_Count == Size) return;
 	_Count = Size;
-	if (_Count) _Transforms.reset(new acl::Transform_32[_Count]);
+	if (_Count) _Transforms.reset(new rtm::qvvf[_Count]);
 	else _Transforms.reset();
 	n_assert_dbg(IsAligned16(_Transforms.get()));
 }

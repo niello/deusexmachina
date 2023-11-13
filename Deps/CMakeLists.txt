@@ -29,11 +29,26 @@ endif()
 
 #???run python script to update cmake src lists?
 
+# Dependency: RTM
+
+add_library(rtm INTERFACE)
+target_include_directories(rtm INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/rtm/includes")
+
 # Dependency: ACL
 
 add_library(acl INTERFACE)
 target_include_directories(acl INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/acl/includes")
-# TODO (to show in Visual Studio): add_custom_target(acl_ SOURCES ${ACL_FILES})
+
+# ACL & RTM custom targets for displaying files in IDE
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/acl/cmake/CMakeUtils.cmake")
+file(GLOB_RECURSE ACL_INCLUDE_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_SOURCE_DIR}/acl/includes/*.h)
+create_source_groups("${ACL_INCLUDE_FILES}" ${CMAKE_CURRENT_SOURCE_DIR}/acl)
+file(GLOB_RECURSE NATVIS_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_SOURCE_DIR}/acl/*.natvis)
+add_custom_target(acl_ SOURCES ${ACL_INCLUDE_FILES} ${NATVIS_FILES})
+file(GLOB_RECURSE RTM_INCLUDE_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_SOURCE_DIR}/rtm/includes/*.h)
+create_source_groups("${RTM_INCLUDE_FILES}" ${CMAKE_CURRENT_SOURCE_DIR}/rtm)
+add_custom_target(rtm_ SOURCES ${RTM_INCLUDE_FILES})
 
 # Dependency: Lua
 
@@ -173,7 +188,11 @@ get_all_targets(DEM_DEPS_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}")
 foreach(_TARGET_NAME IN LISTS DEM_DEPS_TARGETS)
 
 	get_target_property(_TARGET_TYPE ${_TARGET_NAME} TYPE)
-	if (NOT ${_TARGET_TYPE} STREQUAL "INTERFACE_LIBRARY")
+	if (${_TARGET_TYPE} IN_LIST DEM_DEPS_TARGET_TYPES_TO_EXPORT)
+		list(APPEND DEM_DEPS_TARGETS_TO_EXPORT ${_TARGET_NAME})
+	endif()
+
+	if (${_TARGET_TYPE} IN_LIST DEM_DEPS_TARGET_TYPES_TO_PROCESS)
 
 		set_target_properties(${_TARGET_NAME} PROPERTIES
 			ARCHIVE_OUTPUT_DIRECTORY ${DEM_DEPS_LIB_DIR}
@@ -208,5 +227,5 @@ endforeach()
 
 #???Create interface imported target with all other targets listed? No way to obtain deps list otherwise.
 
-export(TARGETS ${DEM_DEPS_TARGETS} NAMESPACE DEMDeps:: FILE DEMDepsConfig.cmake)
+export(TARGETS ${DEM_DEPS_TARGETS_TO_EXPORT} NAMESPACE DEMDeps:: FILE DEMDepsConfig.cmake)
 

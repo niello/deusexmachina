@@ -2,7 +2,7 @@
 #include <Scene/NodeAttribute.h>
 #include <Frame/GraphicsScene.h>
 #include <Render/RenderFwd.h>
-#include <acl/math/vector4_32.h>
+#include <rtm/vector4f.h>
 
 // Light attribute is a scene node attribute that contains light source params.
 // See subclasses for different light source types.
@@ -35,15 +35,15 @@ public:
 
 	virtual Render::PLight  CreateLight() const = 0;
 	virtual void            UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const = 0;
-	virtual acl::Vector4_32 GetLocalSphere() const = 0;
+	virtual rtm::vector4f GetLocalSphere() const = 0;
 	virtual bool            GetLocalAABB(CAABB& OutBox) const = 0;
 	bool                    GetGlobalAABB(CAABB& OutBox) const;
 	void                    UpdateInGraphicsScene(CGraphicsScene& Scene);
 	CGraphicsScene::HRecord GetSceneHandle() const { return _SceneRecordHandle; }
 
 	float                   GetMaxDistance() const { return _MaxDistance; }
-	virtual bool            IntersectsWith(acl::Vector4_32Arg0 Sphere) const = 0;
-	virtual U8              TestBoxClipping(acl::Vector4_32Arg0 BoxCenter, acl::Vector4_32Arg1 BoxExtent) const = 0;
+	virtual bool            IntersectsWith(rtm::vector4f_arg0 Sphere) const = 0;
+	virtual U8              TestBoxClipping(rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent) const = 0;
 	virtual bool            DoesEmitAnyEnergy() const = 0;
 };
 

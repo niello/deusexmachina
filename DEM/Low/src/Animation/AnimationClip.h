@@ -6,7 +6,7 @@
 
 namespace acl
 {
-	class CompressedClip;
+	class compressed_tracks;
 }
 
 namespace DEM::Anim
@@ -30,25 +30,25 @@ class CAnimationClip: public ::Core::CObject
 
 protected:
 
-	acl::CompressedClip* _pClip = nullptr;
-	PSkeletonInfo        _SkeletonInfo;
-	PBipedLocomotionInfo _LocomotionInfo;
-	float                _Duration = 0.f;
-	U32                  _SampleCount = 0; // TODO: can get from CompressedClip
+	acl::compressed_tracks* _pClip = nullptr;
+	PSkeletonInfo           _SkeletonInfo;
+	PBipedLocomotionInfo    _LocomotionInfo;
+	float                   _Duration = 0.f;
+	U32                     _SampleCount = 0; // TODO: can get from compressed_tracks
 
 public:
 
-	CAnimationClip(acl::CompressedClip* pClip, float Duration, U32 SampleCount, PSkeletonInfo&& SkeletonInfo, PBipedLocomotionInfo&& LocomotionInfo = nullptr);
+	CAnimationClip(acl::compressed_tracks* pClip, float Duration, U32 SampleCount, PSkeletonInfo&& SkeletonInfo, PBipedLocomotionInfo&& LocomotionInfo = nullptr);
 	virtual ~CAnimationClip() override;
 
-	const acl::CompressedClip*  GetACLClip() const { return _pClip; }
-	CSkeletonInfo&              GetSkeletonInfo() const { return *_SkeletonInfo; } // non-const to create intrusive strong refs
-	const CBipedLocomotionInfo* GetLocomotionInfo() const { return _LocomotionInfo.get(); }
-	float                       GetDuration() const { return _Duration; }
-	U32                         GetSampleCount() const { return _SampleCount; }
-	UPTR                        GetNodeCount() const;
-	float                       GetLocomotionPhase(float NormalizedTime) const;
-	float                       GetLocomotionPhaseNormalizedTime(float Phase) const;
+	const acl::compressed_tracks* GetACLClip() const { return _pClip; }
+	CSkeletonInfo&               GetSkeletonInfo() const { return *_SkeletonInfo; } // non-const to create intrusive strong refs
+	const CBipedLocomotionInfo*  GetLocomotionInfo() const { return _LocomotionInfo.get(); }
+	float                        GetDuration() const { return _Duration; }
+	U32                          GetSampleCount() const { return _SampleCount; }
+	UPTR                         GetNodeCount() const;
+	float                        GetLocomotionPhase(float NormalizedTime) const;
+	float                        GetLocomotionPhaseNormalizedTime(float Phase) const;
 
 	float AdjustTime(float Time, bool Loop) const
 	{

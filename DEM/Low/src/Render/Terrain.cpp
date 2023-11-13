@@ -92,7 +92,7 @@ void CTerrain::UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrus
 CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext& Ctx, TCellDim x, TCellDim z, U32 LOD, U8 ParentClipStatus, TMorton MortonCode)
 {
 	// Calculate node world space AABB
-	acl::Vector4_32 NodeBoxCenter, NodeBoxExtent;
+	rtm::vector4f NodeBoxCenter, NodeBoxExtent;
 	if (!CDLODData->GetNodeAABB(x, z, LOD, NodeBoxCenter, NodeBoxExtent)) return ENodeStatus::Invisible;
 
 	// Inside and outside statuses are propagated to children as they are, partial intersection requires further testing.
@@ -102,16 +102,16 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		auto PatchBoxCenter = NodeBoxCenter;
 		auto PatchBoxExtent = NodeBoxExtent;
 		CDLODData->ClampNodeToPatchAABB(PatchBoxCenter, PatchBoxExtent);
-		PatchBoxCenter = acl::vector_add(PatchBoxCenter, Ctx.Offset);
-		PatchBoxExtent = acl::vector_mul(PatchBoxExtent, Ctx.Scale);
+		PatchBoxCenter = rtm::vector_add(PatchBoxCenter, Ctx.Offset);
+		PatchBoxExtent = rtm::vector_mul(PatchBoxExtent, Ctx.Scale);
 		ParentClipStatus = Math::ClipAABB(PatchBoxCenter, PatchBoxExtent, Ctx.ViewFrustum);
 		if (ParentClipStatus == Math::ClipOutside) return ENodeStatus::Invisible;
 	}
 
-	NodeBoxCenter = acl::vector_add(NodeBoxCenter, Ctx.Offset);
-	NodeBoxExtent = acl::vector_mul(NodeBoxExtent, Ctx.Scale);
+	NodeBoxCenter = rtm::vector_add(NodeBoxCenter, Ctx.Offset);
+	NodeBoxExtent = rtm::vector_mul(NodeBoxExtent, Ctx.Scale);
 
-	const auto LODSphere = acl::vector_set(Ctx.MainCameraPos.x, Ctx.MainCameraPos.y, Ctx.MainCameraPos.z, LODParams[LOD].Range);
+	const auto LODSphere = rtm::vector_set(Ctx.MainCameraPos.x, Ctx.MainCameraPos.y, Ctx.MainCameraPos.z, LODParams[LOD].Range);
 	if (!Math::HasIntersection(LODSphere, NodeBoxCenter, NodeBoxExtent)) return ENodeStatus::NotInLOD;
 
 	// Bits 0 to 3 - if set, add quarterpatch for child[0 .. 3]
@@ -136,7 +136,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 
 		const U32 NextLOD = LOD - 1;
 
-		const auto NextLODSphere = acl::vector_set(Ctx.MainCameraPos.x, Ctx.MainCameraPos.y, Ctx.MainCameraPos.z, LODParams[NextLOD].Range);
+		const auto NextLODSphere = rtm::vector_set(Ctx.MainCameraPos.x, Ctx.MainCameraPos.y, Ctx.MainCameraPos.z, LODParams[NextLOD].Range);
 		if (!Math::HasIntersection(NextLODSphere, NodeBoxCenter, NodeBoxExtent))
 		{
 			// Add the whole node to the current LOD
@@ -191,9 +191,9 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 	}
 
 	// (HalfSizeX, HalfSizeZ, CenterX, CenterZ)
-	const auto HalfSizeXZCenterXZ = acl::vector_mix_xzac(NodeBoxExtent, NodeBoxCenter);
+	const auto HalfSizeXZCenterXZ = Math::vector_mix_xzac(NodeBoxExtent, NodeBoxCenter);
 	// (HalfSizeX, HalfSizeZ, -HalfSizeX, -HalfSizeZ)
-	const auto HalfSizeXZNegHalfSizeXZ = acl::vector_mul(Math::vector_mix_xyxy(HalfSizeXZCenterXZ), acl::vector_set(1.f, 1.f, -1.f, -1.f)); //???can negate sign bit by mask?
+	const auto HalfSizeXZNegHalfSizeXZ = rtm::vector_mul(Math::vector_mix_xyxy(HalfSizeXZCenterXZ), rtm::vector_set(1.f, 1.f, -1.f, -1.f)); //???can negate sign bit by mask?
 
 	// TODO: it seems to be a bit faster without full patches, using 4 quarters instead and rendering the whole terrain in 1 DIP.
 	// Need to profile further on some specific cases, e.g. rendering when most of items are full. Will 4x instance increase be still negligible?
@@ -203,7 +203,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		// Add whole patch
 		// (HalfSizeX + HalfSizeX, HalfSizeZ + HalfSizeZ, CenterX - HalfSizeX, CenterZ - HalfSizeZ)
 		auto& Patch = _Patches.emplace_back();
-		Patch.ScaleOffset = acl::vector_add(HalfSizeXZCenterXZ, HalfSizeXZNegHalfSizeXZ);
+		Patch.ScaleOffset = rtm::vector_add(HalfSizeXZCenterXZ, HalfSizeXZNegHalfSizeXZ);
 		Patch.LOD = LOD;
 		Patch.MortonCode = MortonCode;
 		Patch.IsFullPatch = true;
@@ -217,7 +217,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		{
 			// (HalfSizeX, HalfSizeZ, CenterX - HalfSizeX, CenterZ - HalfSizeZ)
 			auto& Patch = _Patches.emplace_back();
-			Patch.ScaleOffset = acl::vector_mul_add(HalfSizeXZNegHalfSizeXZ, acl::vector_set(0.f, 0.f, 1.f, 1.f), HalfSizeXZCenterXZ);
+			Patch.ScaleOffset = rtm::vector_mul_add(HalfSizeXZNegHalfSizeXZ, rtm::vector_set(0.f, 0.f, 1.f, 1.f), HalfSizeXZCenterXZ);
 			Patch.LOD = LOD;
 			Patch.MortonCode = FirstChildMortonCode;
 		}
@@ -226,7 +226,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		{
 			// (HalfSizeX, HalfSizeZ, CenterX, CenterZ - HalfSizeZ)
 			auto& Patch = _Patches.emplace_back();
-			Patch.ScaleOffset = acl::vector_mul_add(HalfSizeXZNegHalfSizeXZ, acl::vector_set(0.f, 0.f, 0.f, 1.f), HalfSizeXZCenterXZ);
+			Patch.ScaleOffset = rtm::vector_mul_add(HalfSizeXZNegHalfSizeXZ, rtm::vector_set(0.f, 0.f, 0.f, 1.f), HalfSizeXZCenterXZ);
 			Patch.LOD = LOD;
 			Patch.MortonCode = FirstChildMortonCode + 1;
 		}
@@ -235,7 +235,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		{
 			// (HalfSizeX, HalfSizeZ, CenterX - HalfSizeX, CenterZ)
 			auto& Patch = _Patches.emplace_back();
-			Patch.ScaleOffset = acl::vector_mul_add(HalfSizeXZNegHalfSizeXZ, acl::vector_set(0.f, 0.f, 1.f, 0.f), HalfSizeXZCenterXZ);
+			Patch.ScaleOffset = rtm::vector_mul_add(HalfSizeXZNegHalfSizeXZ, rtm::vector_set(0.f, 0.f, 1.f, 0.f), HalfSizeXZCenterXZ);
 			Patch.LOD = LOD;
 			Patch.MortonCode = FirstChildMortonCode + 2;
 		}
