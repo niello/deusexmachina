@@ -15,7 +15,7 @@
  This source version has been altered.
  */
 
-#if defined(_WIN32) || defined(__i386__)
+#if !defined(BT_USE_SSE_IN_API) && (defined (_WIN32) || defined (__i386__))
 #define BT_USE_SSE_IN_API
 #endif
 

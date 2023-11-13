@@ -132,7 +132,7 @@ get_all_targets(DEM_BULLET_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}/bullet")
 foreach(_TARGET_NAME IN LISTS DEM_BULLET_TARGETS)
 	set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER "bullet")
 	target_include_directories(${_TARGET_NAME} INTERFACE "${BULLET_PHYSICS_SOURCE_DIR}/src")
-	target_compile_definitions(${_TARGET_NAME} PRIVATE BT_NO_PROFILE)
+	target_compile_definitions(${_TARGET_NAME} PRIVATE BT_NO_PROFILE BT_USE_SSE_IN_API)
 	if(MSVC AND DEM_DEPS_DISABLE_CXX_EXCEPTIONS)
 		target_compile_options(${_TARGET_NAME} PRIVATE "/wd4530") # xlocale header under MSVC requires /EHsc
 	endif()
