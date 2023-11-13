@@ -108,32 +108,29 @@ static rtm::qvvf GetNodeTransform(const gltf::Node& Node)
 {
 	if (Node.matrix != gltf::Matrix4::IDENTITY)
 	{
-		//!!!DBG TMP!
-		assert(false);
-		// FIXME: rtm uses return matrix3x4f{ x_axis, y_axis, z_axis, translation };!
 		const rtm::matrix3x4f Matrix =
 		{
 			rtm::vector4f{ Node.matrix.values[0], Node.matrix.values[1], Node.matrix.values[2], Node.matrix.values[3] },
 			rtm::vector4f{ Node.matrix.values[4], Node.matrix.values[5], Node.matrix.values[6], Node.matrix.values[7] },
 			rtm::vector4f{ Node.matrix.values[8], Node.matrix.values[9], Node.matrix.values[10], Node.matrix.values[11] },
-			rtm::vector4f{ 0.f, 0.f, 0.f, 1.f }
+			rtm::vector4f{ Node.matrix.values[12], Node.matrix.values[13], Node.matrix.values[14], Node.matrix.values[15] }
 		};
 
-		return
-		{
+		return rtm::qvv_set
+		(
 			rtm::quat_from_matrix(rtm::matrix_remove_scale(Matrix)),
-			{ Node.matrix.values[12], Node.matrix.values[13], Node.matrix.values[14], 1.f },
-			{ rtm::vector_length3(Matrix.x_axis), rtm::vector_length3(Matrix.y_axis), rtm::vector_length3(Matrix.z_axis), 0.f }
-		};
+			rtm::vector4f{ Node.matrix.values[12], Node.matrix.values[13], Node.matrix.values[14], 1.f },
+			rtm::vector4f{ rtm::vector_length3(Matrix.x_axis), rtm::vector_length3(Matrix.y_axis), rtm::vector_length3(Matrix.z_axis), 0.f }
+		);
 	}
 	else
 	{
-		return
-		{
-			{ Node.rotation.x, Node.rotation.y, Node.rotation.z, Node.rotation.w },
-			{ Node.translation.x, Node.translation.y, Node.translation.z, 1.f },
-			{ Node.scale.x, Node.scale.y, Node.scale.z, 0.f }
-		};
+		return rtm::qvv_set
+		(
+			rtm::quatf{ Node.rotation.x, Node.rotation.y, Node.rotation.z, Node.rotation.w },
+			rtm::vector4f{ Node.translation.x, Node.translation.y, Node.translation.z, 1.f },
+			rtm::vector4f{ Node.scale.x, Node.scale.y, Node.scale.z, 0.f }
+		);
 	}
 }
 //---------------------------------------------------------------------
@@ -142,15 +139,12 @@ static rtm::matrix3x4f GetNodeMatrix(const gltf::Node& Node)
 {
 	if (Node.matrix != gltf::Matrix4::IDENTITY)
 	{
-		//!!!DBG TMP!
-		assert(false);
-		// FIXME: rtm uses return matrix3x4f{ x_axis, y_axis, z_axis, translation };!
 		return
 		{
 			rtm::vector4f{ Node.matrix.values[0], Node.matrix.values[1], Node.matrix.values[2], Node.matrix.values[3] },
 			rtm::vector4f{ Node.matrix.values[4], Node.matrix.values[5], Node.matrix.values[6], Node.matrix.values[7] },
 			rtm::vector4f{ Node.matrix.values[8], Node.matrix.values[9], Node.matrix.values[10], Node.matrix.values[11] },
-			rtm::vector4f{ Node.matrix.values[12], Node.matrix.values[13], Node.matrix.values[14], 1.f }
+			rtm::vector4f{ Node.matrix.values[12], Node.matrix.values[13], Node.matrix.values[14], Node.matrix.values[15] }
 		};
 	}
 	else
