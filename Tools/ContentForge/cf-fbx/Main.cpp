@@ -1860,14 +1860,16 @@ public:
 			++AnimatedCount;
 		}
 
+		const bool FirstNode = Nodes.empty();
 		auto& Node = Nodes.emplace_back();
-		if (Nodes.empty())
+		Node.pNode = pNode;
+		if (FirstNode)
 		{
 			Node.ParentIndex = acl::k_invalid_track_index;
 		}
 		else
 		{
-			auto It = std::find_if(Nodes.crbegin(), Nodes.crend(), [pParent = pNode->GetParent()](const CNodeInfo& pCurr) { return pParent == pCurr.pNode; });
+			auto It = std::find_if(Nodes.crbegin(), Nodes.crend(), [pParent = pNode->GetParent()](const CNodeInfo& Curr) { return pParent == Curr.pNode; });
 			assert(It != Nodes.crend());
 			Node.ParentIndex = static_cast<uint32_t>(std::distance(Nodes.cbegin(), It.base()) - 1);
 		}

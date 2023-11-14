@@ -481,6 +481,15 @@ static uint32_t ACLTrackGetParentIndex(const acl::track& Track)
 }
 //---------------------------------------------------------------------
 
+template<>
+inline void WriteStream(std::ostream& Stream, const acl::string& Value)
+{
+	const auto Length = static_cast<uint16_t>(Value.size());
+	WriteStream<uint16_t>(Stream, Length);
+	if (Length) Stream.write(Value.c_str(), Length);
+}
+//---------------------------------------------------------------------
+
 bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::iallocator& ACLAllocator,
 	acl::track_array& Tracks, const CLocomotionInfo* pLocomotionInfo, CThreadSafeLog& Log)
 {
@@ -514,10 +523,17 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::iallocator& A
 
 	acl::output_stats Stats;
 	acl::compressed_tracks* CompressedTracks = nullptr;
-	const auto ErrorResult = acl::compress_track_list(ACLAllocator, Tracks, ACLSettings, CompressedTracks, Stats);
-	if (!ErrorResult.empty())
+	auto ErrorResult = acl::compress_track_list(ACLAllocator, Tracks, ACLSettings, CompressedTracks, Stats);
+	if (ErrorResult.any() || !CompressedTracks)
 	{
-		Log.LogWarning(std::string("ACL failed to compress animation ") + AnimName + " for one of skeletons");
+		Log.LogWarning(std::string("ACL failed to compress animation ") + AnimName + " for one of skeletons: " + ErrorResult.c_str());
+		return true;
+	}
+
+	ErrorResult = CompressedTracks->is_valid(true);
+	if (ErrorResult.any())
+	{
+		Log.LogWarning("Animation " + AnimName + " is invalid: " + ErrorResult.c_str());
 		return true;
 	}
 
@@ -712,7 +728,7 @@ CRect GetCurrentILImageRect()
 }
 //---------------------------------------------------------------------
 
-bool SaveCurrentILImage(const std::string& DestFormat, std::filesystem::path DestPath, CThreadSafeLog& Log)
+bool SaveCurrentILImage(const std::string& DestFormat, std::filesystem::path& DestPath, CThreadSafeLog& Log)
 {
 	fs::create_directories(DestPath.parent_path());
 
@@ -772,7 +788,7 @@ bool SaveCurrentILImage(const std::string& DestFormat, std::filesystem::path Des
 }
 //---------------------------------------------------------------------
 
-bool SaveILImageRegion(ILuint ID, const std::string& DestFormat, std::filesystem::path DestPath, CRect& Region, CThreadSafeLog& Log)
+bool SaveILImageRegion(ILuint ID, const std::string& DestFormat, std::filesystem::path& DestPath, CRect& Region, CThreadSafeLog& Log)
 {
 	ilBindImage(ID);
 

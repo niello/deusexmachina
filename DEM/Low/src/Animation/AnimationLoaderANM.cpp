@@ -97,14 +97,19 @@ Core::PObject CAnimationLoaderANM::CreateResource(CStrID UID)
 		return nullptr;
 	}
 
-	auto pClip = reinterpret_cast<acl::compressed_tracks*>(pBuffer);
-	if (!pClip->is_valid(true).empty())
+	auto pTracks = acl::make_compressed_tracks(pBuffer);
+#if _DEBUG
+	constexpr bool ValidateHash = true;
+#else
+	constexpr bool ValidateHash = false;
+#endif
+	if (!pTracks || pTracks->is_valid(ValidateHash).any())
 	{
 		SAFE_FREE_ALIGNED(pBuffer);
 		return nullptr;
 	}
 
-	return n_new(DEM::Anim::CAnimationClip(pClip, Duration, SampleCount, new DEM::Anim::CSkeletonInfo(std::move(NodeMapping)), std::move(LocomotionInfo)));
+	return n_new(DEM::Anim::CAnimationClip(pTracks, Duration, SampleCount, new DEM::Anim::CSkeletonInfo(std::move(NodeMapping)), std::move(LocomotionInfo)));
 }
 //---------------------------------------------------------------------
 
