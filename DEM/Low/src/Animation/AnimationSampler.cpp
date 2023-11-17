@@ -94,7 +94,7 @@ bool CAnimationSampler::SetClip(PAnimationClip Clip)
 	const auto* pACLClip = Clip->GetACLClip();
 	if (!pACLClip) return false;
 
-	if (_Context.is_bound_to(*pACLClip))
+	if (!_Context.is_bound_to(*pACLClip))
 		_Context.initialize(*pACLClip);
 
 	_Clip = std::move(Clip);
