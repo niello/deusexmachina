@@ -40,20 +40,24 @@ DEM_FORCE_INLINE rtm::matrix3x4f ToSIMD(const matrix44& m) noexcept
 // TODO: try overloading by return value like in RTM?
 DEM_FORCE_INLINE vector3 FromSIMD3(rtm::vector4f_arg0 v) noexcept
 {
-	return vector3(rtm::vector_get_x(v), rtm::vector_get_y(v), rtm::vector_get_z(v));
+	return vector3(rtm::vector_get_x(v), rtm::vector_get_y(v), rtm::vector_get_z(v)); // rtm::vector_store3 does the same thing
 }
 //---------------------------------------------------------------------
 
 // TODO: try overloading by return value like in RTM?
 DEM_FORCE_INLINE vector4 FromSIMD4(rtm::vector4f_arg0 v) noexcept
 {
-	return vector4(rtm::vector_get_x(v), rtm::vector_get_y(v), rtm::vector_get_z(v), rtm::vector_get_w(v));
+	vector4 result;
+	rtm::vector_store(v, result.v);
+	return result;
 }
 //---------------------------------------------------------------------
 
-DEM_FORCE_INLINE quaternion FromSIMD(rtm::quatf_arg0 v) noexcept
+DEM_FORCE_INLINE quaternion FromSIMD(rtm::quatf_arg0 q) noexcept
 {
-	return quaternion(rtm::quat_get_x(v), rtm::quat_get_y(v), rtm::quat_get_z(v), rtm::quat_get_w(v));
+	quaternion result;
+	rtm::quat_store(q, result.v);
+	return result;
 }
 //---------------------------------------------------------------------
 
