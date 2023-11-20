@@ -1,8 +1,6 @@
 #pragma once
-#include <Math/Vector4.h>
-#include <Math/Quaternion.h>
-#include <rtm/vector4f.h>
-#include <rtm/quatf.h>
+#include <Math/Matrix44.h>
+#include <rtm/matrix3x4f.h>
 
 // Math for view and projection calculations
 
@@ -11,19 +9,68 @@ namespace Math
 
 DEM_FORCE_INLINE rtm::vector4f ToSIMD(const vector3& v) noexcept
 {
-	return rtm::vector_set(v.x, v.y, v.z);
+	return rtm::vector_load3(v.v);
 }
 //---------------------------------------------------------------------
 
 DEM_FORCE_INLINE rtm::vector4f ToSIMD(const vector4& v) noexcept
 {
-	return rtm::vector_set(v.x, v.y, v.z, v.w);
+	return rtm::vector_load(v.v);
 }
 //---------------------------------------------------------------------
 
 DEM_FORCE_INLINE rtm::quatf ToSIMD(const quaternion& q) noexcept
 {
-	return rtm::quat_set(q.x, q.y, q.z, q.w);
+	return rtm::quat_load(q.v);
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE rtm::matrix3x4f ToSIMD(const matrix44& m) noexcept
+{
+	return rtm::matrix3x4f
+	{
+		ToSIMD(m.AxisX()),
+		ToSIMD(m.AxisY()),
+		ToSIMD(m.AxisZ()),
+		ToSIMD(m.Translation())
+	};
+}
+//---------------------------------------------------------------------
+
+// TODO: try overloading by return value like in RTM?
+DEM_FORCE_INLINE vector3 FromSIMD3(rtm::vector4f_arg0 v) noexcept
+{
+	return vector3(rtm::vector_get_x(v), rtm::vector_get_y(v), rtm::vector_get_z(v));
+}
+//---------------------------------------------------------------------
+
+// TODO: try overloading by return value like in RTM?
+DEM_FORCE_INLINE vector4 FromSIMD4(rtm::vector4f_arg0 v) noexcept
+{
+	return vector4(rtm::vector_get_x(v), rtm::vector_get_y(v), rtm::vector_get_z(v), rtm::vector_get_w(v));
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE quaternion FromSIMD(rtm::quatf_arg0 v) noexcept
+{
+	return quaternion(rtm::quat_get_x(v), rtm::quat_get_y(v), rtm::quat_get_z(v), rtm::quat_get_w(v));
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE matrix44 FromSIMD(rtm::matrix3x4f_arg0 m) noexcept
+{
+	matrix44 result
+	(
+		FromSIMD4(m.x_axis),
+		FromSIMD4(m.y_axis),
+		FromSIMD4(m.z_axis),
+		FromSIMD4(m.w_axis)
+	);
+	result.m[0][3] = 0.f;
+	result.m[1][3] = 0.f;
+	result.m[2][3] = 0.f;
+	result.m[3][3] = 1.f;
+	return result;
 }
 //---------------------------------------------------------------------
 

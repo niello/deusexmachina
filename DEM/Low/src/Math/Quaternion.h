@@ -9,7 +9,11 @@ class quaternion
 {
 public:
 
-	float x, y, z, w;
+	union
+	{
+		struct { float x, y, z, w; };
+		float v[4] = { 0.f };
+	};
 
 	static const quaternion Identity;
 
