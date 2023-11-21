@@ -79,7 +79,7 @@ void CPointLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render:
 	}
 
 	Light.GPUData.Color = vector3(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color)) * _Intensity * 0.01f;
-	Light.GPUData.Position = _pNode->GetWorldMatrix().Translation();
+	Light.GPUData.Position = Math::FromSIMD3(_pNode->GetWorldPosition());
 	Light.GPUData.SqInvRange = 1.f / (_Range * _Range);
 }
 //---------------------------------------------------------------------
@@ -93,25 +93,20 @@ bool CPointLightAttribute::GetLocalAABB(CAABB& OutBox) const
 
 bool CPointLightAttribute::IntersectsWith(rtm::vector4f_arg0 Sphere) const
 {
-	const auto& Pos = _pNode->GetWorldPosition();
-	const rtm::vector4f LightPos = rtm::vector_set(Pos.x, Pos.y, Pos.z);
-
 	const float TotalRadius = rtm::vector_get_w(Sphere) + _Range;
-
-	return rtm::vector_length_squared3(rtm::vector_sub(LightPos, Sphere)) <= TotalRadius * TotalRadius;
+	return rtm::vector_length_squared3(rtm::vector_sub(_pNode->GetWorldPosition(), Sphere)) <= TotalRadius * TotalRadius;
 }
 //---------------------------------------------------------------------
 
 U8 CPointLightAttribute::TestBoxClipping(rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent) const
 {
-	const auto& Pos = _pNode->GetWorldPosition();
-	return Math::ClipAABB(BoxCenter, BoxExtent, rtm::vector_set(Pos.x, Pos.y, Pos.z, _Range));
+	return Math::ClipAABB(BoxCenter, BoxExtent, rtm::vector_set_w(_pNode->GetWorldPosition(), _Range));
 }
 //---------------------------------------------------------------------
 
 void CPointLightAttribute::RenderDebug(Debug::CDebugDraw& DebugDraw) const
 {
-	DebugDraw.DrawSphereWireframe(_pNode->GetWorldPosition(), _Range, Render::ColorRGBA(255, 255, 0, 255));
+	DebugDraw.DrawSphereWireframe(Math::FromSIMD3(_pNode->GetWorldPosition()), _Range, Render::ColorRGBA(255, 255, 0, 255));
 }
 //---------------------------------------------------------------------
 

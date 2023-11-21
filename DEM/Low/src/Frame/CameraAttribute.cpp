@@ -1,6 +1,7 @@
 #include "CameraAttribute.h"
 #include <Scene/SceneNode.h>
 #include <Debug/DebugDraw.h>
+#include <Math/CameraMath.h>
 #include <Core/Factory.h>
 
 namespace Frame
@@ -44,7 +45,7 @@ bool CCameraAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 
 void CCameraAttribute::RenderDebug(Debug::CDebugDraw& DebugDraw) const
 {
-	DebugDraw.DrawFrustumWireframe(_ViewProj, Render::ColorRGBA(128, 0, 255, 255), 2.f);
+	DebugDraw.DrawFrustumWireframe(Math::FromSIMD(_ViewProj), Render::ColorRGBA(128, 0, 255, 255), 2.f);
 }
 //---------------------------------------------------------------------
 
@@ -61,7 +62,7 @@ Scene::PNodeAttribute CCameraAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
-void CCameraAttribute::UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount)
+void CCameraAttribute::UpdateBeforeChildren(const rtm::vector4f* pCOIArray, UPTR COICount)
 {
 	bool ViewOrProjChanged = false;
 
@@ -75,9 +76,7 @@ void CCameraAttribute::UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICo
 		// Shadow proj was calculated with:
 		//nearPlane - shadowOffset, farPlane - shadowOffset, shadowOffset(0.00007f)
 
-		//!!!avoid copying!
-		_InvProj = _Proj;
-		_InvProj.invert();
+		_InvProj = rtm::matrix_inverse(_Proj);
 
 		_Flags.Clear(ProjDirty);
 		ViewOrProjChanged = true;
@@ -85,45 +84,44 @@ void CCameraAttribute::UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICo
 
 	if (_pNode->GetTransformVersion() != _LastTransformVersion)
 	{
-		_pNode->GetWorldMatrix().invert_simple(_View);
+		_View = rtm::matrix_inverse(_pNode->GetWorldMatrix());
 		_LastTransformVersion = _pNode->GetTransformVersion();
 		ViewOrProjChanged = true;
 	}
 
-	if (ViewOrProjChanged) _ViewProj = _View * _Proj;
+	if (ViewOrProjChanged) _ViewProj = rtm::matrix_mul(rtm::matrix_cast(_View), _Proj);
 }
 //---------------------------------------------------------------------
 
-void CCameraAttribute::GetRay3D(float RelX, float RelY, float Length, line3& OutRay) const
+void CCameraAttribute::GetRay3D(float RelX, float RelY, float Length, Math::CLine& OutRay) const
 {
-	vector3 ScreenCoord3D((RelX - 0.5f) * 2.0f, (RelY - 0.5f) * 2.0f, 1.0f);
-	vector3 ViewLocalPos = (_InvProj * ScreenCoord3D) * _NearPlane * 1.1f;
-	ViewLocalPos.y = -ViewLocalPos.y;
-	const matrix44&	InvView = GetInvViewMatrix();
-	OutRay.Start = InvView * ViewLocalPos;
-	OutRay.Vector = OutRay.Start - InvView.Translation();
-	OutRay.Vector *= (Length / OutRay.Length());
+	constexpr rtm::vector4f SignMask = { 1.f, -1.f, 1.f, 1.f };
+	const rtm::vector4f ScreenCoord3D = rtm::vector_set((RelX - 0.5f) * 2.0f, (RelY - 0.5f) * 2.0f, 1.0f);
+	const rtm::vector4f ViewLocalPos = rtm::vector_mul(rtm::vector_mul(rtm::matrix_mul_vector(ScreenCoord3D, _InvProj), _NearPlane * 1.1f), SignMask);
+	const rtm::matrix3x4f& InvView = GetInvViewMatrix();
+	OutRay.Start = rtm::matrix_mul_point3(ViewLocalPos, InvView);
+	OutRay.Dir = rtm::vector_sub(OutRay.Start, InvView.w_axis);
+	OutRay.Dir = rtm::vector_mul(OutRay.Dir, Length / rtm::vector_length3(OutRay.Dir));
 }
 //---------------------------------------------------------------------
 
-void CCameraAttribute::GetPoint2D(const vector3& Point3D, float& OutRelX, float& OutRelY) const
+void CCameraAttribute::GetPoint2D(const rtm::vector4f& Point3D, float& OutRelX, float& OutRelY) const
 {
-	vector4 WorldPos = _View * Point3D;
-	WorldPos.w = 0.f;
-	WorldPos = _Proj * WorldPos;
-	WorldPos /= WorldPos.w;
-	OutRelX = 0.5f + WorldPos.x * 0.5f;
-	OutRelY = 0.5f - WorldPos.y * 0.5f;
+	const rtm::vector4f ViewPos = rtm::matrix_mul_point3(Point3D, _View);
+	const rtm::vector4f ProjPos = rtm::matrix_mul_vector(rtm::vector_set_w(ViewPos, 0.f), _Proj);
+	const rtm::vector4f HalfNormProjPos = rtm::vector_mul(rtm::vector_div(ProjPos, rtm::vector_dup_w(ProjPos)), 0.5f);
+	OutRelX = 0.5f + rtm::vector_get_x(HalfNormProjPos);
+	OutRelY = 0.5f - rtm::vector_get_y(HalfNormProjPos);
 }
 //---------------------------------------------------------------------
 
-const vector3& CCameraAttribute::GetPosition() const
+const rtm::vector4f& CCameraAttribute::GetPosition() const
 {
 	return _pNode->GetWorldPosition();
 }
 //---------------------------------------------------------------------
 
-const matrix44& CCameraAttribute::GetInvViewMatrix() const
+const rtm::matrix3x4f& CCameraAttribute::GetInvViewMatrix() const
 {
 	return _pNode->GetWorldMatrix();
 }

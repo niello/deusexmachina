@@ -265,35 +265,17 @@ float CAnimationController::GetLocomotionPhaseFromPose(const CSkeleton& Skeleton
 	const auto* pRightFootNode = Skeleton.GetNode(_RightFootBoneIndex);
 	if (!pRootNode || !pLeftFootNode || !pRightFootNode) return -1.f;
 
-	auto ForwardDir = pRootNode->GetWorldMatrix().AxisZ();
-	ForwardDir.norm();
-	auto SideDir = pRootNode->GetWorldMatrix().AxisX();
-	SideDir.norm();
+	// FIXME: isn't forward -Z?
+	const rtm::vector4f ForwardDir = rtm::vector_normalize3(pRootNode->GetWorldMatrix().z_axis);
+	const rtm::vector4f SideDir = rtm::vector_normalize3(pRootNode->GetWorldMatrix().x_axis);
 
 	// Project foot offset onto the locomotion plane (fwd, up) and normalize it to get phase direction
-	auto PhaseDir = pLeftFootNode->GetWorldMatrix().Translation() - pRightFootNode->GetWorldMatrix().Translation();
-	PhaseDir -= (SideDir * PhaseDir.Dot(SideDir));
-	PhaseDir.norm();
+	const rtm::vector4f FootOffset = rtm::vector_sub(pLeftFootNode->GetWorldMatrix().w_axis, pRightFootNode->GetWorldMatrix().w_axis);
+	const rtm::vector4f ProjectedFootOffset = rtm::vector_sub(FootOffset, rtm::vector_mul(SideDir, (rtm::scalarf)rtm::vector_dot3(FootOffset, SideDir)));
+	const rtm::vector4f PhaseDir = rtm::vector_normalize3(ProjectedFootOffset);
 
-	const float CosA = PhaseDir.Dot(ForwardDir);
-	const float SinA = (PhaseDir * ForwardDir).Dot(SideDir);
-
-	/* TODO: use ACL/RTM for poses
-	const auto Fwd = RootCoordSystem.GetColumn(2);
-	rtm::vector4f ForwardDir = { static_cast<float>(Fwd[0]), static_cast<float>(Fwd[1]), static_cast<float>(Fwd[2]), 0.0f };
-	ForwardDir = acl::vector_normalize3(ForwardDir);
-
-	const auto Side = RootCoordSystem.GetColumn(0);
-	rtm::vector4f SideDir = { static_cast<float>(Side[0]), static_cast<float>(Side[1]), static_cast<float>(Side[2]), 0.0f };
-	SideDir = acl::vector_normalize3(SideDir);
-
-	const auto Offset = acl::vector_sub(LeftFootPositions[i], RightFootPositions[i]);
-	const auto ProjectedOffset = acl::vector_sub(Offset, acl::vector_mul(SideDir, acl::vector_dot3(Offset, SideDir)));
-	const auto PhaseDir = acl::vector_normalize3(ProjectedOffset);
-
-	const float CosA = acl::vector_dot3(PhaseDir, ForwardDir);
-	const float SinA = acl::vector_dot3(acl::vector_cross3(PhaseDir, ForwardDir), SideDir);
-	*/
+	const float CosA = rtm::vector_dot3(PhaseDir, ForwardDir);
+	const float SinA = rtm::vector_dot3(rtm::vector_cross3(PhaseDir, ForwardDir), SideDir);
 
 	const float Angle = std::copysignf(std::acosf(CosA) * 180.f / PI, SinA); // Could also use Angle = RadToDeg(std::atan2f(SinA, CosA));
 

@@ -137,7 +137,7 @@ bool CGameLevel::Validate(Resources::CResourceManager& RsrcMgr)
 }
 //---------------------------------------------------------------------
 
-void CGameLevel::Update(float dt, const vector3* pCOIArray, UPTR COICount)
+void CGameLevel::Update(float dt, const rtm::vector4f* pCOIArray, UPTR COICount)
 {
 	ZoneScoped;
 

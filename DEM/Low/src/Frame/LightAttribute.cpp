@@ -35,10 +35,7 @@ void CLightAttribute::UpdateInGraphicsScene(CGraphicsScene& Scene)
 	if (!SceneChanged && !BoundsChanged) return;
 
 	// Neutralize scale, we can't use it for lights
-	auto Tfm = _pNode->GetWorldMatrix();
-	Tfm.AxisX().norm();
-	Tfm.AxisY().norm();
-	Tfm.AxisZ().norm();
+	const rtm::matrix3x4f Tfm = rtm::matrix_remove_scale(_pNode->GetWorldMatrix());
 
 	AABB.Transform(Tfm);
 

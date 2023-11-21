@@ -85,7 +85,7 @@ void CSkinPalette::Update()
 CSkinProcessorAttribute::~CSkinProcessorAttribute() = default;
 //---------------------------------------------------------------------
 
-void CSkinProcessorAttribute::UpdateAfterChildren(const vector3* pCOIArray, UPTR COICount)
+void CSkinProcessorAttribute::UpdateAfterChildren(const rtm::vector4f* pCOIArray, UPTR COICount)
 {
 	CNodeAttribute::UpdateAfterChildren(pCOIArray, COICount);
 

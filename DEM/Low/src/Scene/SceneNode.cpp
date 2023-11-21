@@ -29,7 +29,7 @@ CSceneNode::~CSceneNode()
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::UpdateInternal(const vector3* pCOIArray, UPTR COICount)
+void CSceneNode::UpdateInternal(const rtm::vector4f* pCOIArray, UPTR COICount)
 {
 	UpdateWorldTransform();
 
@@ -47,7 +47,7 @@ void CSceneNode::UpdateInternal(const vector3* pCOIArray, UPTR COICount)
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::Update(const vector3* pCOIArray, UPTR COICount)
+void CSceneNode::Update(const rtm::vector4f* pCOIArray, UPTR COICount)
 {
 	// The first time an active root node is updated by user, it must be effectively activated.
 	// This is the difference between a scene root and a detached part of the scene.
@@ -130,23 +130,23 @@ void CSceneNode::SetLocalScale(const rtm::vector4f& Value)
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::SetLocalTransform(const matrix44& Value)
+void CSceneNode::SetLocalTransform(const rtm::matrix3x4f& Value)
 {
-	LocalTfm = Math::qvv_from_matrix(Math::ToSIMD(Value));
+	LocalTfm = Math::qvv_from_matrix(Value);
 	Flags.Clear(LocalTransformDirty);
 	Flags.Set(WorldTransformDirty);
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::SetWorldPosition(const vector3& Value)
+void CSceneNode::SetWorldPosition(const rtm::vector4f& Value)
 {
 	// Update before partial change
 	if (IsWorldTransformDirty()) UpdateTransform();
 
 	// Save us from recalculating unchanged hierarchy (static poses, constant animation tracks)
-	if (WorldMatrix.Translation() == Value) return;
+	if (rtm::vector_all_equal3(WorldMatrix.w_axis, Value)) return;
 
-	WorldMatrix.Translation() = Value;
+	WorldMatrix.w_axis = Value;
 
 	Flags.Set(LocalTransformDirty);
 	Flags.Clear(WorldTransformDirty);
@@ -154,7 +154,7 @@ void CSceneNode::SetWorldPosition(const vector3& Value)
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::SetWorldTransform(const matrix44& Value)
+void CSceneNode::SetWorldTransform(const rtm::matrix3x4f& Value)
 {
 	WorldMatrix = Value;
 	Flags.Set(LocalTransformDirty);
@@ -168,16 +168,13 @@ void CSceneNode::UpdateWorldTransform()
 	if (pParent)
 	{
 		if (!IsWorldTransformDirty() && pParent->GetTransformVersion() == LastParentTransformVersion) return;
-
-		WorldMatrix = Math::FromSIMD(rtm::matrix_from_qvv(LocalTfm));
-		WorldMatrix.mult_simple(pParent->GetWorldMatrix());
-
+		WorldMatrix = rtm::matrix_mul(rtm::matrix_from_qvv(LocalTfm), pParent->GetWorldMatrix());
 		LastParentTransformVersion = pParent->GetTransformVersion();
 	}
 	else
 	{
 		if (!IsWorldTransformDirty()) return;
-		WorldMatrix = Math::FromSIMD(rtm::matrix_from_qvv(LocalTfm));
+		WorldMatrix = rtm::matrix_from_qvv(LocalTfm);
 	}
 
 	IncrementTransformVersion();
@@ -197,18 +194,13 @@ void CSceneNode::UpdateLocalTransform()
 	if (pParent)
 	{
 		if (!IsLocalTransformDirty() && pParent->GetTransformVersion() == LastParentTransformVersion) return;
-
-		matrix44 LocalMatrix;
-		pParent->GetWorldMatrix().invert_simple(LocalMatrix);
-		LocalMatrix.mult_simple(WorldMatrix);
-		LocalTfm = Math::qvv_from_matrix(Math::ToSIMD(LocalMatrix));
-
+		LocalTfm = Math::qvv_from_matrix(rtm::matrix_mul(rtm::matrix_inverse(pParent->GetWorldMatrix()), WorldMatrix));
 		LastParentTransformVersion = pParent->GetTransformVersion();
 	}
 	else
 	{
 		if (!IsLocalTransformDirty()) return;
-		LocalTfm = Math::qvv_from_matrix(Math::ToSIMD(WorldMatrix));
+		LocalTfm = Math::qvv_from_matrix(WorldMatrix);
 	}
 
 	Flags.Clear(LocalTransformDirty | WorldTransformDirty);

@@ -1,7 +1,6 @@
 #pragma once
 #include <Scene/NodeAttribute.h>
-#include <Math/Line.h>
-#include <Math/Matrix44.h>
+#include <Math/SIMDMath.h>
 
 // Camera is a scene node attribute describing camera properties.
 // Note - W and H are necessary for orthogonal projection matrix,
@@ -23,18 +22,18 @@ protected:
 		Orthogonal	= 0x20	// Projection is orthogonal, not perspective
 	};
 
-	float    _FOV = n_deg2rad(60.0f);
-	float    _Width = 1024.f;
-	float    _Height = 768.f;
-	float    _NearPlane = 0.1f;
-	float    _FarPlane = 5000.f;
+	rtm::matrix3x4f _View; // InvView is node world tfm
+	rtm::matrix4x4f _Proj;
+	rtm::matrix4x4f _InvProj;
+	rtm::matrix4x4f _ViewProj;
 
-	matrix44 _View; // InvView is node world tfm
-	matrix44 _Proj;
-	matrix44 _InvProj;
-	matrix44 _ViewProj;
+	float _FOV = n_deg2rad(60.0f);
+	float _Width = 1024.f;
+	float _Height = 768.f;
+	float _NearPlane = 0.1f;
+	float _FarPlane = 5000.f;
 
-	U32      _LastTransformVersion = 0;
+	U32 _LastTransformVersion = 0;
 
 public:
 
@@ -50,10 +49,10 @@ public:
 	virtual bool					LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
 	virtual void                    RenderDebug(Debug::CDebugDraw& DebugDraw) const override;
 	virtual Scene::PNodeAttribute	Clone() override;
-	virtual void					UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount) override;
+	virtual void					UpdateBeforeChildren(const rtm::vector4f* pCOIArray, UPTR COICount) override;
 
-	void							GetRay3D(float RelX, float RelY, float Length, line3& OutRay) const;
-	void							GetPoint2D(const vector3& Point3D, float& OutRelX, float& OutRelY) const;
+	void							GetRay3D(float RelX, float RelY, float Length, Math::CLine& OutRay) const;
+	void							GetPoint2D(const rtm::vector4f& Point3D, float& OutRelX, float& OutRelY) const;
 
 	void							SetPerspectiveMode() { if (_Flags.Is(Orthogonal)) { _Flags.Clear(Orthogonal); _Flags.Set(ProjDirty); } }
 	void							SetOrthogonalMode() { if (!_Flags.Is(Orthogonal)) { _Flags.Set(Orthogonal); _Flags.Set(ProjDirty); } }
@@ -69,12 +68,12 @@ public:
 	float							GetNearPlane() const { return _NearPlane; }
 	void							SetFarPlane(float Far) { if (_FarPlane != Far) { _FarPlane = Far; _Flags.Set(ProjDirty); } }
 	float							GetFarPlane() const { return _FarPlane; }
-	const vector3&					GetPosition() const;
-	const matrix44&					GetViewMatrix() const { return _View; }
-	const matrix44&					GetInvViewMatrix() const;
-	const matrix44&					GetProjMatrix() const { return _Proj; }
-	const matrix44&					GetInvProjMatrix() const { return _InvProj; }
-	const matrix44&					GetViewProjMatrix() const { return _ViewProj; }
+	const rtm::vector4f&			GetPosition() const;
+	const rtm::matrix3x4f&			GetViewMatrix() const { return _View; }
+	const rtm::matrix3x4f&			GetInvViewMatrix() const;
+	const rtm::matrix4x4f&			GetProjMatrix() const { return _Proj; }
+	const rtm::matrix4x4f&			GetInvProjMatrix() const { return _InvProj; }
+	const rtm::matrix4x4f&			GetViewProjMatrix() const { return _ViewProj; }
 };
 
 }

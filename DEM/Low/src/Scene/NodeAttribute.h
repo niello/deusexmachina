@@ -2,7 +2,7 @@
 #include <Core/Object.h>
 #include <Data/Flags.h>
 #include <Data/StringID.h>
-#include <Math/Vector3.h>
+#include <rtm/vector4f.h>
 
 // Scene node attributes implement specific logic, attached to a 3D transform provided by scene nodes.
 // Common examples are meshes, lights, cameras etc.
@@ -45,8 +45,8 @@ protected:
 	CSceneNode*  _pNode = nullptr;
 	Data::CFlags _Flags;
 
-	virtual void            UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount) {}
-	virtual void            UpdateAfterChildren(const vector3* pCOIArray, UPTR COICount) {}
+	virtual void            UpdateBeforeChildren(const rtm::vector4f* pCOIArray, UPTR COICount) {}
+	virtual void            UpdateAfterChildren(const rtm::vector4f* pCOIArray, UPTR COICount) {}
 
 	void                    SetNode(CSceneNode* pNode) { _pNode = pNode; UpdateActivity(); }
 	void                    UpdateActivity();

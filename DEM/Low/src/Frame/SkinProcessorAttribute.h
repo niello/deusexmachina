@@ -51,7 +51,7 @@ protected:
 	std::vector<PSkinPalette>                  _Palettes;
 	std::map<Render::PSkinInfo, CSkinPalette*> _SkinToPalette;
 
-	virtual void UpdateAfterChildren(const vector3* pCOIArray, UPTR COICount) override;
+	virtual void UpdateAfterChildren(const rtm::vector4f* pCOIArray, UPTR COICount) override;
 
 public:
 

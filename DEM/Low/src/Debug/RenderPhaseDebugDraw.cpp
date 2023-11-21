@@ -38,7 +38,7 @@ bool CRenderPhaseDebugDraw::Render(CView& View)
 	View.GetGPU()->SetRenderTarget(0, pTarget);
 	View.GetGPU()->SetViewport(0, &Render::GetRenderTargetViewport(pTarget->GetDesc()));
 
-	pDebugDraw->Render(*Effect, pCamera->GetViewProjMatrix());
+	pDebugDraw->Render(*Effect, Math::FromSIMD(pCamera->GetViewProjMatrix()));
 
 	OK;
 }

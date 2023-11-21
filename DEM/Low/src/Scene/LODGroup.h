@@ -27,7 +27,7 @@ public:
 
 	virtual bool			LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
 	virtual PNodeAttribute	Clone() override;
-	virtual void			UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount) override;
+	virtual void			UpdateBeforeChildren(const rtm::vector4f* pCOIArray, UPTR COICount) override;
 };
 
 typedef Ptr<CLODGroup> PLODGroup;

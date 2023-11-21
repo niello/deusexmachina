@@ -58,7 +58,7 @@ Scene::PNodeAttribute CCollisionAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
-void CCollisionAttribute::UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount)
+void CCollisionAttribute::UpdateBeforeChildren(const rtm::vector4f* pCOIArray, UPTR COICount)
 {
 	if (!_Collider) return;
 

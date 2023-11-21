@@ -190,10 +190,12 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		if (!ChildFlags) return IsVisible ? ENodeStatus::Processed : ENodeStatus::Invisible;
 	}
 
+	constexpr rtm::vector4f SignMask{ 1.f, 1.f, -1.f, -1.f }; //???can negate sign bit by mask?
+
 	// (HalfSizeX, HalfSizeZ, CenterX, CenterZ)
 	const auto HalfSizeXZCenterXZ = Math::vector_mix_xzac(NodeBoxExtent, NodeBoxCenter);
 	// (HalfSizeX, HalfSizeZ, -HalfSizeX, -HalfSizeZ)
-	const auto HalfSizeXZNegHalfSizeXZ = rtm::vector_mul(Math::vector_mix_xyxy(HalfSizeXZCenterXZ), rtm::vector_set(1.f, 1.f, -1.f, -1.f)); //???can negate sign bit by mask?
+	const auto HalfSizeXZNegHalfSizeXZ = rtm::vector_mul(Math::vector_mix_xyxy(HalfSizeXZCenterXZ), SignMask);
 
 	// TODO: it seems to be a bit faster without full patches, using 4 quarters instead and rendering the whole terrain in 1 DIP.
 	// Need to profile further on some specific cases, e.g. rendering when most of items are full. Will 4x instance increase be still negligible?

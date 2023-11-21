@@ -67,8 +67,7 @@ void CDirectionalLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, R
 
 	auto pLight = static_cast<Render::CAnalyticalLight*>(&Light);
 	pLight->GPUData.Color = vector3(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color)) * _Intensity;
-	pLight->GPUData.InvDirection = _pNode->GetWorldMatrix().AxisZ();
-	pLight->GPUData.InvDirection.norm();
+	pLight->GPUData.InvDirection = Math::FromSIMD3(rtm::vector_normalize3(_pNode->GetWorldMatrix().z_axis));
 }
 //---------------------------------------------------------------------
 

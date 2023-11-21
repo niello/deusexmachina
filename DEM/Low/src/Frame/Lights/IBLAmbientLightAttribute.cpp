@@ -90,21 +90,15 @@ bool CIBLAmbientLightAttribute::GetLocalAABB(CAABB& OutBox) const
 bool CIBLAmbientLightAttribute::IntersectsWith(rtm::vector4f_arg0 Sphere) const
 {
 	if (IsGlobal()) return true;
-
-	const auto& Pos = _pNode->GetWorldPosition();
-	const rtm::vector4f LightPos = rtm::vector_set(Pos.x, Pos.y, Pos.z);
-
 	const float TotalRadius = rtm::vector_get_w(Sphere) + _Range;
-
-	return rtm::vector_length_squared3(rtm::vector_sub(LightPos, Sphere)) <= TotalRadius * TotalRadius;
+	return rtm::vector_length_squared3(rtm::vector_sub(_pNode->GetWorldPosition(), Sphere)) <= TotalRadius * TotalRadius;
 }
 //---------------------------------------------------------------------
 
 U8 CIBLAmbientLightAttribute::TestBoxClipping(rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent) const
 {
 	if (IsGlobal()) return Math::ClipInside;
-	const auto& Pos = _pNode->GetWorldPosition();
-	return Math::ClipAABB(BoxCenter, BoxExtent, rtm::vector_set(Pos.x, Pos.y, Pos.z, _Range));
+	return Math::ClipAABB(BoxCenter, BoxExtent, rtm::vector_set_w(_pNode->GetWorldPosition(), _Range));
 }
 //---------------------------------------------------------------------
 

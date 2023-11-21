@@ -41,32 +41,32 @@ protected:
 	};
 
 	rtm::qvvf                   LocalTfm = rtm::qvv_identity();
-	matrix44					WorldMatrix;
+	rtm::matrix3x4f             WorldMatrix = rtm::matrix_identity();
 
+	CStrID						Name;
 	CSceneNode*                 pParent = nullptr;
 	std::vector<PSceneNode>     Children; // Always sorted by ID
 	std::vector<PNodeAttribute> Attrs;
 
-	CStrID						Name;
 	Data::CFlags				Flags;
 	U32                         TransformVersion = DIRTY_TRANSFORM_VERSION + 1;
 	U32                         LastParentTransformVersion = DIRTY_TRANSFORM_VERSION;
 
-	void					UpdateInternal(const vector3* pCOIArray, UPTR COICount);
+	void					UpdateInternal(const rtm::vector4f* pCOIArray, UPTR COICount);
 	void					UpdateWorldTransform();
 	void					UpdateLocalTransform();
 
 	void                    SetParent(CSceneNode* pNewParent);
 	void                    UpdateActivity(bool OnDetach = false);
 
-	DEM_FORCE_INLINE void IncrementTransformVersion() { if (++TransformVersion == DIRTY_TRANSFORM_VERSION) ++TransformVersion; }
+	DEM_FORCE_INLINE void IncrementTransformVersion() noexcept { if (++TransformVersion == DIRTY_TRANSFORM_VERSION) ++TransformVersion; }
 
 public:
 
 	CSceneNode(CStrID NodeName = CStrID::Empty);
 	virtual ~CSceneNode() override;
 
-	void					Update(const vector3* pCOIArray, UPTR COICount);
+	void					Update(const rtm::vector4f* pCOIArray, UPTR COICount);
 	bool                    UpdateTransform();
 
 	PSceneNode				Clone(CSceneNode* pNewParent = nullptr, bool CloneChildren = true);
@@ -111,17 +111,17 @@ public:
 	void					SetLocalRotation(const rtm::quatf& Value);
 	void					SetLocalScale(const rtm::vector4f& Value);
 	void					SetLocalTransform(const rtm::qvvf& Value) { LocalTfm = Value; Flags.Clear(LocalTransformDirty); Flags.Set(WorldTransformDirty); }
-	void					SetLocalTransform(const matrix44& Value);
-	void					SetWorldPosition(const vector3& Value);
-	void					SetWorldTransform(const matrix44& Value);
+	void					SetLocalTransform(const rtm::matrix3x4f& Value);
+	void					SetWorldPosition(const rtm::vector4f& Value);
+	void					SetWorldTransform(const rtm::matrix3x4f& Value);
 
 	rtm::vector4f			GetLocalPosition() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.translation; }
 	rtm::quatf				GetLocalRotation() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.rotation; }
 	rtm::vector4f			GetLocalScale() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.scale; }
 	const rtm::qvvf&        GetLocalTransform() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm; }
 	//matrix44			    GetLocalMatrix() const { n_assert_dbg(!IsLocalTransformDirty()); matrix44 m; LocalTfm.ToMatrix(m); return m; }
-	const matrix44&			GetWorldMatrix() const { n_assert_dbg(!IsWorldTransformDirty()); return WorldMatrix; }
-	const vector3&			GetWorldPosition() const { n_assert_dbg(!IsWorldTransformDirty()); return WorldMatrix.Translation(); }
+	const rtm::matrix3x4f&  GetWorldMatrix() const { n_assert_dbg(!IsWorldTransformDirty()); return WorldMatrix; }
+	rtm::vector4f			GetWorldPosition() const { n_assert_dbg(!IsWorldTransformDirty()); return WorldMatrix.w_axis; }
 };
 
 inline CSceneNode* CSceneNode::FindNodeByPath(const char* pPath) const

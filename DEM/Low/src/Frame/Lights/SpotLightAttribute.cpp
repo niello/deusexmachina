@@ -116,9 +116,8 @@ void CSpotLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render::
 
 	auto pLight = static_cast<Render::CAnalyticalLight*>(&Light);
 	pLight->GPUData.Color = vector3(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color)) * _Intensity;
-	pLight->GPUData.Position = _pNode->GetWorldMatrix().Translation();
-	pLight->GPUData.InvDirection = _pNode->GetWorldMatrix().AxisZ();
-	pLight->GPUData.InvDirection.norm();
+	pLight->GPUData.Position = Math::FromSIMD3(_pNode->GetWorldPosition());
+	pLight->GPUData.InvDirection = Math::FromSIMD3(rtm::vector_normalize3(_pNode->GetWorldMatrix().z_axis));
 	pLight->GPUData.SqInvRange = 1.f / (_Range * _Range);
 	pLight->GPUData.Params.x = _CosHalfInner;
 	pLight->GPUData.Params.y = _CosHalfOuter;
@@ -136,16 +135,12 @@ bool CSpotLightAttribute::GetLocalAABB(CAABB& OutBox) const
 
 bool CSpotLightAttribute::IntersectsWith(rtm::vector4f_arg0 Sphere) const
 {
-	const auto& Pos = _pNode->GetWorldPosition();
-	const rtm::vector4f LightPos = rtm::vector_set(Pos.x, Pos.y, Pos.z);
-
-	const auto AxisZ = _pNode->GetWorldMatrix().AxisZ();
-	const rtm::vector4f LightDir = rtm::vector_normalize3(rtm::vector_set(-AxisZ.x, -AxisZ.y, -AxisZ.z));
+	const rtm::vector4f LightDir = rtm::vector_normalize3(rtm::vector_neg(_pNode->GetWorldMatrix().z_axis));
 
 	const float SphereRadius = rtm::vector_get_w(Sphere);
 
 	// Check the bounding sphere of the light first
-	const rtm::vector4f BoundingSpherePos = rtm::vector_mul_add(LightDir, _BoundingSphereOffsetAlongDir, LightPos);
+	const rtm::vector4f BoundingSpherePos = rtm::vector_mul_add(LightDir, _BoundingSphereOffsetAlongDir, _pNode->GetWorldPosition());
 	const float TotalRadius = SphereRadius + _BoundingSphereRadius;
 	if (rtm::vector_length_squared3(rtm::vector_sub(BoundingSpherePos, Sphere)) > TotalRadius * TotalRadius) return false;
 
@@ -156,7 +151,7 @@ bool CSpotLightAttribute::IntersectsWith(rtm::vector4f_arg0 Sphere) const
 	float ProjectedLength = rtm::vector_dot3(LightDir, DistanceVector);
 	if (ProjectedLength <= 0.f || ProjectedLength * ProjectedLength < SqDistance * _CosHalfOuter * _CosHalfOuter) return false;
 
-	DistanceVector = rtm::vector_sub(Sphere, LightPos);
+	DistanceVector = rtm::vector_sub(Sphere, _pNode->GetWorldPosition());
 	SqDistance = rtm::vector_length_squared3(DistanceVector);
 	ProjectedLength = -rtm::vector_dot3(LightDir, DistanceVector);
 	return ProjectedLength <= 0.f || ProjectedLength * ProjectedLength < SqDistance * _SinHalfOuter * _SinHalfOuter || SqDistance <= SphereRadius * SphereRadius;

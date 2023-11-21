@@ -1,7 +1,7 @@
 #pragma once
 #include <Core/RTTIBaseClass.h>
 #include <Data/Array.h>
-#include <Math/Matrix44.h>
+#include <rtm/matrix4x4f.h>
 
 // An object that provides an interface to a rendering algorithm which operates on renderables
 
@@ -25,10 +25,10 @@ public:
 
 	struct CRenderContext
 	{
-		Render::CGPUDriver*		pGPU = nullptr;
+		Render::CGPUDriver*              pGPU = nullptr;
 		const Render::CTechnique* const* pShaderTechCache = nullptr;
-		vector3					CameraPosition;
-		matrix44				ViewProjection;
+		rtm::vector4f                    CameraPosition;
+		rtm::matrix4x4f                  ViewProjection;
 	};
 
 	virtual bool Init(const Data::CParams& Params, CGPUDriver& GPU) = 0;

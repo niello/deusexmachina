@@ -311,19 +311,21 @@ bool CView::UpdateCameraFrustum()
 	{
 		ViewProjChanged = true;
 		_CameraTfmVersion = CameraTfmVersion;
-
-		const auto& EyePos = _pCamera->GetPosition();
-		_EyePos = rtm::vector_set(EyePos.x, EyePos.y, EyePos.z);
+		_EyePos = _pCamera->GetPosition();
 	}
 
 	// Both perspective and orthographic projections are characterized by just few matrix elements, compare only them
 	const auto& Proj = _pCamera->GetProjMatrix();
-	const auto ProjectionParams = rtm::vector_set(Proj.m[0][0], Proj.m[1][1], Proj.m[2][2], Proj.m[3][2]);
+	const float m00 = rtm::vector_get_x(Proj.x_axis);
+	const float m11 = rtm::vector_get_y(Proj.y_axis);
+	const float m22 = rtm::vector_get_z(Proj.z_axis);
+	const float m32 = rtm::vector_get_z(Proj.w_axis);
+	const auto ProjectionParams = rtm::vector_set(m00, m11, m22, m32);
 	if (!rtm::vector_all_near_equal(_ProjectionParams, ProjectionParams))
 	{
 		ViewProjChanged = true;
 		_ProjectionParams = ProjectionParams;
-		_ScreenMultiple = std::max(0.5f * Proj.m[0][0], 0.5f * Proj.m[1][1]);
+		_ScreenMultiple = 0.5f * std::max(m00, m11);
 	}
 
 	if (ViewProjChanged)

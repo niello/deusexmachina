@@ -9,6 +9,12 @@
 namespace Math
 {
 
+struct CLine
+{
+	rtm::vector4f Start;
+	rtm::vector4f Dir;
+};
+
 RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::vector4f ToSIMD(const vector3& v) noexcept
 {
 	return rtm::vector_load3(v.v);
@@ -89,6 +95,12 @@ RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE matrix44 RTM_SIMD_CALL FromSI
 	Result.m[2][3] = 0.f;
 	Result.m[3][3] = 1.f;
 	return Result;
+}
+//---------------------------------------------------------------------
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE matrix44 RTM_SIMD_CALL FromSIMD(rtm::matrix4x4f_arg0 m) noexcept
+{
+	return matrix44(FromSIMD4(m.x_axis), FromSIMD4(m.y_axis), FromSIMD4(m.z_axis), FromSIMD4(m.w_axis));
 }
 //---------------------------------------------------------------------
 

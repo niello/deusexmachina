@@ -65,7 +65,7 @@ public:
 	virtual ~CGameLevel() override;
 
 	bool                     Validate(Resources::CResourceManager& RsrcMgr);
-	void                     Update(float dt, const vector3* pCOIArray, UPTR COICount);
+	void                     Update(float dt, const rtm::vector4f* pCOIArray, UPTR COICount);
 
 	void                     SetNavRegionController(CStrID RegionID, HEntity Controller);
 	void                     SetNavRegionFlags(CStrID RegionID, U16 Flags, bool On);

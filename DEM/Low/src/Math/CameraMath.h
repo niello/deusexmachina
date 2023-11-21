@@ -2,8 +2,7 @@
 #include <Math/Matrix44.h>
 #include <Math/SIMDMath.h>
 #include <System/System.h> //!!!DBG TMP! for tmp assertions, check if can be removed!
-#include <rtm/vector4f.h>
-#include <rtm/quatf.h>
+#include <rtm/matrix4x4f.h>
 
 // Math for view and projection calculations
 
@@ -33,26 +32,29 @@ struct CSIMDFrustum
 // Extract frustum planes using Gribb-Hartmann method.
 // See https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
 // See https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
-DEM_FORCE_INLINE CSIMDFrustum CalcFrustumParams(const matrix44& m) noexcept
+DEM_FORCE_INLINE CSIMDFrustum RTM_SIMD_CALL CalcFrustumParams(rtm::matrix4x4f_arg0 m) noexcept
 {
 	// In the paper Left = W + X, Right = W - X, Bottom = W + Y, Top = W - Y. Normals look inside the frustum, i.e. positive halfspace means 'inside'.
 	// We invert this to Left = -X - W, Right = X - W, Bottom = -Y - W, Top = Y - W. Normals look outside the frustum, i.e. positive halfspace means 'outside'.
 	// LRBT_w is a -d, i.e. -dot(PlaneNormal, PlaneOrigin). +w instead of -d allows us using a single fma instead of separate mul & sub in clipping tests.
-	const auto LRBT_Nx = rtm::vector_sub(rtm::vector_set(-m.m[0][0], m.m[0][0], -m.m[0][1], m.m[0][1]), rtm::vector_set(m.m[0][3]));
-	const auto LRBT_Ny = rtm::vector_sub(rtm::vector_set(-m.m[1][0], m.m[1][0], -m.m[1][1], m.m[1][1]), rtm::vector_set(m.m[1][3]));
-	const auto LRBT_Nz = rtm::vector_sub(rtm::vector_set(-m.m[2][0], m.m[2][0], -m.m[2][1], m.m[2][1]), rtm::vector_set(m.m[2][3]));
-	const auto LRBT_w =  rtm::vector_sub(rtm::vector_set(-m.m[3][0], m.m[3][0], -m.m[3][1], m.m[3][1]), rtm::vector_set(m.m[3][3]));
+	constexpr rtm::vector4f SignMask{ -1.f, 1.f, -1.f, 1.f }; //???can negate sign bit by mask?
+	const auto LRBT_Nx = rtm::vector_sub(rtm::vector_mul(Math::vector_mix_xyxy(m.x_axis), SignMask), rtm::vector_dup_w(m.x_axis));
+	const auto LRBT_Ny = rtm::vector_sub(rtm::vector_mul(Math::vector_mix_xyxy(m.y_axis), SignMask), rtm::vector_dup_w(m.y_axis));
+	const auto LRBT_Nz = rtm::vector_sub(rtm::vector_mul(Math::vector_mix_xyxy(m.z_axis), SignMask), rtm::vector_dup_w(m.z_axis));
+	const auto LRBT_w =  rtm::vector_sub(rtm::vector_mul(Math::vector_mix_xyxy(m.w_axis), SignMask), rtm::vector_dup_w(m.w_axis));
 
 	// Near and far planes are parallel, which enables us to save some work. Near & far planes are +d (-w) along the look
 	// axis, so NearPlane is negated once and FarPlane is negated twice (once to make it -w, once to invert the axis).
 	// We use D3D style projection matrix, near Z limit is 0 instead of OpenGL's -W.
 	// TODO: check if it is really faster than making another vector set for NF_Nx etc. At least less SSE registers used?
-	const auto NearAxis = rtm::vector_set(m.m[0][2], m.m[1][2], m.m[2][2], 0.f);
-	const auto FarAxis = rtm::vector_sub(rtm::vector_set(m.m[0][3], m.m[1][3], m.m[2][3], 0.f), NearAxis);
-	const float InvNearLen = rtm::scalar_sqrt_reciprocal(static_cast<float>(rtm::vector_length_squared3(NearAxis)));
+	const auto NearAxis = rtm::vector_set(rtm::vector_get_z(m.x_axis), rtm::vector_get_z(m.y_axis), rtm::vector_get_z(m.z_axis), 0.f);
+	const auto FarAxis = rtm::vector_sub(rtm::vector_set(rtm::vector_get_w(m.x_axis), rtm::vector_get_w(m.y_axis), rtm::vector_get_w(m.z_axis), 0.f), NearAxis);
+	const float InvNearLen = rtm::scalar_cast(rtm::scalar_sqrt_reciprocal(static_cast<rtm::scalarf>(rtm::vector_length_squared3(NearAxis))));
 	const auto LookAxis = rtm::vector_mul(NearAxis, InvNearLen);
-	const float NearPlane = -m.m[3][2] * InvNearLen;
-	const float FarPlane = (m.m[3][3] - m.m[3][2]) * rtm::scalar_sqrt_reciprocal(static_cast<float>(rtm::vector_length_squared3(FarAxis)));
+	const float m32 = rtm::vector_get_z(m.w_axis);
+	const float m33 = rtm::vector_get_w(m.w_axis);
+	const float NearPlane = -m32 * InvNearLen;
+	const float FarPlane = (m33 - m32) * rtm::scalar_cast(rtm::scalar_sqrt_reciprocal(static_cast<rtm::scalarf>(rtm::vector_length_squared3(FarAxis))));
 
 	return { LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NearPlane, FarPlane };
 }

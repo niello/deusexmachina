@@ -49,18 +49,18 @@ PNodeAttribute CLODGroup::Clone()
 }
 //---------------------------------------------------------------------
 
-void CLODGroup::UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount)
+void CLODGroup::UpdateBeforeChildren(const rtm::vector4f* pCOIArray, UPTR COICount)
 {
 	if (!_pNode || !pCOIArray || !COICount) return;
 
 	// Select minimal distance, if there are multiple COIs
-	const vector3& NodePos = _pNode->GetWorldPosition();
+	const rtm::vector4f NodePos = _pNode->GetWorldPosition();
 	float SqDistance = FLT_MAX;
 	for (UPTR i = 0; i < COICount; ++i)
 	{
-		vector3 DistanceVector = NodePos - pCOIArray[i];
-		float SqDist = DistanceVector.SqLength();
-		if (SqDistance > SqDist) SqDistance = SqDist;
+		const rtm::vector4f DistanceVector = rtm::vector_sub(NodePos, pCOIArray[i]);
+		const float CurrSqDistance = rtm::vector_length_squared3(DistanceVector);
+		if (SqDistance > CurrSqDistance) SqDistance = CurrSqDistance;
 	}
 
 	CStrID SelectedChild;
