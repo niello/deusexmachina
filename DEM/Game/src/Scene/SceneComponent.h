@@ -1,6 +1,8 @@
 #pragma once
 #include <Scene/SceneNode.h>
+#include <Math/TransformSRT.h>
 #include <Game/ECS/ComponentStorage.h>
+#include <Math/SIMDMath.h>
 #include <Data/Metadata.h>
 
 // Scene component contains a part of scene hierarchy, including a root node
@@ -22,8 +24,9 @@ struct CSceneComponent
 
 	CSceneComponent() : RootNode(n_new(Scene::CSceneNode())) {}
 
-	const auto& GetLocalTransform() const { return RootNode->GetLocalTransform(); }
-	void        SetLocalTransform(const Math::CTransform& Value) { RootNode->SetLocalTransform(Value); }
+	// FIXME: can instead use RTM SIMD in metadata?!
+	Math::CTransform GetLocalTransform() const { return Math::FromSIMD(RootNode->GetLocalTransform()); }
+	void             SetLocalTransform(const Math::CTransform& Value) { RootNode->SetLocalTransform(Math::ToSIMD(Value)); }
 };
 
 }

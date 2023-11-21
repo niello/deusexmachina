@@ -2,7 +2,8 @@
 #include <Core/Object.h>
 #include <Data/StringID.h>
 #include <Data/Flags.h>
-#include <Math/TransformSRT.h>
+#include <Math/Matrix44.h>
+#include <rtm/qvvf.h>
 
 // Scene nodes represent hierarchical transform frames and together form a scene graph.
 // Each 3D scene consists of one scene graph starting at the root scene node.
@@ -39,18 +40,17 @@ protected:
 		// TODO: add LockTransform? (now locked through static pose)
 	};
 
+	rtm::qvvf                   LocalTfm = rtm::qvv_identity();
+	matrix44					WorldMatrix;
+
+	CSceneNode*                 pParent = nullptr;
+	std::vector<PSceneNode>     Children; // Always sorted by ID
+	std::vector<PNodeAttribute> Attrs;
+
 	CStrID						Name;
 	Data::CFlags				Flags;
 	U32                         TransformVersion = DIRTY_TRANSFORM_VERSION + 1;
 	U32                         LastParentTransformVersion = DIRTY_TRANSFORM_VERSION;
-
-	//!!!can write special 4x3 tfm matrix without 0,0,0,1 column to save memory! is good for SSE?
-	Math::CTransform			LocalTfm;
-	matrix44					WorldMatrix;
-
-	CSceneNode*					pParent = nullptr;
-	std::vector<PSceneNode>     Children; // Always sorted by ID
-	std::vector<PNodeAttribute> Attrs;
 
 	void					UpdateInternal(const vector3* pCOIArray, UPTR COICount);
 	void					UpdateWorldTransform();
@@ -107,19 +107,19 @@ public:
 	bool					IsWorldTransformDirty() const { return Flags.Is(WorldTransformDirty); }
 	U32						GetTransformVersion() const { n_assert_dbg(!IsWorldTransformDirty()); return TransformVersion; }
 
-	void					SetLocalPosition(const vector3& Value);
-	void					SetLocalRotation(const quaternion& Value);
-	void					SetLocalScale(const vector3& Value);
-	void					SetLocalTransform(const Math::CTransform& Value);
+	void					SetLocalPosition(const rtm::vector4f& Value);
+	void					SetLocalRotation(const rtm::quatf& Value);
+	void					SetLocalScale(const rtm::vector4f& Value);
+	void					SetLocalTransform(const rtm::qvvf& Value) { LocalTfm = Value; Flags.Clear(LocalTransformDirty); Flags.Set(WorldTransformDirty); }
 	void					SetLocalTransform(const matrix44& Value);
 	void					SetWorldPosition(const vector3& Value);
 	void					SetWorldTransform(const matrix44& Value);
 
-	const vector3&			GetLocalPosition() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.Translation; }
-	const quaternion&		GetLocalRotation() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.Rotation; }
-	const vector3&			GetLocalScale() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.Scale; }
-	const Math::CTransform&	GetLocalTransform() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm; }
-	matrix44			    GetLocalMatrix() const { n_assert_dbg(!IsLocalTransformDirty()); matrix44 m; LocalTfm.ToMatrix(m); return m; }
+	rtm::vector4f			GetLocalPosition() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.translation; }
+	rtm::quatf				GetLocalRotation() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.rotation; }
+	rtm::vector4f			GetLocalScale() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.scale; }
+	const rtm::qvvf&        GetLocalTransform() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm; }
+	//matrix44			    GetLocalMatrix() const { n_assert_dbg(!IsLocalTransformDirty()); matrix44 m; LocalTfm.ToMatrix(m); return m; }
 	const matrix44&			GetWorldMatrix() const { n_assert_dbg(!IsWorldTransformDirty()); return WorldMatrix; }
 	const vector3&			GetWorldPosition() const { n_assert_dbg(!IsWorldTransformDirty()); return WorldMatrix.Translation(); }
 };

@@ -14,20 +14,9 @@ struct COutputPoseWriter : public acl::track_writer
 
 	COutputPoseWriter(IPoseOutput& Output) : _Output(Output) {}
 
-	void RTM_SIMD_CALL write_rotation(uint32_t track_index, rtm::quatf_arg0 rotation)
-	{
-		_Output.SetRotation(track_index, quaternion(rtm::quat_get_x(rotation), rtm::quat_get_y(rotation), rtm::quat_get_z(rotation), rtm::quat_get_w(rotation)));
-	}
-
-	void RTM_SIMD_CALL write_translation(uint32_t track_index, rtm::vector4f_arg0 translation)
-	{
-		_Output.SetTranslation(track_index, vector3(rtm::vector_get_x(translation), rtm::vector_get_y(translation), rtm::vector_get_z(translation)));
-	}
-
-	void RTM_SIMD_CALL write_scale(uint32_t track_index, rtm::vector4f_arg0 scale)
-	{
-		_Output.SetScale(track_index, vector3(rtm::vector_get_x(scale), rtm::vector_get_y(scale), rtm::vector_get_z(scale)));
-	}
+	void RTM_SIMD_CALL write_rotation(uint32_t track_index, rtm::quatf_arg0 rotation) { _Output.SetRotation(track_index, rotation); }
+	void RTM_SIMD_CALL write_translation(uint32_t track_index, rtm::vector4f_arg0 translation) { _Output.SetTranslation(track_index, translation); }
+	void RTM_SIMD_CALL write_scale(uint32_t track_index, rtm::vector4f_arg0 scale) { _Output.SetScale(track_index, scale); }
 
 	bool skip_track_rotation(uint32_t track_index) const { return !_Output.IsRotationActive(track_index); }
 	bool skip_track_translation(uint32_t track_index) const { return !_Output.IsTranslationActive(track_index); }
@@ -35,7 +24,6 @@ struct COutputPoseWriter : public acl::track_writer
 };
 
 // Writes bone transforms from ACL clip to CPoseBuffer without mapping
-// FIXME: pass quats and vectors by value using vectorcall, like ACL and RTM do?
 struct CPoseBufferWriter : public acl::track_writer
 {
 	CPoseBuffer& _Output;
@@ -48,7 +36,6 @@ struct CPoseBufferWriter : public acl::track_writer
 };
 
 // Writes bone transforms from ACL clip to CPoseBuffer with mapping
-// FIXME: pass quats and vectors by value using vectorcall, like ACL and RTM do?
 struct CMappedPoseBufferWriter : public acl::track_writer
 {
 	CPoseBuffer& _Output;

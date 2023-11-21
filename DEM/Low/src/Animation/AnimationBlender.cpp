@@ -22,7 +22,7 @@ void CAnimationBlender::Initialize(U8 SourceCount, U8 PortCount)
 
 	// Allocate blend matrix (sources * ports)
 	const auto MatrixCellCount = PortCount * SourceCount;
-	_Transforms.resize(MatrixCellCount);
+	_Transforms.resize(MatrixCellCount, rtm::qvv_identity());
 	_ChannelMasks.resize(MatrixCellCount, 0);
 
 	_PortCount = PortCount;
@@ -45,7 +45,7 @@ void CAnimationBlender::EvaluatePose(IPoseOutput& Output)
 
 	for (UPTR Port = 0; Port < _PortCount; ++Port)
 	{
-		Math::CTransformSRT FinalTfm;
+		rtm::qvvf FinalTfm = rtm::qvv_identity();
 		U8 FinalMask = 0;
 		float ScaleWeights = 0.f;
 		float RotationWeights = 0.f;
@@ -67,9 +67,9 @@ void CAnimationBlender::EvaluatePose(IPoseOutput& Output)
 
 				// Scale is 1.f by default. To blend correctly, we must reset it to zero before applying the first source.
 				if (FinalMask & ETransformChannel::Scaling)
-					FinalTfm.Scale += CurrTfm.Scale * Weight;
+					FinalTfm.scale = rtm::vector_mul_add(CurrTfm.scale, Weight, FinalTfm.scale);
 				else
-					FinalTfm.Scale = CurrTfm.Scale * Weight;
+					FinalTfm.scale = rtm::vector_mul(CurrTfm.scale, Weight);
 
 				FinalMask |= ETransformChannel::Scaling;
 				ScaleWeights += Weight;
@@ -79,23 +79,22 @@ void CAnimationBlender::EvaluatePose(IPoseOutput& Output)
 			{
 				const float Weight = std::min(SourceWeight, 1.f - RotationWeights);
 
-				quaternion Q;
-				Q.x = CurrTfm.Rotation.x * Weight;
-				Q.y = CurrTfm.Rotation.y * Weight;
-				Q.z = CurrTfm.Rotation.z * Weight;
-				Q.w = CurrTfm.Rotation.w * Weight;
+				const rtm::vector4f Q = rtm::vector_mul(rtm::quat_to_vector(CurrTfm.rotation), Weight);
 
 				if (FinalMask & ETransformChannel::Rotation)
 				{
 					// Blend with shortest arc, based on a 4D dot product sign
-					if (Q.x * FinalTfm.Rotation.x + Q.y * FinalTfm.Rotation.y + Q.z * FinalTfm.Rotation.z + Q.w * FinalTfm.Rotation.w < 0.f)
-						FinalTfm.Rotation -= Q;
+					// TODO PERF: can instead of condition (Dot < 0.f) extract sign mask and apply to Q? Will it be faster?
+					const rtm::vector4f FinalRotation = rtm::quat_to_vector(FinalTfm.rotation);
+					const float Dot = rtm::vector_dot(Q, FinalRotation);
+					if (Dot < 0.f)
+						FinalTfm.rotation = rtm::vector_to_quat(rtm::vector_sub(FinalRotation, Q));
 					else
-						FinalTfm.Rotation += Q;
+						FinalTfm.rotation = rtm::vector_to_quat(rtm::vector_add(FinalRotation, Q));
 				}
 				else
 				{
-					FinalTfm.Rotation = Q;
+					FinalTfm.rotation = rtm::vector_to_quat(Q);
 				}
 
 				FinalMask |= ETransformChannel::Rotation;
@@ -105,7 +104,7 @@ void CAnimationBlender::EvaluatePose(IPoseOutput& Output)
 			if ((ChannelMask & ETransformChannel::Translation) && TranslationWeights < 1.f)
 			{
 				const float Weight = std::min(SourceWeight, 1.f - TranslationWeights);
-				FinalTfm.Translation += CurrTfm.Translation * Weight;
+				FinalTfm.translation = rtm::vector_mul_add(CurrTfm.translation, Weight, FinalTfm.translation);
 				FinalMask |= ETransformChannel::Translation;
 				TranslationWeights += Weight;
 			}
@@ -114,16 +113,16 @@ void CAnimationBlender::EvaluatePose(IPoseOutput& Output)
 		// Apply accumulated transform
 
 		if (FinalMask & ETransformChannel::Scaling)
-			Output.SetScale(Port, FinalTfm.Scale);
+			Output.SetScale(Port, FinalTfm.scale);
 
 		if (FinalMask & ETransformChannel::Rotation)
 		{
-			if (RotationWeights < 1.f) FinalTfm.Rotation.normalize();
-			Output.SetRotation(Port, FinalTfm.Rotation);
+			if (RotationWeights < 1.f) FinalTfm.rotation = rtm::quat_normalize(FinalTfm.rotation);
+			Output.SetRotation(Port, FinalTfm.rotation);
 		}
 
 		if (FinalMask & ETransformChannel::Translation)
-			Output.SetTranslation(Port, FinalTfm.Translation);
+			Output.SetTranslation(Port, FinalTfm.translation);
 	}
 
 	// Source data is blended into the output, no more channels are ready to be blended

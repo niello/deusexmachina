@@ -17,6 +17,7 @@ public:
 	vector3		Scale;
 
 	constexpr CTransformSRT(): Scale(1.f, 1.f, 1.f) {}
+	CTransformSRT(const vector3& S, const quaternion& R, const vector3& T) : Scale(S), Rotation(R), Translation(T) {}
 	CTransformSRT(const matrix44& Tfm) { FromMatrix(Tfm); }
 
 	bool	FromMatrix(const matrix44& Tfm);

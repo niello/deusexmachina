@@ -33,10 +33,10 @@ public:
 	//!!!can merge channels with a per-bone layer mask into the single feature!
 	virtual U8   GetActivePortChannels(U16 Port) const override;
 
-	virtual void SetScale(U16 Port, const vector3& Scale) override;
-	virtual void SetRotation(U16 Port, const quaternion& Rotation) override;
-	virtual void SetTranslation(U16 Port, const vector3& Translation) override;
-	virtual void SetTransform(U16 Port, const Math::CTransformSRT& Tfm) override;
+	virtual void SetScale(U16 Port, const rtm::vector4f& Scale) override { _Nodes[Port]->SetLocalScale(Scale); }
+	virtual void SetRotation(U16 Port, const rtm::quatf& Rotation) override { _Nodes[Port]->SetLocalRotation(Rotation); }
+	virtual void SetTranslation(U16 Port, const rtm::vector4f& Translation) override { _Nodes[Port]->SetLocalPosition(Translation); }
+	virtual void SetTransform(U16 Port, const rtm::qvvf& Tfm) override { _Nodes[Port]->SetLocalTransform(Tfm); }
 };
 
 }

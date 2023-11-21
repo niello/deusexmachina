@@ -1,31 +1,39 @@
 #pragma once
 #include <Math/Matrix44.h>
+#include <Math/TransformSRT.h>
 #include <rtm/matrix3x4f.h>
+#include <rtm/qvvf.h>
 
 // Math for view and projection calculations
 
 namespace Math
 {
 
-DEM_FORCE_INLINE rtm::vector4f ToSIMD(const vector3& v) noexcept
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::vector4f ToSIMD(const vector3& v) noexcept
 {
 	return rtm::vector_load3(v.v);
 }
 //---------------------------------------------------------------------
 
-DEM_FORCE_INLINE rtm::vector4f ToSIMD(const vector4& v) noexcept
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::vector4f ToSIMD(const vector4& v) noexcept
 {
 	return rtm::vector_load(v.v);
 }
 //---------------------------------------------------------------------
 
-DEM_FORCE_INLINE rtm::quatf ToSIMD(const quaternion& q) noexcept
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::quatf ToSIMD(const quaternion& q) noexcept
 {
 	return rtm::quat_load(q.v);
 }
 //---------------------------------------------------------------------
 
-DEM_FORCE_INLINE rtm::matrix3x4f ToSIMD(const matrix44& m) noexcept
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::qvvf ToSIMD(const CTransformSRT& Tfm) noexcept
+{
+	return rtm::qvv_set(ToSIMD(Tfm.Rotation), ToSIMD(Tfm.Translation), ToSIMD(Tfm.Scale));
+}
+//---------------------------------------------------------------------
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::matrix3x4f ToSIMD(const matrix44& m) noexcept
 {
 	return rtm::matrix3x4f
 	{
@@ -38,43 +46,68 @@ DEM_FORCE_INLINE rtm::matrix3x4f ToSIMD(const matrix44& m) noexcept
 //---------------------------------------------------------------------
 
 // TODO: try overloading by return value like in RTM?
-DEM_FORCE_INLINE vector3 FromSIMD3(rtm::vector4f_arg0 v) noexcept
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE vector3 RTM_SIMD_CALL FromSIMD3(rtm::vector4f_arg0 v) noexcept
 {
 	return vector3(rtm::vector_get_x(v), rtm::vector_get_y(v), rtm::vector_get_z(v)); // rtm::vector_store3 does the same thing
 }
 //---------------------------------------------------------------------
 
 // TODO: try overloading by return value like in RTM?
-DEM_FORCE_INLINE vector4 FromSIMD4(rtm::vector4f_arg0 v) noexcept
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE vector4 RTM_SIMD_CALL FromSIMD4(rtm::vector4f_arg0 v) noexcept
 {
-	vector4 result;
-	rtm::vector_store(v, result.v);
-	return result;
+	vector4 Result;
+	rtm::vector_store(v, Result.v);
+	return Result;
 }
 //---------------------------------------------------------------------
 
-DEM_FORCE_INLINE quaternion FromSIMD(rtm::quatf_arg0 q) noexcept
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE quaternion RTM_SIMD_CALL FromSIMD(rtm::quatf_arg0 q) noexcept
 {
-	quaternion result;
-	rtm::quat_store(q, result.v);
-	return result;
+	quaternion Result;
+	rtm::quat_store(q, Result.v);
+	return Result;
 }
 //---------------------------------------------------------------------
 
-DEM_FORCE_INLINE matrix44 FromSIMD(rtm::matrix3x4f_arg0 m) noexcept
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE CTransformSRT RTM_SIMD_CALL FromSIMD(rtm::qvvf_arg0 Tfm) noexcept
 {
-	matrix44 result
+	return CTransformSRT{ FromSIMD3(Tfm.scale), FromSIMD(Tfm.rotation), FromSIMD3(Tfm.translation) };
+}
+//---------------------------------------------------------------------
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE matrix44 RTM_SIMD_CALL FromSIMD(rtm::matrix3x4f_arg0 m) noexcept
+{
+	matrix44 Result
 	(
 		FromSIMD4(m.x_axis),
 		FromSIMD4(m.y_axis),
 		FromSIMD4(m.z_axis),
 		FromSIMD4(m.w_axis)
 	);
-	result.m[0][3] = 0.f;
-	result.m[1][3] = 0.f;
-	result.m[2][3] = 0.f;
-	result.m[3][3] = 1.f;
-	return result;
+	Result.m[0][3] = 0.f;
+	Result.m[1][3] = 0.f;
+	Result.m[2][3] = 0.f;
+	Result.m[3][3] = 1.f;
+	return Result;
+}
+//---------------------------------------------------------------------
+
+//!!!TODO: replace with rtm::qvv_from_matrix() when it's available!
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::qvvf RTM_SIMD_CALL qvv_from_matrix(rtm::matrix3x4f_arg0 m) noexcept
+{
+	rtm::matrix3x4f UnscaledMatrix = m;
+	constexpr float THRESHOLD = 1.0E-8F;
+	const rtm::scalarf ScaleX = rtm::vector_length3(m.x_axis);
+	if (rtm::scalar_cast(ScaleX) >= THRESHOLD)
+		UnscaledMatrix.x_axis = rtm::vector_div(m.x_axis, rtm::vector_set(ScaleX));
+	const rtm::scalarf ScaleY = rtm::vector_length3(m.y_axis);
+	if (rtm::scalar_cast(ScaleY) >= THRESHOLD)
+		UnscaledMatrix.y_axis = rtm::vector_div(m.y_axis, rtm::vector_set(ScaleY));
+	const rtm::scalarf ScaleZ = rtm::vector_length3(m.z_axis);
+	if (rtm::scalar_cast(ScaleZ) >= THRESHOLD)
+		UnscaledMatrix.z_axis = rtm::vector_div(m.z_axis, rtm::vector_set(ScaleZ));
+
+	return rtm::qvv_set(rtm::quat_from_matrix(UnscaledMatrix), m.w_axis, rtm::vector_set(ScaleX, ScaleY, ScaleZ));
 }
 //---------------------------------------------------------------------
 

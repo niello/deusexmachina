@@ -3,6 +3,7 @@
 #include <Scene/NodeAttribute.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
+#include <Math/SIMDMath.h>
 #include <Core/Factory.h>
 
 namespace Resources
@@ -16,9 +17,9 @@ const Core::CRTTI& CSceneNodeLoaderSCN::GetResultType() const
 
 bool LoadNode(IO::CBinaryReader& Reader, Scene::PSceneNode Node)
 {
-	Node->SetLocalScale(Reader.Read<vector3>());
-	Node->SetLocalRotation(Reader.Read<quaternion>());
-	Node->SetLocalPosition(Reader.Read<vector3>());
+	Node->SetLocalScale(Math::ToSIMD(Reader.Read<vector3>()));
+	Node->SetLocalRotation(Math::ToSIMD(Reader.Read<quaternion>()));
+	Node->SetLocalPosition(Math::ToSIMD(Reader.Read<vector3>()));
 
 	U16 Count;
 	Reader.Read(Count);

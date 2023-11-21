@@ -43,8 +43,16 @@ void CPoseBuffer::SetSize(UPTR Size)
 {
 	if (_Count == Size) return;
 	_Count = Size;
-	if (_Count) _Transforms.reset(new rtm::qvvf[_Count]);
-	else _Transforms.reset();
+	if (_Count)
+	{
+		_Transforms.reset(new rtm::qvvf[_Count]);
+		for (auto It = begin(); It != end(); ++It)
+			*It = rtm::qvv_identity();
+	}
+	else
+	{
+		_Transforms.reset();
+	}
 	n_assert_dbg(IsAligned16(_Transforms.get()));
 }
 //---------------------------------------------------------------------

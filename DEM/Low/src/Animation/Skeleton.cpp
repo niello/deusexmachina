@@ -46,21 +46,10 @@ U16 CSkeleton::FindPortByName(CStrID NodeID) const
 
 void CSkeleton::FromPoseBuffer(const CPoseBuffer& Pose)
 {
-	// TODO: scene nodes to ACL/RTM?
-	Math::CTransform Tfm;
-
 	const UPTR Size = _Nodes.size();
 	for (UPTR i = 0; i < Size; ++i)
-	{
 		if (auto pNode = _Nodes[i].Get())
-		{
-			const auto& SrcTfm = Pose[i];
-			Tfm.Scale.set(rtm::vector_get_x(SrcTfm.scale), rtm::vector_get_y(SrcTfm.scale), rtm::vector_get_z(SrcTfm.scale));
-			Tfm.Rotation.set(rtm::vector_get_x(SrcTfm.rotation), rtm::vector_get_y(SrcTfm.rotation), rtm::vector_get_z(SrcTfm.rotation), rtm::vector_get_w(SrcTfm.rotation));
-			Tfm.Translation.set(rtm::vector_get_x(SrcTfm.translation), rtm::vector_get_y(SrcTfm.translation), rtm::vector_get_z(SrcTfm.translation));
-			pNode->SetLocalTransform(Tfm);
-		}
-	}
+			pNode->SetLocalTransform(Pose[i]);
 }
 //---------------------------------------------------------------------
 
@@ -69,15 +58,8 @@ void CSkeleton::ToPoseBuffer(CPoseBuffer& Pose) const
 	const UPTR Size = _Nodes.size();
 	Pose.SetSize(Size);
 	for (UPTR i = 0; i < Size; ++i)
-	{
 		if (auto pNode = _Nodes[i].Get())
-		{
-			const auto& SrcTfm = pNode->GetLocalTransform();
-			Pose[i].scale = rtm::vector_set(SrcTfm.Scale.x, SrcTfm.Scale.y, SrcTfm.Scale.z);
-			Pose[i].rotation = rtm::quat_set(SrcTfm.Rotation.x, SrcTfm.Rotation.y, SrcTfm.Rotation.z, SrcTfm.Rotation.w);
-			Pose[i].translation = rtm::vector_set(SrcTfm.Translation.x, SrcTfm.Translation.y, SrcTfm.Translation.z);
-		}
-	}
+			Pose[i] = pNode->GetLocalTransform();
 }
 //---------------------------------------------------------------------
 
@@ -85,30 +67,6 @@ U8 CSkeleton::GetActivePortChannels(U16 Port) const
 {
 	const bool NodeActive = (Port < _Nodes.size() && _Nodes[Port] && _Nodes[Port]->IsActive());
 	return NodeActive ? ETransformChannel::All : 0;
-}
-//---------------------------------------------------------------------
-
-void CSkeleton::SetScale(U16 Port, const vector3& Scale)
-{
-	_Nodes[Port]->SetLocalScale(Scale);
-}
-//---------------------------------------------------------------------
-
-void CSkeleton::SetRotation(U16 Port, const quaternion& Rotation)
-{
-	_Nodes[Port]->SetLocalRotation(Rotation);
-}
-//---------------------------------------------------------------------
-
-void CSkeleton::SetTranslation(U16 Port, const vector3& Translation)
-{
-	_Nodes[Port]->SetLocalPosition(Translation);
-}
-//---------------------------------------------------------------------
-
-void CSkeleton::SetTransform(U16 Port, const Math::CTransformSRT& Tfm)
-{
-	_Nodes[Port]->SetLocalTransform(Tfm);
 }
 //---------------------------------------------------------------------
 

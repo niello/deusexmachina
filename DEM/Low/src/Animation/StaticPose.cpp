@@ -5,7 +5,7 @@
 namespace DEM::Anim
 {
 
-CStaticPose::CStaticPose(std::vector<Math::CTransformSRT>&& Transforms, PSkeletonInfo&& SkeletonInfo)
+CStaticPose::CStaticPose(std::vector<rtm::qvvf>&& Transforms, PSkeletonInfo&& SkeletonInfo)
 	: _Transforms(std::move(Transforms))
 	, _SkeletonInfo(std::move(SkeletonInfo))
 {

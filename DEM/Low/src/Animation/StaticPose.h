@@ -1,6 +1,6 @@
 #pragma once
 #include <Data/Ptr.h>
-#include <Math/TransformSRT.h>
+#include <rtm/qvvf.h>
 
 // Transformation source that applies static transform
 
@@ -21,12 +21,12 @@ class CStaticPose final
 {
 protected:
 
-	PSkeletonInfo                    _SkeletonInfo;
-	std::vector<Math::CTransformSRT> _Transforms;
+	PSkeletonInfo          _SkeletonInfo;
+	std::vector<rtm::qvvf> _Transforms;
 
 public:
 
-	CStaticPose(std::vector<Math::CTransformSRT>&& Transforms, PSkeletonInfo&& SkeletonInfo);
+	CStaticPose(std::vector<rtm::qvvf>&& Transforms, PSkeletonInfo&& SkeletonInfo);
 	~CStaticPose();
 
 	void Apply(IPoseOutput& Output);

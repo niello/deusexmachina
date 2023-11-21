@@ -25,25 +25,25 @@ public:
 		return (MappedPort != InvalidPort) ? _Output.GetActivePortChannels(MappedPort) : 0;
 	}
 
-	virtual void SetScale(U16 Port, const vector3& Scale) override
+	virtual void SetScale(U16 Port, const rtm::vector4f& Scale) override
 	{
 		const U16 MappedPort = _PortMapping[Port];
 		if (MappedPort != InvalidPort) _Output.SetScale(MappedPort, Scale);
 	}
 
-	virtual void SetRotation(U16 Port, const quaternion& Rotation) override
+	virtual void SetRotation(U16 Port, const rtm::quatf& Rotation) override
 	{
 		const U16 MappedPort = _PortMapping[Port];
 		if (MappedPort != InvalidPort) _Output.SetRotation(MappedPort, Rotation);
 	}
 
-	virtual void SetTranslation(U16 Port, const vector3& Translation) override
+	virtual void SetTranslation(U16 Port, const rtm::vector4f& Translation) override
 	{
 		const U16 MappedPort = _PortMapping[Port];
 		if (MappedPort != InvalidPort) _Output.SetTranslation(MappedPort, Translation);
 	}
 
-	virtual void SetTransform(U16 Port, const Math::CTransformSRT& Tfm) override
+	virtual void SetTransform(U16 Port, const rtm::qvvf& Tfm) override
 	{
 		const U16 MappedPort = _PortMapping[Port];
 		if (MappedPort != InvalidPort) _Output.SetTransform(MappedPort, Tfm);

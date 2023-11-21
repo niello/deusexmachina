@@ -1,6 +1,7 @@
 #include "SceneNode.h"
 #include <Scene/NodeAttribute.h>
 #include <Data/StringTokenizer.h>
+#include <Math/SIMDMath.h>
 
 namespace Scene
 {
@@ -84,54 +85,46 @@ bool CSceneNode::UpdateTransform()
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::SetLocalPosition(const vector3& Value)
+void CSceneNode::SetLocalPosition(const rtm::vector4f& Value)
 {
 	// Update before partial change
 	if (IsLocalTransformDirty()) UpdateTransform();
 
 	// Save us from recalculating unchanged hierarchy (static poses, constant animation tracks)
-	if (LocalTfm.Translation == Value) return;
+	if (rtm::vector_all_equal3(LocalTfm.translation, Value)) return;
 
-	LocalTfm.Translation = Value;
+	LocalTfm.translation = Value;
 
 	Flags.Clear(LocalTransformDirty);
 	Flags.Set(WorldTransformDirty);
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::SetLocalRotation(const quaternion& Value)
+void CSceneNode::SetLocalRotation(const rtm::quatf& Value)
 {
 	// Update before partial change
 	if (IsLocalTransformDirty()) UpdateTransform();
 
 	// Save us from recalculating unchanged hierarchy (static poses, constant animation tracks)
-	if (LocalTfm.Rotation == Value) return;
+	if (rtm::quat_are_equal(LocalTfm.rotation, Value)) return;
 
-	LocalTfm.Rotation = Value;
+	LocalTfm.rotation = Value;
 
 	Flags.Clear(LocalTransformDirty);
 	Flags.Set(WorldTransformDirty);
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::SetLocalScale(const vector3& Value)
+void CSceneNode::SetLocalScale(const rtm::vector4f& Value)
 {
 	// Update before partial change
 	if (IsLocalTransformDirty()) UpdateTransform();
 
 	// Save us from recalculating unchanged hierarchy (static poses, constant animation tracks)
-	if (LocalTfm.Scale == Value) return;
+	if (rtm::vector_all_equal3(LocalTfm.scale, Value)) return;
 
-	LocalTfm.Scale = Value;
+	LocalTfm.scale = Value;
 
-	Flags.Clear(LocalTransformDirty);
-	Flags.Set(WorldTransformDirty);
-}
-//---------------------------------------------------------------------
-
-void CSceneNode::SetLocalTransform(const Math::CTransform& Value)
-{
-	LocalTfm = Value;
 	Flags.Clear(LocalTransformDirty);
 	Flags.Set(WorldTransformDirty);
 }
@@ -139,7 +132,7 @@ void CSceneNode::SetLocalTransform(const Math::CTransform& Value)
 
 void CSceneNode::SetLocalTransform(const matrix44& Value)
 {
-	LocalTfm.FromMatrix(Value);
+	LocalTfm = Math::qvv_from_matrix(Math::ToSIMD(Value));
 	Flags.Clear(LocalTransformDirty);
 	Flags.Set(WorldTransformDirty);
 }
@@ -176,7 +169,7 @@ void CSceneNode::UpdateWorldTransform()
 	{
 		if (!IsWorldTransformDirty() && pParent->GetTransformVersion() == LastParentTransformVersion) return;
 
-		LocalTfm.ToMatrix(WorldMatrix);
+		WorldMatrix = Math::FromSIMD(rtm::matrix_from_qvv(LocalTfm));
 		WorldMatrix.mult_simple(pParent->GetWorldMatrix());
 
 		LastParentTransformVersion = pParent->GetTransformVersion();
@@ -184,7 +177,7 @@ void CSceneNode::UpdateWorldTransform()
 	else
 	{
 		if (!IsWorldTransformDirty()) return;
-		LocalTfm.ToMatrix(WorldMatrix);
+		WorldMatrix = Math::FromSIMD(rtm::matrix_from_qvv(LocalTfm));
 	}
 
 	IncrementTransformVersion();
@@ -208,14 +201,14 @@ void CSceneNode::UpdateLocalTransform()
 		matrix44 LocalMatrix;
 		pParent->GetWorldMatrix().invert_simple(LocalMatrix);
 		LocalMatrix.mult_simple(WorldMatrix);
-		LocalTfm.FromMatrix(LocalMatrix);
+		LocalTfm = Math::qvv_from_matrix(Math::ToSIMD(LocalMatrix));
 
 		LastParentTransformVersion = pParent->GetTransformVersion();
 	}
 	else
 	{
 		if (!IsLocalTransformDirty()) return;
-		LocalTfm.FromMatrix(WorldMatrix);
+		LocalTfm = Math::qvv_from_matrix(Math::ToSIMD(WorldMatrix));
 	}
 
 	Flags.Clear(LocalTransformDirty | WorldTransformDirty);
