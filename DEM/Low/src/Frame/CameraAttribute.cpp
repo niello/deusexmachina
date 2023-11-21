@@ -69,9 +69,9 @@ void CCameraAttribute::UpdateBeforeChildren(const rtm::vector4f* pCOIArray, UPTR
 	if (_Flags.Is(ProjDirty))
 	{
 		if (_Flags.Is(Orthogonal))
-			_Proj.orthoRh(_Width, _Height, _NearPlane, _FarPlane);
+			_Proj = Math::matrix_ortho_rh(_Width, _Height, _NearPlane, _FarPlane);
 		else
-			_Proj.perspFovRh(_FOV, _Width / _Height, _NearPlane, _FarPlane);
+			_Proj = Math::matrix_perspective_rh(_FOV, _Width / _Height, _NearPlane, _FarPlane);
 
 		// Shadow proj was calculated with:
 		//nearPlane - shadowOffset, farPlane - shadowOffset, shadowOffset(0.00007f)

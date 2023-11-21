@@ -115,13 +115,12 @@ public:
 	void					SetWorldPosition(const rtm::vector4f& Value);
 	void					SetWorldTransform(const rtm::matrix3x4f& Value);
 
-	rtm::vector4f			GetLocalPosition() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.translation; }
-	rtm::quatf				GetLocalRotation() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.rotation; }
-	rtm::vector4f			GetLocalScale() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.scale; }
+	const rtm::vector4f&	GetLocalPosition() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.translation; }
+	const rtm::quatf&		GetLocalRotation() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.rotation; }
+	const rtm::vector4f&	GetLocalScale() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.scale; }
 	const rtm::qvvf&        GetLocalTransform() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm; }
-	//matrix44			    GetLocalMatrix() const { n_assert_dbg(!IsLocalTransformDirty()); matrix44 m; LocalTfm.ToMatrix(m); return m; }
 	const rtm::matrix3x4f&  GetWorldMatrix() const { n_assert_dbg(!IsWorldTransformDirty()); return WorldMatrix; }
-	rtm::vector4f			GetWorldPosition() const { n_assert_dbg(!IsWorldTransformDirty()); return WorldMatrix.w_axis; }
+	const rtm::vector4f&	GetWorldPosition() const { n_assert_dbg(!IsWorldTransformDirty()); return WorldMatrix.w_axis; }
 };
 
 inline CSceneNode* CSceneNode::FindNodeByPath(const char* pPath) const

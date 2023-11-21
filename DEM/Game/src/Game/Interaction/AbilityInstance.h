@@ -2,9 +2,9 @@
 #include <Game/Interaction/InteractionContext.h>
 #include <Game/ECS/Entity.h>
 #include <Events/EventNative.h>
-#include <Math/Matrix44.h>
 #include <Data/Params.h>
 #include <DetourNavMesh.h> // For dtPolyRef only
+#include <rtm/matrix3x4f.h>
 
 // Ability instance stores the state of a stateless ability and resembles one execution of it by an actor
 
@@ -51,7 +51,7 @@ public:
 	std::vector<const CZone*> AvailableZones;
 	UPTR                      CurrZoneIndex = INVALID_INDEX;
 
-	matrix44                  TargetToWorld; // FIXME: not needed if CTargetInfo will store full SRT instead of Point!
+	rtm::matrix3x4f           TargetToWorld; // FIXME: not needed if CTargetInfo will store full SRT instead of Point!
 	U32                       PrevTargetTfmVersion = 0;
 	float                     ElapsedTime = -1.f;
 	float                     PrevElapsedTime = 0.f; // Useful for dt calc and for detecting that we just passed some point in time

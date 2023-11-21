@@ -29,6 +29,29 @@ struct CSIMDFrustum
 	float FarPlane;
 };
 
+DEM_FORCE_INLINE rtm::matrix4x4f RTM_SIMD_CALL matrix_ortho_rh(float w, float h, float zn, float zf)
+{
+	const float m22 = 1.f / (zn - zf);
+	return rtm::matrix_set(
+		rtm::vector_set(2.f / w, 0.f, 0.f, 0.f),
+		rtm::vector_set(0.f, 2.f / h, 0.f, 0.f),
+		rtm::vector_set(0.f, 0.f, m22, 0.f),
+		rtm::vector_set(0.f, 0.f, zn * m22, 1.f));
+}
+//---------------------------------------------------------------------
+
+DEM_FORCE_INLINE rtm::matrix4x4f RTM_SIMD_CALL matrix_perspective_rh(float fovY, float aspect, float zn, float zf)
+{
+	const float h = 1.f / rtm::scalar_tan(fovY * 0.5f);
+	const float m22 = zf / (zn - zf);
+	return rtm::matrix_set(
+		rtm::vector_set(h / aspect, 0.f, 0.f, 0.f),
+		rtm::vector_set(0.f, h, 0.f, 0.f),
+		rtm::vector_set(0.f, 0.f, m22, -1.f),
+		rtm::vector_set(0.f, 0.f, zn * m22, 0.f));
+}
+//---------------------------------------------------------------------
+
 // Extract frustum planes using Gribb-Hartmann method.
 // See https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
 // See https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/

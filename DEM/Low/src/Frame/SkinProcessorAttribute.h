@@ -1,6 +1,6 @@
 #pragma once
 #include <Scene/NodeAttribute.h>
-#include <Math/Matrix44.h>
+#include <rtm/matrix3x4f.h>
 #include <map>
 
 // Dynamically created attribute that provides skin palettes for different skins based on the underlying node hierarchy
@@ -24,7 +24,7 @@ protected:
 	};
 
 	Render::PSkinInfo            _SkinInfo;
-	matrix44*                    _pSkinPalette = nullptr;
+	rtm::matrix3x4f*             _pSkinPalette = nullptr;
 	std::unique_ptr<CBoneInfo[]> _BoneNodes;
 
 public:
@@ -37,7 +37,7 @@ public:
 	void Update();
 
 	const Render::CSkinInfo* GetSkinInfo() const { return _SkinInfo.Get(); }
-	const matrix44*          GetSkinPalette() const { return _pSkinPalette; }
+	const rtm::matrix3x4f*   GetSkinPalette() const { return _pSkinPalette; }
 };
 
 using PSkinPalette = Ptr<CSkinPalette>;

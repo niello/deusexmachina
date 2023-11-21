@@ -1,5 +1,5 @@
 #include "SkinInfo.h"
-
+#include <Math/SIMDMath.h>
 #include <Core/Factory.h>
 
 namespace Render
@@ -15,7 +15,7 @@ CSkinInfo::~CSkinInfo()
 bool CSkinInfo::Create(UPTR BoneCount)
 {
 	if (pInvBindPose) FAIL;
-	pInvBindPose = static_cast<matrix44*>(n_malloc_aligned(BoneCount * sizeof(matrix44), 16));
+	pInvBindPose = static_cast<rtm::matrix3x4f*>(n_malloc_aligned(BoneCount * sizeof(rtm::matrix3x4f), alignof(rtm::matrix3x4f)));
 	if (!pInvBindPose) FAIL;
 	Bones.resize(BoneCount);
 	OK;
@@ -36,11 +36,7 @@ UPTR CSkinInfo::GetBoneMatchingLength(const CSkinInfo& Other) const
 	{
 		const auto& OurBone = Bones[i];
 		const auto& OtherBone = Other.Bones[i];
-		if (OurBone.ID != OtherBone.ID || OurBone.ParentIndex != OtherBone.ParentIndex) return i;
-
-		const matrix44& OurMatrix = pInvBindPose[i];
-		const matrix44& OtherMatrix = Other.pInvBindPose[i];
-		if (OurMatrix != OtherMatrix) return i;
+		if (OurBone.ID != OtherBone.ID || OurBone.ParentIndex != OtherBone.ParentIndex || !Math::matrix_all_equal(pInvBindPose[i], Other.pInvBindPose[i])) return i;
 	}
 
 	return MinCount;

@@ -6,7 +6,7 @@
 namespace Scene
 {
 constexpr UPTR MAX_NODE_NAME_LEN = 64;
-const std::string ParentToken("^");
+constexpr std::string_view ParentToken("^");
 
 // All transforms are identity and considered valid, so LocalTransformDirty & WorldTransformDirty aren't set.
 // Root node is assumed effectively inactive until the first Update from user, so EffectivelyActive is not set.

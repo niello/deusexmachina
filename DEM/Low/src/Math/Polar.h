@@ -1,9 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_MATH_POLAR_H__
-#define __DEM_L1_MATH_POLAR_H__
-
 #include <Math/Vector3.h>
 #include <Math/Vector2.h>
+#include <rtm/vector4f.h>
 
 // A polar coordinate inline class, consisting of 2 angles Theta (latitude) and Phi (longitude).
 // Also offers conversion between cartesian and polar space.
@@ -22,12 +20,28 @@ public:
 	CPolar(const vector3& Look) { Set(Look); }
 	CPolar(const CPolar& Other): Theta(Other.Theta), Phi(Other.Phi) {}
 
-	vector3	GetCartesianY() const;
-	vector3	GetCartesianZ() const;
 	void	Set(const CPolar& p) { Theta = p.Theta; Phi = p.Phi; }
 	void	Set(float t, float r) { Theta = t; Phi = r; }
 	void	Set(const vector3& vec);
 	bool	IsEqual(const CPolar& Other, float Tolerance) const;
+
+	// Rotate by Theta around x (inclination), than by Phi around y (azimuth), then get y axis
+	rtm::vector4f RTM_SIMD_CALL CPolar::GetCartesianY() const
+	{
+		float SinTheta, CosTheta, SinPhi, CosPhi;
+		n_sincos(Theta, SinTheta, CosTheta);
+		n_sincos(Phi, SinPhi, CosPhi);
+		return rtm::vector_set(SinTheta * SinPhi, CosTheta, -SinTheta * CosPhi);
+	}
+
+	// Rotate by Theta around x (inclination), than by Phi around y (azimuth), then get z axis
+	rtm::vector4f RTM_SIMD_CALL CPolar::GetCartesianZ() const
+	{
+		float SinTheta, CosTheta, SinPhi, CosPhi;
+		n_sincos(Theta, SinTheta, CosTheta);
+		n_sincos(Phi, SinPhi, CosPhi);
+		return rtm::vector_set(-SinPhi * CosTheta, SinTheta, CosTheta * CosPhi);
+	}
 
 	CPolar& operator =(const CPolar& Other) { Theta = Other.Theta; Phi = Other.Phi; return *this; }
 };
@@ -50,30 +64,8 @@ inline void CPolar::Set(const vector3& vec)
 }
 //---------------------------------------------------------------------
 
-// Rotate by Theta around x (inclination), than by Phi around y (azimuth), then get y axis
-inline vector3 CPolar::GetCartesianY() const
-{
-	float sin_theta, cos_theta, sin_rho, cos_rho;
-	n_sincos(Theta, sin_theta, cos_theta);
-	n_sincos(Phi, sin_rho, cos_rho);
-	return vector3(sin_theta * sin_rho, cos_theta, -sin_theta * cos_rho);
-}
-//---------------------------------------------------------------------
-
-// Rotate by Theta around x (inclination), than by Phi around y (azimuth), then get z axis
-inline vector3 CPolar::GetCartesianZ() const
-{
-	float sin_theta, cos_theta, sin_rho, cos_rho;
-	n_sincos(Theta, sin_theta, cos_theta);
-	n_sincos(Phi, sin_rho, cos_rho);
-	return vector3(-sin_rho * cos_theta, sin_theta, cos_theta * cos_rho);
-}
-//---------------------------------------------------------------------
-
 inline bool CPolar::IsEqual(const CPolar& Other, float Tolerance) const
 {
 	return n_fequal(Other.Theta, Theta, Tolerance) && n_fequal(Other.Phi, Phi, Tolerance);
 }
 //---------------------------------------------------------------------
-
-#endif

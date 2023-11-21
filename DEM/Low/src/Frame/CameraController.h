@@ -25,16 +25,16 @@ protected:
 
 	Scene::PSceneNode _Node;
 
-	CPolar	Angles;
-	vector3	COI;          // Center of interest, eye target in world coordinates
-	float	Distance = 1.f;
+	CPolar        Angles;
+	rtm::vector4f COI;          // Center of interest, eye target in world coordinates
+	float         Distance = 1.f;
 
-	float	MinVertAngle = 0.f;
-	float	MaxVertAngle = PI * 0.5f;
-	float	MinDistance = 0.01f;
-	float	MaxDistance = 10000.f;
+	float         MinVertAngle = 0.f;
+	float         MaxVertAngle = PI * 0.5f;
+	float         MinDistance = 0.01f;
+	float         MaxDistance = 10000.f;
 
-	bool	Dirty = true;
+	bool          Dirty = true;
 
 public:
 
@@ -48,12 +48,12 @@ public:
 	void           SetHorizontalAngle(float AngleRad);
 	void           SetDirection(const vector3& Dir);
 	void           SetDistance(float Value);
-	void           SetCOI(const vector3& NewCOI);
+	void           SetCOI(const rtm::vector4f& NewCOI);
 
 	void           OrbitVertical(float AngleRad);
 	void           OrbitHorizontal(float AngleRad);
 	void           Zoom(float Amount);
-	void           Move(const vector3& Translation);
+	void           Move(const rtm::vector4f& Translation);
 	void           MoveForward(float Amount);
 	void           MoveSide(float Amount);
 
@@ -64,7 +64,7 @@ public:
 	float          GetVerticalAngle() const {return Angles.Theta; }
 	float          GetHorizontalAngle() const {return Angles.Phi; }
 	float          GetDistance() const {return Distance; }
-	const vector3& GetCOI() const { return COI; }
+	rtm::vector4f  GetCOI() const { return COI; }
 };
 
 }

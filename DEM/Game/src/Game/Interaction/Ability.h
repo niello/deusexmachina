@@ -2,7 +2,7 @@
 #include <Game/Interaction/Interaction.h>
 #include <Game/ECS/Entity.h>
 #include <Game/ECS/Components/ActionQueueComponent.h> // FIXME: for EActionStatus. Or define queue action type here too?!
-#include <Math/Vector3.h>
+#include <rtm/vector4f.h>
 
 // Ability is an interaction performed by actors in a game world
 
@@ -23,9 +23,9 @@ enum class EFacingMode : U8
 
 struct CFacingParams
 {
-	vector3     Dir;
-	float       Tolerance = 0.f;
-	EFacingMode Mode = EFacingMode::None;
+	rtm::vector4f Dir;
+	float         Tolerance = 0.f;
+	EFacingMode   Mode = EFacingMode::None;
 };
 
 class CAbility : public CInteraction

@@ -160,19 +160,15 @@ bool CSpotLightAttribute::IntersectsWith(rtm::vector4f_arg0 Sphere) const
 
 U8 CSpotLightAttribute::TestBoxClipping(rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent) const
 {
-	const auto& Pos = _pNode->GetWorldPosition();
-
 	// Check the bounding sphere of the light first
-	if (!Math::HasIntersection(rtm::vector_set(Pos.x, Pos.y, Pos.z, _Range), BoxCenter, BoxExtent)) return Math::ClipOutside;
+	if (!Math::HasIntersection(rtm::vector_set_w(_pNode->GetWorldPosition(), _Range), BoxCenter, BoxExtent)) return Math::ClipOutside;
 
 	// Update cached world space frustum
 	if (_WorldBoundsCacheVersion != _pNode->GetTransformVersion())
 	{
-		matrix44 LocalFrustum;
-		LocalFrustum.perspFovRh(_ConeOuter, 1.f, 0.f, _Range);
-		matrix44 GlobalFrustum;
-		_pNode->GetWorldMatrix().invert_simple(GlobalFrustum);
-		GlobalFrustum *= LocalFrustum;
+		// FIXME: check this math! Why invert world matrix? Shouldn't use LocalFrustum * _pNode->GetWorldMatrix()?!
+		const rtm::matrix4x4f LocalFrustum = Math::matrix_perspective_rh(_ConeOuter, 1.f, 0.f, _Range);
+		const rtm::matrix4x4f GlobalFrustum = rtm::matrix_mul(rtm::matrix_cast(rtm::matrix_inverse(_pNode->GetWorldMatrix())), LocalFrustum);
 		_WorldFrustum = Math::CalcFrustumParams(GlobalFrustum);
 		_WorldBoundsCacheVersion = _pNode->GetTransformVersion();
 	}

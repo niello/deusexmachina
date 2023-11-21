@@ -1,6 +1,7 @@
 #include "LightAttribute.h"
 #include <Scene/SceneNode.h>
 #include <Math/AABB.h>
+#include <Math/SIMDMath.h>
 
 namespace Frame
 {
@@ -40,9 +41,8 @@ void CLightAttribute::UpdateInGraphicsScene(CGraphicsScene& Scene)
 	AABB.Transform(Tfm);
 
 	const auto LocalSphere = GetLocalSphere();
-	vector3 SpherePos(rtm::vector_get_x(LocalSphere), rtm::vector_get_y(LocalSphere), rtm::vector_get_z(LocalSphere));
-	SpherePos = Tfm.transform_coord(SpherePos);
-	const auto GlobalSphere = rtm::vector_set(SpherePos.x, SpherePos.y, SpherePos.z, rtm::vector_get_w(LocalSphere));
+	const rtm::vector4f SpherePos = rtm::matrix_mul_point3(LocalSphere, Tfm);
+	const auto GlobalSphere = Math::vector_mix_xyzd(SpherePos, LocalSphere); // World xyz + radius
 
 	if (SceneChanged)
 	{

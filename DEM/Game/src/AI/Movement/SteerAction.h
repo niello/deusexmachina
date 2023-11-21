@@ -1,6 +1,7 @@
 #pragma once
 #include <AI/Navigation/TraversalAction.h>
 #include <Events/EventNative.h>
+#include <rtm/vector4f.h>
 
 // Provides steering traversal action, processed by the character controller
 // or similar components. It is the most common case, simple movement.
@@ -28,11 +29,11 @@ public:
 	//// This value is measured in game world meters.
 	//const float LinearArrivalTolerance = 0.009f;
 
-	vector3 _Dest;
-	vector3 _NextDest;
-	float   _AdditionalDistance = 0.f; // Set < 0.f to disable arrival slowdown
+	rtm::vector4f _Dest;
+	rtm::vector4f _NextDest;
+	float         _AdditionalDistance = 0.f; // Set < 0.f to disable arrival slowdown
 
-	explicit Steer(const vector3& Dest, const vector3& NextDest, float AdditionalDistance)
+	explicit Steer(const rtm::vector4f& Dest, const rtm::vector4f& NextDest, float AdditionalDistance)
 		: _Dest(Dest), _NextDest(NextDest), _AdditionalDistance(AdditionalDistance)
 	{}
 };
@@ -47,14 +48,13 @@ public:
 	// NB: too low tolerance may lead to float precision errors
 	static inline constexpr float AngularTolerance = 0.0001f; // Old was 0.005f
 
-	vector3 _LookatDirection;
-	float   _Tolerance;
+	rtm::vector4f _LookatDirection;
+	float         _Tolerance;
 
-	explicit Turn(const vector3& LookatDirection, float Tolerance = AngularTolerance)
-		: _LookatDirection(LookatDirection)
+	explicit Turn(const rtm::vector4f& LookatDirection, float Tolerance = AngularTolerance)
+		: _LookatDirection(rtm::vector_normalize3(LookatDirection))
 		, _Tolerance(Tolerance)
 	{
-		_LookatDirection.norm();
 	}
 };
 

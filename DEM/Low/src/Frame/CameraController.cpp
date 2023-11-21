@@ -1,5 +1,6 @@
 #include "CameraController.h"
 #include <Scene/SceneNode.h>
+#include <Math/SIMDMath.h>
 
 namespace Frame
 {
@@ -31,7 +32,7 @@ void CCameraController::Update(float dt)
 
 		// Optimized Qx * Qy. Z is negated to switch handedness to RH.
 		_Node->SetLocalRotation(rtm::quatf{ Qx.x * Qy.w, Qx.w * Qy.y, -Qx.x * Qy.y, Qx.w * Qy.w });
-		_Node->SetWorldPosition(COI + Angles.GetCartesianZ() * Distance);
+		_Node->SetWorldPosition(rtm::vector_mul_add(Angles.GetCartesianZ(), Distance, COI));
 
 		Dirty = false;
 	}
@@ -87,9 +88,9 @@ void CCameraController::SetDistance(float Value)
 }
 //---------------------------------------------------------------------
 
-void CCameraController::SetCOI(const vector3& NewCOI)
+void CCameraController::SetCOI(const rtm::vector4f& NewCOI)
 {
-	if (COI == NewCOI) return;
+	if (rtm::vector_all_equal3(COI, NewCOI)) return;
 	COI = NewCOI;
 	Dirty = true;
 }
@@ -119,10 +120,10 @@ void CCameraController::Zoom(float Amount)
 }
 //---------------------------------------------------------------------
 
-void CCameraController::Move(const vector3& Translation)
+void CCameraController::Move(const rtm::vector4f& Translation)
 {
-	if (Translation == vector3::Zero) return;
-	COI += Translation;
+	if (rtm::vector_all_equal3(Translation, rtm::vector_zero())) return;
+	COI = rtm::vector_add(COI, Translation);
 	Dirty = true;
 }
 //---------------------------------------------------------------------
@@ -131,8 +132,8 @@ void CCameraController::MoveForward(float Amount)
 {
 	if (Amount == 0.f) return;
 	auto ForwardAxis = -vector3::AxisZ;
-	ForwardAxis.rotate(vector3::AxisY, -Angles.Phi);
-	COI += (ForwardAxis * Amount);
+	ForwardAxis.rotate(vector3::AxisY, -Angles.Phi); // TODO: SIMD impl
+	COI = rtm::vector_mul_add(Math::ToSIMD(ForwardAxis), Amount, COI);
 	Dirty = true;
 }
 //---------------------------------------------------------------------
@@ -141,8 +142,8 @@ void CCameraController::MoveSide(float Amount)
 {
 	if (Amount == 0.f) return;
 	auto RightAxis = vector3::AxisX;
-	RightAxis.rotate(vector3::AxisY, -Angles.Phi);
-	COI += (RightAxis * Amount);
+	RightAxis.rotate(vector3::AxisY, -Angles.Phi); // TODO: SIMD impl
+	COI = rtm::vector_mul_add(Math::ToSIMD(RightAxis), Amount, COI);
 	Dirty = true;
 }
 //---------------------------------------------------------------------

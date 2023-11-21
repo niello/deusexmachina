@@ -79,7 +79,7 @@ bool CPickItemAbility::GetZones(const Game::CGameSession& Session, const Game::C
 	if (!Out.empty()) return true;
 
 	//!!!FIXME: need some way to add zones! Store per-ability? May need unique zones. Use strong refs, not raw pointers?
-	static Game::CZone Zone(vector3::Zero, 1.f);
+	static Game::CZone Zone(rtm::vector_zero(), 1.f);
 	Out.push_back(&Zone);
 	return true;
 }
@@ -90,7 +90,7 @@ bool CPickItemAbility::GetFacingParams(const Game::CGameSession& Session, const 
 	// Simply face an object origin
 	//???make this logic default???
 	Out.Mode = Game::EFacingMode::Point;
-	Out.Dir = vector3::Zero;
+	Out.Dir = rtm::vector_zero();
 	Out.Tolerance = 1.5f;
 	return true;
 }

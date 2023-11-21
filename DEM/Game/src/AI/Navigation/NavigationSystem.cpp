@@ -125,7 +125,7 @@ static bool UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 //---------------------------------------------------------------------
 
 // Returns whether an agent can continue to perform the current navigation task
-static bool UpdateDestination(const vector3& Dest, CNavAgentComponent& Agent, ::AI::CPathRequestQueue& PathQueue, bool& OutDestChanged)
+static bool UpdateDestination(const rtm::vector4f& Dest, CNavAgentComponent& Agent, ::AI::CPathRequestQueue& PathQueue, bool& OutDestChanged)
 {
 	//!!!FIXME: setting, per Navigate action or per entity!
 	constexpr float MaxTargetOffset = 0.5f;

@@ -24,7 +24,7 @@
 namespace DEM::Game
 {
 
-static bool GetFacingParams(const CGameSession& Session, const CAbilityInstance& AbilityInstance, const vector3& ActorPos, vector3& OutFacingDir, float* pOutFacingTolerance)
+static bool GetFacingParams(const CGameSession& Session, const CAbilityInstance& AbilityInstance, const rtm::vector4f& ActorPos, rtm::vector4f& OutFacingDir, float* pOutFacingTolerance)
 {
 	CFacingParams Facing;
 	if (AbilityInstance.Ability.GetFacingParams(Session, AbilityInstance, Facing))
@@ -40,15 +40,14 @@ static bool GetFacingParams(const CGameSession& Session, const CAbilityInstance&
 			}
 			case EFacingMode::Point:
 			{
-				OutFacingDir = AbilityInstance.TargetToWorld.transform_coord(Facing.Dir) - ActorPos;
-				OutFacingDir.y = 0.f;
-				OutFacingDir.norm();
+				OutFacingDir = rtm::vector_sub(rtm::matrix_mul_vector3(Facing.Dir, AbilityInstance.TargetToWorld), ActorPos);
+				OutFacingDir = rtm::vector_normalize3(rtm::vector_set_y(OutFacingDir, 0.f));
 				return true;
 			}
 		}
 	}
 
-	OutFacingDir = vector3::Zero;
+	OutFacingDir = rtm::vector_zero();
 	if (pOutFacingTolerance) *pOutFacingTolerance = AI::Turn::AngularTolerance;
 	return false;
 }
@@ -66,9 +65,8 @@ static void OptimizePath(const CGameSession& Session, CAbilityInstance& AbilityI
 	AbilityInstance.CheckedPoly = pNavAgent->Corridor.getFirstPoly();
 	if (!AbilityInstance.CheckedPoly) return;
 
-	matrix44 WorldToTarget;
-	AbilityInstance.TargetToWorld.invert_simple(WorldToTarget);
-	const vector3 ActorPosInTargetSpace = WorldToTarget.transform_coord(pNavAgent->Corridor.getPos());
+	const rtm::matrix3x4f WorldToTarget = rtm::matrix_inverse(AbilityInstance.TargetToWorld);
+	const rtm::vector4f ActorPosInTargetSpace = rtm::matrix_mul_point3(rtm::vector_load3(pNavAgent->Corridor.getPos()), WorldToTarget);
 
 	const dtMeshTile* pTile = nullptr;
 	const dtPoly* pPoly = nullptr;
@@ -91,11 +89,11 @@ static void OptimizePath(const CGameSession& Session, CAbilityInstance& AbilityI
 		if (!Zone.IntersectsPoly(AbilityInstance.TargetToWorld, Verts, PolyVertCount)) continue;
 
 		//???adjust for actor radius? for now 0.f
-		vector3 Point;
+		rtm::vector4f Point;
 		const float Distance = Zone.FindClosestPoint(ActorPosInTargetSpace, 0.f, Point);
 		if (MinDistance <= Distance) continue;
 
-		Point = AbilityInstance.TargetToWorld.transform_coord(Point);
+		Point = rtm::matrix_mul_point3(Point, AbilityInstance.TargetToWorld);
 
 		float NavigablePos[3];
 		const float Extents[3] = { Zone.Radius, pNavAgent->Height, Zone.Radius };
@@ -151,12 +149,9 @@ static EActionStatus MoveToTarget(CGameSession& Session, CAbilityInstance& Abili
 	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
 	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return EActionStatus::Failed;
 
-	matrix44 WorldToTarget;
-	AbilityInstance.TargetToWorld.invert_simple(WorldToTarget);
-
-	const auto& ActorWorldTfm = pActorSceneComponent->RootNode->GetWorldMatrix();
-	const auto& ActorPos = ActorWorldTfm.Translation();
-	const vector3 ActorPosInTargetSpace = WorldToTarget.transform_coord(ActorPos);
+	const rtm::matrix3x4f WorldToTarget = rtm::matrix_inverse(AbilityInstance.TargetToWorld);
+	const rtm::vector4f ActorPos = pActorSceneComponent->RootNode->GetWorldPosition();
+	const rtm::vector4f ActorPosInTargetSpace = rtm::matrix_mul_point3(ActorPos, WorldToTarget);
 
 	const auto* pNavAgent = World.FindComponent<AI::CNavAgentComponent>(EntityID);
 
@@ -165,12 +160,12 @@ static EActionStatus MoveToTarget(CGameSession& Session, CAbilityInstance& Abili
 		// Find closest suitable zone and calculate action point in it
 		// NB: could calculate once for each zone, sort and then loop over them, but most probably it will be slower than now,
 		// because it is expected that almost always the first or at worst the second interaction zone will be selected.
-		vector3 ActionPos;
+		rtm::vector4f ActionPos = rtm::vector_zero();
 		float MinDistance = std::numeric_limits<float>().max();
 		for (UPTR i = 0; i < AbilityInstance.AvailableZones.size(); ++i)
 		{
 			//???adjust for actor radius? for now 0.f
-			vector3 Point;
+			rtm::vector4f Point;
 			const float Distance = AbilityInstance.AvailableZones[i]->FindClosestPoint(ActorPosInTargetSpace, 0.f, Point);
 			if (Distance < MinDistance)
 			{
@@ -182,7 +177,7 @@ static EActionStatus MoveToTarget(CGameSession& Session, CAbilityInstance& Abili
 		}
 
 		// FIXME: what if something between ActionPos and ActorPos blocks an interaction? Use visibility raycast?
-		ActionPos = AbilityInstance.TargetToWorld.transform_coord(ActionPos);
+		ActionPos = rtm::matrix_mul_point3(ActionPos, AbilityInstance.TargetToWorld);
 
 		// If actor uses navigation, find navigable point in a zone. Proceed to the next zone if failed.
 		// NB: this check is simplified and may fail to navigate zones where reachable points exist, so, in order
@@ -204,11 +199,11 @@ static EActionStatus MoveToTarget(CGameSession& Session, CAbilityInstance& Abili
 				continue;
 			}
 
-			ActionPos = NavigablePos;
+			ActionPos = rtm::vector_load3(NavigablePos);
 		}
 
 		// Use target facing direction to improve arrival
-		vector3 FacingDir;
+		rtm::vector4f FacingDir;
 		GetFacingParams(Session, AbilityInstance, ActionPos, FacingDir, nullptr);
 
 		// If character is a navmesh agent, must navigate. Otherwise a simple steering does the job.
@@ -217,7 +212,7 @@ static EActionStatus MoveToTarget(CGameSession& Session, CAbilityInstance& Abili
 		if (pNavAgent /*FIXME:*/ && !Queue.FindCurrent<AI::Navigate>(Action))
 			Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, FacingDir, 0.f);
 		else
-			Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, ActionPos + FacingDir, 0.f);
+			Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, rtm::vector_add(ActionPos, FacingDir), 0.f);
 
 		if (AbilityInstance.Stage == EAbilityExecutionStage::Interaction)
 			AbilityInstance.Ability.OnEnd(Session, AbilityInstance, EActionStatus::Cancelled);
@@ -248,9 +243,9 @@ static EActionStatus FaceTarget(CGameSession& Session, CAbilityInstance& Ability
 
 	const auto& ActorWorldTfm = pActorSceneComponent->RootNode->GetWorldMatrix();
 
-	vector3 TargetDir;
+	rtm::vector4f TargetDir;
 	float FacingTolerance;
-	GetFacingParams(Session, AbilityInstance, ActorWorldTfm.Translation(), TargetDir, &FacingTolerance);
+	GetFacingParams(Session, AbilityInstance, ActorWorldTfm.w_axis, TargetDir, &FacingTolerance);
 
 	FacingTolerance = std::max(FacingTolerance, DEM::AI::Turn::AngularTolerance);
 

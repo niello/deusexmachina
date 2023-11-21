@@ -37,7 +37,7 @@ Core::PObject CSkinInfoLoaderSKN::CreateResource(CStrID UID)
 	SkinInfo->Create(BoneCount);
 
 	//!!!may use MMF for bind pose matrices! their offset in a file is aligned-16!
-	Stream->Read(SkinInfo->pInvBindPose, BoneCount * sizeof(matrix44));
+	Stream->Read(SkinInfo->pInvBindPose, BoneCount * sizeof(rtm::matrix3x4f));
 
 	for (auto& BoneInfo : SkinInfo->Bones)
 	{

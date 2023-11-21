@@ -131,6 +131,48 @@ RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::qvvf RTM_SIMD_CALL qvv_f
 }
 //---------------------------------------------------------------------
 
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL vector_squared_length_xz(rtm::vector4f_arg0 v) noexcept
+{
+	return rtm::vector_length_squared3(rtm::quat_set_y(v, 0.f));
+}
+//---------------------------------------------------------------------
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL vector_length_xz(rtm::vector4f_arg0 v) noexcept
+{
+	return rtm::scalar_sqrt(vector_squared_length_xz(v));
+}
+//---------------------------------------------------------------------
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL vector_squared_distance_xz(rtm::vector4f_arg0 v1, rtm::vector4f_arg1 v2) noexcept
+{
+	return vector_squared_length_xz(rtm::vector_sub(v1, v2));
+}
+//---------------------------------------------------------------------
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE bool RTM_SIMD_CALL matrix_all_equal(rtm::matrix3x4f_arg0 m1, rtm::matrix3x4f_arg1 m2) noexcept
+{
+	return rtm::vector_all_equal3(m1.x_axis, m2.x_axis) &&
+		rtm::vector_all_equal3(m1.y_axis, m2.y_axis) &&
+		rtm::vector_all_equal3(m1.z_axis, m2.z_axis) &&
+		rtm::vector_all_equal3(m1.w_axis, m2.w_axis);
+}
+//---------------------------------------------------------------------
+
+// SIMD version of dtDistancePtSegSqr2D
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL DistancePtSegSqr2D(rtm::vector4f_arg0 pt, rtm::vector4f_arg1 p, rtm::vector4f_arg2 q, float& t)
+{
+	const rtm::vector4f pq = rtm::quat_set_y(rtm::vector_sub(q, p), 0.f);
+	const rtm::vector4f ppt = rtm::quat_set_y(rtm::vector_sub(pt, p), 0.f);
+
+	t = rtm::vector_dot3(pq, ppt);
+	const float d = rtm::vector_length_squared3(pq);
+	if (d > 0.f) t /= d;
+	t = std::clamp(t, 0.f, 1.f);
+
+	return rtm::vector_length_squared3(rtm::vector_mul_add(pq, t, rtm::vector_neg(ppt)));
+}
+//---------------------------------------------------------------------
+
 #define RTM_MIX_ALIAS_ONE(c1, c2, c3, c4) \
 RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::vector4f RTM_SIMD_CALL vector_mix_##c1##c2##c3##c4(rtm::vector4f_arg0 input) { return rtm::vector_mix<rtm::mix4::c1, rtm::mix4::c2, rtm::mix4::c3, rtm::mix4::c4>(input, input); }
 #define RTM_MIX_ALIAS_TWO(c1, c2, c3, c4) \

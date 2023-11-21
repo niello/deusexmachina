@@ -6,6 +6,7 @@
 #include <Data/Metadata.h>
 #include <Events/EventNative.h>
 #include <Math/Vector3.h>
+#include <rtm/vector4f.h>
 #include <DetourPathCorridor.h>
 
 // Navigation agent component allows an entity to plan path along navigation mesh
@@ -19,12 +20,12 @@ class Navigate: public ::Events::CEventNative
 
 public:
 
-	vector3 _Destination;
-	vector3 _FinalFacing;
-	float   _Speed = 0.f;
+	rtm::vector4f _Destination;
+	rtm::vector4f _FinalFacing;
+	float         _Speed = 0.f;
 
-	explicit Navigate(const vector3& Destination, float Speed) : _Destination(Destination), _Speed(Speed) {}
-	explicit Navigate(const vector3& Destination, const vector3& FinalFacing, float Speed) : _Destination(Destination), _FinalFacing(FinalFacing), _Speed(Speed) {}
+	explicit Navigate(const rtm::vector4f& Destination, float Speed) : _Destination(Destination), _Speed(Speed) {}
+	explicit Navigate(const rtm::vector4f& Destination, const rtm::vector4f& FinalFacing, float Speed) : _Destination(Destination), _FinalFacing(FinalFacing), _Speed(Speed) {}
 };
 
 enum class ENavigationState : U8

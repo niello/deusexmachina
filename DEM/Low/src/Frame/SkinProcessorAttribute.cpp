@@ -25,7 +25,7 @@ void CSkinPalette::SetSkinInfo(Render::PSkinInfo SkinInfo)
 		SAFE_FREE_ALIGNED(_pSkinPalette); // TODO: use aligned unique array ptr?
 
 		// Allocate aligned to 16 for faster transfer to VRAM
-		_pSkinPalette = static_cast<matrix44*>(n_malloc_aligned(BoneCount * sizeof(matrix44), 16));
+		_pSkinPalette = static_cast<rtm::matrix3x4f*>(n_malloc_aligned(BoneCount * sizeof(rtm::matrix3x4f), alignof(rtm::matrix3x4f)));
 		_BoneNodes = std::make_unique<CBoneInfo[]>(BoneCount);
 	}
 }
@@ -41,7 +41,7 @@ void CSkinPalette::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentNod
 		if (pBoneNode) continue;
 
 		// Reset palette just in case some nodes are not found
-		_pSkinPalette[i].ident();
+		_pSkinPalette[i] = rtm::matrix_identity();
 
 		const auto& BoneInfo = _SkinInfo->GetBoneInfo(i);
 		if (BoneInfo.ParentIndex != ParentIndex) continue;
@@ -53,10 +53,9 @@ void CSkinPalette::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentNod
 		if (pBoneNode)
 		{
 			// Set skinned mesh into a bind pose initially
-			matrix44 BindPoseLocal;
-			_SkinInfo->GetInvBindPose(i).invert_simple(BindPoseLocal);
+			rtm::matrix3x4f BindPoseLocal = rtm::matrix_inverse(_SkinInfo->GetInvBindPose(i));
 			if (ParentIndex != INVALID_INDEX)
-				BindPoseLocal.mult_simple(_SkinInfo->GetInvBindPose(ParentIndex));
+				BindPoseLocal = rtm::matrix_mul(BindPoseLocal, _SkinInfo->GetInvBindPose(ParentIndex));
 			pBoneNode->SetLocalTransform(BindPoseLocal);
 
 			SetupBoneNodes(i, *pBoneNode, CreateMissingBones);
@@ -75,7 +74,7 @@ void CSkinPalette::Update()
 		const Scene::CSceneNode* pBoneNode = _BoneNodes[i].pNode;
 		if (pBoneNode && pBoneNode->GetTransformVersion() != _BoneNodes[i].LastTransformVersion)
 		{
-			_pSkinPalette[i].mult2_simple(_SkinInfo->GetInvBindPose(i), pBoneNode->GetWorldMatrix());
+			_pSkinPalette[i] = rtm::matrix_mul(_SkinInfo->GetInvBindPose(i), pBoneNode->GetWorldMatrix());
 			_BoneNodes[i].LastTransformVersion = pBoneNode->GetTransformVersion();
 		}
 	}
