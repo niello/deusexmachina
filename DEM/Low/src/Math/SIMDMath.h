@@ -104,22 +104,30 @@ RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE matrix44 RTM_SIMD_CALL FromSI
 }
 //---------------------------------------------------------------------
 
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::vector4f RTM_SIMD_CALL matrix_extract_scale(rtm::matrix3x4f_arg0 m) noexcept
+{
+	const float ScaleX = rtm::vector_length3(m.x_axis);
+	const float ScaleY = rtm::vector_length3(m.y_axis);
+	const float ScaleZ = rtm::vector_length3(m.z_axis);
+	return rtm::vector_set(ScaleX, ScaleY, ScaleZ);
+}
+//---------------------------------------------------------------------
+
 //!!!TODO: replace with rtm::qvv_from_matrix() when it's available!
 RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::qvvf RTM_SIMD_CALL qvv_from_matrix(rtm::matrix3x4f_arg0 m) noexcept
 {
-	rtm::matrix3x4f UnscaledMatrix = m;
-	constexpr float THRESHOLD = 1.0E-8F;
-	const rtm::scalarf ScaleX = rtm::vector_length3(m.x_axis);
-	if (rtm::scalar_cast(ScaleX) >= THRESHOLD)
-		UnscaledMatrix.x_axis = rtm::vector_div(m.x_axis, rtm::vector_set(ScaleX));
-	const rtm::scalarf ScaleY = rtm::vector_length3(m.y_axis);
-	if (rtm::scalar_cast(ScaleY) >= THRESHOLD)
-		UnscaledMatrix.y_axis = rtm::vector_div(m.y_axis, rtm::vector_set(ScaleY));
-	const rtm::scalarf ScaleZ = rtm::vector_length3(m.z_axis);
-	if (rtm::scalar_cast(ScaleZ) >= THRESHOLD)
-		UnscaledMatrix.z_axis = rtm::vector_div(m.z_axis, rtm::vector_set(ScaleZ));
+	const rtm::vector4f Scale = matrix_extract_scale(m);
 
-	return rtm::qvv_set(rtm::quat_from_matrix(UnscaledMatrix), m.w_axis, rtm::vector_set(ScaleX, ScaleY, ScaleZ));
+	rtm::matrix3x3f RotationMatrix = rtm::matrix_cast(m);
+	constexpr float THRESHOLD = 1.0E-8F;
+	if (rtm::vector_get_x(Scale) >= THRESHOLD)
+		RotationMatrix.x_axis = rtm::vector_div(m.x_axis, rtm::vector_dup_x(Scale));
+	if (rtm::vector_get_y(Scale) >= THRESHOLD)
+		RotationMatrix.y_axis = rtm::vector_div(m.y_axis, rtm::vector_dup_y(Scale));
+	if (rtm::vector_get_z(Scale) >= THRESHOLD)
+		RotationMatrix.z_axis = rtm::vector_div(m.z_axis, rtm::vector_dup_z(Scale));
+
+	return rtm::qvv_set(rtm::quat_from_matrix(RotationMatrix), m.w_axis, Scale);
 }
 //---------------------------------------------------------------------
 

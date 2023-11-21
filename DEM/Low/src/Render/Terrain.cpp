@@ -48,8 +48,8 @@ void CTerrain::UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrus
 	// NB: always must use the main camera for LOD selection, even if another camera (ViewFrustum) is used for intermediate rendering
 	CNodeProcessingContext Ctx;
 	Ctx.ViewFrustum = ViewFrustum;
-	Ctx.Scale = Math::ToSIMD(Transform.ExtractScale());
-	Ctx.Offset = Math::ToSIMD(Transform.Translation());
+	Ctx.Scale = Math::matrix_extract_scale(Transform);
+	Ctx.Offset = Transform.w_axis;
 	Ctx.MainCameraPos = MainCameraPos;
 
 	std::swap(_PrevPatches, _Patches);

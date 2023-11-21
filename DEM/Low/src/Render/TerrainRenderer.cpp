@@ -168,7 +168,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 		const float ScaleY = CDLOD.GetVerticalScale() * WorldSize.y / LocalSize.y;
 		CDLODParams.TerrainYScale = 65535.f * ScaleY;
-		CDLODParams.TerrainYOffset = -32767.f * ScaleY + Terrain.Transform.Translation().y;
+		CDLODParams.TerrainYOffset = -32767.f * ScaleY + rtm::vector_get_y(Terrain.Transform.w_axis);
 		CDLODParams.InvSplatSizeX = Terrain.GetInvSplatSizeX();
 		CDLODParams.InvSplatSizeZ = Terrain.GetInvSplatSizeZ();
 		if (_pCurrMaterial)
