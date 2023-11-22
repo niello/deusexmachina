@@ -131,7 +131,7 @@ bool CZone::IntersectsPoly(const rtm::matrix3x4f& WorldTfm, rtm::vector4f* pPoly
 		//	WorldTfm.transform_coord(Zone.Vertices[1]).v,
 
 		// FIXME: IMPLEMENT!
-		NOT_IMPLEMENTED;
+		//NOT_IMPLEMENTED;
 		return false;
 	}
 	else
@@ -139,7 +139,7 @@ bool CZone::IntersectsPoly(const rtm::matrix3x4f& WorldTfm, rtm::vector4f* pPoly
 		// Can use separating axes to get distances?
 
 		// FIXME: IMPLEMENT!
-		NOT_IMPLEMENTED;
+		//NOT_IMPLEMENTED;
 		return false;
 	}
 
