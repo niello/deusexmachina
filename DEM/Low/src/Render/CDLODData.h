@@ -1,8 +1,7 @@
 #pragma once
 #include <Core/Object.h>
 #include <Data/FixedArray.h>
-#include <Math/AABB.h>
-#include <rtm/vector4f.h>
+#include <Math/SIMDMath.h>
 #include <array>
 
 // CDLOD heightfield-based terrain rendering data with settings and precalculated aux data
@@ -31,14 +30,14 @@ protected:
 	std::unique_ptr<I16[]>  pMinMaxData = nullptr;
 	CFixedArray<CMinMaxMap>	MinMaxMaps;
 
+	Math::CAABB				Box;
+	rtm::vector4f           BoundsMax;
 	U32						HFWidth;
 	U32						HFHeight;
 	U32						PatchSize;
 	U32						LODCount;
 	float                   VerticalScale;
 	std::array<float, 4>	SplatMapUVCoeffs; // xy - scale, zw - offset
-	CAABB					Box;
-	rtm::vector4f           BoundsMax;
 
 	friend class Resources::CCDLODDataLoader;
 
@@ -63,7 +62,7 @@ public:
 	U32					  GetLODCount() const { return LODCount; }
 	float                 GetVerticalScale() const { return VerticalScale; }
 	const auto&           GetSplatMapUVCoeffs() const { return SplatMapUVCoeffs;}
-	const CAABB&		  GetAABB() const { return Box; }
+	const Math::CAABB&    GetAABB() const { return Box; }
 	void				  GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, I16& MinY, I16& MaxY) const;
 	void				  GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, float& MinY, float& MaxY) const;
 	bool				  HasNode(UPTR X, UPTR Z, UPTR LOD) const;

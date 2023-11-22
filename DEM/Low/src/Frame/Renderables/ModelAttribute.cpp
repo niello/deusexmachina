@@ -190,7 +190,7 @@ void CModelAttribute::UpdateLightList(CView& View, Render::IRenderable& Renderab
 }
 //---------------------------------------------------------------------
 
-bool CModelAttribute::GetLocalAABB(CAABB& OutBox, UPTR LOD) const
+bool CModelAttribute::GetLocalAABB(Math::CAABB& OutBox, UPTR LOD) const
 {
 	if (!_MeshData) FAIL;
 

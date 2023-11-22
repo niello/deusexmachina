@@ -79,10 +79,11 @@ void CIBLAmbientLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Re
 }
 //---------------------------------------------------------------------
 
-bool CIBLAmbientLightAttribute::GetLocalAABB(CAABB& OutBox) const
+bool CIBLAmbientLightAttribute::GetLocalAABB(Math::CAABB& OutBox) const
 {
 	// Negative range is treated as invalid bounds which is desired for global IBL source
-	OutBox.Set(vector3::Zero, vector3(_Range, _Range, _Range));
+	OutBox.Center = rtm::vector_zero();
+	OutBox.Extent = rtm::vector_set(_Range);
 	return true;
 }
 //---------------------------------------------------------------------

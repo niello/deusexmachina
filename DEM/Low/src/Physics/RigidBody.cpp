@@ -24,7 +24,7 @@ void CRigidBody::CDynamicMotionState::SetSceneNode(Scene::PSceneNode&& Node)
 
 void CRigidBody::CDynamicMotionState::getWorldTransform(btTransform& worldTrans) const
 {
-	worldTrans = TfmToBtTfm(_Node ? _Node->GetWorldMatrix() : matrix44::Identity);
+	worldTrans = TfmToBtTfm(_Node ? _Node->GetWorldMatrix() : rtm::matrix_identity());
 	worldTrans.getOrigin() = worldTrans * VectorToBtVector(_Offset);
 }
 //---------------------------------------------------------------------
@@ -40,7 +40,7 @@ void CRigidBody::CDynamicMotionState::setWorldTransform(const btTransform& world
 }
 //---------------------------------------------------------------------
 
-CRigidBody::CRigidBody(float Mass, CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const matrix44& InitialTfm, const CPhysicsMaterial& Material)
+CRigidBody::CRigidBody(float Mass, CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const rtm::matrix3x4f& InitialTfm, const CPhysicsMaterial& Material)
 	: CPhysicsObject(CollisionGroupID, CollisionMaskID)
 	, _MotionState(Shape.GetOffset())
 {
@@ -86,7 +86,7 @@ void CRigidBody::SetControlledNode(Scene::CSceneNode* pNode)
 }
 //---------------------------------------------------------------------
 
-void CRigidBody::SetTransform(const matrix44& Tfm)
+void CRigidBody::SetTransform(const rtm::matrix3x4f& Tfm)
 {
 	btTransform BtTfm;
 	if (PrepareTransform(Tfm, BtTfm))
@@ -97,7 +97,7 @@ void CRigidBody::SetTransform(const matrix44& Tfm)
 }
 //---------------------------------------------------------------------
 
-void CRigidBody::GetTransform(matrix44& OutTfm) const
+void CRigidBody::GetTransform(rtm::matrix3x4f& OutTfm) const
 {
 	if (const Scene::CSceneNode* pSceneNode = _MotionState.GetSceneNode())
 	{
@@ -107,13 +107,13 @@ void CRigidBody::GetTransform(matrix44& OutTfm) const
 	{
 		auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 		OutTfm = BtTfmToTfm(_pBtObject->getWorldTransform());
-		OutTfm.Translation() = OutTfm * (-pShape->GetOffset());
+		OutTfm.w_axis = OutTfm * (-pShape->GetOffset());
 	}
 }
 //---------------------------------------------------------------------
 
 // Interpolated AABB from motion state, matches the graphics representation
-void CRigidBody::GetGlobalAABB(CAABB& OutBox) const
+void CRigidBody::GetGlobalAABB(Math::CAABB& OutBox) const
 {
 	btTransform Tfm;
 	if (_MotionState.GetSceneNode())

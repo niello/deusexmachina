@@ -284,8 +284,8 @@ void CTerrainAttribute::OnLightIntersectionsUpdated()
 			std::swap(_PrevAffectedNodes, LightInfo.AffectedNodes);
 
 			CNodeProcessingContext Ctx;
-			Ctx.Scale = Math::ToSIMD(_pNode->GetWorldMatrix().ExtractScale());
-			Ctx.Offset = Math::ToSIMD(_pNode->GetWorldMatrix().Translation());
+			Ctx.Scale = Math::matrix_extract_scale(_pNode->GetWorldMatrix());
+			Ctx.Offset = _pNode->GetWorldMatrix().w_axis;
 			Ctx.pLightInfo = &LightInfo;
 
 			UpdateLightInQuadTreeNode(Ctx, 0, 0, _CDLODData->GetLODCount() - 1);
@@ -412,7 +412,7 @@ bool CTerrainAttribute::UpdateLightInQuadTreeNode(const CNodeProcessingContext& 
 }
 //---------------------------------------------------------------------
 
-bool CTerrainAttribute::GetLocalAABB(CAABB& OutBox, UPTR LOD) const
+bool CTerrainAttribute::GetLocalAABB(Math::CAABB& OutBox, UPTR LOD) const
 {
 	if (!_CDLODData) FAIL;
 	OutBox = _CDLODData->GetAABB();

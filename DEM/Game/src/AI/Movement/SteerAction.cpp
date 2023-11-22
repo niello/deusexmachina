@@ -3,6 +3,7 @@
 #include <Game/ECS/GameWorld.h>
 #include <Game/GameSession.h>
 #include <AI/Navigation/NavAgentComponent.h>
+#include <Math/SIMDMath.h>
 #include <Math/Vector2.h>
 #include <Core/Factory.h>
 
@@ -11,7 +12,7 @@ namespace DEM::AI
 FACTORY_CLASS_IMPL(DEM::AI::CSteerAction, 'STRA', CTraversalAction);
 
 bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponent& Agent, Game::HEntity Actor, Game::HEntity Controller, Game::CActionQueueComponent& Queue,
-	Game::HAction NavAction, const vector3& Pos)
+	Game::HAction NavAction, const rtm::vector4f& Pos)
 {
 	// If not on navmesh, recover to the nearest valid position
 	if (Agent.Mode == ENavigationMode::Recovery)
@@ -30,14 +31,15 @@ bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponen
 
 	const int Options = Agent.Settings->IsAreaControllable(Agent.CurrAreaType) ? DT_STRAIGHTPATH_ALL_CROSSINGS : DT_STRAIGHTPATH_AREA_CROSSINGS;
 
-	vector3 Dest;
+	vector3 DestRaw;
 	unsigned char Flags;
 	unsigned char AreaType;
 	dtPolyRef PolyRef;
-	dtStatus Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Dest.v, &Flags, &AreaType, &PolyRef, Options);
+	dtStatus Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, DestRaw.v, &Flags, &AreaType, &PolyRef, Options);
 	if (dtStatusFailed(Status)) return false;
 
-	vector3 NextDest = Dest;
+	rtm::vector4f Dest = Math::ToSIMD(DestRaw);
+	rtm::vector4f NextDest = Dest;
 	bool ActionChanged = false;
 	bool NeedSlowdown = true;
 	bool LastEdge = dtStatusSucceed(Status);
@@ -67,8 +69,10 @@ bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponen
 
 		// Get the next path edge end point
 		const int Options = Agent.Settings->IsAreaControllable(AreaType) ? DT_STRAIGHTPATH_ALL_CROSSINGS : DT_STRAIGHTPATH_AREA_CROSSINGS;
-		Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, Options);
+		Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, DestRaw.v, &Flags, &AreaType, &PolyRef, Options);
 		if (dtStatusFailed(Status)) break;
+
+		NextDest = Math::ToSIMD(DestRaw);
 
 		// If next edge changes direction, use its end position for smooth turning and finish
 		if (!DestReached)

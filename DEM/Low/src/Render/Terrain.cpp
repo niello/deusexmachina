@@ -41,7 +41,7 @@ void CTerrain::UpdateMorphConstants(float VisibilityRange)
 }
 //---------------------------------------------------------------------
 
-void CTerrain::UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrustum& ViewFrustum)
+void CTerrain::UpdatePatches(const rtm::vector4f& MainCameraPos, const Math::CSIMDFrustum& ViewFrustum)
 {
 	constexpr TMorton RootMortonCode = 1;
 
@@ -111,7 +111,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 	NodeBoxCenter = rtm::vector_add(NodeBoxCenter, Ctx.Offset);
 	NodeBoxExtent = rtm::vector_mul(NodeBoxExtent, Ctx.Scale);
 
-	const auto LODSphere = rtm::vector_set(Ctx.MainCameraPos.x, Ctx.MainCameraPos.y, Ctx.MainCameraPos.z, LODParams[LOD].Range);
+	const auto LODSphere = rtm::vector_set_w(Ctx.MainCameraPos, LODParams[LOD].Range);
 	if (!Math::HasIntersection(LODSphere, NodeBoxCenter, NodeBoxExtent)) return ENodeStatus::NotInLOD;
 
 	// Bits 0 to 3 - if set, add quarterpatch for child[0 .. 3]
@@ -136,7 +136,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 
 		const U32 NextLOD = LOD - 1;
 
-		const auto NextLODSphere = rtm::vector_set(Ctx.MainCameraPos.x, Ctx.MainCameraPos.y, Ctx.MainCameraPos.z, LODParams[NextLOD].Range);
+		const auto NextLODSphere = rtm::vector_set_w(Ctx.MainCameraPos, LODParams[NextLOD].Range);
 		if (!Math::HasIntersection(NextLODSphere, NodeBoxCenter, NodeBoxExtent))
 		{
 			// Add the whole node to the current LOD

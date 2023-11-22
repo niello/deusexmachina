@@ -86,9 +86,10 @@ bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 		auto Shape = RShape->ValidateObject<Physics::CCollisionShape>();
 		if (!Shape) FAIL;
 
-		const matrix44& Tfm = _pNode->IsWorldTransformDirty() ? matrix44::Identity : _pNode->GetWorldMatrix();
+		static const rtm::matrix3x4f IdentityTfm = rtm::matrix_identity();
+		const rtm::matrix3x4f& Tfm = _pNode->IsWorldTransformDirty() ? IdentityTfm : _pNode->GetWorldMatrix();
 		if (_Static)
-			_Collider = n_new(Physics::CStaticCollider(*Shape, _CollisionGroupID, _CollisionMaskID, Tfm));
+			_Collider = new Physics::CStaticCollider(*Shape, _CollisionGroupID, _CollisionMaskID, Tfm);
 		else
 			_Collider = new Physics::CMovableCollider(*Shape, _CollisionGroupID, _CollisionMaskID, Tfm);
 
@@ -123,7 +124,7 @@ void CCollisionAttribute::OnActivityChanged(bool Active)
 }
 //---------------------------------------------------------------------
 
-bool CCollisionAttribute::GetGlobalAABB(CAABB& OutBox) const
+bool CCollisionAttribute::GetGlobalAABB(Math::CAABB& OutBox) const
 {
 	if (!_Collider) FAIL;
 	_Collider->GetGlobalAABB(OutBox);

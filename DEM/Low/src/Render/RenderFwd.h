@@ -2,7 +2,7 @@
 #include <Data/Ptr.h>
 #include <Data/Dictionary.h>
 #include <Data/StringID.h>
-#include <Math/AABB.h>
+#include <Math/SIMDMath.h> // AABB
 //#include <algorithm>
 //#include <memory>
 
@@ -346,13 +346,13 @@ struct CViewport
 
 struct CPrimitiveGroup
 {
+	Math::CAABB			AABB;
 	UPTR				FirstVertex;
 	UPTR				VertexCount;
 	UPTR				FirstIndex;
 	UPTR				IndexCount;
 	EPrimitiveTopology	Topology;
 	U8                  IndexInMesh; // A sequential index of this group in a mesh, used for sorting in a renderer
-	CAABB				AABB;
 };
 
 // Renderables are queued and filtered by this type. For example, opaque objects are typically

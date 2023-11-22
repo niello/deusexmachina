@@ -49,9 +49,9 @@ protected:
 	struct CNodeProcessingContext
 	{
 		Math::CSIMDFrustum ViewFrustum;
-		rtm::vector4f    Scale;
-		rtm::vector4f    Offset;
-		vector3	           MainCameraPos;
+		rtm::vector4f      Scale;
+		rtm::vector4f      Offset;
+		rtm::vector4f	   MainCameraPos;
 	};
 
 	std::vector<CPatchInstance> _Patches;
@@ -100,7 +100,7 @@ public:
 	virtual ~CTerrain() override;
 
 	void UpdateMorphConstants(float VisibilityRange);
-	void UpdatePatches(const vector3& MainCameraPos, const Math::CSIMDFrustum& ViewFrustum);
+	void UpdatePatches(const rtm::vector4f& MainCameraPos, const Math::CSIMDFrustum& ViewFrustum);
 
 	CCDLODData*         GetCDLODData() const { return CDLODData.Get(); }
 	CMaterial*          GetMaterial() const { return Material.Get(); }

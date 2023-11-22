@@ -155,6 +155,12 @@ RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL vector_sq
 }
 //---------------------------------------------------------------------
 
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL vector_distance_xz(rtm::vector4f_arg0 v1, rtm::vector4f_arg1 v2) noexcept
+{
+	return rtm::scalar_sqrt(vector_squared_distance_xz(v1, v2));
+}
+//---------------------------------------------------------------------
+
 RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE bool RTM_SIMD_CALL matrix_all_equal(rtm::matrix3x4f_arg0 m1, rtm::matrix3x4f_arg1 m2) noexcept
 {
 	return rtm::vector_all_equal3(m1.x_axis, m2.x_axis) &&
@@ -196,6 +202,13 @@ RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE CAABB RTM_SIMD_CALL EmptyAABB
 RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE CAABB RTM_SIMD_CALL InvalidAABB() noexcept
 {
 	return CAABB{ static_cast<rtm::vector4f>(rtm::vector_zero()), rtm::vector_set(-1.f) };
+}
+//---------------------------------------------------------------------
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE CAABB RTM_SIMD_CALL AABBFromMinMax(rtm::vector4f_arg0 Min, rtm::vector4f_arg1 Max) noexcept
+{
+	const rtm::vector4f Center = rtm::vector_mul(rtm::vector_add(Min, Max), 0.5f);
+	return CAABB{ Center, rtm::vector_sub(Max, Center) };
 }
 //---------------------------------------------------------------------
 

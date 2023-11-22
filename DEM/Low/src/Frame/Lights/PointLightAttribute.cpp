@@ -84,9 +84,10 @@ void CPointLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render:
 }
 //---------------------------------------------------------------------
 
-bool CPointLightAttribute::GetLocalAABB(CAABB& OutBox) const
+bool CPointLightAttribute::GetLocalAABB(Math::CAABB& OutBox) const
 {
-	OutBox.Set(vector3::Zero, vector3(_Range, _Range, _Range));
+	OutBox.Center = rtm::vector_zero();
+	OutBox.Extent = rtm::vector_set(_Range);
 	return true;
 }
 //---------------------------------------------------------------------

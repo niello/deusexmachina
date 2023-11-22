@@ -27,10 +27,10 @@ protected:
 
 		BT_DECLARE_ALIGNED_ALLOCATOR();
 
-		CKinematicMotionState(const matrix44& InitialTfm, const vector3& Offset) { SetTransform(InitialTfm, Offset); }
+		CKinematicMotionState(const rtm::matrix3x4f& InitialTfm, const vector3& Offset) { SetTransform(InitialTfm, Offset); }
 
 		//???FIXME: need this? need initial tfm? high chances that identity is passed because world tfm is not yet calculated!
-		void SetTransform(const matrix44& NewTfm, const vector3& Offset);
+		void SetTransform(const rtm::matrix3x4f& NewTfm, const vector3& Offset);
 
 		virtual void getWorldTransform(btTransform& worldTrans) const override { worldTrans = _Tfm; }
 		virtual void setWorldTransform(const btTransform& worldTrans) override { /* must not be called on static and kinematic objects */ }
@@ -45,12 +45,12 @@ public:
 
 	BT_DECLARE_ALIGNED_ALLOCATOR();
 
-	CMovableCollider(CCollisionShape& Shape, CStrID CollisionGroupID = CStrID::Empty, CStrID CollisionMaskID = CStrID::Empty, const matrix44& InitialTfm = matrix44::Identity, const CPhysicsMaterial& Material = CPhysicsMaterial::Default());
+	CMovableCollider(CCollisionShape& Shape, CStrID CollisionGroupID = CStrID::Empty, CStrID CollisionMaskID = CStrID::Empty, const rtm::matrix3x4f& InitialTfm = rtm::matrix_identity(), const CPhysicsMaterial& Material = CPhysicsMaterial::Default());
 	virtual ~CMovableCollider() override;
 
-	virtual void SetTransform(const matrix44& Tfm) override;
-	virtual void GetTransform(matrix44& OutTfm) const override;
-	virtual void GetGlobalAABB(CAABB& OutBox) const override;
+	virtual void SetTransform(const rtm::matrix3x4f& Tfm) override;
+	virtual void GetTransform(rtm::matrix3x4f& OutTfm) const override;
+	virtual void GetGlobalAABB(Math::CAABB& OutBox) const override;
 	virtual void SetActive(bool Active, bool Always = false) override;
 };
 

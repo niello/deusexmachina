@@ -68,14 +68,8 @@ Core::PObject CCDLODDataLoader::CreateResource(CStrID UID)
 	float MinY, MaxY;
 	Obj->GetMinMaxHeight(0, 0, Obj->LODCount - 1, MinY, MaxY);
 
-	Obj->Box.Min.x = 0.f;
-	Obj->Box.Min.y = MinY;
-	Obj->Box.Min.z = 0.f;
-	Obj->Box.Max.x = RasterSizeX;
-	Obj->Box.Max.y = MaxY;
-	Obj->Box.Max.z = RasterSizeZ;
-
 	Obj->BoundsMax = rtm::vector_set(RasterSizeX, MaxY, RasterSizeZ);
+	Obj->Box = Math::AABBFromMinMax(rtm::vector_set(0.f, MinY, 0.f), Obj->BoundsMax);
 
 	return Obj.Get();
 }

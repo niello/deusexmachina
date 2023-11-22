@@ -18,12 +18,12 @@ protected:
 
 public:
 
-	CStaticCollider(CCollisionShape& Shape, CStrID CollisionGroupID = CStrID::Empty, CStrID CollisionMaskID = CStrID::Empty, const matrix44& InitialTfm = matrix44::Identity, const CPhysicsMaterial& Material = CPhysicsMaterial::Default());
+	CStaticCollider(CCollisionShape& Shape, CStrID CollisionGroupID = CStrID::Empty, CStrID CollisionMaskID = CStrID::Empty, const rtm::matrix3x4f& InitialTfm = rtm::matrix_identity(), const CPhysicsMaterial& Material = CPhysicsMaterial::Default());
 	virtual ~CStaticCollider() override;
 
-	virtual void SetTransform(const matrix44& Tfm) override;
-	virtual void GetTransform(matrix44& OutTfm) const override;
-	virtual void GetGlobalAABB(CAABB& OutBox) const override;
+	virtual void SetTransform(const rtm::matrix3x4f& Tfm) override;
+	virtual void GetTransform(rtm::matrix3x4f& OutTfm) const override;
+	virtual void GetGlobalAABB(Math::CAABB& OutBox) const override;
 	virtual void SetActive(bool Active, bool Always = false) override { /* Static object is never active */ }
 };
 

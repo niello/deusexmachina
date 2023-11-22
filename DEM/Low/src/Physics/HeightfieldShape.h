@@ -33,9 +33,9 @@ protected:
 
 public:
 
-	CHeightfieldShape(btDEMHeightfieldTerrainShape* pShape, PHeightfieldData&& HeightfieldData, const vector3& Offset = vector3::Zero, const vector3& Scaling = vector3::One);
+	CHeightfieldShape(btDEMHeightfieldTerrainShape* pShape, PHeightfieldData&& HeightfieldData, const rtm::vector4f& Offset = rtm::vector_zero(), const rtm::vector4f& Scaling = rtm::vector_set(1.f));
 
-	virtual PCollisionShape CloneWithScaling(const vector3& Scaling) const override;
+	virtual PCollisionShape CloneWithScaling(const rtm::vector4f& Scaling) const override;
 };
 
 typedef Ptr<CHeightfieldShape> PHeightfieldShape;

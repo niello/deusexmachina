@@ -46,7 +46,7 @@ void CMeshData::InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount
 			for (UPTR i = 0; i < Count; ++i)
 			{
 				Render::CPrimitiveGroup& MeshGroup = pData[i];
-				MeshGroup.AABB = CAABB::Empty;
+
 				MeshGroup.AABB.BeginExtend();
 
 				if (IndexType == Index_16)

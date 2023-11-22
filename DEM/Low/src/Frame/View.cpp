@@ -463,7 +463,7 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			{
 				if (NoTreeNode || _SpatialTreeNodeVisibility[Record.NodeIndex * 2 + 1]) // Check if node has an invisible part
 				{
-					pRenderable->IsVisible = Math::HasIntersection(Record.BoxCenter, Record.BoxExtent, _LastViewFrustum);
+					pRenderable->IsVisible = Math::HasIntersection(Record.Box.Center, Record.Box.Extent, _LastViewFrustum);
 				}
 				else pRenderable->IsVisible = true;
 			}
@@ -474,8 +474,8 @@ void CView::UpdateRenderables(bool ViewProjChanged)
 			// Calculate LOD prerequisites. They depend only on camera and object bounds.
 			if (pRenderable->IsVisible)
 			{
-				pRenderable->DistanceToCamera = std::sqrtf(Math::SqDistancePointAABB(_EyePos, Record.BoxCenter, Record.BoxExtent));
-				pRenderable->RelScreenRadius = _ScreenMultiple * rtm::vector_get_w(Record.Sphere) / std::max<float>(rtm::vector_distance3(_EyePos, Record.BoxCenter), 1.0f);
+				pRenderable->DistanceToCamera = std::sqrtf(Math::SqDistancePointAABB(_EyePos, Record.Box.Center, Record.Box.Extent));
+				pRenderable->RelScreenRadius = _ScreenMultiple * rtm::vector_get_w(Record.Sphere) / std::max<float>(rtm::vector_distance3(_EyePos, Record.Box.Center), 1.0f);
 			}
 		}
 

@@ -10,14 +10,14 @@ namespace Physics
 {
 
 //???FIXME: need this? need initial tfm? high chances that identity is passed because world tfm is not yet calculated!
-void CMovableCollider::CKinematicMotionState::SetTransform(const matrix44& NewTfm, const vector3& Offset)
+void CMovableCollider::CKinematicMotionState::SetTransform(const rtm::matrix3x4f& NewTfm, const vector3& Offset)
 {
 	_Tfm = TfmToBtTfm(NewTfm);
 	_Tfm.getOrigin() = _Tfm * VectorToBtVector(Offset);
 }
 //---------------------------------------------------------------------
 
-CMovableCollider::CMovableCollider(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const matrix44& InitialTfm, const CPhysicsMaterial& Material)
+CMovableCollider::CMovableCollider(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const rtm::matrix3x4f& InitialTfm, const CPhysicsMaterial& Material)
 	: CPhysicsObject(CollisionGroupID, CollisionMaskID)
 	, _MotionState(InitialTfm, Shape.GetOffset())
 {
@@ -58,14 +58,14 @@ void CMovableCollider::SetActive(bool Active, bool Always)
 }
 //---------------------------------------------------------------------
 
-void CMovableCollider::SetTransform(const matrix44& Tfm)
+void CMovableCollider::SetTransform(const rtm::matrix3x4f& Tfm)
 {
 	if (PrepareTransform(Tfm, _MotionState._Tfm))
 		_pBtObject->forceActivationState(DISABLE_DEACTIVATION);
 }
 //---------------------------------------------------------------------
 
-void CMovableCollider::GetTransform(matrix44& OutTfm) const
+void CMovableCollider::GetTransform(rtm::matrix3x4f& OutTfm) const
 {
 	btTransform Tfm;
 	_MotionState.getWorldTransform(Tfm);
@@ -73,12 +73,12 @@ void CMovableCollider::GetTransform(matrix44& OutTfm) const
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 
 	OutTfm = BtTfmToTfm(Tfm);
-	OutTfm.Translation() = OutTfm * (-pShape->GetOffset());
+	OutTfm.w_axis = OutTfm * (-pShape->GetOffset());
 }
 //---------------------------------------------------------------------
 
 // Interpolated AABB from motion state, matches the graphics representation
-void CMovableCollider::GetGlobalAABB(CAABB& OutBox) const
+void CMovableCollider::GetGlobalAABB(Math::CAABB& OutBox) const
 {
 	btTransform Tfm;
 	_MotionState.getWorldTransform(Tfm);

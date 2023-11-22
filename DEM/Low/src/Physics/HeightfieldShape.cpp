@@ -4,7 +4,7 @@
 namespace Physics
 {
 
-CHeightfieldShape::CHeightfieldShape(btDEMHeightfieldTerrainShape* pShape, PHeightfieldData&& HeightfieldData, const vector3& Offset, const vector3& Scaling)
+CHeightfieldShape::CHeightfieldShape(btDEMHeightfieldTerrainShape* pShape, PHeightfieldData&& HeightfieldData, const rtm::vector4f& Offset, const rtm::vector4f& Scaling)
 	: CCollisionShape(pShape, Offset, Scaling)
 	, _HeightfieldData(std::move(HeightfieldData))
 {
@@ -14,10 +14,9 @@ CHeightfieldShape::CHeightfieldShape(btDEMHeightfieldTerrainShape* pShape, PHeig
 //---------------------------------------------------------------------
 
 // FIXME: terrain is almost never shared, could scale in place instead of calling this! Need to fix in design!
-PCollisionShape CHeightfieldShape::CloneWithScaling(const vector3& Scaling) const
+PCollisionShape CHeightfieldShape::CloneWithScaling(const rtm::vector4f& Scaling) const
 {
-	const auto& CurrScaling = _pBtShape->getLocalScaling();
-	const vector3 UnscaledOffset(_Offset.x / CurrScaling.x(), _Offset.y / CurrScaling.y(), _Offset.z / CurrScaling.z());
+	const rtm::vector4f UnscaledOffset = rtm::vector_div(_Offset, Math::FromBullet(_pBtShape->getLocalScaling()));
 
 	auto pBtHFShape = static_cast<btDEMHeightfieldTerrainShape*>(_pBtShape);
 

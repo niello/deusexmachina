@@ -9,7 +9,7 @@
 namespace Physics
 {
 
-CStaticCollider::CStaticCollider(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const matrix44& InitialTfm, const CPhysicsMaterial& Material)
+CStaticCollider::CStaticCollider(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const rtm::matrix3x4f& InitialTfm, const CPhysicsMaterial& Material)
 	: CPhysicsObject(CollisionGroupID, CollisionMaskID)
 {
 	auto pCollObj = new btCollisionObject();
@@ -40,7 +40,7 @@ void CStaticCollider::RemoveFromLevelInternal()
 }
 //---------------------------------------------------------------------
 
-void CStaticCollider::SetTransform(const matrix44& Tfm)
+void CStaticCollider::SetTransform(const rtm::matrix3x4f& Tfm)
 {
 	btTransform BtTfm;
 	if (PrepareTransform(Tfm, BtTfm))
@@ -51,7 +51,7 @@ void CStaticCollider::SetTransform(const matrix44& Tfm)
 }
 //---------------------------------------------------------------------
 
-void CStaticCollider::GetTransform(matrix44& OutTfm) const
+void CStaticCollider::GetTransform(rtm::matrix3x4f& OutTfm) const
 {
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 	OutTfm = BtTfmToTfm(_pBtObject->getWorldTransform());
@@ -60,7 +60,7 @@ void CStaticCollider::GetTransform(matrix44& OutTfm) const
 //---------------------------------------------------------------------
 
 // Interpolated AABB from motion state, matches the graphics representation
-void CStaticCollider::GetGlobalAABB(CAABB& OutBox) const
+void CStaticCollider::GetGlobalAABB(Math::CAABB& OutBox) const
 {
 	// Static object is not interpolated, use physics AABB
 	GetPhysicsAABB(OutBox);

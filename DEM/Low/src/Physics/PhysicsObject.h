@@ -2,7 +2,7 @@
 #include <Core/Object.h>
 #include <Physics/PhysicsMaterial.h>
 #include <Data/StringID.h>
-#include <Math/AABB.h>
+#include <Math/SIMDMath.h>
 #include <any>
 
 // Base class for all physics objects. Has collision shape and transformation.
@@ -32,8 +32,8 @@ protected:
 	virtual void           RemoveFromLevelInternal() = 0;
 
 	void                   ConstructInternal(btCollisionObject* pBtObject, const CPhysicsMaterial& Material);
-	bool                   UnshareShapeIfNecessary(const vector3& NewScaling);
-	bool                   PrepareTransform(const matrix44& NewTfm, btTransform& OutTfm);
+	bool                   UnshareShapeIfNecessary(const rtm::vector4f& NewScaling);
+	bool                   PrepareTransform(const rtm::matrix3x4f& NewTfm, btTransform& OutTfm);
 
 public:
 
@@ -43,10 +43,10 @@ public:
 	void                   AttachToLevel(CPhysicsLevel& Level);
 	void                   RemoveFromLevel();
 
-	virtual void           SetTransform(const matrix44& Tfm) = 0;
-	virtual void           GetTransform(matrix44& OutTfm) const = 0;
-	virtual void           GetGlobalAABB(CAABB& OutBox) const = 0;
-	void                   GetPhysicsAABB(CAABB& OutBox) const;
+	virtual void           SetTransform(const rtm::matrix3x4f& Tfm) = 0;
+	virtual void           GetTransform(rtm::matrix3x4f& OutTfm) const = 0;
+	virtual void           GetGlobalAABB(Math::CAABB& OutBox) const = 0;
+	void                   GetPhysicsAABB(Math::CAABB& OutBox) const;
 	const CCollisionShape* GetCollisionShape() const;
 	CStrID                 GetCollisionGroup() const { return _CollisionGroupID; }
 	CStrID                 GetCollisionMask() const { return _CollisionMaskID; }

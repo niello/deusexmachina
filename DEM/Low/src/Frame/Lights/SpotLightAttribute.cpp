@@ -124,11 +124,11 @@ void CSpotLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render::
 }
 //---------------------------------------------------------------------
 
-bool CSpotLightAttribute::GetLocalAABB(CAABB& OutBox) const
+bool CSpotLightAttribute::GetLocalAABB(Math::CAABB& OutBox) const
 {
 	const float HalfFarExtent = _Range * _SinHalfOuter / _CosHalfOuter;
-	OutBox.Min.set(-HalfFarExtent, -HalfFarExtent, -_Range);
-	OutBox.Max.set(HalfFarExtent, HalfFarExtent, 0.f);
+	OutBox.Center = rtm::vector_set(0.f, 0.f, -0.5f * _Range);
+	OutBox.Extent = rtm::vector_set(HalfFarExtent, HalfFarExtent, 0.5f * _Range);
 	return true;
 }
 //---------------------------------------------------------------------

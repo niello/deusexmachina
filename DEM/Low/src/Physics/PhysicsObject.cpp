@@ -55,7 +55,7 @@ CPhysicsObject::~CPhysicsObject()
 
 // Bullet Physics doesn't support per-instance scaling of shared shapes. When scale changes, we must create our
 // personal shape copy and scale it as we want. Obviously unsharing must be done only once.
-bool CPhysicsObject::UnshareShapeIfNecessary(const vector3& NewScaling)
+bool CPhysicsObject::UnshareShapeIfNecessary(const rtm::vector4f& NewScaling)
 {
 	if (!_IsShapeShared) return true;
 
@@ -82,28 +82,26 @@ bool CPhysicsObject::UnshareShapeIfNecessary(const vector3& NewScaling)
 }
 //---------------------------------------------------------------------
 
-bool CPhysicsObject::PrepareTransform(const matrix44& NewTfm, btTransform& OutTfm)
+bool CPhysicsObject::PrepareTransform(const rtm::matrix3x4f& NewTfm, btTransform& OutTfm)
 {
-	vector3& AxisX = NewTfm.AxisX();
-	vector3& AxisY = NewTfm.AxisY();
-	vector3& AxisZ = NewTfm.AxisZ();
+	const rtm::vector4f Scaling = Math::matrix_extract_scale(NewTfm);
 
-	const float ScalingX = AxisX.Length();
-	const float ScalingY = AxisY.Length();
-	const float ScalingZ = AxisZ.Length();
-
-	if (!UnshareShapeIfNecessary({ ScalingX, ScalingY, ScalingZ })) return false;
+	if (!UnshareShapeIfNecessary(Scaling)) return false;
 
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 
-	//???TODO PERF: mul reciprocals instead of divisions? is it still actual to do 1 div and 3 mul instead of 3 div?
-	//???TODO PERF: optimize origin? VectorToBtVector(Offset).dot3(m_basis[0], m_basis[1], m_basis[2]) + VectorToBtVector(Tfm.Translation())
+	const rtm::vector4f AxisX = rtm::vector_div(NewTfm.x_axis, rtm::vector_dup_x(Scaling));
+	const rtm::vector4f AxisY = rtm::vector_div(NewTfm.y_axis, rtm::vector_dup_y(Scaling));
+	const rtm::vector4f AxisZ = rtm::vector_div(NewTfm.z_axis, rtm::vector_dup_z(Scaling));
+
 	OutTfm.setBasis(
 		btMatrix3x3(
-			AxisX.x / ScalingX, AxisY.x / ScalingY, AxisZ.x / ScalingZ,
-			AxisX.y / ScalingX, AxisY.y / ScalingY, AxisZ.y / ScalingZ,
-			AxisX.z / ScalingX, AxisY.z / ScalingY, AxisZ.z / ScalingZ));
-	OutTfm.setOrigin(VectorToBtVector(NewTfm.Translation()));
+			rtm::vector_get_x(AxisX), rtm::vector_get_x(AxisY), rtm::vector_get_x(AxisZ),
+			rtm::vector_get_y(AxisX), rtm::vector_get_y(AxisY), rtm::vector_get_y(AxisZ),
+			rtm::vector_get_z(AxisX), rtm::vector_get_z(AxisY), rtm::vector_get_z(AxisZ)));
+
+	//???TODO PERF: optimize origin? VectorToBtVector(Offset).dot3(m_basis[0], m_basis[1], m_basis[2]) + VectorToBtVector(Tfm.w_axis)
+	OutTfm.setOrigin(VectorToBtVector(NewTfm.w_axis));
 	OutTfm.getOrigin() = OutTfm * VectorToBtVector(pShape->GetOffset());
 
 	return true;
@@ -130,7 +128,7 @@ void CPhysicsObject::RemoveFromLevel()
 //---------------------------------------------------------------------
 
 // Returns end-of-tick AABB from the physics world
-void CPhysicsObject::GetPhysicsAABB(CAABB& OutBox) const
+void CPhysicsObject::GetPhysicsAABB(Math::CAABB& OutBox) const
 {
 	if (!_pBtObject) return;
 

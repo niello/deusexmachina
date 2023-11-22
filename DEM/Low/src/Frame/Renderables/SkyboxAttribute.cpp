@@ -105,11 +105,11 @@ void CSkyboxAttribute::UpdateRenderable(CView& View, Render::IRenderable& Render
 }
 //---------------------------------------------------------------------
 
-bool CSkyboxAttribute::GetLocalAABB(CAABB& OutBox, UPTR LOD) const
+bool CSkyboxAttribute::GetLocalAABB(Math::CAABB& OutBox, UPTR LOD) const
 {
 	// Infinite size
 	// FIXME: make return false mean an oversized object and detect invalid data otherwise, not by get AABB return value?
-	OutBox = CAABB::Invalid;
+	OutBox = Math::InvalidAABB();
 	OK;
 }
 //---------------------------------------------------------------------

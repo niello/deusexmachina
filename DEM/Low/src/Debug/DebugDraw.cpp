@@ -166,7 +166,7 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 				for (const auto& Pass : Passes)
 				{
 					GPU.SetRenderState(Pass);
-					GPU.Draw({ 0, BatchSize, 0, 0, Render::Prim_TriList, {} });
+					GPU.Draw({ {}, 0, BatchSize, 0, 0, Render::Prim_TriList });
 				}
 			}
 		}
@@ -208,7 +208,7 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 				for (const auto& Pass : Passes)
 				{
 					GPU.SetRenderState(Pass);
-					GPU.Draw({ 0, BatchSize, 0, 0, Render::Prim_LineList, {} });
+					GPU.Draw({ {}, 0, BatchSize, 0, 0, Render::Prim_LineList });
 				}
 			}
 		}
@@ -249,7 +249,7 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 				for (const auto& Pass : Passes)
 				{
 					GPU.SetRenderState(Pass);
-					GPU.Draw({ 0, BatchSize, 0, 0, Render::Prim_PointList, {} });
+					GPU.Draw({ {}, 0, BatchSize, 0, 0, Render::Prim_PointList });
 				}
 			}
 		}

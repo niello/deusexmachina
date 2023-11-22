@@ -2,40 +2,62 @@
 #if !defined(BT_USE_SSE_IN_API) && (defined (_WIN32) || defined (__i386__))
 #define BT_USE_SSE_IN_API
 #endif
-#include <Math/Matrix44.h>
+#include <Math/SIMDMath.h>
 #include <LinearMath/btTransform.h>
 
 // Bullet physics library to DEM data convertors
 
-//!!!later migrate to bullet math!
-inline vector3 BtVectorToVector(const btVector3& Vec) { return vector3(Vec.x(), Vec.y(), Vec.z()); }
-inline btVector3 VectorToBtVector(const vector3& Vec) { return btVector3(Vec.x, Vec.y, Vec.z); }
+// TODO: can compile with errors if RTM and Bullet use different representations. Fix then.
 
-inline quaternion BtQuatToQuat(const btQuaternion& Q) { return quaternion(Q.x(), Q.y(), Q.z(), Q.w()); }
-inline btQuaternion QuatToBtQuat(const quaternion& Q) { return btQuaternion(Q.x, Q.y, Q.z, Q.w); }
-
-inline btTransform TfmToBtTfm(const matrix44& Tfm)
+namespace Math
 {
-	vector3 AxisX = Tfm.AxisX();
-	AxisX.norm();
-	vector3 AxisY = Tfm.AxisY();
-	AxisY.norm();
-	vector3 AxisZ = Tfm.AxisZ();
-	AxisZ.norm();
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::vector4f FromBullet(const btVector3& v) noexcept
+{
+	return rtm::vector4f{ v.get128() };
+}
+//---------------------------------------------------------------------
+
+// FIXME: use overloading by return type instead of renaming?
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE btVector3 ToBullet3(rtm::vector4f_arg0 v) noexcept
+{
+	return btVector3(v); //??? rtm::vector_set_w(v, 0.f)); - is that w=0 important anywhere in Bullet?
+}
+//---------------------------------------------------------------------
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::quatf FromBullet(const btQuaternion& q) noexcept
+{
+	return rtm::quatf{ q.get128() };
+}
+//---------------------------------------------------------------------
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE btQuaternion ToBullet(rtm::quatf_arg0 q) noexcept
+{
+	return btQuaternion(q);
+}
+//---------------------------------------------------------------------
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::matrix3x4f FromBullet(const btTransform& m) noexcept
+{
+	return rtm::matrix_set(
+		FromBullet(m.getBasis().getColumn(0)),
+		FromBullet(m.getBasis().getColumn(1)),
+		FromBullet(m.getBasis().getColumn(2)),
+		FromBullet(m.getOrigin()));
+}
+//---------------------------------------------------------------------
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE btTransform ToBullet(rtm::matrix3x4f_arg0 m) noexcept
+{
+	const rtm::matrix3x3f M3x3 = rtm::matrix_cast(m);
+	const rtm::matrix3x3f RotationMatrix = rtm::matrix_transpose(rtm::matrix_remove_scale(M3x3));
 	return btTransform(
 		btMatrix3x3(
-			AxisX.x, AxisY.x, AxisZ.x,
-			AxisX.y, AxisY.y, AxisZ.y,
-			AxisX.z, AxisY.z, AxisZ.z),
-		VectorToBtVector(Tfm.Translation()));
+			ToBullet3(RotationMatrix.x_axis),
+			ToBullet3(RotationMatrix.y_axis),
+			ToBullet3(RotationMatrix.z_axis)),
+		ToBullet3(m.w_axis));
 }
+//---------------------------------------------------------------------
 
-inline matrix44 BtTfmToTfm(const btTransform& BtTfm)
-{
-	matrix44 Tfm;
-	Tfm.AxisX() = BtVectorToVector(BtTfm.getBasis().getColumn(0));
-	Tfm.AxisY() = BtVectorToVector(BtTfm.getBasis().getColumn(1));
-	Tfm.AxisZ() = BtVectorToVector(BtTfm.getBasis().getColumn(2));
-	Tfm.Translation() = BtVectorToVector(BtTfm.getOrigin());
-	return Tfm;
 }

@@ -152,10 +152,10 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		// Fill instance data with patches and quarter-patches to render
 
 		// FIXME: can do better?
-		CAABB AABB = CDLOD.GetAABB();
-		const auto LocalSize = AABB.Size();
-		AABB.Transform(Terrain.Transform);
-		const auto WorldSize = AABB.Size();
+		Math::CAABB AABB = CDLOD.GetAABB();
+		const auto LocalSize = AABB.Extent;
+		AABB = Math::AABBFromOBB(AABB, Terrain.Transform);
+		const auto WorldSize = AABB.Extent;
 
 		const float HMTextelWidth = 1.f / static_cast<float>(CDLOD.GetHeightMapWidth());
 		const float HMTextelHeight = 1.f / static_cast<float>(CDLOD.GetHeightMapHeight());
