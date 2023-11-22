@@ -187,7 +187,7 @@ void CShaderConstantParam::SetMatrixArray(CConstantBuffer& CB, const rtm::matrix
 		{
 			for (; pValues < pEnd; ++pValues)
 			{
-				const rtm::matrix4x4f Value = rtm::matrix_cast(rtm::matrix_transpose(*pValues));
+				const rtm::matrix4x4f Value = rtm::matrix_transpose(static_cast<rtm::matrix4x4f>(rtm::matrix_cast(*pValues)));
 				_Info->SetFloats(CB, Offset, reinterpret_cast<const float*>(&Value), ComponentCount);
 				Offset += _Info->GetElementStride();
 			}
@@ -210,7 +210,7 @@ void CShaderConstantParam::SetMatrixArray(CConstantBuffer& CB, const rtm::matrix
 		{
 			for (; pValues < pEnd; ++pValues)
 			{
-				const rtm::matrix4x4f Value = rtm::matrix_cast(rtm::matrix_transpose(*pValues));
+				const rtm::matrix4x4f Value = rtm::matrix_transpose(static_cast<rtm::matrix4x4f>(rtm::matrix_cast(*pValues)));
 				const rtm::vector4f Rows[] = { Value.x_axis, Value.y_axis, Value.z_axis, Value.w_axis };
 				for (UPTR Row = 0; Row < RowCount; ++Row)
 					_Info->SetFloats(CB, Offset + Row * RowBytes, reinterpret_cast<const float*>(&Rows[Row]), RowComponentCount);
