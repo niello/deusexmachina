@@ -218,6 +218,30 @@ RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE CAABB RTM_SIMD_CALL AABBFromM
 }
 //---------------------------------------------------------------------
 
+// Version of AngleXZ with pre-normalized direction vectors
+// TODO PERF: can optimize with actual use of SIMD?
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL AngleXZNorm(rtm::vector4f_arg0 v0, rtm::vector4f_arg1 v1) noexcept
+{
+	// Since angle is calculated in XZ plane, we simplify our calculations.
+	// Originally SinA = CrossY = (v0n x v1n) * XZPlaneNormal
+	// and CosA = Dot = v0n * v1n
+	// XZPlaneNormal = Up = (0, 1, 0), so we need only Y component of Cross.
+	const float v0x = rtm::vector_get_x(v0);
+	const float v0z = rtm::vector_get_z(v0);
+	const float v1x = rtm::vector_get_x(v1);
+	const float v1z = rtm::vector_get_z(v1);
+	float CrossY = v0z * v1x - v0x * v1z;
+	float Dot = v0x * v1x + v0z * v1z;
+	return atan2f(CrossY, Dot);
+}
+//---------------------------------------------------------------------
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL AngleXZ(rtm::vector4f_arg0 v0, rtm::vector4f_arg1 v1) noexcept
+{
+	return AngleXZNorm(rtm::vector_normalize3(v0), rtm::vector_normalize3(v1));
+}
+//---------------------------------------------------------------------
+
 #define RTM_MIX_ALIAS_ONE(c1, c2, c3, c4) \
 RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::vector4f RTM_SIMD_CALL vector_mix_##c1##c2##c3##c4(rtm::vector4f_arg0 input) { return rtm::vector_mix<rtm::mix4::c1, rtm::mix4::c2, rtm::mix4::c3, rtm::mix4::c4>(input, input); }
 #define RTM_MIX_ALIAS_TWO(c1, c2, c3, c4) \
@@ -233,6 +257,10 @@ RTM_MIX_ALIAS_TWO(x, y, z, b);
 RTM_MIX_ALIAS_TWO(x, y, z, c);
 RTM_MIX_ALIAS_TWO(x, y, z, d);
 RTM_MIX_ALIAS_TWO(x, z, a, c);
+RTM_MIX_ALIAS_TWO(x, b, z, w);
+RTM_MIX_ALIAS_TWO(a, b, z, w);
+RTM_MIX_ALIAS_TWO(a, y, z, w);
+RTM_MIX_ALIAS_TWO(x, b, c, w);
 //---------------------------------------------------------------------
 
 }

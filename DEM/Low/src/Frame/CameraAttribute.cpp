@@ -45,7 +45,7 @@ bool CCameraAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 
 void CCameraAttribute::RenderDebug(Debug::CDebugDraw& DebugDraw) const
 {
-	DebugDraw.DrawFrustumWireframe(Math::FromSIMD(_ViewProj), Render::ColorRGBA(128, 0, 255, 255), 2.f);
+	DebugDraw.DrawFrustumWireframe(_ViewProj, Render::ColorRGBA(128, 0, 255, 255), 2.f);
 }
 //---------------------------------------------------------------------
 

@@ -117,7 +117,7 @@ void ScheduleReequipment(Game::CGameWorld& World, Game::HEntity ItemID);
 
 U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID, const rtm::qvvf& Tfm, float MergeRadius);
 std::pair<Game::HEntity, U32> MoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count = std::numeric_limits<U32>().max());
-std::pair<U32, bool> MoveItemsToLocationSlot(Game::CGameWorld& World, std::vector<Game::HEntity>& GroundItems, size_t SlotIndex, Game::HEntity StackID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, bool Merge = true, Game::HEntity* pReplaced = nullptr);
+std::pair<U32, bool> MoveItemsToLocationSlot(Game::CGameWorld& World, std::vector<Game::HEntity>& GroundItems, size_t SlotIndex, Game::HEntity StackID, U32 Count, CStrID LevelID, const rtm::qvvf& Tfm, bool Merge = true, Game::HEntity* pReplaced = nullptr);
 std::pair<U32, bool> MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count, CStrID LevelID, const rtm::qvvf& Tfm, float MergeRadius = 0.f);
 Game::HEntity MoveWholeStackToLocation(Game::CGameWorld& World, Game::HEntity StackID, CStrID LevelID, const rtm::qvvf& Tfm, float MergeRadius = 0.f);
 void ClearLocationSlot(Game::CGameWorld& World, std::vector<Game::HEntity>& GroundItems, size_t SlotIndex);

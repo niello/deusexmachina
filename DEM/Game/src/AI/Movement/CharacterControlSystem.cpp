@@ -197,14 +197,14 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 	if (Character.State == ECharacterState::Walk)
 	{
 		const rtm::vector4f DesiredDir = rtm::vector_normalize3(rtm::vector_set_y(DesiredLinearVelocity, 0.f));
-		DesiredRotation = vector3::Angle2DNorm(LookatDir, DesiredDir);
+		DesiredRotation = Math::AngleXZNorm(LookatDir, DesiredDir);
 	}
 	else if (auto TurnAction = Queue.FindCurrent<AI::Turn>())
 	{
 		auto pTurnAction = TurnAction.As<AI::Turn>();
 		if (pTurnAction && Queue.GetStatus(TurnAction) == EActionStatus::Active)
 		{
-			DesiredRotation = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
+			DesiredRotation = Math::AngleXZNorm(LookatDir, pTurnAction->_LookatDirection);
 			Tolerance = pTurnAction->_Tolerance;
 		}
 	}

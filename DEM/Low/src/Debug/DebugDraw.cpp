@@ -11,6 +11,7 @@
 #include <Render/ShaderParamStorage.h>
 #include <Render/VertexComponent.h>
 #include <Data/Buffer.h>
+#include <rtm/matrix4x4f.h>
 
 namespace Debug
 {
@@ -61,7 +62,7 @@ CDebugDraw::~CDebugDraw() = default;
 //---------------------------------------------------------------------
 
 // TODO: check visibility, skip invisible
-void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
+void CDebugDraw::Render(Render::CEffect& Effect, const rtm::matrix4x4f& ViewProj)
 {
 	auto& GPU = *_GraphicsMgr->GetGPU();
 
@@ -269,47 +270,40 @@ void CDebugDraw::DrawTriangle(const vector3& P1, const vector3& P2, const vector
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawBox(const matrix44& Tfm, U32 Color)
+void CDebugDraw::DrawBox(const rtm::matrix3x4f& Tfm, U32 Color)
 {
-	ShapeInsts[Box].push_back({ Tfm, Color });
+	ShapeInsts[Box].push_back({ rtm::matrix_cast(Tfm), Color });
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawSphere(const vector3& Pos, float R, U32 Color)
+void CDebugDraw::DrawSphere(const rtm::vector4f& Pos, float R, U32 Color)
 {
-	ShapeInsts[Sphere].push_back(
-	{
-		{
-			R, 0.f, 0.f, 0.f,
-			0.f, R, 0.f, 0.f,
-			0.f, 0.f, R, 0.f,
-			Pos.x, Pos.y, Pos.z, 1.f
-		},
-		Color
-	});
+	const rtm::matrix4x4f ObjectTfm = rtm::matrix_set(
+		rtm::vector_set(R, 0.f, 0.f, 0.f),
+		rtm::vector_set(0.f, R, 0.f, 0.f),
+		rtm::vector_set(0.f, 0.f, R, 0.f),
+		rtm::vector_set_w(Pos, 1.f));
+
+	ShapeInsts[Sphere].push_back({ ObjectTfm, Color });
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawCylinder(const matrix44& Tfm, float R, float Length, U32 Color)
+void CDebugDraw::DrawCylinder(const rtm::matrix3x4f& Tfm, float R, float Length, U32 Color)
 {
-	ShapeInsts[Cylinder].push_back(
-	{
-		matrix44
-		{
-			R, 0.f, 0.f, 0.f,
-			0.f, Length, 0.f, 0.f,
-			0.f, 0.f, R, 0.f,
-			0.f, 0.f, 0.f, 1.f
-		} * Tfm,
-		Color
-	});
+	const rtm::matrix3x4f ObjectTfm = rtm::matrix_set(
+		rtm::vector_set(R, 0.f, 0.f, 0.f),
+		rtm::vector_set(0.f, Length, 0.f, 0.f),
+		rtm::vector_set(0.f, 0.f, R, 0.f),
+		rtm::vector_set(0.f, 0.f, 0.f, 1.f));
+
+	ShapeInsts[Cylinder].push_back({ rtm::matrix_cast(rtm::matrix_mul(ObjectTfm, Tfm)), Color });
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawCapsule(const matrix44& Tfm, float R, float Length, U32 Color)
+void CDebugDraw::DrawCapsule(const rtm::matrix3x4f& Tfm, float R, float Length, U32 Color)
 {
-	DrawSphere(Tfm * vector3(0.0f, Length * -0.5f, 0.0f), R, Color);
-	DrawSphere(Tfm * vector3(0.0f, Length * 0.5f, 0.0f), R, Color);
+	DrawSphere(rtm::matrix_mul_point3(rtm::vector_set(0.f, Length * -0.5f, 0.f), Tfm), R, Color);
+	DrawSphere(rtm::matrix_mul_point3(rtm::vector_set(0.f, Length * 0.5f, 0.f), Tfm), R, Color);
 	DrawCylinder(Tfm, R, Length, Color);
 }
 //---------------------------------------------------------------------
@@ -321,16 +315,24 @@ void CDebugDraw::DrawLine(const vector3& P1, const vector3& P2, U32 Color, float
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawBoxWireframe(const CAABB& Box, U32 Color, float Thickness)
+void CDebugDraw::DrawLine(const rtm::vector4f& P1, const rtm::vector4f& P2, U32 Color, float Thickness)
 {
-	const vector3 mmm = Box.GetCorner(0);
-	const vector3 mMm = Box.GetCorner(1);
-	const vector3 MMm = Box.GetCorner(2);
-	const vector3 Mmm = Box.GetCorner(3);
-	const vector3 MMM = Box.GetCorner(4);
-	const vector3 mMM = Box.GetCorner(5);
-	const vector3 mmM = Box.GetCorner(6);
-	const vector3 MmM = Box.GetCorner(7);
+	AddLineVertex(P1, Color, Thickness);
+	AddLineVertex(P2, Color, Thickness);
+}
+//---------------------------------------------------------------------
+
+void CDebugDraw::DrawBoxWireframe(const Math::CAABB& Box, U32 Color, float Thickness)
+{
+	const rtm::vector4f mmm = rtm::vector_sub(Box.Center, Box.Extent);
+	const rtm::vector4f MMM = rtm::vector_add(Box.Center, Box.Extent);
+	const rtm::vector4f mMm = Math::vector_mix_xbzw(mmm, MMM);
+	const rtm::vector4f MMm = Math::vector_mix_abzw(mmm, MMM);
+	const rtm::vector4f Mmm = Math::vector_mix_ayzw(mmm, MMM);
+	const rtm::vector4f mMM = Math::vector_mix_ayzw(MMM, mmm);
+	const rtm::vector4f mmM = Math::vector_mix_abzw(MMM, mmm);
+	const rtm::vector4f MmM = Math::vector_mix_xbzw(MMM, mmm);
+
 	DrawLine(mmm, Mmm, Color, Thickness);
 	DrawLine(mmm, mMm, Color, Thickness);
 	DrawLine(mmm, mmM, Color, Thickness);
@@ -342,7 +344,7 @@ void CDebugDraw::DrawBoxWireframe(const CAABB& Box, U32 Color, float Thickness)
 	DrawLine(mMM, mmM, Color, Thickness);
 	DrawLine(Mmm, MmM, Color, Thickness);
 	DrawLine(mmM, MmM, Color, Thickness);
-	DrawLine(MMm, Mmm, Color);
+	DrawLine(MMm, Mmm, Color, Thickness);
 }
 //---------------------------------------------------------------------
 
@@ -366,9 +368,9 @@ void CDebugDraw::DrawSphereWireframe(const vector3& Pos, float R, U32 Color, flo
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawFrustumWireframe(const matrix44& Frustum, U32 Color, float Thickness)
+void CDebugDraw::DrawFrustumWireframe(const rtm::matrix4x4f& Frustum, U32 Color, float Thickness)
 {
-	constexpr vector4 Corners[] =
+	constexpr rtm::vector4f Corners[] =
 	{
 		{ -1.f, -1.f, -1.f, 1.f },
 		{ -1.f, +1.f, -1.f, 1.f },
@@ -380,14 +382,13 @@ void CDebugDraw::DrawFrustumWireframe(const matrix44& Frustum, U32 Color, float 
 		{ +1.f, -1.f, +1.f, 1.f }
 	};
 
-	matrix44 InvFrustum = Frustum;
-	InvFrustum.invert();
+	const rtm::matrix4x4f InvFrustum = rtm::matrix_inverse(Frustum);
 
-	vector3 TransformedCorners[8];
+	rtm::vector4f TransformedCorners[8];
 	for (UPTR i = 0; i < 8; ++i)
 	{
-		const auto Tmp = InvFrustum * Corners[i];
-		TransformedCorners[i] = Tmp / Tmp.w;
+		const auto Tmp = rtm::matrix_mul_vector(Corners[i], InvFrustum);
+		TransformedCorners[i] = rtm::vector_div(Tmp, rtm::vector_dup_w(Tmp));
 	}
 
 	// Near plane
@@ -414,7 +415,7 @@ void CDebugDraw::DrawCircleXZ(const vector3& Pos, float Radius, float SegmentCou
 {
 	const float StepInRadians = (2.f * PI) / static_cast<float>(SegmentCount);
 
-	AddLineVertex({ 0.f, 0.f, Radius });
+	AddLineVertex(rtm::vector_set(0.f, 0.f, Radius));
 
 	for (U16 i = 1; i < SegmentCount; ++i)
 	{
@@ -424,15 +425,15 @@ void CDebugDraw::DrawCircleXZ(const vector3& Pos, float Radius, float SegmentCou
 		AddLineVertex(Vertex);
 	}
 
-	AddLineVertex({ 0.f, 0.f, Radius });
+	AddLineVertex(rtm::vector_set(0.f, 0.f, Radius));
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawCoordAxes(const matrix44& Tfm, bool DrawX, bool DrawY, bool DrawZ)
+void CDebugDraw::DrawCoordAxes(const rtm::matrix3x4f& Tfm, bool DrawX, bool DrawY, bool DrawZ)
 {
-	if (DrawX) DrawLine(Tfm.Translation(), Tfm.Translation() + Tfm.AxisX(), Render::Color_Red);
-	if (DrawY) DrawLine(Tfm.Translation(), Tfm.Translation() + Tfm.AxisY(), Render::Color_Green);
-	if (DrawZ) DrawLine(Tfm.Translation(), Tfm.Translation() + Tfm.AxisZ(), Render::Color_Blue);
+	if (DrawX) DrawLine(Tfm.w_axis, rtm::vector_add(Tfm.w_axis, Tfm.x_axis), Render::Color_Red);
+	if (DrawY) DrawLine(Tfm.w_axis, rtm::vector_add(Tfm.w_axis, Tfm.y_axis), Render::Color_Green);
+	if (DrawZ) DrawLine(Tfm.w_axis, rtm::vector_add(Tfm.w_axis, Tfm.z_axis), Render::Color_Blue);
 }
 //---------------------------------------------------------------------
 

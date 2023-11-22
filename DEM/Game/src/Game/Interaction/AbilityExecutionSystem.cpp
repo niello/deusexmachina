@@ -252,7 +252,7 @@ static EActionStatus FaceTarget(CGameSession& Session, CAbilityInstance& Ability
 	FacingTolerance = std::max(FacingTolerance, DEM::AI::Turn::AngularTolerance);
 
 	const rtm::vector4f LookatDir = rtm::vector_normalize3(rtm::vector_neg(ActorWorldTfm.z_axis));
-	const float Angle = vector3::Angle2DNorm(LookatDir, TargetDir);
+	const float Angle = Math::AngleXZNorm(LookatDir, TargetDir);
 	if (std::fabsf(Angle) < FacingTolerance) return EActionStatus::Succeeded;
 
 	Queue.PushOrUpdateChild<AI::Turn>(Action, TargetDir, FacingTolerance);

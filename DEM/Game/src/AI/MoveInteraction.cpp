@@ -21,7 +21,9 @@ static bool IsTargetPassable(const CGameSession& Session, const CInteractionCont
 	auto pWorld = Session.FindFeature<CGameWorld>();
 	if (!pWorld) return false;
 
-	for (auto Actor : Context.Actors)
+	const auto TargetPt = Math::FromSIMD3(Target.Point);
+
+	for (HEntity Actor : Context.Actors)
 	{
 		auto pAgent = pWorld->FindComponent<DEM::AI::CNavAgentComponent>(Actor);
 		if (!pAgent || !pAgent->pNavQuery) continue;
@@ -29,13 +31,13 @@ static bool IsTargetPassable(const CGameSession& Session, const CInteractionCont
 		const float Extents[3] = { 0.f, pAgent->Height, 0.f };
 		dtPolyRef PolyRef = 0;
 		vector3 Pos;
-		pAgent->pNavQuery->findNearestPoly(Context.CandidateTarget.Point.v, Extents, pAgent->Settings->GetQueryFilter(),
+		pAgent->pNavQuery->findNearestPoly(TargetPt.v, Extents, pAgent->Settings->GetQueryFilter(),
 			&PolyRef, Pos.v);
 
 		// FIXME: can return point over the impassable object if it stands on the navmesh!
 		if (PolyRef &&
-			vector3::SqDistance2D(Pos, Context.CandidateTarget.Point) <= 0.001f * 0.001f &&
-			std::abs(Pos.y - Context.CandidateTarget.Point.y) < pAgent->Height)
+			vector3::SqDistance2D(Pos, TargetPt) <= 0.001f * 0.001f &&
+			std::abs(Pos.y - TargetPt.y) < pAgent->Height)
 		{
 			return true;
 		}
@@ -68,7 +70,7 @@ bool CMoveInteraction::Execute(CGameSession& Session, CInteractionContext& Conte
 	//const auto* pSceneComponent = pWorld->FindComponent<DEM::Game::CSceneComponent>(*_SelectedActors.begin());
 	//const vector3 Direction = Context.SelectedTargets[0].Point - pSceneComponent->RootNode->GetWorldPosition();
 
-	return pFormationMgr->Move(Context.Actors, Context.Targets[0].Point, vector3::Zero, Enqueue);
+	return pFormationMgr->Move(Context.Actors, Context.Targets[0].Point, rtm::vector_zero(), Enqueue);
 }
 //---------------------------------------------------------------------
 
