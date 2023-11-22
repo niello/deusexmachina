@@ -10,12 +10,6 @@
 // I.e. if the item is moved inside one container or equipment, it will never be lost or duplicated. If the item
 // is moved from one container (or other storage) to another then the calling code is obliged to maintain integrity.
 
-namespace Math
-{
-	class CTransformSRT;
-	using CTransform = CTransformSRT;
-}
-
 namespace DEM::RPG
 {
 struct CItemContainerComponent;
@@ -121,15 +115,15 @@ void ScheduleReequipment(Game::CGameWorld& World, Game::HEntity ItemID);
 //???Game::HEntity GetEquippedStack(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID);
 //???size_t FindEquipmentSlotForItem(item) - to check if we can equip something before we do that! E.g. for UI prompt "Equip immediately?".
 
-U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius);
+U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID, const rtm::qvvf& Tfm, float MergeRadius);
 std::pair<Game::HEntity, U32> MoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count = std::numeric_limits<U32>().max());
 std::pair<U32, bool> MoveItemsToLocationSlot(Game::CGameWorld& World, std::vector<Game::HEntity>& GroundItems, size_t SlotIndex, Game::HEntity StackID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, bool Merge = true, Game::HEntity* pReplaced = nullptr);
-std::pair<U32, bool> MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius = 0.f);
-Game::HEntity MoveWholeStackToLocation(Game::CGameWorld& World, Game::HEntity StackID, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius = 0.f);
+std::pair<U32, bool> MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count, CStrID LevelID, const rtm::qvvf& Tfm, float MergeRadius = 0.f);
+Game::HEntity MoveWholeStackToLocation(Game::CGameWorld& World, Game::HEntity StackID, CStrID LevelID, const rtm::qvvf& Tfm, float MergeRadius = 0.f);
 void ClearLocationSlot(Game::CGameWorld& World, std::vector<Game::HEntity>& GroundItems, size_t SlotIndex);
 U32 RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count);
 void CleanupItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
-bool AddItemVisualsToLocation(Game::CGameWorld& World, Game::HEntity StackID, const Math::CTransformSRT& Tfm);
+bool AddItemVisualsToLocation(Game::CGameWorld& World, Game::HEntity StackID, const rtm::qvvf& Tfm);
 void RemoveItemVisualsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
 
 // TODO:

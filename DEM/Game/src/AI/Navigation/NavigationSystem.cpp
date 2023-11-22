@@ -37,9 +37,10 @@ static bool UpdatePosition(const rtm::vector4f& Position, CNavAgentComponent& Ag
 		((Agent.Mode == ENavigationMode::Recovery) ? 0.0001f : 0.01f);
 	const float RecoveryRadius = std::min(Agent.Radius * 2.f, 20.f);
 
+	const auto PositionRaw = Math::FromSIMD3(Position);
 	if (Agent.State == ENavigationState::Idle ||
 		(Agent.Mode == ENavigationMode::Surface &&
-			InRange(Agent.Corridor.getPos(), Position.v, Agent.Height, EQUALITY_THRESHOLD_SQ)))
+			InRange(Agent.Corridor.getPos(), PositionRaw.v, Agent.Height, EQUALITY_THRESHOLD_SQ)))
 	{
 		// Agent is idle, check the poly under feet validity
 		if (Agent.pNavQuery->isValidPolyRef(Agent.Corridor.getFirstPoly(), pNavFilter)) return true;
@@ -52,9 +53,9 @@ static bool UpdatePosition(const rtm::vector4f& Position, CNavAgentComponent& Ag
 		const auto PrevPoly = Agent.Corridor.getFirstPoly();
 
 		// Agent moves along the navmesh surface or recovers to it, adjust the corridor
-		if (Agent.Corridor.movePosition(Position.v, Agent.pNavQuery, pNavFilter))
+		if (Agent.Corridor.movePosition(PositionRaw.v, Agent.pNavQuery, pNavFilter))
 		{
-			const float SqDeviationFromCorridor = dtVdist2DSqr(Position.v, Agent.Corridor.getPos());
+			const float SqDeviationFromCorridor = dtVdist2DSqr(PositionRaw.v, Agent.Corridor.getPos());
 			if (SqDeviationFromCorridor <= SqRecoveryThreshold)
 			{
 				// Close enough to be considered being on the navmesh
@@ -77,17 +78,17 @@ static bool UpdatePosition(const rtm::vector4f& Position, CNavAgentComponent& Ag
 	const float RecoveryExtents[3] = { RecoveryRadius, Agent.Height, RecoveryRadius };
 	dtPolyRef NearestRef = 0;
 	float NearestPos[3];
-	Agent.pNavQuery->findNearestPoly(Position.v, RecoveryExtents, pNavFilter, &NearestRef, NearestPos);
+	Agent.pNavQuery->findNearestPoly(PositionRaw.v, RecoveryExtents, pNavFilter, &NearestRef, NearestPos);
 
 	if (!NearestRef)
 	{
 		// No poly found in a recovery radius, agent can't recover and needs external position change
-		Agent.Corridor.reset(0, Position.v);
+		Agent.Corridor.reset(0, PositionRaw.v);
 		return false;
 	}
 
 	// Check if our new location is far enough from the navmesh to enable recovery mode
-	if (dtVdist2DSqr(Position.v, NearestPos) > SqRecoveryThreshold)
+	if (dtVdist2DSqr(PositionRaw.v, NearestPos) > SqRecoveryThreshold)
 	{
 		Agent.Mode = ENavigationMode::Recovery;
 		Agent.CurrAreaType = 0;
@@ -397,7 +398,7 @@ static CTraversalAction* FindTraversalAction(Game::CGameWorld& World, CNavAgentC
 					if (!pOffmesh) return nullptr;
 
 					// Check if we are in a trigger range
-					if (InRange(Pos.v, NextCorner.v, Agent.Height, pOffmeshAction->GetSqTriggerRadius(Agent.Radius, pOffmesh->rad)))
+					if (InRange(Math::FromSIMD3(Pos).v, NextCorner.v, Agent.Height, pOffmeshAction->GetSqTriggerRadius(Agent.Radius, pOffmesh->rad)))
 					{
 						Agent.OffmeshRef = PolyRef;
 						pAction = pOffmeshAction;
@@ -453,14 +454,16 @@ static CTraversalAction* FindTraversalAction(Game::CGameWorld& World, CNavAgentC
 }
 //---------------------------------------------------------------------
 
-static bool HasArrived(CNavAgentComponent& Agent, const vector3& Pos, float SqArrivalRadius, bool Unobstructed)
+static bool HasArrived(CNavAgentComponent& Agent, const rtm::vector4f& Pos, float SqArrivalRadius, bool Unobstructed)
 {
 	if (Agent.Mode == ENavigationMode::Offmesh) return false;
 
-	if (dtVdist2DSqr(Pos.v, Agent.Corridor.getTarget()) > std::max(SqArrivalRadius, Steer::SqLinearTolerance)) return false;
+	const rtm::vector4f ToDest = rtm::vector_sub(Pos, rtm::vector_load3(Agent.Corridor.getTarget()));
+
+	if (Math::vector_length_squared_xz(ToDest) > std::max(SqArrivalRadius, Steer::SqLinearTolerance)) return false;
 
 	// NB: in unobstructed case we allow to break this height constraint, because straight path check is better
-	if (!Unobstructed) return std::abs(Pos.y - Agent.Corridor.getTarget()[1]) < Agent.Height;
+	if (!Unobstructed) return std::abs(rtm::vector_get_y(ToDest)) < Agent.Height;
 
 	dtStraightPathContext Ctx;
 	if (dtStatusFailed(Agent.pNavQuery->initStraightPathSearch(
@@ -517,7 +520,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, ::AI::CPathRe
 
 		// Access real physical transform, not an interpolated motion state
 		const auto& Offset = Character.RigidBody->GetCollisionShape()->GetOffset();
-		const vector3 Pos = Math::FromBullet(Character.RigidBody->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
+		const rtm::vector4f Pos = Math::FromBullet(Character.RigidBody->GetBtBody()->getWorldTransform() * Math::ToBullet3(rtm::vector_neg(Offset)));
 
 		// Update navigation status from the current agent position
 		if (!UpdatePosition(Pos, Agent))
@@ -642,16 +645,18 @@ void RenderDebugNavigation(Game::CGameWorld& World, Debug::CDebugDraw& DebugDraw
 				pCurrPos, Agent.Corridor.getTarget(), pCurrPath, Agent.Corridor.getPathCount(), Ctx)))
 			{
 				const auto& Offset = Character.RigidBody->GetCollisionShape()->GetOffset();
-				vector3 From = Math::FromBullet(Character.RigidBody->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
-				vector3 To;
+				rtm::vector4f From = Math::FromBullet(Character.RigidBody->GetBtBody()->getWorldTransform() * Math::ToBullet3(rtm::vector_neg(Offset)));
+				rtm::vector4f To;
 				dtStatus Status;
 				U8 AreaType = Agent.CurrAreaType;
 				do
 				{
 					const int Options = Agent.Settings->IsAreaControllable(AreaType) ? DT_STRAIGHTPATH_ALL_CROSSINGS : DT_STRAIGHTPATH_AREA_CROSSINGS;
-					Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, To.v, nullptr, &AreaType, nullptr, Options);
+					float ToRaw[3];
+					Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, ToRaw, nullptr, &AreaType, nullptr, Options);
 					if (dtStatusFailed(Status)) break;
 
+					To = rtm::vector_load3(ToRaw);
 					DebugDraw.DrawLine(From, To, ColorPathLine);
 					DebugDraw.DrawPoint(To, ColorPathCorner, 6.f);
 					From = To;

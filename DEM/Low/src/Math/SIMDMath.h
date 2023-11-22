@@ -137,7 +137,13 @@ RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::qvvf RTM_SIMD_CALL qvv_f
 }
 //---------------------------------------------------------------------
 
-RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL vector_squared_length_xz(rtm::vector4f_arg0 v) noexcept
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL vector_distance_squared3(rtm::vector4f_arg0 v1, rtm::vector4f_arg1 v2) noexcept
+{
+	return rtm::vector_length_squared3(rtm::vector_sub(v1, v2));
+}
+//---------------------------------------------------------------------
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL vector_length_squared_xz(rtm::vector4f_arg0 v) noexcept
 {
 	return rtm::vector_length_squared3(rtm::vector_set_y(v, 0.f));
 }
@@ -145,19 +151,19 @@ RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL vector_sq
 
 RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL vector_length_xz(rtm::vector4f_arg0 v) noexcept
 {
-	return rtm::scalar_sqrt(vector_squared_length_xz(v));
+	return rtm::scalar_sqrt(vector_length_squared_xz(v));
 }
 //---------------------------------------------------------------------
 
-RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL vector_squared_distance_xz(rtm::vector4f_arg0 v1, rtm::vector4f_arg1 v2) noexcept
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL vector_distance_squared_xz(rtm::vector4f_arg0 v1, rtm::vector4f_arg1 v2) noexcept
 {
-	return vector_squared_length_xz(rtm::vector_sub(v1, v2));
+	return vector_length_squared_xz(rtm::vector_sub(v1, v2));
 }
 //---------------------------------------------------------------------
 
 RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL vector_distance_xz(rtm::vector4f_arg0 v1, rtm::vector4f_arg1 v2) noexcept
 {
-	return rtm::scalar_sqrt(vector_squared_distance_xz(v1, v2));
+	return rtm::scalar_sqrt(vector_distance_squared_xz(v1, v2));
 }
 //---------------------------------------------------------------------
 

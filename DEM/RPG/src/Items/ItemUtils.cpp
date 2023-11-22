@@ -18,16 +18,16 @@ namespace
 
 // TODO: to CGameLevel?
 template<typename TPredicate>
-Game::HEntity FindClosestEntity(const Game::CGameLevel& Level, const vector3& Center, float Radius, TPredicate Predicate)
+static Game::HEntity FindClosestEntity(const Game::CGameLevel& Level, const rtm::vector4f& Center, float Radius, TPredicate Predicate)
 {
 	float ClosestDistanceSq = std::numeric_limits<float>().max();
 	Game::HEntity ClosestEntityID;
 
 	//!!!FIXME: need to set "Interactable" collision flag in all interactable entity colliders!
 	Level.EnumEntitiesInSphere(Center, Radius, /*CStrID("Interactable")*/ CStrID::Empty,
-		[&ClosestDistanceSq, &ClosestEntityID, Center, Predicate](Game::HEntity EntityID, const vector3& Pos)
+		[&ClosestDistanceSq, &ClosestEntityID, Center, Predicate](Game::HEntity EntityID, const rtm::vector4f& Pos)
 	{
-		const auto DistanceSq = vector3::SqDistance(Pos, Center);
+		const auto DistanceSq = Math::vector_distance_squared3(Pos, Center);
 		if (ClosestDistanceSq > DistanceSq && Predicate(EntityID))
 		{
 			ClosestDistanceSq = DistanceSq;
@@ -1618,7 +1618,7 @@ void ScheduleReequipment(Game::CGameWorld& World, Game::HEntity ItemID)
 //---------------------------------------------------------------------
 
 // Returns a number of items actually added
-U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius)
+U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID, const rtm::qvvf& Tfm, float MergeRadius)
 {
 	if (!LevelID || !ItemProtoID || !Count) return 0;
 
@@ -1635,7 +1635,7 @@ U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 C
 			// If tmp item containers are found, add the stack to the closest one (take lookat dir into account?)
 			// Else if stacks are found, try to merge into the closest one (take lookat dir into account?)
 			// If not merged, create tmp item container and add found stack and our stack to it
-			const auto DestStackID = FindClosestEntity(*pLevel, Tfm.Translation, MergeRadius,
+			const auto DestStackID = FindClosestEntity(*pLevel, Tfm.translation, MergeRadius,
 				[&World, ItemProtoID](Game::HEntity EntityID)
 			{
 				auto pGroundStack = World.FindComponent<const CItemStackComponent>(EntityID);
@@ -1677,7 +1677,7 @@ std::pair<Game::HEntity, U32> MoveItemsFromLocation(Game::CGameWorld& World, Gam
 //---------------------------------------------------------------------
 
 std::pair<U32, bool> MoveItemsToLocationSlot(Game::CGameWorld& World, std::vector<Game::HEntity>& GroundItems, size_t SlotIndex, Game::HEntity StackID,
-	U32 Count, CStrID LevelID, const Math::CTransform& Tfm, bool Merge, Game::HEntity* pReplaced)
+	U32 Count, CStrID LevelID, const rtm::qvvf& Tfm, bool Merge, Game::HEntity* pReplaced)
 {
 	if (!StackID || !Count) return { 0, false };
 
@@ -1729,7 +1729,7 @@ std::pair<U32, bool> MoveItemsToLocationSlot(Game::CGameWorld& World, std::vecto
 //---------------------------------------------------------------------
 
 // Returns a number of items actually moved in and a 'need to clear source storage' flag
-std::pair<U32, bool> MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius)
+std::pair<U32, bool> MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count, CStrID LevelID, const rtm::qvvf& Tfm, float MergeRadius)
 {
 	if (!LevelID || !StackID || !Count) return { 0, false };
 
@@ -1748,7 +1748,7 @@ std::pair<U32, bool> MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity 
 			// If tmp item containers are found, add the stack to the closest one (take lookat dir into account?)
 			// Else if stacks are found, try to merge into the closest one (take lookat dir into account?)
 			// If not merged, create tmp item container and add found stack and our stack to it
-			const auto DestStackID = FindClosestEntity(*pLevel, Tfm.Translation, MergeRadius,
+			const auto DestStackID = FindClosestEntity(*pLevel, Tfm.translation, MergeRadius,
 				[&World, pSrcStack](Game::HEntity EntityID)
 			{
 				auto pGroundStack = World.FindComponent<const CItemStackComponent>(EntityID);
@@ -1768,7 +1768,7 @@ std::pair<U32, bool> MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity 
 }
 //---------------------------------------------------------------------
 
-Game::HEntity MoveWholeStackToLocation(Game::CGameWorld& World, Game::HEntity StackID, CStrID LevelID, const Math::CTransform& Tfm, float MergeRadius)
+Game::HEntity MoveWholeStackToLocation(Game::CGameWorld& World, Game::HEntity StackID, CStrID LevelID, const rtm::qvvf& Tfm, float MergeRadius)
 {
 	if (!LevelID || !StackID) return {};
 
@@ -1781,7 +1781,7 @@ Game::HEntity MoveWholeStackToLocation(Game::CGameWorld& World, Game::HEntity St
 		if (auto pLevel = World.FindLevel(LevelID))
 		{
 			// TODO: see the comment for the same call inside MoveItemsToLocation
-			const auto DestStackID = FindClosestEntity(*pLevel, Tfm.Translation, MergeRadius,
+			const auto DestStackID = FindClosestEntity(*pLevel, Tfm.translation, MergeRadius,
 				[&World, pSrcStack](Game::HEntity EntityID)
 			{
 				auto pGroundStack = World.FindComponent<const CItemStackComponent>(EntityID);
@@ -1814,7 +1814,7 @@ U32 RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 
 }
 //---------------------------------------------------------------------
 
-bool AddItemVisualsToLocation(Game::CGameWorld& World, Game::HEntity StackID, const Math::CTransformSRT& Tfm)
+bool AddItemVisualsToLocation(Game::CGameWorld& World, Game::HEntity StackID, const rtm::qvvf& Tfm)
 {
 	auto pItemStack = World.FindComponent<const CItemStackComponent>(StackID);
 	if (!pItemStack) return false;
@@ -1827,7 +1827,7 @@ bool AddItemVisualsToLocation(Game::CGameWorld& World, Game::HEntity StackID, co
 		auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(StackID);
 		pSceneComponent->RootNode->RemoveFromParent();
 		pSceneComponent->AssetID = pItem->WorldModelID;
-		pSceneComponent->SetLocalTransform(Tfm);
+		pSceneComponent->RootNode->SetLocalTransform(Tfm);
 	}
 
 	if (pItem->WorldPhysicsID)

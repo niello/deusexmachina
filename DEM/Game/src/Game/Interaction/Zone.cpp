@@ -65,12 +65,12 @@ float CZone::FindClosestPoint(const rtm::vector4f& LocalSpacePos, float Addition
 	if (VertexCount == 0)
 	{
 		OutClosestPoint = rtm::vector_zero();
-		SqDistance = Math::vector_squared_length_xz(LocalSpacePos); // Distance from zero is the length
+		SqDistance = Math::vector_length_squared_xz(LocalSpacePos); // Distance from zero is the length
 	}
 	else if (VertexCount == 1)
 	{
 		OutClosestPoint = Vertices[0];
-		SqDistance = Math::vector_squared_distance_xz(LocalSpacePos, Vertices[0]);
+		SqDistance = Math::vector_distance_squared_xz(LocalSpacePos, Vertices[0]);
 	}
 	else if (VertexCount == 2)
 	{

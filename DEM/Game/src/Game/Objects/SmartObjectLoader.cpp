@@ -3,6 +3,7 @@
 #include <IO/Stream.h>
 #include <Data/Buffer.h>
 #include <Data/HRDParser.h>
+#include <Math/SIMDMath.h>
 
 namespace Resources
 {
@@ -109,7 +110,7 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 				Zone.Vertices.SetSize(VerticesDesc->GetCount());
 				size_t i = 0;
 				for (const auto& VertexDesc : *VerticesDesc)
-					Zone.Vertices[i++] = VertexDesc.GetValue<vector3>();
+					Zone.Vertices[i++] = Math::ToSIMD(VertexDesc.GetValue<vector3>());
 
 				if (Zone.Vertices.size())
 				{

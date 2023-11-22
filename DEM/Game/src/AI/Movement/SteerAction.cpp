@@ -53,7 +53,7 @@ bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponen
 		const rtm::vector4f ToDest = rtm::vector_sub(Pos, Dest);
 		const bool DestReached =
 			std::abs(rtm::vector_get_y(ToDest)) < Agent.Height &&
-			Math::vector_squared_length_xz(ToDest) < Steer::SqLinearTolerance;
+			Math::vector_length_squared_xz(ToDest) < Steer::SqLinearTolerance;
 
 		// Get the next edge traversal action
 		Game::HEntity Controller;

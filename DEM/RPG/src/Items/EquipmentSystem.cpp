@@ -300,20 +300,17 @@ void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerI
 		if (pBone->IsWorldTransformDirty()) pBone->UpdateTransform();
 
 		// Undo scaling
-		Math::CTransformSRT Tfm(pBone->GetWorldMatrix());
-		Tfm.Scale.ReciprocalInplace();
-		Tfm.Rotation = quaternion::Identity;
-		Tfm.Translation = vector3::Zero;
+		const rtm::qvvf Tfm = rtm::qvv_set(
+			rtm::quat_from_euler(0.f, 0.f, HALF_PI), //!!!DBG TMP! Was rtm::quat_identity()
+			rtm::vector_zero(),
+			rtm::vector_reciprocal(Math::matrix_extract_scale(pBone->GetWorldMatrix())));
 
 		//!!!TODO: store desired attachment local rotation and translation (and scaling?) somewhere?
-
-		//!!!DBG TMP!
-		Tfm.Rotation.set_rotate_x(HALF_PI);
 
 		auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(StackID);
 		pBone->AddChild(CStrID("Equipment"), pSceneComponent->RootNode, true);
 		pSceneComponent->AssetID = pItem->WorldModelID;
-		pSceneComponent->SetLocalTransform(Tfm);
+		pSceneComponent->RootNode->SetLocalTransform(Tfm);
 	}
 	else
 	{

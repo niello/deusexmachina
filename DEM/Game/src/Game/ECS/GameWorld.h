@@ -4,7 +4,7 @@
 #include <Game/ECS/EntityTemplate.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
-#include <Math/AABB.h>
+#include <Math/SIMDMath.h>
 #include <Scripting/SolGame.h>
 
 // A complete game world with objects, time and space. Space is subdivided into levels.
@@ -97,7 +97,7 @@ public:
 
 	IO::IStream* GetBaseStream(U64 Offset) const;
 
-	CGameLevel* CreateLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds = CAABB::Empty, UPTR SubdivisionDepth = 0);
+	CGameLevel* CreateLevel(CStrID ID, const Math::CAABB& Bounds, const Math::CAABB& InteractiveBounds = Math::EmptyAABB(), UPTR SubdivisionDepth = 0);
 	CGameLevel* LoadLevel(CStrID ID, const Data::CParams& In);
 	CGameLevel* FindLevel(CStrID ID) const;
 	void        ValidateComponents(CStrID LevelID);

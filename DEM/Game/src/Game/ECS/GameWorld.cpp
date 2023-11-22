@@ -421,7 +421,7 @@ IO::IStream* CGameWorld::GetBaseStream(U64 Offset) const
 //---------------------------------------------------------------------
 
 // FIXME: make difference between 'non-interactive' and 'interactive same as whole'. AABB::Empty + AABB::Invalid?
-CGameLevel* CGameWorld::CreateLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds, UPTR SubdivisionDepth)
+CGameLevel* CGameWorld::CreateLevel(CStrID ID, const Math::CAABB& Bounds, const Math::CAABB& InteractiveBounds, UPTR SubdivisionDepth)
 {
 	// Ensure there is no level with same ID
 

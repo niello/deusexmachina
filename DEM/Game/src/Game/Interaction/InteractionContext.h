@@ -1,7 +1,7 @@
 #pragma once
 #include <Game/GameSession.h>
 #include <Game/ECS/Entity.h>
-#include <Math/Vector3.h>
+#include <rtm/vector4f.h>
 
 namespace Scene
 {
