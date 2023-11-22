@@ -90,7 +90,7 @@ bool CPickItemAbility::GetFacingParams(const Game::CGameSession& Session, const 
 	// Simply face an object origin
 	//???make this logic default???
 	Out.Mode = Game::EFacingMode::Point;
-	Out.Dir = rtm::vector_zero();
+	Out.Dir = vector3::Zero;
 	Out.Tolerance = 1.5f;
 	return true;
 }

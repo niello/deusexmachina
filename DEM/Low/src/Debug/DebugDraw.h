@@ -49,14 +49,14 @@ protected:
 #pragma pack(push, 1) // Since we want to write them into hardware buffers as is, when possible
 	struct CDDShapeInst
 	{
-		rtm::matrix4x4f World;
-		U32             Color;
+		matrix44 World;
+		U32      Color;
 	};
 
 	struct CDDVertex
 	{
-		rtm::vector4f Pos;   // w - point or line thickness
-		U32           Color;
+		float Pos[4];   // w - point or line thickness
+		U32   Color;
 	};
 #pragma pack(pop)
 
@@ -88,11 +88,8 @@ protected:
 			if (Count >= Capacity)
 			{
 				constexpr UPTR GROW_SIZE = 1000;
-				pData = static_cast<CDDVertex*>(n_realloc_aligned(pData, (Count + GROW_SIZE) * sizeof(CDDVertex), 16));
-				//constexpr rtm::vector4f DefaultValue{ 0.f, 0.f, 0.f, 1.f };
-				//for (UPTR i = Count; i < Count + GROW_SIZE; ++i)
-				//	pData[i].Pos = DefaultValue;
 				Capacity = Count + GROW_SIZE;
+				pData = static_cast<CDDVertex*>(n_realloc_aligned(pData, Capacity * sizeof(CDDVertex), 16));
 			}
 			return pData[Count++];
 		}
@@ -110,24 +107,24 @@ protected:
 	CVertexArray              TriVertices;
 	//std::vector<CDDText>    Texts;
 
-	void DrawPointInternal(const rtm::vector4f& PosSize, U32 Color)
+	void RTM_SIMD_CALL DrawPointInternal(rtm::vector4f_arg0 PosSize, U32 Color)
 	{
 		auto& Vertex = Points.Add();
-		Vertex.Pos = PosSize;
+		rtm::vector_store(PosSize, Vertex.Pos);
 		Vertex.Color = Color;
 	}
 
-	void AddLineVertexInternal(const rtm::vector4f& PosThickness, U32 Color)
+	void RTM_SIMD_CALL AddLineVertexInternal(rtm::vector4f_arg0 PosThickness, U32 Color)
 	{
 		auto& Vertex = LineVertices.Add();
-		Vertex.Pos = PosThickness;
+		rtm::vector_store(PosThickness, Vertex.Pos);
 		Vertex.Color = Color;
 	}
 
-	void AddTriangleVertexInternal(const rtm::vector4f& Pos, U32 Color)
+	void RTM_SIMD_CALL AddTriangleVertexInternal(rtm::vector4f_arg0 Pos, U32 Color)
 	{
 		auto& Vertex = TriVertices.Add();
-		Vertex.Pos = Pos;
+		rtm::vector_store(Pos, Vertex.Pos);
 		Vertex.Color = Color;
 	}
 

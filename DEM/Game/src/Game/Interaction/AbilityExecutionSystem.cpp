@@ -35,12 +35,12 @@ static bool GetFacingParams(const CGameSession& Session, const CAbilityInstance&
 		{
 			case EFacingMode::Direction:
 			{
-				OutFacingDir = Facing.Dir;
+				OutFacingDir = Math::ToSIMD(Facing.Dir);
 				return true;
 			}
 			case EFacingMode::Point:
 			{
-				OutFacingDir = rtm::vector_sub(rtm::matrix_mul_vector3(Facing.Dir, AbilityInstance.TargetToWorld), ActorPos);
+				OutFacingDir = rtm::vector_sub(rtm::matrix_mul_point3(Math::ToSIMD(Facing.Dir), AbilityInstance.TargetToWorld), ActorPos);
 				OutFacingDir = rtm::vector_normalize3(rtm::vector_set_y(OutFacingDir, 0.f));
 				return true;
 			}

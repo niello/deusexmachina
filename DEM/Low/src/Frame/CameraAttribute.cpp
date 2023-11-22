@@ -96,7 +96,7 @@ void CCameraAttribute::UpdateBeforeChildren(const rtm::vector4f* pCOIArray, UPTR
 void CCameraAttribute::GetRay3D(float RelX, float RelY, float Length, Math::CLine& OutRay) const
 {
 	constexpr rtm::vector4f SignMask = { 1.f, -1.f, 1.f, 1.f };
-	const rtm::vector4f ScreenCoord3D = rtm::vector_set((RelX - 0.5f) * 2.0f, (RelY - 0.5f) * 2.0f, 1.0f);
+	const rtm::vector4f ScreenCoord3D = rtm::vector_set((RelX - 0.5f) * 2.f, (RelY - 0.5f) * 2.f, 1.f, 1.f);
 	const rtm::vector4f ViewLocalPos = rtm::vector_mul(rtm::vector_mul(rtm::matrix_mul_vector(ScreenCoord3D, _InvProj), _NearPlane * 1.1f), SignMask);
 	const rtm::matrix3x4f& InvView = GetInvViewMatrix();
 	OutRay.Start = rtm::matrix_mul_point3(ViewLocalPos, InvView);

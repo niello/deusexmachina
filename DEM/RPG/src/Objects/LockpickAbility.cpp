@@ -182,7 +182,7 @@ bool CLockpickAbility::GetFacingParams(const Game::CGameSession& Session, const 
 {
 	// For now simply face an object origin
 	Out.Mode = Game::EFacingMode::Point;
-	Out.Dir = rtm::vector_zero();
+	Out.Dir = vector3::Zero;
 	Out.Tolerance = 1.5f;
 	return true;
 }

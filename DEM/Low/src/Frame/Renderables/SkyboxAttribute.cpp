@@ -99,7 +99,7 @@ void CSkyboxAttribute::UpdateRenderable(CView& View, Render::IRenderable& Render
 	if (ViewProjChanged || pSkybox->TfmVersion != _pNode->GetTransformVersion())
 	{
 		pSkybox->Transform = rtm::matrix_cast(_pNode->GetWorldMatrix());
-		pSkybox->Transform.w_axis = View.GetCamera()->GetPosition();
+		pSkybox->Transform.w_axis = rtm::vector_set_w(View.GetCamera()->GetPosition(), 1.f);
 		pSkybox->TfmVersion = _pNode->GetTransformVersion();
 	}
 }

@@ -272,17 +272,17 @@ void CDebugDraw::DrawTriangle(const vector3& P1, const vector3& P2, const vector
 
 void CDebugDraw::DrawBox(const rtm::matrix3x4f& Tfm, U32 Color)
 {
-	ShapeInsts[Box].push_back({ rtm::matrix_cast(Tfm), Color });
+	ShapeInsts[Box].push_back({ Math::FromSIMD(Tfm), Color });
 }
 //---------------------------------------------------------------------
 
 void CDebugDraw::DrawSphere(const rtm::vector4f& Pos, float R, U32 Color)
 {
-	const rtm::matrix4x4f ObjectTfm = rtm::matrix_set(
-		rtm::vector_set(R, 0.f, 0.f, 0.f),
-		rtm::vector_set(0.f, R, 0.f, 0.f),
-		rtm::vector_set(0.f, 0.f, R, 0.f),
-		rtm::vector_set_w(Pos, 1.f));
+	const matrix44 ObjectTfm(
+		R, 0.f, 0.f, 0.f,
+		0.f, R, 0.f, 0.f,
+		0.f, 0.f, R, 0.f,
+		rtm::vector_get_x(Pos), rtm::vector_get_y(Pos), rtm::vector_get_z(Pos), 1.f);
 
 	ShapeInsts[Sphere].push_back({ ObjectTfm, Color });
 }
@@ -296,7 +296,7 @@ void CDebugDraw::DrawCylinder(const rtm::matrix3x4f& Tfm, float R, float Length,
 		rtm::vector_set(0.f, 0.f, R, 0.f),
 		rtm::vector_set(0.f, 0.f, 0.f, 1.f));
 
-	ShapeInsts[Cylinder].push_back({ rtm::matrix_cast(rtm::matrix_mul(ObjectTfm, Tfm)), Color });
+	ShapeInsts[Cylinder].push_back({ Math::FromSIMD(rtm::matrix_mul(ObjectTfm, Tfm)), Color });
 }
 //---------------------------------------------------------------------
 

@@ -20,8 +20,8 @@ class Navigate: public ::Events::CEventNative
 
 public:
 
-	rtm::vector4f _Destination;
-	rtm::vector4f _FinalFacing;
+	rtm::vector4f _Destination = rtm::vector_zero();
+	rtm::vector4f _FinalFacing = rtm::vector_zero();
 	float         _Speed = 0.f;
 
 	explicit Navigate(const rtm::vector4f& Destination, float Speed) : _Destination(Destination), _Speed(Speed) {}
