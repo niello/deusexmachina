@@ -51,17 +51,6 @@ bool HasLooseIntersection(/*Bounds, Morton*/) noexcept
 }
 //---------------------------------------------------------------------
 
-static inline std::tuple<rtm::vector4f, rtm::vector4f> ConvertAABBToSIMD(const CAABB& GlobalBox)
-{
-	// TODO: store AABB as SIMD center-extents everywhere?!
-	const auto HalfMin = rtm::vector_mul(rtm::vector_set(GlobalBox.Min.x, GlobalBox.Min.y, GlobalBox.Min.z), 0.5f);
-	const auto HalfMax = rtm::vector_mul(rtm::vector_set(GlobalBox.Max.x, GlobalBox.Max.y, GlobalBox.Max.z), 0.5f);
-	const auto BoxCenter = rtm::vector_add(HalfMax, HalfMin);
-	const auto BoxExtent = rtm::vector_sub(HalfMax, HalfMin);
-	return { BoxCenter, BoxExtent };
-}
-//---------------------------------------------------------------------
-
 static inline rtm::vector4f SphereFromBox(rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent)
 {
 	const float SphereRadius = rtm::vector_length3(BoxExtent);
@@ -250,18 +239,17 @@ void CGraphicsScene::RemoveSingleObjectFromNode(U32 NodeIndex, TSceneMorton Node
 //---------------------------------------------------------------------
 
 CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CSpatialRecord>& Storage, UPTR UID,
-	rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent, rtm::vector4f_arg2 GlobalSphere, Scene::CNodeAttribute& Attr)
+	const Math::CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere, Scene::CNodeAttribute& Attr)
 {
 	CSpatialRecord Record;
 	Record.pAttr = &Attr;
-	Record.BoxCenter = BoxCenter;
-	Record.BoxExtent = BoxExtent;
+	Record.Box = GlobalBox;
 	Record.Sphere = GlobalSphere;
 
 	// Check bounds validity
-	if (!rtm::vector_any_less_than3(Record.BoxExtent, rtm::vector_set(0.f))) //!!!TODO PERF: can check negative sign bits by mask!
+	if (!rtm::vector_any_less_than3(Record.Box.Extent, rtm::vector_zero())) //!!!TODO: can check negative sign bits by mask instead of comparing with 0!
 	{
-		const auto NodeMortonCode = CalculateMortonCode(Record.BoxCenter, Record.BoxExtent);
+		const auto NodeMortonCode = CalculateMortonCode(Record.Box.Center, Record.Box.Extent);
 		Record.NodeIndex = AddSingleObjectToNode(NodeMortonCode, 0);
 		Record.NodeMortonCode = NodeMortonCode;
 		Record.BoundsVersion = 1;
@@ -289,25 +277,24 @@ CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CSpatialRecord>
 }
 //---------------------------------------------------------------------
 
-void CGraphicsScene::UpdateObjectBounds(HRecord Handle, rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent, rtm::vector4f_arg2 GlobalSphere)
+void CGraphicsScene::UpdateObjectBounds(HRecord Handle, const Math::CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere)
 {
 	auto& Record = Handle->second;
 
-	// TODO PERF: check if this is useful. Also may want to rewrite for strict equality because near_equal involves much more operations!
-	if (rtm::vector_all_near_equal3(BoxCenter, Record.BoxCenter) && rtm::vector_all_near_equal3(BoxExtent, Record.BoxExtent))
+	// TODO PERF: check if this is useful
+	if (rtm::vector_all_equal3(GlobalBox.Center, Record.Box.Center) && rtm::vector_all_equal3(GlobalBox.Extent, Record.Box.Extent))
 		return;
 
-	const bool BoundsValid = !rtm::vector_any_less_than3(Record.BoxExtent, rtm::vector_set(0.f)); //!!!TODO: can check negative sign bits by mask!
+	const bool BoundsValid = !rtm::vector_any_less_than3(Record.Box.Extent, rtm::vector_zero()); //!!!TODO: can check negative sign bits by mask instead of comparing with 0!
 
-	Record.BoxCenter = BoxCenter;
-	Record.BoxExtent = BoxExtent;
+	Record.Box = GlobalBox;
 	Record.Sphere = GlobalSphere;
 	if (BoundsValid)
 		IncrementVersion(Record.BoundsVersion);
 	else
 		Record.BoundsVersion = 0;
 
-	const auto NodeMortonCode = BoundsValid ? CalculateMortonCode(Record.BoxCenter, Record.BoxExtent) : 0;
+	const auto NodeMortonCode = BoundsValid ? CalculateMortonCode(Record.Box.Center, Record.Box.Extent) : 0;
 	if (Record.NodeMortonCode != NodeMortonCode)
 	{
 		const auto LCAMortonCode = Math::MortonLCA<TREE_DIMENSIONS>(Record.NodeMortonCode, NodeMortonCode);
@@ -328,7 +315,7 @@ void CGraphicsScene::RemoveObject(std::map<UPTR, CSpatialRecord>& Storage, HReco
 }
 //---------------------------------------------------------------------
 
-CGraphicsScene::HRecord CGraphicsScene::AddRenderable(const CAABB& GlobalBox, CRenderableAttribute& RenderableAttr)
+CGraphicsScene::HRecord CGraphicsScene::AddRenderable(const Math::CAABB& GlobalBox, CRenderableAttribute& RenderableAttr)
 {
 	const auto UID = _NextRenderableUID++;
 
@@ -336,25 +323,21 @@ CGraphicsScene::HRecord CGraphicsScene::AddRenderable(const CAABB& GlobalBox, CR
 	// Compacting must change UIDs in map keys and broadcast changes to all views. Try to make it sorted and preserve iterators to avoid logN searches.
 	n_assert_dbg(_NextRenderableUID < std::numeric_limits<decltype(_NextRenderableUID)>().max());
 
-	const auto [BoxCenter, BoxExtent] = ConvertAABBToSIMD(GlobalBox);
-
 	// FIXME: precalculate in tools instead!
 	// See RTCD Chapter 4.3.2: Computing a Bounding Sphere
-	const auto Sphere = SphereFromBox(BoxCenter, BoxExtent);
+	const auto Sphere = SphereFromBox(GlobalBox.Center, GlobalBox.Extent);
 
-	return AddObject(_Renderables, UID, BoxCenter, BoxExtent, Sphere, RenderableAttr);
+	return AddObject(_Renderables, UID, GlobalBox, Sphere, RenderableAttr);
 }
 //---------------------------------------------------------------------
 
-void CGraphicsScene::UpdateRenderableBounds(HRecord Handle, const CAABB& GlobalBox)
+void CGraphicsScene::UpdateRenderableBounds(HRecord Handle, const Math::CAABB& GlobalBox)
 {
-	const auto [BoxCenter, BoxExtent] = ConvertAABBToSIMD(GlobalBox);
-
 	// FIXME: precalculate in tools instead!
 	// See RTCD Chapter 4.3.2: Computing a Bounding Sphere
-	const auto Sphere = SphereFromBox(BoxCenter, BoxExtent);
+	const auto Sphere = SphereFromBox(GlobalBox.Center, GlobalBox.Extent);
 
-	UpdateObjectBounds(Handle, BoxCenter, BoxExtent, Sphere);
+	UpdateObjectBounds(Handle, GlobalBox, Sphere);
 }
 //---------------------------------------------------------------------
 
@@ -380,7 +363,7 @@ void CGraphicsScene::RemoveRenderable(HRecord Handle)
 }
 //---------------------------------------------------------------------
 
-CGraphicsScene::HRecord CGraphicsScene::AddLight(const CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere, CLightAttribute& LightAttr)
+CGraphicsScene::HRecord CGraphicsScene::AddLight(const Math::CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere, CLightAttribute& LightAttr)
 {
 	const auto UID = _NextLightUID++;
 
@@ -388,15 +371,13 @@ CGraphicsScene::HRecord CGraphicsScene::AddLight(const CAABB& GlobalBox, rtm::ve
 	// Compacting must change UIDs in map keys and broadcast changes to all views. Try to make it sorted and preserve iterators to avoid logN searches.
 	n_assert_dbg(_NextLightUID < std::numeric_limits<decltype(_NextLightUID)>().max());
 
-	const auto [BoxCenter, BoxExtent] = ConvertAABBToSIMD(GlobalBox);
-	return AddObject(_Lights, UID, BoxCenter, BoxExtent, GlobalSphere, LightAttr);
+	return AddObject(_Lights, UID, GlobalBox, GlobalSphere, LightAttr);
 }
 //---------------------------------------------------------------------
 
-void CGraphicsScene::UpdateLightBounds(HRecord Handle, const CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere)
+void CGraphicsScene::UpdateLightBounds(HRecord Handle, const Math::CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere)
 {
-	const auto [BoxCenter, BoxExtent] = ConvertAABBToSIMD(GlobalBox);
-	UpdateObjectBounds(Handle, BoxCenter, BoxExtent, GlobalSphere);
+	UpdateObjectBounds(Handle, GlobalBox, GlobalSphere);
 }
 //---------------------------------------------------------------------
 
@@ -551,20 +532,26 @@ rtm::vector4f CGraphicsScene::CalcNodeBounds(TSceneMorton MortonCode) const
 }
 //---------------------------------------------------------------------
 
-CAABB CGraphicsScene::GetNodeAABB(U32 NodeIndex, bool Loose) const
+Math::CAABB CGraphicsScene::GetNodeAABB(U32 NodeIndex, bool Loose) const
 {
-	CAABB Box;
+	Math::CAABB Box;
 	if (NodeIndex != NO_SPATIAL_TREE_NODE)
+	{
 		Box = GetNodeAABB(_TreeNodes[NodeIndex].Bounds, Loose);
+	}
+	else
+	{
+		Box.Center = rtm::vector_zero();
+		Box.Extent = rtm::vector_zero();
+	}
 	return Box;
 }
 //---------------------------------------------------------------------
 
-CAABB CGraphicsScene::GetNodeAABB(rtm::vector4f_arg0 Bounds, bool Loose) const
+Math::CAABB CGraphicsScene::GetNodeAABB(rtm::vector4f_arg0 Bounds, bool Loose) const
 {
-	const vector3 Center(rtm::vector_get_x(Bounds), rtm::vector_get_y(Bounds), rtm::vector_get_z(Bounds));
 	const float Extent = _WorldExtent * rtm::vector_get_w(Bounds) * (Loose ? 2.f : 1.f);
-	return CAABB(Center, vector3(Extent, Extent, Extent));
+	return Math::CAABB{ Bounds, rtm::vector_set(Extent) };
 }
 //---------------------------------------------------------------------
 

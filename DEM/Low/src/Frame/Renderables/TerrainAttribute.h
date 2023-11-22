@@ -73,7 +73,7 @@ public:
 	virtual void                  UpdateLightList(CView& View, Render::IRenderable& Renderable, const CObjectLightIntersection* pHead) const override;
 	virtual void                  OnLightIntersectionsUpdated() override;
 	virtual U8                    GetLightTrackingFlags() const override { return TrackLightContactChanges | TrackLightRelativeMovement; }
-	virtual bool                  GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const override;
+	virtual bool                  GetLocalAABB(Math::CAABB& OutBox, UPTR LOD = 0) const override;
 };
 
 typedef Ptr<CTerrainAttribute> PTerrainAttribute;

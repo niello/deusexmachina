@@ -29,7 +29,7 @@ public:
 	virtual Render::PLight        CreateLight() const override;
 	virtual void                  UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const override;
 	virtual rtm::vector4f         GetLocalSphere() const override { return rtm::vector_set(0.f, 0.f, 0.f, _Range); }
-	virtual bool                  GetLocalAABB(CAABB& OutBox) const override;
+	virtual bool                  GetLocalAABB(Math::CAABB& OutBox) const override;
 	virtual bool                  IntersectsWith(rtm::vector4f_arg0 Sphere) const override;
 	virtual U8                    TestBoxClipping(rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent) const override;
 	virtual bool                  DoesEmitAnyEnergy() const override { return _IrradianceMapUID || _RadianceEnvMapUID; }

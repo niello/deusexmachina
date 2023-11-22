@@ -8,11 +8,14 @@
 // is resource validation. It happens only for instances and initializes GPU-dependent
 // resources of the attribute, making it renderable on certain GPU.
 
-class CAABB;
-
 namespace Render
 {
 	typedef std::unique_ptr<class IRenderable> PRenderable;
+}
+
+namespace Math
+{
+	struct CAABB;
 }
 
 namespace Frame
@@ -46,8 +49,8 @@ public:
 	virtual void                UpdateLightList(CView& View, Render::IRenderable& Renderable, const CObjectLightIntersection* pHead) const = 0;
 	virtual void                OnLightIntersectionsUpdated() = 0;
 	virtual U8                  GetLightTrackingFlags() const = 0;
-	virtual bool                GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
-	bool                        GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const;
+	virtual bool                GetLocalAABB(Math::CAABB& OutBox, UPTR LOD = 0) const = 0;
+	bool                        GetGlobalAABB(Math::CAABB& OutBox, UPTR LOD = 0) const;
 	void                        UpdateInGraphicsScene(CGraphicsScene& Scene);
 	CGraphicsScene::HRecord     GetSceneHandle() const { return _SceneRecordHandle; }
 

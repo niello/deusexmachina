@@ -1,8 +1,7 @@
 #pragma once
 #include <Data/SparseArray2.hpp>
-#include <Math/AABB.h>
+#include <Math/SIMDMath.h>
 #include <System/Allocators/PoolAllocator.h>
-#include <rtm/vector4f.h>
 #include <map>
 
 // Container for graphics objects - renderables and lights. Accelerated with a spatial partitioning tree.
@@ -64,9 +63,8 @@ public:
 
 	struct CSpatialRecord
 	{
-		rtm::vector4f           BoxCenter;
-		rtm::vector4f           BoxExtent;
-		rtm::vector4f           Sphere;
+		Math::CAABB               Box;
+		rtm::vector4f             Sphere;
 		Scene::CNodeAttribute*    pAttr = nullptr;
 		CObjectLightIntersection* pObjectLightIntersections = nullptr;
 		TSceneMorton              NodeMortonCode = 0;                  // 0 is for objects outside the octree, 1 is for root, and longer codes are for child nodes
@@ -105,8 +103,8 @@ protected:
 	U32             AddSingleObjectToNode(TSceneMorton NodeMortonCode, TSceneMorton StopMortonCode);
 	void            RemoveSingleObjectFromNode(U32 NodeIndex, TSceneMorton NodeMortonCode, TSceneMorton StopMortonCode);
 
-	HRecord         AddObject(std::map<UPTR, CSpatialRecord>& Storage, UPTR UID, rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent, rtm::vector4f_arg2 GlobalSphere, Scene::CNodeAttribute& Attr);
-	void            UpdateObjectBounds(HRecord Handle, rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent, rtm::vector4f_arg2 GlobalSphere);
+	HRecord         AddObject(std::map<UPTR, CSpatialRecord>& Storage, UPTR UID, const Math::CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere, Scene::CNodeAttribute& Attr);
+	void            UpdateObjectBounds(HRecord Handle, const Math::CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere);
 	void            RemoveObject(std::map<UPTR, CSpatialRecord>& Storage, HRecord Handle);
 
 	void            TrackObjectLightIntersections(CSpatialRecord& Record, bool Track);
@@ -115,21 +113,21 @@ public:
 
 	void            Init(const vector3& Center, float Size, U8 HierarchyDepth);
 
-	HRecord         AddRenderable(const CAABB& GlobalBox, CRenderableAttribute& RenderableAttr);
-	void            UpdateRenderableBounds(HRecord Handle, const CAABB& GlobalBox);
+	HRecord         AddRenderable(const Math::CAABB& GlobalBox, CRenderableAttribute& RenderableAttr);
+	void            UpdateRenderableBounds(HRecord Handle, const Math::CAABB& GlobalBox);
 	void            RemoveRenderable(HRecord Handle);
 	const auto&     GetRenderables() const { return _Renderables; }
 
-	HRecord         AddLight(const CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere, CLightAttribute& LightAttr);
-	void            UpdateLightBounds(HRecord Handle, const CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere);
+	HRecord         AddLight(const Math::CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere, CLightAttribute& LightAttr);
+	void            UpdateLightBounds(HRecord Handle, const Math::CAABB& GlobalBox, rtm::vector4f_arg0 GlobalSphere);
 	void            RemoveLight(HRecord Handle);
 	const auto&     GetLights() const { return _Lights; }
 
 	void            TestSpatialTreeVisibility(const Math::CSIMDFrustum& Frustum, std::vector<bool>& NodeVisibility) const;
 
-	rtm::vector4f CalcNodeBounds(TSceneMorton MortonCode) const;
-	CAABB           GetNodeAABB(U32 NodeIndex, bool Loose = false) const;
-	CAABB           GetNodeAABB(rtm::vector4f_arg0 Bounds, bool Loose = false) const;
+	rtm::vector4f   CalcNodeBounds(TSceneMorton MortonCode) const;
+	Math::CAABB     GetNodeAABB(U32 NodeIndex, bool Loose = false) const;
+	Math::CAABB     GetNodeAABB(rtm::vector4f_arg0 Bounds, bool Loose = false) const;
 	U32             GetSpatialTreeRebuildVersion() const { return _SpatialTreeRebuildVersion; }
 
 	void            TrackObjectLightIntersections(CRenderableAttribute& RenderableAttr, bool Track);

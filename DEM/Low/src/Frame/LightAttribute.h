@@ -2,12 +2,14 @@
 #include <Scene/NodeAttribute.h>
 #include <Frame/GraphicsScene.h>
 #include <Render/RenderFwd.h>
-#include <rtm/vector4f.h>
 
 // Light attribute is a scene node attribute that contains light source params.
 // See subclasses for different light source types.
 
-class CAABB;
+namespace Math
+{
+	struct CAABB;
+}
 
 namespace Frame
 {
@@ -27,7 +29,7 @@ protected:
 	bool                    _CastsShadow : 1;
 	bool                    _DoOcclusionCulling : 1;
 
-	virtual void           OnActivityChanged(bool Active) override;
+	virtual void            OnActivityChanged(bool Active) override;
 
 public:
 
@@ -35,9 +37,9 @@ public:
 
 	virtual Render::PLight  CreateLight() const = 0;
 	virtual void            UpdateLight(CGraphicsResourceManager& ResMgr, Render::CLight& Light) const = 0;
-	virtual rtm::vector4f GetLocalSphere() const = 0;
-	virtual bool            GetLocalAABB(CAABB& OutBox) const = 0;
-	bool                    GetGlobalAABB(CAABB& OutBox) const;
+	virtual rtm::vector4f   GetLocalSphere() const = 0;
+	virtual bool            GetLocalAABB(Math::CAABB& OutBox) const = 0;
+	bool                    GetGlobalAABB(Math::CAABB& OutBox) const;
 	void                    UpdateInGraphicsScene(CGraphicsScene& Scene);
 	CGraphicsScene::HRecord GetSceneHandle() const { return _SceneRecordHandle; }
 
