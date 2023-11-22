@@ -27,10 +27,10 @@ protected:
 
 		BT_DECLARE_ALIGNED_ALLOCATOR();
 
-		CKinematicMotionState(const rtm::matrix3x4f& InitialTfm, const vector3& Offset) { SetTransform(InitialTfm, Offset); }
+		CKinematicMotionState(const rtm::matrix3x4f& InitialTfm, const rtm::vector4f& Offset) { SetTransform(InitialTfm, Offset); }
 
 		//???FIXME: need this? need initial tfm? high chances that identity is passed because world tfm is not yet calculated!
-		void SetTransform(const rtm::matrix3x4f& NewTfm, const vector3& Offset);
+		void SetTransform(const rtm::matrix3x4f& NewTfm, const rtm::vector4f& Offset);
 
 		virtual void getWorldTransform(btTransform& worldTrans) const override { worldTrans = _Tfm; }
 		virtual void setWorldTransform(const btTransform& worldTrans) override { /* must not be called on static and kinematic objects */ }

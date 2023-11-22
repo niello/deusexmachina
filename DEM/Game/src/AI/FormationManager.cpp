@@ -14,7 +14,7 @@ CFormationManager::CFormationManager(CGameSession& Owner)
 }
 //---------------------------------------------------------------------
 
-bool CFormationManager::Move(std::vector<HEntity> Entities, const vector3& WorldPosition, const vector3& Direction, bool Enqueue) const
+bool CFormationManager::Move(std::vector<HEntity> Entities, const rtm::vector4f& WorldPosition, const rtm::vector4f& Direction, bool Enqueue) const
 {
 	if (Entities.empty()) return false;
 

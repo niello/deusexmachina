@@ -61,7 +61,7 @@ public:
 
 	static PGameLevel LoadFromDesc(CStrID ID, const Data::CParams& In, Resources::CResourceManager& ResMgr);
 
-	CGameLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds = CAABB::Empty, UPTR SubdivisionDepth = 0);
+	CGameLevel(CStrID ID, const Math::CAABB& Bounds, const Math::CAABB& InteractiveBounds = Math::EmptyAABB(), UPTR SubdivisionDepth = 0);
 	virtual ~CGameLevel() override;
 
 	bool                     Validate(Resources::CResourceManager& RsrcMgr);
@@ -70,13 +70,13 @@ public:
 	void                     SetNavRegionController(CStrID RegionID, HEntity Controller);
 	void                     SetNavRegionFlags(CStrID RegionID, U16 Flags, bool On);
 
-	Physics::CPhysicsObject* GetFirstPickIntersection(const line3& Ray, vector3* pOutPoint3D = nullptr) const;
+	Physics::CPhysicsObject* GetFirstPickIntersection(const Math::CLine& Ray, rtm::vector4f* pOutPoint3D = nullptr) const;
 	// Query hierarchy:
 	// 4. Reachable entities in a shape (navigation)
 	// 5. Reachable entities in a shape filtered by a custom filter, e.g. by a component presence
 	//ray check may need to apply collision group filter after the raycast, e.g. when searching for
 	//the closest Interactable, if the user wants closer non-interactable collision objects to block it.
-	UPTR                     EnumEntitiesInSphere(const vector3& Position, float Radius, CStrID CollisionMask, std::function<bool(HEntity&, const vector3&)>&& Callback) const;
+	UPTR                     EnumEntitiesInSphere(const rtm::vector4f& Position, float Radius, CStrID CollisionMask, std::function<bool(HEntity&, const rtm::vector4f&)>&& Callback) const;
 
 	CStrID                   GetID() const { return _ID; }
 

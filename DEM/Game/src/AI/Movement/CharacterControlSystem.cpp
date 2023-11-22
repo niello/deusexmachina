@@ -13,27 +13,25 @@
 namespace DEM::Game
 {
 
-static float CalcDistanceToGround(const CCharacterControllerComponent& Character, const vector3& Pos)
+static float CalcDistanceToGround(const CCharacterControllerComponent& Character, const rtm::vector4f& Pos)
 {
 	constexpr float GroundProbeLength = 0.5f;
 
-	vector3 Start = Pos;
-	vector3 End = Pos;
-	Start.y += Character.Height;
-	End.y -= (Character.MaxStepDownHeight + GroundProbeLength); // Falling state detection
+	const rtm::vector4f Start = rtm::vector_add(Pos, rtm::vector_set(0.f, Character.Height, 0.f));
+	const rtm::vector4f End = rtm::vector_sub(Pos, rtm::vector_set(0.f, Character.MaxStepDownHeight + GroundProbeLength, 0.f)); // Falling state detection
 
 	auto pBody = Character.RigidBody.Get();
 
 	// FIXME: improve passing collision flags through interfaces!
 	const auto* pCollisionProxy = pBody->GetBtBody()->getBroadphaseProxy();
 
-	vector3 ContactPos;
+	rtm::vector4f ContactPos;
 	if (pBody->GetLevel()->GetClosestRayContact(Start, End,
 		pCollisionProxy->m_collisionFilterGroup,
 		pCollisionProxy->m_collisionFilterMask,
 		&ContactPos, nullptr, pBody))
 	{
-		return Pos.y - ContactPos.y;
+		return rtm::vector_get_y(rtm::vector_sub(Pos, ContactPos));
 	}
 
 	return std::numeric_limits<float>().max();
@@ -100,7 +98,7 @@ static bool UpdateSelfControlState(CCharacterControllerComponent& Character, flo
 }
 //---------------------------------------------------------------------
 
-static vector3 ProcessMovement(CCharacterControllerComponent& Character, CActionQueueComponent& Queue, const vector3& Pos)
+static rtm::vector4f ProcessMovement(CCharacterControllerComponent& Character, CActionQueueComponent& Queue, const rtm::vector4f& Pos)
 {
 	// Move only when explicitly requested
 	auto SteerAction = Queue.FindCurrent<AI::Steer>();
@@ -109,19 +107,20 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 	{
 		if (Character.State == ECharacterState::Walk || Character.State == ECharacterState::ShortStep)
 			Character.State = ECharacterState::Stand;
-		return vector3::Zero;
+		return rtm::vector_zero();
 	}
 
-	vector3 ToDest(pSteerAction->_Dest.x - Pos.x, 0.f, pSteerAction->_Dest.z - Pos.z);
+	const rtm::vector4f ToDest = rtm::vector_sub(pSteerAction->_Dest, Pos);
+	const rtm::vector4f ToDestXZ = rtm::vector_set_y(ToDest, 0.f);
 
 	// Check if already at the desired position
-	const float SqDistanceToDest = ToDest.SqLength2D();
-	const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
+	const float SqDistanceToDest = rtm::vector_length_squared3(ToDestXZ);
+	const bool IsSameHeightLevel = (rtm::vector_get_y(rtm::vector_abs(ToDest)) < Character.Height);
 	if (IsSameHeightLevel && SqDistanceToDest < AI::Steer::SqLinearTolerance)
 	{
 		Queue.SetStatus(SteerAction, EActionStatus::Succeeded);
 		Character.State = ECharacterState::Stand;
-		return vector3::Zero;
+		return rtm::vector_zero();
 	}
 
 	// Select movement mode. Note that ShortStep may turn into Walk if destination
@@ -136,17 +135,17 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 	}
 
 	// If current destination is an intermediate turning point, make the trajectory smooth
-	vector3 DesiredMovement = ToDest;
+	rtm::vector4f DesiredMovement = ToDestXZ;
 	float RemainingDistance = n_sqrt(SqDistanceToDest);
-	if (Character.SteeringSmoothness > 0.f && pSteerAction->_NextDest != pSteerAction->_Dest)
+	if (Character.SteeringSmoothness > 0.f && !rtm::vector_all_equal3(pSteerAction->_NextDest, pSteerAction->_Dest))
 	{
-		const vector3 ToNext(pSteerAction->_NextDest.x - Pos.x, 0.f, pSteerAction->_NextDest.z - Pos.z);
-		const float DistanceToNext = ToNext.Length2D();
+		const rtm::vector4f ToNextXZ = rtm::vector_set_y(rtm::vector_sub(pSteerAction->_NextDest, Pos), 0.f);
+		const float DistanceToNext = rtm::vector_length3(ToNextXZ);
 		if (DistanceToNext > 0.001f)
 		{
 			const float Scale = RemainingDistance * Character.SteeringSmoothness / DistanceToNext;
-			DesiredMovement -= ToNext * Scale;
-			RemainingDistance = DesiredMovement.Length2D();
+			DesiredMovement = rtm::vector_sub(DesiredMovement, rtm::vector_mul(ToNextXZ, Scale));
+			RemainingDistance = rtm::vector_length3(DesiredMovement);
 		}
 	}
 
@@ -171,9 +170,9 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 
 	// Avoid overshooting, make exactly remaining movement in one frame
 	const float FrameTime = Character.RigidBody->GetLevel()->GetStepTime();
-	vector3 DesiredLinearVelocity = (RemainingDistance < Speed* FrameTime) ?
-		ToDest / FrameTime :
-		DesiredMovement * (Speed / RemainingDistance);
+	rtm::vector4f DesiredLinearVelocity = (RemainingDistance < Speed* FrameTime) ?
+		rtm::vector_div(ToDest, rtm::vector_set(FrameTime)) :
+		rtm::vector_mul(DesiredMovement, Speed / RemainingDistance);
 
 // TODO: neighbour separation, obstacle avoidance (see DetourCrowd for impl.)
 //if (Character._ObstacleAvoidanceEnabled) AvoidObstacles();
@@ -183,7 +182,7 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 //---------------------------------------------------------------------
 
 // Process facing, either explicitly requested or induced by linear movement. Can modify desired linear velocity.
-static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueueComponent& Queue, vector3& DesiredLinearVelocity)
+static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueueComponent& Queue, rtm::vector4f& DesiredLinearVelocity)
 {
 	// If character can't turn, skip facing
 	if (Character.MaxAngularSpeed <= 0.f) return 0.f;
@@ -191,14 +190,13 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 	auto pBody = Character.RigidBody.Get();
 	auto pBtBody = pBody->GetBtBody();
 
-	const vector3 LookatDir = BtVectorToVector(pBtBody->getWorldTransform().getBasis() * btVector3(0.f, 0.f, -1.f));
+	const rtm::vector4f LookatDir = Math::FromBullet(pBtBody->getWorldTransform().getBasis() * btVector3(0.f, 0.f, -1.f));
 
 	float DesiredRotation = 0.f;
 	float Tolerance = AI::Turn::AngularTolerance;
 	if (Character.State == ECharacterState::Walk)
 	{
-		vector3 DesiredDir(DesiredLinearVelocity.x, 0.f, DesiredLinearVelocity.z);
-		DesiredDir.norm();
+		const rtm::vector4f DesiredDir = rtm::vector_normalize3(rtm::vector_set_y(DesiredLinearVelocity, 0.f));
 		DesiredRotation = vector3::Angle2DNorm(LookatDir, DesiredDir);
 	}
 	else if (auto TurnAction = Queue.FindCurrent<AI::Turn>())
@@ -225,7 +223,7 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 		Speed *= AngleAbs / AngularArrivalZone;
 
 	// Amount of required rotation is too big, actor must stop moving to perform it
-	if (AngleAbs > Character.BigTurnThreshold) DesiredLinearVelocity = vector3::Zero;
+	if (AngleAbs > Character.BigTurnThreshold) DesiredLinearVelocity = rtm::vector_zero();
 
 	// Avoid overshooting, make exactly remaining rotation in one frame
 	const float FrameTime = pBody->GetLevel()->GetStepTime();
@@ -286,13 +284,13 @@ void ProcessCharacterControllers(CGameWorld& World, Physics::CPhysicsLevel& Phys
 
 		// Access real physical transform, not an interpolated motion state
 		const auto& Offset = pBody->GetCollisionShape()->GetOffset();
-		const vector3 Pos = BtVectorToVector(pBody->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
+		const vector3 Pos = Math::FromBullet(pBody->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
 
 		const float DistanceToGround = CalcDistanceToGround(Character, Pos);
 		if (UpdateSelfControlState(Character, DistanceToGround))
 		{
 			// Update movement and other self-control
-			vector3 DesiredLinearVelocity = ProcessMovement(Character, Queue, Pos);
+			rtm::vector4f DesiredLinearVelocity = ProcessMovement(Character, Queue, Pos);
 			const float DesiredAngularVelocity = ProcessFacing(Character, Queue, DesiredLinearVelocity);
 			UpdateRigidBodyMovement(pBody, dt, DesiredLinearVelocity, DesiredAngularVelocity, Character.MaxAcceleration);
 
@@ -329,7 +327,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 		{
 			// Check linear arrival
 			const auto& Offset = pBody->GetCollisionShape()->GetOffset();
-			const vector3 Pos = BtVectorToVector(BodyTfm * btVector3(-Offset.x, -Offset.y, -Offset.z));
+			const vector3 Pos = Math::FromBullet(BodyTfm * btVector3(-Offset.x, -Offset.y, -Offset.z));
 			const float SqDistance = vector3::SqDistance2D(pSteerAction->_Dest, Pos);
 			const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
 			if (IsSameHeightLevel && SqDistance < AI::Steer::SqLinearTolerance)
@@ -348,7 +346,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 		else if (auto pTurnAction = Action.As<AI::Turn>())
 		{
 			// Check angular arrival
-			const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
+			const vector3 LookatDir = Math::FromBullet(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
 			const float Angle = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
 			if (std::fabsf(Angle) < pTurnAction->_Tolerance)
 				Queue.SetStatus(Action, EActionStatus::Succeeded);
@@ -366,13 +364,17 @@ void UpdateCharacterControllerShape(CCharacterControllerComponent& Character)
 
 	Physics::CPhysicsLevel* pLevel = nullptr;
 	Scene::CSceneNode* pNode = nullptr;
-	matrix44 Tfm;
+	rtm::matrix3x4f Tfm;
 	if (pBody)
 	{
 		pLevel = pBody->GetLevel();
 		pNode = pBody->GetControlledNode();
 		pBody->GetTransform(Tfm);
 		pBody->RemoveFromLevel();
+	}
+	else
+	{
+		Tfm = rtm::matrix_identity();
 	}
 
 	// FIXME PHYSICS - where to set? In component (externally)?
@@ -381,7 +383,7 @@ void UpdateCharacterControllerShape(CCharacterControllerComponent& Character)
 
 	const float CapsuleHeight = Character.Height - Character.Radius - Character.Radius - Character.Hover;
 	n_assert(CapsuleHeight > 0.f);
-	const vector3 Offset(0.f, (Character.Hover + Character.Height) * 0.5f, 0.f);
+	const rtm::vector4f Offset = rtm::vector_set(0.f, (Character.Hover + Character.Height) * 0.5f, 0.f);
 	auto Shape = Physics::CCollisionShape::CreateCapsuleY(Character.Radius, CapsuleHeight, Offset);
 
 	Character.RigidBody = n_new(Physics::CRigidBody(Character.Mass, *Shape, CollisionGroupID, CollisionMaskID, Tfm));

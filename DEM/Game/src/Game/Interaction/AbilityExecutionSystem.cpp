@@ -73,10 +73,10 @@ static void OptimizePath(const CGameSession& Session, CAbilityInstance& AbilityI
 	pNavAgent->pNavQuery->getAttachedNavMesh()->getTileAndPolyByRefUnsafe(AbilityInstance.CheckedPoly, &pTile, &pPoly);
 	if (pPoly->getType() == DT_POLYTYPE_OFFMESH_CONNECTION) return;
 
-	float Verts[DT_VERTS_PER_POLYGON * 3];
+	rtm::vector4f Verts[DT_VERTS_PER_POLYGON];
 	const int PolyVertCount = pPoly->vertCount;
 	for (int i = 0; i < PolyVertCount; ++i)
-		dtVcopy(&Verts[i * 3], &pTile->verts[pPoly->verts[i] * 3]);
+		Verts[i] = rtm::vector_load3(&pTile->verts[pPoly->verts[i] * 3]);
 
 	float MinDistance = std::numeric_limits<float>().max();
 	for (UPTR ZoneIdx = 0; ZoneIdx < AbilityInstance.AvailableZones.size(); ++ZoneIdx)
@@ -95,11 +95,12 @@ static void OptimizePath(const CGameSession& Session, CAbilityInstance& AbilityI
 
 		Point = rtm::matrix_mul_point3(Point, AbilityInstance.TargetToWorld);
 
+		vector3 PointRaw = Math::FromSIMD3(Point);
 		float NavigablePos[3];
 		const float Extents[3] = { Zone.Radius, pNavAgent->Height, Zone.Radius };
 		dtPolyRef ObjPolyRef = 0;
-		pNavAgent->pNavQuery->findNearestPoly(Point.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NavigablePos);
-		if (ObjPolyRef != AbilityInstance.CheckedPoly || dtVdist2DSqr(Point.v, NavigablePos) > Zone.Radius * Zone.Radius) continue;
+		pNavAgent->pNavQuery->findNearestPoly(PointRaw.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NavigablePos);
+		if (ObjPolyRef != AbilityInstance.CheckedPoly || dtVdist2DSqr(PointRaw.v, NavigablePos) > Zone.Radius * Zone.Radius) continue;
 
 		MinDistance = Distance;
 		pNavAction->_Destination = Point; // Remember local for now, will convert once at the end
@@ -187,13 +188,14 @@ static EActionStatus MoveToTarget(CGameSession& Session, CAbilityInstance& Abili
 		// http://acm.math.spbu.ru/~sk1/download/books/geometry/distance_O(log(n+m))_1985-J-02-ComputingExtremeDistances.pdf
 		if (pNavAgent)
 		{
+			vector3 ActionPosRaw = Math::FromSIMD3(ActionPos);
 			float NavigablePos[3];
 			const float Radius = AbilityInstance.AvailableZones[AbilityInstance.CurrZoneIndex]->Radius;
 			const float Extents[3] = { Radius, pNavAgent->Height, Radius };
 			dtPolyRef ObjPolyRef = 0;
-			pNavAgent->pNavQuery->findNearestPoly(ActionPos.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NavigablePos);
+			pNavAgent->pNavQuery->findNearestPoly(ActionPosRaw.v, Extents, pNavAgent->Settings->GetQueryFilter(), &ObjPolyRef, NavigablePos);
 
-			if (!ObjPolyRef || dtVdist2DSqr(ActionPos.v, NavigablePos) > Radius * Radius)
+			if (!ObjPolyRef || dtVdist2DSqr(ActionPosRaw.v, NavigablePos) > Radius * Radius)
 			{
 				Algo::VectorFastErase(AbilityInstance.AvailableZones, AbilityInstance.CurrZoneIndex);
 				continue;
@@ -249,8 +251,7 @@ static EActionStatus FaceTarget(CGameSession& Session, CAbilityInstance& Ability
 
 	FacingTolerance = std::max(FacingTolerance, DEM::AI::Turn::AngularTolerance);
 
-	vector3 LookatDir = -ActorWorldTfm.AxisZ();
-	LookatDir.norm();
+	const rtm::vector4f LookatDir = rtm::vector_normalize3(rtm::vector_neg(ActorWorldTfm.z_axis));
 	const float Angle = vector3::Angle2DNorm(LookatDir, TargetDir);
 	if (std::fabsf(Angle) < FacingTolerance) return EActionStatus::Succeeded;
 

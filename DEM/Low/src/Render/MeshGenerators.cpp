@@ -87,8 +87,7 @@ Core::PObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 	Group.VertexCount = VertexCount;
 	Group.FirstIndex = 0;
 	Group.IndexCount = IndexCount;
-	Group.AABB.Min = vector3::Zero;
-	Group.AABB.Max.set(1.f, 0.f, 1.f);
+	Group.AABB = Math::AABBFromMinMax(rtm::vector_zero(), rtm::vector_set(1.f, 0.f, 1.f));
 
 	MeshData->InitGroups(&Group, 1, 1, 1, false, false);
 
@@ -157,8 +156,8 @@ Core::PObject CMeshGeneratorBox::CreateResource(CStrID UID)
 	Group.VertexCount = MeshData->VertexCount;
 	Group.FirstIndex = 0;
 	Group.IndexCount = MeshData->IndexCount;
-	Group.AABB.Min.set(-0.5f, -0.5f, -0.5f);
-	Group.AABB.Max.set(0.5f, 0.5f, 0.5f);
+	Group.AABB.Center = rtm::vector_zero();
+	Group.AABB.Extent = rtm::vector_set(0.5f);
 
 	MeshData->InitGroups(&Group, 1, 1, 1, false, false);
 
@@ -285,8 +284,8 @@ Core::PObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 	Group.VertexCount = MeshData->VertexCount;
 	Group.FirstIndex = 0;
 	Group.IndexCount = MeshData->IndexCount;
-	Group.AABB.Min.set(-Radius, -Radius, -Radius);
-	Group.AABB.Max.set(Radius, Radius, Radius);
+	Group.AABB.Center = rtm::vector_zero();
+	Group.AABB.Extent = rtm::vector_set(Radius);
 
 	MeshData->InitGroups(&Group, 1, 1, 1, false, false);
 
@@ -391,8 +390,8 @@ Core::PObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
 	Group.VertexCount = MeshData->VertexCount;
 	Group.FirstIndex = 0;
 	Group.IndexCount = MeshData->IndexCount;
-	Group.AABB.Min.set(-Radius, -HalfHeight, -Radius);
-	Group.AABB.Max.set(Radius, HalfHeight, Radius);
+	Group.AABB.Center = rtm::vector_zero();
+	Group.AABB.Extent = rtm::vector_set(Radius, HalfHeight, Radius);
 
 	MeshData->InitGroups(&Group, 1, 1, 1, false, false);
 
@@ -466,8 +465,8 @@ Core::PObject CMeshGeneratorCone::CreateResource(CStrID UID)
 	Group.VertexCount = MeshData->VertexCount;
 	Group.FirstIndex = 0;
 	Group.IndexCount = MeshData->IndexCount;
-	Group.AABB.Min.set(-Radius, -HalfHeight, -Radius);
-	Group.AABB.Max.set(Radius, HalfHeight, Radius);
+	Group.AABB.Center = rtm::vector_zero();
+	Group.AABB.Extent = rtm::vector_set(Radius, HalfHeight, Radius);
 
 	MeshData->InitGroups(&Group, 1, 1, 1, false, false);
 

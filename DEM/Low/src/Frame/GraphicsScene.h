@@ -111,7 +111,7 @@ protected:
 
 public:
 
-	void            Init(const vector3& Center, float Size, U8 HierarchyDepth);
+	void            Init(const rtm::vector4f& Center, float Size, U8 HierarchyDepth);
 
 	HRecord         AddRenderable(const Math::CAABB& GlobalBox, CRenderableAttribute& RenderableAttr);
 	void            UpdateRenderableBounds(HRecord Handle, const Math::CAABB& GlobalBox);

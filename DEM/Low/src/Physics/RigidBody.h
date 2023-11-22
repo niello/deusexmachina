@@ -27,11 +27,11 @@ protected:
 	protected:
 
 		Scene::PSceneNode _Node;
-		vector3           _Offset;
+		rtm::vector4f     _Offset;
 
 	public:
 
-		CDynamicMotionState(const vector3& Offset);
+		CDynamicMotionState(const rtm::vector4f& Offset);
 		virtual ~CDynamicMotionState() override;
 
 		void SetSceneNode(Scene::PSceneNode&& Node);

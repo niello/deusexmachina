@@ -84,8 +84,7 @@ Core::PObject CMeshLoaderMSH::CreateResource(CStrID UID)
 		MeshGroup.FirstIndex = Group.FirstIndex;
 		MeshGroup.IndexCount = Group.IndexCount;
 		MeshGroup.Topology = static_cast<Render::EPrimitiveTopology>(Group.TopologyCode);
-		MeshGroup.AABB.Min = Group.AABBMin;
-		MeshGroup.AABB.Max = Group.AABBMax;
+		MeshGroup.AABB = Math::AABBFromMinMax(Math::ToSIMD(Group.AABBMin), Math::ToSIMD(Group.AABBMax));
 	}
 
 	U32 VertexStartPos, IndexStartPos;

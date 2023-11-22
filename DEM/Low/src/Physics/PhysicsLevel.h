@@ -2,6 +2,7 @@
 #include <Data/RefCounted.h>
 #include <Data/DynamicEnum.h>
 #include <Math/Vector3.h>
+#include <Math/SIMDMath.h>
 #include <LinearMath/btScalar.h>
 
 // Physics level represents a space where physics bodies and collision objects live.
@@ -37,18 +38,18 @@ public:
 
 	Data::CDynamicEnum32     CollisionGroups;
 
-	CPhysicsLevel(const CAABB& Bounds);
+	CPhysicsLevel(const Math::CAABB& Bounds);
 	virtual ~CPhysicsLevel() override;
 
 	void  Update(float dt);
 	void  RenderDebug(Debug::CDebugDraw& DebugDraw);
 
 	// FIXME CONSISTENCY: contact enumerators work only with CPhysicsObject but GetClosestRayContact detects hit point for any bullet collision objects!
-	bool  GetClosestRayContact(const vector3& Start, const vector3& End, U32 Group, U32 Mask, vector3* pOutPos = nullptr, PPhysicsObject* pOutObj = nullptr, CPhysicsObject* pExclude = nullptr) const;
-	UPTR  EnumRayContacts(const vector3& Start, const vector3& End, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const;
-	UPTR  EnumObjectContacts(const CPhysicsObject& Object, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const;
-	UPTR  EnumSphereContacts(const vector3& Position, float Radius, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const;
-	UPTR  EnumCapsuleYContacts(const vector3& Position, float Radius, float CylinderLength, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const;
+	bool  GetClosestRayContact(const rtm::vector4f& Start, const rtm::vector4f& End, U32 Group, U32 Mask, rtm::vector4f* pOutPos = nullptr, PPhysicsObject* pOutObj = nullptr, CPhysicsObject* pExclude = nullptr) const;
+	UPTR  EnumRayContacts(const rtm::vector4f& Start, const rtm::vector4f& End, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const rtm::vector4f&)>&& Callback) const;
+	UPTR  EnumObjectContacts(const CPhysicsObject& Object, std::function<bool(CPhysicsObject&, const rtm::vector4f&)>&& Callback) const;
+	UPTR  EnumSphereContacts(const rtm::vector4f& Position, float Radius, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const rtm::vector4f&)>&& Callback) const;
+	UPTR  EnumCapsuleYContacts(const rtm::vector4f& Position, float Radius, float CylinderLength, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const rtm::vector4f&)>&& Callback) const;
 
 	void  RegisterTickListener(ITickListener* pListener);
 	void  UnregisterTickListener(ITickListener* pListener);

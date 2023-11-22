@@ -14,8 +14,8 @@ using PGameSession = Ptr<class CGameSession>;
 
 struct CTargetInfo
 {
+	rtm::vector4f      Point;
 	Scene::CSceneNode* pNode = nullptr;
-	vector3            Point;
 	HEntity            Entity;
 	bool               Valid = false;
 

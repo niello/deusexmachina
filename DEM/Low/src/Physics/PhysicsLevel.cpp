@@ -70,14 +70,14 @@ class CFunctorContactCallback : public btCollisionWorld::ContactResultCallback
 {
 protected:
 
-	btCollisionObject&                                             _Self;
-	std::function<bool(Physics::CPhysicsObject&, const vector3&)>& _Callback;
-	UPTR                                                           _Counter = 0;
+	btCollisionObject& _Self;
+	UPTR               _Counter = 0;
+	std::function<bool(Physics::CPhysicsObject&, const rtm::vector4f&)>& _Callback;
 
 public:
 
 	//???struct CContact instead of separate object + pos? May add normal.
-	CFunctorContactCallback(btCollisionObject& Self, std::function<bool(Physics::CPhysicsObject&, const vector3&)>& Callback)
+	CFunctorContactCallback(btCollisionObject& Self, std::function<bool(Physics::CPhysicsObject&, const rtm::vector4f&)>& Callback)
 		: _Self(Self), _Callback(Callback)
 	{
 		if (const btBroadphaseProxy* pBroadphase = _Self.getBroadphaseHandle())
@@ -87,7 +87,7 @@ public:
 		}
 	}
 
-	CFunctorContactCallback(btCollisionObject& Self, U32 Group, U32 Mask, std::function<bool(Physics::CPhysicsObject&, const vector3&)>& Callback)
+	CFunctorContactCallback(btCollisionObject& Self, U32 Group, U32 Mask, std::function<bool(Physics::CPhysicsObject&, const rtm::vector4f&)>& Callback)
 		: _Self(Self), _Callback(Callback)
 	{
 		m_collisionFilterGroup = Group;
@@ -105,7 +105,7 @@ public:
 		if (auto pPhysicsObj = static_cast<Physics::CPhysicsObject*>(pBtObj->getUserPointer()))
 		{
 			++_Counter;
-			_Callback(*pPhysicsObj, BtVectorToVector(Pos)); // FIXME: how to interrupt query execution?
+			_Callback(*pPhysicsObj, Math::FromBullet(Pos)); // FIXME: how to interrupt query execution?
 		}
 		return 0;
 	}
@@ -133,10 +133,10 @@ void CPhysicsLevel::AfterTick(btDynamicsWorld* world, btScalar timeStep)
 }
 //---------------------------------------------------------------------
 
-CPhysicsLevel::CPhysicsLevel(const CAABB& Bounds)
+CPhysicsLevel::CPhysicsLevel(const Math::CAABB& Bounds)
 {
-	const btVector3 Min = VectorToBtVector(Bounds.Min);
-	const btVector3 Max = VectorToBtVector(Bounds.Max);
+	const btVector3 Min = Math::ToBullet3(rtm::vector_sub(Bounds.Center, Bounds.Extent));
+	const btVector3 Max = Math::ToBullet3(rtm::vector_add(Bounds.Center, Bounds.Extent));
 	btBroadphaseInterface* pBtBroadPhase = new btAxisSweep3(Min, Max);
 
 	btDefaultCollisionConfiguration* pBtCollCfg = new btDefaultCollisionConfiguration();
@@ -215,12 +215,12 @@ void CPhysicsLevel::RenderDebug(Debug::CDebugDraw& DebugDraw)
 
 // FIXME CONSISTENCY: contact enumerators work only with CPhysicsObject but GetClosestRayContact detects hit point for any bullet collision objects!
 // NB: may return true when the PPhysicsObject is nullptr! pExclude is optional.
-bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& End, U32 Group, U32 Mask, vector3* pOutPos, PPhysicsObject* pOutObj, CPhysicsObject* pExclude) const
+bool CPhysicsLevel::GetClosestRayContact(const rtm::vector4f& Start, const rtm::vector4f& End, U32 Group, U32 Mask, rtm::vector4f* pOutPos, PPhysicsObject* pOutObj, CPhysicsObject* pExclude) const
 {
 	if (!pBtDynWorld) FAIL;
 
-	const btVector3 BtStart = VectorToBtVector(Start);
-	const btVector3 BtEnd = VectorToBtVector(End);
+	const btVector3 BtStart = Math::ToBullet3(Start);
+	const btVector3 BtEnd = Math::ToBullet3(End);
 
 	CClosestRayResultCallbackWithExclude RayCB(BtStart, BtEnd, pExclude);
 	RayCB.m_collisionFilterGroup = Group;
@@ -229,7 +229,7 @@ bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& En
 
 	if (!RayCB.hasHit()) FAIL;
 
-	if (pOutPos) *pOutPos = BtVectorToVector(RayCB.m_hitPointWorld);
+	if (pOutPos) *pOutPos = Math::FromBullet(RayCB.m_hitPointWorld);
 	if (pOutObj) *pOutObj = RayCB.m_collisionObject ? static_cast<CPhysicsObject*>(RayCB.m_collisionObject->getUserPointer()) : nullptr;
 
 	OK;
@@ -237,12 +237,12 @@ bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& En
 //---------------------------------------------------------------------
 
 //???struct CContact instead of separate object + pos? May add normal.
-UPTR CPhysicsLevel::EnumRayContacts(const vector3& Start, const vector3& End, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const
+UPTR CPhysicsLevel::EnumRayContacts(const rtm::vector4f& Start, const rtm::vector4f& End, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const rtm::vector4f&)>&& Callback) const
 {
 	if (!pBtDynWorld) return 0;
 
-	btVector3 BtStart = VectorToBtVector(Start);
-	btVector3 BtEnd = VectorToBtVector(End);
+	const btVector3 BtStart = Math::ToBullet3(Start);
+	const btVector3 BtEnd = Math::ToBullet3(End);
 	btCollisionWorld::AllHitsRayResultCallback RayCB(BtStart, BtEnd); // FIXME: use enumerating callback instead of an array!
 	RayCB.m_collisionFilterGroup = Group;
 	RayCB.m_collisionFilterMask = Mask;
@@ -260,7 +260,7 @@ UPTR CPhysicsLevel::EnumRayContacts(const vector3& Start, const vector3& End, U3
 }
 //---------------------------------------------------------------------
 
-UPTR CPhysicsLevel::EnumObjectContacts(const CPhysicsObject& Object, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const
+UPTR CPhysicsLevel::EnumObjectContacts(const CPhysicsObject& Object, std::function<bool(CPhysicsObject&, const rtm::vector4f&)>&& Callback) const
 {
 	if (!pBtDynWorld || !Object.GetBtObject()) return 0;
 
@@ -275,14 +275,14 @@ UPTR CPhysicsLevel::EnumObjectContacts(const CPhysicsObject& Object, std::functi
 }
 //---------------------------------------------------------------------
 
-UPTR CPhysicsLevel::EnumSphereContacts(const vector3& Position, float Radius, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const
+UPTR CPhysicsLevel::EnumSphereContacts(const rtm::vector4f& Position, float Radius, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const rtm::vector4f&)>&& Callback) const
 {
 	if (!pBtDynWorld || !Callback || Radius <= 0.f) return 0;
 
 	btSphereShape BtShape(Radius);
 	btCollisionObject BtObject;
 	BtObject.setCollisionShape(&BtShape);
-	BtObject.getWorldTransform().setOrigin(VectorToBtVector(Position));
+	BtObject.getWorldTransform().setOrigin(Math::ToBullet3(Position));
 
 	CFunctorContactCallback CB(BtObject, Group, Mask, Callback);
 	pBtDynWorld->contactTest(&BtObject, CB);
@@ -291,7 +291,7 @@ UPTR CPhysicsLevel::EnumSphereContacts(const vector3& Position, float Radius, U3
 }
 //---------------------------------------------------------------------
 
-UPTR CPhysicsLevel::EnumCapsuleYContacts(const vector3& Position, float Radius, float CylinderLength, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const vector3&)>&& Callback) const
+UPTR CPhysicsLevel::EnumCapsuleYContacts(const rtm::vector4f& Position, float Radius, float CylinderLength, U32 Group, U32 Mask, std::function<bool(CPhysicsObject&, const rtm::vector4f&)>&& Callback) const
 {
 	if (!pBtDynWorld || !Callback) return 0;
 
@@ -300,7 +300,7 @@ UPTR CPhysicsLevel::EnumCapsuleYContacts(const vector3& Position, float Radius, 
 	btCapsuleShape BtShape(Radius, CylinderLength);
 	btCollisionObject BtObject;
 	BtObject.setCollisionShape(&BtShape);
-	BtObject.getWorldTransform().setOrigin(VectorToBtVector(Position));
+	BtObject.getWorldTransform().setOrigin(Math::ToBullet3(Position));
 
 	CFunctorContactCallback CB(BtObject, Group, Mask, Callback);
 	pBtDynWorld->contactTest(&BtObject, CB);
@@ -324,14 +324,14 @@ void CPhysicsLevel::UnregisterTickListener(ITickListener* pListener)
 void CPhysicsLevel::SetGravity(const vector3& NewGravity)
 {
 	n_assert(pBtDynWorld);
-	pBtDynWorld->setGravity(VectorToBtVector(NewGravity));
+	pBtDynWorld->setGravity(Math::ToBullet3(Math::ToSIMD(NewGravity)));
 }
 //---------------------------------------------------------------------
 
 void CPhysicsLevel::GetGravity(vector3& Out) const
 {
 	n_assert(pBtDynWorld);
-	Out = BtVectorToVector(pBtDynWorld->getGravity());
+	Out = Math::FromSIMD3(Math::FromBullet(pBtDynWorld->getGravity()));
 }
 //---------------------------------------------------------------------
 

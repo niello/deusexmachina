@@ -23,7 +23,7 @@ namespace DEM::AI
 constexpr float EQUALITY_THRESHOLD_SQ = 1.0f / (16384.0f * 16384.0f);
 
 // Returns whether an agent can continue to perform the current navigation task
-static bool UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
+static bool UpdatePosition(const rtm::vector4f& Position, CNavAgentComponent& Agent)
 {
 	const auto* pNavFilter = Agent.Settings->GetQueryFilter();
 
@@ -133,9 +133,11 @@ static bool UpdateDestination(const rtm::vector4f& Dest, CNavAgentComponent& Age
 
 	const auto* pNavFilter = Agent.Settings->GetQueryFilter();
 
+	const auto DestRaw = Math::FromSIMD3(Dest);
+
 	if (Agent.State != ENavigationState::Idle)
 	{
-		OutDestChanged = !InRange(Agent.TargetPos.v, Dest.v, Agent.Height, EQUALITY_THRESHOLD_SQ);
+		OutDestChanged = !InRange(Agent.TargetPos.v, DestRaw.v, Agent.Height, EQUALITY_THRESHOLD_SQ);
 		if (!OutDestChanged)
 		{
 			// Target remains static but we must check its poly validity anyway
@@ -144,11 +146,11 @@ static bool UpdateDestination(const rtm::vector4f& Dest, CNavAgentComponent& Age
 		else if (Agent.State == ENavigationState::Following)
 		{
 			// Planning finished, can adjust moving target in the corridor
-			if (Agent.Corridor.moveTargetPosition(Dest.v, Agent.pNavQuery, pNavFilter))
+			if (Agent.Corridor.moveTargetPosition(DestRaw.v, Agent.pNavQuery, pNavFilter))
 			{
 				// Check if target matches the corridor or moved not too far from it into impassable zone.
 				// Otherwise target is considered teleported and may require replanning (see below).
-				const auto OffsetSq = dtVdist2DSqr(Dest.v, Agent.Corridor.getTarget());
+				const auto OffsetSq = dtVdist2DSqr(DestRaw.v, Agent.Corridor.getTarget());
 				if (OffsetSq < EQUALITY_THRESHOLD_SQ ||
 					(Agent.TargetRef == Agent.Corridor.getLastPoly() && OffsetSq <= MaxTargetOffsetSq))
 				{
@@ -163,10 +165,10 @@ static bool UpdateDestination(const rtm::vector4f& Dest, CNavAgentComponent& Age
 
 	// Target poly is unknown or invalid, find the nearest valid one
 	const float TargetExtents[3] = { MaxTargetOffset, Agent.Height, MaxTargetOffset };
-	Agent.pNavQuery->findNearestPoly(Dest.v, TargetExtents, pNavFilter, &Agent.TargetRef, Agent.TargetPos.v);
+	Agent.pNavQuery->findNearestPoly(DestRaw.v, TargetExtents, pNavFilter, &Agent.TargetRef, Agent.TargetPos.v);
 
 	// If no poly found in a target radius, navigation task is failed
-	if (!Agent.TargetRef || dtVdist2DSqr(Dest.v, Agent.TargetPos.v) > MaxTargetOffsetSq)
+	if (!Agent.TargetRef || dtVdist2DSqr(DestRaw.v, Agent.TargetPos.v) > MaxTargetOffsetSq)
 		return false;
 
 	// If target is in the current corridor, can avoid replanning
@@ -341,7 +343,7 @@ static void ResetNavigation(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& 
 //!!!FIXME: if character stands exactly in the offmesh connection start, findNextStraightPathPoint will return
 //other side of the offmesh connection. Offmesh will not be triggered, its action will be ignored.
 static CTraversalAction* FindTraversalAction(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue,
-	Game::HAction NavAction, const vector3& Pos, bool OptimizePath, Game::HEntity& OutController)
+	Game::HAction NavAction, const rtm::vector4f& Pos, bool OptimizePath, Game::HEntity& OutController)
 {
 	if (Agent.Mode == ENavigationMode::Recovery)
 		return Agent.Settings->FindAction(World, Agent, 0, 0, nullptr);
@@ -515,7 +517,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, ::AI::CPathRe
 
 		// Access real physical transform, not an interpolated motion state
 		const auto& Offset = Character.RigidBody->GetCollisionShape()->GetOffset();
-		const vector3 Pos = BtVectorToVector(Character.RigidBody->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
+		const vector3 Pos = Math::FromBullet(Character.RigidBody->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
 
 		// Update navigation status from the current agent position
 		if (!UpdatePosition(Pos, Agent))
@@ -640,7 +642,7 @@ void RenderDebugNavigation(Game::CGameWorld& World, Debug::CDebugDraw& DebugDraw
 				pCurrPos, Agent.Corridor.getTarget(), pCurrPath, Agent.Corridor.getPathCount(), Ctx)))
 			{
 				const auto& Offset = Character.RigidBody->GetCollisionShape()->GetOffset();
-				vector3 From = BtVectorToVector(Character.RigidBody->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
+				vector3 From = Math::FromBullet(Character.RigidBody->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
 				vector3 To;
 				dtStatus Status;
 				U8 AreaType = Agent.CurrAreaType;

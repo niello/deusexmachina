@@ -21,7 +21,9 @@ RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::vector4f FromBullet(cons
 // FIXME: use overloading by return type instead of renaming?
 RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE btVector3 ToBullet3(rtm::vector4f_arg0 v) noexcept
 {
-	return btVector3(v); //??? rtm::vector_set_w(v, 0.f)); - is that w=0 important anywhere in Bullet?
+	btVector3 Result;
+	Result.set128(v); //??? rtm::vector_set_w(v, 0.f)); - is that w=0 important anywhere in Bullet?
+	return Result;
 }
 //---------------------------------------------------------------------
 
@@ -33,7 +35,9 @@ RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::quatf FromBullet(const b
 
 RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE btQuaternion ToBullet(rtm::quatf_arg0 q) noexcept
 {
-	return btQuaternion(q);
+	btQuaternion Result;
+	Result.set128(q);
+	return Result;
 }
 //---------------------------------------------------------------------
 

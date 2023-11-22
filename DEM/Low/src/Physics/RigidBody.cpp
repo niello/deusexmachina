@@ -10,7 +10,7 @@
 namespace Physics
 {
 
-CRigidBody::CDynamicMotionState::CDynamicMotionState(const vector3& Offset) : _Offset(Offset) {}
+CRigidBody::CDynamicMotionState::CDynamicMotionState(const rtm::vector4f& Offset) : _Offset(Offset) {}
 //---------------------------------------------------------------------
 
 CRigidBody::CDynamicMotionState::~CDynamicMotionState() = default;
@@ -24,8 +24,8 @@ void CRigidBody::CDynamicMotionState::SetSceneNode(Scene::PSceneNode&& Node)
 
 void CRigidBody::CDynamicMotionState::getWorldTransform(btTransform& worldTrans) const
 {
-	worldTrans = TfmToBtTfm(_Node ? _Node->GetWorldMatrix() : rtm::matrix_identity());
-	worldTrans.getOrigin() = worldTrans * VectorToBtVector(_Offset);
+	worldTrans = Math::ToBullet(_Node ? _Node->GetWorldMatrix() : rtm::matrix_identity());
+	worldTrans.getOrigin() = worldTrans * Math::ToBullet3(_Offset);
 }
 //---------------------------------------------------------------------
 
@@ -33,8 +33,8 @@ void CRigidBody::CDynamicMotionState::setWorldTransform(const btTransform& world
 {
 	if (_Node)
 	{
-		auto Tfm = BtTfmToTfm(worldTrans);
-		Tfm.Translation() = Tfm * (-_Offset);
+		auto Tfm = Math::FromBullet(worldTrans);
+		Tfm.w_axis = rtm::matrix_mul_point3(rtm::vector_neg(_Offset), Tfm);
 		_Node->SetWorldTransform(Tfm);
 	}
 }
@@ -106,8 +106,8 @@ void CRigidBody::GetTransform(rtm::matrix3x4f& OutTfm) const
 	else
 	{
 		auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
-		OutTfm = BtTfmToTfm(_pBtObject->getWorldTransform());
-		OutTfm.w_axis = OutTfm * (-pShape->GetOffset());
+		OutTfm = Math::FromBullet(_pBtObject->getWorldTransform());
+		OutTfm.w_axis = rtm::matrix_mul_point3(rtm::vector_neg(pShape->GetOffset()), OutTfm);
 	}
 }
 //---------------------------------------------------------------------
@@ -123,8 +123,7 @@ void CRigidBody::GetGlobalAABB(Math::CAABB& OutBox) const
 
 	btVector3 Min, Max;
 	_pBtObject->getCollisionShape()->getAabb(Tfm, Min, Max);
-	OutBox.Min = BtVectorToVector(Min);
-	OutBox.Max = BtVectorToVector(Max);
+	OutBox = Math::AABBFromMinMax(Math::FromBullet(Min), Math::FromBullet(Max));
 }
 //---------------------------------------------------------------------
 

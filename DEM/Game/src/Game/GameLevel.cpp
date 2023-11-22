@@ -17,12 +17,13 @@ namespace DEM::Game
 {
 bool GetTargetFromPhysicsObject(const Physics::CPhysicsObject& Object, CTargetInfo& OutTarget);
 
-CGameLevel::CGameLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds, UPTR SubdivisionDepth)
+CGameLevel::CGameLevel(CStrID ID, const Math::CAABB& Bounds, const Math::CAABB& InteractiveBounds, UPTR SubdivisionDepth)
 	: _ID(ID)
 	, _SceneRoot(n_new(Scene::CSceneNode(ID)))
 	, _PhysicsLevel(n_new(Physics::CPhysicsLevel(Bounds)))
 {
-	_GraphicsScene.Init(Bounds.Center(), std::max({ Bounds.Size().x, Bounds.Size().y, Bounds.Size().z }), SubdivisionDepth ? SubdivisionDepth : 12);
+	const auto BoundsSize = Math::FromSIMD3(rtm::vector_mul(Bounds.Extent, 2.f));
+	_GraphicsScene.Init(Bounds.Center, std::max({ BoundsSize.x, BoundsSize.y, BoundsSize.z }), SubdivisionDepth ? SubdivisionDepth : 12);
 }
 //---------------------------------------------------------------------
 
@@ -44,9 +45,14 @@ PGameLevel CGameLevel::LoadFromDesc(CStrID ID, const Data::CParams& In, Resource
 	In.TryGet(Size, CStrID("Size"));
 	In.TryGet(SubdivisionDepth, CStrID("SubdivisionDepth"));
 	vector3 InteractiveCenter = In.Get(CStrID("InteractiveCenter"), Center);
-	vector3 InteractiveSize = In.Get(CStrID("InteractiveSize"), Size);
+	vector3 InteractiveExtents = In.Get(CStrID("InteractiveSize"), Size) * 0.5f;
+	vector3 Extents = Size * 0.5f;
 
-	PGameLevel Level = n_new(CGameLevel(ID, CAABB(Center, Size * 0.5f), CAABB(InteractiveCenter, InteractiveSize * 0.5f), SubdivisionDepth));
+	PGameLevel Level = new CGameLevel(
+		ID,
+		Math::CAABB{ Math::ToSIMD(Center), Math::ToSIMD(Extents) },
+		Math::CAABB{ Math::ToSIMD(InteractiveCenter), Math::ToSIMD(InteractiveExtents) },
+		SubdivisionDepth);
 
 	// Load optional scene with static graphics, collision and other attributes. No entity is associated with it.
 	const bool StaticSceneIsUnique = In.Get(CStrID("StaticSceneIsUnique"), true);
@@ -172,19 +178,19 @@ void CGameLevel::Update(float dt, const rtm::vector4f* pCOIArray, UPTR COICount)
 }
 //---------------------------------------------------------------------
 
-Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const line3& Ray, vector3* pOutPoint3D) const
+Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const Math::CLine& Ray, rtm::vector4f* pOutPoint3D) const
 {
 	if (!_PhysicsLevel) return nullptr;
 
 	const auto Group = _PhysicsLevel->CollisionGroups.GetMask("Probe");
 	const auto Mask = _PhysicsLevel->CollisionGroups.GetMask("All"); // TODO: pass as argument?
 	Physics::PPhysicsObject PhysObj;
-	_PhysicsLevel->GetClosestRayContact(Ray.Start, Ray.End(), Group, Mask, pOutPoint3D, &PhysObj);
+	_PhysicsLevel->GetClosestRayContact(Ray.Start, rtm::vector_add(Ray.Start, Ray.Dir), Group, Mask, pOutPoint3D, &PhysObj);
 	return PhysObj.Get();
 }
 //---------------------------------------------------------------------
 
-UPTR CGameLevel::EnumEntitiesInSphere(const vector3& Position, float Radius, CStrID CollisionMask, std::function<bool(HEntity&, const vector3&)>&& Callback) const
+UPTR CGameLevel::EnumEntitiesInSphere(const rtm::vector4f& Position, float Radius, CStrID CollisionMask, std::function<bool(HEntity&, const rtm::vector4f&)>&& Callback) const
 {
 	if (!_PhysicsLevel || !Callback) return 0;
 
@@ -192,7 +198,7 @@ UPTR CGameLevel::EnumEntitiesInSphere(const vector3& Position, float Radius, CSt
 	const auto Mask = _PhysicsLevel->CollisionGroups.GetMask(CollisionMask ? CollisionMask.CStr() : "All");
 
 	//???return contact in a form of CTargetInfo? Fill CTargetInfo from physics object + bullet contact info?
-	_PhysicsLevel->EnumSphereContacts(Position, Radius, Group, Mask, [&Callback](Physics::CPhysicsObject& PhysObj, const vector3& ContactPos)
+	_PhysicsLevel->EnumSphereContacts(Position, Radius, Group, Mask, [&Callback](Physics::CPhysicsObject& PhysObj, const rtm::vector4f& ContactPos)
 	{
 		CTargetInfo Target;
 		if (!GetTargetFromPhysicsObject(PhysObj, Target) || !Target.Entity) return true;

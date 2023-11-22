@@ -54,8 +54,8 @@ void CStaticCollider::SetTransform(const rtm::matrix3x4f& Tfm)
 void CStaticCollider::GetTransform(rtm::matrix3x4f& OutTfm) const
 {
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
-	OutTfm = BtTfmToTfm(_pBtObject->getWorldTransform());
-	OutTfm.Translation() = OutTfm * (-pShape->GetOffset());
+	OutTfm = Math::FromBullet(_pBtObject->getWorldTransform());
+	OutTfm.w_axis = rtm::matrix_mul_point3(rtm::vector_neg(pShape->GetOffset()), OutTfm);
 }
 //---------------------------------------------------------------------
 

@@ -91,7 +91,7 @@ static inline void DetachObjectLightIntersection(CObjectLightIntersection* pInte
 }
 //---------------------------------------------------------------------
 
-void CGraphicsScene::Init(const vector3& Center, float Size, U8 HierarchyDepth)
+void CGraphicsScene::Init(const rtm::vector4f& Center, float Size, U8 HierarchyDepth)
 {
 	n_assert2_dbg(Size >= 0.f, "CGraphicsScene::Init() > negative world extent is not allowed!");
 
@@ -103,7 +103,7 @@ void CGraphicsScene::Init(const vector3& Center, float Size, U8 HierarchyDepth)
 	// Create a root node. This simplifies object insertion logic.
 	// Set object count to fake 1 to keep the root alive forever.
 	auto& Root = *_TreeNodes.emplace();
-	Root.Bounds = rtm::vector_set(Center.x, Center.y, Center.z, 1.f);
+	Root.Bounds = rtm::vector_set_w(Center, 1.f);
 	Root.MortonCode = 1;
 	Root.ParentIndex = NO_SPATIAL_TREE_NODE;
 	Root.SubtreeObjectCount = 1;

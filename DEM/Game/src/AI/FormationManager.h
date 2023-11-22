@@ -1,7 +1,7 @@
 #pragma once
 #include <Core/RTTIBaseClass.h>
 #include <Game/ECS/Entity.h>
-#include <Math/Vector3.h>
+#include <rtm/vector4f.h>
 
 // Controls positioning of the group of movable objects in the world
 
@@ -25,7 +25,7 @@ public:
 
 	CFormationManager(CGameSession& Owner);
 
-	bool Move(std::vector<HEntity> Entities, const vector3& WorldPosition, const vector3& Direction, bool Enqueue) const;
+	bool Move(std::vector<HEntity> Entities, const rtm::vector4f& WorldPosition, const rtm::vector4f& Direction, bool Enqueue) const;
 };
 
 }

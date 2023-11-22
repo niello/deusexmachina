@@ -10,10 +10,10 @@ namespace Physics
 {
 
 //???FIXME: need this? need initial tfm? high chances that identity is passed because world tfm is not yet calculated!
-void CMovableCollider::CKinematicMotionState::SetTransform(const rtm::matrix3x4f& NewTfm, const vector3& Offset)
+void CMovableCollider::CKinematicMotionState::SetTransform(const rtm::matrix3x4f& NewTfm, const rtm::vector4f& Offset)
 {
-	_Tfm = TfmToBtTfm(NewTfm);
-	_Tfm.getOrigin() = _Tfm * VectorToBtVector(Offset);
+	_Tfm = Math::ToBullet(NewTfm);
+	_Tfm.getOrigin() = _Tfm * Math::ToBullet3(Offset);
 }
 //---------------------------------------------------------------------
 
@@ -72,8 +72,8 @@ void CMovableCollider::GetTransform(rtm::matrix3x4f& OutTfm) const
 
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 
-	OutTfm = BtTfmToTfm(Tfm);
-	OutTfm.w_axis = OutTfm * (-pShape->GetOffset());
+	OutTfm = Math::FromBullet(Tfm);
+	OutTfm.w_axis = rtm::matrix_mul_point3(rtm::vector_neg(pShape->GetOffset()), OutTfm);
 }
 //---------------------------------------------------------------------
 
@@ -85,8 +85,7 @@ void CMovableCollider::GetGlobalAABB(Math::CAABB& OutBox) const
 
 	btVector3 Min, Max;
 	_pBtObject->getCollisionShape()->getAabb(Tfm, Min, Max);
-	OutBox.Min = BtVectorToVector(Min);
-	OutBox.Max = BtVectorToVector(Max);
+	OutBox = Math::AABBFromMinMax(Math::FromBullet(Min), Math::FromBullet(Max));
 }
 //---------------------------------------------------------------------
 

@@ -7,7 +7,7 @@ namespace Physics
 
 void CPhysicsDebugDraw::drawLine(const btVector3& from,const btVector3& to,const btVector3& color)
 {
-	_DebugDraw.DrawLine(BtVectorToVector(from), BtVectorToVector(to), Render::ColorRGBANorm(color.x(), color.y(), color.z()));
+	_DebugDraw.DrawLine(Math::FromBullet(from), Math::FromBullet(to), Render::ColorRGBANorm(color.x(), color.y(), color.z()));
 }
 //---------------------------------------------------------------------
 

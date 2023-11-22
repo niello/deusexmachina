@@ -61,10 +61,8 @@ bool CPhysicsObject::UnshareShapeIfNecessary(const rtm::vector4f& NewScaling)
 
 	constexpr float ShapeUnshareThreshold = 0.0001f;
 
-	const btVector3& ShapeScaling = _pBtObject->getCollisionShape()->getLocalScaling();
-	if (!n_fequal(NewScaling.x, ShapeScaling.x(), ShapeUnshareThreshold) ||
-		!n_fequal(NewScaling.y, ShapeScaling.y(), ShapeUnshareThreshold) ||
-		!n_fequal(NewScaling.z, ShapeScaling.z(), ShapeUnshareThreshold))
+	const rtm::vector4f ShapeScaling = Math::FromBullet(_pBtObject->getCollisionShape()->getLocalScaling());
+	if (!rtm::vector_all_near_equal3(NewScaling, ShapeScaling, ShapeUnshareThreshold))
 	{
 		auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 		PCollisionShape NewShape = pShape->CloneWithScaling(NewScaling);
@@ -101,8 +99,8 @@ bool CPhysicsObject::PrepareTransform(const rtm::matrix3x4f& NewTfm, btTransform
 			rtm::vector_get_z(AxisX), rtm::vector_get_z(AxisY), rtm::vector_get_z(AxisZ)));
 
 	//???TODO PERF: optimize origin? VectorToBtVector(Offset).dot3(m_basis[0], m_basis[1], m_basis[2]) + VectorToBtVector(Tfm.w_axis)
-	OutTfm.setOrigin(VectorToBtVector(NewTfm.w_axis));
-	OutTfm.getOrigin() = OutTfm * VectorToBtVector(pShape->GetOffset());
+	OutTfm.setOrigin(Math::ToBullet3(NewTfm.w_axis));
+	OutTfm.getOrigin() = OutTfm * Math::ToBullet3(pShape->GetOffset());
 
 	return true;
 }
@@ -137,8 +135,7 @@ void CPhysicsObject::GetPhysicsAABB(Math::CAABB& OutBox) const
 		_Level->GetBtWorld()->getBroadphase()->getAabb(_pBtObject->getBroadphaseHandle(), Min, Max);
 	else
 		_pBtObject->getCollisionShape()->getAabb(_pBtObject->getWorldTransform(), Min, Max);
-	OutBox.Min = BtVectorToVector(Min);
-	OutBox.Max = BtVectorToVector(Max);
+	OutBox = Math::AABBFromMinMax(Math::FromBullet(Min), Math::FromBullet(Max));
 }
 //---------------------------------------------------------------------
 

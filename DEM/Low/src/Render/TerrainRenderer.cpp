@@ -153,20 +153,23 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 		// FIXME: can do better?
 		Math::CAABB AABB = CDLOD.GetAABB();
-		const auto LocalSize = AABB.Extent;
+		const auto LocalSize = rtm::vector_mul(AABB.Extent, 2.f);
 		AABB = Math::AABBFromOBB(AABB, Terrain.Transform);
-		const auto WorldSize = AABB.Extent;
+		const auto WorldSize = rtm::vector_mul(AABB.Extent, 2.f);
 
 		const float HMTextelWidth = 1.f / static_cast<float>(CDLOD.GetHeightMapWidth());
 		const float HMTextelHeight = 1.f / static_cast<float>(CDLOD.GetHeightMapHeight());
 
-		// Map texels to vertices exactly. UV will be in range (0.5 * texelsize, 1 - 0.5 * texelsize).
-		CDLODParams.WorldToHM[0] = (1.f - HMTextelWidth) / WorldSize.x;
-		CDLODParams.WorldToHM[1] = (1.f - HMTextelHeight) / WorldSize.z;
-		CDLODParams.WorldToHM[2] = -AABB.Min.x * CDLODParams.WorldToHM[0] + HMTextelWidth * 0.5f;
-		CDLODParams.WorldToHM[3] = -AABB.Min.z * CDLODParams.WorldToHM[1] + HMTextelHeight * 0.5f;
+		const rtm::vector4f AABBNegMin = rtm::vector_neg(rtm::vector_sub(AABB.Center, AABB.Extent));
+		const rtm::vector4f AABBMax = rtm::vector_add(AABB.Center, AABB.Extent);
 
-		const float ScaleY = CDLOD.GetVerticalScale() * WorldSize.y / LocalSize.y;
+		// Map texels to vertices exactly. UV will be in range (0.5 * texelsize, 1 - 0.5 * texelsize).
+		CDLODParams.WorldToHM[0] = (1.f - HMTextelWidth) / rtm::vector_get_x(WorldSize);
+		CDLODParams.WorldToHM[1] = (1.f - HMTextelHeight) / rtm::vector_get_z(WorldSize);
+		CDLODParams.WorldToHM[2] = rtm::vector_get_x(AABBNegMin) * CDLODParams.WorldToHM[0] + HMTextelWidth * 0.5f;
+		CDLODParams.WorldToHM[3] = rtm::vector_get_z(AABBNegMin) * CDLODParams.WorldToHM[1] + HMTextelHeight * 0.5f;
+
+		const float ScaleY = CDLOD.GetVerticalScale() * rtm::vector_get_y(WorldSize) / rtm::vector_get_y(LocalSize);
 		CDLODParams.TerrainYScale = 65535.f * ScaleY;
 		CDLODParams.TerrainYOffset = -32767.f * ScaleY + rtm::vector_get_y(Terrain.Transform.w_axis);
 		CDLODParams.InvSplatSizeX = Terrain.GetInvSplatSizeX();
@@ -183,8 +186,8 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			}
 		}
 		CDLODParams.SplatMapUVCoeffs = CDLOD.GetSplatMapUVCoeffs();
-		CDLODParams.WorldMaxX = AABB.Max.x;
-		CDLODParams.WorldMaxZ = AABB.Max.z;
+		CDLODParams.WorldMaxX = rtm::vector_get_x(AABBMax);
+		CDLODParams.WorldMaxZ = rtm::vector_get_z(AABBMax);
 
 		_pCurrTechInterface->PerInstanceParams.SetRawConstant(_pCurrTechInterface->ConstVSCDLODParams, CDLODParams);
 	}

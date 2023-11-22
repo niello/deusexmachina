@@ -47,7 +47,14 @@ void CMeshData::InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount
 			{
 				Render::CPrimitiveGroup& MeshGroup = pData[i];
 
-				MeshGroup.AABB.BeginExtend();
+				if (!MeshGroup.IndexCount)
+				{
+					MeshGroup.AABB = Math::EmptyAABB();
+					continue;
+				}
+
+				rtm::vector4f Min = rtm::vector_set(FLT_MAX, FLT_MAX, FLT_MAX, 0.f);
+				rtm::vector4f Max = rtm::vector_set(-FLT_MAX, -FLT_MAX, -FLT_MAX, 0.f);
 
 				if (IndexType == Index_16)
 				{
@@ -55,8 +62,9 @@ void CMeshData::InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount
 					const U16* pIndexEnd = pIndex + MeshGroup.IndexCount;
 					for (; pIndex < pIndexEnd; ++pIndex)
 					{
-						auto pVertex = reinterpret_cast<const vector3*>(pPositionData + (*pIndex) * VertexSize);
-						MeshGroup.AABB.Extend(pVertex->x, pVertex->y, pVertex->z);
+						const rtm::vector4f Vertex = rtm::vector_load3(reinterpret_cast<const float*>(pPositionData + (*pIndex) * VertexSize));
+						Min = rtm::vector_min(Min, Vertex);
+						Max = rtm::vector_max(Max, Vertex);
 					}
 				}
 				else
@@ -65,12 +73,13 @@ void CMeshData::InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount
 					const U32* pIndexEnd = pIndex + MeshGroup.IndexCount;
 					for (; pIndex < pIndexEnd; ++pIndex)
 					{
-						auto pVertex = reinterpret_cast<const vector3*>(pPositionData + (*pIndex) * VertexSize);
-						MeshGroup.AABB.Extend(pVertex->x, pVertex->y, pVertex->z);
+						const rtm::vector4f Vertex = rtm::vector_load3(reinterpret_cast<const float*>(pPositionData + (*pIndex) * VertexSize));
+						Min = rtm::vector_min(Min, Vertex);
+						Max = rtm::vector_max(Max, Vertex);
 					}
 				}
 
-				MeshGroup.AABB.EndExtend();
+				MeshGroup.AABB = Math::AABBFromMinMax(Min, Max);
 			}
 		}
 	}

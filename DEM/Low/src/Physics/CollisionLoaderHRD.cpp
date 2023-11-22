@@ -6,6 +6,7 @@
 #include <Data/HRDParser.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
+#include <Math/SIMDMath.h>
 
 namespace Resources
 {
@@ -49,10 +50,10 @@ Core::PObject CCollisionLoaderHRD::CreateResource(CStrID UID)
 	const CStrID sidVertices("Vertices");
 
 	const auto Type = Params.Get(sidType, CStrID::Empty);
-	const auto& Offset = Params.Get(sidOffset, vector3::Zero);
-	const auto& Scaling = Params.Get(sidScaling, vector3::One);
+	const rtm::vector4f Offset = Math::ToSIMD(Params.Get(sidOffset, vector3::Zero));
+	const rtm::vector4f Scaling = Math::ToSIMD(Params.Get(sidScaling, vector3::One));
 	if (Type == sidBox)
-		return Physics::CCollisionShape::CreateBox(Params.Get(sidSize, vector3::Zero), Offset, Scaling);
+		return Physics::CCollisionShape::CreateBox(Math::ToSIMD(Params.Get(sidSize, vector3::Zero)), Offset, Scaling);
 	else if (Type == sidSphere)
 		return Physics::CCollisionShape::CreateSphere(Params.Get(sidRadius, 0.f), Offset, Scaling);
 	else if (Type == sidCapsuleX)

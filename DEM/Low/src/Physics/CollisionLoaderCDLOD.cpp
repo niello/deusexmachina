@@ -52,7 +52,7 @@ Core::PObject CCollisionLoaderCDLOD::CreateResource(CStrID UID)
 
 	// Bullet shape is created with an origin at the center of a heightmap AABB.
 	// Calculate an offset between that center and the real origin, which is a half extent of the terrain.
-	const vector3 Offset(Header.HFWidth * 0.5f, (MinYF + MaxYF) * 0.5f, Header.HFHeight * 0.5f);
+	const rtm::vector4f Offset = rtm::vector_set(Header.HFWidth * 0.5f, (MinYF + MaxYF) * 0.5f, Header.HFHeight * 0.5f);
 
 	const UPTR DataSize = Header.HFWidth * Header.HFHeight * sizeof(short);
 	Physics::PHeightfieldData Data(new char[DataSize]);

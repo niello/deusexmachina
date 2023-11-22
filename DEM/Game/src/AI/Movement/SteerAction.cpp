@@ -16,12 +16,16 @@ bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponen
 {
 	// If not on navmesh, recover to the nearest valid position
 	if (Agent.Mode == ENavigationMode::Recovery)
-		return !!Queue.PushOrUpdateChild<Steer>(NavAction, Agent.Corridor.getPos(), Agent.Corridor.getPos(), -0.f);
+	{
+		const rtm::vector4f ClosestPos = rtm::vector_load3(Agent.Corridor.getPos());
+		return !!Queue.PushOrUpdateChild<Steer>(NavAction, ClosestPos, ClosestPos, -0.f);
+	}
 
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return false;
 
-	const float* pPos = (Agent.Mode == ENavigationMode::Offmesh) ? Pos.v : Agent.Corridor.getPos();
+	const auto PosRaw = Math::FromSIMD3(Pos);
+	const float* pPos = (Agent.Mode == ENavigationMode::Offmesh) ? PosRaw.v : Agent.Corridor.getPos();
 
 	//???add shortcut method to corridor? Agent.Corridor.initStraightPathSearch(Agent.pNavQuery, Ctx);
 	dtStraightPathContext Ctx;
@@ -46,9 +50,10 @@ bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponen
 	while (!LastEdge)
 	{
 		// Check if Dest is close enough to be considered reached
+		const rtm::vector4f ToDest = rtm::vector_sub(Pos, Dest);
 		const bool DestReached =
-			std::abs(Pos.y - Dest.y) < Agent.Height &&
-			vector3::SqDistance2D(Pos, Dest) < Steer::SqLinearTolerance;
+			std::abs(rtm::vector_get_y(ToDest)) < Agent.Height &&
+			Math::vector_squared_length_xz(ToDest) < Steer::SqLinearTolerance;
 
 		// Get the next edge traversal action
 		Game::HEntity Controller;
@@ -78,10 +83,10 @@ bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponen
 		if (!DestReached)
 		{
 			constexpr float COS_SMALL_ANGLE_SQ = 0.99999f;
-			const vector2 ToCurr(Dest.x - Pos.x, Dest.z - Pos.z);
-			const vector2 ToNext(NextDest.x - Pos.x, NextDest.z - Pos.z);
-			const float Dot = ToNext.dot(ToCurr);
-			if (Dot * Dot < ToNext.SqLength() * ToCurr.SqLength() * COS_SMALL_ANGLE_SQ)
+			const rtm::vector4f ToCurr = rtm::vector_set_y(rtm::vector_sub(Dest, Pos), 0.f);
+			const rtm::vector4f ToNext = rtm::vector_set_y(rtm::vector_sub(NextDest, Pos), 0.f);
+			const float Dot = rtm::vector_dot3(ToNext, ToCurr);
+			if (Dot * Dot < rtm::vector_length_squared3(ToNext) * rtm::vector_length_squared3(ToCurr) * COS_SMALL_ANGLE_SQ)
 				break;
 
 			//!!!TODO: slowdown if too big turn is expected!
@@ -104,13 +109,13 @@ bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponen
 
 		// Recalculate only when destination changes
 		// TODO: can add other criteria, like final navigation target change
-		if (!pSteer || pSteer->_Dest != Dest)
+		if (!pSteer || !rtm::vector_all_equal3(pSteer->_Dest, Dest))
 		{
-			vector3 Prev = Dest;
-			vector3 Curr = NextDest;
+			rtm::vector4f Prev = Dest;
+			rtm::vector4f Curr = NextDest;
 			while (true)
 			{
-				AdditionalDistance += vector3::Distance(Prev, Curr);
+				AdditionalDistance += rtm::vector_distance3(Prev, Curr);
 
 				// Stop if path ends at Curr
 				if (!dtStatusInProgress(Status)) break;
@@ -121,10 +126,13 @@ bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponen
 				if (!pNextAction || &CSteerAction::RTTI != pNextAction->GetRTTI()) break;
 
 				// Get end point of the next edge with the same action
-				Prev = Curr;
+				vector3 Point;
 				const int Options = Agent.Settings->IsAreaControllable(AreaType) ? DT_STRAIGHTPATH_ALL_CROSSINGS : DT_STRAIGHTPATH_AREA_CROSSINGS;
-				Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Curr.v, nullptr, &AreaType, &PolyRef, Options);
+				Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Point.v, nullptr, &AreaType, &PolyRef, Options);
 				if (dtStatusFailed(Status)) break;
+
+				Prev = Curr;
+				Curr = Math::ToSIMD(Point);
 			}
 		}
 		else
@@ -135,7 +143,7 @@ bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponen
 	}
 
 	// At the last path edge consider desired final facing
-	if (LastEdge) NextDest = Dest + NavAction.As<Navigate>()->_FinalFacing;
+	if (LastEdge) NextDest = rtm::vector_add(Dest, NavAction.As<Navigate>()->_FinalFacing);
 
 	// Update existing action or push the new one
 	return !!Queue.PushOrUpdateChild<Steer>(NavAction, Dest, NextDest, AdditionalDistance);
