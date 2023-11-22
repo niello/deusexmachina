@@ -48,7 +48,7 @@ void CTerrain::UpdatePatches(const rtm::vector4f& MainCameraPos, const Math::CSI
 	// NB: always must use the main camera for LOD selection, even if another camera (ViewFrustum) is used for intermediate rendering
 	CNodeProcessingContext Ctx;
 	Ctx.ViewFrustum = ViewFrustum;
-	Ctx.Scale = Math::matrix_extract_scale(Transform);
+	Ctx.Scale = Math::matrix_extract_scale(rtm::matrix_cast(Transform));
 	Ctx.Offset = Transform.w_axis;
 	Ctx.MainCameraPos = MainCameraPos;
 

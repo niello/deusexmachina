@@ -154,7 +154,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		// FIXME: can do better?
 		Math::CAABB AABB = CDLOD.GetAABB();
 		const auto LocalSize = rtm::vector_mul(AABB.Extent, 2.f);
-		AABB = Math::AABBFromOBB(AABB, Terrain.Transform);
+		AABB = Math::AABBFromOBB(AABB, rtm::matrix_cast(Terrain.Transform));
 		const auto WorldSize = rtm::vector_mul(AABB.Extent, 2.f);
 
 		const float HMTextelWidth = 1.f / static_cast<float>(CDLOD.GetHeightMapWidth());

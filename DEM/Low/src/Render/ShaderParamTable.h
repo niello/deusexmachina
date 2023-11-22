@@ -1,6 +1,7 @@
 #pragma once
 #include <Render/ShaderConstantInfo.h>
 #include <Render/RenderFwd.h>
+#include <rtm/matrix4x4f.h>
 
 // Shader parameter table stores metadata necessary to set shader parameter values
 
@@ -28,7 +29,7 @@ private:
 
 	CShaderConstantParam(PShaderConstantInfo Info, U32 Offset);
 
-	void   InternalSetMatrix(CConstantBuffer& CB, const matrix44& Value) const;
+	void   InternalSetMatrix(CConstantBuffer& CB, const rtm::matrix4x4f& Value) const;
 
 public:
 
@@ -56,7 +57,10 @@ public:
 	void   SetVector(CConstantBuffer& CB, const vector2& Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, Value.v, 2); }
 	void   SetVector(CConstantBuffer& CB, const vector3& Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, Value.v, 3); }
 	void   SetVector(CConstantBuffer& CB, const vector4& Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, Value.v, 4); }
-	void   SetMatrix(CConstantBuffer& CB, const matrix44& Value, bool ColumnMajor = false) const { n_assert_dbg(_Info); if (_Info) { if (ColumnMajor == _Info->IsColumnMajor()) InternalSetMatrix(CB, Value); else InternalSetMatrix(CB, Value.transposed()); } }
+	void   SetVector2(CConstantBuffer& CB, const rtm::vector4f& Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, reinterpret_cast<const float*>(&Value), 2); }
+	void   SetVector3(CConstantBuffer& CB, const rtm::vector4f& Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, reinterpret_cast<const float*>(&Value), 3); }
+	void   SetVector4(CConstantBuffer& CB, const rtm::vector4f& Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, reinterpret_cast<const float*>(&Value), 4); }
+	void   SetMatrix(CConstantBuffer& CB, const rtm::matrix4x4f& Value, bool ColumnMajor = false) const { n_assert_dbg(_Info); if (_Info) { if (ColumnMajor == _Info->IsColumnMajor()) InternalSetMatrix(CB, Value); else InternalSetMatrix(CB, rtm::matrix_transpose(Value)); } }
 	//!!!TODO: 16-float matrix setter for different math APIs!
 
 	void   SetFloatArray(CConstantBuffer& CB, const float* pValues, UPTR Count, U32 StartIndex = 0) const;
@@ -70,6 +74,7 @@ public:
 	//void   SetVectorArray(CConstantBuffer& CB, const vector3* pValues, UPTR Count, U32 StartIndex = 0) const;
 	//void   SetVectorArray(CConstantBuffer& CB, const vector4* pValues, UPTR Count, U32 StartIndex = 0) const;
 	void   SetMatrixArray(CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex = 0, bool ColumnMajor = false) const;
+	void   SetMatrixArray(CConstantBuffer& CB, const rtm::matrix3x4f* pValues, UPTR Count, U32 StartIndex = 0, bool ColumnMajor = false) const;
 
 	CShaderConstantParam GetMember(CStrID Name) const;
 	CShaderConstantParam GetElement(U32 Index) const;

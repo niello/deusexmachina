@@ -727,7 +727,7 @@ bool CView::Render()
 	if (ViewProjChanged)
 	{
 		_Globals.SetMatrix(_RenderPath->ConstViewProjection, GetCamera()->GetViewProjMatrix());
-		_Globals.SetVector(_RenderPath->ConstCameraPosition, GetCamera()->GetPosition());
+		_Globals.SetVector3(_RenderPath->ConstCameraPosition, GetCamera()->GetPosition());
 	}
 
 	// Update visibility flags of spatial tree nodes

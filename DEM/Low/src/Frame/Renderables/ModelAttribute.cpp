@@ -158,7 +158,7 @@ void CModelAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rendera
 	}
 
 	// Update transform
-	pModel->Transform = _pNode->GetWorldMatrix();
+	pModel->Transform = rtm::matrix_cast(_pNode->GetWorldMatrix());
 }
 //---------------------------------------------------------------------
 

@@ -197,7 +197,52 @@ bool CShaderParamStorage::SetVector(const CShaderConstantParam& Param, const vec
 }
 //---------------------------------------------------------------------
 
-bool CShaderParamStorage::SetMatrix(const CShaderConstantParam& Param, const matrix44& Value, bool ColumnMajor)
+bool CShaderParamStorage::SetVector2(const CShaderConstantParam& Param, const rtm::vector4f& Value)
+{
+	if (!Param) FAIL;
+	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
+	if (!pCB) FAIL;
+
+	if (!pCB->IsInWriteMode())
+		_GPU->BeginShaderConstants(*pCB);
+
+	Param.SetVector2(*pCB, Value);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CShaderParamStorage::SetVector3(const CShaderConstantParam& Param, const rtm::vector4f& Value)
+{
+	if (!Param) FAIL;
+	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
+	if (!pCB) FAIL;
+
+	if (!pCB->IsInWriteMode())
+		_GPU->BeginShaderConstants(*pCB);
+
+	Param.SetVector3(*pCB, Value);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CShaderParamStorage::SetVector4(const CShaderConstantParam& Param, const rtm::vector4f& Value)
+{
+	if (!Param) FAIL;
+	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
+	if (!pCB) FAIL;
+
+	if (!pCB->IsInWriteMode())
+		_GPU->BeginShaderConstants(*pCB);
+
+	Param.SetVector4(*pCB, Value);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CShaderParamStorage::SetMatrix(const CShaderConstantParam& Param, const rtm::matrix4x4f& Value, bool ColumnMajor)
 {
 	if (!Param) FAIL;
 	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
@@ -213,6 +258,21 @@ bool CShaderParamStorage::SetMatrix(const CShaderConstantParam& Param, const mat
 //---------------------------------------------------------------------
 
 bool CShaderParamStorage::SetMatrixArray(const CShaderConstantParam& Param, const matrix44* pValues, UPTR Count, U32 StartIndex, bool ColumnMajor)
+{
+	if (!Param) FAIL;
+	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
+	if (!pCB) FAIL;
+
+	if (!pCB->IsInWriteMode())
+		_GPU->BeginShaderConstants(*pCB);
+
+	Param.SetMatrixArray(*pCB, pValues, Count, StartIndex, ColumnMajor);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CShaderParamStorage::SetMatrixArray(const CShaderConstantParam& Param, const rtm::matrix3x4f* pValues, UPTR Count, U32 StartIndex, bool ColumnMajor)
 {
 	if (!Param) FAIL;
 	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());

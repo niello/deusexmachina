@@ -182,7 +182,7 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 
 	// Update transform
 	//!!!TODO: ensure no rotation!
-	pTerrain->Transform = _pNode->GetWorldMatrix();
+	pTerrain->Transform = rtm::matrix_cast(_pNode->GetWorldMatrix());
 
 	// Update a list of visible patches
 	if (MorphChanged || ViewProjChanged || pTerrain->PatchesTransformVersion != _pNode->GetTransformVersion())

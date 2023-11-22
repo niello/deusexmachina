@@ -109,7 +109,7 @@ void CShaderConstantParam::SetMatrixArray(CConstantBuffer& CB, const matrix44* p
 	}
 
 	// Calculate metrics for source data
-	const auto Rows = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
+	const auto RowCount = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
 	const auto RowComponentCount = _Info->IsColumnMajor() ? _Info->GetRowCount() : _Info->GetColumnCount();
 
 	auto Offset = _Offset + StartIndex * _Info->GetElementStride();
@@ -144,7 +144,7 @@ void CShaderConstantParam::SetMatrixArray(CConstantBuffer& CB, const matrix44* p
 			for (; pValues < pEnd; ++pValues)
 			{
 				const matrix44 Transposed = pValues->transposed();
-				for (UPTR Row = 0; Row < Rows; ++Row)
+				for (UPTR Row = 0; Row < RowCount; ++Row)
 					_Info->SetFloats(CB, Offset + Row * RowBytes, Transposed.m[Row], RowComponentCount);
 				Offset += _Info->GetElementStride();
 			}
@@ -153,7 +153,7 @@ void CShaderConstantParam::SetMatrixArray(CConstantBuffer& CB, const matrix44* p
 		{
 			for (; pValues < pEnd; ++pValues)
 			{
-				for (UPTR Row = 0; Row < Rows; ++Row)
+				for (UPTR Row = 0; Row < RowCount; ++Row)
 					_Info->SetFloats(CB, Offset + Row * RowBytes, pValues->m[Row], RowComponentCount);
 				Offset += _Info->GetElementStride();
 			}
@@ -162,19 +162,90 @@ void CShaderConstantParam::SetMatrixArray(CConstantBuffer& CB, const matrix44* p
 }
 //---------------------------------------------------------------------
 
-void CShaderConstantParam::InternalSetMatrix(CConstantBuffer& CB, const matrix44& Value) const
+// NB: matrix3x4f must be restored to matrix4x4f, have to process matrix by matrix
+void CShaderConstantParam::SetMatrixArray(CConstantBuffer& CB, const rtm::matrix3x4f* pValues, UPTR Count, U32 StartIndex, bool ColumnMajor) const
 {
-	const auto Rows = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
+	n_assert_dbg(_Info);
+	if (!_Info) return;
+
+	const bool Transpose = (ColumnMajor != _Info->IsColumnMajor());
+	const auto ComponentCount = _Info->GetColumnCount() * _Info->GetRowCount();
+
+	// Calculate metrics for source data
+	const auto RowCount = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
+	const auto RowComponentCount = _Info->IsColumnMajor() ? _Info->GetRowCount() : _Info->GetColumnCount();
+
+	auto Offset = _Offset + StartIndex * _Info->GetElementStride();
+	const auto* pEnd = pValues + Count;
+
+	//???!!!TODO PERF: CB is guaranteed to be align16, can use SSE aligned store instruction?
+
+	if (RowComponentCount == 4)
+	{
+		// Write matrix by matrix
+		if (Transpose)
+		{
+			for (; pValues < pEnd; ++pValues)
+			{
+				const rtm::matrix4x4f Value = rtm::matrix_cast(rtm::matrix_transpose(*pValues));
+				_Info->SetFloats(CB, Offset, reinterpret_cast<const float*>(&Value), ComponentCount);
+				Offset += _Info->GetElementStride();
+			}
+		}
+		else
+		{
+			for (; pValues < pEnd; ++pValues)
+			{
+				const rtm::matrix4x4f Value = rtm::matrix_cast(*pValues);
+				_Info->SetFloats(CB, Offset, reinterpret_cast<const float*>(&Value), ComponentCount);
+				Offset += _Info->GetElementStride();
+			}
+		}
+	}
+	else
+	{
+		// Write row by row
+		const UPTR RowBytes = RowComponentCount * sizeof(float);
+		if (Transpose)
+		{
+			for (; pValues < pEnd; ++pValues)
+			{
+				const rtm::matrix4x4f Value = rtm::matrix_cast(rtm::matrix_transpose(*pValues));
+				const rtm::vector4f Rows[] = { Value.x_axis, Value.y_axis, Value.z_axis, Value.w_axis };
+				for (UPTR Row = 0; Row < RowCount; ++Row)
+					_Info->SetFloats(CB, Offset + Row * RowBytes, reinterpret_cast<const float*>(&Rows[Row]), RowComponentCount);
+				Offset += _Info->GetElementStride();
+			}
+		}
+		else
+		{
+			for (; pValues < pEnd; ++pValues)
+			{
+				const rtm::matrix4x4f Value = rtm::matrix_cast(*pValues);
+				const rtm::vector4f Rows[] = { Value.x_axis, Value.y_axis, Value.z_axis, Value.w_axis };
+				for (UPTR Row = 0; Row < RowCount; ++Row)
+					_Info->SetFloats(CB, Offset + Row * RowBytes, reinterpret_cast<const float*>(&Rows[Row]), RowComponentCount);
+				Offset += _Info->GetElementStride();
+			}
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+void CShaderConstantParam::InternalSetMatrix(CConstantBuffer& CB, const rtm::matrix4x4f& Value) const
+{
+	const auto RowCount = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
 	const auto RowComponentCount = _Info->IsColumnMajor() ? _Info->GetRowCount() : _Info->GetColumnCount();
 	if (RowComponentCount == 4)
 	{
-		_Info->SetFloats(CB, _Offset, *Value.m, RowComponentCount * Rows);
+		_Info->SetFloats(CB, _Offset, reinterpret_cast<const float*>(&Value), RowComponentCount * RowCount);
 	}
 	else
 	{
 		const UPTR RowBytes = RowComponentCount * sizeof(float);
-		for (UPTR Row = 0; Row < Rows; ++Row)
-			_Info->SetFloats(CB, _Offset + Row * RowBytes, Value.m[Row], RowComponentCount);
+		const rtm::vector4f Rows[] = { Value.x_axis, Value.y_axis, Value.z_axis, Value.w_axis };
+		for (UPTR Row = 0; Row < RowCount; ++Row)
+			_Info->SetFloats(CB, _Offset + Row * RowBytes, reinterpret_cast<const float*>(&Rows[Row]), RowComponentCount);
 	}
 }
 //---------------------------------------------------------------------

@@ -50,8 +50,12 @@ public:
 	bool                     SetVector(const CShaderConstantParam& Param, const vector2& Value);
 	bool                     SetVector(const CShaderConstantParam& Param, const vector3& Value);
 	bool                     SetVector(const CShaderConstantParam& Param, const vector4& Value);
-	bool                     SetMatrix(const CShaderConstantParam& Param, const matrix44& Value, bool ColumnMajor = false);
+	bool                     SetVector2(const CShaderConstantParam& Param, const rtm::vector4f& Value);
+	bool                     SetVector3(const CShaderConstantParam& Param, const rtm::vector4f& Value);
+	bool                     SetVector4(const CShaderConstantParam& Param, const rtm::vector4f& Value);
+	bool                     SetMatrix(const CShaderConstantParam& Param, const rtm::matrix4x4f& Value, bool ColumnMajor = false);
 	bool                     SetMatrixArray(const CShaderConstantParam& Param, const matrix44* pValues, UPTR Count, U32 StartIndex = 0, bool ColumnMajor = false);
+	bool                     SetMatrixArray(const CShaderConstantParam& Param, const rtm::matrix3x4f* pValues, UPTR Count, U32 StartIndex = 0, bool ColumnMajor = false);
 
 	bool                     SetResource(CStrID ID, CTexture* pTexture);
 	bool                     SetResource(size_t Index, CTexture* pTexture);

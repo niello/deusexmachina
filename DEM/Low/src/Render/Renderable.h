@@ -1,6 +1,6 @@
 #pragma once
 #include <Core/RTTIBaseClass.h>
-#include <rtm/matrix3x4f.h>
+#include <rtm/matrix4x4f.h>
 
 // An interface class for any renderable objects, like regular models, particle systems, terrain patches etc.
 
@@ -22,7 +22,7 @@ public:
 
 	//???move material here? everything needs a material - texture or customization params. Or not everything?
 
-	rtm::matrix3x4f Transform;
+	rtm::matrix4x4f Transform; // NB: full 4x4 matrix because shader may need correct (0, 0, 0, 1) column
 
 	float DistanceToCamera = 0.f;                // For LOD, distance culling, render queue sorting and custom use
 	float RelScreenRadius = 0.f;                 // For LOD and distance culling
