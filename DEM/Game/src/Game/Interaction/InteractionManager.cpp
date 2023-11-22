@@ -198,6 +198,8 @@ void CInteractionManager::ResetCandidateInteraction(CInteractionContext& Context
 
 bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Context) const
 {
+	ZoneScoped;
+
 	if (Context.Interaction)
 	{
 		// If we already started selecting targets, interaction remains selected if only it doesn't become invalid

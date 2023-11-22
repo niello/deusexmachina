@@ -14,6 +14,8 @@ CNavMeshDebugDraw::~CNavMeshDebugDraw()
 
 void CNavMeshDebugDraw::DrawNavMesh(const DEM::AI::CNavMesh& NavMesh)
 {
+	ZoneScoped;
+
 	if (auto pDtNavMesh = NavMesh.GetDetourNavMesh())
 	{
 		duDebugDrawNavMesh(this, *pDtNavMesh, DU_DRAWNAVMESH_OFFMESHCONS);
@@ -25,6 +27,8 @@ void CNavMeshDebugDraw::DrawNavMesh(const DEM::AI::CNavMesh& NavMesh)
 
 void CNavMeshDebugDraw::DrawNavMeshPolyAt(const DEM::AI::CNavMesh& NavMesh, const vector3& Pos, uint32_t Color)
 {
+	ZoneScoped;
+
 	auto pDtNavMesh = NavMesh.GetDetourNavMesh();
 	if (!pDtNavMesh) return;
 
