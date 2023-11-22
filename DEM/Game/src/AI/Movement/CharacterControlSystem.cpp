@@ -234,12 +234,12 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 }
 //---------------------------------------------------------------------
 
-static void UpdateRigidBodyMovement(Physics::CRigidBody* pBody, float dt, const vector3& DesiredLinearVelocity,
+static void UpdateRigidBodyMovement(Physics::CRigidBody* pBody, float dt, const rtm::vector4f& DesiredLinearVelocity,
 	float DesiredAngularVelocity, float MaxAcceleration)
 {
 	// We want a precise control over the movement, so deny freezing on low speed
 	// when movement is requested. When idle, allow to deactivate eventually.
-	if (DesiredLinearVelocity != vector3::Zero || DesiredAngularVelocity != 0.f)
+	if (!rtm::vector_all_equal3(DesiredLinearVelocity, rtm::vector_zero()) || DesiredAngularVelocity != 0.f)
 		pBody->SetActive(true, true);
 	else if (pBody->IsAlwaysActive())
 		pBody->SetActive(true, false);
@@ -248,7 +248,7 @@ static void UpdateRigidBodyMovement(Physics::CRigidBody* pBody, float dt, const 
 	pBody->GetBtBody()->setAngularVelocity(btVector3(0.f, DesiredAngularVelocity, 0.f));
 
 	//???what to do with DesiredLinearVelocity.y? perform auto climbing/jumping or deny and wait for an explicit command?
-	const btVector3 ReqLinearVelocity = btVector3(DesiredLinearVelocity.x, 0.f, DesiredLinearVelocity.z);
+	const btVector3 ReqLinearVelocity = Math::ToBullet3(rtm::vector_set_y(DesiredLinearVelocity, 0.f));
 	if (MaxAcceleration <= 0.f)
 	{
 		// No linear acceleration limit, set directly
@@ -284,7 +284,7 @@ void ProcessCharacterControllers(CGameWorld& World, Physics::CPhysicsLevel& Phys
 
 		// Access real physical transform, not an interpolated motion state
 		const auto& Offset = pBody->GetCollisionShape()->GetOffset();
-		const vector3 Pos = Math::FromBullet(pBody->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
+		const rtm::vector4f Pos = Math::FromBullet(pBody->GetBtBody()->getWorldTransform() * Math::ToBullet3(rtm::vector_neg(Offset)));
 
 		const float DistanceToGround = CalcDistanceToGround(Character, Pos);
 		if (UpdateSelfControlState(Character, DistanceToGround))
@@ -327,9 +327,10 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 		{
 			// Check linear arrival
 			const auto& Offset = pBody->GetCollisionShape()->GetOffset();
-			const vector3 Pos = Math::FromBullet(BodyTfm * btVector3(-Offset.x, -Offset.y, -Offset.z));
-			const float SqDistance = vector3::SqDistance2D(pSteerAction->_Dest, Pos);
-			const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
+			const rtm::vector4f Pos = Math::FromBullet(BodyTfm * Math::ToBullet3(rtm::vector_neg(Offset)));
+			const rtm::vector4f ToDest = rtm::vector_sub(pSteerAction->_Dest, Pos);
+			const float SqDistance = Math::vector_length_squared_xz(ToDest);
+			const bool IsSameHeightLevel = (std::fabsf(rtm::vector_get_y(ToDest)) < Character.Height);
 			if (IsSameHeightLevel && SqDistance < AI::Steer::SqLinearTolerance)
 			{
 				Queue.SetStatus(Action, EActionStatus::Succeeded);
@@ -346,8 +347,8 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 		else if (auto pTurnAction = Action.As<AI::Turn>())
 		{
 			// Check angular arrival
-			const vector3 LookatDir = Math::FromBullet(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
-			const float Angle = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
+			const rtm::vector4f LookatDir = Math::FromBullet(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
+			const float Angle = Math::AngleXZNorm(LookatDir, pTurnAction->_LookatDirection);
 			if (std::fabsf(Angle) < pTurnAction->_Tolerance)
 				Queue.SetStatus(Action, EActionStatus::Succeeded);
 		}

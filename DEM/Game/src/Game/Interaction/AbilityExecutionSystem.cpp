@@ -389,7 +389,7 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 			else if (!AbilityInstance.Targets.empty())
 			{
 				// FIXME: AbilityInstance.TargetToWorld not needed if CTargetInfo will store full SRT instead of Point!
-				AbilityInstance.TargetToWorld.Translation() = AbilityInstance.Targets[0].Point;
+				AbilityInstance.TargetToWorld.w_axis = AbilityInstance.Targets[0].Point;
 			}
 		}
 		else if (pTargetRootNode && AbilityInstance.PrevTargetTfmVersion != pTargetRootNode->GetTransformVersion())
