@@ -181,7 +181,11 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 	if (MorphChanged) pTerrain->UpdateMorphConstants(VisibilityRange);
 
 	// Update transform
-	//!!!TODO: ensure no rotation!
+#if _DEBUG
+	// Ensure there is no rotation, it is not supported by the current CDLOD renderer implementation
+	const auto R = rtm::quat_from_matrix(rtm::matrix_remove_scale(_pNode->GetWorldMatrix()));
+	n_assert_dbg(rtm::quat_are_equal(R, rtm::quat_identity()));
+#endif
 	pTerrain->Transform = rtm::matrix_cast(_pNode->GetWorldMatrix());
 
 	// Update a list of visible patches
