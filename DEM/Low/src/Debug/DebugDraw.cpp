@@ -278,10 +278,12 @@ void CDebugDraw::DrawBox(const rtm::matrix3x4f& Tfm, U32 Color)
 
 void CDebugDraw::DrawSphere(const rtm::vector4f& Pos, float R, U32 Color)
 {
+	// Base sphere radius is 0.5f, that's why multiplying by 2 is required
+	const float S = 2.f * R;
 	const matrix44 ObjectTfm(
-		R, 0.f, 0.f, 0.f,
-		0.f, R, 0.f, 0.f,
-		0.f, 0.f, R, 0.f,
+		S, 0.f, 0.f, 0.f,
+		0.f, S, 0.f, 0.f,
+		0.f, 0.f, S, 0.f,
 		rtm::vector_get_x(Pos), rtm::vector_get_y(Pos), rtm::vector_get_z(Pos), 1.f);
 
 	ShapeInsts[Sphere].push_back({ ObjectTfm, Color });
@@ -353,13 +355,16 @@ void CDebugDraw::DrawSphereWireframe(const vector3& Pos, float R, U32 Color, flo
 	// NB: here we exploit internal knowledge about sphere mesh generator. Could write more robust logic later. Vertex & triangle iterators in CMeshData?
 	if (auto pMeshData = _Shapes[Sphere]->GetMeshData().Get())
 	{
+		// Base sphere radius is 0.5f, that's why multiplying by 2 is required
+		const float S = 2.f * R;
 		const auto pVertices = static_cast<vector3*>(pMeshData->VBData->GetPtr());
 		const auto pIndices = static_cast<U16*>(pMeshData->IBData->GetPtr());
 		for (UPTR i = 0; i < pMeshData->IndexCount; i += 3)
 		{
-			const vector3 v0 = pVertices[pIndices[i + 0]] * R + Pos;
-			const vector3 v1 = pVertices[pIndices[i + 1]] * R + Pos;
-			const vector3 v2 = pVertices[pIndices[i + 2]] * R + Pos;
+			// Base sphere radius is 0.5f, that's why multiplying by 2 is required
+			const vector3 v0 = pVertices[pIndices[i + 0]] * S + Pos;
+			const vector3 v1 = pVertices[pIndices[i + 1]] * S + Pos;
+			const vector3 v2 = pVertices[pIndices[i + 2]] * S + Pos;
 			DrawLine(v0, v1, Color, Thickness);
 			DrawLine(v1, v2, Color, Thickness);
 			DrawLine(v2, v0, Color, Thickness);
