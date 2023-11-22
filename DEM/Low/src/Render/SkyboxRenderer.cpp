@@ -42,6 +42,8 @@ bool CSkyboxRenderer::BeginRange(const CRenderContext& Context)
 
 void CSkyboxRenderer::Render(const CRenderContext& Context, IRenderable& Renderable)
 {
+	ZoneScoped;
+
 	CSkybox& Skybox = static_cast<CSkybox&>(Renderable);
 
 	const CTechnique* pTech = Context.pShaderTechCache[Skybox.ShaderTechIndex];

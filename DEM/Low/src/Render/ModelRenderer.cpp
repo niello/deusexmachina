@@ -67,6 +67,8 @@ bool CModelRenderer::BeginRange(const CRenderContext& Context)
 // For constant buffer handling see https://learn.microsoft.com/en-us/windows/win32/dxtecharts/direct3d10-frequently-asked-questions
 void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderable)
 {
+	ZoneScoped;
+
 	CModel& Model = static_cast<CModel&>(Renderable);
 
 	const CTechnique* pTech = Context.pShaderTechCache[Model.ShaderTechIndex];

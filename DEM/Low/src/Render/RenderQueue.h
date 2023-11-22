@@ -81,6 +81,8 @@ public:
 
 	virtual void Update() override
 	{
+		ZoneScoped;
+
 		// Sort removal list for faster matching, see the loop below
 		std::sort(_ToRemove.begin(), _ToRemove.end());
 

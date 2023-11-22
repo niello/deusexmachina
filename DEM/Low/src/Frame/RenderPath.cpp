@@ -31,6 +31,8 @@ void CRenderPath::SetRenderTargetClearColor(CStrID ID, const vector4& Color)
 
 bool CRenderPath::Render(CView& View)
 {
+	ZoneScoped;
+
 	Render::CGPUDriver* pGPU = View.GetGPU();
 	if (!pGPU || !pGPU->BeginFrame()) FAIL;
 
@@ -39,13 +41,17 @@ bool CRenderPath::Render(CView& View)
 	// rendering architecture, as phase must not clear RTs and therefore know
 	// whether it is the first who writes to the target.
 
-	for (const auto& Slot : RTSlots)
-		if (auto pRT = View.GetRenderTarget(Slot.first))
-			pGPU->ClearRenderTarget(*pRT, Slot.second.ClearValue);
+	{
+		ZoneScopedN("clear targets");
 
-	for (const auto& Slot : DSSlots)
-		if (auto pDS = View.GetDepthStencilBuffer(Slot.first))
-			pGPU->ClearDepthStencilBuffer(*pDS, Slot.second.ClearFlags, Slot.second.DepthClearValue, Slot.second.StencilClearValue);
+		for (const auto& Slot : RTSlots)
+			if (auto pRT = View.GetRenderTarget(Slot.first))
+				pGPU->ClearRenderTarget(*pRT, Slot.second.ClearValue);
+
+		for (const auto& Slot : DSSlots)
+			if (auto pDS = View.GetDepthStencilBuffer(Slot.first))
+				pGPU->ClearDepthStencilBuffer(*pDS, Slot.second.ClearFlags, Slot.second.DepthClearValue, Slot.second.StencilClearValue);
+	}
 
 	View.ApplyGlobalShaderParams();
 

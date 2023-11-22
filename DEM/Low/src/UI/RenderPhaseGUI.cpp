@@ -56,6 +56,9 @@ bool CRenderPhaseGUI::Init(CRenderPath& Owner, CGraphicsResourceManager& GfxMgr,
 
 bool CRenderPhaseGUI::Render(CView& View)
 {
+	ZoneScoped;
+	ZoneText(Name.CStr(), std::strlen(Name.CStr()));
+
 	auto pUICtx = View.GetUIContext();
 	if (!pUICtx) FAIL;
 

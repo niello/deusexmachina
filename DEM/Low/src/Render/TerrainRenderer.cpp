@@ -94,6 +94,8 @@ bool CTerrainRenderer::BeginRange(const CRenderContext& Context)
 //???!!!support rendering multiple terrains at once?! could be useful for open worlds and subdividing large levels!
 void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Renderable)
 {
+	ZoneScoped;
+
 	CTerrain& Terrain = static_cast<CTerrain&>(Renderable);
 
 	if (!Terrain.GetPatchMesh() || !Terrain.GetQuarterPatchMesh() || !Terrain.GetCDLODData() || Terrain.GetPatches().empty()) return;

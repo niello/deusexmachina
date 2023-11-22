@@ -30,6 +30,9 @@ bool CRenderPhaseDebugDraw::Init(CRenderPath& Owner, CGraphicsResourceManager& G
 
 bool CRenderPhaseDebugDraw::Render(CView& View)
 {
+	ZoneScoped;
+	ZoneText(Name.CStr(), std::strlen(Name.CStr()));
+
 	const auto pCamera = View.GetCamera();
 	const auto pDebugDraw = View.GetDebugDrawer();
 	auto pTarget = View.GetRenderTarget(RenderTargetID);

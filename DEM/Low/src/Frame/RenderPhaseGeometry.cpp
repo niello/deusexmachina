@@ -23,6 +23,9 @@ CRenderPhaseGeometry::~CRenderPhaseGeometry() = default;
 
 bool CRenderPhaseGeometry::Render(CView& View)
 {
+	ZoneScoped;
+	ZoneText(Name.CStr(), std::strlen(Name.CStr()));
+
 	if (!View.GetGraphicsScene() || !View.GetCamera()) OK;
 
 	if (!View.GetGraphicsManager()) FAIL;
