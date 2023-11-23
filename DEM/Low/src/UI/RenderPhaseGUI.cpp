@@ -58,6 +58,7 @@ bool CRenderPhaseGUI::Render(CView& View)
 {
 	ZoneScoped;
 	ZoneText(Name.CStr(), std::strlen(Name.CStr()));
+	DEM_RENDER_EVENT_SCOPED(View.GetGPU(), std::wstring(Name.CStr(), Name.CStr() + std::strlen(Name.CStr())).c_str());
 
 	auto pUICtx = View.GetUIContext();
 	if (!pUICtx) FAIL;

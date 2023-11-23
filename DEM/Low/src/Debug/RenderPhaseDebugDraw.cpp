@@ -32,6 +32,7 @@ bool CRenderPhaseDebugDraw::Render(CView& View)
 {
 	ZoneScoped;
 	ZoneText(Name.CStr(), std::strlen(Name.CStr()));
+	DEM_RENDER_EVENT_SCOPED(View.GetGPU(), std::wstring(Name.CStr(), Name.CStr() + std::strlen(Name.CStr())).c_str());
 
 	const auto pCamera = View.GetCamera();
 	const auto pDebugDraw = View.GetDebugDrawer();

@@ -1,14 +1,13 @@
 #pragma once
 #include <Data/Ptr.h>
-#include <Data/Dictionary.h>
-#include <Data/StringID.h>
 #include <Math/SIMDMath.h> // AABB
-//#include <algorithm>
-//#include <memory>
 
 // Render system definitions and forward declarations
 
+#ifndef DEM_RENDER_DEBUG
 #define DEM_RENDER_DEBUG (1)
+#endif
+
 #define DEM_RENDER_USENVPERFHUD (0)
 
 // Error codes

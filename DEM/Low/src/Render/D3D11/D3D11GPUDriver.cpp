@@ -30,6 +30,12 @@
 #endif
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
+#ifdef DEM_RENDER_DEBUG_D3D11_1 // TODO: now included only for debug API, will need to check another macro for normal use!
+#include <d3d11_1.h>
+#endif
+#ifdef DEM_RENDER_DEBUG_D3D9 // Debug markers API from D3D9 is used for D3D before 11.1
+#include <d3d9.h>
+#endif
 
 #undef min
 #undef max
@@ -113,6 +119,11 @@ bool CD3D11GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 	if (AdapterID == 0) Type = GPU_Hardware; //???else? //!!!in D3D9 type was in device caps!
 
 	Sys::Log("Device created: %s, feature level 0x%x\n", "HAL", (int)D3DFeatureLevel);
+
+#ifdef DEM_RENDER_DEBUG_D3D11_1
+	hr = pD3DImmContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), (void**)&_pD3DAnnotation);
+	if (FAILED(hr)) Sys::Log("Can't obtain ID3DUserDefinedAnnotation, hr = 0x%x!\n", hr);
+#endif
 
 	UPTR MRTCountCaps = 0;
 	UPTR MaxViewportCountCaps = 0;
@@ -3521,6 +3532,52 @@ bool CD3D11GPUDriver::CommitShaderConstants(CConstantBuffer& Buffer)
 	CB11.OnCommit();
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::IsRunningUnderGraphicsDebugger() const
+{
+#ifdef DEM_RENDER_DEBUG_D3D11_1
+	return _pD3DAnnotation && _pD3DAnnotation->GetStatus() != 0;
+#elif DEM_RENDER_DEBUG_D3D9
+	return D3DPERF_GetStatus() != 0;
+#else
+	return false;
+#endif
+}
+//---------------------------------------------------------------------
+
+int CD3D11GPUDriver::DebugBeginEvent(const wchar_t* pName) const
+{
+#ifdef DEM_RENDER_DEBUG_D3D11_1
+	return _pD3DAnnotation ? _pD3DAnnotation->BeginEvent(pName) : -1;
+#elif DEM_RENDER_DEBUG_D3D9
+	return D3DPERF_BeginEvent(0xffffffff, pName);
+#else
+	return -1;
+#endif
+}
+//---------------------------------------------------------------------
+
+int CD3D11GPUDriver::DebugEndEvent() const
+{
+#ifdef DEM_RENDER_DEBUG_D3D11_1
+	return _pD3DAnnotation ? _pD3DAnnotation->EndEvent() : -1;
+#elif DEM_RENDER_DEBUG_D3D9
+	return D3DPERF_EndEvent();
+#else
+	return -1;
+#endif
+}
+//---------------------------------------------------------------------
+
+void CD3D11GPUDriver::DebugMarker(const wchar_t* pName) const
+{
+#ifdef DEM_RENDER_DEBUG_D3D11_1
+	if (_pD3DAnnotation) _pD3DAnnotation->SetMarker(pName);
+#elif DEM_RENDER_DEBUG_D3D9
+	D3DPERF_SetMarker(0xffffffff, pName);
+#endif
 }
 //---------------------------------------------------------------------
 

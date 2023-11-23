@@ -3565,6 +3565,30 @@ bool CD3D9GPUDriver::CommitShaderConstants(CConstantBuffer& Buffer)
 }
 //---------------------------------------------------------------------
 
+bool CD3D9GPUDriver::IsRunningUnderGraphicsDebugger() const
+{
+	return D3DPERF_GetStatus() != 0;
+}
+//---------------------------------------------------------------------
+
+int CD3D9GPUDriver::DebugBeginEvent(const wchar_t* pName) const
+{
+	return D3DPERF_BeginEvent(0xffffffff, pName);
+}
+//---------------------------------------------------------------------
+
+int CD3D9GPUDriver::DebugEndEvent() const
+{
+	return D3DPERF_EndEvent();
+}
+//---------------------------------------------------------------------
+
+void CD3D9GPUDriver::DebugMarker(const wchar_t* pName) const
+{
+	D3DPERF_SetMarker(0xffffffff, pName);
+}
+//---------------------------------------------------------------------
+
 D3DDEVTYPE CD3D9GPUDriver::GetD3DDriverType(EGPUDriverType DriverType)
 {
 	switch (DriverType)

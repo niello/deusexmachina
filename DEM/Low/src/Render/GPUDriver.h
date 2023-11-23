@@ -142,8 +142,32 @@ public:
 
 	virtual CRenderTarget*		GetRenderTarget(UPTR Index) const = 0;
 	virtual CDepthStencilBuffer* GetDepthStencilBuffer() const = 0;
+
+	virtual bool                IsRunningUnderGraphicsDebugger() const = 0;
+	virtual int                 DebugBeginEvent(const wchar_t* pName) const = 0;
+	virtual int                 DebugEndEvent() const = 0;
+	virtual void                DebugMarker(const wchar_t* pName) const = 0;
 };
 
 typedef Ptr<CGPUDriver> PGPUDriver;
 
+struct CScopedRenderEvent
+{
+	CScopedRenderEvent(CGPUDriver* pGPU, const wchar_t* pName) : _pGPU(pGPU) { _pGPU->DebugBeginEvent(pName); }
+	~CScopedRenderEvent() { _pGPU->DebugEndEvent(); }
+	CGPUDriver* _pGPU;
+};
+
 }
+
+#if DEM_RENDER_DEBUG
+#define DEM_RENDER_EVENT_SCOPED(GPU, Name) ::Render::CScopedRenderEvent _ScopedRenderEvent_##__LINE__(GPU, Name)
+#define DEM_RENDER_BEGIN_EVENT(GPU, Name) GPU->DebugBeginEvent(Name)
+#define DEM_RENDER_END_EVENT(GPU) GPU->DebugEndEvent()
+#define DEM_RENDER_MARKER(GPU, Name) GPU->DebugMarker(Name)
+#else
+#define DEM_RENDER_EVENT_SCOPED(GPU, Name)
+#define DEM_RENDER_BEGIN_EVENT(GPU, Name)
+#define DEM_RENDER_END_EVENT(GPU)
+#define DEM_RENDER_MARKER(GPU, Name)
+#endif

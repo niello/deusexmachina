@@ -100,4 +100,10 @@ ID3D11Texture3D* CD3D11Texture::GetD3DTexture3D() const
 }
 //---------------------------------------------------------------------
 
+void CD3D11Texture::SetDebugName(std::string_view Name)
+{
+	if (pD3DTex) pD3DTex->SetPrivateData(WKPDID_D3DDebugObjectName, Name.size(), Name.data());
+}
+//---------------------------------------------------------------------
+
 }

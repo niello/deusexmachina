@@ -32,6 +32,8 @@ public:
 	bool						Create(PTextureData Data, UINT Usage, D3DPOOL Pool, IDirect3DBaseTexture9* pTexture, bool HoldRAMCopy = false);
 	virtual void				Destroy() { InternalDestroy(); CTexture::Destroy(); }
 
+	virtual void                SetDebugName(std::string_view Name) override;
+
 	IDirect3DBaseTexture9*		GetD3DBaseTexture() const { /*n_assert(!LockCount);*/ return pD3DTex; }
 	IDirect3DTexture9*			GetD3DTexture() const;
 	IDirect3DCubeTexture9*		GetD3DCubeTexture() const;

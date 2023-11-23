@@ -6,9 +6,12 @@ project(deusexmachina) # VERSION 0.1.0)
 # TODO: exclude platform-specific sources & headers from unsupported platforms,?hide DEM_PLATFORM_WIN32 etc to PRIVATE?
 # TODO: conditional addition of Win32, D3D9, D3D11 sources, headers & libs
 
+include(CheckIncludeFile)
+
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT "DEMRPG")
 
+option(DEM_RENDER_DEBUG "Debug rendering API" ON)
 option(DEM_DISABLE_CXX_EXCEPTIONS "Disable C++ exceptions" ON)
 option(DEM_DISABLE_CXX_RTTI "Disable C++ RTTI" ON)
 set(DEM_PREBUILT_DEPS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Deps/Build" CACHE STRING "Prebuilt dependency package location")
@@ -77,12 +80,27 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/DEM/Low/src" FILES ${DEM_L1_LOW_H
 add_library(DEMLow ${DEM_L1_LOW_HEADERS} ${DEM_L1_LOW_SOURCES})
 target_include_directories(DEMLow PUBLIC DEM/Low/src)
 target_link_libraries(DEMLow PUBLIC ${DEM_DEPS_TARGETS_TO_LINK})
+target_compile_definitions(DEMLow PUBLIC "$<IF:$<BOOL:${DEM_RENDER_DEBUG}>,DEM_RENDER_DEBUG=1,DEM_RENDER_DEBUG=0>")
 if(WIN32)
 	target_compile_definitions(DEMLow PUBLIC DEM_PLATFORM_WIN32=1) # Public because app uses headers. Exclude headers when not Win32!
 	target_link_libraries(DEMLow PUBLIC UxTheme.lib Secur32.lib DbgHelp.lib) # Win32 platform, window and stack trace
 	target_link_libraries(DEMLow PUBLIC DXGI.lib D3D11.lib) # TODO: only when D3D11 renderer is built
-	target_link_libraries(DEMLow PUBLIC D3d9.lib dxguid.lib) # TODO: only when D3D9 renderer is built
-	#TODO: move DEM_RENDER_DEBUG to cmake, link D3D11d.lib, use CMake target_link_libraries with debug/optimized/general
+	target_link_libraries(DEMLow PUBLIC D3d9.lib) # TODO: only when D3D9 renderer is built
+	if(DEM_RENDER_DEBUG)
+		target_link_libraries(DEMLow PUBLIC dxguid.lib) # For any D3D
+	endif()
+
+	check_include_file("d3d11_1.h" HAS_D3D11_1_H)
+	check_include_file("d3d9.h" HAS_D3D9_H)
+	if(HAS_D3D11_1_H)
+		# ID3DUserDefinedAnnotation
+		target_compile_definitions(DEMLow PUBLIC DEM_RENDER_DEBUG_D3D11_1)
+	elseif(HAS_D3D9_H)
+		# D3DPERF_BeginEvent, ... (DX10+ too!)
+		target_compile_definitions(DEMLow PUBLIC DEM_RENDER_DEBUG_D3D9)
+	else()
+		# No gfx API zones
+	endif()
 endif()
 if(DEM_DISABLE_CXX_EXCEPTIONS)
 	target_compile_definitions(DEMLow PUBLIC _HAS_EXCEPTIONS=0)

@@ -2,6 +2,7 @@
 #include <Render/GPUDriver.h>
 #include <Render/D3D11/D3D11SwapChain.h>
 #include <Data/FixedArray.h>
+#include <Data/StringID.h>
 #include <System/Allocators/PoolAllocator.h>
 #include <map>
 
@@ -25,6 +26,9 @@ enum D3D11_TEXTURE_ADDRESS_MODE;
 enum D3D11_FILTER;
 typedef struct tagRECT RECT;
 typedef unsigned int UINT;
+#ifdef DEM_RENDER_DEBUG_D3D11_1
+struct ID3DUserDefinedAnnotation;
+#endif
 
 namespace Data
 {
@@ -135,6 +139,9 @@ protected:
 	ID3D11Device*						pD3DDevice = nullptr;
 	ID3D11DeviceContext*				pD3DImmContext = nullptr;
 	//???store also D3D11.1 interfaces? and use for 11.1 methods only.
+#ifdef DEM_RENDER_DEBUG_D3D11_1
+	ID3DUserDefinedAnnotation*          _pD3DAnnotation = nullptr;
+#endif
 
 	struct CTmpCB
 	{
@@ -259,6 +266,11 @@ public:
 
 	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer) override;
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer) override;
+
+	virtual bool                IsRunningUnderGraphicsDebugger() const override;
+	virtual int                 DebugBeginEvent(const wchar_t* pName) const override;
+	virtual int                 DebugEndEvent() const override;
+	virtual void                DebugMarker(const wchar_t* pName) const override;
 
 	bool                        BindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CD3D11ConstantBuffer* pBuffer);
 	bool                        BindResource(EShaderType ShaderType, U32 Register, CD3D11Texture* pResource);

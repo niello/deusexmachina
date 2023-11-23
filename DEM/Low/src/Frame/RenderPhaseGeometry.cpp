@@ -23,16 +23,17 @@ CRenderPhaseGeometry::~CRenderPhaseGeometry() = default;
 
 bool CRenderPhaseGeometry::Render(CView& View)
 {
+	auto pGPU = View.GetGPU();
+
 	ZoneScoped;
 	ZoneText(Name.CStr(), std::strlen(Name.CStr()));
+	DEM_RENDER_EVENT_SCOPED(pGPU, std::wstring(Name.CStr(), Name.CStr() + std::strlen(Name.CStr())).c_str());
 
 	if (!View.GetGraphicsScene() || !View.GetCamera()) OK;
 
 	if (!View.GetGraphicsManager()) FAIL;
 
 	// Setup global lighting params, both ambient and direct
-
-	auto pGPU = View.GetGPU();
 
 	// Bind render targets and a depth-stencil buffer
 

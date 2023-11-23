@@ -33,6 +33,8 @@ public:
 	bool						Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlags, ID3D11Resource* pTexture, ID3D11ShaderResourceView* pSRV, bool HoldRAMCopy = false);
 	virtual void				Destroy() { InternalDestroy(); }
 
+	virtual void                SetDebugName(std::string_view Name) override;
+
 	ID3D11Resource*				GetD3DResource() const { return pD3DTex; }
 	ID3D11Texture1D*			GetD3DTexture1D() const;
 	ID3D11Texture2D*			GetD3DTexture2D() const;

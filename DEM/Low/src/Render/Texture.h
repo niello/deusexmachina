@@ -36,6 +36,8 @@ public:
 	UPTR				GetDimensionCount() const;
 	UPTR				GetRowPitch() const { return RowPitch; }
 	UPTR				GetSlicePitch() const { return SlicePitch; }
+
+	virtual void        SetDebugName(std::string_view Name) = 0;
 };
 
 typedef Ptr<CTexture> PTexture;

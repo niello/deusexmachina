@@ -108,7 +108,14 @@ Render::PTexture CGraphicsResourceManager::GetTexture(CStrID UID, UPTR AccessFla
 
 	TexData->ReleaseBuffer();
 
-	if (Texture) Textures.emplace(UID, Texture);
+	if (Texture)
+	{
+		Textures.emplace(UID, Texture);
+
+#if DEM_RENDER_DEBUG
+		Texture->SetDebugName(UID.ToStringView());
+#endif
+	}
 
 	return Texture;
 }

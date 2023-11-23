@@ -2,6 +2,7 @@
 #include <Render/GPUDriver.h>
 #include <Render/D3D9/D3D9SwapChain.h>
 #include <Data/FixedArray.h>
+#include <Data/StringID.h>
 #include <System/Allocators/PoolAllocator.h>
 #include "DEMD3D9.h" // At least for a CAPS structure
 #include <map>
@@ -210,6 +211,11 @@ public:
 
 	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer);
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer);
+
+	virtual bool                IsRunningUnderGraphicsDebugger() const override;
+	virtual int                 DebugBeginEvent(const wchar_t* pName) const override;
+	virtual int                 DebugEndEvent() const override;
+	virtual void                DebugMarker(const wchar_t* pName) const override;
 
 	//void						SetWireframe(bool Wire);
 	//bool						IsWireframe() const { return Wireframe; }

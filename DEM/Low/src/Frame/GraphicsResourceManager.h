@@ -1,5 +1,6 @@
 #pragma once
 #include <Render/RenderFwd.h>
+#include <Data/StringID.h>
 #include <Data/RefCounted.h>
 
 // Manages all GPU-dependent resources required for frame rendering, prevents redundant GPU resource loading.
