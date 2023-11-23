@@ -30,6 +30,7 @@ public:
 	virtual ~CVertexBuffer() { InternalDestroy(); }
 
 	virtual void	Destroy() { InternalDestroy(); }
+	virtual void    SetDebugName(std::string_view Name) = 0;
 
 	CVertexLayout*	GetVertexLayout() const { return VertexLayout.Get(); }
 	UPTR			GetVertexCount() const { return VertexCount; }

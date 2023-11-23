@@ -31,6 +31,7 @@ public:
 	bool			Create(EIndexType Type, ID3D11Buffer* pIB);
 	virtual void	Destroy() { InternalDestroy(); CIndexBuffer::Destroy(); }
 	virtual bool	IsValid() const { return !!pBuffer; }
+	virtual void    SetDebugName(std::string_view Name) override;
 
 	ID3D11Buffer*	GetD3DBuffer() const { return pBuffer; }
 	D3D11_USAGE		GetD3DUsage() const { return D3DUsage; }

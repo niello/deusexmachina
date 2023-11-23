@@ -27,6 +27,7 @@ public:
 
 	virtual void	Destroy() { InternalDestroy(); }
 	virtual bool	IsValid() const = 0;
+	virtual void    SetDebugName(std::string_view Name) = 0;
 
 	Data::CFlags	GetAccess() const { return Access; }
 	EIndexType		GetIndexType() const { return IndexType; }

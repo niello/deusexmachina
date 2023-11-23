@@ -2,6 +2,7 @@
 
 #include <Core/Factory.h>
 #include "DEMD3D9.h"
+#include <D3Dcommon.h> // WKPDID_D3DDebugObjectName
 
 namespace Render
 {
@@ -44,6 +45,12 @@ void CD3D9VertexBuffer::InternalDestroy()
 {
 	//n_assert(!LockCount); //???who must track and change this value?
 	SAFE_RELEASE(pBuffer);
+}
+//---------------------------------------------------------------------
+
+void CD3D9VertexBuffer::SetDebugName(std::string_view Name)
+{
+	if (pBuffer) pBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, Name.data(), Name.size(), 0);
 }
 //---------------------------------------------------------------------
 

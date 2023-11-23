@@ -75,6 +75,11 @@ Render::PMesh CGraphicsResourceManager::GetMesh(CStrID UID)
 
 	if (!Result) return nullptr;
 
+#if DEM_RENDER_DEBUG
+	if (const auto& VB = Mesh->GetVertexBuffer()) VB->SetDebugName(UID.ToStringView());
+	if (const auto& IB = Mesh->GetIndexBuffer()) IB->SetDebugName(UID.ToStringView());
+#endif
+
 	// Sorting keys for mesh groups are generated as mesh key + group index.
 	// NB: sorting may be suboptimal if new groups are added to existing meshes because of key clash with other groups.
 	_MeshKeyCounter += MeshData->GetGroupCount();

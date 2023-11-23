@@ -27,6 +27,7 @@ public:
 
 	bool					Create(CVertexLayout& Layout, IDirect3DVertexBuffer9* pVB);
 	virtual void			Destroy() { InternalDestroy(); CVertexBuffer::Destroy(); }
+	virtual void            SetDebugName(std::string_view Name) override;
 
 	IDirect3DVertexBuffer9*	GetD3DBuffer() const { return pBuffer; }
 	UINT					GetD3DUsage() const { return Usage; }

@@ -2,6 +2,7 @@
 
 #include <Core/Factory.h>
 #include "DEMD3D9.h"
+#include <D3Dcommon.h> // WKPDID_D3DDebugObjectName
 
 namespace Render
 {
@@ -41,6 +42,12 @@ void CD3D9IndexBuffer::InternalDestroy()
 {
 	//n_assert(!LockCount);
 	SAFE_RELEASE(pBuffer);
+}
+//---------------------------------------------------------------------
+
+void CD3D9IndexBuffer::SetDebugName(std::string_view Name)
+{
+	if (pBuffer) pBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, Name.data(), Name.size(), 0);
 }
 //---------------------------------------------------------------------
 

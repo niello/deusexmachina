@@ -28,6 +28,7 @@ public:
 	bool					Create(EIndexType Type, IDirect3DIndexBuffer9* pIB);
 	virtual void			Destroy() { InternalDestroy(); CIndexBuffer::Destroy(); }
 	virtual bool			IsValid() const { return !!pBuffer; }
+	virtual void            SetDebugName(std::string_view Name) override;
 
 	IDirect3DIndexBuffer9*	GetD3DBuffer() const { return pBuffer; }
 	UINT					GetD3DUsage() const { return Usage; }

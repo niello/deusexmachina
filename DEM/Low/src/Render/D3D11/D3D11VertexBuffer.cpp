@@ -41,4 +41,10 @@ void CD3D11VertexBuffer::InternalDestroy()
 }
 //---------------------------------------------------------------------
 
+void CD3D11VertexBuffer::SetDebugName(std::string_view Name)
+{
+	if (pBuffer) pBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, Name.size(), Name.data());
+}
+//---------------------------------------------------------------------
+
 }
