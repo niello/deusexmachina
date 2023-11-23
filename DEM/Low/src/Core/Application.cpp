@@ -726,7 +726,7 @@ bool CApplication::Update()
 
 	_RequestedState = _CurrState->Update(FrameTime);
 
-	// Tracy frame mark
+	// Tracy main frame mark
 	FrameMark;
 
 	return true;

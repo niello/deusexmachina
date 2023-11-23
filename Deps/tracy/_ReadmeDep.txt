@@ -12,7 +12,7 @@ Current version used:
 0.10.0
 
 Local modifications:
-none
+Compilation fix is_active -> active in D3D11
 
 Purpose in DEM:
 Game application profiling

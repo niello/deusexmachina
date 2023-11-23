@@ -26,11 +26,18 @@ enum D3D11_TEXTURE_ADDRESS_MODE;
 enum D3D11_FILTER;
 typedef struct tagRECT RECT;
 typedef unsigned int UINT;
+
 #if DEM_RENDER_DEBUG
 struct ID3D11Debug;
+#ifndef TRACY_ENABLE
+using TracyD3D11Ctx = void*;
+#else
+namespace tracy { class D3D11Ctx; }
+using TracyD3D11Ctx = tracy::D3D11Ctx*;
 #endif
-#if DEM_RENDER_DEBUG && defined(DEM_RENDER_DEBUG_D3D11_1)
+#if defined(DEM_RENDER_DEBUG_D3D11_1)
 struct ID3DUserDefinedAnnotation;
+#endif
 #endif
 
 namespace Data
@@ -143,6 +150,7 @@ protected:
 	ID3D11DeviceContext*				pD3DImmContext = nullptr;
 	//???store also D3D11.1 interfaces? and use for 11.1 methods only.
 #if DEM_RENDER_DEBUG
+	TracyD3D11Ctx                       _pTracyImmCtx = nullptr;
 	ID3D11Debug*                        _pD3DDebug = nullptr;
 #endif
 #if DEM_RENDER_DEBUG && defined(DEM_RENDER_DEBUG_D3D11_1)

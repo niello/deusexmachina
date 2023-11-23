@@ -28,6 +28,7 @@
 #include <Core/CoreServer.h>
 #include <Data/StringUtils.h>
 #endif
+#if DEM_RENDER_DEBUG
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
 #ifdef DEM_RENDER_DEBUG_D3D11_1 // TODO: now included only for debug API, will need to check another macro for normal use!
@@ -35,6 +36,8 @@
 #endif
 #ifdef DEM_RENDER_DEBUG_D3D9 // Debug markers API from D3D9 is used for D3D before 11.1
 #include <d3d9.h>
+#endif
+#include <tracy/TracyD3D11.hpp>
 #endif
 
 #undef min
@@ -67,10 +70,10 @@ bool CD3D11GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 	//!!!fix if will be multithreaded, forex job-based!
 	UPTR CreateFlags = D3D11_CREATE_DEVICE_SINGLETHREADED;
 
-#if !defined(_DEBUG) && (DEM_RENDER_DEBUG == 0)
+#if !defined(_DEBUG) && !DEM_RENDER_DEBUG
 	// Prevents end-users from debugging an application
 	CreateFlags |= D3D11_CREATE_DEVICE_PREVENT_ALTERING_LAYER_SETTINGS_FROM_REGISTRY;
-#elif (DEM_RENDER_DEBUG != 0)
+#elif DEM_RENDER_DEBUG
 	// Enable D3D11 debug layer only in debug builds with render debugging on
 	CreateFlags |= D3D11_CREATE_DEVICE_DEBUG;
 //const char c_szName[] = "mytexture.jpg";
@@ -121,12 +124,16 @@ bool CD3D11GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 	Sys::Log("Device created: %s, feature level 0x%x\n", "HAL", (int)D3DFeatureLevel);
 
 #if DEM_RENDER_DEBUG
+	_pTracyImmCtx = TracyD3D11Context(pD3DDevice, pD3DImmContext);
+	TracyD3D11ContextName(_pTracyImmCtx, "GPU main", sizeof("GPU main"));
+
 	hr = pD3DDevice->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&_pD3DDebug));
 	if (FAILED(hr)) Sys::Log("Can't obtain ID3D11Debug, hr = 0x%x!\n", hr);
-#endif
-#if DEM_RENDER_DEBUG && defined(DEM_RENDER_DEBUG_D3D11_1)
+
+#if defined(DEM_RENDER_DEBUG_D3D11_1)
 	hr = pD3DImmContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), reinterpret_cast<void**>(&_pD3DAnnotation));
 	if (FAILED(hr)) Sys::Log("Can't obtain ID3DUserDefinedAnnotation, hr = 0x%x!\n", hr);
+#endif
 #endif
 
 	UPTR MRTCountCaps = 0;
@@ -300,11 +307,15 @@ void CD3D11GPUDriver::Release()
 
 #if DEM_RENDER_DEBUG
 	pD3DImmContext->Flush(); // for clearer output of ReportLiveDeviceObjects
-#endif
 
-#if DEM_RENDER_DEBUG && defined(DEM_RENDER_DEBUG_D3D11_1)
+#if defined(DEM_RENDER_DEBUG_D3D11_1)
 	SAFE_RELEASE(_pD3DAnnotation);
 #endif
+
+	TracyD3D11Destroy(_pTracyImmCtx);
+	_pTracyImmCtx = nullptr;
+#endif
+
 	SAFE_RELEASE(pD3DImmContext);
 	SAFE_RELEASE(pD3DDevice);
 
@@ -759,7 +770,14 @@ bool CD3D11GPUDriver::Present(UPTR SwapChainID)
 {
 	if (!SwapChainExists(SwapChainID)) FAIL;
 	CD3D11SwapChain& SC = SwapChains[SwapChainID];
-	return SUCCEEDED(SC.pSwapChain->Present(0, 0));
+	const bool Result = SUCCEEDED(SC.pSwapChain->Present(0, 0));
+
+#if DEM_RENDER_DEBUG
+	TracyD3D11Collect(_pTracyImmCtx);
+	//FrameMarkNamed("Render");
+#endif
+
+	return Result;
 }
 //---------------------------------------------------------------------
 
@@ -1212,6 +1230,11 @@ void CD3D11GPUDriver::ClearDepthStencilBuffer(CDepthStencilBuffer& DS, UPTR Flag
 
 bool CD3D11GPUDriver::InternalDraw(const CPrimitiveGroup& PrimGroup, bool Instanced, UPTR InstanceCount)
 {
+//#if DEM_RENDER_DEBUG
+//	ZoneScoped;
+//	TracyD3D11Zone(_pTracyImmCtx, "InternalDraw");
+//#endif
+
 	n_assert_dbg(pD3DDevice && InstanceCount && (Instanced || InstanceCount == 1));
 
 	if (CurrPT != PrimGroup.Topology)
