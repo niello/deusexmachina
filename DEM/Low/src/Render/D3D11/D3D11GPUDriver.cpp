@@ -120,8 +120,12 @@ bool CD3D11GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 
 	Sys::Log("Device created: %s, feature level 0x%x\n", "HAL", (int)D3DFeatureLevel);
 
-#ifdef DEM_RENDER_DEBUG_D3D11_1
-	hr = pD3DImmContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), (void**)&_pD3DAnnotation);
+#if DEM_RENDER_DEBUG
+	hr = pD3DDevice->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&_pD3DDebug));
+	if (FAILED(hr)) Sys::Log("Can't obtain ID3D11Debug, hr = 0x%x!\n", hr);
+#endif
+#if DEM_RENDER_DEBUG && defined(DEM_RENDER_DEBUG_D3D11_1)
+	hr = pD3DImmContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), reinterpret_cast<void**>(&_pD3DAnnotation));
 	if (FAILED(hr)) Sys::Log("Can't obtain ID3DUserDefinedAnnotation, hr = 0x%x!\n", hr);
 #endif
 
@@ -292,25 +296,23 @@ void CD3D11GPUDriver::Release()
 
 	//!!!ReleaseQueries();
 
-//#if (DEM_RENDER_DEBUG != 0)
-//	pD3DImmContext->Flush();
-//#endif
-
 	pD3DImmContext->ClearState();
 
+#if DEM_RENDER_DEBUG
+	pD3DImmContext->Flush(); // for clearer output of ReportLiveDeviceObjects
+#endif
+
+#if DEM_RENDER_DEBUG && defined(DEM_RENDER_DEBUG_D3D11_1)
+	SAFE_RELEASE(_pD3DAnnotation);
+#endif
 	SAFE_RELEASE(pD3DImmContext);
-
-//#if DEM_RENDER_DEBUG
-//	ID3D11Debug* pD3D11Debug = nullptr;
-//	pD3DDevice->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&pD3D11Debug));
-//	if (pD3D11Debug)
-//	{
-//		pD3D11Debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
-//		pD3D11Debug->Release();
-//	}
-//#endif
-
 	SAFE_RELEASE(pD3DDevice);
+
+#if DEM_RENDER_DEBUG
+	// Uncomment when check needed. Always reports alive device and some Ref=0, IntRef=1 objects.
+	//if (_pD3DDebug) _pD3DDebug->ReportLiveDeviceObjects(/*D3D11_RLDO_SUMMARY |*/ D3D11_RLDO_DETAIL);
+	SAFE_RELEASE(_pD3DDebug);
+#endif
 
 //	IsInsideFrame = false;
 }
@@ -1231,6 +1233,14 @@ bool CD3D11GPUDriver::InternalDraw(const CPrimitiveGroup& PrimGroup, bool Instan
 
 	if (CurrDirtyFlags.IsAny() && ApplyChanges(CurrDirtyFlags.GetMask()) != 0) FAIL;
 	n_assert_dbg(CurrDirtyFlags.IsNotAll());
+
+#if _DEBUG && DEM_RENDER_DEBUG
+	if (_pD3DDebug)
+	{
+		const auto hr = _pD3DDebug->ValidateContext(pD3DImmContext);
+		n_assert(SUCCEEDED(hr));
+	}
+#endif
 
 	if (PrimGroup.IndexCount > 0)
 	{

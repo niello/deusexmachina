@@ -26,7 +26,10 @@ enum D3D11_TEXTURE_ADDRESS_MODE;
 enum D3D11_FILTER;
 typedef struct tagRECT RECT;
 typedef unsigned int UINT;
-#ifdef DEM_RENDER_DEBUG_D3D11_1
+#if DEM_RENDER_DEBUG
+struct ID3D11Debug;
+#endif
+#if DEM_RENDER_DEBUG && defined(DEM_RENDER_DEBUG_D3D11_1)
 struct ID3DUserDefinedAnnotation;
 #endif
 
@@ -139,7 +142,10 @@ protected:
 	ID3D11Device*						pD3DDevice = nullptr;
 	ID3D11DeviceContext*				pD3DImmContext = nullptr;
 	//???store also D3D11.1 interfaces? and use for 11.1 methods only.
-#ifdef DEM_RENDER_DEBUG_D3D11_1
+#if DEM_RENDER_DEBUG
+	ID3D11Debug*                        _pD3DDebug = nullptr;
+#endif
+#if DEM_RENDER_DEBUG && defined(DEM_RENDER_DEBUG_D3D11_1)
 	ID3DUserDefinedAnnotation*          _pD3DAnnotation = nullptr;
 #endif
 
