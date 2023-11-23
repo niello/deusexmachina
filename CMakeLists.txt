@@ -87,19 +87,19 @@ if(WIN32)
 	target_link_libraries(DEMLow PUBLIC DXGI.lib D3D11.lib) # TODO: only when D3D11 renderer is built
 	target_link_libraries(DEMLow PUBLIC D3d9.lib) # TODO: only when D3D9 renderer is built
 	if(DEM_RENDER_DEBUG)
-		target_link_libraries(DEMLow PUBLIC dxguid.lib) # For any D3D
-	endif()
+		target_link_libraries(DEMLow PUBLIC dxguid.lib) # For any D3D, WKPDID_D3DDebugObjectName
 
-	check_include_file("d3d11_1.h" HAS_D3D11_1_H)
-	check_include_file("d3d9.h" HAS_D3D9_H)
-	if(HAS_D3D11_1_H)
-		# ID3DUserDefinedAnnotation
-		target_compile_definitions(DEMLow PUBLIC DEM_RENDER_DEBUG_D3D11_1)
-	elseif(HAS_D3D9_H)
-		# D3DPERF_BeginEvent, ... (DX10+ too!)
-		target_compile_definitions(DEMLow PUBLIC DEM_RENDER_DEBUG_D3D9)
-	else()
-		# No gfx API zones
+		check_include_file("d3d11_1.h" HAS_D3D11_1_H)
+		check_include_file("d3d9.h" HAS_D3D9_H)
+		if(HAS_D3D11_1_H)
+			# ID3DUserDefinedAnnotation
+			target_compile_definitions(DEMLow PUBLIC DEM_RENDER_DEBUG_D3D11_1)
+		elseif(HAS_D3D9_H)
+			# D3DPERF_BeginEvent, ... (DX10+ too!)
+			target_compile_definitions(DEMLow PUBLIC DEM_RENDER_DEBUG_D3D9)
+		else()
+			# No gfx API zones
+		endif()
 	endif()
 endif()
 if(DEM_DISABLE_CXX_EXCEPTIONS)

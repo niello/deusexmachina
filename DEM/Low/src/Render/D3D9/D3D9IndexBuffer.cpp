@@ -2,7 +2,9 @@
 
 #include <Core/Factory.h>
 #include "DEMD3D9.h"
+#if DEM_RENDER_DEBUG
 #include <D3Dcommon.h> // WKPDID_D3DDebugObjectName
+#endif
 
 namespace Render
 {
@@ -47,7 +49,9 @@ void CD3D9IndexBuffer::InternalDestroy()
 
 void CD3D9IndexBuffer::SetDebugName(std::string_view Name)
 {
+#if DEM_RENDER_DEBUG
 	if (pBuffer) pBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, Name.data(), Name.size(), 0);
+#endif
 }
 //---------------------------------------------------------------------
 

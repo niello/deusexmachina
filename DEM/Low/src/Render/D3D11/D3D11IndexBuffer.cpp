@@ -40,7 +40,9 @@ void CD3D11IndexBuffer::InternalDestroy()
 
 void CD3D11IndexBuffer::SetDebugName(std::string_view Name)
 {
+#if DEM_RENDER_DEBUG
 	if (pBuffer) pBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, Name.size(), Name.data());
+#endif
 }
 //---------------------------------------------------------------------
 

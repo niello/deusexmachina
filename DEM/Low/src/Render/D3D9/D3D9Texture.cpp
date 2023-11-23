@@ -5,7 +5,9 @@
 #include <Render/ImageUtils.h>
 #include <Core/Factory.h>
 #include "DEMD3D9.h"
+#if DEM_RENDER_DEBUG
 #include <D3Dcommon.h> // WKPDID_D3DDebugObjectName
+#endif
 
 namespace Render
 {
@@ -91,7 +93,9 @@ IDirect3DVolumeTexture9* CD3D9Texture::GetD3DVolumeTexture() const
 
 void CD3D9Texture::SetDebugName(std::string_view Name)
 {
+#if DEM_RENDER_DEBUG
 	if (pD3DTex) pD3DTex->SetPrivateData(WKPDID_D3DDebugObjectName, Name.data(), Name.size(), 0);
+#endif
 }
 //---------------------------------------------------------------------
 
