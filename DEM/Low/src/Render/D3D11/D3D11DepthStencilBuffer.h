@@ -30,6 +30,7 @@ public:
 	virtual void			Destroy() { InternalDestroy(); }
 	virtual bool			IsValid() const { return !!pDSView; }
 	virtual CTexture*		GetShaderResource() const;
+	virtual void            SetDebugName(std::string_view Name) override;
 	ID3D11DepthStencilView*	GetD3DDSView() const { return pDSView; }
 };
 

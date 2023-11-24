@@ -3,6 +3,9 @@
 #include <Render/D3D9/D3D9DriverFactory.h>
 #include <Core/Factory.h>
 #include "DEMD3D9.h"
+#if DEM_RENDER_DEBUG
+#include <D3Dcommon.h> // WKPDID_D3DDebugObjectName
+#endif
 
 namespace Render
 {
@@ -46,6 +49,14 @@ bool CD3D9DepthStencilBuffer::Create(IDirect3DSurface9* pSurface)
 void CD3D9DepthStencilBuffer::InternalDestroy()
 {
 	SAFE_RELEASE(pDSSurface);
+}
+//---------------------------------------------------------------------
+
+void CD3D9DepthStencilBuffer::SetDebugName(std::string_view Name)
+{
+#if DEM_RENDER_DEBUG
+	if (pDSSurface) pDSSurface->SetPrivateData(WKPDID_D3DDebugObjectName, Name.data(), Name.size(), 0);
+#endif
 }
 //---------------------------------------------------------------------
 

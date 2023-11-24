@@ -86,7 +86,7 @@ public:
 	void              Update(float dt);
 
 	Resources::CResourceManager* GetResourceManager() const { return pResMgr; }
-	Render::CGPUDriver*          GetGPU() const;
+	Render::CGPUDriver*          GetGPU() const { return GPU.Get(); }
 	UI::CUIServer*               GetUI() const { return UIServer.get(); }
 };
 

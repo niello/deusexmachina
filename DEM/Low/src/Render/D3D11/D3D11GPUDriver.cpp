@@ -28,9 +28,9 @@
 #include <Core/CoreServer.h>
 #include <Data/StringUtils.h>
 #endif
-#if DEM_RENDER_DEBUG
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
+#if DEM_RENDER_DEBUG
 #ifdef DEM_RENDER_DEBUG_D3D11_1 // TODO: now included only for debug API, will need to check another macro for normal use!
 #include <d3d11_1.h>
 #endif

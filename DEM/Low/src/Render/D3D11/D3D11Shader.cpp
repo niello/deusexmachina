@@ -94,4 +94,12 @@ ID3D11PixelShader* CD3D11Shader::GetD3DPixelShader() const
 }
 //---------------------------------------------------------------------
 
+void CD3D11Shader::SetDebugName(std::string_view Name)
+{
+#if DEM_RENDER_DEBUG
+	if (_pShader) _pShader->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)Name.size(), Name.data());
+#endif
+}
+//---------------------------------------------------------------------
+
 }

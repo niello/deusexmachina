@@ -125,4 +125,13 @@ CTexture* CD3D11RenderTarget::GetShaderResource() const
 }
 //---------------------------------------------------------------------
 
+void CD3D11RenderTarget::SetDebugName(std::string_view Name)
+{
+#if DEM_RENDER_DEBUG
+	if (pRTView) pRTView->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)Name.size(), Name.data());
+	if (Texture) Texture->SetDebugName(Name);
+#endif
+}
+//---------------------------------------------------------------------
+
 }

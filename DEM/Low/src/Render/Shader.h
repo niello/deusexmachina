@@ -21,6 +21,7 @@ public:
 
 	const CShaderParamTable* GetParamTable() const { return _Params; }
 	EShaderType              GetType() const { return _Type; }
+	virtual void             SetDebugName(std::string_view Name) = 0;
 };
 
 typedef Ptr<CShader> PShader;

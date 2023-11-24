@@ -36,6 +36,7 @@ public:
 	virtual bool		IsValid() const { return !!pRTSurface; }
 	virtual bool		CopyResolveToTexture(PTexture Dest /*, region*/) const;
 	virtual CTexture*	GetShaderResource() const;
+	virtual void        SetDebugName(std::string_view Name) override;
 	IDirect3DSurface9*	GetD3DSurface() const { return pRTSurface; }
 };
 

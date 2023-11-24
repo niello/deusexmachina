@@ -166,6 +166,8 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 			::Sys::Error("CView::CView() > Unknown render queue type!");
 		}
 	}
+
+	_DebugName = "View " + std::to_string((size_t)this) + "(" + RenderPathID.ToString() + ")";
 }
 //---------------------------------------------------------------------
 
@@ -717,6 +719,7 @@ bool CView::Render()
 	if (!_RenderPath || !_pScene || !_pCamera) return false;
 
 	ZoneScoped;
+	ZoneText(_DebugName.c_str(), _DebugName.size());
 
 	// Synchronize objects from scene to this view
 	SynchronizeRenderables();
@@ -747,6 +750,8 @@ bool CView::Render()
 	for (auto& Queue : _RenderQueues)
 		Queue->Update();
 
+	DEM_RENDER_EVENT_SCOPED(GetGPU(), std::wstring(_DebugName.begin(), _DebugName.end()).c_str());
+
 	return _RenderPath->Render(*this);
 }
 //---------------------------------------------------------------------
@@ -771,8 +776,19 @@ bool CView::SetRenderTarget(CStrID ID, Render::PRenderTarget RT)
 {
 	if (!_RenderPath || !_RenderPath->HasRenderTarget(ID)) FAIL;
 
-	if (RT) RTs[ID] = RT;
-	else RTs.erase(ID);
+	if (RT)
+	{
+#if DEM_RENDER_DEBUG
+		RT->SetDebugName(ID.ToStringView());
+#endif
+
+		RTs[ID] = std::move(RT);
+	}
+	else
+	{
+		RTs.erase(ID);
+	}
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -788,8 +804,19 @@ bool CView::SetDepthStencilBuffer(CStrID ID, Render::PDepthStencilBuffer DS)
 {
 	if (!_RenderPath || !_RenderPath->HasDepthStencilBuffer(ID)) FAIL;
 
-	if (DS) DSBuffers[ID] = DS;
-	else DSBuffers.erase(ID);
+	if (DS)
+	{
+#if DEM_RENDER_DEBUG
+		DS->SetDebugName(ID.ToStringView());
+#endif
+
+		DSBuffers[ID] = std::move(DS);
+	}
+	else
+	{
+		DSBuffers.erase(ID);
+	}
+
 	OK;
 }
 //---------------------------------------------------------------------

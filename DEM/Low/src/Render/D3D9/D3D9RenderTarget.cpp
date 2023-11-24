@@ -4,6 +4,9 @@
 #include <Render/D3D9/D3D9Texture.h>
 #include <Core/Factory.h>
 #include "DEMD3D9.h"
+#if DEM_RENDER_DEBUG
+#include <D3Dcommon.h> // WKPDID_D3DDebugObjectName
+#endif
 
 namespace Render
 {
@@ -95,6 +98,15 @@ CTexture* CD3D9RenderTarget::GetShaderResource() const
 	//!!!on render to texture end, if MipLevels > 0, generate mips!
 	//autogen mipmap flag is set, but will it work? if will, mips will be generated only as required by driver
 	return SRTexture.Get();
+}
+//---------------------------------------------------------------------
+
+void CD3D9RenderTarget::SetDebugName(std::string_view Name)
+{
+#if DEM_RENDER_DEBUG
+	if (pRTSurface) pRTSurface->SetPrivateData(WKPDID_D3DDebugObjectName, Name.data(), Name.size(), 0);
+	if (SRTexture) SRTexture->SetDebugName(Name);
+#endif
 }
 //---------------------------------------------------------------------
 

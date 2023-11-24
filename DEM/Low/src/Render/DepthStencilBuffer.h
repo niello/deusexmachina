@@ -21,6 +21,7 @@ public:
 	virtual bool				IsValid() const = 0;
 	virtual CTexture*			GetShaderResource() const = 0;
 	const CRenderTargetDesc&	GetDesc() const { return Desc; }
+	virtual void                SetDebugName(std::string_view Name) = 0;
 };
 
 typedef Ptr<CDepthStencilBuffer> PDepthStencilBuffer;

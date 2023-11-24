@@ -39,12 +39,6 @@ CGraphicsResourceManager::CGraphicsResourceManager(Resources::CResourceManager& 
 CGraphicsResourceManager::~CGraphicsResourceManager() = default;
 //---------------------------------------------------------------------
 
-Render::CGPUDriver* CGraphicsResourceManager::GetGPU() const
-{
-	return GPU;
-}
-//---------------------------------------------------------------------
-
 Render::PMesh CGraphicsResourceManager::GetMesh(CStrID UID)
 {
 	if (!UID) return nullptr;
@@ -177,7 +171,14 @@ Render::PShader CGraphicsResourceManager::GetShader(CStrID UID, bool NeedParamTa
 
 	Render::PShader Shader = GPU->CreateShader(*Stream, NeedParamTable);
 
-	if (Shader) Shaders.emplace(UID, Shader);
+	if (Shader)
+	{
+		Shaders.emplace(UID, Shader);
+
+#if DEM_RENDER_DEBUG
+		Shader->SetDebugName(UID.ToStringView());
+#endif
+	}
 
 	return Shader;
 }

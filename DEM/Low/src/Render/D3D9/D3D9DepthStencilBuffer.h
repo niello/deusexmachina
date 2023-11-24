@@ -38,6 +38,7 @@ public:
 	virtual void		Destroy() { InternalDestroy(); }
 	virtual bool		IsValid() const { return !!pDSSurface; }
 	virtual CTexture*	GetShaderResource() const { return nullptr; }
+	virtual void        SetDebugName(std::string_view Name) override;
 	IDirect3DSurface9*	GetD3DSurface() const { return pDSSurface; }
 };
 

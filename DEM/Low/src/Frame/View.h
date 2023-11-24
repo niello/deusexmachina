@@ -94,6 +94,8 @@ protected:
 	U32                                         _SpatialTreeRebuildVersion = 0; // For spatial tree node visibility cache invalidation
 	U32                                         _CameraTfmVersion = 0;
 
+	std::string _DebugName;
+
 	friend class CGraphicsResourceManager;
 
 	CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int SwapChainID, CStrID SwapChainRTID);
@@ -162,6 +164,7 @@ public:
 	DEM::Sys::COSWindow*			GetTargetWindow() const;
 	Render::PDisplayDriver			GetTargetDisplay() const;
 	bool							IsFullscreen() const;
+	void                            SetDebugName(std::string_view Name) { _DebugName = Name; }
 };
 
 }

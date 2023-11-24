@@ -34,6 +34,7 @@ public:
 	virtual ~CD3D11Shader() override;
 
 	virtual bool          IsValid() const override { return !!_pShader && _Type != ShaderType_Invalid; }
+	virtual void          SetDebugName(std::string_view Name) override;
 
 	U32                   GetInputSignatureID() const { return _InputSignatureID; }
 	ID3D11DeviceChild*    GetD3DShader() const { return _pShader; }

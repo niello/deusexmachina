@@ -88,4 +88,13 @@ CTexture* CD3D11DepthStencilBuffer::GetShaderResource() const
 }
 //---------------------------------------------------------------------
 
+void CD3D11DepthStencilBuffer::SetDebugName(std::string_view Name)
+{
+#if DEM_RENDER_DEBUG
+	if (pDSView) pDSView->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)Name.size(), Name.data());
+	if (Texture) Texture->SetDebugName(Name);
+#endif
+}
+//---------------------------------------------------------------------
+
 }

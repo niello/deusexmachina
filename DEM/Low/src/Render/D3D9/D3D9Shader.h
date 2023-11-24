@@ -26,6 +26,7 @@ public:
 	virtual ~CD3D9Shader();
 
 	virtual bool            IsValid() const override { return !!_pShader && _Type != ShaderType_Invalid; }
+	virtual void            SetDebugName(std::string_view Name) override;
 
 	IDirect3DVertexShader9* GetD3DVertexShader() const;
 	IDirect3DPixelShader9*  GetD3DPixelShader() const;

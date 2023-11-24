@@ -30,6 +30,7 @@ public:
 	virtual bool			IsValid() const { return !!pRTView; }
 	virtual bool			CopyResolveToTexture(PTexture Dest /*, region*/) const;
 	virtual CTexture*		GetShaderResource() const;
+	virtual void            SetDebugName(std::string_view Name) override;
 	ID3D11RenderTargetView*	GetD3DRTView() const { return pRTView; }
 };
 

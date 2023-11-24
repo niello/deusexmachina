@@ -43,4 +43,10 @@ IDirect3DPixelShader9* CD3D9Shader::GetD3DPixelShader() const
 }
 //---------------------------------------------------------------------
 
+void CD3D9Shader::SetDebugName(std::string_view Name)
+{
+	// Not supported
+}
+//---------------------------------------------------------------------
+
 }
