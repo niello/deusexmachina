@@ -98,7 +98,7 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 	auto& GlobalParams = _RenderPath->GetGlobalParamTable();
 	_Globals = Render::CShaderParamStorage(GlobalParams, *GraphicsMgr.GetGPU(), true);
 	for (const auto& Const : GlobalParams.GetConstants())
-		_Globals.CreatePermanentConstantBuffer(Const.GetConstantBufferIndex(), Render::Access_CPU_Write | Render::Access_GPU_Read);
+		_Globals.CreatePermanentConstantBuffer(Const.GetConstantBufferIndex(), Render::Access_CPU_Write | Render::Access_GPU_Read, "Globals");
 
 	// Allocate caches for original effects and for all overrides
 	_ShaderTechCache.resize(1 + _RenderPath->EffectOverrides.size());

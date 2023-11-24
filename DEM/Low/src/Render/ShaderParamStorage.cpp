@@ -68,13 +68,19 @@ bool CShaderParamStorage::SetConstantBuffer(size_t Index, CConstantBuffer* pBuff
 }
 //---------------------------------------------------------------------
 
-CConstantBuffer* CShaderParamStorage::CreatePermanentConstantBuffer(size_t Index, U8 AccessFlags)
+CConstantBuffer* CShaderParamStorage::CreatePermanentConstantBuffer(size_t Index, U8 AccessFlags, std::string_view DebugName)
 {
 	if (Index >= _ConstantBuffers.size()) return nullptr;
 
 	//???if exists, assert access flags or even replace with new buffer?
 	if (!_ConstantBuffers[Index])
+	{
 		_ConstantBuffers[Index] = _GPU->CreateConstantBuffer(*_Table->GetConstantBuffer(Index), AccessFlags);
+
+#if DEM_RENDER_DEBUG
+		_ConstantBuffers[Index]->SetDebugName(DebugName);
+#endif
+	}
 
 	return _ConstantBuffers[Index];
 }

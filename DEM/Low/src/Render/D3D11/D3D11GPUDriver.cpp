@@ -542,6 +542,10 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 	ItSC->Sub_OnToggleFullscreen = pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D11GPUDriver::OnOSWindowToggleFullscreen);
 	ItSC->Sub_OnClosing = pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnClosing"), this, &CD3D11GPUDriver::OnOSWindowClosing);
 
+#if DEM_RENDER_DEBUG
+	ItSC->BackBufferRT->SetDebugName("SwapChain: " + pWindow->GetTitle());
+#endif
+
 	return std::distance(SwapChains.begin(), ItSC);
 }
 //---------------------------------------------------------------------
@@ -1977,7 +1981,11 @@ PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(IConstantBufferPa
 		}
 	}
 
-	return InternalCreateConstantBuffer(pUSMParam->GetType(), NextPow2Size, Access_CPU_Write | Access_GPU_Read, nullptr, true);
+	auto CB = InternalCreateConstantBuffer(pUSMParam->GetType(), NextPow2Size, Access_CPU_Write | Access_GPU_Read, nullptr, true);
+#if DEM_RENDER_DEBUG
+	if (CB) CB->SetDebugName("Tmp" + std::to_string(NextPow2Size) + "_" + std::to_string(BufferPool.size()));
+#endif
+	return CB;
 }
 //---------------------------------------------------------------------
 

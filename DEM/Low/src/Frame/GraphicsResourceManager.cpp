@@ -704,6 +704,10 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 		if (!(Buffer->GetAccessFlags() & Render::Access_GPU_Read))
 			Buffer = GPU->CreateConstantBuffer(*Table.GetConstantBuffer(i), Render::Access_GPU_Read, Buffer.Get());
 
+#if DEM_RENDER_DEBUG
+		Buffer->SetDebugName(UID.ToString() + ": " + Table.GetConstantBuffer(i)->GetID().ToString());
+#endif
+
 		Storage.SetConstantBuffer(i, Buffer);
 	}
 

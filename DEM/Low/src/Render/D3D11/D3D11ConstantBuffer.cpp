@@ -114,4 +114,12 @@ void CD3D11ConstantBuffer::OnCommit()
 }
 //---------------------------------------------------------------------
 
+void CD3D11ConstantBuffer::SetDebugName(std::string_view Name)
+{
+#if DEM_RENDER_DEBUG
+	if (pBuffer) pBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)Name.size(), Name.data());
+#endif
+}
+//---------------------------------------------------------------------
+
 }

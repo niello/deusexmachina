@@ -52,6 +52,7 @@ public:
 	virtual bool IsDirty() const override { return Flags.IsAny(CB9_AnyDirty); }
 	virtual bool IsTemporary() const override { return Flags.Is(CB9_Temporary); }
 	virtual U8   GetAccessFlags() const override;
+	virtual void SetDebugName(std::string_view Name) override { /* not supported */ }
 
 	//!!!for IConst can compute universal offset! anyway need to set proper dirty flag (can deduce from offset btw)!
 	void         WriteData(ESM30RegisterSet RegSet, UPTR OffsetInBytes, const void* pData, UPTR Size);

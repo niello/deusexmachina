@@ -50,6 +50,7 @@ public:
 	virtual bool                IsDirty() const override { return Flags.Is(CB11_Dirty); }
 	virtual bool				IsTemporary() const override { return Flags.Is(CB11_Temporary); }
 	virtual U8                  GetAccessFlags() const override;
+	virtual void                SetDebugName(std::string_view Name) override;
 
 	bool						CreateRAMCopy();
 	void						ResetRAMCopy(const void* pVBuffer);

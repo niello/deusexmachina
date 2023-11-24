@@ -36,7 +36,7 @@ public:
 
 	bool                     SetConstantBuffer(CStrID ID, CConstantBuffer* pBuffer);
 	bool                     SetConstantBuffer(size_t Index, CConstantBuffer* pBuffer);
-	CConstantBuffer*         CreatePermanentConstantBuffer(size_t Index, U8 AccessFlags);
+	CConstantBuffer*         CreatePermanentConstantBuffer(size_t Index, U8 AccessFlags, std::string_view DebugName = {});
 	CConstantBuffer*         GetConstantBuffer(size_t Index, bool Create = true);
 
 	bool                     SetRawConstant(CStrID ID, const void* pData, UPTR Size) { return SetRawConstant(_Table->GetConstant(ID), pData, Size); }

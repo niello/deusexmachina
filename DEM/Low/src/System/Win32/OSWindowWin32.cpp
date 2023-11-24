@@ -166,17 +166,15 @@ void COSWindowWin32::SetTitle(const char* pTitle)
 }
 //---------------------------------------------------------------------
 
-CString COSWindowWin32::GetTitle() const
+std::string COSWindowWin32::GetTitle() const
 {
-	CString Out;
+	std::string Out;
 	if (!hWnd) return Out;
 
-	const int Len = ::GetWindowTextLength(hWnd) + 1;
-	Out.Reserve(Len);
-	char* pBuf = n_new_array(char, Len);
-	::GetWindowText(hWnd, pBuf, Len);
-	Out = pBuf;
-	n_delete_array(pBuf);
+	const int Len = ::GetWindowTextLength(hWnd);
+	Out.resize(Len + 1);
+	::GetWindowText(hWnd, Out.data(), Len);
+	Out.back() = 0;
 	return Out;
 }
 //---------------------------------------------------------------------

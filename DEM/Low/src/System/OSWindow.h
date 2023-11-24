@@ -44,7 +44,7 @@ public:
 	virtual bool			IsValid() const = 0;
 	virtual bool			HasInputFocus() const = 0;
 	virtual COSWindow*		GetParent() const = 0;
-	virtual CString			GetTitle() const = 0;
+	virtual std::string		GetTitle() const = 0;
 	virtual bool			GetCursorPosition(IPTR& OutX, IPTR& OutY) const = 0;
 
 	bool					IsChild() const { return !!GetParent(); }

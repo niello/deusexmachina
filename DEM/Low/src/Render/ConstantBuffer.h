@@ -20,6 +20,7 @@ public:
 	virtual bool IsDirty() const = 0;
 	virtual bool IsTemporary() const = 0;
 	virtual U8   GetAccessFlags() const = 0;
+	virtual void SetDebugName(std::string_view Name) = 0;
 };
 
 typedef Ptr<CConstantBuffer> PConstantBuffer;
