@@ -60,11 +60,11 @@ DEM_FORCE_INLINE CSIMDFrustum RTM_SIMD_CALL CalcFrustumParams(rtm::matrix4x4f_ar
 	// In the paper Left = W + X, Right = W - X, Bottom = W + Y, Top = W - Y. Normals look inside the frustum, i.e. positive halfspace means 'inside'.
 	// We invert this to Left = -X - W, Right = X - W, Bottom = -Y - W, Top = Y - W. Normals look outside the frustum, i.e. positive halfspace means 'outside'.
 	// LRBT_w is a -d, i.e. -dot(PlaneNormal, PlaneOrigin). +w instead of -d allows us using a single fma instead of separate mul & sub in clipping tests.
-	constexpr rtm::vector4f SignMask{ -1.f, 1.f, -1.f, 1.f }; //???can negate sign bit by mask?
-	const auto LRBT_Nx = rtm::vector_sub(rtm::vector_mul(Math::vector_mix_xyxy(m.x_axis), SignMask), rtm::vector_dup_w(m.x_axis));
-	const auto LRBT_Ny = rtm::vector_sub(rtm::vector_mul(Math::vector_mix_xyxy(m.y_axis), SignMask), rtm::vector_dup_w(m.y_axis));
-	const auto LRBT_Nz = rtm::vector_sub(rtm::vector_mul(Math::vector_mix_xyxy(m.z_axis), SignMask), rtm::vector_dup_w(m.z_axis));
-	const auto LRBT_w =  rtm::vector_sub(rtm::vector_mul(Math::vector_mix_xyxy(m.w_axis), SignMask), rtm::vector_dup_w(m.w_axis));
+	constexpr rtm::vector4f SignMask{ -0.f, 0.f, -0.f, 0.f };
+	const auto LRBT_Nx = rtm::vector_sub(rtm::vector_xor(Math::vector_mix_xxyy(m.x_axis), SignMask), rtm::vector_dup_w(m.x_axis));
+	const auto LRBT_Ny = rtm::vector_sub(rtm::vector_xor(Math::vector_mix_xxyy(m.y_axis), SignMask), rtm::vector_dup_w(m.y_axis));
+	const auto LRBT_Nz = rtm::vector_sub(rtm::vector_xor(Math::vector_mix_xxyy(m.z_axis), SignMask), rtm::vector_dup_w(m.z_axis));
+	const auto LRBT_w =  rtm::vector_sub(rtm::vector_xor(Math::vector_mix_xxyy(m.w_axis), SignMask), rtm::vector_dup_w(m.w_axis));
 
 	// Near and far planes are parallel, which enables us to save some work. Near & far planes are +d (-w) along the look
 	// axis, so NearPlane is negated once and FarPlane is negated twice (once to make it -w, once to invert the axis).

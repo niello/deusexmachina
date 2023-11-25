@@ -190,12 +190,12 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		if (!ChildFlags) return IsVisible ? ENodeStatus::Processed : ENodeStatus::Invisible;
 	}
 
-	constexpr rtm::vector4f SignMask{ 1.f, 1.f, -1.f, -1.f }; //???can negate sign bit by mask?
+	constexpr rtm::vector4f SignMask{ 0.f, 0.f, -0.f, -0.f };
 
 	// (HalfSizeX, HalfSizeZ, CenterX, CenterZ)
 	const auto HalfSizeXZCenterXZ = Math::vector_mix_xzac(NodeBoxExtent, NodeBoxCenter);
 	// (HalfSizeX, HalfSizeZ, -HalfSizeX, -HalfSizeZ)
-	const auto HalfSizeXZNegHalfSizeXZ = rtm::vector_mul(Math::vector_mix_xyxy(HalfSizeXZCenterXZ), SignMask);
+	const auto HalfSizeXZNegHalfSizeXZ = rtm::vector_xor(Math::vector_mix_xyxy(HalfSizeXZCenterXZ), SignMask);
 
 	// TODO: it seems to be a bit faster without full patches, using 4 quarters instead and rendering the whole terrain in 1 DIP.
 	// Need to profile further on some specific cases, e.g. rendering when most of items are full. Will 4x instance increase be still negligible?
@@ -219,7 +219,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		{
 			// (HalfSizeX, HalfSizeZ, CenterX - HalfSizeX, CenterZ - HalfSizeZ)
 			auto& Patch = _Patches.emplace_back();
-			Patch.ScaleOffset = rtm::vector_mul_add(HalfSizeXZNegHalfSizeXZ, rtm::vector_set(0.f, 0.f, 1.f, 1.f), HalfSizeXZCenterXZ);
+			Patch.ScaleOffset = rtm::vector_mul_add(HalfSizeXZNegHalfSizeXZ, rtm::vector4f{ 0.f, 0.f, 1.f, 1.f }, HalfSizeXZCenterXZ);
 			Patch.LOD = LOD;
 			Patch.MortonCode = FirstChildMortonCode;
 		}
@@ -228,7 +228,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		{
 			// (HalfSizeX, HalfSizeZ, CenterX, CenterZ - HalfSizeZ)
 			auto& Patch = _Patches.emplace_back();
-			Patch.ScaleOffset = rtm::vector_mul_add(HalfSizeXZNegHalfSizeXZ, rtm::vector_set(0.f, 0.f, 0.f, 1.f), HalfSizeXZCenterXZ);
+			Patch.ScaleOffset = rtm::vector_mul_add(HalfSizeXZNegHalfSizeXZ, rtm::vector4f{ 0.f, 0.f, 0.f, 1.f }, HalfSizeXZCenterXZ);
 			Patch.LOD = LOD;
 			Patch.MortonCode = FirstChildMortonCode + 1;
 		}
@@ -237,7 +237,7 @@ CTerrain::ENodeStatus CTerrain::ProcessTerrainNode(const CNodeProcessingContext&
 		{
 			// (HalfSizeX, HalfSizeZ, CenterX - HalfSizeX, CenterZ)
 			auto& Patch = _Patches.emplace_back();
-			Patch.ScaleOffset = rtm::vector_mul_add(HalfSizeXZNegHalfSizeXZ, rtm::vector_set(0.f, 0.f, 1.f, 0.f), HalfSizeXZCenterXZ);
+			Patch.ScaleOffset = rtm::vector_mul_add(HalfSizeXZNegHalfSizeXZ, rtm::vector4f{ 0.f, 0.f, 1.f, 0.f }, HalfSizeXZCenterXZ);
 			Patch.LOD = LOD;
 			Patch.MortonCode = FirstChildMortonCode + 2;
 		}

@@ -251,6 +251,7 @@ RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::vector4f RTM_SIMD_CALL v
 //RTM_MIX_ALIAS_ONE(y, y, y, y); - use rtm::vector_dup_y
 //RTM_MIX_ALIAS_ONE(z, z, z, z); - use rtm::vector_dup_z
 //RTM_MIX_ALIAS_ONE(w, w, w, w); - use rtm::vector_dup_w
+RTM_MIX_ALIAS_ONE(x, x, y, y);
 RTM_MIX_ALIAS_ONE(x, y, x, y);
 RTM_MIX_ALIAS_TWO(x, y, z, a);
 RTM_MIX_ALIAS_TWO(x, y, z, b);
