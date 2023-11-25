@@ -2,6 +2,8 @@
 #include <Render/D3D11/D3D11DisplayDriver.h>
 #include <Render/D3D11/D3D11GPUDriver.h>
 #include <Data/Buffer.h>
+#include <IO/IOServer.h> //!!!FIXME: DBG TMP!
+#include <IO/Stream.h> //!!!FIXME: DBG TMP!
 
 // Windows 8.1 SDK is missing definitions for debug GUIDs
 #if (DEM_RENDER_DEBUG) && (WINVER <= 0x0603)
@@ -15,7 +17,10 @@
 namespace Render
 {
 
-CD3D11DriverFactory::CD3D11DriverFactory() = default;
+CD3D11DriverFactory::CD3D11DriverFactory(std::string_view ShaderInputSignaturesDir)
+	: _ShaderInputSignaturesDir(ShaderInputSignaturesDir)
+{
+}
 //---------------------------------------------------------------------
 
 CD3D11DriverFactory::~CD3D11DriverFactory()
@@ -180,11 +185,21 @@ PGPUDriver CD3D11DriverFactory::CreateGPUDriver(UPTR Adapter, EGPUDriverType Dri
 //---------------------------------------------------------------------
 
 // NB: Doesn't copy data, so pData must be dynamically allocated and must not be freed externally
-bool CD3D11DriverFactory::RegisterShaderInputSignature(U32 ID, Data::PBuffer&& Data)
+bool CD3D11DriverFactory::RegisterShaderInputSignature(U32 ID)
 {
+	auto It = ShaderSigIDToIndex.find(ID);
+	if (It != ShaderSigIDToIndex.cend()) return true;
+
+	//!!!FIXME: how to process this correctly? Move to GRM, where we have access to IO via resource manager? Or make signatures resources?
+	const auto FileName = _ShaderInputSignaturesDir + std::to_string(ID) + ".sig";
+	IO::PStream File = IOSrv->CreateStream(FileName.c_str(), IO::SAM_READ, IO::SAP_SEQUENTIAL);
+	if (!File || !File->IsOpened()) return false;
+	auto Data = File->ReadAll();
+	if (!Data) return false;
+
 	ShaderSignatures.push_back(std::move(Data));
 	ShaderSigIDToIndex.emplace(ID, ShaderSignatures.size() - 1);
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 

@@ -91,7 +91,7 @@ public:
 
 		std::string MaterialID;
 
-		const auto TexturePath = GetPath(Task.Params, "TextureOutput");
+		const auto TexturePath = GetOutputPath(Task.Params, "TextureOutput");
 
 		auto EffectIt = _Settings.EffectsByType.find("MetallicRoughnessSkybox");
 		if (EffectIt == _Settings.EffectsByType.cend() || EffectIt->second.empty())
@@ -132,7 +132,7 @@ public:
 		}
 
 		{
-			auto DestPath = GetPath(Task.Params, "MaterialOutput") / (TaskName + ".mtl");
+			auto DestPath = GetOutputPath(Task.Params, "MaterialOutput") / (TaskName + ".mtl");
 
 			fs::create_directories(DestPath.parent_path());
 
@@ -240,7 +240,7 @@ public:
 
 		Result.emplace_back(CStrID("Attrs"), std::move(Attributes));
 
-		const fs::path OutPath = GetPath(Task.Params, "Output");
+		const fs::path OutPath = GetOutputPath(Task.Params);
 
 		if (_OutputHRD)
 		{

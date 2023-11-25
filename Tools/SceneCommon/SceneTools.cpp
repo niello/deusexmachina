@@ -606,7 +606,7 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::iallocator& A
 // FIXME: to common ancestor of FBX & glTF tools, to have access to a CF tool class data
 // Name = Task.TaskID.ToString()
 // TaskParams = Task.Params
-// DestDir = GetPath(Task.Params, "Output");
+// DestDir = GetOutputPath(Task.Params);
 bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name, Data::CParams&& Nodes,
 	const Data::CSchemeSet& Schemes, const Data::CParams& TaskParams, bool HRD, bool Binary, bool CreateRoot, CThreadSafeLog& Log)
 {

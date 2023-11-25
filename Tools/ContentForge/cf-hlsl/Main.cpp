@@ -9,9 +9,10 @@ namespace fs = std::filesystem;
 
 // Set working directory to $(TargetDir)
 // Example args:
-// -s src/shaders/hlsl_usm/CEGUI.hlsl.meta
-// -s src/shaders/hlsl_usm/CEGUI.hlsl
-// -s src/shaders
+// -s src/shaders/hlsl_usm/CEGUI.hlsl.meta -cfg release
+// -s src/shaders/hlsl_usm/CEGUI.hlsl -cfg release
+// -s src/shaders --cfg release
+// -s src/shaders --cfg debug -d
 
 class CDLLLog : public DEMShaderCompiler::ILogDelegate
 {
@@ -40,20 +41,22 @@ public:
 
 	std::string _DBPath;
 	std::string _InputSignaturesDir;
+	std::string _ConfigName;
 	bool _ForceRecompilation = false;
+	bool _Debug = false;
 
-	CHLSLTool(const std::string& Name, const std::string& Desc, CVersion Version) :
-		CContentForgeTool(Name, Desc, Version)
-	{
-	}
+	using CContentForgeTool::CContentForgeTool;
 
 	virtual int Init() override
 	{
+		if (_OutDir.empty())
+			_OutDir = (fs::path(_RootDir) / "shaders" / _ConfigName).string();
+
 		if (_DBPath.empty())
-			_DBPath = (fs::path(_RootDir) / fs::path("src/shaders/shaders.db3")).string();
+			_DBPath = (fs::path(_RootDir) / "src/shaders/shaders.db3").string();
 
 		if (_InputSignaturesDir.empty())
-			_InputSignaturesDir = "shaders/d3d_usm/sig";
+			_InputSignaturesDir = (fs::relative(fs::path(_OutDir) / "sig", _RootDir)).string();
 
 		if (!DEMShaderCompiler::Init(_DBPath.c_str())) return 1;
 
@@ -75,7 +78,9 @@ public:
 		CContentForgeTool::ProcessCommandLine(CLIApp);
 		CLIApp.add_option("--db", _DBPath, "Shader DB file path");
 		CLIApp.add_option("--is,--inputsig", _InputSignaturesDir, "Folder where input signature binaries will be saved");
+		CLIApp.add_option("--cfg", _ConfigName, "Configuration name. Multiple configs with different flags can coexist in a cache.");
 		CLIApp.add_flag("-r", _ForceRecompilation, "Force recompilation");
+		CLIApp.add_flag("-d", _Debug, "Compile shaders for debugging");
 	}
 
 	virtual ETaskResult ProcessTask(CContentForgeTask& Task) override
@@ -83,10 +88,9 @@ public:
 		const std::string EntryPoint = ParamsUtils::GetParam<std::string>(Task.Params, "Entry", std::string{});
 		if (EntryPoint.empty()) return ETaskResult::Failure;
 
-		const std::string Output = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
 		const int Target = ParamsUtils::GetParam<int>(Task.Params, "Target", 0);
 		const std::string Defines = ParamsUtils::GetParam<std::string>(Task.Params, "Defines", std::string{});
-		const bool Debug = ParamsUtils::GetParam<bool>(Task.Params, "Debug", false);
+		const bool Debug = _Debug || ParamsUtils::GetParam<bool>(Task.Params, "Debug", false);
 
 		EShaderType ShaderType;
 		const CStrID Type = ParamsUtils::GetParam<CStrID>(Task.Params, "Type", CStrID::Empty);
@@ -105,15 +109,13 @@ public:
 		}
 
 		const auto SrcPath = fs::relative(Task.SrcFilePath, _RootDir);
-
-		const std::string TaskID(Task.TaskID.CStr());
-		const auto DestPath = fs::path(Output) / (TaskID + ".bin");
+		const auto DestPath = fs::relative(GetOutputPath(Task.Params) / (Task.TaskID.ToString() + ".bin"), _RootDir);
 
 		CDLLLog Log(&Task.Log);
 
 		const auto Code = DEMShaderCompiler::CompileShader(_RootDir.c_str(),
 			SrcPath.string().c_str(), DestPath.string().c_str(), _InputSignaturesDir.c_str(),
-			ShaderType, Target, EntryPoint.c_str(), Defines.c_str(), Debug, _ForceRecompilation, SrcFileData.data(), SrcFileData.size(), &Log);
+			ShaderType, Target, _ConfigName.c_str(), EntryPoint.c_str(), Defines.c_str(), Debug, _ForceRecompilation, SrcFileData.data(), SrcFileData.size(), &Log);
 
 		return(Code == DEM_SHADER_COMPILER_SUCCESS) ? ETaskResult::Success :
 			(Code == DEM_SHADER_COMPILER_UP_TO_DATE) ? ETaskResult::UpToDate :
@@ -123,6 +125,6 @@ public:
 
 int main(int argc, const char** argv)
 {
-	CHLSLTool Tool("cf-hlsl", "HLSL to DeusExMachina resource converter", { 1, 0, 0 });
+	CHLSLTool Tool("cf-hlsl", "HLSL to DeusExMachina resource converter", { 0, 2, 0 });
 	return Tool.Execute(argc, argv);
 }

@@ -506,7 +506,7 @@ public:
 
 		// Write resulting NM file
 		{
-			auto DestPath = GetPath(Task.Params, "Output") / (TaskName + ".nm");
+			auto DestPath = GetOutputPath(Task.Params) / (TaskName + ".nm");
 			fs::create_directories(DestPath.parent_path());
 
 			std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);

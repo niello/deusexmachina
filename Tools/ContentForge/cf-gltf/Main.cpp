@@ -495,12 +495,12 @@ public:
 
 		Ctx.TaskName = Task.TaskID.CStr();
 
-		Ctx.MeshPath = GetPath(Task.Params, "MeshOutput");
-		Ctx.MaterialPath = GetPath(Task.Params, "MaterialOutput");
-		Ctx.TexturePath = GetPath(Task.Params, "TextureOutput");
-		Ctx.SkinPath = GetPath(Task.Params, "SkinOutput");
-		Ctx.AnimPath = GetPath(Task.Params, "AnimOutput");
-		Ctx.CollisionPath = GetPath(Task.Params, "CollisionOutput");
+		Ctx.MeshPath = GetOutputPath(Task.Params, "MeshOutput");
+		Ctx.MaterialPath = GetOutputPath(Task.Params, "MaterialOutput");
+		Ctx.TexturePath = GetOutputPath(Task.Params, "TextureOutput");
+		Ctx.SkinPath = GetOutputPath(Task.Params, "SkinOutput");
+		Ctx.AnimPath = GetOutputPath(Task.Params, "AnimOutput");
+		Ctx.CollisionPath = GetOutputPath(Task.Params, "CollisionOutput");
 
 		// Export node hierarchy to DEM format
 
@@ -545,7 +545,7 @@ public:
 
 		const bool CreateRoot = ParamsUtils::GetParam(Ctx.TaskParams, "CreateRoot", true);
 
-		const bool Result = WriteDEMScene(GetPath(Task.Params, "Output"), Task.TaskID.ToString(), std::move(Nodes), _SceneSchemes, Task.Params,
+		const bool Result = WriteDEMScene(GetOutputPath(Task.Params), Task.TaskID.ToString(), std::move(Nodes), _SceneSchemes, Task.Params,
 			_OutputHRD, _OutputBin, CreateRoot, Task.Log);
 		return Result ? ETaskResult::Success : ETaskResult::Failure;
 	}

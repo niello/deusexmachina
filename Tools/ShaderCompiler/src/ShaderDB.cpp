@@ -303,6 +303,7 @@ CREATE TABLE 'ShaderBinaries' (\
 \
 CREATE TABLE 'InputSignatures' (\
 	'ID' INTEGER,\
+	'ConfigName' VARCHAR(32),\
 	'Folder' VARCHAR(1024) NOT NULL,\
 	'Size' INTEGER,\
 	'CRC' INTEGER,\
@@ -312,6 +313,7 @@ CREATE TABLE 'Shaders' (\
 	'ID' INTEGER,\
 	'ShaderType' INTEGER,\
 	'Target' INTEGER,\
+	'ConfigName' VARCHAR(32),\
 	'EntryPoint' VARCHAR(64),\
 	'CompilerVersion' INTEGER,\
 	'CompilerFlags' INTEGER,\
@@ -334,7 +336,7 @@ CREATE TABLE 'Macros' (\
 \
 CREATE INDEX ShaderBinaries_MainIndex ON ShaderBinaries (Size, CRC);\
 \
-CREATE INDEX Shaders_MainIndex ON Shaders (SrcPath, ShaderType, Target, EntryPoint)";
+CREATE INDEX Shaders_MainIndex ON Shaders (SrcPath, ShaderType, Target, ConfigName, EntryPoint)";
 		if (!ExecuteSQLQuery(pCreateDBSQL))
 		{
 			CloseConnection();
@@ -372,13 +374,14 @@ bool FindShaderRecord(CShaderRecord& InOut)
 	Params.emplace_back(CStrID("Path"), InOut.SrcFile.Path);
 	Params.emplace_back(CStrID("Type"), static_cast<int>(InOut.ShaderType));
 	Params.emplace_back(CStrID("Target"), static_cast<int>(InOut.Target));
+	Params.emplace_back(CStrID("Config"), InOut.ConfigName);
 	Params.emplace_back(CStrID("Entry"), InOut.EntryPoint);
 
 	// Find all shaders for the given set of known params
 	constexpr char* pSQLSelect =
 		"SELECT ID, CompilerVersion, CompilerFlags, SrcModifyTimestamp, SrcSize, SrcCRC, BinaryFileID, InputSigFileID "
 		"FROM Shaders "
-		"WHERE SrcPath=:Path AND ShaderType=:Type AND Target=:Target AND EntryPoint=:Entry";
+		"WHERE SrcPath=:Path AND ShaderType=:Type AND Target=:Target AND ConfigName=:Config AND EntryPoint=:Entry";
 
 	CValueTable Shaders;
 	if (!ExecuteSQLQuery(pSQLSelect, &Shaders, &Params)) return false;
@@ -445,6 +448,7 @@ bool FindShaderRecord(CShaderRecord& InOut)
 	InOut.ObjFile.ID = 0;
 	InOut.ObjFile.Path.clear();
 	InOut.InputSigFile.ID = 0;
+	InOut.InputSigFile.ConfigName.clear();
 	InOut.InputSigFile.Folder.clear();
 
 	return false; // Not found
@@ -456,6 +460,7 @@ bool WriteShaderRecord(CShaderRecord& InOut)
 	Data::CParams Params;
 	Params.emplace_back(CStrID("ShaderType"), static_cast<int>(InOut.ShaderType));
 	Params.emplace_back(CStrID("Target"), static_cast<int>(InOut.Target));
+	Params.emplace_back(CStrID("ConfigName"), InOut.ConfigName);
 	Params.emplace_back(CStrID("EntryPoint"), InOut.EntryPoint);
 	Params.emplace_back(CStrID("CompilerVersion"), static_cast<int>(InOut.CompilerVersion));
 	Params.emplace_back(CStrID("CompilerFlags"), static_cast<int>(InOut.CompilerFlags));
@@ -472,9 +477,9 @@ bool WriteShaderRecord(CShaderRecord& InOut)
 		// We have no ID, insert a new line
 		constexpr char* pSQLInsert =
 			"INSERT INTO Shaders "
-			"   (ShaderType, Target, EntryPoint, CompilerVersion, CompilerFlags, SrcPath, SrcModifyTimestamp, SrcSize, SrcCRC, BinaryFileID, InputSigFileID) "
+			"   (ShaderType, Target, ConfigName, EntryPoint, CompilerVersion, CompilerFlags, SrcPath, SrcModifyTimestamp, SrcSize, SrcCRC, BinaryFileID, InputSigFileID) "
 			"VALUES "
-			"   (:ShaderType, :Target, :EntryPoint, :CompilerVersion, :CompilerFlags, :SrcPath, :SrcModifyTimestamp, :SrcSize, :SrcCRC, :BinaryFileID, :InputSigFileID)";
+			"   (:ShaderType, :Target, :ConfigName, :EntryPoint, :CompilerVersion, :CompilerFlags, :SrcPath, :SrcModifyTimestamp, :SrcSize, :SrcCRC, :BinaryFileID, :InputSigFileID)";
 		if (!ExecuteSQLQuery(pSQLInsert, nullptr, &Params)) return false;
 
 		ID = static_cast<uint32_t>(sqlite3_last_insert_rowid(SQLiteHandle));
@@ -489,6 +494,7 @@ bool WriteShaderRecord(CShaderRecord& InOut)
 			"UPDATE Shaders SET "
 			"	ShaderType=:ShaderType, "
 			"	Target=:Target, "
+			"	ConfigName=:ConfigName, "
 			"	EntryPoint=:EntryPoint, "
 			"	CompilerVersion=:CompilerVersion, "
 			"	CompilerFlags=:CompilerFlags, "
@@ -542,16 +548,17 @@ bool FindSignatureRecord(CSignatureRecord& InOut, const char* pBasePath, const v
 	Data::CParams Params;
 	Params.emplace_back(CStrID("Size"), static_cast<int>(InOut.Size));
 	Params.emplace_back(CStrID("CRC"), static_cast<int>(InOut.CRC));
+	Params.emplace_back(CStrID("ConfigName"), InOut.ConfigName);
 
 	CValueTable Result;
-	if (!ExecuteSQLQuery("SELECT ID, Folder FROM InputSignatures WHERE Size=:Size AND CRC=:CRC", &Result, &Params)) return false;
+	if (!ExecuteSQLQuery("SELECT ID, Folder FROM InputSignatures WHERE Size=:Size AND CRC=:CRC AND ConfigName=:ConfigName", &Result, &Params)) return false;
 
 	const int Col_ID = Result.GetColumnIndex(CStrID("ID"));
 	const int Col_Folder = Result.GetColumnIndex(CStrID("Folder"));
 	for (size_t i = 0; i < Result.GetRowCount(); ++i)
 	{
 		const int ID = Result.Get<int>(Col_ID, i);
-		const std::string Folder = Result.Get<std::string>(Col_Folder, i);
+		std::string Folder = Result.Get<std::string>(Col_Folder, i);
 
 		// If binary data is passed in, compare bytewise
 		if (pBinaryData)
@@ -590,6 +597,7 @@ bool WriteSignatureRecord(CSignatureRecord& InOut)
 	}
 
 	Data::CParams Params;
+	Params.emplace_back(CStrID("ConfigName"), InOut.ConfigName);
 	Params.emplace_back(CStrID("Folder"), InOut.Folder);
 	Params.emplace_back(CStrID("Size"), static_cast<int>(InOut.Size));
 	Params.emplace_back(CStrID("CRC"), static_cast<int>(InOut.CRC));
@@ -597,7 +605,7 @@ bool WriteSignatureRecord(CSignatureRecord& InOut)
 	if (!ID)
 	{
 		// No free ID, insert a new line
-		if (!ExecuteSQLQuery("INSERT INTO InputSignatures (Folder, Size, CRC) VALUES (:Folder, :Size, :CRC)", nullptr, &Params)) return false;
+		if (!ExecuteSQLQuery("INSERT INTO InputSignatures (ConfigName, Folder, Size, CRC) VALUES (:ConfigName, :Folder, :Size, :CRC)", nullptr, &Params)) return false;
 		ID = static_cast<uint32_t>(sqlite3_last_insert_rowid(SQLiteHandle));
 		if (!ID) return false;
 	}
@@ -605,7 +613,7 @@ bool WriteSignatureRecord(CSignatureRecord& InOut)
 	{
 		// We have ID, update existing row
 		Params.emplace_back(CStrID("ID"), static_cast<int>(ID));
-		if (!ExecuteSQLQuery("UPDATE InputSignatures SET Folder=:Folder, Size=:Size, CRC=:CRC WHERE ID=:ID", nullptr, &Params)) return false;
+		if (!ExecuteSQLQuery("UPDATE InputSignatures SET ConfigName=:ConfigName, Folder=:Folder, Size=:Size, CRC=:CRC WHERE ID=:ID", nullptr, &Params)) return false;
 	}
 
 	InOut.ID = ID;

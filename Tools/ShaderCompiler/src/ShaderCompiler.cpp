@@ -112,7 +112,7 @@ static void MakePaths(const char* pBasePath, const char* pPath, fs::path& OutFSP
 }
 //---------------------------------------------------------------------
 
-static int ProcessInputSignature(const char* pBasePath, const char* pInputSigDir, ID3DBlob* pCode, DB::CShaderRecord& Rec)
+static int ProcessInputSignature(const char* pBasePath, const char* pInputSigDir, const char* pConfigName, ID3DBlob* pCode, DB::CShaderRecord& Rec)
 {
 	ID3DBlob* pInputSig = nullptr;
 	if (FAILED(D3DGetInputSignatureBlob(pCode->GetBufferPointer(), pCode->GetBufferSize(), &pInputSig)))
@@ -124,6 +124,7 @@ static int ProcessInputSignature(const char* pBasePath, const char* pInputSigDir
 
 	Rec.InputSigFile.Size = pInputSig->GetBufferSize();
 	Rec.InputSigFile.CRC = CalcCRC((uint8_t*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
+	Rec.InputSigFile.ConfigName = pConfigName;
 
 	// Try to find existing file in DB and on disk
 	if (!DB::FindSignatureRecord(Rec.InputSigFile, pBasePath, pInputSig->GetBufferPointer()))
@@ -313,7 +314,7 @@ DEM_DLL_API bool DEM_DLLCALL Init(const char* pDBFileName)
 //---------------------------------------------------------------------
 
 DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSrcPath, const char* pDestPath, const char* pInputSigDir,
-	EShaderType ShaderType, uint32_t Target, const char* pEntryPoint, const char* pDefines, bool Debug, bool Recompile,
+	EShaderType ShaderType, uint32_t Target, const char* pConfigName, const char* pEntryPoint, const char* pDefines, bool Debug, bool Recompile,
 	const char* pSrcData, size_t SrcDataSize, ILogDelegate* pLog)
 {
 	// Validate args
@@ -350,6 +351,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 	Rec.SrcFile.Path = SrcPathDB.generic_string();
 	Rec.ShaderType = ShaderType;
 	Rec.Target = Target;
+	Rec.ConfigName = pConfigName;
 	Rec.EntryPoint = pEntryPoint;
 
 	// Parse preprocessor macro definitions
@@ -420,7 +422,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 		Flags |= D3DCOMPILE_ENABLE_STRICTNESS; // Deny deprecated syntax
 
 	if (Debug)
-		Flags |= (D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION);
+		Flags |= (D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_PREFER_FLOW_CONTROL);
 	else
 		Flags |= (D3DCOMPILE_OPTIMIZATION_LEVEL3); // | D3DCOMPILE_SKIP_VALIDATION);
 
@@ -527,7 +529,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 
 	if (HasInputSignature)
 	{
-		const auto ResultCode = ProcessInputSignature(pBasePath, pInputSigDir, pCode, Rec);
+		const auto ResultCode = ProcessInputSignature(pBasePath, pInputSigDir, pConfigName, pCode, Rec);
 		if (ResultCode != DEM_SHADER_COMPILER_SUCCESS)
 		{
 			pCode->Release();

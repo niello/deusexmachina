@@ -35,6 +35,7 @@ struct CSignatureRecord
 	uint32_t	ID;
 	uint64_t	Size;
 	uint32_t	CRC;
+	std::string ConfigName;
 	std::string	Folder; // Signature file name is based on ID and can be restored from ID+Folder
 };
 
@@ -45,6 +46,7 @@ struct CShaderRecord
 	uint32_t			Target = 0;
 	uint32_t			CompilerVersion;
 	uint32_t			CompilerFlags;
+	std::string			ConfigName;
 	std::string			EntryPoint;
 	CSourceRecord		SrcFile;
 	uint64_t			SrcModifyTimestamp;

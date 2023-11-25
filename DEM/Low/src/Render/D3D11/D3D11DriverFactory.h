@@ -46,10 +46,11 @@ protected:
 	UPTR                          AdapterCount = 0;		// Valid during a lifetime of the DXGI factory object
 	std::vector<Data::PBuffer>    ShaderSignatures;
 	std::unordered_map<U32, UPTR> ShaderSigIDToIndex;
+	std::string                   _ShaderInputSignaturesDir;
 
 public:
 
-	CD3D11DriverFactory();
+	CD3D11DriverFactory(std::string_view ShaderInputSignaturesDir);
 	virtual ~CD3D11DriverFactory() override;
 
 	static DXGI_FORMAT		PixelFormatToDXGIFormat(EPixelFormat Format);
@@ -73,7 +74,7 @@ public:
 	PDisplayDriver			CreateDisplayDriver(IDXGIOutput* pOutput);
 	virtual PGPUDriver		CreateGPUDriver(UPTR Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect);
 
-	bool					RegisterShaderInputSignature(U32 ID, Data::PBuffer&& Data);
+	bool					RegisterShaderInputSignature(U32 ID);
 	const Data::IBuffer*    FindShaderInputSignature(U32 ID) const;
 
 	IDXGIFactory1*			GetDXGIFactory() const { return pDXGIFactory; }

@@ -25,20 +25,20 @@ CContentForgeTool::CContentForgeTool(const std::string& Name, const std::string&
 void CContentForgeTool::ProcessCommandLine(CLI::App& CLIApp)
 {
 	CLIApp.add_option("--root", _RootDir, "Root folder for all project resources");
-	CLIApp.add_option("-s,--src", _SrcPathes, "Source file or metafile");
+	CLIApp.add_option("--out", _OutDir, "Output folder, default is root");
+	CLIApp.add_option("-s,--src", _SrcPathes, "Source asset file or metafile or folder with them");
 	CLIApp.add_option("-v", _LogVerbosity, "Verbosity level")->check(
 		CLI::Range(static_cast<int>(EVerbosity::Always), static_cast<int>(EVerbosity::Debug)));
 	CLIApp.add_option("-w,--waitkey", _WaitKey, "Wait for key press after the tool has finished");
 
 	// Path aliases (assigns)
-	auto pOption = CLIApp.add_option("--path", [this](CLI::results_t vals)
+	CLIApp.add_option("--path", [this](CLI::results_t vals)
 	{
 		const size_t PairCount = vals.size() / 2;
 		for (size_t i = 0; i < PairCount; ++i)
 			_PathAliases[vals[i * 2]] = vals[i * 2 + 1];
 		return true;
-	}, "Path alias for resource location resolving");
-	pOption->type_name("KEY VALUE")->type_size(-2);
+	}, "Path alias for resource location resolving")->type_name("KEY VALUE")->type_size(-2);
 }
 //---------------------------------------------------------------------
 
@@ -55,6 +55,9 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 	if (!_RootDir.empty() && _RootDir.back() != '/' && _RootDir.back() != '\\')
 		_RootDir.push_back('/');
 
+	if (!_OutDir.empty() && _OutDir.back() != '/' && _OutDir.back() != '\\')
+		_OutDir.push_back('/');
+
 	// Run custom initialization code
 
 	{
@@ -70,7 +73,8 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 	{
 		std::cout << _Name << " v" << static_cast<uint32_t>(_Version.Major) <<
 			'.' << static_cast<uint32_t>(_Version.Minor) <<
-			'.' << static_cast<uint32_t>(_Version.Patch) << LineEnd;
+			'.' << static_cast<uint32_t>(_Version.Patch) <<
+			" (CWD: " << std::filesystem::current_path().generic_string() << ')' << LineEnd;
 
 		//const auto Now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 		//std::cout << "Started: " << std::ctime(&Now) << LineEnd;
@@ -303,19 +307,25 @@ void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, std::
 }
 //---------------------------------------------------------------------
 
-std::filesystem::path CContentForgeTool::GetPath(const Data::CParams& TaskParams, const char* pPathID) const
+std::filesystem::path CContentForgeTool::GetOutputPath(const Data::CParams& TaskParams, const char* pPathID) const
 {
 	std::filesystem::path Result;
 
 	std::string PathValue;
-	if (ParamsUtils::TryGetParam(PathValue, TaskParams, pPathID))
+	if (pPathID && ParamsUtils::TryGetParam(PathValue, TaskParams, pPathID))
 		Result = PathValue;
 	else if (ParamsUtils::TryGetParam(PathValue, TaskParams, "Output"))
 		Result = PathValue;
-	else return Result;
+	else
+		return Result;
 
-	if (!_RootDir.empty() && Result.is_relative())
-		Result = _RootDir / Result;
+	if (Result.is_relative())
+	{
+		if (!_OutDir.empty())
+			Result = _OutDir / Result;
+		else if (!_RootDir.empty())
+			Result = _RootDir / Result;
+	}
 
 	return Result;
 }

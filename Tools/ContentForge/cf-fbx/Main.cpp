@@ -475,13 +475,13 @@ public:
 
 		Ctx.TaskName = Task.TaskID.CStr();
 
-		Ctx.ScenePath = GetPath(Task.Params, "Output");
-		Ctx.MeshPath = GetPath(Task.Params, "MeshOutput");
-		Ctx.MaterialPath = GetPath(Task.Params, "MaterialOutput");
-		Ctx.TexturePath = GetPath(Task.Params, "TextureOutput");
-		Ctx.SkinPath = GetPath(Task.Params, "SkinOutput");
-		Ctx.AnimPath = GetPath(Task.Params, "AnimOutput");
-		Ctx.CollisionPath = GetPath(Task.Params, "CollisionOutput");
+		Ctx.ScenePath = GetOutputPath(Task.Params);
+		Ctx.MeshPath = GetOutputPath(Task.Params, "MeshOutput");
+		Ctx.MaterialPath = GetOutputPath(Task.Params, "MaterialOutput");
+		Ctx.TexturePath = GetOutputPath(Task.Params, "TextureOutput");
+		Ctx.SkinPath = GetOutputPath(Task.Params, "SkinOutput");
+		Ctx.AnimPath = GetOutputPath(Task.Params, "AnimOutput");
+		Ctx.CollisionPath = GetOutputPath(Task.Params, "CollisionOutput");
 
 		// Export node hierarchy to DEM format, omit FBX root node
 		

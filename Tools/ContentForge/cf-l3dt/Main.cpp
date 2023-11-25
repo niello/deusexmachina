@@ -280,7 +280,7 @@ public:
 
 		// Prepare common part of the material
 
-		const auto TexturePath = GetPath(Task.Params, "TextureOutput");
+		const auto TexturePath = GetOutputPath(Task.Params, "TextureOutput");
 
 		auto EffectIt = _Settings.EffectsByType.find("MetallicRoughnessTerrain");
 		if (EffectIt == _Settings.EffectsByType.cend() || EffectIt->second.empty())
@@ -549,7 +549,7 @@ public:
 
 				std::string MaterialID;
 				{
-					auto DestPath = GetPath(Task.Params, "MaterialOutput") / (TaskName + Postfix + ".mtl");
+					auto DestPath = GetOutputPath(Task.Params, "MaterialOutput") / (TaskName + Postfix + ".mtl");
 
 					fs::create_directories(DestPath.parent_path());
 
@@ -563,7 +563,7 @@ public:
 				// Write resulting CDLOD file
 				std::string CDLODID;
 				{
-					auto DestPath = GetPath(Task.Params, "CDLODOutput") / (TaskName + Postfix + ".cdlod");
+					auto DestPath = GetOutputPath(Task.Params, "CDLODOutput") / (TaskName + Postfix + ".cdlod");
 					fs::create_directories(DestPath.parent_path());
 
 					std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
@@ -666,7 +666,7 @@ public:
 
 		RootNode.emplace_back(sidChildren, std::move(Children));
 
-		const fs::path OutPath = GetPath(Task.Params, "Output");
+		const fs::path OutPath = GetOutputPath(Task.Params);
 
 		if (_OutputHRD)
 		{

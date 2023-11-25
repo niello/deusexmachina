@@ -36,11 +36,7 @@ public:
 
 	virtual ETaskResult ProcessTask(CContentForgeTask& Task) override
 	{
-		const std::string Output = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
-		const std::string TaskID(Task.TaskID.CStr());
-		auto DestPath = fs::path(Output) / (TaskID + ".eff");
-		if (!_RootDir.empty() && DestPath.is_relative())
-			DestPath = fs::path(_RootDir) / DestPath;
+		const auto DestPath = GetOutputPath(Task.Params) / (Task.TaskID.ToString() + ".eff");
 
 		// Read effect hrd
 

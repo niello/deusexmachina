@@ -45,7 +45,7 @@ namespace DEMShaderCompiler
 // For static loading
 DEM_DLL_API bool DEM_DLLCALL Init(const char* pDBFileName);
 DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSrcPath, const char* pDestPath, const char* pInputSigDir,
-	EShaderType ShaderType, uint32_t Target, const char* pEntryPoint, const char* pDefines, bool Debug, bool Recompile,
+	EShaderType ShaderType, uint32_t Target, const char* pConfigName, const char* pEntryPoint, const char* pDefines, bool Debug, bool Recompile,
 	const char* pSrcData = nullptr, size_t SrcDataSize = 0, ILogDelegate* pLog = nullptr);
 DEM_DLL_API uint32_t DEM_DLLCALL PackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath);
 

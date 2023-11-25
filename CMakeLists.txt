@@ -21,6 +21,8 @@ else()
 	option(DEM_PREBUILT_DEPS "Use prebuilt dependencies" OFF)
 endif()
 
+message(STATUS "DEM_RENDER_DEBUG = ${DEM_RENDER_DEBUG}")
+
 include(CMake/DEMCMakeUtils.cmake)
 
 if(MSVC AND DEM_DISABLE_CXX_EXCEPTIONS)

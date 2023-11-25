@@ -20,7 +20,6 @@
 #include <Events/EventServer.h>
 #include <System/Win32/OSWindowWin32.h>
 #include <System/SystemEvents.h>
-#include <IO/IOServer.h> //!!!DBG TMP!
 #include <IO/BinaryReader.h>
 #include <Data/Buffer.h>
 #include <string>
@@ -2813,22 +2812,7 @@ PShader CD3D11GPUDriver::CreateShader(IO::IStream& Stream, bool LoadParamTable)
 			if (!_DriverFactory->RegisterShaderInputSignature(InputSignatureID, std::move(Data))) return nullptr;
 		}
 		*/
-
-		if (!_DriverFactory->FindShaderInputSignature(InputSignatureID))
-		{
-			//!!!DBG TMP!
-
-			std::string FileName("Data:shaders/d3d_usm/sig/");
-			FileName += std::to_string(InputSignatureID);
-			FileName += ".sig";
-
-			IO::PStream File = IOSrv->CreateStream(FileName.c_str(), IO::SAM_READ, IO::SAP_SEQUENTIAL);
-			if (!File || !File->IsOpened()) return nullptr;
-			auto Buffer = File->ReadAll();
-			if (!Buffer) return nullptr;
-
-			if (!_DriverFactory->RegisterShaderInputSignature(InputSignatureID, std::move(Buffer))) return nullptr;
-		}
+		if (!_DriverFactory->RegisterShaderInputSignature(InputSignatureID)) return nullptr;
 	}
 
 	return Shader.Get();
