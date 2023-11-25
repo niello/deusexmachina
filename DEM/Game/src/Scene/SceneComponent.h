@@ -25,8 +25,8 @@ struct CSceneComponent
 	CSceneComponent() : RootNode(n_new(Scene::CSceneNode())) {}
 
 	// FIXME: can instead use RTM SIMD in metadata?!
-	Math::CTransform GetLocalTransform() const { return Math::FromSIMD(RootNode->GetLocalTransform()); }
-	void             SetLocalTransform(const Math::CTransform& Value) { RootNode->SetLocalTransform(Math::ToSIMD(Value)); }
+	Math::CTransformSRT GetLocalTransform() const { return Math::FromSIMD(RootNode->GetLocalTransform()); }
+	void                SetLocalTransform(const Math::CTransformSRT& Value) { RootNode->SetLocalTransform(Math::ToSIMD(Value)); }
 };
 
 }
@@ -47,14 +47,14 @@ template<> inline constexpr auto RegisterMembers<quaternion>()
 	);
 }
 
-template<> inline constexpr auto RegisterClassName<Math::CTransform>() { return "Math::CTransform"; }
-template<> inline constexpr auto RegisterMembers<Math::CTransform>()
+template<> inline constexpr auto RegisterClassName<Math::CTransformSRT>() { return "Math::CTransformSRT"; }
+template<> inline constexpr auto RegisterMembers<Math::CTransformSRT>()
 {
 	return std::make_tuple
 	(
-		Member(1, "S", &Math::CTransform::Scale, &Math::CTransform::Scale),
-		Member(2, "R", &Math::CTransform::Rotation, &Math::CTransform::Rotation),
-		Member(3, "T", &Math::CTransform::Translation, &Math::CTransform::Translation)
+		Member(1, "S", &Math::CTransformSRT::Scale, &Math::CTransformSRT::Scale),
+		Member(2, "R", &Math::CTransformSRT::Rotation, &Math::CTransformSRT::Rotation),
+		Member(3, "T", &Math::CTransformSRT::Translation, &Math::CTransformSRT::Translation)
 	);
 }
 
@@ -65,7 +65,7 @@ template<> inline constexpr auto RegisterMembers<Game::CSceneComponent>()
 	(
 		Member(1, "AssetID", &Game::CSceneComponent::AssetID, &Game::CSceneComponent::AssetID),
 		Member(2, "RootPath", &Game::CSceneComponent::RootPath, &Game::CSceneComponent::RootPath),
-		Member<Game::CSceneComponent, Math::CTransform>(3, "Transform", &Game::CSceneComponent::GetLocalTransform, &Game::CSceneComponent::SetLocalTransform)
+		Member<Game::CSceneComponent, Math::CTransformSRT>(3, "Transform", &Game::CSceneComponent::GetLocalTransform, &Game::CSceneComponent::SetLocalTransform)
 	);
 }
 

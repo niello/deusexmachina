@@ -12,8 +12,8 @@ class CPoseRecorder : public IPoseOutput
 {
 protected:
 
-	PSkeletonInfo                    _SkeletonInfo;
-	std::vector<Math::CTransformSRT> _Transforms;
+	PSkeletonInfo          _SkeletonInfo;
+	std::vector<rtm::qvvf> _Transforms;
 
 public:
 
@@ -25,15 +25,15 @@ public:
 
 	PStaticPose GetPose()
 	{
-		std::vector<Math::CTransformSRT> PoseTransforms;
+		std::vector<rtm::qvvf> PoseTransforms;
 		std::swap(_Transforms, PoseTransforms);
 		return PStaticPose(n_new(CStaticPose(std::move(PoseTransforms), PSkeletonInfo(_SkeletonInfo))));
 	}
 
-	virtual void SetScale(U16 Port, const vector3& Scale) override { _Transforms[Port].Scale = Scale; }
-	virtual void SetRotation(U16 Port, const quaternion& Rotation) override { _Transforms[Port].Rotation = Rotation; }
-	virtual void SetTranslation(U16 Port, const vector3& Translation) override { _Transforms[Port].Translation = Translation; }
-	virtual void SetTransform(U16 Port, const Math::CTransformSRT& Tfm) override { _Transforms[Port] = Tfm; }
+	virtual void SetScale(U16 Port, const rtm::vector4f& Scale) override { _Transforms[Port].scale = Scale; }
+	virtual void SetRotation(U16 Port, const rtm::quatf& Rotation) override { _Transforms[Port].rotation = Rotation; }
+	virtual void SetTranslation(U16 Port, const rtm::vector4f& Translation) override { _Transforms[Port].translation = Translation; }
+	virtual void SetTransform(U16 Port, const rtm::qvvf& Tfm) override { _Transforms[Port] = Tfm; }
 };
 
 }

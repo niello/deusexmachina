@@ -637,6 +637,9 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 		//!!!FIXME: if querying octree, there won't be objects with zero TrackObjectLightIntersections, so this condition won't be needed!
 		if (!LightRecord.TrackObjectLightIntersections) continue;
 
+		// TODO: can use RenderableRecord.NodeMortonCode & LightRecord.NodeMortonCode for early true/false?
+		//!!!then the same needed for UpdateObjectLightIntersections(CLightAttribute& LightAttr)!
+
 		// Only local lights (ones with BoundsVersion > 0) track intersections
 		const bool Intersects = LightRecord.BoundsVersion && static_cast<CLightAttribute*>(LightRecord.pAttr)->IntersectsWith(RenderableRecord.Sphere);
 		if (Intersects)
