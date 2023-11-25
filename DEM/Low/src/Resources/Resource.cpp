@@ -38,6 +38,9 @@ void CResource::SetCreator(IResourceCreator* pNewCreator)
 
 	if (_State == EResourceState::NotLoaded && _Creator)
 	{
+		ZoneScopedN("CreateResource");
+		ZoneText(_UID.CStr(), std::strlen(_UID.CStr()));
+
 		_State = EResourceState::LoadingInProgress;
 		_Object = _Creator->CreateResource(_UID);
 		_State = _Object ? EResourceState::Loaded : EResourceState::LoadingFailed;
