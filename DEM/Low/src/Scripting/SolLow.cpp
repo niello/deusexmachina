@@ -41,6 +41,10 @@ static sol::object MakeObjectFromData(sol::state_view& s, const Data::CData& Dat
 
 void RegisterBasicTypes(sol::state& State)
 {
+	State.set_function("RandomFloat", sol::overload(
+		sol::resolve<float()>(Math::RandomFloat),
+		sol::resolve<float(float, float)>(Math::RandomFloat)));
+
 	State.new_usertype<vector3>("vector3"
 		, sol::constructors<sol::types<>, sol::types<float, float, float>>()
 		, sol::meta_function::index, [](const vector3& Self, size_t i) { return Self.v[i]; }
