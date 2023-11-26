@@ -11,6 +11,9 @@
 #include <Scene/NodeAttribute.h>
 #include <Data/Algorithms.h>
 
+//!!!DBG TMP!
+#include <Frame/Lights/PointLightAttribute.h>
+
 // A set of ECS systems required for functioning of the equipment logic
 
 namespace DEM::RPG
@@ -51,7 +54,7 @@ void InitEquipment(Game::CGameWorld& World, Resources::CResourceManager& ResMgr)
 			if (auto pEquipped = World.AddComponent<CEquippedComponent>(StackID))
 			{
 				pEquipped->OwnerID = EntityID;
-				ScheduleStackReequipment(World, StackID, EItemStorage::Equipment, FindMainOccupiedSlot(World, Component, StackID));
+				ScheduleStackReequipment(World, StackID, EItemStorage::Equipment, FindMainOccupiedSlot(World, Component, StackID, EItemStorage::Equipment).first);
 			}
 		}
 
@@ -138,7 +141,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 	CAppearanceComponent::CLookMap NewLook;
 	std::set<CStrID> FilledBodyParts;
 
-	if (auto pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID))
+	if (auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID))
 	{
 		// The same as FilledBodyParts but with explicitly ignored parts. Affects only equipment.
 		std::set<CStrID> IgnoredBodyParts;
@@ -247,11 +250,9 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 }
 //---------------------------------------------------------------------
 
-void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, CStrID SlotID, bool ForceHide)
+//!!!FIXME: where to place?! Or require bones to be named as slots!
+static CStrID GetAttachmentNodeForSlot(CStrID SlotID)
 {
-	if (!OwnerID || !SlotID) return;
-
-	//!!!FIXME: where to place?! Or require bones to be named as slots!
 	static const std::map<CStrID, const char*> EEquipmentSlot_Bone
 	{
 		{ CStrID("Torso"), "torso"},
@@ -278,7 +279,18 @@ void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerI
 
 	//!!!FIXME: constexpr CStrID?! Or at least pre-init once!
 	const auto ItBoneName = EEquipmentSlot_Bone.find(SlotID);
-	if (ItBoneName == EEquipmentSlot_Bone.cend() || !ItBoneName->second || !*ItBoneName->second) return;
+	if (ItBoneName == EEquipmentSlot_Bone.cend() || !ItBoneName->second || !*ItBoneName->second) return CStrID{};
+
+	return CStrID(ItBoneName->second);
+}
+//---------------------------------------------------------------------
+
+void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, CStrID SlotID, bool ForceHide)
+{
+	if (!OwnerID || !SlotID) return;
+
+	const auto AttachmentBoneID = GetAttachmentNodeForSlot(SlotID);
+	if (!AttachmentBoneID) return;
 
 	auto pEquipment = World.FindComponent<const CEquipmentComponent>(OwnerID);
 	if (!pEquipment) return;
@@ -289,7 +301,7 @@ void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerI
 	auto pOwnerScene = World.FindComponent<const Game::CSceneComponent>(OwnerID);
 	if (!pOwnerScene || !pOwnerScene->RootNode) return;
 
-	auto pBone = pOwnerScene->RootNode->GetChildRecursively(CStrID(ItBoneName->second));
+	auto pBone = pOwnerScene->RootNode->GetChildRecursively(AttachmentBoneID);
 	if (!pBone) return;
 
 	if (StackID && !ForceHide)
@@ -301,11 +313,11 @@ void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerI
 
 		// Undo scaling
 		const rtm::qvvf Tfm = rtm::qvv_set(
-			rtm::quat_from_euler(0.f, 0.f, HALF_PI), //!!!DBG TMP! Was rtm::quat_identity()
+			rtm::quat_from_euler(0.f, 0.f, -HALF_PI), //!!!DBG TMP! Normally was rtm::quat_identity() but hacked for current models.
 			rtm::vector_zero(),
 			rtm::vector_reciprocal(Math::matrix_extract_scale(pBone->GetWorldMatrix())));
 
-		//!!!TODO: store desired attachment local rotation and translation (and scaling?) somewhere?
+		//!!!TODO: store desired attachment local tfm somewhere?
 
 		auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(StackID);
 		pBone->AddChild(CStrID("Equipment"), pSceneComponent->RootNode, true);
@@ -407,6 +419,10 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 						auto FnProxy = ScriptObject["OnEquipped"];
 						if (FnProxy.get_type() == sol::type::function)
 							FnProxy(StackID, EntityID, Rec.NewStorage, Rec.NewSlot);
+
+						FnProxy = ScriptObject["UpdateEquipped"];
+						if (FnProxy.get_type() == sol::type::function)
+							pEquipped->FnUpdateEquipped = FnProxy;
 					}
 				}
 			}
@@ -443,6 +459,33 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 	});
 
 	World.RemoveAllComponents<CEquipmentChangesComponent>();
+}
+//---------------------------------------------------------------------
+
+void UpdateEquipment(Game::CGameWorld& World, float dt)
+{
+	World.ForEachComponent<const CEquippedComponent>([&World, dt](auto StackID, const CEquippedComponent& Equipped)
+	{
+		if (Equipped.FnUpdateEquipped) Equipped.FnUpdateEquipped(dt);
+
+		// TODO PERF: is it OK or better would be to store slot ID in CEquippedComponent and refresh there when changed?
+		auto [SlotID, Storage] = FindMainOccupiedSlot(World, Equipped.OwnerID, StackID);
+
+		auto pOwnerScene = World.FindComponent<const Game::CSceneComponent>(Equipped.OwnerID);
+		if (!pOwnerScene || !pOwnerScene->RootNode) return;
+
+		if (auto pBone = pOwnerScene->RootNode->GetChildRecursively(GetAttachmentNodeForSlot(SlotID)))
+		{
+			//if (auto pItemRoot = pBone->GetChild(CStrID("Equipment")))
+			if (auto pLightNode = pBone->GetChildRecursively(CStrID("light")))
+			{
+				if (auto pLight = pLightNode->FindFirstAttribute<Frame::CPointLightAttribute>())
+				{
+					::Sys::Log("FOUND LIGHT\n");
+				}
+			}
+		}
+	});
 }
 //---------------------------------------------------------------------
 
