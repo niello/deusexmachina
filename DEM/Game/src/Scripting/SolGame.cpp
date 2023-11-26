@@ -5,6 +5,7 @@
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/Interaction/ScriptedAbility.h>
 #include <Animation/AnimationComponent.h>
+#include <Scene/SceneComponent.h>
 
 namespace DEM::Scripting
 {
@@ -42,6 +43,10 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 
 	State.new_usertype<DEM::Game::CAnimationComponent>("CAnimationComponent"
 		, "Controller", &DEM::Game::CAnimationComponent::Controller
+	);
+
+	State.new_usertype<DEM::Game::CSceneComponent>("CSceneComponent"
+		, "RootNode", &DEM::Game::CSceneComponent::RootNode
 	);
 
 	State.new_enum<DEM::Game::EFacingMode>("EFacingMode",

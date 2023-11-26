@@ -10,13 +10,11 @@ class CPointLightAttribute : public CLightAttribute
 {
 	FACTORY_CLASS_DECL;
 
-protected:
+public:
 
 	U32   _Color = Render::Color_White;
 	float _Intensity = 1.f;
 	float _Range = 1.f;
-
-public:
 
 	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
 	virtual Scene::PNodeAttribute Clone() override;

@@ -466,25 +466,21 @@ void UpdateEquipment(Game::CGameWorld& World, float dt)
 {
 	World.ForEachComponent<const CEquippedComponent>([&World, dt](auto StackID, const CEquippedComponent& Equipped)
 	{
-		if (Equipped.FnUpdateEquipped) Equipped.FnUpdateEquipped(dt);
+		if (Equipped.FnUpdateEquipped) Equipped.FnUpdateEquipped(StackID, dt);
 
-		// TODO PERF: is it OK or better would be to store slot ID in CEquippedComponent and refresh there when changed?
-		auto [SlotID, Storage] = FindMainOccupiedSlot(World, Equipped.OwnerID, StackID);
-
-		auto pOwnerScene = World.FindComponent<const Game::CSceneComponent>(Equipped.OwnerID);
-		if (!pOwnerScene || !pOwnerScene->RootNode) return;
-
-		if (auto pBone = pOwnerScene->RootNode->GetChildRecursively(GetAttachmentNodeForSlot(SlotID)))
-		{
-			//if (auto pItemRoot = pBone->GetChild(CStrID("Equipment")))
-			if (auto pLightNode = pBone->GetChildRecursively(CStrID("light")))
-			{
-				if (auto pLight = pLightNode->FindFirstAttribute<Frame::CPointLightAttribute>())
-				{
-					::Sys::Log("FOUND LIGHT\n");
-				}
-			}
-		}
+		////!!!DBG TMP!
+		//if (auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(StackID))
+		//{
+		//	if (auto pLightNode = pSceneComponent->RootNode->GetChildRecursively(CStrID("light")))
+		//	{
+		//		if (auto pLight = pLightNode->FindFirstAttribute<Frame::CPointLightAttribute>())
+		//		{
+		//			const auto Pos = rtm::vector_fraction(rtm::vector_div(pLightNode->GetWorldPosition(), rtm::vector_set(5.f)));
+		//			pLight->_Color = Render::ColorRGBANorm(rtm::vector_get_x(Pos), rtm::vector_get_y(Pos), rtm::vector_get_z(Pos));
+		//			pLight->_Range = 8.f + 8.f * Math::RandomFloat();
+		//		}
+		//	}
+		//}
 	});
 }
 //---------------------------------------------------------------------
