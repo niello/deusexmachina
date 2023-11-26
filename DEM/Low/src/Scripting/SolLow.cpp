@@ -5,6 +5,7 @@
 #include <UI/UIWindow.h>
 #include <UI/UIContext.h>
 #include <UI/UIServer.h>
+#include <Frame/Lights/PointLightAttribute.h>
 #include <Scene/SceneNode.h>
 #include <Scripting/LuaEventHandler.h>
 #include <Events/Signal.h>
@@ -205,7 +206,7 @@ void RegisterBasicTypes(sol::state& State)
 		, "SetString", sol::overload(
 			sol::resolve<bool(UPTR, CStrID)>(&DEM::Anim::CAnimationController::SetString),
 			sol::resolve<bool(CStrID, CStrID)>(&DEM::Anim::CAnimationController::SetString))
-		);
+	);
 
 	State.new_usertype<Scene::CSceneNode>("CSceneNode"
 		, sol::meta_function::index, [](const Scene::CSceneNode& Self, const char* pKey) { return Self.GetChild(CStrID(pKey)); } //!!!FIXME PERF: add overload with std::string_view!
@@ -215,6 +216,13 @@ void RegisterBasicTypes(sol::state& State)
 		, "GetChild", sol::overload(
 			sol::resolve<Scene::CSceneNode*(UPTR) const>(&Scene::CSceneNode::GetChild),
 			sol::resolve<Scene::CSceneNode*(CStrID) const>(&Scene::CSceneNode::GetChild))
+		, "FindPointLight", &Scene::CSceneNode::FindFirstAttribute<Frame::CPointLightAttribute> //!!!FIXME: improve!!!
+	);
+
+	State.new_usertype<Frame::CPointLightAttribute>("CPointLightAttribute"
+		, "Color", &Frame::CPointLightAttribute::_Color
+		, "Intensity", &Frame::CPointLightAttribute::_Intensity
+		, "Range", &Frame::CPointLightAttribute::_Range
 	);
 }
 //---------------------------------------------------------------------
