@@ -464,23 +464,11 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 
 void UpdateEquipment(Game::CGameWorld& World, float dt)
 {
+	ZoneScoped;
+
 	World.ForEachComponent<const CEquippedComponent>([&World, dt](auto StackID, const CEquippedComponent& Equipped)
 	{
 		if (Equipped.FnUpdateEquipped) Equipped.FnUpdateEquipped(StackID, dt);
-
-		////!!!DBG TMP!
-		//if (auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(StackID))
-		//{
-		//	if (auto pLightNode = pSceneComponent->RootNode->GetChildRecursively(CStrID("light")))
-		//	{
-		//		if (auto pLight = pLightNode->FindFirstAttribute<Frame::CPointLightAttribute>())
-		//		{
-		//			const auto Pos = rtm::vector_fraction(rtm::vector_div(pLightNode->GetWorldPosition(), rtm::vector_set(5.f)));
-		//			pLight->_Color = Render::ColorRGBANorm(rtm::vector_get_x(Pos), rtm::vector_get_y(Pos), rtm::vector_get_z(Pos));
-		//			pLight->_Range = 8.f + 8.f * Math::RandomFloat();
-		//		}
-		//	}
-		//}
 	});
 }
 //---------------------------------------------------------------------

@@ -436,6 +436,8 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback, TFilter Filter)
 template<typename TComponent, typename TCallback>
 inline void CGameWorld::ForEachComponent(TCallback Callback)
 {
+	ZoneScopedN(DEM_FUNCTION_NAME);
+
 	// NB: explicit storage type is important here because access to the const storage is optimized
 	if (TComponentStoragePtr<TComponent> pStorage = FindComponentStorage<just_type_t<TComponent>>())
 	{
