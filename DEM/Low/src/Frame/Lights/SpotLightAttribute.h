@@ -38,6 +38,7 @@ public:
 	virtual bool                  IntersectsWith(rtm::vector4f_arg0 Sphere) const override;
 	virtual U8                    TestBoxClipping(rtm::vector4f_arg0 BoxCenter, rtm::vector4f_arg1 BoxExtent) const override;
 	virtual bool                  DoesEmitAnyEnergy() const override { return (_Color & 0x00ffffff) && _Intensity > 0.f; }
+	virtual void                  RenderDebug(Debug::CDebugDraw& DebugDraw) const override;
 };
 
 typedef Ptr<CSpotLightAttribute> PSpotLightAttribute;

@@ -5,6 +5,7 @@
 #include <Math/CameraMath.h>
 #include <Core/Factory.h>
 #include <IO/BinaryReader.h>
+#include <Debug/DebugDraw.h>
 
 namespace Frame
 {
@@ -166,8 +167,7 @@ U8 CSpotLightAttribute::TestBoxClipping(rtm::vector4f_arg0 BoxCenter, rtm::vecto
 	// Update cached world space frustum
 	if (_WorldBoundsCacheVersion != _pNode->GetTransformVersion())
 	{
-		// FIXME: check this math! Why invert world matrix? Shouldn't use LocalFrustum * _pNode->GetWorldMatrix()?!
-		const rtm::matrix4x4f LocalFrustum = Math::matrix_perspective_rh(_ConeOuter, 1.f, 0.f, _Range);
+		const rtm::matrix4x4f LocalFrustum = Math::matrix_perspective_rh(_ConeOuter, 1.f, 0.001f, _Range);
 		const rtm::matrix4x4f GlobalFrustum = rtm::matrix_mul(rtm::matrix_cast(rtm::matrix_inverse(_pNode->GetWorldMatrix())), LocalFrustum);
 		_WorldFrustum = Math::CalcFrustumParams(GlobalFrustum);
 		_WorldBoundsCacheVersion = _pNode->GetTransformVersion();
@@ -175,6 +175,15 @@ U8 CSpotLightAttribute::TestBoxClipping(rtm::vector4f_arg0 BoxCenter, rtm::vecto
 
 	// Test AABB against the bounding frustum of the spot light
 	return Math::ClipAABB(BoxCenter, BoxExtent, _WorldFrustum);
+}
+//---------------------------------------------------------------------
+
+void CSpotLightAttribute::RenderDebug(Debug::CDebugDraw& DebugDraw) const
+{
+	// FIXME: reuse _WorldFrustum
+	const rtm::matrix4x4f LocalFrustum = Math::matrix_perspective_rh(_ConeOuter, 1.f, 0.001f, _Range);
+	const rtm::matrix4x4f GlobalFrustum = rtm::matrix_mul(rtm::matrix_cast(rtm::matrix_inverse(_pNode->GetWorldMatrix())), LocalFrustum);
+	DebugDraw.DrawFrustumWireframe(GlobalFrustum, Render::ColorRGBA(255, 255, 0, 255));
 }
 //---------------------------------------------------------------------
 

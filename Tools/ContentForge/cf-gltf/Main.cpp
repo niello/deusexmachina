@@ -1425,8 +1425,9 @@ public:
 
 			if (LightClassFourCC == 'SLTA')
 			{
-				Attribute.emplace_back(CStrID("ConeInner"), RadToDeg(Light.innerConeAngle));
-				Attribute.emplace_back(CStrID("ConeOuter"), RadToDeg(Light.outerConeAngle));
+				// Turn half angles in radians into full angles in degrees
+				Attribute.emplace_back(CStrID("ConeInner"), 2.f * RadToDeg(Light.innerConeAngle));
+				Attribute.emplace_back(CStrID("ConeOuter"), 2.f * RadToDeg(Light.outerConeAngle));
 			}
 		}
 
