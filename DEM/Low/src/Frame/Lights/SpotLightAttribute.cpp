@@ -147,7 +147,7 @@ bool CSpotLightAttribute::IntersectsWith(rtm::vector4f_arg0 Sphere) const
 
 	// Check sphere-cone intersection
 
-	rtm::vector4f DistanceVector = rtm::vector_sub(Sphere, rtm::vector_mul(LightDir, (SphereRadius / _SinHalfOuter)));
+	rtm::vector4f DistanceVector = rtm::vector_sub(Sphere, rtm::vector_sub(_pNode->GetWorldPosition(), rtm::vector_mul(LightDir, (SphereRadius / _SinHalfOuter))));
 	float SqDistance = rtm::vector_length_squared3(DistanceVector);
 	float ProjectedLength = rtm::vector_dot3(LightDir, DistanceVector);
 	if (ProjectedLength <= 0.f || ProjectedLength * ProjectedLength < SqDistance * _CosHalfOuter * _CosHalfOuter) return false;
