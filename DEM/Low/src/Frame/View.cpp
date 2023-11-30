@@ -614,6 +614,16 @@ void CView::UploadLightsToGPU()
 {
 	ZoneScoped;
 
+	U32 MaxGlobalLights = 0;
+	Render::CShaderConstantParam GlobalLightElm;
+	if (_RenderPath->ConstGlobalLights)
+	{
+		MaxGlobalLights = _RenderPath->ConstGlobalLights.GetElementCount();
+
+		// FIXME: improve working with 1-element arrays! Must be stored as an array and first indexing must obtain an element!
+		GlobalLightElm = (MaxGlobalLights > 1) ? _RenderPath->ConstGlobalLights[0] : _RenderPath->ConstGlobalLights;
+	}
+
 	U32 MaxLocalLights = 0;
 	Render::CShaderConstantParam LocalLightElm;
 	if (_RenderPath->ConstLightBuffer)
@@ -629,6 +639,7 @@ void CView::UploadLightsToGPU()
 	}
 
 	_pGlobalAmbientLight = nullptr;
+	U32 GlobalLightCount = 0;
 
 	for (const auto& [UID, Light] : _Lights)
 	{
@@ -653,15 +664,25 @@ void CView::UploadLightsToGPU()
 			// global (dir) lights - to separate GPU structures, but can still use GPUData field. Choose N most intense/high-priority. set GPUIndex!
 			n_assert_dbg(Light->GPUData.Type == Render::ELightType::Directional);
 
-			// if GPUIndex is empty
-			//   if no global light slots left, prioritize this light with existing ones
-			//   if this light didn't get a slot, skip it
-			//   set GPUIndex from free or acquired slot
-			//   set dirty
+			// Skip global light if not supported
+			if (!MaxGlobalLights) continue;
 
-			// if dirty, update data on GPU and clear dirty flag
+			// Prioritize the light
+			// FIXME: collect to the intermediate list and upload to GPU at the end outside a loop?!
+			if (GlobalLightCount >= MaxGlobalLights)
+			{
+				// Prioritize against current chosen list, higher intensity wins.
+				// If this light is the weakest, skip it, else replace
+				NOT_IMPLEMENTED;
+			}
+			else
+			{
+				Light->GPUIndex = GlobalLightCount++;
+			}
 
-			NOT_IMPLEMENTED;
+			GlobalLightElm.Shift(_RenderPath->ConstGlobalLights, Light->GPUIndex);
+			_Globals.SetRawConstant(GlobalLightElm, Light->GPUData);
+			Light->GPUDirty = false;
 		}
 		else // analytical local lights
 		{
@@ -687,6 +708,14 @@ void CView::UploadLightsToGPU()
 				Light->GPUDirty = false;
 			}
 		}
+	}
+
+	// Terminate global light buffer to skip unfilled slots when calculating lighting
+	if (GlobalLightCount < MaxGlobalLights)
+	{
+		static const Render::CGPULightInfo InvalidGlobalLight{};
+		GlobalLightElm.Shift(_RenderPath->ConstGlobalLights, GlobalLightCount);
+		_Globals.SetRawConstant(GlobalLightElm, InvalidGlobalLight);
 	}
 }
 //---------------------------------------------------------------------

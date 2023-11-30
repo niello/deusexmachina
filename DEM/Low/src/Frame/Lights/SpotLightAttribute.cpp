@@ -116,7 +116,7 @@ void CSpotLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render::
 	}
 
 	auto pLight = static_cast<Render::CAnalyticalLight*>(&Light);
-	pLight->GPUData.Color = vector3(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color)) * _Intensity;
+	pLight->GPUData.Color = vector3(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color)) * (_Intensity / 255.f);
 	pLight->GPUData.Position = Math::FromSIMD3(_pNode->GetWorldPosition());
 	pLight->GPUData.InvDirection = Math::FromSIMD3(rtm::vector_normalize3(_pNode->GetWorldMatrix().z_axis));
 	pLight->GPUData.SqInvRange = 1.f / (_Range * _Range);

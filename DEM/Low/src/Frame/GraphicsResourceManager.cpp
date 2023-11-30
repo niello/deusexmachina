@@ -860,6 +860,10 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 	if (It != GlobalParams.cend())
 		RP->ConstLightBuffer = RP->Globals->GetConstant(It->second);
 
+	It = GlobalParams.find("GlobalLights");
+	if (It != GlobalParams.cend())
+		RP->ConstGlobalLights = RP->Globals->GetConstant(It->second);
+
 	It = GlobalParams.find("IrradianceMap");
 	if (It != GlobalParams.cend())
 		RP->RsrcIrradianceMap = RP->Globals->GetResource(It->second);

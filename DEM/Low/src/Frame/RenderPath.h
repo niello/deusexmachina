@@ -61,6 +61,7 @@ public:
 	Render::CShaderConstantParam        ConstViewProjection;
 	Render::CShaderConstantParam        ConstCameraPosition;
 	Render::CShaderConstantParam        ConstLightBuffer;
+	Render::CShaderConstantParam        ConstGlobalLights;
 	Render::PResourceParam              RsrcIrradianceMap;
 	Render::PResourceParam              RsrcRadianceEnvMap;
 	Render::PSamplerParam               SampTrilinearCube;

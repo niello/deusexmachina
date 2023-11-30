@@ -78,7 +78,7 @@ void CPointLightAttribute::UpdateLight(CGraphicsResourceManager& ResMgr, Render:
 		return;
 	}
 
-	Light.GPUData.Color = vector3(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color)) * _Intensity * 0.01f;
+	Light.GPUData.Color = vector3(Render::ColorGetRed(_Color), Render::ColorGetGreen(_Color), Render::ColorGetBlue(_Color)) * (_Intensity / 255.f);
 	Light.GPUData.Position = Math::FromSIMD3(_pNode->GetWorldPosition());
 	Light.GPUData.SqInvRange = 1.f / (_Range * _Range);
 }

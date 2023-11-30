@@ -18,7 +18,8 @@ enum class ELightType : U32
 	Point,
 	Spot,
 	IBL,
-	COUNT
+	COUNT,
+	Invalid = INVALID_INDEX_T<std::underlying_type_t<ELightType>>
 };
 
 struct alignas(16) CGPULightInfo
@@ -29,7 +30,7 @@ struct alignas(16) CGPULightInfo
 	float      SqInvRange;		// For attenuation // FIXME: could instead use attenuation formulas based on intensity
 	vector4    Params;			// Spot: x - cos inner, y - cos outer
 	vector3    InvDirection;
-	ELightType Type;
+	ELightType Type = ELightType::Invalid;
 };
 
 class CLight : public Core::CRTTIBaseClass
