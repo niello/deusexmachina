@@ -474,7 +474,7 @@ bool CollectMaterialParams(CMaterialParams& Out, const CUSMEffectMeta& Meta)
 			default: return false;
 		}
 
-		const uint32_t ConstSizeInBytes = Const.second.second.ElementSize * Const.second.second.ElementCount;
+		const uint32_t ConstSizeInBytes = Const.second.second.ElementSize * std::max<uint32_t>(1, Const.second.second.ElementCount);
 
 		auto It = Out.Consts.find(Const.first);
 		if (It == Out.Consts.cend())

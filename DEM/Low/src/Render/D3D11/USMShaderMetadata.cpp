@@ -63,6 +63,9 @@ void CUSMConstantInfo::CalculateCachedValues()
 		VectorStride = (MajorDim > 1 ? 4 : MinorDim) * ComponentSize;
 		ElementSize = (MajorDim - 1) * VectorStride + MinorDim * ComponentSize;
 	}
+
+	// For an array don't add padding of the last element
+	TotalSize = ElementCount ? ((ElementCount - 1) * ElementStride + ElementSize) : ElementSize;
 }
 //---------------------------------------------------------------------
 
@@ -71,7 +74,7 @@ void CUSMConstantInfo::SetRawValue(CConstantBuffer& CB, U32 Offset, const void* 
 	if (!pValue || !Size) return;
 
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
-		pCB->WriteData(Offset, pValue, std::min(Size, ElementCount * ElementStride)); //!!!need byte size from meta, it has no last element padding!
+		pCB->WriteData(Offset, pValue, std::min(Size, TotalSize));
 }
 //---------------------------------------------------------------------
 
@@ -81,13 +84,11 @@ void CUSMConstantInfo::SetFloats(CConstantBuffer& CB, U32 Offset, const float* p
 
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
 	{
-		const auto SizeInBytes = ElementCount * ElementStride; //!!!need byte size from meta, it has no last element padding!
-
 		switch (Type)
 		{
-			case USMConst_Float: pCB->WriteData(Offset, pValue, std::min(Count * sizeof(float), SizeInBytes)); break;
+			case USMConst_Float: pCB->WriteData(Offset, pValue, std::min(Count * sizeof(float), TotalSize)); break;
 			case USMConst_Int:
-			case USMConst_Bool:  ConvertAndWrite<I32>(pCB, Offset, pValue, Count, SizeInBytes); break;
+			case USMConst_Bool:  ConvertAndWrite<I32>(pCB, Offset, pValue, Count, TotalSize); break;
 			default: ::Sys::Error("CUSMConstantInfo::SetFloats() > typed value writing allowed only for float, int & bool constants"); return;
 		}
 	}
@@ -100,13 +101,11 @@ void CUSMConstantInfo::SetInts(CConstantBuffer& CB, U32 Offset, const I32* pValu
 
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
 	{
-		const auto SizeInBytes = ElementCount * ElementStride;
-
 		switch (Type)
 		{
-			case USMConst_Float: ConvertAndWrite<float>(pCB, Offset, pValue, Count, SizeInBytes); break;
+			case USMConst_Float: ConvertAndWrite<float>(pCB, Offset, pValue, Count, TotalSize); break;
 			case USMConst_Int:
-			case USMConst_Bool:  pCB->WriteData(Offset, pValue, std::min(Count * sizeof(I32), SizeInBytes)); break;
+			case USMConst_Bool:  pCB->WriteData(Offset, pValue, std::min(Count * sizeof(I32), TotalSize)); break;
 			default: ::Sys::Error("CUSMConstantInfo::SetInts() > typed value writing allowed only for float, int & bool constants"); return;
 		}
 	}
@@ -119,13 +118,11 @@ void CUSMConstantInfo::SetUInts(CConstantBuffer& CB, U32 Offset, const U32* pVal
 
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
 	{
-		const auto SizeInBytes = ElementCount * ElementStride;
-
 		switch (Type)
 		{
-			case USMConst_Float: ConvertAndWrite<float>(pCB, Offset, pValue, Count, SizeInBytes); break;
+			case USMConst_Float: ConvertAndWrite<float>(pCB, Offset, pValue, Count, TotalSize); break;
 			case USMConst_Int:
-			case USMConst_Bool:  pCB->WriteData(Offset, pValue, std::min(Count * sizeof(U32), SizeInBytes)); break;
+			case USMConst_Bool:  pCB->WriteData(Offset, pValue, std::min(Count * sizeof(U32), TotalSize)); break;
 			default: ::Sys::Error("CUSMConstantInfo::SetUInts() > typed value writing allowed only for float, int & bool constants"); return;
 		}
 	}
@@ -138,13 +135,11 @@ void CUSMConstantInfo::SetBools(CConstantBuffer& CB, U32 Offset, const bool* pVa
 
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
 	{
-		const auto SizeInBytes = ElementCount * ElementStride;
-
 		switch (Type)
 		{
-			case USMConst_Float: ConvertAndWrite<float>(pCB, Offset, pValue, Count, SizeInBytes); break;
+			case USMConst_Float: ConvertAndWrite<float>(pCB, Offset, pValue, Count, TotalSize); break;
 			case USMConst_Int:
-			case USMConst_Bool:  ConvertAndWrite<I32>(pCB, Offset, pValue, Count, SizeInBytes); break;
+			case USMConst_Bool:  ConvertAndWrite<I32>(pCB, Offset, pValue, Count, TotalSize); break;
 			default: ::Sys::Error("CUSMConstantInfo::SetBools() > typed value writing allowed only for float, int & bool constants"); return;
 		}
 	}

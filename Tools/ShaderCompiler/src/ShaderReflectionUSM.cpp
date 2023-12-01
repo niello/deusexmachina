@@ -50,18 +50,17 @@ static bool ProcessStructure(CUSMShaderMeta& Meta, ID3D11ShaderReflectionType* p
 		}
 		else MemberSize = StructSize - D3DMemberTypeDesc.Offset;
 
-		if (D3DMemberTypeDesc.Elements > 1)
+		MemberMeta.ElementCount = D3DMemberTypeDesc.Elements;
+		if (D3DMemberTypeDesc.Elements)
 		{
-			// Arrays
+			// Arrays, including Array[1]
 			MemberMeta.ElementSize = MemberSize / D3DMemberTypeDesc.Elements;
-			MemberMeta.ElementCount = D3DMemberTypeDesc.Elements;
 			assert(MemberSize == MemberMeta.ElementSize * MemberMeta.ElementCount);
 		}
 		else
 		{
-			// Non-arrays and arrays [1]
+			// Non-arrays
 			MemberMeta.ElementSize = MemberSize;
-			MemberMeta.ElementCount = 1;
 		}
 
 		if (D3DMemberTypeDesc.Class == D3D_SVC_STRUCT)
@@ -250,18 +249,17 @@ bool ExtractUSMMetaFromBinary(const void* pData, size_t Size, CUSMShaderMeta& Ou
 						ConstMeta.Offset = D3DVarDesc.StartOffset;
 						ConstMeta.Flags = 0;
 
-						if (D3DTypeDesc.Elements > 1)
+						ConstMeta.ElementCount = D3DTypeDesc.Elements;
+						if (D3DTypeDesc.Elements)
 						{
-							// Arrays
+							// Arrays, including Array[1]
 							ConstMeta.ElementSize = D3DVarDesc.Size / D3DTypeDesc.Elements;
-							ConstMeta.ElementCount = D3DTypeDesc.Elements;
 							assert(D3DVarDesc.Size == ConstMeta.ElementSize * ConstMeta.ElementCount);
 						}
 						else
 						{
-							// Non-arrays and arrays [1]
+							// Non-arrays
 							ConstMeta.ElementSize = D3DVarDesc.Size;
-							ConstMeta.ElementCount = 1;
 						}
 
 						if (D3DTypeDesc.Class == D3D_SVC_STRUCT)

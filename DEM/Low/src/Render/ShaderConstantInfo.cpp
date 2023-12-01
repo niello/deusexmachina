@@ -3,6 +3,8 @@
 
 namespace Render
 {
+static const PShaderConstantInfo EmptyInfo;
+
 CShaderConstantInfo::~CShaderConstantInfo() = default;
 
 // TODO: is there better way to clone fields from the base class?
@@ -16,56 +18,54 @@ void CShaderConstantInfo::CShaderConstantInfo_CopyFields(const CShaderConstantIn
 	ElementCount = Source.ElementCount;
 	VectorStride = Source.VectorStride;
 	ComponentSize = Source.ComponentSize;
+	TotalSize = Source.TotalSize;
 	Rows = Source.Rows;
 	Columns = Source.Columns;
 	Flags = Source.Flags;
 }
 //---------------------------------------------------------------------
 
-PShaderConstantInfo CShaderConstantInfo::GetMemberInfo(CStrID Name)
+const PShaderConstantInfo& CShaderConstantInfo::GetMemberInfo(CStrID Name)
 {
 	// An array, can't access members even if array element is a structure
-	if (ElementCount > 1) return nullptr;
+	if (ElementCount) return EmptyInfo;
 
 	// Not a structure
-	if (!Struct) return nullptr;
+	if (!Struct) return EmptyInfo;
 
 	const auto MemberIndex = Struct->FindMemberIndex(Name);
 
 	// Has no member with requested Name
-	if (MemberIndex >= Struct->GetMemberCount()) return nullptr;
+	if (MemberIndex >= Struct->GetMemberCount()) return EmptyInfo;
 
-	if (SubInfo)
-	{
-		// Cache is mapped to struct members, check at member index
-		if (SubInfo[MemberIndex]) return SubInfo[MemberIndex];
-	}
-	else
-	{
-		// Member cache is not created yet, allocate
-		SubInfo = std::make_unique<PShaderConstantInfo[]>(Struct->GetMemberCount());
-	}
+	// Member cache is not created yet, allocate
+	if (!SubInfo) SubInfo = std::make_unique<PShaderConstantInfo[]>(Struct->GetMemberCount());
 
+	// Cache is mapped to struct members, check at member index
 	auto& Member = SubInfo[MemberIndex];
-	Member = Struct->GetMember(MemberIndex)->Clone();
-	Member->BufferIndex = BufferIndex;
-	Member->CalculateCachedValues();
+	if (!Member)
+	{
+		Member = Struct->GetMember(MemberIndex)->Clone();
+		Member->BufferIndex = BufferIndex;
+		Member->CalculateCachedValues();
+	}
 
-	return SubInfo[MemberIndex];
+	return Member;
 }
 //---------------------------------------------------------------------
 
 PShaderConstantInfo CShaderConstantInfo::GetElementInfo()
 {
 	// Not an array, is element itself 
-	if (ElementCount < 2) return this;
+	if (!ElementCount) return this;
 
 	// If cache is valid, there is the only element there
 	if (SubInfo) return SubInfo[0];
 
 	SubInfo = std::make_unique<PShaderConstantInfo[]>(1);
 	SubInfo[0] = Clone();
-	SubInfo[0]->ElementCount = 1;
+	SubInfo[0]->LocalOffset = 0;
+	SubInfo[0]->ElementCount = 0;
 	SubInfo[0]->CalculateCachedValues();
 
 	return SubInfo[0];
@@ -75,7 +75,7 @@ PShaderConstantInfo CShaderConstantInfo::GetElementInfo()
 PShaderConstantInfo CShaderConstantInfo::GetVectorInfo()
 {
 	// An array, can't access components
-	if (ElementCount > 1) return nullptr;
+	if (ElementCount) return nullptr;
 
 	// Don't check if it is a structure, because structure must have MajorDim = 1
 	n_assert_dbg(!Struct);
@@ -115,7 +115,7 @@ PShaderConstantInfo CShaderConstantInfo::GetVectorInfo()
 PShaderConstantInfo CShaderConstantInfo::GetComponentInfo()
 {
 	// An array, can't access components
-	if (ElementCount > 1) return nullptr;
+	if (ElementCount) return nullptr;
 
 	// A structure, can't access components
 	if (Struct) return nullptr;

@@ -619,9 +619,7 @@ void CView::UploadLightsToGPU()
 	if (_RenderPath->ConstGlobalLights)
 	{
 		MaxGlobalLights = _RenderPath->ConstGlobalLights.GetElementCount();
-
-		// FIXME: improve working with 1-element arrays! Must be stored as an array and first indexing must obtain an element!
-		GlobalLightElm = (MaxGlobalLights > 1) ? _RenderPath->ConstGlobalLights[0] : _RenderPath->ConstGlobalLights;
+		GlobalLightElm = _RenderPath->ConstGlobalLights[0];
 	}
 
 	U32 MaxLocalLights = 0;

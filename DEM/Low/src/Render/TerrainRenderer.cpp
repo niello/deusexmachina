@@ -52,9 +52,9 @@ CTerrainRenderer::CTerrainTechInterface* CTerrainRenderer::GetTechInterface(cons
 		TechInterface.VSLinearSampler = ParamTable.GetSampler(sidVSLinearSampler);
 	}
 
-	TechInterface.TechMaxInstanceCount = TechInterface.ConstInstanceDataVS.GetElementCount();
+	TechInterface.TechMaxInstanceCount = std::max<U32>(1, TechInterface.ConstInstanceDataVS.GetElementCount());
 	if (TechInterface.ConstInstanceDataPS)
-		TechInterface.TechMaxInstanceCount = std::min(TechInterface.TechMaxInstanceCount, TechInterface.ConstInstanceDataPS.GetElementCount());
+		TechInterface.TechMaxInstanceCount = std::min(TechInterface.TechMaxInstanceCount, std::max<U32>(1, TechInterface.ConstInstanceDataPS.GetElementCount()));
 
 	TechInterface.TechLightCount = std::min(CTerrain::MAX_LIGHTS_PER_PATCH, TechInterface.MemberLightIndices.GetTotalComponentCount());
 

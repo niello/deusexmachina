@@ -39,6 +39,7 @@ public:
 	U32                  ElementCount;
 	U32                  VectorStride;
 	U32                  ComponentSize;
+	U32                  TotalSize;
 	U8                   Rows;
 	U8                   Columns;
 	U8                   Flags;
@@ -65,7 +66,7 @@ public:
 	U32    GetColumnCount() const { return Columns; }
 	bool   IsColumnMajor() const { return Flags & EShaderConstantFlags::ColumnMajor; }
 
-	PShaderConstantInfo GetMemberInfo(CStrID Name);
+	const PShaderConstantInfo& GetMemberInfo(CStrID Name);
 	PShaderConstantInfo GetElementInfo();
 	PShaderConstantInfo GetVectorInfo();
 	PShaderConstantInfo GetComponentInfo();

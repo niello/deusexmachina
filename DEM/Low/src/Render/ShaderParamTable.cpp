@@ -278,7 +278,7 @@ CShaderConstantParam CShaderConstantParam::GetComponent(U32 Index) const
 	const auto Rows = _Info->GetRowCount();
 	const auto Cols = _Info->GetColumnCount();
 	const auto ComponentCount = Rows * Cols;
-	if (_Info->GetElementCount() > 1)
+	if (_Info->GetElementCount())
 	{
 		return GetElement(Index / ComponentCount).GetComponent(Index % ComponentCount);
 	}
@@ -294,7 +294,7 @@ CShaderConstantParam CShaderConstantParam::GetComponent(U32 Index) const
 CShaderConstantParam CShaderConstantParam::GetComponent(U32 Row, U32 Column) const
 {
 	if (!_Info ||
-		_Info->GetElementCount() > 1 ||
+		_Info->GetElementCount() ||
 		_Info->Struct ||
 		_Info->GetRowCount() <= Row ||
 		_Info->GetColumnCount() <= Column)
@@ -314,7 +314,7 @@ CShaderConstantParam CShaderConstantParam::operator [](U32 Index) const
 {
 	if (!_Info) return CShaderConstantParam();
 
-	if (_Info->GetElementCount() > 1) return GetElement(Index);
+	if (_Info->GetElementCount()) return GetElement(Index);
 
 	const auto MajorDim = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
 	if (MajorDim > 1) return GetVector(Index);

@@ -43,7 +43,7 @@ CModelRenderer::CModelTechInterface* CModelRenderer::GetTechInterface(const CTec
 		}
 	}
 
-	TechInterface.TechMaxInstanceCount = TechInterface.ConstInstanceData ? TechInterface.ConstInstanceData.GetElementCount() : std::numeric_limits<U32>::max();
+	TechInterface.TechMaxInstanceCount = TechInterface.ConstInstanceData ? std::max<U32>(1, TechInterface.ConstInstanceData.GetElementCount()) : std::numeric_limits<U32>::max();
 	TechInterface.TechNeedsMaterial = pTech->GetEffect()->GetMaterialParamTable().HasParams();
 
 	return &TechInterface;
