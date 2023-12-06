@@ -613,7 +613,7 @@ void CView::UpdateLights(bool ViewProjChanged)
 // TODO: add hard int priority
 static inline bool IsLightPriorityLess(const Render::CLight* a, const Render::CLight* b)
 {
-	return (a->GPUData.Color.x + a->GPUData.Color.y + a->GPUData.Color.z) > (b->GPUData.Color.x + b->GPUData.Color.y + b->GPUData.Color.z);
+	return (a->GPUData.Color.x + a->GPUData.Color.y + a->GPUData.Color.z) < (b->GPUData.Color.x + b->GPUData.Color.y + b->GPUData.Color.z);
 }
 //---------------------------------------------------------------------
 
@@ -718,27 +718,37 @@ void CView::UploadLightsToGPU()
 	const auto GlobalLightCount = _GlobalLights.size();
 	if (MaxGlobalLights && GlobalLightCount)
 	{
+		// Require sorting for the algorithm below to work
 		std::sort(_GlobalLights.begin(), _GlobalLights.end(), [](const Render::CLight* a, const Render::CLight* b) { return a->GPUIndex < b->GPUIndex; });
 
 		// Fill the GPU buffer preserving already uploaded lights in their positions when possible
+		auto NextForCheck = 0;
 		auto NextForMove = GlobalLightCount - 1;
-		for (size_t i = 0; i < GlobalLightCount; ++i)
+		for (size_t GPUIndex = 0; GPUIndex < GlobalLightCount; ++GPUIndex)
 		{
-			//!!!FIXME: not uploaded lights erase each other!
-			if (_GlobalLights[i]->GPUIndex != i)
+			Render::CLight* pLight = _GlobalLights[NextForCheck];
+			if (pLight->GPUIndex != GPUIndex)
 			{
-				if (i != NextForMove) _GlobalLights[i] = _GlobalLights[NextForMove--];
-				_GlobalLights[i]->GPUIndex = i;
-				_GlobalLights[i]->GPUDirty = true;
+				if (NextForCheck != NextForMove) pLight = _GlobalLights[NextForMove--];
+				pLight->GPUIndex = GPUIndex;
+				pLight->GPUDirty = true;
+			}
+			else
+			{
+				++NextForCheck;
 			}
 
-			if (_GlobalLights[i]->GPUDirty)
+			if (pLight->GPUDirty)
 			{
-				GlobalLightElm.Shift(_RenderPath->ConstGlobalLights, i);
-				_Globals.SetRawConstant(GlobalLightElm, _GlobalLights[i]->GPUData);
-				_GlobalLights[i]->GPUDirty = false;
+				GlobalLightElm.Shift(_RenderPath->ConstGlobalLights, GPUIndex);
+				_Globals.SetRawConstant(GlobalLightElm, pLight->GPUData);
+				pLight->GPUDirty = false;
 			}
 		}
+
+		// Restore sorting for the case when _GlobalLights may be read from outside as an actual list of global lights (not needed now)
+		//if (_GlobalLights.back()->GPUIndex != GlobalLightCount - 1)
+		//	std::sort(_GlobalLights.begin(), _GlobalLights.end(), [](const Render::CLight* a, const Render::CLight* b) { return a->GPUIndex < b->GPUIndex; });
 
 		// Terminate global light buffer to skip unfilled slots when calculating lighting
 		if (GlobalLightCount < MaxGlobalLights && PrevGlobalLightCount != GlobalLightCount)
