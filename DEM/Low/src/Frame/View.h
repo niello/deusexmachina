@@ -66,7 +66,6 @@ protected:
 	int											_SwapChainID = INVALID_INDEX;
 	Render::CShaderParamStorage					_Globals;
 	Render::PSampler							_TrilinearCubeSampler; // For IBL
-	Render::CImageBasedLight*                   _pGlobalAmbientLight = nullptr;
 	CCameraAttribute*                           _pCamera = nullptr; //???smart ptr?
 
 	CGraphicsScene*								_pScene = nullptr;
@@ -85,7 +84,9 @@ protected:
 	std::vector<decltype(_Renderables)::node_type> _RenderableNodePool;
 	std::map<UPTR, Render::PLight>                 _Lights;
 	std::vector<decltype(_Lights)::node_type>      _LightNodePool;
+	std::vector<Render::CLight*>                   _GlobalLights;
 	std::vector<U32>                               _FreeLightGPUIndices;
+	Render::CImageBasedLight*                      _pGlobalAmbientLight = nullptr;
 	U32                                            _NextUnusedLightGPUIndex = 0;
 
 	std::map<std::pair<const Render::CEffect*, CStrID>, U32> _EffectMap;  // Source effect & input set -> index in a _ShaderTechCache
