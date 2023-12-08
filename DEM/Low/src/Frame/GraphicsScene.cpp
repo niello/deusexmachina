@@ -247,7 +247,7 @@ CGraphicsScene::HRecord CGraphicsScene::AddObject(std::map<UPTR, CSpatialRecord>
 	Record.Sphere = GlobalSphere;
 
 	// Check bounds validity
-	if (!rtm::vector_any_less_than3(Record.Box.Extent, rtm::vector_zero())) //!!!TODO: can check negative sign bits by mask instead of comparing with 0!
+	if (Math::IsAABBValid(Record.Box))
 	{
 		const auto NodeMortonCode = CalculateMortonCode(Record.Box.Center, Record.Box.Extent);
 		Record.NodeIndex = AddSingleObjectToNode(NodeMortonCode, 0);
@@ -285,7 +285,7 @@ void CGraphicsScene::UpdateObjectBounds(HRecord Handle, const Math::CAABB& Globa
 	if (rtm::vector_all_equal3(GlobalBox.Center, Record.Box.Center) && rtm::vector_all_equal3(GlobalBox.Extent, Record.Box.Extent))
 		return;
 
-	const bool BoundsValid = !rtm::vector_any_less_than3(Record.Box.Extent, rtm::vector_zero()); //!!!TODO: can check negative sign bits by mask instead of comparing with 0!
+	const bool BoundsValid = Math::IsAABBValid(Record.Box);
 
 	Record.Box = GlobalBox;
 	Record.Sphere = GlobalSphere;

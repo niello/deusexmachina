@@ -211,6 +211,13 @@ RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE CAABB RTM_SIMD_CALL InvalidAA
 }
 //---------------------------------------------------------------------
 
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE bool RTM_SIMD_CALL IsAABBValid(const CAABB& AABB) noexcept
+{
+	//???TODO: can check negative sign bits instead of comparing with zero vector?
+	return rtm::vector_all_greater_equal3(AABB.Extent, rtm::vector_zero());
+}
+//---------------------------------------------------------------------
+
 RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE CAABB RTM_SIMD_CALL AABBFromMinMax(rtm::vector4f_arg0 Min, rtm::vector4f_arg1 Max) noexcept
 {
 	const rtm::vector4f Center = rtm::vector_mul(rtm::vector_add(Min, Max), 0.5f);

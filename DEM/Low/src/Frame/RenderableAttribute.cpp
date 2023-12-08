@@ -72,11 +72,11 @@ void CRenderableAttribute::RenderDebug(Debug::CDebugDraw& DebugDraw) const
 {
 	// Draw world-space AABB
 	Math::CAABB AABB;
-	if (GetGlobalAABB(AABB))
+	if (GetGlobalAABB(AABB) && Math::IsAABBValid(AABB))
 		DebugDraw.DrawBoxWireframe(AABB, Render::ColorRGBA(160, 220, 255, 255), 1.f);
 
 	// Draw spatial tree node bounds
-	if (_pScene)
+	if (_pScene && _SceneRecordHandle->second.NodeIndex != NO_SPATIAL_TREE_NODE)
 		DebugDraw.DrawBoxWireframe(_pScene->GetNodeAABB(_SceneRecordHandle->second.NodeIndex, true), Render::ColorRGBA(160, 255, 160, 255), 1.f);
 }
 //---------------------------------------------------------------------
