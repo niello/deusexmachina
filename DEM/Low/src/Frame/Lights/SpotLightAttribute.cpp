@@ -165,6 +165,7 @@ U8 CSpotLightAttribute::TestBoxClipping(rtm::vector4f_arg0 BoxCenter, rtm::vecto
 	if (!Math::HasIntersection(rtm::vector_set_w(_pNode->GetWorldPosition(), _Range), BoxCenter, BoxExtent)) return Math::ClipOutside;
 
 	// Update cached world space frustum
+	// NB: we don't normalize the frustum intentionally becase it is only used for AABB tests
 	if (_WorldBoundsCacheVersion != _pNode->GetTransformVersion())
 	{
 		const rtm::matrix4x4f LocalFrustum = Math::matrix_perspective_rh(_ConeOuter, 1.f, 0.001f, _Range);

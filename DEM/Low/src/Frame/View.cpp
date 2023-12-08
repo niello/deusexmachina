@@ -330,8 +330,9 @@ bool CView::UpdateCameraFrustum()
 		_ScreenMultiple = 0.5f * std::max(m00, m11);
 	}
 
+	// NB: must be normalized for correct sphere culling
 	if (ViewProjChanged)
-		_LastViewFrustum = Math::CalcFrustumParams(_pCamera->GetViewProjMatrix());
+		_LastViewFrustum = Math::NormalizeFrustum(Math::CalcFrustumParams(_pCamera->GetViewProjMatrix()));
 
 	return ViewProjChanged;
 }

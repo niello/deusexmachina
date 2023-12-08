@@ -55,6 +55,8 @@ DEM_FORCE_INLINE rtm::matrix4x4f RTM_SIMD_CALL matrix_perspective_rh(float fovY,
 // Extract frustum planes using Gribb-Hartmann method.
 // See https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
 // See https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
+// NB: this function returns denormalized planes and resulting frustun is therefore not suitable for culling spheres but only boxes!
+// Use NormalizeFrustum on the result to get normalized planes for sphere culling.
 DEM_FORCE_INLINE CSIMDFrustum RTM_SIMD_CALL CalcFrustumParams(rtm::matrix4x4f_arg0 m) noexcept
 {
 	// In the paper Left = W + X, Right = W - X, Bottom = W + Y, Top = W - Y. Normals look inside the frustum, i.e. positive halfspace means 'inside'.
@@ -80,6 +82,26 @@ DEM_FORCE_INLINE CSIMDFrustum RTM_SIMD_CALL CalcFrustumParams(rtm::matrix4x4f_ar
 	const float FarPlane = (m33 - m32) * rtm::scalar_cast(rtm::scalar_sqrt_reciprocal(static_cast<rtm::scalarf>(rtm::vector_length_squared3(FarAxis))));
 
 	return { LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NearPlane, FarPlane };
+}
+//---------------------------------------------------------------------
+
+// Normalize fructum plane normals. Required for sphere culling at least.
+DEM_FORCE_INLINE CSIMDFrustum& RTM_SIMD_CALL NormalizeFrustum(CSIMDFrustum& f) noexcept
+{
+	rtm::vector4f Dot = rtm::vector_mul(f.LRBT_Nx, f.LRBT_Nx);
+	Dot = rtm::vector_mul_add(f.LRBT_Ny, f.LRBT_Ny, Dot);
+	Dot = rtm::vector_mul_add(f.LRBT_Nz, f.LRBT_Nz, Dot);
+
+	// TODO PERF: vector_sqrt_reciprocal, waiting for https://github.com/nfrechette/rtm/issues/193
+	const rtm::vector4f InvLen = rtm::vector_reciprocal(rtm::vector_sqrt(Dot));
+	f.LRBT_Nx = rtm::vector_mul(f.LRBT_Nx, InvLen);
+	f.LRBT_Ny = rtm::vector_mul(f.LRBT_Ny, InvLen);
+	f.LRBT_Nz = rtm::vector_mul(f.LRBT_Nz, InvLen);
+	f.LRBT_w = rtm::vector_mul(f.LRBT_w, InvLen);
+
+	// NB: LookAxis is already normalized in CalcFrustumParams
+
+	return f;
 }
 //---------------------------------------------------------------------
 
@@ -148,7 +170,7 @@ DEM_FORCE_INLINE U8 RTM_SIMD_CALL ClipAABB(rtm::vector4f_arg0 BoxCenter, rtm::ve
 }
 //---------------------------------------------------------------------
 
-// Test AABB vs frustum planes intersection for positive halfspace treated as 'inside'
+// Test sphere vs frustum planes intersection for positive halfspace treated as 'inside'
 // TODO: add an alternative implementation for AVX (ymm register can hold all 6 planes at once)
 //???!!!TODO PERF: rtm::vector_abs & rtm::vector_neg are bit-based! Is it better to recalc abs axes or cache them in CSIMDFrustum (probably in memory)?
 DEM_FORCE_INLINE bool RTM_SIMD_CALL HasIntersection(rtm::vector4f_arg0 Sphere, const CSIMDFrustum& Frustum) noexcept
@@ -158,7 +180,7 @@ DEM_FORCE_INLINE bool RTM_SIMD_CALL HasIntersection(rtm::vector4f_arg0 Sphere, c
 	CenterDistance = rtm::vector_mul_add(rtm::vector_dup_y(Sphere), Frustum.LRBT_Ny, CenterDistance);
 	CenterDistance = rtm::vector_mul_add(rtm::vector_dup_z(Sphere), Frustum.LRBT_Nz, CenterDistance);
 
-	// Plane normals look outside the frustum. Sphere.w is its radius.
+	// Plane normals look outside the frustum. Sphere.w is a sphere radius.
 	// TODO: rtm::vector_any_greater_then, or leave vector_any_greater_equal?
 	if (rtm::vector_any_greater_equal(CenterDistance, rtm::vector_dup_w(Sphere)))
 		return false;
