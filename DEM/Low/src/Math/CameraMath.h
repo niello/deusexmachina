@@ -74,12 +74,12 @@ DEM_FORCE_INLINE CSIMDFrustum RTM_SIMD_CALL CalcFrustumParams(rtm::matrix4x4f_ar
 	// TODO: check if it is really faster than making another vector set for NF_Nx etc. At least less SSE registers used?
 	const auto NearAxis = rtm::vector_set(rtm::vector_get_z(m.x_axis), rtm::vector_get_z(m.y_axis), rtm::vector_get_z(m.z_axis), 0.f);
 	const auto FarAxis = rtm::vector_sub(rtm::vector_set(rtm::vector_get_w(m.x_axis), rtm::vector_get_w(m.y_axis), rtm::vector_get_w(m.z_axis), 0.f), NearAxis);
-	const float InvNearLen = rtm::scalar_cast(rtm::scalar_sqrt_reciprocal(static_cast<rtm::scalarf>(rtm::vector_length_squared3(NearAxis))));
+	const float InvNearLen = rtm::vector_length_reciprocal3(NearAxis);
 	const auto LookAxis = rtm::vector_mul(NearAxis, InvNearLen);
 	const float m32 = rtm::vector_get_z(m.w_axis);
 	const float m33 = rtm::vector_get_w(m.w_axis);
 	const float NearPlane = -m32 * InvNearLen;
-	const float FarPlane = (m33 - m32) * rtm::scalar_cast(rtm::scalar_sqrt_reciprocal(static_cast<rtm::scalarf>(rtm::vector_length_squared3(FarAxis))));
+	const float FarPlane = (m33 - m32) * rtm::vector_length_reciprocal3(FarAxis);
 
 	return { LRBT_Nx, LRBT_Ny, LRBT_Nz, LRBT_w, LookAxis, NearPlane, FarPlane };
 }
