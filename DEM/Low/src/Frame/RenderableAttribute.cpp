@@ -45,6 +45,7 @@ bool CRenderableAttribute::GetGlobalAABB(Math::CAABB& OutBox, UPTR LOD) const
 
 	if (_pScene && _pNode->GetTransformVersion() == _LastTransformVersion) //!!! && LocalBox not changed!
 	{
+		// FIXME: should return true if this object has no box and GetLocalAABB would return false?!
 		OutBox = _SceneRecordHandle->second.Box;
 	}
 	else

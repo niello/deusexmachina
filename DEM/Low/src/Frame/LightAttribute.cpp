@@ -65,6 +65,7 @@ bool CLightAttribute::GetGlobalAABB(Math::CAABB& OutBox) const
 
 	if (_pScene && _pNode->GetTransformVersion() == _LastTransformVersion) //!!! && LocalBox not changed!
 	{
+		// FIXME: should return true if this object has no box and GetLocalAABB would return false?!
 		OutBox = _SceneRecordHandle->second.Box;
 	}
 	else
