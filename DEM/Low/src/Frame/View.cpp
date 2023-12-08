@@ -746,10 +746,6 @@ void CView::UploadLightsToGPU()
 			}
 		}
 
-		// Restore sorting for the case when _GlobalLights may be read from outside as an actual list of global lights (not needed now)
-		//if (_GlobalLights.back()->GPUIndex != GlobalLightCount - 1)
-		//	std::sort(_GlobalLights.begin(), _GlobalLights.end(), [](const Render::CLight* a, const Render::CLight* b) { return a->GPUIndex < b->GPUIndex; });
-
 		// Terminate global light buffer to skip unfilled slots when calculating lighting
 		if (GlobalLightCount < MaxGlobalLights && PrevGlobalLightCount != GlobalLightCount)
 		{
