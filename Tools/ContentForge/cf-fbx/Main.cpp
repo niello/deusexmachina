@@ -1784,18 +1784,8 @@ public:
 						const auto R = LocalTfm.GetQ();
 						const auto T = LocalTfm.GetT();
 
-						// FIXME: strips scale from the root to fix assets where model is in cm but animation scales it to meters
-						if (BoneIdx == RootIdx)
-						{
-							Dest.scale = rtm::vector_set(1.f, 1.f, 1.f, 1.f);
-							const auto ST = T / S;
-							Dest.translation = rtm::vector_set(static_cast<float>(ST[0]), static_cast<float>(ST[1]), static_cast<float>(ST[2]), 1.f);
-						}
-						else
-						{
-							Dest.scale = rtm::vector_set(static_cast<float>(S[0]), static_cast<float>(S[1]), static_cast<float>(S[2]), 1.f);
-							Dest.translation = rtm::vector_set(static_cast<float>(T[0]), static_cast<float>(T[1]), static_cast<float>(T[2]), 1.f);
-						}
+						Dest.scale = rtm::vector_set(static_cast<float>(S[0]), static_cast<float>(S[1]), static_cast<float>(S[2]), 1.f);
+						Dest.translation = rtm::vector_set(static_cast<float>(T[0]), static_cast<float>(T[1]), static_cast<float>(T[2]), 1.f);
 						Dest.rotation = rtm::quat_set(static_cast<float>(R[0]), static_cast<float>(R[1]), static_cast<float>(R[2]), static_cast<float>(R[3]));
 					}
 				}
