@@ -715,44 +715,53 @@ void CView::UploadLightsToGPU()
 	}
 
 	// Upload global lights
-	const auto GlobalLightCount = _GlobalLights.size();
-	if (MaxGlobalLights && GlobalLightCount)
+	if (MaxGlobalLights)
 	{
-		// Require sorting for the algorithm below to work
-		std::sort(_GlobalLights.begin(), _GlobalLights.end(), [](const Render::CLight* a, const Render::CLight* b) { return a->GPUIndex < b->GPUIndex; });
-
-		// Fill the GPU buffer preserving already uploaded lights in their positions when possible
-		auto NextForCheck = 0;
-		auto NextForMove = GlobalLightCount - 1;
-		for (size_t GPUIndex = 0; GPUIndex < GlobalLightCount; ++GPUIndex)
+		const auto GlobalLightCount = _GlobalLights.size();
+		if (GlobalLightCount)
 		{
-			Render::CLight* pLight = _GlobalLights[NextForCheck];
-			if (pLight->GPUIndex != GPUIndex)
-			{
-				if (NextForCheck != NextForMove) pLight = _GlobalLights[NextForMove--];
-				pLight->GPUIndex = GPUIndex;
-				pLight->GPUDirty = true;
-			}
-			else
-			{
-				++NextForCheck;
-			}
+			// Require sorting for the algorithm below to work
+			std::sort(_GlobalLights.begin(), _GlobalLights.end(), [](const Render::CLight* a, const Render::CLight* b) { return a->GPUIndex < b->GPUIndex; });
 
-			if (pLight->GPUDirty)
+			// Fill the GPU buffer preserving already uploaded lights in their positions when possible
+			auto NextForCheck = 0;
+			auto NextForMove = GlobalLightCount - 1;
+			for (size_t GPUIndex = 0; GPUIndex < GlobalLightCount; ++GPUIndex)
 			{
-				GlobalLightElm.Shift(_RenderPath->ConstGlobalLights, GPUIndex);
-				_Globals.SetRawConstant(GlobalLightElm, pLight->GPUData);
-				pLight->GPUDirty = false;
+				Render::CLight* pLight = _GlobalLights[NextForCheck];
+				if (pLight->GPUIndex != GPUIndex)
+				{
+					if (NextForCheck != NextForMove) pLight = _GlobalLights[NextForMove--];
+					pLight->GPUIndex = GPUIndex;
+					pLight->GPUDirty = true;
+				}
+				else
+				{
+					++NextForCheck;
+				}
+
+				if (pLight->GPUDirty)
+				{
+					GlobalLightElm.Shift(_RenderPath->ConstGlobalLights, GPUIndex);
+					_Globals.SetRawConstant(GlobalLightElm, pLight->GPUData);
+					pLight->GPUDirty = false;
+				}
 			}
 		}
 
 		// Terminate global light buffer to skip unfilled slots when calculating lighting
-		if (GlobalLightCount < MaxGlobalLights && PrevGlobalLightCount != GlobalLightCount)
+		if (GlobalLightCount < MaxGlobalLights)
 		{
-			//???TODO: write only invalid light type instead of the whole invalid light data?
-			static const Render::CGPULightInfo InvalidGlobalLight{};
-			GlobalLightElm.Shift(_RenderPath->ConstGlobalLights, GlobalLightCount);
-			_Globals.SetRawConstant(GlobalLightElm, InvalidGlobalLight);
+			// Fake element for correct prev count tracking
+			_GlobalLights.push_back(nullptr);
+
+			if (PrevGlobalLightCount != _GlobalLights.size())
+			{
+				//???TODO: write only invalid light type instead of the whole invalid light data?
+				static const Render::CGPULightInfo InvalidGlobalLight{};
+				GlobalLightElm.Shift(_RenderPath->ConstGlobalLights, GlobalLightCount);
+				_Globals.SetRawConstant(GlobalLightElm, InvalidGlobalLight);
+			}
 		}
 	}
 }

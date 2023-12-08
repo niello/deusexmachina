@@ -23,10 +23,10 @@ protected:
 		CShaderConstantParam ConstSkinPalette;
 		CShaderConstantParam MemberWorldMatrix;
 		CShaderConstantParam MemberFirstBoneIndex;
-		CShaderConstantParam MemberLightCount;
 		CShaderConstantParam MemberLightIndices;
 
 		UPTR TechMaxInstanceCount = 1;
+		U32  TechLightCount = 0;
 		bool TechNeedsMaterial = false;
 	};
 
@@ -40,6 +40,7 @@ protected:
 	UPTR _InstanceCount = 0;
 
 	std::map<const CTechnique*, CModelTechInterface> _TechInterfaces;
+	std::vector<U32> _LightIndexBuffer; // here to vaoid per frame reallocation
 
 	CModelTechInterface* GetTechInterface(const CTechnique* pTech);
 	void CommitCollectedInstances();

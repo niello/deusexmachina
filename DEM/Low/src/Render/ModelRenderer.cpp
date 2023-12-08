@@ -17,6 +17,7 @@ CModelRenderer::CModelTechInterface* CModelRenderer::GetTechInterface(const CTec
 	if (It != _TechInterfaces.cend()) return &It->second;
 
 	auto& TechInterface = _TechInterfaces[pTech];
+	TechInterface.TechLightCount = 0;
 
 	if (pTech->GetParamTable().HasParams())
 	{
@@ -36,10 +37,14 @@ CModelRenderer::CModelTechInterface* CModelRenderer::GetTechInterface(const CTec
 		{
 			TechInterface.MemberFirstBoneIndex = Struct[sidFirstBoneIndex];
 			TechInterface.MemberWorldMatrix = Struct[sidWorldMatrix];
-			TechInterface.MemberLightCount = Struct[sidLightCount];
 			TechInterface.MemberLightIndices = Struct[sidLightIndices];
 
-			n_assert_dbg(!TechInterface.MemberLightCount || (TechInterface.MemberLightIndices && TechInterface.MemberLightIndices.GetElementCount()));
+			// Extend the common buffer if necessary
+			if (TechInterface.MemberLightIndices)
+			{
+				TechInterface.TechLightCount = TechInterface.MemberLightIndices.GetTotalComponentCount();
+				_LightIndexBuffer.reserve(TechInterface.TechLightCount);
+			}
 		}
 	}
 
@@ -159,28 +164,25 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 		_BufferedBoneCount += InstanceBoneCount;
 	}
 
-	if (_pCurrTechInterface->MemberLightCount)
+	if (_pCurrTechInterface->TechLightCount)
 	{
 		// Set per-instance light indices for currently visible lights, clamp by limit
-		U32 LightCount = 0;
-		const auto LightLimit = _pCurrTechInterface->MemberLightIndices.GetTotalComponentCount();
-		if (LightLimit)
+		_LightIndexBuffer.clear();
+		_pCurrTechInterface->MemberLightIndices.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
+		for (const auto& Pair : Model.Lights)
 		{
-			_pCurrTechInterface->MemberLightIndices.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
-			for (const auto& Pair : Model.Lights)
+			const auto GPUIndex = Pair.second->GPUIndex;
+			if (GPUIndex != INVALID_INDEX_T<U32>)
 			{
-				const auto GPUIndex = Pair.second->GPUIndex;
-				if (GPUIndex != INVALID_INDEX_T<U32>)
-				{
-					// TODO PERF: check array element param creation cost, maybe can reduce it? Add SetUInt(Index, Value)? or set raw?
-					_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->MemberLightIndices.GetComponent(LightCount), GPUIndex);
-					if (++LightCount == LightLimit) break;
-				}
+				_LightIndexBuffer.push_back(GPUIndex);
+				if (_LightIndexBuffer.size() == _pCurrTechInterface->TechLightCount) break;
 			}
 		}
 
-		_pCurrTechInterface->MemberLightCount.Shift(_pCurrTechInterface->ConstInstanceData, _InstanceCount);
-		_pCurrTechInterface->PerInstanceParams.SetUInt(_pCurrTechInterface->MemberLightCount, LightCount);
+		if (_LightIndexBuffer.size() < _pCurrTechInterface->TechLightCount)
+			_LightIndexBuffer.push_back(-1);
+
+		_pCurrTechInterface->PerInstanceParams.SetRawConstant(_pCurrTechInterface->MemberLightIndices, _LightIndexBuffer.data(), sizeof(U32) * _LightIndexBuffer.size());
 	}
 
 	++_InstanceCount;
