@@ -168,6 +168,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/IO/Streams/FileStream.h
 	DEM/Low/src/IO/Streams/MemStream.h
 	DEM/Low/src/IO/Streams/ScopedStream.h
+	DEM/Low/src/Jobs/WorkStealingQueue.h
 	DEM/Low/src/Math/AABB.h
 	DEM/Low/src/Math/CameraMath.h
 	DEM/Low/src/Math/DelaunayTriangulation.hpp
