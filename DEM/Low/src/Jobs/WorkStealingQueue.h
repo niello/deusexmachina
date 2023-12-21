@@ -3,7 +3,10 @@
 #include <atomic>
 
 // A lock-free work stealing queue.
-// Implements https://fzn.fr/readings/ppopp13.pdf, and optimized version of Chase-Lev deque.
+// Implements https://fzn.fr/readings/ppopp13.pdf, an optimized version of Chase-Lev deque.
+// See also:
+// https://blog.molecular-matters.com/2015/09/25/job-system-2-0-lock-free-work-stealing-part-3-going-lock-free/
+// https://www.dre.vanderbilt.edu/~schmidt/PDF/work-stealing-dequeue.pdf
 
 namespace DEM::Jobs
 {
@@ -15,23 +18,45 @@ class CWorkStealingQueue final
 
 private:
 
-	//???TODO: force top & bottom different cache lines to avoid false sharing?! 2 lines to combat prefetching!
-	//???can also exploit true sharing? to load top or bottom with other useful fields, but avoiding false sharing on write.
-	std::atomic<size_t>          _Top;           // Written only in Steal()
-	std::atomic<size_t>          _Bottom;        // Written only in Push() and Pop()
-	std::atomic<std::atomic<T>*> _Elements;
-	size_t                       _Capacity = 0;
-	std::vector<std::atomic<T>*> _Garbage;       // We should prevent reuse of memory that was already used for the queue, so we store it here
+	struct CStorage
+	{
+		size_t          Capacity;
+		size_t          Mask;
+		std::atomic<T>* Elements;
+
+		CStorage(size_t Capacity_) : Capacity(Capacity_), Mask(Capacity_ - 1), Elements(new std::atomic<T>[Capacity_]) {}
+
+		//???FIXME: why elements need to be atomic?! who might read their values when being stored? is this because of resizing?
+		//when push writes to the slot where steal steals? can happen if maxsize = capacity - 1?
+		T Get(size_t Index) const { return Elements[Index & Mask].load(std::memory_order_relaxed); }
+		void Set(size_t Index, T Value) const { Elements[Index & Mask].store(Value, std::memory_order_relaxed); }
+	};
+
+	std::atomic<size_t>    _Bottom;  // Written only in Push() and Pop()
+	std::atomic<CStorage*> _Storage; // Written only in Push()
+	std::vector<CStorage*> _Garbage; // Written only in Push()
+
+	// Skip remaining part of a ceche line and a one more whole cache line (due to prefetch) between _Top and other fields to prevent false sharing
+	alignas(std::hardware_destructive_interference_size) char _PAD[std::hardware_destructive_interference_size];
+
+	alignas(std::hardware_destructive_interference_size)
+	std::atomic<size_t>    _Top;     // Written with sequentially consistent CAS in Steal() and rarely in Pop()
 
 public:
 
 	CWorkStealingQueue(size_t Capacity = 256)
 	{
 		// NB: effective capacity must be a power of 2
-		_Capacity = std::max(2, Math::NextPow2(Capacity));
-		_Elements.store(new std::atomic<T>[_Capacity], std::memory_order_relaxed);
+		_Storage.store(new CStorage(std::max<size_t>(2, Math::NextPow2(Capacity))), std::memory_order_relaxed);
 		_Top.store(0, std::memory_order_relaxed);
 		_Bottom.store(0, std::memory_order_relaxed);
+	}
+
+	~CWorkStealingQueue()
+	{
+		for (CStorage* pGarbage : _Garbage)
+			delete pGarbage;
+		delete _Storage.load(std::memory_order_relaxed);
 	}
 
 	// Called only from an owner thread
@@ -41,112 +66,104 @@ public:
 
 		const size_t Bottom = _Bottom.load(std::memory_order_relaxed);
 		const size_t Top = _Top.load(std::memory_order_acquire);
-		auto Elements = _Elements.load(std::memory_order_relaxed);
-
-		const auto Mask = _Capacity - 1;
+		CStorage* pStorage = _Storage.load(std::memory_order_relaxed);
 
 		// Resize a queue if it is full.
 		// The last cell in the array remains unused for possible extension according to Chase & Lev paper p.4.1, when a full array indicates an empty array.
-		if (Bottom >= Top + _Capacity - 1)
+		if (Bottom >= Top + pStorage->Capacity - 1)
 		{
-			// TODO: if (Bottom == std::numeric_limits<size_t>().max()) - how to reset?!
+			// TODO: if (Bottom == std::numeric_limits<size_t>().max()) - how to reset?! Start returning false, so that calling code can wait all jobs and recreate queue then?
 
 			// Allocate a new buffer twice as big, its capacity is also a power of 2
-			const auto NewCapacity = _Capacity << 1;
-			const auto NewMask = NewCapacity - 1;
-			auto NewElements = new std::atomic<T>[NewCapacity];
+			CStorage* pNewStorage = new CStorage(pStorage->Capacity << 1);
 
-			//???FIXME: why elements need to be atomic?! who might read their values when being stored? is this because of resizing?
 			// Copy elements to the same indices in the new array. Other threads still see an old array as the source for Pop and Steal.
 			for (size_t i = Top; i < Bottom; ++i)
-				NewElements[i & NewMask].store(Elements[i & Mask].load(std::memory_order_relaxed), std::memory_order_relaxed);
+				pNewStorage->Set(i, pStorage->Get(i));
 
-			// This prevents an allocator from reusing the same memory addresses and therefore guarantees that ...
-			//!!!TODO: see p.4.3 Lemma 5, understand better!
-			_Garbage.push_back(Elements);
+			// This prevents an allocator from reusing the same memory addresses. This guarantees that interrupted Steal() operations
+			// that reference the old array will not access some new data if its location is overwritten by the new owner of this memory.
+			_Garbage.push_back(pStorage);
 
-			// Use a new array instead of an old one. Until other threads see this store, they will access a previous array which remains valid.
+			// Use a new array instead of an old one. Until Steal() in other threads see this store, they will access a previous array which remains valid.
 			// Old array doesn't contain our new record, but Bottom is stored with "release" and reading it will imply reading the new array address.
-			Elements = NewElements;
-			_Elements.store(NewElements, std::memory_order_relaxed);
+			pStorage = pNewStorage;
+			_Storage.store(pNewStorage, std::memory_order_relaxed); //???FIXME: relaxed or release?
 		}
 
-		//???FIXME: why elements need to be atomic?! who might read their values when being stored? is this because of resizing?
-		Elements[Bottom & Mask].store(NewElement, std::memory_order_relaxed);
+		pStorage->Set(Bottom, NewElement);
 
-		// Publish a new element with store-release, so that Steal() can see it
-		std::atomic_thread_fence(std::memory_order_release);  // Like in the original paper
-		_Bottom.store(Bottom + 1, std::memory_order_relaxed); // Like in the original paper
-		//_Bottom.store(Bottom + 1, std::memory_order_release);   // Like in https://github.com/apache/brpc/blob/master/src/bthread/work_stealing_queue.h#L79
+		// Publish a new element with store-release, so that stealing threads can see it
+		_Bottom.store(Bottom + 1, std::memory_order_release);
 	}
 
 	// LIFO. Called only from an owner thread.
 	T Pop()
 	{
-		const size_t Bottom = _Bottom.load(std::memory_order_relaxed);
-		size_t Top = _Top.load(std::memory_order_relaxed);
-
-		// Top may be out of date here but then it will be reloaded with sequentially consistent load-acquire below.
-		// Only an actual Top value may trigger this early exit condition because Top never decrements.
-		if (Top >= Bottom) return {};
-
-		auto Elements = _Elements.load(std::memory_order_relaxed);
-
-		// Notify concurrent steals that we want to take the bottommost element
-		const size_t NewBottom = Bottom - 1;
-		_Bottom.store(NewBottom, std::memory_order_relaxed);
-
-//adding just a compiler barrier between the store to bottom = b and the read from long t = top is not enough,
-//because the memory model explicitly allows that “Loads may be reordered with older stores to different locations”
-//-
-// Can be also this, but portability is not guaranteed:
-//long b = m_bottom - 1;
-//_InterlockedExchange(&m_bottom, b); // _Bottom.exchange?
-//long t = m_top;
-//-
-// We have to use seq-cst order for operations on _bottom as well as _top to ensure
-// that when two threads compete for the last item either one sees the updated _bottom
-// (pop wins), or one sees the updated _top (steal wins).
-//-
-//it must be that two concurrent steal and
-//take do not read “old” values of both bottom and top, where “old”
-//could be defined as “older than the value known to the other party
-//in coherence order”
-//The presence of the two cumulative barriers in
-//	steal and take on ARMv7 guarantee such a condition :
-// if the take barrier is ordered before the barrier in steal, then the
-//	program - order - previous write to bottom will be propagated to
-//	the instance of steal;
-// conversely, if the steal barrier is ordered before the barrier in
-//	take, then value read by the program - order - previous read from
-//	top will be propagated to the instance of take.
-		std::atomic_thread_fence(std::memory_order_seq_cst);
-
-//In contrast to the implementation of Steal(), this time around we need to ensure that we first decrement bottom before
-//attempting to read top.Otherwise, concurrent Steal() operations could remove several jobs from the deque without Pop() noticing.
-		Top = _Top.load(std::memory_order_relaxed); //???!!!this becomes seq-cst load-acquire and syncs with seq-cst CAS in a total order?
-
 		T Value{};
-		if (Top > NewBottom)
-		{
-			// The queue is empty, reset Bottom to the canonical empty state (Bottom == Top)
-			_Bottom.store(Bottom, std::memory_order_relaxed);
-		}
-		else
-		{
-			//???!!!capacity isn't protected now!? prevoiusly it was stored inside an array and was obtained with pointer!
-			//!!!FIXME: now Elements may not match _Capacity! And even if no problem here because of the same thread, Steal() may suffer!
-			T Value = Elements[NewBottom & (_Capacity - 1)].load(std::memory_order_relaxed);
 
-			if (Top == NewBottom)
+		const size_t Bottom = _Bottom.load(std::memory_order_relaxed);
+
+		// Top may be out of date in our thread at the moment, but then it is less than actual, since Top
+		// only grows. So actual Top gives us a useful early exit and inactual Top does no harm.
+		if (_Top.load(std::memory_order_relaxed) < Bottom)
+		{
+			CStorage* pStorage = _Storage.load(std::memory_order_relaxed);
+
+			const size_t NewBottom = Bottom - 1;
+
+			// Notify concurrent stealing threads that we want to take the bottommost element
+#if DEM_CPU_ARCH_X86_COMPATIBLE
+			// 'xchg' instruction on x86 acts like a memory barrier and is a bit cheaper than 'mfence'
+			//!!!TODO: PROFILE! Other branch generates lock inc, maube it is not slower or even faster! Check in real multithreaded app, optimizations might cut something!
+			_Bottom.exchange(NewBottom, std::memory_order_seq_cst);
+#else
+			_Bottom.store(NewBottom, std::memory_order_relaxed);
+			std::atomic_thread_fence(std::memory_order_seq_cst);
+#endif
+
+			// There is a situation in which Pop() could break everything by returning the same element as Steal().
+			// For this to happen, Steal() and Pop() must fight for the last element in a queue, but Pop() must
+			// think that it is not the last element. Then Pop() will not execute CAS on Top and race will occur.
+			// Since Top monotonically increases, this is possible only if Pop() holds a stale value of Top,
+			// and Steal() didn't see _Bottom decrement above. To win CAS, our Steal() must see the latest Top.
+			// Let: P - pop, S - steal, R - read, W - write, b - bottom, t - top. Then for Pop() to see a stale
+			// Top, it must read it before the last write from Steal() became observable in Pop()'s thread:
+			//   READ_t = PRt (stale) -> <t incremented by other S> -> SRt (latest)
+			// In this case the only way for error to happen is when SRb didn't see PWb-1 (a store above).
+			// a) If PRt -> ... -> PWb-1, nothing prevents us from executing a successful Steal() inside "..."
+			//    and then continue with inactual Top. To prevent this, we call PWb-1 before PRt and forbid
+			//    reordering. Since this is StoreLoad pair, we have to make a memory fence, because even on
+			//    strong x86 StoreLoad reordering is allowed at runtime. I.e. even if PWb-1 is executed before PRt,
+			//    Steal() has a chance not to observe it in time.
+			// b) Given PWb-1 -> PRt (by "a") and PRt -> SRt (by definition), SRb -> PWb-1 is still possible, but
+			//    only if SRb -> SRt. Steal() reads Bottom, then Pop() writes Bottom-1, then it reads stale Top,
+			//    then Steal() regains control and reads actual Top. To prevent this, we can simply ensure that
+			//    SRt -> SRb. In this case, since we read actual Top, Pop() has already propagated actual Bottom.
+			size_t Top = _Top.load(std::memory_order_relaxed);
+
+			if (Top > NewBottom)
 			{
-				// The queue contains the last element, must compete for it with Steal().
-				// CAS failure means that we have lost the race and Value was stolen by another consumer.
-				if (!_Top.compare_exchange_strong(Top, Top + 1, std::memory_order_seq_cst, std::memory_order_relaxed))
-					Value = {};
-
-				// Whether we won or lost the race, Top is now incremented, so Bottom decrement must be undone
+				// The queue is empty, undo Bottom decrement, resetting the queue to the canonical empty state (Bottom == Top)
 				_Bottom.store(Bottom, std::memory_order_relaxed);
+			}
+			else
+			{
+				//???FIXME: why reading now? Push() can't take this slot because it is in the same thread with us!
+				Value = pStorage->Get(NewBottom);
+
+				if (Top == NewBottom)
+				{
+					// The queue contains the last element, must compete for it with Steal(). CAS failure means that we
+					// have lost the race, so our Value was stolen by another consumer and we must not return it.
+					// NB: for the last element Pop() increments Top instead of decrementing Bottom to participate in CAS.
+					if (!_Top.compare_exchange_strong(Top, Top + 1, std::memory_order_seq_cst, std::memory_order_relaxed))
+						Value = {};
+
+					// Whether we won or lost the race, Top is now incremented, so Bottom decrement must be undone.
+					// Stealing threads will eventually observe this, but we don't need to hurry.
+					_Bottom.store(Bottom, std::memory_order_relaxed);
+				}
 			}
 		}
 
@@ -174,6 +191,7 @@ public:
 
 //???WHY IN MOLECULAR IS THIS???
 //ensure that top is always read before bottom. loads will not be reordered with other loads on x86, so a compiler barrier is enough.
+//On x86, an mfence instruction is added between the two reads in steal (c) ppopp13 - but a compiler barrier would be enough.
 		std::atomic_thread_fence(std::memory_order_seq_cst);
 		const auto Bottom = _Bottom.load(std::memory_order_acquire);
 // Bottom becomes seq-cst load-acquire with store in pop in total order and syncs with store-release in push
