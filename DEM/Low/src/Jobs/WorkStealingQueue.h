@@ -85,15 +85,20 @@ public:
 			// that reference the old array will not access some new data if its location is overwritten by the new owner of this memory.
 			_Garbage.push_back(pStorage);
 
-			// Use a new array instead of an old one. Until Steal() in other threads see this store, they will access a previous array which remains valid.
-			// Old array doesn't contain our new record, but Bottom is stored with "release" and reading it will imply reading the new array address.
+			// Publish a new storage with store-release, propagating its contents written with relaxed pNewStorage->Set() above.
+			// There is an address dependency from storage ptr to values so the reader can synchronize with consume instead of acquire.
+			_Storage.store(pNewStorage, std::memory_order_release);
+
+			// Use a new array instead of an old one
 			pStorage = pNewStorage;
-			_Storage.store(pNewStorage, std::memory_order_relaxed); //???FIXME: relaxed or release?
 		}
 
 		pStorage->Set(Bottom, NewElement);
 
-		// Publish a new element with store-release, so that stealing threads can see it
+		// Publish a new element with store-release, so that stealing threads can see it. If a resize has happened,
+		// a reader of Bottom will also see a new value of Storage. Until Steal() threads see this change they will
+		// be accessing an old storage. Bottom values will be also old, and values in the old array are preserved at
+		// correct indices and are never destroyed, so there won't be any incorrect access.
 		_Bottom.store(Bottom + 1, std::memory_order_release);
 	}
 
@@ -112,34 +117,41 @@ public:
 
 			const size_t NewBottom = Bottom - 1;
 
-			// Notify concurrent stealing threads that we want to take the bottommost element
+			// Notify concurrent stealing threads that we want to take the bottommost element.
+			// ---
+			// There is a situation in which Pop() could break everything by returning the same element as Steal().
+			// For this to happen, Steal() and Pop() must fight for the last element in a queue, but Pop() must
+			// think that it is not the last element. Then Pop() will not execute CAS on Top and race will occur.
+			// Since Top monotonically increases, this is possible only if Pop() holds a stale value of Top. To be
+			// successful, Steal() must see the latest Top to win CAS and don't yet see --Bottom to proceed to it.
+			// Let: P - pop, S - steal, R - read, W - write, b - bottom, t - top. Then for Pop() to see a stale
+			// Top, it must read it before the last write from Steal() became observable in Pop()'s thread:
+			//   PRt (stale) -> <++Top by sequentially consistent CAS in other S> -> SRt (latest)
+			// In this case the only way for error to happen is when SRb didn't see PWb-1.
+			// a) If PRt -> PWb-1, we can execute a successful Steal() in between and then continue with inactual
+			//    Top. To prevent this, we call PWb-1 before PRt and forbid reordering. Since this is StoreLoad
+			//    pair, we have to make a memory fence, because even on strong x86 StoreLoad reordering is allowed
+			//    at runtime. I.e. even if PWb-1 is executed before PRt, Steal() might not observe it in time.
+			// b) Given PWb-1 -> PRt (by "a") and PRt -> SRt (by definition), SRb -> PWb-1 is still possible, but
+			//    only if SRb -> SRt. Steal() reads Bottom, then Pop() writes Bottom-1, then it reads stale Top,
+			//    then Steal() regains control and reads actual Top. To prevent this, we can simply ensure that
+			//    SRt -> SRb. Then, since Steal() reads actual Top, PWb-1 has also been already propagated to it.
+			// So, either this barrier in Pop() is ordered before barrier in Steal() and it sees actual Bottom
+			// or barrier in Steal() is ordered before this barrier in Pop() and Top that is read in Steal() will
+			// be propagated here. In any case there won't be a situation when Steal() sees a stale Bottom and
+			// Pop() sees a stale Top() at the same time, and this is enough to prevent the undesired behaviour.
 #if DEM_CPU_ARCH_X86_COMPATIBLE
 			// 'xchg' instruction on x86 acts like a memory barrier and is a bit cheaper than 'mfence'
-			//!!!TODO: PROFILE! Other branch generates lock inc, maube it is not slower or even faster! Check in real multithreaded app, optimizations might cut something!
+			//!!!TODO: PROFILE! Other branch generates lock inc, maybe it is not slower or even faster! Check in real multithreaded app, optimizations might cut something!
 			_Bottom.exchange(NewBottom, std::memory_order_seq_cst);
 #else
 			_Bottom.store(NewBottom, std::memory_order_relaxed);
 			std::atomic_thread_fence(std::memory_order_seq_cst);
 #endif
 
-			// There is a situation in which Pop() could break everything by returning the same element as Steal().
-			// For this to happen, Steal() and Pop() must fight for the last element in a queue, but Pop() must
-			// think that it is not the last element. Then Pop() will not execute CAS on Top and race will occur.
-			// Since Top monotonically increases, this is possible only if Pop() holds a stale value of Top,
-			// and Steal() didn't see _Bottom decrement above. To win CAS, our Steal() must see the latest Top.
-			// Let: P - pop, S - steal, R - read, W - write, b - bottom, t - top. Then for Pop() to see a stale
-			// Top, it must read it before the last write from Steal() became observable in Pop()'s thread:
-			//   READ_t = PRt (stale) -> <t incremented by other S> -> SRt (latest)
-			// In this case the only way for error to happen is when SRb didn't see PWb-1 (a store above).
-			// a) If PRt -> ... -> PWb-1, nothing prevents us from executing a successful Steal() inside "..."
-			//    and then continue with inactual Top. To prevent this, we call PWb-1 before PRt and forbid
-			//    reordering. Since this is StoreLoad pair, we have to make a memory fence, because even on
-			//    strong x86 StoreLoad reordering is allowed at runtime. I.e. even if PWb-1 is executed before PRt,
-			//    Steal() has a chance not to observe it in time.
-			// b) Given PWb-1 -> PRt (by "a") and PRt -> SRt (by definition), SRb -> PWb-1 is still possible, but
-			//    only if SRb -> SRt. Steal() reads Bottom, then Pop() writes Bottom-1, then it reads stale Top,
-			//    then Steal() regains control and reads actual Top. To prevent this, we can simply ensure that
-			//    SRt -> SRb. In this case, since we read actual Top, Pop() has already propagated actual Bottom.
+			// The value read here is not older than one read in the latest Steal() which triggered a memory barrier
+			// before the barrier right above. See the comment to _Top.load(...) in Steal(). On x86 there is no barrier
+			// as the value read in Steal() is guaranteed to be propagated to all threads and therefore be seen here.
 			size_t Top = _Top.load(std::memory_order_relaxed);
 
 			if (Top > NewBottom)
@@ -154,9 +166,11 @@ public:
 
 				if (Top == NewBottom)
 				{
-					// The queue contains the last element, must compete for it with Steal(). CAS failure means that we
-					// have lost the race, so our Value was stolen by another consumer and we must not return it.
-					// NB: for the last element Pop() increments Top instead of decrementing Bottom to participate in CAS.
+					// The queue contains the last element, must compete for it with Steal() instances who managed to read
+					// Top and Bottom before we reserved an element by decrementing Bottom. This requires us to
+					// participate in CAS on Top. This is possible because when there is only one element in a queue
+					// we can either decrement bottom or increment top to claim it. CAS failure means that we
+					// have lost the race, so our Value is stolen by another consumer and we must not return it.
 					if (!_Top.compare_exchange_strong(Top, Top + 1, std::memory_order_seq_cst, std::memory_order_relaxed))
 						Value = {};
 
@@ -173,47 +187,47 @@ public:
 	// FIFO. Can be called from any thread.
 	T Steal()
 	{
-// The reason is that it must be guaranteed that the load operation in steal sees the updated value written in pop.
-// Otherwise you could have a race condition where the same item could be returned twice(once from pop and once from steal).
-//-
-// A very crucial thing to note here is that top is always read before bottom, ensuring that the values represent a consistent
-// view of the memory. Still, a subtle race may occur if the deque is emptied by a concurrent Pop() after bottom is read and before
-// the CAS is executed. We need to ensure that no concurrent Pop() and Steal() operations both return the last job remaining in the deque,
-// which is achieved by also trying to modify top in the implementation of Pop() using a CAS operation.
-		const auto Top = _Top.load(std::memory_order_acquire);
+		// Read Top synchronized with the global-order-previous write by CAS, making a total order:
+		//  (++Top in latest CAS) -> (this load-acquire) -> (fence right below)
+		// On weak architectures this may not synchronize with Bottom changes from Pop() because its thread didn't
+		// perform CAS. Anyway this operation prevents a compiler from reordering instructions, which is important
+		// for x86 where it is enough here for a proper sync.
+		auto Top = _Top.load(std::memory_order_acquire);
 
-		/*
-		// Possibly inactual Bottom will lead to a false negative (empty queue, nothing to steal), but it saves
-		// us from hitting unnecessary std::memory_order_seq_cst fence at each Steal() on empty queues
-		const auto Bottom = _Bottom.load(std::memory_order_acquire);
-		if (Top >= Bottom) return {};
-		*/
+		// Value of Bottom must not be older than a Top value we've just read. See the long comment in Pop(), near writing
+		// NewBottom into _Bottom, case "b". This is LoadLoad pair, so on weak memory architectures a runtime reordering
+		// may occur, and we need a memory barrier to see an actual value of Bottom. In x86 strong memory model LoadLoad
+		// can't be reordered at runtime, so a compiler barrier is enough. We will either read an actual Bottom if Pop()
+		// already stored it, or the Pop() will read an actual Top() because we just have read it and x86 memory model
+		// guarantees that its value is now visible to all threads.
+#if !DEM_CPU_ARCH_X86_COMPATIBLE
+		// Possibly inactual Bottom will lead to a false negative (seeing the queue empty when it isn't), but it
+		// saves us from hitting unnecessary std::memory_order_seq_cst fence at each Steal() on empty queues
+		if (Top >= _Bottom.load(std::memory_order_relaxed)) return {};
 
-//???WHY IN MOLECULAR IS THIS???
-//ensure that top is always read before bottom. loads will not be reordered with other loads on x86, so a compiler barrier is enough.
-//On x86, an mfence instruction is added between the two reads in steal (c) ppopp13 - but a compiler barrier would be enough.
 		std::atomic_thread_fence(std::memory_order_seq_cst);
+#endif
+
+		// This read is either synchronized with:
+		// - some of previous writes in Push(), propagating actual _Storage and added element here
+		// - latest Pop() which reserved an element and triggered a memory barrier (or simply latest on x86)
+		// So we either will read an actual element or won't compete for the last element which is reserved.
 		const auto Bottom = _Bottom.load(std::memory_order_acquire);
-// Bottom becomes seq-cst load-acquire with store in pop in total order and syncs with store-release in push
 
 		// The queue is empty, nothing to steal
 		if (Top >= Bottom) return {};
 
-		auto Elements = _Elements.load(std::memory_order_consume);
+		// Load an address of the storage and exploit address dependency to consume element values written during resize
+		CStorage* pStorage = _Storage.load(std::memory_order_consume);
 
-		//???!!!capacity isn't protected now!? prevoiusly it was stored inside an array and was obtained with pointer!
-		//!!!FIXME: now Elements may not match _Capacity! And even if no problem here because of the same thread, Steal() may suffer!
-		//???allocate new array as a single buffer? store both capacity & fixed number of elements there? how about alignment? is worth? rare operation!
-		T Value = Elements[Top & (_Capacity - 1)].load(std::memory_order_relaxed);
+		// Read a value before CAS. In the case of successful CAS this slot will become free and can be refilled
+		// with Push() because the buffer is curcular and when it is full the next Bottom will map to this Top.
+		// CAS itself serves as a barrier so this read will not be reordered past it.
+		//!!!FIXME: isn't it solved by simply treating capacity as being 1 less than real? Or multiple Push() will still break it?
+		T Value = pStorage->Get(Top);
 
-//Since the algorithm uses a cyclic array, it is important to read the element from the array before we do
-//the CAS, because after the CAS completes, this location may be refilled with a new value by a concurrent pushBottom operation.
-//-
-//Note that it is important to read the job before carrying out the CAS, because the location in the array could be overwritten
-//by concurrent Push() operations happening after the CAS has completed.
-//-
-//Additionally, we would need another barrier that guarantees that the read from the array is carried out before the CAS.
-//In this case however, the interlocked function acts as a compiler barrier implicitly.
+		// Compete with other Steal() threads. In case of the last element there is also possible to compete with Pop()
+		// if we reat Top & Bottom first and then Pop() tries to claim an element with CAS.
 		if (!_Top.compare_exchange_strong(Top, Top + 1, std::memory_order_seq_cst, std::memory_order_relaxed))
 			Value = {};
 
