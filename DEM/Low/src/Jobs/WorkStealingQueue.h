@@ -14,22 +14,22 @@ namespace DEM::Jobs
 template<typename T>
 class CWorkStealingQueue final
 {
-	static_assert(std::atomic<T>::is_always_lock_free, "Consider using a lock-free atomic type to avoid performance penalty");
-
 private:
 
+	// Elements need not to be atomic because they are synchronized with other (stealing) threads either by
+	// read-acquire of _Bottom or read-consume of _Storage which guarantee payload to be fully observed. See:
+	// https://preshing.com/20130823/the-synchronizes-with-relation/
+	// https://preshing.com/20140709/the-purpose-of-memory_order_consume-in-cpp11/
 	struct CStorage
 	{
-		size_t          Capacity;
-		size_t          Mask;
-		std::atomic<T>* Elements;
+		size_t Capacity;
+		size_t Mask;
+		T*     Elements;
 
-		CStorage(size_t Capacity_) : Capacity(Capacity_), Mask(Capacity_ - 1), Elements(new std::atomic<T>[Capacity_]) {}
+		CStorage(size_t Capacity_) : Capacity(Capacity_), Mask(Capacity_ - 1), Elements(new T[Capacity_]) {}
 
-		//???FIXME: why elements need to be atomic?! who might read their values when being stored? is this because of resizing?
-		//when push writes to the slot where steal steals? can happen if maxsize = capacity - 1?
-		T Get(size_t Index) const { return Elements[Index & Mask].load(std::memory_order_relaxed); }
-		void Set(size_t Index, T Value) const { Elements[Index & Mask].store(Value, std::memory_order_relaxed); }
+		T Get(size_t Index) const { return Elements[Index & Mask]; }
+		void Set(size_t Index, T Value) const { Elements[Index & Mask] = std::move(Value); }
 	};
 
 	std::atomic<size_t>    _Bottom;  // Written only in Push() and Pop()
@@ -115,8 +115,6 @@ public:
 		{
 			CStorage* pStorage = _Storage.load(std::memory_order_relaxed);
 
-			const size_t NewBottom = Bottom - 1;
-
 			// Notify concurrent stealing threads that we want to take the bottommost element.
 			// ---
 			// There is a situation in which Pop() could break everything by returning the same element as Steal().
@@ -140,9 +138,11 @@ public:
 			// or barrier in Steal() is ordered before this barrier in Pop() and Top that is read in Steal() will
 			// be propagated here. In any case there won't be a situation when Steal() sees a stale Bottom and
 			// Pop() sees a stale Top() at the same time, and this is enough to prevent the undesired behaviour.
+			const size_t NewBottom = Bottom - 1;
 #if DEM_CPU_ARCH_X86_COMPATIBLE
-			// 'xchg' instruction on x86 acts like a memory barrier and is a bit cheaper than 'mfence'
-			//!!!TODO: PROFILE! Other branch generates lock inc, maybe it is not slower or even faster! Check in real multithreaded app, optimizations might cut something!
+			// x86 'xchg' and 'lock *' instructions act like a memory barrier and are a bit cheaper than 'mfence'.
+			// See https://stackoverflow.com/questions/60332591/why-is-lock-a-full-barrier-on-x86.
+			//!!!TODO: PROFILE! Other branch generates lock inc, maybe it is not slower or even faster than xchg! Check in real multithreaded app, optimizations might cut something!
 			_Bottom.exchange(NewBottom, std::memory_order_seq_cst);
 #else
 			_Bottom.store(NewBottom, std::memory_order_relaxed);
@@ -154,30 +154,27 @@ public:
 			// as the value read in Steal() is guaranteed to be propagated to all threads and therefore be seen here.
 			size_t Top = _Top.load(std::memory_order_relaxed);
 
-			if (Top > NewBottom)
+			if (Top < NewBottom)
 			{
-				// The queue is empty, undo Bottom decrement, resetting the queue to the canonical empty state (Bottom == Top)
-				_Bottom.store(Bottom, std::memory_order_relaxed);
+				// More than one element left. Simply read a value, there is no concurrency for it.
+				Value = pStorage->Get(NewBottom);
 			}
 			else
 			{
-				//???FIXME: why reading now? Push() can't take this slot because it is in the same thread with us!
-				Value = pStorage->Get(NewBottom);
-
 				if (Top == NewBottom)
 				{
 					// The queue contains the last element, must compete for it with Steal() instances who managed to read
 					// Top and Bottom before we reserved an element by decrementing Bottom. This requires us to
 					// participate in CAS on Top. This is possible because when there is only one element in a queue
-					// we can either decrement bottom or increment top to claim it. CAS failure means that we
-					// have lost the race, so our Value is stolen by another consumer and we must not return it.
-					if (!_Top.compare_exchange_strong(Top, Top + 1, std::memory_order_seq_cst, std::memory_order_relaxed))
-						Value = {};
-
-					// Whether we won or lost the race, Top is now incremented, so Bottom decrement must be undone.
-					// Stealing threads will eventually observe this, but we don't need to hurry.
-					_Bottom.store(Bottom, std::memory_order_relaxed);
+					// we can either decrement bottom or increment top to claim it.
+					if (_Top.compare_exchange_strong(Top, Top + 1, std::memory_order_seq_cst, std::memory_order_relaxed))
+						Value = pStorage->Get(NewBottom);
 				}
+
+				// Whether the queue is empty or we won or lost the race for the last element, a Bottom decrement must be undone.
+				// In the first case we reserved inexistent element, in the second (CAS) Top was modified instead of Bottom.
+				// Stealing threads will eventually observe this store, but we don't need to hurry.
+				_Bottom.store(Bottom, std::memory_order_relaxed);
 			}
 		}
 
@@ -210,26 +207,30 @@ public:
 
 		// This read is either synchronized with:
 		// - some of previous writes in Push(), propagating actual _Storage and added element here
-		// - latest Pop() which reserved an element and triggered a memory barrier (or simply latest on x86)
+		// - latest Pop() which reserved an element and triggered a memory barrier (simply latest Pop() on x86)
 		// So we either will read an actual element or won't compete for the last element which is reserved.
 		const auto Bottom = _Bottom.load(std::memory_order_acquire);
 
-		// The queue is empty, nothing to steal
-		if (Top >= Bottom) return {};
+		T Value{};
 
-		// Load an address of the storage and exploit address dependency to consume element values written during resize
-		CStorage* pStorage = _Storage.load(std::memory_order_consume);
+		// Check that the queue is not empty
+		if (Top < Bottom)
+		{
+			// Load an address of the storage and exploit address dependency to consume element values written during resize
+			CStorage* pStorage = _Storage.load(std::memory_order_consume);
 
-		// Read a value before CAS. In the case of successful CAS this slot will become free and can be refilled
-		// with Push() because the buffer is curcular and when it is full the next Bottom will map to this Top.
-		// CAS itself serves as a barrier so this read will not be reordered past it.
-		//!!!FIXME: isn't it solved by simply treating capacity as being 1 less than real? Or multiple Push() will still break it?
-		T Value = pStorage->Get(Top);
+			// Read a value before CAS. In the case of successful CAS this slot will become free and can be refilled
+			// with Push() because the buffer is curcular and when it is full the next Bottom will map to this Top.
+			// CAS itself serves as a barrier so this read will not be reordered past it. Note that reserving the last
+			// element is not enough because any number of Steal() instances can be preempted right after CAS and
+			// any number of Push() instances can follow, overwriting slots to which pending steals are targeting.
+			T Value = pStorage->Get(Top);
 
-		// Compete with other Steal() threads. In case of the last element there is also possible to compete with Pop()
-		// if we reat Top & Bottom first and then Pop() tries to claim an element with CAS.
-		if (!_Top.compare_exchange_strong(Top, Top + 1, std::memory_order_seq_cst, std::memory_order_relaxed))
-			Value = {};
+			// Compete with other Steal() threads. In case of the last element there is also possible to compete with Pop()
+			// if we reat Top & Bottom first and then Pop() tries to claim an element with CAS.
+			if (!_Top.compare_exchange_strong(Top, Top + 1, std::memory_order_seq_cst, std::memory_order_relaxed))
+				Value = {};
+		}
 
 		return Value;
 	}
