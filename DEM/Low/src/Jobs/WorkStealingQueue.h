@@ -26,7 +26,7 @@ private:
 		size_t Mask;
 		T*     Elements;
 
-		CStorage(size_t Capacity_) : Capacity(Capacity_), Mask(Capacity_ - 1), Elements(new T[Capacity_]) {}
+		CStorage(size_t Capacity_) : Capacity(Capacity_), Mask(Capacity_ - 1), Elements(new(std::nothrow) T[Capacity_]) {}
 
 		T Get(size_t Index) const { return Elements[Index & Mask]; }
 		void Set(size_t Index, T Value) const { Elements[Index & Mask] = std::move(Value); }
@@ -47,7 +47,7 @@ public:
 	CWorkStealingQueue(size_t Capacity = 256)
 	{
 		// NB: effective capacity must be a power of 2
-		_Storage.store(new CStorage(std::max<size_t>(2, Math::NextPow2(Capacity))), std::memory_order_relaxed);
+		_Storage.store(new(std::nothrow) CStorage(std::max<size_t>(2, Math::NextPow2(Capacity))), std::memory_order_relaxed);
 		_Top.store(0, std::memory_order_relaxed);
 		_Bottom.store(0, std::memory_order_relaxed);
 	}
@@ -75,7 +75,7 @@ public:
 			// TODO: if (Bottom == std::numeric_limits<size_t>().max()) - how to reset?! Start returning false, so that calling code can wait all jobs and recreate queue then?
 
 			// Allocate a new buffer twice as big, its capacity is also a power of 2
-			CStorage* pNewStorage = new CStorage(pStorage->Capacity << 1);
+			CStorage* pNewStorage = new(std::nothrow) CStorage(pStorage->Capacity << 1);
 
 			// Copy elements to the same indices in the new array. Other threads still see an old array as the source for Pop and Steal.
 			for (size_t i = Top; i < Bottom; ++i)
