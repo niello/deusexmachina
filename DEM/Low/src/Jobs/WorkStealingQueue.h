@@ -113,8 +113,6 @@ public:
 		// only grows. So actual Top gives us a useful early exit and inactual Top does no harm.
 		if (_Top.load(std::memory_order_relaxed) < Bottom)
 		{
-			CStorage* pStorage = _Storage.load(std::memory_order_relaxed);
-
 			// Notify concurrent stealing threads that we want to take the bottommost element.
 			// ---
 			// There is a situation in which Pop() could break everything by returning the same element as Steal().
@@ -144,6 +142,7 @@ public:
 			// See https://stackoverflow.com/questions/60332591/why-is-lock-a-full-barrier-on-x86.
 			//!!!TODO: PROFILE! Other branch generates lock inc, maybe it is not slower or even faster than xchg! Check in real multithreaded app, optimizations might cut something!
 			_Bottom.exchange(NewBottom, std::memory_order_seq_cst);
+			//_Bottom.store(NewBottom, std::memory_order_seq_cst);
 #else
 			_Bottom.store(NewBottom, std::memory_order_relaxed);
 			std::atomic_thread_fence(std::memory_order_seq_cst);
@@ -157,7 +156,7 @@ public:
 			if (Top < NewBottom)
 			{
 				// More than one element left. Simply read a value, there is no concurrency for it.
-				Value = pStorage->Get(NewBottom);
+				Value = _Storage.load(std::memory_order_relaxed)->Get(NewBottom);
 			}
 			else
 			{
@@ -168,7 +167,7 @@ public:
 					// participate in CAS on Top. This is possible because when there is only one element in a queue
 					// we can either decrement bottom or increment top to claim it.
 					if (_Top.compare_exchange_strong(Top, Top + 1, std::memory_order_seq_cst, std::memory_order_relaxed))
-						Value = pStorage->Get(NewBottom);
+						Value = _Storage.load(std::memory_order_relaxed)->Get(NewBottom);
 				}
 
 				// Whether the queue is empty or we won or lost the race for the last element, a Bottom decrement must be undone.
@@ -186,9 +185,10 @@ public:
 	{
 		// Read Top synchronized with the global-order-previous write by CAS, making a total order:
 		//  (++Top in latest CAS) -> (this load-acquire) -> (fence right below)
-		// On weak architectures this may not synchronize with Bottom changes from Pop() because its thread didn't
-		// perform CAS. Anyway this operation prevents a compiler from reordering instructions, which is important
-		// for x86 where it is enough here for a proper sync.
+		// As acquire, this won't be reordered with operations below. On weak architectures this may not
+		// synchronize with Bottom changes from Pop() because its thread didn't perform CAS. Anyway this
+		// operation prevents a compiler from reordering instructions, which is important for x86 where it
+		// is enough here for a proper sync.
 		auto Top = _Top.load(std::memory_order_acquire);
 
 		// Value of Bottom must not be older than a Top value we've just read. See the long comment in Pop(), near writing

@@ -166,7 +166,10 @@ foreach(_TARGET_NAME IN LISTS DEM_TARGETS)
 		if(DEM_DISABLE_CXX_RTTI)
 			target_compile_options(${_TARGET_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
 		endif()
-		target_compile_options(${_TARGET_NAME} PRIVATE "/Zc:__cplusplus")
+		target_compile_options(${_TARGET_NAME} PRIVATE
+			"/Zc:__cplusplus"
+			"$<$<CONFIG:RelWithDebInfo>:/Ob2>" # CMake sets /Ob1 by default for RelWithDebInfo, preventing inlining in critical code like std::atomic, making profiling not representative
+		)
 	endif()
 
 endforeach()

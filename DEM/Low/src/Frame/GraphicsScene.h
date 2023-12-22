@@ -23,7 +23,7 @@ class CRenderableAttribute;
 class CLightAttribute;
 
 // TODO: make template class TTree<DIMENSIONS, CODE_TYPE> and move these constants and quadtree/octree utility methods into it?
-#if DEM_64
+#if DEM_CPU_64
 using TSceneMorton = U64;
 using TSceneCellDim = U32; // Max 31 bits for quadtree, 21 bits for octree
 #else

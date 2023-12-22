@@ -22,10 +22,33 @@ constexpr size_t INVALID_INDEX = ~static_cast<size_t>(0);
 template<typename T, size_t N>
 constexpr size_t sizeof_array(const T(&)[N]) { return N; }
 
-#if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64)
-#define DEM_64 (1)
+// See https://sourceforge.net/p/predef/wiki/Architectures/
+#if defined(__x86_64__) || defined(__x86_64) || defined(_M_X64) || defined(__amd64__) || defined(__amd64) || defined(_M_AMD64)
+#define DEM_CPU_ARCH_X86_64 (1)
+#elif defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
+#define DEM_CPU_ARCH_X86 (1)
+#elif defined(__aarch64__) || defined(_M_ARM64)
+#define DEM_CPU_ARCH_ARM64 (1)
+#endif
+
+#if DEM_CPU_ARCH_X86_64 || DEM_CPU_ARCH_ARM64
+#define DEM_CPU_64 (1)
 #else
-#define DEM_32 (1)
+#define DEM_CPU_32 (1)
+#endif
+
+#if DEM_CPU_ARCH_X86_64 || DEM_CPU_ARCH_X86
+#define DEM_CPU_ARCH_X86_COMPATIBLE (1)
+#define DEM_CPU_REORDER_LOAD_LOAD (0)
+#define DEM_CPU_REORDER_LOAD_STORE (0)
+#define DEM_CPU_REORDER_STORE_LOAD (1)
+#define DEM_CPU_REORDER_STORE_STORE (0)
+#else
+// Imagine the worst case by default
+#define DEM_CPU_REORDER_LOAD_LOAD (1)
+#define DEM_CPU_REORDER_LOAD_STORE (1)
+#define DEM_CPU_REORDER_STORE_LOAD (1)
+#define DEM_CPU_REORDER_STORE_STORE (1)
 #endif
 
 #if defined(__BMI2__) || defined(__AVX2__)
