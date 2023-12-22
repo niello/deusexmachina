@@ -117,6 +117,14 @@ typedef UPTR				HHandle;
     #define DEM_FORCE_INLINE inline
 #endif
 
+#ifdef _MSC_VER
+    #define DEM_NO_INLINE __declspec(noinline)
+#elif defined(__GNUC__) ||  defined(__CLANG__)
+	#define DEM_FORCE_INLINE __attribute__((noinline))
+#else
+    #define DEM_NO_INLINE
+#endif
+
 //---------------------------------------------------------------------
 // Template magic not in std (yet?)
 //---------------------------------------------------------------------

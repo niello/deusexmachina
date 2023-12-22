@@ -36,11 +36,31 @@ private:
 	std::atomic<CStorage*> _Storage; // Written only in Push()
 	std::vector<CStorage*> _Garbage; // Written only in Push()
 
-	// Skip remaining part of a ceche line and a one more whole cache line (due to prefetch) between _Top and other fields to prevent false sharing
+	// Skip remaining part of a cache line and one more whole cache line (due to prefetch) between _Top and other fields to prevent false sharing
 	alignas(std::hardware_destructive_interference_size) char _PAD[std::hardware_destructive_interference_size];
 
 	alignas(std::hardware_destructive_interference_size)
 	std::atomic<size_t>    _Top;     // Written with sequentially consistent CAS in Steal() and rarely in Pop()
+
+	DEM_NO_INLINE CStorage* Grow(CStorage* pStorage, size_t Top, size_t Bottom)
+	{
+		// Allocate a new buffer twice as big, its capacity is also a power of 2
+		CStorage* pNewStorage = new(std::nothrow) CStorage(pStorage->Capacity << 1);
+
+		// Copy elements to the same indices in the new array. Other threads still see an old array as the source for Pop and Steal.
+		for (size_t i = Top; i < Bottom; ++i)
+			pNewStorage->Set(i, pStorage->Get(i));
+
+		// This prevents an allocator from reusing the same memory addresses. This guarantees that interrupted Steal() operations
+		// that reference the old array will not access some new data if its location is overwritten by the new owner of this memory.
+		_Garbage.push_back(pStorage);
+
+		// Publish a new storage with store-release, propagating its contents written with relaxed pNewStorage->Set() above.
+		// There is an address dependency from storage ptr to values so the reader can synchronize with consume instead of acquire.
+		_Storage.store(pNewStorage, std::memory_order_release);
+
+		return pNewStorage;
+	}
 
 public:
 
@@ -62,35 +82,18 @@ public:
 	// Called only from an owner thread
 	void Push(T NewElement)
 	{
-		//if (NewElement == {}) return;
-
 		const size_t Bottom = _Bottom.load(std::memory_order_relaxed);
 		const size_t Top = _Top.load(std::memory_order_acquire);
 		CStorage* pStorage = _Storage.load(std::memory_order_relaxed);
 
 		// Resize a queue if it is full.
 		// The last cell in the array remains unused for possible extension according to Chase & Lev paper p.4.1, when a full array indicates an empty array.
-		if (Bottom >= Top + pStorage->Capacity - 1)
+		if (Bottom >= Top + pStorage->Capacity - 1) // TODO: C++20 [[unlikely]]
 		{
 			// TODO: if (Bottom == std::numeric_limits<size_t>().max()) - how to reset?! Start returning false, so that calling code can wait all jobs and recreate queue then?
 
-			// Allocate a new buffer twice as big, its capacity is also a power of 2
-			CStorage* pNewStorage = new(std::nothrow) CStorage(pStorage->Capacity << 1);
-
-			// Copy elements to the same indices in the new array. Other threads still see an old array as the source for Pop and Steal.
-			for (size_t i = Top; i < Bottom; ++i)
-				pNewStorage->Set(i, pStorage->Get(i));
-
-			// This prevents an allocator from reusing the same memory addresses. This guarantees that interrupted Steal() operations
-			// that reference the old array will not access some new data if its location is overwritten by the new owner of this memory.
-			_Garbage.push_back(pStorage);
-
-			// Publish a new storage with store-release, propagating its contents written with relaxed pNewStorage->Set() above.
-			// There is an address dependency from storage ptr to values so the reader can synchronize with consume instead of acquire.
-			_Storage.store(pNewStorage, std::memory_order_release);
-
 			// Use a new array instead of an old one
-			pStorage = pNewStorage;
+			pStorage = Grow(pStorage, Top, Bottom);
 		}
 
 		pStorage->Set(Bottom, NewElement);
@@ -138,11 +141,10 @@ public:
 			// Pop() sees a stale Top() at the same time, and this is enough to prevent the undesired behaviour.
 			const size_t NewBottom = Bottom - 1;
 #if DEM_CPU_ARCH_X86_COMPATIBLE
-			// x86 'xchg' and 'lock *' instructions act like a memory barrier and are a bit cheaper than 'mfence'.
+			// RMW here generates x86 'xchg' instruction that acts like a memory barrier and is a bit cheaper than a
+			// separate fence, being it 'mfence' or 'mov' + 'lock inc' on an internal guard variable (MSVC does that).
 			// See https://stackoverflow.com/questions/60332591/why-is-lock-a-full-barrier-on-x86.
-			//!!!TODO: PROFILE! Other branch generates lock inc, maybe it is not slower or even faster than xchg! Check in real multithreaded app, optimizations might cut something!
 			_Bottom.exchange(NewBottom, std::memory_order_seq_cst);
-			//_Bottom.store(NewBottom, std::memory_order_seq_cst);
 #else
 			_Bottom.store(NewBottom, std::memory_order_relaxed);
 			std::atomic_thread_fence(std::memory_order_seq_cst);
@@ -224,7 +226,7 @@ public:
 			// CAS itself serves as a barrier so this read will not be reordered past it. Note that reserving the last
 			// element is not enough because any number of Steal() instances can be preempted right after CAS and
 			// any number of Push() instances can follow, overwriting slots to which pending steals are targeting.
-			T Value = pStorage->Get(Top);
+			Value = pStorage->Get(Top);
 
 			// Compete with other Steal() threads. In case of the last element there is also possible to compete with Pop()
 			// if we reat Top & Bottom first and then Pop() tries to claim an element with CAS.
