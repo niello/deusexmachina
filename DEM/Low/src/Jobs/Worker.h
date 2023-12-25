@@ -11,12 +11,14 @@ class CWorker final
 {
 protected:
 
-	// CJob - to CJobSystem or separate header? Job = dependency counter + std::function
+	// CJob - to CJobSystem or separate header? Job = dependency counter + std::function. Or store counter only in a wait list?
+	// also job must store a list of counters (or always a single one?) which it must decrement when it is finished.
 
 	//CWorkStealingQueue<CJob*>
 	//CPoolAllocator<CJob> - ensure works well when the job is stolen, how to free job in the allocation thread, not in stealing thread?! Allocate aligned by cacheline.
 	//Random generator
 	//mutex and conditional variable for sleeping when there are no jobs; or a single cond var in a CJobSystem?! local queue can't be pushed in when the thread sleeps.
+	//???wait list for jobs with dependencies? need pool allocator for waiting nodes
 
 	CJobSystem& _Owner;
 	uint32_t    _Index = std::numeric_limits<uint32_t>().max();
@@ -29,7 +31,7 @@ public:
 	{
 	}
 
-	bool MainLoop();
+	void MainLoop();
 
 	//???or in a CJobSystem, by index?
 	// SetAffinity
