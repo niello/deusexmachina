@@ -1,8 +1,7 @@
 #pragma once
 #include "WorkStealingQueue.h"
-#include <thread>
 
-// A worker thread wrapper. After construction, all its fields are intended for access from the contained thread.
+// Implements a worker thread logic. After construction, all its fields are intended for access from the corresponding thread only.
 
 namespace DEM::Jobs
 {
@@ -19,25 +18,20 @@ protected:
 	//Random generator
 	//mutex and conditional variable for sleeping when there are no jobs; or a single cond var in a CJobSystem?! local queue can't be pushed in when the thread sleeps.
 
-	CJobSystem* _pOwner = nullptr;
-	uint32_t    _ID = std::numeric_limits<uint32_t>().max();
-	std::thread _Thread;
+	CJobSystem& _Owner;
+	uint32_t    _Index = std::numeric_limits<uint32_t>().max();
 
 public:
 
-	CWorker(CWorker&& Other) noexcept = default;
-
-	CWorker(CJobSystem& Owner, uint32_t ID, std::thread&& Thread)
-		: _pOwner(&Owner)
-		, _ID(ID)
-		, _Thread(std::move(Thread))
+	CWorker(CJobSystem& Owner, uint32_t Index)
+		: _Owner(Owner)
+		, _Index(Index)
 	{
 	}
 
-	~CWorker();
-
 	bool MainLoop();
 
+	//???or in a CJobSystem, by index?
 	// SetAffinity
 	// SetCapabilities (mask - main thread, render context etc)
 };
