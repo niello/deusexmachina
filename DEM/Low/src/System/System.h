@@ -46,6 +46,7 @@ namespace Sys
 
 	// Threading
 	void			Sleep(unsigned long MSec); //!!!???to Thread namespace/class?!
+	void            SetCurrentThreadName(std::string_view Name);
 
 	// Input
 	bool			GetKeyName(U8 ScanCode, bool ExtendedKey, CString& OutName);

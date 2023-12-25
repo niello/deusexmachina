@@ -168,6 +168,8 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/IO/Streams/FileStream.h
 	DEM/Low/src/IO/Streams/MemStream.h
 	DEM/Low/src/IO/Streams/ScopedStream.h
+	DEM/Low/src/Jobs/JobSystem.h
+	DEM/Low/src/Jobs/Worker.h
 	DEM/Low/src/Jobs/WorkStealingQueue.h
 	DEM/Low/src/Math/AABB.h
 	DEM/Low/src/Math/CameraMath.h
@@ -452,6 +454,8 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/IO/Streams/FileStream.cpp
 	DEM/Low/src/IO/Streams/MemStream.cpp
 	DEM/Low/src/IO/Streams/ScopedStream.cpp
+	DEM/Low/src/Jobs/JobSystem.cpp
+	DEM/Low/src/Jobs/Worker.cpp
 	DEM/Low/src/Math/AABB.cpp
 	DEM/Low/src/Math/Math.cpp
 	DEM/Low/src/Math/Matrix33.cpp

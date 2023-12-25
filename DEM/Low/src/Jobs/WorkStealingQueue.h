@@ -112,8 +112,8 @@ public:
 
 		const size_t Bottom = _Bottom.load(std::memory_order_relaxed);
 
-		// Top may be out of date in our thread at the moment, but then it is less than actual, since Top
-		// only grows. So actual Top gives us a useful early exit and inactual Top does no harm.
+		// Top may be out of date in our thread at the moment, but then it is less than an actual Top, since it
+		// only grows. Actual Top here gives us a useful early exit and inactual Top does no harm.
 		if (_Top.load(std::memory_order_relaxed) < Bottom)
 		{
 			// Notify concurrent stealing threads that we want to take the bottommost element.
@@ -173,7 +173,7 @@ public:
 				}
 
 				// Whether the queue is empty or we won or lost the race for the last element, a Bottom decrement must be undone.
-				// In the first case we reserved inexistent element, in the second (CAS) Top was modified instead of Bottom.
+				// In the first case we reserved inexistent element. In the second case Top was modified instead of Bottom by CAS.
 				// Stealing threads will eventually observe this store, but we don't need to hurry.
 				_Bottom.store(Bottom, std::memory_order_relaxed);
 			}

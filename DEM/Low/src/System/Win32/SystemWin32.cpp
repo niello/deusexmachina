@@ -70,6 +70,13 @@ void Sleep(unsigned long MSec)
 }
 //---------------------------------------------------------------------
 
+void SetCurrentThreadName(std::string_view Name)
+{
+	const std::wstring WName(Name.cbegin(), Name.cend());
+	::SetThreadDescription(::GetCurrentThread(), WName.c_str());
+}
+//---------------------------------------------------------------------
+
 bool GetKeyName(U8 ScanCode, bool ExtendedKey, CString& OutName)
 {
 	//???build DEM KeyCode -> Key name table?
