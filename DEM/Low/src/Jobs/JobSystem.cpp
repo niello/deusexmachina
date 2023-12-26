@@ -31,7 +31,12 @@ CJobSystem::CJobSystem(uint32_t ThreadCount, std::string_view ThreadNamePrefix)
 	{
 		_Threads.emplace_back([this, i, ThreadCount, &ThreadNamePrefixStr, &ThreadsStarted, &ThreadsStartedMutex, &ThreadsStartedCV]
 		{
-			Sys::SetCurrentThreadName(ThreadNamePrefixStr + std::to_string(i));
+			const std::string ThreadName = ThreadNamePrefixStr + std::to_string(i);
+			Sys::SetCurrentThreadName(ThreadName);
+			tracy::SetThreadName(ThreadName.c_str());
+
+			// FIXME: must be more clever! E.g. allow both main and hyperthreading processors, don't set affinity for I/O threads etc.
+			Sys::SetCurrentThreadAffinity(i);
 
 			// Let the system know that we are ready to go. Wake up the constructor thread if we were the last.
 			{

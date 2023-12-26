@@ -77,6 +77,12 @@ void SetCurrentThreadName(std::string_view Name)
 }
 //---------------------------------------------------------------------
 
+void SetCurrentThreadAffinity(size_t CPUIndex)
+{
+	::SetThreadAffinityMask(::GetCurrentThread(), (1 << CPUIndex));
+}
+//---------------------------------------------------------------------
+
 bool GetKeyName(U8 ScanCode, bool ExtendedKey, CString& OutName)
 {
 	//???build DEM KeyCode -> Key name table?

@@ -15,13 +15,8 @@ void CWorker::Init(CJobSystem& Owner, uint32_t Index)
 // Implements https://taskflow.github.io/taskflow/icpads20.pdf with some changes
 void CWorker::MainLoop()
 {
-	//!!!DBG TMP! Just to show all threads in Tracy ////////
-	{
-		ZoneScopedN("THREAD_INIT");
-		using namespace std::chrono_literals;
-		std::this_thread::sleep_for(1ms);
-	}
-	////////////////////////////////////////////////////////
+	//!!!DBG TMP!
+	ZoneScopedN("DBG THREAD LOOP");
 
 	const size_t MaxStealsBeforeYield = 2 * (_pOwner->GetWorkerThreadCount() + 1);
 	const size_t MaxStealAttempts = MaxStealsBeforeYield * 64;
