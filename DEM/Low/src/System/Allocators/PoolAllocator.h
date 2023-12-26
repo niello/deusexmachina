@@ -119,12 +119,14 @@ public:
 	}
 };
 
-template<typename T, UPTR ObjectsPerChunk = 128>
+template<typename T, UPTR Alignment = alignof(T), UPTR ObjectsPerChunk = 128>
 class CPool final
 {
 private:
 
-	CPoolAllocator<sizeof(T), alignof(T), ObjectsPerChunk> _Allocator;
+	static_assert(Alignment >= alignof(T), "Can't use alignment that is less than the object itself requires");
+
+	CPoolAllocator<sizeof(T), Alignment, ObjectsPerChunk> _Allocator;
 
 public:
 

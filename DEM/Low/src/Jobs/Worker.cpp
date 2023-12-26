@@ -1,22 +1,106 @@
 #include "Worker.h"
+#include <Jobs/JobSystem.h>
+#include <random>
 
 namespace DEM::Jobs
 {
 
+void CWorker::Init(CJobSystem& Owner, uint32_t Index)
+{
+	_pOwner = &Owner;
+	_Index = Index;
+}
+//---------------------------------------------------------------------
+
+// Implements https://taskflow.github.io/taskflow/icpads20.pdf with some changes
 void CWorker::MainLoop()
 {
-	//!!!DBG TMP!
-	ZoneScopedN("THREAD");
-	using namespace std::chrono_literals;
-	std::this_thread::sleep_for(400ms);
+	//!!!DBG TMP! Just to show all threads in Tracy ////////
+	{
+		ZoneScopedN("THREAD_INIT");
+		using namespace std::chrono_literals;
+		std::this_thread::sleep_for(1ms);
+	}
+	////////////////////////////////////////////////////////
 
-	//???!!!if termination, return right from loop?!
-	// while (auto pJob = _Queue.Pop()) *pJob(/*this, pJob*/);
+	const size_t MaxStealsBeforeYield = 2 * (_pOwner->GetWorkerThreadCount() + 1);
+	const size_t MaxStealAttempts = MaxStealsBeforeYield * 64;
 
-	//???!!!if termination, return right from loop?!
-	// try steal from random victims, make some attempts, yelding intermediately
+	// TODO: use own WELL512?
+	std::default_random_engine VictimRNG{ std::random_device{}() };
+	std::uniform_int_distribution<size_t> GetRandomVictim(0, _pOwner->GetWorkerThreadCount() - 2); // Exclude the current worker from the range, see generation below
+	size_t Victim = _pOwner->GetWorkerThreadCount(); // Start stealing from the main thread
 
-	// sleep until woken up by incoming tasks or until termination is requested
+	// Main loop of the worker thread implements a state-machine of 3 states: local queue loop, stealing loop and sleeping.
+	while (true)
+	{
+		// Process the local queue until it is empty or until termination is requested
+		while (true)
+		{
+			auto pJob = _Queue.Pop();
+			if (_pOwner->IsTerminationRequested() /*|| (Counter && *Counter == 0) || ProcessedJobLimitExceeded*/) return;
+			if (!pJob) break;
+			pJob->Function();
+		}
+
+		// Try stealing from random victims
+		while (true)
+		{
+			CJob* pJob = nullptr;
+			size_t StealsWithoutYield = 0;
+			for (size_t StealAttempts = 0; StealAttempts < MaxStealAttempts; ++StealAttempts)
+			{
+				pJob = _pOwner->GetWorker(Victim).Steal();
+
+				if (_pOwner->IsTerminationRequested() /*|| (Counter && *Counter == 0) || ProcessedJobLimitExceeded*/) return;
+
+				if (pJob) break;
+
+				if (++StealsWithoutYield >= MaxStealsBeforeYield)
+				{
+					StealsWithoutYield = 0;
+					std::this_thread::yield();
+				}
+
+				// Steal attempt to the current victim has failed, try another one. Skip our index.
+				Victim = GetRandomVictim(VictimRNG);
+				if (Victim >= _Index) ++Victim;
+			}
+
+			//???TODO: random stealing has failed, should we try to scan all queues in order manually? maybe RNG didn't return use some index in time.
+			//if (!pJob)
+			//{
+			//	for (size_t i = 0; i <= _pOwner->GetWorkerThreadCount(); ++i)
+			//	{
+			//		if (i == _Index) continue;
+			//		pJob = _pOwner->GetWorker(i).Steal();
+			//		if (pJob) break;
+			//	}
+			//}
+
+			if (pJob)
+			{
+				//!!!notify the next waiting thread that it can start trying to steal because we are busy now
+				//{
+				//	std::lock_guard Lock(WaitJobsMutex);
+				//	WaitJobsCV.notify_one();
+				//}
+
+				// Stolen successfully, do the job and return to the local queue loop because this job might push new jobs to it
+				pJob->Function();
+				break;
+			}
+			else
+			{
+				// No jobs to steal, go to sleep. After waking up the worker returns to the stealing loop because no one could push jobs into its local queue.
+				//std::unique_lock Lock(WaitJobsMutex);
+				//WaitJobsCV.wait(Lock, { terminated or new jobs arrived });
+
+				// We could have been woken up because of termination request, let's check immediately
+				if (_pOwner->IsTerminationRequested() /*|| (Counter && *Counter == 0) || ProcessedJobLimitExceeded*/) return;
+			}
+		}
+	}
 }
 //---------------------------------------------------------------------
 
