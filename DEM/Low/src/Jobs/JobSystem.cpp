@@ -14,7 +14,10 @@ CJobSystem::CJobSystem(uint32_t ThreadCount, std::string_view ThreadNamePrefix)
 
 	// The last worker is for the main thread, this simplifies a design
 	_Workers.reset(new CWorker[ThreadCount + 1]);
-	_Workers[ThreadCount].Init(*this, ThreadCount);
+	for (uint32_t i = 0; i <= ThreadCount; ++i)
+		_Workers[i].Init(*this, i);
+
+	_ThreadToIndex.emplace(std::this_thread::get_id(), ThreadCount);
 
 	uint32_t ThreadsStarted = 0;
 	std::mutex ThreadsStartedMutex;
@@ -26,8 +29,6 @@ CJobSystem::CJobSystem(uint32_t ThreadCount, std::string_view ThreadNamePrefix)
 	_Threads.reserve(ThreadCount);
 	for (uint32_t i = 0; i < ThreadCount; ++i)
 	{
-		_Workers[i].Init(*this, i);
-
 		_Threads.emplace_back([this, i, ThreadCount, &ThreadNamePrefixStr, &ThreadsStarted, &ThreadsStartedMutex, &ThreadsStartedCV]
 		{
 			Sys::SetCurrentThreadName(ThreadNamePrefixStr + std::to_string(i));

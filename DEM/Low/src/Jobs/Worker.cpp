@@ -67,16 +67,18 @@ void CWorker::MainLoop()
 				if (Victim >= _Index) ++Victim;
 			}
 
-			//???TODO: random stealing has failed, should we try to scan all queues in order manually? maybe RNG didn't return use some index in time.
-			//if (!pJob)
-			//{
-			//	for (size_t i = 0; i <= _pOwner->GetWorkerThreadCount(); ++i)
-			//	{
-			//		if (i == _Index) continue;
-			//		pJob = _pOwner->GetWorker(i).Steal();
-			//		if (pJob) break;
-			//	}
-			//}
+			// There is a big chance that randomization will not return us the index of the thread that has jobs to steal.
+			// As a last resort, try to scan all workers including a main thread worker. This is especially helpful when there are many workers.
+			if (!pJob)
+			{
+				// TODO: start from the main thread?
+				for (size_t i = 0; i <= _pOwner->GetWorkerThreadCount(); ++i)
+				{
+					if (i == _Index) continue;
+					pJob = _pOwner->GetWorker(i).Steal();
+					if (pJob) break;
+				}
+			}
 
 			if (pJob)
 			{
@@ -98,6 +100,10 @@ void CWorker::MainLoop()
 
 				// We could have been woken up because of termination request, let's check immediately
 				if (_pOwner->IsTerminationRequested() /*|| (Counter && *Counter == 0) || ProcessedJobLimitExceeded*/) return;
+
+				// We don't know who has sent a signal, start stealing from the main thread.
+				// This is a good choice because the main thread is the most likely to have new jobs.
+				Victim = _pOwner->GetWorkerThreadCount();
 			}
 		}
 	}

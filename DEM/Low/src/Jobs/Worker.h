@@ -28,13 +28,11 @@ protected:
 	//???wait list for jobs with dependencies? need pool allocator for waiting nodes. Or wait list must be global?
 
 	CWorkStealingQueue<CJob*> _Queue;
-	CJobSystem*               _pOwner;
+	CJobSystem*               _pOwner = nullptr;
 	CPool<CJob, JOB_ALIGN>    _JobPool; //???how to ensure that the job is destroyed by the same pool it was created and from the same thread? Or pool must be global and lockable?
 	uint32_t                  _Index = std::numeric_limits<uint32_t>().max();
 
 public:
-
-	CWorker() = default;
 
 	void Init(CJobSystem& Owner, uint32_t Index);
 	void MainLoop();
