@@ -8,7 +8,7 @@
 namespace DEM::Jobs
 {
 
-CJobSystem::CJobSystem(uint32_t ThreadCount, std::string_view ThreadNamePrefix)
+CJobSystem::CJobSystem(bool Sleepy, uint32_t ThreadCount, std::string_view ThreadNamePrefix)
 {
 	if (ThreadCount < 1) ThreadCount = 1;
 
@@ -32,14 +32,17 @@ CJobSystem::CJobSystem(uint32_t ThreadCount, std::string_view ThreadNamePrefix)
 
 	for (uint32_t i = 0; i < ThreadCount; ++i)
 	{
-		_Threads[i] = std::thread([this, i, ThreadCount, &ThreadNamePrefixStr, &ThreadsStarted, &ThreadsStartedMutex, &ThreadsStartedCV]
+		_Threads[i] = std::thread([this, i, Sleepy, ThreadCount, &ThreadNamePrefixStr, &ThreadsStarted, &ThreadsStartedMutex, &ThreadsStartedCV]
 		{
 			const std::string ThreadName = ThreadNamePrefixStr + std::to_string(i);
 			Sys::SetCurrentThreadName(ThreadName);
 			tracy::SetThreadName(ThreadName.c_str());
 
+			// NB: sleepy jobs (IO, network etc) don't need an affinity because they are blocked most of the time and we want them to wake anywhere possible
 			// TODO PERF: test under the real workload. Profiling shows that this may perform better or worse depending on the test itself.
-			Sys::SetCurrentThreadAffinity(i);
+			if (!Sleepy) Sys::SetCurrentThreadAffinity(i);
+
+			//???!!!TODO: raise thread priority for sleepy jobs to fight priority inversion, when some normal job waits dynamically spawned IO job?!
 
 			// Let the system know that we are ready to go. Wake up the constructor thread if we were the last.
 			{

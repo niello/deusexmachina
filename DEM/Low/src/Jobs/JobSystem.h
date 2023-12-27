@@ -26,7 +26,7 @@ protected:
 
 public:
 
-	CJobSystem(uint32_t ThreadCount = std::thread::hardware_concurrency(), std::string_view ThreadNamePrefix = "Worker");
+	CJobSystem(bool Sleepy = false, uint32_t ThreadCount = std::thread::hardware_concurrency(), std::string_view ThreadNamePrefix = "Worker");
 	~CJobSystem();
 
 	void WakeUpWorkers(size_t Count);
