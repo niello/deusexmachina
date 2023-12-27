@@ -45,6 +45,9 @@ public:
 		CJob* pJob = _JobPool.Construct();
 		pJob->Function = std::move(f);
 		_Queue.Push(pJob);
+
+		// We have a job now, let's wake up another worker for stealing
+		_pOwner->WakeUpWorkers(1);
 	}
 
 	CJob* Steal() { return _Queue.Steal(); }
