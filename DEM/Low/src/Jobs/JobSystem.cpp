@@ -17,6 +17,10 @@ CJobSystem::CJobSystem(uint32_t ThreadCount, std::string_view ThreadNamePrefix)
 	for (uint32_t i = 0; i <= ThreadCount; ++i)
 		_Workers[i].Init(*this, i);
 
+	// NB: it is crucial not to reserve but to resize the vector because we use its
+	// size as a thread count and access it in workers before we create all threads
+	_Threads.resize(ThreadCount);
+
 	_ThreadToIndex.emplace(std::this_thread::get_id(), ThreadCount);
 
 	uint32_t ThreadsStarted = 0;
@@ -26,10 +30,9 @@ CJobSystem::CJobSystem(uint32_t ThreadCount, std::string_view ThreadNamePrefix)
 	//!!!FIXME: use fmtlib!
 	const std::string ThreadNamePrefixStr(ThreadNamePrefix);
 
-	_Threads.reserve(ThreadCount);
 	for (uint32_t i = 0; i < ThreadCount; ++i)
 	{
-		_Threads.emplace_back([this, i, ThreadCount, &ThreadNamePrefixStr, &ThreadsStarted, &ThreadsStartedMutex, &ThreadsStartedCV]
+		_Threads[i] = std::thread([this, i, ThreadCount, &ThreadNamePrefixStr, &ThreadsStarted, &ThreadsStartedMutex, &ThreadsStartedCV]
 		{
 			const std::string ThreadName = ThreadNamePrefixStr + std::to_string(i);
 			Sys::SetCurrentThreadName(ThreadName);
