@@ -112,4 +112,11 @@ bool CJobSystem::HasJobs() const
 }
 //---------------------------------------------------------------------
 
+CWorker* CJobSystem::FindCurrentThreadWorker() const
+{
+	auto It = _ThreadToIndex.find(std::this_thread::get_id());
+	return (It != _ThreadToIndex.cend()) ? &_Workers[It->second] : nullptr;
+}
+//---------------------------------------------------------------------
+
 }

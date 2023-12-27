@@ -41,6 +41,7 @@ public:
 
 	CWorker& GetWorker(uint32_t Index) const { return _Workers[Index]; }
 	CWorker& GetMainThreadWorker() const { return _Workers[_Threads.size()]; }
+	CWorker* FindCurrentThreadWorker() const;
 	size_t GetWorkerThreadCount() const { return _Threads.size(); }
 	bool   HasJobs() const;
 	bool   IsTerminationRequested() const { return _TerminationRequested; }
