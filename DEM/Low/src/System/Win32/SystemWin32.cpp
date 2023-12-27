@@ -83,6 +83,15 @@ void SetCurrentThreadAffinity(size_t CPUIndex)
 }
 //---------------------------------------------------------------------
 
+void SetCurrentThreadAffinity(std::initializer_list<size_t> CPUIndices)
+{
+	DWORD_PTR AffinityMask = 0;
+	for (size_t CPUIndex : CPUIndices)
+		AffinityMask |= (1 << CPUIndex);
+	::SetThreadAffinityMask(::GetCurrentThread(), AffinityMask);
+}
+//---------------------------------------------------------------------
+
 bool GetKeyName(U8 ScanCode, bool ExtendedKey, CString& OutName)
 {
 	//???build DEM KeyCode -> Key name table?

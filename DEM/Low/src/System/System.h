@@ -48,6 +48,7 @@ namespace Sys
 	void			Sleep(unsigned long MSec); //!!!???to Thread namespace/class?!
 	void            SetCurrentThreadName(std::string_view Name);
 	void            SetCurrentThreadAffinity(size_t CPUIndex);
+	void            SetCurrentThreadAffinity(std::initializer_list<size_t> CPUIndices);
 
 	// Input
 	bool			GetKeyName(U8 ScanCode, bool ExtendedKey, CString& OutName);

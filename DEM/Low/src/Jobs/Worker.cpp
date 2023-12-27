@@ -77,21 +77,17 @@ void CWorker::MainLoop()
 
 			if (pJob)
 			{
-				//!!!notify the next waiting thread that it can start trying to steal because we are busy now
-				//{
-				//	std::lock_guard Lock(WaitJobsMutex);
-				//	WaitJobsCV.notify_one();
-				//}
+				// We have stolen a job an will be busy, wake up one more worker to continue stealing jobs
+				_pOwner->WakeUpWorkers(1);
 
-				// Stolen successfully, do the job and return to the local queue loop because this job might push new jobs to it
+				// Do the job and return to the local queue loop because this job might push new jobs to it
 				pJob->Function();
 				break;
 			}
 			else
 			{
 				// No jobs to steal, go to sleep. After waking up the worker returns to the stealing loop because no one could push jobs into its local queue.
-				//std::unique_lock Lock(WaitJobsMutex);
-				//WaitJobsCV.wait(Lock, { terminated or new jobs arrived });
+				_pOwner->PutCurrentWorkerToSleepUntil([this] { return _pOwner->IsTerminationRequested() || _pOwner->HasJobs(); });
 
 				// We could have been woken up because of termination request, let's check immediately
 				if (_pOwner->IsTerminationRequested() /*|| (Counter && *Counter == 0) || ProcessedJobLimitExceeded*/) return;

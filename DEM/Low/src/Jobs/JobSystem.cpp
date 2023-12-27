@@ -38,7 +38,7 @@ CJobSystem::CJobSystem(uint32_t ThreadCount, std::string_view ThreadNamePrefix)
 			Sys::SetCurrentThreadName(ThreadName);
 			tracy::SetThreadName(ThreadName.c_str());
 
-			// FIXME: must be more clever! E.g. allow both main and hyperthreading processors, don't set affinity for I/O threads etc.
+			// TODO PERF: test under the real workload. Profiling shows that this may perform better or worse depending on the test itself.
 			Sys::SetCurrentThreadAffinity(i);
 
 			// Let the system know that we are ready to go. Wake up the constructor thread if we were the last.
@@ -70,14 +70,42 @@ CJobSystem::~CJobSystem()
 	_TerminationRequested.store(true, std::memory_order_relaxed);
 
 	// Wake up all sleeping workers so that they can terminate properly
-	//{
-	//	std::lock_guard Lock(WaitJobsMutex);
-	//	WaitJobsCV.notify_all();
-	//}
+	WakeUpAllWorkers();
 
 	// Wait for all worker threads to terminate
 	for (auto& Thread: _Threads)
 		if (Thread.joinable()) Thread.join();
+}
+//---------------------------------------------------------------------
+
+void CJobSystem::WakeUpWorkers(size_t Count)
+{
+	if (Count >= _Threads.size())
+	{
+		WakeUpAllWorkers();
+	}
+	else
+	{
+		std::lock_guard Lock(_WaitJobsMutex);
+		for (size_t i = 0; i < Count; ++i)
+			_WaitJobsCV.notify_one();
+	}
+}
+//---------------------------------------------------------------------
+
+void CJobSystem::WakeUpAllWorkers()
+{
+	std::lock_guard Lock(_WaitJobsMutex);
+	_WaitJobsCV.notify_all();
+}
+//---------------------------------------------------------------------
+
+bool CJobSystem::HasJobs() const
+{
+	//!!!FIXME: use a global atomic counter of jobs added to the top level?! Can use it in WaitForAll too!
+	for (uint32_t i = 0; i <= _Threads.size(); ++i)
+		if (_Workers[i].HasJobs()) return true;
+	return false;
 }
 //---------------------------------------------------------------------
 

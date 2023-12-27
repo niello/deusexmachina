@@ -49,8 +49,9 @@ public:
 
 	CJob* Steal() { return _Queue.Steal(); }
 
+	bool  HasJobs() const { return !_Queue.empty(); }
+
 	//???or in a CJobSystem, by index?
-	// SetAffinity
 	// SetCapabilities (mask - main thread, render context etc)
 };
 
