@@ -64,11 +64,9 @@ CJobSystem::CJobSystem(bool Sleepy, uint32_t ThreadCount, std::string_view Threa
 }
 //---------------------------------------------------------------------
 
+// NB: cancels not started jobs. To execute them wait on their completion counter(s) before destroying a system.
 CJobSystem::~CJobSystem()
 {
-	//???wait for all jobs or cancel? either should call WaitAll() or Cancel() explicitly at the app exit if wants different behaviour!
-	//???need global job counter for WaitAll?
-
 	// Set a termination flag for workers to see the request
 	_TerminationRequested.store(true, std::memory_order_relaxed);
 
@@ -106,7 +104,8 @@ void CJobSystem::WakeUpAllWorkers()
 bool CJobSystem::HasJobs() const
 {
 	//!!!FIXME: use a global atomic counter of jobs added to the top level?! Can use it in WaitForAll too!
-	for (uint32_t i = 0; i <= _Threads.size(); ++i)
+	const auto ThreadCount = _Threads.size();
+	for (uint32_t i = 0; i <= ThreadCount; ++i)
 		if (_Workers[i].HasJobs()) return true;
 	return false;
 }

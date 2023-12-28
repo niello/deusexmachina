@@ -18,13 +18,14 @@ void CWorker::MainLoop()
 	//!!!DBG TMP!
 	ZoneScopedN("DBG THREAD LOOP");
 
-	const size_t MaxStealsBeforeYield = 2 * (_pOwner->GetWorkerThreadCount() + 1);
+	const size_t ThreadCount = _pOwner->GetWorkerThreadCount();
+	const size_t MaxStealsBeforeYield = 2 * (ThreadCount + 1);
 	const size_t MaxStealAttempts = MaxStealsBeforeYield * 64;
 
 	// TODO: use own WELL512?
 	std::default_random_engine VictimRNG{ std::random_device{}() };
-	std::uniform_int_distribution<size_t> GetRandomVictim(0, _pOwner->GetWorkerThreadCount() - 2); // Exclude the current worker from the range, see generation below
-	size_t Victim = _pOwner->GetWorkerThreadCount(); // Start stealing from the main thread
+	std::uniform_int_distribution<size_t> GetRandomVictim(0, ThreadCount - 2); // Exclude the current worker from the range, see generation below
+	size_t Victim = ThreadCount; // Start stealing from the main thread
 
 	// Main loop of the worker thread implements a state-machine of 3 states: local queue loop, stealing loop and sleeping.
 	while (true)
@@ -35,7 +36,7 @@ void CWorker::MainLoop()
 			auto pJob = _Queue.Pop();
 			if (_pOwner->IsTerminationRequested() /*|| (Counter && *Counter == 0) || ProcessedJobLimitExceeded*/) return;
 			if (!pJob) break;
-			pJob->Function();
+			(*pJob)();
 		}
 
 		// Try stealing from random victims
@@ -67,7 +68,7 @@ void CWorker::MainLoop()
 			if (!pJob)
 			{
 				// TODO: start from the main thread?
-				for (size_t i = 0; i <= _pOwner->GetWorkerThreadCount(); ++i)
+				for (size_t i = 0; i <= ThreadCount; ++i)
 				{
 					if (i == _Index) continue;
 					pJob = _pOwner->GetWorker(i).Steal();
@@ -81,7 +82,7 @@ void CWorker::MainLoop()
 				_pOwner->WakeUpWorkers(1);
 
 				// Do the job and return to the local queue loop because this job might push new jobs to it
-				pJob->Function();
+				(*pJob)();
 				break;
 			}
 			else
@@ -94,7 +95,7 @@ void CWorker::MainLoop()
 
 				// We don't know who has sent a signal, start stealing from the main thread.
 				// This is a good choice because the main thread is the most likely to have new jobs.
-				Victim = _pOwner->GetWorkerThreadCount();
+				Victim = ThreadCount;
 			}
 		}
 	}
