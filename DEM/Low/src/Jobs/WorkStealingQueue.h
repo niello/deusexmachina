@@ -26,10 +26,10 @@ private:
 		size_t Mask;
 		T*     Elements;
 
-		CStorage(size_t Capacity_) : Capacity(Capacity_), Mask(Capacity_ - 1), Elements(new(std::nothrow) T[Capacity_]) {}
+		CStorage(size_t Capacity_) noexcept : Capacity(Capacity_), Mask(Capacity_ - 1), Elements(new(std::nothrow) T[Capacity_]) {}
 
-		T Get(size_t Index) const { return Elements[Index & Mask]; }
-		void Set(size_t Index, T Value) const { Elements[Index & Mask] = std::move(Value); }
+		T Get(size_t Index) const noexcept { return Elements[Index & Mask]; }
+		void Set(size_t Index, T Value) const noexcept { Elements[Index & Mask] = std::move(Value); }
 	};
 
 	std::atomic<size_t>    _Bottom;  // Written only in Push() and Pop()
@@ -42,7 +42,7 @@ private:
 	alignas(std::hardware_destructive_interference_size)
 	std::atomic<size_t>    _Top;     // Written with sequentially consistent CAS in Steal() and rarely in Pop()
 
-	DEM_NO_INLINE CStorage* Grow(CStorage* pStorage, size_t Top, size_t Bottom)
+	DEM_NO_INLINE CStorage* Grow(CStorage* pStorage, size_t Top, size_t Bottom) noexcept
 	{
 		// Allocate a new buffer twice as big, its capacity is also a power of 2
 		CStorage* pNewStorage = new(std::nothrow) CStorage(pStorage->Capacity << 1);
@@ -80,7 +80,7 @@ public:
 	}
 
 	// Called only from an owner thread
-	void Push(T NewElement)
+	void Push(T NewElement) noexcept
 	{
 		const size_t Bottom = _Bottom.load(std::memory_order_relaxed);
 		const size_t Top = _Top.load(std::memory_order_acquire);
@@ -106,7 +106,7 @@ public:
 	}
 
 	// LIFO. Called only from an owner thread.
-	T Pop()
+	T Pop() noexcept
 	{
 		T Value{};
 
@@ -183,7 +183,7 @@ public:
 	}
 
 	// FIFO. Can be called from any thread.
-	T Steal()
+	T Steal() noexcept
 	{
 		// Read Top synchronized with the global-order-previous write by CAS, making a total order:
 		//  (++Top in latest CAS) -> (this load-acquire) -> (fence right below)
@@ -237,9 +237,9 @@ public:
 		return Value;
 	}
 
-	bool empty() const { return _Bottom.load(std::memory_order_relaxed) <= _Top.load(std::memory_order_relaxed); }
+	bool empty() const noexcept { return _Bottom.load(std::memory_order_relaxed) <= _Top.load(std::memory_order_relaxed); }
 
-	size_t size() const
+	size_t size() const noexcept
 	{
 		const size_t Top = _Top.load(std::memory_order_relaxed);
 		const size_t Bottom = _Bottom.load(std::memory_order_relaxed);

@@ -79,6 +79,56 @@ CJobSystem::~CJobSystem()
 }
 //---------------------------------------------------------------------
 
+bool CJobSystem::StartWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter, CJob* pJob)
+{
+	// There are no unsatisfied dependencies, return false to let the worker enqueue the job immediately
+	if (!Counter || Counter->load(std::memory_order_relaxed) == 0) return false;
+
+	{
+		std::unique_lock Lock(_WaitListMutex);
+
+		// Counter might have changed after the previous check but before we locked the mutex, check again.
+		// This check will not be reordered before the lock because locking has acquire semantics.
+		// Return false to let the worker enqueue the job immediately. EndWaiting() has either finished or was
+		// not called yet or is waiting for the _WaitListMutex. In any case it will not find pJob in the wait list.
+		if (Counter->load(std::memory_order_relaxed) == 0) return false;
+
+		auto It = _WaitList.find(Counter);
+		if (It == _WaitList.cend())
+		{
+			It = _WaitList.emplace(std::move(Counter), pJob).first;
+		}
+		else
+		{
+			//???build chain of counters?! can get counter from job, or create if it hasn't. But this will serialize!
+			NOT_IMPLEMENTED;
+		}
+	}
+
+	// The job is successfully added to the wait list and will be found by the next EndWaiting()
+	return true;
+}
+//---------------------------------------------------------------------
+
+CJob* CJobSystem::EndWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter)
+{
+	// Assume the counter being 0, otherwise this method wouldn't be called.
+	// Incrementing and starting waiting on the same counter is illegal until it is removed from the wait list.
+
+	CJob* pJob = nullptr;
+	{
+		std::unique_lock Lock(_WaitListMutex);
+		auto It = _WaitList.find(Counter);
+		if (It != _WaitList.cend())
+		{
+			pJob = It->second;
+			_WaitList.erase(It);
+		}
+	}
+	return pJob;
+}
+//---------------------------------------------------------------------
+
 void CJobSystem::WakeUpWorkers(size_t Count)
 {
 	if (Count >= _Threads.size())
@@ -103,7 +153,6 @@ void CJobSystem::WakeUpAllWorkers()
 
 bool CJobSystem::HasJobs() const
 {
-	//!!!FIXME: use a global atomic counter of jobs added to the top level?! Can use it in WaitForAll too!
 	const auto ThreadCount = _Threads.size();
 	for (uint32_t i = 0; i <= ThreadCount; ++i)
 		if (_Workers[i].HasJobs()) return true;
