@@ -22,7 +22,7 @@ protected:
 	std::mutex                          _WaitJobsMutex;
 	std::condition_variable             _WaitJobsCV;
 
-	//???instead of main thread queue can create CWorker MainThreadWorker? could call its main loop for some seconds or for a number of jobs. Also can push jobs to it! Store in the same array, as a first or last one?
+	//std::unordered_map<std::shared_ptr<std::atomic<uint32_t>>, CJob*> _WaitList;
 
 public:
 
@@ -33,7 +33,7 @@ public:
 	void WakeUpAllWorkers();
 
 	template<typename F>
-	void PutCurrentWorkerToSleepUntil(F Condition)
+	DEM_FORCE_INLINE void PutCurrentWorkerToSleepUntil(F Condition)
 	{
 		std::unique_lock Lock(_WaitJobsMutex);
 		_WaitJobsCV.wait(Lock, Condition);
@@ -42,9 +42,10 @@ public:
 	CWorker& GetWorker(uint32_t Index) const { return _Workers[Index]; }
 	CWorker& GetMainThreadWorker() const { return _Workers[_Threads.size()]; }
 	CWorker* FindCurrentThreadWorker() const;
-	size_t GetWorkerThreadCount() const { return _Threads.size(); }
-	bool   HasJobs() const;
-	bool   IsTerminationRequested() const { return _TerminationRequested; }
+	uint32_t FindCurrentThreadWorkerIndex() const;
+	size_t   GetWorkerThreadCount() const { return _Threads.size(); }
+	bool     HasJobs() const;
+	bool     IsTerminationRequested() const { return _TerminationRequested; }
 };
 
 }

@@ -118,4 +118,11 @@ CWorker* CJobSystem::FindCurrentThreadWorker() const
 }
 //---------------------------------------------------------------------
 
+uint32_t CJobSystem::FindCurrentThreadWorkerIndex() const
+{
+	auto It = _ThreadToIndex.find(std::this_thread::get_id());
+	return (It != _ThreadToIndex.cend()) ? It->second : std::numeric_limits<decltype(It->second)>().max();
+}
+//---------------------------------------------------------------------
+
 }
