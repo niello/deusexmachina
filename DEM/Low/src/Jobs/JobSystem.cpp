@@ -93,16 +93,8 @@ bool CJobSystem::StartWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter, CJ
 		// not called yet or is waiting for the _WaitListMutex. In any case it will not find pJob in the wait list.
 		if (Counter->load(std::memory_order_relaxed) == 0) return false;
 
-		auto It = _WaitList.find(Counter);
-		if (It == _WaitList.cend())
-		{
-			It = _WaitList.emplace(std::move(Counter), pJob).first;
-		}
-		else
-		{
-			//???build chain of counters?! can get counter from job, or create if it hasn't. But this will serialize!
-			NOT_IMPLEMENTED;
-		}
+		// Only workers can call StartWaiting() and they never push the same job twice, no duplicate check is needed
+		_WaitList.emplace(std::move(Counter), pJob);
 	}
 
 	// The job is successfully added to the wait list and will be found by the next EndWaiting()
@@ -110,22 +102,26 @@ bool CJobSystem::StartWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter, CJ
 }
 //---------------------------------------------------------------------
 
-CJob* CJobSystem::EndWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter)
+void CJobSystem::EndWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter, CWorker& Worker)
 {
 	// Assume the counter being 0, otherwise this method wouldn't be called.
 	// Incrementing and starting waiting on the same counter is illegal until it is removed from the wait list.
 
-	CJob* pJob = nullptr;
+	size_t NewJobCount = 0;
 	{
 		std::unique_lock Lock(_WaitListMutex);
-		auto It = _WaitList.find(Counter);
-		if (It != _WaitList.cend())
-		{
-			pJob = It->second;
-			_WaitList.erase(It);
-		}
+		auto [ItBegin, ItEnd] = _WaitList.equal_range(Counter);
+		if (ItBegin == ItEnd) return;
+
+		// TODO: pushing jobs should not be protected by mutex but it is probably better than copying job pointers
+		// to an intermediate array. If will rewrite to linked list of waiting jobs, can copy list head.
+		for (auto It = ItBegin; It != ItEnd; ++It, ++NewJobCount)
+			Worker.Push(It->second);
+
+		_WaitList.erase(ItBegin, ItEnd);
 	}
-	return pJob;
+
+	WakeUpWorkers(NewJobCount);
 }
 //---------------------------------------------------------------------
 

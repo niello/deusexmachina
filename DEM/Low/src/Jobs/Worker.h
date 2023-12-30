@@ -202,6 +202,7 @@ public:
 			PushJob(pJob);
 	}
 
+	void  Push(CJob* pJob) { return _Queue.Push(pJob); }
 	CJob* Steal() { return _Queue.Steal(); }
 
 	auto  GetIndex() const { return _Index; }

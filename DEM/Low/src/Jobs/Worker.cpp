@@ -35,8 +35,7 @@ void CWorker::DoJob(CJob& Job)
 	// https://probablydance.com/2019/12/30/measuring-mutexes-spinlocks-and-how-bad-the-linux-scheduler-really-is/
 	if (auto CounterPtr = Job.Counter.lock())
 		if (CounterPtr->fetch_sub(1, std::memory_order_acq_rel) == 1)
-			if (auto pJob = _pOwner->EndWaiting(std::move(CounterPtr)))
-				PushJob(pJob);
+			_pOwner->EndWaiting(std::move(CounterPtr), *this);
 }
 //---------------------------------------------------------------------
 

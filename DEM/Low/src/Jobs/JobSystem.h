@@ -22,8 +22,8 @@ protected:
 	std::mutex                          _WaitJobsMutex;
 	std::condition_variable             _WaitJobsCV;
 
-	std::mutex                                                        _WaitListMutex;
-	std::unordered_map<std::shared_ptr<std::atomic<uint32_t>>, CJob*> _WaitList; //???!!!can have multiple jobs waiting on the same counter?! Then need a list of CJob*! Use lock-free hash map?!
+	std::mutex                                                             _WaitListMutex;
+	std::unordered_multimap<std::shared_ptr<std::atomic<uint32_t>>, CJob*> _WaitList; //???!!!Need a list of CJob* waiting nodes? Use lock-free hash map?!
 
 	// TODO: add pool or handle manager for dependency counters, not to allocate a new shared_ptr with atomic each time the counter is needed
 
@@ -32,8 +32,10 @@ public:
 	CJobSystem(bool Sleepy = false, uint32_t ThreadCount = std::thread::hardware_concurrency(), std::string_view ThreadNamePrefix = "Worker");
 	~CJobSystem();
 
+	// Private interface for workers
+
 	bool     StartWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter, CJob* pJob);
-	CJob*    EndWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter);
+	void     EndWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter, CWorker& Worker);
 
 	void     WakeUpWorkers(size_t Count);
 	void     WakeUpAllWorkers();
@@ -44,6 +46,8 @@ public:
 		std::unique_lock Lock(_WaitJobsMutex);
 		_WaitJobsCV.wait(Lock, Condition);
 	}
+
+	// Public interface
 
 	CWorker& GetWorker(uint32_t Index) const { return _Workers[Index]; }
 	CWorker& GetMainThreadWorker() const { return _Workers[_Threads.size()]; }
