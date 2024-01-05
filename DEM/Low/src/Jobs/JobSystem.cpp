@@ -8,39 +8,48 @@
 namespace DEM::Jobs
 {
 
-CJobSystem::CJobSystem(bool Sleepy, uint32_t ThreadCount, std::string_view ThreadNamePrefix)
+CJobSystem::CJobSystem(std::initializer_list<CWorkerConfig> Config)
 {
-	if (ThreadCount < 1) ThreadCount = 1;
+	// Allocate all workers at once. The last worker is for the current (main) thread, this simplifies a design.
+	uint32_t TotalThreadCount = 0;
+	for (const auto& ConfigRecord : Config)
+		TotalThreadCount += ConfigRecord.ThreadCount;
+	_Workers.reset(new CWorker[TotalThreadCount + 1]);
 
-	// The last worker is for the main thread, this simplifies a design
-	_Workers.reset(new CWorker[ThreadCount + 1]);
-	for (uint32_t i = 0; i <= ThreadCount; ++i)
-		_Workers[i].Init(*this, i);
+	uint32_t ThreadIndex = 0;
+	for (const auto& ConfigRecord : Config)
+	{
+		for (uint32_t i = 0; i < ConfigRecord.ThreadCount; ++i, ++ThreadIndex)
+			_Workers[ThreadIndex].Init(*this, ConfigRecord.ThreadNamePrefix.data() + std::to_string(i), ThreadIndex, ConfigRecord.JobTypeMask);
+	}
+
+	// Init main thread with all job types allowed.
+	// NB: it is not necessarily a 'main' thread in a common meaning, it is instead any thread in which the job system was created.
+	_Workers[ThreadIndex].Init(*this, "MainThread", ThreadIndex);
 
 	// NB: it is crucial not to reserve but to resize the vector because we use its
 	// size as a thread count and access it in workers before we create all threads
-	_Threads.resize(ThreadCount);
+	_Threads.resize(TotalThreadCount);
 
-	_ThreadToIndex.emplace(std::this_thread::get_id(), ThreadCount);
+	_ThreadToIndex.emplace(std::this_thread::get_id(), TotalThreadCount);
 
 	uint32_t ThreadsStarted = 0;
 	std::mutex ThreadsStartedMutex;
 	std::condition_variable ThreadsStartedCV;
 
-	//!!!FIXME: use fmtlib!
-	const std::string ThreadNamePrefixStr(ThreadNamePrefix);
-
-	for (uint32_t i = 0; i < ThreadCount; ++i)
+	for (uint32_t i = 0; i < TotalThreadCount; ++i)
 	{
-		_Threads[i] = std::thread([this, i, Sleepy, ThreadCount, &ThreadNamePrefixStr, &ThreadsStarted, &ThreadsStartedMutex, &ThreadsStartedCV]
+		_Threads[i] = std::thread([this, i, TotalThreadCount, &ThreadsStarted, &ThreadsStartedMutex, &ThreadsStartedCV]
 		{
-			const std::string ThreadName = ThreadNamePrefixStr + std::to_string(i);
-			Sys::SetCurrentThreadName(ThreadName);
-			tracy::SetThreadName(ThreadName.c_str());
+			auto& ThisWorker = _Workers[i];
+
+			Sys::SetCurrentThreadName(ThisWorker.GetName());
+			tracy::SetThreadName(ThisWorker.GetName().c_str());
 
 			// NB: sleepy jobs (IO, network etc) don't need an affinity because they are blocked most of the time and we want them to wake anywhere possible
 			// TODO PERF: test under the real workload. Profiling shows that this may perform better or worse depending on the test itself.
-			if (!Sleepy) Sys::SetCurrentThreadAffinity(i);
+			if (ThisWorker.GetJobTypeMask() & ENUM_MASK(EJobType::Normal))
+				Sys::SetCurrentThreadAffinity(i);
 
 			//???!!!TODO: raise thread priority for sleepy jobs to fight priority inversion, when some normal job waits dynamically spawned IO job?!
 
@@ -48,10 +57,9 @@ CJobSystem::CJobSystem(bool Sleepy, uint32_t ThreadCount, std::string_view Threa
 			{
 				std::lock_guard Lock(ThreadsStartedMutex);
 				_ThreadToIndex.emplace(std::this_thread::get_id(), i);
-				if (++ThreadsStarted == ThreadCount) ThreadsStartedCV.notify_one();
+				if (++ThreadsStarted == TotalThreadCount) ThreadsStartedCV.notify_one();
 			}
 
-			auto& ThisWorker = _Workers[i];
 			ThisWorker.MainLoop();
 		});
 	}
@@ -59,7 +67,7 @@ CJobSystem::CJobSystem(bool Sleepy, uint32_t ThreadCount, std::string_view Threa
 	// Wait for all worker threads to start
 	{
 		std::unique_lock Lock(ThreadsStartedMutex);
-		ThreadsStartedCV.wait(Lock, [&ThreadsStarted, ThreadCount]() { return ThreadsStarted == ThreadCount; });
+		ThreadsStartedCV.wait(Lock, [&ThreadsStarted, TotalThreadCount]() { return ThreadsStarted == TotalThreadCount; });
 	}
 }
 //---------------------------------------------------------------------
@@ -79,7 +87,7 @@ CJobSystem::~CJobSystem()
 }
 //---------------------------------------------------------------------
 
-bool CJobSystem::StartWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter, CJob* pJob)
+bool CJobSystem::StartWaiting(CJobCounter Counter, CJob* pJob, EJobType JobType)
 {
 	// There are no unsatisfied dependencies, return false to let the worker enqueue the job immediately
 	if (!Counter || Counter->load(std::memory_order_relaxed) == 0) return false;
@@ -94,7 +102,7 @@ bool CJobSystem::StartWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter, CJ
 		if (Counter->load(std::memory_order_relaxed) == 0) return false;
 
 		// Only workers can call StartWaiting() and they never push the same job twice, no duplicate check is needed
-		_WaitList.emplace(std::move(Counter), pJob);
+		_WaitList.emplace(std::move(Counter), std::make_pair(pJob, JobType));
 	}
 
 	// The job is successfully added to the wait list and will be found by the next EndWaiting()
@@ -102,7 +110,7 @@ bool CJobSystem::StartWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter, CJ
 }
 //---------------------------------------------------------------------
 
-void CJobSystem::EndWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter, CWorker& Worker)
+void CJobSystem::EndWaiting(CJobCounter Counter, CWorker& Worker)
 {
 	// Assume the counter being 0, otherwise this method wouldn't be called.
 	// Incrementing and starting waiting on the same counter is illegal until it is removed from the wait list.
@@ -116,7 +124,7 @@ void CJobSystem::EndWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter, CWor
 		// TODO: pushing jobs should not be protected by mutex but it is probably better than copying job pointers
 		// to an intermediate array. If will rewrite to linked list of waiting jobs, can copy list head.
 		for (auto It = ItBegin; It != ItEnd; ++It, ++NewJobCount)
-			Worker.Push(It->second);
+			Worker.Push(It->second.second, It->second.first);
 
 		_WaitList.erase(ItBegin, ItEnd);
 	}

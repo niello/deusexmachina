@@ -8,6 +8,15 @@
 namespace DEM::Jobs
 {
 class CJobSystem;
+using CJobCounter = std::shared_ptr<std::atomic<uint32_t>>; // TODO: make pool and handle manager to use fast and safe handles?
+
+enum EJobType : uint8_t
+{
+	Normal = 0, // Computational job that uses ~100% of CPU
+	Sleepy,     // IO or other waiting job that uses significantly less than 100% of CPU
+
+	Count
+};
 
 struct alignas(std::hardware_constructive_interference_size) CJob
 {
@@ -20,14 +29,52 @@ class CWorker final
 {
 protected:
 
-	CWorkStealingQueue<CJob*> _Queue;
+	CWorkStealingQueue<CJob*> _Queue[EJobType::Count];
 	CJobSystem*               _pOwner = nullptr;
 	CPool<CJob>               _JobPool; //???how to ensure that the job is destroyed by the same pool it was created and from the same thread? Or pool must be lockable/lock-free and so shared (no reason to have per thread then)?
+	std::string               _Name;
 	uint32_t                  _Index = std::numeric_limits<uint32_t>().max();
+	uint8_t                   _JobTypeMask = ~0; //???or initializer list instead of mask?! can tune priorities between types!
 
-	void PushJob(CJob* pJob);
+	void PushJob(EJobType Type, CJob* pJob);
 	void DoJob(CJob& Job);
 	void CancelJob(CJob* pJob);
+
+	CJob* PopJob()
+	{
+		// Search for allowed job in our own queue
+		for (uint8_t i = 0; i < EJobType::Count; ++i)
+			if (_JobTypeMask & ENUM_MASK(i))
+				if (auto pJob = _Queue[i].Pop())
+					return pJob;
+		return nullptr;
+	}
+
+	template<typename F>
+	DEM_FORCE_INLINE CJob* AllocateJob(CJobCounter* pCounter, F f)
+	{
+		//!!!DBG TMP!
+		//!!!FIXME: leak!!!
+		CJob* pJob = _JobPool.Construct();
+		pJob->Function = std::move(f); //???can piecewise construct be useful here? pass f right into _JobPool.Construct()?
+
+		if (!pCounter)
+		{
+			pJob->Counter.reset();
+		}
+		else
+		{
+			// Counter must be incremented and assigned to the job before it is pushed to the queue.
+			// Otherwise the job may be executed immediately and the counter will never be decremented.
+			if (!(*pCounter))
+				(*pCounter).reset(new std::atomic<uint32_t>(1));
+			else
+				(*pCounter)->fetch_add(1, std::memory_order_relaxed);
+			pJob->Counter = (*pCounter);
+		}
+
+		return pJob;
+	}
 
 	// Implements https://taskflow.github.io/taskflow/icpads20.pdf with some changes
 	template<typename TPred>
@@ -53,7 +100,7 @@ protected:
 			{
 				if (ExitPred()) return;
 
-				auto pJob = _Queue.Pop();
+				CJob* pJob = PopJob();
 
 				if (_pOwner->IsTerminationRequested())
 				{
@@ -75,7 +122,7 @@ protected:
 				{
 					if (ExitPred()) return;
 
-					pJob = _pOwner->GetWorker(Victim).Steal();
+					pJob = _pOwner->GetWorker(Victim).Steal(_JobTypeMask);
 
 					if (_pOwner->IsTerminationRequested())
 					{
@@ -104,7 +151,7 @@ protected:
 					for (size_t i = 0; i <= ThreadCount; ++i)
 					{
 						if (i == _Index) continue;
-						pJob = _pOwner->GetWorker(i).Steal();
+						pJob = _pOwner->GetWorker(i).Steal(_JobTypeMask);
 						if (pJob) break;
 					}
 				}
@@ -136,80 +183,66 @@ protected:
 
 public:
 
-	void Init(CJobSystem& Owner, uint32_t Index);
+	void Init(CJobSystem& Owner, std::string Name, uint32_t Index, uint8_t JobTypeMask = ~0);
 	void MainLoop() { MainLoop([]() { return false; }); }
-	void Wait(std::shared_ptr<std::atomic<uint32_t>> Counter);
+	void Wait(CJobCounter Counter);
+
+	// Shortcuts for normal jobs
+	template<typename F> DEM_FORCE_INLINE void AddJob(F f) { AddJob(EJobType::Normal, f); }
+	template<typename F> DEM_FORCE_INLINE void AddJob(CJobCounter& Counter, F f) { AddJob(EJobType::Normal, Counter, f); }
+	template<typename F> DEM_FORCE_INLINE void AddWaitingJob(CJobCounter WaitCounter, F f) { AddWaitingJob(EJobType::Normal, WaitCounter, f); }
+	template<typename F> DEM_FORCE_INLINE void AddWaitingJob(CJobCounter& Counter, CJobCounter WaitCounter, F f) { AddWaitingJob(EJobType::Normal, Counter, WaitCounter, f); }
 
 	template<typename F>
-	DEM_FORCE_INLINE void AddJob(F f)
+	DEM_FORCE_INLINE void AddJob(EJobType Type, F f)
 	{
-		//!!!DBG TMP!
-		//!!!FIXME: leak!!!
-		CJob* pJob = _JobPool.Construct();
-		pJob->Function = std::move(f); //???can piecewise construct be useful here? pass f right into _JobPool.Construct()?
-		pJob->Counter.reset();
-		PushJob(pJob);
+		PushJob(Type, AllocateJob(nullptr, f));
 	}
 
 	template<typename F>
-	DEM_FORCE_INLINE void AddJob(std::shared_ptr<std::atomic<uint32_t>>& Counter, F f)
+	DEM_FORCE_INLINE void AddJob(EJobType Type, CJobCounter& Counter, F f)
 	{
-		// Counter must be incremented and assigned to the job before it is pushed to the queue.
-		// Otherwise the job may be executed immediately and the counter will never be decremented.
-		if (!Counter)
-			Counter.reset(new std::atomic<uint32_t>(1));
-		else
-			Counter->fetch_add(1, std::memory_order_relaxed);
-
-		//!!!DBG TMP!
-		//!!!FIXME: leak!!!
-		CJob* pJob = _JobPool.Construct();
-		pJob->Function = std::move(f); //???can piecewise construct be useful here? pass f right into _JobPool.Construct()?
-		pJob->Counter = Counter;
-		PushJob(pJob);
+		PushJob(Type, AllocateJob(&Counter, f));
 	}
 
 	template<typename F>
-	DEM_FORCE_INLINE void AddWaitingJob(std::shared_ptr<std::atomic<uint32_t>> WaitCounter, F f)
+	DEM_FORCE_INLINE void AddWaitingJob(EJobType Type, CJobCounter WaitCounter, F f)
 	{
-		//!!!DBG TMP!
-		//!!!FIXME: leak!!!
-		CJob* pJob = _JobPool.Construct();
-		pJob->Function = std::move(f); //???can piecewise construct be useful here? pass f right into _JobPool.Construct()?
-		pJob->Counter.reset();
-
-		if (!_pOwner->StartWaiting(WaitCounter, pJob))
-			PushJob(pJob);
+		CJob* pJob = AllocateJob(nullptr, f);
+		if (!_pOwner->StartWaiting(WaitCounter, pJob, Type))
+			PushJob(Type, pJob);
 	}
 
 	template<typename F>
-	DEM_FORCE_INLINE void AddWaitingJob(std::shared_ptr<std::atomic<uint32_t>>& Counter, std::shared_ptr<std::atomic<uint32_t>> WaitCounter, F f)
+	DEM_FORCE_INLINE void AddWaitingJob(EJobType Type, CJobCounter& Counter, CJobCounter WaitCounter, F f)
 	{
-		// Counter must be incremented and assigned to the job before it is pushed to the queue.
-		// Otherwise the job may be executed immediately and the counter will never be decremented.
-		if (!Counter)
-			Counter.reset(new std::atomic<uint32_t>(1));
-		else
-			Counter->fetch_add(1, std::memory_order_relaxed);
-
-		//!!!DBG TMP!
-		//!!!FIXME: leak!!!
-		CJob* pJob = _JobPool.Construct();
-		pJob->Function = std::move(f); //???can piecewise construct be useful here? pass f right into _JobPool.Construct()?
-		pJob->Counter = Counter;
-
-		if (!_pOwner->StartWaiting(WaitCounter, pJob))
-			PushJob(pJob);
+		CJob* pJob = AllocateJob(&Counter, f);
+		if (!_pOwner->StartWaiting(WaitCounter, pJob, Type))
+			PushJob(Type, pJob);
 	}
 
-	void  Push(CJob* pJob) { return _Queue.Push(pJob); }
-	CJob* Steal() { return _Queue.Steal(); }
+	void Push(EJobType Type, CJob* pJob) { return _Queue[Type].Push(pJob); }
 
-	auto  GetIndex() const { return _Index; }
-	bool  HasJobs() const { return !_Queue.empty(); }
+	CJob* Steal(uint8_t TypeMask)
+	{
+		// Search for allowed job in our own queue
+		for (uint8_t i = 0; i < EJobType::Count; ++i)
+			if (TypeMask & ENUM_MASK(i))
+				if (auto pJob = _Queue[i].Steal())
+					return pJob;
+		return nullptr;
+	}
 
-	//???or in a CJobSystem, by index?
-	// SetCapabilities (mask - main thread, render context etc)
+	bool HasJobs(uint8_t TypeMask = ~0) const
+	{
+		for (uint8_t i = 0; i < EJobType::Count; ++i)
+			if ((TypeMask & ENUM_MASK(i)) && !_Queue[i].empty()) return true;
+		return false;
+	}
+
+	const std::string& GetName() const { return _Name; }
+	uint32_t           GetIndex() const { return _Index; }
+	uint8_t            GetJobTypeMask() const { return _JobTypeMask; }
 };
 
 }

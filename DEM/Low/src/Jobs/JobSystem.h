@@ -10,6 +10,17 @@
 namespace DEM::Jobs
 {
 
+struct CWorkerConfig
+{
+	std::string_view ThreadNamePrefix;
+	uint32_t         ThreadCount;
+	uint8_t          JobTypeMask; //???!!!or array / vector/ initializer list? to enforce priority between types!
+
+	static CWorkerConfig Normal(uint32_t Count) { return CWorkerConfig{ "Worker", Count, ENUM_MASK(EJobType::Normal) }; }
+	static CWorkerConfig Sleepy(uint32_t Count) { return CWorkerConfig{ "SleepyWorker", Count, ENUM_MASK(EJobType::Sleepy) }; }
+	static CWorkerConfig Default() { return Normal(std::thread::hardware_concurrency()); }
+};
+
 class CJobSystem final
 {
 protected:
@@ -22,20 +33,20 @@ protected:
 	std::mutex                          _WaitJobsMutex;
 	std::condition_variable             _WaitJobsCV;
 
-	std::mutex                                                             _WaitListMutex;
-	std::unordered_multimap<std::shared_ptr<std::atomic<uint32_t>>, CJob*> _WaitList; //???!!!Need a list of CJob* waiting nodes? Use lock-free hash map?!
+	std::mutex                                                       _WaitListMutex;
+	std::unordered_multimap<CJobCounter, std::pair<CJob*, EJobType>> _WaitList; //???!!!Need a list of CJob* waiting nodes? Use lock-free hash map?!
 
 	// TODO: add pool or handle manager for dependency counters, not to allocate a new shared_ptr with atomic each time the counter is needed
 
 public:
 
-	CJobSystem(bool Sleepy = false, uint32_t ThreadCount = std::thread::hardware_concurrency(), std::string_view ThreadNamePrefix = "Worker");
+	CJobSystem(std::initializer_list<CWorkerConfig> Config = { CWorkerConfig::Default() });
 	~CJobSystem();
 
 	// Private interface for workers
 
-	bool     StartWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter, CJob* pJob);
-	void     EndWaiting(std::shared_ptr<std::atomic<uint32_t>> Counter, CWorker& Worker);
+	bool     StartWaiting(CJobCounter Counter, CJob* pJob, EJobType JobType);
+	void     EndWaiting(CJobCounter Counter, CWorker& Worker);
 
 	void     WakeUpWorkers(size_t Count);
 	void     WakeUpAllWorkers();
@@ -50,7 +61,6 @@ public:
 	// Public interface
 
 	CWorker& GetWorker(uint32_t Index) const { return _Workers[Index]; }
-	CWorker& GetMainThreadWorker() const { return _Workers[_Threads.size()]; }
 	CWorker* FindCurrentThreadWorker() const;
 	uint32_t FindCurrentThreadWorkerIndex() const;
 	size_t   GetWorkerThreadCount() const { return _Threads.size(); }

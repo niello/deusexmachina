@@ -168,6 +168,7 @@ DEM_FORCE_INLINE bool IsAligned16(const void* Pointer) { return !(((unsigned int
 template<typename... T>
 DEM_FORCE_INLINE constexpr decltype(auto) ENUM_MASK(T... Values)
 {
+	// TODO: support enum class with std::underlying_type_t. Maybe write 2 overloads with enable_if?
 	return ((1 << Values) | ...);
 }
 //---------------------------------------------------------------------

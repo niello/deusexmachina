@@ -4,17 +4,19 @@
 namespace DEM::Jobs
 {
 
-void CWorker::Init(CJobSystem& Owner, uint32_t Index)
+void CWorker::Init(CJobSystem& Owner, std::string Name, uint32_t Index, uint8_t JobTypeMask)
 {
 	_pOwner = &Owner;
+	_Name = std::move(Name);
 	_Index = Index;
+	_JobTypeMask = JobTypeMask;
 }
 //---------------------------------------------------------------------
 
 // FIXME: inline manually?! Not compiled as inline without more headers, but is OK inside templated methods!
-void CWorker::PushJob(CJob* pJob)
+void CWorker::PushJob(EJobType Type, CJob* pJob)
 {
-	_Queue.Push(pJob);
+	_Queue[Type].Push(pJob);
 	_pOwner->WakeUpWorkers(1); // We have a job now, let's wake up another worker for stealing (e.g. from us)
 }
 //---------------------------------------------------------------------
@@ -53,7 +55,7 @@ void CWorker::CancelJob(CJob* pJob)
 
 // TODO: could use fibers to move the current job into a wait list in the middle
 // of its execution with CJobSystem::StartWaiting() and continue the main loop without recursion
-void CWorker::Wait(std::shared_ptr<std::atomic<uint32_t>> Counter)
+void CWorker::Wait(CJobCounter Counter)
 {
 	if (!Counter) return;
 	MainLoop([WaitCounter = std::move(Counter)]() { return WaitCounter->load(std::memory_order_relaxed) == 0; });
