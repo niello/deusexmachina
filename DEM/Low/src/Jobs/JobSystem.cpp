@@ -76,10 +76,12 @@ CJobSystem::CJobSystem(std::initializer_list<CWorkerConfig> Config)
 CJobSystem::~CJobSystem()
 {
 	// Set a termination flag for workers to see the request
-	_TerminationRequested.store(true, std::memory_order_relaxed);
+	_TerminationRequested.store(true, std::memory_order_seq_cst);
 
 	// Wake up all sleeping workers so that they can terminate properly
-	WakeUpAllWorkers();
+	const size_t ThreadCount = _Threads.size();
+	for (size_t i = 0; i < ThreadCount; ++i)
+		_Workers[i].WakeUp();
 
 	// Wait for all worker threads to terminate
 	for (auto& Thread: _Threads)
@@ -90,7 +92,7 @@ CJobSystem::~CJobSystem()
 bool CJobSystem::StartWaiting(CJobCounter Counter, CJob* pJob, EJobType JobType)
 {
 	// There are no unsatisfied dependencies, return false to let the worker enqueue the job immediately
-	if (!Counter || Counter->load(std::memory_order_relaxed) == 0) return false;
+	if (!pJob || !Counter || Counter->load(std::memory_order_relaxed) == 0) return false;
 
 	{
 		std::unique_lock Lock(_WaitListMutex);
@@ -102,10 +104,32 @@ bool CJobSystem::StartWaiting(CJobCounter Counter, CJob* pJob, EJobType JobType)
 		if (Counter->load(std::memory_order_relaxed) == 0) return false;
 
 		// Only workers can call StartWaiting() and they never push the same job twice, no duplicate check is needed
-		_WaitList.emplace(std::move(Counter), std::make_pair(pJob, JobType));
+		_WaitList.emplace(std::move(Counter), CWaiter(pJob, JobType));
 	}
 
 	// The job is successfully added to the wait list and will be found by the next EndWaiting()
+	return true;
+}
+//---------------------------------------------------------------------
+
+bool CJobSystem::StartWaiting(CJobCounter Counter, uint32_t WorkerIndex)
+{
+	// There are no unsatisfied dependencies, return false to let the worker continue immediately
+	if (!Counter || Counter->load(std::memory_order_relaxed) == 0) return false;
+
+	{
+		std::unique_lock Lock(_WaitListMutex);
+
+		// Counter might have changed after the previous check but before we locked the mutex, check again.
+		// This check will not be reordered before the lock because locking has acquire semantics.
+		// Return false to let the worker continue immediately.
+		if (Counter->load(std::memory_order_relaxed) == 0) return false;
+
+		// Don't check for duplicates, they are most likely rare and harmless
+		_WaitList.emplace(std::move(Counter), CWaiter(WorkerIndex));
+	}
+
+	// The worker is successfully added to the wait list and will be awakened by the next EndWaiting()
 	return true;
 }
 //---------------------------------------------------------------------
@@ -115,7 +139,7 @@ void CJobSystem::EndWaiting(CJobCounter Counter, CWorker& Worker)
 	// Assume the counter being 0, otherwise this method wouldn't be called.
 	// Incrementing and starting waiting on the same counter is illegal until it is removed from the wait list.
 
-	size_t NewJobCount = 0;
+	size_t NewJobCount[EJobType::Count] = {};
 	{
 		std::unique_lock Lock(_WaitListMutex);
 		auto [ItBegin, ItEnd] = _WaitList.equal_range(Counter);
@@ -123,44 +147,76 @@ void CJobSystem::EndWaiting(CJobCounter Counter, CWorker& Worker)
 
 		// TODO: pushing jobs should not be protected by mutex but it is probably better than copying job pointers
 		// to an intermediate array. If will rewrite to linked list of waiting jobs, can copy list head.
-		for (auto It = ItBegin; It != ItEnd; ++It, ++NewJobCount)
-			Worker.Push(It->second.second, It->second.first);
+		for (auto It = ItBegin; It != ItEnd; ++It)
+		{
+			auto& Waiter = It->second;
+			if (Waiter.pJob)
+			{
+				// Schedule waiting job
+				Worker.Push(Waiter.JobType, Waiter.pJob);
+				++NewJobCount[Waiter.JobType];
+			}
+			else
+			{
+				// Resume waiting worker, see CWorker::Wait(CJobCounter Counter)
+				// FIXME: worker's _WaitJobsMutex will be locked inside our _WaitListMutex lock. Looks safe but can delay WakeUp after unlock just in case.
+				_Workers[Waiter.WorkerIndex].WakeUp();
+			}
+		}
 
 		_WaitList.erase(ItBegin, ItEnd);
 	}
 
-	WakeUpWorkers(NewJobCount);
+	// Wake up workers for stealing new jobs
+	//!!!FIXME PERF: can check caps matching once per thread group, caps inside a group are the same!
+	const auto ThreadCount = _Threads.size();
+	for (uint8_t JobType = 0; JobType < EJobType::Count; ++JobType)
+		for (uint32_t i = 0; NewJobCount[JobType] && i < ThreadCount; ++i)
+			if ((_Workers[i].GetJobTypeMask() & ENUM_MASK(JobType)) && _Workers[i].WakeUp())
+				--NewJobCount[JobType];
 }
 //---------------------------------------------------------------------
 
-void CJobSystem::WakeUpWorkers(size_t Count)
+void CJobSystem::WakeUpWorker(uint8_t AvailableJobsMask)
 {
-	if (Count >= _Threads.size())
-	{
-		WakeUpAllWorkers();
-	}
-	else
-	{
-		std::lock_guard Lock(_WaitJobsMutex);
-		for (size_t i = 0; i < Count; ++i)
-			_WaitJobsCV.notify_one();
-	}
+	if (!AvailableJobsMask) return;
+
+	const auto ThreadCount = _Threads.size();
+	for (uint32_t i = 0; i < ThreadCount; ++i)
+		if ((_Workers[i].GetJobTypeMask() & AvailableJobsMask) && _Workers[i].WakeUp())
+			return;
 }
 //---------------------------------------------------------------------
 
-void CJobSystem::WakeUpAllWorkers()
+void CJobSystem::Wait(CJobCounter Counter)
 {
-	std::lock_guard Lock(_WaitJobsMutex);
-	_WaitJobsCV.notify_all();
+	//!!!DBG TMP!
+	//!!!FIXME PERF: need better waiting on counter! This sleep_for() is only a temporary solution!
+	//???add itself (main thread worker index) to the wait list?!
+	using namespace std::chrono_literals;
+	while (Counter->load(std::memory_order_relaxed) > 0)
+		std::this_thread::sleep_for(1ms);
+	std::atomic_thread_fence(std::memory_order_acquire); // Make job results visible
 }
 //---------------------------------------------------------------------
 
-bool CJobSystem::HasJobs() const
+bool CJobSystem::HasJobs(uint8_t TypeMask) const
 {
 	const auto ThreadCount = _Threads.size();
 	for (uint32_t i = 0; i <= ThreadCount; ++i)
-		if (_Workers[i].HasJobs()) return true;
+		if (_Workers[i].HasJobs(TypeMask)) return true;
 	return false;
+}
+//---------------------------------------------------------------------
+
+uint8_t CJobSystem::CollectAvailableJobsMask() const
+{
+	// TODO PERF: early exit if all types are set? don't check queues for which the bit is already set?
+	uint8_t Mask = 0;
+	const auto ThreadCount = _Threads.size();
+	for (uint32_t i = 0; i <= ThreadCount; ++i)
+		Mask |= _Workers[i].CollectAvailableJobsMask();
+	return Mask;
 }
 //---------------------------------------------------------------------
 

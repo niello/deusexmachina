@@ -36,6 +36,10 @@ protected:
 	uint32_t                  _Index = std::numeric_limits<uint32_t>().max();
 	uint8_t                   _JobTypeMask = ~0; //???or initializer list instead of mask?! can tune priorities between types!
 
+	std::mutex                _WaitJobsMutex;
+	std::condition_variable   _WaitJobsCV;
+	bool                      _IsWaiting = false;
+
 	void PushJob(EJobType Type, CJob* pJob);
 	void DoJob(CJob& Job);
 	void CancelJob(CJob* pJob);
@@ -159,7 +163,7 @@ protected:
 				if (pJob)
 				{
 					// We have stolen a job an will be busy, wake up one more worker to continue stealing jobs
-					_pOwner->WakeUpWorkers(1);
+					_pOwner->WakeUpWorker(_pOwner->CollectAvailableJobsMask());
 
 					// Do the job and return to the local queue loop because this job might push new jobs to it
 					DoJob(*pJob);
@@ -167,11 +171,22 @@ protected:
 				}
 				else
 				{
-					// No jobs to steal, go to sleep. After waking up the worker returns to the stealing loop because no one could push jobs into its local queue.
-					_pOwner->PutCurrentWorkerToSleepUntil([this, &ExitPred] { return _pOwner->IsTerminationRequested() || ExitPred() || _pOwner->HasJobs(); });
+					// No jobs to steal, go to sleep. After waking up the worker returns to stealing because no one could push jobs into its local queue.
+					bool NeedExit = false;
+					{
+						std::unique_lock Lock(_WaitJobsMutex);
+						NeedExit = _pOwner->IsTerminationRequested(true) || ExitPred();
+						while (!NeedExit && !_pOwner->HasJobs(_JobTypeMask))
+						{
+							_IsWaiting = true;
+							_WaitJobsCV.wait(Lock); // NB: predicate is moved outside the wait() call
+							NeedExit = _pOwner->IsTerminationRequested(true) || ExitPred();
+						}
+						_IsWaiting = false; //???!!!TODO: when wait on atomic become available, use atomic _IsWaiting instead of conditional variable?!
+					}
 
 					// We could have been woken up because of termination request, let's check immediately
-					if (_pOwner->IsTerminationRequested() || ExitPred()) return;
+					if (NeedExit) return;
 
 					// We don't know who has sent a signal, start stealing from the main thread.
 					// This is a good choice because the main thread is the most likely to have new jobs.
@@ -209,7 +224,7 @@ public:
 	DEM_FORCE_INLINE void AddWaitingJob(EJobType Type, CJobCounter WaitCounter, F f)
 	{
 		CJob* pJob = AllocateJob(nullptr, f);
-		if (!_pOwner->StartWaiting(WaitCounter, pJob, Type))
+		if (!_pOwner->StartWaiting(std::move(WaitCounter), pJob, Type))
 			PushJob(Type, pJob);
 	}
 
@@ -217,7 +232,7 @@ public:
 	DEM_FORCE_INLINE void AddWaitingJob(EJobType Type, CJobCounter& Counter, CJobCounter WaitCounter, F f)
 	{
 		CJob* pJob = AllocateJob(&Counter, f);
-		if (!_pOwner->StartWaiting(WaitCounter, pJob, Type))
+		if (!_pOwner->StartWaiting(std::move(WaitCounter), pJob, Type))
 			PushJob(Type, pJob);
 	}
 
@@ -238,6 +253,22 @@ public:
 		for (uint8_t i = 0; i < EJobType::Count; ++i)
 			if ((TypeMask & ENUM_MASK(i)) && !_Queue[i].empty()) return true;
 		return false;
+	}
+
+	uint8_t CollectAvailableJobsMask() const
+	{
+		uint8_t Mask = 0;
+		for (uint8_t i = 0; i < EJobType::Count; ++i)
+			if (!_Queue[i].empty()) Mask |= ENUM_MASK(i);
+		return Mask;
+	}
+
+	bool WakeUp()
+	{
+		std::lock_guard Lock(_WaitJobsMutex);
+		if (!_IsWaiting) return false;
+		_WaitJobsCV.notify_one();
+		return true;
 	}
 
 	const std::string& GetName() const { return _Name; }

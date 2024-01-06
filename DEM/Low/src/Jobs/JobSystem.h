@@ -30,11 +30,22 @@ protected:
 	std::map<std::thread::id, uint32_t> _ThreadToIndex;
 	std::atomic<bool>                   _TerminationRequested = false;
 
-	std::mutex                          _WaitJobsMutex;
-	std::condition_variable             _WaitJobsCV;
+	// An unified waiting record for jobs added with AddWaitingJob and worker threads waiting on a counter
+	struct CWaiter
+	{
+		CJob*        pJob; // nullptr - WorkerIndex, else JobType
+		union
+		{
+			uint32_t WorkerIndex;
+			EJobType JobType;
+		};
 
-	std::mutex                                                       _WaitListMutex;
-	std::unordered_multimap<CJobCounter, std::pair<CJob*, EJobType>> _WaitList; //???!!!Need a list of CJob* waiting nodes? Use lock-free hash map?!
+		CWaiter(CJob* pJob_, EJobType JobType_) : pJob(pJob_), JobType(JobType_) {}
+		CWaiter(uint32_t WorkerIndex_) : pJob(nullptr), WorkerIndex(WorkerIndex_) {}
+	};
+
+	std::mutex                                    _WaitListMutex;
+	std::unordered_multimap<CJobCounter, CWaiter> _WaitList; //???!!!Need a list of CWaiter* nodes? Use lock-free hash map?!
 
 	// TODO: add pool or handle manager for dependency counters, not to allocate a new shared_ptr with atomic each time the counter is needed
 
@@ -46,26 +57,21 @@ public:
 	// Private interface for workers
 
 	bool     StartWaiting(CJobCounter Counter, CJob* pJob, EJobType JobType);
+	bool     StartWaiting(CJobCounter Counter, uint32_t WorkerIndex);
 	void     EndWaiting(CJobCounter Counter, CWorker& Worker);
-
-	void     WakeUpWorkers(size_t Count);
-	void     WakeUpAllWorkers();
-
-	template<typename F>
-	DEM_FORCE_INLINE void PutCurrentWorkerToSleepUntil(F Condition)
-	{
-		std::unique_lock Lock(_WaitJobsMutex);
-		_WaitJobsCV.wait(Lock, Condition);
-	}
+	void     WakeUpWorker(uint8_t AvailableJobsMask);
 
 	// Public interface
+
+	static void Wait(CJobCounter Counter);
 
 	CWorker& GetWorker(uint32_t Index) const { return _Workers[Index]; }
 	CWorker* FindCurrentThreadWorker() const;
 	uint32_t FindCurrentThreadWorkerIndex() const;
 	size_t   GetWorkerThreadCount() const { return _Threads.size(); }
-	bool     HasJobs() const;
-	bool     IsTerminationRequested() const { return _TerminationRequested; }
+	bool     HasJobs(uint8_t TypeMask = ~0) const;
+	uint8_t  CollectAvailableJobsMask() const;
+	bool     IsTerminationRequested(bool SeqCstRead = false) const { return _TerminationRequested.load(SeqCstRead ? std::memory_order_seq_cst : std::memory_order_relaxed); }
 };
 
 }

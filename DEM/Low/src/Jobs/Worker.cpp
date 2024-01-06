@@ -16,8 +16,9 @@ void CWorker::Init(CJobSystem& Owner, std::string Name, uint32_t Index, uint8_t 
 // FIXME: inline manually?! Not compiled as inline without more headers, but is OK inside templated methods!
 void CWorker::PushJob(EJobType Type, CJob* pJob)
 {
+	//???use CollectAvailableJobsMask to wake up a new worker? or is it OK to wake up by incoming job type?
 	_Queue[Type].Push(pJob);
-	_pOwner->WakeUpWorkers(1); // We have a job now, let's wake up another worker for stealing (e.g. from us)
+	_pOwner->WakeUpWorker(ENUM_MASK(Type)); // We have a job now, let's wake up another worker for stealing (e.g. from us)
 }
 //---------------------------------------------------------------------
 
@@ -47,7 +48,7 @@ void CWorker::CancelJob(CJob* pJob)
 
 	//???destroy Function or must destroy it in the same thread where created?
 
-	// NB: not calling EndWaiting() because now Cancel() is only called from termination
+	// NB: not calling EndWaiting() because now CancelJob() is only called from termination
 	if (auto CounterPtr = pJob->Counter.lock())
 		CounterPtr->fetch_sub(1, std::memory_order_relaxed); // No job results to publish, relaxed is enough
 }
@@ -57,9 +58,11 @@ void CWorker::CancelJob(CJob* pJob)
 // of its execution with CJobSystem::StartWaiting() and continue the main loop without recursion
 void CWorker::Wait(CJobCounter Counter)
 {
-	if (!Counter) return;
-	MainLoop([WaitCounter = std::move(Counter)]() { return WaitCounter->load(std::memory_order_relaxed) == 0; });
-	std::atomic_thread_fence(std::memory_order_acquire); // Make finished job results visible
+	if (_pOwner->StartWaiting(Counter, _Index))
+	{
+		MainLoop([WaitCounter = std::move(Counter)]() { return WaitCounter->load(std::memory_order_relaxed) == 0; });
+		std::atomic_thread_fence(std::memory_order_acquire); // Make finished job results visible
+	}
 }
 //---------------------------------------------------------------------
 
