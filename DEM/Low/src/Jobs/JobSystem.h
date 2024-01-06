@@ -63,8 +63,6 @@ public:
 
 	// Public interface
 
-	static void Wait(CJobCounter Counter);
-
 	CWorker& GetWorker(uint32_t Index) const { return _Workers[Index]; }
 	CWorker* FindCurrentThreadWorker() const;
 	uint32_t FindCurrentThreadWorkerIndex() const;

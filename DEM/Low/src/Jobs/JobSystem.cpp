@@ -158,7 +158,7 @@ void CJobSystem::EndWaiting(CJobCounter Counter, CWorker& Worker)
 			}
 			else
 			{
-				// Resume waiting worker, see CWorker::Wait(CJobCounter Counter)
+				// Resume waiting worker, see CWorker::WaitActive/WaitIdle(CJobCounter Counter)
 				// FIXME: worker's _WaitJobsMutex will be locked inside our _WaitListMutex lock. Looks safe but can delay WakeUp after unlock just in case.
 				_Workers[Waiter.WorkerIndex].WakeUp();
 			}
@@ -185,18 +185,6 @@ void CJobSystem::WakeUpWorker(uint8_t AvailableJobsMask)
 	for (uint32_t i = 0; i < ThreadCount; ++i)
 		if ((_Workers[i].GetJobTypeMask() & AvailableJobsMask) && _Workers[i].WakeUp())
 			return;
-}
-//---------------------------------------------------------------------
-
-void CJobSystem::Wait(CJobCounter Counter)
-{
-	//!!!DBG TMP!
-	//!!!FIXME PERF: need better waiting on counter! This sleep_for() is only a temporary solution!
-	//???add itself (main thread worker index) to the wait list?!
-	using namespace std::chrono_literals;
-	while (Counter->load(std::memory_order_relaxed) > 0)
-		std::this_thread::sleep_for(1ms);
-	std::atomic_thread_fence(std::memory_order_acquire); // Make job results visible
 }
 //---------------------------------------------------------------------
 

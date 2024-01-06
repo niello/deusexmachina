@@ -54,15 +54,30 @@ void CWorker::CancelJob(CJob* pJob)
 }
 //---------------------------------------------------------------------
 
+// Active waiting. The worker thread is allowed to pick and execute independent jobs while waiting on the counter.
 // TODO: could use fibers to move the current job into a wait list in the middle
 // of its execution with CJobSystem::StartWaiting() and continue the main loop without recursion
-void CWorker::Wait(CJobCounter Counter)
+void CWorker::WaitActive(CJobCounter Counter)
 {
-	if (_pOwner->StartWaiting(Counter, _Index))
-	{
-		MainLoop([WaitCounter = std::move(Counter)]() { return WaitCounter->load(std::memory_order_relaxed) == 0; });
-		std::atomic_thread_fence(std::memory_order_acquire); // Make finished job results visible
-	}
+	if (!_pOwner->StartWaiting(Counter, _Index)) return;
+
+	MainLoop([WaitCounter = std::move(Counter)]() { return WaitCounter->load(std::memory_order_relaxed) == 0; });
+
+	// Make finished job results visible
+	std::atomic_thread_fence(std::memory_order_acquire);
+}
+//---------------------------------------------------------------------
+
+// Inactive waiting. The worker thread yelds until the counter reaches zero.
+void CWorker::WaitIdle(CJobCounter Counter)
+{
+	if (!_pOwner->StartWaiting(Counter, _Index)) return;
+
+	// Lock also works as an acquire fence, making job results from Counter visible when the counter reaches zero
+	std::unique_lock Lock(_WaitJobsMutex);
+	_IsWaiting = true;
+	_WaitJobsCV.wait(Lock, [WaitCounter = std::move(Counter), this]() { return WaitCounter->load(std::memory_order_relaxed) == 0 || _pOwner->IsTerminationRequested(true); });
+	_IsWaiting = false;
 }
 //---------------------------------------------------------------------
 

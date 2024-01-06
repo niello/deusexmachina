@@ -175,12 +175,12 @@ protected:
 					bool NeedExit = false;
 					{
 						std::unique_lock Lock(_WaitJobsMutex);
-						NeedExit = _pOwner->IsTerminationRequested(true) || ExitPred();
+						NeedExit = ExitPred() || _pOwner->IsTerminationRequested(true);
 						while (!NeedExit && !_pOwner->HasJobs(_JobTypeMask))
 						{
 							_IsWaiting = true;
 							_WaitJobsCV.wait(Lock); // NB: predicate is moved outside the wait() call
-							NeedExit = _pOwner->IsTerminationRequested(true) || ExitPred();
+							NeedExit = ExitPred() || _pOwner->IsTerminationRequested(true);
 						}
 						_IsWaiting = false; //???!!!TODO: when wait on atomic become available, use atomic _IsWaiting instead of conditional variable?!
 					}
@@ -200,7 +200,8 @@ public:
 
 	void Init(CJobSystem& Owner, std::string Name, uint32_t Index, uint8_t JobTypeMask = ~0);
 	void MainLoop() { MainLoop([]() { return false; }); }
-	void Wait(CJobCounter Counter);
+	void WaitActive(CJobCounter Counter);
+	void WaitIdle(CJobCounter Counter);
 
 	// Shortcuts for normal jobs
 	template<typename F> DEM_FORCE_INLINE void AddJob(F f) { AddJob(EJobType::Normal, f); }
