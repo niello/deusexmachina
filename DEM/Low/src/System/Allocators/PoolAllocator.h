@@ -103,7 +103,7 @@ public:
 	template<typename T, typename... TArgs> T* Construct(TArgs&&... Args)
 	{
 		static_assert(sizeof(T) <= ObjectByteSize);
-		auto pNew = static_cast<T*>(Allocate());
+		auto pNew = std::launder(static_cast<T*>(Allocate()));
 		new (pNew) T(std::forward<TArgs>(Args)...);
 		return pNew;
 	}
