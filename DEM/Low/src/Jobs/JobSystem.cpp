@@ -183,11 +183,14 @@ void CJobSystem::EndWaiting(CJobCounter Counter, CWorker& Worker)
 
 void CJobSystem::WakeUpWorker(uint8_t AvailableJobsMask)
 {
+	//ZoneScoped;
+
 	if (!AvailableJobsMask) return;
 
-	const auto ThreadCount = _Threads.size();
-	for (uint8_t i = 0; i < ThreadCount; ++i)
-		if ((_Workers[i].GetJobTypeMask() & AvailableJobsMask) && _Workers[i].WakeUp())
+	CWorker* pCurr = &_Workers[0];
+	CWorker* pEnd = pCurr + _Threads.size();
+	for (; pCurr != pEnd; ++pCurr)
+		if ((pCurr->GetJobTypeMask() & AvailableJobsMask) && pCurr->WakeUp())
 			return;
 }
 //---------------------------------------------------------------------

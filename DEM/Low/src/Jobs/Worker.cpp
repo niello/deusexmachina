@@ -26,8 +26,6 @@ void CWorker::DoJob(CJob& Job)
 {
 	Job.Function();
 
-	//???destroy Function or must destroy it in the same thread where created?
-
 	//???decrement relaxed and publish job results with release only if reached 0?
 	//???can increment in AddJob be reordered after this decrement currently? Think of stealing!
 	//!!!TODO: C++20 wait on atomic! Or for Windows 8+ can use short spinlock + WaitOnAddress, WakeByAddressSingle and WakeByAddressAll:
@@ -47,8 +45,6 @@ void CWorker::DoJob(CJob& Job)
 void CWorker::CancelJob(CJob* pJob)
 {
 	if (!pJob) return;
-
-	//???destroy Function or must destroy it in the same thread where created?
 
 	// NB: not calling EndWaiting() because now CancelJob() is only called from termination
 	if (auto CounterPtr = pJob->Counter.lock())
