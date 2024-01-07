@@ -73,11 +73,15 @@ void CWorker::WaitIdle(CJobCounter Counter)
 {
 	if (!_pOwner->StartWaiting(Counter, _Index)) return;
 
+	//!!!TODO PERF: do need seq cst here to avoid reading "false" in WakeUp() when we are going to sleep here?
+	_IsWaiting.store(true, std::memory_order_seq_cst);
+
 	// Lock also works as an acquire fence, making job results from Counter visible when the counter reaches zero
 	std::unique_lock Lock(_WaitJobsMutex);
-	_IsWaiting = true;
-	_WaitJobsCV.wait(Lock, [WaitCounter = std::move(Counter), this]() { return WaitCounter->load(std::memory_order_relaxed) == 0 || _pOwner->IsTerminationRequested(true); });
-	_IsWaiting = false;
+	while (Counter->load(std::memory_order_relaxed) != 0 && !_pOwner->IsTerminationRequested(true))
+		_WaitJobsCV.wait(Lock);
+
+	_IsWaiting.store(false, std::memory_order_relaxed); //???!!!TODO: when wait on atomic become available, use _IsWaiting instead of conditional variable?!
 }
 //---------------------------------------------------------------------
 
