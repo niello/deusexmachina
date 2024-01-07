@@ -207,8 +207,8 @@ public:
 	// Shortcuts for normal jobs
 	template<typename F> DEM_FORCE_INLINE void AddJob(F f) { AddJob(EJobType::Normal, f); }
 	template<typename F> DEM_FORCE_INLINE void AddJob(CJobCounter& Counter, F f) { AddJob(EJobType::Normal, Counter, f); }
-	template<typename F> DEM_FORCE_INLINE void AddWaitingJob(CJobCounter WaitCounter, F f) { AddWaitingJob(EJobType::Normal, WaitCounter, f); }
-	template<typename F> DEM_FORCE_INLINE void AddWaitingJob(CJobCounter& Counter, CJobCounter WaitCounter, F f) { AddWaitingJob(EJobType::Normal, Counter, WaitCounter, f); }
+	template<typename F> DEM_FORCE_INLINE void AddWaitingJob(CJobCounter WaitCounter, F f) { AddWaitingJob(EJobType::Normal, std::move(WaitCounter), f); }
+	template<typename F> DEM_FORCE_INLINE void AddWaitingJob(CJobCounter& Counter, CJobCounter WaitCounter, F f) { AddWaitingJob(EJobType::Normal, Counter, std::move(WaitCounter), f); }
 
 	template<typename F>
 	DEM_FORCE_INLINE void AddJob(EJobType Type, F f)
