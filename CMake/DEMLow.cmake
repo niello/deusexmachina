@@ -315,6 +315,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/System/Platform.h
 	DEM/Low/src/System/System.h
 	DEM/Low/src/System/SystemEvents.h
+	DEM/Low/src/System/Allocators/HalfSafePool.h
 	DEM/Low/src/System/Allocators/PoolAllocator.h
 	DEM/Low/src/System/Win32/InputDeviceWin32.h
 	DEM/Low/src/System/Win32/KeyboardWin32.h

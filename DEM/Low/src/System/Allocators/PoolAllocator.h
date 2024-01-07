@@ -24,11 +24,11 @@ protected:
 		CRecord ChunkRecords[ObjectsPerChunk];
 	};
 
-	std::unique_ptr<CChunkNode> Chunks;
-	CRecord* pFreeRecords = nullptr;
+	std::unique_ptr<CChunkNode> _Chunks;
+	CRecord*                    _pFreeRecords = nullptr;
 
 #ifdef _DEBUG
-	UPTR CurrAllocatedCount = 0;
+	UPTR                        _CurrAllocatedCount = 0;
 #endif
 
 public:
@@ -36,74 +36,73 @@ public:
 #ifdef _DEBUG
 	~CPoolAllocator()
 	{
-		if (CurrAllocatedCount > 0)
-			::Sys::Error("~CPoolAllocator() > %d unreleased records\n", CurrAllocatedCount);
+		if (_CurrAllocatedCount > 0)
+			::Sys::Error("~CPoolAllocator() > %d unreleased records\n", _CurrAllocatedCount);
 	}
 #endif
 
 	void* Allocate()
 	{
-		void* pAllocatedRec = nullptr;
-
-		if (pFreeRecords)
-		{
-			pAllocatedRec = pFreeRecords->Object;
-			pFreeRecords = pFreeRecords->pNext;
-		}
-		else
-		{
-			auto NewChunk = std::make_unique<CChunkNode>();
-			NewChunk->Next = std::move(Chunks);
-			Chunks = std::move(NewChunk);
-
-			pAllocatedRec = Chunks->ChunkRecords->Object;
-
-			// We had already taken the first record, add remaining ones to the free list
-			if constexpr (ObjectsPerChunk > 1)
-			{
-				pFreeRecords = Chunks->ChunkRecords + 1;
-				CRecord* pEnd = Chunks->ChunkRecords + ObjectsPerChunk - 1;
-				for (auto pCurr = pFreeRecords; pCurr < pEnd; ++pCurr)
-					pCurr->pNext = pCurr + 1;
-				pEnd->pNext = nullptr;
-			}
-		}
-
 #ifdef _DEBUG
-		++CurrAllocatedCount;
+		++_CurrAllocatedCount;
 #endif
+
+		if (auto pRecord = _pFreeRecords)
+		{
+			_pFreeRecords = pRecord->pNext;
+			return pRecord->Object;
+		}
+
+		auto NewChunk = std::make_unique<CChunkNode>();
+		NewChunk->Next = std::move(_Chunks);
+		_Chunks = std::move(NewChunk);
+
+		void* pAllocatedRec = _Chunks->ChunkRecords->Object;
+
+		// We had already taken the first record, add remaining ones to the free list
+		if constexpr (ObjectsPerChunk > 1)
+		{
+			CRecord* pBegin = _Chunks->ChunkRecords + 1;
+			CRecord* pEnd = _Chunks->ChunkRecords + ObjectsPerChunk - 1;
+			for (auto pCurr = pBegin; pCurr < pEnd; ++pCurr)
+				pCurr->pNext = pCurr + 1;
+			pEnd->pNext = nullptr;
+
+			_pFreeRecords = pBegin;
+		}
 
 		return pAllocatedRec;
 	}
 
-	void Free(void* pAllocatedRec)
+	void Free(void* pObject)
 	{
-		if (!pAllocatedRec) return;
+		if (!pObject) return;
 
 #ifdef _DEBUG
 		// TODO: add optional debug validation of incoming pointer
-		--CurrAllocatedCount;
+		--_CurrAllocatedCount;
 #endif
 
-		((CRecord*)pAllocatedRec)->pNext = pFreeRecords;
-		pFreeRecords = (CRecord*)pAllocatedRec;
+		auto pAllocatedRec = std::launder(reinterpret_cast<CRecord*>(pObject));
+		pAllocatedRec->pNext = _pFreeRecords;
+		_pFreeRecords = pAllocatedRec;
 	}
 
 	void Clear()
 	{
 #ifdef _DEBUG
 		// Intentionally clear the pool. Allocated pointers become invalid, but no warning issued.
-		CurrAllocatedCount = 0;
+		_CurrAllocatedCount = 0;
 #endif
 
-		Chunks = nullptr;
-		pFreeRecords = nullptr;
+		_Chunks = nullptr;
+		_pFreeRecords = nullptr;
 	}
 
 	template<typename T, typename... TArgs> T* Construct(TArgs&&... Args)
 	{
 		static_assert(sizeof(T) <= ObjectByteSize);
-		auto pNew = std::launder(static_cast<T*>(Allocate()));
+		auto pNew = std::launder(reinterpret_cast<T*>(Allocate()));
 		new (pNew) T(std::forward<TArgs>(Args)...);
 		return pNew;
 	}

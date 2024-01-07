@@ -1,6 +1,6 @@
 #pragma once
 #include "WorkStealingQueue.h"
-#include <System/Allocators/PoolAllocator.h>
+#include <System/Allocators/HalfSafePool.h>
 #include <random>
 
 // Implements a worker thread logic. After construction, all its fields are intended for access from the corresponding thread only.
@@ -9,6 +9,7 @@ namespace DEM::Jobs
 {
 class CJobSystem;
 using CJobCounter = std::shared_ptr<std::atomic<uint32_t>>; // TODO: make pool and handle manager to use fast and safe handles?
+using CJobCounterWeak = std::weak_ptr<std::atomic<uint32_t>>; // TODO: make pool and handle manager to use fast and safe handles?
 
 enum EJobType : uint8_t
 {
@@ -20,8 +21,9 @@ enum EJobType : uint8_t
 
 struct alignas(std::hardware_constructive_interference_size) CJob
 {
-	std::function<void()>                Function;
-	std::weak_ptr<std::atomic<uint32_t>> Counter;  // An optional counter decremented on this job completion. External code may wait on it.
+	std::function<void()> Function;
+	CJobCounterWeak       Counter;     // An optional counter decremented on this job completion. External code may wait on it.
+	uint8_t               WorkerIndex; // For finding a per-thread pool where the job is created
 };
 static_assert(sizeof(CJob) <= alignof(CJob)); // TODO: see what we can do if this asserts. Probably x64 will.
 
@@ -31,9 +33,9 @@ protected:
 
 	CWorkStealingQueue<CJob*> _Queue[EJobType::Count];
 	CJobSystem*               _pOwner = nullptr;
-	CPool<CJob>               _JobPool; //???how to ensure that the job is destroyed by the same pool it was created and from the same thread? Or pool must be lockable/lock-free and so shared (no reason to have per thread then)?
+	CHalfSafePool<CJob>       _JobPool; //???how to ensure that the job is destroyed by the same pool it was created and from the same thread? Or pool must be lockable/lock-free and so shared (no reason to have per thread then)?
 	std::string               _Name;
-	uint32_t                  _Index = std::numeric_limits<uint32_t>().max();
+	uint8_t                   _Index = std::numeric_limits<uint8_t>().max();
 	uint8_t                   _JobTypeMask = ~0; //???or initializer list instead of mask?! can tune priorities between types!
 
 	std::mutex                _WaitJobsMutex;
@@ -57,10 +59,9 @@ protected:
 	template<typename F>
 	DEM_FORCE_INLINE CJob* AllocateJob(CJobCounter* pCounter, F f)
 	{
-		//!!!DBG TMP!
-		//!!!FIXME: leak!!!
 		CJob* pJob = _JobPool.Construct();
 		pJob->Function = std::move(f); //???can piecewise construct be useful here? pass f right into _JobPool.Construct()?
+		pJob->WorkerIndex = _Index;
 
 		if (!pCounter)
 		{
@@ -126,7 +127,7 @@ protected:
 				{
 					if (ExitPred()) return;
 
-					pJob = _pOwner->GetWorker(Victim).Steal(_JobTypeMask);
+					pJob = _pOwner->GetWorker(static_cast<uint8_t>(Victim)).Steal(_JobTypeMask);
 
 					if (_pOwner->IsTerminationRequested())
 					{
@@ -152,7 +153,7 @@ protected:
 				if (!pJob)
 				{
 					// TODO: start from the main thread?
-					for (size_t i = 0; i <= ThreadCount; ++i)
+					for (uint8_t i = 0; i <= ThreadCount; ++i)
 					{
 						if (i == _Index) continue;
 						pJob = _pOwner->GetWorker(i).Steal(_JobTypeMask);
@@ -198,7 +199,7 @@ protected:
 
 public:
 
-	void Init(CJobSystem& Owner, std::string Name, uint32_t Index, uint8_t JobTypeMask = ~0);
+	void Init(CJobSystem& Owner, std::string Name, uint8_t Index, uint8_t JobTypeMask = ~0);
 	void MainLoop() { MainLoop([]() { return false; }); }
 	void WaitActive(CJobCounter Counter);
 	void WaitIdle(CJobCounter Counter);
@@ -273,7 +274,7 @@ public:
 	}
 
 	const std::string& GetName() const { return _Name; }
-	uint32_t           GetIndex() const { return _Index; }
+	uint8_t            GetIndex() const { return _Index; }
 	uint8_t            GetJobTypeMask() const { return _JobTypeMask; }
 };
 

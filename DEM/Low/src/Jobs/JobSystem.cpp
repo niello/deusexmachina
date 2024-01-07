@@ -10,16 +10,20 @@ namespace DEM::Jobs
 
 CJobSystem::CJobSystem(std::initializer_list<CWorkerConfig> Config)
 {
+	ZoneScoped;
+
 	// Allocate all workers at once. The last worker is for the current (main) thread, this simplifies a design.
 	uint32_t TotalThreadCount = 0;
 	for (const auto& ConfigRecord : Config)
 		TotalThreadCount += ConfigRecord.ThreadCount;
 	_Workers.reset(new CWorker[TotalThreadCount + 1]);
 
-	uint32_t ThreadIndex = 0;
+	n_assert(TotalThreadCount <= std::numeric_limits<uint8_t>().max());
+
+	uint8_t ThreadIndex = 0;
 	for (const auto& ConfigRecord : Config)
 	{
-		for (uint32_t i = 0; i < ConfigRecord.ThreadCount; ++i, ++ThreadIndex)
+		for (uint8_t i = 0; i < ConfigRecord.ThreadCount; ++i, ++ThreadIndex)
 			_Workers[ThreadIndex].Init(*this, ConfigRecord.ThreadNamePrefix.data() + std::to_string(i), ThreadIndex, ConfigRecord.JobTypeMask);
 	}
 
@@ -33,11 +37,11 @@ CJobSystem::CJobSystem(std::initializer_list<CWorkerConfig> Config)
 
 	_ThreadToIndex.emplace(std::this_thread::get_id(), TotalThreadCount);
 
-	uint32_t ThreadsStarted = 0;
+	uint8_t ThreadsStarted = 0;
 	std::mutex ThreadsStartedMutex;
 	std::condition_variable ThreadsStartedCV;
 
-	for (uint32_t i = 0; i < TotalThreadCount; ++i)
+	for (uint8_t i = 0; i < TotalThreadCount; ++i)
 	{
 		_Threads[i] = std::thread([this, i, TotalThreadCount, &ThreadsStarted, &ThreadsStartedMutex, &ThreadsStartedCV]
 		{
@@ -112,7 +116,7 @@ bool CJobSystem::StartWaiting(CJobCounter Counter, CJob* pJob, EJobType JobType)
 }
 //---------------------------------------------------------------------
 
-bool CJobSystem::StartWaiting(CJobCounter Counter, uint32_t WorkerIndex)
+bool CJobSystem::StartWaiting(CJobCounter Counter, uint8_t WorkerIndex)
 {
 	// There are no unsatisfied dependencies, return false to let the worker continue immediately
 	if (!Counter || Counter->load(std::memory_order_relaxed) == 0) return false;
@@ -171,7 +175,7 @@ void CJobSystem::EndWaiting(CJobCounter Counter, CWorker& Worker)
 	//!!!FIXME PERF: can check caps matching once per thread group, caps inside a group are the same!
 	const auto ThreadCount = _Threads.size();
 	for (uint8_t JobType = 0; JobType < EJobType::Count; ++JobType)
-		for (uint32_t i = 0; NewJobCount[JobType] && i < ThreadCount; ++i)
+		for (uint8_t i = 0; NewJobCount[JobType] && i < ThreadCount; ++i)
 			if ((_Workers[i].GetJobTypeMask() & ENUM_MASK(JobType)) && _Workers[i].WakeUp())
 				--NewJobCount[JobType];
 }
@@ -182,7 +186,7 @@ void CJobSystem::WakeUpWorker(uint8_t AvailableJobsMask)
 	if (!AvailableJobsMask) return;
 
 	const auto ThreadCount = _Threads.size();
-	for (uint32_t i = 0; i < ThreadCount; ++i)
+	for (uint8_t i = 0; i < ThreadCount; ++i)
 		if ((_Workers[i].GetJobTypeMask() & AvailableJobsMask) && _Workers[i].WakeUp())
 			return;
 }
@@ -191,7 +195,7 @@ void CJobSystem::WakeUpWorker(uint8_t AvailableJobsMask)
 bool CJobSystem::HasJobs(uint8_t TypeMask) const
 {
 	const auto ThreadCount = _Threads.size();
-	for (uint32_t i = 0; i <= ThreadCount; ++i)
+	for (uint8_t i = 0; i <= ThreadCount; ++i)
 		if (_Workers[i].HasJobs(TypeMask)) return true;
 	return false;
 }
@@ -202,7 +206,7 @@ uint8_t CJobSystem::CollectAvailableJobsMask() const
 	// TODO PERF: early exit if all types are set? don't check queues for which the bit is already set?
 	uint8_t Mask = 0;
 	const auto ThreadCount = _Threads.size();
-	for (uint32_t i = 0; i <= ThreadCount; ++i)
+	for (uint8_t i = 0; i <= ThreadCount; ++i)
 		Mask |= _Workers[i].CollectAvailableJobsMask();
 	return Mask;
 }
@@ -215,7 +219,7 @@ CWorker* CJobSystem::FindCurrentThreadWorker() const
 }
 //---------------------------------------------------------------------
 
-uint32_t CJobSystem::FindCurrentThreadWorkerIndex() const
+uint8_t CJobSystem::FindCurrentThreadWorkerIndex() const
 {
 	auto It = _ThreadToIndex.find(std::this_thread::get_id());
 	return (It != _ThreadToIndex.cend()) ? It->second : std::numeric_limits<decltype(It->second)>().max();

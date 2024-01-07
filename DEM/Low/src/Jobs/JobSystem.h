@@ -13,11 +13,11 @@ namespace DEM::Jobs
 struct CWorkerConfig
 {
 	std::string_view ThreadNamePrefix;
-	uint32_t         ThreadCount;
+	uint8_t          ThreadCount;
 	uint8_t          JobTypeMask; //???!!!or array / vector/ initializer list? to enforce priority between types!
 
-	static CWorkerConfig Normal(uint32_t Count) { return CWorkerConfig{ "Worker", Count, ENUM_MASK(EJobType::Normal) }; }
-	static CWorkerConfig Sleepy(uint32_t Count) { return CWorkerConfig{ "SleepyWorker", Count, ENUM_MASK(EJobType::Sleepy) }; }
+	static CWorkerConfig Normal(uint8_t Count) { return CWorkerConfig{ "Worker", Count, ENUM_MASK(EJobType::Normal) }; }
+	static CWorkerConfig Sleepy(uint8_t Count) { return CWorkerConfig{ "SleepyWorker", Count, ENUM_MASK(EJobType::Sleepy) }; }
 	static CWorkerConfig Default() { return Normal(std::thread::hardware_concurrency()); }
 };
 
@@ -25,10 +25,10 @@ class CJobSystem final
 {
 protected:
 
-	std::unique_ptr<CWorker[]>          _Workers; // Workers aren't movable because of std::atomic in a queue
-	std::vector<std::thread>            _Threads;
-	std::map<std::thread::id, uint32_t> _ThreadToIndex;
-	std::atomic<bool>                   _TerminationRequested = false;
+	std::unique_ptr<CWorker[]>         _Workers; // Workers aren't movable because of std::atomic in a queue
+	std::vector<std::thread>           _Threads;
+	std::map<std::thread::id, uint8_t> _ThreadToIndex;
+	std::atomic<bool>                  _TerminationRequested = false;
 
 	// An unified waiting record for jobs added with AddWaitingJob and worker threads waiting on a counter
 	struct CWaiter
@@ -36,12 +36,12 @@ protected:
 		CJob*        pJob; // nullptr - WorkerIndex, else JobType
 		union
 		{
-			uint32_t WorkerIndex;
+			uint8_t  WorkerIndex;
 			EJobType JobType;
 		};
 
 		CWaiter(CJob* pJob_, EJobType JobType_) : pJob(pJob_), JobType(JobType_) {}
-		CWaiter(uint32_t WorkerIndex_) : pJob(nullptr), WorkerIndex(WorkerIndex_) {}
+		CWaiter(uint8_t WorkerIndex_) : pJob(nullptr), WorkerIndex(WorkerIndex_) {}
 	};
 
 	std::mutex                                    _WaitListMutex;
@@ -57,15 +57,15 @@ public:
 	// Private interface for workers
 
 	bool     StartWaiting(CJobCounter Counter, CJob* pJob, EJobType JobType);
-	bool     StartWaiting(CJobCounter Counter, uint32_t WorkerIndex);
+	bool     StartWaiting(CJobCounter Counter, uint8_t WorkerIndex);
 	void     EndWaiting(CJobCounter Counter, CWorker& Worker);
 	void     WakeUpWorker(uint8_t AvailableJobsMask);
 
 	// Public interface
 
-	CWorker& GetWorker(uint32_t Index) const { return _Workers[Index]; }
+	CWorker& GetWorker(uint8_t Index) const { return _Workers[Index]; }
 	CWorker* FindCurrentThreadWorker() const;
-	uint32_t FindCurrentThreadWorkerIndex() const;
+	uint8_t  FindCurrentThreadWorkerIndex() const;
 	size_t   GetWorkerThreadCount() const { return _Threads.size(); }
 	bool     HasJobs(uint8_t TypeMask = ~0) const;
 	uint8_t  CollectAvailableJobsMask() const;

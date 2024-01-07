@@ -4,7 +4,7 @@
 namespace DEM::Jobs
 {
 
-void CWorker::Init(CJobSystem& Owner, std::string Name, uint32_t Index, uint8_t JobTypeMask)
+void CWorker::Init(CJobSystem& Owner, std::string Name, uint8_t Index, uint8_t JobTypeMask)
 {
 	_pOwner = &Owner;
 	_Name = std::move(Name);
@@ -39,6 +39,8 @@ void CWorker::DoJob(CJob& Job)
 	if (auto CounterPtr = Job.Counter.lock())
 		if (CounterPtr->fetch_sub(1, std::memory_order_acq_rel) == 1)
 			_pOwner->EndWaiting(std::move(CounterPtr), *this);
+
+	_pOwner->GetWorker(Job.WorkerIndex)._JobPool.Destroy(&Job);
 }
 //---------------------------------------------------------------------
 
@@ -51,6 +53,8 @@ void CWorker::CancelJob(CJob* pJob)
 	// NB: not calling EndWaiting() because now CancelJob() is only called from termination
 	if (auto CounterPtr = pJob->Counter.lock())
 		CounterPtr->fetch_sub(1, std::memory_order_relaxed); // No job results to publish, relaxed is enough
+
+	_pOwner->GetWorker(pJob->WorkerIndex)._JobPool.Destroy(pJob);
 }
 //---------------------------------------------------------------------
 
