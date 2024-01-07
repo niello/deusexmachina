@@ -37,6 +37,7 @@ public:
 #ifdef _DEBUG
 	~CHalfSafePoolAllocator()
 	{
+		const auto CurrAllocatedCount = _CurrAllocatedCount.load();
 		if (CurrAllocatedCount > 0)
 			::Sys::Error("~CHalfSafePoolAllocator() > %d unreleased records\n", CurrAllocatedCount);
 	}
