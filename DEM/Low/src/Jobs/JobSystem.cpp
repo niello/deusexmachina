@@ -18,14 +18,12 @@ CJobSystem::CJobSystem(std::initializer_list<CWorkerConfig> Config)
 		TotalThreadCount += ConfigRecord.ThreadCount;
 	_Workers.reset(new CWorker[TotalThreadCount + 1]);
 
-	n_assert(TotalThreadCount <= std::numeric_limits<uint8_t>().max());
+	n_assert(TotalThreadCount <= MAX_WORKERS);
 
 	uint8_t ThreadIndex = 0;
 	for (const auto& ConfigRecord : Config)
-	{
 		for (uint8_t i = 0; i < ConfigRecord.ThreadCount; ++i, ++ThreadIndex)
 			_Workers[ThreadIndex].Init(*this, ConfigRecord.ThreadNamePrefix.data() + std::to_string(i), ThreadIndex, ConfigRecord.JobTypeMask);
-	}
 
 	// Init main thread with all job types allowed.
 	// NB: it is not necessarily a 'main' thread in a common meaning, it is instead any thread in which the job system was created.
@@ -87,6 +85,8 @@ CJobSystem::~CJobSystem()
 	for (size_t i = 0; i < ThreadCount; ++i)
 		_Workers[i].WakeUp();
 
+	n_assert_dbg(!_SleepingWorkerMask.load(std::memory_order_seq_cst));
+
 	// Wait for all worker threads to terminate
 	for (auto& Thread: _Threads)
 		if (Thread.joinable()) Thread.join();
@@ -143,6 +143,7 @@ void CJobSystem::EndWaiting(CJobCounter Counter, CWorker& Worker)
 	// Assume the counter being 0, otherwise this method wouldn't be called.
 	// Incrementing and starting waiting on the same counter is illegal until it is removed from the wait list.
 
+	size_t WorkersToWakeUp = 0;
 	size_t NewJobCount[EJobType::Count] = {};
 	{
 		std::unique_lock Lock(_WaitListMutex);
@@ -162,22 +163,50 @@ void CJobSystem::EndWaiting(CJobCounter Counter, CWorker& Worker)
 			}
 			else
 			{
-				// Resume waiting worker, see CWorker::WaitActive/WaitIdle(CJobCounter Counter)
-				// FIXME: worker's _WaitJobsMutex will be locked inside our _WaitListMutex lock. Looks safe but can delay WakeUp after unlock just in case.
-				_Workers[Waiter.WorkerIndex].WakeUp();
+				// Register the waiting worker for waking up
+				WorkersToWakeUp |= (1 << Waiter.WorkerIndex);
 			}
 		}
 
 		_WaitList.erase(ItBegin, ItEnd);
 	}
 
-	// Wake up workers for stealing new jobs
+	CWorker* pBegin = &_Workers[0];
+	const CWorker* pEnd = pBegin + _Threads.size();
+
+	//???TODO PERF: do need seq cst here? or is it enough to store with it?
+	auto SleepingWorkerMask = _SleepingWorkerMask.load(std::memory_order_seq_cst);
+	if (!SleepingWorkerMask) return;
+
+	// Resume waiting workers first, see CWorker::WaitActive/WaitIdle(CJobCounter Counter)
+	// NB: main thread included because it can be put to wait
+	WorkersToWakeUp &= SleepingWorkerMask;
+	for (auto pCurr = pBegin; WorkersToWakeUp && (pCurr <= pEnd); ++pCurr, WorkersToWakeUp >>= 1)
+		if (WorkersToWakeUp & 1) pCurr->WakeUp();
+
+	// Don't try to wake up already awakened workers
+	SleepingWorkerMask &= ~WorkersToWakeUp;
+	if (!SleepingWorkerMask) return;
+
+	// Wake up additional workers for stealing new jobs
+	// NB: main thread excluded
 	//!!!FIXME PERF: can check caps matching once per thread group, caps inside a group are the same!
-	const auto ThreadCount = _Threads.size();
 	for (uint8_t JobType = 0; JobType < EJobType::Count; ++JobType)
-		for (uint8_t i = 0; NewJobCount[JobType] && i < ThreadCount; ++i)
-			if ((_Workers[i].GetJobTypeMask() & ENUM_MASK(JobType)) && _Workers[i].WakeUp())
-				--NewJobCount[JobType];
+	{
+		auto JobCount = NewJobCount[JobType];
+		const auto JobTypeMask = ENUM_MASK(JobType);
+		uint8_t WorkerBitMask = 1;
+		for (auto pCurr = pBegin; JobCount && (pCurr != pEnd); ++pCurr, WorkerBitMask <<= 1)
+		{
+			if ((SleepingWorkerMask & WorkerBitMask) && (pCurr->GetJobTypeMask() & JobTypeMask) && pCurr->WakeUp())
+			{
+				// Don't try to wake up already awakened workers
+				SleepingWorkerMask &= ~WorkerBitMask;
+				if (!SleepingWorkerMask) return;
+				--JobCount;
+			}
+		}
+	}
 }
 //---------------------------------------------------------------------
 
@@ -185,12 +214,27 @@ void CJobSystem::WakeUpWorker(uint8_t AvailableJobsMask)
 {
 	//ZoneScoped;
 
-	if (!AvailableJobsMask) return;
+	//???TODO PERF: do need seq cst here? or is it enough to store with it?
+	auto SleepingWorkerMask = _SleepingWorkerMask.load(std::memory_order_seq_cst);
+	if (!SleepingWorkerMask) return;
 
-	CWorker* pCurr = &_Workers[0];
-	CWorker* pEnd = pCurr + _Threads.size();
-	for (; pCurr != pEnd; ++pCurr)
-		if ((pCurr->GetJobTypeMask() & AvailableJobsMask) && pCurr->WakeUp())
+	CWorker* pBegin = &_Workers[0];
+	const CWorker* pEnd = pBegin + _Threads.size();
+
+	if (!AvailableJobsMask)
+	{
+		// TODO PERF: early exit if all types are set? don't check queues for which the bit is already set?
+		// NB: main thread included because it can contain jobs for stealing by other workers
+		for (auto pCurr = pBegin; pCurr <= pEnd; ++pCurr)
+			AvailableJobsMask |= pCurr->CollectAvailableJobsMask();
+
+		if (!AvailableJobsMask) return;
+	}
+
+	// Wake up the first suitable worker
+	// NB: main thread excluded
+	for (auto pCurr = pBegin; pCurr != pEnd; ++pCurr, SleepingWorkerMask >>= 1)
+		if ((SleepingWorkerMask & 1) && (pCurr->GetJobTypeMask() & AvailableJobsMask) && pCurr->WakeUp())
 			return;
 }
 //---------------------------------------------------------------------
@@ -201,17 +245,6 @@ bool CJobSystem::HasJobs(uint8_t TypeMask) const
 	for (uint8_t i = 0; i <= ThreadCount; ++i)
 		if (_Workers[i].HasJobs(TypeMask)) return true;
 	return false;
-}
-//---------------------------------------------------------------------
-
-uint8_t CJobSystem::CollectAvailableJobsMask() const
-{
-	// TODO PERF: early exit if all types are set? don't check queues for which the bit is already set?
-	uint8_t Mask = 0;
-	const auto ThreadCount = _Threads.size();
-	for (uint8_t i = 0; i <= ThreadCount; ++i)
-		Mask |= _Workers[i].CollectAvailableJobsMask();
-	return Mask;
 }
 //---------------------------------------------------------------------
 

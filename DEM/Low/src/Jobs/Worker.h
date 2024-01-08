@@ -44,7 +44,6 @@ protected:
 
 	std::mutex                _WaitJobsMutex;
 	std::condition_variable   _WaitJobsCV;
-	std::atomic<bool>         _IsWaiting = false;
 
 	void PushJob(EJobType Type, CJob* pJob);
 	void DoJob(CJob& Job);
@@ -162,7 +161,7 @@ protected:
 				if (pJob)
 				{
 					// We have stolen a job an will be busy, wake up one more worker to continue stealing jobs
-					_pOwner->WakeUpWorker(_pOwner->CollectAvailableJobsMask());
+					_pOwner->WakeUpWorker();
 
 					// Do the job and return to the local queue loop because this job might push new jobs to it
 					DoJob(*pJob);
@@ -171,13 +170,14 @@ protected:
 				else
 				{
 					// This store must not be reordered past the sleep condition evaluation. Otherwise a condition may
-					// be evaluated to true, then WakeUp() will preempt us, read _IsWaiting = false and skip notification.
-					// This thread will resume and start waiting on CV. This results in a missing wakeup. Making sure that
-					// _IsWaiting is set before eliminates this case. We either see _IsWaiting = true and send notification
-					// or we skip notification due to _IsWaiting = false but sleep condition will detect new jobs, if any.
-					_IsWaiting.store(true, std::memory_order_seq_cst);
+					// be evaluated to true, then WakeUp() will preempt us, read "waiting is false" and skip notification.
+					// This thread will resume and start waiting on CV. This results in a missing wakeup. Making sure that the
+					// waiting flag is set before eliminates this case. We either see "waiting is true" and send notification
+					// or we skip notification due to "waiting is false" but sleep condition will detect new jobs, if any.
+					_pOwner->SetWorkerSleeping(_Index);
 
 					// No jobs to steal, go to sleep. After waking up the worker returns to stealing because no one could push jobs into its local queue.
+					// TODO PERF C++20: wait on atomic?!
 					bool NeedExit = false;
 					{
 						std::unique_lock Lock(_WaitJobsMutex);
@@ -189,7 +189,7 @@ protected:
 							NeedExit = ExitPred() || _pOwner->IsTerminationRequested(true);
 						}
 
-						_IsWaiting.store(false, std::memory_order_relaxed); //???!!!TODO: when wait on atomic become available, use _IsWaiting instead of conditional variable?!
+						_pOwner->SetWorkerAwakened(_Index);
 					}
 
 					// We could have been woken up because of termination request, let's check immediately
@@ -275,19 +275,7 @@ public:
 	}
 
 	// Can be called from any thread
-	bool WakeUp()
-	{
-		//???!!!TODO PERF: do need seq cst here to avoid reading "false" when we are going to sleep? See notifier from Eigen / taskflow?
-		if (!_IsWaiting.load(std::memory_order_seq_cst)) return false;
-
-		{
-			std::lock_guard Lock(_WaitJobsMutex);
-			if (!_IsWaiting.load(std::memory_order_relaxed)) return false;
-			_WaitJobsCV.notify_one();
-		}
-
-		return true;
-	}
+	bool WakeUp();
 
 	const std::string& GetName() const { return _Name; }
 	uint8_t            GetIndex() const { return _Index; }

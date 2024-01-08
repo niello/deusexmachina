@@ -16,7 +16,6 @@ void CWorker::Init(CJobSystem& Owner, std::string Name, uint8_t Index, uint8_t J
 // FIXME: inline manually?! Not compiled as inline without more headers, but is OK inside templated methods!
 void CWorker::PushJob(EJobType Type, CJob* pJob)
 {
-	//???use CollectAvailableJobsMask to wake up a new worker? or is it OK to wake up by incoming job type?
 	_Queue[Type].Push(pJob);
 	_pOwner->WakeUpWorker(ENUM_MASK(Type)); // We have a job now, let's wake up another worker for stealing (e.g. from us)
 }
@@ -74,14 +73,25 @@ void CWorker::WaitIdle(CJobCounter Counter)
 	if (!_pOwner->StartWaiting(Counter, _Index)) return;
 
 	// Waiting logic is the same as in MainLoop, see comments there for details
-	_IsWaiting.store(true, std::memory_order_seq_cst);
+	_pOwner->SetWorkerSleeping(_Index);
 
 	// Lock also works as an acquire fence, making job results from Counter visible when the counter reaches zero
+	// TODO PERF C++20: wait on atomic?!
 	std::unique_lock Lock(_WaitJobsMutex);
 	while (Counter->load(std::memory_order_relaxed) != 0 && !_pOwner->IsTerminationRequested(true))
 		_WaitJobsCV.wait(Lock);
 
-	_IsWaiting.store(false, std::memory_order_relaxed); //???!!!TODO: when wait on atomic become available, use _IsWaiting instead of conditional variable?!
+	_pOwner->SetWorkerAwakened(_Index);
+}
+//---------------------------------------------------------------------
+
+// Can be called from any thread
+bool CWorker::WakeUp()
+{
+	std::lock_guard Lock(_WaitJobsMutex);
+	if (!_pOwner->IsWorkerSleeping(_Index)) return false;
+	_WaitJobsCV.notify_one();
+	return true;
 }
 //---------------------------------------------------------------------
 
