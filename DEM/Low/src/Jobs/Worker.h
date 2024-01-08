@@ -10,7 +10,6 @@ namespace DEM::Jobs
 {
 class CJobSystem;
 using CJobCounter = std::shared_ptr<std::atomic<uint32_t>>; // TODO: make pool and handle manager to use fast and safe handles?
-using CJobCounterWeak = std::weak_ptr<std::atomic<uint32_t>>; // TODO: make pool and handle manager to use fast and safe handles?
 
 enum EJobType : uint8_t
 {
@@ -23,8 +22,12 @@ enum EJobType : uint8_t
 struct alignas(std::hardware_constructive_interference_size) CJob
 {
 	std::function<void()> Function;
-	CJobCounterWeak       Counter;     // An optional counter decremented on this job completion. External code may wait on it.
+	CJobCounter           Counter;     // An optional counter decremented on this job completion. External code may wait on it.
 	uint8_t               WorkerIndex; // For finding a per-thread pool where the job is created
+
+	template<typename F> CJob(uint8_t WorkerIndex_, F f)
+		: Function(std::move(f)), WorkerIndex(WorkerIndex_)
+	{}
 };
 static_assert(sizeof(CJob) <= alignof(CJob)); // TODO: see what we can do if this asserts. Probably x64 will.
 
@@ -60,9 +63,7 @@ protected:
 	template<typename F>
 	DEM_FORCE_INLINE CJob* AllocateJob(CJobCounter* pCounter, F f)
 	{
-		CJob* pJob = _JobPool.Construct();
-		pJob->Function = std::move(f); //???can piecewise construct be useful here? pass f right into _JobPool.Construct()?
-		pJob->WorkerIndex = _Index;
+		CJob* pJob = _JobPool.Construct(_Index, std::move(f));
 
 		if (pCounter)
 		{

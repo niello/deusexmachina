@@ -34,9 +34,9 @@ void CWorker::DoJob(CJob& Job)
 	// https://developers.redhat.com/articles/2022/12/06/implementing-c20-atomic-waiting-libstdc
 	// https://rigtorp.se/spinlock/
 	// https://probablydance.com/2019/12/30/measuring-mutexes-spinlocks-and-how-bad-the-linux-scheduler-really-is/
-	if (auto CounterPtr = Job.Counter.lock())
-		if (CounterPtr->fetch_sub(1, std::memory_order_acq_rel) == 1)
-			_pOwner->EndWaiting(std::move(CounterPtr), *this);
+	if (auto pCounter = Job.Counter.get())
+		if (pCounter->fetch_sub(1, std::memory_order_acq_rel) == 1)
+			_pOwner->EndWaiting(std::move(Job.Counter), *this);
 
 	_pOwner->GetWorker(Job.WorkerIndex)._JobPool.Destroy(&Job);
 }
@@ -47,8 +47,8 @@ void CWorker::CancelJob(CJob* pJob)
 	if (!pJob) return;
 
 	// NB: not calling EndWaiting() because now CancelJob() is only called from termination
-	if (auto CounterPtr = pJob->Counter.lock())
-		CounterPtr->fetch_sub(1, std::memory_order_relaxed); // No job results to publish, relaxed is enough
+	if (auto pCounter = pJob->Counter.get())
+		pCounter->fetch_sub(1, std::memory_order_relaxed); // No job results to publish, relaxed is enough
 
 	_pOwner->GetWorker(pJob->WorkerIndex)._JobPool.Destroy(pJob);
 }
