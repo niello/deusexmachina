@@ -73,7 +73,7 @@ void CWorker::WaitIdle(CJobCounter Counter)
 {
 	if (!_pOwner->StartWaiting(Counter, _Index)) return;
 
-	//!!!TODO PERF: do need seq cst here to avoid reading "false" in WakeUp() when we are going to sleep here?
+	// Waiting logic is the same as in MainLoop, see comments there for details
 	_IsWaiting.store(true, std::memory_order_seq_cst);
 
 	// Lock also works as an acquire fence, making job results from Counter visible when the counter reaches zero

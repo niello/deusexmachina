@@ -3,7 +3,8 @@
 #include <System/Allocators/HalfSafePool.h>
 #include <random>
 
-// Implements a worker thread logic. After construction, all its fields are intended for access from the corresponding thread only.
+// Implements a worker thread logic. After construction, all its fields and methods must be accessed
+// from the corresponding worker thread only unless explicitly stated otherwise.
 
 namespace DEM::Jobs
 {
@@ -168,7 +169,11 @@ protected:
 				}
 				else
 				{
-					//!!!TODO PERF: do need seq cst here to avoid reading "false" in WakeUp() when we are going to sleep here?
+					// This store must not be reordered past the sleep condition evaluation. Otherwise a condition may
+					// be evaluated to true, then WakeUp() will preempt us, read _IsWaiting = false and skip notification.
+					// This thread will resume and start waiting on CV. This results in a missing wakeup. Making sure that
+					// _IsWaiting is set before eliminates this case. We either see _IsWaiting = true and send notification
+					// or we skip notification due to _IsWaiting = false but sleep condition will detect new jobs, if any.
 					_IsWaiting.store(true, std::memory_order_seq_cst);
 
 					// No jobs to steal, go to sleep. After waking up the worker returns to stealing because no one could push jobs into its local queue.
@@ -179,7 +184,7 @@ protected:
 						NeedExit = ExitPred() || _pOwner->IsTerminationRequested(true);
 						while (!NeedExit && !_pOwner->HasJobs(_JobTypeMask))
 						{
-							_WaitJobsCV.wait(Lock); // NB: predicate is moved outside the wait() call
+							_WaitJobsCV.wait(Lock);
 							NeedExit = ExitPred() || _pOwner->IsTerminationRequested(true);
 						}
 
@@ -240,6 +245,7 @@ public:
 
 	void Push(EJobType Type, CJob* pJob) { return _Queue[Type].Push(pJob); }
 
+	// Can be called from any thread
 	CJob* Steal(uint8_t TypeMask)
 	{
 		// Search for allowed job in our own queue
@@ -250,6 +256,7 @@ public:
 		return nullptr;
 	}
 
+	// Can be called from any thread
 	bool HasJobs(uint8_t TypeMask = ~0) const
 	{
 		for (uint8_t i = 0; i < EJobType::Count; ++i)
@@ -257,6 +264,7 @@ public:
 		return false;
 	}
 
+	// Can be called from any thread
 	uint8_t CollectAvailableJobsMask() const
 	{
 		uint8_t Mask = 0;
@@ -265,10 +273,10 @@ public:
 		return Mask;
 	}
 
+	// Can be called from any thread
 	bool WakeUp()
 	{
-		//!!!TODO PERF: do need seq cst here to avoid reading "false" when we are going to sleep?
-		// This could lead to missing wakeup. See notifier from Eigen / taskflow?
+		//???!!!TODO PERF: do need seq cst here to avoid reading "false" when we are going to sleep? See notifier from Eigen / taskflow?
 		if (!_IsWaiting.load(std::memory_order_seq_cst)) return false;
 
 		{
