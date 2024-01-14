@@ -85,8 +85,6 @@ CJobSystem::~CJobSystem()
 	for (size_t i = 0; i < ThreadCount; ++i)
 		_Workers[i].WakeUp();
 
-	n_assert_dbg(!_SleepingWorkerMask.load(std::memory_order_seq_cst));
-
 	// Wait for all worker threads to terminate
 	for (auto& Thread: _Threads)
 		if (Thread.joinable()) Thread.join();
