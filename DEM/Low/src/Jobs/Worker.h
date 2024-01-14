@@ -29,8 +29,8 @@ struct alignas(std::hardware_constructive_interference_size) CJob
 		: Function(std::move(f)), WorkerIndex(WorkerIndex_)
 	{}
 
-	template<typename F> CJob(uint8_t WorkerIndex_, F f, CJobCounter Counter_)
-		: Function(std::move(f)), WorkerIndex(WorkerIndex_), Counter(std::move(Counter_))
+	template<typename F> CJob(uint8_t WorkerIndex_, F f, const CJobCounter& Counter_)
+		: Function(std::move(f)), WorkerIndex(WorkerIndex_), Counter(Counter_)
 	{}
 };
 static_assert(sizeof(CJob) <= alignof(CJob)); // TODO: see what we can do if this asserts. Probably x64 will.
