@@ -2,7 +2,8 @@
 #include <StdDEM.h>
 #include <random>
 
-// WELL512 random number generator
+// WELL512 random number generator. Satisfies C++17 UniformRandomBitGenerator requirements:
+// https://en.cppreference.com/w/cpp/named_req/UniformRandomBitGenerator
 
 namespace Math
 {
@@ -20,9 +21,9 @@ public:
 
 	CWELL512(U32 Seed = std::random_device{}())
 	{
-		std::mt19937 SourceRNG{ Seed };
-		for (U32 i = 0; i < 16; ++i)
-			_State[i] = SourceRNG();
+		std::default_random_engine SourceRNG{ Seed };
+		for (auto& State : _State)
+			State = SourceRNG();
 	}
 
 	// Code from http://lomont.org/Math/Papers/2008/Lomont_PRNG_2008.pdf

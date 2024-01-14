@@ -1,7 +1,7 @@
 #pragma once
 #include "WorkStealingQueue.h"
 #include <System/Allocators/HalfSafePool.h>
-#include <random>
+#include <Math/WELL512.h>
 
 // Implements a worker thread logic. After construction, all its fields and methods must be accessed
 // from the corresponding worker thread only unless explicitly stated otherwise.
@@ -27,6 +27,10 @@ struct alignas(std::hardware_constructive_interference_size) CJob
 
 	template<typename F> CJob(uint8_t WorkerIndex_, F f)
 		: Function(std::move(f)), WorkerIndex(WorkerIndex_)
+	{}
+
+	template<typename F> CJob(uint8_t WorkerIndex_, F f, CJobCounter Counter_)
+		: Function(std::move(f)), WorkerIndex(WorkerIndex_), Counter(std::move(Counter_))
 	{}
 };
 static_assert(sizeof(CJob) <= alignof(CJob)); // TODO: see what we can do if this asserts. Probably x64 will.
@@ -60,22 +64,22 @@ protected:
 	}
 
 	template<typename F>
-	DEM_FORCE_INLINE CJob* AllocateJob(CJobCounter* pCounter, F f)
+	DEM_FORCE_INLINE CJob* AllocateJob(F f)
 	{
-		CJob* pJob = _JobPool.Construct(_Index, std::move(f));
+		return _JobPool.Construct(_Index, std::move(f));
+	}
 
-		if (pCounter)
-		{
-			// Counter must be incremented and assigned to the job before it is pushed to the queue.
-			// Otherwise the job may be executed immediately and the counter will never be decremented.
-			if (!(*pCounter))
-				(*pCounter).reset(new std::atomic<uint32_t>(1));
-			else
-				(*pCounter)->fetch_add(1, std::memory_order_relaxed);
-			pJob->Counter = (*pCounter);
-		}
+	template<typename F>
+	DEM_FORCE_INLINE CJob* AllocateJob(CJobCounter& Counter, F f)
+	{
+		// Counter must be incremented and assigned to the job before it is pushed to the queue.
+		// Otherwise the job may be executed immediately and the counter will never be decremented.
+		if (!Counter)
+			Counter.reset(new std::atomic<uint32_t>(1));
+		else
+			Counter->fetch_add(1, std::memory_order_relaxed);
 
-		return pJob;
+		return _JobPool.Construct(_Index, std::move(f), Counter);
 	}
 
 	// Implements https://taskflow.github.io/taskflow/icpads20.pdf with some changes
@@ -89,7 +93,9 @@ protected:
 		const size_t MaxStealsBeforeYield = 2 * (ThreadCount + 1);
 		const size_t MaxStealAttempts = MaxStealsBeforeYield * 64;
 
-		std::default_random_engine VictimRNG{ std::random_device{}() };
+		// PERF: WELL512 is slightly faster in my local tests
+		//std::default_random_engine VictimRNG{ std::random_device{}() };
+		Math::CWELL512 VictimRNG{ std::random_device{}() };
 		std::uniform_int_distribution<size_t> GetRandomVictim(0, ThreadCount - 2); // Exclude the current worker from the range, see generation below
 		size_t Victim = ThreadCount; // Start stealing from the main thread
 
@@ -218,19 +224,19 @@ public:
 	template<typename F>
 	DEM_FORCE_INLINE void AddJob(EJobType Type, F f)
 	{
-		PushJob(Type, AllocateJob(nullptr, f));
+		PushJob(Type, AllocateJob(f));
 	}
 
 	template<typename F>
 	DEM_FORCE_INLINE void AddJob(EJobType Type, CJobCounter& Counter, F f)
 	{
-		PushJob(Type, AllocateJob(&Counter, f));
+		PushJob(Type, AllocateJob(Counter, f));
 	}
 
 	template<typename F>
 	DEM_FORCE_INLINE void AddWaitingJob(EJobType Type, CJobCounter WaitCounter, F f)
 	{
-		CJob* pJob = AllocateJob(nullptr, f);
+		CJob* pJob = AllocateJob(f);
 		if (!_pOwner->StartWaiting(std::move(WaitCounter), pJob, Type))
 			PushJob(Type, pJob);
 	}
@@ -238,7 +244,7 @@ public:
 	template<typename F>
 	DEM_FORCE_INLINE void AddWaitingJob(EJobType Type, CJobCounter& Counter, CJobCounter WaitCounter, F f)
 	{
-		CJob* pJob = AllocateJob(&Counter, f);
+		CJob* pJob = AllocateJob(Counter, f);
 		if (!_pOwner->StartWaiting(std::move(WaitCounter), pJob, Type))
 			PushJob(Type, pJob);
 	}
