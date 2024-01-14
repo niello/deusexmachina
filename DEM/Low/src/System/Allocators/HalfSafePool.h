@@ -26,7 +26,8 @@ protected:
 	};
 
 	std::unique_ptr<CChunkNode> _Chunks;
-	std::atomic<CRecord*>       _pFreeRecords = nullptr;
+	CRecord*                    _pFreeRecords = nullptr;     // Two lists are used to reduce contention, see Allocate()
+	std::atomic<CRecord*>       _pDisposedRecords = nullptr;
 
 #ifdef _DEBUG
 	std::atomic<UPTR>           _CurrAllocatedCount = 0;
@@ -51,49 +52,66 @@ public:
 		_CurrAllocatedCount.fetch_add(1, std::memory_order_relaxed);
 #endif
 
-		// Try acquiring a free record. Load-consume pFreeRecords->* by address dependency.
-		// Failure of compare_exchange_weak must not be stronger than success, so consume on success too.
-		// NB: in a half-safe implementation we only consume changes from Free() because Allocate() can't
-		// be called from a different thread and its effects are always observable in the next Allocate().
-		// NB: in a half-safe implementation pFreeRecords can't become nullptr after the first check because
-		// concurrent Free() may only add records and not borrow them. Full safety would require "while (pFreeRecords)".
-		if (auto pFreeRecords = _pFreeRecords.load(std::memory_order_consume))
+		// Try acquiring a record from a newly allocated block. The block is allocated in the same thread
+		// so there is no contention for _pFreeRecords and all dependent memory effects are already observable.
+		if (auto pFreeRecords = _pFreeRecords)
 		{
-			do {} while (!_pFreeRecords.compare_exchange_weak(pFreeRecords, pFreeRecords->pNext, std::memory_order_consume, std::memory_order_consume));
+			_pFreeRecords = pFreeRecords->pNext;
 			return pFreeRecords->Object;
 		}
 
-		// There is no free record, must allocate a new chunk
-		// NB: this is not thread safe in the current implementation, that's why the pool is "half-safe"
-		auto NewChunk = std::make_unique<CChunkNode>();
-		NewChunk->Next = std::move(_Chunks);
-		_Chunks = std::move(NewChunk);
+		// Try acquiring a free (deallocated) record. Load-consume pDisposedRecords->* by address dependency.
+		// There is no concurrent Allocate() possible so if there is a free record now there is a guarantee
+		// that there will be a free record later, concurrent Free() may only add more of them.
+		auto pDisposedRecords = _pDisposedRecords.load(std::memory_order_consume);
 
-		// Take the first record of the new chunk
-		void* pAllocatedRec = _Chunks->ChunkRecords->Object;
-
-		// Add remaining records to the free list
-		if constexpr (ObjectsPerChunk > 1)
+		// There is neither free nor disposed record, allocate a new chunk
+		if (!pDisposedRecords)
 		{
-			// Build a chain of new records
-			CRecord* pBegin = _Chunks->ChunkRecords + 1;
-			CRecord* pEnd = _Chunks->ChunkRecords + ObjectsPerChunk - 1;
-			for (auto pCurr = pBegin; pCurr < pEnd; ++pCurr)
-				pCurr->pNext = pCurr + 1;
+			auto NewChunk = std::make_unique<CChunkNode>();
+			NewChunk->Next = std::move(_Chunks);
+			_Chunks = std::move(NewChunk);
 
-			// Atomically attach new free records to existing. Note that pFreeRecords might change
-			// because some records could be freed while we were allocating a chunk and building a chain.
-			// NB: would need store-release to publish new chunk and chain links from above and below, but in the
-			// half-safe implementation these are read only in the same thread and are guaranteed to be observed.
-			auto pFreeRecords = _pFreeRecords.load(std::memory_order_relaxed);
-			do
+			// Take the first record of the new chunk
+			void* pAllocatedRec = _Chunks->ChunkRecords->Object;
+
+			// Add a chain of remaining new records to the free list
+			if constexpr (ObjectsPerChunk > 1)
 			{
-				pEnd->pNext = pFreeRecords;
+				_pFreeRecords = _Chunks->ChunkRecords + 1;
+				CRecord* pEnd = _Chunks->ChunkRecords + ObjectsPerChunk - 1;
+				for (auto pCurr = _pFreeRecords; pCurr < pEnd; ++pCurr)
+					pCurr->pNext = pCurr + 1;
+				pEnd->pNext = nullptr;
 			}
-			while (!_pFreeRecords.compare_exchange_weak(pFreeRecords, pBegin, std::memory_order_relaxed, std::memory_order_relaxed));
+
+			return pAllocatedRec;
 		}
 
-		return pAllocatedRec;
+		// A technical loop, no more than 2 iterations possible. See the comment in 'else' branch.
+		while (true)
+		{
+			if (auto pRecord = pDisposedRecords->pNext)
+			{
+				// Concurret Free() calls access only _pDisposedRecords. A chain starting at its pNext is not shared
+				// and can be detached without synchronization, leaving the system in a consistent state.
+				_pFreeRecords = pRecord->pNext;
+				pDisposedRecords->pNext = nullptr;
+				return pRecord->Object;
+			}
+			else
+			{
+				// The only free record is a head of disposed records. We contend for it with Free() calls and must use CAS.
+				// If the CAS is succeeded, the head is ours and we acquire it for allocation. If the CAS is failed it means
+				// that a concurrent Free() has added a new record to _pDisposedRecords, and this in turn means that the new
+				// pDisposedRecords is guaranteed to have non-null pNext. Then we allow the loop to proceed to 'if' block.
+				if (_pDisposedRecords.compare_exchange_strong(pDisposedRecords, nullptr, std::memory_order_consume, std::memory_order_consume))
+					return pDisposedRecords->Object;
+			}
+		}
+
+		// Can never be reached
+		return nullptr;
 	}
 
 	// Call from any thread
@@ -106,15 +124,10 @@ public:
 		_CurrAllocatedCount.fetch_sub(1, std::memory_order_relaxed);
 #endif
 
-		auto pAllocatedRec = std::launder(reinterpret_cast<CRecord*>(pObject));
-
 		// Store-release pNext, it will be load-consumed in Allocate()
-		auto pFreeRecords = _pFreeRecords.load(std::memory_order_relaxed);
-		do
-		{
-			pAllocatedRec->pNext = pFreeRecords;
-		}
-		while (!_pFreeRecords.compare_exchange_weak(pFreeRecords, pAllocatedRec, std::memory_order_release, std::memory_order_relaxed));
+		auto pAllocatedRec = std::launder(reinterpret_cast<CRecord*>(pObject));
+		pAllocatedRec->pNext = _pDisposedRecords.load(std::memory_order_relaxed);
+		do {} while (!_pDisposedRecords.compare_exchange_weak(pAllocatedRec->pNext, pAllocatedRec, std::memory_order_release, std::memory_order_relaxed));
 	}
 
 	// Call from the owner thread only
@@ -126,7 +139,7 @@ public:
 #endif
 
 		_Chunks = nullptr;
-		_pFreeRecords.store(nullptr, std::memory_order_relaxed);
+		_pDisposedRecords.store(nullptr, std::memory_order_relaxed);
 	}
 
 	// Call from the owner thread only
