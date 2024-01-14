@@ -89,7 +89,6 @@ protected:
 		const size_t MaxStealsBeforeYield = 2 * (ThreadCount + 1);
 		const size_t MaxStealAttempts = MaxStealsBeforeYield * 64;
 
-		// TODO: use own WELL512?
 		std::default_random_engine VictimRNG{ std::random_device{}() };
 		std::uniform_int_distribution<size_t> GetRandomVictim(0, ThreadCount - 2); // Exclude the current worker from the range, see generation below
 		size_t Victim = ThreadCount; // Start stealing from the main thread
@@ -174,7 +173,7 @@ protected:
 					// This thread will resume and start waiting on CV. This results in a missing wakeup. Making sure that the
 					// waiting flag is set before eliminates this case. We either see "waiting is true" and send notification
 					// or we skip notification due to "waiting is false" but sleep condition will detect new jobs, if any.
-					_pOwner->SetWorkerSleeping(_Index);
+					_pOwner->SetWorkerWaitingJob(_Index);
 
 					// No jobs to steal, go to sleep. After waking up the worker returns to stealing because no one could push jobs into its local queue.
 					// TODO PERF C++20: wait on atomic?!
@@ -189,7 +188,7 @@ protected:
 							NeedExit = ExitPred() || _pOwner->IsTerminationRequested(true);
 						}
 
-						_pOwner->SetWorkerAwakened(_Index);
+						_pOwner->SetWorkerNotWaitingJob(_Index);
 					}
 
 					// We could have been woken up because of termination request, let's check immediately

@@ -113,10 +113,6 @@ CApplication::CApplication(Sys::IPlatform& _Platform)
 {
 	// check multiple instances
 
-	//???move RNG instance to an application instead of static vars? pass platform system time as seed?
-	// RNG is initialized in constructor to be available anywhere
-	Math::InitRandomNumberGenerator();
-
 	// create default file system from platform
 	// setup hard assigns from platform and application
 

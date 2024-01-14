@@ -227,13 +227,11 @@ inline float n_angulardistance(float from, float to)
 
 namespace Math
 {
-
-void InitRandomNumberGenerator();
 U32 RandomU32();
 
 // Quake inverse sqrt //???use rcpss?
 //https://en.wikipedia.org/wiki/Fast_inverse_square_root
-DEM_FORCE_INLINE float RSqrt(const float Value)
+DEM_FORCE_INLINE float RSqrt(float Value)
 {
 	const float Half = Value * 0.5f;
 	float y = Value;

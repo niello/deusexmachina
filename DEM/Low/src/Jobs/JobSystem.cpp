@@ -173,22 +173,28 @@ void CJobSystem::EndWaiting(const CJobCounter& Counter, CWorker& Worker)
 	const CWorker* pEnd = pBegin + _Threads.size();
 
 	//???TODO PERF: do need seq cst here? or is it enough to store with it?
-	auto SleepingWorkerMask = _SleepingWorkerMask.load(std::memory_order_seq_cst);
-	if (!SleepingWorkerMask) return;
+	auto WaitJobWorkerMask = _WaitJobWorkerMask.load(std::memory_order_seq_cst);
 
 	// Resume waiting workers first, see CWorker::WaitActive/WaitIdle(CJobCounter Counter)
-	// NB: main thread included because it can be put to wait
-	WorkersToWakeUp &= SleepingWorkerMask;
-	for (auto pCurr = pBegin; WorkersToWakeUp && (pCurr <= pEnd); ++pCurr, WorkersToWakeUp >>= 1)
-		if (WorkersToWakeUp & 1) pCurr->WakeUp();
+	if (WorkersToWakeUp)
+	{
+		// Since workers can be waiting actively or idly, we must check them in both masks
+		//???TODO PERF: do need seq cst here? or is it enough to store with it?
+		WorkersToWakeUp &= (WaitJobWorkerMask | _WaitCounterWorkerMask.load(std::memory_order_seq_cst));
 
-	// Don't try to wake up already awakened workers
-	SleepingWorkerMask &= ~WorkersToWakeUp;
-	if (!SleepingWorkerMask) return;
+		// Don't try to wake up already awakened workers below
+		WaitJobWorkerMask &= ~WorkersToWakeUp;
+
+		// NB: main thread included because it can be put to wait
+		for (auto pCurr = pBegin; WorkersToWakeUp && (pCurr <= pEnd); ++pCurr, WorkersToWakeUp >>= 1)
+			if (WorkersToWakeUp & 1) pCurr->WakeUp();
+	}
+
+	// We may have new jobs but there is no one to wake up to do them
+	if (!WaitJobWorkerMask) return;
 
 	// Wake up additional workers for stealing new jobs
-	// NB: main thread excluded
-	//!!!FIXME PERF: can check caps matching once per thread group, caps inside a group are the same!
+	// NB: main thread excluded because it doesn't participate in work stealing
 	for (uint8_t JobType = 0; JobType < EJobType::Count; ++JobType)
 	{
 		auto JobCount = NewJobCount[JobType];
@@ -196,11 +202,11 @@ void CJobSystem::EndWaiting(const CJobCounter& Counter, CWorker& Worker)
 		uint8_t WorkerBitMask = 1;
 		for (auto pCurr = pBegin; JobCount && (pCurr != pEnd); ++pCurr, WorkerBitMask <<= 1)
 		{
-			if ((SleepingWorkerMask & WorkerBitMask) && (pCurr->GetJobTypeMask() & JobTypeMask) && pCurr->WakeUp())
+			if ((WaitJobWorkerMask & WorkerBitMask) && (pCurr->GetJobTypeMask() & JobTypeMask) && pCurr->WakeUp())
 			{
-				// Don't try to wake up already awakened workers
-				SleepingWorkerMask &= ~WorkerBitMask;
-				if (!SleepingWorkerMask) return;
+				// Don't try to wake up already awakened workers when processing other job types
+				WaitJobWorkerMask &= ~WorkerBitMask;
+				if (!WaitJobWorkerMask) return;
 				--JobCount;
 			}
 		}
@@ -213,11 +219,12 @@ void CJobSystem::WakeUpWorker(uint8_t AvailableJobsMask)
 	//ZoneScoped;
 
 	//???TODO PERF: do need seq cst here? or is it enough to store with it?
-	auto SleepingWorkerMask = _SleepingWorkerMask.load(std::memory_order_seq_cst);
-	if (!SleepingWorkerMask) return;
+	auto WaitJobWorkerMask = _WaitJobWorkerMask.load(std::memory_order_seq_cst);
+	if (!WaitJobWorkerMask) return;
 
+	const auto ThreadCount = _Threads.size();
 	CWorker* pBegin = &_Workers[0];
-	const CWorker* pEnd = pBegin + _Threads.size();
+	const CWorker* pEnd = pBegin + ThreadCount;
 
 	if (!AvailableJobsMask)
 	{
@@ -231,8 +238,8 @@ void CJobSystem::WakeUpWorker(uint8_t AvailableJobsMask)
 
 	// Wake up the first suitable worker
 	// NB: main thread excluded
-	for (auto pCurr = pBegin; pCurr != pEnd; ++pCurr, SleepingWorkerMask >>= 1)
-		if ((SleepingWorkerMask & 1) && (pCurr->GetJobTypeMask() & AvailableJobsMask) && pCurr->WakeUp())
+	for (auto pCurr = pBegin; WaitJobWorkerMask && (pCurr != pEnd); ++pCurr, WaitJobWorkerMask >>= 1)
+		if ((WaitJobWorkerMask & 1) && (pCurr->GetJobTypeMask() & AvailableJobsMask) && pCurr->WakeUp())
 			return;
 }
 //---------------------------------------------------------------------

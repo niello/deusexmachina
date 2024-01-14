@@ -66,14 +66,14 @@ void CWorker::WaitIdle(CJobCounter Counter)
 	if (!_pOwner->StartWaiting(Counter, _Index)) return;
 
 	// Waiting logic is the same as in MainLoop, see comments there for details
-	_pOwner->SetWorkerSleeping(_Index);
+	_pOwner->SetWorkerWaitingCounter(_Index);
 
 	// TODO PERF C++20: wait on atomic?!
 	std::unique_lock Lock(_WaitJobsMutex);
 	while (Counter->load(std::memory_order_relaxed) != 0 && !_pOwner->IsTerminationRequested(true))
 		_WaitJobsCV.wait(Lock);
 
-	_pOwner->SetWorkerAwakened(_Index);
+	_pOwner->SetWorkerNotWaitingCounter(_Index);
 
 	// Make finished job results visible, sync with Counter acq-rel decrement in DoJob
 	if (!_pOwner->IsTerminationRequested(false))
