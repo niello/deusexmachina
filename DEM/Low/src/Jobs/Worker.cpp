@@ -25,17 +25,9 @@ void CWorker::DoJob(CJob& Job)
 {
 	Job.Function();
 
-	//???decrement relaxed and publish job results with release only if reached 0?
-	//???can increment in AddJob be reordered after this decrement currently? Think of stealing!
-	//!!!TODO: C++20 wait on atomic! Or for Windows 8+ can use short spinlock + WaitOnAddress, WakeByAddressSingle and WakeByAddressAll:
-	// https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitonaddress
-	// https://edu.anarcho-copy.org/other/Windows/Windows%2010%20System%20Programming.pdf (search for WaitOnAddress, p.357)
-	// https://developers.redhat.com/articles/2022/12/06/implementing-c20-atomic-waiting-libstdc
-	// https://rigtorp.se/spinlock/
-	// https://probablydance.com/2019/12/30/measuring-mutexes-spinlocks-and-how-bad-the-linux-scheduler-really-is/
-	if (auto pCounter = Job.Counter.get())
-		if (pCounter->fetch_sub(1, std::memory_order_acq_rel) == 1)
-			_pOwner->EndWaiting(std::move(Job.Counter), *this);
+	//???decrement relaxed and publish job results with release fence only if reached 0?
+	if (Job.Counter && Job.Counter->fetch_sub(1, std::memory_order_acq_rel) == 1)
+		_pOwner->EndWaiting(Job.Counter, *this);
 
 	_pOwner->GetWorker(Job.WorkerIndex)._JobPool.Destroy(&Job);
 }
@@ -54,16 +46,17 @@ void CWorker::CancelJob(CJob* pJob)
 //---------------------------------------------------------------------
 
 // Active waiting. The worker thread is allowed to pick and execute independent jobs while waiting on the counter.
-// TODO: could use fibers to move the current job into a wait list in the middle
-// of its execution with CJobSystem::StartWaiting() and continue the main loop without recursion
+// TODO: could use fibers to move the current job into a wait list in the middle of its execution
+// with CJobSystem::StartWaiting() and continue the main loop without recursion
 void CWorker::WaitActive(CJobCounter Counter)
 {
 	if (!_pOwner->StartWaiting(Counter, _Index)) return;
 
 	MainLoop([WaitCounter = std::move(Counter)]() { return WaitCounter->load(std::memory_order_relaxed) == 0; });
 
-	// Make finished job results visible
-	std::atomic_thread_fence(std::memory_order_acquire);
+	// Make finished job results visible, sync with Counter acq-rel decrement in DoJob
+	if (!_pOwner->IsTerminationRequested(false))
+		std::atomic_thread_fence(std::memory_order_acquire);
 }
 //---------------------------------------------------------------------
 
@@ -75,13 +68,16 @@ void CWorker::WaitIdle(CJobCounter Counter)
 	// Waiting logic is the same as in MainLoop, see comments there for details
 	_pOwner->SetWorkerSleeping(_Index);
 
-	// Lock also works as an acquire fence, making job results from Counter visible when the counter reaches zero
 	// TODO PERF C++20: wait on atomic?!
 	std::unique_lock Lock(_WaitJobsMutex);
 	while (Counter->load(std::memory_order_relaxed) != 0 && !_pOwner->IsTerminationRequested(true))
 		_WaitJobsCV.wait(Lock);
 
 	_pOwner->SetWorkerAwakened(_Index);
+
+	// Make finished job results visible, sync with Counter acq-rel decrement in DoJob
+	if (!_pOwner->IsTerminationRequested(false))
+		std::atomic_thread_fence(std::memory_order_acquire);
 }
 //---------------------------------------------------------------------
 

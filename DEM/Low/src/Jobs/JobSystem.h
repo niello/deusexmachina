@@ -62,7 +62,7 @@ public:
 
 	bool     StartWaiting(CJobCounter Counter, CJob* pJob, EJobType JobType);
 	bool     StartWaiting(CJobCounter Counter, uint8_t WorkerIndex);
-	void     EndWaiting(CJobCounter Counter, CWorker& Worker);
+	void     EndWaiting(const CJobCounter& Counter, CWorker& Worker);
 	void     WakeUpWorker(uint8_t AvailableJobsMask = 0);
 	void     SetWorkerSleeping(uint8_t Index) { _SleepingWorkerMask.fetch_or((1 << Index), std::memory_order_seq_cst); } // See a call in CWorker::MainLoop for comments
 	void     SetWorkerAwakened(uint8_t Index) { _SleepingWorkerMask.fetch_and(~(1 << Index), std::memory_order_relaxed); }

@@ -136,7 +136,7 @@ bool CJobSystem::StartWaiting(CJobCounter Counter, uint8_t WorkerIndex)
 }
 //---------------------------------------------------------------------
 
-void CJobSystem::EndWaiting(CJobCounter Counter, CWorker& Worker)
+void CJobSystem::EndWaiting(const CJobCounter& Counter, CWorker& Worker)
 {
 	// Assume the counter being 0, otherwise this method wouldn't be called.
 	// Incrementing and starting waiting on the same counter is illegal until it is removed from the wait list.
