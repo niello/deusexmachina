@@ -66,12 +66,15 @@ protected:
 	template<typename F>
 	DEM_FORCE_INLINE CJob* AllocateJob(F f)
 	{
+		static_assert(!std::is_same_v<F, std::nullptr_t>, "Should not pass nullptr as job!");
 		return _JobPool.Construct(_Index, std::move(f));
 	}
 
 	template<typename F>
 	DEM_FORCE_INLINE CJob* AllocateJob(CJobCounter& Counter, F f)
 	{
+		static_assert(!std::is_same_v<F, std::nullptr_t>, "Should not pass nullptr as job!");
+
 		// Counter must be incremented and assigned to the job before it is pushed to the queue.
 		// Otherwise the job may be executed immediately and the counter will never be decremented.
 		if (!Counter)
