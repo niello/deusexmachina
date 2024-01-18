@@ -793,39 +793,43 @@ void CView::ApplyGlobalShaderParams()
 
 bool CView::Render()
 {
-	if (!_RenderPath || !_pScene || !_pCamera) return false;
+	if (!_RenderPath) return false;
 
 	ZoneScoped;
 	ZoneText(_DebugName.c_str(), _DebugName.size());
 
-	// Synchronize objects from scene to this view
-	SynchronizeRenderables();
-	SynchronizeLights();
-
-	// Check for camera frustum changes
-	const bool ViewProjChanged = UpdateCameraFrustum();
-	if (ViewProjChanged)
+	// UI-only views can live without scene
+	if (_pScene && _pCamera)
 	{
-		_Globals.SetMatrix(_RenderPath->ConstViewProjection, GetCamera()->GetViewProjMatrix());
-		_Globals.SetVector3(_RenderPath->ConstCameraPosition, GetCamera()->GetPosition());
+		// Synchronize objects from scene to this view
+		SynchronizeRenderables();
+		SynchronizeLights();
+
+		// Check for camera frustum changes
+		const bool ViewProjChanged = UpdateCameraFrustum();
+		if (ViewProjChanged)
+		{
+			_Globals.SetMatrix(_RenderPath->ConstViewProjection, GetCamera()->GetViewProjMatrix());
+			_Globals.SetVector3(_RenderPath->ConstCameraPosition, GetCamera()->GetPosition());
+		}
+
+		// Update visibility flags of spatial tree nodes
+		if (ViewProjChanged || _SpatialTreeRebuildVersion != _pScene->GetSpatialTreeRebuildVersion())
+		{
+			// Invalidate the node visibility cache
+			_SpatialTreeNodeVisibility.clear();
+			_SpatialTreeRebuildVersion = _pScene->GetSpatialTreeRebuildVersion();
+		}
+		_pScene->TestSpatialTreeVisibility(_LastViewFrustum, _SpatialTreeNodeVisibility);
+
+		// Update rendering representations of scene objects
+		UpdateLights(ViewProjChanged);
+		UpdateRenderables(ViewProjChanged);
+
+		//!!!TODO PERF: queues are independent, no write access to renderables is needed, can parallelize!
+		for (auto& Queue : _RenderQueues)
+			Queue->Update();
 	}
-
-	// Update visibility flags of spatial tree nodes
-	if (ViewProjChanged || _SpatialTreeRebuildVersion != _pScene->GetSpatialTreeRebuildVersion())
-	{
-		// Invalidate the node visibility cache
-		_SpatialTreeNodeVisibility.clear();
-		_SpatialTreeRebuildVersion = _pScene->GetSpatialTreeRebuildVersion();
-	}
-	_pScene->TestSpatialTreeVisibility(_LastViewFrustum, _SpatialTreeNodeVisibility);
-
-	// Update rendering representations of scene objects
-	UpdateLights(ViewProjChanged);
-	UpdateRenderables(ViewProjChanged);
-
-	//!!!TODO PERF: queues are independent, no write access to renderables is needed, can parallelize!
-	for (auto& Queue : _RenderQueues)
-		Queue->Update();
 
 	DEM_RENDER_EVENT_SCOPED(GetGPU(), std::wstring(_DebugName.begin(), _DebugName.end()).c_str());
 
