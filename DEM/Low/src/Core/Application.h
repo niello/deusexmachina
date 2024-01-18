@@ -4,8 +4,7 @@
 #include <Data/Regions.h>
 #include <Events/EventsFwd.h>
 #include <Input/InputTranslator.h>
-#include <memory>
-#include <vector>
+#include <Jobs/JobSystem.h>
 
 // DEM application base class. Application serves as a state machine,
 // OS interface and a global service container.
@@ -78,6 +77,7 @@ protected:
 	};
 
 	Sys::IPlatform& Platform; //???use unique ptr and heap-allocated platform?
+	Jobs::CJobSystem _JobSystem;
 
 	std::unique_ptr<IO::CIOServer> IOServer; //???rename to IOService?
 	std::unique_ptr<Resources::CResourceManager> ResMgr;
@@ -115,6 +115,7 @@ public:
 	virtual ~CApplication();
 
 	Sys::IPlatform&	GetPlatform() const { return Platform; }
+	Jobs::CJobSystem& JobSystem() { return _JobSystem; }
 
 	IO::CIOServer& IO() const;
 	Resources::CResourceManager& ResourceManager() const;
