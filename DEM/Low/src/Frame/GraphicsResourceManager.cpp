@@ -21,6 +21,7 @@
 #include <Resources/Resource.h>
 #include <IO/Stream.h>
 #include <IO/BinaryReader.h>
+#include <Jobs/JobSystem.h>
 #include <Data/Buffer.h>
 #include <Data/StringUtils.h>
 #include <Core/Factory.h>
@@ -29,9 +30,10 @@
 namespace Frame
 {
 
-CGraphicsResourceManager::CGraphicsResourceManager(Resources::CResourceManager& ResMgr, Render::CGPUDriver& GPU)
+CGraphicsResourceManager::CGraphicsResourceManager(Resources::CResourceManager& ResMgr, Render::CGPUDriver& GPU, DEM::Jobs::CJobSystem* pJobSystem)
 	: pResMgr(&ResMgr)
 	, GPU(&GPU)
+	, _pJobSystem(pJobSystem)
 {
 }
 //---------------------------------------------------------------------
@@ -957,6 +959,12 @@ PView CGraphicsResourceManager::CreateView(CStrID RenderPathID, int SwapChainID,
 void CGraphicsResourceManager::Update(float dt)
 {
 	if (UIServer) UIServer->Trigger(dt);
+}
+//---------------------------------------------------------------------
+
+DEM::Jobs::CWorker* CGraphicsResourceManager::GetJobSystemWorker() const
+{
+	return _pJobSystem ? _pJobSystem->FindCurrentThreadWorker() : nullptr;
 }
 //---------------------------------------------------------------------
 

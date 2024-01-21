@@ -89,9 +89,6 @@ protected:
 	template<typename TPred>
 	void MainLoop(TPred ExitPred)
 	{
-		//!!!DBG TMP!
-		ZoneScopedN("DBG THREAD LOOP");
-
 		const size_t ThreadCount = _pOwner->GetWorkerThreadCount();
 		const size_t MaxStealsBeforeYield = 2 * (ThreadCount + 1);
 		const size_t MaxStealAttempts = MaxStealsBeforeYield * 64;

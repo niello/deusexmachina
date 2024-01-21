@@ -665,7 +665,7 @@ Frame::PGraphicsResourceManager CApplication::BootstrapGraphics(Render::PVideoDr
 
 	// Return graphics resource manager object, which allows to create frame views
 
-	return n_new(Frame::CGraphicsResourceManager(*ResMgr, *GPU));
+	return n_new(Frame::CGraphicsResourceManager(*ResMgr, *GPU, &_JobSystem));
 }
 //---------------------------------------------------------------------
 

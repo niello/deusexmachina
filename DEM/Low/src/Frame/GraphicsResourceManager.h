@@ -33,6 +33,12 @@ namespace UI
 	class CUIServer;
 }
 
+namespace DEM::Jobs
+{
+	class CJobSystem;
+	class CWorker;
+}
+
 namespace Frame
 {
 typedef Ptr<class CGraphicsResourceManager> PGraphicsResourceManager;
@@ -45,6 +51,7 @@ private:
 
 	Resources::CResourceManager*                  pResMgr = nullptr; //???strong ref?
 	Render::PGPUDriver                            GPU;
+	DEM::Jobs::CJobSystem*                        _pJobSystem = nullptr; // TODO: service locator?
 	std::unique_ptr<UI::CUIServer>                UIServer; // FIXME: is the right place?
 
 	std::unordered_map<CStrID, Render::PMesh>     Meshes;
@@ -67,7 +74,7 @@ private:
 
 public:
 
-	CGraphicsResourceManager(Resources::CResourceManager& ResMgr, Render::CGPUDriver& GPU);
+	CGraphicsResourceManager(Resources::CResourceManager& ResMgr, Render::CGPUDriver& GPU, DEM::Jobs::CJobSystem* pJobSystem = nullptr);
 	virtual ~CGraphicsResourceManager() override;
 
 	// Engine resource management - create GPU (VRAM) resource from engine resource
@@ -87,6 +94,7 @@ public:
 
 	Resources::CResourceManager* GetResourceManager() const { return pResMgr; }
 	Render::CGPUDriver*          GetGPU() const { return GPU.Get(); }
+	DEM::Jobs::CWorker*          GetJobSystemWorker() const;
 	UI::CUIServer*               GetUI() const { return UIServer.get(); }
 };
 

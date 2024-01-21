@@ -22,6 +22,7 @@
 #include <UI/UIServer.h>
 #include <System/OSWindow.h>
 #include <System/SystemEvents.h>
+#include <Core/Application.h>
 
 namespace Frame
 {
@@ -420,6 +421,8 @@ void CView::SynchronizeLights()
 			// UIDs always grow (unless overflowed), and therefore adding to the end is always the right hint which gives us O(1) insertion
 			//???!!!could compact UIDs when close to overflow! Do in SPS and broadcast changes OldUID->NewUID to all views. With guarantee of
 			//doing this in order, we can keep an iterator and avoid logarithmic searches for each change!
+			// TODO: wrap into a template method? Or inherit from map? CRTP to mix in an extract-cache to all supporting collections?!
+			// TODO PERF: measure performance gain from using extract-cache!
 			if (_LightNodePool.empty())
 			{
 				_Lights.emplace_hint(_Lights.cend(), UID, pAttr->CreateLight());
@@ -802,6 +805,8 @@ bool CView::Render()
 	if (_pScene && _pCamera)
 	{
 		// Synchronize objects from scene to this view
+		// TODO: could move SynchronizeRenderables to a job, but now SynchronizeLights is too cheap
+		// and this doesn't bring any performance improvement. Need to test again later on a big scene.
 		SynchronizeRenderables();
 		SynchronizeLights();
 
@@ -826,9 +831,21 @@ bool CView::Render()
 		UpdateLights(ViewProjChanged);
 		UpdateRenderables(ViewProjChanged);
 
-		//!!!TODO PERF: queues are independent, no write access to renderables is needed, can parallelize!
-		for (auto& Queue : _RenderQueues)
-			Queue->Update();
+		// Update queues in parallel as they are independent from each other and don't write to renderables
+		// TODO: improve interface to hide a case for no worker? Or stop supporting this situation?
+		if (const auto pWorker = _GraphicsMgr->GetJobSystemWorker())
+		{
+			DEM::Jobs::CJobCounter Counter;
+			for (auto& Queue : _RenderQueues)
+				pWorker->AddJob(Counter, [&Queue]() { Queue->Update(); });
+			// TODO: could do something here to give jobs a chance to finish in the meantime
+			pWorker->WaitIdle(Counter);
+		}
+		else
+		{
+			for (auto& Queue : _RenderQueues)
+				Queue->Update();
+		}
 	}
 
 	DEM_RENDER_EVENT_SCOPED(GetGPU(), std::wstring(_DebugName.begin(), _DebugName.end()).c_str());
