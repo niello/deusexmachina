@@ -232,7 +232,15 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 		}
 
 		if (LookNode.mapped())
-			pRootNode->FindNodeByPath(LookNode.key().second.c_str())->AddChild(pSceneAsset->GetUID(), LookNode.mapped());
+		{
+			const char* pBoneName = LookNode.key().second.c_str();
+			auto pDestNode = pRootNode->FindNodeByPath(pBoneName);
+			if (!pDestNode) pDestNode = pRootNode->GetChildRecursively(CStrID(pBoneName));
+			if (pDestNode)
+				pDestNode->AddChild(pSceneAsset->GetUID(), LookNode.mapped());
+			else
+				::Sys::Error("Can't find a bone for appearance attachment");
+		}
 
 		AppearanceComponent.CurrentLook.insert(std::move(LookNode));
 	});
