@@ -2,7 +2,7 @@
 #include <StdDEM.h>
 
 // A rendering queue is a set of renderables filtered and sorted according to certain rules.
-// Different filters and sortings are used for draw call and state change optinizations
+// Different filters and sortings are used for draw call and state change optimizations
 // in different frame rendering phases.
 
 namespace Render
@@ -15,7 +15,9 @@ class CRenderQueueBaseT
 {
 protected:
 
-	static inline constexpr TKey NO_KEY = INVALID_INDEX_T<TKey>; // Implementation must guarantee that no valid key will be equal to this
+	// Implementation must guarantee that no valid key will be equal to this. The value is intentionally the
+	// maximum possible. Sorting algorithm must move items without a key to the tail of the queue.
+	static inline constexpr TKey NO_KEY = INVALID_INDEX_T<TKey>;
 
 	struct CRecord
 	{

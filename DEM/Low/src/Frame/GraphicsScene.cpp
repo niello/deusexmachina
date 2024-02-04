@@ -634,7 +634,7 @@ void CGraphicsScene::UpdateObjectLightIntersections(CRenderableAttribute& Render
 		}
 
 		// Don't erase existing connection in this case, tracking may be re-enabled later and connection may remain valid
-		//!!!FIXME: if querying octree, there won't be objects with zero TrackObjectLightIntersections, so this condition won't be needed!
+		//!!!FIXME: if querying scene octree, there won't be objects with zero TrackObjectLightIntersections, so this condition won't be needed!
 		if (!LightRecord.TrackObjectLightIntersections) continue;
 
 		// TODO: can use RenderableRecord.NodeMortonCode & LightRecord.NodeMortonCode for early true/false?

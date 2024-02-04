@@ -148,6 +148,9 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 	_RenderQueues.resize(_RenderPath->_RenderQueues.size());
 	for (auto [Type, Index] : _RenderPath->_RenderQueues)
 	{
+//#if DEM_CPU_64
+//#else
+//#endif
 		//???TODO: move to factory later? it is not yet well suited for templated classes.
 		//!!!TODO: for x64 use 64-bit keys with more counter space for meshes and materials!
 		//???need separated opaque and atest in a color phase?! atest is in render state, sorting by tech already happens.
@@ -155,6 +158,7 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 			_RenderQueues[Index] = std::make_unique<Render::CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque));
 		else if (Type == "AlphaTestDepthPrePass")
 			// FIXME: also would benefit from FtB sorting here, see CAlphaTestDepthPrePass64, but can't use on 32-bit!
+			// FIXME: virtual type of the queue must not depend on the key size! Now only Render::PRenderQueueBaseT_<UPTR>_ stop us from using 64 bit key!
 			_RenderQueues[Index] = std::make_unique<Render::CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_AlphaTest));
 		else if (Type == "OpaqueMaterial")
 			_RenderQueues[Index] = std::make_unique<Render::CRenderQueue<CMaterialKey32>>(ENUM_MASK(Render::EEffectType::EffectType_Opaque, Render::EEffectType::EffectType_Skybox));
