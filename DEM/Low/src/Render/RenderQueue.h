@@ -74,7 +74,7 @@ public:
 
 	using CRenderQueueBaseT::CRenderQueueBaseT;
 
-	// Remember a key calculated from the not updated state, so it equal to the key currently in a queue.
+	// Remember a key calculated from the not updated state, it will be equal to the key currently in a queue.
 	virtual void Remove(IRenderable* pRenderable) override
 	{
 		if (_FilterMask & pRenderable->RenderQueueMask)

@@ -354,8 +354,9 @@ void CView::SynchronizeRenderables()
 		if (ItSceneObject == _pScene->GetRenderables().cend())
 		{
 			// An object was removed from a scene, remove its renderable from queues and from a sync list
-			for (auto& Queue : _RenderQueues)
-				Queue->Remove(ItViewObject->second.get());
+			if (ItViewObject->second->IsVisible)
+				for (auto& Queue : _RenderQueues)
+					Queue->Remove(ItViewObject->second.get());
 
 			// NB: erasing a map doesn't affect other iterators, and DEM::Algo::SortedUnion already cached the next one, so nothing will break
 			ItViewObject->second.reset();
