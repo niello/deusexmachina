@@ -73,7 +73,7 @@ void InitEquipment(Game::CGameWorld& World, Resources::CResourceManager& ResMgr)
 //---------------------------------------------------------------------
 
 static size_t ApplyAppearance(CAppearanceComponent::CLookMap& Look, const CAppearanceAsset* pAppearanceAsset, const Data::PParams& AppearanceParams,
-	const std::set<CStrID>& IgnoredBodyParts)
+	const std::set<CStrID>& IgnoredBodyParts, const CEquipmentScheme* pEquipmentScheme, CStrID SlotID)
 {
 	if (!pAppearanceAsset) return 0;
 
@@ -113,14 +113,18 @@ static size_t ApplyAppearance(CAppearanceComponent::CLookMap& Look, const CAppea
 
 			if (Variant.Asset)
 			{
-				//!!!???TODO:
-				// detect target bone from SlotID if no explicit path specified?
-				//!!!use main slot ID for the item, not just the first met slot!
-				// how to handle sheathed and unsheathed weapons? a bool flag in a character appearance component? just as 'hide helmet'
-				//!!!can patch empty RootBonePath by SlotID in a postprocessing pass, to reuse main part of the loop for the base look!
+				//???how to handle sheathed and unsheathed weapons? a bool flag in a character appearance component? just as 'hide helmet'
+				//!!!TODO: explicit empty RootBonePath and deafult RootBonePath may need to be treated differently, but now can't distinguish between them!
+				std::string Bone = VisualPart.RootBonePath;
+				if (pEquipmentScheme && Bone.empty())
+				{
+					auto It = pEquipmentScheme->SlotBones.find(SlotID);
+					if (It != pEquipmentScheme->SlotBones.cend())
+						Bone = It->second;
+				}
 
 				// Match found, remember this scene asset for instantiation
-				Look.emplace(std::make_pair(Variant.Asset, VisualPart.RootBonePath), Scene::PSceneNode{});
+				Look.emplace(std::make_pair(Variant.Asset, std::move(Bone)), Scene::PSceneNode{});
 			}
 
 			break;
@@ -164,7 +168,8 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 			{
 				if (auto pAppearanceAsset = AppearanceRsrc->ValidateObject<CAppearanceAsset>())
 				{
-					ApplyAppearance(NewLook, pAppearanceAsset, AppearanceComponent.Params, IgnoredBodyParts);
+					//!!!TODO: use main slot ID for the item, not just the first met slot!
+					ApplyAppearance(NewLook, pAppearanceAsset, AppearanceComponent.Params, IgnoredBodyParts, pEquipment->Scheme, SlotID);
 
 					// Consider body parts filled even if no scene asset was added. Can change this by checking ApplyAppearance return value.
 					for (const auto& VisualPart : pAppearanceAsset->Visuals)
@@ -180,7 +185,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 	// Apply base look, ignoring only filled body parts but not explicit ignores
 	// TODO: skip ignored assets
 	for (const auto& AppearanceRsrc : AppearanceComponent.AppearanceAssets)
-		ApplyAppearance(NewLook, AppearanceRsrc->ValidateObject<CAppearanceAsset>(), AppearanceComponent.Params, FilledBodyParts);
+		ApplyAppearance(NewLook, AppearanceRsrc->ValidateObject<CAppearanceAsset>(), AppearanceComponent.Params, FilledBodyParts, nullptr, CStrID::Empty);
 
 	// Mark as detached all elements that do not match the new look
 	CAppearanceComponent::CLookMap Detached;
