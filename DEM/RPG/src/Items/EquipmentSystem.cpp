@@ -46,7 +46,11 @@ void InitEquipment(Game::CGameWorld& World, Resources::CResourceManager& ResMgr)
 	{
 		// Setup equipment assets
 		if (Component.SchemeID)
+		{
 			Component.Scheme = ResMgr.RegisterResource<CEquipmentScheme>(Component.SchemeID.CStr())->ValidateObject<CEquipmentScheme>();
+			if (Component.Scheme && Component.Scheme->HandCount)
+				Component.Hands.reset(new CHandSlot[Component.Scheme->HandCount]);
+		}
 
 		// Request application of equipment effects for already equipped stacks
 		for (const auto [SlotID, StackID] : Component.Equipment)
@@ -238,6 +242,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 
 		if (LookNode.mapped())
 		{
+			//???resolve in ApplyAppearance and store node pointers instead of paths in a look map?
 			const char* pBoneName = LookNode.key().second.c_str();
 			auto pDestNode = pRootNode->FindNodeByPath(pBoneName);
 			if (!pDestNode) pDestNode = pRootNode->GetChildRecursively(CStrID(pBoneName));
@@ -464,11 +469,13 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 			}
 		}
 
-		for (CStrID SlotID : SlotsToUpdate)
-			UpdateCharacterModelEquipment(World, EntityID, SlotID, false);
-
 		if (auto pAppearance = FindItemComponent<CAppearanceComponent>(World, EntityID))
 			RebuildCharacterAppearance(World, EntityID, *pAppearance, RsrcMgr);
+
+		// for each scabbard slot (hardcoded types) and Q-slot
+		//   collect item ID and path to parent bone for attachment
+		//   find main hand for the item (1 or 2h, sheathed, missing, not renderable)
+		// sync set<HEntity> of current attachments with map of new ones (dispose, move, add, leave as is)
 	});
 
 	World.RemoveAllComponents<CEquipmentChangesComponent>();

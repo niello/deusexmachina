@@ -18,6 +18,7 @@ public:
 	std::map<CStrID, size_t>      SlotTypes; // Slot type -> number of slots
 	std::map<CStrID, CStrID>      Slots;     // Slot ID -> slot type
 	std::map<CStrID, std::string> SlotBones; // Slot ID -> bone name or path
+	U8                            HandCount = 2;
 
 	void OnPostLoad()
 	{
@@ -46,7 +47,8 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CEquipmentScheme>()
 	return std::make_tuple
 	(
 		DEM_META_MEMBER_FIELD(RPG::CEquipmentScheme, 1, SlotTypes),
-		DEM_META_MEMBER_FIELD(RPG::CEquipmentScheme, 2, SlotBones)
+		DEM_META_MEMBER_FIELD(RPG::CEquipmentScheme, 2, SlotBones),
+		DEM_META_MEMBER_FIELD(RPG::CEquipmentScheme, 3, HandCount)
 	);
 }
 

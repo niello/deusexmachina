@@ -22,12 +22,9 @@ static std::pair<Game::HEntity, int> FindBestLockpick(const Game::CGameWorld& Wo
 	int BestModifier = std::numeric_limits<int>().min();
 	if (auto pEquipment = World.FindComponent<const CEquipmentComponent>(ActorID))
 	{
-		static const CStrID sidItemInHand("ItemInHand");
-
 		for (auto [SlotID, SlotType] : pEquipment->Scheme->Slots)
 		{
-			if (SlotType != sidItemInHand) continue;
-
+			// TODO: check only certain types of slots or all equipment like now?
 			const auto StackID = GetEquippedStack(*pEquipment, SlotID);
 			if (auto pTool = FindItemComponent<const Sh2::CLockpickComponent>(World, StackID))
 			{
@@ -120,7 +117,6 @@ bool CLockpickAbility::IsTargetValid(const Game::CGameSession& Session, U32 Inde
 	if (pLock->Difficulty < 5) return true;
 
 	// An actor must be able to interact and must have a lockpicking skill opened
-	static const CStrID sidItemInHand("ItemInHand");
 	for (auto ActorID : Context.Actors)
 	{
 		// Must be able to interact with objects
@@ -134,10 +130,13 @@ bool CLockpickAbility::IsTargetValid(const Game::CGameSession& Session, U32 Inde
 		// Must have a lockpicking tool equipped or in a quick slot
 		if (auto pEquipment = pWorld->FindComponent<const CEquipmentComponent>(ActorID))
 		{
+			// TODO: check only certain types of slots or all equipment like now?
 			for (auto [SlotID, SlotType] : pEquipment->Scheme->Slots)
-				if (SlotType == sidItemInHand && FindItemComponent<const Sh2::CLockpickComponent>(*pWorld, GetEquippedStack(*pEquipment, SlotID))) return true;
+				if (FindItemComponent<const Sh2::CLockpickComponent>(*pWorld, GetEquippedStack(*pEquipment, SlotID)))
+					return true;
 			for (auto StackID : pEquipment->QuickSlots)
-				if (FindItemComponent<const Sh2::CLockpickComponent>(*pWorld, StackID)) return true;
+				if (FindItemComponent<const Sh2::CLockpickComponent>(*pWorld, StackID))
+					return true;
 		}
 	}
 

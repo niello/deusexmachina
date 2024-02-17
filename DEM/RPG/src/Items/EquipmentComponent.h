@@ -7,12 +7,19 @@
 namespace DEM::RPG
 {
 
+struct CHandSlot
+{
+	CStrID ScabbardSlotID;
+	bool   Unsheathed = false;
+};
+
 struct CEquipmentComponent
 {
 	std::map<CStrID, Game::HEntity> Equipment;
 	std::vector<Game::HEntity>      QuickSlots;
 	CStrID                          SchemeID; // FIXME: ID to resource directly!
 	PEquipmentScheme                Scheme;
+	std::unique_ptr<CHandSlot[]>    Hands;
 
 	// TODO: active items/slots (current set of items in hands and active quickslots, e.g. current ammo)
 
@@ -45,7 +52,7 @@ namespace DEM::Serialization
 template<>
 struct ParamsFormat<DEM::RPG::CEquipmentComponent>
 {
-	static inline void Serialize(Data::CData& Output, DEM::RPG::CEquipmentComponent Value)
+	static inline void Serialize(Data::CData& Output, const DEM::RPG::CEquipmentComponent& Value)
 	{
 		//Output = ...;
 	}
