@@ -21,6 +21,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Character/StatsComponent.h
 	DEM/RPG/src/Combat/Damage.h
 	DEM/RPG/src/Combat/DestructibleComponent.h
+	DEM/RPG/src/Combat/WeaponComponent.h
 	DEM/RPG/src/Dlg/DialogueManager.h
 	DEM/RPG/src/Dlg/DlgContext.h
 	DEM/RPG/src/Dlg/DlgGraph.h

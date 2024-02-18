@@ -5,6 +5,7 @@
 #include <Items/EquippableComponent.h>
 #include <Items/EquippedComponent.h>
 #include <Items/EquipmentChangesComponent.h>
+#include <Combat/WeaponComponent.h>
 #include <Game/GameLevel.h>
 #include <Scene/SceneComponent.h>
 #include <Physics/RigidBodyComponent.h>
@@ -1496,15 +1497,28 @@ U32 CanEquipItems(const Game::CGameWorld& World, Game::HEntity ReceiverID, Game:
 	auto pEquipment = World.FindComponent<const CEquipmentComponent>(ReceiverID);
 	if (!pEquipment) return 0;
 
+	// Requested slot must exist
+	auto ItSlotInfo = pEquipment->Scheme->Slots.find(SlotID);
+	if (ItSlotInfo == pEquipment->Scheme->Slots.cend()) return 0;
+
+	const auto SlotType = ItSlotInfo->second;
+
 	auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID);
+
+	// Weapons are equippable to Scabbard / BigScabbard slots based on their size, and don't require explicit slot listing
+	static const CStrID sidScabbard("Scabbard");
+	static const CStrID sidBigScabbard("BigScabbard");
+	if (auto pWeapon = FindItemComponent<const CWeaponComponent>(World, StackID))
+		if (SlotType == sidBigScabbard || (!pWeapon->Big && SlotType == sidScabbard))
+			return pEquippable ? std::max<U32>(1, pEquippable->MaxStack) : 1;
+
 	if (!pEquippable) return 0;
 
 	// TODO: if scripted, try to find CanEquip function in the script
 	// Return value will be true, false or nil. The latter is to proceed to the C++ logic below.
 
-	// Check if requested destination slot exists and matches the required slot type of the equippable item
-	auto ItSlotInfo = pEquipment->Scheme->Slots.find(SlotID);
-	if (ItSlotInfo == pEquipment->Scheme->Slots.cend() || pEquippable->Slots.find(ItSlotInfo->second) == pEquippable->Slots.cend()) return 0;
+	// Check if requested destination slot matches the required slot type of the equippable item
+	if (pEquippable->Slots.find(SlotType) == pEquippable->Slots.cend()) return 0;
 
 	// The item in the destination slot can be replaced, so we consider slots blocked by it free
 	const Game::HEntity ExcludedStackID = GetEquippedStack(*pEquipment, SlotID);
