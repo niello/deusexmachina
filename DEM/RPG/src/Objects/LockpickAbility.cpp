@@ -14,7 +14,7 @@
 
 namespace DEM::RPG
 {
-void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, CStrID SlotID, bool ForceHide);
+//void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, CStrID SlotID, bool ForceHide);
 
 static std::pair<Game::HEntity, int> FindBestLockpick(const Game::CGameWorld& World, Game::HEntity ActorID)
 {
@@ -239,7 +239,8 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 
 		//!!!model equipment must operate on MainHand, and select currently active set automatically!
 		static const CStrID sidItemInHand1("ItemInHand1");
-		UpdateCharacterModelEquipment(*pWorld, Instance.Actor, sidItemInHand1, true);
+		//UpdateCharacterModelEquipment(*pWorld, Instance.Actor, sidItemInHand1, true);
+		NOT_IMPLEMENTED;
 	}
 
 	// If this object is owned to other faction, create crime stimulus
@@ -282,7 +283,8 @@ void CLockpickAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance
 
 		//!!!model equipment must operate on MainHand, and select currently active set automatically!
 		static const CStrID sidItemInHand1("ItemInHand1");
-		UpdateCharacterModelEquipment(*pWorld, Instance.Actor, sidItemInHand1, false);
+		//UpdateCharacterModelEquipment(*pWorld, Instance.Actor, sidItemInHand1, false);
+		NOT_IMPLEMENTED;
 	}
 
 	// TODO:

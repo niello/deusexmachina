@@ -117,7 +117,6 @@ static size_t ApplyAppearance(CAppearanceComponent::CLookMap& Look, const CAppea
 
 			if (Variant.Asset)
 			{
-				//???how to handle sheathed and unsheathed weapons? a bool flag in a character appearance component? just as 'hide helmet'
 				//!!!TODO: explicit empty RootBonePath and deafult RootBonePath may need to be treated differently, but now can't distinguish between them!
 				std::string Bone = VisualPart.RootBonePath;
 				if (pEquipmentScheme && Bone.empty())
@@ -268,87 +267,6 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 }
 //---------------------------------------------------------------------
 
-//!!!FIXME: where to place?! Or require bones to be named as slots!
-static CStrID GetAttachmentNodeForSlot(CStrID SlotID)
-{
-	static const std::map<CStrID, const char*> EEquipmentSlot_Bone
-	{
-		{ CStrID("Torso"), "torso"},
-		{ CStrID("Shoulders"), "shoulders_cloak"},
-		{ CStrID("Head"), "head"},
-		{ CStrID("Arms"), "arms"},
-		{ CStrID("Hands"), "hands"},
-		{ CStrID("Legs"), "legs"},
-		{ CStrID("Feet"), "feet"},
-		{ CStrID("Belt"), "belt"},
-		{ CStrID("Backpack"), "backpack"},
-		{ CStrID("Neck"), "neck"},
-		{ CStrID("Bracelet1"), "bracelet"},
-		{ CStrID("Bracelet2"), "bracelet"},
-		{ CStrID("Ring1"), "ring"},
-		{ CStrID("Ring2"), "ring"},
-		{ CStrID("Ring3"), "ring"},
-		{ CStrID("Ring4"), "ring"},
-		{ CStrID("ItemInHand1"), "mixamorig_RightHandMiddle1"},
-		{ CStrID("ItemInHand2"), "mixamorig_LeftHandMiddle1"},
-		{ CStrID("ItemInHand3"), "mixamorig_RightHandMiddle1"},
-		{ CStrID("ItemInHand4"), "mixamorig_LeftHandMiddle1"}
-	};
-
-	//!!!FIXME: constexpr CStrID?! Or at least pre-init once!
-	const auto ItBoneName = EEquipmentSlot_Bone.find(SlotID);
-	if (ItBoneName == EEquipmentSlot_Bone.cend() || !ItBoneName->second || !*ItBoneName->second) return CStrID{};
-
-	return CStrID(ItBoneName->second);
-}
-//---------------------------------------------------------------------
-
-void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, CStrID SlotID, bool ForceHide)
-{
-	if (!OwnerID || !SlotID) return;
-
-	const auto AttachmentBoneID = GetAttachmentNodeForSlot(SlotID);
-	if (!AttachmentBoneID) return;
-
-	auto pEquipment = World.FindComponent<const CEquipmentComponent>(OwnerID);
-	if (!pEquipment) return;
-
-	auto It = pEquipment->Equipment.find(SlotID);
-	const auto StackID = (It == pEquipment->Equipment.cend()) ? Game::HEntity{} : It->second;
-
-	auto pOwnerScene = World.FindComponent<const Game::CSceneComponent>(OwnerID);
-	if (!pOwnerScene || !pOwnerScene->RootNode) return;
-
-	auto pBone = pOwnerScene->RootNode->GetChildRecursively(AttachmentBoneID);
-	if (!pBone) return;
-
-	if (StackID && !ForceHide)
-	{
-		const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, StackID);
-		if (!pItem || !pItem->WorldModelID) return;
-
-		if (pBone->IsWorldTransformDirty()) pBone->UpdateTransform();
-
-		// Undo scaling
-		const rtm::qvvf Tfm = rtm::qvv_set(
-			rtm::quat_from_euler(0.f, 0.f, -HALF_PI), //!!!DBG TMP! Normally was rtm::quat_identity() but hacked for current models.
-			rtm::vector_zero(),
-			rtm::vector_reciprocal(Math::matrix_extract_scale(pBone->GetWorldMatrix())));
-
-		//!!!TODO: store desired attachment local tfm somewhere?
-
-		auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(StackID);
-		pBone->AddChild(CStrID("Equipment"), pSceneComponent->RootNode, true);
-		pSceneComponent->AssetID = pItem->WorldModelID;
-		pSceneComponent->RootNode->SetLocalTransform(Tfm);
-	}
-	else
-	{
-		pBone->RemoveChild(CStrID("Equipment"));
-	}
-}
-//---------------------------------------------------------------------
-
 void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Session, Resources::CResourceManager& RsrcMgr)
 {
 	World.ForEachComponent<const CEquipmentChangesComponent>([&World, &Session, &RsrcMgr](auto EntityID, const CEquipmentChangesComponent& Changes)
@@ -469,13 +387,72 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 			}
 		}
 
-		if (auto pAppearance = FindItemComponent<CAppearanceComponent>(World, EntityID))
+		// Process appearance parts
+		if (auto pAppearance = World.FindComponent<CAppearanceComponent>(EntityID))
 			RebuildCharacterAppearance(World, EntityID, *pAppearance, RsrcMgr);
 
-		// for each scabbard slot (hardcoded types) and Q-slot
-		//   collect item ID and path to parent bone for attachment
-		//   find main hand for the item (1 or 2h, sheathed, missing, not renderable)
-		// sync set<HEntity> of current attachments with map of new ones (dispose, move, add, leave as is)
+		// Process attachments
+		auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID);
+		if (pEquipment && pEquipment->Scheme)
+		{
+			// FIXME: duplication!!!
+			auto pSceneComponent = World.FindComponent<const Game::CSceneComponent>(EntityID);
+			if (!pSceneComponent || !pSceneComponent->RootNode) return;
+			auto pRootNode = pSceneComponent->RootNode->FindNodeByPath("asset.f_hum_skeleton"); // FIXME: how to determine??? Some convention needed?!
+			if (!pRootNode) return;
+
+			static const CStrID sidScabbard("Scabbard");
+			static const CStrID sidBigScabbard("BigScabbard");
+			for (auto [SlotID, StackID] : pEquipment->Equipment)
+			{
+				const auto SlotType = pEquipment->Scheme->Slots[SlotID];
+				if (SlotType != sidScabbard && SlotType != sidBigScabbard) continue;
+
+				auto It = pEquipment->Scheme->SlotBones.find(SlotID);
+				if (It != pEquipment->Scheme->SlotBones.cend())
+				{
+					const char* pBoneName = It->second.c_str();
+					auto pDestNode = pRootNode->FindNodeByPath(pBoneName);
+					if (!pDestNode) pDestNode = pRootNode->GetChildRecursively(CStrID(pBoneName));
+					if (!pDestNode)
+					{
+						::Sys::Error("Can't find a bone for item attachment");
+						continue;
+					}
+
+					if (StackID /*&& !ForceHide*/)
+					{
+						const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, StackID);
+						if (!pItem || !pItem->WorldModelID) continue;
+
+						if (pDestNode->IsWorldTransformDirty()) pDestNode->UpdateTransform();
+
+						// Undo scaling
+						const rtm::qvvf Tfm = rtm::qvv_set(
+							rtm::quat_identity(), //rtm::quat_from_euler(0.f, 0.f, -HALF_PI), //!!!DBG TMP! Normally was rtm::quat_identity() but hacked for current models.
+							rtm::vector_zero(),
+							rtm::vector_reciprocal(Math::matrix_extract_scale(pDestNode->GetWorldMatrix())));
+
+						//!!!TODO: store desired attachment local tfm somewhere?
+
+						auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(StackID);
+						pDestNode->AddChild(CStrID("Equipment"), pSceneComponent->RootNode, true);
+						pSceneComponent->AssetID = pItem->WorldModelID;
+						pSceneComponent->RootNode->SetLocalTransform(Tfm);
+					}
+					else
+					{
+						pDestNode->RemoveChild(CStrID("Equipment"));
+					}
+				}
+			}
+			// for each scabbard slot (hardcoded types) and Q-slot
+			//   collect item ID and path to parent bone for attachment
+			//   find main hand for the item (1 or 2h, sheathed, missing, not renderable)
+			// sync set<HEntity> of current attachments with map of new ones (dispose, move, add, leave as is)
+
+			// TODO: for each quickslot too
+		}
 	});
 
 	World.RemoveAllComponents<CEquipmentChangesComponent>();
