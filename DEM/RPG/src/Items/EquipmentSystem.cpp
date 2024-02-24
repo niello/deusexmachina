@@ -401,14 +401,32 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 			auto pRootNode = pSceneComponent->RootNode->FindNodeByPath("asset.f_hum_skeleton"); // FIXME: how to determine??? Some convention needed?!
 			if (!pRootNode) return;
 
+			std::map<CStrID, Scene::CSceneNode*> NewAttachments; // Item stack ID -> Target bone
+
 			static const CStrID sidScabbard("Scabbard");
 			static const CStrID sidBigScabbard("BigScabbard");
-			for (auto [SlotID, StackID] : pEquipment->Equipment)
+			for (auto [SlotID, StackID] : pEquipment->Equipment) // TODO: the same for Q slots!
 			{
+				// No item - no attachment
+				if (!StackID) continue;
+
+				// Ignore slots that do not produce attachments
 				const auto SlotType = pEquipment->Scheme->Slots[SlotID];
 				if (SlotType != sidScabbard && SlotType != sidBigScabbard) continue;
 
-				auto It = pEquipment->Scheme->SlotBones.find(SlotID);
+				const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, StackID);
+				if (!pItem || !pItem->WorldModelID) continue;
+
+				CStrID BoneKey = SlotID;
+				for (size_t HandIdx = 0; HandIdx < pEquipment->Scheme->HandCount; ++HandIdx)
+				{
+					const auto& Hand = pEquipment->Hands[HandIdx];
+					if (Hand.ScabbardSlotID == SlotID && Hand.Unsheathed)
+						BoneKey = CStrID("__Hand" + std::to_string(HandIdx));
+				}
+
+				// Find parent bone for the attachment
+				auto It = pEquipment->Scheme->SlotBones.find(BoneKey);
 				if (It != pEquipment->Scheme->SlotBones.cend())
 				{
 					const char* pBoneName = It->second.c_str();
@@ -416,42 +434,46 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 					if (!pDestNode) pDestNode = pRootNode->GetChildRecursively(CStrID(pBoneName));
 					if (!pDestNode)
 					{
+						// No target bone - no attachment
 						::Sys::Error("Can't find a bone for item attachment");
 						continue;
 					}
 
-					if (StackID /*&& !ForceHide*/)
-					{
-						const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, StackID);
-						if (!pItem || !pItem->WorldModelID) continue;
-
-						if (pDestNode->IsWorldTransformDirty()) pDestNode->UpdateTransform();
-
-						// Undo scaling
-						const rtm::qvvf Tfm = rtm::qvv_set(
-							rtm::quat_identity(), //rtm::quat_from_euler(0.f, 0.f, -HALF_PI), //!!!DBG TMP! Normally was rtm::quat_identity() but hacked for current models.
-							rtm::vector_zero(),
-							rtm::vector_reciprocal(Math::matrix_extract_scale(pDestNode->GetWorldMatrix())));
-
-						//!!!TODO: store desired attachment local tfm somewhere?
-
-						auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(StackID);
-						pDestNode->AddChild(CStrID("Equipment"), pSceneComponent->RootNode, true);
-						pSceneComponent->AssetID = pItem->WorldModelID;
-						pSceneComponent->RootNode->SetLocalTransform(Tfm);
-					}
-					else
-					{
-						pDestNode->RemoveChild(CStrID("Equipment"));
-					}
+					NewAttachments.emplace(StackID, pDestNode);
 				}
 			}
-			// for each scabbard slot (hardcoded types) and Q-slot
-			//   collect item ID and path to parent bone for attachment
-			//   find main hand for the item (1 or 2h, sheathed, missing, not renderable)
-			// sync set<HEntity> of current attachments with map of new ones (dispose, move, add, leave as is)
 
-			// TODO: for each quickslot too
+			// Synchronize current attachments with desired list
+			Algo::SortedUnion(NewAttachments, component.CurrentAttachments, [](auto ItNew, auto ItCurr)
+			{
+				// find model component in the item
+				// has curr, no new
+				//  - remove model from parent and destroy
+				// has new, no curr
+				//  - create model if not found, attach to parent
+				// has new, has curr
+				//  - if model found and parent is the same, skip
+				//  - if model found, detach from curr parent, else create model
+				//  - attach to new parent
+				/*
+					if (pDestNode->IsWorldTransformDirty()) pDestNode->UpdateTransform();
+
+					// Undo scaling
+					const rtm::qvvf Tfm = rtm::qvv_set(
+						rtm::quat_identity(), //rtm::quat_from_euler(0.f, 0.f, -HALF_PI), //!!!DBG TMP! Normally was rtm::quat_identity() but hacked for current models.
+						rtm::vector_zero(),
+						rtm::vector_reciprocal(Math::matrix_extract_scale(pDestNode->GetWorldMatrix())));
+
+					auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(StackID);
+					pDestNode->AddChild(CStrID("Equipment"), pSceneComponent->RootNode, true);
+					pSceneComponent->AssetID = pItem->WorldModelID;
+					pSceneComponent->RootNode->SetLocalTransform(Tfm);
+				*/
+
+				//component.CurrentAttachments.insert(std::move(LookNode));
+			});
+
+			//!!!load resources if created new models!
 		}
 	});
 
