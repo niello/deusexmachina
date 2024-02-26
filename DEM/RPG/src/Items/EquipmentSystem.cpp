@@ -148,7 +148,8 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 	CAppearanceComponent::CLookMap NewLook;
 	std::set<CStrID> FilledBodyParts;
 
-	if (auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID))
+	auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID);
+	if (pEquipment && pEquipment->Scheme)
 	{
 		// The same as FilledBodyParts but with explicitly ignored parts. Affects only equipment.
 		std::set<CStrID> IgnoredBodyParts;
@@ -257,6 +258,138 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 	// Discard not reused nodes
 	Detached.clear();
 
+	// Process attachments
+	if (pEquipment && pEquipment->Scheme)
+	{
+		std::map<Game::HEntity, Scene::CSceneNode*> NewAttachments; // Item stack ID -> Target bone
+
+		static const CStrID sidScabbard("Scabbard");
+		static const CStrID sidBigScabbard("BigScabbard");
+		for (auto [SlotID, StackID] : pEquipment->Equipment) // TODO: the same for Q slots!
+		{
+			// No item - no attachment
+			if (!StackID) continue;
+
+			// Ignore slots that do not produce attachments
+			const auto SlotType = pEquipment->Scheme->Slots[SlotID];
+			if (SlotType != sidScabbard && SlotType != sidBigScabbard) continue;
+
+			const CItemComponent* pItemComponent = FindItemComponent<const CItemComponent>(World, StackID);
+			if (!pItemComponent || !pItemComponent->WorldModelID) continue;
+
+			CStrID BoneKey = SlotID;
+			for (size_t HandIdx = 0; HandIdx < pEquipment->Scheme->HandCount; ++HandIdx)
+			{
+				const auto& Hand = pEquipment->Hands[HandIdx];
+				if (Hand.ScabbardSlotID == SlotID && Hand.Unsheathed)
+					BoneKey = CStrID("__Hand" + std::to_string(HandIdx));
+			}
+
+			// Find parent bone for the attachment
+			auto It = pEquipment->Scheme->SlotBones.find(BoneKey);
+			if (It != pEquipment->Scheme->SlotBones.cend())
+			{
+				const char* pBoneName = It->second.c_str();
+				auto pDestNode = pRootNode->FindNodeByPath(pBoneName);
+				if (!pDestNode) pDestNode = pRootNode->GetChildRecursively(CStrID(pBoneName));
+				if (!pDestNode)
+				{
+					// No target bone - no attachment
+					::Sys::Error("Can't find a bone for item attachment");
+					continue;
+				}
+
+				NewAttachments.emplace(StackID, pDestNode);
+			}
+		}
+
+		// Synchronize current attachments with desired list
+		// TODO: need Algo::SortedUnion for map+set / set+map! Currently a single Less isn't capable of handling a < b and b < a at the same time. Need a trait to get key from iterator?!
+		{
+			auto ItCurrA = NewAttachments.begin();
+			auto ItCurrB = AppearanceComponent.CurrentAttachments.begin();
+			bool IsEndA = (ItCurrA == NewAttachments.cend());
+			bool IsEndB = (ItCurrB == AppearanceComponent.CurrentAttachments.cend());
+			while (!IsEndA || !IsEndB)
+			{
+				decltype(ItCurrA) ItNew;
+				decltype(ItCurrB) ItOld;
+				if (IsEndB || (!IsEndA && ItCurrA->first < *ItCurrB))
+				{
+					ItNew = ItCurrA++;
+					ItOld = AppearanceComponent.CurrentAttachments.end();
+					IsEndA = (ItCurrA == NewAttachments.cend());
+				}
+				else if (IsEndA || *ItCurrB < ItCurrA->first)
+				{
+					ItNew = NewAttachments.end();
+					ItOld = ItCurrB++;
+					IsEndB = (ItCurrB == AppearanceComponent.CurrentAttachments.cend());
+				}
+				else // equal
+				{
+					ItNew = ItCurrA++;
+					ItOld = ItCurrB++;
+					IsEndA = (ItCurrA == NewAttachments.cend());
+					IsEndB = (ItCurrB == AppearanceComponent.CurrentAttachments.cend());
+				}
+
+				if (ItNew == NewAttachments.cend())
+				{
+					// Remove old attachment
+					World.RemoveComponent<Game::CSceneComponent>(*ItOld);
+					AppearanceComponent.CurrentAttachments.erase(ItOld);
+				}
+				else if (ItOld == AppearanceComponent.CurrentAttachments.cend())
+				{
+					// Add new attachment
+					auto pItemSceneComponent = World.FindComponent<Game::CSceneComponent>(ItNew->first);
+					if (!pItemSceneComponent)
+						pItemSceneComponent = World.AddComponent<Game::CSceneComponent>(ItNew->first);
+
+					// FIXME PERF: can cache CItemComponent in NewAttachments because has already found it!
+					pItemSceneComponent->AssetID = FindItemComponent<const CItemComponent>(World, ItNew->first)->WorldModelID;
+
+					Scene::CSceneNode* pDestNode = ItNew->second;
+					if (pDestNode->IsWorldTransformDirty()) pDestNode->UpdateTransform();
+
+					pItemSceneComponent->RootNode->SetLocalScale(rtm::vector_reciprocal(Math::matrix_extract_scale(pDestNode->GetWorldMatrix()))); // Undo scaling
+					pDestNode->AddChild(CStrID("Equipment"), pItemSceneComponent->RootNode, true);
+
+					AppearanceComponent.CurrentAttachments.insert(ItNew->first);
+				}
+				else
+				{
+					//!!!FIXME: duplicated code!!!
+					auto pItemSceneComponent = World.FindComponent<Game::CSceneComponent>(ItNew->first);
+					if (pItemSceneComponent)
+					{
+						// If already attached where needed, skip
+						if (pItemSceneComponent->RootNode->GetParent() == ItNew->second) break;
+
+						// Else detach from old parent
+						pItemSceneComponent->RootNode->RemoveFromParent();
+					}
+					else
+					{
+						pItemSceneComponent = World.AddComponent<Game::CSceneComponent>(ItNew->first);
+
+						// FIXME PERF: can cache CItemComponent in NewAttachments because has already found it!
+						pItemSceneComponent->AssetID = FindItemComponent<const CItemComponent>(World, ItNew->first)->WorldModelID;
+					}
+
+					// Attach to new parent
+					Scene::CSceneNode* pDestNode = ItNew->second;
+					if (pDestNode->IsWorldTransformDirty()) pDestNode->UpdateTransform();
+
+					pItemSceneComponent->RootNode->SetLocalScale(rtm::vector_reciprocal(Math::matrix_extract_scale(pDestNode->GetWorldMatrix()))); // Undo scaling
+					pDestNode->AddChild(CStrID("Equipment"), pItemSceneComponent->RootNode, true);
+				}
+			}
+		}
+	}
+
+	//!!!TODO PERF: only if new models created!
 	// Validate resources
 	pRootNode->Visit([&RsrcMgr](Scene::CSceneNode& Node)
 	{
@@ -387,94 +520,9 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 			}
 		}
 
-		// Process appearance parts
+		// Process appearance parts and attachments
 		if (auto pAppearance = World.FindComponent<CAppearanceComponent>(EntityID))
 			RebuildCharacterAppearance(World, EntityID, *pAppearance, RsrcMgr);
-
-		// Process attachments
-		auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID);
-		if (pEquipment && pEquipment->Scheme)
-		{
-			// FIXME: duplication!!!
-			auto pSceneComponent = World.FindComponent<const Game::CSceneComponent>(EntityID);
-			if (!pSceneComponent || !pSceneComponent->RootNode) return;
-			auto pRootNode = pSceneComponent->RootNode->FindNodeByPath("asset.f_hum_skeleton"); // FIXME: how to determine??? Some convention needed?!
-			if (!pRootNode) return;
-
-			std::map<CStrID, Scene::CSceneNode*> NewAttachments; // Item stack ID -> Target bone
-
-			static const CStrID sidScabbard("Scabbard");
-			static const CStrID sidBigScabbard("BigScabbard");
-			for (auto [SlotID, StackID] : pEquipment->Equipment) // TODO: the same for Q slots!
-			{
-				// No item - no attachment
-				if (!StackID) continue;
-
-				// Ignore slots that do not produce attachments
-				const auto SlotType = pEquipment->Scheme->Slots[SlotID];
-				if (SlotType != sidScabbard && SlotType != sidBigScabbard) continue;
-
-				const CItemComponent* pItem = FindItemComponent<const CItemComponent>(World, StackID);
-				if (!pItem || !pItem->WorldModelID) continue;
-
-				CStrID BoneKey = SlotID;
-				for (size_t HandIdx = 0; HandIdx < pEquipment->Scheme->HandCount; ++HandIdx)
-				{
-					const auto& Hand = pEquipment->Hands[HandIdx];
-					if (Hand.ScabbardSlotID == SlotID && Hand.Unsheathed)
-						BoneKey = CStrID("__Hand" + std::to_string(HandIdx));
-				}
-
-				// Find parent bone for the attachment
-				auto It = pEquipment->Scheme->SlotBones.find(BoneKey);
-				if (It != pEquipment->Scheme->SlotBones.cend())
-				{
-					const char* pBoneName = It->second.c_str();
-					auto pDestNode = pRootNode->FindNodeByPath(pBoneName);
-					if (!pDestNode) pDestNode = pRootNode->GetChildRecursively(CStrID(pBoneName));
-					if (!pDestNode)
-					{
-						// No target bone - no attachment
-						::Sys::Error("Can't find a bone for item attachment");
-						continue;
-					}
-
-					NewAttachments.emplace(StackID, pDestNode);
-				}
-			}
-
-			// Synchronize current attachments with desired list
-			Algo::SortedUnion(NewAttachments, component.CurrentAttachments, [](auto ItNew, auto ItCurr)
-			{
-				// find model component in the item
-				// has curr, no new
-				//  - remove model from parent and destroy
-				// has new, no curr
-				//  - create model if not found, attach to parent
-				// has new, has curr
-				//  - if model found and parent is the same, skip
-				//  - if model found, detach from curr parent, else create model
-				//  - attach to new parent
-				/*
-					if (pDestNode->IsWorldTransformDirty()) pDestNode->UpdateTransform();
-
-					// Undo scaling
-					const rtm::qvvf Tfm = rtm::qvv_set(
-						rtm::quat_identity(), //rtm::quat_from_euler(0.f, 0.f, -HALF_PI), //!!!DBG TMP! Normally was rtm::quat_identity() but hacked for current models.
-						rtm::vector_zero(),
-						rtm::vector_reciprocal(Math::matrix_extract_scale(pDestNode->GetWorldMatrix())));
-
-					auto pSceneComponent = World.AddComponent<Game::CSceneComponent>(StackID);
-					pDestNode->AddChild(CStrID("Equipment"), pSceneComponent->RootNode, true);
-					pSceneComponent->AssetID = pItem->WorldModelID;
-					pSceneComponent->RootNode->SetLocalTransform(Tfm);
-				*/
-
-				//component.CurrentAttachments.insert(std::move(LookNode));
-			});
-
-			//!!!load resources if created new models!
-		}
 	});
 
 	World.RemoveAllComponents<CEquipmentChangesComponent>();

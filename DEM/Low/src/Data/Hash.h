@@ -1,5 +1,6 @@
 #pragma once
 #include "MurmurHash3.h"
+#include <string_view>
 #include <string.h>			// strlen
 
 // Hash functions
@@ -17,6 +18,12 @@ inline uint32_t Hash(const void* pData, int Length)
 inline uint32_t Hash(const char* pStr)
 {
 	return pStr ? Hash(pStr, strlen(pStr)) : 0;
+}
+//---------------------------------------------------------------------
+
+inline uint32_t Hash(std::string_view Str)
+{
+	return Str.empty() ? 0 : Hash(Str.data(), Str.size());
 }
 //---------------------------------------------------------------------
 

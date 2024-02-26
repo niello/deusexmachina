@@ -28,7 +28,7 @@ public:
 	CStringID() = default;
 	CStringID(const CStringID& Other) : pString(Other.pString) {}
 	CStringID(CStringID&& Other) noexcept : pString(Other.pString) {}
-	explicit CStringID(const char* pStr, bool OnlyExisting = false);
+	explicit CStringID(std::string_view Str, bool OnlyExisting = false);
 	explicit CStringID(void* StrID): pString((const char*)StrID) {} // Direct constructor. Be careful.
 	explicit CStringID(uintptr_t StrID): pString((const char*)StrID) {} // Direct constructor. Be careful.
 

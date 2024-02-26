@@ -20,12 +20,6 @@ struct CEquipmentComponent
 	CStrID                          SchemeID; // FIXME: ID to resource directly!
 	PEquipmentScheme                Scheme;
 	std::unique_ptr<CHandSlot[]>    Hands;
-
-	// TODO: active items/slots (current set of items in hands and active quickslots, e.g. current ammo)
-
-	// TODO: default visuals for different body parts - only meshes or scene assets with possible sub-hierarchies? Controls scene component!
-	//???not here but in a separate component?! equipment itself doesn't mean someone has visual appearance. Also skin color etc is not from here for sure!
-	//use component model to separate these things!
 };
 
 }

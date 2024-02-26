@@ -1,4 +1,5 @@
 #include "StringIDStorage.h"
+#include <System/System.h>
 #include <memory.h>
 #include <algorithm>
 
@@ -18,9 +19,9 @@ CStringIDStorage::CStringIDStorage():
 }
 //---------------------------------------------------------------------
 
-const char* CStringIDStorage::StoreString(const char* pString)
+const char* CStringIDStorage::StoreString(std::string_view Str)
 {
-	int Len = strlen(pString) + 1;
+	const size_t Len = Str.size() + 1;
 
 	if (Len > STR_BLOCK_SIZE) return nullptr;
 
@@ -38,27 +39,32 @@ const char* CStringIDStorage::StoreString(const char* pString)
 	}
 
 	char* pStoredStr = Block[BlockIndex] + BlockPosition;
-	std::memcpy(pStoredStr, pString, Len);
+	std::memcpy(pStoredStr, Str.data(), Str.size());
+	pStoredStr[Len] = 0;
 	BlockPosition += Len;
 
 	return pStoredStr;
 }
 //---------------------------------------------------------------------
 
-CStringID CStringIDStorage::Get(const char* pString) const
+CStringID CStringIDStorage::Get(std::string_view Str) const
 {
-	unsigned int HashValue = Hash(pString);
+	unsigned int HashValue = Hash(Str);
 	auto& Chain = Map[HashValue % Map.size()];
 	if (Chain.size() == 1)
 	{
 		const CRecord& Rec = Chain[0];
-		if (Rec.Hash == HashValue && !strcmp(Rec.pStr, pString)) return CStringID(Rec.pStr, 0, 0);
+		if (Rec.Hash == HashValue && Rec.pStr == Str) return CStringID(Rec.pStr, 0, 0);
 	}
 	else if (Chain.size() > 1)
 	{
 		CRecord CmpRec;
 		CmpRec.Hash = HashValue;
-		CmpRec.pStr = pString;
+		CmpRec.pStr = Str.data();
+
+		// FIXME: assumes null terminated Str, must be fixed!!!
+		n_assert(Str[Str.size()] == 0);
+
 		auto It = std::lower_bound(Chain.cbegin(), Chain.cend(), CmpRec);
 		if (It != Chain.cend()) return CStringID(It->pStr, 0, 0);
 	}
@@ -66,16 +72,16 @@ CStringID CStringIDStorage::Get(const char* pString) const
 }
 //---------------------------------------------------------------------
 
-CStringID CStringIDStorage::GetOrAdd(const char* pString)
+CStringID CStringIDStorage::GetOrAdd(std::string_view Str)
 {
-	unsigned int HashValue = Hash(pString);
+	unsigned int HashValue = Hash(Str);
 	auto& Chain = Map[HashValue % Map.size()];
 	auto InsertPos = Chain.begin();
 	if (Chain.size() == 1)
 	{
 		CRecord& Rec = Chain[0];
-		if (Rec.Hash == HashValue && !strcmp(Rec.pStr, pString)) return CStringID(Rec.pStr, 0, 0);
-		if (strcmp(Rec.pStr, pString) < 0) ++InsertPos;
+		if (Rec.Hash == HashValue && Rec.pStr == Str) return CStringID(Rec.pStr, 0, 0);
+		if (Str.compare(Rec.pStr) > 0) ++InsertPos;
 #ifdef _DEBUG
 		++Stats_CollisionCount;
 #endif
@@ -86,7 +92,10 @@ CStringID CStringIDStorage::GetOrAdd(const char* pString)
 		// insertion optimality. So, equal element must be referenced as [Idx - 1].
 		CRecord CmpRec;
 		CmpRec.Hash = HashValue;
-		CmpRec.pStr = pString;
+		CmpRec.pStr = Str.data();
+
+		// FIXME: assumes null terminated Str, must be fixed!!!
+		n_assert(Str[Str.size()] == 0);
 
 		InsertPos = std::lower_bound(Chain.begin(), Chain.end(), CmpRec);
 		if (InsertPos != Chain.end() && *InsertPos == CmpRec)
@@ -96,7 +105,7 @@ CStringID CStringIDStorage::GetOrAdd(const char* pString)
 #endif
 	}
 
-	const char* pStoredStr = StoreString(pString);
+	const char* pStoredStr = StoreString(Str);
 
 	CRecord CmpRec;
 	CmpRec.Hash = HashValue;

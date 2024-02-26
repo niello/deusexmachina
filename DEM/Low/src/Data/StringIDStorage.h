@@ -33,15 +33,15 @@ protected:
 	uintptr_t						Stats_CollisionCount;
 #endif
 
-	const char*	StoreString(const char* pString);
+	const char*	StoreString(std::string_view Str);
 
 public:
 
 	CStringIDStorage();
 	~CStringIDStorage() { for (int i = 0; i <= BlockIndex; ++i) free(Block[i]); }
 
-	CStringID	Get(const char* pString) const;
-	CStringID	GetOrAdd(const char* pString);
+	CStringID	Get(std::string_view Str) const;
+	CStringID	GetOrAdd(std::string_view Str);
 };
 
 }

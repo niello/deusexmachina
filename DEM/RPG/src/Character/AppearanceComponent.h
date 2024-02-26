@@ -18,6 +18,7 @@ struct CAppearanceComponent
 	Data::PParams                     Params; // FIXME: must not be shared!!!
 	std::vector<Resources::PResource> AppearanceAssets;
 	CLookMap                          CurrentLook; // Not serialized
+	std::set<Game::HEntity>           CurrentAttachments; // Not serialized
 };
 
 }
