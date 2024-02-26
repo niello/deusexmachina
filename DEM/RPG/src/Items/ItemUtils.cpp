@@ -1136,6 +1136,12 @@ U32 RemoveItemsFromQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, G
 }
 //---------------------------------------------------------------------
 
+CStrID GetHandPseudoSlotID(size_t HandIndex)
+{
+	return CStrID("__Hand" + std::to_string(HandIndex + 1));
+}
+//---------------------------------------------------------------------
+
 // FIXME: major code duplication with AddItemsToQuickSlot!
 // Returns a number of items actually added
 U32 AddItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID, Game::HEntity ItemProtoID, U32 Count, bool Merge)

@@ -140,6 +140,8 @@ static size_t ApplyAppearance(CAppearanceComponent::CLookMap& Look, const CAppea
 
 void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID, CAppearanceComponent& AppearanceComponent, Resources::CResourceManager& RsrcMgr)
 {
+	ZoneScoped;
+
 	auto pSceneComponent = World.FindComponent<const Game::CSceneComponent>(EntityID);
 	if (!pSceneComponent || !pSceneComponent->RootNode) return;
 	auto pRootNode = pSceneComponent->RootNode->FindNodeByPath("asset.f_hum_skeleton"); // FIXME: how to determine??? Some convention needed?!
@@ -282,7 +284,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 			{
 				const auto& Hand = pEquipment->Hands[HandIdx];
 				if (Hand.ScabbardSlotID == SlotID && Hand.Unsheathed)
-					BoneKey = CStrID("__Hand" + std::to_string(HandIdx));
+					BoneKey = GetHandPseudoSlotID(HandIdx);
 			}
 
 			// Find parent bone for the attachment
