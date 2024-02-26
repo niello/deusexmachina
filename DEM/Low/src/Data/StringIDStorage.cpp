@@ -40,7 +40,7 @@ const char* CStringIDStorage::StoreString(std::string_view Str)
 
 	char* pStoredStr = Block[BlockIndex] + BlockPosition;
 	std::memcpy(pStoredStr, Str.data(), Str.size());
-	pStoredStr[Len] = 0;
+	pStoredStr[Len - 1] = 0;
 	BlockPosition += Len;
 
 	return pStoredStr;
@@ -63,7 +63,7 @@ CStringID CStringIDStorage::Get(std::string_view Str) const
 		CmpRec.pStr = Str.data();
 
 		// FIXME: assumes null terminated Str, must be fixed!!!
-		n_assert(Str[Str.size()] == 0);
+		n_assert(Str.data()[Str.size()] == 0);
 
 		auto It = std::lower_bound(Chain.cbegin(), Chain.cend(), CmpRec);
 		if (It != Chain.cend()) return CStringID(It->pStr, 0, 0);
@@ -95,7 +95,7 @@ CStringID CStringIDStorage::GetOrAdd(std::string_view Str)
 		CmpRec.pStr = Str.data();
 
 		// FIXME: assumes null terminated Str, must be fixed!!!
-		n_assert(Str[Str.size()] == 0);
+		n_assert(Str.data()[Str.size()] == 0);
 
 		InsertPos = std::lower_bound(Chain.begin(), Chain.end(), CmpRec);
 		if (InsertPos != Chain.end() && *InsertPos == CmpRec)

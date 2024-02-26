@@ -365,7 +365,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 					if (pItemSceneComponent)
 					{
 						// If already attached where needed, skip
-						if (pItemSceneComponent->RootNode->GetParent() == ItNew->second) break;
+						if (pItemSceneComponent->RootNode->GetParent() == ItNew->second) continue;
 
 						// Else detach from old parent
 						pItemSceneComponent->RootNode->RemoveFromParent();
