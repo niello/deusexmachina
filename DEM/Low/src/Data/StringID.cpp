@@ -3,12 +3,17 @@
 
 namespace Data
 {
-CStringIDStorage CStringID::Storage;
-
 const CStringID CStringID::Empty;
 
+CStringIDStorage& GetStorage()
+{
+	static CStringIDStorage Storage;
+	return Storage;
+}
+//---------------------------------------------------------------------
+
 CStringID::CStringID(std::string_view Str, bool OnlyExisting)
-	: pString(Str.empty() ? CStringID::Empty.CStr() : OnlyExisting ? Storage.Get(Str).CStr() : Storage.GetOrAdd(Str).CStr())
+	: pString(Str.empty() ? CStringID::Empty.CStr() : OnlyExisting ? GetStorage().Get(Str).CStr() : GetStorage().GetOrAdd(Str).CStr())
 {
 }
 //---------------------------------------------------------------------

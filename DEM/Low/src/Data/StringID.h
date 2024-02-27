@@ -15,7 +15,6 @@ class CStringID
 protected:
 
 	friend class CStringIDStorage;
-	static class CStringIDStorage Storage;
 
 	const char* pString = nullptr;
 
