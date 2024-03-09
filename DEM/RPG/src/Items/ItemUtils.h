@@ -126,6 +126,7 @@ Game::HEntity GetEquippedStack(Game::CGameWorld& World, Game::HEntity EntityID, 
 bool IsItemEquipped(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID);
 bool IsItemStackEquipped(const CEquipmentComponent& Component, Game::HEntity StackID);
 bool IsItemStackEquipped(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID);
+void CalcEquipmentStats(Game::CGameWorld& World, Game::HEntity EntityID, CContainerStats& OutStats);
 
 CStrID GetHandPseudoSlotID(size_t HandIndex);
 bool EquipItemToHand(Game::CGameWorld& World, Game::HEntity EntityID, size_t HandIndex, CStrID SlotID);

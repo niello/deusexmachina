@@ -729,23 +729,28 @@ U32 RemoveItemsFromContainer(Game::CGameWorld& World, Game::HEntity ContainerID,
 }
 //---------------------------------------------------------------------
 
+static void AddItemStackToStats(Game::CGameWorld& World, Game::HEntity StackID, CContainerStats& OutStats)
+{
+	auto pStack = World.FindComponent<const CItemStackComponent>(StackID);
+	if (!pStack) return;
+
+	if (auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pStack))
+	{
+		OutStats.UsedWeight += pStack->Count * pItem->Weight;
+		OutStats.UsedVolume += pStack->Count * pItem->Volume;
+		OutStats.Price += pStack->Count * pItem->Price; //???what to count? only valuable or money-like items?
+	}
+}
+//---------------------------------------------------------------------
+
 void CalcContainerStats(Game::CGameWorld& World, const CItemContainerComponent& Container, CContainerStats& OutStats)
 {
 	OutStats.UsedWeight = 0.f;
 	OutStats.UsedVolume = 0.f;
 	OutStats.Price = 0;
-	for (auto ItemEntityID : Container.Items)
-	{
-		auto pStack = World.FindComponent<const CItemStackComponent>(ItemEntityID);
-		if (!pStack) continue;
 
-		if (auto pItem = FindItemComponent<const CItemComponent>(World, ItemEntityID, *pStack))
-		{
-			OutStats.UsedWeight += pStack->Count * pItem->Weight;
-			OutStats.UsedVolume += pStack->Count * pItem->Volume;
-			OutStats.Price += pStack->Count * pItem->Price; //???what to count? only valuable or money-like items?
-		}
-	}
+	for (auto StackID : Container.Items)
+		AddItemStackToStats(World, StackID, OutStats);
 
 	OutStats.FreeVolume = (Container.MaxVolume <= 0.f) ? FLT_MAX : (Container.MaxVolume - OutStats.UsedVolume);
 }
@@ -1648,6 +1653,24 @@ bool IsItemStackEquipped(Game::CGameWorld& World, Game::HEntity EntityID, Game::
 {
 	auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID);
 	return pEquipment && IsItemStackEquipped(*pEquipment, StackID);
+}
+//---------------------------------------------------------------------
+
+void CalcEquipmentStats(Game::CGameWorld& World, Game::HEntity EntityID, CContainerStats& OutStats)
+{
+	OutStats.UsedWeight = 0.f;
+	OutStats.UsedVolume = 0.f;
+	OutStats.FreeVolume = FLT_MAX;
+	OutStats.Price = 0;
+
+	if (auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID))
+	{
+		for (const auto [SlotID, StackInSlotID] : pEquipment->Equipment)
+			AddItemStackToStats(World, StackInSlotID, OutStats);
+
+		for (const auto StackInSlotID : pEquipment->QuickSlots)
+			AddItemStackToStats(World, StackInSlotID, OutStats);
+	}
 }
 //---------------------------------------------------------------------
 
