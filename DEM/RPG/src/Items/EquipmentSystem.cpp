@@ -188,7 +188,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 		std::set<Game::HEntity> ProcessedStacks;
 
 		// TODO: process slots in order of priority!
-		for (const auto& [SlotID, StackID] : pEquipment->Equipment)
+		for (auto [SlotID, StackID] : pEquipment->Equipment)
 		{
 			if (ProcessedStacks.find(StackID) != ProcessedStacks.cend()) continue;
 
@@ -202,8 +202,8 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 			{
 				if (auto pAppearanceAsset = AppearanceRsrc->ValidateObject<CAppearanceAsset>())
 				{
-					//!!!TODO: use main slot ID for the item, not just the first met slot!
-					ApplyAppearance(NewLook, pAppearanceAsset, AppearanceComponent.Params, IgnoredBodyParts, pEquipment->Scheme, SlotID);
+					const auto MainSlotID = FindMainOccupiedSlot(World, *pEquipment, StackID, EItemStorage::Equipment).first;
+					ApplyAppearance(NewLook, pAppearanceAsset, AppearanceComponent.Params, IgnoredBodyParts, pEquipment->Scheme, MainSlotID);
 
 					// Consider body parts filled even if no scene asset was added. Can change this by checking ApplyAppearance return value.
 					for (const auto& VisualPart : pAppearanceAsset->Visuals)
