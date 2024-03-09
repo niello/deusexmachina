@@ -99,7 +99,6 @@ void ClearQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t Slot
 U32 RemoveItemsFromQuickSlot(Game::CGameWorld& World, Game::HEntity EntityID, size_t SlotIndex, U32 Count);
 U32 RemoveItemsFromQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count, bool AllowModified);
 
-CStrID GetHandPseudoSlotID(size_t HandIndex);
 U32 AddItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID, Game::HEntity ItemProtoID, U32 Count, bool Merge = true);
 U32 AddItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count, bool Merge = true);
 std::pair<Game::HEntity, U32> MoveItemsFromEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID, U32 Count);
@@ -115,6 +114,9 @@ void ScheduleStackReequipment(Game::CGameWorld& World, Game::HEntity StackID, EI
 void ScheduleReequipment(Game::CGameWorld& World, Game::HEntity ItemID);
 //???Game::HEntity GetEquippedStack(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID);
 //???size_t FindEquipmentSlotForItem(item) - to check if we can equip something before we do that! E.g. for UI prompt "Equip immediately?".
+
+CStrID GetHandPseudoSlotID(size_t HandIndex);
+bool EquipItemToHand(Game::CGameWorld& World, Game::HEntity EntityID, size_t HandIndex, CStrID SlotID);
 
 U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID, const rtm::qvvf& Tfm, float MergeRadius);
 std::pair<Game::HEntity, U32> MoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count = std::numeric_limits<U32>().max());

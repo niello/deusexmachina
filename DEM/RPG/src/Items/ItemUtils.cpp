@@ -1136,12 +1136,6 @@ U32 RemoveItemsFromQuickSlots(Game::CGameWorld& World, Game::HEntity EntityID, G
 }
 //---------------------------------------------------------------------
 
-CStrID GetHandPseudoSlotID(size_t HandIndex)
-{
-	return CStrID("__Hand" + std::to_string(HandIndex + 1));
-}
-//---------------------------------------------------------------------
-
 // FIXME: major code duplication with AddItemsToQuickSlot!
 // Returns a number of items actually added
 U32 AddItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID, Game::HEntity ItemProtoID, U32 Count, bool Merge)
@@ -1629,6 +1623,87 @@ void ScheduleReequipment(Game::CGameWorld& World, Game::HEntity ItemID)
 			if (Stack.Prototype == ItemID) ScheduleStackReequipment(World, StackID);
 		});
 	}
+}
+//---------------------------------------------------------------------
+
+CStrID GetHandPseudoSlotID(size_t HandIndex)
+{
+	return CStrID("__Hand" + std::to_string(HandIndex + 1));
+}
+//---------------------------------------------------------------------
+
+bool EquipItemToHand(Game::CGameWorld& World, Game::HEntity EntityID, size_t HandIndex, CStrID SlotID)
+{
+	auto pEquipment = World.FindComponent<DEM::RPG::CEquipmentComponent>(EntityID);
+	if (!pEquipment || !pEquipment->Hands || !pEquipment->Scheme || pEquipment->Scheme->HandCount <= HandIndex) return false;
+
+	const auto PrevStackID = DEM::RPG::GetEquippedStack(*pEquipment, pEquipment->Hands[HandIndex].ScabbardSlotID);
+	const auto NewStackID = DEM::RPG::GetEquippedStack(*pEquipment, SlotID);
+
+	const auto pPrevWeapon = FindItemComponent<const DEM::RPG::CWeaponComponent>(World, PrevStackID);
+	const bool IsPrevTwoHanded = pPrevWeapon && pPrevWeapon->Big; // FIXME: need separate field for 1/1.5/2 handedness, Big isn't the same!
+
+	const auto pNewWeapon = FindItemComponent<const DEM::RPG::CWeaponComponent>(World, NewStackID);
+	const bool IsNewTwoHanded = pNewWeapon && pNewWeapon->Big; // FIXME: need separate field for 1/1.5/2 handedness, Big isn't the same!
+
+	if (IsNewTwoHanded && pEquipment->Scheme->HandCount < 2) return false;
+
+	// Clear hands from old and new weapons when required
+	for (size_t i = 0; i < pEquipment->Scheme->HandCount; ++i)
+	{
+		auto& Hand = pEquipment->Hands[i];
+		const auto HandStackID = DEM::RPG::GetEquippedStack(*pEquipment, Hand.ScabbardSlotID);
+		if (HandStackID == NewStackID || (IsPrevTwoHanded && HandStackID == PrevStackID))
+			Hand.ScabbardSlotID = {};
+	}
+
+	// Choose a second slot for a two handed weapon
+	if (IsNewTwoHanded)
+	{
+		size_t SecondHandIndex = pEquipment->Scheme->HandCount;
+
+		// First try empty hands
+		for (size_t i = 0; i < pEquipment->Scheme->HandCount; ++i)
+		{
+			if (i != HandIndex && !pEquipment->Hands[i].ScabbardSlotID)
+			{
+				SecondHandIndex = i;
+				break;
+			}
+		}
+
+		// If failed, replace other weapon and clear it from all slots
+		if (SecondHandIndex == pEquipment->Scheme->HandCount)
+		{
+			CStrID ReplacedSlotID;
+			for (size_t i = 0; i < pEquipment->Scheme->HandCount; ++i)
+			{
+				if (i == HandIndex) continue;
+
+				auto& Hand = pEquipment->Hands[i];
+
+				if (!ReplacedSlotID)
+				{
+					ReplacedSlotID = Hand.ScabbardSlotID;
+					SecondHandIndex = i;
+					Hand.ScabbardSlotID = {};
+
+					const auto pReplacedWeapon = FindItemComponent<const DEM::RPG::CWeaponComponent>(World, DEM::RPG::GetEquippedStack(*pEquipment, ReplacedSlotID));
+					const bool IsReplacedTwoHanded = pReplacedWeapon && pReplacedWeapon->Big; // FIXME: need separate field for 1/1.5/2 handedness, Big isn't the same!
+					if (!IsReplacedTwoHanded) break;
+				}
+				else if (Hand.ScabbardSlotID == ReplacedSlotID) // Clear all slots occupied by the replaced two handed weapon
+					Hand.ScabbardSlotID = {};
+			}
+		}
+
+		n_assert(SecondHandIndex < pEquipment->Scheme->HandCount);
+		pEquipment->Hands[SecondHandIndex].ScabbardSlotID = SlotID;
+	}
+
+	pEquipment->Hands[HandIndex].ScabbardSlotID = SlotID;
+
+	return true;
 }
 //---------------------------------------------------------------------
 

@@ -284,7 +284,10 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 			{
 				const auto& Hand = pEquipment->Hands[HandIdx];
 				if (Hand.ScabbardSlotID == SlotID && Hand.Unsheathed)
+				{
 					BoneKey = GetHandPseudoSlotID(HandIdx);
+					break;
+				}
 			}
 
 			// Find parent bone for the attachment
