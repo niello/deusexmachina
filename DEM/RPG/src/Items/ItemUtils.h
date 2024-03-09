@@ -122,8 +122,10 @@ std::pair<CStrID, EItemStorage> FindMainOccupiedSlot(const Game::CGameWorld& Wor
 std::pair<CStrID, EItemStorage> FindMainOccupiedSlot(const Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, EItemStorage Storage = EItemStorage::None);
 void ScheduleStackReequipment(Game::CGameWorld& World, Game::HEntity StackID, EItemStorage Storage = EItemStorage::None, CStrID SlotID = CStrID::Empty);
 void ScheduleReequipment(Game::CGameWorld& World, Game::HEntity ItemID);
-//???Game::HEntity GetEquippedStack(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID);
-//???size_t FindEquipmentSlotForItem(item) - to check if we can equip something before we do that! E.g. for UI prompt "Equip immediately?".
+Game::HEntity GetEquippedStack(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID);
+bool IsItemEquipped(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID);
+bool IsItemStackEquipped(const CEquipmentComponent& Component, Game::HEntity StackID);
+bool IsItemStackEquipped(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID);
 
 CStrID GetHandPseudoSlotID(size_t HandIndex);
 bool EquipItemToHand(Game::CGameWorld& World, Game::HEntity EntityID, size_t HandIndex, CStrID SlotID);

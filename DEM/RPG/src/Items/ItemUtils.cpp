@@ -243,15 +243,6 @@ CStrID UnblockEquipmentSlots(Game::CGameWorld& World, CEquipmentComponent& Equip
 }
 //---------------------------------------------------------------------
 
-bool IsStackEquipped(const CEquipmentComponent& Component, Game::HEntity StackID)
-{
-	for (const auto [SlotID, StackInSlotID] : Component.Equipment)
-		if (StackID == StackInSlotID)
-			return true;
-	return false;
-}
-//---------------------------------------------------------------------
-
 // Monitored and processed by the special system
 void RecordEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, EItemStorage Storage, CStrID Slot)
 {
@@ -1295,7 +1286,7 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 	if (!pSrcStack || !pSrcStack->Count) return { 0, false };
 
 	// Check if the stack is moved within the same storage
-	const auto IsAlreadyEquipped = IsStackEquipped(*pEquipment, StackID);
+	const auto IsAlreadyEquipped = IsItemStackEquipped(*pEquipment, StackID);
 
 	// Try to merge items to the existing stack
 	if (auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID))
@@ -1371,7 +1362,7 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 	if (Merge)
 	{
 		// Check if the stack is moved within the same storage
-		const auto IsAlreadyEquipped = IsStackEquipped(*pEquipment, StackID);
+		const auto IsAlreadyEquipped = IsItemStackEquipped(*pEquipment, StackID);
 
 		for (auto [SlotID, SlotType] : pEquipment->Scheme->Slots)
 		{
@@ -1623,6 +1614,40 @@ void ScheduleReequipment(Game::CGameWorld& World, Game::HEntity ItemID)
 			if (Stack.Prototype == ItemID) ScheduleStackReequipment(World, StackID);
 		});
 	}
+}
+//---------------------------------------------------------------------
+
+Game::HEntity GetEquippedStack(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID)
+{
+	auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID);
+	return pEquipment ? GetEquippedStack(*pEquipment, SlotID) : Game::HEntity{};
+}
+//---------------------------------------------------------------------
+
+bool IsItemEquipped(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID)
+{
+	if (auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID))
+		for (const auto [SlotID, StackInSlotID] : pEquipment->Equipment)
+			if (auto pStack = World.FindComponent<const CItemStackComponent>(StackInSlotID))
+				if (pStack->Prototype == ItemProtoID)
+					return true;
+	return false;
+}
+//---------------------------------------------------------------------
+
+bool IsItemStackEquipped(const CEquipmentComponent& Component, Game::HEntity StackID)
+{
+	for (const auto [SlotID, StackInSlotID] : Component.Equipment)
+		if (StackID == StackInSlotID)
+			return true;
+	return false;
+}
+//---------------------------------------------------------------------
+
+bool IsItemStackEquipped(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID)
+{
+	auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID);
+	return pEquipment && IsItemStackEquipped(*pEquipment, StackID);
 }
 //---------------------------------------------------------------------
 
