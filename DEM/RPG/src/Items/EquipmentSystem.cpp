@@ -138,6 +138,34 @@ static size_t ApplyAppearance(CAppearanceComponent::CLookMap& Look, const CAppea
 }
 //---------------------------------------------------------------------
 
+static Scene::CSceneNode* GatherAttachment(Game::CGameWorld& World, const CEquipmentComponent& Equipment, Game::HEntity StackID, CStrID SlotID, Scene::CSceneNode* pRootNode)
+{
+	const CItemComponent* pItemComponent = FindItemComponent<const CItemComponent>(World, StackID);
+	if (!pItemComponent || !pItemComponent->WorldModelID) return nullptr;
+
+	CStrID BoneKey = SlotID;
+	for (size_t HandIdx = 0; HandIdx < Equipment.Scheme->HandCount; ++HandIdx)
+	{
+		const auto& Hand = Equipment.Hands[HandIdx];
+		if (Hand.ScabbardSlotID == SlotID && Hand.Unsheathed)
+		{
+			BoneKey = GetHandPseudoSlotID(HandIdx);
+			break;
+		}
+	}
+
+	// Find parent bone for the attachment
+	auto It = Equipment.Scheme->SlotBones.find(BoneKey);
+	if (It == Equipment.Scheme->SlotBones.cend()) return nullptr;
+
+	const char* pBoneName = It->second.c_str();
+	auto pDestNode = pRootNode->FindNodeByPath(pBoneName);
+	if (!pDestNode) pDestNode = pRootNode->GetChildRecursively(CStrID(pBoneName));
+	n_assert2(pDestNode, "GatherAttachment() > can't find a bone for item attachment");
+	return pDestNode;
+}
+//---------------------------------------------------------------------
+
 void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID, CAppearanceComponent& AppearanceComponent, Resources::CResourceManager& RsrcMgr)
 {
 	ZoneScoped;
@@ -265,47 +293,27 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 	{
 		std::map<Game::HEntity, Scene::CSceneNode*> NewAttachments; // Item stack ID -> Target bone
 
+		// Process scabbards. Other equipment slots can't produce attachments.
 		static const CStrID sidScabbard("Scabbard");
 		static const CStrID sidBigScabbard("BigScabbard");
-		for (auto [SlotID, StackID] : pEquipment->Equipment) // TODO: the same for Q slots!
+		for (auto [SlotID, StackID] : pEquipment->Equipment)
 		{
-			// No item - no attachment
 			if (!StackID) continue;
 
-			// Ignore slots that do not produce attachments
 			const auto SlotType = pEquipment->Scheme->Slots[SlotID];
-			if (SlotType != sidScabbard && SlotType != sidBigScabbard) continue;
+			if (SlotType == sidScabbard || SlotType == sidBigScabbard)
+				if (auto pDestNode = GatherAttachment(World, *pEquipment, StackID, SlotID, pRootNode))
+					NewAttachments.emplace(StackID, pDestNode);
+		}
 
-			const CItemComponent* pItemComponent = FindItemComponent<const CItemComponent>(World, StackID);
-			if (!pItemComponent || !pItemComponent->WorldModelID) continue;
+		// Process quickslots
+		for (size_t i = 0; i < pEquipment->QuickSlots.size(); ++i)
+		{
+			const auto StackID = pEquipment->QuickSlots[i];
+			if (!StackID) continue;
 
-			CStrID BoneKey = SlotID;
-			for (size_t HandIdx = 0; HandIdx < pEquipment->Scheme->HandCount; ++HandIdx)
-			{
-				const auto& Hand = pEquipment->Hands[HandIdx];
-				if (Hand.ScabbardSlotID == SlotID && Hand.Unsheathed)
-				{
-					BoneKey = GetHandPseudoSlotID(HandIdx);
-					break;
-				}
-			}
-
-			// Find parent bone for the attachment
-			auto It = pEquipment->Scheme->SlotBones.find(BoneKey);
-			if (It != pEquipment->Scheme->SlotBones.cend())
-			{
-				const char* pBoneName = It->second.c_str();
-				auto pDestNode = pRootNode->FindNodeByPath(pBoneName);
-				if (!pDestNode) pDestNode = pRootNode->GetChildRecursively(CStrID(pBoneName));
-				if (!pDestNode)
-				{
-					// No target bone - no attachment
-					::Sys::Error("Can't find a bone for item attachment");
-					continue;
-				}
-
+			if (auto pDestNode = GatherAttachment(World, *pEquipment, StackID, GetQuickSlotID(i), pRootNode))
 				NewAttachments.emplace(StackID, pDestNode);
-			}
 		}
 
 		// Synchronize current attachments with desired list

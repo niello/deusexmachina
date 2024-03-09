@@ -63,8 +63,18 @@ void AddEquipmentModifier(CEquippedComponent& Source, CModifiableParameter<typen
 
 inline Game::HEntity GetEquippedStack(const CEquipmentComponent& Component, CStrID SlotID)
 {
+	if (!SlotID) return {};
+
 	auto It = Component.Equipment.find(SlotID);
-	return (It == Component.Equipment.cend()) ? Game::HEntity{} : It->second;
+	if (It != Component.Equipment.cend()) return It->second;
+
+	if (SlotID.CStr()[0] == 'Q')
+	{
+		const size_t QIndex = static_cast<size_t>(std::atoi(SlotID.CStr() + 1) - 1);
+		if (QIndex < Component.QuickSlots.size()) return Component.QuickSlots[QIndex];
+	}
+
+	return {};
 }
 //---------------------------------------------------------------------
 
