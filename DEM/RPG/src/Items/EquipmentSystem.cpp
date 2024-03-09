@@ -203,7 +203,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 				if (auto pAppearanceAsset = AppearanceRsrc->ValidateObject<CAppearanceAsset>())
 				{
 					const auto MainSlotID = FindMainOccupiedSlot(World, *pEquipment, StackID, EItemStorage::Equipment).first;
-					ApplyAppearance(NewLook, pAppearanceAsset, AppearanceComponent.Params, IgnoredBodyParts, pEquipment->Scheme, MainSlotID);
+					ApplyAppearance(NewLook, pAppearanceAsset, AppearanceComponent.Params, IgnoredBodyParts, pEquipment->Scheme, MainSlotID ? MainSlotID : SlotID);
 
 					// Consider body parts filled even if no scene asset was added. Can change this by checking ApplyAppearance return value.
 					for (const auto& VisualPart : pAppearanceAsset->Visuals)
