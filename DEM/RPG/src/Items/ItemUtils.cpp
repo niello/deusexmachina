@@ -1740,16 +1740,16 @@ CStrID GetHandPseudoSlotID(size_t HandIndex)
 
 bool EquipItemToHand(Game::CGameWorld& World, Game::HEntity EntityID, size_t HandIndex, CStrID SlotID)
 {
-	auto pEquipment = World.FindComponent<DEM::RPG::CEquipmentComponent>(EntityID);
+	auto pEquipment = World.FindComponent<CEquipmentComponent>(EntityID);
 	if (!pEquipment || !pEquipment->Hands || !pEquipment->Scheme || pEquipment->Scheme->HandCount <= HandIndex) return false;
 
-	const auto PrevStackID = DEM::RPG::GetEquippedStack(*pEquipment, pEquipment->Hands[HandIndex].ScabbardSlotID);
-	const auto NewStackID = DEM::RPG::GetEquippedStack(*pEquipment, SlotID);
+	const auto PrevStackID = GetEquippedStack(*pEquipment, pEquipment->Hands[HandIndex].ScabbardSlotID);
+	const auto NewStackID = GetEquippedStack(*pEquipment, SlotID);
 
-	const auto pPrevWeapon = FindItemComponent<const DEM::RPG::CWeaponComponent>(World, PrevStackID);
+	const auto pPrevWeapon = FindItemComponent<const CWeaponComponent>(World, PrevStackID);
 	const bool IsPrevTwoHanded = pPrevWeapon && pPrevWeapon->Big; // FIXME: need separate field for 1/1.5/2 handedness, Big isn't the same!
 
-	const auto pNewWeapon = FindItemComponent<const DEM::RPG::CWeaponComponent>(World, NewStackID);
+	const auto pNewWeapon = FindItemComponent<const CWeaponComponent>(World, NewStackID);
 	const bool IsNewTwoHanded = pNewWeapon && pNewWeapon->Big; // FIXME: need separate field for 1/1.5/2 handedness, Big isn't the same!
 
 	if (IsNewTwoHanded && pEquipment->Scheme->HandCount < 2) return false;
@@ -1758,7 +1758,7 @@ bool EquipItemToHand(Game::CGameWorld& World, Game::HEntity EntityID, size_t Han
 	for (size_t i = 0; i < pEquipment->Scheme->HandCount; ++i)
 	{
 		auto& Hand = pEquipment->Hands[i];
-		const auto HandStackID = DEM::RPG::GetEquippedStack(*pEquipment, Hand.ScabbardSlotID);
+		const auto HandStackID = GetEquippedStack(*pEquipment, Hand.ScabbardSlotID);
 		if (HandStackID == NewStackID || (IsPrevTwoHanded && HandStackID == PrevStackID))
 			Hand.ScabbardSlotID = {};
 	}
@@ -1794,7 +1794,7 @@ bool EquipItemToHand(Game::CGameWorld& World, Game::HEntity EntityID, size_t Han
 					SecondHandIndex = i;
 					Hand.ScabbardSlotID = {};
 
-					const auto pReplacedWeapon = FindItemComponent<const DEM::RPG::CWeaponComponent>(World, DEM::RPG::GetEquippedStack(*pEquipment, ReplacedSlotID));
+					const auto pReplacedWeapon = FindItemComponent<const CWeaponComponent>(World, GetEquippedStack(*pEquipment, ReplacedSlotID));
 					const bool IsReplacedTwoHanded = pReplacedWeapon && pReplacedWeapon->Big; // FIXME: need separate field for 1/1.5/2 handedness, Big isn't the same!
 					if (!IsReplacedTwoHanded) break;
 				}
@@ -2043,6 +2043,31 @@ void RemoveItemVisualsFromLocation(Game::CGameWorld& World, Game::HEntity StackI
 {
 	World.RemoveComponent<Game::CSceneComponent>(StackID);
 	World.RemoveComponent<Game::CRigidBodyComponent>(StackID);
+}
+//---------------------------------------------------------------------
+
+std::pair<Game::HEntity, EItemStorage> ReinsertWithoutSplit(Game::CGameWorld& World, EItemStorage SrcStorage, Game::HEntity OwnerID, Game::HEntity StackID)
+{
+	//!!!FIXME: check that MoveWholeStackToContainer and MoveWholeStackToQuickSlots don't split!
+
+	// Try to reinsert item to the character only if it was not on the ground
+	if (SrcStorage != EItemStorage::World)
+	{
+		if (const auto ResultingStackID = MoveWholeStackToContainer(World, OwnerID, StackID)) return { ResultingStackID, EItemStorage::Container };
+		if (const auto ResultingStackID = MoveWholeStackToQuickSlots(World, OwnerID, StackID)) return { ResultingStackID, EItemStorage::QuickSlot };
+		// NB: no auto-equipping for now, but it may be added if needed
+	}
+
+	// The last resort with guaranteed success, because the world has no item capacity limit
+	if (SrcStorage != EItemStorage::World)
+	{
+		// Add the stack to the world only if it is not there yet. No merging allowed now but it can be easily enabled if needed.
+		rtm::qvvf Tfm = rtm::qvv_identity();
+		if (auto pOwnerScene = World.FindComponent<const Game::CSceneComponent>(OwnerID))
+			Tfm.translation = rtm::matrix_mul_point3(rtm::vector_set(0.f, 1.f, -1.f), pOwnerScene->RootNode->GetWorldMatrix());
+		StackID = MoveWholeStackToLocation(World, StackID, World.GetEntityLevel(OwnerID), Tfm);
+	}
+	return { StackID, EItemStorage::World };
 }
 //---------------------------------------------------------------------
 

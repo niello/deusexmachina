@@ -142,6 +142,8 @@ void CleanupItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
 bool AddItemVisualsToLocation(Game::CGameWorld& World, Game::HEntity StackID, const rtm::qvvf& Tfm);
 void RemoveItemVisualsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
 
+std::pair<Game::HEntity, EItemStorage> ReinsertWithoutSplit(Game::CGameWorld& World, EItemStorage SrcStorage, Game::HEntity OwnerID, Game::HEntity StackID);
+
 // TODO:
 // void QueryItemsInShape(Game::CGameWorld& World /*collision shape - sphere, capsule etc*/ /*, T Filter*/); //!!!including piles!
 //IsItemValuable, IsItemTrash - not here, game-specific filters? Or use settings from CItemManager?
