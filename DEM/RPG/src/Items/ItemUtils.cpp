@@ -2054,17 +2054,14 @@ void RemoveItemVisualsFromLocation(Game::CGameWorld& World, Game::HEntity StackI
 
 std::pair<Game::HEntity, EItemStorage> ReinsertWithoutSplit(Game::CGameWorld& World, EItemStorage SrcStorage, Game::HEntity OwnerID, Game::HEntity StackID)
 {
-	// Try to reinsert item to the character only if it was not on the ground
 	if (SrcStorage != EItemStorage::World)
 	{
+		// Try to reinsert item to the character only if it was not on the ground
 		if (const auto ResultingStackID = MoveWholeStackToContainer(World, OwnerID, StackID)) return { ResultingStackID, EItemStorage::Container };
 		if (const auto ResultingStackID = MoveWholeStackToQuickSlots(World, OwnerID, StackID)) return { ResultingStackID, EItemStorage::QuickSlot };
 		// NB: no auto-equipping for now, but it may be added if needed
-	}
 
-	// The last resort with guaranteed success, because the world has no item capacity limit
-	if (SrcStorage != EItemStorage::World)
-	{
+		// The last resort with guaranteed success, because the world has no item capacity limit.
 		// Add the stack to the world only if it is not there yet. No merging allowed now but it can be easily enabled if needed.
 		rtm::qvvf Tfm = rtm::qvv_identity();
 		if (auto pOwnerScene = World.FindComponent<const Game::CSceneComponent>(OwnerID))
