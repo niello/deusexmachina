@@ -1400,9 +1400,18 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 		for (auto [SlotID, SlotType] : pEquipment->Scheme->Slots)
 		{
 			auto& DestSlot = pEquipmentWritable->Equipment[SlotID];
-			if (DestSlot) continue;
+			if (DestSlot && (!pReplaced || (*pReplaced && *pReplaced != DestSlot))) continue;
 
-			const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, DestSlot, StackID, std::min(RemainingCount, CanEquipItems(World, EntityID, StackID, SlotID)));
+			// How many items can we equip to this slot?
+			const auto AvailableCapacity = CanEquipItems(World, EntityID, StackID, SlotID);
+			if (!AvailableCapacity) continue;
+
+			// If didn't replace anything yet and the slot is occupied, replace its current stack
+			if (DestSlot && pReplaced && !*pReplaced)
+				*pReplaced = DestSlot;
+
+			// Move as many items as possible to the slot
+			const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, DestSlot, StackID, std::min(RemainingCount, AvailableCapacity));
 			if (MovedCount)
 			{
 				const auto MainSlotID = BlockEquipmentSlots(World, *pEquipmentWritable, DestSlot);
@@ -1411,12 +1420,6 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 			if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
 			RemainingCount -= MovedCount;
 		}
-	}
-
-	// If replacing allowed, replace one slot
-	if (pReplaced)
-	{
-		NOT_IMPLEMENTED;
 	}
 
 	return { Count - RemainingCount, false };
