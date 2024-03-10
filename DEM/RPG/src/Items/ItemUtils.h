@@ -138,7 +138,6 @@ std::pair<U32, bool> MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity 
 Game::HEntity MoveWholeStackToLocation(Game::CGameWorld& World, Game::HEntity StackID, CStrID LevelID, const rtm::qvvf& Tfm, float MergeRadius = 0.f);
 void ClearLocationSlot(Game::CGameWorld& World, std::vector<Game::HEntity>& GroundItems, size_t SlotIndex);
 U32 RemoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count);
-void CleanupItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
 bool AddItemVisualsToLocation(Game::CGameWorld& World, Game::HEntity StackID, const rtm::qvvf& Tfm);
 void RemoveItemVisualsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
 

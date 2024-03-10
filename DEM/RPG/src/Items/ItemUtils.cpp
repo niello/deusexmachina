@@ -494,11 +494,8 @@ U32 AddItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game
 		if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
 		{
 			const auto SlotIndex = GetFirstEmptySlotIndex(pContainerWritable->Items);
-			if (SlotIndex < pContainerWritable->Items.size())
-			{
-				pContainerWritable->Items[SlotIndex] = NewStackID;
-				return Count;
-			}
+			pContainerWritable->Items[SlotIndex] = NewStackID;
+			return Count;
 		}
 		World.DeleteEntity(NewStackID);
 	}
@@ -635,8 +632,7 @@ std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity
 	if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
 	{
 		const auto SlotIndex = GetFirstEmptySlotIndex(pContainerWritable->Items);
-		if (SlotIndex < pContainerWritable->Items.size())
-			return SplitItemsToSlot(World, pContainerWritable->Items[SlotIndex], StackID, Count);
+		return SplitItemsToSlot(World, pContainerWritable->Items[SlotIndex], StackID, Count);
 	}
 
 	return { 0, false };
@@ -659,6 +655,7 @@ Game::HEntity MoveWholeStackToContainer(Game::CGameWorld& World, Game::HEntity C
 	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
 	if (!pItem) return {};
 
+	// If the whole stack can't be stored, cancel the operation. Don't split the stack.
 	if (pSrcStack->Count > GetContainerCapacityInItems(World, *pContainer, pItem, 1, StackID)) return {};
 
 	// Try to merge into an existing stack first
@@ -667,7 +664,10 @@ Game::HEntity MoveWholeStackToContainer(Game::CGameWorld& World, Game::HEntity C
 		const auto SlotIndex = GetFirstMergeableSlotIndex(World, *pContainer, StackID);
 		if (SlotIndex < pContainer->Items.size())
 		{
-			if (!MoveItemsToStack(World, pContainer->Items[SlotIndex], StackID, pSrcStack->Count).first) return {};
+			// Container has no limit for item count in a slot, merging will always merge the whole stack
+			const auto [MovedCount, MovedCompletely] = MoveItemsToStack(World, pContainer->Items[SlotIndex], StackID, pSrcStack->Count);
+			if (!MovedCount) return {};
+			n_assert_dbg(MovedCompletely);
 			return pContainer->Items[SlotIndex];
 		}
 	}
@@ -676,11 +676,8 @@ Game::HEntity MoveWholeStackToContainer(Game::CGameWorld& World, Game::HEntity C
 	if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
 	{
 		const auto SlotIndex = GetFirstEmptySlotIndex(pContainerWritable->Items);
-		if (SlotIndex < pContainerWritable->Items.size())
-		{
-			if (!SplitItemsToSlot(World, pContainerWritable->Items[SlotIndex], StackID, pSrcStack->Count).first) return {};
-			return pContainerWritable->Items[SlotIndex];
-		}
+		pContainerWritable->Items[SlotIndex] = StackID;
+		return StackID;
 	}
 
 	return {};
@@ -1053,29 +1050,36 @@ Game::HEntity MoveWholeStackToQuickSlots(Game::CGameWorld& World, Game::HEntity 
 	auto pItem = FindItemComponent<const CItemComponent>(World, StackID, *pSrcStack);
 	if (!pItem) return {};
 
+	// Skip if the stack can't fit into a single quick slot without splitting
 	const auto SlotCapacity = GetQuickSlotCapacity(pItem);
 	if (pSrcStack->Count > SlotCapacity) return {};
 
 	// First try to merge into existing stacks of the same item
 	if (Merge)
 	{
-		for (auto DestStackID : pEquipment->QuickSlots)
+		for (const auto DestStackID : pEquipment->QuickSlots)
 		{
-			auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID);
+			// Accept only slots with identical items with the remaining capacity enough to accomodate the whole source stack
+			const auto pDestStack = World.FindComponent<const CItemStackComponent>(DestStackID);
 			if (!pDestStack || (pSrcStack->Count + pDestStack->Count > SlotCapacity) || !CanMergeStacks(*pSrcStack, pDestStack)) continue;
-			if (!MoveItemsToStack(World, DestStackID, StackID, pSrcStack->Count).first) return {};
+
+			const auto [MovedCount, MovedCompletely] = MoveItemsToStack(World, DestStackID, StackID, pSrcStack->Count);
+			if (!MovedCount) return {};
+			n_assert_dbg(MovedCompletely);
 			return DestStackID;
 		}
 	}
 
-	// Put remaining count into free slots
+	// Then try to put the whole stack into an empty quick slot
 	if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 	{
 		for (size_t SlotIndex = 0; SlotIndex < pEquipmentWritable->QuickSlots.size(); ++SlotIndex)
 		{
 			auto& DestSlot = pEquipmentWritable->QuickSlots[SlotIndex];
 			if (DestSlot) continue;
-			if (!SplitItemsToSlot(World, DestSlot, StackID, pSrcStack->Count).first) return {};
+
+			// We have already checked that an empty quick slot can accomodate the whole stack
+			DestSlot = StackID;
 			RecordEquipment(World, EntityID, DestSlot, EItemStorage::QuickSlot, GetQuickSlotID(SlotIndex));
 			return DestSlot;
 		}
@@ -1984,7 +1988,9 @@ Game::HEntity MoveWholeStackToLocation(Game::CGameWorld& World, Game::HEntity St
 				return pGroundStack && CanMergeStacks(*pSrcStack, pGroundStack);
 			});
 
-			return MoveItemsToStack(World, DestStackID, StackID, pSrcStack->Count).first ? DestStackID : Game::HEntity{};
+			const auto [MovedCount, MovedCompletely] = MoveItemsToStack(World, DestStackID, StackID, pSrcStack->Count);
+			n_assert_dbg(MovedCompletely);
+			return MovedCount ? DestStackID : Game::HEntity{};
 		}
 	}
 
@@ -2048,8 +2054,6 @@ void RemoveItemVisualsFromLocation(Game::CGameWorld& World, Game::HEntity StackI
 
 std::pair<Game::HEntity, EItemStorage> ReinsertWithoutSplit(Game::CGameWorld& World, EItemStorage SrcStorage, Game::HEntity OwnerID, Game::HEntity StackID)
 {
-	//!!!FIXME: check that MoveWholeStackToContainer and MoveWholeStackToQuickSlots don't split!
-
 	// Try to reinsert item to the character only if it was not on the ground
 	if (SrcStorage != EItemStorage::World)
 	{
