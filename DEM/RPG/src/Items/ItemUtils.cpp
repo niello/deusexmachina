@@ -1397,6 +1397,7 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 	// Put remaining count into free slots
 	if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 	{
+		bool IsReplaced = false;
 		for (auto [SlotID, SlotType] : pEquipment->Scheme->Slots)
 		{
 			auto& DestSlot = pEquipmentWritable->Equipment[SlotID];
@@ -1414,8 +1415,16 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 			const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, DestSlot, StackID, std::min(RemainingCount, AvailableCapacity));
 			if (MovedCount)
 			{
-				const auto MainSlotID = BlockEquipmentSlots(World, *pEquipmentWritable, DestSlot);
-				RecordEquipment(World, EntityID, DestSlot, EItemStorage::Equipment, MainSlotID);
+				const auto MainEquipSlotID = BlockEquipmentSlots(World, *pEquipmentWritable, DestSlot);
+				RecordEquipment(World, EntityID, DestSlot, EItemStorage::Equipment, MainEquipSlotID);
+
+				// Unequip replaced stack
+				if (!IsReplaced && pReplaced && *pReplaced)
+				{
+					const auto MainUnequipSlotID = UnblockEquipmentSlots(World, *pEquipmentWritable, *pReplaced);
+					RecordUnequipment(World, EntityID, *pReplaced, EItemStorage::Equipment, MainUnequipSlotID);
+					IsReplaced = true;
+				}
 			}
 			if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
 			RemainingCount -= MovedCount;
