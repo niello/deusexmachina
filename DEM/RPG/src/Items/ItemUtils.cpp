@@ -1350,7 +1350,7 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 //---------------------------------------------------------------------
 
 // Returns a number of items actually moved in and a 'need to clear source storage' flag
-std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, U32 Count, bool Merge, Game::HEntity* pReplaced)
+std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, U32 Count, bool Merge, Game::HEntity* pReplaced, std::set<Game::HEntity>* pDestStacks)
 {
 	if (!EntityID || !StackID || !Count) return { 0, false };
 
@@ -1377,57 +1377,97 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 			auto pDestStack = World.FindComponent<const CItemStackComponent>(It->second);
 			if (!pDestStack || !CanMergeStacks(*pSrcStack, pDestStack)) continue;
 
+			// Skip already full slots
 			const U32 SlotCapacity = CanEquipItems(World, EntityID, StackID, SlotID);
 			if (pDestStack->Count >= SlotCapacity) continue;
 
 			const auto [MovedCount, MovedCompletely] = MoveItemsToStack(World, It->second, StackID, std::min(RemainingCount, SlotCapacity - pDestStack->Count));
-			if (MovedCompletely && IsAlreadyEquipped)
+			if (MovedCount)
 			{
-				if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
+				if (pDestStacks) pDestStacks->insert(It->second);
+
+				if (MovedCompletely && IsAlreadyEquipped)
 				{
-					const auto MainSlotID = UnblockEquipmentSlots(World, *pEquipmentWritable, StackID);
-					RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, MainSlotID);
+					// The source stack was equipped and now it is fully merged into other stacks, unequip it
+					if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
+					{
+						const auto MainSlotID = UnblockEquipmentSlots(World, *pEquipmentWritable, StackID);
+						RecordUnequipment(World, EntityID, StackID, EItemStorage::Equipment, MainSlotID);
+					}
 				}
+
+				if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
+				RemainingCount -= MovedCount;
 			}
-			if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
-			RemainingCount -= MovedCount;
 		}
 	}
 
 	// Put remaining count into free slots
 	if (auto pEquipmentWritable = World.FindComponent<CEquipmentComponent>(EntityID))
 	{
-		bool IsReplaced = false;
 		for (auto [SlotID, SlotType] : pEquipment->Scheme->Slots)
 		{
-			auto& DestSlot = pEquipmentWritable->Equipment[SlotID];
-			if (DestSlot && (!pReplaced || (*pReplaced && *pReplaced != DestSlot))) continue;
+			// Skip non-empty slots
+			auto ItDestSlot = pEquipmentWritable->Equipment.find(SlotID);
+			if (ItDestSlot != pEquipmentWritable->Equipment.cend() && ItDestSlot->second) continue;
 
 			// How many items can we equip to this slot?
-			const auto AvailableCapacity = CanEquipItems(World, EntityID, StackID, SlotID);
-			if (!AvailableCapacity) continue;
+			const auto SlotCapacity = CanEquipItems(World, EntityID, StackID, SlotID);
+			if (!SlotCapacity) continue;
 
-			// If didn't replace anything yet and the slot is occupied, replace its current stack
-			if (DestSlot && pReplaced && !*pReplaced)
-				*pReplaced = DestSlot;
+			// Now we actually need this slot to be allocated
+			if (ItDestSlot == pEquipmentWritable->Equipment.cend())
+				ItDestSlot = pEquipmentWritable->Equipment.emplace(SlotID, Game::HEntity{}).first;
 
 			// Move as many items as possible to the slot
-			const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, DestSlot, StackID, std::min(RemainingCount, AvailableCapacity));
+			const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, ItDestSlot->second, StackID, std::min(RemainingCount, SlotCapacity));
 			if (MovedCount)
 			{
-				const auto MainEquipSlotID = BlockEquipmentSlots(World, *pEquipmentWritable, DestSlot);
-				RecordEquipment(World, EntityID, DestSlot, EItemStorage::Equipment, MainEquipSlotID);
+				if (pDestStacks) pDestStacks->insert(ItDestSlot->second);
 
-				// Unequip replaced stack
-				if (!IsReplaced && pReplaced && *pReplaced)
+				const auto MainEquipSlotID = BlockEquipmentSlots(World, *pEquipmentWritable, ItDestSlot->second);
+				RecordEquipment(World, EntityID, ItDestSlot->second, EItemStorage::Equipment, MainEquipSlotID);
+
+				if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
+				RemainingCount -= MovedCount;
+			}
+		}
+
+		// Try to replace one stack with the source stack if allowed
+		if (pReplaced)
+		{
+			for (auto& [SlotID, DestSlot] : pEquipmentWritable->Equipment)
+			{
+				// Process only non-empty slots. Don't replace identical items.
+				auto pDestStack = World.FindComponent<const CItemStackComponent>(DestSlot);
+				if (!pDestStack || CanMergeStacks(*pSrcStack, pDestStack)) continue;
+
+				// How many items can we equip to this slot?
+				const auto SlotCapacity = CanEquipItems(World, EntityID, StackID, SlotID);
+				if (!SlotCapacity) continue;
+
+				// Move as many items as possible to the slot
+				const Game::HEntity ReplacedStackID = DestSlot;
+				const auto [MovedCount, MovedCompletely] = SplitItemsToSlot(World, DestSlot, StackID, std::min(RemainingCount, SlotCapacity));
+				if (MovedCount)
 				{
-					const auto MainUnequipSlotID = UnblockEquipmentSlots(World, *pEquipmentWritable, *pReplaced);
-					RecordUnequipment(World, EntityID, *pReplaced, EItemStorage::Equipment, MainUnequipSlotID);
-					IsReplaced = true;
+					*pReplaced = ReplacedStackID;
+					if (pDestStacks) pDestStacks->insert(DestSlot);
+
+					// Unequip replaced stack
+					const auto MainUnequipSlotID = UnblockEquipmentSlots(World, *pEquipmentWritable, ReplacedStackID);
+					RecordUnequipment(World, EntityID, ReplacedStackID, EItemStorage::Equipment, MainUnequipSlotID);
+
+					const auto MainEquipSlotID = BlockEquipmentSlots(World, *pEquipmentWritable, DestSlot);
+					RecordEquipment(World, EntityID, DestSlot, EItemStorage::Equipment, MainEquipSlotID);
+
+					if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
+					RemainingCount -= MovedCount;
+
+					// Can replace only one stack
+					break;
 				}
 			}
-			if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
-			RemainingCount -= MovedCount;
 		}
 	}
 
