@@ -1350,7 +1350,7 @@ std::pair<U32, bool> MoveItemsToEquipmentSlot(Game::CGameWorld& World, Game::HEn
 //---------------------------------------------------------------------
 
 // Returns a number of items actually moved in and a 'need to clear source storage' flag
-std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, U32 Count, bool Merge)
+std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity StackID, U32 Count, bool Merge, Game::HEntity* pReplaced)
 {
 	if (!EntityID || !StackID || !Count) return { 0, false };
 
@@ -1411,6 +1411,12 @@ std::pair<U32, bool> MoveItemsToEquipment(Game::CGameWorld& World, Game::HEntity
 			if (MovedCount >= RemainingCount) return { Count, MovedCompletely };
 			RemainingCount -= MovedCount;
 		}
+	}
+
+	// If replacing allowed, replace one slot
+	if (pReplaced)
+	{
+		NOT_IMPLEMENTED;
 	}
 
 	return { Count - RemainingCount, false };
