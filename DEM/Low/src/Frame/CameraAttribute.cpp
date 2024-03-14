@@ -73,6 +73,34 @@ void CCameraAttribute::UpdateBeforeChildren(const rtm::vector4f* pCOIArray, UPTR
 		else
 			_Proj = Math::matrix_perspective_rh(_FOV, _Width / _Height, _NearPlane, _FarPlane);
 
+		//!!!DBG TMP!
+		/*
+		{
+			float t = _NearPlane * rtm::scalar_tan(_FOV * 0.5f);
+			float h = t + t;
+			float w = (_Width / _Height) * h;
+			float l = -0.5f * w;
+
+			struct
+			{
+				float offsetX;
+				float offsetY;
+				float width;
+				float height;
+			}
+			view = { 0, 0, 1, 1 };
+			//view = { 0, 0, 4, 4 };
+			//view = { 0.25f, 0.25f, 1.f / 1024.f, 1.f / 768.f };
+			view = { 0.25f, 0.5f, 0.25f, 0.25f };
+			l += view.offsetX * w;
+			t -= view.offsetY * h;
+			w *= view.width;
+			h *= view.height;
+
+			_Proj = Math::matrix_perspective_off_center_rh(l, l + w, t - h, t, _NearPlane, _FarPlane);
+		}
+		*/
+
 		// Shadow proj was calculated with:
 		//nearPlane - shadowOffset, farPlane - shadowOffset, shadowOffset(0.00007f)
 
@@ -96,6 +124,8 @@ void CCameraAttribute::UpdateBeforeChildren(const rtm::vector4f* pCOIArray, UPTR
 // See https://www.derschmale.com/2014/09/28/unprojections-explained/
 void CCameraAttribute::GetRay3D(float RelX, float RelY, float Length, Math::CLine& OutRay) const
 {
+	// TODO: if dirty, update first!
+
 	// Unproject NDC back to view space and divide by W for principal representation of the position (W=1)
 	const rtm::vector4f NDCOnNearPlane = rtm::vector_set(RelX * 2.f - 1.f, -(RelY * 2.f - 1.f), 0.f, 1.f);
 	rtm::vector4f ViewLocalPos = rtm::matrix_mul_vector(NDCOnNearPlane, _InvProj);

@@ -22,10 +22,10 @@ protected:
 		Orthogonal	= 0x20	// Projection is orthogonal, not perspective
 	};
 
-	rtm::matrix3x4f _View; // InvView is node world tfm
-	rtm::matrix4x4f _Proj;
-	rtm::matrix4x4f _InvProj;
-	rtm::matrix4x4f _ViewProj;
+	rtm::matrix3x4f _View = rtm::matrix_identity(); // InvView is node world tfm
+	rtm::matrix4x4f _Proj = rtm::matrix_identity();
+	rtm::matrix4x4f _InvProj = rtm::matrix_identity();
+	rtm::matrix4x4f _ViewProj = rtm::matrix_identity();
 
 	float _FOV = n_deg2rad(60.0f);
 	float _Width = 1024.f;
