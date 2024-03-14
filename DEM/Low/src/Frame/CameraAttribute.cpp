@@ -93,13 +93,19 @@ void CCameraAttribute::UpdateBeforeChildren(const rtm::vector4f* pCOIArray, UPTR
 }
 //---------------------------------------------------------------------
 
+// See https://www.derschmale.com/2014/09/28/unprojections-explained/
 void CCameraAttribute::GetRay3D(float RelX, float RelY, float Length, Math::CLine& OutRay) const
 {
-	constexpr rtm::vector4f SignMask = { 0.f, -0.f, 0.f, 0.f };
-	const rtm::vector4f ScreenCoord3D = rtm::vector_set((RelX - 0.5f) * 2.f, (RelY - 0.5f) * 2.f, 1.f, 1.f);
-	const rtm::vector4f ViewLocalPos = rtm::vector_xor(rtm::vector_mul(rtm::matrix_mul_vector(ScreenCoord3D, _InvProj), _NearPlane * 1.1f), SignMask);
+	// Unproject NDC back to view space and divide by W for principal representation of the position (W=1)
+	const rtm::vector4f NDCOnNearPlane = rtm::vector_set(RelX * 2.f - 1.f, -(RelY * 2.f - 1.f), 0.f, 1.f);
+	rtm::vector4f ViewLocalPos = rtm::matrix_mul_vector(NDCOnNearPlane, _InvProj);
+	ViewLocalPos = rtm::vector_div(ViewLocalPos, rtm::vector_dup_w(ViewLocalPos));
+
+	// Transform the beginning of the ray from view back to world
 	const rtm::matrix3x4f& InvView = GetInvViewMatrix();
 	OutRay.Start = rtm::matrix_mul_point3(ViewLocalPos, InvView);
+
+	// Calculate direction as (Ray point - Eye position) and resize it to requested length
 	OutRay.Dir = rtm::vector_sub(OutRay.Start, InvView.w_axis);
 	OutRay.Dir = rtm::vector_mul(OutRay.Dir, Length / rtm::vector_length3(OutRay.Dir));
 }

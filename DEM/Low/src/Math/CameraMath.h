@@ -52,6 +52,20 @@ DEM_FORCE_INLINE rtm::matrix4x4f RTM_SIMD_CALL matrix_perspective_rh(float fovY,
 }
 //---------------------------------------------------------------------
 
+DEM_FORCE_INLINE rtm::matrix4x4f RTM_SIMD_CALL matrix_perspective_off_center_rh(float l, float r, float b, float t, float zn, float zf)
+{
+	const float zn_x_2 = zn + zn;
+	const float inv_w = rtm::scalar_reciprocal(r - l); // TODO: batch 3 divisions into one vectorized op?
+	const float inv_h = rtm::scalar_reciprocal(t - b);
+	const float m22 = zf / (zn - zf);
+	return rtm::matrix_set(
+		rtm::vector_set(zn_x_2 * inv_w, 0.f, 0.f, 0.f),
+		rtm::vector_set(0.f, zn_x_2 * inv_h, 0.f, 0.f),
+		rtm::vector_set((l + r) * inv_w, (t + b) * inv_h, m22, -1.f),
+		rtm::vector_set(0.f, 0.f, zn * m22, 0.f));
+}
+//---------------------------------------------------------------------
+
 // Extract frustum planes using Gribb-Hartmann method.
 // See https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
 // See https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
