@@ -104,6 +104,7 @@ bool CGPURenderablePicker::Init(CView& View, std::map<Render::EEffectType, CStrI
 	// - object ID (U32, index in a rendered vector, not a renderable attr's global 64-bit UID)
 	// - triangle ID(U32 from uint SV_PrimitiveId. Do really need? Will correspond to order in a mesh VB/IB data?)
 	// - Z coord (normalized F32, can be quantized to U32? or written bitwise? or prepared for real world depth restore?)
+	// - normal? or restore from triangle on CPU? don't sample normal map anyway in picking shaders? could use last U32 as 2xF16.
 
 	// Don't forget that with D3D10 and up, it is possible to interpret data in groovy ways. The shader intrinsics starting
 	// with "as" can be used to convert the representation of data from one data type to other. This means that you could carry
@@ -119,18 +120,22 @@ bool CGPURenderablePicker::Init(CView& View, std::map<Render::EEffectType, CStrI
 	RTDesc.MipLevels = 1;
 	_RT = View.GetGPU()->CreateRenderTarget(RTDesc);
 
-	//???need flag for CPU readback?
-	// see CD3D11GPUDriver::ReadFromD3DBuffer, CD3D11GPUDriver::ReadFromResource
-	//???create staging texture here once and provide it for readback? make method Copy[Sub]Resource[Region]?
-	//???what is better, read to staging or map-unmap?
-	//if (readBack)
-	//{
-	//	desc.BindFlags = 0;
-	//	desc.Usage = D3D11_USAGE_STAGING;
-	//	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-	//}
-	//m_deviceCtx->Map(texture.m_ptr, _mip, D3D11_MAP_READ, 0, &mapped)
-	//???use future to return value from readback? can run async in another thread and wait on future until available. Or use job counter for waiting and release-acquire?
+	// https://learn.microsoft.com/en-us/windows/win32/direct3d10/d3d10-graphics-programming-guide-resources-mapping
+	// https://chromium.googlesource.com/angle/angle/+/a787b6187a134c64cc9c336a2cdd20ed08778eb2/src/libANGLE/renderer/d3d/d3d11/Buffer11.cpp
+	// https://learn.microsoft.com/en-us/windows/win32/direct3d12/readback-data-using-heaps
+	// https://stackoverflow.com/questions/13479259/read-pixel-data-from-render-target-in-d3d11
+	//
+	// Asynchronous copy: immediateContext->CopySubresourceRegion(mStagingTexture.get(), ...)
+	// then give some time for GPU to finish job, and then:
+	// immediateContext->Map(mStagingTexture.get(), _mip, D3D11_MAP_READ, 0, &mapped)
+	//
+	//!!!TODO: improve ReadFromD3DBuffer, now copies and then maps immediately, guaranteed stall! Return future instead? Or wait for 2 frames, see MSDN.
+	//If your app needs to copy an entire resource, we recommend to use ID3D11DeviceContext::CopyResource instead. (!!!)
+	// Could use D3D11.3 fence: ID3D11Fence::SetEventOnCompletion + WaitForSingleObject, or older widely supported ID3D11Query of type D3D11_QUERY_EVENT
+	//And always creates a new staging resource, we could create it once here!
+	//???can run async in another thread and wait on future until available. Or use job counter for waiting and release-acquire?
+	//
+	//!!!mapped data will be align16, can load into SSE register with movaps if needed!
 
 	Render::CRenderTargetDesc DSDesc;
 	DSDesc.Width = 1;
