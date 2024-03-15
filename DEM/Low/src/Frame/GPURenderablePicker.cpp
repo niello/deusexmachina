@@ -17,11 +17,12 @@ CGPURenderablePicker::~CGPURenderablePicker() = default;
 bool CGPURenderablePicker::Render(CView& View)
 {
 	auto pGPU = View.GetGPU();
+	auto pCamera = View.GetCamera();
 
 	ZoneScoped;
 	DEM_RENDER_EVENT_SCOPED(pGPU, L"CGPURenderablePicker");
 
-	if (!View.GetGraphicsScene() || !View.GetCamera()) OK;
+	if (!View.GetGraphicsScene() || !pCamera) OK;
 
 	// Bind render targets and a depth-stencil buffer
 
@@ -32,8 +33,26 @@ bool CGPURenderablePicker::Render(CView& View)
 	Render::IRenderer::CRenderContext Ctx;
 	Ctx.pGPU = pGPU;
 	Ctx.pShaderTechCache = View.GetShaderTechCache(_ShaderTechCacheIndex);
-	Ctx.CameraPosition = View.GetCamera()->GetPosition();
-	Ctx.ViewProjection = View.GetCamera()->GetViewProjMatrix();
+	Ctx.CameraPosition = pCamera->GetPosition();
+
+	// Calculate view-projection matrix to render only the requested pixel
+	{
+		float t = pCamera->GetNearPlane() * rtm::scalar_tan(pCamera->GetFOV() * 0.5f);
+		float h = t + t;
+		float w = pCamera->GetAspectRatio() * h;
+		float l = -0.5f * w;
+
+		//!!!need to calculate view region from the pixel and actual view target size (Main target, where to define its ID, pass on creation?)!
+		//const vector2 PixelSize = View.GetRenderTarget(SomeID).GetPixelSize();
+		//l += Point.x * PixelSize.x * w;
+		//t -= Point.y * PixelSize.y * h;
+		//w *= PixelSize.x;
+		//h *= PixelSize.y;
+
+		const auto Proj = Math::matrix_perspective_off_center_rh(l, l + w, t - h, t, pCamera->GetNearPlane(), pCamera->GetFarPlane());
+
+		Ctx.ViewProjection = rtm::matrix_mul(rtm::matrix_cast(pCamera->GetViewMatrix()), Proj);
+	}
 
 	Render::IRenderer* pCurrRenderer = nullptr;
 	U8 CurrRendererIndex = 0;
