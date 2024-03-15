@@ -14,6 +14,10 @@
 #define OK   return true
 #define FAIL return false
 
+// Used for concatenating with predefined macros like __LINE__
+#define CONCATENATE_INTERNAL(x, y) x ## y
+#define CONCATENATE(x, y) CONCATENATE_INTERNAL(x, y)
+
 template<typename T, typename = std::enable_if_t<std::is_integral_v<T> && !std::is_signed_v<T>>>
 constexpr T INVALID_INDEX_T = ~static_cast<T>(0);
 

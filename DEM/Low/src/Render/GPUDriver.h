@@ -161,7 +161,7 @@ struct CScopedRenderEvent
 }
 
 #if DEM_RENDER_DEBUG
-#define DEM_RENDER_EVENT_SCOPED(GPU, Name) ::Render::CScopedRenderEvent _ScopedRenderEvent_##__LINE__(GPU, Name)
+#define DEM_RENDER_EVENT_SCOPED(GPU, Name) ::Render::CScopedRenderEvent CONCATENATE(_ScopedRenderEvent_, __LINE__)(GPU, Name)
 #define DEM_RENDER_BEGIN_EVENT(GPU, Name) GPU->DebugBeginEvent(Name)
 #define DEM_RENDER_END_EVENT(GPU) GPU->DebugEndEvent()
 #define DEM_RENDER_MARKER(GPU, Name) GPU->DebugMarker(Name)
