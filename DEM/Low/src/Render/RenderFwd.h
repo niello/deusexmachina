@@ -154,6 +154,7 @@ enum EPixelFormat
 	PixelFmt_B5G6R5,
 	PixelFmt_R8,
 	PixelFmt_R16,
+	PixelFmt_R32G32B32A32_F,
 	PixelFmt_DXT1,
 	PixelFmt_DXT3,
 	PixelFmt_DXT5,
@@ -435,6 +436,9 @@ constexpr inline UPTR GetFormatBitsPerPixel(EPixelFormat Format)
 
 		case PixelFmt_D32S8X24:
 			return 64;
+
+		case PixelFmt_R32G32B32A32_F:
+			return 128;
 
 		default:
 			return 0;

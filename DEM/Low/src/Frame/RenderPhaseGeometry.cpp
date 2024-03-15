@@ -6,7 +6,6 @@
 #include <Render/GPUDriver.h>
 #include <Render/RenderTarget.h>
 #include <Render/DepthStencilBuffer.h>
-#include <Render/ImageBasedLight.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 #include <Core/Factory.h>
@@ -14,12 +13,6 @@
 namespace Frame
 {
 FACTORY_CLASS_IMPL(Frame::CRenderPhaseGeometry, 'PHGE', Frame::CRenderPhase);
-
-CRenderPhaseGeometry::CRenderPhaseGeometry() = default;
-//---------------------------------------------------------------------
-
-CRenderPhaseGeometry::~CRenderPhaseGeometry() = default;
-//---------------------------------------------------------------------
 
 bool CRenderPhaseGeometry::Render(CView& View)
 {
@@ -31,16 +24,12 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	if (!View.GetGraphicsScene() || !View.GetCamera()) OK;
 
-	if (!View.GetGraphicsManager()) FAIL;
-
-	// Setup global lighting params, both ambient and direct
-
 	// Bind render targets and a depth-stencil buffer
 
-	const UPTR RenderTargetCount = RenderTargetIDs.size();
+	const UPTR RenderTargetCount = _RenderTargetIDs.size();
 	for (UPTR i = 0; i < RenderTargetCount; ++i)
 	{
-		auto pTarget = View.GetRenderTarget(RenderTargetIDs[i]);
+		auto pTarget = View.GetRenderTarget(_RenderTargetIDs[i]);
 		pGPU->SetRenderTarget(i, pTarget);
 		pGPU->SetViewport(i, &Render::GetRenderTargetViewport(pTarget->GetDesc()));
 	}
@@ -49,7 +38,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	for (UPTR i = RenderTargetCount; i < MaxRTCount; ++i)
 		pGPU->SetRenderTarget(i, nullptr);
 
-	auto pDepthStencliBuffer = View.GetDepthStencilBuffer(DepthStencilID);
+	auto pDepthStencliBuffer = View.GetDepthStencilBuffer(_DepthStencilID);
 	if (pDepthStencliBuffer && !RenderTargetCount)
 		pGPU->SetViewport(0, &Render::GetRenderTargetViewport(pDepthStencliBuffer->GetDesc()));
 	pGPU->SetDepthStencilBuffer(pDepthStencliBuffer);
@@ -98,34 +87,32 @@ bool CRenderPhaseGeometry::Init(CRenderPath& Owner, CGraphicsResourceManager& Gf
 {
 	if (!CRenderPhase::Init(Owner, GfxMgr, PhaseName, Desc)) FAIL;
 
-	EnableLighting = Desc.Get<bool>(CStrID("EnableLighting"), false);
-
 	const Data::CData& RTValue = Desc.Get(CStrID("RenderTarget")).GetRawValue();
-	if (RTValue.IsNull()) RenderTargetIDs.SetSize(0);
+	if (RTValue.IsNull()) _RenderTargetIDs.SetSize(0);
 	else if (RTValue.IsA<Data::PDataArray>())
 	{
 		Data::PDataArray RTArray = RTValue.GetValue<Data::PDataArray>();
-		RenderTargetIDs.SetSize(RTArray->GetCount());
+		_RenderTargetIDs.SetSize(RTArray->GetCount());
 		for (UPTR i = 0; i < RTArray->GetCount(); ++i)
 		{
 			const Data::CData& RTElm = RTArray->Get<int>(i);
-			if (RTElm.IsNull()) RenderTargetIDs[i] = CStrID::Empty;
-			else if (RTElm.IsA<int>()) RenderTargetIDs[i] = RTArray->Get<CStrID>(i);
+			if (RTElm.IsNull()) _RenderTargetIDs[i] = CStrID::Empty;
+			else if (RTElm.IsA<int>()) _RenderTargetIDs[i] = RTArray->Get<CStrID>(i);
 			else FAIL;
 		}
 	}
 	else if (RTValue.IsA<CStrID>())
 	{
-		RenderTargetIDs.SetSize(1);
-		RenderTargetIDs[0] = RTValue.GetValue<CStrID>();
+		_RenderTargetIDs.SetSize(1);
+		_RenderTargetIDs[0] = RTValue.GetValue<CStrID>();
 	}
 	else FAIL;
 
 	const Data::CData& DSValue = Desc.Get(CStrID("DepthStencilBuffer")).GetRawValue();
-	if (DSValue.IsNull()) DepthStencilID = CStrID::Empty;
+	if (DSValue.IsNull()) _DepthStencilID = CStrID::Empty;
 	else if (DSValue.IsA<CStrID>())
 	{
-		DepthStencilID = DSValue.GetValue<CStrID>();
+		_DepthStencilID = DSValue.GetValue<CStrID>();
 	}
 	else FAIL;
 

@@ -113,6 +113,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Events/Subscription.h
 	DEM/Low/src/Frame/CameraAttribute.h
 	DEM/Low/src/Frame/CameraController.h
+	DEM/Low/src/Frame/GPURenderablePicker.h
 	DEM/Low/src/Frame/GraphicsResourceManager.h
 	DEM/Low/src/Frame/GraphicsScene.h
 	DEM/Low/src/Frame/LightAttribute.h
@@ -410,6 +411,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Events/Subscription.cpp
 	DEM/Low/src/Frame/CameraAttribute.cpp
 	DEM/Low/src/Frame/CameraController.cpp
+	DEM/Low/src/Frame/GPURenderablePicker.cpp
 	DEM/Low/src/Frame/GraphicsResourceManager.cpp
 	DEM/Low/src/Frame/GraphicsScene.cpp
 	DEM/Low/src/Frame/LightAttribute.cpp
