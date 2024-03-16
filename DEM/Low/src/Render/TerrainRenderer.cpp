@@ -104,8 +104,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 
 	UPTR LightCount = 0;
 	const CTechnique* pTech = Context.pShaderTechCache[Terrain.ShaderTechIndex];
-	const auto& Passes = pTech->GetPasses(LightCount);
-	if (Passes.empty()) return;
+	if (!pTech) return;
 
 	auto pMaterial = Terrain.Material.Get();
 	n_assert_dbg(pMaterial);
@@ -265,7 +264,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		_pGPU->SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 
 		const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
-		for (const auto& Pass : Passes)
+		for (const auto& Pass : _pCurrTech->GetPasses())
 		{
 			_pGPU->SetRenderState(Pass);
 			_pGPU->DrawInstanced(*pGroup, FullInstanceCount);
@@ -293,7 +292,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		_pGPU->SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 
 		const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
-		for (const auto& Pass : Passes)
+		for (const auto& Pass : _pCurrTech->GetPasses())
 		{
 			_pGPU->SetRenderState(Pass);
 			_pGPU->DrawInstanced(*pGroup, QuarterInstanceIndex - FullInstanceCount);

@@ -77,7 +77,6 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 	CModel& Model = static_cast<CModel&>(Renderable);
 
 	const CTechnique* pTech = Context.pShaderTechCache[Model.ShaderTechIndex];
-	n_assert_dbg(pTech);
 	if (!pTech) return;
 
 	auto pMaterial = Model.Material.Get();
@@ -228,10 +227,7 @@ void CModelRenderer::CommitCollectedInstances()
 	//but it keeps material and mesh, and maybe even cached intermediate data like GPU skinned vertices buffer.
 	//???what effects use multipass techs at all? is there any not implementable with different render phases?
 	//may remove pass arrays from tech and leave there only one render state, or at least a set of states for different factor (instance limit etc)
-	// FIXME: get rid of light count variations? Or use them?
-	UPTR LightCount = 0;
-	const auto& Passes = _pCurrTech->GetPasses(LightCount);
-	for (const auto& Pass : Passes)
+	for (const auto& Pass : _pCurrTech->GetPasses())
 	{
 		_pGPU->SetRenderState(Pass);
 		if (_InstanceCount > 1)

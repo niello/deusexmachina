@@ -37,15 +37,11 @@ CGPURenderablePicker::CGPURenderablePicker(CView& View, std::map<Render::EEffect
 CGPURenderablePicker::~CGPURenderablePicker() = default;
 //---------------------------------------------------------------------
 
-//!!!in - vector of renderables associated with user data, out - index or renderable or user data of the picked one, or empty for no pick!
-bool CGPURenderablePicker::Render(CView& View)
+bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::pair<Render::IRenderable*, UPTR>* pObjects, size_t ObjectCount, UPTR ShaderTechCacheIndex)
 {
 	//////////////
 	//!!!DBG TMP!
 	CStrID RenderTargetID("Main");
-	vector2 PixelPos;
-	std::pair<Render::IRenderable*, UPTR>* pObjects = nullptr;
-	size_t ObjectCount = 0;
 	//////////////
 
 	auto pGPU = View.GetGPU();
@@ -65,8 +61,7 @@ bool CGPURenderablePicker::Render(CView& View)
 	// Initialize rendering context
 	Render::IRenderer::CRenderContext Ctx;
 	Ctx.pGPU = pGPU;
-	NOT_IMPLEMENTED;
-	//Ctx.pShaderTechCache = View.GetShaderTechCache(_ShaderTechCacheIndex);
+	Ctx.pShaderTechCache = View.GetShaderTechCache(ShaderTechCacheIndex);
 	Ctx.CameraPosition = pCamera->GetPosition();
 
 	// Calculate a view-projection matrix to render only the requested pixel
@@ -81,11 +76,12 @@ bool CGPURenderablePicker::Render(CView& View)
 
 		// And then crop to a single pixel at the requested position
 		//???!!!turn RenderTargetID into index in Init?! target can change size, can't cache pixel size. But can cache index!
+		//???or pass relative x, y and pixel size here?! anyway calculated for GetRay3D for coarse testing!
 		if (auto pTarget = View.GetRenderTarget(RenderTargetID))
 		{
 			const vector2 PixelSize = Render::GetRenderTargetPixelSize(pTarget->GetDesc());
-			l += PixelPos.x * PixelSize.x * w;
-			t -= PixelPos.y * PixelSize.y * h;
+			l += x * PixelSize.x * w;
+			t -= y * PixelSize.y * h;
 			w *= PixelSize.x;
 			h *= PixelSize.y;
 		}

@@ -33,7 +33,6 @@ public:
 
 	const CEffect*     GetEffect() const { return _pOwner; }
 	CStrID             GetName() const { return _Name; }
-	const auto&        GetPasses(UPTR& LightCount) const { return _Passes; }
 	const auto&        GetPasses() const { return _Passes; }
 	IPTR               GetMaxLightCount() const { return _MaxLightCount; }
 	CShaderParamTable& GetParamTable() const { return *_Params; }

@@ -135,13 +135,15 @@ public:
 	void                            EnableGPUPicking(CStrID RenderTargetID, std::map<Render::EEffectType, CStrID>&& GPUPickEffects);
 	void                            DisableGPUPicking();
 	//!!!TODO: sync & async pick API! fallback to CPU picking if no GPU? what about skinning? use bone OBBs for optimization?
+	//!!!DBG TMP! The simplest impl for testing:
+	void                            PickRenderableAt(float x, float y /*func filter(renderable, maybe UID)*/) const;
 
 	bool                            PrecreateRenderObjects();
 	U32                             RegisterEffect(const Render::CEffect& Effect, CStrID InputSet);
 	const Render::CTechnique* const* GetShaderTechCache(UPTR OverrideIndex = 0) const { return (OverrideIndex < _ShaderTechCache.size()) ? _ShaderTechCache[OverrideIndex].data() : nullptr; }
 	Render::IRenderer*              GetRenderer(U8 Index) const { n_assert_dbg(Index < _Renderers.size()); return _Renderers[Index].get(); }
-	Render::IRenderable*			GetRenderable(UPTR UID) { auto It = _Renderables.find(UID); return (It == _Renderables.cend()) ? nullptr : It->second.get(); }
-	Render::CLight*			        GetLight(UPTR UID) { auto It = _Lights.find(UID); return (It == _Lights.cend()) ? nullptr : It->second.get(); }
+	Render::IRenderable*			GetRenderable(UPTR UID) const { auto It = _Renderables.find(UID); return (It == _Renderables.cend()) ? nullptr : It->second.get(); }
+	Render::CLight*			        GetLight(UPTR UID) const { auto It = _Lights.find(UID); return (It == _Lights.cend()) ? nullptr : It->second.get(); }
 
 	template<typename TCallback>
 	DEM_FORCE_INLINE void ForEachRenderableInQueue(U32 QueueIndex, TCallback Callback)

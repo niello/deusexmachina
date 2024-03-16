@@ -47,7 +47,6 @@ void CSkyboxRenderer::Render(const CRenderContext& Context, IRenderable& Rendera
 	CSkybox& Skybox = static_cast<CSkybox&>(Renderable);
 
 	const CTechnique* pTech = Context.pShaderTechCache[Skybox.ShaderTechIndex];
-	n_assert_dbg(pTech);
 	if (!pTech) return;
 
 	auto pMaterial = Skybox.Material.Get();
@@ -70,10 +69,6 @@ void CSkyboxRenderer::Render(const CRenderContext& Context, IRenderable& Rendera
 		n_verify_dbg(pMaterial->Apply());
 	}
 
-	UPTR LightCount = 0;
-	const auto& Passes = pTech->GetPasses(LightCount);
-	if (Passes.empty()) return;
-
 	if (_pCurrTechInterface->ConstWorldMatrix)
 	{
 		_pCurrTechInterface->PerInstanceParams.SetMatrix(_pCurrTechInterface->ConstWorldMatrix, Skybox.Transform);
@@ -87,7 +82,7 @@ void CSkyboxRenderer::Render(const CRenderContext& Context, IRenderable& Rendera
 
 	// NB: rendered at the far clipping plane due to .xyww position swizzling in a shader
 	const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
-	for (const auto& Pass : Passes)
+	for (const auto& Pass : pTech->GetPasses())
 	{
 		_pGPU->SetRenderState(Pass);
 		_pGPU->Draw(*pGroup);

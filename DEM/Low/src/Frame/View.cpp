@@ -295,6 +295,41 @@ void CView::DisableGPUPicking()
 }
 //---------------------------------------------------------------------
 
+void CView::PickRenderableAt(float x, float y) const
+{
+	if (!_pCamera || !_GPUPicker) return;
+
+	//???!!!how to obtain the main target?! must store it inside the view?! or send target to PickRenderableAt as arg?! camera aspect depends on the main target!!!
+	//???or pass relative values here? target size may not be the same as the window size.
+	//!!!DBG TMP!
+	CStrID RenderTargetID("Main");
+	auto pTarget = GetRenderTarget(RenderTargetID);
+	if (!pTarget) return;
+	const float XRel = x / static_cast<float>(pTarget->GetDesc().Width);
+	const float YRel = y / static_cast<float>(pTarget->GetDesc().Height);
+	///
+
+	Math::CLine Ray;
+	_pCamera->GetRay3D(XRel, YRel, _pCamera->GetFarPlane(), Ray);
+
+	std::vector<std::pair<Render::IRenderable*, UPTR>> Candidates;
+
+	//!!!TODO: could use octree to test the ray against its nodes and throw out many visible objects here! But need object lists in octree nodes!
+	for (const auto& Pair : _Renderables)
+	{
+		auto pRenderable = Pair.second.get();
+		if (!pRenderable->IsVisible) continue;
+
+		//!!!TODO: coarse test ray-AABB or ray-OBB!
+		//pRenderable->BoundsVersion //???sync for bounds?! or store in renderable?
+
+		Candidates.push_back({ pRenderable, Pair.first });
+	}
+
+	_GPUPicker->Pick(*this, x, y, Candidates.data(), Candidates.size(), _GPUPickerShaderTechCacheIndex);
+}
+//---------------------------------------------------------------------
+
 bool CView::PrecreateRenderObjects()
 {
 	if (!_pScene) return false;

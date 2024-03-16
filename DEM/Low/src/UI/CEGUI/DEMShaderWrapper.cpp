@@ -99,8 +99,7 @@ void CDEMShaderWrapper::setInputSet(BlendMode BlendMode, bool Clipped, bool Opaq
 	_pCurrCache = &It->second;
 
 	// FIXME: no multipass support for now, CEGUI does multiple passes in its effects
-	UPTR LightCount = 0;
-	_GPU->SetRenderState(_pCurrCache->pTech->GetPasses(LightCount)[0]);
+	_GPU->SetRenderState(_pCurrCache->pTech->GetPasses()[0]);
 
 	if (_pCurrCache && _pCurrCache->pLinearSamplerParam)
 		_pCurrCache->pLinearSamplerParam->Apply(*_GPU, _LinearSampler.Get());

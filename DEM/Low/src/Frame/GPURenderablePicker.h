@@ -25,7 +25,7 @@ public:
 	~CGPURenderablePicker();
 
 	bool Init(); //???!!!to the constructor?!
-	bool Render(CView& View);
+	bool Pick(const CView& View, float x, float y, const std::pair<Render::IRenderable*, UPTR>* pObjects, size_t ObjectCount, UPTR ShaderTechCacheIndex);
 
 	const auto& GetEffects() const { return _GPUPickEffects; }
 };
