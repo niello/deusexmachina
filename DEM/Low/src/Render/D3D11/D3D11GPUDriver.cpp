@@ -1208,21 +1208,21 @@ void CD3D11GPUDriver::Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U
 
 void CD3D11GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA)
 {
-	if (!RT.IsValid()) return;
-	CD3D11RenderTarget& D3D11RT = (CD3D11RenderTarget&)RT;
-	pD3DImmContext->ClearRenderTargetView(D3D11RT.GetD3DRTView(), ColorRGBA.v);
+	auto& D3D11RT = static_cast<CD3D11RenderTarget&>(RT);
+	if (D3D11RT.IsValid())
+		pD3DImmContext->ClearRenderTargetView(D3D11RT.GetD3DRTView(), ColorRGBA.v);
 }
 //---------------------------------------------------------------------
 
 void CD3D11GPUDriver::ClearDepthStencilBuffer(CDepthStencilBuffer& DS, UPTR Flags, float Depth, U8 Stencil)
 {
-	if (!DS.IsValid()) return;
-	CD3D11DepthStencilBuffer& D3D11DS = (CD3D11DepthStencilBuffer&)DS;
+	auto& D3D11DS = static_cast<CD3D11DepthStencilBuffer&>(DS);
+	if (!D3D11DS.IsValid()) return;
 
 	UINT D3DFlags = 0;
 	if (Flags & Clear_Depth) D3DFlags |= D3D11_CLEAR_DEPTH;
 
-	DXGI_FORMAT Fmt = CD3D11DriverFactory::PixelFormatToDXGIFormat(D3D11DS.GetDesc().Format);
+	const DXGI_FORMAT Fmt = CD3D11DriverFactory::PixelFormatToDXGIFormat(D3D11DS.GetDesc().Format);
 	if ((Flags & Clear_Stencil) && CD3D11DriverFactory::DXGIFormatStencilBits(Fmt) > 0)
 		D3DFlags |= D3D11_CLEAR_STENCIL;
 

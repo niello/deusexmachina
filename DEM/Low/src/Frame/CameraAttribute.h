@@ -3,7 +3,7 @@
 #include <Math/SIMDMath.h>
 
 // Camera is a scene node attribute describing camera properties.
-// Note - W and H are necessary for orthogonal projection matrix,
+// Note - W and H are necessary for Orthographic projection matrix,
 // aspect ratio for a prespective projection is calculated as W / H.
 
 namespace Frame
@@ -19,7 +19,7 @@ protected:
 	enum // extends Scene::CNodeAttribute enum
 	{
 		ProjDirty	= 0x10,	// Projection params changed, matrix should be recomputed
-		Orthogonal	= 0x20	// Projection is orthogonal, not perspective
+		Orthographic	= 0x20	// Projection is Orthographic, not perspective
 	};
 
 	rtm::matrix3x4f _View = rtm::matrix_identity(); // InvView is node world tfm
@@ -43,7 +43,7 @@ public:
 
 	//background color
 	//???clip planes computing? or from any matrix?
-	//???flag ManualProjMatrix? Perspective, Orthogonal, Manual
+	//???flag ManualProjMatrix? Perspective, Orthographic, Manual
 	//???need BBox calculation? projection box, mul view matrix = viewproj box
 
 	virtual bool					LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
@@ -54,9 +54,9 @@ public:
 	void							GetRay3D(float RelX, float RelY, float Length, Math::CLine& OutRay) const;
 	void							GetPoint2D(const rtm::vector4f& Point3D, float& OutRelX, float& OutRelY) const;
 
-	void							SetPerspectiveMode() { if (_Flags.Is(Orthogonal)) { _Flags.Clear(Orthogonal); _Flags.Set(ProjDirty); } }
-	void							SetOrthogonalMode() { if (!_Flags.Is(Orthogonal)) { _Flags.Set(Orthogonal); _Flags.Set(ProjDirty); } }
-	bool							IsOrthogonal() const { return _Flags.Is(Orthogonal); }
+	void							SetPerspectiveMode() { if (_Flags.Is(Orthographic)) { _Flags.Clear(Orthographic); _Flags.Set(ProjDirty); } }
+	void							SetOrthographicMode() { if (!_Flags.Is(Orthographic)) { _Flags.Set(Orthographic); _Flags.Set(ProjDirty); } }
+	bool							IsOrthographic() const { return _Flags.Is(Orthographic); }
 	void							SetFOV(float NewFOV) { if (_FOV != NewFOV) { _FOV = NewFOV; _Flags.Set(ProjDirty); } }
 	float							GetFOV() const { return _FOV; }
 	void							SetWidth(float W) { if (_Width != W) { _Width = W; _Flags.Set(ProjDirty); } }

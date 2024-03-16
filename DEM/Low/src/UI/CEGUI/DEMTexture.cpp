@@ -259,7 +259,7 @@ void CDEMTexture::blitToMemory(void* targetData)
 //                            static_cast<float>(tex_desc.Height)),
 //                    mapped_tex.RowPitch);
 
-	n_assert(_Owner.getGPUDriver()->ReadFromResource(Dest, *_DEMTexture));
+	n_verify(_Owner.getGPUDriver()->ReadFromResource(Dest, *_DEMTexture));
 }
 //--------------------------------------------------------------------
 

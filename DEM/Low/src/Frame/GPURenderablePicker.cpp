@@ -9,6 +9,7 @@
 
 namespace Frame
 {
+static const vector4 PickerTargetEmptyValue{ reinterpret_cast<const float&>(INVALID_INDEX_T<U32>), reinterpret_cast<const float&>(INVALID_INDEX_T<U32>), 1.f, 0.f };
 
 CGPURenderablePicker::~CGPURenderablePicker() = default;
 //---------------------------------------------------------------------
@@ -16,6 +17,14 @@ CGPURenderablePicker::~CGPURenderablePicker() = default;
 //!!!in - vector of renderables associated with user data, out - index or renderable or user data of the picked one, or empty for no pick!
 bool CGPURenderablePicker::Render(CView& View)
 {
+	//////////////
+	//!!!DBG TMP!
+	CStrID RenderTargetID("Main");
+	vector2 PixelPos;
+	std::pair<Render::IRenderable*, UPTR>* pObjects = nullptr;
+	size_t ObjectCount = 0;
+	//////////////
+
 	auto pGPU = View.GetGPU();
 	auto pCamera = View.GetCamera();
 
@@ -25,41 +34,50 @@ bool CGPURenderablePicker::Render(CView& View)
 	if (!View.GetGraphicsScene() || !pCamera) OK;
 
 	// Bind render targets and a depth-stencil buffer
-
 	pGPU->SetRenderTarget(0, _RT);
 	pGPU->SetDepthStencilBuffer(_DS);
 	pGPU->SetViewport(0, &Render::GetRenderTargetViewport(_RT->GetDesc()));
+	pGPU->ClearRenderTarget(*_RT, PickerTargetEmptyValue);
 
+	// Initialize rendering context
 	Render::IRenderer::CRenderContext Ctx;
 	Ctx.pGPU = pGPU;
 	Ctx.pShaderTechCache = View.GetShaderTechCache(_ShaderTechCacheIndex);
 	Ctx.CameraPosition = pCamera->GetPosition();
 
-	// Calculate view-projection matrix to render only the requested pixel
+	// Calculate a view-projection matrix to render only the requested pixel
 	{
+		n_assert_dbg(!pCamera->IsOrthographic());
+
+		// First calculate params of a full projection matrix
 		float t = pCamera->GetNearPlane() * rtm::scalar_tan(pCamera->GetFOV() * 0.5f);
 		float h = t + t;
 		float w = pCamera->GetAspectRatio() * h;
 		float l = -0.5f * w;
 
-		//!!!need to calculate view region from the pixel and actual view target size (Main target, where to define its ID, pass on creation?)!
-		//const vector2 PixelSize = View.GetRenderTarget(SomeID).GetPixelSize();
-		//l += Point.x * PixelSize.x * w;
-		//t -= Point.y * PixelSize.y * h;
-		//w *= PixelSize.x;
-		//h *= PixelSize.y;
+		// And then crop to a single pixel at the requested position
+		//???!!!turn RenderTargetID into index in Init?! target can change size, can't cache pixel size. But can cache index!
+		if (auto pTarget = View.GetRenderTarget(RenderTargetID))
+		{
+			const vector2 PixelSize = Render::GetRenderTargetPixelSize(pTarget->GetDesc());
+			l += PixelPos.x * PixelSize.x * w;
+			t -= PixelPos.y * PixelSize.y * h;
+			w *= PixelSize.x;
+			h *= PixelSize.y;
+		}
 
 		const auto Proj = Math::matrix_perspective_off_center_rh(l, l + w, t - h, t, pCamera->GetNearPlane(), pCamera->GetFarPlane());
 
 		Ctx.ViewProjection = rtm::matrix_mul(rtm::matrix_cast(pCamera->GetViewMatrix()), Proj);
 	}
 
+	// Render hit test candidates to 1x1 target with an override material
 	Render::IRenderer* pCurrRenderer = nullptr;
 	U8 CurrRendererIndex = 0;
-	/*
-	for (Render::IRenderable* pRenderable : Renderables)
+	for (size_t i = 0; i < ObjectCount; ++i)
 	{
-		n_assert_dbg(pRenderable->IsVisible);
+		Render::IRenderable* pRenderable = pObjects[i].first;
+		n_assert_dbg(pRenderable && pRenderable->IsVisible);
 
 		if (CurrRendererIndex != pRenderable->RendererIndex)
 		{
@@ -73,14 +91,33 @@ bool CGPURenderablePicker::Render(CView& View)
 
 		if (pCurrRenderer) pCurrRenderer->Render(Ctx, *pRenderable);
 	}
-	*/
 	if (pCurrRenderer) pCurrRenderer->EndRange(Ctx);
-
-	//???need to call something to finalize rendering to target? how to wait for it to start a readback?
 
 	// Unbind render target(s) & DS buffer
 	pGPU->SetRenderTarget(0, nullptr);
 	pGPU->SetDepthStencilBuffer(nullptr);
+
+	// Read back a pick target value containing an intersection info
+	//!!!FIXME: synchronous, just for testing!
+	alignas(16) struct
+	{
+		U32   ObjectIndex = INVALID_INDEX_T<U32>;
+		U32   TriangleIndex = INVALID_INDEX_T<U32>;
+		float Z = 1.f;
+		U32   UNUSED = 0; //??? 2xfloat16 for a normal?
+	} PickInfo;
+	//Render::CImageData Dest;
+	//Dest.pData = reinterpret_cast<char*>(&PickInfo);
+	//Dest.RowPitch = RT->GetTexture()->GetRowPitch();
+	//Dest.SlicePitch = RT->GetTexture()->GetSlicePitch();
+	//pGPU->ReadFromResource(Dest, RT->GetTexture());
+	//_RT->CopyResolveToTexture???
+
+	//!!!
+	// Don't forget that with D3D10 and up, it is possible to interpret data in groovy ways. The shader intrinsics starting
+	// with "as" can be used to convert the representation of data from one data type to other. This means that you could carry
+	// integer data in your buffer's(texture's) channels that are typed as float.
+	// https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-asuint
 
 	OK;
 }
@@ -89,32 +126,10 @@ bool CGPURenderablePicker::Render(CView& View)
 //!!!TODO: must pass here a set of effect overrides! can control alpha bleanded and alpha tested picking behaviour with different overrides!
 bool CGPURenderablePicker::Init(CView& View, std::map<Render::EEffectType, CStrID>&& EffectOverrides)
 {
-	// RT formats with guaranteed support from D3D10:
-	// https://learn.microsoft.com/en-us/windows/win32/direct3ddxgi/format-support-for-direct3d-feature-level-10-0-hardware
-	// DXGI_FORMAT_R32G32B32A32_FLOAT, UINT, SINT
-	// DXGI_FORMAT_R16G16B16A16_FLOAT, UNORM, UINT, SNORM, SINT
-	// DXGI_FORMAT_R32G32_FLOAT, UINT, SINT
-	// DXGI_FORMAT_R10G10B10A2_UNORM, UINT
-	// DXGI_FORMAT_R11G11B10_FLOAT
-	// DXGI_FORMAT_R16G16_FLOAT, UNORM, UINT, SNORM, SINT
-	// DXGI_FORMAT_R32_FLOAT, UINT, SINT
-	// DXGI_FORMAT_B5G6R5_UNORM
-
-	// Create 1x1 render target or multiple, able to contain:
-	// - object ID (U32, index in a rendered vector, not a renderable attr's global 64-bit UID)
-	// - triangle ID(U32 from uint SV_PrimitiveId. Do really need? Will correspond to order in a mesh VB/IB data?)
-	// - Z coord (normalized F32, can be quantized to U32? or written bitwise? or prepared for real world depth restore?)
-	// - normal? or restore from triangle on CPU? don't sample normal map anyway in picking shaders? could use last U32 as 2xF16.
-
-	// Don't forget that with D3D10 and up, it is possible to interpret data in groovy ways. The shader intrinsics starting
-	// with "as" can be used to convert the representation of data from one data type to other. This means that you could carry
-	// integer data in your buffer's(texture's) channels that are typed as float.
-	// https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-asuint
-
 	Render::CRenderTargetDesc RTDesc;
 	RTDesc.Width = 1;
 	RTDesc.Height = 1;
-	RTDesc.Format = Render::PixelFmt_R32G32B32A32_F;
+	RTDesc.Format = Render::PixelFmt_R32G32B32A32_F; // Guaranteed for D3D10 and above
 	RTDesc.MSAAQuality = Render::MSAA_None;
 	RTDesc.UseAsShaderInput = false;
 	RTDesc.MipLevels = 1;
@@ -134,8 +149,6 @@ bool CGPURenderablePicker::Init(CView& View, std::map<Render::EEffectType, CStrI
 	// Could use D3D11.3 fence: ID3D11Fence::SetEventOnCompletion + WaitForSingleObject, or older widely supported ID3D11Query of type D3D11_QUERY_EVENT
 	//And always creates a new staging resource, we could create it once here!
 	//???can run async in another thread and wait on future until available. Or use job counter for waiting and release-acquire?
-	//
-	//!!!mapped data will be align16, can load into SSE register with movaps if needed!
 
 	Render::CRenderTargetDesc DSDesc;
 	DSDesc.Width = 1;

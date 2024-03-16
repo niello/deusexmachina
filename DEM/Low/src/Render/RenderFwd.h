@@ -452,6 +452,12 @@ constexpr inline CViewport GetRenderTargetViewport(const CRenderTargetDesc& RTDe
 }
 //---------------------------------------------------------------------
 
+constexpr inline vector2 GetRenderTargetPixelSize(const CRenderTargetDesc& RTDesc)
+{
+	return vector2{ 1.f / static_cast<float>(RTDesc.Width), 1.f / static_cast<float>(RTDesc.Height) };
+}
+//---------------------------------------------------------------------
+
 constexpr inline U32 ColorRGBA(U8 r, U8 g, U8 b, U8 a = 255)
 {
 	return ((U32)r) | ((U32)g << 8) | ((U32)b << 16) | ((U32)a << 24);

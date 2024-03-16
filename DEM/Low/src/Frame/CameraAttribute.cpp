@@ -57,7 +57,7 @@ Scene::PNodeAttribute CCameraAttribute::Clone()
 	ClonedAttr->_Height = _Height;
 	ClonedAttr->_NearPlane = _NearPlane;
 	ClonedAttr->_FarPlane = _FarPlane;
-	ClonedAttr->_Flags.SetTo(Orthogonal, IsOrthogonal());
+	ClonedAttr->_Flags.SetTo(Orthographic, IsOrthographic());
 	return ClonedAttr;
 }
 //---------------------------------------------------------------------
@@ -68,7 +68,7 @@ void CCameraAttribute::UpdateBeforeChildren(const rtm::vector4f* pCOIArray, UPTR
 
 	if (_Flags.Is(ProjDirty))
 	{
-		if (_Flags.Is(Orthogonal))
+		if (_Flags.Is(Orthographic))
 			_Proj = Math::matrix_ortho_rh(_Width, _Height, _NearPlane, _FarPlane);
 		else
 			_Proj = Math::matrix_perspective_rh(_FOV, _Width / _Height, _NearPlane, _FarPlane);
