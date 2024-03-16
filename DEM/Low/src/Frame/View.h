@@ -68,7 +68,9 @@ protected:
 	Render::CShaderParamStorage					_Globals;
 	Render::PSampler							_TrilinearCubeSampler; // For IBL
 	CCameraAttribute*                           _pCamera = nullptr; //???smart ptr?
+
 	PGPURenderablePicker                        _GPUPicker;
+	UPTR                                        _GPUPickerShaderTechCacheIndex = INVALID_INDEX;
 
 	CGraphicsScene*								_pScene = nullptr;
 
@@ -92,7 +94,7 @@ protected:
 	U32                                            _NextUnusedLightGPUIndex = 0;
 
 	std::map<std::pair<const Render::CEffect*, CStrID>, U32> _EffectMap;  // Source effect & input set -> index in a _ShaderTechCache
-	std::vector<std::vector<const Render::CTechnique*>> _ShaderTechCache; // First index is an override index (0 is no override), second is from _EffectMap
+	std::vector<std::vector<const Render::CTechnique*>> _ShaderTechCache; // First index is an override index (0 for no override), second is from _EffectMap
 
 	U32                                         _SpatialTreeRebuildVersion = 0; // For spatial tree node visibility cache invalidation
 	U32                                         _CameraTfmVersion = 0;

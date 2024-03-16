@@ -259,15 +259,27 @@ void CView::EnableGPUPicking(CStrID RenderTargetID, std::map<Render::EEffectType
 	// Clear previous settings
 	if (_GPUPicker) DisableGPUPicking();
 
-	//!!!???instead of passing Effects there, should save them in EffectOverrides here and pass _ShaderTechCacheIndex to Init()?!
-	//???save picking overrides index in view to reuse it on subsequent EnableGPUPicking / DisableGPUPicking, if IDs change?
-	//!!!or instead of saving here, can obtain from _GPUPicker? and erase in DisableGPUPicking instead of keeping?
+	//!!!TODO: also pass a render target index!
+	_GPUPicker.reset(new CGPURenderablePicker(*this, std::move(GPUPickEffects)));
 
-	//???update override for existing effects?! see RegisterEffect
-	//???add new category to cache? see _ShaderTechCache.resize(1 + _RenderPath->EffectOverrides.size());
+	// If a cache wasn't allocated for the GPU picker, it is the time to do it now
+	if (_GPUPickerShaderTechCacheIndex == INVALID_INDEX)
+	{
+		_GPUPickerShaderTechCacheIndex = _ShaderTechCache.size();
+		_ShaderTechCache.push_back({});
+	}
 
-	_GPUPicker.reset(new CGPURenderablePicker());
-	_GPUPicker->Init(*this, std::move(GPUPickEffects)); //!!!TODO: also pass a render target index!
+	// Now must fill the new override cache for already registered effects
+	auto& TechCache = _ShaderTechCache[_GPUPickerShaderTechCacheIndex];
+	for (auto& [Key, Value] : _EffectMap)
+	{
+		const Render::CEffect* pEffect = Key.first;
+		auto OverrideIt = _GPUPicker->GetEffects().find(pEffect->GetType());
+		if (OverrideIt != _GPUPicker->GetEffects().cend())
+			pEffect = _GraphicsMgr->GetEffect(OverrideIt->second).Get();
+
+		TechCache.push_back(pEffect ? pEffect->GetTechByInputSet(Key.second) : nullptr);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -275,7 +287,9 @@ void CView::DisableGPUPicking()
 {
 	if (!_GPUPicker) return;
 
-	//???delete from EffectOverrides using an index saved in _GPUPicker?!
+	// Clear the cache of GPU picking shader techs
+	if (_GPUPickerShaderTechCacheIndex != INVALID_INDEX)
+		_ShaderTechCache[_GPUPickerShaderTechCacheIndex].clear();
 
 	_GPUPicker = nullptr;
 }
@@ -308,14 +322,23 @@ U32 CView::RegisterEffect(const Render::CEffect& Effect, CStrID InputSet)
 	// Resolve techniques for the new effect and input set
 	for (UPTR ShaderTechCacheIndex = 0; ShaderTechCacheIndex < _ShaderTechCache.size(); ++ShaderTechCacheIndex)
 	{
-		const Render::CEffect* pEffect = &Effect;
-
-		// Process overrides
-		if (ShaderTechCacheIndex > 0)
+		const std::map<Render::EEffectType, CStrID>* pOverrides = nullptr;
+		if (_GPUPicker && ShaderTechCacheIndex == _GPUPickerShaderTechCacheIndex)
 		{
-			const auto& EffectOverrides = _RenderPath->EffectOverrides[ShaderTechCacheIndex - 1];
-			auto OverrideIt = EffectOverrides.find(pEffect->GetType());
-			if (OverrideIt != EffectOverrides.cend())
+			// GPU picking effect overrides intended for writing pick infor into the render target
+			pOverrides = &_GPUPicker->GetEffects();
+		}
+		else if (ShaderTechCacheIndex > 0)
+		{
+			// Overrides declared in phases of a render path
+			pOverrides = &_RenderPath->EffectOverrides[ShaderTechCacheIndex - 1];
+		}
+
+		const Render::CEffect* pEffect = &Effect;
+		if (pOverrides)
+		{
+			auto OverrideIt = pOverrides->find(pEffect->GetType());
+			if (OverrideIt != pOverrides->cend())
 				pEffect = _GraphicsMgr->GetEffect(OverrideIt->second).Get();
 		}
 

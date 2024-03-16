@@ -15,16 +15,19 @@ class CGPURenderablePicker
 {
 protected:
 
-	Render::PRenderTarget       _RT;
-	Render::PDepthStencilBuffer _DS;
-	UPTR                        _ShaderTechCacheIndex = 0;
+	Render::PRenderTarget                 _RT;
+	Render::PDepthStencilBuffer           _DS;
+	std::map<Render::EEffectType, CStrID> _GPUPickEffects;
 
 public:
 
+	CGPURenderablePicker(CView& View, std::map<Render::EEffectType, CStrID>&& GPUPickEffects);
 	~CGPURenderablePicker();
 
-	bool Init(CView& View, std::map<Render::EEffectType, CStrID>&& EffectOverrides);
+	bool Init(); //???!!!to the constructor?!
 	bool Render(CView& View);
+
+	const auto& GetEffects() const { return _GPUPickEffects; }
 };
 
 }

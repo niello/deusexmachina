@@ -11,6 +11,29 @@ namespace Frame
 {
 static const vector4 PickerTargetEmptyValue{ reinterpret_cast<const float&>(INVALID_INDEX_T<U32>), reinterpret_cast<const float&>(INVALID_INDEX_T<U32>), 1.f, 0.f };
 
+CGPURenderablePicker::CGPURenderablePicker(CView& View, std::map<Render::EEffectType, CStrID>&& GPUPickEffects)
+	: _GPUPickEffects(std::move(GPUPickEffects))
+{
+	Render::CRenderTargetDesc RTDesc;
+	RTDesc.Width = 1;
+	RTDesc.Height = 1;
+	RTDesc.Format = Render::PixelFmt_R32G32B32A32_F; // Guaranteed for D3D10 and above
+	RTDesc.MSAAQuality = Render::MSAA_None;
+	RTDesc.UseAsShaderInput = false;
+	RTDesc.MipLevels = 1;
+	_RT = View.GetGPU()->CreateRenderTarget(RTDesc);
+
+	Render::CRenderTargetDesc DSDesc;
+	DSDesc.Width = 1;
+	DSDesc.Height = 1;
+	DSDesc.Format = Render::PixelFmt_DefaultDepthBuffer;
+	DSDesc.MSAAQuality = Render::MSAA_None;
+	DSDesc.UseAsShaderInput = false;
+	DSDesc.MipLevels = 0;
+	_DS = View.GetGPU()->CreateDepthStencilBuffer(DSDesc);
+}
+//---------------------------------------------------------------------
+
 CGPURenderablePicker::~CGPURenderablePicker() = default;
 //---------------------------------------------------------------------
 
@@ -42,7 +65,8 @@ bool CGPURenderablePicker::Render(CView& View)
 	// Initialize rendering context
 	Render::IRenderer::CRenderContext Ctx;
 	Ctx.pGPU = pGPU;
-	Ctx.pShaderTechCache = View.GetShaderTechCache(_ShaderTechCacheIndex);
+	NOT_IMPLEMENTED;
+	//Ctx.pShaderTechCache = View.GetShaderTechCache(_ShaderTechCacheIndex);
 	Ctx.CameraPosition = pCamera->GetPosition();
 
 	// Calculate a view-projection matrix to render only the requested pixel
@@ -120,22 +144,7 @@ bool CGPURenderablePicker::Render(CView& View)
 	// integer data in your buffer's(texture's) channels that are typed as float.
 	// https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-asuint
 
-	OK;
-}
-//---------------------------------------------------------------------
-
-//!!!TODO: must pass here a set of effect overrides! can control alpha bleanded and alpha tested picking behaviour with different overrides!
-bool CGPURenderablePicker::Init(CView& View, std::map<Render::EEffectType, CStrID>&& EffectOverrides)
-{
-	Render::CRenderTargetDesc RTDesc;
-	RTDesc.Width = 1;
-	RTDesc.Height = 1;
-	RTDesc.Format = Render::PixelFmt_R32G32B32A32_F; // Guaranteed for D3D10 and above
-	RTDesc.MSAAQuality = Render::MSAA_None;
-	RTDesc.UseAsShaderInput = false;
-	RTDesc.MipLevels = 1;
-	_RT = View.GetGPU()->CreateRenderTarget(RTDesc);
-
+	//!!!
 	// https://learn.microsoft.com/en-us/windows/win32/direct3d10/d3d10-graphics-programming-guide-resources-mapping
 	// https://chromium.googlesource.com/angle/angle/+/a787b6187a134c64cc9c336a2cdd20ed08778eb2/src/libANGLE/renderer/d3d/d3d11/Buffer11.cpp
 	// https://learn.microsoft.com/en-us/windows/win32/direct3d12/readback-data-using-heaps
@@ -150,20 +159,6 @@ bool CGPURenderablePicker::Init(CView& View, std::map<Render::EEffectType, CStrI
 	// Could use D3D11.3 fence: ID3D11Fence::SetEventOnCompletion + WaitForSingleObject, or older widely supported ID3D11Query of type D3D11_QUERY_EVENT
 	//And always creates a new staging resource, we could create it once here!
 	//???can run async in another thread and wait on future until available. Or use job counter for waiting and release-acquire?
-
-	Render::CRenderTargetDesc DSDesc;
-	DSDesc.Width = 1;
-	DSDesc.Height = 1;
-	DSDesc.Format = Render::PixelFmt_DefaultDepthBuffer;
-	DSDesc.MSAAQuality = Render::MSAA_None;
-	DSDesc.UseAsShaderInput = false;
-	DSDesc.MipLevels = 0;
-	_DS = View.GetGPU()->CreateDepthStencilBuffer(DSDesc);
-
-	//!!!need to refresh the cache in CView because now it is fixed at the start!!!
-	//or create picker in CView constructor and deny lazy creation? then pass _ShaderTechCacheIndex here.
-	View.GetRenderPath()->EffectOverrides.push_back(std::move(EffectOverrides));
-	_ShaderTechCacheIndex = View.GetRenderPath()->EffectOverrides.size();
 
 	OK;
 }
