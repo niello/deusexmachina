@@ -112,6 +112,7 @@ bool CGPURenderablePicker::Render(CView& View)
 	//Dest.SlicePitch = RT->GetTexture()->GetSlicePitch();
 	//pGPU->ReadFromResource(Dest, RT->GetTexture());
 	//_RT->CopyResolveToTexture???
+	//???for each async request allocate a new staging texture if previous one wasn't yet read and released by the caller? reuse if released?
 
 	//!!!
 	// Don't forget that with D3D10 and up, it is possible to interpret data in groovy ways. The shader intrinsics starting

@@ -51,6 +51,7 @@ class CRenderableAttribute;
 typedef Ptr<class CRenderPath> PRenderPath;
 typedef Ptr<class CGraphicsResourceManager> PGraphicsResourceManager;
 typedef std::unique_ptr<class CView> PView;
+using PGPURenderablePicker = std::unique_ptr<class CGPURenderablePicker>;
 
 class CView final
 {
@@ -67,6 +68,7 @@ protected:
 	Render::CShaderParamStorage					_Globals;
 	Render::PSampler							_TrilinearCubeSampler; // For IBL
 	CCameraAttribute*                           _pCamera = nullptr; //???smart ptr?
+	PGPURenderablePicker                        _GPUPicker;
 
 	CGraphicsScene*								_pScene = nullptr;
 
@@ -127,6 +129,10 @@ public:
 	bool                            CreateDebugDrawer();
 	bool                            CreateMatchingDepthStencilBuffer(CStrID RenderTargetID, CStrID BufferID, Render::EPixelFormat Format = Render::PixelFmt_DefaultDepthBuffer);
 	CCameraAttribute*               CreateDefaultCamera(CStrID RenderTargetID, Scene::CSceneNode& ParentNode, bool SetAsCurrent = true);
+
+	void                            EnableGPUPicking(CStrID RenderTargetID, std::map<Render::EEffectType, CStrID>&& GPUPickEffects);
+	void                            DisableGPUPicking();
+	//!!!TODO: sync & async pick API! fallback to CPU picking if no GPU? what about skinning? use bone OBBs for optimization?
 
 	bool                            PrecreateRenderObjects();
 	U32                             RegisterEffect(const Render::CEffect& Effect, CStrID InputSet);

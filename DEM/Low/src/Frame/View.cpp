@@ -5,6 +5,7 @@
 #include <Frame/RenderableAttribute.h>
 #include <Frame/RenderPath.h>
 #include <Frame/GraphicsResourceManager.h>
+#include <Frame/GPURenderablePicker.h>
 #include <Render/Renderable.h>
 #include <Render/ImageBasedLight.h>
 #include <Render/RenderTarget.h>
@@ -250,6 +251,33 @@ CCameraAttribute* CView::CreateDefaultCamera(CStrID RenderTargetID, Scene::CScen
 	pCameraNode->AddAttribute(*MainCamera);
 	if (SetAsCurrent) SetCamera(MainCamera);
 	return MainCamera.Get();
+}
+//---------------------------------------------------------------------
+
+void CView::EnableGPUPicking(CStrID RenderTargetID, std::map<Render::EEffectType, CStrID>&& GPUPickEffects)
+{
+	// Clear previous settings
+	if (_GPUPicker) DisableGPUPicking();
+
+	//!!!???instead of passing Effects there, should save them in EffectOverrides here and pass _ShaderTechCacheIndex to Init()?!
+	//???save picking overrides index in view to reuse it on subsequent EnableGPUPicking / DisableGPUPicking, if IDs change?
+	//!!!or instead of saving here, can obtain from _GPUPicker? and erase in DisableGPUPicking instead of keeping?
+
+	//???update override for existing effects?! see RegisterEffect
+	//???add new category to cache? see _ShaderTechCache.resize(1 + _RenderPath->EffectOverrides.size());
+
+	_GPUPicker.reset(new CGPURenderablePicker());
+	_GPUPicker->Init(*this, std::move(GPUPickEffects)); //!!!TODO: also pass a render target index!
+}
+//---------------------------------------------------------------------
+
+void CView::DisableGPUPicking()
+{
+	if (!_GPUPicker) return;
+
+	//???delete from EffectOverrides using an index saved in _GPUPicker?!
+
+	_GPUPicker = nullptr;
 }
 //---------------------------------------------------------------------
 
