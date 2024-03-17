@@ -271,14 +271,15 @@ void CView::EnableGPUPicking(CStrID RenderTargetID, std::map<Render::EEffectType
 
 	// Now must fill the new override cache for already registered effects
 	auto& TechCache = _ShaderTechCache[_GPUPickerShaderTechCacheIndex];
-	for (auto& [Key, Value] : _EffectMap)
+	TechCache.resize(_EffectMap.size());
+	for (auto& [Key, Index] : _EffectMap)
 	{
 		const Render::CEffect* pEffect = Key.first;
 		auto OverrideIt = _GPUPicker->GetEffects().find(pEffect->GetType());
 		if (OverrideIt != _GPUPicker->GetEffects().cend())
 			pEffect = _GraphicsMgr->GetEffect(OverrideIt->second).Get();
 
-		TechCache.push_back(pEffect ? pEffect->GetTechByInputSet(Key.second) : nullptr);
+		TechCache[Index] = pEffect ? pEffect->GetTechByInputSet(Key.second) : nullptr;
 	}
 }
 //---------------------------------------------------------------------
@@ -297,6 +298,8 @@ void CView::DisableGPUPicking()
 
 void CView::PickRenderableAt(float x, float y) const
 {
+	ZoneScoped;
+
 	if (!_pCamera || !_GPUPicker) return;
 
 	//???!!!how to obtain the main target?! must store it inside the view?! or send target to PickRenderableAt as arg?! camera aspect depends on the main target!!!
@@ -315,6 +318,7 @@ void CView::PickRenderableAt(float x, float y) const
 	std::vector<std::pair<Render::IRenderable*, UPTR>> Candidates;
 
 	//!!!TODO: could use octree to test the ray against its nodes and throw out many visible objects here! But need object lists in octree nodes!
+	//???use render queues for better sorting and filtering instead of scanning all renderables?
 	for (const auto& Pair : _Renderables)
 	{
 		auto pRenderable = Pair.second.get();
