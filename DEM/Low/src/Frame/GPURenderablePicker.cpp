@@ -10,6 +10,47 @@
 namespace Frame
 {
 static const vector4 PickerTargetEmptyValue{ reinterpret_cast<const float&>(INVALID_INDEX_T<U32>), reinterpret_cast<const float&>(INVALID_INDEX_T<U32>), 1.f, 0.f };
+static const CStrID sidInstanceData("InstanceData");
+static const CStrID sidObjectIndex("ObjectIndex");
+
+// Set the object index as a shader constant
+class CGPUPickRenderModifier : public Render::IRenderModifier
+{
+public:
+
+	U32 _ObjectIndex = INVALID_INDEX_T<U32>;
+
+	CGPUPickRenderModifier(U32 ObjectIndex) : _ObjectIndex(ObjectIndex) {}
+
+	virtual void ModifyPerInstanceConstants(Render::CShaderParamStorage& PerInstanceParams, UPTR InstanceIndex) override
+	{
+		auto ConstInstanceData = PerInstanceParams.GetParamTable().GetConstant(sidObjectIndex);
+		PerInstanceParams.SetUInt(ConstInstanceData[InstanceIndex], _ObjectIndex);
+	}
+
+	//!!!this class uses the contract between GPU picker and effects passed to it! pickers knows how to write object UID, shaders must implement its reading!
+	//this may be a key for the correct architecture. now the main problem is different per instance constant storage in input sets.
+	//can use separate object index constant buffer with well defined layout in any input set, i.e. always an array of MAX_INSTANCE_COUNT or a single (non-array) item.
+	//then all pick effects will provide this interface, making this a kind of multiple-inheritance input set or mix-in. One part is given from
+	//the renderer, another one - from the picker. The only thing we need is to obtain tech's param storage that will be used for rendering.
+
+	// Set the object index as a shader constant. Instanced renderers will add instance index to the result.
+	// Given the order of instanced rendering is preserved, .
+	//!!!FIXME: instanced renderers collect renderables one by one, the value will be broken, not first but last instance index!
+	//???disable instancing through render context? or detect per instance params change in renderer and flush?
+	//???or return a per instance params for the current instance (i.e. with index already?). Then UID is really per instance.
+	//If want to make UID per batch param, need something else! But is it worth increasing the complexity?
+	//???or split Render into Prepare and Render? in prepare, can setup tech etc, and then allow the caller to change something.
+	//after that maybe need to detect if prev instances should be committed, or guarantee that params will be altered
+	//only in true per-instance data!
+	//UID is a PS constant if per instance, but VS if per batch. Instance ID must be passed to PS anyway. Then can make it VS constant and pass ready UID.
+	//
+	//renderer feeds the input set into the tech. additional per instance params are not input set parts!
+	// - animated material params are material animation parts
+	// - things like object UID are parts of things like GPU picker, which also override effects/techs to supply these values!!! I.e. effect is known and consts too!
+	//
+	//std::function may be costly, use modifier interface and pass a list of modifiers to renderer or to ctx? per renderable only? or also per animated material etc?
+};
 
 CGPURenderablePicker::CGPURenderablePicker(CView& View, std::map<Render::EEffectType, CStrID>&& GPUPickEffects)
 	: _GPUPickEffects(std::move(GPUPickEffects))
@@ -37,13 +78,8 @@ CGPURenderablePicker::CGPURenderablePicker(CView& View, std::map<Render::EEffect
 CGPURenderablePicker::~CGPURenderablePicker() = default;
 //---------------------------------------------------------------------
 
-bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::pair<Render::IRenderable*, UPTR>* pObjects, size_t ObjectCount, UPTR ShaderTechCacheIndex)
+bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::pair<Render::IRenderable*, UPTR>* pObjects, U32 ObjectCount, UPTR ShaderTechCacheIndex)
 {
-	//////////////
-	//!!!DBG TMP!
-	CStrID RenderTargetID("Main");
-	//////////////
-
 	auto pGPU = View.GetGPU();
 	auto pCamera = View.GetCamera();
 
@@ -77,6 +113,8 @@ bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::
 		// And then crop to a single pixel at the requested position
 		//???!!!turn RenderTargetID into index in Init?! target can change size, can't cache pixel size. But can cache index!
 		//???or pass relative x, y and pixel size here?! anyway calculated for GetRay3D for coarse testing!
+		//!!!DBG TMP!
+		CStrID RenderTargetID("Main");
 		if (auto pTarget = View.GetRenderTarget(RenderTargetID))
 		{
 			const vector2 PixelSize = Render::GetRenderTargetPixelSize(pTarget->GetDesc());
@@ -94,7 +132,7 @@ bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::
 	// Render hit test candidates to 1x1 target with an override material
 	Render::IRenderer* pCurrRenderer = nullptr;
 	U8 CurrRendererIndex = 0;
-	for (size_t i = 0; i < ObjectCount; ++i)
+	for (U32 i = 0; i < ObjectCount; ++i)
 	{
 		Render::IRenderable* pRenderable = pObjects[i].first;
 		n_assert_dbg(pRenderable && pRenderable->IsVisible);
@@ -109,7 +147,7 @@ bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::
 					pCurrRenderer = nullptr;
 		}
 
-		if (pCurrRenderer) pCurrRenderer->Render(Ctx, *pRenderable);
+		if (pCurrRenderer) pCurrRenderer->Render(Ctx, *pRenderable, &CGPUPickRenderModifier(i));
 	}
 	if (pCurrRenderer) pCurrRenderer->EndRange(Ctx);
 

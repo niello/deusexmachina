@@ -26,14 +26,14 @@ CEffect::~CEffect() = default;
 const CTechnique* CEffect::GetTechByName(CStrID Name) const
 {
 	auto It = _TechsByName.find(Name);
-	return (It == _TechsByName.cend()) ? nullptr : It->second;
+	return (It == _TechsByName.cend()) ? nullptr : It->second.Get();
 }
 //---------------------------------------------------------------------
 
 const CTechnique* CEffect::GetTechByInputSet(CStrID InputSet) const
 {
 	auto It = _TechsByInputSet.find(InputSet);
-	return (It == _TechsByInputSet.cend()) ? nullptr : It->second;
+	return (It == _TechsByInputSet.cend()) ? nullptr : It->second.Get();
 }
 //---------------------------------------------------------------------
 

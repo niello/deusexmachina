@@ -70,7 +70,7 @@ bool CModelRenderer::BeginRange(const CRenderContext& Context)
 //---------------------------------------------------------------------
 
 // For constant buffer handling see https://learn.microsoft.com/en-us/windows/win32/dxtecharts/direct3d10-frequently-asked-questions
-void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderable)
+void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderable, IRenderModifier* pModifier)
 {
 	ZoneScoped;
 
@@ -183,6 +183,8 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 
 		_pCurrTechInterface->PerInstanceParams.SetRawConstant(_pCurrTechInterface->MemberLightIndices, _LightIndexBuffer.data(), sizeof(U32) * _LightIndexBuffer.size());
 	}
+
+	if (pModifier) pModifier->ModifyPerInstanceConstants(_pCurrTechInterface->PerInstanceParams, _InstanceCount);
 
 	++_InstanceCount;
 

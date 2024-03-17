@@ -37,7 +37,7 @@ public:
 
 	virtual bool Init(const Data::CParams& Params, CGPUDriver& GPU) override { OK; }
 	virtual bool BeginRange(const CRenderContext& Context) override;
-	virtual void Render(const CRenderContext& Context, IRenderable& Renderable) override;
+	virtual void Render(const CRenderContext& Context, IRenderable& Renderable, IRenderModifier* pModifier = nullptr) override;
 	virtual void EndRange(const CRenderContext& Context) override;
 };
 

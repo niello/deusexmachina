@@ -16,6 +16,14 @@ class IRenderable;
 class CGPUDriver;
 class CTechnique;
 using PRenderer = std::unique_ptr<class IRenderer>;
+class CShaderParamStorage;
+
+class IRenderModifier
+{
+public:
+
+	virtual void ModifyPerInstanceConstants(CShaderParamStorage& PerInstanceParams, UPTR InstanceIndex) = 0;
+};
 
 class IRenderer: public Core::CRTTIBaseClass
 {
@@ -33,7 +41,7 @@ public:
 
 	virtual bool Init(const Data::CParams& Params, CGPUDriver& GPU) = 0;
 	virtual bool BeginRange(const CRenderContext& Context) = 0;
-	virtual void Render(const CRenderContext& Context, IRenderable& Renderable) = 0;
+	virtual void Render(const CRenderContext& Context, IRenderable& Renderable, IRenderModifier* pModifier = nullptr) = 0;
 	virtual void EndRange(const CRenderContext& Context) = 0;
 };
 

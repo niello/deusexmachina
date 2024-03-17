@@ -92,7 +92,7 @@ bool CTerrainRenderer::BeginRange(const CRenderContext& Context)
 //---------------------------------------------------------------------
 
 //???!!!support rendering multiple terrains at once?! could be useful for open worlds and subdividing large levels!
-void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Renderable)
+void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Renderable, IRenderModifier* pModifier)
 {
 	ZoneScoped;
 
@@ -240,6 +240,8 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 			_pCurrTechInterface->PerInstanceParams.SetRawConstant(_pCurrTechInterface->MemberLightIndices, LightIndexBuffer.data(), sizeof(U32) * LightCount);
 		}
 	}
+
+	if (pModifier) pModifier->ModifyPerInstanceConstants(_pCurrTechInterface->PerInstanceParams, 0);
 
 	// Render patches
 

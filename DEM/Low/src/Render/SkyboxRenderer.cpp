@@ -40,7 +40,7 @@ bool CSkyboxRenderer::BeginRange(const CRenderContext& Context)
 }
 //---------------------------------------------------------------------
 
-void CSkyboxRenderer::Render(const CRenderContext& Context, IRenderable& Renderable)
+void CSkyboxRenderer::Render(const CRenderContext& Context, IRenderable& Renderable, IRenderModifier* pModifier)
 {
 	ZoneScoped;
 
@@ -70,10 +70,11 @@ void CSkyboxRenderer::Render(const CRenderContext& Context, IRenderable& Rendera
 	}
 
 	if (_pCurrTechInterface->ConstWorldMatrix)
-	{
 		_pCurrTechInterface->PerInstanceParams.SetMatrix(_pCurrTechInterface->ConstWorldMatrix, Skybox.Transform);
-		n_verify_dbg(_pCurrTechInterface->PerInstanceParams.Apply());
-	}
+
+	if (pModifier) pModifier->ModifyPerInstanceConstants(_pCurrTechInterface->PerInstanceParams, 0);
+
+	n_verify_dbg(_pCurrTechInterface->PerInstanceParams.Apply());
 
 	CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
 	_pGPU->SetVertexLayout(pVB->GetVertexLayout());
