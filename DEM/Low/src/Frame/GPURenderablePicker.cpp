@@ -75,7 +75,6 @@ bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::
 	Render::IRenderer::CRenderContext Ctx;
 	Ctx.pGPU = pGPU;
 	Ctx.pShaderTechCache = View.GetShaderTechCache(ShaderTechCacheIndex);
-	Ctx.CameraPosition = pCamera->GetPosition();
 
 	// Calculate a view-projection matrix to render only the requested pixel
 	{
@@ -103,7 +102,10 @@ bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::
 
 		const auto Proj = Math::matrix_perspective_off_center_rh(l, l + w, t - h, t, pCamera->GetNearPlane(), pCamera->GetFarPlane());
 
-		Ctx.ViewProjection = rtm::matrix_mul(rtm::matrix_cast(pCamera->GetViewMatrix()), Proj);
+		//Ctx.ViewProjection = rtm::matrix_mul(rtm::matrix_cast(pCamera->GetViewMatrix()), Proj);
+
+		//_Globals.SetMatrix(_RenderPath->ConstViewProjection, GetCamera()->GetViewProjMatrix());
+		//_Globals.SetVector3(_RenderPath->ConstCameraPosition, GetCamera()->GetPosition());
 	}
 
 	// Render hit test candidates to 1x1 target with an override material

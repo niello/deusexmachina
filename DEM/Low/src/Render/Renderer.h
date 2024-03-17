@@ -35,8 +35,6 @@ public:
 	{
 		Render::CGPUDriver*              pGPU = nullptr;
 		const Render::CTechnique* const* pShaderTechCache = nullptr;
-		rtm::vector4f                    CameraPosition;
-		rtm::matrix4x4f                  ViewProjection;
 	};
 
 	virtual bool Init(const Data::CParams& Params, CGPUDriver& GPU) = 0;

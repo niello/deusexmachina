@@ -11,7 +11,7 @@ namespace Render
 {
 FACTORY_CLASS_IMPL(Render::CModelRenderer, 'MDLR', Render::IRenderer);
 
-CModelRenderer::CModelTechInterface* CModelRenderer::GetTechInterface(const CTechnique* pTech)
+CModelRenderer::CModelTechInterface* CModelRenderer::GetTechInterface(const CTechnique* pTech, CGPUDriver& GPU)
 {
 	auto It = _TechInterfaces.find(pTech);
 	if (It != _TechInterfaces.cend()) return &It->second;
@@ -28,7 +28,7 @@ CModelRenderer::CModelTechInterface* CModelRenderer::GetTechInterface(const CTec
 		static const CStrID sidLightIndices("LightIndices");
 		static const CStrID sidLightCount("LightCount");
 
-		TechInterface.PerInstanceParams = CShaderParamStorage(pTech->GetParamTable(), *_pGPU);
+		TechInterface.PerInstanceParams = CShaderParamStorage(pTech->GetParamTable(), GPU);
 
 		TechInterface.ConstInstanceData = pTech->GetParamTable().GetConstant(sidInstanceData);
 		TechInterface.ConstSkinPalette = pTech->GetParamTable().GetConstant(sidSkinPalette);
@@ -62,7 +62,6 @@ bool CModelRenderer::BeginRange(const CRenderContext& Context)
 	_pCurrMaterial = nullptr;
 	_pCurrMesh = nullptr;
 	_pCurrGroup = nullptr;
-	_pGPU = Context.pGPU; // FIXME: could instead pass CRenderContext to accessing methods
 	_InstanceCount = 0;
 
 	OK;
@@ -91,14 +90,16 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 	n_assert_dbg(pGroup);
 	if (!pGroup) return;
 
+	auto& GPU = *Context.pGPU;
+
 	// Detect batch breaking, commit collected instances to GPU and prepare the new batch
 
 	if (pTech != _pCurrTech)
 	{
-		if (_InstanceCount) CommitCollectedInstances();
+		if (_InstanceCount) CommitCollectedInstances(GPU);
 
 		_pCurrTech = pTech;
-		_pCurrTechInterface = GetTechInterface(pTech);
+		_pCurrTechInterface = GetTechInterface(pTech, GPU);
 	}
 	else
 	{
@@ -110,13 +111,13 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 			(_InstanceCount && Model.BoneCount && !_pCurrTechInterface->MemberFirstBoneIndex) ||
 			(_BufferedBoneCount && Model.BoneCount > _pCurrTechInterface->ConstSkinPalette.GetElementCount() - _BufferedBoneCount))
 		{
-			CommitCollectedInstances();
+			CommitCollectedInstances(GPU);
 		}
 	}
 
 	if (_pCurrTechInterface->TechNeedsMaterial && pMaterial != _pCurrMaterial)
 	{
-		if (_InstanceCount) CommitCollectedInstances();
+		if (_InstanceCount) CommitCollectedInstances(GPU);
 
 		_pCurrMaterial = pMaterial;
 		n_verify_dbg(pMaterial->Apply());
@@ -124,18 +125,18 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 
 	if (pMesh != _pCurrMesh)
 	{
-		if (_InstanceCount) CommitCollectedInstances();
+		if (_InstanceCount) CommitCollectedInstances(GPU);
 
 		auto pVB = pMesh->GetVertexBuffer().Get();
-		_pGPU->SetVertexLayout(pVB->GetVertexLayout());
-		_pGPU->SetVertexBuffer(0, pVB);
-		_pGPU->SetIndexBuffer(pMesh->GetIndexBuffer().Get());
+		GPU.SetVertexLayout(pVB->GetVertexLayout());
+		GPU.SetVertexBuffer(0, pVB);
+		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 		_pCurrMesh = pMesh;
 	}
 
 	if (pGroup != _pCurrGroup)
 	{
-		if (_InstanceCount) CommitCollectedInstances();
+		if (_InstanceCount) CommitCollectedInstances(GPU);
 
 		_pCurrGroup = pGroup;
 	}
@@ -214,11 +215,11 @@ void CModelRenderer::Render(const CRenderContext& Context, IRenderable& Renderab
 
 void CModelRenderer::EndRange(const CRenderContext& Context)
 {
-	if (_InstanceCount) CommitCollectedInstances();
+	if (_InstanceCount) CommitCollectedInstances(*Context.pGPU);
 }
 //---------------------------------------------------------------------
 
-void CModelRenderer::CommitCollectedInstances()
+void CModelRenderer::CommitCollectedInstances(CGPUDriver& GPU)
 {
 	//!!!PERF: needs testing on big scene. Check is moved outside the call to reduce redundant call count, but is it necessary?
 	n_assert_dbg(_InstanceCount);
@@ -231,11 +232,11 @@ void CModelRenderer::CommitCollectedInstances()
 	//may remove pass arrays from tech and leave there only one render state, or at least a set of states for different factor (instance limit etc)
 	for (const auto& Pass : _pCurrTech->GetPasses())
 	{
-		_pGPU->SetRenderState(Pass);
+		GPU.SetRenderState(Pass);
 		if (_InstanceCount > 1)
-			_pGPU->DrawInstanced(*_pCurrGroup, _InstanceCount);
+			GPU.DrawInstanced(*_pCurrGroup, _InstanceCount);
 		else
-			_pGPU->Draw(*_pCurrGroup); //!!!TODO PERF: check if this is better for a single object! DrawInstanced(1) works either! Maybe there is no profit in branching here!
+			GPU.Draw(*_pCurrGroup); //!!!TODO PERF: check if this is better for a single object! DrawInstanced(1) works either! Maybe there is no profit in branching here!
 	}
 
 	_InstanceCount = 0;

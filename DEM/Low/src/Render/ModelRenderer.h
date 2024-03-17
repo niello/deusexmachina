@@ -35,15 +35,14 @@ protected:
 	const CMaterial* _pCurrMaterial = nullptr;
 	const CMesh* _pCurrMesh = nullptr;
 	const CPrimitiveGroup* _pCurrGroup = nullptr;
-	CGPUDriver* _pGPU = nullptr;
 	UPTR _BufferedBoneCount = 0;
 	UPTR _InstanceCount = 0;
 
 	std::map<const CTechnique*, CModelTechInterface> _TechInterfaces;
-	std::vector<U32> _LightIndexBuffer; // here to vaoid per frame reallocation
+	std::vector<U32> _LightIndexBuffer; // here to avoid per frame reallocation
 
-	CModelTechInterface* GetTechInterface(const CTechnique* pTech);
-	void CommitCollectedInstances();
+	CModelTechInterface* GetTechInterface(const CTechnique* pTech, CGPUDriver& GPU);
+	void CommitCollectedInstances(CGPUDriver& GPU);
 
 public:
 

@@ -48,8 +48,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	Render::IRenderer::CRenderContext Ctx;
 	Ctx.pGPU = pGPU;
 	Ctx.pShaderTechCache = View.GetShaderTechCache(_ShaderTechCacheIndex);
-	Ctx.CameraPosition = View.GetCamera()->GetPosition();
-	Ctx.ViewProjection = View.GetCamera()->GetViewProjMatrix();
 
 	Render::IRenderer* pCurrRenderer = nullptr;
 	U8 CurrRendererIndex = 0;
