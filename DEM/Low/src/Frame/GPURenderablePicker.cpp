@@ -13,7 +13,8 @@ static const vector4 PickerTargetEmptyValue{ reinterpret_cast<const float&>(INVA
 static const CStrID sidInstanceData("InstanceData");
 static const CStrID sidObjectIndex("ObjectIndex");
 
-// Set the object index as a shader constant
+// Set the object index as a shader constant. This works like a kind of a mix-in, providing additional
+// shader parameters required by the GPU picker (external rendering facility) alongside any input set.
 class CGPUPickRenderModifier : public Render::IRenderModifier
 {
 public:
@@ -24,32 +25,8 @@ public:
 
 	virtual void ModifyPerInstanceConstants(Render::CShaderParamStorage& PerInstanceParams, UPTR InstanceIndex) override
 	{
-		auto ConstInstanceData = PerInstanceParams.GetParamTable().GetConstant(sidObjectIndex);
-		PerInstanceParams.SetUInt(ConstInstanceData[InstanceIndex], _ObjectIndex);
+		PerInstanceParams.SetUInt(PerInstanceParams.GetParamTable().GetConstant(sidObjectIndex)[InstanceIndex], _ObjectIndex);
 	}
-
-	//!!!this class uses the contract between GPU picker and effects passed to it! pickers knows how to write object UID, shaders must implement its reading!
-	//this may be a key for the correct architecture. now the main problem is different per instance constant storage in input sets.
-	//can use separate object index constant buffer with well defined layout in any input set, i.e. always an array of MAX_INSTANCE_COUNT or a single (non-array) item.
-	//then all pick effects will provide this interface, making this a kind of multiple-inheritance input set or mix-in. One part is given from
-	//the renderer, another one - from the picker. The only thing we need is to obtain tech's param storage that will be used for rendering.
-
-	// Set the object index as a shader constant. Instanced renderers will add instance index to the result.
-	// Given the order of instanced rendering is preserved, .
-	//!!!FIXME: instanced renderers collect renderables one by one, the value will be broken, not first but last instance index!
-	//???disable instancing through render context? or detect per instance params change in renderer and flush?
-	//???or return a per instance params for the current instance (i.e. with index already?). Then UID is really per instance.
-	//If want to make UID per batch param, need something else! But is it worth increasing the complexity?
-	//???or split Render into Prepare and Render? in prepare, can setup tech etc, and then allow the caller to change something.
-	//after that maybe need to detect if prev instances should be committed, or guarantee that params will be altered
-	//only in true per-instance data!
-	//UID is a PS constant if per instance, but VS if per batch. Instance ID must be passed to PS anyway. Then can make it VS constant and pass ready UID.
-	//
-	//renderer feeds the input set into the tech. additional per instance params are not input set parts!
-	// - animated material params are material animation parts
-	// - things like object UID are parts of things like GPU picker, which also override effects/techs to supply these values!!! I.e. effect is known and consts too!
-	//
-	//std::function may be costly, use modifier interface and pass a list of modifiers to renderer or to ctx? per renderable only? or also per animated material etc?
 };
 
 CGPURenderablePicker::CGPURenderablePicker(CView& View, std::map<Render::EEffectType, CStrID>&& GPUPickEffects)
