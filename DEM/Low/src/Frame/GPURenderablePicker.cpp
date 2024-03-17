@@ -10,7 +10,7 @@
 namespace Frame
 {
 static const vector4 PickerTargetEmptyValue{ reinterpret_cast<const float&>(INVALID_INDEX_T<U32>), reinterpret_cast<const float&>(INVALID_INDEX_T<U32>), 1.f, 0.f };
-static const CStrID sidInstanceData("InstanceData");
+static const CStrID sidPickViewProj("PickViewProj");
 static const CStrID sidObjectIndex("ObjectIndex");
 
 // Set the object index as a shader constant. This works like a kind of a mix-in, providing additional
@@ -19,12 +19,14 @@ class CGPUPickRenderModifier : public Render::IRenderModifier
 {
 public:
 
-	U32 _ObjectIndex = INVALID_INDEX_T<U32>;
+	const rtm::matrix4x4f& _ViewProj;
+	U32                    _ObjectIndex = INVALID_INDEX_T<U32>;
 
-	CGPUPickRenderModifier(U32 ObjectIndex) : _ObjectIndex(ObjectIndex) {}
+	CGPUPickRenderModifier(const rtm::matrix4x4f& ViewProj, U32 ObjectIndex) : _ViewProj(ViewProj), _ObjectIndex(ObjectIndex) {}
 
 	virtual void ModifyPerInstanceShaderParams(Render::CShaderParamStorage& PerInstanceParams, UPTR InstanceIndex) override
 	{
+		PerInstanceParams.SetMatrix(PerInstanceParams.GetParamTable().GetConstant(sidPickViewProj), _ViewProj);
 		PerInstanceParams.SetUInt(PerInstanceParams.GetParamTable().GetConstant(sidObjectIndex)[InstanceIndex], _ObjectIndex);
 	}
 };
@@ -70,6 +72,7 @@ bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::
 	pGPU->SetDepthStencilBuffer(_DS);
 	pGPU->SetViewport(0, &Render::GetRenderTargetViewport(_RT->GetDesc()));
 	pGPU->ClearRenderTarget(*_RT, PickerTargetEmptyValue);
+	pGPU->ClearDepthStencilBuffer(*_DS, Render::Clear_Depth, 1.f, 0);
 
 	// Initialize rendering context
 	Render::IRenderer::CRenderContext Ctx;
@@ -77,6 +80,7 @@ bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::
 	Ctx.pShaderTechCache = View.GetShaderTechCache(ShaderTechCacheIndex);
 
 	// Calculate a view-projection matrix to render only the requested pixel
+	rtm::matrix4x4f ViewProj;
 	{
 		n_assert_dbg(!pCamera->IsOrthographic());
 
@@ -101,11 +105,7 @@ bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::
 		}
 
 		const auto Proj = Math::matrix_perspective_off_center_rh(l, l + w, t - h, t, pCamera->GetNearPlane(), pCamera->GetFarPlane());
-
-		//Ctx.ViewProjection = rtm::matrix_mul(rtm::matrix_cast(pCamera->GetViewMatrix()), Proj);
-
-		//_Globals.SetMatrix(_RenderPath->ConstViewProjection, GetCamera()->GetViewProjMatrix());
-		//_Globals.SetVector3(_RenderPath->ConstCameraPosition, GetCamera()->GetPosition());
+		ViewProj = rtm::matrix_mul(rtm::matrix_cast(pCamera->GetViewMatrix()), Proj);
 	}
 
 	// Render hit test candidates to 1x1 target with an override material
@@ -126,7 +126,7 @@ bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::
 					pCurrRenderer = nullptr;
 		}
 
-		if (pCurrRenderer) pCurrRenderer->Render(Ctx, *pRenderable, &CGPUPickRenderModifier(i));
+		if (pCurrRenderer) pCurrRenderer->Render(Ctx, *pRenderable, &CGPUPickRenderModifier(ViewProj, i));
 	}
 	if (pCurrRenderer) pCurrRenderer->EndRange(Ctx);
 
