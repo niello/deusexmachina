@@ -72,7 +72,7 @@ void CSkyboxRenderer::Render(const CRenderContext& Context, IRenderable& Rendera
 	if (_pCurrTechInterface->ConstWorldMatrix)
 		_pCurrTechInterface->PerInstanceParams.SetMatrix(_pCurrTechInterface->ConstWorldMatrix, Skybox.Transform);
 
-	if (pModifier) pModifier->ModifyPerInstanceConstants(_pCurrTechInterface->PerInstanceParams, 0);
+	if (pModifier) pModifier->ModifyPerInstanceShaderParams(_pCurrTechInterface->PerInstanceParams, 0);
 
 	n_verify_dbg(_pCurrTechInterface->PerInstanceParams.Apply());
 

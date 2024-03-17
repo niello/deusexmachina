@@ -241,7 +241,7 @@ void CTerrainRenderer::Render(const CRenderContext& Context, IRenderable& Render
 		}
 	}
 
-	if (pModifier) pModifier->ModifyPerInstanceConstants(_pCurrTechInterface->PerInstanceParams, 0);
+	if (pModifier) pModifier->ModifyPerInstanceShaderParams(_pCurrTechInterface->PerInstanceParams, 0);
 
 	// Render patches
 

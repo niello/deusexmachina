@@ -23,7 +23,7 @@ public:
 
 	CGPUPickRenderModifier(U32 ObjectIndex) : _ObjectIndex(ObjectIndex) {}
 
-	virtual void ModifyPerInstanceConstants(Render::CShaderParamStorage& PerInstanceParams, UPTR InstanceIndex) override
+	virtual void ModifyPerInstanceShaderParams(Render::CShaderParamStorage& PerInstanceParams, UPTR InstanceIndex) override
 	{
 		PerInstanceParams.SetUInt(PerInstanceParams.GetParamTable().GetConstant(sidObjectIndex)[InstanceIndex], _ObjectIndex);
 	}

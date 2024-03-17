@@ -22,7 +22,7 @@ class IRenderModifier
 {
 public:
 
-	virtual void ModifyPerInstanceConstants(CShaderParamStorage& PerInstanceParams, UPTR InstanceIndex) = 0;
+	virtual void ModifyPerInstanceShaderParams(CShaderParamStorage& PerInstanceParams, UPTR InstanceIndex) = 0;
 };
 
 class IRenderer: public Core::CRTTIBaseClass
