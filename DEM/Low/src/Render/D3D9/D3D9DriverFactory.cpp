@@ -113,21 +113,22 @@ EPixelFormat CD3D9DriverFactory::D3DFormatToPixelFormat(D3DFORMAT D3DFormat)
 {
 	switch (D3DFormat)
 	{
-		case D3DFMT_X8B8G8R8:	return PixelFmt_R8G8B8X8;
-		case D3DFMT_A8B8G8R8:	return PixelFmt_R8G8B8A8;
-		case D3DFMT_X8R8G8B8:	return PixelFmt_B8G8R8X8;
-		case D3DFMT_A8R8G8B8:	return PixelFmt_B8G8R8A8;
-		case D3DFMT_R5G6B5:		return PixelFmt_B5G6R5;
-		case D3DFMT_L8:			return PixelFmt_R8;
-		case D3DFMT_L16:		return PixelFmt_R16;
-		case D3DFMT_DXT1:		return PixelFmt_DXT1;
-		case D3DFMT_DXT3:		return PixelFmt_DXT3;
-		case D3DFMT_DXT5:		return PixelFmt_DXT5;
-		case D3DFMT_D24X8:		return PixelFmt_D24;
-		case D3DFMT_D24S8:		return PixelFmt_D24S8;
-		case D3DFMT_D32:		return PixelFmt_D32;
+		case D3DFMT_X8B8G8R8:      return PixelFmt_R8G8B8X8;
+		case D3DFMT_A8B8G8R8:      return PixelFmt_R8G8B8A8;
+		case D3DFMT_X8R8G8B8:      return PixelFmt_B8G8R8X8;
+		case D3DFMT_A8R8G8B8:      return PixelFmt_B8G8R8A8;
+		case D3DFMT_R5G6B5:        return PixelFmt_B5G6R5;
+		case D3DFMT_L8:            return PixelFmt_R8;
+		case D3DFMT_L16:           return PixelFmt_R16;
+		case D3DFMT_A32B32G32R32F: return PixelFmt_R32G32B32A32_F;
+		case D3DFMT_DXT1:          return PixelFmt_DXT1;
+		case D3DFMT_DXT3:          return PixelFmt_DXT3;
+		case D3DFMT_DXT5:          return PixelFmt_DXT5;
+		case D3DFMT_D24X8:         return PixelFmt_D24;
+		case D3DFMT_D24S8:         return PixelFmt_D24S8;
+		case D3DFMT_D32:           return PixelFmt_D32;
 		case D3DFMT_UNKNOWN:
-		default:				return PixelFmt_Invalid;
+		default:                   return PixelFmt_Invalid;
 	}
 }
 //---------------------------------------------------------------------

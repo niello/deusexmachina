@@ -3205,7 +3205,7 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 		TexData->Desc = Resource.GetDesc();
 		TexData->Desc.MipLevels = 1;
 		TexData->Desc.ArraySize = 1;
-		StagingTexture = static_cast<PD3D11Texture>(CreateTexture(std::move(TexData), EResourceAccess::Access_CPU_Read));
+		StagingTexture = static_cast<CD3D11Texture*>(CreateTexture(std::move(TexData), EResourceAccess::Access_CPU_Read).Get());
 		pRsrcToMap = StagingTexture->GetD3DResource();
 
 		//!!!FIXME PERF: if not whole subresource is read, pass a box into a CopySubresourceRegion!
