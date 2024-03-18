@@ -1,6 +1,7 @@
 #pragma once
 #include <Render/RenderFwd.h>
 #include <Data/StringID.h>
+#include <Data/Regions.h>
 #include <map>
 
 // Renders geometry batches, instanced when possible. Uses sorting, lights.
@@ -25,7 +26,7 @@ public:
 	~CGPURenderablePicker();
 
 	bool Init(); //???!!!to the constructor?!
-	bool Pick(const CView& View, float x, float y, const std::pair<Render::IRenderable*, UPTR>* pObjects, U32 ObjectCount, UPTR ShaderTechCacheIndex);
+	bool Pick(const CView& View, const Data::CRectF& RelRect, const std::pair<Render::IRenderable*, UPTR>* pObjects, U32 ObjectCount, UPTR ShaderTechCacheIndex);
 
 	const auto& GetEffects() const { return _GPUPickEffects; }
 };

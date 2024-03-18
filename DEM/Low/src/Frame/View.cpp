@@ -308,12 +308,14 @@ void CView::PickRenderableAt(float x, float y) const
 	CStrID RenderTargetID("Main");
 	auto pTarget = GetRenderTarget(RenderTargetID);
 	if (!pTarget) return;
-	const float XRel = x / static_cast<float>(pTarget->GetDesc().Width);
-	const float YRel = y / static_cast<float>(pTarget->GetDesc().Height);
+	const vector2 PixelSize = Render::GetRenderTargetPixelSize(pTarget->GetDesc());
 	///
 
+	// Build a relative screen space rect corresponding to the pixel being tested
+	const Data::CRectF RelRect(x * PixelSize.x, y * PixelSize.y, PixelSize.x, PixelSize.y);
+
 	Math::CLine Ray;
-	_pCamera->GetRay3D(XRel, YRel, _pCamera->GetFarPlane(), Ray);
+	_pCamera->GetRay3D(RelRect.X, RelRect.Y, _pCamera->GetFarPlane(), Ray);
 
 	std::vector<std::pair<Render::IRenderable*, UPTR>> Candidates;
 
@@ -330,7 +332,7 @@ void CView::PickRenderableAt(float x, float y) const
 		Candidates.push_back({ pRenderable, Pair.first });
 	}
 
-	_GPUPicker->Pick(*this, x, y, Candidates.data(), Candidates.size(), _GPUPickerShaderTechCacheIndex);
+	_GPUPicker->Pick(*this, RelRect, Candidates.data(), Candidates.size(), _GPUPickerShaderTechCacheIndex);
 }
 //---------------------------------------------------------------------
 

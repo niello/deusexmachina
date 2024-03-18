@@ -26,10 +26,13 @@ public:
 
 	virtual void ModifyPerInstanceShaderParams(Render::CShaderParamStorage& PerInstanceParams, UPTR InstanceIndex) override
 	{
-		PerInstanceParams.SetMatrix(PerInstanceParams.GetParamTable().GetConstant(sidPickViewProj), _ViewProj);
+		// Set matrix only with the first instance
+		if (!InstanceIndex)
+			PerInstanceParams.SetMatrix(PerInstanceParams.GetParamTable().GetConstant(sidPickViewProj), _ViewProj);
 		PerInstanceParams.SetUInt(PerInstanceParams.GetParamTable().GetConstant(sidObjectIndex)[InstanceIndex], _ObjectIndex);
 	}
 };
+//---------------------------------------------------------------------
 
 CGPURenderablePicker::CGPURenderablePicker(CView& View, std::map<Render::EEffectType, CStrID>&& GPUPickEffects)
 	: _GPUPickEffects(std::move(GPUPickEffects))
@@ -57,7 +60,7 @@ CGPURenderablePicker::CGPURenderablePicker(CView& View, std::map<Render::EEffect
 CGPURenderablePicker::~CGPURenderablePicker() = default;
 //---------------------------------------------------------------------
 
-bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::pair<Render::IRenderable*, UPTR>* pObjects, U32 ObjectCount, UPTR ShaderTechCacheIndex)
+bool CGPURenderablePicker::Pick(const CView& View, const Data::CRectF& RelRect, const std::pair<Render::IRenderable*, UPTR>* pObjects, U32 ObjectCount, UPTR ShaderTechCacheIndex)
 {
 	auto pGPU = View.GetGPU();
 	auto pCamera = View.GetCamera();
@@ -65,7 +68,7 @@ bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::
 	ZoneScoped;
 	DEM_RENDER_EVENT_SCOPED(pGPU, L"CGPURenderablePicker");
 
-	if (!View.GetGraphicsScene() || !pCamera) OK;
+	if (!View.GetGraphicsScene() || !pCamera) return false;
 
 	// Bind render targets and a depth-stencil buffer
 	pGPU->SetRenderTarget(0, _RT);
@@ -79,7 +82,7 @@ bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::
 	Ctx.pGPU = pGPU;
 	Ctx.pShaderTechCache = View.GetShaderTechCache(ShaderTechCacheIndex);
 
-	// Calculate a view-projection matrix to render only the requested pixel
+	// Calculate a view-projection matrix to render only the requested rect (typically a single pixel)
 	rtm::matrix4x4f ViewProj;
 	{
 		n_assert_dbg(!pCamera->IsOrthographic());
@@ -90,19 +93,11 @@ bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::
 		float w = pCamera->GetAspectRatio() * h;
 		float l = -0.5f * w;
 
-		// And then crop to a single pixel at the requested position
-		//???!!!turn RenderTargetID into index in Init?! target can change size, can't cache pixel size. But can cache index!
-		//???or pass relative x, y and pixel size here?! anyway calculated for GetRay3D for coarse testing!
-		//!!!DBG TMP!
-		CStrID RenderTargetID("Main");
-		if (auto pTarget = View.GetRenderTarget(RenderTargetID))
-		{
-			const vector2 PixelSize = Render::GetRenderTargetPixelSize(pTarget->GetDesc());
-			l += x * PixelSize.x * w;
-			t -= y * PixelSize.y * h;
-			w *= PixelSize.x;
-			h *= PixelSize.y;
-		}
+		// And then crop to the requested rect
+		l += RelRect.X * w;
+		t -= RelRect.Y * h;
+		w *= RelRect.W;
+		h *= RelRect.H;
 
 		const auto Proj = Math::matrix_perspective_off_center_rh(l, l + w, t - h, t, pCamera->GetNearPlane(), pCamera->GetFarPlane());
 		ViewProj = rtm::matrix_mul(rtm::matrix_cast(pCamera->GetViewMatrix()), Proj);
@@ -173,7 +168,7 @@ bool CGPURenderablePicker::Pick(const CView& View, float x, float y, const std::
 	//And always creates a new staging resource, we could create it once here!
 	//???can run async in another thread and wait on future until available. Or use job counter for waiting and release-acquire?
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
