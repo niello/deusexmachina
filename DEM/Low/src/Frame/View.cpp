@@ -332,7 +332,16 @@ void CView::PickRenderableAt(float x, float y) const
 		Candidates.push_back({ pRenderable, Pair.first });
 	}
 
-	_GPUPicker->Pick(*this, RelRect, Candidates.data(), Candidates.size(), _GPUPickerShaderTechCacheIndex);
+	auto PickInfo = _GPUPicker->Pick(*this, RelRect, Candidates.data(), Candidates.size(), _GPUPickerShaderTechCacheIndex);
+
+	//!!!TODO: can reconstruct a contact point from x, y and Z!
+
+	//!!!DBG TMP!
+	if (PickInfo.ObjectUID != INVALID_INDEX)
+	{
+		// TODO: _pScene->FindRenderable(PickInfo.ObjectUID)
+		::Sys::DbgOut(("**DBG Pick UID: " + std::to_string(PickInfo.ObjectUID) + ", Z: " + std::to_string(PickInfo.Z) + "\n").c_str());
+	}
 }
 //---------------------------------------------------------------------
 

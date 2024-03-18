@@ -22,12 +22,11 @@ protected:
 
 public:
 
-	struct alignas(16) CPickInfo
+	struct CPickInfo
 	{
-		U32   ObjectIndex = INVALID_INDEX_T<U32>;
+		UPTR  ObjectUID = INVALID_INDEX;
 		U32   TriangleIndex = INVALID_INDEX_T<U32>;
 		float Z = 1.f;
-		U32   UNUSED = 0; //??? 2xfloat16 for a normal?
 	};
 
 	CGPURenderablePicker(CView& View, std::map<Render::EEffectType, CStrID>&& GPUPickEffects);

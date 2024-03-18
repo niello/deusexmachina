@@ -143,11 +143,26 @@ CGPURenderablePicker::CPickInfo CGPURenderablePicker::Pick(const CView& View, co
 
 	//!!!FIXME PERF: stall is right here! Must give GPU time for working async on our request!
 
+	struct alignas(16)
+	{
+		U32   ObjectIndex = INVALID_INDEX_T<U32>;
+		U32   TriangleIndex = INVALID_INDEX_T<U32>;
+		float Z = 1.f;
+		U32   UNUSED = 0; //??? 2xfloat16 for a normal?
+	} PickTargetData;
+
 	Render::CImageData Dest;
-	Dest.pData = reinterpret_cast<char*>(&PickInfo);
+	Dest.pData = reinterpret_cast<char*>(&PickTargetData);
 	Dest.RowPitch = CPUReadableTexture->GetRowPitch();
 	Dest.SlicePitch = CPUReadableTexture->GetSlicePitch();
 	if (!pGPU->ReadFromResource(Dest, *CPUReadableTexture)) return PickInfo;
+
+	if (PickTargetData.ObjectIndex < ObjectCount)
+	{
+		PickInfo.ObjectUID = pObjects[PickTargetData.ObjectIndex].second;
+		PickInfo.TriangleIndex = PickTargetData.TriangleIndex; //!!!FIXME: useless now because it seems that only a single visible triangle is counted!!!
+		PickInfo.Z = PickTargetData.Z;
+	}
 
 	//!!!TODO: return future? Or wait for 2 frames, see MSDN. Could use D3D11.3 fence: ID3D11Fence::SetEventOnCompletion + WaitForSingleObject,
 	//or older widely supported ID3D11Query of type D3D11_QUERY_EVENT
