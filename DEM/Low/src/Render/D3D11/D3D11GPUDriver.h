@@ -260,8 +260,8 @@ public:
 	virtual bool				Draw(const CPrimitiveGroup& PrimGroup) override { return InternalDraw(PrimGroup, false, 1); }
 	virtual bool				DrawInstanced(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount) override { return InternalDraw(PrimGroup, true, InstanceCount); }
 
-	//can set current values and call CreateRenderCache for the current set, which will generate layouts etc and even return cache object
-	//then Draw(CRenderCache&). D3D12 bundles may perfectly fit into this architecture.
+	//can set current values and call CreateCommandBuffer for the current set, which will generate layouts etc and even return cache object
+	//then Draw(CCommandBuffer&). D3D12 bundles may perfectly fit into this architecture.
 	UPTR						ApplyChanges(UPTR ChangesToUpdate = GPU_Dirty_All); // returns a combination of dirty flags where errors occurred
 
 	virtual bool				MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode) override;
@@ -273,6 +273,7 @@ public:
 	virtual bool				ReadFromResource(void* pDest, const CVertexBuffer& Resource, UPTR Size = 0, UPTR Offset = 0) override;
 	virtual bool				ReadFromResource(void* pDest, const CIndexBuffer& Resource, UPTR Size = 0, UPTR Offset = 0) override;
 	virtual bool				ReadFromResource(const CImageData& Dest, const CTexture& Resource, UPTR ArraySlice = 0, UPTR MipLevel = 0, const Data::CBox* pRegion = nullptr) override;
+	virtual bool                ReadFromResource(PTexture& Dest, const CRenderTarget& Resource, const Data::CRect* pRegion = nullptr) override;
 	virtual bool				WriteToResource(CVertexBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0) override;
 	virtual bool				WriteToResource(CIndexBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0) override;
 	virtual bool				WriteToResource(CTexture& Resource, const CImageData& SrcData, UPTR ArraySlice = 0, UPTR MipLevel = 0, const Data::CBox* pRegion = nullptr) override;

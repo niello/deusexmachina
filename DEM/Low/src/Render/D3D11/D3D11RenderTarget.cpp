@@ -50,16 +50,7 @@ bool CD3D11RenderTarget::Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResour
 	if (Desc.UseAsShaderInput)
 	{
 		PTextureData TexData = n_new(CTextureData);
-
-		CTextureDesc& TexDesc = TexData->Desc;
-		TexDesc.Type = Texture_2D;
-		TexDesc.Width = Desc.Width;
-		TexDesc.Height = Desc.Height;
-		TexDesc.Depth = 1;
-		TexDesc.ArraySize = 1;
-		TexDesc.MipLevels = Desc.MipLevels;
-		TexDesc.MSAAQuality = Desc.MSAAQuality;
-		TexDesc.Format = Desc.Format;
+		TexData->Desc = GetRenderTargetTextureDesc(Desc);
 
 		Texture = n_new(CD3D11Texture);
 		if (!Texture->Create(TexData, D3DTexDesc.Usage, Access_GPU_Read, pTex, pSRV))

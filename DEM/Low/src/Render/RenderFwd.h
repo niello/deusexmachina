@@ -458,6 +458,21 @@ constexpr inline vector2 GetRenderTargetPixelSize(const CRenderTargetDesc& RTDes
 }
 //---------------------------------------------------------------------
 
+inline CTextureDesc GetRenderTargetTextureDesc(const CRenderTargetDesc& RTDesc)
+{
+	CTextureDesc Desc;
+	Desc.Type = ETextureType::Texture_2D;
+	Desc.Width = RTDesc.Width;
+	Desc.Height = RTDesc.Height;
+	Desc.Depth = 1;
+	Desc.MipLevels = RTDesc.MipLevels;
+	Desc.ArraySize = 1;
+	Desc.Format = RTDesc.Format;
+	Desc.MSAAQuality = RTDesc.MSAAQuality;
+	return Desc;
+}
+//---------------------------------------------------------------------
+
 constexpr inline U32 ColorRGBA(U8 r, U8 g, U8 b, U8 a = 255)
 {
 	return ((U32)r) | ((U32)g << 8) | ((U32)b << 16) | ((U32)a << 24);

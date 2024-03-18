@@ -22,11 +22,19 @@ protected:
 
 public:
 
+	struct alignas(16) CPickInfo
+	{
+		U32   ObjectIndex = INVALID_INDEX_T<U32>;
+		U32   TriangleIndex = INVALID_INDEX_T<U32>;
+		float Z = 1.f;
+		U32   UNUSED = 0; //??? 2xfloat16 for a normal?
+	};
+
 	CGPURenderablePicker(CView& View, std::map<Render::EEffectType, CStrID>&& GPUPickEffects);
 	~CGPURenderablePicker();
 
-	bool Init(); //???!!!to the constructor?!
-	bool Pick(const CView& View, const Data::CRectF& RelRect, const std::pair<Render::IRenderable*, UPTR>* pObjects, U32 ObjectCount, UPTR ShaderTechCacheIndex);
+	bool        Init(); //???!!!to the constructor?!
+	CPickInfo   Pick(const CView& View, const Data::CRectF& RelRect, const std::pair<Render::IRenderable*, UPTR>* pObjects, U32 ObjectCount, UPTR ShaderTechCacheIndex);
 
 	const auto& GetEffects() const { return _GPUPickEffects; }
 };

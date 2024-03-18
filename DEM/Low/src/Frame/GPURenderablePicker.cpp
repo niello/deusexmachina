@@ -5,6 +5,7 @@
 #include <Render/Renderable.h>
 #include <Render/GPUDriver.h>
 #include <Render/RenderTarget.h>
+#include <Render/Texture.h>
 #include <Render/DepthStencilBuffer.h> // at least for a destructor
 
 namespace Frame
@@ -60,7 +61,7 @@ CGPURenderablePicker::CGPURenderablePicker(CView& View, std::map<Render::EEffect
 CGPURenderablePicker::~CGPURenderablePicker() = default;
 //---------------------------------------------------------------------
 
-bool CGPURenderablePicker::Pick(const CView& View, const Data::CRectF& RelRect, const std::pair<Render::IRenderable*, UPTR>* pObjects, U32 ObjectCount, UPTR ShaderTechCacheIndex)
+CGPURenderablePicker::CPickInfo CGPURenderablePicker::Pick(const CView& View, const Data::CRectF& RelRect, const std::pair<Render::IRenderable*, UPTR>* pObjects, U32 ObjectCount, UPTR ShaderTechCacheIndex)
 {
 	auto pGPU = View.GetGPU();
 	auto pCamera = View.GetCamera();
@@ -68,7 +69,9 @@ bool CGPURenderablePicker::Pick(const CView& View, const Data::CRectF& RelRect, 
 	ZoneScoped;
 	DEM_RENDER_EVENT_SCOPED(pGPU, L"CGPURenderablePicker");
 
-	if (!View.GetGraphicsScene() || !pCamera) return false;
+	CPickInfo PickInfo;
+
+	if (!View.GetGraphicsScene() || !pCamera) return PickInfo;
 
 	// Bind render targets and a depth-stencil buffer
 	pGPU->SetRenderTarget(0, _RT);
@@ -130,45 +133,26 @@ bool CGPURenderablePicker::Pick(const CView& View, const Data::CRectF& RelRect, 
 	pGPU->SetDepthStencilBuffer(nullptr);
 
 	// Read back a pick target value containing an intersection info
-	//!!!FIXME: synchronous, just for testing!
-	alignas(16) struct
-	{
-		U32   ObjectIndex = INVALID_INDEX_T<U32>;
-		U32   TriangleIndex = INVALID_INDEX_T<U32>;
-		float Z = 1.f;
-		U32   UNUSED = 0; //??? 2xfloat16 for a normal?
-	} PickInfo;
-	//Render::CImageData Dest;
-	//Dest.pData = reinterpret_cast<char*>(&PickInfo);
-	//Dest.RowPitch = RT->GetTexture()->GetRowPitch();
-	//Dest.SlicePitch = RT->GetTexture()->GetSlicePitch();
-	//pGPU->ReadFromResource(Dest, RT->GetTexture());
-	//_RT->CopyResolveToTexture???
-	//???for each async request allocate a new staging texture if previous one wasn't yet read and released by the caller? reuse if released?
 
-	//!!!
-	// Don't forget that with D3D10 and up, it is possible to interpret data in groovy ways. The shader intrinsics starting
-	// with "as" can be used to convert the representation of data from one data type to other. This means that you could carry
-	// integer data in your buffer's(texture's) channels that are typed as float.
-	// https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-asuint
+	//???!!!what to do with multiple calls in flight?
+	//???store textures internally and return a future with already read structure to the caller?
+	//when the caller reads the future, the corresponding texture is locked, read and discarded to the pool, or deleted.
+	//???how to discard a texture if its future was abandoned?!
+	Render::PTexture CPUReadableTexture;
+	if (!pGPU->ReadFromResource(CPUReadableTexture, *_RT)) return PickInfo;
 
-	//!!!
-	// https://learn.microsoft.com/en-us/windows/win32/direct3d10/d3d10-graphics-programming-guide-resources-mapping
-	// https://chromium.googlesource.com/angle/angle/+/a787b6187a134c64cc9c336a2cdd20ed08778eb2/src/libANGLE/renderer/d3d/d3d11/Buffer11.cpp
-	// https://learn.microsoft.com/en-us/windows/win32/direct3d12/readback-data-using-heaps
-	// https://stackoverflow.com/questions/13479259/read-pixel-data-from-render-target-in-d3d11
-	//
-	// Asynchronous copy: immediateContext->CopySubresourceRegion(mStagingTexture.get(), ...)
-	// then give some time for GPU to finish job, and then:
-	// immediateContext->Map(mStagingTexture.get(), _mip, D3D11_MAP_READ, 0, &mapped)
-	//
-	//!!!TODO: improve ReadFromD3DBuffer, now copies and then maps immediately, guaranteed stall! Return future instead? Or wait for 2 frames, see MSDN.
-	//If your app needs to copy an entire resource, we recommend to use ID3D11DeviceContext::CopyResource instead. (!!!)
-	// Could use D3D11.3 fence: ID3D11Fence::SetEventOnCompletion + WaitForSingleObject, or older widely supported ID3D11Query of type D3D11_QUERY_EVENT
-	//And always creates a new staging resource, we could create it once here!
-	//???can run async in another thread and wait on future until available. Or use job counter for waiting and release-acquire?
+	//!!!FIXME PERF: stall is right here! Must give GPU time for working async on our request!
 
-	return true;
+	Render::CImageData Dest;
+	Dest.pData = reinterpret_cast<char*>(&PickInfo);
+	Dest.RowPitch = CPUReadableTexture->GetRowPitch();
+	Dest.SlicePitch = CPUReadableTexture->GetSlicePitch();
+	if (!pGPU->ReadFromResource(Dest, *CPUReadableTexture)) return PickInfo;
+
+	//!!!TODO: return future? Or wait for 2 frames, see MSDN. Could use D3D11.3 fence: ID3D11Fence::SetEventOnCompletion + WaitForSingleObject,
+	//or older widely supported ID3D11Query of type D3D11_QUERY_EVENT
+
+	return PickInfo;
 }
 //---------------------------------------------------------------------
 

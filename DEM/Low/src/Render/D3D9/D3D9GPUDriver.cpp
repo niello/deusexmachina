@@ -2611,16 +2611,7 @@ PRenderTarget CD3D9GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 	if (pTexture)
 	{
 		PTextureData TexData = n_new(CTextureData);
-
-		CTextureDesc& TexDesc = TexData->Desc;
-		TexDesc.Type = Texture_2D;
-		TexDesc.Width = Desc.Width;
-		TexDesc.Height = Desc.Height;
-		TexDesc.Depth = 1;
-		TexDesc.ArraySize = 1;
-		TexDesc.MipLevels = Desc.MipLevels;
-		TexDesc.MSAAQuality = Desc.MSAAQuality;
-		TexDesc.Format = Desc.Format;
+		TexData->Desc = GetRenderTargetTextureDesc(Desc);
 
 		Tex = n_new(CD3D9Texture);
 		if (!Tex->Create(TexData, Usage, D3DPOOL_DEFAULT, pTexture))
@@ -3330,6 +3321,14 @@ bool CD3D9GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& Re
 	}
 
 	return Result;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::ReadFromResource(PTexture& Dest, const CRenderTarget& Resource, const Data::CRect* pRegion)
+{
+	// CreateOffscreenPlainSurface, GetRenderTargetData, see right above
+	NOT_IMPLEMENTED;
+	return false;
 }
 //---------------------------------------------------------------------
 
