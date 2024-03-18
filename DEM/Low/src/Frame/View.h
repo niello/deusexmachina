@@ -136,7 +136,7 @@ public:
 	void                            DisableGPUPicking();
 	//!!!TODO: sync & async pick API! fallback to CPU picking if no GPU? what about skinning? use bone OBBs for optimization?
 	//!!!DBG TMP! The simplest impl for testing:
-	void                            PickRenderableAt(float x, float y /*func filter(renderable, maybe UID)*/) const;
+	UPTR                            PickRenderableAt(float x, float y /*func filter(renderable, maybe UID)*/) const;
 
 	bool                            PrecreateRenderObjects();
 	U32                             RegisterEffect(const Render::CEffect& Effect, CStrID InputSet);

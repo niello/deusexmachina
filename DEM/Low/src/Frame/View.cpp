@@ -296,18 +296,18 @@ void CView::DisableGPUPicking()
 }
 //---------------------------------------------------------------------
 
-void CView::PickRenderableAt(float x, float y) const
+UPTR CView::PickRenderableAt(float x, float y) const
 {
 	ZoneScoped;
 
-	if (!_pCamera || !_GPUPicker) return;
+	if (!_pCamera || !_GPUPicker) return 0;
 
 	//???!!!how to obtain the main target?! must store it inside the view?! or send target to PickRenderableAt as arg?! camera aspect depends on the main target!!!
 	//???or pass relative values here? target size may not be the same as the window size.
 	//!!!DBG TMP!
 	CStrID RenderTargetID("Main");
 	auto pTarget = GetRenderTarget(RenderTargetID);
-	if (!pTarget) return;
+	if (!pTarget) return 0;
 	const vector2 PixelSize = Render::GetRenderTargetPixelSize(pTarget->GetDesc());
 	///
 
@@ -334,14 +334,16 @@ void CView::PickRenderableAt(float x, float y) const
 
 	auto PickInfo = _GPUPicker->Pick(*this, RelRect, Candidates.data(), Candidates.size(), _GPUPickerShaderTechCacheIndex);
 
-	//!!!TODO: can reconstruct a contact point from x, y and Z!
+	//!!!TODO: can reconstruct a contact point from x, y and PickInfo.Z!
 
 	//!!!DBG TMP!
 	if (PickInfo.ObjectUID != INVALID_INDEX)
 	{
 		// TODO: _pScene->FindRenderable(PickInfo.ObjectUID)
-		::Sys::DbgOut(("**DBG Pick UID: " + std::to_string(PickInfo.ObjectUID) + ", Z: " + std::to_string(PickInfo.Z) + "\n").c_str());
+		::Sys::DbgOut(("***DBG Pick UID: " + std::to_string(PickInfo.ObjectUID) + ", Z: " + std::to_string(PickInfo.Z) + "\n").c_str());
 	}
+
+	return PickInfo.ObjectUID;
 }
 //---------------------------------------------------------------------
 
