@@ -449,7 +449,10 @@ void Combobox::onDropListDisplayed(WindowEventArgs& e)
 //----------------------------------------------------------------------------//
 void Combobox::onDroplistRemoved(WindowEventArgs& e)
 {
-    getGUIContext().updateWindowContainingCursor();
+    GUIContext* pContext = getGUIContextPtr();
+    if (pContext)
+        pContext->updateWindowContainingCursor();
+
     getPushButton()->setPushedState(false);
 	fireEvent(EventDropListRemoved, e, EventNamespace);
 }
@@ -588,7 +591,7 @@ bool Combobox::editbox_PointerPressHoldHandler(const EventArgs& e)
         return false;
 
     Editbox* editbox = getEditbox();
-    if (editbox->isReadOnly())
+    if (!editbox->isReadOnly())
         return false;
 
     ComboDropList* droplist = getDropList();

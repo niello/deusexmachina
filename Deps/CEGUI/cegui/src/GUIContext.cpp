@@ -97,7 +97,7 @@ void GUIContext::setRootWindow(Window* new_root)
         d_rootWindow->attachToGUIContext(nullptr);
 
     d_rootWindow = new_root;
-    d_windowContainingCursorIsUpToDate = false;
+	d_windowContainingCursorIsUpToDate = false;
 
     if (d_rootWindow)
         d_rootWindow->attachToGUIContext(this);
@@ -675,7 +675,6 @@ void GUIContext::updateTooltipState(float timeElapsed)
     if (!needTooltip)
     {
         hideTooltip(true);
-        d_tooltipSource = nullptr;
         return;
     }
 
