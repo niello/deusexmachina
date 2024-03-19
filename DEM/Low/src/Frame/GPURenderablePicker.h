@@ -24,9 +24,10 @@ public:
 
 	struct CPickInfo
 	{
-		UPTR  ObjectUID = INVALID_INDEX;
-		U32   TriangleIndex = INVALID_INDEX_T<U32>;
-		float Z = 1.f;
+		UPTR    ObjectUID = INVALID_INDEX;
+		vector3 Position;
+		vector3 Normal;
+		vector2 TexCoord;
 	};
 
 	CGPURenderablePicker(CView& View, std::map<Render::EEffectType, CStrID>&& GPUPickEffects);

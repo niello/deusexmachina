@@ -321,6 +321,7 @@ UPTR CView::PickRenderableAt(float x, float y) const
 
 	//!!!TODO: could use octree to test the ray against its nodes and throw out many visible objects here! But need object lists in octree nodes!
 	//???use render queues for better sorting and filtering instead of scanning all renderables?
+	//!!!the best would be to sort near-to-far along the ray! can use results of the coarse ray test! can simply sort collected vector.
 	for (const auto& Pair : _Renderables)
 	{
 		auto pRenderable = Pair.second.get();
@@ -340,7 +341,7 @@ UPTR CView::PickRenderableAt(float x, float y) const
 	if (PickInfo.ObjectUID != INVALID_INDEX)
 	{
 		// TODO: _pScene->FindRenderable(PickInfo.ObjectUID)
-		::Sys::DbgOut(("***DBG Pick UID: " + std::to_string(PickInfo.ObjectUID) + ", Z: " + std::to_string(PickInfo.Z) + "\n").c_str());
+		::Sys::DbgOut(("***DBG Pick UID: " + std::to_string(PickInfo.ObjectUID) + "\n").c_str());
 	}
 
 	return PickInfo.ObjectUID;

@@ -59,6 +59,10 @@ constexpr size_t sizeof_array(const T(&)[N]) { return N; }
 #define DEM_BMI2 (1)
 #endif
 
+#if defined(__AVX2__)
+#define DEM_F16C (1)
+#endif
+
 #if defined(_MSC_VER) // __FUNCTION__ ## "()"
 #   define DEM_FUNCTION_NAME __FUNCSIG__
 #elif defined(__GNUC__)

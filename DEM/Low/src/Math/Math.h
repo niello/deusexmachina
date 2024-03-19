@@ -11,7 +11,7 @@
 #endif
 #endif
 
-#if DEM_BMI2
+#if DEM_BMI2 || DEM_F16C
 #include <immintrin.h>
 #endif
 
@@ -728,6 +728,86 @@ DEM_FORCE_INLINE T MortonLCA(T MortonCodeA, T MortonCodeB) noexcept
 DEM_FORCE_INLINE UPTR GetQuadtreeNodeCount(UPTR Depth)
 {
 	return (Pow(4, Depth) - 1) / 3;
+}
+//---------------------------------------------------------------------
+
+// See https://en.wikipedia.org/wiki/Half-precision_floating-point_format
+DEM_FORCE_INLINE uint16_t FloatToHalf(float Value)
+{
+#if DEM_F16C
+	return static_cast<uint16_t>(_mm_extract_epi16(_mm_cvtps_ph(_mm_set_ss(Value), _MM_FROUND_TO_NEAREST_INT), 0));
+#else
+	uint32_t SourceBits = reinterpret_cast<uint32_t&>(Value);
+
+	// Extract the sign bit from the source
+	const uint32_t Sign = (SourceBits & 0x80000000);
+	SourceBits &= 0x7fffffff;
+
+	uint32_t Result;
+	if (SourceBits >= 0x47800000) // e+16, too large for half, make inf, -inf or NaN
+	{
+		Result = 0x7c00;
+		if (SourceBits > 0x7f800000) Result |= (0x200 | ((SourceBits >> 13) & 0x3ff));
+	}
+	else if (SourceBits <= 0x33000000) // e-25, too small for half, make 0
+	{
+		Result = 0;
+	}
+	else if (SourceBits < 0x38800000) // e-14, too small for a normalized half
+	{
+		// Make subnormal
+		const uint32_t Shift = 125 - (SourceBits >> 23);
+		SourceBits = 0x800000 | (SourceBits & 0x7fffff);
+		Result = SourceBits >> (Shift + 1);
+		const uint32_t HasShiftBits = (SourceBits & ((1 << Shift) - 1)) != 0;
+		Result += (Result | HasShiftBits) & ((SourceBits >> Shift) & 1);
+	}
+	else // Can be a normalized half
+	{
+		// Bias the exponent
+		SourceBits += 0xc8000000;
+		Result = ((SourceBits + 0x0fff + ((SourceBits >> 13) & 1)) >> 13) & 0x7fff;
+	}
+
+	return static_cast<uint16_t>(Result | (Sign >> 16));
+#endif
+}
+//---------------------------------------------------------------------
+
+// See https://en.wikipedia.org/wiki/Half-precision_floating-point_format
+DEM_FORCE_INLINE float HalfToFloat(uint16_t Value)
+{
+#if DEM_F16C
+	return _mm_cvtss_f32(_mm_cvtph_ps(_mm_cvtsi32_si128(static_cast<int>(Value))));
+#else
+	auto Mantissa = static_cast<uint32_t>(Value & 0x03ff);
+	auto Exponent = static_cast<uint32_t>(Value & 0x7c00);
+
+	// All exp bits set - inf or -inf. All unset - subnormal numbers. Otherwise - normal numbers.
+	if (Exponent == 0x7c00)
+		Exponent = 0x8f;
+	else if (Exponent)
+		Exponent = static_cast<uint32_t>((Value >> 10) & 0x1f);
+	else if (!Mantissa)
+		Exponent = 0;
+	else
+	{
+		// Normalize a subnormal number
+		Exponent = 1;
+		do
+		{
+			--Exponent;
+			Mantissa <<= 1;
+		}
+		while (!(Mantissa & 0x400));
+
+		Mantissa &= 0x03ff;
+		Exponent += 0x70;
+	}
+
+	const uint32_t ResultBits = ((Value & 0x8000) << 16) | (Exponent << 23) | (Mantissa << 13);
+	return reinterpret_cast<const float&>(ResultBits);
+#endif
 }
 //---------------------------------------------------------------------
 

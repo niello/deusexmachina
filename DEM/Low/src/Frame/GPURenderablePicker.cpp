@@ -146,9 +146,11 @@ CGPURenderablePicker::CPickInfo CGPURenderablePicker::Pick(const CView& View, co
 	struct alignas(16)
 	{
 		U32   ObjectIndex = INVALID_INDEX_T<U32>;
-		U32   TriangleIndex = INVALID_INDEX_T<U32>;
 		float Z = 1.f;
-		U32   UNUSED = 0; //??? 2xfloat16 for a normal?
+		U16   PackedNormalX = 0; //???!!!write F16 type?!
+		U16   PackedNormalY = 0;
+		U16   PackedU = 0;
+		U16   PackedV = 0;
 	} PickTargetData;
 
 	Render::CImageData Dest;
@@ -157,12 +159,19 @@ CGPURenderablePicker::CPickInfo CGPURenderablePicker::Pick(const CView& View, co
 	Dest.SlicePitch = CPUReadableTexture->GetSlicePitch();
 	if (!pGPU->ReadFromResource(Dest, *CPUReadableTexture)) return PickInfo;
 
-	if (PickTargetData.ObjectIndex < ObjectCount)
-	{
-		PickInfo.ObjectUID = pObjects[PickTargetData.ObjectIndex].second;
-		PickInfo.TriangleIndex = PickTargetData.TriangleIndex; //!!!FIXME: useless now because it seems that only a single visible triangle is counted!!!
-		PickInfo.Z = PickTargetData.Z;
-	}
+	if (PickTargetData.ObjectIndex >= ObjectCount) return PickInfo;
+
+	PickInfo.ObjectUID = pObjects[PickTargetData.ObjectIndex].second;
+
+	// reconstruct pos from RelRect.X, RelRect.Y and Z
+	//PickInfo.Z = PickTargetData.Z;
+
+	PickInfo.Normal.x = Math::HalfToFloat(PickTargetData.PackedNormalX);
+	PickInfo.Normal.y = Math::HalfToFloat(PickTargetData.PackedNormalY);
+	PickInfo.Normal.z = std::sqrt(1.f - (PickInfo.Normal.x * PickInfo.Normal.x) - (PickInfo.Normal.y * PickInfo.Normal.y));
+
+	PickInfo.TexCoord.x = Math::HalfToFloat(PickTargetData.PackedU);
+	PickInfo.TexCoord.y = Math::HalfToFloat(PickTargetData.PackedV);
 
 	//!!!TODO: return future? Or wait for 2 frames, see MSDN. Could use D3D11.3 fence: ID3D11Fence::SetEventOnCompletion + WaitForSingleObject,
 	//or older widely supported ID3D11Query of type D3D11_QUERY_EVENT
