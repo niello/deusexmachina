@@ -783,17 +783,25 @@ DEM_FORCE_INLINE float HalfToFloat(uint16_t Value)
 	auto Mantissa = static_cast<uint32_t>(Value & 0x03ff);
 	auto Exponent = static_cast<uint32_t>(Value & 0x7c00);
 
-	// All exp bits set - inf or -inf. All unset - subnormal numbers. Otherwise - normal numbers.
 	if (Exponent == 0x7c00)
-		Exponent = 0x8f;
+	{
+		// inf, -inf or NaN
+		Exponent = 0xff;
+	}
 	else if (Exponent)
-		Exponent = static_cast<uint32_t>((Value >> 10) & 0x1f);
+	{
+		// Normal numbers
+		Exponent = static_cast<uint32_t>((Value >> 10) & 0x1f) + 0x70;
+	}
 	else if (!Mantissa)
+	{
+		// Zero
 		Exponent = 0;
+	}
 	else
 	{
-		// Normalize a subnormal number
-		Exponent = 1;
+		// Subnormal number, normalize it
+		Exponent = 0x71;
 		do
 		{
 			--Exponent;
@@ -802,7 +810,6 @@ DEM_FORCE_INLINE float HalfToFloat(uint16_t Value)
 		while (!(Mantissa & 0x400));
 
 		Mantissa &= 0x03ff;
-		Exponent += 0x70;
 	}
 
 	const uint32_t ResultBits = ((Value & 0x8000) << 16) | (Exponent << 23) | (Mantissa << 13);
