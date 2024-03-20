@@ -12,6 +12,7 @@ namespace Frame
 {
 static const vector4 PickerTargetEmptyValue{ reinterpret_cast<const float&>(INVALID_INDEX_T<U32>), reinterpret_cast<const float&>(INVALID_INDEX_T<U32>), 1.f, 0.f };
 static const CStrID sidPickViewProj("PickViewProj");
+static const CStrID sidAlphaThreshold("AlphaThreshold");
 static const CStrID sidObjectIndex("ObjectIndex");
 
 // Set the object index as a shader constant. This works like a kind of a mix-in, providing additional
@@ -27,9 +28,12 @@ public:
 
 	virtual void ModifyPerInstanceShaderParams(Render::CShaderParamStorage& PerInstanceParams, UPTR InstanceIndex) override
 	{
-		// Set matrix only with the first instance
+		// Set per-batch constants only with the first instance
 		if (!InstanceIndex)
+		{
 			PerInstanceParams.SetMatrix(PerInstanceParams.GetParamTable().GetConstant(sidPickViewProj), _ViewProj);
+			PerInstanceParams.SetFloat(PerInstanceParams.GetParamTable().GetConstant(sidAlphaThreshold), 0.5f); // TODO: make tuneable!
+		}
 		PerInstanceParams.SetUInt(PerInstanceParams.GetParamTable().GetConstant(sidObjectIndex)[InstanceIndex], _ObjectIndex);
 	}
 };
