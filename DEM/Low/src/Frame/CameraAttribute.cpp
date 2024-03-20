@@ -123,6 +123,15 @@ void CCameraAttribute::GetPoint2D(const rtm::vector4f& Point3D, float& OutRelX, 
 }
 //---------------------------------------------------------------------
 
+rtm::vector4f CCameraAttribute::ReconstructWorldPosition(float RelX, float RelY, float Z_NDC) const
+{
+	const rtm::vector4f NDCPos = rtm::vector_set(RelX * 2.f - 1.f, -(RelY * 2.f - 1.f), Z_NDC, 1.f);
+	rtm::vector4f ViewLocalPos = rtm::matrix_mul_vector(NDCPos, _InvProj);
+	ViewLocalPos = rtm::vector_div(ViewLocalPos, rtm::vector_dup_w(ViewLocalPos));
+	return rtm::matrix_mul_point3(ViewLocalPos, GetInvViewMatrix());
+}
+//---------------------------------------------------------------------
+
 const rtm::vector4f& CCameraAttribute::GetPosition() const
 {
 	return _pNode->GetWorldPosition();

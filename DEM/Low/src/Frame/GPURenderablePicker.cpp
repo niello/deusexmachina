@@ -167,8 +167,9 @@ CGPURenderablePicker::CPickInfo CGPURenderablePicker::Pick(const CView& View, co
 
 	PickInfo.ObjectUID = pObjects[PickTargetData.ObjectIndex].second;
 
-	// reconstruct pos from RelRect.X, RelRect.Y and Z
-	//PickInfo.Z = PickTargetData.Z;
+	const auto PixelCenter = RelRect.Center();
+	const auto WorldPos = pCamera->ReconstructWorldPosition(PixelCenter.x, PixelCenter.y, PickTargetData.Z);
+	PickInfo.Position.set(rtm::vector_get_x(WorldPos), rtm::vector_get_y(WorldPos), rtm::vector_get_z(WorldPos));
 
 	PickInfo.Normal.x = Math::HalfToFloat(PickTargetData.PackedNormalX);
 	PickInfo.Normal.y = Math::HalfToFloat(PickTargetData.PackedNormalY);

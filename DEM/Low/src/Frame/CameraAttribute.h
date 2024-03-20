@@ -53,6 +53,7 @@ public:
 
 	void							GetRay3D(float RelX, float RelY, float Length, Math::CLine& OutRay) const;
 	void							GetPoint2D(const rtm::vector4f& Point3D, float& OutRelX, float& OutRelY) const;
+	rtm::vector4f                   ReconstructWorldPosition(float RelX, float RelY, float Z_NDC) const;
 
 	void							SetPerspectiveMode() { if (_Flags.Is(Orthographic)) { _Flags.Clear(Orthographic); _Flags.Set(ProjDirty); } }
 	void							SetOrthographicMode() { if (!_Flags.Is(Orthographic)) { _Flags.Set(Orthographic); _Flags.Set(ProjDirty); } }

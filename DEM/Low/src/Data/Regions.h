@@ -1,4 +1,5 @@
 #pragma once
+#include <Math/Vector2.h>
 
 // Line 1D, rect 2D and cuboid 3D axis-aligned region descriptions.
 // Implicit constructors allow to convert between these objects.
@@ -54,6 +55,8 @@ struct CRectF //???use templates?
 	float Top() const { return Y; }
 	float Right() const { return X + W; }
 	float Bottom() const { return Y + H; }
+
+	vector2 Center() const { return { X + 0.5f * W, Y + 0.5f * H }; }
 };
 
 struct CBox
