@@ -5,6 +5,7 @@
 #include <Render/D3D11/D3D11VertexLayout.h>
 #include <Render/D3D11/D3D11VertexBuffer.h>
 #include <Render/D3D11/D3D11IndexBuffer.h>
+#include <Render/D3D11/D3D11GPUFence.h>
 #include <Render/D3D11/D3D11Texture.h>
 #include <Render/D3D11/D3D11RenderTarget.h>
 #include <Render/D3D11/D3D11DepthStencilBuffer.h>
@@ -3159,6 +3160,8 @@ bool CD3D11GPUDriver::ReadFromResource(void* pDest, const CIndexBuffer& Resource
 
 bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& Resource, UPTR ArraySlice, UPTR MipLevel, const Data::CBox* pRegion)
 {
+	ZoneScoped;
+
 	n_assert_dbg(Resource.IsA<CD3D11Texture>());
 
 	const CTextureDesc& Desc = Resource.GetDesc();
@@ -3541,6 +3544,29 @@ bool CD3D11GPUDriver::CommitShaderConstants(CConstantBuffer& Buffer)
 	CB11.OnCommit();
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+PGPUFence CD3D11GPUDriver::CreateFence()
+{
+	D3D11_QUERY_DESC Desc;
+	Desc.Query = D3D11_QUERY_EVENT;
+	Desc.MiscFlags = 0;
+
+	ID3D11Query* pQuery = nullptr;
+	pD3DDevice->CreateQuery(&Desc, &pQuery);
+
+	PGPUFence Fence;
+	if (pQuery) Fence = new CD3D11GPUFence(pQuery);
+
+	return Fence;
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::SignalFence(IGPUFence& Fence)
+{
+	pD3DImmContext->End(static_cast<CD3D11GPUFence&>(Fence).GetD3DQuery());
+	return true;
 }
 //---------------------------------------------------------------------
 

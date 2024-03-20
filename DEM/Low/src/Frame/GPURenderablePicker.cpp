@@ -7,6 +7,7 @@
 #include <Render/RenderTarget.h>
 #include <Render/Texture.h>
 #include <Render/DepthStencilBuffer.h> // at least for a destructor
+#include <Render/GPUFence.h>
 
 namespace Frame
 {
@@ -144,8 +145,11 @@ CGPURenderablePicker::CPickInfo CGPURenderablePicker::Pick(const CView& View, co
 	//???how to discard a texture if its future was abandoned?!
 	Render::PTexture CPUReadableTexture;
 	if (!pGPU->ReadFromResource(CPUReadableTexture, *_RT)) return PickInfo;
+	Render::PGPUFence CopyFence = pGPU->CreateFence();
+	pGPU->SignalFence(*CopyFence);
 
 	//!!!FIXME PERF: stall is right here! Must give GPU time for working async on our request!
+	CopyFence->Wait();
 
 	struct alignas(16)
 	{

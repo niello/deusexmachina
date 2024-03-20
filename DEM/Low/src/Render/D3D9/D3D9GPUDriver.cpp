@@ -13,6 +13,7 @@
 #include <Render/D3D9/D3D9Shader.h>
 #include <Render/D3D9/D3D9ConstantBuffer.h>
 #include <Render/D3D9/SM30ShaderMetadata.h>
+#include <Render/GPUFence.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/SamplerDesc.h>
 #include <Render/TextureData.h>
@@ -3561,6 +3562,20 @@ bool CD3D9GPUDriver::CommitShaderConstants(CConstantBuffer& Buffer)
 
 	CB9.OnCommit();
 	OK;
+}
+//---------------------------------------------------------------------
+
+PGPUFence CD3D9GPUDriver::CreateFence()
+{
+	NOT_IMPLEMENTED;
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::SignalFence(IGPUFence& /*Fence*/)
+{
+	NOT_IMPLEMENTED;
+	return false;
 }
 //---------------------------------------------------------------------
 

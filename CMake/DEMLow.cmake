@@ -221,6 +221,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/DisplayMode.h
 	DEM/Low/src/Render/Effect.h
 	DEM/Low/src/Render/GPUDriver.h
+	DEM/Low/src/Render/GPUFence.h
 	DEM/Low/src/Render/ImageBasedLight.h
 	DEM/Low/src/Render/ImageUtils.h
 	DEM/Low/src/Render/IndexBuffer.h
@@ -268,6 +269,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/D3D11/D3D11DisplayDriver.h
 	DEM/Low/src/Render/D3D11/D3D11DriverFactory.h
 	DEM/Low/src/Render/D3D11/D3D11GPUDriver.h
+	DEM/Low/src/Render/D3D11/D3D11GPUFence.h
 	DEM/Low/src/Render/D3D11/D3D11IndexBuffer.h
 	DEM/Low/src/Render/D3D11/D3D11RenderState.h
 	DEM/Low/src/Render/D3D11/D3D11RenderTarget.h
@@ -520,6 +522,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/D3D11/D3D11DisplayDriver.cpp
 	DEM/Low/src/Render/D3D11/D3D11DriverFactory.cpp
 	DEM/Low/src/Render/D3D11/D3D11GPUDriver.cpp
+	DEM/Low/src/Render/D3D11/D3D11GPUFence.cpp
 	DEM/Low/src/Render/D3D11/D3D11IndexBuffer.cpp
 	DEM/Low/src/Render/D3D11/D3D11RenderState.cpp
 	DEM/Low/src/Render/D3D11/D3D11RenderTarget.cpp

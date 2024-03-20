@@ -144,6 +144,9 @@ public:
 	virtual CRenderTarget*		GetRenderTarget(UPTR Index) const = 0;
 	virtual CDepthStencilBuffer* GetDepthStencilBuffer() const = 0;
 
+	virtual PGPUFence           CreateFence() = 0;
+	virtual bool                SignalFence(IGPUFence& Fence) = 0;
+
 	virtual bool                IsRunningUnderGraphicsDebugger() const = 0;
 	virtual int                 DebugBeginEvent(const wchar_t* pName) const = 0;
 	virtual int                 DebugEndEvent() const = 0;

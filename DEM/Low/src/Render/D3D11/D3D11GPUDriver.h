@@ -282,6 +282,9 @@ public:
 	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer) override;
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer) override;
 
+	virtual PGPUFence           CreateFence() override;
+	virtual bool                SignalFence(IGPUFence& Fence) override;
+
 	virtual bool                IsRunningUnderGraphicsDebugger() const override;
 	virtual int                 DebugBeginEvent(const wchar_t* pName) const override;
 	virtual int                 DebugEndEvent() const override;
