@@ -147,7 +147,7 @@ CGPURenderablePicker::CPickInfo CGPURenderablePicker::Pick(const CView& View, co
 	{
 		U32   ObjectIndex = INVALID_INDEX_T<U32>;
 		float Z = 1.f;
-		U16   PackedNormalX = 0; //???!!!write F16 type?!
+		U16   PackedNormalX = 0;
 		U16   PackedNormalY = 0;
 		U16   PackedU = 0;
 		U16   PackedV = 0;
