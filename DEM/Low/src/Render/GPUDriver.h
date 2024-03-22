@@ -49,8 +49,7 @@ protected:
 
 public:
 
-	CGPUDriver();
-	virtual ~CGPUDriver();
+	virtual ~CGPUDriver() = default;
 
 	EGPUDriverType				GetType() const { return Type; }
 	EGPUFeatureLevel			GetFeatureLevel() const { return FeatureLevel; }
@@ -146,6 +145,7 @@ public:
 
 	virtual PGPUFence           CreateFence() = 0;
 	virtual bool                SignalFence(IGPUFence& Fence) = 0;
+	PGPUFence                   SignalFence();
 
 	virtual bool                IsRunningUnderGraphicsDebugger() const = 0;
 	virtual int                 DebugBeginEvent(const wchar_t* pName) const = 0;

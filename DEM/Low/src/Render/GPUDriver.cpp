@@ -1,10 +1,9 @@
 #include "GPUDriver.h"
+#include <Render/GPUFence.h>
 #include <System/OSWindow.h>
 
 namespace Render
 {
-CGPUDriver::CGPUDriver() {}
-CGPUDriver::~CGPUDriver() {}
 
 bool CGPUDriver::PresentBlankScreen(UPTR SwapChainID, const vector4& ColorRGBA)
 {
@@ -38,6 +37,14 @@ void CGPUDriver::PrepareWindowAndBackBufferSize(DEM::Sys::COSWindow& Window, U32
 			Window.SetRect(WindowRect);
 		}
 	}
+}
+//---------------------------------------------------------------------
+
+PGPUFence CGPUDriver::SignalFence()
+{
+	PGPUFence Fence = CreateFence();
+	if (!SignalFence(*Fence)) Fence = nullptr;
+	return Fence;
 }
 //---------------------------------------------------------------------
 
