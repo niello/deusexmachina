@@ -295,22 +295,13 @@ void CView::DisableGPUPicking()
 }
 //---------------------------------------------------------------------
 
-bool CView::PickRenderableAt(float x, float y, CPickRequest& Request) const
+bool CView::PickRenderableAt(const Data::CRectF& RelRect, CPickRequest& Request) const
 {
 	ZoneScoped;
 
-	if (!_pCamera || !_GPUPicker) return false;
+	if (!_pCamera || !_GPUPicker || RelRect.W <= 0.f || RelRect.H <= 0.f) return false;
 
-	//???!!!how to obtain the main target?! must store it inside the view?! or send target to PickRenderableAt as arg?! camera aspect depends on the main target!!!
-	//???or pass relative values here? target size may not be the same as the window size.
-	//!!!DBG TMP!
-	CStrID RenderTargetID("Main");
-	auto pTarget = GetRenderTarget(RenderTargetID);
-	if (!pTarget) return false;
-	const vector2 PixelSize = Render::GetRenderTargetPixelSize(pTarget->GetDesc());
-	///
-
-	// Build a reqyuest for the relative screen space rect corresponding to the pixel being tested
+	// Build a request for the relative screen space rect corresponding to the pixel being tested
 
 	auto& PickerRequest = Request.PickerRequest;
 
@@ -318,10 +309,10 @@ bool CView::PickRenderableAt(float x, float y, CPickRequest& Request) const
 	PickerRequest.Objects.clear();
 
 	PickerRequest.pView = this;
-	PickerRequest.RelRect = Data::CRectF(x * PixelSize.x, y * PixelSize.y, PixelSize.x, PixelSize.y);
+	PickerRequest.RelRect = RelRect;
 
 	Math::CLine Ray;
-	_pCamera->GetRay3D(PickerRequest.RelRect.X, PickerRequest.RelRect.Y, _pCamera->GetFarPlane(), Ray);
+	_pCamera->GetRay3D(RelRect.X, RelRect.Y, _pCamera->GetFarPlane(), Ray);
 
 	//!!!TODO: could use octree to test the ray against its nodes and throw out many visible objects here! But need object lists in octree nodes!
 	//???use render queues for better sorting and filtering instead of scanning all renderables?
