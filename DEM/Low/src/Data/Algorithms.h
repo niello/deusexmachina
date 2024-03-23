@@ -1,6 +1,7 @@
 #pragma once
 #include <Data/FunctionTraits.h>
 #include <algorithm>
+#include <map>
 #include <set>
 #include <unordered_set>
 
@@ -63,14 +64,14 @@ void InsertionSort(TCollection& Data)
 //---------------------------------------------------------------------
 
 // Calls a Callback with iterators to elements from 'a' that do not appear in 'b'
-template<typename TCollection, typename TCallback>
-inline void SortedDifference(const TCollection& a, const TCollection& b, TCallback Callback)
+template<typename TCollection, typename TLess, typename TCallback>
+inline void SortedDifference(const TCollection& a, const TCollection& b, TLess Less, TCallback Callback)
 {
 	auto ItCurrA = a.cbegin();
 	auto ItCurrB = b.cbegin();
 	while (ItCurrA != a.cend() && ItCurrB != b.cend())
 	{
-		if (*ItCurrA < *ItCurrB)
+		if (Less(*ItCurrA, *ItCurrB))
 		{
 			if constexpr (std::is_invocable_r_v<bool, TCallback, typename TCollection::const_iterator>)
 			{
@@ -84,7 +85,7 @@ inline void SortedDifference(const TCollection& a, const TCollection& b, TCallba
 		}
 		else
 		{
-			if (!(*ItCurrB < *ItCurrA)) ++ItCurrA;
+			if (!Less(*ItCurrB, *ItCurrA)) ++ItCurrA;
 			++ItCurrB;
 		}
 	}
@@ -277,10 +278,17 @@ DEM_FORCE_INLINE void SortedInnerJoin(const TCollection& a, const TCollection& b
 }
 //---------------------------------------------------------------------
 
+template<typename... T, typename TCallback>
+inline void MapDifference(const std::map<T...>& a, const std::map<T...>& b, TCallback Callback)
+{
+	SortedDifference(a, b, [](const auto& va, const auto& vb) { return va.first < vb.first; }, std::forward<TCallback>(Callback));
+}
+//---------------------------------------------------------------------
+
 template<typename T, typename TCallback>
 inline void SetDifference(const std::set<T>& a, const std::set<T>& b, TCallback Callback)
 {
-	SortedDifference(a, b, std::forward<TCallback>(Callback));
+	SortedDifference(a, b, std::less<T>{}, std::forward<TCallback>(Callback));
 }
 //---------------------------------------------------------------------
 

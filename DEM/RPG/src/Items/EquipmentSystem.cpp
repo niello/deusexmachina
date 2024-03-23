@@ -225,7 +225,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 
 	// Mark as detached all elements that do not match the new look
 	CAppearanceComponent::CLookMap Detached;
-	Algo::SortedDifference(AppearanceComponent.CurrentLook, NewLook, [&AppearanceComponent, &Detached](CAppearanceComponent::CLookMap::const_iterator It)
+	Algo::MapDifference(AppearanceComponent.CurrentLook, NewLook, [&AppearanceComponent, &Detached](CAppearanceComponent::CLookMap::const_iterator It)
 	{
 		auto LookNode = AppearanceComponent.CurrentLook.extract(It);
 		if (LookNode.mapped().Node) Detached.insert(std::move(LookNode));
@@ -252,20 +252,19 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 		LookNode.second.Node->RemoveFromParent();
 
 	// Attach nodes for the new look that are not in the current look yet
-	Algo::SortedDifference(NewLook, AppearanceComponent.CurrentLook, [&NewLook, &AppearanceComponent, &Detached, pRootNode](CAppearanceComponent::CLookMap::const_iterator It)
+	Algo::MapDifference(NewLook, AppearanceComponent.CurrentLook, [&NewLook, &AppearanceComponent, &Detached, pRootNode](CAppearanceComponent::CLookMap::const_iterator It)
 	{
 		const auto pSceneAsset = It->first.first.Get();
 		if (!pSceneAsset) return;
 
 		auto LookNode = NewLook.extract(It);
 
-		auto ItCache = std::find_if(Detached.begin(), Detached.end(), [pSceneAsset](const auto& CacheRec) { return CacheRec.first.first == pSceneAsset; });
-		if (ItCache != Detached.cend())
+		auto ItReuse = std::find_if(Detached.begin(), Detached.end(), [pSceneAsset](const auto& CacheRec) { return CacheRec.first.first == pSceneAsset; });
+		if (ItReuse != Detached.cend())
 		{
 			// Reuse already instantiated visual part from the previous look
-			ItCache->second.SourceEntityID = LookNode.mapped().SourceEntityID;
-			LookNode.mapped() = std::move(ItCache->second);
-			Detached.erase(ItCache);
+			LookNode.mapped().Node = std::move(ItReuse->second.Node);
+			Detached.erase(ItReuse);
 		}
 		else if (auto NodeTpl = pSceneAsset->ValidateObject<Scene::CSceneNode>())
 		{
