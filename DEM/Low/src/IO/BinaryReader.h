@@ -2,6 +2,7 @@
 #include <IO/Stream.h>
 #include <Data/Params.h>
 #include <Data/String.h>
+//#include <optional>
 
 // Binary data reader
 
@@ -48,6 +49,26 @@ public:
 	//template<> bool		Read<PParams>(const PParams& OutValue) { return OutValue.IsValid() ? Read(*OutValue) : true; }
 	//template<> bool		Read<CParam>(const CParam& OutValue) { return WriteParam(OutValue); }
 	template<> bool		Read<Data::CData>(Data::CData& OutValue) { return ReadData(OutValue); }
+
+	/*
+	template<typename U>
+	bool                Read<std::optional<U>>(std::optional<U>& OutValue)
+	{
+		bool HasValue = false;
+		if (!Read(HasValue)) return false;
+		if (HasValue)
+		{
+			U NewValue{};
+			if (!Read(NewValue)) return false;
+			OutValue = std::move(NewValue);
+		}
+		else
+		{
+			OutValue.reset();
+		}
+		return true;
+	}
+	*/
 
 	template<class T>
 	CBinaryReader& operator >>(T& OutValue) { Read(OutValue); return *this; }

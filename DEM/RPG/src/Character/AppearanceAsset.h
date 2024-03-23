@@ -24,7 +24,7 @@ public:
 	{
 		std::vector<CStrID>             BodyParts;
 		std::vector<CVisualPartVariant> Variants;
-		std::string                     RootBonePath;
+		std::optional<std::string>      RootBonePath;
 	};
 
 	std::vector<CVisualPart> Visuals;

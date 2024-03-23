@@ -117,17 +117,23 @@ static size_t ApplyAppearance(CAppearanceComponent::CLookMap& Look, const CAppea
 
 			if (Variant.Asset)
 			{
-				//!!!TODO: explicit empty RootBonePath and deafult RootBonePath may need to be treated differently, but now can't distinguish between them!
-				std::string Bone = VisualPart.RootBonePath;
-				if (pEquipmentScheme && Bone.empty())
+				const std::string* pBoneName = nullptr;
+				if (VisualPart.RootBonePath)
 				{
+					// Explicit value, can be empty for a root node
+					pBoneName = &VisualPart.RootBonePath.value();
+				}
+				else if (pEquipmentScheme)
+				{
+					// No value specified, use default
 					auto It = pEquipmentScheme->SlotBones.find(SlotID);
 					if (It != pEquipmentScheme->SlotBones.cend())
-						Bone = It->second;
+						pBoneName = &It->second;
 				}
 
 				// Match found, remember this scene asset for instantiation
-				Look.emplace(std::make_pair(Variant.Asset, std::move(Bone)), CAppearanceComponent::CLookPart{ nullptr, ItemStackID });
+				if (pBoneName)
+					Look.emplace(std::make_pair(Variant.Asset, *pBoneName), CAppearanceComponent::CLookPart{ nullptr, ItemStackID });
 			}
 
 			break;

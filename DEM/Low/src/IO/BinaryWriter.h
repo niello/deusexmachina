@@ -3,6 +3,7 @@
 #include <Data/Params.h>
 #include <Data/String.h>
 #include <Data/Dictionary.h>
+//#include <optional>
 
 // Binary data serializer
 
@@ -46,12 +47,21 @@ public:
 	template<> bool		Write<CString>(const CString& Value) { return WriteString(Value); }
 	template<> bool		Write<CStrID>(const CStrID& Value) { return WriteString(Value.CStr()); }
 	template<> bool		Write<Data::CParams>(const Data::CParams& Value) { return WriteParams(Value); }
-	template<> bool		Write<Data::PParams>(const Data::PParams& Value) { return Value.IsValidPtr() ? WriteParams(*Value) : true; }
+	template<> bool		Write<Data::PParams>(const Data::PParams& Value) { return !Value || WriteParams(*Value); }
 	template<> bool		Write<Data::CParam>(const Data::CParam& Value) { return WriteParam(Value); }
 	template<> bool		Write<Data::CData>(const Data::CData& Value) { return WriteData(Value); }
 	template<> bool		Write<Data::CDataArray>(const Data::CDataArray& Value);
-	template<> bool		Write<Data::PDataArray>(const Data::PDataArray& Value) { return Value.IsValidPtr() ? Write<Data::CDataArray>(*Value) : true; }
+	template<> bool		Write<Data::PDataArray>(const Data::PDataArray& Value) { return !Value || Write<Data::CDataArray>(*Value); }
 	template<> bool		Write<Data::CBufferMalloc>(const Data::CBufferMalloc& Value);
+
+	/*
+	template<typename U>
+	bool                Write<std::optional<U>>(const std::optional<U>& Value)
+	{
+		if (!Write(Value.has_value())) return false;
+		return !Value || Write(Value.value());
+	}
+	*/
 
 	template<class T>
 	CBinaryWriter& operator <<(const T& Value) { Write(Value); return *this; }

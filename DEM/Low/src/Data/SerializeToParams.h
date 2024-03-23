@@ -4,6 +4,7 @@
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 #include <Data/Algorithms.h>
+#include <optional>
 
 // Serialization of arbitrary data to DEM CData
 
@@ -550,6 +551,33 @@ struct ParamsFormat<T, typename std::enable_if_t<Meta::is_not_collection_v<T> &&
 					}
 				}
 			});
+		}
+	}
+};
+
+template<typename T>
+struct ParamsFormat<std::optional<T>>
+{
+	static inline void Serialize(Data::CData& Output, const std::optional<T>& Value)
+	{
+		// FIXME: instead of writing null could skip writing completely, but we can't do it from here
+		if (Value)
+			ParamsFormat<T>::Serialize(Output, Value.value());
+		else
+			Output.Clear();
+	}
+
+	static inline void Deserialize(const Data::CData& Input, std::optional<T>& Value)
+	{
+		if (Input.IsVoid())
+		{
+			Value.reset();
+		}
+		else
+		{
+			T NewValue{};
+			ParamsFormat<T>::Deserialize(Input, NewValue);
+			Value = std::move(NewValue);
 		}
 	}
 };
