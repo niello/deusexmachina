@@ -3249,20 +3249,29 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 
 bool CD3D11GPUDriver::ReadFromResource(PTexture& Dest, const CRenderTarget& Resource, const Data::CRect* pRegion)
 {
-	if (!Dest)
-	{
-		PTextureData TexData = new CTextureData();
-		TexData->Desc = GetRenderTargetTextureDesc(Resource.GetDesc());
-		Dest = CreateTexture(std::move(TexData), EResourceAccess::Access_CPU_Read);
-		if (!Dest) return false;
-	}
-
-	auto pDestRsrc = static_cast<const CD3D11Texture*>(Dest.Get())->GetD3DResource();
-	if (!pDestRsrc) return false;
-
 	ID3D11Resource* pSrcRsrc = nullptr;
 	static_cast<const CD3D11RenderTarget&>(Resource).GetD3DRTView()->GetResource(&pSrcRsrc);
 	if (!pSrcRsrc) return false;
+
+	ID3D11Resource* pDestRsrc = nullptr;
+	if (Dest)
+	{
+		pDestRsrc = static_cast<const CD3D11Texture*>(Dest.Get())->GetD3DResource();
+		if (!pDestRsrc) return false;
+	}
+	else
+	{
+		PTextureData TexData = new CTextureData();
+		TexData->Desc = GetRenderTargetTextureDesc(Resource.GetDesc());
+		PTexture NewDest = CreateTexture(std::move(TexData), EResourceAccess::Access_CPU_Read);
+		if (!NewDest) return false;
+
+		pDestRsrc = static_cast<const CD3D11Texture*>(NewDest.Get())->GetD3DResource();
+		if (!pDestRsrc) return false;
+
+		// Expose only if the operation is going to be successful
+		Dest = std::move(NewDest);
+	}
 
 	if (pRegion && (pRegion->X > 0 || pRegion->Y > 0 || pRegion->W < Resource.GetDesc().Width || pRegion->H < Resource.GetDesc().Height))
 	{

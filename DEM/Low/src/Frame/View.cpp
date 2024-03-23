@@ -5,7 +5,6 @@
 #include <Frame/RenderableAttribute.h>
 #include <Frame/RenderPath.h>
 #include <Frame/GraphicsResourceManager.h>
-#include <Frame/GPURenderablePicker.h>
 #include <Render/Renderable.h>
 #include <Render/ImageBasedLight.h>
 #include <Render/RenderTarget.h>
@@ -260,7 +259,7 @@ void CView::EnableGPUPicking(CStrID RenderTargetID, std::map<Render::EEffectType
 	if (_GPUPicker) DisableGPUPicking();
 
 	//!!!TODO: also pass a render target index!
-	_GPUPicker.reset(new CGPURenderablePicker(*this, std::move(GPUPickEffects)));
+	_GPUPicker.reset(new CGPURenderablePicker(*GetGPU(), std::move(GPUPickEffects)));
 
 	// If a cache wasn't allocated for the GPU picker, it is the time to do it now
 	if (_GPUPickerShaderTechCacheIndex == INVALID_INDEX)
@@ -296,28 +295,29 @@ void CView::DisableGPUPicking()
 }
 //---------------------------------------------------------------------
 
-UPTR CView::PickRenderableAt(float x, float y) const
+bool CView::PickRenderableAt(float x, float y, CPickRequest& Request) const
 {
 	ZoneScoped;
 
-	if (!_pCamera || !_GPUPicker) return 0;
+	if (!_pCamera || !_GPUPicker) return false;
 
 	//???!!!how to obtain the main target?! must store it inside the view?! or send target to PickRenderableAt as arg?! camera aspect depends on the main target!!!
 	//???or pass relative values here? target size may not be the same as the window size.
 	//!!!DBG TMP!
 	CStrID RenderTargetID("Main");
 	auto pTarget = GetRenderTarget(RenderTargetID);
-	if (!pTarget) return 0;
+	if (!pTarget) return false;
 	const vector2 PixelSize = Render::GetRenderTargetPixelSize(pTarget->GetDesc());
 	///
 
-	// Build a relative screen space rect corresponding to the pixel being tested
-	const Data::CRectF RelRect(x * PixelSize.x, y * PixelSize.y, PixelSize.x, PixelSize.y);
+	// Build a reqyuest for the relative screen space rect corresponding to the pixel being tested
+
+	auto& PickerRequest = Request.PickerRequest;
+	PickerRequest.pView = this;
+	PickerRequest.RelRect = Data::CRectF(x * PixelSize.x, y * PixelSize.y, PixelSize.x, PixelSize.y);
 
 	Math::CLine Ray;
-	_pCamera->GetRay3D(RelRect.X, RelRect.Y, _pCamera->GetFarPlane(), Ray);
-
-	std::vector<std::pair<Render::IRenderable*, UPTR>> Candidates;
+	_pCamera->GetRay3D(PickerRequest.RelRect.X, PickerRequest.RelRect.Y, _pCamera->GetFarPlane(), Ray);
 
 	//!!!TODO: could use octree to test the ray against its nodes and throw out many visible objects here! But need object lists in octree nodes!
 	//???use render queues for better sorting and filtering instead of scanning all renderables?
@@ -327,24 +327,35 @@ UPTR CView::PickRenderableAt(float x, float y) const
 		auto pRenderable = Pair.second.get();
 		if (!pRenderable->IsVisible) continue;
 
-		//!!!TODO: coarse test ray-AABB or ray-OBB!
+		//!!!TODO: coarse test Ray-AABB or Ray-OBB!
 		//pRenderable->BoundsVersion //???sync for bounds?! or store in renderable?
 
-		Candidates.push_back({ pRenderable, Pair.first });
+		PickerRequest.Objects.push_back({ pRenderable, Pair.first });
 	}
 
-	auto PickInfo = _GPUPicker->Pick(*this, RelRect, Candidates.data(), Candidates.size(), _GPUPickerShaderTechCacheIndex);
+	return _GPUPicker->PickAsync(PickerRequest);
+}
+//---------------------------------------------------------------------
 
-	//!!!TODO: can reconstruct a contact point from x, y and PickInfo.Z!
+void CView::CPickRequest::Get(CPickInfo& Out)
+{
+	PickerRequest.Get(Out);
 
-	//!!!DBG TMP!
-	if (PickInfo.ObjectUID != INVALID_INDEX)
+	if (Out.UserValue != INVALID_INDEX)
 	{
-		// TODO: _pScene->FindRenderable(PickInfo.ObjectUID)
-		::Sys::DbgOut(("***DBG Pick UID: " + std::to_string(PickInfo.ObjectUID) + "\n").c_str());
-	}
+		// Should never be 0 because this is an UID for "no object"
+		n_assert_dbg(Out.UserValue != 0);
 
-	return PickInfo.ObjectUID;
+		//!!!DBG TMP!
+		::Sys::DbgOut(("***DBG Pick UserValue: " + std::to_string(Out.UserValue) + "\n").c_str());
+
+		if (auto pScene = PickerRequest.pView->GetGraphicsScene())
+		{
+			auto It = pScene->GetRenderables().find(Out.UserValue);
+			if (It != pScene->GetRenderables().cend())
+				Out.pAttr = static_cast<CRenderableAttribute*>(It->second.pAttr);
+		}
+	}
 }
 //---------------------------------------------------------------------
 

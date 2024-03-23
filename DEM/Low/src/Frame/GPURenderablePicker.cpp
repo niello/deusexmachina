@@ -40,7 +40,7 @@ public:
 };
 //---------------------------------------------------------------------
 
-CGPURenderablePicker::CGPURenderablePicker(CView& View, std::map<Render::EEffectType, CStrID>&& GPUPickEffects)
+CGPURenderablePicker::CGPURenderablePicker(Render::CGPUDriver& GPU, std::map<Render::EEffectType, CStrID>&& GPUPickEffects)
 	: _GPUPickEffects(std::move(GPUPickEffects))
 {
 	Render::CRenderTargetDesc RTDesc;
@@ -50,7 +50,7 @@ CGPURenderablePicker::CGPURenderablePicker(CView& View, std::map<Render::EEffect
 	RTDesc.MSAAQuality = Render::MSAA_None;
 	RTDesc.UseAsShaderInput = false;
 	RTDesc.MipLevels = 1;
-	_RT = View.GetGPU()->CreateRenderTarget(RTDesc);
+	_RT = GPU.CreateRenderTarget(RTDesc);
 
 	Render::CRenderTargetDesc DSDesc;
 	DSDesc.Width = 1;
@@ -59,24 +59,23 @@ CGPURenderablePicker::CGPURenderablePicker(CView& View, std::map<Render::EEffect
 	DSDesc.MSAAQuality = Render::MSAA_None;
 	DSDesc.UseAsShaderInput = false;
 	DSDesc.MipLevels = 0;
-	_DS = View.GetGPU()->CreateDepthStencilBuffer(DSDesc);
+	_DS = GPU.CreateDepthStencilBuffer(DSDesc);
 }
 //---------------------------------------------------------------------
 
 CGPURenderablePicker::~CGPURenderablePicker() = default;
 //---------------------------------------------------------------------
 
-CGPURenderablePicker::CPickInfo CGPURenderablePicker::Pick(const CView& View, const Data::CRectF& RelRect, const std::pair<Render::IRenderable*, UPTR>* pObjects, U32 ObjectCount, UPTR ShaderTechCacheIndex)
+bool CGPURenderablePicker::PickAsync(CPickRequest& AsyncRequest)
 {
-	auto pGPU = View.GetGPU();
-	auto pCamera = View.GetCamera();
+	auto pView = AsyncRequest.pView;
+	if (AsyncRequest.Objects.empty() || !pView || !pView->GetGraphicsScene() || !pView->GetCamera()) return false;
+
+	auto pGPU = pView->GetGPU();
+	auto pCamera = pView->GetCamera();
 
 	ZoneScoped;
 	DEM_RENDER_EVENT_SCOPED(pGPU, L"CGPURenderablePicker");
-
-	CPickInfo PickInfo;
-
-	if (!View.GetGraphicsScene() || !pCamera) return PickInfo;
 
 	// Bind render targets and a depth-stencil buffer
 	pGPU->SetRenderTarget(0, _RT);
@@ -88,7 +87,7 @@ CGPURenderablePicker::CPickInfo CGPURenderablePicker::Pick(const CView& View, co
 	// Initialize rendering context
 	Render::IRenderer::CRenderContext Ctx;
 	Ctx.pGPU = pGPU;
-	Ctx.pShaderTechCache = View.GetShaderTechCache(ShaderTechCacheIndex);
+	Ctx.pShaderTechCache = pView->GetGPUPickShaderTechCache();
 
 	// Calculate a view-projection matrix to render only the requested rect (typically a single pixel)
 	rtm::matrix4x4f ViewProj;
@@ -102,10 +101,10 @@ CGPURenderablePicker::CPickInfo CGPURenderablePicker::Pick(const CView& View, co
 		float l = -0.5f * w;
 
 		// And then crop to the requested rect
-		l += RelRect.X * w;
-		t -= RelRect.Y * h;
-		w *= RelRect.W;
-		h *= RelRect.H;
+		l += AsyncRequest.RelRect.X * w;
+		t -= AsyncRequest.RelRect.Y * h;
+		w *= AsyncRequest.RelRect.W;
+		h *= AsyncRequest.RelRect.H;
 
 		const auto Proj = Math::matrix_perspective_off_center_rh(l, l + w, t - h, t, pCamera->GetNearPlane(), pCamera->GetFarPlane());
 		ViewProj = rtm::matrix_mul(rtm::matrix_cast(pCamera->GetViewMatrix()), Proj);
@@ -114,16 +113,17 @@ CGPURenderablePicker::CPickInfo CGPURenderablePicker::Pick(const CView& View, co
 	// Render hit test candidates to 1x1 target with an override material
 	Render::IRenderer* pCurrRenderer = nullptr;
 	U8 CurrRendererIndex = 0;
+	const auto ObjectCount = AsyncRequest.Objects.size();
 	for (U32 i = 0; i < ObjectCount; ++i)
 	{
-		Render::IRenderable* pRenderable = pObjects[i].first;
+		Render::IRenderable* pRenderable = AsyncRequest.Objects[i].first;
 		n_assert_dbg(pRenderable && pRenderable->IsVisible);
 
 		if (CurrRendererIndex != pRenderable->RendererIndex)
 		{
 			if (pCurrRenderer) pCurrRenderer->EndRange(Ctx);
 			CurrRendererIndex = pRenderable->RendererIndex;
-			pCurrRenderer = View.GetRenderer(CurrRendererIndex);
+			pCurrRenderer = pView->GetRenderer(CurrRendererIndex);
 			if (pCurrRenderer)
 				if (!pCurrRenderer->BeginRange(Ctx))
 					pCurrRenderer = nullptr;
@@ -137,19 +137,42 @@ CGPURenderablePicker::CPickInfo CGPURenderablePicker::Pick(const CView& View, co
 	pGPU->SetRenderTarget(0, nullptr);
 	pGPU->SetDepthStencilBuffer(nullptr);
 
+	if (!pGPU->ReadFromResource(AsyncRequest.CPUReadableTexture, *_RT)) return false;
+
+	// Issue a fence after the async copy request to know when it is completed
+	AsyncRequest.CopyFence = pGPU->SignalFence();
+
+	return true;
+}
+//---------------------------------------------------------------------
+
+bool CGPURenderablePicker::CPickRequest::IsValid() const
+{
+	return !Objects.empty();
+}
+//---------------------------------------------------------------------
+
+bool CGPURenderablePicker::CPickRequest::IsReady() const
+{
+	return !CPUReadableTexture || !CopyFence || CopyFence->IsSignaled();
+}
+//---------------------------------------------------------------------
+
+void CGPURenderablePicker::CPickRequest::Wait() const
+{
+	if (CopyFence) CopyFence->Wait();
+}
+//---------------------------------------------------------------------
+
+void CGPURenderablePicker::CPickRequest::Get(CPickInfo& Out)
+{
+	auto pGPU = pView->GetGPU();
+	auto pCamera = pView->GetCamera(); //???FIXME: need to copy camera when a request is issued? Tfm might change already!
+
+	// This is not necessary because Map in ReadFromResource will wait if needed
+	//CopyFence->Wait();
+
 	// Read back a pick target value containing an intersection info
-
-	//???!!!what to do with multiple calls in flight?
-	//???store textures internally and return a future with already read structure to the caller?
-	//when the caller reads the future, the corresponding texture is locked, read and discarded to the pool, or deleted.
-	//???how to discard a texture if its future was abandoned?!
-	Render::PTexture CPUReadableTexture;
-	if (!pGPU->ReadFromResource(CPUReadableTexture, *_RT)) return PickInfo;
-	Render::PGPUFence CopyFence = pGPU->SignalFence();
-
-	//!!!FIXME PERF: stall is right here! Must give GPU time for working async on our request!
-	CopyFence->Wait();
-
 	struct alignas(16)
 	{
 		U32   ObjectIndex = INVALID_INDEX_T<U32>;
@@ -164,27 +187,25 @@ CGPURenderablePicker::CPickInfo CGPURenderablePicker::Pick(const CView& View, co
 	Dest.pData = reinterpret_cast<char*>(&PickTargetData);
 	Dest.RowPitch = CPUReadableTexture->GetRowPitch();
 	Dest.SlicePitch = CPUReadableTexture->GetSlicePitch();
-	if (!pGPU->ReadFromResource(Dest, *CPUReadableTexture)) return PickInfo;
+	if (pGPU->ReadFromResource(Dest, *CPUReadableTexture) && PickTargetData.ObjectIndex < Objects.size())
+	{
+		Out.pRenderable = Objects[PickTargetData.ObjectIndex].first;
+		Out.UserValue = Objects[PickTargetData.ObjectIndex].second;
 
-	if (PickTargetData.ObjectIndex >= ObjectCount) return PickInfo;
+		const auto PixelCenter = RelRect.Center();
+		const auto WorldPos = pCamera->ReconstructWorldPosition(PixelCenter.x, PixelCenter.y, PickTargetData.Z);
+		Out.Position.set(rtm::vector_get_x(WorldPos), rtm::vector_get_y(WorldPos), rtm::vector_get_z(WorldPos));
 
-	PickInfo.ObjectUID = pObjects[PickTargetData.ObjectIndex].second;
+		Out.Normal.x = Math::HalfToFloat(PickTargetData.PackedNormalX);
+		Out.Normal.y = Math::HalfToFloat(PickTargetData.PackedNormalY);
+		Out.Normal.z = std::sqrt(1.f - (Out.Normal.x * Out.Normal.x) - (Out.Normal.y * Out.Normal.y));
 
-	const auto PixelCenter = RelRect.Center();
-	const auto WorldPos = pCamera->ReconstructWorldPosition(PixelCenter.x, PixelCenter.y, PickTargetData.Z);
-	PickInfo.Position.set(rtm::vector_get_x(WorldPos), rtm::vector_get_y(WorldPos), rtm::vector_get_z(WorldPos));
+		Out.TexCoord.x = Math::HalfToFloat(PickTargetData.PackedU);
+		Out.TexCoord.y = Math::HalfToFloat(PickTargetData.PackedV);
+	}
 
-	PickInfo.Normal.x = Math::HalfToFloat(PickTargetData.PackedNormalX);
-	PickInfo.Normal.y = Math::HalfToFloat(PickTargetData.PackedNormalY);
-	PickInfo.Normal.z = std::sqrt(1.f - (PickInfo.Normal.x * PickInfo.Normal.x) - (PickInfo.Normal.y * PickInfo.Normal.y));
-
-	PickInfo.TexCoord.x = Math::HalfToFloat(PickTargetData.PackedU);
-	PickInfo.TexCoord.y = Math::HalfToFloat(PickTargetData.PackedV);
-
-	//!!!TODO: return future? Or wait for 2 frames, see MSDN. Could use D3D11.3 fence: ID3D11Fence::SetEventOnCompletion + WaitForSingleObject,
-	//or older widely supported ID3D11Query of type D3D11_QUERY_EVENT
-
-	return PickInfo;
+	// Always clear to indicate that the request is no longer pending (valid)
+	Objects.clear();
 }
 //---------------------------------------------------------------------
 

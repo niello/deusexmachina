@@ -1,4 +1,5 @@
 #pragma once
+#include <Frame/GPURenderablePicker.h> // FIXME: for pick request only!
 #include <Render/RenderFwd.h>
 #include <Render/Renderer.h>
 #include <Render/ShaderParamStorage.h>
@@ -50,7 +51,7 @@ class CIBLAmbientLightAttribute;
 class CRenderableAttribute;
 typedef Ptr<class CRenderPath> PRenderPath;
 typedef Ptr<class CGraphicsResourceManager> PGraphicsResourceManager;
-typedef std::unique_ptr<class CView> PView;
+using PView = std::unique_ptr<class CView>;
 using PGPURenderablePicker = std::unique_ptr<class CGPURenderablePicker>;
 
 class CView final
@@ -116,6 +117,27 @@ protected:
 
 public:
 
+	struct CPickInfo : public CGPURenderablePicker::CPickInfo
+	{
+		CRenderableAttribute* pAttr = nullptr;
+	};
+
+	class CPickRequest
+	{
+	protected:
+
+		CGPURenderablePicker::CPickRequest PickerRequest;
+
+	public:
+
+		friend class CView;
+
+		bool IsValid() const { return PickerRequest.IsValid(); }
+		bool IsReady() const { return PickerRequest.IsReady(); }
+		void Wait() const { PickerRequest.Wait(); }
+		void Get(CPickInfo& Out);
+	};
+
 	//???add viewport settings here? to render multiple views into one RT
 
 	~CView();
@@ -136,11 +158,12 @@ public:
 	void                            DisableGPUPicking();
 	//!!!TODO: sync & async pick API! fallback to CPU picking if no GPU? what about skinning? use bone OBBs for optimization?
 	//!!!DBG TMP! The simplest impl for testing:
-	UPTR                            PickRenderableAt(float x, float y /*func filter(renderable, maybe UID)*/) const;
+	bool                            PickRenderableAt(float x, float y, CPickRequest& Request /*func filter(renderable, maybe UID)*/) const;
 
 	bool                            PrecreateRenderObjects();
 	U32                             RegisterEffect(const Render::CEffect& Effect, CStrID InputSet);
 	const Render::CTechnique* const* GetShaderTechCache(UPTR OverrideIndex = 0) const { return (OverrideIndex < _ShaderTechCache.size()) ? _ShaderTechCache[OverrideIndex].data() : nullptr; }
+	const Render::CTechnique* const* GetGPUPickShaderTechCache() const { return GetShaderTechCache(_GPUPickerShaderTechCacheIndex); }
 	Render::IRenderer*              GetRenderer(U8 Index) const { n_assert_dbg(Index < _Renderers.size()); return _Renderers[Index].get(); }
 	Render::IRenderable*			GetRenderable(UPTR UID) const { auto It = _Renderables.find(UID); return (It == _Renderables.cend()) ? nullptr : It->second.get(); }
 	Render::CLight*			        GetLight(UPTR UID) const { auto It = _Lights.find(UID); return (It == _Lights.cend()) ? nullptr : It->second.get(); }

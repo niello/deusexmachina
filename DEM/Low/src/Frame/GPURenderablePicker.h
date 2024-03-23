@@ -9,8 +9,7 @@
 
 namespace Frame
 {
-class CRenderPath;
-class CView;
+using PView = std::unique_ptr<class CView>;
 
 class CGPURenderablePicker
 {
@@ -24,17 +23,39 @@ public:
 
 	struct CPickInfo
 	{
-		UPTR    ObjectUID = INVALID_INDEX;
-		vector3 Position;
-		vector3 Normal;
-		vector2 TexCoord;
+		Render::IRenderable* pRenderable = nullptr;
+		UPTR                 UserValue = INVALID_INDEX;
+		vector3              Position;
+		vector3              Normal;
+		vector2              TexCoord;
 	};
 
-	CGPURenderablePicker(CView& View, std::map<Render::EEffectType, CStrID>&& GPUPickEffects);
+	class CPickRequest
+	{
+	protected:
+
+		Render::PTexture  CPUReadableTexture;
+		Render::PGPUFence CopyFence;
+
+	public:
+
+		friend class CGPURenderablePicker;
+
+		const CView* pView = nullptr;
+		Data::CRectF RelRect;
+		std::vector<std::pair<Render::IRenderable*, UPTR>> Objects; // Renderable + UserValue
+
+		bool IsValid() const;
+		bool IsReady() const;
+		void Wait() const;
+		void Get(CPickInfo& Out);
+	};
+
+	CGPURenderablePicker(Render::CGPUDriver& GPU, std::map<Render::EEffectType, CStrID>&& GPUPickEffects);
 	~CGPURenderablePicker();
 
 	bool        Init(); //???!!!to the constructor?!
-	CPickInfo   Pick(const CView& View, const Data::CRectF& RelRect, const std::pair<Render::IRenderable*, UPTR>* pObjects, U32 ObjectCount, UPTR ShaderTechCacheIndex);
+	bool        PickAsync(CPickRequest& AsyncRequest);
 
 	const auto& GetEffects() const { return _GPUPickEffects; }
 };
