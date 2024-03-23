@@ -313,6 +313,10 @@ bool CView::PickRenderableAt(float x, float y, CPickRequest& Request) const
 	// Build a reqyuest for the relative screen space rect corresponding to the pixel being tested
 
 	auto& PickerRequest = Request.PickerRequest;
+
+	n_assert(!Request.PickerRequest.IsValid());
+	PickerRequest.Objects.clear();
+
 	PickerRequest.pView = this;
 	PickerRequest.RelRect = Data::CRectF(x * PixelSize.x, y * PixelSize.y, PixelSize.x, PixelSize.y);
 
