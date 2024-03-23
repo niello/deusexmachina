@@ -13,7 +13,15 @@ namespace DEM::RPG
 
 struct CAppearanceComponent
 {
-	using CLookMap = std::map<std::pair<Resources::PResource, std::string>, Scene::PSceneNode>;
+	struct CLookPart
+	{
+		Scene::PSceneNode Node;
+		Game::HEntity     SourceEntityID;
+
+		bool operator <(const CLookPart& Other) const noexcept { return Node < Other.Node; }
+	};
+
+	using CLookMap = std::map<std::pair<Resources::PResource, std::string>, CLookPart>;
 
 	Data::PParams                     Params; // FIXME: must not be shared!!!
 	std::vector<Resources::PResource> AppearanceAssets;

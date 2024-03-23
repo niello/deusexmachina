@@ -77,7 +77,7 @@ void InitEquipment(Game::CGameWorld& World, Resources::CResourceManager& ResMgr)
 //---------------------------------------------------------------------
 
 static size_t ApplyAppearance(CAppearanceComponent::CLookMap& Look, const CAppearanceAsset* pAppearanceAsset, const Data::PParams& AppearanceParams,
-	const std::set<CStrID>& IgnoredBodyParts, const CEquipmentScheme* pEquipmentScheme, CStrID SlotID)
+	const std::set<CStrID>& IgnoredBodyParts, const CEquipmentScheme* pEquipmentScheme, CStrID SlotID, Game::HEntity ItemStackID)
 {
 	if (!pAppearanceAsset) return 0;
 
@@ -127,7 +127,7 @@ static size_t ApplyAppearance(CAppearanceComponent::CLookMap& Look, const CAppea
 				}
 
 				// Match found, remember this scene asset for instantiation
-				Look.emplace(std::make_pair(Variant.Asset, std::move(Bone)), Scene::PSceneNode{});
+				Look.emplace(std::make_pair(Variant.Asset, std::move(Bone)), CAppearanceComponent::CLookPart{ nullptr, ItemStackID });
 			}
 
 			break;
@@ -170,6 +170,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 {
 	ZoneScoped;
 
+	// Find a character scene root
 	auto pSceneComponent = World.FindComponent<const Game::CSceneComponent>(EntityID);
 	if (!pSceneComponent || !pSceneComponent->RootNode) return;
 	auto pRootNode = pSceneComponent->RootNode->FindNodeByPath("asset.f_hum_skeleton"); // FIXME: how to determine??? Some convention needed?!
@@ -178,6 +179,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 	CAppearanceComponent::CLookMap NewLook;
 	std::set<CStrID> FilledBodyParts;
 
+	// First fill body parts from equipment
 	auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID);
 	if (pEquipment && pEquipment->Scheme)
 	{
@@ -203,7 +205,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 				if (auto pAppearanceAsset = AppearanceRsrc->ValidateObject<CAppearanceAsset>())
 				{
 					const auto MainSlotID = FindMainOccupiedSlot(World, *pEquipment, StackID, EItemStorage::Equipment).first;
-					ApplyAppearance(NewLook, pAppearanceAsset, AppearanceComponent.Params, IgnoredBodyParts, pEquipment->Scheme, MainSlotID ? MainSlotID : SlotID);
+					ApplyAppearance(NewLook, pAppearanceAsset, AppearanceComponent.Params, IgnoredBodyParts, pEquipment->Scheme, MainSlotID ? MainSlotID : SlotID, StackID);
 
 					// Consider body parts filled even if no scene asset was added. Can change this by checking ApplyAppearance return value.
 					for (const auto& VisualPart : pAppearanceAsset->Visuals)
@@ -219,22 +221,22 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 	// Apply base look, ignoring only filled body parts but not explicit ignores
 	// TODO: skip ignored assets
 	for (const auto& AppearanceRsrc : AppearanceComponent.AppearanceAssets)
-		ApplyAppearance(NewLook, AppearanceRsrc->ValidateObject<CAppearanceAsset>(), AppearanceComponent.Params, FilledBodyParts, nullptr, CStrID::Empty);
+		ApplyAppearance(NewLook, AppearanceRsrc->ValidateObject<CAppearanceAsset>(), AppearanceComponent.Params, FilledBodyParts, nullptr, CStrID::Empty, {});
 
 	// Mark as detached all elements that do not match the new look
 	CAppearanceComponent::CLookMap Detached;
 	Algo::SortedDifference(AppearanceComponent.CurrentLook, NewLook, [&AppearanceComponent, &Detached](CAppearanceComponent::CLookMap::const_iterator It)
 	{
 		auto LookNode = AppearanceComponent.CurrentLook.extract(It);
-		if (LookNode.mapped()) Detached.insert(std::move(LookNode));
+		if (LookNode.mapped().Node) Detached.insert(std::move(LookNode));
 	});
 
 	// Also mark as detached all elements that are attached to detached parts of the hierarchy
 	for (auto It = AppearanceComponent.CurrentLook.cbegin(); It != AppearanceComponent.CurrentLook.cend(); /**/)
 	{
-		if (auto pNode = It->second.Get())
+		if (auto pNode = It->second.Node.Get())
 		{
-			auto ItDetached = std::find_if(Detached.cbegin(), Detached.cend(), [pNode](const auto& Rec) { return pNode->IsChildOf(Rec.second); });
+			auto ItDetached = std::find_if(Detached.cbegin(), Detached.cend(), [pNode](const auto& Rec) { return pNode->IsChildOf(Rec.second.Node); });
 			if (ItDetached != Detached.cend())
 			{
 				Detached.insert(AppearanceComponent.CurrentLook.extract(It++));
@@ -247,7 +249,7 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 
 	// Effectively detach nodes
 	for (const auto& LookNode : Detached)
-		LookNode.second->RemoveFromParent();
+		LookNode.second.Node->RemoveFromParent();
 
 	// Attach nodes for the new look that are not in the current look yet
 	Algo::SortedDifference(NewLook, AppearanceComponent.CurrentLook, [&NewLook, &AppearanceComponent, &Detached, pRootNode](CAppearanceComponent::CLookMap::const_iterator It)
@@ -261,23 +263,24 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 		if (ItCache != Detached.cend())
 		{
 			// Reuse already instantiated visual part from the previous look
+			ItCache->second.SourceEntityID = LookNode.mapped().SourceEntityID;
 			LookNode.mapped() = std::move(ItCache->second);
 			Detached.erase(ItCache);
 		}
 		else if (auto NodeTpl = pSceneAsset->ValidateObject<Scene::CSceneNode>())
 		{
 			// Instantiate a new visual part
-			LookNode.mapped() = NodeTpl->Clone();
+			LookNode.mapped().Node = NodeTpl->Clone();
 		}
 
-		if (LookNode.mapped())
+		if (LookNode.mapped().Node)
 		{
 			//???resolve in ApplyAppearance and store node pointers instead of paths in a look map?
 			const char* pBoneName = LookNode.key().second.c_str();
 			auto pDestNode = pRootNode->FindNodeByPath(pBoneName);
 			if (!pDestNode) pDestNode = pRootNode->GetChildRecursively(CStrID(pBoneName));
 			if (pDestNode)
-				pDestNode->AddChild(pSceneAsset->GetUID(), LookNode.mapped());
+				pDestNode->AddChild(pSceneAsset->GetUID(), LookNode.mapped().Node);
 			else
 				::Sys::Error("Can't find a bone for appearance attachment");
 		}
