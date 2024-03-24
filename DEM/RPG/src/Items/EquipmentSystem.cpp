@@ -153,7 +153,7 @@ static Scene::CSceneNode* GatherAttachment(Game::CGameWorld& World, const CEquip
 	for (size_t HandIdx = 0; HandIdx < Equipment.Scheme->HandCount; ++HandIdx)
 	{
 		const auto& Hand = Equipment.Hands[HandIdx];
-		if (Hand.ScabbardSlotID == SlotID && Hand.Unsheathed)
+		if (Hand.ItemStackID == StackID && Hand.Unsheathed)
 		{
 			BoneKey = GetHandPseudoSlotID(HandIdx);
 			break;

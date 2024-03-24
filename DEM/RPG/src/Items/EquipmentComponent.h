@@ -9,8 +9,8 @@ namespace DEM::RPG
 
 struct CHandSlot
 {
-	CStrID ScabbardSlotID;
-	bool   Unsheathed = false;
+	Game::HEntity ItemStackID;
+	bool          Unsheathed = false;
 };
 
 struct CEquipmentComponent

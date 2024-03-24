@@ -1742,18 +1742,18 @@ CStrID GetHandPseudoSlotID(size_t HandIndex)
 }
 //---------------------------------------------------------------------
 
-bool EquipItemToHand(Game::CGameWorld& World, Game::HEntity EntityID, size_t HandIndex, CStrID SlotID)
+bool EquipItemToHand(Game::CGameWorld& World, Game::HEntity EntityID, size_t HandIndex, Game::HEntity StackID)
 {
 	auto pEquipment = World.FindComponent<CEquipmentComponent>(EntityID);
 	if (!pEquipment || !pEquipment->Hands || !pEquipment->Scheme || pEquipment->Scheme->HandCount <= HandIndex) return false;
 
-	const auto PrevStackID = GetEquippedStack(*pEquipment, pEquipment->Hands[HandIndex].ScabbardSlotID);
-	const auto NewStackID = GetEquippedStack(*pEquipment, SlotID);
+	const auto PrevStackID = pEquipment->Hands[HandIndex].ItemStackID;
+	if (PrevStackID == StackID) return true;
 
 	const auto pPrevWeapon = FindItemComponent<const CWeaponComponent>(World, PrevStackID);
 	const bool IsPrevTwoHanded = pPrevWeapon && pPrevWeapon->Big; // FIXME: need separate field for 1/1.5/2 handedness, Big isn't the same!
 
-	const auto pNewWeapon = FindItemComponent<const CWeaponComponent>(World, NewStackID);
+	const auto pNewWeapon = FindItemComponent<const CWeaponComponent>(World, StackID);
 	const bool IsNewTwoHanded = pNewWeapon && pNewWeapon->Big; // FIXME: need separate field for 1/1.5/2 handedness, Big isn't the same!
 
 	if (IsNewTwoHanded && pEquipment->Scheme->HandCount < 2) return false;
@@ -1762,9 +1762,8 @@ bool EquipItemToHand(Game::CGameWorld& World, Game::HEntity EntityID, size_t Han
 	for (size_t i = 0; i < pEquipment->Scheme->HandCount; ++i)
 	{
 		auto& Hand = pEquipment->Hands[i];
-		const auto HandStackID = GetEquippedStack(*pEquipment, Hand.ScabbardSlotID);
-		if (HandStackID == NewStackID || (IsPrevTwoHanded && HandStackID == PrevStackID))
-			Hand.ScabbardSlotID = {};
+		if (Hand.ItemStackID == StackID || (IsPrevTwoHanded && Hand.ItemStackID == PrevStackID))
+			Hand.ItemStackID = {};
 	}
 
 	// Choose a second slot for a two handed weapon
@@ -1775,43 +1774,43 @@ bool EquipItemToHand(Game::CGameWorld& World, Game::HEntity EntityID, size_t Han
 		// First try empty hands
 		for (size_t i = 0; i < pEquipment->Scheme->HandCount; ++i)
 		{
-			if (i != HandIndex && !pEquipment->Hands[i].ScabbardSlotID)
+			if (i != HandIndex && !pEquipment->Hands[i].ItemStackID)
 			{
 				SecondHandIndex = i;
 				break;
 			}
 		}
 
-		// If failed, replace other weapon and clear it from all slots
+		// If failed, replace other weapon and clear it from all hand slots
 		if (SecondHandIndex == pEquipment->Scheme->HandCount)
 		{
-			CStrID ReplacedSlotID;
+			Game::HEntity ReplacedStackID;
 			for (size_t i = 0; i < pEquipment->Scheme->HandCount; ++i)
 			{
 				if (i == HandIndex) continue;
 
 				auto& Hand = pEquipment->Hands[i];
 
-				if (!ReplacedSlotID)
+				if (!ReplacedStackID)
 				{
-					ReplacedSlotID = Hand.ScabbardSlotID;
+					ReplacedStackID = Hand.ItemStackID;
 					SecondHandIndex = i;
-					Hand.ScabbardSlotID = {};
+					Hand.ItemStackID = {};
 
-					const auto pReplacedWeapon = FindItemComponent<const CWeaponComponent>(World, GetEquippedStack(*pEquipment, ReplacedSlotID));
+					const auto pReplacedWeapon = FindItemComponent<const CWeaponComponent>(World, ReplacedStackID);
 					const bool IsReplacedTwoHanded = pReplacedWeapon && pReplacedWeapon->Big; // FIXME: need separate field for 1/1.5/2 handedness, Big isn't the same!
 					if (!IsReplacedTwoHanded) break;
 				}
-				else if (Hand.ScabbardSlotID == ReplacedSlotID) // Clear all slots occupied by the replaced two handed weapon
-					Hand.ScabbardSlotID = {};
+				else if (Hand.ItemStackID == ReplacedStackID) // Clear all slots occupied by the replaced two handed weapon
+					Hand.ItemStackID = {};
 			}
 		}
 
 		n_assert(SecondHandIndex < pEquipment->Scheme->HandCount);
-		pEquipment->Hands[SecondHandIndex].ScabbardSlotID = SlotID;
+		pEquipment->Hands[SecondHandIndex].ItemStackID = StackID;
 	}
 
-	pEquipment->Hands[HandIndex].ScabbardSlotID = SlotID;
+	pEquipment->Hands[HandIndex].ItemStackID = StackID;
 
 	return true;
 }
