@@ -16,6 +16,9 @@ void CBoolSelectorNode::Init(CAnimationInitContext& Context)
 	if (!Context.Controller.FindParam(_ParamID, &ParamType, &_ParamIndex) || ParamType != EParamType::Bool)
 		_ParamIndex = INVALID_INDEX;
 
+	if (_TrueVariant.Node) _TrueVariant.Node->Init(Context);
+	if (_FalseVariant.Node) _FalseVariant.Node->Init(Context);
+
 	CSelectorNodeBase::Init(Context);
 }
 //---------------------------------------------------------------------

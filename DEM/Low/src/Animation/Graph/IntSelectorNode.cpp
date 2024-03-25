@@ -16,6 +16,11 @@ void CIntSelectorNode::Init(CAnimationInitContext& Context)
 	if (!Context.Controller.FindParam(_ParamID, &ParamType, &_ParamIndex) || ParamType != EParamType::Int)
 		_ParamIndex = INVALID_INDEX;
 
+	for (auto& Rec : _Variants)
+		if (Rec.Variant.Node) Rec.Variant.Node->Init(Context);
+
+	//if (_DefaultVariant.Node) _DefaultVariant.Node->Init(Context);
+
 	CSelectorNodeBase::Init(Context);
 }
 //---------------------------------------------------------------------
