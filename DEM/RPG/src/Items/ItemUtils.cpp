@@ -1816,6 +1816,36 @@ bool EquipItemToHand(Game::CGameWorld& World, Game::HEntity EntityID, size_t Han
 }
 //---------------------------------------------------------------------
 
+void SheatheAllItems(Game::CGameWorld& World, Game::HEntity EntityID)
+{
+	auto pEquipment = World.FindComponent<CEquipmentComponent>(EntityID);
+	if (pEquipment && pEquipment->Hands && pEquipment->Scheme)
+		for (size_t HandIdx = 0; HandIdx < pEquipment->Scheme->HandCount; ++HandIdx)
+			pEquipment->Hands[HandIdx].Unsheathed = false;
+}
+//---------------------------------------------------------------------
+
+void UnsheatheAllItems(Game::CGameWorld& World, Game::HEntity EntityID)
+{
+	auto pEquipment = World.FindComponent<CEquipmentComponent>(EntityID);
+	if (pEquipment && pEquipment->Hands && pEquipment->Scheme)
+		for (size_t HandIdx = 0; HandIdx < pEquipment->Scheme->HandCount; ++HandIdx)
+			pEquipment->Hands[HandIdx].Unsheathed = true;
+}
+//---------------------------------------------------------------------
+
+bool HasUnsheathedItem(Game::CGameWorld& World, Game::HEntity EntityID)
+{
+	auto pEquipment = World.FindComponent<CEquipmentComponent>(EntityID);
+	if (pEquipment && pEquipment->Hands && pEquipment->Scheme)
+		for (size_t HandIdx = 0; HandIdx < pEquipment->Scheme->HandCount; ++HandIdx)
+			if (pEquipment->Hands[HandIdx].Unsheathed)
+				return true;
+
+	return false;
+}
+//---------------------------------------------------------------------
+
 // Returns a number of items actually added
 U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID, const rtm::qvvf& Tfm, float MergeRadius)
 {

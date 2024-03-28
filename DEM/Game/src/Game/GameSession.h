@@ -36,6 +36,7 @@ public:
 	~CGameSession();
 
 	sol::state& GetScriptState() { return _ScriptState; }
+	auto& GetResourceManager() { return _ResMgr; } // FIXME: where to get properly?!
 
 	sol::table GetScript(CStrID ID, bool ForceReload = false);
 

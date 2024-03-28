@@ -19,6 +19,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Character/ParameterModifier.h
 	DEM/RPG/src/Character/SkillsComponent.h
 	DEM/RPG/src/Character/StatsComponent.h
+	DEM/RPG/src/Combat/AttackAbility.h
 	DEM/RPG/src/Combat/Damage.h
 	DEM/RPG/src/Combat/DestructibleComponent.h
 	DEM/RPG/src/Combat/WeaponComponent.h
@@ -66,6 +67,7 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/AI/Sensors/SensorVision.cpp
 	DEM/RPG/src/AI/Stimuli/StimulusSound.cpp
 	DEM/RPG/src/AI/Stimuli/StimulusVisible.cpp
+	DEM/RPG/src/Combat/AttackAbility.cpp
 	DEM/RPG/src/Dlg/DialogueManager.cpp
 	DEM/RPG/src/Dlg/DlgContext.cpp
 	DEM/RPG/src/Dlg/PropTalking.cpp

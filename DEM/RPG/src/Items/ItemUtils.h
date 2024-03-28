@@ -130,6 +130,9 @@ void CalcEquipmentStats(Game::CGameWorld& World, Game::HEntity EntityID, CContai
 
 CStrID GetHandPseudoSlotID(size_t HandIndex);
 bool EquipItemToHand(Game::CGameWorld& World, Game::HEntity EntityID, size_t HandIndex, Game::HEntity StackID);
+void SheatheAllItems(Game::CGameWorld& World, Game::HEntity EntityID);
+void UnsheatheAllItems(Game::CGameWorld& World, Game::HEntity EntityID);
+bool HasUnsheathedItem(Game::CGameWorld& World, Game::HEntity EntityID);
 
 U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 Count, CStrID LevelID, const rtm::qvvf& Tfm, float MergeRadius);
 std::pair<Game::HEntity, U32> MoveItemsFromLocation(Game::CGameWorld& World, Game::HEntity StackID, U32 Count = std::numeric_limits<U32>().max());

@@ -12,9 +12,12 @@
 #include <Objects/OwnedComponent.h>
 #include <Math/Math.h>
 
+//!!!FIXME: TMP!
+#include <Character/AppearanceComponent.h>
+
 namespace DEM::RPG
 {
-//void UpdateCharacterModelEquipment(Game::CGameWorld& World, Game::HEntity OwnerID, CStrID SlotID, bool ForceHide);
+void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID, CAppearanceComponent& AppearanceComponent, Resources::CResourceManager& RsrcMgr);
 
 static std::pair<Game::HEntity, int> FindBestLockpick(const Game::CGameWorld& World, Game::HEntity ActorID)
 {
@@ -236,11 +239,11 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
 	{
 		pAnimComponent->Controller.SetString(CStrID("Action"), AnimAction);
+		SheatheAllItems(*pWorld, Instance.Actor);
 
-		//!!!model equipment must operate on MainHand, and select currently active set automatically!
-		static const CStrID sidItemInHand1("ItemInHand1");
-		//UpdateCharacterModelEquipment(*pWorld, Instance.Actor, sidItemInHand1, true);
-		NOT_IMPLEMENTED;
+		// FIXME: trigger from inside the SheatheAllItems / UnsheatheAllItems
+		if (auto pAppearance = pWorld->FindComponent<CAppearanceComponent>(Instance.Actor))
+			RebuildCharacterAppearance(*pWorld, Instance.Actor, *pAppearance, Session.GetResourceManager()); // FIXME: where to get ResourceManager properly?!
 	}
 
 	// If this object is owned to other faction, create crime stimulus
@@ -281,10 +284,13 @@ void CLockpickAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance
 	{
 		pAnimComponent->Controller.SetString(CStrID("Action"), CStrID::Empty);
 
-		//!!!model equipment must operate on MainHand, and select currently active set automatically!
-		static const CStrID sidItemInHand1("ItemInHand1");
-		//UpdateCharacterModelEquipment(*pWorld, Instance.Actor, sidItemInHand1, false);
+		//!!!FIXME: need to restore previous state, not just unsheathe everything!
 		NOT_IMPLEMENTED;
+		UnsheatheAllItems(*pWorld, Instance.Actor);
+
+		// FIXME: trigger from inside the SheatheAllItems / UnsheatheAllItems
+		if (auto pAppearance = pWorld->FindComponent<CAppearanceComponent>(Instance.Actor))
+			RebuildCharacterAppearance(*pWorld, Instance.Actor, *pAppearance, Session.GetResourceManager()); // FIXME: where to get ResourceManager properly?!
 	}
 
 	// TODO:
