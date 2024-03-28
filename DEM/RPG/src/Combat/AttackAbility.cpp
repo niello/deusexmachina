@@ -54,7 +54,7 @@ bool CAttackAbility::IsTargetValid(const Game::CGameSession& Session, U32 Index,
 
 	// Check for the destructible component
 	const auto& Target = (Index == Context.Targets.size()) ? Context.CandidateTarget : Context.Targets[Index];
-	if (!Target.Valid) return false;
+	if (!Target.Valid || (!Context.Actors.empty() && Target.Entity == Context.Actors[0])) return false;
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return false;
 	auto pDestructible = pWorld->FindComponent<const CDestructibleComponent>(Target.Entity);
