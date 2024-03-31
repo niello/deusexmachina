@@ -9,10 +9,6 @@ namespace DEM::RPG
 
 class CAttackAbility : public Game::CAbility
 {
-protected:
-
-	virtual Game::PAbilityInstance CreateInstance(const Game::CInteractionContext& Context) const override;
-
 public:
 
 	CAttackAbility(std::string_view CursorImage = {});
@@ -22,6 +18,7 @@ public:
 	virtual ESoftBool           NeedMoreTargets(const Game::CInteractionContext& Context) const override;
 	virtual bool                Execute(Game::CGameSession& Session, Game::CInteractionContext& Context, bool Enqueue, bool PushChild) const override;
 
+	virtual bool                GetZones(const Game::CGameSession& Session, const Game::CAbilityInstance& Instance, std::vector<const Game::CZone*>& Out) const override;
 	virtual bool                GetFacingParams(const Game::CGameSession& Session, const Game::CAbilityInstance& Instance, Game::CFacingParams& Out) const override;
 	virtual void                OnStart(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const override;
 	virtual Game::EActionStatus OnUpdate(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const override;

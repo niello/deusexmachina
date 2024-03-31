@@ -1,17 +1,12 @@
 #include "PickItemAbility.h"
-//#include <Animation/AnimationComponent.h>
-//#include <Animation/AnimationController.h>
 #include <Game/Interaction/AbilityInstance.h>
 #include <Game/Interaction/Zone.h>
 #include <Game/ECS/GameWorld.h>
 #include <Physics/RigidBodyComponent.h>
 #include <Character/StatsComponent.h>
-//#include <Character/SkillsComponent.h>
 #include <Items/ItemStackComponent.h>
 #include <Scene/SceneComponent.h>
 #include <Items/ItemUtils.h>
-//#include <Objects/OwnedComponent.h>
-//#include <Math/Math.h>
 
 namespace DEM::RPG
 {
