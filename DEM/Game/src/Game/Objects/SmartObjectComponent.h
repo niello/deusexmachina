@@ -50,7 +50,8 @@ template<> inline constexpr auto RegisterMembers<Game::CSmartObjectComponent>()
 {
 	return std::make_tuple
 	(
-		Member<Game::CSmartObjectComponent, CStrID>(1, "AssetID", &Game::CSmartObjectComponent::AssetID, &Game::CSmartObjectComponent::AssetID)
+		DEM_META_MEMBER_FIELD(Game::CSmartObjectComponent, 1, AssetID),
+		DEM_META_MEMBER_FIELD(Game::CSmartObjectComponent, 2, CurrState)
 	);
 }
 

@@ -255,8 +255,15 @@ void InitSmartObjects(CGameWorld& World, CGameSession& Session, Resources::CReso
 		{
 			pSmart->InitInSession(Session);
 
-			//!!!???FIXME: how to set state if CurrState is valid?! Need to initialize pose etc!
-			if (!Component.CurrState) Component.RequestedState = pSmart->GetDefaultState();
+			// Force set initial state
+			const CStrID InitialState = Component.CurrState ? Component.CurrState : pSmart->GetDefaultState();
+			if (auto pState = pSmart->FindState(InitialState))
+			{
+				CallTransitionScript(pSmart->GetScriptFunction(Session, "OnStateForceSet"), EntityID, CStrID::Empty, InitialState);
+				Component.OnStateForceSet(EntityID, CStrID::Empty, InitialState);
+				Component.CurrState = InitialState;
+				Component.UpdateScript = pSmart->GetScriptFunction(Session, "OnStateUpdate");
+			}
 		}
 	});
 }
