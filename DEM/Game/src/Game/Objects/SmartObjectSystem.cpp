@@ -4,11 +4,6 @@
 #include <Game/Objects/SmartObject.h>
 #include <Scripting/SolGame.h>
 
-//!!!DBG TMP!
-#include <Animation/Skeleton.h>
-#include <Animation/PoseTrack.h>
-#include <Scene/SceneComponent.h>
-
 namespace DEM::Game
 {
 
@@ -25,15 +20,15 @@ static void RunTimelineTask(CGameWorld& World, HEntity EntityID, Anim::CTimeline
 	// FIXME: more than one loop will now work wrong with initial progress!
 	n_assert(Task.LoopCount < 2);
 
-	// Transfer the progress % from the previous transition, if required
+	// Transfer the progress % from the previous transition if required
 	const float FullDuration = Player.GetLoopDuration() * Task.LoopCount;
-	Player.SetTime(InitialProgress * FullDuration * (std::signbit(Task.Speed) ? -1.f : 1.f));
+	Player.SetTime(InitialProgress * std::copysign(FullDuration, Task.Speed));
 
 	Player.Play(Task.LoopCount);
 }
 //---------------------------------------------------------------------
 
-static void CallTransitionScript(sol::function& Script, HEntity EntityID, CStrID CurrState, CStrID NextState)
+static void CallStateChangeScript(sol::function& Script, HEntity EntityID, CStrID CurrState, CStrID NextState)
 {
 	if (Script.valid())
 	{
@@ -134,7 +129,7 @@ void ProcessStateChangeRequest(CGameWorld& World, CGameSession& Session, HEntity
 		// Current TL track instance is reusable only if its prototype is known
 		if (pTransitionCN) pPrevTask = &pTransitionCN->TimelineTask;
 
-		CallTransitionScript(SOAsset.GetScriptFunction(Session, "OnTransitionCancel"), EntityID, SOComponent.CurrState, SOComponent.NextState);
+		CallStateChangeScript(SOAsset.GetScriptFunction(Session, "OnTransitionCancel"), EntityID, SOComponent.CurrState, SOComponent.NextState);
 		SOComponent.OnTransitionCancel(EntityID, SOComponent.CurrState, SOComponent.NextState);
 		SOComponent.NextState = CStrID::Empty;
 	}
@@ -146,7 +141,7 @@ void ProcessStateChangeRequest(CGameWorld& World, CGameSession& Session, HEntity
 		{
 			SOComponent.CurrState = FromState;
 			SOComponent.NextState = RequestedState;
-			CallTransitionScript(SOAsset.GetScriptFunction(Session, "OnTransitionStart"), EntityID, SOComponent.CurrState, SOComponent.NextState);
+			CallStateChangeScript(SOAsset.GetScriptFunction(Session, "OnTransitionStart"), EntityID, SOComponent.CurrState, SOComponent.NextState);
 			SOComponent.OnTransitionStart(EntityID, SOComponent.CurrState, SOComponent.NextState);
 			RunTimelineTask(World, EntityID, SOComponent.Player, pTransitionCR->TimelineTask, pPrevTask, InitialProgress);
 		}
@@ -162,11 +157,10 @@ void ProcessStateChangeRequest(CGameWorld& World, CGameSession& Session, HEntity
 	{
 		if (auto pState = SOAsset.FindState(RequestedState))
 		{
-			CallTransitionScript(SOAsset.GetScriptFunction(Session, "OnStateForceSet"), EntityID, FromState, RequestedState);
-			SOComponent.OnStateForceSet(EntityID, FromState, RequestedState);
+			CallStateChangeScript(SOAsset.GetScriptFunction(Session, "OnStateChanged"), EntityID, FromState, RequestedState);
+			SOComponent.OnStateChanged(EntityID, FromState, RequestedState);
 			RunTimelineTask(World, EntityID, SOComponent.Player, pState->TimelineTask, pPrevTask);
 			SOComponent.CurrState = RequestedState;
-			SOComponent.UpdateScript = SOAsset.GetScriptFunction(Session, "OnStateUpdate");
 		}
 	}
 }
@@ -207,16 +201,15 @@ void UpdateSmartObjects(CGameWorld& World, CGameSession& Session, float dt)
 						pPrevTask = &pTransitionCN->TimelineTask;
 
 					// End transition, enter the destination state
-					CallTransitionScript(pSOAsset->GetScriptFunction(Session, "OnTransitionEnd"), EntityID, SOComponent.CurrState, SOComponent.NextState);
-					SOComponent.OnTransitionEnd(EntityID, SOComponent.CurrState, SOComponent.NextState);
+					CallStateChangeScript(pSOAsset->GetScriptFunction(Session, "OnStateChanged"), EntityID, SOComponent.CurrState, SOComponent.NextState);
+					SOComponent.OnStateChanged(EntityID, SOComponent.CurrState, SOComponent.NextState);
 					RunTimelineTask(World, EntityID, SOComponent.Player, pState->TimelineTask, pPrevTask);
 					SOComponent.CurrState = SOComponent.NextState;
-					SOComponent.UpdateScript = pSOAsset->GetScriptFunction(Session, "OnStateUpdate");
 				}
 				else
 				{
 					// State was deleted from asset at runtime, cancel to source state
-					CallTransitionScript(pSOAsset->GetScriptFunction(Session, "OnTransitionCancel"), EntityID, SOComponent.CurrState, SOComponent.NextState);
+					CallStateChangeScript(pSOAsset->GetScriptFunction(Session, "OnTransitionCancel"), EntityID, SOComponent.CurrState, SOComponent.NextState);
 					SOComponent.OnTransitionCancel(EntityID, SOComponent.CurrState, SOComponent.NextState);
 					SOComponent.Player.SetTrack(nullptr);
 				}
@@ -244,25 +237,50 @@ void UpdateSmartObjects(CGameWorld& World, CGameSession& Session, float dt)
 // FIXME: how to init SO created in runtime?
 void InitSmartObjects(CGameWorld& World, CGameSession& Session, Resources::CResourceManager& ResMgr)
 {
-	World.ForEachComponent<CSmartObjectComponent>([&Session, &ResMgr](auto EntityID, CSmartObjectComponent& Component)
+	World.ForEachComponent<CSmartObjectComponent>([&World, &Session, &ResMgr](auto EntityID, CSmartObjectComponent& Component)
 	{
-		// FIXME: how to load ID into a resource without resource manager available (while deserializing)?
-		// Don't want to store both Asset and AssetID.
-		Component.Asset = ResMgr.RegisterResource<CSmartObject>(Component.AssetID.CStr());
+		ResMgr.RegisterResource<CSmartObject>(Component.Asset);
 		if (!Component.Asset) return;
 
 		if (auto pSmart = Component.Asset->ValidateObject<CSmartObject>())
 		{
 			pSmart->InitInSession(Session);
 
+			Component.UpdateScript = pSmart->GetScriptFunction(Session, "OnStateUpdate");
+
 			// Force set initial state
 			const CStrID InitialState = Component.CurrState ? Component.CurrState : pSmart->GetDefaultState();
 			if (auto pState = pSmart->FindState(InitialState))
 			{
-				CallTransitionScript(pSmart->GetScriptFunction(Session, "OnStateForceSet"), EntityID, CStrID::Empty, InitialState);
-				Component.OnStateForceSet(EntityID, CStrID::Empty, InitialState);
+				CallStateChangeScript(pSmart->GetScriptFunction(Session, "OnStateChanged"), EntityID, CStrID::Empty, InitialState);
+				Component.OnStateChanged(EntityID, CStrID::Empty, InitialState);
+				RunTimelineTask(World, EntityID, Component.Player, pState->TimelineTask, nullptr);
 				Component.CurrState = InitialState;
-				Component.UpdateScript = pSmart->GetScriptFunction(Session, "OnStateUpdate");
+
+				/*
+				//!!!TODO: in all places where forced set happens!
+				if (!pState->TimelineTask.Timeline)
+				{
+					// Set first frame of the first transition
+					//!!!FIXME: need better way to force set state of static objects!
+					//!!!this is bad to simply play first frame of the whole timeline task! there can be undesired events, sounds etc.
+					//!!!need to just evaluate animation poses!?
+					//???if no transitions with timeline, must have one-frame play-once timeline with pose?
+					//???CStaticPoseClip? must not update each frame if already set. Only on enter!
+					//???choose any transition TO this state and use the last frame?
+					for (auto& TransitionInfo : pState->Transitions)
+					{
+						if (TransitionInfo.TimelineTask.Timeline)
+						{
+							RunTimelineTask(World, EntityID, Component.Player, TransitionInfo.TimelineTask, nullptr);
+							Component.Player.Update(0.01f);
+							//Component.Player.SetPaused(true);
+							Component.Player.SetTrack(nullptr); //???why this resets object tfm?! timeline must not play forever!
+							break;
+						}
+					}
+				}
+				*/
 			}
 		}
 	});

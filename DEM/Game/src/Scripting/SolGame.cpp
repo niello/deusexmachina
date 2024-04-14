@@ -34,9 +34,8 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 		, "NextState", &DEM::Game::CSmartObjectComponent::NextState
 		, "RequestedState", &DEM::Game::CSmartObjectComponent::RequestedState
 		, "OnTransitionStart", &DEM::Game::CSmartObjectComponent::OnTransitionStart
-		, "OnTransitionEnd", &DEM::Game::CSmartObjectComponent::OnTransitionEnd
 		, "OnTransitionCancel", &DEM::Game::CSmartObjectComponent::OnTransitionCancel
-		, "OnStateForceSet", &DEM::Game::CSmartObjectComponent::OnStateForceSet
+		, "OnStateChanged", &DEM::Game::CSmartObjectComponent::OnStateChanged
 		, "RequestState", [](DEM::Game::CSmartObjectComponent& Self, CStrID State) { Self.RequestedState = State; Self.Force = false;  }
 		, "ForceState", [](DEM::Game::CSmartObjectComponent& Self, CStrID State) { Self.RequestedState = State; Self.Force = true;  }
 	);

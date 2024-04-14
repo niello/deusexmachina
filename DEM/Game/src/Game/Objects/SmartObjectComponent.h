@@ -16,7 +16,6 @@ struct CSmartObjectComponent
 	DEM::Anim::CTimelinePlayer Player;
 
 	Resources::PResource       Asset; // CSmartObject
-	CStrID                     AssetID; // FIXME: PResource Asset must be enough, but how to deserialize without ResMgr?
 
 	CStrID                     CurrState;
 	CStrID                     NextState;
@@ -27,9 +26,8 @@ struct CSmartObjectComponent
 
 	// Args are: our entity, state before, state after
 	Events::CSignal<void(HEntity, CStrID, CStrID)> OnTransitionStart;
-	Events::CSignal<void(HEntity, CStrID, CStrID)> OnTransitionEnd;
 	Events::CSignal<void(HEntity, CStrID, CStrID)> OnTransitionCancel;
-	Events::CSignal<void(HEntity, CStrID, CStrID)> OnStateForceSet;
+	Events::CSignal<void(HEntity, CStrID, CStrID)> OnStateChanged;
 
 	//???transition progress / current state timer (one multipurpose time float)? or inside timeline player?
 	//!!!NB: if time is in TL in player, must save/return prev time, not curr, or some TL part may be skipped on game reload!
@@ -50,7 +48,7 @@ template<> inline constexpr auto RegisterMembers<Game::CSmartObjectComponent>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(Game::CSmartObjectComponent, 1, AssetID),
+		DEM_META_MEMBER_FIELD(Game::CSmartObjectComponent, 1, Asset),
 		DEM_META_MEMBER_FIELD(Game::CSmartObjectComponent, 2, CurrState)
 	);
 }
