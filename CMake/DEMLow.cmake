@@ -1,29 +1,19 @@
 set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/StdCfg.h
 	DEM/Low/src/StdDEM.h
-	DEM/Low/src/Animation/AnimatedPoseClip.h
 	DEM/Low/src/Animation/AnimationBlender.h
 	DEM/Low/src/Animation/AnimationClip.h
 	DEM/Low/src/Animation/AnimationController.h
 	DEM/Low/src/Animation/AnimationLoaderANM.h
 	DEM/Low/src/Animation/AnimationSampler.h
-	DEM/Low/src/Animation/CompositePoseClip.h
 	DEM/Low/src/Animation/Inertialization.h
 	DEM/Low/src/Animation/MappedPoseOutput.h
 	DEM/Low/src/Animation/PoseBuffer.h
-	DEM/Low/src/Animation/PoseClipBase.h
 	DEM/Low/src/Animation/PoseOutput.h
 	DEM/Low/src/Animation/PoseRecorder.h
-	DEM/Low/src/Animation/PoseTrack.h
 	DEM/Low/src/Animation/Skeleton.h
 	DEM/Low/src/Animation/SkeletonInfo.h
 	DEM/Low/src/Animation/StaticPose.h
-	DEM/Low/src/Animation/StaticPoseClip.h
-	DEM/Low/src/Animation/TimelinePlayer.h
-	DEM/Low/src/Animation/TimelineTrack.h
-	DEM/Low/src/Animation/TimelineTrackGroup.h
-	DEM/Low/src/Animation/TimelineTrackLoaderANM.h
-	DEM/Low/src/Animation/TimelineTrackLoaderHRD.h
 	DEM/Low/src/Animation/Graph/AnimGraphNode.h
 	DEM/Low/src/Animation/Graph/BlendSpace1D.h
 	DEM/Low/src/Animation/Graph/BlendSpace2D.h
@@ -34,6 +24,16 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/Graph/IntSelectorNode.h
 	DEM/Low/src/Animation/Graph/SelectorNodeBase.h
 	DEM/Low/src/Animation/Graph/StringSelectorNode.h
+	DEM/Low/src/Animation/Timeline/AnimatedPoseClip.h
+	DEM/Low/src/Animation/Timeline/CompositePoseClip.h
+	DEM/Low/src/Animation/Timeline/PoseClipBase.h
+	DEM/Low/src/Animation/Timeline/PoseTrack.h
+	DEM/Low/src/Animation/Timeline/StaticPoseClip.h
+	DEM/Low/src/Animation/Timeline/TimelinePlayer.h
+	DEM/Low/src/Animation/Timeline/TimelineTrack.h
+	DEM/Low/src/Animation/Timeline/TimelineTrackGroup.h
+	DEM/Low/src/Animation/Timeline/TimelineTrackLoaderANM.h
+	DEM/Low/src/Animation/Timeline/TimelineTrackLoaderHRD.h
 	DEM/Low/src/Core/Application.h
 	DEM/Low/src/Core/ApplicationState.h
 	DEM/Low/src/Core/CoreServer.h
@@ -355,25 +355,16 @@ set(DEM_L1_LOW_HEADERS
 )
 
 set(DEM_L1_LOW_SOURCES
-	DEM/Low/src/Animation/AnimatedPoseClip.cpp
 	DEM/Low/src/Animation/AnimationBlender.cpp
 	DEM/Low/src/Animation/AnimationClip.cpp
 	DEM/Low/src/Animation/AnimationController.cpp
 	DEM/Low/src/Animation/AnimationLoaderANM.cpp
 	DEM/Low/src/Animation/AnimationSampler.cpp
-	DEM/Low/src/Animation/CompositePoseClip.cpp
 	DEM/Low/src/Animation/Inertialization.cpp
 	DEM/Low/src/Animation/PoseBuffer.cpp
-	DEM/Low/src/Animation/PoseClipBase.cpp
-	DEM/Low/src/Animation/PoseTrack.cpp
 	DEM/Low/src/Animation/Skeleton.cpp
 	DEM/Low/src/Animation/SkeletonInfo.cpp
 	DEM/Low/src/Animation/StaticPose.cpp
-	DEM/Low/src/Animation/StaticPoseClip.cpp
-	DEM/Low/src/Animation/TimelinePlayer.cpp
-	DEM/Low/src/Animation/TimelineTrackGroup.cpp
-	DEM/Low/src/Animation/TimelineTrackLoaderANM.cpp
-	DEM/Low/src/Animation/TimelineTrackLoaderHRD.cpp
 	DEM/Low/src/Animation/Graph/AnimGraphNode.cpp
 	DEM/Low/src/Animation/Graph/BlendSpace1D.cpp
 	DEM/Low/src/Animation/Graph/BlendSpace2D.cpp
@@ -384,6 +375,15 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/Graph/IntSelectorNode.cpp
 	DEM/Low/src/Animation/Graph/SelectorNodeBase.cpp
 	DEM/Low/src/Animation/Graph/StringSelectorNode.cpp
+	DEM/Low/src/Animation/Timeline/AnimatedPoseClip.cpp
+	DEM/Low/src/Animation/Timeline/CompositePoseClip.cpp
+	DEM/Low/src/Animation/Timeline/PoseClipBase.cpp
+	DEM/Low/src/Animation/Timeline/PoseTrack.cpp
+	DEM/Low/src/Animation/Timeline/StaticPoseClip.cpp
+	DEM/Low/src/Animation/Timeline/TimelinePlayer.cpp
+	DEM/Low/src/Animation/Timeline/TimelineTrackGroup.cpp
+	DEM/Low/src/Animation/Timeline/TimelineTrackLoaderANM.cpp
+	DEM/Low/src/Animation/Timeline/TimelineTrackLoaderHRD.cpp
 	DEM/Low/src/Core/Application.cpp
 	DEM/Low/src/Core/CoreServer.cpp
 	DEM/Low/src/Core/Factory.cpp

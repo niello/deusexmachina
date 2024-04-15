@@ -1,6 +1,6 @@
 #include "TimelineTrackLoaderANM.h"
-#include <Animation/PoseTrack.h>
-#include <Animation/AnimatedPoseClip.h>
+#include <Animation/Timeline/PoseTrack.h>
+#include <Animation/Timeline/AnimatedPoseClip.h>
 #include <Animation/AnimationClip.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>

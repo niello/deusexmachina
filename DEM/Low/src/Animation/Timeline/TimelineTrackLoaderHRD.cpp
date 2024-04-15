@@ -1,5 +1,5 @@
 #include "TimelineTrackLoaderHRD.h"
-#include <Animation/TimelineTrack.h>
+#include <Animation/Timeline/TimelineTrack.h>
 #include <Resources/ResourceManager.h>
 #include <IO/Stream.h>
 #include <Data/Params.h>

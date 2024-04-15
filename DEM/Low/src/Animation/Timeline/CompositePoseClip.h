@@ -1,5 +1,5 @@
 #pragma once
-#include <Animation/PoseClipBase.h>
+#include <Animation/Timeline/PoseClipBase.h>
 #include <Animation/AnimationBlender.h>
 
 // Pose clip that blends poses from child pose tracks

@@ -1,5 +1,5 @@
 #include "PoseTrack.h"
-#include <Animation/PoseClipBase.h>
+#include <Animation/Timeline/PoseClipBase.h>
 #include <Animation/PoseOutput.h>
 #include <Animation/SkeletonInfo.h>
 

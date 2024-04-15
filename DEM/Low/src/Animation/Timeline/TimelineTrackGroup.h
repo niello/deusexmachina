@@ -1,5 +1,5 @@
 #pragma once
-#include <Animation/TimelineTrack.h>
+#include <Animation/Timeline/TimelineTrack.h>
 
 // Composite track that contains a group of child tracks (possibly composite too).
 // Track group is useful to represent a timeline asset itself and to nest timeline assets.

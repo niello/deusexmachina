@@ -1,7 +1,7 @@
 #pragma once
 #include <Resources/Resource.h>
-#include <Animation/TimelinePlayer.h>
-#include <Animation/TimelineTrack.h> // For inlined destructor CSmartObjectComponent -> CTimelinePlayer
+#include <Animation/Timeline/TimelinePlayer.h>
+#include <Animation/Timeline/TimelineTrack.h> // For inlined destructor CSmartObjectComponent -> CTimelinePlayer
 #include <Events/Signal.h>
 #include <Data/Metadata.h>
 #include <Scripting/SolGame.h>

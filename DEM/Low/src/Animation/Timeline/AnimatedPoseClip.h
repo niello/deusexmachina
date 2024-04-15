@@ -1,5 +1,5 @@
 #pragma once
-#include <Animation/PoseClipBase.h>
+#include <Animation/Timeline/PoseClipBase.h>
 #include <Animation/AnimationSampler.h>
 
 // Pose clip that samples a pose from an animation player 

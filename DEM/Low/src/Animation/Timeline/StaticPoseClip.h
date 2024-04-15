@@ -1,5 +1,5 @@
 #pragma once
-#include <Animation/PoseClipBase.h>
+#include <Animation/Timeline/PoseClipBase.h>
 #include <Animation/StaticPose.h>
 
 // Pose clip that samples the same pose for its entire duration

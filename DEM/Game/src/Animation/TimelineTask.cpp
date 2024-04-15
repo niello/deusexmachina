@@ -1,6 +1,6 @@
 #include "TimelineTask.h"
-#include <Animation/PoseTrack.h>
-#include <Animation/TimelinePlayer.h>
+#include <Animation/Timeline/PoseTrack.h>
+#include <Animation/Timeline/TimelinePlayer.h>
 #include <Animation/Skeleton.h>
 #include <Game/ECS/GameWorld.h>
 #include <Scene/SceneComponent.h>

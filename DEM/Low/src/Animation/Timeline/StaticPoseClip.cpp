@@ -1,7 +1,7 @@
 #include "StaticPoseClip.h"
 #include <Animation/SkeletonInfo.h>
 #include <Animation/MappedPoseOutput.h>
-#include <Animation/PoseTrack.h>
+#include <Animation/Timeline/PoseTrack.h>
 
 namespace DEM::Anim
 {
