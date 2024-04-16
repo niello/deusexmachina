@@ -57,7 +57,7 @@ protected:
 	void					UpdateLocalTransform();
 
 	void                    SetParent(CSceneNode* pNewParent);
-	void                    UpdateActivity(bool OnDetach = false);
+	void                    UpdateActivity(bool OnDetach);
 
 	DEM_FORCE_INLINE void IncrementTransformVersion() noexcept { if (++TransformVersion == DIRTY_TRANSFORM_VERSION) ++TransformVersion; }
 
@@ -102,7 +102,7 @@ public:
 	bool					IsChildOf(const CSceneNode* pParentNode) const;
 	bool					IsActiveSelf() const { return Flags.Is(SelfActive); }
 	bool					IsActive() const { return Flags.Is(EffectivelyActive); }
-	void					SetActive(bool Enable) { Flags.SetTo(SelfActive, Enable); UpdateActivity(); }
+	void					SetActive(bool Enable) { Flags.SetTo(SelfActive, Enable); UpdateActivity(false); }
 	bool					IsLocalTransformDirty() const { return Flags.Is(LocalTransformDirty); }
 	bool					IsWorldTransformDirty() const { return Flags.Is(WorldTransformDirty); }
 	U32						GetTransformVersion() const { n_assert_dbg(!IsWorldTransformDirty()); return TransformVersion; }

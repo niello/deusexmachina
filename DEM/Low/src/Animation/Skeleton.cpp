@@ -65,7 +65,8 @@ void CSkeleton::ToPoseBuffer(CPoseBuffer& Pose) const
 
 U8 CSkeleton::GetActivePortChannels(U16 Port) const
 {
-	const bool NodeActive = (Port < _Nodes.size() && _Nodes[Port] && _Nodes[Port]->IsActive());
+	// TODO: https://app.asana.com/0/955191134306476/1207093668190468/f
+	const bool NodeActive = (Port < _Nodes.size() && _Nodes[Port] && _Nodes[Port]->IsActiveSelf());
 	return NodeActive ? ETransformChannel::All : 0;
 }
 //---------------------------------------------------------------------

@@ -51,7 +51,7 @@ void CSceneNode::Update(const rtm::vector4f* pCOIArray, UPTR COICount)
 {
 	// The first time an active root node is updated by user, it must be effectively activated.
 	// This is the difference between a scene root and a detached part of the scene.
-	if (IsActiveSelf() && !pParent) UpdateActivity();
+	if (IsActiveSelf() && !pParent) UpdateActivity(false);
 
 	if (!IsActive())
 	{
@@ -470,7 +470,7 @@ void CSceneNode::UpdateActivity(bool OnDetach)
 			Attr->UpdateActivity();
 
 		for (const auto& Child : Children)
-			Child->UpdateActivity();
+			Child->UpdateActivity(false);
 	}
 }
 //---------------------------------------------------------------------

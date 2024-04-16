@@ -257,7 +257,6 @@ void InitSmartObjects(CGameWorld& World, CGameSession& Session, Resources::CReso
 				RunTimelineTask(World, EntityID, Component.Player, pState->TimelineTask, nullptr);
 				Component.CurrState = InitialState;
 
-				/*
 				//!!!TODO: in all places where forced set happens!
 				if (!pState->TimelineTask.Timeline)
 				{
@@ -273,14 +272,15 @@ void InitSmartObjects(CGameWorld& World, CGameSession& Session, Resources::CReso
 						if (TransitionInfo.TimelineTask.Timeline)
 						{
 							RunTimelineTask(World, EntityID, Component.Player, TransitionInfo.TimelineTask, nullptr);
-							Component.Player.Update(0.01f);
-							//Component.Player.SetPaused(true);
-							Component.Player.SetTrack(nullptr); //???why this resets object tfm?! timeline must not play forever!
+
+							//!!!FIXME: reversed timeline at 0 time doesn't sample the last frame!
+							Component.Player.Update(0.0001f);
+
+							Component.Player.SetTrack(nullptr);
 							break;
 						}
 					}
 				}
-				*/
 			}
 		}
 	});
