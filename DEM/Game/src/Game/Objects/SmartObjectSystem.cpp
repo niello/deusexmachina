@@ -42,12 +42,80 @@ static void CallStateChangeScript(sol::function& Script, HEntity EntityID, CStrI
 }
 //---------------------------------------------------------------------
 
+static void ChangeState(CGameWorld& World, CGameSession& Session, HEntity EntityID, CSmartObjectComponent& Component, CStrID PrevState, const CSmartObjectStateInfo& State, const Anim::CTimelineTask* pPrevTask = nullptr)
+{
+	Component.CurrState = State.ID;
+
+	auto pSmart = Component.Asset->ValidateObject<CSmartObject>();
+	CallStateChangeScript(pSmart->GetScriptFunction(Session, "OnStateChanged"), EntityID, PrevState, State.ID);
+	Component.OnStateChanged(EntityID, PrevState, State.ID);
+
+	if (State.TimelineTask.Timeline)
+	{
+		RunTimelineTask(World, EntityID, Component.Player, State.TimelineTask, pPrevTask);
+	}
+	else
+	{
+		// Try to set visual state from any transition connected to this state
+		const Anim::CTimelineTask* pTask = nullptr;
+		float InitialProgress = 0.f;
+
+		// First try the first frame of any transition from this state
+		for (auto& TransitionInfo : State.Transitions)
+		{
+			if (TransitionInfo.TimelineTask.Timeline)
+			{
+				pTask = &TransitionInfo.TimelineTask;
+				break;
+			}
+		}
+
+		// Then try the last frame of any transition to this state
+		if (!pTask)
+		{
+			for (const auto& PrevState : pSmart->GetStates())
+			{
+				if (&PrevState == &State) continue;
+
+				auto pTransition = pSmart->FindTransition(PrevState.ID, State.ID);
+				if (pTransition && pTransition->TimelineTask.Timeline)
+				{
+					pTask = &pTransition->TimelineTask;
+					InitialProgress = 0.999f; // FIXME: 1.f asserts at the time of writing this, need to improve timeline code!
+					break;
+				}
+			}
+		}
+
+		//!!!FIXME: need better way to force set state of static objects!
+		//!!!this is bad to simply play first frame of the whole timeline task! there can be undesired events, sounds etc.
+		//!!!need to just evaluate animation poses!?
+		if (pTask)
+		{
+			RunTimelineTask(World, EntityID, Component.Player, *pTask, pPrevTask, InitialProgress);
+
+			//!!!FIXME: reversed timeline at 0 time doesn't sample the last frame!
+			Component.Player.Update((InitialProgress > 0.f) ? 0.f : 0.0001f);
+
+			Component.Player.SetTrack(nullptr);
+		}
+	}
+}
+//---------------------------------------------------------------------
+
 void ProcessStateChangeRequest(CGameWorld& World, CGameSession& Session, HEntity EntityID,
 	CSmartObjectComponent& SOComponent, const CSmartObject& SOAsset)
 {
 	// In case game logic callbacks will make another request during the processing of this one
 	const auto RequestedState = SOComponent.RequestedState;
 	SOComponent.RequestedState = CStrID::Empty;
+
+	auto pRequestedState = SOAsset.FindState(RequestedState);
+	if (!pRequestedState)
+	{
+		::Sys::Error("Missing smart object state requested!"); // TODO: normal logs and/or assertion!
+		return;
+	}
 
 	const CSmartObjectTransitionInfo* pTransitionCN = nullptr;
 	float InitialProgress = 0.f;
@@ -154,15 +222,7 @@ void ProcessStateChangeRequest(CGameWorld& World, CGameSession& Session, HEntity
 
 	// Force-set requested state
 	if (SOComponent.Force && FromState != RequestedState)
-	{
-		if (auto pState = SOAsset.FindState(RequestedState))
-		{
-			CallStateChangeScript(SOAsset.GetScriptFunction(Session, "OnStateChanged"), EntityID, FromState, RequestedState);
-			SOComponent.OnStateChanged(EntityID, FromState, RequestedState);
-			RunTimelineTask(World, EntityID, SOComponent.Player, pState->TimelineTask, pPrevTask);
-			SOComponent.CurrState = RequestedState;
-		}
-	}
+		ChangeState(World, Session, EntityID, SOComponent, FromState, *pRequestedState, pPrevTask);
 }
 //---------------------------------------------------------------------
 
@@ -201,10 +261,7 @@ void UpdateSmartObjects(CGameWorld& World, CGameSession& Session, float dt)
 						pPrevTask = &pTransitionCN->TimelineTask;
 
 					// End transition, enter the destination state
-					CallStateChangeScript(pSOAsset->GetScriptFunction(Session, "OnStateChanged"), EntityID, SOComponent.CurrState, SOComponent.NextState);
-					SOComponent.OnStateChanged(EntityID, SOComponent.CurrState, SOComponent.NextState);
-					RunTimelineTask(World, EntityID, SOComponent.Player, pState->TimelineTask, pPrevTask);
-					SOComponent.CurrState = SOComponent.NextState;
+					ChangeState(World, Session, EntityID, SOComponent, SOComponent.CurrState, *pState, pPrevTask);
 				}
 				else
 				{
@@ -237,51 +294,21 @@ void UpdateSmartObjects(CGameWorld& World, CGameSession& Session, float dt)
 // FIXME: how to init SO created in runtime?
 void InitSmartObjects(CGameWorld& World, CGameSession& Session, Resources::CResourceManager& ResMgr)
 {
-	World.ForEachComponent<CSmartObjectComponent>([&World, &Session, &ResMgr](auto EntityID, CSmartObjectComponent& Component)
+	World.ForEachComponent<CSmartObjectComponent>([&World, &Session, &ResMgr](auto EntityID, CSmartObjectComponent& SOComponent)
 	{
-		ResMgr.RegisterResource<CSmartObject>(Component.Asset);
-		if (!Component.Asset) return;
+		ResMgr.RegisterResource<CSmartObject>(SOComponent.Asset);
+		if (!SOComponent.Asset) return;
 
-		if (auto pSmart = Component.Asset->ValidateObject<CSmartObject>())
+		if (auto pSmart = SOComponent.Asset->ValidateObject<CSmartObject>())
 		{
 			pSmart->InitInSession(Session);
 
-			Component.UpdateScript = pSmart->GetScriptFunction(Session, "OnStateUpdate");
+			SOComponent.UpdateScript = pSmart->GetScriptFunction(Session, "OnStateUpdate");
 
-			// Force set initial state
-			const CStrID InitialState = Component.CurrState ? Component.CurrState : pSmart->GetDefaultState();
+			// Force set initial state. Can be distunguished by empty previous state ID.
+			const CStrID InitialState = SOComponent.CurrState ? SOComponent.CurrState : pSmart->GetDefaultState();
 			if (auto pState = pSmart->FindState(InitialState))
-			{
-				CallStateChangeScript(pSmart->GetScriptFunction(Session, "OnStateChanged"), EntityID, CStrID::Empty, InitialState);
-				Component.OnStateChanged(EntityID, CStrID::Empty, InitialState);
-				RunTimelineTask(World, EntityID, Component.Player, pState->TimelineTask, nullptr);
-				Component.CurrState = InitialState;
-
-				//!!!TODO: in all places where forced set happens!
-				if (!pState->TimelineTask.Timeline)
-				{
-					// Set first frame of the first transition
-					//!!!FIXME: need better way to force set state of static objects!
-					//!!!this is bad to simply play first frame of the whole timeline task! there can be undesired events, sounds etc.
-					//!!!need to just evaluate animation poses!?
-					//???if no transitions with timeline, must have one-frame play-once timeline with pose?
-					//???CStaticPoseClip? must not update each frame if already set. Only on enter!
-					//???choose any transition TO this state and use the last frame?
-					for (auto& TransitionInfo : pState->Transitions)
-					{
-						if (TransitionInfo.TimelineTask.Timeline)
-						{
-							RunTimelineTask(World, EntityID, Component.Player, TransitionInfo.TimelineTask, nullptr);
-
-							//!!!FIXME: reversed timeline at 0 time doesn't sample the last frame!
-							Component.Player.Update(0.0001f);
-
-							Component.Player.SetTrack(nullptr);
-							break;
-						}
-					}
-				}
-			}
+				ChangeState(World, Session, EntityID, SOComponent, CStrID::Empty, *pState);
 		}
 	});
 }

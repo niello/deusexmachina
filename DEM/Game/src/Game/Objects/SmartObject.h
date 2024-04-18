@@ -76,6 +76,7 @@ public:
 	sol::function                     GetScriptFunction(CGameSession& Session, std::string_view Name) const;
 	CStrID                            GetID() const { return _ID; }
 	CStrID                            GetDefaultState() const { return _DefaultState; }
+	const auto&                       GetStates() const { return _States; }
 };
 
 }
