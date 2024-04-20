@@ -16,7 +16,7 @@ void CCompositePoseClip::GatherSkeletonInfo(PSkeletonInfo& SkeletonInfo)
 }
 //---------------------------------------------------------------------
 
-void CCompositePoseClip::PlayInterval(float PrevTime, float CurrTime, bool IsLast, const CPoseTrack& Track, UPTR ClipIndex)
+void CCompositePoseClip::PlayInterval(float PrevTime, float CurrTime, bool IsLast, IPoseOutput& Output)
 {
 	// evaluate blend params
 	// evaluate tracks

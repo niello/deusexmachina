@@ -64,7 +64,7 @@ float CPoseTrack::GetDuration() const
 //???are both time points inclusive? event or action exactly at point will be executed twice then, not good
 void CPoseTrack::PlayInterval(float PrevTime, float CurrTime, bool IsLast)
 {
-	if (_Clips.empty()) return;
+	if (_Clips.empty() || !_Output) return;
 
 	const float MinTime = std::min(PrevTime, CurrTime);
 	const float MaxTime = std::max(PrevTime, CurrTime);
@@ -81,8 +81,7 @@ void CPoseTrack::PlayInterval(float PrevTime, float CurrTime, bool IsLast)
 		do
 		{
 			auto CurrIt = It++;
-			CurrIt->Clip->PlayInterval(PrevTime - CurrIt->StartTime, CurrTime - CurrIt->StartTime,
-				IsLast && (It == ItEnd), *this, std::distance(_Clips.begin(), CurrIt));
+			CurrIt->Clip->PlayInterval(PrevTime - CurrIt->StartTime, CurrTime - CurrIt->StartTime, IsLast && (It == ItEnd), *_Output);
 		}
 		while (It != ItEnd);
 	}
@@ -94,8 +93,7 @@ void CPoseTrack::PlayInterval(float PrevTime, float CurrTime, bool IsLast)
 		do
 		{
 			auto CurrIt = RIt++;
-			CurrIt->Clip->PlayInterval(PrevTime - CurrIt->StartTime, CurrTime - CurrIt->StartTime,
-				IsLast && (RIt == RItEnd), *this, std::distance(_Clips.begin(), CurrIt.base()) - 1);
+			CurrIt->Clip->PlayInterval(PrevTime - CurrIt->StartTime, CurrTime - CurrIt->StartTime, IsLast && (RIt == RItEnd), *_Output);
 		}
 		while (RIt != RItEnd);
 	}

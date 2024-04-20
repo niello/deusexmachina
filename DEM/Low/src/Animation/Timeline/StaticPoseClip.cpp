@@ -24,14 +24,14 @@ void CStaticPoseClip::GatherSkeletonInfo(PSkeletonInfo& SkeletonInfo)
 }
 //---------------------------------------------------------------------
 
-void CStaticPoseClip::PlayInterval(float /*PrevTime*/, float /*CurrTime*/, bool IsLast, const CPoseTrack& Track, UPTR /*ClipIndex*/)
+void CStaticPoseClip::PlayInterval(float /*PrevTime*/, float /*CurrTime*/, bool IsLast, IPoseOutput& Output)
 {
-	if (IsLast && _Pose && Track.GetOutput())
+	if (IsLast && _Pose)
 	{
 		if (_PortMapping)
-			_Pose->Apply(CMappedPoseOutput(*Track.GetOutput(), _PortMapping.get()));
+			_Pose->Apply(CMappedPoseOutput(Output, _PortMapping.get()));
 		else
-			_Pose->Apply(*Track.GetOutput());
+			_Pose->Apply(Output);
 	}
 }
 //---------------------------------------------------------------------

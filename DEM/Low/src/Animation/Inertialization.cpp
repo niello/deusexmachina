@@ -229,42 +229,37 @@ void CInertializationPoseDiff::ApplyTo(CPoseBuffer& Target, float ElapsedTime) c
 		const auto RotationHalfAngles = rtm::vector_mul(EvaluateCurves(VTime, _Curves[i].Rotation), 0.5f);
 		const auto TranslationMagnitudes = EvaluateCurves(VTime, _Curves[i].Translation);
 
-		// FIXME: use RTM functions! Will they have sincos?
 		rtm::vector4f VSin, VCos;
 		rtm::vector_sincos(RotationHalfAngles, VSin, VCos);
 
 		const auto& BoneAxes0 = _Axes[BoneIdx];
+		const auto Quat0 = Math::vector_mix_xyza(rtm::vector_mul(rtm::vector_dup_x(VSin), BoneAxes0.RotationAxis), VCos);
 		auto& Tfm0 = Target[BoneIdx];
 		Tfm0.scale = rtm::vector_mul_add(BoneAxes0.ScaleAxis, rtm::vector_dup_x(ScaleMagnitudes), Tfm0.scale);
-		auto Quat0 = rtm::vector_mul(rtm::vector_dup_x(VSin), BoneAxes0.RotationAxis);
-		Quat0 = Math::vector_mix_xyza(Quat0, VCos);
 		Tfm0.rotation = rtm::quat_mul(Quat0, Tfm0.rotation);
 		Tfm0.translation = rtm::vector_mul_add(BoneAxes0.TranslationDir, rtm::vector_dup_x(TranslationMagnitudes), Tfm0.translation);
 		if (++BoneIdx >= BoneCount) break;
 
 		const auto& BoneAxes1 = _Axes[BoneIdx];
+		const auto Quat1 = Math::vector_mix_xyzb(rtm::vector_mul(rtm::vector_dup_y(VSin), BoneAxes1.RotationAxis), VCos);
 		auto& Tfm1 = Target[BoneIdx];
 		Tfm1.scale = rtm::vector_mul_add(BoneAxes1.ScaleAxis, rtm::vector_dup_y(ScaleMagnitudes), Tfm1.scale);
-		auto Quat1 = rtm::vector_mul(rtm::vector_dup_y(VSin), BoneAxes1.RotationAxis);
-		Quat1 = Math::vector_mix_xyzb(Quat1, VCos);
 		Tfm1.rotation = rtm::quat_mul(Quat1, Tfm1.rotation);
 		Tfm1.translation = rtm::vector_mul_add(BoneAxes1.TranslationDir, rtm::vector_dup_y(TranslationMagnitudes), Tfm1.translation);
 		if (++BoneIdx >= BoneCount) break;
 
 		const auto& BoneAxes2 = _Axes[BoneIdx];
+		const auto Quat2 = Math::vector_mix_xyzc(rtm::vector_mul(rtm::vector_dup_z(VSin), BoneAxes2.RotationAxis), VCos);
 		auto& Tfm2 = Target[BoneIdx];
 		Tfm2.scale = rtm::vector_mul_add(BoneAxes2.ScaleAxis, rtm::vector_dup_z(ScaleMagnitudes), Tfm2.scale);
-		auto Quat2 = rtm::vector_mul(rtm::vector_dup_z(VSin), BoneAxes2.RotationAxis);
-		Quat2 = Math::vector_mix_xyzc(Quat2, VCos);
 		Tfm2.rotation = rtm::quat_mul(Quat2, Tfm2.rotation);
 		Tfm2.translation = rtm::vector_mul_add(BoneAxes2.TranslationDir, rtm::vector_dup_z(TranslationMagnitudes), Tfm2.translation);
 		if (++BoneIdx >= BoneCount) break;
 
 		const auto& BoneAxes3 = _Axes[BoneIdx];
+		const auto Quat3 = Math::vector_mix_xyzd(rtm::vector_mul(rtm::vector_dup_w(VSin), BoneAxes3.RotationAxis), VCos);
 		auto& Tfm3 = Target[BoneIdx];
 		Tfm3.scale = rtm::vector_mul_add(BoneAxes3.ScaleAxis, rtm::vector_dup_w(ScaleMagnitudes), Tfm3.scale);
-		auto Quat3 = rtm::vector_mul(rtm::vector_dup_w(VSin), BoneAxes3.RotationAxis);
-		Quat3 = Math::vector_mix_xyzd(Quat3, VCos);
 		Tfm3.rotation = rtm::quat_mul(Quat3, Tfm3.rotation);
 		Tfm3.translation = rtm::vector_mul_add(BoneAxes3.TranslationDir, rtm::vector_dup_w(TranslationMagnitudes), Tfm3.translation);
 		if (++BoneIdx >= BoneCount) break;

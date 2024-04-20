@@ -31,16 +31,16 @@ void CAnimatedPoseClip::GatherSkeletonInfo(PSkeletonInfo& SkeletonInfo)
 }
 //---------------------------------------------------------------------
 
-void CAnimatedPoseClip::PlayInterval(float /*PrevTime*/, float CurrTime, bool IsLast, const CPoseTrack& Track, UPTR /*ClipIndex*/)
+void CAnimatedPoseClip::PlayInterval(float /*PrevTime*/, float CurrTime, bool IsLast, IPoseOutput& Output)
 {
 	//!!!FIXME: sample pose only if CurrTime is inside the clip (>=0 && <= duration)! Otherwise clip is skipped already.
 	//???IsLast will already check it? Last clip is always current, otherwise it is skipped. Rename to IsCurr?
-	if (IsLast && Track.GetOutput())
+	if (IsLast)
 	{
 		if (_PortMapping)
-			_Sampler.EvaluatePose(CurrTime, CMappedPoseOutput(*Track.GetOutput(), _PortMapping.get()));
+			_Sampler.EvaluatePose(CurrTime, CMappedPoseOutput(Output, _PortMapping.get()));
 		else
-			_Sampler.EvaluatePose(CurrTime, *Track.GetOutput());
+			_Sampler.EvaluatePose(CurrTime, Output);
 	}
 }
 //---------------------------------------------------------------------

@@ -19,7 +19,7 @@ public:
 
 	virtual PPoseClipBase Clone() const override;
 	virtual void          GatherSkeletonInfo(PSkeletonInfo& SkeletonInfo) override;
-	virtual void          PlayInterval(float PrevTime, float CurrTime, bool IsLast, const CPoseTrack& Track, UPTR ClipIndex) override;
+	virtual void          PlayInterval(float PrevTime, float CurrTime, bool IsLast, IPoseOutput& Output) override;
 };
 
 }
