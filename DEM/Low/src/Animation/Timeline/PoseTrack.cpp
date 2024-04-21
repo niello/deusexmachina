@@ -64,6 +64,8 @@ float CPoseTrack::GetDuration() const
 //???are both time points inclusive? event or action exactly at point will be executed twice then, not good
 void CPoseTrack::PlayInterval(float PrevTime, float CurrTime, bool IsLast)
 {
+	//???FIXME: maybe pose track should skip updating everything except last clip of the last track instead of deciding it in each clip?!
+
 	if (_Clips.empty() || !_Output) return;
 
 	const float MinTime = std::min(PrevTime, CurrTime);

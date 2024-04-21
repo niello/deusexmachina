@@ -26,6 +26,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/Graph/StringSelectorNode.h
 	DEM/Low/src/Animation/Timeline/AnimatedPoseClip.h
 	DEM/Low/src/Animation/Timeline/CompositePoseClip.h
+	DEM/Low/src/Animation/Timeline/EventClip.h
 	DEM/Low/src/Animation/Timeline/PoseClipBase.h
 	DEM/Low/src/Animation/Timeline/PoseTrack.h
 	DEM/Low/src/Animation/Timeline/StaticPoseClip.h
@@ -107,6 +108,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Events/EventHandler.h
 	DEM/Low/src/Events/EventID.h
 	DEM/Low/src/Events/EventNative.h
+	DEM/Low/src/Events/EventOutput.h
 	DEM/Low/src/Events/EventServer.h
 	DEM/Low/src/Events/EventsFwd.h
 	DEM/Low/src/Events/Signal.h
@@ -377,6 +379,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/Graph/StringSelectorNode.cpp
 	DEM/Low/src/Animation/Timeline/AnimatedPoseClip.cpp
 	DEM/Low/src/Animation/Timeline/CompositePoseClip.cpp
+	DEM/Low/src/Animation/Timeline/EventClip.cpp
 	DEM/Low/src/Animation/Timeline/PoseClipBase.cpp
 	DEM/Low/src/Animation/Timeline/PoseTrack.cpp
 	DEM/Low/src/Animation/Timeline/StaticPoseClip.cpp

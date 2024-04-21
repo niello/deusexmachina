@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_EVENT_H__
-#define __DEM_L1_EVENT_H__
-
 #include <Events/EventBase.h>
 #include <Data/Params.h>
 //#include <System/Allocators/PoolAllocator.h>
@@ -25,9 +22,9 @@ public:
 	CStrID        ID;     // Event ID (string like "OnItemPicked")
 	Data::PParams Params; // Event parameters
 
-	CEvent() {}
-	CEvent(CStrID _ID): ID(_ID) {}
-	CEvent(CStrID _ID, Data::PParams _Params = nullptr): ID(_ID), Params(_Params) {}
+	CEvent() = default;
+	CEvent(CStrID ID_): ID(ID_) {}
+	CEvent(CStrID ID_, Data::PParams Params_ = nullptr): ID(ID_), Params(std::move(Params_)) {}
 
 	virtual CEventID GetID() const { return ID; }
 
@@ -41,5 +38,3 @@ public:
 };
 
 }
-
-#endif
