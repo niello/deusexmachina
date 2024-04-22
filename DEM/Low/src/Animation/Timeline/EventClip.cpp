@@ -4,6 +4,13 @@
 namespace DEM::Anim
 {
 
+void CEventClip::AddEvent(float Time, CStrID ID, Data::CData Data)
+{
+	auto ItWhere = std::upper_bound(_Events.begin(), _Events.end(), Time, [](float EventTime, const CAnimEvent& Ev) { return EventTime < Ev.Time; });
+	_Events.insert(ItWhere, CAnimEvent{ Time, ID, std::move(Data) });
+}
+//---------------------------------------------------------------------
+
 void CEventClip::PlayInterval(float PrevTime, float CurrTime, bool /*IsLast*/, Events::IEventOutput& Output)
 {
 	// Prevent repeated triggering of an event under the playback cursor
@@ -17,7 +24,7 @@ void CEventClip::PlayInterval(float PrevTime, float CurrTime, bool /*IsLast*/, E
 		// Forward playback
 		auto It = std::upper_bound(_Events.cbegin(), _Events.cend(), PrevTime, [](float Time, const CAnimEvent& Clip) { return Time < Clip.Time; });
 		for (; It != _Events.cend() && It->Time <= CurrTime; ++It)
-			Output.OnEvent(It->ID, It->Data, CurrTime - It->Time);
+			Output.OnEvent(It->ID, It->Data, CurrTime - It->Time); // TODO: need global time diff, not a clip-local, because of looping
 	}
 	else
 	{

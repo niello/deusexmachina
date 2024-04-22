@@ -31,6 +31,9 @@ Core::PObject CTimelineTrackLoaderANM::CreateResource(CStrID UID)
 	Track->AddClip(std::move(Clip), 0.f, Anim->GetDuration());
 	Track->RefreshSkeletonInfo();
 
+	//!!!could also load CEventClip right from anm!
+	//also can make CEventClipLoaderANM just like this one for loading events from ANM as a separate event clip with #Events or like that
+
 	return Track;
 }
 //---------------------------------------------------------------------

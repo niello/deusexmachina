@@ -29,8 +29,8 @@ protected:
 
 public:
 
-	//PEventClip Clone() const;
-	void       PlayInterval(float PrevTime, float CurrTime, bool IsLast, Events::IEventOutput& Output);
+	void AddEvent(float Time, CStrID ID, Data::CData Data = {});
+	void PlayInterval(float PrevTime, float CurrTime, bool IsLast, Events::IEventOutput& Output);
 };
 
 }

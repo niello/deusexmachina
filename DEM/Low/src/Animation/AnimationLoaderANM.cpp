@@ -85,13 +85,13 @@ Core::PObject CAnimationLoaderANM::CreateResource(CStrID UID)
 	U32 ClipDataSize;
 	if (!Reader.Read(ClipDataSize) || !ClipDataSize) return nullptr;
 
-	// Clip size is a part of clip data, so it must be read again as a part of the clip
-	Stream->Seek(-4, IO::Seek_Current);
-
 	void* pBuffer = n_malloc_aligned(ClipDataSize, alignof(acl::compressed_tracks));
+	if (!pBuffer) return nullptr;
 
-	//!!!clip data is aligned-16 relatively to the file beginning! can use MMF!
-	if (!pBuffer || Stream->Read(pBuffer, ClipDataSize) != ClipDataSize)
+	// Clip size is a part of clip data, so it must be put back to first 4 bytes of buffer
+	//!!!clip data is aligned-16 relatively to the file beginning! can use MMF with memcpy?!
+	*static_cast<U32*>(pBuffer) = ClipDataSize;
+	if (Stream->Read(static_cast<uint8_t*>(pBuffer) + 4, ClipDataSize - 4) != ClipDataSize - 4)
 	{
 		SAFE_FREE_ALIGNED(pBuffer);
 		return nullptr;
