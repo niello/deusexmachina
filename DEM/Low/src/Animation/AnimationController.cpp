@@ -108,22 +108,20 @@ void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResource
 }
 //---------------------------------------------------------------------
 
-void CAnimationController::Update(const CSkeleton& Target, float dt)
+void CAnimationController::Update(const CSkeleton& Target, float dt, Events::IEventOutput* pEventOutput)
 {
 	ZoneScoped;
 
 	// update conditions etc
 
 	// TODO:
-	// - selector (CStrID based?) with blend time for switching to actions like "open door". Finish vs cancel anim?
-	// - pose modifiers = skeletal controls, object space
-	// - inertialization
+	// - pose modifiers = skeletal controls (like lookat), object space (like rigid body or what?)
 	// - IK
 
 	if (_GraphRoot)
 	{
 		++_UpdateCounter;
-		CAnimationUpdateContext Context{ *this, Target };
+		CAnimationUpdateContext Context{ *this, Target, pEventOutput };
 		_GraphRoot->Update(Context, dt);
 
 		// TODO: synchronize times by sync group?

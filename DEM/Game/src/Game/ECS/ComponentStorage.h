@@ -158,8 +158,7 @@ protected:
 	bool LoadBaseComponent(HEntity EntityID, const CIndexRecord& Record, T& Component) const
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
-
-		if (Record.BaseState == EComponentState::Explicit)
+		else if (Record.BaseState == EComponentState::Explicit)
 		{
 			// If base data is available for this component, load it (overrides a template)
 			if (auto pBaseStream = _World.GetBaseStream(Record.BaseDataOffset))
@@ -197,19 +196,19 @@ protected:
 	T LoadComponent(HEntity EntityID, const CIndexRecord& Record) const
 	{
 		T Component;
-		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return Component;
-
-		LoadBaseComponent(EntityID, Record, Component);
-
-		// If diff data is available, apply it on top of base data
-		if (Record.DiffDataSize)
+		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
 		{
-			if constexpr (STORAGE_USE_DIFF_POOL<T>)
-				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData, Record.DiffDataSize)), Component);
-			else
-				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData.GetConstPtr(), Record.DiffDataSize)), Component);
-		}
+			LoadBaseComponent(EntityID, Record, Component);
 
+			// If diff data is available, apply it on top of base data
+			if (Record.DiffDataSize)
+			{
+				if constexpr (STORAGE_USE_DIFF_POOL<T>)
+					DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData, Record.DiffDataSize)), Component);
+				else
+					DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData.GetConstPtr(), Record.DiffDataSize)), Component);
+			}
+		}
 		return Component;
 	}
 	//---------------------------------------------------------------------
@@ -218,53 +217,55 @@ protected:
 	void SaveComponent(CIndexRecord& Record)
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return;
-
-		if (!Record.DiffDirty) return;
-
-		n_assert2_dbg(Record.Index != INVALID_INDEX, "CSparseComponentStorage::SaveComponent() > call only for loaded components");
-
-		const auto& [Component, EntityID] = _Data[Record.Index];
-
-		T BaseComponent;
-		const bool HasBase = LoadBaseComponent(EntityID, Record, BaseComponent);
-
-		bool HasDiff;
-		if constexpr (STORAGE_USE_DIFF_POOL<T>)
-		{
-			if (!Record.DiffData) Record.DiffData = _DiffPool.Allocate();
-			IO::CMemStream DiffStream(Record.DiffData, MAX_DIFF_SIZE);
-			HasDiff = DEM::BinaryFormat::SerializeDiff(IO::CBinaryWriter(DiffStream), Component, BaseComponent);
-			Record.DiffDataSize = static_cast<U32>(DiffStream.Tell());
-		}
 		else
 		{
-			// Preallocate buffer
-			// FIXME: need more clever logic? vector-like allocation strategy inside a CBufferMalloc, or std::vector-based buffer?
-			if (!Record.DiffData.GetSize()) Record.DiffData.Resize(512);
-			IO::CMemStream DiffStream(Record.DiffData);
-			HasDiff = DEM::BinaryFormat::SerializeDiff(IO::CBinaryWriter(DiffStream), Component, BaseComponent);
-			Record.DiffDataSize = static_cast<U32>(DiffStream.Tell());
-		}
+			if (!Record.DiffDirty) return;
 
-		if (HasBase && !HasDiff)
-		{
-			// No diff against the base, component is unchanged, nothing must be saved
-			ClearDiffBuffer(Record);
-		}
-		else
-		{
-			// When HasDiff is false, the component is new but equal to the default one, and we must
-			// save empty diff, which is not equal to nothing. It is already written in SerializeDiff.
-			if constexpr (!STORAGE_USE_DIFF_POOL<T>)
+			n_assert2_dbg(Record.Index != INVALID_INDEX, "CSparseComponentStorage::SaveComponent() > call only for loaded components");
+
+			const auto& [Component, EntityID] = _Data[Record.Index];
+
+			T BaseComponent;
+			const bool HasBase = LoadBaseComponent(EntityID, Record, BaseComponent);
+
+			bool HasDiff;
+			if constexpr (STORAGE_USE_DIFF_POOL<T>)
 			{
-				// Truncate if too many unused bytes left
-				// FIXME: need more clever logic?
-				if (Record.DiffData.GetSize() > Record.DiffDataSize + 400)
-					Record.DiffData.Resize(Record.DiffDataSize);
+				if (!Record.DiffData) Record.DiffData = _DiffPool.Allocate();
+				IO::CMemStream DiffStream(Record.DiffData, MAX_DIFF_SIZE);
+				HasDiff = DEM::BinaryFormat::SerializeDiff(IO::CBinaryWriter(DiffStream), Component, BaseComponent);
+				Record.DiffDataSize = static_cast<U32>(DiffStream.Tell());
 			}
-		}
+			else
+			{
+				// Preallocate buffer
+				// FIXME: need more clever logic? vector-like allocation strategy inside a CBufferMalloc, or std::vector-based buffer?
+				if (!Record.DiffData.GetSize()) Record.DiffData.Resize(512);
+				IO::CMemStream DiffStream(Record.DiffData);
+				HasDiff = DEM::BinaryFormat::SerializeDiff(IO::CBinaryWriter(DiffStream), Component, BaseComponent);
+				Record.DiffDataSize = static_cast<U32>(DiffStream.Tell());
+			}
 
-		Record.DiffDirty = false;
+			if (HasBase && !HasDiff)
+			{
+				// No diff against the base, component is unchanged, nothing must be saved
+				ClearDiffBuffer(Record);
+			}
+			else
+			{
+				// When HasDiff is false, the component is new but equal to the default one, and we must
+				// save empty diff, which is not equal to nothing. It is already written in SerializeDiff.
+				if constexpr (!STORAGE_USE_DIFF_POOL<T>)
+				{
+					// Truncate if too many unused bytes left
+					// FIXME: need more clever logic?
+					if (Record.DiffData.GetSize() > Record.DiffDataSize + 400)
+						Record.DiffData.Resize(Record.DiffDataSize);
+				}
+			}
+
+			Record.DiffDirty = false;
+		}
 	}
 	//---------------------------------------------------------------------
 
@@ -332,12 +333,13 @@ protected:
 	// This must be faster than looking up each one separately from inside the iterator on access.
 	void MarkAllDirty()
 	{
-		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
-
-		_IndexByEntity.ForEach([](HEntity, CIndexRecord& Record)
+		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
 		{
-			if (Record.Index != INVALID_INDEX) Record.DiffDirty = true;
-		});
+			_IndexByEntity.ForEach([](HEntity, CIndexRecord& Record)
+			{
+				if (Record.Index != INVALID_INDEX) Record.DiffDirty = true;
+			});
+		}
 	}
 	//---------------------------------------------------------------------
 
@@ -504,117 +506,124 @@ public:
 	virtual bool AddFromParams(HEntity EntityID, const Data::CData& In) override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
-
-		if (!In.IsA<Data::PParams>()) return false;
-
-		// Distinguish templated components from explicit
-		const bool Templated = In.GetValue<Data::PParams>()->Get(CStrID("__UseTpl"), false);
-		const auto State = Templated ? EComponentState::Templated : EComponentState::Explicit;
-
-		// Add a record. Will replace existing one.
-		auto It = _IndexByEntity.find(EntityID);
-		if (It)
-		{
-			It->Value.State = State;
-		}
 		else
 		{
-			It = _IndexByEntity.emplace(EntityID,
-				CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, State, EComponentState::NoBase });
+			if (!In.IsA<Data::PParams>()) return false;
+
+			// Distinguish templated components from explicit
+			const bool Templated = In.GetValue<Data::PParams>()->Get(CStrID("__UseTpl"), false);
+			const auto State = Templated ? EComponentState::Templated : EComponentState::Explicit;
+
+			// Add a record. Will replace existing one.
+			auto It = _IndexByEntity.find(EntityID);
+			if (It)
+			{
+				It->Value.State = State;
+			}
+			else
+			{
+				It = _IndexByEntity.emplace(EntityID,
+					CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, State, EComponentState::NoBase });
+			}
+
+			// Params format isn't supported as an intermediate storage, so we must create a component immediately.
+			// NB: Component must be default-created for LoadBaseComponent to work correctly.
+			T Component;
+			LoadBaseComponent(EntityID, It->Value, Component);
+			DEM::ParamsFormat::DeserializeDiff(In, Component);
+
+			if (It->Value.Index != INVALID_INDEX)
+				_Data[It->Value.Index].first = std::move(Component);
+			else
+				It->Value.Index = _Data.emplace(std::move(Component), EntityID);
+
+			It->Value.DiffDirty = true;
+
+			if constexpr (Signals) OnAdd(EntityID, &_Data[It->Value.Index].first);
+
+			return true;
 		}
-
-		// Params format isn't supported as an intermediate storage, so we must create a component immediately.
-		// NB: Component must be default-created for LoadBaseComponent to work correctly.
-		T Component;
-		LoadBaseComponent(EntityID, It->Value, Component);
-		DEM::ParamsFormat::DeserializeDiff(In, Component);
-
-		if (It->Value.Index != INVALID_INDEX)
-			_Data[It->Value.Index].first = std::move(Component);
-		else
-			It->Value.Index = _Data.emplace(std::move(Component), EntityID);
-
-		It->Value.DiffDirty = true;
-
-		if constexpr (Signals) OnAdd(EntityID, &_Data[It->Value.Index].first);
-
-		return true;
 	}
 	//---------------------------------------------------------------------
 
 	virtual bool SaveComponentToParams(HEntity EntityID, Data::CData& Out) const override
 	{
+		//???!!!FIXME: make separate almost empty storage specialization for not registered components?
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
+		else
+		{
+			auto It = _IndexByEntity.find(EntityID);
+			if (!It) return false;
+			const auto& Record = It->Value;
 
-		auto It = _IndexByEntity.find(EntityID);
-		if (!It) return false;
-		const auto& Record = It->Value;
+			// If there is nothing to write, return immediately
+			if (!WriteComponent<DEM::ParamsFormat>(Out, EntityID, Record)) return false;
 
-		// If there is nothing to write, return immediately
-		if (!WriteComponent<DEM::ParamsFormat>(Out, EntityID, Record)) return false;
+			// Perform format-specific part of writing
+			if (Record.State == EComponentState::Templated)
+				Out.GetValue<Data::PParams>()->Set(CStrID("__UseTpl"), true);
+			else if (Record.State == EComponentState::Deleted)
+				Out.Clear();
 
-		// Perform format-specific part of writing
-		if (Record.State == EComponentState::Templated)
-			Out.GetValue<Data::PParams>()->Set(CStrID("__UseTpl"), true);
-		else if (Record.State == EComponentState::Deleted)
-			Out.Clear();
-
-		return true;
+			return true;
+		}
 	}
 	//---------------------------------------------------------------------
 
 	virtual bool SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
-
-		auto It = _IndexByEntity.find(EntityID);
-		if (!It) return false;
-		const auto& Record = It->Value;
-
-		if (Record.State == EComponentState::Deleted)
-		{
-			if (Record.BaseState == Record.State) return false;
-
-			// Explicitly save as deleted
-			Out.Clear();
-			return true;
-		}
 		else
 		{
-			// Converting explicit components back to templated is not supported in diffs
-			n_assert_dbg(Record.State != EComponentState::Templated || Record.BaseState == EComponentState::NoBase || Record.BaseState == Record.State);
+			auto It = _IndexByEntity.find(EntityID);
+			if (!It) return false;
+			const auto& Record = It->Value;
 
-			T BaseComponent;
-			LoadBaseComponent(EntityID, Record, BaseComponent);
-
-			bool HasDiff;
-			if (Record.Index != INVALID_INDEX)
+			if (Record.State == EComponentState::Deleted)
 			{
-				const T& Component = _Data[Record.Index].first;
-				HasDiff = DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
+				if (Record.BaseState == Record.State) return false;
+
+				// Explicitly save as deleted
+				Out.Clear();
+				return true;
 			}
 			else
 			{
-				// TODO: how to handle non-copyable? Write CMetadata<T>::Move or load another copy of BaseComponent?
-				// TODO: need CMetadata<T>::IsCopyable, depends on registered members!
-				T Component;
-				DEM::Meta::CMetadata<T>::Copy(BaseComponent, Component);
+				// Converting explicit components back to templated is not supported in diffs
+				n_assert_dbg(Record.State != EComponentState::Templated || Record.BaseState == EComponentState::NoBase || Record.BaseState == Record.State);
 
-				if (Record.DiffDataSize)
+				T BaseComponent;
+				LoadBaseComponent(EntityID, Record, BaseComponent);
+
+				bool HasDiff;
+				if (Record.Index != INVALID_INDEX)
 				{
-					if constexpr (STORAGE_USE_DIFF_POOL<T>)
-						DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData, Record.DiffDataSize)), Component);
-					else
-						DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData.GetConstPtr(), Record.DiffDataSize)), Component);
+					const T& Component = _Data[Record.Index].first;
+					HasDiff = DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
+				}
+				else
+				{
+					// TODO: how to handle non-copyable? Write CMetadata<T>::Move or load another copy of BaseComponent?
+					// TODO: need CMetadata<T>::IsCopyable, depends on registered members!
+					T Component;
+					DEM::Meta::CMetadata<T>::Copy(BaseComponent, Component);
+
+					if (Record.DiffDataSize)
+					{
+						if constexpr (STORAGE_USE_DIFF_POOL<T>)
+							DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData, Record.DiffDataSize)), Component);
+						else
+							DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData.GetConstPtr(), Record.DiffDataSize)), Component);
+					}
+
+					HasDiff = DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
 				}
 
-				HasDiff = DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
+				if (HasDiff && Record.State == EComponentState::Templated)
+					Out.GetValue<Data::PParams>()->Set(CStrID("__UseTpl"), true);
+
+				return HasDiff;
 			}
-
-			if (HasDiff && Record.State == EComponentState::Templated)
-				Out.GetValue<Data::PParams>()->Set(CStrID("__UseTpl"), true);
-
-			return HasDiff;
 		}
 	}
 	//---------------------------------------------------------------------
@@ -622,93 +631,97 @@ public:
 	virtual bool LoadBase(IO::CBinaryReader& In) override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
-
+		else
+		{
 		// Erase all existing data, both base and diff
-		ClearAll();
+			ClearAll();
 
-		// Load explicitly deleted records. This prevents templated component instantiation.
-		const auto DeletedCount = In.Read<U32>();
-		for (U32 i = 0; i < DeletedCount; ++i)
-		{
-			const auto EntityIDRaw = In.Read<decltype(HEntity::Raw)>();
-			_IndexByEntity.emplace(HEntity{ EntityIDRaw },
-				CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, EComponentState::Deleted, EComponentState::Deleted });
+			// Load explicitly deleted records. This prevents templated component instantiation.
+			const auto DeletedCount = In.Read<U32>();
+			for (U32 i = 0; i < DeletedCount; ++i)
+			{
+				const auto EntityIDRaw = In.Read<decltype(HEntity::Raw)>();
+				_IndexByEntity.emplace(HEntity{ EntityIDRaw },
+					CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, EComponentState::Deleted, EComponentState::Deleted });
+			}
+
+			// We could create base components from data right here, but we will deserialize them on demand instead.
+			// NB: purely templated components are not saved in a base, they are created on template instantiation.
+			const auto IndexCount = In.Read<U32>();
+			for (U32 i = 0; i < IndexCount; ++i)
+			{
+				const auto EntityIDRaw = In.Read<decltype(HEntity::Raw)>();
+				const auto OffsetInBase = In.Read<U64>();
+				const auto ComponentState = static_cast<EComponentState>(In.Read<U8>());
+				_IndexByEntity.emplace(HEntity{ EntityIDRaw },
+					CIndexRecord{ OffsetInBase, {}, 0, INVALID_INDEX, ComponentState, ComponentState });
+			}
+
+			//???OnAdd? or when instantiated?
+
+			// Skip binary data for now. Will be accessed on demand through records' OffsetInBase.
+			auto ComponentDataSkipOffset = In.Read<U64>();
+			In.GetStream().Seek(static_cast<I64>(ComponentDataSkipOffset), IO::ESeekOrigin::Seek_Begin);
+
+			return true;
 		}
-
-		// We could create base components from data right here, but we will deserialize them on demand instead.
-		// NB: purely templated components are not saved in a base, they are created on template instantiation.
-		const auto IndexCount = In.Read<U32>();
-		for (U32 i = 0; i < IndexCount; ++i)
-		{
-			const auto EntityIDRaw = In.Read<decltype(HEntity::Raw)>();
-			const auto OffsetInBase = In.Read<U64>();
-			const auto ComponentState = static_cast<EComponentState>(In.Read<U8>());
-			_IndexByEntity.emplace(HEntity{ EntityIDRaw },
-				CIndexRecord{ OffsetInBase, {}, 0, INVALID_INDEX, ComponentState, ComponentState });
-		}
-
-		//???OnAdd? or when instantiated?
-
-		// Skip binary data for now. Will be accessed on demand through records' OffsetInBase.
-		auto ComponentDataSkipOffset = In.Read<U64>();
-		In.GetStream().Seek(static_cast<I64>(ComponentDataSkipOffset), IO::ESeekOrigin::Seek_Begin);
-
-		return true;
 	}
 	//---------------------------------------------------------------------
 
 	virtual bool LoadDiff(IO::CBinaryReader& In) override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
-
+		else
+		{
 		// Instead of cleaning all up, we only erase all diff data and unload affected components
-		ClearDiff();
+			ClearDiff();
 
-		// Remove components listed as deleted
-		HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
-		while (EntityID)
-		{
-			RemoveComponent(EntityID);
+			// Remove components listed as deleted
+			HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
+			while (EntityID)
+			{
+				RemoveComponent(EntityID);
+				EntityID = { In.Read<decltype(HEntity::Raw)>() };
+			}
+
+			// Load diff data for added and modified components
 			EntityID = { In.Read<decltype(HEntity::Raw)>() };
+			while (EntityID)
+			{
+				auto It = _IndexByEntity.find(EntityID);
+				if (It)
+				{
+					// Component could be kept loaded by ClearDiff, but now it becomes invalid and must be unloaded
+					ClearComponent(It->Value);
+				}
+				else
+				{
+					// NB: State, DiffData and DiffDataSize will be overwritten below
+					It = _IndexByEntity.emplace(EntityID,
+						CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, EComponentState::Templated, EComponentState::NoBase });
+				}
+				auto& IndexRecord = It->Value;
+
+				IndexRecord.State = static_cast<EComponentState>(In.Read<U8>()); // Explicit or Templated
+
+				In.Read(IndexRecord.DiffDataSize);
+
+				if constexpr (STORAGE_USE_DIFF_POOL<T>)
+				{
+					if (!IndexRecord.DiffData) IndexRecord.DiffData = _DiffPool.Allocate();
+					In.GetStream().Read(IndexRecord.DiffData, IndexRecord.DiffDataSize);
+				}
+				else
+				{
+					IndexRecord.DiffData.Resize(IndexRecord.DiffDataSize);
+					In.GetStream().Read(IndexRecord.DiffData.GetPtr(), IndexRecord.DiffDataSize);
+				}
+
+				EntityID = { In.Read<decltype(HEntity::Raw)>() };
+			}
+
+			return true;
 		}
-
-		// Load diff data for added and modified components
-		EntityID = { In.Read<decltype(HEntity::Raw)>() };
-		while (EntityID)
-		{
-			auto It = _IndexByEntity.find(EntityID);
-			if (It)
-			{
-				// Component could be kept loaded by ClearDiff, but now it becomes invalid and must be unloaded
-				ClearComponent(It->Value);
-			}
-			else
-			{
-				// NB: State, DiffData and DiffDataSize will be overwritten below
-				It = _IndexByEntity.emplace(EntityID,
-					CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, EComponentState::Templated, EComponentState::NoBase });
-			}
-			auto& IndexRecord = It->Value;
-
-			IndexRecord.State = static_cast<EComponentState>(In.Read<U8>()); // Explicit or Templated
-
-			In.Read(IndexRecord.DiffDataSize);
-
-			if constexpr (STORAGE_USE_DIFF_POOL<T>)
-			{
-				if (!IndexRecord.DiffData) IndexRecord.DiffData = _DiffPool.Allocate();
-				In.GetStream().Read(IndexRecord.DiffData, IndexRecord.DiffDataSize);
-			}
-			else
-			{
-				IndexRecord.DiffData.Resize(IndexRecord.DiffDataSize);
-				In.GetStream().Read(IndexRecord.DiffData.GetPtr(), IndexRecord.DiffDataSize);
-			}
-
-			EntityID = { In.Read<decltype(HEntity::Raw)>() };
-		}
-
-		return true;
 	}
 	//---------------------------------------------------------------------
 
@@ -716,135 +729,139 @@ public:
 	virtual bool SaveAll(IO::CBinaryWriter& Out) const override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
-
-		struct CRecordData
+		else
 		{
-			HEntity         EntityID;
-			size_t          BinaryDataIndex;
-			EComponentState ComponentState;
-		};
-
-		std::vector<std::pair<Data::CBufferMalloc, U64>> BinaryData;
-		std::vector<CRecordData> EntityToData;
-		std::vector<HEntity> DeletedRecords;
-		BinaryData.reserve(_IndexByEntity.size());
-		EntityToData.reserve(_IndexByEntity.size());
-		DeletedRecords.reserve(_IndexByEntity.size());
-
-		// Choose some reasonable initial size for the buffer to minimize reallocations.
-		// Max diff size is always more than max whole data size due to field IDs, so it is safe to choose it.
-		IO::CMemStream IntermediateStream(std::min<decltype(MAX_DIFF_SIZE)>(MAX_DIFF_SIZE, 512));
-		IO::CBinaryWriter Intermediate(IntermediateStream);
-
-		_IndexByEntity.ForEach([&](HEntity EntityID, const CIndexRecord& Record)
-		{
-			Intermediate.GetStream().Seek(0, IO::Seek_Begin);
-
-			// If there is nothing to write, skip entity
-			if (!WriteComponent<DEM::BinaryFormat>(Intermediate, EntityID, Record)) return; // continue
-
-			// Perform format-specific part of writing
-			if (Record.State == EComponentState::Deleted)
+			struct CRecordData
 			{
-				DeletedRecords.push_back(EntityID);
-				return; // continue
-			}
+				HEntity         EntityID;
+				size_t          BinaryDataIndex;
+				EComponentState ComponentState;
+			};
 
-			const auto SerializedSize = static_cast<UPTR>(Intermediate.GetStream().Tell());
-			if (!SerializedSize) return; // continue
+			std::vector<std::pair<Data::CBufferMalloc, U64>> BinaryData;
+			std::vector<CRecordData> EntityToData;
+			std::vector<HEntity> DeletedRecords;
+			BinaryData.reserve(_IndexByEntity.size());
+			EntityToData.reserve(_IndexByEntity.size());
+			DeletedRecords.reserve(_IndexByEntity.size());
 
-			const void* pComponentData = Intermediate.GetStream().Map();
+			// Choose some reasonable initial size for the buffer to minimize reallocations.
+			// Max diff size is always more than max whole data size due to field IDs, so it is safe to choose it.
+			IO::CMemStream IntermediateStream(std::min<decltype(MAX_DIFF_SIZE)>(MAX_DIFF_SIZE, 512));
+			IO::CBinaryWriter Intermediate(IntermediateStream);
 
-			//???TODO: use hashes for faster comparison?
-			for (size_t i = 0; i < BinaryData.size(); ++i)
-				if (!BinaryData[i].first.Compare(pComponentData, SerializedSize))
+			_IndexByEntity.ForEach([&](HEntity EntityID, const CIndexRecord& Record)
+			{
+				Intermediate.GetStream().Seek(0, IO::Seek_Begin);
+
+				// If there is nothing to write, skip entity
+				if (!WriteComponent<DEM::BinaryFormat>(Intermediate, EntityID, Record)) return; // continue
+
+				// Perform format-specific part of writing
+				if (Record.State == EComponentState::Deleted)
 				{
-					EntityToData.push_back({ EntityID, i, Record.State });
-					return;
+					DeletedRecords.push_back(EntityID);
+					return; // continue
 				}
 
-			Data::CBufferMalloc NewBuffer(SerializedSize);
-			std::memcpy(NewBuffer.GetPtr(), pComponentData, SerializedSize);
-			BinaryData.emplace_back(std::move(NewBuffer), 0);
+				const auto SerializedSize = static_cast<UPTR>(Intermediate.GetStream().Tell());
+				if (!SerializedSize) return; // continue
 
-			EntityToData.push_back({ EntityID, BinaryData.size() - 1, Record.State });
-		});
+				const void* pComponentData = Intermediate.GetStream().Map();
 
-		// Save explicitly deleted components
-		Out.Write(static_cast<U32>(DeletedRecords.size()));
-		for (const auto& EntityID : DeletedRecords)
-			Out.Write(EntityID.Raw);
+				//???TODO: use hashes for faster comparison?
+				for (size_t i = 0; i < BinaryData.size(); ++i)
+					if (!BinaryData[i].first.Compare(pComponentData, SerializedSize))
+					{
+						EntityToData.push_back({ EntityID, i, Record.State });
+						return;
+					}
 
-		// Build EntityID -> component data offset index table for template-overriding components and template diffs.
-		// Base offset of component data is current offset plus size of indexing table, written just below.
-		U64 ComponentDataOffset = Out.GetStream().Tell() +
-			sizeof(U32) + // Index table size
-			static_cast<U64>(EntityToData.size()) * (sizeof(decltype(HEntity::Raw)) + sizeof(U64) + sizeof(U8)) + // Index records
-			sizeof(U64); // Resulting ComponentDataOffset for skip
+				Data::CBufferMalloc NewBuffer(SerializedSize);
+				std::memcpy(NewBuffer.GetPtr(), pComponentData, SerializedSize);
+				BinaryData.emplace_back(std::move(NewBuffer), 0);
 
-		// Precalculate offsets per binary data record
-		for (auto& [Buffer, Offset] : BinaryData)
-		{
-			Offset = ComponentDataOffset;
-			ComponentDataOffset += Buffer.GetSize();
+				EntityToData.push_back({ EntityID, BinaryData.size() - 1, Record.State });
+			});
+
+			// Save explicitly deleted components
+			Out.Write(static_cast<U32>(DeletedRecords.size()));
+			for (const auto& EntityID : DeletedRecords)
+				Out.Write(EntityID.Raw);
+
+			// Build EntityID -> component data offset index table for template-overriding components and template diffs.
+			// Base offset of component data is current offset plus size of indexing table, written just below.
+			U64 ComponentDataOffset = Out.GetStream().Tell() +
+				sizeof(U32) + // Index table size
+				static_cast<U64>(EntityToData.size()) * (sizeof(decltype(HEntity::Raw)) + sizeof(U64) + sizeof(U8)) + // Index records
+				sizeof(U64); // Resulting ComponentDataOffset for skip
+
+			// Precalculate offsets per binary data record
+			for (auto& [Buffer, Offset] : BinaryData)
+			{
+				Offset = ComponentDataOffset;
+				ComponentDataOffset += Buffer.GetSize();
+			}
+
+			// Save index table
+			Out.Write(static_cast<U32>(EntityToData.size()));
+			for (const auto& Record : EntityToData)
+			{
+				Out.Write(Record.EntityID.Raw);
+				Out.Write(BinaryData[Record.BinaryDataIndex].second);
+				Out.Write(static_cast<U8>(Record.ComponentState));
+			}
+
+			// Save component data skip offset
+			Out.Write(ComponentDataOffset);
+
+			// Store component data
+			for (const auto& [Buffer, Offset] : BinaryData)
+			{
+				// Ensure our calculations are correct
+				n_assert_dbg(Out.GetStream().Tell() == Offset);
+				Out.GetStream().Write(Buffer.GetConstPtr(), Buffer.GetSize());
+			}
+
+			return true;
 		}
-
-		// Save index table
-		Out.Write(static_cast<U32>(EntityToData.size()));
-		for (const auto& Record : EntityToData)
-		{
-			Out.Write(Record.EntityID.Raw);
-			Out.Write(BinaryData[Record.BinaryDataIndex].second);
-			Out.Write(static_cast<U8>(Record.ComponentState));
-		}
-
-		// Save component data skip offset
-		Out.Write(ComponentDataOffset);
-
-		// Store component data
-		for (const auto& [Buffer, Offset] : BinaryData)
-		{
-			// Ensure our calculations are correct
-			n_assert_dbg(Out.GetStream().Tell() == Offset);
-			Out.GetStream().Write(Buffer.GetConstPtr(), Buffer.GetSize());
-		}
-
-		return true;
 	}
 	//---------------------------------------------------------------------
 
 	virtual bool SaveDiff(IO::CBinaryWriter& Out) override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
-
+		else
+		{
 		// Save the list of deleted components
 
-		_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
-		{
-			if (Record.BaseState != Record.State && Record.State == EComponentState::Deleted)
-				Out.Write(EntityID.Raw);
-		});
-
-		Out << CEntityStorage::INVALID_HANDLE_VALUE;
-
-		// Save diff data of added and modified components
-
-		_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
-		{
-			// Converting explicit components back to templated is not supported in diffs
-			n_assert_dbg(Record.State != EComponentState::Templated || Record.BaseState == EComponentState::NoBase || Record.BaseState == Record.State);
-
-			// State can be equal to BaseState, but some fields may change
-			if (Record.State != EComponentState::Deleted)
+			_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
 			{
-				if (Record.Index != INVALID_INDEX) SaveComponent(Record);
-				WriteComponentDiff(Out, EntityID, Record);
-			}
-		});
+				if (Record.BaseState != Record.State && Record.State == EComponentState::Deleted)
+					Out.Write(EntityID.Raw);
+			});
 
-		Out << CEntityStorage::INVALID_HANDLE_VALUE;
+			Out << CEntityStorage::INVALID_HANDLE_VALUE;
 
-		return true;
+			// Save diff data of added and modified components
+
+			_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
+			{
+				// Converting explicit components back to templated is not supported in diffs
+				n_assert_dbg(Record.State != EComponentState::Templated || Record.BaseState == EComponentState::NoBase || Record.BaseState == Record.State);
+
+				// State can be equal to BaseState, but some fields may change
+				if (Record.State != EComponentState::Deleted)
+				{
+					if (Record.Index != INVALID_INDEX) SaveComponent(Record);
+					WriteComponentDiff(Out, EntityID, Record);
+				}
+			});
+
+			Out << CEntityStorage::INVALID_HANDLE_VALUE;
+
+			return true;
+		}
 	}
 	//---------------------------------------------------------------------
 

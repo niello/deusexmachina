@@ -72,6 +72,8 @@ void CBlendSpace1D::Update(CAnimationUpdateContext& Context, float dt)
 		}
 	}
 
+	//???!!!FIXME: sort by weight descending, like in blend 2D? Locomotion leader must be the first updated animation with locomotion data!
+
 	// Update sample playback cursors
 
 	// TODO: playback rate must be correctly calculated for blend spaces (see CRY and UE4?)

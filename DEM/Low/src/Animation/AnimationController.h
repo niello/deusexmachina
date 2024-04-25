@@ -13,6 +13,11 @@ namespace Resources
 	class CResourceManager;
 }
 
+namespace DEM::Events
+{
+	class IEventOutput;
+}
+
 namespace DEM::Anim
 {
 using PAnimationController = std::unique_ptr<class CAnimationController>;
@@ -44,6 +49,7 @@ struct CAnimationUpdateContext
 {
 	CAnimationController& Controller;
 	const CSkeleton&      Target;
+	Events::IEventOutput* pEventOutput = nullptr;
 
 	// TODO: map CStrID -> values, per named sync group?
 	//float NormalizedTime = 0.f;
@@ -93,7 +99,7 @@ public:
 	~CAnimationController();
 
 	void   Init(PAnimGraphNode&& GraphRoot, Resources::CResourceManager& ResMgr, CStrID LeftFootID = {}, CStrID RightFootID = {}, std::map<CStrID, float>&& Floats = {}, std::map<CStrID, int>&& Ints = {}, std::map<CStrID, bool>&& Bools = {}, std::map<CStrID, CStrID>&& Strings = {}, const std::map<CStrID, CStrID>& AssetOverrides = {});
-	void   Update(const CSkeleton& Target, float dt);
+	void   Update(const CSkeleton& Target, float dt, Events::IEventOutput* pEventOutput);
 	void   EvaluatePose(CSkeleton& Target);
 
 	bool   FindParam(CStrID ID, EParamType* pOutType = nullptr, UPTR* pOutIndex = nullptr) const;
