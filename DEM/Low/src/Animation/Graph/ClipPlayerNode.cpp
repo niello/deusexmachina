@@ -114,8 +114,8 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 	if (Context.pEventOutput && _EventClip)
 	{
 		//!!!FIXME: wrapping, playing first frame event (start time inclusive)!
-		//NOT_IMPLEMENTED;
-		_EventClip->PlayInterval(PrevClipTime, _CurrClipTime, false, *Context.pEventOutput);
+		bool IncludeStartTime = false;
+		_EventClip->PlayInterval(PrevClipTime, _CurrClipTime, *Context.pEventOutput, IncludeStartTime);
 	}
 }
 //---------------------------------------------------------------------

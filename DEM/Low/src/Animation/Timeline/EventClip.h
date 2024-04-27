@@ -30,7 +30,7 @@ protected:
 public:
 
 	void AddEvent(float Time, CStrID ID, Data::CData Data = {});
-	void PlayInterval(float PrevTime, float CurrTime, bool IsLast, Events::IEventOutput& Output);
+	void PlayInterval(float PrevTime, float CurrTime, Events::IEventOutput& Output, bool IncludeStartTime = false);
 };
 
 }
