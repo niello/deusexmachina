@@ -1,5 +1,5 @@
 #pragma once
-//#include <Events/EventBase.h>
+#include <Events/EventOutputBuffer.h>
 //#include <Data/Metadata.h>
 //#include <deque>
 
@@ -8,13 +8,12 @@
 namespace DEM::Game
 {
 
-class CEventsComponent
+struct CEventsComponent
 {
-	// TODO:
-	// - IEventOutput impl (event list?)
-	// - Signal or event dispatcher
+	Events::CEventOutputBuffer Buffer;
 
-	int TMP = 0;
+	// TODO:
+	// - Signal or event dispatcher
 };
 
 }

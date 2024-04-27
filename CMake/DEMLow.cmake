@@ -109,6 +109,8 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Events/EventID.h
 	DEM/Low/src/Events/EventNative.h
 	DEM/Low/src/Events/EventOutput.h
+	DEM/Low/src/Events/EventOutputBuffer.h
+	DEM/Low/src/Events/EventOutputDispatcher.h
 	DEM/Low/src/Events/EventServer.h
 	DEM/Low/src/Events/EventsFwd.h
 	DEM/Low/src/Events/Signal.h
