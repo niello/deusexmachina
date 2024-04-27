@@ -11,9 +11,7 @@ namespace DEM::Game
 struct CEventsComponent
 {
 	Events::CEventOutputBuffer Buffer;
-
-	// TODO:
-	// - Signal or event dispatcher
+	Events::CSignal<void(DEM::Game::HEntity, CStrID, const Data::CParams*, float TimeOffset)> OnEvent;
 };
 
 }

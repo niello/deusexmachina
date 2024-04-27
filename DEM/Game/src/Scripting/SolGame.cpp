@@ -2,6 +2,7 @@
 #include "SolGame.h"
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
+#include <Game/ECS/Components/EventsComponent.h>
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/Interaction/ScriptedAbility.h>
 #include <Animation/AnimationComponent.h>
@@ -119,6 +120,13 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 			}
 			return DEM::Game::HAction{};
 		}
+	);
+
+	// For CEventsComponent
+	DEM::Scripting::RegisterSignalType<void(DEM::Game::HEntity, CStrID, const Data::CParams*, float)>(State);
+
+	State.new_usertype<DEM::Game::CEventsComponent>("CEventsComponent"
+		, "OnEvent", &DEM::Game::CEventsComponent::OnEvent
 	);
 }
 //---------------------------------------------------------------------

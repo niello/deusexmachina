@@ -4,6 +4,7 @@
 #include <Game/Interaction/AbilityInstance.h>
 #include <Game/Interaction/Zone.h>
 #include <Game/ECS/GameWorld.h>
+#include <Game/ECS/Components/EventsComponent.h>
 #include <Character/StatsComponent.h>
 #include <Character/SkillsComponent.h>
 #include <Combat/DestructibleComponent.h>
@@ -145,6 +146,17 @@ void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance
 
 		pAnimComponent->Controller.SetString(sidAction, sidAttack);
 		pAnimComponent->Controller.SetInt(sidWeaponHands, Hands);
+
+		//!!!DBG TMP! Need to remember subscription!
+		//???fallback to animation end event? if no Hit is fired during an iteration.
+		if (auto pEvents = pWorld->FindComponent<Game::CEventsComponent>(Instance.Actor))
+		{
+			pEvents->OnEvent.SubscribeAndForget([](DEM::Game::HEntity EntityID, CStrID ID, const Data::CParams* pParams, float TimeOffset)
+			{
+				if (ID == "Hit")
+					::Sys::DbgOut("***DBG Hit\n");
+			});
+		}
 	}
 }
 //---------------------------------------------------------------------

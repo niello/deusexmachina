@@ -396,20 +396,23 @@ public:
 		else
 		{
 			// Slower fallback through serialization
-
-			// Choose some reasonable initial size for the buffer to minimize reallocations.
-			// Max diff size is always more than max whole data size due to field IDs, so it is safe to choose it.
-			IO::CMemStream Stream(std::min<decltype(MAX_DIFF_SIZE)>(MAX_DIFF_SIZE, 512));
-			if (WriteComponent<DEM::BinaryFormat>(IO::CBinaryWriter(Stream), SrcEntityID, It->Value))
+			if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return true;
+			else
 			{
-				DEM::BinaryFormat::Deserialize(IO::CBinaryReader(Stream), *pDst);
-				return true;
-			}
+				// Choose some reasonable initial size for the buffer to minimize reallocations.
+				// Max diff size is always more than max whole data size due to field IDs, so it is safe to choose it.
+				IO::CMemStream Stream(std::min<decltype(MAX_DIFF_SIZE)>(MAX_DIFF_SIZE, 512));
+				if (WriteComponent<DEM::BinaryFormat>(IO::CBinaryWriter(Stream), SrcEntityID, It->Value))
+				{
+					DEM::BinaryFormat::Deserialize(IO::CBinaryReader(Stream), *pDst);
+					return true;
+				}
 
-			// We failed, revert changes
-			// TODO: may do serialization trial before adding dest entity but code will be less clean
-			RemoveComponent(DestEntityID);
-			return false;
+				// We failed, revert changes
+				// TODO: may do serialization trial before adding dest entity but code will be less clean
+				RemoveComponent(DestEntityID);
+				return false;
+			}
 		}
 	}
 	//---------------------------------------------------------------------
@@ -505,44 +508,44 @@ public:
 
 	virtual bool AddFromParams(HEntity EntityID, const Data::CData& In) override
 	{
-		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
+		if (!In.IsA<Data::PParams>()) return false;
+
+		// Distinguish templated components from explicit
+		const bool Templated = In.GetValue<Data::PParams>()->Get(CStrID("__UseTpl"), false);
+		const auto State = Templated ? EComponentState::Templated : EComponentState::Explicit;
+
+		// Add a record. Will replace existing one.
+		auto It = _IndexByEntity.find(EntityID);
+		if (It)
+		{
+			It->Value.State = State;
+		}
 		else
 		{
-			if (!In.IsA<Data::PParams>()) return false;
+			It = _IndexByEntity.emplace(EntityID,
+				CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, State, EComponentState::NoBase });
+		}
 
-			// Distinguish templated components from explicit
-			const bool Templated = In.GetValue<Data::PParams>()->Get(CStrID("__UseTpl"), false);
-			const auto State = Templated ? EComponentState::Templated : EComponentState::Explicit;
+		T Component;
 
-			// Add a record. Will replace existing one.
-			auto It = _IndexByEntity.find(EntityID);
-			if (It)
-			{
-				It->Value.State = State;
-			}
-			else
-			{
-				It = _IndexByEntity.emplace(EntityID,
-					CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, State, EComponentState::NoBase });
-			}
-
+		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
+		{
 			// Params format isn't supported as an intermediate storage, so we must create a component immediately.
 			// NB: Component must be default-created for LoadBaseComponent to work correctly.
-			T Component;
 			LoadBaseComponent(EntityID, It->Value, Component);
 			DEM::ParamsFormat::DeserializeDiff(In, Component);
-
-			if (It->Value.Index != INVALID_INDEX)
-				_Data[It->Value.Index].first = std::move(Component);
-			else
-				It->Value.Index = _Data.emplace(std::move(Component), EntityID);
-
-			It->Value.DiffDirty = true;
-
-			if constexpr (Signals) OnAdd(EntityID, &_Data[It->Value.Index].first);
-
-			return true;
 		}
+
+		if (It->Value.Index != INVALID_INDEX)
+			_Data[It->Value.Index].first = std::move(Component);
+		else
+			It->Value.Index = _Data.emplace(std::move(Component), EntityID);
+
+		It->Value.DiffDirty = true;
+
+		if constexpr (Signals) OnAdd(EntityID, &_Data[It->Value.Index].first);
+
+		return true;
 	}
 	//---------------------------------------------------------------------
 

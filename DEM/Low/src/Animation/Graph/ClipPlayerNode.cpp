@@ -3,20 +3,25 @@
 #include <Animation/AnimationClip.h>
 #include <Animation/SkeletonInfo.h>
 #include <Animation/MappedPoseOutput.h>
+#include <Animation/Timeline/EventClip.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 
 namespace DEM::Anim
 {
 
-CClipPlayerNode::CClipPlayerNode(CStrID ClipID, bool Loop, float Speed, float StartTime, bool ResetOnActivate)
+CClipPlayerNode::CClipPlayerNode(CStrID ClipID, bool Loop, float Speed, float StartTime, bool ResetOnActivate, PEventClip&& EventClip)
 	: _ClipID(ClipID)
 	, _StartTime(StartTime)
 	, _Speed(Speed)
 	, _Loop(Loop)
 	, _ResetOnActivate(ResetOnActivate)
+	, _EventClip(std::move(EventClip))
 {
 }
+//---------------------------------------------------------------------
+
+CClipPlayerNode::~CClipPlayerNode() = default;
 //---------------------------------------------------------------------
 
 void CClipPlayerNode::ResetTime()
@@ -60,6 +65,8 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 	if (_ResetOnActivate && WasInactive) ResetTime();
 	_LastUpdateIndex = CurrUpdateIndex;
 
+	const float PrevClipTime = _CurrClipTime;
+
 	if (pClip->GetLocomotionInfo())
 	{
 		if (Context.LocomotionPhase < 0.f && WasInactive)
@@ -102,6 +109,13 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 
 		//::Sys::DbgOut("***CClipPlayerNode: no sync, time %lf (rel %lf), clip %s\n", _CurrClipTime,
 		//	_CurrClipTime / pClip->GetDuration(), _ClipID.CStr());
+	}
+
+	if (Context.pEventOutput && _EventClip)
+	{
+		//!!!FIXME: wrapping, playing first frame event (start time inclusive)!
+		//NOT_IMPLEMENTED;
+		_EventClip->PlayInterval(PrevClipTime, _CurrClipTime, false, *Context.pEventOutput);
 	}
 }
 //---------------------------------------------------------------------
