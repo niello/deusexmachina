@@ -42,7 +42,7 @@ static void CallStateChangeScript(sol::function& Script, HEntity EntityID, CStrI
 }
 //---------------------------------------------------------------------
 
-static void ChangeState(CGameWorld& World, CGameSession& Session, HEntity EntityID, CSmartObjectComponent& Component, CStrID PrevState, const CSmartObjectStateInfo& State, const Anim::CTimelineTask* pPrevTask = nullptr)
+static void ChangeState(CGameWorld& World, CGameSession& Session, HEntity EntityID, CSmartObjectComponent& Component, CStrID PrevState, const CSmartObjectStateInfo& State, const Anim::CTimelineTask* pPrevTask, bool ResetVisuals)
 {
 	Component.CurrState = State.ID;
 
@@ -54,7 +54,7 @@ static void ChangeState(CGameWorld& World, CGameSession& Session, HEntity Entity
 	{
 		RunTimelineTask(World, EntityID, Component.Player, State.TimelineTask, pPrevTask);
 	}
-	else
+	else if (ResetVisuals)
 	{
 		// Try to set visual state from any transition connected to this state
 		const Anim::CTimelineTask* pTask = nullptr;
@@ -222,7 +222,7 @@ void ProcessStateChangeRequest(CGameWorld& World, CGameSession& Session, HEntity
 
 	// Force-set requested state
 	if (SOComponent.Force && FromState != RequestedState)
-		ChangeState(World, Session, EntityID, SOComponent, FromState, *pRequestedState, pPrevTask);
+		ChangeState(World, Session, EntityID, SOComponent, FromState, *pRequestedState, pPrevTask, true);
 }
 //---------------------------------------------------------------------
 
@@ -261,7 +261,7 @@ void UpdateSmartObjects(CGameWorld& World, CGameSession& Session, float dt)
 						pPrevTask = &pTransitionCN->TimelineTask;
 
 					// End transition, enter the destination state
-					ChangeState(World, Session, EntityID, SOComponent, SOComponent.CurrState, *pState, pPrevTask);
+					ChangeState(World, Session, EntityID, SOComponent, SOComponent.CurrState, *pState, pPrevTask, false);
 				}
 				else
 				{
@@ -308,7 +308,7 @@ void InitSmartObjects(CGameWorld& World, CGameSession& Session, Resources::CReso
 			// Force set initial state. Can be distunguished by empty previous state ID.
 			const CStrID InitialState = SOComponent.CurrState ? SOComponent.CurrState : pSmart->GetDefaultState();
 			if (auto pState = pSmart->FindState(InitialState))
-				ChangeState(World, Session, EntityID, SOComponent, CStrID::Empty, *pState);
+				ChangeState(World, Session, EntityID, SOComponent, CStrID::Empty, *pState, nullptr, true);
 		}
 	});
 }

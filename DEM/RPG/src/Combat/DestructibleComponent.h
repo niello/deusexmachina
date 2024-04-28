@@ -13,6 +13,9 @@ struct CDestructibleComponent
 	CModifiableParameter<int>               HP = 0;
 	CModifiableParameter<CDamageAbsorption> DamageAbsorption;
 
+	Events::CSignal<void(int)> OnHit;
+	Events::CSignal<void()>    OnDestroyed;
+
 	// TODO: resistances and immunities. here or in a separate component with hit zones?
 
 	//!!!FIXME: need something like SerializeAs<CDamageAbsorption>! Transparent conversion from and to the serializable type. Or provide explicit methods for get and set.

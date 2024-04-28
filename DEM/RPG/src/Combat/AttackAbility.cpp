@@ -155,14 +155,33 @@ void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance
 		pAnimComponent->Controller.SetString(sidAction, sidAttack);
 		pAnimComponent->Controller.SetInt(sidWeaponHands, Hands);
 
-		//!!!DBG TMP! Need to remember subscription!
-		//???fallback to animation end event? if no Hit is fired during an iteration.
 		if (auto pEvents = pWorld->FindComponent<Game::CEventsComponent>(Instance.Actor))
 		{
-			AttackInstance.HitConn = pEvents->OnEvent.Subscribe([&AttackInstance](DEM::Game::HEntity EntityID, CStrID ID, const Data::CParams* pParams, float TimeOffset)
+			//???fallback to animation end event if no Hit is fired during an iteration?
+			AttackInstance.HitConn = pEvents->OnEvent.Subscribe([&AttackInstance, pWorld](DEM::Game::HEntity EntityID, CStrID ID, const Data::CParams* pParams, float TimeOffset)
 			{
 				if (ID == "Hit")
-					::Sys::DbgOut(("***DBG Hit: " + Game::EntityToString(AttackInstance.Actor) + " hits " + Game::EntityToString(AttackInstance.Targets[0].Entity) + "\n").c_str());
+				{
+					const auto TargetID = AttackInstance.Targets[0].Entity;
+					if (auto pDestructible = pWorld->FindComponent<CDestructibleComponent>(TargetID))
+					{
+						const auto Dmg = Math::RandomU32(1, 6);
+						if (pDestructible->HP.GetFinalValue() > 0)
+						{
+							auto HP = pDestructible->GetHP();
+							HP -= Dmg;
+							pDestructible->SetHP(HP);
+							pDestructible->OnHit(Dmg);
+
+							//!!!DBG TMP!
+							::Sys::DbgOut(("***DBG Hit: " + Game::EntityToString(AttackInstance.Actor) + " hits " + Game::EntityToString(TargetID) +
+								" (" + std::to_string(pDestructible->HP.GetFinalValue()) + " HP) " +
+								" for " + std::to_string(Dmg) + " HP\n").c_str());
+
+							if (pDestructible->HP.GetFinalValue() <= 0) pDestructible->OnDestroyed();
+						}
+					}
+				}
 			});
 		}
 	}
