@@ -1,14 +1,28 @@
 #pragma once
 #include <Game/Interaction/Ability.h>
 #include <Game/Interaction/AbilityInstance.h>
+#include <Events/Signal.h>
 
 // Attack a destructible object with the current attack (weapon, natural or some other)
 
 namespace DEM::RPG
 {
 
+class CAttackAbilityInstance : public Game::CAbilityInstance
+{
+public:
+
+	Events::CConnection HitConn;
+
+	using CAbilityInstance::CAbilityInstance;
+};
+
 class CAttackAbility : public Game::CAbility
 {
+protected:
+
+	virtual Game::PAbilityInstance CreateInstance(const Game::CInteractionContext& Context) const override;
+
 public:
 
 	CAttackAbility(std::string_view CursorImage = {});

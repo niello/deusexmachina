@@ -31,6 +31,12 @@ CAttackAbility::CAttackAbility(std::string_view CursorImage)
 }
 //---------------------------------------------------------------------
 
+Game::PAbilityInstance CAttackAbility::CreateInstance(const Game::CInteractionContext& Context) const
+{
+	return Game::PAbilityInstance(n_new(CAttackAbilityInstance(*this)));
+}
+//---------------------------------------------------------------------
+
 bool CAttackAbility::IsAvailable(const Game::CGameSession& Session, const Game::CInteractionContext& Context) const
 {
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
@@ -129,6 +135,8 @@ void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return;
 
+	auto& AttackInstance = static_cast<CAttackAbilityInstance&>(Instance);
+
 	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
 	{
 		int Hands = 1;
@@ -151,10 +159,10 @@ void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance
 		//???fallback to animation end event? if no Hit is fired during an iteration.
 		if (auto pEvents = pWorld->FindComponent<Game::CEventsComponent>(Instance.Actor))
 		{
-			pEvents->OnEvent.SubscribeAndForget([](DEM::Game::HEntity EntityID, CStrID ID, const Data::CParams* pParams, float TimeOffset)
+			AttackInstance.HitConn = pEvents->OnEvent.Subscribe([&AttackInstance](DEM::Game::HEntity EntityID, CStrID ID, const Data::CParams* pParams, float TimeOffset)
 			{
 				if (ID == "Hit")
-					::Sys::DbgOut("***DBG Hit\n");
+					::Sys::DbgOut(("***DBG Hit: " + Game::EntityToString(AttackInstance.Actor) + " hits " + Game::EntityToString(AttackInstance.Targets[0].Entity) + "\n").c_str());
 			});
 		}
 	}
@@ -177,10 +185,15 @@ void CAttackAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& 
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return;
 
+	auto& AttackInstance = static_cast<CAttackAbilityInstance&>(Instance);
+
 	// TODO: restore sheathed state of items? Or switch an actor into cooling down state, so it will become peaceful after timeout and sheathe weapons?
 
 	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
+	{
 		pAnimComponent->Controller.SetString(sidAction, CStrID::Empty);
+		AttackInstance.HitConn.Disconnect();
+	}
 }
 //---------------------------------------------------------------------
 
