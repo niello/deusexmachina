@@ -139,12 +139,14 @@ void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance
 
 	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
 	{
+		// Find weapon
+		const CWeaponComponent* pWeaponComponent = nullptr;
 		int Hands = 1;
 		if (auto pEquipment = pWorld->FindComponent<const CEquipmentComponent>(Instance.Actor))
 		{
 			for (size_t HandIdx = 0; HandIdx < pEquipment->Scheme->HandCount; ++HandIdx)
 			{
-				if (auto pWeaponComponent = FindItemComponent<const CWeaponComponent>(*pWorld, pEquipment->Hands[HandIdx].ItemStackID))
+				if (pWeaponComponent = FindItemComponent<const CWeaponComponent>(*pWorld, pEquipment->Hands[HandIdx].ItemStackID))
 				{
 					if (pWeaponComponent->Big) Hands = 2;
 					break;
@@ -152,31 +154,53 @@ void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance
 			}
 		}
 
+		// Setup character animation
 		pAnimComponent->Controller.SetString(sidAction, sidAttack);
 		pAnimComponent->Controller.SetInt(sidWeaponHands, Hands);
 
+		// Calculate damage
+		//!!!DBG TMP!
+		EDamageType DamageType;
+		int Damage = 0;
+		if (pWeaponComponent)
+		{
+			DamageType = pWeaponComponent->Damage.Type;
+			for (uint8_t i = 0; i < pWeaponComponent->Damage.x; ++i)
+				Damage += Math::RandomU32(1, pWeaponComponent->Damage.y);
+			Damage += pWeaponComponent->Damage.z;
+		}
+		else
+		{
+			// From bare hands
+			DamageType = EDamageType::Bludgeoning;
+			Damage = Math::RandomU32(1, 2);
+		}
+
+		// Subscribe on Hit event to inflict damage
 		if (auto pEvents = pWorld->FindComponent<Game::CEventsComponent>(Instance.Actor))
 		{
 			//???fallback to animation end event if no Hit is fired during an iteration?
-			AttackInstance.HitConn = pEvents->OnEvent.Subscribe([&AttackInstance, pWorld](DEM::Game::HEntity EntityID, CStrID ID, const Data::CParams* pParams, float TimeOffset)
+			AttackInstance.HitConn = pEvents->OnEvent.Subscribe(
+				[&AttackInstance, pWorld, DamageType, Damage](DEM::Game::HEntity EntityID, CStrID ID, const Data::CParams* pParams, float TimeOffset)
 			{
 				if (ID == "Hit")
 				{
 					const auto TargetID = AttackInstance.Targets[0].Entity;
 					if (auto pDestructible = pWorld->FindComponent<CDestructibleComponent>(TargetID))
 					{
-						const auto Dmg = Math::RandomU32(1, 6);
 						if (pDestructible->HP.GetFinalValue() > 0)
 						{
 							auto HP = pDestructible->GetHP();
-							HP -= Dmg;
+							HP -= Damage;
 							pDestructible->SetHP(HP);
-							pDestructible->OnHit(Dmg);
+							pDestructible->OnHit(Damage);
 
 							//!!!DBG TMP!
+							Data::CData DmgTypeStr;
+							DEM::ParamsFormat::Serialize(DmgTypeStr, DamageType);
 							::Sys::DbgOut(("***DBG Hit: " + Game::EntityToString(AttackInstance.Actor) + " hits " + Game::EntityToString(TargetID) +
 								" (" + std::to_string(pDestructible->HP.GetFinalValue()) + " HP) " +
-								" for " + std::to_string(Dmg) + " HP\n").c_str());
+								" for " + std::to_string(Damage) + " HP (" + DmgTypeStr.GetValue<CString>().CStr() + ")\n").c_str());
 
 							if (pDestructible->HP.GetFinalValue() <= 0) pDestructible->OnDestroyed();
 						}
