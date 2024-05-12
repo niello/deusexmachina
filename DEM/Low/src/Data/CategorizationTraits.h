@@ -1,6 +1,8 @@
 #pragma once
 #include <unordered_set>
 #include <map>
+#include <set>
+#include <unordered_map>
 #include <type_traits>
 
 // Helpers for compile-time type categorization

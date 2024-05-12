@@ -26,41 +26,6 @@ struct CWeaponComponent
 
 }
 
-namespace DEM::Serialization
-{
-
-//!!!FIXME: need generic serialization for all enums!
-template<>
-struct ParamsFormat<DEM::RPG::EDamageType>
-{
-	static inline void Serialize(Data::CData& Output, DEM::RPG::EDamageType Value)
-	{
-		switch (Value)
-		{
-			case DEM::RPG::EDamageType::Piercing: Output = CString("Piercing"); return;
-			case DEM::RPG::EDamageType::Slashing: Output = CString("Slashing"); return;
-			case DEM::RPG::EDamageType::Bludgeoning: Output = CString("Bludgeoning"); return;
-			case DEM::RPG::EDamageType::Energetic: Output = CString("Energetic"); return;
-			case DEM::RPG::EDamageType::Chemical: Output = CString("Chemical"); return;
-			default: Output = {}; return;
-		}
-	}
-
-	static inline void Deserialize(const Data::CData& Input, DEM::RPG::EDamageType& Value)
-	{
-		if (!Input.IsA<CString>()) return;
-
-		const std::string_view TypeStr = Input.GetValue<CString>().CStr();
-		if (TypeStr == "Piercing") Value = DEM::RPG::EDamageType::Piercing;
-		else if (TypeStr == "Slashing") Value = DEM::RPG::EDamageType::Slashing;
-		else if (TypeStr == "Bludgeoning") Value = DEM::RPG::EDamageType::Bludgeoning;
-		else if (TypeStr == "Energetic") Value = DEM::RPG::EDamageType::Energetic;
-		else if (TypeStr == "Chemical") Value = DEM::RPG::EDamageType::Chemical;
-	}
-};
-
-}
-
 namespace DEM::Meta
 {
 

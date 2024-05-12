@@ -9,6 +9,7 @@
 #include <Character/SkillsComponent.h>
 #include <Combat/DestructibleComponent.h>
 #include <Combat/WeaponComponent.h>
+#include <Combat/CombatUtils.h>
 #include <Items/EquipmentComponent.h>
 #include <Items/ItemUtils.h>
 #include <Math/Math.h>
@@ -184,28 +185,7 @@ void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance
 				[&AttackInstance, pWorld, DamageType, Damage](DEM::Game::HEntity EntityID, CStrID ID, const Data::CParams* pParams, float TimeOffset)
 			{
 				if (ID == "Hit")
-				{
-					const auto TargetID = AttackInstance.Targets[0].Entity;
-					if (auto pDestructible = pWorld->FindComponent<CDestructibleComponent>(TargetID))
-					{
-						if (pDestructible->HP.GetFinalValue() > 0)
-						{
-							auto HP = pDestructible->GetHP();
-							HP -= Damage;
-							pDestructible->SetHP(HP);
-							pDestructible->OnHit(Damage);
-
-							//!!!DBG TMP!
-							Data::CData DmgTypeStr;
-							DEM::ParamsFormat::Serialize(DmgTypeStr, DamageType);
-							::Sys::DbgOut(("***DBG Hit: " + Game::EntityToString(AttackInstance.Actor) + " hits " + Game::EntityToString(TargetID) +
-								" (" + std::to_string(pDestructible->HP.GetFinalValue()) + " HP) " +
-								" for " + std::to_string(Damage) + " HP (" + DmgTypeStr.GetValue<CString>().CStr() + ")\n").c_str());
-
-							if (pDestructible->HP.GetFinalValue() <= 0) pDestructible->OnDestroyed();
-						}
-					}
-				}
+					InflictDamage(*pWorld, AttackInstance.Targets[0].Entity, CStrID::Empty, Damage, DamageType, AttackInstance.Actor);
 			});
 		}
 	}
