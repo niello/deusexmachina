@@ -10,7 +10,7 @@ void InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Locat
 	auto pDestructible = World.FindComponent<CDestructibleComponent>(TargetID);
 	if (!pDestructible || pDestructible->HP.GetFinalValue() <= 0) return;
 
-	const auto& Absorption = pDestructible->GetDamageAbsorption();
+	const auto& Absorption = pDestructible->DamageAbsorption.GetFinalValue();
 	if (!Absorption.empty())
 	{
 		const auto It = Location ? Absorption.find(Location) : Absorption.cbegin();
