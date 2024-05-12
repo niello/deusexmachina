@@ -72,8 +72,6 @@ public:
 	PSceneNode				Clone(CSceneNode* pNewParent = nullptr, bool CloneChildren = true);
 	void					RemoveFromParent() { if (pParent) pParent->RemoveChild(*this); }
 
-	bool                    Visit(const std::function<bool(CSceneNode& Node)>& Visitor);
-
 	CStrID					GetName() const { return Name; }
 
 	CSceneNode*				CreateChild(CStrID ChildName, bool Replace = false);
@@ -121,6 +119,44 @@ public:
 	const rtm::qvvf&        GetLocalTransform() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm; }
 	const rtm::matrix3x4f&  GetWorldMatrix() const { n_assert_dbg(!IsWorldTransformDirty()); return WorldMatrix; }
 	const rtm::vector4f&	GetWorldPosition() const { n_assert_dbg(!IsWorldTransformDirty()); return WorldMatrix.w_axis; }
+
+	template<typename F>
+	bool Visit(F Visitor)
+	{
+		if constexpr (std::is_invocable_r_v<bool, F, CSceneNode&>)
+		{
+			if (!Visitor(*this)) return false;
+		}
+		else if constexpr (std::is_invocable_r_v<void, F, CSceneNode&>)
+		{
+			Visitor(*this);
+		}
+		else static_assert(false, "Callback must accept CSceneNode& and return void or bool");
+
+		for (const auto& Child : Children)
+			if (!Child->Visit(Visitor)) return false;
+
+		return true;
+	}
+
+	template<typename F>
+	bool Visit(F Visitor) const
+	{
+		if constexpr (std::is_invocable_r_v<bool, F, const CSceneNode&>)
+		{
+			if (!Visitor(*this)) return false;
+		}
+		else if constexpr (std::is_invocable_r_v<void, F, const CSceneNode&>)
+		{
+			Visitor(*this);
+		}
+		else static_assert(false, "Callback must accept const CSceneNode& and return void or bool");
+
+		for (const auto& Child : Children)
+			if (!Child->Visit(Visitor)) return false;
+
+		return true;
+	}
 };
 
 inline CSceneNode* CSceneNode::FindNodeByPath(const char* pPath) const
@@ -136,16 +172,6 @@ template<class T> inline T* CSceneNode::FindFirstAttribute() const
 	for (const auto& Attr : Attrs)
 		if (auto Casted = Attr->As<T>()) return Casted;
 	return nullptr;
-}
-//---------------------------------------------------------------------
-
-// TODO: if make templated for Callable bool(CSceneNode&), will be faster? Will passing callable to children prevent inlining?
-inline bool CSceneNode::Visit(const std::function<bool(CSceneNode& Node)>& Visitor)
-{
-	if (!Visitor(*this)) FAIL;
-	for (const auto& Child : Children)
-		if (!Child->Visit(Visitor)) FAIL;
-	OK;
 }
 //---------------------------------------------------------------------
 
