@@ -12,9 +12,12 @@ void CSelectorNodeBase::Init(CAnimationInitContext& Context)
 
 void CSelectorNodeBase::Update(CAnimationUpdateContext& Context, float dt)
 {
+	// FIXME: need to remember why was this added. This breaks inertialization blending from finished one-off animations to new selection.
+	//!!!probably this is needed in case that this node was not active at all for some time, then we need not to blend from _pCurrVariant
+	// because we aren't really in it anymore!
 	// If current subnode finished its evaluation, reset state and select the new one without limitations
-	if (_pCurrVariant && !_pCurrVariant->Node->IsActive())
-		_pCurrVariant = nullptr;
+	//if (_pCurrVariant && !_pCurrVariant->Node->IsActive())
+	//	_pCurrVariant = nullptr;
 
 	auto pNewVariant = SelectVariant(Context);
 	if (pNewVariant && !pNewVariant->Node) pNewVariant = nullptr;
