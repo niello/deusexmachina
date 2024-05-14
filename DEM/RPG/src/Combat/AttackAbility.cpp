@@ -217,25 +217,27 @@ void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance
 	InitStrike(*pWorld, AttackInstance);
 
 	// Subscribe on Hit event to inflict damage and to animation end event to switch to combat idle
-	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
+	if (auto pEvents = pWorld->FindComponent<Game::CEventsComponent>(Instance.Actor))
 	{
-		if (auto pEvents = pWorld->FindComponent<Game::CEventsComponent>(Instance.Actor))
+		AttackInstance.AnimEventConn = pEvents->OnEvent.Subscribe(
+			[&AttackInstance, pWorld](DEM::Game::HEntity EntityID, CStrID ID, const Data::CParams* pParams, float TimeOffset)
 		{
-			AttackInstance.AnimEventConn = pEvents->OnEvent.Subscribe(
-				[&AttackInstance, pWorld](DEM::Game::HEntity EntityID, CStrID ID, const Data::CParams* pParams, float TimeOffset)
+			if (ID == "Hit")
 			{
-				if (ID == "Hit")
-				{
-					ApplyDamageFromAbility(*pWorld, AttackInstance);
-				}
-				else if (ID == Anim::Event_AnimEnd)
-				{
-					ApplyDamageFromAbility(*pWorld, AttackInstance);
-					if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(AttackInstance.Actor))
-						pAnimComponent->Controller.SetString(sidAction, CStrID::Empty);
-				}
-			});
-		}
+				// Logically strike a target at the proper moment of attack animation to sync with visuals
+				ApplyDamageFromAbility(*pWorld, AttackInstance);
+			}
+			else if (ID == Anim::Event_AnimEnd)
+			{
+				//!!!FIXME: need to check what animation was finished, maybe it was e.g. hit reaction clip!
+				//???maybe should cancel strike here? then any animation will do it, but only Hit animation will inflict damage.
+				//???but what to do with attack period? Strike anim end doesn't cancel waiting, other anim restarts strike from beginning!
+				//!!!need to handle interruptions (e.g. from being hit) here, attack action must be cancelled or at least reset!
+				ApplyDamageFromAbility(*pWorld, AttackInstance);
+				if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(AttackInstance.Actor))
+					pAnimComponent->Controller.SetString(sidAction, CStrID::Empty);
+			}
+		});
 	}
 }
 //---------------------------------------------------------------------
