@@ -111,11 +111,16 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 		//	_CurrClipTime / pClip->GetDuration(), _ClipID.CStr());
 	}
 
-	if (Context.pEventOutput && _EventClip)
+	if (Context.pEventOutput)
 	{
+		if (_EventClip)
+		{
 		//!!!FIXME: wrapping, playing first frame event (start time inclusive)!
-		bool IncludeStartTime = false;
-		_EventClip->PlayInterval(PrevClipTime, _CurrClipTime, *Context.pEventOutput, IncludeStartTime);
+			bool IncludeStartTime = false;
+			_EventClip->PlayInterval(PrevClipTime, _CurrClipTime, *Context.pEventOutput, IncludeStartTime);
+		}
+
+		//!!!TODO: if PrevClipTime is not at end and _CurrClipTime is ar end, fire Event_AnimEnd! Take into account playback direction to determine what's "at end"!
 	}
 }
 //---------------------------------------------------------------------

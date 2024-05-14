@@ -20,6 +20,8 @@ struct CWeaponComponent
 {
 	//!!!DBG TMP!
 	CDamageData Damage;
+	float       Range = 1.f;   // World units (meters)
+	float       Period = 1.f;  // Seconds
 
 	bool Big = false;
 };
@@ -29,7 +31,7 @@ struct CWeaponComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CDamageData>() { return "quaternion"; }
+template<> inline constexpr auto RegisterClassName<DEM::RPG::CDamageData>() { return "DEM::RPG::CDamageData"; }
 template<> inline constexpr auto RegisterMembers<DEM::RPG::CDamageData>()
 {
 	return std::make_tuple
@@ -47,7 +49,9 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CWeaponComponent>()
 	return std::make_tuple
 	(
 		DEM_META_MEMBER_FIELD(RPG::CWeaponComponent, 1, Damage),
-		DEM_META_MEMBER_FIELD(RPG::CWeaponComponent, 2, Big)
+		DEM_META_MEMBER_FIELD(RPG::CWeaponComponent, 2, Range),
+		DEM_META_MEMBER_FIELD(RPG::CWeaponComponent, 3, Period),
+		DEM_META_MEMBER_FIELD(RPG::CWeaponComponent, 4, Big)
 	);
 }
 

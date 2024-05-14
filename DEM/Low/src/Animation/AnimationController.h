@@ -27,6 +27,7 @@ class CSkeleton;
 
 // FIXME: unify EmptyPort, InvalidPort and this!
 inline constexpr U16 INVALID_BONE_INDEX = std::numeric_limits<U16>().max();
+inline const CStrID Event_AnimEnd("SYSEVENT_AnimEnd");
 
 enum class EParamType
 {
@@ -121,6 +122,7 @@ public:
 	CStrID GetString(UPTR Index, CStrID Default = CStrID::Empty) const { return (Index == INVALID_INDEX) ? Default : _StringValues[Index]; }
 
 	float  GetLocomotionPhaseFromPose(const CSkeleton& Skeleton) const;
+	float  GetExpectedAnimationLength() const;
 	void   RequestInertialization(float Duration);
 
 	const CSkeletonInfo* GetSkeletonInfo() const { return _SkeletonInfo.Get(); }

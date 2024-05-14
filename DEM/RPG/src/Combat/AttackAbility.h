@@ -1,4 +1,5 @@
 #pragma once
+#include <Combat/Damage.h>
 #include <Game/Interaction/Ability.h>
 #include <Game/Interaction/AbilityInstance.h>
 #include <Events/Signal.h>
@@ -12,7 +13,13 @@ class CAttackAbilityInstance : public Game::CAbilityInstance
 {
 public:
 
-	Events::CConnection HitConn;
+	Events::CConnection AnimEventConn;
+
+	// Current strike
+	CStrID              Location;
+	float               StrikeEndTime = 0.f;
+	int                 Damage = 0;
+	EDamageType         DamageType = EDamageType::COUNT;
 
 	using CAbilityInstance::CAbilityInstance;
 };

@@ -281,6 +281,13 @@ float CAnimationController::GetLocomotionPhaseFromPose(const CSkeleton& Skeleton
 }
 //---------------------------------------------------------------------
 
+// Returns a duration of one playback iteration if applicable
+float CAnimationController::GetExpectedAnimationLength() const
+{
+	return _GraphRoot ? _GraphRoot->GetAnimationLengthScaled() : 0.f;
+}
+//---------------------------------------------------------------------
+
 void CAnimationController::RequestInertialization(float Duration)
 {
 	if (_InertializationRequest < 0.f || _InertializationRequest > Duration)
