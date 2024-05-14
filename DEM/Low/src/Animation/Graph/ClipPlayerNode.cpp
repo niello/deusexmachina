@@ -4,6 +4,7 @@
 #include <Animation/SkeletonInfo.h>
 #include <Animation/MappedPoseOutput.h>
 #include <Animation/Timeline/EventClip.h>
+#include <Events/EventOutput.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 
@@ -115,12 +116,18 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 	{
 		if (_EventClip)
 		{
-		//!!!FIXME: wrapping, playing first frame event (start time inclusive)!
+			//!!!TODO: handle wrapping, handle playing first frame event (IncludeStartTime=true) when just started!
 			bool IncludeStartTime = false;
 			_EventClip->PlayInterval(PrevClipTime, _CurrClipTime, *Context.pEventOutput, IncludeStartTime);
 		}
 
-		//!!!TODO: if PrevClipTime is not at end and _CurrClipTime is ar end, fire Event_AnimEnd! Take into account playback direction to determine what's "at end"!
+		// Fire automatic end event for play-once animations
+		if (!_Loop)
+		{
+			const float EndTime = (_Speed < 0.f) ? 0.f : pClip->GetDuration();
+			if (PrevClipTime != EndTime && _CurrClipTime == EndTime)
+				Context.pEventOutput->OnEvent(Event_AnimEnd, {}, PrevClipTime + dt * _Speed - _CurrClipTime);
+		}
 	}
 }
 //---------------------------------------------------------------------

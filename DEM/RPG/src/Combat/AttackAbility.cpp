@@ -131,66 +131,51 @@ bool CAttackAbility::GetFacingParams(const Game::CGameSession& Session, const Ga
 }
 //---------------------------------------------------------------------
 
-static void ApplyDamageFromAbility(Game::CGameWorld& World, CAttackAbilityInstance& Instance)
+static void InitStrike(Game::CGameWorld& World, CAttackAbilityInstance& Instance)
 {
-	if (Instance.DamageType == EDamageType::COUNT) return;
-
-	InflictDamage(World, Instance.Targets[0].Entity, Instance.Location, Instance.Damage, Instance.DamageType, Instance.Actor);
-
-	Instance.DamageType = EDamageType::COUNT; // Reset applied damage
-}
-//---------------------------------------------------------------------
-
-void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
-{
-	auto pWorld = Session.FindFeature<Game::CGameWorld>();
-	if (!pWorld) return;
-
-	auto& AttackInstance = static_cast<CAttackAbilityInstance&>(Instance);
-
-	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
+	// Find weapon
+	const CWeaponComponent* pWeaponComponent = nullptr;
+	int Hands = 1;
+	if (auto pEquipment = World.FindComponent<const CEquipmentComponent>(Instance.Actor))
 	{
-		// Find weapon
-		const CWeaponComponent* pWeaponComponent = nullptr;
-		int Hands = 1;
-		if (auto pEquipment = pWorld->FindComponent<const CEquipmentComponent>(Instance.Actor))
+		for (size_t HandIdx = 0; HandIdx < pEquipment->Scheme->HandCount; ++HandIdx)
 		{
-			for (size_t HandIdx = 0; HandIdx < pEquipment->Scheme->HandCount; ++HandIdx)
+			if (pWeaponComponent = FindItemComponent<const CWeaponComponent>(World, pEquipment->Hands[HandIdx].ItemStackID))
 			{
-				if (pWeaponComponent = FindItemComponent<const CWeaponComponent>(*pWorld, pEquipment->Hands[HandIdx].ItemStackID))
-				{
-					if (pWeaponComponent->Big) Hands = 2;
-					break;
-				}
+				if (pWeaponComponent->Big) Hands = 2;
+				break;
 			}
 		}
+	}
 
-		// Calculate strike params
-		//!!!DBG TMP!
-		float Period;
-		if (pWeaponComponent)
-		{
-			AttackInstance.DamageType = pWeaponComponent->Damage.Type;
-			for (uint8_t i = 0; i < pWeaponComponent->Damage.x; ++i)
-				AttackInstance.Damage += Math::RandomU32(1, pWeaponComponent->Damage.y);
-			AttackInstance.Damage += pWeaponComponent->Damage.z;
-			Period = pWeaponComponent->Period;
-		}
-		else
-		{
-			// From bare hands
-			// FIXME: need to calc from actor stats
-			AttackInstance.DamageType = EDamageType::Bludgeoning;
-			AttackInstance.Damage = Math::RandomU32(1, 2);
-			Period = 1.9f;
-		}
+	// Calculate strike params
+	//!!!DBG TMP!
+	float Period;
+	if (pWeaponComponent)
+	{
+		Instance.DamageType = pWeaponComponent->Damage.Type;
+		for (uint8_t i = 0; i < pWeaponComponent->Damage.x; ++i)
+			Instance.Damage += Math::RandomU32(1, pWeaponComponent->Damage.y);
+		Instance.Damage += pWeaponComponent->Damage.z;
+		Period = pWeaponComponent->Period;
+	}
+	else
+	{
+		// From bare hands
+		// FIXME: need to calc from actor stats
+		Instance.DamageType = EDamageType::Bludgeoning;
+		Instance.Damage = Math::RandomU32(1, 2);
+		Period = 3.0f;
+	}
 
-		// TODO: determine location, also can setup AC params, especially IK, to animate strike to that location visually
-		AttackInstance.Location = {};
+	// TODO: determine location, also can setup AC params, especially IK, to animate strike to that location visually
+	Instance.Location = {};
 
-		AttackInstance.StrikeEndTime = AttackInstance.ElapsedTime + Period;
+	Instance.StrikeEndTime = Instance.ElapsedTime + Period;
 
-		// Setup character animation
+	// Setup character animation
+	if (auto pAnimComponent = World.FindComponent<Game::CAnimationComponent>(Instance.Actor))
+	{
 		pAnimComponent->Controller.SetString(sidAction, sidAttack);
 		pAnimComponent->Controller.SetInt(sidWeaponHands, Hands);
 		//pAnimComponent->Controller.SetBool(sidIsInCombat, true);
@@ -208,8 +193,32 @@ void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance
 		{
 			// can apply speed multiplier for anim slowing down, but with threshold to avoid too slow animations
 		}
+	}
+}
+//---------------------------------------------------------------------
 
-		// Subscribe on Hit event to inflict damage and to animation end event to switch to combat idle
+static void ApplyDamageFromAbility(Game::CGameWorld& World, CAttackAbilityInstance& Instance)
+{
+	if (Instance.DamageType == EDamageType::COUNT) return;
+
+	InflictDamage(World, Instance.Targets[0].Entity, Instance.Location, Instance.Damage, Instance.DamageType, Instance.Actor);
+
+	Instance.DamageType = EDamageType::COUNT; // Reset applied damage
+}
+//---------------------------------------------------------------------
+
+void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
+{
+	auto pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return;
+
+	auto& AttackInstance = static_cast<CAttackAbilityInstance&>(Instance);
+
+	InitStrike(*pWorld, AttackInstance);
+
+	// Subscribe on Hit event to inflict damage and to animation end event to switch to combat idle
+	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
+	{
 		if (auto pEvents = pWorld->FindComponent<Game::CEventsComponent>(Instance.Actor))
 		{
 			AttackInstance.AnimEventConn = pEvents->OnEvent.Subscribe(
@@ -238,19 +247,18 @@ Game::EActionStatus CAttackAbility::OnUpdate(Game::CGameSession& Session, Game::
 
 	auto& AttackInstance = static_cast<CAttackAbilityInstance&>(Instance);
 
-	//!!!TODO:
-	// unsubscribe animation event or cancel animation or remember that strike was finished to ignore Event_AnimEnd
-	// If target is invalid, don't do the next strike, return Succeeded. See below.
-	if (AttackInstance.ElapsedTime >= AttackInstance.StrikeEndTime)
-	{
+	// If the strike time reached and damage wasn't yet inflicted, must do it now
+	if (AttackInstance.DamageType != EDamageType::COUNT && AttackInstance.ElapsedTime >= AttackInstance.StrikeEndTime)
 		ApplyDamageFromAbility(*pWorld, AttackInstance);
 
-		//...
-	}
+	// Could wait for the end of the attack Period here, but now we chose to succeed immediately, allowing an actor to proceed with the next action
+	if (!IsTargetDestructible(*pWorld, Instance.Targets[0].Entity)) return Game::EActionStatus::Succeeded;
 
-	// TODO: if target is destroyed but action is not cancelled, wait for animation cycle end before returning success?
+	// If the previous strike is finished, start new one
+	if (AttackInstance.DamageType == EDamageType::COUNT && AttackInstance.ElapsedTime >= AttackInstance.StrikeEndTime)
+		InitStrike(*pWorld, AttackInstance);
 
-	return IsTargetDestructible(*pWorld, Instance.Targets[0].Entity) ? Game::EActionStatus::Active : Game::EActionStatus::Succeeded;
+	return Game::EActionStatus::Active;
 }
 //---------------------------------------------------------------------
 
@@ -264,10 +272,9 @@ void CAttackAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& 
 	// TODO: restore sheathed state of items? Or switch an actor into cooling down state, so it will become peaceful after timeout and sheathe weapons?
 
 	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
-	{
 		pAnimComponent->Controller.SetString(sidAction, CStrID::Empty);
-		AttackInstance.AnimEventConn.Disconnect();
-	}
+
+	AttackInstance.AnimEventConn.Disconnect();
 }
 //---------------------------------------------------------------------
 
