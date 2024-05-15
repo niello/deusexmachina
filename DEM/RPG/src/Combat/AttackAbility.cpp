@@ -155,9 +155,9 @@ static void InitStrike(Game::CGameWorld& World, CAttackAbilityInstance& Instance
 	if (pWeaponComponent)
 	{
 		Instance.DamageType = pWeaponComponent->Damage.Type;
+		Instance.Damage = pWeaponComponent->Damage.z;
 		for (uint8_t i = 0; i < pWeaponComponent->Damage.x; ++i)
 			Instance.Damage += Math::RandomU32(1, pWeaponComponent->Damage.y);
-		Instance.Damage += pWeaponComponent->Damage.z;
 		Period = pWeaponComponent->Period;
 	}
 	else
