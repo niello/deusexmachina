@@ -22,6 +22,7 @@ namespace DEM::RPG
 static const CStrID sidAction("Action");
 static const CStrID sidAttack("Attack");
 static const CStrID sidWeaponHands("WeaponHands");
+static const CStrID sidActionSpeedMul("ActionSpeedMul");
 
 void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID, CAppearanceComponent& AppearanceComponent, Resources::CResourceManager& RsrcMgr);
 
@@ -165,8 +166,11 @@ static void InitStrike(Game::CGameWorld& World, CAttackAbilityInstance& Instance
 		// FIXME: need to calc from actor stats
 		Instance.DamageType = EDamageType::Bludgeoning;
 		Instance.Damage = Math::RandomU32(1, 2);
-		Period = 3.0f;
+		Period = 2.0f;
 	}
+
+	// FIXME: need better handling for this case? Assert?
+	if (Period <= 0.f) Period = 0.001f;
 
 	// TODO: determine location, also can setup AC params, especially IK, to animate strike to that location visually
 	Instance.Location = {};
@@ -184,15 +188,11 @@ static void InitStrike(Game::CGameWorld& World, CAttackAbilityInstance& Instance
 		//!!!TODO: check that when updating for dt=0, it must not trigger (and therefore skip) anim event on which it currently stands, if any!!!
 		pAnimComponent->Controller.Update(pAnimComponent->Output, 0.f, nullptr);
 
+		// Avoid slowing animation down too much
+		constexpr float MinSpeedMul = 0.75f;
+
 		const float AnimLength = pAnimComponent->Controller.GetExpectedAnimationLength();
-		if (AnimLength > Period)
-		{
-			// set speed multiplier (either hack dt in AC update or set AC param and apply it to attack subtree inside anim graph, second allows playing hit reactions etc with normal speed!)
-		}
-		else
-		{
-			// can apply speed multiplier for anim slowing down, but with threshold to avoid too slow animations
-		}
+		pAnimComponent->Controller.SetFloat(sidActionSpeedMul, std::max(MinSpeedMul, AnimLength / Period));
 	}
 }
 //---------------------------------------------------------------------
@@ -235,7 +235,10 @@ void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance
 				//!!!need to handle interruptions (e.g. from being hit) here, attack action must be cancelled or at least reset!
 				ApplyDamageFromAbility(*pWorld, AttackInstance);
 				if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(AttackInstance.Actor))
+				{
 					pAnimComponent->Controller.SetString(sidAction, CStrID::Empty);
+					pAnimComponent->Controller.SetFloat(sidActionSpeedMul, 1.f);
+				}
 			}
 		});
 	}
@@ -274,7 +277,10 @@ void CAttackAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& 
 	// TODO: restore sheathed state of items? Or switch an actor into cooling down state, so it will become peaceful after timeout and sheathe weapons?
 
 	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
+	{
 		pAnimComponent->Controller.SetString(sidAction, CStrID::Empty);
+		pAnimComponent->Controller.SetFloat(sidActionSpeedMul, 1.f);
+	}
 
 	AttackInstance.AnimEventConn.Disconnect();
 }

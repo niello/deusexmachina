@@ -13,7 +13,7 @@ CFloatSelectorNode::CFloatSelectorNode(CStrID ParamID)
 void CFloatSelectorNode::Init(CAnimationInitContext& Context)
 {
 	EParamType ParamType;
-	if (!Context.Controller.FindParam(_ParamID, &ParamType, &_ParamIndex) || ParamType != EParamType::Bool)
+	if (!Context.Controller.FindParam(_ParamID, &ParamType, &_ParamIndex) || ParamType != EParamType::Float)
 		_ParamIndex = INVALID_INDEX;
 
 	//for (auto& Rec : _Variants)

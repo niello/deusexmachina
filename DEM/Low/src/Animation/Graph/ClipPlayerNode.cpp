@@ -62,7 +62,7 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 	if (!pClip || pClip->GetDuration() <= 0.f) return;
 
 	const U32 CurrUpdateIndex = Context.Controller.GetUpdateIndex();
-	const bool WasInactive = (_LastUpdateIndex != CurrUpdateIndex - 1);
+	const bool WasInactive = (_LastUpdateIndex != CurrUpdateIndex - 1) || !IsActive(); // Was not updated on prev frame or played to the end without looping
 	if (_ResetOnActivate && WasInactive) ResetTime();
 	_LastUpdateIndex = CurrUpdateIndex;
 

@@ -23,6 +23,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/Graph/FloatSelectorNode.h
 	DEM/Low/src/Animation/Graph/IntSelectorNode.h
 	DEM/Low/src/Animation/Graph/SelectorNodeBase.h
+	DEM/Low/src/Animation/Graph/SpeedModifierNode.h
 	DEM/Low/src/Animation/Graph/StringSelectorNode.h
 	DEM/Low/src/Animation/Timeline/AnimatedPoseClip.h
 	DEM/Low/src/Animation/Timeline/CompositePoseClip.h
@@ -378,6 +379,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/Graph/FloatSelectorNode.cpp
 	DEM/Low/src/Animation/Graph/IntSelectorNode.cpp
 	DEM/Low/src/Animation/Graph/SelectorNodeBase.cpp
+	DEM/Low/src/Animation/Graph/SpeedModifierNode.cpp
 	DEM/Low/src/Animation/Graph/StringSelectorNode.cpp
 	DEM/Low/src/Animation/Timeline/AnimatedPoseClip.cpp
 	DEM/Low/src/Animation/Timeline/CompositePoseClip.cpp
