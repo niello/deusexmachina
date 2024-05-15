@@ -270,14 +270,14 @@ static EActionStatus InteractWithTarget(CGameSession& Session, CAbilityInstance&
 	// Start interaction, if not yet
 	if (AbilityInstance.Stage != EAbilityExecutionStage::Interaction)
 	{
-		//!!!if animation graph override is defined, enable it!
+		//!!!TODO: if animation graph override is defined, enable it!
 
-		AbilityInstance.Ability.OnStart(Session, AbilityInstance);
-		AbilityInstance.Stage = EAbilityExecutionStage::Interaction;
-
-		//???first frame must have elapsed time 0.f or dt or part of dt not used by movement and facing?
+		//???after OnStart should immediately update for the part of dt not used by movement and facing?
 		AbilityInstance.PrevElapsedTime = 0.f;
 		AbilityInstance.ElapsedTime = 0.f;
+
+		AbilityInstance.Stage = EAbilityExecutionStage::Interaction;
+		AbilityInstance.Ability.OnStart(Session, AbilityInstance);
 	}
 	else
 	{

@@ -31,9 +31,6 @@ void CSpeedModifierNode::Init(CAnimationInitContext& Context)
 
 void CSpeedModifierNode::Update(CAnimationUpdateContext& Context, float dt)
 {
-	//!!!DBG TMP!
-	::Sys::DbgOut("***DBG dt = %lf, ActionSpeedMul = %lf\n", dt, Context.Controller.GetFloat(_ParamIndex, _FallbackMultiplier));
-
 	if (_Subgraph) _Subgraph->Update(Context, dt * Context.Controller.GetFloat(_ParamIndex, _FallbackMultiplier));
 }
 //---------------------------------------------------------------------
