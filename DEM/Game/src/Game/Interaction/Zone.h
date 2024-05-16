@@ -1,5 +1,6 @@
 #pragma once
 #include <Data/FixedArray.h>
+#include <Data/Metadata.h>
 #include <rtm/matrix3x4f.h>
 
 // Flat zone - a set of points forming a line chain or a closed polygon, extended by radius.
@@ -23,5 +24,21 @@ public:
 	float FindClosestPoint(const rtm::vector4f& LocalSpacePos, float AdditionalRadius, rtm::vector4f& OutClosestPoint) const;
 	bool  IntersectsPoly(const rtm::matrix3x4f& WorldTfm, rtm::vector4f* pPolyVerts, int PolyVertCount) const;
 };
+
+}
+
+namespace DEM::Meta
+{
+
+template<> inline constexpr auto RegisterClassName<Game::CZone>() { return "DEM::Game::CZone"; }
+template<> inline constexpr auto RegisterMembers<Game::CZone>()
+{
+	return std::make_tuple
+	(
+		DEM_META_MEMBER_FIELD(Game::CZone, 1, Vertices),
+		DEM_META_MEMBER_FIELD(Game::CZone, 2, Radius),
+		DEM_META_MEMBER_FIELD(Game::CZone, 3, ClosedPolygon)
+	);
+}
 
 }

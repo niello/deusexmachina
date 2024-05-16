@@ -5,6 +5,7 @@
 #include <Game/Interaction/Zone.h>
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/EventsComponent.h>
+#include <AI/Navigation/NavAgentComponent.h>
 #include <Character/StatsComponent.h>
 #include <Character/SkillsComponent.h>
 #include <Combat/DestructibleComponent.h>
@@ -115,8 +116,23 @@ bool CAttackAbility::GetZones(const Game::CGameSession& Session, const Game::CAb
 	// If smart object provided zones, don't add a default one
 	if (!Out.empty()) return true;
 
-	//!!!FIXME: need some way to add zones! Store per-ability? May need unique zones. Use strong refs, not raw pointers?
-	static Game::CZone Zone(rtm::vector_zero(), 1.f);
+	// Fallback to a navigation agent radius, this is a sane default for creatures
+	//!!!FIXME: storing raw pointers in Out doesn't allow to add zones on the fly!
+	/*
+	if (auto pWorld = Session.FindFeature<Game::CGameWorld>())
+	{
+		if (auto pAgent = pWorld->FindComponent<const AI::CNavAgentComponent>(Instance.Actor))
+		{
+			Game::CZone NavAgentZone(rtm::vector_zero(), pAgent->Radius);
+			Out.push_back(&NavAgentZone);
+			return true;
+		}
+	}
+	*/
+
+	// The last resort
+	//???need? or let it fail?
+	static const Game::CZone Zone(rtm::vector_zero(), 1.f);
 	Out.push_back(&Zone);
 	return true;
 }

@@ -3,6 +3,7 @@
 #include <Math/TransformSRT.h>
 #include <rtm/matrix3x4f.h>
 #include <rtm/qvvf.h>
+#include <rtm/mask4f.h>
 
 // Math for view and projection calculations
 
@@ -272,3 +273,15 @@ RTM_MIX_ALIAS_TWO(x, b, c, w);
 //---------------------------------------------------------------------
 
 }
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE bool RTM_SIMD_CALL operator ==(rtm::vector4f_arg0 v0, rtm::vector4f_arg1 v1) noexcept
+{
+	return rtm::mask_all_true(rtm::vector_equal(v0, v1));
+}
+//---------------------------------------------------------------------
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE bool RTM_SIMD_CALL operator !=(rtm::vector4f_arg0 v0, rtm::vector4f_arg1 v1) noexcept
+{
+	return !rtm::mask_all_true(rtm::vector_equal(v0, v1));
+}
+//---------------------------------------------------------------------

@@ -335,24 +335,34 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 				AIState._AbilityInstance->Actor = EntityID;
 				AIState._AbilityInstance->Stage = EAbilityExecutionStage::Movement;
 
+				auto& Zones = AIState._AbilityInstance->InitialZones;
+
 				// Get interaction zones from a smart object, if present
 				if (!AIState._AbilityInstance->Targets.empty())
 				{
-					auto pSOComponent = World.FindComponent<const CSmartObjectComponent>(AIState._AbilityInstance->Targets[0].Entity);
-					auto pSOAsset = (pSOComponent && pSOComponent->Asset) ? pSOComponent->Asset->GetObject<CSmartObject>() : nullptr;
-					if (pSOAsset)
+					if (auto pSOComponent = World.FindComponent<const CSmartObjectComponent>(AIState._AbilityInstance->Targets[0].Entity))
 					{
-						// TODO: can check additional conditions of zone before adding it!
-						const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
-						AIState._AbilityInstance->InitialZones.reserve(ZoneCount);
-						for (U8 i = 0; i < ZoneCount; ++i)
-							AIState._AbilityInstance->InitialZones.push_back(&pSOAsset->GetInteractionZone(i));
+						// Get zones from entity component
+						Zones.reserve(pSOComponent->Zones.size());
+						for (U8 i = 0; i < pSOComponent->Zones.size(); ++i)
+							Zones.push_back(&pSOComponent->Zones[i]);
+
+						// Get zones from asset
+						auto pSOAsset = pSOComponent->Asset ? pSOComponent->Asset->GetObject<CSmartObject>() : nullptr;
+						if (pSOAsset)
+						{
+							// TODO: can check additional conditions of zone before adding it!
+							const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
+							Zones.reserve(Zones.size() + ZoneCount);
+							for (U8 i = 0; i < ZoneCount; ++i)
+								Zones.push_back(&pSOAsset->GetInteractionZone(i));
+						}
 					}
 				}
 
 				// Get interaction zones from an ability
-				AIState._AbilityInstance->Ability.GetZones(Session, *AIState._AbilityInstance, AIState._AbilityInstance->InitialZones);
-				n_assert_dbg(!AIState._AbilityInstance->InitialZones.empty());
+				AIState._AbilityInstance->Ability.GetZones(Session, *AIState._AbilityInstance, Zones);
+				n_assert_dbg(!Zones.empty());
 			}
 		}
 

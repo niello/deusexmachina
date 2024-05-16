@@ -1,4 +1,5 @@
 #pragma once
+#include <Game/Interaction/Zone.h>
 #include <Resources/Resource.h>
 #include <Animation/Timeline/TimelinePlayer.h>
 #include <Animation/Timeline/TimelineTrack.h> // For inlined destructor CSmartObjectComponent -> CTimelinePlayer
@@ -16,6 +17,7 @@ struct CSmartObjectComponent
 	DEM::Anim::CTimelinePlayer Player;
 
 	Resources::PResource       Asset; // CSmartObject
+	CFixedArray<CZone>         Zones; // Per-entity interaction zones
 
 	CStrID                     CurrState;
 	CStrID                     NextState;
@@ -49,7 +51,8 @@ template<> inline constexpr auto RegisterMembers<Game::CSmartObjectComponent>()
 	return std::make_tuple
 	(
 		DEM_META_MEMBER_FIELD(Game::CSmartObjectComponent, 1, Asset),
-		DEM_META_MEMBER_FIELD(Game::CSmartObjectComponent, 2, CurrState)
+		DEM_META_MEMBER_FIELD(Game::CSmartObjectComponent, 2, Zones),
+		DEM_META_MEMBER_FIELD(Game::CSmartObjectComponent, 3, CurrState)
 	);
 }
 

@@ -59,6 +59,14 @@ public:
 
 	void		operator =(const CFixedArray<T, S>& Other) { Copy(Other); }
 	T&			operator [](S Index) const;
+
+	bool operator ==(const CFixedArray<T, S>& Other) const noexcept
+	{
+		if (Count != Other.Count) return false;
+		for (size_t i = 0; i < Count; ++i)
+			if (!(pData[i] == Other.pData[i])) return false;
+		return true;
+	}
 };
 
 template<typename T, typename S> void CFixedArray<T, S>::SetSize(S NewSize, bool KeepValues)

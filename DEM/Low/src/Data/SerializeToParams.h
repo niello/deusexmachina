@@ -4,6 +4,8 @@
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 #include <Data/Algorithms.h>
+#include <Data/FixedArray.h> // for specialization
+#include <Math/SIMDMath.h> // for specializations
 #include <optional>
 
 // Serialization of arbitrary data to DEM CData
@@ -578,6 +580,60 @@ struct ParamsFormat<std::optional<T>>
 			T NewValue{};
 			ParamsFormat<T>::Deserialize(Input, NewValue);
 			Value = std::move(NewValue);
+		}
+	}
+};
+
+template<>
+struct ParamsFormat<rtm::vector4f>
+{
+	static inline void Serialize(Data::CData& Output, rtm::vector4f Value)
+	{
+		if (rtm::vector_get_w(Value) == 0.f)
+			Output = Math::FromSIMD3(Value);
+		else
+			Output = Math::FromSIMD4(Value);
+	}
+
+	static inline void Deserialize(const Data::CData& Input, rtm::vector4f& Value)
+	{
+		if (auto* pV3 = Input.As<vector3>())
+			Value = Math::ToSIMD(*pV3);
+		else if (auto* pV4 = Input.As<vector4>())
+			Value = Math::ToSIMD(*pV4);
+	}
+};
+
+template<typename T, typename... TTraits>
+struct ParamsFormat<CFixedArray<T, TTraits...>>
+{
+	static inline void Serialize(Data::CData& Output, const CFixedArray<T, TTraits...>& Vector)
+	{
+		Data::PDataArray Out;
+		Out = n_new(Data::CDataArray(Vector.size()));
+		for (const auto& Value : Vector)
+		{
+			Data::CData ValueData;
+			ParamsFormat<T>::Serialize(ValueData, Value);
+			Out->Add(std::move(ValueData));
+		}
+		Output = std::move(Out);
+	}
+
+	static inline void Deserialize(const Data::CData& Input, CFixedArray<T, TTraits...>& Vector)
+	{
+		if (auto pArrayPtr = Input.As<Data::PDataArray>())
+		{
+			auto pArray = pArrayPtr->Get();
+			Vector.SetSize(pArray->GetCount());
+			for (size_t i = 0; i < pArray->GetCount(); ++i)
+				ParamsFormat<T>::Deserialize(pArray->At(i), Vector[i]);
+		}
+		else
+		{
+			// Try to deserialize the value as a vector of a single element
+			Vector.SetSize(1);
+			ParamsFormat<T>::Deserialize(Input, Vector[0]);
 		}
 	}
 };

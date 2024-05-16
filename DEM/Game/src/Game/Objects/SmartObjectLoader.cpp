@@ -93,36 +93,8 @@ Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 
 	// Load interaction zones and available interactions
 	std::vector<DEM::Game::CZone> Zones;
-	Data::PDataArray ZoneDescs;
-	if (Params.TryGet<Data::PDataArray>(ZoneDescs, CStrID("Zones")))
-	{
-		Zones.reserve(ZoneDescs->GetCount());
-		for (const auto& ZoneParam : *ZoneDescs)
-		{
-			const auto& ZoneDesc = *ZoneParam.GetValue<Data::PParams>();
-
-			DEM::Game::CZone Zone;
-			Zone.Radius = ZoneDesc.Get(CStrID("Radius"), 0.f);
-
-			Data::PDataArray VerticesDesc;
-			if (ZoneDesc.TryGet<Data::PDataArray>(VerticesDesc, CStrID("Vertices")))
-			{
-				Zone.Vertices.SetSize(VerticesDesc->GetCount());
-				size_t i = 0;
-				for (const auto& VertexDesc : *VerticesDesc)
-					Zone.Vertices[i++] = Math::ToSIMD(VertexDesc.GetValue<vector3>());
-
-				if (Zone.Vertices.size())
-				{
-					Zone.ClosedPolygon = ZoneDesc.Get(CStrID("ClosedPoly"), false);
-					// TODO: Zone.ConvexPolygon = ZoneDesc.Get(CStrID("ConvexPoly"), false);
-					//???or detect from points?
-				}
-			}
-
-			Zones.push_back(std::move(Zone));
-		}
-	}
+	if (auto* pParam = Params.Find(CStrID("Zones")))
+		DEM::ParamsFormat::Deserialize(pParam->GetRawValue(), Zones);
 
 	// Load interaction override rules
 	std::map<CStrID, CFixedArray<CStrID>> Overrides;
