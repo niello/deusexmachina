@@ -29,6 +29,7 @@ public:
 
 	void          GatherExistingTemplates();
 
+	Game::HEntity FindPrototypeEntity(CStrID ItemID) const;
 	Game::HEntity CreateStack(CStrID ItemID, U32 Count, CStrID LevelID);
 };
 

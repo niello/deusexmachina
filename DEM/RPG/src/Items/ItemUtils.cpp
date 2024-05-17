@@ -5,8 +5,11 @@
 #include <Items/EquippableComponent.h>
 #include <Items/EquippedComponent.h>
 #include <Items/EquipmentChangesComponent.h>
+#include <Items/ItemManager.h>
+#include <Objects/LockComponent.h>
 #include <Combat/WeaponComponent.h>
 #include <Game/GameLevel.h>
+#include <Game/GameSession.h>
 #include <Scene/SceneComponent.h>
 #include <Physics/RigidBodyComponent.h>
 
@@ -2098,6 +2101,72 @@ std::pair<Game::HEntity, EItemStorage> ReinsertWithoutSplit(Game::CGameWorld& Wo
 		StackID = MoveWholeStackToLocation(World, StackID, World.GetEntityLevel(OwnerID), Tfm);
 	}
 	return { StackID, EItemStorage::World };
+}
+//---------------------------------------------------------------------
+
+bool HasItems(const Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count)
+{
+	U32 FoundCount = 0;
+	if (auto pContainer = World.FindComponent<const CItemContainerComponent>(EntityID))
+		for (Game::HEntity StackID : pContainer->Items)
+			if (auto pStack = World.FindComponent<const CItemStackComponent>(StackID))
+				if (pStack->Prototype == ItemProtoID)
+				{
+					FoundCount += pStack->Count;
+					if (FoundCount >= Count) return true;
+				}
+
+	if (auto pEquipment = World.FindComponent<const CEquipmentComponent>(EntityID))
+	{
+		for (Game::HEntity StackID : pEquipment->QuickSlots)
+			if (auto pStack = World.FindComponent<const CItemStackComponent>(StackID))
+				if (pStack->Prototype == ItemProtoID)
+				{
+					FoundCount += pStack->Count;
+					if (FoundCount >= Count) return true;
+				}
+
+		for (auto& [SlotID, StackID] : pEquipment->Equipment)
+			if (auto pStack = World.FindComponent<const CItemStackComponent>(StackID))
+				if (pStack->Prototype == ItemProtoID)
+				{
+					FoundCount += pStack->Count;
+					if (FoundCount >= Count) return true;
+				}
+	}
+
+	return false;
+}
+//---------------------------------------------------------------------
+
+bool TryUnlockObject(const Game::CGameSession& Session, Game::HEntity Object, Game::HEntity Actor)
+{
+	auto pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return false;
+
+	auto pLock = pWorld->FindComponent<const CLockComponent>(Object);
+	if (!pLock) return true;
+
+	if (pLock->Jamming || !pLock->KeyItemID || !pLock->KeyItemCount) return false;
+
+	auto pItemMgr = Session.FindFeature<CItemManager>();
+	if (!pItemMgr) return false;
+
+	const auto ProtoID = pItemMgr->FindPrototypeEntity(pLock->KeyItemID);
+	if (!ProtoID) return false;
+
+	// TODO: can check the whole faction using max distance from actor. 0 for actor only, inf for all faction.
+	if (!HasItems(*pWorld, Actor, ProtoID, pLock->KeyItemCount)) return false;
+
+	if (pLock->KeyConsume)
+	{
+		NOT_IMPLEMENTED;
+		//RemoveItems(*pWorld, Actor, ProtoID, pLock->KeyItemCount) - from all storages
+	}
+
+	pWorld->RemoveComponent<CLockComponent>(Object);
+
+	return true;
 }
 //---------------------------------------------------------------------
 

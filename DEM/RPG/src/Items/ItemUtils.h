@@ -10,6 +10,11 @@
 // I.e. if the item is moved inside one container or equipment, it will never be lost or duplicated. If the item
 // is moved from one container (or other storage) to another then the calling code is obliged to maintain integrity.
 
+namespace DEM::Game
+{
+	class CGameSession;
+}
+
 namespace DEM::RPG
 {
 struct CItemContainerComponent;
@@ -145,6 +150,11 @@ bool AddItemVisualsToLocation(Game::CGameWorld& World, Game::HEntity StackID, co
 void RemoveItemVisualsFromLocation(Game::CGameWorld& World, Game::HEntity StackID);
 
 std::pair<Game::HEntity, EItemStorage> ReinsertWithoutSplit(Game::CGameWorld& World, EItemStorage SrcStorage, Game::HEntity OwnerID, Game::HEntity StackID);
+
+bool HasItems(const Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count);
+
+// TODO: move to appropriate module
+bool TryUnlockObject(const Game::CGameSession& Session, Game::HEntity Object, Game::HEntity Actor);
 
 // TODO:
 // void QueryItemsInShape(Game::CGameWorld& World /*collision shape - sphere, capsule etc*/ /*, T Filter*/); //!!!including piles!

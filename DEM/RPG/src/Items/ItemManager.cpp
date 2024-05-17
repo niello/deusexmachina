@@ -44,6 +44,13 @@ void CItemManager::GatherExistingTemplates()
 }
 //---------------------------------------------------------------------
 
+Game::HEntity CItemManager::FindPrototypeEntity(CStrID ItemID) const
+{
+	auto It = _Templates.find(ItemID);
+	return (It == _Templates.cend()) ? Game::HEntity{} : It->second;
+}
+//---------------------------------------------------------------------
+
 Game::HEntity CItemManager::CreateStack(CStrID ItemID, U32 Count, CStrID LevelID)
 {
 	auto pWorld = _Session.FindFeature<Game::CGameWorld>();

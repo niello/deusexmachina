@@ -11,8 +11,12 @@ namespace DEM::RPG //???Shantara2?
 struct CLockComponent
 {
 	//!!!TODO: serialize U8 to CData!
-	int Difficulty = 0; // Difficulty of lockpicking this lock
-	int Jamming = 0;    // Difficulty of repairing this jammed lock (zero unless jammed)
+	int    Difficulty = 0; // Difficulty of lockpicking this lock
+	int    Jamming = 0;    // Difficulty of repairing this jammed lock (zero unless jammed)
+
+	CStrID KeyItemID;
+	U32    KeyItemCount = 1;
+	bool   KeyConsume = true;
 };
 
 }
@@ -26,7 +30,10 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CLockComponent>()
 	return std::make_tuple
 	(
 		DEM_META_MEMBER_FIELD(RPG::CLockComponent, 1, Difficulty),
-		DEM_META_MEMBER_FIELD(RPG::CLockComponent, 2, Jamming)
+		DEM_META_MEMBER_FIELD(RPG::CLockComponent, 2, Jamming),
+		DEM_META_MEMBER_FIELD(RPG::CLockComponent, 3, KeyItemID),
+		DEM_META_MEMBER_FIELD(RPG::CLockComponent, 4, KeyItemCount),
+		DEM_META_MEMBER_FIELD(RPG::CLockComponent, 5, KeyConsume)
 	);
 }
 
