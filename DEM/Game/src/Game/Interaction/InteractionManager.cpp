@@ -142,6 +142,8 @@ const CInteractionTool* CInteractionManager::FindAvailableTool(CStrID ID, const 
 
 const CInteraction* CInteractionManager::FindInteraction(CStrID ID, CStrID SmartObjectID) const
 {
+	if (!ID) return nullptr;
+
 	// Search for an interaction with the specified smart object
 	if (SmartObjectID)
 	{
@@ -192,7 +194,6 @@ void CInteractionManager::ResetCandidateInteraction(CInteractionContext& Context
 	Context.Interaction = CStrID::Empty;
 	Context.SmartObjectID = CStrID::Empty;
 	Context.Targets.clear();
-	Context.TargetExpected = ESoftBool::True;
 }
 //---------------------------------------------------------------------
 
@@ -302,15 +303,26 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 
 bool CInteractionManager::AcceptTarget(CInteractionContext& Context) const
 {
-	if (!Context.Interaction || Context.TargetExpected == ESoftBool::False) return false;
-
 	auto pInteraction = FindInteraction(Context.Interaction, Context.SmartObjectID);
 	if (!pInteraction || !pInteraction->IsCandidateTargetValid(_Session, Context)) return false;
 
 	Context.Targets.push_back(Context.CandidateTarget);
-	Context.TargetExpected = pInteraction->NeedMoreTargets(Context);
 
 	return true;
+}
+//---------------------------------------------------------------------
+
+bool CInteractionManager::AreMandatoryTargetsSelected(CInteractionContext& Context) const
+{
+	auto pInteraction = FindInteraction(Context.Interaction, Context.SmartObjectID);
+	return pInteraction && Context.Targets.size() >= pInteraction->GetMandatoryTargetCount();
+}
+//---------------------------------------------------------------------
+
+bool CInteractionManager::AreMaxTargetsSelected(CInteractionContext& Context) const
+{
+	auto pInteraction = FindInteraction(Context.Interaction, Context.SmartObjectID);
+	return pInteraction && Context.Targets.size() >= static_cast<size_t>(pInteraction->GetMandatoryTargetCount() + pInteraction->GetOptionalTargetCount());
 }
 //---------------------------------------------------------------------
 
@@ -323,7 +335,6 @@ bool CInteractionManager::Revert(CInteractionContext& Context) const
 		if (!pInteraction) return false;
 
 		Context.Targets.pop_back();
-		Context.TargetExpected = pInteraction->NeedMoreTargets(Context);
 	}
 	else if (Context.Tool && Context.Tool != _DefaultTool)
 		SelectTool(Context, _DefaultTool, {});
@@ -336,10 +347,8 @@ bool CInteractionManager::Revert(CInteractionContext& Context) const
 bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool Enqueue) const
 {
 	// Ensure interaction and all mandatory targets are selected
-	if (!Context.Interaction || Context.TargetExpected == ESoftBool::True) return false;
-
 	auto pInteraction = FindInteraction(Context.Interaction, Context.SmartObjectID);
-	if (!pInteraction) return false;
+	if (!pInteraction || Context.Targets.size() < pInteraction->GetMandatoryTargetCount()) return false;
 
 	//!!!DBG TMP!
 	const std::string Actor = Context.Actors.empty() ? "none" : std::to_string(*Context.Actors.begin());

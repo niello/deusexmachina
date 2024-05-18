@@ -77,12 +77,6 @@ bool CAttackAbility::IsTargetValid(const Game::CGameSession& Session, U32 Index,
 }
 //---------------------------------------------------------------------
 
-ESoftBool CAttackAbility::NeedMoreTargets(const Game::CInteractionContext& Context) const
-{
-	return (Context.Targets.size() < 1) ? ESoftBool::True : ESoftBool::False;
-}
-//---------------------------------------------------------------------
-
 bool CAttackAbility::Execute(Game::CGameSession& Session, Game::CInteractionContext& Context, bool Enqueue, bool PushChild) const
 {
 	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;

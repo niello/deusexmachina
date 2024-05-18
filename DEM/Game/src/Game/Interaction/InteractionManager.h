@@ -49,6 +49,8 @@ public:
 	void                    ResetCandidateInteraction(CInteractionContext& Context) const;
 	bool                    UpdateCandidateInteraction(CInteractionContext& Context) const;
 	bool                    AcceptTarget(CInteractionContext& Context) const;
+	bool                    AreMandatoryTargetsSelected(CInteractionContext& Context) const;
+	bool                    AreMaxTargetsSelected(CInteractionContext& Context) const;
 	bool                    Revert(CInteractionContext& Context) const;
 	bool                    ExecuteInteraction(CInteractionContext& Context, bool Enqueue) const;
 

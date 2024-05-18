@@ -53,12 +53,6 @@ bool CMoveInteraction::IsTargetValid(const CGameSession& Session, U32 Index, con
 }
 //---------------------------------------------------------------------
 
-ESoftBool CMoveInteraction::NeedMoreTargets(const CInteractionContext& Context) const
-{
-	return (Context.Targets.size() < 1) ? ESoftBool::True : ESoftBool::False;
-}
-//---------------------------------------------------------------------
-
 bool CMoveInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue, bool PushChild) const
 {
 	if (Context.Targets.empty()) return false;

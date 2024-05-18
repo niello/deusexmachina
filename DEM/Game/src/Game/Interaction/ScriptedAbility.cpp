@@ -6,7 +6,7 @@ namespace DEM::Game
 {
 
 // TODO: common utility function?!
-// FIXME: DUPLICATED CODE! See CScriptedInteraction!
+// FIXME: DUPLICATED CODE! See CScriptedInteraction! Use CRTP?
 template<typename... TArgs>
 static bool LuaCall(const sol::function& Fn, TArgs&&... Args)
 {
@@ -30,7 +30,6 @@ CScriptedAbility::CScriptedAbility(sol::state_view Lua, const sol::table& Table)
 {
 	_FnIsAvailable = Table.get<sol::function>("IsAvailable");
 	_FnIsTargetValid = Table.get<sol::function>("IsTargetValid");
-	_FnNeedMoreTargets = Table.get<sol::function>("NeedMoreTargets");
 	_FnPrepare = Table.get<sol::function>("Prepare");
 
 	_FnGetZones = Table.get<sol::function>("GetZones");
@@ -39,7 +38,9 @@ CScriptedAbility::CScriptedAbility(sol::state_view Lua, const sol::table& Table)
 	_FnOnUpdate = Table.get<sol::function>("OnUpdate");
 	_FnOnEnd = Table.get<sol::function>("OnEnd");
 
-	_CursorImage = Table.get<std::string>("CursorImage"); //???to method? pass target index?
+	_CursorImage = Table.get_or<std::string>("CursorImage", {}); //???to method? pass target index?
+	_MandatoryTargets = Table.get_or<U8>("MandatoryTargets", 1);
+	_OptionalTargets = Table.get_or<U8>("OptionalTargets", 0);
 }
 //---------------------------------------------------------------------
 
@@ -60,23 +61,6 @@ bool CScriptedAbility::IsAvailable(const CGameSession& Session, const CInteracti
 bool CScriptedAbility::IsTargetValid(const CGameSession& Session, U32 Index, const CInteractionContext& Context) const
 {
 	return LuaCall(_FnIsTargetValid, Index, Context);
-}
-//---------------------------------------------------------------------
-
-ESoftBool CScriptedAbility::NeedMoreTargets(const CInteractionContext& Context) const
-{
-	auto Result = _FnNeedMoreTargets(Context);
-	if (!Result.valid())
-	{
-		sol::error Error = Result;
-		::Sys::Error(Error.what());
-		return ESoftBool::False;
-	}
-
-	const auto Type = Result.get_type();
-	if (Type == sol::type::none || Type == sol::type::nil) return ESoftBool::Maybe;
-
-	return Result ? ESoftBool::True : ESoftBool::False;
 }
 //---------------------------------------------------------------------
 

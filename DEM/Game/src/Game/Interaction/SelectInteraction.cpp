@@ -28,12 +28,6 @@ bool CSelectInteraction::IsTargetValid(const CGameSession& Session, U32 Index, c
 }
 //---------------------------------------------------------------------
 
-ESoftBool CSelectInteraction::NeedMoreTargets(const CInteractionContext& Context) const
-{
-	return (Context.Targets.size() < 1) ? ESoftBool::True : ESoftBool::False;
-}
-//---------------------------------------------------------------------
-
 bool CSelectInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue, bool PushChild) const
 {
 	if (Context.Targets.empty()) return false;

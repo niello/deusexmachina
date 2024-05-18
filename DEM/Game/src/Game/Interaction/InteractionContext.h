@@ -32,7 +32,6 @@ struct CInteractionContext
 	HEntity                  Source; // E.g. item
 	std::vector<HEntity>     Actors;
 	std::vector<CTargetInfo> Targets;
-	ESoftBool                TargetExpected = ESoftBool::True;
 };
 
 }
