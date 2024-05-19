@@ -11,13 +11,12 @@
 namespace DEM::Anim
 {
 
-CClipPlayerNode::CClipPlayerNode(CStrID ClipID, bool Loop, float Speed, float StartTime, bool ResetOnActivate, PEventClip&& EventClip)
+CClipPlayerNode::CClipPlayerNode(CStrID ClipID, bool Loop, float Speed, float StartTime, bool ResetOnActivate)
 	: _ClipID(ClipID)
 	, _StartTime(StartTime)
 	, _Speed(Speed)
 	, _Loop(Loop)
 	, _ResetOnActivate(ResetOnActivate)
-	, _EventClip(std::move(EventClip))
 {
 }
 //---------------------------------------------------------------------
@@ -114,11 +113,11 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 
 	if (Context.pEventOutput)
 	{
-		if (_EventClip)
+		if (auto pEventClip = pClip->GetEventClip())
 		{
 			//!!!TODO: handle wrapping, handle playing first frame event (IncludeStartTime=true) when just started!
 			bool IncludeStartTime = false;
-			_EventClip->PlayInterval(PrevClipTime, _CurrClipTime, *Context.pEventOutput, IncludeStartTime);
+			pEventClip->PlayInterval(PrevClipTime, _CurrClipTime, *Context.pEventOutput, IncludeStartTime);
 		}
 
 		// Fire automatic end event for play-once animations

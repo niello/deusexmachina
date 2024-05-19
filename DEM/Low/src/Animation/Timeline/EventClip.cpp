@@ -11,7 +11,7 @@ void CEventClip::AddEvent(float Time, CStrID ID, Data::CData Data)
 }
 //---------------------------------------------------------------------
 
-void CEventClip::PlayInterval(float PrevTime, float CurrTime, Events::IEventOutput& Output, bool IncludeStartTime)
+void CEventClip::PlayInterval(float PrevTime, float CurrTime, Events::IEventOutput& Output, bool IncludeStartTime) const
 {
 	// Prevent repeated triggering of an event under the playback cursor
 	if (PrevTime == CurrTime) return;

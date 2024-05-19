@@ -638,7 +638,7 @@ bool CHRDParser::ParseTokenStream(const CArray<CToken>& Tokens, CParams& Output)
 }
 //---------------------------------------------------------------------
 
-// PARAM = ID [ '=' ] DATA
+// PARAM = ID|CONST_STRID [ '=' ] DATA
 bool CHRDParser::ParseParam(const CArray<CToken>& Tokens, CParams& Output)
 {
 	CStrID Key;

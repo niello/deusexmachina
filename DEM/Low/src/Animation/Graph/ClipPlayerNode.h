@@ -8,7 +8,6 @@
 namespace DEM::Anim
 {
 using PClipPlayerNode = std::unique_ptr<class CClipPlayerNode>;
-using PEventClip = std::unique_ptr<class CEventClip>;
 
 class alignas(CAnimationSampler) CClipPlayerNode : public CAnimGraphNode
 {
@@ -17,10 +16,6 @@ protected:
 	//!!!TODO: support composite clips in a sampler!
 	CAnimationSampler      _Sampler; // At offset 0 for proper alignment
 	std::unique_ptr<U16[]> _PortMapping;
-
-	//!!!FIXME: event clip must be a subject for Context.AssetOverrides!
-	//!!!FIXME: probably must be intrusive ptr, not unique, and make this a resource!
-	PEventClip             _EventClip;
 
 	CStrID                 _ClipID;
 
@@ -38,7 +33,7 @@ public:
 
 	DEM_ALLOCATE_ALIGNED(alignof(CClipPlayerNode));
 
-	CClipPlayerNode(CStrID ClipID, bool Loop = true, float Speed = 1.f, float StartTime = 0.f, bool ResetOnActivate = true, PEventClip&& EventClip = {});
+	CClipPlayerNode(CStrID ClipID, bool Loop = true, float Speed = 1.f, float StartTime = 0.f, bool ResetOnActivate = true);
 	~CClipPlayerNode();
 
 	virtual void Init(CAnimationInitContext& Context) override;

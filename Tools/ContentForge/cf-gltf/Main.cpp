@@ -353,6 +353,9 @@ protected:
 		fs::path                  CollisionPath;
 		std::string               TaskName;
 
+		std::string LeftFootBoneName;
+		std::string RightFootBoneName;
+
 		std::unordered_map<std::string, CMeshAttrInfo> ProcessedMeshes;
 		std::unordered_map<std::string, CSkinAttrInfo> ProcessedSkins;
 		std::unordered_map<std::string, std::vector<CBone>> ProcessedSkinBones;
@@ -537,9 +540,15 @@ public:
 
 		// Export animations
 
-		for (const auto& Anim : Ctx.Doc.animations.Elements())
-			if (!ExportAnimation(Anim, Ctx))
-				return ETaskResult::Failure;
+		if (!Ctx.AnimPath.empty())
+		{
+			Ctx.LeftFootBoneName = ParamsUtils::GetParam(Task.Params, "LeftFootBoneName", std::string{});
+			Ctx.RightFootBoneName = ParamsUtils::GetParam(Task.Params, "RightFootBoneName", std::string{});
+
+			for (const auto& Anim : Ctx.Doc.animations.Elements())
+				if (!ExportAnimation(Anim, Ctx))
+					return ETaskResult::Failure;
+		}
 
 		// Finalize and save the scene
 

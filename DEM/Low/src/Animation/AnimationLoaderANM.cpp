@@ -1,12 +1,16 @@
 #include "AnimationLoaderANM.h"
 #include <Animation/AnimationClip.h>
 #include <Animation/SkeletonInfo.h>
+#include <Animation/Timeline/EventClip.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
+#include <Data/DataArray.h>
 #include <acl/core/compressed_tracks.h>
 
 namespace Resources
 {
+static const CStrID sidID("ID");
+static const CStrID sidTime("Time");
 
 const Core::CRTTI& CAnimationLoaderANM::GetResultType() const
 {
@@ -109,7 +113,35 @@ Core::PObject CAnimationLoaderANM::CreateResource(CStrID UID)
 		return nullptr;
 	}
 
-	return n_new(DEM::Anim::CAnimationClip(pTracks, Duration, SampleCount, new DEM::Anim::CSkeletonInfo(std::move(NodeMapping)), std::move(LocomotionInfo)));
+	DEM::Anim::PEventClip EventClip;
+	U32 EventSig;
+	if (Reader.Read(EventSig) && EventSig == 'EVNT')
+	{
+		EventClip = std::make_unique<DEM::Anim::CEventClip>();
+
+		Data::CDataArray Events;
+		Reader.Read(Events);
+		for (const auto& Event : Events)
+		{
+			auto* ppParams = Event.As<Data::PParams>();
+			if (!ppParams || !*ppParams) continue;
+			Data::PParams Params = *ppParams;
+
+			const CStrID ID = Params->Get<CStrID>(sidID, CStrID::Empty);
+			if (!ID) continue;
+
+			const float Time = std::clamp(Params->Get<float>(sidTime, 0.f), 0.f, Duration);
+
+			Params->Remove(sidID);
+			Params->Remove(sidTime);
+			if (!Params->GetCount())
+				Params = nullptr;
+
+			EventClip->AddEvent(Time, ID, Params);
+		}
+	}
+
+	return n_new(DEM::Anim::CAnimationClip(pTracks, Duration, SampleCount, new DEM::Anim::CSkeletonInfo(std::move(NodeMapping)), std::move(EventClip), std::move(LocomotionInfo)));
 }
 //---------------------------------------------------------------------
 

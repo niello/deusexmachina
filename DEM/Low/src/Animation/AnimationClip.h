@@ -12,6 +12,7 @@ namespace acl
 namespace DEM::Anim
 {
 using PSkeletonInfo = Ptr<class CSkeletonInfo>;
+using PEventClip = std::unique_ptr<class CEventClip>;
 using PBipedLocomotionInfo = std::unique_ptr<struct CBipedLocomotionInfo>;
 
 struct CBipedLocomotionInfo
@@ -32,17 +33,19 @@ protected:
 
 	acl::compressed_tracks* _pClip = nullptr;
 	PSkeletonInfo           _SkeletonInfo;
+	PEventClip              _EventClip;
 	PBipedLocomotionInfo    _LocomotionInfo;
 	float                   _Duration = 0.f;
 	U32                     _SampleCount = 0; // TODO: can get from compressed_tracks
 
 public:
 
-	CAnimationClip(acl::compressed_tracks* pClip, float Duration, U32 SampleCount, PSkeletonInfo&& SkeletonInfo, PBipedLocomotionInfo&& LocomotionInfo = nullptr);
+	CAnimationClip(acl::compressed_tracks* pClip, float Duration, U32 SampleCount, PSkeletonInfo&& SkeletonInfo, PEventClip&& EventClip = {}, PBipedLocomotionInfo&& LocomotionInfo = {});
 	virtual ~CAnimationClip() override;
 
-	const acl::compressed_tracks* GetACLClip() const { return _pClip; }
+	const auto*                  GetACLClip() const { return _pClip; }
 	CSkeletonInfo&               GetSkeletonInfo() const { return *_SkeletonInfo; } // non-const to create intrusive strong refs
+	const CEventClip*            GetEventClip() const { return _EventClip.get(); }
 	const CBipedLocomotionInfo*  GetLocomotionInfo() const { return _LocomotionInfo.get(); }
 	float                        GetDuration() const { return _Duration; }
 	U32                          GetSampleCount() const { return _SampleCount; }

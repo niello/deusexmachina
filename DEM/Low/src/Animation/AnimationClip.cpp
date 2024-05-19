@@ -1,12 +1,14 @@
 #include "AnimationClip.h"
 #include <Animation/SkeletonInfo.h>
+#include <Animation/Timeline/EventClip.h>
 
 namespace DEM::Anim
 {
 
-CAnimationClip::CAnimationClip(acl::compressed_tracks* pClip, float Duration, U32 SampleCount, PSkeletonInfo&& SkeletonInfo, PBipedLocomotionInfo&& LocomotionInfo)
+CAnimationClip::CAnimationClip(acl::compressed_tracks* pClip, float Duration, U32 SampleCount, PSkeletonInfo&& SkeletonInfo, PEventClip&& EventClip, PBipedLocomotionInfo&& LocomotionInfo)
 	: _pClip(pClip)
 	, _SkeletonInfo(std::move(SkeletonInfo))
+	, _EventClip(std::move(EventClip))
 	, _LocomotionInfo(std::move(LocomotionInfo))
 	, _Duration(Duration)
 	, _SampleCount(SampleCount)
