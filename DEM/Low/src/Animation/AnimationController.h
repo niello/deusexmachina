@@ -55,6 +55,7 @@ struct CAnimationUpdateContext
 	// TODO: map CStrID -> values, per named sync group?
 	//float NormalizedTime = 0.f;
 	float                 LocomotionPhase = -1.f; // Any negative -> no phase syncing
+	U32                   LocomotionWrapCount = 0;
 };
 
 class CAnimationController final

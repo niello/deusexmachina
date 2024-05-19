@@ -52,13 +52,6 @@ public:
 	UPTR                         GetNodeCount() const;
 	float                        GetLocomotionPhase(float NormalizedTime) const;
 	float                        GetLocomotionPhaseNormalizedTime(float Phase) const;
-
-	float AdjustTime(float Time, bool Loop) const
-	{
-		if (Time < 0.f) return Loop ? _Duration + std::fmodf(Time, _Duration) : 0.f;
-		else if (Time > _Duration) return Loop ? std::fmodf(Time, _Duration) : _Duration;
-		else return Time;
-	}
 };
 
 typedef Ptr<CAnimationClip> PAnimationClip;

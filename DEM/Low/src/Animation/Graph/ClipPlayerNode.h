@@ -27,7 +27,8 @@ protected:
 	bool                   _Loop = true;
 	bool                   _ResetOnActivate = true;
 
-	void ResetTime();
+	void                  ResetTime();
+	std::pair<float, U32> GetWrappedTime(float dt) const;
 
 public:
 

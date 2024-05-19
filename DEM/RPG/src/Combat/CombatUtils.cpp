@@ -32,6 +32,9 @@ void InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Locat
 	pDestructible->OnHit(Damage);
 
 	if (pDestructible->HP.GetFinalValue() <= 0) pDestructible->OnDestroyed();
+
+	//!!!DBG TMP!
+	if (pDestructible->HP.GetFinalValue() <= 0) ::Sys::DbgOut(("***DBG Destroyed: " + Game::EntityToString(TargetID) + "\n").c_str());
 }
 //---------------------------------------------------------------------
 

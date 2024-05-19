@@ -33,6 +33,24 @@ void CClipPlayerNode::ResetTime()
 }
 //---------------------------------------------------------------------
 
+// Returns wrapped time and wrap count
+std::pair<float, U32> CClipPlayerNode::GetWrappedTime(float dt) const
+{
+	const float NewTime = _CurrClipTime + dt * _Speed;
+	const float Duration = _Sampler.GetClip()->GetDuration();
+
+	if (!_Loop)
+		return { std::clamp(NewTime, 0.f, Duration), 0 };
+
+	float WrapCount;
+	const float NewTimeWrapped = std::modf(NewTime / Duration, &WrapCount) * Duration;
+	if (std::signbit(NewTimeWrapped))
+		return { Duration + NewTimeWrapped, static_cast<U32>(-WrapCount) };
+	else
+		return { NewTimeWrapped, static_cast<U32>(WrapCount) };
+}
+//---------------------------------------------------------------------
+
 void CClipPlayerNode::Init(CAnimationInitContext& Context)
 {
 	CStrID ClipID = _ClipID;
@@ -58,7 +76,7 @@ void CClipPlayerNode::Init(CAnimationInitContext& Context)
 void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 {
 	const auto pClip = _Sampler.GetClip();
-	if (!pClip || pClip->GetDuration() <= 0.f) return;
+	if (!pClip || pClip->GetDuration() <= 0.f || _Speed == 0.f) return;
 
 	const U32 CurrUpdateIndex = Context.Controller.GetUpdateIndex();
 	const bool WasInactive = (_LastUpdateIndex != CurrUpdateIndex - 1) || !IsActive(); // Was not updated on prev frame or played to the end without looping
@@ -66,6 +84,7 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 	_LastUpdateIndex = CurrUpdateIndex;
 
 	const float PrevClipTime = _CurrClipTime;
+	U32 WrapCount = 0;
 
 	if (pClip->GetLocomotionInfo())
 	{
@@ -86,6 +105,7 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 			// Locomotion phase is already evaluated, sync clip with it
 			// NB: for now the first locomotion clip determines phase, not the most weighted one. May change later.
 			_CurrClipTime = pClip->GetLocomotionPhaseNormalizedTime(Context.LocomotionPhase) * pClip->GetDuration();
+			WrapCount = Context.LocomotionWrapCount;
 
 			//::Sys::DbgOut("***CClipPlayerNode: phase-synced, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
 			//	_CurrClipTime / pClip->GetDuration(), Context.LocomotionPhase, _ClipID.CStr());
@@ -93,8 +113,9 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 		else
 		{
 			// We drive the phase by our normal time update, others sync with us
-			_CurrClipTime = pClip->AdjustTime(_CurrClipTime + dt * _Speed, _Loop);
+			std::tie(_CurrClipTime, WrapCount) = GetWrappedTime(dt);
 			Context.LocomotionPhase = pClip->GetLocomotionPhase(_CurrClipTime / pClip->GetDuration());
+			Context.LocomotionWrapCount = WrapCount;
 
 			//::Sys::DbgOut("***CClipPlayerNode: phase-driving, time %lf (rel %lf), phase %lf, clip %s\n", _CurrClipTime,
 			//	_CurrClipTime / pClip->GetDuration(), Context.LocomotionPhase, _ClipID.CStr());
@@ -105,7 +126,7 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 		// TODO: add normalized time syncing option? Not used for now.
 
 		// Update regular clip
-		_CurrClipTime = pClip->AdjustTime(_CurrClipTime + dt * _Speed, _Loop);
+		std::tie(_CurrClipTime, WrapCount) = GetWrappedTime(dt);
 
 		//::Sys::DbgOut("***CClipPlayerNode: no sync, time %lf (rel %lf), clip %s\n", _CurrClipTime,
 		//	_CurrClipTime / pClip->GetDuration(), _ClipID.CStr());
@@ -113,17 +134,27 @@ void CClipPlayerNode::Update(CAnimationUpdateContext& Context, float dt)
 
 	if (Context.pEventOutput)
 	{
+		float BeginTime = 0.f;
+		float EndTime = pClip->GetDuration();
+		if (_Speed < 0.f) std::swap(BeginTime, EndTime);
+
 		if (auto pEventClip = pClip->GetEventClip())
 		{
-			//!!!TODO: handle wrapping, handle playing first frame event (IncludeStartTime=true) when just started!
-			bool IncludeStartTime = false;
-			pEventClip->PlayInterval(PrevClipTime, _CurrClipTime, *Context.pEventOutput, IncludeStartTime);
+			float FromTime = PrevClipTime;
+			bool IncludeStartTime = WasInactive;
+			for (U32 i = 0; i < WrapCount; ++i)
+			{
+				pEventClip->PlayInterval(FromTime, EndTime, *Context.pEventOutput, IncludeStartTime);
+				FromTime = BeginTime;
+				IncludeStartTime = true;
+			}
+
+			pEventClip->PlayInterval(FromTime, _CurrClipTime, *Context.pEventOutput, IncludeStartTime);
 		}
 
 		// Fire automatic end event for play-once animations
 		if (!_Loop)
 		{
-			const float EndTime = (_Speed < 0.f) ? 0.f : pClip->GetDuration();
 			if (PrevClipTime != EndTime && _CurrClipTime == EndTime)
 				Context.pEventOutput->OnEvent(Event_AnimEnd, {}, PrevClipTime + dt * _Speed - _CurrClipTime);
 		}
