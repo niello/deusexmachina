@@ -625,11 +625,21 @@ bool CHRDParser::ParseTokenStream(const std::vector<CToken>& Tokens, CParams& Ou
 }
 //---------------------------------------------------------------------
 
-// PARAM = ID [ '=' ] DATA
+// PARAM = ID|CONST_STRID [ '=' ] DATA
 bool CHRDParser::ParseParam(const std::vector<CToken>& Tokens, CParams& Output)
 {
+	CStrID Key;
+
 	const CToken& CurrToken = Tokens[ParserCursor];
-	if (CurrToken.Table != TBL_ID)
+	if (CurrToken.Table == TBL_ID)
+	{
+		Key = CStrID(TableID[CurrToken.Index].c_str());
+	}
+	else if (CurrToken.Table == TBL_CONST && TableConst[CurrToken.Index].IsA<CStrID>())
+	{
+		Key = TableConst[CurrToken.Index].GetValue<CStrID>();
+	}
+	else
 	{
 		if (pErr)
 			*pErr << "ID expected (Ln:" << CurrToken.Ln << ", Col:" << CurrToken.Cl << ")\n";
@@ -656,7 +666,7 @@ bool CHRDParser::ParseParam(const std::vector<CToken>& Tokens, CParams& Output)
 		}
 
 		//!!!can check duplicates here!
-		Output.emplace_back(CStrID(TableID[CurrToken.Index].c_str()), std::move(Data));
+		Output.emplace_back(Key, std::move(Data));
 		return true;
 	}
 	

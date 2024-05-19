@@ -1667,18 +1667,8 @@ public:
 
 		// Read animation clip settings
 
-		bool DiscardRootMotion = false;
-		bool IsLocomotionClip = false;
-		const Data::CParams* pParams = nullptr;
-		if (ParamsUtils::TryGetParam(pParams, Ctx.TaskParams, "Animations"))
-		{
-			const Data::CParams* pClipParams = nullptr;
-			if (ParamsUtils::TryGetParam(pClipParams, *pParams, AnimName.c_str()))
-			{
-				DiscardRootMotion = ParamsUtils::GetParam(*pClipParams, "DiscardRootMotion", false);
-				IsLocomotionClip = ParamsUtils::GetParam(*pClipParams, "IsLocomotionClip", false);
-			}
-		}
+		CAnimationSettings AnimSettings;
+		LoadAnimationSettings(Ctx.TaskParams, AnimName, AnimSettings);
 
 		// Create rigid skeletons and associate ACL bones with FbxNode instances
 
@@ -1728,7 +1718,7 @@ public:
 			size_t RightFootIdx = std::numeric_limits<size_t>().max();
 			std::vector<rtm::vector4f> LeftFootPositions;
 			std::vector<rtm::vector4f> RightFootPositions;
-			if (IsLocomotionClip && !Ctx.LeftFootBoneName.empty() && !Ctx.RightFootBoneName.empty())
+			if (AnimSettings.IsLocomotionClip && !Ctx.LeftFootBoneName.empty() && !Ctx.RightFootBoneName.empty())
 			{
 				auto ItLeft = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](const CNodeInfo& pNode) { return Ctx.LeftFootBoneName == pNode.pNode->GetName(); });
 				auto ItRight = std::find_if(Nodes.begin(), Nodes.end(), [&Ctx](const CNodeInfo& pNode) { return Ctx.RightFootBoneName == pNode.pNode->GetName(); });
@@ -1741,7 +1731,7 @@ public:
 				}
 				else
 				{
-					IsLocomotionClip = false;
+					AnimSettings.IsLocomotionClip = false;
 					Ctx.Log.LogWarning("Could not find leg bones in a locomotion clip. Locomotion flag is discarded.");
 				}
 			}
@@ -1771,7 +1761,7 @@ public:
 					}
 
 					auto& Dest = Track[SampleIndex];
-					if (BoneIdx == RootIdx && DiscardRootMotion && Frame > StartFrame)
+					if (BoneIdx == RootIdx && AnimSettings.DiscardRootMotion && Frame > StartFrame)
 					{
 						// All root transforms will be as in the first frame
 						//???Add options do discard only some components, like translation XZ?
@@ -1792,7 +1782,7 @@ public:
 			}
 
 			CLocomotionInfo LocomotionInfo;
-			if (IsLocomotionClip)
+			if (AnimSettings.IsLocomotionClip)
 			{
 				FbxAMatrix GlobalTfm;
 				auto& AxisSys = pScene->GetGlobalSettings().GetAxisSystem();
@@ -1811,7 +1801,7 @@ public:
 			}
 
 			const auto DestPath = Ctx.AnimPath / (AnimName + ".anm");
-			if (!WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Tracks, IsLocomotionClip ? &LocomotionInfo : nullptr, Ctx.Log)) return false;
+			if (!WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Tracks, AnimSettings.pEvents, AnimSettings.IsLocomotionClip ? &LocomotionInfo : nullptr, Ctx.Log)) return false;
 		}
 
 		return true;

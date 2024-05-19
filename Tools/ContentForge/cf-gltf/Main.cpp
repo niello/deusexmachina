@@ -1485,6 +1485,11 @@ public:
 
 		const auto FrameCount = static_cast<uint32_t>(std::ceilf((MaxTime - MinTime) * _AnimSamplingRate)) + 1;
 
+		// Read animation clip settings
+
+		CAnimationSettings AnimSettings;
+		LoadAnimationSettings(Ctx.TaskParams, RsrcName, AnimSettings);
+
 		// Collect animation data for each animated node
 
 		struct CAnimationData
@@ -1669,8 +1674,9 @@ public:
 			}
 		}
 
+		//!!!TODO: add locomotion calculations like in FBX!
 		const auto DestPath = Ctx.AnimPath / (RsrcName + ".anm");
-		return WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Tracks, nullptr, Ctx.Log);
+		return WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Tracks, AnimSettings.pEvents, nullptr, Ctx.Log);
 	}
 };
 

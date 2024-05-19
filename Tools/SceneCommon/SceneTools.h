@@ -41,6 +41,13 @@ struct CSceneSettings
 	}
 };
 
+struct CAnimationSettings
+{
+	const Data::CDataArray* pEvents = nullptr;
+	bool DiscardRootMotion = false;
+	bool IsLocomotionClip = false;
+};
+
 // TODO: look at fbx2acl for correct FBX animation export
 namespace acl
 {
@@ -215,12 +222,13 @@ inline void MergeAABBs(CAABB& Dest, const CAABB& Src)
 
 std::string GetRelativeNodePath(std::vector<std::string>&& From, std::vector<std::string>&& To);
 bool LoadSceneSettings(const std::filesystem::path& Path, CSceneSettings& Out);
+void LoadAnimationSettings(const Data::CParams& TaskParams, const std::string& AnimName, CAnimationSettings& Out);
 void ProcessGeometry(const std::vector<CVertex>& RawVertices, const std::vector<unsigned int>& RawIndices, std::vector<CVertex>& Vertices, std::vector<unsigned int>& Indices);
 void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic Semantic, EVertexComponentFormat Format, uint8_t Index, uint8_t StreamIndex);
 bool WriteDEMMesh(const std::filesystem::path& DestPath, const std::map<std::string, CMeshGroup>& SubMeshes, const CVertexFormat& VertexFormat, size_t BoneCount, CThreadSafeLog& Log);
 bool ReadDEMMeshVertexPositions(const std::filesystem::path& Path, std::vector<float3>& Out, CThreadSafeLog& Log);
 bool WriteDEMSkin(const std::filesystem::path& DestPath, const std::vector<CBone>& Bones, CThreadSafeLog& Log);
-bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::iallocator& ACLAllocator, acl::track_array& Tracks, const CLocomotionInfo* pLocomotionInfo, CThreadSafeLog& Log);
+bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::iallocator& ACLAllocator, acl::track_array& Tracks, const Data::CDataArray* pEvents, const CLocomotionInfo* pLocomotionInfo, CThreadSafeLog& Log);
 bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name, Data::CParams&& Nodes, const Data::CSchemeSet& Schemes, const Data::CParams& TaskParams, bool HRD, bool Binary, bool CreateRoot, CThreadSafeLog& Log);
 void InitImageProcessing();
 void TermImageProcessing();

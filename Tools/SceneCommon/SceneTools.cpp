@@ -103,6 +103,22 @@ bool LoadSceneSettings(const std::filesystem::path& Path, CSceneSettings& Out)
 }
 //---------------------------------------------------------------------
 
+void LoadAnimationSettings(const Data::CParams& TaskParams, const std::string& AnimName, CAnimationSettings& Out)
+{
+	const Data::CParams* pParams = nullptr;
+	if (ParamsUtils::TryGetParam(pParams, TaskParams, "Animations"))
+	{
+		const Data::CParams* pClipParams = nullptr;
+		if (ParamsUtils::TryGetParam(pClipParams, *pParams, AnimName.c_str()))
+		{
+			Out.DiscardRootMotion = ParamsUtils::GetParam(*pClipParams, "DiscardRootMotion", false);
+			Out.IsLocomotionClip = ParamsUtils::GetParam(*pClipParams, "IsLocomotionClip", false);
+			ParamsUtils::TryGetParam(Out.pEvents, *pClipParams, "Events");
+		}
+	}
+}
+//---------------------------------------------------------------------
+
 void ProcessGeometry(const std::vector<CVertex>& RawVertices, const std::vector<unsigned int>& RawIndices,
 	std::vector<CVertex>& Vertices, std::vector<unsigned int>& Indices)
 {
@@ -490,8 +506,8 @@ inline void WriteStream(std::ostream& Stream, const acl::string& Value)
 }
 //---------------------------------------------------------------------
 
-bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::iallocator& ACLAllocator,
-	acl::track_array& Tracks, const CLocomotionInfo* pLocomotionInfo, CThreadSafeLog& Log)
+bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::iallocator& ACLAllocator, acl::track_array& Tracks,
+	const Data::CDataArray* pEvents, const CLocomotionInfo* pLocomotionInfo, CThreadSafeLog& Log)
 {
 	const auto AnimName = DestPath.filename().string();
 	const auto NodeCount = Tracks.get_num_tracks();
@@ -597,7 +613,15 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::iallocator& A
 
 	File.write(reinterpret_cast<const char*>(CompressedTracks), CompressedTracks->get_size());
 
-	Log.LogInfo(DestPath.filename().generic_string() + " " + std::to_string(File.tellp()) + " bytes saved" + (pLocomotionInfo ? ", including locomotion info" : ""));
+	if (pEvents)
+	{
+		WriteStream<uint32_t>(File, 'EVNT');
+		WriteStream(File, *pEvents);
+	}
+
+	Log.LogInfo(DestPath.filename().generic_string() + " " + std::to_string(File.tellp()) + " bytes saved" +
+		(pLocomotionInfo ? ", with locomotion info" : "") +
+		(pEvents ? ", with events" : ""));
 
 	return true;
 }
