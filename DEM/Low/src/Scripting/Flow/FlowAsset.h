@@ -1,11 +1,37 @@
 #pragma once
 #include <Core/Object.h>
+#include <Data/Params.h>
+#include <Data/Metadata.h>
+#include <map>
 
-// Reusable and stateless asset of a node based Flow script.
+// Reusable and stateless asset representing a node based Flow script.
 // Flow consists of actions linked with links which may be conditionally disabled.
 
 namespace DEM::Flow
 {
+constexpr U32 EmptyActionID = 0;
+
+//!!!can be universal, not flow-specific!
+struct CConditionData
+{
+	CStrID        Type;
+	Data::PParams Params;
+};
+
+struct CFlowLink
+{
+	CConditionData Condition; // Empty type means no condition
+	U32            DestID;
+	bool           YieldToNextFrame;
+};
+
+struct CFlowActionData
+{
+	U32                    ID;
+	CStrID                 ClassName; //TODO: use FourCC?! or register class names in a factory as CStrIDs?!
+	Data::PParams          Params;
+	std::vector<CFlowLink> Links;
+};
 
 class CFlowAsset : public ::Core::CObject
 {
@@ -13,23 +39,68 @@ class CFlowAsset : public ::Core::CObject
 
 protected:
 
-	// list of actions (map by ID? can deserialize individual actions and build map)
-	// - unique ID (in a scope of this asset)
-	// - type
-	// - params
-	// - list of links
-	//   - target action ID
-	//   - optional condition structure
-	//     - type (some hardcoded + factory, or register all handlers by CStrID, including typical)
-	//     - params
-	//   - bool yield until next frame
-	// default start action ID
-	// default values for a variable storage
+	std::map<U32, CFlowActionData> _Actions;
+	U32                            _DefaultStartActionID;
+
+	// TODO: variable storage with default values
 
 	//!!!values should support HEntity, but it is in DEMGame, maybe can use std::any? or some extensible type system? or move Flow to DEMGame?
 	//!!!need variable storage default value deserialization for HEntity. Deserialization from HRD already exists, need to use properly.
 
 public:
+
+	CFlowAsset(std::map<U32, CFlowActionData>&& Actions, U32 StartActionID)
+		: _Actions(std::move(Actions))
+		, _DefaultStartActionID(StartActionID)
+	{}
+
+	const CFlowActionData* FindAction(U32 ID) const
+	{
+		auto It = _Actions.find(ID);
+		return (It == _Actions.cend()) ? nullptr : &It->second;
+	}
+
+	U32 GetDefaultStartActionID() const { return _DefaultStartActionID; }
 };
+
+using PFlowAsset = Ptr<CFlowAsset>;
+
+}
+
+namespace DEM::Meta
+{
+
+template<> inline constexpr auto RegisterClassName<DEM::Flow::CConditionData>() { return "DEM::Flow::CConditionData"; }
+template<> inline constexpr auto RegisterMembers<DEM::Flow::CConditionData>()
+{
+	return std::make_tuple
+	(
+		DEM_META_MEMBER_FIELD(Flow::CConditionData, 1, Type),
+		DEM_META_MEMBER_FIELD(Flow::CConditionData, 2, Params)
+	);
+}
+
+template<> inline constexpr auto RegisterClassName<DEM::Flow::CFlowLink>() { return "DEM::Flow::CFlowLink"; }
+template<> inline constexpr auto RegisterMembers<DEM::Flow::CFlowLink>()
+{
+	return std::make_tuple
+	(
+		DEM_META_MEMBER_FIELD(Flow::CFlowLink, 1, Condition),
+		DEM_META_MEMBER_FIELD(Flow::CFlowLink, 2, DestID),
+		DEM_META_MEMBER_FIELD(Flow::CFlowLink, 3, YieldToNextFrame)
+	);
+}
+
+template<> inline constexpr auto RegisterClassName<DEM::Flow::CFlowActionData>() { return "DEM::Flow::CFlowActionData"; }
+template<> inline constexpr auto RegisterMembers<DEM::Flow::CFlowActionData>()
+{
+	return std::make_tuple
+	(
+		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 1, ID),
+		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 2, ClassName),
+		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 3, Params),
+		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 4, Links)
+	);
+}
 
 }

@@ -3,6 +3,8 @@
 #include <Resources/ResourceManager.h>
 #include <IO/Stream.h>
 #include <Data/Buffer.h>
+#include <Data/HRDParser.h>
+#include <Data/SerializeToParams.h>
 
 namespace Resources
 {
@@ -24,10 +26,38 @@ Core::PObject CFlowAssetLoader::CreateResource(CStrID UID)
 	}
 	if (!Buffer) return nullptr;
 
-	// ...
-	//???can use templated data loader? or need some processing?
+	// Read params from resource HRD
+	// FIXME: add an ability to create CData from CParams instead of PParams?
+	//Data::CParams Params;
+	Data::PParams Params(n_new(Data::CParams)());
+	Data::CHRDParser Parser;
+	if (!Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), *Params)) return nullptr;
 
-	return n_new(DEM::Flow::CFlowAsset());
+	// FIXME: can't load a map with U32 keys from HRD currently, so have this intermediate step!
+	// When the functionality is available, can replace this loader with CDataAssetLoaderHRD<CFlowAsset>.
+	Data::PDataArray ActionsDesc;
+	if (!Params->TryGet(ActionsDesc, CStrID("Actions"))) return nullptr;
+
+	std::vector<DEM::Flow::CFlowActionData> Actions;
+	DEM::ParamsFormat::Deserialize(Data::CData(Params), Actions);
+
+	std::map<U32, DEM::Flow::CFlowActionData> ActionsByID;
+	for (auto& Action : Actions)
+	{
+		const auto ActionID = Action.ID;
+		n_assert_dbg(ActionID != DEM::Flow::EmptyActionID);
+		if (ActionID == DEM::Flow::EmptyActionID) return nullptr;
+
+		const bool Added = ActionsByID.emplace(ActionID, std::move(Action)).second;
+		n_assert_dbg(Added);
+		if (!Added) return nullptr;
+	}
+
+	const auto StartActionID = static_cast<U32>(Params->Get<int>(CStrID("StartActionID"), DEM::Flow::EmptyActionID));
+
+	//!!!TODO: read variable storage!
+
+	return n_new(DEM::Flow::CFlowAsset(std::move(ActionsByID), StartActionID));
 }
 //---------------------------------------------------------------------
 
