@@ -34,9 +34,7 @@ bool CFlowPlayer::Start(PFlowAsset Asset, U32 StartActionID)
 
 void CFlowPlayer::Stop()
 {
-	// If an action is running, cancel it. _NextActionID is non-empty only when an action has already finished.
-	//???TODO: clear _CurrAction when setting _NextActionID? Need to take into account in IsPlaying / GetCurrentActionID, must return _NextActionID!
-	if (_CurrAction && _NextActionID != EmptyActionID)
+	if (_CurrAction)
 		_CurrAction->OnCancel();
 
 	Finish();
@@ -45,35 +43,69 @@ void CFlowPlayer::Stop()
 
 void CFlowPlayer::Update(float dt)
 {
-	//1 if next action ID is not empty (yield), start the action, make it current and clear next ID field
-	//2 if no curr action, return
-	//3 if curr action active, update it with dt, passing the player instance in
-	//4 if curr action has finished (see below)
-	//	 if error or break (=no next action), finish script execution
-	//	 destroy or return to cache an action C++ instance object
-	//	 if yield to next frame, mark that we did it (by storing next action ID?) and return
-	//	 start next action (i.e. the one at the chosen output pin)
-	//	 make the next action current and goto 3
-	//!!!TODO: must fail if no next action with specified ID exists!
+	// Resume from yielding
+	if (_NextActionID != EmptyActionID)
+	{
+		SetCurrentAction(_NextActionID);
+		_NextActionID = EmptyActionID;
+	}
+
+	if (!_CurrAction) return;
+
+	CUpdateContext Ctx;
+	Ctx.dt = dt;
+	do
+	{
+		_CurrAction->Update(Ctx); ///TODO: also pass player! and maybe session?!
+
+		if (!Ctx.Error.empty())
+			::Sys::Log(Ctx.Error.c_str());
+
+		if (Ctx.Finished)
+		{
+			if (Ctx.NextActionID != EmptyActionID)
+			{
+				if (Ctx.YieldToNextFrame)
+				{
+					_CurrAction = nullptr;
+					_NextActionID = Ctx.NextActionID;
+					break;
+				}
+				else
+				{
+					SetCurrentAction(Ctx.NextActionID);
+				}
+			}
+			else
+			{
+				Finish();
+				break;
+			}
+		}
+	}
+	while (_CurrAction);
 }
 //---------------------------------------------------------------------
 
 void CFlowPlayer::SetCurrentAction(U32 ID)
 {
-	auto* pActionData = _Asset->FindAction(ID);
-	if (!pActionData) return;
-	_CurrAction.reset(Core::CFactory::Instance().Create<IFlowAction>(pActionData->ClassName.CStr()));
-	if (!_CurrAction) return;
-	_CurrAction->OnStart();
+	_CurrAction = nullptr;
+
+	if (auto* pActionData = _Asset->FindAction(ID))
+	{
+		_CurrAction.reset(Core::CFactory::Instance().Create<IFlowAction>(pActionData->ClassName.CStr()));
+		if (_CurrAction)
+			_CurrAction->OnStart();
+	}
+
+	n_assert_dbg(_CurrAction);
 }
 //---------------------------------------------------------------------
 
 void CFlowPlayer::Finish()
 {
 	_CurrAction = nullptr;
-	//This happens when the current action is empty or invalid, either at the playback start or after finishing a previous action.
-	//fire global OnFinish, possibly with the previous action ID and result type
-	//(empty pin requested = finish, or error).
+	//fire global OnFinish, possibly with the previous action ID and result type (empty pin requested = finish, or error).
 }
 //---------------------------------------------------------------------
 

@@ -12,11 +12,11 @@ constexpr U32 EmptyActionID_FIXME = 0; //!!!!!!!!FIXME: fix duplicated definitio
 
 struct CUpdateContext
 {
-	float       dt;
-	U32         NextActionID;
+	float       dt = 0.f;
+	U32         NextActionID = EmptyActionID_FIXME;
 	std::string Error;
-	bool        Finished;
-	bool        YieldToNextFrame;
+	bool        Finished = false;
+	bool        YieldToNextFrame = false;
 };
 
 class IFlowAction : public ::Core::CRTTIBaseClass
@@ -56,7 +56,7 @@ public:
 	void Update(float dt); //???!!!if needs session, must be in DEMGame?!
 
 	CFlowAsset* GetAsset() const { return _Asset.Get(); }
-	// get curr action ID
+	bool IsPlaying() const { return _CurrAction || _NextActionID != EmptyActionID_FIXME; }
 };
 
 }
