@@ -56,9 +56,9 @@ bool CFlowPlayer::Start(PFlowAsset Asset, U32 StartActionID)
 	SetCurrentAction(StartActionID);
 	if (!_CurrAction) return false;
 
-	// TODO:
-	//Variable storage is initialized with default values from the asset.
-	//Global OnStart is fired/invoked. Need? Start is always controlled by external logic!
+	// TODO: Variable storage is initialized with default values from the asset.
+
+	OnStart();
 
 	return true;
 }
@@ -140,8 +140,9 @@ void CFlowPlayer::Finish(bool WithError)
 {
 	n_assert(!WithError);
 
+	OnFinish(_CurrAction ? _CurrAction->GetPrototype().ID : EmptyActionID_FIXME, WithError);
+
 	_CurrAction = nullptr;
-	//fire global OnFinish, possibly with the previous action ID and WithError flag
 }
 //---------------------------------------------------------------------
 

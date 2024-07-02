@@ -1,5 +1,6 @@
 #pragma once
 #include <Core/RTTIBaseClass.h>
+#include <Events/Signal.h>
 #include <Data/Ptr.h>
 
 // Plays a Flow asset and tracks its state.
@@ -8,6 +9,7 @@
 namespace DEM::Flow
 {
 struct CFlowLink;
+struct CFlowActionData;
 using PFlowAsset = Ptr<class CFlowAsset>;
 constexpr U32 EmptyActionID_FIXME = 0; //!!!!!!!!FIXME: fix duplicated definition!
 
@@ -30,11 +32,17 @@ protected:
 	static void Throw(CUpdateContext& Ctx, std::string&& Error, bool CanRetry);
 	static void Goto(CUpdateContext& Ctx, const CFlowLink& Link, float consumedDt = 0.f);
 
+	const CFlowActionData& _Prototype;
+
 public:
+
+	IFlowAction(const CFlowActionData& Prototype) : _Prototype(Prototype) {}
 
 	virtual void OnStart() = 0;
 	virtual void Update(CUpdateContext& Ctx) = 0;
 	virtual void OnCancel() {}
+
+	const auto& GetPrototype() const { return _Prototype; }
 };
 
 using PFlowAction = std::unique_ptr<IFlowAction>;
@@ -53,6 +61,9 @@ private:
 	void Finish(bool WithError);
 
 public:
+
+	DEM::Events::CSignal<void()>                                         OnStart;
+	DEM::Events::CSignal<void(U32 /*LastActionID*/, bool /*WithError*/)> OnFinish;
 
 	~CFlowPlayer();
 
