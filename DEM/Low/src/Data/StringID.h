@@ -25,11 +25,11 @@ public:
 	static const CStringID Empty;
 
 	CStringID() = default;
-	CStringID(const CStringID& Other) : pString(Other.pString) {}
-	CStringID(CStringID&& Other) noexcept : pString(Other.pString) {}
 	explicit CStringID(std::string_view Str, bool OnlyExisting = false);
-	//explicit CStringID(void* StrID): pString((const char*)StrID) {} // Direct constructor. Be careful.
-	//explicit CStringID(uintptr_t StrID): pString((const char*)StrID) {} // Direct constructor. Be careful.
+	CStringID(const CStringID& Other) = default;
+	CStringID(CStringID&& Other) noexcept = default;
+	CStringID& operator =(const CStringID& Other) = default;
+	CStringID& operator =(CStringID&& Other) noexcept = default;
 
 	uintptr_t	GetID() const { return reinterpret_cast<uintptr_t>(pString); }
 	const char*	CStr() const { return pString; }
@@ -49,7 +49,6 @@ public:
 	bool		operator !=(CStringID Other) const noexcept { return pString != Other.pString; }
 	bool		operator ==(const char* pOther) const { return pString == pOther || (pString && pOther && !std::strcmp(pString, pOther)); }
 	bool		operator !=(const char* pOther) const { return pString != pOther && (!pString || !pOther || std::strcmp(pString, pOther)); }
-	CStringID&	operator =(const CStringID& Other) { pString = Other.pString; return *this; }
 };
 
 inline bool operator <(CStringID a, const char* b)
