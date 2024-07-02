@@ -7,6 +7,7 @@
 
 namespace DEM::Flow
 {
+struct CFlowLink;
 using PFlowAsset = Ptr<class CFlowAsset>;
 constexpr U32 EmptyActionID_FIXME = 0; //!!!!!!!!FIXME: fix duplicated definition!
 
@@ -23,7 +24,11 @@ class IFlowAction : public ::Core::CRTTIBaseClass
 {
 protected:
 
-	// TODO: shortcuts for filling CUpdateContext for common cases: break, choose pin(pass dt consumed), throw error, continue updating
+	// Shortcuts for action flow control. Can be used with 'return' for shortness.
+	static void Continue(CUpdateContext& Ctx);
+	static void Break(CUpdateContext& Ctx);
+	static void Throw(CUpdateContext& Ctx, std::string&& Error, bool CanRetry);
+	static void Goto(CUpdateContext& Ctx, const CFlowLink& Link, float consumedDt = 0.f);
 
 public:
 
@@ -45,7 +50,7 @@ private:
 	// TODO: add action pool Type->Instance? std::map<CStrID, PFlowAction>; // NB: always needs only 1 instance of each type.
 
 	void SetCurrentAction(U32 ID);
-	void Finish();
+	void Finish(bool WithError);
 
 public:
 

@@ -41,23 +41,11 @@ Core::PObject CFlowAssetLoader::CreateResource(CStrID UID)
 	std::vector<DEM::Flow::CFlowActionData> Actions;
 	DEM::ParamsFormat::Deserialize(Data::CData(Params), Actions);
 
-	std::map<U32, DEM::Flow::CFlowActionData> ActionsByID;
-	for (auto& Action : Actions)
-	{
-		const auto ActionID = Action.ID;
-		n_assert_dbg(ActionID != DEM::Flow::EmptyActionID);
-		if (ActionID == DEM::Flow::EmptyActionID) return nullptr;
-
-		const bool Added = ActionsByID.emplace(ActionID, std::move(Action)).second;
-		n_assert_dbg(Added);
-		if (!Added) return nullptr;
-	}
-
 	const auto StartActionID = static_cast<U32>(Params->Get<int>(CStrID("StartActionID"), DEM::Flow::EmptyActionID));
 
 	//!!!TODO: read variable storage!
 
-	return n_new(DEM::Flow::CFlowAsset(std::move(ActionsByID), StartActionID));
+	return n_new(DEM::Flow::CFlowAsset(std::move(Actions), StartActionID));
 }
 //---------------------------------------------------------------------
 

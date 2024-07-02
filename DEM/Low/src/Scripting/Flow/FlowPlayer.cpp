@@ -5,6 +5,38 @@
 namespace DEM::Flow
 {
 
+void IFlowAction::Continue(CUpdateContext& Ctx)
+{
+	Ctx.Error.clear();
+	Ctx.Finished = false;
+}
+//---------------------------------------------------------------------
+
+void IFlowAction::Break(CUpdateContext& Ctx)
+{
+	Ctx.NextActionID = EmptyActionID_FIXME;
+	Ctx.Error.clear();
+	Ctx.Finished = true;
+}
+//---------------------------------------------------------------------
+
+void IFlowAction::Throw(CUpdateContext& Ctx, std::string&& Error, bool CanRetry)
+{
+	Ctx.Error = std::move(Error);
+	Ctx.Finished = !CanRetry;
+}
+//---------------------------------------------------------------------
+
+void IFlowAction::Goto(CUpdateContext& Ctx, const CFlowLink& Link, float consumedDt)
+{
+	Ctx.dt = std::max(0.f, Ctx.dt - consumedDt);
+	Ctx.NextActionID = Link.DestID;
+	Ctx.Error.clear();
+	Ctx.Finished = true;
+	Ctx.YieldToNextFrame = Link.YieldToNextFrame;
+}
+//---------------------------------------------------------------------
+
 CFlowPlayer::~CFlowPlayer() = default;
 //---------------------------------------------------------------------
 
@@ -37,7 +69,7 @@ void CFlowPlayer::Stop()
 	if (_CurrAction)
 		_CurrAction->OnCancel();
 
-	Finish();
+	Finish(false);
 }
 //---------------------------------------------------------------------
 
@@ -58,30 +90,32 @@ void CFlowPlayer::Update(float dt)
 	{
 		_CurrAction->Update(Ctx); ///TODO: also pass player! and maybe session?!
 
-		if (!Ctx.Error.empty())
+		// Print both critical and retryable errors
+		const bool HasError = !Ctx.Error.empty();
+		if (HasError)
 			::Sys::Log(Ctx.Error.c_str());
 
-		if (Ctx.Finished)
+		// If the action must be continued, we will do it at the next frame
+		if (!Ctx.Finished)
+			break;
+
+		// End the script when the last action is reached or a critical error is thrown
+		if (HasError || Ctx.NextActionID == EmptyActionID)
 		{
-			if (Ctx.NextActionID != EmptyActionID)
-			{
-				if (Ctx.YieldToNextFrame)
-				{
-					_CurrAction = nullptr;
-					_NextActionID = Ctx.NextActionID;
-					break;
-				}
-				else
-				{
-					SetCurrentAction(Ctx.NextActionID);
-				}
-			}
-			else
-			{
-				Finish();
-				break;
-			}
+			Finish(HasError);
+			break;
 		}
+
+		// If the traversed link requests yielding, delay the next action start to the next frame
+		if (Ctx.YieldToNextFrame)
+		{
+			_CurrAction = nullptr;
+			_NextActionID = Ctx.NextActionID;
+			break;
+		}
+
+		// Otherwise proceed to the new action with remaining part of dt
+		SetCurrentAction(Ctx.NextActionID);
 	}
 	while (_CurrAction);
 }
@@ -102,10 +136,12 @@ void CFlowPlayer::SetCurrentAction(U32 ID)
 }
 //---------------------------------------------------------------------
 
-void CFlowPlayer::Finish()
+void CFlowPlayer::Finish(bool WithError)
 {
+	n_assert(!WithError);
+
 	_CurrAction = nullptr;
-	//fire global OnFinish, possibly with the previous action ID and result type (empty pin requested = finish, or error).
+	//fire global OnFinish, possibly with the previous action ID and WithError flag
 }
 //---------------------------------------------------------------------
 

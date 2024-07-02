@@ -39,8 +39,8 @@ class CFlowAsset : public ::Core::CObject
 
 protected:
 
-	std::map<U32, CFlowActionData> _Actions;
-	U32                            _DefaultStartActionID;
+	std::vector<CFlowActionData> _Actions;
+	U32                          _DefaultStartActionID;
 
 	// TODO: variable storage with default values
 
@@ -49,15 +49,26 @@ protected:
 
 public:
 
-	CFlowAsset(std::map<U32, CFlowActionData>&& Actions, U32 StartActionID)
+	CFlowAsset(std::vector<CFlowActionData>&& Actions, U32 StartActionID)
 		: _Actions(std::move(Actions))
 		, _DefaultStartActionID(StartActionID)
-	{}
+	{
+		std::sort(_Actions.begin(), _Actions.end(), [](const auto& a, const auto& b) { return a.ID < b.ID; });
+
+#if _DEBUG
+		// Check that all IDs are unique and not empty
+		for (size_t i = 0; i < _Actions.size(); ++i)
+		{
+			n_assert(_Actions[i].ID != DEM::Flow::EmptyActionID);
+			n_assert(i == 0 || _Actions[i - 1].ID != _Actions[i].ID);
+		}
+#endif
+	}
 
 	const CFlowActionData* FindAction(U32 ID) const
 	{
-		auto It = _Actions.find(ID);
-		return (It == _Actions.cend()) ? nullptr : &It->second;
+		auto It = std::lower_bound(_Actions.begin(), _Actions.end(), ID, [](const auto& Elm, U32 Value) { return Elm.ID < Value; });
+		return (It == _Actions.end() || (*It).ID != ID) ? nullptr : &(*It);
 	}
 
 	U32 GetDefaultStartActionID() const { return _DefaultStartActionID; }
