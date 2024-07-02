@@ -129,7 +129,10 @@ void CFlowPlayer::SetCurrentAction(U32 ID)
 	{
 		_CurrAction.reset(Core::CFactory::Instance().Create<IFlowAction>(pActionData->ClassName.CStr()));
 		if (_CurrAction)
+		{
+			_CurrAction->_pPrototype = pActionData;
 			_CurrAction->OnStart();
+		}
 	}
 
 	n_assert_dbg(_CurrAction);
@@ -140,7 +143,7 @@ void CFlowPlayer::Finish(bool WithError)
 {
 	n_assert(!WithError);
 
-	OnFinish(_CurrAction ? _CurrAction->GetPrototype().ID : EmptyActionID_FIXME, WithError);
+	OnFinish(_CurrAction ? _CurrAction->_pPrototype->ID : EmptyActionID_FIXME, WithError);
 
 	_CurrAction = nullptr;
 }

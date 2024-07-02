@@ -32,17 +32,13 @@ protected:
 	static void Throw(CUpdateContext& Ctx, std::string&& Error, bool CanRetry);
 	static void Goto(CUpdateContext& Ctx, const CFlowLink& Link, float consumedDt = 0.f);
 
-	const CFlowActionData& _Prototype;
-
 public:
 
-	IFlowAction(const CFlowActionData& Prototype) : _Prototype(Prototype) {}
+	const CFlowActionData* _pPrototype = nullptr; // Can't set in a constructor because the main factory doesn't support constructor args
 
 	virtual void OnStart() = 0;
 	virtual void Update(CUpdateContext& Ctx) = 0;
 	virtual void OnCancel() {}
-
-	const auto& GetPrototype() const { return _Prototype; }
 };
 
 using PFlowAction = std::unique_ptr<IFlowAction>;

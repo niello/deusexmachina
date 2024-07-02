@@ -27,10 +27,10 @@ struct CFlowLink
 
 struct CFlowActionData
 {
-	U32                    ID;
 	CStrID                 ClassName; //TODO: use FourCC?! or register class names in a factory as CStrIDs?!
 	Data::PParams          Params;
 	std::vector<CFlowLink> Links;
+	U32                    ID;
 };
 
 class CFlowAsset : public ::Core::CObject
@@ -107,10 +107,10 @@ template<> inline constexpr auto RegisterMembers<DEM::Flow::CFlowActionData>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 1, ID),
-		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 2, ClassName),
-		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 3, Params),
-		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 4, Links)
+		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 1, ClassName),
+		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 2, Params),
+		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 3, Links),
+		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 4, ID)
 	);
 }
 
