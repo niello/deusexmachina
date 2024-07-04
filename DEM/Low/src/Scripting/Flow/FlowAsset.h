@@ -1,6 +1,7 @@
 #pragma once
 #include <Core/Object.h>
 #include <Data/Params.h>
+#include <Data/VarStorage.h>
 #include <Data/Metadata.h>
 #include <map>
 
@@ -43,6 +44,8 @@ protected:
 	U32                          _DefaultStartActionID;
 
 	// TODO: variable storage with default values
+	// TODO: using with alias for most common storage compatible with HRD?
+	CVarStorage<bool, int, float, std::string, CStrID> _VarStorage;
 
 	//!!!values should support HEntity, but it is in DEMGame, maybe can use std::any? or some extensible type system? or move Flow to DEMGame?
 	//!!!need variable storage default value deserialization for HEntity. Deserialization from HRD already exists, need to use properly.
@@ -72,6 +75,7 @@ public:
 	}
 
 	U32 GetDefaultStartActionID() const { return _DefaultStartActionID; }
+	auto& GetDefaultVarStorage() const { return _VarStorage; }
 };
 
 using PFlowAsset = Ptr<CFlowAsset>;

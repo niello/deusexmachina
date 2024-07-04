@@ -95,6 +95,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/SuperFastHash.h
 	DEM/Low/src/Data/TableT.h
 	DEM/Low/src/Data/Type.h
+	DEM/Low/src/Data/VarStorage.h
 	DEM/Low/src/Data/XMLDocument.h
 	DEM/Low/src/Debug/DebugDraw.h
 	DEM/Low/src/Debug/DebugServer.h
