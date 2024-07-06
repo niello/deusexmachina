@@ -229,7 +229,7 @@ public:
 
 				// Temporary static_assert to control usage. Can remove and allow to skip saving not supported types.
 				static_assert(Data::CTypeID<THRDType>::IsDeclared);
-				if constexpr (!Data::CTypeID<THRDType>::IsDeclared)
+				if constexpr (Data::CTypeID<THRDType>::IsDeclared)
 				{
 					if constexpr (std::is_convertible_v<TVarType, THRDType>)
 						Params.Set(ID, static_cast<THRDType>(Get<TVarType>(Handle)));
