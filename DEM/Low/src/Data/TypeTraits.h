@@ -7,37 +7,6 @@
 namespace DEM::Meta
 {
 
-template<typename T, typename... TTypes>
-constexpr size_t index_of_type()
-{
-	size_t i = 0;
-	const bool Found = ((++i && std::is_same_v<T, TTypes>) || ...);
-	return i - Found;
-}
-
-template<typename T, typename... TTypes>
-constexpr bool contains_type()
-{
-	return (std::is_same_v<T, TTypes> || ...);
-}
-
-// https://stackoverflow.com/questions/46278997/variadic-templates-and-switch-statement
-template<typename T, T... Is, typename F>
-decltype(auto) compile_switch(T i, std::integer_sequence<T, Is...>, F f)
-{
-	using return_type = std::common_type_t<decltype(f(std::integral_constant<T, Is>{}))... > ;
-	if constexpr (std::is_void_v<return_type>)
-	{
-		std::initializer_list<int>({ (i == Is ? (f(std::integral_constant<T, Is>{})),0 : 0)... });
-	}
-	else
-	{
-		return_type ret{};
-		std::initializer_list<int>({ (i == Is ? (ret = f(std::integral_constant<T, Is>{})),0 : 0)... });
-		return ret;
-	}
-}
-
 // https://stackoverflow.com/questions/27338428/variadic-template-that-determines-the-best-conversion
 // NB: yields 'void' for ambiguous conversions. Numeric conversions are frequently ambiguous, e.g. integral vs float.
 template <typename T, typename... E>
@@ -69,5 +38,40 @@ struct best_conversion
 
 template <typename... T>
 using best_conversion_t = typename best_conversion<T...>::type;
+//---------------------------------------------------------------------
+
+template<typename T, typename... TTypes>
+constexpr size_t index_of_type()
+{
+	size_t i = 0;
+	const bool Found = ((++i && std::is_same_v<T, TTypes>) || ...);
+	return i - Found;
+}
+//---------------------------------------------------------------------
+
+template<typename T, typename... TTypes>
+constexpr bool contains_type()
+{
+	return (std::is_same_v<T, TTypes> || ...);
+}
+//---------------------------------------------------------------------
+
+// https://stackoverflow.com/questions/46278997/variadic-templates-and-switch-statement
+template<typename T, T... Is, typename F>
+decltype(auto) compile_switch(T i, std::integer_sequence<T, Is...>, F f)
+{
+	using return_type = std::common_type_t<decltype(f(std::integral_constant<T, Is>{}))... > ;
+	if constexpr (std::is_void_v<return_type>)
+	{
+		std::initializer_list<int>({ (i == Is ? (f(std::integral_constant<T, Is>{})),0 : 0)... });
+	}
+	else
+	{
+		return_type ret{};
+		std::initializer_list<int>({ (i == Is ? (ret = f(std::integral_constant<T, Is>{})),0 : 0)... });
+		return ret;
+	}
+}
+//---------------------------------------------------------------------
 
 }

@@ -27,10 +27,8 @@ struct HVar
 	constexpr HVar() : TypeIdx((1 << TYPE_INDEX_BITS) - 1), VarIdx((1 << VAR_INDEX_BITS) - 1) {}
 	constexpr HVar(uint32_t TypeIdx_, uint32_t VarIdx_) : TypeIdx(TypeIdx_), VarIdx(VarIdx_) {}
 
-	constexpr bool operator ==(HVar Other) const { return TypeIdx == Other.TypeIdx && VarIdx == Other.VarIdx; }
-	constexpr operator bool() { return !(*this == HVar{}); }
+	constexpr operator bool() { return TypeIdx != HVar{}.TypeIdx && VarIdx != HVar{}.VarIdx; } // NB: any field invalid -> HVar invalid
 };
-constexpr HVar InvalidVar{};
 
 template<typename... TVarTypes>
 class CVarStorage
