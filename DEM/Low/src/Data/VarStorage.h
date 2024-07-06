@@ -43,18 +43,26 @@ auto compile_switch(T i, std::integer_sequence<T, Is...>, F f)
 
 }
 
-//???make struct?! to ensure external transparency and strict type safety without implicit conversions.
-using HVar = uint32_t; // 4 bits of type index and 28 bits of index in a corresponding vector
-constexpr HVar InvalidVar = { 0xffffffff };
-constexpr size_t VAR_INDEX_BITS = 28;
-constexpr size_t VAR_TYPE_INDEX_BITS = sizeof(HVar) * 8 - VAR_INDEX_BITS;
+// Opaque handle for fast access to stored variables
+struct HVar
+{
+	static constexpr size_t TYPE_INDEX_BITS = 4;
+	static constexpr size_t VAR_INDEX_BITS = 28;
+
+	uint32_t TypeIdx : TYPE_INDEX_BITS;
+	uint32_t VarIdx : VAR_INDEX_BITS;
+
+	constexpr HVar() : TypeIdx((1 << TYPE_INDEX_BITS) - 1), VarIdx((1 << VAR_INDEX_BITS) - 1) {}
+	constexpr HVar(uint32_t TypeIdx_, uint32_t VarIdx_) : TypeIdx(TypeIdx_), VarIdx(VarIdx_) {}
+};
+constexpr HVar InvalidVar{};
 
 template<typename... TVarTypes>
 class CVarStorage
 {
 protected:
 
-	static_assert(sizeof...(TVarTypes) < (1 << VAR_TYPE_INDEX_BITS), "Too many types to be indexed in HVar"); // NB: one value is reserved for invalid index
+	static_assert(sizeof...(TVarTypes) < (1 << HVar::TYPE_INDEX_BITS), "Too many types to be indexed in HVar"); // NB: one value is reserved for invalid index
 
 	template<typename T>
 	using pass = std::conditional_t<(sizeof(T) > sizeof(size_t)), const T&, T>;
@@ -68,12 +76,6 @@ protected:
 	std::map<CStrID, HVar>                _VarsByID;
 
 	template<typename T>
-	bool IsTypeValid(HVar Handle) const
-	{
-		return (Handle >> VAR_INDEX_BITS) == TypeIndex<T>;
-	}
-
-	template<typename T>
 	bool TrySet(CStrID ID, pass<T> Value)
 	{
 		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
@@ -82,7 +84,7 @@ protected:
 	}
 
 	template<typename T, typename std::enable_if_t<!std::is_same_v<pass<T>, T>>* = nullptr>
-	HVar TrySet(CStrID ID, T&& Value)
+	bool TrySet(CStrID ID, T&& Value)
 	{
 		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
 			Set<T>(ID, std::move(Value));
@@ -111,26 +113,28 @@ public:
 	{
 		// Explicit check saves us from a spam of compiler errors with the same meaning from std::get
 		static_assert(DEM::Meta::contains_type<T, TVarTypes...>(), "Requested type is not supported by this storage");
-		n_assert_dbg(IsTypeValid<T>(Handle));
-		return std::get<std::vector<T>>(_Storages)[Handle & ((1 << VAR_INDEX_BITS) - 1)];
+		n_assert_dbg(Handle.TypeIdx == TypeIndex<T>);
+		return std::get<std::vector<T>>(_Storages)[Handle.VarIdx];
 	}
 
 	template<typename T>
 	void Set(HVar Handle, pass<T> Value)
 	{
-		// TODO: support convertible here too?
-		n_assert_dbg(IsTypeValid<T>(Handle));
-		if (IsTypeValid<T>(Handle))
-			std::get<TypeIndex<T>>(_Storages)[Handle & ((1 << VAR_INDEX_BITS) - 1)] = Value;
+		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be converted to a supported type");
+
+		n_assert_dbg(Handle.TypeIdx == TypeIndex<T>);
+		if (Handle.TypeIdx == TypeIndex<T>)
+			std::get<TypeIndex<T>>(_Storages)[Handle.VarIdx] = Value;
 	}
 
 	template<typename T, typename std::enable_if_t<!std::is_same_v<pass<T>, T>>* = nullptr>
 	void Set(HVar Handle, T&& Value)
 	{
-		// TODO: support convertible here too?
-		n_assert_dbg(IsTypeValid<T>(Handle));
-		if (IsTypeValid<T>(Handle))
-			std::get<TypeIndex<T>>(_Storages)[Handle & ((1 << VAR_INDEX_BITS) - 1)] = std::move(Value);
+		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be converted to a supported type");
+
+		n_assert_dbg(Handle.TypeIdx == TypeIndex<T>);
+		if (Handle.TypeIdx == TypeIndex<T>)
+			std::get<TypeIndex<T>>(_Storages)[Handle.VarIdx] = std::move(Value);
 	}
 
 	//!!!TODO: check code generation between pass<T> and T&& for by-value types! Maybe don't need these two versions!
@@ -144,8 +148,7 @@ public:
 		if (It == _VarsByID.cend())
 		{
 			auto& Storage = std::get<TypeIndex<T>>(_Storages);
-			const HVar Handle = (TypeIndex<T> << VAR_INDEX_BITS) | Storage.size();
-			It = _VarsByID.emplace(ID, Handle).first;
+			It = _VarsByID.emplace(ID, HVar{ TypeIndex<T>, Storage.size() }).first;
 			Storage.push_back(Value);
 		}
 		else
@@ -165,8 +168,7 @@ public:
 		if (It == _VarsByID.cend())
 		{
 			auto& Storage = std::get<TypeIndex<T>>(_Storages);
-			const HVar Handle = (TypeIndex<T> << VAR_INDEX_BITS) | Storage.size();
-			It = _VarsByID.emplace(ID, Handle).first;
+			It = _VarsByID.emplace(ID, HVar{ TypeIndex<T>, Storage.size() }).first;
 			Storage.push_back(std::move(Value));
 		}
 		else
@@ -214,8 +216,7 @@ public:
 		size_t Saved = 0;
 		for (const auto& [ID, Handle] : _VarsByID)
 		{
-			const auto CurrTypeIndex = (Handle >> VAR_INDEX_BITS);
-			Saved += DEM::Meta::compile_switch(CurrTypeIndex, std::index_sequence_for<TVarTypes...>{}, [this, &Params, ID = ID, Handle = Handle](auto i) {
+			Saved += DEM::Meta::compile_switch(Handle.TypeIdx, std::index_sequence_for<TVarTypes...>{}, [this, &Params, ID = ID, Handle = Handle](auto i) {
 				using TVarType = std::tuple_element_t<i, std::tuple<TVarTypes...>>;
 				using THRDType = Data::THRDType<TVarType>;
 
