@@ -1,6 +1,6 @@
 #pragma once
-#include <StdDEM.h>
-#include <System/System.h>
+#include <Data/Params.h>
+#include <Data/DataArray.h>
 #include <map>
 
 // Fixed size two-dimensional array.
@@ -73,6 +73,22 @@ protected:
 		return (Handle >> VAR_INDEX_BITS) == TypeIndex<T>;
 	}
 
+	template<typename T>
+	bool TrySet(CStrID ID, pass<T> Value)
+	{
+		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
+			Set<T>(ID, Value);
+		return (TypeIndex<T> < sizeof...(TVarTypes));
+	}
+
+	template<typename T, typename std::enable_if_t<!std::is_same_v<pass<T>, T>>* = nullptr>
+	HVar TrySet(CStrID ID, T&& Value)
+	{
+		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
+			Set<T>(ID, std::move(Value));
+		return (TypeIndex<T> < sizeof...(TVarTypes));
+	}
+
 public:
 
 	HVar Find(CStrID ID) const
@@ -80,6 +96,15 @@ public:
 		const auto It = _VarsByID.find(ID);
 		return (It == _VarsByID.cend()) ? InvalidVar : It->second;
 	}
+
+	void clear()
+	{
+		_VarsByID.clear();
+		std::apply([](auto& ...Storage) { (..., Storage.clear()); }, _Storages);
+	}
+
+	bool empty() const { return _VarsByID.empty(); }
+	auto size() const { return _VarsByID.size(); }
 
 	template<typename T>
 	pass<T> Get(HVar Handle) const
@@ -96,7 +121,7 @@ public:
 		// TODO: support convertible here too?
 		n_assert_dbg(IsTypeValid<T>(Handle));
 		if (IsTypeValid<T>(Handle))
-			std::get<std::vector<T>>(_Storages)[Handle & ((1 << VAR_INDEX_BITS) - 1)] = Value;
+			std::get<TypeIndex<T>>(_Storages)[Handle & ((1 << VAR_INDEX_BITS) - 1)] = Value;
 	}
 
 	template<typename T, typename std::enable_if_t<!std::is_same_v<pass<T>, T>>* = nullptr>
@@ -105,7 +130,7 @@ public:
 		// TODO: support convertible here too?
 		n_assert_dbg(IsTypeValid<T>(Handle));
 		if (IsTypeValid<T>(Handle))
-			std::get<std::vector<T>>(_Storages)[Handle & ((1 << VAR_INDEX_BITS) - 1)] = std::move(Value);
+			std::get<TypeIndex<T>>(_Storages)[Handle & ((1 << VAR_INDEX_BITS) - 1)] = std::move(Value);
 	}
 
 	//!!!TODO: check code generation between pass<T> and T&& for by-value types! Maybe don't need these two versions!
@@ -152,20 +177,45 @@ public:
 		return It->second;
 	}
 
-	void Load(const Data::CParams& Params)
+	size_t Load(const Data::CParams& Params)
 	{
+		size_t Loaded = 0;
 		for (const auto& Param : Params)
 		{
-			//Set(Param.ID, Param.Get<T>());
+			switch (Param.GetRawValue().GetTypeID())
+			{
+				case Data::CTypeID<bool>::TypeID: Loaded += TrySet<bool>(Param.GetName(), Param.GetValue<bool>()); break;
+				case Data::CTypeID<int>::TypeID: Loaded += TrySet<int>(Param.GetName(), Param.GetValue<int>()); break;
+				case Data::CTypeID<float>::TypeID: Loaded += TrySet<float>(Param.GetName(), Param.GetValue<float>()); break;
+				case Data::CTypeID<CString>::TypeID:
+				{
+					const auto& Src = Param.GetValue<CString>();
+					if constexpr (DEM::Meta::contains_type<CString, TVarTypes...>())
+						Loaded += TrySet<CString>(Param.GetName(), Src);
+					else
+						Loaded += TrySet<std::string>(Param.GetName(), std::string(Src.CStr(), Src.GetLength()));
+					break;
+				}
+				case Data::CTypeID<CStrID>::TypeID: Loaded += TrySet<CStrID>(Param.GetName(), Param.GetValue<CStrID>()); break;
+				case Data::CTypeID<vector3>::TypeID: Loaded += TrySet<vector3>(Param.GetName(), Param.GetValue<vector3>()); break;
+				case Data::CTypeID<vector4>::TypeID: Loaded += TrySet<vector4>(Param.GetName(), Param.GetValue<vector4>()); break;
+				case Data::CTypeID<matrix44>::TypeID: Loaded += TrySet<matrix44>(Param.GetName(), Param.GetValue<matrix44>()); break;
+				case Data::CTypeID<Data::PParams>::TypeID: Loaded += TrySet<Data::PParams>(Param.GetName(), Param.GetValue<Data::PParams>()); break;
+				case Data::CTypeID<Data::PDataArray>::TypeID: Loaded += TrySet<Data::PDataArray>(Param.GetName(), Param.GetValue<Data::PDataArray>()); break;
+				default: break;
+			}
 		}
+
+		return Loaded;
 	}
 
-	void Save(Data::CParams& Params)
+	size_t Save(Data::CParams& Params)
 	{
+		size_t Saved = 0;
 		for (const auto& [ID, Handle] : _VarsByID)
 		{
-			const auto TypeIndex = (Handle >> VAR_INDEX_BITS);
-			const bool Saved = DEM::Meta::compile_switch(TypeIndex, std::index_sequence_for<TVarTypes...>{}, [this, &Params, ID = ID, Handle = Handle](auto i) {
+			const auto CurrTypeIndex = (Handle >> VAR_INDEX_BITS);
+			Saved += DEM::Meta::compile_switch(CurrTypeIndex, std::index_sequence_for<TVarTypes...>{}, [this, &Params, ID = ID, Handle = Handle](auto i) {
 				using TVarType = std::tuple_element_t<i, std::tuple<TVarTypes...>>;
 				using THRDType = Data::THRDType<TVarType>;
 
@@ -183,5 +233,7 @@ public:
 				return true;
 			});
 		}
+
+		return Saved;
 	}
 };

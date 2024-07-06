@@ -20,7 +20,7 @@ public:
 	CString(): pString(nullptr), Length(0), MaxLength(0) {}
 	explicit CString(const char* pSrc);
 	explicit CString(const char* pSrc, UPTR SrcLength, UPTR PreallocatedFreeSpace = 0);
-	explicit CString(const std::string& Src) : CString(Src.c_str(), Src.size()) {}
+	explicit CString(std::string_view Src) : CString(Src.data(), Src.size()) {}
 	CString(const CString& Other, UPTR PreallocatedFreeSpace = 0): CString(Other.CStr(), Other.GetLength(), PreallocatedFreeSpace) { }
 	~CString() { if (pString) n_free(pString); }
 

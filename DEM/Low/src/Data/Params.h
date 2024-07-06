@@ -54,7 +54,9 @@ public:
 	template<class T> bool		TryGet(T& Dest, CStrID Name) const;
 	void						Set(const CParam& Param);
 	void						Set(CStrID Name, const CData& Value);
+	void						Set(CStrID Name, CData&& Value);
 	template<class T> void		Set(CStrID Name, const T& Value) { Set(Name, CData(Value)); }
+	template<class T> void		Set(CStrID Name, T&& Value) { Set(Name, CData(std::move(Value))); }
 	bool						Remove(CStrID Name);
 	void						Clear() { Params.Clear(); }
 
@@ -220,6 +222,14 @@ inline void CParams::Set(CStrID Name, const CData& Value)
 	IPTR Idx = IndexOf(Name);
 	if (Idx != INVALID_INDEX) Params[Idx].SetValue(Value);
 	else Params.Add(CParam(Name, Value)); //???can avoid tmp obj creation?
+}
+//---------------------------------------------------------------------
+
+inline void CParams::Set(CStrID Name, CData&& Value)
+{
+	IPTR Idx = IndexOf(Name);
+	if (Idx != INVALID_INDEX) Params[Idx].SetValue(std::move(Value));
+	else Params.Add(CParam(Name, std::move(Value))); //???can avoid tmp obj creation?
 }
 //---------------------------------------------------------------------
 

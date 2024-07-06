@@ -21,8 +21,9 @@ public:
 
 	CParam() {}
 	CParam(const CParam& Src) { Clone(Src); }
-	CParam(CStrID name, const CData& value): Name(name), Value(value) {} 
-	
+	CParam(CStrID name, const CData& value) : Name(name), Value(value) {}
+	CParam(CStrID name, CData&& value) : Name(name), Value(std::move(value)) {}
+
 	template<class T> bool		IsA() const { return Value.GetType() == CType::GetType<T>(); }
 
 	CStrID						GetName() const { return Name; }
