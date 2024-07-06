@@ -266,6 +266,14 @@ struct hrd_type { using type = void; };
 template<typename T>
 struct hrd_type<T, typename std::enable_if_t<CTypeID<T>::IsDeclared>> { using type = T; };
 
+// Lossy conversion, remove when extend HRD types to 64 bits
+template<typename T>
+struct hrd_type<T, typename std::enable_if_t<std::is_integral_v<T> && (sizeof(T) > sizeof(int))>> { using type = int; };
+
+// Lossy conversion, remove when extend HRD types to 64 bits
+template<>
+struct hrd_type<double> { using type = float; };
+
 template<>
 struct hrd_type<std::string> { using type = CString; };
 

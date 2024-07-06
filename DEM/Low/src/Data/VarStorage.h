@@ -2,14 +2,23 @@
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 #include <map>
+#include <variant>
 
-// Fixed size two-dimensional array.
+// A heterogeneous strongly typed named variable storage, like map<ID, std::variant> but more optimal in RAM.
+// Features:
+// - Saving and loading with Data::CParams. Can be easily extended or changed to XML, JSON or any other markup.
+// - Automatically accepts convertible types
+// - Visitation of contents similar to std::visit
+// Limitations:
+// - Variable, once added, can be cleared but can't be deleted. Only full storage cleanup is available.
+// - No more than 15 different types, see HVar bits usage
+// - Auto-conversion with precision loss is not supported, cast your values manually on set if you want it
 
 //!!!TODO: move to appropriate header!
 namespace DEM::Meta
 {
 
-template<class T, class... TTypes>
+template<typename T, typename... TTypes>
 constexpr size_t index_of_type()
 {
 	size_t i = 0;
@@ -17,29 +26,60 @@ constexpr size_t index_of_type()
 	return i - Found;
 }
 
-template<class T, class... TTypes>
-constexpr size_t index_of_convertible_type()
-{
-	size_t i = 0;
-	const bool Found = ((++i && std::is_convertible_v<T, TTypes>) || ...);
-	return i - Found;
-}
-
-template<class T, class... TTypes>
+template<typename T, typename... TTypes>
 constexpr bool contains_type()
 {
 	return (std::is_same_v<T, TTypes> || ...);
 }
 
 // https://stackoverflow.com/questions/46278997/variadic-templates-and-switch-statement
-template <class T, T... Is, class F>
-auto compile_switch(T i, std::integer_sequence<T, Is...>, F f)
+template<typename T, T... Is, typename F>
+decltype(auto) compile_switch(T i, std::integer_sequence<T, Is...>, F f)
 {
 	using return_type = std::common_type_t<decltype(f(std::integral_constant<T, Is>{}))...>;
-	return_type ret{};
-	std::initializer_list<int>({ (i == Is ? (ret = f(std::integral_constant<T, Is>{})),0 : 0)... });
-	return ret;
+	if constexpr (std::is_void_v<return_type>)
+	{
+		std::initializer_list<int>({ (i == Is ? (f(std::integral_constant<T, Is>{})),0 : 0)... });
+	}
+	else
+	{
+		return_type ret{};
+		std::initializer_list<int>({ (i == Is ? (ret = f(std::integral_constant<T, Is>{})),0 : 0)... });
+		return ret;
+	}
 }
+
+// https://stackoverflow.com/questions/27338428/variadic-template-that-determines-the-best-conversion
+// NB: yields 'void' for ambiguous conversions. Numeric conversions are frequently ambiguous, e.g. integral vs float.
+template <typename T, typename... E>
+struct best_conversion
+{
+	template <typename...> struct overloads {};
+
+	template <typename U, typename... Rest>
+	struct overloads<U, Rest...> : overloads<Rest...>
+	{
+		using overloads<Rest...>::call;
+		static U call(U);
+	};
+
+	template <typename U>
+	struct overloads<U>
+	{
+		static U call(U);
+	};
+
+	template <typename... E_>
+	static decltype(overloads<E_...>::call(std::declval<T>())) best_conv(int);
+
+	template <typename...>
+	static void best_conv(...);
+
+	using type = decltype(best_conv<E...>(0));
+};
+
+template <typename... T>
+using best_conversion_t = typename best_conversion<T...>::type;
 
 }
 
@@ -54,6 +94,9 @@ struct HVar
 
 	constexpr HVar() : TypeIdx((1 << TYPE_INDEX_BITS) - 1), VarIdx((1 << VAR_INDEX_BITS) - 1) {}
 	constexpr HVar(uint32_t TypeIdx_, uint32_t VarIdx_) : TypeIdx(TypeIdx_), VarIdx(VarIdx_) {}
+
+	constexpr bool operator ==(HVar Other) const { return TypeIdx == Other.TypeIdx && VarIdx == Other.VarIdx; }
+	constexpr operator bool() { return !(*this == HVar{}); }
 };
 constexpr HVar InvalidVar{};
 
@@ -70,7 +113,7 @@ protected:
 	template<typename T>
 	static constexpr auto TypeIndex = DEM::Meta::contains_type<T, TVarTypes...>() ?
 		DEM::Meta::index_of_type<T, TVarTypes...>() :
-		DEM::Meta::index_of_convertible_type<T, TVarTypes...>();
+		DEM::Meta::index_of_type<DEM::Meta::best_conversion_t<T, TVarTypes...>, TVarTypes...>();
 
 	std::tuple<std::vector<TVarTypes>...> _Storages;
 	std::map<CStrID, HVar>                _VarsByID;
@@ -96,9 +139,10 @@ public:
 	HVar Find(CStrID ID) const
 	{
 		const auto It = _VarsByID.find(ID);
-		return (It == _VarsByID.cend()) ? InvalidVar : It->second;
+		return (It == _VarsByID.cend()) ? HVar{} : It->second;
 	}
 
+	// NB: this invalidated all HVar handles issued by this storage
 	void clear()
 	{
 		_VarsByID.clear();
@@ -115,6 +159,16 @@ public:
 		static_assert(DEM::Meta::contains_type<T, TVarTypes...>(), "Requested type is not supported by this storage");
 		n_assert_dbg(Handle.TypeIdx == TypeIndex<T>);
 		return std::get<std::vector<T>>(_Storages)[Handle.VarIdx];
+	}
+
+	auto Get(HVar Handle) const
+	{
+		std::variant<std::monostate, TVarTypes...> Result;
+		DEM::Meta::compile_switch(Handle.TypeIdx, std::index_sequence_for<TVarTypes...>{}, [this, &Result, VarIdx = Handle.VarIdx](auto i)
+		{
+			Result = std::get<i>(_Storages)[VarIdx];
+		});
+		return Result;
 	}
 
 	template<typename T>
@@ -139,6 +193,7 @@ public:
 
 	//!!!TODO: check code generation between pass<T> and T&& for by-value types! Maybe don't need these two versions!
 	//!!!also currently it can't deduce var type from arg! Need to write Set<float> etc!
+	//can leave pass<T> as a return value in Get!
 	template<typename T>
 	HVar Set(CStrID ID, pass<T> Value)
 	{
@@ -179,6 +234,18 @@ public:
 		return It->second;
 	}
 
+	template<typename F>
+	void Visit(F Callback)
+	{
+		for (const auto& [ID, Handle] : _VarsByID)
+		{
+			DEM::Meta::compile_switch(Handle.TypeIdx, std::index_sequence_for<TVarTypes...>{}, [this, &Callback, ID, VarIdx = Handle.VarIdx](auto i)
+			{
+				Callback(ID, std::get<i>(_Storages)[VarIdx]);
+			});
+		}
+	}
+
 	size_t Load(const Data::CParams& Params)
 	{
 		size_t Loaded = 0;
@@ -216,7 +283,8 @@ public:
 		size_t Saved = 0;
 		for (const auto& [ID, Handle] : _VarsByID)
 		{
-			Saved += DEM::Meta::compile_switch(Handle.TypeIdx, std::index_sequence_for<TVarTypes...>{}, [this, &Params, ID = ID, Handle = Handle](auto i) {
+			Saved += DEM::Meta::compile_switch(Handle.TypeIdx, std::index_sequence_for<TVarTypes...>{}, [this, &Params, ID = ID, Handle = Handle](auto i)
+			{
 				using TVarType = std::tuple_element_t<i, std::tuple<TVarTypes...>>;
 				using THRDType = Data::THRDType<TVarType>;
 
@@ -227,7 +295,7 @@ public:
 					return false;
 
 				if constexpr (std::is_convertible_v<TVarType, THRDType>)
-					Params.Set(ID, Get<TVarType>(Handle));
+					Params.Set(ID, static_cast<THRDType>(Get<TVarType>(Handle)));
 				else
 					Params.Set(ID, THRDType(Get<TVarType>(Handle)));
 
