@@ -173,6 +173,18 @@ public:
 		}
 	}
 
+	template<typename F>
+	void Visit(F Callback) const
+	{
+		for (const auto& [ID, Handle] : _VarsByID)
+		{
+			DEM::Meta::compile_switch(Handle.TypeIdx, std::index_sequence_for<TVarTypes...>{}, [this, &Callback, ID, VarIdx = Handle.VarIdx](auto i)
+			{
+				Callback(ID, std::get<i>(_Storages)[VarIdx]);
+			});
+		}
+	}
+
 	size_t Load(const Data::CParams& Params)
 	{
 		size_t Loaded = 0;
