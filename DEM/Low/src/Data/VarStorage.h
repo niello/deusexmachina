@@ -38,9 +38,6 @@ protected:
 	static_assert(sizeof...(TVarTypes) < (1 << HVar::TYPE_INDEX_BITS), "Too many types to be indexed in HVar"); // NB: one value is reserved for invalid index
 
 	template<typename T>
-	using pass = std::conditional_t<(sizeof(T) > sizeof(size_t)), const T&, T>;
-
-	template<typename T>
 	static constexpr auto TypeIndex = DEM::Meta::contains_type<T, TVarTypes...>() ?
 		DEM::Meta::index_of_type<T, TVarTypes...>() :
 		DEM::Meta::index_of_type<DEM::Meta::best_conversion_t<T, TVarTypes...>, TVarTypes...>();
@@ -75,7 +72,7 @@ public:
 	auto size() const { return _VarsByID.size(); }
 
 	template<typename T>
-	pass<T> Get(HVar Handle) const
+	auto Get(HVar Handle) const
 	{
 		static_assert(DEM::Meta::contains_type<T, TVarTypes...>(), "Requested type is not supported by this storage");
 		n_assert_dbg(Handle.TypeIdx == TypeIndex<T>);
@@ -83,7 +80,7 @@ public:
 	}
 
 	template<typename T>
-	pass<T> Get(HVar Handle, const T& Default) const
+	auto Get(HVar Handle, const T& Default) const
 	{
 		static_assert(DEM::Meta::contains_type<T, TVarTypes...>(), "Requested type is not supported by this storage");
 		auto& Storage = std::get<std::vector<T>>(_Storages);
