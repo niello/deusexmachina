@@ -227,18 +227,19 @@ public:
 				using TVarType = std::tuple_element_t<i, std::tuple<TVarTypes...>>;
 				using THRDType = Data::THRDType<TVarType>;
 
-				// Left here temporary to control usage. Can remove and allow to skip saving not supported types.
+				// Temporary static_assert to control usage. Can remove and allow to skip saving not supported types.
 				static_assert(Data::CTypeID<THRDType>::IsDeclared);
-
 				if constexpr (!Data::CTypeID<THRDType>::IsDeclared)
-					return false;
+				{
+					if constexpr (std::is_convertible_v<TVarType, THRDType>)
+						Params.Set(ID, static_cast<THRDType>(Get<TVarType>(Handle)));
+					else
+						Params.Set(ID, THRDType(Get<TVarType>(Handle)));
 
-				if constexpr (std::is_convertible_v<TVarType, THRDType>)
-					Params.Set(ID, static_cast<THRDType>(Get<TVarType>(Handle)));
-				else
-					Params.Set(ID, THRDType(Get<TVarType>(Handle)));
+					return true;
+				}
 
-				return true;
+				return false;
 			});
 		}
 
