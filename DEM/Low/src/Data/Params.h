@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_PARAMS_H__
-#define __DEM_L1_PARAMS_H__
-
 #include <Data/RefCounted.h>
 #include <Data/Array.h>
 #include <Data/Param.h>
@@ -247,75 +244,22 @@ inline float GetFloat(const Data::CParams& P, CStrID Name, float Default = 0.f)
 }
 //---------------------------------------------------------------------
 
-//!!!Tmp while there are no conversions!
-inline CStrID GetStrID(const Data::CData& Data)
-{
-	return Data.IsA<CStrID>() ? Data.GetValue<CStrID>() : CStrID(Data.GetValue<CString>().CStr());
-}
-//---------------------------------------------------------------------
-
-//!!!Tmp while there are no conversions!
-inline CStrID GetStrID(const Data::CParams& P, CStrID Name, CStrID Default = CStrID::Empty)
-{
-	Data::CParam* pPrm;
-	if (P.TryGet(pPrm, Name))
-		return pPrm->IsA<CStrID>() ? pPrm->GetValue<CStrID>() : CStrID(pPrm->GetValue<CString>().CStr());
-	return Default;
-}
-//---------------------------------------------------------------------
-
 DECLARE_TYPE(PParams, 11)
-#define TParams DATA_TYPE(PParams)
 
-#endif
-
-/*
-template<int Size>
-class CStaticParams //???public CParams? or both from list?
+namespace Data
 {
-protected:
 
-CParam Params[Size];
+// Type conversion for saving in HRD format
+template<typename T, typename Enable = void>
+struct hrd_type { using type = void; };
 
-public:
+template<typename T>
+struct hrd_type<T, typename std::enable_if_t<CTypeID<T>::IsDeclared>> { using type = T; };
 
-//???const char* / CString versions?
-inline const CParam* Get(CStrID Name) const;
-inline UPTR         IndexOf(CStrID Name) const;
-inline bool          Exists(CStrID Name) const {return IndexOf(Name)!=INVALID_INDEX;}
+template<>
+struct hrd_type<std::string> { using type = CString; };
 
-const CParam& operator[](UPTR Index) const
-{
-assert((Index<Size)&&"Get invalid parameter!");
-return Params[Index];
+template <typename T>
+using THRDType = typename hrd_type<T>::type;
+
 }
-
-const CParam& operator[](CStrID Name) const
-{
-const CParam* Tmp=Get(Name);
-assert(Tmp&&"Get invalid parameter!");
-return Tmp;
-}
-
-//template<class T>
-//void     Add(CStrID id, const T &val);
-//???remove?
-};
-//---------------------------------------------------------------------
-
-template<int Size> inline const CParam* CStaticParams<Size>::Get(CStrID Name) const
-{
-for (UPTR i=0; i<Size; ++i)
-if (Params[i].GetName()==Name) return Params[i];
-return nullptr;
-}
-//---------------------------------------------------------------------
-
-template<int Size> inline UPTR CStaticParams<Size>::IndexOf(CStrID Name) const
-{
-for (UPTR i=0; i<Size; ++i)
-if (Params[i].GetName()==Name) return i;
-return INVALID_INDEX;
-}
-//=====================================================================
-*/

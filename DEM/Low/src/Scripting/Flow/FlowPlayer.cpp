@@ -58,16 +58,6 @@ bool CFlowPlayer::Start(PFlowAsset Asset, U32 StartActionID)
 
 	// TODO: Variable storage is initialized with default values from the asset.
 
-	//!!!DBG TMP!
-	auto Storage = _Asset->GetDefaultVarStorage();
-	float x = Storage.Get<float>({});
-	const auto& s = Storage.Get<std::string>({});
-	Storage.Set<float>({}, 0.f);
-	Storage.Set<std::string>({}, "nn");
-	auto h1 = Storage.Set<float>(CStrID("xx"), 0.f);
-	auto h2 = Storage.Set<std::string>(CStrID("xx"), "nn");
-	uint64_t tt = Storage.Get<uint64_t>({});
-
 	OnStart();
 
 	return true;

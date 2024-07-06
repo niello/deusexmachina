@@ -216,7 +216,7 @@ bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value,
 
 bool CBinaryWriter::WriteDataAsOfType(const Data::CData& Value, int TypeID, Data::CFlags Flags)
 {
-	if (TypeID == TVoid) return Write(Value);
+	if (TypeID == INVALID_TYPE_ID) return Write(Value);
 	else
 	{
 		if (Value.GetTypeID() != TypeID)

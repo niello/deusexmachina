@@ -81,7 +81,7 @@ public:
 	const char*					ToString() const { return Type ? Type->ToString(Value) : nullptr; }
 
 	CData&                      operator =(const CData& Src) { SetTypeValue(Src); return *this; }
-	CData&                      operator =(CData&& Src);
+	CData&                      operator =(CData&& Src) noexcept;
 	template<class T> CData&	operator =(const T& Src) { SetTypeValue(Src); return *this; }
 	template<class T> CData&	operator =(T& Src) { SetTypeValue(Src); return *this; }
 	template<class T> CData&	operator =(T&& Src);
@@ -247,18 +247,7 @@ template<> inline CData& CData::operator =(CData& Src)
 }
 //---------------------------------------------------------------------
 
-//template<> inline CData& CData::operator =(CData&& Src)
-//{
-//	Clear();
-//	Type = Src.Type;
-//	Value = Src.Value;
-//	Src.Type = nullptr;
-//	Src.Value = nullptr;
-//	return *this;
-//}
-////---------------------------------------------------------------------
-
-inline CData& CData::operator =(CData&& Src)
+inline CData& CData::operator =(CData&& Src) noexcept
 {
 	Clear();
 	Type = Src.Type;
@@ -283,14 +272,3 @@ DECLARE_TYPE(float, 3)
 DECLARE_TYPE(CString, 4) //???define char* too?
 DECLARE_TYPE(CStrID, 5)
 DECLARE_TYPE(PVOID, 6)
-
-#define TVoid			INVALID_TYPE_ID
-#define TBool			DATA_TYPE(bool)
-#define TInt			DATA_TYPE(int)
-#define TFloat			DATA_TYPE(float)
-#define TString			DATA_TYPE(CString)
-#define TStrID			DATA_TYPE(CStrID)
-#define TPtr			DATA_TYPE(PVOID)
-#define TVector3		DATA_TYPE(vector3)
-#define TVector4		DATA_TYPE(vector4)
-#define TMatrix44		DATA_TYPE(matrix44)

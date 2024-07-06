@@ -112,7 +112,7 @@ bool CBinaryReader::ReadData(Data::CData& OutValue)
 	char Type;
 	if (!Read(Type)) FAIL;
 
-	if (Type == TVoid) OutValue.Clear();
+	if (Type == INVALID_TYPE_ID) OutValue.Clear();
 	else if (Type == DATA_TYPE_ID(bool)) OutValue = Read<bool>();
 	else if (Type == DATA_TYPE_ID(int)) OutValue = Read<int>();
 	else if (Type == DATA_TYPE_ID(float)) OutValue = Read<float>();
