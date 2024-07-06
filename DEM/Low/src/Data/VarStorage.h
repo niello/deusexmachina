@@ -1,89 +1,21 @@
 #pragma once
 #include <Data/Params.h>
 #include <Data/DataArray.h>
+#include <Data/TypeTraits.h>
 #include <map>
 #include <variant>
 
 // A heterogeneous strongly typed named variable storage, like map<ID, std::variant> but more optimal in RAM.
 // Features:
 // - Saving and loading with Data::CParams. Can be easily extended or changed to XML, JSON or any other markup.
-// - Automatically accepts convertible types
+// - Auto-conversion of an absent type to the best matching type when possible
 // - Visitation of contents similar to std::visit
 // Limitations:
 // - Variable, once added, can be cleared but can't be deleted. Only full storage cleanup is available.
-// - No more than 15 different types, see HVar bits usage
-// - Auto-conversion with precision loss is not supported, cast your values manually on set if you want it
+// - No more than 15 different types and 268M variables per type, see HVar bits usage
+// - Auto-conversion is disabled when ambiguous, cast your values to the desired type manually in this case
 
-//!!!TODO: move to appropriate header!
-namespace DEM::Meta
-{
-
-template<typename T, typename... TTypes>
-constexpr size_t index_of_type()
-{
-	size_t i = 0;
-	const bool Found = ((++i && std::is_same_v<T, TTypes>) || ...);
-	return i - Found;
-}
-
-template<typename T, typename... TTypes>
-constexpr bool contains_type()
-{
-	return (std::is_same_v<T, TTypes> || ...);
-}
-
-// https://stackoverflow.com/questions/46278997/variadic-templates-and-switch-statement
-template<typename T, T... Is, typename F>
-decltype(auto) compile_switch(T i, std::integer_sequence<T, Is...>, F f)
-{
-	using return_type = std::common_type_t<decltype(f(std::integral_constant<T, Is>{}))...>;
-	if constexpr (std::is_void_v<return_type>)
-	{
-		std::initializer_list<int>({ (i == Is ? (f(std::integral_constant<T, Is>{})),0 : 0)... });
-	}
-	else
-	{
-		return_type ret{};
-		std::initializer_list<int>({ (i == Is ? (ret = f(std::integral_constant<T, Is>{})),0 : 0)... });
-		return ret;
-	}
-}
-
-// https://stackoverflow.com/questions/27338428/variadic-template-that-determines-the-best-conversion
-// NB: yields 'void' for ambiguous conversions. Numeric conversions are frequently ambiguous, e.g. integral vs float.
-template <typename T, typename... E>
-struct best_conversion
-{
-	template <typename...> struct overloads {};
-
-	template <typename U, typename... Rest>
-	struct overloads<U, Rest...> : overloads<Rest...>
-	{
-		using overloads<Rest...>::call;
-		static U call(U);
-	};
-
-	template <typename U>
-	struct overloads<U>
-	{
-		static U call(U);
-	};
-
-	template <typename... E_>
-	static decltype(overloads<E_...>::call(std::declval<T>())) best_conv(int);
-
-	template <typename...>
-	static void best_conv(...);
-
-	using type = decltype(best_conv<E...>(0));
-};
-
-template <typename... T>
-using best_conversion_t = typename best_conversion<T...>::type;
-
-}
-
-// Opaque handle for fast access to stored variables
+// Lightweight opaque handle for fast access to variables in CVarStorage
 struct HVar
 {
 	static constexpr size_t TYPE_INDEX_BITS = 4;
@@ -191,9 +123,6 @@ public:
 			std::get<TypeIndex<T>>(_Storages)[Handle.VarIdx] = std::move(Value);
 	}
 
-	//!!!TODO: check code generation between pass<T> and T&& for by-value types! Maybe don't need these two versions!
-	//!!!also currently it can't deduce var type from arg! Need to write Set<float> etc!
-	//can leave pass<T> as a return value in Get!
 	template<typename T>
 	HVar Set(CStrID ID, pass<T> Value)
 	{
