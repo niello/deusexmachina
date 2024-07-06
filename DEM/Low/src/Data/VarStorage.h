@@ -72,7 +72,7 @@ public:
 		return (It == _VarsByID.cend()) ? HVar{} : It->second;
 	}
 
-	// NB: this invalidated all HVar handles issued by this storage
+	// NB: this invalidates all HVar handles issued by this storage
 	void clear()
 	{
 		_VarsByID.clear();
