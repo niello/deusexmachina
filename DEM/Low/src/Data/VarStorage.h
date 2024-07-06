@@ -49,18 +49,10 @@ protected:
 	std::map<CStrID, HVar>                _VarsByID;
 
 	template<typename T>
-	bool TrySet(CStrID ID, pass<T> Value)
-	{
-		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
-			Set<T>(ID, Value);
-		return (TypeIndex<T> < sizeof...(TVarTypes));
-	}
-
-	template<typename T, typename std::enable_if_t<!std::is_same_v<pass<T>, T>>* = nullptr>
 	bool TrySet(CStrID ID, T&& Value)
 	{
 		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
-			Set<T>(ID, std::move(Value));
+			Set(ID, std::forward<T>(Value));
 		return (TypeIndex<T> < sizeof...(TVarTypes));
 	}
 
@@ -85,10 +77,17 @@ public:
 	template<typename T>
 	pass<T> Get(HVar Handle) const
 	{
-		// Explicit check saves us from a spam of compiler errors with the same meaning from std::get
 		static_assert(DEM::Meta::contains_type<T, TVarTypes...>(), "Requested type is not supported by this storage");
 		n_assert_dbg(Handle.TypeIdx == TypeIndex<T>);
 		return std::get<std::vector<T>>(_Storages)[Handle.VarIdx];
+	}
+
+	template<typename T>
+	pass<T> Get(HVar Handle, const T& Default) const
+	{
+		static_assert(DEM::Meta::contains_type<T, TVarTypes...>(), "Requested type is not supported by this storage");
+		auto& Storage = std::get<std::vector<T>>(_Storages);
+		return (Handle.TypeIdx == TypeIndex<T> && Handle.VarIdx < Storage.size()) ? Storage[Handle.VarIdx] : Default;
 	}
 
 	auto Get(HVar Handle) const
@@ -102,27 +101,18 @@ public:
 	}
 
 	template<typename T>
-	void Set(HVar Handle, pass<T> Value)
-	{
-		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be converted to a supported type");
-
-		n_assert_dbg(Handle.TypeIdx == TypeIndex<T>);
-		if (Handle.TypeIdx == TypeIndex<T>)
-			std::get<TypeIndex<T>>(_Storages)[Handle.VarIdx] = Value;
-	}
-
-	template<typename T, typename std::enable_if_t<!std::is_same_v<pass<T>, T>>* = nullptr>
 	void Set(HVar Handle, T&& Value)
 	{
 		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be converted to a supported type");
 
 		n_assert_dbg(Handle.TypeIdx == TypeIndex<T>);
 		if (Handle.TypeIdx == TypeIndex<T>)
-			std::get<TypeIndex<T>>(_Storages)[Handle.VarIdx] = std::move(Value);
+			std::get<TypeIndex<T>>(_Storages)[Handle.VarIdx] = std::forward<T>(Value);
 	}
 
-	template<typename T>
-	HVar Set(CStrID ID, pass<T> Value)
+	// NB: this is probably too big to be inlined and microoptimization with T instead of T&& yields better assembly
+	template<typename T, typename std::enable_if_t<(sizeof(T) <= sizeof(size_t))>* = nullptr>
+	HVar Set(CStrID ID, T Value)
 	{
 		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be converted to a supported type");
 
@@ -135,13 +125,13 @@ public:
 		}
 		else
 		{
-			Set<T>(It->second, Value);
+			Set(It->second, Value);
 		}
 
 		return It->second;
 	}
 
-	template<typename T, typename std::enable_if_t<!std::is_same_v<pass<T>, T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<(sizeof(T) > sizeof(size_t))>* = nullptr>
 	HVar Set(CStrID ID, T&& Value)
 	{
 		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be converted to a supported type");
@@ -151,11 +141,11 @@ public:
 		{
 			auto& Storage = std::get<TypeIndex<T>>(_Storages);
 			It = _VarsByID.emplace(ID, HVar{ static_cast<uint32_t>(TypeIndex<T>), static_cast<uint32_t>(Storage.size()) }).first;
-			Storage.push_back(std::move(Value));
+			Storage.push_back(std::forward<T>(Value));
 		}
 		else
 		{
-			Set<T>(It->second, std::move(Value));
+			Set(It->second, std::forward<T>(Value));
 		}
 
 		return It->second;
@@ -192,24 +182,24 @@ public:
 		{
 			switch (Param.GetRawValue().GetTypeID())
 			{
-				case Data::CTypeID<bool>::TypeID: Loaded += TrySet<bool>(Param.GetName(), Param.GetValue<bool>()); break;
-				case Data::CTypeID<int>::TypeID: Loaded += TrySet<int>(Param.GetName(), Param.GetValue<int>()); break;
-				case Data::CTypeID<float>::TypeID: Loaded += TrySet<float>(Param.GetName(), Param.GetValue<float>()); break;
+				case Data::CTypeID<bool>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<bool>()); break;
+				case Data::CTypeID<int>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<int>()); break;
+				case Data::CTypeID<float>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<float>()); break;
 				case Data::CTypeID<CString>::TypeID:
 				{
 					const auto& Src = Param.GetValue<CString>();
 					if constexpr (DEM::Meta::contains_type<CString, TVarTypes...>())
-						Loaded += TrySet<CString>(Param.GetName(), Src);
+						Loaded += TrySet(Param.GetName(), Src);
 					else
-						Loaded += TrySet<std::string>(Param.GetName(), std::string(Src.CStr(), Src.GetLength()));
+						Loaded += TrySet(Param.GetName(), std::string(Src.CStr(), Src.GetLength()));
 					break;
 				}
-				case Data::CTypeID<CStrID>::TypeID: Loaded += TrySet<CStrID>(Param.GetName(), Param.GetValue<CStrID>()); break;
-				case Data::CTypeID<vector3>::TypeID: Loaded += TrySet<vector3>(Param.GetName(), Param.GetValue<vector3>()); break;
-				case Data::CTypeID<vector4>::TypeID: Loaded += TrySet<vector4>(Param.GetName(), Param.GetValue<vector4>()); break;
-				case Data::CTypeID<matrix44>::TypeID: Loaded += TrySet<matrix44>(Param.GetName(), Param.GetValue<matrix44>()); break;
-				case Data::CTypeID<Data::PParams>::TypeID: Loaded += TrySet<Data::PParams>(Param.GetName(), Param.GetValue<Data::PParams>()); break;
-				case Data::CTypeID<Data::PDataArray>::TypeID: Loaded += TrySet<Data::PDataArray>(Param.GetName(), Param.GetValue<Data::PDataArray>()); break;
+				case Data::CTypeID<CStrID>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<CStrID>()); break;
+				case Data::CTypeID<vector3>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<vector3>()); break;
+				case Data::CTypeID<vector4>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<vector4>()); break;
+				case Data::CTypeID<matrix44>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<matrix44>()); break;
+				case Data::CTypeID<Data::PParams>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<Data::PParams>()); break;
+				case Data::CTypeID<Data::PDataArray>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<Data::PDataArray>()); break;
 				default: break;
 			}
 		}
@@ -227,8 +217,6 @@ public:
 				using TVarType = std::tuple_element_t<i, std::tuple<TVarTypes...>>;
 				using THRDType = Data::THRDType<TVarType>;
 
-				// Temporary static_assert to control usage. Can remove and allow to skip saving not supported types.
-				static_assert(Data::CTypeID<THRDType>::IsDeclared);
 				if constexpr (Data::CTypeID<THRDType>::IsDeclared)
 				{
 					if constexpr (std::is_convertible_v<TVarType, THRDType>)
