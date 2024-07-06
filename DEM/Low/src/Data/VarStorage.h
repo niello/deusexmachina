@@ -203,7 +203,7 @@ public:
 		if (It == _VarsByID.cend())
 		{
 			auto& Storage = std::get<TypeIndex<T>>(_Storages);
-			It = _VarsByID.emplace(ID, HVar{ TypeIndex<T>, Storage.size() }).first;
+			It = _VarsByID.emplace(ID, HVar{ static_cast<uint32_t>(TypeIndex<T>), static_cast<uint32_t>(Storage.size()) }).first;
 			Storage.push_back(Value);
 		}
 		else
@@ -223,7 +223,7 @@ public:
 		if (It == _VarsByID.cend())
 		{
 			auto& Storage = std::get<TypeIndex<T>>(_Storages);
-			It = _VarsByID.emplace(ID, HVar{ TypeIndex<T>, Storage.size() }).first;
+			It = _VarsByID.emplace(ID, HVar{ static_cast<uint32_t>(TypeIndex<T>), static_cast<uint32_t>(Storage.size()) }).first;
 			Storage.push_back(std::move(Value));
 		}
 		else
