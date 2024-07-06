@@ -2,6 +2,8 @@
 #include <Core/RTTIBaseClass.h>
 #include <Events/Signal.h>
 #include <Data/Ptr.h>
+#include <Data/StringID.h>
+#include <Data/VarStorage.h>
 
 // Plays a Flow asset and tracks its state.
 // Only one action can be active at the same time.
@@ -11,6 +13,7 @@ namespace DEM::Flow
 struct CFlowLink;
 struct CFlowActionData;
 using PFlowAsset = Ptr<class CFlowAsset>;
+using CFlowVarStorage = CVarStorage<bool, int, float, std::string, CStrID>;
 constexpr U32 EmptyActionID_FIXME = 0; //!!!!!!!!FIXME: fix duplicated definition!
 
 struct CUpdateContext
@@ -47,10 +50,10 @@ class CFlowPlayer
 {
 private:
 
-	PFlowAsset  _Asset;
-	PFlowAction _CurrAction;
-	U32         _NextActionID = EmptyActionID_FIXME; // Non-empty when a link is yielding to the next frame
-	// Variable set
+	PFlowAsset      _Asset;
+	PFlowAction     _CurrAction;
+	U32             _NextActionID = EmptyActionID_FIXME; // Non-empty when a link is yielding to the next frame
+	CFlowVarStorage _VarStorage;
 	// TODO: add action pool Type->Instance? std::map<CStrID, PFlowAction>; // NB: always needs only 1 instance of each type.
 
 	void SetCurrentAction(U32 ID);

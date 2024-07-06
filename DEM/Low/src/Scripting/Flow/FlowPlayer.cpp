@@ -56,7 +56,7 @@ bool CFlowPlayer::Start(PFlowAsset Asset, U32 StartActionID)
 	SetCurrentAction(StartActionID);
 	if (!_CurrAction) return false;
 
-	// TODO: Variable storage is initialized with default values from the asset.
+	_VarStorage = Asset->GetDefaultVarStorage();
 
 	OnStart();
 

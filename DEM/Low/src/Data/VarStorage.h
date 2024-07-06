@@ -2,6 +2,7 @@
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 #include <Data/TypeTraits.h>
+#include <Data/SerializeToParams.h>
 #include <map>
 #include <variant>
 
@@ -204,7 +205,7 @@ public:
 		return Loaded;
 	}
 
-	size_t Save(Data::CParams& Params)
+	size_t Save(Data::CParams& Params) const
 	{
 		size_t Saved = 0;
 		for (const auto& [ID, Handle] : _VarsByID)
@@ -231,3 +232,33 @@ public:
 		return Saved;
 	}
 };
+
+namespace DEM::Serialization
+{
+
+template<typename... TVarTypes>
+struct ParamsFormat<CVarStorage<TVarTypes...>>
+{
+	static inline void Serialize(Data::CData& Output, const CVarStorage<TVarTypes...>& Value)
+	{
+		Output.Clear();
+
+		if (!Value.empty())
+		{
+			Data::PParams Params(new Data::CParams(Value.size()));
+			Value.Save(*Params);
+			Output = std::move(Params);
+		}
+	}
+
+	static inline void Deserialize(const Data::CData& Input, CVarStorage<TVarTypes...>& Value)
+	{
+		if (auto* pParams = Input.As<Data::PParams>())
+		{
+			const auto Loaded = Value.Load(**pParams);
+			n_assert_dbg(Loaded == (*pParams)->GetCount());
+		}
+	}
+};
+
+}

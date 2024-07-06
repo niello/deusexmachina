@@ -34,6 +34,10 @@ struct CFlowActionData
 	U32                    ID;
 };
 
+//!!!values should support HEntity, but it is in DEMGame, maybe can use std::any? or some extensible type system? or move Flow to DEMGame?
+//!!!need variable storage default value deserialization for HEntity. Deserialization from HRD already exists, need to use properly.
+using CFlowVarStorage = CVarStorage<bool, int, float, std::string, CStrID>;
+
 class CFlowAsset : public ::Core::CObject
 {
 	RTTI_CLASS_DECL(DEM::Flow::CFlowAsset, ::Core::CObject);
@@ -41,19 +45,14 @@ class CFlowAsset : public ::Core::CObject
 protected:
 
 	std::vector<CFlowActionData> _Actions;
+	CFlowVarStorage              _VarStorage;
 	U32                          _DefaultStartActionID;
-
-	// TODO: variable storage with default values
-	// TODO: using with alias for most common storage compatible with HRD?
-	CVarStorage<bool, int, float, std::string, CStrID> _VarStorage;
-
-	//!!!values should support HEntity, but it is in DEMGame, maybe can use std::any? or some extensible type system? or move Flow to DEMGame?
-	//!!!need variable storage default value deserialization for HEntity. Deserialization from HRD already exists, need to use properly.
 
 public:
 
-	CFlowAsset(std::vector<CFlowActionData>&& Actions, U32 StartActionID)
+	CFlowAsset(std::vector<CFlowActionData>&& Actions, CFlowVarStorage&& Vars, U32 StartActionID)
 		: _Actions(std::move(Actions))
+		, _VarStorage(std::move(Vars))
 		, _DefaultStartActionID(StartActionID)
 	{
 		std::sort(_Actions.begin(), _Actions.end(), [](const auto& a, const auto& b) { return a.ID < b.ID; });

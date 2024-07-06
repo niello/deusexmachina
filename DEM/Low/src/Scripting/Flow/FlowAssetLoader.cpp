@@ -35,17 +35,19 @@ Core::PObject CFlowAssetLoader::CreateResource(CStrID UID)
 
 	// FIXME: can't load a map with U32 keys from HRD currently, so have this intermediate step!
 	// When the functionality is available, can replace this loader with CDataAssetLoaderHRD<CFlowAsset>.
-	Data::PDataArray ActionsDesc;
-	if (!Params->TryGet(ActionsDesc, CStrID("Actions"))) return nullptr;
+	auto* pActionsDesc = Params->Find(CStrID("Actions"));
+	if (!pActionsDesc) return nullptr;
 
 	std::vector<DEM::Flow::CFlowActionData> Actions;
-	DEM::ParamsFormat::Deserialize(Data::CData(Params), Actions);
+	DEM::ParamsFormat::Deserialize(pActionsDesc->GetRawValue(), Actions);
 
 	const auto StartActionID = static_cast<U32>(Params->Get<int>(CStrID("StartActionID"), DEM::Flow::EmptyActionID));
 
-	//!!!TODO: read variable storage!
+	DEM::Flow::CFlowVarStorage Vars;
+	if (auto* pVarsDesc = Params->Find(CStrID("Vars")))
+		DEM::ParamsFormat::Deserialize(pVarsDesc->GetRawValue(), Vars);
 
-	return n_new(DEM::Flow::CFlowAsset(std::move(Actions), StartActionID));
+	return n_new(DEM::Flow::CFlowAsset(std::move(Actions), std::move(Vars), StartActionID));
 }
 //---------------------------------------------------------------------
 
