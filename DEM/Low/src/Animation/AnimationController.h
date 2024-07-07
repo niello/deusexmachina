@@ -1,6 +1,7 @@
 #pragma once
 #include <Data/Ptr.h>
 #include <Data/StringID.h>
+#include <Data/VarStorage.h>
 #include <Animation/PoseBuffer.h>
 #include <Animation/Inertialization.h>
 #include <map>
@@ -24,6 +25,7 @@ using PAnimationController = std::unique_ptr<class CAnimationController>;
 using PAnimGraphNode = std::unique_ptr<class CAnimGraphNode>;
 using PSkeletonInfo = Ptr<class CSkeletonInfo>;
 class CSkeleton;
+using CAnimVarStorage = CVarStorage<bool, int, float, CStrID>;
 
 // FIXME: unify EmptyPort, InvalidPort and this!
 inline constexpr U16 INVALID_BONE_INDEX = std::numeric_limits<U16>().max();
@@ -65,11 +67,7 @@ protected:
 	PAnimGraphNode                                _GraphRoot;
 	PSkeletonInfo                                 _SkeletonInfo;
 
-	std::map<CStrID, std::pair<EParamType, UPTR>> _Params; // ID -> Type and Index in a value array
-	std::unique_ptr<float[]>                      _FloatValues;
-	std::unique_ptr<int[]>                        _IntValues;
-	std::unique_ptr<bool[]>                       _BoolValues;
-	std::unique_ptr<CStrID[]>                     _StringValues;
+	CAnimVarStorage                               _Params;
 
 	U32                                           _UpdateCounter = 0;
 
@@ -104,23 +102,8 @@ public:
 	void   Update(const CSkeleton& Target, float dt, Events::IEventOutput* pEventOutput);
 	void   EvaluatePose(CSkeleton& Target);
 
-	bool   FindParam(CStrID ID, EParamType* pOutType = nullptr, UPTR* pOutIndex = nullptr) const;
-	bool   SetFloat(CStrID ID, float Value);
-	bool   SetFloat(UPTR Index, float Value) { if (Index == INVALID_INDEX) return false; _FloatValues[Index] = Value; return true; }
-	float  GetFloat(CStrID ID, float Default = 0.f) const;
-	float  GetFloat(UPTR Index, float Default = 0.f) const { return (Index == INVALID_INDEX) ? Default : _FloatValues[Index]; }
-	bool   SetInt(CStrID ID, int Value);
-	bool   SetInt(UPTR Index, int Value) { if (Index == INVALID_INDEX) return false; _IntValues[Index] = Value; return true; }
-	int    GetInt(CStrID ID, int Default = 0.f) const;
-	int    GetInt(UPTR Index, int Default = 0.f) const { return (Index == INVALID_INDEX) ? Default : _IntValues[Index]; }
-	bool   SetBool(CStrID ID, bool Value);
-	bool   SetBool(UPTR Index, bool Value) { if (Index == INVALID_INDEX) return false; _BoolValues[Index] = Value; return true; }
-	bool   GetBool(CStrID ID, bool Default = 0.f) const;
-	bool   GetBool(UPTR Index, bool Default = 0.f) const { return (Index == INVALID_INDEX) ? Default : _BoolValues[Index]; }
-	bool   SetString(CStrID ID, CStrID Value);
-	bool   SetString(UPTR Index, CStrID Value) { if (Index == INVALID_INDEX) return false; _StringValues[Index] = Value; return true; }
-	CStrID GetString(CStrID ID, CStrID Default = CStrID::Empty) const;
-	CStrID GetString(UPTR Index, CStrID Default = CStrID::Empty) const { return (Index == INVALID_INDEX) ? Default : _StringValues[Index]; }
+	auto&  GetParams() { return _Params; }
+	auto&  GetParams() const { return _Params; }
 
 	float  GetLocomotionPhaseFromPose(const CSkeleton& Skeleton) const;
 	float  GetExpectedAnimationLength() const;

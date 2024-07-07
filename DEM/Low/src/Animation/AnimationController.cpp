@@ -19,65 +19,33 @@ void CAnimationController::Init(PAnimGraphNode&& GraphRoot, Resources::CResource
 	const std::map<CStrID, CStrID>& AssetOverrides)
 {
 	_Params.clear();
-	_FloatValues.reset();
-	_IntValues.reset();
-	_BoolValues.reset();
-	_StringValues.reset();
 
 	if (!Floats.empty())
 	{
-		UPTR CurrIdx = 0;
-		_FloatValues.reset(new float[Floats.size()]);
+		_Params.reserve<float>(Floats.size());
 		for (const auto [ID, DefaultValue] : Floats)
-		{
-			_Params.emplace(ID, std::pair{ EParamType::Float, CurrIdx });
-			_FloatValues[CurrIdx++] = DefaultValue;
-
-			// Duplicate IDs aren't allowed
-			Ints.erase(ID);
-			Bools.erase(ID);
-			Strings.erase(ID);
-		}
+			_Params.Set(ID, DefaultValue);
 	}
 
 	if (!Ints.empty())
 	{
-		UPTR CurrIdx = 0;
-		_IntValues.reset(new int[Ints.size()]);
+		_Params.reserve<int>(Ints.size());
 		for (const auto [ID, DefaultValue] : Ints)
-		{
-			_Params.emplace(ID, std::pair{ EParamType::Int, CurrIdx });
-			_IntValues[CurrIdx++] = DefaultValue;
-
-			// Duplicate IDs aren't allowed
-			Bools.erase(ID);
-			Strings.erase(ID);
-		}
+			_Params.Set(ID, DefaultValue);
 	}
 
 	if (!Bools.empty())
 	{
-		UPTR CurrIdx = 0;
-		_BoolValues.reset(new bool[Bools.size()]);
+		_Params.reserve<bool>(Bools.size());
 		for (const auto [ID, DefaultValue] : Bools)
-		{
-			_Params.emplace(ID, std::pair{ EParamType::Bool, CurrIdx });
-			_BoolValues[CurrIdx++] = DefaultValue;
-
-			// Duplicate IDs aren't allowed
-			Strings.erase(ID);
-		}
+			_Params.Set(ID, DefaultValue);
 	}
 
 	if (!Strings.empty())
 	{
-		UPTR CurrIdx = 0;
-		_StringValues.reset(new CStrID[Strings.size()]);
+		_Params.reserve<CStrID>(Strings.size());
 		for (const auto [ID, DefaultValue] : Strings)
-		{
-			_Params.emplace(ID, std::pair{ EParamType::String, CurrIdx });
-			_StringValues[CurrIdx++] = DefaultValue;
-		}
+			_Params.Set(ID, DefaultValue);
 	}
 
 	_GraphRoot = std::move(GraphRoot);
@@ -165,92 +133,6 @@ void CAnimationController::EvaluatePose(CSkeleton& Target)
 	//Output.SetTranslation(0, vector3::Zero);
 
 	Target.FromPoseBuffer(_CurrPose);
-}
-//---------------------------------------------------------------------
-
-bool CAnimationController::FindParam(CStrID ID, EParamType* pOutType, UPTR* pOutIndex) const
-{
-	auto It = _Params.find(ID);
-	if (It == _Params.cend()) return false;
-	if (pOutType) *pOutType = It->second.first;
-	if (pOutIndex) *pOutIndex = It->second.second;
-	return true;
-}
-//---------------------------------------------------------------------
-
-bool CAnimationController::SetFloat(CStrID ID, float Value)
-{
-	EParamType Type;
-	UPTR Index;
-	if (!FindParam(ID, &Type, &Index) || Type != EParamType::Float) return false;
-	_FloatValues[Index] = Value;
-	return true;
-}
-//---------------------------------------------------------------------
-
-float CAnimationController::GetFloat(CStrID ID, float Default) const
-{
-	EParamType Type;
-	UPTR Index;
-	if (!FindParam(ID, &Type, &Index) || Type != EParamType::Float) return Default;
-	return _FloatValues[Index];
-}
-//---------------------------------------------------------------------
-
-bool CAnimationController::SetInt(CStrID ID, int Value)
-{
-	EParamType Type;
-	UPTR Index;
-	if (!FindParam(ID, &Type, &Index) || Type != EParamType::Int) return false;
-	_IntValues[Index] = Value;
-	return true;
-}
-//---------------------------------------------------------------------
-
-int CAnimationController::GetInt(CStrID ID, int Default) const
-{
-	EParamType Type;
-	UPTR Index;
-	if (!FindParam(ID, &Type, &Index) || Type != EParamType::Int) return Default;
-	return _IntValues[Index];
-}
-//---------------------------------------------------------------------
-
-bool CAnimationController::SetBool(CStrID ID, bool Value)
-{
-	EParamType Type;
-	UPTR Index;
-	if (!FindParam(ID, &Type, &Index) || Type != EParamType::Bool) return false;
-	_BoolValues[Index] = Value;
-	return true;
-}
-//---------------------------------------------------------------------
-
-bool CAnimationController::GetBool(CStrID ID, bool Default) const
-{
-	EParamType Type;
-	UPTR Index;
-	if (!FindParam(ID, &Type, &Index) || Type != EParamType::Bool) return Default;
-	return _BoolValues[Index];
-}
-//---------------------------------------------------------------------
-
-bool CAnimationController::SetString(CStrID ID, CStrID Value)
-{
-	EParamType Type;
-	UPTR Index;
-	if (!FindParam(ID, &Type, &Index) || Type != EParamType::String) return false;
-	_StringValues[Index] = Value;
-	return true;
-}
-//---------------------------------------------------------------------
-
-CStrID CAnimationController::GetString(CStrID ID, CStrID Default) const
-{
-	EParamType Type;
-	UPTR Index;
-	if (!FindParam(ID, &Type, &Index) || Type != EParamType::String) return Default;
-	return _StringValues[Index];
 }
 //---------------------------------------------------------------------
 

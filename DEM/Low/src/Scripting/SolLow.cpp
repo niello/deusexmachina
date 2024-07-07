@@ -206,10 +206,14 @@ void RegisterBasicTypes(sol::state& State)
 		, "DestroyAllReusableWindows", & UI::CUIServer::DestroyAllReusableWindows
 	);
 
+	//!!!TODO: ensure that it is passed by value as HEntity and CStrID!
+	State.new_usertype<HVar>("HVar");
+
+	// TODO: bind var storage to Lua (can make variadic template for it?)
 	State.new_usertype<DEM::Anim::CAnimationController>("CAnimationController"
 		, "SetString", sol::overload(
-			sol::resolve<bool(UPTR, CStrID)>(&DEM::Anim::CAnimationController::SetString),
-			sol::resolve<bool(CStrID, CStrID)>(&DEM::Anim::CAnimationController::SetString))
+			[](DEM::Anim::CAnimationController& Self, HVar Handle, CStrID Value) { if (Handle) Self.GetParams().Set(Handle, Value); return !!Handle; },
+			[](DEM::Anim::CAnimationController& Self, CStrID ID, CStrID Value) { return !!Self.GetParams().Set(ID, Value); })
 	);
 
 	State.new_usertype<Scene::CSceneNode>("CSceneNode"

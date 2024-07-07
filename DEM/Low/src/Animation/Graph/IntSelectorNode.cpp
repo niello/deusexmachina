@@ -12,9 +12,7 @@ CIntSelectorNode::CIntSelectorNode(CStrID ParamID)
 
 void CIntSelectorNode::Init(CAnimationInitContext& Context)
 {
-	EParamType ParamType;
-	if (!Context.Controller.FindParam(_ParamID, &ParamType, &_ParamIndex) || ParamType != EParamType::Int)
-		_ParamIndex = INVALID_INDEX;
+	_ParamHandle = Context.Controller.GetParams().Find<int>(_ParamID);
 
 	for (auto& Rec : _Variants)
 		if (Rec.Variant.Node) Rec.Variant.Node->Init(Context);
@@ -27,8 +25,8 @@ void CIntSelectorNode::Init(CAnimationInitContext& Context)
 
 CSelectorNodeBase::CVariant* CIntSelectorNode::SelectVariant(CAnimationUpdateContext& Context)
 {
-	if (_ParamIndex == INVALID_INDEX) return nullptr;
-	const int Value = Context.Controller.GetInt(_ParamIndex);
+	if (!_ParamHandle) return nullptr;
+	const int Value = Context.Controller.GetParams().Get<int>(_ParamHandle);
 
 	// TODO: sort variants?
 	for (auto& Rec : _Variants)

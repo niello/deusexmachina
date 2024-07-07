@@ -1,6 +1,7 @@
 #pragma once
 #include <Animation/Graph/SelectorNodeBase.h>
 #include <Data/StringID.h>
+#include <Data/VarStorage.h> // for HVar
 
 // Animation graph node that selects a subnode based on a boolean value
 
@@ -13,7 +14,7 @@ class CBoolSelectorNode : public CSelectorNodeBase
 protected:
 
 	CStrID               _ParamID;
-	UPTR                 _ParamIndex = INVALID_INDEX; // Cached for fast access
+	HVar                 _ParamHandle; // Cached for fast access
 
 	CVariant             _TrueVariant;
 	CVariant             _FalseVariant;

@@ -56,10 +56,10 @@ protected:
 
 public:
 
-	HVar Find(CStrID ID) const
+	template<typename T>
+	static constexpr bool IsA(HVar Handle)
 	{
-		const auto It = _VarsByID.find(ID);
-		return (It == _VarsByID.cend()) ? HVar{} : It->second;
+		return Handle.TypeIdx == TypeIndex<T>;
 	}
 
 	// NB: this invalidates all HVar handles issued by this storage
@@ -69,8 +69,27 @@ public:
 		std::apply([](auto& ...Storage) { (..., Storage.clear()); }, _Storages);
 	}
 
+	template<typename T>
+	void reserve(size_t Count)
+	{
+		std::get<std::vector<T>>(_Storages).reserve(Count);
+	}
+
 	bool empty() const { return _VarsByID.empty(); }
 	auto size() const { return _VarsByID.size(); }
+
+	HVar Find(CStrID ID) const
+	{
+		const auto It = _VarsByID.find(ID);
+		return (It == _VarsByID.cend()) ? HVar{} : It->second;
+	}
+
+	template<typename T>
+	HVar Find(CStrID ID) const
+	{
+		const auto It = _VarsByID.find(ID);
+		return (It == _VarsByID.cend() || !IsA<T>(It->second)) ? HVar{} : It->second;
+	}
 
 	template<typename T>
 	auto Get(HVar Handle) const
@@ -101,7 +120,7 @@ public:
 	template<typename T>
 	void Set(HVar Handle, T&& Value)
 	{
-		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be converted to a supported type");
+		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be unambiguosly converted to a supported type");
 
 		n_assert_dbg(Handle.TypeIdx == TypeIndex<T>);
 		if (Handle.TypeIdx == TypeIndex<T>)
@@ -112,7 +131,7 @@ public:
 	template<typename T, typename std::enable_if_t<(sizeof(T) <= sizeof(size_t))>* = nullptr>
 	HVar Set(CStrID ID, T Value)
 	{
-		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be converted to a supported type");
+		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be unambiguosly converted to a supported type");
 
 		auto It = _VarsByID.find(ID);
 		if (It == _VarsByID.cend())
@@ -132,7 +151,7 @@ public:
 	template<typename T, typename std::enable_if_t<(sizeof(T) > sizeof(size_t))>* = nullptr>
 	HVar Set(CStrID ID, T&& Value)
 	{
-		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be converted to a supported type");
+		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be unambiguosly converted to a supported type");
 
 		auto It = _VarsByID.find(ID);
 		if (It == _VarsByID.cend())

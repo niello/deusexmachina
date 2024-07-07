@@ -15,9 +15,7 @@ CBlendSpace1D::CBlendSpace1D(CStrID ParamID, float SmoothTime)
 
 void CBlendSpace1D::Init(CAnimationInitContext& Context)
 {
-	EParamType Type;
-	if (!Context.Controller.FindParam(_ParamID, &Type, &_ParamIndex) || Type != EParamType::Float)
-		_ParamIndex = INVALID_INDEX;
+	_ParamHandle = Context.Controller.GetParams().Find<float>(_ParamID);
 
 	if (!_Samples.empty())
 	{
@@ -33,9 +31,9 @@ void CBlendSpace1D::Init(CAnimationInitContext& Context)
 
 void CBlendSpace1D::Update(CAnimationUpdateContext& Context, float dt)
 {
-	if (_Samples.empty()) return;
+	if (_Samples.empty() || !_ParamHandle) return;
 
-	const float RawInput = Context.Controller.GetFloat(_ParamIndex);
+	const float RawInput = Context.Controller.GetParams().Get<float>(_ParamHandle);
 	const float Input = _Filter.Update(RawInput, dt);
 	//???!!! dt *= (RawInput / Input); ?!
 

@@ -21,9 +21,7 @@ CSpeedModifierNode::CSpeedModifierNode(PAnimGraphNode&& Subgraph, float Multipli
 
 void CSpeedModifierNode::Init(CAnimationInitContext& Context)
 {
-	EParamType ParamType;
-	if (!Context.Controller.FindParam(_ParamID, &ParamType, &_ParamIndex) || ParamType != EParamType::Float)
-		_ParamIndex = INVALID_INDEX;
+	_ParamHandle = Context.Controller.GetParams().Find<float>(_ParamID);
 
 	if (_Subgraph) _Subgraph->Init(Context);
 }
@@ -31,7 +29,7 @@ void CSpeedModifierNode::Init(CAnimationInitContext& Context)
 
 void CSpeedModifierNode::Update(CAnimationUpdateContext& Context, float dt)
 {
-	if (_Subgraph) _Subgraph->Update(Context, dt * Context.Controller.GetFloat(_ParamIndex, _FallbackMultiplier));
+	if (_Subgraph) _Subgraph->Update(Context, dt * Context.Controller.GetParams().Get<float>(_ParamHandle, _FallbackMultiplier));
 }
 //---------------------------------------------------------------------
 

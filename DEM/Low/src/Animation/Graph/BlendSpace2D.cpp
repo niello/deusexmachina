@@ -28,11 +28,8 @@ CBlendSpace2D::CBlendSpace2D(CStrID XParamID, CStrID YParamID, float XSmoothTime
 
 void CBlendSpace2D::Init(CAnimationInitContext& Context)
 {
-	EParamType XType, YType;
-	if (!Context.Controller.FindParam(_XParamID, &XType, &_XParamIndex) || XType != EParamType::Float)
-		_XParamIndex = INVALID_INDEX;
-	if (!Context.Controller.FindParam(_YParamID, &YType, &_YParamIndex) || YType != EParamType::Float)
-		_YParamIndex = INVALID_INDEX;
+	_XParamHandle = Context.Controller.GetParams().Find<float>(_XParamID);
+	_YParamHandle = Context.Controller.GetParams().Find<float>(_YParamID);
 
 	if (!_Samples.empty())
 	{
@@ -220,8 +217,10 @@ void CBlendSpace2D::Update(CAnimationUpdateContext& Context, float dt)
 		return;
 	}
 
-	const float RawXInput = Context.Controller.GetFloat(_XParamIndex);
-	const float RawYInput = Context.Controller.GetFloat(_YParamIndex);
+	if (!_XParamHandle || !_YParamHandle) return;
+
+	const float RawXInput = Context.Controller.GetParams().Get<float>(_XParamHandle);
+	const float RawYInput = Context.Controller.GetParams().Get<float>(_YParamHandle);
 
 	const float XInput = _XFilter.Update(RawXInput, dt);
 	const float YInput = _YFilter.Update(RawYInput, dt);

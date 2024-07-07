@@ -2,6 +2,7 @@
 #include <Animation/Graph/AnimGraphNode.h>
 #include <Animation/PoseBuffer.h>
 #include <Data/StringID.h>
+#include <Data/VarStorage.h> // for HVar
 #include <Util/TimedFilter.h>
 
 // Animation graph node that blends sources based on a value in 1D space
@@ -31,7 +32,7 @@ protected:
 	float                _BlendFactor = 0.f;
 
 	CStrID               _ParamID;
-	UPTR                 _ParamIndex = INVALID_INDEX; // Cached for fast access
+	HVar                 _ParamHandle; // Cached for fast access
 
 	CTimedFilter<float>  _Filter;
 

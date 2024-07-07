@@ -12,9 +12,7 @@ CStringSelectorNode::CStringSelectorNode(CStrID ParamID)
 
 void CStringSelectorNode::Init(CAnimationInitContext& Context)
 {
-	EParamType ParamType;
-	if (!Context.Controller.FindParam(_ParamID, &ParamType, &_ParamIndex) || ParamType != EParamType::String)
-		_ParamIndex = INVALID_INDEX;
+	_ParamHandle = Context.Controller.GetParams().Find<CStrID>(_ParamID);
 
 	for (auto& Rec : _Variants)
 		if (Rec.Variant.Node) Rec.Variant.Node->Init(Context);
@@ -27,8 +25,8 @@ void CStringSelectorNode::Init(CAnimationInitContext& Context)
 
 CSelectorNodeBase::CVariant* CStringSelectorNode::SelectVariant(CAnimationUpdateContext& Context)
 {
-	if (_ParamIndex == INVALID_INDEX) return nullptr;
-	const CStrID Value = Context.Controller.GetString(_ParamIndex);
+	if (!_ParamHandle) return nullptr;
+	const CStrID Value = Context.Controller.GetParams().Get<CStrID>(_ParamHandle);
 
 	// TODO: sort variants?
 	for (auto& Rec : _Variants)

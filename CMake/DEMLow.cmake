@@ -19,7 +19,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/Graph/BlendSpace2D.h
 	DEM/Low/src/Animation/Graph/BoolSelectorNode.h
 	DEM/Low/src/Animation/Graph/ClipPlayerNode.h
-	DEM/Low/src/Animation/Graph/ConditionalSelectorNode.h
 	DEM/Low/src/Animation/Graph/FloatSelectorNode.h
 	DEM/Low/src/Animation/Graph/IntSelectorNode.h
 	DEM/Low/src/Animation/Graph/SelectorNodeBase.h
@@ -380,7 +379,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/Graph/BlendSpace2D.cpp
 	DEM/Low/src/Animation/Graph/BoolSelectorNode.cpp
 	DEM/Low/src/Animation/Graph/ClipPlayerNode.cpp
-	DEM/Low/src/Animation/Graph/ConditionalSelectorNode.cpp
 	DEM/Low/src/Animation/Graph/FloatSelectorNode.cpp
 	DEM/Low/src/Animation/Graph/IntSelectorNode.cpp
 	DEM/Low/src/Animation/Graph/SelectorNodeBase.cpp

@@ -12,9 +12,7 @@ CBoolSelectorNode::CBoolSelectorNode(CStrID ParamID)
 
 void CBoolSelectorNode::Init(CAnimationInitContext& Context)
 {
-	EParamType ParamType;
-	if (!Context.Controller.FindParam(_ParamID, &ParamType, &_ParamIndex) || ParamType != EParamType::Bool)
-		_ParamIndex = INVALID_INDEX;
+	_ParamHandle = Context.Controller.GetParams().Find<bool>(_ParamID);
 
 	if (_TrueVariant.Node) _TrueVariant.Node->Init(Context);
 	if (_FalseVariant.Node) _FalseVariant.Node->Init(Context);
@@ -25,8 +23,8 @@ void CBoolSelectorNode::Init(CAnimationInitContext& Context)
 
 CSelectorNodeBase::CVariant* CBoolSelectorNode::SelectVariant(CAnimationUpdateContext& Context)
 {
-	if (_ParamIndex == INVALID_INDEX) return nullptr;
-	return Context.Controller.GetBool(_ParamIndex) ? &_TrueVariant : &_FalseVariant;
+	if (!_ParamHandle) return nullptr;
+	return Context.Controller.GetParams().Get<bool>(_ParamHandle) ? &_TrueVariant : &_FalseVariant;
 }
 //---------------------------------------------------------------------
 

@@ -2,6 +2,7 @@
 #include <Animation/Graph/AnimGraphNode.h>
 #include <Animation/PoseBuffer.h>
 #include <Data/StringID.h>
+#include <Data/VarStorage.h> // for HVar
 #include <Util/TimedFilter.h>
 
 // Animation graph node that blends sources based on two values in 2D space
@@ -53,8 +54,8 @@ protected:
 
 	CStrID                 _XParamID;
 	CStrID                 _YParamID;
-	UPTR                   _XParamIndex = INVALID_INDEX; // Cached for fast access
-	UPTR                   _YParamIndex = INVALID_INDEX; // Cached for fast access
+	HVar                   _XParamHandle; // Cached for fast access
+	HVar                   _YParamHandle; // Cached for fast access
 
 	CTimedFilter<float>    _XFilter;
 	CTimedFilter<float>    _YFilter;

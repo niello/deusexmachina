@@ -190,8 +190,8 @@ static void InitStrike(Game::CGameWorld& World, CAttackAbilityInstance& Instance
 	// Setup character animation
 	if (auto pAnimComponent = World.FindComponent<Game::CAnimationComponent>(Instance.Actor))
 	{
-		pAnimComponent->Controller.SetString(sidAction, sidAttack);
-		pAnimComponent->Controller.SetInt(sidWeaponHands, Hands);
+		pAnimComponent->Controller.GetParams().Set<CStrID>(sidAction, sidAttack);
+		pAnimComponent->Controller.GetParams().Set<int>(sidWeaponHands, Hands);
 		//pAnimComponent->Controller.SetBool(sidIsInCombat, true);
 
 		// Apply AC param changes to receive correct animation length
@@ -202,7 +202,7 @@ static void InitStrike(Game::CGameWorld& World, CAttackAbilityInstance& Instance
 		constexpr float MinSpeedMul = 0.75f;
 
 		const float AnimLength = pAnimComponent->Controller.GetExpectedAnimationLength();
-		pAnimComponent->Controller.SetFloat(sidActionSpeedMul, std::max(MinSpeedMul, AnimLength / Period));
+		pAnimComponent->Controller.GetParams().Set<float>(sidActionSpeedMul, std::max(MinSpeedMul, AnimLength / Period));
 	}
 }
 //---------------------------------------------------------------------
@@ -246,8 +246,8 @@ void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance
 				ApplyDamageFromAbility(*pWorld, AttackInstance);
 				if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(AttackInstance.Actor))
 				{
-					pAnimComponent->Controller.SetString(sidAction, CStrID::Empty);
-					pAnimComponent->Controller.SetFloat(sidActionSpeedMul, 1.f);
+					pAnimComponent->Controller.GetParams().Set<CStrID>(sidAction, CStrID::Empty);
+					pAnimComponent->Controller.GetParams().Set<float>(sidActionSpeedMul, 1.f);
 				}
 			}
 		});
@@ -288,8 +288,8 @@ void CAttackAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& 
 
 	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
 	{
-		pAnimComponent->Controller.SetString(sidAction, CStrID::Empty);
-		pAnimComponent->Controller.SetFloat(sidActionSpeedMul, 1.f);
+		pAnimComponent->Controller.GetParams().Set<CStrID>(sidAction, CStrID::Empty);
+		pAnimComponent->Controller.GetParams().Set<float>(sidActionSpeedMul, 1.f);
 	}
 
 	AttackInstance.AnimEventConn.Disconnect();

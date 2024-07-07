@@ -1,6 +1,7 @@
 #pragma once
 #include <Animation/Graph/AnimGraphNode.h>
 #include <Data/StringID.h>
+#include <Data/VarStorage.h> // for HVar
 
 // Modifies playback speed for the underlying subgraph
 
@@ -14,7 +15,7 @@ protected:
 
 	PAnimGraphNode _Subgraph;
 	CStrID         _ParamID;
-	UPTR           _ParamIndex = INVALID_INDEX; // Cached for fast access
+	HVar           _ParamHandle; // Cached for fast access
 	float          _FallbackMultiplier = 1.f;   // If param is not found, use this value
 
 public:

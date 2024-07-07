@@ -232,7 +232,7 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 
 	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
 	{
-		pAnimComponent->Controller.SetString(CStrID("Action"), AnimAction);
+		pAnimComponent->Controller.GetParams().Set<CStrID>(CStrID("Action"), AnimAction);
 		SheatheAllItems(*pWorld, Instance.Actor);
 
 		// FIXME: trigger from inside the SheatheAllItems / UnsheatheAllItems
@@ -276,7 +276,7 @@ void CLockpickAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance
 
 	if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(Instance.Actor))
 	{
-		pAnimComponent->Controller.SetString(CStrID("Action"), CStrID::Empty);
+		pAnimComponent->Controller.GetParams().Set<CStrID>(CStrID("Action"), CStrID::Empty);
 
 		//!!!FIXME: need to restore previous state, not just unsheathe everything!
 		UnsheatheAllItems(*pWorld, Instance.Actor);
