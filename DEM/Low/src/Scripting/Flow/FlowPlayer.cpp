@@ -130,6 +130,7 @@ void CFlowPlayer::SetCurrentAction(U32 ID)
 		if (_CurrAction)
 		{
 			_CurrAction->_pPrototype = pActionData;
+			_CurrAction->_pPlayer = this;
 			_CurrAction->OnStart();
 		}
 	}

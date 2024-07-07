@@ -12,6 +12,7 @@ namespace DEM::Flow
 {
 struct CFlowLink;
 struct CFlowActionData;
+class CFlowPlayer;
 using PFlowAsset = Ptr<class CFlowAsset>;
 using CFlowVarStorage = CVarStorage<bool, int, float, std::string, CStrID>;
 constexpr U32 EmptyActionID_FIXME = 0; //!!!!!!!!FIXME: fix duplicated definition!
@@ -38,6 +39,7 @@ protected:
 public:
 
 	const CFlowActionData* _pPrototype = nullptr; // Can't set in a constructor because the main factory doesn't support constructor args
+	CFlowPlayer*           _pPlayer = nullptr; // Can't set in a constructor because the main factory doesn't support constructor args
 
 	virtual void OnStart() = 0;
 	virtual void Update(CUpdateContext& Ctx) = 0;
@@ -71,7 +73,9 @@ public:
 	void Update(float dt); //???!!!if needs session, must be in DEMGame?!
 
 	CFlowAsset* GetAsset() const { return _Asset.Get(); }
-	bool IsPlaying() const { return _CurrAction || _NextActionID != EmptyActionID_FIXME; }
+	auto&       GetVars() { return _VarStorage; }
+	auto&       GetVars() const { return _VarStorage; }
+	bool        IsPlaying() const { return _CurrAction || _NextActionID != EmptyActionID_FIXME; }
 };
 
 }

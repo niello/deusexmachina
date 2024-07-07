@@ -1,5 +1,6 @@
 #pragma once
 #include <Scripting/Flow/FlowPlayer.h>
+#include <Game/ECS/Entity.h>
 
 // An action for speaking a phrase either in a foreground UI or in a background
 
@@ -11,6 +12,8 @@ class CPhraseAction : public Flow::IFlowAction
 	FACTORY_CLASS_DECL;
 
 protected:
+
+	Game::HEntity _Speaker;
 
 public:
 
