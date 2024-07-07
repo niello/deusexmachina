@@ -44,23 +44,22 @@ bool CFlowPlayer::Start(PFlowAsset Asset, U32 StartActionID)
 {
 	Stop();
 
-	_Asset = Asset;
+	_Asset = std::move(Asset);
 	if (!_Asset) return false;
 
 	if (StartActionID == EmptyActionID)
 	{
-		StartActionID = Asset->GetDefaultStartActionID();
+		StartActionID = _Asset->GetDefaultStartActionID();
 		if (StartActionID == EmptyActionID) return false;
 	}
 
-	SetCurrentAction(StartActionID);
-	if (!_CurrAction) return false;
+	_VarStorage = _Asset->GetDefaultVarStorage();
 
-	_VarStorage = Asset->GetDefaultVarStorage();
-
+	// Before SetCurrentAction() to give a caller chance to fill variables externally
 	OnStart();
 
-	return true;
+	SetCurrentAction(StartActionID);
+	return !!_CurrAction;
 }
 //---------------------------------------------------------------------
 

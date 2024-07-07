@@ -15,6 +15,7 @@ const Core::CRTTI& CFlowAssetLoader::GetResultType() const
 }
 //---------------------------------------------------------------------
 
+//???TODO: can replace this loader with CDataAssetLoaderHRD<CFlowAsset>? Must sort actions! There is no constructor with args!
 Core::PObject CFlowAssetLoader::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
@@ -33,8 +34,6 @@ Core::PObject CFlowAssetLoader::CreateResource(CStrID UID)
 	Data::CHRDParser Parser;
 	if (!Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), *Params)) return nullptr;
 
-	// FIXME: can't load a map with U32 keys from HRD currently, so have this intermediate step!
-	// When the functionality is available, can replace this loader with CDataAssetLoaderHRD<CFlowAsset>.
 	auto* pActionsDesc = Params->Find(CStrID("Actions"));
 	if (!pActionsDesc) return nullptr;
 

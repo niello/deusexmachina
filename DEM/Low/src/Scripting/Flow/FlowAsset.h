@@ -15,15 +15,15 @@ constexpr U32 EmptyActionID = 0;
 //!!!can be universal, not flow-specific!
 struct CConditionData
 {
-	CStrID        Type;
+	CStrID        Type;   // Empty type means no condition
 	Data::PParams Params;
 };
 
 struct CFlowLink
 {
-	CConditionData Condition; // Empty type means no condition
-	U32            DestID;
-	bool           YieldToNextFrame;
+	CConditionData Condition;
+	U32            DestID = EmptyActionID;
+	bool           YieldToNextFrame = false;
 };
 
 struct CFlowActionData
@@ -31,7 +31,7 @@ struct CFlowActionData
 	CStrID                 ClassName; //TODO: use FourCC?! or register class names in a factory as CStrIDs?!
 	Data::PParams          Params;
 	std::vector<CFlowLink> Links;
-	U32                    ID;
+	U32                    ID = EmptyActionID;
 };
 
 //!!!values should support HEntity, but it is in DEMGame, maybe can use std::any? or some extensible type system? or move Flow to DEMGame?
