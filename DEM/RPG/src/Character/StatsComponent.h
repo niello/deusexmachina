@@ -10,14 +10,15 @@ namespace DEM::Sh2
 enum ECapability : U8 //!!!TODO: serialize U8 to CData!
 {
 	Move = 0x01,
-	Interact = 0x02
+	Interact = 0x02,
+	Talk = 0x04
 };
 
 struct CStatsComponent
 {
 	//!!!TODO: serialize U8 to CData!
 	int Dexterity = 0;
-	U8  Capabilities = ECapability::Move | ECapability::Interact; //???!!!serialize enum as String1 | String2 | ...!?
+	U8  Capabilities = ECapability::Move | ECapability::Interact | ECapability::Talk; //???!!!serialize enum as String1 | String2 | ...!?
 };
 
 }
