@@ -35,8 +35,6 @@ void CPhraseAction::Update(Flow::CUpdateContext& Ctx)
 	if (auto* pParam = _pPrototype->Params->Find(sidText))
 		if (auto& Text = pParam->GetValue<CString>())
 			::Sys::DbgOut((Game::EntityToString(_Speaker) + ": " + Text.CStr()).c_str());
-
-	Continue(Ctx); //???!!!TODO: what will happen currently if action calls nothing?! how Ctx must be filled by default?
 }
 //---------------------------------------------------------------------
 

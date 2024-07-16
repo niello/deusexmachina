@@ -83,6 +83,8 @@ void CFlowPlayer::Update(float dt)
 
 	if (!_CurrAction) return;
 
+	// The context is filled for IFlowAction::Continue() by default. Actions that
+	// don't control the flow explicitly will continue executing at the next frame.
 	CUpdateContext Ctx;
 	Ctx.dt = dt;
 	do
@@ -115,6 +117,9 @@ void CFlowPlayer::Update(float dt)
 
 		// Otherwise proceed to the new action with remaining part of dt
 		SetCurrentAction(Ctx.NextActionID);
+
+		// Reset Ctx state to IFlowAction::Continue() for the correct default behaviour
+		Ctx.Finished = false;
 	}
 	while (_CurrAction);
 }
