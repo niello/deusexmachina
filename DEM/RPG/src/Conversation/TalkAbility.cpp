@@ -4,6 +4,7 @@
 #include <Game/ECS/GameWorld.h>
 #include <Character/StatsComponent.h>
 #include <Conversation/TalkingComponent.h>
+#include <Conversation/ConversationManager.h>
 
 namespace DEM::RPG
 {
@@ -37,7 +38,7 @@ bool CTalkAbility::IsTargetValid(const Game::CGameSession& Session, U32 Index, c
 	const auto& Target = (Index == Context.Targets.size()) ? Context.CandidateTarget : Context.Targets[Index];
 	if (!Target.Valid) return false;
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
-	return pWorld && pWorld->FindComponent<RPG::CTalkingComponent>(Target.Entity);
+	return pWorld && pWorld->FindComponent<CTalkingComponent>(Target.Entity);
 }
 //---------------------------------------------------------------------
 
@@ -82,7 +83,10 @@ bool CTalkAbility::GetFacingParams(const Game::CGameSession& Session, const Game
 
 void CTalkAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
 {
-	// TODO: animation?
+	auto pConvMgr = Session.FindFeature<CConversationManager>();
+	if (!pConvMgr) return;
+
+	pConvMgr->StartConversation(Instance.Actor, Instance.Targets[0].Entity);
 }
 //---------------------------------------------------------------------
 
