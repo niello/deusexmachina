@@ -15,7 +15,7 @@ struct CFlowActionData;
 class CFlowPlayer;
 using PFlowAsset = Ptr<class CFlowAsset>;
 using CFlowVarStorage = CVarStorage<bool, int, float, std::string, CStrID>;
-constexpr U32 EmptyActionID_FIXME = 0; //!!!!!!!!FIXME: fix duplicated definition!
+constexpr U32 EmptyActionID_FIXME = 0; //!!!!!!!!FIXME: fix duplicated definition, see EmptyActionID!
 
 struct CUpdateContext
 {

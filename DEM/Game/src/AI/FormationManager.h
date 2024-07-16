@@ -15,7 +15,7 @@ class CFormationManager : public ::Core::CRTTIBaseClass
 
 protected:
 
-	CGameSession& _Owner;
+	CGameSession& _Session;
 	// formation set
 	// current formation
 	// other settings

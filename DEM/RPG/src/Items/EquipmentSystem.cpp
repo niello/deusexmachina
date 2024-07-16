@@ -561,4 +561,50 @@ void UpdateEquipment(Game::CGameWorld& World, float dt)
 }
 //---------------------------------------------------------------------
 
+void UpdateCharacterAppearances(Game::CGameWorld& World, CStrID LevelID, Resources::CResourceManager& RsrcMgr)
+{
+	ZoneScoped;
+
+	World.ForEachEntityWith<DEM::RPG::CEquippableComponent>(
+		[&RsrcMgr](auto EntityID, auto& Entity, DEM::RPG::CEquippableComponent& Equippable)
+	{
+		for (Resources::PResource& Asset : Equippable.AppearanceAssets)
+		{
+			RsrcMgr.RegisterResource<DEM::RPG::CAppearanceAsset>(Asset);
+			if (Asset)
+			{
+				if (auto pAppearance = Asset->ValidateObject<DEM::RPG::CAppearanceAsset>())
+				{
+					for (auto& VisualPart : pAppearance->Visuals)
+						for (auto& Variant : VisualPart.Variants)
+							RsrcMgr.RegisterResource<DEM::RPG::CAppearanceAsset>(Variant.Asset);
+				}
+			}
+		}
+	});
+
+	World.ForEachEntityInLevelWith<DEM::RPG::CAppearanceComponent>(LevelID,
+		[&World, &RsrcMgr](auto EntityID, auto& Entity, DEM::RPG::CAppearanceComponent& Appearance)
+	{
+		for (Resources::PResource& Asset : Appearance.AppearanceAssets)
+		{
+			RsrcMgr.RegisterResource<DEM::RPG::CAppearanceAsset>(Asset);
+			if (Asset)
+			{
+				if (auto pAppearance = Asset->ValidateObject<DEM::RPG::CAppearanceAsset>())
+				{
+					for (auto& VisualPart : pAppearance->Visuals)
+						for (auto& Variant : VisualPart.Variants)
+							RsrcMgr.RegisterResource<DEM::RPG::CAppearanceAsset>(Variant.Asset);
+				}
+			}
+		}
+
+		// Entities with CEquipmentChangesComponent will rebuild their appearance in ProcessEquipmentChanges 
+		if (!World.FindComponent<const DEM::RPG::CEquipmentChangesComponent>(EntityID))
+			RebuildCharacterAppearance(World, EntityID, Appearance, RsrcMgr);
+	});
+}
+//---------------------------------------------------------------------
+
 }

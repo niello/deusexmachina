@@ -9,7 +9,7 @@ namespace DEM::Game
 {
 
 CFormationManager::CFormationManager(CGameSession& Owner)
-	: _Owner(Owner)
+	: _Session(Owner)
 {
 }
 //---------------------------------------------------------------------
@@ -18,7 +18,7 @@ bool CFormationManager::Move(std::vector<HEntity> Entities, const rtm::vector4f&
 {
 	if (Entities.empty()) return false;
 
-	auto pWorld = _Owner.FindFeature<CGameWorld>();
+	auto pWorld = _Session.FindFeature<CGameWorld>();
 	if (!pWorld) return false;
 
 	//!!!for a single character control may skip direction to allow short steps without turning!

@@ -24,7 +24,9 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Combat/Damage.h
 	DEM/RPG/src/Combat/DestructibleComponent.h
 	DEM/RPG/src/Combat/WeaponComponent.h
+	DEM/RPG/src/Conversation/ConversationManager.h
 	DEM/RPG/src/Conversation/PhraseAction.h
+	DEM/RPG/src/Conversation/TalkingComponent.h
 	DEM/RPG/src/Dlg/DialogueManager.h
 	DEM/RPG/src/Dlg/DlgContext.h
 	DEM/RPG/src/Dlg/DlgGraph.h
@@ -71,6 +73,8 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/AI/Stimuli/StimulusVisible.cpp
 	DEM/RPG/src/Combat/AttackAbility.cpp
 	DEM/RPG/src/Combat/CombatUtils.cpp
+	DEM/RPG/src/Conversation/ConversationManager.cpp
+	DEM/RPG/src/Conversation/ConversationSystem.cpp
 	DEM/RPG/src/Conversation/PhraseAction.cpp
 	DEM/RPG/src/Dlg/DialogueManager.cpp
 	DEM/RPG/src/Dlg/DlgContext.cpp

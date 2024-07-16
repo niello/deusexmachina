@@ -14,7 +14,7 @@ void IFlowAction::Continue(CUpdateContext& Ctx)
 
 void IFlowAction::Break(CUpdateContext& Ctx)
 {
-	Ctx.NextActionID = EmptyActionID_FIXME;
+	Ctx.NextActionID = EmptyActionID;
 	Ctx.Error.clear();
 	Ctx.Finished = true;
 }
@@ -37,7 +37,10 @@ void IFlowAction::Goto(CUpdateContext& Ctx, const CFlowLink& Link, float consume
 }
 //---------------------------------------------------------------------
 
-CFlowPlayer::~CFlowPlayer() = default;
+CFlowPlayer::~CFlowPlayer()
+{
+	Stop();
+}
 //---------------------------------------------------------------------
 
 bool CFlowPlayer::Start(PFlowAsset Asset, U32 StartActionID)
@@ -65,6 +68,9 @@ bool CFlowPlayer::Start(PFlowAsset Asset, U32 StartActionID)
 
 void CFlowPlayer::Stop()
 {
+	if (!IsPlaying())
+		return;
+
 	if (_CurrAction)
 		_CurrAction->OnCancel();
 
@@ -148,7 +154,7 @@ void CFlowPlayer::Finish(bool WithError)
 {
 	n_assert(!WithError);
 
-	OnFinish(_CurrAction ? _CurrAction->_pPrototype->ID : EmptyActionID_FIXME, WithError);
+	OnFinish(_CurrAction ? _CurrAction->_pPrototype->ID : _NextActionID, WithError);
 
 	_CurrAction = nullptr;
 }
