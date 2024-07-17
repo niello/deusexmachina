@@ -55,10 +55,10 @@ bool CConversationManager::StartConversation(Game::HEntity Initiator, Game::HEnt
 	//!!!TODO: can write better?! Maybe provide callback into Player.Start directly? or separate SetAsset and Start?!
 	auto FillVarsConn = New->Player.OnStart.Subscribe([pNew = New.get(), Initiator, Target]()
 	{
-		static const CStrID sidInitiator("Initiator");
-		static const CStrID sidOwner("Owner");
-		pNew->Player.GetVars().Set<int>(sidInitiator, Initiator.Raw);
-		pNew->Player.GetVars().Set<int>(sidOwner, Target.Raw);
+		static const CStrID sidConversationInitiator("ConversationInitiator");
+		static const CStrID sidConversationOwner("ConversationOwner");
+		pNew->Player.GetVars().Set<int>(sidConversationInitiator, Initiator.Raw);
+		pNew->Player.GetVars().Set<int>(sidConversationOwner, Target.Raw);
 	});
 
 	if (!New->Player.Start(pFlow)) return false;
@@ -76,15 +76,28 @@ bool CConversationManager::StartConversation(Game::HEntity Initiator, Game::HEnt
 }
 //---------------------------------------------------------------------
 
-void CConversationManager::CancelConversation(Game::HEntity Key)
+std::map<Game::HEntity, PConversation>::iterator CConversationManager::CleanupConversation(std::map<Game::HEntity, PConversation>::iterator It)
 {
-	_Conversations.erase(Key);
-	if (Key == _ForegroundConversation)
+	if (It == _Conversations.cend()) return It;
+
+	for (auto ItActor = _BusyActors.begin(); ItActor != _BusyActors.end(); /**/)
+	{
+		if (ItActor->second == It->first)
+			ItActor = _BusyActors.erase(ItActor);
+		else
+			++ItActor;
+	}
+
+	if (It->first == _ForegroundConversation)
 		_ForegroundConversation = {};
 
-	//!!!clean _BusyActors!
+	return _Conversations.erase(It);
+}
+//---------------------------------------------------------------------
 
-	NOT_IMPLEMENTED;
+void CConversationManager::CancelConversation(Game::HEntity Key)
+{
+	CleanupConversation(_Conversations.find(Key));
 }
 //---------------------------------------------------------------------
 
@@ -143,8 +156,15 @@ Game::HEntity CConversationManager::GetConversationKey(Game::HEntity Participant
 
 void CConversationManager::Update(float dt)
 {
-	// update all active conversation
-	// if finished, cleanup like in CancelConversation
+	for (auto It = _Conversations.begin(); It != _Conversations.end(); /**/)
+	{
+		It->second->Player.Update(dt);
+
+		if (It->second->Player.IsPlaying())
+			++It;
+		else
+			It = CleanupConversation(It);
+	}
 }
 //---------------------------------------------------------------------
 

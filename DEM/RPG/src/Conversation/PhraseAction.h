@@ -14,6 +14,7 @@ class CPhraseAction : public Flow::IFlowAction
 protected:
 
 	Game::HEntity _Speaker;
+	float         _dt = 0.f;
 
 public:
 

@@ -37,6 +37,8 @@ protected:
 	std::map<Game::HEntity, Game::HEntity> _BusyActors;    // Entity -> Conversation key, for quick "is talking" check
 	Game::HEntity                          _ForegroundConversation;
 
+	std::map<Game::HEntity, PConversation>::iterator CleanupConversation(std::map<Game::HEntity, PConversation>::iterator It);
+
 public:
 
 	CConversationManager(Game::CGameSession& Owner);

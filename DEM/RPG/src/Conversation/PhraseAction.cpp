@@ -12,6 +12,7 @@ static const CStrID sidText("Text");
 void CPhraseAction::OnStart()
 {
 	_Speaker = {};
+	_dt = 0.f;
 
 	// TODO: to utility function for reading HEntity in a flow script!
 	if (auto* pParam = _pPrototype->Params->Find(sidSpeaker))
@@ -32,9 +33,22 @@ void CPhraseAction::OnStart()
 void CPhraseAction::Update(Flow::CUpdateContext& Ctx)
 {
 	//!!!show phrase in fg or bg and then wait for time or for signal!
-	if (auto* pParam = _pPrototype->Params->Find(sidText))
-		if (auto& Text = pParam->GetValue<CString>())
-			::Sys::DbgOut((Game::EntityToString(_Speaker) + ": " + Text.CStr()).c_str());
+	if (_dt <= 0.f)
+		if (auto* pParam = _pPrototype->Params->Find(sidText))
+			if (auto& Text = pParam->GetValue<CString>())
+				::Sys::DbgOut((Game::EntityToString(_Speaker) + ": " + Text.CStr() + "\n").c_str());
+
+	if (_dt < 1.f)
+	{
+		_dt += Ctx.dt;
+		return;
+	}
+
+	//!!!!!!!TODO: need GotoNext or Goto(GetFirstValidLink()), link is ptr, when null do break!
+	if (_pPrototype->Links.empty())
+		Break(Ctx);
+	else
+		Goto(Ctx, _pPrototype->Links[0]);
 }
 //---------------------------------------------------------------------
 
