@@ -69,8 +69,14 @@ public:
 
 	const CFlowActionData* FindAction(U32 ID) const
 	{
-		auto It = std::lower_bound(_Actions.begin(), _Actions.end(), ID, [](const auto& Elm, U32 Value) { return Elm.ID < Value; });
-		return (It == _Actions.end() || (*It).ID != ID) ? nullptr : &(*It);
+		auto It = std::lower_bound(_Actions.cbegin(), _Actions.cend(), ID, [](const auto& Elm, U32 Value) { return Elm.ID < Value; });
+		return (It == _Actions.cend() || (*It).ID != ID) ? nullptr : &(*It);
+	}
+
+	bool HasAction(CStrID ClassName) const
+	{
+		auto It = std::find_if(_Actions.cbegin(), _Actions.cend(), [ClassName](const auto& Elm) { return Elm.ClassName == ClassName; });
+		return It != _Actions.cend();
 	}
 
 	U32 GetDefaultStartActionID() const { return _DefaultStartActionID; }

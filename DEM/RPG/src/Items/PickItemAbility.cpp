@@ -42,7 +42,7 @@ bool CPickItemAbility::IsTargetValid(const Game::CGameSession& Session, U32 Inde
 	const auto& Target = (Index == Context.Targets.size()) ? Context.CandidateTarget : Context.Targets[Index];
 	if (!Target.Valid) return false;
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
-	return pWorld && pWorld->FindComponent<CItemStackComponent>(Target.Entity);
+	return pWorld && pWorld->FindComponent<const CItemStackComponent>(Target.Entity);
 }
 //---------------------------------------------------------------------
 

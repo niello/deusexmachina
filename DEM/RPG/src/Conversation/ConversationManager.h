@@ -41,13 +41,17 @@ public:
 
 	CConversationManager(Game::CGameSession& Owner);
 
-	void                StartConversation(Game::HEntity Initiator, Game::HEntity Target, EConversationMode Mode = EConversationMode::Auto);
+	bool                StartConversation(Game::HEntity Initiator, Game::HEntity Target, EConversationMode Mode = EConversationMode::Auto);
 	void                CancelConversation(Game::HEntity Key);
 	bool                SetConversationMode(Game::HEntity Key, EConversationMode Mode);
+	bool                RegisterParticipant(Game::HEntity Key, Game::HEntity Actor);
+	bool                UnregisterParticipant(Game::HEntity Key, Game::HEntity Actor);
 	size_t              GetParticipantCount(Game::HEntity Key) const;
 	Game::HEntity       GetConversationKey(Game::HEntity Participant) const;
 	Game::HEntity       GetForegroundConversationKey() const { return _ForegroundConversation; }
 	size_t              GetActiveConversationCount() const { return _Conversations.size(); }
+
+	void                Update(float dt);
 
 	Events::CConnection SayPhrase(Game::HEntity Actor, std::string&& Text, float Time = -1.f, std::function<void()>&& OnEnd = nullptr);
 	Events::CConnection ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose);

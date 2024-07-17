@@ -38,7 +38,7 @@ bool CTalkAbility::IsTargetValid(const Game::CGameSession& Session, U32 Index, c
 	const auto& Target = (Index == Context.Targets.size()) ? Context.CandidateTarget : Context.Targets[Index];
 	if (!Target.Valid) return false;
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
-	return pWorld && pWorld->FindComponent<CTalkingComponent>(Target.Entity);
+	return pWorld && pWorld->FindComponent<const CTalkingComponent>(Target.Entity);
 }
 //---------------------------------------------------------------------
 
@@ -92,6 +92,8 @@ void CTalkAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance& 
 
 Game::EActionStatus CTalkAbility::OnUpdate(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
 {
+	//???fail if can't find a conversation?! how to process StartConversation failure?!
+
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return Game::EActionStatus::Failed;
 
@@ -101,7 +103,10 @@ Game::EActionStatus CTalkAbility::OnUpdate(Game::CGameSession& Session, Game::CA
 
 void CTalkAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, Game::EActionStatus Status) const
 {
-	// TODO: animation?
+	auto pConvMgr = Session.FindFeature<CConversationManager>();
+	if (!pConvMgr) return;
+
+	pConvMgr->CancelConversation(Instance.Actor);
 }
 //---------------------------------------------------------------------
 
