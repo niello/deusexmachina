@@ -54,13 +54,9 @@ void CPhraseAction::Update(Flow::CUpdateContext& Ctx)
 		//!!!TODO: calculate IsLast! must find next phrase or end. Or any linked action is ok?
 		bool IsLast = false;
 
+		// NB: _PhraseEndConn unsubscribes in destructor so capturing raw 'this' is safe here
 		if (auto pConvMgr = Ctx.pSession->FindFeature<CConversationManager>())
-		{
-			//!!!!!!FIXME: 'this' is captured by raw value, how to guarantee correctness? Use signal system to auto unsubscribe on destruction?
-			//???can use CConnection without CSignal? Just to make self-clearing connection with any user system? Could provide connection for callback.
-			//otherwise would have to use shared_ptr+weak_ptr for all flow actions!
-			pConvMgr->SayPhrase(_Speaker, std::move(TextStr), IsLast, Time, [this]() { _State = EState::Finished; });
-		}
+			_PhraseEndConn = pConvMgr->SayPhrase(_Speaker, std::move(TextStr), IsLast, Time, [this]() { _State = EState::Finished; });
 	}
 
 	if (_State == EState::Finished)

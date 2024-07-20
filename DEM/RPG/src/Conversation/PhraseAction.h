@@ -20,8 +20,9 @@ protected:
 		Finished
 	};
 
-	Game::HEntity _Speaker;
-	EState         _State = EState::Created;
+	Game::HEntity       _Speaker;
+	Events::CConnection _PhraseEndConn;
+	EState              _State = EState::Created;
 
 public:
 

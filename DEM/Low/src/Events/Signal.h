@@ -17,7 +17,7 @@ struct CConnectionRecordBase
 	// TODO: strong and weak counters for intrusive?
 	uint16_t ConnectionCount = 0; //???TODO: could check existense of weak_ptrs instead?
 
-	virtual bool IsConnected() const = 0;
+	virtual bool IsConnected() const noexcept = 0;
 	virtual void Disconnect() = 0;
 };
 
@@ -96,7 +96,7 @@ public:
 		return *this;
 	}
 
-	bool IsConnected() const
+	bool IsConnected() const noexcept
 	{
 		const auto SharedRecord = _Record.lock();
 		return SharedRecord && SharedRecord->IsConnected();
@@ -111,6 +111,8 @@ public:
 		}
 		_Record.reset();
 	}
+
+	operator bool() const noexcept { return IsConnected(); }
 };
 
 template<typename T>
@@ -130,7 +132,7 @@ protected:
 		PNode Next;
 		bool Connected = false; // Needed only due to VERY poor performance of "Slot != nullptr" checks, even in Release
 
-		virtual bool IsConnected() const override { return Connected; }
+		virtual bool IsConnected() const noexcept override { return Connected; }
 		virtual void Disconnect() override { Slot = nullptr; Connected = false; }
 	};
 

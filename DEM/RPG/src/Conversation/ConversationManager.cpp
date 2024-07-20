@@ -174,6 +174,9 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 	//!!!TODO: calc recommended phrase duration!
 
 	if (_View) _View->SayPhrase(Actor, std::move(Text), IsLast, Time, std::move(OnEnd));
+
+	//!!!if no view or view returned empty connection, probably must call OnEnd here to prevent unintended infinite waiting!
+
 	return {};
 }
 //---------------------------------------------------------------------
