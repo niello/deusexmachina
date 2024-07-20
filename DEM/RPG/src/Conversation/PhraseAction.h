@@ -13,8 +13,15 @@ class CPhraseAction : public Flow::IFlowAction
 
 protected:
 
+	enum class EState : U8
+	{
+		Created,
+		Started,
+		Finished
+	};
+
 	Game::HEntity _Speaker;
-	float         _dt = 0.f;
+	EState         _State = EState::Created;
 
 public:
 

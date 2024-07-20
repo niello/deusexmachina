@@ -18,12 +18,21 @@ namespace DEM::Flow
 namespace DEM::RPG
 {
 using PConversation = std::unique_ptr<struct CConversation>;
+using PConversationView = std::unique_ptr<class IConversationView>;
 
 enum class EConversationMode
 {
 	Foreground,	// Main UI window, single instance
 	Background,	// Phrases above characters' heads, multiple instances
 	Auto		// Decide from participant factions and presence of choices in a flow asset
+};
+
+class IConversationView
+{
+public:
+
+	virtual bool SayPhrase(Game::HEntity Actor, std::string&& Text, bool IsLast, float Time, std::function<void()>&& OnEnd) = 0;
+	virtual bool ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose) = 0;
 };
 
 class CConversationManager : public ::Core::CRTTIBaseClass
@@ -36,12 +45,15 @@ protected:
 	std::map<Game::HEntity, PConversation> _Conversations; // Indexed by target (asset owner)
 	std::map<Game::HEntity, Game::HEntity> _BusyActors;    // Entity -> Conversation key, for quick "is talking" check
 	Game::HEntity                          _ForegroundConversation;
+	PConversationView                      _View;
 
 	std::map<Game::HEntity, PConversation>::iterator CleanupConversation(std::map<Game::HEntity, PConversation>::iterator It);
 
 public:
 
-	CConversationManager(Game::CGameSession& Owner);
+	CConversationManager(Game::CGameSession& Owner, PConversationView&& View = nullptr);
+
+	void                SetView(PConversationView&& View) { _View = std::move(View); }
 
 	bool                StartConversation(Game::HEntity Initiator, Game::HEntity Target, EConversationMode Mode = EConversationMode::Auto);
 	void                CancelConversation(Game::HEntity Key);
@@ -55,7 +67,7 @@ public:
 
 	void                Update(float dt);
 
-	Events::CConnection SayPhrase(Game::HEntity Actor, std::string&& Text, float Time = -1.f, std::function<void()>&& OnEnd = nullptr);
+	Events::CConnection SayPhrase(Game::HEntity Actor, std::string&& Text, bool IsLast, float Time = -1.f, std::function<void()>&& OnEnd = nullptr);
 	Events::CConnection ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose);
 };
 

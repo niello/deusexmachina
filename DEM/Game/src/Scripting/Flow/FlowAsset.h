@@ -34,8 +34,6 @@ struct CFlowActionData
 	U32                    ID = EmptyActionID;
 };
 
-//!!!values should support HEntity, but it is in DEMGame, maybe can use std::any? or some extensible type system? or move Flow to DEMGame?
-//!!!need variable storage default value deserialization for HEntity. Deserialization from HRD already exists, need to use properly.
 using CFlowVarStorage = CVarStorage<bool, int, float, std::string, CStrID>;
 
 class CFlowAsset : public ::Core::CObject

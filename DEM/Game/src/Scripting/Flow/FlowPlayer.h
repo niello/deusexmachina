@@ -8,6 +8,11 @@
 // Plays a Flow asset and tracks its state.
 // Only one action can be active at the same time.
 
+namespace DEM::Game
+{
+	using PGameSession = Ptr<class CGameSession>;
+}
+
 namespace DEM::Flow
 {
 struct CFlowLink;
@@ -19,11 +24,12 @@ constexpr U32 EmptyActionID_FIXME = 0; //!!!!!!!!FIXME: fix duplicated definitio
 
 struct CUpdateContext
 {
-	float       dt = 0.f;
-	U32         NextActionID = EmptyActionID_FIXME;
-	std::string Error;
-	bool        Finished = false;
-	bool        YieldToNextFrame = false;
+	Game::CGameSession* pSession = nullptr;
+	float               dt = 0.f;
+	U32                 NextActionID = EmptyActionID_FIXME;
+	std::string         Error;
+	bool                Finished = false;
+	bool                YieldToNextFrame = false;
 };
 
 class IFlowAction : public ::Core::CRTTIBaseClass
@@ -70,7 +76,7 @@ public:
 
 	bool Start(PFlowAsset Asset, U32 StartActionID = EmptyActionID_FIXME);
 	void Stop();
-	void Update(float dt); //???!!!if needs session, must be in DEMGame?!
+	void Update(Game::CGameSession& Session, float dt);
 
 	CFlowAsset* GetAsset() const { return _Asset.Get(); }
 	auto&       GetVars() { return _VarStorage; }

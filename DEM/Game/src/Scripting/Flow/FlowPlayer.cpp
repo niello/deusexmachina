@@ -78,7 +78,7 @@ void CFlowPlayer::Stop()
 }
 //---------------------------------------------------------------------
 
-void CFlowPlayer::Update(float dt)
+void CFlowPlayer::Update(Game::CGameSession& Session, float dt)
 {
 	// Resume from yielding
 	if (_NextActionID != EmptyActionID)
@@ -92,10 +92,11 @@ void CFlowPlayer::Update(float dt)
 	// The context is filled for IFlowAction::Continue() by default. Actions that
 	// don't control the flow explicitly will continue executing at the next frame.
 	CUpdateContext Ctx;
+	Ctx.pSession = &Session;
 	Ctx.dt = dt;
 	do
 	{
-		_CurrAction->Update(Ctx); ///TODO: also pass player! and maybe session?!
+		_CurrAction->Update(Ctx);
 
 		// Print both critical and retryable errors
 		const bool HasError = !Ctx.Error.empty();

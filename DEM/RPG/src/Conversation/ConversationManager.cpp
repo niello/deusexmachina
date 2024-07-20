@@ -15,8 +15,9 @@ struct CConversation
 	// TODO: persistent data, e.g. visited phrases. Load here or keep in a separate collection in a manager?
 };
 
-CConversationManager::CConversationManager(Game::CGameSession& Owner)
+CConversationManager::CConversationManager(Game::CGameSession& Owner, PConversationView&& View)
 	: _Session(Owner)
+	, _View(std::move(View))
 {
 }
 //---------------------------------------------------------------------
@@ -158,13 +159,29 @@ void CConversationManager::Update(float dt)
 {
 	for (auto It = _Conversations.begin(); It != _Conversations.end(); /**/)
 	{
-		It->second->Player.Update(dt);
+		It->second->Player.Update(_Session, dt);
 
 		if (It->second->Player.IsPlaying())
 			++It;
 		else
 			It = CleanupConversation(It);
 	}
+}
+//---------------------------------------------------------------------
+
+Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::string&& Text, bool IsLast, float Time, std::function<void()>&& OnEnd)
+{
+	//!!!TODO: calc recommended phrase duration!
+
+	if (_View) _View->SayPhrase(Actor, std::move(Text), IsLast, Time, std::move(OnEnd));
+	return {};
+}
+//---------------------------------------------------------------------
+
+Events::CConnection CConversationManager::ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose)
+{
+	if (_View) _View->ProvideChoices(Actor, std::move(Texts), std::move(OnChoose));
+	return {};
 }
 //---------------------------------------------------------------------
 

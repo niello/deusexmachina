@@ -318,9 +318,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Scripting/ScriptObject.h
 	DEM/Low/src/Scripting/ScriptServer.h
 	DEM/Low/src/Scripting/SolLow.h
-	DEM/Low/src/Scripting/Flow/FlowAsset.h
-	DEM/Low/src/Scripting/Flow/FlowAssetLoader.h
-	DEM/Low/src/Scripting/Flow/FlowPlayer.h
 	DEM/Low/src/SI/SI_L1.h
 	DEM/Low/src/System/Memory.h
 	DEM/Low/src/System/OSFileSystem.h
@@ -570,8 +567,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Scripting/ScriptObject.cpp
 	DEM/Low/src/Scripting/ScriptServer.cpp
 	DEM/Low/src/Scripting/SolLow.cpp
-	DEM/Low/src/Scripting/Flow/FlowAssetLoader.cpp
-	DEM/Low/src/Scripting/Flow/FlowPlayer.cpp
 	DEM/Low/src/SI/SIEventServer.cpp
 	DEM/Low/src/SI/SIGlobals.cpp
 	DEM/Low/src/SI/SITime.cpp
