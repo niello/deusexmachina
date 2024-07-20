@@ -96,6 +96,8 @@ Game::EActionStatus CTalkAbility::OnUpdate(Game::CGameSession& Session, Game::CA
 	if (!pConvMgr) return Game::EActionStatus::Cancelled;
 
 	//???fail if can't find a conversation?! how to process StartConversation failure?!
+	//???enable failures from CAbility::OnStart? return bool and turn false into EActionStatus::Failed in a calling system.
+	//???or leave as now and continue checking GetConversationKey to know if dlg has ended. But is it failed start or correct finish?!
 
 	//!!!TODO: catch conversation end event from manager!!!
 

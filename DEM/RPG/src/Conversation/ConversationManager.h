@@ -31,8 +31,8 @@ class IConversationView
 {
 public:
 
-	virtual bool SayPhrase(Game::HEntity Actor, std::string&& Text, bool IsLast, float Time, std::function<void()>&& OnEnd) = 0;
-	virtual bool ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose) = 0;
+	virtual Events::CConnection SayPhrase(Game::HEntity Actor, std::string&& Text, bool IsLast, float Time, std::function<void()>&& OnEnd) = 0;
+	virtual Events::CConnection ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose) = 0;
 };
 
 class CConversationManager : public ::Core::CRTTIBaseClass

@@ -173,18 +173,25 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 {
 	//!!!TODO: calc recommended phrase duration!
 
-	if (_View) _View->SayPhrase(Actor, std::move(Text), IsLast, Time, std::move(OnEnd));
+	Events::CConnection Conn;
+	if (_View)
+		Conn = _View->SayPhrase(Actor, std::move(Text), IsLast, Time, std::move(OnEnd));
+	else
+		OnEnd();
 
-	//!!!if no view or view returned empty connection, probably must call OnEnd here to prevent unintended infinite waiting!
-
-	return {};
+	return Conn;
 }
 //---------------------------------------------------------------------
 
 Events::CConnection CConversationManager::ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose)
 {
-	if (_View) _View->ProvideChoices(Actor, std::move(Texts), std::move(OnChoose));
-	return {};
+	Events::CConnection Conn;
+	if (_View && !Texts.empty())
+		Conn = _View->ProvideChoices(Actor, std::move(Texts), std::move(OnChoose));
+	else
+		; //!!!TODO: call OnChoose with some special value meaning forced cancellation with no choice made!
+
+	return Conn;
 }
 //---------------------------------------------------------------------
 
