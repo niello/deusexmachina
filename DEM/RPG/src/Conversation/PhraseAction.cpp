@@ -15,6 +15,7 @@ static const CStrID sidTime("Time");
 void CPhraseAction::OnStart()
 {
 	_Speaker = {};
+	_PhraseEndConn = {};
 	_State = EState::Created;
 
 	// TODO: to utility function for reading HEntity in a flow script!
@@ -37,35 +38,23 @@ void CPhraseAction::Update(Flow::CUpdateContext& Ctx)
 {
 	if (_State == EState::Created)
 	{
-		std::string TextStr;
-		if (auto* pParam = _pPrototype->Params->Find(sidText))
-			if (auto& Text = pParam->GetValue<CString>())
-				TextStr = Text.CStr();
-
+		std::string TextStr = _pPrototype->Params->Get<CString>(sidText, CString::Empty).CStr();
 		if (TextStr.empty()) return Break(Ctx);
 
 		// Set this before SayPhrase call because it can set finished state immediately!
 		_State = EState::Started;
 
-		float Time = -1.f;
-		if (auto* pParam = _pPrototype->Params->Find(sidTime))
-			Time = pParam->GetValue<float>();
+		const float Time = _pPrototype->Params->Get<float>(sidTime, -1.f);
 
-		//!!!TODO: calculate IsLast! must find next phrase or end. Or any linked action is ok?
-		bool IsLast = false;
-
-		// NB: _PhraseEndConn unsubscribes in destructor so capturing raw 'this' is safe here
+		// NB: _PhraseEndConn unsubscribes in destructor so capturing raw 'this' is safe here as long as views don't store the callback in an unsafe way
 		if (auto pConvMgr = Ctx.pSession->FindFeature<CConversationManager>())
-			_PhraseEndConn = pConvMgr->SayPhrase(_Speaker, std::move(TextStr), IsLast, Time, [this]() { _State = EState::Finished; });
+			_PhraseEndConn = pConvMgr->SayPhrase(_Speaker, std::move(TextStr), Time, [this]() { _State = EState::Finished; });
+		else
+			_State = EState::Finished;
 	}
 
 	if (_State == EState::Finished)
-	{
-		if (_pPrototype->Links.empty())
-			Break(Ctx);
-		else
-			Goto(Ctx, _pPrototype->Links[0]); //!!!GetFirstValidLink()!
-	}
+		Goto(Ctx, GetFirstValidLink(*Ctx.pSession, _pPlayer->GetVars()));
 }
 //---------------------------------------------------------------------
 

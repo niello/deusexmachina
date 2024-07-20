@@ -12,10 +12,10 @@ namespace DEM::Flow
 {
 constexpr U32 EmptyActionID = 0;
 
-//!!!can be universal, not flow-specific!
+//!!!TODO: can be universal, not flow-specific!
 struct CConditionData
 {
-	CStrID        Type;   // Empty type means no condition
+	CStrID        Type;   // Empty type means no condition //???TODO: use enum, and for Custom store Type in params?!
 	Data::PParams Params;
 };
 

@@ -5,6 +5,24 @@
 namespace DEM::Flow
 {
 
+bool EvaluateCondition(const CConditionData& Cond, const Game::CGameSession& Session, const CFlowVarStorage& Vars)
+{
+	if (!Cond.Type) return true;
+
+	//!!!TODO: use enum, and for Custom get Type from params?!
+	static const CStrID sidCompareVarConst("CompareVarConst");
+	if (Cond.Type == sidCompareVarConst)
+	{
+		// arg1, arg2, op
+		// op could be CStrID or int (enum)
+		// get var from storage
+		// return comparison result
+	}
+
+	return false;
+}
+//---------------------------------------------------------------------
+
 void IFlowAction::Continue(CUpdateContext& Ctx)
 {
 	Ctx.Error.clear();
@@ -27,13 +45,35 @@ void IFlowAction::Throw(CUpdateContext& Ctx, std::string&& Error, bool CanRetry)
 }
 //---------------------------------------------------------------------
 
-void IFlowAction::Goto(CUpdateContext& Ctx, const CFlowLink& Link, float consumedDt)
+void IFlowAction::Goto(CUpdateContext& Ctx, const CFlowLink* pLink, float consumedDt)
 {
-	Ctx.dt = std::max(0.f, Ctx.dt - consumedDt);
-	Ctx.NextActionID = Link.DestID;
 	Ctx.Error.clear();
 	Ctx.Finished = true;
-	Ctx.YieldToNextFrame = Link.YieldToNextFrame;
+	if (pLink)
+	{
+		Ctx.dt = std::max(0.f, Ctx.dt - consumedDt);
+		Ctx.NextActionID = pLink->DestID;
+		Ctx.YieldToNextFrame = pLink->YieldToNextFrame;
+	}
+	else
+	{
+		// Equal to Break()
+		Ctx.NextActionID = EmptyActionID;
+	}
+}
+//---------------------------------------------------------------------
+
+//???return ptr or index or both?
+const CFlowLink* IFlowAction::GetFirstValidLink(const Game::CGameSession& Session, const CFlowVarStorage& Vars) const
+{
+	const CFlowLink* pResult = nullptr;
+	ForEachValidLink(Session, Vars, [&pResult](size_t i, const CFlowLink& Link)
+	{
+		pResult = &Link;
+		return false;
+	});
+
+	return pResult;
 }
 //---------------------------------------------------------------------
 

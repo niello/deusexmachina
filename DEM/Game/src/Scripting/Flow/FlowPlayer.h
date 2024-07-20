@@ -15,12 +15,16 @@ namespace DEM::Game
 
 namespace DEM::Flow
 {
+struct CConditionData;
 struct CFlowLink;
 struct CFlowActionData;
 class CFlowPlayer;
 using PFlowAsset = Ptr<class CFlowAsset>;
 using CFlowVarStorage = CVarStorage<bool, int, float, std::string, CStrID>;
 constexpr U32 EmptyActionID_FIXME = 0; //!!!!!!!!FIXME: fix duplicated definition, see EmptyActionID!
+
+//!!!TODO: can be universal, not flow-specific!
+bool EvaluateCondition(const CConditionData& Cond, const Game::CGameSession& Session, const CFlowVarStorage& Vars);
 
 struct CUpdateContext
 {
@@ -40,7 +44,33 @@ protected:
 	static void Continue(CUpdateContext& Ctx);
 	static void Break(CUpdateContext& Ctx);
 	static void Throw(CUpdateContext& Ctx, std::string&& Error, bool CanRetry);
-	static void Goto(CUpdateContext& Ctx, const CFlowLink& Link, float consumedDt = 0.f);
+	static void Goto(CUpdateContext& Ctx, const CFlowLink* pLink, float consumedDt = 0.f);
+
+	template<typename F>
+	void ForEachValidLink(const Game::CGameSession& Session, const CFlowVarStorage& Vars, F Callback) const
+	{
+		if (!_pPrototype) return;
+
+		const auto LinkCount = _pPrototype->Links.size();
+		for (size_t i = 0; i < LinkCount; ++i)
+		{
+			const auto& Link = _pPrototype->Links[i];
+			if (EvaluateCondition(Link.Condition, Session, Vars))
+			{
+				if constexpr (std::is_invocable_r_v<bool, F, size_t, const CFlowLink&>)
+				{
+					if (!Callback(i, Link)) return;
+				}
+				else if constexpr (std::is_invocable_v<F, size_t, const CFlowLink&>)
+				{
+					Callback(i, Link);
+				}
+				else static_assert(false, "Callback must accept link index and const link reference");
+			}
+		}
+	}
+
+	const CFlowLink* GetFirstValidLink(const Game::CGameSession& Session, const CFlowVarStorage& Vars) const;
 
 public:
 

@@ -46,15 +46,9 @@ bool CTalkAbility::Execute(Game::CGameSession& Session, Game::CInteractionContex
 {
 	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;
 
-	Game::HEntity ActorID = Context.Actors[0];
-	// TODO: choose the first actor with enough inventory space? Or no need?
-	//if (Context.Actors.size() > 1)
-	//{
-	//}
-
 	// Push standard action for the first actor only
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
-	return pWorld && PushStandardExecuteAction(*pWorld, ActorID, Context, Enqueue, PushChild);
+	return pWorld && PushStandardExecuteAction(*pWorld, Context.Actors[0], Context, Enqueue, PushChild);
 }
 //---------------------------------------------------------------------
 

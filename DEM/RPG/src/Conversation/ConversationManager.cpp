@@ -13,6 +13,7 @@ struct CConversation
 	Flow::CFlowPlayer       Player;
 	std::set<Game::HEntity> Participants; //???store owner (target) and initiator separately?
 	// TODO: persistent data, e.g. visited phrases. Load here or keep in a separate collection in a manager?
+	// Can also store in persistent data last checkpoint action ID when conv was interrupted! To start not from beginning!
 };
 
 CConversationManager::CConversationManager(Game::CGameSession& Owner, PConversationView&& View)
@@ -169,13 +170,19 @@ void CConversationManager::Update(float dt)
 }
 //---------------------------------------------------------------------
 
-Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::string&& Text, bool IsLast, float Time, std::function<void()>&& OnEnd)
+Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::string&& Text, float Time, std::function<void()>&& OnEnd)
 {
-	//!!!TODO: calc recommended phrase duration!
+	//!!!check actor valid and can speak!
+	//???pass error in callback arg?
+
+	if (Time < 0.f)
+	{
+		//!!!TODO: calc recommended phrase duration! Can use VO duration, number of vowels in a text etc. Or do it in view?
+	}
 
 	Events::CConnection Conn;
 	if (_View)
-		Conn = _View->SayPhrase(Actor, std::move(Text), IsLast, Time, std::move(OnEnd));
+		Conn = _View->SayPhrase(Actor, std::move(Text), Time, std::move(OnEnd));
 	else
 		OnEnd();
 
@@ -185,6 +192,9 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 
 Events::CConnection CConversationManager::ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose)
 {
+	//!!!check actor valid and can speak!
+	//???pass error in callback arg or as a special choice value?
+
 	Events::CConnection Conn;
 	if (_View && !Texts.empty())
 		Conn = _View->ProvideChoices(Actor, std::move(Texts), std::move(OnChoose));

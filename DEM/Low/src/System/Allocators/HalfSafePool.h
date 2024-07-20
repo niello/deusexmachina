@@ -2,9 +2,11 @@
 #include <StdDEM.h>
 #include <atomic>
 
-// A variation of CHalfSafePoolAllocator that supports freeing objects from multiple threads.
+// A variation of CPoolAllocator that supports freeing objects from multiple threads.
 // Allocations and clearing are allowed only from the same thread. Used for allocating
 // jobs in a work-stealing scheduler.
+
+// TODO: rename Half -> Semi
 
 template <UPTR ObjectByteSize, UPTR Alignment = 0, UPTR ObjectsPerChunk = 128>
 class CHalfSafePoolAllocator final
