@@ -167,6 +167,8 @@ void CConversationManager::Update(float dt)
 		else
 			It = CleanupConversation(It);
 	}
+
+	if (_View) _View->Update(dt);
 }
 //---------------------------------------------------------------------
 
