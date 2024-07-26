@@ -70,6 +70,7 @@ public:
 
 	Events::CConnection SayPhrase(Game::HEntity Actor, std::string&& Text, float Time = -1.f, std::function<void()>&& OnEnd = nullptr);
 	Events::CConnection ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose);
+	IConversationView*  GetView() const { return _View.get(); }
 };
 
 }
