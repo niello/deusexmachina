@@ -31,6 +31,8 @@ class IConversationView
 {
 public:
 
+	virtual ~IConversationView() = default;
+
 	virtual void                Update(float dt) = 0;
 	virtual Events::CConnection SayPhrase(Game::HEntity Actor, std::string&& Text, float Time, std::function<void()>&& OnEnd) = 0;
 	virtual Events::CConnection ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose) = 0;
