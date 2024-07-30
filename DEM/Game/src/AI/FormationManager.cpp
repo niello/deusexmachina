@@ -42,7 +42,7 @@ bool CFormationManager::Move(std::vector<HEntity> Entities, const rtm::vector4f&
 		{
 			if (!Enqueue) pQueue->Reset();
 
-			if (auto pAgent = pWorld->FindComponent<AI::CNavAgentComponent>(EntityID))
+			if (auto pAgent = pWorld->FindComponent<const AI::CNavAgentComponent>(EntityID))
 				pQueue->EnqueueAction<AI::Navigate>(WorldPosition, 0.f);
 			else
 				pQueue->EnqueueAction<AI::Steer>(WorldPosition, WorldPosition, 0.f);
