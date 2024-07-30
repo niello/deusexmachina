@@ -180,6 +180,7 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 	if (Time < 0.f)
 	{
 		//!!!TODO: calc recommended phrase duration! Can use VO duration, number of vowels in a text etc. Or do it in view?
+		Time = 2.f;
 	}
 
 	Events::CConnection Conn;
