@@ -54,16 +54,12 @@ bool CConversationManager::StartConversation(Game::HEntity Initiator, Game::HEnt
 
 	PConversation New(new CConversation);
 
-	//!!!TODO: can write better?! Maybe provide callback into Player.Start directly? or separate SetAsset and Start?!
-	auto FillVarsConn = New->Player.OnStart.Subscribe([pNew = New.get(), Initiator, Target]()
-	{
-		static const CStrID sidConversationInitiator("ConversationInitiator");
-		static const CStrID sidConversationOwner("ConversationOwner");
-		pNew->Player.GetVars().Set<int>(sidConversationInitiator, Initiator.Raw);
-		pNew->Player.GetVars().Set<int>(sidConversationOwner, Target.Raw);
-	});
-
 	if (!New->Player.Start(pFlow)) return false;
+
+	static const CStrID sidConversationInitiator("ConversationInitiator");
+	static const CStrID sidConversationOwner("ConversationOwner");
+	New->Player.GetVars().Set<int>(sidConversationInitiator, Initiator.Raw);
+	New->Player.GetVars().Set<int>(sidConversationOwner, Target.Raw);
 
 	_Conversations.emplace(Target, std::move(New));
 

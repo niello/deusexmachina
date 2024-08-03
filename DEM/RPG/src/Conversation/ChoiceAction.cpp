@@ -12,6 +12,28 @@ FACTORY_CLASS_IMPL(DEM::RPG::CChoiceAction, 'CHOA', Flow::IFlowAction);
 static const CStrID sidSpeaker("Speaker");
 static const CStrID sidText("Text");
 
+void CChoiceAction::CollectChoices(CChoiceAction& Root, const Flow::CFlowActionData& Curr, const Game::CGameSession& Session)
+{
+	ForEachValidLink(Curr, Session, Root._pPlayer->GetVars(), [&Root, &Session](size_t Index, const Flow::CFlowLink& Link)
+	{
+		const auto* pActionData = Root._pPlayer->GetAsset()->FindAction(Link.DestID);
+		if (!pActionData) return;
+		const auto* pLinkedRTTI = Core::CFactory::Instance().GetRTTI(pActionData->ClassName.CStr());
+
+		if (CPhraseAction::RTTI.IsBaseOf(pLinkedRTTI))
+		{
+			Root._ChoiceTexts.push_back(pActionData->Params->Get<CString>(sidText, CString::Empty).CStr());
+			Root._ChoiceLinks.push_back(&Link);
+		}
+		else if (CChoiceAction::RTTI.IsBaseOf(pLinkedRTTI))
+		{
+			// Collect recursively. This is useful for grouping choices under the same condition.
+			CollectChoices(Root, *pActionData, Session);
+		}
+	});
+}
+//---------------------------------------------------------------------
+
 void CChoiceAction::OnStart(Game::CGameSession& Session)
 {
 	_Speaker = {};
@@ -32,23 +54,7 @@ void CChoiceAction::OnStart(Game::CGameSession& Session)
 	}
 
 	// Collect answers
-	ForEachValidLink(Session, _pPlayer->GetVars(), [this](size_t Index, const Flow::CFlowLink& Link)
-	{
-		const auto* pActionData = _pPlayer->GetAsset()->FindAction(Link.DestID);
-		if (!pActionData) return;
-		const auto* pLinkedRTTI = Core::CFactory::Instance().GetRTTI(pActionData->ClassName.CStr());
-
-		if (CPhraseAction::RTTI.IsBaseOf(pLinkedRTTI))
-		{
-			_ChoiceTexts.push_back(pActionData->Params->Get<CString>(sidText, CString::Empty).CStr());
-			_ChoiceLinks.push_back(&Link);
-		}
-		else if (CChoiceAction::RTTI.IsBaseOf(pLinkedRTTI))
-		{
-			//!!!TODO: recurse!
-		}
-	});
-
+	CollectChoices(*this, *_pPrototype, Session);
 	_Choice = _ChoiceLinks.size();
 }
 //---------------------------------------------------------------------

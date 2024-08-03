@@ -96,12 +96,11 @@ bool CFlowPlayer::Start(PFlowAsset Asset, U32 StartActionID)
 		if (StartActionID == EmptyActionID) return false;
 	}
 
+	_NextActionID = StartActionID;
 	_VarStorage = _Asset->GetDefaultVarStorage();
 
-	// Before SetCurrentAction() to give a caller chance to fill variables externally
 	OnStart();
 
-	SetCurrentAction(StartActionID);
 	return !!_CurrAction;
 }
 //---------------------------------------------------------------------
@@ -120,10 +119,10 @@ void CFlowPlayer::Stop()
 
 void CFlowPlayer::Update(Game::CGameSession& Session, float dt)
 {
-	// Resume from yielding
+	// Resume from yielding or start the first action
 	if (_NextActionID != EmptyActionID)
 	{
-		SetCurrentAction(_NextActionID);
+		SetCurrentAction(Session, _NextActionID);
 		_NextActionID = EmptyActionID;
 	}
 
@@ -163,7 +162,7 @@ void CFlowPlayer::Update(Game::CGameSession& Session, float dt)
 		}
 
 		// Otherwise proceed to the new action with remaining part of dt
-		SetCurrentAction(Ctx.NextActionID);
+		SetCurrentAction(Session, Ctx.NextActionID);
 
 		// Reset Ctx state to IFlowAction::Continue() for the correct default behaviour
 		Ctx.Finished = false;
@@ -172,7 +171,7 @@ void CFlowPlayer::Update(Game::CGameSession& Session, float dt)
 }
 //---------------------------------------------------------------------
 
-void CFlowPlayer::SetCurrentAction(U32 ID)
+void CFlowPlayer::SetCurrentAction(Game::CGameSession& Session, U32 ID)
 {
 	_CurrAction = nullptr;
 
@@ -183,7 +182,7 @@ void CFlowPlayer::SetCurrentAction(U32 ID)
 		{
 			_CurrAction->_pPrototype = pActionData;
 			_CurrAction->_pPlayer = this;
-			_CurrAction->OnStart();
+			_CurrAction->OnStart(Session);
 		}
 	}
 

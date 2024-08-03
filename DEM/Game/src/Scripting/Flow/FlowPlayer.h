@@ -47,14 +47,12 @@ protected:
 	static void Goto(CUpdateContext& Ctx, const CFlowLink* pLink, float consumedDt = 0.f);
 
 	template<typename F>
-	void ForEachValidLink(const Game::CGameSession& Session, const CFlowVarStorage& Vars, F Callback) const
+	static void ForEachValidLink(const CFlowActionData& Proto, const Game::CGameSession& Session, const CFlowVarStorage& Vars, F Callback)
 	{
-		if (!_pPrototype) return;
-
-		const auto LinkCount = _pPrototype->Links.size();
+		const auto LinkCount = Proto.Links.size();
 		for (size_t i = 0; i < LinkCount; ++i)
 		{
-			const auto& Link = _pPrototype->Links[i];
+			const auto& Link = Proto.Links[i];
 			if (EvaluateCondition(Link.Condition, Session, Vars))
 			{
 				if constexpr (std::is_invocable_r_v<bool, F, size_t, const CFlowLink&>)
@@ -68,6 +66,12 @@ protected:
 				else static_assert(false, "Callback must accept link index and const link reference");
 			}
 		}
+	}
+
+	template<typename F>
+	DEM_FORCE_INLINE void ForEachValidLink(const Game::CGameSession& Session, const CFlowVarStorage& Vars, F Callback) const
+	{
+		if (_pPrototype) ForEachValidLink<F>(*_pPrototype, Session, Vars, Callback);
 	}
 
 	const CFlowLink* GetFirstValidLink(const Game::CGameSession& Session, const CFlowVarStorage& Vars) const;
@@ -94,7 +98,7 @@ private:
 	CFlowVarStorage _VarStorage;
 	// TODO: add action pool Type->Instance? std::map<CStrID, PFlowAction>; // NB: always needs only 1 instance of each type.
 
-	void SetCurrentAction(U32 ID);
+	void SetCurrentAction(Game::CGameSession& Session, U32 ID);
 	void Finish(bool WithError);
 
 public:

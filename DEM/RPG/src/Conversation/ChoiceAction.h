@@ -20,6 +20,8 @@ protected:
 	Events::CConnection                 _ChoiceMadeConn;
 	size_t                              _Choice;
 
+	static void CollectChoices(CChoiceAction& Root, const Flow::CFlowActionData& Curr, const Game::CGameSession& Session);
+
 public:
 
 	virtual void OnStart(Game::CGameSession& Session) override;
