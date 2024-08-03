@@ -15,8 +15,7 @@ static bool LuaCall(const sol::function& Fn, TArgs&&... Args)
 	auto Result = Fn(std::forward<TArgs>(Args)...);
 	if (!Result.valid())
 	{
-		sol::error Error = Result;
-		::Sys::Error(Error.what());
+		::Sys::Error(Result.get<sol::error>().what());
 		return false;
 	}
 

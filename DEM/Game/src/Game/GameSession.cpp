@@ -56,8 +56,7 @@ sol::table CGameSession::GetScript(CStrID ID, bool ForceReload)
 	auto Result = _ScriptState.script(pScriptAsset->GetSourceBuffer(), ScriptObject, std::string(ID.CStr()), sol::load_mode::any);
 	if (!Result.valid())
 	{
-		sol::error Error = Result;
-		::Sys::Error(Error.what());
+		::Sys::Error(Result.get<sol::error>().what());
 		return sol::nil;
 	}
 

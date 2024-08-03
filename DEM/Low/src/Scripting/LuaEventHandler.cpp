@@ -14,8 +14,7 @@ bool CLuaEventHandler::Invoke(CEventDispatcher* pDispatcher, const CEventBase& E
 		auto Result = _Fn(pEvent);
 		if (!Result.valid())
 		{
-			sol::error Error = Result;
-			::Sys::Error(Error.what());
+			::Sys::Error(Result.get<sol::error>().what());
 			return false;
 		}
 

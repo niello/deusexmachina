@@ -82,12 +82,10 @@ bool CInteractionManager::RegisterTool(CStrID ID, const Data::CParams& Params)
 					if (!Condition.empty())
 					{
 						auto LoadedCondition = _Session.GetScriptState().load("local Actors, Target = ...; return " + Condition, (ID.CStr() + ActID).CStr());
-						if (LoadedCondition.valid()) ConditionFunc = LoadedCondition;
+						if (LoadedCondition.valid())
+							ConditionFunc = LoadedCondition;
 						else
-						{
-							sol::error Error = LoadedCondition;
-							::Sys::Error(Error.what());
-						}
+							::Sys::Error(LoadedCondition.get<sol::error>().what());
 					}
 
 					Tool.Interactions.emplace_back(CStrID(ActID.CStr()), std::move(ConditionFunc));
@@ -254,8 +252,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 			auto Result = Precondition(Context.Actors, Context.CandidateTarget);
 			if (!Result.valid())
 			{
-				sol::error Error = Result;
-				::Sys::Error(Error.what());
+				::Sys::Error(Result.get<sol::error>().what());
 				continue;
 			}
 

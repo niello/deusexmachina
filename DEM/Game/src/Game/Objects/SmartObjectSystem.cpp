@@ -34,10 +34,7 @@ static void CallStateChangeScript(sol::function& Script, HEntity EntityID, CStrI
 	{
 		auto Result = Script(EntityID, CurrState, NextState);
 		if (!Result.valid())
-		{
-			sol::error Error = Result;
-			::Sys::Error(Error.what());
-		}
+			::Sys::Error(Result.get<sol::error>().what());
 	}
 }
 //---------------------------------------------------------------------
@@ -281,10 +278,7 @@ void UpdateSmartObjects(CGameWorld& World, CGameSession& Session, float dt)
 			{
 				auto Result = SOComponent.UpdateScript(EntityID, SOComponent.CurrState);
 				if (!Result.valid())
-				{
-					sol::error Error = Result;
-					::Sys::Error(Error.what());
-				}
+					::Sys::Error(Result.get<sol::error>().what());
 			}
 		}
 	});
