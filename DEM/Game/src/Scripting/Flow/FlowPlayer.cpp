@@ -101,7 +101,7 @@ bool CFlowPlayer::Start(PFlowAsset Asset, U32 StartActionID)
 
 	OnStart();
 
-	return !!_CurrAction;
+	return true;
 }
 //---------------------------------------------------------------------
 

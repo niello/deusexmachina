@@ -44,13 +44,8 @@ bool CConversationManager::StartConversation(Game::HEntity Initiator, Game::HEnt
 			Mode = EConversationMode::Background;
 	}
 
-	if (Mode == EConversationMode::Foreground)
-	{
-		// Can't have more than one foreground conversation running
-		if (_ForegroundConversation) return false;
-
-		_ForegroundConversation = Target;
-	}
+	// Can't have more than one foreground conversation running
+	if (Mode == EConversationMode::Foreground && _ForegroundConversation) return false;
 
 	PConversation New(new CConversation);
 
@@ -69,6 +64,9 @@ bool CConversationManager::StartConversation(Game::HEntity Initiator, Game::HEnt
 		CancelConversation(Target);
 		return false;
 	}
+
+	if (Mode == EConversationMode::Foreground)
+		_ForegroundConversation = Target;
 
 	return true;
 }
