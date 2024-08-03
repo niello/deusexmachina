@@ -1,12 +1,12 @@
 #pragma once
 #include <Scripting/Flow/FlowPlayer.h>
 
-// An action that executes a Lua script string
+// An action that sets a variable value in the flow player storage
 
 namespace DEM::Flow
 {
 
-class CLuaStringAction : public Flow::IFlowAction
+class CSetVarAction : public Flow::IFlowAction
 {
 	FACTORY_CLASS_DECL;
 

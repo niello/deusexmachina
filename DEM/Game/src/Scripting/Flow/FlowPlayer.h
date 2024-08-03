@@ -81,7 +81,7 @@ public:
 	const CFlowActionData* _pPrototype = nullptr; // Can't set in a constructor because the main factory doesn't support constructor args
 	CFlowPlayer*           _pPlayer = nullptr; // Can't set in a constructor because the main factory doesn't support constructor args
 
-	virtual void OnStart(Game::CGameSession& Session) = 0;
+	virtual void OnStart(Game::CGameSession& Session) {}
 	virtual void Update(CUpdateContext& Ctx) = 0;
 	virtual void OnCancel() {}
 };

@@ -28,7 +28,7 @@ struct HVar
 	constexpr HVar() : TypeIdx((1 << TYPE_INDEX_BITS) - 1), VarIdx((1 << VAR_INDEX_BITS) - 1) {}
 	constexpr HVar(uint32_t TypeIdx_, uint32_t VarIdx_) : TypeIdx(TypeIdx_), VarIdx(VarIdx_) {}
 
-	constexpr operator bool() { return TypeIdx != HVar{}.TypeIdx && VarIdx != HVar{}.VarIdx; } // NB: any field invalid -> HVar invalid
+	constexpr operator bool() const noexcept { return TypeIdx != HVar{}.TypeIdx && VarIdx != HVar{}.VarIdx; } // NB: any field invalid -> HVar invalid
 };
 
 template<typename... TVarTypes>

@@ -4,19 +4,44 @@
 
 namespace DEM::Flow
 {
+static const CStrID sidVarCmpConst("VarCmpConst");
+static const CStrID sidLeft("Left");
+static const CStrID sidOp("Op");
+static const CStrID sidRight("Right");
+static const CStrID sidOpLess("<");
+static const CStrID sidOpLessEq("<=");
+static const CStrID sidOpGreater(">");
+static const CStrID sidOpGreaterEq(">=");
+static const CStrID sidOpEq("==");
+static const CStrID sidOpNeq("!=");
 
 bool EvaluateCondition(const CConditionData& Cond, const Game::CGameSession& Session, const CFlowVarStorage& Vars)
 {
 	if (!Cond.Type) return true;
 
-	//!!!TODO: use enum, and for Custom get Type from params?!
-	static const CStrID sidCompareVarConst("CompareVarConst");
-	if (Cond.Type == sidCompareVarConst)
+	if (Cond.Type == sidVarCmpConst)
 	{
-		// arg1, arg2, op
-		// op could be CStrID or int (enum)
-		// get var from storage
-		// return comparison result
+		//!!!DBG TMP! Hardcode types as int for now, just for test!
+		const auto LeftHandle = Vars.Find(Cond.Params->Get<CStrID>(sidLeft));
+		if (!LeftHandle) return false;
+		const int Left = Vars.Get<int>(LeftHandle);
+		const int Right = Cond.Params->Get<int>(sidRight);
+
+		const CStrID Op = Cond.Params->Get<CStrID>(sidOp);
+		if (Op == sidOpEq)
+			return Left == Right;
+		else if (Op == sidOpNeq)
+			return Left != Right;
+		else if (Op == sidOpLess)
+			return Left < Right;
+		else if (Op == sidOpLessEq)
+			return Left <= Right;
+		else if (Op == sidOpGreater)
+			return Left > Right;
+		else if (Op == sidOpGreaterEq)
+			return Left >= Right;
+		else
+			return false;
 	}
 
 	return false;
