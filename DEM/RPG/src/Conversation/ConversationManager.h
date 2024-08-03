@@ -34,7 +34,8 @@ public:
 	virtual ~IConversationView() = default;
 
 	virtual void                Update(float dt) = 0;
-	virtual Events::CConnection SayPhrase(Game::HEntity Actor, std::string&& Text, float Time, std::function<void()>&& OnEnd) = 0;
+	virtual void                OnConversationEnd(bool Foreground) = 0;
+	virtual Events::CConnection SayPhrase(Game::HEntity Actor, std::string&& Text, bool Foreground, float Time, std::function<void()>&& OnEnd) = 0;
 	virtual Events::CConnection ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose) = 0;
 };
 
@@ -66,6 +67,7 @@ public:
 	size_t              GetParticipantCount(Game::HEntity Key) const;
 	Game::HEntity       GetConversationKey(Game::HEntity Participant) const;
 	Game::HEntity       GetForegroundConversationKey() const { return _ForegroundConversation; }
+	bool                InInForegroundConversation(Game::HEntity Participant) const { return _ForegroundConversation && GetConversationKey(Participant) == _ForegroundConversation; }
 	size_t              GetActiveConversationCount() const { return _Conversations.size(); }
 
 	void                Update(float dt);

@@ -53,6 +53,16 @@ vector2 CUIWindow::GetSizeRel() const
 }
 //---------------------------------------------------------------------
 
+void CUIWindow::SetFocus()
+{
+	// FIXME CEGUI: DefaultWindow can't be activated without a window renderer even if it has children with visual appearance
+	if (pWnd->activate()) return;
+
+	for (size_t i = 0; i < pWnd->getChildCount(); ++i)
+		if (pWnd->getChildAtIndex(i)->activate()) return;
+}
+//---------------------------------------------------------------------
+
 vector2 CUIWindow::GetParentBaseSize(CEGUI::Window* pWindow)
 {
 	CEGUI::Window* pWndParent = pWindow->getParent();

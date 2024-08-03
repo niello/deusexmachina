@@ -80,7 +80,7 @@ void CTalkAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance& 
 	auto pConvMgr = Session.FindFeature<CConversationManager>();
 	if (!pConvMgr) return;
 
-	pConvMgr->StartConversation(Instance.Actor, Instance.Targets[0].Entity);
+	pConvMgr->StartConversation(Instance.Actor, Instance.Targets[0].Entity, DEM::RPG::EConversationMode::Foreground);
 }
 //---------------------------------------------------------------------
 

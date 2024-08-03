@@ -64,7 +64,7 @@ public:
 	void			SetPositionRel(const vector2& Pos) { n_assert(pWnd); pWnd->setPosition(CEGUI::UVector2(CEGUI::UDim(Pos.x, 0.f), CEGUI::UDim(Pos.y, 0.f))); }
 	void			SetPositionRel(float x, float y) { n_assert(pWnd); pWnd->setPosition(CEGUI::UVector2(CEGUI::UDim(x, 0.f), CEGUI::UDim(y, 0.f))); }
 	vector2			GetSizeRel() const;
-	void			SetFocus() { pWnd->activate(); }
+	void			SetFocus();
 
 	bool			SetWidgetEnabled(const char* pPath, bool Enabled);
 	bool			SetWidgetText(const char* pPath, std::string_view Text);

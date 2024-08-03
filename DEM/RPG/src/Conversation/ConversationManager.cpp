@@ -82,6 +82,8 @@ std::map<Game::HEntity, PConversation>::iterator CConversationManager::CleanupCo
 {
 	if (It == _Conversations.cend()) return It;
 
+	if (_View) _View->OnConversationEnd(true);
+
 	for (auto ItActor = _BusyActors.begin(); ItActor != _BusyActors.end(); /**/)
 	{
 		if (ItActor->second == It->first)
@@ -185,7 +187,7 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 
 	Events::CConnection Conn;
 	if (_View)
-		Conn = _View->SayPhrase(Actor, std::move(Text), Time, std::move(OnEnd));
+		Conn = _View->SayPhrase(Actor, std::move(Text), InInForegroundConversation(Actor), Time, std::move(OnEnd));
 	else
 		OnEnd();
 
