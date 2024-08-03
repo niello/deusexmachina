@@ -13,20 +13,16 @@ class CChoiceAction : public Flow::IFlowAction
 
 protected:
 
-	enum class EState : U8
-	{
-		Created,
-		Started,
-		Finished
-	};
-
-	Game::HEntity       _Speaker;
-	Events::CConnection _ChoiceMadeConn;
-	EState              _State = EState::Created;
+	//!!!???TODO: allow choices to be from different speakers?! don't store speaker here, get it from phrase action when it is chosen and played!
+	Game::HEntity                       _Speaker;
+	std::vector<std::string>            _ChoiceTexts;
+	std::vector<const Flow::CFlowLink*> _ChoiceLinks;
+	Events::CConnection                 _ChoiceMadeConn;
+	size_t                              _Choice;
 
 public:
 
-	virtual void OnStart() override;
+	virtual void OnStart(Game::CGameSession& Session) override;
 	virtual void Update(Flow::CUpdateContext& Ctx) override;
 };
 

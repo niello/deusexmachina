@@ -12,7 +12,7 @@ static const CStrID sidSpeaker("Speaker");
 static const CStrID sidText("Text");
 static const CStrID sidTime("Time");
 
-void CPhraseAction::OnStart()
+void CPhraseAction::OnStart(Game::CGameSession& Session)
 {
 	_Speaker = {};
 	_PhraseEndConn = {};

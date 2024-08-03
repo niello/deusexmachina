@@ -52,6 +52,17 @@ public:
 	bool               IsDerivedFrom(Data::CFourCC OtherFourCC) const;
 	bool               IsDerivedFrom(const char* pOtherName) const;
 
+	bool IsBaseOf(const CRTTI* pRTTI) const
+	{
+		while (pRTTI)
+		{
+			if (pRTTI == this) return true;
+			pRTTI = pRTTI->pParent;
+		}
+
+		return false;
+	}
+
 	bool operator ==(const CRTTI& Other) const { return this == &Other; }
 	bool operator !=(const CRTTI& Other) const { return this != &Other; }
 };

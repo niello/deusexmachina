@@ -26,7 +26,7 @@ protected:
 
 public:
 
-	virtual void OnStart() override;
+	virtual void OnStart(Game::CGameSession& Session) override;
 	virtual void Update(Flow::CUpdateContext& Ctx) override;
 };
 

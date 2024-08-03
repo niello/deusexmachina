@@ -1,5 +1,6 @@
 #include "ChoiceAction.h"
 #include <Conversation/ConversationManager.h>
+#include <Conversation/PhraseAction.h>
 #include <Game/GameSession.h>
 #include <Scripting/Flow/FlowAsset.h>
 #include <Core/Factory.h>
@@ -10,13 +11,11 @@ FACTORY_CLASS_IMPL(DEM::RPG::CChoiceAction, 'CHOA', Flow::IFlowAction);
 
 static const CStrID sidSpeaker("Speaker");
 static const CStrID sidText("Text");
-static const CStrID sidTime("Time");
 
-void CChoiceAction::OnStart()
+void CChoiceAction::OnStart(Game::CGameSession& Session)
 {
 	_Speaker = {};
 	_ChoiceMadeConn = {};
-	_State = EState::Created;
 
 	// TODO: to utility function for reading HEntity in a flow script!
 	if (auto* pParam = _pPrototype->Params->Find(sidSpeaker))
@@ -31,30 +30,45 @@ void CChoiceAction::OnStart()
 			_Speaker = Game::HEntity{ static_cast<DEM::Game::HEntity::TRawValue>(SpeakerRaw) };
 		}
 	}
+
+	// Collect answers
+	ForEachValidLink(Session, _pPlayer->GetVars(), [this](size_t Index, const Flow::CFlowLink& Link)
+	{
+		const auto* pActionData = _pPlayer->GetAsset()->FindAction(Link.DestID);
+		if (!pActionData) return;
+		const auto* pLinkedRTTI = Core::CFactory::Instance().GetRTTI(pActionData->ClassName.CStr());
+
+		if (CPhraseAction::RTTI.IsBaseOf(pLinkedRTTI))
+		{
+			_ChoiceTexts.push_back(pActionData->Params->Get<CString>(sidText, CString::Empty).CStr());
+			_ChoiceLinks.push_back(&Link);
+		}
+		else if (CChoiceAction::RTTI.IsBaseOf(pLinkedRTTI))
+		{
+			//!!!TODO: recurse!
+		}
+	});
+
+	_Choice = _ChoiceLinks.size();
 }
 //---------------------------------------------------------------------
 
 void CChoiceAction::Update(Flow::CUpdateContext& Ctx)
 {
-	if (_State == EState::Created)
+	if (!_ChoiceMadeConn)
 	{
-		std::string TextStr = _pPrototype->Params->Get<CString>(sidText, CString::Empty).CStr();
-		if (TextStr.empty()) return Break(Ctx);
-
-		// Set this before SayChoice call because it can set finished state immediately!
-		_State = EState::Started;
-
-		const float Time = _pPrototype->Params->Get<float>(sidTime, -1.f);
+		if (_ChoiceTexts.empty()) return Break(Ctx);
 
 		// NB: _ChoiceMadeConn unsubscribes in destructor so capturing raw 'this' is safe here as long as views don't store the callback in an unsafe way
 		if (auto pConvMgr = Ctx.pSession->FindFeature<CConversationManager>())
-			_ChoiceMadeConn = pConvMgr->ProvideChoices(_Speaker, { std::move(TextStr) }, [this](size_t Index) { _State = EState::Finished; });
+			_ChoiceMadeConn = pConvMgr->ProvideChoices(_Speaker, std::move(_ChoiceTexts), [this](size_t Index) { _Choice = Index; });
 		else
-			_State = EState::Finished;
+			return Break(Ctx);
 	}
 
-	if (_State == EState::Finished)
-		Goto(Ctx, GetFirstValidLink(*Ctx.pSession, _pPlayer->GetVars()));
+	// TODO: can add processing for special _Choice values, e.g. forced break!
+	if (_Choice < _ChoiceLinks.size())
+		Goto(Ctx, _ChoiceLinks[_Choice]);
 }
 //---------------------------------------------------------------------
 
