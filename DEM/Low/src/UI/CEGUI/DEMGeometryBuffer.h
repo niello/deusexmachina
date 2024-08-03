@@ -22,7 +22,6 @@ protected:
 public:
 
 	CDEMGeometryBuffer(CDEMRenderer& owner, RefCounted<RenderMaterial> renderMaterial);
-	//virtual ~CDEMGeometryBuffer() { }
 
 	void setVertexLayout(Render::PVertexLayout newLayout);
 
