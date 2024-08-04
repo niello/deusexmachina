@@ -5,6 +5,7 @@
 namespace DEM::Flow
 {
 static const CStrID sidVarCmpConst("VarCmpConst");
+static const CStrID sidVarCmpVar("VarCmpVar");
 static const CStrID sidLeft("Left");
 static const CStrID sidOp("Op");
 static const CStrID sidRight("Right");
@@ -15,33 +16,78 @@ static const CStrID sidOpGreaterEq(">=");
 static const CStrID sidOpEq("==");
 static const CStrID sidOpNeq("!=");
 
+template<typename T, typename U>
+static inline bool Compare(T&& Left, CStrID Op, U&& Right)
+{
+	if (Op == sidOpEq)
+		return Left == Right;
+	else if (Op == sidOpNeq)
+		return Left != Right;
+	else if (Op == sidOpLess)
+		return Left < Right;
+	else if (Op == sidOpLessEq)
+		return Left <= Right;
+	else if (Op == sidOpGreater)
+		return Left > Right;
+	else if (Op == sidOpGreaterEq)
+		return Left >= Right;
+	else
+		return false;
+}
+//---------------------------------------------------------------------
+
+static inline bool CompareVarData(const CFlowVarStorage::TVariant& Left, CStrID Op, const Data::CData& Right)
+{
+	bool Result = false;
+	std::visit([&Right, Op, &Result](auto&& LeftValue)
+	{
+		using TVarType = std::decay_t<decltype(LeftValue)>;
+		using THRDType = Data::THRDType<TVarType>;
+
+		if constexpr (Data::CTypeID<THRDType>::IsDeclared)
+		{
+			if (const THRDType* pRightValue = Right.As<THRDType>())
+			{
+				if constexpr (std::is_same_v<THRDType, CString>)
+					Result = Compare(LeftValue, Op, std::string_view{ *pRightValue });
+				else
+					Result = Compare(LeftValue, Op, *pRightValue);
+			}
+		}
+	}, Left);
+
+	return Result;
+}
+//---------------------------------------------------------------------
+
+static inline bool CompareVarVar(const CFlowVarStorage::TVariant& Left, CStrID Op, const CFlowVarStorage::TVariant& Right)
+{
+	return (Left.index() == Right.index()) && Compare(Left, Op, Right);
+}
+//---------------------------------------------------------------------
+
 bool EvaluateCondition(const CConditionData& Cond, const Game::CGameSession& Session, const CFlowVarStorage& Vars)
 {
 	if (!Cond.Type) return true;
 
-	if (Cond.Type == sidVarCmpConst)
+	if (Cond.Type == sidVarCmpConst || Cond.Type == sidVarCmpVar)
 	{
-		//!!!DBG TMP! Hardcode types as int for now, just for test!
+		const CStrID Op = Cond.Params->Get<CStrID>(sidOp);
+
 		const auto LeftHandle = Vars.Find(Cond.Params->Get<CStrID>(sidLeft));
 		if (!LeftHandle) return false;
-		const int Left = Vars.Get<int>(LeftHandle);
-		const int Right = Cond.Params->Get<int>(sidRight);
+		const auto Left = Vars.Get(LeftHandle);
 
-		const CStrID Op = Cond.Params->Get<CStrID>(sidOp);
-		if (Op == sidOpEq)
-			return Left == Right;
-		else if (Op == sidOpNeq)
-			return Left != Right;
-		else if (Op == sidOpLess)
-			return Left < Right;
-		else if (Op == sidOpLessEq)
-			return Left <= Right;
-		else if (Op == sidOpGreater)
-			return Left > Right;
-		else if (Op == sidOpGreaterEq)
-			return Left >= Right;
+		if (Cond.Type == sidVarCmpConst)
+		{
+			const auto* pRightParam = Cond.Params->Find(sidRight);
+			return pRightParam && CompareVarData(Left, Op, pRightParam->GetRawValue());
+		}
 		else
-			return false;
+		{
+			const auto RightHandle = Vars.Find(Cond.Params->Get<CStrID>(sidRight));
+			return RightHandle && CompareVarVar(Left, Op, Vars.Get(RightHandle));
+		}
 	}
 
 	return false;

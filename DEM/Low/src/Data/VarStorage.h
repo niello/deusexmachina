@@ -48,6 +48,8 @@ protected:
 
 public:
 
+	using TVariant = std::variant<std::monostate, TVarTypes...>;
+
 	template<typename T>
 	static constexpr bool IsA(HVar Handle)
 	{
@@ -99,9 +101,9 @@ public:
 		return (Handle.TypeIdx == TypeIndex<T> && Handle.VarIdx < Storage.size()) ? Storage[Handle.VarIdx] : Default;
 	}
 
-	auto Get(HVar Handle) const
+	TVariant Get(HVar Handle) const
 	{
-		std::variant<std::monostate, TVarTypes...> Result;
+		TVariant Result;
 		DEM::Meta::compile_switch(Handle.TypeIdx, std::index_sequence_for<TVarTypes...>{}, [this, &Result, VarIdx = Handle.VarIdx](auto i)
 		{
 			Result = std::get<i>(_Storages)[VarIdx];

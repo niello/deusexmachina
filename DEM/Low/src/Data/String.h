@@ -111,6 +111,30 @@ inline bool operator !=(const char* pStr1, const CString& Str2)
 }
 //---------------------------------------------------------------------
 
+inline bool operator ==(const CString& Str1, std::string_view Str2)
+{
+	return std::string_view{ Str1.CStr() } == Str2;
+}
+//---------------------------------------------------------------------
+
+inline bool operator ==(std::string_view Str1, const CString& Str2)
+{
+	return Str2 == Str1;
+}
+//---------------------------------------------------------------------
+
+inline bool operator !=(const CString& Str1, std::string_view Str2)
+{
+	return !(Str1 == Str2);
+}
+//---------------------------------------------------------------------
+
+inline bool operator !=(std::string_view Str1, const CString& Str2)
+{
+	return Str2 != Str1;
+}
+//---------------------------------------------------------------------
+
 template<> inline uint32_t Hash<CString>(const CString& Key)
 {
 	return Hash(Key.CStr(), Key.GetLength());
