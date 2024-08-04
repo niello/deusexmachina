@@ -17,7 +17,7 @@ static const CStrID sidOpEq("==");
 static const CStrID sidOpNeq("!=");
 
 template<typename T, typename U>
-static inline bool Compare(T&& Left, CStrID Op, U&& Right)
+static inline bool Compare(const T& Left, CStrID Op, const U& Right)
 {
 	if (Op == sidOpEq)
 		return Left == Right;
@@ -60,11 +60,19 @@ static inline bool CompareVarData(HVar Left, CStrID Op, const Data::CData& Right
 
 static inline bool CompareVarVar(HVar Left, CStrID Op, HVar Right, const CFlowVarStorage& Vars)
 {
-	if (!Left || !Right || Left.TypeIdx != Right.TypeIdx) return false;
+	bool Result = false;
+	Vars.Visit(Left, [&Vars, Right, Op, &Result](auto&& LeftValue)
+	{
+		Vars.Visit(Right, [&LeftValue, Op, &Result](auto&& RightValue)
+		{
+			using TLeft = std::decay_t<decltype(LeftValue)>;
+			using TRight = std::decay_t<decltype(RightValue)>;
+			if constexpr (std::is_same_v<TLeft, TRight>) // TODO: can add is_convertible_v but not for bools, there are errors and warnings for them!
+				Result = Compare(LeftValue, Op, RightValue);
+		});
+	});
 
-	const auto LeftValue = Vars.Get(Left);
-	const auto RightValue = Vars.Get(Right);
-	return Compare(LeftValue, Op, RightValue);
+	return Result;
 }
 //---------------------------------------------------------------------
 
