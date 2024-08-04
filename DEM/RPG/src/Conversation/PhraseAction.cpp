@@ -14,23 +14,9 @@ static const CStrID sidTime("Time");
 
 void CPhraseAction::OnStart(Game::CGameSession& Session)
 {
-	_Speaker = {};
+	_Speaker = ResolveEntityID(sidSpeaker);
 	_PhraseEndConn = {};
 	_State = EState::Created;
-
-	// TODO: to utility function for reading HEntity in a flow script!
-	if (auto* pParam = _pPrototype->Params->Find(sidSpeaker))
-	{
-		if (pParam->IsA<int>())
-		{
-			_Speaker = Game::HEntity{ static_cast<DEM::Game::HEntity::TRawValue>(pParam->GetValue<int>()) };
-		}
-		else if (pParam->IsA<CStrID>())
-		{
-			const int SpeakerRaw = _pPlayer->GetVars().Get<int>(_pPlayer->GetVars().Find(pParam->GetValue<CStrID>()), static_cast<int>(Game::HEntity{}.Raw));
-			_Speaker = Game::HEntity{ static_cast<DEM::Game::HEntity::TRawValue>(SpeakerRaw) };
-		}
-	}
 }
 //---------------------------------------------------------------------
 

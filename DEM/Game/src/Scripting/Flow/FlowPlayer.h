@@ -4,6 +4,7 @@
 #include <Data/Ptr.h>
 #include <Data/StringID.h>
 #include <Data/VarStorage.h>
+#include <Game/ECS/Entity.h> // For ResolveEntityID utility method
 
 // Plays a Flow asset and tracks its state.
 // Only one action can be active at the same time.
@@ -75,6 +76,7 @@ protected:
 	}
 
 	const CFlowLink* GetFirstValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars) const;
+	Game::HEntity    ResolveEntityID(CStrID ParamID) const;
 
 public:
 
