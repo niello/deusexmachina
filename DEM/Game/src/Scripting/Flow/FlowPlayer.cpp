@@ -36,17 +36,15 @@ static inline bool Compare(T&& Left, CStrID Op, U&& Right)
 }
 //---------------------------------------------------------------------
 
-static inline bool CompareVarData(const CFlowVarStorage::TVariant& Left, CStrID Op, const Data::CData& Right)
+static inline bool CompareVarData(HVar Left, CStrID Op, const Data::CData& Right, const CFlowVarStorage& Vars)
 {
 	bool Result = false;
-	std::visit([&Right, Op, &Result](auto&& LeftValue)
+	Vars.Visit(Left, [&Right, Op, &Result](auto&& LeftValue)
 	{
-		using TVarType = std::decay_t<decltype(LeftValue)>;
-		using THRDType = Data::THRDType<TVarType>;
-
+		using THRDType = Data::THRDType<std::decay_t<decltype(LeftValue)>>;
 		if constexpr (Data::CTypeID<THRDType>::IsDeclared)
 		{
-			if (const THRDType* pRightValue = Right.As<THRDType>())
+			if (const THRDType* pRightValue = Right.As<THRDType>()) //???TODO: compare HRD null to monostate?!
 			{
 				if constexpr (std::is_same_v<THRDType, CString>)
 					Result = Compare(LeftValue, Op, std::string_view{ *pRightValue });
@@ -54,15 +52,19 @@ static inline bool CompareVarData(const CFlowVarStorage::TVariant& Left, CStrID 
 					Result = Compare(LeftValue, Op, *pRightValue);
 			}
 		}
-	}, Left);
+	});
 
 	return Result;
 }
 //---------------------------------------------------------------------
 
-static inline bool CompareVarVar(const CFlowVarStorage::TVariant& Left, CStrID Op, const CFlowVarStorage::TVariant& Right)
+static inline bool CompareVarVar(HVar Left, CStrID Op, HVar Right, const CFlowVarStorage& Vars)
 {
-	return (Left.index() == Right.index()) && Compare(Left, Op, Right);
+	if (!Left || !Right || Left.TypeIdx != Right.TypeIdx) return false;
+
+	const auto LeftValue = Vars.Get(Left);
+	const auto RightValue = Vars.Get(Right);
+	return Compare(LeftValue, Op, RightValue);
 }
 //---------------------------------------------------------------------
 
@@ -74,19 +76,18 @@ bool EvaluateCondition(const CConditionData& Cond, const Game::CGameSession& Ses
 	{
 		const CStrID Op = Cond.Params->Get<CStrID>(sidOp);
 
-		const auto LeftHandle = Vars.Find(Cond.Params->Get<CStrID>(sidLeft));
-		if (!LeftHandle) return false;
-		const auto Left = Vars.Get(LeftHandle);
+		const auto Left = Vars.Find(Cond.Params->Get<CStrID>(sidLeft));
+		if (!Left) return false;
 
 		if (Cond.Type == sidVarCmpConst)
 		{
 			const auto* pRightParam = Cond.Params->Find(sidRight);
-			return pRightParam && CompareVarData(Left, Op, pRightParam->GetRawValue());
+			return pRightParam && CompareVarData(Left, Op, pRightParam->GetRawValue(), Vars);
 		}
 		else
 		{
-			const auto RightHandle = Vars.Find(Cond.Params->Get<CStrID>(sidRight));
-			return RightHandle && CompareVarVar(Left, Op, Vars.Get(RightHandle));
+			const auto Right = Vars.Find(Cond.Params->Get<CStrID>(sidRight));
+			return CompareVarVar(Left, Op, Right, Vars);
 		}
 	}
 

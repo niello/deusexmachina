@@ -198,6 +198,15 @@ public:
 	}
 
 	template<typename F>
+	void Visit(HVar Handle, F Callback) const
+	{
+		DEM::Meta::compile_switch(Handle.TypeIdx, std::index_sequence_for<TVarTypes...>{}, [this, &Callback, VarIdx = Handle.VarIdx](auto i)
+		{
+			Callback(std::get<i>(_Storages)[VarIdx]);
+		});
+	}
+
+	template<typename F>
 	void Visit(F Callback)
 	{
 		for (const auto& [ID, Handle] : _VarsByID)
