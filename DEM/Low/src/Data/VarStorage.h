@@ -46,14 +46,6 @@ protected:
 	std::tuple<std::vector<TVarTypes>...> _Storages;
 	std::map<CStrID, HVar>                _VarsByID;
 
-	template<typename T>
-	bool TrySet(CStrID ID, T&& Value)
-	{
-		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
-			Set(ID, std::forward<T>(Value));
-		return (TypeIndex<T> < sizeof...(TVarTypes));
-	}
-
 public:
 
 	template<typename T>
@@ -168,6 +160,41 @@ public:
 		return It->second;
 	}
 
+	template<typename T>
+	bool TrySet(CStrID ID, T&& Value)
+	{
+		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
+			Set(ID, std::forward<T>(Value));
+		return (TypeIndex<T> < sizeof...(TVarTypes));
+	}
+
+	bool TrySet(CStrID ID, Data::CData& Value) { return TrySet(ID, std::as_const(Value)); }
+
+	bool TrySet(CStrID ID, const Data::CData& Value)
+	{
+		switch (Value.GetTypeID())
+		{
+			case Data::CTypeID<bool>::TypeID: return TrySet(ID, Value.GetValue<bool>());
+			case Data::CTypeID<int>::TypeID: return TrySet(ID, Value.GetValue<int>());
+			case Data::CTypeID<float>::TypeID: return TrySet(ID, Value.GetValue<float>());
+			case Data::CTypeID<CString>::TypeID:
+			{
+				const auto& Src = Value.GetValue<CString>();
+				if constexpr (DEM::Meta::contains_type<CString, TVarTypes...>())
+					return TrySet(ID, Src);
+				else
+					return TrySet(ID, std::string(Src.CStr(), Src.GetLength()));
+			}
+			case Data::CTypeID<CStrID>::TypeID: return TrySet(ID, Value.GetValue<CStrID>());
+			case Data::CTypeID<vector3>::TypeID: return TrySet(ID, Value.GetValue<vector3>());
+			case Data::CTypeID<vector4>::TypeID: return TrySet(ID, Value.GetValue<vector4>());
+			case Data::CTypeID<matrix44>::TypeID: return TrySet(ID, Value.GetValue<matrix44>());
+			case Data::CTypeID<Data::PParams>::TypeID: return TrySet(ID, Value.GetValue<Data::PParams>());
+			case Data::CTypeID<Data::PDataArray>::TypeID: return TrySet(ID, Value.GetValue<Data::PDataArray>());
+			default: return false;
+		}
+	}
+
 	template<typename F>
 	void Visit(F Callback)
 	{
@@ -196,31 +223,7 @@ public:
 	{
 		size_t Loaded = 0;
 		for (const auto& Param : Params)
-		{
-			switch (Param.GetRawValue().GetTypeID())
-			{
-				case Data::CTypeID<bool>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<bool>()); break;
-				case Data::CTypeID<int>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<int>()); break;
-				case Data::CTypeID<float>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<float>()); break;
-				case Data::CTypeID<CString>::TypeID:
-				{
-					const auto& Src = Param.GetValue<CString>();
-					if constexpr (DEM::Meta::contains_type<CString, TVarTypes...>())
-						Loaded += TrySet(Param.GetName(), Src);
-					else
-						Loaded += TrySet(Param.GetName(), std::string(Src.CStr(), Src.GetLength()));
-					break;
-				}
-				case Data::CTypeID<CStrID>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<CStrID>()); break;
-				case Data::CTypeID<vector3>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<vector3>()); break;
-				case Data::CTypeID<vector4>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<vector4>()); break;
-				case Data::CTypeID<matrix44>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<matrix44>()); break;
-				case Data::CTypeID<Data::PParams>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<Data::PParams>()); break;
-				case Data::CTypeID<Data::PDataArray>::TypeID: Loaded += TrySet(Param.GetName(), Param.GetValue<Data::PDataArray>()); break;
-				default: break;
-			}
-		}
-
+			Loaded += TrySet(Param.GetName(), Param.GetRawValue());
 		return Loaded;
 	}
 

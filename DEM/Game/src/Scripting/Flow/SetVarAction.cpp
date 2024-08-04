@@ -12,21 +12,8 @@ static const CStrID sidValue("Value");
 void CSetVarAction::Update(Flow::CUpdateContext& Ctx)
 {
 	if (const CStrID Name = _pPrototype->Params->Get<CStrID>(sidName, CStrID::Empty))
-	{
 		if (auto* pValueParam = _pPrototype->Params->Find(sidValue))
-		{
-			if (auto* pValue = pValueParam->GetRawValue().As<bool>())
-				_pPlayer->GetVars().Set(Name, *pValue);
-			else if (auto* pValue = pValueParam->GetRawValue().As<int>())
-				_pPlayer->GetVars().Set(Name, *pValue);
-			else if (auto* pValue = pValueParam->GetRawValue().As<float>())
-				_pPlayer->GetVars().Set(Name, *pValue);
-			else if (auto* pValue = pValueParam->GetRawValue().As<CStrID>())
-				_pPlayer->GetVars().Set(Name, *pValue);
-			else if (auto* pValue = pValueParam->GetRawValue().As<CString>())
-				_pPlayer->GetVars().Set(Name, pValue->CStr());
-		}
-	}
+			_pPlayer->GetVars().TrySet(Name, pValueParam->GetRawValue());
 
 	Goto(Ctx, GetFirstValidLink(*Ctx.pSession, _pPlayer->GetVars()));
 }
