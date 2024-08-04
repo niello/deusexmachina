@@ -36,7 +36,7 @@ bool CTalkAbility::IsTargetValid(const Game::CGameSession& Session, U32 Index, c
 
 	// Check for the item stack component
 	const auto& Target = (Index == Context.Targets.size()) ? Context.CandidateTarget : Context.Targets[Index];
-	if (!Target.Valid) return false;
+	if (!Target.Valid || (!Context.Actors.empty() && Target.Entity == Context.Actors[0])) return false;
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	return pWorld && pWorld->FindComponent<const CTalkingComponent>(Target.Entity);
 }

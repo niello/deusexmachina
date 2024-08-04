@@ -22,14 +22,19 @@ void CChoiceAction::CollectChoices(CChoiceAction& Root, const Flow::CFlowActionD
 
 		if (CPhraseAction::RTTI.IsBaseOf(pLinkedRTTI))
 		{
-			Root._ChoiceTexts.push_back(pActionData->Params->Get<CString>(sidText, CString::Empty).CStr());
-			Root._ChoiceLinks.push_back(&Link);
+			const auto It = std::find_if(Root._ChoiceLinks.cbegin(), Root._ChoiceLinks.cend(), [ID = Link.DestID](const auto* pLink) { return pLink->DestID == ID; });
+			if (It == Root._ChoiceLinks.cend())
+			{
+				Root._ChoiceTexts.push_back(pActionData->Params->Get<CString>(sidText, CString::Empty).CStr());
+				Root._ChoiceLinks.push_back(&Link);
+			}
 		}
 		else if (CChoiceAction::RTTI.IsBaseOf(pLinkedRTTI))
 		{
 			// Collect recursively. This is useful for grouping choices under the same condition.
 			CollectChoices(Root, *pActionData, Session);
 		}
+		// Can add more supported types here
 	});
 }
 //---------------------------------------------------------------------
