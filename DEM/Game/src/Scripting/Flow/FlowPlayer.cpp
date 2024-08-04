@@ -216,6 +216,23 @@ const CFlowLink* IFlowAction::GetFirstValidLink(Game::CGameSession& Session, con
 }
 //---------------------------------------------------------------------
 
+//???return ptr or index or both?
+const CFlowLink* IFlowAction::GetRandomValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars) const
+{
+	std::vector<size_t> Indices;
+	Indices.reserve(_pPrototype->Links.size());
+	ForEachValidLink(Session, Vars, [&Indices](size_t i, const CFlowLink& Link)
+	{
+		Indices.push_back(i);
+	});
+
+	if (Indices.empty()) return nullptr;
+
+	std::uniform_int_distribution<size_t> GetRandomIndex(0, Indices.size() - 1);
+	return &_pPrototype->Links[Indices[GetRandomIndex(_pPlayer->GetRNG())]];
+}
+//---------------------------------------------------------------------
+
 Game::HEntity IFlowAction::ResolveEntityID(CStrID ParamID) const
 {
 	if (auto* pParam = _pPrototype->Params->Find(ParamID))
@@ -243,7 +260,7 @@ CFlowPlayer::~CFlowPlayer()
 }
 //---------------------------------------------------------------------
 
-bool CFlowPlayer::Start(PFlowAsset Asset, U32 StartActionID)
+bool CFlowPlayer::Start(PFlowAsset Asset, U32 StartActionID, std::optional<U32> RNGSeed)
 {
 	Stop();
 
@@ -258,6 +275,7 @@ bool CFlowPlayer::Start(PFlowAsset Asset, U32 StartActionID)
 
 	_NextActionID = StartActionID;
 	_VarStorage = _Asset->GetDefaultVarStorage();
+	if (RNGSeed) _RNG = Math::CWELL512(*RNGSeed);
 
 	OnStart();
 

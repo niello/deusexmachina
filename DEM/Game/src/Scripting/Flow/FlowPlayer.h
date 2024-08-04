@@ -4,6 +4,7 @@
 #include <Data/Ptr.h>
 #include <Data/StringID.h>
 #include <Data/VarStorage.h>
+#include <Math/WELL512.h>
 #include <Game/ECS/Entity.h> // For ResolveEntityID utility method
 
 // Plays a Flow asset and tracks its state.
@@ -76,6 +77,7 @@ protected:
 	}
 
 	const CFlowLink* GetFirstValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars) const;
+	const CFlowLink* GetRandomValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars) const;
 	Game::HEntity    ResolveEntityID(CStrID ParamID) const;
 
 public:
@@ -98,6 +100,7 @@ private:
 	PFlowAction     _CurrAction;
 	U32             _NextActionID = EmptyActionID_FIXME; // Non-empty when a link is yielding to the next frame
 	CFlowVarStorage _VarStorage;
+	Math::CWELL512  _RNG;
 	// TODO: add action pool Type->Instance? std::map<CStrID, PFlowAction>; // NB: always needs only 1 instance of each type.
 
 	void SetCurrentAction(Game::CGameSession& Session, U32 ID);
@@ -110,13 +113,14 @@ public:
 
 	~CFlowPlayer();
 
-	bool Start(PFlowAsset Asset, U32 StartActionID = EmptyActionID_FIXME);
+	bool Start(PFlowAsset Asset, U32 StartActionID = EmptyActionID_FIXME, std::optional<U32> RNGSeed = std::nullopt);
 	void Stop();
 	void Update(Game::CGameSession& Session, float dt);
 
 	CFlowAsset* GetAsset() const { return _Asset.Get(); }
 	auto&       GetVars() { return _VarStorage; }
 	auto&       GetVars() const { return _VarStorage; }
+	auto&       GetRNG() { return _RNG;}
 	bool        IsPlaying() const { return _CurrAction || _NextActionID != EmptyActionID_FIXME; }
 };
 
