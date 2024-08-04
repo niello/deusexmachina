@@ -5,6 +5,10 @@
 
 namespace DEM::Flow
 {
+static const CStrID sidAnd("And");
+static const CStrID sidOr("Or");
+static const CStrID sidNot("Not");
+static const CStrID sidFalse("False");
 static const CStrID sidVarCmpConst("VarCmpConst");
 static const CStrID sidVarCmpVar("VarCmpVar");
 static const CStrID sidLuaString("LuaString");
@@ -83,6 +87,8 @@ bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, 
 {
 	if (!Cond.Type) return true;
 
+	if (Cond.Type == sidFalse) return false;
+
 	if (Cond.Type == sidVarCmpConst || Cond.Type == sidVarCmpVar)
 	{
 		const CStrID Op = Cond.Params->Get<CStrID>(sidOp);
@@ -124,7 +130,34 @@ bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, 
 		const auto Type = Result.get_type();
 		return (Type != sol::type::none && Type != sol::type::nil && Result);
 	}
+	else if (Cond.Type == sidAnd)
+	{
+		CConditionData Inner;
+		for (const auto& Param : *Cond.Params)
+		{
+			DEM::ParamsFormat::Deserialize(Param.GetRawValue(), Inner);
+			if (!EvaluateCondition(Inner, Session, Vars)) return false;
+		}
+		return true;
+	}
+	else if (Cond.Type == sidOr)
+	{
+		CConditionData Inner;
+		for (const auto& Param : *Cond.Params)
+		{
+			DEM::ParamsFormat::Deserialize(Param.GetRawValue(), Inner);
+			if (EvaluateCondition(Inner, Session, Vars)) return true;
+		}
+		return false;
+	}
+	else if (Cond.Type == sidNot)
+	{
+		CConditionData Inner;
+		DEM::ParamsFormat::Deserialize(Cond.Params, Inner);
+		return !EvaluateCondition(Inner, Session, Vars);
+	}
 
+	::Sys::Error("Unsupported condition type");
 	return false;
 }
 //---------------------------------------------------------------------
