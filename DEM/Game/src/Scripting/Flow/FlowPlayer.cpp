@@ -106,10 +106,14 @@ bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, 
 		const std::string_view Code = Cond.Params->Get<CString>(sidCode, CString::Empty);
 		if (Code.empty()) return true;
 
-		// To pass args can use:
-		//auto Precondition = _Session.GetScriptState().load("local Actors, Target = ...; return " + Condition);
-		//auto Result = Precondition.get<sol::function>(Context.Actors, Context.CandidateTarget);
-		const auto Result = Session.GetScriptState().do_string("return " + std::string(Code));
+		auto LuaFn = Session.GetScriptState().load("local Vars = ...; return " + std::string(Code));
+		if (!LuaFn.valid())
+		{
+			::Sys::Error(LuaFn.get<sol::error>().what());
+			return false;
+		}
+
+		auto Result = LuaFn.get<sol::function>()(Vars);
 		if (!Result.valid())
 		{
 			::Sys::Error(Result.get<sol::error>().what());

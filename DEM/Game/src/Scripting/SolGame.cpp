@@ -25,7 +25,11 @@ void RegisterVarStorageTemplateMethods(sol::usertype<CVarStorage<TVar...>>& User
 	using T = CVarStorage<TVar...>;
 	(UserType.set(std::string("Get") + (api_name_v<TVar> ? api_name_v<TVar> : typeid(T).name()), sol::overload(
 			sol::resolve<typename T::TRetVal<TVar>(HVar) const>(&T::Get<TVar>),
-			sol::resolve<typename T::TRetVal<TVar>(HVar, const TVar&) const>(&T::Get<TVar>)))
+			sol::resolve<typename T::TRetVal<TVar>(HVar, const TVar&) const>(&T::Get<TVar>),
+			[](const T& Self, std::string_view ID) { return Self.Get<TVar>(Self.Find(CStrID(ID))); },
+			[](const T& Self, std::string_view ID, const TVar& Dflt) { return Self.Get<TVar>(Self.Find(CStrID(ID)), Dflt); }))
+		, ...);
+	(UserType.set(std::string("Is") + (api_name_v<TVar> ? api_name_v<TVar> : typeid(T).name()), &T::IsA<TVar>)
 		, ...);
 }
 //---------------------------------------------------------------------
@@ -36,6 +40,9 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 	{
 		auto& UserType = State.new_usertype<Flow::CFlowVarStorage>("CFlowVarStorage"
 			, "clear", &Flow::CFlowVarStorage::clear
+			, "empty", &Flow::CFlowVarStorage::empty
+			, "size", &Flow::CFlowVarStorage::size
+			, "Find", static_cast<HVar (Flow::CFlowVarStorage::*)(CStrID ID) const>(&Flow::CFlowVarStorage::Find)
 		);
 		RegisterVarStorageTemplateMethods(UserType);
 	}
