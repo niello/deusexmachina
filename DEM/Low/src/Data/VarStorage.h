@@ -48,6 +48,9 @@ protected:
 
 public:
 
+	template<typename T>
+	using TRetVal = std::conditional_t<sizeof(T) <= sizeof(size_t), T, const T&>;
+
 	using TVariant = std::variant<std::monostate, TVarTypes...>;
 
 	template<typename T>
@@ -86,7 +89,7 @@ public:
 	}
 
 	template<typename T>
-	auto Get(HVar Handle) const
+	TRetVal<T> Get(HVar Handle) const
 	{
 		static_assert(DEM::Meta::contains_type<T, TVarTypes...>(), "Requested type is not supported by this storage");
 		n_assert_dbg(Handle.TypeIdx == TypeIndex<T>);
@@ -94,10 +97,10 @@ public:
 	}
 
 	template<typename T>
-	auto Get(HVar Handle, const T& Default) const
+	TRetVal<T> Get(HVar Handle, const T& Default) const
 	{
 		static_assert(DEM::Meta::contains_type<T, TVarTypes...>(), "Requested type is not supported by this storage");
-		auto& Storage = std::get<std::vector<T>>(_Storages);
+		const auto& Storage = std::get<std::vector<T>>(_Storages);
 		return (Handle.TypeIdx == TypeIndex<T> && Handle.VarIdx < Storage.size()) ? Storage[Handle.VarIdx] : Default;
 	}
 

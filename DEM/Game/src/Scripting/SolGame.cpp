@@ -7,12 +7,39 @@
 #include <Game/Interaction/ScriptedAbility.h>
 #include <Animation/AnimationComponent.h>
 #include <Scene/SceneComponent.h>
+#include <Scripting/Flow/FlowAsset.h>
 
 namespace DEM::Scripting
 {
+template<typename T> struct api_name { static constexpr char* value = nullptr; };
+template<typename T> constexpr auto api_name_v = api_name<T>::value;
+template<> struct api_name<bool> { static constexpr char* value = "Bool"; };
+template<> struct api_name<int> { static constexpr char* value = "Int"; };
+template<> struct api_name<float> { static constexpr char* value = "Float"; };
+template<> struct api_name<std::string> { static constexpr char* value = "String"; };
+template<> struct api_name<CStrID> { static constexpr char* value = "StrID"; };
+
+template<typename... TVar>
+void RegisterVarStorageTemplateMethods(sol::usertype<CVarStorage<TVar...>>& UserType)
+{
+	using T = CVarStorage<TVar...>;
+	(UserType.set(std::string("Get") + (api_name_v<TVar> ? api_name_v<TVar> : typeid(T).name()), sol::overload(
+			sol::resolve<typename T::TRetVal<TVar>(HVar) const>(&T::Get<TVar>),
+			sol::resolve<typename T::TRetVal<TVar>(HVar, const TVar&) const>(&T::Get<TVar>)))
+		, ...);
+}
+//---------------------------------------------------------------------
 
 void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 {
+	// CFlowVarStorage
+	{
+		auto& UserType = State.new_usertype<Flow::CFlowVarStorage>("CFlowVarStorage"
+			, "clear", &Flow::CFlowVarStorage::clear
+		);
+		RegisterVarStorageTemplateMethods(UserType);
+	}
+
 	State.new_usertype<DEM::Game::CGameWorld>("CGameWorld"
 		, sol::meta_function::index, [](DEM::Game::CGameWorld& Self, sol::stack_object Key) { return sol::object(Self._ScriptFields[Key]); }
 		//, "FindEntity", [](DEM::Game::CGameWorld& Self, DEM::Game::HEntity EntityID) { return sol::nil;  }
