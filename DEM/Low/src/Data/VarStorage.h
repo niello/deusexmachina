@@ -48,6 +48,7 @@ protected:
 
 public:
 
+	// Small types are better returned by value. Also bools from std::vector<bool> can't be returned by reference.
 	template<typename T>
 	using TRetVal = std::conditional_t<sizeof(T) <= sizeof(size_t), T, const T&>;
 

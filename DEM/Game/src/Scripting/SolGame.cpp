@@ -19,17 +19,23 @@ template<> struct api_name<float> { static constexpr char* value = "Float"; };
 template<> struct api_name<std::string> { static constexpr char* value = "String"; };
 template<> struct api_name<CStrID> { static constexpr char* value = "StrID"; };
 
+template<typename U> using TPass = std::conditional_t<sizeof(U) <= sizeof(size_t), U, U&&>;
+
 template<typename... TVar>
 void RegisterVarStorageTemplateMethods(sol::usertype<CVarStorage<TVar...>>& UserType)
 {
 	using T = CVarStorage<TVar...>;
 	(UserType.set(std::string("Get") + (api_name_v<TVar> ? api_name_v<TVar> : typeid(T).name()), sol::overload(
-			sol::resolve<typename T::TRetVal<TVar>(HVar) const>(&T::Get<TVar>),
-			sol::resolve<typename T::TRetVal<TVar>(HVar, const TVar&) const>(&T::Get<TVar>),
-			[](const T& Self, std::string_view ID) { return Self.Get<TVar>(Self.Find(CStrID(ID))); },
-			[](const T& Self, std::string_view ID, const TVar& Dflt) { return Self.Get<TVar>(Self.Find(CStrID(ID)), Dflt); }))
+		sol::resolve<typename T::TRetVal<TVar>(HVar) const>(&T::Get<TVar>),
+		sol::resolve<typename T::TRetVal<TVar>(HVar, const TVar&) const>(&T::Get<TVar>),
+		[](const T& Self, std::string_view ID) { return Self.Get<TVar>(Self.Find(CStrID(ID))); },
+		[](const T& Self, std::string_view ID, const TVar& Dflt) { return Self.Get<TVar>(Self.Find(CStrID(ID)), Dflt); }))
 		, ...);
 	(UserType.set(std::string("Is") + (api_name_v<TVar> ? api_name_v<TVar> : typeid(T).name()), &T::IsA<TVar>)
+		, ...);
+	(UserType.set(std::string("Set") + (api_name_v<TVar> ? api_name_v<TVar> : typeid(T).name()), sol::overload(
+		sol::resolve<HVar(CStrID, TPass<TVar>)>(&T::Set<TVar>),
+		[](T& Self, std::string_view ID, TPass<TVar> Value) { return Self.Set<TVar>(CStrID(ID), std::forward<TPass<TVar>>(Value)); }))
 		, ...);
 }
 //---------------------------------------------------------------------

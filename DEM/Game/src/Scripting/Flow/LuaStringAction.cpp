@@ -12,14 +12,18 @@ static const CStrID sidCode("Code");
 void CLuaStringAction::Update(Flow::CUpdateContext& Ctx)
 {
 	const std::string_view Code = _pPrototype->Params->Get<CString>(sidCode, CString::Empty);
-	if (Code.empty())
-		return Goto(Ctx, GetFirstValidLink(*Ctx.pSession, _pPlayer->GetVars()));
+	if (!Code.empty())
+	{
+		auto LuaFn = Ctx.pSession->GetScriptState().load("local Vars = ...; " + std::string(Code));
+		if (!LuaFn.valid())
+			return Throw(Ctx, LuaFn.get<sol::error>().what(), false);
 
-	const auto Result = Ctx.pSession->GetScriptState().do_string(Code);
-	if (Result.valid())
-		return Goto(Ctx, GetFirstValidLink(*Ctx.pSession, _pPlayer->GetVars()));
+		auto Result = LuaFn.get<sol::function>()(_pPlayer->GetVars());
+		if (!Result.valid())
+			return Throw(Ctx, Result.get<sol::error>().what(), false);
+	}
 
-	Throw(Ctx, Result.get<sol::error>().what(), false);
+	Goto(Ctx, GetFirstValidLink(*Ctx.pSession, _pPlayer->GetVars()));
 }
 //---------------------------------------------------------------------
 
