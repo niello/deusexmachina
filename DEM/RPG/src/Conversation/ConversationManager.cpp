@@ -198,7 +198,7 @@ Events::CConnection CConversationManager::ProvideChoices(Game::HEntity Actor, st
 	if (_View && !Texts.empty())
 		Conn = _View->ProvideChoices(Actor, std::move(Texts), std::move(OnChoose));
 	else
-		; //!!!TODO: call OnChoose with some special value meaning forced cancellation with no choice made!
+		NOT_IMPLEMENTED; //!!!TODO: call OnChoose with some special value meaning forced cancellation with no choice made!
 
 	return Conn;
 }

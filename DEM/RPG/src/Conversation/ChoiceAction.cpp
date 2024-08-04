@@ -12,7 +12,7 @@ FACTORY_CLASS_IMPL(DEM::RPG::CChoiceAction, 'CHOA', Flow::IFlowAction);
 static const CStrID sidSpeaker("Speaker");
 static const CStrID sidText("Text");
 
-void CChoiceAction::CollectChoices(CChoiceAction& Root, const Flow::CFlowActionData& Curr, const Game::CGameSession& Session)
+void CChoiceAction::CollectChoices(CChoiceAction& Root, const Flow::CFlowActionData& Curr, Game::CGameSession& Session)
 {
 	ForEachValidLink(Curr, Session, Root._pPlayer->GetVars(), [&Root, &Session](size_t Index, const Flow::CFlowLink& Link)
 	{

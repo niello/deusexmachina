@@ -24,7 +24,7 @@ using CFlowVarStorage = CVarStorage<bool, int, float, std::string, CStrID>;
 constexpr U32 EmptyActionID_FIXME = 0; //!!!!!!!!FIXME: fix duplicated definition, see EmptyActionID!
 
 //!!!TODO: can be universal, not flow-specific!
-bool EvaluateCondition(const CConditionData& Cond, const Game::CGameSession& Session, const CFlowVarStorage& Vars);
+bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage& Vars);
 
 struct CUpdateContext
 {
@@ -47,7 +47,7 @@ protected:
 	static void Goto(CUpdateContext& Ctx, const CFlowLink* pLink, float consumedDt = 0.f);
 
 	template<typename F>
-	static void ForEachValidLink(const CFlowActionData& Proto, const Game::CGameSession& Session, const CFlowVarStorage& Vars, F Callback)
+	static void ForEachValidLink(const CFlowActionData& Proto, Game::CGameSession& Session, const CFlowVarStorage& Vars, F Callback)
 	{
 		const auto LinkCount = Proto.Links.size();
 		for (size_t i = 0; i < LinkCount; ++i)
@@ -69,12 +69,12 @@ protected:
 	}
 
 	template<typename F>
-	DEM_FORCE_INLINE void ForEachValidLink(const Game::CGameSession& Session, const CFlowVarStorage& Vars, F Callback) const
+	DEM_FORCE_INLINE void ForEachValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars, F Callback) const
 	{
 		if (_pPrototype) ForEachValidLink<F>(*_pPrototype, Session, Vars, Callback);
 	}
 
-	const CFlowLink* GetFirstValidLink(const Game::CGameSession& Session, const CFlowVarStorage& Vars) const;
+	const CFlowLink* GetFirstValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars) const;
 
 public:
 

@@ -1,11 +1,13 @@
 #include "FlowPlayer.h"
 #include <Scripting/Flow/FlowAsset.h>
+#include <Game/GameSession.h>
 #include <Core/Factory.h>
 
 namespace DEM::Flow
 {
 static const CStrID sidVarCmpConst("VarCmpConst");
 static const CStrID sidVarCmpVar("VarCmpVar");
+static const CStrID sidLuaString("LuaString");
 static const CStrID sidLeft("Left");
 static const CStrID sidOp("Op");
 static const CStrID sidRight("Right");
@@ -15,6 +17,7 @@ static const CStrID sidOpGreater(">");
 static const CStrID sidOpGreaterEq(">=");
 static const CStrID sidOpEq("==");
 static const CStrID sidOpNeq("!=");
+static const CStrID sidCode("Code");
 
 template<typename T, typename U>
 static inline bool Compare(const T& Left, CStrID Op, const U& Right)
@@ -76,7 +79,7 @@ static inline bool CompareVarVar(HVar Left, CStrID Op, HVar Right, const CFlowVa
 }
 //---------------------------------------------------------------------
 
-bool EvaluateCondition(const CConditionData& Cond, const Game::CGameSession& Session, const CFlowVarStorage& Vars)
+bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage& Vars)
 {
 	if (!Cond.Type) return true;
 
@@ -97,6 +100,25 @@ bool EvaluateCondition(const CConditionData& Cond, const Game::CGameSession& Ses
 			const auto Right = Vars.Find(Cond.Params->Get<CStrID>(sidRight));
 			return CompareVarVar(Left, Op, Right, Vars);
 		}
+	}
+	else if (Cond.Type == sidLuaString)
+	{
+		const std::string_view Code = Cond.Params->Get<CString>(sidCode, CString::Empty);
+		if (Code.empty()) return true;
+
+		// To pass args can use:
+		//auto Precondition = _Session.GetScriptState().load("local Actors, Target = ...; return " + Condition);
+		//auto Result = Precondition.get<sol::function>(Context.Actors, Context.CandidateTarget);
+		const auto Result = Session.GetScriptState().do_string("return " + std::string(Code));
+		if (!Result.valid())
+		{
+			::Sys::Error(Result.get<sol::error>().what());
+			return false;
+		}
+
+		//???SOL: why nil can't be negated? https://www.lua.org/pil/3.3.html
+		const auto Type = Result.get_type();
+		return (Type != sol::type::none && Type != sol::type::nil && Result);
 	}
 
 	return false;
@@ -144,7 +166,7 @@ void IFlowAction::Goto(CUpdateContext& Ctx, const CFlowLink* pLink, float consum
 //---------------------------------------------------------------------
 
 //???return ptr or index or both?
-const CFlowLink* IFlowAction::GetFirstValidLink(const Game::CGameSession& Session, const CFlowVarStorage& Vars) const
+const CFlowLink* IFlowAction::GetFirstValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars) const
 {
 	const CFlowLink* pResult = nullptr;
 	ForEachValidLink(Session, Vars, [&pResult](size_t i, const CFlowLink& Link)
