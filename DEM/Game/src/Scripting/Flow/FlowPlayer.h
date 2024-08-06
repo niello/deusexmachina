@@ -70,13 +70,21 @@ protected:
 		}
 	}
 
+	//???return ptr or index or both?
+	static const CFlowLink* GetFirstValidLink(const CFlowActionData& Proto, Game::CGameSession& Session, const CFlowVarStorage& Vars);
+	static const CFlowLink* GetRandomValidLink(const CFlowActionData& Proto, Game::CGameSession& Session, const CFlowVarStorage& Vars, Math::CWELL512& RNG);
+
 	template<typename F>
 	DEM_FORCE_INLINE void ForEachValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars, F Callback) const
 	{
 		if (_pPrototype) ForEachValidLink<F>(*_pPrototype, Session, Vars, Callback);
 	}
 
-	const CFlowLink* GetFirstValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars) const;
+	DEM_FORCE_INLINE const CFlowLink* GetFirstValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars) const
+	{
+		return _pPrototype ? GetFirstValidLink(*_pPrototype, Session, Vars) : nullptr;
+	}
+
 	const CFlowLink* GetRandomValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars) const;
 	Game::HEntity    ResolveEntityID(CStrID ParamID) const;
 

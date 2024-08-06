@@ -86,6 +86,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Scripting/Flow/FlowAsset.h
 	DEM/Game/src/Scripting/Flow/FlowAssetLoader.h
 	DEM/Game/src/Scripting/Flow/FlowPlayer.h
+	DEM/Game/src/Scripting/Flow/HubAction.h
 	DEM/Game/src/Scripting/Flow/LuaStringAction.h
 	DEM/Game/src/Scripting/Flow/SetVarAction.h
 	DEM/Game/src/SI/SI_L2.h
@@ -161,6 +162,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Scripting/SolGame.cpp
 	DEM/Game/src/Scripting/Flow/FlowAssetLoader.cpp
 	DEM/Game/src/Scripting/Flow/FlowPlayer.cpp
+	DEM/Game/src/Scripting/Flow/HubAction.cpp
 	DEM/Game/src/Scripting/Flow/LuaStringAction.cpp
 	DEM/Game/src/Scripting/Flow/SetVarAction.cpp
 	DEM/Game/src/SI/SIEntityManager.cpp

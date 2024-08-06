@@ -202,11 +202,10 @@ void IFlowAction::Goto(CUpdateContext& Ctx, const CFlowLink* pLink, float consum
 }
 //---------------------------------------------------------------------
 
-//???return ptr or index or both?
-const CFlowLink* IFlowAction::GetFirstValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars) const
+const CFlowLink* IFlowAction::GetFirstValidLink(const CFlowActionData& Proto, Game::CGameSession& Session, const CFlowVarStorage& Vars)
 {
 	const CFlowLink* pResult = nullptr;
-	ForEachValidLink(Session, Vars, [&pResult](size_t i, const CFlowLink& Link)
+	ForEachValidLink(Proto, Session, Vars, [&pResult](size_t i, const CFlowLink& Link)
 	{
 		pResult = &Link;
 		return false;
@@ -216,12 +215,11 @@ const CFlowLink* IFlowAction::GetFirstValidLink(Game::CGameSession& Session, con
 }
 //---------------------------------------------------------------------
 
-//???return ptr or index or both?
-const CFlowLink* IFlowAction::GetRandomValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars) const
+const CFlowLink* IFlowAction::GetRandomValidLink(const CFlowActionData& Proto, Game::CGameSession& Session, const CFlowVarStorage& Vars, Math::CWELL512& RNG)
 {
 	std::vector<size_t> Indices;
-	Indices.reserve(_pPrototype->Links.size());
-	ForEachValidLink(Session, Vars, [&Indices](size_t i, const CFlowLink& Link)
+	Indices.reserve(Proto.Links.size());
+	ForEachValidLink(Proto, Session, Vars, [&Indices](size_t i, const CFlowLink& Link)
 	{
 		Indices.push_back(i);
 	});
@@ -229,7 +227,13 @@ const CFlowLink* IFlowAction::GetRandomValidLink(Game::CGameSession& Session, co
 	if (Indices.empty()) return nullptr;
 
 	std::uniform_int_distribution<size_t> GetRandomIndex(0, Indices.size() - 1);
-	return &_pPrototype->Links[Indices[GetRandomIndex(_pPlayer->GetRNG())]];
+	return &Proto.Links[Indices[GetRandomIndex(RNG)]];
+}
+//---------------------------------------------------------------------
+
+const CFlowLink* IFlowAction::GetRandomValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars) const
+{
+	return _pPrototype ? GetRandomValidLink(*_pPrototype, Session, Vars, _pPlayer->GetRNG()) : nullptr;
 }
 //---------------------------------------------------------------------
 
