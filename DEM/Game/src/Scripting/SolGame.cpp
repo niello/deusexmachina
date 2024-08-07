@@ -5,6 +5,7 @@
 #include <Game/ECS/Components/EventsComponent.h>
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/Interaction/ScriptedAbility.h>
+#include <Game/SessionVars.h>
 #include <Animation/AnimationComponent.h>
 #include <Scene/SceneComponent.h>
 #include <Scripting/Flow/FlowAsset.h>
@@ -52,6 +53,22 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 		);
 		RegisterVarStorageTemplateMethods(UserType);
 	}
+
+	// CSessionVarStorage
+	{
+		auto& UserType = State.new_usertype<Game::CSessionVarStorage>("CSessionVarStorage"
+			, "clear", &Game::CSessionVarStorage::clear
+			, "empty", &Game::CSessionVarStorage::empty
+			, "size", &Game::CSessionVarStorage::size
+			, "Find", static_cast<HVar(Game::CSessionVarStorage::*)(CStrID ID) const>(&Game::CSessionVarStorage::Find)
+		);
+		RegisterVarStorageTemplateMethods(UserType);
+	}
+
+	State.new_usertype<Game::CSessionVars>("CSessionVars"
+		, "Persistent", &Game::CSessionVars::Persistent
+		, "Runtime", &Game::CSessionVars::Runtime
+	);
 
 	State.new_usertype<DEM::Game::CGameWorld>("CGameWorld"
 		, sol::meta_function::index, [](DEM::Game::CGameWorld& Self, sol::stack_object Key) { return sol::object(Self._ScriptFields[Key]); }

@@ -53,6 +53,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/GameState.h
 	DEM/Game/src/Game/GameStateManager.h
 	DEM/Game/src/Game/Property.h
+	DEM/Game/src/Game/SessionVars.h
 	DEM/Game/src/Game/ECS/ComponentObserver.h
 	DEM/Game/src/Game/ECS/ComponentStorage.h
 	DEM/Game/src/Game/ECS/Entity.h
