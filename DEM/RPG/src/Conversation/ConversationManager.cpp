@@ -26,7 +26,8 @@ bool CanSpeak(const Game::CGameWorld& World, Game::HEntity EntityID)
 	auto* pTalking = World.FindComponent<const CTalkingComponent>(EntityID);
 	if (!pTalking) return false;
 
-	// If this is the character (and not something like a talking door) check if it is not mute
+	// If this is the character (and not something like a talking door) check if it is not mute.
+	// NB: death or unconsciousness will disable Talk capability, they souldn't be checked directly.
 	if (auto* pStats = World.FindComponent<const Sh2::CStatsComponent>(EntityID))
 		if (!(pStats->Capabilities & Sh2::ECapability::Talk)) return false;
 
