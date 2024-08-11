@@ -77,8 +77,8 @@ bool CConversationManager::StartConversation(Game::HEntity Initiator, Game::HEnt
 
 	// Register first two mandatory participants, target first because it owns the conversation.
 	// Failure to engage one will automatically cancel the conversation.
-	if (!EngageParticipant(Target, Target, true) || (Initiator && !EngageParticipant(Target, Initiator, true)))
-		return false;
+	if (!EngageParticipant(Target, Target, true)) return false;
+	if (Initiator && Initiator != Target && !EngageParticipant(Target, Initiator, true)) return false;
 
 	if (Mode == EConversationMode::Foreground)
 		_ForegroundConversation = Target;
