@@ -48,9 +48,15 @@ class CConversationManager : public ::Core::CRTTIBaseClass
 
 protected:
 
+	struct CActorInfo
+	{
+		Game::HEntity ConversationKey;
+		bool          Mandatory = false;
+	};
+
 	Game::CGameSession&                    _Session;
 	std::map<Game::HEntity, PConversation> _Conversations; // Indexed by target (asset owner)
-	std::map<Game::HEntity, Game::HEntity> _BusyActors;    // Entity -> Conversation key, for quick "is talking" check
+	std::map<Game::HEntity, CActorInfo>    _Actors;
 	Game::HEntity                          _ForegroundConversation;
 	PConversationView                      _View;
 

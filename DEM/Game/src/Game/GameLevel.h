@@ -78,6 +78,29 @@ public:
 	//the closest Interactable, if the user wants closer non-interactable collision objects to block it.
 	UPTR                     EnumEntitiesInSphere(const rtm::vector4f& Position, float Radius, CStrID CollisionMask, std::function<bool(HEntity&, const rtm::vector4f&)>&& Callback) const;
 
+	template<typename TPredicate>
+	Game::HEntity FindClosestEntity(const rtm::vector4f& Position, float Radius, CStrID CollisionMask, TPredicate Predicate = nullptr)
+	{
+		float ClosestDistanceSq = std::numeric_limits<float>().max();
+		Game::HEntity ClosestEntityID;
+
+		EnumEntitiesInSphere(Position, Radius, CollisionMask,
+			[&ClosestDistanceSq, &ClosestEntityID, Position, Predicate](Game::HEntity EntityID, const rtm::vector4f& Pos)
+			{
+				const float DistanceSq = Math::vector_distance_squared3(Pos, Position);
+				if (ClosestDistanceSq <= DistanceSq) return true;
+
+				if constexpr (!std::is_same_v<TPredicate, std::nullptr_t>)
+					if (!Predicate(EntityID)) return true;
+
+				ClosestDistanceSq = DistanceSq;
+				ClosestEntityID = EntityID;
+				return true;
+			});
+
+		return ClosestEntityID;
+	}
+
 	CStrID                   GetID() const { return _ID; }
 
 	Scene::CSceneNode&       GetSceneRoot() { return *_SceneRoot.Get(); }

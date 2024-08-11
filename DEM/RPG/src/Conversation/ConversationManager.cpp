@@ -13,8 +13,8 @@ static const CStrID sidConversationOwner("ConversationOwner");
 
 struct CConversation
 {
-	Flow::CFlowPlayer             Player;
-	std::map<Game::HEntity, bool> Participants; // Actor -> Is mandatory //???FIXME: need this or iterate _BusyActors?!
+	Flow::CFlowPlayer       Player;
+	std::set<Game::HEntity> Participants; //???FIXME: need this or iterate _BusyActors?!
 	// TODO: persistent data, e.g. visited phrases. Load here or keep in a separate collection in a manager?
 	// Can also store in persistent data last checkpoint action ID when conv was interrupted! To start not from beginning!
 };
@@ -93,13 +93,8 @@ std::map<Game::HEntity, PConversation>::iterator CConversationManager::CleanupCo
 
 	if (_View) _View->OnConversationEnd(true);
 
-	for (auto ItActor = _BusyActors.begin(); ItActor != _BusyActors.end(); /**/)
-	{
-		if (ItActor->second == It->first)
-			ItActor = _BusyActors.erase(ItActor);
-		else
-			++ItActor;
-	}
+	for (Game::HEntity Participant : It->second->Participants)
+		_Actors.erase(Participant);
 
 	if (It->first == _ForegroundConversation)
 		_ForegroundConversation = {};
@@ -134,38 +129,28 @@ bool CConversationManager::EngageParticipantInternal(Game::HEntity Key, Game::HE
 	if (!CanSpeak(*pWorld, Actor)) return false;
 
 	// Check if the actor is already engaged
-	auto ItActor = _BusyActors.find(Actor);
-	if (ItActor != _BusyActors.cend())
+	auto ItActor = _Actors.find(Actor);
+	if (ItActor != _Actors.cend())
 	{
-		const auto CurrKey = ItActor->second;
+		const auto CurrKey = ItActor->second.ConversationKey;
 		if (CurrKey == Key)
 		{
 			// Engaged into the same conversation, update role
-			ItConv->second->Participants.insert_or_assign(Actor, Mandatory); //???or store Mandatory in _BusyActors?
+			ItActor->second.Mandatory = Mandatory;
 			return true;
 		}
 		else
 		{
-			// Engaged into another conversation
-			auto ItCurrConv = _Conversations.find(CurrKey);
-			if (ItCurrConv != _Conversations.cend())
-			{
-				auto It = ItCurrConv->second->Participants.find(Actor);
-				if (It != ItCurrConv->second->Participants.cend())
-				{
-					// Mandatory prevails over optional, otherwise fail a request
-					const bool WasMandatory = It->second;
-					if (Mandatory && !WasMandatory)
-						DisengageParticipant(CurrKey, Actor);
-					else
-						return false;
-				}
-			}
+			// Engaged into another conversation. Mandatory prevails over optional, otherwise fail a request.
+			if (Mandatory && !ItActor->second.Mandatory)
+				DisengageParticipant(CurrKey, Actor);
+			else
+				return false;
 		}
 	}
 
-	ItConv->second->Participants.emplace(Actor, Mandatory); //???or store Mandatory in _BusyActors?
-	_BusyActors.emplace(Actor, Key);
+	ItConv->second->Participants.emplace(Actor);
+	_Actors.emplace(Actor, CActorInfo{ Key, Mandatory });
 
 	return true;
 }
@@ -181,21 +166,16 @@ bool CConversationManager::EngageParticipant(Game::HEntity Key, Game::HEntity Ac
 
 bool CConversationManager::DisengageParticipant(Game::HEntity Key, Game::HEntity Actor)
 {
-	auto ItActor = _BusyActors.find(Actor);
-	if (ItActor == _BusyActors.cend() || ItActor->second != Key) return false;
+	auto ItActor = _Actors.find(Actor);
+	if (ItActor == _Actors.cend() || ItActor->second.ConversationKey != Key) return false;
 
-	_BusyActors.erase(ItActor);
+	const bool WasMandatory = ItActor->second.Mandatory;
+
+	_Actors.erase(ItActor);
 
 	auto ItConv = _Conversations.find(Key);
-	if (ItConv == _Conversations.cend()) return false;
-
-	auto& Participants = ItConv->second->Participants;
-	auto It = Participants.find(Actor);
-	if (It == Participants.cend()) return false;
-
-	const bool WasMandatory = It->second;
-
-	Participants.erase(It);
+	if (ItConv != _Conversations.cend())
+		ItConv->second->Participants.erase(Actor);
 
 	if (WasMandatory) CancelConversation(Key);
 
@@ -212,8 +192,8 @@ size_t CConversationManager::GetParticipantCount(Game::HEntity Key) const
 
 Game::HEntity CConversationManager::GetConversationKey(Game::HEntity Participant) const
 {
-	auto It = _BusyActors.find(Participant);
-	return (It == _BusyActors.cend()) ? Game::HEntity{} : It->second;
+	auto It = _Actors.find(Participant);
+	return (It == _Actors.cend()) ? Game::HEntity{} : It->second.ConversationKey;
 }
 //---------------------------------------------------------------------
 
@@ -237,8 +217,8 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 {
 	Events::CConnection Conn;
 
-	auto ItActor = _BusyActors.find(Actor);
-	if (ItActor == _BusyActors.cend())
+	auto ItActor = _Actors.find(Actor);
+	if (ItActor == _Actors.cend())
 	{
 		// Not engaged actor
 		//???or allow this?!
@@ -249,18 +229,8 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 	auto* pWorld = _Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld || !CanSpeak(*pWorld, Actor))
 	{
-		// FIXME: store mandatory in _BusyActors?
-		bool Mandatory = false;
-		auto ItConv = _Conversations.find(ItActor->second);
-		if (ItConv != _Conversations.cend())
-		{
-			auto& Participants = ItConv->second->Participants;
-			auto It = Participants.find(Actor);
-			Mandatory = (It != Participants.cend()) && It->second;
-		}
-
 		//???or instead of bool use the same callback signature and same error codes as in ProvideChoices?!
-		OnEnd(!Mandatory);
+		OnEnd(!ItActor->second.Mandatory);
 
 		return Conn;
 	}
@@ -285,8 +255,8 @@ Events::CConnection CConversationManager::ProvideChoices(Game::HEntity Actor, st
 	Events::CConnection Conn;
 
 	//???FIXME: need to specify an actor to provide choices to? Can be multiple actors!
-	auto ItActor = _BusyActors.find(Actor);
-	if (ItActor == _BusyActors.cend())
+	auto ItActor = _Actors.find(Actor);
+	if (ItActor == _Actors.cend())
 	{
 		// Not engaged actor
 		//???or allow this?!
@@ -297,16 +267,6 @@ Events::CConnection CConversationManager::ProvideChoices(Game::HEntity Actor, st
 	auto* pWorld = _Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld || !CanSpeak(*pWorld, Actor))
 	{
-		// FIXME: store mandatory in _BusyActors?
-		bool Mandatory = false;
-		auto ItConv = _Conversations.find(ItActor->second);
-		if (ItConv != _Conversations.cend())
-		{
-			auto& Participants = ItConv->second->Participants;
-			auto It = Participants.find(Actor);
-			Mandatory = (It != Participants.cend()) && It->second;
-		}
-
 		NOT_IMPLEMENTED; //!!!TODO: call OnChoose with some special value meaning mandatory/optional actor unable to speak!
 
 		return Conn;

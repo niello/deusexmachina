@@ -1,6 +1,7 @@
 #pragma once
 #include "SolGame.h"
 #include <Game/ECS/GameWorld.h>
+#include <Game/GameLevel.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Game/ECS/Components/EventsComponent.h>
 #include <Game/Objects/SmartObjectComponent.h>
@@ -70,8 +71,15 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 		, "Runtime", &Game::CSessionVars::Runtime
 	);
 
+	State.new_usertype<DEM::Game::CGameLevel>("CGameLevel"
+		, "FindClosestEntity", sol::overload(
+			&DEM::Game::CGameLevel::FindClosestEntity<std::nullptr_t>
+			, &DEM::Game::CGameLevel::FindClosestEntity<sol::function>)
+	);
+
 	State.new_usertype<DEM::Game::CGameWorld>("CGameWorld"
 		, sol::meta_function::index, [](DEM::Game::CGameWorld& Self, sol::stack_object Key) { return sol::object(Self._ScriptFields[Key]); }
+		, "FindLevel", &DEM::Game::CGameWorld::FindLevel
 		//, "FindEntity", [](DEM::Game::CGameWorld& Self, DEM::Game::HEntity EntityID) { return sol::nil;  }
 	);
 

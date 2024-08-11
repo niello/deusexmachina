@@ -19,30 +19,8 @@ namespace DEM::RPG
 // static
 namespace
 {
-
-// TODO: to CGameLevel?
-template<typename TPredicate>
-static Game::HEntity FindClosestEntity(const Game::CGameLevel& Level, const rtm::vector4f& Center, float Radius, TPredicate Predicate)
-{
-	float ClosestDistanceSq = std::numeric_limits<float>().max();
-	Game::HEntity ClosestEntityID;
-
-	//!!!FIXME: need to set "Interactable" collision flag in all interactable entity colliders!
-	Level.EnumEntitiesInSphere(Center, Radius, /*CStrID("Interactable")*/ CStrID::Empty,
-		[&ClosestDistanceSq, &ClosestEntityID, Center, Predicate](Game::HEntity EntityID, const rtm::vector4f& Pos)
-	{
-		const auto DistanceSq = Math::vector_distance_squared3(Pos, Center);
-		if (ClosestDistanceSq > DistanceSq && Predicate(EntityID))
-		{
-			ClosestDistanceSq = DistanceSq;
-			ClosestEntityID = EntityID;
-		}
-		return true;
-	});
-
-	return ClosestEntityID;
-}
-//---------------------------------------------------------------------
+//!!!FIXME: need to set "Interactable" collision flag in all interactable entity colliders!
+const CStrID sidInteractableCollisionMask;// ("Interactable")
 
 U32 GetContainerCapacityInItems(const Game::CGameWorld& World, const CItemContainerComponent& Container,
 	const CItemComponent* pItem, U32 MinItemCount = 1, Game::HEntity ExcludeStackID = {})
@@ -1867,7 +1845,7 @@ U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 C
 			// If tmp item containers are found, add the stack to the closest one (take lookat dir into account?)
 			// Else if stacks are found, try to merge into the closest one (take lookat dir into account?)
 			// If not merged, create tmp item container and add found stack and our stack to it
-			const auto DestStackID = FindClosestEntity(*pLevel, Tfm.translation, MergeRadius,
+			const auto DestStackID = pLevel->FindClosestEntity(Tfm.translation, MergeRadius, sidInteractableCollisionMask,
 				[&World, ItemProtoID](Game::HEntity EntityID)
 			{
 				auto pGroundStack = World.FindComponent<const CItemStackComponent>(EntityID);
@@ -1980,7 +1958,7 @@ std::pair<U32, bool> MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity 
 			// If tmp item containers are found, add the stack to the closest one (take lookat dir into account?)
 			// Else if stacks are found, try to merge into the closest one (take lookat dir into account?)
 			// If not merged, create tmp item container and add found stack and our stack to it
-			const auto DestStackID = FindClosestEntity(*pLevel, Tfm.translation, MergeRadius,
+			const auto DestStackID = pLevel->FindClosestEntity(Tfm.translation, MergeRadius, sidInteractableCollisionMask,
 				[&World, pSrcStack](Game::HEntity EntityID)
 			{
 				auto pGroundStack = World.FindComponent<const CItemStackComponent>(EntityID);
@@ -2013,7 +1991,7 @@ Game::HEntity MoveWholeStackToLocation(Game::CGameWorld& World, Game::HEntity St
 		if (auto pLevel = World.FindLevel(LevelID))
 		{
 			// TODO: see the comment for the same call inside MoveItemsToLocation
-			const auto DestStackID = FindClosestEntity(*pLevel, Tfm.translation, MergeRadius,
+			const auto DestStackID = pLevel->FindClosestEntity(Tfm.translation, MergeRadius, sidInteractableCollisionMask,
 				[&World, pSrcStack](Game::HEntity EntityID)
 			{
 				auto pGroundStack = World.FindComponent<const CItemStackComponent>(EntityID);
