@@ -38,7 +38,7 @@ public:
 
 	virtual void                Update(float dt) = 0;
 	virtual void                OnConversationEnd(bool Foreground) = 0;
-	virtual Events::CConnection SayPhrase(Game::HEntity Actor, std::string&& Text, bool Foreground, float Time, std::function<void()>&& OnEnd) = 0;
+	virtual Events::CConnection SayPhrase(Game::HEntity Actor, std::string&& Text, bool Foreground, float Time, std::function<void(bool)>&& OnEnd) = 0;
 	virtual Events::CConnection ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose) = 0;
 };
 
@@ -76,7 +76,7 @@ public:
 
 	void                Update(float dt);
 
-	Events::CConnection SayPhrase(Game::HEntity Actor, std::string&& Text, float Time = -1.f, std::function<void()>&& OnEnd = nullptr);
+	Events::CConnection SayPhrase(Game::HEntity Actor, std::string&& Text, float Time = -1.f, std::function<void(bool)>&& OnEnd = nullptr);
 	Events::CConnection ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose);
 	IConversationView*  GetView() const { return _View.get(); }
 };

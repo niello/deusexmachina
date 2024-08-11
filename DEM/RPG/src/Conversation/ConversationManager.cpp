@@ -14,7 +14,7 @@ static const CStrID sidConversationOwner("ConversationOwner");
 struct CConversation
 {
 	Flow::CFlowPlayer             Player;
-	std::map<Game::HEntity, bool> Participants; // Actor -> Is mandatory
+	std::map<Game::HEntity, bool> Participants; // Actor -> Is mandatory //???FIXME: need this or iterate _BusyActors?!
 	// TODO: persistent data, e.g. visited phrases. Load here or keep in a separate collection in a manager?
 	// Can also store in persistent data last checkpoint action ID when conv was interrupted! To start not from beginning!
 };
@@ -140,7 +140,7 @@ bool CConversationManager::EngageParticipantInternal(Game::HEntity Key, Game::HE
 		if (CurrKey == Key)
 		{
 			// Engaged into the same conversation, update role
-			ItConv->second->Participants.insert_or_assign(Actor, Mandatory);
+			ItConv->second->Participants.insert_or_assign(Actor, Mandatory); //???or store Mandatory in _BusyActors?
 			return true;
 		}
 		else
@@ -163,7 +163,7 @@ bool CConversationManager::EngageParticipantInternal(Game::HEntity Key, Game::HE
 		}
 	}
 
-	ItConv->second->Participants.emplace(Actor, Mandatory);
+	ItConv->second->Participants.emplace(Actor, Mandatory); //???or store Mandatory in _BusyActors?
 	_BusyActors.emplace(Actor, Key);
 
 	return true;
@@ -232,10 +232,37 @@ void CConversationManager::Update(float dt)
 }
 //---------------------------------------------------------------------
 
-Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::string&& Text, float Time, std::function<void()>&& OnEnd)
+Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::string&& Text, float Time, std::function<void(bool)>&& OnEnd)
 {
-	//!!!check actor valid and can speak!
-	//???pass error in callback arg?
+	Events::CConnection Conn;
+
+	auto ItActor = _BusyActors.find(Actor);
+	if (ItActor == _BusyActors.cend())
+	{
+		// Not engaged actor
+		//???or allow this?!
+		OnEnd(false);
+		return Conn;
+	}
+
+	auto* pWorld = _Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld || !CanSpeak(*pWorld, Actor))
+	{
+		// FIXME: store mandatory in _BusyActors?
+		bool Mandatory = false;
+		auto ItConv = _Conversations.find(ItActor->second);
+		if (ItConv != _Conversations.cend())
+		{
+			auto& Participants = ItConv->second->Participants;
+			auto It = Participants.find(Actor);
+			Mandatory = (It != Participants.cend()) && It->second;
+		}
+
+		//???or instead of bool use the same callback signature and same error codes as in ProvideChoices?!
+		OnEnd(!Mandatory);
+
+		return Conn;
+	}
 
 	if (Time < 0.f)
 	{
@@ -243,11 +270,10 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 		Time = 3.f;
 	}
 
-	Events::CConnection Conn;
 	if (_View)
 		Conn = _View->SayPhrase(Actor, std::move(Text), InInForegroundConversation(Actor), Time, std::move(OnEnd));
 	else
-		OnEnd();
+		OnEnd(true);
 
 	return Conn;
 }
@@ -255,10 +281,36 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 
 Events::CConnection CConversationManager::ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose)
 {
-	//!!!check actor valid and can speak!
-	//???pass error in callback arg or as a special choice value?
-
 	Events::CConnection Conn;
+
+	//???FIXME: need to specify an actor to provide choices to? Can be multiple actors!
+	auto ItActor = _BusyActors.find(Actor);
+	if (ItActor == _BusyActors.cend())
+	{
+		// Not engaged actor
+		//???or allow this?!
+		NOT_IMPLEMENTED; //!!!TODO: call OnChoose with some special value meaning not engaged actor!
+		return Conn;
+	}
+
+	auto* pWorld = _Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld || !CanSpeak(*pWorld, Actor))
+	{
+		// FIXME: store mandatory in _BusyActors?
+		bool Mandatory = false;
+		auto ItConv = _Conversations.find(ItActor->second);
+		if (ItConv != _Conversations.cend())
+		{
+			auto& Participants = ItConv->second->Participants;
+			auto It = Participants.find(Actor);
+			Mandatory = (It != Participants.cend()) && It->second;
+		}
+
+		NOT_IMPLEMENTED; //!!!TODO: call OnChoose with some special value meaning mandatory/optional actor unable to speak!
+
+		return Conn;
+	}
+
 	if (_View && !Texts.empty())
 		Conn = _View->ProvideChoices(Actor, std::move(Texts), std::move(OnChoose));
 	else

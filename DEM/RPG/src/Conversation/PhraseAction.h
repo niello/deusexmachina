@@ -17,7 +17,8 @@ protected:
 	{
 		Created,
 		Started,
-		Finished
+		Finished,
+		Error
 	};
 
 	Game::HEntity       _Speaker;

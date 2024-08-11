@@ -34,13 +34,15 @@ void CPhraseAction::Update(Flow::CUpdateContext& Ctx)
 
 		// NB: _PhraseEndConn unsubscribes in destructor so capturing raw 'this' is safe here as long as views don't store the callback in an unsafe way
 		if (auto pConvMgr = Ctx.pSession->FindFeature<CConversationManager>())
-			_PhraseEndConn = pConvMgr->SayPhrase(_Speaker, std::move(TextStr), Time, [this]() { _State = EState::Finished; });
+			_PhraseEndConn = pConvMgr->SayPhrase(_Speaker, std::move(TextStr), Time, [this](bool Ok) { _State = Ok ? EState::Finished : EState::Error; });
 		else
 			_State = EState::Finished;
 	}
 
 	if (_State == EState::Finished)
 		Goto(Ctx, GetFirstValidLink(*Ctx.pSession, _pPlayer->GetVars()));
+	else if (_State == EState::Error)
+		Throw(Ctx, "Conversation manager failure", false);
 }
 //---------------------------------------------------------------------
 
