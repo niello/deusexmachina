@@ -8,6 +8,7 @@
 namespace DEM::Game
 {
 	class CGameSession;
+	class CGameWorld;
 }
 
 namespace DEM::Flow
@@ -19,6 +20,8 @@ namespace DEM::RPG
 {
 using PConversation = std::unique_ptr<struct CConversation>;
 using PConversationView = std::unique_ptr<class IConversationView>;
+
+bool CanSpeak(const Game::CGameWorld& World, Game::HEntity EntityID);
 
 enum class EConversationMode
 {
@@ -51,6 +54,7 @@ protected:
 	Game::HEntity                          _ForegroundConversation;
 	PConversationView                      _View;
 
+	bool                                             EngageParticipantInternal(Game::HEntity Key, Game::HEntity Actor, bool Mandatory);
 	std::map<Game::HEntity, PConversation>::iterator CleanupConversation(std::map<Game::HEntity, PConversation>::iterator It);
 
 public:
@@ -62,8 +66,8 @@ public:
 	bool                StartConversation(Game::HEntity Initiator, Game::HEntity Target, EConversationMode Mode = EConversationMode::Auto);
 	void                CancelConversation(Game::HEntity Key);
 	bool                SetConversationMode(Game::HEntity Key, EConversationMode Mode);
-	bool                RegisterParticipant(Game::HEntity Key, Game::HEntity Actor);
-	bool                UnregisterParticipant(Game::HEntity Key, Game::HEntity Actor);
+	bool                EngageParticipant(Game::HEntity Key, Game::HEntity Actor, bool Mandatory);
+	bool                DisengageParticipant(Game::HEntity Key, Game::HEntity Actor);
 	size_t              GetParticipantCount(Game::HEntity Key) const;
 	Game::HEntity       GetConversationKey(Game::HEntity Participant) const;
 	Game::HEntity       GetForegroundConversationKey() const { return _ForegroundConversation; }

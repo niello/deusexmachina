@@ -2,19 +2,37 @@
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
 #include <Conversation/TalkingComponent.h>
+#include <Character/StatsComponent.h>
 #include <Scripting/Flow/FlowPlayer.h>
 #include <Scripting/Flow/FlowAsset.h>
 
 namespace DEM::RPG
 {
+static const CStrID sidConversationInitiator("ConversationInitiator");
+static const CStrID sidConversationOwner("ConversationOwner");
 
 struct CConversation
 {
-	Flow::CFlowPlayer       Player;
-	std::set<Game::HEntity> Participants; //???store owner (target) and initiator separately?
+	Flow::CFlowPlayer             Player;
+	std::map<Game::HEntity, bool> Participants; // Actor -> Is mandatory
 	// TODO: persistent data, e.g. visited phrases. Load here or keep in a separate collection in a manager?
 	// Can also store in persistent data last checkpoint action ID when conv was interrupted! To start not from beginning!
 };
+
+bool CanSpeak(const Game::CGameWorld& World, Game::HEntity EntityID)
+{
+	// The entity must be talking, even if it has no conversation asset assigned.
+	// This also filters out empty and expired entity IDs.
+	auto* pTalking = World.FindComponent<const CTalkingComponent>(EntityID);
+	if (!pTalking) return false;
+
+	// If this is the character (and not something like a talking door) check if it is not mute
+	if (auto* pStats = World.FindComponent<const Sh2::CStatsComponent>(EntityID))
+		if (!(pStats->Capabilities & Sh2::ECapability::Talk)) return false;
+
+	return true;
+}
+//---------------------------------------------------------------------
 
 CConversationManager::CConversationManager(Game::CGameSession& Owner, PConversationView&& View)
 	: _Session(Owner)
@@ -28,7 +46,7 @@ bool CConversationManager::StartConversation(Game::HEntity Initiator, Game::HEnt
 	auto* pWorld = _Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return false;
 
-	auto* pTalking = pWorld->FindComponent<CTalkingComponent>(Target);
+	auto* pTalking = pWorld->FindComponent<const CTalkingComponent>(Target);
 	if (!pTalking) return false;
 
 	auto* pFlow = pTalking->Asset->ValidateObject<Flow::CFlowAsset>();
@@ -47,23 +65,19 @@ bool CConversationManager::StartConversation(Game::HEntity Initiator, Game::HEnt
 	// Can't have more than one foreground conversation running
 	if (Mode == EConversationMode::Foreground && _ForegroundConversation) return false;
 
-	PConversation New(new CConversation);
+	PConversation New(new CConversation());
 
 	if (!New->Player.Start(pFlow)) return false;
 
-	static const CStrID sidConversationInitiator("ConversationInitiator");
-	static const CStrID sidConversationOwner("ConversationOwner");
 	New->Player.GetVars().Set<int>(sidConversationInitiator, Initiator.Raw);
 	New->Player.GetVars().Set<int>(sidConversationOwner, Target.Raw);
 
 	_Conversations.emplace(Target, std::move(New));
 
-	// Register first two mandatory participants
-	if (!RegisterParticipant(Target, Initiator) || !RegisterParticipant(Target, Target))
-	{
-		CancelConversation(Target);
+	// Register first two mandatory participants, target first because it owns the conversation.
+	// Failure to engage one will automatically cancel the conversation.
+	if (!EngageParticipant(Target, Target, true) || (Initiator && !EngageParticipant(Target, Initiator, true)))
 		return false;
-	}
 
 	if (Mode == EConversationMode::Foreground)
 		_ForegroundConversation = Target;
@@ -106,33 +120,83 @@ bool CConversationManager::SetConversationMode(Game::HEntity Key, EConversationM
 }
 //---------------------------------------------------------------------
 
-bool CConversationManager::RegisterParticipant(Game::HEntity Key, Game::HEntity Actor)
+bool CConversationManager::EngageParticipantInternal(Game::HEntity Key, Game::HEntity Actor, bool Mandatory)
 {
-	// Check if the actor is already busy in this or another conversation
+	// Check if the requested conversation exists
+	auto ItConv = _Conversations.find(Key);
+	if (ItConv == _Conversations.cend()) return false;
+
+	auto* pWorld = _Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return false;
+
+	// Can engage something unable to speak
+	if (!CanSpeak(*pWorld, Actor)) return false;
+
+	// Check if the actor is already engaged
 	auto ItActor = _BusyActors.find(Actor);
 	if (ItActor != _BusyActors.cend())
-		return (ItActor->second == Key);
+	{
+		const auto CurrKey = ItActor->second;
+		if (CurrKey == Key)
+		{
+			// Engaged into the same conversation, update role
+			ItConv->second->Participants.insert_or_assign(Actor, Mandatory);
+			return true;
+		}
+		else
+		{
+			// Engaged into another conversation
+			auto ItCurrConv = _Conversations.find(CurrKey);
+			if (ItCurrConv != _Conversations.cend())
+			{
+				auto It = ItCurrConv->second->Participants.find(Actor);
+				if (It != ItCurrConv->second->Participants.cend())
+				{
+					// Mandatory prevails over optional, otherwise fail a request
+					const bool WasMandatory = It->second;
+					if (Mandatory && !WasMandatory)
+						DisengageParticipant(CurrKey, Actor);
+					else
+						return false;
+				}
+			}
+		}
+	}
 
-	// Check if the requested conversation exists
-	auto It = _Conversations.find(Key);
-	if (It == _Conversations.cend()) return false;
-
+	ItConv->second->Participants.emplace(Actor, Mandatory);
 	_BusyActors.emplace(Actor, Key);
-	It->second->Participants.insert(Actor);
+
 	return true;
 }
 //---------------------------------------------------------------------
 
-bool CConversationManager::UnregisterParticipant(Game::HEntity Key, Game::HEntity Actor)
+bool CConversationManager::EngageParticipant(Game::HEntity Key, Game::HEntity Actor, bool Mandatory)
+{
+	if (EngageParticipantInternal(Key, Actor, Mandatory)) return true;
+	if (Mandatory) CancelConversation(Key);
+	return false;
+}
+//---------------------------------------------------------------------
+
+bool CConversationManager::DisengageParticipant(Game::HEntity Key, Game::HEntity Actor)
 {
 	auto ItActor = _BusyActors.find(Actor);
 	if (ItActor == _BusyActors.cend() || ItActor->second != Key) return false;
 
 	_BusyActors.erase(ItActor);
 
-	auto It = _Conversations.find(Key);
-	if (It != _Conversations.cend())
-		It->second->Participants.erase(Actor);
+	auto ItConv = _Conversations.find(Key);
+	if (ItConv == _Conversations.cend()) return false;
+
+	auto& Participants = ItConv->second->Participants;
+	auto It = Participants.find(Actor);
+	if (It == Participants.cend()) return false;
+
+	const bool WasMandatory = It->second;
+
+	Participants.erase(It);
+
+	if (WasMandatory) CancelConversation(Key);
 
 	return true;
 }
