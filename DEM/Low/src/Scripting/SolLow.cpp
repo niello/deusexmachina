@@ -61,6 +61,17 @@ void RegisterBasicTypes(sol::state& State)
 	vector3Table.set("AxisZ", vector3::AxisZ);
 	vector3Table.set("BaseDir", vector3::BaseDir);
 
+	State.new_usertype<rtm::vector4f>("vector4f"
+		, "new", sol::initializers(
+			[](rtm::vector4f& Self, float x, float y, float z) { Self = rtm::vector_set(x, y, z); },
+			[](rtm::vector4f& Self, float x, float y, float z, float w) { Self = rtm::vector_set(x, y, z, w); }
+			)
+		, "x", [](rtm::vector4f& Self) { return rtm::vector_get_x(Self); }
+		, "y", [](rtm::vector4f& Self) { return rtm::vector_get_y(Self); }
+		, "z", [](rtm::vector4f& Self) { return rtm::vector_get_z(Self); }
+		, "w", [](rtm::vector4f& Self) { return rtm::vector_get_w(Self); }
+	);
+
 	State.new_enum<ESoftBool>("ESoftBool",
 		{
 			{ "False", ESoftBool::False },
