@@ -26,6 +26,8 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Combat/WeaponComponent.h
 	DEM/RPG/src/Conversation/ChoiceAction.h
 	DEM/RPG/src/Conversation/ConversationManager.h
+	DEM/RPG/src/Conversation/DisengageFromConversationAction.h
+	DEM/RPG/src/Conversation/EngageInConversationAction.h
 	DEM/RPG/src/Conversation/PhraseAction.h
 	DEM/RPG/src/Conversation/TalkAbility.h
 	DEM/RPG/src/Conversation/TalkingComponent.h
@@ -78,6 +80,8 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/Conversation/ChoiceAction.cpp
 	DEM/RPG/src/Conversation/ConversationManager.cpp
 	DEM/RPG/src/Conversation/ConversationSystem.cpp
+	DEM/RPG/src/Conversation/DisengageFromConversationAction.cpp
+	DEM/RPG/src/Conversation/EngageInConversationAction.cpp
 	DEM/RPG/src/Conversation/PhraseAction.cpp
 	DEM/RPG/src/Conversation/TalkAbility.cpp
 	DEM/RPG/src/Dlg/DialogueManager.cpp

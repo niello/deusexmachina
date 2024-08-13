@@ -2,6 +2,7 @@
 #include <Conversation/ConversationManager.h>
 #include <Conversation/PhraseAction.h>
 #include <Game/GameSession.h>
+#include <Game/ECS/GameWorld.h>
 #include <Scripting/Flow/FlowAsset.h>
 #include <Scripting/Flow/HubAction.h>
 #include <Core/Factory.h>
@@ -21,12 +22,16 @@ void CChoiceAction::CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlo
 
 	if (CPhraseAction::RTTI.IsBaseOf(pLinkedRTTI))
 	{
+		// Skip answers of invalid speakers
+		auto* pWorld = Session.FindFeature<Game::CGameWorld>();
+		if (!pWorld || !CanSpeak(*pWorld, Flow::ResolveEntityID(*pActionData, sidSpeaker, Root._pPlayer->GetVars()))) return;
+
+		// Skip already reached answers
 		const auto It = std::find_if(Root._ChoiceLinks.cbegin(), Root._ChoiceLinks.cend(), [ID = Link.DestID](const auto* pLink) { return pLink->DestID == ID; });
-		if (It == Root._ChoiceLinks.cend())
-		{
-			Root._ChoiceTexts.push_back(pActionData->Params->Get<CString>(sidText, CString::Empty).CStr());
-			Root._ChoiceLinks.push_back(&Link);
-		}
+		if (It != Root._ChoiceLinks.cend()) return;
+
+		Root._ChoiceTexts.push_back(pActionData->Params->Get<CString>(sidText, CString::Empty).CStr());
+		Root._ChoiceLinks.push_back(&Link);
 	}
 	else if (CChoiceAction::RTTI.IsBaseOf(pLinkedRTTI))
 	{

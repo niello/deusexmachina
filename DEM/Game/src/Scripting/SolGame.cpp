@@ -91,6 +91,7 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 			, [](DEM::Game::HEntity a, const char* b) { return DEM::Game::EntityToString(a) + b; })
 		, "IsValid", [](DEM::Game::HEntity e) { return !!e; }
 		, "IsEmpty", [](DEM::Game::HEntity e) { return !e; }
+		, "Raw", &DEM::Game::HEntity::Raw
 	);
 	sol::table HEntityTable = State["HEntity"];
 	HEntityTable.set("Empty", DEM::Game::HEntity{});

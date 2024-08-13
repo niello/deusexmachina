@@ -25,8 +25,9 @@ using PFlowAsset = Ptr<class CFlowAsset>;
 using CFlowVarStorage = CVarStorage<bool, int, float, std::string, CStrID>;
 constexpr U32 EmptyActionID_FIXME = 0; //!!!!!!!!FIXME: fix duplicated definition, see EmptyActionID!
 
-//!!!TODO: can be universal, not flow-specific!
-bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage& Vars);
+//!!!TODO: condition can be universal, not flow-specific!
+bool          EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage& Vars);
+Game::HEntity ResolveEntityID(const CFlowActionData& Proto, CStrID ParamID, const CFlowVarStorage& Vars);
 
 struct CUpdateContext
 {
