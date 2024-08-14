@@ -118,8 +118,23 @@ void CConversationManager::CancelConversation(Game::HEntity Key)
 
 bool CConversationManager::SetConversationMode(Game::HEntity Key, EConversationMode Mode)
 {
-	NOT_IMPLEMENTED;
-	return false;
+	if (Mode == EConversationMode::Auto) return false;
+
+	if (Mode == EConversationMode::Foreground)
+	{
+		if (_ForegroundConversation) return (_ForegroundConversation == Key);
+		_ForegroundConversation = Key;
+	}
+	else
+	{
+		if (_ForegroundConversation == Key)
+		{
+			_ForegroundConversation = {};
+			if (_View) _View->OnConversationEnd(true); // FIXME: better name/API? Closes FG UI.
+		}
+	}
+
+	return true;
 }
 //---------------------------------------------------------------------
 
