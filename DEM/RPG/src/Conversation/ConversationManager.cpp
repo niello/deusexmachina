@@ -99,6 +99,13 @@ std::map<Game::HEntity, PConversation>::iterator CConversationManager::CleanupCo
 	if (It->first == _ForegroundConversation)
 		_ForegroundConversation = {};
 
+	// Protect conversations from being deleted from inside their flow script
+	if (It->second->Player.IsPlaying())
+	{
+		_TerminatingConversations.emplace_back(std::move(It->second));
+		return It;
+	}
+
 	return _Conversations.erase(It);
 }
 //---------------------------------------------------------------------
@@ -190,6 +197,13 @@ size_t CConversationManager::GetParticipantCount(Game::HEntity Key) const
 }
 //---------------------------------------------------------------------
 
+bool CConversationManager::IsParticipantMandatory(Game::HEntity Participant) const
+{
+	auto It = _Actors.find(Participant);
+	return It != _Actors.cend() && It->second.Mandatory;
+}
+//---------------------------------------------------------------------
+
 Game::HEntity CConversationManager::GetConversationKey(Game::HEntity Participant) const
 {
 	auto It = _Actors.find(Participant);
@@ -203,11 +217,16 @@ void CConversationManager::Update(float dt)
 	{
 		It->second->Player.Update(_Session, dt);
 
-		if (It->second->Player.IsPlaying())
+		if (!It->second)
+			It = _Conversations.erase(It); // Conversation was terminated from inside itself
+		else if (It->second->Player.IsPlaying())
 			++It;
 		else
-			It = CleanupConversation(It);
+			It = CleanupConversation(It); // Conversation has ended
 	}
+
+	// Now it is safe because flow player updates are finished
+	_TerminatingConversations.clear();
 
 	if (_View) _View->Update(dt);
 }

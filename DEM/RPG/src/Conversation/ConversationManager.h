@@ -11,11 +11,6 @@ namespace DEM::Game
 	class CGameWorld;
 }
 
-namespace DEM::Flow
-{
-	class CFlowPlayer;
-}
-
 namespace DEM::RPG
 {
 using PConversation = std::unique_ptr<struct CConversation>;
@@ -56,6 +51,7 @@ protected:
 
 	Game::CGameSession&                    _Session;
 	std::map<Game::HEntity, PConversation> _Conversations; // Indexed by target (asset owner)
+	std::vector<PConversation>             _TerminatingConversations;
 	std::map<Game::HEntity, CActorInfo>    _Actors;
 	Game::HEntity                          _ForegroundConversation;
 	PConversationView                      _View;
@@ -75,6 +71,7 @@ public:
 	bool                EngageParticipant(Game::HEntity Key, Game::HEntity Actor, bool Mandatory);
 	bool                DisengageParticipant(Game::HEntity Key, Game::HEntity Actor);
 	size_t              GetParticipantCount(Game::HEntity Key) const;
+	bool                IsParticipantMandatory(Game::HEntity Participant) const;
 	Game::HEntity       GetConversationKey(Game::HEntity Participant) const;
 	Game::HEntity       GetForegroundConversationKey() const { return _ForegroundConversation; }
 	bool                InInForegroundConversation(Game::HEntity Participant) const { return _ForegroundConversation && GetConversationKey(Participant) == _ForegroundConversation; }

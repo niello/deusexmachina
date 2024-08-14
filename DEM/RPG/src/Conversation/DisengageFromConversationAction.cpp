@@ -22,8 +22,12 @@ void CDisengageFromConversationAction::Update(Flow::CUpdateContext& Ctx)
 	{
 		const int Raw = _pPlayer->GetVars().Get<int>(_pPlayer->GetVars().Find(sidConversationOwner), static_cast<int>(Game::HEntity{}.Raw));
 		Game::HEntity ConversationOwner{ static_cast<DEM::Game::HEntity::TRawValue>(Raw) };
-		if (ConversationOwner && pConvMgr->DisengageParticipant(ConversationOwner, _Actor))
-			return Goto(Ctx, GetFirstValidLink(*Ctx.pSession, _pPlayer->GetVars()));
+		if (ConversationOwner)
+		{
+			const bool Mandatory = pConvMgr->IsParticipantMandatory(_Actor);
+			if (pConvMgr->DisengageParticipant(ConversationOwner, _Actor))
+				return Mandatory ? Break(Ctx) : Goto(Ctx, GetFirstValidLink(*Ctx.pSession, _pPlayer->GetVars()));
+		}
 	}
 
 	Throw(Ctx, "Failed to engage actor in conversation", false);
