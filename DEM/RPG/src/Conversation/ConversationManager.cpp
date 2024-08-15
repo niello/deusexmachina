@@ -48,7 +48,7 @@ bool CConversationManager::StartConversation(Game::HEntity Initiator, Game::HEnt
 	if (!pWorld) return false;
 
 	auto* pTalking = pWorld->FindComponent<const CTalkingComponent>(Target);
-	if (!pTalking) return false;
+	if (!pTalking || !pTalking->Asset) return false;
 
 	auto* pFlow = pTalking->Asset->ValidateObject<Flow::CFlowAsset>();
 	if (!pFlow) return false;

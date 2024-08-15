@@ -42,7 +42,7 @@ void CPhraseAction::Update(Flow::CUpdateContext& Ctx)
 	if (_State == EState::Finished)
 		Goto(Ctx, GetFirstValidLink(*Ctx.pSession, _pPlayer->GetVars()));
 	else if (_State == EState::Error)
-		Throw(Ctx, "Conversation manager failure", false);
+		Throw(Ctx, "CPhraseAction - Conversation manager failure", false);
 }
 //---------------------------------------------------------------------
 

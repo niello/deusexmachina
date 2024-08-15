@@ -34,11 +34,16 @@ bool CTalkAbility::IsTargetValid(const Game::CGameSession& Session, U32 Index, c
 	// Ability accepts only one target
 	if (Index != 0) return false;
 
-	// Check for the item stack component
+	// Can speak with itself
 	const auto& Target = (Index == Context.Targets.size()) ? Context.CandidateTarget : Context.Targets[Index];
 	if (!Target.Valid || (!Context.Actors.empty() && Target.Entity == Context.Actors[0])) return false;
+
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
-	return pWorld && pWorld->FindComponent<const CTalkingComponent>(Target.Entity);
+	if (!pWorld) return false;
+
+	// Need a conversation asset assigned
+	auto* pTalking = pWorld->FindComponent<const CTalkingComponent>(Target.Entity);
+	return pTalking && pTalking->Asset;
 }
 //---------------------------------------------------------------------
 
