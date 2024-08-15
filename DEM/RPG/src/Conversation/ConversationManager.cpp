@@ -51,13 +51,19 @@ bool CConversationManager::StartConversation(Game::HEntity Initiator, Game::HEnt
 	if (!pTalking || !pTalking->Asset) return false;
 
 	auto* pFlow = pTalking->Asset->ValidateObject<Flow::CFlowAsset>();
-	if (!pFlow) return false;
+	return StartConversation(pFlow, Initiator, Target, Mode);
+}
+//---------------------------------------------------------------------
+
+bool CConversationManager::StartConversation(Flow::PFlowAsset Asset, Game::HEntity Initiator, Game::HEntity Target, EConversationMode Mode)
+{
+	if (!Asset) return false;
 
 	if (Mode == EConversationMode::Auto)
 	{
 		// Conversations with choice actions must be foreground
-		static const CStrID sidChoiceActionClass("DEM::RPG::CAnswerChoiceAction");
-		if (pFlow->HasAction(sidChoiceActionClass))
+		static const CStrID sidChoiceActionClass("DEM::RPG::CChoiceAction");
+		if (Asset->HasAction(sidChoiceActionClass))
 			Mode = EConversationMode::Foreground;
 		else
 			Mode = EConversationMode::Background;
@@ -68,7 +74,7 @@ bool CConversationManager::StartConversation(Game::HEntity Initiator, Game::HEnt
 
 	PConversation New(new CConversation());
 
-	if (!New->Player.Start(pFlow)) return false;
+	if (!New->Player.Start(std::move(Asset))) return false;
 
 	New->Player.GetVars().Set<int>(sidConversationInitiator, Initiator.Raw);
 	New->Player.GetVars().Set<int>(sidConversationOwner, Target.Raw);

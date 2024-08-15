@@ -11,6 +11,11 @@ namespace DEM::Game
 	class CGameWorld;
 }
 
+namespace DEM::Flow
+{
+	using PFlowAsset = Ptr<class CFlowAsset>;
+}
+
 namespace DEM::RPG
 {
 using PConversation = std::unique_ptr<struct CConversation>;
@@ -66,6 +71,7 @@ public:
 	void                SetView(PConversationView&& View) { _View = std::move(View); }
 
 	bool                StartConversation(Game::HEntity Initiator, Game::HEntity Target, EConversationMode Mode = EConversationMode::Auto);
+	bool                StartConversation(Flow::PFlowAsset Asset, Game::HEntity Initiator, Game::HEntity Target, EConversationMode Mode = EConversationMode::Auto);
 	void                CancelConversation(Game::HEntity Key);
 	bool                SetConversationMode(Game::HEntity Key, EConversationMode Mode);
 	bool                EngageParticipant(Game::HEntity Key, Game::HEntity Actor, bool Mandatory);
