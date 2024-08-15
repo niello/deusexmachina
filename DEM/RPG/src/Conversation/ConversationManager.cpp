@@ -254,9 +254,9 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 	auto ItActor = _Actors.find(Actor);
 	if (ItActor == _Actors.cend())
 	{
-		// Not engaged actor
-		//???or allow this?!
-		OnEnd(false);
+		// If the actor was mandatory, the conversation would cancel before reaching here. This means that
+		// an actor is either optional or not engaged at all. In both cases we can silently skip.
+		OnEnd(true);
 		return Conn;
 	}
 
