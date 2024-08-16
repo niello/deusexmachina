@@ -290,7 +290,7 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 }
 //---------------------------------------------------------------------
 
-Events::CConnection CConversationManager::ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose)
+Events::CConnection CConversationManager::ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::vector<bool>&& ValidFlags, std::function<void(size_t)>&& OnChoose)
 {
 	Events::CConnection Conn;
 
@@ -313,7 +313,7 @@ Events::CConnection CConversationManager::ProvideChoices(Game::HEntity Actor, st
 	}
 
 	if (_View && !Texts.empty())
-		Conn = _View->ProvideChoices(Actor, std::move(Texts), std::move(OnChoose));
+		Conn = _View->ProvideChoices(Actor, std::move(Texts), std::move(ValidFlags), std::move(OnChoose));
 	else
 		NOT_IMPLEMENTED; //!!!TODO: call OnChoose with some special value meaning forced cancellation with no choice made!
 

@@ -39,7 +39,7 @@ public:
 	virtual void                Update(float dt) = 0;
 	virtual void                OnConversationEnd(bool Foreground) = 0;
 	virtual Events::CConnection SayPhrase(Game::HEntity Actor, std::string&& Text, bool Foreground, float Time, std::function<void(bool)>&& OnEnd) = 0;
-	virtual Events::CConnection ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose) = 0;
+	virtual Events::CConnection ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::vector<bool>&& ValidFlags, std::function<void(size_t)>&& OnChoose) = 0;
 };
 
 class CConversationManager : public ::Core::CRTTIBaseClass
@@ -60,6 +60,7 @@ protected:
 	std::map<Game::HEntity, CActorInfo>    _Actors;
 	Game::HEntity                          _ForegroundConversation;
 	PConversationView                      _View;
+	bool                                   _DebugMode = false;
 
 	bool                                             EngageParticipantInternal(Game::HEntity Key, Game::HEntity Actor, bool Mandatory);
 	std::map<Game::HEntity, PConversation>::iterator CleanupConversation(std::map<Game::HEntity, PConversation>::iterator It);
@@ -86,8 +87,11 @@ public:
 	void                Update(float dt);
 
 	Events::CConnection SayPhrase(Game::HEntity Actor, std::string&& Text, float Time = -1.f, std::function<void(bool)>&& OnEnd = nullptr);
-	Events::CConnection ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::function<void(size_t)>&& OnChoose);
+	Events::CConnection ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::vector<bool>&& ValidFlags, std::function<void(size_t)>&& OnChoose);
 	IConversationView*  GetView() const { return _View.get(); }
+
+	void                SetDebugMode(bool Enable) { _DebugMode = Enable; }
+	bool                IsInDebugMode() const { return _DebugMode; }
 };
 
 }

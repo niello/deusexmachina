@@ -14,7 +14,7 @@ FACTORY_CLASS_IMPL(DEM::RPG::CChoiceAction, 'CHOA', Flow::IFlowAction);
 static const CStrID sidSpeaker("Speaker");
 static const CStrID sidText("Text");
 
-void CChoiceAction::CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlowLink& Link, Game::CGameSession& Session)
+void CChoiceAction::CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlowLink& Link, Game::CGameSession& Session, bool DebugMode)
 {
 	const auto* pActionData = Root._pPlayer->GetAsset()->FindAction(Link.DestID);
 	if (!pActionData) return;
@@ -24,36 +24,59 @@ void CChoiceAction::CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlo
 	{
 		// Skip answers of invalid speakers
 		auto* pWorld = Session.FindFeature<Game::CGameWorld>();
-		if (!pWorld || !CanSpeak(*pWorld, Flow::ResolveEntityID(*pActionData, sidSpeaker, Root._pPlayer->GetVars()))) return;
+		bool IsPhraseValid = pWorld && CanSpeak(*pWorld, Flow::ResolveEntityID(*pActionData, sidSpeaker, Root._pPlayer->GetVars()));
+		if (!IsPhraseValid && !DebugMode) return;
+
+		// In debug mode we didn't check a condition, do it now
+		if (DebugMode && IsPhraseValid)
+			IsPhraseValid = EvaluateCondition(Link.Condition, Session, Root._pPlayer->GetVars());
 
 		// Skip already reached answers
 		const auto It = std::find_if(Root._ChoiceLinks.cbegin(), Root._ChoiceLinks.cend(), [ID = Link.DestID](const auto* pLink) { return pLink->DestID == ID; });
-		if (It != Root._ChoiceLinks.cend()) return;
+		if (It != Root._ChoiceLinks.cend())
+		{
+			if (DebugMode && IsPhraseValid)
+			{
+				// In case the phrase was recorded as invalid but now reached as valid
+				const auto Idx = std::distance(Root._ChoiceLinks.cbegin(), It);
+				Root._ChoiceValidFlags[Idx] = true;
+			}
+			return;
+		}
 
 		Root._ChoiceTexts.push_back(pActionData->Params->Get<CString>(sidText, CString::Empty).CStr());
 		Root._ChoiceLinks.push_back(&Link);
+		Root._ChoiceValidFlags.push_back(IsPhraseValid);
 	}
 	else if (CChoiceAction::RTTI.IsBaseOf(pLinkedRTTI))
 	{
 		// Collect recursively. This is useful for grouping choices under the same condition.
-		CollectChoices(Root, *pActionData, Session);
+		CollectChoices(Root, *pActionData, Session, DebugMode);
 	}
 	else if (Flow::CHubAction::RTTI.IsBaseOf(pLinkedRTTI))
 	{
 		// Process hubs transparently as if we executed through them using their rules
 		if (const auto* pNextLink = Flow::CHubAction::ChooseNext(*pActionData, Session, Root._pPlayer->GetVars(), Root._pPlayer->GetRNG()))
-			CollectChoicesFromLink(Root, *pNextLink, Session);
+			CollectChoicesFromLink(Root, *pNextLink, Session, DebugMode);
 	}
 	// Can add more supported types here
 }
 //---------------------------------------------------------------------
 
-void CChoiceAction::CollectChoices(CChoiceAction& Root, const Flow::CFlowActionData& Curr, Game::CGameSession& Session)
+void CChoiceAction::CollectChoices(CChoiceAction& Root, const Flow::CFlowActionData& Curr, Game::CGameSession& Session, bool DebugMode)
 {
-	ForEachValidLink(Curr, Session, Root._pPlayer->GetVars(), [&Root, &Session](size_t Index, const Flow::CFlowLink& Link)
+	if (DebugMode)
 	{
-		CollectChoicesFromLink(Root, Link, Session);
-	});
+		for (const auto& Link : Root._pPrototype->Links)
+			CollectChoicesFromLink(Root, Link, Session, true);
+	}
+	else
+	{
+		ForEachValidLink(Curr, Session, Root._pPlayer->GetVars(), [&Root, &Session](size_t Index, const Flow::CFlowLink& Link)
+		{
+			CollectChoicesFromLink(Root, Link, Session, false);
+		});
+	}
 }
 //---------------------------------------------------------------------
 
@@ -61,7 +84,14 @@ void CChoiceAction::OnStart(Game::CGameSession& Session)
 {
 	_Speaker = ResolveEntityID(sidSpeaker);
 	_ChoiceMadeConn = {};
-	CollectChoices(*this, *_pPrototype, Session);
+
+	auto* pConvMgr = Session.FindFeature<CConversationManager>();
+	const bool DebugMode = pConvMgr && pConvMgr->IsInDebugMode();
+
+	_ChoiceTexts.clear();
+	_ChoiceLinks.clear();
+	_ChoiceValidFlags.clear();
+	CollectChoices(*this, *_pPrototype, Session, DebugMode);
 	_Choice = _ChoiceLinks.size();
 }
 //---------------------------------------------------------------------
@@ -73,8 +103,8 @@ void CChoiceAction::Update(Flow::CUpdateContext& Ctx)
 		if (_ChoiceTexts.empty()) return Break(Ctx);
 
 		// NB: _ChoiceMadeConn unsubscribes in destructor so capturing raw 'this' is safe here as long as views don't store the callback in an unsafe way
-		if (auto pConvMgr = Ctx.pSession->FindFeature<CConversationManager>())
-			_ChoiceMadeConn = pConvMgr->ProvideChoices(_Speaker, std::move(_ChoiceTexts), [this](size_t Index) { _Choice = Index; });
+		if (auto* pConvMgr = Ctx.pSession->FindFeature<CConversationManager>())
+			_ChoiceMadeConn = pConvMgr->ProvideChoices(_Speaker, std::move(_ChoiceTexts), std::move(_ChoiceValidFlags), [this](size_t Index) { _Choice = Index; });
 		else
 			return Break(Ctx);
 	}
