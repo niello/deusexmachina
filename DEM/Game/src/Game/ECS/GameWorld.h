@@ -187,7 +187,11 @@ void CGameWorld::RegisterComponent(CStrID Name, UPTR InitialCapacity)
 	{
 		_ScriptFields[Name.CStr()] = [pStorage = _Storages[TypeIndex].get()](std::optional<HEntity> EntityID)
 		{
-			return static_cast<TComponentTraits<T>::TStorage*>(pStorage)->Find(EntityID.value_or(HEntity{}));
+			// TODO: make CEmptyComponentStorage work with bool instead of T*!
+			if constexpr (std::is_empty_v<T>)
+				return !!static_cast<TComponentTraits<T>::TStorage*>(pStorage)->Find(EntityID.value_or(HEntity{}));
+			else
+				return static_cast<TComponentTraits<T>::TStorage*>(pStorage)->Find(EntityID.value_or(HEntity{}));
 		};
 		_ScriptFields["Remove" + Name.ToString()] = [pStorage = _Storages[TypeIndex].get()](std::optional<HEntity> EntityID)
 		{

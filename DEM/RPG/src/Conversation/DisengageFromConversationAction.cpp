@@ -30,7 +30,7 @@ void CDisengageFromConversationAction::Update(Flow::CUpdateContext& Ctx)
 		}
 	}
 
-	Throw(Ctx, "Failed to engage actor in conversation", false);
+	Throw(Ctx, "Failed to disengage actor from conversation", false);
 }
 //---------------------------------------------------------------------
 
