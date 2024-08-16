@@ -26,7 +26,6 @@ protected:
 
 	Render::PGPUDriver _GPU;
 	Render::PEffect    _Effect;
-	CStrID             _CurrInputSet;
 	CTechCache*        _pCurrCache = nullptr;
 	Render::PSampler   _LinearSampler; //!!!???can define in effect?!
 
@@ -38,7 +37,6 @@ public:
 	virtual ~CDEMShaderWrapper() override;
 
 	void         setInputSet(BlendMode BlendMode, bool Clipped, bool Opaque);
-	void         resetInputSet() { _CurrInputSet = CStrID::Empty; }
 	virtual void prepareForRendering(const ShaderParameterBindings* shaderParameterBindings) override;
 };
 

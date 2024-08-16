@@ -62,10 +62,6 @@ void CDEMShaderWrapper::setInputSet(BlendMode BlendMode, bool Clipped, bool Opaq
 			NewInputSet = Clipped ? ColoredRegularClipped : ColoredRegularUnclipped;
 	}
 
-	if (_CurrInputSet == NewInputSet) return;
-
-	_CurrInputSet = NewInputSet;
-
 	auto It = _TechCache.find(NewInputSet);
 	if (It == _TechCache.cend())
 	{
@@ -74,7 +70,7 @@ void CDEMShaderWrapper::setInputSet(BlendMode BlendMode, bool Clipped, bool Opaq
 		static const CStrID sidWVP("WVP");
 		static const CStrID sidAlphaPercentage("AlphaPercentage");
 
-		const auto* pTech = _Effect->GetTechByInputSet(_CurrInputSet);
+		const auto* pTech = _Effect->GetTechByInputSet(NewInputSet);
 		n_assert_dbg(pTech);
 		if (!pTech) return;
 

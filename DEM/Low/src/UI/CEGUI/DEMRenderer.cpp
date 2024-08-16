@@ -249,14 +249,6 @@ GeometryBuffer& CDEMRenderer::createGeometryBufferColoured(RefCounted<RenderMate
 
 void CDEMRenderer::beginRendering()
 {
-	if (pShaderWrapperTextured)
-	{
-		pShaderWrapperTextured->resetInputSet();
-	}
-	if (pShaderWrapperColoured)
-	{
-		pShaderWrapperColoured->resetInputSet();
-	}
 }
 //---------------------------------------------------------------------
 
