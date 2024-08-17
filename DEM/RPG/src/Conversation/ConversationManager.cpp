@@ -97,13 +97,14 @@ std::map<Game::HEntity, PConversation>::iterator CConversationManager::CleanupCo
 {
 	if (It == _Conversations.cend()) return It;
 
-	if (_View) _View->OnConversationEnd(true);
+	const bool IsForeground = (It->first == _ForegroundConversation);
+
+	if (_View) _View->OnConversationEnd(IsForeground);
 
 	for (Game::HEntity Participant : It->second->Participants)
 		_Actors.erase(Participant);
 
-	if (It->first == _ForegroundConversation)
-		_ForegroundConversation = {};
+	if (IsForeground) _ForegroundConversation = {};
 
 	// Protect conversations from being deleted from inside their flow script
 	if (It->second->Player.IsPlaying())
@@ -211,6 +212,12 @@ bool CConversationManager::DisengageParticipant(Game::HEntity Key, Game::HEntity
 }
 //---------------------------------------------------------------------
 
+bool CConversationManager::DisengageParticipant(Game::HEntity Actor)
+{
+	return DisengageParticipant(GetConversationKey(Actor), Actor);
+}
+//---------------------------------------------------------------------
+
 size_t CConversationManager::GetParticipantCount(Game::HEntity Key) const
 {
 	auto It = _Conversations.find(Key);
@@ -236,10 +243,11 @@ void CConversationManager::Update(float dt)
 {
 	for (auto It = _Conversations.begin(); It != _Conversations.end(); /**/)
 	{
-		It->second->Player.Update(_Session, dt);
+		if (It->second)
+			It->second->Player.Update(_Session, dt);
 
 		if (!It->second)
-			It = _Conversations.erase(It); // Conversation was terminated from inside itself
+			It = _Conversations.erase(It); // Conversation was terminated from inside itself or externally
 		else if (It->second->Player.IsPlaying())
 			++It;
 		else

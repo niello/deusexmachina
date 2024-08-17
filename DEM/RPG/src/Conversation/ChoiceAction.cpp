@@ -24,7 +24,8 @@ void CChoiceAction::CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlo
 	{
 		// Skip answers of invalid speakers
 		auto* pWorld = Session.FindFeature<Game::CGameWorld>();
-		bool IsPhraseValid = pWorld && CanSpeak(*pWorld, Flow::ResolveEntityID(*pActionData, sidSpeaker, Root._pPlayer->GetVars()));
+		const auto Speaker = Flow::ResolveEntityID(*pActionData, sidSpeaker, Root._pPlayer->GetVars());
+		bool IsPhraseValid = pWorld && CanSpeak(*pWorld, Speaker) && CPhraseAction::IsMatchingConversation(Speaker, Session, Root._pPlayer->GetVars());
 		if (!IsPhraseValid && !DebugMode) return;
 
 		// In debug mode we didn't check a condition, do it now

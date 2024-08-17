@@ -11,6 +11,20 @@ FACTORY_CLASS_IMPL(DEM::RPG::CPhraseAction, 'PHRA', Flow::IFlowAction);
 static const CStrID sidSpeaker("Speaker");
 static const CStrID sidText("Text");
 static const CStrID sidTime("Time");
+static const CStrID sidConversationOwner("ConversationOwner");
+
+// Check that the phrase is said from the same conversation to which an actor is bound, including 'no conversation' case
+bool CPhraseAction::IsMatchingConversation(Game::HEntity Speaker, Game::CGameSession& Session, const Flow::CFlowVarStorage& Vars)
+{
+	auto* pConvMgr = Session.FindFeature<CConversationManager>();
+	if (!pConvMgr) return false;
+
+	const int Raw = Vars.Get<int>(Vars.Find(sidConversationOwner), static_cast<int>(Game::HEntity{}.Raw));
+	const Game::HEntity ConversationOwner{ static_cast<DEM::Game::HEntity::TRawValue>(Raw) };
+	const auto EngagedConvKey = pConvMgr->GetConversationKey(Speaker);
+	return EngagedConvKey == ConversationOwner;
+}
+//---------------------------------------------------------------------
 
 void CPhraseAction::OnStart(Game::CGameSession& Session)
 {
@@ -30,13 +44,17 @@ void CPhraseAction::Update(Flow::CUpdateContext& Ctx)
 		// Set this before SayPhrase call because it can set finished state immediately!
 		_State = EState::Started;
 
-		const float Time = _pPrototype->Params->Get<float>(sidTime, -1.f);
-
 		// NB: _PhraseEndConn unsubscribes in destructor so capturing raw 'this' is safe here as long as views don't store the callback in an unsafe way
-		if (auto pConvMgr = Ctx.pSession->FindFeature<CConversationManager>())
+		auto* pConvMgr = Ctx.pSession->FindFeature<CConversationManager>();
+		if (pConvMgr && IsMatchingConversation(_Speaker, *Ctx.pSession, _pPlayer->GetVars()))
+		{
+			const float Time = _pPrototype->Params->Get<float>(sidTime, -1.f);
 			_PhraseEndConn = pConvMgr->SayPhrase(_Speaker, std::move(TextStr), Time, [this](bool Ok) { _State = Ok ? EState::Finished : EState::Error; });
+		}
 		else
+		{
 			_State = EState::Finished;
+		}
 	}
 
 	if (_State == EState::Finished)

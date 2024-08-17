@@ -77,6 +77,7 @@ public:
 	bool                SetConversationMode(Game::HEntity Key, EConversationMode Mode);
 	bool                EngageParticipant(Game::HEntity Key, Game::HEntity Actor, bool Mandatory);
 	bool                DisengageParticipant(Game::HEntity Key, Game::HEntity Actor);
+	bool                DisengageParticipant(Game::HEntity Actor);
 	size_t              GetParticipantCount(Game::HEntity Key) const;
 	bool                IsParticipantMandatory(Game::HEntity Participant) const;
 	Game::HEntity       GetConversationKey(Game::HEntity Participant) const;

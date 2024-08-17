@@ -14,6 +14,7 @@ class CEngageInConversationAction : public Flow::IFlowAction
 protected:
 
 	Game::HEntity _Actor;
+	bool          _DisengageFromCurrent = false;
 	bool          _Optional = true;
 
 public:
