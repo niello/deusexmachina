@@ -83,7 +83,6 @@ void CChoiceAction::CollectChoices(CChoiceAction& Root, const Flow::CFlowActionD
 
 void CChoiceAction::OnStart(Game::CGameSession& Session)
 {
-	_Speaker = ResolveEntityID(sidSpeaker);
 	_ChoiceMadeConn = {};
 
 	auto* pConvMgr = Session.FindFeature<CConversationManager>();
@@ -93,7 +92,7 @@ void CChoiceAction::OnStart(Game::CGameSession& Session)
 	_ChoiceLinks.clear();
 	_ChoiceValidFlags.clear();
 	CollectChoices(*this, *_pPrototype, Session, DebugMode);
-	_Choice = _ChoiceLinks.size();
+	_Choice = std::nullopt;
 }
 //---------------------------------------------------------------------
 
@@ -105,14 +104,18 @@ void CChoiceAction::Update(Flow::CUpdateContext& Ctx)
 
 		// NB: _ChoiceMadeConn unsubscribes in destructor so capturing raw 'this' is safe here as long as views don't store the callback in an unsafe way
 		if (auto* pConvMgr = Ctx.pSession->FindFeature<CConversationManager>())
-			_ChoiceMadeConn = pConvMgr->ProvideChoices(_Speaker, std::move(_ChoiceTexts), std::move(_ChoiceValidFlags), [this](size_t Index) { _Choice = Index; });
+			_ChoiceMadeConn = pConvMgr->ProvideChoices(std::move(_ChoiceTexts), std::move(_ChoiceValidFlags), [this](size_t Index) { _Choice = Index; });
 		else
 			return Break(Ctx);
 	}
 
-	// TODO: can add processing for special _Choice values, e.g. forced break!
-	if (_Choice < _ChoiceLinks.size())
-		Goto(Ctx, _ChoiceLinks[_Choice]);
+	if (_Choice.has_value())
+	{
+		if (_Choice.value() < _ChoiceLinks.size())
+			Goto(Ctx, _ChoiceLinks[_Choice.value()]);
+		else
+			Break(Ctx);
+	}
 }
 //---------------------------------------------------------------------
 

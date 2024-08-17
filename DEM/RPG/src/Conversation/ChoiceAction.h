@@ -13,13 +13,11 @@ class CChoiceAction : public Flow::IFlowAction
 
 protected:
 
-	//!!!???TODO: allow choices to be from different speakers?! don't store speaker here, get it from phrase action when it is chosen and played!
-	Game::HEntity                       _Speaker;
 	std::vector<std::string>            _ChoiceTexts;
 	std::vector<const Flow::CFlowLink*> _ChoiceLinks;
 	std::vector<bool>                   _ChoiceValidFlags; // For debug, isn't filled when not in a conversation debug mode
 	Events::CConnection                 _ChoiceMadeConn;
-	size_t                              _Choice;
+	std::optional<size_t>               _Choice;
 
 	static void CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlowLink& Link, Game::CGameSession& Session, bool DebugMode);
 	static void CollectChoices(CChoiceAction& Root, const Flow::CFlowActionData& Curr, Game::CGameSession& Session, bool DebugMode);

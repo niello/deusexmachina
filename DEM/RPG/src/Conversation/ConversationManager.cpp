@@ -298,32 +298,14 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 }
 //---------------------------------------------------------------------
 
-Events::CConnection CConversationManager::ProvideChoices(Game::HEntity Actor, std::vector<std::string>&& Texts, std::vector<bool>&& ValidFlags, std::function<void(size_t)>&& OnChoose)
+Events::CConnection CConversationManager::ProvideChoices(std::vector<std::string>&& Texts, std::vector<bool>&& ValidFlags, std::function<void(size_t)>&& OnChoose)
 {
 	Events::CConnection Conn;
 
-	//???FIXME: need to specify an actor to provide choices to? Can be multiple actors!
-	auto ItActor = _Actors.find(Actor);
-	if (ItActor == _Actors.cend())
-	{
-		// Not engaged actor
-		//???or allow this?!
-		NOT_IMPLEMENTED; //!!!TODO: call OnChoose with some special value meaning not engaged actor!
-		return Conn;
-	}
-
-	auto* pWorld = _Session.FindFeature<Game::CGameWorld>();
-	if (!pWorld || !CanSpeak(*pWorld, Actor))
-	{
-		NOT_IMPLEMENTED; //!!!TODO: call OnChoose with some special value meaning mandatory/optional actor unable to speak!
-
-		return Conn;
-	}
-
 	if (_View && !Texts.empty())
-		Conn = _View->ProvideChoices(Actor, std::move(Texts), std::move(ValidFlags), std::move(OnChoose));
+		Conn = _View->ProvideChoices(std::move(Texts), std::move(ValidFlags), std::move(OnChoose));
 	else
-		NOT_IMPLEMENTED; //!!!TODO: call OnChoose with some special value meaning forced cancellation with no choice made!
+		OnChoose(Texts.size());
 
 	return Conn;
 }
