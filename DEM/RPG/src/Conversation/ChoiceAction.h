@@ -19,8 +19,8 @@ protected:
 	Events::CConnection                 _ChoiceMadeConn;
 	std::optional<size_t>               _Choice;
 
-	static void CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlowLink& Link, Game::CGameSession& Session, bool DebugMode);
-	static void CollectChoices(CChoiceAction& Root, const Flow::CFlowActionData& Curr, Game::CGameSession& Session, bool DebugMode);
+	static void CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlowLink& Link, Game::CGameSession& Session, bool DebugMode, bool IsValid);
+	static void CollectChoices(CChoiceAction& Root, const Flow::CFlowActionData& Curr, Game::CGameSession& Session, bool DebugMode, bool IsValid);
 
 public:
 

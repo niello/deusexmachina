@@ -14,7 +14,7 @@ FACTORY_CLASS_IMPL(DEM::RPG::CChoiceAction, 'CHOA', Flow::IFlowAction);
 static const CStrID sidSpeaker("Speaker");
 static const CStrID sidText("Text");
 
-void CChoiceAction::CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlowLink& Link, Game::CGameSession& Session, bool DebugMode)
+void CChoiceAction::CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlowLink& Link, Game::CGameSession& Session, bool DebugMode, bool IsValid)
 {
 	const auto* pActionData = Root._pPlayer->GetAsset()->FindAction(Link.DestID);
 	if (!pActionData) return;
@@ -25,12 +25,8 @@ void CChoiceAction::CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlo
 		// Skip answers of invalid speakers
 		auto* pWorld = Session.FindFeature<Game::CGameWorld>();
 		const auto Speaker = Flow::ResolveEntityID(*pActionData, sidSpeaker, Root._pPlayer->GetVars());
-		bool IsPhraseValid = pWorld && CanSpeak(*pWorld, Speaker) && CPhraseAction::IsMatchingConversation(Speaker, Session, Root._pPlayer->GetVars());
+		const bool IsPhraseValid = IsValid && pWorld && CanSpeak(*pWorld, Speaker) && CPhraseAction::IsMatchingConversation(Speaker, Session, Root._pPlayer->GetVars());
 		if (!IsPhraseValid && !DebugMode) return;
-
-		// In debug mode we didn't check a condition, do it now
-		if (DebugMode && IsPhraseValid)
-			IsPhraseValid = EvaluateCondition(Link.Condition, Session, Root._pPlayer->GetVars());
 
 		// Skip already reached answers
 		const auto It = std::find_if(Root._ChoiceLinks.cbegin(), Root._ChoiceLinks.cend(), [ID = Link.DestID](const auto* pLink) { return pLink->DestID == ID; });
@@ -52,30 +48,33 @@ void CChoiceAction::CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlo
 	else if (CChoiceAction::RTTI.IsBaseOf(pLinkedRTTI))
 	{
 		// Collect recursively. This is useful for grouping choices under the same condition.
-		CollectChoices(Root, *pActionData, Session, DebugMode);
+		CollectChoices(Root, *pActionData, Session, DebugMode, IsValid);
 	}
 	else if (Flow::CHubAction::RTTI.IsBaseOf(pLinkedRTTI))
 	{
 		// Process hubs transparently as if we executed through them using their rules
-		if (const auto* pNextLink = Flow::CHubAction::ChooseNext(*pActionData, Session, Root._pPlayer->GetVars(), Root._pPlayer->GetRNG()))
-			CollectChoicesFromLink(Root, *pNextLink, Session, DebugMode);
+		if (DebugMode)
+			CollectChoices(Root, *pActionData, Session, DebugMode, IsValid);
+		else if (const auto* pNextLink = Flow::CHubAction::ChooseNext(*pActionData, Session, Root._pPlayer->GetVars(), Root._pPlayer->GetRNG()))
+			CollectChoicesFromLink(Root, *pNextLink, Session, DebugMode, IsValid);
 	}
 	// Can add more supported types here
 }
 //---------------------------------------------------------------------
 
-void CChoiceAction::CollectChoices(CChoiceAction& Root, const Flow::CFlowActionData& Curr, Game::CGameSession& Session, bool DebugMode)
+void CChoiceAction::CollectChoices(CChoiceAction& Root, const Flow::CFlowActionData& Curr, Game::CGameSession& Session, bool DebugMode, bool IsValid)
 {
 	if (DebugMode)
 	{
-		for (const auto& Link : Root._pPrototype->Links)
-			CollectChoicesFromLink(Root, Link, Session, true);
+		// In debug mode all unavailable answers are listed too
+		for (const auto& Link : Curr.Links)
+			CollectChoicesFromLink(Root, Link, Session, true, IsValid && EvaluateCondition(Link.Condition, Session, Root._pPlayer->GetVars()));
 	}
 	else
 	{
 		ForEachValidLink(Curr, Session, Root._pPlayer->GetVars(), [&Root, &Session](size_t Index, const Flow::CFlowLink& Link)
 		{
-			CollectChoicesFromLink(Root, Link, Session, false);
+			CollectChoicesFromLink(Root, Link, Session, false, true);
 		});
 	}
 }
@@ -91,7 +90,7 @@ void CChoiceAction::OnStart(Game::CGameSession& Session)
 	_ChoiceTexts.clear();
 	_ChoiceLinks.clear();
 	_ChoiceValidFlags.clear();
-	CollectChoices(*this, *_pPrototype, Session, DebugMode);
+	CollectChoices(*this, *_pPrototype, Session, DebugMode, true);
 	_Choice = std::nullopt;
 }
 //---------------------------------------------------------------------
