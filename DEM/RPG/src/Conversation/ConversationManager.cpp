@@ -79,7 +79,8 @@ bool CConversationManager::StartConversation(Flow::PFlowAsset Asset, Game::HEnti
 	New->Player.GetVars().Set<int>(sidConversationInitiator, Initiator.Raw);
 	New->Player.GetVars().Set<int>(sidConversationOwner, Target.Raw);
 
-	_Conversations.emplace(Target, std::move(New));
+	// NB: an empty but not yet deleted record may exist from the previous conversation with this key
+	_Conversations.insert_or_assign(Target, std::move(New));
 
 	// Register first two mandatory participants, target first because it owns the conversation.
 	// Failure to engage one will automatically cancel the conversation.

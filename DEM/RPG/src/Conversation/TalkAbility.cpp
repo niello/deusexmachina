@@ -63,7 +63,7 @@ bool CTalkAbility::GetZones(const Game::CGameSession& Session, const Game::CAbil
 	if (!Out.empty()) return true;
 
 	//!!!FIXME: need some way to add zones! Store per-ability? May need unique zones. Use strong refs, not raw pointers?
-	static Game::CZone Zone(rtm::vector_zero(), 1.f);
+	static Game::CZone Zone(rtm::vector_zero(), 2.f);
 	Out.push_back(&Zone);
 	return true;
 }
@@ -75,7 +75,7 @@ bool CTalkAbility::GetFacingParams(const Game::CGameSession& Session, const Game
 	//???make this logic default???
 	Out.Mode = Game::EFacingMode::Point;
 	Out.Dir = vector3::Zero;
-	Out.Tolerance = 1.5f;
+	Out.Tolerance = 5.f;
 	return true;
 }
 //---------------------------------------------------------------------
@@ -85,6 +85,7 @@ void CTalkAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance& 
 	auto pConvMgr = Session.FindFeature<CConversationManager>();
 	if (!pConvMgr) return;
 
+	pConvMgr->DisengageParticipant(Instance.Targets[0].Entity);
 	pConvMgr->StartConversation(Instance.Actor, Instance.Targets[0].Entity);
 }
 //---------------------------------------------------------------------

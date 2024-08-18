@@ -56,6 +56,11 @@ void CPhraseAction::Update(Flow::CUpdateContext& Ctx)
 			_State = EState::Finished;
 		}
 	}
+	else if (_State == EState::Started)
+	{
+		if (!IsMatchingConversation(_Speaker, *Ctx.pSession, _pPlayer->GetVars()))
+			_State = EState::Finished;
+	}
 
 	if (_State == EState::Finished)
 		Goto(Ctx, GetFirstValidLink(*Ctx.pSession, _pPlayer->GetVars()));
