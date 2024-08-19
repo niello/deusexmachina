@@ -93,6 +93,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/StringUtils.h
 	DEM/Low/src/Data/SuperFastHash.h
 	DEM/Low/src/Data/TableT.h
+	DEM/Low/src/Data/TextResolver.h
 	DEM/Low/src/Data/Type.h
 	DEM/Low/src/Data/TypeTraits.h
 	DEM/Low/src/Data/VarStorage.h
@@ -409,6 +410,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Data/StringID.cpp
 	DEM/Low/src/Data/StringIDStorage.cpp
 	DEM/Low/src/Data/StringUtils.cpp
+	DEM/Low/src/Data/TextResolver.cpp
 	DEM/Low/src/Debug/DebugDraw.cpp
 	DEM/Low/src/Debug/DebugServer.cpp
 	DEM/Low/src/Debug/DebugUtils.cpp
