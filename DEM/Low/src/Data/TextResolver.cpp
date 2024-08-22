@@ -1,17 +1,18 @@
 #include "TextResolver.h"
 #include <System/System.h>
-//#include <stack>
 
-namespace DEM::Data
+namespace /*DEM::*/Data
 {
 
+//???TODO: instead of return value pass Output as arg? Can then reuse preallocated buffer in recursion and control preallocation better overall.
+//???how to avoid resolving text without '{'? Maybe pass input as In-Out string / buffer?
 std::string ITextResolver::Resolve(std::string_view Input)
 {
 	const size_t InputLength = Input.size();
 
 	//!!!TODO: more sophisticated estimation? count { and } braces on the top level and for each add max(id_len, max_expected_var_len)?
 	std::string Result;
-	Result.reserve(InputLength);
+	Result.reserve(Result.size() + InputLength);
 
 	//!!!TODO: limit nesting depth with e.g. 16 and use std::array + cursor?!
 	std::vector<size_t> BracePosStack;
@@ -24,63 +25,68 @@ std::string ITextResolver::Resolve(std::string_view Input)
 		if (Chr == '{')
 		{
 			if (i + 1 < InputLength && Input[i + 1] == '{')
-			{
-				Result += '{';
-				i += 2;
-			}
-			else
-			{
-				BracePosStack.push_back(Result.size());
-				Result += '{';
 				++i;
-			}
+			else
+				BracePosStack.push_back(Result.size());
+
+			// Write anyway because unresolved tokens are kept in result as is
+			Result += '{';
 		}
 		else if (Chr == '}')
 		{
+			// Token is sent to resolver with surrounding braces
+			Result += '}';
+
 			if (i + 1 < InputLength && Input[i + 1] == '}')
 			{
-				Result += '}';
-				i += 2;
+				++i;
 			}
-			else if (!BracePosStack.empty()) //!!!need to fire error if empty?!
+			else if (!BracePosStack.empty())
 			{
 				const size_t TokenStartPos = BracePosStack.back();
 				BracePosStack.pop_back();
-				std::string variable_id = Result.substr(TokenStartPos + 1, Result.size() - TokenStartPos - 2);
+				const auto Token = std::string_view{ Result }.substr(TokenStartPos);
 
-				// Attempt to resolve the variable
-				//!!!can pass result inside and use something like fmt::format_to(back_inserter), to avoid temporary var!
-				//!!!all resolvers then must write results to output string, not construct new one to return! And also can use retval for bool success then!
-				if (GetVariable(variable_id, Result))
+				// Attempt to resolve the token
+				// NB: resolvers should end reading Token before starting writing to Result!
+				if (ResolveToken(Token, Result))
 				{
-					// Replace the part of the result buffer starting from `{` with its resolved value
-					//!!!must happen inside? send position from which to start inserting? how to optimize?
-					//???can live without tmp string for var resolve result?
-					//Result.erase(TokenStartPos);
-					//Result += variable_value;
-
-					//!!!need to restart from substitution point, because substituted value can have tokens!!!
-					//!!!and must iterate result, not input!!! first copy one to another?! or use insertion in the middle? slow!!!
-					++i;
+					// Resolve tokens and escaped braces in a text resolved from the token
+					const auto ResolvedText = std::string_view{ Result }.substr(TokenStartPos);
+					if (ResolvedText.find('{') != std::string_view::npos || ResolvedText.find('}') != std::string_view::npos)
+					{
+						//!!!can resolve from found '{' or '}'! preceding text is verbatim!
+						const auto SubResult = Resolve(ResolvedText);
+						Result.erase(TokenStartPos);
+						Result += SubResult;
+					}
 				}
-				else
-				{
-					// Unresolved variable tokens are left in the text as is, so append `}` to complete it
-					Result += '}';
-					++i;
-				}
+			}
+			else
+			{
+				::Sys::Error("ITextResolver::Resolve() > closing brace '}' without matching opening brace '{'");
 			}
 		}
 		else
 		{
+			// Regular character, just add it to result
 			Result += Chr;
-			++i;
 		}
+
+		++i;
 	}
 
-	n_assert(Stack.empty());
+	n_assert2(BracePosStack.empty(), "ITextResolver::Resolve() > opening brace '{' without matching closing brace '}'");
 
 	return Result;
+}
+//---------------------------------------------------------------------
+
+bool CCompositeTextResolver::ResolveToken(std::string_view In, std::string& Out)
+{
+	for (auto& SubResolver : _SubResolvers)
+		if (ResolveToken(In, Out)) return true;
+	return false;
 }
 //---------------------------------------------------------------------
 

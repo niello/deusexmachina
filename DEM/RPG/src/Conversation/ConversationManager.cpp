@@ -6,6 +6,9 @@
 #include <Scripting/Flow/FlowPlayer.h>
 #include <Scripting/Flow/FlowAsset.h>
 
+//!!!DBG TMP!
+#include <Data/TextResolver.h>
+
 namespace DEM::RPG
 {
 static const CStrID sidConversationInitiator("ConversationInitiator");
@@ -289,6 +292,10 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 		//!!!TODO: calc recommended phrase duration! Can use VO duration, number of vowels in a text etc. Or do it in view?
 		Time = 3.f;
 	}
+
+	//!!!DBG TMP!
+	Data::CCompositeTextResolver TextResolver({});
+	Text = TextResolver.Resolve(Text);
 
 	if (_View)
 		Conn = _View->SayPhrase(Actor, std::move(Text), InInForegroundConversation(Actor), Time, std::move(OnEnd));
