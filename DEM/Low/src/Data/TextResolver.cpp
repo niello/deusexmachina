@@ -1,64 +1,82 @@
 #include "TextResolver.h"
 #include <System/System.h>
 
+using namespace std::string_view_literals;
+
 namespace /*DEM::*/Data
 {
 
-//???TODO: instead of return value pass Output as arg? Can then reuse preallocated buffer in recursion and control preallocation better overall.
-//???how to avoid resolving text without '{'? Maybe pass input as In-Out string / buffer?
-std::string ITextResolver::Resolve(std::string_view Input)
+void ITextResolver::ResolveTo(std::string_view In, std::string& Out)
 {
-	const size_t InputLength = Input.size();
+	const size_t InputLength = In.size();
 
 	//!!!TODO: more sophisticated estimation? count { and } braces on the top level and for each add max(id_len, max_expected_var_len)?
-	std::string Result;
-	Result.reserve(Result.size() + InputLength);
+	//could also remember pos of the first '{' then.
+	Out.reserve(Out.size() + InputLength);
 
-	//!!!TODO: limit nesting depth with e.g. 16 and use std::array + cursor?!
-	std::vector<size_t> BracePosStack;
-	BracePosStack.reserve(8);
+	constexpr size_t NestingLimit = 16;
+	std::array<size_t, NestingLimit> BracePosStack;
+	size_t CurrNesting = 0;
+
+	// Reusable buffer for possible recursive resolutions
+	std::string SubResult;
 
 	size_t i = 0;
 	while (i < InputLength)
 	{
-		const char Chr = Input[i];
+		const char Chr = In[i];
 		if (Chr == '{')
 		{
-			if (i + 1 < InputLength && Input[i + 1] == '{')
+			if (i + 1 < InputLength && In[i + 1] == '{')
+			{
+				// Skip second escaping brace
 				++i;
+			}
 			else
-				BracePosStack.push_back(Result.size());
+			{
+				if (CurrNesting < NestingLimit)
+					BracePosStack[CurrNesting] = Out.size();
+				else
+					::Sys::Error("ITextResolver::Resolve() > token nesting limit exceeded");
+				++CurrNesting;
+			}
 
-			// Write anyway because unresolved tokens are kept in result as is
-			Result += '{';
+			// Write always because unresolved tokens are also kept in result as is
+			Out += '{';
 		}
 		else if (Chr == '}')
 		{
 			// Token is sent to resolver with surrounding braces
-			Result += '}';
+			Out += '}';
 
-			if (i + 1 < InputLength && Input[i + 1] == '}')
+			if (i + 1 < InputLength && In[i + 1] == '}')
 			{
+				// Skip second escaping brace
 				++i;
 			}
-			else if (!BracePosStack.empty())
+			else if (CurrNesting > NestingLimit)
 			{
-				const size_t TokenStartPos = BracePosStack.back();
-				BracePosStack.pop_back();
-				const auto Token = std::string_view{ Result }.substr(TokenStartPos);
+				// Keep counting without resolving too deeply nested tokens
+				--CurrNesting;
+			}
+			else if (CurrNesting)
+			{
+				const size_t TokenStartPos = BracePosStack[--CurrNesting];
+				const auto Token = std::string_view{ Out }.substr(TokenStartPos);
 
 				// Attempt to resolve the token
-				// NB: resolvers should end reading Token before starting writing to Result!
-				if (ResolveToken(Token, Result))
+				// NB: resolvers should end reading Token before starting writing to Out because they point to the same location!
+				if (ResolveToken(Token, Out))
 				{
-					// Resolve tokens and escaped braces in a text resolved from the token
-					const auto ResolvedText = std::string_view{ Result }.substr(TokenStartPos);
-					if (ResolvedText.find('{') != std::string_view::npos || ResolvedText.find('}') != std::string_view::npos)
+					// Recursively resolve tokens and escaped braces in a text resolved from the token
+					const auto ResolvedText = std::string_view{ Out }.substr(TokenStartPos);
+					const size_t BracePos = ResolvedText.find_first_of("{}"sv);
+					if (BracePos != std::string_view::npos)
 					{
-						//!!!can resolve from found '{' or '}'! preceding text is verbatim!
-						const auto SubResult = Resolve(ResolvedText);
-						Result.erase(TokenStartPos);
-						Result += SubResult;
+						ResolveTo(ResolvedText.substr(BracePos), SubResult);
+						Out.erase(TokenStartPos + BracePos);
+						Out += SubResult;
+						SubResult.clear();
 					}
 				}
 			}
@@ -70,15 +88,13 @@ std::string ITextResolver::Resolve(std::string_view Input)
 		else
 		{
 			// Regular character, just add it to result
-			Result += Chr;
+			Out += Chr;
 		}
 
 		++i;
 	}
 
-	n_assert2(BracePosStack.empty(), "ITextResolver::Resolve() > opening brace '{' without matching closing brace '}'");
-
-	return Result;
+	n_assert2(!CurrNesting, "ITextResolver::Resolve() > opening brace '{' without matching closing brace '}'");
 }
 //---------------------------------------------------------------------
 
