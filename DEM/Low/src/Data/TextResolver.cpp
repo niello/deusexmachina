@@ -101,7 +101,7 @@ void ITextResolver::ResolveTo(std::string_view In, std::string& Out)
 bool CCompositeTextResolver::ResolveToken(std::string_view In, std::string& Out)
 {
 	for (auto& SubResolver : _SubResolvers)
-		if (ResolveToken(In, Out)) return true;
+		if (SubResolver->ResolveToken(In, Out)) return true;
 	return false;
 }
 //---------------------------------------------------------------------

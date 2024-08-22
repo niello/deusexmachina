@@ -22,6 +22,10 @@ public:
 
 class CCompositeTextResolver : public ITextResolver
 {
+protected:
+
+	std::vector<PTextResolver> _SubResolvers;
+
 public:
 
 	CCompositeTextResolver(std::initializer_list<PTextResolver> SubResolvers)
@@ -29,10 +33,28 @@ public:
 	{}
 
 	virtual bool ResolveToken(std::string_view In, std::string& Out) override;
+};
 
-protected:
+class CMapTextResolver : public ITextResolver
+{
+public:
 
-	std::vector<PTextResolver> _SubResolvers;
+	// TODO: can make improved versions with trie or with perfect hashing, e.g. for localization
+	// TODO: C++20 transparent comparator
+	std::unordered_map<std::string, std::string> _Map;
+
+	CMapTextResolver() = default;
+	CMapTextResolver(std::initializer_list<decltype(_Map)::value_type> Data)
+		: _Map(std::move(Data))
+	{}
+
+	virtual bool ResolveToken(std::string_view In, std::string& Out) override
+	{
+		auto It = _Map.find(std::string(In.substr(1, In.size() - 2)));
+		if (It == _Map.cend()) return false;
+		Out = It->second;
+		return true;
+	}
 };
 
 }
