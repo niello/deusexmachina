@@ -10,11 +10,31 @@ namespace /*DEM::*/Data
 {
 using PTextResolver = Ptr<class ITextResolver>;
 
+// A wrapper which combines overwriting and back-insertion
+class CStringAppender
+{
+public:
+
+	CStringAppender(std::string& Str, size_t Pos = 0) : _Str(Str), _Pos(Pos) {}
+
+	void Append(std::string_view Data)
+	{
+		_Str.erase(_Pos);
+		_Str.append(Data);
+		_Pos = _Str.size();
+	}
+
+protected:
+
+	std::string& _Str;
+	size_t       _Pos = 0;
+};
+
 class ITextResolver : public ::Data::CRefCounted
 {
 public:
 
-	virtual bool ResolveToken(std::string_view In, std::string& Out) = 0;
+	virtual bool ResolveToken(std::string_view In, CStringAppender Out) = 0;
 
 	std::string Resolve(std::string_view In) { std::string Result; ResolveTo(In, Result); return Result; }
 	void ResolveTo(std::string_view In, std::string& Out); //???TODO: return bool? if error or if no tokens in the source?
@@ -32,7 +52,7 @@ public:
 		: _SubResolvers(std::move(SubResolvers))
 	{}
 
-	virtual bool ResolveToken(std::string_view In, std::string& Out) override;
+	virtual bool ResolveToken(std::string_view In, CStringAppender Out) override;
 };
 
 class CMapTextResolver : public ITextResolver
@@ -48,11 +68,11 @@ public:
 		: _Map(std::move(Data))
 	{}
 
-	virtual bool ResolveToken(std::string_view In, std::string& Out) override
+	virtual bool ResolveToken(std::string_view In, CStringAppender Out) override
 	{
 		auto It = _Map.find(std::string(In.substr(1, In.size() - 2)));
 		if (It == _Map.cend()) return false;
-		Out = It->second;
+		Out.Append(It->second);
 		return true;
 	}
 };

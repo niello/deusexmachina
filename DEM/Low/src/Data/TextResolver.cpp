@@ -27,21 +27,14 @@ void ITextResolver::ResolveTo(std::string_view In, std::string& Out)
 		const char Chr = In[i];
 		if (Chr == '{')
 		{
-			if (i + 1 < InputLength && In[i + 1] == '{')
-			{
-				// Skip second escaping brace
-				++i;
-			}
+			if (CurrNesting < NestingLimit)
+				BracePosStack[CurrNesting] = Out.size();
 			else
-			{
-				if (CurrNesting < NestingLimit)
-					BracePosStack[CurrNesting] = Out.size();
-				else
-					::Sys::Error("ITextResolver::Resolve() > token nesting limit exceeded");
-				++CurrNesting;
-			}
+				::Sys::Error("ITextResolver::Resolve() > token nesting limit exceeded");
 
-			// Write always because unresolved tokens are also kept in result as is
+			++CurrNesting;
+
+			// Write because unresolved tokens are kept in result as is
 			Out += '{';
 		}
 		else if (Chr == '}')
@@ -49,12 +42,7 @@ void ITextResolver::ResolveTo(std::string_view In, std::string& Out)
 			// Token is sent to resolver with surrounding braces
 			Out += '}';
 
-			if (i + 1 < InputLength && In[i + 1] == '}')
-			{
-				// Skip second escaping brace
-				++i;
-			}
-			else if (CurrNesting > NestingLimit)
+			if (CurrNesting > NestingLimit)
 			{
 				// Keep counting without resolving too deeply nested tokens
 				--CurrNesting;
@@ -66,15 +54,15 @@ void ITextResolver::ResolveTo(std::string_view In, std::string& Out)
 
 				// Attempt to resolve the token
 				// NB: resolvers should end reading Token before starting writing to Out because they point to the same location!
-				if (ResolveToken(Token, Out))
+				if (ResolveToken(Token, { Out, TokenStartPos }))
 				{
 					// Recursively resolve tokens and escaped braces in a text resolved from the token
 					const auto ResolvedText = std::string_view{ Out }.substr(TokenStartPos);
-					const size_t BracePos = ResolvedText.find_first_of("{}"sv);
-					if (BracePos != std::string_view::npos)
+					const size_t SpecialChrPos = ResolvedText.find_first_of("\\{}"sv);
+					if (SpecialChrPos != std::string_view::npos)
 					{
-						ResolveTo(ResolvedText.substr(BracePos), SubResult);
-						Out.erase(TokenStartPos + BracePos);
+						ResolveTo(ResolvedText.substr(SpecialChrPos), SubResult);
+						Out.erase(TokenStartPos + SpecialChrPos);
 						Out += SubResult;
 						SubResult.clear();
 					}
@@ -83,6 +71,20 @@ void ITextResolver::ResolveTo(std::string_view In, std::string& Out)
 			else
 			{
 				::Sys::Error("ITextResolver::Resolve() > closing brace '}' without matching opening brace '{'");
+			}
+		}
+		else if (Chr == '\\' && (i + 1 < InputLength))
+		{
+			// Process escape sequences \\, \{ and \}
+			const char NextChar = In[i + 1];
+			if (NextChar == '\\' || NextChar == '{' || NextChar == '}')
+			{
+				++i;
+				Out += NextChar;
+			}
+			else
+			{
+				Out += Chr;
 			}
 		}
 		else
@@ -98,7 +100,7 @@ void ITextResolver::ResolveTo(std::string_view In, std::string& Out)
 }
 //---------------------------------------------------------------------
 
-bool CCompositeTextResolver::ResolveToken(std::string_view In, std::string& Out)
+bool CCompositeTextResolver::ResolveToken(std::string_view In, CStringAppender Out)
 {
 	for (auto& SubResolver : _SubResolvers)
 		if (SubResolver->ResolveToken(In, Out)) return true;

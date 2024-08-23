@@ -294,7 +294,7 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 	}
 
 	//!!!DBG TMP!
-	Data::CCompositeTextResolver TextResolver({ new Data::CMapTextResolver({ { "Conv_test_bg_2", "Text{val}2" }, { "val", " " } }) });
+	Data::CCompositeTextResolver TextResolver({ new Data::CMapTextResolver({ { "Conv_test_bg_2", "\\{Text{val}2\\}" }, { "val", " " }, { "num", "2" } }) });
 	Text = TextResolver.Resolve(Text);
 
 	if (_View)
