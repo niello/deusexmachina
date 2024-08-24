@@ -82,11 +82,24 @@ public:
 		return (It == _VarsByID.cend()) ? HVar{} : It->second;
 	}
 
+	HVar Find(std::string_view IDStr) const
+	{
+		const auto ID = CStrID::Find(IDStr);
+		return ID ? Find(ID) : HVar{};
+	}
+
 	template<typename T>
 	HVar Find(CStrID ID) const
 	{
 		const auto It = _VarsByID.find(ID);
 		return (It == _VarsByID.cend() || !IsA<T>(It->second)) ? HVar{} : It->second;
+	}
+
+	template<typename T>
+	HVar Find(std::string_view IDStr) const
+	{
+		const auto ID = CStrID::Find(IDStr);
+		return ID ? Find<T>(ID) : HVar{};
 	}
 
 	template<typename T>

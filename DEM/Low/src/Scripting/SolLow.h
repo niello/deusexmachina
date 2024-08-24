@@ -51,6 +51,7 @@ void RegisterSignalType(sol::state& State)
 }
 //---------------------------------------------------------------------
 
+// TODO: return std::string_view instead of const char*?
 template<typename F>
 void ObjectToString(const sol::object& Object, sol::state_view& State, F Callback)
 {

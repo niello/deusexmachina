@@ -95,6 +95,7 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 	);
 	sol::table HEntityTable = State["HEntity"];
 	HEntityTable.set("Empty", DEM::Game::HEntity{});
+	HEntityTable.set("From", [](DEM::Game::HEntity::TRawValue Raw) { return DEM::Game::HEntity{ Raw }; });
 
 	State.new_usertype<DEM::Game::CSmartObjectComponent>("CSmartObjectComponent"
 		, "CurrState", &DEM::Game::CSmartObjectComponent::CurrState

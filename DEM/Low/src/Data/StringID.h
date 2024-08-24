@@ -22,6 +22,8 @@ protected:
 
 public:
 
+	static CStringID Find(std::string_view Str);
+
 	static const CStringID Empty;
 
 	CStringID() = default;

@@ -8,6 +8,7 @@
 
 //!!!DBG TMP!
 #include <Data/VarStorageTextResolver.h>
+#include <Data/LuaTextResolver.h>
 
 namespace DEM::RPG
 {
@@ -294,10 +295,13 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 	}
 
 	//!!!DBG TMP!
+	sol::environment Env(_Session.GetScriptState(), sol::create, _Session.GetScriptState().globals());
+	Env["Vars"] = &_Conversations[ItActor->second.ConversationKey]->Player.GetVars();
 	Data::CCompositeTextResolver TextResolver(
 		{
 			new Data::CMapTextResolver({ { "Conv_test_bg_2", "\\{Text{val}2\\}" }, { "val", " " }, { "num", "2" } }),
-			Data::CreateTextResolver(_Conversations[ItActor->second.ConversationKey]->Player.GetVars())
+			Data::CreateTextResolver(_Conversations[ItActor->second.ConversationKey]->Player.GetVars()),
+			Data::CreateTextResolver(_Session.GetScriptState(), Env)
 		});
 	Text = TextResolver.Resolve(Text);
 

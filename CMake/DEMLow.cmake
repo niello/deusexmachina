@@ -68,6 +68,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/KeyList.h
 	DEM/Low/src/Data/LineBuffer.h
 	DEM/Low/src/Data/List.h
+	DEM/Low/src/Data/LuaTextResolver.h
 	DEM/Low/src/Data/MemberAccess.h
 	DEM/Low/src/Data/Metadata.h
 	DEM/Low/src/Data/MurmurHash3.h
@@ -405,6 +406,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Data/DataScheme.cpp
 	DEM/Low/src/Data/HandleManager.cpp
 	DEM/Low/src/Data/HRDParser.cpp
+	DEM/Low/src/Data/LuaTextResolver.cpp
 	DEM/Low/src/Data/MurmurHash3.cpp
 	DEM/Low/src/Data/Params.cpp
 	DEM/Low/src/Data/ParamsTextResolver.cpp

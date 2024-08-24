@@ -21,7 +21,9 @@ public:
 
 	virtual bool ResolveToken(std::string_view In, CStringAppender Out) override
 	{
-		if (auto Handle = _Vars.Find(CStrID(In.substr(1, In.size() - 2))))
+		//!!!DBG TMP! Need to fix CStrID expecting a null terminated string!!!
+		//if (auto Handle = _Vars.Find(In.substr(1, In.size() - 2)))
+		if (auto Handle = _Vars.Find(std::string(In.substr(1, In.size() - 2))))
 		{
 			//!!!TODO: need to implement CVarStorage::Visit with return value, like std::visit!
 			_Vars.Visit(Handle, [&Out](auto&& SubValue) { Out.Append(StringUtils::ToString(SubValue)); });

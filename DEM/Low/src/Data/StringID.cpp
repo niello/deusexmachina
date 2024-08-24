@@ -12,6 +12,12 @@ CStringIDStorage& GetStorage()
 }
 //---------------------------------------------------------------------
 
+CStringID CStringID::Find(std::string_view Str)
+{
+	return GetStorage().Get(Str);
+}
+//---------------------------------------------------------------------
+
 CStringID::CStringID(std::string_view Str, bool OnlyExisting)
 	: pString(Str.empty() ? CStringID::Empty.CStr() : OnlyExisting ? GetStorage().Get(Str).CStr() : GetStorage().GetOrAdd(Str).CStr())
 {
