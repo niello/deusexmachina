@@ -1,34 +1,16 @@
 #pragma once
 #include <Data/Ptr.h>
 #include <Data/RefCounted.h>
-#include <string_view>
+#include <Data/StringUtils.h>
 
 // A base class for resolving text string with embedded variables.
-// Subclass this class for different variable logic.
+// Subclass ITextResolver for different variable logic.
+// Some common implementations are included in this header.
 
 namespace /*DEM::*/Data
 {
 using PTextResolver = Ptr<class ITextResolver>;
-
-// A wrapper which combines overwriting and back-insertion
-class CStringAppender
-{
-public:
-
-	CStringAppender(std::string& Str, size_t Pos = 0) : _Str(Str), _Pos(Pos) {}
-
-	void Append(std::string_view Data)
-	{
-		_Str.erase(_Pos);
-		_Str.append(Data);
-		_Pos = _Str.size();
-	}
-
-protected:
-
-	std::string& _Str;
-	size_t       _Pos = 0;
-};
+using CStringAppender = StringUtils::CStringAppender;
 
 class ITextResolver : public ::Data::CRefCounted
 {

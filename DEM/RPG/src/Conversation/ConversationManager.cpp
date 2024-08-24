@@ -7,7 +7,7 @@
 #include <Scripting/Flow/FlowAsset.h>
 
 //!!!DBG TMP!
-#include <Data/TextResolver.h>
+#include <Data/VarStorageTextResolver.h>
 
 namespace DEM::RPG
 {
@@ -294,7 +294,11 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 	}
 
 	//!!!DBG TMP!
-	Data::CCompositeTextResolver TextResolver({ new Data::CMapTextResolver({ { "Conv_test_bg_2", "\\{Text{val}2\\}" }, { "val", " " }, { "num", "2" } }) });
+	Data::CCompositeTextResolver TextResolver(
+		{
+			new Data::CMapTextResolver({ { "Conv_test_bg_2", "\\{Text{val}2\\}" }, { "val", " " }, { "num", "2" } }),
+			Data::CreateTextResolver(_Conversations[ItActor->second.ConversationKey]->Player.GetVars())
+		});
 	Text = TextResolver.Resolve(Text);
 
 	if (_View)

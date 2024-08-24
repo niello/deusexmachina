@@ -106,15 +106,16 @@ CString FromMatrix44(const matrix44& m)
 
 bool ToBool(const char* pStr)
 {
-	static const char* Bools[] = { "no", "yes", "off", "on", "false", "true", nullptr };
-	int i = 0;
-	while (Bools[i])
-	{
-		if (!n_stricmp(Bools[i], pStr)) return (i & 1);
-		++i;
-	}
+	constexpr char* True[] = { "true", "1", "yes", "on" };
+	for (auto* pBool : True)
+		if (!n_stricmp(pBool, pStr)) return true;
+
+	constexpr char* False[] = { "false", "0", "no", "off" };
+	for (auto* pBool : False)
+		if (!n_stricmp(pBool, pStr)) return false;
+
 	Sys::Error("Invalid string value for bool!\n");
-	FAIL;
+	return false;
 }
 //---------------------------------------------------------------------
 

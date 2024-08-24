@@ -74,6 +74,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/PairT.h
 	DEM/Low/src/Data/Param.h
 	DEM/Low/src/Data/Params.h
+	DEM/Low/src/Data/ParamsTextResolver.h
 	DEM/Low/src/Data/ParamsUtils.h
 	DEM/Low/src/Data/Ptr.h
 	DEM/Low/src/Data/QuadTree.h
@@ -97,6 +98,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/Type.h
 	DEM/Low/src/Data/TypeTraits.h
 	DEM/Low/src/Data/VarStorage.h
+	DEM/Low/src/Data/VarStorageTextResolver.h
 	DEM/Low/src/Data/XMLDocument.h
 	DEM/Low/src/Debug/DebugDraw.h
 	DEM/Low/src/Debug/DebugServer.h
@@ -405,6 +407,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Data/HRDParser.cpp
 	DEM/Low/src/Data/MurmurHash3.cpp
 	DEM/Low/src/Data/Params.cpp
+	DEM/Low/src/Data/ParamsTextResolver.cpp
 	DEM/Low/src/Data/ParamsUtils.cpp
 	DEM/Low/src/Data/String.cpp
 	DEM/Low/src/Data/StringID.cpp

@@ -61,6 +61,16 @@ inline bool operator <(const char* a, CStringID b)
 	return std::strcmp(a, b.CStr()) < 0;
 }
 
+inline bool operator ==(std::string_view a, CStringID b)
+{
+	return a == b.ToStringView();
+}
+
+inline bool operator ==(CStringID a, std::string_view b)
+{
+	return a.ToStringView() == b;
+}
+
 }
 
 typedef Data::CStringID CStrID;
