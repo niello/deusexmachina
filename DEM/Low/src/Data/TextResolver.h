@@ -37,6 +37,12 @@ public:
 	virtual bool ResolveToken(std::string_view In, CStringAppender Out) override;
 };
 
+inline PTextResolver CreateTextResolver(std::initializer_list<PTextResolver> SubResolvers)
+{
+	return new CCompositeTextResolver(std::move(SubResolvers));
+}
+//---------------------------------------------------------------------
+
 class CMapTextResolver : public ITextResolver
 {
 public:
@@ -46,7 +52,7 @@ public:
 	std::unordered_map<std::string, std::string> _Map;
 
 	CMapTextResolver() = default;
-	CMapTextResolver(std::initializer_list<decltype(_Map)::value_type> Data)
+	CMapTextResolver(std::initializer_list<std::pair<const std::string, std::string>> Data)
 		: _Map(std::move(Data))
 	{}
 
@@ -58,5 +64,11 @@ public:
 		return true;
 	}
 };
+
+inline PTextResolver CreateTextResolver(std::initializer_list<std::pair<const std::string, std::string>> Data)
+{
+	return new CMapTextResolver(std::move(Data));
+}
+//---------------------------------------------------------------------
 
 }

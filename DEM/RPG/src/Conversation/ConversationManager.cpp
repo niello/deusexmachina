@@ -299,7 +299,7 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 	Env["Vars"] = &_Conversations[ItActor->second.ConversationKey]->Player.GetVars();
 	Data::CCompositeTextResolver TextResolver(
 		{
-			new Data::CMapTextResolver({ { "Conv_test_bg_2", "\\{Text{val}2\\}" }, { "val", " " }, { "num", "2" } }),
+			Data::CreateTextResolver({ { "Conv_test_bg_2", "\\{Text{val}2\\}" }, { "val", " " }, { "num", "2" } }),
 			Data::CreateTextResolver(_Conversations[ItActor->second.ConversationKey]->Player.GetVars()),
 			Data::CreateTextResolver(_Session.GetScriptState(), Env)
 		});
