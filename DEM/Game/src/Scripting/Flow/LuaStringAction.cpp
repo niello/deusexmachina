@@ -14,11 +14,9 @@ void CLuaStringAction::Update(Flow::CUpdateContext& Ctx)
 	const std::string_view Code = _pPrototype->Params->Get<CString>(sidCode, CString::Empty);
 	if (!Code.empty())
 	{
-		auto LuaFn = Ctx.pSession->GetScriptState().load("local Vars = ...; " + std::string(Code));
-		if (!LuaFn.valid())
-			return Throw(Ctx, LuaFn.get<sol::error>().what(), false);
-
-		auto Result = LuaFn.get<sol::function>()(_pPlayer->GetVars());
+		sol::environment Env(Ctx.pSession->GetScriptState(), sol::create, Ctx.pSession->GetScriptState().globals());
+		Env["Vars"] = &_pPlayer->GetVars();
+		auto Result = Ctx.pSession->GetScriptState().script(Code, Env);
 		if (!Result.valid())
 			return Throw(Ctx, Result.get<sol::error>().what(), false);
 	}

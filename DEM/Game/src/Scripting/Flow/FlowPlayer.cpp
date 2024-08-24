@@ -112,14 +112,9 @@ bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, 
 		const std::string_view Code = Cond.Params->Get<CString>(sidCode, CString::Empty);
 		if (Code.empty()) return true;
 
-		auto LuaFn = Session.GetScriptState().load("local Vars = ...; return " + std::string(Code));
-		if (!LuaFn.valid())
-		{
-			::Sys::Error(LuaFn.get<sol::error>().what());
-			return false;
-		}
-
-		auto Result = LuaFn.get<sol::function>()(Vars);
+		sol::environment Env(Session.GetScriptState(), sol::create, Session.GetScriptState().globals());
+		Env["Vars"] = &Vars;
+		auto Result = Session.GetScriptState().script("return " + std::string(Code), Env);
 		if (!Result.valid())
 		{
 			::Sys::Error(Result.get<sol::error>().what());
