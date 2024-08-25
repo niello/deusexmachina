@@ -58,15 +58,9 @@ CStringID CStringIDStorage::Get(std::string_view Str) const
 	}
 	else if (Chain.size() > 1)
 	{
-		CRecord CmpRec;
-		CmpRec.Hash = HashValue;
-		CmpRec.pStr = Str.data();
-
-		// FIXME: assumes null terminated Str, must be fixed!!!
-		n_assert(Str.data()[Str.size()] == 0);
-
-		auto It = std::lower_bound(Chain.cbegin(), Chain.cend(), CmpRec);
-		if (It != Chain.cend()) return CStringID(It->pStr, 0, 0);
+		auto It = std::lower_bound(Chain.begin(), Chain.end(), Str, [](const auto& Elm, std::string_view Value) { return std::string_view{ Elm.pStr } < Value; });
+		if (It != Chain.end() && It->Hash == HashValue && It->pStr == Str)
+			return CStringID(It->pStr, 0, 0);
 	}
 	return CStringID::Empty;
 }
@@ -88,17 +82,8 @@ CStringID CStringIDStorage::GetOrAdd(std::string_view Str)
 	}
 	else if (Chain.size() > 1)
 	{
-		// If equal element found, FindClosestIndexSorted() returns the next index for
-		// insertion optimality. So, equal element must be referenced as [Idx - 1].
-		CRecord CmpRec;
-		CmpRec.Hash = HashValue;
-		CmpRec.pStr = Str.data();
-
-		// FIXME: assumes null terminated Str, must be fixed!!!
-		n_assert(Str.data()[Str.size()] == 0);
-
-		InsertPos = std::lower_bound(Chain.begin(), Chain.end(), CmpRec);
-		if (InsertPos != Chain.end() && *InsertPos == CmpRec)
+		InsertPos = std::lower_bound(Chain.begin(), Chain.end(), Str, [](const auto& Elm, std::string_view Value) { return std::string_view{ Elm.pStr } < Value; });
+		if (InsertPos != Chain.end() && InsertPos->Hash == HashValue && InsertPos->pStr == Str)
 			return CStringID(InsertPos->pStr, 0, 0);
 #ifdef _DEBUG
 		++Stats_CollisionCount;
@@ -107,6 +92,7 @@ CStringID CStringIDStorage::GetOrAdd(std::string_view Str)
 
 	const char* pStoredStr = StoreString(Str);
 
+	//???maybe better is to sort by hash valua and inside by string, or even don't sort inside and linearly check colliding strings!
 	CRecord CmpRec;
 	CmpRec.Hash = HashValue;
 	CmpRec.pStr = pStoredStr;
