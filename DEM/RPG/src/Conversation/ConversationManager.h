@@ -16,6 +16,11 @@ namespace DEM::Flow
 	using PFlowAsset = Ptr<class CFlowAsset>;
 }
 
+namespace /*DEM::*/Data
+{
+	using PTextResolver = Ptr<class ITextResolver>;
+}
+
 namespace DEM::RPG
 {
 using PConversation = std::unique_ptr<struct CConversation>;
@@ -60,6 +65,7 @@ protected:
 	std::map<Game::HEntity, CActorInfo>    _Actors;
 	Game::HEntity                          _ForegroundConversation;
 	PConversationView                      _View;
+	Data::PTextResolver                    _LocalizationResolver;
 	bool                                   _DebugMode = false;
 
 	bool                                             EngageParticipantInternal(Game::HEntity Key, Game::HEntity Actor, bool Mandatory);
@@ -87,7 +93,7 @@ public:
 
 	void                Update(float dt);
 
-	Events::CConnection SayPhrase(Game::HEntity Actor, std::string&& Text, float Time = -1.f, std::function<void(bool)>&& OnEnd = nullptr);
+	Events::CConnection SayPhrase(Game::HEntity Actor, std::string_view Text, float Time = -1.f, std::function<void(bool)>&& OnEnd = nullptr);
 	Events::CConnection ProvideChoices(std::vector<std::string>&& Texts, std::vector<bool>&& ValidFlags, std::function<void(size_t)>&& OnChoose);
 	IConversationView*  GetView() const { return _View.get(); }
 

@@ -38,7 +38,7 @@ void CPhraseAction::Update(Flow::CUpdateContext& Ctx)
 {
 	if (_State == EState::Created)
 	{
-		std::string TextStr = _pPrototype->Params->Get<CString>(sidText, CString::Empty).CStr();
+		std::string_view TextStr = _pPrototype->Params->Get<CString>(sidText, CString::Empty);
 		if (TextStr.empty()) return Break(Ctx);
 
 		// Set this before SayPhrase call because it can set finished state immediately!
@@ -49,7 +49,7 @@ void CPhraseAction::Update(Flow::CUpdateContext& Ctx)
 		if (pConvMgr && IsMatchingConversation(_Speaker, *Ctx.pSession, _pPlayer->GetVars()))
 		{
 			const float Time = _pPrototype->Params->Get<float>(sidTime, -1.f);
-			_PhraseEndConn = pConvMgr->SayPhrase(_Speaker, std::move(TextStr), Time, [this](bool Ok) { _State = Ok ? EState::Finished : EState::Error; });
+			_PhraseEndConn = pConvMgr->SayPhrase(_Speaker, std::string(TextStr), Time, [this](bool Ok) { _State = Ok ? EState::Finished : EState::Error; });
 		}
 		else
 		{

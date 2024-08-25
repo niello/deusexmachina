@@ -17,8 +17,9 @@ static const CStrID sidConversationOwner("ConversationOwner");
 
 struct CConversation
 {
-	Flow::CFlowPlayer       Player;
-	std::set<Game::HEntity> Participants; //???FIXME: need this or iterate _BusyActors?!
+	Flow::CFlowPlayer            Player;
+	Data::CCompositeTextResolver TextResolver;
+	std::set<Game::HEntity>      Participants; //???FIXME: need this or iterate _BusyActors?!
 	// TODO: persistent data, e.g. visited phrases. Load here or keep in a separate collection in a manager?
 	// Can also store in persistent data last checkpoint action ID when conv was interrupted! To start not from beginning!
 };
@@ -43,6 +44,8 @@ CConversationManager::CConversationManager(Game::CGameSession& Owner, PConversat
 	: _Session(Owner)
 	, _View(std::move(View))
 {
+	//!!!DBG TMP! // TODO: need real localization table! And language switching on the fly!
+	_LocalizationResolver = Data::CreateTextResolver({ { "Conv_test_bg_2", "\\{Text{val}2\\}" }, { "val", " " }, { "num", "2" } });
 }
 //---------------------------------------------------------------------
 
@@ -82,6 +85,12 @@ bool CConversationManager::StartConversation(Flow::PFlowAsset Asset, Game::HEnti
 
 	New->Player.GetVars().Set<int>(sidConversationInitiator, Initiator.Raw);
 	New->Player.GetVars().Set<int>(sidConversationOwner, Target.Raw);
+
+	sol::environment Env(_Session.GetScriptState(), sol::create, _Session.GetScriptState().globals());
+	Env["Vars"] = &New->Player.GetVars();
+	New->TextResolver._SubResolvers.push_back(_LocalizationResolver);
+	New->TextResolver._SubResolvers.push_back(Data::CreateTextResolver(New->Player.GetVars()));
+	New->TextResolver._SubResolvers.push_back(Data::CreateTextResolver(_Session.GetScriptState(), Env));
 
 	// NB: an empty but not yet deleted record may exist from the previous conversation with this key
 	_Conversations.insert_or_assign(Target, std::move(New));
@@ -266,7 +275,7 @@ void CConversationManager::Update(float dt)
 }
 //---------------------------------------------------------------------
 
-Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::string&& Text, float Time, std::function<void(bool)>&& OnEnd)
+Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::string_view Text, float Time, std::function<void(bool)>&& OnEnd)
 {
 	Events::CConnection Conn;
 
@@ -288,27 +297,20 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 		return Conn;
 	}
 
+	if (!_View)
+	{
+		OnEnd(true);
+		return Conn;
+	}
+
 	if (Time < 0.f)
 	{
-		//!!!TODO: calc recommended phrase duration! Can use VO duration, number of vowels in a text etc. Or do it in view?
+		//!!!TODO: calc recommended phrase duration after TextResolver.Resolve()! Can use VO duration, number of vowels in a text etc. Or do it in view?
 		Time = 3.f;
 	}
 
-	//!!!DBG TMP!
-	sol::environment Env(_Session.GetScriptState(), sol::create, _Session.GetScriptState().globals());
-	Env["Vars"] = &_Conversations[ItActor->second.ConversationKey]->Player.GetVars();
-	Data::CCompositeTextResolver TextResolver(
-		{
-			Data::CreateTextResolver({ { "Conv_test_bg_2", "\\{Text{val}2\\}" }, { "val", " " }, { "num", "2" } }),
-			Data::CreateTextResolver(_Conversations[ItActor->second.ConversationKey]->Player.GetVars()),
-			Data::CreateTextResolver(_Session.GetScriptState(), Env)
-		});
-	Text = TextResolver.Resolve(Text);
-
-	if (_View)
-		Conn = _View->SayPhrase(Actor, std::move(Text), InInForegroundConversation(Actor), Time, std::move(OnEnd));
-	else
-		OnEnd(true);
+	const auto ConvKey = ItActor->second.ConversationKey;
+	Conn = _View->SayPhrase(Actor, _Conversations[ConvKey]->TextResolver.Resolve(Text), (ConvKey == _ForegroundConversation), Time, std::move(OnEnd));
 
 	return Conn;
 }

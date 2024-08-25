@@ -24,12 +24,11 @@ public:
 
 class CCompositeTextResolver : public ITextResolver
 {
-protected:
+public:
 
 	std::vector<PTextResolver> _SubResolvers;
 
-public:
-
+	CCompositeTextResolver() = default;
 	CCompositeTextResolver(std::initializer_list<PTextResolver> SubResolvers)
 		: _SubResolvers(std::move(SubResolvers))
 	{}
