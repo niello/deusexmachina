@@ -83,19 +83,15 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 		//, "FindEntity", [](DEM::Game::CGameWorld& Self, DEM::Game::HEntity EntityID) { return sol::nil;  }
 	);
 
-	State.new_usertype<DEM::Game::HEntity>("HEntity"
+	auto UT_HEntity = State.new_usertype<DEM::Game::HEntity>("HEntity"
 		, sol::constructors<sol::types<>, sol::types<const DEM::Game::HEntity&>>()
-		, sol::meta_function::to_string, &DEM::Game::EntityToString
-		, sol::meta_function::concatenation, sol::overload(
-			[](const char* a, DEM::Game::HEntity b) { return a + DEM::Game::EntityToString(b); }
-			, [](DEM::Game::HEntity a, const char* b) { return DEM::Game::EntityToString(a) + b; })
-		, "IsValid", [](DEM::Game::HEntity e) { return !!e; }
-		, "IsEmpty", [](DEM::Game::HEntity e) { return !e; }
-		, "Raw", &DEM::Game::HEntity::Raw
 	);
-	sol::table HEntityTable = State["HEntity"];
-	HEntityTable.set("Empty", DEM::Game::HEntity{});
-	HEntityTable.set("From", [](DEM::Game::HEntity::TRawValue Raw) { return DEM::Game::HEntity{ Raw }; });
+	UT_HEntity.set("IsValid", [](DEM::Game::HEntity e) { return !!e; });
+	UT_HEntity.set("IsEmpty", [](DEM::Game::HEntity e) { return !e; });
+	UT_HEntity.set("Raw", &DEM::Game::HEntity::Raw);
+	UT_HEntity.set("From", [](DEM::Game::HEntity::TRawValue Raw) { return DEM::Game::HEntity{ Raw }; });
+	UT_HEntity.set("Empty", sol::var(DEM::Game::HEntity{}));
+	RegisterStringOperations(UT_HEntity);
 
 	State.new_usertype<DEM::Game::CSmartObjectComponent>("CSmartObjectComponent"
 		, "CurrState", &DEM::Game::CSmartObjectComponent::CurrState

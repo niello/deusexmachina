@@ -2,8 +2,11 @@
 #include <sol/sol.hpp>
 #include <Data/Ptr.h>
 #include <Data/StringID.h>
+#include <Data/StringUtils.h>
 
 // Wrapper for Sol header with template overrides required for DEM Low layer
+
+using namespace std::string_view_literals;
 
 namespace sol
 {
@@ -20,15 +23,8 @@ struct unique_usertype_traits<Ptr<T>>
 	typedef Ptr<T> actual_type;
 	static constexpr bool value = true;
 
-	static bool is_null(const actual_type& ptr)
-	{
-		return !ptr;
-	}
-
-	static type* get(const actual_type& ptr)
-	{
-		return ptr.Get();
-	}
+	static bool  is_null(const actual_type& ptr) { return !ptr; }
+	static type* get(const actual_type& ptr) { return ptr.Get(); }
 };
 
 }
@@ -51,24 +47,50 @@ void RegisterSignalType(sol::state& State)
 }
 //---------------------------------------------------------------------
 
-// TODO: return std::string_view instead of const char*?
+template<typename T>
+void RegisterStringOperations(sol::usertype<T>& Usertype)
+{
+	// TODO: need a trait for the matching overload type or address to bind ToString directly!
+	// Now casting fails because some overloads accept T and others accept const T&.
+	Usertype.set(sol::meta_function::to_string, [](const T& Value) { return StringUtils::ToString(Value); });
+
+	Usertype.set(sol::meta_function::concatenation, sol::overload(
+		[](std::string_view a, const T& b)
+		{
+			// TODO: ToString writing to the Out param would help here!
+			std::string bStr = StringUtils::ToString(b);
+			std::string Result;
+			Result.reserve(a.size() + bStr.size());
+			return Result.append(a).append(bStr);
+		},
+		[](const T& a, std::string_view b) { return StringUtils::ToString(a).append(b); }));
+}
+//---------------------------------------------------------------------
+
 template<typename F>
-void ObjectToString(const sol::object& Object, sol::state_view& State, F Callback)
+auto ObjectToString(const sol::object& Object, sol::state_view& State, F Callback)
 {
 	const auto ObjType = Object.get_type();
-	if (ObjType == sol::type::string)
+	switch (ObjType)
 	{
-		Callback(Object.as<const char*>());
-	}
-	else
-	{
-		auto Result = State["tostring"](Object);
-		if (Result.valid() && Result.get_type() == sol::type::string)
+		case sol::type::none:    return Callback(""sv);
+		case sol::type::nil:     return Callback("nil"sv);
+		case sol::type::string:  return Callback(Object.as<std::string_view>());
+		case sol::type::boolean: return Callback(StringUtils::ToString(Object.as<bool>()));
+		case sol::type::number:
 		{
-			Callback(Result.get<const char*>());
+			if (Object.is<size_t>()) return Callback(StringUtils::ToString(Object.as<size_t>()));
+			if (Object.is<intptr_t>()) return Callback(StringUtils::ToString(Object.as<intptr_t>()));
+			return Callback(StringUtils::ToString(Object.as<double>()));
 		}
-		else
+		default:
 		{
+			// Try converting an object via Lua tostring. For DEM classes it is frequently bound to StringUtils::ToString(T).
+			auto Result = State["tostring"](Object);
+			if (Result.valid() && Result.get_type() == sol::type::string)
+				return Callback(Result.get<std::string_view>());
+
+			// Print a name of a non-printable type for easier debugging
 			std::string TypeName;
 			if (ObjType == sol::type::table || ObjType == sol::type::userdata)
 			{
@@ -83,7 +105,7 @@ void ObjectToString(const sol::object& Object, sol::state_view& State, F Callbac
 				TypeName = sol::type_name(State, ObjType);
 			}
 
-			Callback(("Non-printable object of type " + TypeName).c_str());
+			return Callback("Non-printable object of type " + TypeName);
 		}
 	}
 }

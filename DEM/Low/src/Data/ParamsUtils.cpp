@@ -7,6 +7,7 @@
 #include <IO/HRDWriter.h>
 #include <IO/BinaryReader.h>
 #include <IO/BinaryWriter.h>
+#include <IO/Streams/MemStream.h>
 
 namespace ParamsUtils
 {
@@ -98,6 +99,26 @@ bool SaveParamsToPRM(const char* pFileName, const Data::CParams& Params)
 	if (!File || !File->IsOpened()) FAIL;
 	IO::CBinaryWriter Writer(*File);
 	return Writer.WriteParams(Params);
+}
+//---------------------------------------------------------------------
+
+}
+
+namespace StringUtils
+{
+
+// TODO: need to improve API for writing into memory (string)! Use std::string as a dest buffer directly?!
+std::string ToString(const Data::CParams& Value)
+{
+	std::string Result;
+	IO::CMemStream Stream;
+	IO::CHRDWriter Writer(Stream);
+	if (Writer.WriteParams(Value))
+	{
+		auto Buf = Stream.Detach();
+		Result.assign(static_cast<const char*>(Buf->GetConstPtr()), Buf->GetSize());
+	}
+	return Result;
 }
 //---------------------------------------------------------------------
 

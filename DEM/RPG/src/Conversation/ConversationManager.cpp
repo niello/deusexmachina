@@ -45,6 +45,7 @@ CConversationManager::CConversationManager(Game::CGameSession& Owner, PConversat
 	, _View(std::move(View))
 {
 	//!!!DBG TMP! // TODO: need real localization table! And language switching on the fly!
+	// TODO: can have common localization table and separate tables per conversation! Will optimize loading a lot.
 	_LocalizationResolver = Data::CreateTextResolver({ { "Conv_test_bg_2", "\\{Text{val}2\\}" }, { "val", " " }, { "num", "2" } });
 }
 //---------------------------------------------------------------------
@@ -86,6 +87,7 @@ bool CConversationManager::StartConversation(Flow::PFlowAsset Asset, Game::HEnti
 	New->Player.GetVars().Set<int>(sidConversationInitiator, Initiator.Raw);
 	New->Player.GetVars().Set<int>(sidConversationOwner, Target.Raw);
 
+	//???can write to env table from lua ? could cache entity IDs or components of conversation participants!
 	sol::environment Env(_Session.GetScriptState(), sol::create, _Session.GetScriptState().globals());
 	Env["Vars"] = &New->Player.GetVars();
 	New->TextResolver._SubResolvers.push_back(_LocalizationResolver);

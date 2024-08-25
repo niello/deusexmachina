@@ -25,7 +25,7 @@ struct function_traits<ReturnType(*)(Arguments...)>
 	template<std::size_t Index>
 	using argument = typename std::tuple_element<Index, std::tuple<Arguments...>>::type;
 
-	static const std::size_t arity = sizeof...(Arguments);
+	static constexpr std::size_t arity = sizeof...(Arguments);
 };
 
 #define HAS_METHOD_TRAIT(method_name) \

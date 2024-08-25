@@ -12,7 +12,7 @@ bool CLuaTextResolver::ResolveToken(std::string_view In, CStringAppender Out)
 	const auto Type = Result.get_type();
 	if (Type == sol::type::none || Type == sol::type::nil) return false;
 
-	DEM::Scripting::ObjectToString(Result.get<sol::object>(), _State, [&Out](const char* pStr) { Out.Append(pStr); });
+	DEM::Scripting::ObjectToString(Result.get<sol::object>(), _State, [&Out](std::string_view Str) { Out.Append(Str); });
 	return true;
 }
 //---------------------------------------------------------------------

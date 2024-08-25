@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_PARAMS_UTILS_H__
-#define __DEM_L1_PARAMS_UTILS_H__
-
 #include <Data/Ptr.h>
 #include <Data/Dictionary.h>
 #include <Data/StringID.h>
@@ -26,4 +23,9 @@ bool SaveParamsToPRM(const char* pFileName, const Data::CParams& Params);
 
 }
 
-#endif
+namespace StringUtils
+{
+
+std::string ToString(const Data::CParams& Value);
+
+}

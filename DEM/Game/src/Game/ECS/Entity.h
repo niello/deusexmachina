@@ -38,6 +38,17 @@ inline std::string EntityToString(HEntity EntityID)
 
 }
 
+namespace StringUtils
+{
+
+inline std::string ToString(DEM::Game::HEntity Value)
+{
+	return DEM::Game::EntityToString(Value);
+}
+//---------------------------------------------------------------------
+
+}
+
 namespace DEM::Meta
 {
 

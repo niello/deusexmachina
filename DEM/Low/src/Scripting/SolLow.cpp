@@ -1,4 +1,3 @@
-#pragma once
 #include "SolLow.h"
 #include <Input/InputTranslator.h>
 #include <Animation/AnimationController.h>
@@ -12,8 +11,8 @@
 #include <Math/Vector3.h>
 #include <Data/DataArray.h>
 #include <Data/Buffer.h>
+#include <Data/ParamsUtils.h>
 #include <IO/HRDWriter.h>
-#include <IO/Streams/MemStream.h>
 
 namespace DEM::Scripting
 {
@@ -94,7 +93,7 @@ void RegisterBasicTypes(sol::state& State)
 	sol::table CStrIDTable = State["CStrID"];
 	CStrIDTable.set("Empty", CStrID::Empty);
 
-	State.new_usertype<Data::CParams>("CParams"
+	auto UT_CParams = State.new_usertype<Data::CParams>("CParams"
 		, sol::meta_function::length, [](const Data::CParams& Self) { return Self.GetCount(); }
 		, sol::meta_function::index, [](const Data::CParams& Self, const char* pKey, sol::this_state s)
 		{
@@ -102,17 +101,9 @@ void RegisterBasicTypes(sol::state& State)
 				return MakeObjectFromData(sol::state_view(s), pParam->GetRawValue());
 			return sol::object();
 		}
-		, sol::meta_function::new_index, [](Data::CParams& Self, const char* pKey, sol::object Value) {}
-		, sol::meta_function::to_string, [](const Data::CParams& Self)
-		{
-			// TODO: need to improve API for writing into memory (string)!
-			IO::CMemStream Stream;
-			IO::CHRDWriter Writer(Stream);
-			if (!Writer.WriteParams(Self)) return std::string{};
-			auto Buf = Stream.Detach();
-			return std::string(static_cast<const char*>(Buf->GetConstPtr()), Buf->GetSize());
-		}
+		, sol::meta_function::new_index, [](Data::CParams& Self, const char* pKey, sol::object Value) { NOT_IMPLEMENTED; }
 	);
+	RegisterStringOperations(UT_CParams);
 
 	State.new_usertype<Data::CDataArray>("CDataArray"
 		, sol::meta_function::length, [](const Data::CDataArray& Self) { return Self.GetCount(); }
