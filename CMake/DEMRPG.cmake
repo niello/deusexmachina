@@ -31,11 +31,6 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Conversation/PhraseAction.h
 	DEM/RPG/src/Conversation/TalkAbility.h
 	DEM/RPG/src/Conversation/TalkingComponent.h
-	DEM/RPG/src/Dlg/DialogueManager.h
-	DEM/RPG/src/Dlg/DlgContext.h
-	DEM/RPG/src/Dlg/DlgGraph.h
-	DEM/RPG/src/Dlg/DlgNode.h
-	DEM/RPG/src/Dlg/PropTalking.h
 	DEM/RPG/src/Factions/Faction.h
 	DEM/RPG/src/Factions/FactionManager.h
 	DEM/RPG/src/Items/ArmorComponent.h
@@ -84,10 +79,6 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/Conversation/EngageInConversationAction.cpp
 	DEM/RPG/src/Conversation/PhraseAction.cpp
 	DEM/RPG/src/Conversation/TalkAbility.cpp
-	DEM/RPG/src/Dlg/DialogueManager.cpp
-	DEM/RPG/src/Dlg/DlgContext.cpp
-	DEM/RPG/src/Dlg/PropTalking.cpp
-	DEM/RPG/src/Dlg/PropTalkingSI.cpp
 	DEM/RPG/src/Factions/Faction.cpp
 	DEM/RPG/src/Factions/FactionManager.cpp
 	DEM/RPG/src/Items/EquipmentSystem.cpp
@@ -96,7 +87,6 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/Items/PickItemAbility.cpp
 	DEM/RPG/src/Objects/LockpickAbility.cpp
 	DEM/RPG/src/Quests/QuestManager.cpp
-	DEM/RPG/src/SI/SIDialogueManager.cpp
 	DEM/RPG/src/SI/SIFaction.cpp
 	DEM/RPG/src/SI/SIQuestManager.cpp
 	DEM/RPG/src/World/WorldManager.cpp
