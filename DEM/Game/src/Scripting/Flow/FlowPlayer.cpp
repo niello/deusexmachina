@@ -27,17 +27,27 @@ template<typename T, typename U>
 static inline bool Compare(const T& Left, CStrID Op, const U& Right)
 {
 	if (Op == sidOpEq)
-		return Left == Right;
+	{
+		if constexpr (Meta::is_equality_comparable<T, U>)
+			return Left == Right;
+		else
+			return !(Left < Right || Right < Left);
+	}
 	else if (Op == sidOpNeq)
-		return Left != Right;
+	{
+		if constexpr (Meta::is_equality_comparable<T, U>)
+			return !(Left == Right);
+		else
+			return Left < Right || Right < Left;
+	}
 	else if (Op == sidOpLess)
 		return Left < Right;
 	else if (Op == sidOpLessEq)
-		return Left <= Right;
+		return !(Right < Left);
 	else if (Op == sidOpGreater)
-		return Left > Right;
+		return Right < Left;
 	else if (Op == sidOpGreaterEq)
-		return Left >= Right;
+		return !(Left < Right);
 	else
 		return false;
 }
@@ -92,6 +102,9 @@ bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, 
 	if (Cond.Type == sidVarCmpConst || Cond.Type == sidVarCmpVar)
 	{
 		const CStrID Op = Cond.Params->Get<CStrID>(sidOp);
+
+		// TODO: if not found in local vars, try session vars, both runtime and persistent
+		//const auto* pSessionVars = Session.FindFeature<DEM::Game::CSessionVars>();
 
 		const auto Left = Vars.Find(Cond.Params->Get<CStrID>(sidLeft));
 		if (!Left) return false;

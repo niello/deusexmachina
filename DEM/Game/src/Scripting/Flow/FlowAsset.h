@@ -3,7 +3,6 @@
 #include <Data/Params.h>
 #include <Data/VarStorage.h>
 #include <Data/Metadata.h>
-#include <map>
 
 // Reusable and stateless asset representing a node based Flow script.
 // Flow consists of actions linked with links which may be conditionally disabled.
