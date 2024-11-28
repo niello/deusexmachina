@@ -14,7 +14,7 @@ namespace DEM::Game
 {
 using PGameSession = Ptr<class CGameSession>;
 
-class CGameSession : public Data::CRefCounted
+class CGameSession final : public Data::CRefCounted
 {
 protected:
 
@@ -62,9 +62,7 @@ public:
 	template<class T> T* FindFeature() const
 	{
 		const auto TypeIndex = FeatureTypeIndex<T>;
-		if (_Features.size() <= TypeIndex) return nullptr;
-		auto pFeature = _Features[TypeIndex].get();
-		return pFeature ? static_cast<T*>(pFeature) : nullptr;
+		return (TypeIndex < _Features.size()) ? static_cast<T*>(_Features[TypeIndex].get()) : nullptr;
 	}
 	//---------------------------------------------------------------------
 

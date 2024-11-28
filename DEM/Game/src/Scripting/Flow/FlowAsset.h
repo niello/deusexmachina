@@ -1,22 +1,12 @@
 #pragma once
+#include <Scripting/Flow/Condition.h>
 #include <Core/Object.h>
-#include <Data/Params.h>
-#include <Data/VarStorage.h>
-#include <Data/Metadata.h>
 
 // Reusable and stateless asset representing a node based Flow script.
 // Flow consists of actions linked with links which may be conditionally disabled.
 
 namespace DEM::Flow
 {
-constexpr U32 EmptyActionID = 0;
-
-//!!!TODO: can be universal, not flow-specific!
-struct CConditionData
-{
-	CStrID        Type;   // Empty type means no condition //???TODO: use enum, and for Custom store Type in params?!
-	Data::PParams Params;
-};
 
 struct CFlowLink
 {
@@ -32,8 +22,6 @@ struct CFlowActionData
 	std::vector<CFlowLink> Links;
 	U32                    ID = EmptyActionID;
 };
-
-using CFlowVarStorage = CVarStorage<bool, int, float, std::string, CStrID>;
 
 class CFlowAsset : public ::Core::CObject
 {
@@ -86,16 +74,6 @@ using PFlowAsset = Ptr<CFlowAsset>;
 
 namespace DEM::Meta
 {
-
-template<> inline constexpr auto RegisterClassName<DEM::Flow::CConditionData>() { return "DEM::Flow::CConditionData"; }
-template<> inline constexpr auto RegisterMembers<DEM::Flow::CConditionData>()
-{
-	return std::make_tuple
-	(
-		DEM_META_MEMBER_FIELD(Flow::CConditionData, 1, Type),
-		DEM_META_MEMBER_FIELD(Flow::CConditionData, 2, Params)
-	);
-}
 
 template<> inline constexpr auto RegisterClassName<DEM::Flow::CFlowLink>() { return "DEM::Flow::CFlowLink"; }
 template<> inline constexpr auto RegisterMembers<DEM::Flow::CFlowLink>()

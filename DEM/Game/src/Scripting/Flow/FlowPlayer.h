@@ -1,9 +1,7 @@
 #pragma once
+#include <Scripting/Flow/FlowCommon.h>
 #include <Core/RTTIBaseClass.h>
 #include <Events/Signal.h>
-#include <Data/Ptr.h>
-#include <Data/StringID.h>
-#include <Data/VarStorage.h>
 #include <Math/WELL512.h>
 #include <Game/ECS/Entity.h> // For ResolveEntityID utility method
 
@@ -12,28 +10,18 @@
 
 namespace DEM::Game
 {
-	using PGameSession = Ptr<class CGameSession>;
+	class CGameSession;
 }
 
 namespace DEM::Flow
 {
-struct CConditionData;
-struct CFlowLink;
-struct CFlowActionData;
-class CFlowPlayer;
-using PFlowAsset = Ptr<class CFlowAsset>;
-using CFlowVarStorage = CVarStorage<bool, int, float, std::string, CStrID>;
-constexpr U32 EmptyActionID_FIXME = 0; //!!!!!!!!FIXME: fix duplicated definition, see EmptyActionID!
-
-//!!!TODO: condition can be universal, not flow-specific!
-bool          EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage& Vars);
 Game::HEntity ResolveEntityID(const CFlowActionData& Proto, CStrID ParamID, const CFlowVarStorage& Vars);
 
 struct CUpdateContext
 {
 	Game::CGameSession* pSession = nullptr;
 	float               dt = 0.f;
-	U32                 NextActionID = EmptyActionID_FIXME;
+	U32                 NextActionID = EmptyActionID;
 	std::string         Error;
 	bool                Finished = false;
 	bool                YieldToNextFrame = false;
@@ -101,13 +89,13 @@ public:
 
 using PFlowAction = std::unique_ptr<IFlowAction>;
 
-class CFlowPlayer
+class CFlowPlayer final
 {
 private:
 
 	PFlowAsset      _Asset;
 	PFlowAction     _CurrAction;
-	U32             _NextActionID = EmptyActionID_FIXME; // Non-empty when a link is yielding to the next frame
+	U32             _NextActionID = EmptyActionID; // Non-empty when a link is yielding to the next frame
 	CFlowVarStorage _VarStorage;
 	Math::CWELL512  _RNG;
 	// TODO: add action pool Type->Instance? std::map<CStrID, PFlowAction>; // NB: always needs only 1 instance of each type.
@@ -122,7 +110,7 @@ public:
 
 	~CFlowPlayer();
 
-	bool Start(PFlowAsset Asset, U32 StartActionID = EmptyActionID_FIXME, std::optional<U32> RNGSeed = std::nullopt);
+	bool Start(PFlowAsset Asset, U32 StartActionID = EmptyActionID, std::optional<U32> RNGSeed = std::nullopt);
 	void Stop();
 	void Update(Game::CGameSession& Session, float dt);
 
@@ -130,7 +118,7 @@ public:
 	auto&       GetVars() { return _VarStorage; }
 	auto&       GetVars() const { return _VarStorage; }
 	auto&       GetRNG() { return _RNG;}
-	bool        IsPlaying() const { return _CurrAction || _NextActionID != EmptyActionID_FIXME; }
+	bool        IsPlaying() const { return _CurrAction || _NextActionID != EmptyActionID; }
 };
 
 }

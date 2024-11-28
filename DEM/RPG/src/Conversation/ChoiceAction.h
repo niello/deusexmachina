@@ -1,6 +1,5 @@
 #pragma once
 #include <Scripting/Flow/FlowPlayer.h>
-#include <Game/ECS/Entity.h>
 
 // An action for providing answer choices for a player in a foreground UI
 
