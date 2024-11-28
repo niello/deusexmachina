@@ -1,5 +1,6 @@
 #include "Condition.h"
 #include <Scripting/Flow/ConditionRegistry.h>
+#include <Game/SessionVars.h>
 #include <Game/GameSession.h>
 
 //!!!DBG TMP!
@@ -84,12 +85,12 @@ static inline bool CompareVarData(HVar Left, CStrID Op, const Data::CData& Right
 }
 //---------------------------------------------------------------------
 
-static inline bool CompareVarVar(HVar Left, CStrID Op, HVar Right, const CFlowVarStorage& Vars)
+static inline bool CompareVarVar(HVar Left, CStrID Op, HVar Right, const CFlowVarStorage& LeftVars, const CFlowVarStorage& RightVars)
 {
 	bool Result = false;
-	Vars.Visit(Left, [&Vars, Right, Op, &Result](auto&& LeftValue)
+	LeftVars.Visit(Left, [&RightVars, Right, Op, &Result](auto&& LeftValue)
 	{
-		Vars.Visit(Right, [&LeftValue, Op, &Result](auto&& RightValue)
+		RightVars.Visit(Right, [&LeftValue, Op, &Result](auto&& RightValue)
 		{
 			using TLeft = std::decay_t<decltype(LeftValue)>;
 			using TRight = std::decay_t<decltype(RightValue)>;
@@ -99,6 +100,24 @@ static inline bool CompareVarVar(HVar Left, CStrID Op, HVar Right, const CFlowVa
 	});
 
 	return Result;
+}
+//---------------------------------------------------------------------
+
+static std::pair<const CFlowVarStorage*, HVar> FindVar(Game::CGameSession& Session, const CFlowVarStorage& Vars, CStrID ID)
+{
+	auto Handle = Vars.Find(ID);
+	if (Handle) return { &Vars, Handle };
+
+	if (const auto* pSessionVars = Session.FindFeature<Game::CSessionVars>())
+	{
+		Handle = pSessionVars->Runtime.Find(ID);
+		if (Handle) return { &pSessionVars->Runtime, Handle };
+
+		Handle = pSessionVars->Persistent.Find(ID);
+		if (Handle) return { &pSessionVars->Persistent, Handle };
+	}
+
+	return { nullptr, {} };
 }
 //---------------------------------------------------------------------
 
@@ -115,21 +134,18 @@ bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, 
 	{
 		const CStrID Op = Cond.Params->Get<CStrID>(sidOp);
 
-		// TODO: if not found in local vars, try session vars, both runtime and persistent
-		//const auto* pSessionVars = Session.FindFeature<DEM::Game::CSessionVars>();
-
-		const auto Left = Vars.Find(Cond.Params->Get<CStrID>(sidLeft));
+		const auto [ pLeftVars, Left ] = FindVar(Session, Vars, Cond.Params->Get<CStrID>(sidLeft));
 		if (!Left) return false;
 
 		if (Cond.Type == sidVarCmpConst)
 		{
 			const auto* pRightParam = Cond.Params->Find(sidRight);
-			return pRightParam && CompareVarData(Left, Op, pRightParam->GetRawValue(), Vars);
+			return pRightParam && CompareVarData(Left, Op, pRightParam->GetRawValue(), *pLeftVars);
 		}
 		else
 		{
-			const auto Right = Vars.Find(Cond.Params->Get<CStrID>(sidRight));
-			return CompareVarVar(Left, Op, Right, Vars);
+			const auto [pRightVars, Right] = FindVar(Session, Vars, Cond.Params->Get<CStrID>(sidRight));
+			return Right && CompareVarVar(Left, Op, Right, *pLeftVars, *pRightVars);
 		}
 	}
 	else if (Cond.Type == sidLuaString)
