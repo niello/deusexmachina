@@ -28,8 +28,8 @@ public:
 
 	virtual ~ICondition() = default;
 
-	virtual bool Evaluate(const Data::CParams* pParams, Game::CGameSession& Session, const CFlowVarStorage& Vars) const = 0;
-	virtual bool GetText(std::string& Out) const {}
+	virtual bool Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const = 0;
+	virtual void GetText(std::string& Out) const {}
 
 	//???register signal objects of different session features under global names? or access right here from CGameSession arg?
 	virtual void RENAME_SOMETHING_ABOUT_SUBSCRIPTIONS() const { /* return set of signals / event names or make subscriptions to dispatcher right here */ }
@@ -39,7 +39,63 @@ class CFalseCondition : public ICondition
 {
 public:
 
-	virtual bool Evaluate(const Data::CParams* pParams, Game::CGameSession& Session, const CFlowVarStorage& Vars) const override { return false; }
+	inline static const auto Type = CStrID("False");
+
+	virtual bool Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const override { return false; }
+};
+
+class CAndCondition : public ICondition
+{
+public:
+
+	inline static const auto Type = CStrID("And");
+
+	virtual bool Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const override;
+};
+
+class COrCondition : public ICondition
+{
+public:
+
+	inline static const auto Type = CStrID("Or");
+
+	virtual bool Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const override;
+};
+
+class CNotCondition : public ICondition
+{
+public:
+
+	inline static const auto Type = CStrID("Not");
+
+	virtual bool Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const override;
+};
+
+class CVarCmpConstCondition : public ICondition
+{
+public:
+
+	inline static const auto Type = CStrID("VarCmpConst");
+
+	virtual bool Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const override;
+};
+
+class CVarCmpVarCondition : public ICondition
+{
+public:
+
+	inline static const auto Type = CStrID("VarCmpVar");
+
+	virtual bool Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const override;
+};
+
+class CLuaStringCondition : public ICondition
+{
+public:
+
+	inline static const auto Type = CStrID("LuaString");
+
+	virtual bool Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const override;
 };
 
 }

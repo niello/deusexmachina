@@ -165,6 +165,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Scripting/ScriptObjectSIEx.cpp
 	DEM/Game/src/Scripting/SolGame.cpp
 	DEM/Game/src/Scripting/Flow/Condition.cpp
+	DEM/Game/src/Scripting/Flow/ConditionRegistry.cpp
 	DEM/Game/src/Scripting/Flow/FlowAssetLoader.cpp
 	DEM/Game/src/Scripting/Flow/FlowPlayer.cpp
 	DEM/Game/src/Scripting/Flow/HubAction.cpp

@@ -15,13 +15,6 @@
 
 namespace DEM::Flow
 {
-static const CStrID sidAnd("And");
-static const CStrID sidOr("Or");
-static const CStrID sidNot("Not");
-static const CStrID sidFalse("False");
-static const CStrID sidVarCmpConst("VarCmpConst");
-static const CStrID sidVarCmpVar("VarCmpVar");
-static const CStrID sidLuaString("LuaString");
 static const CStrID sidLeft("Left");
 static const CStrID sidOp("Op");
 static const CStrID sidRight("Right");
@@ -128,73 +121,95 @@ bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, 
 	const auto* pConditions = Session.FindFeature<CConditionRegistry>();
 	if (!pConditions) return true;
 
-	if (Cond.Type == sidFalse) return false;
-
-	if (Cond.Type == sidVarCmpConst || Cond.Type == sidVarCmpVar)
-	{
-		const CStrID Op = Cond.Params->Get<CStrID>(sidOp);
-
-		const auto [ pLeftVars, Left ] = FindVar(Session, Vars, Cond.Params->Get<CStrID>(sidLeft));
-		if (!Left) return false;
-
-		if (Cond.Type == sidVarCmpConst)
-		{
-			const auto* pRightParam = Cond.Params->Find(sidRight);
-			return pRightParam && CompareVarData(Left, Op, pRightParam->GetRawValue(), *pLeftVars);
-		}
-		else
-		{
-			const auto [pRightVars, Right] = FindVar(Session, Vars, Cond.Params->Get<CStrID>(sidRight));
-			return Right && CompareVarVar(Left, Op, Right, *pLeftVars, *pRightVars);
-		}
-	}
-	else if (Cond.Type == sidLuaString)
-	{
-		const std::string_view Code = Cond.Params->Get<CString>(sidCode, CString::Empty);
-		if (Code.empty()) return true;
-
-		sol::environment Env(Session.GetScriptState(), sol::create, Session.GetScriptState().globals());
-		Env["Vars"] = &Vars;
-		auto Result = Session.GetScriptState().script("return " + std::string(Code), Env);
-		if (!Result.valid())
-		{
-			::Sys::Error(Result.get<sol::error>().what());
-			return false;
-		}
-
-		//???SOL: why nil can't be negated? https://www.lua.org/pil/3.3.html
-		const auto Type = Result.get_type();
-		return (Type != sol::type::none && Type != sol::type::nil && Result);
-	}
-	else if (Cond.Type == sidAnd)
-	{
-		CConditionData Inner;
-		for (const auto& Param : *Cond.Params)
-		{
-			DEM::ParamsFormat::Deserialize(Param.GetRawValue(), Inner);
-			if (!EvaluateCondition(Inner, Session, Vars)) return false;
-		}
-		return true;
-	}
-	else if (Cond.Type == sidOr)
-	{
-		CConditionData Inner;
-		for (const auto& Param : *Cond.Params)
-		{
-			DEM::ParamsFormat::Deserialize(Param.GetRawValue(), Inner);
-			if (EvaluateCondition(Inner, Session, Vars)) return true;
-		}
-		return false;
-	}
-	else if (Cond.Type == sidNot)
-	{
-		CConditionData Inner;
-		DEM::ParamsFormat::Deserialize(Cond.Params, Inner);
-		return !EvaluateCondition(Inner, Session, Vars);
-	}
+	if (auto* pCondition = pConditions->FindCondition(Cond.Type))
+		return pCondition->Evaluate(Cond.Params.Get(), Session, Vars);
 
 	::Sys::Error("Unsupported condition type");
 	return false;
+}
+//---------------------------------------------------------------------
+
+bool CAndCondition::Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const
+{
+	if (!Params) return true;
+
+	CConditionData Inner;
+	for (const auto& Param : *Params)
+	{
+		DEM::ParamsFormat::Deserialize(Param.GetRawValue(), Inner);
+		if (!EvaluateCondition(Inner, Session, Vars)) return false;
+	}
+	return true;
+}
+//---------------------------------------------------------------------
+
+bool COrCondition::Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const
+{
+	if (!Params) return true;
+
+	CConditionData Inner;
+	for (const auto& Param : *Params)
+	{
+		DEM::ParamsFormat::Deserialize(Param.GetRawValue(), Inner);
+		if (EvaluateCondition(Inner, Session, Vars)) return true;
+	}
+	return false;
+}
+//---------------------------------------------------------------------
+
+bool CNotCondition::Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const
+{
+	if (!Params) return true;
+
+	CConditionData Inner;
+	DEM::ParamsFormat::Deserialize(Params, Inner);
+	return !EvaluateCondition(Inner, Session, Vars);
+}
+//---------------------------------------------------------------------
+
+bool CVarCmpConstCondition::Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const
+{
+	if (!Params) return true;
+
+	const auto [pLeftVars, Left] = FindVar(Session, Vars, Params->Get<CStrID>(sidLeft));
+	if (!Left) return false;
+
+	const auto* pRightParam = Params->Find(sidRight);
+	return pRightParam && CompareVarData(Left, Params->Get<CStrID>(sidOp), pRightParam->GetRawValue(), *pLeftVars);
+}
+//---------------------------------------------------------------------
+
+bool CVarCmpVarCondition::Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const
+{
+	if (!Params) return true;
+
+	const auto [pLeftVars, Left] = FindVar(Session, Vars, Params->Get<CStrID>(sidLeft));
+	if (!Left) return false;
+
+	const auto [pRightVars, Right] = FindVar(Session, Vars, Params->Get<CStrID>(sidRight));
+	return Right && CompareVarVar(Left, Params->Get<CStrID>(sidOp), Right, *pLeftVars, *pRightVars);
+}
+//---------------------------------------------------------------------
+
+bool CLuaStringCondition::Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const
+{
+	if (!Params) return true;
+
+	const std::string_view Code = Params->Get<CString>(sidCode, CString::Empty);
+	if (Code.empty()) return true;
+
+	sol::environment Env(Session.GetScriptState(), sol::create, Session.GetScriptState().globals());
+	Env["Vars"] = &Vars;
+	auto Result = Session.GetScriptState().script("return " + std::string(Code), Env);
+	if (!Result.valid())
+	{
+		::Sys::Error(Result.get<sol::error>().what());
+		return false;
+	}
+
+	//???SOL: why nil can't be negated? https://www.lua.org/pil/3.3.html
+	const auto Type = Result.get_type();
+	return (Type != sol::type::none && Type != sol::type::nil && Result);
 }
 //---------------------------------------------------------------------
 
