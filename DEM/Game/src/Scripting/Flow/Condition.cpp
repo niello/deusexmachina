@@ -3,16 +3,6 @@
 #include <Game/SessionVars.h>
 #include <Game/GameSession.h>
 
-//!!!DBG TMP!
-// conditions need no factory and 'new', they are stateless and registered by type IDs (CStrID or enum), returning a 'singleton' instance of cond type.
-// Lua condition stores sol::function objects but this is code, not state. Session will be needed for that.
-// Lua condition gets script as input and loads functions from it by names, without putting them to the global namespace!
-// Registration requires a pair ID -> instance (or template type and variadic args for construction).
-// Condition registry may live in a session, it is needed for Lua anyway. Add registry as a feature?
-// No refcounting needed because of singleton nature of conditions. unique_ptr is enough. No RTTI is needed because there is no factory.
-// Data::PParams arg is always provided into evaluation, because it is a state
-// Unordered map should be used for fast condition lookup, because composite conditions will have to do lookup where now is DEM::ParamsFormat::Deserialize.
-
 namespace DEM::Flow
 {
 static const CStrID sidLeft("Left");

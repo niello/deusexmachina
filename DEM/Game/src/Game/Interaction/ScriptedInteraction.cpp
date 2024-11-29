@@ -5,25 +5,6 @@
 namespace DEM::Game
 {
 
-// TODO: common utility function?!
-// FIXME: DUPLICATED CODE! See CScriptedAbility! Use CRTP?
-template<typename... TArgs>
-static bool LuaCall(const sol::function& Fn, TArgs&&... Args)
-{
-	if (!Fn) return false;
-
-	auto Result = Fn(std::forward<TArgs>(Args)...);
-	if (!Result.valid())
-	{
-		::Sys::Error(Result.get<sol::error>().what());
-		return false;
-	}
-
-	const auto Type = Result.get_type();
-	return Type != sol::type::nil && Type != sol::type::none && Result;
-}
-//---------------------------------------------------------------------
-
 CScriptedInteraction::CScriptedInteraction(const sol::table& Table)
 {
 	_FnIsAvailable = Table.get<sol::function>("IsAvailable");
@@ -38,19 +19,19 @@ CScriptedInteraction::CScriptedInteraction(const sol::table& Table)
 
 bool CScriptedInteraction::IsAvailable(const CGameSession& Session, const CInteractionContext& Context) const
 {
-	return !_FnIsAvailable || LuaCall(_FnIsAvailable, Context);
+	return !_FnIsAvailable || Scripting::LuaCall(_FnIsAvailable, Context);
 }
 //---------------------------------------------------------------------
 
 bool CScriptedInteraction::IsTargetValid(const CGameSession& Session, U32 Index, const CInteractionContext& Context) const
 {
-	return LuaCall(_FnIsTargetValid, Index, Context);
+	return Scripting::LuaCall(_FnIsTargetValid, Index, Context);
 }
 //---------------------------------------------------------------------
 
 bool CScriptedInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue, bool PushChild) const
 {
-	return LuaCall(_FnExecute, Context, Enqueue, PushChild);
+	return Scripting::LuaCall(_FnExecute, Context, Enqueue, PushChild);
 }
 //---------------------------------------------------------------------
 

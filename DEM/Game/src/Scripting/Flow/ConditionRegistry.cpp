@@ -1,5 +1,6 @@
 #include "ConditionRegistry.h"
-#include <Scripting/Flow/Condition.h> // also for PCondition destruction
+#include <Game/GameSession.h>
+#include <Scripting/Flow/ScriptCondition.h>
 
 namespace DEM::Flow
 {
@@ -19,6 +20,18 @@ CConditionRegistry::CConditionRegistry(Game::CGameSession& Owner)
 //---------------------------------------------------------------------
 
 CConditionRegistry::~CConditionRegistry() = default;
+//---------------------------------------------------------------------
+
+CScriptCondition* CConditionRegistry::RegisterScriptedCondition(CStrID Type, CStrID ScriptAssetID)
+{
+	if (auto ScriptObject = _Session.GetScript(ScriptAssetID))
+	{
+		auto It = _Conditions.insert_or_assign(Type, std::make_unique<CScriptCondition>(ScriptObject)).first;
+		return static_cast<CScriptCondition*>(It->second.get());
+	}
+
+	return nullptr;
+}
 //---------------------------------------------------------------------
 
 }

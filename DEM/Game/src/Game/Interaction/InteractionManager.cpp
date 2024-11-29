@@ -75,6 +75,7 @@ bool CInteractionManager::RegisterTool(CStrID ID, const Data::CParams& Params)
 				CString ActID;
 				if ((*pActionDesc)->TryGet<CString>(ActID, CStrID("ID")))
 				{
+					// TODO: use ICondition?!
 					// TODO: pushes the compiled chunk as a Lua function on top of the stack,
 					// need to save anywhere in this Tool's table?
 					sol::function ConditionFunc;

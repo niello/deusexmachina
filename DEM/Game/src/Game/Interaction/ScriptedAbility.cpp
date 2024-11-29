@@ -5,25 +5,6 @@
 namespace DEM::Game
 {
 
-// TODO: common utility function?!
-// FIXME: DUPLICATED CODE! See CScriptedInteraction! Use CRTP?
-template<typename... TArgs>
-static bool LuaCall(const sol::function& Fn, TArgs&&... Args)
-{
-	if (!Fn) return false;
-
-	auto Result = Fn(std::forward<TArgs>(Args)...);
-	if (!Result.valid())
-	{
-		::Sys::Error(Result.get<sol::error>().what());
-		return false;
-	}
-
-	const auto Type = Result.get_type();
-	return Type != sol::type::nil && Type != sol::type::none && Result;
-}
-//---------------------------------------------------------------------
-
 CScriptedAbility::CScriptedAbility(sol::state_view Lua, const sol::table& Table)
 	: _Lua(Lua)
 {
@@ -53,13 +34,13 @@ PAbilityInstance CScriptedAbility::CreateInstance(const CInteractionContext& Con
 
 bool CScriptedAbility::IsAvailable(const CGameSession& Session, const CInteractionContext& Context) const
 {
-	return !_FnIsAvailable || LuaCall(_FnIsAvailable, Context);
+	return !_FnIsAvailable || Scripting::LuaCall(_FnIsAvailable, Context);
 }
 //---------------------------------------------------------------------
 
 bool CScriptedAbility::IsTargetValid(const CGameSession& Session, U32 Index, const CInteractionContext& Context) const
 {
-	return LuaCall(_FnIsTargetValid, Index, Context);
+	return Scripting::LuaCall(_FnIsTargetValid, Index, Context);
 }
 //---------------------------------------------------------------------
 
@@ -75,7 +56,7 @@ bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Conte
 	if (_FnPrepare)
 	{
 		// Filter actors, adjust ability params etc (like +2 bonus in skill for each helping actor)
-		LuaCall(_FnPrepare, Actors);
+		Scripting::LuaCall(_FnPrepare, Actors);
 	}
 	else
 	{
@@ -93,21 +74,21 @@ bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Conte
 
 bool CScriptedAbility::GetZones(const Game::CGameSession& Session, const CAbilityInstance& Instance, std::vector<const CZone*>& Out) const
 {
-	return LuaCall(_FnGetZones, static_cast<const CScriptedAbilityInstance&>(Instance), Out);
+	return Scripting::LuaCall(_FnGetZones, static_cast<const CScriptedAbilityInstance&>(Instance), Out);
 }
 //---------------------------------------------------------------------
 
 bool CScriptedAbility::GetFacingParams(const Game::CGameSession& Session, const CAbilityInstance& Instance, CFacingParams& Out) const
 {
 	if (!_FnGetFacingParams) return false;
-	LuaCall(_FnGetFacingParams, static_cast<const CScriptedAbilityInstance&>(Instance), Out);
+	Scripting::LuaCall(_FnGetFacingParams, static_cast<const CScriptedAbilityInstance&>(Instance), Out);
 	return Out.Mode != EFacingMode::None;
 }
 //---------------------------------------------------------------------
 
 void CScriptedAbility::OnStart(Game::CGameSession& Session, CAbilityInstance& Instance) const
 {
-	LuaCall(_FnOnStart, static_cast<const CScriptedAbilityInstance&>(Instance));
+	Scripting::LuaCall(_FnOnStart, static_cast<const CScriptedAbilityInstance&>(Instance));
 }
 //---------------------------------------------------------------------
 
@@ -133,7 +114,7 @@ EActionStatus CScriptedAbility::OnUpdate(Game::CGameSession& Session, CAbilityIn
 
 void CScriptedAbility::OnEnd(Game::CGameSession& Session, CAbilityInstance& Instance, EActionStatus Status) const
 {
-	LuaCall(_FnOnEnd, static_cast<const CScriptedAbilityInstance&>(Instance), Status);
+	Scripting::LuaCall(_FnOnEnd, static_cast<const CScriptedAbilityInstance&>(Instance), Status);
 }
 //---------------------------------------------------------------------
 

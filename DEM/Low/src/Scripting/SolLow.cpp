@@ -10,9 +10,7 @@
 #include <Events/Signal.h>
 #include <Math/Vector3.h>
 #include <Data/DataArray.h>
-#include <Data/Buffer.h>
-#include <Data/ParamsUtils.h>
-#include <IO/HRDWriter.h>
+#include <Data/ParamsUtils.h> // CParams::ToString
 
 namespace DEM::Scripting
 {

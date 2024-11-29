@@ -12,6 +12,7 @@ namespace DEM::Game
 namespace DEM::Flow
 {
 using PCondition = std::unique_ptr<class ICondition>;
+class CScriptCondition;
 
 class CConditionRegistry final : public ::Core::CRTTIBaseClass
 {
@@ -19,7 +20,7 @@ class CConditionRegistry final : public ::Core::CRTTIBaseClass
 
 protected:
 
-	Game::CGameSession& _Session;
+	Game::CGameSession&                    _Session;
 	std::unordered_map<CStrID, PCondition> _Conditions;
 
 public:
@@ -33,6 +34,8 @@ public:
 		auto It = _Conditions.insert_or_assign(Type, std::make_unique<T>(std::forward<TArgs>(Args)...)).first;
 		return static_cast<T*>(It->second.get());
 	}
+
+	CScriptCondition* RegisterScriptedCondition(CStrID Type, CStrID ScriptAssetID);
 
 	ICondition* FindCondition(CStrID Type) const
 	{

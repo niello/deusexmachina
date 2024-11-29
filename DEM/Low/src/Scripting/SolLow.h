@@ -111,4 +111,28 @@ auto ObjectToString(const sol::object& Object, sol::state_view& State, F Callbac
 }
 //---------------------------------------------------------------------
 
+template<typename TRet = bool, typename... TArgs>
+TRet LuaCall(const sol::function& Fn, TArgs&&... Args)
+{
+	if (!Fn) return TRet{};
+
+	auto Result = Fn(std::forward<TArgs>(Args)...);
+	if (!Result.valid())
+	{
+		::Sys::Error(Result.get<sol::error>().what());
+		return TRet{};
+	}
+
+	if constexpr (std::is_same_v<TRet, bool>)
+	{
+		const auto Type = Result.get_type();
+		return Type != sol::type::nil && Type != sol::type::none && Result;
+	}
+	else if constexpr (!std::is_same_v<TRet, void>)
+	{
+		return Result.get<TRet>();
+	}
+}
+//---------------------------------------------------------------------
+
 }

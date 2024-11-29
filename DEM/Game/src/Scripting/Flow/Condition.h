@@ -29,7 +29,7 @@ public:
 	virtual ~ICondition() = default;
 
 	virtual bool Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const = 0;
-	virtual void GetText(std::string& Out) const {}
+	virtual void GetText(std::string& Out, const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const {}
 
 	//???register signal objects of different session features under global names? or access right here from CGameSession arg?
 	virtual void RENAME_SOMETHING_ABOUT_SUBSCRIPTIONS() const { /* return set of signals / event names or make subscriptions to dispatcher right here */ }
