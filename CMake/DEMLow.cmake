@@ -407,7 +407,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Data/HandleManager.cpp
 	DEM/Low/src/Data/HRDParser.cpp
 	DEM/Low/src/Data/LuaTextResolver.cpp
-	DEM/Low/src/Data/MurmurHash3.cpp
 	DEM/Low/src/Data/Params.cpp
 	DEM/Low/src/Data/ParamsTextResolver.cpp
 	DEM/Low/src/Data/ParamsUtils.cpp

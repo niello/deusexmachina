@@ -1,47 +1,10 @@
 #pragma once
 #include "MurmurHash3.h"
 #include <string_view>
-#include <string.h>			// strlen
 
 // Hash functions
 
-inline uint32_t Hash(const void* pData, int Length)
-{
-	if (!pData || !Length) return 0;
-
-	uint32_t Result;
-	MurmurHash3_x86_32(pData, Length, 0xB0F57EE3, &Result);
-	return Result;
-}
-//---------------------------------------------------------------------
-
-inline uint32_t Hash(const char* pStr)
-{
-	return pStr ? Hash(pStr, strlen(pStr)) : 0;
-}
-//---------------------------------------------------------------------
-
-inline uint32_t Hash(std::string_view Str)
-{
-	return Str.empty() ? 0 : Hash(Str.data(), Str.size());
-}
-//---------------------------------------------------------------------
-
-template<class T> inline uint32_t Hash(const T& Key)
-{
-	//???what about smaller than int? what about x64 pointers?
-	if (sizeof(T) == sizeof(int)) return WangIntegerHash((int)*(void* const*)&Key);
-	else return Hash(&Key, sizeof(T));
-}
-//---------------------------------------------------------------------
-
-template<> inline uint32_t Hash<const char*>(const char * const & Key)
-{
-	return Hash(Key, strlen(Key));
-}
-//---------------------------------------------------------------------
-
-inline int WangIntegerHash(int Key)
+constexpr int WangIntegerHash(int Key)
 {
 	//if (sizeof(void*)==8) RealKey = Key[0] + Key[1];
 
@@ -55,11 +18,46 @@ inline int WangIntegerHash(int Key)
 
 	// Bullet Physics variant
 	Key += ~(Key << 15);
-	Key ^=  (Key >> 10);
-	Key +=  (Key << 3);
-	Key ^=  (Key >> 6);
+	Key ^= (Key >> 10);
+	Key += (Key << 3);
+	Key ^= (Key >> 6);
 	Key += ~(Key << 11);
-	Key ^=  (Key >> 16);
+	Key ^= (Key >> 16);
 	return Key;
+}
+//---------------------------------------------------------------------
+
+constexpr uint32_t Hash(const void* pData, int Length)
+{
+	uint32_t Result = 0;
+	if (pData && Length)
+		MurmurHash3_x86_32(pData, Length, 0xB0F57EE3, &Result);
+	return Result;
+}
+//---------------------------------------------------------------------
+
+constexpr uint32_t Hash(std::string_view Str)
+{
+	return Hash(Str.data(), Str.size());
+}
+//---------------------------------------------------------------------
+
+constexpr uint32_t Hash(const char* pStr)
+{
+	return pStr ? Hash(std::string_view{ pStr }) : 0;
+}
+//---------------------------------------------------------------------
+
+template<class T> constexpr uint32_t Hash(const T& Key)
+{
+	//???what about smaller than int? what about x64 pointers?
+	if (sizeof(T) == sizeof(int)) return WangIntegerHash((int)*(void* const*)&Key);
+	else return Hash(&Key, sizeof(T));
+}
+//---------------------------------------------------------------------
+
+template<> constexpr uint32_t Hash<const char*>(const char * const & Key)
+{
+	return Hash(Key, strlen(Key));
 }
 //---------------------------------------------------------------------
