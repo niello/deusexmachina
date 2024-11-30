@@ -119,6 +119,19 @@ bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, 
 }
 //---------------------------------------------------------------------
 
+std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage& Vars)
+{
+	std::string Result;
+
+	if (Cond.Type)
+		if (const auto* pConditions = Session.FindFeature<CConditionRegistry>())
+			if (auto* pCondition = pConditions->FindCondition(Cond.Type))
+				pCondition->GetText(Result, Cond.Params.Get(), Session, Vars);
+
+	return Result;
+}
+//---------------------------------------------------------------------
+
 bool CAndCondition::Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const
 {
 	if (!Params) return true;
@@ -166,6 +179,17 @@ bool CVarCmpConstCondition::Evaluate(const Data::PParams& Params, Game::CGameSes
 
 	const auto* pRightParam = Params->Find(sidRight);
 	return pRightParam && CompareVarData(Left, Params->Get<CStrID>(sidOp), pRightParam->GetRawValue(), *pLeftVars);
+}
+//---------------------------------------------------------------------
+
+void CVarCmpConstCondition::GetText(std::string& Out, const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const
+{
+	Out.append(Params->Get<CStrID>(sidLeft).ToStringView());
+	Out.append(Params->Get<CStrID>(sidOp).ToStringView());
+	if (const auto* pRightParam = Params->Find(sidRight))
+		Out.append(pRightParam->GetRawValue().ToString());
+	else
+		Out.append("<MISSING>");
 }
 //---------------------------------------------------------------------
 

@@ -78,7 +78,7 @@ public:
 	template<class T> const T*	GetValuePtr() const;
 	void* const*				GetValueObjectPtr() const { return &Value; }
 
-	const char*					ToString() const { return Type ? Type->ToString(Value) : nullptr; }
+	std::string					ToString() const { return Type ? Type->ToString(Value) : std::string{}; }
 
 	CData&                      operator =(const CData& Src) { SetTypeValue(Src); return *this; }
 	CData&                      operator =(CData&& Src) noexcept;
@@ -259,6 +259,17 @@ inline CData& CData::operator =(CData&& Src) noexcept
 //---------------------------------------------------------------------
 
 };
+
+namespace StringUtils
+{
+
+inline std::string ToString(const Data::CData& Value)
+{
+	return Value.ToString();
+}
+//---------------------------------------------------------------------
+
+}
 
 typedef Data::CStringID CStrID;
 template<class TKey, class TVal> class CDictionary;

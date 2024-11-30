@@ -1,17 +1,16 @@
 #include "Data.h"
 #include <Data/StringID.h>
-#include <string>
+#include <Data/StringUtils.h>
 
 namespace Data
 {
 
-//!!!int, float - rewrite better if possible!
-//???always use CTypeImpl<T>::ToString() { return Data::ValueToString<T>(); } and specialize that function?
-template<> inline const char* CTypeImpl<bool>::ToString(const void* pObj) const { return pObj ? "true" : "false"; }
-template<> inline const char* CTypeImpl<int>::ToString(const void* pObj) const { return std::to_string(*((int*)&pObj)).c_str(); }
-template<> inline const char* CTypeImpl<float>::ToString(const void* pObj) const { return std::to_string(*((float*)&pObj)).c_str(); }
-template<> inline const char* CTypeImpl<CString>::ToString(const void* pObj) const { return ((CString*)pObj)->CStr(); }
-template<> inline const char* CTypeImpl<CStrID>::ToString(const void* pObj) const { return (const char*)pObj; }
+//???always use CTypeImpl<T>::ToString() { return StringUtils::ToString(GetRef(pObj)); }?
+template<> std::string CTypeImpl<bool>::ToString(const void* pObj) const { return StringUtils::ToString(*(bool*)GetPtr(&pObj)); }
+template<> std::string CTypeImpl<int>::ToString(const void* pObj) const { return StringUtils::ToString(*(int*)GetPtr(&pObj)); }
+template<> std::string CTypeImpl<float>::ToString(const void* pObj) const { return StringUtils::ToString(*(float*)GetPtr(&pObj)); }
+template<> std::string CTypeImpl<CString>::ToString(const void* pObj) const { return StringUtils::ToString(*(CString*)GetPtr(&pObj)); }
+template<> std::string CTypeImpl<CStrID>::ToString(const void* pObj) const { return StringUtils::ToString(*(CStrID*)GetPtr(&pObj)); }
 
 //DEFINE_TYPE(void)
 DEFINE_TYPE(bool, false)

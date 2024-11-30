@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_PARAM_H__
-#define __DEM_L1_PARAM_H__
-
 #include "Data.h"
 #include <Data/StringID.h>
 
@@ -48,5 +45,3 @@ public:
 };
 
 };
-
-#endif

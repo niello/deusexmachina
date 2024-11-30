@@ -1,5 +1,6 @@
 #pragma once
 #include <System/Memory.h>
+#include <string>
 
 // Template data type implementation.
 
@@ -34,7 +35,7 @@ public:
 	virtual bool		IsEqualT(const void* pObj, const void* OtherValue) const = 0;
 	virtual int			GetSize() const = 0;
 	virtual int			GetID() const = 0;
-	virtual const char*	ToString(const void* pObj) const = 0;
+	virtual std::string	ToString(const void* pObj) const = 0;
 
 	template<class T>
 	static const CType*	GetType() { static_assert(CTypeID<T>::IsDeclared, "Type not declared!"); return CTypeImpl<T>::Type; }
@@ -72,14 +73,14 @@ public:
 	virtual void		Delete(void** pObj) const;
 	virtual void		Copy(void** pObj, void* const* pSrcObj) const;
 	virtual void		CopyT(void** pObj, const void* Value) const;
-	virtual bool		IsEqual(const void* pObj, const void* pOtherObj) const;
-	virtual bool		IsEqualT(const void* pObj, const void* OtherValue) const;
-	virtual int			GetSize() const;
+	virtual bool		IsEqual(const void* pObj, const void* pOtherObj) const { return (*(T*)GetPtr(pObj)) == (*(T*)GetPtr(pOtherObj)); }
+	virtual bool		IsEqualT(const void* pObj, const void* OtherValue) const { return (*(T*)GetPtr(pObj)) == (*(const T*)OtherValue); }
+	virtual int			GetSize() const { return (sizeof(T) <= sizeof(void*)) ? sizeof(void*) : sizeof(T); }
 	virtual int			GetID() const { return CTypeID<T>::TypeID; }
-	virtual const char*	ToString(const void* /*pObj*/) const { return nullptr; }
+	virtual std::string	ToString(const void* /*pObj*/) const { return {}; }
 
-	inline void*		GetPtr(void* pObj) const;
-	inline const void*	GetPtr(const void* pObj) const;
+	void*               GetPtr(void* pObj) const { return (sizeof(T) <= sizeof(void*)) ? pObj : *(T**)pObj; }
+	const void*         GetPtr(const void* pObj) const { return (sizeof(T) <= sizeof(void*)) ? pObj : *(T**)pObj; }
 
 	void NewMoveT(void** pObj, T&& Value) const
 	{
@@ -156,36 +157,6 @@ template<class T> inline void CTypeImpl<T>::CopyT(void** pObj, const void* Value
 		if (*(T**)pObj) **(T**)pObj = *(const T*)Value;
 		else *(T**)pObj = n_new(T)(*(const T*)Value);
 	}
-}
-//---------------------------------------------------------------------
-
-template<class T> inline void* CTypeImpl<T>::GetPtr(void* pObj) const
-{
-	return (sizeof(T) <= sizeof(void*)) ? pObj : *(T**)pObj;
-}
-//---------------------------------------------------------------------
-
-template<class T> inline const void* CTypeImpl<T>::GetPtr(const void* pObj) const
-{
-	return (sizeof(T) <= sizeof(void*)) ? pObj : *(T**)pObj;
-}
-//---------------------------------------------------------------------
-
-template<class T> inline bool CTypeImpl<T>::IsEqual(const void* pObj, const void* pOtherObj) const
-{
-	return (*(T*)GetPtr(pObj)) == (*(T*)GetPtr(pOtherObj));
-}
-//---------------------------------------------------------------------
-
-template<class T> inline bool CTypeImpl<T>::IsEqualT(const void* pObj, const void* OtherValue) const
-{
-	return (*(T*)GetPtr(pObj)) == (*(const T*)OtherValue);
-}
-//---------------------------------------------------------------------
-
-template<class T> inline int CTypeImpl<T>::GetSize() const
-{
-	return (sizeof(T) <= sizeof(void*)) ? sizeof(void*) : sizeof(T);
 }
 //---------------------------------------------------------------------
 

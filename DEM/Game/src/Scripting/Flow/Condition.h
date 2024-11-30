@@ -21,6 +21,7 @@ struct CConditionData
 };
 
 bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage& Vars);
+std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage& Vars);
 
 class ICondition
 {
@@ -42,6 +43,7 @@ public:
 	inline static const auto Type = CStrID("False");
 
 	virtual bool Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const override { return false; }
+	virtual void GetText(std::string& Out, const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const { Out.append("[NEVER]"); }
 };
 
 class CAndCondition : public ICondition
@@ -78,6 +80,7 @@ public:
 	inline static const auto Type = CStrID("VarCmpConst");
 
 	virtual bool Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const override;
+	virtual void GetText(std::string& Out, const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const;
 };
 
 class CVarCmpVarCondition : public ICondition
