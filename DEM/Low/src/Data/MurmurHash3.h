@@ -13,60 +13,36 @@
 //-----------------------------------------------------------------------------
 // Platform-specific functions and macros
 
-// Microsoft Visual Studio
-
 #if defined(_MSC_VER) && (_MSC_VER < 1600)
-
-typedef unsigned char uint8_t;
-typedef unsigned int uint32_t;
-typedef unsigned __int64 uint64_t;
-
-// Other compilers
-
-#else   // defined(_MSC_VER)
-
-#include <stdint.h>
-
-#endif // !defined(_MSC_VER)
-
-//-----------------------------------------------------------------------------
-// Platform-specific functions and macros
-
-// Microsoft Visual Studio
+	typedef unsigned char uint8_t;
+	typedef unsigned int uint32_t;
+	typedef unsigned __int64 uint64_t;
+#else
+	#include <stdint.h>
+#endif
 
 #if defined(_MSC_VER)
+	#define FORCE_INLINE    __forceinline
 
-#define FORCE_INLINE    __forceinline
+	#include <stdlib.h>
 
-#include <stdlib.h>
-
-#define ROTL32(x,y)     _rotl(x,y)
-#define ROTL64(x,y)     _rotl64(x,y)
-
-#define BIG_CONSTANT(x) (x)
-
-// Other compilers
-
+	#define BIG_CONSTANT(x) (x)
 #else   // defined(_MSC_VER)
+	#define FORCE_INLINE inline __attribute__((always_inline))
 
-#define FORCE_INLINE inline __attribute__((always_inline))
-
-constexpr uint32_t rotl32(uint32_t x, int8_t r)
-{
-	return (x << r) | (x >> (32 - r));
-}
-
-constexpr uint64_t rotl64(uint64_t x, int8_t r)
-{
-	return (x << r) | (x >> (64 - r));
-}
-
-#define ROTL32(x,y)     rotl32(x,y)
-#define ROTL64(x,y)     rotl64(x,y)
-
-#define BIG_CONSTANT(x) (x##LLU)
-
+	#define BIG_CONSTANT(x) (x##LLU)
 #endif // !defined(_MSC_VER)
+
+// rotl
+#if __cplusplus >= 202002L
+	#define ROTL32(x,y) std::rotl(x,y)
+	#define ROTL64(x,y) std::rotl(x,y)
+#else
+	constexpr uint32_t rotl32(uint32_t x, int8_t r) { return (x << r) | (x >> (32 - r)); }
+	constexpr uint64_t rotl64(uint64_t x, int8_t r) { return (x << r) | (x >> (64 - r)); }
+	#define ROTL32(x,y) rotl32(x,y)
+	#define ROTL64(x,y) rotl64(x,y)
+#endif
 
 //-----------------------------------------------------------------------------
 // Block read - if your platform needs to do endian-swapping or can only
@@ -75,6 +51,11 @@ constexpr uint64_t rotl64(uint64_t x, int8_t r)
 FORCE_INLINE constexpr uint32_t getblock32(const uint32_t* p, int i)
 {
 	return p[i];
+}
+
+FORCE_INLINE constexpr uint32_t getblock32(const char* p, int i)
+{
+	return (uint8_t)(p[i + 0]) << 24 | (uint8_t)(p[i + 1]) << 16 | (uint8_t)(p[i + 2]) << 8 | (uint8_t)(p[i + 3]);
 }
 
 FORCE_INLINE constexpr uint64_t getblock64(const uint64_t* p, int i)
@@ -111,10 +92,8 @@ FORCE_INLINE constexpr uint64_t fmix64(uint64_t k)
 
 //-----------------------------------------------------------------------------
 
-constexpr void MurmurHash3_x86_32(const void* key, int len,
-	uint32_t seed, void* out)
+constexpr void MurmurHash3_x86_32(const char* key, int len, uint32_t seed, uint32_t* out)
 {
-	const uint8_t* data = (const uint8_t*)key;
 	const int nblocks = len / 4;
 
 	uint32_t h1 = seed;
@@ -125,11 +104,11 @@ constexpr void MurmurHash3_x86_32(const void* key, int len,
 	//----------
 	// body
 
-	const uint32_t* blocks = (const uint32_t*)(data + nblocks * 4);
+	const auto* blocks = key + nblocks * 4;
 
 	for (int i = -nblocks; i; i++)
 	{
-		uint32_t k1 = getblock32(blocks, i);
+		uint32_t k1 = getblock32(blocks, 4 * i);
 
 		k1 *= c1;
 		k1 = ROTL32(k1, 15);
@@ -143,15 +122,15 @@ constexpr void MurmurHash3_x86_32(const void* key, int len,
 	//----------
 	// tail
 
-	const uint8_t* tail = (const uint8_t*)(data + nblocks * 4);
+	const auto* tail = key + nblocks * 4;
 
 	uint32_t k1 = 0;
 
 	switch (len & 3)
 	{
-		case 3: k1 ^= tail[2] << 16;
-		case 2: k1 ^= tail[1] << 8;
-		case 1: k1 ^= tail[0];
+		case 3: k1 ^= static_cast<uint8_t>(tail[2]) << 16;
+		case 2: k1 ^= static_cast<uint8_t>(tail[1]) << 8;
+		case 1: k1 ^= static_cast<uint8_t>(tail[0]);
 			k1 *= c1; k1 = ROTL32(k1, 15); k1 *= c2; h1 ^= k1;
 	};
 
@@ -162,13 +141,12 @@ constexpr void MurmurHash3_x86_32(const void* key, int len,
 
 	h1 = fmix32(h1);
 
-	*(uint32_t*)out = h1;
+	*out = h1;
 }
 
 //-----------------------------------------------------------------------------
 
-constexpr void MurmurHash3_x86_128(const void* key, const int len,
-	uint32_t seed, void* out)
+constexpr void MurmurHash3_x86_128(const char* key, const int len, uint32_t seed, void* out)
 {
 	const uint8_t* data = (const uint8_t*)key;
 	const int nblocks = len / 16;
@@ -272,8 +250,7 @@ constexpr void MurmurHash3_x86_128(const void* key, const int len,
 
 //-----------------------------------------------------------------------------
 
-constexpr void MurmurHash3_x64_128(const void* key, const int len,
-	const uint32_t seed, void* out)
+constexpr void MurmurHash3_x64_128(const char* key, const int len, const uint32_t seed, void* out)
 {
 	const uint8_t* data = (const uint8_t*)key;
 	const int nblocks = len / 16;
