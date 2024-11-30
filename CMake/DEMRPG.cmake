@@ -50,9 +50,8 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Objects/LockComponent.h
 	DEM/RPG/src/Objects/LockpickAbility.h
 	DEM/RPG/src/Objects/OwnedComponent.h
-	DEM/RPG/src/Quests/Quest.h
+	DEM/RPG/src/Quests/QuestData.h
 	DEM/RPG/src/Quests/QuestManager.h
-	DEM/RPG/src/Quests/Task.h
 	DEM/RPG/src/SI/SI_L3.h
 	DEM/RPG/src/World/WorldManager.h
 )
@@ -88,7 +87,6 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/Objects/LockpickAbility.cpp
 	DEM/RPG/src/Quests/QuestManager.cpp
 	DEM/RPG/src/SI/SIFaction.cpp
-	DEM/RPG/src/SI/SIQuestManager.cpp
 	DEM/RPG/src/World/WorldManager.cpp
 )
 
