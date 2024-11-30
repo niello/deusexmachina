@@ -16,4 +16,18 @@ void CQuestManager::LoadQuests(const Data::PParams& Desc)
 }
 //---------------------------------------------------------------------
 
+const CQuestData* CQuestManager::FindQuestData(CStrID ID) const
+{
+	auto It = _Quests.find(ID);
+	return (It != _Quests.cend()) ? &It->second : nullptr;
+}
+//---------------------------------------------------------------------
+
+bool CQuestManager::StartQuest(CStrID ID)
+{
+	NOT_IMPLEMENTED;
+	return false;
+}
+//---------------------------------------------------------------------
+
 }

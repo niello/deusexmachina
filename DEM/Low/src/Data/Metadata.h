@@ -224,6 +224,8 @@ public:
 
 	constexpr const char*   GetName() const { return _pName; }
 	constexpr std::uint32_t GetCode() const { return _Code; }
+	constexpr const TGetter GetGetter() const { return _pGetter; }
+	constexpr const TSetter GetSetter() const { return _pSetter; }
 
 	// TODO: in addition could have per-member constexpr bool "need serialization/need diff/...?"
 	constexpr bool          CanSerialize() const { return _Code != DEM::Meta::NO_MEMBER_CODE; }
@@ -234,7 +236,7 @@ private:
 	const char*      _pName = nullptr;
 	TGetter          _pGetter = nullptr;
 	TSetter          _pSetter = nullptr;
-	CTypeMetadata<T> _Extras;
+	CTypeMetadata<T> _Extras; // TODO: can inherit from it instead? would be convenient?
 };
 
 // FIXME: not usable without std::enable_if_t<is_setter_v<TAccessor, TClass, T>>> etc

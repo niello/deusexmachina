@@ -1,8 +1,8 @@
 #pragma once
 #include <sol/sol.hpp>
 #include <Data/Ptr.h>
-#include <Data/StringID.h>
 #include <Data/StringUtils.h>
+#include <Data/Metadata.h>
 
 // Wrapper for Sol header with template overrides required for DEM Low layer
 
@@ -37,7 +37,7 @@ void RegisterBasicTypes(sol::state& State);
 template<typename T>
 void RegisterSignalType(sol::state& State)
 {
-	using TSignal = DEM::Events::CSignal<T>;
+	using TSignal = Events::CSignal<T>;
 	State.new_usertype<TSignal>(sol::detail::demangle<TSignal>()
 		, "Subscribe", &TSignal::Subscribe<sol::function>
 		, "SubscribeAndForget", &TSignal::SubscribeAndForget<sol::function>
@@ -48,13 +48,13 @@ void RegisterSignalType(sol::state& State)
 //---------------------------------------------------------------------
 
 template<typename T>
-void RegisterStringOperations(sol::usertype<T>& Usertype)
+void RegisterStringOperations(sol::usertype<T>& UserType)
 {
 	// TODO: need a trait for the matching overload type or address to bind ToString directly!
 	// Now casting fails because some overloads accept T and others accept const T&.
-	Usertype.set(sol::meta_function::to_string, [](const T& Value) { return StringUtils::ToString(Value); });
+	UserType.set(sol::meta_function::to_string, [](const T& Value) { return StringUtils::ToString(Value); });
 
-	Usertype.set(sol::meta_function::concatenation, sol::overload(
+	UserType.set(sol::meta_function::concatenation, sol::overload(
 		[](std::string_view a, const T& b)
 		{
 			// TODO: ToString writing to the Out param would help here!
@@ -64,6 +64,19 @@ void RegisterStringOperations(sol::usertype<T>& Usertype)
 			return Result.append(a).append(bStr);
 		},
 		[](const T& a, std::string_view b) { return StringUtils::ToString(a).append(b); }));
+}
+//---------------------------------------------------------------------
+
+template<typename T>
+void RegisterMetadataFields(sol::usertype<T>& UserType)
+{
+	if constexpr (Meta::CMetadata<T>::IsRegistered)
+	{
+		Meta::CMetadata<T>::ForEachMember([&UserType](const auto& Member)
+		{
+			UserType.set(Member.GetName(), sol::property(Member.GetGetter(), Member.GetSetter()));
+		});
+	}
 }
 //---------------------------------------------------------------------
 

@@ -41,7 +41,9 @@ public:
 
 	CQuestManager(Game::CGameSession& Owner);
 
-	void LoadQuests(const Data::PParams& Desc);
+	void              LoadQuests(const Data::PParams& Desc);
+	const CQuestData* FindQuestData(CStrID ID) const;
+	bool              StartQuest(CStrID ID);
 	//GetQuestState
 	//SetQuestOutcome
 	//ActivateQuest - does nothiong if active, what if finished with outcome?
