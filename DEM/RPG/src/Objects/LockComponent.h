@@ -24,8 +24,8 @@ struct CLockComponent
 namespace DEM::Meta
 {
 
-template<> constexpr auto RegisterClassName<DEM::RPG::CLockComponent>() { return "DEM::RPG::CLockComponent"; }
-template<> constexpr auto RegisterMembers<DEM::RPG::CLockComponent>()
+template<> constexpr auto RegisterClassName<RPG::CLockComponent>() { return "DEM::RPG::CLockComponent"; }
+template<> constexpr auto RegisterMembers<RPG::CLockComponent>()
 {
 	return std::make_tuple
 	(
@@ -36,6 +36,6 @@ template<> constexpr auto RegisterMembers<DEM::RPG::CLockComponent>()
 		DEM_META_MEMBER_FIELD(RPG::CLockComponent, KeyConsume)
 	);
 }
-static_assert(DEM::Meta::CMetadata<DEM::RPG::CLockComponent>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
+static_assert(CMetadata<RPG::CLockComponent>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
 
 }

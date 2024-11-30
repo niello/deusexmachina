@@ -39,6 +39,6 @@ template<> constexpr auto RegisterMembers<RPG::CItemComponent>()
 		DEM_META_MEMBER_FIELD(RPG::CItemComponent, AlwaysShowCount)
 	);
 }
-static_assert(DEM::Meta::CMetadata<DEM::RPG::CItemComponent>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
+static_assert(CMetadata<RPG::CItemComponent>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
 
 }

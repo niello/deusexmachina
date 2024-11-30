@@ -1,35 +1,35 @@
 #pragma once
-#include <Core/Object.h>
 #include <Data/Metadata.h>
 #include <Data/StringID.h>
 
-// Quest is a graph of linked tasks representing a part of storyline, either main or optional
-// This implementation manages only current tasks. Links are managed by tasks themselves.
+// An objective of a player and its character. Can be started and then completed with different outcomes.
 
 namespace DEM::RPG
 {
 
-class CQuestData : public ::Core::CObject
+struct CQuestData
 {
-	RTTI_CLASS_DECL(CEquipmentScheme, ::Core::CObject);
-
-public:
-
 	CStrID      ID;
 	CStrID      ParentID;
 	std::string UIName;
 	std::string UIDesc;
+	// Outcomes: ID -> Name(?)+Desc+Rewards?
+	//    if outcome not in list, is it impossible or simply not shown in UI and not giving a reward?
+	// Flow asset or script for OnStart
+	// Flow asset or script for outcome condition monitoring; OnOutcome logic can be stored in Lua object of the quest, for locality of data
+	//    OnStarted, OnCompleted(Outcome, InOutRewards), OnReset; maybe also some arbitrary Lua functions called in flow nodes
+	//???or store on started in the same flow? and when restoring quest, start player from remembered condition monitoring node
+	//!!!flow can be inline, no resource manager needed!
+	//???requirements (resources)?
 };
-
-using PQuestData = Ptr<CQuestData>;
 
 }
 
 namespace DEM::Meta
 {
 
-template<> constexpr auto RegisterClassName<DEM::RPG::CQuestData>() { return "DEM::RPG::CQuestData"; }
-template<> constexpr auto RegisterMembers<DEM::RPG::CQuestData>()
+template<> constexpr auto RegisterClassName<RPG::CQuestData>() { return "DEM::RPG::CQuestData"; }
+template<> constexpr auto RegisterMembers<RPG::CQuestData>()
 {
 	return std::make_tuple
 	(
@@ -39,6 +39,6 @@ template<> constexpr auto RegisterMembers<DEM::RPG::CQuestData>()
 		DEM_META_MEMBER_FIELD(RPG::CQuestData, UIDesc)
 	);
 }
-static_assert(DEM::Meta::CMetadata<DEM::RPG::CQuestData>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
+static_assert(CMetadata<RPG::CQuestData>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
 
 }
