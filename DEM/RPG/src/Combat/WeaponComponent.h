@@ -36,10 +36,10 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CDamageData>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CDamageData, 1, Type),
-		DEM_META_MEMBER_FIELD(RPG::CDamageData, 2, x),
-		DEM_META_MEMBER_FIELD(RPG::CDamageData, 3, y),
-		DEM_META_MEMBER_FIELD(RPG::CDamageData, 4, z)
+		DEM_META_MEMBER_FIELD(RPG::CDamageData, Type),
+		DEM_META_MEMBER_FIELD(RPG::CDamageData, x),
+		DEM_META_MEMBER_FIELD(RPG::CDamageData, y),
+		DEM_META_MEMBER_FIELD(RPG::CDamageData, z)
 	);
 }
 
@@ -48,10 +48,10 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CWeaponComponent>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CWeaponComponent, 1, Damage),
-		DEM_META_MEMBER_FIELD(RPG::CWeaponComponent, 2, Range),
-		DEM_META_MEMBER_FIELD(RPG::CWeaponComponent, 3, Period),
-		DEM_META_MEMBER_FIELD(RPG::CWeaponComponent, 4, Big)
+		DEM_META_MEMBER_FIELD(RPG::CWeaponComponent, Damage),
+		DEM_META_MEMBER_FIELD(RPG::CWeaponComponent, Range),
+		DEM_META_MEMBER_FIELD(RPG::CWeaponComponent, Period),
+		DEM_META_MEMBER_FIELD(RPG::CWeaponComponent, Big)
 	);
 }
 

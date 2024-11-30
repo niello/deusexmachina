@@ -22,7 +22,7 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CTalkingComponent>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CTalkingComponent, 1, Asset)
+		DEM_META_MEMBER_FIELD(RPG::CTalkingComponent, Asset)
 	);
 }
 

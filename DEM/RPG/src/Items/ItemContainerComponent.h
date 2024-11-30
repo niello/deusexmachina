@@ -23,9 +23,9 @@ template<> inline constexpr auto RegisterMembers<RPG::CItemContainerComponent>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CItemContainerComponent, 1, Items),
-		DEM_META_MEMBER_FIELD(RPG::CItemContainerComponent, 2, MaxVolume),
-		DEM_META_MEMBER_FIELD(RPG::CItemContainerComponent, 3, Temporary)
+		DEM_META_MEMBER_FIELD(RPG::CItemContainerComponent, Items),
+		DEM_META_MEMBER_FIELD(RPG::CItemContainerComponent, MaxVolume),
+		DEM_META_MEMBER_FIELD(RPG::CItemContainerComponent, Temporary)
 	);
 }
 

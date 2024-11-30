@@ -29,12 +29,13 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CLockComponent>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CLockComponent, 1, Difficulty),
-		DEM_META_MEMBER_FIELD(RPG::CLockComponent, 2, Jamming),
-		DEM_META_MEMBER_FIELD(RPG::CLockComponent, 3, KeyItemID),
-		DEM_META_MEMBER_FIELD(RPG::CLockComponent, 4, KeyItemCount),
-		DEM_META_MEMBER_FIELD(RPG::CLockComponent, 5, KeyConsume)
+		DEM_META_MEMBER_FIELD(RPG::CLockComponent, Difficulty),
+		DEM_META_MEMBER_FIELD(RPG::CLockComponent, Jamming),
+		DEM_META_MEMBER_FIELD(RPG::CLockComponent, KeyItemID),
+		DEM_META_MEMBER_FIELD(RPG::CLockComponent, KeyItemCount),
+		DEM_META_MEMBER_FIELD(RPG::CLockComponent, KeyConsume)
 	);
 }
+static_assert(DEM::Meta::CMetadata<DEM::RPG::CLockComponent>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
 
 }

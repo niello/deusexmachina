@@ -25,7 +25,7 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CArmorComponent>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CArmorComponent, 1, Absorption)
+		DEM_META_MEMBER_FIELD(RPG::CArmorComponent, Absorption)
 	);
 }
 

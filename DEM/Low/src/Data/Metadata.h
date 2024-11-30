@@ -1,5 +1,6 @@
 #pragma once
 #include <Data/MemberAccess.h>
+#include <Data/Hash.h> // for auto-generated field codes
 #include <cstdint>
 #include <string>
 
@@ -17,9 +18,11 @@
 namespace DEM::Meta
 {
 
+constexpr std::uint32_t NO_MEMBER_CODE = std::numeric_limits<std::uint32_t>::max();
+
 // Specialize this for your types
-template<typename T> inline constexpr auto RegisterMembers() { return false; } // return std::tuple instead for your types
-template<typename T> inline constexpr auto RegisterClassName() { return "<no class name specified>"; } // typeid(T).name()
+template<typename T> constexpr auto RegisterMembers() { return false; } // return std::tuple instead for your types
+template<typename T> constexpr auto RegisterClassName() { return "<no class name specified>"; } // typeid(T).name()
 
 // Specialize this to add more meta info to your types
 template<typename T> struct CTypeMetadata {};
@@ -39,52 +42,52 @@ class CMetadata final
 {
 private:
 
-	static inline constexpr auto _Members = RegisterMembers<T>();
+	static constexpr auto _Members = RegisterMembers<T>();
 
 public:
 
 	// Template sets _Members to const bool false, specializations must use std::tuple
-	static inline constexpr bool IsRegistered = !std::is_same_v<decltype(_Members), const bool>;
+	static constexpr bool IsRegistered = !std::is_same_v<decltype(_Members), const bool>;
 
-	static inline constexpr auto   GetClassName() { return RegisterClassName<T>(); }
+	static constexpr auto   GetClassName() { return RegisterClassName<T>(); }
 	template<size_t Index>
-	static inline constexpr auto   GetMember() { return std::get<Index>(_Members); }
-	static inline constexpr size_t GetMemberCount() { return std::tuple_size_v<decltype(_Members)>; }
+	static constexpr auto   GetMember() { return std::get<Index>(_Members); }
+	static constexpr size_t GetMemberCount() { return std::tuple_size_v<decltype(_Members)>; }
 
 	template<typename TCallback>
-	static inline constexpr void ForEachMember(TCallback Callback)
+	static constexpr void ForEachMember(TCallback Callback)
 	{
 		std::apply([Callback](auto& ...Members) { (..., Callback(Members)); }, _Members);
 	}
 
-	static inline constexpr bool HasMember(std::string_view Name)
+	static constexpr bool HasMember(std::string_view Name)
 	{
 		return std::apply([Name](auto& ...Members) { return (... || (Members.GetName() == Name)); }, _Members);
 	}
 
-	static inline constexpr bool HasMember(std::uint32_t Code)
+	static constexpr bool HasMember(std::uint32_t Code)
 	{
 		return std::apply([Code](auto& ...Members) { return (... || (Members.GetCode() == Code)); }, _Members);
 	}
 
-	static inline constexpr bool IsEqual(const T& a, const T& b)
+	static constexpr bool IsEqual(const T& a, const T& b)
 	{
 		return std::apply([&a, &b](auto& ...Members) { return (... && IsEqualByValue(Members.GetConstValue(a), Members.GetConstValue(b))); }, _Members);
 	}
 
-	static inline constexpr void Copy(const T& From, T& To)
+	static constexpr void Copy(const T& From, T& To)
 	{
 		std::apply([&From, &To](auto& ...Members) { (..., Members.SetValue(To, Members.GetConstValue(From))); }, _Members);
 	}
 
 	// TODO: TSetter doesn't allow to get mutable pointer and alter the source this way. Need to improve.
-	//static inline constexpr void Move(T&& From, T& To)
+	//static constexpr void Move(T&& From, T& To)
 	//{
 	//	std::apply([&From, &To](auto& ...Members) { (..., Members.SetValue(To, std::move(Members.GetValueRef(From)))); }, _Members);
 	//}
 
 	template<typename TCallback>
-	static inline constexpr bool WithMember(std::string_view Name, TCallback Callback)
+	static constexpr bool WithMember(std::string_view Name, TCallback Callback)
 	{
 		bool Found = false;
 		ForEachMember([Name, Callback, &Found](const auto& Member)
@@ -99,7 +102,7 @@ public:
 	}
 
 	template<typename TCallback>
-	static inline constexpr bool WithMember(std::uint32_t Code, TCallback Callback)
+	static constexpr bool WithMember(std::uint32_t Code, TCallback Callback)
 	{
 		bool Found = false;
 		ForEachMember([Code, Callback, &Found](const auto& Member)
@@ -112,12 +115,32 @@ public:
 		});
 		return Found;
 	}
+
+	// TODO: how to invoke automatically on _Members init?
+	static constexpr bool ValidateMembers()
+	{
+		// Check that field codes are unique. If uniqueness is broken by auto-generation via Hash,
+		// change the field name or provide the code explicitly via DEM_META_MEMBER_FIELD.
+		bool Result = true;
+		ForEachMember([&Result](const auto& MemberA)
+		{
+			ForEachMember([&Result, &MemberA](const auto& MemberB)
+			{
+				// Early exit if already failed or comparing with itself
+				if (!Result || (void*)&MemberA == (void*)&MemberB) return;
+
+				if (MemberA.GetCode() != NO_MEMBER_CODE && MemberA.GetCode() == MemberB.GetCode())
+					Result = false;
+				else if (MemberA.GetName() == MemberB.GetName())
+					Result = false;
+			});
+		});
+		return Result;
+	}
 };
 
 template<typename TMember>
 using TMemberValue = typename std::decay_t<TMember>::TValue;
-
-constexpr std::uint32_t NO_MEMBER_CODE = std::numeric_limits<std::uint32_t>::max();
 
 // Interface to a registered member metadata
 template<typename TClass, typename T, typename TGetter, typename TSetter>
@@ -263,7 +286,9 @@ inline constexpr auto Member(std::uint32_t Code, const char* pName, T TClass::* 
 }
 
 #define DEM_META_REGISTER_CLASS_NAME(Class) template<> inline constexpr auto RegisterClassName<Class>() { return #Class; }
-#define DEM_META_MEMBER_FIELD(Class, Code, Name) Member(Code, #Name, &Class::Name, &Class::Name)
+#define DEM_META_MEMBER_FIELD_CODE(Class, Code, Name) Member(Code, #Name, &Class::Name, &Class::Name)
+#define DEM_META_MEMBER_FIELD(Class, Name) Member(DEM::Utils::Hash(#Name), #Name, &Class::Name, &Class::Name)
+#define DEM_META_MEMBER_FIELD_NOSAVE(Class, Name) Member(#Name, &Class::Name, &Class::Name)
 
 // Default equality comparison for objects with registered metadata.
 // Must be in the global namespace in order to be available everywhere on operator resolution.

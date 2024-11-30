@@ -37,8 +37,8 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CAppearanceComponent>
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CAppearanceComponent, 1, Params),
-		DEM_META_MEMBER_FIELD(RPG::CAppearanceComponent, 2, AppearanceAssets)
+		DEM_META_MEMBER_FIELD(RPG::CAppearanceComponent, Params),
+		DEM_META_MEMBER_FIELD(RPG::CAppearanceComponent, AppearanceAssets)
 	);
 }
 

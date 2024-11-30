@@ -111,8 +111,8 @@ template<> inline constexpr auto RegisterMembers<DEM::Flow::CConditionData>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(Flow::CConditionData, 1, Type),
-		DEM_META_MEMBER_FIELD(Flow::CConditionData, 2, Params)
+		DEM_META_MEMBER_FIELD(Flow::CConditionData, Type),
+		DEM_META_MEMBER_FIELD(Flow::CConditionData, Params)
 	);
 }
 

@@ -86,7 +86,7 @@ struct hash<CStrID>
 {
 	size_t operator()(const CStrID _Keyval) const noexcept
 	{
-		return static_cast<size_t>(Hash(_Keyval.CStr()));
+		return static_cast<size_t>(DEM::Utils::Hash(_Keyval.CStr()));
 	}
 };
 

@@ -4,6 +4,9 @@
 
 // Hash functions
 
+namespace DEM::Utils
+{
+
 constexpr int WangIntegerHash(int Key)
 {
 	//if (sizeof(void*)==8) RealKey = Key[0] + Key[1];
@@ -27,7 +30,7 @@ constexpr int WangIntegerHash(int Key)
 }
 //---------------------------------------------------------------------
 
-constexpr uint32_t Hash(const void* pData, int Length)
+constexpr uint32_t Hash(const char* pData, int Length)
 {
 	uint32_t Result = 0;
 	if (pData && Length)
@@ -56,8 +59,17 @@ template<class T> constexpr uint32_t Hash(const T& Key)
 }
 //---------------------------------------------------------------------
 
-template<> constexpr uint32_t Hash<const char*>(const char * const & Key)
+template<> constexpr uint32_t Hash<const char*>(const char* const& Key)
 {
-	return Hash(Key, strlen(Key));
+	return Hash(std::string_view{ Key });
 }
 //---------------------------------------------------------------------
+
+// FIXME: C++17 can't be constexpr because of cast
+inline uint32_t Hash(const void* pData, int Length)
+{
+	return Hash(static_cast<const char*>(pData), Length);
+}
+//---------------------------------------------------------------------
+
+}

@@ -28,7 +28,7 @@ public:
 	virtual void*       Resize(UPTR NewSize) { return nullptr; }
 	virtual bool        IsOwning() const = 0;
 
-	uint32_t            GetHash() const { return Hash(GetConstPtr(), GetSize()); }
+	uint32_t            GetHash() const { return DEM::Utils::Hash(GetConstPtr(), GetSize()); }
 	int                 Compare(const IBuffer& Other) const { return Compare(Other.GetConstPtr(), Other.GetSize()); }
 	int                 Compare(const void* pOtherData, UPTR OtherSize) const;
 

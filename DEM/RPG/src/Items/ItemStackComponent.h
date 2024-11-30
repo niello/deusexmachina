@@ -29,9 +29,9 @@ template<> inline constexpr auto RegisterMembers<RPG::CItemStackComponent>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CItemStackComponent, 1, Prototype),
-		DEM_META_MEMBER_FIELD(RPG::CItemStackComponent, 2, Count),
-		DEM_META_MEMBER_FIELD(RPG::CItemStackComponent, 3, Modified)
+		DEM_META_MEMBER_FIELD(RPG::CItemStackComponent, Prototype),
+		DEM_META_MEMBER_FIELD(RPG::CItemStackComponent, Count),
+		DEM_META_MEMBER_FIELD(RPG::CItemStackComponent, Modified)
 	);
 }
 

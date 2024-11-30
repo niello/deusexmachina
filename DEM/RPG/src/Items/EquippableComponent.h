@@ -26,10 +26,10 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CEquippableComponent>
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, 1, Slots),
-		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, 2, MaxStack),
-		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, 3, ScriptAssetID),
-		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, 4, AppearanceAssets)
+		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, Slots),
+		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, MaxStack),
+		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, ScriptAssetID),
+		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, AppearanceAssets)
 	);
 }
 

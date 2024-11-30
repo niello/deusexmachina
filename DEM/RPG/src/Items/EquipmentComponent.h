@@ -32,9 +32,9 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CEquipmentComponent>(
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CEquipmentComponent, 1, Equipment),
-		DEM_META_MEMBER_FIELD(RPG::CEquipmentComponent, 2, QuickSlots),
-		DEM_META_MEMBER_FIELD(RPG::CEquipmentComponent, 3, SchemeID)
+		DEM_META_MEMBER_FIELD(RPG::CEquipmentComponent, Equipment),
+		DEM_META_MEMBER_FIELD(RPG::CEquipmentComponent, QuickSlots),
+		DEM_META_MEMBER_FIELD(RPG::CEquipmentComponent, SchemeID)
 	);
 }
 

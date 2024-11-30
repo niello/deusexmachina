@@ -135,11 +135,16 @@ inline bool operator !=(std::string_view Str1, const CString& Str2)
 }
 //---------------------------------------------------------------------
 
+namespace DEM::Utils
+{
+
 template<> inline uint32_t Hash<CString>(const CString& Key)
 {
 	return Hash(Key.CStr(), Key.GetLength());
 }
 //---------------------------------------------------------------------
+
+}
 
 inline CString::CString(const char* pSrc)
 {

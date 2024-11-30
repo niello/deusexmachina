@@ -49,7 +49,7 @@ const char* CStringIDStorage::StoreString(std::string_view Str)
 
 CStringID CStringIDStorage::Get(std::string_view Str) const
 {
-	unsigned int HashValue = Hash(Str);
+	unsigned int HashValue = DEM::Utils::Hash(Str);
 	auto& Chain = Map[HashValue % Map.size()];
 	if (Chain.size() == 1)
 	{
@@ -68,7 +68,7 @@ CStringID CStringIDStorage::Get(std::string_view Str) const
 
 CStringID CStringIDStorage::GetOrAdd(std::string_view Str)
 {
-	unsigned int HashValue = Hash(Str);
+	unsigned int HashValue = DEM::Utils::Hash(Str);
 	auto& Chain = Map[HashValue % Map.size()];
 	auto InsertPos = Chain.begin();
 	if (Chain.size() == 1)

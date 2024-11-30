@@ -33,11 +33,12 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CQuestData>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CQuestData, 1, ID),
-		DEM_META_MEMBER_FIELD(RPG::CQuestData, 2, ParentID),
-		DEM_META_MEMBER_FIELD(RPG::CQuestData, 3, UIName),
-		DEM_META_MEMBER_FIELD(RPG::CQuestData, 4, UIDesc)
+		DEM_META_MEMBER_FIELD(RPG::CQuestData, ID),
+		DEM_META_MEMBER_FIELD(RPG::CQuestData, ParentID),
+		DEM_META_MEMBER_FIELD(RPG::CQuestData, UIName),
+		DEM_META_MEMBER_FIELD(RPG::CQuestData, UIDesc)
 	);
 }
+static_assert(DEM::Meta::CMetadata<DEM::RPG::CQuestData>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
 
 }

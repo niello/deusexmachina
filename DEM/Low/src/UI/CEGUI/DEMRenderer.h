@@ -78,8 +78,13 @@ public:
 
 }
 
+namespace DEM::Utils
+{
+
 template<> inline unsigned int Hash<CEGUI::String>(const CEGUI::String& Key)
 {
 	return Hash(Key.c_str(), Key.size());
 }
 //---------------------------------------------------------------------
+
+}

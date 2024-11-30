@@ -42,8 +42,8 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CAppearanceAsset::CVi
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset::CVisualPartVariant, 1, Asset),
-		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset::CVisualPartVariant, 2, Conditions)
+		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset::CVisualPartVariant, Asset),
+		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset::CVisualPartVariant, Conditions)
 	);
 }
 
@@ -52,9 +52,9 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CAppearanceAsset::CVi
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset::CVisualPart, 1, BodyParts),
-		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset::CVisualPart, 2, Variants),
-		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset::CVisualPart, 3, RootBonePath)
+		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset::CVisualPart, BodyParts),
+		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset::CVisualPart, Variants),
+		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset::CVisualPart, RootBonePath)
 	);
 }
 
@@ -63,7 +63,7 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CAppearanceAsset>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset, 1, Visuals)
+		DEM_META_MEMBER_FIELD(RPG::CAppearanceAsset, Visuals)
 	);
 }
 

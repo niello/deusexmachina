@@ -80,9 +80,9 @@ template<> inline constexpr auto RegisterMembers<DEM::Flow::CFlowLink>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(Flow::CFlowLink, 1, Condition),
-		DEM_META_MEMBER_FIELD(Flow::CFlowLink, 2, DestID),
-		DEM_META_MEMBER_FIELD(Flow::CFlowLink, 3, YieldToNextFrame)
+		DEM_META_MEMBER_FIELD(Flow::CFlowLink, Condition),
+		DEM_META_MEMBER_FIELD(Flow::CFlowLink, DestID),
+		DEM_META_MEMBER_FIELD(Flow::CFlowLink, YieldToNextFrame)
 	);
 }
 
@@ -91,10 +91,10 @@ template<> inline constexpr auto RegisterMembers<DEM::Flow::CFlowActionData>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 1, ClassName),
-		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 2, Params),
-		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 3, Links),
-		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, 4, ID)
+		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, ClassName),
+		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, Params),
+		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, Links),
+		DEM_META_MEMBER_FIELD(Flow::CFlowActionData, ID)
 	);
 }
 

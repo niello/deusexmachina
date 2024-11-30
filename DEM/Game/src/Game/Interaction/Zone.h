@@ -35,9 +35,9 @@ template<> inline constexpr auto RegisterMembers<Game::CZone>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(Game::CZone, 1, Vertices),
-		DEM_META_MEMBER_FIELD(Game::CZone, 2, Radius),
-		DEM_META_MEMBER_FIELD(Game::CZone, 3, ClosedPolygon)
+		DEM_META_MEMBER_FIELD(Game::CZone, Vertices),
+		DEM_META_MEMBER_FIELD(Game::CZone, Radius),
+		DEM_META_MEMBER_FIELD(Game::CZone, ClosedPolygon)
 	);
 }
 

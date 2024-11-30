@@ -100,7 +100,7 @@ struct hash<DEM::Game::HEntity>
 {
 	size_t operator()(const DEM::Game::HEntity _Keyval) const noexcept
 	{
-		return static_cast<size_t>(Hash(_Keyval));
+		return static_cast<size_t>(DEM::Utils::Hash(_Keyval));
 
 		// TODO: more profiling required
 		// The best hash function returns different value for each input.

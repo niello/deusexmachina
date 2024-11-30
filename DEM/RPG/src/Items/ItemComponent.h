@@ -29,15 +29,16 @@ template<> inline constexpr auto RegisterMembers<RPG::CItemComponent>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 1, WorldModelID),
-		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 2, WorldPhysicsID),
-		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 3, UIIcon),
-		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 4, UIName),
-		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 5, Weight),
-		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 6, Volume),
-		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 7, Price),
-		DEM_META_MEMBER_FIELD(RPG::CItemComponent, 8, AlwaysShowCount)
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, WorldModelID),
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, WorldPhysicsID),
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, UIIcon),
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, UIName),
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, Weight),
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, Volume),
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, Price),
+		DEM_META_MEMBER_FIELD(RPG::CItemComponent, AlwaysShowCount)
 	);
 }
+static_assert(DEM::Meta::CMetadata<DEM::RPG::CItemComponent>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
 
 }
