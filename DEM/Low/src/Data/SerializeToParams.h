@@ -290,9 +290,8 @@ struct ParamsFormat
 	//---------------------------------------------------------------------
 
 	template<typename T, typename std::enable_if_t<Meta::is_resizable_single_collection_v<T>>* = nullptr>
-	static inline void Deserialize(const Data::CData& Input, T& Vector)
+	static inline void DeserializeAppend(const Data::CData& Input, T& Vector)
 	{
-		Vector.clear();
 		if (auto pArrayPtr = Input.As<Data::PDataArray>())
 		{
 			auto pArray = pArrayPtr->Get();
@@ -318,20 +317,26 @@ struct ParamsFormat
 		else
 		{
 			// Try to deserialize the value as a vector of a single element
-			Vector.resize(1);
-			Deserialize(Input, Vector[0]);
+			Deserialize(Input, Vector.emplace_back());
 		}
 	}
 	//---------------------------------------------------------------------
 
+	template<typename T, typename std::enable_if_t<Meta::is_resizable_single_collection_v<T>>* = nullptr>
+	static inline void Deserialize(const Data::CData& Input, T& Vector)
+	{
+		Vector.clear();
+		DeserializeAppend(Input, Vector);
+	}
+	//---------------------------------------------------------------------
+
 	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
-	static inline void Deserialize(const Data::CData& Input, T& Map)
+	static inline void DeserializeAppend(const Data::CData& Input, T& Map)
 	{
 		static_assert(is_string_compatible_v<T::key_type>, "CData deserialization supports only string map keys");
 
 		constexpr bool IsStrIDKey = std::is_same_v<std::remove_cv_t<std::remove_reference_t<T::key_type>>, CStrID>;
 
-		Map.clear();
 		if (auto pParamsPtr = Input.As<Data::PParams>())
 		{
 			auto pParams = pParamsPtr->Get();
@@ -346,6 +351,14 @@ struct ParamsFormat
 				Deserialize(Param.GetRawValue(), *pValue);
 			}
 		}
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
+	static inline void Deserialize(const Data::CData& Input, T& Map)
+	{
+		Map.clear();
+		DeserializeAppend(Input, Map);
 	}
 	//---------------------------------------------------------------------
 

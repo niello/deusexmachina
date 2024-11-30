@@ -9,7 +9,7 @@ namespace DEM::RPG
 
 struct CQuestData
 {
-	CStrID      ID;
+	//CStrID      ID;
 	CStrID      ParentID;
 	std::string UIName;
 	std::string UIDesc;
@@ -33,7 +33,7 @@ template<> constexpr auto RegisterMembers<RPG::CQuestData>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CQuestData, ID),
+		//DEM_META_MEMBER_FIELD(RPG::CQuestData, ID),
 		DEM_META_MEMBER_FIELD(RPG::CQuestData, ParentID),
 		DEM_META_MEMBER_FIELD(RPG::CQuestData, UIName),
 		DEM_META_MEMBER_FIELD(RPG::CQuestData, UIDesc)

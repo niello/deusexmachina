@@ -1,5 +1,6 @@
 #pragma once
 #include <Core/RTTIBaseClass.h>
+#include <Quests/QuestData.h>
 #include <Data/Ptr.h>
 
 // Quest system manages current player (character) tasks and their flow (completion, failure,
@@ -24,11 +25,19 @@ class CQuestManager : public ::Core::CRTTIBaseClass
 
 private:
 
-	Game::CGameSession& _Session;
+	Game::CGameSession&                    _Session;
+
+	std::unordered_map<CStrID, CQuestData> _Quests;
 
 public:
 
 	// Quest = quest data ref (1<->1) + flow player, script function cache, subscriptions
+
+	//???!!!on subscription triggered, can pass data from the event to outcome calculation? or always calculated from the world state?
+	//!!!e.g. destroy with fire may not work without events! fire damage type is recorded only in a death event! can combine with flow or need Lua?
+	//???set all or chosen (by ID) params to flow vars context?! OnDead(EventParams) -> Flow.SetVar("DamageType", EventParams.DamageType), RecalcOutcomeConditions()
+	//???instead of flow script, use only declarative conditions and handle them in C++ with additional flexibility through Lua?
+	//or event-listening flow action will catch an event and evaluate conditions in a context of this event? but how, if there is no such param in EvaluateCondition?
 
 	CQuestManager(Game::CGameSession& Owner);
 
