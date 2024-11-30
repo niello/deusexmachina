@@ -30,8 +30,8 @@ public:
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<Game::CZone>() { return "DEM::Game::CZone"; }
-template<> inline constexpr auto RegisterMembers<Game::CZone>()
+template<> constexpr auto RegisterClassName<Game::CZone>() { return "DEM::Game::CZone"; }
+template<> constexpr auto RegisterMembers<Game::CZone>()
 {
 	return std::make_tuple
 	(

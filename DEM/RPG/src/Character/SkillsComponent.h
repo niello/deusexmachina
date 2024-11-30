@@ -19,8 +19,8 @@ struct CSkillsComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::Sh2::CSkillsComponent>() { return "DEM::Sh2::CSkillsComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::Sh2::CSkillsComponent>()
+template<> constexpr auto RegisterClassName<DEM::Sh2::CSkillsComponent>() { return "DEM::Sh2::CSkillsComponent"; }
+template<> constexpr auto RegisterMembers<DEM::Sh2::CSkillsComponent>()
 {
 	return std::make_tuple
 	(

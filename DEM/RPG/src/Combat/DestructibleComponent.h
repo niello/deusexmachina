@@ -34,8 +34,8 @@ struct CDestructibleComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CDestructibleComponent>() { return "DEM::RPG::CDestructibleComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CDestructibleComponent>()
+template<> constexpr auto RegisterClassName<DEM::RPG::CDestructibleComponent>() { return "DEM::RPG::CDestructibleComponent"; }
+template<> constexpr auto RegisterMembers<DEM::RPG::CDestructibleComponent>()
 {
 	return std::make_tuple
 	(

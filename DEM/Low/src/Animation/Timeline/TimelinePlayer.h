@@ -32,7 +32,7 @@ protected:
 
 public:
 
-	static inline constexpr U32 LOOP_INFINITELY = 0; // For _RemainingLoopCount
+	static constexpr U32 LOOP_INFINITELY = 0; // For _RemainingLoopCount
 
 	CTimelinePlayer();
 	~CTimelinePlayer();

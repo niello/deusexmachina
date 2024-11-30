@@ -75,8 +75,8 @@ using PFlowAsset = Ptr<CFlowAsset>;
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::Flow::CFlowLink>() { return "DEM::Flow::CFlowLink"; }
-template<> inline constexpr auto RegisterMembers<DEM::Flow::CFlowLink>()
+template<> constexpr auto RegisterClassName<DEM::Flow::CFlowLink>() { return "DEM::Flow::CFlowLink"; }
+template<> constexpr auto RegisterMembers<DEM::Flow::CFlowLink>()
 {
 	return std::make_tuple
 	(
@@ -86,8 +86,8 @@ template<> inline constexpr auto RegisterMembers<DEM::Flow::CFlowLink>()
 	);
 }
 
-template<> inline constexpr auto RegisterClassName<DEM::Flow::CFlowActionData>() { return "DEM::Flow::CFlowActionData"; }
-template<> inline constexpr auto RegisterMembers<DEM::Flow::CFlowActionData>()
+template<> constexpr auto RegisterClassName<DEM::Flow::CFlowActionData>() { return "DEM::Flow::CFlowActionData"; }
+template<> constexpr auto RegisterMembers<DEM::Flow::CFlowActionData>()
 {
 	return std::make_tuple
 	(

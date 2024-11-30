@@ -28,8 +28,8 @@ struct CRigidBodyComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<Game::CRigidBodyComponent>() { return "DEM::Game::CRigidBodyComponent"; }
-template<> inline constexpr auto RegisterMembers<Game::CRigidBodyComponent>()
+template<> constexpr auto RegisterClassName<Game::CRigidBodyComponent>() { return "DEM::Game::CRigidBodyComponent"; }
+template<> constexpr auto RegisterMembers<Game::CRigidBodyComponent>()
 {
 	return std::make_tuple
 	(

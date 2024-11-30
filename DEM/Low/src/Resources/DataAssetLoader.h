@@ -18,8 +18,8 @@
 //
 // namespace DEM::Meta
 // {
-// template<> inline constexpr auto RegisterClassName<CAsset>() { return "CAsset"; }
-// template<> inline constexpr auto RegisterMembers<CAsset>() { return std::make_tuple(DEM_META_MEMBER_FIELD(CAsset, 1, Field1), DEM_META_MEMBER_FIELD(CAsset, 2, Field2)); }
+// template<> constexpr auto RegisterClassName<CAsset>() { return "CAsset"; }
+// template<> constexpr auto RegisterMembers<CAsset>() { return std::make_tuple(DEM_META_MEMBER_FIELD(CAsset, 1, Field1), DEM_META_MEMBER_FIELD(CAsset, 2, Field2)); }
 // }
 //
 // App.ResourceManager().RegisterDefaultCreator("hrd", &CAsset::RTTI, n_new(Resources::CDataAssetLoaderHRD<CAsset>(App.ResourceManager())));

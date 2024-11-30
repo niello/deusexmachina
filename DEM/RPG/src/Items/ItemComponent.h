@@ -24,8 +24,8 @@ struct CItemComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<RPG::CItemComponent>() { return "DEM::RPG::CItemComponent"; }
-template<> inline constexpr auto RegisterMembers<RPG::CItemComponent>()
+template<> constexpr auto RegisterClassName<RPG::CItemComponent>() { return "DEM::RPG::CItemComponent"; }
+template<> constexpr auto RegisterMembers<RPG::CItemComponent>()
 {
 	return std::make_tuple
 	(

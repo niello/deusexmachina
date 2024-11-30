@@ -20,8 +20,8 @@ struct CArmorComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CArmorComponent>() { return "DEM::RPG::CArmorComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CArmorComponent>()
+template<> constexpr auto RegisterClassName<DEM::RPG::CArmorComponent>() { return "DEM::RPG::CArmorComponent"; }
+template<> constexpr auto RegisterMembers<DEM::RPG::CArmorComponent>()
 {
 	return std::make_tuple
 	(

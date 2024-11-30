@@ -467,7 +467,7 @@ struct BinaryFormat
 	//---------------------------------------------------------------------
 
 	template<typename TValue>
-	static inline constexpr size_t GetMaxDiffSize()
+	static constexpr size_t GetMaxDiffSize()
 	{
 		if constexpr (Meta::is_single_iterable_v<TValue> || Meta::is_pair_iterable_v<TValue>)
 		{

@@ -80,8 +80,8 @@ inline bool InRange(const float* v0, const float* v1, float AgentHeight, float S
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::AI::CNavAgentComponent>() { return "DEM::AI::CNavAgentComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::AI::CNavAgentComponent>()
+template<> constexpr auto RegisterClassName<DEM::AI::CNavAgentComponent>() { return "DEM::AI::CNavAgentComponent"; }
+template<> constexpr auto RegisterMembers<DEM::AI::CNavAgentComponent>()
 {
 	return std::make_tuple
 	(

@@ -37,8 +37,8 @@ using PAppearanceAsset = Ptr<CAppearanceAsset>;
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CAppearanceAsset::CVisualPartVariant>() { return "DEM::RPG::CAppearanceAsset::CVisualPartVariant"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CAppearanceAsset::CVisualPartVariant>()
+template<> constexpr auto RegisterClassName<DEM::RPG::CAppearanceAsset::CVisualPartVariant>() { return "DEM::RPG::CAppearanceAsset::CVisualPartVariant"; }
+template<> constexpr auto RegisterMembers<DEM::RPG::CAppearanceAsset::CVisualPartVariant>()
 {
 	return std::make_tuple
 	(
@@ -47,8 +47,8 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CAppearanceAsset::CVi
 	);
 }
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CAppearanceAsset::CVisualPart>() { return "DEM::RPG::CAppearanceAsset::CVisualPart"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CAppearanceAsset::CVisualPart>()
+template<> constexpr auto RegisterClassName<DEM::RPG::CAppearanceAsset::CVisualPart>() { return "DEM::RPG::CAppearanceAsset::CVisualPart"; }
+template<> constexpr auto RegisterMembers<DEM::RPG::CAppearanceAsset::CVisualPart>()
 {
 	return std::make_tuple
 	(
@@ -58,8 +58,8 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CAppearanceAsset::CVi
 	);
 }
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CAppearanceAsset>() { return "DEM::RPG::CAppearanceAsset"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CAppearanceAsset>()
+template<> constexpr auto RegisterClassName<DEM::RPG::CAppearanceAsset>() { return "DEM::RPG::CAppearanceAsset"; }
+template<> constexpr auto RegisterMembers<DEM::RPG::CAppearanceAsset>()
 {
 	return std::make_tuple
 	(

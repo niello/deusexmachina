@@ -27,8 +27,8 @@ struct CAnimationComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<Game::CAnimationComponent>() { return "DEM::Game::CAnimationComponent"; }
-template<> inline constexpr auto RegisterMembers<Game::CAnimationComponent>()
+template<> constexpr auto RegisterClassName<Game::CAnimationComponent>() { return "DEM::Game::CAnimationComponent"; }
+template<> constexpr auto RegisterMembers<Game::CAnimationComponent>()
 {
 	return std::make_tuple
 	(

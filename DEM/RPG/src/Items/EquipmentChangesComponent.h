@@ -27,8 +27,8 @@ struct CEquipmentChangesComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CEquipmentChangesComponent>() { return "DEM::RPG::CEquipmentChangesComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CEquipmentChangesComponent>()
+template<> constexpr auto RegisterClassName<DEM::RPG::CEquipmentChangesComponent>() { return "DEM::RPG::CEquipmentChangesComponent"; }
+template<> constexpr auto RegisterMembers<DEM::RPG::CEquipmentChangesComponent>()
 {
 	return std::make_tuple(); // This component is not persistent.
 }

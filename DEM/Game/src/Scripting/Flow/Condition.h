@@ -106,8 +106,8 @@ public:
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::Flow::CConditionData>() { return "DEM::Flow::CConditionData"; }
-template<> inline constexpr auto RegisterMembers<DEM::Flow::CConditionData>()
+template<> constexpr auto RegisterClassName<DEM::Flow::CConditionData>() { return "DEM::Flow::CConditionData"; }
+template<> constexpr auto RegisterMembers<DEM::Flow::CConditionData>()
 {
 	return std::make_tuple
 	(

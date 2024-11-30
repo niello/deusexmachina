@@ -33,7 +33,7 @@ namespace DEM::Meta
 {
 
 DEM_META_REGISTER_CLASS_NAME(DEM::RPG::CAppearanceComponent)
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CAppearanceComponent>()
+template<> constexpr auto RegisterMembers<DEM::RPG::CAppearanceComponent>()
 {
 	return std::make_tuple
 	(

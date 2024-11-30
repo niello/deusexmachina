@@ -46,8 +46,8 @@ struct CCharacterControllerComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<Game::CCharacterControllerComponent>() { return "DEM::Game::CCharacterControllerComponent"; }
-template<> inline constexpr auto RegisterMembers<Game::CCharacterControllerComponent>()
+template<> constexpr auto RegisterClassName<Game::CCharacterControllerComponent>() { return "DEM::Game::CCharacterControllerComponent"; }
+template<> constexpr auto RegisterMembers<Game::CCharacterControllerComponent>()
 {
 	return std::make_tuple
 	(

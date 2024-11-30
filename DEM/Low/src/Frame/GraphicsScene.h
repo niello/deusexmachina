@@ -30,8 +30,8 @@ using TSceneCellDim = U32; // Max 31 bits for quadtree, 21 bits for octree
 using TSceneMorton = U32;
 using TSceneCellDim = U16; // Max 15 bits for quadtree, 10 bits for octree
 #endif
-static inline constexpr size_t TREE_DIMENSIONS = 3;
-static inline constexpr U8 TREE_MAX_DEPTH = (sizeof(TSceneMorton) * 8 - 1) / TREE_DIMENSIONS;
+static constexpr size_t TREE_DIMENSIONS = 3;
+static constexpr U8 TREE_MAX_DEPTH = (sizeof(TSceneMorton) * 8 - 1) / TREE_DIMENSIONS;
 
 struct CSpatialTreeNode
 {

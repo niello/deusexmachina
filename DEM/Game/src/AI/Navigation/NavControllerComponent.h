@@ -36,8 +36,8 @@ struct CNavControllerComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::AI::CNavControllerComponent>() { return "DEM::AI::CNavControllerComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::AI::CNavControllerComponent>()
+template<> constexpr auto RegisterClassName<DEM::AI::CNavControllerComponent>() { return "DEM::AI::CNavControllerComponent"; }
+template<> constexpr auto RegisterMembers<DEM::AI::CNavControllerComponent>()
 {
 	return std::make_tuple
 	(

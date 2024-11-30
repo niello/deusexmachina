@@ -24,8 +24,8 @@ struct CLockComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CLockComponent>() { return "DEM::RPG::CLockComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CLockComponent>()
+template<> constexpr auto RegisterClassName<DEM::RPG::CLockComponent>() { return "DEM::RPG::CLockComponent"; }
+template<> constexpr auto RegisterMembers<DEM::RPG::CLockComponent>()
 {
 	return std::make_tuple
 	(

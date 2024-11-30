@@ -20,8 +20,8 @@ struct CItemCountMonitorComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CItemCountMonitorComponent>() { return "DEM::RPG::CItemCountMonitorComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CItemCountMonitorComponent>()
+template<> constexpr auto RegisterClassName<DEM::RPG::CItemCountMonitorComponent>() { return "DEM::RPG::CItemCountMonitorComponent"; }
+template<> constexpr auto RegisterMembers<DEM::RPG::CItemCountMonitorComponent>()
 {
 	return std::make_tuple(); // This component is not persistent.
 }

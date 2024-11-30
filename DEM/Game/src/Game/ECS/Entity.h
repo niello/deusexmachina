@@ -52,8 +52,8 @@ inline std::string ToString(DEM::Game::HEntity Value)
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<Game::CEntity>() { return "DEM::Game::CEntity"; }
-template<> inline constexpr auto RegisterMembers<Game::CEntity>()
+template<> constexpr auto RegisterClassName<Game::CEntity>() { return "DEM::Game::CEntity"; }
+template<> constexpr auto RegisterMembers<Game::CEntity>()
 {
 	return std::make_tuple
 	(

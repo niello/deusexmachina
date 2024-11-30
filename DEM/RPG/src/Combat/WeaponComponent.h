@@ -31,8 +31,8 @@ struct CWeaponComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CDamageData>() { return "DEM::RPG::CDamageData"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CDamageData>()
+template<> constexpr auto RegisterClassName<DEM::RPG::CDamageData>() { return "DEM::RPG::CDamageData"; }
+template<> constexpr auto RegisterMembers<DEM::RPG::CDamageData>()
 {
 	return std::make_tuple
 	(
@@ -43,8 +43,8 @@ template<> inline constexpr auto RegisterMembers<DEM::RPG::CDamageData>()
 	);
 }
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CWeaponComponent>() { return "DEM::RPG::CWeaponComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CWeaponComponent>()
+template<> constexpr auto RegisterClassName<DEM::RPG::CWeaponComponent>() { return "DEM::RPG::CWeaponComponent"; }
+template<> constexpr auto RegisterMembers<DEM::RPG::CWeaponComponent>()
 {
 	return std::make_tuple
 	(

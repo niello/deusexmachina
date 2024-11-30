@@ -28,8 +28,8 @@ using PQuestData = Ptr<CQuestData>;
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CQuestData>() { return "DEM::RPG::CQuestData"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CQuestData>()
+template<> constexpr auto RegisterClassName<DEM::RPG::CQuestData>() { return "DEM::RPG::CQuestData"; }
+template<> constexpr auto RegisterMembers<DEM::RPG::CQuestData>()
 {
 	return std::make_tuple
 	(

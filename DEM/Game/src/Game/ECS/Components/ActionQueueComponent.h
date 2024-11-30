@@ -259,8 +259,8 @@ public:
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<Game::CActionQueueComponent>() { return "DEM::Game::CActionQueueComponent"; }
-template<> inline constexpr auto RegisterMembers<Game::CActionQueueComponent>()
+template<> constexpr auto RegisterClassName<Game::CActionQueueComponent>() { return "DEM::Game::CActionQueueComponent"; }
+template<> constexpr auto RegisterMembers<Game::CActionQueueComponent>()
 {
 	return std::make_tuple
 	(

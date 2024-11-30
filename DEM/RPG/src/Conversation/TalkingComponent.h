@@ -17,8 +17,8 @@ struct CTalkingComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CTalkingComponent>() { return "DEM::RPG::CTalkingComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CTalkingComponent>()
+template<> constexpr auto RegisterClassName<DEM::RPG::CTalkingComponent>() { return "DEM::RPG::CTalkingComponent"; }
+template<> constexpr auto RegisterMembers<DEM::RPG::CTalkingComponent>()
 {
 	return std::make_tuple
 	(

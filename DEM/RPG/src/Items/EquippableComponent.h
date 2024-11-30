@@ -21,8 +21,8 @@ struct CEquippableComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CEquippableComponent>() { return "DEM::RPG::CEquippableComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CEquippableComponent>()
+template<> constexpr auto RegisterClassName<DEM::RPG::CEquippableComponent>() { return "DEM::RPG::CEquippableComponent"; }
+template<> constexpr auto RegisterMembers<DEM::RPG::CEquippableComponent>()
 {
 	return std::make_tuple
 	(

@@ -26,8 +26,8 @@ struct CStatsComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::Sh2::CStatsComponent>() { return "DEM::Sh2::CStatsComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::Sh2::CStatsComponent>()
+template<> constexpr auto RegisterClassName<DEM::Sh2::CStatsComponent>() { return "DEM::Sh2::CStatsComponent"; }
+template<> constexpr auto RegisterMembers<DEM::Sh2::CStatsComponent>()
 {
 	return std::make_tuple
 	(

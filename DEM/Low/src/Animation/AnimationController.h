@@ -28,7 +28,7 @@ class CSkeleton;
 using CAnimVarStorage = CVarStorage<bool, int, float, CStrID>;
 
 // FIXME: unify EmptyPort, InvalidPort and this!
-inline constexpr U16 INVALID_BONE_INDEX = std::numeric_limits<U16>().max();
+constexpr U16 INVALID_BONE_INDEX = std::numeric_limits<U16>().max();
 inline const CStrID Event_AnimEnd("SYSEVENT_AnimEnd");
 
 enum class EParamType

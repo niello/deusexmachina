@@ -17,8 +17,8 @@ public:
 
 	// Squared range (in meters) in which agent is considered being at the destination
 	// NB: too low tolerance may lead to float precision errors
-	static inline constexpr float LinearTolerance = 0.0004f;
-	static inline constexpr float SqLinearTolerance = LinearTolerance * LinearTolerance;
+	static constexpr float LinearTolerance = 0.0004f;
+	static constexpr float SqLinearTolerance = LinearTolerance * LinearTolerance;
 
 	// TODO: check this old info, may be still actual, then must adjust current tolerances
 	//// At very small speeds and physics step sizes body position stops updating because of limited
@@ -46,7 +46,7 @@ public:
 
 	// Angle offset (in radians) in which agent is considered facing the lookat direction
 	// NB: too low tolerance may lead to float precision errors
-	static inline constexpr float AngularTolerance = 0.0001f; // Old was 0.005f
+	static constexpr float AngularTolerance = 0.0001f; // Old was 0.005f
 
 	rtm::vector4f _LookatDirection;
 	float         _Tolerance;

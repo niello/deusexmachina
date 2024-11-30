@@ -248,44 +248,44 @@ private:
 //CMember(const char*, const T& (TClass::*)() const) -> CMember<TClass, T, const T& (TClass::*)() const, std::nullptr_t>;
 
 template<typename TClass, typename T, typename TGetter, typename TSetter>
-inline constexpr auto Member(const char* pName, TGetter pGetter = nullptr, TSetter pSetter = nullptr)
+constexpr auto Member(const char* pName, TGetter pGetter = nullptr, TSetter pSetter = nullptr)
 {
 	return CMember<TClass, T, TGetter, TSetter>(pName, pGetter, pSetter);
 }
 
 template<typename TClass, typename T>
-inline constexpr auto Member(const char* pName, T TClass::* pGetter)
+constexpr auto Member(const char* pName, T TClass::* pGetter)
 {
 	return CMember<TClass, T, T TClass::*, std::nullptr_t>(pName, pGetter, nullptr);
 }
 
 template<typename TClass, typename T>
-inline constexpr auto Member(const char* pName, T TClass::* pGetter, T TClass::* pSetter)
+constexpr auto Member(const char* pName, T TClass::* pGetter, T TClass::* pSetter)
 {
 	return CMember<TClass, T, T TClass::*, T TClass::*>(pName, pGetter, pSetter);
 }
 
 template<typename TClass, typename T, typename TGetter, typename TSetter>
-inline constexpr auto Member(std::uint32_t Code, const char* pName, TGetter pGetter = nullptr, TSetter pSetter = nullptr)
+constexpr auto Member(std::uint32_t Code, const char* pName, TGetter pGetter = nullptr, TSetter pSetter = nullptr)
 {
 	return CMember<TClass, T, TGetter, TSetter>(Code, pName, pGetter, pSetter);
 }
 
 template<typename TClass, typename T>
-inline constexpr auto Member(std::uint32_t Code, const char* pName, T TClass::* pGetter)
+constexpr auto Member(std::uint32_t Code, const char* pName, T TClass::* pGetter)
 {
 	return CMember<TClass, T, T TClass::*, std::nullptr_t>(Code, pName, pGetter, nullptr);
 }
 
 template<typename TClass, typename T>
-inline constexpr auto Member(std::uint32_t Code, const char* pName, T TClass::* pGetter, T TClass::* pSetter)
+constexpr auto Member(std::uint32_t Code, const char* pName, T TClass::* pGetter, T TClass::* pSetter)
 {
 	return CMember<TClass, T, T TClass::*, T TClass::*>(Code, pName, pGetter, pSetter);
 }
 
 }
 
-#define DEM_META_REGISTER_CLASS_NAME(Class) template<> inline constexpr auto RegisterClassName<Class>() { return #Class; }
+#define DEM_META_REGISTER_CLASS_NAME(Class) template<> constexpr auto RegisterClassName<Class>() { return #Class; }
 #define DEM_META_MEMBER_FIELD_CODE(Class, Code, Name) Member(Code, #Name, &Class::Name, &Class::Name)
 #define DEM_META_MEMBER_FIELD(Class, Name) Member(DEM::Utils::Hash(#Name), #Name, &Class::Name, &Class::Name)
 #define DEM_META_MEMBER_FIELD_NOSAVE(Class, Name) Member(#Name, &Class::Name, &Class::Name)
@@ -293,13 +293,13 @@ inline constexpr auto Member(std::uint32_t Code, const char* pName, T TClass::* 
 // Default equality comparison for objects with registered metadata.
 // Must be in the global namespace in order to be available everywhere on operator resolution.
 template<typename T>
-inline constexpr typename std::enable_if_t<DEM::Meta::CMetadata<T>::IsRegistered, bool> operator ==(const T& a, const T& b)
+constexpr typename std::enable_if_t<DEM::Meta::CMetadata<T>::IsRegistered, bool> operator ==(const T& a, const T& b)
 {
 	return DEM::Meta::CMetadata<T>::IsEqual(a, b);
 }
 
 template<typename T>
-inline constexpr typename std::enable_if_t<DEM::Meta::CMetadata<T>::IsRegistered, bool> operator !=(const T& a, const T& b)
+constexpr typename std::enable_if_t<DEM::Meta::CMetadata<T>::IsRegistered, bool> operator !=(const T& a, const T& b)
 {
 	return !DEM::Meta::CMetadata<T>::IsEqual(a, b);
 }

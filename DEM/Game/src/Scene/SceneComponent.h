@@ -34,8 +34,8 @@ struct CSceneComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<quaternion>() { return "quaternion"; }
-template<> inline constexpr auto RegisterMembers<quaternion>()
+template<> constexpr auto RegisterClassName<quaternion>() { return "quaternion"; }
+template<> constexpr auto RegisterMembers<quaternion>()
 {
 	// FIXME: quaternion diff will be too big! Can forbid diff saving for some types, save always all data in binary!
 	return std::make_tuple
@@ -47,8 +47,8 @@ template<> inline constexpr auto RegisterMembers<quaternion>()
 	);
 }
 
-template<> inline constexpr auto RegisterClassName<Math::CTransformSRT>() { return "Math::CTransformSRT"; }
-template<> inline constexpr auto RegisterMembers<Math::CTransformSRT>()
+template<> constexpr auto RegisterClassName<Math::CTransformSRT>() { return "Math::CTransformSRT"; }
+template<> constexpr auto RegisterMembers<Math::CTransformSRT>()
 {
 	return std::make_tuple
 	(
@@ -58,8 +58,8 @@ template<> inline constexpr auto RegisterMembers<Math::CTransformSRT>()
 	);
 }
 
-template<> inline constexpr auto RegisterClassName<Game::CSceneComponent>() { return "DEM::Game::CSceneComponent"; }
-template<> inline constexpr auto RegisterMembers<Game::CSceneComponent>()
+template<> constexpr auto RegisterClassName<Game::CSceneComponent>() { return "DEM::Game::CSceneComponent"; }
+template<> constexpr auto RegisterMembers<Game::CSceneComponent>()
 {
 	return std::make_tuple
 	(

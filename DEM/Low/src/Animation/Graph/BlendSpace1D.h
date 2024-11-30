@@ -17,7 +17,7 @@ class CBlendSpace1D : public CAnimGraphNode
 {
 protected:
 
-	static inline constexpr float SAMPLE_MATCH_TOLERANCE = 0.001f; //???or relative to parameter space?
+	static constexpr float SAMPLE_MATCH_TOLERANCE = 0.001f; //???or relative to parameter space?
 
 	struct CSample
 	{

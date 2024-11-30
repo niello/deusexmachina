@@ -45,8 +45,8 @@ struct CSmartObjectComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<Game::CSmartObjectComponent>() { return "DEM::Game::CSmartObjectComponent"; }
-template<> inline constexpr auto RegisterMembers<Game::CSmartObjectComponent>()
+template<> constexpr auto RegisterClassName<Game::CSmartObjectComponent>() { return "DEM::Game::CSmartObjectComponent"; }
+template<> constexpr auto RegisterMembers<Game::CSmartObjectComponent>()
 {
 	return std::make_tuple
 	(

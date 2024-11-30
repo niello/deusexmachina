@@ -18,8 +18,8 @@ struct CAIStateComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::AI::CAIStateComponent>() { return "DEM::AI::CAIStateComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::AI::CAIStateComponent>()
+template<> constexpr auto RegisterClassName<DEM::AI::CAIStateComponent>() { return "DEM::AI::CAIStateComponent"; }
+template<> constexpr auto RegisterMembers<DEM::AI::CAIStateComponent>()
 {
 	return std::make_tuple
 	(

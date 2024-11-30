@@ -17,8 +17,8 @@ struct COwnedComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::COwnedComponent>() { return "DEM::RPG::COwnedComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::COwnedComponent>()
+template<> constexpr auto RegisterClassName<DEM::RPG::COwnedComponent>() { return "DEM::RPG::COwnedComponent"; }
+template<> constexpr auto RegisterMembers<DEM::RPG::COwnedComponent>()
 {
 	return std::make_tuple
 	(

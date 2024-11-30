@@ -41,8 +41,8 @@ using PEquipmentScheme = Ptr<CEquipmentScheme>;
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::RPG::CEquipmentScheme>() { return "DEM::RPG::CEquipmentScheme"; }
-template<> inline constexpr auto RegisterMembers<DEM::RPG::CEquipmentScheme>()
+template<> constexpr auto RegisterClassName<DEM::RPG::CEquipmentScheme>() { return "DEM::RPG::CEquipmentScheme"; }
+template<> constexpr auto RegisterMembers<DEM::RPG::CEquipmentScheme>()
 {
 	return std::make_tuple
 	(

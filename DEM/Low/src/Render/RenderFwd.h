@@ -374,7 +374,7 @@ enum EEffectType
 	EffectType_Invalid
 };
 
-inline UPTR GetMipLevelCount(UPTR Width, UPTR Height, UPTR BlockSize = 1)
+constexpr UPTR GetMipLevelCount(UPTR Width, UPTR Height, UPTR BlockSize = 1)
 {
 	UPTR MaxDim = std::max(Width, Height);
 	UPTR MipLevels = 1;
@@ -387,7 +387,7 @@ inline UPTR GetMipLevelCount(UPTR Width, UPTR Height, UPTR BlockSize = 1)
 }
 //---------------------------------------------------------------------
 
-constexpr inline std::pair<UPTR, UPTR> GetFormatBlockSize(EPixelFormat Format)
+constexpr std::pair<UPTR, UPTR> GetFormatBlockSize(EPixelFormat Format)
 {
 	switch (Format)
 	{
@@ -408,7 +408,7 @@ constexpr inline std::pair<UPTR, UPTR> GetFormatBlockSize(EPixelFormat Format)
 }
 //---------------------------------------------------------------------
 
-constexpr inline UPTR GetFormatBitsPerPixel(EPixelFormat Format)
+constexpr UPTR GetFormatBitsPerPixel(EPixelFormat Format)
 {
 	switch (Format)
 	{
@@ -447,13 +447,13 @@ constexpr inline UPTR GetFormatBitsPerPixel(EPixelFormat Format)
 }
 //---------------------------------------------------------------------
 
-constexpr inline CViewport GetRenderTargetViewport(const CRenderTargetDesc& RTDesc)
+constexpr CViewport GetRenderTargetViewport(const CRenderTargetDesc& RTDesc)
 {
 	return CViewport{ 0.f, 0.f, static_cast<float>(RTDesc.Width), static_cast<float>(RTDesc.Height), 0.f, 1.f };
 }
 //---------------------------------------------------------------------
 
-constexpr inline vector2 GetRenderTargetPixelSize(const CRenderTargetDesc& RTDesc)
+constexpr vector2 GetRenderTargetPixelSize(const CRenderTargetDesc& RTDesc)
 {
 	return vector2{ 1.f / static_cast<float>(RTDesc.Width), 1.f / static_cast<float>(RTDesc.Height) };
 }
@@ -474,13 +474,13 @@ inline CTextureDesc GetRenderTargetTextureDesc(const CRenderTargetDesc& RTDesc)
 }
 //---------------------------------------------------------------------
 
-constexpr inline U32 ColorRGBA(U8 r, U8 g, U8 b, U8 a = 255)
+constexpr U32 ColorRGBA(U8 r, U8 g, U8 b, U8 a = 255)
 {
 	return ((U32)r) | ((U32)g << 8) | ((U32)b << 16) | ((U32)a << 24);
 }
 //---------------------------------------------------------------------
 
-constexpr inline U32 ColorRGBANorm(float r, float g, float b, float a = 1.f)
+constexpr U32 ColorRGBANorm(float r, float g, float b, float a = 1.f)
 {
 	return ColorRGBA(
 		static_cast<uint8_t>(r * 255.0f + 0.5f),
@@ -490,33 +490,33 @@ constexpr inline U32 ColorRGBANorm(float r, float g, float b, float a = 1.f)
 }
 //---------------------------------------------------------------------
 
-constexpr inline U8 ColorGetRed(U32 Color)
+constexpr U8 ColorGetRed(U32 Color)
 {
 	return Color & 0xff;
 }
 //---------------------------------------------------------------------
 
-constexpr inline U8 ColorGetGreen(U32 Color)
+constexpr U8 ColorGetGreen(U32 Color)
 {
 	return (Color >> 8) & 0xff;
 }
 //---------------------------------------------------------------------
 
-constexpr inline U8 ColorGetBlue(U32 Color)
+constexpr U8 ColorGetBlue(U32 Color)
 {
 	return (Color >> 16) & 0xff;
 }
 //---------------------------------------------------------------------
 
-constexpr inline U8 ColorGetAlpha(U32 Color)
+constexpr U8 ColorGetAlpha(U32 Color)
 {
 	return (Color >> 24) & 0xff;
 }
 //---------------------------------------------------------------------
 
-constexpr inline U32 Color_White = ColorRGBA(255, 255, 255, 255);
-constexpr inline U32 Color_Red = ColorRGBA(255, 0, 0, 255);
-constexpr inline U32 Color_Green = ColorRGBA(0, 255, 0, 255);
-constexpr inline U32 Color_Blue = ColorRGBA(0, 0, 255, 255);
+constexpr U32 Color_White = ColorRGBA(255, 255, 255, 255);
+constexpr U32 Color_Red = ColorRGBA(255, 0, 0, 255);
+constexpr U32 Color_Green = ColorRGBA(0, 255, 0, 255);
+constexpr U32 Color_Blue = ColorRGBA(0, 0, 255, 255);
 
 }

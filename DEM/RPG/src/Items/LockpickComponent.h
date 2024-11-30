@@ -17,8 +17,8 @@ struct CLockpickComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::Sh2::CLockpickComponent>() { return "DEM::Sh2::CLockpickComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::Sh2::CLockpickComponent>()
+template<> constexpr auto RegisterClassName<DEM::Sh2::CLockpickComponent>() { return "DEM::Sh2::CLockpickComponent"; }
+template<> constexpr auto RegisterMembers<DEM::Sh2::CLockpickComponent>()
 {
 	return std::make_tuple
 	(

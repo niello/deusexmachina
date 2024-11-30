@@ -17,7 +17,7 @@ protected:
 
 	// Implementation must guarantee that no valid key will be equal to this. The value is intentionally the
 	// maximum possible. Sorting algorithm must move items without a key to the tail of the queue.
-	static inline constexpr TKey NO_KEY = INVALID_INDEX_T<TKey>;
+	static constexpr TKey NO_KEY = INVALID_INDEX_T<TKey>;
 
 	struct CRecord
 	{
