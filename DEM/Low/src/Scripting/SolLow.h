@@ -34,6 +34,19 @@ namespace DEM::Scripting
 
 void RegisterBasicTypes(sol::state& State);
 
+// FIXME: sol::create_if_nil / sol::update_if_empty do not work in a loop
+inline sol::table EnsureTable(sol::state_view& State, sol::table Parent, std::string_view Name)
+{
+	auto Table = Parent[Name];
+	if (!Table.valid())
+	{
+		Table = State.create_table();
+		Parent.set(Name, Table);
+	}
+	return Table;
+}
+//---------------------------------------------------------------------
+
 template<typename T>
 void RegisterSignalType(sol::state& State)
 {
@@ -68,6 +81,21 @@ void RegisterStringOperations(sol::usertype<T>& UserType)
 //---------------------------------------------------------------------
 
 template<typename T>
+sol::table Namespace(sol::state_view& State)
+{
+	sol::table Table = State.globals();
+	if constexpr (Meta::CMetadata<T>::IsRegistered)
+	{
+		Meta::CMetadata<T>::ForEachNamespace([&Table, &State](size_t /*Index*/, std::string_view NamespaceName)
+		{
+			Table = EnsureTable(State, Table, NamespaceName);
+		});
+	}
+	return Table;
+}
+//---------------------------------------------------------------------
+
+template<typename T>
 void RegisterMetadataFields(sol::usertype<T>& UserType)
 {
 	if constexpr (Meta::CMetadata<T>::IsRegistered)
@@ -77,6 +105,17 @@ void RegisterMetadataFields(sol::usertype<T>& UserType)
 			UserType.set(Member.GetName(), sol::property(Member.GetGetter(), Member.GetSetter()));
 		});
 	}
+}
+//---------------------------------------------------------------------
+
+template<typename T, typename... TArgs>
+sol::usertype<T> RegisterTypeWithMetadata(sol::state_view& State, TArgs&&... Args)
+{
+	static_assert(Meta::CMetadata<T>::IsRegistered);
+
+	auto UserType = Namespace<T>(State).new_usertype<T>(Meta::CMetadata<T>::GetUnqualifiedClassName(), std::forward<TArgs>(Args)...);
+	RegisterMetadataFields(UserType);
+	return UserType;
 }
 //---------------------------------------------------------------------
 

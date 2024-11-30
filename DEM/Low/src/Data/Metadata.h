@@ -30,6 +30,7 @@ template<typename T> struct CTypeMetadata {};
 // TODO: move to more appropriate header?
 template<typename T, typename U> inline bool IsEqualByValue(const T& a, const U& b)
 {
+	// FIXME: probably not every type can be compared this way!
 	if constexpr (std::is_same_v<T, U> && std::is_array_v<T>)
 		return !std::memcmp(a, b, sizeof(T));
 	else
@@ -42,6 +43,8 @@ class CMetadata final
 {
 private:
 
+	static constexpr std::string_view NamespaceDelimiter = "::";
+
 	static constexpr auto _Members = RegisterMembers<T>();
 
 public:
@@ -53,6 +56,28 @@ public:
 	template<size_t Index>
 	static constexpr auto   GetMember() { return std::get<Index>(_Members); }
 	static constexpr size_t GetMemberCount() { return std::tuple_size_v<decltype(_Members)>; }
+
+	template<typename TCallback>
+	static constexpr void ForEachNamespace(TCallback Callback)
+	{
+		size_t Index = 0;
+		size_t Start = 0;
+		size_t Pos = 0;
+		constexpr std::string_view FullName = GetClassName();
+		while ((Pos = FullName.find(NamespaceDelimiter, Start)) != std::string_view::npos)
+		{
+			Callback(Index, FullName.substr(Start, Pos - Start));
+			++Index;
+			Start = Pos + NamespaceDelimiter.size();
+		}
+	}
+
+	static constexpr std::string_view GetUnqualifiedClassName()
+	{
+		constexpr std::string_view FullName = GetClassName();
+		constexpr size_t Pos = FullName.rfind(NamespaceDelimiter);
+		return FullName.substr(Pos == std::string_view::npos ? 0 : Pos + NamespaceDelimiter.size());
+	}
 
 	template<typename TCallback>
 	static constexpr void ForEachMember(TCallback Callback)
