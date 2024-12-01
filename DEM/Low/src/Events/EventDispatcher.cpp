@@ -1,9 +1,18 @@
 #include "EventDispatcher.h"
-#include <Events/Subscription.h>
 
 namespace Events
 {
 UPTR CEventDispatcher::EventsFiredTotal = 0;
+
+void CEventHandler::Disconnect()
+{
+	if (_pDispatcher)
+	{
+		_pDispatcher->Unsubscribe(_EventID, this);
+		_pDispatcher = nullptr;
+	}
+}
+//---------------------------------------------------------------------
 
 UPTR CEventDispatcher::FireEvent(const CEventBase& Event, U8 Flags)
 {
@@ -30,38 +39,24 @@ UPTR CEventDispatcher::FireEvent(const CEventBase& Event, U8 Flags)
 		}
 	}
 
-	// Look for any event handlers
-	if (!(Flags & Event_IgnoreAllEventSubs))
-	{
-		auto It = Handlers.find(nullptr);
-		PEventHandler Sub = (It == Handlers.cend()) ? nullptr : It->second;
-		while (Sub)
-		{
-			if (Sub->Invoke(this, Event))
-			{
-				++HandledCounter;
-				if (Flags & Event_TermOnHandled) return HandledCounter;
-			}
-			Sub = Sub->Next;
-		}
-	}
-
 	return HandledCounter;
 }
 //---------------------------------------------------------------------
 
-PSub CEventDispatcher::Subscribe(CEventID ID, PEventHandler&& Handler)
+PSub CEventDispatcher::Subscribe(PEventHandler&& Handler)
 {
-	n_assert_dbg(Handler);
+	n_assert_dbg(Handler && Handler->GetEventID());
+	if (!Handler || !Handler->GetEventID()) return {};
 
-	CEventHandler* pHandler = Handler.Get();
-	const auto Priority = pHandler->GetPriority();
+	// Create before moving from Handler
+	auto Conn = PSub(Handler);
 
-	auto It = Handlers.find(ID);
+	auto It = Handlers.find(Handler->GetEventID());
 	if (It != Handlers.cend())
 	{
 		PEventHandler* pPrev = nullptr;
 		PEventHandler* pCurr = &It->second;
+		const auto Priority = Handler->GetPriority();
 		while ((*pCurr) && (*pCurr)->GetPriority() > Priority)
 		{
 			pPrev = pCurr;
@@ -73,9 +68,9 @@ PSub CEventDispatcher::Subscribe(CEventID ID, PEventHandler&& Handler)
 		if (pPrev) (*pPrev)->Next = std::move(Handler);
 		else It->second = std::move(Handler);
 	}
-	else Handlers.emplace(ID, std::move(Handler));
+	else Handlers.emplace(Handler->GetEventID(), std::move(Handler));
 
-	return n_new(CSubscription)(this, ID, pHandler);
+	return Conn;
 }
 //---------------------------------------------------------------------
 
@@ -94,7 +89,7 @@ void CEventDispatcher::Unsubscribe(CEventID ID, CEventHandler* pHandler)
 	PEventHandler* pCurr = &It->second;
 	do
 	{
-		if ((*pCurr) == pHandler)
+		if ((*pCurr).get() == pHandler)
 		{
 			if (pPrev) (*pPrev)->Next = std::move(pHandler->Next);
 			else

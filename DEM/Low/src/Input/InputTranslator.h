@@ -1,6 +1,7 @@
 #pragma once
 #include <Events/EventDispatcher.h>
 #include <Data/StringID.h>
+#include <map>
 
 // Input translator receives events from input devices and translates them into
 // general purpose events accompanied with a user ID to which a translator belongs.
@@ -29,7 +30,8 @@ private:
 
 	CStrID                     _UserID;
 	std::vector<CInputContext> _Contexts;
-	std::vector<Events::PSub>  _DeviceSubs;
+
+	std::map<IInputDevice*, std::vector<Events::PSub>, std::less<>> _DeviceSubs;
 
 	void			Clear();
 

@@ -12,7 +12,7 @@
 
 namespace Events
 {
-#define EventSrv Events::CEventServer::Instance()
+#define EventSrv ::Events::CEventServer::Instance()
 
 class CEventServer: public CEventDispatcher
 {

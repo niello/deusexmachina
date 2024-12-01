@@ -124,16 +124,11 @@ void RegisterBasicTypes(sol::state& State)
 		}
 	);
 
-	State.new_usertype<::Events::CSubscription>("CSubscription"
-		, sol::meta_function::less_than, [](const ::Events::CSubscription& a, const ::Events::CSubscription& b) { return &a < &b; }
-		, sol::meta_function::less_than_or_equal_to, [](const ::Events::CSubscription& a, const ::Events::CSubscription& b) { return &a <= &b; }
-		, sol::meta_function::equal_to, [](const ::Events::CSubscription& a, const ::Events::CSubscription& b) { return &a == &b; }
-	);
-
 	State.new_usertype<::Events::CEventDispatcher>("CEventDispatcher"
 		, "Subscribe", [](::Events::CEventDispatcher& Self, const char* pEventID, sol::function Handler)
 		{
-			return Self.Subscribe(CStrID(pEventID), n_new(::Events::CLuaEventHandler(std::move(Handler))));
+			const CStrID EventID(pEventID);
+			return EventID ? Self.Subscribe(std::make_shared<::Events::CLuaEventHandler>(std::move(Handler), &Self, EventID)) : ::Events::PSub{};
 		}
 	);
 
@@ -143,7 +138,7 @@ void RegisterBasicTypes(sol::state& State)
 		if (Arg.is<::Events::PSub>())
 		{
 			::Events::PSub& Sub = Arg.as<::Events::PSub&>();
-			Sub = nullptr;
+			Sub.Disconnect();
 			return sol::object{};
 		}
 		else
@@ -152,13 +147,6 @@ void RegisterBasicTypes(sol::state& State)
 			return Arg;
 		}
 	});
-
-	State.new_usertype<Input::CInputTranslator>("CInputTranslator"
-		, sol::base_classes, sol::bases<::Events::CEventDispatcher>()
-		, "HasContext", &Input::CInputTranslator::HasContext
-		, "EnableContext", &Input::CInputTranslator::EnableContext
-		, "DisableContext", &Input::CInputTranslator::DisableContext
-	);
 
 	State.new_usertype<Events::CConnection>("CConnection"
 		, "IsConnected", &Events::CConnection::IsConnected
@@ -183,6 +171,13 @@ void RegisterBasicTypes(sol::state& State)
 
 	DEM::Scripting::RegisterSignalType<void()>(State);
 	DEM::Scripting::RegisterSignalType<void(UI::PUIWindow)>(State);
+
+	State.new_usertype<Input::CInputTranslator>("CInputTranslator"
+		, sol::base_classes, sol::bases<::Events::CEventDispatcher>()
+		, "HasContext", &Input::CInputTranslator::HasContext
+		, "EnableContext", &Input::CInputTranslator::EnableContext
+		, "DisableContext", &Input::CInputTranslator::DisableContext
+	);
 
 	State.new_usertype<UI::CUIWindow>("CUIWindow"
 		, "AddChild", &UI::CUIWindow::AddChild

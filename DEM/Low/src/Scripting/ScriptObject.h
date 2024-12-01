@@ -2,8 +2,8 @@
 #include <Core/Object.h>
 #include <Data/Array.h>
 #include <Data/String.h>
+#include <Data/StringID.h>
 #include <Events/EventsFwd.h>
-#include <Events/Subscription.h>
 
 // Script object is a base for all scripted objects. It can interact with scripts in both directions.
 
@@ -14,12 +14,6 @@ const UPTR Error_Scripting_NoFunction = Error + 2;
 const UPTR Error_Scripting_Parsing = Error + 3;
 
 struct lua_State;
-
-namespace Events
-{
-	class CEventDispatcher;
-	typedef Ptr<CSubscription> PSub;
-}
 
 namespace Data
 {

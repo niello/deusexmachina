@@ -2,7 +2,6 @@
 
 #include <Game/Entity.h>
 #include <Events/EventServer.h>
-#include <Events/Subscription.h>
 #include <Math/Matrix44.h>
 
 namespace RPG

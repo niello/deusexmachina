@@ -2,7 +2,6 @@
 
 #include <Scripting/ScriptServer.h>
 #include <Events/EventServer.h>
-#include <Events/Subscription.h>
 
 namespace RPG
 {

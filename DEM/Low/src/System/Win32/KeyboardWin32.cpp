@@ -1,13 +1,12 @@
 #include "KeyboardWin32.h"
 
 #include <Input/InputEvents.h>
-#include <Events/Subscription.h>
 #include <System/OSWindow.h>
 
 namespace Input
 {
-CKeyboardWin32::CKeyboardWin32() {}
-CKeyboardWin32::~CKeyboardWin32() {}
+CKeyboardWin32::CKeyboardWin32() = default;
+CKeyboardWin32::~CKeyboardWin32() = default;
 
 bool CKeyboardWin32::Init(HANDLE hDevice, const CString& DeviceName, const RID_DEVICE_INFO_KEYBOARD& DeviceInfo)
 {

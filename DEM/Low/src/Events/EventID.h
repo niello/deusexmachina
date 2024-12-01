@@ -22,7 +22,7 @@ struct CEventID
 	CEventID(const Core::CRTTI* _RTTI): RTTI(_RTTI) {}
 	CEventID(const Core::CRTTI& _RTTI): RTTI(&_RTTI) {}
 
-	bool IsDefault() const { return ID == nullptr; }
+	constexpr operator bool() const noexcept { return !!ID; }
 
 	bool operator ==(const CEventID& Other) const { return ID == Other.ID; }
 	bool operator !=(const CEventID& Other) const { return ID != Other.ID; }

@@ -1,7 +1,6 @@
 #include "ScriptObject.h"
 
 #include "ScriptServer.h"
-#include "EventHandlerScript.h"
 #include <Events/EventServer.h>
 #include <Data/Buffer.h>
 #include <IO/IOServer.h>
@@ -248,15 +247,18 @@ UPTR CScriptObject::RunFunctionOneArg(const char* pFuncName, const Data::CData& 
 
 bool CScriptObject::SubscribeEvent(CStrID EventID, const char* HandlerFuncName, Events::CEventDispatcher* pDisp, U16 Priority)
 {
-	auto Sub = pDisp->Subscribe(EventID, n_new(Events::CEventHandlerScript)(this, HandlerFuncName, Priority));
-	if (!Sub) FAIL;
-	Subscriptions.Add(std::move(Sub));
+	NOT_IMPLEMENTED_MSG("CScriptObject is deprecated and will be removed");
+	//auto Sub = pDisp->Subscribe(EventID, n_new(Events::CEventHandlerScript)(this, HandlerFuncName, Priority));
+	//if (!Sub) FAIL;
+	//Subscriptions.Add(std::move(Sub));
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CScriptObject::UnsubscribeEvent(CStrID EventID, const char* HandlerFuncName, const Events::CEventDispatcher* pDisp)
 {
+	NOT_IMPLEMENTED_MSG("CScriptObject is deprecated and will be removed");
+	/*
 	for (UPTR i = 0; i < Subscriptions.GetCount(); ++i)
 	{
 		Events::PSub CurrSub = Subscriptions[i];
@@ -267,6 +269,7 @@ void CScriptObject::UnsubscribeEvent(CStrID EventID, const char* HandlerFuncName
 			break; //???or scan all array for duplicates?
 		}
 	}
+	*/
 }
 //---------------------------------------------------------------------
 

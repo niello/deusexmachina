@@ -1,7 +1,6 @@
 #pragma once
 #include <Events/EventHandler.h>
 #include <Events/Event.h>
-#include <Events/Subscription.h>
 
 // Event dispatcher receives fired events and dispatches them to subordinate dispatchers and subscribers.
 // Subscribers can specify their priority, and higher priority subscriber receives event first.
@@ -9,7 +8,7 @@
 
 namespace Data
 {
-	typedef Ptr<class CParams> PParams;
+	using PParams = Ptr<class CParams>;
 }
 
 namespace Events
@@ -17,8 +16,7 @@ namespace Events
 
 enum EEventFlags
 {
-	Event_TermOnHandled			= 0x01,	// Stop calling handlers as one returns true, which means 'event is handled by me'
-	Event_IgnoreAllEventSubs	= 0x02	// Don't send to default (any-event, nullptr) handlers
+	Event_TermOnHandled = 0x01,	// Stop calling handlers as one returns true, which means 'event is handled by me'
 };
 
 class CEventDispatcher
@@ -39,7 +37,7 @@ public:
 	UPTR		FireEvent(const CEventBase& Event, U8 Flags = 0);
 	UPTR		FireEvent(CStrID ID, Data::PParams Params = nullptr, U8 Flags = 0) { return FireEvent(CEvent(ID, Params), Flags); }
 
-	PSub		Subscribe(CEventID ID, PEventHandler&& Handler);
+	PSub		Subscribe(PEventHandler&& Handler);
 	PSub		Subscribe(CEventID ID, CEventCallback Callback, U16 Priority = Priority_Default);
 	PSub		Subscribe(CEventID ID, CEventFunctor&& Functor, U16 Priority = Priority_Default);
 	PSub		Subscribe(CEventID ID, const CEventFunctor& Functor, U16 Priority = Priority_Default);
@@ -53,26 +51,26 @@ public:
 
 inline PSub CEventDispatcher::Subscribe(CEventID ID, CEventCallback Callback, U16 Priority)
 {
-	return Subscribe(ID, n_new(CEventHandlerCallback)(Callback, Priority));
+	return ID ? Subscribe(std::make_shared<CEventHandlerCallback>(Callback, this, ID, Priority)) : PSub{};
 }
 //---------------------------------------------------------------------
 
 inline PSub CEventDispatcher::Subscribe(CEventID ID, CEventFunctor&& Functor, U16 Priority)
 {
-	return Subscribe(ID, n_new(CEventHandlerFunctor)(std::move(Functor), Priority));
+	return ID ? Subscribe(std::make_shared<CEventHandlerFunctor>(std::move(Functor), this, ID, Priority)) : PSub{};
 }
 //---------------------------------------------------------------------
 
 inline PSub CEventDispatcher::Subscribe(CEventID ID, const CEventFunctor& Functor, U16 Priority)
 {
-	return Subscribe(ID, n_new(CEventHandlerFunctor)(Functor, Priority));
+	return ID ? Subscribe(std::make_shared<CEventHandlerFunctor>(Functor, this, ID, Priority)) : PSub{};
 }
 //---------------------------------------------------------------------
 
 template<class T>
 inline PSub CEventDispatcher::Subscribe(CEventID ID, T* Object, bool (T::*Callback)(CEventDispatcher*, const CEventBase&), U16 Priority)
 {
-	return Subscribe(ID, n_new(CEventHandlerMember<T>)(Object, Callback, Priority));
+	return ID ? Subscribe(std::make_shared<CEventHandlerMember<T>>(Object, Callback, this, ID, Priority)) : PSub{};
 }
 //---------------------------------------------------------------------
 

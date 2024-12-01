@@ -108,6 +108,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Debug/Profiler.h
 	DEM/Low/src/Debug/RenderPhaseDebugDraw.h
 	DEM/Low/src/Debug/WatcherWindow.h
+	DEM/Low/src/Events/Connection.h
 	DEM/Low/src/Events/Event.h
 	DEM/Low/src/Events/EventBase.h
 	DEM/Low/src/Events/EventDispatcher.h
@@ -120,7 +121,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Events/EventServer.h
 	DEM/Low/src/Events/EventsFwd.h
 	DEM/Low/src/Events/Signal.h
-	DEM/Low/src/Events/Subscription.h
 	DEM/Low/src/Frame/CameraAttribute.h
 	DEM/Low/src/Frame/CameraController.h
 	DEM/Low/src/Frame/GPURenderablePicker.h
@@ -315,7 +315,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Scene/NodeAttribute.h
 	DEM/Low/src/Scene/SceneNode.h
 	DEM/Low/src/Scene/SceneNodeLoaderSCN.h
-	DEM/Low/src/Scripting/EventHandlerScript.h
 	DEM/Low/src/Scripting/LuaEventHandler.h
 	DEM/Low/src/Scripting/ScriptAsset.h
 	DEM/Low/src/Scripting/ScriptAssetLoader.h
@@ -423,7 +422,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Debug/WatcherWindow.cpp
 	DEM/Low/src/Events/EventDispatcher.cpp
 	DEM/Low/src/Events/EventServer.cpp
-	DEM/Low/src/Events/Subscription.cpp
 	DEM/Low/src/Frame/CameraAttribute.cpp
 	DEM/Low/src/Frame/CameraController.cpp
 	DEM/Low/src/Frame/GPURenderablePicker.cpp
@@ -567,13 +565,11 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Scene/NodeAttribute.cpp
 	DEM/Low/src/Scene/SceneNode.cpp
 	DEM/Low/src/Scene/SceneNodeLoaderSCN.cpp
-	DEM/Low/src/Scripting/EventHandlerScript.cpp
 	DEM/Low/src/Scripting/LuaEventHandler.cpp
 	DEM/Low/src/Scripting/ScriptAssetLoader.cpp
 	DEM/Low/src/Scripting/ScriptObject.cpp
 	DEM/Low/src/Scripting/ScriptServer.cpp
 	DEM/Low/src/Scripting/SolLow.cpp
-	DEM/Low/src/SI/SIEventServer.cpp
 	DEM/Low/src/SI/SIGlobals.cpp
 	DEM/Low/src/SI/SITime.cpp
 	DEM/Low/src/System/Memory.cpp

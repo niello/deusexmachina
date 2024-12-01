@@ -3,7 +3,6 @@
 #include <Render/DisplayDriver.h>
 #include <Render/RenderTarget.h>
 #include <System/OSWindow.h>
-#include <Events/Subscription.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
@@ -20,8 +19,8 @@ CD3D11SwapChain::~CD3D11SwapChain()
 
 void CD3D11SwapChain::Destroy()
 {
-	Sub_OnClosing = nullptr;
-	Sub_OnToggleFullscreen = nullptr;
+	Sub_OnClosing.Disconnect();
+	Sub_OnToggleFullscreen.Disconnect();
 
 	if (BackBufferRT.IsValidPtr()) BackBufferRT->Destroy();
 

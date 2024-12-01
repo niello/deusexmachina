@@ -2,7 +2,6 @@
 
 #include <UI/CEGUI/DEMRenderer.h>
 #include <Events/EventDispatcher.h>
-#include <Events/Subscription.h>
 #include <Input/InputEvents.h>
 #include <System/OSWindow.h>
 #include <System/SystemEvents.h>
@@ -64,6 +63,7 @@ bool CUIContext::SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Pri
 {
 	if (!pDispatcher || !pCtx) FAIL;
 
+	auto& InputSubs = _InputSubs[pDispatcher];
 	InputSubs.push_back(pDispatcher->Subscribe(&Event::AxisMove::RTTI, this, &CUIContext::OnAxisMove, Priority));
 	InputSubs.push_back(pDispatcher->Subscribe(&Event::ButtonDown::RTTI, this, &CUIContext::OnButtonDown, Priority));
 	InputSubs.push_back(pDispatcher->Subscribe(&Event::ButtonUp::RTTI, this, &CUIContext::OnButtonUp, Priority));
@@ -76,9 +76,9 @@ bool CUIContext::SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Pri
 void CUIContext::UnsubscribeFromInput(Events::CEventDispatcher* pDispatcher)
 {
 	if (pDispatcher)
-		InputSubs.erase(std::remove_if(InputSubs.begin(), InputSubs.end(), [pDispatcher](const Events::PSub& Sub) { return Sub->GetDispatcher() == pDispatcher; }), InputSubs.end());
+		_InputSubs.erase(pDispatcher);
 	else
-		InputSubs.clear();
+		_InputSubs.clear();
 }
 //---------------------------------------------------------------------
 

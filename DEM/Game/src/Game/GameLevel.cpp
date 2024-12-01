@@ -419,7 +419,7 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 
 void CGameLevel::Term()
 {
-	GlobalSub = nullptr;
+	GlobalSub.Disconnect();
 	AILevel = nullptr;
 	PhysicsLevel = nullptr;
 	SceneRoot = nullptr;

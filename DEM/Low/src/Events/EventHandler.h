@@ -1,35 +1,37 @@
 #pragma once
 #include <Data/RefCounted.h>
 #include <Events/EventsFwd.h>
+#include <Events/EventID.h>
 
 // Abstract wrapper for different event callback types
 
 namespace Events
 {
 
-// NB: refcounting is required for unsubscribing from an event inside its handler
-class CEventHandler
+// FIXME: better would be to create a dispatcher node with CEventHandler inside but now the handler is a node itself to finish coding this faster
+class CEventHandler : public DEM::Events::CConnectionRecordBase
 {
-protected:
-
-	U16 RefCount = 0;
-	U16 Priority;
-
-	friend inline void DEMPtrAddRef(Events::CEventHandler* p) noexcept { ++p->RefCount; }
-	friend inline void DEMPtrRelease(Events::CEventHandler* p) noexcept { n_assert_dbg(p->RefCount > 0); if (--p->RefCount == 0) n_delete(p); }
-
 public:
 
+	CEventHandler(CEventDispatcher* d, CEventID e, U16 _Priority = Priority_Default) : _pDispatcher(d), _EventID(e), _Priority(_Priority) {}
 	virtual ~CEventHandler() = default;
 
-	PEventHandler Next;
-
-	CEventHandler(U16 _Priority = Priority_Default): Priority(_Priority) {}
-
-	U16          GetPriority() const { return Priority; }
 	virtual bool Invoke(CEventDispatcher* pDispatcher, const CEventBase& Event) = 0;
-
 	bool         operator()(CEventDispatcher* pDispatcher, const CEventBase& Event) { return Invoke(pDispatcher, Event); }
+
+	// FIXME: everything below is a node, not a callable
+
+	PEventHandler     Next;
+	U16               _Priority;
+	CEventDispatcher* _pDispatcher;
+	CEventID          _EventID;
+
+	virtual bool IsConnected() const noexcept override { return !!_pDispatcher; }
+	virtual void Disconnect() override; // See impl in EventDispatcher.cpp
+
+	CEventID     GetEventID() const { return _EventID; }
+	U16          GetPriority() const { return _Priority; }
+
 };
 //---------------------------------------------------------------------
 
@@ -41,7 +43,7 @@ private:
 
 public:
 
-	CEventHandlerCallback(CEventCallback Func, U16 _Priority = Priority_Default): CEventHandler(_Priority), Handler(Func) {}
+	CEventHandlerCallback(CEventCallback Func, CEventDispatcher* d, CEventID e, U16 _Priority = Priority_Default): CEventHandler(d, e, _Priority), Handler(Func) {}
 
 	virtual bool Invoke(CEventDispatcher* pDispatcher, const CEventBase& Event) { return (*Handler)(pDispatcher, Event); }
 };
@@ -55,8 +57,8 @@ private:
 
 public:
 
-	CEventHandlerFunctor(CEventFunctor&& Func, U16 _Priority = Priority_Default): CEventHandler(_Priority), Handler(std::move(Func)) {}
-	CEventHandlerFunctor(const CEventFunctor& Func, U16 _Priority = Priority_Default): CEventHandler(_Priority), Handler(Func) {}
+	CEventHandlerFunctor(CEventFunctor&& Func, CEventDispatcher* d, CEventID e, U16 _Priority = Priority_Default): CEventHandler(d, e, _Priority), Handler(std::move(Func)) {}
+	CEventHandlerFunctor(const CEventFunctor& Func, CEventDispatcher* d, CEventID e, U16 _Priority = Priority_Default): CEventHandler(d, e, _Priority), Handler(Func) {}
 
 	virtual bool Invoke(CEventDispatcher* pDispatcher, const CEventBase& Event) { return Handler(pDispatcher, Event); }
 };
@@ -74,7 +76,7 @@ private:
 
 public:
 
-	CEventHandlerMember(T* Obj, CMemberFunc Func, U16 _Priority = Priority_Default): CEventHandler(_Priority), Object(Obj), Handler(Func) {}
+	CEventHandlerMember(T* Obj, CMemberFunc Func, CEventDispatcher* d, CEventID e, U16 _Priority = Priority_Default): CEventHandler(d, e, _Priority), Object(Obj), Handler(Func) {}
 
 	virtual bool Invoke(CEventDispatcher* pDispatcher, const CEventBase& Event) { return (Object->*Handler)(pDispatcher, Event); }
 };

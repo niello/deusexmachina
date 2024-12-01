@@ -16,7 +16,7 @@ private:
 
 public:
 
-	CLuaEventHandler(sol::function&& Fn, U16 _Priority = Priority_Default): CEventHandler(_Priority), _Fn(std::move(Fn)) {}
+	CLuaEventHandler(sol::function&& Fn, CEventDispatcher* d, CEventID e, U16 _Priority = Priority_Default): CEventHandler(d, e, _Priority), _Fn(std::move(Fn)) {}
 
 	virtual bool Invoke(CEventDispatcher* pDispatcher, const CEventBase& Event);
 

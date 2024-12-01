@@ -1,4 +1,5 @@
 #pragma once
+#include <Events/Connection.h>
 #include <Data/Ptr.h>
 
 // Event system declarations and helpers
@@ -7,8 +8,8 @@ namespace Events
 {
 class CEventBase;
 class CEventDispatcher;
-typedef Ptr<class CSubscription> PSub;
-typedef Ptr<class CEventHandler> PEventHandler;
+using PSub = DEM::Events::CConnection;
+using PEventHandler = std::shared_ptr<class CEventHandler>;
 typedef bool (*CEventCallback)(CEventDispatcher*, const CEventBase&);
 typedef std::function<bool(CEventDispatcher*, const CEventBase&)> CEventFunctor;
 
@@ -53,12 +54,6 @@ enum EEventPriority
 #define SUBSCRIBE_PEVENT_PRIORITY(EventName, Class, Handler, Priority) \
 	EventSrv->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, Priority)
 
-#define SUBSCRIBE_ALL_EVENTS(Class, Handler) \
-	Sub_##EventName = EventSrv->Subscribe<Class>(nullptr, this, &Class::Handler)
-
-#define SUBSCRIBE_ALL_EVENTS_PRIORITY(Class, Handler, Priority) \
-	Sub_##EventName = EventSrv->Subscribe<Class>(nullptr, this, &Class::Handler, Priority)
-
 #define DISP_SUBSCRIBE_NEVENT(Dispatcher, EventName, Class, Handler) \
 	Sub_##EventName = (Dispatcher)->Subscribe<Class>(&::Event::EventName::RTTI, this, &Class::Handler)
 
@@ -71,14 +66,8 @@ enum EEventPriority
 #define DISP_SUBSCRIBE_PEVENT_PRIORITY(Dispatcher, EventName, Class, Handler, Priority) \
 	Sub_##EventName = (Dispatcher)->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, Priority)
 
-#define DISP_SUBSCRIBE_ALL_EVENTS(Dispatcher, Class, Handler) \
-	Sub_##EventName = (Dispatcher)->Subscribe<Class>(nullptr, this, &Class::Handler)
-
-#define DISP_SUBSCRIBE_ALL_EVENTS_PRIORITY(Dispatcher, Class, Handler, Priority) \
-	Sub_##EventName = (Dispatcher)->Subscribe<Class>(nullptr, this, &Class::Handler, Priority)
-
 #define UNSUBSCRIBE_EVENT(EventName) \
-	Sub_##EventName = nullptr
+	Sub_##EventName.Disconnect()
 
 #define IS_SUBSCRIBED(EventName) \
-	(Sub_##EventName.IsValidPtr())
+	(Sub_##EventName.IsConnected())

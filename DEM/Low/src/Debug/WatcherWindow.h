@@ -1,7 +1,6 @@
 #pragma once
 #include <UI/UIWindow.h>
 #include <Events/EventsFwd.h>
-#include <Events/Subscription.h>
 #include <Data/Array.h>
 #include <Data/String.h>
 

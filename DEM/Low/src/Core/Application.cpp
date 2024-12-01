@@ -5,7 +5,6 @@
 #include <IO/FSBrowser.h>
 #include <IO/PathUtils.h>
 #include <Events/EventServer.h>
-#include <Events/Subscription.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Math/Math.h>
@@ -122,7 +121,7 @@ CApplication::CApplication(Sys::IPlatform& _Platform)
 	// create default file system from platform
 	// setup hard assigns from platform and application
 
-	n_new(Events::CEventServer);
+	n_new(::Events::CEventServer);
 	IOServer.reset(n_new(IO::CIOServer));
 	ResMgr.reset(n_new(Resources::CResourceManager(IOServer.get())));
 
@@ -144,7 +143,7 @@ CApplication::CApplication(Sys::IPlatform& _Platform)
 CApplication::~CApplication()
 {
 	Term();
-	if (Events::CEventServer::HasInstance()) n_delete(EventSrv);
+	if (::Events::CEventServer::HasInstance()) n_delete(EventSrv);
 }
 //---------------------------------------------------------------------
 
@@ -774,7 +773,7 @@ void CApplication::ExitOnWindowClosed(Sys::COSWindow* pWindow)
 }
 //---------------------------------------------------------------------
 
-bool CApplication::OnMainWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+bool CApplication::OnMainWindowClosing(::Events::CEventDispatcher* pDispatcher, const ::Events::CEventBase& Event)
 {
 	UNSUBSCRIBE_EVENT(OnClosing);
 	RequestState(nullptr);
@@ -782,7 +781,7 @@ bool CApplication::OnMainWindowClosing(Events::CEventDispatcher* pDispatcher, co
 }
 //---------------------------------------------------------------------
 
-bool CApplication::OnInputDeviceArrived(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+bool CApplication::OnInputDeviceArrived(::Events::CEventDispatcher* pDispatcher, const ::Events::CEventBase& Event)
 {
 	const Event::InputDeviceArrived& Ev = static_cast<const Event::InputDeviceArrived&>(Event);
 
@@ -810,7 +809,7 @@ bool CApplication::OnInputDeviceArrived(Events::CEventDispatcher* pDispatcher, c
 }
 //---------------------------------------------------------------------
 
-bool CApplication::OnInputDeviceRemoved(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+bool CApplication::OnInputDeviceRemoved(::Events::CEventDispatcher* pDispatcher, const ::Events::CEventBase& Event)
 {
 	const Event::InputDeviceRemoved& Ev = static_cast<const Event::InputDeviceRemoved&>(Event);
 

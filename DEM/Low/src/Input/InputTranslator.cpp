@@ -2,7 +2,6 @@
 #include <Input/InputEvents.h>
 #include <Input/InputDevice.h>
 #include <Input/ControlLayout.h>
-#include <Events/Subscription.h>
 #include <Core/Application.h>
 
 namespace Input
@@ -144,60 +143,49 @@ void CInputTranslator::ConnectToDevice(IInputDevice* pDevice, U16 Priority)
 {
 	if (!pDevice || IsConnectedToDevice(pDevice)) return;
 
+	auto& DeviceSubs = _DeviceSubs[pDevice];
+
 	if (pDevice->GetAxisCount() > 0)
-		_DeviceSubs.push_back(pDevice->Subscribe(&Event::AxisMove::RTTI, this, &CInputTranslator::OnAxisMove));
+		DeviceSubs.push_back(pDevice->Subscribe(&Event::AxisMove::RTTI, this, &CInputTranslator::OnAxisMove));
 
 	if (pDevice->GetButtonCount() > 0)
 	{
-		_DeviceSubs.push_back(pDevice->Subscribe(&Event::ButtonDown::RTTI, this, &CInputTranslator::OnButtonDown));
-		_DeviceSubs.push_back(pDevice->Subscribe(&Event::ButtonUp::RTTI, this, &CInputTranslator::OnButtonUp));
+		DeviceSubs.push_back(pDevice->Subscribe(&Event::ButtonDown::RTTI, this, &CInputTranslator::OnButtonDown));
+		DeviceSubs.push_back(pDevice->Subscribe(&Event::ButtonUp::RTTI, this, &CInputTranslator::OnButtonUp));
 	}
 
 	if (pDevice->CanInputText())
-		_DeviceSubs.push_back(pDevice->Subscribe(&Event::TextInput::RTTI, this, &CInputTranslator::OnTextInput));
+		DeviceSubs.push_back(pDevice->Subscribe(&Event::TextInput::RTTI, this, &CInputTranslator::OnTextInput));
 }
 //---------------------------------------------------------------------
 
 void CInputTranslator::DisconnectFromDevice(const IInputDevice* pDevice)
 {
-	auto It = std::remove_if(_DeviceSubs.begin(), _DeviceSubs.end(), [pDevice](const Events::PSub& Sub)
-	{
-		return Sub->GetDispatcher() == pDevice;
-	});
-	_DeviceSubs.erase(It, _DeviceSubs.end());
+	auto It = _DeviceSubs.find(pDevice);
+	if (It != _DeviceSubs.cend()) _DeviceSubs.erase(It);
 }
 //---------------------------------------------------------------------
 
 UPTR CInputTranslator::GetConnectedDevices(std::vector<IInputDevice*>& OutDevices) const
 {
 	const UPTR PrevCount = OutDevices.size();
-	for (const auto& Sub : _DeviceSubs)
-	{
-		auto pDevice = static_cast<IInputDevice*>(Sub->GetDispatcher());
-		if (std::find(OutDevices.cbegin(), OutDevices.cend(), pDevice) == OutDevices.cend())
-			OutDevices.push_back(pDevice);
-	}
+	for (const auto& [pDevice, Subs] : _DeviceSubs)
+		OutDevices.push_back(pDevice);
 	return OutDevices.size() - PrevCount;
 }
 //---------------------------------------------------------------------
 
 bool CInputTranslator::IsConnectedToDevice(const IInputDevice* pDevice) const
 {
-	for (const auto& Sub : _DeviceSubs)
-		if (Sub->GetDispatcher() == pDevice)
-			return true;
-
-	return false;
+	return _DeviceSubs.find(pDevice) != _DeviceSubs.cend();
 }
 //---------------------------------------------------------------------
 
 void CInputTranslator::TransferAllDevices(CInputTranslator* pNewOwner)
 {
 	if (pNewOwner)
-	{
-		for (const auto& Sub : _DeviceSubs)
-			pNewOwner->ConnectToDevice(static_cast<IInputDevice*>(Sub->GetDispatcher()));
-	}
+		for (const auto& [pDevice, Subs] : _DeviceSubs)
+			pNewOwner->ConnectToDevice(static_cast<IInputDevice*>(pDevice));
 
 	_DeviceSubs.clear();
 }

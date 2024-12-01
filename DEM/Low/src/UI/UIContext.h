@@ -20,10 +20,10 @@ class CUIContext: public Core::CObject
 private:
 
 	std::vector<PUIWindow>    RootWindows; // Stack, top is back
-
 	DEM::Sys::POSWindow       OSWindow;
-	std::vector<Events::PSub> InputSubs;
 	CEGUI::GUIContext*        pCtx = nullptr;
+
+	std::map<const ::Events::CEventDispatcher*, std::vector<::Events::PSub>> _InputSubs;
 
 	void				SetRootWindow(CUIWindow* pWindow);
 	void                DetachRootWindow(PUIWindow&& Window);

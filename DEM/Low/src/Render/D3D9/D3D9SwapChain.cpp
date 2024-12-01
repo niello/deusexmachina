@@ -3,12 +3,11 @@
 #include <Render/DisplayDriver.h>
 #include <Render/RenderTarget.h>
 #include <System/OSWindow.h>
-#include <Events/Subscription.h>
 #include "DEMD3D9.h"
 
 namespace Render
 {
-CD3D9SwapChain::CD3D9SwapChain() {}
+CD3D9SwapChain::CD3D9SwapChain() = default;
 
 CD3D9SwapChain::~CD3D9SwapChain()
 {
@@ -18,8 +17,8 @@ CD3D9SwapChain::~CD3D9SwapChain()
 
 void CD3D9SwapChain::Release()
 {
-	Sub_OnClosing = nullptr;
-	Sub_OnToggleFullscreen = nullptr;
+	Sub_OnClosing.Disconnect();
+	Sub_OnToggleFullscreen.Disconnect();
 
 	if (BackBufferRT.IsValidPtr()) BackBufferRT->Destroy();
 

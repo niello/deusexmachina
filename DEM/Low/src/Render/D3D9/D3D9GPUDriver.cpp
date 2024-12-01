@@ -19,7 +19,6 @@
 #include <Render/TextureData.h>
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
-#include <Events/Subscription.h>
 #include <IO/BinaryReader.h>
 #include <System/Win32/OSWindowWin32.h>
 #include <System/SystemEvents.h>

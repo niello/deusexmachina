@@ -2,7 +2,6 @@
 
 #include <Game/Property.h>
 #include <Game/GameLevel.h>
-#include <Events/Subscription.h>
 #include <Data/DataArray.h>
 
 namespace Game
@@ -32,7 +31,7 @@ void CEntity::SetLevel(CGameLevel* pNewLevel)
 	n_assert(IsInactive());
 	if (pNewLevel == Level.Get()) return;
 	Level = pNewLevel;
-	LevelSub = pNewLevel ? pNewLevel->Subscribe(nullptr, this, &CEntity::OnEvent) : nullptr;
+	LevelSub = pNewLevel ? pNewLevel->Subscribe(nullptr, this, &CEntity::OnEvent) : ::Events::PSub {};
 }
 //---------------------------------------------------------------------
 

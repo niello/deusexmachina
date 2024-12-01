@@ -1,7 +1,6 @@
 #include "Property.h"
 
 #include <Game/Entity.h>
-#include <Events/Subscription.h>
 
 namespace Game
 {

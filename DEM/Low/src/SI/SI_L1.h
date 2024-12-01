@@ -8,7 +8,6 @@
 namespace SI
 {
 	bool RegisterGlobals();
-	bool RegisterEventServer();
 	bool RegisterTime();
 }
 
