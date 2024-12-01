@@ -1,6 +1,7 @@
 #pragma once
 #include <Core/RTTIBaseClass.h>
 #include <Quests/QuestData.h>
+#include <Events/Signal.h>
 #include <Data/Ptr.h>
 
 // Quest system manages current player (character) tasks and their flow (completion, failure,
@@ -25,13 +26,24 @@ class CQuestManager : public ::Core::CRTTIBaseClass
 
 private:
 
-	Game::CGameSession&                    _Session;
+	struct CActiveQuest
+	{
+		const CQuestData*                pQuestData = nullptr;
+		std::vector<Events::CConnection> Subs; //???can use the same CConnection for event dispatcher subscriptions?
+		// variable storage
+		// if needed, flow player and cached lua objects/functions
+	};
 
-	std::unordered_map<CStrID, CQuestData> _Quests;
+	Game::CGameSession&                      _Session;
+
+	std::unordered_map<CStrID, CQuestData>   _Quests;
+	std::unordered_map<CStrID, CActiveQuest> _ActiveQuests;
 
 public:
 
-	// Quest = quest data ref (1<->1) + flow player, script function cache, subscriptions
+	Events::CSignal<void(CStrID)>         OnQuestStarted;   // QuestID
+	Events::CSignal<void(CStrID)>         OnQuestReset;     // QuestID
+	Events::CSignal<void(CStrID, CStrID)> OnQuestCompleted; // QuestID, OutcomeID
 
 	//???!!!on subscription triggered, can pass data from the event to outcome calculation? or always calculated from the world state?
 	//!!!e.g. destroy with fire may not work without events! fire damage type is recorded only in a death event! can combine with flow or need Lua?
@@ -44,7 +56,7 @@ public:
 	void              LoadQuests(const Data::PParams& Desc);
 	const CQuestData* FindQuestData(CStrID ID) const;
 	bool              StartQuest(CStrID ID);
-	//GetQuestState
+	//GetQuestState - inactive, active, completed (with outcome). Return pair?
 	//SetQuestOutcome
 	//ActivateQuest - does nothiong if active, what if finished with outcome?
 	//ResetQuest - returns to not activated state

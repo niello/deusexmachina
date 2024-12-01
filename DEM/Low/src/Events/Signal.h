@@ -8,6 +8,7 @@
 // TODO: void Subscribe(F f, TID ID) - subscribe by ID value, can share between different slots, no connection tracking
 // TODO: invoke with result accumulation, template Callable accumulator.
 //       TAcc Accum(TAcc Curr, TRet SlotRet)? or void Accum(TAcc& Acc, TRet SlotRet).
+// TODO: what is needed to support coroutine event handlers?
 
 namespace DEM::Events
 {
