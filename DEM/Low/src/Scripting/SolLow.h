@@ -35,14 +35,17 @@ namespace DEM::Scripting
 void RegisterBasicTypes(sol::state& State);
 
 // FIXME: sol::create_if_nil / sol::update_if_empty do not work in a loop
-inline sol::table EnsureTable(sol::state_view& State, sol::table Parent, std::string_view Name)
+inline sol::table EnsureTable(sol::table Parent, std::string_view Name)
 {
-	auto Table = Parent[Name];
-	if (!Table.valid())
-	{
-		Table = State.create_table();
-		Parent.set(Name, Table);
-	}
+	return Parent[Name].get_or_create<sol::table>();
+}
+//---------------------------------------------------------------------
+
+inline sol::table EnsureTable(sol::table Parent, std::initializer_list<std::string_view> Names)
+{
+	auto Table = Parent;
+	for (const std::string_view Name : Names)
+		Table = Table[Name].get_or_create<sol::table>();
 	return Table;
 }
 //---------------------------------------------------------------------
@@ -86,9 +89,9 @@ sol::table Namespace(sol::state_view& State)
 	sol::table Table = State.globals();
 	if constexpr (Meta::CMetadata<T>::IsRegistered)
 	{
-		Meta::CMetadata<T>::ForEachNamespace([&Table, &State](size_t /*Index*/, std::string_view NamespaceName)
+		Meta::CMetadata<T>::ForEachNamespace([&Table](size_t /*Index*/, std::string_view NamespaceName)
 		{
-			Table = EnsureTable(State, Table, NamespaceName);
+			Table = EnsureTable(Table, NamespaceName);
 		});
 	}
 	return Table;

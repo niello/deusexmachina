@@ -3,7 +3,6 @@
 #include <Core/RTTIBaseClass.h>
 #include <Events/Signal.h>
 #include <Math/WELL512.h>
-#include <Game/ECS/Entity.h> // For ResolveEntityID utility method
 
 // Plays a Flow asset and tracks its state.
 // Only one action can be active at the same time.
@@ -15,7 +14,6 @@ namespace DEM::Game
 
 namespace DEM::Flow
 {
-Game::HEntity ResolveEntityID(const CFlowActionData& Proto, CStrID ParamID, const CFlowVarStorage& Vars);
 
 struct CUpdateContext
 {

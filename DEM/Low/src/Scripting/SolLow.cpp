@@ -109,7 +109,7 @@ void RegisterBasicTypes(sol::state& State)
 		{
 			return (Self.GetCount() > i) ? MakeObjectFromData(sol::state_view(s), Self[i]) : sol::object();
 		}
-		, sol::meta_function::new_index, [](Data::CDataArray& Self, size_t i, sol::object Value) {}
+		, sol::meta_function::new_index, [](Data::CDataArray& Self, size_t i, sol::object Value) { NOT_IMPLEMENTED; }
 	);
 
 	State.new_usertype<::Events::CEvent>("CEvent"

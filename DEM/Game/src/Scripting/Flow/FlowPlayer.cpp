@@ -6,27 +6,6 @@
 namespace DEM::Flow
 {
 
-Game::HEntity ResolveEntityID(const CFlowActionData& Proto, CStrID ParamID, const CFlowVarStorage& Vars)
-{
-	if (auto* pParam = Proto.Params->Find(ParamID))
-	{
-		if (pParam->IsA<int>())
-		{
-			// An entity ID is provided in an action parameter
-			return Game::HEntity{ static_cast<DEM::Game::HEntity::TRawValue>(pParam->GetValue<int>()) };
-		}
-		else if (pParam->IsA<CStrID>())
-		{
-			// An entity ID is stored in a flow player variable storage and is referenced in action by var ID
-			const int Raw = Vars.Get<int>(Vars.Find(pParam->GetValue<CStrID>()), static_cast<int>(Game::HEntity{}.Raw));
-			return Game::HEntity{ static_cast<DEM::Game::HEntity::TRawValue>(Raw) };
-		}
-	}
-
-	return {};
-}
-//---------------------------------------------------------------------
-
 void IFlowAction::Continue(CUpdateContext& Ctx)
 {
 	Ctx.Error.clear();
@@ -104,7 +83,7 @@ const CFlowLink* IFlowAction::GetRandomValidLink(Game::CGameSession& Session, co
 
 Game::HEntity IFlowAction::ResolveEntityID(CStrID ParamID) const
 {
-	return (_pPrototype && _pPlayer) ? DEM::Flow::ResolveEntityID(*_pPrototype, ParamID, _pPlayer->GetVars()) : Game::HEntity{};
+	return (_pPrototype && _pPlayer) ? DEM::Flow::ResolveEntityID(_pPrototype->Params, ParamID, _pPlayer->GetVars()) : Game::HEntity{};
 }
 //---------------------------------------------------------------------
 

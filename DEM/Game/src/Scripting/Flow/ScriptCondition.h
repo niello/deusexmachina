@@ -14,15 +14,15 @@ protected:
 	// This is not state, this is session-level logic
 	sol::function _FnEvaluate;
 	sol::function _FnGetText;
-	sol::function _FnRENAME_SOMETHING_ABOUT_SUBSCRIPTIONS;
+	sol::function _FnSubscribeRelevantEvents;
 
 public:
 
 	CScriptCondition(sol::table ScriptAsset);
 
-	virtual bool Evaluate(const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const override;
-	virtual void GetText(std::string& Out, const Data::PParams& Params, Game::CGameSession& Session, const CFlowVarStorage& Vars) const override;
-	virtual void RENAME_SOMETHING_ABOUT_SUBSCRIPTIONS() const override;
+	virtual bool Evaluate(const CConditionContext& Ctx) const override;
+	virtual void GetText(std::string& Out, const CConditionContext& Ctx) const override;
+	virtual void SubscribeRelevantEvents(std::vector<Events::CConnection>& OutSubs, const CConditionContext& Ctx, const std::function<void()>& Callback) const override;
 };
 
 }

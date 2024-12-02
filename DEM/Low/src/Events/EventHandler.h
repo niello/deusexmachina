@@ -1,5 +1,4 @@
 #pragma once
-#include <Data/RefCounted.h>
 #include <Events/EventsFwd.h>
 #include <Events/EventID.h>
 

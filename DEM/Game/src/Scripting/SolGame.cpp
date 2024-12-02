@@ -44,6 +44,8 @@ void RegisterVarStorageTemplateMethods(sol::usertype<CVarStorage<TVar...>>& User
 
 void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 {
+	EnsureTable(State.globals(), { "DEM", "Flow" }).set_function("ResolveEntityID", &DEM::Flow::ResolveEntityID);
+
 	// CFlowVarStorage
 	{
 		auto& UserType = State.new_usertype<Flow::CFlowVarStorage>("CFlowVarStorage"

@@ -29,7 +29,7 @@ private:
 	struct CActiveQuest
 	{
 		const CQuestData*                pQuestData = nullptr;
-		std::vector<Events::CConnection> Subs; //???can use the same CConnection for event dispatcher subscriptions?
+		std::vector<Events::CConnection> Subs;
 		// variable storage
 		// if needed, flow player and cached lua objects/functions
 	};

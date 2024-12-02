@@ -13,8 +13,8 @@ struct CDestructibleComponent
 	CModifiableParameter<int>               HP = 0;
 	CModifiableParameter<CDamageAbsorption> DamageAbsorption;
 
-	Events::CSignal<void(int)> OnHit;
-	Events::CSignal<void()>    OnDestroyed;
+	Events::CSignal<void(int)>         OnHit;
+	Events::CSignal<void(EDamageType)> OnDestroyed;
 
 	// TODO: resistances and immunities. here or in a separate component with hit zones?
 
