@@ -14,6 +14,9 @@ namespace DEM::RPG
 {
 static const CStrID sidConversationInitiator("ConversationInitiator");
 static const CStrID sidConversationOwner("ConversationOwner");
+static const CStrID sidConversationMode("ConversationMode");
+static const CStrID sidForeground("Foreground");
+static const CStrID sidChoiceActionClass("DEM::RPG::CChoiceAction");
 
 struct CConversation
 {
@@ -69,12 +72,18 @@ bool CConversationManager::StartConversation(Flow::PFlowAsset Asset, Game::HEnti
 
 	if (Mode == EConversationMode::Auto)
 	{
+		Mode = EConversationMode::Background;
+
 		// Conversations with choice actions must be foreground
-		static const CStrID sidChoiceActionClass("DEM::RPG::CChoiceAction");
 		if (Asset->HasAction(sidChoiceActionClass))
+		{
 			Mode = EConversationMode::Foreground;
-		else
-			Mode = EConversationMode::Background;
+		}
+		else if (auto ModeVar = Asset->GetDefaultVarStorage().Find<CStrID>(sidConversationMode))
+		{
+			if (Asset->GetDefaultVarStorage().Get<CStrID>(ModeVar) == sidForeground)
+				Mode = EConversationMode::Foreground;
+		}
 	}
 
 	// Can't have more than one foreground conversation running
