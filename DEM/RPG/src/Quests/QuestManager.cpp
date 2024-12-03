@@ -1,4 +1,6 @@
 #include "QuestManager.h"
+#include <Game/GameSession.h>
+#include <Scripting/Flow/ConditionRegistry.h>
 #include <Data/SerializeToParams.h>
 
 namespace DEM::RPG
@@ -39,17 +41,37 @@ bool CQuestManager::StartQuest(CStrID ID)
 	//   !!!if activates or deactivates other quests, must put them into a queue?
 	// fire quest started event/signal
 
+	// if no outcomes, finish immediately?
+	// if outcome has no condition, finish immediately with this outcome? why to have this at all? assert on it?
+
+	//???pass event params to vars? can vars be a part of a quest desc? need it really?
+	Flow::CFlowVarStorage Vars;
 	for (const auto& [OutcomeID, OutcomeData] : pQuestData->Outcomes)
 	{
-		// check all conditions, maybe immediately go to outcome //???or put it to queue?
-		// if not, subscribe to condition events to check outcomes when something changes
+		const auto& Cond = OutcomeData.Condition;
+		if (Flow::EvaluateCondition(Cond, _Session, Vars))
+		{
+			// immediately go to outcome OutcomeID //???or put it to queue?
+		}
+		else if (const auto* pConditions = _Session.FindFeature<Flow::CConditionRegistry>())
+		{
+			if (auto* pCondition = pConditions->FindCondition(Cond.Type))
+			{
+				pCondition->SubscribeRelevantEvents(ActiveQuest.Subs, { Cond, _Session, Vars }, [OutcomeID, &Cond]()
+				{
+					// re-evaluate condition and go to outcome if it is met
+					::Sys::DbgOut(OutcomeID.CStr()); ::Sys::DbgOut("\n");
+					::Sys::DbgOut(Cond.Type.CStr()); ::Sys::DbgOut("\n");
+					NOT_IMPLEMENTED_MSG("QUEST RE-EVAL");
+				});
+			}
+		}
 	}
 
-	//!!!if use queue, manager must correctlly return quest state based on queued operations too!
+	//!!!if use queue, manager must correctly return quest state based on queued operations too!
 	//can process queue right here in the end of the function recursively or in a loop with guard flag, or in CQuestManager::Update
 
-	NOT_IMPLEMENTED;
-	return false;
+	return true;
 }
 //---------------------------------------------------------------------
 
