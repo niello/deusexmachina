@@ -86,14 +86,17 @@ static inline bool CompareVarVar(HVar Left, CStrID Op, HVar Right, const CFlowVa
 }
 //---------------------------------------------------------------------
 
-static std::pair<const CFlowVarStorage*, HVar> FindVar(Game::CGameSession& Session, const CFlowVarStorage& Vars, CStrID ID)
+static std::pair<const CFlowVarStorage*, HVar> FindVar(Game::CGameSession& Session, const CFlowVarStorage* pVars, CStrID ID)
 {
-	auto Handle = Vars.Find(ID);
-	if (Handle) return { &Vars, Handle };
+	if (pVars)
+	{
+		auto Handle = pVars->Find(ID);
+		if (Handle) return { pVars, Handle };
+	}
 
 	if (const auto* pSessionVars = Session.FindFeature<Game::CSessionVars>())
 	{
-		Handle = pSessionVars->Runtime.Find(ID);
+		auto Handle = pSessionVars->Runtime.Find(ID);
 		if (Handle) return { &pSessionVars->Runtime, Handle };
 
 		Handle = pSessionVars->Persistent.Find(ID);
@@ -104,7 +107,7 @@ static std::pair<const CFlowVarStorage*, HVar> FindVar(Game::CGameSession& Sessi
 }
 //---------------------------------------------------------------------
 
-bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage& Vars)
+bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage* pVars)
 {
 	if (!Cond.Type) return true;
 
@@ -112,27 +115,27 @@ bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, 
 	if (!pConditions) return true;
 
 	if (auto* pCondition = pConditions->FindCondition(Cond.Type))
-		return pCondition->Evaluate({ Cond, Session, Vars });
+		return pCondition->Evaluate({ Cond, Session, pVars });
 
 	::Sys::Error("Unsupported condition type");
 	return false;
 }
 //---------------------------------------------------------------------
 
-std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage& Vars)
+std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage* pVars)
 {
 	std::string Result;
 
 	if (Cond.Type)
 		if (const auto* pConditions = Session.FindFeature<CConditionRegistry>())
 			if (auto* pCondition = pConditions->FindCondition(Cond.Type))
-				pCondition->GetText(Result, { Cond, Session, Vars });
+				pCondition->GetText(Result, { Cond, Session, pVars });
 
 	return Result;
 }
 //---------------------------------------------------------------------
 
-Game::HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const CFlowVarStorage& Vars)
+Game::HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const CFlowVarStorage* pVars)
 {
 	if (auto* pParam = Params->Find(ParamID))
 	{
@@ -141,10 +144,10 @@ Game::HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const
 			// An entity ID is provided in an action parameter
 			return Game::HEntity{ static_cast<DEM::Game::HEntity::TRawValue>(pParam->GetValue<int>()) };
 		}
-		else if (pParam->IsA<CStrID>())
+		else if (pVars && pParam->IsA<CStrID>())
 		{
 			// An entity ID is stored in a flow player variable storage and is referenced in action by var ID
-			const int Raw = Vars.Get<int>(Vars.Find(pParam->GetValue<CStrID>()), static_cast<int>(Game::HEntity{}.Raw));
+			const int Raw = pVars->Get<int>(pVars->Find(pParam->GetValue<CStrID>()), static_cast<int>(Game::HEntity{}.Raw));
 			return Game::HEntity{ static_cast<DEM::Game::HEntity::TRawValue>(Raw) };
 		}
 	}
@@ -162,7 +165,7 @@ bool CAndCondition::Evaluate(const CConditionContext& Ctx) const
 	for (const auto& Param : *Params)
 	{
 		DEM::ParamsFormat::Deserialize(Param.GetRawValue(), Inner);
-		if (!EvaluateCondition(Inner, Ctx.Session, Ctx.Vars)) return false;
+		if (!EvaluateCondition(Inner, Ctx.Session, Ctx.pVars)) return false;
 	}
 	return true;
 }
@@ -177,7 +180,7 @@ bool COrCondition::Evaluate(const CConditionContext& Ctx) const
 	for (const auto& Param : *Params)
 	{
 		DEM::ParamsFormat::Deserialize(Param.GetRawValue(), Inner);
-		if (EvaluateCondition(Inner, Ctx.Session, Ctx.Vars)) return true;
+		if (EvaluateCondition(Inner, Ctx.Session, Ctx.pVars)) return true;
 	}
 	return false;
 }
@@ -190,7 +193,7 @@ bool CNotCondition::Evaluate(const CConditionContext& Ctx) const
 
 	CConditionData Inner;
 	DEM::ParamsFormat::Deserialize(Params, Inner);
-	return !EvaluateCondition(Inner, Ctx.Session, Ctx.Vars);
+	return !EvaluateCondition(Inner, Ctx.Session, Ctx.pVars);
 }
 //---------------------------------------------------------------------
 
@@ -199,7 +202,7 @@ bool CVarCmpConstCondition::Evaluate(const CConditionContext& Ctx) const
 	const auto& Params = Ctx.Condition.Params;
 	if (!Params) return true;
 
-	const auto [pLeftVars, Left] = FindVar(Ctx.Session, Ctx.Vars, Params->Get<CStrID>(sidLeft));
+	const auto [pLeftVars, Left] = FindVar(Ctx.Session, Ctx.pVars, Params->Get<CStrID>(sidLeft));
 	if (!Left) return false;
 
 	const auto* pRightParam = Params->Find(sidRight);
@@ -226,10 +229,10 @@ bool CVarCmpVarCondition::Evaluate(const CConditionContext& Ctx) const
 	const auto& Params = Ctx.Condition.Params;
 	if (!Params) return true;
 
-	const auto [pLeftVars, Left] = FindVar(Ctx.Session, Ctx.Vars, Params->Get<CStrID>(sidLeft));
+	const auto [pLeftVars, Left] = FindVar(Ctx.Session, Ctx.pVars, Params->Get<CStrID>(sidLeft));
 	if (!Left) return false;
 
-	const auto [pRightVars, Right] = FindVar(Ctx.Session, Ctx.Vars, Params->Get<CStrID>(sidRight));
+	const auto [pRightVars, Right] = FindVar(Ctx.Session, Ctx.pVars, Params->Get<CStrID>(sidRight));
 	return Right && CompareVarVar(Left, Params->Get<CStrID>(sidOp), Right, *pLeftVars, *pRightVars);
 }
 //---------------------------------------------------------------------
@@ -243,7 +246,7 @@ bool CLuaStringCondition::Evaluate(const CConditionContext& Ctx) const
 	if (Code.empty()) return true;
 
 	sol::environment Env(Ctx.Session.GetScriptState(), sol::create, Ctx.Session.GetScriptState().globals());
-	Env["Vars"] = &Ctx.Vars;
+	Env["Vars"] = Ctx.pVars;
 	auto Result = Ctx.Session.GetScriptState().script("return " + std::string(Code), Env);
 	if (!Result.valid())
 	{

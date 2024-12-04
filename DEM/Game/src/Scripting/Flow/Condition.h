@@ -30,12 +30,14 @@ struct CConditionContext
 {
 	const CConditionData&  Condition;
 	Game::CGameSession&    Session;
-	const CFlowVarStorage& Vars;
+	const CFlowVarStorage* pVars;
 };
 
-bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage& Vars);
-std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage& Vars);
-Game::HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const CFlowVarStorage& Vars);
+bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage* pVars);
+std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage* pVars);
+Game::HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const CFlowVarStorage* pVars);
+
+using FEventCallback = std::function<void(const Flow::CFlowVarStorage*)>;
 
 class ICondition
 {
@@ -45,7 +47,7 @@ public:
 
 	virtual bool Evaluate(const CConditionContext& Ctx) const = 0;
 	virtual void GetText(std::string& Out, const CConditionContext& Ctx) const {}
-	virtual void SubscribeRelevantEvents(std::vector<Events::CConnection>& OutSubs, const CConditionContext& Ctx, const std::function<void()>& Callback) const {}
+	virtual void SubscribeRelevantEvents(std::vector<Events::CConnection>& OutSubs, const CConditionContext& Ctx, const FEventCallback& Callback) const {}
 };
 
 class CFalseCondition : public ICondition

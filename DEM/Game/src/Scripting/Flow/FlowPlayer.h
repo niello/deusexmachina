@@ -43,7 +43,7 @@ protected:
 		for (size_t i = 0; i < LinkCount; ++i)
 		{
 			const auto& Link = Proto.Links[i];
-			if (EvaluateCondition(Link.Condition, Session, Vars))
+			if (EvaluateCondition(Link.Condition, Session, &Vars))
 			{
 				if constexpr (std::is_invocable_r_v<bool, F, size_t, const CFlowLink&>)
 				{

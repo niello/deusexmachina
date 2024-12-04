@@ -22,7 +22,7 @@ public:
 
 	virtual bool Evaluate(const CConditionContext& Ctx) const override;
 	virtual void GetText(std::string& Out, const CConditionContext& Ctx) const override;
-	virtual void SubscribeRelevantEvents(std::vector<Events::CConnection>& OutSubs, const CConditionContext& Ctx, const std::function<void()>& Callback) const override;
+	virtual void SubscribeRelevantEvents(std::vector<Events::CConnection>& OutSubs, const CConditionContext& Ctx, const FEventCallback& Callback) const override;
 };
 
 }

@@ -24,7 +24,7 @@ void CChoiceAction::CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlo
 	{
 		// Skip answers of invalid speakers
 		auto* pWorld = Session.FindFeature<Game::CGameWorld>();
-		const auto Speaker = Flow::ResolveEntityID(pActionData->Params, sidSpeaker, Root._pPlayer->GetVars());
+		const auto Speaker = Flow::ResolveEntityID(pActionData->Params, sidSpeaker, &Root._pPlayer->GetVars());
 		const bool IsPhraseValid = IsValid && pWorld && CanSpeak(*pWorld, Speaker) && CPhraseAction::IsMatchingConversation(Speaker, Session, Root._pPlayer->GetVars());
 		if (!IsPhraseValid && !DebugMode) return;
 
@@ -42,7 +42,7 @@ void CChoiceAction::CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlo
 		}
 
 		// TODO: a list of condition types for which text must be displayed in UI? Or text is for UI only? In debug mode show all conditions.
-		std::string Text = GetConditionText(Link.Condition, Session, Root._pPlayer->GetVars());
+		std::string Text = GetConditionText(Link.Condition, Session, &Root._pPlayer->GetVars());
 		if (!Text.empty()) Text.append(": ");
 		Text.append(static_cast<std::string_view>(pActionData->Params->Get<CString>(sidText, CString::Empty)));
 		Root._ChoiceTexts.push_back(std::move(Text));
@@ -72,7 +72,7 @@ void CChoiceAction::CollectChoices(CChoiceAction& Root, const Flow::CFlowActionD
 	{
 		// In debug mode all unavailable answers are listed too
 		for (const auto& Link : Curr.Links)
-			CollectChoicesFromLink(Root, Link, Session, true, IsValid && EvaluateCondition(Link.Condition, Session, Root._pPlayer->GetVars()));
+			CollectChoicesFromLink(Root, Link, Session, true, IsValid && EvaluateCondition(Link.Condition, Session, &Root._pPlayer->GetVars()));
 	}
 	else
 	{

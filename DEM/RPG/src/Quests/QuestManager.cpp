@@ -45,11 +45,10 @@ bool CQuestManager::StartQuest(CStrID ID)
 	// if outcome has no condition, finish immediately with this outcome? why to have this at all? assert on it?
 
 	//???pass event params to vars? can vars be a part of a quest desc? need it really?
-	Flow::CFlowVarStorage Vars;
 	for (const auto& [OutcomeID, OutcomeData] : pQuestData->Outcomes)
 	{
 		const auto& Cond = OutcomeData.Condition;
-		if (Flow::EvaluateCondition(Cond, _Session, Vars))
+		if (Flow::EvaluateCondition(Cond, _Session, nullptr))
 		{
 			// immediately go to outcome OutcomeID //???or put it to queue?
 		}
@@ -57,12 +56,12 @@ bool CQuestManager::StartQuest(CStrID ID)
 		{
 			if (auto* pCondition = pConditions->FindCondition(Cond.Type))
 			{
-				pCondition->SubscribeRelevantEvents(ActiveQuest.Subs, { Cond, _Session, Vars }, [OutcomeID, &Cond]()
+				pCondition->SubscribeRelevantEvents(ActiveQuest.Subs, { Cond, _Session, nullptr }, [this, OutcomeID, &Cond](const Flow::CFlowVarStorage* pVars)
 				{
-					// re-evaluate condition and go to outcome if it is met
-					::Sys::DbgOut(OutcomeID.CStr()); ::Sys::DbgOut("\n");
-					::Sys::DbgOut(Cond.Type.CStr()); ::Sys::DbgOut("\n");
-					NOT_IMPLEMENTED_MSG("QUEST RE-EVAL");
+					if (Flow::EvaluateCondition(Cond, _Session, pVars))
+					{
+						// immediately go to outcome OutcomeID //???or put it to queue?
+					}
 				});
 			}
 		}
