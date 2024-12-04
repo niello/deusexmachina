@@ -3,6 +3,7 @@
 #include <Quests/QuestData.h>
 #include <Events/Signal.h>
 #include <Data/Ptr.h>
+#include <deque>
 
 // Quest system manages current player (character) tasks and their flow (completion, failure,
 // opening new tasks etc)
@@ -38,6 +39,8 @@ private:
 
 	std::unordered_map<CStrID, CQuestData>   _Quests;
 	std::unordered_map<CStrID, CActiveQuest> _ActiveQuests;
+	std::unordered_map<CStrID, CActiveQuest> _FinishedQuests;
+	std::deque<std::pair<CStrID, CStrID>>    _ChangeQueue; //  A queue of pending operations Quest ID -> Outcome ID or activation if empty
 
 public:
 
@@ -56,10 +59,12 @@ public:
 	void              LoadQuests(const Data::PParams& Desc);
 	const CQuestData* FindQuestData(CStrID ID) const;
 	bool              StartQuest(CStrID ID);
-	//GetQuestState - inactive, active, completed (with outcome). Return pair?
-	//SetQuestOutcome
-	//ActivateQuest - does nothiong if active, what if finished with outcome?
-	//ResetQuest - returns to not activated state
+	bool              SetQuestOutcome(CStrID ID, CStrID OutcomeID);
+	//GetQuestState - inactive, active, completed (with outcome). Return pair? Check queue!!!
+	//ResetQuest - returns to not activated state from either active or finished state, remove from queue
+	//ResetAllQuests
+
+	void              ProcessQueue();
 };
 
 }

@@ -11,7 +11,6 @@ struct CQuestOutcomeData
 	std::string          UIDesc;
 	Flow::CConditionData Condition;
 	// Reward
-	// StartQuests
 	// EndQuests
 	// Flow or Lua //???or single in CQuestData, outcome as arg?
 };
@@ -21,6 +20,7 @@ struct CQuestData
 	CStrID                              ParentID;
 	std::string                         UIName;
 	std::string                         UIDesc;
+	std::vector<CStrID>                 StartQuests;
 	std::map<CStrID, CQuestOutcomeData> Outcomes;
 
 	// Flow asset or script for OnStart
@@ -59,6 +59,7 @@ template<> constexpr auto RegisterMembers<RPG::CQuestData>()
 		DEM_META_MEMBER_FIELD(RPG::CQuestData, ParentID),
 		DEM_META_MEMBER_FIELD(RPG::CQuestData, UIName),
 		DEM_META_MEMBER_FIELD(RPG::CQuestData, UIDesc),
+		DEM_META_MEMBER_FIELD(RPG::CQuestData, StartQuests),
 		DEM_META_MEMBER_FIELD(RPG::CQuestData, Outcomes)
 	);
 }
