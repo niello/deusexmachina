@@ -4,6 +4,7 @@
 #include <Events/Signal.h>
 #include <Data/Ptr.h>
 #include <deque>
+#include <memory>
 
 // Quest system manages current player (character) tasks and their flow (completion, failure,
 // opening new tasks etc)
@@ -27,6 +28,10 @@ class CQuestManager : public ::Core::CRTTIBaseClass
 
 private:
 
+	// TODO: could use shared_ptr to avoid multiple copies of the same param set! But need to enforce this in args.
+	//!!!lua can construct shared ptr to via special factory binding!
+	using PFlowVarStorage = std::unique_ptr<Flow::CFlowVarStorage>;
+
 	struct CActiveQuest
 	{
 		const CQuestData*                pQuestData = nullptr;
@@ -35,14 +40,31 @@ private:
 		// if needed, flow player and cached lua objects/functions
 	};
 
+	struct CQueueRecord
+	{
+		CStrID          QuestID;
+		CStrID          OutcomeID; // Empty for quest activation
+		PFlowVarStorage Vars;      // Optional variables, e.g. from a triggering event
+
+		CQueueRecord(CStrID QuestID_, CStrID OutcomeID_, const Flow::CFlowVarStorage* pVars)
+			: QuestID(QuestID_)
+			, OutcomeID(OutcomeID_)
+			, Vars(pVars ? std::make_unique<Flow::CFlowVarStorage>(*pVars) : nullptr)
+		{
+		}
+	};
+
 	Game::CGameSession&                      _Session;
 
 	std::unordered_map<CStrID, CQuestData>   _Quests;
 	std::unordered_map<CStrID, CActiveQuest> _ActiveQuests;
 	std::unordered_map<CStrID, CStrID>       _FinishedQuests;
-	std::deque<std::pair<CStrID, CStrID>>    _ChangeQueue; //  A queue of pending operations Quest ID -> Outcome ID or activation if empty
+	std::deque<CQueueRecord>                 _ChangeQueue; //  A queue of pending operations Quest ID -> Outcome ID or activation if empty
 
 	bool                                     _IsInQueueProcessing = false;
+
+	bool HandleQuestStart(CStrID ID, const Flow::CFlowVarStorage* pVars, bool Loading);
+	bool HandleQuestCompletion(CStrID ID, CStrID OutcomeID, const Flow::CFlowVarStorage* pVars);
 
 public:
 
@@ -58,10 +80,12 @@ public:
 
 	CQuestManager(Game::CGameSession& Owner);
 
+	void              LoadState();
+
 	void              LoadQuests(const Data::PParams& Desc);
 	const CQuestData* FindQuestData(CStrID ID) const;
-	bool              StartQuest(CStrID ID);
-	bool              SetQuestOutcome(CStrID ID, CStrID OutcomeID);
+	void              StartQuest(CStrID ID, const Flow::CFlowVarStorage* pVars = nullptr);
+	void              SetQuestOutcome(CStrID ID, CStrID OutcomeID, const Flow::CFlowVarStorage* pVars = nullptr);
 	//GetQuestState - inactive, active, completed (with outcome). Return pair? Check queue!!!
 	//ResetQuest - returns to not activated state from either active or finished state, remove from queue
 	//ResetAllQuests

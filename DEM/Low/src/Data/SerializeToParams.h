@@ -333,22 +333,29 @@ struct ParamsFormat
 	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
 	static inline void DeserializeAppend(const Data::CData& Input, T& Map)
 	{
-		static_assert(is_string_compatible_v<T::key_type>, "CData deserialization supports only string map keys");
-
-		constexpr bool IsStrIDKey = std::is_same_v<std::remove_cv_t<std::remove_reference_t<T::key_type>>, CStrID>;
+		// vector of pairs has no T::key_type and T::mapped_type
+		using pair_type = typename std::iterator_traits<typename T::iterator>::value_type;
+		using key_type = typename pair_type::first_type;
+		using mapped_type = typename pair_type::second_type;
+		static_assert(is_string_compatible_v<key_type>, "CData deserialization supports only string map keys");
 
 		if (auto pParamsPtr = Input.As<Data::PParams>())
 		{
 			auto pParams = pParamsPtr->Get();
 			for (const auto& Param : *pParams)
 			{
-				typename T::mapped_type* pValue;
-				if constexpr (IsStrIDKey)
-					pValue = &Map[Param.GetName()];
-				else
-					pValue = &Map[Param.GetName().CStr()];
+				std::pair<std::remove_const_t<key_type>, mapped_type> Value;
 
-				Deserialize(Param.GetRawValue(), *pValue);
+				// Set key
+				if constexpr (std::is_same_v<std::decay_t<key_type>, CStrID>)
+					Value.first = Param.GetName();
+				else
+					Value.first = Param.GetName().CStr();
+
+				// Set value
+				Deserialize(Param.GetRawValue(), Value.second);
+
+				Map.insert(Map.cend(), std::move(Value));
 			}
 		}
 	}

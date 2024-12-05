@@ -8,20 +8,22 @@ namespace DEM::RPG
 
 struct CQuestOutcomeData
 {
-	std::string          UIDesc;
-	Flow::CConditionData Condition;
+	std::string                            UIDesc;
+	Flow::CConditionData                   Condition;
+	std::vector<CStrID>                    StartQuests;
+	std::vector<std::pair<CStrID, CStrID>> EndQuests; // Quest -> Outcome
 	// Reward
-	// EndQuests
 	// Flow or Lua //???or single in CQuestData, outcome as arg?
 };
 
 struct CQuestData
 {
-	CStrID                              ParentID;
-	std::string                         UIName;
-	std::string                         UIDesc;
-	std::vector<CStrID>                 StartQuests;
-	std::map<CStrID, CQuestOutcomeData> Outcomes;
+	CStrID                                 ParentID;
+	std::string                            UIName;
+	std::string                            UIDesc;
+	std::vector<CStrID>                    StartQuests;
+	std::vector<std::pair<CStrID, CStrID>> EndQuests; // Quest -> Outcome
+	std::map<CStrID, CQuestOutcomeData>    Outcomes;
 
 	// Flow asset or script for OnStart
 	// Flow asset or script for outcome condition monitoring; OnOutcome logic can be stored in Lua object of the quest, for locality of data
@@ -30,7 +32,6 @@ struct CQuestData
 	//!!!flow can be inline, no resource manager needed!
 
 	// Requirements
-	// EndQuests = vector of pairs ID -> Outcome
 	// OnStart Flow or Lua
 };
 
@@ -45,7 +46,9 @@ template<> constexpr auto RegisterMembers<RPG::CQuestOutcomeData>()
 	return std::make_tuple
 	(
 		DEM_META_MEMBER_FIELD(RPG::CQuestOutcomeData, UIDesc),
-		DEM_META_MEMBER_FIELD(RPG::CQuestOutcomeData, Condition)
+		DEM_META_MEMBER_FIELD(RPG::CQuestOutcomeData, Condition),
+		DEM_META_MEMBER_FIELD(RPG::CQuestOutcomeData, StartQuests),
+		DEM_META_MEMBER_FIELD(RPG::CQuestOutcomeData, EndQuests)
 	);
 }
 static_assert(CMetadata<RPG::CQuestOutcomeData>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
@@ -59,6 +62,7 @@ template<> constexpr auto RegisterMembers<RPG::CQuestData>()
 		DEM_META_MEMBER_FIELD(RPG::CQuestData, UIName),
 		DEM_META_MEMBER_FIELD(RPG::CQuestData, UIDesc),
 		DEM_META_MEMBER_FIELD(RPG::CQuestData, StartQuests),
+		DEM_META_MEMBER_FIELD(RPG::CQuestData, EndQuests),
 		DEM_META_MEMBER_FIELD(RPG::CQuestData, Outcomes)
 	);
 }
