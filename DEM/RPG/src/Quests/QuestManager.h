@@ -39,8 +39,10 @@ private:
 
 	std::unordered_map<CStrID, CQuestData>   _Quests;
 	std::unordered_map<CStrID, CActiveQuest> _ActiveQuests;
-	std::unordered_map<CStrID, CActiveQuest> _FinishedQuests;
+	std::unordered_map<CStrID, CStrID>       _FinishedQuests;
 	std::deque<std::pair<CStrID, CStrID>>    _ChangeQueue; //  A queue of pending operations Quest ID -> Outcome ID or activation if empty
+
+	bool                                     _IsInQueueProcessing = false;
 
 public:
 

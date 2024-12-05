@@ -30,8 +30,7 @@ struct CQuestData
 	//!!!flow can be inline, no resource manager needed!
 
 	// Requirements
-	// StartQuests
-	// EndQuests
+	// EndQuests = vector of pairs ID -> Outcome
 	// OnStart Flow or Lua
 };
 

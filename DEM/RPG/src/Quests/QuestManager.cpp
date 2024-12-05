@@ -91,15 +91,18 @@ bool CQuestManager::StartQuest(CStrID ID)
 
 bool CQuestManager::SetQuestOutcome(CStrID ID, CStrID OutcomeID)
 {
-	NOT_IMPLEMENTED;
-
 	// To change the quest outcome, user must call ResetQuest. It never happens automatically
 	// from quest settings and therefore it is safe from infinite loops in a queue.
-	auto ItFinishedQuest = _FinishedQuests.find(ID);
-	if (ItFinishedQuest != _FinishedQuests.cend()) return false;
+	auto [_, Inserted] = _FinishedQuests.try_emplace(ID, OutcomeID);
+	if (!Inserted) return false;
 
-	//???can set outcome to inactive quest? finished without starting - is OK?
-	//???!!!outcome must not exists, missing outcome record is treated like empty one! this is to reduce bloat and simplify GD job!
+	auto ItActiveQuest = _ActiveQuests.find(ID);
+	if (ItActiveQuest != _ActiveQuests.cend())
+	{
+		// execute outcome script, pass outcome ID, pass reward for preprocessing
+		// apply reward
+		// start/end quests
+	}
 
 	OnQuestCompleted(ID, OutcomeID);
 
@@ -110,7 +113,8 @@ bool CQuestManager::SetQuestOutcome(CStrID ID, CStrID OutcomeID)
 // Quest system must preserve change order and linearize changes chaotically triggered by quest interdependencies
 void CQuestManager::ProcessQueue()
 {
-	//!!!???need queue lock to avoid recursive access?!
+	if (_IsInQueueProcessing) return;
+	_IsInQueueProcessing = true;
 
 	while (!_ChangeQueue.empty())
 	{
@@ -122,6 +126,8 @@ void CQuestManager::ProcessQueue()
 		else
 			StartQuest(QuestID);
 	}
+
+	_IsInQueueProcessing = false;
 }
 //---------------------------------------------------------------------
 
