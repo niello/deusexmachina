@@ -22,6 +22,13 @@ namespace DEM::Game
 namespace DEM::RPG
 {
 
+enum class EQuestState : U8
+{
+	NotStarted,
+	Active,
+	Completed
+};
+
 class CQuestManager : public ::Core::CRTTIBaseClass
 {
 	RTTI_CLASS_DECL(CQuestManager, ::Core::CRTTIBaseClass);
@@ -36,8 +43,9 @@ private:
 	{
 		const CQuestData*                pQuestData = nullptr;
 		std::vector<Events::CConnection> Subs;
-		// variable storage
-		// if needed, flow player and cached lua objects/functions
+		PFlowVarStorage                  Vars; //???need? save persistent?
+		// if needed, cached lua objects/functions
+		//???store activation time in the world time? save persistent? or should it be stored in Vars?
 	};
 
 	struct CQueueRecord
@@ -63,8 +71,8 @@ private:
 
 	bool                                     _IsInQueueProcessing = false;
 
-	bool HandleQuestStart(CStrID ID, PFlowVarStorage&& Vars, bool Loading);
-	bool HandleQuestCompletion(CStrID ID, CStrID OutcomeID, PFlowVarStorage&& Vars);
+	bool HandleQuestStart(CStrID ID, PFlowVarStorage Vars, bool Loading);
+	bool HandleQuestCompletion(CStrID ID, CStrID OutcomeID, PFlowVarStorage Vars);
 
 public:
 
@@ -72,25 +80,18 @@ public:
 	Events::CSignal<void(CStrID)>         OnQuestReset;     // QuestID
 	Events::CSignal<void(CStrID, CStrID)> OnQuestCompleted; // QuestID, OutcomeID
 
-	//???!!!on subscription triggered, can pass data from the event to outcome calculation? or always calculated from the world state?
-	//!!!e.g. destroy with fire may not work without events! fire damage type is recorded only in a death event! can combine with flow or need Lua?
-	//???set all or chosen (by ID) params to flow vars context?! OnDead(EventParams) -> Flow.SetVar("DamageType", EventParams.DamageType), RecalcOutcomeConditions()
-	//???instead of flow script, use only declarative conditions and handle them in C++ with additional flexibility through Lua?
-	//or event-listening flow action will catch an event and evaluate conditions in a context of this event? but how, if there is no such param in EvaluateCondition?
-
 	CQuestManager(Game::CGameSession& Owner);
 
-	void              LoadState();
+	void                           LoadState();
 
-	void              LoadQuests(const Data::PParams& Desc);
-	const CQuestData* FindQuestData(CStrID ID) const;
-	void              StartQuest(CStrID ID, PFlowVarStorage Vars = {});
-	void              SetQuestOutcome(CStrID ID, CStrID OutcomeID, PFlowVarStorage Vars = {});
-	//GetQuestState - inactive, active, completed (with outcome). Return pair? Check queue!!!
-	//ResetQuest - returns to not activated state from either active or finished state, remove from queue
-	//ResetAllQuests
+	void                           LoadQuests(const Data::PParams& Desc);
+	const CQuestData*              FindQuestData(CStrID ID) const;
+	void                           StartQuest(CStrID ID, PFlowVarStorage Vars = {});
+	void                           SetQuestOutcome(CStrID ID, CStrID OutcomeID, PFlowVarStorage Vars = {});
+	void                           ResetQuest(CStrID ID);
+	std::pair<EQuestState, CStrID> GetQuestState(CStrID ID) const;
 
-	void              ProcessQueue();
+	void                           ProcessQueue();
 };
 
 }

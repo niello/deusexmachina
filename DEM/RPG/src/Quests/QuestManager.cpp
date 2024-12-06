@@ -36,7 +36,7 @@ const CQuestData* CQuestManager::FindQuestData(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-bool CQuestManager::HandleQuestStart(CStrID ID, PFlowVarStorage&& Vars, bool Loading)
+bool CQuestManager::HandleQuestStart(CStrID ID, PFlowVarStorage Vars, bool Loading)
 {
 	// To start the quest again, user must call ResetQuest. It never happens automatically
 	// from quest settings and therefore it is safe from infinite loops in a queue.
@@ -49,11 +49,15 @@ bool CQuestManager::HandleQuestStart(CStrID ID, PFlowVarStorage&& Vars, bool Loa
 	if (!Inserted) return false;
 
 	ItActiveQuest->second.pQuestData = pQuestData;
+	ItActiveQuest->second.Vars = std::move(Vars);
+
+	const PFlowVarStorage& QuestVars = ItActiveQuest->second.Vars;
 
 	// Do one time start logic, it should not run on loading already active quests
 	if (!Loading)
 	{
 		// execute OnStart logic, either Lua or Flow
+		//???if Vars are mutable here, need to create copy in a script? because our vars may be stored in other quests too!
 		//???what if Lua script will want to save state and to keep it until the quest end? store lua table? or forbid?
 		//???need flow? could be useful, but flow here is not intended to last multiple frames!
 		//???control by data type in the desc? treat PParams arg as a flow and string as a lua? what if want a file? CStrID and see extension?
@@ -65,9 +69,9 @@ bool CQuestManager::HandleQuestStart(CStrID ID, PFlowVarStorage&& Vars, bool Loa
 
 		// Activate/finish dependent quests before testing outcomes
 		for (const auto [DependentID, DepOutcomeID] : pQuestData->EndQuests)
-			_ChangeQueue.emplace_back(DependentID, DepOutcomeID, Vars);
+			_ChangeQueue.emplace_back(DependentID, DepOutcomeID, QuestVars);
 		for (CStrID DependentID : pQuestData->StartQuests)
-			_ChangeQueue.emplace_back(DependentID, CStrID::Empty, Vars);
+			_ChangeQueue.emplace_back(DependentID, CStrID::Empty, QuestVars);
 	}
 
 	// Quest without outcomes can be only finished by its parent or by explicit SetQuestOutcome call
@@ -78,16 +82,16 @@ bool CQuestManager::HandleQuestStart(CStrID ID, PFlowVarStorage&& Vars, bool Loa
 
 		// Evaluate outcome condition immediately to catch already completed quests
 		const auto& Cond = OutcomeData.Condition;
-		if (Flow::EvaluateCondition(Cond, _Session, Vars.get()))
+		if (Flow::EvaluateCondition(Cond, _Session, QuestVars.get()))
 		{
-			_ChangeQueue.emplace_back(ID, OutcomeID, std::move(Vars));
+			_ChangeQueue.emplace_back(ID, OutcomeID, QuestVars);
 		}
 		else if (const auto* pConditions = _Session.FindFeature<Flow::CConditionRegistry>())
 		{
 			// Not satisfied condition will be re-tested on one of relevant events
 			if (auto* pCondition = pConditions->FindCondition(Cond.Type))
 			{
-				pCondition->SubscribeRelevantEvents(ItActiveQuest->second.Subs, { Cond, _Session, Vars.get() }, [this, ID, OutcomeID, &Cond](PFlowVarStorage EventVars)
+				pCondition->SubscribeRelevantEvents(ItActiveQuest->second.Subs, { Cond, _Session, QuestVars.get() }, [this, ID, OutcomeID, &Cond](PFlowVarStorage EventVars)
 				{
 					if (Flow::EvaluateCondition(Cond, _Session, EventVars.get()))
 					{
@@ -103,8 +107,11 @@ bool CQuestManager::HandleQuestStart(CStrID ID, PFlowVarStorage&& Vars, bool Loa
 }
 //---------------------------------------------------------------------
 
-bool CQuestManager::HandleQuestCompletion(CStrID ID, CStrID OutcomeID, PFlowVarStorage&& Vars)
+bool CQuestManager::HandleQuestCompletion(CStrID ID, CStrID OutcomeID, PFlowVarStorage Vars)
 {
+	n_assert(OutcomeID);
+	if (!OutcomeID) return false;
+
 	const CQuestData* pQuestData = nullptr;
 
 	// Finish an active quest even if it is already recorded in _FinishedQuests. This is possible only by mistake.
@@ -116,6 +123,8 @@ bool CQuestManager::HandleQuestCompletion(CStrID ID, CStrID OutcomeID, PFlowVarS
 		//!!!can copy vars from event trigger and pass here for postprocessing and outcome mod
 		// execute outcome script, pass outcome ID and reward for optional modification
 		// apply reward
+		// after possible outcome override:
+		//if (!OutcomeID) return false;
 
 		_ActiveQuests.erase(ItActiveQuest);
 	}
@@ -166,6 +175,27 @@ void CQuestManager::SetQuestOutcome(CStrID ID, CStrID OutcomeID, PFlowVarStorage
 {
 	_ChangeQueue.emplace_back(ID, OutcomeID, std::move(Vars));
 	ProcessQueue();
+}
+//---------------------------------------------------------------------
+
+void CQuestManager::ResetQuest(CStrID ID)
+{
+	// TODO: need OnReset script if active?
+	_ActiveQuests.erase(ID);
+	_FinishedQuests.erase(ID);
+	_ChangeQueue.erase(std::remove_if(_ChangeQueue.begin(), _ChangeQueue.end(), [ID](const auto& Record) { return Record.QuestID == ID; }), _ChangeQueue.end());
+}
+//---------------------------------------------------------------------
+
+std::pair<EQuestState, CStrID> CQuestManager::GetQuestState(CStrID ID) const
+{
+	auto ItActiveQuest = _ActiveQuests.find(ID);
+	if (ItActiveQuest != _ActiveQuests.cend()) return { EQuestState::Active, {} };
+
+	auto ItFinishedQuest = _FinishedQuests.find(ID);
+	if (ItFinishedQuest != _FinishedQuests.cend()) return { EQuestState::Completed, ItFinishedQuest->second };
+
+	return { EQuestState::NotStarted, {} };
 }
 //---------------------------------------------------------------------
 
