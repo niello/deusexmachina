@@ -24,7 +24,7 @@ template<> struct api_name<CStrID> { static constexpr char* value = "StrID"; };
 template<typename U> using TPass = std::conditional_t<sizeof(U) <= sizeof(size_t), U, U&&>;
 
 template<typename... TVar>
-void RegisterVarStorageTemplateMethods(sol::usertype<CVarStorage<TVar...>>& UserType)
+static void RegisterVarStorageTemplateMethods(sol::usertype<CVarStorage<TVar...>>& UserType)
 {
 	using T = CVarStorage<TVar...>;
 	(UserType.set(std::string("Get") + (api_name_v<TVar> ? api_name_v<TVar> : typeid(T).name()), sol::overload(
@@ -42,31 +42,26 @@ void RegisterVarStorageTemplateMethods(sol::usertype<CVarStorage<TVar...>>& User
 }
 //---------------------------------------------------------------------
 
+template<typename T>
+sol::usertype<T> RegisterVarStorage(sol::state& State, std::string_view Key)
+{
+	auto UserType = State.new_usertype<T>(Key
+		, "new_shared", sol::factories([]() { return std::shared_ptr<T>(new T{}); }));
+	UserType.set_function("clear", &T::clear);
+	UserType.set_function("empty", &T::empty);
+	UserType.set_function("size", &T::size);
+	UserType.set_function("Find", static_cast<HVar(T::*)(CStrID ID) const>(&T::Find));
+	RegisterVarStorageTemplateMethods(UserType);
+	return UserType;
+}
+//---------------------------------------------------------------------
+
 void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 {
 	EnsureTable(State.globals(), { "DEM", "Flow" }).set_function("ResolveEntityID", &DEM::Flow::ResolveEntityID);
 
-	// CFlowVarStorage
-	{
-		auto& UserType = State.new_usertype<Flow::CFlowVarStorage>("CFlowVarStorage"
-			, "clear", &Flow::CFlowVarStorage::clear
-			, "empty", &Flow::CFlowVarStorage::empty
-			, "size", &Flow::CFlowVarStorage::size
-			, "Find", static_cast<HVar (Flow::CFlowVarStorage::*)(CStrID ID) const>(&Flow::CFlowVarStorage::Find)
-		);
-		RegisterVarStorageTemplateMethods(UserType);
-	}
-
-	// CSessionVarStorage
-	{
-		auto& UserType = State.new_usertype<Game::CSessionVarStorage>("CSessionVarStorage"
-			, "clear", &Game::CSessionVarStorage::clear
-			, "empty", &Game::CSessionVarStorage::empty
-			, "size", &Game::CSessionVarStorage::size
-			, "Find", static_cast<HVar(Game::CSessionVarStorage::*)(CStrID ID) const>(&Game::CSessionVarStorage::Find)
-		);
-		RegisterVarStorageTemplateMethods(UserType);
-	}
+	RegisterVarStorage<Flow::CFlowVarStorage>(State, "CFlowVarStorage");
+	RegisterVarStorage<Game::CSessionVarStorage>(State, "CSessionVarStorage");
 
 	State.new_usertype<Game::CSessionVars>("CSessionVars"
 		, "Persistent", &Game::CSessionVars::Persistent

@@ -26,11 +26,11 @@ class CQuestManager : public ::Core::CRTTIBaseClass
 {
 	RTTI_CLASS_DECL(CQuestManager, ::Core::CRTTIBaseClass);
 
-private:
+public:
 
-	// TODO: could use shared_ptr to avoid multiple copies of the same param set! But need to enforce this in args.
-	//!!!lua can construct shared ptr to via special factory binding!
-	using PFlowVarStorage = std::unique_ptr<Flow::CFlowVarStorage>;
+	using PFlowVarStorage = std::shared_ptr<Flow::CFlowVarStorage>;
+
+private:
 
 	struct CActiveQuest
 	{
@@ -46,10 +46,10 @@ private:
 		CStrID          OutcomeID; // Empty for quest activation
 		PFlowVarStorage Vars;      // Optional variables, e.g. from a triggering event
 
-		CQueueRecord(CStrID QuestID_, CStrID OutcomeID_, const Flow::CFlowVarStorage* pVars)
+		CQueueRecord(CStrID QuestID_, CStrID OutcomeID_, PFlowVarStorage Vars_)
 			: QuestID(QuestID_)
 			, OutcomeID(OutcomeID_)
-			, Vars(pVars ? std::make_unique<Flow::CFlowVarStorage>(*pVars) : nullptr)
+			, Vars(std::move(Vars_))
 		{
 		}
 	};
@@ -63,8 +63,8 @@ private:
 
 	bool                                     _IsInQueueProcessing = false;
 
-	bool HandleQuestStart(CStrID ID, const Flow::CFlowVarStorage* pVars, bool Loading);
-	bool HandleQuestCompletion(CStrID ID, CStrID OutcomeID, const Flow::CFlowVarStorage* pVars);
+	bool HandleQuestStart(CStrID ID, PFlowVarStorage&& Vars, bool Loading);
+	bool HandleQuestCompletion(CStrID ID, CStrID OutcomeID, PFlowVarStorage&& Vars);
 
 public:
 
@@ -84,8 +84,8 @@ public:
 
 	void              LoadQuests(const Data::PParams& Desc);
 	const CQuestData* FindQuestData(CStrID ID) const;
-	void              StartQuest(CStrID ID, const Flow::CFlowVarStorage* pVars = nullptr);
-	void              SetQuestOutcome(CStrID ID, CStrID OutcomeID, const Flow::CFlowVarStorage* pVars = nullptr);
+	void              StartQuest(CStrID ID, PFlowVarStorage Vars = {});
+	void              SetQuestOutcome(CStrID ID, CStrID OutcomeID, PFlowVarStorage Vars = {});
 	//GetQuestState - inactive, active, completed (with outcome). Return pair? Check queue!!!
 	//ResetQuest - returns to not activated state from either active or finished state, remove from queue
 	//ResetAllQuests

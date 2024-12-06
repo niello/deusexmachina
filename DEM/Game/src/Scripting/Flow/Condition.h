@@ -37,7 +37,7 @@ bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, 
 std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage* pVars);
 Game::HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const CFlowVarStorage* pVars);
 
-using FEventCallback = std::function<void(const Flow::CFlowVarStorage*)>;
+using FEventCallback = std::function<void(std::shared_ptr<Flow::CFlowVarStorage>)>;
 
 class ICondition
 {
