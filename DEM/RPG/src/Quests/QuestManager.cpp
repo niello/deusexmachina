@@ -76,33 +76,44 @@ bool CQuestManager::HandleQuestStart(CStrID ID, PFlowVarStorage Vars, bool Loadi
 
 		// Activate/finish dependent quests before testing outcomes
 		for (const auto [DependentID, DepOutcomeID] : pQuestData->EndQuests)
-			_ChangeQueue.emplace_back(DependentID, DepOutcomeID, QuestVars);
+			EnqueueQuestCompletion(DependentID, DepOutcomeID, QuestVars);
 		for (CStrID DependentID : pQuestData->StartQuests)
-			_ChangeQueue.emplace_back(DependentID, CStrID::Empty, QuestVars);
+			EnqueueQuestStart(DependentID, QuestVars);
 	}
 
-	// Quest without outcomes can be only finished by its parent or by explicit SetQuestOutcome call
+	// Check outcomes in the order of priority.
+	// Quest without outcomes can be only finished by another quest's EndQuests or by SetQuestOutcome call.
 	for (const auto& [OutcomeID, OutcomeData] : pQuestData->Outcomes)
 	{
-		// Outcomes without a condition can be selected only by explicit SetQuestOutcome call
+		// Outcomes without a condition can be selected only by SetQuestOutcome call or outcome overriding in OnComplete script
 		if (!OutcomeData.Condition.Type) continue;
 
 		// Evaluate outcome condition immediately to catch already completed quests
-		const auto& Cond = OutcomeData.Condition;
-		if (Flow::EvaluateCondition(Cond, _Session, QuestVars.get()))
+		if (Flow::EvaluateCondition(OutcomeData.Condition, _Session, QuestVars.get()))
 		{
-			_ChangeQueue.emplace_back(ID, OutcomeID, QuestVars);
+			EnqueueQuestCompletion(ID, OutcomeID, QuestVars);
+			return true;
 		}
-		else if (const auto* pConditions = _Session.FindFeature<Flow::CConditionRegistry>())
+	}
+
+	// Subscribe to events in reverse order to enforce desired call priority when subscribing to the same signal
+	// FIXME: need subscription with priority! Now rely on CSignal LIFO behaviour.
+	if (const auto* pConditions = _Session.FindFeature<Flow::CConditionRegistry>())
+	{
+		for (auto RIt = pQuestData->Outcomes.crbegin(); RIt != pQuestData->Outcomes.crend(); ++RIt)
 		{
+			const auto& [OutcomeID, OutcomeData] = *RIt;
+
 			// Not satisfied condition will be re-tested on one of relevant events
+			const auto& Cond = OutcomeData.Condition;
 			if (auto* pCondition = pConditions->FindCondition(Cond.Type))
 			{
 				pCondition->SubscribeRelevantEvents(ItActiveQuest->second.Subs, { Cond, _Session, QuestVars.get() }, [this, ID, OutcomeID, &Cond](PFlowVarStorage EventVars)
 				{
 					if (Flow::EvaluateCondition(Cond, _Session, EventVars.get()))
 					{
-						_ChangeQueue.emplace_back(ID, OutcomeID, std::move(EventVars));
+						// Don't unsubscribe from other events, give them a chance to trigger outcomes of a higher priority
+						EnqueueQuestCompletion(ID, OutcomeID, std::move(EventVars));
 						ProcessQueue();
 					}
 				});
@@ -128,6 +139,7 @@ bool CQuestManager::HandleQuestCompletion(CStrID ID, CStrID OutcomeID, PFlowVarS
 		pQuestData = ItActiveQuest->second.pQuestData;
 
 		// FIXME: could not find a way to pass OutcomeID to Lua by ref, std::ref didn't help. Interferes with is_value_semantic_for_function?!
+		//???maybe must remove is_value_semantic_for_function for non-const ref? make sure that https://github.com/ThePhD/sol2/issues/1335 will not return!
 		{
 			auto CompletionInfo = _Session.GetScriptState().create_table();
 			CompletionInfo["OutcomeID"] = OutcomeID;
@@ -138,9 +150,9 @@ bool CQuestManager::HandleQuestCompletion(CStrID ID, CStrID OutcomeID, PFlowVarS
 		// Completion could have been reverted in a handler
 		if (!OutcomeID) return false;
 
-		// TODO: apply modified-reward-from-balance
-
 		_ActiveQuests.erase(ItActiveQuest);
+
+		// TODO: apply possibly-modified-reward-from-balance (only when finishing an active quest!)
 	}
 	else
 	{
@@ -155,22 +167,22 @@ bool CQuestManager::HandleQuestCompletion(CStrID ID, CStrID OutcomeID, PFlowVarS
 	auto [_, Inserted] = _FinishedQuests.try_emplace(ID, OutcomeID);
 	if (!Inserted) return false;
 
-	auto ItOutcome = pQuestData->Outcomes.find(OutcomeID);
+	const auto* pOutcome = pQuestData->FindOutcome(OutcomeID);
 
 	// Finish dependent quests before auto-finishing children because here we can override outcome ID
-	if (ItOutcome != pQuestData->Outcomes.cend())
-		for (const auto [DependentID, DepOutcomeID] : ItOutcome->second.EndQuests)
-			_ChangeQueue.emplace_back(DependentID, DepOutcomeID, Vars);
+	if (pOutcome)
+		for (const auto [DependentID, DepOutcomeID] : pOutcome->EndQuests)
+			EnqueueQuestCompletion(DependentID, DepOutcomeID, Vars);
 
 	// Automatically end child quests with the same outcome ID
 	for (const auto& [ChildID, ActiveQuest] : _ActiveQuests)
 		if (ActiveQuest.pQuestData->ParentID == ID)
-			_ChangeQueue.emplace_back(ChildID, OutcomeID, Vars);
+			EnqueueQuestCompletion(ChildID, OutcomeID, Vars);
 
 	// Activate dependent quests after finishing everything we wanted
-	if (ItOutcome != pQuestData->Outcomes.cend())
-		for (const CStrID DependentID : ItOutcome->second.StartQuests)
-			_ChangeQueue.emplace_back(DependentID, CStrID::Empty, Vars);
+	if (pOutcome)
+		for (const CStrID DependentID : pOutcome->StartQuests)
+			EnqueueQuestStart(DependentID, Vars);
 
 	OnQuestCompleted(ID, OutcomeID);
 
@@ -178,16 +190,42 @@ bool CQuestManager::HandleQuestCompletion(CStrID ID, CStrID OutcomeID, PFlowVarS
 }
 //---------------------------------------------------------------------
 
-void CQuestManager::StartQuest(CStrID ID, PFlowVarStorage Vars)
+void CQuestManager::EnqueueQuestStart(CStrID ID, PFlowVarStorage Vars)
 {
 	_ChangeQueue.emplace_back(ID, CStrID::Empty, std::move(Vars));
+}
+//---------------------------------------------------------------------
+
+void CQuestManager::EnqueueQuestCompletion(CStrID ID, CStrID OutcomeID, PFlowVarStorage Vars)
+{
+	// Outcomes are listed in the quest in the order of priority and can be overridden right in a queue.
+	// This is required to correctly choose from multiple outcomes with conditions satisfied by the same event.
+	auto It = std::remove_if(_ChangeQueue.begin(), _ChangeQueue.end(), [ID](const auto& Record) { return Record.QuestID == ID; });
+	if (It == _ChangeQueue.cend())
+	{
+		_ChangeQueue.emplace_back(ID, OutcomeID, std::move(Vars));
+	}
+	else if (const auto* pQuestData = FindQuestData(ID))
+	{
+		if (pQuestData->FindOutcomeIndex(OutcomeID) < pQuestData->FindOutcomeIndex(It->OutcomeID))
+		{
+			It->OutcomeID = OutcomeID;
+			It->Vars = std::move(Vars);
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+void CQuestManager::StartQuest(CStrID ID, PFlowVarStorage Vars)
+{
+	EnqueueQuestStart(ID, std::move(Vars));
 	ProcessQueue();
 }
 //---------------------------------------------------------------------
 
 void CQuestManager::SetQuestOutcome(CStrID ID, CStrID OutcomeID, PFlowVarStorage Vars)
 {
-	_ChangeQueue.emplace_back(ID, OutcomeID, std::move(Vars));
+	EnqueueQuestCompletion(ID, OutcomeID, std::move(Vars));
 	ProcessQueue();
 }
 //---------------------------------------------------------------------
@@ -219,7 +257,7 @@ CStrID CQuestManager::GetQuestOutcome(CStrID ID) const
 // Quest system must preserve change order and linearize changes chaotically triggered by quest interdependencies
 void CQuestManager::ProcessQueue()
 {
-	if (_IsInQueueProcessing) return;
+	if (_IsInQueueProcessing || _ChangeQueue.empty()) return;
 	_IsInQueueProcessing = true;
 
 	while (!_ChangeQueue.empty())

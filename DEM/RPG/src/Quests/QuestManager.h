@@ -75,6 +75,8 @@ private:
 
 	bool HandleQuestStart(CStrID ID, PFlowVarStorage Vars, bool Loading);
 	bool HandleQuestCompletion(CStrID ID, CStrID OutcomeID, PFlowVarStorage Vars);
+	void EnqueueQuestStart(CStrID ID, PFlowVarStorage Vars);
+	void EnqueueQuestCompletion(CStrID ID, CStrID OutcomeID, PFlowVarStorage Vars);
 
 public:
 

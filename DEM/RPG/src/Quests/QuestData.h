@@ -13,18 +13,35 @@ struct CQuestOutcomeData
 	std::vector<CStrID>                    StartQuests;
 	std::vector<std::pair<CStrID, CStrID>> EndQuests; // Quest -> Outcome
 	// Reward
+
+	// For Lua binding compilation
+	bool operator ==(const CQuestOutcomeData& Other) const noexcept { return UIDesc == Other.UIDesc; }
 };
 
 struct CQuestData
 {
-	CStrID                                 ParentID;
-	std::string                            UIName;
-	std::string                            UIDesc;
-	std::vector<CStrID>                    StartQuests;
-	std::vector<std::pair<CStrID, CStrID>> EndQuests; // Quest -> Outcome
-	std::map<CStrID, CQuestOutcomeData>    Outcomes;
-	CStrID                                 ScriptAssetID;
+	CStrID                                            ParentID;
+	std::string                                       UIName;
+	std::string                                       UIDesc;
+	std::vector<CStrID>                               StartQuests;
+	std::vector<std::pair<CStrID, CStrID>>            EndQuests; // Quest -> Outcome
+	std::vector<std::pair<CStrID, CQuestOutcomeData>> Outcomes; // Order is important
+	CStrID                                            ScriptAssetID;
 	// Requirements
+
+	size_t FindOutcomeIndex(CStrID ID) const
+	{
+		for (size_t i = 0; i < Outcomes.size(); ++i)
+			if (Outcomes[i].first == ID)
+				return i;
+		return std::numeric_limits<size_t>::max();
+	}
+
+	const CQuestOutcomeData* FindOutcome(CStrID ID) const
+	{
+		const auto OutcomeIndex = FindOutcomeIndex(ID);
+		return (OutcomeIndex < Outcomes.size()) ? &Outcomes[OutcomeIndex].second : nullptr;
+	}
 };
 
 }
