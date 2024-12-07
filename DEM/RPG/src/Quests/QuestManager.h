@@ -38,12 +38,12 @@ public:
 
 	using PFlowVarStorage = std::shared_ptr<Flow::CFlowVarStorage>;
 
-private:
+protected:
 
 	struct CActiveQuest
 	{
 		const CQuestData*                pQuestData = nullptr;
-		PFlowVarStorage                  Vars; //???need? save persistent?
+		PFlowVarStorage                  Vars; //???need? save persistent? now never used after start, could use if EventVars are nullptr, or merge!
 		sol::function                    FnOnStart;
 		sol::function                    FnOnComplete;
 		std::vector<Events::CConnection> Subs;
@@ -69,7 +69,7 @@ private:
 	std::unordered_map<CStrID, CQuestData>   _Quests;
 	std::unordered_map<CStrID, CActiveQuest> _ActiveQuests;
 	std::unordered_map<CStrID, CStrID>       _FinishedQuests;
-	std::deque<CQueueRecord>                 _ChangeQueue; //  A queue of pending operations Quest ID -> Outcome ID or activation if empty
+	std::deque<CQueueRecord>                 _ChangeQueue;
 
 	bool                                     _IsInQueueProcessing = false;
 
