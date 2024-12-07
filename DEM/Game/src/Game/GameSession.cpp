@@ -32,6 +32,7 @@ CGameSession::~CGameSession()
 	_Features.clear();
 
 	_LoadedScripts.clear();
+	_ScriptFields = sol::nil;
 	_ScriptState["Session"] = sol::nil;
 }
 //---------------------------------------------------------------------
