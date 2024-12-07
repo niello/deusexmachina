@@ -31,6 +31,7 @@ CGameSession::~CGameSession()
 	_FeaturesByName.clear(); //???unregister features from Lua one by one, don't leave dangling pointer even for a moment?
 	_Features.clear();
 
+	_LoadedScripts.clear();
 	_ScriptState["Session"] = sol::nil;
 }
 //---------------------------------------------------------------------

@@ -2133,7 +2133,7 @@ bool TryUnlockObject(const Game::CGameSession& Session, Game::HEntity Object, Ga
 	const auto ProtoID = pItemMgr->FindPrototypeEntity(pLock->KeyItemID);
 	if (!ProtoID) return false;
 
-	// TODO: can check the whole faction using max distance from actor. 0 for actor only, inf for all faction.
+	// TODO: can check the whole faction using max distance from actor. 0 for actor only, +inf for all faction.
 	if (!HasItems(*pWorld, Actor, ProtoID, pLock->KeyItemCount)) return false;
 
 	if (pLock->KeyConsume)
@@ -2142,6 +2142,7 @@ bool TryUnlockObject(const Game::CGameSession& Session, Game::HEntity Object, Ga
 		//RemoveItems(*pWorld, Actor, ProtoID, pLock->KeyItemCount) - from all storages
 	}
 
+	pLock->OnUnlocked(true);
 	pWorld->RemoveComponent<CLockComponent>(Object);
 
 	return true;

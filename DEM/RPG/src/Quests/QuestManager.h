@@ -3,6 +3,7 @@
 #include <Quests/QuestData.h>
 #include <Events/Signal.h>
 #include <Data/Ptr.h>
+#include <Scripting/SolLow.h>
 #include <deque>
 #include <memory>
 
@@ -42,9 +43,10 @@ private:
 	struct CActiveQuest
 	{
 		const CQuestData*                pQuestData = nullptr;
-		std::vector<Events::CConnection> Subs;
 		PFlowVarStorage                  Vars; //???need? save persistent?
-		// if needed, cached lua objects/functions
+		sol::function                    FnOnStart;
+		sol::function                    FnOnComplete;
+		std::vector<Events::CConnection> Subs;
 		//???store activation time in the world time? save persistent? or should it be stored in Vars?
 	};
 
@@ -90,6 +92,8 @@ public:
 	void                           SetQuestOutcome(CStrID ID, CStrID OutcomeID, PFlowVarStorage Vars = {});
 	void                           ResetQuest(CStrID ID);
 	std::pair<EQuestState, CStrID> GetQuestState(CStrID ID) const;
+	CStrID                         GetQuestOutcome(CStrID ID) const;
+	bool                           IsQuestActive(CStrID ID) const { return _ActiveQuests.find(ID) != _ActiveQuests.cend(); }
 
 	void                           ProcessQueue();
 };

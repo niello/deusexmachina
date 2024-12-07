@@ -51,6 +51,7 @@ sol::usertype<T> RegisterVarStorage(sol::state& State, std::string_view Key)
 	UserType.set_function("empty", &T::empty);
 	UserType.set_function("size", &T::size);
 	UserType.set_function("Find", static_cast<HVar(T::*)(CStrID ID) const>(&T::Find));
+	UserType.set_function("Has", [](const T& Self, CStrID ID) { return !!Self.Find(ID); });
 	RegisterVarStorageTemplateMethods(UserType);
 	return UserType;
 }

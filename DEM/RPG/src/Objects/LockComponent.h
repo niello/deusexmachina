@@ -1,5 +1,6 @@
 #pragma once
 #include <Data/Metadata.h>
+#include <Events/Signal.h>
 #include <StdDEM.h>
 
 // Adds a lock to the entity. Lock blocks some actions, like opening the door.
@@ -17,6 +18,8 @@ struct CLockComponent
 	CStrID KeyItemID;
 	U32    KeyItemCount = 1;
 	bool   KeyConsume = true;
+
+	Events::CSignal<void(bool /*ByKey*/)> OnUnlocked;
 };
 
 }

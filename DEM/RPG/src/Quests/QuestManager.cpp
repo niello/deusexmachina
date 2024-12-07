@@ -53,19 +53,26 @@ bool CQuestManager::HandleQuestStart(CStrID ID, PFlowVarStorage Vars, bool Loadi
 
 	const PFlowVarStorage& QuestVars = ItActiveQuest->second.Vars;
 
+	// TODO: don't need to keep an asset loaded, maybe load here directly?
+	// TODO: resource ID (CStrID) vs embedded string (std::string)?
+	if (auto ScriptObject = _Session.GetScript(pQuestData->ScriptAssetID))
+	{
+		ItActiveQuest->second.FnOnStart = ScriptObject.get<sol::function>("OnStart");
+		ItActiveQuest->second.FnOnComplete = ScriptObject.get<sol::function>("OnComplete");
+	}
+
 	// Do one time start logic, it should not run on loading already active quests
 	if (!Loading)
 	{
-		// execute OnStart logic, either Lua or Flow
-		//???if Vars are mutable here, need to create copy in a script? because our vars may be stored in other quests too!
-		//???what if Lua script will want to save state and to keep it until the quest end? store lua table? or forbid?
-		//???need flow? could be useful, but flow here is not intended to last multiple frames!
-		//???control by data type in the desc? treat PParams arg as a flow and string as a lua? what if want a file? CStrID and see extension?
-		//???could be a special universal script type with complex deserialization logic?
-		//???would want to have one script asset for multiple quest objectives, to reduce number of files? load to some table, internally q1 = {}; function q1:OnStart(...) and find by name?
-		//???maybe general purpose script asset should simply listen OnQuestStarted and check ID, instead of personal script? personal is clearer!
+		// TODO: if Vars are mutable here, need to create copy in a script, because they may already be used in other quests
+		Scripting::LuaCall(ItActiveQuest->second.FnOnStart, QuestVars.get());
 
 		OnQuestStarted(ID);
+
+		// Should not reset a quest from its handler
+		const auto IsStillActive = IsQuestActive(ID);
+		n_assert(IsStillActive);
+		if (!IsStillActive) return false;
 
 		// Activate/finish dependent quests before testing outcomes
 		for (const auto [DependentID, DepOutcomeID] : pQuestData->EndQuests)
@@ -120,11 +127,18 @@ bool CQuestManager::HandleQuestCompletion(CStrID ID, CStrID OutcomeID, PFlowVarS
 	{
 		pQuestData = ItActiveQuest->second.pQuestData;
 
-		//!!!can copy vars from event trigger and pass here for postprocessing and outcome mod
-		// execute outcome script, pass outcome ID and reward for optional modification
-		// apply reward
-		// after possible outcome override:
-		//if (!OutcomeID) return false;
+		// FIXME: could not find a way to pass OutcomeID to Lua by ref, std::ref didn't help. Interferes with is_value_semantic_for_function?!
+		{
+			auto CompletionInfo = _Session.GetScriptState().create_table();
+			CompletionInfo["OutcomeID"] = OutcomeID;
+			Scripting::LuaCall(ItActiveQuest->second.FnOnComplete, Vars.get(), CompletionInfo/*, inout reward-from-balance?*/);
+			OutcomeID = CompletionInfo["OutcomeID"];
+		}
+
+		// Completion could have been reverted in a handler
+		if (!OutcomeID) return false;
+
+		// TODO: apply modified-reward-from-balance
 
 		_ActiveQuests.erase(ItActiveQuest);
 	}
@@ -189,13 +203,16 @@ void CQuestManager::ResetQuest(CStrID ID)
 
 std::pair<EQuestState, CStrID> CQuestManager::GetQuestState(CStrID ID) const
 {
-	auto ItActiveQuest = _ActiveQuests.find(ID);
-	if (ItActiveQuest != _ActiveQuests.cend()) return { EQuestState::Active, {} };
-
-	auto ItFinishedQuest = _FinishedQuests.find(ID);
-	if (ItFinishedQuest != _FinishedQuests.cend()) return { EQuestState::Completed, ItFinishedQuest->second };
-
+	if (IsQuestActive(ID)) return { EQuestState::Active, {} };
+	if (auto OutcomeID = GetQuestOutcome(ID)) return { EQuestState::Completed, OutcomeID };
 	return { EQuestState::NotStarted, {} };
+}
+//---------------------------------------------------------------------
+
+CStrID CQuestManager::GetQuestOutcome(CStrID ID) const
+{
+	auto ItFinishedQuest = _FinishedQuests.find(ID);
+	return (ItFinishedQuest != _FinishedQuests.cend()) ? ItFinishedQuest->second : CStrID::Empty;
 }
 //---------------------------------------------------------------------
 

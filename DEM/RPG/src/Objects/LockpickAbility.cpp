@@ -293,7 +293,14 @@ void CLockpickAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance
 
 	const int Difference = static_cast<CSkillCheckAbilityInstance&>(Instance).Difference;
 	if (Status == Game::EActionStatus::Succeeded && Difference > 0)
-		pWorld->RemoveComponent<CLockComponent>(Instance.Targets[0].Entity);
+	{
+		const auto TargetID = Instance.Targets[0].Entity;
+		if (auto* pLock = pWorld->FindComponent<CLockComponent>(TargetID))
+		{
+			pLock->OnUnlocked(false);
+			pWorld->RemoveComponent<CLockComponent>(TargetID);
+		}
+	}
 }
 //---------------------------------------------------------------------
 
