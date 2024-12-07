@@ -96,23 +96,23 @@ bool CQuestManager::HandleQuestStart(CStrID ID, PFlowVarStorage Vars, bool Loadi
 		}
 	}
 
-	// Subscribe to events in reverse order to enforce desired call priority when subscribing to the same signal
-	// FIXME: need subscription with priority! Now rely on CSignal LIFO behaviour.
+	// Subscribe to relevant events to re-evaluate outcome conditions.
+	// FIXME: subscription goes in reverse order to enforce desired call priority when subscribing to the same CSignal,
+	// which calls handlers in LIFO. Need subscription with explicit priority instead! Condition may subscribe not only CSignal!
 	if (const auto* pConditions = _Session.FindFeature<Flow::CConditionRegistry>())
 	{
 		for (auto RIt = pQuestData->Outcomes.crbegin(); RIt != pQuestData->Outcomes.crend(); ++RIt)
 		{
 			const auto& [OutcomeID, OutcomeData] = *RIt;
-
-			// Not satisfied condition will be re-tested on one of relevant events
 			const auto& Cond = OutcomeData.Condition;
+			if (!Cond.Type) continue;
+
 			if (auto* pCondition = pConditions->FindCondition(Cond.Type))
 			{
 				pCondition->SubscribeRelevantEvents(ItActiveQuest->second.Subs, { Cond, _Session, QuestVars.get() }, [this, ID, OutcomeID, &Cond](PFlowVarStorage EventVars)
 				{
 					if (Flow::EvaluateCondition(Cond, _Session, EventVars.get()))
 					{
-						// Don't unsubscribe from other events, give them a chance to trigger outcomes of a higher priority
 						EnqueueQuestCompletion(ID, OutcomeID, std::move(EventVars));
 						ProcessQueue();
 					}
