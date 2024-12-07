@@ -14,6 +14,7 @@ set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT "DEMRPG")
 option(DEM_RENDER_DEBUG "Debug rendering API" ON)
 option(DEM_DISABLE_CXX_EXCEPTIONS "Disable C++ exceptions" ON)
 option(DEM_DISABLE_CXX_RTTI "Disable C++ RTTI" ON)
+option(DEM_ASAN "Enable address sanitizer" OFF)
 set(DEM_PREBUILT_DEPS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Deps/Build" CACHE STRING "Prebuilt dependency package location")
 if(EXISTS ${DEM_PREBUILT_DEPS_PATH})
 	option(DEM_PREBUILT_DEPS "Use prebuilt dependencies" ON)
@@ -22,6 +23,7 @@ else()
 endif()
 
 message(STATUS "DEM_RENDER_DEBUG = ${DEM_RENDER_DEBUG}")
+message(STATUS "DEM_ASAN = ${DEM_ASAN}")
 
 include(CMake/DEMCMakeUtils.cmake)
 
@@ -165,6 +167,9 @@ foreach(_TARGET_NAME IN LISTS DEM_TARGETS)
 		set_target_properties(${_TARGET_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 		if(DEM_DISABLE_CXX_RTTI)
 			target_compile_options(${_TARGET_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
+		endif()
+		if(DEM_ASAN)
+			target_compile_options(${_TARGET_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/fsanitize=address>)
 		endif()
 		target_compile_options(${_TARGET_NAME} PRIVATE
 			"/Zc:__cplusplus"
