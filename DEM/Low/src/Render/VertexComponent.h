@@ -75,7 +75,7 @@ inline UPTR CVertexComponent::GetSize() const
 		case EVertexComponentFormat::Float32_4:		return 16;
 		case EVertexComponentFormat::Float16_2:		return 4;
 		case EVertexComponentFormat::Float16_4:		return 8;
-		case EVertexComponentFormat::UInt8_4:			return 4;
+		case EVertexComponentFormat::UInt8_4:		return 4;
 		case EVertexComponentFormat::UInt8_4_Norm:	return 4;
 		case EVertexComponentFormat::SInt16_2:		return 4;
 		case EVertexComponentFormat::SInt16_4:		return 8;

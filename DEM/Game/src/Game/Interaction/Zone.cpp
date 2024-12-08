@@ -12,10 +12,10 @@ static bool RTM_SIMD_CALL PointInPolygon(rtm::vector4f_arg0 pt, const rtm::vecto
 	bool c = false;
 	for (int i = 0, j = nverts - 1; i < nverts; j = i++)
 	{
-		const float vix = rtm::vector_get_x(verts[i * 3]);
-		const float viz = rtm::vector_get_z(verts[i * 3]);
-		const float vjx = rtm::vector_get_x(verts[j * 3]);
-		const float vjz = rtm::vector_get_z(verts[j * 3]);
+		const float vix = rtm::vector_get_x(verts[i]);
+		const float viz = rtm::vector_get_z(verts[i]);
+		const float vjx = rtm::vector_get_x(verts[j]);
+		const float vjz = rtm::vector_get_z(verts[j]);
 		if (((viz > ptz) != (vjz > ptz)) && (ptx < (vjx - vix) * (ptz - viz) / (vjz - viz) + vix))
 			c = !c;
 	}

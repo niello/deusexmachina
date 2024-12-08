@@ -214,6 +214,11 @@ foreach(_TARGET_NAME IN LISTS DEM_DEPS_TARGETS)
 			if(DEM_DEPS_DISABLE_CXX_RTTI AND NOT ${_TARGET_NAME} IN_LIST DEM_CEGUI_TARGETS)
 				target_compile_options(${_TARGET_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
 			endif()
+			if(DEM_ASAN)
+				target_compile_options(${_TARGET_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/fsanitize=address>)
+				#!!!DBG TMP! Need to build CEGUI deps with /fsanitize=address
+				target_compile_definitions(${_TARGET_NAME} PRIVATE _DISABLE_VECTOR_ANNOTATION _DISABLE_STRING_ANNOTATION)
+			endif()
 			target_compile_options(${_TARGET_NAME} PRIVATE "/Zc:__cplusplus")
 		endif()
 

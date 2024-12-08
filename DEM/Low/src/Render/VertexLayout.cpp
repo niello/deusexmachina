@@ -14,6 +14,7 @@ const char* CVertexComponent::SemanticNames[] =
 	"Bwh",
 	"Bix"
 };
+static_assert(std::extent_v<decltype(CVertexComponent::SemanticNames)> == static_cast<size_t>(EVertexComponentSemantic::UserDefined));
 
 const char* CVertexComponent::FormatNames[] =
 {
@@ -21,13 +22,18 @@ const char* CVertexComponent::FormatNames[] =
 	"F2",
 	"F3",
 	"F4",
-	"UB4",        
-	"S2",        
-	"S4",        
+	"F162",
+	"F164",
+	"UB4",
 	"UB4N",
+	"S2",
+	"S4",        
 	"S2N",
-	"S4N"
+	"S4N",
+	"U2N",
+	"U4N"
 };
+static_assert(std::extent_v<decltype(CVertexComponent::FormatNames)> == static_cast<size_t>(EVertexComponentFormat::Invalid));
 
 static const char* IndexStrings[] =
 {

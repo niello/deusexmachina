@@ -170,6 +170,8 @@ foreach(_TARGET_NAME IN LISTS DEM_TARGETS)
 		endif()
 		if(DEM_ASAN)
 			target_compile_options(${_TARGET_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/fsanitize=address>)
+			#!!!DBG TMP! Need to build CEGUI deps with /fsanitize=address
+			target_compile_definitions(${_TARGET_NAME} PRIVATE _DISABLE_VECTOR_ANNOTATION _DISABLE_STRING_ANNOTATION)
 		endif()
 		target_compile_options(${_TARGET_NAME} PRIVATE
 			"/Zc:__cplusplus"

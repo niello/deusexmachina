@@ -22,6 +22,8 @@ public:
 
 	constexpr static inline U16 InvalidPort = std::numeric_limits<U16>().max();
 
+	virtual ~IPoseOutput() = default;
+
 	virtual U8   GetActivePortChannels(U16 Port) const { return ETransformChannel::All; } // returns ETransformChannel flags that port accepts now
 
 	//???PERF: or SetTransform(tfm, ETransformChannel mask)? 3 bool checks inside, but mb less virtual calls. Is critical?
