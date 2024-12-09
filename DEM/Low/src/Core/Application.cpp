@@ -111,9 +111,9 @@ CApplication::CApplication(Sys::IPlatform& _Platform)
 	: Platform(_Platform)
 #ifdef TRACY_ENABLE
 		// Leave one core for tracy worker and one for Tracy.exe
-	, _JobSystem({ DEM::Jobs::CWorkerConfig::Normal(std::max(2u, std::thread::hardware_concurrency()) - 2), DEM::Jobs::CWorkerConfig::Sleepy(4) })
+	, _JobSystem({ DEM::Jobs::CWorkerConfig::Normal(std::clamp(std::thread::hardware_concurrency(), 2u, DEM::Jobs::MAX_WORKERS - 4) - 2), DEM::Jobs::CWorkerConfig::Sleepy(4) })
 #else
-	, _JobSystem({ DEM::Jobs::CWorkerConfig::Default(), DEM::Jobs::CWorkerConfig::Sleepy(4) })
+	, _JobSystem({ DEM::Jobs::CWorkerConfig::Default(4), DEM::Jobs::CWorkerConfig::Sleepy(4) })
 #endif
 {
 	// check multiple instances

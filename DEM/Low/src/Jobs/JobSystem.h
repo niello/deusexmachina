@@ -10,6 +10,9 @@
 namespace DEM::Jobs
 {
 
+// Limited by the worker index size and the number of bits in a _WaitJobWorkerMask / _WaitCounterWorkerMask
+constexpr size_t MAX_WORKERS = std::min<size_t>(std::numeric_limits<uint8_t>().max(), sizeof(size_t) * 8);
+
 struct CWorkerConfig
 {
 	std::string_view ThreadNamePrefix;
@@ -18,7 +21,7 @@ struct CWorkerConfig
 
 	static CWorkerConfig Normal(uint8_t Count) { return CWorkerConfig{ "Worker", Count, ENUM_MASK(EJobType::Normal) }; }
 	static CWorkerConfig Sleepy(uint8_t Count) { return CWorkerConfig{ "SleepyWorker", Count, ENUM_MASK(EJobType::Sleepy) }; }
-	static CWorkerConfig Default() { return Normal(std::thread::hardware_concurrency()); }
+	static CWorkerConfig Default(uint8_t ReservedLimit = 0) { return Normal(static_cast<uint8_t>(std::min(std::thread::hardware_concurrency(), MAX_WORKERS - ReservedLimit))); }
 };
 
 class CJobSystem final
@@ -52,9 +55,6 @@ protected:
 	// TODO: add pool or handle manager for dependency counters, not to allocate a new shared_ptr with atomic each time the counter is needed
 
 public:
-
-	// Limited by the worker index size and the number of bits in a _SleepingWorkerMask
-	inline static constexpr size_t MAX_WORKERS = std::min<size_t>(std::numeric_limits<uint8_t>().max(), sizeof(size_t) * 8);
 
 	CJobSystem(std::initializer_list<CWorkerConfig> Config = { CWorkerConfig::Default() });
 	~CJobSystem();
