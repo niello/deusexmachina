@@ -241,7 +241,10 @@ void CBlendSpace2D::Update(CAnimationUpdateContext& Context, float dt)
 		v = (apx * pTri->acy - pTri->acx * apy) * pTri->InvDenominator;
 		w = (pTri->abx * apy - apx * pTri->aby) * pTri->InvDenominator;
 		u = 1.f - v - w;
-		const auto NegativeMask = (static_cast<int>(w < 0.f) << 2) | (static_cast<int>(v < 0.f) << 1) | static_cast<int>(u < 0.f);
+
+		// Compare with epsilon to avoid infinite looping when the point lies on the edge
+		constexpr float epsilon = -std::numeric_limits<float>::epsilon();
+		const auto NegativeMask = (static_cast<int>(w < epsilon) << 2) | (static_cast<int>(v < epsilon) << 1) | static_cast<int>(u < epsilon);
 
 		// Zero mask means that all weights are positive and we are inside a triangle
 		if (!NegativeMask)
