@@ -27,7 +27,7 @@ protected:
 
 public:
 
-	static bool IsMatchingConversation(Game::HEntity Speaker, Game::CGameSession& Session, const Flow::CFlowVarStorage& Vars);
+	static bool IsMatchingConversation(Game::HEntity Speaker, Game::CGameSession& Session, const CBasicVarStorage& Vars);
 
 	virtual void OnStart(Game::CGameSession& Session) override;
 	virtual void Update(Flow::CUpdateContext& Ctx) override;

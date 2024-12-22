@@ -13,7 +13,7 @@ class CHubAction : public Flow::IFlowAction
 
 public:
 
-	static const CFlowLink* ChooseNext(const CFlowActionData& Proto, Game::CGameSession& Session, const CFlowVarStorage& Vars, Math::CWELL512& RNG);
+	static const CFlowLink* ChooseNext(const CFlowActionData& Proto, Game::CGameSession& Session, const CBasicVarStorage& Vars, Math::CWELL512& RNG);
 
 	virtual void Update(Flow::CUpdateContext& Ctx) override;
 };

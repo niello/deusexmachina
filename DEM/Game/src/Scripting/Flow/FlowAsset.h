@@ -30,12 +30,12 @@ class CFlowAsset : public ::Core::CObject
 protected:
 
 	std::vector<CFlowActionData> _Actions;
-	CFlowVarStorage              _VarStorage;
+	CBasicVarStorage              _VarStorage;
 	U32                          _DefaultStartActionID;
 
 public:
 
-	CFlowAsset(std::vector<CFlowActionData>&& Actions, CFlowVarStorage&& Vars, U32 StartActionID)
+	CFlowAsset(std::vector<CFlowActionData>&& Actions, CBasicVarStorage&& Vars, U32 StartActionID)
 		: _Actions(std::move(Actions))
 		, _VarStorage(std::move(Vars))
 		, _DefaultStartActionID(StartActionID)

@@ -31,7 +31,7 @@ static void RegisterVarStorageTemplateMethods(sol::usertype<CVarStorage<TVar...>
 		sol::resolve<typename T::TRetVal<TVar>(HVar) const>(&T::Get<TVar>),
 		sol::resolve<typename T::TRetVal<TVar>(HVar, const TVar&) const>(&T::Get<TVar>),
 		[](const T& Self, std::string_view ID) { return Self.Get<TVar>(Self.Find(CStrID(ID))); },
-		[](const T& Self, std::string_view ID, const TVar& Dflt) { return Self.Get<TVar>(Self.Find(CStrID(ID)), Dflt); }))
+		[](const T& Self, std::string_view ID, TPass<TVar> Dflt) { return Self.Get<TVar>(Self.Find(CStrID(ID)), std::forward<TPass<TVar>>(Dflt)); }))
 		, ...);
 	(UserType.set(std::string("Is") + (api_name_v<TVar> ? api_name_v<TVar> : typeid(T).name()), &T::IsA<TVar>)
 		, ...);
@@ -45,6 +45,7 @@ static void RegisterVarStorageTemplateMethods(sol::usertype<CVarStorage<TVar...>
 template<typename T>
 sol::usertype<T> RegisterVarStorage(sol::state& State, std::string_view Key)
 {
+	// TODO: assert if the usertype for T already exists, or there will be an error later on (Lua will GC the second metatable)
 	auto UserType = State.new_usertype<T>(Key
 		, "new_shared", sol::factories([]() { return std::shared_ptr<T>(new T{}); }));
 	UserType.set_function("clear", &T::clear);
@@ -61,8 +62,7 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 {
 	EnsureTable(State.globals(), { "DEM", "Flow" }).set_function("ResolveEntityID", &DEM::Flow::ResolveEntityID);
 
-	RegisterVarStorage<Flow::CFlowVarStorage>(State, "CFlowVarStorage");
-	RegisterVarStorage<Game::CSessionVarStorage>(State, "CSessionVarStorage");
+	RegisterVarStorage<CBasicVarStorage>(State, "CBasicVarStorage");
 
 	State.new_usertype<Game::CSessionVars>("CSessionVars"
 		, "Persistent", &Game::CSessionVars::Persistent

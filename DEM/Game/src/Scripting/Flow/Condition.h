@@ -1,5 +1,5 @@
 #pragma once
-#include <Scripting/Flow/FlowCommon.h> // for CFlowVarStorage only, maybe redeclare as CCommonVarStorage
+#include <Scripting/Flow/FlowCommon.h> // for CBasicVarStorage only, maybe redeclare as CCommonVarStorage
 #include <Game/ECS/Entity.h> // For ResolveEntityID utility method
 #include <Data/Params.h>
 #include <Data/Metadata.h>
@@ -30,14 +30,14 @@ struct CConditionContext
 {
 	const CConditionData&  Condition;
 	Game::CGameSession&    Session;
-	const CFlowVarStorage* pVars;
+	const CBasicVarStorage* pVars;
 };
 
-bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage* pVars);
-std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Session, const CFlowVarStorage* pVars);
-Game::HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const CFlowVarStorage* pVars);
+bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const CBasicVarStorage* pVars);
+std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Session, const CBasicVarStorage* pVars);
+Game::HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const CBasicVarStorage* pVars);
 
-using FEventCallback = std::function<void(std::shared_ptr<Flow::CFlowVarStorage>)>;
+using FEventCallback = std::function<void(std::shared_ptr<CBasicVarStorage>)>;
 
 class ICondition
 {

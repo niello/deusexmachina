@@ -10,5 +10,4 @@ struct CFlowLink;
 struct CFlowActionData;
 class CFlowPlayer;
 using PFlowAsset = Ptr<class CFlowAsset>;
-using CFlowVarStorage = CVarStorage<bool, int, float, std::string, CStrID>;
 }

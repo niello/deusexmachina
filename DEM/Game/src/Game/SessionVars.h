@@ -7,7 +7,6 @@
 namespace DEM::Game
 {
 class CGameSession;
-using CSessionVarStorage = CVarStorage<bool, int, float, std::string, CStrID>;
 
 class CSessionVars : public ::Core::CRTTIBaseClass
 {
@@ -19,8 +18,8 @@ protected:
 
 public:
 
-	CSessionVarStorage Persistent;
-	CSessionVarStorage Runtime;
+	CBasicVarStorage Persistent;
+	CBasicVarStorage Runtime;
 
 	CSessionVars(CGameSession& Owner) : _Session(Owner) {}
 };

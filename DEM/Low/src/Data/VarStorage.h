@@ -283,6 +283,9 @@ public:
 	}
 };
 
+// The most typical general purpose storage
+using CBasicVarStorage = CVarStorage<bool, int, float, std::string, CStrID>;
+
 namespace DEM::Serialization
 {
 

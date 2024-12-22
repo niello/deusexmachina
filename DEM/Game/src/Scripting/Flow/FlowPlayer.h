@@ -37,7 +37,7 @@ protected:
 	static void Goto(CUpdateContext& Ctx, const CFlowLink* pLink, float consumedDt = 0.f);
 
 	template<typename F>
-	static void ForEachValidLink(const CFlowActionData& Proto, Game::CGameSession& Session, const CFlowVarStorage& Vars, F Callback)
+	static void ForEachValidLink(const CFlowActionData& Proto, Game::CGameSession& Session, const CBasicVarStorage& Vars, F Callback)
 	{
 		const auto LinkCount = Proto.Links.size();
 		for (size_t i = 0; i < LinkCount; ++i)
@@ -59,21 +59,21 @@ protected:
 	}
 
 	//???return ptr or index or both?
-	static const CFlowLink* GetFirstValidLink(const CFlowActionData& Proto, Game::CGameSession& Session, const CFlowVarStorage& Vars);
-	static const CFlowLink* GetRandomValidLink(const CFlowActionData& Proto, Game::CGameSession& Session, const CFlowVarStorage& Vars, Math::CWELL512& RNG);
+	static const CFlowLink* GetFirstValidLink(const CFlowActionData& Proto, Game::CGameSession& Session, const CBasicVarStorage& Vars);
+	static const CFlowLink* GetRandomValidLink(const CFlowActionData& Proto, Game::CGameSession& Session, const CBasicVarStorage& Vars, Math::CWELL512& RNG);
 
 	template<typename F>
-	DEM_FORCE_INLINE void ForEachValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars, F Callback) const
+	DEM_FORCE_INLINE void ForEachValidLink(Game::CGameSession& Session, const CBasicVarStorage& Vars, F Callback) const
 	{
 		if (_pPrototype) ForEachValidLink<F>(*_pPrototype, Session, Vars, Callback);
 	}
 
-	DEM_FORCE_INLINE const CFlowLink* GetFirstValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars) const
+	DEM_FORCE_INLINE const CFlowLink* GetFirstValidLink(Game::CGameSession& Session, const CBasicVarStorage& Vars) const
 	{
 		return _pPrototype ? GetFirstValidLink(*_pPrototype, Session, Vars) : nullptr;
 	}
 
-	const CFlowLink* GetRandomValidLink(Game::CGameSession& Session, const CFlowVarStorage& Vars) const;
+	const CFlowLink* GetRandomValidLink(Game::CGameSession& Session, const CBasicVarStorage& Vars) const;
 	Game::HEntity    ResolveEntityID(CStrID ParamID) const;
 
 public:
@@ -95,7 +95,7 @@ private:
 	PFlowAsset      _Asset;
 	PFlowAction     _CurrAction;
 	U32             _NextActionID = EmptyActionID; // Non-empty when a link is yielding to the next frame
-	CFlowVarStorage _VarStorage;
+	CBasicVarStorage _VarStorage;
 	Math::CWELL512  _RNG;
 	// TODO: add action pool Type->Instance? std::map<CStrID, PFlowAction>; // NB: always needs only 1 instance of each type.
 

@@ -14,7 +14,7 @@ static const CStrID sidTime("Time");
 static const CStrID sidConversationOwner("ConversationOwner");
 
 // Check that the phrase is said from the same conversation to which an actor is bound, including 'no conversation' case
-bool CPhraseAction::IsMatchingConversation(Game::HEntity Speaker, Game::CGameSession& Session, const Flow::CFlowVarStorage& Vars)
+bool CPhraseAction::IsMatchingConversation(Game::HEntity Speaker, Game::CGameSession& Session, const CBasicVarStorage& Vars)
 {
 	auto* pConvMgr = Session.FindFeature<CConversationManager>();
 	if (!pConvMgr) return false;

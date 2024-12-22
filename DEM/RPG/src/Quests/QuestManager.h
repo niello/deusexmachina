@@ -36,7 +36,7 @@ class CQuestManager : public ::Core::CRTTIBaseClass
 
 public:
 
-	using PFlowVarStorage = std::shared_ptr<Flow::CFlowVarStorage>;
+	using PFlowVarStorage = std::shared_ptr<CBasicVarStorage>;
 
 protected:
 
