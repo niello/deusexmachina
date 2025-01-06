@@ -18,6 +18,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Character/ModifiableParameter.h
 	DEM/RPG/src/Character/ParameterModifier.h
 	DEM/RPG/src/Character/SkillsComponent.h
+	DEM/RPG/src/Character/SocialComponent.h
 	DEM/RPG/src/Character/StatsComponent.h
 	DEM/RPG/src/Combat/AttackAbility.h
 	DEM/RPG/src/Combat/CombatUtils.h
@@ -31,8 +32,6 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Conversation/PhraseAction.h
 	DEM/RPG/src/Conversation/TalkAbility.h
 	DEM/RPG/src/Conversation/TalkingComponent.h
-	DEM/RPG/src/Factions/Faction.h
-	DEM/RPG/src/Factions/FactionManager.h
 	DEM/RPG/src/Items/ArmorComponent.h
 	DEM/RPG/src/Items/EquipmentChangesComponent.h
 	DEM/RPG/src/Items/EquipmentComponent.h
@@ -52,7 +51,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Objects/OwnedComponent.h
 	DEM/RPG/src/Quests/QuestData.h
 	DEM/RPG/src/Quests/QuestManager.h
-	DEM/RPG/src/SI/SI_L3.h
+	DEM/RPG/src/Social/SocialManager.h
 	DEM/RPG/src/World/WorldManager.h
 )
 
@@ -78,15 +77,13 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/Conversation/EngageInConversationAction.cpp
 	DEM/RPG/src/Conversation/PhraseAction.cpp
 	DEM/RPG/src/Conversation/TalkAbility.cpp
-	DEM/RPG/src/Factions/Faction.cpp
-	DEM/RPG/src/Factions/FactionManager.cpp
 	DEM/RPG/src/Items/EquipmentSystem.cpp
 	DEM/RPG/src/Items/ItemManager.cpp
 	DEM/RPG/src/Items/ItemUtils.cpp
 	DEM/RPG/src/Items/PickItemAbility.cpp
 	DEM/RPG/src/Objects/LockpickAbility.cpp
 	DEM/RPG/src/Quests/QuestManager.cpp
-	DEM/RPG/src/SI/SIFaction.cpp
+	DEM/RPG/src/Social/SocialManager.cpp
 	DEM/RPG/src/World/WorldManager.cpp
 )
 

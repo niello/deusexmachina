@@ -197,14 +197,14 @@ struct ParamsFormat
 	{
 		Data::CData Added;
 		Data::CData Deleted;
-		SetDifference(Set, BaseSet, [&Added](auto It)
+		Algo::SetDifference(Set, BaseSet, [&Added](auto It)
 		{
 			if (Added.IsVoid()) Added = Data::PDataArray(n_new(Data::CDataArray()));
 			Data::CData ValueData;
 			Serialize(ValueData, *It);
 			Added.As<Data::PDataArray>()->Get()->Add(std::move(ValueData));
 		});
-		SetDifference(BaseSet, Set, [&Deleted](auto It)
+		Algo::SetDifference(BaseSet, Set, [&Deleted](auto It)
 		{
 			if (Deleted.IsVoid()) Deleted = Data::PDataArray(n_new(Data::CDataArray()));
 			Data::CData ValueData;
@@ -317,7 +317,16 @@ struct ParamsFormat
 		else
 		{
 			// Try to deserialize the value as a vector of a single element
-			Deserialize(Input, Vector.emplace_back());
+			if constexpr (std::is_same_v<std::vector<T::value_type>, T>) // Check that the collection is std vector
+			{
+				Deserialize(Input, Vector.emplace_back());
+			}
+			else
+			{
+				typename T::value_type Value;
+				Deserialize(Input, Value);
+				Vector.insert(std::move(Value));
+			}
 		}
 	}
 	//---------------------------------------------------------------------

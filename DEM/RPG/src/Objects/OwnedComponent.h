@@ -1,15 +1,16 @@
 #pragma once
 #include <Game/ECS/Entity.h>
 
-// Makes an entity belong to some other entity (owner) or a faction
+// Makes an entity belong to other entity (normally character or creature)
+// and/or to factions. For faction membership use CSocialComponent.
 
 namespace DEM::RPG
 {
 
 struct COwnedComponent
 {
-	Game::HEntity Owner;
-	//TODO: faction ID, use if no owner?
+	Game::HEntity    Owner;
+	std::set<CStrID> Factions;
 };
 
 }
@@ -17,12 +18,13 @@ struct COwnedComponent
 namespace DEM::Meta
 {
 
-template<> constexpr auto RegisterClassName<DEM::RPG::COwnedComponent>() { return "DEM::RPG::COwnedComponent"; }
-template<> constexpr auto RegisterMembers<DEM::RPG::COwnedComponent>()
+template<> constexpr auto RegisterClassName<RPG::COwnedComponent>() { return "DEM::RPG::COwnedComponent"; }
+template<> constexpr auto RegisterMembers<RPG::COwnedComponent>()
 {
 	return std::make_tuple
 	(
-		Member(1, "Owner", &DEM::RPG::COwnedComponent::Owner, &DEM::RPG::COwnedComponent::Owner)
+		DEM_META_MEMBER_FIELD(RPG::COwnedComponent, Owner),
+		DEM_META_MEMBER_FIELD(RPG::COwnedComponent, Factions)
 	);
 }
 
