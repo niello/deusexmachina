@@ -26,6 +26,7 @@ private:
 	//  - script and/or crime rules
 	//  - ???unpaid crime accumulator?
 	// party personality traits map CStrID -> float (or better use int here?)
+	//???store party factions here? 'Party' by default but can add more by joining factions or using disguise.
 	// balance constants (here or load everything to global/session vars?)
 
 public:

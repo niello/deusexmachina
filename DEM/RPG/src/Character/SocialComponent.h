@@ -11,7 +11,8 @@ namespace DEM::RPG
 
 struct CSocialComponent
 {
-	CModifiableParameter<float> Disposition = 0.f;
+	//CModifiableParameter<float> Disposition = 0.f;
+	float                       Disposition = 0.f;
 	std::set<CStrID>            Factions;
 	std::map<CStrID, float>     FactionDispositonCoeffs;
 	std::map<CStrID, float>     TraitDispositonCoeffs;
@@ -28,6 +29,7 @@ template<> constexpr auto RegisterMembers<RPG::CSocialComponent>()
 	return std::make_tuple
 	(
 		//DEM_META_MEMBER_FIELD(RPG::CSocialComponent, Disposition), // TODO: (de)serialize CModifiableParameter as base value! sol binding via unique traits like ptr?
+		DEM_META_MEMBER_FIELD(RPG::CSocialComponent, Disposition),
 		DEM_META_MEMBER_FIELD(RPG::CSocialComponent, Factions),
 		DEM_META_MEMBER_FIELD(RPG::CSocialComponent, FactionDispositonCoeffs),
 		DEM_META_MEMBER_FIELD(RPG::CSocialComponent, TraitDispositonCoeffs)

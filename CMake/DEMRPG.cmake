@@ -52,6 +52,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Quests/QuestData.h
 	DEM/RPG/src/Quests/QuestManager.h
 	DEM/RPG/src/Social/SocialManager.h
+	DEM/RPG/src/Social/SocialUtils.h
 	DEM/RPG/src/World/WorldManager.h
 )
 
@@ -84,6 +85,7 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/Objects/LockpickAbility.cpp
 	DEM/RPG/src/Quests/QuestManager.cpp
 	DEM/RPG/src/Social/SocialManager.cpp
+	DEM/RPG/src/Social/SocialUtils.cpp
 	DEM/RPG/src/World/WorldManager.cpp
 )
 
