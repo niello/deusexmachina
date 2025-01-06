@@ -1,4 +1,5 @@
 #include "SocialManager.h"
+#include <Data/SerializeToParams.h>
 
 namespace DEM::RPG
 {
@@ -6,6 +7,12 @@ namespace DEM::RPG
 CSocialManager::CSocialManager(Game::CGameSession& Owner)
 	: _Session(Owner)
 {
+}
+//---------------------------------------------------------------------
+
+void CSocialManager::LoadFactions(const Data::PParams& Desc)
+{
+	DEM::ParamsFormat::DeserializeAppend(Data::CData(Desc), _Factions);
 }
 //---------------------------------------------------------------------
 

@@ -321,7 +321,13 @@ Events::CConnection CConversationManager::SayPhrase(Game::HEntity Actor, std::st
 	}
 
 	const auto ConvKey = ItActor->second.ConversationKey;
-	Conn = _View->SayPhrase(Actor, _Conversations[ConvKey]->TextResolver.Resolve(Text), (ConvKey == _ForegroundConversation), Time, std::move(OnEnd));
+	const auto& Conv = _Conversations[ConvKey];
+	const auto& Vars = Conv->Player.GetVars();
+
+	// FIXME: instead of passing to each phrase must revisit this logic in a whole! UI needs NPC to player disposition at least.
+	const Game::HEntity Initiator{ static_cast<DEM::Game::HEntity::TRawValue>(Vars.Get<int>(Vars.Find(sidConversationInitiator), static_cast<int>(Game::HEntity{}.Raw))) };
+
+	Conn = _View->SayPhrase(Actor, Initiator, Conv->TextResolver.Resolve(Text), (ConvKey == _ForegroundConversation), Time, std::move(OnEnd));
 
 	return Conn;
 }

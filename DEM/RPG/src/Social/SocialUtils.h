@@ -11,7 +11,7 @@ namespace DEM::Game
 namespace DEM::RPG
 {
 
-float GetDisposition(Game::CGameSession& Session, Game::HEntity NPCID);
+float GetDisposition(Game::CGameSession& Session, Game::HEntity FromCharacter, Game::HEntity ToCharacter);
 
 }
 

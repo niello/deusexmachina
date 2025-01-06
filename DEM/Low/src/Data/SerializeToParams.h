@@ -411,7 +411,12 @@ struct ParamsFormat
 	static inline void DeserializeDiff(const Data::CData& Input, T& Set)
 	{
 		auto pParamsPtr = Input.As<Data::PParams>();
-		if (!pParamsPtr) return;
+		if (!pParamsPtr)
+		{
+			// Possibly a full collection instead of diff, try reading it
+			Deserialize(Input, Set);
+			return;
+		}
 
 		Data::PDataArray Deleted;
 		if (pParamsPtr->Get()->TryGet(Deleted, CStrID("Deleted")))
