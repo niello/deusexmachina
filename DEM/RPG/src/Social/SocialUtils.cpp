@@ -24,7 +24,7 @@ float GetDisposition(Game::CGameSession& Session, Game::HEntity FromCharacter, G
 	if (!pNPCSocial) return 0.f;
 
 	//???!!!TODO: calculate disposition here or use CModifiableValue?! or apply temporary
-	// modifications to pNPCSocial->Disposition but keep factions and traits here?!
+	//modifications to pNPCSocial->Disposition but keep factions and traits here?!
 	float Disposition = pNPCSocial->Disposition;// .GetBaseValue();
 
 	// Modify disposition from player character charisma
