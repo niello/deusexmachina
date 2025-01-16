@@ -5,7 +5,8 @@
 #include <Physics/PhysicsDebugDraw.h>
 #include <Math/AABB.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
-#include <BulletCollision/BroadphaseCollision/btAxisSweep3.h>
+//#include <BulletCollision/BroadphaseCollision/btAxisSweep3.h>
+#include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
 #include <BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
 #include <BulletCollision/CollisionShapes/btSphereShape.h>
 #include <BulletCollision/CollisionShapes/btCapsuleShape.h>
@@ -133,19 +134,20 @@ void CPhysicsLevel::AfterTick(btDynamicsWorld* world, btScalar timeStep)
 }
 //---------------------------------------------------------------------
 
-CPhysicsLevel::CPhysicsLevel(const Math::CAABB& Bounds)
+CPhysicsLevel::CPhysicsLevel(const Math::CAABB& /*Bounds*/)
 {
 	// Register predefined collision groups
-	// FIXME: do need flags per level?
 	PredefinedCollisionGroups.Dynamic = CollisionGroups.GetMask("Dynamic");
 	PredefinedCollisionGroups.Static = CollisionGroups.GetMask("Static");
 	PredefinedCollisionGroups.Interactable = CollisionGroups.GetMask("Interactable");
 	PredefinedCollisionGroups.Query = CollisionGroups.GetMask("Query");
 	PredefinedCollisionGroups.All = CollisionGroups.SetAlias(CStrID("All"), std::numeric_limits<U32>().max());
 
-	const btVector3 Min = Math::ToBullet3(rtm::vector_sub(Bounds.Center, Bounds.Extent));
-	const btVector3 Max = Math::ToBullet3(rtm::vector_add(Bounds.Center, Bounds.Extent));
-	btBroadphaseInterface* pBtBroadPhase = new btAxisSweep3(Min, Max);
+	// TODO PERF: test, DBVT is faster according to https://web.archive.org/web/20170704124316/http://bulletphysics.org/mediawiki-1.5.8/index.php/CDTestFramework
+	//const btVector3 Min = Math::ToBullet3(rtm::vector_sub(Bounds.Center, Bounds.Extent));
+	//const btVector3 Max = Math::ToBullet3(rtm::vector_add(Bounds.Center, Bounds.Extent));
+	//btBroadphaseInterface* pBtBroadPhase = new btAxisSweep3(Min, Max);
+	btBroadphaseInterface* pBtBroadPhase = new btDbvtBroadphase();
 
 	btDefaultCollisionConfiguration* pBtCollCfg = new btDefaultCollisionConfiguration();
 	btCollisionDispatcher* pBtCollDisp = new btCollisionDispatcher(pBtCollCfg);
@@ -160,19 +162,10 @@ CPhysicsLevel::CPhysicsLevel(const Math::CAABB& Bounds)
 	pBtDynWorld->setInternalTickCallback(BeforeTick, this, true);
 	pBtDynWorld->setInternalTickCallback(AfterTick, this, false);
 
-	//!!!can reimplement with some notifications like FireEvent(OnCollision)!
-	//btGhostPairCallback* pGhostPairCB = new btGhostPairCallback(); //!!!delete!
-	//pBtDynWorld->getPairCache()->setInternalGhostPairCallback(pGhostPairCB);
-
 	/*
-	btGhostObject for triggers and raytests, it keeps track of all its intersections
-	btGhostPairCallback to notify application of new/removed collisions
 	???btBvhTriangleMeshShape->performRaycast(btTriangleCallback*)
 	bt[Scaled]BvhTriangleMeshShape for all the non-modifyable and non-deletable static environment except a terrain
 	it can be created at compile time and saved (btOptimizedBvh, Demo/ConcaveDemo)
-	a->group in b->mask && b->group in a->mask = collision, 32bit
-	btOverlapFilterCallback - broadphase, receives broadphase proxies (AABBs?) world->getpaircache->set
-	near callback dispatcher->set
 	appendAnchor attaches body to body
 	use CCD for fast moving objects
 	btConeTwistConstraint for ragdolls
@@ -275,6 +268,7 @@ UPTR CPhysicsLevel::EnumObjectContacts(const CPhysicsObject& Object, std::functi
 	CFunctorContactCallback CB(*Object.GetBtObject(), Callback);
 	pBtDynWorld->contactTest(Object.GetBtObject(), CB);
 
+	//???or instead of object pass precreated shape here, and create ghost/collision object for the test!
 	// Collision objects with a callback still have collision response with dynamic rigid bodies.
 	// In order to use collision objects as trigger, you have to disable the collision response. 
 	//Object.GetBtObject()->setCollisionFlags(Object.GetBtObject()->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE));
