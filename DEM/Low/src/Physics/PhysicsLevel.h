@@ -36,7 +36,18 @@ protected:
 
 public:
 
+	// Predefined collision groups used in game logic
+	struct CCollisionGroups
+	{
+		U32 Dynamic;      // Material objects that can move
+		U32 Static;       // Material objects tat never move
+		U32 Interactable; // Immaterial objects with which a user can interact in UI
+		U32 Query;        // Objects that collide other objects only to report contacts, without response
+		U32 All;
+	};
+
 	Data::CDynamicEnum32     CollisionGroups;
+	CCollisionGroups         PredefinedCollisionGroups;
 
 	CPhysicsLevel(const Math::CAABB& Bounds);
 	virtual ~CPhysicsLevel() override;

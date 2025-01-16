@@ -1,6 +1,5 @@
 #pragma once
 #include <Data/StringID.h>
-#include <Data/StringTokenizer.h>
 #include <map>
 
 // Dynamic enum associates string names with bits. Use integer types as a template type.
@@ -20,24 +19,21 @@ protected:
 
 public:
 
-	T		GetMask(const char* pFlagStr);
-	void	SetAlias(CStrID Alias, const char* pFlagStr) { Flags.emplace(Alias, GetMask(pFlagStr)); }
-	void	SetAlias(CStrID Alias, T Mask) { Flags.emplace(Alias, Mask); }
+	T GetMask(std::string_view FlagStr);
+	T SetAlias(CStrID Alias, std::string_view FlagStr) { return Flags.emplace(Alias, GetMask(FlagStr)).first->second; }
+	T SetAlias(CStrID Alias, T Mask) { return Flags.emplace(Alias, Mask).first->second; }
 };
 
-typedef CDynamicEnumT<U16> CDynamicEnum16;
-typedef CDynamicEnumT<U32> CDynamicEnum32;
-typedef CDynamicEnumT<UPTR> CDynamicEnum;
-
 template<class T>
-T CDynamicEnumT<T>::GetMask(const char* pFlagStr)
+T CDynamicEnumT<T>::GetMask(std::string_view FlagStr)
 {
 	T Mask = 0;
 
-	Data::CStringTokenizer StrTok(pFlagStr);
-	while (StrTok.GetNextToken("\t |") && *StrTok.GetCurrToken())
+	size_t Start = 0;
+	while (Start < FlagStr.size())
 	{
-		CStrID Flag = CStrID(StrTok.GetCurrToken());
+		const size_t End = FlagStr.find('|', Start);
+		const CStrID Flag = CStrID(FlagStr.substr(Start, End - Start));
 
 		auto It = Flags.find(Flag);
 		if (It != Flags.cend())
@@ -48,7 +44,7 @@ T CDynamicEnumT<T>::GetMask(const char* pFlagStr)
 		{
 			if (BitsUsed >= (sizeof(T) << 3))
 			{
-				::Sys::Error("CDynamicEnumT: overflow, flag '%s' would be %d-th", Flag.CStr(), BitsUsed + 1);
+				::Sys::Error("CDynamicEnumT<T>::GetMask() > overflow, flag '%s' would be %d-th", Flag.CStr(), BitsUsed + 1);
 				return 0;
 			}
 
@@ -58,10 +54,20 @@ T CDynamicEnumT<T>::GetMask(const char* pFlagStr)
 
 			Mask |= BitValue;
 		}
+
+		if (End == std::string_view::npos) break;
+
+		Start = End + 1;
 	}
 
 	return Mask;
 }
 //---------------------------------------------------------------------
+
+using CDynamicEnum8 = CDynamicEnumT<U8>;
+using CDynamicEnum16 = CDynamicEnumT<U16>;
+using CDynamicEnum32 = CDynamicEnumT<U32>;
+using CDynamicEnum64 = CDynamicEnumT<U64>;
+using CDynamicEnum = CDynamicEnumT<UPTR>;
 
 }

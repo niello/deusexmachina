@@ -178,24 +178,26 @@ void CGameLevel::Update(float dt, const rtm::vector4f* pCOIArray, UPTR COICount)
 }
 //---------------------------------------------------------------------
 
-Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const Math::CLine& Ray, rtm::vector4f* pOutPoint3D) const
+Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const Math::CLine& Ray, rtm::vector4f* pOutPoint3D, std::string_view CollisionMask) const
 {
 	if (!_PhysicsLevel) return nullptr;
 
-	const auto Group = _PhysicsLevel->CollisionGroups.GetMask("Probe");
-	const auto Mask = _PhysicsLevel->CollisionGroups.GetMask("All"); // TODO: pass as argument?
+	const auto& Groups = _PhysicsLevel->PredefinedCollisionGroups;
+	const auto Group = Groups.Query;
+	const auto Mask = CollisionMask.empty() ? Groups.All : _PhysicsLevel->CollisionGroups.GetMask(CollisionMask);
 	Physics::PPhysicsObject PhysObj;
 	_PhysicsLevel->GetClosestRayContact(Ray.Start, rtm::vector_add(Ray.Start, Ray.Dir), Group, Mask, pOutPoint3D, &PhysObj);
 	return PhysObj.Get();
 }
 //---------------------------------------------------------------------
 
-UPTR CGameLevel::EnumEntitiesInSphere(const rtm::vector4f& Position, float Radius, CStrID CollisionMask, std::function<bool(HEntity&, const rtm::vector4f&)>&& Callback) const
+UPTR CGameLevel::EnumEntitiesInSphere(const rtm::vector4f& Position, float Radius, std::string_view CollisionMask, std::function<bool(HEntity&, const rtm::vector4f&)>&& Callback) const
 {
 	if (!_PhysicsLevel || !Callback) return 0;
 
-	const auto Group = _PhysicsLevel->CollisionGroups.GetMask("Probe");
-	const auto Mask = _PhysicsLevel->CollisionGroups.GetMask(CollisionMask ? CollisionMask.CStr() : "All");
+	const auto& Groups = _PhysicsLevel->PredefinedCollisionGroups;
+	const auto Group = Groups.Query;
+	const auto Mask = CollisionMask.empty() ? Groups.All : _PhysicsLevel->CollisionGroups.GetMask(CollisionMask);
 
 	//???return contact in a form of CTargetInfo? Fill CTargetInfo from physics object + bullet contact info?
 	_PhysicsLevel->EnumSphereContacts(Position, Radius, Group, Mask, [&Callback](Physics::CPhysicsObject& PhysObj, const rtm::vector4f& ContactPos)

@@ -28,8 +28,9 @@ CStaticCollider::~CStaticCollider()
 
 void CStaticCollider::AttachToLevelInternal()
 {
-	const auto Group = _Level->CollisionGroups.GetMask(_CollisionGroupID ? _CollisionGroupID.CStr() : "PhysicalStatic");
-	const auto Mask = _Level->CollisionGroups.GetMask(_CollisionMaskID ? _CollisionMaskID.CStr() : "All");
+	const auto& Groups = _Level->PredefinedCollisionGroups;
+	const auto Group = _CollisionGroupID ? _Level->CollisionGroups.GetMask(_CollisionGroupID.CStr()) : Groups.Static;
+	const auto Mask = _CollisionMaskID ? _Level->CollisionGroups.GetMask(_CollisionMaskID.CStr()) : (Groups.Dynamic | Groups.Query);
 	_Level->GetBtWorld()->addCollisionObject(_pBtObject, Group, Mask);
 }
 //---------------------------------------------------------------------

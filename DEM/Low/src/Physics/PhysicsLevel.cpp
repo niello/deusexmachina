@@ -135,6 +135,14 @@ void CPhysicsLevel::AfterTick(btDynamicsWorld* world, btScalar timeStep)
 
 CPhysicsLevel::CPhysicsLevel(const Math::CAABB& Bounds)
 {
+	// Register predefined collision groups
+	// FIXME: do need flags per level?
+	PredefinedCollisionGroups.Dynamic = CollisionGroups.GetMask("Dynamic");
+	PredefinedCollisionGroups.Static = CollisionGroups.GetMask("Static");
+	PredefinedCollisionGroups.Interactable = CollisionGroups.GetMask("Interactable");
+	PredefinedCollisionGroups.Query = CollisionGroups.GetMask("Query");
+	PredefinedCollisionGroups.All = CollisionGroups.SetAlias(CStrID("All"), std::numeric_limits<U32>().max());
+
 	const btVector3 Min = Math::ToBullet3(rtm::vector_sub(Bounds.Center, Bounds.Extent));
 	const btVector3 Max = Math::ToBullet3(rtm::vector_add(Bounds.Center, Bounds.Extent));
 	btBroadphaseInterface* pBtBroadPhase = new btAxisSweep3(Min, Max);

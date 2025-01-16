@@ -378,8 +378,9 @@ void UpdateCharacterControllerShape(CCharacterControllerComponent& Character)
 		Tfm = rtm::matrix_identity();
 	}
 
-	// FIXME PHYSICS - where to set? In component (externally)?
-	CStrID CollisionGroupID("Character");
+	// FIXME PHYSICS: where to set? In component (externally)?
+	// TODO: separate for character? E.g. for particles to collide with static & dynamic but don't affect characters.
+	CStrID CollisionGroupID("Dynamic");
 	CStrID CollisionMaskID("All");
 
 	const float CapsuleHeight = Character.Height - Character.Radius - Character.Radius - Character.Hover;

@@ -19,8 +19,6 @@ namespace DEM::RPG
 // static
 namespace
 {
-//!!!FIXME: need to set "Interactable" collision flag in all interactable entity colliders!
-const CStrID sidInteractableCollisionMask;// ("Interactable")
 
 U32 GetContainerCapacityInItems(const Game::CGameWorld& World, const CItemContainerComponent& Container,
 	const CItemComponent* pItem, U32 MinItemCount = 1, Game::HEntity ExcludeStackID = {})
@@ -1845,7 +1843,8 @@ U32 AddItemsToLocation(Game::CGameWorld& World, Game::HEntity ItemProtoID, U32 C
 			// If tmp item containers are found, add the stack to the closest one (take lookat dir into account?)
 			// Else if stacks are found, try to merge into the closest one (take lookat dir into account?)
 			// If not merged, create tmp item container and add found stack and our stack to it
-			const auto DestStackID = pLevel->FindClosestEntity(Tfm.translation, MergeRadius, sidInteractableCollisionMask,
+			//!!!FIXME: need to set "Interactable" collision flag in all interactable entity colliders!
+			const auto DestStackID = pLevel->FindClosestEntity(Tfm.translation, MergeRadius, /* "Interactable"sv */ ""sv,
 				[&World, ItemProtoID](Game::HEntity EntityID)
 			{
 				auto pGroundStack = World.FindComponent<const CItemStackComponent>(EntityID);
@@ -1958,7 +1957,8 @@ std::pair<U32, bool> MoveItemsToLocation(Game::CGameWorld& World, Game::HEntity 
 			// If tmp item containers are found, add the stack to the closest one (take lookat dir into account?)
 			// Else if stacks are found, try to merge into the closest one (take lookat dir into account?)
 			// If not merged, create tmp item container and add found stack and our stack to it
-			const auto DestStackID = pLevel->FindClosestEntity(Tfm.translation, MergeRadius, sidInteractableCollisionMask,
+			//!!!FIXME: need to set "Interactable" collision flag in all interactable entity colliders!
+			const auto DestStackID = pLevel->FindClosestEntity(Tfm.translation, MergeRadius, /* "Interactable"sv */ ""sv,
 				[&World, pSrcStack](Game::HEntity EntityID)
 			{
 				auto pGroundStack = World.FindComponent<const CItemStackComponent>(EntityID);
@@ -1991,7 +1991,8 @@ Game::HEntity MoveWholeStackToLocation(Game::CGameWorld& World, Game::HEntity St
 		if (auto pLevel = World.FindLevel(LevelID))
 		{
 			// TODO: see the comment for the same call inside MoveItemsToLocation
-			const auto DestStackID = pLevel->FindClosestEntity(Tfm.translation, MergeRadius, sidInteractableCollisionMask,
+			//!!!FIXME: need to set "Interactable" collision flag in all interactable entity colliders!
+			const auto DestStackID = pLevel->FindClosestEntity(Tfm.translation, MergeRadius, /* "Interactable"sv */ ""sv,
 				[&World, pSrcStack](Game::HEntity EntityID)
 			{
 				auto pGroundStack = World.FindComponent<const CItemStackComponent>(EntityID);
@@ -2047,7 +2048,7 @@ bool AddItemVisualsToLocation(Game::CGameWorld& World, Game::HEntity StackID, co
 		auto pPhysicsComponent = World.AddComponent<Game::CRigidBodyComponent>(StackID);
 		pPhysicsComponent->ShapeAssetID = pItem->WorldPhysicsID;
 		pPhysicsComponent->Mass = pItemStack->Count * pItem->Weight;
-		pPhysicsComponent->CollisionGroupID = CStrID("PhysicalDynamic|Interactable");
+		pPhysicsComponent->CollisionGroupID = CStrID("Dynamic|Interactable");
 		// TODO: physics material?
 	}
 
