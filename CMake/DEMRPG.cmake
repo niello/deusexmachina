@@ -41,6 +41,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Items/ItemComponent.h
 	DEM/RPG/src/Items/ItemContainerComponent.h
 	DEM/RPG/src/Items/ItemCountMonitorComponent.h
+	DEM/RPG/src/Items/ItemList.h
 	DEM/RPG/src/Items/ItemManager.h
 	DEM/RPG/src/Items/ItemStackComponent.h
 	DEM/RPG/src/Items/ItemUtils.h
@@ -79,6 +80,7 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/Conversation/PhraseAction.cpp
 	DEM/RPG/src/Conversation/TalkAbility.cpp
 	DEM/RPG/src/Items/EquipmentSystem.cpp
+	DEM/RPG/src/Items/ItemList.cpp
 	DEM/RPG/src/Items/ItemManager.cpp
 	DEM/RPG/src/Items/ItemUtils.cpp
 	DEM/RPG/src/Items/PickItemAbility.cpp

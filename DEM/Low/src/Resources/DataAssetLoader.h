@@ -65,6 +65,8 @@ public:
 		// Do optional postprocessing
 		if constexpr (has_method_with_signature_OnPostLoad_v<T, void()>)
 			NewObject->OnPostLoad();
+		else if constexpr (has_method_with_signature_OnPostLoad_v<T, void(Resources::CResourceManager&)>)
+			NewObject->OnPostLoad(_ResMgr);
 
 		return NewObject;
 	}
