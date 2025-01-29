@@ -19,8 +19,6 @@ struct CItemListRecord
 	Resources::PResource SubList; // CItemList //!!!TODO: CItemList need a custom recursive loader!
 	Flow::CConditionData Condition;
 	U32                  RandomWeight = 1; // only for randomly evaluated lists
-
-	// Can also use XdY+Z to implement non-linear distribution, but for a simple [min; max] it is harder to setup
 	U32                  MinCount = 1;
 	U32                  MaxCount = 1;
 	bool                 SingleEval = false; // if true, a SubList will be evaluated once, and the result will be multiplied by Count
@@ -29,6 +27,19 @@ struct CItemListRecord
 class CItemList : public ::Core::CObject
 {
 	RTTI_CLASS_DECL(DEM::RPG::CItemList, ::Core::CObject);
+
+protected:
+
+	struct CLimitAccumulator
+	{
+		U32 RecordCount = 0;
+		U32 ItemCount = 0;
+		U32 Cost = 0;
+		U32 Weight = 0;
+		U32 Volume = 0;
+	};
+
+	void EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, U32>& Out, U32 Mul, CLimitAccumulator& Limits);
 
 public:
 
