@@ -63,20 +63,7 @@ public:
 
 	void Evaluate(Game::CGameSession& Session, std::map<CStrID, U32>& Out, U32 Mul = 1);
 
-	void OnPostLoad(Resources::CResourceManager& ResMgr)
-	{
-		//!!!TODO: if random list and has no limits, must limit itself to 1 record.
-
-		for (auto& Record : Records)
-		{
-			if (Record.MinCount > Record.MaxCount)
-				std::swap(Record.MinCount, Record.MaxCount);
-
-			// Recursively load sub-lists
-			ResMgr.RegisterResource<CItemList>(Record.SubList);
-			if (Record.SubList) Record.SubList->ValidateObject<CItemList>();
-		}
-	}
+	void OnPostLoad(Resources::CResourceManager& ResMgr);
 };
 
 }

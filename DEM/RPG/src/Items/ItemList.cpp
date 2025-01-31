@@ -12,13 +12,12 @@ bool CItemList::EvaluateRecord(const CItemListRecord& Record, Game::CGameSession
 	++Limits.RecordCount;
 
 	// TODO: can also use XdY+Z to implement non-linear distribution, but for a simple [min; max] it is harder to setup
-	const auto Count = Math::RandomU32(Record.MinCount, Record.MaxCount) * Mul;
+	const auto Count = ((Record.MinCount < Record.MaxCount) ? Math::RandomU32(Record.MinCount, Record.MaxCount) : Record.MaxCount) * Mul;
 	if (!Count) return true;
 
 	if (Record.ItemTemplateID)
 	{
-		n_assert(!Record.SubList);
-
+		// Find or allocate a generated item stack record
 		auto It = Out.find(Record.ItemTemplateID);
 		if (It == Out.end())
 		{
@@ -47,7 +46,6 @@ bool CItemList::EvaluateRecord(const CItemListRecord& Record, Game::CGameSession
 	}
 	else if (Record.SubList)
 	{
-		//!!!separate limit for sub-lists, they have their own limits! Then add to our limit!
 		if (auto* pSubList = Record.SubList->ValidateObject<CItemList>())
 		{
 			const auto Evaluations = Record.SingleEvaluation ? 1 : Count;
@@ -70,21 +68,19 @@ void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, C
 {
 	if (Random)
 	{
-		// iterate valid records, pick random ones until the limit is reached
-
 		std::vector<const CItemListRecord*> ValidRecords;
 		ValidRecords.reserve(Records.size());
 		U32 TotalWeight = 0;
 		for (const auto& Record : Records)
 		{
 			// TODO: can build a var storage for conditions, maybe outside, e.g. to pass a destination container ID
-			if (!Record.MaxCount || (!Record.ItemTemplateID && !Record.SubList) || !Flow::EvaluateCondition(Record.Condition, Session, nullptr)) continue;
+			if (!Flow::EvaluateCondition(Record.Condition, Session, nullptr)) continue;
 
 			ValidRecords.push_back(&Record);
 			TotalWeight += Record.RandomWeight;
 		}
 
-		while (TotalWeight /* && limits left */)
+		while (TotalWeight /*!!! && limits left */)
 		{
 			// TODO: weighted random helper
 			const auto Rnd = Math::RandomU32(0, TotalWeight - 1);
@@ -95,8 +91,10 @@ void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, C
 				WeightCounter += Record.RandomWeight;
 				if (WeightCounter > Rnd)
 				{
+					//!!!FIXME: what if all remaining records are empty! need to stop at this point! could check sum of MaxCount!? what if it overflows?
 					if (!EvaluateRecord(Record, Session, Out, Mul, Limits))
 					{
+						// The record is not able to generate more items within remaining limits
 						TotalWeight -= Record.RandomWeight;
 						ValidRecords.erase(It);
 					}
@@ -111,7 +109,7 @@ void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, C
 		for (const auto& Record : Records)
 		{
 			// TODO: can build a var storage for conditions, maybe outside, e.g. to pass a destination container ID
-			if (!Record.MaxCount || (!Record.ItemTemplateID && !Record.SubList) || !Flow::EvaluateCondition(Record.Condition, Session, nullptr)) continue;
+			if (!Flow::EvaluateCondition(Record.Condition, Session, nullptr)) continue;
 
 			EvaluateRecord(Record, Session, Out, Mul, Limits);
 
@@ -130,6 +128,35 @@ void CItemList::Evaluate(Game::CGameSession& Session, std::map<CStrID, U32>& Out
 	EvaluateInternal(Session, OutInternal, Mul, Limits);
 
 	//???return OutInternal without conversion?
+}
+//---------------------------------------------------------------------
+
+void CItemList::OnPostLoad(Resources::CResourceManager& ResMgr)
+{
+	//!!!TODO: if random list and has no limits, must limit itself to 1 record.
+	//!!!need to define what is "no limits". Zero?
+
+	for (auto& Record : Records)
+	{
+		if (Record.MinCount > Record.MaxCount)
+			std::swap(Record.MinCount, Record.MaxCount);
+
+		// Recursively load sub-lists
+		ResMgr.RegisterResource<CItemList>(Record.SubList);
+		if (Record.SubList)
+		{
+			Record.SubList->ValidateObject<CItemList>();
+
+			// Can't generate both item and sub-list from the single record
+			n_assert(!Record.ItemTemplateID);
+			Record.ItemTemplateID = {};
+		}
+		else if (!Record.ItemTemplateID)
+		{
+			Record.MinCount = 0;
+			Record.MaxCount = 0;
+		}
+	}
 }
 //---------------------------------------------------------------------
 
