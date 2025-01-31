@@ -12,6 +12,7 @@ namespace DEM::Game
 
 namespace DEM::RPG
 {
+struct CItemComponent;
 
 struct CItemListRecord
 {
@@ -21,7 +22,7 @@ struct CItemListRecord
 	U32                  RandomWeight = 1; // only for randomly evaluated lists
 	U32                  MinCount = 1;
 	U32                  MaxCount = 1;
-	bool                 SingleEval = false; // if true, a SubList will be evaluated once, and the result will be multiplied by Count
+	bool                 SingleEvaluation = false; // if true, a SubList will be evaluated once, and the result will be multiplied by Count
 };
 
 class CItemList : public ::Core::CObject
@@ -39,7 +40,15 @@ protected:
 		U32 Volume = 0;
 	};
 
-	void EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, U32>& Out, U32 Mul, CLimitAccumulator& Limits);
+	struct CItemRecord
+	{
+		Game::HEntity         EntityID;
+		const CItemComponent* pItem = nullptr;
+		U32                   Count = 0;
+	};
+
+	static bool EvaluateRecord(const CItemListRecord& Record, Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CLimitAccumulator& Limits);
+	void EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CLimitAccumulator& Limits);
 
 public:
 
@@ -50,15 +59,20 @@ public:
 	U32                          CostLimit = 0;
 	U32                          WeightLimit = 0;
 	U32                          VolumeLimit = 0;
-	bool                         Random = true; // true - choose random, false - choose one by one
+	bool                         Random = true; // true - choose randomy, false - add one by one
 
-	void Evaluate(Game::CGameSession& Session, std::map<CStrID, U32>& Out);
+	void Evaluate(Game::CGameSession& Session, std::map<CStrID, U32>& Out, U32 Mul = 1);
 
 	void OnPostLoad(Resources::CResourceManager& ResMgr)
 	{
-		// Recursively load sub-lists
+		//!!!TODO: if random list and has no limits, must limit itself to 1 record.
+
 		for (auto& Record : Records)
 		{
+			if (Record.MinCount > Record.MaxCount)
+				std::swap(Record.MinCount, Record.MaxCount);
+
+			// Recursively load sub-lists
 			ResMgr.RegisterResource<CItemList>(Record.SubList);
 			if (Record.SubList) Record.SubList->ValidateObject<CItemList>();
 		}
@@ -81,7 +95,7 @@ template<> constexpr auto RegisterMembers<RPG::CItemListRecord>()
 		DEM_META_MEMBER_FIELD(RPG::CItemListRecord, RandomWeight),
 		DEM_META_MEMBER_FIELD(RPG::CItemListRecord, MinCount),
 		DEM_META_MEMBER_FIELD(RPG::CItemListRecord, MaxCount),
-		DEM_META_MEMBER_FIELD(RPG::CItemListRecord, SingleEval)
+		DEM_META_MEMBER_FIELD(RPG::CItemListRecord, SingleEvaluation)
 	);
 }
 static_assert(CMetadata<RPG::CItemListRecord>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
