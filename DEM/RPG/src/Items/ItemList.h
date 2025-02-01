@@ -25,19 +25,19 @@ struct CItemListRecord
 	bool                 SingleEvaluation = false; // if true, a SubList will be evaluated once, and the result will be multiplied by Count
 };
 
+struct CItemLimits
+{
+	std::optional<U32>   Count;
+	std::optional<U32>   Cost;
+	std::optional<float> Weight;
+	std::optional<float> Volume;
+};
+
 class CItemList : public ::Core::CObject
 {
 	RTTI_CLASS_DECL(DEM::RPG::CItemList, ::Core::CObject);
 
 protected:
-
-	struct CItemLimits
-	{
-		U32 ItemCount = 0;
-		U32 Cost = 0;
-		U32 Weight = 0;
-		U32 Volume = 0;
-	};
 
 	struct CItemRecord
 	{
@@ -47,20 +47,17 @@ protected:
 	};
 
 	static bool EvaluateRecord(const CItemListRecord& Record, Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CItemLimits& Limits);
-	void EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CItemLimits& Limits);
+	void EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CItemLimits& Limits) const;
 
 public:
 
 	std::vector<CItemListRecord> Records;
 
 	std::optional<U32>           RecordLimit;
-	std::optional<U32>           ItemLimit;
-	std::optional<U32>           CostLimit;
-	std::optional<U32>           WeightLimit;
-	std::optional<U32>           VolumeLimit;
+	CItemLimits                  ItemLimit;
 	bool                         Random = true; // true - choose randomy, false - add one by one
 
-	void Evaluate(Game::CGameSession& Session, std::map<CStrID, U32>& Out, U32 Mul = 1);
+	void Evaluate(Game::CGameSession& Session, std::map<CStrID, U32>& Out, U32 Mul = 1) const;
 
 	void OnPostLoad(Resources::CResourceManager& ResMgr);
 };
@@ -86,6 +83,19 @@ template<> constexpr auto RegisterMembers<RPG::CItemListRecord>()
 }
 static_assert(CMetadata<RPG::CItemListRecord>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
 
+template<> constexpr auto RegisterClassName<RPG::CItemLimits>() { return "DEM::RPG::CItemLimits"; }
+template<> constexpr auto RegisterMembers<RPG::CItemLimits>()
+{
+	return std::make_tuple
+	(
+		DEM_META_MEMBER_FIELD(RPG::CItemLimits, Count),
+		DEM_META_MEMBER_FIELD(RPG::CItemLimits, Cost),
+		DEM_META_MEMBER_FIELD(RPG::CItemLimits, Weight),
+		DEM_META_MEMBER_FIELD(RPG::CItemLimits, Volume)
+	);
+}
+static_assert(CMetadata<RPG::CItemLimits>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
+
 template<> constexpr auto RegisterClassName<RPG::CItemList>() { return "DEM::RPG::CItemList"; }
 template<> constexpr auto RegisterMembers<RPG::CItemList>()
 {
@@ -94,9 +104,6 @@ template<> constexpr auto RegisterMembers<RPG::CItemList>()
 		DEM_META_MEMBER_FIELD(RPG::CItemList, Records),
 		DEM_META_MEMBER_FIELD(RPG::CItemList, RecordLimit),
 		DEM_META_MEMBER_FIELD(RPG::CItemList, ItemLimit),
-		DEM_META_MEMBER_FIELD(RPG::CItemList, CostLimit),
-		DEM_META_MEMBER_FIELD(RPG::CItemList, WeightLimit),
-		DEM_META_MEMBER_FIELD(RPG::CItemList, VolumeLimit),
 		DEM_META_MEMBER_FIELD(RPG::CItemList, Random)
 	);
 }
