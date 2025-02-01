@@ -17,7 +17,7 @@ struct CItemComponent;
 struct CItemListRecord
 {
 	CStrID               ItemTemplateID;
-	Resources::PResource SubList; // CItemList //!!!TODO: CItemList need a custom recursive loader!
+	Resources::PResource SubList; // CItemList //!!!TODO: need an inline asset loading support! ID vs CParams!
 	Flow::CConditionData Condition;
 	U32                  RandomWeight = 1; // only for randomly evaluated lists
 	U32                  MinCount = 1;

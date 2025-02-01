@@ -33,6 +33,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Conversation/TalkAbility.h
 	DEM/RPG/src/Conversation/TalkingComponent.h
 	DEM/RPG/src/Items/ArmorComponent.h
+	DEM/RPG/src/Items/CurrencyComponent.h
 	DEM/RPG/src/Items/EquipmentChangesComponent.h
 	DEM/RPG/src/Items/EquipmentComponent.h
 	DEM/RPG/src/Items/EquipmentScheme.h
@@ -47,6 +48,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Items/ItemUtils.h
 	DEM/RPG/src/Items/LockpickComponent.h
 	DEM/RPG/src/Items/PickItemAbility.h
+	DEM/RPG/src/Items/VendorComponent.h
 	DEM/RPG/src/Objects/LockComponent.h
 	DEM/RPG/src/Objects/LockpickAbility.h
 	DEM/RPG/src/Objects/OwnedComponent.h
@@ -84,6 +86,7 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/Items/ItemManager.cpp
 	DEM/RPG/src/Items/ItemUtils.cpp
 	DEM/RPG/src/Items/PickItemAbility.cpp
+	DEM/RPG/src/Items/VendorSystem.cpp
 	DEM/RPG/src/Objects/LockpickAbility.cpp
 	DEM/RPG/src/Quests/QuestManager.cpp
 	DEM/RPG/src/Social/SocialManager.cpp
