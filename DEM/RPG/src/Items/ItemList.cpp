@@ -17,6 +17,15 @@ static inline void BorrowMinOptional(std::optional<T>& Dest, std::optional<T>& S
 }
 //---------------------------------------------------------------------
 
+static inline bool IsLimitReached(const CItemLimits& Limits)
+{
+	return (Limits.Count && !*Limits.Count) ||
+		(Limits.Cost && !*Limits.Cost) ||
+		(Limits.Weight && *Limits.Weight < 0.0001f) ||
+		(Limits.Volume && *Limits.Volume < 0.0001f);
+}
+//---------------------------------------------------------------------
+
 bool CItemList::EvaluateRecord(const CItemListRecord& Record, Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CItemLimits& Limits)
 {
 	// TODO: can also use XdY+Z to implement non-linear distribution, but for a simple [min; max] it is harder to setup
@@ -49,6 +58,12 @@ bool CItemList::EvaluateRecord(const CItemListRecord& Record, Game::CGameSession
 		// Clamp the generated count to limits
 		if (Limits.Count)
 			Count = std::min(Count, *Limits.Count);
+		if (Limits.Cost && It->second.pItem->Price)
+			Count = std::min(Count, *Limits.Cost / It->second.pItem->Price);
+		if (Limits.Weight && It->second.pItem->Weight > 0.f)
+			Count = std::min(Count, static_cast<U32>(*Limits.Weight / It->second.pItem->Weight));
+		if (Limits.Volume && It->second.pItem->Volume > 0.f)
+			Count = std::min(Count, static_cast<U32>(*Limits.Volume / It->second.pItem->Volume));
 
 		// Discard a record if it isn't able to generate more items within limits
 		if (!Count) return false;
@@ -57,6 +72,9 @@ bool CItemList::EvaluateRecord(const CItemListRecord& Record, Game::CGameSession
 
 		// Subtract generated items from limits
 		if (Limits.Count) Limits.Count = *Limits.Count - Count;
+		if (Limits.Cost) Limits.Cost = *Limits.Cost - Count * It->second.pItem->Price;
+		if (Limits.Weight) Limits.Weight = *Limits.Weight - Count * It->second.pItem->Weight;
+		if (Limits.Volume) Limits.Volume = *Limits.Volume - Count * It->second.pItem->Volume;
 	}
 	else if (Record.SubList)
 	{
@@ -71,11 +89,17 @@ bool CItemList::EvaluateRecord(const CItemListRecord& Record, Game::CGameSession
 
 				// Apply parent limits to the sub-list
 				BorrowMinOptional(SubLimits.Count, Limits.Count);
+				BorrowMinOptional(SubLimits.Cost, Limits.Cost);
+				BorrowMinOptional(SubLimits.Weight, Limits.Weight);
+				BorrowMinOptional(SubLimits.Volume, Limits.Volume);
 
 				pSubList->EvaluateInternal(Session, Out, Multiplier, SubLimits);
 
-				// Return remaining limits to the parent where its limits were defined
+				// Return remaining part of borrowed limits to the parent
 				if (PreBorrowLimits.Count && SubLimits.Count) Limits.Count = *Limits.Count + *SubLimits.Count;
+				if (PreBorrowLimits.Cost && SubLimits.Cost) Limits.Cost = *Limits.Cost + *SubLimits.Cost;
+				if (PreBorrowLimits.Weight && SubLimits.Weight) Limits.Weight = *Limits.Weight + *SubLimits.Weight;
+				if (PreBorrowLimits.Volume && SubLimits.Volume) Limits.Volume = *Limits.Volume + *SubLimits.Volume;
 			}
 		}
 	}
@@ -91,6 +115,7 @@ void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, C
 
 	if (Random)
 	{
+		// Collect records that will participate in randomized selection
 		std::vector<const CItemListRecord*> ValidRecords;
 		ValidRecords.reserve(Records.size());
 		U32 TotalWeight = 0;
@@ -111,6 +136,7 @@ void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, C
 			NonEmptyRecords += static_cast<size_t>(Record.MaxCount > 0);
 		}
 
+		// Select records randomly until the limit is reached or all records are unable to generate items
 		while (NonEmptyRecords)
 		{
 			const auto Rnd = Math::RandomU32(0, TotalWeight - 1);
@@ -134,12 +160,12 @@ void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, C
 			}
 
 			if (RecordLimit && --RemainingRecords == 0) break;
-
-			if (Limits.Count && !*Limits.Count) break;
+			if (IsLimitReached(Limits)) break;
 		}
 	}
 	else
 	{
+		// Scan the whole list once, break if the limit is reached
 		for (const auto& Record : Records)
 		{
 			// TODO: can build a var storage for conditions, maybe outside, e.g. to pass a destination container ID
@@ -148,8 +174,7 @@ void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, C
 			EvaluateRecord(Record, Session, Out, Mul, Limits);
 
 			if (RecordLimit && --RemainingRecords == 0) break;
-
-			if (Limits.Count && !*Limits.Count) break;
+			if (IsLimitReached(Limits)) break;
 		}
 	}
 }
@@ -189,6 +214,7 @@ void CItemList::OnPostLoad(Resources::CResourceManager& ResMgr)
 		}
 		else if (!Record.ItemTemplateID)
 		{
+			// Simplify checks by ensuring that empty records always have zero MaxCount
 			Record.MinCount = 0;
 			Record.MaxCount = 0;
 		}
