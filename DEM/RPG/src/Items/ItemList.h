@@ -31,9 +31,8 @@ class CItemList : public ::Core::CObject
 
 protected:
 
-	struct CLimitAccumulator
+	struct CItemLimits
 	{
-		U32 RecordCount = 0;
 		U32 ItemCount = 0;
 		U32 Cost = 0;
 		U32 Weight = 0;
@@ -47,18 +46,18 @@ protected:
 		U32                   Count = 0;
 	};
 
-	static bool EvaluateRecord(const CItemListRecord& Record, Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CLimitAccumulator& Limits);
-	void EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CLimitAccumulator& Limits);
+	static bool EvaluateRecord(const CItemListRecord& Record, Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CItemLimits& Limits);
+	void EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CItemLimits& Limits);
 
 public:
 
 	std::vector<CItemListRecord> Records;
 
-	U32                          RecordLimit = 0;
-	U32                          ItemLimit = 0;
-	U32                          CostLimit = 0;
-	U32                          WeightLimit = 0;
-	U32                          VolumeLimit = 0;
+	std::optional<U32>           RecordLimit;
+	std::optional<U32>           ItemLimit;
+	std::optional<U32>           CostLimit;
+	std::optional<U32>           WeightLimit;
+	std::optional<U32>           VolumeLimit;
 	bool                         Random = true; // true - choose randomy, false - add one by one
 
 	void Evaluate(Game::CGameSession& Session, std::map<CStrID, U32>& Out, U32 Mul = 1);

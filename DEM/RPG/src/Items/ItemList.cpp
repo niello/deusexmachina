@@ -7,10 +7,8 @@
 namespace DEM::RPG
 {
 
-bool CItemList::EvaluateRecord(const CItemListRecord& Record, Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CLimitAccumulator& Limits)
+bool CItemList::EvaluateRecord(const CItemListRecord& Record, Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CItemLimits& Limits)
 {
-	++Limits.RecordCount;
-
 	// TODO: can also use XdY+Z to implement non-linear distribution, but for a simple [min; max] it is harder to setup
 	const auto Count = ((Record.MinCount < Record.MaxCount) ? Math::RandomU32(Record.MinCount, Record.MaxCount) : Record.MaxCount) * Mul;
 	if (!Count) return true;
@@ -50,10 +48,10 @@ bool CItemList::EvaluateRecord(const CItemListRecord& Record, Game::CGameSession
 		{
 			const auto Evaluations = Record.SingleEvaluation ? 1 : Count;
 			const auto Multiplier = Record.SingleEvaluation ? Count : 1;
-			for (U32 i = 0; i < Count; ++i)
+			for (U32 i = 0; i < Evaluations; ++i)
 			{
-				CLimitAccumulator SubLimits;
-				pSubList->EvaluateInternal(Session, Out, 1, SubLimits);
+				CItemLimits SubLimits;
+				pSubList->EvaluateInternal(Session, Out, Multiplier, SubLimits);
 
 				//!!!add to Limits, check! what if generated more? should have clamped local limits with global?!
 			}
@@ -64,25 +62,34 @@ bool CItemList::EvaluateRecord(const CItemListRecord& Record, Game::CGameSession
 }
 //---------------------------------------------------------------------
 
-void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CLimitAccumulator& Limits)
+void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CItemLimits& Limits)
 {
+	U32 RemainingRecords = std::max<U32>(1, RecordLimit.value_or(std::numeric_limits<U32>::max()));
+
 	if (Random)
 	{
 		std::vector<const CItemListRecord*> ValidRecords;
 		ValidRecords.reserve(Records.size());
 		U32 TotalWeight = 0;
+		size_t NonEmptyRecords = 0;
 		for (const auto& Record : Records)
 		{
+			// Records with zero weight should never be chosen. This can be used for disabling records temporarily in a config.
+			if (!Record.RandomWeight) continue;
+
+			// When we are not limited by the record count, there is no reason to process empty records, it would only slow things down
+			if (!RecordLimit && !Record.MaxCount) continue;
+
 			// TODO: can build a var storage for conditions, maybe outside, e.g. to pass a destination container ID
 			if (!Flow::EvaluateCondition(Record.Condition, Session, nullptr)) continue;
 
 			ValidRecords.push_back(&Record);
 			TotalWeight += Record.RandomWeight;
+			NonEmptyRecords += static_cast<size_t>(Record.MaxCount > 0);
 		}
 
-		while (TotalWeight /*!!! && limits left */)
+		while (NonEmptyRecords)
 		{
-			// TODO: weighted random helper
 			const auto Rnd = Math::RandomU32(0, TotalWeight - 1);
 			U32 WeightCounter = 0;
 			for (auto It = ValidRecords.begin(); It != ValidRecords.end(); ++It)
@@ -91,17 +98,21 @@ void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, C
 				WeightCounter += Record.RandomWeight;
 				if (WeightCounter > Rnd)
 				{
-					//!!!FIXME: what if all remaining records are empty! need to stop at this point! could check sum of MaxCount!? what if it overflows?
 					if (!EvaluateRecord(Record, Session, Out, Mul, Limits))
 					{
 						// The record is not able to generate more items within remaining limits
 						TotalWeight -= Record.RandomWeight;
+						NonEmptyRecords -= static_cast<size_t>(Record.MaxCount > 0);
 						ValidRecords.erase(It);
 					}
 
 					break;
 				}
 			}
+
+			if (RecordLimit && --RemainingRecords == 0) break;
+
+			// check limits
 		}
 	}
 	else
@@ -113,6 +124,8 @@ void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, C
 
 			EvaluateRecord(Record, Session, Out, Mul, Limits);
 
+			if (RecordLimit && --RemainingRecords == 0) break;
+
 			//if (Limits.RecordCount >= RecordLimit || Limits.ItemCount >= ItemLimit || 
 			// check limits, if any is recahed, stop
 		}
@@ -122,7 +135,7 @@ void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, C
 
 void CItemList::Evaluate(Game::CGameSession& Session, std::map<CStrID, U32>& Out, U32 Mul)
 {
-	CLimitAccumulator Limits;
+	CItemLimits Limits;
 
 	std::map<CStrID, CItemRecord> OutInternal;
 	EvaluateInternal(Session, OutInternal, Mul, Limits);
@@ -133,8 +146,11 @@ void CItemList::Evaluate(Game::CGameSession& Session, std::map<CStrID, U32>& Out
 
 void CItemList::OnPostLoad(Resources::CResourceManager& ResMgr)
 {
-	//!!!TODO: if random list and has no limits, must limit itself to 1 record.
-	//!!!need to define what is "no limits". Zero?
+	if (Random)
+	{
+		//!!!TODO: if random list and has no limits, must limit itself to 1 record.
+		//!!!need to define what is "no limits". Zero?
+	}
 
 	for (auto& Record : Records)
 	{
