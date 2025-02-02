@@ -187,7 +187,9 @@ void CItemList::Evaluate(Game::CGameSession& Session, std::map<CStrID, U32>& Out
 	std::map<CStrID, CItemRecord> OutInternal;
 	EvaluateInternal(Session, OutInternal, Mul, Limits);
 
-	//???return OutInternal without conversion?
+	//???TODO: return OutInternal without conversion? cheaper and more info for the caller!
+	for (const auto& [ItemID, ItemRecord] : OutInternal)
+		Out.emplace(ItemID, ItemRecord.Count);
 }
 //---------------------------------------------------------------------
 

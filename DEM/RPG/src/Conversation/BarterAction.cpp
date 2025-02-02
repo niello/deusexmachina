@@ -16,6 +16,7 @@ void CBarterAction::OnStart(Game::CGameSession& Session)
 
 void CBarterAction::Update(Flow::CUpdateContext& Ctx)
 {
+	// TODO: to open barter here we must access the current UI context. Probably in must be accessed from CGameSession, e.g. with a high level UI manager feature.
 	NOT_IMPLEMENTED_MSG("Barter");
 
 	// TODO: here could also react on foreign currencies and unique items
