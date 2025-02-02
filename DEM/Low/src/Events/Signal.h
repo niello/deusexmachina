@@ -34,11 +34,12 @@ protected:
 		virtual void Disconnect() override { Slot = nullptr; Connected = false; }
 	};
 
-	PNode Slots;
-	PNode Referenced;
-	PNode Pool;
+	thread_local static inline PNode Pool;
+	thread_local static inline PNode Referenced;
 
-	void PrepareNode()
+	PNode Slots;
+
+	static PNode AllocateNode()
 	{
 		// Try to reuse disconnected nodes no longer referenced by connection objects
 		if (!Pool)
@@ -84,11 +85,6 @@ protected:
 			}
 		}
 
-		// Try to find and reuse disconnected nodes from Slots
-		// TODO PERF: if this is slow on long lists can stop on first N found nodes (and remember start pos for next GC?)
-		//???CollectGarbage(count N)?!
-		if (!Pool) CollectGarbage();
-
 		PNode Node;
 		if (Pool)
 		{
@@ -96,13 +92,14 @@ protected:
 			Pool = std::move(Node->Next);
 		}
 		else
+		{
 			Node = std::make_shared<CNode>();
+		}
 
-		Node->Next = std::move(Slots);
-		Slots = std::move(Node);
+		return Node;
 	}
 
-	void CollectNode(PNode& Node)
+	static void FreeNode(PNode& Node)
 	{
 		// Extract the node from its current chain
 		PNode FreeNode = std::move(Node);
@@ -119,6 +116,15 @@ protected:
 
 public:
 
+	static void ReleaseMemory()
+	{
+		while (Referenced)
+			Referenced = std::move(Referenced->Next);
+
+		while (Pool)
+			Pool = std::move(Pool->Next);
+	}
+
 	CSignal() = default;
 	CSignal(const CSignal&) = delete;
 	CSignal(CSignal&&) noexcept = default;
@@ -129,39 +135,32 @@ public:
 		// NB: turn recursion into loop to prevent stack overflow when too many slots exist
 		while (Slots)
 			Slots = std::move(Slots->Next);
-
-		ReleaseMemory();
 	}
 
 	template<typename F>
 	[[nodiscard]] CConnection Subscribe(F f)
 	{
-		PrepareNode();
-		Slots->Slot = std::move(f);
-		Slots->Connected = true;
+		auto Node = AllocateNode();
+		Node->Slot = std::move(f);
+		Node->Connected = true;
+		Node->Next = std::move(Slots);
+		Slots = std::move(Node);
 		return CConnection(Slots);
 	}
 
 	template<typename F>
 	void SubscribeAndForget(F f)
 	{
-		PrepareNode();
-		Slots->Slot = std::move(f);
-		Slots->Connected = true;
+		auto Node = AllocateNode();
+		Node->Slot = std::move(f);
+		Node->Connected = true;
+		Node->Next = std::move(Slots);
+		Slots = std::move(Node);
 	}
 
 	void UnsubscribeAll()
 	{
-		while (Slots) CollectNode(Slots);
-	}
-
-	void ReleaseMemory()
-	{
-		while (Referenced)
-			Referenced = std::move(Referenced->Next);
-
-		while (Pool)
-			Pool = std::move(Pool->Next);
+		while (Slots) FreeNode(Slots);
 	}
 
 	void CollectGarbage()
@@ -178,7 +177,7 @@ public:
 			else
 			{
 				auto& SharedCurr = pPrev ? pPrev->Next : Slots;
-				CollectNode(SharedCurr);
+				FreeNode(SharedCurr);
 				pCurr = SharedCurr.get();
 			}
 		}
@@ -214,7 +213,7 @@ public:
 			}
 
 			auto& SharedCurr = pPrev ? pPrev->Next : Slots;
-			CollectNode(SharedCurr);
+			FreeNode(SharedCurr);
 			pCurr = SharedCurr.get();
 		}
 	}
