@@ -12,7 +12,8 @@ struct CVendorComponent
 {
 	Game::HEntity        ContainerID;
 	Resources::PResource ItemGeneratorAsset; // CItemList
-	// last gen timestamp in world time, default 0
+	U32                  RegenerationPeriod = 0;
+	U32                  LastGenerationTimestamp = 0;
 };
 
 }
@@ -26,7 +27,9 @@ template<> constexpr auto RegisterMembers<RPG::CVendorComponent>()
 	return std::make_tuple
 	(
 		DEM_META_MEMBER_FIELD(RPG::CVendorComponent, ContainerID),
-		DEM_META_MEMBER_FIELD(RPG::CVendorComponent, ItemGeneratorAsset)
+		DEM_META_MEMBER_FIELD(RPG::CVendorComponent, ItemGeneratorAsset),
+		DEM_META_MEMBER_FIELD(RPG::CVendorComponent, RegenerationPeriod),
+		DEM_META_MEMBER_FIELD(RPG::CVendorComponent, LastGenerationTimestamp)
 	);
 }
 static_assert(CMetadata<RPG::CVendorComponent>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
