@@ -90,6 +90,7 @@ bool CanMergeItems(Game::HEntity ProtoID, const CItemStackComponent* pDestStack)
 bool CanMergeStacks(const CItemStackComponent& SrcStack, const CItemStackComponent* pDestStack);
 size_t GetFirstEmptySlotIndex(std::vector<Game::HEntity>& Collection);
 void ShrinkItemCollection(std::vector<Game::HEntity>& Collection);
+void RemoveEmptySlots(std::vector<Game::HEntity>& Collection);
 
 U32 AddItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, Game::HEntity ItemProtoID, U32 Count, bool Merge = true);
 U32 AddItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity ItemProtoID, U32 Count, bool Merge = true);

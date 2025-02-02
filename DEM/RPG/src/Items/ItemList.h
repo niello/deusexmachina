@@ -33,21 +33,21 @@ struct CItemLimits
 	std::optional<float> Volume;
 };
 
+struct CItemStackData
+{
+	Game::HEntity         EntityID;
+	const CItemComponent* pItem = nullptr;
+	U32                   Count = 0;
+};
+
 class CItemList : public ::Core::CObject
 {
 	RTTI_CLASS_DECL(DEM::RPG::CItemList, ::Core::CObject);
 
 protected:
 
-	struct CItemRecord
-	{
-		Game::HEntity         EntityID;
-		const CItemComponent* pItem = nullptr;
-		U32                   Count = 0;
-	};
-
-	static bool EvaluateRecord(const CItemListRecord& Record, Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CItemLimits& Limits);
-	void EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CItemLimits& Limits) const;
+	static bool EvaluateRecord(const CItemListRecord& Record, Game::CGameSession& Session, std::map<CStrID, CItemStackData>& Out, U32 Mul, CItemLimits& Limits);
+	void EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, CItemStackData>& Out, U32 Mul, CItemLimits& Limits) const;
 
 public:
 
@@ -57,7 +57,7 @@ public:
 	CItemLimits                  ItemLimit;
 	bool                         Random = true; // true - choose randomy, false - add one by one
 
-	void Evaluate(Game::CGameSession& Session, std::map<CStrID, U32>& Out, U32 Mul = 1) const;
+	void Evaluate(Game::CGameSession& Session, std::map<CStrID, CItemStackData>& Out, U32 Mul = 1) const;
 
 	void OnPostLoad(Resources::CResourceManager& ResMgr);
 };

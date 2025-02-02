@@ -206,6 +206,7 @@ T* CGameWorld::AddComponent(HEntity EntityID)
 {
 	if (!EntityID || !_Entities.GetValue(EntityID)) return nullptr;
 	auto pStorage = FindComponentStorage<T>();
+	n_assert2_dbg(pStorage, "Component is not registered!");
 	return pStorage ? pStorage->Add(EntityID) : nullptr;
 }
 //---------------------------------------------------------------------
@@ -250,6 +251,7 @@ T* CGameWorld::FindComponent(HEntity EntityID) const
 
 	// NB: explicit storage type is important here because access to the const storage is optimized
 	TComponentStoragePtr<T> pStorage = FindComponentStorage<just_type_t<T>>();
+	n_assert2_dbg(pStorage, "Component is not registered!");
 	return pStorage ? pStorage->Find(EntityID) : nullptr;
 }
 //---------------------------------------------------------------------

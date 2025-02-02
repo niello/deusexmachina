@@ -8,6 +8,8 @@
 namespace DEM::RPG
 {
 
+struct CGeneratedComponent {}; // TODO: can move to a separate header, "generated" flag is pretty universal, can be reused e.g. with enemies
+
 struct CVendorComponent
 {
 	Game::HEntity        ContainerID;

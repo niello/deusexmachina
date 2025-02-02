@@ -393,6 +393,12 @@ void ShrinkItemCollection(std::vector<Game::HEntity>& Collection)
 }
 //---------------------------------------------------------------------
 
+void RemoveEmptySlots(std::vector<Game::HEntity>& Collection)
+{
+	Collection.erase(std::remove(Collection.begin(), Collection.end(), Game::HEntity{}), Collection.end());
+}
+//---------------------------------------------------------------------
+
 // Returns a number of items actually added
 U32 AddItemsToContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, Game::HEntity ItemProtoID, U32 Count, bool Merge)
 {

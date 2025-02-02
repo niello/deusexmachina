@@ -26,7 +26,7 @@ static inline bool IsLimitReached(const CItemLimits& Limits)
 }
 //---------------------------------------------------------------------
 
-bool CItemList::EvaluateRecord(const CItemListRecord& Record, Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CItemLimits& Limits)
+bool CItemList::EvaluateRecord(const CItemListRecord& Record, Game::CGameSession& Session, std::map<CStrID, CItemStackData>& Out, U32 Mul, CItemLimits& Limits)
 {
 	// TODO: can also use XdY+Z to implement non-linear distribution, but for a simple [min; max] it is harder to setup
 	U32 Count = ((Record.MinCount < Record.MaxCount) ? Math::RandomU32(Record.MinCount, Record.MaxCount) : Record.MaxCount) * Mul;
@@ -52,7 +52,7 @@ bool CItemList::EvaluateRecord(const CItemListRecord& Record, Game::CGameSession
 			const auto* pItem = pWorld->FindComponent<const CItemComponent>(ProtoID);
 			if (!pItem) return false;
 
-			It = Out.emplace(Record.ItemTemplateID, CItemRecord{ ProtoID, pItem, 0 }).first;
+			It = Out.emplace(Record.ItemTemplateID, CItemStackData{ ProtoID, pItem, 0 }).first;
 		}
 
 		// Clamp the generated count to limits
@@ -108,7 +108,7 @@ bool CItemList::EvaluateRecord(const CItemListRecord& Record, Game::CGameSession
 }
 //---------------------------------------------------------------------
 
-void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, CItemRecord>& Out, U32 Mul, CItemLimits& Limits) const
+void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, CItemStackData>& Out, U32 Mul, CItemLimits& Limits) const
 {
 	// Record limit is special, it is always local for the current list and neither affects nor is affected by sub-list limits
 	U32 RemainingRecords = std::max<U32>(1, RecordLimit.value_or(std::numeric_limits<U32>::max()));
@@ -180,16 +180,10 @@ void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, C
 }
 //---------------------------------------------------------------------
 
-void CItemList::Evaluate(Game::CGameSession& Session, std::map<CStrID, U32>& Out, U32 Mul) const
+void CItemList::Evaluate(Game::CGameSession& Session, std::map<CStrID, CItemStackData>& Out, U32 Mul) const
 {
 	auto Limits = ItemLimit;
-
-	std::map<CStrID, CItemRecord> OutInternal;
-	EvaluateInternal(Session, OutInternal, Mul, Limits);
-
-	//???TODO: return OutInternal without conversion? cheaper and more info for the caller!
-	for (const auto& [ItemID, ItemRecord] : OutInternal)
-		Out.emplace(ItemID, ItemRecord.Count);
+	EvaluateInternal(Session, Out, Mul, Limits);
 }
 //---------------------------------------------------------------------
 
