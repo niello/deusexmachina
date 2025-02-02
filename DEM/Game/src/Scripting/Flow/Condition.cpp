@@ -256,7 +256,7 @@ bool CLuaStringCondition::Evaluate(const CConditionContext& Ctx) const
 
 	//???SOL: why nil can't be negated? https://www.lua.org/pil/3.3.html
 	const auto Type = Result.get_type();
-	return (Type != sol::type::none && Type != sol::type::nil && Result);
+	return (Type == sol::type::userdata) || (Type != sol::type::none && Type != sol::type::nil && Result);
 }
 //---------------------------------------------------------------------
 
