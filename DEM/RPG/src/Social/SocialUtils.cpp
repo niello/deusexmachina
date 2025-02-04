@@ -9,7 +9,7 @@ namespace DEM::RPG
 {
 
 // NB: ToCharacter is considered being a party member now! Can make it optional and skip party-only logic for NPC->NPC.
-float GetDisposition(Game::CGameSession& Session, Game::HEntity FromCharacter, Game::HEntity ToCharacter)
+float GetDisposition(const Game::CGameSession& Session, Game::HEntity FromCharacter, Game::HEntity ToCharacter)
 {
 	constexpr float MaxDisposition = 100.f;
 	if (FromCharacter == ToCharacter) return MaxDisposition;
@@ -97,6 +97,35 @@ float GetDisposition(Game::CGameSession& Session, Game::HEntity FromCharacter, G
 	}
 
 	return std::clamp(Disposition, -MaxDisposition, MaxDisposition);
+}
+//---------------------------------------------------------------------
+
+bool IsInFaction(const Game::CGameSession& Session, Game::HEntity CharacterID, CStrID FactionID)
+{
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return false;
+
+	auto* pSocial = pWorld->FindComponent<const CSocialComponent>(CharacterID);
+	return pSocial && pSocial->Factions.find(FactionID) != pSocial->Factions.cend();
+}
+//---------------------------------------------------------------------
+
+bool IsPartyMember(const Game::CGameSession& Session, Game::HEntity CharacterID)
+{
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return false;
+
+	auto* pSocialMgr = Session.FindFeature<CSocialManager>();
+	if (!pSocialMgr || pSocialMgr->GetPartyFactions().empty()) return false;
+
+	auto* pSocial = pWorld->FindComponent<const CSocialComponent>(CharacterID);
+	if (!pSocial) return false;
+
+	for (const CStrID FactionID : pSocialMgr->GetPartyFactions())
+		if (pSocial->Factions.find(FactionID) != pSocial->Factions.cend())
+			return true;
+
+	return false;
 }
 //---------------------------------------------------------------------
 

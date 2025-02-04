@@ -38,7 +38,7 @@ private:
 	Game::CGameSession& _Session;
 
 	std::map<CStrID, CFactionInfo> _Factions;
-	std::map<CStrID, U32>          _PartyTraits;
+	std::map<CStrID, U32>          _PartyTraits;   // Counters for various types of behaviour expressed by party members (Kind, Aggressive, Honest etc)
 	std::set<CStrID>               _PartyFactions; //???need here? 'Party' by default but can add more by joining factions or using disguise.
 	// balance constants (here or load everything to global/session vars?)
 
@@ -50,7 +50,7 @@ public:
 	const CFactionInfo* FindFaction(CStrID ID) const;
 	void                AddPartyFaction(CStrID ID) { _PartyFactions.insert(ID); }
 	U32                 GetPartyTrait(CStrID ID) const;
-	const auto&         GetPartyFactions() const { return _PartyFactions; }
+	const auto&         GetPartyFactions() const { return _PartyFactions; } //???or need a single Party faction and assign additional factions to characters?
 };
 
 }

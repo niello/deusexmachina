@@ -2,10 +2,9 @@
 #include <Game/Interaction/AbilityInstance.h>
 #include <Game/Interaction/Zone.h>
 #include <Game/ECS/GameWorld.h>
-#include <Physics/RigidBodyComponent.h>
 #include <Character/StatsComponent.h>
+#include <Items/ItemComponent.h> // currency
 #include <Items/ItemStackComponent.h>
-#include <Scene/SceneComponent.h>
 #include <Items/ItemUtils.h>
 
 namespace DEM::RPG
@@ -96,15 +95,23 @@ Game::EActionStatus CPickItemAbility::OnUpdate(Game::CGameSession& Session, Game
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return Game::EActionStatus::Failed;
 
+	const auto StackID = Instance.Targets[0].Entity;
+
 	// TODO: if owned by another faction, create crime stimulus/signal based on Steal skill check,
 	// it may even interrupt item picking (in OnStart()?)
 
 	// TODO: equip if a) default equipping makes sense, like for weapons b) inventory is full but equipment slot isn't
 	// NB: equipped things ignore volume limitations, but not weight
 
-	const auto [AddedCount, MovedCompletely] = MoveItemsToContainer(*pWorld, Instance.Actor, Instance.Targets[0].Entity);
+	if (TryPickCurrency(Session, Instance.Actor, StackID))
+	{
+		RemoveItemVisualsFromLocation(*pWorld, StackID);
+		return Game::EActionStatus::Succeeded;
+	}
+
+	const auto [AddedCount, MovedCompletely] = MoveItemsToContainer(*pWorld, Instance.Actor, StackID);
 	if (MovedCompletely)
-		RemoveItemVisualsFromLocation(*pWorld, Instance.Targets[0].Entity);
+		RemoveItemVisualsFromLocation(*pWorld, StackID);
 
 	return AddedCount ? Game::EActionStatus::Succeeded : Game::EActionStatus::Failed;
 }

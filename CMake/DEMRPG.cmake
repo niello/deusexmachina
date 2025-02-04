@@ -34,7 +34,6 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Conversation/TalkAbility.h
 	DEM/RPG/src/Conversation/TalkingComponent.h
 	DEM/RPG/src/Items/ArmorComponent.h
-	DEM/RPG/src/Items/CurrencyComponent.h
 	DEM/RPG/src/Items/EquipmentChangesComponent.h
 	DEM/RPG/src/Items/EquipmentComponent.h
 	DEM/RPG/src/Items/EquipmentScheme.h

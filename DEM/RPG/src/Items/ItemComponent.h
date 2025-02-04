@@ -19,6 +19,8 @@ struct CItemComponent
 	bool        AlwaysShowCount = false;
 };
 
+struct CCurrencyComponent {}; // A simple flag component for currencies (items with an always stable price)
+
 }
 
 namespace DEM::Meta

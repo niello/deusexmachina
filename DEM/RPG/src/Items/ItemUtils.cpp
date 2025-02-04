@@ -8,6 +8,7 @@
 #include <Items/ItemManager.h>
 #include <Objects/LockComponent.h>
 #include <Combat/WeaponComponent.h>
+#include <Social/SocialUtils.h>
 #include <Game/GameLevel.h>
 #include <Game/GameSession.h>
 #include <Scene/SceneComponent.h>
@@ -2121,6 +2122,20 @@ bool HasItems(const Game::CGameWorld& World, Game::HEntity EntityID, Game::HEnti
 	}
 
 	return false;
+}
+//---------------------------------------------------------------------
+
+bool TryPickCurrency(const Game::CGameSession& Session, Game::HEntity CharacterID, Game::HEntity StackID)
+{
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return false;
+
+	if (!FindItemComponent<const CCurrencyComponent>(*pWorld, StackID)) return false;
+
+	if (!IsPartyMember(Session, CharacterID)) return false;
+
+	auto* pItemMgr = Session.FindFeature<CItemManager>();
+	return pItemMgr && MoveWholeStackToContainer(*pWorld, pItemMgr->GetPartyPouch(), StackID);
 }
 //---------------------------------------------------------------------
 

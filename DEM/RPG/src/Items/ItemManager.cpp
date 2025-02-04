@@ -1,6 +1,7 @@
 #include "ItemManager.h"
 #include <Items/ItemComponent.h>
 #include <Items/ItemStackComponent.h>
+#include <Items/ItemContainerComponent.h>
 #include <Items/ItemUtils.h>
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
@@ -69,6 +70,21 @@ Game::HEntity CItemManager::CreateStack(CStrID ItemID, U32 Count, CStrID LevelID
 	else ProtoEntity = It->second;
 
 	return CreateItemStack(*pWorld, ProtoEntity, Count, LevelID);
+}
+//---------------------------------------------------------------------
+
+Game::HEntity CItemManager::GetPartyPouch()
+{
+	if (!_PartyPouch)
+	{
+		if (auto* pWorld = _Session.FindFeature<Game::CGameWorld>())
+		{
+			_PartyPouch = pWorld->CreateEntity(CStrID::Empty);
+			pWorld->AddComponent<CItemContainerComponent>(_PartyPouch);
+		}
+	}
+
+	return _PartyPouch;
 }
 //---------------------------------------------------------------------
 

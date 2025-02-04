@@ -11,7 +11,9 @@ namespace DEM::Game
 namespace DEM::RPG
 {
 
-float GetDisposition(Game::CGameSession& Session, Game::HEntity FromCharacter, Game::HEntity ToCharacter);
+float GetDisposition(const Game::CGameSession& Session, Game::HEntity FromCharacter, Game::HEntity ToCharacter);
+bool  IsInFaction(const Game::CGameSession& Session, Game::HEntity CharacterID, CStrID FactionID);
+bool  IsPartyMember(const Game::CGameSession& Session, Game::HEntity CharacterID);
 
 }
 

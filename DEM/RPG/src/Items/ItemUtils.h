@@ -154,6 +154,8 @@ std::pair<Game::HEntity, EItemStorage> ReinsertWithoutSplit(Game::CGameWorld& Wo
 
 bool HasItems(const Game::CGameWorld& World, Game::HEntity EntityID, Game::HEntity ItemProtoID, U32 Count);
 
+bool TryPickCurrency(const Game::CGameSession& Session, Game::HEntity CharacterID, Game::HEntity StackID);
+
 // TODO: move to appropriate module
 bool TryUnlockObject(const Game::CGameSession& Session, Game::HEntity Object, Game::HEntity Actor);
 

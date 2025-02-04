@@ -22,6 +22,7 @@ private:
 
 	Game::CGameSession&                       _Session;
 	std::unordered_map<CStrID, Game::HEntity> _Templates;
+	Game::HEntity                             _PartyPouch; // A place where currencies gathered by party are stored
 
 public:
 
@@ -31,6 +32,7 @@ public:
 
 	Game::HEntity FindPrototypeEntity(CStrID ItemID) const;
 	Game::HEntity CreateStack(CStrID ItemID, U32 Count, CStrID LevelID);
+	Game::HEntity GetPartyPouch();
 };
 
 }
