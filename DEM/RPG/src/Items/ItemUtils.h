@@ -29,7 +29,8 @@ enum class EItemStorage
 	World,     // A stack is located as a separate object in a game scene
 	Container, // A stack is stored in CItemContainerComponent
 	QuickSlot, // A stack is stored in one of quick slots inside CEquipmentComponent
-	Equipment  // A stack is equipped to one of equipment slots inside CEquipmentComponent
+	Equipment, // A stack is equipped to one of equipment slots inside CEquipmentComponent
+	Pouch      // A stack is stored in a party pouch, a special CItemContainerComponent
 };
 
 struct CContainerStats

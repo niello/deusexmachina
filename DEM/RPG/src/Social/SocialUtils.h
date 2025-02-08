@@ -10,6 +10,7 @@ namespace DEM::Game
 
 namespace DEM::RPG
 {
+constexpr float MAX_DISPOSITION = 100.f;
 
 float GetDisposition(const Game::CGameSession& Session, Game::HEntity FromCharacter, Game::HEntity ToCharacter);
 bool  IsInFaction(const Game::CGameSession& Session, Game::HEntity CharacterID, CStrID FactionID);

@@ -11,8 +11,7 @@ namespace DEM::RPG
 // NB: ToCharacter is considered being a party member now! Can make it optional and skip party-only logic for NPC->NPC.
 float GetDisposition(const Game::CGameSession& Session, Game::HEntity FromCharacter, Game::HEntity ToCharacter)
 {
-	constexpr float MaxDisposition = 100.f;
-	if (FromCharacter == ToCharacter) return MaxDisposition;
+	if (FromCharacter == ToCharacter) return MAX_DISPOSITION;
 
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return 0.f;
@@ -96,7 +95,7 @@ float GetDisposition(const Game::CGameSession& Session, Game::HEntity FromCharac
 			Disposition += FactionMembershipReputation * GoodReputationCoeff * It->second;
 	}
 
-	return std::clamp(Disposition, -MaxDisposition, MaxDisposition);
+	return std::clamp(Disposition, -MAX_DISPOSITION, MAX_DISPOSITION);
 }
 //---------------------------------------------------------------------
 

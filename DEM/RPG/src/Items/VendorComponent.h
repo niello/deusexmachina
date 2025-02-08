@@ -14,8 +14,11 @@ struct CVendorComponent
 {
 	Game::HEntity        ContainerID;
 	Resources::PResource ItemGeneratorAsset; // CItemList
+	CStrID               ScriptAssetID;
 	U32                  RegenerationPeriod = 0;
 	U32                  LastGenerationTimestamp = 0;
+	std::optional<float> BuyFromVendorCoeff;
+	std::optional<float> SellToVendorCoeff;
 };
 
 }
@@ -30,8 +33,11 @@ template<> constexpr auto RegisterMembers<RPG::CVendorComponent>()
 	(
 		DEM_META_MEMBER_FIELD(RPG::CVendorComponent, ContainerID),
 		DEM_META_MEMBER_FIELD(RPG::CVendorComponent, ItemGeneratorAsset),
+		DEM_META_MEMBER_FIELD(RPG::CVendorComponent, ScriptAssetID),
 		DEM_META_MEMBER_FIELD(RPG::CVendorComponent, RegenerationPeriod),
-		DEM_META_MEMBER_FIELD(RPG::CVendorComponent, LastGenerationTimestamp)
+		DEM_META_MEMBER_FIELD(RPG::CVendorComponent, LastGenerationTimestamp),
+		DEM_META_MEMBER_FIELD(RPG::CVendorComponent, BuyFromVendorCoeff),
+		DEM_META_MEMBER_FIELD(RPG::CVendorComponent, SellToVendorCoeff)
 	);
 }
 static_assert(CMetadata<RPG::CVendorComponent>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?

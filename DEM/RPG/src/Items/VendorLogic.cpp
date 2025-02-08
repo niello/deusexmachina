@@ -1,3 +1,4 @@
+#include "VendorLogic.h"
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
 #include <Items/ItemComponent.h>
@@ -7,8 +8,9 @@
 #include <Items/ItemList.h>
 #include <Items/ItemManager.h>
 #include <Items/ItemUtils.h>
-
-// A set of ECS systems required for vendor logic (shop item regeneration etc)
+#include <Social/SocialUtils.h>
+#include <Character/SocialComponent.h>
+#include <Character/SkillsComponent.h> // TODO: or use a skill check utility!
 
 namespace DEM::RPG
 {
@@ -117,6 +119,77 @@ void RegenerateGoods(Game::CGameSession& Session, Game::HEntity VendorID, bool F
 	RemoveEmptySlots(pContainer->Items);
 
 	pVendor->LastGenerationTimestamp = CurrTimestamp;
+}
+//---------------------------------------------------------------------
+
+void GetItemPrices(Game::CGameSession& Session, Game::HEntity VendorID, Game::HEntity BuyerID, const std::set<Game::HEntity>& ItemIDs, std::map<Game::HEntity, CVendorCoeffs>& Out)
+{
+	auto* pWorld = Session.FindFeature<DEM::Game::CGameWorld>();
+	if (!pWorld) return;
+
+	auto* pVendor = pWorld->FindComponent<DEM::RPG::CVendorComponent>(VendorID);
+	if (!pVendor) return;
+
+	// TODO: to global balance
+	constexpr float DefaultBuyFromVendorCoeff = 2.0f;
+	constexpr float DefaultSellToVendorCoeff = 0.5f;
+	constexpr float MaxDispositionPriceChange = 0.25f;
+
+	float BuyFromVendorCoeff = pVendor->BuyFromVendorCoeff.value_or(DefaultBuyFromVendorCoeff);
+	float SellToVendorCoeff = pVendor->SellToVendorCoeff.value_or(DefaultSellToVendorCoeff);
+
+	// Modify prices from disposition
+	const float Disposition = GetDisposition(Session, VendorID, BuyerID);
+	const float DispositionPriceChange = MaxDispositionPriceChange * Disposition / MAX_DISPOSITION;
+	BuyFromVendorCoeff -= DispositionPriceChange;
+	SellToVendorCoeff += DispositionPriceChange;
+
+	// Diplomacy / haggle skill
+	auto* pVendorSkills = pWorld->FindComponent<const Sh2::CSkillsComponent>(VendorID);
+	auto* pBuyerSkills = pWorld->FindComponent<const Sh2::CSkillsComponent>(BuyerID);
+	// SkillValue = pSkills ? pSkills->SkillValue : 0
+	// then do an opposed roll (what to do if skill is 0 i.e. not opened?)
+	// ...
+
+	// Protect game economy from money farming
+	if (BuyFromVendorCoeff < SellToVendorCoeff)
+	{
+		BuyFromVendorCoeff = (BuyFromVendorCoeff + SellToVendorCoeff) * 0.5f;
+		SellToVendorCoeff = BuyFromVendorCoeff;
+	}
+
+	// Get overrides from the vendor script
+	if (auto ScriptObject = Session.GetScript(pVendor->ScriptAssetID))
+	{
+		// pass VendorID, BuyerID, ItemIDs and calculated default BuyFromVendorCoeff and SellToVendorCoeff
+		// get overrides as a map (Game::HEntity -> [BuyFromVendorCoeff, SellToVendorCoeff])
+		// if has empty key, it is override for default BuyFromVendorCoeff and SellToVendorCoeff
+	}
+
+	// Get overrides from vendor factions for items not overridden by the vendor itself
+	if (auto* pVendorSocial = pWorld->FindComponent<const CSocialComponent>(VendorID))
+	{
+		for (const auto FactionID : pVendorSocial->Factions)
+		{
+			// ...
+			// for the faction currency must make BuyFromVendorCoeff == SellToVendorCoeff so that std::round(ItemPrice * Coeff) = DesiredPrice
+		}
+	}
+
+	Out.emplace(Game::HEntity{}, CVendorCoeffs{ BuyFromVendorCoeff, SellToVendorCoeff });
+}
+//---------------------------------------------------------------------
+
+CItemPrices GetItemStackPrices(Game::CGameSession& Session, Game::HEntity StackID, const CVendorCoeffs& Coeffs)
+{
+	// Item instance modifiers:
+	// - unidentified and misidentified item coeffs
+	// - charges (essential like in wands or replenishable like bullets)
+	// - item HP
+	// They must be applied per stack, coeffs for this must be requested from the balance.
+
+	// calculating prices, quantities and rounding
+	return {};
 }
 //---------------------------------------------------------------------
 
