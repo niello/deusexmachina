@@ -162,7 +162,7 @@ void GetItemPrices(Game::CGameSession& Session, Game::HEntity VendorID, Game::HE
 	if (auto ScriptObject = Session.GetScript(pVendor->ScriptAssetID))
 	{
 		// pass VendorID, BuyerID, ItemIDs and calculated default BuyFromVendorCoeff and SellToVendorCoeff
-		// get overrides as a map (Game::HEntity -> [BuyFromVendorCoeff, SellToVendorCoeff])
+		// get overrides as a map (item tpl Game::HEntity or CStrID -> [BuyFromVendorCoeff, SellToVendorCoeff])
 		// if has empty key, it is override for default BuyFromVendorCoeff and SellToVendorCoeff
 	}
 
@@ -171,7 +171,7 @@ void GetItemPrices(Game::CGameSession& Session, Game::HEntity VendorID, Game::HE
 	{
 		for (const auto FactionID : pVendorSocial->Factions)
 		{
-			// ...
+			// same as with ScriptObject above
 			// for the faction currency must make BuyFromVendorCoeff == SellToVendorCoeff so that std::round(ItemPrice * Coeff) = DesiredPrice
 		}
 	}
@@ -182,14 +182,22 @@ void GetItemPrices(Game::CGameSession& Session, Game::HEntity VendorID, Game::HE
 
 CItemPrices GetItemStackPrices(Game::CGameSession& Session, Game::HEntity StackID, const CVendorCoeffs& Coeffs)
 {
+	auto* pWorld = Session.FindFeature<DEM::Game::CGameWorld>();
+	if (!pWorld) return {};
+
 	// Item instance modifiers:
 	// - unidentified and misidentified item coeffs
 	// - charges (essential like in wands or replenishable like bullets)
 	// - item HP
 	// They must be applied per stack, coeffs for this must be requested from the balance.
 
-	// calculating prices, quantities and rounding
-	return {};
+	auto* pItem = FindItemComponent<const CItemComponent>(*pWorld, StackID);
+	if (!pItem) return {};
+
+	CItemPrices Prices;
+	Prices.BuyFromVendorPrice = static_cast<U32>(std::round(pItem->Price * Coeffs.BuyFromVendorCoeff));
+	// ...
+	return Prices;
 }
 //---------------------------------------------------------------------
 
