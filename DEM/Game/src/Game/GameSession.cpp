@@ -8,6 +8,8 @@ namespace DEM::Game
 CGameSession::CGameSession(Resources::CResourceManager& ResMgr)
 	: _ResMgr(ResMgr)
 {
+	::Sys::DbgOut(LUA_RELEASE);
+
 	_ScriptState.open_libraries(sol::lib::base);
 
 	//???does index work with polymorphic types?

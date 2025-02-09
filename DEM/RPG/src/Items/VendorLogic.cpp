@@ -9,6 +9,7 @@
 #include <Items/ItemManager.h>
 #include <Items/ItemUtils.h>
 #include <Social/SocialUtils.h>
+#include <Social/SocialManager.h>
 #include <Character/SocialComponent.h>
 #include <Character/SkillsComponent.h> // TODO: or use a skill check utility!
 
@@ -122,7 +123,8 @@ void RegenerateGoods(Game::CGameSession& Session, Game::HEntity VendorID, bool F
 }
 //---------------------------------------------------------------------
 
-void GetItemPrices(Game::CGameSession& Session, Game::HEntity VendorID, Game::HEntity BuyerID, const std::set<Game::HEntity>& ItemIDs, std::map<Game::HEntity, CVendorCoeffs>& Out)
+void GetItemPrices(Game::CGameSession& Session, Game::HEntity VendorID, Game::HEntity BuyerID, const std::set<Game::HEntity>& ItemIDs,
+	std::map<Game::HEntity, CVendorCoeffs>& Out)
 {
 	auto* pWorld = Session.FindFeature<DEM::Game::CGameWorld>();
 	if (!pWorld) return;
@@ -160,22 +162,19 @@ void GetItemPrices(Game::CGameSession& Session, Game::HEntity VendorID, Game::HE
 
 	// Get overrides from the vendor script
 	if (auto ScriptObject = Session.GetScript(pVendor->ScriptAssetID))
-	{
-		// pass VendorID, BuyerID, ItemIDs and calculated default BuyFromVendorCoeff and SellToVendorCoeff
-		// get overrides as a map (item tpl Game::HEntity or CStrID -> [BuyFromVendorCoeff, SellToVendorCoeff])
-		// if has empty key, it is override for default BuyFromVendorCoeff and SellToVendorCoeff
-	}
+		if (auto Fn = ScriptObject.get<sol::function>("GetItemPrices"))
+			Scripting::LuaCall(Fn, VendorID, BuyerID, ItemIDs, BuyFromVendorCoeff, SellToVendorCoeff, Out);
 
 	// Get overrides from vendor factions for items not overridden by the vendor itself
-	if (auto* pVendorSocial = pWorld->FindComponent<const CSocialComponent>(VendorID))
-	{
-		for (const auto FactionID : pVendorSocial->Factions)
-		{
-			// same as with ScriptObject above
-			// for the faction currency must make BuyFromVendorCoeff == SellToVendorCoeff so that std::round(ItemPrice * Coeff) = DesiredPrice
-		}
-	}
+	if (const auto pSocialMgr = Session.FindFeature<CSocialManager>())
+		if (const auto* pVendorSocial = pWorld->FindComponent<const CSocialComponent>(VendorID))
+			for (const auto FactionID : pVendorSocial->Factions)
+				if (const auto* pFaction = pSocialMgr->FindFaction(FactionID))
+					if (auto ScriptObject = Session.GetScript(pFaction->ScriptAssetID))
+						if (auto Fn = ScriptObject.get<sol::function>("GetItemPrices"))
+							Scripting::LuaCall(Fn, VendorID, BuyerID, ItemIDs, BuyFromVendorCoeff, SellToVendorCoeff, Out);
 
+	// Set default coeffs if they are not set in scripts
 	Out.emplace(Game::HEntity{}, CVendorCoeffs{ BuyFromVendorCoeff, SellToVendorCoeff });
 }
 //---------------------------------------------------------------------

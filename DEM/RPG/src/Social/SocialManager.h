@@ -24,10 +24,10 @@ namespace DEM::RPG
 struct CFactionInfo
 {
 	std::map<CStrID, float> Relations;
-	float GoodReputation = 0.f; //???or int, and divide by deed to reputation coeff when calc result?
-	float BadReputation = 0.f; //???or int, and divide by deed to reputation coeff when calc result?
+	CStrID                  ScriptAssetID;
+	float                   GoodReputation = 0.f; //???or int, and divide by deed to reputation coeff when calc result?
+	float                   BadReputation = 0.f; //???or int, and divide by deed to reputation coeff when calc result?
 	//  - deed to reputation coeff
-	//  - script and/or crime rules
 	//  - ???unpaid crime accumulator?
 };
 
@@ -64,6 +64,7 @@ template<> constexpr auto RegisterMembers<RPG::CFactionInfo>()
 	return std::make_tuple
 	(
 		DEM_META_MEMBER_FIELD(RPG::CFactionInfo, Relations),
+		DEM_META_MEMBER_FIELD(RPG::CFactionInfo, ScriptAssetID),
 		DEM_META_MEMBER_FIELD(RPG::CFactionInfo, GoodReputation),
 		DEM_META_MEMBER_FIELD(RPG::CFactionInfo, BadReputation)
 	);
