@@ -185,18 +185,52 @@ CItemPrices GetItemStackPrices(Game::CGameSession& Session, Game::HEntity StackI
 	auto* pWorld = Session.FindFeature<DEM::Game::CGameWorld>();
 	if (!pWorld) return {};
 
+	auto* pItem = FindItemComponent<const CItemComponent>(*pWorld, StackID);
+	if (!pItem) return {};
+
 	// Item instance modifiers:
 	// - unidentified and misidentified item coeffs
 	// - charges (essential like in wands or replenishable like bullets)
 	// - item HP
-	// They must be applied per stack, coeffs for this must be requested from the balance.
+	// Coeffs for this must be requested from the balance.
 
-	auto* pItem = FindItemComponent<const CItemComponent>(*pWorld, StackID);
-	if (!pItem) return {};
+	const float BuyPrice = pItem->Price * Coeffs.BuyFromVendorCoeff;
+	const float SellPrice = pItem->Price * Coeffs.SellToVendorCoeff;
 
 	CItemPrices Prices;
-	Prices.BuyFromVendorPrice = static_cast<U32>(std::round(pItem->Price * Coeffs.BuyFromVendorCoeff));
-	// ...
+
+	if (BuyPrice <= 0.f)
+	{
+		Prices.BuyFromVendorPrice = 0;
+		Prices.BuyFromVendorQuantity = 0;
+	}
+	else if (BuyPrice >= 1.f)
+	{
+		Prices.BuyFromVendorPrice = static_cast<U32>(std::round(BuyPrice));
+		Prices.BuyFromVendorQuantity = 1;
+	}
+	else
+	{
+		Prices.BuyFromVendorPrice = 1;
+		Prices.BuyFromVendorQuantity = static_cast<U32>(std::ceil(1.f / BuyPrice));
+	}
+
+	if (SellPrice <= 0.f)
+	{
+		Prices.SellToVendorPrice = 0;
+		Prices.SellToVendorQuantity = 0;
+	}
+	else if (SellPrice >= 1.f)
+	{
+		Prices.SellToVendorPrice = static_cast<U32>(std::round(SellPrice));
+		Prices.SellToVendorQuantity = 1;
+	}
+	else
+	{
+		Prices.SellToVendorPrice = 1;
+		Prices.SellToVendorQuantity = static_cast<U32>(std::ceil(1.f / SellPrice));
+	}
+
 	return Prices;
 }
 //---------------------------------------------------------------------
