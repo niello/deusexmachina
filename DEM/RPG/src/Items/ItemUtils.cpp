@@ -587,7 +587,7 @@ std::pair<U32, bool> MoveItemsToContainerSlot(Game::CGameWorld& World, Game::HEn
 //---------------------------------------------------------------------
 
 // Returns a number of items actually moved in and a 'need to clear source storage' flag
-std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity StackID, U32 Count, bool Merge)
+std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity ContainerID, Game::HEntity StackID, U32 Count, bool Merge, size_t* pOutSlotIndex)
 {
 	if (!ContainerID || !StackID || !Count) return { 0, false };
 
@@ -611,13 +611,17 @@ std::pair<U32, bool> MoveItemsToContainer(Game::CGameWorld& World, Game::HEntity
 	{
 		const auto SlotIndex = GetFirstMergeableSlotIndex(World, *pContainer, StackID);
 		if (SlotIndex < pContainer->Items.size())
+		{
+			if (pOutSlotIndex) *pOutSlotIndex = SlotIndex;
 			return MoveItemsToStack(World, pContainer->Items[SlotIndex], StackID, Count);
+		}
 	}
 
 	// Put remaining count into an empty slot
 	if (auto pContainerWritable = World.FindComponent<CItemContainerComponent>(ContainerID))
 	{
 		const auto SlotIndex = GetFirstEmptySlotIndex(pContainerWritable->Items);
+		if (pOutSlotIndex) *pOutSlotIndex = SlotIndex;
 		return SplitItemsToSlot(World, pContainerWritable->Items[SlotIndex], StackID, Count);
 	}
 
