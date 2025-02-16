@@ -160,9 +160,11 @@ bool TryPickCurrency(const Game::CGameSession& Session, Game::HEntity CharacterI
 // TODO: move to appropriate module
 bool TryUnlockObject(const Game::CGameSession& Session, Game::HEntity Object, Game::HEntity Actor);
 
+bool IsItemValuable(const Game::CGameWorld& World, Game::HEntity StackID);
+bool IsItemTrash(const Game::CGameWorld& World, Game::HEntity StackID);
+
 // TODO:
 // void QueryItemsInShape(Game::CGameWorld& World /*collision shape - sphere, capsule etc*/ /*, T Filter*/); //!!!including piles!
-//IsItemValuable, IsItemTrash - not here, game-specific filters? Or use settings from CItemManager?
 //FactionHasItem(faction ID, item ID, count, allow modified)
 
 template<typename T>

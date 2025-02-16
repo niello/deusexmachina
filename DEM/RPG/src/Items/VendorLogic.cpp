@@ -174,12 +174,17 @@ void GetItemPrices(Game::CGameSession& Session, Game::HEntity VendorID, Game::HE
 						if (auto Fn = ScriptObject.get<sol::function>("GetItemPrices"))
 							Scripting::LuaCall(Fn, VendorID, BuyerID, ItemIDs, BuyFromVendorCoeff, SellToVendorCoeff, Out);
 
+	// Set default currency coefficients
+	for (const auto ItemID : ItemIDs)
+		if (pWorld->FindComponent<const CCurrencyComponent>(ItemID))
+			Out.emplace(ItemID, CVendorCoeffs{ 1.f, 1.f });
+
 	// Set default coeffs if they are not set in scripts
 	Out.emplace(Game::HEntity{}, CVendorCoeffs{ BuyFromVendorCoeff, SellToVendorCoeff });
 }
 //---------------------------------------------------------------------
 
-CItemPrices GetItemStackPrices(Game::CGameSession& Session, Game::HEntity StackID, const CVendorCoeffs& Coeffs)
+CItemPrices GetItemStackUnitPrices(Game::CGameSession& Session, Game::HEntity StackID, const CVendorCoeffs& Coeffs)
 {
 	auto* pWorld = Session.FindFeature<DEM::Game::CGameWorld>();
 	if (!pWorld) return {};

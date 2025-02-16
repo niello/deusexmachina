@@ -2171,4 +2171,22 @@ bool TryUnlockObject(const Game::CGameSession& Session, Game::HEntity Object, Ga
 }
 //---------------------------------------------------------------------
 
+bool IsItemValuable(const Game::CGameWorld& World, Game::HEntity StackID)
+{
+	// TODO: to game settings!
+	constexpr float VALUABLE_THRESHOLD = 100.f;
+	const auto* pItem = FindItemComponent<const DEM::RPG::CItemComponent>(World, StackID);
+	return pItem && pItem->Price && (!pItem->Weight || (pItem->Price / pItem->Weight >= VALUABLE_THRESHOLD));
+}
+//---------------------------------------------------------------------
+
+bool IsItemTrash(const Game::CGameWorld& World, Game::HEntity StackID)
+{
+	// TODO: to game settings!
+	constexpr float TRASH_THRESHOLD = 5.f;
+	const auto* pItem = FindItemComponent<const DEM::RPG::CItemComponent>(World, StackID);
+	return pItem && pItem->Weight && (pItem->Price / pItem->Weight <= TRASH_THRESHOLD);
+}
+//---------------------------------------------------------------------
+
 }

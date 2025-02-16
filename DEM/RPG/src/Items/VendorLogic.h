@@ -33,6 +33,6 @@ struct CItemPrices
 void InitVendors(Game::CGameWorld& World, Resources::CResourceManager& ResMgr);
 void RegenerateGoods(Game::CGameSession& Session, Game::HEntity VendorID, bool Force);
 void GetItemPrices(Game::CGameSession& Session, Game::HEntity VendorID, Game::HEntity BuyerID, const std::set<Game::HEntity>& ItemIDs, std::map<Game::HEntity, CVendorCoeffs>& Out);
-CItemPrices GetItemStackPrices(Game::CGameSession& Session, Game::HEntity StackID, const CVendorCoeffs& Coeffs);
+CItemPrices GetItemStackUnitPrices(Game::CGameSession& Session, Game::HEntity StackID, const CVendorCoeffs& Coeffs);
 
 }
