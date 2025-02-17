@@ -57,7 +57,9 @@ public:
 	CItemLimits                  ItemLimit;
 	bool                         Random = true; // true - choose randomy, false - add one by one
 
-	void Evaluate(Game::CGameSession& Session, std::map<CStrID, CItemStackData>& Out, U32 Mul = 1) const;
+	// TODO: decouple list and limits? and random flag too? they are generation params. Sub-lists will still need them. Support inline list assets?
+	void Evaluate(Game::CGameSession& Session, std::map<CStrID, CItemStackData>& Out, const CItemLimits& Limits, U32 Mul = 1) const;
+	void Evaluate(Game::CGameSession& Session, std::map<CStrID, CItemStackData>& Out, U32 Mul = 1) const { Evaluate(Session, Out, ItemLimit, Mul); }
 
 	void OnPostLoad(Resources::CResourceManager& ResMgr);
 };

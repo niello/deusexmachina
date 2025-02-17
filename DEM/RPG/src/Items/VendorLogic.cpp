@@ -22,6 +22,9 @@ void InitVendors(Game::CGameWorld& World, Resources::CResourceManager& ResMgr)
 	{
 		ResMgr.RegisterResource<CItemList>(Component.ItemGeneratorAsset);
 		if (Component.ItemGeneratorAsset) Component.ItemGeneratorAsset->ValidateObject<CItemList>();
+
+		ResMgr.RegisterResource<CItemList>(Component.CurrencyListAsset);
+		if (Component.CurrencyListAsset) Component.CurrencyListAsset->ValidateObject<CItemList>();
 	});
 }
 //---------------------------------------------------------------------
@@ -38,9 +41,6 @@ void RegenerateGoods(Game::CGameSession& Session, Game::HEntity VendorID, bool F
 	auto* pVendor = pWorld->FindComponent<DEM::RPG::CVendorComponent>(VendorID);
 	if (!pVendor) return;
 
-	auto* pItemList = pVendor->ItemGeneratorAsset->ValidateObject<DEM::RPG::CItemList>();
-	if (!pItemList) return;
-
 	// TODO: Session.FindFeature<DEM::PRG::CWorldCalendar>()->GetCurrentTimestamp()
 	const U32 CurrTimestamp = 0;
 
@@ -56,6 +56,16 @@ void RegenerateGoods(Game::CGameSession& Session, Game::HEntity VendorID, bool F
 			if (pVendor->LastGenerationTimestamp) return;
 		}
 	}
+
+	// Regenerate money
+	U32 PrevMoneyRemaining = 0;
+	if (pVendor->Money > pVendor->MaxGeneratedMoney)
+		PrevMoneyRemaining = static_cast<U32>(Math::RandomFloat(0.3f, 0.8f) * (pVendor->Money - pVendor->MaxGeneratedMoney));
+	pVendor->Money = Math::RandomU32(pVendor->MinGeneratedMoney, pVendor->MaxGeneratedMoney) + PrevMoneyRemaining;
+
+	// Regenerate goods
+	auto* pItemList = pVendor->ItemGeneratorAsset->ValidateObject<DEM::RPG::CItemList>();
+	if (!pItemList) return;
 
 	const auto* pVendorEntity = pWorld->GetEntity(VendorID);
 	const auto LevelID = pVendorEntity ? pVendorEntity->LevelID : CStrID{};

@@ -65,7 +65,9 @@ bool CItemList::EvaluateRecord(const CItemListRecord& Record, Game::CGameSession
 		if (Limits.Volume && It->second.pItem->Volume > 0.f)
 			Count = std::min(Count, static_cast<U32>(*Limits.Volume / It->second.pItem->Volume));
 
-		// Discard a record if it isn't able to generate more items within limits
+		// Discard a record if it isn't able to generate more items within limits.
+		// NB: the record with 0 count remains in Out and will be cleared at the end. Clearing is
+		//     delayed intentionally because this ItemTemplateID may be added by other records.
 		if (!Count) return false;
 
 		It->second.Count += Count;
@@ -180,10 +182,19 @@ void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, C
 }
 //---------------------------------------------------------------------
 
-void CItemList::Evaluate(Game::CGameSession& Session, std::map<CStrID, CItemStackData>& Out, U32 Mul) const
+void CItemList::Evaluate(Game::CGameSession& Session, std::map<CStrID, CItemStackData>& Out, const CItemLimits& Limits, U32 Mul) const
 {
-	auto Limits = ItemLimit;
-	EvaluateInternal(Session, Out, Mul, Limits);
+	auto LimitsCopy = Limits;
+	EvaluateInternal(Session, Out, Mul, LimitsCopy);
+
+	// Clear stacks that don't have any items
+	for (auto It = Out.begin(); It != Out.end(); /**/)
+	{
+		if (It->second.Count)
+			++It;
+		else
+			It = Out.erase(It);
+	}
 }
 //---------------------------------------------------------------------
 
