@@ -32,16 +32,16 @@ void InitVendors(Game::CGameWorld& World, Resources::CResourceManager& ResMgr)
 // TODO: pass RNG instance or RNG seed in
 void RegenerateGoods(Game::CGameSession& Session, Game::HEntity VendorID, bool Force)
 {
-	auto* pWorld = Session.FindFeature<DEM::Game::CGameWorld>();
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return;
 
-	auto* pItemMgr = Session.FindFeature<DEM::RPG::CItemManager>();
+	auto* pItemMgr = Session.FindFeature<CItemManager>();
 	if (!pItemMgr) return;
 
-	auto* pVendor = pWorld->FindComponent<DEM::RPG::CVendorComponent>(VendorID);
+	auto* pVendor = pWorld->FindComponent<CVendorComponent>(VendorID);
 	if (!pVendor) return;
 
-	// TODO: Session.FindFeature<DEM::PRG::CWorldCalendar>()->GetCurrentTimestamp()
+	// TODO: Session.FindFeature<PRG::CWorldCalendar>()->GetCurrentTimestamp()
 	const U32 CurrTimestamp = 0;
 
 	if (!Force)
@@ -64,13 +64,13 @@ void RegenerateGoods(Game::CGameSession& Session, Game::HEntity VendorID, bool F
 	pVendor->Money = Math::RandomU32(pVendor->MinGeneratedMoney, pVendor->MaxGeneratedMoney) + PrevMoneyRemaining;
 
 	// Regenerate goods
-	auto* pItemList = pVendor->ItemGeneratorAsset->ValidateObject<DEM::RPG::CItemList>();
+	auto* pItemList = pVendor->ItemGeneratorAsset->ValidateObject<CItemList>();
 	if (!pItemList) return;
 
 	const auto* pVendorEntity = pWorld->GetEntity(VendorID);
 	const auto LevelID = pVendorEntity ? pVendorEntity->LevelID : CStrID{};
 
-	auto* pContainer = pWorld->FindComponent<DEM::RPG::CItemContainerComponent>(pVendor->ContainerID ? pVendor->ContainerID : VendorID);
+	auto* pContainer = pWorld->FindComponent<CItemContainerComponent>(pVendor->ContainerID ? pVendor->ContainerID : VendorID);
 	if (!pContainer) return;
 
 	// Gather current stacks available for replacing
@@ -136,10 +136,10 @@ void RegenerateGoods(Game::CGameSession& Session, Game::HEntity VendorID, bool F
 void GetItemPrices(Game::CGameSession& Session, Game::HEntity VendorID, Game::HEntity BuyerID, const std::set<Game::HEntity>& ItemIDs,
 	std::map<Game::HEntity, CVendorCoeffs>& Out)
 {
-	auto* pWorld = Session.FindFeature<DEM::Game::CGameWorld>();
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return;
 
-	auto* pVendor = pWorld->FindComponent<DEM::RPG::CVendorComponent>(VendorID);
+	auto* pVendor = pWorld->FindComponent<CVendorComponent>(VendorID);
 	if (!pVendor) return;
 
 	// TODO: to global balance
@@ -196,7 +196,7 @@ void GetItemPrices(Game::CGameSession& Session, Game::HEntity VendorID, Game::HE
 
 CItemPrices GetItemStackUnitPrices(Game::CGameSession& Session, Game::HEntity StackID, const CVendorCoeffs& Coeffs)
 {
-	auto* pWorld = Session.FindFeature<DEM::Game::CGameWorld>();
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return {};
 
 	auto* pItem = FindItemComponent<const CItemComponent>(*pWorld, StackID);
@@ -246,6 +246,101 @@ CItemPrices GetItemStackUnitPrices(Game::CGameSession& Session, Game::HEntity St
 	}
 
 	return Prices;
+}
+//---------------------------------------------------------------------
+
+U32 CalcStackPrice(U32 UnitPrice, U32 UnitQuantity, U32 Count, bool VendorGoods)
+{
+	// Fractional vendor goods are always rounded up, party goods are rounded down, to prevent money farming
+	if (VendorGoods && UnitQuantity > 1)
+		Count += UnitQuantity - 1;
+
+	return UnitPrice * Count / UnitQuantity;
+}
+//---------------------------------------------------------------------
+
+// Returns remaining cost
+I32 GatherMoneyFromPouch(Game::CGameSession& Session, U32 TotalCost, const std::map<Game::HEntity, CVendorCoeffs>& PriceCoeffs,
+	std::vector<std::pair<Game::HEntity, U32>>& Out)
+{
+	I32 RemainingPayment = TotalCost;
+
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return RemainingPayment;
+
+	auto* pItemMgr = Session.FindFeature<CItemManager>();
+	if (!pItemMgr) return RemainingPayment;
+
+	auto* pPouch = pWorld->FindComponent<const CItemContainerComponent>(pItemMgr->GetPartyPouch());
+	if (!pPouch) return RemainingPayment;
+
+	// Default currency coeffs are all 1.f
+	CVendorCoeffs DefaultCurrencyCoeffs;
+
+	// Sort player money by the unit price
+	struct CMoney
+	{
+		Game::HEntity StackID;
+		U32           Price;
+		U32           Quantity;
+		U32           Count;
+	};
+	std::vector<CMoney> PlayerMoneyStacks;
+	PlayerMoneyStacks.reserve(pPouch->Items.size());
+	for (const auto StackID : pPouch->Items)
+	{
+		if (auto* pStack = pWorld->FindComponent<const CItemStackComponent>(StackID))
+		{
+			auto It = PriceCoeffs.find(pStack->Prototype);
+			const auto& ItemPriceCoeffs = (It != PriceCoeffs.cend()) ? It->second : DefaultCurrencyCoeffs;
+			const auto Prices = GetItemStackUnitPrices(Session, StackID, ItemPriceCoeffs);
+			PlayerMoneyStacks.push_back(CMoney{ StackID, Prices.SellToVendorPrice, Prices.SellToVendorQuantity, pStack->Count });
+		}
+	}
+
+	std::sort(PlayerMoneyStacks.begin(), PlayerMoneyStacks.end(), [](const auto& a, const auto& b)
+	{
+		if (a.Price != b.Price) return a.Price < b.Price;
+		return a.Quantity > b.Quantity;
+	});
+
+	// Calculate total sum of money from lowest ones to the first money with unit price higher than the payment.
+	U32 LowerDenominationsCost = 0;
+	auto It = PlayerMoneyStacks.begin();
+	for (; It != PlayerMoneyStacks.end(); ++It)
+	{
+		if (static_cast<I32>(It->Price) > RemainingPayment) break;
+		LowerDenominationsCost += CalcStackPrice(It->Price, It->Quantity, It->Count, false);
+	}
+
+	while (RemainingPayment > 0)
+	{
+		U32 Count = 0;
+		if (static_cast<I32>(LowerDenominationsCost) < RemainingPayment)
+		{
+			// There is no enough money to pay the remaining sum in lower denominations, use a higher one or fail with not enough money
+			if (It == PlayerMoneyStacks.end() || It->Count < It->Quantity) break;
+			Count = It->Quantity;
+		}
+		else
+		{
+			// There is enough small money. Spend from higher denominations down.
+			--It;
+
+			const auto CurrDenominationCost = CalcStackPrice(It->Price, It->Quantity, It->Count, false);
+			LowerDenominationsCost -= CurrDenominationCost;
+
+			Count = std::min<I32>(CurrDenominationCost, RemainingPayment) * It->Quantity / It->Price;
+			n_assert_dbg(It->Count >= Count);
+		}
+
+		It->Count -= Count;
+
+		Out.push_back({ It->StackID, Count });
+		RemainingPayment -= CalcStackPrice(It->Price, It->Quantity, Count, false);
+	}
+
+	return RemainingPayment;
 }
 //---------------------------------------------------------------------
 
