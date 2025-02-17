@@ -9,9 +9,9 @@ namespace DEM::RPG
 {
 
 // NB: ToCharacter is considered being a party member now! Can make it optional and skip party-only logic for NPC->NPC.
-float GetDisposition(const Game::CGameSession& Session, Game::HEntity FromCharacter, Game::HEntity ToCharacter)
+float GetDisposition(const Game::CGameSession& Session, Game::HEntity FromCharacterID, Game::HEntity ToCharacterID)
 {
-	if (FromCharacter == ToCharacter) return MAX_DISPOSITION;
+	if (FromCharacterID == ToCharacterID) return MAX_DISPOSITION;
 
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return 0.f;
@@ -19,7 +19,7 @@ float GetDisposition(const Game::CGameSession& Session, Game::HEntity FromCharac
 	auto pSocialMgr = Session.FindFeature<CSocialManager>();
 	if (!pSocialMgr) return 0.f;
 
-	auto pNPCSocial = pWorld->FindComponent<const CSocialComponent>(FromCharacter);
+	auto pNPCSocial = pWorld->FindComponent<const CSocialComponent>(FromCharacterID);
 	if (!pNPCSocial) return 0.f;
 
 	//???!!!TODO: calculate disposition here or use CModifiableValue?! or apply temporary
@@ -28,7 +28,7 @@ float GetDisposition(const Game::CGameSession& Session, Game::HEntity FromCharac
 
 	// Modify disposition from player character charisma
 	constexpr float CharismaCoeff = 2.5f;
-	if (auto* pStats = pWorld->FindComponent<const Sh2::CStatsComponent>(ToCharacter))
+	if (auto* pStats = pWorld->FindComponent<const Sh2::CStatsComponent>(ToCharacterID))
 		Disposition += (pStats->Charisma - 11) * CharismaCoeff;
 
 	// Modify disposition from party personality traits
@@ -125,6 +125,15 @@ bool IsPartyMember(const Game::CGameSession& Session, Game::HEntity CharacterID)
 			return true;
 
 	return false;
+}
+//---------------------------------------------------------------------
+
+void AddDispositionForGift(const Game::CGameSession& Session, Game::HEntity FromCharacterID, Game::HEntity ToCharacterID, U32 Cost)
+{
+	NOT_IMPLEMENTED;
+
+	// Cost to Disposition rate may depend on the ToCharacterID's wealth and initial disposition
+	// Gift and bribery are the same mechanic
 }
 //---------------------------------------------------------------------
 

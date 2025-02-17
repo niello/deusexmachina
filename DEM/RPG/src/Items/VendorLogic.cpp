@@ -261,7 +261,7 @@ U32 CalcStackPrice(U32 UnitPrice, U32 UnitQuantity, U32 Count, bool VendorGoods)
 
 // Returns remaining cost
 I32 GatherMoneyFromPouch(Game::CGameSession& Session, U32 TotalCost, const std::map<Game::HEntity, CVendorCoeffs>& PriceCoeffs,
-	const std::map<Game::HEntity, U32>& UsedMoney, std::map<Game::HEntity, U32>& Out)
+	const std::map<Game::HEntity, U32>& UsedMoney, std::map<size_t, U32>& Out)
 {
 	I32 RemainingPayment = TotalCost;
 
@@ -280,6 +280,7 @@ I32 GatherMoneyFromPouch(Game::CGameSession& Session, U32 TotalCost, const std::
 	// Sort player money by the unit price
 	struct CMoney
 	{
+		size_t        SlotIndex;
 		Game::HEntity StackID;
 		U32           Price;
 		U32           Quantity;
@@ -287,8 +288,10 @@ I32 GatherMoneyFromPouch(Game::CGameSession& Session, U32 TotalCost, const std::
 	};
 	std::vector<CMoney> PlayerMoneyStacks;
 	PlayerMoneyStacks.reserve(pPouch->Items.size());
-	for (const auto StackID : pPouch->Items)
+	for (size_t i = 0; i < pPouch->Items.size(); ++i)
 	{
+		const auto StackID = pPouch->Items[i];
+
 		auto* pStack = pWorld->FindComponent<const CItemStackComponent>(StackID);
 		if (!pStack) continue;
 
@@ -300,7 +303,7 @@ I32 GatherMoneyFromPouch(Game::CGameSession& Session, U32 TotalCost, const std::
 		auto ItCoeff = PriceCoeffs.find(pStack->Prototype);
 		const auto& ItemPriceCoeffs = (ItCoeff != PriceCoeffs.cend()) ? ItCoeff->second : DefaultCurrencyCoeffs;
 		const auto Prices = GetItemStackUnitPrices(Session, StackID, ItemPriceCoeffs);
-		PlayerMoneyStacks.push_back(CMoney{ StackID, Prices.SellToVendorPrice, Prices.SellToVendorQuantity, StackCount });
+		PlayerMoneyStacks.push_back(CMoney{ i, StackID, Prices.SellToVendorPrice, Prices.SellToVendorQuantity, StackCount });
 	}
 
 	std::sort(PlayerMoneyStacks.begin(), PlayerMoneyStacks.end(), [](const auto& a, const auto& b)
@@ -341,7 +344,7 @@ I32 GatherMoneyFromPouch(Game::CGameSession& Session, U32 TotalCost, const std::
 
 		It->Count -= Count;
 
-		Out.emplace(It->StackID, Count);
+		Out.emplace(It->SlotIndex, Count);
 		RemainingPayment -= CalcStackPrice(It->Price, It->Quantity, Count, false);
 	}
 

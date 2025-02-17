@@ -35,6 +35,6 @@ void        RegenerateGoods(Game::CGameSession& Session, Game::HEntity VendorID,
 void        GetItemPrices(Game::CGameSession& Session, Game::HEntity VendorID, Game::HEntity BuyerID, const std::set<Game::HEntity>& ItemIDs, std::map<Game::HEntity, CVendorCoeffs>& Out);
 CItemPrices GetItemStackUnitPrices(Game::CGameSession& Session, Game::HEntity StackID, const CVendorCoeffs& Coeffs);
 U32         CalcStackPrice(U32 UnitPrice, U32 UnitQuantity, U32 Count, bool VendorGoods);
-I32         GatherMoneyFromPouch(Game::CGameSession& Session, U32 TotalCost, const std::map<Game::HEntity, CVendorCoeffs>& PriceCoeffs, const std::map<Game::HEntity, U32>& UsedMoney, std::map<Game::HEntity, U32>& Out);
+I32         GatherMoneyFromPouch(Game::CGameSession& Session, U32 TotalCost, const std::map<Game::HEntity, CVendorCoeffs>& PriceCoeffs, const std::map<Game::HEntity, U32>& UsedMoney, std::map<size_t, U32>& Out);
 
 }
