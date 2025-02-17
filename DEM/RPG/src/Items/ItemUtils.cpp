@@ -394,6 +394,52 @@ void ShrinkItemCollection(std::vector<Game::HEntity>& Collection)
 }
 //---------------------------------------------------------------------
 
+void ClearStacks(std::vector<Game::HEntity>& Collection, std::set<DEM::Game::HEntity>& Stacks)
+{
+	if (Stacks.empty()) return;
+
+	for (auto& StackID : Collection)
+	{
+		auto ItEmpty = Stacks.find(StackID);
+		if (ItEmpty != Stacks.end())
+		{
+			StackID = {};
+			Stacks.erase(ItEmpty);
+			if (Stacks.empty()) return;
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+void ClearStacks(Game::CGameWorld& World, Game::HEntity EntityID, std::set<DEM::Game::HEntity>& Stacks)
+{
+	if (Stacks.empty()) return;
+
+	if (auto* pContainer = World.FindComponent<CItemContainerComponent>(EntityID))
+	{
+		ClearStacks(pContainer->Items, Stacks);
+		if (Stacks.empty()) return;
+	}
+
+	if (auto* pEquipment = World.FindComponent<CEquipmentComponent>(EntityID))
+	{
+		ClearStacks(pEquipment->QuickSlots, Stacks);
+		if (Stacks.empty()) return;
+
+		for (auto& [SlotID, StackID] : pEquipment->Equipment)
+		{
+			auto ItEmpty = Stacks.find(StackID);
+			if (ItEmpty != Stacks.end())
+			{
+				StackID = {};
+				Stacks.erase(ItEmpty);
+				if (Stacks.empty()) break;
+			}
+		}
+	}
+}
+//---------------------------------------------------------------------
+
 void RemoveEmptySlots(std::vector<Game::HEntity>& Collection)
 {
 	Collection.erase(std::remove(Collection.begin(), Collection.end(), Game::HEntity{}), Collection.end());
@@ -682,6 +728,7 @@ void ClearContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size
 //---------------------------------------------------------------------
 
 // Returns a number of items actually removed
+//!!!FIXME: will return 0 when really removed the whole stack, but not necessarily Count! Need to fix.
 U32 RemoveItemsFromContainerSlot(Game::CGameWorld& World, Game::HEntity ContainerID, size_t SlotIndex, U32 Count)
 {
 	const auto [StackID, RemovedCount] = MoveItemsFromContainerSlot(World, ContainerID, SlotIndex, Count);
