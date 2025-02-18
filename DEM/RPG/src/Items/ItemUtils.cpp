@@ -6,6 +6,7 @@
 #include <Items/EquippedComponent.h>
 #include <Items/EquipmentChangesComponent.h>
 #include <Items/ItemManager.h>
+#include <Items/VendorComponent.h> // for CGeneratedComponent
 #include <Objects/LockComponent.h>
 #include <Combat/WeaponComponent.h>
 #include <Social/SocialUtils.h>
@@ -321,10 +322,10 @@ Game::HEntity CreateItemStack(Game::CGameWorld& World, Game::HEntity ItemProtoID
 
 Game::HEntity CloneItemStack(Game::CGameWorld& World, Game::HEntity StackID, U32 Count)
 {
-	auto NewStackID = World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(StackID);
+	const auto NewStackID = World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent, CGeneratedComponent>(StackID);
 	if (!NewStackID) return {};
 
-	if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
+	if (auto* pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
 		pNewStack->Count = Count;
 
 	return NewStackID;
@@ -341,7 +342,7 @@ Game::HEntity SplitItemStack(Game::CGameWorld& World, Game::HEntity StackID, U32
 	// No splitting required, move the whole source stack
 	if (pSrcStack->Count <= Count) return StackID;
 
-	auto NewStackID = World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent>(StackID);
+	auto NewStackID = World.CloneEntityExcluding<Game::CSceneComponent, Game::CRigidBodyComponent, CGeneratedComponent>(StackID);
 
 	if (auto pNewStack = World.FindComponent<CItemStackComponent>(NewStackID))
 	{
