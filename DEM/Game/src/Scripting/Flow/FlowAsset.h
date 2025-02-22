@@ -1,4 +1,5 @@
 #pragma once
+#include <Scripting/Flow/FlowCommon.h>
 #include <Scripting/Flow/Condition.h>
 #include <Core/Object.h>
 

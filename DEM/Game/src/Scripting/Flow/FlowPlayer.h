@@ -4,6 +4,7 @@
 #include <Events/Signal.h>
 #include <Math/WELL512.h>
 #include <Game/ECS/Entity.h> // For ResolveEntityID
+#include <Data/VarStorage.h>
 
 // Plays a Flow asset and tracks its state.
 // Only one action can be active at the same time.

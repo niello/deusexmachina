@@ -1,6 +1,6 @@
 #pragma once
-#include <Scripting/Flow/FlowCommon.h> // for CBasicVarStorage only, maybe redeclare as CCommonVarStorage
 #include <Game/ECS/Entity.h> // For ResolveEntityID utility method
+#include <Data/VarStorage.h>
 #include <Data/Params.h>
 #include <Data/Metadata.h>
 
