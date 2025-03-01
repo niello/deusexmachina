@@ -117,23 +117,19 @@ private:
 //	void* operator new(size_t size) { return RTTI.AllocInstanceMemory(); };
 //	void operator delete(void* p) { RTTI.FreeInstanceMemory(p); };
 #define FACTORY_CLASS_DECL \
+private: \
+	struct RegisterInFactory { RegisterInFactory(); }; \
+	static RegisterInFactory FactoryHelper; \
 public: \
-	static ::Core::CRTTI			RTTI; \
-	static const bool				Factory_Registered; \
-	virtual const ::Core::CRTTI*	GetRTTI() const override { return &RTTI; } \
-	static ::Core::CRTTIBaseClass*	CreateClassInstance(void* pParam = nullptr); \
-	static bool						RegisterInFactory(); \
-	static void						ForceFactoryRegistration(); \
+	static const ::Core::CRTTI     RTTI; \
+	virtual const ::Core::CRTTI*   GetRTTI() const override { return &RTTI; } \
+	static ::Core::CRTTIBaseClass* CreateClassInstance(void* pParam = nullptr); \
+	static void                    ForceFactoryRegistration(); \
 private:
 
 #define FACTORY_CLASS_IMPL(Class, FourCC, ParentClass) \
-	::Core::CRTTI Class::RTTI(#Class, FourCC, Class::CreateClassInstance, &ParentClass::RTTI, sizeof(Class)); \
+	const ::Core::CRTTI Class::RTTI = ::Core::CRTTI(#Class, FourCC, Class::CreateClassInstance, &ParentClass::RTTI, sizeof(Class)); \
 	::Core::CRTTIBaseClass* Class::CreateClassInstance(void* pParam) { return n_new(Class); } \
-	bool Class::RegisterInFactory() \
-	{ \
-		if (!::Core::CFactory::Instance().IsNameRegistered(#Class)) \
-			::Core::CFactory::Instance().Register(Class::RTTI, #Class, FourCC); \
-		return true; \
-	} \
-	void Class::ForceFactoryRegistration() { Class::Factory_Registered; } \
-	const bool Class::Factory_Registered = Class::RegisterInFactory();
+	Class::RegisterInFactory::RegisterInFactory() { ::Core::CFactory::Instance().Register(Class::RTTI, #Class, FourCC); } \
+	Class::RegisterInFactory Class::FactoryHelper{}; \
+	void Class::ForceFactoryRegistration() { Class::FactoryHelper; }
