@@ -8,6 +8,10 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/PropActorBrain.h
 	DEM/Game/src/AI/PropAIHints.h
 	DEM/Game/src/AI/PropSmartObject.h
+	DEM/Game/src/AI/SoundSensorComponent.h
+	DEM/Game/src/AI/SoundStimulus.h
+	DEM/Game/src/AI/VisibleComponent.h
+	DEM/Game/src/AI/VisionSensorComponent.h
 	DEM/Game/src/AI/Behaviour/Action.h
 	DEM/Game/src/AI/Behaviour/ActionIdle.h
 	DEM/Game/src/AI/Behaviour/ActionSequence.h
