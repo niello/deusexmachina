@@ -6,7 +6,7 @@
 namespace DEM::AI
 {
 
-struct CActiveStimulus
+struct CSoundStimulus
 {
 	Game::HEntity EntityID;
 	vector3       Position;
@@ -19,8 +19,8 @@ struct CActiveStimulus
 namespace DEM::Meta
 {
 
-template<> constexpr auto RegisterClassName<DEM::AI::CActiveStimulus>() { return "DEM::AI::CActiveStimulus"; }
-template<> constexpr auto RegisterMembers<DEM::AI::CActiveStimulus>()
+template<> constexpr auto RegisterClassName<DEM::AI::CSoundStimulus>() { return "DEM::AI::CSoundStimulus"; }
+template<> constexpr auto RegisterMembers<DEM::AI::CSoundStimulus>()
 {
 	return std::make_tuple
 	(

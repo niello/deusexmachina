@@ -1,6 +1,7 @@
 #pragma once
 #include <Game/ECS/ComponentStorage.h>
 #include <Game/Interaction/AbilityInstance.h>
+#include <AI/Perception.h>
 #include <Data/Metadata.h>
 
 // Character AI state
@@ -10,7 +11,9 @@ namespace DEM::AI
 
 struct CAIStateComponent
 {
-	Game::PAbilityInstance _AbilityInstance;
+	Game::PAbilityInstance       _AbilityInstance; // TODO: rename without _
+	std::vector<CSensedStimulus> NewStimuli;
+	std::vector<CSensedStimulus> CurrStimuli;
 };
 
 }
