@@ -1,4 +1,3 @@
-#pragma once
 #include <Game/ECS/GameWorld.h>
 #include <Game/GameLevel.h>
 #include <Game/Interaction/InteractionContext.h>

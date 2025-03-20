@@ -6,17 +6,6 @@
 namespace DEM::AI
 {
 
-enum EStimulusType // flags
-{
-	Unspecified = 0,
-	Threat,
-	Danger,
-	Movement,
-	Contact,
-	Anomaly,
-	Benefit
-};
-
 struct CActiveStimulus
 {
 	Game::HEntity EntityID;

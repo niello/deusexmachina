@@ -61,6 +61,7 @@ set(DEM_L3_RPG_HEADERS
 )
 
 set(DEM_L3_RPG_SOURCES
+	DEM/RPG/src/AI/PerceptionSystems.cpp
 	DEM/RPG/src/AI/Actions/ActionWander.cpp
 	DEM/RPG/src/AI/ActionTpls/ActionTplWander.cpp
 	DEM/RPG/src/AI/Goals/GoalWander.cpp
