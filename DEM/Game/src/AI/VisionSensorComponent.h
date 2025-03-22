@@ -17,8 +17,8 @@ struct CVisionSensorComponent
 
 	float             PerfectRadius = 10.f;
 	float             MaxRadius = 30.f;
-	float             PerfectFOV = n_deg2rad(60.f);
-	float             MaxFOV = n_deg2rad(120.f);
+	float             PerfectFOV = 60.f;
+	float             MaxFOV = 120.f;
 	std::string       NodePath;
 };
 
