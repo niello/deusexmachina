@@ -5,7 +5,6 @@
 #include <Physics/PhysicsDebugDraw.h>
 #include <Math/AABB.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
-//#include <BulletCollision/BroadphaseCollision/btAxisSweep3.h>
 #include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
 #include <BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
 #include <BulletCollision/CollisionShapes/btSphereShape.h>
@@ -47,7 +46,7 @@ public:
 	}
 };
 
-class CClosestRayResultCallbackWithExclude: public btCollisionWorld::ClosestRayResultCallback
+class CClosestRayResultCallbackWithExclude : public btCollisionWorld::ClosestRayResultCallback
 {
 protected:
 
@@ -55,15 +54,18 @@ protected:
 
 public:
 
-	CClosestRayResultCallbackWithExclude(const btVector3& From, const btVector3& To, Physics::CPhysicsObject* pExclude):
-		ClosestRayResultCallback(From, To), _pExclude(pExclude)
+	CClosestRayResultCallbackWithExclude(const btVector3& From, const btVector3& To, Physics::CPhysicsObject* pExclude)
+		: ClosestRayResultCallback(From, To)
+		, _pExclude(pExclude)
 	{
 	}
 
-	virtual btScalar addSingleResult(btCollisionWorld::LocalRayResult& rayResult, bool normalInWorldSpace) override
+	virtual bool needsCollision(btBroadphaseProxy* proxy0) const override
 	{
-		if (_pExclude && rayResult.m_collisionObject->getUserPointer() == _pExclude) return 1.f;
-		return ClosestRayResultCallback::addSingleResult(rayResult, normalInWorldSpace);
+		if (!(proxy0->m_collisionFilterGroup & m_collisionFilterMask)) return false;
+		if (!(m_collisionFilterGroup & proxy0->m_collisionFilterMask)) return false;
+		if (_pExclude && static_cast<btCollisionObject*>(proxy0->m_clientObject)->getUserPointer() == _pExclude) return false;
+		return true;
 	}
 };
 

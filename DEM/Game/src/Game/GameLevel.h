@@ -70,7 +70,7 @@ public:
 	void                     SetNavRegionController(CStrID RegionID, HEntity Controller);
 	void                     SetNavRegionFlags(CStrID RegionID, U16 Flags, bool On);
 
-	Physics::CPhysicsObject* GetFirstPickIntersection(const Math::CLine& Ray, rtm::vector4f* pOutPoint3D = nullptr, std::string_view CollisionMask = {}) const;
+	Physics::CPhysicsObject* GetFirstPickIntersection(const rtm::vector4f& RayFrom, const rtm::vector4f& RayTo, rtm::vector4f* pOutPoint3D = nullptr, std::string_view CollisionMask = {}, HEntity ExcludeID = {}) const;
 	// Query hierarchy:
 	// 4. Reachable entities in a shape (navigation)
 	// 5. Reachable entities in a shape filtered by a custom filter, e.g. by a component presence

@@ -7,11 +7,12 @@
 #include <Physics/PhysicsLevel.h>
 #include <Physics/PhysicsObject.h>
 #include <Physics/CollisionAttribute.h>
-#include <Physics/CollisionShape.h>
+#include <Physics/BulletConv.h>
 #include <AI/Navigation/NavMap.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Data/DataArray.h>
+#include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
 namespace DEM::Game
 {
@@ -178,16 +179,59 @@ void CGameLevel::Update(float dt, const rtm::vector4f* pCOIArray, UPTR COICount)
 }
 //---------------------------------------------------------------------
 
-Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const Math::CLine& Ray, rtm::vector4f* pOutPoint3D, std::string_view CollisionMask) const
+Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const rtm::vector4f& RayFrom, const rtm::vector4f& RayTo, rtm::vector4f* pOutPoint3D, std::string_view CollisionMask, HEntity ExcludeID) const
 {
 	if (!_PhysicsLevel) return nullptr;
 
-	const auto& Groups = _PhysicsLevel->PredefinedCollisionGroups;
-	const auto Group = Groups.Query;
-	const auto Mask = CollisionMask.empty() ? Groups.All : _PhysicsLevel->CollisionGroups.GetMask(CollisionMask);
-	Physics::PPhysicsObject PhysObj;
-	_PhysicsLevel->GetClosestRayContact(Ray.Start, rtm::vector_add(Ray.Start, Ray.Dir), Group, Mask, pOutPoint3D, &PhysObj);
-	return PhysObj.Get();
+	auto* pBtWorld = _PhysicsLevel->GetBtWorld();
+	if (!pBtWorld) return nullptr;
+
+	class CEntityExcludingRayCallback : public btCollisionWorld::ClosestRayResultCallback
+	{
+	protected:
+
+		HEntity _ExcludeID;
+
+	public:
+
+		CEntityExcludingRayCallback(const btVector3& From, const btVector3& To, HEntity ExcludeID = {})
+			: ClosestRayResultCallback(From, To)
+			,_ExcludeID(ExcludeID)
+		{
+		}
+
+		virtual bool needsCollision(btBroadphaseProxy* proxy0) const override
+		{
+			if (!(proxy0->m_collisionFilterGroup & m_collisionFilterMask)) return false;
+			if (!(m_collisionFilterGroup & proxy0->m_collisionFilterMask)) return false;
+
+			// TODO: if guaranteed to receive each object once, could remember if already met excluded entity and stop checking for it
+			if (_ExcludeID)
+			{
+				if (const auto* pPhysObj = static_cast<Physics::CPhysicsObject*>(static_cast<btCollisionObject*>(proxy0->m_clientObject)->getUserPointer()))
+				{
+					CTargetInfo Target;
+					GetTargetFromPhysicsObject(*pPhysObj, Target);
+					if (Target.Entity == _ExcludeID) return false;
+				}
+			}
+
+			return true;
+		}
+	};
+
+	const btVector3 BtStart = Math::ToBullet3(RayFrom);
+	const btVector3 BtEnd = Math::ToBullet3(RayTo);
+
+	CEntityExcludingRayCallback RayCB(BtStart, BtEnd, ExcludeID);
+	RayCB.m_collisionFilterGroup = _PhysicsLevel->PredefinedCollisionGroups.Query;
+	RayCB.m_collisionFilterMask = CollisionMask.empty() ? _PhysicsLevel->PredefinedCollisionGroups.All : _PhysicsLevel->CollisionGroups.GetMask(CollisionMask);
+	pBtWorld->rayTest(BtStart, BtEnd, RayCB);
+
+	if (!RayCB.hasHit()) return nullptr;
+
+	if (pOutPoint3D) *pOutPoint3D = Math::FromBullet(RayCB.m_hitPointWorld);
+	return RayCB.m_collisionObject ? static_cast<Physics::CPhysicsObject*>(RayCB.m_collisionObject->getUserPointer()) : nullptr;
 }
 //---------------------------------------------------------------------
 
