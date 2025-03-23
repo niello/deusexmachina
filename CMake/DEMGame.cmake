@@ -107,6 +107,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/AIServer.cpp
 	DEM/Game/src/AI/FormationManager.cpp
 	DEM/Game/src/AI/MoveInteraction.cpp
+	DEM/Game/src/AI/PerceptionSystems.cpp
 	DEM/Game/src/AI/PropActorBrain.cpp
 	DEM/Game/src/AI/PropActorBrainSI.cpp
 	DEM/Game/src/AI/PropAIHints.cpp
