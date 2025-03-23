@@ -181,6 +181,8 @@ void CGameLevel::Update(float dt, const rtm::vector4f* pCOIArray, UPTR COICount)
 
 Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const rtm::vector4f& RayFrom, const rtm::vector4f& RayTo, rtm::vector4f* pOutPoint3D, std::string_view CollisionMask, HEntity ExcludeID) const
 {
+	ZoneScoped;
+
 	if (!_PhysicsLevel) return nullptr;
 
 	auto* pBtWorld = _PhysicsLevel->GetBtWorld();
