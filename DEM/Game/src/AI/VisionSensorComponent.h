@@ -12,6 +12,8 @@ struct CVisionSensorComponent
 {
 	// Calculated from serializable properties
 	Scene::PSceneNode Node;
+	float             PerfectRadiusSq = 0.f;
+	float             MaxRadiusSq = 0.f;
 	float             CosHalfPerfectFOV = 1.f;
 	float             CosHalfMaxFOV = 1.f;
 
