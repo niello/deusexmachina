@@ -98,6 +98,7 @@ void ProcessVisionSensors(Game::CGameSession& Session, Game::CGameWorld& World, 
 			//Stimulus.AddedTimestamp - here or later when merging?
 			//Stimulus.UpdatedTimestamp - here or later when merging?
 			//Stimulus.TypeFlags = ...; //!!!must be set in SenseVisualStimulus!
+			//Stimulus.ModalityFlags = ESenseModality::Vision;
 
 			return true; // continue
 		});

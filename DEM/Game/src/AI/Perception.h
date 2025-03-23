@@ -6,15 +6,25 @@
 namespace DEM::AI
 {
 
-enum EStimulusType : uint8_t // flags
+enum EStimulusType : uint8_t
 {
 	Unspecified = 0,
-	Threat,
-	Danger,
-	Movement,
-	Contact,
-	Anomaly,
-	Benefit
+	Threat = 0x01,
+	Danger = 0x02,
+	Movement = 0x04,
+	Contact = 0x08,
+	Anomaly = 0x10,
+	Benefit = 0x20
+};
+
+enum EStimulusModality : uint8_t
+{
+	Unspecified = 0,
+	Vision = 0x01,
+	Sound = 0x02,
+	Smell = 0x04,
+	Touch = 0x08,
+	SelfAwareness = 0x10
 };
 
 enum class EAwareness : uint8_t
@@ -35,7 +45,8 @@ struct CSensedStimulus
 	uint32_t      AddedTimestamp;
 	uint32_t      UpdatedTimestamp;
 	EAwareness    Awareness;
-	uint8_t       TypeFlags; // EStimulusType
+	uint8_t       TypeFlags;        // EStimulusType
+	uint8_t       ModalityFlags;    // EStimulusModality
 };
 
 }
