@@ -13,7 +13,7 @@ namespace DEM::Game
 namespace DEM::RPG
 {
 
-AI::EAwareness SenseVisualStimulus(Game::CGameSession& Session, Game::HEntity SensorID, Game::HEntity StimulusID, float Modifier)
+void SenseVisualStimulus(Game::CGameSession& Session, Game::HEntity SensorID, Game::HEntity StimulusID, float Modifier, AI::EAwareness& OutAwareness, uint8_t& OutTypeFlags)
 {
 	// TODO: process
 
@@ -25,14 +25,16 @@ AI::EAwareness SenseVisualStimulus(Game::CGameSession& Session, Game::HEntity Se
 
 	// can apply sensor cheats and buffs here
 
-	return AI::EAwareness::Full;
+	OutAwareness = AI::EAwareness::Full;
+	// OutTypeFlags = ...
 }
 //---------------------------------------------------------------------
 
+// TODO: move common logic to DEMGame as utility function(s)
 void ProcessVisionSensors(Game::CGameSession& Session, Game::CGameWorld& World, Game::CGameLevel& Level)
 {
-	World.ForEachEntityInLevelWith<const DEM::AI::CVisionSensorComponent, DEM::AI::CAIStateComponent>(Level.GetID(),
-		[&Session, &Level](auto SensorID, auto& Entity, const DEM::AI::CVisionSensorComponent& Sensor, DEM::AI::CAIStateComponent& AIState)
+	World.ForEachEntityInLevelWith<const AI::CVisionSensorComponent, AI::CAIStateComponent>(Level.GetID(),
+		[&Session, &Level](auto SensorID, auto& Entity, const AI::CVisionSensorComponent& Sensor, AI::CAIStateComponent& AIState)
 	{
 		if (!Sensor.Node || Sensor.MaxRadius <= 0.f) return; // continue
 
@@ -44,7 +46,7 @@ void ProcessVisionSensors(Game::CGameSession& Session, Game::CGameWorld& World, 
 
 		// TODO PERF: could reuse shape and collision flags and perform contactTest manually, but is it really benefical?
 		Level.EnumEntitiesInSphere(Sensor.Node->GetWorldPosition(), Sensor.MaxRadius, /* "Visible"sv */ "Dynamic"sv,
-			[&Session, &Level, &Sensor, SensorID, &AIState](DEM::Game::HEntity StimulusID, const rtm::vector4f& ContactPos)
+			[&Session, &Level, &Sensor, SensorID, &AIState](Game::HEntity StimulusID, const rtm::vector4f& ContactPos)
 		{
 			if (StimulusID == SensorID) return true; // continue
 
@@ -72,8 +74,10 @@ void ProcessVisionSensors(Game::CGameSession& Session, Game::CGameWorld& World, 
 			n_assert_dbg(Modifier > 0.f);
 
 			// Apply game logic
-			const auto Awareness = DEM::RPG::SenseVisualStimulus(Session, SensorID, StimulusID, Modifier);
-			if (Awareness == DEM::AI::EAwareness::None) return true; // continue
+			AI::EAwareness Awareness = AI::EAwareness::None;
+			uint8_t TypeFlags = 0;
+			RPG::SenseVisualStimulus(Session, SensorID, StimulusID, Modifier, Awareness, TypeFlags);
+			if (Awareness == AI::EAwareness::None) return true; // continue
 
 			// Perform line of sight test
 			// TODO PERF:
@@ -85,8 +89,8 @@ void ProcessVisionSensors(Game::CGameSession& Session, Game::CGameWorld& World, 
 			//   must not filter out characters standing one after another! Check only static geometry and dynamic things like doors?
 			if (auto* pPhysicsObject = Level.GetFirstPickIntersection(SensorPos, ContactPos, nullptr, /*"Visible|Static|Dynamic"sv*/ ""sv, SensorID))
 			{
-				DEM::Game::CTargetInfo LOSCollision;
-				DEM::Game::GetTargetFromPhysicsObject(*pPhysicsObject, LOSCollision);
+				Game::CTargetInfo LOSCollision;
+				Game::GetTargetFromPhysicsObject(*pPhysicsObject, LOSCollision);
 				if (LOSCollision.Entity != StimulusID) return true; // continue
 			}
 
@@ -94,11 +98,11 @@ void ProcessVisionSensors(Game::CGameSession& Session, Game::CGameWorld& World, 
 			auto& Stimulus = AIState.NewStimuli.emplace_back();
 			Stimulus.Position = ContactPos;
 			Stimulus.SourceID = StimulusID;
-			Stimulus.Awareness = Awareness;
 			//Stimulus.AddedTimestamp - here or later when merging?
 			//Stimulus.UpdatedTimestamp - here or later when merging?
-			//Stimulus.TypeFlags = ...; //!!!must be set in SenseVisualStimulus!
-			//Stimulus.ModalityFlags = ESenseModality::Vision;
+			Stimulus.Awareness = Awareness;
+			Stimulus.TypeFlags = TypeFlags;
+			Stimulus.ModalityFlags = static_cast<uint8_t>(AI::ESenseModality::Vision);
 
 			return true; // continue
 		});

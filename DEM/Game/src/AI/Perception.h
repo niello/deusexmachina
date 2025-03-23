@@ -6,7 +6,7 @@
 namespace DEM::AI
 {
 
-enum EStimulusType : uint8_t
+enum class EStimulusType: uint8_t
 {
 	Unspecified = 0,
 	Threat = 0x01,
@@ -17,7 +17,7 @@ enum EStimulusType : uint8_t
 	Benefit = 0x20
 };
 
-enum EStimulusModality : uint8_t
+enum class ESenseModality : uint8_t
 {
 	Unspecified = 0,
 	Vision = 0x01,
