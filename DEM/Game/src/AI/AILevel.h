@@ -23,7 +23,24 @@ protected:
 
 public:
 
-	void RenderDebug(Debug::CDebugDraw& DebugDraw);
+	//!!!global, not per level!
+	//float _LowestUsefulIntensity[static_cast<size_t>(ESenseModality::Count)] = { 0.f };
+	//void  SetLowestUsefulIntensity(ESenseModality Sense, float Value) { _LowestUsefulIntensity[static_cast<size_t>(Sense)] = Value; }
+	//float GetLowestUsefulIntensity(ESenseModality Sense) const { return _LowestUsefulIntensity[static_cast<size_t>(Sense)]; }
+
+	float GetStimulusMaskingAt(ESenseModality Sense, const rtm::vector4f& Pos) const;
+
+	void  AddStimulusEvent(const CStimulusEvent& Event);
+
+	template<typename F>
+	void ProcessStimulusEvents(F Callback)
+	{
+		for (const auto& Event : _StimulusEvents)
+			Callback(Event);
+		_StimulusEvents.clear();
+	}
+
+	void  RenderDebug(Debug::CDebugDraw& DebugDraw);
 };
 //---------------------------------------------------------------------
 

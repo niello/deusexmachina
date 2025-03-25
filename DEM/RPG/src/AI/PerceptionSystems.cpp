@@ -4,6 +4,8 @@
 #include <AI/Perception.h>
 #include <AI/AIStateComponent.h>
 #include <AI/VisionSensorComponent.h>
+#include <AI/SoundSensorComponent.h>
+#include <AI/AILevel.h>
 
 namespace DEM::Game
 {
@@ -12,6 +14,7 @@ namespace DEM::Game
 
 namespace DEM::RPG
 {
+constexpr size_t MAX_STIMULI_PER_TICK = 128;
 
 void SenseVisualStimulus(Game::CGameSession& Session, Game::HEntity SensorID, Game::HEntity StimulusID, float Modifier, AI::EAwareness& OutAwareness, uint8_t& OutTypeFlags)
 {
@@ -24,6 +27,15 @@ void SenseVisualStimulus(Game::CGameSession& Session, Game::HEntity SensorID, Ga
 	// choose an awareness level based on Modifier and detection
 
 	// can apply sensor cheats and buffs here
+
+	OutAwareness = AI::EAwareness::Full;
+	// OutTypeFlags = ...
+}
+//---------------------------------------------------------------------
+
+void SenseSoundStimulus(Game::CGameSession& Session, Game::HEntity SensorID, const AI::CStimulusEvent& StimulusEvent, float IntensityAtSensor, AI::EAwareness& OutAwareness, uint8_t& OutTypeFlags)
+{
+	// TODO: process
 
 	OutAwareness = AI::EAwareness::Full;
 	// OutTypeFlags = ...
@@ -48,20 +60,22 @@ void ProcessVisionSensors(Game::CGameSession& Session, Game::CGameWorld& World, 
 		Level.EnumEntitiesInSphere(Sensor.Node->GetWorldPosition(), Sensor.MaxRadius, /* "Visible"sv */ "Dynamic"sv,
 			[&Session, &Level, &Sensor, SensorID, &AIState](Game::HEntity StimulusID, const rtm::vector4f& ContactPos)
 		{
+			if (AIState.NewStimuli.size() >= MAX_STIMULI_PER_TICK) return false; // break
+
 			if (StimulusID == SensorID) return true; // continue
 
 			const auto& SensorTfm = Sensor.Node->GetWorldMatrix();
 			const auto SensorPos = SensorTfm.w_axis;
-			const auto SensorToContact = rtm::vector_sub(ContactPos, SensorPos);
+			const auto FromSensorToContact = rtm::vector_sub(ContactPos, SensorPos);
 
 			// Test against max vision distance
 			// FIXME: why physics system reports such contacts?
-			const float DistanceToContactSq = rtm::vector_length_squared3(SensorToContact);
+			const float DistanceToContactSq = rtm::vector_length_squared3(FromSensorToContact);
 			if (DistanceToContactSq > Sensor.MaxRadiusSq) return true; // continue
 
 			// Test against max vision angle
 			const auto LookatDir = rtm::vector_normalize3(rtm::vector_neg(SensorTfm.z_axis));
-			const auto ContactDir = rtm::vector_mul(SensorToContact, rtm::scalar_sqrt_reciprocal(DistanceToContactSq));
+			const auto ContactDir = rtm::vector_mul(FromSensorToContact, rtm::scalar_sqrt_reciprocal(DistanceToContactSq));
 			const float CosLookAtStimulus = rtm::vector_dot3(LookatDir, ContactDir);
 			if (CosLookAtStimulus < Sensor.CosHalfMaxFOV) return true; // continue
 
@@ -102,7 +116,83 @@ void ProcessVisionSensors(Game::CGameSession& Session, Game::CGameWorld& World, 
 			//Stimulus.UpdatedTimestamp - here or later when merging?
 			Stimulus.Awareness = Awareness;
 			Stimulus.TypeFlags = TypeFlags;
-			Stimulus.ModalityFlags = static_cast<uint8_t>(AI::ESenseModality::Vision);
+			Stimulus.ModalityFlags = (1 << static_cast<uint8_t>(AI::ESenseModality::Vision));
+
+			return true; // continue
+		});
+	});
+}
+//---------------------------------------------------------------------
+
+// TODO: can set in AI level or even vary at different points of the level
+constexpr float SoundAttenuationCoeff = 0.05f;
+
+// TODO: must set in AI manager
+constexpr float LowestUsefulIntensity = 0.01f;
+
+// TODO: move common logic to DEMGame as utility function(s)
+void ProcessSoundSensors(Game::CGameSession& Session, Game::CGameWorld& World, Game::CGameLevel& Level)
+{
+	if (!Level.GetAI()) return;
+
+	//!!!DBG TMP!
+	{
+		AI::CStimulusEvent DBGEvent;
+		DBGEvent.Position = rtm::vector_set(113.f, 38.1f, 113.f);
+		DBGEvent.SourceID = Game::HEntity{ 9 };
+		DBGEvent.Intensity = 0.3f;
+		DBGEvent.TypeFlags = (1 << static_cast<uint8_t>(AI::EStimulusType::Benefit));
+		DBGEvent.Modality = AI::ESenseModality::Sound;
+		Level.GetAI()->AddStimulusEvent(DBGEvent);
+	}
+
+	Level.GetAI()->ProcessStimulusEvents([&Session, &World, &Level](const AI::CStimulusEvent& StimulusEvent)
+	{
+		//!!!FIXME: need switch by type and a separate processing function per type!
+		n_assert(StimulusEvent.Modality == AI::ESenseModality::Sound);
+
+		// TODO: or set manually when registering events?
+		const float MaxRadius = rtm::scalar_sqrt((StimulusEvent.Intensity - LowestUsefulIntensity) / (LowestUsefulIntensity * SoundAttenuationCoeff));
+
+		// TODO: can collide only passive sensors of the corresponding modality, need a separate collision flag
+		Level.EnumEntitiesInSphere(StimulusEvent.Position, MaxRadius, /* "SoundSensor"sv */ "Dynamic"sv,
+			[&Session, &World, &Level, &StimulusEvent](Game::HEntity SensorID, const rtm::vector4f& ContactPos)
+		{
+			const auto* pSoundSensor = World.FindComponent<const AI::CSoundSensorComponent>(SensorID);
+			if (!pSoundSensor) return true; // continue
+
+			const auto FromSoundToSensor = rtm::vector_sub(ContactPos, StimulusEvent.Position);
+			const float DistanceSq = rtm::vector_length_squared3(FromSoundToSensor);
+
+			float IntensityAtSensor = StimulusEvent.Intensity / (1.f + SoundAttenuationCoeff * DistanceSq);
+			if (IntensityAtSensor < pSoundSensor->IntensityThreshold) return true; // continue
+
+			IntensityAtSensor -= Level.GetAI()->GetStimulusMaskingAt(AI::ESenseModality::Sound, ContactPos);
+			if (IntensityAtSensor < pSoundSensor->IntensityThreshold) return true; // continue
+
+			// TODO: do intensity reduction by raycast or pathfinding, if needed (and maybe delay increase and even pos modification)
+
+			// TODO: if delay needed, must add the stimulus in the future, and skip it during merge until its time is passed (can use separate array or std::partition)
+
+			// Apply game logic
+			AI::EAwareness Awareness = AI::EAwareness::None;
+			uint8_t TypeFlags = StimulusEvent.TypeFlags;
+			RPG::SenseSoundStimulus(Session, SensorID, StimulusEvent, IntensityAtSensor, Awareness, TypeFlags);
+			if (Awareness == AI::EAwareness::None) return true; // continue
+
+			// Register a new stimulus in the AI brain
+			auto* pAIState = World.FindComponent<AI::CAIStateComponent>(SensorID);
+			if (pAIState && pAIState->NewStimuli.size() < MAX_STIMULI_PER_TICK)
+			{
+				auto& Stimulus = pAIState->NewStimuli.emplace_back();
+				Stimulus.Position = StimulusEvent.Position;
+				Stimulus.SourceID = StimulusEvent.SourceID;
+				//Stimulus.AddedTimestamp - here or later when merging?
+				//Stimulus.UpdatedTimestamp - here or later when merging?
+				Stimulus.Awareness = Awareness;
+				Stimulus.TypeFlags = TypeFlags;
+				Stimulus.ModalityFlags = (1 << static_cast<uint8_t>(AI::ESenseModality::Sound));
+			}
 
 			return true; // continue
 		});

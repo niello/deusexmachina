@@ -1,18 +1,15 @@
 #pragma once
 #include <Data/Metadata.h>
 
-// Character AI state
+// A sensor that registers sound stimuli
 
 namespace DEM::AI
 {
 
-struct CPassiveSensor
+struct CSoundSensorComponent
 {
-	// modality
-	// radius
-	// center pos or node
-
-	// collision shape
+	float IntensityThreshold = 0.f;
+	// node path & radius? or use collision shape of the host?
 };
 
 }
@@ -20,11 +17,12 @@ struct CPassiveSensor
 namespace DEM::Meta
 {
 
-template<> constexpr auto RegisterClassName<DEM::AI::CPassiveSensor>() { return "DEM::AI::CPassiveSensor"; }
-template<> constexpr auto RegisterMembers<DEM::AI::CPassiveSensor>()
+template<> constexpr auto RegisterClassName<AI::CSoundSensorComponent>() { return "DEM::AI::CSoundSensorComponent"; }
+template<> constexpr auto RegisterMembers<AI::CSoundSensorComponent>()
 {
 	return std::make_tuple
 	(
+		DEM_META_MEMBER_FIELD(AI::CSoundSensorComponent, IntensityThreshold)
 	);
 }
 

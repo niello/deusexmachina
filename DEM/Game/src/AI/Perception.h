@@ -8,23 +8,24 @@ namespace DEM::AI
 
 enum class EStimulusType: uint8_t
 {
-	Unspecified = 0,
-	Threat = 0x01,
-	Danger = 0x02,
-	Movement = 0x04,
-	Contact = 0x08,
-	Anomaly = 0x10,
-	Benefit = 0x20
+	Threat,
+	Danger,
+	Movement,
+	Contact,
+	Anomaly,
+	Benefit
 };
 
 enum class ESenseModality : uint8_t
 {
-	Unspecified = 0,
-	Vision = 0x01,
-	Sound = 0x02,
-	Smell = 0x04,
-	Touch = 0x08,
-	SelfAwareness = 0x10
+	Vision,
+	Sound,
+	Smell,
+	Touch,
+	SelfAwareness,
+
+	Count,
+	Unspecified
 };
 
 enum class EAwareness : uint8_t
