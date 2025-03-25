@@ -19,13 +19,9 @@ namespace Physics
 	class CPhysicsObject;
 }
 
-namespace AI
-{
-	typedef Ptr<class CAILevel> PAILevel;
-}
-
 namespace DEM::AI
 {
+	using PAILevel = Ptr<class CAILevel>;
 	using PNavMap = Ptr<class CNavMap>;
 }
 
@@ -53,7 +49,7 @@ protected:
 	Scene::PSceneNode      _SceneRoot;
 	Frame::CGraphicsScene  _GraphicsScene;
 	Physics::PPhysicsLevel _PhysicsLevel;
-	::AI::PAILevel         _AILevel;
+	AI::PAILevel           _AILevel;
 
 	std::vector<DEM::AI::PNavMap> _NavMaps; // Sorted by R & H
 
@@ -106,8 +102,8 @@ public:
 	Scene::CSceneNode&       GetSceneRoot() { return *_SceneRoot.Get(); }
 	Frame::CGraphicsScene&   GetGraphics() { return _GraphicsScene; }
 	Physics::CPhysicsLevel*  GetPhysics() const { return _PhysicsLevel.Get(); }
-	::AI::CAILevel*          GetAI() const { return _AILevel.Get(); }
-	DEM::AI::CNavMap*        GetNavMap(float AgentRadius, float AgentHeight) const;
+	AI::CAILevel*            GetAI() const { return _AILevel.Get(); }
+	AI::CNavMap*             GetNavMap(float AgentRadius, float AgentHeight) const;
 };
 
 }
@@ -141,7 +137,7 @@ protected:
 
 	Scene::PSceneNode			SceneRoot;
 	Physics::PPhysicsLevel		PhysicsLevel;
-	AI::PAILevel				AILevel;
+	//AI::PAILevel				AILevel;
 
 public:
 
@@ -165,7 +161,7 @@ public:
 
 	Scene::CSceneNode*		GetSceneRoot() { return SceneRoot.Get(); }
 	Physics::CPhysicsLevel*	GetPhysics() const { return PhysicsLevel.Get(); }
-	AI::CAILevel*			GetAI() const { return AILevel.Get(); }
+	//AI::CAILevel*			GetAI() const { return AILevel.Get(); }
 };
 
 }

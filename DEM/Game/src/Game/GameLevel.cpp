@@ -9,6 +9,7 @@
 #include <Physics/CollisionAttribute.h>
 #include <Physics/BulletConv.h>
 #include <AI/Navigation/NavMap.h>
+#include <AI/AILevel.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Data/DataArray.h>
@@ -22,6 +23,7 @@ CGameLevel::CGameLevel(CStrID ID, const Math::CAABB& Bounds, const Math::CAABB& 
 	: _ID(ID)
 	, _SceneRoot(n_new(Scene::CSceneNode(ID)))
 	, _PhysicsLevel(n_new(Physics::CPhysicsLevel(Bounds)))
+	, _AILevel(n_new(AI::CAILevel()))
 {
 	const auto BoundsSize = Math::FromSIMD3(rtm::vector_mul(Bounds.Extent, 2.f));
 	_GraphicsScene.Init(Bounds.Center, std::max({ BoundsSize.x, BoundsSize.y, BoundsSize.z }), SubdivisionDepth ? SubdivisionDepth : 12);
@@ -291,7 +293,6 @@ void CGameLevel::SetNavRegionFlags(CStrID RegionID, U16 Flags, bool On)
 
 //////////////// TODO: REMOVE ///////////////////////////////
 #include <Scripting/ScriptObject.h>
-#include <AI/AILevel.h>
 
 namespace Game
 {
@@ -468,7 +469,7 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 void CGameLevel::Term()
 {
 	GlobalSub.Disconnect();
-	AILevel = nullptr;
+	//AILevel = nullptr;
 	PhysicsLevel = nullptr;
 	SceneRoot = nullptr;
 	Script = nullptr;

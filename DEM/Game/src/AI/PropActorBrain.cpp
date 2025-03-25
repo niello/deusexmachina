@@ -48,7 +48,7 @@ CPropActorBrain::CPropActorBrain(): MemSystem(this)
 
 bool CPropActorBrain::InternalActivate()
 {
-	if (!GetEntity()->GetLevel()->GetAI()) FAIL;
+	//if (!GetEntity()->GetLevel()->GetAI()) FAIL;
 
 // Blackboard
 
@@ -389,8 +389,8 @@ bool CPropActorBrain::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const 
 	//!!!only for external (tests external stimuli placed in the level)!
 	//also need to update internal sensors & actor's state through them
 	//???CStimulus -> CExternalStimulus?
-	for (CArray<PSensor>::CIterator ppSensor = Sensors.Begin(); ppSensor != Sensors.End(); ++ppSensor)
-		GetEntity()->GetLevel()->GetAI()->UpdateActorSense(this, (*ppSensor));
+	//for (CArray<PSensor>::CIterator ppSensor = Sensors.Begin(); ppSensor != Sensors.End(); ++ppSensor)
+	//	GetEntity()->GetLevel()->GetAI()->UpdateActorSense(this, (*ppSensor));
 
 	MemSystem.Update();
 

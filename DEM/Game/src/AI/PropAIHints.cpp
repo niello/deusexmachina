@@ -19,7 +19,7 @@ static const CString StrStimulusPrefix("AI::CStimulus");
 
 bool CPropAIHints::InternalActivate()
 {
-	if (!GetEntity()->GetLevel()->GetAI()) FAIL;
+	//if (!GetEntity()->GetLevel()->GetAI()) FAIL;
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
 	if (pProp && pProp->IsActive()) EnableSI(*pProp);
@@ -158,7 +158,7 @@ bool CPropAIHints::OnPropsActivated(Events::CEventDispatcher* pDispatcher, const
 
 		//???Rec.Stimulus->Init(PrmVal);
 
-		Rec.QTNode = PrmVal->Get(CStrID("Enabled"), false) ? GetEntity()->GetLevel()->GetAI()->RegisterStimulus(Rec.Stimulus) : nullptr;
+		//Rec.QTNode = PrmVal->Get(CStrID("Enabled"), false) ? GetEntity()->GetLevel()->GetAI()->RegisterStimulus(Rec.Stimulus) : nullptr;
 		Hints.Add(Prm.GetName(), Rec);
 	}
 	Hints.EndAdd();
@@ -177,8 +177,8 @@ void CPropAIHints::EnableStimulus(CStrID Name, bool Enable)
 
 		if (Enable)
 		{
-			if (!Rec.QTNode)
-				Rec.QTNode = GetEntity()->GetLevel()->GetAI()->RegisterStimulus(Rec.Stimulus);
+			//if (!Rec.QTNode)
+			//	Rec.QTNode = GetEntity()->GetLevel()->GetAI()->RegisterStimulus(Rec.Stimulus);
 		}
 		else
 		{
@@ -201,7 +201,7 @@ bool CPropAIHints::OnUpdateTransform(Events::CEventDispatcher* pDispatcher, cons
 	{
 		CRecord& Rec = Hints.ValueAt(i);
 		Rec.Stimulus->Position = Pos; //!!!offset * tfm!
-		if (Rec.QTNode) GetEntity()->GetLevel()->GetAI()->UpdateStimulusLocation(Rec.QTNode);
+		//if (Rec.QTNode) GetEntity()->GetLevel()->GetAI()->UpdateStimulusLocation(Rec.QTNode);
 	}
 
 	OK;

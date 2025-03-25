@@ -87,10 +87,10 @@ void ProcessVisionSensors(Game::CGameSession& Session, Game::CGameWorld& World, 
 			//   raycast can be performed less frequently then a sensor test, especially if the object has passed a raycast test before
 			//   may do async raycasts for objects with previous successfull raycast, i.e. currently visible ones
 			//   must not filter out characters standing one after another! Check only static geometry and dynamic things like doors?
-			if (auto* pPhysicsObject = Level.GetFirstPickIntersection(SensorPos, ContactPos, nullptr, /*"Visible|Static|Dynamic"sv*/ ""sv, SensorID))
+			if (auto* pLOSBlocker = Level.GetFirstPickIntersection(SensorPos, ContactPos, nullptr, /*"Visible|Static|Dynamic"sv*/ ""sv, SensorID))
 			{
 				Game::CTargetInfo LOSCollision;
-				Game::GetTargetFromPhysicsObject(*pPhysicsObject, LOSCollision);
+				Game::GetTargetFromPhysicsObject(*pLOSBlocker, LOSCollision);
 				if (LOSCollision.Entity != StimulusID) return true; // continue
 			}
 

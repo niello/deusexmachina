@@ -38,6 +38,15 @@ enum class EAwareness : uint8_t
 	Full      // Perfect awareness
 };
 
+struct CStimulusEvent
+{
+	rtm::vector4f  Position;
+	Game::HEntity  SourceID;
+	float          Intensity = 1.f;
+	uint8_t        TypeFlags = 0; // EStimulusType
+	ESenseModality Modality = ESenseModality::Unspecified;
+};
+
 struct CSensedStimulus
 {
 	rtm::vector4f Position;

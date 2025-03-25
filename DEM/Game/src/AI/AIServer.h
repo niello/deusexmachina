@@ -4,10 +4,11 @@
 
 #include <Data/Singleton.h>
 #include <Data/StringID.h>
+#include <Data/Dictionary.h>
 #include <Events/EventsFwd.h>
 #include <AI/Planning/Planner.h>
 #include <AI/SmartObj/SmartAction.h>
-#include <AI/AILevel.h>
+#include <AI/Navigation/PathRequestQueue.h>
 
 // AI server manages AI levels and high-level systems like planner or memory fact factory
 
