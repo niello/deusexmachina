@@ -152,6 +152,10 @@ void ProcessSoundSensors(Game::CGameSession& Session, Game::CGameWorld& World, G
 		n_assert(StimulusEvent.Modality == AI::ESenseModality::Sound);
 
 		// TODO: or set manually when registering events?
+		//!!!can do LowestUsefulIntensity += StimulusMasking from environment if it is constant across the level (or use the lowest masking if not!)
+		// this will significantly reduce the collision radius and skip all too silent sounds immediately!
+		if (StimulusEvent.Intensity <= LowestUsefulIntensity) return; // continue
+		n_assert_dbg(LowestUsefulIntensity > 0.f && SoundAttenuationCoeff > 0.f);
 		const float MaxRadius = rtm::scalar_sqrt((StimulusEvent.Intensity - LowestUsefulIntensity) / (LowestUsefulIntensity * SoundAttenuationCoeff));
 
 		// TODO: can collide only passive sensors of the corresponding modality, need a separate collision flag
