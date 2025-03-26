@@ -16,6 +16,8 @@ enum class EStimulusType: uint8_t
 	Benefit
 };
 
+// TODO: need user values for game specific sensors, e.g. magic! What to use - enum class, dynamic enum or constants?
+//???or define sense types in RPG level, not in game? And use only raw int values in DEMGame? Like with collision flags.
 enum class ESenseModality : uint8_t
 {
 	Vision,

@@ -15,6 +15,8 @@ namespace DEM::Game
 namespace DEM::RPG
 {
 constexpr size_t MAX_STIMULI_PER_TICK = 128;
+constexpr float SoundAttenuationCoeff = 0.05f; // TODO: can set in AI level or even vary at different points of the level
+constexpr float LowestUsefulIntensity = 0.01f; // TODO: must set in AI manager
 
 void SenseVisualStimulus(Game::CGameSession& Session, Game::HEntity SensorID, Game::HEntity StimulusID, float Modifier, AI::EAwareness& OutAwareness, uint8_t& OutTypeFlags)
 {
@@ -57,7 +59,7 @@ void ProcessVisionSensors(Game::CGameSession& Session, Game::CGameWorld& World, 
 		//???separate collision world and simplified shapes for sensing? or add sensing collision flags to physics bodies and existing colliders?
 
 		// TODO PERF: could reuse shape and collision flags and perform contactTest manually, but is it really benefical?
-		Level.EnumEntitiesInSphere(Sensor.Node->GetWorldPosition(), Sensor.MaxRadius, /* "Visible"sv */ "Dynamic"sv,
+		Level.EnumEntitiesInSphere(Sensor.Node->GetWorldPosition(), Sensor.MaxRadius, /* "Visible"sv */ ""sv,
 			[&Session, &Level, &Sensor, SensorID, &AIState](Game::HEntity StimulusID, const rtm::vector4f& ContactPos)
 		{
 			if (AIState.NewStimuli.size() >= MAX_STIMULI_PER_TICK) return false; // break
@@ -124,16 +126,12 @@ void ProcessVisionSensors(Game::CGameSession& Session, Game::CGameWorld& World, 
 }
 //---------------------------------------------------------------------
 
-// TODO: can set in AI level or even vary at different points of the level
-constexpr float SoundAttenuationCoeff = 0.05f;
-
-// TODO: must set in AI manager
-constexpr float LowestUsefulIntensity = 0.01f;
-
 // TODO: move common logic to DEMGame as utility function(s)
 void ProcessSoundSensors(Game::CGameSession& Session, Game::CGameWorld& World, Game::CGameLevel& Level)
 {
 	if (!Level.GetAI()) return;
+
+	ZoneScoped;
 
 	//!!!DBG TMP!
 	{
@@ -155,10 +153,14 @@ void ProcessSoundSensors(Game::CGameSession& Session, Game::CGameWorld& World, G
 		//!!!can do LowestUsefulIntensity += StimulusMasking from environment if it is constant across the level (or use the lowest masking if not!)
 		// this will significantly reduce the collision radius and skip all too silent sounds immediately!
 		if (StimulusEvent.Intensity <= LowestUsefulIntensity) return; // continue
+
+		ZoneScopedN("SoundStimulus");
+
 		n_assert_dbg(LowestUsefulIntensity > 0.f && SoundAttenuationCoeff > 0.f);
 		const float MaxRadius = rtm::scalar_sqrt((StimulusEvent.Intensity - LowestUsefulIntensity) / (LowestUsefulIntensity * SoundAttenuationCoeff));
 
 		// TODO: can collide only passive sensors of the corresponding modality, need a separate collision flag
+		// TODO: OR can provide a needCollision delegate and filter out entities without CSoundSensorComponent before collision check, but is slow part after this check?
 		Level.EnumEntitiesInSphere(StimulusEvent.Position, MaxRadius, /* "SoundSensor"sv */ "Dynamic"sv,
 			[&Session, &World, &Level, &StimulusEvent](Game::HEntity SensorID, const rtm::vector4f& ContactPos)
 		{

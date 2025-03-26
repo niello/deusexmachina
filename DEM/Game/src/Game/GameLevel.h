@@ -72,7 +72,7 @@ public:
 	// 5. Reachable entities in a shape filtered by a custom filter, e.g. by a component presence
 	//ray check may need to apply collision group filter after the raycast, e.g. when searching for
 	//the closest Interactable, if the user wants closer non-interactable collision objects to block it.
-	UPTR                     EnumEntitiesInSphere(const rtm::vector4f& Position, float Radius, std::string_view CollisionMask, std::function<bool(HEntity&, const rtm::vector4f&)>&& Callback) const;
+	void                     EnumEntitiesInSphere(const rtm::vector4f& Position, float Radius, std::string_view CollisionMask, std::function<bool(HEntity&, const rtm::vector4f&)>&& Callback) const;
 
 	template<typename TPredicate>
 	Game::HEntity FindClosestEntity(const rtm::vector4f& Position, float Radius, std::string_view CollisionMask, TPredicate Predicate = nullptr)

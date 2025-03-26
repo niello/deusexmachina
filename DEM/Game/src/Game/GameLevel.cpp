@@ -14,6 +14,7 @@
 #include <Resources/Resource.h>
 #include <Data/DataArray.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include <BulletCollision/CollisionShapes/btSphereShape.h>
 
 namespace DEM::Game
 {
@@ -239,26 +240,61 @@ Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const rtm::vector4
 }
 //---------------------------------------------------------------------
 
-UPTR CGameLevel::EnumEntitiesInSphere(const rtm::vector4f& Position, float Radius, std::string_view CollisionMask, std::function<bool(HEntity&, const rtm::vector4f&)>&& Callback) const
+void CGameLevel::EnumEntitiesInSphere(const rtm::vector4f& Position, float Radius, std::string_view CollisionMask, std::function<bool(HEntity&, const rtm::vector4f&)>&& Callback) const
 {
-	if (!_PhysicsLevel || !Callback) return 0;
+	if (!_PhysicsLevel || !Callback || Radius <= 0.f) return;
 
-	const auto& Groups = _PhysicsLevel->PredefinedCollisionGroups;
-	const auto Group = Groups.Query;
-	const auto Mask = CollisionMask.empty() ? Groups.All : _PhysicsLevel->CollisionGroups.GetMask(CollisionMask);
+	auto* pBtWorld = _PhysicsLevel->GetBtWorld();
+	if (!pBtWorld) return;
 
-	//???return contact in a form of CTargetInfo? Fill CTargetInfo from physics object + bullet contact info?
-	_PhysicsLevel->EnumSphereContacts(Position, Radius, Group, Mask, [&Callback](Physics::CPhysicsObject& PhysObj, const rtm::vector4f& ContactPos)
+	// Optimized to skip physics objects without DEM entities bound. Skips costly tests against static level geometry.
+	struct CEntityOnlyContactCallback : public btCollisionWorld::ContactResultCallback
 	{
-		CTargetInfo Target;
-		if (!GetTargetFromPhysicsObject(PhysObj, Target) || !Target.Entity) return true;
+		btCollisionObject&                                   _Self;
+		std::function<bool(HEntity&, const rtm::vector4f&)>& _Callback;
 
-		Target.Point = ContactPos;
+		CEntityOnlyContactCallback(btCollisionObject& Self, std::function<bool(HEntity&, const rtm::vector4f&)>& Callback)
+			: _Self(Self), _Callback(Callback)
+		{
+		}
 
-		return Callback(Target.Entity, ContactPos); // FIXME: return target info?
-	});
+		virtual bool needsCollision(btBroadphaseProxy* proxy0) const override
+		{
+			if (!(proxy0->m_collisionFilterGroup & m_collisionFilterMask)) return false;
+			if (!(m_collisionFilterGroup & proxy0->m_collisionFilterMask)) return false;
 
-	return 0;
+			const auto* pPhysObj = static_cast<Physics::CPhysicsObject*>(static_cast<btCollisionObject*>(proxy0->m_clientObject)->getUserPointer());
+			if (!pPhysObj) return false;
+
+			CTargetInfo Target;
+			GetTargetFromPhysicsObject(*pPhysObj, Target);
+			return !!Target.Entity;
+		}
+
+		virtual btScalar addSingleResult(btManifoldPoint& cp,
+			const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0,
+			const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1)
+		{
+			// NB: the same object can be reported multiple times
+			const bool IsMeFirst = (colObj0Wrap->getCollisionObject() == &_Self);
+			const auto* pBtObj = IsMeFirst ? colObj1Wrap->getCollisionObject() : colObj0Wrap->getCollisionObject();
+			const auto* pPhysObj = static_cast<Physics::CPhysicsObject*>(pBtObj->getUserPointer());
+			CTargetInfo Target;
+			GetTargetFromPhysicsObject(*pPhysObj, Target);
+			_Callback(Target.Entity, Math::FromBullet(IsMeFirst ? cp.m_positionWorldOnB : cp.m_positionWorldOnA));
+			return 0;
+		}
+	};
+
+	btSphereShape BtShape(Radius);
+	btCollisionObject BtObject;
+	BtObject.setCollisionShape(&BtShape);
+	BtObject.getWorldTransform().setOrigin(Math::ToBullet3(Position));
+
+	CEntityOnlyContactCallback CB(BtObject, Callback);
+	CB.m_collisionFilterGroup = _PhysicsLevel->PredefinedCollisionGroups.Query;
+	CB.m_collisionFilterMask = CollisionMask.empty() ? _PhysicsLevel->PredefinedCollisionGroups.All : _PhysicsLevel->CollisionGroups.GetMask(CollisionMask);
+	pBtWorld->contactTest(&BtObject, CB);
 }
 //---------------------------------------------------------------------
 
