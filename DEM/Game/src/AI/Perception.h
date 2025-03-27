@@ -60,5 +60,6 @@ struct CSensedStimulus
 	uint8_t       TypeFlags;        // EStimulusType
 	uint8_t       ModalityFlags;    // EStimulusModality
 };
+static_assert(std::is_trivially_copyable_v<AI::CSensedStimulus>);
 
 }

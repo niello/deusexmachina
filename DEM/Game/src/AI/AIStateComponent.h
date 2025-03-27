@@ -13,7 +13,8 @@ struct CAIStateComponent
 {
 	Game::PAbilityInstance       _AbilityInstance; // TODO: rename without _
 	std::vector<CSensedStimulus> NewStimuli;
-	std::vector<CSensedStimulus> CurrStimuli;
+	std::vector<CSensedStimulus> Facts;
+	size_t                       FactWithSourceCount = 0;
 };
 
 }
