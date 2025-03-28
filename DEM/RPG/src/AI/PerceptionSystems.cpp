@@ -44,6 +44,48 @@ void SenseSoundStimulus(Game::CGameSession& Session, Game::HEntity SensorID, con
 }
 //---------------------------------------------------------------------
 
+// TODO: hardcode appropriate values or get them from settings
+static inline bool ForgetFact(AI::CSensedStimulus& Fact, uint32_t CurrTimestamp, float PersonalModifier = 1.f)
+{
+	ZoneScoped;
+
+	const float TimeSinceLastSensed = (CurrTimestamp - Fact.UpdatedTimestamp) * PersonalModifier;
+
+	if (Fact.Awareness <= AI::EAwareness::Faint)
+	{
+		// A simple fact of knowing that something exists becomes unimportant
+		return TimeSinceLastSensed > 3.f;
+	}
+	else if ((Fact.TypeFlags & static_cast<uint8_t>(AI::EStimulusType::Movement)) && TimeSinceLastSensed > 2.f)
+	{
+		// A location of a moving stimulus quickly loses actuality
+		Fact.Awareness = AI::EAwareness::Faint;
+		Fact.UpdatedTimestamp = CurrTimestamp;
+		return false;
+	}
+	else if (Fact.Awareness >= AI::EAwareness::Strong)
+	{
+		// Strong knowledge fades away slower
+		return TimeSinceLastSensed > 5.f;
+	}
+	else
+	{
+		// And weak one does that pretty fast
+		return TimeSinceLastSensed > 2.f;
+	}
+}
+//---------------------------------------------------------------------
+
+static inline AI::EAwareness MergeAwareness(AI::EAwareness a, AI::EAwareness b)
+{
+	// Full awareness is special, it can't be reached by combining information from multiple stimuli
+	if (a == b && a < AI::EAwareness::Detailed)
+		return static_cast<AI::EAwareness>(static_cast<uint8_t>(a) + 1);
+	else
+		return std::max(a, b);
+}
+//---------------------------------------------------------------------
+
 // TODO: move common logic to DEMGame as utility function(s)
 void ProcessVisionSensors(Game::CGameSession& Session, Game::CGameWorld& World, Game::CGameLevel& Level)
 {
@@ -206,17 +248,26 @@ void ProcessSoundSensors(Game::CGameSession& Session, Game::CGameWorld& World, G
 }
 //---------------------------------------------------------------------
 
-void MergeSensedStimuli(Game::CGameWorld& World)
+void MergeAIMemory(Game::CGameWorld& World)
 {
 	//!!!DBG TMP! Need a reusable buffer in an AI system!
-	std::vector<AI::CSensedStimulus> NewFacts;
+	std::vector<AI::CSensedStimulus> MergedFacts;
 
-	World.ForEachComponent<AI::CAIStateComponent>([&NewFacts](auto EntityID, AI::CAIStateComponent& AIState)
+	// TODO: need time e.g. in msec from game start, enough for 46 days. Or in AI ticks for memory fact forgetting?
+	//!!!DBG TMP!
+	static uint32_t Timer = 0;
+	uint32_t CurrTimestamp = ++Timer;
+
+	World.ForEachComponent<AI::CAIStateComponent>([&MergedFacts, CurrTimestamp](auto EntityID, AI::CAIStateComponent& AIState)
 	{
-		//!!!TODO PERF: sparse update!
+		//!!!TODO PERF: sparse update! AI ticks and dividing to subsequent frames for an even workload.
 
-		NewFacts.clear();
-		NewFacts.reserve(std::max(AIState.NewStimuli.size(), AIState.Facts.size()));
+		ZoneScopedN("MergeAIMemory");
+
+		if (AIState.NewStimuli.empty() && AIState.Facts.empty()) return; // continue
+
+		MergedFacts.clear();
+		MergedFacts.reserve(std::max(AIState.NewStimuli.size(), AIState.Facts.size()));
 
 		// Shift sourceless stimuly to the end of the range, sort sourceful ones by source ID
 		const auto ItNewBegin = AIState.NewStimuli.begin();
@@ -236,52 +287,58 @@ void MergeSensedStimuli(Game::CGameWorld& World)
 			if (IsEndCurr || (!IsEndNew && ItNew->SourceID < ItCurr->SourceID))
 			{
 				// Only new stimulus, simply add
-				NewFacts.push_back(*ItNew++);
-				IsEndNew = (ItNew == ItNewEnd);
+				auto& MergedFact = MergedFacts.emplace_back(*ItNew);
+				MergedFact.AddedTimestamp = CurrTimestamp;
+				MergedFact.UpdatedTimestamp = CurrTimestamp;
+				IsEndNew = (++ItNew == ItNewEnd);
 			}
 			else if (IsEndNew || ItCurr->SourceID < ItNew->SourceID)
 			{
 				// Only old stimulus, apply forgetting and discard if totally forgotten
-
-				// TODO: check how much time have passed from last update and check forgettance time for the ItCurr->Awareness
-				const bool ShouldForget = false;
-
-				if (!ShouldForget) NewFacts.push_back(*ItCurr++);
-				IsEndCurr = (ItCurr == ItCurrEnd);
+				if (!ForgetFact(*ItCurr, CurrTimestamp))
+					MergedFacts.push_back(*ItCurr);
+				IsEndCurr = (++ItCurr == ItCurrEnd);
 			}
 			else // equal
 			{
 				// Update the existing stimulus with new info
-				auto& MergedFact = NewFacts.emplace_back();
+				auto& MergedFact = MergedFacts.emplace_back(*ItCurr);
+				MergedFact.UpdatedTimestamp = CurrTimestamp;
+				IsEndCurr = (++ItCurr == ItCurrEnd);
 
-				// advance only new! keep curr!
-				// or inner loop while SourceID is the same
-				//ItA = ItNew++;
-				//ItB = ItCurr++;
+				do
+				{
+					if (ItNew->Awareness > AI::EAwareness::Faint && ItNew->Awareness >= MergedFact.Awareness)
+						MergedFact.Position = ItNew->Position;
+					MergedFact.Awareness = MergeAwareness(ItNew->Awareness, MergedFact.Awareness);
+					MergedFact.TypeFlags = (ItNew->TypeFlags | MergedFact.TypeFlags);
+					MergedFact.ModalityFlags = (ItNew->ModalityFlags | MergedFact.ModalityFlags);
 
-				MergedFact.AddedTimestamp = std::min(ItNew->AddedTimestamp, ItCurr->AddedTimestamp);
-				MergedFact.UpdatedTimestamp = curr_time;
-				MergedFact.Position = DoesAwarenessOfferPosOrDir(ItNew->Awareness) ? ItNew->Position : ItCurr->Position;
-				MergedFact.Awareness = MergeAwareness(ItNew->Awareness, ItCurr->Awareness); // max and sometimes emergent raise
-				MergedFact.TypeFlags = (ItNew->TypeFlags | ItCurr->TypeFlags);
-				MergedFact.ModalityFlags = (ItNew->ModalityFlags | ItCurr->ModalityFlags);
-
-				IsEndNew = (ItNew == ItNewEnd);
-				IsEndCurr = (ItCurr == ItCurrEnd);
+					IsEndNew = (++ItNew == ItNewEnd);
+				}
+				while (!IsEndNew && ItNew->SourceID == MergedFact.SourceID);
 			}
 		}
 
-		AIState.FactWithSourceCount = NewFacts.size();
+		// Remember the count before adding sourceless facts
+		AIState.FactWithSourceCount = MergedFacts.size();
 
-		// Merge sourceless records by proximity
-		ItNewEnd = AIState.NewStimuli.end();
-		ItCurrEnd = AIState.Facts.end();
-		// - what can't be merged is copied as a separate fact, first from new stimuli, then from existing
-		// - check total fact limit, break immediately if the limit is reached, as sourceless facts are the least useful
+		// Merge sourceless records by proximity, first new, then existing.
+		// What haven't been merged is saved as separate facts /*TODO: but within a limit*/.
+		//!!!TODO: merge by proximity! use k-d tree like nanoflann? or grid spatial hash? or naive O(m*n) is ok for our case with small element count?
+		for (; ItNew != AIState.NewStimuli.end(); ++ItNew)
+		{
+			MergedFacts.push_back(*ItNew);
+		}
+		for (; ItCurr != AIState.Facts.end(); ++ItCurr)
+		{
+			MergedFacts.push_back(*ItCurr);
+		}
 
 		// Store a new memory state in the AI brain
 		// TODO PERF: can prevent all buffers to grow to the size of the biggest one among all actors? May copy contents instead of swap, but it is slower!
-		std::swap(AIState.Facts, NewFacts);
+		std::swap(AIState.Facts, MergedFacts);
+		AIState.NewStimuli.clear();
 	});
 }
 //---------------------------------------------------------------------

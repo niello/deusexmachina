@@ -8,7 +8,7 @@ namespace DEM::Game
 CGameSession::CGameSession(Resources::CResourceManager& ResMgr)
 	: _ResMgr(ResMgr)
 {
-	::Sys::DbgOut(LUA_RELEASE);
+	::Sys::DbgOut(LUA_RELEASE); ::Sys::DbgOut("\n");
 
 	_ScriptState.open_libraries(sol::lib::base);
 
