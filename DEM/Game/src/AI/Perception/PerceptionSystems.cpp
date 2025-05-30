@@ -1,6 +1,6 @@
 #include <Game/ECS/GameWorld.h>
 #include <Scene/SceneComponent.h>
-#include <AI/VisionSensorComponent.h>
+#include <AI/Perception/VisionSensorComponent.h>
 
 namespace DEM::AI
 {

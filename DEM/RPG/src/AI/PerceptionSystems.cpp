@@ -1,10 +1,10 @@
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
 #include <Game/GameLevel.h>
-#include <AI/Perception.h>
+#include <AI/Perception/Perception.h>
 #include <AI/AIStateComponent.h>
-#include <AI/VisionSensorComponent.h>
-#include <AI/SoundSensorComponent.h>
+#include <AI/Perception/VisionSensorComponent.h>
+#include <AI/Perception/SoundSensorComponent.h>
 #include <AI/AILevel.h>
 
 namespace DEM::Game

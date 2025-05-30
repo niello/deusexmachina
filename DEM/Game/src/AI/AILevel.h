@@ -1,6 +1,6 @@
 #pragma once
 #include <Core/Object.h>
-#include <AI/Perception.h>
+#include <AI/Perception/Perception.h>
 
 // AI level is an abstract space, like scene or CPhysicsLevel, that contains stimuli,
 // AI hints and other AI-related world info. Also AILevel is intended to serve as a

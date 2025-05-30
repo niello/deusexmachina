@@ -1,17 +1,4 @@
 set(DEM_L3_RPG_HEADERS
-	DEM/RPG/src/AI/Actions/ActionWander.h
-	DEM/RPG/src/AI/ActionTpls/ActionTplWander.h
-	DEM/RPG/src/AI/Goals/GoalWander.h
-	DEM/RPG/src/AI/Goals/GoalWork.h
-	DEM/RPG/src/AI/Memory/MemFactOverseer.h
-	DEM/RPG/src/AI/Memory/MemFactSmartObj.h
-	DEM/RPG/src/AI/Perceptors/PerceptorObstacle.h
-	DEM/RPG/src/AI/Perceptors/PerceptorOverseer.h
-	DEM/RPG/src/AI/Perceptors/PerceptorSmartObj.h
-	DEM/RPG/src/AI/Sensors/SensorDamage.h
-	DEM/RPG/src/AI/Sensors/SensorVision.h
-	DEM/RPG/src/AI/Stimuli/StimulusSound.h
-	DEM/RPG/src/AI/Stimuli/StimulusVisible.h
 	DEM/RPG/src/Character/AppearanceAsset.h
 	DEM/RPG/src/Character/AppearanceComponent.h
 	DEM/RPG/src/Character/CharacterSheet.h
@@ -62,18 +49,6 @@ set(DEM_L3_RPG_HEADERS
 
 set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/AI/PerceptionSystems.cpp
-	DEM/RPG/src/AI/Actions/ActionWander.cpp
-	DEM/RPG/src/AI/ActionTpls/ActionTplWander.cpp
-	DEM/RPG/src/AI/Goals/GoalWander.cpp
-	DEM/RPG/src/AI/Goals/GoalWork.cpp
-	DEM/RPG/src/AI/Memory/MemFactOverseer.cpp
-	DEM/RPG/src/AI/Memory/MemFactSmartObj.cpp
-	DEM/RPG/src/AI/Perceptors/PerceptorObstacle.cpp
-	DEM/RPG/src/AI/Perceptors/PerceptorOverseer.cpp
-	DEM/RPG/src/AI/Perceptors/PerceptorSmartObj.cpp
-	DEM/RPG/src/AI/Sensors/SensorVision.cpp
-	DEM/RPG/src/AI/Stimuli/StimulusSound.cpp
-	DEM/RPG/src/AI/Stimuli/StimulusVisible.cpp
 	DEM/RPG/src/Combat/AttackAbility.cpp
 	DEM/RPG/src/Combat/CombatUtils.cpp
 	DEM/RPG/src/Conversation/BarterAction.cpp

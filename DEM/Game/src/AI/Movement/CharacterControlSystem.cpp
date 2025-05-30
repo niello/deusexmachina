@@ -426,7 +426,19 @@ void CCharacterController::AvoidObstacles()
 	}
 
 	//!!!GET AT ACTIVATION AND STORE!
-	const dtObstacleAvoidanceParams* pOAParams = AISrv->GetDefaultObstacleAvoidanceParams();
+	//dtObstacleAvoidanceParams* pOAParams = n_new(dtObstacleAvoidanceParams);
+	//pOAParams->velBias = 0.4f;
+	//pOAParams->weightDesVel = 2.0f;
+	//pOAParams->weightCurVel = 0.75f;
+	//pOAParams->weightSide = 0.75f;
+	//pOAParams->weightToi = 2.5f;
+	//pOAParams->horizTime = 2.5f;
+	//pOAParams->gridSize = 33;
+	//pOAParams->adaptiveDivs = 7;
+	//pOAParams->adaptiveRings = 2;
+	//pOAParams->adaptiveDepth = 5;
+	//ObstacleAvoidanceParams.Add(CStrID::Empty, pOAParams);
+	const dtObstacleAvoidanceParams* pOAParams = AI::CAIServer::Instance()->GetDefaultObstacleAvoidanceParams();
 
 	if (ObstacleQuery.getObstacleCircleCount() || ObstacleQuery.getObstacleSegmentCount())
 	{

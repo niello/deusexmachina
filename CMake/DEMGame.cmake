@@ -1,25 +1,12 @@
 set(DEM_L2_GAME_HEADERS
-	DEM/Game/src/AI/ActorFwd.h
 	DEM/Game/src/AI/AILevel.h
-	DEM/Game/src/AI/AIServer.h
 	DEM/Game/src/AI/AIStateComponent.h
 	DEM/Game/src/AI/FormationManager.h
 	DEM/Game/src/AI/MoveInteraction.h
-	DEM/Game/src/AI/Perception.h
-	DEM/Game/src/AI/PropActorBrain.h
-	DEM/Game/src/AI/PropAIHints.h
-	DEM/Game/src/AI/PropSmartObject.h
-	DEM/Game/src/AI/SoundSensorComponent.h
-	DEM/Game/src/AI/SoundStimulus.h
-	DEM/Game/src/AI/VisibleComponent.h
-	DEM/Game/src/AI/VisionSensorComponent.h
-	DEM/Game/src/AI/Behaviour/Action.h
-	DEM/Game/src/AI/Behaviour/ActionIdle.h
-	DEM/Game/src/AI/Behaviour/ActionSequence.h
-	DEM/Game/src/AI/Memory/MemFact.h
-	DEM/Game/src/AI/Memory/MemSystem.h
+	DEM/Game/src/AI/Behaviour/BehaviourTreeAsset.h
+	DEM/Game/src/AI/Behaviour/BehaviourTreeAssetLoader.h
+	DEM/Game/src/AI/Behaviour/BehaviourTreePlayer.h
 	DEM/Game/src/AI/Movement/SteerAction.h
-	DEM/Game/src/AI/Movement/Memory/MemFactObstacle.h
 	DEM/Game/src/AI/Navigation/NavAgentComponent.h
 	DEM/Game/src/AI/Navigation/NavAgentSettings.h
 	DEM/Game/src/AI/Navigation/NavAgentSettingsLoaderHRD.h
@@ -31,22 +18,11 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/Navigation/NavMeshLoaderNM.h
 	DEM/Game/src/AI/Navigation/PathRequestQueue.h
 	DEM/Game/src/AI/Navigation/TraversalAction.h
-	DEM/Game/src/AI/Perception/Perceptor.h
-	DEM/Game/src/AI/Perception/Sensor.h
-	DEM/Game/src/AI/Perception/Stimulus.h
-	DEM/Game/src/AI/Planning/ActionTpl.h
-	DEM/Game/src/AI/Planning/ActionTplIdle.h
-	DEM/Game/src/AI/Planning/Goal.h
-	DEM/Game/src/AI/Planning/GoalIdle.h
-	DEM/Game/src/AI/Planning/Planner.h
-	DEM/Game/src/AI/Planning/WorldState.h
-	DEM/Game/src/AI/Planning/WorldStateSource.h
-	DEM/Game/src/AI/Planning/WorldStateSourceScript.h
-	DEM/Game/src/AI/SmartObj/SmartAction.h
-	DEM/Game/src/AI/SmartObj/Actions/ActionGotoSmartObj.h
-	DEM/Game/src/AI/SmartObj/Actions/ActionUseSmartObj.h
-	DEM/Game/src/AI/SmartObj/ActionTpls/ActionTplGotoSmartObj.h
-	DEM/Game/src/AI/SmartObj/ActionTpls/ActionTplUseSmartObj.h
+	DEM/Game/src/AI/Perception/Perception.h
+	DEM/Game/src/AI/Perception/SoundSensorComponent.h
+	DEM/Game/src/AI/Perception/SoundStimulus.h
+	DEM/Game/src/AI/Perception/VisibleComponent.h
+	DEM/Game/src/AI/Perception/VisionSensorComponent.h
 	DEM/Game/src/Animation/AnimationComponent.h
 	DEM/Game/src/Animation/TimelineTask.h
 	DEM/Game/src/App/AppFSM.h
@@ -99,28 +75,16 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Scripting/Flow/LuaStringAction.h
 	DEM/Game/src/Scripting/Flow/ScriptCondition.h
 	DEM/Game/src/Scripting/Flow/SetVarAction.h
-	DEM/Game/src/SI/SI_L2.h
 )
 
 set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/AILevel.cpp
-	DEM/Game/src/AI/AIServer.cpp
 	DEM/Game/src/AI/FormationManager.cpp
 	DEM/Game/src/AI/MoveInteraction.cpp
-	DEM/Game/src/AI/PerceptionSystems.cpp
-	DEM/Game/src/AI/PropActorBrain.cpp
-	DEM/Game/src/AI/PropActorBrainSI.cpp
-	DEM/Game/src/AI/PropAIHints.cpp
-	DEM/Game/src/AI/PropAIHintsSI.cpp
-	DEM/Game/src/AI/PropSmartObject.cpp
-	DEM/Game/src/AI/PropSmartObjectSI.cpp
-	DEM/Game/src/AI/Behaviour/ActionIdle.cpp
-	DEM/Game/src/AI/Behaviour/ActionSequence.cpp
-	DEM/Game/src/AI/Memory/MemFact.cpp
-	DEM/Game/src/AI/Memory/MemSystem.cpp
+	DEM/Game/src/AI/Behaviour/BehaviourTreeAssetLoader.cpp
+	DEM/Game/src/AI/Behaviour/BehaviourTreePlayer.cpp
 	DEM/Game/src/AI/Movement/CharacterControlSystem.cpp
 	DEM/Game/src/AI/Movement/SteerAction.cpp
-	DEM/Game/src/AI/Movement/Memory/MemFactObstacle.cpp
 	DEM/Game/src/AI/Navigation/NavAgentSettings.cpp
 	DEM/Game/src/AI/Navigation/NavAgentSettingsLoaderHRD.cpp
 	DEM/Game/src/AI/Navigation/NavigationSystem.cpp
@@ -129,18 +93,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/Navigation/NavMeshDebugDraw.cpp
 	DEM/Game/src/AI/Navigation/NavMeshLoaderNM.cpp
 	DEM/Game/src/AI/Navigation/PathRequestQueue.cpp
-	DEM/Game/src/AI/Planning/ActionTpl.cpp
-	DEM/Game/src/AI/Planning/ActionTplIdle.cpp
-	DEM/Game/src/AI/Planning/Goal.cpp
-	DEM/Game/src/AI/Planning/GoalIdle.cpp
-	DEM/Game/src/AI/Planning/Planner.cpp
-	DEM/Game/src/AI/Planning/WorldState.cpp
-	DEM/Game/src/AI/Planning/WorldStateSourceScript.cpp
-	DEM/Game/src/AI/SmartObj/SmartAction.cpp
-	DEM/Game/src/AI/SmartObj/Actions/ActionGotoSmartObj.cpp
-	DEM/Game/src/AI/SmartObj/Actions/ActionUseSmartObj.cpp
-	DEM/Game/src/AI/SmartObj/ActionTpls/ActionTplGotoSmartObj.cpp
-	DEM/Game/src/AI/SmartObj/ActionTpls/ActionTplUseSmartObj.cpp
+	DEM/Game/src/AI/Perception/PerceptionSystems.cpp
 	DEM/Game/src/Animation/TimelineTask.cpp
 	DEM/Game/src/App/AppFSM.cpp
 	DEM/Game/src/App/AppStateVideo.cpp
@@ -179,7 +132,5 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Scripting/Flow/LuaStringAction.cpp
 	DEM/Game/src/Scripting/Flow/ScriptCondition.cpp
 	DEM/Game/src/Scripting/Flow/SetVarAction.cpp
-	DEM/Game/src/SI/SIEntityManager.cpp
-	DEM/Game/src/SI/SINavMesh.cpp
 )
 
