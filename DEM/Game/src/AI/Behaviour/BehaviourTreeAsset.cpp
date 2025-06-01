@@ -7,6 +7,7 @@
 namespace DEM::AI
 {
 
+// Temporary data used when loading an asset
 struct CNodeInfo
 {
 	const Core::CRTTI*            pRTTI;
@@ -29,8 +30,11 @@ static bool DFSSecondPass(const CBehaviourTreeNodeData& NodeData, CNodeInfo* pNo
 {
 	auto& CurrNodeInfo = pNodeInfo[CurrIdx];
 	CurrNodeInfo.pRTTI = DEM::Core::CFactory::Instance().GetRTTI(NodeData.ClassName.CStr()); // TODO: use CStrID in factory
-	n_assert_dbg(CurrNodeInfo.pRTTI);
-	if (!CurrNodeInfo.pRTTI) return false;
+	if (!CurrNodeInfo.pRTTI || !CurrNodeInfo.pRTTI->IsDerivedFrom(CBehaviourTreeNodeBase::RTTI))
+	{
+		::Sys::Error("Behaviour tree node class is not found or is not a subclass of CBehaviourTreeNodeBase");
+		return false;
+	}
 
 	CurrNodeInfo.pData = &NodeData;
 
@@ -53,12 +57,12 @@ CBehaviourTreeAsset::CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData)
 	size_t NodeCount = 0;
 	size_t MaxDepth = 0;
 	DFSFirstPass(RootNodeData, 1, NodeCount, MaxDepth);
-	n_assert_dbg(NodeCount);
+	n_assert_dbg(NodeCount > 0);
 
 	// Fill a temporary buffer with node information needed to build an asset
 	std::unique_ptr<CNodeInfo[]> NodeInfo(new CNodeInfo[NodeCount]);
 	size_t CurrIdx = 0;
-	DFSSecondPass(RootNodeData, NodeInfo.get(), CurrIdx);
+	if (!DFSSecondPass(RootNodeData, NodeInfo.get(), CurrIdx)) return;
 
 	// Sort nodes by alignment and size of static data for optimal packing into a single buffer (see below)
 	std::sort(NodeInfo.get(), NodeInfo.get() + NodeCount, [](const auto& a, const auto& b)
@@ -70,33 +74,45 @@ CBehaviourTreeAsset::CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData)
 		return a.Index < b.Index;
 	});
 
-	// Calculate memory needed for node pointer and skip index array
-	const size_t StaticAlignment = std::max(sizeof(void*), NodeInfo[0].pRTTI->GetInstanceAlignment());
-	size_t StaticBytes = 0;
+	_Nodes.reset(new CNode[NodeCount]);
 
-	// Add shared node data memory requirements
+	// Calculate shared node data memory requirements
+	size_t StaticBytes = 0;
 	for (size_t i = 0; i < NodeCount; ++i)
 		StaticBytes += NodeInfo[i].pRTTI->GetInstanceSize();
 
-	// Allocate a single buffer for all asset data
-	unique_ptr_aligned<void> StaticBuffer(n_malloc_aligned(StaticBytes, StaticAlignment));
-	// std::aligned_alloc / std::free, operator new(std::align_val_t)
-	// std::aligned_storage, alignas(Align) unsigned char data[Len];
-	// assert that memory is allocated!
-	//!!!could sort by alignment!
-	//
-	//auto storage = static_cast<Foo*>(std::aligned_alloc(n * sizeof(Foo), alignment));
-	//std::uninitialized_default_construct_n(storage, n);
-	//auto ptr = std::launder(storage);
-	//// use ptr to refer to Foo objects
-	//std::destroy_n(storage, n);
-	//free(storage);
+	// Allocate a single buffer for node implementations
+	const size_t StaticAlignment = std::max(sizeof(void*), NodeInfo[0].pRTTI->GetInstanceAlignment());
+	_NodeImplBuffer.reset(n_malloc_aligned(StaticBytes, StaticAlignment));
+	auto* pAddr = static_cast<std::byte*>(_NodeImplBuffer.get());
+	for (size_t i = 0; i < NodeCount; ++i)
+	{
+		auto& CurrNodeInfo = NodeInfo[i];
+
+		auto* pRTTI = CurrNodeInfo.pRTTI;
+		auto* pNode = static_cast<CBehaviourTreeNodeBase*>(pRTTI->CreateInstance(pAddr));
+		pNode->Init(CurrNodeInfo.pData->Params);
+
+		pAddr += pRTTI->GetInstanceSize();
+
+		auto& CurrNode = _Nodes[CurrNodeInfo.Index];
+		CurrNode.pNode = pNode;
+		CurrNode.SkipSubtreeIndex = CurrNodeInfo.SkipSubtreeIndex;
+	}
 
 	// Calculate per-instance node data memory requirements. This will be used by BT players.
 	size_t InstanceAlignment = sizeof(void*);
 	size_t InstanceBytes = 0;
 	//...
 	InstanceBytes = Math::CeilToMultiple(InstanceBytes, InstanceAlignment);
+}
+//---------------------------------------------------------------------
+
+CBehaviourTreeAsset::~CBehaviourTreeAsset()
+{
+	const size_t EndIdx = _Nodes[0].SkipSubtreeIndex;
+	for (size_t i = 0; i < EndIdx; ++i)
+		_Nodes[i].pNode->~CBehaviourTreeNodeBase();
 }
 //---------------------------------------------------------------------
 
