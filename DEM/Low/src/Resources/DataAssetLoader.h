@@ -8,7 +8,7 @@
 // A template for loading arbitrary C++ object as a DEM resource from HRD using metadata defined with DEM::Meta.
 // Example of usage:
 //
-// class CAsset : public Core::CObject
+// class CAsset : public DEM::Core::CObject
 // {
 // public:
 //
@@ -33,13 +33,13 @@ class CDataAssetLoaderHRD : public Resources::CResourceLoader
 {
 public:
 
-	static_assert(std::is_base_of_v<Core::CObject, T>, "Resource class must be derived from Core::CObject");
+	static_assert(std::is_base_of_v<DEM::Core::CObject, T>, "Resource class must be derived from Core::CObject");
 
 	CDataAssetLoaderHRD(Resources::CResourceManager& ResourceManager) : CResourceLoader(ResourceManager) {}
 
-	virtual const Core::CRTTI& GetResultType() const override { return T::RTTI; }
+	virtual const DEM::Core::CRTTI& GetResultType() const override { return T::RTTI; }
 
-	virtual Core::PObject CreateResource(CStrID UID) override
+	virtual DEM::Core::PObject CreateResource(CStrID UID) override
 	{
 		// Load data stream contents to a buffer
 		const char* pOutSubId;

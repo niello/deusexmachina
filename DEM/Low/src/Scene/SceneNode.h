@@ -23,7 +23,7 @@ namespace Scene
 typedef Ptr<class CSceneNode> PSceneNode;
 typedef Ptr<class CNodeAttribute> PNodeAttribute;
 
-class CSceneNode: public ::Core::CObject
+class CSceneNode: public DEM::Core::CObject
 {
 public:
 

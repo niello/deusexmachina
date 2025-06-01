@@ -88,13 +88,13 @@ private:
 public:
 
 	constexpr CBufferMalloc() = default;
-	CBufferMalloc(UPTR Size) : _pData(Size ? n_malloc(Size) : nullptr), _Size(Size) {}
+	CBufferMalloc(UPTR Size) : _pData(Size ? std::malloc(Size) : nullptr), _Size(Size) {}
 	CBufferMalloc(const CBufferMalloc& Other);
 	CBufferMalloc(CBufferMalloc&& Other) noexcept : _pData(Other._pData), _Size(Other._Size) { Other._pData = nullptr; Other._Size = 0; }
 	CBufferMalloc& operator =(const CBufferMalloc& Other);
 	CBufferMalloc& operator =(CBufferMalloc&& Other);
 
-	virtual ~CBufferMalloc() override { if (_pData) n_free(_pData); }
+	virtual ~CBufferMalloc() override { if (_pData) std::free(_pData); }
 
 	virtual void*       GetPtr() override { return _pData; }
 	virtual const void* GetConstPtr() const override { return _pData; }

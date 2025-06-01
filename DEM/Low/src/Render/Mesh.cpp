@@ -4,7 +4,7 @@
 
 namespace Render
 {
-FACTORY_CLASS_IMPL(Render::CMesh, 'MESH', ::Core::CObject);
+FACTORY_CLASS_IMPL(Render::CMesh, 'MESH', DEM::Core::CObject);
 
 CMesh::CMesh() = default;
 

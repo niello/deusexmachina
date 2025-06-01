@@ -10,9 +10,9 @@ using PRenderable = std::unique_ptr<class IRenderable>;
 class IRenderer;
 
 // FIXME: with fields it is a base class and not an interface!
-class IRenderable: public Core::CRTTIBaseClass
+class IRenderable: public DEM::Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL(Render::IRenderable, Core::CRTTIBaseClass);
+	RTTI_CLASS_DECL(Render::IRenderable, DEM::Core::CRTTIBaseClass);
 
 protected:
 

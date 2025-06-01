@@ -20,7 +20,7 @@ protected:
 public:
 
 	CStringTokenizer(const char* String, char* Buffer = nullptr, UPTR BufSize = 0);
-	~CStringTokenizer() { if (FreeBuffer) n_free(pBuffer); }
+	~CStringTokenizer() { if (FreeBuffer) std::free(pBuffer); }
 
 	void		ResetCursor() { pCursor = pString; }
 	const char*	GetCurrToken() const { return pBuffer; }
@@ -47,7 +47,7 @@ inline CStringTokenizer::CStringTokenizer(const char* String, char* Buffer, UPTR
 	else
 	{
 		BufferSize = strlen(String) + 1;
-		pBuffer = (char*)n_malloc(BufferSize);
+		pBuffer = (char*)std::malloc(BufferSize);
 		FreeBuffer = true;
 	}
 

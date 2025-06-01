@@ -45,9 +45,9 @@ struct CSmartObjectStateInfo
 	std::vector<CSmartObjectTransitionInfo> Transitions;
 };
 
-class CSmartObject : public ::Core::CObject
+class CSmartObject : public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::Game::CSmartObject, ::Core::CObject);
+	RTTI_CLASS_DECL(DEM::Game::CSmartObject, DEM::Core::CObject);
 
 protected:
 

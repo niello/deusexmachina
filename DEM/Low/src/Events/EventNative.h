@@ -8,9 +8,9 @@
 // NB: this MUST be declared in all native event classes!
 #define NATIVE_EVENT_DECL(Class, ParentClass) \
 public: \
-	inline static const ::Core::CRTTI RTTI = ::Core::CRTTI(#Class, 0, nullptr, &ParentClass::RTTI, 0); \
-	virtual const ::Core::CRTTI* GetRTTI() const override { return &RTTI; } \
-	virtual ::Events::CEventID     GetID() const override { return &RTTI; } \
+	inline static const DEM::Core::CRTTI RTTI = DEM::Core::CRTTI(#Class, 0, nullptr, nullptr, &ParentClass::RTTI, 0, 0); \
+	virtual const DEM::Core::CRTTI* GetRTTI() const override { return &RTTI; } \
+	virtual ::Events::CEventID      GetID() const override { return &RTTI; } \
 private:
 
 namespace Events

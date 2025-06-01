@@ -9,9 +9,9 @@ namespace DEM::Anim
 {
 using PTimelineTrack = Ptr<class CTimelineTrack>;
 
-class CTimelineTrack : public ::Core::CObject
+class CTimelineTrack : public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::Anim::CTimelineTrack, ::Core::CObject);
+	RTTI_CLASS_DECL(DEM::Anim::CTimelineTrack, DEM::Core::CObject);
 
 protected:
 

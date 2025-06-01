@@ -21,7 +21,7 @@ struct CNavControllerComponent
 
 	void SetActionID(const std::string& ActionID)
 	{
-		Action = ::Core::CFactory::Instance().Create<DEM::AI::CTraversalAction>(ActionID.c_str());
+		Action = DEM::Core::CFactory::Instance().Create<DEM::AI::CTraversalAction>(ActionID.c_str());
 	}
 
 	const std::string& GetActionID() const

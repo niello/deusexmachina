@@ -9,9 +9,9 @@ namespace DEM::Game
 {
 class CGameSession;
 
-class CFormationManager : public ::Core::CRTTIBaseClass
+class CFormationManager : public DEM::Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL(CFormationManager, ::Core::CRTTIBaseClass);
+	RTTI_CLASS_DECL(CFormationManager, DEM::Core::CRTTIBaseClass);
 
 protected:
 

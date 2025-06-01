@@ -9,7 +9,7 @@ namespace Render
 {
 
 //!!!GPU resource, Buffer, Resource!
-class CIndexBuffer: public Core::CObject
+class CIndexBuffer: public DEM::Core::CObject
 {
 	//RTTI_CLASS_DECL;
 

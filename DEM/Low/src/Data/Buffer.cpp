@@ -18,7 +18,7 @@ int IBuffer::Compare(const void* pOtherData, UPTR OtherSize) const
 //---------------------------------------------------------------------
 
 CBufferMalloc::CBufferMalloc(const CBufferMalloc& Other)
-	: _pData(Other._Size ? n_malloc(Other._Size) : nullptr)
+	: _pData(Other._Size ? std::malloc(Other._Size) : nullptr)
 	, _Size(Other._Size)
 {
 	if (_Size) std::memcpy(_pData, Other._pData, _Size);
@@ -27,9 +27,9 @@ CBufferMalloc::CBufferMalloc(const CBufferMalloc& Other)
 
 CBufferMalloc& CBufferMalloc::operator =(const CBufferMalloc& Other)
 {
-	if (_pData) n_free(_pData);
+	if (_pData) std::free(_pData);
 	_Size = Other._Size;
-	_pData = _Size ? n_malloc(_Size) : nullptr;
+	_pData = _Size ? std::malloc(_Size) : nullptr;
 	if (_Size) std::memcpy(_pData, Other._pData, _Size);
 	return *this;
 }
@@ -37,7 +37,7 @@ CBufferMalloc& CBufferMalloc::operator =(const CBufferMalloc& Other)
 
 CBufferMalloc& CBufferMalloc::operator =(CBufferMalloc&& Other)
 {
-	if (_pData) n_free(_pData);
+	if (_pData) std::free(_pData);
 	_pData = Other._pData;
 	_Size = Other._Size;
 	Other._pData = nullptr;
@@ -52,13 +52,13 @@ void* CBufferMalloc::Resize(UPTR NewSize)
 
 	if (!NewSize)
 	{
-		n_free(_pData);
+		std::free(_pData);
 		_pData = nullptr;
 		_Size = 0;
 		return nullptr;
 	}
 
-	if (auto pNewData = n_realloc(_pData, NewSize))
+	if (auto pNewData = std::realloc(_pData, NewSize))
 	{
 		_pData = pNewData;
 		_Size = NewSize;

@@ -24,7 +24,7 @@ namespace Data
 namespace Scripting
 {
 
-class CScriptObject: public Core::CObject
+class CScriptObject: public DEM::Core::CObject
 {
 	FACTORY_CLASS_DECL;
 

@@ -11,9 +11,9 @@ namespace Debug
 {
 #define DbgSrv Debug::CDebugServer::Instance()
 
-class CDebugServer: public Core::CObject
+class CDebugServer: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(Debug::CDebugServer, Core::CObject);
+	RTTI_CLASS_DECL(Debug::CDebugServer, DEM::Core::CObject);
 	__DeclareSingleton(CDebugServer);
 
 private:

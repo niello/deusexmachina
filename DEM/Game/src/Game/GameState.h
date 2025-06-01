@@ -11,9 +11,9 @@ namespace DEM::Game
 {
 typedef Ptr<class CGameState> PGameState;
 
-class CGameState : public ::Core::CObject
+class CGameState : public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::Game::CGameState, ::Core::CObject);
+	RTTI_CLASS_DECL(DEM::Game::CGameState, DEM::Core::CObject);
 
 public:
 

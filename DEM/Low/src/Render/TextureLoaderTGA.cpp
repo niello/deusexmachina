@@ -74,13 +74,13 @@ constexpr U8 TGA_ATTRIBUTE_BITS = 0x0f;
 
 constexpr const char ReferenceSignature[] = "TRUEVISION-XFILE";
 
-const Core::CRTTI& CTextureLoaderTGA::GetResultType() const
+const DEM::Core::CRTTI& CTextureLoaderTGA::GetResultType() const
 {
 	return Render::CTextureData::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CTextureLoaderTGA::CreateResource(CStrID UID)
+DEM::Core::PObject CTextureLoaderTGA::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

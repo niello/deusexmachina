@@ -4,7 +4,7 @@
 
 namespace Render
 {
-FACTORY_CLASS_IMPL(Render::CSkinInfo, 'SKIF', ::Core::CObject);
+FACTORY_CLASS_IMPL(Render::CSkinInfo, 'SKIF', DEM::Core::CObject);
 
 CSkinInfo::~CSkinInfo()
 {

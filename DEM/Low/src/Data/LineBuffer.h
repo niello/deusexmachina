@@ -41,7 +41,7 @@ private:
 public:
 
 	CLineBuffer();
-	~CLineBuffer() { if (pBuffer) n_free(pBuffer); }
+	~CLineBuffer() { if (pBuffer) std::free(pBuffer); }
 
 	void		Put(const char* pString);
 	const char*	GetLine(UPTR Idx) const { n_assert(Idx < MAX_LINES); return Lines[Idx].pString; }
@@ -108,7 +108,7 @@ inline const char* CLineBuffer::CLine::Add(const char* pInStr)
 
 inline CLineBuffer::CLineBuffer(): HeadLine(0), TailLine(0)
 {
-	pBuffer = (char*)n_calloc(MAX_LINE_CHARS, MAX_LINES);
+	pBuffer = (char*)std::calloc(MAX_LINE_CHARS, MAX_LINES);
 	n_assert(pBuffer);
 	for (int i = 0; i < MAX_LINES; ++i)
 		Lines[i].Set(pBuffer + i * MAX_LINE_CHARS, MAX_LINE_CHARS);

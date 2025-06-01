@@ -78,7 +78,7 @@ int CEntityScriptObject_AttachProperty(lua_State* l)
 	SETUP_ENT_SI_ARGS(2)
 	if (lua_isstring(l, 2))
 	{
-		const Core::CRTTI* pRTTI = Core::CFactory::Instance().GetRTTI(lua_tostring(l, 2));
+		const DEM::Core::CRTTI* pRTTI = DEM::Core::CFactory::Instance().GetRTTI(lua_tostring(l, 2));
 		//Game::CProperty* pProp = GameSrv->GetEntityMgr()->AttachProperty(*This->GetEntity(), pRTTI);
 		//pProp->Activate();
 	}
@@ -92,7 +92,7 @@ int CEntityScriptObject_RemoveProperty(lua_State* l)
 	SETUP_ENT_SI_ARGS(2)
 	if (lua_isstring(l, 2))
 	{
-		const Core::CRTTI* pRTTI = Core::CFactory::Instance().GetRTTI(lua_tostring(l, 2));
+		const DEM::Core::CRTTI* pRTTI = DEM::Core::CFactory::Instance().GetRTTI(lua_tostring(l, 2));
 		//GameSrv->GetEntityMgr()->RemoveProperty(*This->GetEntity(), pRTTI);
 	}
 	return 0;
@@ -116,7 +116,7 @@ int CEntityScriptObject_HasProperty(lua_State* l)
 	if (strncmp(ClassName.CStr(), pPrefix, sizeof(pPrefix) - 1))
 		ClassName = pPrefix + ClassName;
 
-	const Core::CRTTI* pRTTI = Core::CFactory::Instance().GetRTTI(ClassName.CStr());
+	const DEM::Core::CRTTI* pRTTI = DEM::Core::CFactory::Instance().GetRTTI(ClassName.CStr());
 	//Game::CProperty* pProp = GameSrv->GetEntityMgr()->GetProperty(This->GetEntity()->GetUID(), pRTTI);
 
 	//lua_pushboolean(l, pProp != nullptr);
@@ -141,7 +141,7 @@ int CEntityScriptObject_IsPropertyActive(lua_State* l)
 	if (strncmp(ClassName.CStr(), pPrefix, sizeof(pPrefix) - 1))
 		ClassName = pPrefix + ClassName;
 
-	const Core::CRTTI* pRTTI = Core::CFactory::Instance().GetRTTI(ClassName.CStr());
+	const DEM::Core::CRTTI* pRTTI = DEM::Core::CFactory::Instance().GetRTTI(ClassName.CStr());
 	//Game::CProperty* pProp = GameSrv->GetEntityMgr()->GetProperty(This->GetEntity()->GetUID(), pRTTI);
 
 	//lua_pushboolean(l, pProp && pProp->IsActive());

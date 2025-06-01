@@ -14,9 +14,9 @@ namespace Resources
 namespace Render
 {
 
-class CCDLODData: public ::Core::CObject
+class CCDLODData: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(Render::CCDLODData, ::Core::CObject);
+	RTTI_CLASS_DECL(Render::CCDLODData, DEM::Core::CObject);
 
 protected:
 

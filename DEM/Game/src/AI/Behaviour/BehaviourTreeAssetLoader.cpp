@@ -9,14 +9,14 @@
 namespace Resources
 {
 
-const Core::CRTTI& CBehaviourTreeAssetLoader::GetResultType() const
+const DEM::Core::CRTTI& CBehaviourTreeAssetLoader::GetResultType() const
 {
 	return DEM::AI::CBehaviourTreeAsset::RTTI;
 }
 //---------------------------------------------------------------------
 
 //???TODO: can replace this loader with CDataAssetLoaderHRD<CBehaviourTreeAsset>? Must sort actions! There is no constructor with args!
-Core::PObject CBehaviourTreeAssetLoader::CreateResource(CStrID UID)
+DEM::Core::PObject CBehaviourTreeAssetLoader::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	Data::PBuffer Buffer;

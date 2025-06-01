@@ -24,9 +24,9 @@ struct CFlowActionData
 	U32                    ID = EmptyActionID;
 };
 
-class CFlowAsset : public ::Core::CObject
+class CFlowAsset : public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::Flow::CFlowAsset, ::Core::CObject);
+	RTTI_CLASS_DECL(DEM::Flow::CFlowAsset, DEM::Core::CObject);
 
 protected:
 

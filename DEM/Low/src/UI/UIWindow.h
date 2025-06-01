@@ -18,7 +18,7 @@ namespace UI
 using PUIWindow = Ptr<class CUIWindow>;
 class CUIContext;
 
-class CUIWindow: public Core::CObject
+class CUIWindow: public DEM::Core::CObject
 {
 	FACTORY_CLASS_DECL;
 

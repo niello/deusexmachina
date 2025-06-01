@@ -8,9 +8,9 @@
 namespace Render
 {
 
-class CTexture: public Core::CObject
+class CTexture: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(Render::CTexture, Core::CObject);
+	RTTI_CLASS_DECL(Render::CTexture, DEM::Core::CObject);
 
 protected:
 

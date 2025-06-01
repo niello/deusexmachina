@@ -52,15 +52,13 @@ namespace Frame
 	typedef Ptr<class CGraphicsResourceManager> PGraphicsResourceManager;
 }
 
-namespace DEM
-{
-namespace Sys
+namespace DEM::Sys
 {
 	class IPlatform;
 	typedef Ptr<class COSWindow> POSWindow;
 }
 
-namespace Core
+namespace DEM::Core
 {
 typedef Ptr<class CApplicationState> PApplicationState;
 
@@ -169,4 +167,3 @@ public:
 };
 
 }
-};

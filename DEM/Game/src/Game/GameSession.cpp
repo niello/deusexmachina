@@ -18,8 +18,8 @@ CGameSession::CGameSession(Resources::CResourceManager& ResMgr)
 	auto SessionClassMeta = _ScriptState.new_usertype<CGameSession>("CGameSession"
 		, sol::meta_function::index, [](CGameSession& Self, sol::stack_object Key) { return sol::object(Self._ScriptFields[Key]); }
 		, "FindFeature", sol::overload(
-			static_cast<::Core::CRTTIBaseClass* (CGameSession::*)(const char*) const>(&CGameSession::FindFeature)
-			, static_cast<::Core::CRTTIBaseClass* (CGameSession::*)(CStrID) const>(&CGameSession::FindFeature))
+			static_cast<Core::CRTTIBaseClass* (CGameSession::*)(const char*) const>(&CGameSession::FindFeature)
+			, static_cast<Core::CRTTIBaseClass* (CGameSession::*)(CStrID) const>(&CGameSession::FindFeature))
 		);
 
 	_ScriptFields = _ScriptState.create_table();

@@ -24,9 +24,9 @@ namespace Frame
 class CView;
 typedef Ptr<class CRenderPhase> PRenderPhase;
 
-class CRenderPath: public Core::CObject
+class CRenderPath: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(Frame::CRenderPath, Core::CObject);
+	RTTI_CLASS_DECL(Frame::CRenderPath, DEM::Core::CObject);
 
 protected:
 
@@ -49,8 +49,8 @@ public:
 
 	struct CRendererSettings
 	{
-		const Core::CRTTI*              pRendererType = nullptr;
-		std::vector<const Core::CRTTI*> RenderableTypes;
+		const DEM::Core::CRTTI*              pRendererType = nullptr;
+		std::vector<const DEM::Core::CRTTI*> RenderableTypes;
 		Data::PParams                   SettingsDesc;
 	};
 

@@ -10,9 +10,9 @@
 //???!!!move to application base class?! too little functionality and will not be more
 //isn't worth a dedicated singleton
 
-namespace Core
+namespace DEM::Core
 {
-#define CoreSrv Core::CCoreServer::Instance()
+#define CoreSrv DEM::Core::CCoreServer::Instance()
 
 typedef Ptr<class CTimeSource> PTimeSource;
 

@@ -30,7 +30,7 @@ bool CD3D11VertexLayout::Create(const CVertexComponent* pComponents, UPTR Count,
 	pD3DDesc = n_new_array(D3D11_INPUT_ELEMENT_DESC, Count);
 	std::memcpy(pD3DDesc, pD3DElementDesc, Count * sizeof(D3D11_INPUT_ELEMENT_DESC));
 
-	pSemanticNames = (char*)n_malloc(SemanticNamesLen);
+	pSemanticNames = (char*)std::malloc(SemanticNamesLen);
 	char* pCurr = pSemanticNames;
 	char* pEnd = pSemanticNames + SemanticNamesLen;
 	for (UPTR i = 0; i < Count; ++i)

@@ -19,13 +19,13 @@ struct CMSHMeshGroup
 };
 #pragma pack(pop)
 
-const Core::CRTTI& CMeshLoaderMSH::GetResultType() const
+const DEM::Core::CRTTI& CMeshLoaderMSH::GetResultType() const
 {
 	return Render::CMeshData::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CMeshLoaderMSH::CreateResource(CStrID UID)
+DEM::Core::PObject CMeshLoaderMSH::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

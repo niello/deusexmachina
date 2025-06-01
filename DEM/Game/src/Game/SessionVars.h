@@ -8,9 +8,9 @@ namespace DEM::Game
 {
 class CGameSession;
 
-class CSessionVars : public ::Core::CRTTIBaseClass
+class CSessionVars : public DEM::Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL(CSessionVars, ::Core::CRTTIBaseClass);
+	RTTI_CLASS_DECL(CSessionVars, DEM::Core::CRTTIBaseClass);
 
 protected:
 

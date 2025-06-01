@@ -12,13 +12,13 @@ namespace Resources
 static const CStrID sidID("ID");
 static const CStrID sidTime("Time");
 
-const Core::CRTTI& CAnimationLoaderANM::GetResultType() const
+const DEM::Core::CRTTI& CAnimationLoaderANM::GetResultType() const
 {
 	return DEM::Anim::CAnimationClip::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CAnimationLoaderANM::CreateResource(CStrID UID)
+DEM::Core::PObject CAnimationLoaderANM::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

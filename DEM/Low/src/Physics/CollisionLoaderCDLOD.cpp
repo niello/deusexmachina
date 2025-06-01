@@ -7,14 +7,14 @@
 namespace Resources
 {
 
-const Core::CRTTI& CCollisionLoaderCDLOD::GetResultType() const
+const DEM::Core::CRTTI& CCollisionLoaderCDLOD::GetResultType() const
 {
 	return Physics::CCollisionShape::RTTI;
 }
 //---------------------------------------------------------------------
 
 // Can also load CDLODData resource and acceletare raycasting with minmax map
-Core::PObject CCollisionLoaderCDLOD::CreateResource(CStrID UID)
+DEM::Core::PObject CCollisionLoaderCDLOD::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

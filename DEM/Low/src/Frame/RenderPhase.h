@@ -17,9 +17,9 @@ class CGraphicsResourceManager;
 class CView;
 class CRenderPath;
 
-class CRenderPhase: public Core::CObject //???need? lives only in RP!
+class CRenderPhase: public DEM::Core::CObject //???need? lives only in RP!
 {
-	RTTI_CLASS_DECL(Frame::CRenderPhase, Core::CObject);
+	RTTI_CLASS_DECL(Frame::CRenderPhase, DEM::Core::CObject);
 
 protected:
 

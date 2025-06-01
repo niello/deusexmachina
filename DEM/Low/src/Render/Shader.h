@@ -8,7 +8,7 @@
 namespace Render
 {
 
-class CShader: public Core::CObject
+class CShader: public DEM::Core::CObject
 {
 protected:
 

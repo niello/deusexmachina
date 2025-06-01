@@ -1,6 +1,6 @@
 #include "Object.h"
 
-namespace Core
+namespace DEM::Core
 {
 
 #ifdef _DEBUG

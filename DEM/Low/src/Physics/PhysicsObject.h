@@ -15,9 +15,9 @@ namespace Physics
 typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
 class CCollisionShape;
 
-class CPhysicsObject: public Core::CObject
+class CPhysicsObject: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(Physics::CPhysicsObject, Core::CObject);
+	RTTI_CLASS_DECL(Physics::CPhysicsObject, DEM::Core::CObject);
 
 protected:
 

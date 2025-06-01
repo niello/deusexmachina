@@ -15,7 +15,7 @@ void CResource::SetCreator(IResourceCreator* pNewCreator)
 }
 //--------------------------------------------------------------------
 
-::Core::CObject* CResource::GetObject()
+DEM::Core::CObject* CResource::GetObject()
 {
 	if (_State == EResourceState::Loaded)
 	{
@@ -28,7 +28,7 @@ void CResource::SetCreator(IResourceCreator* pNewCreator)
 }
 //--------------------------------------------------------------------
 
-::Core::CObject* CResource::ValidateObject()
+DEM::Core::CObject* CResource::ValidateObject()
 {
 	if (_State == EResourceState::Loaded)
 	{

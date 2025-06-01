@@ -14,13 +14,13 @@
 namespace Resources
 {
 
-const Core::CRTTI& CNavAgentSettingsLoaderHRD::GetResultType() const
+const DEM::Core::CRTTI& CNavAgentSettingsLoaderHRD::GetResultType() const
 {
 	return DEM::AI::CNavAgentSettings::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CNavAgentSettingsLoaderHRD::CreateResource(CStrID UID)
+DEM::Core::PObject CNavAgentSettingsLoaderHRD::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	Data::PBuffer Buffer;
@@ -57,7 +57,7 @@ Core::PObject CNavAgentSettingsLoaderHRD::CreateResource(CStrID UID)
 			{
 				CString ActionID;
 				if (AreaDesc.TryGet(ActionID, CStrID("Action")))
-					Action = Core::CFactory::Instance().Create<DEM::AI::CTraversalAction>(ActionID);
+					Action = DEM::Core::CFactory::Instance().Create<DEM::AI::CTraversalAction>(ActionID);
 			}
 
 			const bool UseControllersInArea = AreaDesc.Get(CStrID("UseControllers"), false);

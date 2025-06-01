@@ -18,9 +18,9 @@ namespace RPG
 {
 #define WorldMgr RPG::CWorldManager::Instance()
 
-class CWorldManager: public Core::CObject
+class CWorldManager: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(RPG::CWorldManager, Core::CObject);
+	RTTI_CLASS_DECL(RPG::CWorldManager, DEM::Core::CObject);
 	__DeclareSingleton(CWorldManager);
 
 private:

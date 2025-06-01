@@ -9,7 +9,7 @@
 namespace Events
 {
 
-class CEventBase : public Core::CRTTIBaseClass
+class CEventBase : public DEM::Core::CRTTIBaseClass
 {
 protected:
 

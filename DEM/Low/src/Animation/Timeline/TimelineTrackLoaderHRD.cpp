@@ -10,13 +10,13 @@
 namespace Resources
 {
 
-const Core::CRTTI& CTimelineTrackLoaderHRD::GetResultType() const
+const DEM::Core::CRTTI& CTimelineTrackLoaderHRD::GetResultType() const
 {
 	return DEM::Anim::CTimelineTrack::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CTimelineTrackLoaderHRD::CreateResource(CStrID UID)
+DEM::Core::PObject CTimelineTrackLoaderHRD::CreateResource(CStrID UID)
 {
 	// TODO: can support optional multiple templates in one file through sub-ID
 	const char* pOutSubId;

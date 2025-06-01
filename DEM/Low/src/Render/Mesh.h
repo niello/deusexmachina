@@ -10,7 +10,7 @@ namespace Render
 {
 typedef Ptr<class CMeshData> PMeshData;
 
-class CMesh: public ::Core::CObject
+class CMesh: public DEM::Core::CObject
 {
 	FACTORY_CLASS_DECL;
 

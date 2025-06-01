@@ -8,9 +8,9 @@
 namespace Input
 {
 
-class CInputConditionState: public Core::CRTTIBaseClass
+class CInputConditionState: public DEM::Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL(Input::CInputConditionState, Core::CRTTIBaseClass);
+	RTTI_CLASS_DECL(Input::CInputConditionState, DEM::Core::CRTTIBaseClass);
 
 protected:
 

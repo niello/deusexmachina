@@ -43,7 +43,7 @@ PGameState CGameStateManager::PopState()
 }
 //---------------------------------------------------------------------
 
-void CGameStateManager::PopStateTo(const ::Core::CRTTI& StateType)
+void CGameStateManager::PopStateTo(const Core::CRTTI& StateType)
 {
 	while (!_Stack.empty() && !_Stack.back()->IsA(StateType))
 		PopState();
@@ -68,7 +68,7 @@ void CGameStateManager::PopAllStates()
 }
 //---------------------------------------------------------------------
 
-CGameState* CGameStateManager::FindState(const ::Core::CRTTI& StateType)
+CGameState* CGameStateManager::FindState(const Core::CRTTI& StateType)
 {
 	for (auto It = _Stack.rbegin(); It != _Stack.rend(); ++It)
 		if ((*It)->IsA(StateType)) return It->Get();

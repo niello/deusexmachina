@@ -9,13 +9,13 @@
 namespace Resources
 {
 
-const Core::CRTTI& CTextureLoaderCDLOD::GetResultType() const
+const DEM::Core::CRTTI& CTextureLoaderCDLOD::GetResultType() const
 {
 	return Render::CTextureData::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CTextureLoaderCDLOD::CreateResource(CStrID UID)
+DEM::Core::PObject CTextureLoaderCDLOD::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

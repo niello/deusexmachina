@@ -19,9 +19,9 @@ typedef std::unique_ptr<class CGameWorld> PGameWorld;
 typedef Ptr<class CGameLevel> PGameLevel;
 
 // CRTTIBaseClass for registration in a CGameSession.
-class CGameWorld final : public ::Core::CRTTIBaseClass
+class CGameWorld final : public DEM::Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL(CGameWorld, ::Core::CRTTIBaseClass);
+	RTTI_CLASS_DECL(CGameWorld, DEM::Core::CRTTIBaseClass);
 
 protected:
 

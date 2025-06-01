@@ -47,9 +47,9 @@ public:
 	virtual Events::CConnection ProvideChoices(std::vector<std::string>&& Texts, std::vector<bool>&& ValidFlags, std::function<void(size_t)>&& OnChoose) = 0;
 };
 
-class CConversationManager : public ::Core::CRTTIBaseClass
+class CConversationManager : public DEM::Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL(CConversationManager, ::Core::CRTTIBaseClass);
+	RTTI_CLASS_DECL(CConversationManager, DEM::Core::CRTTIBaseClass);
 
 protected:
 

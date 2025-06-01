@@ -8,13 +8,13 @@
 // Base class for engine objects. Provides refcounting, smart pointer support,
 // fast custom RTTI and security check at application shutdown.
 
-namespace Core
+namespace DEM::Core
 {
 typedef Ptr<class CObject> PObject;
 
 class CObject : public Data::CRefCounted, public CRTTIBaseClass
 {
-	RTTI_CLASS_DECL(Core::CObject, Core::CRTTIBaseClass);
+	RTTI_CLASS_DECL(DEM::Core::CObject, CRTTIBaseClass);
 
 #ifdef _DEBUG
 private:

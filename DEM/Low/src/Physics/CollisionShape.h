@@ -11,9 +11,9 @@ namespace Physics
 {
 using PCollisionShape = Ptr<class CCollisionShape>;
 
-class CCollisionShape : public ::Core::CObject
+class CCollisionShape : public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(Physics::CCollisionShape, ::Core::CObject);
+	RTTI_CLASS_DECL(Physics::CCollisionShape, DEM::Core::CObject);
 
 protected:
 

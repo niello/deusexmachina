@@ -9,9 +9,9 @@
 namespace DEM::AI
 {
 
-class CNavMesh : public ::Core::CObject
+class CNavMesh : public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::AI::CNavMesh, ::Core::CObject);
+	RTTI_CLASS_DECL(DEM::AI::CNavMesh, DEM::Core::CObject);
 
 protected:
 

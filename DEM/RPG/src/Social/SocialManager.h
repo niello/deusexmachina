@@ -31,7 +31,7 @@ struct CFactionInfo
 	//  - ???unpaid crime accumulator?
 };
 
-class CSocialManager: public ::Core::CRTTIBaseClass
+class CSocialManager: public DEM::Core::CRTTIBaseClass
 {
 private:
 

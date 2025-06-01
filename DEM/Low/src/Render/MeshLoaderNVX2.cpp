@@ -154,13 +154,13 @@ static void SetupVertexComponents(U32 Mask, std::vector<Render::CVertexComponent
 }
 //---------------------------------------------------------------------
 
-const Core::CRTTI& CMeshLoaderNVX2::GetResultType() const
+const DEM::Core::CRTTI& CMeshLoaderNVX2::GetResultType() const
 {
 	return Render::CMeshData::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CMeshLoaderNVX2::CreateResource(CStrID UID)
+DEM::Core::PObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

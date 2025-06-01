@@ -13,7 +13,7 @@ namespace Render
 {
 
 template<typename T>
-static inline T* Cast(Core::CRTTIBaseClass& Value)
+static inline T* Cast(DEM::Core::CRTTIBaseClass& Value)
 {
 #if DEM_SHADER_META_DYNAMIC_TYPE_VALIDATION
 	return Value.As<T>();

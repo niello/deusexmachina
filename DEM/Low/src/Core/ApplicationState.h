@@ -12,9 +12,9 @@ namespace DEM::Core
 class CApplication;
 typedef Ptr<class CApplicationState> PApplicationState;
 
-class CApplicationState : public ::Core::CObject
+class CApplicationState : public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::Core::CApplicationState, ::Core::CObject);
+	RTTI_CLASS_DECL(DEM::Core::CApplicationState, DEM::Core::CObject);
 
 protected:
 

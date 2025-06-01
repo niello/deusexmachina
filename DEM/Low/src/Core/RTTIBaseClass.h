@@ -3,14 +3,14 @@
 
 // Base class for all RTTI-capable classes. Implements RTTI root and all necessary methods for type checking.
 
-namespace Core
+namespace DEM::Core
 {
 
 class CRTTIBaseClass
 {
 public:
 
-	inline static const ::Core::CRTTI RTTI = ::Core::CRTTI("Core::CRTTIBaseClass", 0, nullptr, nullptr, 0);
+	inline static const CRTTI RTTI = CRTTI("Core::CRTTIBaseClass", 0, nullptr, nullptr, nullptr, 0, 0);
 
 	virtual ~CRTTIBaseClass() = default;
 

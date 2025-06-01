@@ -1,7 +1,7 @@
 #include "Factory.h"
 #include <Core/RTTI.h>
 
-namespace Core
+namespace DEM::Core
 {
 
 CFactory& CFactory::Instance()
@@ -46,19 +46,19 @@ const CRTTI* CFactory::GetRTTI(uint32_t ClassFourCC) const
 }
 //---------------------------------------------------------------------
 
-CRTTIBaseClass* CFactory::Create(const char* pClassName, void* pParam) const
+CRTTIBaseClass* CFactory::Create(const char* pClassName) const
 {
 	const CRTTI* pRTTI = GetRTTI(pClassName);
 	n_assert_dbg(pRTTI);
-	return pRTTI ? pRTTI->CreateClassInstance(pParam) : nullptr;
+	return pRTTI ? pRTTI->CreateInstance() : nullptr;
 }
 //---------------------------------------------------------------------
 
-CRTTIBaseClass* CFactory::Create(uint32_t ClassFourCC, void* pParam) const
+CRTTIBaseClass* CFactory::Create(uint32_t ClassFourCC) const
 {
 	const CRTTI* pRTTI = GetRTTI(ClassFourCC);
 	n_assert_dbg(pRTTI);
-	return pRTTI ? pRTTI->CreateClassInstance(pParam) : nullptr;
+	return pRTTI ? pRTTI->CreateInstance() : nullptr;
 }
 //---------------------------------------------------------------------
 

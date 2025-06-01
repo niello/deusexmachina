@@ -16,9 +16,9 @@ class CVideoPlayer;
 
 #define VideoSrv Video::CVideoServer::Instance()
 
-class CVideoServer: public Core::CObject
+class CVideoServer: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(Video::CVideoServer, Core::CObject);
+	RTTI_CLASS_DECL(Video::CVideoServer, DEM::Core::CObject);
 	__DeclareSingleton(CVideoServer);
 
 protected:

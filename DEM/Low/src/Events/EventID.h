@@ -14,13 +14,13 @@ struct CEventID
 	union
 	{
 		const char*        ID = nullptr; // Pointer to string interned by CStrID
-		const Core::CRTTI* RTTI;
+		const DEM::Core::CRTTI* RTTI;
 	};
 
 	CEventID() = default;
 	CEventID(CStrID _ID): ID(_ID.CStr()) {}
-	CEventID(const Core::CRTTI* _RTTI): RTTI(_RTTI) {}
-	CEventID(const Core::CRTTI& _RTTI): RTTI(&_RTTI) {}
+	CEventID(const DEM::Core::CRTTI* _RTTI): RTTI(_RTTI) {}
+	CEventID(const DEM::Core::CRTTI& _RTTI): RTTI(&_RTTI) {}
 
 	constexpr operator bool() const noexcept { return !!ID; }
 
@@ -33,8 +33,8 @@ struct CEventID
 
 	operator UPTR() const { return (UPTR)ID; }
 	operator CStrID() const { return *(CStrID*)&ID; }
-	operator const Core::CRTTI*() const { return RTTI; }
-	operator const Core::CRTTI&() const { return *RTTI; }
+	operator const DEM::Core::CRTTI*() const { return RTTI; }
+	operator const DEM::Core::CRTTI&() const { return *RTTI; }
 };
 
 }

@@ -6,7 +6,7 @@
 
 #define MAX_FRAME_TIME 0.25f
 
-namespace Core
+namespace DEM::Core
 {
 __ImplementSingleton(Core::CCoreServer);
 

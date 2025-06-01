@@ -11,7 +11,7 @@
 namespace Render
 {
 
-class CConstantBuffer: public Core::CObject
+class CConstantBuffer: public DEM::Core::CObject
 {
 public:
 

@@ -9,14 +9,14 @@
 namespace Resources
 {
 
-const Core::CRTTI& CFlowAssetLoader::GetResultType() const
+const DEM::Core::CRTTI& CFlowAssetLoader::GetResultType() const
 {
 	return DEM::Flow::CFlowAsset::RTTI;
 }
 //---------------------------------------------------------------------
 
 //???TODO: can replace this loader with CDataAssetLoaderHRD<CFlowAsset>? Must sort actions! There is no constructor with args!
-Core::PObject CFlowAssetLoader::CreateResource(CStrID UID)
+DEM::Core::PObject CFlowAssetLoader::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	Data::PBuffer Buffer;

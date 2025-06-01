@@ -5,7 +5,7 @@
 
 // Allows RTTI-enabled object creation by type name or FourCC code
 
-namespace Core
+namespace DEM::Core
 {
 class CRTTI;
 class CRTTIBaseClass;
@@ -32,25 +32,25 @@ public:
 	bool			IsFourCCRegistered(uint32_t ClassFourCC) const;
 	const CRTTI*	GetRTTI(const char* pClassName) const;
 	const CRTTI*	GetRTTI(uint32_t ClassFourCC) const;
-	CRTTIBaseClass*	Create(const char* pClassName, void* pParam = nullptr) const;
-	CRTTIBaseClass*	Create(uint32_t ClassFourCC, void* pParam = nullptr) const;
+	CRTTIBaseClass*	Create(const char* pClassName) const;
+	CRTTIBaseClass*	Create(uint32_t ClassFourCC) const;
 
-	template<class T> T* Create(const char* pClassName, void* pParam = nullptr) const
+	template<class T> T* Create(const char* pClassName) const
 	{
 		const CRTTI* pRTTI = GetRTTI(pClassName);
 
 		// FIXME: use Verify instead of duplicating condition!
 		n_assert2_dbg(pRTTI && pRTTI->IsDerivedFrom(T::RTTI), (std::string("No factory type or not a subclass: ") + pClassName).c_str());
-		return (pRTTI && pRTTI->IsDerivedFrom(T::RTTI)) ? static_cast<T*>(pRTTI->CreateClassInstance(pParam)) : nullptr;
+		return (pRTTI && pRTTI->IsDerivedFrom(T::RTTI)) ? static_cast<T*>(pRTTI->CreateInstance()) : nullptr;
 	}
 
-	template<class T> T* Create(uint32_t ClassFourCC, void* pParam = nullptr) const
+	template<class T> T* Create(uint32_t ClassFourCC) const
 	{
 		const CRTTI* pRTTI = GetRTTI(ClassFourCC);
 
 		// FIXME: use Verify instead of duplicating condition!
 		n_assert2_dbg(pRTTI && pRTTI->IsDerivedFrom(T::RTTI), "No factory type or not a subclass");
-		return (pRTTI && pRTTI->IsDerivedFrom(T::RTTI)) ? static_cast<T*>(pRTTI->CreateClassInstance(pParam)) : nullptr;
+		return (pRTTI && pRTTI->IsDerivedFrom(T::RTTI)) ? static_cast<T*>(pRTTI->CreateInstance()) : nullptr;
 	}
 };
 

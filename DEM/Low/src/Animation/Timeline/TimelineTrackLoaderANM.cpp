@@ -8,13 +8,13 @@
 namespace Resources
 {
 
-const Core::CRTTI& CTimelineTrackLoaderANM::GetResultType() const
+const DEM::Core::CRTTI& CTimelineTrackLoaderANM::GetResultType() const
 {
 	return DEM::Anim::CTimelineTrack::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CTimelineTrackLoaderANM::CreateResource(CStrID UID)
+DEM::Core::PObject CTimelineTrackLoaderANM::CreateResource(CStrID UID)
 {
 	// Requires #TL sub-ID to distinguish from animation clip resource
 	const char* pSubId = strchr(UID.CStr(), '#');

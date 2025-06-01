@@ -108,7 +108,7 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
 		if (DataSize > pSelf->RawInputBufferSize)
 		{
-			pSelf->pRawInputBuffer = n_realloc(pSelf->pRawInputBuffer, DataSize);
+			pSelf->pRawInputBuffer = std::realloc(pSelf->pRawInputBuffer, DataSize);
 			pSelf->RawInputBufferSize = DataSize;
 		}
 

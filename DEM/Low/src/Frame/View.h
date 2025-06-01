@@ -82,7 +82,7 @@ protected:
 	std::map<CStrID, Render::PDepthStencilBuffer>  DSBuffers;
 	std::vector<Render::PRenderQueueBaseT<UPTR>>   _RenderQueues;
 	std::vector<Render::PRenderer>                 _Renderers;
-	std::map<const Core::CRTTI*, U8>               _RenderersByRenderableType;
+	std::map<const DEM::Core::CRTTI*, U8>               _RenderersByRenderableType;
 
 	std::vector<bool>                              _SpatialTreeNodeVisibility;
 	std::map<UPTR, Render::PRenderable>            _Renderables;

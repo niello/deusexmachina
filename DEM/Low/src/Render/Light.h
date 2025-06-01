@@ -33,9 +33,9 @@ struct alignas(16) CGPULightInfo
 	ELightType Type = ELightType::Invalid;
 };
 
-class CLight : public Core::CRTTIBaseClass
+class CLight : public DEM::Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL(Render::CLight, Core::CRTTIBaseClass);
+	RTTI_CLASS_DECL(Render::CLight, DEM::Core::CRTTIBaseClass);
 
 public:
 

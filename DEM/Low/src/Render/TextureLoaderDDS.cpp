@@ -237,13 +237,13 @@ Render::EPixelFormat DDSDX10FormatToPixelFormat(U32 DDSDX10Format)
 }
 //---------------------------------------------------------------------
 
-const Core::CRTTI& CTextureLoaderDDS::GetResultType() const
+const DEM::Core::CRTTI& CTextureLoaderDDS::GetResultType() const
 {
 	return Render::CTextureData::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CTextureLoaderDDS::CreateResource(CStrID UID)
+DEM::Core::PObject CTextureLoaderDDS::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

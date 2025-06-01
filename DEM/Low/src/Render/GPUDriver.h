@@ -32,7 +32,7 @@ namespace DEM::Sys
 namespace Render
 {
 
-class CGPUDriver: public Core::CObject
+class CGPUDriver: public DEM::Core::CObject
 {
 protected:
 

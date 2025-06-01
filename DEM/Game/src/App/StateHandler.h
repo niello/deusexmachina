@@ -16,9 +16,9 @@
 namespace App
 {
 
-class CStateHandler: public Core::CObject
+class CStateHandler: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(App::CStateHandler, Core::CObject);
+	RTTI_CLASS_DECL(App::CStateHandler, DEM::Core::CObject);
 
 protected:
 

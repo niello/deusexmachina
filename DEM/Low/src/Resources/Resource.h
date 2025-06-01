@@ -35,13 +35,10 @@ class CResource final : public Data::CRefCounted
 {
 protected:
 
-	CStrID				_UID;
-	::Core::PObject     _Object;  // Actual object, such as a texture or a game object description
-	PResourceCreator	_Creator; // For (re)creation of an actual resource object
-	EResourceState		_State = EResourceState::NotLoaded;
-
-	//Core::PObject	_Placeholder; //???here or register per RTTI in Mgr?
-	//UPTR				_ByteSize = 0; //???or getter with redirection to Core::PObject?
+	CStrID             _UID;
+	DEM::Core::PObject _Object;  // Actual object, such as a texture or a game object description
+	PResourceCreator   _Creator; // For (re)creation of an actual resource object
+	EResourceState     _State = EResourceState::NotLoaded;
 
 public:
 
@@ -50,27 +47,27 @@ public:
 
 	template<class T> T* GetObject()
 	{
-		::Core::CObject* pObj = GetObject();
+		auto* pObj = GetObject();
 		return (pObj && pObj->IsA<T>()) ? static_cast<T*>(pObj) : nullptr;
 	}
 
 	template<class T> T* ValidateObject()
 	{
-		::Core::CObject* pObj = ValidateObject();
+		auto* pObj = ValidateObject();
 		return (pObj && pObj->IsA<T>()) ? static_cast<T*>(pObj) : nullptr;
 	}
 
-	::Core::CObject*  GetObject();
-	::Core::CObject*  ValidateObject();
-	void              Unload();
+	DEM::Core::CObject* GetObject();
+	DEM::Core::CObject* ValidateObject();
+	void                Unload();
 
 	//PJob ValidateObjectAsync(callback on finished); - doesn't create a job if already actual
 
-	CStrID            GetUID() const { return _UID; }
-	EResourceState    GetState() const { return _State; } //!!!must be thread-safe!
-	bool              IsLoaded() const { return _State == EResourceState::Loaded; } //!!!must be thread-safe!
-	IResourceCreator* GetCreator() const { return _Creator.Get(); }
-	void              SetCreator(IResourceCreator* pNewCreator);
+	CStrID              GetUID() const { return _UID; }
+	EResourceState      GetState() const { return _State; } //!!!must be thread-safe!
+	bool                IsLoaded() const { return _State == EResourceState::Loaded; } //!!!must be thread-safe!
+	IResourceCreator*   GetCreator() const { return _Creator.Get(); }
+	void                SetCreator(IResourceCreator* pNewCreator);
 };
 
 }

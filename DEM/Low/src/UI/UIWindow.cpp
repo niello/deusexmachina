@@ -9,7 +9,7 @@
 
 namespace UI
 {
-FACTORY_CLASS_IMPL(UI::CUIWindow, 'UIWN', Core::CObject);
+FACTORY_CLASS_IMPL(UI::CUIWindow, 'UIWN', DEM::Core::CObject);
 
 CUIWindow::~CUIWindow()
 {

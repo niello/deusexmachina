@@ -8,13 +8,13 @@
 namespace Resources
 {
 
-const Core::CRTTI& CEntityTemplateLoader::GetResultType() const
+const DEM::Core::CRTTI& CEntityTemplateLoader::GetResultType() const
 {
 	return DEM::Game::CEntityTemplate::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CEntityTemplateLoader::CreateResource(CStrID UID)
+DEM::Core::PObject CEntityTemplateLoader::CreateResource(CStrID UID)
 {
 	// TODO: can support optional multiple templates in one file through sub-ID
 	const char* pOutSubId;

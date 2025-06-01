@@ -118,7 +118,7 @@ PUIContext CUIServer::CreateContext(float Width, float Height, DEM::Sys::COSWind
 }
 //---------------------------------------------------------------------
 
-PUIWindow CUIServer::FindReusableWindow(const Core::CRTTI* Type)
+PUIWindow CUIServer::FindReusableWindow(const DEM::Core::CRTTI* Type)
 {
 	auto It = WindowPool.find(Type);
 	if (It == WindowPool.cend() || It->second.empty()) return {};

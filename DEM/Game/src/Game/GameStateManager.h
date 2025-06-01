@@ -24,11 +24,11 @@ public:
 
 	void        PushState(PGameState NewState);
 	PGameState  PopState();
-	void        PopStateTo(const ::Core::CRTTI& StateType);
+	void        PopStateTo(const Core::CRTTI& StateType);
 	void        PopStateTo(const CGameState& State);
 	void        PopAllStates();
 
-	CGameState* FindState(const ::Core::CRTTI& StateType);
+	CGameState* FindState(const Core::CRTTI& StateType);
 	UPTR        GetStateStackDepth() const { return _Stack.size(); }
 };
 

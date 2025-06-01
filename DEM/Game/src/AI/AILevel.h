@@ -15,7 +15,7 @@ namespace DEM::AI
 {
 using PAILevel = Ptr<class CAILevel>;
 
-class CAILevel : public Core::CObject
+class CAILevel : public DEM::Core::CObject
 {
 protected:
 

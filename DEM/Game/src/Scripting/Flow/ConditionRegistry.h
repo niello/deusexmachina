@@ -14,9 +14,9 @@ namespace DEM::Flow
 using PCondition = std::unique_ptr<class ICondition>;
 class CScriptCondition;
 
-class CConditionRegistry final : public ::Core::CRTTIBaseClass
+class CConditionRegistry final : public DEM::Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL(CConditionRegistry, ::Core::CRTTIBaseClass);
+	RTTI_CLASS_DECL(CConditionRegistry, DEM::Core::CRTTIBaseClass);
 
 protected:
 

@@ -81,6 +81,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/AILevel.cpp
 	DEM/Game/src/AI/FormationManager.cpp
 	DEM/Game/src/AI/MoveInteraction.cpp
+	DEM/Game/src/AI/Behaviour/BehaviourTreeAsset.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreeAssetLoader.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreePlayer.cpp
 	DEM/Game/src/AI/Movement/CharacterControlSystem.cpp

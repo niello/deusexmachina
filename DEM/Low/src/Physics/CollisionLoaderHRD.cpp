@@ -11,14 +11,14 @@
 namespace Resources
 {
 
-const Core::CRTTI& CCollisionLoaderHRD::GetResultType() const
+const DEM::Core::CRTTI& CCollisionLoaderHRD::GetResultType() const
 {
 	return Physics::CCollisionShape::RTTI;
 }
 //---------------------------------------------------------------------
 
 // Can also load CDLODData resource and acceletare raycasting with minmax map
-Core::PObject CCollisionLoaderHRD::CreateResource(CStrID UID)
+DEM::Core::PObject CCollisionLoaderHRD::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	Data::PBuffer Buffer;

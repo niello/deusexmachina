@@ -27,7 +27,7 @@ namespace Render
 typedef Ptr<class CDisplayDriver> PDisplayDriver;
 typedef Ptr<class CGPUDriver> PGPUDriver;
 
-class CVideoDriverFactory: public Core::CObject
+class CVideoDriverFactory: public DEM::Core::CObject
 {
 public:
 

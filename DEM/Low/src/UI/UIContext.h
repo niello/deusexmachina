@@ -15,7 +15,7 @@ namespace UI
 using PUIWindow = Ptr<class CUIWindow>;
 using PUIContext = Ptr<class CUIContext>;
 
-class CUIContext: public Core::CObject
+class CUIContext: public DEM::Core::CObject
 {
 private:
 

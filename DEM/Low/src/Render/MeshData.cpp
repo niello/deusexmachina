@@ -97,7 +97,7 @@ void CMeshData::InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount
 		TotalSize = sizeof(CPrimitiveGroup) * _GroupCount;
 	}
 
-	pGroups = static_cast<CPrimitiveGroup*>(n_malloc(TotalSize));
+	pGroups = static_cast<CPrimitiveGroup*>(std::malloc(TotalSize));
 	std::memcpy(pGroups, pData, TotalSize);
 	if (UseMapping) pGroupLODMapping = (CPrimitiveGroup**)(pGroups + _GroupCount);
 

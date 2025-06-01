@@ -22,7 +22,7 @@ public:
 	explicit CString(const char* pSrc, UPTR SrcLength, UPTR PreallocatedFreeSpace = 0);
 	explicit CString(std::string_view Src) : CString(Src.data(), Src.size()) {}
 	CString(const CString& Other, UPTR PreallocatedFreeSpace = 0): CString(Other.CStr(), Other.GetLength(), PreallocatedFreeSpace) { }
-	~CString() { if (pString) n_free(pString); }
+	~CString() { if (pString) std::free(pString); }
 
 	void			Reallocate(UPTR NewMaxLength);
 	void			Reserve(UPTR Bytes) { if (Length + Bytes > MaxLength) Reallocate(Length + Bytes); }
@@ -153,7 +153,7 @@ inline CString::CString(const char* pSrc)
 		UPTR SrcLength = strlen(pSrc);
 		if (SrcLength)
 		{
-			pString = (char*)n_malloc(SrcLength + 1);
+			pString = (char*)std::malloc(SrcLength + 1);
 			memmove(pString, pSrc, SrcLength + 1);
 			MaxLength = SrcLength;
 			Length = SrcLength;
@@ -172,13 +172,13 @@ inline CString::CString(const char* pSrc, UPTR SrcLength, UPTR PreallocatedFreeS
 	if (pSrc && SrcLength)
 	{
 		MaxLength = SrcLength + PreallocatedFreeSpace;
-		pString = (char*)n_malloc(MaxLength + 1);
+		pString = (char*)std::malloc(MaxLength + 1);
 		strncpy_s(pString, MaxLength + 1, pSrc, SrcLength);
 		Length = SrcLength;
 	}
 	else
 	{
-		pString = PreallocatedFreeSpace ? (char*)n_malloc(PreallocatedFreeSpace + 1) : nullptr;
+		pString = PreallocatedFreeSpace ? (char*)std::malloc(PreallocatedFreeSpace + 1) : nullptr;
 		MaxLength = PreallocatedFreeSpace;
 		Length = 0;
 	}
@@ -191,7 +191,7 @@ inline void CString::Set(const char* pSrc, UPTR SrcLength, UPTR PreallocatedFree
 	{
 		UPTR ReqLength = SrcLength + PreallocatedFreeSpace;
 		if (ReqLength > MaxLength)
-			pString = (char*)n_realloc(pString, ReqLength + 1);
+			pString = (char*)std::realloc(pString, ReqLength + 1);
 		memmove(pString, pSrc, SrcLength);
 		pString[SrcLength] = 0;
 		Length = SrcLength;

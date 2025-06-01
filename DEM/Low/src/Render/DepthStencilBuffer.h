@@ -7,9 +7,9 @@
 namespace Render
 {
 
-class CDepthStencilBuffer: public Core::CObject
+class CDepthStencilBuffer: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(Render::CDepthStencilBuffer, Core::CObject);
+	RTTI_CLASS_DECL(Render::CDepthStencilBuffer, DEM::Core::CObject);
 
 protected:
 

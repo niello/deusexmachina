@@ -20,9 +20,9 @@ namespace Data
 namespace Render
 {
 
-class CMeshData: public ::Core::CObject
+class CMeshData: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(Render::CMeshData, ::Core::CObject);
+	RTTI_CLASS_DECL(Render::CMeshData, DEM::Core::CObject);
 
 protected:
 

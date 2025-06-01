@@ -24,8 +24,8 @@ protected:
 
 	Resources::CResourceManager&                         _ResMgr;
 
-	std::vector<std::unique_ptr<::Core::CRTTIBaseClass>> _Features;
-	std::map<CStrID, ::Core::CRTTIBaseClass*>            _FeaturesByName;
+	std::vector<std::unique_ptr<Core::CRTTIBaseClass>> _Features;
+	std::map<CStrID, Core::CRTTIBaseClass*>            _FeaturesByName;
 	sol::state                                           _ScriptState; //???or pass it as a constructor argument and reuse for multiple sessions?!
 	sol::table                                           _ScriptFields;
 	std::map<CStrID, sol::table>                         _LoadedScripts; // For faster lookup
@@ -42,7 +42,7 @@ public:
 
 	template<class T, typename... TArgs> T* RegisterFeature(CStrID Name, TArgs&&... Args)
 	{
-		static_assert(std::is_base_of_v<::Core::CRTTIBaseClass, T>,
+		static_assert(std::is_base_of_v<Core::CRTTIBaseClass, T>,
 			"CGameSession::RegisterFeature() > Feature must be a subclass of CRTTIBaseClass");
 
 		const auto TypeIndex = FeatureTypeIndex<T>;

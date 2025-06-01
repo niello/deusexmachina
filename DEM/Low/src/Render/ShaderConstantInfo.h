@@ -15,7 +15,7 @@ enum EShaderConstantFlags : U8
 	ColumnMajor = 0x01
 };
 
-class CShaderConstantInfo : public Core::CObject
+class CShaderConstantInfo : public DEM::Core::CObject
 {
 protected:
 

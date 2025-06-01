@@ -8,9 +8,9 @@
 namespace DEM::RPG
 {
 
-class CAppearanceAsset : public ::Core::CObject
+class CAppearanceAsset : public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(CAppearanceAsset, ::Core::CObject);
+	RTTI_CLASS_DECL(CAppearanceAsset, DEM::Core::CObject);
 
 public:
 

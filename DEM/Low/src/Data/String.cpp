@@ -11,7 +11,7 @@ void CString::Reallocate(UPTR NewMaxLength)
 
 	if (NewMaxLength)
 	{
-		char* pNewString = (char*)n_realloc(pString, NewMaxLength + 1);
+		char* pNewString = (char*)std::realloc(pString, NewMaxLength + 1);
 		if (!pNewString)
 		{
 			Sys::Error("CString::Reallocate() > Allocation failed!\n");
@@ -42,7 +42,7 @@ void CString::FormatWithArgs(const char* pFormatStr, va_list Args)
 
 	UPTR BufferSize = ReqLength + 1;
 	if (ReqLength > MaxLength)
-		pString = (char*)n_realloc(pString, BufferSize);
+		pString = (char*)std::realloc(pString, BufferSize);
 	_vsnprintf_s(pString, BufferSize, BufferSize, pFormatStr, Args);
 	MaxLength = ReqLength;
 	Length = ReqLength;
@@ -147,7 +147,7 @@ void CString::Replace(const char* pSubStr, const char* pReplaceWith)
 		while (pCurr);
 
 		UPTR NewLength = Length + ReplaceCount * (ReplaceLen - SrcLen);
-		char* pNewString = (NewLength > MaxLength) ? (char*)n_malloc(NewLength + 1) : pString;
+		char* pNewString = (NewLength > MaxLength) ? (char*)std::malloc(NewLength + 1) : pString;
 
 		pCurr = pEnd;
 		char* pDestEnd = pNewString + NewLength;
@@ -174,7 +174,7 @@ void CString::Replace(const char* pSubStr, const char* pReplaceWith)
 		if (pNewString != pString)
 		{
 			if (pString < pPrev) memmove(pNewString, pString, pPrev - pString);
-			n_free(pString);
+			std::free(pString);
 			pString = pNewString;
 			MaxLength = NewLength;
 		}

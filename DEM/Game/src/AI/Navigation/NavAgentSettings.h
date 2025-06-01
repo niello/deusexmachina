@@ -16,9 +16,9 @@ namespace DEM::AI
 using PTraversalAction = Ptr<class CTraversalAction>;
 struct CNavAgentComponent;
 
-class CNavAgentSettings : public ::Core::CObject
+class CNavAgentSettings : public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::AI::CNavAgentSettings, ::Core::CObject);
+	RTTI_CLASS_DECL(DEM::AI::CNavAgentSettings, DEM::Core::CObject);
 
 protected:
 

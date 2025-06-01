@@ -37,7 +37,7 @@ bool CDebugServer::RegisterPlugin(CStrID Name, const char* CppClassName, const c
 {
 	CPlugin New;
 	New.UIResource = UIResource;
-	New.Window = static_cast<UI::CUIWindow*>(Core::CFactory::Instance().Create(CppClassName));
+	New.Window = static_cast<UI::CUIWindow*>(DEM::Core::CFactory::Instance().Create(CppClassName));
 	n_assert(New.Window.IsValidPtr());
 	//!!!call InitPlugin or write all Init code in the virtual CUIWindow::Init!
 	Plugins.Add(Name, New);

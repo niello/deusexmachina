@@ -12,7 +12,7 @@ namespace Render
 {
 
 //!!!GPU resource, Buffer!
-class CVertexBuffer: public Core::CObject
+class CVertexBuffer: public DEM::Core::CObject
 {
 	//RTTI_CLASS_DECL;
 

@@ -18,7 +18,7 @@ void CChoiceAction::CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlo
 {
 	const auto* pActionData = Root._pPlayer->GetAsset()->FindAction(Link.DestID);
 	if (!pActionData) return;
-	const auto* pLinkedRTTI = Core::CFactory::Instance().GetRTTI(pActionData->ClassName.CStr());
+	const auto* pLinkedRTTI = DEM::Core::CFactory::Instance().GetRTTI(pActionData->ClassName.CStr());
 
 	if (CPhraseAction::RTTI.IsBaseOf(pLinkedRTTI))
 	{

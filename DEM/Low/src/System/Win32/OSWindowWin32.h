@@ -14,7 +14,7 @@ typedef Ptr<class COSWindowWin32> POSWindowWin32;
 
 class COSWindowWin32 : public COSWindow
 {
-	RTTI_CLASS_DECL(DEM::Sys::COSWindowWin32, Core::CObject);
+	RTTI_CLASS_DECL(DEM::Sys::COSWindowWin32, DEM::Core::CObject);
 
 protected:
 

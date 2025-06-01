@@ -11,7 +11,7 @@
 namespace Render
 {
 
-class CDisplayDriver: public Core::CObject
+class CDisplayDriver: public DEM::Core::CObject
 {
 public:
 

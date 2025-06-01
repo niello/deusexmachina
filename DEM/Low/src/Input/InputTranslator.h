@@ -7,10 +7,10 @@
 // general purpose events accompanied with a user ID to which a translator belongs.
 // Mappings are separated into input contexts which can be enabled or disabled individually.
 
-namespace DEM { namespace Core
+namespace DEM::Core
 {
 	class CApplication;
-}}
+}
 
 namespace Input
 {

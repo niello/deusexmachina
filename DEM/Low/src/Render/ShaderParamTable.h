@@ -96,9 +96,9 @@ public:
 	operator bool() const noexcept { return _Info.IsValidPtr(); }
 };
 
-class IConstantBufferParam : public Core::CObject
+class IConstantBufferParam : public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(IConstantBufferParam, Core::CObject);
+	RTTI_CLASS_DECL(IConstantBufferParam, DEM::Core::CObject);
 
 public:
 

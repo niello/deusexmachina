@@ -9,7 +9,7 @@ namespace DEM::Sys
 {
 typedef Ptr<class COSWindow> POSWindow;
 
-class COSWindow : public ::Events::CEventDispatcher, public ::Core::CObject
+class COSWindow : public ::Events::CEventDispatcher, public DEM::Core::CObject
 {
 protected:
 

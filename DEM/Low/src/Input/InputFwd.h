@@ -3,7 +3,7 @@
 
 // Input system forward declarations
 
-namespace Core
+namespace DEM::Core
 {
 	class CRTTIBaseClass;
 }
@@ -224,7 +224,7 @@ EKey					StringToKey(const char* pName);
 U8						StringToButton(EDeviceType DeviceType, const char* pName);
 const char*				ButtonToString(EDeviceType DeviceType, U8 Code);
 
-Core::CRTTIBaseClass*	ParseRule(const char* pRule);
+DEM::Core::CRTTIBaseClass* ParseRule(const char* pRule);
 
 }
 

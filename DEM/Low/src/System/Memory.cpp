@@ -10,34 +10,10 @@
 
 bool DEM_LogMemory = false;
 
-void* n_malloc_dbg(size_t size, const char* filename, int line)
-{
-	void* res = _malloc_dbg(size, _NORMAL_BLOCK, filename, line);
-	if (DEM_LogMemory) Sys::Log("%lx = n_malloc(size=%d, file=%s, line=%d)\n", res, size, filename, line);
-	return res;
-}
-//---------------------------------------------------------------------
-
 void* n_malloc_aligned_dbg(size_t size, size_t Alignment, const char* filename, int line)
 {
 	void* res = _aligned_malloc_dbg(size, Alignment, filename, line);
 	if (DEM_LogMemory) Sys::Log("%lx = n_malloc_aligned(size=%d, align=%d, file=%s, line=%d)\n", res, size, Alignment, filename, line);
-	return res;
-}
-//---------------------------------------------------------------------
-
-void* n_calloc_dbg(size_t num, size_t size, const char* filename, int line)
-{
-	void* res = _calloc_dbg(num, size, _NORMAL_BLOCK, filename, line);
-	if (DEM_LogMemory) Sys::Log("%lx = n_calloc(num=%d, size=%d, file=%s, line=%d)\n", res, num, size, filename, line);
-	return res;
-}
-//---------------------------------------------------------------------
-
-void* n_realloc_dbg(void* memblock, size_t size, const char* filename, int line)
-{
-	void* res = _realloc_dbg(memblock, size, _NORMAL_BLOCK, filename, line);
-	if (DEM_LogMemory) Sys::Log("%lx = n_realloc(ptr=%lx, size=%d, file=%s, line=%d)\n", res, memblock, size, filename, line);
 	return res;
 }
 //---------------------------------------------------------------------
@@ -47,13 +23,6 @@ void* n_realloc_aligned_dbg(void* memblock, size_t size, size_t Alignment, const
 	void* res = _aligned_realloc_dbg(memblock, size, Alignment, filename, line);
 	if (DEM_LogMemory) Sys::Log("%lx = n_realloc_aligned(ptr=%lx, size=%d, align=%d, file=%s, line=%d)\n", res, memblock, size, Alignment, filename, line);
 	return res;
-}
-//---------------------------------------------------------------------
-
-void n_free_dbg(void* memblock, const char* filename, int line)
-{
-	_free_dbg(memblock, _NORMAL_BLOCK);
-	if (DEM_LogMemory) Sys::Log("n_free(ptr=%lx, file=%s, line=%d)\n", memblock, filename, line);
 }
 //---------------------------------------------------------------------
 

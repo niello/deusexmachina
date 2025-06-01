@@ -9,9 +9,9 @@
 namespace DEM::RPG
 {
 
-class CEquipmentScheme : public ::Core::CObject
+class CEquipmentScheme : public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(CEquipmentScheme, ::Core::CObject);
+	RTTI_CLASS_DECL(CEquipmentScheme, DEM::Core::CObject);
 
 public:
 

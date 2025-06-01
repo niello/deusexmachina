@@ -7,9 +7,9 @@
 namespace DEM::Game
 {
 
-class CEntityTemplate: public ::Core::CObject
+class CEntityTemplate: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::Game::CEntityTemplate, ::Core::CObject);
+	RTTI_CLASS_DECL(DEM::Game::CEntityTemplate, DEM::Core::CObject);
 
 protected:
 

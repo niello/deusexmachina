@@ -12,8 +12,8 @@ public:
 
 	CAnimationLoaderANM(CResourceManager& ResourceManager) : CResourceLoader(ResourceManager) {}
 
-	virtual const Core::CRTTI& GetResultType() const override;
-	virtual Core::PObject      CreateResource(CStrID UID) override;
+	virtual const DEM::Core::CRTTI& GetResultType() const override;
+	virtual DEM::Core::PObject      CreateResource(CStrID UID) override;
 };
 
 typedef Ptr<CAnimationLoaderANM> PAnimationLoaderANM;

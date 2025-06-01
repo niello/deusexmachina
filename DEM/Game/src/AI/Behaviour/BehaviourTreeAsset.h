@@ -15,18 +15,15 @@ struct CBehaviourTreeNodeData
 	std::vector<CBehaviourTreeNodeData> Children;
 };
 
-class CBehaviourTreeAsset : public ::Core::CObject
+class CBehaviourTreeAsset : public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::AI::CBehaviourTreeAsset, ::Core::CObject);
+	RTTI_CLASS_DECL(DEM::AI::CBehaviourTreeAsset, DEM::Core::CObject);
 
 protected:
 
 public:
 
-	CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData)
-	{
-		// ...
-	}
+	CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData);
 };
 
 using PBehaviourTreeAsset = Ptr<CBehaviourTreeAsset>;

@@ -6,9 +6,9 @@
 namespace DEM::Scripting
 {
 
-class CScriptAsset : public ::Core::CObject
+class CScriptAsset : public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::Game::CEntityTemplate, ::Core::CObject);
+	RTTI_CLASS_DECL(DEM::Game::CEntityTemplate, DEM::Core::CObject);
 
 protected:
 

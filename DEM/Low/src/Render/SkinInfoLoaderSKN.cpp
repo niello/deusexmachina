@@ -7,13 +7,13 @@
 namespace Resources
 {
 
-const Core::CRTTI& CSkinInfoLoaderSKN::GetResultType() const
+const DEM::Core::CRTTI& CSkinInfoLoaderSKN::GetResultType() const
 {
 	return Render::CSkinInfo::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CSkinInfoLoaderSKN::CreateResource(CStrID UID)
+DEM::Core::PObject CSkinInfoLoaderSKN::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

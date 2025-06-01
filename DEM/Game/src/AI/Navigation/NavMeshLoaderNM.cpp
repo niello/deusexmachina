@@ -6,13 +6,13 @@
 namespace Resources
 {
 
-const Core::CRTTI& CNavMeshLoaderNM::GetResultType() const
+const DEM::Core::CRTTI& CNavMeshLoaderNM::GetResultType() const
 {
 	return DEM::AI::CNavMesh::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CNavMeshLoaderNM::CreateResource(CStrID UID)
+DEM::Core::PObject CNavMeshLoaderNM::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

@@ -7,13 +7,13 @@
 namespace Resources
 {
 
-const Core::CRTTI& CScriptAssetLoader::GetResultType() const
+const DEM::Core::CRTTI& CScriptAssetLoader::GetResultType() const
 {
 	return DEM::Scripting::CScriptAsset::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CScriptAssetLoader::CreateResource(CStrID UID)
+DEM::Core::PObject CScriptAssetLoader::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	Data::PBuffer Buffer;

@@ -27,7 +27,7 @@ struct CUpdateContext
 	bool                YieldToNextFrame = false;
 };
 
-class IFlowAction : public ::Core::CRTTIBaseClass
+class IFlowAction : public DEM::Core::CRTTIBaseClass
 {
 protected:
 

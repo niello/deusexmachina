@@ -48,12 +48,12 @@ private:
 	CEGUI::CDEMResourceProvider* ResourceProvider;
 	CEGUI::XMLParser*            XMLParser;
 
-	std::map<const ::Core::CRTTI*, std::vector<PUIWindow>> WindowPool; // Preloaded windows suitable for reuse // TODO: std::type_index?
+	std::map<const DEM::Core::CRTTI*, std::vector<PUIWindow>> WindowPool; // Preloaded windows suitable for reuse // TODO: std::type_index?
 
 	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
 	DECLARE_EVENT_HANDLER(OnRenderDeviceReset, OnDeviceReset);
 
-	PUIWindow FindReusableWindow(const ::Core::CRTTI* Type);
+	PUIWindow FindReusableWindow(const DEM::Core::CRTTI* Type);
 
 public:
 

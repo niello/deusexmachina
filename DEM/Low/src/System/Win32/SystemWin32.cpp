@@ -227,7 +227,7 @@ bool TraceStack(char* pTrace, unsigned int MaxLength)
 	char* pOut = pTrace;
 
 	const int MAX_NAME_LEN = 512;
-	SYMBOL_INFO* pSymInfo = (SYMBOL_INFO*)n_malloc(sizeof(SYMBOL_INFO) + MAX_NAME_LEN);
+	SYMBOL_INFO* pSymInfo = (SYMBOL_INFO*)std::malloc(sizeof(SYMBOL_INFO) + MAX_NAME_LEN);
 
 	while (::StackWalk64(
 				Arch,
@@ -289,7 +289,7 @@ bool TraceStack(char* pTrace, unsigned int MaxLength)
 		else pOut += _snprintf_s(pOut, MaxLength - 1 + pTrace - pOut, _TRUNCATE, "Error: EIP=0\n");
 	}
 
-	n_free(pSymInfo);
+	std::free(pSymInfo);
 
 	return ::SymCleanup(hProcess) == TRUE;
 }

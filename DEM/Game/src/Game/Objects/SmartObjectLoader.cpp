@@ -8,13 +8,13 @@
 namespace Resources
 {
 
-const Core::CRTTI& CSmartObjectLoader::GetResultType() const
+const DEM::Core::CRTTI& CSmartObjectLoader::GetResultType() const
 {
 	return DEM::Game::CSmartObject::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
+DEM::Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 {
 	// TODO: can support optional multiple templates in one file through sub-ID
 	const char* pOutSubId;

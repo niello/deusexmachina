@@ -20,9 +20,9 @@ using PTraversalAction = Ptr<class CTraversalAction>;
 struct CNavAgentComponent;
 class Navigate;
 
-class CTraversalAction : public ::Core::CObject
+class CTraversalAction : public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(CTraversalAction, ::Core::CObject);
+	RTTI_CLASS_DECL(CTraversalAction, DEM::Core::CObject);
 
 public:
 

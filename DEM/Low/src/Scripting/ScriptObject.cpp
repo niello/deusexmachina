@@ -16,7 +16,7 @@ extern "C"
 
 namespace Scripting
 {
-FACTORY_CLASS_IMPL(Scripting::CScriptObject, 'SOBJ', Core::CObject);
+FACTORY_CLASS_IMPL(Scripting::CScriptObject, 'SOBJ', DEM::Core::CObject);
 
 CScriptObject::~CScriptObject()
 {

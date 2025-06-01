@@ -27,9 +27,9 @@ namespace Scene
 class CSceneNode;
 typedef Ptr<class CNodeAttribute> PNodeAttribute;
 
-class CNodeAttribute: public Core::CObject
+class CNodeAttribute: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(Scene::CNodeAttribute, Core::CObject);
+	RTTI_CLASS_DECL(Scene::CNodeAttribute, DEM::Core::CObject);
 
 protected:
 

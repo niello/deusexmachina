@@ -19,9 +19,9 @@ using PInteraction = std::unique_ptr<class CInteraction>;
 struct CInteractionContext;
 class CGameSession;
 
-class CInteractionManager : public ::Core::CRTTIBaseClass
+class CInteractionManager : public DEM::Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL(CInteractionManager, ::Core::CRTTIBaseClass);
+	RTTI_CLASS_DECL(CInteractionManager, DEM::Core::CRTTIBaseClass);
 
 protected:
 

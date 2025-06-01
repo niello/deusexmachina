@@ -39,7 +39,7 @@ public:
 	void			RequestState(CStrID NewState, Data::PParams Params = nullptr);
 
 	CStateHandler*	FindStateHandlerByID(CStrID ID) const;
-	CStateHandler*	FindStateHandlerByRTTI(const Core::CRTTI& RTTI) const;
+	CStateHandler*	FindStateHandlerByRTTI(const DEM::Core::CRTTI& RTTI) const;
 	CStateHandler*	GetStateHandlerAt(IPTR Idx) const { return StateHandlers[Idx]; }
 	CStateHandler*	GetCurrentStateHandler() const { return pCurrStateHandler; }
 	CStrID			GetCurrentStateID() const { return CurrState; }
@@ -68,7 +68,7 @@ inline CStateHandler* CAppFSM::FindStateHandlerByID(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-inline CStateHandler* CAppFSM::FindStateHandlerByRTTI(const Core::CRTTI& RTTI) const
+inline CStateHandler* CAppFSM::FindStateHandlerByRTTI(const DEM::Core::CRTTI& RTTI) const
 {
 	for (UPTR i = 0; i < StateHandlers.GetCount(); ++i)
 		if (StateHandlers[i]->IsExactly(RTTI))

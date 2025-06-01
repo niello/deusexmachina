@@ -9,7 +9,7 @@
 namespace Resources
 {
 
-const Core::CRTTI& CSceneNodeLoaderSCN::GetResultType() const
+const DEM::Core::CRTTI& CSceneNodeLoaderSCN::GetResultType() const
 {
 	return Scene::CSceneNode::RTTI;
 }
@@ -31,7 +31,7 @@ bool LoadNode(IO::CBinaryReader& Reader, Scene::PSceneNode Node)
 
 		U32 ClassFourCC;
 		n_verify(Reader.Read(ClassFourCC));
-		Scene::PNodeAttribute Attr = Core::CFactory::Instance().Create<Scene::CNodeAttribute>(ClassFourCC);
+		Scene::PNodeAttribute Attr = DEM::Core::CFactory::Instance().Create<Scene::CNodeAttribute>(ClassFourCC);
 
 		//!!!not all attrs may be saved with blocks! change SCN format?
 		if (!Attr || !Attr->LoadDataBlocks(Reader, DataBlockCount)) FAIL;
@@ -56,7 +56,7 @@ bool LoadNode(IO::CBinaryReader& Reader, Scene::PSceneNode Node)
 }
 //---------------------------------------------------------------------
 
-Core::PObject CSceneNodeLoaderSCN::CreateResource(CStrID UID)
+DEM::Core::PObject CSceneNodeLoaderSCN::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

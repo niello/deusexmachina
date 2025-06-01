@@ -6,13 +6,13 @@
 namespace Resources
 {
 
-const Core::CRTTI& CMeshGenerator::GetResultType() const
+const DEM::Core::CRTTI& CMeshGenerator::GetResultType() const
 {
 	return Render::CMeshData::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
+DEM::Core::PObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 {
 	const float InvEdgeSize = 1.f / static_cast<float>(_QuadsPerEdge);
 	const UPTR VerticesPerEdge = _QuadsPerEdge + 1;
@@ -95,7 +95,7 @@ Core::PObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 }
 //---------------------------------------------------------------------
 
-Core::PObject CMeshGeneratorBox::CreateResource(CStrID UID)
+DEM::Core::PObject CMeshGeneratorBox::CreateResource(CStrID UID)
 {
 	Render::PMeshData MeshData = n_new(Render::CMeshData);
 	MeshData->IndexType = Render::Index_16;
@@ -165,7 +165,7 @@ Core::PObject CMeshGeneratorBox::CreateResource(CStrID UID)
 }
 //---------------------------------------------------------------------
 
-Core::PObject CMeshGeneratorSphere::CreateResource(CStrID UID)
+DEM::Core::PObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 {
 	// Twice as much vertices on longitude result in more sphere-looking mesh
 	const U16 MeridianCount = _RowCount * 2;
@@ -293,7 +293,7 @@ Core::PObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 }
 //---------------------------------------------------------------------
 
-Core::PObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
+DEM::Core::PObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
 {
 	Render::PMeshData MeshData = n_new(Render::CMeshData);
 	MeshData->IndexType = Render::Index_16;
@@ -399,7 +399,7 @@ Core::PObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
 }
 //---------------------------------------------------------------------
 
-Core::PObject CMeshGeneratorCone::CreateResource(CStrID UID)
+DEM::Core::PObject CMeshGeneratorCone::CreateResource(CStrID UID)
 {
 	Render::PMeshData MeshData = n_new(Render::CMeshData);
 	MeshData->IndexType = Render::Index_16;

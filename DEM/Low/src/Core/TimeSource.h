@@ -6,12 +6,12 @@
 // time sources, they can also be paused and unpaused independently from
 // each other, and they may also run faster or slower then real time.
 
-namespace Core
+namespace DEM::Core
 {
 
 class CTimeSource: public CObject
 {
-	RTTI_CLASS_DECL(Core::CTimeSource, Core::CObject);
+	RTTI_CLASS_DECL(DEM::Core::CTimeSource, DEM::Core::CObject);
 
 protected:
 

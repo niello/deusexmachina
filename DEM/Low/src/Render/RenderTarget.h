@@ -14,9 +14,9 @@ namespace Render
 {
 typedef Ptr<class CTexture> PTexture;
 
-class CRenderTarget: public Core::CObject
+class CRenderTarget: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(Render::CRenderTarget, Core::CObject);
+	RTTI_CLASS_DECL(Render::CRenderTarget, DEM::Core::CObject);
 
 protected:
 

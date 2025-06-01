@@ -1913,7 +1913,7 @@ void CD3D9GPUDriver::EndFrame()
 	for (UPTR i = 0; i < CurrRT.size(); ++i)
 		if (CurrRT[i].IsValidPtr())
 			RTString += StringUtils::FromInt((int)CurrRT[i].Get());
-	if (Core::CCoreServer::HasInstance())
+	if (DEM::Core::CCoreServer::HasInstance())
 	{
 		CoreSrv->SetGlobal<int>("Render_Primitives_" + RTString, PrimitivesRendered);
 		CoreSrv->SetGlobal<int>("Render_Draws_" + RTString, DrawsRendered);

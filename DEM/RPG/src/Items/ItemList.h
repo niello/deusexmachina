@@ -40,9 +40,9 @@ struct CItemStackData
 	U32                   Count = 0;
 };
 
-class CItemList : public ::Core::CObject
+class CItemList : public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::RPG::CItemList, ::Core::CObject);
+	RTTI_CLASS_DECL(DEM::RPG::CItemList, DEM::Core::CObject);
 
 protected:
 

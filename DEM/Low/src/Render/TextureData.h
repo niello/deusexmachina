@@ -15,9 +15,9 @@ namespace Data
 namespace Render
 {
 
-class CTextureData: public ::Core::CObject
+class CTextureData: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(Render::CTextureData, ::Core::CObject);
+	RTTI_CLASS_DECL(Render::CTextureData, DEM::Core::CObject);
 
 private:
 

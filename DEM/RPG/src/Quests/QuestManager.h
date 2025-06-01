@@ -30,9 +30,9 @@ enum class EQuestState : U8
 	Completed
 };
 
-class CQuestManager : public ::Core::CRTTIBaseClass
+class CQuestManager : public DEM::Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL(CQuestManager, ::Core::CRTTIBaseClass);
+	RTTI_CLASS_DECL(CQuestManager, DEM::Core::CRTTIBaseClass);
 
 public:
 

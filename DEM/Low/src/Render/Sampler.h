@@ -6,7 +6,7 @@
 namespace Render
 {
 
-class CSampler: public Core::CObject
+class CSampler: public DEM::Core::CObject
 {
 	//RTTI_CLASS_DECL;
 

@@ -13,9 +13,9 @@ class CEntity;
 typedef Ptr<class CProperty> PProperty;
 typedef CHashTable<CStrID, PProperty> CPropertyStorage;
 
-class CProperty: public Core::CObject
+class CProperty: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(Game::CProperty, Core::CObject);
+	RTTI_CLASS_DECL(Game::CProperty, DEM::Core::CObject);
 
 protected:
 

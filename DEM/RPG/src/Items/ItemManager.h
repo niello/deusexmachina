@@ -16,7 +16,7 @@ namespace DEM::Game
 namespace DEM::RPG
 {
 
-class CItemManager: public ::Core::CRTTIBaseClass
+class CItemManager: public DEM::Core::CRTTIBaseClass
 {
 private:
 

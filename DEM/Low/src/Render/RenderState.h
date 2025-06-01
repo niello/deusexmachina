@@ -32,7 +32,7 @@
 namespace Render
 {
 
-class CRenderState: public Core::CObject
+class CRenderState: public DEM::Core::CObject
 {
 	//RTTI_CLASS_DECL;
 

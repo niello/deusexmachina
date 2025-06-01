@@ -20,7 +20,7 @@ CResourceManager::~CResourceManager() = default;
 //---------------------------------------------------------------------
 
 // NB: does not change creator for existing resource
-PResource CResourceManager::RegisterResource(const char* pUID, const Core::CRTTI& RsrcType)
+PResource CResourceManager::RegisterResource(const char* pUID, const DEM::Core::CRTTI& RsrcType)
 {
 	if (!pUID || !*pUID) return nullptr;
 
@@ -39,7 +39,7 @@ PResource CResourceManager::RegisterResource(const char* pUID, const Core::CRTTI
 //---------------------------------------------------------------------
 
 // NB: does not change creator for existing resource
-void CResourceManager::RegisterResource(PResource& Resource, const Core::CRTTI& RsrcType)
+void CResourceManager::RegisterResource(PResource& Resource, const DEM::Core::CRTTI& RsrcType)
 {
 	if (!Resource || !Resource->GetUID())
 	{
@@ -116,7 +116,7 @@ void CResourceManager::UnregisterResource(CStrID UID)
 }
 //---------------------------------------------------------------------
 
-bool CResourceManager::RegisterDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType, IResourceCreator* pCreator)
+bool CResourceManager::RegisterDefaultCreator(const char* pFmtExtension, const DEM::Core::CRTTI* pRsrcType, IResourceCreator* pCreator)
 {
 	if (pCreator &&	pRsrcType && !pCreator->GetResultType().IsDerivedFrom(*pRsrcType)) FAIL;
 
@@ -149,7 +149,7 @@ bool CResourceManager::RegisterDefaultCreator(const char* pFmtExtension, const C
 }
 //---------------------------------------------------------------------
 
-PResourceCreator CResourceManager::GetDefaultCreator(CStrID UID, const Core::CRTTI& RsrcType) const
+PResourceCreator CResourceManager::GetDefaultCreator(CStrID UID, const DEM::Core::CRTTI& RsrcType) const
 {
 	CString Ext(PathUtils::GetExtension(UID.CStr()));
 	if (Ext.IsValid())
@@ -162,7 +162,7 @@ PResourceCreator CResourceManager::GetDefaultCreator(CStrID UID, const Core::CRT
 }
 //---------------------------------------------------------------------
 
-PResourceCreator CResourceManager::GetDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType) const
+PResourceCreator CResourceManager::GetDefaultCreator(const char* pFmtExtension, const DEM::Core::CRTTI* pRsrcType) const
 {
 	CString ExtStr(pFmtExtension);
 	ExtStr.Trim();

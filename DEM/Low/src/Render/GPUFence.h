@@ -6,7 +6,7 @@
 namespace Render
 {
 
-class IGPUFence : public Core::CObject
+class IGPUFence : public DEM::Core::CObject
 {
 public:
 

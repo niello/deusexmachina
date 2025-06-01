@@ -25,9 +25,9 @@ struct CBipedLocomotionInfo
 	U32                                  RightFootOnGroundFrame = std::numeric_limits<U32>().max();
 };
 
-class CAnimationClip: public ::Core::CObject
+class CAnimationClip: public DEM::Core::CObject
 {
-	RTTI_CLASS_DECL(DEM::Anim::CAnimationClip, ::Core::CObject);
+	RTTI_CLASS_DECL(DEM::Anim::CAnimationClip, DEM::Core::CObject);
 
 protected:
 

@@ -15,7 +15,7 @@ struct CBoneInfo
 	UPTR	ParentIndex;
 };
 
-class CSkinInfo: public ::Core::CObject
+class CSkinInfo: public DEM::Core::CObject
 {
 	FACTORY_CLASS_DECL;
 

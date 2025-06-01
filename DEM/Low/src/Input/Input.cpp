@@ -422,7 +422,7 @@ const char* ButtonToString(EDeviceType DeviceType, U8 Code)
 }
 //---------------------------------------------------------------------
 
-static Core::CRTTIBaseClass* ParseCondition(const char*& pRule)
+static DEM::Core::CRTTIBaseClass* ParseCondition(const char*& pRule)
 {
 	const char* pCurr = pRule;
 
@@ -550,13 +550,13 @@ static Core::CRTTIBaseClass* ParseCondition(const char*& pRule)
 }
 //---------------------------------------------------------------------
 
-static Core::CRTTIBaseClass* ParseSequence(const char*& pRule)
+static DEM::Core::CRTTIBaseClass* ParseSequence(const char*& pRule)
 {
-	Core::CRTTIBaseClass* pResult = nullptr;
+	DEM::Core::CRTTIBaseClass* pResult = nullptr;
 
 	while (*pRule && *pRule != '|')
 	{
-		Core::CRTTIBaseClass* pCondition = ParseCondition(pRule);
+		DEM::Core::CRTTIBaseClass* pCondition = ParseCondition(pRule);
 
 		// Failed parsing is an error, result is discarded
 		if (!pCondition)
@@ -622,14 +622,14 @@ static Core::CRTTIBaseClass* ParseSequence(const char*& pRule)
 }
 //---------------------------------------------------------------------
 
-Core::CRTTIBaseClass* ParseRule(const char* pRule)
+DEM::Core::CRTTIBaseClass* ParseRule(const char* pRule)
 {
-	Core::CRTTIBaseClass* pResult = nullptr;
+	DEM::Core::CRTTIBaseClass* pResult = nullptr;
 	bool IsSequence = true;
 
 	do
 	{
-		Core::CRTTIBaseClass* pCondition = ParseSequence(pRule);
+		DEM::Core::CRTTIBaseClass* pCondition = ParseSequence(pRule);
 
 		if (!pCondition)
 		{

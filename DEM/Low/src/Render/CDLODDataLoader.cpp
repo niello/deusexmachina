@@ -7,13 +7,13 @@
 namespace Resources
 {
 
-const Core::CRTTI& CCDLODDataLoader::GetResultType() const
+const DEM::Core::CRTTI& CCDLODDataLoader::GetResultType() const
 {
 	return Render::CCDLODData::RTTI;
 }
 //---------------------------------------------------------------------
 
-Core::PObject CCDLODDataLoader::CreateResource(CStrID UID)
+DEM::Core::PObject CCDLODDataLoader::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);

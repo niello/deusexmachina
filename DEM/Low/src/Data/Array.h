@@ -123,7 +123,7 @@ CArray<T>::CArray(UPTR _Count, UPTR _GrowSize):
 	Count(0),
 	Flags(Array_KeepOrder)
 {
-	pData = (_Count > 0) ? (T*)n_malloc(sizeof(T) * Allocated) : nullptr;
+	pData = (_Count > 0) ? (T*)std::malloc(sizeof(T) * Allocated) : nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -136,7 +136,7 @@ CArray<T>::CArray(UPTR _Count, UPTR _GrowSize, const T& Value):
 {
 	if (_Count > 0)
 	{
-		pData = (T*)n_malloc(sizeof(T) * Allocated);
+		pData = (T*)std::malloc(sizeof(T) * Allocated);
 		for (UPTR i = 0; i < _Count; ++i) n_placement_new(pData + i, T)(Value);
 	}
 	else pData = nullptr;
@@ -178,7 +178,7 @@ CArray<T>::~CArray()
 	if (pData)
 	{
 		for (UPTR i = 0; i < Count; ++i) pData[i].~T();
-		n_free(pData);
+		std::free(pData);
 	}
 }
 //---------------------------------------------------------------------
@@ -189,7 +189,7 @@ void CArray<T>::Copy(const CArray<T>& Other)
 	for (UPTR i = 0; i < Count; ++i) pData[i].~T();
 
 	if (Allocated < Other.Allocated)
-		pData = (T*)n_realloc(pData, sizeof(T) * Other.Allocated);
+		pData = (T*)std::realloc(pData, sizeof(T) * Other.Allocated);
 
 	for (UPTR i = 0; i < Other.Count; ++i)  n_placement_new(pData + i, T)(Other.pData[i]);
 
@@ -231,12 +231,12 @@ void CArray<T>::Reallocate(UPTR NewAllocSize, UPTR NewGrowSize)
 	GrowSize = NewGrowSize;
 	Allocated = NewAllocSize;
 	Count = 0;
-	if (Allocated > 0) pData = (T*)n_realloc(pData, sizeof(T) * Allocated);
+	if (Allocated > 0) pData = (T*)std::realloc(pData, sizeof(T) * Allocated);
 	else { SAFE_FREE(pData); }
 }
 //---------------------------------------------------------------------
 
-// NB: this implementation can invoke raw memory copying through n_realloc,
+// NB: this implementation can invoke raw memory copying through std::realloc,
 // that doesn't call constructors and destructors, but changes object location.
 template<class T>
 void CArray<T>::Resize(UPTR NewAllocSize)
@@ -245,7 +245,7 @@ void CArray<T>::Resize(UPTR NewAllocSize)
 
 	for (UPTR i = NewAllocSize; i < Count; ++i) pData[i].~T();
 
-	pData = (T*)n_realloc(pData, sizeof(T) * NewAllocSize);
+	pData = (T*)std::realloc(pData, sizeof(T) * NewAllocSize);
 	n_assert_dbg(!NewAllocSize || pData);
 
 	Allocated = NewAllocSize;
@@ -254,7 +254,7 @@ void CArray<T>::Resize(UPTR NewAllocSize)
 	/*
 	// NB: variant above doesn't construct objects above the Count! It is good, and Move() relies on it!
 
-	T* pNewData = (T*)n_malloc(sizeof(T) * NewAllocSize);
+	T* pNewData = (T*)std::malloc(sizeof(T) * NewAllocSize);
 
 	UPTR NewSize = (NewAllocSize < Count) ? NewAllocSize : Count;
 
@@ -265,7 +265,7 @@ void CArray<T>::Resize(UPTR NewAllocSize)
 			Construct(pNewData + i, pData[i]); //n_placement_new(pData + i, T)(Val)
 			pData[i].~T();
 		}
-		n_free(pData);
+		std::free(pData);
 	}
 
 	pData = pNewData;
@@ -518,7 +518,7 @@ void CArray<T>::Clear(bool FreeMemory)
 	Count = 0;
 	if (FreeMemory && pData)
 	{
-		n_free(pData);
+		std::free(pData);
 		pData = nullptr;
 		Allocated = 0;
 	}

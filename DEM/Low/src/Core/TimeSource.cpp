@@ -1,6 +1,6 @@
 #include "TimeSource.h"
 
-namespace Core
+namespace DEM::Core
 {
 
 void CTimeSource::Update(float _FrameTime)

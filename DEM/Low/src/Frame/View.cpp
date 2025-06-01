@@ -135,7 +135,7 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 
 	for (const auto& RendererSettings : _RenderPath->_RendererSettings)
 	{
-		Render::PRenderer Renderer(static_cast<Render::IRenderer*>(RendererSettings.pRendererType->CreateClassInstance()));
+		Render::PRenderer Renderer(static_cast<Render::IRenderer*>(RendererSettings.pRendererType->CreateInstance()));
 		if (!Renderer || !Renderer->Init(*RendererSettings.SettingsDesc, *GraphicsMgr.GetGPU())) continue;
 
 		for (const auto pRTTI : RendererSettings.RenderableTypes)

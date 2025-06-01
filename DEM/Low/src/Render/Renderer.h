@@ -25,9 +25,9 @@ public:
 	virtual void ModifyPerInstanceShaderParams(CShaderParamStorage& PerInstanceParams, UPTR InstanceIndex) = 0;
 };
 
-class IRenderer: public Core::CRTTIBaseClass
+class IRenderer: public DEM::Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL(Render::IRenderer, Core::CRTTIBaseClass);
+	RTTI_CLASS_DECL(Render::IRenderer, DEM::Core::CRTTIBaseClass);
 
 public:
 

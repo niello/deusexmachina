@@ -8,7 +8,7 @@
 // a hub for accessing any types of assets in an abstract way.
 // Resource ID is either an engine path to the file or an abstract string.
 
-namespace Core
+namespace DEM::Core
 {
 	class CRTTI;
 }
@@ -31,7 +31,7 @@ protected:
 	struct CDefaultCreatorRecord
 	{
 		CStrID				Extension;
-		const Core::CRTTI*	pRsrcType;
+		const DEM::Core::CRTTI*	pRsrcType;
 		PResourceCreator	Creator;
 	};
 
@@ -39,7 +39,7 @@ protected:
 	std::unordered_map<CStrID, PResource> Registry;
 	std::vector<CDefaultCreatorRecord>    DefaultCreators;
 
-	PResourceCreator GetDefaultCreator(CStrID UID, const Core::CRTTI& RsrcType) const;
+	PResourceCreator GetDefaultCreator(CStrID UID, const DEM::Core::CRTTI& RsrcType) const;
 
 public:
 
@@ -49,8 +49,8 @@ public:
 
 	CResourceManager& operator =(const CResourceManager&) = delete;
 
-	bool				RegisterDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType, IResourceCreator* pCreator);
-	PResourceCreator	GetDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType = nullptr) const;
+	bool				RegisterDefaultCreator(const char* pFmtExtension, const DEM::Core::CRTTI* pRsrcType, IResourceCreator* pCreator);
+	PResourceCreator	GetDefaultCreator(const char* pFmtExtension, const DEM::Core::CRTTI* pRsrcType = nullptr) const;
 	template<class TRsrc>
 	PResourceCreator	GetDefaultCreatorFor(const char* pFmtExtension) const { return GetDefaultCreator(pFmtExtension, &TRsrc::RTTI); }
 
@@ -58,8 +58,8 @@ public:
 	PResource			RegisterResource(const char* pUID) { return RegisterResource(pUID, TRsrc::RTTI); }
 	template<class TRsrc>
 	void                RegisterResource(PResource& Resource) { return RegisterResource(Resource, TRsrc::RTTI); }
-	PResource			RegisterResource(const char* pUID, const Core::CRTTI& RsrcType);
-	void                RegisterResource(PResource& Resource, const Core::CRTTI& RsrcType);
+	PResource			RegisterResource(const char* pUID, const DEM::Core::CRTTI& RsrcType);
+	void                RegisterResource(PResource& Resource, const DEM::Core::CRTTI& RsrcType);
 	PResource			RegisterResource(const char* pUID, IResourceCreator* pCreator);
 	CResource*			FindResource(const char* pUID) const;
 	CResource*			FindResource(CStrID UID) const;
