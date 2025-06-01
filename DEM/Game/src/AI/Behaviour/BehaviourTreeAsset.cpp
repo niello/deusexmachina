@@ -9,8 +9,10 @@ namespace DEM::AI
 
 struct CNodeInfo
 {
-	const DEM::Core::CRTTI* pRTTI;
-	size_t             SkipSubtreeIndex;
+	const Core::CRTTI*            pRTTI;
+	const CBehaviourTreeNodeData* pData;
+	size_t                        Index;
+	size_t                        SkipSubtreeIndex;
 };
 
 static void DFSFirstPass(const CBehaviourTreeNodeData& NodeData, size_t Depth, size_t& NodeCount, size_t& MaxDepth)
@@ -23,52 +25,65 @@ static void DFSFirstPass(const CBehaviourTreeNodeData& NodeData, size_t Depth, s
 }
 //---------------------------------------------------------------------
 
-static void DFSSecondPass(const CBehaviourTreeNodeData& NodeData, CNodeInfo* pNodeInfo, size_t& CurrIdx)
+static bool DFSSecondPass(const CBehaviourTreeNodeData& NodeData, CNodeInfo* pNodeInfo, size_t& CurrIdx)
 {
 	auto& CurrNodeInfo = pNodeInfo[CurrIdx];
 	CurrNodeInfo.pRTTI = DEM::Core::CFactory::Instance().GetRTTI(NodeData.ClassName.CStr()); // TODO: use CStrID in factory
 	n_assert_dbg(CurrNodeInfo.pRTTI);
+	if (!CurrNodeInfo.pRTTI) return false;
+
+	CurrNodeInfo.pData = &NodeData;
+
+	// To preserve DFS indices after sorting node info array
+	CurrNodeInfo.Index = CurrIdx;
 
 	for (const auto& ChildNodeData : NodeData.Children)
-		DFSSecondPass(ChildNodeData, pNodeInfo, ++CurrIdx);
+		if (!DFSSecondPass(ChildNodeData, pNodeInfo, ++CurrIdx)) return false;
 
 	CurrNodeInfo.SkipSubtreeIndex = CurrIdx;
+
+	return true;
 }
 //---------------------------------------------------------------------
 
-// TODO: most of this can be calculated offline
+// TODO: most of this can be calculated offline, except for node sizes and alignment, as they can change
 CBehaviourTreeAsset::CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData)
 {
 	// Calculate node count and max depth of the tree
 	size_t NodeCount = 0;
 	size_t MaxDepth = 0;
 	DFSFirstPass(RootNodeData, 1, NodeCount, MaxDepth);
+	n_assert_dbg(NodeCount);
 
-	// Fill a preallocated buffer with node RTTI and subtree skip indices (next sibling, subtree end)
+	// Fill a temporary buffer with node information needed to build an asset
 	std::unique_ptr<CNodeInfo[]> NodeInfo(new CNodeInfo[NodeCount]);
 	size_t CurrIdx = 0;
 	DFSSecondPass(RootNodeData, NodeInfo.get(), CurrIdx);
 
-	// Calculate shared node data memory requirements
-	size_t StaticAlignment = sizeof(void*);
-	size_t StaticBytes = 0;
-	for (size_t i = 0; i < NodeCount; ++i)
+	// Sort nodes by alignment and size of static data for optimal packing into a single buffer (see below)
+	std::sort(NodeInfo.get(), NodeInfo.get() + NodeCount, [](const auto& a, const auto& b)
 	{
-		auto& CurrNodeInfo = NodeInfo[i];
-		if (auto* pRTTI = CurrNodeInfo.pRTTI)
-		{
-			StaticBytes += pRTTI->GetInstanceSize();
-			if (StaticAlignment < pRTTI->GetInstanceAlignment())
-				StaticAlignment = pRTTI->GetInstanceAlignment();
-		}
-	}
+		if (a.pRTTI->GetInstanceAlignment() != b.pRTTI->GetInstanceAlignment())
+			return a.pRTTI->GetInstanceAlignment() > b.pRTTI->GetInstanceAlignment();
+		if (a.pRTTI->GetInstanceSize() != b.pRTTI->GetInstanceSize())
+			return a.pRTTI->GetInstanceSize() > b.pRTTI->GetInstanceSize();
+		return a.Index < b.Index;
+	});
 
-	StaticBytes = Math::CeilToMultiple(StaticBytes, StaticAlignment);
+	// Calculate memory needed for node pointer and skip index array
+	const size_t StaticAlignment = std::max(sizeof(void*), NodeInfo[0].pRTTI->GetInstanceAlignment());
+	size_t StaticBytes = 0;
 
+	// Add shared node data memory requirements
+	for (size_t i = 0; i < NodeCount; ++i)
+		StaticBytes += NodeInfo[i].pRTTI->GetInstanceSize();
+
+	// Allocate a single buffer for all asset data
 	unique_ptr_aligned<void> StaticBuffer(n_malloc_aligned(StaticBytes, StaticAlignment));
 	// std::aligned_alloc / std::free, operator new(std::align_val_t)
 	// std::aligned_storage, alignas(Align) unsigned char data[Len];
 	// assert that memory is allocated!
+	//!!!could sort by alignment!
 	//
 	//auto storage = static_cast<Foo*>(std::aligned_alloc(n * sizeof(Foo), alignment));
 	//std::uninitialized_default_construct_n(storage, n);

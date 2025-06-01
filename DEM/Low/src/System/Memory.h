@@ -48,8 +48,8 @@ void n_free_aligned_dbg(void* memblock, const char* filename, int line);
 struct CDeleterFree { void operator()(void* x) { std::free(x); } };
 template<typename T> using unique_ptr_free = std::unique_ptr<T, CDeleterFree>;
 
-struct CDeleterAligned { void operator()(void* x) { n_free_aligned(x); } };
-template<typename T> using unique_ptr_aligned = std::unique_ptr<T, CDeleterAligned>;
+struct CDeleterFreeAligned { void operator()(void* x) { n_free_aligned(x); } };
+template<typename T> using unique_ptr_aligned = std::unique_ptr<T, CDeleterFreeAligned>;
 
 #define SAFE_RELEASE(n)			if (n) { n->Release(); n = nullptr; }
 #define SAFE_DELETE(n)			if (n) { n_delete(n); n = nullptr; }
