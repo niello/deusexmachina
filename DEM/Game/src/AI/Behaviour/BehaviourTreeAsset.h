@@ -20,6 +20,8 @@ class CBehaviourTreeNodeBase : public Core::CRTTIBaseClass
 public:
 
 	virtual void Init(const Data::CParams* pParams) = 0;
+	virtual size_t GetInstanceDataSize() const = 0;
+	virtual size_t GetInstanceDataAlignment() const = 0;
 };
 
 class CBehaviourTreeAsset : public DEM::Core::CObject
@@ -30,7 +32,7 @@ protected:
 
 	struct CNode
 	{
-		CBehaviourTreeNodeBase* pNode;
+		CBehaviourTreeNodeBase* pNodeImpl;
 		size_t                  SkipSubtreeIndex;
 	};
 

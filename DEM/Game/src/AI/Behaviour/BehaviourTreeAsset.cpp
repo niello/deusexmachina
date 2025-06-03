@@ -90,21 +90,53 @@ CBehaviourTreeAsset::CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData)
 		auto& CurrNodeInfo = NodeInfo[i];
 
 		auto* pRTTI = CurrNodeInfo.pRTTI;
-		auto* pNode = static_cast<CBehaviourTreeNodeBase*>(pRTTI->CreateInstance(pAddr));
-		pNode->Init(CurrNodeInfo.pData->Params);
+		auto* pNodeImpl = static_cast<CBehaviourTreeNodeBase*>(pRTTI->CreateInstance(pAddr));
+		pNodeImpl->Init(CurrNodeInfo.pData->Params);
 
 		pAddr += pRTTI->GetInstanceSize();
 
 		auto& CurrNode = _Nodes[CurrNodeInfo.Index];
-		CurrNode.pNode = pNode;
+		CurrNode.pNodeImpl = pNodeImpl;
 		CurrNode.SkipSubtreeIndex = CurrNodeInfo.SkipSubtreeIndex;
 	}
 
 	// Calculate per-instance node data memory requirements. This will be used by BT players.
-	size_t InstanceAlignment = sizeof(void*);
-	size_t InstanceBytes = 0;
-	//...
-	InstanceBytes = Math::CeilToMultiple(InstanceBytes, InstanceAlignment);
+	// The value may not be exactly an amount of required memory but it is conservative.
+	{
+		constexpr size_t MinInstanceAlignment = sizeof(void*); // 1;?
+		std::vector<std::pair<size_t, size_t>> Stack; // Running total byte count, subtree skip index
+		size_t MaxInstanceBytes = 0;
+		size_t CurrIndex = 0;
+		Stack.push_back({ 0, NodeCount });
+		while (!Stack.empty())
+		{
+			// First get accumulated size of parents
+			size_t TotalSize = Stack.back().first;
+
+			const auto& Node = _Nodes[CurrIndex];
+			if (const auto DataSize = Node.pNodeImpl->GetInstanceDataSize())
+			{
+				const size_t AlignedSize = Math::CeilToMultiple(DataSize, MinInstanceAlignment);
+				const size_t MaxPadding = (Node.pNodeImpl->GetInstanceDataAlignment() / MinInstanceAlignment - 1) * MinInstanceAlignment;
+				TotalSize += AlignedSize + MaxPadding;
+				if (MaxInstanceBytes < TotalSize)
+					MaxInstanceBytes = TotalSize;
+			}
+
+			++CurrIndex;
+			if (Node.SkipSubtreeIndex > CurrIndex)
+			{
+				// Next node is our child, enter a subtree
+				Stack.push_back({ TotalSize, Node.SkipSubtreeIndex });
+			}
+			else
+			{
+				// Exit finished subtree
+				while (!Stack.empty() && Stack.back().second == CurrIndex)
+					Stack.pop_back();
+			}
+		}
+	}
 }
 //---------------------------------------------------------------------
 
@@ -112,7 +144,7 @@ CBehaviourTreeAsset::~CBehaviourTreeAsset()
 {
 	const size_t EndIdx = _Nodes[0].SkipSubtreeIndex;
 	for (size_t i = 0; i < EndIdx; ++i)
-		_Nodes[i].pNode->~CBehaviourTreeNodeBase();
+		_Nodes[i].pNodeImpl->~CBehaviourTreeNodeBase();
 }
 //---------------------------------------------------------------------
 
