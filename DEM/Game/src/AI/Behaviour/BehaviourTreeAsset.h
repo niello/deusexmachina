@@ -39,10 +39,17 @@ protected:
 	std::unique_ptr<CNode[]> _Nodes;
 	unique_ptr_aligned<void> _NodeImplBuffer;
 
+	size_t                   _MaxDepth = 0;
+	size_t                   _MaxInstanceBytes = 0;
+
 public:
 
 	CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData);
 	~CBehaviourTreeAsset();
+
+	size_t GetNodeCount() const { return _Nodes ? _Nodes[0].SkipSubtreeIndex : 0; }
+	size_t GetMaxDepth() const { return _MaxDepth; }
+	size_t GetMaxInstanceBytes() const { return _MaxInstanceBytes; }
 };
 
 using PBehaviourTreeAsset = Ptr<CBehaviourTreeAsset>;

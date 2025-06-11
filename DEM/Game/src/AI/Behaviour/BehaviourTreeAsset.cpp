@@ -55,8 +55,7 @@ CBehaviourTreeAsset::CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData)
 {
 	// Calculate node count and max depth of the tree
 	size_t NodeCount = 0;
-	size_t MaxDepth = 0;
-	DFSFirstPass(RootNodeData, 1, NodeCount, MaxDepth);
+	DFSFirstPass(RootNodeData, 1, NodeCount, _MaxDepth);
 	n_assert_dbg(NodeCount > 0);
 
 	// Fill a temporary buffer with node information needed to build an asset
@@ -103,9 +102,10 @@ CBehaviourTreeAsset::CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData)
 	// Calculate per-instance node data memory requirements. This will be used by BT players.
 	// The value may not be exactly an amount of required memory but it is conservative.
 	{
+		_MaxInstanceBytes = 0;
+
 		constexpr size_t MinInstanceAlignment = sizeof(void*); // 1;?
 		std::vector<std::pair<size_t, size_t>> Stack; // Running total byte count, subtree skip index
-		size_t MaxInstanceBytes = 0;
 		size_t CurrIndex = 0;
 		Stack.push_back({ 0, NodeCount });
 		while (!Stack.empty())
@@ -113,14 +113,15 @@ CBehaviourTreeAsset::CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData)
 			// First get accumulated size of parents
 			size_t TotalSize = Stack.back().first;
 
+			// Now add current node requirements
 			const auto& Node = _Nodes[CurrIndex];
 			if (const auto DataSize = Node.pNodeImpl->GetInstanceDataSize())
 			{
 				const size_t AlignedSize = Math::CeilToMultiple(DataSize, MinInstanceAlignment);
 				const size_t MaxPadding = (Node.pNodeImpl->GetInstanceDataAlignment() / MinInstanceAlignment - 1) * MinInstanceAlignment;
 				TotalSize += AlignedSize + MaxPadding;
-				if (MaxInstanceBytes < TotalSize)
-					MaxInstanceBytes = TotalSize;
+				if (_MaxInstanceBytes < TotalSize)
+					_MaxInstanceBytes = TotalSize;
 			}
 
 			++CurrIndex;
