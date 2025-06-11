@@ -1,8 +1,23 @@
 #include "BehaviourTreePlayer.h"
 #include <AI/Behaviour/BehaviourTreeAsset.h>
+#include <Math/Math.h>
 
 namespace DEM::AI
 {
+constexpr auto BT_PLAYER_MIN_BUFFER_ALIGNMENT = sizeof(void*);
+
+static inline size_t CalcTraversalStackSize(const CBehaviourTreeAsset& Asset)
+{
+	return Math::CeilToMultiple(Asset.GetMaxDepth() * sizeof(U16), BT_PLAYER_MIN_BUFFER_ALIGNMENT);
+}
+//---------------------------------------------------------------------
+
+static inline size_t CalcBufferSize(const CBehaviourTreeAsset& Asset)
+{
+	const auto TraversalStackBytes = CalcTraversalStackSize(Asset);
+	return TraversalStackBytes + TraversalStackBytes + Asset.GetMaxInstanceBytes();
+}
+//---------------------------------------------------------------------
 
 CBehaviourTreePlayer::~CBehaviourTreePlayer()
 {
@@ -12,24 +27,24 @@ CBehaviourTreePlayer::~CBehaviourTreePlayer()
 
 bool CBehaviourTreePlayer::Start(PBehaviourTreeAsset Asset)
 {
-	const auto PrevDepth = _Asset ? _Asset->GetMaxDepth() : 0;
-	const auto PrevInstanceBytes = _Asset ? _Asset->GetMaxInstanceBytes() : 0;
+	const auto PrevBytes = _Asset ? CalcBufferSize(*_Asset) : 0;
 
 	Stop();
 
 	_Asset = std::move(Asset);
 	if (!_Asset) return false;
 
-	if (PrevDepth < _Asset->GetMaxDepth())
+	// Allocate a single buffer for traversal stacks and node instance data
+	const auto NewBytes = CalcBufferSize(*_Asset);
+	if (PrevBytes < NewBytes)
 	{
-		// alloc two stacks, each of max depth, will swap them as prev/new for subtree switching
-		// will store indices, but of which type? is U16 enough for any BT?
-	}
+		_MemBuffer.reset(new std::byte[NewBytes]);
+		n_assert_dbg(IsAligned<BT_PLAYER_MIN_BUFFER_ALIGNMENT>(_MemBuffer.get()));
 
-	if (PrevInstanceBytes < _Asset->GetMaxInstanceBytes())
-	{
-		_NodeInstanceData.reset(new std::byte[_Asset->GetMaxInstanceBytes()]);
-		n_assert_dbg(IsAligned<sizeof(void*)>(_NodeInstanceData.get()));
+		const auto TraversalStackBytes = CalcTraversalStackSize(*_Asset);
+		_pCurrStack = std::launder(reinterpret_cast<U16*>(_MemBuffer.get()));
+		_pPrevStack = std::launder(reinterpret_cast<U16*>(_MemBuffer.get() + TraversalStackBytes));
+		_pNodeInstanceData = _MemBuffer.get() + TraversalStackBytes + TraversalStackBytes;
 	}
 
 	return true;
@@ -44,9 +59,12 @@ void CBehaviourTreePlayer::Stop()
 
 void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 {
-	// if search requested, do search
+	// if search requested or there is no active subtree, do search
+	//_RequestedTraversalStartIndex
 
-	// update active subtree
+	// update active subtree; on node activation allocate a buffer
+
+	// search and update interchange!
 }
 //---------------------------------------------------------------------
 

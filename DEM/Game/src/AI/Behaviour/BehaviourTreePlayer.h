@@ -17,7 +17,11 @@ class CBehaviourTreePlayer final
 private:
 
 	PBehaviourTreeAsset          _Asset;
-	std::unique_ptr<std::byte[]> _NodeInstanceData;
+	std::unique_ptr<std::byte[]> _MemBuffer;
+	U16*                         _pCurrStack = nullptr;
+	U16*                         _pPrevStack = nullptr;
+	std::byte*                   _pNodeInstanceData = nullptr;
+	U16                          _RequestedTraversalStartIndex = 0;
 
 public:
 
