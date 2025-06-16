@@ -12,8 +12,8 @@ struct CNodeInfo
 {
 	const Core::CRTTI*            pRTTI;
 	const CBehaviourTreeNodeData* pData;
-	size_t                        Index;
-	size_t                        SkipSubtreeIndex;
+	U16                           Index;
+	U16                           SkipSubtreeIndex;
 };
 
 static void DFSFirstPass(const CBehaviourTreeNodeData& NodeData, size_t Depth, size_t& NodeCount, size_t& MaxDepth)
@@ -26,7 +26,7 @@ static void DFSFirstPass(const CBehaviourTreeNodeData& NodeData, size_t Depth, s
 }
 //---------------------------------------------------------------------
 
-static bool DFSSecondPass(const CBehaviourTreeNodeData& NodeData, CNodeInfo* pNodeInfo, size_t& CurrIdx)
+static bool DFSSecondPass(const CBehaviourTreeNodeData& NodeData, CNodeInfo* pNodeInfo, U16& CurrIdx)
 {
 	auto& CurrNodeInfo = pNodeInfo[CurrIdx];
 	CurrNodeInfo.pRTTI = DEM::Core::CFactory::Instance().GetRTTI(NodeData.ClassName.CStr()); // TODO: use CStrID in factory
@@ -56,11 +56,11 @@ CBehaviourTreeAsset::CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData)
 	// Calculate node count and max depth of the tree
 	size_t NodeCount = 0;
 	DFSFirstPass(RootNodeData, 1, NodeCount, _MaxDepth);
-	n_assert_dbg(NodeCount > 0);
+	n_assert_dbg(NodeCount > 0 && NodeCount <= std::numeric_limits<U16>::max());
 
 	// Fill a temporary buffer with node information needed to build an asset
 	std::unique_ptr<CNodeInfo[]> NodeInfo(new CNodeInfo[NodeCount]);
-	size_t CurrIdx = 0;
+	U16 CurrIdx = 0;
 	if (!DFSSecondPass(RootNodeData, NodeInfo.get(), CurrIdx)) return;
 
 	// Sort nodes by alignment and size of static data for optimal packing into a single buffer (see below)

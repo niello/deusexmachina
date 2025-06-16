@@ -19,22 +19,36 @@ class CBehaviourTreeNodeBase : public Core::CRTTIBaseClass
 {
 public:
 
-	virtual void Init(const Data::CParams* pParams) = 0;
-	virtual size_t GetInstanceDataSize() const = 0;
-	virtual size_t GetInstanceDataAlignment() const = 0;
+	enum class EStatus
+	{
+		Running,
+		Succeeded,
+		Failed
+	};
+
+	virtual void                    Init(const Data::CParams* pParams) = 0;
+	virtual size_t                  GetInstanceDataSize() const = 0;
+	virtual size_t                  GetInstanceDataAlignment() const = 0;
+
+	virtual U16                     Traverse(U16 PrevIdx, U16 NextIdx, EStatus ChildStatus) const = 0;
+	virtual EStatus                 Activate() const = 0;
+	virtual void                    Deactivate() const = 0;
+	virtual std::pair<EStatus, U16> Update() const = 0;
 };
 
 class CBehaviourTreeAsset : public DEM::Core::CObject
 {
 	RTTI_CLASS_DECL(DEM::AI::CBehaviourTreeAsset, DEM::Core::CObject);
 
-protected:
+public:
 
 	struct CNode
 	{
 		CBehaviourTreeNodeBase* pNodeImpl;
-		size_t                  SkipSubtreeIndex;
+		U16                     SkipSubtreeIndex;
 	};
+
+protected:
 
 	std::unique_ptr<CNode[]> _Nodes;
 	unique_ptr_aligned<void> _NodeImplBuffer;
@@ -47,9 +61,10 @@ public:
 	CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData);
 	~CBehaviourTreeAsset();
 
-	size_t GetNodeCount() const { return _Nodes ? _Nodes[0].SkipSubtreeIndex : 0; }
-	size_t GetMaxDepth() const { return _MaxDepth; }
-	size_t GetMaxInstanceBytes() const { return _MaxInstanceBytes; }
+	size_t       GetNodeCount() const { return _Nodes ? _Nodes[0].SkipSubtreeIndex : 0; }
+	const CNode* GetNode(U16 i) const { return &_Nodes[i]; }
+	size_t       GetMaxDepth() const { return _MaxDepth; }
+	size_t       GetMaxInstanceBytes() const { return _MaxInstanceBytes; }
 };
 
 using PBehaviourTreeAsset = Ptr<CBehaviourTreeAsset>;

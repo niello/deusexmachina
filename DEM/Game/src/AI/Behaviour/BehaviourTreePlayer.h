@@ -18,10 +18,11 @@ private:
 
 	PBehaviourTreeAsset          _Asset;
 	std::unique_ptr<std::byte[]> _MemBuffer;
-	U16*                         _pCurrStack = nullptr;
-	U16*                         _pPrevStack = nullptr;
+	U16*                         _pNewStack = nullptr;         // Current traversal path
+	U16*                         _pCurrStack = nullptr;        // Currently activated path
+	U16*                         _pRequestStack = nullptr;     // Currently activated path overridden by requests from higher priority nodes
 	std::byte*                   _pNodeInstanceData = nullptr;
-	U16                          _RequestedTraversalStartIndex = 0;
+	U16                          _CurrDepth = 0;               // Depth of _pCurrStack
 
 public:
 
