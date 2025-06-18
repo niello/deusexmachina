@@ -43,7 +43,7 @@ bool CBehaviourTreePlayer::Start(PBehaviourTreeAsset Asset)
 
 		const auto TraversalStackBytes = CalcTraversalStackSize(*_Asset);
 		_pNewStack = std::launder(reinterpret_cast<U16*>(_MemBuffer.get()));
-		_pCurrStack = std::launder(reinterpret_cast<U16*>(_MemBuffer.get() + TraversalStackBytes));
+		_pActiveStack = std::launder(reinterpret_cast<U16*>(_MemBuffer.get() + TraversalStackBytes));
 		_pRequestStack = std::launder(reinterpret_cast<U16*>(_MemBuffer.get() + 2 * TraversalStackBytes));
 		_pNodeInstanceData = _MemBuffer.get() + 3 * TraversalStackBytes;
 	}
@@ -64,85 +64,85 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 
 	using EStatus = CBehaviourTreeNodeBase::EStatus;
 
+	// Start from the root
+	EStatus Status = EStatus::Running;
 	U16 PrevIdx = 0;
 	U16 NextIdx = 0;
 	U16 CurrIdx = 0;
 	U16 NewLevel = 0;
-	EStatus Status = EStatus::Running;
-
 	_pNewStack[0] = 0;
 
 	while (true)
 	{
-		const auto* pCurrNode = _Asset->GetNode(CurrIdx);
+		const auto* pNode = _Asset->GetNode(CurrIdx);
 
-		// If traversing down and following the current path
-		if (CurrIdx >= PrevIdx && NewLevel < _CurrDepth && CurrIdx == _pCurrStack[NewLevel])
+		// If traversing down and following the active path
+		if (CurrIdx >= PrevIdx && NewLevel < _ActiveDepth && CurrIdx == _pActiveStack[NewLevel])
 		{
 			// Update an already active node
-			std::tie(Status, NextIdx) = pCurrNode->pNodeImpl->Update();
+			std::tie(Status, NextIdx) = pNode->pNodeImpl->Update();
 
 			// The most often case for the node is to request itself when explicit traversal change is not needed
 			if (NextIdx == CurrIdx)
 			{
-				// If no children, return to parent. Else proceed to the next current node or overriding high priority request.
+				// If no children, return to parent. Else proceed to the active child node or overriding high priority request.
 				const auto NextLevel = NewLevel + 1;
-				NextIdx = (NextLevel == _CurrDepth) ? pCurrNode->SkipSubtreeIndex : _pRequestStack[NextLevel];
+				NextIdx = (NextLevel == _ActiveDepth) ? pNode->SkipSubtreeIndex : _pRequestStack[NextLevel];
 			}
 		}
 		else
 		{
-			// Try to find a new active path in the tree
-			NextIdx = pCurrNode->pNodeImpl->Traverse(PrevIdx, NextIdx, Status);
+			// Search for a new active path in the tree
+			NextIdx = pNode->pNodeImpl->Traverse(PrevIdx, NextIdx, Status);
 
 			// If the node requests itself, it is the new active node
 			if (NextIdx == CurrIdx)
 			{
-				// When we have no active tree we will activate nodes starting from the root
-				U16 CurrLevel = 0;
+				// When we have no active subtree we will activate nodes starting from the root
+				U16 Level = 0;
 
 				// Deactivate the previously active subtree up to common parent with the new one.
-				// NB: both stacks always start from the root so [0] is always identical and CurrLevel won't become negative.
-				if (_CurrDepth)
+				// NB: both stacks always start from the root so [0] is always identical and Level won't become negative.
+				if (_ActiveDepth)
 				{
-					CurrLevel = _CurrDepth - 1;
-					while (CurrLevel > NewLevel || _pCurrStack[CurrLevel] != _pNewStack[CurrLevel])
+					Level = _ActiveDepth - 1;
+					while (Level > NewLevel || _pActiveStack[Level] != _pNewStack[Level])
 					{
-						_Asset->GetNode(_pCurrStack[CurrLevel])->pNodeImpl->Deactivate();
-						--CurrLevel;
+						_Asset->GetNode(_pActiveStack[Level])->pNodeImpl->Deactivate();
+						--Level;
 					}
 
 					// Proceed from the common parent to the first child on the new path (if any)
-					++CurrLevel;
+					++Level;
 				}
 
 				// Activate the new subtree
-				while (CurrLevel <= NewLevel)
+				while (Level <= NewLevel)
 				{
-					const auto ActivatingIdx = _pNewStack[CurrLevel];
+					const auto ActivatingIdx = _pNewStack[Level];
 					Status = _Asset->GetNode(ActivatingIdx)->pNodeImpl->Activate();
 
 					if (Status == EStatus::Failed)
 					{
 						// Rollback to the last successfully activated node and stop activation
-						NewLevel = CurrLevel - 1;
-						pCurrNode = _Asset->GetNode(_pCurrStack[ActivatingIdx - 1]);
+						NewLevel = Level - 1;
+						pNode = _Asset->GetNode(_pActiveStack[NewLevel]);
 						break;
 					}
 
-					_pCurrStack[CurrLevel++] = ActivatingIdx;
+					_pActiveStack[Level++] = ActivatingIdx;
 				}
 
-				// CurrLevel is now 1 level past the last activated node
-				_CurrDepth = CurrLevel;
+				// "Level" is now 1 level past the last activated node
+				_ActiveDepth = Level;
 
 				// A new subtree was activated and the status must be returned to the active node's parent regardless of the value.
 				// NB: an active node can't currently proceed down the tree, it sould have done that in Traverse. May change later.
-				NextIdx = pCurrNode->SkipSubtreeIndex;
+				NextIdx = pNode->SkipSubtreeIndex;
 			}
 		}
 
-		if (NextIdx >= pCurrNode->SkipSubtreeIndex)
+		if (NextIdx >= pNode->SkipSubtreeIndex)
 		{
 			// Subtree is finished, must return to the parent
 			if (!NewLevel) break;
@@ -157,7 +157,7 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 	}
 
 	// Initially we have no higher priority requests and default to continuing along the current active path
-	std::copy_n(_pCurrStack, _CurrDepth, _pRequestStack);
+	std::copy_n(_pActiveStack, _ActiveDepth, _pRequestStack);
 
 	//!!!must check that after failed activation and rollback the newly activated node won't update on the next iteration!
 
