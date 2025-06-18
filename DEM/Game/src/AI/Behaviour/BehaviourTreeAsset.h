@@ -19,7 +19,7 @@ class CBehaviourTreeNodeBase : public Core::CRTTIBaseClass
 {
 public:
 
-	enum class EStatus
+	enum class EStatus : U8
 	{
 		Running,
 		Succeeded,

@@ -64,16 +64,16 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 
 	using EStatus = CBehaviourTreeNodeBase::EStatus;
 
+	U16 PrevIdx = 0;
+	U16 NextIdx = 0;
 	U16 CurrIdx = 0;
 	U16 NewLevel = 0;
 	EStatus Status = EStatus::Running;
-	U16 PrevIdx = 0;
-	U16 NextIdx = 0;
+
+	_pNewStack[0] = 0;
 
 	while (true)
 	{
-		_pNewStack[NewLevel] = CurrIdx;
-
 		const auto* pCurrNode = _Asset->GetNode(CurrIdx);
 
 		// If traversing down and following the current path
@@ -85,9 +85,9 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 			// The most often case for the node is to request itself when explicit traversal change is not needed
 			if (NextIdx == CurrIdx)
 			{
-				// If no children, return to parent. Else choose between the next current node and overriding high priority request.
+				// If no children, return to parent. Else proceed to the next current node or overriding high priority request.
 				const auto NextLevel = NewLevel + 1;
-				NextIdx = (NextLevel == _CurrDepth) ? pCurrNode->SkipSubtreeIndex : std::min(_pCurrStack[NextLevel], _pRequestStack[NextLevel]);
+				NextIdx = (NextLevel == _CurrDepth) ? pCurrNode->SkipSubtreeIndex : _pRequestStack[NextLevel];
 			}
 		}
 		else
@@ -142,19 +142,22 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 			}
 		}
 
-		if (NextIdx == pCurrNode->SkipSubtreeIndex)
+		if (NextIdx >= pCurrNode->SkipSubtreeIndex)
 		{
 			// Subtree is finished, must return to the parent
 			if (!NewLevel) break;
-			--NewLevel;
+			CurrIdx = _pNewStack[--NewLevel];
 		}
 		else
 		{
-			++NewLevel;
+			_pNewStack[++NewLevel] = NextIdx;
 			PrevIdx = CurrIdx;
 			CurrIdx = NextIdx;
 		}
 	}
+
+	// Initially we have no higher priority requests and default to continuing along the current active path
+	std::copy_n(_pCurrStack, _CurrDepth, _pRequestStack);
 
 	//!!!must check that after failed activation and rollback the newly activated node won't update on the next iteration!
 
