@@ -80,7 +80,7 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 		if (CurrIdx >= PrevIdx && NewLevel < _ActiveDepth && CurrIdx == _pActiveStack[NewLevel])
 		{
 			// Update an already active node
-			std::tie(Status, NextIdx) = pNode->pNodeImpl->Update();
+			std::tie(Status, NextIdx) = pNode->pNodeImpl->Update(CurrIdx);
 
 			// The most often case for the node is to request itself when explicit traversal change is not needed
 			if (NextIdx == CurrIdx)
@@ -93,7 +93,7 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 		else
 		{
 			// Search for a new active path in the tree
-			NextIdx = pNode->pNodeImpl->Traverse(PrevIdx, NextIdx, Status);
+			NextIdx = pNode->pNodeImpl->Traverse(PrevIdx, CurrIdx, NextIdx, Status);
 
 			// If the node requests itself, it is the new active node
 			if (NextIdx == CurrIdx)
@@ -142,6 +142,8 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 			}
 		}
 
+		n_assert_dbg(NextIdx >= CurrIdx && NextIdx <= pCurrNode->SkipSubtreeIndex);
+
 		if (NextIdx >= pNode->SkipSubtreeIndex)
 		{
 			// Subtree is finished, must return to the parent
@@ -164,6 +166,8 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 	// if Status = failed here does it always mean that non-empty current stack was failed to activate and must be aborted to the root?!
 
 	// at the end Status contains the root status, can detect tree execution end to stop or loop!
+
+	//???does that all mean that any non-running status here must deactivate an active tree?!
 }
 //---------------------------------------------------------------------
 
