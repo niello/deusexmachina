@@ -5,7 +5,9 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/MoveInteraction.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreeAsset.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreeAssetLoader.h
+	DEM/Game/src/AI/Behaviour/BehaviourTreeCondition.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreePlayer.h
+	DEM/Game/src/AI/Behaviour/BehaviourTreeSelector.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreeSequence.h
 	DEM/Game/src/AI/Movement/SteerAction.h
 	DEM/Game/src/AI/Navigation/NavAgentComponent.h
@@ -84,7 +86,9 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/MoveInteraction.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreeAsset.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreeAssetLoader.cpp
+	DEM/Game/src/AI/Behaviour/BehaviourTreeCondition.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreePlayer.cpp
+	DEM/Game/src/AI/Behaviour/BehaviourTreeSelector.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreeSequence.cpp
 	DEM/Game/src/AI/Movement/CharacterControlSystem.cpp
 	DEM/Game/src/AI/Movement/SteerAction.cpp

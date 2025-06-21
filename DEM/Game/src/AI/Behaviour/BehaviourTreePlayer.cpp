@@ -74,13 +74,14 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 
 	while (true)
 	{
+		const bool IsGoingDown = (CurrIdx >= PrevIdx);
 		const auto* pNode = _Asset->GetNode(CurrIdx);
 
 		// If traversing down and following the active path
-		if (CurrIdx >= PrevIdx && NewLevel < _ActiveDepth && CurrIdx == _pActiveStack[NewLevel])
+		if (IsGoingDown && NewLevel < _ActiveDepth && CurrIdx == _pActiveStack[NewLevel])
 		{
 			// Update an already active node
-			std::tie(Status, NextIdx) = pNode->pNodeImpl->Update(CurrIdx);
+			std::tie(Status, NextIdx) = pNode->pNodeImpl->Update(CurrIdx, dt);
 
 			// The most often case for the node is to request itself when explicit traversal change is not needed
 			if (NextIdx == CurrIdx)
@@ -94,6 +95,15 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 		{
 			// Search for a new active path in the tree
 			NextIdx = pNode->pNodeImpl->Traverse(PrevIdx, CurrIdx, NextIdx, pNode->SkipSubtreeIndex, Status);
+
+			/*
+			//EnterFromParent / EnterFromChild / ReturnFromChild
+			//OnEnter / OnChildExit / OnChildReturned
+			if (IsGoingDown)
+				NextIdx = pNode->pNodeImpl->TraverseFromParent(CurrIdx, pNode->SkipSubtreeIndex);
+			else
+				std::tie(Status, NextIdx) = pNode->pNodeImpl->TraverseFromChild(CurrIdx, pNode->SkipSubtreeIndex, NextIdx, Status);
+			*/
 
 			// If the node requests itself, it is the new active node
 			if (NextIdx == CurrIdx)
@@ -142,7 +152,9 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 			}
 		}
 
-		n_assert_dbg(NextIdx >= CurrIdx && NextIdx <= pNode->SkipSubtreeIndex);
+		n_assert_dbg(NextIdx > CurrIdx && NextIdx <= pNode->SkipSubtreeIndex);
+
+		PrevIdx = CurrIdx;
 
 		if (NextIdx >= pNode->SkipSubtreeIndex)
 		{
@@ -152,8 +164,8 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 		}
 		else
 		{
+			// Proceed to the child
 			_pNewStack[++NewLevel] = NextIdx;
-			PrevIdx = CurrIdx;
 			CurrIdx = NextIdx;
 		}
 	}

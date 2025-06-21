@@ -1,12 +1,12 @@
 #pragma once
 #include <AI/Behaviour/BehaviourTreeAsset.h>
 
-// A classical BT sequence (AND)
+// A BT decorator that checks a condition and either passes execution to its child or returns failure to the parent
 
 namespace DEM::AI
 {
 
-class CBehaviourTreeSequence : public CBehaviourTreeNodeBase
+class CBehaviourTreeCondition : public CBehaviourTreeNodeBase
 {
 	FACTORY_CLASS_DECL;
 

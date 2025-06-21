@@ -1,12 +1,12 @@
 #pragma once
 #include <AI/Behaviour/BehaviourTreeAsset.h>
 
-// A classical BT sequence (AND)
+// A classical BT selector (OR)
 
 namespace DEM::AI
 {
 
-class CBehaviourTreeSequence : public CBehaviourTreeNodeBase
+class CBehaviourTreeSelector : public CBehaviourTreeNodeBase
 {
 	FACTORY_CLASS_DECL;
 
