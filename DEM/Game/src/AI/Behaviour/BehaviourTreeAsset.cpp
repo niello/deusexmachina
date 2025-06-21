@@ -28,6 +28,8 @@ static void DFSFirstPass(const CBehaviourTreeNodeData& NodeData, size_t Depth, s
 
 static bool DFSSecondPass(const CBehaviourTreeNodeData& NodeData, CNodeInfo* pNodeInfo, U16& CurrIdx)
 {
+	//???store all basic nodes in one header? implementations can be very simple and defined right in headers
+	//???register basic nodes with easy to read IDs like basic conditions are registered in RegisterCondition? First try them, then the factory.
 	auto& CurrNodeInfo = pNodeInfo[CurrIdx];
 	CurrNodeInfo.pRTTI = DEM::Core::CFactory::Instance().GetRTTI(NodeData.ClassName.CStr()); // TODO: use CStrID in factory
 	if (!CurrNodeInfo.pRTTI || !CurrNodeInfo.pRTTI->IsDerivedFrom(CBehaviourTreeNodeBase::RTTI))

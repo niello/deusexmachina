@@ -94,7 +94,7 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 		else
 		{
 			// Search for a new active path in the tree
-			NextIdx = pNode->pNodeImpl->Traverse(PrevIdx, CurrIdx, NextIdx, pNode->SkipSubtreeIndex, Status);
+			NextIdx = pNode->pNodeImpl->Traverse(PrevIdx, CurrIdx, NextIdx, pNode->SkipSubtreeIndex, Status, Session);
 
 			/*
 			//EnterFromParent / EnterFromChild / ReturnFromChild

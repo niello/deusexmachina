@@ -5,7 +5,7 @@ namespace DEM::AI
 {
 FACTORY_CLASS_IMPL(DEM::AI::CBehaviourTreeSelector, 'BTSL', CBehaviourTreeNodeBase);
 
-U16 CBehaviourTreeSelector::Traverse(U16 PrevIdx, U16 SelfIdx, U16 NextIdx, U16 SkipIdx, EStatus ChildStatus) const
+U16 CBehaviourTreeSelector::Traverse(U16 PrevIdx, U16 SelfIdx, U16 NextIdx, U16 SkipIdx, EStatus ChildStatus, Game::CGameSession& Session) const
 {
 	// Traversing from above always means starting from the beginning
 	if (PrevIdx < SelfIdx) return SelfIdx + 1;

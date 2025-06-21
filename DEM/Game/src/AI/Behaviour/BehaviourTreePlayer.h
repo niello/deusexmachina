@@ -1,7 +1,7 @@
 #pragma once
 #include <Data/Ptr.h>
 
-// Plays a BehaviourTree asset and tracks its state. Parallel tasks use their sub-players.
+// Plays a CBehaviourTreeAsset and tracks its state. Parallel tasks can be implemented using their own nested players.
 
 namespace DEM::Game
 {
