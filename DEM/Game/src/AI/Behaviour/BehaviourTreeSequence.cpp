@@ -5,21 +5,17 @@ namespace DEM::AI
 {
 FACTORY_CLASS_IMPL(DEM::AI::CBehaviourTreeSequence, 'BTSQ', CBehaviourTreeNodeBase);
 
-U16 CBehaviourTreeSequence::Traverse(U16 PrevIdx, U16 SelfIdx, U16 NextIdx, EStatus ChildStatus) const
+//!!!seq must propagate status as is, but some decorators may want to change it. Here or in activate / deactivate / update?
+U16 CBehaviourTreeSequence::Traverse(U16 PrevIdx, U16 SelfIdx, U16 NextIdx, U16 SkipIdx, EStatus ChildStatus) const
 {
 	// Traversing from above means starting from the beginning
 	if (PrevIdx < SelfIdx) return SelfIdx + 1;
 
-	if (ChildStatus == EStatus::Succeeded)
-	{
-		// return skip index of succeeded child, last child's skip index is equal to ours
-	}
-	else
-	{
-		// propagate this status up and return own skip index
-	}
+	// If the child succeeded, proceed to the next child or to the subtree end if it was the last child
+	if (ChildStatus == EStatus::Succeeded) return NextIdx;
 
-	return 0;
+	// If the child failed or is running, skip the whole sequence subtree and return to the parent
+	return SkipIdx;
 }
 //---------------------------------------------------------------------
 

@@ -30,7 +30,7 @@ public:
 	virtual size_t                  GetInstanceDataSize() const { return 0; }
 	virtual size_t                  GetInstanceDataAlignment() const { return 0; }
 
-	virtual U16                     Traverse(U16 PrevIdx, U16 SelfIdx, U16 NextIdx, EStatus ChildStatus) const = 0;
+	virtual U16                     Traverse(U16 PrevIdx, U16 SelfIdx, U16 NextIdx, U16 SkipIdx, EStatus ChildStatus) const = 0;
 	virtual EStatus                 Activate() const { return EStatus::Running; }
 	virtual void                    Deactivate() const {}
 	virtual std::pair<EStatus, U16> Update(U16 SelfIdx) const { return std::make_pair(EStatus::Running, SelfIdx); }

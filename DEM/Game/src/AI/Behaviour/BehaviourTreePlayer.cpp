@@ -93,7 +93,7 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 		else
 		{
 			// Search for a new active path in the tree
-			NextIdx = pNode->pNodeImpl->Traverse(PrevIdx, CurrIdx, NextIdx, Status);
+			NextIdx = pNode->pNodeImpl->Traverse(PrevIdx, CurrIdx, NextIdx, pNode->SkipSubtreeIndex, Status);
 
 			// If the node requests itself, it is the new active node
 			if (NextIdx == CurrIdx)
@@ -142,7 +142,7 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 			}
 		}
 
-		n_assert_dbg(NextIdx >= CurrIdx && NextIdx <= pCurrNode->SkipSubtreeIndex);
+		n_assert_dbg(NextIdx >= CurrIdx && NextIdx <= pNode->SkipSubtreeIndex);
 
 		if (NextIdx >= pNode->SkipSubtreeIndex)
 		{
