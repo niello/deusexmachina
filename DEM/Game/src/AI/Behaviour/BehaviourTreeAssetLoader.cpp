@@ -15,7 +15,6 @@ const DEM::Core::CRTTI& CBehaviourTreeAssetLoader::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-//???TODO: can replace this loader with CDataAssetLoaderHRD<CBehaviourTreeAsset>? Must sort actions! There is no constructor with args!
 DEM::Core::PObject CBehaviourTreeAssetLoader::CreateResource(CStrID UID)
 {
 	const char* pOutSubId;

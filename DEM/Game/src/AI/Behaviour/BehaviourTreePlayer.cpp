@@ -54,13 +54,15 @@ bool CBehaviourTreePlayer::Start(PBehaviourTreeAsset Asset)
 
 void CBehaviourTreePlayer::Stop()
 {
-	// unwind current subtree to the root, cancelling actions and destructing instance data structures, but don't deallocate buffers
+	// TODO: free instance data (wrap to this->DeactivateNode(Index)?)
+	while (_ActiveDepth)
+		_Asset->GetNode(_pActiveStack[--_ActiveDepth])->pNodeImpl->Deactivate();
 }
 //---------------------------------------------------------------------
 
-void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
+EBTStatus CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 {
-	if (!_Asset) return;
+	if (!_Asset) return EBTStatus::Failed;
 
 	// Start from the root
 	_pNewStack[0] = 0;
@@ -113,6 +115,7 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 					Level = _ActiveDepth - 1;
 					while (Level > NewLevel || _pActiveStack[Level] != _pNewStack[Level])
 					{
+						// TODO: free instance data (wrap to this->DeactivateNode(Index)?)
 						_Asset->GetNode(_pActiveStack[Level])->pNodeImpl->Deactivate();
 						--Level;
 					}
@@ -124,10 +127,11 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 				// Activate the new subtree
 				while (Level <= NewLevel)
 				{
+					// TODO: allocate instance data (wrap to this->ActivateNode(Index)?)
 					const auto ActivatingIdx = _pNewStack[Level];
 					Status = _Asset->GetNode(ActivatingIdx)->pNodeImpl->Activate();
 
-					//???what if succeeded? or instead of status activation must return only bool?
+					//???TODO: what if succeeded? now proceeds to the child, like for Running. Instead of status activation must return only bool?
 					if (Status == EBTStatus::Failed)
 					{
 						// Rollback to the last successfully activated node and stop activation
@@ -169,14 +173,10 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 	// Initially we have no higher priority requests and default to continuing along the current active path
 	std::copy_n(_pActiveStack, _ActiveDepth, _pRequestStack);
 
-	//!!!must check that after failed activation and rollback the newly activated node won't update on the next iteration!
+	// If the tree is not running, the current active path is no longer active and must be deactivated
+	if (Status != EBTStatus::Running) Stop();
 
-	// if Status = failed here does it always mean that non-empty current stack was failed to activate and must be aborted to the root?!
-
-	// at the end Status contains the root status, can detect tree execution end to stop or loop!
-
-	//???does that all mean that any non-running status here must deactivate an active tree?!
-	//???or do it externally where the player update is called, based on the return walue? should really be there or better to incapsulate it here?
+	return Status;
 }
 //---------------------------------------------------------------------
 

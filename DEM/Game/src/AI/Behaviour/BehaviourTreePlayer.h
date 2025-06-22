@@ -28,12 +28,12 @@ public:
 
 	~CBehaviourTreePlayer();
 
-	bool Start(PBehaviourTreeAsset Asset);
-	void Stop();
-	void Update(Game::CGameSession& Session, float dt);
+	bool      Start(PBehaviourTreeAsset Asset);
+	void      Stop();
+	EBTStatus Update(Game::CGameSession& Session, float dt);
 
 	CBehaviourTreeAsset* GetAsset() const { return _Asset.Get(); }
-	//bool                 IsPlaying() const { return _CurrAction || _NextActionID != EmptyActionID; }
+	bool                 IsPlaying() const { return _ActiveDepth > 0; } //???or !!_Asset?
 };
 
 }
