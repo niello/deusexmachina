@@ -54,7 +54,7 @@ bool CBehaviourTreePlayer::Start(PBehaviourTreeAsset Asset)
 
 void CBehaviourTreePlayer::Stop()
 {
-	// unwind current subtree to the root, cancelling actions, but don't deallocate buffers
+	// unwind current subtree to the root, cancelling actions and destructing instance data structures, but don't deallocate buffers
 }
 //---------------------------------------------------------------------
 
@@ -63,12 +63,14 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 	if (!_Asset) return;
 
 	// Start from the root
+	_pNewStack[0] = 0;
 	EBTStatus Status = EBTStatus::Running;
 	U16 PrevIdx = 0;
 	U16 NextIdx = 0;
 	U16 CurrIdx = 0;
 	U16 NewLevel = 0;
-	_pNewStack[0] = 0;
+
+	//!!!TODO: pack context into a single structure? or only mutable part? or immutable too, as a second struct?
 
 	while (true)
 	{
@@ -174,6 +176,7 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 	// at the end Status contains the root status, can detect tree execution end to stop or loop!
 
 	//???does that all mean that any non-running status here must deactivate an active tree?!
+	//???or do it externally where the player update is called, based on the return walue? should really be there or better to incapsulate it here?
 }
 //---------------------------------------------------------------------
 
