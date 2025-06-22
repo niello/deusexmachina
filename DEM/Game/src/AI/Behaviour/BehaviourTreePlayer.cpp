@@ -62,10 +62,8 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 {
 	if (!_Asset) return;
 
-	using EStatus = CBehaviourTreeNodeBase::EStatus;
-
 	// Start from the root
-	EStatus Status = EStatus::Running;
+	EBTStatus Status = EBTStatus::Running;
 	U16 PrevIdx = 0;
 	U16 NextIdx = 0;
 	U16 CurrIdx = 0;
@@ -93,17 +91,12 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 		}
 		else
 		{
-			// Search for a new active path in the tree
-			NextIdx = pNode->pNodeImpl->Traverse(PrevIdx, CurrIdx, NextIdx, pNode->SkipSubtreeIndex, Status, Session);
-
-			/*
-			//EnterFromParent / EnterFromChild / ReturnFromChild
-			//OnEnter / OnChildExit / OnChildReturned
+			// Search for a new active path in the tree.
+			// NB: Status value makes sense only for upwards traversal, otherwise the node is considered Running.
 			if (IsGoingDown)
-				NextIdx = pNode->pNodeImpl->TraverseFromParent(CurrIdx, pNode->SkipSubtreeIndex);
+				std::tie(Status, NextIdx) = pNode->pNodeImpl->TraverseFromParent(CurrIdx, pNode->SkipSubtreeIndex, Session);
 			else
-				std::tie(Status, NextIdx) = pNode->pNodeImpl->TraverseFromChild(CurrIdx, pNode->SkipSubtreeIndex, NextIdx, Status);
-			*/
+				std::tie(Status, NextIdx) = pNode->pNodeImpl->TraverseFromChild(CurrIdx, pNode->SkipSubtreeIndex, NextIdx, Status, Session);
 
 			// If the node requests itself, it is the new active node
 			if (NextIdx == CurrIdx)
@@ -132,7 +125,8 @@ void CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 					const auto ActivatingIdx = _pNewStack[Level];
 					Status = _Asset->GetNode(ActivatingIdx)->pNodeImpl->Activate();
 
-					if (Status == EStatus::Failed)
+					//???what if succeeded? or instead of status activation must return only bool?
+					if (Status == EBTStatus::Failed)
 					{
 						// Rollback to the last successfully activated node and stop activation
 						NewLevel = Level - 1;

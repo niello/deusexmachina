@@ -14,21 +14,15 @@ void CBehaviourTreeCondition::Init(const Data::CParams* pParams)
 }
 //---------------------------------------------------------------------
 
-U16 CBehaviourTreeCondition::Traverse(U16 PrevIdx, U16 SelfIdx, U16 NextIdx, U16 SkipIdx, EStatus ChildStatus, Game::CGameSession& Session) const
+std::pair<EBTStatus, U16> CBehaviourTreeCondition::TraverseFromParent(U16 SelfIdx, U16 SkipIdx, Game::CGameSession& Session) const
 {
-	if (PrevIdx < SelfIdx)
-	{
-		const bool Passed = Flow::EvaluateCondition(_Condition, Session, nullptr/*blackboard*/);
-		//if (Flow::EvaluateCondition(_Condition, Session, nullptr/*blackboard*/)) ...
-		//if condition is async, return SelfIdx to request activation. Maybe a separate type is needed for async conditions not tu clutter logic.
-		//if returned false, return SkipIdx with failure
-		//else if SelfIdx + 1 == SkipIdx, return SkipIdx with success (no children, should look the same as if we have successfully executed them)
-		//else return SelfIdx + 1; (proceed to the first child)
-		return SelfIdx + 1;
-	}
+	// TODO: if condition is async, return SelfIdx to request activation. Maybe a separate type is needed for async conditions not to clutter logic.
+	//???Flow::EvaluateConditionAsync? When not supported, will return result immediately. Or not needed and for async can use action decorators with request success check?
 
-	// When the child returns, simply propagate its result up
-	return NextIdx; // status is passed unchanged
+	if (Flow::EvaluateCondition(_Condition, Session, nullptr/*blackboard*/))
+		return { EBTStatus::Succeeded, SelfIdx + 1 }; // NB: report immediate success if there is no child
+	else
+		return { EBTStatus::Failed, SkipIdx };
 }
 //---------------------------------------------------------------------
 
