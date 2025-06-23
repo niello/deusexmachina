@@ -44,7 +44,7 @@ void __fastcall CopyImage(const CImageData& Src, const CImageData& Dest, UPTR Fl
 
 #ifdef _DEBUG
 	// Don't check adjusted pointers, user can't align offsets
-	if ((!IsAligned16(pSrc) && !(Flags & CopyImage_AdjustSrc))  || (!IsAligned16(pDest) && !(Flags & CopyImage_AdjustDest)))
+	if ((!Math::IsAligned<16>(pSrc) && !(Flags & CopyImage_AdjustSrc))  || (!Math::IsAligned<16>(pDest) && !(Flags & CopyImage_AdjustDest)))
 		Sys::DbgOut("Render::CopyImage() > Either pSrc or pDest is not aligned at 16 bytes boundary. Align your pointers to achieve MUCH faster copying.\n");
 #endif
 

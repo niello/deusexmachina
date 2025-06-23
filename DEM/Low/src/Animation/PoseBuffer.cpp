@@ -1,4 +1,5 @@
 #include "PoseBuffer.h"
+#include <Math/Math.h>
 #include <System/System.h>
 
 namespace DEM::Anim
@@ -10,7 +11,7 @@ CPoseBuffer::CPoseBuffer(const CPoseBuffer& Other)
 	if (_Count)
 	{
 		_Transforms.reset(new rtm::qvvf[_Count]);
-		n_assert_dbg(IsAligned16(_Transforms.get()));
+		n_assert_dbg(Math::IsAligned<16>(_Transforms.get()));
 		std::memcpy(_Transforms.get(), Other._Transforms.get(), sizeof(rtm::qvvf) * _Count);
 	}
 }
@@ -53,7 +54,7 @@ void CPoseBuffer::SetSize(UPTR Size)
 	{
 		_Transforms.reset();
 	}
-	n_assert_dbg(IsAligned16(_Transforms.get()));
+	n_assert_dbg(Math::IsAligned<16>(_Transforms.get()));
 }
 //---------------------------------------------------------------------
 

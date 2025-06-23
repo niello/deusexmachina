@@ -395,6 +395,22 @@ DEM_FORCE_INLINE constexpr T PrevPow2(T x) noexcept
 }
 //---------------------------------------------------------------------
 
+template <size_t Alignment>
+DEM_FORCE_INLINE constexpr bool IsAligned(const void* Pointer)
+{
+	static_assert(IsPow2(Alignment));
+	return !(reinterpret_cast<uintptr_t>(Pointer) & (Alignment - 1));
+}
+//---------------------------------------------------------------------
+
+template <typename T>
+DEM_FORCE_INLINE constexpr T* NextAligned(T* Pointer, size_t Alignment)
+{
+	n_assert_dbg(IsPow2(Alignment));
+	return reinterpret_cast<T*>((reinterpret_cast<uintptr_t>(Pointer) + Alignment - 1) & ~(Alignment - 1));
+}
+//---------------------------------------------------------------------
+
 template <typename T>
 DEM_FORCE_INLINE constexpr int CountLeadingZeros(T x) noexcept
 {

@@ -100,10 +100,10 @@ void CInertializationPoseDiff::Init(const CPoseBuffer& CurrPose, const CPoseBuff
 
 	const auto BoneCount = CurrPose.size();
 	_Axes.SetSize(BoneCount);
-	n_assert_dbg(IsAligned<alignof(CBoneAxes)>(_Axes.data()));
+	n_assert_dbg(Math::IsAligned<alignof(CBoneAxes)>(_Axes.data()));
 	const auto TetradCount = (BoneCount + 3) / 4;
 	_Curves.SetSize(TetradCount);
-	n_assert_dbg(IsAligned<alignof(CBoneCurves)>(_Curves.data()));
+	n_assert_dbg(Math::IsAligned<alignof(CBoneCurves)>(_Curves.data()));
 	for (UPTR i = 0, BoneIdx = 0; i < TetradCount; ++i)
 	{
 		for (UPTR j = 0; (j < 4) && (BoneIdx < BoneCount); ++j, ++BoneIdx)

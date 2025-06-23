@@ -119,6 +119,7 @@ CBehaviourTreeAsset::CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData)
 			const auto& Node = _Nodes[CurrIndex];
 			if (const auto DataSize = Node.pNodeImpl->GetInstanceDataSize())
 			{
+				n_assert_dbg(Node.pNodeImpl->GetInstanceDataAlignment());
 				const size_t AlignedSize = Math::CeilToMultiple(DataSize, MinInstanceAlignment);
 				const size_t MaxPadding = (Node.pNodeImpl->GetInstanceDataAlignment() / MinInstanceAlignment - 1) * MinInstanceAlignment;
 				TotalSize += AlignedSize + MaxPadding;

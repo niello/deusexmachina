@@ -169,10 +169,6 @@ auto tuple_pop_front(const T& tuple)
 //  Kernel and aux functions and enums
 //---------------------------------------------------------------------
 
-// Only for power-of-2 alignment //!!!C++11 static_assert may help!
-template <unsigned int Alignment> DEM_FORCE_INLINE bool IsAligned(const void* Pointer) { return !(((unsigned int)Pointer) & (Alignment - 1)); }
-DEM_FORCE_INLINE bool IsAligned16(const void* Pointer) { return !(((unsigned int)Pointer) & 0x0000000f); }
-
 template<typename... T>
 DEM_FORCE_INLINE constexpr decltype(auto) ENUM_MASK(T... Values)
 {

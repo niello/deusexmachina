@@ -410,7 +410,7 @@ void CD3D9GPUDriver::ApplyShaderConstChanges()
 
 			float* pCurrValue = pCurrVSFloat4 + (CurrConst * 4);
 			const float* pBufferValue = pBufferRangeData + ((CurrConst - FoundRangeStart) * 4);
-			n_assert_dbg(IsAligned16(pCurrValue) && IsAligned16(pBufferValue));			
+			n_assert_dbg(Math::IsAligned<16>(pCurrValue) && Math::IsAligned<16>(pBufferValue));			
 			__m128 BufferValue = _mm_load_ps(pBufferValue);
 			if (_mm_movemask_ps(_mm_cmpneq_ps(_mm_load_ps(pCurrValue), BufferValue)))
 			{
@@ -482,7 +482,7 @@ void CD3D9GPUDriver::ApplyShaderConstChanges()
 
 			__m128i* pCurrValue = (__m128i*)(pCurrVSInt4 + (CurrConst * 4));
 			const __m128i* pBufferValue = (const __m128i*)(pBufferRangeData + ((CurrConst - FoundRangeStart) * 4));
-			n_assert_dbg(IsAligned16(pCurrValue) && IsAligned16(pBufferValue));			
+			n_assert_dbg(Math::IsAligned<16>(pCurrValue) && Math::IsAligned<16>(pBufferValue));			
 			__m128i BufferValue = _mm_load_si128(pBufferValue);
 			if (_mm_movemask_epi8(_mm_cmpeq_epi32(_mm_load_si128(pCurrValue), BufferValue)))
 			{
@@ -624,7 +624,7 @@ void CD3D9GPUDriver::ApplyShaderConstChanges()
 
 			float* pCurrValue = pCurrPSFloat4 + (CurrConst * 4);
 			const float* pBufferValue = pBufferRangeData + ((CurrConst - FoundRangeStart) * 4);
-			n_assert_dbg(IsAligned16(pCurrValue) && IsAligned16(pBufferValue));			
+			n_assert_dbg(Math::IsAligned<16>(pCurrValue) && Math::IsAligned<16>(pBufferValue));			
 			__m128 BufferValue = _mm_load_ps(pBufferValue);
 			if (_mm_movemask_ps(_mm_cmpneq_ps(_mm_load_ps(pCurrValue), BufferValue)))
 			{
@@ -696,7 +696,7 @@ void CD3D9GPUDriver::ApplyShaderConstChanges()
 
 			__m128i* pCurrValue = (__m128i*)(pCurrPSInt4 + (CurrConst * 4));
 			const __m128i* pBufferValue = (const __m128i*)(pBufferRangeData + ((CurrConst - FoundRangeStart) * 4));
-			n_assert_dbg(IsAligned16(pCurrValue) && IsAligned16(pBufferValue));			
+			n_assert_dbg(Math::IsAligned<16>(pCurrValue) && Math::IsAligned<16>(pBufferValue));			
 			__m128i BufferValue = _mm_load_si128(pBufferValue);
 			if (_mm_movemask_epi8(_mm_cmpeq_epi32(_mm_load_si128(pCurrValue), BufferValue)))
 			{
