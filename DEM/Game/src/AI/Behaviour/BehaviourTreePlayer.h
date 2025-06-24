@@ -3,15 +3,11 @@
 
 // Plays a CBehaviourTreeAsset and tracks its state. Parallel tasks can be implemented using their own nested players.
 
-namespace DEM::Game
-{
-	class CGameSession;
-}
-
 namespace DEM::AI
 {
 using PBehaviourTreeAsset = Ptr<class CBehaviourTreeAsset>;
 enum class EBTStatus : U8;
+struct CBehaviourTreeContext;
 
 class CBehaviourTreePlayer final
 {
@@ -43,7 +39,7 @@ public:
 
 	bool      Start(PBehaviourTreeAsset Asset);
 	void      Stop();
-	EBTStatus Update(Game::CGameSession& Session, float dt);
+	EBTStatus Update(const CBehaviourTreeContext& Ctx, float dt);
 
 	CBehaviourTreeAsset* GetAsset() const { return _Asset.Get(); }
 	bool                 IsPlaying() const { return _ActiveDepth > 0; } //???or !!_Asset?

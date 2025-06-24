@@ -117,7 +117,7 @@ void CBehaviourTreePlayer::DeactivateNode(U16 Index, CDataStackRecord& InstanceD
 }
 //---------------------------------------------------------------------
 
-EBTStatus CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
+EBTStatus CBehaviourTreePlayer::Update(const CBehaviourTreeContext& Ctx, float dt)
 {
 	if (!_Asset) return EBTStatus::Failed;
 
@@ -157,9 +157,9 @@ EBTStatus CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 			// Search for a new active path in the tree.
 			// NB: Status value makes sense only for upwards traversal, otherwise the node is considered Running.
 			if (IsGoingDown)
-				std::tie(Status, NextIdx) = pNode->pNodeImpl->TraverseFromParent(CurrIdx, pNode->SkipSubtreeIndex, Session);
+				std::tie(Status, NextIdx) = pNode->pNodeImpl->TraverseFromParent(CurrIdx, pNode->SkipSubtreeIndex, Ctx);
 			else
-				std::tie(Status, NextIdx) = pNode->pNodeImpl->TraverseFromChild(CurrIdx, pNode->SkipSubtreeIndex, NextIdx, Status, Session);
+				std::tie(Status, NextIdx) = pNode->pNodeImpl->TraverseFromChild(CurrIdx, pNode->SkipSubtreeIndex, NextIdx, Status, Ctx);
 
 			// If the node requests itself, it is the new active node
 			if (NextIdx == CurrIdx)
@@ -188,7 +188,9 @@ EBTStatus CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 					const auto ActivatingIdx = _pNewStack[Level];
 					Status = ActivateNode(ActivatingIdx, _pNodeInstanceData[Level]);
 
-					//???TODO: what if succeeded? now proceeds to the child, like for Running. Instead of status activation must return only bool?
+					n_assert_dbg(static_cast<size_t>(std::distance(_pNodeInstanceData[0].pPrevStackTop, _pInstanceDataBuffer)) < _Asset->GetMaxInstanceBytes());
+
+					// NB: difference between Succeeded and Running is important for the deepest active action as it is passed to parents
 					if (Status == EBTStatus::Failed)
 					{
 						// Rollback to the last successfully activated node and stop activation
@@ -204,7 +206,7 @@ EBTStatus CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 				_ActiveDepth = Level;
 
 				// A new subtree was activated and the status must be returned to the active node's parent regardless of the value.
-				// NB: an active node can't currently proceed down the tree, it sould have done that in Traverse. May change later.
+				// NB: the deepest active node can't currently proceed down the tree, it should have done that in Traverse. May change later.
 				NextIdx = pNode->SkipSubtreeIndex;
 			}
 		}

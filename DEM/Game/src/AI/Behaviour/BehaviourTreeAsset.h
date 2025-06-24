@@ -1,4 +1,5 @@
 #pragma once
+#include <Game/ECS/Entity.h>
 #include <Data/Params.h>
 #include <Data/Metadata.h>
 #include <Core/Object.h>
@@ -12,6 +13,7 @@ namespace DEM::Game
 
 namespace DEM::AI
 {
+struct CAIStateComponent;
 
 struct CBehaviourTreeNodeData
 {
@@ -27,6 +29,13 @@ enum class EBTStatus : U8
 	Failed
 };
 
+struct CBehaviourTreeContext
+{
+	Game::CGameSession& Session;
+	Game::HEntity       EntityID;
+	CAIStateComponent*  pBrain;
+};
+
 class CBehaviourTreeNodeBase : public Core::CRTTIBaseClass
 {
 public:
@@ -35,8 +44,8 @@ public:
 	virtual size_t                    GetInstanceDataSize() const { return 0; }
 	virtual size_t                    GetInstanceDataAlignment() const { return 0; }
 
-	virtual std::pair<EBTStatus, U16> TraverseFromParent(U16 SelfIdx, U16 SkipIdx, Game::CGameSession& Session) const = 0;
-	virtual std::pair<EBTStatus, U16> TraverseFromChild(U16 SelfIdx, U16 SkipIdx, U16 NextIdx, EBTStatus ChildStatus, Game::CGameSession& Session) const = 0;
+	virtual std::pair<EBTStatus, U16> TraverseFromParent(U16 SelfIdx, U16 SkipIdx, const CBehaviourTreeContext& Ctx) const = 0;
+	virtual std::pair<EBTStatus, U16> TraverseFromChild(U16 SelfIdx, U16 SkipIdx, U16 NextIdx, EBTStatus ChildStatus, const CBehaviourTreeContext& Ctx) const = 0;
 	virtual EBTStatus                 Activate(std::byte* /*pData*/) const { return EBTStatus::Running; }
 	virtual void                      Deactivate(std::byte* /*pData*/) const {}
 	virtual std::pair<EBTStatus, U16> Update(U16 SelfIdx, float /*dt*/) const { return { EBTStatus::Running, SelfIdx }; }
