@@ -15,6 +15,14 @@ enum class EBTStatus : U8;
 
 class CBehaviourTreePlayer final
 {
+public:
+
+	struct CDataStackRecord
+	{
+		std::byte* pNodeData;
+		std::byte* pPrevStackTop;
+	};
+
 private:
 
 	PBehaviourTreeAsset          _Asset;
@@ -22,12 +30,12 @@ private:
 	U16*                         _pNewStack = nullptr;           // Current traversal path
 	U16*                         _pRequestStack = nullptr;       // Currently activated path overridden by requests from higher priority nodes
 	U16*                         _pActiveStack = nullptr;        // Currently activated path
-	std::byte**                  _pNodeInstanceData = nullptr;   // Pointers to node instance data of active path nodes
-	std::byte*                   _pInstanceDataBuffer = nullptr; // Stack allocation buffer for node instance data
+	CDataStackRecord*            _pNodeInstanceData = nullptr;   // Pointers to node instance data of active path nodes
+	std::byte*                   _pInstanceDataBuffer = nullptr; // Top of the stack allocation buffer for node instance data
 	U16                          _ActiveDepth = 0;               // Depth of _pActiveStack
 
-	EBTStatus ActivateNode(U16 Index);
-	void      DeactivateNode(U16 Index);
+	EBTStatus ActivateNode(U16 Index, CDataStackRecord& InstanceDataRecord);
+	void      DeactivateNode(U16 Index, CDataStackRecord& InstanceDataRecord);
 
 public:
 

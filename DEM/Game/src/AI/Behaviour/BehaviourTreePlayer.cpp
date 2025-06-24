@@ -16,7 +16,7 @@ static inline size_t CalcStackSize(const CBehaviourTreeAsset& Asset)
 static inline size_t CalcBufferSize(const CBehaviourTreeAsset& Asset)
 {
 	const auto TraversalStackBytes = CalcStackSize<U16>(Asset);
-	const auto InstanceDataPtrStackBytes = CalcStackSize<std::byte*>(Asset);
+	const auto InstanceDataPtrStackBytes = CalcStackSize<CBehaviourTreePlayer::CDataStackRecord>(Asset);
 	return 3 * TraversalStackBytes + InstanceDataPtrStackBytes + Asset.GetMaxInstanceBytes();
 }
 //---------------------------------------------------------------------
@@ -42,15 +42,26 @@ bool CBehaviourTreePlayer::Start(PBehaviourTreeAsset Asset)
 	{
 		_MemBuffer.reset(new std::byte[NewBytes]);
 		n_assert_dbg(Math::IsAligned<BT_PLAYER_MIN_BUFFER_ALIGNMENT>(_MemBuffer.get()));
-
-		const auto TraversalStackBytes = CalcStackSize<U16>(*_Asset);
-		const auto InstanceDataPtrStackBytes = CalcStackSize<std::byte*>(*_Asset);
-		_pNewStack = std::launder(reinterpret_cast<U16*>(_MemBuffer.get()));
-		_pRequestStack = std::launder(reinterpret_cast<U16*>(_MemBuffer.get() + TraversalStackBytes));
-		_pActiveStack = std::launder(reinterpret_cast<U16*>(_MemBuffer.get() + 2 * TraversalStackBytes));
-		_pNodeInstanceData = std::launder(reinterpret_cast<std::byte**>(_MemBuffer.get() + 3 * TraversalStackBytes));
-		_pInstanceDataBuffer = _MemBuffer.get() + 3 * TraversalStackBytes + InstanceDataPtrStackBytes;
 	}
+
+	const auto TraversalStackBytes = CalcStackSize<U16>(*_Asset);
+	const auto InstanceDataPtrStackBytes = CalcStackSize<CDataStackRecord>(*_Asset);
+
+	auto* pRawMem = _MemBuffer.get();
+
+	_pNewStack = std::launder(reinterpret_cast<U16*>(pRawMem));
+	pRawMem += TraversalStackBytes;
+
+	_pRequestStack = std::launder(reinterpret_cast<U16*>(pRawMem));
+	pRawMem += TraversalStackBytes;
+
+	_pActiveStack = std::launder(reinterpret_cast<U16*>(pRawMem));
+	pRawMem += TraversalStackBytes;
+
+	_pNodeInstanceData = std::launder(reinterpret_cast<CDataStackRecord*>(pRawMem));
+	pRawMem += InstanceDataPtrStackBytes;
+
+	_pInstanceDataBuffer = pRawMem;
 
 	return true;
 }
@@ -59,52 +70,50 @@ bool CBehaviourTreePlayer::Start(PBehaviourTreeAsset Asset)
 void CBehaviourTreePlayer::Stop()
 {
 	while (_ActiveDepth)
-		DeactivateNode(_pActiveStack[--_ActiveDepth]);
+	{
+		--_ActiveDepth;
+		DeactivateNode(_pActiveStack[_ActiveDepth], _pNodeInstanceData[_ActiveDepth]);
+	}
 }
 //---------------------------------------------------------------------
 
-EBTStatus CBehaviourTreePlayer::ActivateNode(U16 Index)
+//???instead rewrite to Push/PopActiveNode? Then level will come from _ActiveDepth!
+EBTStatus CBehaviourTreePlayer::ActivateNode(U16 Index, CDataStackRecord& InstanceDataRecord)
 {
 	auto* pNode = _Asset->GetNode(Index);
 	n_assert_dbg(pNode);
 	if (!pNode) return EBTStatus::Failed;
 
 	auto* pNodeImpl = pNode->pNodeImpl;
-	const auto DataSize = pNodeImpl->GetInstanceDataSize();
-	const auto Alignment = pNodeImpl->GetInstanceDataAlignment();
-	if (DataSize && Alignment)
-	{
-		_pNodeInstanceData = Math::NextAligned(_pNodeInstanceData, Alignment);
-		_pNodeInstanceData += pNodeImpl->GetInstanceDataSize();
 
-		// push real offset to stack
+	// Allocate bytes for node instance data
+	InstanceDataRecord.pPrevStackTop = _pInstanceDataBuffer;
+	if (const auto DataSize = pNodeImpl->GetInstanceDataSize())
+	{
+		InstanceDataRecord.pNodeData = Math::NextAligned(_pInstanceDataBuffer, pNodeImpl->GetInstanceDataAlignment());
+		_pInstanceDataBuffer = InstanceDataRecord.pNodeData + DataSize;
 	}
 	else
 	{
-		// push 0 offset to stack, could even push nullptr!
+		InstanceDataRecord.pNodeData = nullptr;
 	}
 
-	const auto Status = pNodeImpl->Activate();
+	const auto Status = pNodeImpl->Activate(InstanceDataRecord.pNodeData);
 
+	// On failure cancel effects of possible partial activation and free allocated bytes
 	if (Status == EBTStatus::Failed)
-	{
-		// pop instance data
-		// pop offset from stack
-		// new end = offset + GetInstanceDataSize of prev node
-		// would need to rewind O(n) for nodes without size
-		//instead of pointer can store two offsets U32 as a pair or 24:8 as struct!
-	}
+		DeactivateNode(Index, InstanceDataRecord);
 
 	return Status;
 }
 //---------------------------------------------------------------------
 
-void CBehaviourTreePlayer::DeactivateNode(U16 Index)
+void CBehaviourTreePlayer::DeactivateNode(U16 Index, CDataStackRecord& InstanceDataRecord)
 {
-	_Asset->GetNode(Index)->pNodeImpl->Deactivate();
+	_Asset->GetNode(Index)->pNodeImpl->Deactivate(InstanceDataRecord.pNodeData);
 
-	// pop instance data
-	// pop offset from stack
+	// Free bytes allocated for this instance
+	_pInstanceDataBuffer = InstanceDataRecord.pPrevStackTop;
 }
 //---------------------------------------------------------------------
 
@@ -164,7 +173,10 @@ EBTStatus CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 				{
 					Level = _ActiveDepth - 1;
 					while (Level > NewLevel || _pActiveStack[Level] != _pNewStack[Level])
-						DeactivateNode(_pActiveStack[Level--]);
+					{
+						DeactivateNode(_pActiveStack[Level], _pNodeInstanceData[Level]);
+						--Level;
+					}
 
 					// Proceed from the common parent to the first child on the new path (if any)
 					++Level;
@@ -174,7 +186,7 @@ EBTStatus CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 				while (Level <= NewLevel)
 				{
 					const auto ActivatingIdx = _pNewStack[Level];
-					Status = ActivateNode(ActivatingIdx);
+					Status = ActivateNode(ActivatingIdx, _pNodeInstanceData[Level]);
 
 					//???TODO: what if succeeded? now proceeds to the child, like for Running. Instead of status activation must return only bool?
 					if (Status == EBTStatus::Failed)
@@ -219,6 +231,7 @@ EBTStatus CBehaviourTreePlayer::Update(Game::CGameSession& Session, float dt)
 	std::copy_n(_pActiveStack, _ActiveDepth, _pRequestStack);
 
 	// If the tree is not running, the current active path is no longer active and must be deactivated
+	// FIXME: must not unsubscribe from events?! Need clearer start-stop logic for BTs!
 	if (Status != EBTStatus::Running) Stop();
 
 	return Status;
