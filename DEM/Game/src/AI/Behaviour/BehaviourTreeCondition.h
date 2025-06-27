@@ -14,7 +14,6 @@ class CBehaviourTreeCondition : public CBehaviourTreeNodeBase
 protected:
 
 	Flow::CConditionData _Condition;
-	bool                 _DesiredResult = true;
 
 public:
 
