@@ -1,7 +1,8 @@
 #include "BehaviourTreeCondition.h"
-#include <Data/SerializeToParams.h>
+#include <AI/Behaviour/BehaviourTreePlayer.h>
 #include <Game/GameSession.h>
 #include <Scripting/Flow/ConditionRegistry.h>
+#include <Data/SerializeToParams.h>
 #include <Core/Factory.h>
 
 namespace DEM::AI
@@ -17,7 +18,7 @@ void CBehaviourTreeCondition::Init(const Data::CParams* pParams)
 }
 //---------------------------------------------------------------------
 
-void CBehaviourTreeCondition::OnTreeStarted(U16 SelfIdx, std::vector<Events::CConnection>& OutSubs, const CBehaviourTreeContext& Ctx) const
+void CBehaviourTreeCondition::OnTreeStarted(U16 SelfIdx, CBehaviourTreePlayer& Player, const CBehaviourTreeContext& Ctx) const
 {
 	const auto* pConditions = Ctx.Session.FindFeature<Flow::CConditionRegistry>();
 	if (!pConditions) return;
@@ -25,11 +26,10 @@ void CBehaviourTreeCondition::OnTreeStarted(U16 SelfIdx, std::vector<Events::CCo
 	auto* pCondition = pConditions->FindCondition(_Condition.Type);
 	if (!pCondition) return;
 
-	//!!!pPlayer->OutSubs
-	pCondition->SubscribeRelevantEvents(OutSubs, { _Condition, Ctx.Session, nullptr/*Ctx.pBrain->Blackboard*/ }, [](const std::shared_ptr<CBasicVarStorage>& EventVars)
+	pCondition->SubscribeRelevantEvents(Player.Subscriptions(), { _Condition, Ctx.Session, nullptr/*Ctx.pBrain->Blackboard*/ }, [&Player, SelfIdx](const std::shared_ptr<CBasicVarStorage>& EventVars)
 	{
 		// Execution may not even reach this node so we don't check a condition value here
-		//pPlayer->RequestEvaluation(SelfIdx);
+		Player.RequestEvaluation(SelfIdx);
 	});
 }
 //---------------------------------------------------------------------

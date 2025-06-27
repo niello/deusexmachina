@@ -71,7 +71,7 @@ bool CBehaviourTreePlayer::Start(const CBehaviourTreeContext& Ctx)
 	if (!_Asset) return false;
 
 	for (U16 i = 0; i < _Asset->GetNodeCount(); ++i)
-		_Asset->GetNode(i)->pNodeImpl->OnTreeStarted(i, _NodeSubs, Ctx);
+		_Asset->GetNode(i)->pNodeImpl->OnTreeStarted(i, *this, Ctx);
 
 	return true;
 }

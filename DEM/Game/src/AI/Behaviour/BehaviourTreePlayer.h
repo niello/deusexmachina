@@ -53,6 +53,7 @@ public:
 	bool      RequestEvaluation(U16 Index);
 
 	CBehaviourTreeAsset* GetAsset() const { return _Asset.Get(); }
+	auto&                Subscriptions() { return _NodeSubs; }
 	bool                 IsPlaying() const { return _ActiveDepth > 0; } //???or !!_Asset?
 };
 

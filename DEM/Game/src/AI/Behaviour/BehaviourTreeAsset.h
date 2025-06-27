@@ -11,14 +11,10 @@ namespace DEM::Game
 	class CGameSession;
 }
 
-namespace DEM::Events
-{
-	class CConnection;
-}
-
 namespace DEM::AI
 {
 struct CAIStateComponent;
+class CBehaviourTreePlayer;
 
 struct CBehaviourTreeNodeData
 {
@@ -49,7 +45,7 @@ public:
 	virtual size_t                    GetInstanceDataSize() const { return 0; }
 	virtual size_t                    GetInstanceDataAlignment() const { return 0; }
 
-	virtual void                      OnTreeStarted(U16 /*SelfIdx*/, std::vector<Events::CConnection>& /*OutSubs*/, const CBehaviourTreeContext& /*Ctx*/) const {}
+	virtual void                      OnTreeStarted(U16 /*SelfIdx*/, CBehaviourTreePlayer& /*Player*/, const CBehaviourTreeContext& /*Ctx*/) const {}
 	virtual bool                      CanOverrideLowerPriorityNodes() const { return true; }
 
 	virtual std::pair<EBTStatus, U16> TraverseFromParent(U16 SelfIdx, U16 SkipIdx, const CBehaviourTreeContext& Ctx) const = 0;
