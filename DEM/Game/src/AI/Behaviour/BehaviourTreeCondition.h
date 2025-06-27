@@ -14,6 +14,7 @@ class CBehaviourTreeCondition : public CBehaviourTreeNodeBase
 protected:
 
 	Flow::CConditionData _Condition;
+	bool                 _DesiredResult = true;
 
 public:
 
@@ -22,6 +23,7 @@ public:
 
 	virtual void Init(const Data::CParams* pParams) override;
 
+	virtual void                      OnTreeStarted(U16 SelfIdx, std::vector<Events::CConnection>& OutSubs, const CBehaviourTreeContext& Ctx) const override;
 	virtual std::pair<EBTStatus, U16> TraverseFromParent(U16 SelfIdx, U16 SkipIdx, const CBehaviourTreeContext& Ctx) const override;
 
 	virtual std::pair<EBTStatus, U16> TraverseFromChild(U16 SelfIdx, U16 SkipIdx, U16 NextIdx, EBTStatus ChildStatus, const CBehaviourTreeContext&) const override

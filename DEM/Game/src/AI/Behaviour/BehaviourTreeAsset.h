@@ -11,6 +11,11 @@ namespace DEM::Game
 	class CGameSession;
 }
 
+namespace DEM::Events
+{
+	class CConnection;
+}
+
 namespace DEM::AI
 {
 struct CAIStateComponent;
@@ -43,6 +48,8 @@ public:
 	virtual void                      Init(const Data::CParams* /*pParams*/) {}
 	virtual size_t                    GetInstanceDataSize() const { return 0; }
 	virtual size_t                    GetInstanceDataAlignment() const { return 0; }
+
+	virtual void                      OnTreeStarted(U16 /*SelfIdx*/, std::vector<Events::CConnection>& /*OutSubs*/, const CBehaviourTreeContext& /*Ctx*/) const {}
 
 	virtual std::pair<EBTStatus, U16> TraverseFromParent(U16 SelfIdx, U16 SkipIdx, const CBehaviourTreeContext& Ctx) const = 0;
 	virtual std::pair<EBTStatus, U16> TraverseFromChild(U16 SelfIdx, U16 SkipIdx, U16 NextIdx, EBTStatus ChildStatus, const CBehaviourTreeContext& Ctx) const = 0;

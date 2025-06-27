@@ -1,5 +1,6 @@
 #include "BehaviourTreePlayer.h"
 #include <AI/Behaviour/BehaviourTreeAsset.h>
+#include <Events/Connection.h> // for destruction
 #include <Math/Math.h>
 
 namespace DEM::AI
@@ -27,14 +28,14 @@ CBehaviourTreePlayer::~CBehaviourTreePlayer()
 }
 //---------------------------------------------------------------------
 
-bool CBehaviourTreePlayer::Start(PBehaviourTreeAsset Asset)
+void CBehaviourTreePlayer::SetAsset(PBehaviourTreeAsset Asset)
 {
 	const auto PrevBytes = _Asset ? CalcBufferSize(*_Asset) : 0;
 
 	Stop();
 
 	_Asset = std::move(Asset);
-	if (!_Asset) return false;
+	if (!_Asset) return;
 
 	// Allocate a single buffer for traversal stacks and node instance data
 	const auto NewBytes = CalcBufferSize(*_Asset);
@@ -62,6 +63,15 @@ bool CBehaviourTreePlayer::Start(PBehaviourTreeAsset Asset)
 	pRawMem += InstanceDataPtrStackBytes;
 
 	_pInstanceDataBuffer = pRawMem;
+}
+//---------------------------------------------------------------------
+
+bool CBehaviourTreePlayer::Start(const CBehaviourTreeContext& Ctx)
+{
+	if (!_Asset) return false;
+
+	for (U16 i = 0; i < _Asset->GetNodeCount(); ++i)
+		_Asset->GetNode(i)->pNodeImpl->OnTreeStarted(i, _NodeSubs, Ctx);
 
 	return true;
 }
@@ -69,11 +79,8 @@ bool CBehaviourTreePlayer::Start(PBehaviourTreeAsset Asset)
 
 void CBehaviourTreePlayer::Stop()
 {
-	while (_ActiveDepth)
-	{
-		--_ActiveDepth;
-		DeactivateNode(_pActiveStack[_ActiveDepth], _pNodeInstanceData[_ActiveDepth]);
-	}
+	ResetActivePath();
+	_NodeSubs.clear();
 }
 //---------------------------------------------------------------------
 
@@ -117,6 +124,16 @@ void CBehaviourTreePlayer::DeactivateNode(U16 Index, CDataStackRecord& InstanceD
 }
 //---------------------------------------------------------------------
 
+void CBehaviourTreePlayer::ResetActivePath()
+{
+	while (_ActiveDepth)
+	{
+		--_ActiveDepth;
+		DeactivateNode(_pActiveStack[_ActiveDepth], _pNodeInstanceData[_ActiveDepth]);
+	}
+}
+//---------------------------------------------------------------------
+
 EBTStatus CBehaviourTreePlayer::Update(const CBehaviourTreeContext& Ctx, float dt)
 {
 	if (!_Asset) return EBTStatus::Failed;
@@ -135,8 +152,6 @@ EBTStatus CBehaviourTreePlayer::Update(const CBehaviourTreeContext& Ctx, float d
 	{
 		const bool IsGoingDown = (CurrIdx >= PrevIdx);
 		const auto* pNode = _Asset->GetNode(CurrIdx);
-
-		//!!!TODO: assert returning to the child <= one we returned from! potential infinite loop!
 
 		// If traversing down and following the active path
 		if (IsGoingDown && NewLevel < _ActiveDepth && CurrIdx == _pActiveStack[NewLevel])
@@ -211,7 +226,12 @@ EBTStatus CBehaviourTreePlayer::Update(const CBehaviourTreeContext& Ctx, float d
 			}
 		}
 
+		// Make sure that we either descend to one of children or return to the parent and not jump randomly
 		n_assert_dbg(NextIdx > CurrIdx && NextIdx <= pNode->SkipSubtreeIndex);
+
+		// Make sure that we don't return to one of previous children of the same parent, literally:
+		// we either descended here (not returned from child at all) or that child goes before the one we are going to
+		n_assert_dbg(IsGoingDown || PrevIdx < NextIdx);
 
 		PrevIdx = CurrIdx;
 
@@ -233,10 +253,15 @@ EBTStatus CBehaviourTreePlayer::Update(const CBehaviourTreeContext& Ctx, float d
 	std::copy_n(_pActiveStack, _ActiveDepth, _pRequestStack);
 
 	// If the tree is not running, the current active path is no longer active and must be deactivated
-	// FIXME: must not unsubscribe from events?! Need clearer start-stop logic for BTs!
-	if (Status != EBTStatus::Running) Stop();
+	if (Status != EBTStatus::Running) ResetActivePath();
 
 	return Status;
+}
+//---------------------------------------------------------------------
+
+bool CBehaviourTreePlayer::RequestEvaluation(U16 Index)
+{
+	return true;
 }
 //---------------------------------------------------------------------
 
