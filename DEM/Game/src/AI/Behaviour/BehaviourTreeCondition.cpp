@@ -25,6 +25,7 @@ void CBehaviourTreeCondition::OnTreeStarted(U16 SelfIdx, std::vector<Events::CCo
 	auto* pCondition = pConditions->FindCondition(_Condition.Type);
 	if (!pCondition) return;
 
+	//!!!pPlayer->OutSubs
 	pCondition->SubscribeRelevantEvents(OutSubs, { _Condition, Ctx.Session, nullptr/*Ctx.pBrain->Blackboard*/ }, [](const std::shared_ptr<CBasicVarStorage>& EventVars)
 	{
 		// Execution may not even reach this node so we don't check a condition value here

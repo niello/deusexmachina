@@ -261,6 +261,35 @@ EBTStatus CBehaviourTreePlayer::Update(const CBehaviourTreeContext& Ctx, float d
 
 bool CBehaviourTreePlayer::RequestEvaluation(U16 Index)
 {
+	// Nothing to override, evaluation will start from the root
+	if (!_ActiveDepth) return false;
+
+	// Only higher priority nodes can override the active path
+	const U16 ActiveLevel = _ActiveDepth - 1;
+	if (_pActiveStack[ActiveLevel] <= Index) return false;
+
+	// Bubble request up to the common parent on the active path (the root in the worst case)
+	U16 CandidateIdx = Index;
+	U16 CurrIdx = Index;
+	const auto* pNode = _Asset->GetNode(CurrIdx);
+	while (ActiveLevel > pNode->DepthLevel || CurrIdx < _pActiveStack[pNode->DepthLevel])
+	{
+		if (!pNode->pNodeImpl->CanOverrideLowerPriorityNodes()) return false;
+
+		CandidateIdx = CurrIdx;
+		CurrIdx = pNode->ParentIndex;
+		pNode = _Asset->GetNode(CurrIdx);
+	}
+
+	// CandidateIdx is the first divergence point between the request path and the active path
+	const auto CandidateLevel = _Asset->GetNode(CandidateIdx)->DepthLevel;
+	auto& RequestSlot = _pRequestStack[CandidateLevel];
+
+	// A sibling with higher priority already requested evaluation
+	if (CandidateIdx >= RequestSlot) return false;
+
+	// Finally register a request
+	RequestSlot = CandidateIdx;
 	return true;
 }
 //---------------------------------------------------------------------

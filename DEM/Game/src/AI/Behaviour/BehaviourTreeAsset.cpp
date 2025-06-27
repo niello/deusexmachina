@@ -14,9 +14,11 @@ struct CNodeInfo
 	const CBehaviourTreeNodeData* pData;
 	U16                           Index;
 	U16                           SkipSubtreeIndex;
+	U16                           ParentIndex;
+	U16                           DepthLevel;
 };
 
-static void DFSFirstPass(const CBehaviourTreeNodeData& NodeData, size_t Depth, size_t& NodeCount, size_t& MaxDepth)
+static void DFSFirstPass(const CBehaviourTreeNodeData& NodeData, U16 Depth, U16& NodeCount, U16& MaxDepth)
 {
 	++NodeCount;
 	if (MaxDepth < Depth) MaxDepth = Depth;
@@ -26,7 +28,7 @@ static void DFSFirstPass(const CBehaviourTreeNodeData& NodeData, size_t Depth, s
 }
 //---------------------------------------------------------------------
 
-static bool DFSSecondPass(const CBehaviourTreeNodeData& NodeData, CNodeInfo* pNodeInfo, U16& CurrIdx)
+static bool DFSSecondPass(const CBehaviourTreeNodeData& NodeData, CNodeInfo* pNodeInfo, U16& CurrIdx, U16 ParentIndex, U16 DepthLevel)
 {
 	//???store all basic nodes in one header? implementations can be very simple and defined right in headers
 	//???register basic nodes with easy to read IDs like basic conditions are registered in RegisterCondition? First try them, then the factory.
@@ -44,7 +46,8 @@ static bool DFSSecondPass(const CBehaviourTreeNodeData& NodeData, CNodeInfo* pNo
 	CurrNodeInfo.Index = CurrIdx;
 
 	for (const auto& ChildNodeData : NodeData.Children)
-		if (!DFSSecondPass(ChildNodeData, pNodeInfo, ++CurrIdx)) return false;
+		if (!DFSSecondPass(ChildNodeData, pNodeInfo, ++CurrIdx, CurrNodeInfo.Index, DepthLevel + 1))
+			return false;
 
 	CurrNodeInfo.SkipSubtreeIndex = CurrIdx;
 
@@ -56,14 +59,16 @@ static bool DFSSecondPass(const CBehaviourTreeNodeData& NodeData, CNodeInfo* pNo
 CBehaviourTreeAsset::CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData)
 {
 	// Calculate node count and max depth of the tree
-	size_t NodeCount = 0;
+	U16 NodeCount = 0;
 	DFSFirstPass(RootNodeData, 1, NodeCount, _MaxDepth);
-	n_assert_dbg(NodeCount > 0 && NodeCount <= std::numeric_limits<U16>::max());
+
+	n_assert_dbg(NodeCount);
+	if (!NodeCount) return;
 
 	// Fill a temporary buffer with node information needed to build an asset
 	std::unique_ptr<CNodeInfo[]> NodeInfo(new CNodeInfo[NodeCount]);
 	U16 CurrIdx = 0;
-	if (!DFSSecondPass(RootNodeData, NodeInfo.get(), CurrIdx)) return;
+	if (!DFSSecondPass(RootNodeData, NodeInfo.get(), CurrIdx, 0, 0)) return;
 
 	// Sort nodes by alignment and size of static data for optimal packing into a single buffer (see below)
 	std::sort(NodeInfo.get(), NodeInfo.get() + NodeCount, [](const auto& a, const auto& b)

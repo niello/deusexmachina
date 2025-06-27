@@ -50,6 +50,7 @@ public:
 	virtual size_t                    GetInstanceDataAlignment() const { return 0; }
 
 	virtual void                      OnTreeStarted(U16 /*SelfIdx*/, std::vector<Events::CConnection>& /*OutSubs*/, const CBehaviourTreeContext& /*Ctx*/) const {}
+	virtual bool                      CanOverrideLowerPriorityNodes() const { return true; }
 
 	virtual std::pair<EBTStatus, U16> TraverseFromParent(U16 SelfIdx, U16 SkipIdx, const CBehaviourTreeContext& Ctx) const = 0;
 	virtual std::pair<EBTStatus, U16> TraverseFromChild(U16 SelfIdx, U16 SkipIdx, U16 NextIdx, EBTStatus ChildStatus, const CBehaviourTreeContext& Ctx) const = 0;
@@ -68,6 +69,8 @@ public:
 	{
 		CBehaviourTreeNodeBase* pNodeImpl;
 		U16                     SkipSubtreeIndex;
+		U16                     ParentIndex;
+		U16                     DepthLevel; // 0 for the root
 	};
 
 protected:
@@ -75,7 +78,7 @@ protected:
 	std::unique_ptr<CNode[]> _Nodes;
 	unique_ptr_aligned<void> _NodeImplBuffer;
 
-	size_t                   _MaxDepth = 0;
+	U16                      _MaxDepth = 0;
 	size_t                   _MaxInstanceBytes = 0;
 
 public:
@@ -83,9 +86,9 @@ public:
 	CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData);
 	~CBehaviourTreeAsset();
 
-	size_t       GetNodeCount() const { return _Nodes ? _Nodes[0].SkipSubtreeIndex : 0; }
+	U16          GetNodeCount() const { return _Nodes ? _Nodes[0].SkipSubtreeIndex : 0; }
 	const CNode* GetNode(U16 i) const { return &_Nodes[i]; }
-	size_t       GetMaxDepth() const { return _MaxDepth; }
+	U16          GetMaxDepth() const { return _MaxDepth; }
 	size_t       GetMaxInstanceBytes() const { return _MaxInstanceBytes; }
 };
 
