@@ -103,6 +103,7 @@ EBTStatus CBehaviourTreePlayer::ActivateNode(U16 Index, CDataStackRecord& Instan
 	InstanceDataRecord.pPrevStackTop = _pInstanceDataBuffer;
 	if (const auto DataSize = pNodeImpl->GetInstanceDataSize())
 	{
+		//???FIXME: must also consider MinInstanceAlignment from asset loading? or now it is guaranteed to work correctly?
 		InstanceDataRecord.pNodeData = Math::NextAligned(_pInstanceDataBuffer, pNodeImpl->GetInstanceDataAlignment());
 		_pInstanceDataBuffer = InstanceDataRecord.pNodeData + DataSize;
 	}

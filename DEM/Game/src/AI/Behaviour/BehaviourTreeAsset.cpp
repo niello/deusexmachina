@@ -2,7 +2,6 @@
 #include <Math/Math.h>
 #include <Core/RTTI.h>
 #include <Core/Factory.h>
-#include <cstdlib>
 
 namespace DEM::AI
 {
@@ -89,8 +88,8 @@ CBehaviourTreeAsset::CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData)
 
 	// Allocate a single buffer for node implementations
 	const size_t StaticAlignment = std::max(sizeof(void*), NodeInfo[0].pRTTI->GetInstanceAlignment());
-	_NodeImplBuffer.reset(n_malloc_aligned(StaticBytes, StaticAlignment));
-	auto* pAddr = static_cast<std::byte*>(_NodeImplBuffer.get());
+	_NodeImplBuffer.reset(static_cast<std::byte*>(n_malloc_aligned(StaticBytes, StaticAlignment)));
+	auto* pAddr = _NodeImplBuffer.get();
 	for (size_t i = 0; i < NodeCount; ++i)
 	{
 		auto& CurrNodeInfo = NodeInfo[i];

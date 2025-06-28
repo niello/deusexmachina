@@ -71,11 +71,11 @@ public:
 
 protected:
 
-	std::unique_ptr<CNode[]> _Nodes;
-	unique_ptr_aligned<void> _NodeImplBuffer;
+	std::unique_ptr<CNode[]>      _Nodes;
+	unique_ptr_aligned<std::byte> _NodeImplBuffer;
 
-	U16                      _MaxDepth = 0;
-	size_t                   _MaxInstanceBytes = 0;
+	U16                           _MaxDepth = 0;
+	size_t                        _MaxInstanceBytes = 0;
 
 public:
 

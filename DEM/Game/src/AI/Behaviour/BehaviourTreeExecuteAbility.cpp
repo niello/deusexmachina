@@ -34,7 +34,8 @@ void CBehaviourTreeExecuteAbility::Init(const Data::CParams* pParams)
 {
 	if (!pParams) return;
 
-	// Ability ID
+	pParams->TryGet(_AbilityID, CStrID("Ability"));
+
 	// Target hardcoded ID / hardcoded list of IDs / BB key
 }
 //---------------------------------------------------------------------
@@ -53,10 +54,15 @@ size_t CBehaviourTreeExecuteAbility::GetInstanceDataAlignment() const
 
 EBTStatus CBehaviourTreeExecuteAbility::Activate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
+	// Before everything else because Deactivate always calls a destructor
 	auto& Action = *new(pData) Game::HAction();
+
+	if (!_AbilityID) return EBTStatus::Succeeded;
 
 	Game::CInteractionManager* pIactMgr = Ctx.Session.FindFeature<Game::CInteractionManager>();
 	if (!pIactMgr) return EBTStatus::Failed;
+
+	// resolve TargetEntityID(s) from hardcode or from BB key
 
 	//!!!TODO!
 	CStrID SmartObjectID;
