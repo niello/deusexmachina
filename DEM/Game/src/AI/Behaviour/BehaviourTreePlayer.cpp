@@ -46,21 +46,24 @@ void CBehaviourTreePlayer::SetAsset(PBehaviourTreeAsset Asset)
 		n_assert_dbg(Math::IsAligned<BT_PLAYER_MIN_BUFFER_ALIGNMENT>(_MemBuffer.get()));
 	}
 
+	static_assert(std::is_trivial_v<U16>, "U16 must be a trivial type to skip explicit construction!"); // just in case
+	static_assert(std::is_trivial_v<CDataStackRecord>, "CDataStackRecord must be a trivial type to skip explicit construction!");
+
 	const auto TraversalStackBytes = CalcStackSize<U16>(*_Asset);
 	const auto InstanceDataPtrStackBytes = CalcStackSize<CDataStackRecord>(*_Asset);
 
 	auto* pRawMem = _MemBuffer.get();
 
-	_pNewStack = std::launder(reinterpret_cast<U16*>(pRawMem));
+	_pNewStack = reinterpret_cast<U16*>(pRawMem);
 	pRawMem += TraversalStackBytes;
 
-	_pRequestStack = std::launder(reinterpret_cast<U16*>(pRawMem));
+	_pRequestStack = reinterpret_cast<U16*>(pRawMem);
 	pRawMem += TraversalStackBytes;
 
-	_pActiveStack = std::launder(reinterpret_cast<U16*>(pRawMem));
+	_pActiveStack = reinterpret_cast<U16*>(pRawMem);
 	pRawMem += TraversalStackBytes;
 
-	_pNodeInstanceData = std::launder(reinterpret_cast<CDataStackRecord*>(pRawMem));
+	_pNodeInstanceData = reinterpret_cast<CDataStackRecord*>(pRawMem);
 	pRawMem += InstanceDataPtrStackBytes;
 
 	_pInstanceDataBuffer = pRawMem;
