@@ -41,18 +41,18 @@ class CBehaviourTreeNodeBase : public Core::CRTTIBaseClass
 {
 public:
 
-	virtual void                      Init(const Data::CParams* /*pParams*/) {}
+	virtual void                      Init(const Data::CParams* pParams) {}
 	virtual size_t                    GetInstanceDataSize() const { return 0; }
 	virtual size_t                    GetInstanceDataAlignment() const { return 0; }
 
-	virtual void                      OnTreeStarted(U16 /*SelfIdx*/, CBehaviourTreePlayer& /*Player*/, const CBehaviourTreeContext& /*Ctx*/) const {}
+	virtual void                      OnTreeStarted(U16 SelfIdx, CBehaviourTreePlayer& Player, const CBehaviourTreeContext& Ctx) const {}
 	virtual bool                      CanOverrideLowerPriorityNodes() const { return true; }
 
-	virtual std::pair<EBTStatus, U16> TraverseFromParent(U16 SelfIdx, U16 SkipIdx, const CBehaviourTreeContext& Ctx) const = 0;
-	virtual std::pair<EBTStatus, U16> TraverseFromChild(U16 SelfIdx, U16 SkipIdx, U16 NextIdx, EBTStatus ChildStatus, const CBehaviourTreeContext& Ctx) const = 0;
-	virtual EBTStatus                 Activate(std::byte* /*pData*/) const { return EBTStatus::Running; }
-	virtual void                      Deactivate(std::byte* /*pData*/) const {}
-	virtual std::pair<EBTStatus, U16> Update(U16 SelfIdx, float /*dt*/) const { return { EBTStatus::Running, SelfIdx }; }
+	virtual std::pair<EBTStatus, U16> TraverseFromParent(U16 SelfIdx, U16 SkipIdx, const CBehaviourTreeContext& Ctx) const { return { EBTStatus::Running, SelfIdx }; }
+	virtual std::pair<EBTStatus, U16> TraverseFromChild(U16 SelfIdx, U16 SkipIdx, U16 NextIdx, EBTStatus ChildStatus, const CBehaviourTreeContext& Ctx) const { return { ChildStatus, NextIdx }; }
+	virtual EBTStatus                 Activate(std::byte* pData) const { return EBTStatus::Running; }
+	virtual void                      Deactivate(std::byte* pData) const {}
+	virtual std::pair<EBTStatus, U16> Update(U16 SelfIdx, float dt) const { return { EBTStatus::Running, SelfIdx }; }
 };
 
 class CBehaviourTreeAsset : public DEM::Core::CObject

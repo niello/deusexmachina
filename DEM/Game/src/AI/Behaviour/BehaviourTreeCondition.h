@@ -17,19 +17,10 @@ protected:
 
 public:
 
-	// TODO: subscribe condition events (pCondition->SubscribeRelevantEvents) on player start
-	//!!!FIXME: here and in quests must ensure that composite conditions subscribe correctly! now it seems that they don't!
-
 	virtual void Init(const Data::CParams* pParams) override;
 
 	virtual void                      OnTreeStarted(U16 SelfIdx, CBehaviourTreePlayer& Player, const CBehaviourTreeContext& Ctx) const override;
 	virtual std::pair<EBTStatus, U16> TraverseFromParent(U16 SelfIdx, U16 SkipIdx, const CBehaviourTreeContext& Ctx) const override;
-
-	virtual std::pair<EBTStatus, U16> TraverseFromChild(U16 SelfIdx, U16 SkipIdx, U16 NextIdx, EBTStatus ChildStatus, const CBehaviourTreeContext&) const override
-	{
-		// When the child returns, simply propagate its result up
-		return { ChildStatus, NextIdx };
-	}
 };
 
 }
