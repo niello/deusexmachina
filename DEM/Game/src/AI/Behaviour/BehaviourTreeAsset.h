@@ -33,7 +33,7 @@ enum class EBTStatus : U8
 struct CBehaviourTreeContext
 {
 	Game::CGameSession& Session;
-	Game::HEntity       EntityID;
+	Game::HEntity       ActorID;
 	CAIStateComponent*  pBrain;
 };
 
@@ -50,9 +50,9 @@ public:
 
 	virtual std::pair<EBTStatus, U16> TraverseFromParent(U16 SelfIdx, U16 SkipIdx, const CBehaviourTreeContext& Ctx) const { return { EBTStatus::Running, SelfIdx }; }
 	virtual std::pair<EBTStatus, U16> TraverseFromChild(U16 SelfIdx, U16 SkipIdx, U16 NextIdx, EBTStatus ChildStatus, const CBehaviourTreeContext& Ctx) const { return { ChildStatus, NextIdx }; }
-	virtual EBTStatus                 Activate(std::byte* pData) const { return EBTStatus::Running; }
-	virtual void                      Deactivate(std::byte* pData) const {}
-	virtual std::pair<EBTStatus, U16> Update(U16 SelfIdx, float dt) const { return { EBTStatus::Running, SelfIdx }; }
+	virtual EBTStatus                 Activate(std::byte* pData, const CBehaviourTreeContext& Ctx) const { return EBTStatus::Running; }
+	virtual void                      Deactivate(std::byte* pData, const CBehaviourTreeContext& Ctx) const {}
+	virtual std::pair<EBTStatus, U16> Update(U16 SelfIdx, std::byte* pData, float dt, const CBehaviourTreeContext& Ctx) const { return { EBTStatus::Running, SelfIdx }; }
 };
 
 class CBehaviourTreeAsset : public DEM::Core::CObject

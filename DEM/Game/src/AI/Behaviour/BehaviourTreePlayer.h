@@ -38,9 +38,9 @@ private:
 
 	U16                               _ActiveDepth = 0;               // Depth of _pActiveStack
 
-	EBTStatus ActivateNode(U16 Index, CDataStackRecord& InstanceDataRecord);
-	void      DeactivateNode(U16 Index, CDataStackRecord& InstanceDataRecord);
-	void      ResetActivePath();
+	EBTStatus ActivateNode(U16 Index, CDataStackRecord& InstanceDataRecord, const CBehaviourTreeContext& Ctx);
+	void      DeactivateNode(U16 Index, CDataStackRecord& InstanceDataRecord, const CBehaviourTreeContext& Ctx);
+	void      ResetActivePath(const CBehaviourTreeContext& Ctx);
 
 public:
 
@@ -54,7 +54,7 @@ public:
 
 	CBehaviourTreeAsset* GetAsset() const { return _Asset.Get(); }
 	auto&                Subscriptions() { return _NodeSubs; }
-	bool                 IsPlaying() const { return _ActiveDepth > 0; } //???or !!_Asset?
+	bool                 IsPlaying() const { return _ActiveDepth > 0; } //???or !!_Asset? or explicit flag?!
 };
 
 }

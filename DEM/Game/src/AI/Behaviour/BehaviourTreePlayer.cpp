@@ -6,6 +6,7 @@
 namespace DEM::AI
 {
 constexpr auto BT_PLAYER_MIN_BUFFER_ALIGNMENT = sizeof(void*);
+static_assert(__STDCPP_DEFAULT_NEW_ALIGNMENT__ >= BT_PLAYER_MIN_BUFFER_ALIGNMENT);
 
 template<typename T>
 static inline size_t CalcStackSize(const CBehaviourTreeAsset& Asset)
@@ -79,13 +80,15 @@ bool CBehaviourTreePlayer::Start(const CBehaviourTreeContext& Ctx)
 
 void CBehaviourTreePlayer::Stop()
 {
-	ResetActivePath();
+	//!!!FIXME: maybe store context on Start() the tree player and don't pass it each frame? Session and AI must be constant during the playback!
+	n_assert(false);
+	//ResetActivePath();
 	_NodeSubs.clear();
 }
 //---------------------------------------------------------------------
 
 //???instead rewrite to Push/PopActiveNode? Then level will come from _ActiveDepth!
-EBTStatus CBehaviourTreePlayer::ActivateNode(U16 Index, CDataStackRecord& InstanceDataRecord)
+EBTStatus CBehaviourTreePlayer::ActivateNode(U16 Index, CDataStackRecord& InstanceDataRecord, const CBehaviourTreeContext& Ctx)
 {
 	auto* pNode = _Asset->GetNode(Index);
 	n_assert_dbg(pNode);
@@ -105,31 +108,31 @@ EBTStatus CBehaviourTreePlayer::ActivateNode(U16 Index, CDataStackRecord& Instan
 		InstanceDataRecord.pNodeData = nullptr;
 	}
 
-	const auto Status = pNodeImpl->Activate(InstanceDataRecord.pNodeData);
+	const auto Status = pNodeImpl->Activate(InstanceDataRecord.pNodeData, Ctx);
 
 	// On failure cancel effects of possible partial activation and free allocated bytes
 	if (Status == EBTStatus::Failed)
-		DeactivateNode(Index, InstanceDataRecord);
+		DeactivateNode(Index, InstanceDataRecord, Ctx);
 
 	return Status;
 }
 //---------------------------------------------------------------------
 
-void CBehaviourTreePlayer::DeactivateNode(U16 Index, CDataStackRecord& InstanceDataRecord)
+void CBehaviourTreePlayer::DeactivateNode(U16 Index, CDataStackRecord& InstanceDataRecord, const CBehaviourTreeContext& Ctx)
 {
-	_Asset->GetNode(Index)->pNodeImpl->Deactivate(InstanceDataRecord.pNodeData);
+	_Asset->GetNode(Index)->pNodeImpl->Deactivate(InstanceDataRecord.pNodeData, Ctx);
 
 	// Free bytes allocated for this instance
 	_pInstanceDataBuffer = InstanceDataRecord.pPrevStackTop;
 }
 //---------------------------------------------------------------------
 
-void CBehaviourTreePlayer::ResetActivePath()
+void CBehaviourTreePlayer::ResetActivePath(const CBehaviourTreeContext& Ctx)
 {
 	while (_ActiveDepth)
 	{
 		--_ActiveDepth;
-		DeactivateNode(_pActiveStack[_ActiveDepth], _pNodeInstanceData[_ActiveDepth]);
+		DeactivateNode(_pActiveStack[_ActiveDepth], _pNodeInstanceData[_ActiveDepth], Ctx);
 	}
 }
 //---------------------------------------------------------------------
@@ -157,7 +160,7 @@ EBTStatus CBehaviourTreePlayer::Update(const CBehaviourTreeContext& Ctx, float d
 		if (IsGoingDown && NewLevel < _ActiveDepth && CurrIdx == _pActiveStack[NewLevel])
 		{
 			// Update an already active node
-			std::tie(Status, NextIdx) = pNode->pNodeImpl->Update(CurrIdx, dt);
+			std::tie(Status, NextIdx) = pNode->pNodeImpl->Update(CurrIdx, _pNodeInstanceData[NewLevel].pNodeData, dt, Ctx);
 
 			// The most often case for the node is to request itself when explicit traversal change is not needed
 			if (NextIdx == CurrIdx)
@@ -189,7 +192,7 @@ EBTStatus CBehaviourTreePlayer::Update(const CBehaviourTreeContext& Ctx, float d
 					Level = _ActiveDepth - 1;
 					while (Level > NewLevel || _pActiveStack[Level] != _pNewStack[Level])
 					{
-						DeactivateNode(_pActiveStack[Level], _pNodeInstanceData[Level]);
+						DeactivateNode(_pActiveStack[Level], _pNodeInstanceData[Level], Ctx);
 						--Level;
 					}
 
@@ -201,7 +204,7 @@ EBTStatus CBehaviourTreePlayer::Update(const CBehaviourTreeContext& Ctx, float d
 				while (Level <= NewLevel)
 				{
 					const auto ActivatingIdx = _pNewStack[Level];
-					Status = ActivateNode(ActivatingIdx, _pNodeInstanceData[Level]);
+					Status = ActivateNode(ActivatingIdx, _pNodeInstanceData[Level], Ctx);
 
 					n_assert_dbg(static_cast<size_t>(std::distance(_pNodeInstanceData[0].pPrevStackTop, _pInstanceDataBuffer)) < _Asset->GetMaxInstanceBytes());
 
@@ -253,7 +256,7 @@ EBTStatus CBehaviourTreePlayer::Update(const CBehaviourTreeContext& Ctx, float d
 	std::copy_n(_pActiveStack, _ActiveDepth, _pRequestStack);
 
 	// If the tree is not running, the current active path is no longer active and must be deactivated
-	if (Status != EBTStatus::Running) ResetActivePath();
+	if (Status != EBTStatus::Running) ResetActivePath(Ctx);
 
 	return Status;
 }
