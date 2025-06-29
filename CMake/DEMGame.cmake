@@ -1,6 +1,7 @@
 set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/AILevel.h
 	DEM/Game/src/AI/AIStateComponent.h
+	DEM/Game/src/AI/Blackboard.h
 	DEM/Game/src/AI/FormationManager.h
 	DEM/Game/src/AI/MoveInteraction.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreeAIActionBase.h

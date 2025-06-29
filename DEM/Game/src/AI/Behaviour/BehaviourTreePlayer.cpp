@@ -1,5 +1,6 @@
 #include "BehaviourTreePlayer.h"
 #include <AI/Behaviour/BehaviourTreeAsset.h>
+#include <AI/AIStateComponent.h>
 #include <Events/Connection.h> // for destruction
 #include <Math/Math.h>
 
@@ -77,6 +78,19 @@ bool CBehaviourTreePlayer::Start(const CBehaviourTreeContext& Ctx)
 	for (U16 i = 0; i < _Asset->GetNodeCount(); ++i)
 		_Asset->GetNode(i)->pNodeImpl->OnTreeStarted(i, *this, Ctx);
 
+	// All blackboard changes are handled by a single subscription. It is both optimal
+	// and deals with the lack of knowledge about a blackboard in a condition system.
+	if (!_BBKeyToNode.empty())
+	{
+		_NodeSubs.push_back(Ctx.pBrain->Blackboard.OnChanged.Subscribe([this](HVar BBKey)
+		{
+			// Empty BBKey means the whole blackboard change
+			const auto Range = BBKey ? _BBKeyToNode.equal_range(BBKey) : std::make_pair(_BBKeyToNode.begin(), _BBKeyToNode.end());
+			for (auto It = Range.first; It != Range.second; ++It)
+				RequestEvaluation(It->second);
+		}));
+	}
+
 	return true;
 }
 //---------------------------------------------------------------------
@@ -86,6 +100,7 @@ void CBehaviourTreePlayer::Stop()
 	//!!!FIXME: maybe store context on Start() the tree player and don't pass it each frame? Session and AI must be constant during the playback!
 	n_assert(false);
 	//ResetActivePath();
+	_BBKeyToNode.clear();
 	_NodeSubs.clear();
 }
 //---------------------------------------------------------------------

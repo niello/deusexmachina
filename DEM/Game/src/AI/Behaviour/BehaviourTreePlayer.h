@@ -1,5 +1,7 @@
 #pragma once
 #include <Data/Ptr.h>
+#include <Data/VarStorage.h> // for HVar in the inlined EvaluateOnBlackboardChange
+#include <map>
 
 // Plays a CBehaviourTreeAsset and tracks its state. Parallel tasks can be implemented using their own nested players.
 
@@ -28,6 +30,7 @@ private:
 
 	PBehaviourTreeAsset               _Asset;
 	std::vector<Events::CConnection>& _NodeSubs;
+	std::multimap<HVar, U16>          _BBKeyToNode; // A map of BB keys to nodes that are affected by its change
 
 	std::unique_ptr<std::byte[]>      _MemBuffer;
 	U16*                              _pNewStack = nullptr;           // Current traversal path
@@ -51,6 +54,7 @@ public:
 	void      Stop();
 	EBTStatus Update(const CBehaviourTreeContext& Ctx, float dt);
 	bool      RequestEvaluation(U16 Index);
+	void      EvaluateOnBlackboardChange(HVar BBKey, U16 Index) { _BBKeyToNode.emplace(BBKey, Index); }
 
 	CBehaviourTreeAsset* GetAsset() const { return _Asset.Get(); }
 	auto&                Subscriptions() { return _NodeSubs; }

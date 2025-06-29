@@ -180,16 +180,16 @@ public:
 	}
 
 	template<typename T>
-	bool TrySet(CStrID ID, T&& Value)
+	HVar TrySet(CStrID ID, T&& Value)
 	{
 		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
-			Set(ID, std::forward<T>(Value));
-		return (TypeIndex<T> < sizeof...(TVarTypes));
+			return Set(ID, std::forward<T>(Value));
+		return {};
 	}
 
-	bool TrySet(CStrID ID, Data::CData& Value) { return TrySet(ID, std::as_const(Value)); }
+	HVar TrySet(CStrID ID, Data::CData& Value) { return TrySet(ID, std::as_const(Value)); }
 
-	bool TrySet(CStrID ID, const Data::CData& Value)
+	HVar TrySet(CStrID ID, const Data::CData& Value)
 	{
 		switch (Value.GetTypeID())
 		{
@@ -210,7 +210,7 @@ public:
 			case Data::CTypeID<matrix44>::TypeID: return TrySet(ID, Value.GetValue<matrix44>());
 			case Data::CTypeID<Data::PParams>::TypeID: return TrySet(ID, Value.GetValue<Data::PParams>());
 			case Data::CTypeID<Data::PDataArray>::TypeID: return TrySet(ID, Value.GetValue<Data::PDataArray>());
-			default: return false;
+			default: return {};
 		}
 	}
 
