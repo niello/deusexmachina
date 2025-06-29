@@ -11,6 +11,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/Behaviour/BehaviourTreeExecuteAbility.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreeMove.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreePlayer.h
+	DEM/Game/src/AI/Behaviour/BehaviourTreeSelectClosestActor.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreeSelector.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreeSequence.h
 	DEM/Game/src/AI/Movement/SteerAction.h
@@ -95,6 +96,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/Behaviour/BehaviourTreeExecuteAbility.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreeMove.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreePlayer.cpp
+	DEM/Game/src/AI/Behaviour/BehaviourTreeSelectClosestActor.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreeSelector.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreeSequence.cpp
 	DEM/Game/src/AI/Movement/CharacterControlSystem.cpp
