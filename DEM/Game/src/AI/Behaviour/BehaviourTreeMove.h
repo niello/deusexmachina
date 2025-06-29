@@ -1,19 +1,21 @@
 #pragma once
 #include <AI/Behaviour/BehaviourTreeAIActionBase.h>
 
-// A leaf BT action that executes an ability by ID
+// A leaf BT action that orders an agent to move to the desired position or entity
 
 namespace DEM::AI
 {
 
-class CBehaviourTreeExecuteAbility : public CBehaviourTreeAIActionBase
+class CBehaviourTreeMove : public CBehaviourTreeAIActionBase
 {
 	FACTORY_CLASS_DECL;
 
 protected:
 
-	CStrID _AbilityID; //???allow BB key too?
-	// Hardcoded targets or BB key, may be position, may need no target at all
+	// Hardcoded position or entity ID or BB key of them
+
+	bool _IgnoreNavigation = false; // Move directly to the destination, ignore navmesh and path controllers
+	//???bool FollowTarget? should then refresh position of entity or BB key value and apply changes
 
 public:
 

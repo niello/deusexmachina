@@ -6,29 +6,12 @@
 #include <Game/Interaction/AbilityInstance.h>
 #include <Game/Interaction/InteractionManager.h>
 #include <Game/Interaction/InteractionContext.h>
-//#include <Data/SerializeToParams.h> - deserialize target structure?
+//#include <Data/SerializeToParams.h> - deserialize CTargetInfo structure?
 #include <Core/Factory.h>
 
 namespace DEM::AI
 {
-FACTORY_CLASS_IMPL(DEM::AI::CBehaviourTreeExecuteAbility, 'BTEA', CBehaviourTreeNodeBase);
-
-static EBTStatus ActionStatusToBTStatus(Game::EActionStatus Status)
-{
-	switch (Status)
-	{
-		//!!!FIXME: can't know WHY there is no action in queue. Might have succeeded and was removed? Or failed? Or cancelled?
-		case Game::EActionStatus::NotQueued:
-		case Game::EActionStatus::Succeeded:
-			return EBTStatus::Succeeded;
-		case Game::EActionStatus::Failed:
-		case Game::EActionStatus::Cancelled:
-			return EBTStatus::Failed;
-		default:
-			return EBTStatus::Running;
-	}
-}
-//---------------------------------------------------------------------
+FACTORY_CLASS_IMPL(DEM::AI::CBehaviourTreeExecuteAbility, 'BTEA', CBehaviourTreeAIActionBase);
 
 void CBehaviourTreeExecuteAbility::Init(const Data::CParams* pParams)
 {
@@ -84,6 +67,7 @@ EBTStatus CBehaviourTreeExecuteAbility::Activate(std::byte* pData, const CBehavi
 	{
 		if (auto* pQueue = pWorld->FindComponent<Game::CActionQueueComponent>(Ctx.ActorID))
 		{
+			//!!!FIXME: we don't even know if it is our action!
 			Action = pQueue->FindCurrent<Game::ExecuteAbility>();
 			return ActionStatusToBTStatus(pQueue->GetStatus(Action));
 		}
@@ -97,12 +81,7 @@ EBTStatus CBehaviourTreeExecuteAbility::Activate(std::byte* pData, const CBehavi
 void CBehaviourTreeExecuteAbility::Deactivate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
 	auto& Action = *reinterpret_cast<Game::HAction*>(pData);
-
-	if (auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>())
-		if (auto* pQueue = pWorld->FindComponent<Game::CActionQueueComponent>(Ctx.ActorID))
-			if (pQueue->GetStatus(Action) == Game::EActionStatus::Active)
-				pQueue->SetStatus(Action, Game::EActionStatus::Cancelled);
-
+	CancelAction(Ctx, Action);
 	std::destroy_at(&Action);
 }
 //---------------------------------------------------------------------
@@ -110,15 +89,7 @@ void CBehaviourTreeExecuteAbility::Deactivate(std::byte* pData, const CBehaviour
 std::pair<EBTStatus, U16> CBehaviourTreeExecuteAbility::Update(U16 SelfIdx, std::byte* pData, float dt, const CBehaviourTreeContext& Ctx) const
 {
 	auto& Action = *reinterpret_cast<Game::HAction*>(pData);
-
-	EBTStatus Status = EBTStatus::Running;
-
-	//!!!also has pAIState->_AbilityInstance but there is no status there! At least now.
-	if (auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>())
-		if (auto* pQueue = pWorld->FindComponent<Game::CActionQueueComponent>(Ctx.ActorID))
-			Status = ActionStatusToBTStatus(pQueue->GetStatus(Action));
-
-	return { Status, SelfIdx };
+	return { GetActionStatus(Ctx, Action), SelfIdx };
 }
 //---------------------------------------------------------------------
 
