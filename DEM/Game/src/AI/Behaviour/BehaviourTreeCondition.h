@@ -14,6 +14,7 @@ class CBehaviourTreeCondition : public CBehaviourTreeNodeBase
 protected:
 
 	Flow::CConditionData _Condition;
+	std::vector<CStrID>  _UsedBBKeys;
 
 public:
 

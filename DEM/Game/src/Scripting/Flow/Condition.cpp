@@ -161,9 +161,9 @@ bool CAndCondition::Evaluate(const CConditionContext& Ctx) const
 	const auto& Params = Ctx.Condition.Params;
 	if (!Params) return true;
 
-	CConditionData Inner;
 	for (const auto& Param : *Params)
 	{
+		CConditionData Inner;
 		DEM::ParamsFormat::Deserialize(Param.GetRawValue(), Inner);
 		if (!EvaluateCondition(Inner, Ctx.Session, Ctx.pVars)) return false;
 	}
@@ -176,9 +176,9 @@ bool COrCondition::Evaluate(const CConditionContext& Ctx) const
 	const auto& Params = Ctx.Condition.Params;
 	if (!Params) return true;
 
-	CConditionData Inner;
 	for (const auto& Param : *Params)
 	{
+		CConditionData Inner;
 		DEM::ParamsFormat::Deserialize(Param.GetRawValue(), Inner);
 		if (EvaluateCondition(Inner, Ctx.Session, Ctx.pVars)) return true;
 	}

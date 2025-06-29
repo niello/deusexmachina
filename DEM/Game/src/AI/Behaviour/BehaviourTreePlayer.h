@@ -1,6 +1,6 @@
 #pragma once
 #include <Data/Ptr.h>
-#include <Data/VarStorage.h> // for HVar in the inlined EvaluateOnBlackboardChange
+#include <Data/StringID.h>
 #include <map>
 
 // Plays a CBehaviourTreeAsset and tracks its state. Parallel tasks can be implemented using their own nested players.
@@ -9,6 +9,8 @@ namespace DEM::Events
 {
 	class CConnection;
 }
+
+struct HVar;
 
 namespace DEM::AI
 {
@@ -54,7 +56,7 @@ public:
 	void      Stop();
 	EBTStatus Update(const CBehaviourTreeContext& Ctx, float dt);
 	bool      RequestEvaluation(U16 Index);
-	void      EvaluateOnBlackboardChange(HVar BBKey, U16 Index) { _BBKeyToNode.emplace(BBKey, Index); }
+	void      EvaluateOnBlackboardChange(const CBehaviourTreeContext& Ctx, CStrID BBKey, U16 Index);
 
 	CBehaviourTreeAsset* GetAsset() const { return _Asset.Get(); }
 	auto&                Subscriptions() { return _NodeSubs; }

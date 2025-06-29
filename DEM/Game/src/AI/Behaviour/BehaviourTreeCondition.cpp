@@ -10,12 +10,56 @@ namespace DEM::AI
 {
 FACTORY_CLASS_IMPL(DEM::AI::CBehaviourTreeCondition, 'BTCO', CBehaviourTreeNodeBase);
 
+static const CStrID sidLeft("Left");
+static const CStrID sidRight("Right");
+
+// FIXME: move to condition system! Need session for ICondition resolving?!
+//        Pass session or Flow::CConditionRegistry into loader on its registration? And move it to CAppStateLoading::Load()!
+static void EnumerateUsedContextKeys(const Flow::CConditionData& Condition, std::vector<CStrID>& Out)
+{
+	// TODO: scripted conditions must report their keys. NEED session for Lua! and ICondition::EnumerateUsedContextKeys.
+	if (Condition.Type == Flow::CVarCmpVarCondition::Type)
+	{
+		Out.push_back(Condition.Params->Get<CStrID>(sidLeft));
+		Out.push_back(Condition.Params->Get<CStrID>(sidRight));
+	}
+	else if (Condition.Type == Flow::CVarCmpConstCondition::Type)
+	{
+		Out.push_back(Condition.Params->Get<CStrID>(sidLeft));
+	}
+	else if (Condition.Type == Flow::CAndCondition::Type || Condition.Type == Flow::COrCondition::Type)
+	{
+		for (const auto& Param : *Condition.Params)
+		{
+			Flow::CConditionData Inner;
+			ParamsFormat::Deserialize(Param.GetRawValue(), Inner);
+			EnumerateUsedContextKeys(Inner, Out);
+		}
+	}
+	else if (Condition.Type == Flow::CNotCondition::Type)
+	{
+		Flow::CConditionData Inner;
+		ParamsFormat::Deserialize(Condition.Params, Inner);
+		EnumerateUsedContextKeys(Inner, Out);
+	}
+}
+//---------------------------------------------------------------------
+
 void CBehaviourTreeCondition::Init(const Data::CParams* pParams)
 {
 	if (!pParams) return;
 
 	if (auto* pDesc = pParams->Find(CStrID("Condition")))
-		DEM::ParamsFormat::Deserialize(pDesc->GetRawValue(), _Condition);
+	{
+		ParamsFormat::Deserialize(pDesc->GetRawValue(), _Condition);
+
+		// Gather context (blackboard) keys used by the conditon
+		_UsedBBKeys.reserve(16);
+		EnumerateUsedContextKeys(_Condition, _UsedBBKeys);
+		std::sort(_UsedBBKeys.begin(), _UsedBBKeys.end());
+		_UsedBBKeys.erase(std::unique(_UsedBBKeys.begin(), _UsedBBKeys.end()), _UsedBBKeys.end());
+		_UsedBBKeys.shrink_to_fit();
+	}
 }
 //---------------------------------------------------------------------
 
@@ -34,10 +78,8 @@ void CBehaviourTreeCondition::OnTreeStarted(U16 SelfIdx, CBehaviourTreePlayer& P
 		Player.RequestEvaluation(SelfIdx);
 	});
 
-	// TODO: scan condition hierarchy for VarConst and VarVar and set Key -> SelfIdx to Player's blackboard change map
-	// NB: scripted conditions can use blackboard too! Need a separate utility method pCondition->GatherAccessedContextKeys?!
-	// With callback or vector/set. vector + sort + unique?
-	//Player.EvaluateOnBlackboardChange(Key, SelfIdx);
+	for (const auto Key : _UsedBBKeys)
+		Player.EvaluateOnBlackboardChange(Ctx, Key, SelfIdx);
 }
 //---------------------------------------------------------------------
 

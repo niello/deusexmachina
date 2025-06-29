@@ -316,4 +316,13 @@ bool CBehaviourTreePlayer::RequestEvaluation(U16 Index)
 }
 //---------------------------------------------------------------------
 
+void CBehaviourTreePlayer::EvaluateOnBlackboardChange(const CBehaviourTreeContext& Ctx, CStrID BBKey, U16 Index)
+{
+	//!!!FIXME: what if the key is not used yet but the value will be assigned later?! Must pre-register all keys in a blackboard? Need to know types in that place!
+	//May use storage's Load() to initialize  the blackboard from HRD!
+	if (auto Handle = Ctx.pBrain->Blackboard.GetStorage().Find(BBKey))
+		_BBKeyToNode.emplace(Handle, Index);
+}
+//---------------------------------------------------------------------
+
 }
