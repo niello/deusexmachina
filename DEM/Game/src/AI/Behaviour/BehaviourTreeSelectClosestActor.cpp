@@ -16,10 +16,10 @@ static Game::HEntity FindClosestActor(const CBehaviourTreeContext& Ctx)
 	auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return {};
 
-	auto* pBrainScene = pWorld->FindComponent<const Game::CSceneComponent>(Ctx.ActorID);
-	if (!pBrainScene) return {};
+	auto* pActorScene = pWorld->FindComponent<const Game::CSceneComponent>(Ctx.ActorID);
+	if (!pActorScene) return {};
 
-	const rtm::vector4f BrainPos = pBrainScene->RootNode->GetWorldPosition();
+	const rtm::vector4f ActorPos = pActorScene->RootNode->GetWorldPosition();
 
 	Game::HEntity Result;
 	float MinSqDist = std::numeric_limits<float>::max();
@@ -27,7 +27,7 @@ static Game::HEntity FindClosestActor(const CBehaviourTreeContext& Ctx)
 	{
 		if (!Fact.SourceID) continue;
 
-		const float SqDist = rtm::vector_length_squared3(rtm::vector_sub(BrainPos, Fact.Position));
+		const float SqDist = rtm::vector_length_squared3(rtm::vector_sub(ActorPos, Fact.Position));
 		if (MinSqDist <= SqDist) continue;
 
 		// Filter by AI actors only

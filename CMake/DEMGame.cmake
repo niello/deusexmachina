@@ -13,6 +13,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/Behaviour/BehaviourTreePlayer.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreeSelectClosestActor.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreeSelector.h
+	DEM/Game/src/AI/Behaviour/BehaviourTreeSelectRandomPosition.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreeSequence.h
 	DEM/Game/src/AI/Movement/SteerAction.h
 	DEM/Game/src/AI/Navigation/NavAgentComponent.h
@@ -98,6 +99,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/Behaviour/BehaviourTreePlayer.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreeSelectClosestActor.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreeSelector.cpp
+	DEM/Game/src/AI/Behaviour/BehaviourTreeSelectRandomPosition.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreeSequence.cpp
 	DEM/Game/src/AI/Movement/CharacterControlSystem.cpp
 	DEM/Game/src/AI/Movement/SteerAction.cpp
