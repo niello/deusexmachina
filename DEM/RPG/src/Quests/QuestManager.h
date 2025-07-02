@@ -36,7 +36,7 @@ class CQuestManager : public DEM::Core::CRTTIBaseClass
 
 public:
 
-	using PFlowVarStorage = std::shared_ptr<CBasicVarStorage>;
+	using PFlowVarStorage = std::shared_ptr<Game::CGameVarStorage>;
 
 protected:
 

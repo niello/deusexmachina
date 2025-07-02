@@ -42,7 +42,7 @@ DEM::Core::PObject CFlowAssetLoader::CreateResource(CStrID UID)
 
 	const auto StartActionID = static_cast<U32>(Params->Get<int>(CStrID("StartActionID"), DEM::Flow::EmptyActionID));
 
-	CBasicVarStorage Vars;
+	DEM::Game::CGameVarStorage Vars;
 	if (auto* pVarsDesc = Params->Find(CStrID("Vars")))
 		DEM::ParamsFormat::Deserialize(pVarsDesc->GetRawValue(), Vars);
 

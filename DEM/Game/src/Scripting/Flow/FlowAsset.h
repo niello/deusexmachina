@@ -31,12 +31,12 @@ class CFlowAsset : public DEM::Core::CObject
 protected:
 
 	std::vector<CFlowActionData> _Actions;
-	CBasicVarStorage              _VarStorage;
+	Game::CGameVarStorage        _VarStorage;
 	U32                          _DefaultStartActionID;
 
 public:
 
-	CFlowAsset(std::vector<CFlowActionData>&& Actions, CBasicVarStorage&& Vars, U32 StartActionID)
+	CFlowAsset(std::vector<CFlowActionData>&& Actions, Game::CGameVarStorage&& Vars, U32 StartActionID)
 		: _Actions(std::move(Actions))
 		, _VarStorage(std::move(Vars))
 		, _DefaultStartActionID(StartActionID)

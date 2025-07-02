@@ -13,6 +13,12 @@ constexpr bool is_equality_comparable = false;
 template <class T, class U>
 constexpr bool is_equality_comparable<T, U, std::void_t<decltype(std::declval<T&>() == std::declval<U&>())>> = true;
 
+template <class T, class U, class = void>
+constexpr bool is_less_comparable = false;
+
+template <class T, class U>
+constexpr bool is_less_comparable<T, U, std::void_t<decltype(std::declval<T&>() < std::declval<U&>())>> = true;
+
 // https://stackoverflow.com/questions/27338428/variadic-template-that-determines-the-best-conversion
 // NB: yields 'void' for ambiguous conversions. Numeric conversions are frequently ambiguous, e.g. integral vs float.
 template <typename T, typename... E>

@@ -1,5 +1,5 @@
 #pragma once
-#include <Data/VarStorage.h>
+#include <Game/GameVarStorage.h>
 #include <Events/Signal.h>
 
 // An AI agent's blackboard. Stores heterogeneous values and notifies listeners about changes.
@@ -11,7 +11,7 @@ class CBlackboard
 {
 protected:
 
-	CBasicVarStorage _Storage;
+	Game::CGameVarStorage _Storage;
 
 public:
 

@@ -72,7 +72,7 @@ void CBehaviourTreeCondition::OnTreeStarted(U16 SelfIdx, CBehaviourTreePlayer& P
 	if (!pCondition) return;
 
 	//!!!FIXME: here and in quests must ensure that composite conditions subscribe correctly! now it seems that they don't!
-	pCondition->SubscribeRelevantEvents(Player.Subscriptions(), { _Condition, Ctx.Session, &Ctx.pBrain->Blackboard.GetStorage() }, [&Player, SelfIdx](const std::shared_ptr<CBasicVarStorage>& EventVars)
+	pCondition->SubscribeRelevantEvents(Player.Subscriptions(), { _Condition, Ctx.Session, &Ctx.pBrain->Blackboard.GetStorage() }, [&Player, SelfIdx](const std::shared_ptr<Game::CGameVarStorage>& EventVars)
 	{
 		// Execution may not even reach this node so we don't check a condition value here
 		Player.RequestEvaluation(SelfIdx);

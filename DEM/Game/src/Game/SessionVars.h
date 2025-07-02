@@ -1,6 +1,6 @@
 #pragma once
 #include <Core/RTTIBaseClass.h>
-#include <Data/VarStorage.h>
+#include <Game/GameVarStorage.h>
 
 // Global variables belonging to the game session
 
@@ -18,8 +18,8 @@ protected:
 
 public:
 
-	CBasicVarStorage Persistent;
-	CBasicVarStorage Runtime;
+	CGameVarStorage Persistent;
+	CGameVarStorage Runtime;
 
 	CSessionVars(CGameSession& Owner) : _Session(Owner) {}
 };
