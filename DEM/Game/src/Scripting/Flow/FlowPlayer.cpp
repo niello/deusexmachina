@@ -46,7 +46,7 @@ void IFlowAction::Goto(CUpdateContext& Ctx, const CFlowLink* pLink, float consum
 }
 //---------------------------------------------------------------------
 
-const CFlowLink* IFlowAction::GetFirstValidLink(const CFlowActionData& Proto, Game::CGameSession& Session, const CBasicVarStorage& Vars)
+const CFlowLink* IFlowAction::GetFirstValidLink(const CFlowActionData& Proto, Game::CGameSession& Session, const Game::CGameVarStorage& Vars)
 {
 	const CFlowLink* pResult = nullptr;
 	ForEachValidLink(Proto, Session, Vars, [&pResult](size_t i, const CFlowLink& Link)
@@ -59,7 +59,7 @@ const CFlowLink* IFlowAction::GetFirstValidLink(const CFlowActionData& Proto, Ga
 }
 //---------------------------------------------------------------------
 
-const CFlowLink* IFlowAction::GetRandomValidLink(const CFlowActionData& Proto, Game::CGameSession& Session, const CBasicVarStorage& Vars, Math::CWELL512& RNG)
+const CFlowLink* IFlowAction::GetRandomValidLink(const CFlowActionData& Proto, Game::CGameSession& Session, const Game::CGameVarStorage& Vars, Math::CWELL512& RNG)
 {
 	std::vector<size_t> Indices;
 	Indices.reserve(Proto.Links.size());
@@ -75,7 +75,7 @@ const CFlowLink* IFlowAction::GetRandomValidLink(const CFlowActionData& Proto, G
 }
 //---------------------------------------------------------------------
 
-const CFlowLink* IFlowAction::GetRandomValidLink(Game::CGameSession& Session, const CBasicVarStorage& Vars) const
+const CFlowLink* IFlowAction::GetRandomValidLink(Game::CGameSession& Session, const Game::CGameVarStorage& Vars) const
 {
 	return _pPrototype ? GetRandomValidLink(*_pPrototype, Session, Vars, _pPlayer->GetRNG()) : nullptr;
 }

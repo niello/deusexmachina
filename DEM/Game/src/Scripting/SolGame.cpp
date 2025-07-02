@@ -20,6 +20,8 @@ template<> struct api_name<int> { static constexpr char* value = "Int"; };
 template<> struct api_name<float> { static constexpr char* value = "Float"; };
 template<> struct api_name<std::string> { static constexpr char* value = "String"; };
 template<> struct api_name<CStrID> { static constexpr char* value = "StrID"; };
+template<> struct api_name<Game::HEntity> { static constexpr char* value = "Entity"; };
+template<> struct api_name<rtm::vector4f> { static constexpr char* value = "Vector"; };
 
 template<typename U> using TPass = std::conditional_t<sizeof(U) <= sizeof(size_t), U, U&&>;
 
@@ -63,6 +65,7 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 	EnsureTable(State.globals(), { "DEM", "Flow" }).set_function("ResolveEntityID", &DEM::Flow::ResolveEntityID);
 
 	RegisterVarStorage<CBasicVarStorage>(State, "CBasicVarStorage");
+	RegisterVarStorage<Game::CGameVarStorage>(State, "CGameVarStorage");
 
 	State.new_usertype<Game::CSessionVars>("CSessionVars"
 		, "Persistent", &Game::CSessionVars::Persistent

@@ -1,6 +1,5 @@
 #pragma once
-#include <Game/ECS/Entity.h> // For ResolveEntityID utility method
-#include <Data/VarStorage.h>
+#include <Game/GameVarStorage.h>
 #include <Data/Params.h>
 #include <Data/Metadata.h>
 
@@ -28,16 +27,16 @@ struct CConditionData
 
 struct CConditionContext
 {
-	const CConditionData&  Condition;
-	Game::CGameSession&    Session;
-	const CBasicVarStorage* pVars;
+	const CConditionData&        Condition;
+	Game::CGameSession&          Session;
+	const Game::CGameVarStorage* pVars;
 };
 
-bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const CBasicVarStorage* pVars);
-std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Session, const CBasicVarStorage* pVars);
-Game::HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const CBasicVarStorage* pVars);
+bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const Game::CGameVarStorage* pVars);
+std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Session, const Game::CGameVarStorage* pVars);
+Game::HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const Game::CGameVarStorage* pVars);
 
-using FEventCallback = std::function<void(std::shared_ptr<CBasicVarStorage>)>;
+using FEventCallback = std::function<void(std::shared_ptr<Game::CGameVarStorage>)>;
 
 class ICondition
 {

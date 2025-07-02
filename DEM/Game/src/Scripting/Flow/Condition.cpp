@@ -46,7 +46,7 @@ static inline bool Compare(const T& Left, CStrID Op, const U& Right)
 }
 //---------------------------------------------------------------------
 
-static inline bool CompareVarData(HVar Left, CStrID Op, const Data::CData& Right, const CBasicVarStorage& Vars)
+static inline bool CompareVarData(HVar Left, CStrID Op, const Data::CData& Right, const Game::CGameVarStorage& Vars)
 {
 	bool Result = false;
 	Vars.Visit(Left, [&Right, Op, &Result](auto&& LeftValue)
@@ -68,7 +68,7 @@ static inline bool CompareVarData(HVar Left, CStrID Op, const Data::CData& Right
 }
 //---------------------------------------------------------------------
 
-static inline bool CompareVarVar(HVar Left, CStrID Op, HVar Right, const CBasicVarStorage& LeftVars, const CBasicVarStorage& RightVars)
+static inline bool CompareVarVar(HVar Left, CStrID Op, HVar Right, const Game::CGameVarStorage& LeftVars, const Game::CGameVarStorage& RightVars)
 {
 	bool Result = false;
 	LeftVars.Visit(Left, [&RightVars, Right, Op, &Result](auto&& LeftValue)
@@ -86,7 +86,7 @@ static inline bool CompareVarVar(HVar Left, CStrID Op, HVar Right, const CBasicV
 }
 //---------------------------------------------------------------------
 
-static std::pair<const CBasicVarStorage*, HVar> FindVar(Game::CGameSession& Session, const CBasicVarStorage* pVars, CStrID ID)
+static std::pair<const Game::CGameVarStorage*, HVar> FindVar(Game::CGameSession& Session, const Game::CGameVarStorage* pVars, CStrID ID)
 {
 	if (pVars)
 	{
@@ -107,7 +107,7 @@ static std::pair<const CBasicVarStorage*, HVar> FindVar(Game::CGameSession& Sess
 }
 //---------------------------------------------------------------------
 
-bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const CBasicVarStorage* pVars)
+bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const Game::CGameVarStorage* pVars)
 {
 	if (!Cond.Type) return true;
 
@@ -122,7 +122,7 @@ bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, 
 }
 //---------------------------------------------------------------------
 
-std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Session, const CBasicVarStorage* pVars)
+std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Session, const Game::CGameVarStorage* pVars)
 {
 	std::string Result;
 
@@ -135,7 +135,7 @@ std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Ses
 }
 //---------------------------------------------------------------------
 
-Game::HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const CBasicVarStorage* pVars)
+Game::HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const Game::CGameVarStorage* pVars)
 {
 	if (auto* pParam = Params->Find(ParamID))
 	{
