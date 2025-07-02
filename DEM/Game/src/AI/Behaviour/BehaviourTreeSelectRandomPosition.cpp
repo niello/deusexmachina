@@ -29,11 +29,11 @@ EBTStatus CBehaviourTreeSelectRandomPosition::Activate(std::byte* pData, const C
 	auto* pAgent = pWorld->FindComponent<const AI::CNavAgentComponent>(Ctx.ActorID);
 	if (!pAgent) return EBTStatus::Failed;
 
-	auto* pActorScene = pWorld->FindComponent<const Game::CSceneComponent>(Ctx.ActorID);
-	if (!pActorScene) return EBTStatus::Failed;
-
 	// TODO: random point can be not only around actor but also around a static point or another actor/object or at the named zone (poly or set of polys)
 	// Can determine explicitly or implicitly from params in Init() and remember. Or if it is in BB, check here in Activate, because BB value can change between activations?
+	//???for point in nav. region make separate action? radius not needed and CStrID ambiguity between BB key and zone ID will be removed from here in implicit case.
+	auto* pActorScene = pWorld->FindComponent<const Game::CSceneComponent>(Ctx.ActorID);
+	if (!pActorScene) return EBTStatus::Failed;
 	const rtm::vector4f ActorPos = pActorScene->RootNode->GetWorldPosition();
 	const auto ActorPosRaw = Math::FromSIMD3(ActorPos);
 
