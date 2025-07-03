@@ -110,8 +110,16 @@ public:
 		return std::get<std::vector<T>>(_Storages)[Handle.VarIdx];
 	}
 
-	template<typename T>
-	TRetVal<T> Get(HVar Handle, const T& Default) const
+	template<typename T, typename std::enable_if_t<(sizeof(T) <= sizeof(size_t))>* = nullptr>
+	T Get(HVar Handle, T Default) const
+	{
+		static_assert(DEM::Meta::contains_type<T, TVarTypes...>(), "Requested type is not supported by this storage");
+		const auto& Storage = std::get<std::vector<T>>(_Storages);
+		return (Handle.TypeIdx == TypeIndex<T> && Handle.VarIdx < Storage.size()) ? Storage[Handle.VarIdx] : Default;
+	}
+
+	template<typename T, typename std::enable_if_t<(sizeof(T) > sizeof(size_t))>* = nullptr>
+	const T& Get(HVar Handle, const T& Default) const
 	{
 		static_assert(DEM::Meta::contains_type<T, TVarTypes...>(), "Requested type is not supported by this storage");
 		const auto& Storage = std::get<std::vector<T>>(_Storages);
