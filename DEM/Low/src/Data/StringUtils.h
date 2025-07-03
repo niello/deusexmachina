@@ -2,6 +2,7 @@
 #include <Data/String.h>
 #include <Data/StringID.h>
 #include <Math/Matrix44.h>
+#include <rtm/vector4f.h>
 #include <string>
 #include <optional>
 #include <variant>
@@ -160,6 +161,16 @@ inline std::string ToString(const vector3& Value)
 inline std::string ToString(const vector4& Value)
 {
 	return ToString(Value.x) + ',' + ToString(Value.y) + ',' + ToString(Value.z) + ',' + ToString(Value.w);
+}
+//---------------------------------------------------------------------
+
+inline std::string ToString(rtm::vector4f_arg0 Value)
+{
+	const float x = rtm::vector_get_x(Value);
+	const float y = rtm::vector_get_y(Value);
+	const float z = rtm::vector_get_z(Value);
+	const float w = rtm::vector_get_w(Value);
+	return ToString(x) + ',' + ToString(y) + ',' + ToString(z) + ',' + ToString(w);
 }
 //---------------------------------------------------------------------
 
