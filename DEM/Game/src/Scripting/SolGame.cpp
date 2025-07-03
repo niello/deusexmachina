@@ -23,8 +23,6 @@ template<> struct api_name<CStrID> { static constexpr char* value = "StrID"; };
 template<> struct api_name<Game::HEntity> { static constexpr char* value = "Entity"; };
 template<> struct api_name<rtm::vector4f> { static constexpr char* value = "Vector"; };
 
-template<typename T> constexpr bool pass_by_value_v = sizeof(T) <= sizeof(size_t);
-
 template<typename TVar, typename T>
 static void RegisterVarStorageTemplateMethods(sol::usertype<T>& UserType)
 {
@@ -33,7 +31,7 @@ static void RegisterVarStorageTemplateMethods(sol::usertype<T>& UserType)
 	UserType.set(std::string("Is") + TypeAPIName, &T::IsA<TVar>);
 
 	// Only l-values can come from Lua to C++, can't use r-value references
-	using TPass = std::conditional_t<pass_by_value_v<TVar>, TVar, const TVar&>;
+	using TPass = std::conditional_t<DEM::Meta::should_pass_by_value<TVar>, TVar, const TVar&>;
 
 	UserType.set(std::string("Set") + TypeAPIName, sol::overload(
 		sol::resolve<HVar(CStrID, TPass)>(&T::Set<TPass>),
