@@ -50,7 +50,7 @@ public:
 
 	// Small types are better returned by value. Also bools from std::vector<bool> can't be returned by reference.
 	template<typename T>
-	using TRetVal = std::conditional_t<sizeof(T) <= sizeof(size_t), T, const T&>;
+	using TRetVal = std::conditional_t<DEM::Meta::should_pass_by_value<T>, T, const T&>;
 
 	using TVariant = std::variant<std::monostate, TVarTypes...>;
 
@@ -110,7 +110,7 @@ public:
 		return std::get<std::vector<T>>(_Storages)[Handle.VarIdx];
 	}
 
-	template<typename T, typename std::enable_if_t<(sizeof(T) <= sizeof(size_t))>* = nullptr>
+	template<typename T, typename std::enable_if_t<DEM::Meta::should_pass_by_value<T>>* = nullptr>
 	T Get(HVar Handle, T Default) const
 	{
 		static_assert(DEM::Meta::contains_type<T, TVarTypes...>(), "Requested type is not supported by this storage");
@@ -118,7 +118,7 @@ public:
 		return (Handle.TypeIdx == TypeIndex<T> && Handle.VarIdx < Storage.size()) ? Storage[Handle.VarIdx] : Default;
 	}
 
-	template<typename T, typename std::enable_if_t<(sizeof(T) > sizeof(size_t))>* = nullptr>
+	template<typename T, typename std::enable_if_t<!DEM::Meta::should_pass_by_value<T>>* = nullptr>
 	const T& Get(HVar Handle, const T& Default) const
 	{
 		static_assert(DEM::Meta::contains_type<T, TVarTypes...>(), "Requested type is not supported by this storage");
@@ -147,7 +147,7 @@ public:
 	}
 
 	// NB: this is probably too big to be inlined and microoptimization with T instead of T&& yields better assembly
-	template<typename T, typename std::enable_if_t<(sizeof(T) <= sizeof(size_t))>* = nullptr>
+	template<typename T, typename std::enable_if_t<DEM::Meta::should_pass_by_value<T>>* = nullptr>
 	HVar Set(CStrID ID, T Value)
 	{
 		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be unambiguosly converted to a supported type");
@@ -167,7 +167,7 @@ public:
 		return It->second;
 	}
 
-	template<typename T, typename std::enable_if_t<(sizeof(T) > sizeof(size_t))>* = nullptr>
+	template<typename T, typename std::enable_if_t<!DEM::Meta::should_pass_by_value<T>>* = nullptr>
 	HVar Set(CStrID ID, T&& Value)
 	{
 		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be unambiguosly converted to a supported type");

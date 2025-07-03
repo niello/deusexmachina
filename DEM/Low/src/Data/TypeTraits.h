@@ -1,4 +1,5 @@
 #pragma once
+#include <rtm/math.h>
 #include <type_traits>
 #include <utility>
 
@@ -18,6 +19,22 @@ constexpr bool is_less_comparable = false;
 
 template <class T, class U>
 constexpr bool is_less_comparable<T, U, std::void_t<decltype(std::declval<T&>() < std::declval<U&>())>> = true;
+
+template<typename T>
+constexpr bool is_simd_type = false
+#ifdef RTM_SSE2_INTRINSICS
+	|| std::is_same_v<T, __m128>
+#endif
+#ifdef RTM_AVX_INTRINSICS
+	|| std::is_same_v<T, __m256>
+#endif
+#ifdef __AVX512F__
+	|| std::is_same_v<T, __m512>
+#endif
+;
+
+template<typename T>
+constexpr bool should_pass_by_value = (std::is_trivially_copyable_v<std::decay_t<T>> && sizeof(std::decay_t<T>) <= 2 * sizeof(void*)) || is_simd_type<std::decay_t<T>>;
 
 // https://stackoverflow.com/questions/27338428/variadic-template-that-determines-the-best-conversion
 // NB: yields 'void' for ambiguous conversions. Numeric conversions are frequently ambiguous, e.g. integral vs float.
