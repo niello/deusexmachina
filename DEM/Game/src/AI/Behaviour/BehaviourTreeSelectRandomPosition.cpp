@@ -14,14 +14,21 @@ void CBehaviourTreeSelectRandomPosition::Init(const Data::CParams* pParams)
 {
 	if (!pParams) return;
 
-	pParams->TryGet(_BBKey, CStrID("BBKey"));
-	pParams->TryGet(_Radius, CStrID("Radius"));
+	pParams->TryGet(_DestBBKey, CStrID("DestBBKey"));
+
+	if (auto* pRadiusParam = pParams->Find(CStrID("Radius")))
+		_Radius = { pRadiusParam->GetRawValue() };
 }
 //---------------------------------------------------------------------
 
 EBTStatus CBehaviourTreeSelectRandomPosition::Activate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
-	if (!_BBKey || _Radius <= 0.f) return EBTStatus::Failed;
+	if (!_DestBBKey) return EBTStatus::Failed;
+
+	auto& BB = Ctx.pBrain->Blackboard;
+	const float Radius = _Radius.Get(BB);
+
+	if (!_DestBBKey || Radius <= 0.f) return EBTStatus::Failed;
 
 	auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return EBTStatus::Failed;
@@ -42,12 +49,10 @@ EBTStatus CBehaviourTreeSelectRandomPosition::Activate(std::byte* pData, const C
 	dtPolyRef PolyRef = 0;
 	vector3 Point;
 	const auto NavStatus = pAgent->pNavQuery->findRandomPointAroundCircle(
-		pAgent->Corridor.getFirstPoly(), ActorPosRaw.v, _Radius, pAgent->Settings->GetQueryFilter(), Math::RandomFloat, &PolyRef, Point.v);
+		pAgent->Corridor.getFirstPoly(), ActorPosRaw.v, Radius, pAgent->Settings->GetQueryFilter(), Math::RandomFloat, &PolyRef, Point.v);
 	if (!dtStatusSucceed(NavStatus)) return EBTStatus::Failed;
 
-	// TODO: Ctx.pBrain->Blackboard.Set(_BBKey, Point);
-	//???use vector3 in BB or rtm::vector4f?
-	//???aside of CBasicVarStorage create CGameplayVarStorage with entity IDs, vectors etc?
+	BB.Set(_DestBBKey, Math::ToSIMD(Point));
 
 	return EBTStatus::Succeeded;
 }

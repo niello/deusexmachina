@@ -1,5 +1,6 @@
 #pragma once
 #include <AI/Behaviour/BehaviourTreeAsset.h>
+#include <AI/Parameter.h>
 
 // A BT action that selects a random point on the navmesh in a radius and sets it to the blackboard
 
@@ -12,8 +13,8 @@ class CBehaviourTreeSelectRandomPosition : public CBehaviourTreeNodeBase
 
 protected:
 
-	CStrID _BBKey;
-	float  _Radius = 10.f;
+	CStrID            _DestBBKey;
+	CParameter<float> _Radius; // TODO: = 10.f;
 
 public:
 
