@@ -19,30 +19,31 @@ static const CStrID sidCode("Code");
 template<typename T, typename U>
 static inline bool Compare(const T& Left, CStrID Op, const U& Right)
 {
-	if (Op == sidOpEq)
+	if constexpr (Meta::is_equality_comparable<T, U>)
 	{
-		if constexpr (Meta::is_equality_comparable<T, U>)
-			return Left == Right;
-		else
-			return !(Left < Right || Right < Left);
+		if (Op == sidOpEq) return Left == Right;
+		if (Op == sidOpNeq) return !(Left == Right);
 	}
-	else if (Op == sidOpNeq)
+	else if constexpr (Meta::is_less_comparable<T, U> && Meta::is_less_comparable<U, T>)
 	{
-		if constexpr (Meta::is_equality_comparable<T, U>)
-			return !(Left == Right);
-		else
-			return Left < Right || Right < Left;
+		if (Op == sidOpEq) return !(Left < Right || Right < Left);
+		if (Op == sidOpNeq) return Left < Right || Right < Left;
 	}
-	else if (Op == sidOpLess)
-		return Left < Right;
-	else if (Op == sidOpLessEq)
-		return !(Right < Left);
-	else if (Op == sidOpGreater)
-		return Right < Left;
-	else if (Op == sidOpGreaterEq)
-		return !(Left < Right);
-	else
-		return false;
+
+	if constexpr (Meta::is_less_comparable<T, U>)
+	{
+		if (Op == sidOpLess) return Left < Right;
+		if (Op == sidOpGreaterEq) return !(Left < Right);
+	}
+
+	if constexpr (Meta::is_less_comparable<U, T>)
+	{
+		if (Op == sidOpLessEq) return !(Right < Left);
+		if (Op == sidOpGreater) return Right < Left;
+	}
+
+	::Sys::Error("DEM::Flow::Compare() > unknown operator '...<TODO>...' or incompatible types");
+	return false;
 }
 //---------------------------------------------------------------------
 
