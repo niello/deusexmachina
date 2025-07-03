@@ -23,24 +23,34 @@ template<> struct api_name<CStrID> { static constexpr char* value = "StrID"; };
 template<> struct api_name<Game::HEntity> { static constexpr char* value = "Entity"; };
 template<> struct api_name<rtm::vector4f> { static constexpr char* value = "Vector"; };
 
-template<typename U> using TPass = std::conditional_t<sizeof(U) <= sizeof(size_t), U, U&&>;
+template<typename T> constexpr bool pass_by_value_v = sizeof(T) <= sizeof(size_t);
+
+template<typename TVar, typename T>
+static void RegisterVarStorageTemplateMethods(sol::usertype<T>& UserType)
+{
+	const std::string TypeAPIName = api_name_v<TVar> ? api_name_v<TVar> : typeid(TVar).name();
+
+	UserType.set(std::string("Is") + TypeAPIName, &T::IsA<TVar>);
+
+	// Only l-values can come from Lua to C++, can't use r-value references
+	using TPass = std::conditional_t<pass_by_value_v<TVar>, TVar, const TVar&>;
+
+	UserType.set(std::string("Set") + TypeAPIName, sol::overload(
+		sol::resolve<HVar(CStrID, TPass)>(&T::Set<TPass>),
+		[](T& Self, std::string_view ID, TPass Value) { return Self.Set<TPass>(CStrID(ID), Value); }));
+
+	UserType.set(std::string("Get") + TypeAPIName, sol::overload(
+		sol::resolve<TPass(HVar) const>(&T::Get<TVar>),
+		sol::resolve<TPass(HVar, TPass) const>(&T::Get<TVar>),
+		[](const T& Self, std::string_view ID) { return Self.Get<TVar>(Self.Find(CStrID(ID))); },
+		[](const T& Self, std::string_view ID, TPass Dflt) { return Self.Get<TVar>(Self.Find(CStrID(ID)), Dflt); }));
+}
+//---------------------------------------------------------------------
 
 template<typename... TVar>
 static void RegisterVarStorageTemplateMethods(sol::usertype<CVarStorage<TVar...>>& UserType)
 {
-	using T = CVarStorage<TVar...>;
-	(UserType.set(std::string("Get") + (api_name_v<TVar> ? api_name_v<TVar> : typeid(T).name()), sol::overload(
-		sol::resolve<typename T::TRetVal<TVar>(HVar) const>(&T::Get<TVar>),
-		sol::resolve<typename T::TRetVal<TVar>(HVar, const TVar&) const>(&T::Get<TVar>),
-		[](const T& Self, std::string_view ID) { return Self.Get<TVar>(Self.Find(CStrID(ID))); },
-		[](const T& Self, std::string_view ID, TPass<TVar> Dflt) { return Self.Get<TVar>(Self.Find(CStrID(ID)), std::forward<TPass<TVar>>(Dflt)); }))
-		, ...);
-	(UserType.set(std::string("Is") + (api_name_v<TVar> ? api_name_v<TVar> : typeid(T).name()), &T::IsA<TVar>)
-		, ...);
-	(UserType.set(std::string("Set") + (api_name_v<TVar> ? api_name_v<TVar> : typeid(T).name()), sol::overload(
-		sol::resolve<HVar(CStrID, TPass<TVar>)>(&T::Set<TVar>),
-		[](T& Self, std::string_view ID, TPass<TVar> Value) { return Self.Set<TVar>(CStrID(ID), std::forward<TPass<TVar>>(Value)); }))
-		, ...);
+	(RegisterVarStorageTemplateMethods<TVar>(UserType), ...);
 }
 //---------------------------------------------------------------------
 
