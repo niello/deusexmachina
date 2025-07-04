@@ -2,28 +2,30 @@
 #include <AI/Blackboard.h>
 
 // An AI agent's parameter that can be set directly or read from a blackboard key
+// CParameter   - a simple mandatory (non-optional) strictly typed parameter. Has better memory footprint for sizeof(BBKey) == sizeof(T) cases.
+// CParameterEx - can be optional, can accept different types like std::variant.
 
-// NB: sizeof(CParameter<T>) == sizeof(std::variant<BBKey, T>), so we chose to keep both side
-//     by side instead of switching between them. When BB is in use, Value serves as a default.
+// TODO: can use HVar instead of CStrID for BBKey? What if key is added or deleted from BB? Make a real handle from HVar, with gen counter? And/or subscribe BB changes?
 
 namespace DEM::AI
 {
+inline const auto sidBBKey = CStrID("BBKey");
+inline const auto sidDefault = CStrID("Default");
+inline const auto sidValue = CStrID("Value");
 
 template<typename T>
 class CParameter
 {
 protected:
 
-	inline static const auto sidBBKey = CStrID("BBKey");
-	inline static const auto sidDefault = CStrID("Default");
-	inline static const auto sidValue = CStrID("Value");
+	using TPass = std::conditional_t<DEM::Meta::should_pass_by_value<T>, T, const T&>;
 
-	CStrID _BBKey; // TODO: can use HVar? What if key is added or deleted from BB? Make a real handle from HVar, with gen counter? And/or subscribe BB changes?
-	T      _Value;
+	// NB: sizeof(CParameter<T>) == sizeof(std::variant<BBKey, T>), so we chose to keep both side
+	//     by side instead of switching between them. When BB is in use, Value serves as a default.
+	CStrID _BBKey;
+	T      _Value = {};
 
 public:
-
-	using TPass = std::conditional_t<DEM::Meta::should_pass_by_value<T>, T, const T&>;
 
 	CParameter(TPass Value = {}) : _Value(Value) {}
 	CParameter(T&& Value) noexcept : _Value(std::move(Value)) {}
@@ -60,6 +62,91 @@ public:
 	{
 		return _BBKey ? Blackboard.GetStorage().Get(Blackboard.GetStorage().Find(_BBKey), _Value) : _Value;
 	}
+};
+
+template<typename... TVarTypes>
+class CParameterEx final
+{
+private:
+
+	template<typename T>
+	static constexpr auto TypeIndex = DEM::Meta::contains_type<T, TVarTypes...>() ?
+		DEM::Meta::index_of_type<T, TVarTypes...>() :
+		DEM::Meta::index_of_type<DEM::Meta::best_conversion_t<T, TVarTypes...>, TVarTypes...>();
+
+	static constexpr auto MaxSize = std::max({ sizeof(TVarTypes)... });
+	static constexpr auto MaxAlign = std::max({ alignof(TVarTypes)... });
+	static constexpr auto NoType = INVALID_INDEX_T<uint8_t>;
+
+	// NB: not <=, TypeIndex<InvalidType> returns sizeof...(TVarTypes) and it must not return NoType for IsValueA to work
+	static_assert(sizeof...(TVarTypes) < NoType, "Too many variable types in a template parameter list");
+
+	// NB: _Type combines with the smaller of _Value & _BBKey and takes additional memory only when their sizes are equal
+	alignas(MaxAlign) std::byte _Value[MaxSize];
+	uint8_t                     _Type = NoType;
+	CStrID                      _BBKey;
+
+	template<typename F>
+	decltype(auto) Visit(F Visitor)
+	{
+		using TRet = std::common_type_t<decltype(Visitor(static_cast<TVarTypes*>(nullptr)))... > ;
+
+		if (_Type == NoType) return TRet{};
+
+		return DEM::Meta::compile_switch(static_cast<size_t>(_Type), std::index_sequence_for<TVarTypes...>{}, [this, &Visitor](auto i)
+		{
+			using TVarType = std::tuple_element_t<i, std::tuple<TVarTypes...>>;
+			return Visitor(reinterpret_cast<TVarType*>(_Value));
+		});
+	}
+
+	template<typename T>
+	void InitValue(T&& Value)
+	{
+		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this parameter nor it can be unambiguosly converted to a supported type");
+
+		using TVarType = std::tuple_element_t<TypeIndex<T>, std::tuple<TVarTypes...>>;
+
+		new (_Value) TVarType(std::forward<T>(Value));
+		_Type = TypeIndex<T>;
+	}
+
+	void DestroyValue()
+	{
+		Visit([](auto* pValue) { std::destroy_at(pValue); });
+	}
+
+public:
+
+	CParameterEx() = default;
+	//CParameterEx(const CParameterEx&) = delete;
+	//CParameterEx(CParameterEx&&) noexcept = delete;
+
+	template<typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, CParameterEx<TVarTypes...>>>>
+	CParameterEx(T&& Value)
+	{
+		InitValue(std::forward<T>(Value));
+	}
+
+	CParameterEx(CStrID BBKey) : _BBKey(BBKey) { /* NB: type and value are not initialized */ }
+
+	template<typename T>
+	CParameterEx(CStrID BBKey, T&& Default)
+		: _BBKey(BBKey)
+	{
+		InitValue(std::forward<T>(Default));
+	}
+
+	~CParameterEx()
+	{
+		DestroyValue();
+	}
+
+	template<typename T>
+	bool IsValueA() const { return _Type == TypeIndex<T>; }
+
+	// try get - fail if not matching type in BB or in value or BB key not found
+	// get - if BB key and BB ok, return from BB. If BB read failed or no BB key, return value if that type, else return empty.
 };
 
 }

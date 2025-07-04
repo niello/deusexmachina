@@ -13,8 +13,7 @@ class CBehaviourTreeTurn : public CBehaviourTreeAIActionBase
 
 protected:
 
-	//CParameter<Data::CData> _TargetA;
-	//CParameter<std::variant<std::monostate, rtm::vector4f, Game::HEntity, float>> _TargetB;
+	CParameterEx<rtm::vector4f, Game::HEntity, float> _Target; // lookat point / entity / angle (-180 .. 180)
 
 public:
 

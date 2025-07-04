@@ -15,6 +15,7 @@ void CBehaviourTreeTurn::Init(const Data::CParams* pParams)
 	if (!pParams) return;
 
 	// Hardcoded position of interest or entity ID or float angle -180..180 or BB key of them
+	//_Target = { CStrID("k"), 5 };
 }
 //---------------------------------------------------------------------
 
