@@ -107,6 +107,8 @@ private:
 
 		using TVarType = std::tuple_element_t<TypeIndex<T>, std::tuple<TVarTypes...>>;
 
+		n_assert_dbg(_Type == NoType);
+
 		new (_Value) TVarType(std::forward<T>(Value));
 		_Type = TypeIndex<T>;
 	}
@@ -114,6 +116,7 @@ private:
 	void DestroyValue()
 	{
 		Visit([](auto* pValue) { std::destroy_at(pValue); });
+		_Type = NoType;
 	}
 
 public:
@@ -143,7 +146,29 @@ public:
 	}
 
 	template<typename T>
-	bool IsValueA() const { return _Type == TypeIndex<T>; }
+	bool IsValueA() const { return (TypeIndex<T> < sizeof...(TVarTypes)) && (_Type == TypeIndex<T>); }
+
+	template<typename T>
+	bool TryGet(const CBlackboard& Blackboard, T& Out) const
+	{
+		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this parameter nor it can be unambiguosly converted to a supported type");
+
+		// If there is data of matching type on the matching key in BB, return it
+		if (_BBKey && Blackboard.GetStorage().TryGet(Blackboard.GetStorage().Find(_BBKey), Out)) return true;
+
+		// Default to _Value. Can store and request types that are not supported by BB.
+		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
+		{
+			if (_Type == TypeIndex<T>)
+			{
+				using TVarType = std::tuple_element_t<TypeIndex<T>, std::tuple<TVarTypes...>>;
+				Out = *reinterpret_cast<const TVarType*>(_Value);
+				return true;
+			}
+		}
+
+		return false;
+	}
 
 	// try get - fail if not matching type in BB or in value or BB key not found
 	// get - if BB key and BB ok, return from BB. If BB read failed or no BB key, return value if that type, else return empty.

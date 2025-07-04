@@ -46,6 +46,8 @@ EBTStatus CBehaviourTreeTurn::Activate(std::byte* pData, const CBehaviourTreeCon
 	auto& BB = Ctx.pBrain->Blackboard;
 	//_TargetA.Get(BB);
 	//_TargetB.Get(BB);
+	float x;
+	if (!_Target.TryGet(BB, x)) x = 5.f;
 	rtm::vector4f TargetDir = rtm::vector_zero();
 	const auto FacingTolerance = AI::Turn::AngularTolerance; // std::max(FacingTolerance, Turn::AngularTolerance);
 

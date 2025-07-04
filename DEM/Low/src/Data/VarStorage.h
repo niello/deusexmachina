@@ -57,7 +57,7 @@ public:
 	template<typename T>
 	static constexpr bool IsA(HVar Handle)
 	{
-		return Handle.TypeIdx == TypeIndex<T>;
+		return (TypeIndex<T> < sizeof...(TVarTypes)) && (Handle.TypeIdx == TypeIndex<T>);
 	}
 
 	// NB: this invalidates all HVar handles issued by this storage
@@ -134,6 +134,25 @@ public:
 			Result = std::get<i>(_Storages)[VarIdx];
 		});
 		return Result;
+	}
+
+	template<typename T>
+	bool TryGet(HVar Handle, T& Out) const
+	{
+		// Don't static_assert on this because it can be a part of more complex algorithm with fallback for unsupported types
+		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
+		{
+			using TVarType = std::tuple_element_t<TypeIndex<T>, std::tuple<TVarTypes...>>;
+
+			const auto& Storage = std::get<std::vector<TVarType>>(_Storages);
+			if (Handle.TypeIdx == TypeIndex<T> && Handle.VarIdx < Storage.size())
+			{
+				Out = static_cast<T>(Storage[Handle.VarIdx]);
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	template<typename T>
