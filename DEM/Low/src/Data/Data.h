@@ -78,6 +78,26 @@ public:
 	template<class T> const T*	GetValuePtr() const;
 	void* const*				GetValueObjectPtr() const { return &Value; }
 
+	//!!!TODO: support RTM vector from vec3/4 in data!
+	template<typename F>
+	decltype(auto) Visit(F Visitor) const
+	{
+		switch (GetTypeID())
+		{
+			case Data::CTypeID<bool>::TypeID: return Visitor(GetValue<bool>());
+			case Data::CTypeID<int>::TypeID: return Visitor(GetValue<int>());
+			case Data::CTypeID<float>::TypeID: return Visitor(GetValue<float>());
+			case Data::CTypeID<CString>::TypeID: return Visitor(GetValue<CString>());
+			case Data::CTypeID<CStrID>::TypeID: return Visitor(GetValue<CStrID>());
+			case Data::CTypeID<vector3>::TypeID: return Visitor(GetValue<vector3>());
+			case Data::CTypeID<vector4>::TypeID: return Visitor(GetValue<vector4>());
+			case Data::CTypeID<matrix44>::TypeID: return Visitor(GetValue<matrix44>());
+			case Data::CTypeID<Data::PParams>::TypeID: return Visitor(GetValue<Data::PParams>());
+			case Data::CTypeID<Data::PDataArray>::TypeID: return Visitor(GetValue<Data::PDataArray>());
+			default: return Visitor(std::monostate{});
+		}
+	}
+
 	std::string					ToString() const { return Type ? Type->ToString(Value) : std::string{}; }
 
 	CData&                      operator =(const CData& Src) { SetTypeValue(Src); return *this; }

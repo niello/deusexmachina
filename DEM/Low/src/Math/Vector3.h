@@ -3,6 +3,7 @@
 
 #include <Math/Math.h>
 #include <Data/Type.h>
+#include <rtm/vector4f.h>
 #include <float.h>
 
 // Generic vector3 class. SSE-unfriendly, 12-byte size.
@@ -39,6 +40,9 @@ public:
 	constexpr vector3(const vector3& vec): x(vec.x), y(vec.y), z(vec.z) {}
 	vector3(const vector4& vec);
 	constexpr vector3(const float* vec): x(vec[0]), y(vec[1]), z(vec[2]) {}
+	vector3(rtm::vector4f_arg0 v) : x(rtm::vector_get_x(v)), y(rtm::vector_get_y(v)), z(rtm::vector_get_z(v)) {}
+
+	operator rtm::vector4f() const noexcept { return rtm::vector_set(x, y, z); }
 
 	static float	Distance(const vector3& v0, const vector3& v1) { return n_sqrt(SqDistance(v0, v1)); }
 	static float	Distance2D(const vector3& v0, const vector3& v1) { return n_sqrt(SqDistance2D(v0, v1)); }

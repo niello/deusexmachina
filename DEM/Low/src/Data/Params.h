@@ -73,6 +73,12 @@ public:
 		return nullptr;
 	}
 
+	const CData* CParams::FindValue(CStrID Name) const
+	{
+		const auto* pParam = Find(Name);
+		return pParam ? &pParam->GetRawValue() : nullptr;
+	}
+
 	CParam&						Get(CStrID Name); //???explicit specialization?
 	const CParam&				Get(CStrID Name) const; //???explicit specialization?
 	template<class T> const T&	Get(CStrID Name) const;

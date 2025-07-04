@@ -33,8 +33,11 @@ public:
 
     constexpr vector4() = default;
 	constexpr vector4(const float _x, const float _y, const float _z, const float _w) : x(_x), y(_y), z(_z), w(_w) {}
-	constexpr vector4::vector4(const vector4& v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
-	constexpr vector4::vector4(const vector3& v, float w_ = 1.f) : x(v.x), y(v.y), z(v.z), w(w_) {}
+	constexpr vector4(const vector4& v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
+	constexpr vector4(const vector3& v, float w_ = 1.f) : x(v.x), y(v.y), z(v.z), w(w_) {}
+	vector4(rtm::vector4f_arg0 v) : x(rtm::vector_get_x(v)), y(rtm::vector_get_y(v)), z(rtm::vector_get_z(v)), w(rtm::vector_get_w(v)) {}
+
+	operator rtm::vector4f() const noexcept { return rtm::vector_set(x, y, z, w); }
 
     /// set elements 1
     void set(const float _x, const float _y, const float _z, const float _w);

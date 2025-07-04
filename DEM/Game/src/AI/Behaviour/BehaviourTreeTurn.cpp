@@ -14,8 +14,8 @@ void CBehaviourTreeTurn::Init(const Data::CParams* pParams)
 {
 	if (!pParams) return;
 
-	// Hardcoded position of interest or entity ID or float angle -180..180 or BB key of them
-	//_Target = { CStrID("k"), 5 };
+	if (auto* pRadiusParam = pParams->Find(CStrID("Target")))
+		_Target = { pRadiusParam->GetRawValue() };
 }
 //---------------------------------------------------------------------
 
@@ -44,10 +44,7 @@ EBTStatus CBehaviourTreeTurn::Activate(std::byte* pData, const CBehaviourTreeCon
 
 	//!!!TODO: read from BB or hardcoded value!
 	auto& BB = Ctx.pBrain->Blackboard;
-	//_TargetA.Get(BB);
-	//_TargetB.Get(BB);
-	float x;
-	if (!_Target.TryGet(BB, x)) x = 5.f;
+	//_Target.Get(BB);
 	rtm::vector4f TargetDir = rtm::vector_zero();
 	const auto FacingTolerance = AI::Turn::AngularTolerance; // std::max(FacingTolerance, Turn::AngularTolerance);
 

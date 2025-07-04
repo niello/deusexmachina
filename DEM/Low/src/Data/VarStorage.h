@@ -34,14 +34,17 @@ struct HVar
 template<typename... TVarTypes>
 class CVarStorage
 {
+public:
+
+	template<typename T>
+	using TEffective = std::conditional_t<DEM::Meta::contains_type<T, TVarTypes...>(), T, DEM::Meta::best_conversion_t<T, TVarTypes...>>;
+
 protected:
 
 	static_assert(sizeof...(TVarTypes) < (1 << HVar::TYPE_INDEX_BITS), "Too many types to be indexed in HVar"); // NB: one value is reserved for invalid index
 
 	template<typename T>
-	static constexpr auto TypeIndex = DEM::Meta::contains_type<T, TVarTypes...>() ?
-		DEM::Meta::index_of_type<T, TVarTypes...>() :
-		DEM::Meta::index_of_type<DEM::Meta::best_conversion_t<T, TVarTypes...>, TVarTypes...>();
+	static constexpr auto TypeIndex = DEM::Meta::index_of_type<TEffective<T>, TVarTypes...>();
 
 	std::tuple<std::vector<TVarTypes>...> _Storages;
 	std::map<CStrID, HVar>                _VarsByID;
@@ -55,9 +58,15 @@ public:
 	using TVariant = std::variant<std::monostate, TVarTypes...>;
 
 	template<typename T>
+	static constexpr bool Supports()
+	{
+		return TypeIndex<T> < sizeof...(TVarTypes);
+	}
+
+	template<typename T>
 	static constexpr bool IsA(HVar Handle)
 	{
-		return (TypeIndex<T> < sizeof...(TVarTypes)) && (Handle.TypeIdx == TypeIndex<T>);
+		return Supports<T>() && (Handle.TypeIdx == TypeIndex<T>);
 	}
 
 	// NB: this invalidates all HVar handles issued by this storage
@@ -144,11 +153,9 @@ public:
 	bool TryGet(HVar Handle, T& Out) const
 	{
 		// Don't static_assert on this because it can be a part of more complex algorithm with fallback for unsupported types
-		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
+		if constexpr (Supports<T>())
 		{
-			using TVarType = std::tuple_element_t<TypeIndex<T>, std::tuple<TVarTypes...>>;
-
-			const auto& Storage = std::get<std::vector<TVarType>>(_Storages);
+			const auto& Storage = std::get<std::vector<TEffective<T>>>(_Storages);
 			if (Handle.TypeIdx == TypeIndex<T> && Handle.VarIdx < Storage.size())
 			{
 				Out = static_cast<T>(Storage[Handle.VarIdx]);
@@ -162,7 +169,7 @@ public:
 	template<typename T>
 	void Set(HVar Handle, T&& Value)
 	{
-		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be unambiguosly converted to a supported type");
+		static_assert(Supports<T>(), "Requested type is not supported by this storage nor it can be unambiguosly converted to a supported type");
 
 		n_assert_dbg(Handle.TypeIdx == TypeIndex<T>);
 		if (Handle.TypeIdx == TypeIndex<T>)
@@ -173,7 +180,7 @@ public:
 	template<typename T, typename std::enable_if_t<DEM::Meta::should_pass_by_value<T>>* = nullptr>
 	HVar Set(CStrID ID, T Value)
 	{
-		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be unambiguosly converted to a supported type");
+		static_assert(Supports<T>(), "Requested type is not supported by this storage nor it can be unambiguosly converted to a supported type");
 
 		auto It = _VarsByID.find(ID);
 		if (It == _VarsByID.cend())
@@ -193,7 +200,7 @@ public:
 	template<typename T, typename std::enable_if_t<!DEM::Meta::should_pass_by_value<T>>* = nullptr>
 	HVar Set(CStrID ID, T&& Value)
 	{
-		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this storage nor it can be unambiguosly converted to a supported type");
+		static_assert(Supports<T>(), "Requested type is not supported by this storage nor it can be unambiguosly converted to a supported type");
 
 		auto It = _VarsByID.find(ID);
 		if (It == _VarsByID.cend())
@@ -213,7 +220,7 @@ public:
 	template<typename T>
 	HVar TrySet(CStrID ID, T&& Value)
 	{
-		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
+		if constexpr (Supports<T>())
 			return Set(ID, std::forward<T>(Value));
 		return {};
 	}
@@ -222,27 +229,16 @@ public:
 
 	HVar TrySet(CStrID ID, const Data::CData& Value)
 	{
-		switch (Value.GetTypeID())
+		return Value.Visit([this, ID](auto&& TypedValue)
 		{
-			case Data::CTypeID<bool>::TypeID: return TrySet(ID, Value.GetValue<bool>());
-			case Data::CTypeID<int>::TypeID: return TrySet(ID, Value.GetValue<int>());
-			case Data::CTypeID<float>::TypeID: return TrySet(ID, Value.GetValue<float>());
-			case Data::CTypeID<CString>::TypeID:
-			{
-				const auto& Src = Value.GetValue<CString>();
-				if constexpr (DEM::Meta::contains_type<CString, TVarTypes...>())
-					return TrySet(ID, Src);
-				else
-					return TrySet(ID, std::string(Src.CStr(), Src.GetLength()));
-			}
-			case Data::CTypeID<CStrID>::TypeID: return TrySet(ID, Value.GetValue<CStrID>());
-			case Data::CTypeID<vector3>::TypeID: return TrySet(ID, Value.GetValue<vector3>());
-			case Data::CTypeID<vector4>::TypeID: return TrySet(ID, Value.GetValue<vector4>());
-			case Data::CTypeID<matrix44>::TypeID: return TrySet(ID, Value.GetValue<matrix44>());
-			case Data::CTypeID<Data::PParams>::TypeID: return TrySet(ID, Value.GetValue<Data::PParams>());
-			case Data::CTypeID<Data::PDataArray>::TypeID: return TrySet(ID, Value.GetValue<Data::PDataArray>());
-			default: return {};
-		}
+			using TArg = decltype(TypedValue);
+
+			//!!!TODO: support RTM vector from vec3/4 in data!
+			if constexpr (std::is_same_v<std::decay_t<TArg>, CString> && !DEM::Meta::contains_type<CString, TVarTypes...>() && DEM::Meta::contains_type<std::string, TVarTypes...>())
+				return TrySet(ID, std::string(TypedValue.CStr(), TypedValue.GetLength()));
+			else
+				return TrySet(ID, std::forward<TArg>(TypedValue));
+		});
 	}
 
 	template<typename F>
@@ -293,7 +289,7 @@ public:
 		{
 			Saved += DEM::Meta::compile_switch(Handle.TypeIdx, std::index_sequence_for<TVarTypes...>{}, [this, &Params, ID = ID, Handle = Handle](auto i)
 			{
-				using TVarType = std::tuple_element_t<i, std::tuple<TVarTypes...>>;
+				using TVarType = TEffective<T>;
 				using THRDType = Data::THRDType<TVarType>;
 
 				if constexpr (Data::CTypeID<THRDType>::IsDeclared)

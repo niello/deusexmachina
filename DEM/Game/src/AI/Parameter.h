@@ -67,15 +67,18 @@ public:
 template<typename... TVarTypes>
 class CParameterEx final
 {
+public:
+
+	template<typename T>
+	using TEffective = std::conditional_t<DEM::Meta::contains_type<T, TVarTypes...>(), T, DEM::Meta::best_conversion_t<T, TVarTypes...>>;
+
 private:
 
 	template<typename T>
 	using TPass = std::conditional_t<DEM::Meta::should_pass_by_value<T>, T, const T&>;
 
 	template<typename T>
-	static constexpr auto TypeIndex = DEM::Meta::contains_type<T, TVarTypes...>() ?
-		DEM::Meta::index_of_type<T, TVarTypes...>() :
-		DEM::Meta::index_of_type<DEM::Meta::best_conversion_t<T, TVarTypes...>, TVarTypes...>();
+	static constexpr auto TypeIndex = DEM::Meta::index_of_type<TEffective<T>, TVarTypes...>();
 
 	static constexpr auto MaxSize = std::max({ sizeof(TVarTypes)... });
 	static constexpr auto MaxAlign = std::max({ alignof(TVarTypes)... });
@@ -105,13 +108,11 @@ private:
 	template<typename T>
 	void InitValue(T&& Value)
 	{
-		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this parameter nor it can be unambiguosly converted to a supported type");
-
-		using TVarType = std::tuple_element_t<TypeIndex<T>, std::tuple<TVarTypes...>>;
+		static_assert(Supports<T>(), "Requested type is not supported by this parameter nor it can be unambiguosly converted to a supported type");
 
 		n_assert_dbg(_Type == NoType);
 
-		new (_Value) TVarType(std::forward<T>(Value));
+		new (_Value) TEffective<T>(std::forward<T>(Value));
 		_Type = TypeIndex<T>;
 	}
 
@@ -121,7 +122,35 @@ private:
 		_Type = NoType;
 	}
 
+	// TODO: can use ParamsFormat::Deserialize to read entity IDs etc? Iterate over TVarTypes and try to apply value from data?
+	bool TrySetValue(const Data::CData* pValue)
+	{
+		if (!pValue) return false;
+
+		pValue->Visit([this](auto&& TypedValue)
+		{
+			using TArg = decltype(TypedValue);
+
+			if constexpr (Supports<TArg>())
+			{
+				//!!!TODO: support RTM vector from vec3/4 in data!
+				if constexpr (std::is_same_v<std::decay_t<TArg>, CString> && !DEM::Meta::contains_type<CString, TVarTypes...>() && DEM::Meta::contains_type<std::string, TVarTypes...>())
+					InitValue(std::string(TypedValue.CStr(), TypedValue.GetLength()));
+				else
+					InitValue(std::forward<TArg>(TypedValue));
+			}
+		});
+
+		return true;
+	}
+
 public:
+
+	template<typename T>
+	static constexpr bool Supports()
+	{
+		return TypeIndex<T> < sizeof...(TVarTypes);
+	}
 
 	CParameterEx() = default;
 	//CParameterEx(const CParameterEx&) = delete;
@@ -142,29 +171,54 @@ public:
 		InitValue(std::forward<T>(Default));
 	}
 
+	CParameterEx(const Data::CData& Data)
+	{
+		if (auto* pBBKey = Data.As<CStrID>())
+		{
+			// For consistency CStrID is always interpreted as a BB key, even if it is also T
+			_BBKey = *pBBKey;
+		}
+		else
+		{
+			bool IsFullForm = false;
+			if (auto* pParams = Data.As<Data::PParams>())
+			{
+				// Read a full non-ambiguous form { BBKey='Key' Default=10 } or { Value=10 }
+				auto& Params = **pParams;
+				IsFullForm = Params.TryGet(_BBKey, sidBBKey);
+				if (IsFullForm)
+					TrySetValue(Params.FindValue(sidDefault));
+				else
+					IsFullForm = TrySetValue(Params.FindValue(sidValue));
+			}
+
+			// Try reading a value directly from an argument
+			if (!IsFullForm) TrySetValue(&Data);
+		}
+	}
+
 	~CParameterEx()
 	{
 		DestroyValue();
 	}
 
 	template<typename T>
-	bool IsValueA() const { return (TypeIndex<T> < sizeof...(TVarTypes)) && (_Type == TypeIndex<T>); }
+	bool IsValueA() const { return Supports<T>() && (_Type == TypeIndex<T>); }
 
 	template<typename T>
 	bool TryGet(const CBlackboard& Blackboard, T& Out) const
 	{
-		static_assert(TypeIndex<T> < sizeof...(TVarTypes), "Requested type is not supported by this parameter nor it can be unambiguosly converted to a supported type");
+		static_assert(Supports<T>(), "Requested type is not supported by this parameter nor it can be unambiguosly converted to a supported type");
 
 		// If there is data of matching type on the matching key in BB, return it
 		if (_BBKey && Blackboard.GetStorage().TryGet(Blackboard.GetStorage().Find(_BBKey), Out)) return true;
 
 		// Default to _Value. Can store and request types that are not supported by BB.
-		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
+		if constexpr (Supports<T>())
 		{
 			if (_Type == TypeIndex<T>)
 			{
-				using TVarType = std::tuple_element_t<TypeIndex<T>, std::tuple<TVarTypes...>>;
-				Out = *reinterpret_cast<const TVarType*>(_Value);
+				Out = *reinterpret_cast<const TEffective<T>*>(_Value);
 				return true;
 			}
 		}
@@ -188,14 +242,9 @@ public:
 		}
 
 		// Default to _Value. Can store and request types that are not supported by BB.
-		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
-		{
+		if constexpr (Supports<T>())
 			if (_Type == TypeIndex<T>)
-			{
-				using TVarType = std::tuple_element_t<TypeIndex<T>, std::tuple<TVarTypes...>>;
-				return *reinterpret_cast<const TVarType*>(_Value);
-			}
-		}
+				return *reinterpret_cast<const TEffective<T>*>(_Value);
 
 		return Default;
 	}
