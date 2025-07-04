@@ -126,6 +126,10 @@ public:
 		return (Handle.TypeIdx == TypeIndex<T> && Handle.VarIdx < Storage.size()) ? Storage[Handle.VarIdx] : Default;
 	}
 
+	// Prevent Default lifetime issues
+	template<typename T, typename std::enable_if_t<!DEM::Meta::should_pass_by_value<T>>* = nullptr>
+	const T& Get(HVar Handle, T&& Default) const = delete;
+
 	TVariant Get(HVar Handle) const
 	{
 		TVariant Result;

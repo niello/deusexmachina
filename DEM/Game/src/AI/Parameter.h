@@ -70,6 +70,9 @@ class CParameterEx final
 private:
 
 	template<typename T>
+	using TPass = std::conditional_t<DEM::Meta::should_pass_by_value<T>, T, const T&>;
+
+	template<typename T>
 	static constexpr auto TypeIndex = DEM::Meta::contains_type<T, TVarTypes...>() ?
 		DEM::Meta::index_of_type<T, TVarTypes...>() :
 		DEM::Meta::index_of_type<DEM::Meta::best_conversion_t<T, TVarTypes...>, TVarTypes...>();
@@ -78,8 +81,7 @@ private:
 	static constexpr auto MaxAlign = std::max({ alignof(TVarTypes)... });
 	static constexpr auto NoType = INVALID_INDEX_T<uint8_t>;
 
-	// NB: not <=, TypeIndex<InvalidType> returns sizeof...(TVarTypes) and it must not return NoType for IsValueA to work
-	static_assert(sizeof...(TVarTypes) < NoType, "Too many variable types in a template parameter list");
+	static_assert(sizeof...(TVarTypes) <= NoType, "Too many variable types in a template parameter list");
 
 	// NB: _Type combines with the smaller of _Value & _BBKey and takes additional memory only when their sizes are equal
 	alignas(MaxAlign) std::byte _Value[MaxSize];
@@ -170,8 +172,37 @@ public:
 		return false;
 	}
 
-	// try get - fail if not matching type in BB or in value or BB key not found
-	// get - if BB key and BB ok, return from BB. If BB read failed or no BB key, return value if that type, else return empty.
+	template<typename T>
+	TPass<T> Get(const CBlackboard& Blackboard, TPass<T> Default = {}) const
+	{
+		// Types passed by reference must match exactly
+		static_assert(!std::is_reference_v<TPass<T>> || DEM::Meta::contains_type<T, TVarTypes...>(), "Requested type is not supported by this parameter");
+
+		// If there is data of matching type on the matching key in BB, return it
+		if (_BBKey)
+		{
+			auto& BB = Blackboard.GetStorage();
+			if (auto Handle = BB.Find(_BBKey))
+				if (BB.IsA<T>(Handle))
+					return BB.Get(Handle, Default); // NB: Default will not be used
+		}
+
+		// Default to _Value. Can store and request types that are not supported by BB.
+		if constexpr (TypeIndex<T> < sizeof...(TVarTypes))
+		{
+			if (_Type == TypeIndex<T>)
+			{
+				using TVarType = std::tuple_element_t<TypeIndex<T>, std::tuple<TVarTypes...>>;
+				return *reinterpret_cast<const TVarType*>(_Value);
+			}
+		}
+
+		return Default;
+	}
+
+	// Prevent Default lifetime issues
+	template<typename T, typename std::enable_if_t<!DEM::Meta::should_pass_by_value<T>>* = nullptr>
+	const T& Get(const CBlackboard& Blackboard, T&& Default) const = delete;
 };
 
 }
