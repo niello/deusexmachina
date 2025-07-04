@@ -112,7 +112,7 @@ private:
 
 		n_assert_dbg(_Type == NoType);
 
-		new (_Value) TEffective<T>(std::forward<T>(Value));
+		new (_Value) TEffective<T>(static_cast<TEffective<T>>(std::forward<T>(Value)));
 		_Type = TypeIndex<T>;
 	}
 
