@@ -1,5 +1,6 @@
 #include "BehaviourTreeSelectRandomPosition.h"
 #include <AI/Navigation/NavAgentComponent.h>
+#include <AI/Navigation/NavMesh.h>
 #include <AI/AIStateComponent.h>
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
@@ -14,6 +15,7 @@ void CBehaviourTreeSelectRandomPosition::Init(const Data::CParams* pParams)
 {
 	if (!pParams) return;
 
+	ParameterFromData(_From, *pParams, CStrID("From"));
 	ParameterFromData(_Radius, *pParams, CStrID("Radius"));
 	pParams->TryGet(_DestBBKey, CStrID("DestBBKey"));
 }
@@ -34,23 +36,51 @@ EBTStatus CBehaviourTreeSelectRandomPosition::Activate(std::byte* pData, const C
 	auto* pAgent = pWorld->FindComponent<const AI::CNavAgentComponent>(Ctx.ActorID);
 	if (!pAgent) return EBTStatus::Failed;
 
-	// TODO: random point can be not only around actor but also around a static point or another actor/object or at the named zone (poly or set of polys)
-	// Can determine explicitly or implicitly from params in Init() and remember. Or if it is in BB, check here in Activate, because BB value can change between activations?
-	//???for point in nav. region make separate action? radius not needed and CStrID ambiguity between BB key and zone ID will be removed from here in implicit case.
-	auto* pActorScene = pWorld->FindComponent<const Game::CSceneComponent>(Ctx.ActorID);
-	if (!pActorScene) return EBTStatus::Failed;
-	const rtm::vector4f ActorPos = pActorScene->RootNode->GetWorldPosition();
-	const auto ActorPosRaw = Math::FromSIMD3(ActorPos);
+	vector3 ResultPoint;
 
-	// FIXME: can't use provided RNG! Detour accepts only a free function without args.
-	// FIXME: not exactly in radius, may be far away if the chosen poly is big. Need more sophisticated logic if this is not acceptable.
-	dtPolyRef PolyRef = 0;
-	vector3 Point;
-	const auto NavStatus = pAgent->pNavQuery->findRandomPointAroundCircle(
-		pAgent->Corridor.getFirstPoly(), ActorPosRaw.v, Radius, pAgent->Settings->GetQueryFilter(), Math::RandomFloat, &PolyRef, Point.v);
-	if (!dtStatusSucceed(NavStatus)) return EBTStatus::Failed;
+	//???!!!FIXME: for point in nav. region make separate action? radius not needed, logic is different.
+	CStrID NavRegionID;
+	if (_From.TryGet(BB, NavRegionID))
+	{
+		const auto* pRegion = pAgent->NavMap->GetNavMesh()->FindRegion(NavRegionID);
+		if (!pRegion) return EBTStatus::Failed;
 
-	BB.Set(_DestBBKey, Math::ToSIMD(Point));
+		// pRegion is a set of poly refs, need the same logic as in findRandomPointAroundCircle but over the predefined set of polys
+
+		NOT_IMPLEMENTED;
+		return EBTStatus::Failed;
+	}
+	else
+	{
+		// Default behaviour is to search around an actor, but another entity can be chosen explicitly
+		Game::HEntity EntityID;
+		if (_From.IsEmpty())
+			EntityID = Ctx.ActorID;
+		else
+			_From.TryGet(BB, EntityID);
+
+		rtm::vector4f CenterPos;
+		if (EntityID)
+		{
+			auto* pSceneComponent = pWorld->FindComponent<const Game::CSceneComponent>(EntityID);
+			if (!pSceneComponent) return EBTStatus::Failed;
+			CenterPos = pSceneComponent->RootNode->GetWorldPosition();
+		}
+		else
+		{
+			// The last our option is an explicit position
+			if (!_From.TryGet(BB, CenterPos)) return EBTStatus::Failed;
+		}
+
+		// FIXME: can't use provided RNG! Detour accepts only a free function without args.
+		// FIXME: not exactly in radius, may be far away if the chosen poly is big. Need more sophisticated logic if this is not acceptable.
+		dtPolyRef PolyRef = 0;
+		const auto NavStatus = pAgent->pNavQuery->findRandomPointAroundCircle(
+			pAgent->Corridor.getFirstPoly(), Math::FromSIMD3(CenterPos).v, Radius, pAgent->Settings->GetQueryFilter(), Math::RandomFloat, &PolyRef, ResultPoint.v);
+		if (!dtStatusSucceed(NavStatus)) return EBTStatus::Failed;
+	}
+
+	BB.Set(_DestBBKey, ResultPoint);
 
 	return EBTStatus::Succeeded;
 }

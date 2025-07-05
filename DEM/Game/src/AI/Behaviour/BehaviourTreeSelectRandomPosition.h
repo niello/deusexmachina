@@ -13,8 +13,9 @@ class CBehaviourTreeSelectRandomPosition : public CBehaviourTreeNodeBase
 
 protected:
 
-	CParameter<float> _Radius = 10.f;
-	CStrID            _DestBBKey;
+	CParameterEx<rtm::vector4f, CStrID, Game::HEntity> _From; // not set - actor pos, entity - its pos, vector - explicit pos, StrID - ID of the nav. region
+	CParameter<float>                                  _Radius = 10.f;
+	CStrID                                             _DestBBKey;
 
 public:
 

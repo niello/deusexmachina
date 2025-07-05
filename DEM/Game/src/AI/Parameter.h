@@ -285,6 +285,8 @@ public:
 	template<typename T>
 	bool IsValueA() const { return Supports<T>() && (_Type == TypeIndex<T>); }
 
+	bool IsEmpty() const { return !_BBKey && _Type == NoType; }
+
 	template<typename T>
 	bool TryGet(const CBlackboard& Blackboard, T& Out) const
 	{
