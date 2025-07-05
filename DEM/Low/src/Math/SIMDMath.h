@@ -238,8 +238,8 @@ RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL AngleXZNo
 	const float v0z = rtm::vector_get_z(v0);
 	const float v1x = rtm::vector_get_x(v1);
 	const float v1z = rtm::vector_get_z(v1);
-	float CrossY = v0z * v1x - v0x * v1z;
-	float Dot = v0x * v1x + v0z * v1z;
+	const float CrossY = v0z * v1x - v0x * v1z;
+	const float Dot = v0x * v1x + v0z * v1z;
 	return atan2f(CrossY, Dot);
 }
 //---------------------------------------------------------------------
@@ -247,6 +247,19 @@ RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL AngleXZNo
 RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE float RTM_SIMD_CALL AngleXZ(rtm::vector4f_arg0 v0, rtm::vector4f_arg1 v1) noexcept
 {
 	return AngleXZNorm(rtm::vector_normalize3(v0), rtm::vector_normalize3(v1));
+}
+//---------------------------------------------------------------------
+
+RTM_DISABLE_SECURITY_COOKIE_CHECK RTM_FORCE_INLINE rtm::vector4f RTM_SIMD_CALL vector_rotated_xz(rtm::vector4f_arg0 v, float Angle) noexcept
+{
+	float SinA, CosA;
+	rtm::scalar_sincos(Angle, SinA, CosA);
+
+	const float x = rtm::vector_get_x(v);
+	const float y = rtm::vector_get_y(v);
+	const float z = rtm::vector_get_z(v);
+
+	return rtm::vector_set(x * CosA - z * SinA, y, x * SinA + z * CosA);
 }
 //---------------------------------------------------------------------
 

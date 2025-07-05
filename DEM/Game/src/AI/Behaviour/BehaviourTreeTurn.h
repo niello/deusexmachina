@@ -14,6 +14,11 @@ class CBehaviourTreeTurn : public CBehaviourTreeAIActionBase
 protected:
 
 	CParameterEx<rtm::vector4f, Game::HEntity, float> _Target; // lookat point / entity / angle (-180 .. 180)
+	bool _Follow = false;
+
+	//???add tolerance as a parameter?
+
+	std::optional<rtm::vector4f> GetDirection(const CBehaviourTreeContext& Ctx) const;
 
 public:
 

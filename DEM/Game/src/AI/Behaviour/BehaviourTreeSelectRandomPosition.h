@@ -13,8 +13,8 @@ class CBehaviourTreeSelectRandomPosition : public CBehaviourTreeNodeBase
 
 protected:
 
+	CParameter<float> _Radius = 10.f;
 	CStrID            _DestBBKey;
-	CParameter<float> _Radius; // TODO: = 10.f;
 
 public:
 

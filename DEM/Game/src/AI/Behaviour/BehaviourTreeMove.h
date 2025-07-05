@@ -1,5 +1,6 @@
 #pragma once
 #include <AI/Behaviour/BehaviourTreeAIActionBase.h>
+#include <AI/Parameter.h>
 
 // A leaf BT action that orders an agent to move to the desired position or entity
 
@@ -12,10 +13,13 @@ class CBehaviourTreeMove : public CBehaviourTreeAIActionBase
 
 protected:
 
-	// Hardcoded position or entity ID or BB key of them
-
+	CParameterEx<rtm::vector4f, Game::HEntity> _Target;
 	bool _IgnoreNavigation = false; // Move directly to the destination, ignore navmesh and path controllers
-	//???bool FollowTarget? should then refresh position of entity or BB key value and apply changes
+	bool _Follow = false;
+
+	//???add tolerance as a parameter?
+
+	std::optional<rtm::vector4f> GetPosition(const CBehaviourTreeContext& Ctx) const;
 
 public:
 

@@ -4,6 +4,8 @@
 #include <Game/ECS/Components/ActionQueueComponent.h>
 #include <AI/Navigation/NavAgentComponent.h>
 #include <AI/Movement/SteerAction.h>
+#include <AI/AIStateComponent.h>
+#include <Scene/SceneComponent.h>
 #include <Core/Factory.h>
 
 namespace DEM::AI
@@ -14,9 +16,9 @@ void CBehaviourTreeMove::Init(const Data::CParams* pParams)
 {
 	if (!pParams) return;
 
+	ParameterFromData(_Target, *pParams, CStrID("Target"));
 	pParams->TryGet(_IgnoreNavigation, CStrID("IgnoreNavigation"));
-
-	// Hardcoded position or entity ID or BB key of them
+	pParams->TryGet(_Follow, CStrID("Follow"));
 }
 //---------------------------------------------------------------------
 
@@ -32,6 +34,35 @@ size_t CBehaviourTreeMove::GetInstanceDataAlignment() const
 }
 //---------------------------------------------------------------------
 
+//???TODO: use parameter's Visit to avoid searching BB key for each type? Can't cache key, it encodes type!
+std::optional<rtm::vector4f> CBehaviourTreeMove::GetPosition(const CBehaviourTreeContext& Ctx) const
+{
+	const auto& BB = Ctx.pBrain->Blackboard;
+
+	// Directly set target position vector
+	{
+		rtm::vector4f TargetPos;
+		if (_Target.TryGet(BB, TargetPos)) return TargetPos;
+	}
+
+	// Position of the target entity
+	{
+		auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>();
+		if (!pWorld) return {};
+
+		Game::HEntity TargetID;
+		if (_Target.TryGet(BB, TargetID))
+		{
+			if (auto* pTargetScene = pWorld->FindComponent<const Game::CSceneComponent>(TargetID))
+				return pTargetScene->RootNode->GetWorldPosition();
+			return {};
+		}
+	}
+
+	return {};
+}
+//---------------------------------------------------------------------
+
 EBTStatus CBehaviourTreeMove::Activate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
 	// Before everything else because Deactivate always calls a destructor
@@ -43,21 +74,21 @@ EBTStatus CBehaviourTreeMove::Activate(std::byte* pData, const CBehaviourTreeCon
 	auto* pQueue = pWorld->FindComponent<Game::CActionQueueComponent>(Ctx.ActorID);
 	if (!pQueue) return EBTStatus::Failed;
 
-	//!!!TODO: read from BB or hardcoded value!
-	rtm::vector4f WorldPosition = rtm::vector_zero();
+	auto OptPos = GetPosition(Ctx);
+	if (!OptPos) return EBTStatus::Failed;
 
 	pQueue->Reset();
 
 	if (_IgnoreNavigation || !pWorld->FindComponent<const AI::CNavAgentComponent>(Ctx.ActorID))
 	{
-		pQueue->EnqueueAction<AI::Steer>(WorldPosition, WorldPosition, 0.f);
+		pQueue->EnqueueAction<AI::Steer>(*OptPos, *OptPos, 0.f);
 
 		//!!!FIXME: we don't even know if it is our action!
 		Action = pQueue->FindCurrent<AI::Steer>();
 	}
 	else
 	{
-		pQueue->EnqueueAction<AI::Navigate>(WorldPosition, 0.f);
+		pQueue->EnqueueAction<AI::Navigate>(*OptPos, 0.f);
 
 		//!!!FIXME: we don't even know if it is our action!
 		Action = pQueue->FindCurrent<AI::Navigate>();
@@ -75,9 +106,30 @@ void CBehaviourTreeMove::Deactivate(std::byte* pData, const CBehaviourTreeContex
 }
 //---------------------------------------------------------------------
 
+// TODO: if not tracking the target, can request next update 'never' and subscribe on action's finish event for re-evaluation/update request
 std::pair<EBTStatus, U16> CBehaviourTreeMove::Update(U16 SelfIdx, std::byte* pData, float dt, const CBehaviourTreeContext& Ctx) const
 {
 	auto& Action = *reinterpret_cast<Game::HAction*>(pData);
+
+	//???only if not completed yet? what will happen with completed one?
+	if (_Follow)
+	{
+		auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>();
+		if (!pWorld) return { EBTStatus::Failed, SelfIdx };
+
+		auto* pQueue = pWorld->FindComponent<Game::CActionQueueComponent>(Ctx.ActorID);
+		if (!pQueue) return { EBTStatus::Failed, SelfIdx };
+
+		auto OptPos = GetPosition(Ctx);
+		if (!OptPos) return { EBTStatus::Failed, SelfIdx };
+
+		// FIXME: most probably will not work! Need update for the root action too!
+		if (_IgnoreNavigation || !pWorld->FindComponent<const AI::CNavAgentComponent>(Ctx.ActorID))
+			pQueue->PushOrUpdateChild<AI::Steer>({}, *OptPos, *OptPos, 0.f);
+		else
+			pQueue->PushOrUpdateChild<AI::Navigate>({}, *OptPos, 0.f);
+	}
+
 	return { GetActionStatus(Ctx, Action), SelfIdx };
 }
 //---------------------------------------------------------------------

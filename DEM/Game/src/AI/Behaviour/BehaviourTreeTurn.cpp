@@ -4,6 +4,7 @@
 #include <Game/ECS/Components/ActionQueueComponent.h>
 #include <AI/Movement/SteerAction.h>
 #include <AI/AIStateComponent.h>
+#include <Scene/SceneComponent.h>
 #include <Core/Factory.h>
 
 namespace DEM::AI
@@ -15,6 +16,7 @@ void CBehaviourTreeTurn::Init(const Data::CParams* pParams)
 	if (!pParams) return;
 
 	ParameterFromData(_Target, *pParams, CStrID("Target"));
+	pParams->TryGet(_Follow, CStrID("Follow"));
 }
 //---------------------------------------------------------------------
 
@@ -30,6 +32,52 @@ size_t CBehaviourTreeTurn::GetInstanceDataAlignment() const
 }
 //---------------------------------------------------------------------
 
+//???TODO: use parameter's Visit to avoid searching BB key for each type? Can't cache key, it encodes type!
+std::optional<rtm::vector4f> CBehaviourTreeTurn::GetDirection(const CBehaviourTreeContext& Ctx) const
+{
+	const auto& BB = Ctx.pBrain->Blackboard;
+
+	// Directly set direction vector
+	//???or should it be point to look at?
+	{
+		rtm::vector4f TargetDir;
+		if (_Target.TryGet(BB, TargetDir)) return TargetDir;
+	}
+
+	auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return {};
+
+	auto* pActorScene = pWorld->FindComponent<const Game::CSceneComponent>(Ctx.ActorID);
+	if (!pActorScene) return {};
+
+	// Direction to the target entity
+	{
+		Game::HEntity TargetID;
+		if (_Target.TryGet(BB, TargetID))
+		{
+			if (auto* pTargetScene = pWorld->FindComponent<const Game::CSceneComponent>(TargetID))
+				return rtm::vector_sub(pTargetScene->RootNode->GetWorldPosition(), pActorScene->RootNode->GetWorldPosition());
+			return {};
+		}
+	}
+
+	// An angle from the current direction
+	//???or should it be angle from absolute -Z (north)?
+	// TODO: use radians and a hint in the editor that the field is an angle?
+	{
+		float AngleDeg;
+		if (_Target.TryGet(BB, AngleDeg))
+		{
+			const float Angle = n_deg2rad(AngleDeg);
+			const auto TargetPos = Math::vector_rotated_xz(rtm::matrix_mul_point3(rtm::vector_set(0.f, 0.f, -1.f), pActorScene->RootNode->GetWorldMatrix()), Angle);
+			return rtm::vector_sub(TargetPos, pActorScene->RootNode->GetWorldPosition());
+		}
+	}
+
+	return {};
+}
+//---------------------------------------------------------------------
+
 EBTStatus CBehaviourTreeTurn::Activate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
 	// Before everything else because Deactivate always calls a destructor
@@ -41,15 +89,11 @@ EBTStatus CBehaviourTreeTurn::Activate(std::byte* pData, const CBehaviourTreeCon
 	auto* pQueue = pWorld->FindComponent<Game::CActionQueueComponent>(Ctx.ActorID);
 	if (!pQueue) return EBTStatus::Failed;
 
-	//!!!TODO: read from BB or hardcoded value!
-	auto& BB = Ctx.pBrain->Blackboard;
-	//_Target.Get(BB);
-	rtm::vector4f TargetDir = rtm::vector_zero();
-	const auto FacingTolerance = AI::Turn::AngularTolerance; // std::max(FacingTolerance, Turn::AngularTolerance);
+	auto OptDir = GetDirection(Ctx);
+	if (!OptDir) return EBTStatus::Failed;
 
 	pQueue->Reset();
-
-	pQueue->EnqueueAction<AI::Turn>(TargetDir, FacingTolerance);
+	pQueue->EnqueueAction<AI::Turn>(*OptDir, AI::Turn::AngularTolerance);
 
 	//!!!FIXME: we don't even know if it is our action!
 	Action = pQueue->FindCurrent<AI::Turn>();
@@ -66,9 +110,27 @@ void CBehaviourTreeTurn::Deactivate(std::byte* pData, const CBehaviourTreeContex
 }
 //---------------------------------------------------------------------
 
+// TODO: if not tracking the target, can request next update 'never' and subscribe on action's finish event for re-evaluation/update request
 std::pair<EBTStatus, U16> CBehaviourTreeTurn::Update(U16 SelfIdx, std::byte* pData, float dt, const CBehaviourTreeContext& Ctx) const
 {
 	auto& Action = *reinterpret_cast<Game::HAction*>(pData);
+
+	//???only if not completed yet? what will happen with completed one?
+	if (_Follow)
+	{
+		auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>();
+		if (!pWorld) return { EBTStatus::Failed, SelfIdx };
+
+		auto* pQueue = pWorld->FindComponent<Game::CActionQueueComponent>(Ctx.ActorID);
+		if (!pQueue) return { EBTStatus::Failed, SelfIdx };
+
+		auto OptDir = GetDirection(Ctx);
+		if (!OptDir) return { EBTStatus::Failed, SelfIdx };
+
+		// FIXME: most probably will not work! Need update for the root action too!
+		pQueue->PushOrUpdateChild<AI::Turn>({}, *OptDir, AI::Turn::AngularTolerance);
+	}
+
 	return { GetActionStatus(Ctx, Action), SelfIdx };
 }
 //---------------------------------------------------------------------

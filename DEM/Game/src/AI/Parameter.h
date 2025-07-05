@@ -28,7 +28,10 @@ protected:
 public:
 
 	CParameter(TPass Value = {}) : _Value(Value) {}
-	CParameter(T&& Value) noexcept : _Value(std::move(Value)) {}
+
+	template <typename T_ = T, typename = std::enable_if_t<!std::is_same_v<T_, TPass>>>
+	CParameter(T_&& Value) noexcept : _Value(std::move(Value)) {}
+
 	CParameter(CStrID BBKey, TPass Default = {}) : _BBKey(BBKey), _Value(Default) {}
 	CParameter(CStrID BBKey, T&& Default = {}) : _BBKey(BBKey), _Value(std::move(Default)) {}
 
@@ -56,6 +59,24 @@ public:
 			// Try reading a value directly from an argument
 			if (!IsFullForm) ParamsFormat::Deserialize(Data, _Value);
 		}
+	}
+
+	template <typename T_ = TPass, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T_>, CParameter<T>>>>
+	CParameter& operator =(TPass Value)
+	{
+		// When assigning a direct value, we are no longer a blackboard key reference
+		_BBKey = {};
+		_Value = Value;
+		return *this;
+	}
+
+	template <typename T_ = T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T_>, CParameter<T>>>>
+	CParameter& operator =(T&& Value)
+	{
+		// When assigning a direct value, we are no longer a blackboard key reference
+		_BBKey = {};
+		_Value = std::move(Value);
+		return *this;
 	}
 
 	TPass Get(const CBlackboard& Blackboard) const
