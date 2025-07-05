@@ -69,6 +69,29 @@ template <typename... T>
 using best_conversion_t = typename best_conversion<T...>::type;
 //---------------------------------------------------------------------
 
+template <typename T, typename... E>
+struct find_constructible;
+
+template <typename T, typename... E>
+using find_constructible_t = typename find_constructible<T, E...>::type;
+
+template <typename T, typename E1, typename... ERest>
+struct find_constructible<T, E1, ERest...>
+{
+	using type = std::conditional_t<std::is_constructible_v<E1, T>, E1, find_constructible_t<T, ERest...>>;
+};
+
+template <typename T>
+struct find_constructible<T>
+{
+	using type = void;
+};
+//---------------------------------------------------------------------
+
+template <typename T, typename... E>
+using best_match_t = std::conditional_t<std::is_void_v<best_conversion_t<T, E...>>, find_constructible_t<T, E...>, best_conversion_t<T, E...>>;
+//---------------------------------------------------------------------
+
 template<typename T, typename... TTypes>
 constexpr size_t index_of_type()
 {

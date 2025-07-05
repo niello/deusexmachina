@@ -19,7 +19,7 @@ bool CControlLayout::Initialize(const Data::CParams& Desc)
 		auto pRule = ParseRule(pRuleStr);
 		if (!pRule)
 		{
-			::Sys::Error("CControlLayout::Initialize() > error parsing rule string \"" + RuleStr + "\"\n");
+			::Sys::Error(("CControlLayout::Initialize() > error parsing rule string \"" + RuleStr + "\"\n").CStr());
 			continue;
 		}
 
@@ -37,7 +37,7 @@ bool CControlLayout::Initialize(const Data::CParams& Desc)
 		else
 		{
 			n_delete(pRule);
-			::Sys::Error("CControlLayout::Initialize() > unexpected rule type returned for \"" + RuleStr + "\"\n");
+			::Sys::Error(("CControlLayout::Initialize() > unexpected rule type returned for \"" + RuleStr + "\"\n").CStr());
 			continue;
 		}
 	}

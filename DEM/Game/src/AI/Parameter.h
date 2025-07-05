@@ -70,7 +70,7 @@ class CParameterEx final
 public:
 
 	template<typename T>
-	using TEffective = std::conditional_t<DEM::Meta::contains_type<T, TVarTypes...>(), T, DEM::Meta::best_conversion_t<T, TVarTypes...>>;
+	using TEffective = std::conditional_t<DEM::Meta::contains_type<T, TVarTypes...>(), T, DEM::Meta::best_match_t<T, TVarTypes...>>;
 
 private:
 
@@ -94,14 +94,26 @@ private:
 	template<typename F>
 	decltype(auto) Visit(F Visitor)
 	{
-		using TRet = std::common_type_t<decltype(Visitor(static_cast<TVarTypes*>(nullptr)))... > ;
+		using TRet = std::common_type_t<decltype(Visitor(static_cast<TVarTypes*>(nullptr)))... >;
 
 		if (_Type == NoType) return TRet{};
 
 		return DEM::Meta::compile_switch(static_cast<size_t>(_Type), std::index_sequence_for<TVarTypes...>{}, [this, &Visitor](auto i)
 		{
-			using TVarType = std::tuple_element_t<i, std::tuple<TVarTypes...>>;
-			return Visitor(reinterpret_cast<TVarType*>(_Value));
+			return Visitor(reinterpret_cast<std::tuple_element_t<i, std::tuple<TVarTypes...>>*>(_Value));
+		});
+	}
+
+	template<typename F>
+	decltype(auto) Visit(F Visitor) const
+	{
+		using TRet = std::common_type_t<decltype(Visitor(static_cast<TVarTypes*>(nullptr)))... >;
+
+		if (_Type == NoType) return TRet{};
+
+		return DEM::Meta::compile_switch(static_cast<size_t>(_Type), std::index_sequence_for<TVarTypes...>{}, [this, &Visitor](auto i)
+		{
+			return Visitor(reinterpret_cast<const std::tuple_element_t<i, std::tuple<TVarTypes...>>*>(_Value));
 		});
 	}
 
@@ -122,7 +134,7 @@ private:
 		_Type = NoType;
 	}
 
-	// TODO: can use ParamsFormat::Deserialize to read entity IDs etc? Iterate over TVarTypes and try to apply value from data?
+	// TODO: can use ParamsFormat::Deserialize to read entity IDs etc? Iterate over TVarTypes and try to apply value from data if its HRDType matches?
 	bool TrySetValue(const Data::CData* pValue)
 	{
 		if (!pValue) return false;
@@ -130,15 +142,8 @@ private:
 		pValue->Visit([this](auto&& TypedValue)
 		{
 			using TArg = decltype(TypedValue);
-
 			if constexpr (Supports<TArg>())
-			{
-				//!!!TODO: support RTM vector from vec3/4 in data!
-				if constexpr (std::is_same_v<std::decay_t<TArg>, CString> && !DEM::Meta::contains_type<CString, TVarTypes...>() && DEM::Meta::contains_type<std::string, TVarTypes...>())
-					InitValue(std::string(TypedValue.CStr(), TypedValue.GetLength()));
-				else
-					InitValue(std::forward<TArg>(TypedValue));
-			}
+				InitValue(std::forward<TArg>(TypedValue));
 		});
 
 		return true;
@@ -153,8 +158,23 @@ public:
 	}
 
 	CParameterEx() = default;
-	//CParameterEx(const CParameterEx&) = delete;
-	//CParameterEx(CParameterEx&&) noexcept = delete;
+
+	CParameterEx(const CParameterEx& Other)
+		: _BBKey(Other._BBKey)
+	{
+		if (Other._Type != NoType)
+			Other.Visit([this](auto* pValue) { InitValue(*pValue); });
+	}
+
+	CParameterEx(CParameterEx&& Other) noexcept
+		: _BBKey(Other._BBKey)
+	{
+		if (Other._Type != NoType)
+		{
+			Other.Visit([this](auto* pValue) { InitValue(std::move(*pValue)); });
+			Other.DestroyValue();
+		}
+	}
 
 	template<typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, CParameterEx<TVarTypes...>>>>
 	CParameterEx(T&& Value)
@@ -200,6 +220,45 @@ public:
 	~CParameterEx()
 	{
 		DestroyValue();
+	}
+
+	CParameterEx& operator =(const CParameterEx& Other)
+	{
+		if (this == &Other) return *this;
+
+		DestroyValue();
+
+		_BBKey = Other._BBKey;
+		if (Other._Type != NoType)
+			Other.Visit([this](auto* pValue) { InitValue(*pValue); });
+
+		return *this;
+	}
+
+	CParameterEx& operator =(CParameterEx&& Other) noexcept
+	{
+		if (this == &Other) return *this;
+
+		DestroyValue();
+
+		_BBKey = Other._BBKey;
+		if (Other._Type != NoType)
+		{
+			Other.Visit([this](auto* pValue) { InitValue(std::move(*pValue)); });
+			Other.DestroyValue();
+		}
+
+		return *this;
+	}
+
+	template<typename T>
+	std::enable_if_t<!std::is_same_v<std::decay_t<T>, CParameterEx<TVarTypes...>>, CParameterEx&> operator =(T&& Value)
+	{
+		// When assigning a direct value, we are no longer a blackboard key reference
+		_BBKey = {};
+		DestroyValue();
+		InitValue(std::forward<T>(Value));
+		return *this;
 	}
 
 	template<typename T>
@@ -253,5 +312,15 @@ public:
 	template<typename T, typename std::enable_if_t<!DEM::Meta::should_pass_by_value<T>>* = nullptr>
 	const T& Get(const CBlackboard& Blackboard, T&& Default) const = delete;
 };
+
+template<typename T>
+bool ParameterFromData(T& AIParameter, const Data::CParams& Params, CStrID Key)
+{
+	auto* pParamData = Params.FindValue(Key);
+	if (!pParamData) return false;
+	AIParameter = { *pParamData };
+	return true;
+}
+//---------------------------------------------------------------------
 
 }

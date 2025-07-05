@@ -8,7 +8,7 @@ namespace IO
 bool CFSBrowser::ForceToFirstEntry()
 {
 	if (hDir) FS->CloseDirectory(hDir);
-	hDir = IOSrv->OpenDirectory(CurrPath, nullptr, FS, CurrEntryName, CurrEntryType);
+	hDir = IOSrv->OpenDirectory(CurrPath.CStr(), nullptr, FS, CurrEntryName, CurrEntryType);
 	AtFirstEntry = true;
 	return !!hDir;
 }
@@ -18,7 +18,7 @@ bool CFSBrowser::SetRelativePath(const char* pPath)
 {
 	n_assert(CurrPath.IsValid());
 	CurrPath.Trim(" \r\n\t\\/", false);
-	return SetAbsolutePath(CurrPath + "/" + pPath);
+	return SetAbsolutePath((CurrPath + "/" + pPath).CStr());
 }
 //---------------------------------------------------------------------
 
@@ -27,7 +27,7 @@ bool CFSBrowser::ListCurrDirContents(CArray<CString>& OutContents, UPTR EntryTyp
 	AtFirstEntry = false;
 
 	if (hDir) FS->CloseDirectory(hDir);
-	hDir = IOSrv->OpenDirectory(CurrPath, pFilter, FS, CurrEntryName, CurrEntryType);
+	hDir = IOSrv->OpenDirectory(CurrPath.CStr(), pFilter, FS, CurrEntryName, CurrEntryType);
 	if (!hDir) FAIL;
 
 	while (CurrEntryType != FSE_NONE)

@@ -41,7 +41,7 @@ Data::PParams LoadParamsFromPRM(const char* pFileName)
 
 Data::PParams LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileName)
 {
-	Data::PParams Main = ParamsUtils::LoadParamsFromPRM(CString(pRootPath) + pRelativeFileName);
+	Data::PParams Main = ParamsUtils::LoadParamsFromPRM((CString(pRootPath) + pRelativeFileName).CStr());
 	if (!Main) return nullptr;
 
 	CString BaseName;
@@ -53,7 +53,7 @@ Data::PParams LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileNa
 		return nullptr;
 	}
 
-	Data::PParams Params = LoadDescFromPRM(pRootPath, BaseName + ".prm");
+	Data::PParams Params = LoadDescFromPRM(pRootPath, (BaseName + ".prm").CStr());
 	if (!Params) return nullptr;
 
 	Params->Merge(*Main, Data::Merge_AddNew | Data::Merge_Replace | Data::Merge_Deep); //!!!can specify merge flags in Desc!

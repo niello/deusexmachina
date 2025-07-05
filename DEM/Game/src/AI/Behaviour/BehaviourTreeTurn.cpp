@@ -14,8 +14,7 @@ void CBehaviourTreeTurn::Init(const Data::CParams* pParams)
 {
 	if (!pParams) return;
 
-	if (auto* pRadiusParam = pParams->Find(CStrID("Target")))
-		_Target = { pRadiusParam->GetRawValue() };
+	ParameterFromData(_Target, *pParams, CStrID("Target"));
 }
 //---------------------------------------------------------------------
 

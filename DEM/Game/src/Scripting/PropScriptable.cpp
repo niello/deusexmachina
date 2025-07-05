@@ -24,7 +24,7 @@ bool CPropScriptable::InternalActivate()
 
 	CString ScriptFile;
 	if (GetEntity()->GetAttr<CString>(ScriptFile, CStrID("Script")) && ScriptFile.IsValid())
-		Obj->LoadScriptFile("Scripts:" + ScriptFile + ".lua");
+		Obj->LoadScriptFile(("Scripts:" + ScriptFile + ".lua").CStr());
 
 	PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropScriptable, OnPropsActivated);
 

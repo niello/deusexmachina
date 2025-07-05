@@ -16,8 +16,7 @@ void CBehaviourTreeSelectRandomPosition::Init(const Data::CParams* pParams)
 
 	pParams->TryGet(_DestBBKey, CStrID("DestBBKey"));
 
-	if (auto* pRadiusParam = pParams->Find(CStrID("Radius")))
-		_Radius = { pRadiusParam->GetRawValue() };
+	ParameterFromData(_Radius, *pParams, CStrID("Radius"));
 }
 //---------------------------------------------------------------------
 

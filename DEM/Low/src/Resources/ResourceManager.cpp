@@ -158,7 +158,7 @@ PResourceCreator CResourceManager::GetDefaultCreator(CStrID UID, const DEM::Core
 		if (SharpIdx >= 0) Ext.TruncateRight(Ext.GetLength() - SharpIdx);
 	}
 
-	return GetDefaultCreator(Ext, &RsrcType);
+	return GetDefaultCreator(Ext.CStr(), &RsrcType);
 }
 //---------------------------------------------------------------------
 
@@ -225,7 +225,7 @@ IO::PStream CResourceManager::CreateResourceStream(const char* pUID, const char*
 		if (pOutSubId == pUID) return nullptr;
 
 		CString Path(pUID, pOutSubId - pUID);
-		Stream = pIO->CreateStream(Path, IO::SAM_READ, Pattern);
+		Stream = pIO->CreateStream(Path.CStr(), IO::SAM_READ, Pattern);
 
 		++pOutSubId; // Skip '#'
 		if (*pOutSubId == 0) pOutSubId = nullptr;

@@ -381,7 +381,7 @@ bool CPlatformWin32::CheckAlreadyRunning(const char* pAppName)
 	if (hRunOnceMutex) FAIL;
 
 	CString Prefix("DEM::CPlatformWin32::CheckAlreadyRunning::");
-	hRunOnceMutex = ::CreateMutex(nullptr, TRUE, Prefix + pAppName);
+	hRunOnceMutex = ::CreateMutex(nullptr, TRUE, (Prefix + pAppName).CStr());
 	if (hRunOnceMutex && ::GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		// The same app is already running
@@ -772,7 +772,7 @@ bool CPlatformWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath) c
 		if (!::GetModuleFileName(nullptr, pRawPath, sizeof(pRawPath))) FAIL;
 		CString PathToExe(pRawPath);
 		PathToExe.Replace('\\', '/');
-		OutPath = PathUtils::CollapseDots(PathUtils::ExtractDirName(PathToExe));
+		OutPath = PathUtils::CollapseDots(PathUtils::ExtractDirName(PathToExe).CStr());
 	}
 	else if (Code == SysFolder_WorkingDir)
 	{

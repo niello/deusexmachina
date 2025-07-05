@@ -79,7 +79,7 @@ bool CInteractionManager::RegisterTool(CStrID ID, const Data::CParams& Params)
 					// TODO: pushes the compiled chunk as a Lua function on top of the stack,
 					// need to save anywhere in this Tool's table?
 					sol::function ConditionFunc;
-					const std::string Condition = (*pActionDesc)->Get(CStrID("Condition"), CString::Empty);
+					const std::string Condition((*pActionDesc)->Get(CStrID("Condition"), CString::Empty));
 					if (!Condition.empty())
 					{
 						auto LoadedCondition = _Session.GetScriptState().load("local Actors, Target = ...; return " + Condition, (ID.CStr() + ActID).CStr());

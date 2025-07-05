@@ -86,7 +86,7 @@ void CDebugServer::TogglePluginWindow(CStrID Name)
 	{
 		if (!UI.GetCEGUIWindow())
 		{
-			UI.Load(CString(pPlugin->UIResource.c_str()));
+			UI.Load(pPlugin->UIResource.c_str());
 			n_assert(UI.GetCEGUIWindow());
 		}
 		if (UI.GetCEGUIWindow()->getParent() != RootWnd.GetCEGUIWindow())

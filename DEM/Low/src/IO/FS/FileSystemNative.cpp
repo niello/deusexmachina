@@ -35,55 +35,55 @@ bool CFileSystemNative::Init()
 
 bool CFileSystemNative::FileExists(const char* pPath)
 {
-	return pFS->FileExists(Root + pPath);
+	return pFS->FileExists((Root + pPath).CStr());
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::IsFileReadOnly(const char* pPath)
 {
-	return _ReadOnly || pFS->IsFileReadOnly(Root + pPath);
+	return _ReadOnly || pFS->IsFileReadOnly((Root + pPath).CStr());
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::SetFileReadOnly(const char* pPath, bool ReadOnly)
 {
-	return (!_ReadOnly || ReadOnly) && pFS->SetFileReadOnly(Root + pPath, ReadOnly);
+	return (!_ReadOnly || ReadOnly) && pFS->SetFileReadOnly((Root + pPath).CStr(), ReadOnly);
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::DeleteFile(const char* pPath)
 {
-	return !_ReadOnly && pFS->DeleteFile(Root + pPath);
+	return !_ReadOnly && pFS->DeleteFile((Root + pPath).CStr());
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::CopyFile(const char* pSrcPath, const char* pDestPath)
 {
-	return !_ReadOnly && pFS->CopyFile(Root + pSrcPath, Root + pDestPath);
+	return !_ReadOnly && pFS->CopyFile((Root + pSrcPath).CStr(), (Root + pDestPath).CStr());
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::DirectoryExists(const char* pPath)
 {
-	return pFS->DirectoryExists(Root + pPath);
+	return pFS->DirectoryExists((Root + pPath).CStr());
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::CreateDirectory(const char* pPath)
 {
-	return !_ReadOnly && pFS->CreateDirectory(Root + pPath);
+	return !_ReadOnly && pFS->CreateDirectory((Root + pPath).CStr());
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::DeleteDirectory(const char* pPath)
 {
-	return !_ReadOnly && pFS->DeleteDirectory(Root + pPath);
+	return !_ReadOnly && pFS->DeleteDirectory((Root + pPath).CStr());
 }
 //---------------------------------------------------------------------
 
 void* CFileSystemNative::OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, EFSEntryType& OutType)
 {
-	return pFS->OpenDirectory(Root + pPath, pFilter, OutName, OutType);
+	return pFS->OpenDirectory((Root + pPath).CStr(), pFilter, OutName, OutType);
 }
 //---------------------------------------------------------------------
 
@@ -102,7 +102,7 @@ bool CFileSystemNative::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntr
 void* CFileSystemNative::OpenFile(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
 	if (_ReadOnly && (Mode & (EStreamAccessMode::SAM_WRITE | EStreamAccessMode::SAM_APPEND))) return nullptr;
-	return pFS->OpenFile(Root + pPath, Mode, Pattern);
+	return pFS->OpenFile((Root + pPath).CStr(), Mode, Pattern);
 }
 //---------------------------------------------------------------------
 

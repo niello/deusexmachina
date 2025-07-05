@@ -203,7 +203,7 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 	int i = 0;
 	for (CArray<CWatched>::CIterator It = Watched.Begin(); It != Watched.End(); It++, ++i)
 	{
-		if (!CheckMatch || StringUtils::MatchesPattern(It->VarName, Pattern.c_str()))
+		if (!CheckMatch || StringUtils::MatchesPattern(It->VarName.CStr(), Pattern.c_str()))
 		{
 			if (It->Type == DEM)
 			{

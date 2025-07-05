@@ -100,10 +100,10 @@ bool COSFileSystemWin32::CreateDirectory(const char* pPath)
 	CString AbsPath(pPath);
 
 	CArray<CString> DirStack;
-	while (!DirectoryExists(AbsPath))
+	while (!DirectoryExists(AbsPath.CStr()))
 	{
 		AbsPath.Trim(" \r\n\t\\/", false);
-		int LastSepIdx = PathUtils::GetLastDirSeparatorIndex(AbsPath);
+		int LastSepIdx = PathUtils::GetLastDirSeparatorIndex(AbsPath.CStr());
 		if (LastSepIdx >= 0)
 		{
 			DirStack.Add(AbsPath.SubString(LastSepIdx + 1, AbsPath.GetLength() - (LastSepIdx + 1)));
@@ -154,7 +154,7 @@ bool COSFileSystemWin32::DeleteDirectory(const char* pPath)
 		Name += FindData.cFileName;
 		if (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		{
-			if (!DeleteDirectory(Name)) FAIL;
+			if (!DeleteDirectory(Name.CStr())) FAIL;
 		}
 		else if (::DeleteFile(Name.CStr()) == FALSE) FAIL;
 	}

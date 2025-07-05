@@ -64,13 +64,14 @@ public:
 	bool			IsEmpty() const { return !pString || !*pString; }
 	bool			IsValid() const { return pString && *pString; }
 
-	operator		const char*() const { return pString ? pString : ""; }
-	operator		bool() const { return pString && *pString; }
-	operator		std::string_view() const { return std::string_view(pString, Length); }
+	explicit operator bool() const { return pString && *pString; }
+	explicit operator std::string() const { return std::string(pString, Length); }
+	operator std::string_view() const { return std::string_view(pString, Length); }
 
 	//???simplify by using const "" instead of nullptr in CString::pString?
 	bool			operator ==(const CString& Other) const { return Length == Other.Length && (pString == Other.pString || (pString && Other.pString && !strcmp(pString, Other.pString))); }
 	bool			operator !=(const CString& Other) const { return Length != Other.Length || (pString != Other.pString && (!pString || !Other.pString || strcmp(pString, Other.pString))); }
+	bool			operator <(const CString& Other) const { return operator <(Other.CStr()); }
 	bool			operator >(const char* pOther) const { return pString && (!pOther || strcmp(pString, pOther) > 0); }
 	bool			operator <(const char* pOther) const { return pOther && (!pString || strcmp(pString, pOther) < 0); }
 	bool			operator >=(const char* pOther) const { return pString == pOther || (pString && (!pOther || strcmp(pString, pOther) >= 0)); }

@@ -28,7 +28,7 @@ bool CSkinAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 			}
 			case 'RSPH':
 			{
-				_RootSearchPath = DataReader.Read<CString>();
+				DataReader.Read(_RootSearchPath);
 				break;
 			}
 			case 'ACBN':

@@ -162,10 +162,10 @@ bool CIOServer::CopyFile(const char* pSrcPath, const char* pDestPath)
 
 	// Cross-FS copying
 
-	if (FileExists(DestPath) && !SetFileReadOnly(DestPath, false)) FAIL;
+	if (FileExists(DestPath.CStr()) && !SetFileReadOnly(DestPath.CStr(), false)) FAIL;
 
-	IO::PStream Src = CreateStream(SrcPath, SAM_READ, SAP_SEQUENTIAL);
-	IO::PStream Dest = CreateStream(DestPath, SAM_WRITE, SAP_SEQUENTIAL);
+	IO::PStream Src = CreateStream(SrcPath.CStr(), SAM_READ, SAP_SEQUENTIAL);
+	IO::PStream Dest = CreateStream(DestPath.CStr(), SAM_WRITE, SAP_SEQUENTIAL);
 	if (!Src || !Src->IsOpened()) FAIL;
 	if (!Dest || !Dest->IsOpened()) FAIL;
 
@@ -269,21 +269,21 @@ bool CIOServer::CopyDirectory(const char* pSrcPath, const char* pDestPath, bool 
 	const CString DestBasePath = ResolveAssigns(pDestPath);
 
 	CFSBrowser Browser;
-	if (!Browser.SetAbsolutePath(SrcBasePath)) FAIL;
+	if (!Browser.SetAbsolutePath(SrcBasePath.CStr())) FAIL;
 
-	if (!CreateDirectory(DestBasePath)) FAIL;
+	if (!CreateDirectory(DestBasePath.CStr())) FAIL;
 
 	if (!Browser.IsCurrDirEmpty()) do
 	{
 		if (Browser.IsCurrEntryFile())
 		{
 			const CString EntryName = "/" + Browser.GetCurrEntryName();
-			if (!CopyFile(SrcBasePath + EntryName, DestBasePath + EntryName)) FAIL;
+			if (!CopyFile((SrcBasePath + EntryName).CStr(), (DestBasePath + EntryName).CStr())) FAIL;
 		}
 		else if (Recursively && Browser.IsCurrEntryDir())
 		{
 			const CString EntryName = "/" + Browser.GetCurrEntryName();
-			if (!CopyDirectory(SrcBasePath + EntryName, DestBasePath + EntryName, Recursively)) FAIL;
+			if (!CopyDirectory((SrcBasePath + EntryName).CStr(), (DestBasePath + EntryName).CStr(), Recursively)) FAIL;
 		}
 	}
 	while (Browser.NextCurrDirEntry());

@@ -78,7 +78,6 @@ public:
 	template<class T> const T*	GetValuePtr() const;
 	void* const*				GetValueObjectPtr() const { return &Value; }
 
-	//!!!TODO: support RTM vector from vec3/4 in data!
 	template<typename F>
 	decltype(auto) Visit(F Visitor) const
 	{

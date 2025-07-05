@@ -37,7 +37,7 @@ class CVarStorage
 public:
 
 	template<typename T>
-	using TEffective = std::conditional_t<DEM::Meta::contains_type<T, TVarTypes...>(), T, DEM::Meta::best_conversion_t<T, TVarTypes...>>;
+	using TEffective = std::conditional_t<DEM::Meta::contains_type<T, TVarTypes...>(), T, DEM::Meta::best_match_t<T, TVarTypes...>>;
 
 protected:
 
@@ -173,7 +173,7 @@ public:
 
 		n_assert_dbg(Handle.TypeIdx == TypeIndex<T>);
 		if (Handle.TypeIdx == TypeIndex<T>)
-			std::get<TypeIndex<T>>(_Storages)[Handle.VarIdx] = std::forward<T>(Value);
+			std::get<TypeIndex<T>>(_Storages)[Handle.VarIdx] = static_cast<TEffective<T>>(std::forward<T>(Value));
 	}
 
 	// NB: this is probably too big to be inlined and microoptimization with T instead of T&& yields better assembly
@@ -187,11 +187,11 @@ public:
 		{
 			auto& Storage = std::get<TypeIndex<T>>(_Storages);
 			It = _VarsByID.emplace(ID, HVar{ static_cast<uint32_t>(TypeIndex<T>), static_cast<uint32_t>(Storage.size()) }).first;
-			Storage.push_back(Value);
+			Storage.push_back(static_cast<TEffective<T>>(Value));
 		}
 		else
 		{
-			Set(It->second, Value);
+			Set(It->second, static_cast<TEffective<T>>(Value));
 		}
 
 		return It->second;
@@ -207,11 +207,11 @@ public:
 		{
 			auto& Storage = std::get<TypeIndex<T>>(_Storages);
 			It = _VarsByID.emplace(ID, HVar{ static_cast<uint32_t>(TypeIndex<T>), static_cast<uint32_t>(Storage.size()) }).first;
-			Storage.push_back(std::forward<T>(Value));
+			Storage.push_back(static_cast<TEffective<T>>(std::forward<T>(Value)));
 		}
 		else
 		{
-			Set(It->second, std::forward<T>(Value));
+			Set(It->second, static_cast<TEffective<T>>(std::forward<T>(Value)));
 		}
 
 		return It->second;
@@ -229,16 +229,7 @@ public:
 
 	HVar TrySet(CStrID ID, const Data::CData& Value)
 	{
-		return Value.Visit([this, ID](auto&& TypedValue)
-		{
-			using TArg = decltype(TypedValue);
-
-			//!!!TODO: support RTM vector from vec3/4 in data!
-			if constexpr (std::is_same_v<std::decay_t<TArg>, CString> && !DEM::Meta::contains_type<CString, TVarTypes...>() && DEM::Meta::contains_type<std::string, TVarTypes...>())
-				return TrySet(ID, std::string(TypedValue.CStr(), TypedValue.GetLength()));
-			else
-				return TrySet(ID, std::forward<TArg>(TypedValue));
-		});
+		return Value.Visit([this, ID](auto&& TypedValue) { return TrySet(ID, std::forward<decltype(TypedValue)>(TypedValue)); });
 	}
 
 	template<typename F>

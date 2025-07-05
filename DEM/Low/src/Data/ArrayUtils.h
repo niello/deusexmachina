@@ -30,7 +30,7 @@ IPTR FindIndexSorted(const T* pData, UPTR Count, const T& Val)
 				High = Mid - 1;
 				Num = Mid - Low;
 			}
-			else if (Val > pData[Mid])
+			else if (pData[Mid] < Val)
 			{
 				Low = Mid + 1;
 				Num = Half;
@@ -71,7 +71,7 @@ IPTR FindClosestIndexSorted(const T* pData, UPTR Count, const T& Val, bool* pHas
 				High = Mid - 1;
 				Num = Mid - Low;
 			}
-			else if (Val > pData[Mid])
+			else if (pData[Mid] < Val)
 			{
 				Low = Mid + 1;
 				Num = Half;
