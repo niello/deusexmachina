@@ -1,5 +1,5 @@
 #pragma once
-#include <AI/Behaviour/BehaviourTreeAIActionBase.h>
+#include <AI/Behaviour/Nodes/BehaviourTreeAIActionBase.h>
 
 // A leaf BT action that executes an ability by ID
 

@@ -24,6 +24,11 @@ static inline size_t CalcBufferSize(const CBehaviourTreeAsset& Asset)
 }
 //---------------------------------------------------------------------
 
+CBehaviourTreePlayer::CBehaviourTreePlayer() = default;
+CBehaviourTreePlayer::CBehaviourTreePlayer(CBehaviourTreePlayer&&) noexcept = default;
+CBehaviourTreePlayer& CBehaviourTreePlayer::operator =(CBehaviourTreePlayer&& Other) noexcept = default;
+//---------------------------------------------------------------------
+
 CBehaviourTreePlayer::~CBehaviourTreePlayer()
 {
 	Stop();

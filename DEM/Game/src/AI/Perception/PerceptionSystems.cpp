@@ -5,7 +5,7 @@
 namespace DEM::AI
 {
 
-void InitCharacterAI(Game::CGameWorld& World)
+void InitCharacterAISenses(Game::CGameWorld& World)
 {
 	World.ForEachEntityWith<CVisionSensorComponent, const Game::CSceneComponent>(
 		[](auto EntityID, auto& Entity, CVisionSensorComponent& Sensor, const Game::CSceneComponent& Scene)

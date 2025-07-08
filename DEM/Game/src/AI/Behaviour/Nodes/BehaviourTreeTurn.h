@@ -1,25 +1,24 @@
 #pragma once
-#include <AI/Behaviour/BehaviourTreeAIActionBase.h>
+#include <AI/Behaviour/Nodes/BehaviourTreeAIActionBase.h>
 #include <AI/Parameter.h>
 
-// A leaf BT action that orders an agent to move to the desired position or entity
+// A leaf BT action that orders an agent to turn to the desired direction or entity
 
 namespace DEM::AI
 {
 
-class CBehaviourTreeMove : public CBehaviourTreeAIActionBase
+class CBehaviourTreeTurn : public CBehaviourTreeAIActionBase
 {
 	FACTORY_CLASS_DECL;
 
 protected:
 
-	CParameterEx<rtm::vector4f, Game::HEntity> _Target;
-	bool _IgnoreNavigation = false; // Move directly to the destination, ignore navmesh and path controllers
+	CParameterEx<rtm::vector4f, Game::HEntity, float> _Target; // lookat point / entity / angle (-180 .. 180)
 	bool _Follow = false;
 
 	//???add tolerance as a parameter?
 
-	std::optional<rtm::vector4f> GetPosition(const CBehaviourTreeContext& Ctx) const;
+	std::optional<rtm::vector4f> GetDirection(const CBehaviourTreeContext& Ctx) const;
 
 public:
 

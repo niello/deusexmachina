@@ -5,18 +5,19 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/FormationManager.h
 	DEM/Game/src/AI/MoveInteraction.h
 	DEM/Game/src/AI/Parameter.h
-	DEM/Game/src/AI/Behaviour/BehaviourTreeAIActionBase.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreeAsset.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreeAssetLoader.h
-	DEM/Game/src/AI/Behaviour/BehaviourTreeCondition.h
-	DEM/Game/src/AI/Behaviour/BehaviourTreeExecuteAbility.h
-	DEM/Game/src/AI/Behaviour/BehaviourTreeMove.h
+	DEM/Game/src/AI/Behaviour/BehaviourTreeComponent.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreePlayer.h
-	DEM/Game/src/AI/Behaviour/BehaviourTreeSelectClosestActor.h
-	DEM/Game/src/AI/Behaviour/BehaviourTreeSelector.h
-	DEM/Game/src/AI/Behaviour/BehaviourTreeSelectRandomPosition.h
-	DEM/Game/src/AI/Behaviour/BehaviourTreeSequence.h
-	DEM/Game/src/AI/Behaviour/BehaviourTreeTurn.h
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeAIActionBase.h
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeCondition.h
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeExecuteAbility.h
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeMove.h
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeSelectClosestActor.h
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeSelector.h
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeSelectRandomPosition.h
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeSequence.h
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeTurn.h
 	DEM/Game/src/AI/Movement/SteerAction.h
 	DEM/Game/src/AI/Navigation/NavAgentComponent.h
 	DEM/Game/src/AI/Navigation/NavAgentSettings.h
@@ -93,18 +94,19 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/AILevel.cpp
 	DEM/Game/src/AI/FormationManager.cpp
 	DEM/Game/src/AI/MoveInteraction.cpp
-	DEM/Game/src/AI/Behaviour/BehaviourTreeAIActionBase.cpp
+	DEM/Game/src/AI/Behaviour/BehaviourSystems.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreeAsset.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreeAssetLoader.cpp
-	DEM/Game/src/AI/Behaviour/BehaviourTreeCondition.cpp
-	DEM/Game/src/AI/Behaviour/BehaviourTreeExecuteAbility.cpp
-	DEM/Game/src/AI/Behaviour/BehaviourTreeMove.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreePlayer.cpp
-	DEM/Game/src/AI/Behaviour/BehaviourTreeSelectClosestActor.cpp
-	DEM/Game/src/AI/Behaviour/BehaviourTreeSelector.cpp
-	DEM/Game/src/AI/Behaviour/BehaviourTreeSelectRandomPosition.cpp
-	DEM/Game/src/AI/Behaviour/BehaviourTreeSequence.cpp
-	DEM/Game/src/AI/Behaviour/BehaviourTreeTurn.cpp
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeAIActionBase.cpp
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeCondition.cpp
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeExecuteAbility.cpp
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeMove.cpp
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeSelectClosestActor.cpp
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeSelector.cpp
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeSelectRandomPosition.cpp
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeSequence.cpp
+	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeTurn.cpp
 	DEM/Game/src/AI/Movement/CharacterControlSystem.cpp
 	DEM/Game/src/AI/Movement/SteerAction.cpp
 	DEM/Game/src/AI/Navigation/NavAgentSettings.cpp

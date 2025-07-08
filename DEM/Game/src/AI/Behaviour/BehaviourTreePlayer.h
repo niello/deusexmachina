@@ -30,16 +30,16 @@ public:
 
 private:
 
-	PBehaviourTreeAsset               _Asset;
-	std::vector<Events::CConnection>& _NodeSubs;
-	std::multimap<HVar, U16>          _BBKeyToNode; // A map of BB keys to nodes that are affected by its change
+	PBehaviourTreeAsset              _Asset;
+	std::vector<Events::CConnection> _NodeSubs;
+	std::multimap<HVar, U16>         _BBKeyToNode; // A map of BB keys to nodes that are affected by its change
 
-	std::unique_ptr<std::byte[]>      _MemBuffer;
-	U16*                              _pNewStack = nullptr;           // Current traversal path
-	U16*                              _pRequestStack = nullptr;       // Currently activated path overridden by requests from higher priority nodes
-	U16*                              _pActiveStack = nullptr;        // Currently activated path
-	CDataStackRecord*                 _pNodeInstanceData = nullptr;   // Pointers to node instance data of active path nodes
-	std::byte*                        _pInstanceDataBuffer = nullptr; // Top of the stack allocation buffer for node instance data
+	std::unique_ptr<std::byte[]>     _MemBuffer;
+	U16*                             _pNewStack = nullptr;           // Current traversal path
+	U16*                             _pRequestStack = nullptr;       // Currently activated path overridden by requests from higher priority nodes
+	U16*                             _pActiveStack = nullptr;        // Currently activated path
+	CDataStackRecord*                _pNodeInstanceData = nullptr;   // Pointers to node instance data of active path nodes
+	std::byte*                       _pInstanceDataBuffer = nullptr; // Top of the stack allocation buffer for node instance data
 
 	U16                               _ActiveDepth = 0;               // Depth of _pActiveStack
 
@@ -49,7 +49,11 @@ private:
 
 public:
 
+	CBehaviourTreePlayer();
+	CBehaviourTreePlayer(CBehaviourTreePlayer&&) noexcept;
 	~CBehaviourTreePlayer();
+
+	CBehaviourTreePlayer& operator =(CBehaviourTreePlayer&& Other) noexcept;
 
 	void      SetAsset(PBehaviourTreeAsset Asset);
 	bool      Start(const CBehaviourTreeContext& Ctx);
