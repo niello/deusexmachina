@@ -20,7 +20,7 @@ public:
 
 	virtual void Init(const Data::CParams* pParams) override;
 
-	virtual void                      OnTreeStarted(U16 SelfIdx, CBehaviourTreePlayer& Player, const CBehaviourTreeContext& Ctx) const override;
+	virtual void                      OnTreeStarted(U16 SelfIdx, CBehaviourTreePlayer& Player) const override;
 	virtual std::pair<EBTStatus, U16> TraverseFromParent(U16 SelfIdx, U16 SkipIdx, const CBehaviourTreeContext& Ctx) const override;
 };
 

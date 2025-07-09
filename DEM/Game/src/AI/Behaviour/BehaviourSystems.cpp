@@ -19,8 +19,18 @@ void InitCharacterAIThinking(Game::CGameWorld& World, Game::CGameSession& Sessio
 			Component.Player.SetAsset(pBTAsset);
 
 			if (auto* pBrain = World.FindComponent<CAIStateComponent>(EntityID))
-				Component.Player.Start(CBehaviourTreeContext{ Session, EntityID, pBrain });
+				Component.Player.Start(Session, EntityID);
 		}
+	});
+}
+//---------------------------------------------------------------------
+
+void UpdateBehaviourTrees(DEM::Game::CGameWorld& World, float dt)
+{
+	World.ForEachComponent<CBehaviourTreeComponent>([dt](auto EntityID, CBehaviourTreeComponent& Component)
+	{
+		if (Component.Player.IsPlaying())
+			Component.Player.Update(dt);
 	});
 }
 //---------------------------------------------------------------------

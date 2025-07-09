@@ -1,6 +1,8 @@
 #include "BehaviourTreePlayer.h"
 #include <AI/Behaviour/BehaviourTreeAsset.h>
 #include <AI/AIStateComponent.h>
+#include <Game/ECS/Components/ActionQueueComponent.h>
+#include <Game/ECS/GameWorld.h>
 #include <Events/Connection.h> // for destruction
 #include <Math/Math.h>
 
@@ -76,18 +78,23 @@ void CBehaviourTreePlayer::SetAsset(PBehaviourTreeAsset Asset)
 }
 //---------------------------------------------------------------------
 
-bool CBehaviourTreePlayer::Start(const CBehaviourTreeContext& Ctx)
+bool CBehaviourTreePlayer::Start(Game::CGameSession& Session, Game::HEntity ActorID)
 {
-	if (!_Asset) return false;
+	if (!_Asset || !ActorID) return false;
+
+	_pSession = &Session;
+	_ActorID = ActorID;
 
 	for (U16 i = 0; i < _Asset->GetNodeCount(); ++i)
-		_Asset->GetNode(i)->pNodeImpl->OnTreeStarted(i, *this, Ctx);
+		_Asset->GetNode(i)->pNodeImpl->OnTreeStarted(i, *this);
 
 	// All blackboard changes are handled by a single subscription. It is both optimal
 	// and deals with the lack of knowledge about a blackboard in a condition system.
 	if (!_BBKeyToNode.empty())
 	{
-		_NodeSubs.push_back(Ctx.pBrain->Blackboard.OnChanged.Subscribe([this](HVar BBKey)
+		auto* pWorld = _pSession->FindFeature<Game::CGameWorld>();
+		auto* pBrain = pWorld->FindComponent<const CAIStateComponent>(_ActorID);
+		_NodeSubs.push_back(pBrain->Blackboard.OnChanged.Subscribe([this](HVar BBKey)
 		{
 			// Empty BBKey means the whole blackboard change
 			const auto Range = BBKey ? _BBKeyToNode.equal_range(BBKey) : std::make_pair(_BBKeyToNode.begin(), _BBKeyToNode.end());
@@ -102,11 +109,19 @@ bool CBehaviourTreePlayer::Start(const CBehaviourTreeContext& Ctx)
 
 void CBehaviourTreePlayer::Stop()
 {
-	//!!!FIXME: maybe store context on Start() the tree player and don't pass it each frame? Session and AI must be constant during the playback!
-	n_assert(false);
-	//ResetActivePath();
+	// Is not playing without a session
+	if (!_pSession) return;
+
+	// Deactivate an active subtree even if there are missing components
+	auto* pWorld = _pSession->FindFeature<Game::CGameWorld>();
+	auto* pBrain = pWorld ? pWorld->FindComponent<CAIStateComponent>(_ActorID) : nullptr;
+	auto* pActuator = pWorld ? pWorld->FindComponent<Game::CActionQueueComponent>(_ActorID) : nullptr;
+	ResetActivePath(CBehaviourTreeContext{ *_pSession, _ActorID, pBrain, pActuator });
+
 	_BBKeyToNode.clear();
 	_NodeSubs.clear();
+	_pSession = nullptr;
+	_ActorID = {};
 }
 //---------------------------------------------------------------------
 
@@ -161,9 +176,21 @@ void CBehaviourTreePlayer::ResetActivePath(const CBehaviourTreeContext& Ctx)
 }
 //---------------------------------------------------------------------
 
-EBTStatus CBehaviourTreePlayer::Update(const CBehaviourTreeContext& Ctx, float dt)
+EBTStatus CBehaviourTreePlayer::Update(float dt)
 {
-	if (!_Asset) return EBTStatus::Failed;
+	if (!_Asset || !_pSession || !_ActorID) return EBTStatus::Failed;
+
+	auto* pWorld = _pSession->FindFeature<Game::CGameWorld>();
+	if (!pWorld) return EBTStatus::Failed;
+
+	auto* pBrain = pWorld->FindComponent<CAIStateComponent>(_ActorID);
+	if (!pBrain) return EBTStatus::Failed;
+
+	auto* pActuator = pWorld->FindComponent<Game::CActionQueueComponent>(_ActorID);
+	if (!pActuator) return EBTStatus::Failed;
+
+	// Proceed to update only when we have all necessary components
+	CBehaviourTreeContext Ctx{ *_pSession, _ActorID, pBrain, pActuator };
 
 	// Start from the root
 	_pNewStack[0] = 0;
@@ -321,11 +348,12 @@ bool CBehaviourTreePlayer::RequestEvaluation(U16 Index)
 }
 //---------------------------------------------------------------------
 
-void CBehaviourTreePlayer::EvaluateOnBlackboardChange(const CBehaviourTreeContext& Ctx, CStrID BBKey, U16 Index)
+// FIXME: BB can be obtained from _pSession + _ActorID. Passing BB here is an optimization, but should really do it this way?
+void CBehaviourTreePlayer::EvaluateOnBlackboardChange(const CBlackboard& BB, CStrID BBKey, U16 Index)
 {
 	//!!!FIXME: what if the key is not used yet but the value will be assigned later?! Must pre-register all keys in a blackboard? Need to know types in that place!
 	//May use storage's Load() to initialize  the blackboard from HRD!
-	if (auto Handle = Ctx.pBrain->Blackboard.GetStorage().Find(BBKey))
+	if (auto Handle = BB.GetStorage().Find(BBKey))
 		_BBKeyToNode.emplace(Handle, Index);
 }
 //---------------------------------------------------------------------

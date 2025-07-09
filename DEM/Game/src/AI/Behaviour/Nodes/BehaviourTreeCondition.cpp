@@ -2,6 +2,7 @@
 #include <AI/Behaviour/BehaviourTreePlayer.h>
 #include <AI/AIStateComponent.h>
 #include <Game/GameSession.h>
+#include <Game/ECS/GameWorld.h>
 #include <Scripting/Flow/ConditionRegistry.h>
 #include <Data/SerializeToParams.h>
 #include <Core/Factory.h>
@@ -63,23 +64,29 @@ void CBehaviourTreeCondition::Init(const Data::CParams* pParams)
 }
 //---------------------------------------------------------------------
 
-void CBehaviourTreeCondition::OnTreeStarted(U16 SelfIdx, CBehaviourTreePlayer& Player, const CBehaviourTreeContext& Ctx) const
+void CBehaviourTreeCondition::OnTreeStarted(U16 SelfIdx, CBehaviourTreePlayer& Player) const
 {
-	const auto* pConditions = Ctx.Session.FindFeature<Flow::CConditionRegistry>();
+	const auto* pConditions = Player.GetSession()->FindFeature<Flow::CConditionRegistry>();
 	if (!pConditions) return;
 
 	auto* pCondition = pConditions->FindCondition(_Condition.Type);
 	if (!pCondition) return;
 
+	auto* pWorld = Player.GetSession()->FindFeature<Game::CGameWorld>();
+	if (!pWorld) return;
+
+	auto* pBrain = pWorld->FindComponent<const CAIStateComponent>(Player.GetActorID());
+	if (!pBrain) return;
+
 	//!!!FIXME: here and in quests must ensure that composite conditions subscribe correctly! now it seems that they don't!
-	pCondition->SubscribeRelevantEvents(Player.Subscriptions(), { _Condition, Ctx.Session, &Ctx.pBrain->Blackboard.GetStorage() }, [&Player, SelfIdx](const std::shared_ptr<Game::CGameVarStorage>& EventVars)
+	pCondition->SubscribeRelevantEvents(Player.Subscriptions(), { _Condition, *Player.GetSession(), &pBrain->Blackboard.GetStorage() }, [&Player, SelfIdx](const std::shared_ptr<Game::CGameVarStorage>& EventVars)
 	{
 		// Execution may not even reach this node so we don't check a condition value here
 		Player.RequestEvaluation(SelfIdx);
 	});
 
 	for (const auto Key : _UsedBBKeys)
-		Player.EvaluateOnBlackboardChange(Ctx, Key, SelfIdx);
+		Player.EvaluateOnBlackboardChange(pBrain->Blackboard, Key, SelfIdx);
 }
 //---------------------------------------------------------------------
 

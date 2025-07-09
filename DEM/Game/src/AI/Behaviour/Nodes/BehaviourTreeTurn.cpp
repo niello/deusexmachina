@@ -83,22 +83,18 @@ EBTStatus CBehaviourTreeTurn::Activate(std::byte* pData, const CBehaviourTreeCon
 	// Before everything else because Deactivate always calls a destructor
 	auto& Action = *new(pData) Game::HAction();
 
-	auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>();
-	if (!pWorld) return EBTStatus::Failed;
-
-	auto* pQueue = pWorld->FindComponent<Game::CActionQueueComponent>(Ctx.ActorID);
-	if (!pQueue) return EBTStatus::Failed;
+	if (!Ctx.pActuator) return EBTStatus::Failed;
 
 	auto OptDir = GetDirection(Ctx);
 	if (!OptDir) return EBTStatus::Failed;
 
-	pQueue->Reset();
-	pQueue->EnqueueAction<AI::Turn>(*OptDir, AI::Turn::AngularTolerance);
+	Ctx.pActuator->Reset();
+	Ctx.pActuator->EnqueueAction<AI::Turn>(*OptDir, AI::Turn::AngularTolerance);
 
 	//!!!FIXME: we don't even know if it is our action!
-	Action = pQueue->FindCurrent<AI::Turn>();
+	Action = Ctx.pActuator->FindCurrent<AI::Turn>();
 
-	return ActionStatusToBTStatus(pQueue->GetStatus(Action));
+	return ActionStatusToBTStatus(Ctx.pActuator->GetStatus(Action));
 }
 //---------------------------------------------------------------------
 
@@ -118,17 +114,13 @@ std::pair<EBTStatus, U16> CBehaviourTreeTurn::Update(U16 SelfIdx, std::byte* pDa
 	//???only if not completed yet? what will happen with completed one?
 	if (_Follow)
 	{
-		auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>();
-		if (!pWorld) return { EBTStatus::Failed, SelfIdx };
-
-		auto* pQueue = pWorld->FindComponent<Game::CActionQueueComponent>(Ctx.ActorID);
-		if (!pQueue) return { EBTStatus::Failed, SelfIdx };
+		if (!Ctx.pActuator) return { EBTStatus::Failed, SelfIdx };
 
 		auto OptDir = GetDirection(Ctx);
 		if (!OptDir) return { EBTStatus::Failed, SelfIdx };
 
 		// FIXME: most probably will not work! Need update for the root action too!
-		pQueue->PushOrUpdateChild<AI::Turn>({}, *OptDir, AI::Turn::AngularTolerance);
+		Ctx.pActuator->PushOrUpdateChild<AI::Turn>({}, *OptDir, AI::Turn::AngularTolerance);
 	}
 
 	return { GetActionStatus(Ctx, Action), SelfIdx };

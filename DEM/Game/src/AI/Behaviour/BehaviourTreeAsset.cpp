@@ -55,6 +55,7 @@ static bool DFSSecondPass(const CBehaviourTreeNodeData& NodeData, CNodeInfo* pNo
 //---------------------------------------------------------------------
 
 // TODO: most of this can be calculated offline, except for node sizes and alignment, as they can change
+// TODO: move to loader and leave an asset unloaded on failures?!
 CBehaviourTreeAsset::CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData)
 {
 	// Calculate node count and max depth of the tree

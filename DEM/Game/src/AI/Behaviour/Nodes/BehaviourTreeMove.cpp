@@ -68,33 +68,32 @@ EBTStatus CBehaviourTreeMove::Activate(std::byte* pData, const CBehaviourTreeCon
 	// Before everything else because Deactivate always calls a destructor
 	auto& Action = *new(pData) Game::HAction();
 
+	if (!Ctx.pActuator) return EBTStatus::Failed;
+
 	auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return EBTStatus::Failed;
-
-	auto* pQueue = pWorld->FindComponent<Game::CActionQueueComponent>(Ctx.ActorID);
-	if (!pQueue) return EBTStatus::Failed;
 
 	auto OptPos = GetPosition(Ctx);
 	if (!OptPos) return EBTStatus::Failed;
 
-	pQueue->Reset();
+	Ctx.pActuator->Reset();
 
 	if (_IgnoreNavigation || !pWorld->FindComponent<const AI::CNavAgentComponent>(Ctx.ActorID))
 	{
-		pQueue->EnqueueAction<AI::Steer>(*OptPos, *OptPos, 0.f);
+		Ctx.pActuator->EnqueueAction<AI::Steer>(*OptPos, *OptPos, 0.f);
 
 		//!!!FIXME: we don't even know if it is our action!
-		Action = pQueue->FindCurrent<AI::Steer>();
+		Action = Ctx.pActuator->FindCurrent<AI::Steer>();
 	}
 	else
 	{
-		pQueue->EnqueueAction<AI::Navigate>(*OptPos, 0.f);
+		Ctx.pActuator->EnqueueAction<AI::Navigate>(*OptPos, 0.f);
 
 		//!!!FIXME: we don't even know if it is our action!
-		Action = pQueue->FindCurrent<AI::Navigate>();
+		Action = Ctx.pActuator->FindCurrent<AI::Navigate>();
 	}
 
-	return ActionStatusToBTStatus(pQueue->GetStatus(Action));
+	return ActionStatusToBTStatus(Ctx.pActuator->GetStatus(Action));
 }
 //---------------------------------------------------------------------
 
@@ -114,20 +113,19 @@ std::pair<EBTStatus, U16> CBehaviourTreeMove::Update(U16 SelfIdx, std::byte* pDa
 	//???only if not completed yet? what will happen with completed one?
 	if (_Follow)
 	{
+		if (!Ctx.pActuator) return { EBTStatus::Failed, SelfIdx };
+
 		auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>();
 		if (!pWorld) return { EBTStatus::Failed, SelfIdx };
-
-		auto* pQueue = pWorld->FindComponent<Game::CActionQueueComponent>(Ctx.ActorID);
-		if (!pQueue) return { EBTStatus::Failed, SelfIdx };
 
 		auto OptPos = GetPosition(Ctx);
 		if (!OptPos) return { EBTStatus::Failed, SelfIdx };
 
 		// FIXME: most probably will not work! Need update for the root action too!
 		if (_IgnoreNavigation || !pWorld->FindComponent<const AI::CNavAgentComponent>(Ctx.ActorID))
-			pQueue->PushOrUpdateChild<AI::Steer>({}, *OptPos, *OptPos, 0.f);
+			Ctx.pActuator->PushOrUpdateChild<AI::Steer>({}, *OptPos, *OptPos, 0.f);
 		else
-			pQueue->PushOrUpdateChild<AI::Navigate>({}, *OptPos, 0.f);
+			Ctx.pActuator->PushOrUpdateChild<AI::Navigate>({}, *OptPos, 0.f);
 	}
 
 	return { GetActionStatus(Ctx, Action), SelfIdx };

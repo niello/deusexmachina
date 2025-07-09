@@ -1,6 +1,4 @@
 #include "BehaviourTreeAIActionBase.h"
-#include <Game/GameSession.h>
-#include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
 
 namespace DEM::AI
@@ -25,19 +23,17 @@ EBTStatus CBehaviourTreeAIActionBase::ActionStatusToBTStatus(Game::EActionStatus
 
 void CBehaviourTreeAIActionBase::CancelAction(const CBehaviourTreeContext& Ctx, Game::HAction Action) const
 {
-	if (auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>())
-		if (auto* pQueue = pWorld->FindComponent<Game::CActionQueueComponent>(Ctx.ActorID))
-			if (pQueue->GetStatus(Action) == Game::EActionStatus::Active)
-				pQueue->SetStatus(Action, Game::EActionStatus::Cancelled);
+	if (Ctx.pActuator)
+		if (Ctx.pActuator->GetStatus(Action) == Game::EActionStatus::Active)
+			Ctx.pActuator->SetStatus(Action, Game::EActionStatus::Cancelled);
 }
 //---------------------------------------------------------------------
 
 EBTStatus CBehaviourTreeAIActionBase::GetActionStatus(const CBehaviourTreeContext& Ctx, Game::HAction Action) const
 {
 	//!!!also has pAIState->_AbilityInstance but there is no status there! At least now.
-	if (auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>())
-		if (auto* pQueue = pWorld->FindComponent<Game::CActionQueueComponent>(Ctx.ActorID))
-			return ActionStatusToBTStatus(pQueue->GetStatus(Action));
+	if (Ctx.pActuator)
+		return ActionStatusToBTStatus(Ctx.pActuator->GetStatus(Action));
 
 	return EBTStatus::Succeeded;
 }

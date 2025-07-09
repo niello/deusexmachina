@@ -22,7 +22,7 @@ void CFactory::Register(const CRTTI& RTTI, const char* pClassName, uint32_t Four
 
 bool CFactory::IsNameRegistered(const char* pClassName) const
 {
-	return NameToRTTI.find(std::string(pClassName)) != NameToRTTI.cend();
+	return pClassName && NameToRTTI.find(std::string(pClassName)) != NameToRTTI.cend();
 }
 //---------------------------------------------------------------------
 
@@ -34,6 +34,8 @@ bool CFactory::IsFourCCRegistered(uint32_t ClassFourCC) const
 
 const CRTTI* CFactory::GetRTTI(const char* pClassName) const
 {
+	if (!pClassName) return nullptr;
+
 	auto It = NameToRTTI.find(std::string(pClassName));
 	return (It == NameToRTTI.cend()) ? nullptr : It->second;
 }

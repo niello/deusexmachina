@@ -15,7 +15,7 @@ protected:
 
 public:
 
-	Events::CSignal<void(HVar)> OnChanged;
+	mutable Events::CSignal<void(HVar)> OnChanged;
 
 	void Clear()
 	{

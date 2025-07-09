@@ -1,6 +1,5 @@
 #include "BehaviourTreeExecuteAbility.h"
 #include <Game/GameSession.h>
-#include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Game/Interaction/Ability.h>
 #include <Game/Interaction/AbilityInstance.h>
@@ -63,14 +62,11 @@ EBTStatus CBehaviourTreeExecuteAbility::Activate(std::byte* pData, const CBehavi
 	if (!pAbility->Execute(Ctx.Session, IactCtx, false)) return EBTStatus::Failed;
 
 	//!!!also has pAIState->_AbilityInstance but there is no status there! At least now.
-	if (auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>())
+	if (Ctx.pActuator)
 	{
-		if (auto* pQueue = pWorld->FindComponent<Game::CActionQueueComponent>(Ctx.ActorID))
-		{
-			//!!!FIXME: we don't even know if it is our action!
-			Action = pQueue->FindCurrent<Game::ExecuteAbility>();
-			return ActionStatusToBTStatus(pQueue->GetStatus(Action));
-		}
+		//!!!FIXME: we don't even know if it is our action!
+		Action = Ctx.pActuator->FindCurrent<Game::ExecuteAbility>();
+		return ActionStatusToBTStatus(Ctx.pActuator->GetStatus(Action));
 	}
 
 	// No running action is found

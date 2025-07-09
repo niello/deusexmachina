@@ -1,4 +1,5 @@
 #pragma once
+#include <Game/ECS/Entity.h>
 #include <Data/Ptr.h>
 #include <Data/StringID.h>
 #include <map>
@@ -10,6 +11,11 @@ namespace DEM::Events
 	class CConnection;
 }
 
+namespace DEM::Game
+{
+	class CGameSession;
+}
+
 struct HVar;
 
 namespace DEM::AI
@@ -17,6 +23,7 @@ namespace DEM::AI
 using PBehaviourTreeAsset = Ptr<class CBehaviourTreeAsset>;
 enum class EBTStatus : U8;
 struct CBehaviourTreeContext;
+class CBlackboard;
 
 class CBehaviourTreePlayer final
 {
@@ -31,6 +38,8 @@ public:
 private:
 
 	PBehaviourTreeAsset              _Asset;
+	Game::CGameSession*              _pSession = nullptr;
+	Game::HEntity                    _ActorID;
 	std::vector<Events::CConnection> _NodeSubs;
 	std::multimap<HVar, U16>         _BBKeyToNode; // A map of BB keys to nodes that are affected by its change
 
@@ -56,15 +65,17 @@ public:
 	CBehaviourTreePlayer& operator =(CBehaviourTreePlayer&& Other) noexcept;
 
 	void      SetAsset(PBehaviourTreeAsset Asset);
-	bool      Start(const CBehaviourTreeContext& Ctx);
+	bool      Start(Game::CGameSession& Session, Game::HEntity ActorID);
 	void      Stop();
-	EBTStatus Update(const CBehaviourTreeContext& Ctx, float dt);
+	EBTStatus Update(float dt);
 	bool      RequestEvaluation(U16 Index);
-	void      EvaluateOnBlackboardChange(const CBehaviourTreeContext& Ctx, CStrID BBKey, U16 Index);
+	void      EvaluateOnBlackboardChange(const CBlackboard& BB, CStrID BBKey, U16 Index);
 
 	CBehaviourTreeAsset* GetAsset() const { return _Asset.Get(); }
+	Game::CGameSession*  GetSession() const { return _pSession; }
+	Game::HEntity        GetActorID() const { return _ActorID; }
 	auto&                Subscriptions() { return _NodeSubs; }
-	bool                 IsPlaying() const { return _ActiveDepth > 0; } //???or !!_Asset? or explicit flag?!
+	bool                 IsPlaying() const { return !!_pSession; }
 };
 
 }
