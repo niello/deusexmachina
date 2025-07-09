@@ -1,103 +1,33 @@
 #include "BehaviourTreeAsset.h"
 #include <Math/Math.h>
 #include <Core/RTTI.h>
-#include <Core/Factory.h>
 
 namespace DEM::AI
 {
 
-// Temporary data used when loading an asset
-struct CNodeInfo
+CBehaviourTreeAsset::CBehaviourTreeAsset(const CNodeInfo* pNodeInfo, U16 NodeCount, U16 MaxDepth)
 {
-	const Core::CRTTI*            pRTTI;
-	const CBehaviourTreeNodeData* pData;
-	U16                           Index;
-	U16                           SkipSubtreeIndex;
-	U16                           ParentIndex;
-	U16                           DepthLevel;
-};
+	n_assert_dbg(pNodeInfo && NodeCount && MaxDepth);
 
-static void DFSFirstPass(const CBehaviourTreeNodeData& NodeData, U16 Depth, U16& NodeCount, U16& MaxDepth)
-{
-	++NodeCount;
-	if (MaxDepth < Depth) MaxDepth = Depth;
-
-	for (const auto& ChildNodeData : NodeData.Children)
-		DFSFirstPass(ChildNodeData, Depth + 1, NodeCount, MaxDepth);
-}
-//---------------------------------------------------------------------
-
-static bool DFSSecondPass(const CBehaviourTreeNodeData& NodeData, CNodeInfo* pNodeInfo, U16& CurrIdx, U16 ParentIndex, U16 DepthLevel)
-{
-	//???store all basic nodes in one header? implementations can be very simple and defined right in headers
-	//???register basic nodes with easy to read IDs like basic conditions are registered in RegisterCondition? First try them, then the factory.
-	auto& CurrNodeInfo = pNodeInfo[CurrIdx];
-	CurrNodeInfo.pRTTI = DEM::Core::CFactory::Instance().GetRTTI(NodeData.ClassName.CStr()); // TODO: use CStrID in factory
-	if (!CurrNodeInfo.pRTTI || !CurrNodeInfo.pRTTI->IsDerivedFrom(CBehaviourTreeNodeBase::RTTI))
-	{
-		::Sys::Error("Behaviour tree node class is not found or is not a subclass of CBehaviourTreeNodeBase");
-		return false;
-	}
-
-	CurrNodeInfo.pData = &NodeData;
-
-	// To preserve DFS indices after sorting node info array
-	CurrNodeInfo.Index = CurrIdx;
-
-	for (const auto& ChildNodeData : NodeData.Children)
-		if (!DFSSecondPass(ChildNodeData, pNodeInfo, ++CurrIdx, CurrNodeInfo.Index, DepthLevel + 1))
-			return false;
-
-	CurrNodeInfo.SkipSubtreeIndex = CurrIdx;
-
-	return true;
-}
-//---------------------------------------------------------------------
-
-// TODO: most of this can be calculated offline, except for node sizes and alignment, as they can change
-// TODO: move to loader and leave an asset unloaded on failures?!
-CBehaviourTreeAsset::CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData)
-{
-	// Calculate node count and max depth of the tree
-	U16 NodeCount = 0;
-	DFSFirstPass(RootNodeData, 1, NodeCount, _MaxDepth);
-
-	n_assert_dbg(NodeCount);
-	if (!NodeCount) return;
-
-	// Fill a temporary buffer with node information needed to build an asset
-	std::unique_ptr<CNodeInfo[]> NodeInfo(new CNodeInfo[NodeCount]);
-	U16 CurrIdx = 0;
-	if (!DFSSecondPass(RootNodeData, NodeInfo.get(), CurrIdx, 0, 0)) return;
-
-	// Sort nodes by alignment and size of static data for optimal packing into a single buffer (see below)
-	std::sort(NodeInfo.get(), NodeInfo.get() + NodeCount, [](const auto& a, const auto& b)
-	{
-		if (a.pRTTI->GetInstanceAlignment() != b.pRTTI->GetInstanceAlignment())
-			return a.pRTTI->GetInstanceAlignment() > b.pRTTI->GetInstanceAlignment();
-		if (a.pRTTI->GetInstanceSize() != b.pRTTI->GetInstanceSize())
-			return a.pRTTI->GetInstanceSize() > b.pRTTI->GetInstanceSize();
-		return a.Index < b.Index;
-	});
-
+	_MaxDepth = MaxDepth;
 	_Nodes.reset(new CNode[NodeCount]);
 
 	// Calculate shared node data memory requirements
 	size_t StaticBytes = 0;
 	for (size_t i = 0; i < NodeCount; ++i)
-		StaticBytes += NodeInfo[i].pRTTI->GetInstanceSize();
+		StaticBytes += pNodeInfo[i].pRTTI->GetInstanceSize();
 
 	// Allocate a single buffer for node implementations
-	const size_t StaticAlignment = std::max(sizeof(void*), NodeInfo[0].pRTTI->GetInstanceAlignment());
+	const size_t StaticAlignment = std::max(sizeof(void*), pNodeInfo[0].pRTTI->GetInstanceAlignment());
 	_NodeImplBuffer.reset(static_cast<std::byte*>(n_malloc_aligned(StaticBytes, StaticAlignment)));
 	auto* pAddr = _NodeImplBuffer.get();
 	for (size_t i = 0; i < NodeCount; ++i)
 	{
-		auto& CurrNodeInfo = NodeInfo[i];
+		auto& CurrNodeInfo = pNodeInfo[i];
 
 		auto* pRTTI = CurrNodeInfo.pRTTI;
 		auto* pNodeImpl = static_cast<CBehaviourTreeNodeBase*>(pRTTI->CreateInstance(pAddr));
-		pNodeImpl->Init(CurrNodeInfo.pData->Params);
+		pNodeImpl->Init(CurrNodeInfo.Params);
 
 		pAddr += pRTTI->GetInstanceSize();
 

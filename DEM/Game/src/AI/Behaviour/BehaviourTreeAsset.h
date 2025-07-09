@@ -17,13 +17,6 @@ namespace DEM::AI
 struct CAIStateComponent;
 class CBehaviourTreePlayer;
 
-struct CBehaviourTreeNodeData
-{
-	CStrID                              ClassName; //TODO: use FourCC?! or register class names in a factory as CStrIDs?!
-	Data::PParams                       Params;
-	std::vector<CBehaviourTreeNodeData> Children;
-};
-
 enum class EBTStatus : U8
 {
 	Running,
@@ -64,6 +57,20 @@ class CBehaviourTreeAsset : public DEM::Core::CObject
 
 public:
 
+	// Temporary data used when loading an asset
+	struct CNodeInfo
+	{
+		CStrID                 ClassName; //TODO: use FourCC?! or register class names in a factory as CStrIDs?!
+		Data::PParams          Params;
+		std::vector<CNodeInfo> Children;  // Don't use, will be already empty when reaches CBehaviourTreeAsset constructor
+
+		const Core::CRTTI*     pRTTI;
+		U16                    Index;
+		U16                    SkipSubtreeIndex;
+		U16                    ParentIndex;
+		U16                    DepthLevel;
+	};
+
 	struct CNode
 	{
 		CBehaviourTreeNodeBase* pNodeImpl;
@@ -82,7 +89,7 @@ protected:
 
 public:
 
-	CBehaviourTreeAsset(CBehaviourTreeNodeData&& RootNodeData);
+	CBehaviourTreeAsset(const CNodeInfo* pNodeInfo, U16 NodeCount, U16 MaxDepth);
 	~CBehaviourTreeAsset();
 
 	U16          GetNodeCount() const { return _Nodes ? _Nodes[0].SkipSubtreeIndex : 0; }
@@ -98,14 +105,14 @@ using PBehaviourTreeAsset = Ptr<CBehaviourTreeAsset>;
 namespace DEM::Meta
 {
 
-template<> constexpr auto RegisterClassName<AI::CBehaviourTreeNodeData>() { return "DEM::AI::CBehaviourTreeNodeData"; }
-template<> constexpr auto RegisterMembers<AI::CBehaviourTreeNodeData>()
+template<> constexpr auto RegisterClassName<AI::CBehaviourTreeAsset::CNodeInfo>() { return "DEM::AI::CBehaviourTreeAsset::CNodeInfo"; }
+template<> constexpr auto RegisterMembers<AI::CBehaviourTreeAsset::CNodeInfo>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(AI::CBehaviourTreeNodeData, ClassName),
-		DEM_META_MEMBER_FIELD(AI::CBehaviourTreeNodeData, Params),
-		DEM_META_MEMBER_FIELD(AI::CBehaviourTreeNodeData, Children)
+		DEM_META_MEMBER_FIELD(AI::CBehaviourTreeAsset::CNodeInfo, ClassName),
+		DEM_META_MEMBER_FIELD(AI::CBehaviourTreeAsset::CNodeInfo, Params),
+		DEM_META_MEMBER_FIELD(AI::CBehaviourTreeAsset::CNodeInfo, Children)
 	);
 }
 
