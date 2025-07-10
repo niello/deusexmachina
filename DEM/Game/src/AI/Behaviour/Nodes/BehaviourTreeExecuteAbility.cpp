@@ -5,6 +5,7 @@
 #include <Game/Interaction/AbilityInstance.h>
 #include <Game/Interaction/InteractionManager.h>
 #include <Game/Interaction/InteractionContext.h>
+#include <AI/AIStateComponent.h>
 //#include <Data/SerializeToParams.h> - deserialize CTargetInfo structure?
 #include <Core/Factory.h>
 
@@ -16,9 +17,8 @@ void CBehaviourTreeExecuteAbility::Init(const Data::CParams* pParams)
 {
 	if (!pParams) return;
 
-	pParams->TryGet(_AbilityID, CStrID("Ability"));
-
-	// Target hardcoded ID / hardcoded list of IDs / BB key
+	ParameterFromData(_AbilityID, *pParams, CStrID("Ability"));
+	//ParameterFromData(_Target, *pParams, CStrID("Target"));
 }
 //---------------------------------------------------------------------
 
@@ -39,24 +39,27 @@ EBTStatus CBehaviourTreeExecuteAbility::Activate(std::byte* pData, const CBehavi
 	// Before everything else because Deactivate always calls a destructor
 	auto& Action = *new(pData) Game::HAction();
 
-	if (!_AbilityID) return EBTStatus::Succeeded;
+	auto& BB = Ctx.pBrain->Blackboard;
+	const auto AbilityID = _AbilityID.Get(BB);
+	if (!AbilityID) return EBTStatus::Succeeded;
 
 	Game::CInteractionManager* pIactMgr = Ctx.Session.FindFeature<Game::CInteractionManager>();
 	if (!pIactMgr) return EBTStatus::Failed;
 
-	// resolve TargetEntityID(s) from hardcode or from BB key
+	//!!!TODO: may not be entity. Build CTargetInfo!
+	const Game::HEntity TargetEntityID = {};// _Target.Get(BB);
 
 	//!!!TODO!
 	CStrID SmartObjectID;
 	// if (auto pSO = pWorld->FindComponent<const Game::CSmartObjectComponent>(TargetEntityID))
 	//	SmartObjectID = pSO->Asset->GetObject<Game::CSmartObject>()->GetID();
 
-	auto pAbility = pIactMgr->FindInteraction(_AbilityID, SmartObjectID);
+	auto pAbility = pIactMgr->FindInteraction(AbilityID, SmartObjectID);
 	if (!pAbility) return EBTStatus::Failed;
 
 	Game::CInteractionContext IactCtx;
 	IactCtx.Actors.push_back(Ctx.ActorID);
-	//IactCtx.Targets.push_back(TargetEntityID);
+	IactCtx.Targets.push_back(TargetEntityID);
 
 	//!!!FIXME: must return HAction? Only abilities? Interactions must not! Or need other way to get HAction from launched ability.
 	if (!pAbility->Execute(Ctx.Session, IactCtx, false)) return EBTStatus::Failed;

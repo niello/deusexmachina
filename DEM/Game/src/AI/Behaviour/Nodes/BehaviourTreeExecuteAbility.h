@@ -1,5 +1,6 @@
 #pragma once
 #include <AI/Behaviour/Nodes/BehaviourTreeAIActionBase.h>
+#include <AI/Parameter.h>
 
 // A leaf BT action that executes an ability by ID
 
@@ -12,8 +13,8 @@ class CBehaviourTreeExecuteAbility : public CBehaviourTreeAIActionBase
 
 protected:
 
-	CStrID _AbilityID; //???allow BB key too?
-	// Hardcoded targets or BB key, may be position, may need no target at all
+	CParameter<CStrID>        _AbilityID;
+	//CParameter<Game::HEntity> _Target; //!!!TODO: hardcoded target or multiple, or BB key, may be position, may need no target at all
 
 public:
 

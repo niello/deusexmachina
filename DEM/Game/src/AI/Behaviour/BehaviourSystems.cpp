@@ -2,7 +2,6 @@
 #include <Game/ECS/GameWorld.h>
 #include <AI/Behaviour/BehaviourTreeComponent.h>
 #include <AI/Behaviour/BehaviourTreeAsset.h>
-#include <AI/AIStateComponent.h>
 
 namespace DEM::AI
 {
@@ -17,9 +16,7 @@ void InitCharacterAIThinking(Game::CGameWorld& World, Game::CGameSession& Sessio
 		if (auto* pBTAsset = Component.Asset->ValidateObject<CBehaviourTreeAsset>())
 		{
 			Component.Player.SetAsset(pBTAsset);
-
-			if (auto* pBrain = World.FindComponent<CAIStateComponent>(EntityID))
-				Component.Player.Start(Session, EntityID);
+			Component.Player.Start(Session, EntityID);
 		}
 	});
 }

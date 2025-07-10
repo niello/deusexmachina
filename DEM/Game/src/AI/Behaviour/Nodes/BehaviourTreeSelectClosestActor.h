@@ -18,7 +18,7 @@ protected:
 		float TimeToNextUpdate = 0.f;
 	};
 
-	CStrID _BBKey;
+	CStrID _DestBBKey;
 	float  _Period = 1.5f; // seconds between updates
 
 	void DoSelection(const CBehaviourTreeContext& Ctx, CInstanceData& Data) const;

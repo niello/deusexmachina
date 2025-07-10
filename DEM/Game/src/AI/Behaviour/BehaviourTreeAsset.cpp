@@ -37,7 +37,7 @@ CBehaviourTreeAsset::CBehaviourTreeAsset(std::vector<CNodeInfo>&& NodeInfo)
 	{
 		auto* pRTTI = CurrNodeInfo.pRTTI;
 		auto* pNodeImpl = static_cast<CBehaviourTreeNodeBase*>(pRTTI->CreateInstance(pAddr));
-		pNodeImpl->Init(CurrNodeInfo.Params);
+		pNodeImpl->Init(CurrNodeInfo.Params.Get());
 
 		pAddr += pRTTI->GetInstanceSize();
 

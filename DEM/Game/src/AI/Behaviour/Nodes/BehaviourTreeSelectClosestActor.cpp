@@ -126,7 +126,7 @@ void CBehaviourTreeSelectClosestActor::Init(const Data::CParams* pParams)
 {
 	if (!pParams) return;
 
-	pParams->TryGet(_BBKey, CStrID("BBKey"));
+	pParams->TryGet(_DestBBKey, CStrID("DestBBKey"));
 	pParams->TryGet(_Period, CStrID("Period"));
 }
 //---------------------------------------------------------------------
@@ -148,7 +148,7 @@ void CBehaviourTreeSelectClosestActor::DoSelection(const CBehaviourTreeContext& 
 	const auto FoundID = FindClosestActor(Ctx);
 
 	//???TODO: in OnTreeStarted cache BB key HVar?
-	Ctx.pBrain->Blackboard.Set(_BBKey, static_cast<int>(FoundID.Raw));
+	Ctx.pBrain->Blackboard.Set(_DestBBKey, static_cast<int>(FoundID.Raw));
 
 	Data.TimeToNextUpdate = _Period;
 	//Data.FactsVersion = Ctx.pBrain->FactsVersion;
@@ -160,7 +160,7 @@ EBTStatus CBehaviourTreeSelectClosestActor::Activate(std::byte* pData, const CBe
 	// Before everything else because Deactivate always calls a destructor
 	auto& Data = *new(pData) CInstanceData();
 
-	if (_BBKey) DoSelection(Ctx, Data);
+	if (_DestBBKey) DoSelection(Ctx, Data);
 
 	// We are merely a service that provides data to the underlying subtree, always proceed to it
 	return EBTStatus::Running;
@@ -170,7 +170,7 @@ EBTStatus CBehaviourTreeSelectClosestActor::Activate(std::byte* pData, const CBe
 void CBehaviourTreeSelectClosestActor::Deactivate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
 	//!!!TODO: need to check if should clear BB record!
-	if (_BBKey) Ctx.pBrain->Blackboard.Set(_BBKey, static_cast<int>(Game::HEntity{}.Raw));
+	if (_DestBBKey) Ctx.pBrain->Blackboard.Set(_DestBBKey, static_cast<int>(Game::HEntity{}.Raw));
 
 	std::destroy_at(reinterpret_cast<CInstanceData*>(pData));
 }
