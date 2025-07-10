@@ -238,7 +238,7 @@ public:
 
 	EActionStatus GetStatus(HAction Handle) const
 	{
-		if (!Handle) return EActionStatus::NotQueued;
+		if (!Handle || _Stack.empty()) return EActionStatus::NotQueued;
 		if (Handle._It == &_Stack.back()) return _Status;
 		return EActionStatus::Active;
 	}

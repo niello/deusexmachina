@@ -156,6 +156,7 @@ private:
 	}
 
 	// TODO: can use ParamsFormat::Deserialize to read entity IDs etc? Iterate over TVarTypes and try to apply value from data if its HRDType matches?
+	//       Currently relies on hardly controllable best match deserialization that requires specific constructors to work (e.g. Game::HEntity from int).
 	bool TrySetValue(const Data::CData* pValue)
 	{
 		if (!pValue) return false;

@@ -47,6 +47,18 @@ public:
 
 		H Raw = INVALID_HANDLE_VALUE;
 
+		constexpr CHandle() = default;
+
+		template<typename H_, typename = std::enable_if_t<std::is_integral_v<H_>>>
+		explicit constexpr CHandle(H_ Raw_) : Raw(Raw_) {}
+
+		template<typename H_, typename = std::enable_if_t<std::is_integral_v<H_>>>
+		CHandle& operator =(H_ Raw_) noexcept
+		{
+			Raw = Raw_;
+			return *this;
+		}
+
 		bool operator <(CHandle Other) const { return Raw < Other.Raw; }
 		bool operator ==(CHandle Other) const { return Raw == Other.Raw; }
 		bool operator !=(CHandle Other) const { return Raw != Other.Raw; }
@@ -54,7 +66,7 @@ public:
 		operator H() const { return Raw; }
 	};
 
-	static constexpr CHandle INVALID_HANDLE = { INVALID_HANDLE_VALUE };
+	static constexpr CHandle INVALID_HANDLE { INVALID_HANDLE_VALUE };
 
 protected:
 
@@ -237,14 +249,14 @@ public:
 			AddRangeToFreeList(0, Size - 1);
 	}
 
-	CHandle Allocate() { return { AllocateEmpty() }; }
+	CHandle Allocate() { return CHandle{ AllocateEmpty() }; }
 
 	CHandle Allocate(T&& Value)
 	{
 		auto Handle = AllocateEmpty();
 		if (Handle != MAX_CAPACITY)
 			_Records[Handle & INDEX_BITS_MASK].Value = std::move(Value);
-		return { Handle };
+		return CHandle{ Handle };
 	}
 
 	CHandle Allocate(const T& Value)
@@ -252,7 +264,7 @@ public:
 		auto Handle = AllocateEmpty();
 		if (Handle != MAX_CAPACITY)
 			_Records[Handle & INDEX_BITS_MASK].Value = Value;
-		return { Handle };
+		return CHandle{ Handle };
 	}
 
 	bool Free(CHandle Handle)
@@ -355,9 +367,9 @@ public:
 	// NB: advanced method, increased risk!
 	CHandle AllocateWithHandle(H Handle, const T& Value)
 	{
-		if (!AllocateEmptyAt(Handle)) return { INVALID_HANDLE_VALUE };
+		if (!AllocateEmptyAt(Handle)) return CHandle{ INVALID_HANDLE_VALUE };
 		_Records[Handle & INDEX_BITS_MASK].Value = Value;
-		return { Handle };
+		return CHandle{ Handle };
 	}
 
 	// Store the value with the specified handle. Useful for serialization and replication.
@@ -365,9 +377,9 @@ public:
 	// NB: advanced method, increased risk!
 	CHandle AllocateWithHandle(H Handle, T&& Value)
 	{
-		if (!AllocateEmptyAt(Handle)) return { INVALID_HANDLE_VALUE };
+		if (!AllocateEmptyAt(Handle)) return CHandle{ INVALID_HANDLE_VALUE };
 		_Records[Handle & INDEX_BITS_MASK].Value = std::move(Value);
-		return { Handle };
+		return CHandle{ Handle };
 	}
 
 	void Clear(size_t NewInitialSize = 0)
@@ -485,7 +497,7 @@ protected:
 			else
 			{
 				const auto Index = static_cast<size_t>(std::distance(_Storage.begin(), _It));
-				_Current = { _It->Value, { (_It->HandleData & REUSE_BITS_MASK) | Index } };
+				_Current = { _It->Value, CHandle{ (_It->HandleData & REUSE_BITS_MASK) | Index } };
 			}
 		}
 	};

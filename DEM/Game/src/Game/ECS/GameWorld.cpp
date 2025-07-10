@@ -230,7 +230,7 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 			// Entity is explicitly deleted. Remove it and all its components.
 			// Entity is always named as __UID. Skip leading "__".
 			const auto RawHandle = static_cast<CEntityStorage::THandleValue>(std::atoi(EntityParam.GetName().CStr() + 2));
-			DeleteEntity({ RawHandle });
+			DeleteEntity(HEntity{ RawHandle });
 		}
 		else
 		{
@@ -258,15 +258,15 @@ void CGameWorld::LoadDiff(IO::PStream InStream)
 	std::unordered_set<HEntity> Deleted;
 	Deleted.reserve(_EntitiesBase.size()); // Cant mark deleted more entities than in base
 
-	HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
+	HEntity EntityID { In.Read<decltype(HEntity::Raw)>() };
 	while (EntityID)
 	{
 		Deleted.insert(EntityID);
-		EntityID = { In.Read<decltype(HEntity::Raw)>() };
+		EntityID = HEntity{ In.Read<decltype(HEntity::Raw)>() };
 	}
 
 	// Read added / modified entity list
-	EntityID = { In.Read<decltype(HEntity::Raw)>() };
+	EntityID = HEntity{ In.Read<decltype(HEntity::Raw)>() };
 	while (EntityID)
 	{
 		auto pBaseEntity = _EntitiesBase.GetValue(EntityID);
@@ -276,7 +276,7 @@ void CGameWorld::LoadDiff(IO::PStream InStream)
 		const auto NewEntityID = _Entities.AllocateWithHandle(EntityID, std::move(NewEntity));
 		n_assert_dbg(NewEntityID && NewEntityID == EntityID);
 
-		EntityID = { In.Read<decltype(HEntity::Raw)>() };
+		EntityID = HEntity{ In.Read<decltype(HEntity::Raw)>() };
 	}
 
 	// Copy unchanged entities from the base state

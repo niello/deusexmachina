@@ -680,15 +680,15 @@ public:
 			ClearDiff();
 
 			// Remove components listed as deleted
-			HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
+			HEntity EntityID{ In.Read<decltype(HEntity::Raw)>() };
 			while (EntityID)
 			{
 				RemoveComponent(EntityID);
-				EntityID = { In.Read<decltype(HEntity::Raw)>() };
+				EntityID = HEntity{ In.Read<decltype(HEntity::Raw)>() };
 			}
 
 			// Load diff data for added and modified components
-			EntityID = { In.Read<decltype(HEntity::Raw)>() };
+			EntityID = HEntity{ In.Read<decltype(HEntity::Raw)>() };
 			while (EntityID)
 			{
 				auto It = _IndexByEntity.find(EntityID);
@@ -720,7 +720,7 @@ public:
 					In.GetStream().Read(IndexRecord.DiffData.GetPtr(), IndexRecord.DiffDataSize);
 				}
 
-				EntityID = { In.Read<decltype(HEntity::Raw)>() };
+				EntityID = HEntity{ In.Read<decltype(HEntity::Raw)>() };
 			}
 
 			return true;
@@ -1142,21 +1142,21 @@ public:
 		_IndexByEntity.clear();
 
 		// Read explicitly deleted list
-		HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
+		HEntity EntityID{ In.Read<decltype(HEntity::Raw)>() };
 		while (EntityID)
 		{
 			n_assert_dbg(!_IndexByEntity.find(EntityID));
 			_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Deleted, EComponentState::Deleted });
-			EntityID = { In.Read<decltype(HEntity::Raw)>() };
+			EntityID = HEntity{ In.Read<decltype(HEntity::Raw)>() };
 		}
 
 		// Read explicitly added list
-		EntityID = { In.Read<decltype(HEntity::Raw)>() };
+		EntityID = HEntity{ In.Read<decltype(HEntity::Raw)>() };
 		while (EntityID)
 		{
 			n_assert_dbg(!_IndexByEntity.find(EntityID));
 			_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Explicit, EComponentState::Explicit });
-			EntityID = { In.Read<decltype(HEntity::Raw)>() };
+			EntityID = HEntity{ In.Read<decltype(HEntity::Raw)>() };
 		}
 
 		return true;
@@ -1168,25 +1168,25 @@ public:
 		ClearDiff();
 
 		// Read explicitly deleted list
-		HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
+		HEntity EntityID{ In.Read<decltype(HEntity::Raw)>() };
 		while (EntityID)
 		{
 			if (auto It = _IndexByEntity.find(EntityID))
 				It->Value.State = EComponentState::Deleted;
 			else
 				_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Deleted, EComponentState::NoBase });
-			EntityID = { In.Read<decltype(HEntity::Raw)>() };
+			EntityID = HEntity{ In.Read<decltype(HEntity::Raw)>() };
 		}
 
 		// Read explicitly added list
-		EntityID = { In.Read<decltype(HEntity::Raw)>() };
+		EntityID = HEntity{ In.Read<decltype(HEntity::Raw)>() };
 		while (EntityID)
 		{
 			if (auto It = _IndexByEntity.find(EntityID))
 				It->Value.State = EComponentState::Explicit;
 			else
 				_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Explicit, EComponentState::NoBase });
-			EntityID = { In.Read<decltype(HEntity::Raw)>() };
+			EntityID = HEntity{ In.Read<decltype(HEntity::Raw)>() };
 		}
 
 		return true;
