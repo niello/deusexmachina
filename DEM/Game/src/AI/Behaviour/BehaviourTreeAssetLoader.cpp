@@ -11,34 +11,40 @@ namespace Resources
 {
 using CBTNodeInfo = DEM::AI::CBehaviourTreeAsset::CNodeInfo;
 
-static bool DFSUnwrapAndPrepareNodes(const Data::CData& CurrNodeData, std::vector<CBTNodeInfo>& NodeInfo, U16 DepthLevel)
+static bool DFSUnwrapAndPrepareNodes(const Data::CData& CurrNodeData, std::vector<CBTNodeInfo>& NodeInfo, U16 DepthLevel, U16 ParentIndex)
 {
-	auto& CurrNodeInfo = NodeInfo.emplace_back();
-	DEM::ParamsFormat::Deserialize(CurrNodeData, CurrNodeInfo);
+	const auto Index = static_cast<U16>(NodeInfo.size());
 
-	//???store all basic nodes in one header? implementations can be very simple and defined right in headers
-	//???register basic nodes with easy to read IDs like basic conditions are registered in RegisterCondition? First try them, then the factory.
-	// TODO: (de)serialization for RTTI? From string or int hash/FourCC.
-	CurrNodeInfo.pRTTI = DEM::Core::CFactory::Instance().GetRTTI(CurrNodeInfo.ClassName.CStr()); // TODO: use CStrID in factory
-	if (!CurrNodeInfo.pRTTI || !CurrNodeInfo.pRTTI->IsDerivedFrom(DEM::AI::CBehaviourTreeNodeBase::RTTI))
 	{
-		::Sys::Error("Behaviour tree node class is not found or is not a subclass of CBehaviourTreeNodeBase");
-		return false;
+		auto& CurrNodeInfo = NodeInfo.emplace_back();
+		DEM::ParamsFormat::Deserialize(CurrNodeData, CurrNodeInfo);
+
+		//???store all basic nodes in one header? implementations can be very simple and defined right in headers
+		//???register basic nodes with easy to read IDs like basic conditions are registered in RegisterCondition? First try them, then the factory.
+		// TODO: (de)serialization for RTTI? From string or int hash/FourCC.
+		CurrNodeInfo.pRTTI = DEM::Core::CFactory::Instance().GetRTTI(CurrNodeInfo.ClassName.CStr()); // TODO: use CStrID in factory
+		if (!CurrNodeInfo.pRTTI || !CurrNodeInfo.pRTTI->IsDerivedFrom(DEM::AI::CBehaviourTreeNodeBase::RTTI))
+		{
+			::Sys::Error("Behaviour tree node class is not found or is not a subclass of CBehaviourTreeNodeBase");
+			return false;
+		}
+
+		CurrNodeInfo.DepthLevel = DepthLevel;
+		CurrNodeInfo.ParentIndex = ParentIndex;
+		CurrNodeInfo.Index = Index;
+
+		if (auto* pParams = CurrNodeData.As<Data::PParams>())
+		{
+			Data::PDataArray ChildrenDesc;
+			if ((*pParams)->TryGet(ChildrenDesc, CStrID("Children")))
+				for (const auto& ChildDesc : *ChildrenDesc)
+					if (!DFSUnwrapAndPrepareNodes(ChildDesc, NodeInfo, DepthLevel + 1, Index))
+						return false;
+		}
 	}
 
-	CurrNodeInfo.DepthLevel = DepthLevel;
-	CurrNodeInfo.Index = static_cast<U16>(NodeInfo.size() - 1); // To preserve DFS indices after sorting node info array
-
-	if (auto* pParams = CurrNodeData.As<Data::PParams>())
-	{
-		Data::PDataArray ChildrenDesc;
-		if ((*pParams)->TryGet(ChildrenDesc, CStrID("Children")))
-			for (const auto& ChildDesc : *ChildrenDesc)
-				if (!DFSUnwrapAndPrepareNodes(ChildDesc, NodeInfo, DepthLevel + 1))
-					return false;
-	}
-
-	CurrNodeInfo.SkipSubtreeIndex = static_cast<U16>(NodeInfo.size());
+	// NB: CurrNodeInfo would be invalid here due to possible vector reallocations
+	NodeInfo[Index].SkipSubtreeIndex = static_cast<U16>(NodeInfo.size());
 
 	return true;
 }
@@ -74,7 +80,7 @@ DEM::Core::PObject CBehaviourTreeAssetLoader::CreateResource(CStrID UID)
 
 	// Parse root, recurse to the hierarchy
 	std::vector<CBTNodeInfo> NodeInfo;
-	if (!DFSUnwrapAndPrepareNodes(pRootDesc->GetRawValue(), NodeInfo, 0)) return nullptr;
+	if (!DFSUnwrapAndPrepareNodes(pRootDesc->GetRawValue(), NodeInfo, 0, 0)) return nullptr;
 
 	if (NodeInfo.empty()) return nullptr;
 
