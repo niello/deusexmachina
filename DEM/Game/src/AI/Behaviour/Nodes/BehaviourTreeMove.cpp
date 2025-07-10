@@ -81,6 +81,7 @@ EBTStatus CBehaviourTreeMove::Activate(std::byte* pData, const CBehaviourTreeCon
 	if (_IgnoreNavigation || !pWorld->FindComponent<const AI::CNavAgentComponent>(Ctx.ActorID))
 	{
 		Ctx.pActuator->EnqueueAction<AI::Steer>(*OptPos, *OptPos, 0.f);
+		Ctx.pActuator->RunNextAction(); // FIXME: hack!
 
 		//!!!FIXME: we don't even know if it is our action!
 		Action = Ctx.pActuator->FindCurrent<AI::Steer>();
@@ -88,6 +89,7 @@ EBTStatus CBehaviourTreeMove::Activate(std::byte* pData, const CBehaviourTreeCon
 	else
 	{
 		Ctx.pActuator->EnqueueAction<AI::Navigate>(*OptPos, 0.f);
+		Ctx.pActuator->RunNextAction(); // FIXME: hack!
 
 		//!!!FIXME: we don't even know if it is our action!
 		Action = Ctx.pActuator->FindCurrent<AI::Navigate>();

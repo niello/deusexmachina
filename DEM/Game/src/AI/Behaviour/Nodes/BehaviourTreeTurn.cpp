@@ -90,6 +90,7 @@ EBTStatus CBehaviourTreeTurn::Activate(std::byte* pData, const CBehaviourTreeCon
 
 	Ctx.pActuator->Reset();
 	Ctx.pActuator->EnqueueAction<AI::Turn>(*OptDir, AI::Turn::AngularTolerance);
+	Ctx.pActuator->RunNextAction(); // FIXME: hack!
 
 	//!!!FIXME: we don't even know if it is our action!
 	Action = Ctx.pActuator->FindCurrent<AI::Turn>();

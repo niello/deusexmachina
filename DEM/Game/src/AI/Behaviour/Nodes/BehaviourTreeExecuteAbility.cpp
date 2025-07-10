@@ -67,6 +67,8 @@ EBTStatus CBehaviourTreeExecuteAbility::Activate(std::byte* pData, const CBehavi
 	//!!!also has pAIState->_AbilityInstance but there is no status there! At least now.
 	if (Ctx.pActuator)
 	{
+		Ctx.pActuator->RunNextAction(); // FIXME: hack!
+
 		//!!!FIXME: we don't even know if it is our action!
 		Action = Ctx.pActuator->FindCurrent<Game::ExecuteAbility>();
 		return ActionStatusToBTStatus(Ctx.pActuator->GetStatus(Action));
