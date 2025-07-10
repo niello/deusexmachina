@@ -5,26 +5,36 @@
 namespace DEM::AI
 {
 
-CBehaviourTreeAsset::CBehaviourTreeAsset(const CNodeInfo* pNodeInfo, U16 NodeCount, U16 MaxDepth)
+CBehaviourTreeAsset::CBehaviourTreeAsset(std::vector<CNodeInfo>&& NodeInfo)
 {
-	n_assert_dbg(pNodeInfo && NodeCount && MaxDepth);
+	n_assert_dbg(!NodeInfo.empty());
 
-	_MaxDepth = MaxDepth;
-	_Nodes.reset(new CNode[NodeCount]);
+	_MaxDepth = std::max_element(NodeInfo.begin(), NodeInfo.end(), [](const CNodeInfo& a, const CNodeInfo& b) { return a.DepthLevel < b.DepthLevel; })->DepthLevel + 1;
+
+	// Sort nodes by alignment and size of static data for optimal packing into a single buffer (see below)
+	std::sort(NodeInfo.begin(), NodeInfo.end(), [](const auto& a, const auto& b)
+	{
+		if (a.pRTTI->GetInstanceAlignment() != b.pRTTI->GetInstanceAlignment())
+			return a.pRTTI->GetInstanceAlignment() > b.pRTTI->GetInstanceAlignment();
+		if (a.pRTTI->GetInstanceSize() != b.pRTTI->GetInstanceSize())
+			return a.pRTTI->GetInstanceSize() > b.pRTTI->GetInstanceSize();
+		return a.Index < b.Index;
+	});
+
+	_Nodes.reset(new CNode[NodeInfo.size()]);
 
 	// Calculate shared node data memory requirements
 	size_t StaticBytes = 0;
-	for (size_t i = 0; i < NodeCount; ++i)
-		StaticBytes += pNodeInfo[i].pRTTI->GetInstanceSize();
+	for (const auto& CurrNodeInfo : NodeInfo)
+		StaticBytes += CurrNodeInfo.pRTTI->GetInstanceSize();
 
 	// Allocate a single buffer for node implementations
-	const size_t StaticAlignment = std::max(sizeof(void*), pNodeInfo[0].pRTTI->GetInstanceAlignment());
+	const size_t MaxNodeAlignment = NodeInfo[0].pRTTI->GetInstanceAlignment();
+	const size_t StaticAlignment = std::max(sizeof(void*), MaxNodeAlignment);
 	_NodeImplBuffer.reset(static_cast<std::byte*>(n_malloc_aligned(StaticBytes, StaticAlignment)));
 	auto* pAddr = _NodeImplBuffer.get();
-	for (size_t i = 0; i < NodeCount; ++i)
+	for (const auto& CurrNodeInfo : NodeInfo)
 	{
-		auto& CurrNodeInfo = pNodeInfo[i];
-
 		auto* pRTTI = CurrNodeInfo.pRTTI;
 		auto* pNodeImpl = static_cast<CBehaviourTreeNodeBase*>(pRTTI->CreateInstance(pAddr));
 		pNodeImpl->Init(CurrNodeInfo.Params);
@@ -44,7 +54,7 @@ CBehaviourTreeAsset::CBehaviourTreeAsset(const CNodeInfo* pNodeInfo, U16 NodeCou
 		constexpr size_t MinInstanceAlignment = sizeof(void*); // 1;?
 		std::vector<std::pair<size_t, size_t>> Stack; // Running total byte count, subtree skip index
 		size_t CurrIndex = 0;
-		Stack.push_back({ 0, NodeCount });
+		Stack.push_back({ 0, NodeInfo.size() });
 		while (!Stack.empty())
 		{
 			// First get accumulated size of parents

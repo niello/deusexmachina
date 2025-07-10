@@ -11,42 +11,34 @@ namespace Resources
 {
 using CBTNodeInfo = DEM::AI::CBehaviourTreeAsset::CNodeInfo;
 
-static void DFSCoundNodesAndDepth(const CBTNodeInfo& CurrNodeData, U16 Depth, U16& NodeCount, U16& MaxDepth)
+static bool DFSUnwrapAndPrepareNodes(const Data::CData& CurrNodeData, std::vector<CBTNodeInfo>& NodeInfo, U16 DepthLevel)
 {
-	++NodeCount;
-	if (MaxDepth < Depth) MaxDepth = Depth;
+	auto& CurrNodeInfo = NodeInfo.emplace_back();
+	DEM::ParamsFormat::Deserialize(CurrNodeData, CurrNodeInfo);
 
-	for (const auto& ChildNodeData : CurrNodeData.Children)
-		DFSCoundNodesAndDepth(ChildNodeData, Depth + 1, NodeCount, MaxDepth);
-}
-//---------------------------------------------------------------------
-
-static bool DFSUnwrapAndPrepareNodes(CBTNodeInfo& CurrNodeData, CBTNodeInfo* pNodeData, U16& CurrIdx, U16 ParentIndex, U16 DepthLevel)
-{
 	//???store all basic nodes in one header? implementations can be very simple and defined right in headers
 	//???register basic nodes with easy to read IDs like basic conditions are registered in RegisterCondition? First try them, then the factory.
 	// TODO: (de)serialization for RTTI? From string or int hash/FourCC.
-	CurrNodeData.pRTTI = DEM::Core::CFactory::Instance().GetRTTI(CurrNodeData.ClassName.CStr()); // TODO: use CStrID in factory
-	if (!CurrNodeData.pRTTI || !CurrNodeData.pRTTI->IsDerivedFrom(DEM::AI::CBehaviourTreeNodeBase::RTTI))
+	CurrNodeInfo.pRTTI = DEM::Core::CFactory::Instance().GetRTTI(CurrNodeInfo.ClassName.CStr()); // TODO: use CStrID in factory
+	if (!CurrNodeInfo.pRTTI || !CurrNodeInfo.pRTTI->IsDerivedFrom(DEM::AI::CBehaviourTreeNodeBase::RTTI))
 	{
 		::Sys::Error("Behaviour tree node class is not found or is not a subclass of CBehaviourTreeNodeBase");
 		return false;
 	}
 
-	// To preserve DFS indices after sorting node info array
-	CurrNodeData.Index = CurrIdx;
+	CurrNodeInfo.DepthLevel = DepthLevel;
+	CurrNodeInfo.Index = static_cast<U16>(NodeInfo.size() - 1); // To preserve DFS indices after sorting node info array
 
-	for (auto& ChildNodeData : CurrNodeData.Children)
+	if (auto* pParams = CurrNodeData.As<Data::PParams>())
 	{
-		pNodeData[++CurrIdx] = std::move(ChildNodeData);
-		if (!DFSUnwrapAndPrepareNodes(pNodeData[++CurrIdx], pNodeData, ++CurrIdx, CurrNodeData.Index, DepthLevel + 1))
-			return false;
+		Data::PDataArray ChildrenDesc;
+		if ((*pParams)->TryGet(ChildrenDesc, CStrID("Children")))
+			for (const auto& ChildDesc : *ChildrenDesc)
+				if (!DFSUnwrapAndPrepareNodes(ChildDesc, NodeInfo, DepthLevel + 1))
+					return false;
 	}
 
-	// Children are DFS-unwrapped
-	std::exchange(CurrNodeData.Children, {});
-
-	CurrNodeData.SkipSubtreeIndex = CurrIdx;
+	CurrNodeInfo.SkipSubtreeIndex = static_cast<U16>(NodeInfo.size());
 
 	return true;
 }
@@ -81,34 +73,12 @@ DEM::Core::PObject CBehaviourTreeAssetLoader::CreateResource(CStrID UID)
 	if (!pRootDesc) return nullptr;
 
 	// Parse root, recurse to the hierarchy
-	// TODO: immediately unwrap with DFS?
 	std::vector<CBTNodeInfo> NodeInfo;
-	NodeInfo.resize(1);
-	DEM::ParamsFormat::Deserialize(pRootDesc->GetRawValue(), NodeInfo[0]);
+	if (!DFSUnwrapAndPrepareNodes(pRootDesc->GetRawValue(), NodeInfo, 0)) return nullptr;
 
-	U16 NodeCount = 0;
-	U16 MaxDepth = 0;
-	DFSCoundNodesAndDepth(NodeInfo[0], 1, NodeCount, MaxDepth);
+	if (NodeInfo.empty()) return nullptr;
 
-	n_assert_dbg(NodeCount && MaxDepth);
-	if (!NodeCount || !MaxDepth) return nullptr;
-
-	NodeInfo.resize(NodeCount);
-
-	U16 CurrIdx = 0;
-	if (!DFSUnwrapAndPrepareNodes(NodeInfo[0], NodeInfo.data(), CurrIdx, 0, 0)) return nullptr;
-
-	// Sort nodes by alignment and size of static data for optimal packing into a single buffer (see below)
-	std::sort(NodeInfo.begin(), NodeInfo.end(), [](const auto& a, const auto& b)
-	{
-		if (a.pRTTI->GetInstanceAlignment() != b.pRTTI->GetInstanceAlignment())
-			return a.pRTTI->GetInstanceAlignment() > b.pRTTI->GetInstanceAlignment();
-		if (a.pRTTI->GetInstanceSize() != b.pRTTI->GetInstanceSize())
-			return a.pRTTI->GetInstanceSize() > b.pRTTI->GetInstanceSize();
-		return a.Index < b.Index;
-	});
-
-	return new DEM::AI::CBehaviourTreeAsset(NodeInfo.data(), NodeCount, MaxDepth);
+	return new DEM::AI::CBehaviourTreeAsset(std::move(NodeInfo));
 }
 //---------------------------------------------------------------------
 

@@ -60,9 +60,8 @@ public:
 	// Temporary data used when loading an asset
 	struct CNodeInfo
 	{
-		CStrID                 ClassName; //TODO: use FourCC?! or register class names in a factory as CStrIDs?!
+		CStrID                 ClassName; //TODO: use FourCC?! or register class names in a factory as CStrIDs?! or deserialize CRTTI?
 		Data::PParams          Params;
-		std::vector<CNodeInfo> Children;  // Don't use, will be already empty when reaches CBehaviourTreeAsset constructor
 
 		const Core::CRTTI*     pRTTI;
 		U16                    Index;
@@ -89,7 +88,7 @@ protected:
 
 public:
 
-	CBehaviourTreeAsset(const CNodeInfo* pNodeInfo, U16 NodeCount, U16 MaxDepth);
+	CBehaviourTreeAsset(std::vector<CNodeInfo>&& NodeInfo);
 	~CBehaviourTreeAsset();
 
 	U16          GetNodeCount() const { return _Nodes ? _Nodes[0].SkipSubtreeIndex : 0; }
@@ -111,8 +110,7 @@ template<> constexpr auto RegisterMembers<AI::CBehaviourTreeAsset::CNodeInfo>()
 	return std::make_tuple
 	(
 		DEM_META_MEMBER_FIELD(AI::CBehaviourTreeAsset::CNodeInfo, ClassName),
-		DEM_META_MEMBER_FIELD(AI::CBehaviourTreeAsset::CNodeInfo, Params),
-		DEM_META_MEMBER_FIELD(AI::CBehaviourTreeAsset::CNodeInfo, Children)
+		DEM_META_MEMBER_FIELD(AI::CBehaviourTreeAsset::CNodeInfo, Params)
 	);
 }
 
