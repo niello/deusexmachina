@@ -1,9 +1,7 @@
 #pragma once
 #include <Data/RefCounted.h>
-#include <Data/Regions.h>
 #include <Game/ECS/Entity.h>
 #include <Frame/GraphicsScene.h>
-#include <Math/AABB.h>
 
 // Represents one game location. Consists of subsystem worlds (scene, graphics, physics, AI).
 // In MVC pattern it is a model.
@@ -104,64 +102,6 @@ public:
 	Physics::CPhysicsLevel*  GetPhysics() const { return _PhysicsLevel.Get(); }
 	AI::CAILevel*            GetAI() const { return _AILevel.Get(); }
 	AI::CNavMap*             GetNavMap(float AgentRadius, float AgentHeight) const;
-};
-
-}
-
-
-//////////////// TODO: REMOVE ///////////////////////////////
-#include <Events/EventDispatcher.h>
-
-namespace Data
-{
-	class CParams;
-}
-
-namespace Scripting
-{
-	typedef Ptr<class CScriptObject> PScriptObject;
-}
-
-namespace Game
-{
-class CEntity;
-
-class CGameLevel: public Events::CEventDispatcher, public Data::CRefCounted
-{
-protected:
-
-	CStrID						ID;
-	CString						Name;
-	Events::PSub				GlobalSub;
-	Scripting::PScriptObject	Script;
-
-	Scene::PSceneNode			SceneRoot;
-	Physics::PPhysicsLevel		PhysicsLevel;
-	//AI::PAILevel				AILevel;
-
-public:
-
-	CGameLevel();
-	virtual ~CGameLevel();
-
-	bool					Load(CStrID LevelID, const Data::CParams& Desc);
-	void					Term();
-	bool					Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc = nullptr);
-	//void					RenderDebug();
-
-	//!!!ensure there are SPS-accelerated queries!
-	// Screen queries
-	//???pass camera? or move to view? here is more universal, but may need renaming as there is no "screen" at the server part
-	//can add shortcut methods to a View, with these names, calling renamed level methods with a view camera
-	bool					GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset = nullptr) const;
-	bool					GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const;
-
-	CStrID					GetID() const { return ID; }
-	const CString&			GetName() const { return Name; }
-
-	Scene::CSceneNode*		GetSceneRoot() { return SceneRoot.Get(); }
-	Physics::CPhysicsLevel*	GetPhysics() const { return PhysicsLevel.Get(); }
-	//AI::CAILevel*			GetAI() const { return AILevel.Get(); }
 };
 
 }

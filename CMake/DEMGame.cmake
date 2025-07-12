@@ -41,13 +41,11 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/App/AppFSM.h
 	DEM/Game/src/App/AppStateVideo.h
 	DEM/Game/src/App/StateHandler.h
-	DEM/Game/src/Game/Entity.h
 	DEM/Game/src/Game/GameLevel.h
 	DEM/Game/src/Game/GameSession.h
 	DEM/Game/src/Game/GameState.h
 	DEM/Game/src/Game/GameStateManager.h
 	DEM/Game/src/Game/GameVarStorage.h
-	DEM/Game/src/Game/Property.h
 	DEM/Game/src/Game/SessionVars.h
 	DEM/Game/src/Game/ECS/ComponentObserver.h
 	DEM/Game/src/Game/ECS/ComponentStorage.h
@@ -73,11 +71,8 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/Objects/SmartObjectComponent.h
 	DEM/Game/src/Game/Objects/SmartObjectLoader.h
 	DEM/Game/src/Physics/CharacterControllerComponent.h
-	DEM/Game/src/Physics/PropTrigger.h
 	DEM/Game/src/Physics/RigidBodyComponent.h
 	DEM/Game/src/Scene/SceneComponent.h
-	DEM/Game/src/Scripting/EntityScriptObject.h
-	DEM/Game/src/Scripting/PropScriptable.h
 	DEM/Game/src/Scripting/SolGame.h
 	DEM/Game/src/Scripting/Flow/Condition.h
 	DEM/Game/src/Scripting/Flow/ConditionRegistry.h
@@ -124,11 +119,9 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/App/AppFSM.cpp
 	DEM/Game/src/App/AppStateVideo.cpp
 	DEM/Game/src/Game/ActionQueueSystem.cpp
-	DEM/Game/src/Game/EntityOld.cpp
 	DEM/Game/src/Game/GameLevel.cpp
 	DEM/Game/src/Game/GameSession.cpp
 	DEM/Game/src/Game/GameStateManager.cpp
-	DEM/Game/src/Game/Property.cpp
 	DEM/Game/src/Game/ECS/EntityTemplateLoader.cpp
 	DEM/Game/src/Game/ECS/GameWorld.cpp
 	DEM/Game/src/Game/Interaction/Ability.cpp
@@ -143,12 +136,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/Objects/SmartObjectLoader.cpp
 	DEM/Game/src/Game/Objects/SmartObjectSystem.cpp
 	DEM/Game/src/Physics/PhysicsSystems.cpp
-	DEM/Game/src/Physics/PropTrigger.cpp
-	DEM/Game/src/Physics/PropTriggerSI.cpp
 	DEM/Game/src/Scene/SceneSystems.cpp
-	DEM/Game/src/Scripting/EntityScriptObject.cpp
-	DEM/Game/src/Scripting/PropScriptable.cpp
-	DEM/Game/src/Scripting/ScriptObjectSIEx.cpp
 	DEM/Game/src/Scripting/SolGame.cpp
 	DEM/Game/src/Scripting/Flow/Condition.cpp
 	DEM/Game/src/Scripting/Flow/ConditionRegistry.cpp

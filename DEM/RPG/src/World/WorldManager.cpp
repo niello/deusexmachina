@@ -1,6 +1,5 @@
 #include "WorldManager.h"
 
-#include <Game/Entity.h>
 #include <Events/EventServer.h>
 #include <Math/Matrix44.h>
 
@@ -42,6 +41,7 @@ bool CWorldManager::OnGameSaving(Events::CEventDispatcher* pDispatcher, const Ev
 // Level will be set as active externally, because transition can be performed by NPCs too
 bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID LevelID, CStrID MarkerID, bool UnloadAllLevels)
 {
+	/*
 	CArray<Game::PEntity> Entities(EntityIDs.GetCount(), 0);
 	for (UPTR i = 0; i < EntityIDs.GetCount(); ++i)
 	{
@@ -85,7 +85,7 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Level
 		Entities[i]->SetLevel(pNewLevel);
 	for (UPTR i = 0; i < Entities.GetCount(); ++i)
 		Entities[i]->Activate();
-
+	*/
 	OK;
 }
 //---------------------------------------------------------------------
