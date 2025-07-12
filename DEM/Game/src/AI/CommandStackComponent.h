@@ -32,7 +32,11 @@ public:
 
 	//???should be able to get child or parent of an action by its future? need it? maybe yes, to control decomposition from the system.
 	// GetCurrent needed? stack top.
-	// IsEmpty - if stack itself will be hidden
+
+	bool IsEmpty() const { return _CommandStack.empty(); }
+
+	//::Sys::Log((EntityToString(EntityID) + ": " + RootAction.Get()->GetClassName() + " action succeeded\n").c_str());
+	//::Sys::Log((EntityToString(EntityID) + ": " + RootAction.Get()->GetClassName() + " action failed or was cancelled\n").c_str());
 };
 
 }

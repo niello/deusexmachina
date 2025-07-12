@@ -1,6 +1,5 @@
 #include <Game/GameLevel.h>
 #include <Game/ECS/GameWorld.h>
-#include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Physics/CharacterControllerComponent.h>
 #include <AI/Movement/SteerAction.h>
 #include <Physics/PhysicsLevel.h>
@@ -103,7 +102,7 @@ static rtm::vector4f ProcessMovement(CCharacterControllerComponent& Character, C
 	// Move only when explicitly requested
 	auto SteerAction = Queue.FindCurrent<AI::Steer>();
 	auto pSteerAction = SteerAction.As<AI::Steer>();
-	if (!pSteerAction || Queue.GetStatus(SteerAction) != EActionStatus::Active)
+	if (!pSteerAction || Queue.GetStatus(SteerAction) != AI::ECommandStatus::Active)
 	{
 		if (Character.State == ECharacterState::Walk || Character.State == ECharacterState::ShortStep)
 			Character.State = ECharacterState::Stand;
@@ -118,7 +117,7 @@ static rtm::vector4f ProcessMovement(CCharacterControllerComponent& Character, C
 	const bool IsSameHeightLevel = (rtm::vector_get_y(rtm::vector_abs(ToDest)) < Character.Height);
 	if (IsSameHeightLevel && SqDistanceToDest < AI::Steer::SqLinearTolerance)
 	{
-		Queue.SetStatus(SteerAction, EActionStatus::Succeeded);
+		Queue.SetStatus(SteerAction, AI::ECommandStatus::Succeeded);
 		Character.State = ECharacterState::Stand;
 		return rtm::vector_zero();
 	}
@@ -210,7 +209,7 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 	else if (auto TurnAction = Queue.FindCurrent<AI::Turn>())
 	{
 		auto pTurnAction = TurnAction.As<AI::Turn>();
-		if (pTurnAction && Queue.GetStatus(TurnAction) == EActionStatus::Active)
+		if (pTurnAction && Queue.GetStatus(TurnAction) == AI::ECommandStatus::Active)
 		{
 			DesiredRotation = Math::AngleXZNorm(LookatDir, pTurnAction->_LookatDirection);
 			Tolerance = pTurnAction->_Tolerance;
@@ -330,7 +329,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 
 		// NB: we don't try to process Steer and Turn simultaneously, only the most nested of them
 		auto Action = Queue.FindCurrent<AI::Steer, AI::Turn>();
-		if (Queue.GetStatus(Action) == EActionStatus::Succeeded) return;
+		if (Queue.GetStatus(Action) == AI::ECommandStatus::Succeeded) return;
 
 		// Access real physical transform, not an interpolated motion state
 		const auto& BodyTfm = pBody->GetBtBody()->getWorldTransform();
@@ -347,7 +346,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			const bool IsSameHeightLevel = (std::fabsf(rtm::vector_get_y(ToDest)) < Character.Height);
 			if (IsSameHeightLevel && SqDistance < AI::Steer::SqLinearTolerance)
 			{
-				Queue.SetStatus(Action, EActionStatus::Succeeded);
+				Queue.SetStatus(Action, AI::ECommandStatus::Succeeded);
 				if (IsWalking) Character.State = ECharacterState::Stand;
 			}
 			else if (IsWalking) // Don't check stuck state when standing (e.g. deliberately waiting for obstacle to move) or being in the air
@@ -361,7 +360,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 					Character.TimeStuck += dt;
 					if (Character.TimeStuck >= TimeToStuck)
 					{
-						Queue.SetStatus(Action, EActionStatus::Failed);
+						Queue.SetStatus(Action, AI::ECommandStatus::Failed);
 						Character.State = ECharacterState::Stand;
 					}
 				}
@@ -378,7 +377,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			const rtm::vector4f LookatDir = Math::FromBullet(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
 			const float Angle = Math::AngleXZNorm(LookatDir, pTurnAction->_LookatDirection);
 			if (std::fabsf(Angle) < pTurnAction->_Tolerance)
-				Queue.SetStatus(Action, EActionStatus::Succeeded);
+				Queue.SetStatus(Action, AI::ECommandStatus::Succeeded);
 		}
 	});
 }

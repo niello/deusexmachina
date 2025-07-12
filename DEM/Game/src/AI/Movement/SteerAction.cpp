@@ -1,5 +1,4 @@
 #include "SteerAction.h"
-#include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Game/ECS/GameWorld.h>
 #include <Game/GameSession.h>
 #include <AI/Navigation/NavAgentComponent.h>

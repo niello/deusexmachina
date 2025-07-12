@@ -90,10 +90,10 @@ void CTalkAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance& 
 }
 //---------------------------------------------------------------------
 
-Game::EActionStatus CTalkAbility::OnUpdate(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
+AI::ECommandStatus CTalkAbility::OnUpdate(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
 {
 	auto pConvMgr = Session.FindFeature<CConversationManager>();
-	if (!pConvMgr) return Game::EActionStatus::Cancelled;
+	if (!pConvMgr) return AI::ECommandStatus::Cancelled;
 
 	//???fail if can't find a conversation?! how to process StartConversation failure?!
 	//???enable failures from CAbility::OnStart? return bool and turn false into EActionStatus::Failed in a calling system.
@@ -101,11 +101,11 @@ Game::EActionStatus CTalkAbility::OnUpdate(Game::CGameSession& Session, Game::CA
 
 	//!!!TODO: catch conversation end event from manager!!!
 
-	return pConvMgr->GetConversationKey(Instance.Actor) ? Game::EActionStatus::Active : Game::EActionStatus::Succeeded;
+	return pConvMgr->GetConversationKey(Instance.Actor) ? AI::ECommandStatus::Running : AI::ECommandStatus::Succeeded;
 }
 //---------------------------------------------------------------------
 
-void CTalkAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, Game::EActionStatus Status) const
+void CTalkAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, AI::ECommandStatus Status) const
 {
 	auto pConvMgr = Session.FindFeature<CConversationManager>();
 	if (!pConvMgr) return;

@@ -90,10 +90,10 @@ void CPickItemAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 }
 //---------------------------------------------------------------------
 
-Game::EActionStatus CPickItemAbility::OnUpdate(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
+AI::ECommandStatus CPickItemAbility::OnUpdate(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
 {
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
-	if (!pWorld) return Game::EActionStatus::Failed;
+	if (!pWorld) return AI::ECommandStatus::Failed;
 
 	const auto StackID = Instance.Targets[0].Entity;
 
@@ -106,18 +106,18 @@ Game::EActionStatus CPickItemAbility::OnUpdate(Game::CGameSession& Session, Game
 	if (TryPickCurrency(Session, Instance.Actor, StackID))
 	{
 		RemoveItemVisualsFromLocation(*pWorld, StackID);
-		return Game::EActionStatus::Succeeded;
+		return AI::ECommandStatus::Succeeded;
 	}
 
 	const auto [AddedCount, MovedCompletely] = MoveItemsToContainer(*pWorld, Instance.Actor, StackID);
 	if (MovedCompletely)
 		RemoveItemVisualsFromLocation(*pWorld, StackID);
 
-	return AddedCount ? Game::EActionStatus::Succeeded : Game::EActionStatus::Failed;
+	return AddedCount ? AI::ECommandStatus::Succeeded : AI::ECommandStatus::Failed;
 }
 //---------------------------------------------------------------------
 
-void CPickItemAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, Game::EActionStatus Status) const
+void CPickItemAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, AI::ECommandStatus Status) const
 {
 	// TODO: animation?
 }

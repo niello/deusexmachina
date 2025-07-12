@@ -1,7 +1,7 @@
 #include "BehaviourTreePlayer.h"
 #include <AI/Behaviour/BehaviourTreeAsset.h>
 #include <AI/AIStateComponent.h>
-#include <Game/ECS/Components/ActionQueueComponent.h>
+#include <AI/CommandStackComponent.h>
 #include <Game/ECS/GameWorld.h>
 #include <Events/Connection.h> // for destruction
 #include <Math/Math.h>
@@ -115,7 +115,7 @@ void CBehaviourTreePlayer::Stop()
 	// Deactivate an active subtree even if there are missing components
 	auto* pWorld = _pSession->FindFeature<Game::CGameWorld>();
 	auto* pBrain = pWorld ? pWorld->FindComponent<CAIStateComponent>(_ActorID) : nullptr;
-	auto* pActuator = pWorld ? pWorld->FindComponent<Game::CActionQueueComponent>(_ActorID) : nullptr;
+	auto* pActuator = pWorld ? pWorld->FindComponent<CCommandStackComponent>(_ActorID) : nullptr;
 	ResetActivePath(CBehaviourTreeContext{ *_pSession, _ActorID, pBrain, pActuator });
 
 	_BBKeyToNode.clear();
@@ -186,7 +186,7 @@ EBTStatus CBehaviourTreePlayer::Update(float dt)
 	auto* pBrain = pWorld->FindComponent<CAIStateComponent>(_ActorID);
 	if (!pBrain) return EBTStatus::Failed;
 
-	auto* pActuator = pWorld->FindComponent<Game::CActionQueueComponent>(_ActorID);
+	auto* pActuator = pWorld->FindComponent<CCommandStackComponent>(_ActorID);
 	if (!pActuator) return EBTStatus::Failed;
 
 	// Proceed to update only when we have all necessary components

@@ -1,5 +1,4 @@
 #include <Game/ECS/GameWorld.h>
-#include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Scene/SceneComponent.h>
 #include <AI/Navigation/NavAgentComponent.h>
 #include <AI/AIStateComponent.h>
@@ -113,11 +112,11 @@ static void OptimizePath(const CGameSession& Session, CAbilityInstance& AbilityI
 }
 //---------------------------------------------------------------------
 
-static EActionStatus MoveToTarget(CGameSession& Session, CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID,
+static AI::ECommandStatus MoveToTarget(CGameSession& Session, CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID,
 	CActionQueueComponent& Queue, HAction Action, HAction ChildAction, bool TransformChanged)
 {
 	// When no zones available for an interaction, run ability from the current position
-	//if (AbilityInstance.InitialZones.empty()) return EActionStatus::Succeeded;
+	//if (AbilityInstance.InitialZones.empty()) return AI::ECommandStatus::Succeeded;
 
 	if (TransformChanged)
 	{
@@ -128,16 +127,16 @@ static EActionStatus MoveToTarget(CGameSession& Session, CAbilityInstance& Abili
 	else if (AbilityInstance.Stage > EAbilityExecutionStage::Movement)
 	{
 		// Already at position, skip movement
-		return EActionStatus::Succeeded;
+		return AI::ECommandStatus::Succeeded;
 	}
 	else if (ChildAction)
 	{
 		// Process movement sub-action
 		const auto ChildActionStatus = Queue.GetStatus(ChildAction);
-		if (ChildActionStatus != EActionStatus::Failed)
+		if (ChildActionStatus != AI::ECommandStatus::Failed)
 		{
 			// Check if another available zone is closer along the way than our target zone
-			if (ChildActionStatus == EActionStatus::Active)
+			if (ChildActionStatus == AI::ECommandStatus::Active)
 				OptimizePath(Session, AbilityInstance, World, EntityID, ChildAction);
 
 			return ChildActionStatus;
@@ -148,7 +147,7 @@ static EActionStatus MoveToTarget(CGameSession& Session, CAbilityInstance& Abili
 	}
 
 	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
-	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return EActionStatus::Failed;
+	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return AI::ECommandStatus::Failed;
 
 	const rtm::matrix3x4f WorldToTarget = rtm::matrix_inverse(AbilityInstance.TargetToWorld);
 	const rtm::vector4f ActorPos = pActorSceneComponent->RootNode->GetWorldPosition();
@@ -171,7 +170,7 @@ static EActionStatus MoveToTarget(CGameSession& Session, CAbilityInstance& Abili
 			if (Distance < MinDistance)
 			{
 				AbilityInstance.CurrZoneIndex = i;
-				if (Distance <= AI::Steer::LinearTolerance) return EActionStatus::Succeeded;
+				if (Distance <= AI::Steer::LinearTolerance) return AI::ECommandStatus::Succeeded;
 				ActionPos = Point;
 				MinDistance = Distance;
 			}
@@ -217,31 +216,31 @@ static EActionStatus MoveToTarget(CGameSession& Session, CAbilityInstance& Abili
 			Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, rtm::vector_add(ActionPos, FacingDir), 0.f);
 
 		if (AbilityInstance.Stage == EAbilityExecutionStage::Interaction)
-			AbilityInstance.Ability.OnEnd(Session, AbilityInstance, EActionStatus::Cancelled);
+			AbilityInstance.Ability.OnEnd(Session, AbilityInstance, AI::ECommandStatus::Cancelled);
 		AbilityInstance.Stage = EAbilityExecutionStage::Movement;
 
-		return EActionStatus::Active;
+		return AI::ECommandStatus::Active;
 	}
 
 	// No zones left, fail
 	// TODO: for dynamic targets may retry for some time before failing (target may change tfm in a second or two)
 	//!!!can use ElapsedTime, if states move-face-prepare-execute will be explicit!
-	return EActionStatus::Failed;
+	return AI::ECommandStatus::Failed;
 }
 //---------------------------------------------------------------------
 
-static EActionStatus FaceTarget(CGameSession& Session, CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID,
+static AI::ECommandStatus FaceTarget(CGameSession& Session, CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID,
 	CActionQueueComponent& Queue, HAction Action, HAction ChildAction, bool TransformChanged)
 {
 	// Process Turn sub-action until finished or target transform changed
 	if (!TransformChanged)
 	{
-		if (AbilityInstance.Stage > EAbilityExecutionStage::Facing) return EActionStatus::Succeeded;
+		if (AbilityInstance.Stage > EAbilityExecutionStage::Facing) return AI::ECommandStatus::Succeeded;
 		else if (ChildAction.As<AI::Turn>()) return Queue.GetStatus(ChildAction);
 	}
 
 	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
-	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return EActionStatus::Failed;
+	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return AI::ECommandStatus::Failed;
 
 	const auto& ActorWorldTfm = pActorSceneComponent->RootNode->GetWorldMatrix();
 
@@ -253,19 +252,19 @@ static EActionStatus FaceTarget(CGameSession& Session, CAbilityInstance& Ability
 
 	const rtm::vector4f LookatDir = rtm::vector_normalize3(rtm::vector_neg(ActorWorldTfm.z_axis));
 	const float Angle = Math::AngleXZNorm(LookatDir, TargetDir);
-	if (std::fabsf(Angle) < FacingTolerance) return EActionStatus::Succeeded;
+	if (std::fabsf(Angle) < FacingTolerance) return AI::ECommandStatus::Succeeded;
 
 	Queue.PushOrUpdateChild<AI::Turn>(Action, TargetDir, FacingTolerance);
 
 	if (AbilityInstance.Stage == EAbilityExecutionStage::Interaction)
-		AbilityInstance.Ability.OnEnd(Session, AbilityInstance, EActionStatus::Cancelled);
+		AbilityInstance.Ability.OnEnd(Session, AbilityInstance, AI::ECommandStatus::Cancelled);
 	AbilityInstance.Stage = EAbilityExecutionStage::Facing;
 
-	return EActionStatus::Active;
+	return AI::ECommandStatus::Active;
 }
 //---------------------------------------------------------------------
 
-static EActionStatus InteractWithTarget(CGameSession& Session, CAbilityInstance& AbilityInstance, HEntity EntityID, float dt)
+static AI::ECommandStatus InteractWithTarget(CGameSession& Session, CAbilityInstance& AbilityInstance, HEntity EntityID, float dt)
 {
 	// Start interaction, if not yet
 	if (AbilityInstance.Stage != EAbilityExecutionStage::Interaction)
@@ -289,11 +288,11 @@ static EActionStatus InteractWithTarget(CGameSession& Session, CAbilityInstance&
 }
 //---------------------------------------------------------------------
 
-static void EndCurrentInteraction(CGameSession& Session, EActionStatus NewStatus, AI::CAIStateComponent& AIState, HEntity EntityID)
+static void EndCurrentInteraction(CGameSession& Session, AI::ECommandStatus NewStatus, AI::CAIStateComponent& AIState, HEntity EntityID)
 {
 	if (AIState._AbilityInstance->Stage == EAbilityExecutionStage::Interaction)
 	{
-		if (NewStatus == EActionStatus::NotQueued) NewStatus = EActionStatus::Cancelled;
+		if (NewStatus == AI::ECommandStatus::NotQueued) NewStatus = AI::ECommandStatus::Cancelled;
 		AIState._AbilityInstance->Ability.OnEnd(Session, *AIState._AbilityInstance, NewStatus);
 	}
 
@@ -312,8 +311,8 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 		// If child action was cancelled, the main action is considered cancelled too.
 		const auto Action = Queue.FindCurrent<ExecuteAbility>();
 		const auto ChildAction = Queue.GetChild(Action);
-		const auto ActionStatus = (Queue.GetStatus(ChildAction) == EActionStatus::Cancelled) ? EActionStatus::Cancelled : Queue.GetStatus(Action);
-		if (ActionStatus != EActionStatus::Active)
+		const auto ActionStatus = (Queue.GetStatus(ChildAction) == AI::ECommandStatus::Cancelled) ? AI::ECommandStatus::Cancelled : Queue.GetStatus(Action);
+		if (ActionStatus != AI::ECommandStatus::Active)
 		{
 			if (AIState._AbilityInstance) EndCurrentInteraction(Session, ActionStatus, AIState, EntityID);
 			return;
@@ -325,7 +324,7 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 		{
 			// Interrupt previous ability
 			// NB: it might be our parent, then it will be resumed when we finish executing the nested one
-			if (AIState._AbilityInstance) EndCurrentInteraction(Session, EActionStatus::Cancelled, AIState, EntityID);
+			if (AIState._AbilityInstance) EndCurrentInteraction(Session, AI::ECommandStatus::Cancelled, AIState, EntityID);
 
 			AIState._AbilityInstance = pAction->_AbilityInstance;
 
@@ -369,7 +368,7 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 		if (!AIState._AbilityInstance)
 		{
 			// No ability is being executed
-			Queue.SetStatus(Action, EActionStatus::Succeeded);
+			Queue.SetStatus(Action, AI::ECommandStatus::Succeeded);
 			return;
 		}
 
@@ -411,15 +410,15 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 
 		// Ability execution logic
 
-		EActionStatus Result = MoveToTarget(Session, AbilityInstance, World, EntityID, Queue, Action, ChildAction, TransformChanged);
+		AI::ECommandStatus Result = MoveToTarget(Session, AbilityInstance, World, EntityID, Queue, Action, ChildAction, TransformChanged);
 
-		if (Result == EActionStatus::Succeeded)
+		if (Result == AI::ECommandStatus::Succeeded)
 			Result = FaceTarget(Session, AbilityInstance, World, EntityID, Queue, Action, ChildAction, TransformChanged);
 
-		if (Result == EActionStatus::Succeeded)
+		if (Result == AI::ECommandStatus::Succeeded)
 			Result = InteractWithTarget(Session, AbilityInstance, EntityID, dt);
 
-		if (Result != EActionStatus::Active)
+		if (Result != AI::ECommandStatus::Active)
 		{
 			EndCurrentInteraction(Session, Result, AIState, EntityID);
 			Queue.SetStatus(Action, Result);

@@ -1,10 +1,10 @@
 #include "BehaviourTreeMove.h"
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
-#include <Game/ECS/Components/ActionQueueComponent.h>
 #include <AI/Navigation/NavAgentComponent.h>
 #include <AI/Movement/SteerAction.h>
 #include <AI/AIStateComponent.h>
+#include <AI/CommandStackComponent.h>
 #include <Scene/SceneComponent.h>
 #include <Core/Factory.h>
 
@@ -24,13 +24,13 @@ void CBehaviourTreeMove::Init(const Data::CParams* pParams)
 
 size_t CBehaviourTreeMove::GetInstanceDataSize() const
 {
-	return sizeof(Game::HAction);
+	return sizeof(CCommandFuture);
 }
 //---------------------------------------------------------------------
 
 size_t CBehaviourTreeMove::GetInstanceDataAlignment() const
 {
-	return alignof(Game::HAction);
+	return alignof(CCommandFuture);
 }
 //---------------------------------------------------------------------
 
@@ -66,7 +66,7 @@ std::optional<rtm::vector4f> CBehaviourTreeMove::GetPosition(const CBehaviourTre
 EBTStatus CBehaviourTreeMove::Activate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
 	// Before everything else because Deactivate always calls a destructor
-	auto& Action = *new(pData) Game::HAction();
+	auto& Action = *new(pData) CCommandFuture();
 
 	if (!Ctx.pActuator) return EBTStatus::Failed;
 
@@ -76,32 +76,28 @@ EBTStatus CBehaviourTreeMove::Activate(std::byte* pData, const CBehaviourTreeCon
 	auto OptPos = GetPosition(Ctx);
 	if (!OptPos) return EBTStatus::Failed;
 
-	Ctx.pActuator->Reset();
-
 	if (_IgnoreNavigation || !pWorld->FindComponent<const AI::CNavAgentComponent>(Ctx.ActorID))
 	{
-		Ctx.pActuator->EnqueueAction<AI::Steer>(*OptPos, *OptPos, 0.f);
-		Ctx.pActuator->RunNextAction(); // FIXME: hack!
+		CreateCommand<AI::Steer>(*OptPos, *OptPos, 0.f);
 
 		//!!!FIXME: we don't even know if it is our action!
-		Action = Ctx.pActuator->FindCurrent<AI::Steer>();
+		//Action = Ctx.pActuator->FindCurrent<AI::Steer>();
 	}
 	else
 	{
-		Ctx.pActuator->EnqueueAction<AI::Navigate>(*OptPos, 0.f);
-		Ctx.pActuator->RunNextAction(); // FIXME: hack!
+		CreateCommand<AI::Navigate>(*OptPos, 0.f);
 
 		//!!!FIXME: we don't even know if it is our action!
-		Action = Ctx.pActuator->FindCurrent<AI::Navigate>();
+		//Action = Ctx.pActuator->FindCurrent<AI::Navigate>();
 	}
 
-	return ActionStatusToBTStatus(Ctx.pActuator->GetStatus(Action));
+	return CommandStatusToBTStatus(Action.GetStatus());
 }
 //---------------------------------------------------------------------
 
 void CBehaviourTreeMove::Deactivate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
-	auto& Action = *reinterpret_cast<Game::HAction*>(pData);
+	auto& Action = *reinterpret_cast<CCommandFuture*>(pData);
 	CancelAction(Ctx, Action);
 	std::destroy_at(&Action);
 }
@@ -110,7 +106,7 @@ void CBehaviourTreeMove::Deactivate(std::byte* pData, const CBehaviourTreeContex
 // TODO: if not tracking the target, can request next update 'never' and subscribe on action's finish event for re-evaluation/update request
 std::pair<EBTStatus, U16> CBehaviourTreeMove::Update(U16 SelfIdx, std::byte* pData, float dt, const CBehaviourTreeContext& Ctx) const
 {
-	auto& Action = *reinterpret_cast<Game::HAction*>(pData);
+	auto& Action = *reinterpret_cast<CCommandFuture*>(pData);
 
 	//???only if not completed yet? what will happen with completed one?
 	if (_Follow)
@@ -123,11 +119,16 @@ std::pair<EBTStatus, U16> CBehaviourTreeMove::Update(U16 SelfIdx, std::byte* pDa
 		auto OptPos = GetPosition(Ctx);
 		if (!OptPos) return { EBTStatus::Failed, SelfIdx };
 
-		// FIXME: most probably will not work! Need update for the root action too!
-		if (_IgnoreNavigation || !pWorld->FindComponent<const AI::CNavAgentComponent>(Ctx.ActorID))
-			Ctx.pActuator->PushOrUpdateChild<AI::Steer>({}, *OptPos, *OptPos, 0.f);
-		else
-			Ctx.pActuator->PushOrUpdateChild<AI::Navigate>({}, *OptPos, 0.f);
+		if (auto* pNavigate = Action.As<AI::Navigate>())
+		{
+			pNavigate->_Destination = *OptPos;
+		}
+		else if (auto* pSteer = Action.As<AI::Steer>())
+		{
+			pSteer->_Dest = *OptPos;
+			pSteer->_NextDest = *OptPos;
+		}
+		else return { EBTStatus::Failed, SelfIdx };
 	}
 
 	return { GetActionStatus(Ctx, Action), SelfIdx };

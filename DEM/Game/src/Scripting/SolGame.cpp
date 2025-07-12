@@ -2,7 +2,6 @@
 #include "SolGame.h"
 #include <Game/ECS/GameWorld.h>
 #include <Game/GameLevel.h>
-#include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Game/ECS/Components/EventsComponent.h>
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/Interaction/ScriptedAbility.h>
@@ -135,13 +134,13 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 		, "Mode", &DEM::Game::CFacingParams::Mode
 	);
 
-	State.new_enum<DEM::Game::EActionStatus>("EActionStatus",
+	State.new_enum<DEM::AI::ECommandStatus>("EActionStatus",
 		{
-			{ "Active", DEM::Game::EActionStatus::Active },
-			{ "Succeeded", DEM::Game::EActionStatus::Succeeded },
-			{ "Failed", DEM::Game::EActionStatus::Failed },
-			{ "Cancelled", DEM::Game::EActionStatus::Cancelled },
-			{ "NotQueued", DEM::Game::EActionStatus::NotQueued }
+			{ "NotStarted", DEM::AI::ECommandStatus::NotStarted },
+			{ "Running", DEM::AI::ECommandStatus::Running },
+			{ "Succeeded", DEM::AI::ECommandStatus::Succeeded },
+			{ "Failed", DEM::AI::ECommandStatus::Failed },
+			{ "Cancelled", DEM::AI::ECommandStatus::Cancelled }
 		}
 	);
 
@@ -151,7 +150,7 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 		, "Source", &DEM::Game::CAbilityInstance::Source
 		, "ElapsedTime", &DEM::Game::CAbilityInstance::ElapsedTime
 		, "PrevElapsedTime", &DEM::Game::CAbilityInstance::PrevElapsedTime
-		, "Stop", [&World](DEM::Game::CAbilityInstance& AbilityInstance, DEM::Game::EActionStatus Status)
+		, "Stop", [&World](DEM::Game::CAbilityInstance& AbilityInstance, DEM::AI::ECommandStatus Status)
 		{
 			auto pQueue = World.FindComponent<DEM::Game::CActionQueueComponent>(AbilityInstance.Actor);
 			if (!pQueue) return;

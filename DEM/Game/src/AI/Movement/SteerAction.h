@@ -30,9 +30,9 @@ public:
 	{}
 };
 
-class Turn : public ::Events::CEventNative
+class Turn : public CCommand
 {
-	NATIVE_EVENT_DECL(Turn, ::Events::CEventNative);
+	RTTI_CLASS_DECL(Turn, CCommand);
 
 public:
 
@@ -43,7 +43,7 @@ public:
 	rtm::vector4f _LookatDirection;
 	float         _Tolerance;
 
-	explicit Turn(const rtm::vector4f& LookatDirection, float Tolerance = AngularTolerance)
+	explicit Turn(rtm::vector4f_arg0 LookatDirection, float Tolerance = AngularTolerance)
 		: _LookatDirection(rtm::vector_normalize3(LookatDirection))
 		, _Tolerance(Tolerance)
 	{

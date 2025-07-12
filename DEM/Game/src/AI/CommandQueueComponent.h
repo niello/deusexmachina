@@ -31,12 +31,21 @@ public:
 		return std::move(Future);
 	}
 
+	CCommandPromise Pop()
+	{
+		CCommandPromise Front = std::move(_Queue.front());
+		_Queue.pop_front();
+		return Front;
+	}
+
 	void Reset()
 	{
 		for (auto& Cmd : _Queue)
 			Cmd.SetStatus(ECommandStatus::Cancelled);
 		_Queue.clear();
 	}
+
+	bool IsEmpty() const { return _Queue.empty(); }
 };
 
 }

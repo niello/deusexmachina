@@ -1,7 +1,7 @@
 #pragma once
 #include <Game/Interaction/Interaction.h>
 #include <Game/ECS/Entity.h>
-#include <AI/Command.h> // FIXME: for ECommandStatus
+#include <AI/Command.h> // for ECommandStatus
 #include <Math/Vector3.h>
 
 // Ability is an interaction performed by actors in a game world

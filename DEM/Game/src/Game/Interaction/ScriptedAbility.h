@@ -46,8 +46,8 @@ public:
 	virtual bool          GetZones(const Game::CGameSession& Session, const CAbilityInstance& Instance, std::vector<const CZone*>& Out) const override;
 	virtual bool          GetFacingParams(const Game::CGameSession& Session, const CAbilityInstance& Instance, CFacingParams& Out) const override;
 	virtual void          OnStart(Game::CGameSession& Session, CAbilityInstance& Instance) const override;
-	virtual EActionStatus OnUpdate(Game::CGameSession& Session, CAbilityInstance& Instance) const override;
-	virtual void          OnEnd(Game::CGameSession& Session, CAbilityInstance& Instance, EActionStatus Status) const override;
+	virtual AI::ECommandStatus OnUpdate(Game::CGameSession& Session, CAbilityInstance& Instance) const override;
+	virtual void          OnEnd(Game::CGameSession& Session, CAbilityInstance& Instance, AI::ECommandStatus Status) const override;
 };
 
 }

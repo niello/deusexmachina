@@ -92,27 +92,27 @@ void CScriptedAbility::OnStart(Game::CGameSession& Session, CAbilityInstance& In
 }
 //---------------------------------------------------------------------
 
-EActionStatus CScriptedAbility::OnUpdate(Game::CGameSession& Session, CAbilityInstance& Instance) const
+AI::ECommandStatus CScriptedAbility::OnUpdate(Game::CGameSession& Session, CAbilityInstance& Instance) const
 {
 	auto UpdateResult = _FnOnUpdate(static_cast<const CScriptedAbilityInstance&>(Instance));
 	if (!UpdateResult.valid())
 	{
 		::Sys::Error(UpdateResult.get<sol::error>().what());
-		return EActionStatus::Failed;
+		return AI::ECommandStatus::Failed;
 	}
 	else if (UpdateResult.get_type() != sol::type::number)
 	{
 		// Enums are represented as numbers in Sol. Also allow to return nil as an alias for Active.
 		//!!!TODO: fmtlib and variadic args in assertion macros!
 		n_assert2_dbg(UpdateResult.get_type() == sol::type::none, "Unexpected return type from lua OnUpdate");
-		return EActionStatus::Active;
+		return AI::ECommandStatus::Running;
 	}
 
 	return UpdateResult;
 }
 //---------------------------------------------------------------------
 
-void CScriptedAbility::OnEnd(Game::CGameSession& Session, CAbilityInstance& Instance, EActionStatus Status) const
+void CScriptedAbility::OnEnd(Game::CGameSession& Session, CAbilityInstance& Instance, AI::ECommandStatus Status) const
 {
 	Scripting::LuaCall(_FnOnEnd, static_cast<const CScriptedAbilityInstance&>(Instance), Status);
 }

@@ -52,9 +52,13 @@ public:
 		static_assert(std::is_base_of_v<CCommand, TCleaned>, "All AI commands must be derived from DEM::AI::CCommand");
 		static_assert(!std::is_same_v<CCommand, TCleaned>, "You should request only a desired subtype, not the CCommand itself");
 
+		T* pTypedCmd = _Command->As<T>();
+
 		if constexpr (!std::is_const_v<T>)
-			_Command->_Changed = true;
-		return _Command->As<T>();
+			if (pTypedCmd)
+				_Command->_Changed = true;
+
+		return pTypedCmd;
 	}
 
 	bool RequestCancellation() const
@@ -102,7 +106,7 @@ public:
 };
 
 template<typename T, typename... TArgs>
-std::pair<CCommandFuture, CCommandPromise> CreateCommand(TArgs&&... Args)
+[[nodiscard]] std::pair<CCommandFuture, CCommandPromise> CreateCommand(TArgs&&... Args)
 {
 	static_assert(std::is_base_of_v<CCommand, T>, "All AI commands must be derived from DEM::AI::CCommand");
 

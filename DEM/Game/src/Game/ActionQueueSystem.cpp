@@ -1,37 +1,22 @@
 #include <Game/ECS/GameWorld.h>
-#include <Game/ECS/Components/ActionQueueComponent.h>
+#include <AI/CommandQueueComponent.h>
+#include <AI/CommandStackComponent.h>
 
-namespace DEM::Game
+namespace DEM::AI
 {
 
-void ProcessActionQueue(CGameWorld& World)
+void ProcessActionQueue(Game::CGameWorld& World)
 {
-	World.ForEachComponent<CActionQueueComponent>([&World](auto EntityID, CActionQueueComponent& Queue)
+	World.ForEachEntityWith<CCommandQueueComponent, CCommandStackComponent>([&World](
+		auto EntityID, auto& Entity, CCommandQueueComponent& Queue, CCommandStackComponent& Stack)
 	{
-		// Sub-actions must be processed by systems that pushed them
-		if (Queue.GetStackDepth() > 1) return;
+		// Finished actions must be popped by their systems, we can't do it here
+		if (!Stack.IsEmpty()) return;
 
-		// TODO: could detect dangling 'New' actions which are not processed by any system
-		const auto RootAction = Queue.GetRoot();
-		const auto RootStatus = Queue.GetStatus(RootAction);
-		switch (RootStatus)
-		{
-			case EActionStatus::NotQueued:
-			case EActionStatus::Succeeded:
-			{
-				if (RootAction)
-					::Sys::Log((EntityToString(EntityID) + ": " + RootAction.Get()->GetClassName() + " action succeeded\n").c_str());
-				Queue.RunNextAction();
-				break;
-			}
-			case EActionStatus::Failed:
-			case EActionStatus::Cancelled:
-			{
-				::Sys::Log((EntityToString(EntityID) + ": " + RootAction.Get()->GetClassName() + " action failed or was cancelled\n").c_str());
-				Queue.Reset(RootStatus);
-				break;
-			}
-		}
+		// Nothing to pass to the execution stack
+		if (Queue.IsEmpty()) return;
+
+		Stack._CommandStack.push_back(Queue.Pop());
 	});
 }
 //---------------------------------------------------------------------

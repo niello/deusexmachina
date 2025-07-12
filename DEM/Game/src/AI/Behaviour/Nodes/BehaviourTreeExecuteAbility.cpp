@@ -1,11 +1,11 @@
 #include "BehaviourTreeExecuteAbility.h"
 #include <Game/GameSession.h>
-#include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Game/Interaction/Ability.h>
 #include <Game/Interaction/AbilityInstance.h>
 #include <Game/Interaction/InteractionManager.h>
 #include <Game/Interaction/InteractionContext.h>
 #include <AI/AIStateComponent.h>
+#include <AI/CommandStackComponent.h>
 //#include <Data/SerializeToParams.h> - deserialize CTargetInfo structure?
 #include <Core/Factory.h>
 
@@ -24,20 +24,20 @@ void CBehaviourTreeExecuteAbility::Init(const Data::CParams* pParams)
 
 size_t CBehaviourTreeExecuteAbility::GetInstanceDataSize() const
 {
-	return sizeof(Game::HAction);
+	return sizeof(CCommandFuture);
 }
 //---------------------------------------------------------------------
 
 size_t CBehaviourTreeExecuteAbility::GetInstanceDataAlignment() const
 {
-	return alignof(Game::HAction);
+	return alignof(CCommandFuture);
 }
 //---------------------------------------------------------------------
 
 EBTStatus CBehaviourTreeExecuteAbility::Activate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
 	// Before everything else because Deactivate always calls a destructor
-	auto& Action = *new(pData) Game::HAction();
+	auto& Action = *new(pData) CCommandFuture();
 
 	auto& BB = Ctx.pBrain->Blackboard;
 	const auto AbilityID = _AbilityID.Get(BB);
@@ -66,11 +66,9 @@ EBTStatus CBehaviourTreeExecuteAbility::Activate(std::byte* pData, const CBehavi
 
 	if (Ctx.pActuator)
 	{
-		Ctx.pActuator->RunNextAction(); // FIXME: hack!
-
 		//!!!FIXME: we don't even know if it is our action!
 		Action = Ctx.pActuator->FindCurrent<Game::ExecuteAbility>();
-		return ActionStatusToBTStatus(Ctx.pActuator->GetStatus(Action));
+		return CommandStatusToBTStatus(Action.GetStatus());
 	}
 
 	// No running action is found
@@ -80,7 +78,7 @@ EBTStatus CBehaviourTreeExecuteAbility::Activate(std::byte* pData, const CBehavi
 
 void CBehaviourTreeExecuteAbility::Deactivate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
-	auto& Action = *reinterpret_cast<Game::HAction*>(pData);
+	auto& Action = *reinterpret_cast<CCommandFuture*>(pData);
 	CancelAction(Ctx, Action);
 	std::destroy_at(&Action);
 }
@@ -88,7 +86,7 @@ void CBehaviourTreeExecuteAbility::Deactivate(std::byte* pData, const CBehaviour
 
 std::pair<EBTStatus, U16> CBehaviourTreeExecuteAbility::Update(U16 SelfIdx, std::byte* pData, float dt, const CBehaviourTreeContext& Ctx) const
 {
-	auto& Action = *reinterpret_cast<Game::HAction*>(pData);
+	auto& Action = *reinterpret_cast<CCommandFuture*>(pData);
 	return { GetActionStatus(Ctx, Action), SelfIdx };
 }
 //---------------------------------------------------------------------

@@ -32,8 +32,8 @@ public:
 
 	virtual bool                GetFacingParams(const Game::CGameSession& Session, const Game::CAbilityInstance& Instance, Game::CFacingParams& Out) const override;
 	virtual void                OnStart(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const override;
-	virtual Game::EActionStatus OnUpdate(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const override;
-	virtual void                OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, Game::EActionStatus Status) const override;
+	virtual AI::ECommandStatus OnUpdate(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const override;
+	virtual void                OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, AI::ECommandStatus Status) const override;
 };
 
 }

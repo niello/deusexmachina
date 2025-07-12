@@ -1,9 +1,9 @@
 #include "BehaviourTreeTurn.h"
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
-#include <Game/ECS/Components/ActionQueueComponent.h>
 #include <AI/Movement/SteerAction.h>
 #include <AI/AIStateComponent.h>
+#include <AI/CommandStackComponent.h>
 #include <Scene/SceneComponent.h>
 #include <Core/Factory.h>
 
@@ -22,13 +22,13 @@ void CBehaviourTreeTurn::Init(const Data::CParams* pParams)
 
 size_t CBehaviourTreeTurn::GetInstanceDataSize() const
 {
-	return sizeof(Game::HAction);
+	return sizeof(CCommandFuture);
 }
 //---------------------------------------------------------------------
 
 size_t CBehaviourTreeTurn::GetInstanceDataAlignment() const
 {
-	return alignof(Game::HAction);
+	return alignof(CCommandFuture);
 }
 //---------------------------------------------------------------------
 
@@ -81,27 +81,25 @@ std::optional<rtm::vector4f> CBehaviourTreeTurn::GetDirection(const CBehaviourTr
 EBTStatus CBehaviourTreeTurn::Activate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
 	// Before everything else because Deactivate always calls a destructor
-	auto& Action = *new(pData) Game::HAction();
+	auto& Action = *new(pData) CCommandFuture();
 
 	if (!Ctx.pActuator) return EBTStatus::Failed;
 
 	auto OptDir = GetDirection(Ctx);
 	if (!OptDir) return EBTStatus::Failed;
 
-	Ctx.pActuator->Reset();
-	Ctx.pActuator->EnqueueAction<AI::Turn>(*OptDir, AI::Turn::AngularTolerance);
-	Ctx.pActuator->RunNextAction(); // FIXME: hack!
+	CreateCommand<AI::Turn>(*OptDir, AI::Turn::AngularTolerance);
 
 	//!!!FIXME: we don't even know if it is our action!
-	Action = Ctx.pActuator->FindCurrent<AI::Turn>();
+	//Action = Ctx.pActuator->FindCurrent<AI::Turn>();
 
-	return ActionStatusToBTStatus(Ctx.pActuator->GetStatus(Action));
+	return CommandStatusToBTStatus(Action.GetStatus());
 }
 //---------------------------------------------------------------------
 
 void CBehaviourTreeTurn::Deactivate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
-	auto& Action = *reinterpret_cast<Game::HAction*>(pData);
+	auto& Action = *reinterpret_cast<CCommandFuture*>(pData);
 	CancelAction(Ctx, Action);
 	std::destroy_at(&Action);
 }
@@ -110,7 +108,7 @@ void CBehaviourTreeTurn::Deactivate(std::byte* pData, const CBehaviourTreeContex
 // TODO: if not tracking the target, can request next update 'never' and subscribe on action's finish event for re-evaluation/update request
 std::pair<EBTStatus, U16> CBehaviourTreeTurn::Update(U16 SelfIdx, std::byte* pData, float dt, const CBehaviourTreeContext& Ctx) const
 {
-	auto& Action = *reinterpret_cast<Game::HAction*>(pData);
+	auto& Action = *reinterpret_cast<CCommandFuture*>(pData);
 
 	//???only if not completed yet? what will happen with completed one?
 	if (_Follow)
@@ -120,8 +118,7 @@ std::pair<EBTStatus, U16> CBehaviourTreeTurn::Update(U16 SelfIdx, std::byte* pDa
 		auto OptDir = GetDirection(Ctx);
 		if (!OptDir) return { EBTStatus::Failed, SelfIdx };
 
-		// FIXME: most probably will not work! Need update for the root action too!
-		Ctx.pActuator->PushOrUpdateChild<AI::Turn>({}, *OptDir, AI::Turn::AngularTolerance);
+		Action.As<AI::Turn>()->_LookatDirection = *OptDir;
 	}
 
 	return { GetActionStatus(Ctx, Action), SelfIdx };

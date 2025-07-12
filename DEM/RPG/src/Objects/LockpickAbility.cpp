@@ -250,7 +250,7 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 }
 //---------------------------------------------------------------------
 
-Game::EActionStatus CLockpickAbility::OnUpdate(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
+AI::ECommandStatus CLockpickAbility::OnUpdate(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
 {
 	// TODO: play some sounds
 
@@ -265,11 +265,11 @@ Game::EActionStatus CLockpickAbility::OnUpdate(Game::CGameSession& Session, Game
 	else if (Difference > -5) Duration = 1.5f;
 	else Duration = 5.f;
 
-	return (Instance.ElapsedTime >= Duration) ? Game::EActionStatus::Succeeded : Game::EActionStatus::Active;
+	return (Instance.ElapsedTime >= Duration) ? AI::ECommandStatus::Succeeded : AI::ECommandStatus::Running;
 }
 //---------------------------------------------------------------------
 
-void CLockpickAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, Game::EActionStatus Status) const
+void CLockpickAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, AI::ECommandStatus Status) const
 {
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return;
@@ -292,7 +292,7 @@ void CLockpickAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance
 	// remove crime stimulus
 
 	const int Difference = static_cast<CSkillCheckAbilityInstance&>(Instance).Difference;
-	if (Status == Game::EActionStatus::Succeeded && Difference > 0)
+	if (Status == AI::ECommandStatus::Succeeded && Difference > 0)
 	{
 		const auto TargetID = Instance.Targets[0].Entity;
 		if (auto* pLock = pWorld->FindComponent<CLockComponent>(TargetID))

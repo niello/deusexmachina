@@ -1,4 +1,6 @@
 #include "Ability.h"
+#include <AI/CommandStackComponent.h>
+#include <AI/CommandQueueComponent.h>
 #include <Game/Interaction/AbilityInstance.h>
 #include <Game/ECS/GameWorld.h>
 
@@ -13,25 +15,30 @@ PAbilityInstance CAbility::CreateInstance(const CInteractionContext& Context) co
 
 bool CAbility::PushStandardExecuteAction(CGameWorld& World, HEntity Actor, const CInteractionContext& Context, bool Enqueue, bool PushChild) const
 {
-	if (auto pQueue = World.FindComponent<CActionQueueComponent>(Actor))
-	{
-		if (PAbilityInstance AbilityInstance = CreateInstance(Context))
-		{
-			AbilityInstance->Source = Context.Source;
-			AbilityInstance->Targets = Context.Targets;
+	PAbilityInstance AbilityInstance = CreateInstance(Context);
+	if (!AbilityInstance) return false;
 
-			// TODO: move to queue method?
-			if (PushChild && pQueue->GetCurrent()) pQueue->PushOrUpdateChild<ExecuteAbility>(pQueue->GetCurrent(), std::move(AbilityInstance));
-			else
-			{
-				if (!Enqueue) pQueue->Reset();
-				pQueue->EnqueueAction<ExecuteAbility>(std::move(AbilityInstance));
-			}
-			return true;
-		}
+	AbilityInstance->Source = Context.Source;
+	AbilityInstance->Targets = Context.Targets;
+
+	if (Enqueue)
+	{
+		auto* pQueue = World.FindComponent<AI::CCommandQueueComponent>(Actor);
+		if (!pQueue) return false;
+
+		//???return future?! need empty future for failure or never fails? how to return failure from function that returns future? use optional?
+		pQueue->EnqueueCommand<ExecuteAbility>(std::move(AbilityInstance));
+	}
+	else
+	{
+		auto* pActuator = World.FindComponent<AI::CCommandStackComponent>(Actor);
+		if (!pActuator) return false;
+
+		// TODO: set to root or push to top of the stack based on PushChild
+		pActuator->PushOrUpdateChild<ExecuteAbility>(pQueue->GetCurrent(), std::move(AbilityInstance));
 	}
 
-	return false;
+	return true;
 }
 //---------------------------------------------------------------------
 

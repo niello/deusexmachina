@@ -9,12 +9,12 @@
 namespace DEM::Game
 {
 	class CGameSession;
-	class CActionQueueComponent;
 }
 
 namespace DEM::AI
 {
 struct CAIStateComponent;
+class CCommandStackComponent;
 class CBehaviourTreePlayer;
 
 enum class EBTStatus : U8
@@ -26,10 +26,10 @@ enum class EBTStatus : U8
 
 struct CBehaviourTreeContext
 {
-	Game::CGameSession&          Session;
-	Game::HEntity                ActorID;
-	CAIStateComponent*           pBrain;
-	Game::CActionQueueComponent* pActuator;
+	Game::CGameSession&     Session;
+	Game::HEntity           ActorID;
+	CAIStateComponent*      pBrain;
+	CCommandStackComponent* pActuator;
 	//???CBehaviourTreePlayer* pPlayer? e.g. to request reevaluation from subscriptions in Activate/Update
 };
 

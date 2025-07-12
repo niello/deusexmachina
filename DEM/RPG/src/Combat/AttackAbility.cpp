@@ -255,10 +255,10 @@ void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance
 }
 //---------------------------------------------------------------------
 
-Game::EActionStatus CAttackAbility::OnUpdate(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
+AI::ECommandStatus CAttackAbility::OnUpdate(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
 {
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
-	if (!pWorld) return Game::EActionStatus::Failed;
+	if (!pWorld) return AI::ECommandStatus::Failed;
 
 	auto& AttackInstance = static_cast<CAttackAbilityInstance&>(Instance);
 
@@ -267,17 +267,17 @@ Game::EActionStatus CAttackAbility::OnUpdate(Game::CGameSession& Session, Game::
 		ApplyDamageFromAbility(*pWorld, AttackInstance);
 
 	// Could wait for the end of the attack Period here, but now we chose to succeed immediately, allowing an actor to proceed with the next action
-	if (!IsTargetDestructible(*pWorld, Instance.Targets[0].Entity)) return Game::EActionStatus::Succeeded;
+	if (!IsTargetDestructible(*pWorld, Instance.Targets[0].Entity)) return AI::ECommandStatus::Succeeded;
 
 	// If the previous strike is finished, start new one
 	if (AttackInstance.DamageType == EDamageType::COUNT && AttackInstance.ElapsedTime >= AttackInstance.StrikeEndTime)
 		InitStrike(*pWorld, AttackInstance);
 
-	return Game::EActionStatus::Active;
+	return AI::ECommandStatus::Running;
 }
 //---------------------------------------------------------------------
 
-void CAttackAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, Game::EActionStatus Status) const
+void CAttackAbility::OnEnd(Game::CGameSession& Session, Game::CAbilityInstance& Instance, AI::ECommandStatus Status) const
 {
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return;

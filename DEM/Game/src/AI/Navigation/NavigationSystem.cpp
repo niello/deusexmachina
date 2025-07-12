@@ -1,5 +1,4 @@
 #include <Game/ECS/GameWorld.h>
-#include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Game/GameLevel.h>
 #include <Game/GameSession.h>
 #include <AI/Navigation/NavAgentComponent.h>
@@ -318,7 +317,7 @@ static bool CheckAsyncPathResult(CNavAgentComponent& Agent, ::AI::CPathRequestQu
 //---------------------------------------------------------------------
 
 static void ResetNavigation(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& PathQueue,
-	Game::CActionQueueComponent& Queue, Game::HAction NavAction, Game::EActionStatus Result)
+	Game::CActionQueueComponent& Queue, Game::HAction NavAction, AI::ECommandStatus Result)
 {
 	if (Agent.AsyncTaskID)
 	{
@@ -525,34 +524,34 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, ::AI::CPathRe
 		// Update navigation status from the current agent position
 		if (!UpdatePosition(Pos, Agent))
 		{
-			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Failed);
+			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, AI::ECommandStatus::Failed);
 			return;
 		}
 
 		if (!NavigateAction)
 		{
 			if (Agent.State != ENavigationState::Idle)
-				ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Cancelled);
+				ResetNavigation(Agent, PathQueue, Queue, NavigateAction, AI::ECommandStatus::Cancelled);
 			return;
 		}
 
 		// Action could fail but remain in a queue
 		// FIXME: new action execution system must address this
 		const auto ActionStatus = Queue.GetStatus(NavigateAction);
-		if (ActionStatus == Game::EActionStatus::Failed || ActionStatus == Game::EActionStatus::Cancelled)
+		if (ActionStatus == AI::ECommandStatus::Failed || ActionStatus == AI::ECommandStatus::Cancelled)
 			return;
 
 		// Sub-action termination may lead to a navigation action termination
 		const auto SubActionStatus = Queue.GetStatus(Queue.GetChild(NavigateAction));
-		if (SubActionStatus == Game::EActionStatus::Failed ||
-			SubActionStatus == Game::EActionStatus::Cancelled ||
-			(SubActionStatus == Game::EActionStatus::Succeeded && HasArrived(Agent, Pos, 0.f, true)))
+		if (SubActionStatus == AI::ECommandStatus::Failed ||
+			SubActionStatus == AI::ECommandStatus::Cancelled ||
+			(SubActionStatus == AI::ECommandStatus::Succeeded && HasArrived(Agent, Pos, 0.f, true)))
 		{
 			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, SubActionStatus);
 			return;
 		}
 
-		const bool HasActiveSubAction = (SubActionStatus == Game::EActionStatus::Active);
+		const bool HasActiveSubAction = (SubActionStatus == AI::ECommandStatus::Running);
 
 		// Multiple physics frames can be processed inside one logic frame. Target remains the same
 		// during the logic frame but might be reached by physics in the middle of it. So if there
@@ -563,7 +562,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, ::AI::CPathRe
 		bool DestChanged = true;
 		if (!UpdateDestination(NavigateAction.As<Navigate>()->_Destination, Agent, PathQueue, DestChanged))
 		{
-			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Failed);
+			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, AI::ECommandStatus::Failed);
 			return;
 		}
 
@@ -580,7 +579,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, ::AI::CPathRe
 		{
 			if (!CheckAsyncPathResult(Agent, PathQueue))
 			{
-				ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Failed);
+				ResetNavigation(Agent, PathQueue, Queue, NavigateAction, AI::ECommandStatus::Failed);
 				return;
 			}
 		}
@@ -613,7 +612,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, ::AI::CPathRe
 		Game::HEntity Controller;
 		auto pAction = FindTraversalAction(World, Agent, Queue, NavigateAction, Pos, OptimizePath, Controller);
 		if (!pAction || !pAction->GenerateAction(Session, Agent, EntityID, Controller, Queue, NavigateAction, Pos))
-			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, Game::EActionStatus::Failed);
+			ResetNavigation(Agent, PathQueue, Queue, NavigateAction, AI::ECommandStatus::Failed);
 	});
 
 	// Execute async path requests
@@ -706,8 +705,8 @@ void DestroyNavigationAgent(Game::CGameWorld& World, ::AI::CPathRequestQueue& Pa
 		while (auto NavAction = pQueue->FindCurrent<Navigate>(TopNavAction))
 			TopNavAction = NavAction;
 
-		if (TopNavAction && pQueue->GetStatus(TopNavAction) == Game::EActionStatus::Active)
-			pQueue->SetStatus(TopNavAction, Game::EActionStatus::Cancelled);
+		if (TopNavAction && pQueue->GetStatus(TopNavAction) == AI::ECommandStatus::Running)
+			pQueue->SetStatus(TopNavAction, AI::ECommandStatus::Cancelled);
 	}
 
 	// Need to shutdown async tasks before deleting agent components
