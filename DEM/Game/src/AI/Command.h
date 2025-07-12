@@ -95,6 +95,8 @@ public:
 	}
 
 	void SetStatus(ECommandStatus Status) { _Command->_Status = Status; }
+	void AcceptChanges() { _Command->_Changed = false; }
+	bool IsChanged() const { return _Command->_Changed; }
 	bool IsCancelled() const { return _Command->_Status == ECommandStatus::Cancelled; }
 	bool IsAbandoned() const { return _Command->GetRefCount() == 1; }
 };

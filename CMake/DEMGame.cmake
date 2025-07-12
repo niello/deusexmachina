@@ -3,6 +3,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/AIStateComponent.h
 	DEM/Game/src/AI/Blackboard.h
 	DEM/Game/src/AI/Command.h
+	DEM/Game/src/AI/CommandQueueComponent.h
 	DEM/Game/src/AI/CommandStackComponent.h
 	DEM/Game/src/AI/FormationManager.h
 	DEM/Game/src/AI/MoveInteraction.h
@@ -56,7 +57,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/ECS/EntityTemplate.h
 	DEM/Game/src/Game/ECS/EntityTemplateLoader.h
 	DEM/Game/src/Game/ECS/GameWorld.h
-	DEM/Game/src/Game/ECS/Components/ActionQueueComponent.h
 	DEM/Game/src/Game/ECS/Components/EventsComponent.h
 	DEM/Game/src/Game/Interaction/Ability.h
 	DEM/Game/src/Game/Interaction/AbilityInstance.h

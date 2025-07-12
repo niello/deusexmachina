@@ -25,7 +25,7 @@ public:
 
 	CFormationManager(CGameSession& Owner);
 
-	bool Move(std::vector<HEntity> Entities, const rtm::vector4f& WorldPosition, const rtm::vector4f& Direction, bool Enqueue) const;
+	bool Move(const std::vector<HEntity>& Entities, const rtm::vector4f& WorldPosition, const rtm::vector4f& Direction, bool Enqueue) const;
 };
 
 }

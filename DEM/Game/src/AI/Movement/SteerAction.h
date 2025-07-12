@@ -1,5 +1,6 @@
 #pragma once
 #include <AI/Navigation/TraversalAction.h>
+#include <AI/Command.h>
 #include <Events/EventNative.h>
 #include <rtm/vector4f.h>
 
@@ -9,9 +10,9 @@
 namespace DEM::AI
 {
 
-class Steer : public ::Events::CEventNative
+class Steer : public CCommand
 {
-	NATIVE_EVENT_DECL(Steer, ::Events::CEventNative);
+	RTTI_CLASS_DECL(Steer, CCommand);
 
 public:
 
@@ -20,20 +21,11 @@ public:
 	static constexpr float LinearTolerance = 0.0004f;
 	static constexpr float SqLinearTolerance = LinearTolerance * LinearTolerance;
 
-	// TODO: check this old info, may be still actual, then must adjust current tolerances
-	//// At very small speeds and physics step sizes body position stops updating because of limited
-	//// float precision. LinearSpeed = 0.0007f, StepSize = 0.01f, Pos + LinearSpeed * StepSize = Pos.
-	//// So body never reaches the desired destination and we must accept arrival at given tolerance.
-	//// The less is this value, the more precise is resulting position, but the more time arrival takes.
-	//// Empirical minimum value is somewhere around 0.0008f.
-	//// This value is measured in game world meters.
-	//const float LinearArrivalTolerance = 0.009f;
-
 	rtm::vector4f _Dest;
 	rtm::vector4f _NextDest;
 	float         _AdditionalDistance = 0.f; // Set < 0.f to disable arrival slowdown
 
-	explicit Steer(const rtm::vector4f& Dest, const rtm::vector4f& NextDest, float AdditionalDistance)
+	explicit Steer(rtm::vector4f_arg0 Dest, rtm::vector4f_arg1 NextDest, float AdditionalDistance)
 		: _Dest(Dest), _NextDest(NextDest), _AdditionalDistance(AdditionalDistance)
 	{}
 };
