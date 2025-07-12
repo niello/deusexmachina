@@ -536,6 +536,12 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, ::AI::CPathRe
 			return;
 		}
 
+		// Action could fail but remain in a queue
+		// FIXME: new action execution system must address this
+		const auto ActionStatus = Queue.GetStatus(NavigateAction);
+		if (ActionStatus == Game::EActionStatus::Failed || ActionStatus == Game::EActionStatus::Cancelled)
+			return;
+
 		// Sub-action termination may lead to a navigation action termination
 		const auto SubActionStatus = Queue.GetStatus(Queue.GetChild(NavigateAction));
 		if (SubActionStatus == Game::EActionStatus::Failed ||

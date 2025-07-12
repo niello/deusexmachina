@@ -127,6 +127,12 @@ static rtm::vector4f ProcessMovement(CCharacterControllerComponent& Character, C
 	// becomes farther, but opposite switch Walk -> ShortStep is never performed.
 	if (Character.State == ECharacterState::Stand || Character.State == ECharacterState::ShortStep)
 	{
+		if (Character.State == ECharacterState::Stand)
+		{
+			Character.LastPos = Pos;
+			Character.TimeStuck = 0.f;
+		}
+
 		const float DestFacingThreshold = 1.5f * Character.Radius;
 		if (IsSameHeightLevel && (SqDistanceToDest <= DestFacingThreshold * DestFacingThreshold))
 			Character.State = ECharacterState::ShortStep;
@@ -177,6 +183,8 @@ static rtm::vector4f ProcessMovement(CCharacterControllerComponent& Character, C
 // TODO: neighbour separation, obstacle avoidance (see DetourCrowd for impl.)
 //if (Character._ObstacleAvoidanceEnabled) AvoidObstacles();
 
+	Character.SqExpectedLinearSpeed = Speed * Speed;
+
 	return DesiredLinearVelocity;
 }
 //---------------------------------------------------------------------
@@ -223,7 +231,11 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 		Speed *= AngleAbs / AngularArrivalZone;
 
 	// Amount of required rotation is too big, actor must stop moving to perform it
-	if (AngleAbs > Character.BigTurnThreshold) DesiredLinearVelocity = rtm::vector_zero();
+	if (AngleAbs > Character.BigTurnThreshold)
+	{
+		DesiredLinearVelocity = rtm::vector_zero();
+		Character.SqExpectedLinearSpeed = 0.f;
+	}
 
 	// Avoid overshooting, make exactly remaining rotation in one frame
 	const float FrameTime = pBody->GetLevel()->GetStepTime();
@@ -306,10 +318,10 @@ void ProcessCharacterControllers(CGameWorld& World, Physics::CPhysicsLevel& Phys
 }
 //---------------------------------------------------------------------
 
-void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel& PhysicsLevel)
+void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel& PhysicsLevel, float dt)
 {
 	World.ForEachEntityWith<CCharacterControllerComponent, CActionQueueComponent>(
-		[&PhysicsLevel](auto EntityID, auto& Entity,
+		[&PhysicsLevel, dt](auto EntityID, auto& Entity,
 			CCharacterControllerComponent& Character,
 			CActionQueueComponent& Queue)
 	{
@@ -325,6 +337,8 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 
 		if (auto pSteerAction = Action.As<AI::Steer>())
 		{
+			const bool IsWalking = Character.IsWalking();
+
 			// Check linear arrival
 			const auto& Offset = pBody->GetCollisionShape()->GetOffset();
 			const rtm::vector4f Pos = Math::FromBullet(BodyTfm * Math::ToBullet3(rtm::vector_neg(Offset)));
@@ -334,14 +348,28 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			if (IsSameHeightLevel && SqDistance < AI::Steer::SqLinearTolerance)
 			{
 				Queue.SetStatus(Action, EActionStatus::Succeeded);
-				if (Character.State == ECharacterState::Walk || Character.State == ECharacterState::ShortStep)
-					Character.State = ECharacterState::Stand;
+				if (IsWalking) Character.State = ECharacterState::Stand;
 			}
-			else
+			else if (IsWalking) // Don't check stuck state when standing (e.g. deliberately waiting for obstacle to move) or being in the air
 			{
-				// TODO:
-				// If is stuck, increase stuck timer, and if timer is too high, set Stuck mvmt state, i.e. fail movement.
-				// Stuck can be detected if resulting moving average distance remains almost the same for some period of time.
+				const float SqExpectedMovement = Character.SqExpectedLinearSpeed * (dt * dt);
+				const float SqActualMovement = Math::vector_length_squared_xz(rtm::vector_sub(Pos, Character.LastPos));
+				if (SqActualMovement < SqExpectedMovement * (0.25f * 0.25f)) // Moved less than 25% of expected
+				{
+					constexpr float TimeToStuck = 2.f;
+
+					Character.TimeStuck += dt;
+					if (Character.TimeStuck >= TimeToStuck)
+					{
+						Queue.SetStatus(Action, EActionStatus::Failed);
+						Character.State = ECharacterState::Stand;
+					}
+				}
+				else
+				{
+					Character.LastPos = Pos;
+					Character.TimeStuck = 0.f;
+				}
 			}
 		}
 		else if (auto pTurnAction = Action.As<AI::Turn>())

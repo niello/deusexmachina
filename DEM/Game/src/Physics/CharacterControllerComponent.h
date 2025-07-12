@@ -20,6 +20,8 @@ enum class ECharacterState : U8
 
 struct CCharacterControllerComponent
 {
+	rtm::vector4f   LastPos; // For stuck state detection
+
 	Physics::PRigidBody RigidBody;
 
 	float           Mass = 80.f;
@@ -36,9 +38,14 @@ struct CCharacterControllerComponent
 	float           SteeringSmoothness = 0.3f;
 	float           ArriveBrakingCoeff = -0.5f / -10.f; // -1/2a = -0.5/a, where a is max brake acceleration, a < 0
 
+	// For stuck state detection
+	float           SqExpectedLinearSpeed = 0.f;
+	float           TimeStuck = 0.f;
+
 	ECharacterState	State = ECharacterState::Stand;
 
 	bool IsOnTheGround() const { return State != ECharacterState::Jump && State != ECharacterState::Fall; } // Check Levitate too!
+	bool IsWalking() const { return State == ECharacterState::Walk || State == ECharacterState::ShortStep; }
 };
 
 }
