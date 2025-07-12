@@ -64,7 +64,6 @@ EBTStatus CBehaviourTreeExecuteAbility::Activate(std::byte* pData, const CBehavi
 	//!!!FIXME: must return HAction? Only abilities? Interactions must not! Or need other way to get HAction from launched ability.
 	if (!pAbility->Execute(Ctx.Session, IactCtx, false)) return EBTStatus::Failed;
 
-	//!!!also has pAIState->_AbilityInstance but there is no status there! At least now.
 	if (Ctx.pActuator)
 	{
 		Ctx.pActuator->RunNextAction(); // FIXME: hack!

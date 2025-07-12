@@ -31,7 +31,6 @@ void CBehaviourTreeAIActionBase::CancelAction(const CBehaviourTreeContext& Ctx, 
 
 EBTStatus CBehaviourTreeAIActionBase::GetActionStatus(const CBehaviourTreeContext& Ctx, Game::HAction Action) const
 {
-	//!!!also has pAIState->_AbilityInstance but there is no status there! At least now.
 	if (Ctx.pActuator)
 		return ActionStatusToBTStatus(Ctx.pActuator->GetStatus(Action));
 
