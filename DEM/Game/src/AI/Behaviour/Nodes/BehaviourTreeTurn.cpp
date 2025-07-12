@@ -9,7 +9,7 @@
 
 namespace DEM::AI
 {
-FACTORY_CLASS_IMPL(DEM::AI::CBehaviourTreeTurn, 'BTTR', CBehaviourTreeAIActionBase);
+FACTORY_CLASS_IMPL(DEM::AI::CBehaviourTreeTurn, 'BTTR', CBehaviourTreeNodeBase);
 
 void CBehaviourTreeTurn::Init(const Data::CParams* pParams)
 {
@@ -81,7 +81,7 @@ std::optional<rtm::vector4f> CBehaviourTreeTurn::GetDirection(const CBehaviourTr
 EBTStatus CBehaviourTreeTurn::Activate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
 	// Before everything else because Deactivate always calls a destructor
-	auto& Action = *new(pData) CCommandFuture();
+	auto& Cmd = *new(pData) CCommandFuture();
 
 	if (!Ctx.pActuator) return EBTStatus::Failed;
 
@@ -91,24 +91,24 @@ EBTStatus CBehaviourTreeTurn::Activate(std::byte* pData, const CBehaviourTreeCon
 	CreateCommand<AI::Turn>(*OptDir, AI::Turn::AngularTolerance);
 
 	//!!!FIXME: we don't even know if it is our action!
-	//Action = Ctx.pActuator->FindCurrent<AI::Turn>();
+	//Cmd = Ctx.pActuator->FindCurrent<AI::Turn>();
 
-	return CommandStatusToBTStatus(Action.GetStatus());
+	return CommandStatusToBTStatus(Cmd.GetStatus());
 }
 //---------------------------------------------------------------------
 
 void CBehaviourTreeTurn::Deactivate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
-	auto& Action = *reinterpret_cast<CCommandFuture*>(pData);
-	CancelAction(Ctx, Action);
-	std::destroy_at(&Action);
+	auto& Cmd = *reinterpret_cast<CCommandFuture*>(pData);
+	Cmd.RequestCancellation();
+	std::destroy_at(&Cmd);
 }
 //---------------------------------------------------------------------
 
 // TODO: if not tracking the target, can request next update 'never' and subscribe on action's finish event for re-evaluation/update request
 std::pair<EBTStatus, U16> CBehaviourTreeTurn::Update(U16 SelfIdx, std::byte* pData, float dt, const CBehaviourTreeContext& Ctx) const
 {
-	auto& Action = *reinterpret_cast<CCommandFuture*>(pData);
+	auto& Cmd = *reinterpret_cast<CCommandFuture*>(pData);
 
 	//???only if not completed yet? what will happen with completed one?
 	if (_Follow)
@@ -118,10 +118,10 @@ std::pair<EBTStatus, U16> CBehaviourTreeTurn::Update(U16 SelfIdx, std::byte* pDa
 		auto OptDir = GetDirection(Ctx);
 		if (!OptDir) return { EBTStatus::Failed, SelfIdx };
 
-		Action.As<AI::Turn>()->_LookatDirection = *OptDir;
+		Cmd.As<AI::Turn>()->_LookatDirection = *OptDir;
 	}
 
-	return { GetActionStatus(Ctx, Action), SelfIdx };
+	return { CommandStatusToBTStatus(Cmd.GetStatus()), SelfIdx };
 }
 //---------------------------------------------------------------------
 

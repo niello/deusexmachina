@@ -12,7 +12,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/Behaviour/BehaviourTreeAssetLoader.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreeComponent.h
 	DEM/Game/src/AI/Behaviour/BehaviourTreePlayer.h
-	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeAIActionBase.h
 	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeCondition.h
 	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeExecuteAbility.h
 	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeMove.h
@@ -96,7 +95,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/Behaviour/BehaviourTreeAsset.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreeAssetLoader.cpp
 	DEM/Game/src/AI/Behaviour/BehaviourTreePlayer.cpp
-	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeAIActionBase.cpp
 	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeCondition.cpp
 	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeExecuteAbility.cpp
 	DEM/Game/src/AI/Behaviour/Nodes/BehaviourTreeMove.cpp

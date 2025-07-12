@@ -11,7 +11,7 @@
 
 namespace DEM::AI
 {
-FACTORY_CLASS_IMPL(DEM::AI::CBehaviourTreeExecuteAbility, 'BTEA', CBehaviourTreeAIActionBase);
+FACTORY_CLASS_IMPL(DEM::AI::CBehaviourTreeExecuteAbility, 'BTEA', CBehaviourTreeNodeBase);
 
 void CBehaviourTreeExecuteAbility::Init(const Data::CParams* pParams)
 {
@@ -37,7 +37,7 @@ size_t CBehaviourTreeExecuteAbility::GetInstanceDataAlignment() const
 EBTStatus CBehaviourTreeExecuteAbility::Activate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
 	// Before everything else because Deactivate always calls a destructor
-	auto& Action = *new(pData) CCommandFuture();
+	auto& Cmd = *new(pData) CCommandFuture();
 
 	auto& BB = Ctx.pBrain->Blackboard;
 	const auto AbilityID = _AbilityID.Get(BB);
@@ -67,8 +67,8 @@ EBTStatus CBehaviourTreeExecuteAbility::Activate(std::byte* pData, const CBehavi
 	if (Ctx.pActuator)
 	{
 		//!!!FIXME: we don't even know if it is our action!
-		Action = Ctx.pActuator->FindCurrent<Game::ExecuteAbility>();
-		return CommandStatusToBTStatus(Action.GetStatus());
+		Cmd = Ctx.pActuator->FindCurrent<Game::ExecuteAbility>();
+		return CommandStatusToBTStatus(Cmd.GetStatus());
 	}
 
 	// No running action is found
@@ -78,16 +78,16 @@ EBTStatus CBehaviourTreeExecuteAbility::Activate(std::byte* pData, const CBehavi
 
 void CBehaviourTreeExecuteAbility::Deactivate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
-	auto& Action = *reinterpret_cast<CCommandFuture*>(pData);
-	CancelAction(Ctx, Action);
-	std::destroy_at(&Action);
+	auto& Cmd = *reinterpret_cast<CCommandFuture*>(pData);
+	Cmd.RequestCancellation();
+	std::destroy_at(&Cmd);
 }
 //---------------------------------------------------------------------
 
 std::pair<EBTStatus, U16> CBehaviourTreeExecuteAbility::Update(U16 SelfIdx, std::byte* pData, float dt, const CBehaviourTreeContext& Ctx) const
 {
-	auto& Action = *reinterpret_cast<CCommandFuture*>(pData);
-	return { GetActionStatus(Ctx, Action), SelfIdx };
+	auto& Cmd = *reinterpret_cast<CCommandFuture*>(pData);
+	return { CommandStatusToBTStatus(Cmd.GetStatus()), SelfIdx };
 }
 //---------------------------------------------------------------------
 

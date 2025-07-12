@@ -1,9 +1,25 @@
 #include "BehaviourTreeAsset.h"
+#include <AI/Command.h>
 #include <Math/Math.h>
 #include <Core/RTTI.h>
 
 namespace DEM::AI
 {
+
+EBTStatus CommandStatusToBTStatus(ECommandStatus Status)
+{
+	switch (Status)
+	{
+		case ECommandStatus::Succeeded:
+			return EBTStatus::Succeeded;
+		case ECommandStatus::Failed:
+		case ECommandStatus::Cancelled:
+			return EBTStatus::Failed;
+		default:
+			return EBTStatus::Running;
+	}
+}
+//---------------------------------------------------------------------
 
 CBehaviourTreeAsset::CBehaviourTreeAsset(std::vector<CNodeInfo>&& NodeInfo)
 {

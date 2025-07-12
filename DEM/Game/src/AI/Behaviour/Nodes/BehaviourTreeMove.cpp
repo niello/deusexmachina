@@ -10,7 +10,7 @@
 
 namespace DEM::AI
 {
-FACTORY_CLASS_IMPL(DEM::AI::CBehaviourTreeMove, 'BTMV', CBehaviourTreeAIActionBase);
+FACTORY_CLASS_IMPL(DEM::AI::CBehaviourTreeMove, 'BTMV', CBehaviourTreeNodeBase);
 
 void CBehaviourTreeMove::Init(const Data::CParams* pParams)
 {
@@ -66,7 +66,7 @@ std::optional<rtm::vector4f> CBehaviourTreeMove::GetPosition(const CBehaviourTre
 EBTStatus CBehaviourTreeMove::Activate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
 	// Before everything else because Deactivate always calls a destructor
-	auto& Action = *new(pData) CCommandFuture();
+	auto& Cmd = *new(pData) CCommandFuture();
 
 	if (!Ctx.pActuator) return EBTStatus::Failed;
 
@@ -80,33 +80,30 @@ EBTStatus CBehaviourTreeMove::Activate(std::byte* pData, const CBehaviourTreeCon
 	{
 		CreateCommand<AI::Steer>(*OptPos, *OptPos, 0.f);
 
-		//!!!FIXME: we don't even know if it is our action!
-		//Action = Ctx.pActuator->FindCurrent<AI::Steer>();
+		//Ctx.pActuator->Reset
+		//Cmd = Ctx.pActuator->PushCommand<AI::Steer>(*OptPos, *OptPos, 0.f);
 	}
 	else
 	{
 		CreateCommand<AI::Navigate>(*OptPos, 0.f);
-
-		//!!!FIXME: we don't even know if it is our action!
-		//Action = Ctx.pActuator->FindCurrent<AI::Navigate>();
 	}
 
-	return CommandStatusToBTStatus(Action.GetStatus());
+	return CommandStatusToBTStatus(Cmd.GetStatus());
 }
 //---------------------------------------------------------------------
 
 void CBehaviourTreeMove::Deactivate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
-	auto& Action = *reinterpret_cast<CCommandFuture*>(pData);
-	CancelAction(Ctx, Action);
-	std::destroy_at(&Action);
+	auto& Cmd = *reinterpret_cast<CCommandFuture*>(pData);
+	Cmd.RequestCancellation();
+	std::destroy_at(&Cmd);
 }
 //---------------------------------------------------------------------
 
 // TODO: if not tracking the target, can request next update 'never' and subscribe on action's finish event for re-evaluation/update request
 std::pair<EBTStatus, U16> CBehaviourTreeMove::Update(U16 SelfIdx, std::byte* pData, float dt, const CBehaviourTreeContext& Ctx) const
 {
-	auto& Action = *reinterpret_cast<CCommandFuture*>(pData);
+	auto& Cmd = *reinterpret_cast<CCommandFuture*>(pData);
 
 	//???only if not completed yet? what will happen with completed one?
 	if (_Follow)
@@ -119,11 +116,11 @@ std::pair<EBTStatus, U16> CBehaviourTreeMove::Update(U16 SelfIdx, std::byte* pDa
 		auto OptPos = GetPosition(Ctx);
 		if (!OptPos) return { EBTStatus::Failed, SelfIdx };
 
-		if (auto* pNavigate = Action.As<AI::Navigate>())
+		if (auto* pNavigate = Cmd.As<AI::Navigate>())
 		{
 			pNavigate->_Destination = *OptPos;
 		}
-		else if (auto* pSteer = Action.As<AI::Steer>())
+		else if (auto* pSteer = Cmd.As<AI::Steer>())
 		{
 			pSteer->_Dest = *OptPos;
 			pSteer->_NextDest = *OptPos;
@@ -131,7 +128,7 @@ std::pair<EBTStatus, U16> CBehaviourTreeMove::Update(U16 SelfIdx, std::byte* pDa
 		else return { EBTStatus::Failed, SelfIdx };
 	}
 
-	return { GetActionStatus(Ctx, Action), SelfIdx };
+	return { CommandStatusToBTStatus(Cmd.GetStatus()), SelfIdx };
 }
 //---------------------------------------------------------------------
 

@@ -1,5 +1,5 @@
 #pragma once
-#include <AI/Behaviour/Nodes/BehaviourTreeAIActionBase.h>
+#include <AI/Behaviour/BehaviourTreeAsset.h>
 #include <AI/Parameter.h>
 
 // A leaf BT action that orders an agent to move to the desired position or entity
@@ -7,7 +7,7 @@
 namespace DEM::AI
 {
 
-class CBehaviourTreeMove : public CBehaviourTreeAIActionBase
+class CBehaviourTreeMove : public CBehaviourTreeNodeBase
 {
 	FACTORY_CLASS_DECL;
 

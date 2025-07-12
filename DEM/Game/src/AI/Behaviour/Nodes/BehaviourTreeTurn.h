@@ -1,5 +1,5 @@
 #pragma once
-#include <AI/Behaviour/Nodes/BehaviourTreeAIActionBase.h>
+#include <AI/Behaviour/BehaviourTreeAsset.h>
 #include <AI/Parameter.h>
 
 // A leaf BT action that orders an agent to turn to the desired direction or entity
@@ -7,7 +7,7 @@
 namespace DEM::AI
 {
 
-class CBehaviourTreeTurn : public CBehaviourTreeAIActionBase
+class CBehaviourTreeTurn : public CBehaviourTreeNodeBase
 {
 	FACTORY_CLASS_DECL;
 

@@ -15,6 +15,7 @@ namespace DEM::AI
 {
 struct CAIStateComponent;
 class CCommandStackComponent;
+enum class ECommandStatus : U8;
 class CBehaviourTreePlayer;
 
 enum class EBTStatus : U8
@@ -23,6 +24,8 @@ enum class EBTStatus : U8
 	Succeeded,
 	Failed
 };
+
+static EBTStatus CommandStatusToBTStatus(ECommandStatus Status);
 
 struct CBehaviourTreeContext
 {

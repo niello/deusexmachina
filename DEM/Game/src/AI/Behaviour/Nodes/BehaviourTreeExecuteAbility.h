@@ -1,5 +1,5 @@
 #pragma once
-#include <AI/Behaviour/Nodes/BehaviourTreeAIActionBase.h>
+#include <AI/Behaviour/BehaviourTreeAsset.h>
 #include <AI/Parameter.h>
 
 // A leaf BT action that executes an ability by ID
@@ -7,7 +7,7 @@
 namespace DEM::AI
 {
 
-class CBehaviourTreeExecuteAbility : public CBehaviourTreeAIActionBase
+class CBehaviourTreeExecuteAbility : public CBehaviourTreeNodeBase
 {
 	FACTORY_CLASS_DECL;
 
