@@ -565,12 +565,16 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 			}
 		}
 
-		const bool IsSubCommandRunning = !IsTerminalCommandStatus(pNavCmd->_SubCommandFuture.GetStatus());
+		// Forget a succeeded intermediate sub-command
+		if (IsTerminalCommandStatus(pNavCmd->_SubCommandFuture.GetStatus()))
+			pNavCmd->_SubCommandFuture = {};
+		else
+			n_assert_dbg(!pNavCmd->_SubCommandFuture.IsAbandoned());
 
 		// Multiple physics frames can be processed inside one logic frame. Target remains the same
 		// during the logic frame but might be reached by physics in the middle of it. So if there
 		// is an active sub-command, let's just continue executing it without unnecessary update.
-		if (!NewFrame && IsSubCommandRunning && PrevMode == Agent.Mode && Agent.State == ENavigationState::Following) return;
+		if (!NewFrame && pNavCmd->_SubCommandFuture && PrevMode == Agent.Mode && Agent.State == ENavigationState::Following) return;
 
 		// Process target location changes and validity
 		bool DestChanged = false;
@@ -612,7 +616,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 		if (Agent.OffmeshRef)
 		{
 			// Offmesh connection properties can't change and therefore sub-action can't become inactual during the traversal
-			if (IsSubCommandRunning && PrevState == Agent.State && (!DestChanged || Agent.Mode == ENavigationMode::Offmesh)) return;
+			if (pNavCmd->_SubCommandFuture && PrevState == Agent.State && (!DestChanged || Agent.Mode == ENavigationMode::Offmesh)) return;
 		}
 		else if (Agent.Mode == ENavigationMode::Surface)
 		{
@@ -628,13 +632,13 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 			}
 
 			// Continue executing active sub-action while it is actual
-			if (!DestChanged && !OptimizePath && IsSubCommandRunning && PrevState == Agent.State) return;
+			if (!DestChanged && !OptimizePath && pNavCmd->_SubCommandFuture && PrevState == Agent.State) return;
 		}
 
 		// Generate sub-action for path following
 		Game::HEntity Controller;
 		auto pAction = FindTraversalAction(World, Agent, CmdStack, Pos, OptimizePath, Controller);
-		if (!pAction || !pAction->GenerateAction(Session, Agent, EntityID, Controller, CmdStack, NavigateCmd, Pos))
+		if (!pAction || !pAction->GenerateAction(Session, Agent, EntityID, Controller, CmdStack, pNavCmd->_SubCommandFuture, Pos))
 		{
 			ResetNavigation(Agent, PathQueue);
 			pNavCmd->_SubCommandFuture = {};

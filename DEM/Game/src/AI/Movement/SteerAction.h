@@ -1,7 +1,6 @@
 #pragma once
 #include <AI/Navigation/TraversalAction.h>
 #include <AI/Command.h>
-#include <Events/EventNative.h>
 #include <rtm/vector4f.h>
 
 // Provides steering traversal action, processed by the character controller
@@ -58,7 +57,7 @@ public:
 
 	// When steering through the offmesh connection, must reach the start point first
 	virtual float GetSqTriggerRadius(float AgentRadius, float OffmeshTriggerRadius) const override { return std::max(Steer::SqLinearTolerance, OffmeshTriggerRadius * OffmeshTriggerRadius); }
-	virtual bool  GenerateAction(Game::CGameSession& Session, CNavAgentComponent& Agent, Game::HEntity Actor, Game::HEntity Controller, CCommandStackComponent& CmdStack, Game::HAction NavAction, const rtm::vector4f& Pos) override;
+	virtual bool  GenerateAction(Game::CGameSession& Session, CNavAgentComponent& Agent, Game::HEntity Actor, Game::HEntity Controller, const rtm::vector4f& Pos, CCommandStackComponent& CmdStack, CCommandFuture& SubCmd) override;
 };
 
 }

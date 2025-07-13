@@ -30,7 +30,7 @@ public:
 	virtual bool  CanStartTraversingOffmesh(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, const rtm::vector4f& Pos) const { return true; }
 	virtual bool  CanEndTraversingOffmesh(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, const rtm::vector4f& Pos) const { return true; }
 	virtual bool  NeedSlowdownBeforeStart(CNavAgentComponent& Agent) const { return true; }
-	virtual bool  GenerateAction(Game::CGameSession& Session, CNavAgentComponent& Agent, Game::HEntity Actor, Game::HEntity Controller, CCommandStackComponent& CmdStack, Game::HAction NavAction, const rtm::vector4f& Pos) = 0;
+	virtual bool  GenerateAction(Game::CGameSession& Session, CNavAgentComponent& Agent, Game::HEntity Actor, Game::HEntity Controller, const rtm::vector4f& Pos, CCommandStackComponent& CmdStack, CCommandFuture& SubCmd) = 0;
 };
 
 }

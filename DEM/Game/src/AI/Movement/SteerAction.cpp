@@ -2,6 +2,7 @@
 #include <Game/ECS/GameWorld.h>
 #include <Game/GameSession.h>
 #include <AI/Navigation/NavAgentComponent.h>
+#include <AI/CommandStackComponent.h>
 #include <Math/SIMDMath.h>
 #include <Math/Vector2.h>
 #include <Core/Factory.h>
@@ -10,14 +11,32 @@ namespace DEM::AI
 {
 FACTORY_CLASS_IMPL(DEM::AI::CSteerAction, 'STRA', CTraversalAction);
 
-bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponent& Agent, Game::HEntity Actor, Game::HEntity Controller, CCommandStackComponent& CmdStack,
-	Game::HAction NavAction, const rtm::vector4f& Pos)
+bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponent& Agent, Game::HEntity Actor, Game::HEntity Controller,
+	const rtm::vector4f& Pos, CCommandStackComponent& CmdStack, CCommandFuture& SubCmd)
 {
 	// If not on navmesh, recover to the nearest valid position
 	if (Agent.Mode == ENavigationMode::Recovery)
 	{
 		const rtm::vector4f ClosestPos = rtm::vector_load3(Agent.Corridor.getPos());
-		return !!Queue.PushOrUpdateChild<Steer>(NavAction, ClosestPos, ClosestPos, -0.f);
+
+		if (!SubCmd)
+		{
+			SubCmd = CmdStack.PushCommand<Steer>(ClosestPos, ClosestPos, -0.f);
+		}
+
+		if (auto* pSteer = SubCmd.As<Steer>())
+		{
+			pSteer->_Dest = ClosestPos;
+			pSteer->_NextDest = ClosestPos;
+			pSteer->_AdditionalDistance = -0.f;
+		}
+		else
+		{
+			SubCmd.RequestCancellation();
+			SubCmd = {};
+		}
+
+		return true;
 	}
 
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
@@ -64,7 +83,7 @@ bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponen
 			// new action start immediately to avoid regenerating already finished Steer action again and again.
 			// Don't trigger offmesh connections. If it was possible, navigation system would do that.
 			if (pNextAction && DestReached && !(Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION))
-				return pNextAction->GenerateAction(Session, Agent, Actor, Controller, Queue, NavAction, Pos);
+				return pNextAction->GenerateAction(Session, Agent, Actor, Controller, CmdStack, NavAction, Pos);
 
 			// Some actions require no arrival slowdown when approaching action change point
 			NeedSlowdown = !pNextAction || pNextAction->NeedSlowdownBeforeStart(Agent);
@@ -103,7 +122,7 @@ bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponen
 	if (!ActionChanged && !LastEdge)
 	{
 		// Try to get existing sub-action of required type
-		auto SteerAction = Queue.GetChild(NavAction);
+		auto SteerAction = CmdStack.GetChild(NavAction);
 		auto pSteer = SteerAction.As<Steer>();
 
 		// Recalculate only when destination changes
@@ -145,7 +164,7 @@ bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponen
 	if (LastEdge) NextDest = rtm::vector_add(Dest, NavAction.As<Navigate>()->_FinalFacing);
 
 	// Update existing action or push the new one
-	return !!Queue.PushOrUpdateChild<Steer>(NavAction, Dest, NextDest, AdditionalDistance);
+	return !!CmdStack.PushOrUpdateChild<Steer>(NavAction, Dest, NextDest, AdditionalDistance);
 }
 //---------------------------------------------------------------------
 
