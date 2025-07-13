@@ -10,7 +10,6 @@ namespace DEM::Game
 {
 	class CGameSession;
 	class CGameWorld;
-	class CActionQueueComponent;
 	class HAction;
 }
 
@@ -18,6 +17,7 @@ namespace DEM::AI
 {
 using PTraversalAction = Ptr<class CTraversalAction>;
 struct CNavAgentComponent;
+class CCommandStackComponent;
 class Navigate;
 
 class CTraversalAction : public DEM::Core::CObject
@@ -30,7 +30,7 @@ public:
 	virtual bool  CanStartTraversingOffmesh(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, const rtm::vector4f& Pos) const { return true; }
 	virtual bool  CanEndTraversingOffmesh(Game::CGameWorld& World, CNavAgentComponent& Agent, Game::HEntity Controller, const rtm::vector4f& Pos) const { return true; }
 	virtual bool  NeedSlowdownBeforeStart(CNavAgentComponent& Agent) const { return true; }
-	virtual bool  GenerateAction(Game::CGameSession& Session, CNavAgentComponent& Agent, Game::HEntity Actor, Game::HEntity Controller, Game::CActionQueueComponent& Queue, Game::HAction NavAction, const rtm::vector4f& Pos) = 0;
+	virtual bool  GenerateAction(Game::CGameSession& Session, CNavAgentComponent& Agent, Game::HEntity Actor, Game::HEntity Controller, CCommandStackComponent& CmdStack, Game::HAction NavAction, const rtm::vector4f& Pos) = 0;
 };
 
 }

@@ -21,10 +21,28 @@ public:
 	CCommandStackComponent& operator =(CCommandStackComponent&&) noexcept = default;
 	~CCommandStackComponent() = default;
 
-	// SetRootCommand
-	// PushChildCommand
-	// PopChildCommands? from which command, and maybe with result, cancelled by default
-	// Clear/Reset? with result? cancelled by default
+	template<typename T, typename... TArgs>
+	CCommandFuture PushCommand(TArgs&&... Args)
+	{
+		auto [Future, Promise] = CreateCommand<T>(std::forward<TArgs>(Args)...);
+		_CommandStack.push_back(std::move(Promise));
+		return std::move(Future);
+	}
+
+	void PushCommand(CCommandPromise&& Cmd) { _CommandStack.push_back(std::move(Cmd)); }
+
+	//???or use index on stack instead of promise? Find will return index and will accept a starting index.
+	//???or use some kind of iterator? or pointer? need to access command args with Find result but then use it back as an iterator.
+	void PopCommand(const CCommandPromise& Cmd, ECommandStatus Status)
+	{
+		n_assert_dbg(IsTerminalCommandStatus(Status));
+
+		// drop all children and then ourselves from the stack, setting the same status
+
+		// root logging
+		//::Sys::Log((EntityToString(EntityID) + ": " + RootAction.Get()->GetClassName() + " action succeeded\n").c_str());
+		//::Sys::Log((EntityToString(EntityID) + ": " + RootAction.Get()->GetClassName() + " action failed or was cancelled\n").c_str());
+	}
 
 	// FindCurrent<T>? Or always work with top action? maybe not, because higher level
 	// subsystem may change state, e.g. character became unable to navigate, but Steer doesn't know!
@@ -34,9 +52,6 @@ public:
 	// GetCurrent needed? stack top.
 
 	bool IsEmpty() const { return _CommandStack.empty(); }
-
-	//::Sys::Log((EntityToString(EntityID) + ": " + RootAction.Get()->GetClassName() + " action succeeded\n").c_str());
-	//::Sys::Log((EntityToString(EntityID) + ": " + RootAction.Get()->GetClassName() + " action failed or was cancelled\n").c_str());
 };
 
 }

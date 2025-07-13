@@ -88,10 +88,8 @@ EBTStatus CBehaviourTreeTurn::Activate(std::byte* pData, const CBehaviourTreeCon
 	auto OptDir = GetDirection(Ctx);
 	if (!OptDir) return EBTStatus::Failed;
 
-	CreateCommand<AI::Turn>(*OptDir, AI::Turn::AngularTolerance);
-
-	//!!!FIXME: we don't even know if it is our action!
-	//Cmd = Ctx.pActuator->FindCurrent<AI::Turn>();
+	Ctx.pActuator->PopCommand(0, ECommandStatus::Cancelled); //???or shortcut method Reset?
+	Cmd = Ctx.pActuator->PushCommand<AI::Turn>(*OptDir, AI::Turn::AngularTolerance);
 
 	return CommandStatusToBTStatus(Cmd.GetStatus());
 }

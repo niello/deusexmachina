@@ -113,7 +113,7 @@ static void OptimizePath(const CGameSession& Session, CAbilityInstance& AbilityI
 //---------------------------------------------------------------------
 
 static AI::ECommandStatus MoveToTarget(CGameSession& Session, CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID,
-	CActionQueueComponent& Queue, HAction Action, HAction ChildAction, bool TransformChanged)
+	AI::CCommandStackComponent& CmdStack, HAction Action, HAction ChildAction, bool TransformChanged)
 {
 	// When no zones available for an interaction, run ability from the current position
 	//if (AbilityInstance.InitialZones.empty()) return AI::ECommandStatus::Succeeded;
@@ -132,11 +132,11 @@ static AI::ECommandStatus MoveToTarget(CGameSession& Session, CAbilityInstance& 
 	else if (ChildAction)
 	{
 		// Process movement sub-action
-		const auto ChildActionStatus = Queue.GetStatus(ChildAction);
+		const auto ChildActionStatus = CmdStack.GetStatus(ChildAction);
 		if (ChildActionStatus != AI::ECommandStatus::Failed)
 		{
 			// Check if another available zone is closer along the way than our target zone
-			if (ChildActionStatus == AI::ECommandStatus::Active)
+			if (ChildActionStatus == AI::ECommandStatus::Running)
 				OptimizePath(Session, AbilityInstance, World, EntityID, ChildAction);
 
 			return ChildActionStatus;
@@ -210,16 +210,16 @@ static AI::ECommandStatus MoveToTarget(CGameSession& Session, CAbilityInstance& 
 		// If character is a navmesh agent, must navigate. Otherwise a simple steering does the job.
 		// FIXME: Navigate action can't be nested now because it completely breaks offmesh traversal.
 		// Steering may ignore special traversal logic but it is our only option at least for now.
-		if (pNavAgent /*FIXME:*/ && !Queue.FindCurrent<AI::Navigate>(Action))
-			Queue.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, FacingDir, 0.f);
+		if (pNavAgent /*FIXME:*/ && !CmdStack.FindCurrent<AI::Navigate>(Action))
+			CmdStack.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, FacingDir, 0.f);
 		else
-			Queue.PushOrUpdateChild<AI::Steer>(Action, ActionPos, rtm::vector_add(ActionPos, FacingDir), 0.f);
+			CmdStack.PushOrUpdateChild<AI::Steer>(Action, ActionPos, rtm::vector_add(ActionPos, FacingDir), 0.f);
 
 		if (AbilityInstance.Stage == EAbilityExecutionStage::Interaction)
 			AbilityInstance.Ability.OnEnd(Session, AbilityInstance, AI::ECommandStatus::Cancelled);
 		AbilityInstance.Stage = EAbilityExecutionStage::Movement;
 
-		return AI::ECommandStatus::Active;
+		return AI::ECommandStatus::Running;
 	}
 
 	// No zones left, fail
@@ -230,13 +230,13 @@ static AI::ECommandStatus MoveToTarget(CGameSession& Session, CAbilityInstance& 
 //---------------------------------------------------------------------
 
 static AI::ECommandStatus FaceTarget(CGameSession& Session, CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID,
-	CActionQueueComponent& Queue, HAction Action, HAction ChildAction, bool TransformChanged)
+	AI::CCommandStackComponent& CmdStack, HAction Action, HAction ChildAction, bool TransformChanged)
 {
 	// Process Turn sub-action until finished or target transform changed
 	if (!TransformChanged)
 	{
 		if (AbilityInstance.Stage > EAbilityExecutionStage::Facing) return AI::ECommandStatus::Succeeded;
-		else if (ChildAction.As<AI::Turn>()) return Queue.GetStatus(ChildAction);
+		else if (ChildAction.As<AI::Turn>()) return CmdStack.GetStatus(ChildAction);
 	}
 
 	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
@@ -254,13 +254,13 @@ static AI::ECommandStatus FaceTarget(CGameSession& Session, CAbilityInstance& Ab
 	const float Angle = Math::AngleXZNorm(LookatDir, TargetDir);
 	if (std::fabsf(Angle) < FacingTolerance) return AI::ECommandStatus::Succeeded;
 
-	Queue.PushOrUpdateChild<AI::Turn>(Action, TargetDir, FacingTolerance);
+	CmdStack.PushOrUpdateChild<AI::Turn>(Action, TargetDir, FacingTolerance);
 
 	if (AbilityInstance.Stage == EAbilityExecutionStage::Interaction)
 		AbilityInstance.Ability.OnEnd(Session, AbilityInstance, AI::ECommandStatus::Cancelled);
 	AbilityInstance.Stage = EAbilityExecutionStage::Facing;
 
-	return AI::ECommandStatus::Active;
+	return AI::ECommandStatus::Running;
 }
 //---------------------------------------------------------------------
 
@@ -292,7 +292,7 @@ static void EndCurrentInteraction(CGameSession& Session, AI::ECommandStatus NewS
 {
 	if (AIState._AbilityInstance->Stage == EAbilityExecutionStage::Interaction)
 	{
-		if (NewStatus == AI::ECommandStatus::NotQueued) NewStatus = AI::ECommandStatus::Cancelled;
+		if (NewStatus == AI::ECommandStatus::NotStarted) NewStatus = AI::ECommandStatus::Cancelled;
 		AIState._AbilityInstance->Ability.OnEnd(Session, *AIState._AbilityInstance, NewStatus);
 	}
 
@@ -304,14 +304,14 @@ static void EndCurrentInteraction(CGameSession& Session, AI::ECommandStatus NewS
 
 void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float dt)
 {
-	World.ForEachEntityWith<CActionQueueComponent, AI::CAIStateComponent>(
-		[&Session, &World, dt](auto EntityID, auto& Entity, CActionQueueComponent& Queue, AI::CAIStateComponent& AIState)
+	World.ForEachEntityWith<AI::CCommandStackComponent, AI::CAIStateComponent>(
+		[&Session, &World, dt](auto EntityID, auto& Entity, AI::CCommandStackComponent& CmdStack, AI::CAIStateComponent& AIState)
 	{
 		// If current action is empty or has finished with any result, stop current interaction.
 		// If child action was cancelled, the main action is considered cancelled too.
-		const auto Action = Queue.FindCurrent<ExecuteAbility>();
-		const auto ChildAction = Queue.GetChild(Action);
-		const auto ActionStatus = (Queue.GetStatus(ChildAction) == AI::ECommandStatus::Cancelled) ? AI::ECommandStatus::Cancelled : Queue.GetStatus(Action);
+		const auto Action = CmdStack.FindCurrent<ExecuteAbility>();
+		const auto ChildAction = CmdStack.GetChild(Action);
+		const auto ActionStatus = (CmdStack.GetStatus(ChildAction) == AI::ECommandStatus::Cancelled) ? AI::ECommandStatus::Cancelled : CmdStack.GetStatus(Action);
 		if (ActionStatus != AI::ECommandStatus::Active)
 		{
 			if (AIState._AbilityInstance) EndCurrentInteraction(Session, ActionStatus, AIState, EntityID);
@@ -368,7 +368,7 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 		if (!AIState._AbilityInstance)
 		{
 			// No ability is being executed
-			Queue.SetStatus(Action, AI::ECommandStatus::Succeeded);
+			CmdStack.SetStatus(Action, AI::ECommandStatus::Succeeded);
 			return;
 		}
 
@@ -410,10 +410,10 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 
 		// Ability execution logic
 
-		AI::ECommandStatus Result = MoveToTarget(Session, AbilityInstance, World, EntityID, Queue, Action, ChildAction, TransformChanged);
+		AI::ECommandStatus Result = MoveToTarget(Session, AbilityInstance, World, EntityID, CmdStack, Action, ChildAction, TransformChanged);
 
 		if (Result == AI::ECommandStatus::Succeeded)
-			Result = FaceTarget(Session, AbilityInstance, World, EntityID, Queue, Action, ChildAction, TransformChanged);
+			Result = FaceTarget(Session, AbilityInstance, World, EntityID, CmdStack, Action, ChildAction, TransformChanged);
 
 		if (Result == AI::ECommandStatus::Succeeded)
 			Result = InteractWithTarget(Session, AbilityInstance, EntityID, dt);
@@ -421,7 +421,7 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 		if (Result != AI::ECommandStatus::Active)
 		{
 			EndCurrentInteraction(Session, Result, AIState, EntityID);
-			Queue.SetStatus(Action, Result);
+			CmdStack.SetStatus(Action, Result);
 		}
 	});
 }

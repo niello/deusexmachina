@@ -88,6 +88,7 @@ set(DEM_L2_GAME_HEADERS
 )
 
 set(DEM_L2_GAME_SOURCES
+	DEM/Game/src/AI/ActionSystems.cpp
 	DEM/Game/src/AI/AILevel.cpp
 	DEM/Game/src/AI/FormationManager.cpp
 	DEM/Game/src/AI/MoveInteraction.cpp
@@ -118,7 +119,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Animation/TimelineTask.cpp
 	DEM/Game/src/App/AppFSM.cpp
 	DEM/Game/src/App/AppStateVideo.cpp
-	DEM/Game/src/Game/ActionQueueSystem.cpp
 	DEM/Game/src/Game/GameLevel.cpp
 	DEM/Game/src/Game/GameSession.cpp
 	DEM/Game/src/Game/GameStateManager.cpp

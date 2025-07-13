@@ -6,6 +6,7 @@
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/Interaction/ScriptedAbility.h>
 #include <Game/SessionVars.h>
+#include <AI/CommandStackComponent.h>
 #include <Animation/AnimationComponent.h>
 #include <Scene/SceneComponent.h>
 #include <Scripting/Flow/FlowAsset.h>
@@ -152,20 +153,20 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 		, "PrevElapsedTime", &DEM::Game::CAbilityInstance::PrevElapsedTime
 		, "Stop", [&World](DEM::Game::CAbilityInstance& AbilityInstance, DEM::AI::ECommandStatus Status)
 		{
-			auto pQueue = World.FindComponent<DEM::Game::CActionQueueComponent>(AbilityInstance.Actor);
-			if (!pQueue) return;
+			auto pCmdStack = World.FindComponent<DEM::AI::CCommandStackComponent>(AbilityInstance.Actor);
+			if (!pCmdStack) return;
 
-			DEM::Game::HAction Action = pQueue->FindCurrent<DEM::Game::ExecuteAbility>();
+			DEM::Game::HAction Action = pCmdStack->FindCurrent<DEM::Game::ExecuteAbility>();
 			while (Action)
 			{
 				auto pAction = Action.As<DEM::Game::ExecuteAbility>();
 				if (pAction && pAction->_AbilityInstance == &AbilityInstance)
 				{
-					pQueue->SetStatus(Action, Status);
+					pCmdStack->SetStatus(Action, Status);
 					return;
 				}
 
-				Action = pQueue->FindCurrent<DEM::Game::ExecuteAbility>(Action);
+				Action = pCmdStack->FindCurrent<DEM::Game::ExecuteAbility>(Action);
 			}
 		}
 	);
@@ -175,11 +176,11 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 		, "Custom", &DEM::Game::CScriptedAbilityInstance::Custom
 	);
 
-	State.new_usertype<DEM::Game::CActionQueueComponent>("CActionQueueComponent"
-		, "SetStatus", &DEM::Game::CActionQueueComponent::SetStatus
-		, "GetCurrent", &DEM::Game::CActionQueueComponent::GetCurrent
-		, "GetRoot", &DEM::Game::CActionQueueComponent::GetRoot
-		, "GetAbilityInstanceAction", [](DEM::Game::CActionQueueComponent& Self, const DEM::Game::CAbilityInstance& AbilityInstance)
+	State.new_usertype<DEM::AI::CCommandStackComponent>("CCommandStackComponent"
+		, "SetStatus", &DEM::AI::CCommandStackComponent::SetStatus
+		, "GetCurrent", &DEM::AI::CCommandStackComponent::GetCurrent
+		, "GetRoot", &DEM::AI::CCommandStackComponent::GetRoot
+		, "GetAbilityInstanceAction", [](DEM::AI::CCommandStackComponent& Self, const DEM::Game::CAbilityInstance& AbilityInstance)
 		{
 			DEM::Game::HAction Action = Self.FindCurrent<DEM::Game::ExecuteAbility>();
 			while (Action)

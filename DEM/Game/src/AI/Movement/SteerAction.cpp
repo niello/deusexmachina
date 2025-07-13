@@ -10,7 +10,7 @@ namespace DEM::AI
 {
 FACTORY_CLASS_IMPL(DEM::AI::CSteerAction, 'STRA', CTraversalAction);
 
-bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponent& Agent, Game::HEntity Actor, Game::HEntity Controller, Game::CActionQueueComponent& Queue,
+bool CSteerAction::GenerateAction(Game::CGameSession& Session, CNavAgentComponent& Agent, Game::HEntity Actor, Game::HEntity Controller, CCommandStackComponent& CmdStack,
 	Game::HAction NavAction, const rtm::vector4f& Pos)
 {
 	// If not on navmesh, recover to the nearest valid position

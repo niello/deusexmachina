@@ -15,6 +15,9 @@ enum class ECommandStatus : U8
 	Cancelled
 };
 
+inline bool IsFinishedCommandStatus(ECommandStatus Status) { return Status == ECommandStatus::Succeeded || Status == ECommandStatus::Failed; }
+inline bool IsTerminalCommandStatus(ECommandStatus Status) { return IsFinishedCommandStatus(Status) || Status == ECommandStatus::Cancelled; }
+
 class CCommand : public Core::CObject
 {
 private:

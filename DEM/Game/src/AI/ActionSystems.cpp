@@ -5,7 +5,7 @@
 namespace DEM::AI
 {
 
-void ProcessActionQueue(Game::CGameWorld& World)
+void ProcessCommandQueue(Game::CGameWorld& World)
 {
 	World.ForEachEntityWith<CCommandQueueComponent, CCommandStackComponent>([&World](
 		auto EntityID, auto& Entity, CCommandQueueComponent& Queue, CCommandStackComponent& Stack)
@@ -16,7 +16,7 @@ void ProcessActionQueue(Game::CGameWorld& World)
 		// Nothing to pass to the execution stack
 		if (Queue.IsEmpty()) return;
 
-		Stack._CommandStack.push_back(Queue.Pop());
+		Stack.PushCommand(Queue.Pop());
 	});
 }
 //---------------------------------------------------------------------
