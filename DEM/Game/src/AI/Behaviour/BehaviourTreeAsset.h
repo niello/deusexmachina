@@ -25,7 +25,7 @@ enum class EBTStatus : U8
 	Failed
 };
 
-static EBTStatus CommandStatusToBTStatus(ECommandStatus Status);
+EBTStatus CommandStatusToBTStatus(ECommandStatus Status);
 
 struct CBehaviourTreeContext
 {

@@ -2,6 +2,7 @@
 #include <Game/ECS/GameWorld.h>
 #include <Physics/CharacterControllerComponent.h>
 #include <AI/Movement/SteerAction.h>
+#include <AI/CommandStackComponent.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/RigidBody.h>
 #include <Physics/CollisionShape.h>
@@ -100,15 +101,21 @@ static bool UpdateSelfControlState(CCharacterControllerComponent& Character, flo
 static rtm::vector4f ProcessMovement(CCharacterControllerComponent& Character, AI::CCommandStackComponent& CmdStack, const rtm::vector4f& Pos)
 {
 	// Move only when explicitly requested
-	auto SteerAction = CmdStack.FindCurrent<AI::Steer>();
-	auto pSteerAction = SteerAction.As<AI::Steer>();
-	if (!pSteerAction || CmdStack.GetStatus(SteerAction) != AI::ECommandStatus::Active)
+	auto SteerCmd = CmdStack.FindTopmostCommand<AI::Steer>();
+	if (!SteerCmd || SteerCmd->IsCancelled())
 	{
+		if (SteerCmd) CmdStack.PopCommand(SteerCmd, AI::ECommandStatus::Cancelled);
+
 		if (Character.State == ECharacterState::Walk || Character.State == ECharacterState::ShortStep)
 			Character.State = ECharacterState::Stand;
+
 		return rtm::vector_zero();
 	}
 
+	// TODO: check if can benefit from knowing about changes
+	SteerCmd->AcceptChanges();
+
+	auto* pSteerAction = SteerCmd->As<AI::Steer>();
 	const rtm::vector4f ToDest = rtm::vector_sub(pSteerAction->_Dest, Pos);
 	const rtm::vector4f ToDestXZ = rtm::vector_set_y(ToDest, 0.f);
 
@@ -117,7 +124,7 @@ static rtm::vector4f ProcessMovement(CCharacterControllerComponent& Character, A
 	const bool IsSameHeightLevel = (rtm::vector_get_y(rtm::vector_abs(ToDest)) < Character.Height);
 	if (IsSameHeightLevel && SqDistanceToDest < AI::Steer::SqLinearTolerance)
 	{
-		CmdStack.SetStatus(SteerAction, AI::ECommandStatus::Succeeded);
+		CmdStack.PopCommand(SteerCmd, AI::ECommandStatus::Succeeded);
 		Character.State = ECharacterState::Stand;
 		return rtm::vector_zero();
 	}
@@ -206,11 +213,15 @@ static float ProcessFacing(CCharacterControllerComponent& Character, AI::CComman
 		const rtm::vector4f DesiredDir = rtm::vector_normalize3(rtm::vector_set_y(DesiredLinearVelocity, 0.f));
 		DesiredRotation = Math::AngleXZNorm(LookatDir, DesiredDir);
 	}
-	else if (auto TurnAction = CmdStack.FindCurrent<AI::Turn>())
+	else if (auto TurnCmd = CmdStack.FindTopmostCommand<AI::Turn>())
 	{
-		auto pTurnAction = TurnAction.As<AI::Turn>();
-		if (pTurnAction && CmdStack.GetStatus(TurnAction) == AI::ECommandStatus::Active)
+		if (TurnCmd->IsCancelled())
 		{
+			CmdStack.PopCommand(TurnCmd, AI::ECommandStatus::Cancelled);
+		}
+		else
+		{
+			auto* pTurnAction = TurnCmd->As<AI::Turn>();
 			DesiredRotation = Math::AngleXZNorm(LookatDir, pTurnAction->_LookatDirection);
 			Tolerance = pTurnAction->_Tolerance;
 		}
@@ -328,13 +339,12 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
 
 		// NB: we don't try to process Steer and Turn simultaneously, only the most nested of them
-		auto Action = CmdStack.FindCurrent<AI::Steer, AI::Turn>();
-		if (CmdStack.GetStatus(Action) == AI::ECommandStatus::Succeeded) return;
+		auto Cmd = CmdStack.FindTopmostCommand<AI::Steer, AI::Turn>();
 
 		// Access real physical transform, not an interpolated motion state
 		const auto& BodyTfm = pBody->GetBtBody()->getWorldTransform();
 
-		if (auto pSteerAction = Action.As<AI::Steer>())
+		if (auto* pSteerAction = Cmd->As<AI::Steer>())
 		{
 			const bool IsWalking = Character.IsWalking();
 
@@ -346,7 +356,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			const bool IsSameHeightLevel = (std::fabsf(rtm::vector_get_y(ToDest)) < Character.Height);
 			if (IsSameHeightLevel && SqDistance < AI::Steer::SqLinearTolerance)
 			{
-				CmdStack.SetStatus(Action, AI::ECommandStatus::Succeeded);
+				CmdStack.PopCommand(Cmd, AI::ECommandStatus::Succeeded);
 				if (IsWalking) Character.State = ECharacterState::Stand;
 			}
 			else if (IsWalking) // Don't check stuck state when standing (e.g. deliberately waiting for obstacle to move) or being in the air
@@ -360,7 +370,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 					Character.TimeStuck += dt;
 					if (Character.TimeStuck >= TimeToStuck)
 					{
-						CmdStack.SetStatus(Action, AI::ECommandStatus::Failed);
+						CmdStack.PopCommand(Cmd, AI::ECommandStatus::Failed);
 						Character.State = ECharacterState::Stand;
 					}
 				}
@@ -371,13 +381,13 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 				}
 			}
 		}
-		else if (auto pTurnAction = Action.As<AI::Turn>())
+		else if (auto* pTurnAction = Cmd->As<AI::Turn>())
 		{
 			// Check angular arrival
 			const rtm::vector4f LookatDir = Math::FromBullet(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
 			const float Angle = Math::AngleXZNorm(LookatDir, pTurnAction->_LookatDirection);
 			if (std::fabsf(Angle) < pTurnAction->_Tolerance)
-				CmdStack.SetStatus(Action, AI::ECommandStatus::Succeeded);
+				CmdStack.PopCommand(Cmd, AI::ECommandStatus::Succeeded);
 		}
 	});
 }

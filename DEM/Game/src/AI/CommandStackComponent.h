@@ -62,8 +62,6 @@ public:
 
 	void PushCommand(CCommandPromise&& Cmd) { _CommandStack.push_back(std::move(Cmd)); }
 
-	//???or use index on stack instead of promise? Find will return index and will accept a starting index.
-	//???or use some kind of iterator? or pointer? need to access command args with Find result but then use it back as an iterator.
 	void PopCommand(CCommandStackHandle CmdHandle, ECommandStatus Status, bool ForceRewriteFinishedStatus = false)
 	{
 		const auto StartIdx = CmdHandle._Index;
@@ -83,9 +81,9 @@ public:
 		//::Sys::Log((EntityToString(EntityID) + ": " + RootAction.Get()->GetClassName() + " action failed or was cancelled\n").c_str());
 	}
 
-	CCommandStackHandle GetTop()
+	void Reset(ECommandStatus Status, bool ForceRewriteFinishedStatus = false)
 	{
-		return _CommandStack.empty() ? CCommandStackHandle{} : CCommandStackHandle(&_CommandStack, _CommandStack.size() - 1);
+		PopCommand(CCommandStackHandle(&_CommandStack, 0), Status, ForceRewriteFinishedStatus);
 	}
 
 	template<typename... T>

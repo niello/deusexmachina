@@ -76,7 +76,7 @@ EBTStatus CBehaviourTreeMove::Activate(std::byte* pData, const CBehaviourTreeCon
 	auto OptPos = GetPosition(Ctx);
 	if (!OptPos) return EBTStatus::Failed;
 
-	Ctx.pActuator->PopCommand(0, ECommandStatus::Cancelled); //???or shortcut method Reset?
+	Ctx.pActuator->Reset(ECommandStatus::Cancelled);
 
 	if (_IgnoreNavigation || !pWorld->FindComponent<const AI::CNavAgentComponent>(Ctx.ActorID))
 		Cmd = Ctx.pActuator->PushCommand<AI::Steer>(*OptPos, *OptPos, 0.f);
