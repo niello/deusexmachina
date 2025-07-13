@@ -47,8 +47,10 @@ public:
 
 	ECommandStatus GetStatus() const { return _Command->_Status; }
 
+	template<typename... T> bool IsAnyOf() const { return _Command->IsAnyOfExactly<T...>(); }
+
 	// Use non-const to update parameters of a fired command
-	template<class T>
+	template<typename T>
 	T* As() const
 	{
 		using TCleaned = std::remove_const_t<T>;
@@ -90,9 +92,11 @@ public:
 	CCommandPromise& operator =(const CCommandPromise&) = delete;
 	CCommandPromise& operator =(CCommandPromise&&) noexcept = default;
 
+	template<typename... T> bool IsAnyOf() const { return _Command->IsAnyOfExactly<T...>(); }
+
 	// Use non-const to enable executing side to store intermediate values right in the command.
 	// NB: it is not architecturally correct to give a write access to the command here, but it is needed for possible optimizations.
-	template<class T>
+	template<typename T>
 	T* As() const
 	{
 		using TCleaned = std::remove_const_t<T>;

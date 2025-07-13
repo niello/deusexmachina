@@ -179,7 +179,6 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 	State.new_usertype<DEM::AI::CCommandStackComponent>("CCommandStackComponent"
 		, "SetStatus", &DEM::AI::CCommandStackComponent::SetStatus
 		, "GetCurrent", &DEM::AI::CCommandStackComponent::GetCurrent
-		, "GetRoot", &DEM::AI::CCommandStackComponent::GetRoot
 		, "GetAbilityInstanceAction", [](DEM::AI::CCommandStackComponent& Self, const DEM::Game::CAbilityInstance& AbilityInstance)
 		{
 			DEM::Game::HAction Action = Self.FindCurrent<DEM::Game::ExecuteAbility>();
