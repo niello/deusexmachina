@@ -155,6 +155,15 @@ float CRigidBody::GetInvMass() const
 }
 //---------------------------------------------------------------------
 
+// Access real physical transform, not an interpolated motion state
+rtm::vector4f CRigidBody::GetPhysicalPosition() const
+{
+	const auto* pShape = GetCollisionShape();
+	const auto Offset = pShape ? pShape->GetOffset() : rtm::vector_zero();
+	return Math::FromBullet(static_cast<btRigidBody*>(_pBtObject)->getWorldTransform() * Math::ToBullet3(rtm::vector_neg(Offset)));
+}
+//---------------------------------------------------------------------
+
 btRigidBody* CRigidBody::GetBtBody() const
 {
 	return static_cast<btRigidBody*>(_pBtObject);

@@ -64,17 +64,18 @@ public:
 
 	//???or use index on stack instead of promise? Find will return index and will accept a starting index.
 	//???or use some kind of iterator? or pointer? need to access command args with Find result but then use it back as an iterator.
-	void PopCommand(CCommandStackHandle CmdHandle, ECommandStatus Status)
+	void PopCommand(CCommandStackHandle CmdHandle, ECommandStatus Status, bool ForceRewriteFinishedStatus = false)
 	{
 		const auto StartIdx = CmdHandle._Index;
 
 		n_assert_dbg(CmdHandle._pStack == &_CommandStack && StartIdx < _CommandStack.size() && IsTerminalCommandStatus(Status));
 
 		for (size_t i = StartIdx; i < _CommandStack.size(); ++i)
-			//???if (!_CommandStack[i].IsFinished())
-			_CommandStack[i].SetStatus(Status);
+			if (ForceRewriteFinishedStatus || !_CommandStack[i].IsFinished())
+				_CommandStack[i].SetStatus(Status);
 
-		_CommandStack.resize(StartIdx);
+		// Can't use resize because it requires a default empty promise constructor even though growing never happens
+		_CommandStack.erase(std::next(_CommandStack.begin(), StartIdx), _CommandStack.end());
 
 		// TODO: pop root logging
 		//if (_CommandStack.empty())

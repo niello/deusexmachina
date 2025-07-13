@@ -126,7 +126,7 @@ static bool UpdatePosition(const rtm::vector4f& Position, CNavAgentComponent& Ag
 //---------------------------------------------------------------------
 
 // Returns whether an agent can continue to perform the current navigation task
-static bool UpdateDestination(const rtm::vector4f& Dest, CNavAgentComponent& Agent, CPathRequestQueue& PathQueue, bool& OutDestChanged)
+static bool UpdateDestination(rtm::vector4f_arg0 Dest, CNavAgentComponent& Agent, CPathRequestQueue& PathQueue, bool& OutDestChanged)
 {
 	//!!!FIXME: setting, per Navigate action or per entity!
 	constexpr float MaxTargetOffset = 0.5f;
@@ -512,26 +512,26 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 
 		const auto PrevState = Agent.State;
 		const auto PrevMode = Agent.Mode;
+		const auto Pos = Character.RigidBody->GetPhysicalPosition();
 
 		// Pick a supported action to process
 		auto NavigateCmd = CmdStack.FindTopmostCommand<Navigate>();
 
-		// Access real physical transform, not an interpolated motion state
-		const auto& Offset = Character.RigidBody->GetCollisionShape()->GetOffset();
-		const rtm::vector4f Pos = Math::FromBullet(Character.RigidBody->GetBtBody()->getWorldTransform() * Math::ToBullet3(rtm::vector_neg(Offset)));
-
-		// Update navigation status from the current agent position
+		// Update navigation status from the current agent position. Do it even when no navigation requested.
 		if (!UpdatePosition(Pos, Agent))
 		{
 			ResetNavigation(Agent, PathQueue);
 			if (NavigateCmd)
 			{
-				NavigateCmd->SetStatus(ECommandStatus::Failed); //???must pop from stack instead of setting status?
-				//???clear _SubCommandFuture?
+				//???do _SubCommandFuture clearing in virtual CCommand::OnTerminated()? or maybe it is unnecessary? nav. future will be released soon?
+				//???could be useful to encapsulate other async and RAII things like what is in ResetNavigation and auto-cancel them? E.g. could store path request ID there!
+				NavigateCmd->As<Navigate>()->_SubCommandFuture = {};
+				CmdStack.PopCommand(NavigateCmd, ECommandStatus::Failed);
 			}
 			return;
 		}
 
+		// There is nothing to do if no navigation is requested. An agent is idle.
 		if (!NavigateCmd)
 		{
 			if (Agent.State != ENavigationState::Idle)
@@ -539,40 +539,52 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 			return;
 		}
 
-		// Action could fail but remain in a queue
-		//???must pop from stack?
-		if (NavigateCmd->IsFinished() || NavigateCmd->IsCancelled()) return;
-
-		// Sub-action termination may lead to a navigation action termination
 		auto* pNavCmd = NavigateCmd->As<Navigate>();
-		const bool HasActiveSubAction = !!pNavCmd->_SubCommandFuture;
-		if (HasActiveSubAction)
+
+		// Cancel an action if requested
+		n_assert2_dbg(!NavigateCmd->IsFinished(), "Only the navigation system itself might set a Navigate action finished");
+		if (NavigateCmd->IsCancelled())
 		{
-			const auto SubActionStatus = pNavCmd->_SubCommandFuture.GetStatus();
-			if (SubActionStatus == ECommandStatus::Failed ||
-				SubActionStatus == ECommandStatus::Cancelled ||
-				(SubActionStatus == ECommandStatus::Succeeded && HasArrived(Agent, Pos, 0.f, true)))
+			pNavCmd->_SubCommandFuture = {};
+			CmdStack.PopCommand(NavigateCmd, ECommandStatus::Cancelled);
+			return;
+		}
+
+		// Check sub-command status. Its termination may lead to a navigation action termination.
+		if (pNavCmd->_SubCommandFuture)
+		{
+			const auto SubCmdStatus = pNavCmd->_SubCommandFuture.GetStatus();
+			if (SubCmdStatus == ECommandStatus::Failed ||
+				SubCmdStatus == ECommandStatus::Cancelled ||
+				(SubCmdStatus == ECommandStatus::Succeeded && HasArrived(Agent, Pos, 0.f, true)))
 			{
 				ResetNavigation(Agent, PathQueue);
-				NavigateCmd->SetStatus(SubActionStatus); //???must pop from stack instead of setting status?
 				pNavCmd->_SubCommandFuture = {};
+				CmdStack.PopCommand(NavigateCmd, SubCmdStatus);
 				return;
 			}
 		}
 
+		const bool IsSubCommandRunning = !IsTerminalCommandStatus(pNavCmd->_SubCommandFuture.GetStatus());
+
 		// Multiple physics frames can be processed inside one logic frame. Target remains the same
 		// during the logic frame but might be reached by physics in the middle of it. So if there
-		// is an active sub-action, let's just continue executing it, without unnecessary update.
-		if (!NewFrame && HasActiveSubAction && PrevMode == Agent.Mode && Agent.State == ENavigationState::Following) return;
+		// is an active sub-command, let's just continue executing it without unnecessary update.
+		if (!NewFrame && IsSubCommandRunning && PrevMode == Agent.Mode && Agent.State == ENavigationState::Following) return;
 
 		// Process target location changes and validity
-		bool DestChanged = true;
-		if (!UpdateDestination(pNavCmd->_Destination, Agent, PathQueue, DestChanged))
+		bool DestChanged = false;
+		if (NavigateCmd->IsChanged())
 		{
-			ResetNavigation(Agent, PathQueue);
-			NavigateCmd->SetStatus(ECommandStatus::Failed); //???must pop from stack instead of setting status?
-			pNavCmd->_SubCommandFuture = {};
-			return;
+			NavigateCmd->AcceptChanges();
+
+			if (!UpdateDestination(pNavCmd->_Destination, Agent, PathQueue, DestChanged))
+			{
+				ResetNavigation(Agent, PathQueue);
+				pNavCmd->_SubCommandFuture = {};
+				CmdStack.PopCommand(NavigateCmd, ECommandStatus::Failed);
+				return;
+			}
 		}
 
 		// Check current path validity, replan if can't continue using it
@@ -589,8 +601,8 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 			if (!CheckAsyncPathResult(Agent, PathQueue))
 			{
 				ResetNavigation(Agent, PathQueue);
-				NavigateCmd->SetStatus(ECommandStatus::Failed); //???must pop from stack instead of setting status?
 				pNavCmd->_SubCommandFuture = {};
+				CmdStack.PopCommand(NavigateCmd, ECommandStatus::Failed);
 				return;
 			}
 		}
@@ -600,7 +612,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 		if (Agent.OffmeshRef)
 		{
 			// Offmesh connection properties can't change and therefore sub-action can't become inactual during the traversal
-			if (HasActiveSubAction && PrevState == Agent.State && (!DestChanged || Agent.Mode == ENavigationMode::Offmesh)) return;
+			if (IsSubCommandRunning && PrevState == Agent.State && (!DestChanged || Agent.Mode == ENavigationMode::Offmesh)) return;
 		}
 		else if (Agent.Mode == ENavigationMode::Surface)
 		{
@@ -616,7 +628,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 			}
 
 			// Continue executing active sub-action while it is actual
-			if (!DestChanged && !OptimizePath && HasActiveSubAction && PrevState == Agent.State) return;
+			if (!DestChanged && !OptimizePath && IsSubCommandRunning && PrevState == Agent.State) return;
 		}
 
 		// Generate sub-action for path following
@@ -625,8 +637,8 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 		if (!pAction || !pAction->GenerateAction(Session, Agent, EntityID, Controller, CmdStack, NavigateCmd, Pos))
 		{
 			ResetNavigation(Agent, PathQueue);
-			NavigateCmd->SetStatus(ECommandStatus::Failed); //???must pop from stack instead of setting status?
 			pNavCmd->_SubCommandFuture = {};
+			CmdStack.PopCommand(NavigateCmd, ECommandStatus::Failed);
 		}
 	});
 
@@ -664,8 +676,7 @@ void RenderDebugNavigation(Game::CGameWorld& World, Debug::CDebugDraw& DebugDraw
 			if (dtStatusSucceed(Agent.pNavQuery->initStraightPathSearch(
 				pCurrPos, Agent.Corridor.getTarget(), pCurrPath, Agent.Corridor.getPathCount(), Ctx)))
 			{
-				const auto& Offset = Character.RigidBody->GetCollisionShape()->GetOffset();
-				rtm::vector4f From = Math::FromBullet(Character.RigidBody->GetBtBody()->getWorldTransform() * Math::ToBullet3(rtm::vector_neg(Offset)));
+				rtm::vector4f From = Character.RigidBody->GetPhysicalPosition();
 				rtm::vector4f To;
 				dtStatus Status;
 				U8 AreaType = Agent.CurrAreaType;
@@ -715,14 +726,8 @@ void DestroyNavigationAgent(Game::CGameWorld& World, CPathRequestQueue& PathQueu
 {
 	// Cancel active navigation tasks
 	if (auto pCmdStack = World.FindComponent<CCommandStackComponent>(EntityID))
-	{
-		CCommandStackHandle TopNavAction;
-		while (auto NavAction = pCmdStack->FindTopmostCommand<Navigate>(TopNavAction))
-			TopNavAction = NavAction;
-
-		if (TopNavAction && !TopNavAction->IsFinished())
-			TopNavAction->SetStatus(ECommandStatus::Cancelled);
-	}
+		while (auto NavCmd = pCmdStack->FindTopmostCommand<Navigate>())
+			pCmdStack->PopCommand(NavCmd, ECommandStatus::Cancelled);
 
 	// Need to shutdown async tasks before deleting agent components
 	if (Agent.AsyncTaskID)

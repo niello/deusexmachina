@@ -26,7 +26,7 @@ private:
 	friend class CCommandPromise;
 
 	ECommandStatus _Status = ECommandStatus::NotStarted;
-	bool           _Changed = false;
+	bool           _Changed = true; // Considered changed on creation because a processing subsystem didn't see these values yet
 };
 
 using PCommand = Ptr<CCommand>;
@@ -46,6 +46,7 @@ public:
 	CCommandFuture& operator =(const CCommandFuture&) = delete;
 	CCommandFuture& operator =(CCommandFuture&&) noexcept = default;
 
+	// NB: an empty future must return a terminal status to ensure that there is no waiting on it
 	ECommandStatus GetStatus() const { return _Command ? _Command->_Status : ECommandStatus::Failed; }
 
 	template<typename... T> bool IsAnyOf() const { return _Command && _Command->IsAnyOfExactly<T...>(); }

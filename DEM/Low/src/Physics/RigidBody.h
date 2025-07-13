@@ -61,6 +61,9 @@ public:
 	float              GetInvMass() const;
 	float              GetMass() const { return 1.f / GetInvMass(); }
 
+	// Access real physical transform, not an interpolated motion state
+	rtm::vector4f      GetPhysicalPosition() const;
+
 	// FIXME: hide behind the facade?
 	btRigidBody*       GetBtBody() const;
 };
