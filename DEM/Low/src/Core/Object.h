@@ -10,7 +10,7 @@
 
 namespace DEM::Core
 {
-typedef Ptr<class CObject> PObject;
+using PObject = Ptr<class CObject>;
 
 class CObject : public Data::CRefCounted, public CRTTIBaseClass
 {

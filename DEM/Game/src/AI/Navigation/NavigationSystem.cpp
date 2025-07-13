@@ -638,7 +638,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 		// Generate sub-action for path following
 		Game::HEntity Controller;
 		auto pAction = FindTraversalAction(World, Agent, CmdStack, Pos, OptimizePath, Controller);
-		if (!pAction || !pAction->GenerateAction(Session, Agent, EntityID, Controller, CmdStack, pNavCmd->_SubCommandFuture, Pos))
+		if (!pAction || !pAction->GenerateAction(Session, Agent, EntityID, Controller, Pos, CmdStack, *pNavCmd))
 		{
 			ResetNavigation(Agent, PathQueue);
 			pNavCmd->_SubCommandFuture = {};

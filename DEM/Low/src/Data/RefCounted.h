@@ -11,18 +11,18 @@ class CRefCounted
 {
 private:
 
-	U32 RefCount = 0; // volatile for threading?
+	U32 RefCount = 0; // TODO: atomic for threading, or create separate CAtomicRefCounted?
 
 public:
 
 	virtual ~CRefCounted() { n_assert_dbg(!RefCount); }
 
-	void	AddRef() { ++RefCount; } //!!!interlocked for threading!
-	void	Release() { n_assert_dbg(RefCount > 0); if (--RefCount == 0) n_delete(this); } //!!!interlocked for threading!
+	void	AddRef() { ++RefCount; }
+	void	Release() { n_assert_dbg(RefCount > 0); if (--RefCount == 0) n_delete(this); }
 	U32		GetRefCount() const { return RefCount; }
 };
 
-typedef Ptr<CRefCounted> PRefCounted;
+using PRefCounted = Ptr<CRefCounted>;
 
 }
 

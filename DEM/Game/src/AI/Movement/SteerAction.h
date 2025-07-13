@@ -11,7 +11,7 @@ namespace DEM::AI
 
 class Steer : public CCommand
 {
-	RTTI_CLASS_DECL(Steer, CCommand);
+	RTTI_CLASS_DECL(DEM::AI::Steer, CCommand);
 
 public:
 
@@ -22,16 +22,19 @@ public:
 
 	rtm::vector4f _Dest;
 	rtm::vector4f _NextDest;
-	float         _AdditionalDistance = 0.f; // Set < 0.f to disable arrival slowdown
+	float         _AdditionalDistance; // Set any negative (std::signbit check) to disable arrival slowdown
 
-	explicit Steer(rtm::vector4f_arg0 Dest, rtm::vector4f_arg1 NextDest, float AdditionalDistance)
-		: _Dest(Dest), _NextDest(NextDest), _AdditionalDistance(AdditionalDistance)
-	{}
+	void SetPayload(rtm::vector4f_arg0 Dest, rtm::vector4f_arg1 NextDest, float AdditionalDistance)
+	{
+		_Dest = Dest;
+		_NextDest = NextDest;
+		_AdditionalDistance = AdditionalDistance;
+	}
 };
 
 class Turn : public CCommand
 {
-	RTTI_CLASS_DECL(Turn, CCommand);
+	RTTI_CLASS_DECL(DEM::AI::Turn, CCommand);
 
 public:
 
@@ -42,10 +45,10 @@ public:
 	rtm::vector4f _LookatDirection;
 	float         _Tolerance;
 
-	explicit Turn(rtm::vector4f_arg0 LookatDirection, float Tolerance = AngularTolerance)
-		: _LookatDirection(rtm::vector_normalize3(LookatDirection))
-		, _Tolerance(Tolerance)
+	void SetPayload(rtm::vector4f_arg0 LookatDirection, float Tolerance = AngularTolerance)
 	{
+		_LookatDirection = rtm::vector_normalize3(LookatDirection);
+		_Tolerance = Tolerance;
 	}
 };
 
@@ -57,7 +60,7 @@ public:
 
 	// When steering through the offmesh connection, must reach the start point first
 	virtual float GetSqTriggerRadius(float AgentRadius, float OffmeshTriggerRadius) const override { return std::max(Steer::SqLinearTolerance, OffmeshTriggerRadius * OffmeshTriggerRadius); }
-	virtual bool  GenerateAction(Game::CGameSession& Session, CNavAgentComponent& Agent, Game::HEntity Actor, Game::HEntity Controller, const rtm::vector4f& Pos, CCommandStackComponent& CmdStack, CCommandFuture& SubCmd) override;
+	virtual bool  GenerateAction(Game::CGameSession& Session, CNavAgentComponent& Agent, Game::HEntity Actor, Game::HEntity Controller, const rtm::vector4f& Pos, CCommandStackComponent& CmdStack, Navigate& NavigateCmd) override;
 };
 
 }

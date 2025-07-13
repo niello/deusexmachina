@@ -119,6 +119,23 @@ public:
 	bool IsEmpty() const { return _CommandStack.empty(); }
 };
 
+template<typename T, typename... TArgs>
+void PushOrUpdateCommand(CCommandStackComponent& CmdStack, CCommandFuture& Cmd, TArgs&&... Args)
+{
+	if (!Cmd)
+	{
+		Cmd = CmdStack.PushCommand<Steer>(std::forward<TArgs>(Args)...);
+	}
+	else if (!UpdateCommand<Steer>(Cmd, std::forward<TArgs>(Args)...))
+	{
+		// Cmd is of different type, must cancel it before replacing.
+		// External system can handle empty Cmd in a way it wants.
+		Cmd.RequestCancellation();
+		Cmd = {};
+	}
+}
+//---------------------------------------------------------------------
+
 }
 
 namespace DEM::Meta

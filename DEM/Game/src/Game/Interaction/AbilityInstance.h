@@ -1,7 +1,7 @@
 #pragma once
 #include <Game/Interaction/InteractionContext.h>
 #include <Game/ECS/Entity.h>
-#include <Events/EventNative.h>
+#include <AI/Command.h>
 #include <Data/Params.h>
 #include <DetourNavMesh.h> // For dtPolyRef only
 #include <rtm/matrix3x4f.h>
@@ -21,15 +21,18 @@ enum class EAbilityExecutionStage : U8
 	Interaction
 };
 
-class ExecuteAbility : public ::Events::CEventNative
+class ExecuteAbility : public AI::CCommand
 {
-	NATIVE_EVENT_DECL(ExecuteAbility, ::Events::CEventNative);
+	RTTI_CLASS_DECL(DEM::Game::ExecuteAbility, AI::CCommand);
 
 public:
 
 	PAbilityInstance _AbilityInstance;
 
-	explicit ExecuteAbility(PAbilityInstance AbilityInstance) : _AbilityInstance(AbilityInstance) {}
+	void SetPayload(PAbilityInstance AbilityInstance)
+	{
+		_AbilityInstance = std::move(AbilityInstance);
+	}
 };
 
 //???where to handle cooldowns, costs etc?

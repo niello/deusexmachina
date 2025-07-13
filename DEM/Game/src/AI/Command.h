@@ -20,13 +20,15 @@ inline bool IsTerminalCommandStatus(ECommandStatus Status) { return IsFinishedCo
 
 class CCommand : public Core::CObject
 {
+	RTTI_CLASS_DECL(DEM::AI::CCommand, Core::CObject);
+
 private:
 
 	friend class CCommandFuture;
 	friend class CCommandPromise;
 
 	ECommandStatus _Status = ECommandStatus::NotStarted;
-	bool           _Changed = true; // Considered changed on creation because a processing subsystem didn't see these values yet
+	bool           _Changed = true; // Considered changed on creation because a processing subsystem didn't it yet
 };
 
 using PCommand = Ptr<CCommand>;
@@ -124,8 +126,25 @@ template<typename T, typename... TArgs>
 {
 	static_assert(std::is_base_of_v<CCommand, T>, "All AI commands must be derived from DEM::AI::CCommand");
 
-	PCommand Cmd(new T(std::forward<TArgs>(Args)...));
+	PCommand Cmd(new T());
+	if constexpr (sizeof...(TArgs) > 0)
+		static_cast<T*>(Cmd.Get())->SetPayload(std::forward<TArgs>(Args)...);
 	return std::make_pair(CCommandFuture(*Cmd), CCommandPromise(*Cmd));
+}
+//---------------------------------------------------------------------
+
+template<typename T, typename... TArgs>
+bool UpdateCommand(CCommandFuture& Cmd, TArgs&&... Args)
+{
+	static_assert(sizeof...(TArgs) > 0, "There is no meaning in updating a command without payload params");
+
+	if (auto* pTypedCmd = Cmd.As<T>())
+	{
+		pTypedCmd->SetPayload(std::forward<TArgs>(Args)...);
+		return true;
+	}
+
+	return false;
 }
 //---------------------------------------------------------------------
 

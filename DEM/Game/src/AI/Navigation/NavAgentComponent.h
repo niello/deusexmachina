@@ -14,18 +14,29 @@ namespace DEM::AI
 
 class Navigate: public CCommand
 {
-	RTTI_CLASS_DECL(Navigate, CCommand);
+	RTTI_CLASS_DECL(DEM::AI::Navigate, CCommand);
 
 public:
 
-	rtm::vector4f  _Destination = rtm::vector_zero();
-	rtm::vector4f  _FinalFacing = rtm::vector_zero();
-	float          _Speed = 0.f;
+	rtm::vector4f  _Destination;
+	rtm::vector4f  _FinalFacing;
+	float          _Speed;
 
 	CCommandFuture _SubCommandFuture; // Navigation is typically processed as a set of traversal sub-actions like Steer
 
-	explicit Navigate(rtm::vector4f_arg0 Destination, float Speed) : _Destination(Destination), _Speed(Speed) {}
-	explicit Navigate(rtm::vector4f_arg0 Destination, rtm::vector4f_arg1 FinalFacing, float Speed) : _Destination(Destination), _FinalFacing(FinalFacing), _Speed(Speed) {}
+	void SetPayload(rtm::vector4f_arg0 Destination, float Speed)
+	{
+		_Destination = Destination;
+		_FinalFacing = rtm::vector_zero();
+		_Speed = Speed;
+	}
+
+	void SetPayload(rtm::vector4f_arg0 Destination, rtm::vector4f_arg1 FinalFacing, float Speed)
+	{
+		_Destination = Destination;
+		_FinalFacing = FinalFacing;
+		_Speed = Speed;
+	}
 };
 
 enum class ENavigationState : U8
