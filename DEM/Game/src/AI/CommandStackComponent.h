@@ -71,7 +71,8 @@ public:
 		n_assert_dbg(CmdHandle._pStack == &_CommandStack && StartIdx < _CommandStack.size() && IsTerminalCommandStatus(Status));
 
 		for (size_t i = StartIdx; i < _CommandStack.size(); ++i)
-			_CommandStack[i].SetStatus(Status); //???is cmd status is already terminal, should keep old value or set new?
+			//???if (!_CommandStack[i].IsFinished())
+			_CommandStack[i].SetStatus(Status);
 
 		_CommandStack.resize(StartIdx);
 
@@ -92,23 +93,23 @@ public:
 		auto RIt = _CommandStack.crbegin();
 		if (BelowThis && BelowThis._Index > 0)
 		{
-			n_assert_dbg(CmdHandle._pStack == &_CommandStack && BelowThis._Index < _CommandStack.size());
+			n_assert_dbg(BelowThis._pStack == &_CommandStack && BelowThis._Index < _CommandStack.size());
 			RIt = std::reverse_iterator(std::next(_CommandStack.begin(), BelowThis._Index));
 			if (RIt == _CommandStack.crend()) return {};
 		}
 
 		// Walk from nested sub-actions to the stack root
 		for (; RIt != _CommandStack.crend(); ++RIt)
-			if ((*RIt)->IsAnyOf<T...>())
-				return CCommandStackHandle(&_CommandStack, static_cast<size_t>(std::distance(_CommandStack.begin(), std::prev(RIt.base()))));
+			if ((*RIt).IsAnyOf<T...>())
+				return CCommandStackHandle(&_CommandStack, static_cast<size_t>(std::distance(_CommandStack.cbegin(), std::prev(RIt.base()))));
 
 		return {};
 	}
 
 	CCommandStackHandle Find(const CCommandPromise& Cmd)
 	{
-		auto It = std::find(_CommandStack.begin(), _CommandStack.end(), Cmd);
-		return (It == _CommandStack.end()) ? CCommandStackHandle{} : CCommandStackHandle(&_CommandStack, (std::distance(_CommandStack.begin(), It)));
+		auto It = std::find(_CommandStack.cbegin(), _CommandStack.cend(), Cmd);
+		return (It == _CommandStack.cend()) ? CCommandStackHandle{} : CCommandStackHandle(&_CommandStack, (std::distance(_CommandStack.cbegin(), It)));
 	}
 
 	//???should be able to get child or parent of an action by its future? need it? maybe yes, to control decomposition from the system.

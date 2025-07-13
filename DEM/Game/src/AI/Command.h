@@ -39,15 +39,16 @@ private:
 
 public:
 
+	CCommandFuture() = default;
 	CCommandFuture(CCommand& Command) : _Command(&Command) {}
 	CCommandFuture(const CCommandFuture&) = delete;
 	CCommandFuture(CCommandFuture&&) noexcept = default;
 	CCommandFuture& operator =(const CCommandFuture&) = delete;
 	CCommandFuture& operator =(CCommandFuture&&) noexcept = default;
 
-	ECommandStatus GetStatus() const { return _Command->_Status; }
+	ECommandStatus GetStatus() const { return _Command ? _Command->_Status : ECommandStatus::Failed; }
 
-	template<typename... T> bool IsAnyOf() const { return _Command->IsAnyOfExactly<T...>(); }
+	template<typename... T> bool IsAnyOf() const { return _Command && _Command->IsAnyOfExactly<T...>(); }
 
 	// Use non-const to update parameters of a fired command
 	template<typename T>
@@ -57,7 +58,7 @@ public:
 		static_assert(std::is_base_of_v<CCommand, TCleaned>, "All AI commands must be derived from DEM::AI::CCommand");
 		static_assert(!std::is_same_v<CCommand, TCleaned>, "You should request only a desired subtype, not the CCommand itself");
 
-		T* pTypedCmd = _Command->As<T>();
+		T* pTypedCmd = _Command ? _Command->As<T>() : nullptr;
 
 		if constexpr (!std::is_const_v<T>)
 			if (pTypedCmd)
@@ -68,14 +69,16 @@ public:
 
 	bool RequestCancellation() const
 	{
-		if (_Command->_Status == ECommandStatus::Succeeded || _Command->_Status == ECommandStatus::Failed)
+		if (!_Command || IsFinishedCommandStatus(_Command->_Status))
 			return false;
 
 		_Command->_Status = ECommandStatus::Cancelled;
 		return true;
 	}
 
-	bool IsAbandoned() const { return _Command->GetRefCount() == 1; }
+	bool IsAbandoned() const { return !_Command || _Command->GetRefCount() == 1; }
+
+	operator bool() const noexcept { return !!_Command; }
 };
 
 class CCommandPromise final
@@ -109,6 +112,7 @@ public:
 	void AcceptChanges() { _Command->_Changed = false; }
 	bool IsChanged() const { return _Command->_Changed; }
 	bool IsCancelled() const { return _Command->_Status == ECommandStatus::Cancelled; }
+	bool IsFinished() const { return IsFinishedCommandStatus(_Command->_Status); }
 	bool IsAbandoned() const { return _Command->GetRefCount() == 1; }
 
 	bool operator ==(const CCommandPromise& Other) const { return _Command == Other._Command; }

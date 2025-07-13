@@ -5,7 +5,7 @@
 #include <DetourNavMeshQuery.h>
 #include <memory.h> // memcpy
 
-namespace AI
+namespace DEM::AI
 {
 
 void CPathRequestQueue::Purge()

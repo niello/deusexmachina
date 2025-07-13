@@ -10,7 +10,7 @@
 class dtNavMeshQuery;
 class dtQueryFilter;
 
-namespace AI
+namespace DEM::AI
 {
 
 class CPathRequestQueue
