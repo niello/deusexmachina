@@ -8,27 +8,9 @@ namespace DEM::Core
 
 class CRTTIBaseClass
 {
-protected:
-
-	template<typename T, typename... TNext>
-	inline bool IsAnyOfExactlyImpl() const
-	{
-		if (IsExactly<T>()) return true;
-		return (sizeof...(TNext) > 0) && IsAnyOfExactlyImpl<TNext...>(RTTI);
-	}
-	//---------------------------------------------------------------------
-
-	template<typename T, typename... TNext>
-	inline bool IsAnyOfImpl() const
-	{
-		if (IsA<T>()) return true;
-		return (sizeof...(TNext) > 0) && IsAnyOfImpl<TNext...>(RTTI);
-	}
-	//---------------------------------------------------------------------
-
 public:
 
-	inline static const CRTTI RTTI = CRTTI("Core::CRTTIBaseClass", 0, nullptr, nullptr, nullptr, 0, 0);
+	inline static const CRTTI RTTI = CRTTI("DEM::Core::CRTTIBaseClass", 0, nullptr, nullptr, nullptr, 0, 0);
 
 	virtual ~CRTTIBaseClass() = default;
 
@@ -37,14 +19,14 @@ public:
 	template<typename T>
 	bool               IsExactly() const { return IsExactly(T::RTTI); }
 	template<typename... T>
-	bool               IsAnyOfExactly() const { return IsAnyOfExactlyImpl<T...>(); }
+	bool               IsAnyOfExactly() const { return (IsExactly<T>() || ...); }
 	bool               IsExactly(const CRTTI& RTTI) const { return GetRTTI() == &RTTI; }
 	bool               IsExactly(const char* pName) const { return GetRTTI()->GetName() == pName; }
 	bool               IsExactly(Data::CFourCC FourCC) const { return GetRTTI()->GetFourCC() == FourCC; }
 	template<typename T>
 	bool               IsA() const { return IsA(T::RTTI); }
 	template<typename... T>
-	bool               IsAnyOf() const { return IsAnyOfImpl<T...>(); }
+	bool               IsAnyOf() const { return (IsA<T>() || ...); }
 	bool               IsA(const CRTTI& RTTI) const { return GetRTTI()->IsDerivedFrom(RTTI); }
 	bool               IsA(const char* pName) const { return GetRTTI()->IsDerivedFrom(pName); }
 	bool               IsA(Data::CFourCC FourCC) const { return GetRTTI()->IsDerivedFrom(FourCC); }

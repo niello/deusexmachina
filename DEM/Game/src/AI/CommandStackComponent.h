@@ -93,14 +93,14 @@ public:
 		if (BelowThis && BelowThis._Index > 0)
 		{
 			n_assert_dbg(CmdHandle._pStack == &_CommandStack && BelowThis._Index < _CommandStack.size());
-			RIt = std::reverse_iterator(std::next(_CommandStack.begin(), BelowThis._Index - 1));
+			RIt = std::reverse_iterator(std::next(_CommandStack.begin(), BelowThis._Index));
 			if (RIt == _CommandStack.crend()) return {};
 		}
 
 		// Walk from nested sub-actions to the stack root
 		for (; RIt != _CommandStack.crend(); ++RIt)
-			if (_CommandStack[i]->IsAnyOf<T...>())
-				return CCommandStackHandle(&_CommandStack, static_cast<size_t>(std::distance(_CommandStack.begin(), (++It).base())));
+			if ((*RIt)->IsAnyOf<T...>())
+				return CCommandStackHandle(&_CommandStack, static_cast<size_t>(std::distance(_CommandStack.begin(), std::prev(RIt.base()))));
 
 		return {};
 	}
@@ -110,8 +110,6 @@ public:
 		auto It = std::find(_CommandStack.begin(), _CommandStack.end(), Cmd);
 		return (It == _CommandStack.end()) ? CCommandStackHandle{} : CCommandStackHandle(&_CommandStack, (std::distance(_CommandStack.begin(), It)));
 	}
-
-	//!!!Find exact by future or promise to get handle and drop command? or only by promise? future must request cancellation.
 
 	//???should be able to get child or parent of an action by its future? need it? maybe yes, to control decomposition from the system.
 	//???or should store future of sub-action it fired?

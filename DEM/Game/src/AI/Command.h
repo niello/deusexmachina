@@ -110,6 +110,8 @@ public:
 	bool IsChanged() const { return _Command->_Changed; }
 	bool IsCancelled() const { return _Command->_Status == ECommandStatus::Cancelled; }
 	bool IsAbandoned() const { return _Command->GetRefCount() == 1; }
+
+	bool operator ==(const CCommandPromise& Other) const { return _Command == Other._Command; }
 };
 
 template<typename T, typename... TArgs>
