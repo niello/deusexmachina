@@ -52,7 +52,7 @@ public:
 	bool                    AreMandatoryTargetsSelected(CInteractionContext& Context) const;
 	bool                    AreMaxTargetsSelected(CInteractionContext& Context) const;
 	bool                    Revert(CInteractionContext& Context) const;
-	bool                    ExecuteInteraction(CInteractionContext& Context, bool Enqueue) const;
+	bool                    ExecuteInteraction(CInteractionContext& Context) const;
 
 	const std::string&      GetCursorImageID(CInteractionContext& Context) const;
 };

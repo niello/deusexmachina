@@ -1,4 +1,5 @@
 #pragma once
+#include <AI/Command.h>
 #include <Game/GameSession.h>
 #include <Game/ECS/Entity.h>
 #include <rtm/vector4f.h>
@@ -25,13 +26,16 @@ struct CTargetInfo
 
 struct CInteractionContext
 {
-	CStrID                   Tool;
-	CStrID                   Interaction;
-	CStrID                   SmartObjectID;
-	CTargetInfo              CandidateTarget;
-	HEntity                  Source; // E.g. item
-	std::vector<HEntity>     Actors;
-	std::vector<CTargetInfo> Targets;
+	CStrID                          Tool;
+	CStrID                          Interaction;
+	CStrID                          SmartObjectID;
+	CTargetInfo                     CandidateTarget;
+	HEntity                         Source; // E.g. item
+	std::vector<HEntity>            Actors;
+	std::vector<CTargetInfo>        Targets;
+	std::vector<AI::CCommandFuture> Commands;          // Commands sent to corresponding actors from Actors vector
+	bool                            Enqueue = false;   // Add commands to CCommandQueueComponent instead of immediate execution
+	bool                            ResetStack = true; // Clear CCommandStackComponent's stack before pushing a command on it, making it a new root
 };
 
 }

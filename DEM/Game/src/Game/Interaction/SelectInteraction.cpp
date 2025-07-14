@@ -28,11 +28,11 @@ bool CSelectInteraction::IsTargetValid(const CGameSession& Session, U32 Index, c
 }
 //---------------------------------------------------------------------
 
-bool CSelectInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue, bool PushChild) const
+bool CSelectInteraction::Execute(CGameSession& Session, CInteractionContext& Context) const
 {
 	if (Context.Targets.empty()) return false;
 
-	if (!Enqueue) Context.Actors.clear();
+	if (!Context.Enqueue) Context.Actors.clear();
 
 	for (const auto& Target : Context.Targets)
 		if (Target.Entity && std::find(Context.Actors.cbegin(), Context.Actors.cend(), Target.Entity) == Context.Actors.cend())

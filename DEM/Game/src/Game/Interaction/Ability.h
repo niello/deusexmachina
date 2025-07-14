@@ -32,7 +32,7 @@ class CAbility : public CInteraction
 {
 protected:
 
-	AI::CCommandFuture         PushStandardExecuteAction(CGameWorld& World, HEntity Actor, const CInteractionContext& Context, bool Enqueue, bool PushChild) const;
+	AI::CCommandFuture         PushStandardExecuteAction(CGameWorld& World, HEntity Actor, const CInteractionContext& Context) const;
 
 	virtual PAbilityInstance   CreateInstance(const CInteractionContext& Context) const;
 

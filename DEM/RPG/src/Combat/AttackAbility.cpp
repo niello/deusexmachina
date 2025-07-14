@@ -77,18 +77,23 @@ bool CAttackAbility::IsTargetValid(const Game::CGameSession& Session, U32 Index,
 }
 //---------------------------------------------------------------------
 
-bool CAttackAbility::Execute(Game::CGameSession& Session, Game::CInteractionContext& Context, bool Enqueue, bool PushChild) const
+bool CAttackAbility::Execute(Game::CGameSession& Session, Game::CInteractionContext& Context) const
 {
 	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;
 
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return false;
 
+	Context.Commands.clear();
+	Context.Commands.reserve(Context.Actors.size());
+
 	bool Result = false;
 
 	for (auto ActorID : Context.Actors)
 	{
-		if (PushStandardExecuteAction(*pWorld, ActorID, Context, Enqueue, PushChild))
+		Context.Commands.push_back(PushStandardExecuteAction(*pWorld, ActorID, Context));
+
+		if (Context.Commands.back())
 		{
 			// TODO: disable sheathing while attacking
 			UnsheatheAllItems(*pWorld, ActorID);

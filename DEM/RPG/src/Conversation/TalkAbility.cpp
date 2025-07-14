@@ -47,13 +47,22 @@ bool CTalkAbility::IsTargetValid(const Game::CGameSession& Session, U32 Index, c
 }
 //---------------------------------------------------------------------
 
-bool CTalkAbility::Execute(Game::CGameSession& Session, Game::CInteractionContext& Context, bool Enqueue, bool PushChild) const
+bool CTalkAbility::Execute(Game::CGameSession& Session, Game::CInteractionContext& Context) const
 {
 	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;
 
+	Context.Commands.clear();
+	Context.Commands.resize(Context.Actors.size()); // NB: intentionally resize, not reserve!
+
 	// Push standard action for the first actor only
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
-	return pWorld && PushStandardExecuteAction(*pWorld, Context.Actors[0], Context, Enqueue, PushChild);
+	if (!pWorld) return false;
+
+	size_t BestActorIndex = 0;
+
+	auto& Cmd = Context.Commands[BestActorIndex];
+	Cmd = PushStandardExecuteAction(*pWorld, Context.Actors[BestActorIndex], Context);
+	return !!Cmd;
 }
 //---------------------------------------------------------------------
 

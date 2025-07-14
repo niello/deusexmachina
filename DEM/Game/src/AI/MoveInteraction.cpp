@@ -53,7 +53,7 @@ bool CMoveInteraction::IsTargetValid(const CGameSession& Session, U32 Index, con
 }
 //---------------------------------------------------------------------
 
-bool CMoveInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue, bool PushChild) const
+bool CMoveInteraction::Execute(CGameSession& Session, CInteractionContext& Context) const
 {
 	if (Context.Targets.empty()) return false;
 
@@ -64,7 +64,7 @@ bool CMoveInteraction::Execute(CGameSession& Session, CInteractionContext& Conte
 	//const auto* pSceneComponent = pWorld->FindComponent<DEM::Game::CSceneComponent>(*_SelectedActors.begin());
 	//const vector3 Direction = Context.SelectedTargets[0].Point - pSceneComponent->RootNode->GetWorldPosition();
 
-	return pFormationMgr->Move(Context.Actors, Context.Targets[0].Point, rtm::vector_zero(), Enqueue);
+	return pFormationMgr->Move(Context.Targets[0].Point, rtm::vector_zero(), Context.Actors, &Context.Commands, Context.Enqueue);
 }
 //---------------------------------------------------------------------
 

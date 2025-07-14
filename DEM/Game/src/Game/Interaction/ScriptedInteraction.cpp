@@ -29,9 +29,9 @@ bool CScriptedInteraction::IsTargetValid(const CGameSession& Session, U32 Index,
 }
 //---------------------------------------------------------------------
 
-bool CScriptedInteraction::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue, bool PushChild) const
+bool CScriptedInteraction::Execute(CGameSession& Session, CInteractionContext& Context) const
 {
-	return Scripting::LuaCall(_FnExecute, Context, Enqueue, PushChild);
+	return Scripting::LuaCall(_FnExecute, Context);
 }
 //---------------------------------------------------------------------
 

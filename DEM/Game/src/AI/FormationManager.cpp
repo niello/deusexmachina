@@ -14,7 +14,8 @@ CFormationManager::CFormationManager(CGameSession& Owner)
 }
 //---------------------------------------------------------------------
 
-bool CFormationManager::Move(const std::vector<HEntity>& Entities, const rtm::vector4f& WorldPosition, const rtm::vector4f& Direction, bool Enqueue) const
+bool CFormationManager::Move(rtm::vector4f_arg0 WorldPosition, rtm::vector4f_arg1 Direction, const std::vector<HEntity>& Entities,
+	std::vector<AI::CCommandFuture>* pOutCommands, bool Enqueue) const
 {
 	if (Entities.empty()) return false;
 
@@ -35,20 +36,26 @@ bool CFormationManager::Move(const std::vector<HEntity>& Entities, const rtm::ve
 
 	//vector<pos+dir> out = pFormation->Resolve(count, position, direction, navmesh?)
 
-	//!!!DBG TMP! send them into the one point, ignore direction!
+	if (pOutCommands)
+	{
+		pOutCommands->clear();
+		pOutCommands->reserve(Entities.size());
+	}
+
+	//!!!DBG TMP! now sends them into the one point and ignores direction! Must be smarter!
 	for (auto EntityID : Entities)
 	{
-		// Currently works mostly for player characters. NPC rarely have a queue.
-		if (auto pQueue = pWorld->FindComponent<AI::CCommandQueueComponent>(EntityID))
-		{
-			if (!Enqueue) pQueue->Reset();
+		auto* pQueue = pWorld->FindOrAddComponent<AI::CCommandQueueComponent>(EntityID);
+		if (!Enqueue) pQueue->Reset();
 
-			// NB: drops command future. Could use it for status tracking later.
-			if (auto pAgent = pWorld->FindComponent<const AI::CNavAgentComponent>(EntityID))
-				pQueue->EnqueueCommand<AI::Navigate>(WorldPosition, 0.f);
-			else
-				pQueue->EnqueueCommand<AI::Steer>(WorldPosition, WorldPosition, 0.f);
-		}
+		AI::CCommandFuture Future;
+		if (auto pAgent = pWorld->FindComponent<const AI::CNavAgentComponent>(EntityID))
+			Future = pQueue->EnqueueCommand<AI::Navigate>(WorldPosition, 0.f);
+		else
+			Future = pQueue->EnqueueCommand<AI::Steer>(WorldPosition, WorldPosition, 0.f);
+
+		if (pOutCommands)
+			pOutCommands->push_back(std::move(Future));
 	}
 
 	return true;

@@ -61,17 +61,15 @@ EBTStatus CBehaviourTreeExecuteAbility::Activate(std::byte* pData, const CBehavi
 	IactCtx.Actors.push_back(Ctx.ActorID);
 	IactCtx.Targets.push_back(TargetEntityID);
 
-	//!!!FIXME: must return HAction? Only abilities? Interactions must not! Or need other way to get HAction from launched ability.
-	if (!pAbility->Execute(Ctx.Session, IactCtx, false)) return EBTStatus::Failed;
+	if (!pAbility->Execute(Ctx.Session, IactCtx)) return EBTStatus::Failed;
 
-	if (Ctx.pActuator)
+	if (!IactCtx.Commands.empty() && IactCtx.Commands[0])
 	{
-		//!!!FIXME: we don't even know if it is our action!
-		Cmd = Ctx.pActuator->FindCurrent<Game::ExecuteAbility>();
+		Cmd = std::move(IactCtx.Commands[0]);
 		return CommandStatusToBTStatus(Cmd.GetStatus());
 	}
 
-	// No running action is found
+	// No command was produced but an ability reported success
 	return EBTStatus::Succeeded;
 }
 //---------------------------------------------------------------------

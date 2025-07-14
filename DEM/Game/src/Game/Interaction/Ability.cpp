@@ -13,7 +13,7 @@ PAbilityInstance CAbility::CreateInstance(const CInteractionContext& Context) co
 }
 //---------------------------------------------------------------------
 
-AI::CCommandFuture CAbility::PushStandardExecuteAction(CGameWorld& World, HEntity Actor, const CInteractionContext& Context, bool Enqueue, bool PushChild) const
+AI::CCommandFuture CAbility::PushStandardExecuteAction(CGameWorld& World, HEntity Actor, const CInteractionContext& Context) const
 {
 	PAbilityInstance AbilityInstance = CreateInstance(Context);
 	if (!AbilityInstance) return {};
@@ -21,11 +21,9 @@ AI::CCommandFuture CAbility::PushStandardExecuteAction(CGameWorld& World, HEntit
 	AbilityInstance->Source = Context.Source;
 	AbilityInstance->Targets = Context.Targets;
 
-	if (Enqueue)
+	if (Context.Enqueue)
 	{
-		auto* pQueue = World.FindComponent<AI::CCommandQueueComponent>(Actor);
-		if (!pQueue) return {};
-
+		auto* pQueue = World.FindOrAddComponent<AI::CCommandQueueComponent>(Actor);
 		return pQueue->EnqueueCommand<ExecuteAbility>(std::move(AbilityInstance));
 	}
 	else
@@ -33,7 +31,7 @@ AI::CCommandFuture CAbility::PushStandardExecuteAction(CGameWorld& World, HEntit
 		auto* pActuator = World.FindComponent<AI::CCommandStackComponent>(Actor);
 		if (!pActuator) return {};
 
-		if (!PushChild) pActuator->Reset(AI::ECommandStatus::Cancelled);
+		if (Context.ResetStack) pActuator->Reset(AI::ECommandStatus::Cancelled);
 		return pActuator->PushCommand<ExecuteAbility>(std::move(AbilityInstance));
 	}
 }

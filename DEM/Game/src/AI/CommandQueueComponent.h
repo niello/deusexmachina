@@ -14,7 +14,7 @@ class CCommandQueueComponent final
 {
 protected:
 
-	std::deque<CCommandPromise> _Queue; //???should store future-promise pairs? or something external holds futures?
+	std::deque<CCommandPromise> _Queue;
 
 public:
 

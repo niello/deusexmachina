@@ -44,31 +44,31 @@ bool CScriptedAbility::IsTargetValid(const CGameSession& Session, U32 Index, con
 }
 //---------------------------------------------------------------------
 
-bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Context, bool Enqueue, bool PushChild) const
+bool CScriptedAbility::Execute(CGameSession& Session, CInteractionContext& Context) const
 {
 	if (Context.Actors.empty()) return false;
 
 	auto pWorld = Session.FindFeature<CGameWorld>();
 	if (!pWorld) return false;
 
-	// TODO: more params for Prepare?! Pass ability instance here? Or some dict for additional values?!
-	std::vector<HEntity> Actors;
 	if (_FnPrepare)
 	{
 		// Filter actors, adjust ability params etc (like +2 bonus in skill for each helping actor)
-		Scripting::LuaCall(_FnPrepare, Actors);
+		NOT_IMPLEMENTED;
+		//Scripting::LuaCall(_FnPrepare, ...);
 	}
-	else
-	{
-		Actors = Context.Actors;
-	}
+
+	Context.Commands.clear();
+	Context.Commands.reserve(Context.Actors.size());
 
 	UPTR Issued = 0;
-	for (HEntity ActorID : Actors)
-		if (PushStandardExecuteAction(*pWorld, ActorID, Context, Enqueue, PushChild))
-			++Issued;
+	for (HEntity ActorID : Context.Actors)
+	{
+		Context.Commands.push_back(PushStandardExecuteAction(*pWorld, ActorID, Context));
+		if (Context.Commands.back()) ++Issued;
+	}
 
-	return !!Issued;
+	return Issued > 0;
 }
 //---------------------------------------------------------------------
 

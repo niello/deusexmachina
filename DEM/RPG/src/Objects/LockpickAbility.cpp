@@ -148,29 +148,31 @@ bool CLockpickAbility::IsTargetValid(const Game::CGameSession& Session, U32 Inde
 }
 //---------------------------------------------------------------------
 
-bool CLockpickAbility::Execute(Game::CGameSession& Session, Game::CInteractionContext& Context, bool Enqueue, bool PushChild) const
+bool CLockpickAbility::Execute(Game::CGameSession& Session, Game::CInteractionContext& Context) const
 {
 	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;
 
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return false;
 
-	Game::HEntity BestActorID = Context.Actors[0];
-	if (Context.Actors.size() > 1)
+	Context.Commands.clear();
+	Context.Commands.resize(Context.Actors.size()); // NB: intentionally resize, not reserve!
+
+	size_t BestActorIndex = 0;
+	int BestModifier = std::numeric_limits<int>().min();
+	for (size_t i = 1; i < Context.Actors.size(); ++i)
 	{
-		int BestModifier = std::numeric_limits<int>().min();
-		for (auto ActorID : Context.Actors)
+		const int Modifier = GetTotalLockpickingModifier(*pWorld, Context.Actors[i]);
+		if (BestModifier < Modifier)
 		{
-			const int Modifier = GetTotalLockpickingModifier(*pWorld, ActorID);
-			if (BestModifier < Modifier)
-			{
-				BestModifier = Modifier;
-				BestActorID = ActorID;
-			}
+			BestModifier = Modifier;
+			BestActorIndex = i;
 		}
 	}
 
-	return PushStandardExecuteAction(*pWorld, BestActorID, Context, Enqueue, PushChild);
+	auto& Cmd = Context.Commands[BestActorIndex];
+	Cmd = PushStandardExecuteAction(*pWorld, Context.Actors[BestActorIndex], Context);
+	return !!Cmd;
 }
 //---------------------------------------------------------------------
 

@@ -45,19 +45,28 @@ bool CPickItemAbility::IsTargetValid(const Game::CGameSession& Session, U32 Inde
 }
 //---------------------------------------------------------------------
 
-bool CPickItemAbility::Execute(Game::CGameSession& Session, Game::CInteractionContext& Context, bool Enqueue, bool PushChild) const
+bool CPickItemAbility::Execute(Game::CGameSession& Session, Game::CInteractionContext& Context) const
 {
 	if (Context.Targets.empty() || !Context.Targets[0].Entity || Context.Actors.empty()) return false;
 
+	// Push standard action for the first actor only
+	auto pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return false;
+
+	Context.Commands.clear();
+	Context.Commands.resize(Context.Actors.size()); // NB: intentionally resize, not reserve!
+
 	Game::HEntity ActorID = Context.Actors[0];
-	// TODO: choose the first actor with enough inventory space? Or no need?
+
+	size_t BestActorIndex = 0;
+	// TODO: choose the first actor with enough inventory space? Or the closest one? Or no need?
 	//if (Context.Actors.size() > 1)
 	//{
 	//}
 
-	// Push standard action for the first actor only
-	auto pWorld = Session.FindFeature<Game::CGameWorld>();
-	return pWorld && PushStandardExecuteAction(*pWorld, ActorID, Context, Enqueue, PushChild);
+	auto& Cmd = Context.Commands[BestActorIndex];
+	Cmd = PushStandardExecuteAction(*pWorld, Context.Actors[BestActorIndex], Context);
+	return !!Cmd;
 }
 //---------------------------------------------------------------------
 

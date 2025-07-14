@@ -28,7 +28,7 @@ public:
 
 	virtual bool                IsAvailable(const Game::CGameSession& Session, const Game::CInteractionContext& Context) const;
 	virtual bool                IsTargetValid(const Game::CGameSession& Session, U32 Index, const Game::CInteractionContext& Context) const override;
-	virtual bool                Execute(Game::CGameSession& Session, Game::CInteractionContext& Context, bool Enqueue, bool PushChild) const override;
+	virtual bool                Execute(Game::CGameSession& Session, Game::CInteractionContext& Context) const override;
 
 	virtual bool                GetFacingParams(const Game::CGameSession& Session, const Game::CAbilityInstance& Instance, Game::CFacingParams& Out) const override;
 	virtual void                OnStart(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const override;

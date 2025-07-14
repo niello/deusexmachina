@@ -28,6 +28,9 @@ CInteractionManager::CInteractionManager(CGameSession& Owner)
 		, "Actors", &CInteractionContext::Actors
 		, "CandidateTarget", &CInteractionContext::CandidateTarget
 		, "Targets", &CInteractionContext::Targets
+		//, "Commands", &CInteractionContext::Commands
+		, "Enqueue", &CInteractionContext::Enqueue
+		, "ResetStack", &CInteractionContext::ResetStack
 		);
 }
 //---------------------------------------------------------------------
@@ -342,7 +345,7 @@ bool CInteractionManager::Revert(CInteractionContext& Context) const
 }
 //---------------------------------------------------------------------
 
-bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool Enqueue) const
+bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context) const
 {
 	// Ensure interaction and all mandatory targets are selected
 	auto pInteraction = FindInteraction(Context.Interaction, Context.SmartObjectID);
@@ -356,7 +359,7 @@ bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool 
 		", SmartObject: " + SmartObjectID +
 		", Actor: " + Actor + "\n").c_str());
 
-	return pInteraction->Execute(_Session, Context, Enqueue);
+	return pInteraction->Execute(_Session, Context);
 }
 //---------------------------------------------------------------------
 

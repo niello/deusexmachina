@@ -5,6 +5,11 @@
 
 // Controls positioning of the group of movable objects in the world
 
+namespace DEM::AI
+{
+	class CCommandFuture;
+}
+
 namespace DEM::Game
 {
 class CGameSession;
@@ -25,7 +30,7 @@ public:
 
 	CFormationManager(CGameSession& Owner);
 
-	bool Move(const std::vector<HEntity>& Entities, const rtm::vector4f& WorldPosition, const rtm::vector4f& Direction, bool Enqueue) const;
+	bool Move(rtm::vector4f_arg0 WorldPosition, rtm::vector4f_arg1 Direction, const std::vector<HEntity>& Entities, std::vector<AI::CCommandFuture>* pOutCommands, bool Enqueue) const;
 };
 
 }
