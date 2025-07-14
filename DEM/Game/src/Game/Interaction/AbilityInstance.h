@@ -61,6 +61,7 @@ public:
 	float                     ElapsedTime = -1.f;
 	float                     PrevElapsedTime = 0.f; // Useful for dt calc and for detecting that we just passed some point in time
 	EAbilityExecutionStage    Stage = EAbilityExecutionStage::Movement;
+	AI::ECommandStatus        RequestedStatus = AI::ECommandStatus::Running; // When terminal status is set, a system will terminate an ability with it
 	dtPolyRef                 CheckedPoly = 0; // For path optimization
 
 	CAbilityInstance(const CAbility& Ability_) : Ability(Ability_) {}

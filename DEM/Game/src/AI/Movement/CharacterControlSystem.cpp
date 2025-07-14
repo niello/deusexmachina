@@ -338,6 +338,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 		auto pBody = Character.RigidBody.Get();
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
 
+		// Pick a supported command to process
 		// NB: we don't try to process Steer and Turn simultaneously, only the most nested of them
 		auto Cmd = CmdStack.FindTopmostCommand<AI::Steer, AI::Turn>();
 

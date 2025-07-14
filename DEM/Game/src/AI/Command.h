@@ -138,7 +138,7 @@ bool UpdateCommand(CCommandFuture& Cmd, TArgs&&... Args)
 {
 	static_assert(sizeof...(TArgs) > 0, "There is no meaning in updating a command without payload params");
 
-	if (auto* pTypedCmd = Cmd.As<T>())
+	if (auto* pTypedCmd = Cmd.As<T>()) // will be marked as changed inside
 	{
 		pTypedCmd->SetPayload(std::forward<TArgs>(Args)...);
 		return true;

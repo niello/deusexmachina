@@ -13,7 +13,7 @@ namespace DEM::AI
 struct CAIStateComponent
 {
 	CBlackboard                  Blackboard;
-	Game::PAbilityInstance       AbilityInstance; //???need here?! stored in action!
+	Game::PAbilityInstance       AbilityInstance; // only for correct termination if a running action is dropped //???where should store it?
 	std::vector<CSensedStimulus> NewStimuli;
 	std::vector<CSensedStimulus> Facts;
 	size_t                       FactWithSourceCount = 0;

@@ -54,9 +54,9 @@ static bool GetFacingParams(const CGameSession& Session, const CAbilityInstance&
 //---------------------------------------------------------------------
 
 // When enter new navigation poly, check if it intersects an available zone. If so, move to it instead of original target zone.
-static void OptimizePath(const CGameSession& Session, CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, HAction ChildAction)
+static void OptimizePath(const CGameSession& Session, CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID, AI::CCommandFuture& SubCmd)
 {
-	auto pNavAction = ChildAction.As<AI::Navigate>();
+	auto* pNavAction = SubCmd.As<AI::Navigate>();
 	if (!pNavAction) return;
 
 	const auto* pNavAgent = World.FindComponent<AI::CNavAgentComponent>(EntityID);
@@ -114,7 +114,7 @@ static void OptimizePath(const CGameSession& Session, CAbilityInstance& AbilityI
 //---------------------------------------------------------------------
 
 static AI::ECommandStatus MoveToTarget(CGameSession& Session, CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID,
-	AI::CCommandStackComponent& CmdStack, HAction Action, HAction ChildAction, bool TransformChanged)
+	AI::CCommandStackComponent& CmdStack, ExecuteAbility& Cmd, bool TransformChanged)
 {
 	// When no zones available for an interaction, run ability from the current position
 	//if (AbilityInstance.InitialZones.empty()) return AI::ECommandStatus::Succeeded;
@@ -130,24 +130,29 @@ static AI::ECommandStatus MoveToTarget(CGameSession& Session, CAbilityInstance& 
 		// Already at position, skip movement
 		return AI::ECommandStatus::Succeeded;
 	}
-	else if (ChildAction)
+	else if (Cmd._SubCommandFuture)
 	{
-		// Process movement sub-action
-		const auto ChildActionStatus = CmdStack.GetStatus(ChildAction);
-		if (ChildActionStatus != AI::ECommandStatus::Failed)
+		// Process movement sub-command. Stage == Movement guarantees that this is movement,
+		// and check inside CalcActualAbilityStatus guarantees that it is not cancelled.
+		const auto SubCmdStatus = Cmd._SubCommandFuture.GetStatus();
+		if (SubCmdStatus != AI::ECommandStatus::Failed)
 		{
-			// Check if another available zone is closer along the way than our target zone
-			if (ChildActionStatus == AI::ECommandStatus::Running)
-				OptimizePath(Session, AbilityInstance, World, EntityID, ChildAction);
+			if (SubCmdStatus == AI::ECommandStatus::Succeeded)
+				Cmd._SubCommandFuture = {};
+			else
+				// Check if another available zone is closer along the way than our target zone
+				OptimizePath(Session, AbilityInstance, World, EntityID, Cmd._SubCommandFuture);
 
-			return ChildActionStatus;
+			// Continue running or succeed
+			return SubCmdStatus;
 		}
 
 		// Movement failed. Current zone can't be reached, try another one.
 		Algo::VectorFastErase(AbilityInstance.AvailableZones, AbilityInstance.CurrZoneIndex);
+		Cmd._SubCommandFuture = {};
 	}
 
-	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
+	auto* pActorSceneComponent = World.FindComponent<const CSceneComponent>(EntityID);
 	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return AI::ECommandStatus::Failed;
 
 	const rtm::matrix3x4f WorldToTarget = rtm::matrix_inverse(AbilityInstance.TargetToWorld);
@@ -211,10 +216,10 @@ static AI::ECommandStatus MoveToTarget(CGameSession& Session, CAbilityInstance& 
 		// If character is a navmesh agent, must navigate. Otherwise a simple steering does the job.
 		// FIXME: Navigate action can't be nested now because it completely breaks offmesh traversal.
 		// Steering may ignore special traversal logic but it is our only option at least for now.
-		if (pNavAgent /*FIXME:*/ && !CmdStack.FindCurrent<AI::Navigate>(Action))
-			CmdStack.PushOrUpdateChild<AI::Navigate>(Action, ActionPos, FacingDir, 0.f);
+		if (pNavAgent /*FIXME:*/ && !CmdStack.FindTopmostCommand<AI::Navigate>())
+			AI::PushOrUpdateCommand<AI::Navigate>(CmdStack, Cmd._SubCommandFuture, ActionPos, FacingDir, 0.f);
 		else
-			CmdStack.PushOrUpdateChild<AI::Steer>(Action, ActionPos, rtm::vector_add(ActionPos, FacingDir), 0.f);
+			AI::PushOrUpdateCommand<AI::Steer>(CmdStack, Cmd._SubCommandFuture, ActionPos, rtm::vector_add(ActionPos, FacingDir), 0.f);
 
 		if (AbilityInstance.Stage == EAbilityExecutionStage::Interaction)
 			AbilityInstance.Ability.OnEnd(Session, AbilityInstance, AI::ECommandStatus::Cancelled);
@@ -231,16 +236,24 @@ static AI::ECommandStatus MoveToTarget(CGameSession& Session, CAbilityInstance& 
 //---------------------------------------------------------------------
 
 static AI::ECommandStatus FaceTarget(CGameSession& Session, CAbilityInstance& AbilityInstance, CGameWorld& World, HEntity EntityID,
-	AI::CCommandStackComponent& CmdStack, HAction Action, HAction ChildAction, bool TransformChanged)
+	AI::CCommandStackComponent& CmdStack, ExecuteAbility& Cmd, bool TransformChanged)
 {
-	// Process Turn sub-action until finished or target transform changed
+	// Process Turn sub-command until finished or target transform changed
 	if (!TransformChanged)
 	{
-		if (AbilityInstance.Stage > EAbilityExecutionStage::Facing) return AI::ECommandStatus::Succeeded;
-		else if (ChildAction.As<AI::Turn>()) return CmdStack.GetStatus(ChildAction);
+		if (AbilityInstance.Stage > EAbilityExecutionStage::Facing)
+			return AI::ECommandStatus::Succeeded;
+
+		if (Cmd._SubCommandFuture.As<AI::Turn>())
+		{
+			const auto SubCmdStatus = Cmd._SubCommandFuture.GetStatus();
+			if (AI::IsTerminalCommandStatus(SubCmdStatus))
+				Cmd._SubCommandFuture = {};
+			return SubCmdStatus;
+		}
 	}
 
-	auto pActorSceneComponent = World.FindComponent<CSceneComponent>(EntityID);
+	auto* pActorSceneComponent = World.FindComponent<const CSceneComponent>(EntityID);
 	if (!pActorSceneComponent || !pActorSceneComponent->RootNode) return AI::ECommandStatus::Failed;
 
 	const auto& ActorWorldTfm = pActorSceneComponent->RootNode->GetWorldMatrix();
@@ -255,7 +268,7 @@ static AI::ECommandStatus FaceTarget(CGameSession& Session, CAbilityInstance& Ab
 	const float Angle = Math::AngleXZNorm(LookatDir, TargetDir);
 	if (std::fabsf(Angle) < FacingTolerance) return AI::ECommandStatus::Succeeded;
 
-	CmdStack.PushOrUpdateChild<AI::Turn>(Action, TargetDir, FacingTolerance);
+	AI::PushOrUpdateCommand<AI::Turn>(CmdStack, Cmd._SubCommandFuture, TargetDir, FacingTolerance);
 
 	if (AbilityInstance.Stage == EAbilityExecutionStage::Interaction)
 		AbilityInstance.Ability.OnEnd(Session, AbilityInstance, AI::ECommandStatus::Cancelled);
@@ -294,14 +307,39 @@ static void EndCurrentInteraction(CGameSession& Session, AI::ECommandStatus NewS
 	if (!Instance) return;
 
 	if (Instance->Stage == EAbilityExecutionStage::Interaction)
-	{
-		if (NewStatus == AI::ECommandStatus::NotStarted) NewStatus = AI::ECommandStatus::Cancelled;
 		Instance->Ability.OnEnd(Session, *Instance, NewStatus);
-	}
 
 	Instance = nullptr;
 
 	//!!!if animation graph override is enabled, disable it!
+}
+//---------------------------------------------------------------------
+
+static inline AI::ECommandStatus CalcActualAbilityStatus(AI::CCommandStackHandle Cmd)
+{
+	// If we are executing an ability, it will be cancelled. Otherwise it is like any other terminal status.
+	if (!Cmd) return AI::ECommandStatus::Cancelled;
+
+	// If a child action is cancelled, an ability must be cancelled too
+	const auto* pExecuteAbilityCmd = Cmd->As<ExecuteAbility>();
+	n_assert_dbg(pExecuteAbilityCmd);
+	if (const auto& SubCmd = pExecuteAbilityCmd->_SubCommandFuture)
+		if (SubCmd.GetStatus() == AI::ECommandStatus::Cancelled)
+			return AI::ECommandStatus::Cancelled;
+
+	// Fulfil cancellation request from the ability caller
+	if (Cmd->IsCancelled()) return AI::ECommandStatus::Cancelled;
+
+	// Succeed immediately if there is no ability to execute. This should never happen.
+	if (!pExecuteAbilityCmd->_AbilityInstance) return AI::ECommandStatus::Succeeded;
+
+	// Terminate an ability if its logic requested it
+	const auto RequestedStatus = pExecuteAbilityCmd->_AbilityInstance->RequestedStatus;
+	if (AI::IsTerminalCommandStatus(RequestedStatus)) return RequestedStatus;
+
+	// Otherwise an ability must be running because only the system might finish it and it would be popped from stack in that case
+	n_assert_dbg(!Cmd->IsFinished());
+	return AI::ECommandStatus::Running;
 }
 //---------------------------------------------------------------------
 
@@ -310,42 +348,42 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 	World.ForEachEntityWith<AI::CCommandStackComponent, AI::CAIStateComponent>(
 		[&Session, &World, dt](auto EntityID, auto& Entity, AI::CCommandStackComponent& CmdStack, AI::CAIStateComponent& AIState)
 	{
-		// If current action is empty or has finished with any result, stop current interaction.
-		// If child action was cancelled, the main action is considered cancelled too.
+		// Pick a supported command to process
 		const auto Cmd = CmdStack.FindTopmostCommand<ExecuteAbility>();
-		const auto ChildAction = CmdStack.GetChild(Action);
-		const auto ActionStatus = (CmdStack.GetStatus(ChildAction) == AI::ECommandStatus::Cancelled) ? AI::ECommandStatus::Cancelled : CmdStack.GetStatus(Action);
-		if (ActionStatus != AI::ECommandStatus::Active)
+
+		// Process ability termination
+		const auto AbilityStatus = CalcActualAbilityStatus(Cmd);
+		if (AI::IsTerminalCommandStatus(AbilityStatus))
 		{
-			EndCurrentInteraction(Session, ActionStatus, AIState.AbilityInstance, EntityID);
+			EndCurrentInteraction(Session, AbilityStatus, AIState.AbilityInstance, EntityID);
+			if (Cmd) CmdStack.PopCommand(Cmd, AbilityStatus);
 			return;
 		}
 
-		//!!!if cancellation requested inside pAction->_AbilityInstance, need to cancel action too! Ability doesn't hold its command future and can't cancel this way!
-		//Ability caller cancels by future. Ability marks itself inactual. Ability system pops a promise (Cmd).
-
-		auto pAction = Action.As<ExecuteAbility>();
-		const bool AbilityChanged = (pAction->_AbilityInstance != AIState.AbilityInstance);
+		//???!!!what about ability nesting? instead of AIState.AbilityInstance do finalization on command popping from the stack?! Cmd.OnTerminated(Status)?
+		//???or if don't want to add logic to commands, can store cancelled Running commands in a separate list for finalization?!
+		auto* pExecuteAbilityCmd = Cmd->As<ExecuteAbility>();
+		const bool AbilityChanged = (pExecuteAbilityCmd->_AbilityInstance != AIState.AbilityInstance);
 		if (AbilityChanged)
 		{
 			// Interrupt previous ability
 			// NB: it might be our parent, then it will be resumed when we finish executing the nested one
 			EndCurrentInteraction(Session, AI::ECommandStatus::Cancelled, AIState.AbilityInstance, EntityID);
 
-			AIState.AbilityInstance = pAction->_AbilityInstance;
+			AIState.AbilityInstance = pExecuteAbilityCmd->_AbilityInstance;
 
 			// Initialize new ability
-			if (pAction->_AbilityInstance)
+			if (pExecuteAbilityCmd->_AbilityInstance)
 			{
-				pAction->_AbilityInstance->Actor = EntityID;
-				pAction->_AbilityInstance->Stage = EAbilityExecutionStage::Movement;
+				pExecuteAbilityCmd->_AbilityInstance->Actor = EntityID;
+				pExecuteAbilityCmd->_AbilityInstance->Stage = EAbilityExecutionStage::Movement;
 
-				auto& Zones = pAction->_AbilityInstance->InitialZones;
+				auto& Zones = pExecuteAbilityCmd->_AbilityInstance->InitialZones;
 
 				// Get interaction zones from a smart object, if present
-				if (!pAction->_AbilityInstance->Targets.empty())
+				if (!pExecuteAbilityCmd->_AbilityInstance->Targets.empty())
 				{
-					if (auto pSOComponent = World.FindComponent<const CSmartObjectComponent>(pAction->_AbilityInstance->Targets[0].Entity))
+					if (auto pSOComponent = World.FindComponent<const CSmartObjectComponent>(pExecuteAbilityCmd->_AbilityInstance->Targets[0].Entity))
 					{
 						// Get zones from entity component
 						Zones.reserve(pSOComponent->Zones.size());
@@ -366,19 +404,12 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 				}
 
 				// Get interaction zones from an ability
-				pAction->_AbilityInstance->Ability.GetZones(Session, *pAction->_AbilityInstance, Zones);
+				pExecuteAbilityCmd->_AbilityInstance->Ability.GetZones(Session, *pExecuteAbilityCmd->_AbilityInstance, Zones);
 				n_assert_dbg(!Zones.empty());
 			}
 		}
 
-		if (!pAction->_AbilityInstance)
-		{
-			// No ability is being executed
-			CmdStack.SetStatus(Action, AI::ECommandStatus::Succeeded);
-			return;
-		}
-
-		CAbilityInstance& AbilityInstance = *pAction->_AbilityInstance;
+		CAbilityInstance& AbilityInstance = *pExecuteAbilityCmd->_AbilityInstance;
 
 		// Determine target node, if any
 		Scene::CSceneNode* pTargetRootNode = nullptr;
@@ -398,6 +429,7 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 			TransformChanged = true;
 			if (pTargetRootNode)
 			{
+				//???store temporary system fields in a command instead of ability instance?
 				AbilityInstance.PrevTargetTfmVersion = pTargetRootNode->GetTransformVersion();
 				AbilityInstance.TargetToWorld = pTargetRootNode->GetWorldMatrix();
 			}
@@ -416,18 +448,18 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 
 		// Ability execution logic
 
-		AI::ECommandStatus Result = MoveToTarget(Session, AbilityInstance, World, EntityID, CmdStack, Action, ChildAction, TransformChanged);
+		AI::ECommandStatus Result = MoveToTarget(Session, AbilityInstance, World, EntityID, CmdStack, *pExecuteAbilityCmd, TransformChanged);
 
 		if (Result == AI::ECommandStatus::Succeeded)
-			Result = FaceTarget(Session, AbilityInstance, World, EntityID, CmdStack, Action, ChildAction, TransformChanged);
+			Result = FaceTarget(Session, AbilityInstance, World, EntityID, CmdStack, *pExecuteAbilityCmd, TransformChanged);
 
 		if (Result == AI::ECommandStatus::Succeeded)
 			Result = InteractWithTarget(Session, AbilityInstance, EntityID, dt);
 
-		if (Result != AI::ECommandStatus::Active)
+		if (Result != AI::ECommandStatus::Running)
 		{
 			EndCurrentInteraction(Session, Result, AIState.AbilityInstance, EntityID);
-			CmdStack.SetStatus(Action, Result);
+			CmdStack.PopCommand(Cmd, Result);
 		}
 	});
 }

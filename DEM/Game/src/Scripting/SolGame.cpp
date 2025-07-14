@@ -135,7 +135,7 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 		, "Mode", &DEM::Game::CFacingParams::Mode
 	);
 
-	State.new_enum<DEM::AI::ECommandStatus>("EActionStatus",
+	State.new_enum<DEM::AI::ECommandStatus>("ECommandStatus",
 		{
 			{ "NotStarted", DEM::AI::ECommandStatus::NotStarted },
 			{ "Running", DEM::AI::ECommandStatus::Running },
@@ -151,25 +151,7 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 		, "Source", &DEM::Game::CAbilityInstance::Source
 		, "ElapsedTime", &DEM::Game::CAbilityInstance::ElapsedTime
 		, "PrevElapsedTime", &DEM::Game::CAbilityInstance::PrevElapsedTime
-		, "Stop", [&World](DEM::Game::CAbilityInstance& AbilityInstance, DEM::AI::ECommandStatus Status)
-		{
-			// FIXME: instead of this method must set a cancellation request flag in CAbilityInstance!
-			auto pCmdStack = World.FindComponent<DEM::AI::CCommandStackComponent>(AbilityInstance.Actor);
-			if (!pCmdStack) return;
-
-			auto Cmd = pCmdStack->FindTopmostCommand<DEM::Game::ExecuteAbility>();
-			while (Cmd)
-			{
-				auto* pExecuteAbilityCmd = Cmd->As<DEM::Game::ExecuteAbility>();
-				if (pExecuteAbilityCmd && pExecuteAbilityCmd->_AbilityInstance == &AbilityInstance)
-				{
-					pCmdStack->PopCommand(Cmd, Status);
-					return;
-				}
-
-				Cmd = pCmdStack->FindTopmostCommand<DEM::Game::ExecuteAbility>(Cmd);
-			}
-		}
+		, "RequestedStatus", &DEM::Game::CAbilityInstance::RequestedStatus
 	);
 
 	State.new_usertype<DEM::Game::CScriptedAbilityInstance>("CScriptedAbilityInstance"

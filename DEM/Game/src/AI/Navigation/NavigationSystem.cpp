@@ -7,15 +7,11 @@
 #include <AI/Navigation/PathRequestQueue.h>
 #include <AI/Navigation/TraversalAction.h>
 #include <AI/Navigation/NavMeshDebugDraw.h>
-#include <AI/Navigation/NavMesh.h>
 #include <AI/Movement/SteerAction.h> // FIXME: only for Steer::SqLinearTolerance, can write better?
 #include <Physics/CharacterControllerComponent.h>
-#include <Physics/CollisionShape.h>
-#include <Physics/BulletConv.h>
 #include <Debug/DebugDraw.h>
 #include <DetourCommon.h>
 #include <DetourDebugDraw.h>
-#include <BulletDynamics/Dynamics/btRigidBody.h>
 #include <array>
 
 namespace DEM::AI
@@ -514,7 +510,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 		const auto PrevMode = Agent.Mode;
 		const auto Pos = Character.RigidBody->GetPhysicalPosition();
 
-		// Pick a supported action to process
+		// Pick a supported command to process
 		auto NavigateCmd = CmdStack.FindTopmostCommand<Navigate>();
 
 		// Update navigation status from the current agent position. Do it even when no navigation requested.
