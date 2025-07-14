@@ -2,6 +2,7 @@
 #include <Scene/SceneComponent.h>
 #include <AI/Navigation/NavAgentComponent.h>
 #include <AI/AIStateComponent.h>
+#include <AI/CommandStackComponent.h>
 #include <AI/Movement/SteerAction.h>
 #include <Game/Interaction/Ability.h>
 #include <Game/Objects/SmartObjectComponent.h>
@@ -288,15 +289,17 @@ static AI::ECommandStatus InteractWithTarget(CGameSession& Session, CAbilityInst
 }
 //---------------------------------------------------------------------
 
-static void EndCurrentInteraction(CGameSession& Session, AI::ECommandStatus NewStatus, AI::CAIStateComponent& AIState, HEntity EntityID)
+static void EndCurrentInteraction(CGameSession& Session, AI::ECommandStatus NewStatus, PAbilityInstance& Instance, HEntity EntityID)
 {
-	if (AIState._AbilityInstance->Stage == EAbilityExecutionStage::Interaction)
+	if (!Instance) return;
+
+	if (Instance->Stage == EAbilityExecutionStage::Interaction)
 	{
 		if (NewStatus == AI::ECommandStatus::NotStarted) NewStatus = AI::ECommandStatus::Cancelled;
-		AIState._AbilityInstance->Ability.OnEnd(Session, *AIState._AbilityInstance, NewStatus);
+		Instance->Ability.OnEnd(Session, *Instance, NewStatus);
 	}
 
-	AIState._AbilityInstance = nullptr;
+	Instance = nullptr;
 
 	//!!!if animation graph override is enabled, disable it!
 }
@@ -309,37 +312,40 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 	{
 		// If current action is empty or has finished with any result, stop current interaction.
 		// If child action was cancelled, the main action is considered cancelled too.
-		const auto Action = CmdStack.FindCurrent<ExecuteAbility>();
+		const auto Cmd = CmdStack.FindTopmostCommand<ExecuteAbility>();
 		const auto ChildAction = CmdStack.GetChild(Action);
 		const auto ActionStatus = (CmdStack.GetStatus(ChildAction) == AI::ECommandStatus::Cancelled) ? AI::ECommandStatus::Cancelled : CmdStack.GetStatus(Action);
 		if (ActionStatus != AI::ECommandStatus::Active)
 		{
-			if (AIState._AbilityInstance) EndCurrentInteraction(Session, ActionStatus, AIState, EntityID);
+			EndCurrentInteraction(Session, ActionStatus, AIState.AbilityInstance, EntityID);
 			return;
 		}
 
+		//!!!if cancellation requested inside pAction->_AbilityInstance, need to cancel action too! Ability doesn't hold its command future and can't cancel this way!
+		//Ability caller cancels by future. Ability marks itself inactual. Ability system pops a promise (Cmd).
+
 		auto pAction = Action.As<ExecuteAbility>();
-		const bool AbilityChanged = (pAction->_AbilityInstance != AIState._AbilityInstance);
+		const bool AbilityChanged = (pAction->_AbilityInstance != AIState.AbilityInstance);
 		if (AbilityChanged)
 		{
 			// Interrupt previous ability
 			// NB: it might be our parent, then it will be resumed when we finish executing the nested one
-			if (AIState._AbilityInstance) EndCurrentInteraction(Session, AI::ECommandStatus::Cancelled, AIState, EntityID);
+			EndCurrentInteraction(Session, AI::ECommandStatus::Cancelled, AIState.AbilityInstance, EntityID);
 
-			AIState._AbilityInstance = pAction->_AbilityInstance;
+			AIState.AbilityInstance = pAction->_AbilityInstance;
 
 			// Initialize new ability
-			if (AIState._AbilityInstance)
+			if (pAction->_AbilityInstance)
 			{
-				AIState._AbilityInstance->Actor = EntityID;
-				AIState._AbilityInstance->Stage = EAbilityExecutionStage::Movement;
+				pAction->_AbilityInstance->Actor = EntityID;
+				pAction->_AbilityInstance->Stage = EAbilityExecutionStage::Movement;
 
-				auto& Zones = AIState._AbilityInstance->InitialZones;
+				auto& Zones = pAction->_AbilityInstance->InitialZones;
 
 				// Get interaction zones from a smart object, if present
-				if (!AIState._AbilityInstance->Targets.empty())
+				if (!pAction->_AbilityInstance->Targets.empty())
 				{
-					if (auto pSOComponent = World.FindComponent<const CSmartObjectComponent>(AIState._AbilityInstance->Targets[0].Entity))
+					if (auto pSOComponent = World.FindComponent<const CSmartObjectComponent>(pAction->_AbilityInstance->Targets[0].Entity))
 					{
 						// Get zones from entity component
 						Zones.reserve(pSOComponent->Zones.size());
@@ -360,19 +366,19 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 				}
 
 				// Get interaction zones from an ability
-				AIState._AbilityInstance->Ability.GetZones(Session, *AIState._AbilityInstance, Zones);
+				pAction->_AbilityInstance->Ability.GetZones(Session, *pAction->_AbilityInstance, Zones);
 				n_assert_dbg(!Zones.empty());
 			}
 		}
 
-		if (!AIState._AbilityInstance)
+		if (!pAction->_AbilityInstance)
 		{
 			// No ability is being executed
 			CmdStack.SetStatus(Action, AI::ECommandStatus::Succeeded);
 			return;
 		}
 
-		CAbilityInstance& AbilityInstance = *AIState._AbilityInstance;
+		CAbilityInstance& AbilityInstance = *pAction->_AbilityInstance;
 
 		// Determine target node, if any
 		Scene::CSceneNode* pTargetRootNode = nullptr;
@@ -420,7 +426,7 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 
 		if (Result != AI::ECommandStatus::Active)
 		{
-			EndCurrentInteraction(Session, Result, AIState, EntityID);
+			EndCurrentInteraction(Session, Result, AIState.AbilityInstance, EntityID);
 			CmdStack.SetStatus(Action, Result);
 		}
 	});

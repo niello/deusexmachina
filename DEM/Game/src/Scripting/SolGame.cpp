@@ -153,20 +153,21 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 		, "PrevElapsedTime", &DEM::Game::CAbilityInstance::PrevElapsedTime
 		, "Stop", [&World](DEM::Game::CAbilityInstance& AbilityInstance, DEM::AI::ECommandStatus Status)
 		{
+			// FIXME: instead of this method must set a cancellation request flag in CAbilityInstance!
 			auto pCmdStack = World.FindComponent<DEM::AI::CCommandStackComponent>(AbilityInstance.Actor);
 			if (!pCmdStack) return;
 
-			DEM::Game::HAction Action = pCmdStack->FindCurrent<DEM::Game::ExecuteAbility>();
-			while (Action)
+			auto Cmd = pCmdStack->FindTopmostCommand<DEM::Game::ExecuteAbility>();
+			while (Cmd)
 			{
-				auto pAction = Action.As<DEM::Game::ExecuteAbility>();
-				if (pAction && pAction->_AbilityInstance == &AbilityInstance)
+				auto* pExecuteAbilityCmd = Cmd->As<DEM::Game::ExecuteAbility>();
+				if (pExecuteAbilityCmd && pExecuteAbilityCmd->_AbilityInstance == &AbilityInstance)
 				{
-					pCmdStack->SetStatus(Action, Status);
+					pCmdStack->PopCommand(Cmd, Status);
 					return;
 				}
 
-				Action = pCmdStack->FindCurrent<DEM::Game::ExecuteAbility>(Action);
+				Cmd = pCmdStack->FindTopmostCommand<DEM::Game::ExecuteAbility>(Cmd);
 			}
 		}
 	);
@@ -177,20 +178,7 @@ void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 	);
 
 	State.new_usertype<DEM::AI::CCommandStackComponent>("CCommandStackComponent"
-		, "SetStatus", &DEM::AI::CCommandStackComponent::SetStatus
-		, "GetCurrent", &DEM::AI::CCommandStackComponent::GetCurrent
-		, "GetAbilityInstanceAction", [](DEM::AI::CCommandStackComponent& Self, const DEM::Game::CAbilityInstance& AbilityInstance)
-		{
-			DEM::Game::HAction Action = Self.FindCurrent<DEM::Game::ExecuteAbility>();
-			while (Action)
-			{
-				auto pAction = Action.As<DEM::Game::ExecuteAbility>();
-				if (pAction && pAction->_AbilityInstance == &AbilityInstance) return Action;
-
-				Action = Self.FindCurrent<DEM::Game::ExecuteAbility>(Action);
-			}
-			return DEM::Game::HAction{};
-		}
+		//, "IsEmpty", &DEM::AI::CCommandStackComponent::IsEmpty
 	);
 
 	// For CEventsComponent

@@ -12,7 +12,7 @@
 namespace DEM::AI
 {
 
-class Navigate: public CCommand
+class Navigate : public CCommand
 {
 	RTTI_CLASS_DECL(DEM::AI::Navigate, CCommand);
 

@@ -13,7 +13,7 @@ namespace DEM::AI
 struct CAIStateComponent
 {
 	CBlackboard                  Blackboard;
-	Game::PAbilityInstance       _AbilityInstance; // TODO: rename without _
+	Game::PAbilityInstance       AbilityInstance; //???need here?! stored in action!
 	std::vector<CSensedStimulus> NewStimuli;
 	std::vector<CSensedStimulus> Facts;
 	size_t                       FactWithSourceCount = 0;

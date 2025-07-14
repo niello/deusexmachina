@@ -27,7 +27,9 @@ class ExecuteAbility : public AI::CCommand
 
 public:
 
-	PAbilityInstance _AbilityInstance;
+	PAbilityInstance   _AbilityInstance;
+
+	AI::CCommandFuture _SubCommandFuture; // Ability requires approaching and facing sub-commands
 
 	void SetPayload(PAbilityInstance AbilityInstance)
 	{
