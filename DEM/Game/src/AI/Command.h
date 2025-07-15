@@ -114,6 +114,7 @@ public:
 	void SetStatus(ECommandStatus Status) { _Command->_Status = Status; }
 	void AcceptChanges() { _Command->_Changed = false; }
 	bool IsChanged() const { return _Command->_Changed; }
+	bool IsNew() const { return _Command->_Status == ECommandStatus::NotStarted; }
 	bool IsCancelled() const { return _Command->_Status == ECommandStatus::Cancelled; }
 	bool IsFinished() const { return IsFinishedCommandStatus(_Command->_Status); }
 	bool IsAbandoned() const { return _Command->GetRefCount() == 1; }

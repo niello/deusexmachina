@@ -10,7 +10,7 @@ void ProcessCommandQueue(Game::CGameWorld& World)
 	World.ForEachEntityWith<CCommandQueueComponent, CCommandStackComponent>([&World](
 		auto EntityID, auto& Entity, CCommandQueueComponent& Queue, CCommandStackComponent& Stack)
 	{
-		// Finished actions must be popped by their systems, we can't do it here
+		// There are actions running, we must wait for them
 		if (!Stack.IsEmpty()) return;
 
 		// Nothing to pass to the execution stack

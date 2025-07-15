@@ -504,6 +504,21 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 			CCommandStackComponent& CmdStack,
 			const Game::CCharacterControllerComponent& Character)
 	{
+		CmdStack.FinalizePoppedCommands<Navigate>([](Navigate& Cmd)
+		{
+			// TODO: move async request ID to cmd
+			//!!!make sure to finalize all commands before CCommandStackComponent deletion!
+			//if (Cmd.AsyncTaskID)
+			//{
+			//	PathQueue.CancelRequest(Agent.AsyncTaskID);
+			//	Agent.AsyncTaskID = 0;
+			//}
+
+			// This sub-command is already popped too and needs no cancellation request, but
+			// if not cleared here, Navigate's own future may hold the whole chain in memory
+			Cmd._SubCommandFuture = {};
+		});
+
 		if (!Character.RigidBody || !Agent.pNavQuery || !Agent.Settings) return;
 
 		const auto PrevState = Agent.State;
@@ -517,13 +532,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 		if (!UpdatePosition(Pos, Agent))
 		{
 			ResetNavigation(Agent, PathQueue);
-			if (NavigateCmd)
-			{
-				//???do _SubCommandFuture clearing in virtual CCommand::OnTerminated()? or maybe it is unnecessary? nav. future will be released soon?
-				//???could be useful to encapsulate other async and RAII things like what is in ResetNavigation and auto-cancel them? E.g. could store path request ID there!
-				NavigateCmd->As<Navigate>()->_SubCommandFuture = {};
-				CmdStack.PopCommand(NavigateCmd, ECommandStatus::Failed);
-			}
+			if (NavigateCmd) CmdStack.PopCommand(NavigateCmd, ECommandStatus::Failed);
 			return;
 		}
 
@@ -541,10 +550,11 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 		n_assert2_dbg(!NavigateCmd->IsFinished(), "Only the navigation system itself might set a Navigate action finished");
 		if (NavigateCmd->IsCancelled())
 		{
-			pNavCmd->_SubCommandFuture = {};
 			CmdStack.PopCommand(NavigateCmd, ECommandStatus::Cancelled);
 			return;
 		}
+
+		if (NavigateCmd->IsNew()) NavigateCmd->SetStatus(ECommandStatus::Running);
 
 		// Check sub-command status. Its termination may lead to a navigation action termination.
 		if (pNavCmd->_SubCommandFuture)
@@ -555,7 +565,6 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 				(SubCmdStatus == ECommandStatus::Succeeded && HasArrived(Agent, Pos, 0.f, true)))
 			{
 				ResetNavigation(Agent, PathQueue);
-				pNavCmd->_SubCommandFuture = {};
 				CmdStack.PopCommand(NavigateCmd, SubCmdStatus);
 				return;
 			}
@@ -581,7 +590,6 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 			if (!UpdateDestination(pNavCmd->_Destination, Agent, PathQueue, DestChanged))
 			{
 				ResetNavigation(Agent, PathQueue);
-				pNavCmd->_SubCommandFuture = {};
 				CmdStack.PopCommand(NavigateCmd, ECommandStatus::Failed);
 				return;
 			}
@@ -601,7 +609,6 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 			if (!CheckAsyncPathResult(Agent, PathQueue))
 			{
 				ResetNavigation(Agent, PathQueue);
-				pNavCmd->_SubCommandFuture = {};
 				CmdStack.PopCommand(NavigateCmd, ECommandStatus::Failed);
 				return;
 			}
@@ -637,7 +644,6 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 		if (!pAction || !pAction->GenerateAction(Session, Agent, EntityID, Controller, Pos, CmdStack, *pNavCmd))
 		{
 			ResetNavigation(Agent, PathQueue);
-			pNavCmd->_SubCommandFuture = {};
 			CmdStack.PopCommand(NavigateCmd, ECommandStatus::Failed);
 		}
 	});

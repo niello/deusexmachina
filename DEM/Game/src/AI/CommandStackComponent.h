@@ -44,13 +44,18 @@ class CCommandStackComponent final
 protected:
 
 	std::vector<CCommandPromise> _CommandStack;
+	std::vector<CCommandPromise> _PoppedCommands; // Commands that were running and are pending finalization
 
 public:
 
 	CCommandStackComponent() = default;
 	CCommandStackComponent(CCommandStackComponent&&) noexcept = default;
 	CCommandStackComponent& operator =(CCommandStackComponent&&) noexcept = default;
-	~CCommandStackComponent() = default;
+
+	~CCommandStackComponent()
+	{
+		n_assert_dbg(_CommandStack.empty() && _PoppedCommands.empty());
+	}
 
 	template<typename T, typename... TArgs>
 	CCommandFuture PushCommand(TArgs&&... Args)
@@ -68,9 +73,20 @@ public:
 
 		n_assert_dbg(CmdHandle._pStack == &_CommandStack && StartIdx < _CommandStack.size() && IsTerminalCommandStatus(Status));
 
-		for (size_t i = StartIdx; i < _CommandStack.size(); ++i)
-			if (ForceRewriteFinishedStatus || !_CommandStack[i].IsFinished())
-				_CommandStack[i].SetStatus(Status);
+		// Unwind a stack from the top down to fill _PoppedCommands in the right order
+		auto REnd = std::make_reverse_iterator(std::next(_CommandStack.begin(), StartIdx));
+		for (auto RIt = _CommandStack.rbegin(); RIt != REnd; ++RIt)
+		{
+			auto& Cmd = *RIt;
+			const bool IsTerminated = Cmd.IsFinished() || Cmd.IsCancelled();
+
+			// Normally we don't want to rewrite status of an already finished command
+			if (ForceRewriteFinishedStatus || !IsTerminated)
+				Cmd.SetStatus(Status);
+
+			// Remember the command for finalization by its system
+			if (!IsTerminated) _PoppedCommands.push_back(std::move(Cmd));
+		}
 
 		// Can't use resize because it requires a default empty promise constructor even though growing never happens
 		_CommandStack.erase(std::next(_CommandStack.begin(), StartIdx), _CommandStack.end());
@@ -105,14 +121,23 @@ public:
 		return {};
 	}
 
-	CCommandStackHandle Find(const CCommandPromise& Cmd)
+	template<typename T, typename F = std::nullptr_t>
+	void FinalizePoppedCommands(F Finalizer = {})
 	{
-		auto It = std::find(_CommandStack.cbegin(), _CommandStack.cend(), Cmd);
-		return (It == _CommandStack.cend()) ? CCommandStackHandle{} : CCommandStackHandle(&_CommandStack, (std::distance(_CommandStack.cbegin(), It)));
+		for (auto It = _PoppedCommands.begin(); It != _PoppedCommands.end(); /**/)
+		{
+			if (auto* pTypedCmd = It->As<T>())
+			{
+				if constexpr (!std::is_same_v<F, std::nullptr_t>)
+					Finalizer(*pTypedCmd);
+				It = _PoppedCommands.erase(It);
+			}
+			else
+			{
+				++It;
+			}
+		}
 	}
-
-	//???should be able to get child or parent of an action by its future? need it? maybe yes, to control decomposition from the system.
-	//???or should store future of sub-action it fired?
 
 	bool IsEmpty() const { return _CommandStack.empty(); }
 };
