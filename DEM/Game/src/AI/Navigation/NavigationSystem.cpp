@@ -122,7 +122,7 @@ static bool UpdatePosition(const rtm::vector4f& Position, CNavAgentComponent& Ag
 //---------------------------------------------------------------------
 
 // Returns whether an agent can continue to perform the current navigation task
-static bool UpdateDestination(rtm::vector4f_arg0 Dest, CNavAgentComponent& Agent, CPathRequestQueue& PathQueue, bool& OutDestChanged)
+static bool UpdateDestination(Navigate& Cmd, CNavAgentComponent& Agent, CPathRequestQueue& PathQueue, bool& OutDestChanged)
 {
 	//!!!FIXME: setting, per Navigate action or per entity!
 	constexpr float MaxTargetOffset = 0.5f;
@@ -130,7 +130,7 @@ static bool UpdateDestination(rtm::vector4f_arg0 Dest, CNavAgentComponent& Agent
 
 	const auto* pNavFilter = Agent.Settings->GetQueryFilter();
 
-	const auto DestRaw = Math::FromSIMD3(Dest);
+	const auto DestRaw = Math::FromSIMD3(Cmd._Destination);
 
 	if (Agent.State != ENavigationState::Idle)
 	{
@@ -180,11 +180,14 @@ static bool UpdateDestination(rtm::vector4f_arg0 Dest, CNavAgentComponent& Agent
 			if (Agent.Corridor.getPath()[i] == Agent.TargetRef)
 			{
 				Agent.Corridor.shrink(Agent.TargetPos.v, i + 1);
-				if (Agent.AsyncTaskID)
+
+				// The current corridor is actual, pathfinding is no longer needed
+				if (Cmd._AsyncPathTaskID)
 				{
-					PathQueue.CancelRequest(Agent.AsyncTaskID);
-					Agent.AsyncTaskID = 0;
+					PathQueue.CancelRequest(Cmd._AsyncPathTaskID);
+					Cmd._AsyncPathTaskID = 0;
 				}
+
 				Agent.State = ENavigationState::Following;
 
 				// Offmesh traversal can't be interrupted, but preparation can
@@ -229,7 +232,7 @@ static bool CheckCurrentPath(CNavAgentComponent& Agent)
 }
 //---------------------------------------------------------------------
 
-static void RequestPath(CNavAgentComponent& Agent, CPathRequestQueue& PathQueue)
+static void RequestPath(CNavAgentComponent& Agent, CPathRequestQueue& PathQueue, U16& AsyncPathTaskID)
 {
 	const auto* pNavFilter = Agent.Settings->GetQueryFilter();
 
@@ -264,16 +267,16 @@ static void RequestPath(CNavAgentComponent& Agent, CPathRequestQueue& PathQueue)
 			Agent.Corridor.setCorridor(Agent.Corridor.getPos(), Agent.Corridor.getPath(), 1);
 
 		// Request async path planning
-		if (Agent.AsyncTaskID) PathQueue.CancelRequest(Agent.AsyncTaskID);
-		Agent.AsyncTaskID = PathQueue.Request(Agent.Corridor.getLastPoly(), Agent.TargetRef, Agent.Corridor.getTarget(), Agent.TargetPos.v, Agent.pNavQuery, pNavFilter);
-		if (Agent.AsyncTaskID) Agent.State = ENavigationState::Planning;
+		if (AsyncPathTaskID) PathQueue.CancelRequest(AsyncPathTaskID);
+		AsyncPathTaskID = PathQueue.Request(Agent.Corridor.getLastPoly(), Agent.TargetRef, Agent.Corridor.getTarget(), Agent.TargetPos.v, Agent.pNavQuery, pNavFilter);
+		if (AsyncPathTaskID) Agent.State = ENavigationState::Planning;
 	}
 }
 //---------------------------------------------------------------------
 
-static bool CheckAsyncPathResult(CNavAgentComponent& Agent, CPathRequestQueue& PathQueue)
+static bool CheckAsyncPathResult(CNavAgentComponent& Agent, CPathRequestQueue& PathQueue, U16 AsyncPathTaskID)
 {
-	dtStatus Status = PathQueue.GetRequestStatus(Agent.AsyncTaskID);
+	dtStatus Status = PathQueue.GetRequestStatus(AsyncPathTaskID);
 
 	// If failed, can retry because the target location is still valid
 	if (dtStatusFailed(Status)) Agent.State = ENavigationState::Requested;
@@ -281,8 +284,8 @@ static bool CheckAsyncPathResult(CNavAgentComponent& Agent, CPathRequestQueue& P
 
 	std::array<dtPolyRef, 512> Path;
 	int PathSize = 0;
-	n_assert(PathQueue.GetPathSize(Agent.AsyncTaskID) <= static_cast<int>(Path.size()));
-	Status = PathQueue.GetPathResult(Agent.AsyncTaskID, Path.data(), PathSize, Path.size());
+	n_assert(PathQueue.GetPathSize(AsyncPathTaskID) <= static_cast<int>(Path.size()));
+	Status = PathQueue.GetPathResult(AsyncPathTaskID, Path.data(), PathSize, Path.size());
 
 	// The last ref in the old path should be the same as the location where the request was issued
 	if (dtStatusFailed(Status) || !PathSize || Agent.Corridor.getLastPoly() != Path[0]) return false;
@@ -315,12 +318,6 @@ static bool CheckAsyncPathResult(CNavAgentComponent& Agent, CPathRequestQueue& P
 
 static void ResetNavigation(CNavAgentComponent& Agent, CPathRequestQueue& PathQueue)
 {
-	if (Agent.AsyncTaskID)
-	{
-		PathQueue.CancelRequest(Agent.AsyncTaskID);
-		Agent.AsyncTaskID = 0;
-	}
-
 	if (auto CurrPoly = Agent.Corridor.getFirstPoly())
 		Agent.Corridor.reset(CurrPoly, Agent.Corridor.getPos());
 
@@ -331,6 +328,24 @@ static void ResetNavigation(CNavAgentComponent& Agent, CPathRequestQueue& PathQu
 		Agent.Mode = ENavigationMode::Recovery;
 		Agent.CurrAreaType = 0;
 	}
+}
+//---------------------------------------------------------------------
+
+static void FinalizeCommands(CCommandStackComponent& CmdStack, CPathRequestQueue& PathQueue)
+{
+	CmdStack.FinalizePoppedCommands<Navigate>([&PathQueue](Navigate& Cmd)
+	{
+		//???move State from agent to command too? at least partly - requested, planning, following are states of the command execution!
+		if (Cmd._AsyncPathTaskID)
+		{
+			PathQueue.CancelRequest(Cmd._AsyncPathTaskID);
+			Cmd._AsyncPathTaskID = 0;
+		}
+
+		// This sub-command is already popped too and needs no cancellation request, but
+		// if not cleared here, Navigate's own future may hold the whole chain in memory
+		Cmd._SubCommandFuture = {};
+	});
 }
 //---------------------------------------------------------------------
 
@@ -504,26 +519,15 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 			CCommandStackComponent& CmdStack,
 			const Game::CCharacterControllerComponent& Character)
 	{
-		CmdStack.FinalizePoppedCommands<Navigate>([](Navigate& Cmd)
-		{
-			// TODO: move async request ID to cmd
-			//!!!make sure to finalize all commands before CCommandStackComponent deletion!
-			//if (Cmd.AsyncTaskID)
-			//{
-			//	PathQueue.CancelRequest(Agent.AsyncTaskID);
-			//	Agent.AsyncTaskID = 0;
-			//}
-
-			// This sub-command is already popped too and needs no cancellation request, but
-			// if not cleared here, Navigate's own future may hold the whole chain in memory
-			Cmd._SubCommandFuture = {};
-		});
+		// Finalize commands popped since the system was executed the last time
+		//!!!TODO: finalize commands popped below immediately to prevent an one frame lag?!
+		FinalizeCommands(CmdStack, PathQueue);
 
 		if (!Character.RigidBody || !Agent.pNavQuery || !Agent.Settings) return;
 
 		const auto PrevState = Agent.State;
 		const auto PrevMode = Agent.Mode;
-		const auto Pos = Character.RigidBody->GetPhysicalPosition();
+		const auto Pos = Character.RigidBody->GetPhysicalPosition(); // important since the system is called per physics tick, not per logic update
 
 		// Pick a supported command to process
 		auto NavigateCmd = CmdStack.FindTopmostCommand<Navigate>();
@@ -546,14 +550,16 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 
 		auto* pNavCmd = NavigateCmd->As<Navigate>();
 
-		// Cancel an action if requested
 		n_assert2_dbg(!NavigateCmd->IsFinished(), "Only the navigation system itself might set a Navigate action finished");
+
+		// Cancel a command if requested
 		if (NavigateCmd->IsCancelled())
 		{
 			CmdStack.PopCommand(NavigateCmd, ECommandStatus::Cancelled);
 			return;
 		}
 
+		// Mark a command as started
 		if (NavigateCmd->IsNew()) NavigateCmd->SetStatus(ECommandStatus::Running);
 
 		// Check sub-command status. Its termination may lead to a navigation action termination.
@@ -587,7 +593,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 		{
 			NavigateCmd->AcceptChanges();
 
-			if (!UpdateDestination(pNavCmd->_Destination, Agent, PathQueue, DestChanged))
+			if (!UpdateDestination(*pNavCmd, Agent, PathQueue, DestChanged))
 			{
 				ResetNavigation(Agent, PathQueue);
 				CmdStack.PopCommand(NavigateCmd, ECommandStatus::Failed);
@@ -602,11 +608,11 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 		// Do async path planning
 		if (Agent.State == ENavigationState::Requested)
 		{
-			RequestPath(Agent, PathQueue);
+			RequestPath(Agent, PathQueue, pNavCmd->_AsyncPathTaskID);
 		}
 		else if (Agent.State == ENavigationState::Planning)
 		{
-			if (!CheckAsyncPathResult(Agent, PathQueue))
+			if (!CheckAsyncPathResult(Agent, PathQueue, pNavCmd->_AsyncPathTaskID))
 			{
 				ResetNavigation(Agent, PathQueue);
 				CmdStack.PopCommand(NavigateCmd, ECommandStatus::Failed);
@@ -732,14 +738,11 @@ void DestroyNavigationAgent(Game::CGameWorld& World, CPathRequestQueue& PathQueu
 {
 	// Cancel active navigation tasks
 	if (auto pCmdStack = World.FindComponent<CCommandStackComponent>(EntityID))
+	{
 		while (auto NavCmd = pCmdStack->FindTopmostCommand<Navigate>())
 			pCmdStack->PopCommand(NavCmd, ECommandStatus::Cancelled);
 
-	// Need to shutdown async tasks before deleting agent components
-	if (Agent.AsyncTaskID)
-	{
-		PathQueue.CancelRequest(Agent.AsyncTaskID);
-		Agent.AsyncTaskID = 0;
+		FinalizeCommands(*pCmdStack, PathQueue);
 	}
 
 	if (Agent.pNavQuery)

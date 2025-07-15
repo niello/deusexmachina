@@ -341,6 +341,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 		// Pick a supported command to process
 		// NB: we don't try to process Steer and Turn simultaneously, only the most nested of them
 		auto Cmd = CmdStack.FindTopmostCommand<AI::Steer, AI::Turn>();
+		if (!Cmd) return;
 
 		// Access real physical transform, not an interpolated motion state
 		const auto& BodyTfm = pBody->GetBtBody()->getWorldTransform();
@@ -360,8 +361,9 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 				CmdStack.PopCommand(Cmd, AI::ECommandStatus::Succeeded);
 				if (IsWalking) Character.State = ECharacterState::Stand;
 			}
-			else if (IsWalking) // Don't check stuck state when standing (e.g. deliberately waiting for obstacle to move) or being in the air
+			else if (IsWalking)
 			{
+				// Check if the agent is stuck. Don't check when standing (e.g. avoiding a moving obstacle) or being in the air.
 				const float SqExpectedMovement = Character.SqExpectedLinearSpeed * (dt * dt);
 				const float SqActualMovement = Math::vector_length_squared_xz(rtm::vector_sub(Pos, Character.LastPos));
 				if (SqActualMovement < SqExpectedMovement * (0.25f * 0.25f)) // Moved less than 25% of expected

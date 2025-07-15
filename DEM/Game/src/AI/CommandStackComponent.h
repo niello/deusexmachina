@@ -99,7 +99,7 @@ public:
 
 	void Reset(ECommandStatus Status, bool ForceRewriteFinishedStatus = false)
 	{
-		PopCommand(CCommandStackHandle(&_CommandStack, 0), Status, ForceRewriteFinishedStatus);
+		if (!_CommandStack.empty()) PopCommand(CCommandStackHandle(&_CommandStack, 0), Status, ForceRewriteFinishedStatus);
 	}
 
 	template<typename... T>

@@ -22,7 +22,8 @@ public:
 	rtm::vector4f  _FinalFacing;
 	float          _Speed;
 
-	CCommandFuture _SubCommandFuture; // Navigation is typically processed as a set of traversal sub-actions like Steer
+	CCommandFuture _SubCommandFuture;    // Navigation is typically processed as a set of traversal sub-actions like Steer
+	U16            _AsyncPathTaskID = 0;
 
 	void SetPayload(rtm::vector4f_arg0 Destination, float Speed)
 	{
@@ -71,7 +72,6 @@ struct CNavAgentComponent
 	dtPolyRef            OffmeshRef = 0; // Currently triggered offmesh connection. Traversal may not have started yet.
 	float                ReplanTime = 0.f;
 	float                PathOptimizationTime = 0.f;
-	U16                  AsyncTaskID = 0;
 	//U16                  PathVersion = 0; // Increments each time the path corridor is replanned or optimized. Each new path begins from zero.
 	ENavigationState     State = ENavigationState::Idle;
 	ENavigationMode      Mode = ENavigationMode::Surface; //!!!if will store offmesh ref not in corridor, bool Valid will be enough instead!
