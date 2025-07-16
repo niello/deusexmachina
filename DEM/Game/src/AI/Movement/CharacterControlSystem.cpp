@@ -113,6 +113,8 @@ static rtm::vector4f ProcessMovement(CCharacterControllerComponent& Character, A
 	}
 
 	// TODO: check if can benefit from knowing about changes
+	if (SteerCmd->GetStatus() == AI::ECommandStatus::NotStarted)
+		SteerCmd->SetStatus(AI::ECommandStatus::Running);
 	SteerCmd->AcceptChanges();
 
 	auto* pSteerAction = SteerCmd->As<AI::Steer>();
@@ -221,6 +223,11 @@ static float ProcessFacing(CCharacterControllerComponent& Character, AI::CComman
 		}
 		else
 		{
+			// TODO: check if can benefit from knowing about changes
+			if (TurnCmd->GetStatus() == AI::ECommandStatus::NotStarted)
+				TurnCmd->SetStatus(AI::ECommandStatus::Running);
+			TurnCmd->AcceptChanges();
+
 			auto* pTurnAction = TurnCmd->As<AI::Turn>();
 			DesiredRotation = Math::AngleXZNorm(LookatDir, pTurnAction->_LookatDirection);
 			Tolerance = pTurnAction->_Tolerance;
@@ -256,7 +263,7 @@ static float ProcessFacing(CCharacterControllerComponent& Character, AI::CComman
 }
 //---------------------------------------------------------------------
 
-static void UpdateRigidBodyMovement(Physics::CRigidBody* pBody, float dt, const rtm::vector4f& DesiredLinearVelocity,
+static void UpdateRigidBodyMovement(Physics::CRigidBody* pBody, float dt, rtm::vector4f_arg0 DesiredLinearVelocity,
 	float DesiredAngularVelocity, float MaxAcceleration)
 {
 	// We want a precise control over the movement, so deny freezing on low speed
@@ -301,12 +308,11 @@ void ProcessCharacterControllers(CGameWorld& World, Physics::CPhysicsLevel& Phys
 			CCharacterControllerComponent& Character,
 			AI::CCommandStackComponent& CmdStack)
 	{
-		auto pBody = Character.RigidBody.Get();
+		auto* pBody = Character.RigidBody.Get();
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
 
-		// Access real physical transform, not an interpolated motion state
-		const auto& Offset = pBody->GetCollisionShape()->GetOffset();
-		const rtm::vector4f Pos = Math::FromBullet(pBody->GetBtBody()->getWorldTransform() * Math::ToBullet3(rtm::vector_neg(Offset)));
+		// It is important to use physics body position because the system is called per physics tick, not per logic update
+		const auto Pos = pBody->GetPhysicalPosition();
 
 		const float DistanceToGround = CalcDistanceToGround(Character, Pos);
 		if (UpdateSelfControlState(Character, DistanceToGround))
@@ -335,7 +341,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			CCharacterControllerComponent& Character,
 			AI::CCommandStackComponent& CmdStack)
 	{
-		auto pBody = Character.RigidBody.Get();
+		auto* pBody = Character.RigidBody.Get();
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
 
 		// Pick a supported command to process
@@ -343,17 +349,13 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 		auto Cmd = CmdStack.FindTopmostCommand<AI::Steer, AI::Turn>();
 		if (!Cmd) return;
 
-		// Access real physical transform, not an interpolated motion state
-		const auto& BodyTfm = pBody->GetBtBody()->getWorldTransform();
-
 		if (auto* pSteerAction = Cmd->As<AI::Steer>())
 		{
 			const bool IsWalking = Character.IsWalking();
 
 			// Check linear arrival
-			const auto& Offset = pBody->GetCollisionShape()->GetOffset();
-			const rtm::vector4f Pos = Math::FromBullet(BodyTfm * Math::ToBullet3(rtm::vector_neg(Offset)));
-			const rtm::vector4f ToDest = rtm::vector_sub(pSteerAction->_Dest, Pos);
+			const auto Pos = pBody->GetPhysicalPosition();
+			const auto ToDest = rtm::vector_sub(pSteerAction->_Dest, Pos);
 			const float SqDistance = Math::vector_length_squared_xz(ToDest);
 			const bool IsSameHeightLevel = (std::fabsf(rtm::vector_get_y(ToDest)) < Character.Height);
 			if (IsSameHeightLevel && SqDistance < AI::Steer::SqLinearTolerance)
@@ -386,8 +388,8 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 		}
 		else if (auto* pTurnAction = Cmd->As<AI::Turn>())
 		{
-			// Check angular arrival
-			const rtm::vector4f LookatDir = Math::FromBullet(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
+			// Check angular arrival. Access real physical transform, not an interpolated motion state.
+			const rtm::vector4f LookatDir = Math::FromBullet(pBody->GetBtBody()->getWorldTransform().getBasis() * btVector3(0.f, 0.f, -1.f));
 			const float Angle = Math::AngleXZNorm(LookatDir, pTurnAction->_LookatDirection);
 			if (std::fabsf(Angle) < pTurnAction->_Tolerance)
 				CmdStack.PopCommand(Cmd, AI::ECommandStatus::Succeeded);
@@ -591,23 +593,6 @@ void CCharacterController::AvoidObstacles()
 		pLastClosestObstacle = pClosest;
 	}
 #endif
-}
-//---------------------------------------------------------------------
-
-bool CMotorSystem::IsStuck()
-{
-	// Set Stuck, if:
-	// too much time with too little movement, but far enough from the dest (RELATIVELY little movement)
-	// or
-	// too much time with no RELATIVELY significant progress to dest (distance doesn't reduce)
-	// second is more general
-	//!!!if we want to Flee, stuck must check growing of distance to dest, not reduction!
-	//???do we really want to flee sometimes? hm, returning to weapon radius?
-	//may be just take into account reach radii?
-
-	//!!!DON'T forget StuckTime!
-
-	FAIL;
 }
 //---------------------------------------------------------------------
 
