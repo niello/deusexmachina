@@ -383,6 +383,8 @@ static AI::ECommandStatus ProcessAgentAbility(CGameSession& Session, Game::HEnti
 		// Get interaction zones from an ability
 		AbilityInstance.Ability.GetZones(Session, *pTypedCmd->_AbilityInstance, Zones);
 		n_assert_dbg(!Zones.empty());
+
+		Cmd->AcceptChanges();
 	}
 
 	// Terminate an ability if its logic requested it
@@ -391,7 +393,7 @@ static AI::ECommandStatus ProcessAgentAbility(CGameSession& Session, Game::HEnti
 
 	if (Cmd->IsChanged())
 	{
-		// Ability execution command should not change on the fly
+		// Ability execution command should not change on the fly except for requesting termination, which is handled right above
 		NOT_IMPLEMENTED;
 		Cmd->AcceptChanges();
 	}

@@ -258,7 +258,7 @@ EBTStatus CBehaviourTreePlayer::Update(float dt)
 					const auto ActivatingIdx = _pNewStack[Level];
 					Status = ActivateNode(ActivatingIdx, _pNodeInstanceData[Level], Ctx);
 
-					n_assert_dbg(static_cast<size_t>(std::distance(_pNodeInstanceData[0].pPrevStackTop, _pInstanceDataBuffer)) < _Asset->GetMaxInstanceBytes());
+					n_assert_dbg(static_cast<size_t>(std::distance(_pNodeInstanceData[0].pPrevStackTop, _pInstanceDataBuffer)) <= _Asset->GetMaxInstanceBytes());
 
 					// NB: difference between Succeeded and Running is important for the deepest active action as it is passed to parents
 					if (Status == EBTStatus::Failed)
