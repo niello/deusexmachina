@@ -316,21 +316,6 @@ static bool CheckAsyncPathResult(CNavAgentComponent& Agent, CPathRequestQueue& P
 }
 //---------------------------------------------------------------------
 
-static void ResetNavigation(CNavAgentComponent& Agent, CPathRequestQueue& PathQueue)
-{
-	if (auto CurrPoly = Agent.Corridor.getFirstPoly())
-		Agent.Corridor.reset(CurrPoly, Agent.Corridor.getPos());
-
-	Agent.State = ENavigationState::Idle;
-	Agent.OffmeshRef = 0;
-	if (Agent.Mode == ENavigationMode::Offmesh)
-	{
-		Agent.Mode = ENavigationMode::Recovery;
-		Agent.CurrAreaType = 0;
-	}
-}
-//---------------------------------------------------------------------
-
 static void FinalizeCommands(CCommandStackComponent& CmdStack, CPathRequestQueue& PathQueue)
 {
 	CmdStack.FinalizePoppedCommands<Navigate>([&PathQueue](Navigate& Cmd)
@@ -462,7 +447,7 @@ static CTraversalAction* FindTraversalAction(Game::CGameWorld& World, CNavAgentC
 }
 //---------------------------------------------------------------------
 
-static bool HasArrived(CNavAgentComponent& Agent, const rtm::vector4f& Pos, float SqArrivalRadius, bool Unobstructed)
+static bool HasArrived(CNavAgentComponent& Agent, rtm::vector4f_arg0 Pos, float SqArrivalRadius, bool Unobstructed)
 {
 	if (Agent.Mode == ENavigationMode::Offmesh) return false;
 
@@ -505,8 +490,124 @@ void InitNavigationAgents(Game::CGameWorld& World, Game::CGameLevel& Level, Reso
 }
 //---------------------------------------------------------------------
 
+static ECommandStatus ProcessAgentNavigation(DEM::Game::CGameSession& Session, Game::HEntity EntityID, CNavAgentComponent& Agent, CCommandStackComponent& CmdStack,
+	const Game::CCharacterControllerComponent& Character, CCommandStackHandle Cmd, CPathRequestQueue& PathQueue, float dt, bool IsNewFrame)
+{
+	// It is important to use physics body position because the system is called per physics tick, not per logic update
+	const auto Pos = Character.RigidBody->GetPhysicalPosition();
+	const auto PrevState = Agent.State;
+	const auto PrevMode = Agent.Mode;
+
+	// Can't execute commands on an invalid agent
+	if (!Character.RigidBody || !Agent.pNavQuery || !Agent.Settings) return ECommandStatus::Failed;
+
+	// Update navigation status from the current agent position. Do it even when no
+	// navigation requested. Fail commands if the agent is in an invalid position.
+	if (!UpdatePosition(Pos, Agent)) return ECommandStatus::Failed;
+
+	// No need in further processing if no navigation requested
+	if (!Cmd) return ECommandStatus::Succeeded;
+
+	// Fulfil cancellation request
+	if (Cmd->IsCancelled()) return ECommandStatus::Cancelled;
+
+	n_assert2_dbg(!Cmd->IsFinished(), "Only the navigation system itself might set a Navigate action finished");
+
+	auto* pNavCmd = Cmd->As<Navigate>();
+
+	if (pNavCmd->_SubCommandFuture)
+	{
+		// Process a sub-command execution status
+		const auto SubCmdStatus = pNavCmd->_SubCommandFuture.GetStatus();
+		if (IsTerminalCommandStatus(SubCmdStatus))
+		{
+			pNavCmd->_SubCommandFuture = {};
+			if (SubCmdStatus != ECommandStatus::Succeeded || HasArrived(Agent, Pos, 0.f, true))
+				return SubCmdStatus;
+		}
+		else
+		{
+			// Check that we are not waiting for a lost command. Should never happen.
+			n_assert_dbg(!pNavCmd->_SubCommandFuture.IsAbandoned());
+		}
+	}
+	else
+	{
+		// Mark a new command as started
+		if (Cmd->IsNew()) Cmd->SetStatus(ECommandStatus::Running);
+	}
+
+	// Multiple physics frames can be processed inside one logic frame. Target remains the same
+	// during the logic frame but might be reached by physics in the middle of it. So if there
+	// is an active sub-command, let's just continue executing it without unnecessary update.
+	if (!IsNewFrame && pNavCmd->_SubCommandFuture && PrevMode == Agent.Mode && Agent.State == ENavigationState::Following)
+		return ECommandStatus::Running;
+
+	// Process target location changes and validity
+	bool DestChanged = false;
+	if (Cmd->IsChanged())
+	{
+		Cmd->AcceptChanges();
+		if (!UpdateDestination(*pNavCmd, Agent, PathQueue, DestChanged))
+			return ECommandStatus::Failed;
+	}
+
+	// Check current path validity, replan if can't continue using it
+	if (!CheckCurrentPath(Agent))
+		Agent.State = ENavigationState::Requested;
+
+	// Do async path planning
+	if (Agent.State == ENavigationState::Requested)
+	{
+		RequestPath(Agent, PathQueue, pNavCmd->_AsyncPathTaskID);
+	}
+	else if (Agent.State == ENavigationState::Planning)
+	{
+		if (!CheckAsyncPathResult(Agent, PathQueue, pNavCmd->_AsyncPathTaskID))
+			return ECommandStatus::Failed;
+	}
+
+	// Try to continue execution of an active sub-action
+	bool OptimizePath = false;
+	if (Agent.OffmeshRef)
+	{
+		// Offmesh connection properties can't change and therefore sub-action can't become inactual during the traversal
+		if (pNavCmd->_SubCommandFuture && PrevState == Agent.State && (!DestChanged || Agent.Mode == ENavigationMode::Offmesh))
+			return ECommandStatus::Running;
+	}
+	else if (Agent.Mode == ENavigationMode::Surface)
+	{
+		// When path planning is done, we periodically optimize it and can replan if necessary
+		if (Agent.State == ENavigationState::Following)
+		{
+			Agent.ReplanTime += dt;
+			Agent.PathOptimizationTime += dt;
+
+			constexpr float OPT_TIME_THR_SEC = 2.5f;
+			OptimizePath = (Agent.PathOptimizationTime >= OPT_TIME_THR_SEC);
+			if (OptimizePath) Agent.PathOptimizationTime = 0.f;
+		}
+
+		// Continue executing active sub-action while it is actual
+		if (!DestChanged && !OptimizePath && pNavCmd->_SubCommandFuture && PrevState == Agent.State)
+			return ECommandStatus::Running;
+	}
+
+	auto* pWorld = Session.FindFeature<DEM::Game::CGameWorld>();
+	if (!pWorld) return ECommandStatus::Failed;
+
+	// Generate sub-command for path following
+	Game::HEntity Controller;
+	auto* pAction = FindTraversalAction(*pWorld, Agent, CmdStack, Pos, OptimizePath, Controller);
+	if (!pAction || !pAction->GenerateAction(Session, Agent, EntityID, Controller, Pos, CmdStack, *pNavCmd))
+		return ECommandStatus::Failed;
+
+	return ECommandStatus::Running;
+}
+//---------------------------------------------------------------------
+
 // NB: PathQueue is updated here, after components
-void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQueue& PathQueue, bool NewFrame)
+void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQueue& PathQueue, bool IsNewFrame)
 {
 	auto pWorld = Session.FindFeature<DEM::Game::CGameWorld>();
 	if (!pWorld) return;
@@ -514,143 +615,40 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 	auto& World = *pWorld;
 
 	World.ForEachEntityWith<CNavAgentComponent, CCommandStackComponent, const Game::CCharacterControllerComponent>(
-		[dt, &Session, &World, &PathQueue, NewFrame](auto EntityID, auto& Entity,
+		[dt, &Session, &World, &PathQueue, IsNewFrame](auto EntityID, auto& Entity,
 			CNavAgentComponent& Agent,
 			CCommandStackComponent& CmdStack,
 			const Game::CCharacterControllerComponent& Character)
 	{
 		// Finalize commands popped since the system was executed the last time
-		//!!!TODO: finalize commands popped below immediately to prevent an one frame lag?!
 		FinalizeCommands(CmdStack, PathQueue);
-
-		if (!Character.RigidBody || !Agent.pNavQuery || !Agent.Settings) return;
-
-		const auto PrevState = Agent.State;
-		const auto PrevMode = Agent.Mode;
-		const auto Pos = Character.RigidBody->GetPhysicalPosition(); // important since the system is called per physics tick, not per logic update
 
 		// Pick a supported command to process
 		auto NavigateCmd = CmdStack.FindTopmostCommand<Navigate>();
 
-		// Update navigation status from the current agent position. Do it even when no navigation requested.
-		if (!UpdatePosition(Pos, Agent))
+		// Do the main job of the system
+		const auto Status = ProcessAgentNavigation(Session, EntityID, Agent, CmdStack, Character, NavigateCmd, PathQueue, dt, IsNewFrame);
+
+		// Process finished or failed navigation
+		if (IsTerminalCommandStatus(Status))
 		{
-			ResetNavigation(Agent, PathQueue);
-			if (NavigateCmd) CmdStack.PopCommand(NavigateCmd, ECommandStatus::Failed);
-			return;
-		}
+			if (auto CurrPoly = Agent.Corridor.getFirstPoly())
+				Agent.Corridor.reset(CurrPoly, Agent.Corridor.getPos());
 
-		// There is nothing to do if no navigation is requested. An agent is idle.
-		if (!NavigateCmd)
-		{
-			if (Agent.State != ENavigationState::Idle)
-				ResetNavigation(Agent, PathQueue);
-			return;
-		}
-
-		auto* pNavCmd = NavigateCmd->As<Navigate>();
-
-		n_assert2_dbg(!NavigateCmd->IsFinished(), "Only the navigation system itself might set a Navigate action finished");
-
-		// Cancel a command if requested
-		if (NavigateCmd->IsCancelled())
-		{
-			CmdStack.PopCommand(NavigateCmd, ECommandStatus::Cancelled);
-			return;
-		}
-
-		// Mark a command as started
-		if (NavigateCmd->IsNew()) NavigateCmd->SetStatus(ECommandStatus::Running);
-
-		// Check sub-command status. Its termination may lead to a navigation action termination.
-		if (pNavCmd->_SubCommandFuture)
-		{
-			const auto SubCmdStatus = pNavCmd->_SubCommandFuture.GetStatus();
-			if (SubCmdStatus == ECommandStatus::Failed ||
-				SubCmdStatus == ECommandStatus::Cancelled ||
-				(SubCmdStatus == ECommandStatus::Succeeded && HasArrived(Agent, Pos, 0.f, true)))
+			Agent.State = ENavigationState::Idle;
+			Agent.OffmeshRef = 0;
+			if (Agent.Mode == ENavigationMode::Offmesh)
 			{
-				ResetNavigation(Agent, PathQueue);
-				CmdStack.PopCommand(NavigateCmd, SubCmdStatus);
-				return;
-			}
-		}
-
-		// Forget a succeeded intermediate sub-command
-		if (IsTerminalCommandStatus(pNavCmd->_SubCommandFuture.GetStatus()))
-			pNavCmd->_SubCommandFuture = {};
-		else
-			n_assert_dbg(!pNavCmd->_SubCommandFuture.IsAbandoned());
-
-		// Multiple physics frames can be processed inside one logic frame. Target remains the same
-		// during the logic frame but might be reached by physics in the middle of it. So if there
-		// is an active sub-command, let's just continue executing it without unnecessary update.
-		if (!NewFrame && pNavCmd->_SubCommandFuture && PrevMode == Agent.Mode && Agent.State == ENavigationState::Following) return;
-
-		// Process target location changes and validity
-		bool DestChanged = false;
-		if (NavigateCmd->IsChanged())
-		{
-			NavigateCmd->AcceptChanges();
-
-			if (!UpdateDestination(*pNavCmd, Agent, PathQueue, DestChanged))
-			{
-				ResetNavigation(Agent, PathQueue);
-				CmdStack.PopCommand(NavigateCmd, ECommandStatus::Failed);
-				return;
-			}
-		}
-
-		// Check current path validity, replan if can't continue using it
-		if (!CheckCurrentPath(Agent))
-			Agent.State = ENavigationState::Requested;
-
-		// Do async path planning
-		if (Agent.State == ENavigationState::Requested)
-		{
-			RequestPath(Agent, PathQueue, pNavCmd->_AsyncPathTaskID);
-		}
-		else if (Agent.State == ENavigationState::Planning)
-		{
-			if (!CheckAsyncPathResult(Agent, PathQueue, pNavCmd->_AsyncPathTaskID))
-			{
-				ResetNavigation(Agent, PathQueue);
-				CmdStack.PopCommand(NavigateCmd, ECommandStatus::Failed);
-				return;
-			}
-		}
-
-		// Try to continue execution of an active sub-action
-		bool OptimizePath = false;
-		if (Agent.OffmeshRef)
-		{
-			// Offmesh connection properties can't change and therefore sub-action can't become inactual during the traversal
-			if (pNavCmd->_SubCommandFuture && PrevState == Agent.State && (!DestChanged || Agent.Mode == ENavigationMode::Offmesh)) return;
-		}
-		else if (Agent.Mode == ENavigationMode::Surface)
-		{
-			// When path planning is done, we periodically optimize it and can replan if necessary
-			if (Agent.State == ENavigationState::Following)
-			{
-				Agent.ReplanTime += dt;
-				Agent.PathOptimizationTime += dt;
-
-				constexpr float OPT_TIME_THR_SEC = 2.5f;
-				OptimizePath = (Agent.PathOptimizationTime >= OPT_TIME_THR_SEC);
-				if (OptimizePath) Agent.PathOptimizationTime = 0.f;
+				Agent.Mode = ENavigationMode::Recovery;
+				Agent.CurrAreaType = 0;
 			}
 
-			// Continue executing active sub-action while it is actual
-			if (!DestChanged && !OptimizePath && pNavCmd->_SubCommandFuture && PrevState == Agent.State) return;
-		}
-
-		// Generate sub-action for path following
-		Game::HEntity Controller;
-		auto pAction = FindTraversalAction(World, Agent, CmdStack, Pos, OptimizePath, Controller);
-		if (!pAction || !pAction->GenerateAction(Session, Agent, EntityID, Controller, Pos, CmdStack, *pNavCmd))
-		{
-			ResetNavigation(Agent, PathQueue);
-			CmdStack.PopCommand(NavigateCmd, ECommandStatus::Failed);
+			// Pop and immediately finalize a terminated command
+			if (NavigateCmd)
+			{
+				CmdStack.PopCommand(NavigateCmd, Status);
+				FinalizeCommands(CmdStack, PathQueue);
+			}
 		}
 	});
 
