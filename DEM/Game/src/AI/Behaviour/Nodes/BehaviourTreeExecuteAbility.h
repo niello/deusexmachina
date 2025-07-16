@@ -13,8 +13,8 @@ class CBehaviourTreeExecuteAbility : public CBehaviourTreeNodeBase
 
 protected:
 
-	CParameter<CStrID>        _AbilityID;
-	//CParameter<Game::HEntity> _Target; //!!!TODO: hardcoded target or multiple, or BB key, may be position, may need no target at all
+	CParameter<CStrID>                         _AbilityID;
+	CParameterEx<Game::HEntity, rtm::vector4f> _Target; // TODO: support an array of targets? for multi-target abilities
 
 public:
 

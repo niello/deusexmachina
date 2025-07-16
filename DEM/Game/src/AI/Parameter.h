@@ -51,9 +51,15 @@ public:
 				auto& Params = **pParams;
 				IsFullForm = Params.TryGet(_BBKey, sidBBKey);
 				if (IsFullForm)
-					Params.TryGet(_Value, sidDefault);
-				else
-					IsFullForm = Params.TryGet(_Value, sidValue);
+				{
+					if (auto* pSubData = Params.FindValue(sidDefault))
+						ParamsFormat::Deserialize(*pSubData, _Value);
+				}
+				else if (auto* pSubData = Params.FindValue(sidValue))
+				{
+					ParamsFormat::Deserialize(*pSubData, _Value);
+					IsFullForm = true;
+				}
 			}
 
 			// Try reading a value directly from an argument

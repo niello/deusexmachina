@@ -1,12 +1,12 @@
 #include "BehaviourTreeExecuteAbility.h"
 #include <Game/GameSession.h>
+#include <Game/ECS/GameWorld.h>
 #include <Game/Interaction/Ability.h>
-#include <Game/Interaction/AbilityInstance.h>
 #include <Game/Interaction/InteractionManager.h>
 #include <Game/Interaction/InteractionContext.h>
+#include <Game/Objects/SmartObject.h>
+#include <Game/Objects/SmartObjectComponent.h>
 #include <AI/AIStateComponent.h>
-#include <AI/CommandStackComponent.h>
-//#include <Data/SerializeToParams.h> - deserialize CTargetInfo structure?
 #include <Core/Factory.h>
 
 namespace DEM::AI
@@ -18,7 +18,7 @@ void CBehaviourTreeExecuteAbility::Init(const Data::CParams* pParams)
 	if (!pParams) return;
 
 	ParameterFromData(_AbilityID, *pParams, CStrID("Ability"));
-	//ParameterFromData(_Target, *pParams, CStrID("Target"));
+	ParameterFromData(_Target, *pParams, CStrID("Target"));
 }
 //---------------------------------------------------------------------
 
@@ -43,23 +43,34 @@ EBTStatus CBehaviourTreeExecuteAbility::Activate(std::byte* pData, const CBehavi
 	const auto AbilityID = _AbilityID.Get(BB);
 	if (!AbilityID) return EBTStatus::Succeeded;
 
-	Game::CInteractionManager* pIactMgr = Ctx.Session.FindFeature<Game::CInteractionManager>();
+	auto* pIactMgr = Ctx.Session.FindFeature<Game::CInteractionManager>();
 	if (!pIactMgr) return EBTStatus::Failed;
 
-	//!!!TODO: may not be entity. Build CTargetInfo!
-	const Game::HEntity TargetEntityID = {};// _Target.Get(BB);
+	// Get target
+	//???TODO: deserialize CTargetInfo structure right from parameter? or even vector of them!
+	Game::CTargetInfo Target;
+	if (!_Target.TryGet(BB, Target.Point))
+		if (!_Target.TryGet(BB, Target.Entity))
+			return EBTStatus::Failed;
 
-	//!!!TODO!
+	// If the target is an entity, try to get it's smart object ID for correct ability overriding
 	CStrID SmartObjectID;
-	// if (auto pSO = pWorld->FindComponent<const Game::CSmartObjectComponent>(TargetEntityID))
-	//	SmartObjectID = pSO->Asset->GetObject<Game::CSmartObject>()->GetID();
+	if (Target.Entity)
+	{
+		auto* pWorld = Ctx.Session.FindFeature<Game::CGameWorld>();
+		if (!pWorld) return EBTStatus::Failed;
 
-	auto pAbility = pIactMgr->FindInteraction(AbilityID, SmartObjectID);
+		if (auto* pSOComponent = pWorld->FindComponent<const Game::CSmartObjectComponent>(Target.Entity))
+			if (auto* pSO = pSOComponent->Asset->GetObject<Game::CSmartObject>())
+				SmartObjectID = pSO->GetID();
+	}
+
+	auto* pAbility = pIactMgr->FindInteraction(AbilityID, SmartObjectID);
 	if (!pAbility) return EBTStatus::Failed;
 
 	Game::CInteractionContext IactCtx;
 	IactCtx.Actors.push_back(Ctx.ActorID);
-	IactCtx.Targets.push_back(TargetEntityID);
+	IactCtx.Targets.push_back(std::move(Target));
 
 	if (!pAbility->Execute(Ctx.Session, IactCtx)) return EBTStatus::Failed;
 

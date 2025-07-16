@@ -2,6 +2,7 @@
 #include <AI/AIStateComponent.h>
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
+#include <Game/Interaction/SelectableComponent.h>
 #include <Scene/SceneComponent.h>
 #include <Core/Factory.h>
 
@@ -114,6 +115,9 @@ static Game::HEntity FindClosestActor(const CBehaviourTreeContext& Ctx)
 		// Filter by AI actors only
 		if (!pWorld->FindComponent<const CAIStateComponent>(Fact.SourceID)) continue;
 
+		//!!!DBG TMP! Select player characters by indirect attribute.
+		if (!pWorld->FindComponent<const Game::CSelectableComponent>(Fact.SourceID)) continue;
+
 		MinSqDist = SqDist;
 		Result = Fact.SourceID;
 	}
@@ -148,7 +152,7 @@ void CBehaviourTreeSelectClosestActor::DoSelection(const CBehaviourTreeContext& 
 	const auto FoundID = FindClosestActor(Ctx);
 
 	//???TODO: in OnTreeStarted cache BB key HVar?
-	Ctx.pBrain->Blackboard.Set(_DestBBKey, static_cast<int>(FoundID.Raw));
+	Ctx.pBrain->Blackboard.Set(_DestBBKey, FoundID);
 
 	Data.TimeToNextUpdate = _Period;
 	//Data.FactsVersion = Ctx.pBrain->FactsVersion;
@@ -170,7 +174,7 @@ EBTStatus CBehaviourTreeSelectClosestActor::Activate(std::byte* pData, const CBe
 void CBehaviourTreeSelectClosestActor::Deactivate(std::byte* pData, const CBehaviourTreeContext& Ctx) const
 {
 	//!!!TODO: need to check if should clear BB record!
-	if (_DestBBKey) Ctx.pBrain->Blackboard.Set(_DestBBKey, static_cast<int>(Game::HEntity{}.Raw));
+	if (_DestBBKey) Ctx.pBrain->Blackboard.Set(_DestBBKey, Game::HEntity{});
 
 	std::destroy_at(reinterpret_cast<CInstanceData*>(pData));
 }
