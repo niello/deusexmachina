@@ -305,14 +305,14 @@ static AI::ECommandStatus InteractWithTarget(CGameSession& Session, CAbilityInst
 
 static void FinalizeCommands(CGameSession& Session, AI::CCommandStackComponent& CmdStack)
 {
-	CmdStack.FinalizePoppedCommands<ExecuteAbility>([&Session](ExecuteAbility& Cmd)
+	CmdStack.FinalizePoppedCommands<ExecuteAbility>([&Session](ExecuteAbility& Cmd, AI::ECommandStatus Status)
 	{
 		//!!!if animation graph override is enabled, disable it!
 
 		if (Cmd._AbilityInstance)
 		{
 			if (Cmd._AbilityInstance->Stage == EAbilityExecutionStage::Interaction)
-				Cmd._AbilityInstance->Ability.OnEnd(Session, *Cmd._AbilityInstance, AbilityStatus);
+				Cmd._AbilityInstance->Ability.OnEnd(Session, *Cmd._AbilityInstance, Status);
 
 			Cmd._AbilityInstance = nullptr;
 		}
@@ -330,9 +330,9 @@ static AI::ECommandStatus ProcessAgentAbility(CGameSession& Session, Game::HEnti
 	if (!Cmd) return AI::ECommandStatus::Succeeded;
 
 	// Fulfil cancellation request
-	if (Cmd->IsCancelled()) return AI::ECommandStatus::Cancelled;
+	if (Cmd->GetStatus() == AI::ECommandStatus::Cancelled) return AI::ECommandStatus::Cancelled;
 
-	n_assert2_dbg(!Cmd->IsFinished(), "Only the ability execution system itself might set an ExecuteAbility action finished");
+	n_assert2_dbg(!IsFinishedCommandStatus(Cmd->GetStatus()), "Only the ability execution system itself might set an ExecuteAbility command finished");
 
 	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return AI::ECommandStatus::Failed;
@@ -346,7 +346,7 @@ static AI::ECommandStatus ProcessAgentAbility(CGameSession& Session, Game::HEnti
 	auto& AbilityInstance = *pTypedCmd->_AbilityInstance;
 
 	// Start executing a new command
-	const bool IsNewCommand = Cmd->IsNew();
+	const bool IsNewCommand = (Cmd->GetStatus() == AI::ECommandStatus::NotStarted);
 	if (IsNewCommand)
 	{
 		Cmd->SetStatus(AI::ECommandStatus::Running);

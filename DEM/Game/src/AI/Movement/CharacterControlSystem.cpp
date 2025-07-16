@@ -102,7 +102,7 @@ static rtm::vector4f ProcessMovement(CCharacterControllerComponent& Character, A
 {
 	// Move only when explicitly requested
 	auto SteerCmd = CmdStack.FindTopmostCommand<AI::Steer>();
-	if (!SteerCmd || SteerCmd->IsCancelled())
+	if (!SteerCmd || SteerCmd->GetStatus() == AI::ECommandStatus::Cancelled)
 	{
 		if (SteerCmd) CmdStack.PopCommand(SteerCmd, AI::ECommandStatus::Cancelled);
 
@@ -215,7 +215,7 @@ static float ProcessFacing(CCharacterControllerComponent& Character, AI::CComman
 	}
 	else if (auto TurnCmd = CmdStack.FindTopmostCommand<AI::Turn>())
 	{
-		if (TurnCmd->IsCancelled())
+		if (TurnCmd->GetStatus() == AI::ECommandStatus::Cancelled)
 		{
 			CmdStack.PopCommand(TurnCmd, AI::ECommandStatus::Cancelled);
 		}

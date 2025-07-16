@@ -318,7 +318,7 @@ static bool CheckAsyncPathResult(CNavAgentComponent& Agent, CPathRequestQueue& P
 
 static void FinalizeCommands(CCommandStackComponent& CmdStack, CPathRequestQueue& PathQueue)
 {
-	CmdStack.FinalizePoppedCommands<Navigate>([&PathQueue](Navigate& Cmd)
+	CmdStack.FinalizePoppedCommands<Navigate>([&PathQueue](Navigate& Cmd, ECommandStatus)
 	{
 		//???move State from agent to command too? at least partly - requested, planning, following are states of the command execution!
 		if (Cmd._AsyncPathTaskID)
@@ -509,9 +509,9 @@ static ECommandStatus ProcessAgentNavigation(DEM::Game::CGameSession& Session, G
 	if (!Cmd) return ECommandStatus::Succeeded;
 
 	// Fulfil cancellation request
-	if (Cmd->IsCancelled()) return ECommandStatus::Cancelled;
+	if (Cmd->GetStatus() == AI::ECommandStatus::Cancelled) return ECommandStatus::Cancelled;
 
-	n_assert2_dbg(!Cmd->IsFinished(), "Only the navigation system itself might set a Navigate action finished");
+	n_assert2_dbg(!IsFinishedCommandStatus(Cmd->GetStatus()), "Only the navigation system itself might set a Navigate command finished");
 
 	auto* pTypedCmd = Cmd->As<Navigate>();
 
@@ -534,7 +534,7 @@ static ECommandStatus ProcessAgentNavigation(DEM::Game::CGameSession& Session, G
 	else
 	{
 		// Start executing a new command
-		if (Cmd->IsNew()) Cmd->SetStatus(ECommandStatus::Running);
+		if (Cmd->GetStatus() == AI::ECommandStatus::NotStarted) Cmd->SetStatus(ECommandStatus::Running);
 	}
 
 	// Multiple physics frames can be processed inside one logic frame. Target remains the same

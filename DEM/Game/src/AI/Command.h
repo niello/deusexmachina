@@ -111,15 +111,13 @@ public:
 		return _Command->As<T>();
 	}
 
-	void SetStatus(ECommandStatus Status) { _Command->_Status = Status; }
-	void AcceptChanges() { _Command->_Changed = false; }
-	bool IsChanged() const { return _Command->_Changed; }
-	bool IsNew() const { return _Command->_Status == ECommandStatus::NotStarted; }
-	bool IsCancelled() const { return _Command->_Status == ECommandStatus::Cancelled; }
-	bool IsFinished() const { return IsFinishedCommandStatus(_Command->_Status); }
-	bool IsAbandoned() const { return _Command->GetRefCount() == 1; }
+	void           SetStatus(ECommandStatus Status) { _Command->_Status = Status; }
+	ECommandStatus GetStatus() const { return _Command->_Status; }
+	void           AcceptChanges() { _Command->_Changed = false; }
+	bool           IsChanged() const { return _Command->_Changed; }
+	bool           IsAbandoned() const { return _Command->GetRefCount() == 1; }
 
-	bool operator ==(const CCommandPromise& Other) const { return _Command == Other._Command; }
+	bool           operator ==(const CCommandPromise& Other) const { return _Command == Other._Command; }
 };
 
 template<typename T, typename... TArgs>

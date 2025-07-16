@@ -78,7 +78,7 @@ public:
 		for (auto RIt = _CommandStack.rbegin(); RIt != REnd; ++RIt)
 		{
 			auto& Cmd = *RIt;
-			const bool IsTerminated = Cmd.IsFinished() || Cmd.IsCancelled();
+			const bool IsTerminated = IsTerminalCommandStatus(Cmd.GetStatus());
 
 			// Normally we don't want to rewrite status of an already finished command
 			if (ForceRewriteFinishedStatus || !IsTerminated)
@@ -129,7 +129,7 @@ public:
 			if (auto* pTypedCmd = It->As<T>())
 			{
 				if constexpr (!std::is_same_v<F, std::nullptr_t>)
-					Finalizer(*pTypedCmd);
+					Finalizer(*pTypedCmd, It->GetStatus());
 				It = _PoppedCommands.erase(It);
 			}
 			else
