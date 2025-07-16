@@ -3,6 +3,7 @@
 #include <AI/AIStateComponent.h>
 #include <AI/CommandStackComponent.h>
 #include <Game/ECS/GameWorld.h>
+#include <Game/GameSession.h>
 #include <Events/Connection.h> // for destruction
 #include <Math/Math.h>
 

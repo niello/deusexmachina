@@ -1,5 +1,6 @@
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
+#include <Game/Interaction/InteractionContext.h>
 #include <Game/GameLevel.h>
 #include <AI/Perception/Perception.h>
 #include <AI/AIStateComponent.h>

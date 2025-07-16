@@ -513,34 +513,34 @@ static ECommandStatus ProcessAgentNavigation(DEM::Game::CGameSession& Session, G
 
 	n_assert2_dbg(!Cmd->IsFinished(), "Only the navigation system itself might set a Navigate action finished");
 
-	auto* pNavCmd = Cmd->As<Navigate>();
+	auto* pTypedCmd = Cmd->As<Navigate>();
 
-	if (pNavCmd->_SubCommandFuture)
+	if (pTypedCmd->_SubCommandFuture)
 	{
 		// Process a sub-command execution status
-		const auto SubCmdStatus = pNavCmd->_SubCommandFuture.GetStatus();
+		const auto SubCmdStatus = pTypedCmd->_SubCommandFuture.GetStatus();
 		if (IsTerminalCommandStatus(SubCmdStatus))
 		{
-			pNavCmd->_SubCommandFuture = {};
+			pTypedCmd->_SubCommandFuture = {};
 			if (SubCmdStatus != ECommandStatus::Succeeded || HasArrived(Agent, Pos, 0.f, true))
 				return SubCmdStatus;
 		}
 		else
 		{
 			// Check that we are not waiting for a lost command. Should never happen.
-			n_assert_dbg(!pNavCmd->_SubCommandFuture.IsAbandoned());
+			n_assert_dbg(!pTypedCmd->_SubCommandFuture.IsAbandoned());
 		}
 	}
 	else
 	{
-		// Mark a new command as started
+		// Start executing a new command
 		if (Cmd->IsNew()) Cmd->SetStatus(ECommandStatus::Running);
 	}
 
 	// Multiple physics frames can be processed inside one logic frame. Target remains the same
 	// during the logic frame but might be reached by physics in the middle of it. So if there
 	// is an active sub-command, let's just continue executing it without unnecessary update.
-	if (!IsNewFrame && pNavCmd->_SubCommandFuture && PrevMode == Agent.Mode && Agent.State == ENavigationState::Following)
+	if (!IsNewFrame && pTypedCmd->_SubCommandFuture && PrevMode == Agent.Mode && Agent.State == ENavigationState::Following)
 		return ECommandStatus::Running;
 
 	// Process target location changes and validity
@@ -548,7 +548,7 @@ static ECommandStatus ProcessAgentNavigation(DEM::Game::CGameSession& Session, G
 	if (Cmd->IsChanged())
 	{
 		Cmd->AcceptChanges();
-		if (!UpdateDestination(*pNavCmd, Agent, PathQueue, DestChanged))
+		if (!UpdateDestination(*pTypedCmd, Agent, PathQueue, DestChanged))
 			return ECommandStatus::Failed;
 	}
 
@@ -559,11 +559,11 @@ static ECommandStatus ProcessAgentNavigation(DEM::Game::CGameSession& Session, G
 	// Do async path planning
 	if (Agent.State == ENavigationState::Requested)
 	{
-		RequestPath(Agent, PathQueue, pNavCmd->_AsyncPathTaskID);
+		RequestPath(Agent, PathQueue, pTypedCmd->_AsyncPathTaskID);
 	}
 	else if (Agent.State == ENavigationState::Planning)
 	{
-		if (!CheckAsyncPathResult(Agent, PathQueue, pNavCmd->_AsyncPathTaskID))
+		if (!CheckAsyncPathResult(Agent, PathQueue, pTypedCmd->_AsyncPathTaskID))
 			return ECommandStatus::Failed;
 	}
 
@@ -572,7 +572,7 @@ static ECommandStatus ProcessAgentNavigation(DEM::Game::CGameSession& Session, G
 	if (Agent.OffmeshRef)
 	{
 		// Offmesh connection properties can't change and therefore sub-action can't become inactual during the traversal
-		if (pNavCmd->_SubCommandFuture && PrevState == Agent.State && (!DestChanged || Agent.Mode == ENavigationMode::Offmesh))
+		if (pTypedCmd->_SubCommandFuture && PrevState == Agent.State && (!DestChanged || Agent.Mode == ENavigationMode::Offmesh))
 			return ECommandStatus::Running;
 	}
 	else if (Agent.Mode == ENavigationMode::Surface)
@@ -589,17 +589,17 @@ static ECommandStatus ProcessAgentNavigation(DEM::Game::CGameSession& Session, G
 		}
 
 		// Continue executing active sub-action while it is actual
-		if (!DestChanged && !OptimizePath && pNavCmd->_SubCommandFuture && PrevState == Agent.State)
+		if (!DestChanged && !OptimizePath && pTypedCmd->_SubCommandFuture && PrevState == Agent.State)
 			return ECommandStatus::Running;
 	}
 
-	auto* pWorld = Session.FindFeature<DEM::Game::CGameWorld>();
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return ECommandStatus::Failed;
 
 	// Generate sub-command for path following
 	Game::HEntity Controller;
 	auto* pAction = FindTraversalAction(*pWorld, Agent, CmdStack, Pos, OptimizePath, Controller);
-	if (!pAction || !pAction->GenerateAction(Session, Agent, EntityID, Controller, Pos, CmdStack, *pNavCmd))
+	if (!pAction || !pAction->GenerateAction(Session, Agent, EntityID, Controller, Pos, CmdStack, *pTypedCmd))
 		return ECommandStatus::Failed;
 
 	return ECommandStatus::Running;
@@ -624,10 +624,10 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 		FinalizeCommands(CmdStack, PathQueue);
 
 		// Pick a supported command to process
-		auto NavigateCmd = CmdStack.FindTopmostCommand<Navigate>();
+		auto Cmd = CmdStack.FindTopmostCommand<Navigate>();
 
 		// Do the main job of the system
-		const auto Status = ProcessAgentNavigation(Session, EntityID, Agent, CmdStack, Character, NavigateCmd, PathQueue, dt, IsNewFrame);
+		const auto Status = ProcessAgentNavigation(Session, EntityID, Agent, CmdStack, Character, Cmd, PathQueue, dt, IsNewFrame);
 
 		// Process finished or failed navigation
 		if (IsTerminalCommandStatus(Status))
@@ -644,9 +644,9 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 			}
 
 			// Pop and immediately finalize a terminated command
-			if (NavigateCmd)
+			if (Cmd)
 			{
-				CmdStack.PopCommand(NavigateCmd, Status);
+				CmdStack.PopCommand(Cmd, Status);
 				FinalizeCommands(CmdStack, PathQueue);
 			}
 		}

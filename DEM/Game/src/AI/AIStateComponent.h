@@ -1,6 +1,4 @@
 #pragma once
-#include <Game/ECS/ComponentStorage.h>
-#include <Game/Interaction/AbilityInstance.h>
 #include <AI/Perception/Perception.h>
 #include <AI/Blackboard.h>
 #include <Data/Metadata.h>
@@ -13,7 +11,6 @@ namespace DEM::AI
 struct CAIStateComponent
 {
 	CBlackboard                  Blackboard;
-	Game::PAbilityInstance       AbilityInstance; // only for correct termination if a running action is dropped //???where should store it?
 	std::vector<CSensedStimulus> NewStimuli;
 	std::vector<CSensedStimulus> Facts;
 	size_t                       FactWithSourceCount = 0;

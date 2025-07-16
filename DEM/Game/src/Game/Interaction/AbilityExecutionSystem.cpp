@@ -5,6 +5,7 @@
 #include <AI/CommandStackComponent.h>
 #include <AI/Movement/SteerAction.h>
 #include <Game/Interaction/Ability.h>
+#include <Game/Interaction/AbilityInstance.h>
 #include <Game/Objects/SmartObjectComponent.h>
 #include <Game/Objects/SmartObject.h>
 #include <DetourCommon.h>
@@ -302,44 +303,145 @@ static AI::ECommandStatus InteractWithTarget(CGameSession& Session, CAbilityInst
 }
 //---------------------------------------------------------------------
 
-static void EndCurrentInteraction(CGameSession& Session, AI::ECommandStatus NewStatus, PAbilityInstance& Instance, HEntity EntityID)
+static void FinalizeCommands(CGameSession& Session, AI::CCommandStackComponent& CmdStack)
 {
-	if (!Instance) return;
+	CmdStack.FinalizePoppedCommands<ExecuteAbility>([&Session](ExecuteAbility& Cmd)
+	{
+		//!!!if animation graph override is enabled, disable it!
 
-	if (Instance->Stage == EAbilityExecutionStage::Interaction)
-		Instance->Ability.OnEnd(Session, *Instance, NewStatus);
+		if (Cmd._AbilityInstance)
+		{
+			if (Cmd._AbilityInstance->Stage == EAbilityExecutionStage::Interaction)
+				Cmd._AbilityInstance->Ability.OnEnd(Session, *Cmd._AbilityInstance, AbilityStatus);
 
-	Instance = nullptr;
+			Cmd._AbilityInstance = nullptr;
+		}
 
-	//!!!if animation graph override is enabled, disable it!
+		// This sub-command is already popped too and needs no cancellation request, but
+		// if not cleared here, ExecuteAbility's own future may hold the whole chain in memory
+		Cmd._SubCommandFuture = {};
+	});
 }
 //---------------------------------------------------------------------
 
-static inline AI::ECommandStatus CalcActualAbilityStatus(AI::CCommandStackHandle Cmd)
+static AI::ECommandStatus ProcessAgentAbility(CGameSession& Session, Game::HEntity EntityID, AI::CCommandStackComponent& CmdStack, AI::CCommandStackHandle Cmd, float dt)
 {
-	// If we are executing an ability, it will be cancelled. Otherwise it is like any other terminal status.
-	if (!Cmd) return AI::ECommandStatus::Cancelled;
+	// No need in further processing if no command received
+	if (!Cmd) return AI::ECommandStatus::Succeeded;
 
-	// If a child action is cancelled, an ability must be cancelled too
-	const auto* pExecuteAbilityCmd = Cmd->As<ExecuteAbility>();
-	n_assert_dbg(pExecuteAbilityCmd);
-	if (const auto& SubCmd = pExecuteAbilityCmd->_SubCommandFuture)
-		if (SubCmd.GetStatus() == AI::ECommandStatus::Cancelled)
-			return AI::ECommandStatus::Cancelled;
-
-	// Fulfil cancellation request from the ability caller
+	// Fulfil cancellation request
 	if (Cmd->IsCancelled()) return AI::ECommandStatus::Cancelled;
 
+	n_assert2_dbg(!Cmd->IsFinished(), "Only the ability execution system itself might set an ExecuteAbility action finished");
+
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return AI::ECommandStatus::Failed;
+
+	auto* pTypedCmd = Cmd->As<ExecuteAbility>();
+
 	// Succeed immediately if there is no ability to execute. This should never happen.
-	if (!pExecuteAbilityCmd->_AbilityInstance) return AI::ECommandStatus::Succeeded;
+	n_assert_dbg(pTypedCmd->_AbilityInstance);
+	if (!pTypedCmd->_AbilityInstance) return AI::ECommandStatus::Succeeded;
+
+	auto& AbilityInstance = *pTypedCmd->_AbilityInstance;
+
+	// Start executing a new command
+	const bool IsNewCommand = Cmd->IsNew();
+	if (IsNewCommand)
+	{
+		Cmd->SetStatus(AI::ECommandStatus::Running);
+
+		// Initialize new ability
+		AbilityInstance.Actor = EntityID;
+		AbilityInstance.Stage = EAbilityExecutionStage::Movement;
+
+		auto& Zones = AbilityInstance.InitialZones;
+
+		// Get interaction zones from a smart object, if present
+		if (!AbilityInstance.Targets.empty())
+		{
+			if (auto* pSOComponent = pWorld->FindComponent<const CSmartObjectComponent>(AbilityInstance.Targets[0].Entity))
+			{
+				// Get zones from entity component
+				Zones.reserve(pSOComponent->Zones.size());
+				for (U8 i = 0; i < pSOComponent->Zones.size(); ++i)
+					Zones.push_back(&pSOComponent->Zones[i]);
+
+				// Get zones from asset
+				auto* pSOAsset = pSOComponent->Asset ? pSOComponent->Asset->GetObject<CSmartObject>() : nullptr;
+				if (pSOAsset)
+				{
+					// TODO: can check additional conditions of zone before adding it!
+					const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
+					Zones.reserve(Zones.size() + ZoneCount);
+					for (U8 i = 0; i < ZoneCount; ++i)
+						Zones.push_back(&pSOAsset->GetInteractionZone(i));
+				}
+			}
+		}
+
+		// Get interaction zones from an ability
+		AbilityInstance.Ability.GetZones(Session, *pTypedCmd->_AbilityInstance, Zones);
+		n_assert_dbg(!Zones.empty());
+	}
 
 	// Terminate an ability if its logic requested it
-	const auto RequestedStatus = pExecuteAbilityCmd->_AbilityInstance->RequestedStatus;
+	const auto RequestedStatus = AbilityInstance.RequestedStatus;
 	if (AI::IsTerminalCommandStatus(RequestedStatus)) return RequestedStatus;
 
-	// Otherwise an ability must be running because only the system might finish it and it would be popped from stack in that case
-	n_assert_dbg(!Cmd->IsFinished());
-	return AI::ECommandStatus::Running;
+	if (Cmd->IsChanged())
+	{
+		// Ability execution command should not change on the fly
+		NOT_IMPLEMENTED;
+		Cmd->AcceptChanges();
+	}
+
+	// Determine target node, if any
+	Scene::CSceneNode* pTargetRootNode = nullptr;
+	if (!AbilityInstance.Targets.empty())
+	{
+		const auto& Target = AbilityInstance.Targets[0];
+		if (auto* pTargetSceneComponent = pWorld->FindComponent<CSceneComponent>(Target.Entity))
+			pTargetRootNode = pTargetSceneComponent->RootNode;
+		else
+			pTargetRootNode = Target.pNode;
+	}
+
+	// Update main target transform
+	bool TargetTransformChanged = false;
+	if (IsNewCommand)
+	{
+		TargetTransformChanged = true;
+		if (pTargetRootNode)
+		{
+			//???store temporary system fields in a command instead of ability instance?
+			AbilityInstance.PrevTargetTfmVersion = pTargetRootNode->GetTransformVersion();
+			AbilityInstance.TargetToWorld = pTargetRootNode->GetWorldMatrix();
+		}
+		else if (!AbilityInstance.Targets.empty())
+		{
+			// FIXME: AbilityInstance.TargetToWorld not needed if CTargetInfo will store full SRT instead of Point!
+			AbilityInstance.TargetToWorld.w_axis = AbilityInstance.Targets[0].Point;
+		}
+	}
+	else if (pTargetRootNode && AbilityInstance.PrevTargetTfmVersion != pTargetRootNode->GetTransformVersion())
+	{
+		TargetTransformChanged = true;
+		AbilityInstance.PrevTargetTfmVersion = pTargetRootNode->GetTransformVersion();
+		AbilityInstance.TargetToWorld = pTargetRootNode->GetWorldMatrix();
+	}
+
+	// Ability execution logic
+
+	AI::ECommandStatus Result = MoveToTarget(Session, AbilityInstance, *pWorld, EntityID, CmdStack, *pTypedCmd, TargetTransformChanged);
+
+	if (Result == AI::ECommandStatus::Succeeded)
+		Result = FaceTarget(Session, AbilityInstance, *pWorld, EntityID, CmdStack, *pTypedCmd, TargetTransformChanged);
+
+	if (Result == AI::ECommandStatus::Succeeded)
+		Result = InteractWithTarget(Session, AbilityInstance, EntityID, dt);
+
+	return Result;
 }
 //---------------------------------------------------------------------
 
@@ -348,118 +450,20 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 	World.ForEachEntityWith<AI::CCommandStackComponent, AI::CAIStateComponent>(
 		[&Session, &World, dt](auto EntityID, auto& Entity, AI::CCommandStackComponent& CmdStack, AI::CAIStateComponent& AIState)
 	{
+		// Finalize commands popped since the system was executed the last time
+		FinalizeCommands(Session, CmdStack);
+
 		// Pick a supported command to process
 		const auto Cmd = CmdStack.FindTopmostCommand<ExecuteAbility>();
 
-		// Process ability termination
-		const auto AbilityStatus = CalcActualAbilityStatus(Cmd);
-		if (AI::IsTerminalCommandStatus(AbilityStatus))
+		// Do the main job of the system
+		const auto Status = ProcessAgentAbility(Session, EntityID, CmdStack, Cmd, dt);
+
+		// Process finished or failed commands
+		if (Cmd && AI::IsTerminalCommandStatus(Status))
 		{
-			EndCurrentInteraction(Session, AbilityStatus, AIState.AbilityInstance, EntityID);
-			if (Cmd) CmdStack.PopCommand(Cmd, AbilityStatus);
-			return;
-		}
-
-		//???!!!what about ability nesting? instead of AIState.AbilityInstance do finalization on command popping from the stack?! Cmd.OnTerminated(Status)?
-		//???or if don't want to add logic to commands, can store cancelled Running commands in a separate list for finalization?!
-		auto* pExecuteAbilityCmd = Cmd->As<ExecuteAbility>();
-		const bool AbilityChanged = (pExecuteAbilityCmd->_AbilityInstance != AIState.AbilityInstance);
-		if (AbilityChanged)
-		{
-			// Interrupt previous ability
-			// NB: it might be our parent, then it will be resumed when we finish executing the nested one
-			EndCurrentInteraction(Session, AI::ECommandStatus::Cancelled, AIState.AbilityInstance, EntityID);
-
-			AIState.AbilityInstance = pExecuteAbilityCmd->_AbilityInstance;
-
-			// Initialize new ability
-			if (pExecuteAbilityCmd->_AbilityInstance)
-			{
-				pExecuteAbilityCmd->_AbilityInstance->Actor = EntityID;
-				pExecuteAbilityCmd->_AbilityInstance->Stage = EAbilityExecutionStage::Movement;
-
-				auto& Zones = pExecuteAbilityCmd->_AbilityInstance->InitialZones;
-
-				// Get interaction zones from a smart object, if present
-				if (!pExecuteAbilityCmd->_AbilityInstance->Targets.empty())
-				{
-					if (auto pSOComponent = World.FindComponent<const CSmartObjectComponent>(pExecuteAbilityCmd->_AbilityInstance->Targets[0].Entity))
-					{
-						// Get zones from entity component
-						Zones.reserve(pSOComponent->Zones.size());
-						for (U8 i = 0; i < pSOComponent->Zones.size(); ++i)
-							Zones.push_back(&pSOComponent->Zones[i]);
-
-						// Get zones from asset
-						auto pSOAsset = pSOComponent->Asset ? pSOComponent->Asset->GetObject<CSmartObject>() : nullptr;
-						if (pSOAsset)
-						{
-							// TODO: can check additional conditions of zone before adding it!
-							const auto ZoneCount = pSOAsset->GetInteractionZoneCount();
-							Zones.reserve(Zones.size() + ZoneCount);
-							for (U8 i = 0; i < ZoneCount; ++i)
-								Zones.push_back(&pSOAsset->GetInteractionZone(i));
-						}
-					}
-				}
-
-				// Get interaction zones from an ability
-				pExecuteAbilityCmd->_AbilityInstance->Ability.GetZones(Session, *pExecuteAbilityCmd->_AbilityInstance, Zones);
-				n_assert_dbg(!Zones.empty());
-			}
-		}
-
-		CAbilityInstance& AbilityInstance = *pExecuteAbilityCmd->_AbilityInstance;
-
-		// Determine target node, if any
-		Scene::CSceneNode* pTargetRootNode = nullptr;
-		if (!AbilityInstance.Targets.empty())
-		{
-			const auto& Target = AbilityInstance.Targets[0];
-			if (auto pTargetSceneComponent = World.FindComponent<CSceneComponent>(Target.Entity))
-				pTargetRootNode = pTargetSceneComponent->RootNode;
-			else
-				pTargetRootNode = Target.pNode;
-		}
-
-		// Update main target transform
-		bool TransformChanged = false;
-		if (AbilityChanged)
-		{
-			TransformChanged = true;
-			if (pTargetRootNode)
-			{
-				//???store temporary system fields in a command instead of ability instance?
-				AbilityInstance.PrevTargetTfmVersion = pTargetRootNode->GetTransformVersion();
-				AbilityInstance.TargetToWorld = pTargetRootNode->GetWorldMatrix();
-			}
-			else if (!AbilityInstance.Targets.empty())
-			{
-				// FIXME: AbilityInstance.TargetToWorld not needed if CTargetInfo will store full SRT instead of Point!
-				AbilityInstance.TargetToWorld.w_axis = AbilityInstance.Targets[0].Point;
-			}
-		}
-		else if (pTargetRootNode && AbilityInstance.PrevTargetTfmVersion != pTargetRootNode->GetTransformVersion())
-		{
-			TransformChanged = true;
-			AbilityInstance.PrevTargetTfmVersion = pTargetRootNode->GetTransformVersion();
-			AbilityInstance.TargetToWorld = pTargetRootNode->GetWorldMatrix();
-		}
-
-		// Ability execution logic
-
-		AI::ECommandStatus Result = MoveToTarget(Session, AbilityInstance, World, EntityID, CmdStack, *pExecuteAbilityCmd, TransformChanged);
-
-		if (Result == AI::ECommandStatus::Succeeded)
-			Result = FaceTarget(Session, AbilityInstance, World, EntityID, CmdStack, *pExecuteAbilityCmd, TransformChanged);
-
-		if (Result == AI::ECommandStatus::Succeeded)
-			Result = InteractWithTarget(Session, AbilityInstance, EntityID, dt);
-
-		if (Result != AI::ECommandStatus::Running)
-		{
-			EndCurrentInteraction(Session, Result, AIState.AbilityInstance, EntityID);
-			CmdStack.PopCommand(Cmd, Result);
+			CmdStack.PopCommand(Cmd, Status);
+			FinalizeCommands(Session, CmdStack);
 		}
 	});
 }
