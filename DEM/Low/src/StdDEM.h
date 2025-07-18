@@ -11,6 +11,8 @@
 #include <bit>
 #endif
 
+using namespace std::string_view_literals;
+
 #define OK   return true
 #define FAIL return false
 

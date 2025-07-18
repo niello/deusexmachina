@@ -18,6 +18,20 @@ enum class ECommandStatus : U8
 inline bool IsFinishedCommandStatus(ECommandStatus Status) { return Status == ECommandStatus::Succeeded || Status == ECommandStatus::Failed; }
 inline bool IsTerminalCommandStatus(ECommandStatus Status) { return IsFinishedCommandStatus(Status) || Status == ECommandStatus::Cancelled; }
 
+inline std::string_view CommandStatusToString(ECommandStatus Status)
+{
+	switch (Status)
+	{
+		case ECommandStatus::NotStarted: return "NotStarted"sv;
+		case ECommandStatus::Running:    return "Running"sv;
+		case ECommandStatus::Succeeded:  return "Succeeded"sv;
+		case ECommandStatus::Failed:     return "Failed"sv;
+		case ECommandStatus::Cancelled:  return "Cancelled"sv;
+		default:                         return "<unknown>"sv;
+	}
+}
+//---------------------------------------------------------------------
+
 class CCommand : public Core::CObject
 {
 	RTTI_CLASS_DECL(DEM::AI::CCommand, Core::CObject);
@@ -36,6 +50,8 @@ using PCommand = Ptr<CCommand>;
 class CCommandFuture final
 {
 private:
+
+	friend class CCommandPromise; // for operator ==, currently used only in a hack in MoveToTarget
 
 	PCommand _Command;
 
@@ -118,6 +134,7 @@ public:
 	bool           IsAbandoned() const { return _Command->GetRefCount() == 1; }
 
 	bool           operator ==(const CCommandPromise& Other) const { return _Command == Other._Command; }
+	bool           operator ==(const CCommandFuture& Future) const { return _Command == Future._Command; }
 };
 
 template<typename T, typename... TArgs>
@@ -144,6 +161,17 @@ bool UpdateCommand(CCommandFuture& Cmd, TArgs&&... Args)
 	}
 
 	return false;
+}
+//---------------------------------------------------------------------
+
+}
+
+namespace StringUtils
+{
+
+inline std::string ToString(DEM::AI::ECommandStatus Status)
+{
+	return std::string(DEM::AI::CommandStatusToString(Status));
 }
 //---------------------------------------------------------------------
 

@@ -90,11 +90,6 @@ public:
 
 		// Can't use resize because it requires a default empty promise constructor even though growing never happens
 		_CommandStack.erase(std::next(_CommandStack.begin(), StartIdx), _CommandStack.end());
-
-		// TODO: pop root logging
-		//if (_CommandStack.empty())
-		//::Sys::Log((EntityToString(EntityID) + ": " + RootAction.Get()->GetClassName() + " action succeeded\n").c_str());
-		//::Sys::Log((EntityToString(EntityID) + ": " + RootAction.Get()->GetClassName() + " action failed or was cancelled\n").c_str());
 	}
 
 	void Reset(ECommandStatus Status, bool ForceRewriteFinishedStatus = false)

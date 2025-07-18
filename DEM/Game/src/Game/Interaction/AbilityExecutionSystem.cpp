@@ -217,7 +217,15 @@ static AI::ECommandStatus MoveToTarget(CGameSession& Session, CAbilityInstance& 
 		// If character is a navmesh agent, must navigate. Otherwise a simple steering does the job.
 		// FIXME: Navigate action can't be nested now because it completely breaks offmesh traversal.
 		// Steering may ignore special traversal logic but it is our only option at least for now.
-		if (pNavAgent /*FIXME:*/ && !CmdStack.FindTopmostCommand<AI::Navigate>())
+		bool FIXME_HasNavBelow = false;
+		{
+			auto NavCmd = CmdStack.FindTopmostCommand<AI::Navigate>();
+			if (NavCmd && *NavCmd == Cmd._SubCommandFuture)
+				NavCmd = CmdStack.FindTopmostCommand<AI::Navigate>(NavCmd);
+			FIXME_HasNavBelow = !!NavCmd;
+		}
+
+		if (pNavAgent && !FIXME_HasNavBelow)
 			AI::PushOrUpdateCommand<AI::Navigate>(CmdStack, Cmd._SubCommandFuture, ActionPos, FacingDir, 0.f);
 		else
 			AI::PushOrUpdateCommand<AI::Steer>(CmdStack, Cmd._SubCommandFuture, ActionPos, rtm::vector_add(ActionPos, FacingDir), 0.f);
@@ -464,6 +472,7 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 		// Process finished or failed commands
 		if (Cmd && AI::IsTerminalCommandStatus(Status))
 		{
+			::Sys::Log((StringUtils::ToString(EntityID) + ": ExecuteAbility finished as " + StringUtils::ToString(Status) + "\n").c_str());
 			CmdStack.PopCommand(Cmd, Status);
 			FinalizeCommands(Session, CmdStack);
 		}

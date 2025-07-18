@@ -301,6 +301,13 @@ static void UpdateRigidBodyMovement(Physics::CRigidBody* pBody, float dt, rtm::v
 }
 //---------------------------------------------------------------------
 
+static void FinalizeCommands(AI::CCommandStackComponent& CmdStack)
+{
+	CmdStack.FinalizePoppedCommands<AI::Steer>();
+	CmdStack.FinalizePoppedCommands<AI::Turn>();
+}
+//---------------------------------------------------------------------
+
 void ProcessCharacterControllers(CGameWorld& World, Physics::CPhysicsLevel& PhysicsLevel, float dt)
 {
 	World.ForEachEntityWith<CCharacterControllerComponent, AI::CCommandStackComponent>(
@@ -341,6 +348,9 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			CCharacterControllerComponent& Character,
 			AI::CCommandStackComponent& CmdStack)
 	{
+		// Finalize commands popped since the system was executed the last time
+		FinalizeCommands(CmdStack);
+
 		auto* pBody = Character.RigidBody.Get();
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
 
@@ -360,6 +370,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			const bool IsSameHeightLevel = (std::fabsf(rtm::vector_get_y(ToDest)) < Character.Height);
 			if (IsSameHeightLevel && SqDistance < AI::Steer::SqLinearTolerance)
 			{
+				::Sys::Log((EntityToString(EntityID) + ": arrived to dest\n").c_str());
 				CmdStack.PopCommand(Cmd, AI::ECommandStatus::Succeeded);
 				if (IsWalking) Character.State = ECharacterState::Stand;
 			}
@@ -375,6 +386,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 					Character.TimeStuck += dt;
 					if (Character.TimeStuck >= TimeToStuck)
 					{
+						::Sys::Log((EntityToString(EntityID) + ": failed as stuck\n").c_str());
 						CmdStack.PopCommand(Cmd, AI::ECommandStatus::Failed);
 						Character.State = ECharacterState::Stand;
 					}
@@ -392,8 +404,13 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			const rtm::vector4f LookatDir = Math::FromBullet(pBody->GetBtBody()->getWorldTransform().getBasis() * btVector3(0.f, 0.f, -1.f));
 			const float Angle = Math::AngleXZNorm(LookatDir, pTurnAction->_LookatDirection);
 			if (std::fabsf(Angle) < pTurnAction->_Tolerance)
+			{
+				::Sys::Log((EntityToString(EntityID) + ": finished facing\n").c_str());
 				CmdStack.PopCommand(Cmd, AI::ECommandStatus::Succeeded);
+			}
 		}
+
+		FinalizeCommands(CmdStack);
 	});
 }
 //---------------------------------------------------------------------
