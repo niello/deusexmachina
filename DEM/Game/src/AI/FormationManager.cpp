@@ -2,6 +2,7 @@
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
 #include <AI/CommandQueueComponent.h>
+#include <AI/CommandStackComponent.h>
 #include <AI/Navigation/NavAgentComponent.h>
 #include <AI/Movement/SteerAction.h>
 
@@ -46,7 +47,12 @@ bool CFormationManager::Move(rtm::vector4f_arg0 WorldPosition, rtm::vector4f_arg
 	for (auto EntityID : Entities)
 	{
 		auto* pQueue = pWorld->FindOrAddComponent<AI::CCommandQueueComponent>(EntityID);
-		if (!Enqueue) pQueue->Reset();
+		if (!Enqueue)
+		{
+			pQueue->Reset();
+			if (auto pCmdStack = pWorld->FindComponent<AI::CCommandStackComponent>(EntityID))
+				pCmdStack->Reset(AI::ECommandStatus::Cancelled);
+		}
 
 		AI::CCommandFuture Future;
 		if (auto pAgent = pWorld->FindComponent<const AI::CNavAgentComponent>(EntityID))
