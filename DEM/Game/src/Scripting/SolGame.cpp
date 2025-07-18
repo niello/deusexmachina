@@ -56,8 +56,9 @@ template<typename T>
 sol::usertype<T> RegisterVarStorage(sol::state& State, std::string_view Key)
 {
 	// TODO: assert if the usertype for T already exists, or there will be an error later on (Lua will GC the second metatable)
-	auto UserType = State.new_usertype<T>(Key
-		, "new_shared", sol::factories([]() { return std::shared_ptr<T>(new T{}); }));
+	auto UserType = State.new_usertype<T>(Key);
+	UserType.set("new_shared", sol::factories([]() { return std::shared_ptr<T>(new T{}); }));
+	UserType.set("new_unique", sol::factories([]() { return std::unique_ptr<T>(new T{}); }));
 	UserType.set_function("clear", &T::clear);
 	UserType.set_function("empty", &T::empty);
 	UserType.set_function("size", &T::size);

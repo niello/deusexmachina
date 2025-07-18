@@ -83,13 +83,13 @@ void CBehaviourTreeCondition::OnTreeStarted(U16 SelfIdx, CBehaviourTreePlayer& P
 	auto* pBrain = pWorld->FindComponent<const CAIStateComponent>(Player.GetActorID());
 	if (!pBrain) return;
 
-	//!!!FIXME: here and in quests must ensure that composite conditions subscribe correctly! now it seems that they don't!
 	if (_OverrideLowerPriority)
 	{
 		// FIXME: _OverrideLowerPriority=true conditions without events and keys must be updated regularly? E.g. LuaString.
 
+		//!!!FIXME: here and in quests must ensure that composite conditions subscribe correctly! now it seems that they don't!
 		pCondition->SubscribeRelevantEvents(Player.Subscriptions(), { _Condition, *Player.GetSession(), &pBrain->Blackboard.GetStorage() },
-			[&Player, SelfIdx](const std::shared_ptr<Game::CGameVarStorage>& EventVars)
+			[&Player, SelfIdx](std::unique_ptr<Game::CGameVarStorage>& EventVars)
 		{
 			// New active node may be found before this node is reached, don't waste time on a potentially unneeded condition check here
 			Player.RequestEvaluation(SelfIdx);

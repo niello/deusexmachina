@@ -109,11 +109,14 @@ bool CQuestManager::HandleQuestStart(CStrID ID, PFlowVarStorage Vars, bool Loadi
 
 			if (auto* pCondition = pConditions->FindCondition(Cond.Type))
 			{
-				pCondition->SubscribeRelevantEvents(ItActiveQuest->second.Subs, { Cond, _Session, QuestVars.get() }, [this, ID, OutcomeID, &Cond](PFlowVarStorage EventVars)
+				pCondition->SubscribeRelevantEvents(ItActiveQuest->second.Subs, { Cond, _Session, QuestVars.get() },
+					[this, ID, OutcomeID, &Cond](std::unique_ptr<Game::CGameVarStorage>& EventVars)
 				{
 					if (Flow::EvaluateCondition(Cond, _Session, EventVars.get()))
 					{
-						EnqueueQuestCompletion(ID, OutcomeID, std::move(EventVars));
+						std::shared_ptr<Game::CGameVarStorage> SharedEventVars;
+						if (EventVars) SharedEventVars = std::make_shared<Game::CGameVarStorage>(std::move(*EventVars));
+						EnqueueQuestCompletion(ID, OutcomeID, std::move(SharedEventVars));
 						ProcessQueue();
 					}
 				});

@@ -26,8 +26,24 @@ void CScriptCondition::GetText(std::string& Out, const CConditionContext& Ctx) c
 
 void CScriptCondition::SubscribeRelevantEvents(std::vector<Events::CConnection>& OutSubs, const CConditionContext& Ctx, const FEventCallback& Callback) const
 {
-	if (Callback)
-		Scripting::LuaCall<void>(_FnSubscribeRelevantEvents, OutSubs, Ctx.Condition.Params, Ctx.pVars, Callback);
+	if (!Callback) return;
+
+	Scripting::LuaCall<void>(_FnSubscribeRelevantEvents, OutSubs, Ctx.Condition.Params, Ctx.pVars, [Callback](sol::stack_object Arg)
+	{
+		if (Arg.is<sol::nil_t>())
+		{
+			std::unique_ptr<Game::CGameVarStorage> NoVars;
+			Callback(NoVars);
+		}
+		else if (Arg.is<std::unique_ptr<Game::CGameVarStorage>>())
+		{
+			Callback(Arg.as<std::unique_ptr<Game::CGameVarStorage>&>());
+		}
+		else
+		{
+			::Sys::Error("SubscribeRelevantEvents Lua callback must be called with no arg, nil or a result of CGameVarStorage.new_unique()");
+		}
+	});
 }
 //---------------------------------------------------------------------
 
