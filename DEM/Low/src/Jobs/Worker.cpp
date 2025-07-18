@@ -69,6 +69,7 @@ void CWorker::WaitIdle(CJobCounter Counter)
 	_pOwner->SetWorkerWaitingCounter(_Index);
 
 	// TODO PERF C++20: wait on atomic?!
+	// FIXME: there was a hang once when Counter was 0, all workers were sleeping, but it never returned from _WaitJobsCV!
 	std::unique_lock Lock(_WaitJobsMutex);
 	while (Counter->load(std::memory_order_relaxed) != 0 && !_pOwner->IsTerminationRequested(true))
 		_WaitJobsCV.wait(Lock);

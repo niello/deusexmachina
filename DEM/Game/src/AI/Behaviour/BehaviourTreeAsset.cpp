@@ -60,6 +60,8 @@ CBehaviourTreeAsset::CBehaviourTreeAsset(std::vector<CNodeInfo>&& NodeInfo)
 		auto& CurrNode = _Nodes[CurrNodeInfo.Index];
 		CurrNode.pNodeImpl = pNodeImpl;
 		CurrNode.SkipSubtreeIndex = CurrNodeInfo.SkipSubtreeIndex;
+		CurrNode.ParentIndex = CurrNodeInfo.ParentIndex;
+		CurrNode.DepthLevel = CurrNodeInfo.DepthLevel;
 	}
 
 	// Calculate per-instance node data memory requirements. This will be used by BT players.

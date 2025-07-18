@@ -323,11 +323,11 @@ bool CBehaviourTreePlayer::RequestEvaluation(U16 Index)
 	const U16 ActiveLevel = _ActiveDepth - 1;
 	if (_pActiveStack[ActiveLevel] <= Index) return false;
 
-	// Bubble request up to the common parent on the active path (the root in the worst case)
+	// Bubble request up to the common parent on the active path (the root in the worst case) and stop below it
 	U16 CandidateIdx = Index;
 	U16 CurrIdx = Index;
 	const auto* pNode = _Asset->GetNode(CurrIdx);
-	while (ActiveLevel > pNode->DepthLevel || CurrIdx < _pActiveStack[pNode->DepthLevel])
+	while (ActiveLevel < pNode->DepthLevel || CurrIdx < _pActiveStack[pNode->DepthLevel])
 	{
 		if (!pNode->pNodeImpl->CanOverrideLowerPriorityNodes()) return false;
 
