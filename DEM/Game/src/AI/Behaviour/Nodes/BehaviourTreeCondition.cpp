@@ -71,6 +71,9 @@ void CBehaviourTreeCondition::Init(const Data::CParams* pParams)
 
 void CBehaviourTreeCondition::OnTreeStarted(U16 SelfIdx, CBehaviourTreePlayer& Player) const
 {
+	// No additional initialization required
+	if (!_OverrideLowerPriority) return;
+
 	const auto* pConditions = Player.GetSession()->FindFeature<Flow::CConditionRegistry>();
 	if (!pConditions) return;
 
@@ -83,20 +86,21 @@ void CBehaviourTreeCondition::OnTreeStarted(U16 SelfIdx, CBehaviourTreePlayer& P
 	auto* pBrain = pWorld->FindComponent<const CAIStateComponent>(Player.GetActorID());
 	if (!pBrain) return;
 
-	if (_OverrideLowerPriority)
+	//!!!FIXME: here and in quests must ensure that composite conditions subscribe correctly! now it seems that they don't!
+	const auto PrevSubCount = Player.Subscriptions().size();
+	pCondition->SubscribeRelevantEvents(Player.Subscriptions(), { _Condition, *Player.GetSession(), &pBrain->Blackboard.GetStorage() },
+		[&Player, SelfIdx](std::unique_ptr<Game::CGameVarStorage>& EventVars)
 	{
-		// FIXME: _OverrideLowerPriority=true conditions without events and keys must be updated regularly? E.g. LuaString.
+		// New active node may be found before this node is reached, don't waste time on a potentially unneeded condition check here
+		Player.RequestEvaluation(SelfIdx);
+	});
 
-		//!!!FIXME: here and in quests must ensure that composite conditions subscribe correctly! now it seems that they don't!
-		pCondition->SubscribeRelevantEvents(Player.Subscriptions(), { _Condition, *Player.GetSession(), &pBrain->Blackboard.GetStorage() },
-			[&Player, SelfIdx](std::unique_ptr<Game::CGameVarStorage>& EventVars)
-		{
-			// New active node may be found before this node is reached, don't waste time on a potentially unneeded condition check here
-			Player.RequestEvaluation(SelfIdx);
-		});
+	for (const auto Key : _UsedBBKeys)
+		Player.EvaluateOnBlackboardChange(pBrain->Blackboard, Key, SelfIdx);
 
-		for (const auto Key : _UsedBBKeys)
-			Player.EvaluateOnBlackboardChange(pBrain->Blackboard, Key, SelfIdx);
+	if (_UsedBBKeys.empty() && PrevSubCount == Player.Subscriptions().size())
+	{
+		// FIXME: _OverrideLowerPriority=true conditions without events and keys must be updated each BT cycle? E.g. LuaString.
 	}
 }
 //---------------------------------------------------------------------
