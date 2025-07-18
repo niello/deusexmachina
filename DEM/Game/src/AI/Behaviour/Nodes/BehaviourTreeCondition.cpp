@@ -50,16 +50,21 @@ void CBehaviourTreeCondition::Init(const Data::CParams* pParams)
 {
 	if (!pParams) return;
 
+	pParams->TryGet(_OverrideLowerPriority, CStrID("OverrideLowerPriority"));
+
 	if (auto* pDesc = pParams->Find(CStrID("Condition")))
 	{
 		ParamsFormat::Deserialize(pDesc->GetRawValue(), _Condition);
 
-		// Gather context (blackboard) keys used by the conditon
-		_UsedBBKeys.reserve(16);
-		EnumerateUsedContextKeys(_Condition, _UsedBBKeys);
-		std::sort(_UsedBBKeys.begin(), _UsedBBKeys.end());
-		_UsedBBKeys.erase(std::unique(_UsedBBKeys.begin(), _UsedBBKeys.end()), _UsedBBKeys.end());
-		_UsedBBKeys.shrink_to_fit();
+		if (_OverrideLowerPriority)
+		{
+			// Gather context (blackboard) keys used by the conditon to subscribe on their changes
+			_UsedBBKeys.reserve(16);
+			EnumerateUsedContextKeys(_Condition, _UsedBBKeys);
+			std::sort(_UsedBBKeys.begin(), _UsedBBKeys.end());
+			_UsedBBKeys.erase(std::unique(_UsedBBKeys.begin(), _UsedBBKeys.end()), _UsedBBKeys.end());
+			_UsedBBKeys.shrink_to_fit();
+		}
 	}
 }
 //---------------------------------------------------------------------
@@ -79,14 +84,20 @@ void CBehaviourTreeCondition::OnTreeStarted(U16 SelfIdx, CBehaviourTreePlayer& P
 	if (!pBrain) return;
 
 	//!!!FIXME: here and in quests must ensure that composite conditions subscribe correctly! now it seems that they don't!
-	pCondition->SubscribeRelevantEvents(Player.Subscriptions(), { _Condition, *Player.GetSession(), &pBrain->Blackboard.GetStorage() }, [&Player, SelfIdx](const std::shared_ptr<Game::CGameVarStorage>& EventVars)
+	if (_OverrideLowerPriority)
 	{
-		// Execution may not even reach this node so we don't check a condition value here
-		Player.RequestEvaluation(SelfIdx);
-	});
+		// FIXME: _OverrideLowerPriority=true conditions without events and keys must be updated regularly? E.g. LuaString.
 
-	for (const auto Key : _UsedBBKeys)
-		Player.EvaluateOnBlackboardChange(pBrain->Blackboard, Key, SelfIdx);
+		pCondition->SubscribeRelevantEvents(Player.Subscriptions(), { _Condition, *Player.GetSession(), &pBrain->Blackboard.GetStorage() },
+			[&Player, SelfIdx](const std::shared_ptr<Game::CGameVarStorage>& EventVars)
+		{
+			// New active node may be found before this node is reached, don't waste time on a potentially unneeded condition check here
+			Player.RequestEvaluation(SelfIdx);
+		});
+
+		for (const auto Key : _UsedBBKeys)
+			Player.EvaluateOnBlackboardChange(pBrain->Blackboard, Key, SelfIdx);
+	}
 }
 //---------------------------------------------------------------------
 

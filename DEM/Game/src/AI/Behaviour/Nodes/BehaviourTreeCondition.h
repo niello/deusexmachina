@@ -15,6 +15,7 @@ protected:
 
 	Flow::CConditionData _Condition;
 	std::vector<CStrID>  _UsedBBKeys;
+	bool                 _OverrideLowerPriority = true;
 
 public:
 
