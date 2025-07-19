@@ -179,6 +179,8 @@ void CBehaviourTreePlayer::ResetActivePath(const CBehaviourTreeContext& Ctx)
 
 EBTStatus CBehaviourTreePlayer::Update(float dt)
 {
+	ZoneScoped;
+
 	if (!_Asset || !_pSession || !_ActorID) return EBTStatus::Failed;
 
 	auto* pWorld = _pSession->FindFeature<Game::CGameWorld>();
@@ -200,8 +202,6 @@ EBTStatus CBehaviourTreePlayer::Update(float dt)
 	U16 NextIdx = 0;
 	U16 CurrIdx = 0;
 	U16 NewLevel = 0;
-
-	//!!!TODO: pack context into a single structure? or only mutable part? or immutable too, as a second struct?
 
 	while (true)
 	{
