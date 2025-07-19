@@ -112,13 +112,9 @@ public:
 		{
 			if (_pRecord)
 			{
-				if (_pRecord->pNext) _pRecord = _pRecord->pNext;
-				else
-				{
-					++_BucketIt;
-					if (_BucketIt == _EndIt) _pRecord = nullptr;
-					else _pRecord = *_BucketIt;
-				}
+				_pRecord = _pRecord->pNext;
+				while (!_pRecord && ++_BucketIt != _EndIt)
+					_pRecord = *_BucketIt;
 			}
 
 			return *this;
