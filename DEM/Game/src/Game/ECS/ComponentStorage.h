@@ -77,9 +77,9 @@ struct CStorageNoPool {};
 // Conditional signals mixin
 template<typename T> struct CStorageSignals
 {
-	Events::CSignal<void(HEntity, T*)> OnAdd;
-	Events::CSignal<void(HEntity, T*)> OnRemove;
-	Events::CSignal<void(HEntity, T*)> OnDestroy;
+	Events::CSignal<void(HEntity, T&)> OnAdd;
+	Events::CSignal<void(HEntity, T&)> OnRemove;
+	Events::CSignal<void(HEntity, T&)> OnDestroy;
 	//???OnModify / OnGetMutable?
 };
 struct CStorageNoSignals {};
@@ -127,7 +127,7 @@ protected:
 	{
 		if (Record.Index == INVALID_INDEX) return;
 
-		if constexpr (Signals) OnDestroy(_Data[Record.Index].second, &_Data[Record.Index].first);
+		if constexpr (Signals) OnDestroy(_Data[Record.Index].second, _Data[Record.Index].first);
 
 		_Data.erase(Record.Index);
 		Record.Index = INVALID_INDEX;
@@ -374,7 +374,7 @@ public:
 
 		if (Index == INVALID_INDEX) return nullptr;
 
-		if constexpr (Signals) OnAdd(EntityID, &_Data[Index].first);
+		if constexpr (Signals) OnAdd(EntityID, _Data[Index].first);
 
 		return &_Data[Index].first;
 	}
@@ -425,7 +425,7 @@ public:
 
 		auto& IndexRecord = It->Value;
 
-		if constexpr (Signals) OnRemove(EntityID, &_Data[IndexRecord.Index].first);
+		if constexpr (Signals) OnRemove(EntityID, _Data[IndexRecord.Index].first);
 
 		ClearComponent(IndexRecord);
 		ClearDiffBuffer(IndexRecord);
@@ -543,7 +543,7 @@ public:
 
 		It->Value.DiffDirty = true;
 
-		if constexpr (Signals) OnAdd(EntityID, &_Data[It->Value.Index].first);
+		if constexpr (Signals) OnAdd(EntityID, _Data[It->Value.Index].first);
 
 		return true;
 	}
@@ -876,7 +876,7 @@ public:
 		{
 			if constexpr (Signals)
 				if (IndexRecord.Index != INVALID_INDEX)
-					OnDestroy(_Data[IndexRecord.Index].second, &_Data[IndexRecord.Index].first);
+					OnDestroy(_Data[IndexRecord.Index].second, _Data[IndexRecord.Index].first);
 
 			ClearDiffBuffer(IndexRecord);
 		}
@@ -1010,7 +1010,7 @@ public:
 		else
 			_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Explicit, EComponentState::NoBase });
 
-		if constexpr (Signals) OnAdd(EntityID, &_SharedInstance);
+		if constexpr (Signals) OnAdd(EntityID, _SharedInstance);
 
 		return &_SharedInstance;
 	}
@@ -1028,7 +1028,7 @@ public:
 		auto It = _IndexByEntity.find(EntityID);
 		if (!It) return false;
 
-		if constexpr (Signals) OnRemove(EntityID, &_SharedInstance);
+		if constexpr (Signals) OnRemove(EntityID, _SharedInstance);
 
 		// If record has no template, it can be erased entirely. If component is later added to the template,
 		// it will be instantiated. Can't explicitly delete templated component that is not present.
@@ -1098,7 +1098,7 @@ public:
 		else
 			_IndexByEntity.emplace(EntityID, CIndexRecord{ State, EComponentState::NoBase });
 
-		if constexpr (Signals) OnAdd(EntityID, &_SharedInstance);
+		if constexpr (Signals) OnAdd(EntityID, _SharedInstance);
 
 		return true;
 	}

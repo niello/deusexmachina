@@ -311,7 +311,7 @@ static AI::ECommandStatus InteractWithTarget(CGameSession& Session, CAbilityInst
 }
 //---------------------------------------------------------------------
 
-static void FinalizeCommands(CGameSession& Session, AI::CCommandStackComponent& CmdStack)
+void FinalizeAbilityCommands(CGameSession& Session, AI::CCommandStackComponent& CmdStack)
 {
 	CmdStack.FinalizePoppedCommands<ExecuteAbility>([&Session](ExecuteAbility& Cmd, AI::ECommandStatus Status)
 	{
@@ -461,7 +461,7 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 		[&Session, &World, dt](auto EntityID, auto& Entity, AI::CCommandStackComponent& CmdStack, AI::CAIStateComponent& AIState)
 	{
 		// Finalize commands popped since the system was executed the last time
-		FinalizeCommands(Session, CmdStack);
+		FinalizeAbilityCommands(Session, CmdStack);
 
 		// Pick a supported command to process
 		const auto Cmd = CmdStack.FindTopmostCommand<ExecuteAbility>();
@@ -474,7 +474,7 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 		{
 			::Sys::Log((StringUtils::ToString(EntityID) + ": ExecuteAbility finished as " + StringUtils::ToString(Status) + "\n").c_str());
 			CmdStack.PopCommand(Cmd, Status);
-			FinalizeCommands(Session, CmdStack);
+			FinalizeAbilityCommands(Session, CmdStack);
 		}
 	});
 }

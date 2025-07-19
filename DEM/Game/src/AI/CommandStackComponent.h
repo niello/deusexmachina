@@ -48,6 +48,9 @@ protected:
 
 public:
 
+	// For command cleanup
+	static constexpr bool Signals = true;
+
 	CCommandStackComponent() = default;
 	CCommandStackComponent(CCommandStackComponent&&) noexcept = default;
 	CCommandStackComponent& operator =(CCommandStackComponent&&) noexcept = default;

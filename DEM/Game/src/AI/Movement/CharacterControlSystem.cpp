@@ -301,7 +301,7 @@ static void UpdateRigidBodyMovement(Physics::CRigidBody* pBody, float dt, rtm::v
 }
 //---------------------------------------------------------------------
 
-static void FinalizeCommands(AI::CCommandStackComponent& CmdStack)
+void FinalizeCharacterControllerCommands(AI::CCommandStackComponent& CmdStack)
 {
 	CmdStack.FinalizePoppedCommands<AI::Steer>();
 	CmdStack.FinalizePoppedCommands<AI::Turn>();
@@ -349,7 +349,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			AI::CCommandStackComponent& CmdStack)
 	{
 		// Finalize commands popped since the system was executed the last time
-		FinalizeCommands(CmdStack);
+		FinalizeCharacterControllerCommands(CmdStack);
 
 		auto* pBody = Character.RigidBody.Get();
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
@@ -410,7 +410,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			}
 		}
 
-		FinalizeCommands(CmdStack);
+		FinalizeCharacterControllerCommands(CmdStack);
 	});
 }
 //---------------------------------------------------------------------

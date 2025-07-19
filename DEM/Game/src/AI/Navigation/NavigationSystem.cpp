@@ -316,7 +316,7 @@ static bool CheckAsyncPathResult(CNavAgentComponent& Agent, CPathRequestQueue& P
 }
 //---------------------------------------------------------------------
 
-static void FinalizeCommands(CCommandStackComponent& CmdStack, CPathRequestQueue& PathQueue)
+void FinalizeNavigationCommands(CCommandStackComponent& CmdStack, CPathRequestQueue& PathQueue)
 {
 	CmdStack.FinalizePoppedCommands<Navigate>([&PathQueue](Navigate& Cmd, ECommandStatus)
 	{
@@ -621,7 +621,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 			const Game::CCharacterControllerComponent& Character)
 	{
 		// Finalize commands popped since the system was executed the last time
-		FinalizeCommands(CmdStack, PathQueue);
+		FinalizeNavigationCommands(CmdStack, PathQueue);
 
 		// Pick a supported command to process
 		auto Cmd = CmdStack.FindTopmostCommand<Navigate>();
@@ -648,7 +648,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 			{
 				::Sys::Log((StringUtils::ToString(EntityID) + ": Navigate finished as " + StringUtils::ToString(Status) + "\n").c_str());
 				CmdStack.PopCommand(Cmd, Status);
-				FinalizeCommands(CmdStack, PathQueue);
+				FinalizeNavigationCommands(CmdStack, PathQueue);
 			}
 		}
 	});
@@ -741,7 +741,7 @@ void DestroyNavigationAgent(Game::CGameWorld& World, CPathRequestQueue& PathQueu
 		while (auto NavCmd = pCmdStack->FindTopmostCommand<Navigate>())
 			pCmdStack->PopCommand(NavCmd, ECommandStatus::Cancelled);
 
-		FinalizeCommands(*pCmdStack, PathQueue);
+		FinalizeNavigationCommands(*pCmdStack, PathQueue);
 	}
 
 	if (Agent.pNavQuery)

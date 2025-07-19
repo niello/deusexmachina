@@ -10,6 +10,9 @@ namespace DEM::AI
 
 struct CBehaviourTreeComponent
 {
+	// For player stopping
+	static constexpr bool Signals = true;
+
 	Resources::PResource Asset;
 	CBehaviourTreePlayer Player;
 };
