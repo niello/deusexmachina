@@ -1,7 +1,6 @@
 #include "LuaConsole.h"
 
 #include <Events/EventServer.h>
-#include <Scripting/ScriptServer.h>
 #include <Data/Params.h>
 #include <Core/Factory.h>
 
@@ -124,15 +123,15 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 
 		CArray<CString> Contents;
 
-		if (ScriptSrv->PlaceOnStack(pTable))
-		{
-			ScriptSrv->GetTableFieldsDebug(Contents);
-			Sys::Log("----------\n");
-			for (UPTR i = 0; i < Contents.GetCount(); ++i)
-				Print(Contents[i].CStr(), 0xffb0b0b0);
-			Sys::Log("----------\n");
-		}
-		else Sys::Log("Lua table not found\n");
+		//if (ScriptSrv->PlaceOnStack(pTable))
+		//{
+		//	ScriptSrv->GetTableFieldsDebug(Contents);
+		//	Sys::Log("----------\n");
+		//	for (UPTR i = 0; i < Contents.GetCount(); ++i)
+		//		Print(Contents[i].CStr(), 0xffb0b0b0);
+		//	Sys::Log("----------\n");
+		//}
+		//else Sys::Log("Lua table not found\n");
 	}
 	//else if (!strncmp(pCmd, "cd ", 3))
 	//{
@@ -141,9 +140,9 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 	//}
 	else
 	{
-		Data::CData RetVal;
-		ScriptSrv->RunScript(Cmd.c_str(), -1, &RetVal);
-		if (RetVal.IsValid()) Sys::Log("Return value: %s\n", RetVal.ToString());
+		//Data::CData RetVal;
+		//ScriptSrv->RunScript(Cmd.c_str(), -1, &RetVal);
+		//if (RetVal.IsValid()) Sys::Log("Return value: {}\n"_format(RetVal.ToString()));
 	}
 
 	if (CmdHistoryCursor + 1 != CmdHistory.GetCount())

@@ -4,7 +4,6 @@
 
 #include "WatcherWindow.h"
 
-#include <Scripting/ScriptServer.h>
 #include <Events/EventServer.h>
 #include <Data/DataArray.h>
 #include <Data/StringUtils.h>
@@ -254,7 +253,7 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 				char Script[256];	
 				_snprintf(Script, sizeof(Script) - 1, "return %s", It->VarName.CStr());
 				Data::CData Output;
-				ScriptSrv->RunScript(Script, -1, &Output);
+				//ScriptSrv->RunScript(Script, -1, &Output);
 
 				//!!!Data.ToString!
 				if (Output.IsVoid())
