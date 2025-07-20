@@ -29,6 +29,10 @@ endif()
 
 #???run python script to update cmake src lists?
 
+# Dependency: {fmt}
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/fmt") # target: fmt or alias fmt::fmt
+target_compile_definitions(fmt PRIVATE FMT_USE_EXCEPTIONS=0)
+
 # Dependency: RTM
 
 add_library(rtm INTERFACE)
