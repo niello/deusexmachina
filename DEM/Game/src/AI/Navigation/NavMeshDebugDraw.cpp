@@ -48,7 +48,7 @@ void CNavMeshDebugDraw::DrawNavMeshPolyAt(const DEM::AI::CNavMesh& NavMesh, cons
 	//static dtPolyRef PrevRef = 0;
 	//if (Ref != PrevRef)
 	//{
-	//	::Sys::DbgOut(("Curr nav poly: " + std::to_string(Ref) + '\n').c_str());
+	//	::Sys::DbgOut("Curr nav poly: " + std::to_string(Ref) + '\n');
 	//	PrevRef = Ref;
 	//}
 }

@@ -342,7 +342,7 @@ void CView::CPickRequest::Get(CPickInfo& Out)
 		n_assert_dbg(Out.UserValue != 0);
 
 		//!!!DBG TMP!
-		::Sys::DbgOut(("***DBG Pick UserValue: " + std::to_string(Out.UserValue) + "\n").c_str());
+		::Sys::DbgOut("***DBG Pick UserValue: " + std::to_string(Out.UserValue) + "\n");
 
 		if (auto pScene = PickerRequest.pView->GetGraphicsScene())
 		{

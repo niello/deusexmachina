@@ -281,7 +281,7 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, 
 				Render::PTexture Texture = GetTexture(RUID, Render::Access_GPU_Read);
 				if (Texture.IsNullPtr())
 				{
-					::Sys::Error(("Can't load effect or material texture: " + RUID.ToString()).c_str());
+					::Sys::Error("Can't load effect or material texture: " + RUID.ToString());
 					FAIL;
 				}
 
@@ -323,7 +323,7 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, 
 		}
 		else
 		{
-			::Sys::Error(("Unknown param type: " + ParamID.ToString()).c_str());
+			::Sys::Error("Unknown param type: " + ParamID.ToString());
 			FAIL;
 		}
 	}
@@ -485,7 +485,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 
 #ifdef _DEBUG
 	if (EffectType == Render::EffectType_Other)
-		::Sys::DbgOut(("Effect type not determined for " + UID.ToString() + "\n").c_str());
+		::Sys::DbgOut("Effect type not determined for " + UID.ToString() + "\n");
 #endif
 
 	U32 ShaderFormatCount;

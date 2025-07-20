@@ -472,7 +472,7 @@ void UpdateAbilityInteractions(CGameSession& Session, CGameWorld& World, float d
 		// Process finished or failed commands
 		if (Cmd && AI::IsTerminalCommandStatus(Status))
 		{
-			::Sys::Log((StringUtils::ToString(EntityID) + ": ExecuteAbility finished as " + StringUtils::ToString(Status) + "\n").c_str());
+			::Sys::Log(StringUtils::ToString(EntityID) + ": ExecuteAbility finished as " + StringUtils::ToString(Status) + "\n");
 			CmdStack.PopCommand(Cmd, Status);
 			FinalizeAbilityCommands(Session, CmdStack);
 		}

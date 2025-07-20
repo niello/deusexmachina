@@ -646,7 +646,7 @@ void ProcessNavigation(DEM::Game::CGameSession& Session, float dt, CPathRequestQ
 			// Pop and immediately finalize a terminated command
 			if (Cmd)
 			{
-				::Sys::Log((StringUtils::ToString(EntityID) + ": Navigate finished as " + StringUtils::ToString(Status) + "\n").c_str());
+				::Sys::Log(StringUtils::ToString(EntityID) + ": Navigate finished as " + StringUtils::ToString(Status) + "\n");
 				CmdStack.PopCommand(Cmd, Status);
 				FinalizeNavigationCommands(CmdStack, PathQueue);
 			}

@@ -354,10 +354,10 @@ bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context) const
 	//!!!DBG TMP!
 	const std::string Actor = Context.Actors.empty() ? "none" : std::to_string(*Context.Actors.begin());
 	const std::string SmartObjectID = Context.SmartObjectID ? Context.SmartObjectID.ToString() : "none";
-	::Sys::Log(("Tool: " + Context.Tool.ToString() +
+	::Sys::Log("Tool: " + Context.Tool.ToString() +
 		", Interaction: " + Context.Interaction.ToString() +
 		", SmartObject: " + SmartObjectID +
-		", Actor: " + Actor + "\n").c_str());
+		", Actor: " + Actor + "\n");
 
 	return pInteraction->Execute(_Session, Context);
 }

@@ -151,7 +151,7 @@ void CFlowPlayer::Update(Game::CGameSession& Session, float dt)
 		// Print both critical and retryable errors
 		const bool HasError = !Ctx.Error.empty();
 		if (HasError)
-			::Sys::Log(("[DEM.Flow] Error: " + Ctx.Error + "\n").c_str());
+			::Sys::Log("[DEM.Flow] Error: " + Ctx.Error + "\n");
 
 		// If the action must be continued, we will do it at the next frame
 		if (!Ctx.Finished)

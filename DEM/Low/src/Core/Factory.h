@@ -40,7 +40,7 @@ public:
 		const CRTTI* pRTTI = GetRTTI(pClassName);
 
 		// FIXME: use Verify instead of duplicating condition!
-		n_assert2_dbg(pRTTI && pRTTI->IsDerivedFrom(T::RTTI), (std::string("No factory type or not a subclass: ") + pClassName).c_str());
+		n_assert2_dbg(pRTTI && pRTTI->IsDerivedFrom(T::RTTI), "No factory type or not a subclass: {}"_format(pClassName));
 		return (pRTTI && pRTTI->IsDerivedFrom(T::RTTI)) ? static_cast<T*>(pRTTI->CreateInstance()) : nullptr;
 	}
 

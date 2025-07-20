@@ -20,9 +20,9 @@ void InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Locat
 	//!!!DBG TMP!
 	Data::CData DmgTypeStr;
 	DEM::ParamsFormat::Serialize(DmgTypeStr, DamageType);
-	::Sys::DbgOut(("***DBG Hit: " + Game::EntityToString(ActorID) + " hits " + Game::EntityToString(TargetID) +
+	::Sys::DbgOut("***DBG Hit: " + Game::EntityToString(ActorID) + " hits " + Game::EntityToString(TargetID) +
 		" (" + std::to_string(pDestructible->HP.GetFinalValue()) + " HP)" +
-		" for " + std::to_string(std::max(0, Damage)) + " HP (" + DmgTypeStr.GetValue<CString>().CStr() + ")\n").c_str());
+		" for " + std::to_string(std::max(0, Damage)) + " HP (" + DmgTypeStr.GetValue<CString>().CStr() + ")\n");
 
 	if (Damage <= 0) return;
 
@@ -34,7 +34,7 @@ void InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Locat
 	if (pDestructible->HP.GetFinalValue() <= 0) pDestructible->OnDestroyed(DamageType);
 
 	//!!!DBG TMP!
-	if (pDestructible->HP.GetFinalValue() <= 0) ::Sys::DbgOut(("***DBG Destroyed: " + Game::EntityToString(TargetID) + "\n").c_str());
+	if (pDestructible->HP.GetFinalValue() <= 0) ::Sys::DbgOut("***DBG Destroyed: " + Game::EntityToString(TargetID) + "\n");
 }
 //---------------------------------------------------------------------
 

@@ -485,7 +485,7 @@ bool CGameWorld::InstantiateTemplate(HEntity EntityID, CStrID TemplateID, bool B
 
 	auto Rsrc = _ResMgr.RegisterResource<CEntityTemplate>(TemplateID.CStr());
 	auto pTpl = Rsrc ? Rsrc->ValidateObject<CEntityTemplate>() : nullptr;
-	n_assert2(pTpl, ("CGameWorld::InstantiateTemplate() > can't load requested template " + TemplateID.ToString()).c_str());
+	n_assert2(pTpl, "CGameWorld::InstantiateTemplate() > can't load requested template " + TemplateID.ToString());
 	if (!pTpl) return false;
 
 	// Existing components override the template

@@ -370,7 +370,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			const bool IsSameHeightLevel = (std::fabsf(rtm::vector_get_y(ToDest)) < Character.Height);
 			if (IsSameHeightLevel && SqDistance < AI::Steer::SqLinearTolerance)
 			{
-				::Sys::Log((EntityToString(EntityID) + ": arrived to dest\n").c_str());
+				::Sys::Log(EntityToString(EntityID) + ": arrived to dest\n");
 				CmdStack.PopCommand(Cmd, AI::ECommandStatus::Succeeded);
 				if (IsWalking) Character.State = ECharacterState::Stand;
 			}
@@ -386,7 +386,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 					Character.TimeStuck += dt;
 					if (Character.TimeStuck >= TimeToStuck)
 					{
-						::Sys::Log((EntityToString(EntityID) + ": failed as stuck\n").c_str());
+						::Sys::Log(EntityToString(EntityID) + ": failed as stuck\n");
 						CmdStack.PopCommand(Cmd, AI::ECommandStatus::Failed);
 						Character.State = ECharacterState::Stand;
 					}
@@ -405,7 +405,7 @@ void CheckCharacterControllersArrival(CGameWorld& World, Physics::CPhysicsLevel&
 			const float Angle = Math::AngleXZNorm(LookatDir, pTurnAction->_LookatDirection);
 			if (std::fabsf(Angle) < pTurnAction->_Tolerance)
 			{
-				::Sys::Log((EntityToString(EntityID) + ": finished facing\n").c_str());
+				::Sys::Log(EntityToString(EntityID) + ": finished facing\n");
 				CmdStack.PopCommand(Cmd, AI::ECommandStatus::Succeeded);
 			}
 		}
