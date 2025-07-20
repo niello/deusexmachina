@@ -128,7 +128,7 @@ inline CParam& CParams::Get(CStrID Name)
 {
 	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name) return Params[i];
-	Sys::Error("Param \"%s\" does not exist", Name.CStr());
+	Sys::Error("Param '{}' does not exist"_format(Name));
 	return *(n_new(CParam()));
 }
 //---------------------------------------------------------------------
@@ -137,7 +137,7 @@ inline const CParam& CParams::Get(CStrID Name) const
 {
 	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name) return Params[i];
-	Sys::Error("Param \"%s\" does not exist", Name.CStr());
+	Sys::Error("Param '{}' does not exist"_format(Name));
 	return *(n_new(CParam()));
 }
 //---------------------------------------------------------------------
@@ -148,7 +148,7 @@ template<class T> inline const T& CParams::Get(CStrID Name) const
 	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name)
 			return ((const CData&)Params[i].GetRawValue()).GetValue<T>();
-	Sys::Error("Param \"%s\" does not exist", Name.CStr());
+	Sys::Error("Param '{}' does not exist"_format(Name));
 	return *(n_new(T()));
 }
 //---------------------------------------------------------------------

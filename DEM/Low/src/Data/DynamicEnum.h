@@ -44,7 +44,7 @@ T CDynamicEnumT<T>::GetMask(std::string_view FlagStr)
 		{
 			if (BitsUsed >= (sizeof(T) << 3))
 			{
-				::Sys::Error("CDynamicEnumT<T>::GetMask() > overflow, flag '%s' would be %d-th", Flag.CStr(), BitsUsed + 1);
+				::Sys::Error("CDynamicEnumT<T>::GetMask() > overflow, flag '{}' would be {}-th"_format(Flag, BitsUsed + 1));
 				return 0;
 			}
 

@@ -18,13 +18,13 @@ void CDEMLogger::logEvent(const CEGUI::String& message, CEGUI::LoggingLevel leve
 		switch (level)
 		{
 			case CEGUI::LoggingLevel::Error:
-				Sys::Error("%s\n", msg.c_str());
+				Sys::Error("{}\n"_format(msg));
 				break;
 			case CEGUI::LoggingLevel::Warning:
 			case CEGUI::LoggingLevel::Standard:
 			case CEGUI::LoggingLevel::Informative:
 			case CEGUI::LoggingLevel::Insane:
-				Sys::Log("%s\n", msg.c_str());
+				Sys::Log("{}\n"_format(msg));
 				break;
 			default:
 				Sys::Error("Unknown CEGUI logging level\n");

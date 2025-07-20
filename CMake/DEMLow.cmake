@@ -318,10 +318,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Scripting/LuaEventHandler.h
 	DEM/Low/src/Scripting/ScriptAsset.h
 	DEM/Low/src/Scripting/ScriptAssetLoader.h
-	DEM/Low/src/Scripting/ScriptObject.h
-	DEM/Low/src/Scripting/ScriptServer.h
 	DEM/Low/src/Scripting/SolLow.h
-	DEM/Low/src/SI/SI_L1.h
 	DEM/Low/src/System/Memory.h
 	DEM/Low/src/System/OSFileSystem.h
 	DEM/Low/src/System/OSWindow.h
@@ -567,11 +564,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Scene/SceneNodeLoaderSCN.cpp
 	DEM/Low/src/Scripting/LuaEventHandler.cpp
 	DEM/Low/src/Scripting/ScriptAssetLoader.cpp
-	DEM/Low/src/Scripting/ScriptObject.cpp
-	DEM/Low/src/Scripting/ScriptServer.cpp
 	DEM/Low/src/Scripting/SolLow.cpp
-	DEM/Low/src/SI/SIGlobals.cpp
-	DEM/Low/src/SI/SITime.cpp
 	DEM/Low/src/System/Memory.cpp
 	DEM/Low/src/System/System.cpp
 	DEM/Low/src/System/Win32/KeyboardWin32.cpp

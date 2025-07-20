@@ -37,7 +37,7 @@ public:
 	~CPoolAllocator()
 	{
 		if (_CurrAllocatedCount > 0)
-			::Sys::Error("~CPoolAllocator() > %d unreleased records\n", _CurrAllocatedCount);
+			::Sys::Error("~CPoolAllocator() > {} unreleased records\n"_format(_CurrAllocatedCount));
 	}
 #endif
 

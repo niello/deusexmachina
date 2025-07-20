@@ -15,11 +15,11 @@ void CObject::DumpLeaks() //???dump CRefCounted leaks too? without class names.
 		UPTR Number = 1;
 		for (CObjList::CIterator It = List.Begin(); It != List.End(); ++It, ++Number)
 		{
-			Sys::DbgOut("*** REFCOUNT LEAK %d: Object of class '%s' at address '0x%08lx', refcount is '%d'\n",
+			Sys::DbgOut("*** REFCOUNT LEAK {}: Object of class '{}' at address '{}', refcount is '{}'\n"_format(
 				Number,
 				(*It)->GetClassName().c_str(),
-				(*It),
-				(*It)->GetRefCount());
+				fmt::ptr(*It),
+				(*It)->GetRefCount()));
 		}
 		Sys::DbgOut("\n******** CObject: END OF REFCOUNT LEAK REPORT\n\n");
 		Sys::Error("CObject memory leaks detected");

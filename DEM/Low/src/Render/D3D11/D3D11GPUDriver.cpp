@@ -115,24 +115,24 @@ bool CD3D11GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 
 	if (FAILED(hr))
 	{
-		Sys::Log("Failed to create Direct3D11 device object, hr = 0x%x!\n", hr);
+		Sys::Log("Failed to create Direct3D11 device object, hr = 0x{:x}!\n"_format(hr));
 		FAIL;
 	}
 
 	if (AdapterID == 0) Type = GPU_Hardware; //???else? //!!!in D3D9 type was in device caps!
 
-	Sys::Log("Device created: %s, feature level 0x%x\n", "HAL", (int)D3DFeatureLevel);
+	Sys::Log("Device created: HAL, feature level 0x{:x}\n"_format(fmt::underlying(D3DFeatureLevel)));
 
 #if DEM_RENDER_DEBUG
 	_pTracyImmCtx = TracyD3D11Context(pD3DDevice, pD3DImmContext);
 	TracyD3D11ContextName(_pTracyImmCtx, "GPU main", sizeof("GPU main"));
 
 	hr = pD3DDevice->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&_pD3DDebug));
-	if (FAILED(hr)) Sys::Log("Can't obtain ID3D11Debug, hr = 0x%x!\n", hr);
+	if (FAILED(hr)) Sys::Log("Can't obtain ID3D11Debug, hr = 0x{:x}!\n"_format(hr));
 
 #if defined(DEM_RENDER_DEBUG_D3D11_1)
 	hr = pD3DImmContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), reinterpret_cast<void**>(&_pD3DAnnotation));
-	if (FAILED(hr)) Sys::Log("Can't obtain ID3DUserDefinedAnnotation, hr = 0x%x!\n", hr);
+	if (FAILED(hr)) Sys::Log("Can't obtain ID3DUserDefinedAnnotation, hr = 0x{:x}!\n"_format(hr));
 #endif
 #endif
 
@@ -2126,7 +2126,7 @@ PTexture CD3D11GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 
 	if (Desc.Type != Texture_1D && Desc.Type != Texture_2D && Desc.Type != Texture_Cube && Desc.Type != Texture_3D)
 	{
-		Sys::Error("CD3D11GPUDriver::CreateTexture() > Unknown texture type %d\n", Desc.Type);
+		Sys::Error("CD3D11GPUDriver::CreateTexture() > Unknown texture type {}\n"_format(fmt::underlying(Desc.Type)));
 		return nullptr;
 	}
 
@@ -2154,7 +2154,7 @@ PTexture CD3D11GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 	if (Usage == D3D11_USAGE_DYNAMIC && (MipLevels != 1 || ArraySize != 1))
 	{
 #ifdef _DEBUG
-		Sys::DbgOut("CD3D11GPUDriver::CreateTexture() > Dynamic texture requested %d mips and %d array slices. D3D11 requires 1 for both. Values are changed to 1.\n", MipLevels, ArraySize);
+		Sys::DbgOut("CD3D11GPUDriver::CreateTexture() > Dynamic texture requested {} mips and {} array slices. D3D11 requires 1 for both. Values are changed to 1.\n"_format(MipLevels, ArraySize));
 #endif
 		MipLevels = 1;
 		ArraySize = 1;

@@ -15,7 +15,7 @@
 namespace Sys
 {
 
-EMsgBoxButton ShowMessageBox(EMsgType Type, const char* pHeaderText, const char* pMessage, unsigned int Buttons)
+EMsgBoxButton ShowMessageBox(EMsgType Type, std::string_view HeaderText, std::string_view Message, unsigned int Buttons)
 {
 	// Find app window, and minimize it. This is necessary when in fullscreen mode, otherwise
 	// the message box may not be visible.
@@ -24,10 +24,11 @@ EMsgBoxButton ShowMessageBox(EMsgType Type, const char* pHeaderText, const char*
 	if (hWnd) ::ShowWindow(hWnd, SW_MINIMIZE);
 
 	char HeaderBuf[256];
-	if (!pHeaderText)
+	if (HeaderText.empty())
 	{
 		if (!hWnd) hWnd = ::GetActiveWindow();
-		pHeaderText = (hWnd && ::GetWindowText(hWnd, HeaderBuf, sizeof(HeaderBuf)) > 0) ? HeaderBuf : "";
+		if (hWnd && ::GetWindowText(hWnd, HeaderBuf, sizeof(HeaderBuf)) > 0)
+			HeaderText = HeaderBuf;
 	}
 
 	UINT BoxType = MB_APPLMODAL | MB_SETFOREGROUND | MB_TOPMOST;
@@ -47,9 +48,11 @@ EMsgBoxButton ShowMessageBox(EMsgType Type, const char* pHeaderText, const char*
 		default:									BoxType |= MB_OK; break;
 	}
 
-	int Ret = ::MessageBox(nullptr, pMessage, pHeaderText, BoxType);
+	const std::string MessageStr(Message);
+	const std::string CaptionStr(HeaderText);
+	const int Result = ::MessageBox(nullptr, MessageStr.c_str(), CaptionStr.c_str(), BoxType);
 
-	switch (Ret)
+	switch (Result)
 	{
 		case IDOK:		return MBB_OK;
 		case IDABORT:	return MBB_Abort;
@@ -115,15 +118,15 @@ double GetAppTime()
 //---------------------------------------------------------------------
 
 //!!!???to System.cpp, implement single Win32 calls as Sys:: functions here!
-void DefaultLogHandler(EMsgType Type, const char* pMessage) //!!!context, see Qt!
+void DefaultLogHandler(EMsgType Type, std::string_view Message) //!!!context, see Qt!
 {
-	//!!!see Qt: QString logMessage = qMessageFormatString(type, context, buf);!
+	if (Message.empty()) return;
 
 	switch (Type)
 	{
 		case MsgType_Message:
 		{
-			ShowMessageBox(Type, nullptr, pMessage);
+			ShowMessageBox(Type, {}, Message);
 			// Fallback to MsgType_Log intentionally
 		}
 		case MsgType_Log:
@@ -131,7 +134,7 @@ void DefaultLogHandler(EMsgType Type, const char* pMessage) //!!!context, see Qt
 			HANDLE hStdOut = ::GetStdHandle(STD_OUTPUT_HANDLE);
 			if (hStdOut && hStdOut != INVALID_HANDLE_VALUE)
 			{
-				::WriteFile(hStdOut, pMessage, strlen(pMessage), nullptr, nullptr);
+				::WriteFile(hStdOut, Message.data(), Message.size(), nullptr, nullptr);
 				::FlushFileBuffers(hStdOut); //PERF //???always? isn't too slow?
 				return;
 			}
@@ -142,7 +145,7 @@ void DefaultLogHandler(EMsgType Type, const char* pMessage) //!!!context, see Qt
 			HANDLE hStdErr = ::GetStdHandle(STD_ERROR_HANDLE);
 			if (hStdErr && hStdErr != INVALID_HANDLE_VALUE)
 			{
-				::WriteFile(hStdErr, pMessage, strlen(pMessage), nullptr, nullptr);
+				::WriteFile(hStdErr, Message.data(), Message.size(), nullptr, nullptr);
 				::FlushFileBuffers(hStdErr);
 				return;
 			}
@@ -151,7 +154,7 @@ void DefaultLogHandler(EMsgType Type, const char* pMessage) //!!!context, see Qt
 	}
 
 	// DbgOut and any messages not handled
-	OutputDebugString(pMessage);
+	::OutputDebugString(std::string(Message).c_str());
 }
 //---------------------------------------------------------------------
 

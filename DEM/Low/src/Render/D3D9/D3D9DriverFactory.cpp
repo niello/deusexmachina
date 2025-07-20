@@ -238,7 +238,7 @@ EMSAAQuality CD3D9DriverFactory::D3DMSAAParamsToMSAAQuality(D3DMULTISAMPLE_TYPE 
 		case D3DMULTISAMPLE_2_SAMPLES:	return MSAA_2x;
 		case D3DMULTISAMPLE_4_SAMPLES:	return MSAA_4x;
 		case D3DMULTISAMPLE_8_SAMPLES:	return MSAA_8x;
-		default:						Sys::Error("CD3D9DriverFactory::D3DMSAAParamsToMSAAQuality() > Unsupported MSAA type %d", MultiSampleType); return MSAA_None;
+		default:						Sys::Error("CD3D9DriverFactory::D3DMSAAParamsToMSAAQuality() > Unsupported MSAA type {}"_format(fmt::underlying(MultiSampleType))); return MSAA_None;
 	}
 }
 //---------------------------------------------------------------------

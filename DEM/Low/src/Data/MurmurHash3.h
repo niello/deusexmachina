@@ -20,6 +20,9 @@
 #else
 	#include <stdint.h>
 #endif
+#if __cplusplus >= 202002L
+#include <bit>
+#endif
 
 #if defined(_MSC_VER)
 	#define FORCE_INLINE    __forceinline

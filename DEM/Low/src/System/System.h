@@ -26,23 +26,23 @@ namespace Sys
 		MBB_No		= 0x40
 	};
 
-	typedef void (*FLogHandler)(EMsgType Type, const char* pMessage);
+	typedef void (*FLogHandler)(EMsgType Type, std::string_view Message);
 
 	// Assertions and program termination
 	void			DebugBreak();
-	void			Crash(const char* pFile, int Line, const char* pMessage);
+	void			Crash(const char* pFile, int Line, std::string_view Message);
 	bool			TraceStack(char* pTrace, unsigned int MaxLength);
-	bool			ReportAssertionFailure(const char* pExpression, const char* pMessage, const char* pFile, int Line, const char* pFunc = nullptr);
-	void __cdecl	Error(const char* pMsg, ...) __attribute__((format(printf, 1, 2)));
+	bool			ReportAssertionFailure(const char* pExpression, std::string_view Message, const char* pFile, int Line, const char* pFunc = nullptr);
+	void            Error(std::string_view Message);
 	//!!!need non-terminating error!
 
 	// Logging
-	void __cdecl	Log(const char* pMsg, ...) __attribute__((format(printf, 1, 2)));
-	void __cdecl	DbgOut(const char* pMsg, ...) __attribute__((format(printf, 1, 2)));
-	void __cdecl	Message(const char* pMsg, ...) __attribute__((format(printf, 1, 2)));
+	void            Log(std::string_view Message);
+	void            DbgOut(std::string_view Message);
+	void            Message(std::string_view Message);
 
 	// System UI
-	EMsgBoxButton	ShowMessageBox(EMsgType Type, const char* pHeaderText, const char* pMessage, unsigned int Buttons = MBB_OK);
+	EMsgBoxButton	ShowMessageBox(EMsgType Type, std::string_view HeaderText, std::string_view Message, unsigned int Buttons = MBB_OK);
 
 	// Threading
 	void			Sleep(unsigned long MSec); //!!!???to Thread namespace/class?!

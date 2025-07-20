@@ -11,6 +11,9 @@
 #endif
 #endif
 
+#if __cplusplus >= 202002L
+#include <bit>
+#endif
 #if DEM_BMI2 || DEM_F16C
 #include <immintrin.h>
 #endif

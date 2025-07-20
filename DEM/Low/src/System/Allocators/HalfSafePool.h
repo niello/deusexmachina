@@ -42,7 +42,7 @@ public:
 	{
 		const auto CurrAllocatedCount = _CurrAllocatedCount.load();
 		if (CurrAllocatedCount > 0)
-			::Sys::Error("~CHalfSafePoolAllocator() > %d unreleased records\n", CurrAllocatedCount);
+			::Sys::Error("~CHalfSafePoolAllocator() > {} unreleased records\n"_format(CurrAllocatedCount));
 	}
 #endif
 

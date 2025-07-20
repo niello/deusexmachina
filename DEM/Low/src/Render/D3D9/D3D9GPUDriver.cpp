@@ -957,7 +957,7 @@ bool CD3D9GPUDriver::CreateD3DDevice(UPTR CurrAdapterID, EGPUDriverType CurrDriv
 
 	if (FAILED(hr))
 	{
-		Sys::Log("Failed to create Direct3D9 device object, hr = 0x%x!\n", hr);
+		Sys::Log("Failed to create Direct3D9 device object, hr = 0x{:x}!\n"_format(hr));
 		FAIL;
 	}
 
@@ -2522,7 +2522,7 @@ PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 	}
 	else
 	{
-		Sys::Error("CD3D9GPUDriver::CreateTexture() > Unknown texture type %d\n", Desc.Type);
+		Sys::Error("CD3D9GPUDriver::CreateTexture() > Unknown texture type {}\n"_format(fmt::underlying(Desc.Type)));
 		return nullptr;
 	}
 
@@ -3891,7 +3891,7 @@ bool CD3D9GPUDriver::OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, cons
 {
 #ifdef _DEBUG // Check that it is fullscreen and SC is implicit
 	DEM::Sys::COSWindow* pWnd = (DEM::Sys::COSWindow*)pDispatcher;
-	Sys::DbgOut("CD3D9GPUDriver::OnOSWindowPaint() from %s\n", pWnd->GetTitle());
+	Sys::DbgOut("CD3D9GPUDriver::OnOSWindowPaint() from {}\n"_format(pWnd->GetTitle()));
 	for (UPTR i = 0; i < SwapChains.size(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];

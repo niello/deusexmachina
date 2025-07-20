@@ -2,16 +2,20 @@
 #include "StdCfg.h"
 #include <System/Memory.h>
 #include <tracy/Tracy.hpp>
+#include <fmt/format.h>
 #include <stdint.h>
 #include <vector>
 #include <set>
 #include <functional>
 #include <algorithm>
-#if __cplusplus >= 202002L
-#include <bit>
-#endif
 
 using namespace std::string_view_literals;
+using namespace fmt::literals;
+auto operator"" _format(const char* s, size_t n) {
+	return [=](auto&&... args) {
+		return fmt::format(fmt::runtime(std::string_view(s, n)), args...);
+	};
+}
 
 #define OK   return true
 #define FAIL return false

@@ -107,7 +107,7 @@ n_assert(false);
 
 	if (FAILED(pGraphBuilder->RenderFile(WidePath, nullptr)))
 	{
-		Sys::Error("CVideoServer::PlayFile(): could not render file '%s'", Path.CStr());
+		Sys::Error("CVideoServer::PlayFile(): could not render file '{}'"_format(Path.CStr()));
 		FAIL;
 	}
 

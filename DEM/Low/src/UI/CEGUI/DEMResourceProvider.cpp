@@ -40,7 +40,7 @@ void CDEMResourceProvider::loadRawDataContainer(const String& filename, RawDataC
 		if (BytesRead != Size)
 		{
 			n_delete_array(pBuffer);
-			Sys::Error("CDEMResourceProvider::loadRawDataContainer() > a problem occurred while reading file: %s", Filename.c_str());
+			Sys::Error("CDEMResourceProvider::loadRawDataContainer() > a problem occurred while reading file: {}"_format(Filename));
 		}
 		File->Close();
 
@@ -49,7 +49,7 @@ void CDEMResourceProvider::loadRawDataContainer(const String& filename, RawDataC
 	}
 	else
 	{
-		Sys::Error("CDEMResourceProvider::loadRawDataContainer() > can't open file: %s", Filename.c_str());
+		Sys::Error("CDEMResourceProvider::loadRawDataContainer() > can't open file: {}"_format(Filename));
 	}
 }
 //---------------------------------------------------------------------

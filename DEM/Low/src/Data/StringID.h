@@ -73,6 +73,8 @@ inline bool operator ==(CStringID a, std::string_view b)
 	return a.ToStringView() == b;
 }
 
+inline auto format_as(CStringID ID) { return ID.ToStringView(); }
+
 }
 
 typedef Data::CStringID CStrID;

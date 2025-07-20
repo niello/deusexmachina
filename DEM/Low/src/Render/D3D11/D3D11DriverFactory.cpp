@@ -802,7 +802,7 @@ EMSAAQuality CD3D11DriverFactory::D3DMSAAParamsToMSAAQuality(DXGI_SAMPLE_DESC Sa
 		case 2:		return MSAA_2x;
 		case 4:		return MSAA_4x;
 		case 8:		return MSAA_8x;
-		default:	Sys::Error("CD3D11DriverFactory::D3DMSAAParamsToMSAAQuality() > Unsupported MSAA type %d", SampleDesc.Count); return MSAA_None;
+		default:	Sys::Error("CD3D11DriverFactory::D3DMSAAParamsToMSAAQuality() > Unsupported MSAA type {}"_format(SampleDesc.Count)); return MSAA_None;
 	}
 }
 //---------------------------------------------------------------------

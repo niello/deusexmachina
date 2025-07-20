@@ -200,9 +200,9 @@ PResourceCreator CResourceManager::GetDefaultCreator(const char* pFmtExtension, 
 	if (!pRec)
 	{
 		if (pRsrcType)
-			Sys::Error("CResourceManager::GetDefaultCreator() > no record for extension '%s' and type '%s'\n", Ext.CStr(), pRsrcType->GetName().c_str());
+			Sys::Error("CResourceManager::GetDefaultCreator() > no record for extension '{}' and type '{}'\n"_format(Ext, pRsrcType->GetName()));
 		else
-			Sys::Error("CResourceManager::GetDefaultCreator() > no record for extension '%s'\n", Ext.CStr());
+			Sys::Error("CResourceManager::GetDefaultCreator() > no record for extension '{}'\n"_format(Ext));
 		return nullptr;
 	}
 

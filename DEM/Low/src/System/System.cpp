@@ -7,7 +7,7 @@ namespace Sys
 {
 static FLogHandler pLogHandler = nullptr;
 
-extern void DefaultLogHandler(EMsgType Type, const char* pMessage);
+extern void DefaultLogHandler(EMsgType Type, std::string_view Message);
 
 void DebugBreak()
 {
@@ -15,108 +15,98 @@ void DebugBreak()
 }
 //---------------------------------------------------------------------
 
-void Crash(const char* pFile, int Line, const char* pMessage)
+void Crash(const char* pFile, int Line, std::string_view Message)
 {
 #ifdef _DEBUG
-	int CRTReportMode = _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_WNDW);
+	const int CRTReportMode = _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_WNDW);
 	_CrtSetReportMode(_CRT_ERROR, CRTReportMode);
 
-	int Result = _CrtDbgReport(_CRT_ERROR, pFile, Line, "DeusExMachina game engine", pMessage);
-	if (Result == 0 && CRTReportMode & _CRTDBG_MODE_WNDW) return;
-	else if (Result == 1) _CrtDbgBreak();
+	const int Result = _CrtDbgReport(_CRT_ERROR, pFile, Line, "DeusExMachina game engine", std::string(Message).c_str());
+	if (Result == 0 && (CRTReportMode & _CRTDBG_MODE_WNDW))
+		return;
+	else if (Result == 1)
+		_CrtDbgBreak();
 #endif
 
 	abort();
 }
 //---------------------------------------------------------------------
 
-bool ReportAssertionFailure(const char* pExpression, const char* pMessage, const char* pFile, int Line, const char* pFunc)
+bool ReportAssertionFailure(const char* pExpression, std::string_view Message, const char* pFile, int Line, const char* pFunc)
 {
-	const char* pMsg = pMessage ? pMessage : "none";
+	char TraceBuf[4096];
+	const auto Trace = Sys::TraceStack(TraceBuf, sizeof(TraceBuf)) ? std::string_view(TraceBuf) : std::string_view{};
 
-	CString Buffer;
-	Buffer.Format("*** DEM ASSERTION FAILED ***\nMessage:    %s\nExpression: %s\nFile:       %s\nLine:       %d\nFunction:   %s\n", pMsg, pExpression, pFile, Line, pFunc);
+	const auto InfoBlockStr =
+"Message:    {}\
+Expression: {}\
+File:       {}\
+Line:       {}\
+Function:   {}"_format(Message.empty() ? "none"sv : Message, pExpression, pFile, Line, pFunc);
 
-	char Trace[4096];
-	if (Sys::TraceStack(Trace, sizeof(Trace)))
+	// Log
 	{
-		Buffer += "Call stack:\n";
-		Buffer += Trace;
+		auto LogMsg = "*** DEM ASSERTION FAILED ***\n{}"_format(InfoBlockStr);
+		if (!Trace.empty())
+		{
+			LogMsg.append("\nCall stack:\n");
+			LogMsg.append(Trace);
+		}
+
+		if (!pLogHandler) pLogHandler = DefaultLogHandler;
+		(*pLogHandler)(MsgType_Error, LogMsg);
 	}
 
-	if (!pLogHandler) pLogHandler = DefaultLogHandler;
-	(*pLogHandler)(MsgType_Error, Buffer.CStr());
-
-	Buffer.Format("*** DEM ASSERTION FAILED ***\n\nPRESS OK TO CONTINUE EXECUTION\n\nMessage: %s\nExpression: %s\nFile: %s\nLine: %d\nFunction: %s\n", pMsg, pExpression, pFile, Line, pFunc);
-
-	// Clamp text to fit into a message box
-	//!!!need CString::SetLength/Truncate!
-	Trace[1600] = 0;
-	if (Trace[0])
+	// Message box
 	{
-		Buffer += "\nCall stack:\n";
-		Buffer += Trace;
-	}
+		auto MsgBoxMsg =
+			"*** DEM ASSERTION FAILED ***\
+\
+PRESS OK TO CONTINUE EXECUTION\
+\
+{}\n"_format(InfoBlockStr);
+		if (!Trace.empty())
+		{
+			MsgBoxMsg.append("\nCall stack:\n");
+			MsgBoxMsg.append(Trace);
+		}
 
-	return Sys::ShowMessageBox(MsgType_Error, nullptr, Buffer.CStr(), MBB_OK | MBB_Cancel) != MBB_OK;
+		const auto Result = Sys::ShowMessageBox(MsgType_Error, {}, MsgBoxMsg, MBB_OK | MBB_Cancel);
+
+		return Result != MBB_OK;
+	}
 }
 //---------------------------------------------------------------------
 
 // Critical error, program will be closed
-void __cdecl Error(const char* pMsg, ...)
+void Error(std::string_view Message)
 {
-	CString Buffer;
-	va_list Args;
-	va_start(Args, pMsg);
-	Buffer.FormatWithArgs(pMsg, Args);
-	va_end(Args);
-
 	if (!pLogHandler) pLogHandler = DefaultLogHandler;
-	(*pLogHandler)(MsgType_Error, Buffer.CStr());
+	(*pLogHandler)(MsgType_Error, Message);
 
 	//!!!file and line must be passed here in context!
-	Crash(__FILE__, __LINE__, Buffer.CStr());
+	Crash(__FILE__, __LINE__, Message);
 }
 //---------------------------------------------------------------------
 
-void __cdecl Log(const char* pMsg, ...)
+void Log(std::string_view Message)
 {
-	if (!pMsg || !*pMsg) return;
-
-	CString Buffer;
-	va_list Args;
-	va_start(Args, pMsg);
-	Buffer.FormatWithArgs(pMsg, Args);
-	va_end(Args);
-
 	if (!pLogHandler) pLogHandler = DefaultLogHandler;
-	(*pLogHandler)(MsgType_Log, Buffer.CStr());
+	(*pLogHandler)(MsgType_Log, Message);
 }
 //---------------------------------------------------------------------
 
-void __cdecl DbgOut(const char* pMsg, ...)
+void DbgOut(std::string_view Message)
 {
-	CString Buffer;
-	va_list Args;
-	va_start(Args, pMsg);
-	Buffer.FormatWithArgs(pMsg, Args);
-	va_end(Args);
-
 	if (!pLogHandler) pLogHandler = DefaultLogHandler;
-	(*pLogHandler)(MsgType_DbgOut, Buffer.CStr());
+	(*pLogHandler)(MsgType_DbgOut, Message);
 }
 //---------------------------------------------------------------------
 
-void __cdecl Message(const char* pMsg, ...)
+void Message(std::string_view Message)
 {
-	CString Buffer;
-	va_list Args;
-	va_start(Args, pMsg);
-	Buffer.FormatWithArgs(pMsg, Args);
-	va_end(Args);
-
 	if (!pLogHandler) pLogHandler = DefaultLogHandler;
-	(*pLogHandler)(MsgType_Message, Buffer.CStr());
+	(*pLogHandler)(MsgType_Message, Message);
 }
 //---------------------------------------------------------------------
 

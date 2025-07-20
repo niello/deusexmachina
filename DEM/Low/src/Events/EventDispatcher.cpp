@@ -81,7 +81,7 @@ void CEventDispatcher::Unsubscribe(CEventID ID, CEventHandler* pHandler)
 	auto It = Handlers.find(ID);
 	if (It == Handlers.cend())
 	{
-		::Sys::Error("Subscription on '%s' not found, perhaps double unsubscription occurred", ID.ID);
+		::Sys::Error("Subscription on '{}' not found, perhaps double unsubscription occurred"_format(ID.ID));
 		return;
 	}
 
