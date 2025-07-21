@@ -116,8 +116,6 @@ CApplication::CApplication(Sys::IPlatform& _Platform)
 	, _JobSystem({ DEM::Jobs::CWorkerConfig::Default(4), DEM::Jobs::CWorkerConfig::Sleepy(4) })
 #endif
 {
-	// check multiple instances
-
 	// create default file system from platform
 	// setup hard assigns from platform and application
 

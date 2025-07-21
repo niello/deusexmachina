@@ -33,7 +33,7 @@ private:
 	std::vector<CFSRecord>                  FileSystems;
 	std::map<std::string, std::string, std::less<>> Assigns;
 
-	const char*		GetFSLocalPath(const CFSRecord& Rec, const char* pPath, IPTR ColonIndex) const;
+	const char*		GetFSLocalPath(const CFSRecord& Rec, const char* pPath, size_t ColonIndex) const;
 
 public:
 

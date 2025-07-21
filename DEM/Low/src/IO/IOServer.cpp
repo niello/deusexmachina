@@ -59,14 +59,23 @@ UPTR CIOServer::UnmountFileSystems(const char* pName)
 }
 //---------------------------------------------------------------------
 
-const char* CIOServer::GetFSLocalPath(const CFSRecord& Rec, const char* pPath, IPTR ColonIndex) const
+const char* CIOServer::GetFSLocalPath(const CFSRecord& Rec, const char* pPath, size_t ColonIndex) const
 {
 	// Invalid arguments
-	if (!pPath || ColonIndex < -1) return nullptr;
+	if (!pPath) return nullptr;
 
-	if (ColonIndex > 0 && !Rec.Name.empty() && strncmp(pPath, Rec.Name.c_str(), ColonIndex)) return nullptr;
+	const char* pLocalPath;
+	if (ColonIndex != std::string::npos)
+	{
+		// Check file system ID
+		if (ColonIndex > 0 && !Rec.Name.empty() && strncmp(pPath, Rec.Name.c_str(), ColonIndex)) return nullptr;
 
-	const char* pLocalPath = pPath + (ColonIndex + 1);
+		pLocalPath = pPath + (ColonIndex + 1);
+	}
+	else
+	{
+		pLocalPath = pPath;
+	}
 
 	const UPTR RootPathLen = Rec.RootPath.size();
 	if (RootPathLen)
@@ -93,7 +102,7 @@ const char* CIOServer::GetFSLocalPath(const CFSRecord& Rec, const char* pPath, I
 bool CIOServer::FileExists(const char* pPath) const
 {
 	const std::string Path = ResolveAssigns(pPath);
-	const IPTR ColonIdx = Path.find(':');
+	const auto ColonIdx = Path.find(':');
 	for (auto& Rec : FileSystems)
 	{
 		const char* pLocalPath = GetFSLocalPath(Rec, Path.c_str(), ColonIdx);
@@ -106,7 +115,7 @@ bool CIOServer::FileExists(const char* pPath) const
 bool CIOServer::IsFileReadOnly(const char* pPath) const
 {
 	const std::string Path = ResolveAssigns(pPath);
-	const IPTR ColonIdx = Path.find(':');
+	const auto ColonIdx = Path.find(':');
 	for (auto& Rec : FileSystems)
 	{
 		const char* pLocalPath = GetFSLocalPath(Rec, Path.c_str(), ColonIdx);
@@ -120,7 +129,7 @@ bool CIOServer::IsFileReadOnly(const char* pPath) const
 bool CIOServer::SetFileReadOnly(const char* pPath, bool ReadOnly) const
 {
 	const std::string Path = ResolveAssigns(pPath);
-	const IPTR ColonIdx = Path.find(':');
+	const auto ColonIdx = Path.find(':');
 	for (auto& Rec : FileSystems)
 	{
 		const char* pLocalPath = GetFSLocalPath(Rec, Path.c_str(), ColonIdx);
@@ -134,7 +143,7 @@ bool CIOServer::SetFileReadOnly(const char* pPath, bool ReadOnly) const
 bool CIOServer::DeleteFile(const char* pPath) const
 {
 	const std::string Path = ResolveAssigns(pPath);
-	const IPTR ColonIdx = Path.find(':');
+	const auto ColonIdx = Path.find(':');
 	for (auto& Rec : FileSystems)
 	{
 		const char* pLocalPath = GetFSLocalPath(Rec, Path.c_str(), ColonIdx);
@@ -151,8 +160,8 @@ bool CIOServer::CopyFile(const char* pSrcPath, const char* pDestPath)
 
 	// Try to copy inside a single FS
 
-	const IPTR SrcColonIdx = SrcPath.find(':');
-	const IPTR DestColonIdx = DestPath.find(':');
+	const auto SrcColonIdx = SrcPath.find(':');
+	const auto DestColonIdx = DestPath.find(':');
 	for (auto& Rec : FileSystems)
 	{
 		const char* pLocalSrcPath = GetFSLocalPath(Rec, SrcPath.c_str(), SrcColonIdx);
@@ -227,7 +236,7 @@ U64 CIOServer::GetFileWriteTime(const char* pPath) const
 bool CIOServer::DirectoryExists(const char* pPath) const
 {
 	const std::string Path = ResolveAssigns(pPath);
-	const IPTR ColonIdx = Path.find(':');
+	const auto ColonIdx = Path.find(':');
 	for (auto& Rec : FileSystems)
 	{
 		const char* pLocalPath = GetFSLocalPath(Rec, Path.c_str(), ColonIdx);
@@ -240,7 +249,7 @@ bool CIOServer::DirectoryExists(const char* pPath) const
 bool CIOServer::CreateDirectory(const char* pPath) const
 {
 	const std::string Path = ResolveAssigns(pPath);
-	const IPTR ColonIdx = Path.find(':');
+	const auto ColonIdx = Path.find(':');
 	for (auto& Rec : FileSystems)
 	{
 		const char* pLocalPath = GetFSLocalPath(Rec, Path.c_str(), ColonIdx);
@@ -253,7 +262,7 @@ bool CIOServer::CreateDirectory(const char* pPath) const
 bool CIOServer::DeleteDirectory(const char* pPath) const
 {
 	const std::string Path = ResolveAssigns(pPath);
-	const IPTR ColonIdx = Path.find(':');
+	const auto ColonIdx = Path.find(':');
 	for (auto& Rec : FileSystems)
 	{
 		const char* pLocalPath = GetFSLocalPath(Rec, Path.c_str(), ColonIdx);
@@ -295,7 +304,7 @@ bool CIOServer::CopyDirectory(const char* pSrcPath, const char* pDestPath, bool 
 void* CIOServer::OpenFile(PFileSystem& OutFS, const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern) const
 {
 	const std::string Path = ResolveAssigns(pPath);
-	const IPTR ColonIdx = Path.find(':');
+	const auto ColonIdx = Path.find(':');
 
 	for (auto& Rec : FileSystems)
 	{
@@ -317,7 +326,7 @@ void* CIOServer::OpenFile(PFileSystem& OutFS, const char* pPath, EStreamAccessMo
 void* CIOServer::OpenDirectory(const char* pPath, const char* pFilter, PFileSystem& OutFS, std::string& OutName, EFSEntryType& OutType) const
 {
 	const std::string Path = ResolveAssigns(pPath);
-	const IPTR ColonIdx = Path.find(':');
+	const auto ColonIdx = Path.find(':');
 
 	for (auto& Rec : FileSystems)
 	{
@@ -341,7 +350,7 @@ PStream CIOServer::CreateStream(const char* pPath, EStreamAccessMode Mode, EStre
 	const std::string Path = ResolveAssigns(pPath);
 	if (Path.empty()) return nullptr;
 
-	const IPTR ColonIdx = Path.find(':');
+	const auto ColonIdx = Path.find(':');
 
 	IFileSystem* pFS = nullptr;
 	const char* pLocalPath = nullptr;
@@ -400,16 +409,17 @@ std::string CIOServer::ResolveAssigns(const char* pPath) const
 	std::string PathString(pPath);
 	std::replace(PathString.begin(), PathString.end(), '\\', '/');
 
-	IPTR ColonIdx;
+	auto ColonIdx = PathString.find(':');
 
 	// Ignore one character "assigns" because they are really DOS drive letters
-	while ((ColonIdx = PathString.find(':')) > 1)
+	while (ColonIdx != std::string::npos && ColonIdx > 1)
 	{
 		std::string Assign = PathString.substr(0, ColonIdx);
 		std::transform(Assign.begin(), Assign.end(), Assign.begin(), [](unsigned char c) { return std::tolower(c); });
 		auto It = Assigns.find(Assign); // FIXME: case-insensitive search in a map?
 		if (It == Assigns.cend()) break;
 		PathString = It->second + PathString.substr(ColonIdx + 1, PathString.size() - (ColonIdx + 1));
+		ColonIdx = PathString.find(':');
 	}
 
 	PathString = PathUtils::CollapseDots(PathString.c_str(), PathString.size());

@@ -154,7 +154,7 @@ PResourceCreator CResourceManager::GetDefaultCreator(CStrID UID, const DEM::Core
 	std::string Ext(PathUtils::GetExtension(UID.CStr()));
 	if (!Ext.empty())
 	{
-		IPTR SharpIdx = Ext.find('#');
+		const auto SharpIdx = Ext.find('#');
 		if (SharpIdx != std::string::npos)
 			Ext.resize(SharpIdx);
 	}
