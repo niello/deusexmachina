@@ -16,8 +16,8 @@ class CAppStateVideo: public CStateHandler
 
 private:
 
-	CStrID	NextState;
-	CString	VideoFileName;
+	CStrID	    NextState;
+	std::string	VideoFileName;
 
 public:
 
@@ -31,7 +31,7 @@ public:
 	void			SetNextState(CStrID State) { NextState = State; }
 	CStrID			GetNextState() const { return NextState; }
 	void			SetVideoFile(const char* pFileName) { VideoFileName = pFileName; }
-	const CString&	GetVideoFile() const { return VideoFileName; }
+	const auto&     GetVideoFile() const { return VideoFileName; }
 };
 
 }

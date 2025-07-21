@@ -22,67 +22,67 @@ bool CFileSystemNative::Init()
 	if (!pFS) FAIL;
 
 	// Empty root mounts all the host FS, which always exists logically
-	if (!Root.IsValid()) OK;
+	if (Root.empty()) OK;
 
 	PathUtils::EnsurePathHasEndingDirSeparator(Root);
 
-	if (pFS->DirectoryExists(Root.CStr())) OK;
+	if (pFS->DirectoryExists(Root.c_str())) OK;
 
-	return pFS->CreateDirectory(Root.CStr());
+	return pFS->CreateDirectory(Root.c_str());
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::FileExists(const char* pPath)
 {
-	return pFS->FileExists((Root + pPath).CStr());
+	return pFS->FileExists((Root + pPath).c_str());
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::IsFileReadOnly(const char* pPath)
 {
-	return _ReadOnly || pFS->IsFileReadOnly((Root + pPath).CStr());
+	return _ReadOnly || pFS->IsFileReadOnly((Root + pPath).c_str());
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::SetFileReadOnly(const char* pPath, bool ReadOnly)
 {
-	return (!_ReadOnly || ReadOnly) && pFS->SetFileReadOnly((Root + pPath).CStr(), ReadOnly);
+	return (!_ReadOnly || ReadOnly) && pFS->SetFileReadOnly((Root + pPath).c_str(), ReadOnly);
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::DeleteFile(const char* pPath)
 {
-	return !_ReadOnly && pFS->DeleteFile((Root + pPath).CStr());
+	return !_ReadOnly && pFS->DeleteFile((Root + pPath).c_str());
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::CopyFile(const char* pSrcPath, const char* pDestPath)
 {
-	return !_ReadOnly && pFS->CopyFile((Root + pSrcPath).CStr(), (Root + pDestPath).CStr());
+	return !_ReadOnly && pFS->CopyFile((Root + pSrcPath).c_str(), (Root + pDestPath).c_str());
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::DirectoryExists(const char* pPath)
 {
-	return pFS->DirectoryExists((Root + pPath).CStr());
+	return pFS->DirectoryExists((Root + pPath).c_str());
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::CreateDirectory(const char* pPath)
 {
-	return !_ReadOnly && pFS->CreateDirectory((Root + pPath).CStr());
+	return !_ReadOnly && pFS->CreateDirectory((Root + pPath).c_str());
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::DeleteDirectory(const char* pPath)
 {
-	return !_ReadOnly && pFS->DeleteDirectory((Root + pPath).CStr());
+	return !_ReadOnly && pFS->DeleteDirectory((Root + pPath).c_str());
 }
 //---------------------------------------------------------------------
 
-void* CFileSystemNative::OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, EFSEntryType& OutType)
+void* CFileSystemNative::OpenDirectory(const char* pPath, const char* pFilter, std::string& OutName, EFSEntryType& OutType)
 {
-	return pFS->OpenDirectory((Root + pPath).CStr(), pFilter, OutName, OutType);
+	return pFS->OpenDirectory((Root + pPath).c_str(), pFilter, OutName, OutType);
 }
 //---------------------------------------------------------------------
 
@@ -92,7 +92,7 @@ void CFileSystemNative::CloseDirectory(void* hDir)
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNative::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryType& OutType)
+bool CFileSystemNative::NextDirectoryEntry(void* hDir, std::string& OutName, EFSEntryType& OutType)
 {
 	return pFS->NextDirectoryEntry(hDir, OutName, OutType);
 }
@@ -101,7 +101,7 @@ bool CFileSystemNative::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntr
 void* CFileSystemNative::OpenFile(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
 	if (_ReadOnly && (Mode & (EStreamAccessMode::SAM_WRITE | EStreamAccessMode::SAM_APPEND))) return nullptr;
-	return pFS->OpenFile((Root + pPath).CStr(), Mode, Pattern);
+	return pFS->OpenFile((Root + pPath).c_str(), Mode, Pattern);
 }
 //---------------------------------------------------------------------
 

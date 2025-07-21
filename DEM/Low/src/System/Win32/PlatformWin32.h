@@ -14,7 +14,7 @@ namespace Input
 	typedef Ptr<class CInputDeviceWin32> PInputDeviceWin32;
 }
 
-namespace DEM { namespace Sys
+namespace DEM::Sys
 {
 class COSFileSystemWin32;
 
@@ -57,7 +57,7 @@ public:
 	CPlatformWin32(HINSTANCE hInstance);
 	~CPlatformWin32();
 
-	virtual CString			GetOSUserName() const override;
+	virtual std::string		GetOSUserName() const override;
 	virtual bool			CheckAlreadyRunning(const char* pAppName) override;
 
 	virtual double			GetSystemTime() const override;
@@ -68,11 +68,11 @@ public:
 	//virtual POSConsoleWindow CreateConsoleWindow() override; // AllocConsole, SetConsoleTitle etc
 
 	virtual IOSFileSystem*	GetFileSystemInterface() const override;
-	virtual bool			GetSystemFolderPath(ESystemFolder Code, CString& OutPath) const override;
+	virtual bool			GetSystemFolderPath(ESystemFolder Code, std::string& OutPath) const override;
 
 	virtual bool			Update() override;
 };
 
-}}
+}
 
 #endif

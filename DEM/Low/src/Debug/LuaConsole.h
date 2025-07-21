@@ -27,7 +27,7 @@ protected:
 
 	CEGUI::Event::Connection	ConnOnShow;
 
-	std::vector<CString>				CmdHistory;
+	std::vector<std::string>	CmdHistory;
 	UPTR						CmdHistoryCursor;
 
 	void Init();

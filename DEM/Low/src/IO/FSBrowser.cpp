@@ -1,6 +1,6 @@
 #include "FSBrowser.h"
-
 #include <IO/IOServer.h>
+#include <Data/StringUtils.h>
 
 namespace IO
 {
@@ -8,7 +8,7 @@ namespace IO
 bool CFSBrowser::ForceToFirstEntry()
 {
 	if (hDir) FS->CloseDirectory(hDir);
-	hDir = IOSrv->OpenDirectory(CurrPath.CStr(), nullptr, FS, CurrEntryName, CurrEntryType);
+	hDir = IOSrv->OpenDirectory(CurrPath.c_str(), nullptr, FS, CurrEntryName, CurrEntryType);
 	AtFirstEntry = true;
 	return !!hDir;
 }
@@ -16,18 +16,18 @@ bool CFSBrowser::ForceToFirstEntry()
 
 bool CFSBrowser::SetRelativePath(const char* pPath)
 {
-	n_assert(CurrPath.IsValid());
-	CurrPath.Trim(" \r\n\t\\/", false);
-	return SetAbsolutePath((CurrPath + "/" + pPath).CStr());
+	n_assert(!CurrPath.empty());
+	CurrPath = StringUtils::TrimRight(CurrPath, " \r\n\t\\/");
+	return SetAbsolutePath((CurrPath + "/" + pPath).c_str());
 }
 //---------------------------------------------------------------------
 
-bool CFSBrowser::ListCurrDirContents(std::vector<CString>& OutContents, UPTR EntryTypes, const char* pFilter)
+bool CFSBrowser::ListCurrDirContents(std::vector<std::string>& OutContents, UPTR EntryTypes, const char* pFilter)
 {
 	AtFirstEntry = false;
 
 	if (hDir) FS->CloseDirectory(hDir);
-	hDir = IOSrv->OpenDirectory(CurrPath.CStr(), pFilter, FS, CurrEntryName, CurrEntryType);
+	hDir = IOSrv->OpenDirectory(CurrPath.c_str(), pFilter, FS, CurrEntryName, CurrEntryType);
 	if (!hDir) FAIL;
 
 	while (CurrEntryType != FSE_NONE)

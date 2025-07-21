@@ -40,10 +40,10 @@ private:
 		T_STRID
 	};
 	
-	std::vector<CString>	TableID;
-	std::vector<CString>	TableRW;
-	std::vector<CString>	TableDlm;
-	std::vector<CData>	TableConst;
+	std::vector<std::string> TableID;
+	std::vector<std::string> TableRW;
+	std::vector<std::string> TableDlm;
+	std::vector<CData>       TableConst;
 
 	const char*		LexerCursor;
 	const char*		EndOfBuffer;
@@ -56,7 +56,7 @@ private:
 					
 	UPTR			ParserCursor;
 
-	CString*		pErr;
+	std::string*	pErr;
 	
 	// Lexical analysis
 	//!!!void SetupRWAndDlm();
@@ -72,7 +72,7 @@ private:
 	bool LexProcessCommentBlock();
 	void DlmMatchChar(char Char, int Index, int Start, int End, int& MatchStart, int& MatchEnd);
 	void SkipSpaces();
-	void AddConst(std::vector<CToken>& Tokens, const CString& Const, EType Type);
+	void AddConst(std::vector<CToken>& Tokens, const std::string& Const, EType Type);
 	
 	// Syntax analysis
 	bool ParseTokenStream(const std::vector<CToken>& Tokens, CParams& Output);
@@ -86,7 +86,7 @@ public:
 
 	CHRDParser();
 
-	bool ParseBuffer(const char* Buffer, UPTR Length, CParams& Result, CString* pErrors = nullptr);
+	bool ParseBuffer(const char* Buffer, UPTR Length, CParams& Result, std::string* pErrors = nullptr);
 };
 
 }

@@ -24,14 +24,14 @@ private:
 	struct CFSRecord
 	{
 		PFileSystem	FS;
-		CString		Name;
-		CString		RootPath;
+		std::string		Name;
+		std::string		RootPath;
 
 		//~CFSRecord();
 	};
 
 	std::vector<CFSRecord>                  FileSystems;
-	std::map<CString, CString, std::less<>> Assigns;
+	std::map<std::string, std::string, std::less<>> Assigns;
 
 	const char*		GetFSLocalPath(const CFSRecord& Rec, const char* pPath, IPTR ColonIndex) const;
 
@@ -57,13 +57,13 @@ public:
 	bool			CopyDirectory(const char* pSrcPath, const char* pDestPath, bool Recursively);
 
 	void*			OpenFile(PFileSystem& OutFS, const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) const;
-	void*			OpenDirectory(const char* pPath, const char* pFilter, PFileSystem& OutFS, CString& OutName, EFSEntryType& OutType) const;
+	void*			OpenDirectory(const char* pPath, const char* pFilter, PFileSystem& OutFS, std::string& OutName, EFSEntryType& OutType) const;
 
 	PStream			CreateStream(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) const;
 
 	void			SetAssign(const char* pAssign, const char* pPath);
-	CString			GetAssign(const char* pAssign) const;
-	CString			ResolveAssigns(const char* pPath) const;
+	std::string			GetAssign(const char* pAssign) const;
+	std::string			ResolveAssigns(const char* pPath) const;
 };
 
 }

@@ -80,9 +80,9 @@ protected:
 	std::unique_ptr<IO::CIOServer> IOServer; //???rename to IOService?
 	std::unique_ptr<Resources::CResourceManager> ResMgr;
 
-	CString WritablePath;
-	CString UserSettingsTemplate;
-	CString GlobalSettingsPath;
+	std::string WritablePath;
+	std::string UserSettingsTemplate;
+	std::string GlobalSettingsPath;
 
 	Data::PParams GlobalSettings;
 	Data::PParams OverrideSettings; // From a command line

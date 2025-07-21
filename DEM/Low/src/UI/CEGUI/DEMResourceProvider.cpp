@@ -108,7 +108,7 @@ size_t CDEMResourceProvider::getResourceGroupFileNames(std::vector<String>& out_
     size_t Entries = 0;
 
 	IO::PFileSystem FS;
-	CString EntryName;
+	std::string EntryName;
 	IO::EFSEntryType EntryType;
 	void* hDir = IOSrv->OpenDirectory(DirNameStr.c_str(), "", FS, EntryName, EntryType);
 	if (hDir)
@@ -117,10 +117,10 @@ size_t CDEMResourceProvider::getResourceGroupFileNames(std::vector<String>& out_
 		{
 			if (EntryType == IO::FSE_FILE)
 			{
-				CString FullEntryName = DirNameStr.c_str() + EntryName;
-				if (StringUtils::MatchesPattern(FullEntryName.CStr(), Pattern.c_str()))
+				std::string FullEntryName = DirNameStr.c_str() + EntryName;
+				if (StringUtils::MatchesPattern(FullEntryName.c_str(), Pattern.c_str()))
 				{
-					out_vec.push_back(String(FullEntryName.CStr()));
+					out_vec.push_back(String(FullEntryName.c_str()));
 					++Entries;
 				}
 			}

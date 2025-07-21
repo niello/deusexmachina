@@ -1912,7 +1912,7 @@ void CD3D9GPUDriver::EndFrame()
 	std::string RTString;
 	for (UPTR i = 0; i < CurrRT.size(); ++i)
 		if (CurrRT[i].IsValidPtr())
-			RTString.append(StringUtils::FromInt((int)CurrRT[i].Get()));
+			RTString.append(StringUtils::ToString((int)CurrRT[i].Get()));
 	if (DEM::Core::CCoreServer::HasInstance())
 	{
 		CoreSrv->SetGlobal<int>("Render_Primitives_" + RTString, PrimitivesRendered);

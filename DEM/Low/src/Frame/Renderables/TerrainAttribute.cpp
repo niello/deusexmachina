@@ -33,7 +33,7 @@ bool CTerrainAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count
 			case 'CDLD':
 			{
 				_CDLODDataUID = DataReader.Read<CStrID>();
-				_HeightMapUID = CStrID(_CDLODDataUID.CStr() + CString("#HM"));
+				_HeightMapUID = CStrID(_CDLODDataUID.CStr() + std::string("#HM"));
 				break;
 			}
 			case 'MTRL':
@@ -154,17 +154,14 @@ void CTerrainAttribute::UpdateRenderable(CView& View, Render::IRenderable& Rende
 
 		//!!!TODO: store both patches in one mesh, only use different primitive groups (can vary only indices! whole indices and quarter indices)
 		//???maybe render 4 quarterpatches instead of 1 whole? then will be 1 DIP per terrain cluster, with a possibility to merge!
-		CString PatchName;
-		PatchName.Format("#Mesh_Patch%dx%d", PatchSize, PatchSize);
-		CStrID MeshUID(PatchName);
+		CStrID MeshUID("#Mesh_Patch{}x{}"_format(PatchSize, PatchSize));
 		if (!ResMgr.GetResourceManager()->FindResource(MeshUID))
 			ResMgr.GetResourceManager()->RegisterResource(MeshUID.CStr(), n_new(Resources::CMeshGeneratorQuadPatch(PatchSize)));
 
 		pTerrain->PatchMesh = ResMgr.GetMesh(MeshUID);
 
 		const auto QPatchSize = (PatchSize >> 1);
-		PatchName.Format("#Mesh_Patch%dx%d", QPatchSize, QPatchSize);
-		CStrID QuarterMeshUID(PatchName);
+		CStrID QuarterMeshUID("#Mesh_Patch{}x{}"_format(QPatchSize, QPatchSize));
 		if (!ResMgr.GetResourceManager()->FindResource(QuarterMeshUID))
 			ResMgr.GetResourceManager()->RegisterResource(QuarterMeshUID.CStr(), n_new(Resources::CMeshGeneratorQuadPatch(QPatchSize)));
 

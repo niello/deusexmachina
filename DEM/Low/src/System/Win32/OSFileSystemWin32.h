@@ -4,7 +4,7 @@
 
 // Win32 platform-dependent file system access
 
-namespace DEM { namespace Sys
+namespace DEM::Sys
 {
 
 class COSFileSystemWin32 : public IOSFileSystem
@@ -21,9 +21,9 @@ public:
 	virtual bool	CreateDirectory(const char* pPath) override;
 	virtual bool	DeleteDirectory(const char* pPath) override;
 
-	virtual void*	OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, IO::EFSEntryType& OutType) override;
+	virtual void*	OpenDirectory(const char* pPath, const char* pFilter, std::string& OutName, IO::EFSEntryType& OutType) override;
 	virtual void	CloseDirectory(void* hDir) override;
-	virtual bool	NextDirectoryEntry(void* hDir, CString& OutName, IO::EFSEntryType& OutType) override;
+	virtual bool	NextDirectoryEntry(void* hDir, std::string& OutName, IO::EFSEntryType& OutType) override;
 
 	virtual void*	OpenFile(const char* pPath, IO::EStreamAccessMode Mode, IO::EStreamAccessPattern Pattern = IO::SAP_DEFAULT) override;
 	virtual void	CloseFile(void* hFile) override;
@@ -39,6 +39,5 @@ public:
 };
 
 }
-};
 
 #endif

@@ -7,9 +7,9 @@ namespace PathUtils
 // Returns the same path with '.' (this folder) and '..' (parent folder) collapsed where possible.
 // E.g. CollapseDots("One/Two/Three/../../Four") will return "One/Four"
 // All '\' slashes in a path must be converted to '/' before calling this function.
-CString CollapseDots(const char* pPath, UPTR PathLength)
+std::string CollapseDots(const char* pPath, UPTR PathLength)
 {
-	if (!pPath || !*pPath) return CString::Empty;
+	if (!pPath || !*pPath) return {};
 
 	if (!PathLength) PathLength = strlen(pPath);
 
@@ -159,9 +159,9 @@ CString CollapseDots(const char* pPath, UPTR PathLength)
 		++pCurr;
 	}
 
-	if (!CutRegionCount) return CString(pPath, PathLength);
+	if (!CutRegionCount) return std::string(pPath, PathLength);
 
-	CString Result(nullptr, 0, LengthAfterCut);
+	std::string Result(nullptr, 0, LengthAfterCut);
 
 	IPTR RegionIdx;
 	const char* pStart;
@@ -179,15 +179,15 @@ CString CollapseDots(const char* pPath, UPTR PathLength)
 	for (; RegionIdx < CutRegionCount; ++RegionIdx)
 	{
 		const CCutRegion& CurrRegion = CutRegions[RegionIdx];
-		Result.Add(pStart, CurrRegion.pStart - pStart);
+		Result.append(pStart, CurrRegion.pStart - pStart);
 		pStart = CurrRegion.pEnd;
 	}
 
-	if (pStart < pEnd) Result.Add(pStart, pEnd - pStart);
+	if (pStart < pEnd) Result.append(pStart, pEnd - pStart);
 
 	// Skip ending slash if not present in the original path
-	if (Result.GetLength() && *(pEnd - 1) != '/' && Result[Result.GetLength() - 1] == '/')
-		Result.TruncateRight(1);
+	if (Result.size() && *(pEnd - 1) != '/' && Result[Result.size() - 1] == '/')
+		Result.resize(Result.size() - 1);
 
 	return Result;
 }

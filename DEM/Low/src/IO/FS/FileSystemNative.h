@@ -18,7 +18,7 @@ class CFileSystemNative: public IFileSystem
 protected:
 
 	DEM::Sys::IOSFileSystem* pFS;
-	CString Root;
+	std::string Root;
 	bool _ReadOnly;
 
 public:
@@ -39,9 +39,9 @@ public:
 	virtual bool	CreateDirectory(const char* pPath);
 	virtual bool	DeleteDirectory(const char* pPath);
 
-	virtual void*	OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, EFSEntryType& OutType);
+	virtual void*	OpenDirectory(const char* pPath, const char* pFilter, std::string& OutName, EFSEntryType& OutType);
 	virtual void	CloseDirectory(void* hDir);
-	virtual bool	NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryType& OutType);
+	virtual bool	NextDirectoryEntry(void* hDir, std::string& OutName, EFSEntryType& OutType);
 
 	virtual void*	OpenFile(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual void	CloseFile(void* hFile);

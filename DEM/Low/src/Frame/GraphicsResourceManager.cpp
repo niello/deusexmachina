@@ -147,24 +147,6 @@ Render::PShader CGraphicsResourceManager::GetShader(CStrID UID, bool NeedParamTa
 	if (pSubId)
 	{
 		NOT_IMPLEMENTED_MSG("Shader library is deprecated, need a replacement or use NPK/ZIP?");
-		/*
-		// Generated shaders are not supported, must be a file
-		if (pSubId == UID.CStr()) return nullptr;
-
-		// File must be a ShaderLibrary if sub-ID is used
-		CString Path(UID.CStr(), pSubId - UID.CStr());
-		++pSubId; // Skip '#'
-		if (*pSubId == 0) return nullptr;
-
-		Resources::PResource RShaderLibrary = pResMgr->RegisterResource<Render::CShaderLibrary>(CStrID(Path));
-		if (!RShaderLibrary) return nullptr;
-
-		ShaderLibrary = RShaderLibrary->ValidateObject<Render::CShaderLibrary>();
-		if (!ShaderLibrary) return nullptr;
-
-		const U32 ElementID = StringUtils::ToInt(pSubId);
-		Stream = ShaderLibrary->GetElementStream(ElementID);
-		*/
 	}
 	else
 		Stream = pResMgr->CreateResourceStream(UID.CStr(), pSubId, IO::SAP_SEQUENTIAL);

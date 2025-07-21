@@ -67,40 +67,40 @@
 namespace DEM::Core
 {
 
-CString GetProfilesPath(const CString& AppDataPath)
+static std::string GetProfilesPath(const std::string& AppDataPath)
 {
 	return AppDataPath + "profiles/";
 }
 //---------------------------------------------------------------------
 
-static CString GetUserProfilePath(const CString& AppDataPath, const char* pUserID)
+static std::string GetUserProfilePath(const std::string& AppDataPath, const char* pUserID)
 {
-	CString Path = GetProfilesPath(AppDataPath);
+	std::string Path = GetProfilesPath(AppDataPath);
 	Path += pUserID;
 	PathUtils::EnsurePathHasEndingDirSeparator(Path);
 	return Path;
 }
 //---------------------------------------------------------------------
 
-static CString GetUserSavesPath(const CString& AppDataPath, const char* pUserID)
+static std::string GetUserSavesPath(const std::string& AppDataPath, const char* pUserID)
 {
 	return GetUserProfilePath(AppDataPath, pUserID) + "saves/";
 }
 //---------------------------------------------------------------------
 
-static CString GetUserScreenshotsPath(const CString& AppDataPath, const char* pUserID)
+static std::string GetUserScreenshotsPath(const std::string& AppDataPath, const char* pUserID)
 {
 	return GetUserProfilePath(AppDataPath, pUserID) + "screenshots/";
 }
 //---------------------------------------------------------------------
 
-static CString GetUserCurrDataPath(const CString& AppDataPath, const char* pUserID)
+static std::string GetUserCurrDataPath(const std::string& AppDataPath, const char* pUserID)
 {
 	return GetUserProfilePath(AppDataPath, pUserID) + "current/";
 }
 //---------------------------------------------------------------------
 
-static CString GetUserSettingsFilePath(const CString& AppDataPath, const char* pUserID)
+static std::string GetUserSettingsFilePath(const std::string& AppDataPath, const char* pUserID)
 {
 	return GetUserProfilePath(AppDataPath, pUserID) + "Settings.hrd";
 }
@@ -182,8 +182,8 @@ bool CApplication::IsValidUserProfileName(const char* pUserID, UPTR MaxLength) c
 bool CApplication::UserProfileExists(const char* pUserID) const
 {
 	//???must be case-insensitive regardless of FS?
-	const CString Path = GetUserProfilePath(WritablePath, pUserID);
-	return IO().DirectoryExists(Path.CStr());
+	const std::string Path = GetUserProfilePath(WritablePath, pUserID);
+	return IO().DirectoryExists(Path.c_str());
 }
 //---------------------------------------------------------------------
 
@@ -199,19 +199,19 @@ CStrID CApplication::CreateUserProfile(const char* pUserID, bool Overwrite)
 		if (!Overwrite || !DeleteUserProfile(pUserID)) return CStrID::Empty;
 	}
 
-	const CString Path = GetUserProfilePath(WritablePath, pUserID);
-	if (!IO().CreateDirectory(Path.CStr())) return CStrID::Empty;
+	const std::string Path = GetUserProfilePath(WritablePath, pUserID);
+	if (!IO().CreateDirectory(Path.c_str())) return CStrID::Empty;
 
 	bool Result = true;
 
-	if (Result && !IO().CopyFile(UserSettingsTemplate.CStr(), (Path + "Settings.hrd").CStr())) Result = false;
-	if (Result && !IO().CreateDirectory((Path + "saves").CStr())) Result = false;
-	if (Result && !IO().CreateDirectory((Path + "screenshots").CStr())) Result = false;
-	if (Result && !IO().CreateDirectory((Path + "current").CStr())) Result = false;
+	if (Result && !IO().CopyFile(UserSettingsTemplate.c_str(), (Path + "Settings.hrd").c_str())) Result = false;
+	if (Result && !IO().CreateDirectory((Path + "saves").c_str())) Result = false;
+	if (Result && !IO().CreateDirectory((Path + "screenshots").c_str())) Result = false;
+	if (Result && !IO().CreateDirectory((Path + "current").c_str())) Result = false;
 
 	if (!Result)
 	{
-		IO().DeleteDirectory(Path.CStr());
+		IO().DeleteDirectory(Path.c_str());
 		return CStrID::Empty;
 	}
 
@@ -227,19 +227,19 @@ bool CApplication::DeleteUserProfile(const char* pUserID)
 	//???or deactivate?
 	if (IsUserActive(CStrID(pUserID))) FAIL;
 
-	return IO().DeleteDirectory(GetUserProfilePath(WritablePath, pUserID).CStr());
+	return IO().DeleteDirectory(GetUserProfilePath(WritablePath, pUserID).c_str());
 }
 //---------------------------------------------------------------------
 
 UPTR CApplication::EnumUserProfiles(std::vector<CStrID>& Out) const
 {
-	CString ProfilesDir = GetProfilesPath(WritablePath);
-	if (!IO().DirectoryExists(ProfilesDir.CStr())) return 0;
+	std::string ProfilesDir = GetProfilesPath(WritablePath);
+	if (!IO().DirectoryExists(ProfilesDir.c_str())) return 0;
 
 	const UPTR OldCount = Out.size();
 
 	IO::CFSBrowser Browser;
-	Browser.SetAbsolutePath(ProfilesDir.CStr());
+	Browser.SetAbsolutePath(ProfilesDir.c_str());
 	if (!Browser.IsCurrDirEmpty()) do
 	{
 		if (Browser.IsCurrEntryDir())
@@ -261,17 +261,17 @@ CStrID CApplication::ActivateUser(CStrID UserID, Input::PInputTranslator&& Input
 	});
 	if (It != ActiveUsers.cend()) return UserID;
 
-	CString Path = GetUserProfilePath(WritablePath, UserID.CStr());
+	std::string Path = GetUserProfilePath(WritablePath, UserID.CStr());
 	PathUtils::EnsurePathHasEndingDirSeparator(Path);
 
-	if (!IO().DirectoryExists(Path.CStr())) return CStrID::Empty;
+	if (!IO().DirectoryExists(Path.c_str())) return CStrID::Empty;
 
 	{
 		CUser NewUser;
 		NewUser.ID = UserID;
 
 		// OnSettingsLoaded is not sent here, subscribe on OnUserActivated
-		NewUser.Settings = ParamsUtils::LoadParamsFromHRD(GetUserSettingsFilePath(WritablePath, UserID.CStr()).CStr());
+		NewUser.Settings = ParamsUtils::LoadParamsFromHRD(GetUserSettingsFilePath(WritablePath, UserID.CStr()).c_str());
 		if (!NewUser.Settings) return CStrID::Empty;
 
 		ActiveUsers.push_back(std::move(NewUser));
@@ -317,7 +317,7 @@ void CApplication::DeactivateUser(CStrID UserID)
 	if (It == ActiveUsers.end()) return;
 
 	if (It->SettingsChanged && It->Settings)
-		ParamsUtils::SaveParamsToHRD(GetUserSettingsFilePath(WritablePath, UserID.CStr()).CStr(), *It->Settings);
+		ParamsUtils::SaveParamsToHRD(GetUserSettingsFilePath(WritablePath, UserID.CStr()).c_str(), *It->Settings);
 
 	// All user input is returned to unclaimed
 	It->Input->TransferAllDevices(UnclaimedInput.get());
@@ -425,9 +425,9 @@ void CApplication::SaveSettings()
 	// Save global settings if necessary
 	if (GlobalSettingsChanged && GlobalSettings)
 	{
-		if (GlobalSettingsPath.IsEmpty() ||
-			IO().IsFileReadOnly(GlobalSettingsPath.CStr()) ||
-			!ParamsUtils::SaveParamsToHRD(GlobalSettingsPath.CStr(), *GlobalSettings))
+		if (GlobalSettingsPath.empty() ||
+			IO().IsFileReadOnly(GlobalSettingsPath.c_str()) ||
+			!ParamsUtils::SaveParamsToHRD(GlobalSettingsPath.c_str(), *GlobalSettings))
 		{
 			::Sys::Error("CApplication::SaveSettings() > failed to save global settings\n");
 		}
@@ -441,9 +441,9 @@ void CApplication::SaveSettings()
 		{
 			const auto UserSettingsPath = GetUserSettingsFilePath(WritablePath, User.ID.CStr());
 
-			if (UserSettingsPath.IsEmpty() ||
-				IO().IsFileReadOnly(UserSettingsPath.CStr()) ||
-				!ParamsUtils::SaveParamsToHRD(UserSettingsPath.CStr(), *User.Settings))
+			if (UserSettingsPath.empty() ||
+				IO().IsFileReadOnly(UserSettingsPath.c_str()) ||
+				!ParamsUtils::SaveParamsToHRD(UserSettingsPath.c_str(), *User.Settings))
 			{
 				::Sys::Error("CApplication::SaveSettings() > failed to save user settings\n");
 			}

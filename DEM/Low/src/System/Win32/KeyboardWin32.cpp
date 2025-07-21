@@ -8,7 +8,7 @@ namespace Input
 CKeyboardWin32::CKeyboardWin32() = default;
 CKeyboardWin32::~CKeyboardWin32() = default;
 
-bool CKeyboardWin32::Init(HANDLE hDevice, const CString& DeviceName, const RID_DEVICE_INFO_KEYBOARD& DeviceInfo)
+bool CKeyboardWin32::Init(HANDLE hDevice, const std::string& DeviceName, const RID_DEVICE_INFO_KEYBOARD& DeviceInfo)
 {
 	Name = DeviceName;
 	Type = DeviceInfo.dwType;
@@ -115,7 +115,7 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 	LONG KeyForText = (ScanCode << 16) | (IsE0 << 24);
 	char Buffer[512] = {};
 	::GetKeyNameText(KeyForText, Buffer, 512);
-	::Sys::DbgOut(CString("CKeyboardWin32::HandleRawInput(") + StringUtils::FromInt(KbData.Message) + ") " + Buffer + ((KbData.Flags & RI_KEY_BREAK) ? " up\n" : " down\n"));
+	::Sys::DbgOut(std::string("CKeyboardWin32::HandleRawInput(") + StringUtils::ToString(KbData.Message) + ") " + Buffer + ((KbData.Flags & RI_KEY_BREAK) ? " up\n" : " down\n"));
 	*/
 
 	if (ResultCode == EKey::Key_Invalid || !ResultCode) FAIL;

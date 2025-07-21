@@ -14,7 +14,7 @@ class IFileSystem: public Data::CRefCounted
 {
 public:
 
-	virtual ~IFileSystem() {}
+	virtual ~IFileSystem() = default;
 
 	virtual bool	Init() = 0;
 	virtual bool	IsCaseSensitive() const = 0;
@@ -30,9 +30,9 @@ public:
 	virtual bool	CreateDirectory(const char* pPath) = 0;
 	virtual bool	DeleteDirectory(const char* pPath) = 0;
 
-	virtual void*	OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, EFSEntryType& OutType) = 0;
+	virtual void*	OpenDirectory(const char* pPath, const char* pFilter, std::string& OutName, EFSEntryType& OutType) = 0;
 	virtual void	CloseDirectory(void* hDir) = 0;
-	virtual bool	NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryType& OutType) = 0;
+	virtual bool	NextDirectoryEntry(void* hDir, std::string& OutName, EFSEntryType& OutType) = 0;
 
 	virtual void*	OpenFile(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) = 0;
 	virtual void	CloseFile(void* hFile) = 0;

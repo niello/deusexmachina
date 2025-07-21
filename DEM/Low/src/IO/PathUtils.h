@@ -12,7 +12,7 @@ namespace PathUtils
 // Returns the same path with '.' (this folder) and '..' (parent folder) collapsed where possible.
 // E.g. CollapseDots("One/Two/Three/../../Four") will return "One/Four"
 // All '\' slashes in a path must be converted to '/' before calling this function.
-CString CollapseDots(const char* pPath, UPTR PathLength = 0);
+std::string CollapseDots(const char* pPath, UPTR PathLength = 0);
 
 // Get a pointer to the last directory separator.
 //!!!use FindLastIndex(pCharSet)!
@@ -38,9 +38,9 @@ inline int GetLastDirSeparatorIndex(const char* pPath)
 }
 //---------------------------------------------------------------------
 
-inline void EnsurePathHasEndingDirSeparator(CString& Path)
+inline void EnsurePathHasEndingDirSeparator(std::string& Path)
 {
-	UPTR PathLen = Path.GetLength();
+	UPTR PathLen = Path.size();
 	if (PathLen && Path[PathLen - 1] != '/') Path += '/';
 }
 //---------------------------------------------------------------------
@@ -63,25 +63,25 @@ inline bool CheckExtension(const char* pPath, const char* pExtension)
 }
 //---------------------------------------------------------------------
 
-inline CString ExtractFileName(const char* pPath)
+inline std::string ExtractFileName(const char* pPath)
 {
 	const char* pLastDirSep = GetLastDirSeparator(pPath);
-	return CString(pLastDirSep ? pLastDirSep + 1 : pPath);
+	return std::string(pLastDirSep ? pLastDirSep + 1 : pPath);
 }
 //---------------------------------------------------------------------
 
-inline CString ExtractFileNameWithoutExtension(const char* pPath)
+inline std::string ExtractFileNameWithoutExtension(const char* pPath)
 {
 	const char* pLastDirSep = GetLastDirSeparator(pPath);
 	const char* pStr = pLastDirSep ? pLastDirSep + 1 : pPath;
 	const char* pExt = GetExtension(pStr);
-	if (pExt) return CString(pStr, pExt - pStr - 1); // - 1 to skip dot
-	else return CString(pStr);
+	if (pExt) return std::string(pStr, pExt - pStr - 1); // - 1 to skip dot
+	else return std::string(pStr);
 }
 //---------------------------------------------------------------------
 
-// Return a CString object containing the last directory of the path
-inline CString ExtractLastDirName(const char* pPath)
+// Return a std::string object containing the last directory of the path
+inline std::string ExtractLastDirName(const char* pPath)
 {
 	UPTR PathLen = strlen(pPath);
 	const char* pLastDirSep = GetLastDirSeparator(pPath, PathLen);
@@ -100,20 +100,20 @@ inline CString ExtractLastDirName(const char* pPath)
 		{
 			pEnd = pLastDirSep;
 			pSecondLastDirSep = GetLastDirSeparator(pPath, pEnd - pPath);
-			if (pSecondLastDirSep) return CString(pSecondLastDirSep + 1, pEnd - pSecondLastDirSep - 1);
+			if (pSecondLastDirSep) return std::string(pSecondLastDirSep + 1, pEnd - pSecondLastDirSep - 1);
 		}
 	}
 
-	return CString::Empty;
+	return {};
 }
 //---------------------------------------------------------------------
 
-// Return a CString object containing the part before the last directory separator.
+// Return a std::string object containing the part before the last directory separator.
 // NOTE (floh): I left my fix in that returns the last slash (or colon), this was
 // necessary to tell if a dirname is a normal directory or an assign.
-inline CString ExtractDirName(const char* pPath, UPTR PathLength = 0)
+inline std::string ExtractDirName(const char* pPath, UPTR PathLength = 0)
 {
-	if (!pPath) return CString::Empty;
+	if (!pPath) return {};
 
 	if (!PathLength) PathLength = strlen(pPath);
 	const char* pLastDirSep = GetLastDirSeparator(pPath, PathLength);
@@ -129,37 +129,37 @@ inline CString ExtractDirName(const char* pPath, UPTR PathLength = 0)
 		if (pLastDirSep) pEnd = pLastDirSep + 1;
 	}
 
-	return CString(pPath, pEnd - pPath);
+	return std::string(pPath, pEnd - pPath);
 }
 //---------------------------------------------------------------------
 
-inline CString ExtractDirName(const CString& Path)
+inline std::string ExtractDirName(const std::string& Path)
 {
-	return ExtractDirName(Path.CStr(), Path.GetLength());
+	return ExtractDirName(Path.c_str(), Path.size());
 }
 //---------------------------------------------------------------------
 
 // Return a path pString object which contains of the complete path up to the last slash.
 // Returns an empty pString if there is no slash in the path.
-inline CString ExtractToLastSlash(const char* pPath)
+inline std::string ExtractToLastSlash(const char* pPath)
 {
 	const char* pLastDirSep = GetLastDirSeparator(pPath);
-	if (pLastDirSep) return CString(pPath, pLastDirSep - pPath);
-	else return CString::Empty;
+	if (pLastDirSep) return std::string(pPath, pLastDirSep - pPath);
+	else return {};
 }
 //---------------------------------------------------------------------
 
 // If relative path contains ':' it is considered absolute, and pCurrentPath is not used
-inline CString GetAbsolutePath(const char* pCurrentPath, const char* pRelativePath)
+inline std::string GetAbsolutePath(const char* pCurrentPath, const char* pRelativePath)
 {
-	if (!pCurrentPath || !pRelativePath || !*pCurrentPath || !*pRelativePath) return CString(pRelativePath);
+	if (!pCurrentPath || !pRelativePath || !*pCurrentPath || !*pRelativePath) return std::string(pRelativePath);
 
 	if (strchr(pRelativePath, ':')) return CollapseDots(pRelativePath);
 
-	CString AbsPath(pCurrentPath);
+	std::string AbsPath(pCurrentPath);
 	EnsurePathHasEndingDirSeparator(AbsPath);
 	AbsPath += (*pRelativePath == '/') ? (pRelativePath + 1) : pRelativePath;
-	return CollapseDots(AbsPath.CStr(), AbsPath.GetLength());
+	return CollapseDots(AbsPath.c_str(), AbsPath.size());
 }
 //---------------------------------------------------------------------
 

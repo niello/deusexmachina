@@ -1,6 +1,7 @@
 #if DEM_PLATFORM_WIN32
 #include "OSFileSystemWin32.h"
 #include <IO/PathUtils.h>
+#include <Data/StringUtils.h>
 #include <regex>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -96,21 +97,21 @@ bool COSFileSystemWin32::CreateDirectory(const char* pPath)
 #define CreateDirectory  CreateDirectoryA
 #endif
 
-	CString AbsPath(pPath);
+	std::string AbsPath(pPath);
 
-	std::vector<CString> DirStack;
-	while (!DirectoryExists(AbsPath.CStr()))
+	std::vector<std::string> DirStack;
+	while (!DirectoryExists(AbsPath.c_str()))
 	{
-		AbsPath.Trim(" \r\n\t\\/", false);
-		int LastSepIdx = PathUtils::GetLastDirSeparatorIndex(AbsPath.CStr());
+		AbsPath = StringUtils::TrimRight(AbsPath, " \r\n\t\\/");
+		int LastSepIdx = PathUtils::GetLastDirSeparatorIndex(AbsPath.c_str());
 		if (LastSepIdx >= 0)
 		{
-			DirStack.push_back(AbsPath.SubString(LastSepIdx + 1, AbsPath.GetLength() - (LastSepIdx + 1)));
-			AbsPath = AbsPath.SubString(0, LastSepIdx);
+			DirStack.push_back(AbsPath.substr(LastSepIdx + 1, AbsPath.size() - (LastSepIdx + 1)));
+			AbsPath = AbsPath.substr(0, LastSepIdx);
 		}
 		else
 		{
-			if (!CreateDirectory(AbsPath.CStr(), nullptr)) FAIL;
+			if (!CreateDirectory(AbsPath.c_str(), nullptr)) FAIL;
 			break;
 		}
 	}
@@ -119,7 +120,7 @@ bool COSFileSystemWin32::CreateDirectory(const char* pPath)
 	{
 		AbsPath += "/" + DirStack.back();
 		DirStack.erase(std::prev(DirStack.end()));
-		if (!CreateDirectory(AbsPath.CStr(), nullptr)) FAIL;
+		if (!CreateDirectory(AbsPath.c_str(), nullptr)) FAIL;
 	}
 
 	OK;
@@ -148,14 +149,14 @@ bool COSFileSystemWin32::DeleteDirectory(const char* pPath)
 	{
 		if (!strcmp(FindData.cFileName, "..") || !strcmp(FindData.cFileName, ".")) continue;
 
-		CString Name(pPath);
+		std::string Name(pPath);
 		Name += "/";
 		Name += FindData.cFileName;
 		if (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		{
-			if (!DeleteDirectory(Name.CStr())) FAIL;
+			if (!DeleteDirectory(Name.c_str())) FAIL;
 		}
-		else if (::DeleteFile(Name.CStr()) == FALSE) FAIL;
+		else if (::DeleteFile(Name.c_str()) == FALSE) FAIL;
 	}
 	while (::FindNextFile(hRec, &FindData) != FALSE);
 
@@ -166,22 +167,22 @@ bool COSFileSystemWin32::DeleteDirectory(const char* pPath)
 }
 //---------------------------------------------------------------------
 
-void* COSFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, IO::EFSEntryType& OutType)
+void* COSFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, std::string& OutName, IO::EFSEntryType& OutType)
 {
 	DWORD FileAttrs = ::GetFileAttributes(pPath);
 	if (FileAttrs == INVALID_FILE_ATTRIBUTES || !(FileAttrs & FILE_ATTRIBUTE_DIRECTORY)) return nullptr;
 
 	const char* pActualFilter = (pFilter && *pFilter) ? pFilter : "/*.*"; //???or "/*" ?
 	UPTR FilterLength = strlen(pActualFilter);
-	CString SearchString(pPath, strlen(pPath), FilterLength);
-	SearchString.Add(pActualFilter, FilterLength);
+	std::string SearchString(pPath, strlen(pPath), FilterLength);
+	SearchString.append(pActualFilter, FilterLength);
 
 	WIN32_FIND_DATA FindData;
-	HANDLE hDir = ::FindFirstFile(SearchString.CStr(), &FindData);
+	HANDLE hDir = ::FindFirstFile(SearchString.c_str(), &FindData);
 
 	if (hDir == INVALID_HANDLE_VALUE)
 	{
-		OutName.Clear();
+		OutName.clear();
 		OutType = IO::FSE_NONE;
 		return nullptr; //???return bool success instead? mb nullptr handle is valid?
 	}
@@ -189,7 +190,7 @@ void* COSFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, 
 	while (!strcmp(FindData.cFileName, "..") || !strcmp(FindData.cFileName, "."))
 		if (!::FindNextFile(hDir, &FindData))
 		{
-			OutName.Clear();
+			OutName.clear();
 			OutType = IO::FSE_NONE;
 			return hDir;
 		}
@@ -208,7 +209,7 @@ void COSFileSystemWin32::CloseDirectory(void* hDir)
 }
 //---------------------------------------------------------------------
 
-bool COSFileSystemWin32::NextDirectoryEntry(void* hDir, CString& OutName, IO::EFSEntryType& OutType)
+bool COSFileSystemWin32::NextDirectoryEntry(void* hDir, std::string& OutName, IO::EFSEntryType& OutType)
 {
 	n_assert(hDir);
 	WIN32_FIND_DATA FindData;
@@ -218,7 +219,7 @@ bool COSFileSystemWin32::NextDirectoryEntry(void* hDir, CString& OutName, IO::EF
 		OutType = (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? IO::FSE_DIR : IO::FSE_FILE;
 		OK;
 	}
-	OutName.Clear();
+	OutName.clear();
 	OutType = IO::FSE_NONE;
 	FAIL;
 }

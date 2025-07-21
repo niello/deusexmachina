@@ -5,6 +5,7 @@
 #include <IO/PathUtils.h>
 #include <IO/IOServer.h>
 #include <IO/Stream.h>
+#include <Data/StringUtils.h>
 
 namespace Resources
 {
@@ -24,7 +25,7 @@ PResource CResourceManager::RegisterResource(const char* pUID, const DEM::Core::
 {
 	if (!pUID || !*pUID) return nullptr;
 
-	const CStrID UID = pIO ? CStrID(pIO->ResolveAssigns(pUID).CStr()): CStrID(pUID);
+	const CStrID UID = pIO ? CStrID(pIO->ResolveAssigns(pUID).c_str()): CStrID(pUID);
 	auto It = Registry.find(UID);
 	if (It != Registry.cend()) return It->second;
 
@@ -47,7 +48,7 @@ void CResourceManager::RegisterResource(PResource& Resource, const DEM::Core::CR
 		return;
 	}
 
-	const CStrID UID = pIO ? CStrID(pIO->ResolveAssigns(Resource->GetUID().CStr()).CStr()) : Resource->GetUID();
+	const CStrID UID = pIO ? CStrID(pIO->ResolveAssigns(Resource->GetUID().CStr()).c_str()) : Resource->GetUID();
 	auto It = Registry.find(UID);
 	if (It != Registry.cend())
 	{
@@ -78,7 +79,7 @@ PResource CResourceManager::RegisterResource(const char* pUID, IResourceCreator*
 {
 	if (!pUID || !*pUID) return nullptr;
 
-	CStrID UID = pIO ? CStrID(pIO->ResolveAssigns(pUID).CStr()): CStrID(pUID);
+	CStrID UID = pIO ? CStrID(pIO->ResolveAssigns(pUID).c_str()): CStrID(pUID);
 	auto It = Registry.find(UID);
 	if (It != Registry.cend()) return It->second;
 
@@ -91,7 +92,7 @@ PResource CResourceManager::RegisterResource(const char* pUID, IResourceCreator*
 
 CResource* CResourceManager::FindResource(const char* pUID) const
 {
-	return FindResource(pIO ? CStrID(pIO->ResolveAssigns(pUID).CStr()): CStrID(pUID));
+	return FindResource(pIO ? CStrID(pIO->ResolveAssigns(pUID)): CStrID(pUID));
 }
 //---------------------------------------------------------------------
 
@@ -104,7 +105,7 @@ CResource* CResourceManager::FindResource(CStrID UID) const
 
 void CResourceManager::UnregisterResource(const char* pUID)
 {
-	return UnregisterResource(pIO ? CStrID(pIO->ResolveAssigns(pUID).CStr()): CStrID(pUID));
+	return UnregisterResource(pIO ? CStrID(pIO->ResolveAssigns(pUID)): CStrID(pUID));
 }
 //---------------------------------------------------------------------
 
@@ -120,10 +121,9 @@ bool CResourceManager::RegisterDefaultCreator(const char* pFmtExtension, const D
 {
 	if (pCreator &&	pRsrcType && !pCreator->GetResultType().IsDerivedFrom(*pRsrcType)) FAIL;
 
-	CString ExtStr(pFmtExtension);
-	ExtStr.Trim();
-	ExtStr.ToLower();
-	CStrID Ext(ExtStr.CStr());
+	std::string ExtStr(StringUtils::Trim(pFmtExtension));
+	std::transform(ExtStr.begin(), ExtStr.end(), ExtStr.begin(), [](unsigned char c) { return std::tolower(c); });
+	CStrID Ext(ExtStr);
 
 	auto It = std::find_if(DefaultCreators.begin(), DefaultCreators.end(), [Ext, pRsrcType](const CDefaultCreatorRecord& Rec)
 	{
@@ -151,23 +151,23 @@ bool CResourceManager::RegisterDefaultCreator(const char* pFmtExtension, const D
 
 PResourceCreator CResourceManager::GetDefaultCreator(CStrID UID, const DEM::Core::CRTTI& RsrcType) const
 {
-	CString Ext(PathUtils::GetExtension(UID.CStr()));
-	if (Ext.IsValid())
+	std::string Ext(PathUtils::GetExtension(UID.CStr()));
+	if (!Ext.empty())
 	{
-		IPTR SharpIdx = Ext.FindIndex('#');
-		if (SharpIdx >= 0) Ext.TruncateRight(Ext.GetLength() - SharpIdx);
+		IPTR SharpIdx = Ext.find('#');
+		if (SharpIdx != std::string::npos)
+			Ext.resize(SharpIdx);
 	}
 
-	return GetDefaultCreator(Ext.CStr(), &RsrcType);
+	return GetDefaultCreator(Ext.c_str(), &RsrcType);
 }
 //---------------------------------------------------------------------
 
 PResourceCreator CResourceManager::GetDefaultCreator(const char* pFmtExtension, const DEM::Core::CRTTI* pRsrcType) const
 {
-	CString ExtStr(pFmtExtension);
-	ExtStr.Trim();
-	ExtStr.ToLower();
-	CStrID Ext(ExtStr.CStr());
+	std::string ExtStr(StringUtils::Trim(pFmtExtension));
+	std::transform(ExtStr.begin(), ExtStr.end(), ExtStr.begin(), [](unsigned char c) { return std::tolower(c); });
+	CStrID Ext(ExtStr);
 
 	const CDefaultCreatorRecord* pRec = nullptr;
 	for (const auto& Rec : DefaultCreators)
@@ -224,8 +224,8 @@ IO::PStream CResourceManager::CreateResourceStream(const char* pUID, const char*
 	{
 		if (pOutSubId == pUID) return nullptr;
 
-		CString Path(pUID, pOutSubId - pUID);
-		Stream = pIO->CreateStream(Path.CStr(), IO::SAM_READ, Pattern);
+		std::string Path(pUID, pOutSubId - pUID);
+		Stream = pIO->CreateStream(Path.c_str(), IO::SAM_READ, Pattern);
 
 		++pOutSubId; // Skip '#'
 		if (*pOutSubId == 0) pOutSubId = nullptr;

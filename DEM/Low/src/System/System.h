@@ -3,8 +3,6 @@
 
 // System functions and macros
 
-class CString;
-
 namespace Sys
 {
 	enum EMsgType
@@ -51,7 +49,7 @@ namespace Sys
 	void            SetCurrentThreadAffinity(std::initializer_list<size_t> CPUIndices);
 
 	// Input
-	bool			GetKeyName(U8 ScanCode, bool ExtendedKey, CString& OutName);
+	bool			GetKeyName(U8 ScanCode, bool ExtendedKey, std::string& OutName);
 
 	// Timing
 	double			GetAppTime();

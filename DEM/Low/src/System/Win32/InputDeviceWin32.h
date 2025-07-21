@@ -13,14 +13,14 @@ class CInputDeviceWin32: public IInputDevice
 {
 protected:
 
-	CString	Name;
+	std::string	Name;
 	HANDLE	_hDevice = 0;
 	bool	Operational = false;
 
 public:
 
 	HANDLE				GetWin32Handle() const { return _hDevice; }
-	virtual const char*	GetName() const override { return Name.CStr(); }
+	virtual const char*	GetName() const override { return Name.c_str(); }
 	virtual bool		IsOperational() const override { return Operational; }
 
 	virtual bool		CanHandleRawInput(const RAWINPUT& Data) const = 0;

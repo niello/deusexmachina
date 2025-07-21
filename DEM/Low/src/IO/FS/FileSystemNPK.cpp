@@ -117,13 +117,13 @@ bool CFileSystemNPK::DeleteDirectory(const char* pPath)
 }
 //---------------------------------------------------------------------
 
-void* CFileSystemNPK::OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, EFSEntryType& OutType)
+void* CFileSystemNPK::OpenDirectory(const char* pPath, const char* pFilter, std::string& OutName, EFSEntryType& OutType)
 {
 	CNpkTOCEntry* pTE = TOC.FindEntry(pPath);
 	if (pTE && pTE->GetType() == FSE_DIR)
 	{
 		CNPKDir* pDir = n_new(CNPKDir(pTE));
-		pDir->Filter = !strcmp(pFilter, "*") ? CString::Empty : CString(pFilter);
+		pDir->Filter = !strcmp(pFilter, "*") ? std::string{} : std::string(pFilter);
 
 		if (pFilter && *pFilter)
 			while (pDir->IsValid() && !StringUtils::MatchesPattern(pDir->It->second->GetName().CStr(), pFilter))
@@ -136,13 +136,13 @@ void* CFileSystemNPK::OpenDirectory(const char* pPath, const char* pFilter, CStr
 		}
 		else
 		{
-			OutName.Clear();
+			OutName.clear();
 			OutType = FSE_NONE;
 		}
 		return pDir;
 	}
 
-	OutName.Clear();
+	OutName.clear();
 	OutType = FSE_NONE;
 	return nullptr;
 }
@@ -154,7 +154,7 @@ void CFileSystemNPK::CloseDirectory(void* hDir)
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryType& OutType)
+bool CFileSystemNPK::NextDirectoryEntry(void* hDir, std::string& OutName, EFSEntryType& OutType)
 {
 	n_assert(hDir);
 	CNPKDir* pDir = ((CNPKDir*)hDir);
@@ -162,8 +162,8 @@ bool CFileSystemNPK::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryTy
 	{
 		++pDir->It;
 
-		if (pDir->Filter.IsValid())
-			while (pDir->IsValid() && !StringUtils::MatchesPattern(pDir->It->second->GetName().CStr(), pDir->Filter.CStr()))
+		if (!pDir->Filter.empty())
+			while (pDir->IsValid() && !StringUtils::MatchesPattern(pDir->It->second->GetName().CStr(), pDir->Filter.c_str()))
 				++pDir->It;
 
 		if (pDir->IsValid())
@@ -174,7 +174,7 @@ bool CFileSystemNPK::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryTy
 		}
 	}
 
-	OutName.Clear();
+	OutName.clear();
 	OutType = FSE_NONE;
 	FAIL;
 }

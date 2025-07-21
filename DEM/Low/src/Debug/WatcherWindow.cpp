@@ -213,17 +213,17 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 					if (CurrVar.IsA<bool>())
 					{
 						It->pTypeItem->setText("DEM bool");
-						It->pValueItem->setText(StringUtils::FromBool(CurrVar.GetValue<bool>()).CStr());
+						It->pValueItem->setText(StringUtils::ToString(CurrVar.GetValue<bool>()).c_str());
 					}
 					else if (CurrVar.IsA<int>())
 					{
 						It->pTypeItem->setText("DEM int");
-						It->pValueItem->setText(StringUtils::FromInt(CurrVar.GetValue<int>()).CStr());
+						It->pValueItem->setText(StringUtils::ToString(CurrVar.GetValue<int>()).c_str());
 					}
 					else if (CurrVar.IsA<float>())
 					{
 						It->pTypeItem->setText("DEM float");
-						It->pValueItem->setText(StringUtils::FromFloat(CurrVar.GetValue<float>()).CStr());
+						It->pValueItem->setText(StringUtils::ToString(CurrVar.GetValue<float>()).c_str());
 					}
 					else if (CurrVar.IsA<CString>())
 					{
@@ -233,7 +233,7 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 					else if (CurrVar.IsA<vector4>())
 					{
 						It->pTypeItem->setText("DEM vector4");
-						It->pValueItem->setText(StringUtils::FromVector4(CurrVar.GetValue<vector4>()).CStr());
+						It->pValueItem->setText(StringUtils::ToString(CurrVar.GetValue<vector4>()).c_str());
 					}
 					else
 					{
@@ -269,12 +269,12 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 				else if (Output.IsA<int>())
 				{
 					It->pTypeItem->setText("Lua int");
-					It->pValueItem->setText(StringUtils::FromInt(Output).CStr());
+					It->pValueItem->setText(StringUtils::ToString(Output).c_str());
 				}
 				else if (Output.IsA<float>())
 				{
 					It->pTypeItem->setText("Lua float");
-					It->pValueItem->setText(StringUtils::FromFloat(Output).CStr());
+					It->pValueItem->setText(StringUtils::ToString(Output).c_str());
 				}
 				else if (Output.IsA<CString>())
 				{
@@ -284,12 +284,12 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 				else if (Output.IsA<vector4>())
 				{
 					It->pTypeItem->setText("Lua vector4");
-					It->pValueItem->setText(StringUtils::FromVector4(Output).CStr());
+					It->pValueItem->setText(StringUtils::ToString(Output).c_str());
 				}
 				else if (Output.IsA<PVOID>())
 				{
 					It->pTypeItem->setText("Lua userdata");
-					It->pValueItem->setText(StringUtils::FromInt((int)Output.GetValue<PVOID>()).CStr());
+					It->pValueItem->setText(StringUtils::ToString((int)Output.GetValue<PVOID>()).c_str());
 				}
 				else if (Output.IsA<Data::PDataArray>())
 				{

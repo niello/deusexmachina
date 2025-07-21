@@ -35,6 +35,7 @@
 
 #include "MD5.h"
 
+#include <System/System.h>
 #include <stdio.h>
 
 static unsigned char PADDING[64] =
@@ -62,7 +63,7 @@ static unsigned char PADDING[64] =
 #define S44 21
 
 /// Transforms normal text into an encoded md5 string
-CString CMD5::String2MD5(const char* szString)
+std::string CMD5::String2MD5(const char* szString)
 {
     int nLen = strlen(szString);
     this->Update((unsigned char*)szString, (unsigned int)nLen);
@@ -73,7 +74,7 @@ CString CMD5::String2MD5(const char* szString)
 
 
 /// PrintMD5: Converts a completed md5 digest into a string.
-CString CMD5::PrintMD5(U8 md5Digest[16])
+std::string CMD5::PrintMD5(U8 md5Digest[16])
 {
     char chBuffer[256];
     char chEach[10];
@@ -88,7 +89,7 @@ CString CMD5::PrintMD5(U8 md5Digest[16])
         strncat_s(chBuffer, chEach, sizeof(chEach));
     }
 
-    return CString(chBuffer);
+    return std::string(chBuffer);
 }
 
 /// md5::Init

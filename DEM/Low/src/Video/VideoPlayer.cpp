@@ -1,7 +1,5 @@
 #include "VideoPlayer.h"
 
-#include <IO/IOServer.h>
-
 namespace Video
 {
 

@@ -95,7 +95,7 @@ void SetCurrentThreadAffinity(std::initializer_list<size_t> CPUIndices)
 }
 //---------------------------------------------------------------------
 
-bool GetKeyName(U8 ScanCode, bool ExtendedKey, CString& OutName)
+bool GetKeyName(U8 ScanCode, bool ExtendedKey, std::string& OutName)
 {
 	//???build DEM KeyCode -> Key name table?
 	LONG lParam = (ScanCode << 16);
@@ -103,7 +103,7 @@ bool GetKeyName(U8 ScanCode, bool ExtendedKey, CString& OutName)
 	char Buffer[512];
 	int Len = ::GetKeyNameText(lParam, Buffer, sizeof(Buffer));
 	if (!Len) FAIL;
-	OutName.Set(Buffer, Len);
+	OutName.assign(Buffer, Len);
 	OK;
 }
 //---------------------------------------------------------------------

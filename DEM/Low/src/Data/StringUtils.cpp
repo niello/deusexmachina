@@ -89,21 +89,6 @@ match:
 }
 //---------------------------------------------------------------------
 
-CString FromMatrix44(const matrix44& m)
-{
-	CString Str;
-	Str.Format(	"%.6f, %.6f, %.6f, %.6f, "
-				"%.6f, %.6f, %.6f, %.6f, "
-				"%.6f, %.6f, %.6f, %.6f, "
-				"%.6f, %.6f, %.6f, %.6f",
-				m.M11, m.M12, m.M13, m.M14,
-				m.M21, m.M22, m.M23, m.M24,
-				m.M31, m.M32, m.M33, m.M34,
-				m.M41, m.M42, m.M43, m.M44);
-	return Str;
-}
-//---------------------------------------------------------------------
-
 bool ToBool(const char* pStr)
 {
 	constexpr char* True[] = { "true", "1", "yes", "on" };

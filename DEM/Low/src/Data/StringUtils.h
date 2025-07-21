@@ -32,27 +32,38 @@ protected:
 	size_t       _Pos = 0;
 };
 
-inline CString	FromInt(I32 Value) { CString Str; Str.Format("%ld", Value); return Str; }
-inline CString	FromUInt(U32 Value, bool Hex = false) { CString Str; Str.Format(Hex ? "%lx" : "%lu", Value); return Str; }
-inline CString	FromFloat(float Value) { CString Str; Str.Format("%.6f", Value); return Str; }
-inline CString	FromBool(bool Value) { return CString(Value ? "true" : "false"); }
-inline CString	FromVector3(const vector3& v) { CString Str; Str.Format("%.6f,%.6f,%.6f", v.x, v.y, v.z); return Str; }
-inline CString	FromVector4(const vector4& v) { CString Str; Str.Format("%.6f,%.6f,%.6f,%.6f", v.x, v.y, v.z, v.w); return Str; }
-CString			FromMatrix44(const matrix44& m);
-
 inline int		ToInt(const char* pStr) { return atoi(pStr); }
 inline float	ToFloat(const char* pStr) { return (float)atof(pStr); }
 bool			ToBool(const char* pStr);
 
 char*			LastOccurrenceOf(const char* pStrStart, const char* pStrEnd, const char* pSubStr, UPTR SubStrLen = 0);
 bool			MatchesPattern(const char* pStr, const char* pPattern);
-//CString			Trim(const char* CharSet = DEM_WHITESPACE, bool Left = true, bool Right = true) const;
 
 UPTR			StripComments(char* pStr, const char* pSingleLineComment = "//", const char* pMultiLineCommentStart = "/*", const char* pMultiLineCommentEnd = "*/"); 
 
 inline bool AreEqualCaseInsensitive(const char* pStr1, const char* pStr2)
 {
 	return pStr1 == pStr2 || (pStr1 && pStr2 && !n_stricmp(pStr1, pStr2));
+}
+//---------------------------------------------------------------------
+
+inline std::string_view TrimLeft(std::string_view Input, std::string_view Chars = DEM_WHITESPACE)
+{
+	const size_t First = Input.find_first_not_of(Chars);
+	return (First == std::string_view::npos) ? ""sv : Input.substr(First);
+}
+//---------------------------------------------------------------------
+
+inline std::string_view TrimRight(std::string_view Input, std::string_view Chars = DEM_WHITESPACE)
+{
+	const size_t Last = Input.find_last_not_of(Chars);
+	return (Last == std::string_view::npos) ? ""sv : Input.substr(0, Last + 1);
+}
+//---------------------------------------------------------------------
+
+inline std::string_view Trim(std::string_view Input, std::string_view Chars = DEM_WHITESPACE)
+{
+	return TrimLeft(TrimRight(Input, Chars), Chars);
 }
 //---------------------------------------------------------------------
 
@@ -174,9 +185,17 @@ inline std::string ToString(rtm::vector4f_arg0 Value)
 }
 //---------------------------------------------------------------------
 
-inline std::string ToString(const matrix44& Value)
+inline std::string ToString(const matrix44& m)
 {
-	return ToString(FromMatrix44(Value));
+	return
+		"{:.6f}, {:.6f}, {:.6f}, {:.6f}, "
+		"{:.6f}, {:.6f}, {:.6f}, {:.6f}, "
+		"{:.6f}, {:.6f}, {:.6f}, {:.6f}, "
+		"{:.6f}, {:.6f}, {:.6f}, {:.6f}"_format(
+			m.M11, m.M12, m.M13, m.M14,
+			m.M21, m.M22, m.M23, m.M24,
+			m.M31, m.M32, m.M33, m.M34,
+			m.M41, m.M42, m.M43, m.M44);
 }
 //---------------------------------------------------------------------
 

@@ -12,7 +12,7 @@ class CFileStream: public IStream
 {
 protected:
 
-	CString              FileName;
+	std::string          FileName;
 	PFileSystem          FS;
 	void*                hFile = nullptr;
 	U64                  TruncatedAt = std::numeric_limits<U64>().max();
@@ -33,7 +33,7 @@ public:
 	virtual void	Unmap() override;
 
 	void			SetFileName(const char* pPath) { n_assert(!IsOpened()); FileName = pPath; }
-	const CString&	GetFileName() const { return FileName; }
+	const auto&     GetFileName() const { return FileName; }
 	virtual U64		GetSize() const override;
 	virtual bool	IsOpened() const override { return !!hFile; }
 	virtual bool    IsMapped() const override;

@@ -359,16 +359,16 @@ CPlatformWin32::~CPlatformWin32()
 }
 //---------------------------------------------------------------------
 
-CString CPlatformWin32::GetOSUserName() const
+std::string CPlatformWin32::GetOSUserName() const
 {
 	char Buf[256];
 	DWORD BufSize = sizeof(Buf);
 	if (!::GetUserNameEx(NameDisplay, Buf, &BufSize))
 	{
-		if (::GetLastError() != 1332) return CString();
-		if (!::GetUserName(Buf, &BufSize)) return CString();
+		if (::GetLastError() != 1332) return std::string();
+		if (!::GetUserName(Buf, &BufSize)) return std::string();
 	}
-	return CString(Buf);
+	return std::string(Buf);
 }
 //---------------------------------------------------------------------
 
@@ -380,8 +380,8 @@ bool CPlatformWin32::CheckAlreadyRunning(const char* pAppName)
 	// We are the first instance, and we do't want to detect ourselves as a conflicting process
 	if (hRunOnceMutex) FAIL;
 
-	CString Prefix("DEM::CPlatformWin32::CheckAlreadyRunning::");
-	hRunOnceMutex = ::CreateMutex(nullptr, TRUE, (Prefix + pAppName).CStr());
+	std::string Prefix("DEM::CPlatformWin32::CheckAlreadyRunning::");
+	hRunOnceMutex = ::CreateMutex(nullptr, TRUE, (Prefix + pAppName).c_str());
 	if (hRunOnceMutex && ::GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		// The same app is already running
@@ -524,7 +524,7 @@ bool CPlatformWin32::OnInputDeviceArrived(HANDLE hDevice)
 	char NameBuf[512];
 	UINT NameBufSize = 512;
 	if (::GetRawInputDeviceInfo(hDevice, RIDI_DEVICENAME, NameBuf, &NameBufSize) <= 0) FAIL;
-	const CString DeviceName(NameBuf);
+	const std::string DeviceName(NameBuf);
 
 	for (auto& Device : InputDevices)
 	{
@@ -758,27 +758,27 @@ IOSFileSystem* CPlatformWin32::GetFileSystemInterface() const
 }
 //---------------------------------------------------------------------
 
-bool CPlatformWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath) const
+bool CPlatformWin32::GetSystemFolderPath(ESystemFolder Code, std::string& OutPath) const
 {
 	char pRawPath[DEM_MAX_PATH];
 	if (Code == SysFolder_Temp)
 	{
 		if (!::GetTempPath(sizeof(pRawPath), pRawPath)) FAIL;
 		OutPath = pRawPath;
-		OutPath.Replace('\\', '/');
+		std::replace(OutPath.begin(), OutPath.end(), '\\', '/');
 	}
 	else if (Code == SysFolder_Bin || Code == SysFolder_Home)
 	{
 		if (!::GetModuleFileName(nullptr, pRawPath, sizeof(pRawPath))) FAIL;
-		CString PathToExe(pRawPath);
-		PathToExe.Replace('\\', '/');
-		OutPath = PathUtils::CollapseDots(PathUtils::ExtractDirName(PathToExe).CStr());
+		std::string PathToExe(pRawPath);
+		std::replace(PathToExe.begin(), PathToExe.end(), '\\', '/');
+		OutPath = PathUtils::CollapseDots(PathUtils::ExtractDirName(PathToExe).c_str());
 	}
 	else if (Code == SysFolder_WorkingDir)
 	{
 		if (!::GetCurrentDirectory(sizeof(pRawPath), pRawPath)) FAIL;
 		OutPath = pRawPath;
-		OutPath.Replace('\\', '/');
+		std::replace(OutPath.begin(), OutPath.end(), '\\', '/');
 	}
 	else
 	{
@@ -793,7 +793,7 @@ bool CPlatformWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath) c
 
 		if (FAILED(::SHGetFolderPath(0, CSIDL, nullptr, 0, pRawPath))) FAIL;
 		OutPath = pRawPath;
-		OutPath.Replace('\\', '/');
+		std::replace(OutPath.begin(), OutPath.end(), '\\', '/');
 	}
 
 	PathUtils::EnsurePathHasEndingDirSeparator(OutPath);

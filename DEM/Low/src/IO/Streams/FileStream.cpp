@@ -9,8 +9,8 @@ CFileStream::CFileStream(const char* pPath, IFileSystem* pFS, EStreamAccessMode 
 	: FileName(pPath)
 	, FS(pFS)
 {
-	if (FileName.IsValid() && FS)
-		hFile = FS->OpenFile(FileName.CStr(), Mode, Pattern);
+	if (!FileName.empty() && FS)
+		hFile = FS->OpenFile(FileName.c_str(), Mode, Pattern);
 }
 //---------------------------------------------------------------------
 

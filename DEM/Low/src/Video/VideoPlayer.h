@@ -14,7 +14,7 @@ class CVideoPlayer
 protected:
 
 	bool		_IsOpen;
-	CString		FileName;
+	std::string FileName;
 
 	UPTR		videoWidth;
 	UPTR		videoHeight;
@@ -48,7 +48,7 @@ public:
 	float			GetFpS() const { return videoFpS; }
 	UPTR			GetFrameCount() const { return videoFrameCount; }
 	void			SetFilename(const char* pFileName) { FileName = pFileName; }
-	const CString&	GetFilename() const { return FileName; }
+	const std::string&	GetFilename() const { return FileName; }
 	// SetTexture, GetTexture
 };
 

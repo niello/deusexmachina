@@ -9,7 +9,7 @@ namespace Input
 CMouseWin32::CMouseWin32() {}
 CMouseWin32::~CMouseWin32() {}
 
-bool CMouseWin32::Init(HANDLE hDevice, const CString& DeviceName, const RID_DEVICE_INFO_MOUSE& DeviceInfo)
+bool CMouseWin32::Init(HANDLE hDevice, const std::string& DeviceName, const RID_DEVICE_INFO_MOUSE& DeviceInfo)
 {
 	Name = DeviceName;
 	ID = DeviceInfo.dwId;

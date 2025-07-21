@@ -29,22 +29,22 @@ enum
 CHRDParser::CHRDParser(): pErr(nullptr)
 {
 	// NB: Keep sorted and keep enum above updated
-	TableRW.push_back(CString("false"));
-	TableRW.push_back(CString("null"));
-	TableRW.push_back(CString("true"));
+	TableRW.push_back("false");
+	TableRW.push_back("null");
+	TableRW.push_back("true");
 	
-	TableDlm.push_back(CString("="));
-	TableDlm.push_back(CString("["));
-	TableDlm.push_back(CString(","));
-	TableDlm.push_back(CString("]"));
-	TableDlm.push_back(CString("{"));
-	TableDlm.push_back(CString("}"));
-	TableDlm.push_back(CString("("));
-	TableDlm.push_back(CString(")"));
+	TableDlm.push_back("=");
+	TableDlm.push_back("[");
+	TableDlm.push_back(",");
+	TableDlm.push_back("]");
+	TableDlm.push_back("{");
+	TableDlm.push_back("}");
+	TableDlm.push_back("(");
+	TableDlm.push_back(")");
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::ParseBuffer(const char* Buffer, UPTR Length, CParams& Result, CString* pErrors)
+bool CHRDParser::ParseBuffer(const char* Buffer, UPTR Length, CParams& Result, std::string* pErrors)
 {
 	Result.Clear();
 
@@ -71,7 +71,7 @@ bool CHRDParser::ParseBuffer(const char* Buffer, UPTR Length, CParams& Result, C
 	std::vector<CToken> Tokens;
 	if (!Tokenize(Tokens))
 	{
-		if (pErr) pErr->Add("Lexical analysis of HRD failed\n");
+		if (pErr) pErr->append("Lexical analysis of HRD failed\n");
 		TableID.clear();
 		TableConst.clear(); //???always keep "0" const?
 		FAIL;
@@ -79,7 +79,7 @@ bool CHRDParser::ParseBuffer(const char* Buffer, UPTR Length, CParams& Result, C
 	
 	if (!ParseTokenStream(Tokens, Result))
 	{
-		if (pErr) pErr->Add("Syntax analysis of HRD failed\n");
+		if (pErr) pErr->append("Syntax analysis of HRD failed\n");
 		Result.Clear();
 		TableID.clear();
 		TableConst.clear(); //???always keep "0" const?
@@ -217,8 +217,8 @@ bool CHRDParser::LexProcessID(std::vector<CToken>& Tokens)
 		else break;
 	}
 	
-	CString NewID;
-	NewID.Set(TokenStart, LexerCursor - TokenStart);
+	std::string NewID;
+	NewID.assign(TokenStart, LexerCursor - TokenStart);
 
 	{
 		auto It = std::lower_bound(TableRW.cbegin(), TableRW.cend(), NewID);
@@ -252,17 +252,12 @@ bool CHRDParser::LexProcessHex(std::vector<CToken>& Tokens)
 	int TokenLength = LexerCursor - TokenStart;
 	if (TokenLength < 3)
 	{
-		if (pErr)
-		{
-			CString S;
-			S.Format("Hexadecimal constant should contain at least one hex digit after '0x' (Ln:%u, Col:%u)\n", Line, Col);
-			pErr->Add(S);
-		}
+		if (pErr) pErr->append("Hexadecimal constant should contain at least one hex digit after '0x' (Ln:{}, Col:{})\n"_format(Line, Col));
 		FAIL;
 	}
 	
-	CString Token;
-	Token.Set(TokenStart, TokenLength);
+	std::string Token;
+	Token.assign(TokenStart, TokenLength);
 	AddConst(Tokens, Token, T_INT_HEX);
 	OK;
 }
@@ -279,8 +274,8 @@ bool CHRDParser::LexProcessFloat(std::vector<CToken>& Tokens)
 	}
 	while (LexerCursor < EndOfBuffer && isdigit(*LexerCursor));
 		
-	CString Token;
-	Token.Set(TokenStart, LexerCursor - TokenStart);
+	std::string Token;
+	Token.assign(TokenStart, LexerCursor - TokenStart);
 	AddConst(Tokens, Token, T_FLOAT);
 	OK;
 }
@@ -302,8 +297,8 @@ bool CHRDParser::LexProcessNumeric(std::vector<CToken>& Tokens)
 		else break;
 	}
 
-	CString Token;
-	Token.Set(TokenStart, LexerCursor - TokenStart);
+	std::string Token;
+	Token.assign(TokenStart, LexerCursor - TokenStart);
 	AddConst(Tokens, Token, T_INT);
 	OK;
 }
@@ -311,7 +306,7 @@ bool CHRDParser::LexProcessNumeric(std::vector<CToken>& Tokens)
 
 bool CHRDParser::LexProcessString(std::vector<CToken>& Tokens, char QuoteChar)
 {
-	CString NewConst;
+	std::string NewConst;
 	//NewConst.Reserve(256); //!!!need grow!
 	
 	LexerCursor++;
@@ -328,7 +323,7 @@ bool CHRDParser::LexProcessString(std::vector<CToken>& Tokens, char QuoteChar)
 				CurrChar = *LexerCursor;
 				switch (CurrChar)
 				{
-					case 't': NewConst += "\t"; break;	//!!!NEED CString += char!
+					case 't': NewConst += "\t"; break;	//!!!NEED std::string += char!
 					case '\\': NewConst += "\\"; break;
 					case '"': NewConst += "\""; break;
 					case '\'': NewConst += "'"; break;
@@ -347,7 +342,7 @@ bool CHRDParser::LexProcessString(std::vector<CToken>& Tokens, char QuoteChar)
 						break;
 					default:
 						{
-							//!!!NEED CString += char!
+							//!!!NEED std::string += char!
 							char Tmp[3];
 							Tmp[0] = '\\';
 							Tmp[1] = CurrChar;
@@ -376,7 +371,7 @@ bool CHRDParser::LexProcessString(std::vector<CToken>& Tokens, char QuoteChar)
 		}
 		else
 		{
-			//!!!NEED CString += char! or better pre-allocate+grow & simply set characters by NewConst[Len] = c
+			//!!!NEED std::string += char! or better pre-allocate+grow & simply set characters by NewConst[Len] = c
 			char Tmp[2];
 			Tmp[0] = CurrChar;
 			Tmp[1] = 0;
@@ -386,12 +381,7 @@ bool CHRDParser::LexProcessString(std::vector<CToken>& Tokens, char QuoteChar)
 		}
 	}
 	
-	if (pErr)
-	{
-		CString S;
-		S.Format("Unexpected end of file while parsing string constant (Ln:%u, Col:%u)\n", Line, Col);
-		pErr->Add(S);
-	}
+	if (pErr) pErr->append("Unexpected end of file while parsing string constant (Ln:{}, Col:{})\n"_format(Line, Col));
 
 	FAIL;
 }
@@ -400,7 +390,7 @@ bool CHRDParser::LexProcessString(std::vector<CToken>& Tokens, char QuoteChar)
 // <" STRING CONTENTS ">
 bool CHRDParser::LexProcessBigString(std::vector<CToken>& Tokens)
 {
-	CString NewConst; //!!!preallocate and grow like array!
+	std::string NewConst; //!!!preallocate and grow like array!
 	
 	LexerCursor++;
 	Col++;
@@ -429,7 +419,7 @@ bool CHRDParser::LexProcessBigString(std::vector<CToken>& Tokens)
 			else break;
 		}
 
-		//!!!NEED CString += char! or better pre-allocate+grow & simply set characters by NewConst[Len] = c
+		//!!!NEED std::string += char! or better pre-allocate+grow & simply set characters by NewConst[Len] = c
 		char Tmp[2];
 		Tmp[0] = CurrChar;
 		Tmp[1] = 0;
@@ -438,12 +428,7 @@ bool CHRDParser::LexProcessBigString(std::vector<CToken>& Tokens)
 		Col++;
 	}
 	
-	if (pErr)
-	{
-		CString S;
-		S.Format("Unexpected end of file while parsing big string constant (Ln:%u, Col:%u)\n", Line, Col);
-		pErr->Add(S);
-	}
+	if (pErr) pErr->append("Unexpected end of file while parsing big string constant (Ln:{}, Col:{})\n"_format(Line, Col));
 
 	FAIL;
 }
@@ -484,12 +469,7 @@ bool CHRDParser::LexProcessDlm(std::vector<CToken>& Tokens)
 		
 		if (MatchStart == INVALID_INDEX)
 		{
-			if (pErr)
-			{
-				CString S;
-				S.Format("Unknown delimiter (Ln:%u, Col:%u)\n", Line, Col);
-				pErr->Add(S);
-			}
+			if (pErr) pErr->append("Unknown delimiter (Ln:{}, Col:{})\n"_format(Line, Col));
 			FAIL;
 		}
 
@@ -499,12 +479,7 @@ bool CHRDParser::LexProcessDlm(std::vector<CToken>& Tokens)
 	}
 	
 	// No matching dlm at all, invalid character in stream
-	if (pErr)
-	{
-		CString S;
-		S.Format("Invalid character '%c' (%u) (Ln:%u, Col:%u)\n", CurrChar, CurrChar, Line, Col);
-		pErr->Add(S);
-	}
+	if (pErr) pErr->append("Invalid character '{}' ({}) (Ln:{}, Col:{})\n"_format(CurrChar, CurrChar, Line, Col));
 
 	FAIL;
 }
@@ -546,12 +521,7 @@ bool CHRDParser::LexProcessCommentBlock()
 		}
 	}
 
-	if (pErr)
-	{
-		CString S;
-		S.Format("Unexpected end of file while parsing comment block\n");
-		pErr->Add(S);
-	}
+	if (pErr) pErr->append("Unexpected end of file while parsing comment block\n");
 
 	FAIL;
 }
@@ -563,7 +533,7 @@ void CHRDParser::DlmMatchChar(char Char, int Index, int Start, int End, int& Mat
 	int i = Start;
 	for (; i < End; ++i)
 	{
-		if ((int)TableDlm[i].GetLength() < Index) continue;
+		if ((int)TableDlm[i].size() < Index) continue;
 
 		if (MatchStart == INVALID_INDEX)
 		{
@@ -607,16 +577,16 @@ void CHRDParser::SkipSpaces()
 }
 //---------------------------------------------------------------------
 
-void CHRDParser::AddConst(std::vector<CToken>& Tokens, const CString& Const, EType Type)
+void CHRDParser::AddConst(std::vector<CToken>& Tokens, const std::string& Const, EType Type)
 {
 	CData Data;
 	switch (Type)
 	{
-		case T_INT:		Data = StringUtils::ToInt(Const.CStr()); break;
-		case T_INT_HEX:	Data = (int)strtoul(Const.CStr(), nullptr, 16); break; //!!!can use 0 base to autodetect radix
-		case T_FLOAT:	Data = StringUtils::ToFloat(Const.CStr()); break;
-		case T_STRING:	Data = Const; break;
-		case T_STRID:	Data = CStrID(Const.CStr()); break;
+		case T_INT:		Data = StringUtils::ToInt(Const.c_str()); break;
+		case T_INT_HEX:	Data = (int)strtoul(Const.c_str(), nullptr, 16); break; //!!!can use 0 base to autodetect radix
+		case T_FLOAT:	Data = StringUtils::ToFloat(Const.c_str()); break;
+		case T_STRING:	Data = CString(Const); break;
+		case T_STRID:	Data = CStrID(Const); break;
 		default:		Sys::Error("Unknown data type\n");
 	}
 	
@@ -648,7 +618,7 @@ bool CHRDParser::ParseParam(const std::vector<CToken>& Tokens, CParams& Output)
 	const CToken& CurrToken = Tokens[ParserCursor];
 	if (CurrToken.Table == TBL_ID)
 	{
-		Key = CStrID(TableID[CurrToken.Index].CStr());
+		Key = CStrID(TableID[CurrToken.Index]);
 	}
 	else if (CurrToken.Table == TBL_CONST && TableConst[CurrToken.Index].IsA<CStrID>())
 	{
@@ -656,12 +626,7 @@ bool CHRDParser::ParseParam(const std::vector<CToken>& Tokens, CParams& Output)
 	}
 	else
 	{
-		if (pErr)
-		{
-			CString S;
-			S.Format("ID or CStrID constant expected (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
-			pErr->Add(S);
-		}
+		if (pErr) pErr->append("ID or CStrID constant expected (Ln:{}, Col:{})\n"_format(CurrToken.Ln, CurrToken.Cl));
 		FAIL;
 	}
 	
@@ -671,12 +636,7 @@ bool CHRDParser::ParseParam(const std::vector<CToken>& Tokens, CParams& Output)
 		if (Tokens[ParserCursor].IsA(TBL_DLM, DLM_EQUAL) && ++ParserCursor >= Tokens.size())
 		{
 			ParserCursor = CursorBackup;
-			if (pErr)
-			{
-				CString S;
-				S.Format("Unexpected end of file after ID in PARAM\n");
-				pErr->Add(S);
-			}
+			if (pErr) pErr->append("Unexpected end of file after ID in PARAM\n");
 			FAIL;
 		}
 		
@@ -694,12 +654,7 @@ bool CHRDParser::ParseParam(const std::vector<CToken>& Tokens, CParams& Output)
 	}
 	
 	ParserCursor--;
-	if (pErr)
-	{
-		CString S;
-		S.Format("Unexpected end of file while parsing PARAM\n");
-		pErr->Add(S);
-	}
+	if (pErr) pErr->append("Unexpected end of file while parsing PARAM\n");
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -758,28 +713,18 @@ bool CHRDParser::ParseData(const std::vector<CToken>& Tokens, CData& Output)
 	
 	Output.Clear();
 	ParserCursor = CursorBackup;
-	if (pErr)
-	{
-		CString S;
-		S.Format("Parsing of DATA failed (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
-		pErr->Add(S);
-	}
+	if (pErr) pErr->append("Parsing of DATA failed (Ln:{}, Col:{})\n"_format(CurrToken.Ln, CurrToken.Cl));
 
 #ifdef _DEBUG
-	CString TokenValue;
+	std::string TokenValue;
 	if (CurrToken.Table == TBL_RW) TokenValue = TableRW[CurrToken.Index];
 	else if (CurrToken.Table == TBL_ID) TokenValue = TableID[CurrToken.Index];
 	else if (CurrToken.Table == TBL_DLM) TokenValue = TableDlm[CurrToken.Index];
 	else if (TableConst[CurrToken.Index].IsA<CString>())
 		TokenValue = TableConst[CurrToken.Index].GetValue<CString>();
-	else TokenValue = CString("Non-string (numeric) constant");
+	else TokenValue = "Non-string (numeric) constant";
 	
-	if (pErr)
-	{
-		CString S;
-		S.Format("Current token: %s\n", TokenValue.CStr());
-		pErr->Add(S);
-	}
+	if (pErr) pErr->append("Current token: {}\n"_format(TokenValue));
 
 	if (ParserCursor > 0)
 	{
@@ -789,14 +734,9 @@ bool CHRDParser::ParseData(const std::vector<CToken>& Tokens, CData& Output)
 		else if (PrevToken.Table == TBL_DLM) TokenValue = TableDlm[PrevToken.Index];
 		else if (TableConst[PrevToken.Index].IsA<CString>())
 			TokenValue = TableConst[PrevToken.Index].GetValue<CString>();
-		else TokenValue = CString("Non-string (numeric) constant");
+		else TokenValue = "Non-string (numeric) constant";
 		
-		if (pErr)
-		{
-			CString S;
-			S.Format("Previous token: %s\n", TokenValue.CStr());
-			pErr->Add(S);
-		}
+		if (pErr) pErr->append("Previous token: {}\n"_format(TokenValue));
 	}
 #endif
 
@@ -839,23 +779,13 @@ bool CHRDParser::ParseArray(const std::vector<CToken>& Tokens, CDataArray& Outpu
 		else
 		{
 			ParserCursor = CursorBackup;
-			if (pErr)
-			{
-				CString S;
-				S.Format("',' or ']' expected (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
-				pErr->Add(S);
-			}
+			if (pErr) pErr->append("',' or ']' expected (Ln:{}, Col:{})\n"_format(CurrToken.Ln, CurrToken.Cl));
 			FAIL;
 		}
 	}
 
 	ParserCursor = CursorBackup;
-	if (pErr)
-	{
-		CString S;
-		S.Format("Unexpected end of file while parsing ARRAY\n");
-		pErr->Add(S);
-	}
+	if (pErr) pErr->append("Unexpected end of file while parsing ARRAY\n");
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -884,12 +814,7 @@ bool CHRDParser::ParseSection(const std::vector<CToken>& Tokens, CParams& Output
 	}
 
 	ParserCursor = CursorBackup;
-	if (pErr)
-	{
-		CString S;
-		S.Format("Unexpected end of file while parsing SECTION\n");
-		pErr->Add(S);
-	}
+	if (pErr) pErr->append("Unexpected end of file while parsing SECTION\n");
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -912,12 +837,7 @@ bool CHRDParser::ParseVector(const std::vector<CToken>& Tokens, CData& Output)
 			CData Data;
 			if (!(ParseData(Tokens, Data) && (Data.IsA<int>() || Data.IsA<float>())))
 			{
-				if (pErr)
-				{
-					CString S;
-					S.Format("Numeric constant expected in vector (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
-					pErr->Add(S);
-				}
+				if (pErr) pErr->append("Numeric constant expected in vector (Ln:{}, Col:{})\n"_format(CurrToken.Ln, CurrToken.Cl));
 				ParserCursor = CursorBackup;
 				FAIL;
 			}
@@ -958,12 +878,7 @@ bool CHRDParser::ParseVector(const std::vector<CToken>& Tokens, CData& Output)
 				
 				default:
 					ParserCursor = CursorBackup;
-					if (pErr)
-					{
-						CString S;
-						S.Format("Unexpected vector element count: %d (Ln:%u, Col:%u)\n", Floats.size(), CurrToken.Ln, CurrToken.Cl);
-						pErr->Add(S);
-					}
+					if (pErr) pErr->append("Unexpected vector element count: {} (Ln:{}, Col:{})\n"_format(Floats.size(), CurrToken.Ln, CurrToken.Cl));
 					FAIL;
 			}
 
@@ -973,23 +888,13 @@ bool CHRDParser::ParseVector(const std::vector<CToken>& Tokens, CData& Output)
 		else
 		{
 			ParserCursor = CursorBackup;
-			if (pErr)
-			{
-				CString S;
-				S.Format("',' or ']' expected (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
-				pErr->Add(S);
-			}
+			if (pErr) pErr->append("',' or ']' expected (Ln:{}, Col:{})\n"_format(CurrToken.Ln, CurrToken.Cl));
 			FAIL;
 		}
 	}
 
 	ParserCursor = CursorBackup;
-	if (pErr)
-	{
-		CString S;
-		S.Format("Unexpected end of file while parsing VECTOR\n");
-		pErr->Add(S);
-	}
+	if (pErr) pErr->append("Unexpected end of file while parsing VECTOR\n");
 	FAIL;
 }
 //---------------------------------------------------------------------

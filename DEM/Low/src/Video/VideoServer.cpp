@@ -101,13 +101,13 @@ n_assert(false);
 
 	//???use MultiByteToWideChar?
 	wchar_t WidePath[DEM_MAX_PATH];
-	CString Path = IOSrv->ResolveAssigns(pFileName);
+	const auto Path = IOSrv->ResolveAssigns(pFileName);
 	size_t CharsConverted;
-	mbstowcs_s(&CharsConverted, WidePath, sizeof(WidePath), Path.CStr(), Path.GetLength() + 1);
+	mbstowcs_s(&CharsConverted, WidePath, sizeof(WidePath), Path.c_str(), Path.size() + 1);
 
 	if (FAILED(pGraphBuilder->RenderFile(WidePath, nullptr)))
 	{
-		Sys::Error("CVideoServer::PlayFile(): could not render file '{}'"_format(Path.CStr()));
+		Sys::Error("CVideoServer::PlayFile(): could not render file '{}'"_format(Path.c_str()));
 		FAIL;
 	}
 

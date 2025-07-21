@@ -646,14 +646,14 @@ void CMotorSystem::RenderDebug(Debug::CDebugDraw& DebugDraw)
 	else if (pActor->MvmtState == AIMvmt_DestSet) pMvmt = "DestSet";
 	else if (pActor->MvmtState == AIMvmt_Stuck) pMvmt = "Stuck";
 
-	CString Text;
+	std::string Text;
 	Text.Format("Mvmt state: %s\nFace direction set: %s\n", pMvmt, pActor->FacingState == AIFacing_DirSet ? "true" : "false");
 
 	if (pActor->MvmtState == AIMvmt_DestSet)
 	{
 		vector2 ToDest(DestPoint.x - pActor->Position.x, DestPoint.z - pActor->Position.z);
 
-		CString Text2;
+		std::string Text2;
 		Text2.Format("DestPoint: %.4f, %.4f, %.4f\n"
 			"Position: %.4f, %.4f, %.4f\n"
 			"DistToDest: %.4f\n"
@@ -698,7 +698,7 @@ bool CPropCharacterController::OnRenderDebug(Events::CEventDispatcher* pDispatch
 	{
 		vector3 LVel = CharCtlr->GetLinearVelocity();
 
-		CString Text;
+		std::string Text;
 		Text.Format("\n\n\n\n\n\n\n\n"
 			"Requested velocity: %.4f, %.4f, %.4f\n"
 			"Actual velocity: %.4f, %.4f, %.4f\n"

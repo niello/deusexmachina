@@ -715,7 +715,7 @@ void RenderDebugNavigation(Game::CGameWorld& World, Debug::CDebugDraw& DebugDraw
 		else if (pActor->NavState == AINav_Planning) pNavStr = "Planning";
 		else if (pActor->NavState == AINav_Following) pNavStr = "Following";
 
-		CString Text;
+		std::string Text;
 		Text.Format(
 			"Nav state: %s\n"
 			"Nav location is %s\n"

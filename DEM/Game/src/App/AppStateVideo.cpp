@@ -12,9 +12,9 @@ void CAppStateVideo::OnStateEnter(CStrID PrevState, Data::PParams Params)
 	CoreSrv->ResetAll();
 	CoreSrv->Trigger();
 	CStateHandler::OnStateEnter(PrevState);
-	n_assert(VideoFileName.IsValid());
+	n_assert(!VideoFileName.empty());
 	VideoSrv->ScalingEnabled = EnableScaling;
-	VideoSrv->PlayFile(VideoFileName.CStr());
+	VideoSrv->PlayFile(VideoFileName.c_str());
 }
 //---------------------------------------------------------------------
 

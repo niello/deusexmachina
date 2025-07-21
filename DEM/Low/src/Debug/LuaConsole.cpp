@@ -121,7 +121,7 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 		const char* pTable = Cmd.c_str() + 3;
 		while (*pTable == 32) ++pTable;
 
-		std::vector<CString> Contents;
+		std::vector<std::string> Contents;
 
 		//if (ScriptSrv->PlaceOnStack(pTable))
 		//{
@@ -148,7 +148,7 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 	if (CmdHistoryCursor + 1 != CmdHistory.size())
 	{
 		if (CmdHistory.size() > 32) CmdHistory.erase(CmdHistory.begin());
-		CmdHistory.push_back(CString(Cmd.c_str()));
+		CmdHistory.push_back(std::string(Cmd.c_str()));
 	}
 	CmdHistoryCursor = CmdHistory.size();
 
@@ -167,7 +167,7 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 		if (CmdHistory.size() > CmdHistoryCursor + 1)
 		{
 			++CmdHistoryCursor;
-			pInputLine->setText(CmdHistory[CmdHistoryCursor].CStr());
+			pInputLine->setText(CmdHistory[CmdHistoryCursor].c_str());
 			pInputLine->setCaretIndex(pInputLine->getText().length());
 		}
 		else if (pInputLine->getText().c_str() && *pInputLine->getText().c_str())
@@ -175,7 +175,7 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 			if (CmdHistory.size() == CmdHistoryCursor)
 			{
 				if (CmdHistory.size() > 32) CmdHistory.erase(CmdHistory.begin());
-				CmdHistory.push_back(CString(CEGUI::String::convertUtf32ToUtf8(pInputLine->getText().c_str()).c_str()));
+				CmdHistory.push_back(std::string(CEGUI::String::convertUtf32ToUtf8(pInputLine->getText().c_str()).c_str()));
 			}
 			CmdHistoryCursor = CmdHistory.size();
 
@@ -188,7 +188,7 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 		if (CmdHistory.size())
 		{
 			if (CmdHistoryCursor > 0) --CmdHistoryCursor;
-			pInputLine->setText(CmdHistory[CmdHistoryCursor].CStr());
+			pInputLine->setText(CmdHistory[CmdHistoryCursor].c_str());
 			pInputLine->setCaretIndex(pInputLine->getText().length());
 		}
 		OK;

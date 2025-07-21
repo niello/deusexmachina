@@ -33,9 +33,7 @@
 // documentation and/or software.
 /////////////////////////////////////////////////////////////////////////
 
-
-
-#include <Data/String.h>
+#include <string>
 
 typedef unsigned       int uint4;
 typedef unsigned short int uint2;
@@ -51,8 +49,8 @@ public:
     void    Finalize();
     U8*  Digest() { return m_Digest; }
 
-    CString String2MD5(const char* szString);
-    CString PrintMD5(U8 md5Digest[16]);
+    std::string String2MD5(const char* szString);
+    std::string PrintMD5(U8 md5Digest[16]);
 
 private:
 

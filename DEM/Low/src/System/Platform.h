@@ -9,7 +9,7 @@ namespace Input
 	typedef Ptr<class IInputDevice> PInputDevice;
 }
 
-namespace DEM { namespace Sys
+namespace DEM::Sys
 {
 typedef Ptr<class COSWindow> POSWindow;
 class IOSFileSystem;
@@ -29,7 +29,7 @@ class IPlatform : public ::Events::CEventDispatcher
 {
 public:
 
-	virtual CString			GetOSUserName() const = 0;
+	virtual std::string			GetOSUserName() const = 0;
 	virtual bool			CheckAlreadyRunning(const char* pAppName) = 0;
 
 	virtual double			GetSystemTime() const = 0; // In seconds
@@ -40,10 +40,9 @@ public:
 	//virtual POSConsoleWindow CreateConsoleWindow() = 0;
 
 	virtual IOSFileSystem*	GetFileSystemInterface() const = 0;
-	virtual bool			GetSystemFolderPath(ESystemFolder Code, CString& OutPath) const = 0;
+	virtual bool			GetSystemFolderPath(ESystemFolder Code, std::string& OutPath) const = 0;
 
 	virtual bool			Update() = 0;
 };
 
 }
-};
