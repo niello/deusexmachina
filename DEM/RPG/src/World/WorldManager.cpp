@@ -39,10 +39,10 @@ bool CWorldManager::OnGameSaving(Events::CEventDispatcher* pDispatcher, const Ev
 
 //???to L2 GameSrv?
 // Level will be set as active externally, because transition can be performed by NPCs too
-bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID LevelID, CStrID MarkerID, bool UnloadAllLevels)
+bool CWorldManager::MakeTransition(const std::vector<CStrID>& EntityIDs, CStrID LevelID, CStrID MarkerID, bool UnloadAllLevels)
 {
 	/*
-	CArray<Game::PEntity> Entities(EntityIDs.GetCount(), 0);
+	std::vector<Game::PEntity> Entities(EntityIDs.GetCount(), 0);
 	for (UPTR i = 0; i < EntityIDs.GetCount(); ++i)
 	{
 		Game::CEntity* pEnt = nullptr;//GameSrv->GetEntityMgr()->GetEntity(EntityIDs[i]);

@@ -32,7 +32,7 @@ CWatcherWindow::CWatcherWindow()
 
 CWatcherWindow::~CWatcherWindow()
 {
-	for (UPTR i = 0; i < Watched.GetCount(); ++i)
+	for (UPTR i = 0; i < Watched.size(); ++i)
 		Watched[i].Clear();
 
 	UNSUBSCRIBE_EVENT(OnUIUpdate);
@@ -88,7 +88,7 @@ void CWatcherWindow::SetVisible(bool Visible)
 
 void CWatcherWindow::AddWatched(EVarType Type, const char* Name)
 {
-	CWatched& Curr = *Watched.Reserve(1);
+	CWatched& Curr = Watched.emplace_back();
 	Curr.Type = Type;
 	Curr.VarName = Name;
 
@@ -121,13 +121,13 @@ void CWatcherWindow::AddWatched(EVarType Type, const char* Name)
 
 void CWatcherWindow::AddAllGlobals()
 {
-	UPTR i = Watched.GetCount();
+	UPTR i = Watched.size();
 	for (auto& [Name, Value] : CoreSrv->Globals)
 		AddWatched(DEM, Name.c_str());
 
-	for (UPTR j = i; j < Watched.GetCount(); ++j)
+	for (UPTR j = i; j < Watched.size(); ++j)
 		Watched[j].Clear();
-	Watched.Resize(i);
+	Watched.resize(i);
 }
 //---------------------------------------------------------------------
 
@@ -161,11 +161,11 @@ bool CWatcherWindow::OnKeyDown(const CEGUI::EventArgs& e)
 				pList->setItemSelectState(CEGUI::MCLGridRef(RowIdx, COL_NAME), true);
 			}
 			
-			for (CArray<CWatched>::CIterator It = Watched.Begin(); It != Watched.End(); ++It)
+			for (auto It = Watched.begin(); It != Watched.end(); ++It)
 				if (pSel == It->pNameItem)
 				{
 					It->Clear();
-					Watched.Remove(It);
+					Watched.erase(It);
 					break;
 				}
 			
@@ -180,9 +180,9 @@ bool CWatcherWindow::OnKeyDown(const CEGUI::EventArgs& e)
 bool CWatcherWindow::OnClearClick(const CEGUI::EventArgs& e)
 {
 	pList->resetList();
-	for (UPTR i = 0; i < Watched.GetCount(); ++i)
+	for (UPTR i = 0; i < Watched.size(); ++i)
 		Watched[i].Clear();
-	Watched.Clear();
+	Watched.clear();
 	OK;
 }
 //---------------------------------------------------------------------
@@ -200,7 +200,7 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 	const bool CheckMatch = !Pattern.empty() && Pattern != "*";
 
 	int i = 0;
-	for (CArray<CWatched>::CIterator It = Watched.Begin(); It != Watched.End(); It++, ++i)
+	for (auto It = Watched.begin(); It != Watched.end(); It++, ++i)
 	{
 		if (!CheckMatch || StringUtils::MatchesPattern(It->VarName.CStr(), Pattern.c_str()))
 		{

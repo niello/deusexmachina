@@ -78,17 +78,17 @@ RenderTarget* CDEMRenderer::createViewportTarget(float width, float height)
 {
 	Rectf area(0.f, 0.f, width, height);
 	CDEMViewportTarget* t = n_new(CDEMViewportTarget)(*this, area);
-	VPTargets.Add(t);
+	VPTargets.push_back(t);
 	return t;
 }
 //---------------------------------------------------------------------
 
 void CDEMRenderer::destroyViewportTarget(RenderTarget* target)
 {
-	IPTR Idx = VPTargets.FindIndex(target);
-	if (Idx != INVALID_INDEX)
+	auto It = std::find(VPTargets.begin(), VPTargets.end(), target);
+	if (It != VPTargets.end())
 	{
-		VPTargets.RemoveAt(Idx);
+		VPTargets.erase(It);
 		n_delete(target);
 	}
 }
@@ -104,17 +104,17 @@ void CDEMRenderer::setEffects(CDEMShaderWrapper* pTextured, CDEMShaderWrapper* p
 TextureTarget* CDEMRenderer::createTextureTarget(bool addStencilBuffer)
 {
 	CDEMTextureTarget* t = n_new(CDEMTextureTarget)(*this, addStencilBuffer);
-	TexTargets.Add(t);
+	TexTargets.push_back(t);
 	return t;
 }
 //--------------------------------------------------------------------
 
 void CDEMRenderer::destroyTextureTarget(TextureTarget* target)
 {
-	IPTR Idx = TexTargets.FindIndex((CDEMTextureTarget*)target);
-	if (Idx != INVALID_INDEX)
+	auto It = std::find(TexTargets.begin(), TexTargets.end(), target);
+	if (It != TexTargets.end())
 	{
-		TexTargets.RemoveAt(Idx);
+		TexTargets.erase(It);
 		n_delete(target);
 	}
 }
@@ -122,9 +122,9 @@ void CDEMRenderer::destroyTextureTarget(TextureTarget* target)
 
 void CDEMRenderer::destroyAllTextureTargets()
 {
-	for (CArray<CDEMTextureTarget*>::CIterator It = TexTargets.Begin(); It < TexTargets.End(); ++It)
-		n_delete(*It);
-	TexTargets.Clear(true);
+	for (auto* pTex : TexTargets)
+		n_delete(pTex);
+	TexTargets.clear();
 }
 //--------------------------------------------------------------------
 

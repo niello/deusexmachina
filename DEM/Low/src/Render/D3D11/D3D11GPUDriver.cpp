@@ -2344,7 +2344,7 @@ PTexture CD3D11GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 	}
 
 	PD3D11Texture Tex = n_new(CD3D11Texture);
-	if (Tex.IsNullPtr()) return nullptr;
+	if (!Tex) return nullptr;
 
 	if (!Tex->Create(Data, Usage, AccessFlags, pTexRsrc, pSRV))
 	{

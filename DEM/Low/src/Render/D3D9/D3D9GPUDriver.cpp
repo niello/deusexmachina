@@ -1008,7 +1008,7 @@ void CD3D9GPUDriver::SetDefaultRenderState()
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/bb172599(v=vs.85).aspx.
 	// Some default values may be manually overridden and must be set just before
 	// setting DefaultRenderState as current.
-	if (DefaultRenderState.IsNullPtr())
+	if (!DefaultRenderState)
 	{
 		DefaultRenderState = n_new(CD3D9RenderState);
 		DefaultRenderState->VS = nullptr;
@@ -1072,7 +1072,7 @@ void CD3D9GPUDriver::SetDefaultSamplers()
 	// states when this->BindSampler() is called. Default values are described in
 	// D3DSAMPLERSTATETYPE docs. Some default values may be manually overridden and
 	// must be set just before setting SetDefaultSampler as current.
-	if (DefaultSampler.IsNullPtr())
+	if (!DefaultSampler)
 	{
 		DefaultSampler = n_new(CD3D9Sampler);
 
@@ -1305,7 +1305,7 @@ bool CD3D9GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDispl
 
 	// Only one output per adapter in a current implementation, use output ID 0 for default display
 	SC.TargetDisplay = pDisplay ? pDisplay : _DriverFactory->CreateDisplayDriver(AdapterID, 0);
-	if (SC.TargetDisplay.IsNullPtr()) FAIL;
+	if (!SC.TargetDisplay) FAIL;
 
 	CDisplayMode CurrentMode;
 	if (!pMode)
@@ -2381,7 +2381,7 @@ PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 	n_assert_dbg(!Data->MipDataProvided || Desc.MipLevels);
 
 	PD3D9Texture Tex = n_new(CD3D9Texture);
-	if (Tex.IsNullPtr()) return nullptr;
+	if (!Tex) return nullptr;
 
 	D3DFORMAT D3DFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Desc.Format);
 

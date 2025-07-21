@@ -1,6 +1,4 @@
 #include "DataScheme.h"
-
-#include <Data/DataArray.h>
 #include <Math/Matrix44.h>
 
 namespace Data
@@ -68,7 +66,7 @@ bool CDataScheme::Init(const CParams& Desc)
 		if (Value.TryGet(pDflt, CStrID("Default")))
 			Rec.Default = pDflt->GetRawValue();
 
-		Records.Add(Rec);
+		Records.push_back(std::move(Rec));
 	}
 
 	OK;

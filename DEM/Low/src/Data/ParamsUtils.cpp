@@ -62,7 +62,7 @@ Data::PParams LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileNa
 }
 //---------------------------------------------------------------------
 
-bool LoadDataSerializationSchemesFromDSS(const char* pFileName, CDict<CStrID, Data::PDataScheme>& OutSchemes)
+bool LoadDataSerializationSchemesFromDSS(const char* pFileName, std::map<CStrID, Data::PDataScheme>& OutSchemes)
 {
 	Data::PParams SchemeDescs = ParamsUtils::LoadParamsFromHRD(pFileName);
 	if (!SchemeDescs) FAIL;
@@ -72,12 +72,11 @@ bool LoadDataSerializationSchemesFromDSS(const char* pFileName, CDict<CStrID, Da
 		const Data::CParam& Prm = SchemeDescs->Get(i);
 		if (!Prm.IsA<Data::PParams>()) FAIL;
 
-		IPTR Idx = OutSchemes.FindIndex(Prm.GetName());
-		if (Idx != INVALID_INDEX) OutSchemes.RemoveAt(Idx);
+		OutSchemes.erase(Prm.GetName());
 
 		Data::PDataScheme Scheme = n_new(Data::CDataScheme);
 		if (!Scheme->Init(*Prm.GetValue<Data::PParams>())) FAIL;
-		OutSchemes.Add(Prm.GetName(), Scheme);
+		OutSchemes.emplace(Prm.GetName(), Scheme);
 	}
 
 	OK;

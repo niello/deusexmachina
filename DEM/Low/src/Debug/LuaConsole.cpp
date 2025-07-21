@@ -121,7 +121,7 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 		const char* pTable = Cmd.c_str() + 3;
 		while (*pTable == 32) ++pTable;
 
-		CArray<CString> Contents;
+		std::vector<CString> Contents;
 
 		//if (ScriptSrv->PlaceOnStack(pTable))
 		//{
@@ -145,12 +145,12 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 		//if (RetVal.IsValid()) Sys::Log("Return value: {}\n"_format(RetVal.ToString()));
 	}
 
-	if (CmdHistoryCursor + 1 != CmdHistory.GetCount())
+	if (CmdHistoryCursor + 1 != CmdHistory.size())
 	{
-		if (CmdHistory.GetCount() > 32) CmdHistory.RemoveAt(0);
-		CmdHistory.Add(CString(Cmd.c_str()));
+		if (CmdHistory.size() > 32) CmdHistory.erase(CmdHistory.begin());
+		CmdHistory.push_back(CString(Cmd.c_str()));
 	}
-	CmdHistoryCursor = CmdHistory.GetCount();
+	CmdHistoryCursor = CmdHistory.size();
 
 	pInputLine->setText("");
 
@@ -164,7 +164,7 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 
 	if (ke.d_key == CEGUI::Key::Scan::ArrowDown)
 	{
-		if (CmdHistory.GetCount() > CmdHistoryCursor + 1)
+		if (CmdHistory.size() > CmdHistoryCursor + 1)
 		{
 			++CmdHistoryCursor;
 			pInputLine->setText(CmdHistory[CmdHistoryCursor].CStr());
@@ -172,12 +172,12 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 		}
 		else if (pInputLine->getText().c_str() && *pInputLine->getText().c_str())
 		{
-			if (CmdHistory.GetCount() == CmdHistoryCursor)
+			if (CmdHistory.size() == CmdHistoryCursor)
 			{
-				if (CmdHistory.GetCount() > 32) CmdHistory.RemoveAt(0);
-				CmdHistory.Add(CString(CEGUI::String::convertUtf32ToUtf8(pInputLine->getText().c_str()).c_str()));
+				if (CmdHistory.size() > 32) CmdHistory.erase(CmdHistory.begin());
+				CmdHistory.push_back(CString(CEGUI::String::convertUtf32ToUtf8(pInputLine->getText().c_str()).c_str()));
 			}
-			CmdHistoryCursor = CmdHistory.GetCount();
+			CmdHistoryCursor = CmdHistory.size();
 
 			pInputLine->setText("");
 		}
@@ -185,7 +185,7 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 	}
 	else if (ke.d_key == CEGUI::Key::Scan::ArrowUp)
 	{
-		if (CmdHistory.GetCount())
+		if (CmdHistory.size())
 		{
 			if (CmdHistoryCursor > 0) --CmdHistoryCursor;
 			pInputLine->setText(CmdHistory[CmdHistoryCursor].CStr());

@@ -33,7 +33,7 @@ public:
 
 	typedef T* CIterator;
 
-	Data::CFlags	Flags; // CDict needs to access it
+	Data::CFlags	Flags;
 
 	CArray(): pData(nullptr), Allocated(0), Count(0), GrowSize(16), Flags(Array_KeepOrder) {}
 	CArray(UPTR _Count, UPTR _GrowSize);

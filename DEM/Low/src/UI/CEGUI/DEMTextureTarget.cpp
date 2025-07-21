@@ -45,7 +45,7 @@ void CDEMTextureTarget::deactivate()
 
 void CDEMTextureTarget::clear()
 {
-	if (RT.IsNullPtr()) return;
+	if (!RT) return;
 	d_owner.getGPUDriver()->ClearRenderTarget(*RT, vector4::Zero);
 }
 //---------------------------------------------------------------------

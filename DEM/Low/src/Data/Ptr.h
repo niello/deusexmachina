@@ -30,7 +30,6 @@ public:
 	~Ptr() { if (pObj) DEMPtrRelease(pObj); }
 
 	bool	IsValidPtr() const noexcept { return !!pObj; }
-	bool	IsNullPtr() const noexcept { return !pObj; }
 	T*		Get() const noexcept { return pObj; }
 	void	Reset() { Ptr().Swap(*this); }
 

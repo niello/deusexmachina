@@ -34,7 +34,7 @@ public:
 	~CWorldManager();
 
 	//???to L2 GameSrv?
-	bool	MakeTransition(const CArray<CStrID>& EntityIDs, CStrID LevelID, CStrID MarkerID, bool UnloadAllLevels);
+	bool	MakeTransition(const std::vector<CStrID>& EntityIDs, CStrID LevelID, CStrID MarkerID, bool UnloadAllLevels);
 };
 
 }

@@ -22,7 +22,7 @@ bool CFSBrowser::SetRelativePath(const char* pPath)
 }
 //---------------------------------------------------------------------
 
-bool CFSBrowser::ListCurrDirContents(CArray<CString>& OutContents, UPTR EntryTypes, const char* pFilter)
+bool CFSBrowser::ListCurrDirContents(std::vector<CString>& OutContents, UPTR EntryTypes, const char* pFilter)
 {
 	AtFirstEntry = false;
 
@@ -32,7 +32,7 @@ bool CFSBrowser::ListCurrDirContents(CArray<CString>& OutContents, UPTR EntryTyp
 
 	while (CurrEntryType != FSE_NONE)
 	{
-		if (EntryTypes & CurrEntryType) OutContents.Add(CurrEntryName);
+		if (EntryTypes & CurrEntryType) OutContents.push_back(CurrEntryName);
 		if (!FS->NextDirectoryEntry(hDir, CurrEntryName, CurrEntryType)) break;
 	}
 

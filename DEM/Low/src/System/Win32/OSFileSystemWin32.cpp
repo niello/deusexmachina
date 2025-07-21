@@ -99,14 +99,14 @@ bool COSFileSystemWin32::CreateDirectory(const char* pPath)
 
 	CString AbsPath(pPath);
 
-	CArray<CString> DirStack;
+	std::vector<CString> DirStack;
 	while (!DirectoryExists(AbsPath.CStr()))
 	{
 		AbsPath.Trim(" \r\n\t\\/", false);
 		int LastSepIdx = PathUtils::GetLastDirSeparatorIndex(AbsPath.CStr());
 		if (LastSepIdx >= 0)
 		{
-			DirStack.Add(AbsPath.SubString(LastSepIdx + 1, AbsPath.GetLength() - (LastSepIdx + 1)));
+			DirStack.push_back(AbsPath.SubString(LastSepIdx + 1, AbsPath.GetLength() - (LastSepIdx + 1)));
 			AbsPath = AbsPath.SubString(0, LastSepIdx);
 		}
 		else
@@ -116,10 +116,10 @@ bool COSFileSystemWin32::CreateDirectory(const char* pPath)
 		}
 	}
 
-	while (DirStack.GetCount())
+	while (DirStack.size())
 	{
-		AbsPath += "/" + DirStack.Back();
-		DirStack.RemoveAt(DirStack.GetCount() - 1);
+		AbsPath += "/" + DirStack.back();
+		DirStack.erase(std::prev(DirStack.end()));
 		if (!CreateDirectory(AbsPath.CStr(), nullptr)) FAIL;
 	}
 

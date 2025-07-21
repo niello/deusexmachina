@@ -1,10 +1,6 @@
 #pragma once
-#ifndef __DEM_L1_DATA_SCHEME_H__
-#define __DEM_L1_DATA_SCHEME_H__
-
 #include <Data/Params.h>
 #include <Data/Flags.h>
-#include <Data/Array.h>
 #include <Data/FourCC.h>
 
 // Data serialization scheme declares structure of CParams list and allows to omit saving
@@ -40,11 +36,9 @@ public:
 		CData			Default;
 	};
 
-	CArray<CRecord> Records;
+	std::vector<CRecord> Records;
 
 	bool Init(const CParams& Desc);
 };
 
 }
-
-#endif

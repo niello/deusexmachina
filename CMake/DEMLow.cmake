@@ -45,14 +45,12 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Core/TimeSource.h
 	DEM/Low/src/Data/Algorithms.h
 	DEM/Low/src/Data/Array.h
-	DEM/Low/src/Data/Array2.h
 	DEM/Low/src/Data/ArrayUtils.h
 	DEM/Low/src/Data/Buffer.h
 	DEM/Low/src/Data/CategorizationTraits.h
 	DEM/Low/src/Data/Data.h
 	DEM/Low/src/Data/DataArray.h
 	DEM/Low/src/Data/DataScheme.h
-	DEM/Low/src/Data/Dictionary.h
 	DEM/Low/src/Data/DynamicEnum.h
 	DEM/Low/src/Data/FixedArray.h
 	DEM/Low/src/Data/FixedOrderMap.h
@@ -60,12 +58,8 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/FourCC.h
 	DEM/Low/src/Data/FunctionTraits.h
 	DEM/Low/src/Data/HandleArray.h
-	DEM/Low/src/Data/HandleManager.h
 	DEM/Low/src/Data/Hash.h
-	DEM/Low/src/Data/HashPairT.h
-	DEM/Low/src/Data/HashTable.h
 	DEM/Low/src/Data/HRDParser.h
-	DEM/Low/src/Data/KeyList.h
 	DEM/Low/src/Data/LineBuffer.h
 	DEM/Low/src/Data/List.h
 	DEM/Low/src/Data/LuaTextResolver.h
@@ -87,14 +81,12 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/Singleton.h
 	DEM/Low/src/Data/SparseArray.hpp
 	DEM/Low/src/Data/SparseArray2.hpp
-	DEM/Low/src/Data/Stack.h
 	DEM/Low/src/Data/String.h
 	DEM/Low/src/Data/StringID.h
 	DEM/Low/src/Data/StringIDStorage.h
 	DEM/Low/src/Data/StringTokenizer.h
 	DEM/Low/src/Data/StringUtils.h
 	DEM/Low/src/Data/SuperFastHash.h
-	DEM/Low/src/Data/TableT.h
 	DEM/Low/src/Data/TextResolver.h
 	DEM/Low/src/Data/Type.h
 	DEM/Low/src/Data/TypeTraits.h
@@ -102,7 +94,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/VarStorageTextResolver.h
 	DEM/Low/src/Data/XMLDocument.h
 	DEM/Low/src/Debug/DebugDraw.h
-	DEM/Low/src/Debug/DebugServer.h
 	DEM/Low/src/Debug/DebugUtils.h
 	DEM/Low/src/Debug/LuaConsole.h
 	DEM/Low/src/Debug/Profiler.h
@@ -400,7 +391,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Data/Data.cpp
 	DEM/Low/src/Data/DataArray.cpp
 	DEM/Low/src/Data/DataScheme.cpp
-	DEM/Low/src/Data/HandleManager.cpp
 	DEM/Low/src/Data/HRDParser.cpp
 	DEM/Low/src/Data/LuaTextResolver.cpp
 	DEM/Low/src/Data/Params.cpp
@@ -412,7 +402,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Data/StringUtils.cpp
 	DEM/Low/src/Data/TextResolver.cpp
 	DEM/Low/src/Debug/DebugDraw.cpp
-	DEM/Low/src/Debug/DebugServer.cpp
 	DEM/Low/src/Debug/DebugUtils.cpp
 	DEM/Low/src/Debug/LuaConsole.cpp
 	DEM/Low/src/Debug/RenderPhaseDebugDraw.cpp

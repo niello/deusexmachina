@@ -51,7 +51,7 @@ protected:
 		void Clear();
 	};
 
-	CArray<CWatched>			Watched;
+	std::vector<CWatched>			Watched;
 
 	void Init();
 

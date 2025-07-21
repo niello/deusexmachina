@@ -1,27 +1,23 @@
 #include "Params.h"
 
-#include <Data/Dictionary.h>
-
 namespace Data
 {
 DEFINE_TYPE(PParams, PParams())
 
-void CParams::FromDataDict(const CDataDict& Dict)
+void CParams::FromDataDict(const std::map<CStrID, Data::CData>& Dict)
 {
-	Params.Clear();
-	CParam* pParam = Params.Reserve(Dict.GetCount());
-	for (UPTR i = 0; i < Dict.GetCount(); ++i, ++pParam)
-		pParam->Set(Dict.KeyAt(i), Dict.ValueAt(i));
+	Params.clear();
+	Params.reserve(Dict.size());
+	for (const auto& [Key, Value] : Dict)
+		Params.push_back(CParam(Key, Value));
 }
 //---------------------------------------------------------------------
 
-void CParams::ToDataDict(CDataDict& Dict) const
+void CParams::ToDataDict(std::map<CStrID, Data::CData>& Dict) const
 {
-	Dict.Clear();
-	Dict.BeginAdd(Params.GetCount());
-	for (UPTR i = 0; i < Params.GetCount(); ++i)
-		Dict.Add(Params[i].GetName(), Params[i].GetRawValue());
-	Dict.EndAdd();
+	Dict.clear();
+	for (UPTR i = 0; i < Params.size(); ++i)
+		Dict.emplace(Params[i].GetName(), Params[i].GetRawValue());
 }
 //---------------------------------------------------------------------
 
@@ -49,7 +45,7 @@ void CParams::Merge(const CParams& Other, int Method)
 		else if (Method & Merge_AddNew)
 		{
 			// Don't add deleters, they aren't values
-			if (!IsDeleter) Params.Add(Prm);
+			if (!IsDeleter) Params.push_back(Prm);
 		}
 	}
 }
@@ -65,7 +61,7 @@ void CParams::MergeDiff(CParams& OutChangedData, const CParams& Diff) const
 			OutChangedData.Set(Prm);
 	}
 
-	for (UPTR i = 0; i < Params.GetCount(); ++i)
+	for (UPTR i = 0; i < Params.size(); ++i)
 	{
 		const CParam& Prm = Params[i];
 		CParam* pDiffPrm;
@@ -102,7 +98,7 @@ void CParams::GetDiff(CParams& OutDiff, const CParams& ChangedData) const
 		CStrID Key = ChangedData.Get(i).GetName();
 		const Data::CData& ChangedVal = ChangedData.Get(i).GetRawValue();
 		Data::CParam* pInitialParam;
-		bool IsNew = !Params.GetCount() || !TryGet(pInitialParam, Key);
+		bool IsNew = !Params.size() || !TryGet(pInitialParam, Key);
 		if (IsNew || pInitialParam->GetRawValue() != ChangedVal)
 		{
 			// Recursively diff CParams //???can recurse to CDataArray?
@@ -118,21 +114,20 @@ void CParams::GetDiff(CParams& OutDiff, const CParams& ChangedData) const
 }
 //---------------------------------------------------------------------
 
-void CParams::GetDiff(CParams& OutDiff, const CDataDict& ChangedData) const
+void CParams::GetDiff(CParams& OutDiff, const std::map<CStrID, Data::CData>& ChangedData) const
 {
 	// Cnanged data no longer contains my param, set nullptr as its new value in diff
 	for (UPTR i = 0; i < GetCount(); ++i)
 	{
 		CStrID ID = Params[i].GetName();
-		if (!ChangedData.Contains(ID)) OutDiff.Set(ID, Data::CData());
+		if (ChangedData.find(ID) == ChangedData.cend()) OutDiff.Set(ID, Data::CData());
 	}
 
 	// Write fields added or changed in a changed data
-	for (UPTR i = 0; i < ChangedData.GetCount(); ++i)
+	for (const auto& [Key, ChangedVal] : ChangedData)
 	{
 		Data::CParam* pInitialParam;
-		bool IsNew = !Params.GetCount() || !TryGet(pInitialParam, ChangedData.KeyAt(i));
-		const Data::CData& ChangedVal = ChangedData.ValueAt(i);
+		bool IsNew = Params.empty() || !TryGet(pInitialParam, Key);
 		if (IsNew || pInitialParam->GetRawValue() != ChangedVal)
 		{
 			// Recursively diff CParams //???can recurse to CDataArray?
@@ -140,9 +135,9 @@ void CParams::GetDiff(CParams& OutDiff, const CDataDict& ChangedData) const
 			{
 				PParams SubDiff = n_new(CParams);
 				pInitialParam->GetValue<PParams>()->GetDiff(*SubDiff, *ChangedVal.GetValue<PParams>());
-				OutDiff.Set(ChangedData.KeyAt(i), SubDiff);
+				OutDiff.Set(Key, SubDiff);
 			}
-			else OutDiff.Set(ChangedData.KeyAt(i), ChangedVal);
+			else OutDiff.Set(Key, ChangedVal);
 		}
 	}
 }

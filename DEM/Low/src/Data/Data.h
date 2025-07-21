@@ -290,9 +290,7 @@ inline std::string ToString(const Data::CData& Value)
 
 }
 
-typedef Data::CStringID CStrID;
-template<class TKey, class TVal> class CDictionary;
-typedef CDictionary<CStrID, Data::CData> CDataDict;	// Is used oftenly
+using CStrID = Data::CStringID;
 
 // Std types
 //DECLARE_TYPE(void) //!!!can use struct CVoid {};

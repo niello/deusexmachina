@@ -28,7 +28,7 @@ protected:
 
 	CEGUI::Event::Connection	ConnOnShow;
 
-	CArray<CString>				CmdHistory;
+	std::vector<CString>				CmdHistory;
 	UPTR						CmdHistoryCursor;
 
 	void Init();

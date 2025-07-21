@@ -178,14 +178,14 @@ DEM::Core::PObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 	MeshData->VertexCount = Header.numVertices;
 	MeshData->IndexCount = Header.numIndices;
 
-	CArray<Render::CPrimitiveGroup> Groups;
-	Groups.Resize(Header.numGroups);
+	std::vector<Render::CPrimitiveGroup> Groups;
+	Groups.resize(Header.numGroups);
 	for (U32 i = 0; i < Header.numGroups; ++i)
 	{
 		CNVX2Group Group;
 		Reader.Read(Group);
 
-		Render::CPrimitiveGroup& MeshGroup = Groups.At(i);
+		Render::CPrimitiveGroup& MeshGroup = Groups[i];
 		MeshGroup.FirstVertex = Group.firstVertex;
 		MeshGroup.VertexCount = Group.numVertices;
 		MeshGroup.FirstIndex = Group.firstTriangle * 3;
@@ -205,7 +205,7 @@ DEM::Core::PObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 	MeshData->IBData.reset(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 	Stream->Read(MeshData->IBData->GetPtr(), DataSize);
 
-	MeshData->InitGroups(&Groups.Front(), Groups.GetCount(), Groups.GetCount(), 1, false, true);
+	MeshData->InitGroups(&Groups.front(), Groups.size(), Groups.size(), 1, false, true);
 
 	return MeshData;
 }

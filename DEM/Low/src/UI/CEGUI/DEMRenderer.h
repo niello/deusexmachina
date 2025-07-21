@@ -25,8 +25,8 @@ protected:
 
 	Sizef								DisplaySize;
 
-	CArray<CDEMTextureTarget*>			TexTargets;
-	CArray<RenderTarget*>				VPTargets;
+	std::vector<CDEMTextureTarget*>			 TexTargets;
+	std::vector<RenderTarget*>				 VPTargets;
 	std::unordered_map<String, CDEMTexture*> Textures;
 
 	Render::PVertexLayout				VertexLayoutTextured;

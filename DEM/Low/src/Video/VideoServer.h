@@ -23,7 +23,7 @@ class CVideoServer: public DEM::Core::CObject
 
 protected:
 
-	CArray<CVideoPlayer*>	Players;
+	std::vector<CVideoPlayer*>	Players;
 
 	bool					_IsOpen;
 	bool					_IsPlaying;

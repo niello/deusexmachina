@@ -21,9 +21,6 @@ public:
 	CTextReader(IStream& SrcStream) : Stream(SrcStream) {}
 
 	bool ReadLine(char* pOutValue, UPTR MaxLen = (UPTR)(-1));
-	bool ReadLine(CString& OutValue);
-	bool ReadLines(CArray<CString>& OutValues, UPTR Count = (UPTR)(-1));
-	bool ReadAll(CString& OutValue);
 
 	IStream& GetStream() const { return Stream; }
 };

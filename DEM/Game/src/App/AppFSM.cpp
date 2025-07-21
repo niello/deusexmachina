@@ -38,9 +38,9 @@ void CAppFSM::Clear()
 	pCurrStateHandler = nullptr;
 	TransitionParams = nullptr;
 
-	for (UPTR i = 0; i < StateHandlers.GetCount(); ++i)
+	for (UPTR i = 0; i < StateHandlers.size(); ++i)
 		StateHandlers[i]->OnRemoveFromApplication();
-	StateHandlers.Clear();
+	StateHandlers.clear();
 }
 //---------------------------------------------------------------------
 

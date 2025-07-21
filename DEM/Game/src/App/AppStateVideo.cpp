@@ -1,10 +1,8 @@
 #include "AppStateVideo.h"
 
 #include <Core/CoreServer.h>
-#include <Debug/DebugServer.h>
 #include <Events/EventServer.h>
 #include <Video/VideoServer.h>
-#include <Core/CoreServer.h>
 
 namespace App
 {
@@ -25,7 +23,6 @@ CStrID CAppStateVideo::OnFrame()
 	CStrID ReturnState = ID;
 
 	CoreSrv->Trigger();
-	DbgSrv->Trigger();
 	EventSrv->ProcessPendingEvents();
 
 //	RenderSrv->GetDisplay().ProcessWindowMessages();

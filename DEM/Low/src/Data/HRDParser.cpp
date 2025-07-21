@@ -29,18 +29,18 @@ enum
 CHRDParser::CHRDParser(): pErr(nullptr)
 {
 	// NB: Keep sorted and keep enum above updated
-	TableRW.Add(CString("false"));
-	TableRW.Add(CString("null"));
-	TableRW.Add(CString("true"));
+	TableRW.push_back(CString("false"));
+	TableRW.push_back(CString("null"));
+	TableRW.push_back(CString("true"));
 	
-	TableDlm.Add(CString("="));
-	TableDlm.Add(CString("["));
-	TableDlm.Add(CString(","));
-	TableDlm.Add(CString("]"));
-	TableDlm.Add(CString("{"));
-	TableDlm.Add(CString("}"));
-	TableDlm.Add(CString("("));
-	TableDlm.Add(CString(")"));
+	TableDlm.push_back(CString("="));
+	TableDlm.push_back(CString("["));
+	TableDlm.push_back(CString(","));
+	TableDlm.push_back(CString("]"));
+	TableDlm.push_back(CString("{"));
+	TableDlm.push_back(CString("}"));
+	TableDlm.push_back(CString("("));
+	TableDlm.push_back(CString(")"));
 }
 //---------------------------------------------------------------------
 
@@ -68,12 +68,12 @@ bool CHRDParser::ParseBuffer(const char* Buffer, UPTR Length, CParams& Result, C
 
 	Line = Col = 1;
 
-	CArray<CToken> Tokens;
+	std::vector<CToken> Tokens;
 	if (!Tokenize(Tokens))
 	{
 		if (pErr) pErr->Add("Lexical analysis of HRD failed\n");
-		TableID.Clear();
-		TableConst.Clear(); //???always keep "0" const?
+		TableID.clear();
+		TableConst.clear(); //???always keep "0" const?
 		FAIL;
 	}
 	
@@ -81,14 +81,14 @@ bool CHRDParser::ParseBuffer(const char* Buffer, UPTR Length, CParams& Result, C
 	{
 		if (pErr) pErr->Add("Syntax analysis of HRD failed\n");
 		Result.Clear();
-		TableID.Clear();
-		TableConst.Clear(); //???always keep "0" const?
+		TableID.clear();
+		TableConst.clear(); //???always keep "0" const?
 		//Tokens.Clear();
 		FAIL;
 	}
 	
-	TableID.Clear();
-	TableConst.Clear(); //???always keep "0" const?
+	TableID.clear();
+	TableConst.clear(); //???always keep "0" const?
 	//Tokens.Clear();
 
 	pErr = nullptr;
@@ -97,7 +97,7 @@ bool CHRDParser::ParseBuffer(const char* Buffer, UPTR Length, CParams& Result, C
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::Tokenize(CArray<CToken>& Tokens)
+bool CHRDParser::Tokenize(std::vector<CToken>& Tokens)
 {
 	while (LexerCursor < EndOfBuffer)
 	{
@@ -130,10 +130,10 @@ bool CHRDParser::Tokenize(CArray<CToken>& Tokens)
 			//???add zero const at parsing start?
 			if (ZeroIdx == INVALID_INDEX)
 			{
-				ZeroIdx = TableConst.GetCount();
-				TableConst.Add((int)0); //!!!preallocate & set inplace!
+				ZeroIdx = TableConst.size();
+				TableConst.push_back((int)0); //!!!preallocate & set inplace!
 			}
-			Tokens.Add(CToken(TBL_CONST, ZeroIdx, Line, Col));
+			Tokens.push_back(CToken(TBL_CONST, ZeroIdx, Line, Col));
 		}
 		else if (CurrChar == '.')
 		{
@@ -202,7 +202,7 @@ bool CHRDParser::Tokenize(CArray<CToken>& Tokens)
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::LexProcessID(CArray<CToken>& Tokens)
+bool CHRDParser::LexProcessID(std::vector<CToken>& Tokens)
 {
 	LexerCursor++;
 	Col++;
@@ -219,26 +219,28 @@ bool CHRDParser::LexProcessID(CArray<CToken>& Tokens)
 	
 	CString NewID;
 	NewID.Set(TokenStart, LexerCursor - TokenStart);
-	
-	IPTR Idx = TableRW.FindIndexSorted(NewID);
-	if (Idx != INVALID_INDEX)
+
 	{
-		Tokens.Add(CToken(TBL_RW, Idx, Line, Col));
-		OK;
+		auto It = std::lower_bound(TableRW.cbegin(), TableRW.cend(), NewID);
+		if (It != TableRW.end() && *It == NewID)
+		{
+			Tokens.push_back(CToken(TBL_RW, std::distance(TableID.cbegin(), It), Line, Col));
+			OK;
+		}
 	}
 	
-	Idx = TableID.FindIndex(NewID);
-	if (Idx == INVALID_INDEX)
+	auto It = std::find(TableID.cbegin(), TableID.cend(), NewID);
+	if (It == TableID.cend())
 	{
-		Idx = TableID.GetCount();
-		TableID.Add(NewID);
+		TableID.push_back(NewID);
+		It = std::prev(TableID.cend());
 	}
-	Tokens.Add(CToken(TBL_ID, Idx, Line, Col));
+	Tokens.push_back(CToken(TBL_ID, std::distance(TableID.cbegin(), It), Line, Col));
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::LexProcessHex(CArray<CToken>& Tokens)
+bool CHRDParser::LexProcessHex(std::vector<CToken>& Tokens)
 {
 	do
 	{
@@ -266,7 +268,7 @@ bool CHRDParser::LexProcessHex(CArray<CToken>& Tokens)
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::LexProcessFloat(CArray<CToken>& Tokens)
+bool CHRDParser::LexProcessFloat(std::vector<CToken>& Tokens)
 {
 	// Dot and at least one digit were read
 
@@ -284,7 +286,7 @@ bool CHRDParser::LexProcessFloat(CArray<CToken>& Tokens)
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::LexProcessNumeric(CArray<CToken>& Tokens)
+bool CHRDParser::LexProcessNumeric(std::vector<CToken>& Tokens)
 {
 	LexerCursor++;
 	Col++;
@@ -307,7 +309,7 @@ bool CHRDParser::LexProcessNumeric(CArray<CToken>& Tokens)
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::LexProcessString(CArray<CToken>& Tokens, char QuoteChar)
+bool CHRDParser::LexProcessString(std::vector<CToken>& Tokens, char QuoteChar)
 {
 	CString NewConst;
 	//NewConst.Reserve(256); //!!!need grow!
@@ -396,7 +398,7 @@ bool CHRDParser::LexProcessString(CArray<CToken>& Tokens, char QuoteChar)
 //---------------------------------------------------------------------
 
 // <" STRING CONTENTS ">
-bool CHRDParser::LexProcessBigString(CArray<CToken>& Tokens)
+bool CHRDParser::LexProcessBigString(std::vector<CToken>& Tokens)
 {
 	CString NewConst; //!!!preallocate and grow like array!
 	
@@ -447,10 +449,10 @@ bool CHRDParser::LexProcessBigString(CArray<CToken>& Tokens)
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::LexProcessDlm(CArray<CToken>& Tokens)
+bool CHRDParser::LexProcessDlm(std::vector<CToken>& Tokens)
 {
 	int	Start = 0,
-		End = TableDlm.GetCount(),
+		End = TableDlm.size(),
 		MatchStart,
 		MatchEnd,
 		DetectedLength = 0;
@@ -492,7 +494,7 @@ bool CHRDParser::LexProcessDlm(CArray<CToken>& Tokens)
 		}
 
 		n_assert(MatchStart + 1 == MatchEnd); // Assert there are no duplicates
-		Tokens.Add(CToken(TBL_DLM, MatchStart, Line, Col));
+		Tokens.push_back(CToken(TBL_DLM, MatchStart, Line, Col));
 		OK;
 	}
 	
@@ -605,7 +607,7 @@ void CHRDParser::SkipSpaces()
 }
 //---------------------------------------------------------------------
 
-void CHRDParser::AddConst(CArray<CToken>& Tokens, const CString& Const, EType Type)
+void CHRDParser::AddConst(std::vector<CToken>& Tokens, const CString& Const, EType Type)
 {
 	CData Data;
 	switch (Type)
@@ -618,32 +620,32 @@ void CHRDParser::AddConst(CArray<CToken>& Tokens, const CString& Const, EType Ty
 		default:		Sys::Error("Unknown data type\n");
 	}
 	
-	IPTR Idx = TableConst.FindIndex(Data);
-	if (Idx == INVALID_INDEX)
+	auto It = std::find(TableConst.cbegin(), TableConst.cend(), Data);
+	if (It == TableConst.cend())
 	{
-		Idx = TableConst.GetCount();
-		TableConst.Add(Data);
+		TableConst.push_back(Data);
+		It = std::prev(TableConst.cend());
 	}
-	Tokens.Add(CToken(TBL_CONST, Idx, Line, Col));
+	Tokens.push_back(CToken(TBL_CONST, std::distance(TableConst.cbegin(), It), Line, Col));
 }
 //---------------------------------------------------------------------
 
 // ROOT = { PARAM }
-bool CHRDParser::ParseTokenStream(const CArray<CToken>& Tokens, CParams& Output)
+bool CHRDParser::ParseTokenStream(const std::vector<CToken>& Tokens, CParams& Output)
 {
 	ParserCursor = 0;
-	while (ParserCursor < Tokens.GetCount() && ParseParam(Tokens, Output))
+	while (ParserCursor < Tokens.size() && ParseParam(Tokens, Output))
 		/*do nothing, or scream with joy if you want :)*/;
-	return ParserCursor == Tokens.GetCount();
+	return ParserCursor == Tokens.size();
 }
 //---------------------------------------------------------------------
 
 // PARAM = ID|CONST_STRID [ '=' ] DATA
-bool CHRDParser::ParseParam(const CArray<CToken>& Tokens, CParams& Output)
+bool CHRDParser::ParseParam(const std::vector<CToken>& Tokens, CParams& Output)
 {
 	CStrID Key;
 
-	CToken& CurrToken = Tokens[ParserCursor];
+	const CToken& CurrToken = Tokens[ParserCursor];
 	if (CurrToken.Table == TBL_ID)
 	{
 		Key = CStrID(TableID[CurrToken.Index].CStr());
@@ -663,10 +665,10 @@ bool CHRDParser::ParseParam(const CArray<CToken>& Tokens, CParams& Output)
 		FAIL;
 	}
 	
-	if (++ParserCursor < Tokens.GetCount())
+	if (++ParserCursor < Tokens.size())
 	{
 		int CursorBackup = ParserCursor;
-		if (Tokens[ParserCursor].IsA(TBL_DLM, DLM_EQUAL) && ++ParserCursor >= Tokens.GetCount())
+		if (Tokens[ParserCursor].IsA(TBL_DLM, DLM_EQUAL) && ++ParserCursor >= Tokens.size())
 		{
 			ParserCursor = CursorBackup;
 			if (pErr)
@@ -703,9 +705,9 @@ bool CHRDParser::ParseParam(const CArray<CToken>& Tokens, CParams& Output)
 //---------------------------------------------------------------------
 
 // DATA = CONST | ARRAY | SECTION
-bool CHRDParser::ParseData(const CArray<CToken>& Tokens, CData& Output)
+bool CHRDParser::ParseData(const std::vector<CToken>& Tokens, CData& Output)
 {
-	CToken& CurrToken = Tokens[ParserCursor];
+	const CToken& CurrToken = Tokens[ParserCursor];
 
 	if (CurrToken.Table == TBL_CONST)
 	{
@@ -781,12 +783,12 @@ bool CHRDParser::ParseData(const CArray<CToken>& Tokens, CData& Output)
 
 	if (ParserCursor > 0)
 	{
-		CurrToken = Tokens[ParserCursor - 1];
-		if (CurrToken.Table == TBL_RW) TokenValue = TableRW[CurrToken.Index];
-		else if (CurrToken.Table == TBL_ID) TokenValue = TableID[CurrToken.Index];
-		else if (CurrToken.Table == TBL_DLM) TokenValue = TableDlm[CurrToken.Index];
-		else if (TableConst[CurrToken.Index].IsA<CString>())
-			TokenValue = TableConst[CurrToken.Index].GetValue<CString>();
+		const auto& PrevToken = Tokens[ParserCursor - 1];
+		if (PrevToken.Table == TBL_RW) TokenValue = TableRW[PrevToken.Index];
+		else if (PrevToken.Table == TBL_ID) TokenValue = TableID[PrevToken.Index];
+		else if (PrevToken.Table == TBL_DLM) TokenValue = TableDlm[PrevToken.Index];
+		else if (TableConst[PrevToken.Index].IsA<CString>())
+			TokenValue = TableConst[PrevToken.Index].GetValue<CString>();
 		else TokenValue = CString("Non-string (numeric) constant");
 		
 		if (pErr)
@@ -803,7 +805,7 @@ bool CHRDParser::ParseData(const CArray<CToken>& Tokens, CData& Output)
 //---------------------------------------------------------------------
 
 // ARRAY = '[' [ DATA { ',' DATA } ] ']'
-bool CHRDParser::ParseArray(const CArray<CToken>& Tokens, CDataArray& Output)
+bool CHRDParser::ParseArray(const std::vector<CToken>& Tokens, CDataArray& Output)
 {
 	if (!Tokens[ParserCursor].IsA(TBL_DLM, DLM_SQ_BR_OPEN)) FAIL;
 	
@@ -815,7 +817,7 @@ bool CHRDParser::ParseArray(const CArray<CToken>& Tokens, CDataArray& Output)
 
 	int CursorBackup = ParserCursor;
 
-	while (++ParserCursor < Tokens.GetCount())
+	while (++ParserCursor < Tokens.size())
 	{
 		CData Data;
 		if (!ParseData(Tokens, Data))
@@ -825,9 +827,9 @@ bool CHRDParser::ParseArray(const CArray<CToken>& Tokens, CDataArray& Output)
 		}
 		Output.Add(Data);
 	
-		if (ParserCursor >= Tokens.GetCount()) break;
+		if (ParserCursor >= Tokens.size()) break;
 		
-		CToken& CurrToken = Tokens[ParserCursor];
+		const CToken& CurrToken = Tokens[ParserCursor];
 		if (CurrToken.IsA(TBL_DLM, DLM_COMMA)) continue;
 		else if (CurrToken.IsA(TBL_DLM, DLM_SQ_BR_CLOSE))
 		{
@@ -859,16 +861,16 @@ bool CHRDParser::ParseArray(const CArray<CToken>& Tokens, CDataArray& Output)
 //---------------------------------------------------------------------
 
 // SECTION = '{' { PARAM } '}'
-bool CHRDParser::ParseSection(const CArray<CToken>& Tokens, CParams& Output)
+bool CHRDParser::ParseSection(const std::vector<CToken>& Tokens, CParams& Output)
 {
 	if (!Tokens[ParserCursor].IsA(TBL_DLM, DLM_CUR_BR_OPEN)) FAIL;
 	
 	int CursorBackup = ParserCursor;
 	
 	ParserCursor++;
-	while (ParserCursor < Tokens.GetCount())
+	while (ParserCursor < Tokens.size())
 	{
-		CToken& CurrToken = Tokens[ParserCursor];
+		const CToken& CurrToken = Tokens[ParserCursor];
 		if (CurrToken.IsA(TBL_DLM, DLM_CUR_BR_CLOSE))
 		{
 			ParserCursor++;
@@ -893,40 +895,42 @@ bool CHRDParser::ParseSection(const CArray<CToken>& Tokens, CParams& Output)
 //---------------------------------------------------------------------
 
 // VECTOR = '(' [ NUMBER { ',' NUMBER } ] ')'
-bool CHRDParser::ParseVector(const CArray<CToken>& Tokens, CData& Output)
+bool CHRDParser::ParseVector(const std::vector<CToken>& Tokens, CData& Output)
 {
 	if (!Tokens[ParserCursor].IsA(TBL_DLM, DLM_BR_OPEN)) FAIL;
 
 	int CursorBackup = ParserCursor;
 
-	CArray<float> Floats;
+	std::vector<float> Floats;
 
-	while (++ParserCursor < Tokens.GetCount())
+	while (++ParserCursor < Tokens.size())
 	{
-		CToken& CurrToken = Tokens[ParserCursor];
-
-		// Parse data and ensure it is number
-		CData Data;
-		if (!(ParseData(Tokens, Data) && (Data.IsA<int>() || Data.IsA<float>())))
 		{
-			if (pErr)
+			const CToken& CurrToken = Tokens[ParserCursor];
+
+			// Parse data and ensure it is number
+			CData Data;
+			if (!(ParseData(Tokens, Data) && (Data.IsA<int>() || Data.IsA<float>())))
 			{
-				CString S;
-				S.Format("Numeric constant expected in vector (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
-				pErr->Add(S);
+				if (pErr)
+				{
+					CString S;
+					S.Format("Numeric constant expected in vector (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
+					pErr->Add(S);
+				}
+				ParserCursor = CursorBackup;
+				FAIL;
 			}
-			ParserCursor = CursorBackup;
-			FAIL;
+			Floats.push_back(Data.IsA<int>() ? (float)Data.GetValue<int>() : Data.GetValue<float>());
+
+			if (ParserCursor >= Tokens.size()) break;
 		}
-		Floats.Add(Data.IsA<int>() ? (float)Data.GetValue<int>() : Data.GetValue<float>());
-	
-		if (ParserCursor >= Tokens.GetCount()) break;
 		
-		CurrToken = Tokens[ParserCursor];
+		const CToken& CurrToken = Tokens[ParserCursor];
 		if (CurrToken.IsA(TBL_DLM, DLM_COMMA)) continue;
 		else if (CurrToken.IsA(TBL_DLM, DLM_BR_CLOSE))
 		{
-			switch (Floats.GetCount())
+			switch (Floats.size())
 			{
 				//case 2:
 				//	Output = vector2(Floats[0], Floats[1]);
@@ -957,7 +961,7 @@ bool CHRDParser::ParseVector(const CArray<CToken>& Tokens, CData& Output)
 					if (pErr)
 					{
 						CString S;
-						S.Format("Unexpected vector element count: %d (Ln:%u, Col:%u)\n", Floats.GetCount(), CurrToken.Ln, CurrToken.Cl);
+						S.Format("Unexpected vector element count: %d (Ln:%u, Col:%u)\n", Floats.size(), CurrToken.Ln, CurrToken.Cl);
 						pErr->Add(S);
 					}
 					FAIL;

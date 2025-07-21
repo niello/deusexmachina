@@ -44,7 +44,7 @@ bool CVideoServer::Open()
 void CVideoServer::Close()
 {
 	n_assert(_IsOpen);
-	while (Players.GetCount() > 0) DeleteVideoPlayer(Players.Back());
+	while (Players.size() > 0) DeleteVideoPlayer(Players.back());
 	if (_IsPlaying) Stop();
 	_IsOpen = false;
 }
@@ -59,11 +59,11 @@ void CVideoServer::Trigger()
 	// Rewind players on time reset
 	// Now can't happen due to the wrapping in the CoreSrv
 	if (FrameTime < 0.f)
-		for (UPTR i = 0; i < Players.GetCount(); ++i)
+		for (UPTR i = 0; i < Players.size(); ++i)
 			if (Players[i]->IsOpen()) Players[i]->Rewind();
 
 	//???else? see right above.
-	for (UPTR i = 0; i < Players.GetCount(); ++i)
+	for (UPTR i = 0; i < Players.size(); ++i)
 		if (Players[i]->IsOpen()) Players[i]->Decode(FrameTime);
 
 	if (_IsPlaying)
@@ -176,7 +176,7 @@ CVideoPlayer* CVideoServer::NewVideoPlayer(const char* pName)
 {
 	CVideoPlayer* pPlayer = n_new(COGGTheoraPlayer);
 	pPlayer->SetFilename(pName);
-	Players.Add(pPlayer);
+	Players.push_back(pPlayer);
 	return pPlayer;
 }
 //---------------------------------------------------------------------
@@ -184,10 +184,10 @@ CVideoPlayer* CVideoServer::NewVideoPlayer(const char* pName)
 void CVideoServer::DeleteVideoPlayer(CVideoPlayer* pPlayer)
 {
 	n_assert(pPlayer);
-	for (UPTR i = 0; i < Players.GetCount(); ++i)
+	for (UPTR i = 0; i < Players.size(); ++i)
 		if (Players[i] == pPlayer)
 		{
-			Players.RemoveAt(i);
+			Players.erase(std::next(Players.begin(), i));
 			break;
 		}
 	if (pPlayer->IsOpen()) pPlayer->Close();

@@ -125,7 +125,7 @@ public:
 	bool				UserProfileExists(const char* pUserID) const;
 	CStrID				CreateUserProfile(const char* pUserID, bool Overwrite = false);
 	bool				DeleteUserProfile(const char* pUserID);
-	UPTR				EnumUserProfiles(CArray<CStrID>& Out) const;
+	UPTR				EnumUserProfiles(std::vector<CStrID>& Out) const;
 	CStrID				ActivateUser(CStrID UserID, Input::PInputTranslator&& Input = Input::PInputTranslator());
 	void				DeactivateUser(CStrID UserID);
 	bool				IsUserActive(CStrID UserID) const;

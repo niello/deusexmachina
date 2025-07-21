@@ -2,8 +2,8 @@
 #include <IO/Stream.h>
 #include <Data/Params.h>
 #include <Data/String.h>
-#include <Data/Dictionary.h>
-//#include <optional>
+#include <Data/Flags.h>
+#include <map>
 
 // Binary data serializer
 
@@ -25,7 +25,7 @@ protected:
 
 	IStream& Stream;
 
-	bool WriteParamsByScheme(const Data::CParams& Value, const Data::CDataScheme& Scheme, const CDict<CStrID, Data::PDataScheme>& Schemes, UPTR& Written);
+	bool WriteParamsByScheme(const Data::CParams& Value, const Data::CDataScheme& Scheme, const std::map<CStrID, Data::PDataScheme>& Schemes, UPTR& Written);
 	bool WriteDataAsOfType(const Data::CData& Value, int TypeID, Data::CFlags Flags);
 
 public:
@@ -35,7 +35,7 @@ public:
 	bool				WriteString(const char* Value);
 	bool				WriteString(const CString& Value);
 	bool				WriteParams(const Data::CParams& Value);
-	bool				WriteParams(const Data::CParams& Value, const Data::CDataScheme& Scheme, const CDict<CStrID, Data::PDataScheme>& Schemes) { UPTR Dummy; return WriteParamsByScheme(Value, Scheme, Schemes, Dummy); }
+	bool				WriteParams(const Data::CParams& Value, const Data::CDataScheme& Scheme, const std::map<CStrID, Data::PDataScheme>& Schemes) { UPTR Dummy; return WriteParamsByScheme(Value, Scheme, Schemes, Dummy); }
 	bool				WriteParam(const Data::CParam& Value) { return Write(Value.GetName()) && Write(Value.GetRawValue()); }
 	bool				WriteData(const Data::CData& Value);
 	bool				WriteVoidData() { return Write<U8>(INVALID_TYPE_ID); }

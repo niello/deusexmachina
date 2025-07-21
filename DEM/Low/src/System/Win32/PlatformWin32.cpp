@@ -588,7 +588,7 @@ bool CPlatformWin32::OnInputDeviceRemoved(HANDLE hDevice)
 }
 //---------------------------------------------------------------------
 
-UPTR CPlatformWin32::EnumInputDevices(CArray<Input::PInputDevice>& Out)
+UPTR CPlatformWin32::EnumInputDevices(std::vector<Input::PInputDevice>& Out)
 {
 	RegisterRawInput();
 
@@ -644,12 +644,12 @@ UPTR CPlatformWin32::EnumInputDevices(CArray<Input::PInputDevice>& Out)
 
 	n_delete_array(pList);
 
-	const UPTR PrevSize = Out.GetCount();
+	const UPTR PrevSize = Out.size();
 	for (auto& Device : InputDevices)
 	{
-		if (Device->IsOperational()) Out.Add(Device);
+		if (Device->IsOperational()) Out.push_back(Device);
 	}
-	return Out.GetCount() - PrevSize;
+	return Out.size() - PrevSize;
 }
 //---------------------------------------------------------------------
 

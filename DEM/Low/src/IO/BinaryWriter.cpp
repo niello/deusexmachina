@@ -47,12 +47,12 @@ template<> bool CBinaryWriter::Write<Data::CBufferMalloc>(const Data::CBufferMal
 
 bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value,
 										const Data::CDataScheme& Scheme,
-										const CDict<CStrID, Data::PDataScheme>& Schemes,
+										const std::map<CStrID, Data::PDataScheme>& Schemes,
 										UPTR& Written)
 {
 	Written = 0;
 
-	for (UPTR i = 0; i < Scheme.Records.GetCount(); ++i)
+	for (UPTR i = 0; i < Scheme.Records.size(); ++i)
 	{
 		const Data::CDataScheme::CRecord& Rec = Scheme.Records[i];
 
@@ -87,10 +87,10 @@ bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value,
 			Data::PDataScheme SubScheme;
 			if (Rec.SchemeID.IsValid())
 			{
-				IPTR Idx = Schemes.FindIndex(Rec.SchemeID);
-				if (Idx == INVALID_INDEX) FAIL;
-				SubScheme = Schemes.ValueAt(Idx);
-				if (SubScheme.IsNullPtr()) FAIL;
+				auto It = Schemes.find(Rec.SchemeID);
+				if (It == Schemes.cend() || !It->second) FAIL;
+
+				SubScheme = It->second;
 			}
 			else SubScheme = Rec.Scheme;
 			

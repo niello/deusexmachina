@@ -62,7 +62,7 @@ public:
 
 	virtual double			GetSystemTime() const override;
 
-	virtual UPTR			EnumInputDevices(CArray<Input::PInputDevice>& Out) override;
+	virtual UPTR			EnumInputDevices(std::vector<Input::PInputDevice>& Out) override;
 
 	virtual POSWindow		CreateGUIWindow() override;
 	//virtual POSConsoleWindow CreateConsoleWindow() override; // AllocConsole, SetConsoleTitle etc

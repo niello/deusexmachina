@@ -77,7 +77,7 @@ bool CD3D11RenderTarget::CopyResolveToTexture(PTexture Dest /*, region*/) const
 {
 	n_assert_dbg(Dest->IsA<CD3D11Texture>());
 
-	if (Dest.IsNullPtr()) FAIL;
+	if (!Dest) FAIL;
 	ID3D11Texture2D* pDestTex = ((CD3D11Texture*)Dest.Get())->GetD3DTexture2D();
 
 	ID3D11Device* pDev = nullptr;

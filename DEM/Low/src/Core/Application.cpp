@@ -130,7 +130,7 @@ CApplication::CApplication(Sys::IPlatform& _Platform)
 	UnclaimedInput = std::move(CreateInput(CStrID::Empty));
 
 	// Attach all existing input devices to the unclaimed context
-	CArray<Input::PInputDevice> InputDevices;
+	std::vector<Input::PInputDevice> InputDevices;
 	Platform.EnumInputDevices(InputDevices);
 	for (auto& Device : InputDevices)
 		UnclaimedInput->ConnectToDevice(Device.Get());
@@ -231,23 +231,23 @@ bool CApplication::DeleteUserProfile(const char* pUserID)
 }
 //---------------------------------------------------------------------
 
-UPTR CApplication::EnumUserProfiles(CArray<CStrID>& Out) const
+UPTR CApplication::EnumUserProfiles(std::vector<CStrID>& Out) const
 {
 	CString ProfilesDir = GetProfilesPath(WritablePath);
 	if (!IO().DirectoryExists(ProfilesDir.CStr())) return 0;
 
-	const UPTR OldCount = Out.GetCount();
+	const UPTR OldCount = Out.size();
 
 	IO::CFSBrowser Browser;
 	Browser.SetAbsolutePath(ProfilesDir.CStr());
 	if (!Browser.IsCurrDirEmpty()) do
 	{
 		if (Browser.IsCurrEntryDir())
-			Out.Add(CStrID(Browser.GetCurrEntryName()));
+			Out.push_back(CStrID(Browser.GetCurrEntryName()));
 	}
 	while (Browser.NextCurrDirEntry());
 
-	return Out.GetCount() - OldCount;
+	return Out.size() - OldCount;
 }
 //---------------------------------------------------------------------
 

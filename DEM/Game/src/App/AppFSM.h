@@ -18,7 +18,7 @@ protected:
 
 	CStrID					CurrState;
 	CStrID					RequestedState;
-	CArray<PStateHandler>	StateHandlers;
+	std::vector<PStateHandler>	StateHandlers;
 	CStateHandler*			pCurrStateHandler = nullptr;
 	Data::PParams			TransitionParams;
 
@@ -54,14 +54,14 @@ inline void CAppFSM::RequestState(CStrID NewState, Data::PParams Params)
 
 inline void CAppFSM::AddStateHandler(CStateHandler* pHandler)
 {
-    StateHandlers.Add(pHandler);
+    StateHandlers.push_back(pHandler);
     pHandler->OnAttachToApplication();
 }
 //---------------------------------------------------------------------
 
 inline CStateHandler* CAppFSM::FindStateHandlerByID(CStrID ID) const
 {
-	for (UPTR i = 0; i < StateHandlers.GetCount(); ++i)
+	for (UPTR i = 0; i < StateHandlers.size(); ++i)
 		if (StateHandlers[i]->GetID() == ID)
 			return StateHandlers[i];
 	return nullptr;
@@ -70,7 +70,7 @@ inline CStateHandler* CAppFSM::FindStateHandlerByID(CStrID ID) const
 
 inline CStateHandler* CAppFSM::FindStateHandlerByRTTI(const DEM::Core::CRTTI& RTTI) const
 {
-	for (UPTR i = 0; i < StateHandlers.GetCount(); ++i)
+	for (UPTR i = 0; i < StateHandlers.size(); ++i)
 		if (StateHandlers[i]->IsExactly(RTTI))
 			return StateHandlers[i];
 	return nullptr;

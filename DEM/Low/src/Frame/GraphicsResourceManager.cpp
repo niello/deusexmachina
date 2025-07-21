@@ -279,7 +279,7 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, 
 			if (MaterialTable.GetResource(ParamID))
 			{
 				Render::PTexture Texture = GetTexture(RUID, Render::Access_GPU_Read);
-				if (Texture.IsNullPtr())
+				if (!Texture)
 				{
 					::Sys::Error("Can't load effect or material texture: " + RUID.ToString());
 					FAIL;
@@ -317,7 +317,7 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, 
 			if (MaterialTable.GetSampler(ParamID))
 			{
 				Render::PSampler Sampler = GPU->CreateSampler(SamplerDesc);
-				if (Sampler.IsNullPtr()) FAIL;
+				if (!Sampler) FAIL;
 				Out.SamplerValues.emplace(ParamID, Sampler);
 			}
 		}

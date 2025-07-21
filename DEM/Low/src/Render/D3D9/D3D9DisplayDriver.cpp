@@ -109,7 +109,7 @@ bool CD3D9DisplayDriver::GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const
 		if (DisplayMode.PixelFormat == D3DFMT_UNKNOWN)
 			DisplayMode.PixelFormat = D3DFMT_X8R8G8B8;
 
-		CArray<CDisplayMode> Modes;
+		std::vector<CDisplayMode> Modes;
 		Display.GetAvailableDisplayModes((UPTR)D3DAdapter, D3DPresentParams.BackBufferFormat, Modes);
 		if (Modes.FindIndex(DisplayMode) == INVALID_INDEX)
 		{

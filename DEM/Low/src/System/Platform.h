@@ -35,7 +35,7 @@ public:
 
 	virtual double			GetSystemTime() const = 0; // In seconds
 
-	virtual UPTR			EnumInputDevices(CArray<Input::PInputDevice>& Out) = 0;
+	virtual UPTR			EnumInputDevices(std::vector<Input::PInputDevice>& Out) = 0;
 
 	virtual POSWindow		CreateGUIWindow() = 0;
 	//virtual POSConsoleWindow CreateConsoleWindow() = 0;
