@@ -68,7 +68,7 @@ DEM::Core::PObject CCollisionLoaderHRD::CreateResource(CStrID UID)
 		Data::PDataArray VerticesData;
 		if (!Params.TryGet(VerticesData, sidVertices)) return nullptr;
 
-		const auto VertexCount = VerticesData->GetCount();
+		const auto VertexCount = VerticesData->size();
 		std::unique_ptr<vector3[]> Vertices(new vector3[VertexCount]);
 		for (size_t i = 0; i < VertexCount; ++i)
 			Vertices[i] = (*VerticesData)[i];

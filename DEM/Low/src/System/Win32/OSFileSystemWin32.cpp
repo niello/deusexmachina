@@ -1,7 +1,6 @@
 #if DEM_PLATFORM_WIN32
 #include "OSFileSystemWin32.h"
 #include <IO/PathUtils.h>
-#include <Data/Array.h>
 #include <regex>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>

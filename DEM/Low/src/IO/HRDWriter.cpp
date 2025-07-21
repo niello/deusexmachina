@@ -128,13 +128,13 @@ bool CHRDWriter::WriteData(const Data::CData& Value)
 		WRITE_STATIC_STRING("[\n")
 		++CurrTabLevel;
 		const Data::CDataArray& A = *Value.GetValue<Data::PDataArray>();
-		for (UPTR i = 0; i < A.GetCount(); ++i)
+		for (UPTR i = 0; i < A.size(); ++i)
 		{
 			const Data::CData& Elm = A[i];
 			if (!Elm.IsA<Data::PParams>() && !Elm.IsA<Data::PDataArray>())
 				if (!WriteIndent()) FAIL;
 			if (!WriteData(A[i])) FAIL;
-			if (i < A.GetCount() - 1) WRITE_STATIC_STRING(",\n")
+			if (i < A.size() - 1) WRITE_STATIC_STRING(",\n")
 			else WRITE_STATIC_STRING("\n")
 		}
 		--CurrTabLevel;

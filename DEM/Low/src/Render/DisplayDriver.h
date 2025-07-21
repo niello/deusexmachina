@@ -1,6 +1,5 @@
 #pragma once
 #include <Core/Object.h>
-#include <Data/Array.h>
 #include <Render/DisplayMode.h>
 
 // Display adapter driver represents and provides interface to manipulate with a display device.

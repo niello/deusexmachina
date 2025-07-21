@@ -44,7 +44,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Core/RTTIBaseClass.h
 	DEM/Low/src/Core/TimeSource.h
 	DEM/Low/src/Data/Algorithms.h
-	DEM/Low/src/Data/Array.h
 	DEM/Low/src/Data/ArrayUtils.h
 	DEM/Low/src/Data/Buffer.h
 	DEM/Low/src/Data/CategorizationTraits.h

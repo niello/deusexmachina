@@ -1,6 +1,5 @@
 #pragma once
 #include <Data/RefCounted.h>
-#include <Data/Array.h>
 #include <Data/Hash.h>
 #include <Render/RenderFwd.h>
 

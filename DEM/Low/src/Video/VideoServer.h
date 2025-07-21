@@ -4,7 +4,6 @@
 
 #include <Core/Object.h>
 #include <Data/Singleton.h>
-#include <Data/Array.h>
 #include <dshow.h>
 
 // Server object to playback video streams.

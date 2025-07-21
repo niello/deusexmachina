@@ -1,6 +1,5 @@
 #pragma once
 #include <Core/RTTIBaseClass.h>
-#include <Data/Array.h>
 #include <rtm/matrix4x4f.h>
 
 // An object that provides an interface to a rendering algorithm which operates on renderables

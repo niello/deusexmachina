@@ -135,9 +135,9 @@ bool CBinaryReader::ReadData(Data::CData& OutValue)
 		if (!Read(Count)) FAIL;
 		if (Count > 0)
 		{
-			A->Reserve(Count);
+			A->resize(Count);
 			for (int i = 0; i < Count; ++i)
-				if (!ReadData(A->At(i))) FAIL;
+				if (!ReadData(A->at(i))) FAIL;
 		}
 
 		OutValue = std::move(A);
@@ -159,9 +159,9 @@ bool CBinaryReader::ReadDataArray(Data::CDataArray& OutValue)
 {
 	U16 Count;
 	if (!Read<U16>(Count)) FAIL;
-	OutValue.Resize(Count);
+	OutValue.resize(Count);
 	for (UPTR i = 0; i < Count; ++i)
-		if (!ReadData(*OutValue.Add())) FAIL;
+		if (!ReadData(OutValue[i])) FAIL;
 	OK;
 }
 //---------------------------------------------------------------------

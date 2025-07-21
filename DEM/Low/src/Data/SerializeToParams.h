@@ -79,15 +79,23 @@ struct ParamsFormat
 	{
 		Data::PDataArray Out;
 		if constexpr (Meta::is_fixed_single_collection_v<T>)
-			Out = n_new(Data::CDataArray(Meta::fixed_array_size_v<T>));
+		{
+			Out = n_new(Data::CDataArray());
+			Out->reserve(Meta::fixed_array_size_v<T>);
+		}
 		else
-			Out = n_new(Data::CDataArray(Vector.size()));
+		{
+			Out = n_new(Data::CDataArray());
+			Out->reserve(Vector.size());
+		}
+
 		for (const auto& Value : Vector)
 		{
 			Data::CData ValueData;
 			Serialize(ValueData, Value);
-			Out->Add(std::move(ValueData));
+			Out->push_back(std::move(ValueData));
 		}
+
 		Output = std::move(Out);
 	}
 	//---------------------------------------------------------------------
@@ -145,7 +153,8 @@ struct ParamsFormat
 		constexpr auto ArraySize = Meta::fixed_array_size_v<T>;
 
 		// Vector diff is a vector with length of the new value and nulls for equal elements.
-		Data::PDataArray Out(n_new(Data::CDataArray(ArraySize)));
+		Data::PDataArray Out(n_new(Data::CDataArray()));
+		Out->reserve(ArraySize);
 
 		// Save new value of element or null if element didn't change
 		bool HasChanges = false;
@@ -153,7 +162,7 @@ struct ParamsFormat
 		{
 			Data::CData Elm;
 			HasChanges |= SerializeDiff(Elm, Vector[i], BaseVector[i]);
-			Out->Add(std::move(Elm));
+			Out->push_back(std::move(Elm));
 		}
 
 		Output = std::move(Out);
@@ -165,7 +174,8 @@ struct ParamsFormat
 	static inline bool SerializeDiff(Data::CData& Output, const T& Vector, const T& BaseVector)
 	{
 		// Vector diff is a vector with length of the new value and nulls for equal elements.
-		Data::PDataArray Out(n_new(Data::CDataArray(Vector.size())));
+		Data::PDataArray Out(n_new(Data::CDataArray()));
+		Out->reserve(Vector.size());
 
 		// Save new value of element or null if element didn't change
 		bool HasChanges = (Vector.size() != BaseVector.size());
@@ -174,7 +184,7 @@ struct ParamsFormat
 		{
 			Data::CData Elm;
 			HasChanges |= SerializeDiff(Elm, Vector[i], BaseVector[i]);
-			Out->Add(std::move(Elm));
+			Out->push_back(std::move(Elm));
 		}
 
 		if (!HasChanges) return false;
@@ -184,7 +194,7 @@ struct ParamsFormat
 		{
 			Data::CData Elm;
 			Serialize(Elm, Vector[i]);
-			Out->Add(std::move(Elm));
+			Out->push_back(std::move(Elm));
 		}
 
 		Output = std::move(Out);
@@ -202,14 +212,14 @@ struct ParamsFormat
 			if (Added.IsVoid()) Added = Data::PDataArray(n_new(Data::CDataArray()));
 			Data::CData ValueData;
 			Serialize(ValueData, *It);
-			Added.As<Data::PDataArray>()->Get()->Add(std::move(ValueData));
+			Added.As<Data::PDataArray>()->Get()->push_back(std::move(ValueData));
 		});
 		Algo::SetDifference(BaseSet, Set, [&Deleted](auto It)
 		{
 			if (Deleted.IsVoid()) Deleted = Data::PDataArray(n_new(Data::CDataArray()));
 			Data::CData ValueData;
 			Serialize(ValueData, *It);
-			Deleted.As<Data::PDataArray>()->Get()->Add(std::move(ValueData));
+			Deleted.As<Data::PDataArray>()->Get()->push_back(std::move(ValueData));
 		});
 
 		if (Added.IsVoid() && Deleted.IsVoid()) return false;
@@ -277,9 +287,9 @@ struct ParamsFormat
 		if (auto pArrayPtr = Input.As<Data::PDataArray>())
 		{
 			auto pArray = pArrayPtr->Get();
-			const auto MinSize = std::min(pArray->GetCount(), Meta::fixed_array_size_v<T>);
+			const auto MinSize = std::min(pArray->size(), Meta::fixed_array_size_v<T>);
 			for (size_t i = 0; i < MinSize; ++i)
-				Deserialize(pArray->At(i), Vector[i]);
+				Deserialize(pArray->at(i), Vector[i]);
 		}
 		else
 		{
@@ -297,11 +307,11 @@ struct ParamsFormat
 			auto pArray = pArrayPtr->Get();
 
 			if constexpr (std::is_same_v<std::vector<T::value_type>, T>) // Check that the collection is std vector
-				Vector.resize(pArray->GetCount());
+				Vector.resize(pArray->size());
 
-			for (size_t i = 0; i < pArray->GetCount(); ++i)
+			for (size_t i = 0; i < pArray->size(); ++i)
 			{
-				const auto& ValueData = pArray->At(i);
+				const auto& ValueData = pArray->at(i);
 				if constexpr (std::is_same_v<std::vector<T::value_type>, T>) // Check that the collection is std vector
 				{
 					Deserialize(ValueData, Vector[i]);
@@ -397,12 +407,12 @@ struct ParamsFormat
 			auto pArray = pArrayPtr->Get();
 
 			// Input array size is the new size, discard tail elements as deleted
-			Vector.resize(pArray->GetCount());
+			Vector.resize(pArray->size());
 
 			// Only non-null values are changed and must be deserialized
 			for (size_t i = 0; i < Vector.size(); ++i)
-				if (!pArray->At(i).IsVoid())
-					DeserializeDiff(pArray->At(i), Vector[i]);
+				if (!pArray->at(i).IsVoid())
+					DeserializeDiff(pArray->at(i), Vector[i]);
 		}
 	}
 	//---------------------------------------------------------------------
@@ -644,12 +654,13 @@ struct ParamsFormat<CFixedArray<T, TTraits...>>
 	static inline void Serialize(Data::CData& Output, const CFixedArray<T, TTraits...>& Vector)
 	{
 		Data::PDataArray Out;
-		Out = n_new(Data::CDataArray(Vector.size()));
+		Out = n_new(Data::CDataArray());
+		Out->reserve(Vector.size());
 		for (const auto& Value : Vector)
 		{
 			Data::CData ValueData;
 			ParamsFormat<T>::Serialize(ValueData, Value);
-			Out->Add(std::move(ValueData));
+			Out->push_back(std::move(ValueData));
 		}
 		Output = std::move(Out);
 	}
@@ -659,9 +670,9 @@ struct ParamsFormat<CFixedArray<T, TTraits...>>
 		if (auto pArrayPtr = Input.As<Data::PDataArray>())
 		{
 			auto pArray = pArrayPtr->Get();
-			Vector.SetSize(pArray->GetCount());
-			for (size_t i = 0; i < pArray->GetCount(); ++i)
-				ParamsFormat<T>::Deserialize(pArray->At(i), Vector[i]);
+			Vector.SetSize(pArray->size());
+			for (size_t i = 0; i < pArray->size(); ++i)
+				ParamsFormat<T>::Deserialize(pArray->at(i), Vector[i]);
 		}
 		else
 		{

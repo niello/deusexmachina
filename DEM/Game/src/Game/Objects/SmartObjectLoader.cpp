@@ -104,10 +104,10 @@ DEM::Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 		for (const auto& OverrideParam : *OverridesDesc)
 		{
 			const auto& IDsDesc = *OverrideParam.GetValue<Data::PDataArray>();
-			if (IDsDesc.IsEmpty()) continue;
+			if (IDsDesc.empty()) continue;
 
-			CFixedArray<CStrID> IDs(IDsDesc.GetCount());
-			for (UPTR i = 0; i < IDsDesc.GetCount(); ++i)
+			CFixedArray<CStrID> IDs(IDsDesc.size());
+			for (UPTR i = 0; i < IDsDesc.size(); ++i)
 				IDs[i] = IDsDesc[i].GetValue<CStrID>();
 
 			Overrides.emplace(OverrideParam.GetName(), std::move(IDs));

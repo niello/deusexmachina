@@ -90,8 +90,8 @@ bool CRenderPhaseGeometry::Init(CRenderPath& Owner, CGraphicsResourceManager& Gf
 	else if (RTValue.IsA<Data::PDataArray>())
 	{
 		Data::PDataArray RTArray = RTValue.GetValue<Data::PDataArray>();
-		_RenderTargetIDs.SetSize(RTArray->GetCount());
-		for (UPTR i = 0; i < RTArray->GetCount(); ++i)
+		_RenderTargetIDs.SetSize(RTArray->size());
+		for (UPTR i = 0; i < RTArray->size(); ++i)
 		{
 			const Data::CData& RTElm = RTArray->Get<int>(i);
 			if (RTElm.IsNull()) _RenderTargetIDs[i] = CStrID::Empty;
@@ -115,8 +115,8 @@ bool CRenderPhaseGeometry::Init(CRenderPath& Owner, CGraphicsResourceManager& Gf
 	else FAIL;
 
 	const auto& RenderQueuesDesc = *Desc.Get<Data::PDataArray>(CStrID("RenderQueues"));
-	_RenderQueueIndices.resize(RenderQueuesDesc.GetCount());
-	for (UPTR i = 0; i < RenderQueuesDesc.GetCount(); ++i)
+	_RenderQueueIndices.resize(RenderQueuesDesc.size());
+	for (UPTR i = 0; i < RenderQueuesDesc.size(); ++i)
 	{
 		const CStrID RenderQueueType = RenderQueuesDesc.Get<CStrID>(i);
 		auto It = Owner._RenderQueues.find(RenderQueueType);

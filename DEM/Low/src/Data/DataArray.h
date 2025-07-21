@@ -1,48 +1,33 @@
 #pragma once
-#ifndef __DEM_L1_DATA_ARRAY_H__
-#define __DEM_L1_DATA_ARRAY_H__
-
 #include <Data/RefCounted.h>
 #include <Data/Data.h>
-#include <Data/Array.h>
 
 // Array of variant variables
 
 namespace Data
 {
 
-class CDataArray: public CArray<CData>, public Data::CRefCounted
+class CDataArray: public std::vector<CData>, public Data::CRefCounted
 {
 public:
 
-	CDataArray() {}
-	CDataArray(UPTR _Count, UPTR _GrowSize = 0): CArray(_Count, _GrowSize) {}
-	CDataArray(const CDataArray& Other) { Copy(Other); }
-
+	CData&			Get(size_t Index) { return at(Index); }
+	const CData&	Get(size_t Index) const { return at(Index); }
 	template<class T>
-	void			FillArray(CArray<T>& OutArray) const;
-
-	CData&			Get(int Index) { return At(Index); }
-	const CData&	Get(int Index) const { return At(Index); }
+	T&				Get(size_t Index) { return at(Index).GetValue<T>(); }
 	template<class T>
-	T&				Get(int Index) { return At(Index).GetValue<T>(); }
-	template<class T>
-	const T&		Get(int Index) const { return At(Index).GetValue<T>(); }
+	const T&		Get(size_t Index) const { return at(Index).GetValue<T>(); }
 };
 //---------------------------------------------------------------------
 
-typedef Ptr<CDataArray> PDataArray;
+// Crucial for Sol automagic enrollments which try instantiating operators for any vector
+bool operator <(const CDataArray&, const CDataArray&) = delete;
+bool operator <=(const CDataArray&, const CDataArray&) = delete;
+bool operator >(const CDataArray&, const CDataArray&) = delete;
+bool operator >=(const CDataArray&, const CDataArray&) = delete;
 
-template<class T> inline void CDataArray::FillArray(CArray<T>& OutArray) const
-{
-	for (CIterator It = Begin(); It != End(); ++It)
-		OutArray.Add((*It).GetValue<T>());
-}
-//---------------------------------------------------------------------
+using PDataArray = Ptr<CDataArray>;
 
 }
 
 DECLARE_TYPE(PDataArray, 10)
-#define TArray	DATA_TYPE(PDataArray)
-
-#endif

@@ -1,11 +1,7 @@
 #pragma once
 #include <IO/Stream.h>
-#include <Data/String.h>
-#include <Data/Array.h>
 
 // Text data reader, aware of line endings
-
-class CString;
 
 namespace IO
 {

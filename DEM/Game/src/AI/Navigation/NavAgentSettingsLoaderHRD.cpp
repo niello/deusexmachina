@@ -51,7 +51,7 @@ DEM::Core::PObject CNavAgentSettingsLoaderHRD::CreateResource(CStrID UID)
 			const auto& AreaDesc = *Param.GetValue<Data::PParams>();
 
 			Data::PDataArray AreaTypes;
-			if (!AreaDesc.TryGet(AreaTypes, CStrID("AreaTypes")) || AreaTypes->IsEmpty()) continue;
+			if (!AreaDesc.TryGet(AreaTypes, CStrID("AreaTypes")) || AreaTypes->empty()) continue;
 
 			DEM::AI::PTraversalAction Action;
 			{

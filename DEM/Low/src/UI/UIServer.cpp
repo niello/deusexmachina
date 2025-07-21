@@ -69,7 +69,7 @@ CUIServer::CUIServer(Render::CGPUDriver& GPU, const Data::CParams* pSettings)
 	{
 		Data::PDataArray ResourcesToLoad;
 		if (LoadOnStartup->TryGet<Data::PDataArray>(ResourcesToLoad, CStrID("Schemes")))
-			for (UPTR i = 0; i < ResourcesToLoad->GetCount(); ++i)
+			for (UPTR i = 0; i < ResourcesToLoad->size(); ++i)
 				LoadScheme(ResourcesToLoad->Get<CString>(i).CStr());
 	}
 

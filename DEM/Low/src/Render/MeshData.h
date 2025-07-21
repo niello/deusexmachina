@@ -2,7 +2,6 @@
 #include <Core/Object.h>
 #include <Render/VertexComponent.h>
 #include <Render/RenderFwd.h>
-#include <Data/Array.h>
 
 // Mesh represents complete geometry information of a 3D model. It stores vertex data,
 // optional index data and a list of primitive groups (also known as mesh subsets).

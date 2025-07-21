@@ -32,8 +32,8 @@ bool CBinaryWriter::WriteData(const Data::CData& Value)
 
 template<> bool CBinaryWriter::Write<Data::CDataArray>(const Data::CDataArray& Value)
 {
-	if (!Write<U16>(Value.GetCount())) FAIL;
-	for (UPTR i = 0; i < Value.GetCount(); ++i)
+	if (!Write<U16>(static_cast<U16>(Value.size()))) FAIL;
+	for (UPTR i = 0; i < Value.size(); ++i)
 		if (!WriteData(Value[i])) FAIL;
 	OK;
 }
@@ -169,10 +169,10 @@ bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value,
 
 						// Write element count of current child
 						if (Rec.Flags.Is(Data::CDataScheme::WRITE_CHILD_COUNT))
-							if (!Write<short>(SubPrmArray.GetCount())) FAIL;
+							if (!Write(static_cast<U16>(SubPrmArray.size()))) FAIL;
 
 						// Write array elements one-by-one
-						for (UPTR k = 0; k < SubPrmArray.GetCount(); ++k)
+						for (UPTR k = 0; k < SubPrmArray.size(); ++k)
 							if (!WriteDataAsOfType(SubPrmArray[k], Rec.TypeID, Rec.Flags)) FAIL;
 					}
 					else if (!WriteDataAsOfType(SubPrm.GetRawValue(), Rec.TypeID, Rec.Flags)) FAIL;
@@ -185,10 +185,10 @@ bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value,
 
 				// Write element count of self
 				if (Rec.Flags.Is(Data::CDataScheme::WRITE_COUNT))
-					if (!Write<short>(PrmArray.GetCount())) FAIL;
+					if (!Write(static_cast<U16>(PrmArray.size()))) FAIL;
 
 				// Write array elements one-by-one
-				for (UPTR j = 0; j < PrmArray.GetCount(); ++j)
+				for (UPTR j = 0; j < PrmArray.size(); ++j)
 				{
 					const Data::CData& Element = PrmArray[j];
 					if (SubScheme.IsValidPtr() && Element.IsA<Data::PParams>())

@@ -1,6 +1,5 @@
 #include "FileSystemNative.h"
 
-#include <Data/Array.h>
 #include <IO/PathUtils.h>
 #include <System/OSFileSystem.h>
 

@@ -3,7 +3,6 @@
 #define __DEM_L1_FILE_SYSTEM_BROWSER_H__
 
 #include <IO/FileSystem.h>
-#include <Data/Array.h>
 #include <Data/String.h>
 
 // Utility class that encapsulates file system browsing session.

@@ -91,26 +91,28 @@ void RegisterBasicTypes(sol::state& State)
 	sol::table CStrIDTable = State["CStrID"];
 	CStrIDTable.set("Empty", CStrID::Empty);
 
-	auto UT_CParams = State.new_usertype<Data::CParams>("CParams"
-		, sol::meta_function::length, [](const Data::CParams& Self) { return Self.GetCount(); }
-		, sol::meta_function::index, [](const Data::CParams& Self, const char* pKey, sol::this_state s)
+	{
+		auto UT = State.new_usertype<Data::CParams>("CParams");
+		UT.set_function(sol::meta_function::length, [](const Data::CParams& Self) { return Self.GetCount(); });
+		UT.set_function(sol::meta_function::index, [](const Data::CParams& Self, const char* pKey, sol::this_state s)
 		{
 			if (auto pParam = Self.Find(CStrID(pKey)))
 				return MakeObjectFromData(sol::state_view(s), pParam->GetRawValue());
 			return sol::object();
-		}
-		, sol::meta_function::new_index, [](Data::CParams& Self, const char* pKey, sol::object Value) { NOT_IMPLEMENTED; }
-	);
-	RegisterStringOperations(UT_CParams);
+		});
+		UT.set_function(sol::meta_function::new_index, [](Data::CParams& Self, const char* pKey, sol::object Value) { NOT_IMPLEMENTED; });
+		RegisterStringOperations(UT);
+	}
 
-	State.new_usertype<Data::CDataArray>("CDataArray"
-		, sol::meta_function::length, [](const Data::CDataArray& Self) { return Self.GetCount(); }
-		, sol::meta_function::index, [](const Data::CDataArray& Self, size_t i, sol::this_state s)
+	{
+		auto UT = State.new_usertype<Data::CDataArray>("CDataArray");
+		UT.set_function(sol::meta_function::length, [](const Data::CDataArray& Self) { return Self.size(); });
+		UT.set_function(sol::meta_function::index, [](const Data::CDataArray& Self, size_t i, sol::this_state s)
 		{
-			return (Self.GetCount() > i) ? MakeObjectFromData(sol::state_view(s), Self[i]) : sol::object();
-		}
-		, sol::meta_function::new_index, [](Data::CDataArray& Self, size_t i, sol::object Value) { NOT_IMPLEMENTED; }
-	);
+			return (Self.size() > i) ? MakeObjectFromData(sol::state_view(s), Self[i]) : sol::object();
+		});
+		UT.set_function(sol::meta_function::new_index, [](Data::CDataArray& Self, size_t i, sol::object Value) { NOT_IMPLEMENTED; });
+	}
 
 	State.new_usertype<::Events::CEvent>("CEvent"
 		, "ID", &::Events::CEvent::ID

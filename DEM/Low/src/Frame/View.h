@@ -5,9 +5,6 @@
 #include <Render/ShaderParamStorage.h>
 #include <Render/RenderQueue.h>
 #include <Events/EventsFwd.h>
-#include <Data/FixedArray.h>
-#include <Data/Array.h>
-#include <System/Allocators/PoolAllocator.h>
 #include <Math/CameraMath.h>
 #include <map>
 

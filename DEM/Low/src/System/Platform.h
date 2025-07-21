@@ -1,6 +1,5 @@
 #pragma once
 #include <Data/Ptr.h>
-#include <Data/Array.h>
 #include <Events/EventDispatcher.h>
 
 // Platform-dependent functionality interface. Implemented per-platform / OS.

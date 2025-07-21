@@ -224,7 +224,7 @@ bool CHRDParser::LexProcessID(std::vector<CToken>& Tokens)
 		auto It = std::lower_bound(TableRW.cbegin(), TableRW.cend(), NewID);
 		if (It != TableRW.end() && *It == NewID)
 		{
-			Tokens.push_back(CToken(TBL_RW, std::distance(TableID.cbegin(), It), Line, Col));
+			Tokens.push_back(CToken(TBL_RW, std::distance(TableRW.cbegin(), It), Line, Col));
 			OK;
 		}
 	}
@@ -825,7 +825,7 @@ bool CHRDParser::ParseArray(const std::vector<CToken>& Tokens, CDataArray& Outpu
 			ParserCursor = CursorBackup;
 			FAIL;
 		}
-		Output.Add(Data);
+		Output.push_back(std::move(Data));
 	
 		if (ParserCursor >= Tokens.size()) break;
 		
