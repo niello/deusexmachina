@@ -82,6 +82,9 @@ const DEM::Core::CRTTI& CTextureLoaderTGA::GetResultType() const
 
 DEM::Core::PObject CTextureLoaderTGA::CreateResource(CStrID UID)
 {
+	ZoneScoped;
+	ZoneText(UID.CStr(), strlen(UID.CStr()));
+
 	const char* pOutSubId;
 	IO::PStream Stream = _ResMgr.CreateResourceStream(UID.CStr(), pOutSubId, IO::SAP_SEQUENTIAL);
 	if (!Stream || !Stream->IsOpened()) return nullptr;
@@ -167,6 +170,8 @@ DEM::Core::PObject CTextureLoaderTGA::CreateResource(CStrID UID)
 	const UPTR DataSize = RowSize * Header.ImageHeight;
 	if (IsRLECompressed)
 	{
+		ZoneScopedN("RLE");
+
 		Data.reset(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 		U8* pCurrPixel = static_cast<U8*>(Data->GetPtr());
 		const U8* pDataEnd = pCurrPixel + DataSize;
@@ -211,6 +216,8 @@ DEM::Core::PObject CTextureLoaderTGA::CreateResource(CStrID UID)
 		// It is hard to flip during decompression, separate pass is much easier to implement
 		if (FlipVertically)
 		{
+			ZoneScopedN("Flip");
+
 			const UPTR EndRow = Header.ImageHeight / 2;
 			for (UPTR Row = 0; Row < EndRow; ++Row)
 			{
@@ -226,6 +233,8 @@ DEM::Core::PObject CTextureLoaderTGA::CreateResource(CStrID UID)
 		{
 			if (FlipVertically)
 			{
+				ZoneScopedN("Flip");
+
 				// Only flipping required, read row by row
 				Data.reset(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 				auto* pDataStart = static_cast<char*>(Data->GetPtr());
@@ -234,6 +243,8 @@ DEM::Core::PObject CTextureLoaderTGA::CreateResource(CStrID UID)
 			}
 			else
 			{
+				ZoneScopedN("As-is");
+
 				// No conversion needed, can use data as is. First try to map the stream.
 				// If mapping not succeeded, copy data to new buffer.
 				if (Stream->CanBeMapped()) Data.reset(n_new(Data::CBufferMappedStream(Stream)));
@@ -246,6 +257,8 @@ DEM::Core::PObject CTextureLoaderTGA::CreateResource(CStrID UID)
 		}
 		else
 		{
+			ZoneScopedN("Per-pixel");
+
 			Data.reset(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 			for (UPTR Row = 0; Row < Header.ImageHeight; ++Row)
 			{
@@ -260,6 +273,8 @@ DEM::Core::PObject CTextureLoaderTGA::CreateResource(CStrID UID)
 	// If alpha is not present in a file but exists in a destination buffer, fill it with 255
 	if (BytesPerTargetPixel == 4 && BytesPerPixel < 4)
 	{
+		ZoneScopedN("Fill alpha");
+
 		U8* pCurrPixel = static_cast<U8*>(Data->GetPtr());
 		const U8* pDataEnd = pCurrPixel + DataSize;
 		for (; pCurrPixel < pDataEnd; pCurrPixel += 4)

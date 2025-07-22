@@ -213,6 +213,7 @@ PResourceCreator CResourceManager::GetDefaultCreator(const char* pFmtExtension, 
 IO::PStream CResourceManager::CreateResourceStream(const char* pUID, const char*& pOutSubId, IO::EStreamAccessPattern Pattern)
 {
 	ZoneScoped;
+	ZoneText(pUID, std::strlen(pUID));
 
 	// Only generated resources are supported for resource manager not backed by an IO server
 	if (!pIO) return nullptr;
