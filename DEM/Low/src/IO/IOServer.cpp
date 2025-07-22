@@ -23,6 +23,9 @@ CIOServer::~CIOServer()
 // pRoot takes the form "Name:RootPath"
 bool CIOServer::MountFileSystem(IO::IFileSystem* pFS, const char* pRoot, IO::IFileSystem* pPlaceBefore)
 {
+	ZoneScoped;
+	ZoneText(pRoot, std::strlen(pRoot));
+
 	if (!pFS || !pFS->Init()) FAIL;
 
 	const char* pRootPath = strchr(pRoot, ':');
@@ -347,6 +350,9 @@ void* CIOServer::OpenDirectory(const char* pPath, const char* pFilter, PFileSyst
 
 PStream CIOServer::CreateStream(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern) const
 {
+	ZoneScoped;
+	ZoneText(pPath, std::strlen(pPath));
+
 	const std::string Path = ResolveAssigns(pPath);
 	if (Path.empty()) return nullptr;
 

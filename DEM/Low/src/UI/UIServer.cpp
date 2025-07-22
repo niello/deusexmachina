@@ -25,6 +25,8 @@ namespace UI
 
 CUIServer::CUIServer(Render::CGPUDriver& GPU, const Data::CParams* pSettings)
 {
+	ZoneScoped;
+
 	if (CEGUI::System::getSingletonPtr())
 	{
 		::Sys::Error("CUIServer::CUIServer() > CEGUI is singleton-based, can't create second UI server!");

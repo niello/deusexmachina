@@ -48,7 +48,7 @@ bool CHRDWriter::WriteData(const Data::CData& Value)
 	{
 		//!!!correctly serialize \n, \t etc!
 		WRITE_STATIC_STRING("\"")
-		WRITE_NSTRING(static_cast<std::string>(Value.GetValue<std::string>()))
+		WRITE_NSTRING(Value.GetValue<std::string>())
 		WRITE_STATIC_STRING("\"")
 	}
 	else if (Value.IsA<CStrID>())

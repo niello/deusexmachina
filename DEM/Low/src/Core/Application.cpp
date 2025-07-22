@@ -402,6 +402,8 @@ void CApplication::ParseCommandLine(const char* pCmdLine)
 
 bool CApplication::LoadGlobalSettings(const char* pFilePath)
 {
+	ZoneScoped;
+
 	GlobalSettingsPath = pFilePath;
 
 	Data::PParams NewSettings = ParamsUtils::LoadParamsFromHRD(pFilePath);
@@ -586,6 +588,8 @@ bool CApplication::SetStringSetting(const char* pKey, const std::string& Value, 
 // Creates a GUI window most suitable for 3D scene rendering, based on app & profile settings
 int CApplication::CreateRenderWindow(Render::CGPUDriver& GPU, const Data::CRect& Rect)
 {
+	ZoneScoped;
+
 	auto Wnd = Platform.CreateGUIWindow();
 	Wnd->SetRect(Rect);
 
@@ -613,6 +617,8 @@ int CApplication::CreateRenderWindow(Render::CGPUDriver& GPU, const Data::CRect&
 // code if more sophisticated initialization is required. Don't call more than once!
 Frame::PGraphicsResourceManager CApplication::BootstrapGraphics(Render::PVideoDriverFactory Gfx)
 {
+	ZoneScoped;
+
 	// Register render path classes in the factory
 
 	Frame::CRenderPhaseGUI::ForceFactoryRegistration();

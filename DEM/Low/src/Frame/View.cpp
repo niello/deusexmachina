@@ -85,6 +85,8 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 	: _GraphicsMgr(&GraphicsMgr)
 	, _SwapChainID(SwapChainID)
 {
+	ZoneScoped;
+
 	// Obtain the render path resource
 
 	_RenderPath = GraphicsMgr.GetRenderPath(RenderPathID);
@@ -182,6 +184,8 @@ CView::~CView() = default;
 // Pass empty RenderTargetID to use swap chain render target
 bool CView::CreateUIContext(CStrID RenderTargetID)
 {
+	ZoneScoped;
+
 	auto* pUI = _GraphicsMgr->GetUI();
 	if (!pUI || RTs.empty()) FAIL;
 
@@ -217,6 +221,8 @@ bool CView::CreateDebugDrawer()
 
 bool CView::CreateMatchingDepthStencilBuffer(CStrID RenderTargetID, CStrID BufferID, Render::EPixelFormat Format)
 {
+	ZoneScoped;
+
 	// Free the previous buffer memory before creating the new one
 	SetDepthStencilBuffer(BufferID, nullptr);
 

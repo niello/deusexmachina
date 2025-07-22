@@ -21,6 +21,8 @@ constexpr UPTR MAX_PRIMITIVE_VERTICES_PER_DIP = 65536;
 CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr)
 	: _GraphicsMgr(&GraphicsMgr)
 {
+	ZoneScoped;
+
 	GraphicsMgr.GetResourceManager()->RegisterResource("#Mesh_BoxCCW", n_new(Resources::CMeshGeneratorBox()));
 	auto ShpereRsrc = GraphicsMgr.GetResourceManager()->RegisterResource("#Mesh_SphereCCW12", n_new(Resources::CMeshGeneratorSphere(12)));
 	if (auto pMeshData = ShpereRsrc->ValidateObject<Render::CMeshData>())
