@@ -1,6 +1,6 @@
 #pragma once
 #include <Data/Type.h>
-#include <Data/String.h>
+#include <StdDEM.h>
 
 // Variant data type with compile-time extendable type list
 
@@ -27,7 +27,7 @@ protected:
 		bool							As_bool;
 		int								As_int;
 		float							As_float;
-		CString*						As_CString;
+		std::string*					As_String;
 		const char*						As_CStrID;
 		const CDataArray*				As_CDataArray;
 		const CParams*					As_CParams;
@@ -86,7 +86,7 @@ public:
 			case Data::CTypeID<bool>::TypeID: return Visitor(GetValue<bool>());
 			case Data::CTypeID<int>::TypeID: return Visitor(GetValue<int>());
 			case Data::CTypeID<float>::TypeID: return Visitor(GetValue<float>());
-			case Data::CTypeID<CString>::TypeID: return Visitor(GetValue<CString>());
+			case Data::CTypeID<std::string>::TypeID: return Visitor(GetValue<std::string>());
 			case Data::CTypeID<CStrID>::TypeID: return Visitor(GetValue<CStrID>());
 			case Data::CTypeID<vector3>::TypeID: return Visitor(GetValue<vector3>());
 			case Data::CTypeID<vector4>::TypeID: return Visitor(GetValue<vector4>());
@@ -181,11 +181,11 @@ template<class T> inline bool CData::GetValue(T& Dest) const
 	if (!IsVoid() && Type == DATA_TYPE(T)) // no conversions now
 	{
 		Dest = *(const T*)DATA_TYPE_NV(T)::GetPtr(&Value);
-		OK;
+		return true;
 	}
 
 	//!!!return converted if !void!
-	FAIL;
+	return false;
 }
 //---------------------------------------------------------------------
 
@@ -220,7 +220,7 @@ template<class T> inline const T* CData::GetValuePtr() const
 inline bool CData::operator ==(const CData& Other) const
 {
 	//!!!compare by comparator & return IsEqual!
-	if (Type != Other.Type)	FAIL;
+	if (Type != Other.Type)	return false;
 	return (IsVoid() || Type->IsEqual(&Value, &Other.Value));
 }
 //---------------------------------------------------------------------
@@ -228,7 +228,7 @@ inline bool CData::operator ==(const CData& Other) const
 template<class T> inline bool CData::operator ==(const T& Other) const
 {
 	//!!!compare by comparator & return IsEqual!
-	if (Type != DATA_TYPE(T)) FAIL;
+	if (Type != DATA_TYPE(T)) return false;
 	return (IsVoid() || Type->IsEqualT(&Value, &Other));
 }
 //---------------------------------------------------------------------
@@ -297,6 +297,6 @@ using CStrID = Data::CStringID;
 DECLARE_TYPE(bool, 1)
 DECLARE_TYPE(int, 2)
 DECLARE_TYPE(float, 3)
-DECLARE_TYPE(CString, 4) //???define char* too?
+DECLARE_TYPE(std::string, 4)
 DECLARE_TYPE(CStrID, 5)
 DECLARE_TYPE(PVOID, 6)

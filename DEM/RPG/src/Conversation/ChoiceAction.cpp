@@ -44,7 +44,7 @@ void CChoiceAction::CollectChoicesFromLink(CChoiceAction& Root, const Flow::CFlo
 		// TODO: a list of condition types for which text must be displayed in UI? Or text is for UI only? In debug mode show all conditions.
 		std::string Text = GetConditionText(Link.Condition, Session, &Root._pPlayer->GetVars());
 		if (!Text.empty()) Text.append(": ");
-		Text.append(static_cast<std::string_view>(pActionData->Params->Get<CString>(sidText, CString::Empty)));
+		Text.append(static_cast<std::string_view>(pActionData->Params->Get<std::string>(sidText, EmptyString)));
 		Root._ChoiceTexts.push_back(std::move(Text));
 		Root._ChoiceLinks.push_back(&Link);
 		Root._ChoiceValidFlags.push_back(IsPhraseValid);

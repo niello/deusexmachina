@@ -1,12 +1,8 @@
 #pragma once
 #include <IO/Stream.h>
 #include <Data/Params.h>
-#include <Data/String.h>
-//#include <optional>
 
 // Binary data reader
-
-class CString;
 
 namespace Data
 {
@@ -28,7 +24,6 @@ public:
 
 	bool				ReadString(char* OutValue, UPTR MaxLen);
 	bool				ReadString(char*& OutValue); // Allocates memory
-	bool				ReadString(CString& OutValue);
 	bool				ReadString(std::string& OutValue);
 	bool				ReadParams(Data::CParams& OutValue);
 	bool				ReadParam(Data::CParam& OutValue);
@@ -40,7 +35,6 @@ public:
 	template<class T>
 	bool				Read(T& OutValue) { return Stream.Read(&OutValue, sizeof(T)) == sizeof(T); }
 	template<> bool		Read<char*>(char*& OutValue) { return ReadString(OutValue); }
-	template<> bool		Read<CString>(CString& OutValue) { return ReadString(OutValue); }
 	template<> bool		Read<std::string>(std::string& OutValue) { return ReadString(OutValue); }
 	template<> bool		Read<CStrID>(CStrID& OutValue);
 	template<> bool		Read<Data::CDataArray>(Data::CDataArray& OutValue) { return ReadDataArray(OutValue); }

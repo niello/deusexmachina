@@ -1,6 +1,5 @@
 #pragma once
 #include "NpkTOCEntry.h"
-#include <Data/String.h>
 #include <Data/StringTokenizer.h>
 #include <Data/StringUtils.h>
 

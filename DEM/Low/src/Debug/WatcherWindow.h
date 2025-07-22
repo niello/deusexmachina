@@ -1,7 +1,6 @@
 #pragma once
 #include <UI/UIWindow.h>
 #include <Events/EventsFwd.h>
-#include <Data/String.h>
 
 // Nebula variable watcher with pattern-matching filter
 
@@ -39,7 +38,7 @@ protected:
 	struct CWatched
 	{
 		EVarType				Type;
-		CString					VarName;
+		std::string					VarName;
 		int						RowID;
 		CEGUI::ListboxTextItem*	pNameItem;
 		CEGUI::ListboxTextItem*	pTypeItem;

@@ -54,7 +54,7 @@ CUIServer::CUIServer(Render::CGPUDriver& GPU, const Data::CParams* pSettings)
 		for (UPTR i = 0; i < ResourceGroups->GetCount(); ++i)
 		{
 			Data::CParam& Prm = ResourceGroups->Get(i);
-			ResourceProvider->setResourceGroupDirectory(Prm.GetName().CStr(), Prm.GetValue<CString>().CStr());
+			ResourceProvider->setResourceGroupDirectory(Prm.GetName().CStr(), Prm.GetValue<std::string>().c_str());
 		}
 	}
 
@@ -70,20 +70,20 @@ CUIServer::CUIServer(Render::CGPUDriver& GPU, const Data::CParams* pSettings)
 		Data::PDataArray ResourcesToLoad;
 		if (LoadOnStartup->TryGet<Data::PDataArray>(ResourcesToLoad, CStrID("Schemes")))
 			for (UPTR i = 0; i < ResourcesToLoad->size(); ++i)
-				LoadScheme(ResourcesToLoad->Get<CString>(i).CStr());
+				LoadScheme(ResourcesToLoad->Get<std::string>(i).c_str());
 	}
 
-	const CString& DefaultCursor = pSettings ? pSettings->Get<CString>(CStrID("DefaultCursor"), CString::Empty) : CString::Empty;
-	if (DefaultCursor.IsValid())
-		CEGUISystem->setDefaultCursorName(DefaultCursor.CStr());
+	const std::string& DefaultCursor = pSettings ? pSettings->Get<std::string>(CStrID("DefaultCursor"), EmptyString) : EmptyString;
+	if (!DefaultCursor.empty())
+		CEGUISystem->setDefaultCursorName(DefaultCursor.c_str());
 
-	const CString& DefaultTooltip = pSettings ? pSettings->Get<CString>(CStrID("DefaultTooltip"), CString::Empty) : CString::Empty;
-	if (DefaultTooltip.IsValid())
-		CEGUISystem->setDefaultTooltipType(DefaultTooltip.CStr());
+	const std::string& DefaultTooltip = pSettings ? pSettings->Get<std::string>(CStrID("DefaultTooltip"), EmptyString) : EmptyString;
+	if (!DefaultTooltip.empty())
+		CEGUISystem->setDefaultTooltipType(DefaultTooltip.c_str());
 
-	const CString& DefaultFont = pSettings ? pSettings->Get<CString>(CStrID("DefaultFont"), CString::Empty) : CString::Empty;
-	if (DefaultFont.IsValid())
-		CEGUISystem->setDefaultFontName(DefaultFont.CStr());
+	const std::string& DefaultFont = pSettings ? pSettings->Get<std::string>(CStrID("DefaultFont"), EmptyString) : EmptyString;
+	if (!DefaultFont.empty())
+		CEGUISystem->setDefaultFontName(DefaultFont.c_str());
 
 	SUBSCRIBE_PEVENT(OnRenderDeviceLost, CUIServer, OnDeviceLost);
 	SUBSCRIBE_PEVENT(OnRenderDeviceReset, CUIServer, OnDeviceReset);

@@ -11,7 +11,7 @@ class CProfiler
 {
 private:
 
-	CString	GlobalVarName;
+	std::string	GlobalVarName;
 	CTime	StartTime;
 	CTime	AccumTime;
 	bool	IsActive;

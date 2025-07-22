@@ -38,7 +38,7 @@ void CPhraseAction::Update(Flow::CUpdateContext& Ctx)
 {
 	if (_State == EState::Created)
 	{
-		std::string_view TextStr = _pPrototype->Params->Get<CString>(sidText, CString::Empty);
+		std::string_view TextStr = _pPrototype->Params->Get<std::string>(sidText, EmptyString);
 		if (TextStr.empty()) return Break(Ctx);
 
 		// Set this before SayPhrase call because it can set finished state immediately!

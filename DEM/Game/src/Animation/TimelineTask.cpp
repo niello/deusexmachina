@@ -60,12 +60,12 @@ bool LoadTimelineTaskIntoPlayer(CTimelinePlayer& Player, Game::CGameWorld& World
 				// TODO: Player.GetTrack()->FindTrackByName(pPoseTrack->GetName());
 				// If found, may reuse output CSkeleton if skeleton info is the same?
 
-				if (!pPoseTrack->GetSkeletonInfo() || !pOutputDesc->IsA<CString>()) return;
+				if (!pPoseTrack->GetSkeletonInfo() || !pOutputDesc->IsA<std::string>()) return;
 
 				if (auto pSceneComponent = World.FindComponent<Game::CSceneComponent>(Owner))
 				{
-					const CString& SkeletonRootPath = pOutputDesc->GetValue<CString>();
-					if (auto pTargetRoot = pSceneComponent->RootNode->FindNodeByPath(SkeletonRootPath.CStr()))
+					const std::string& SkeletonRootPath = pOutputDesc->GetValue<std::string>();
+					if (auto pTargetRoot = pSceneComponent->RootNode->FindNodeByPath(SkeletonRootPath.c_str()))
 					{
 						Anim::PSkeleton Skeleton(n_new(Anim::CSkeleton()));
 						Skeleton->Init(*pTargetRoot, *pPoseTrack->GetSkeletonInfo());

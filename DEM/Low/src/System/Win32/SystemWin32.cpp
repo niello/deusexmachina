@@ -1,7 +1,6 @@
 #if DEM_PLATFORM_WIN32
 #include <System/System.h>
 
-#include <Data/String.h>
 #include <IO/PathUtils.h>
 
 #include <stdio.h>

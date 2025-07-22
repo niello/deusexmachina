@@ -1,7 +1,6 @@
 #pragma once
 #include <Data/Singleton.h>
 #include <IO/IOFwd.h>
-#include <Data/String.h>
 #include <vector>
 #include <map>
 

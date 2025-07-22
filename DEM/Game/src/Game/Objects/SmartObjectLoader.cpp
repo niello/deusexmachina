@@ -74,14 +74,14 @@ DEM::Core::PObject CSmartObjectLoader::CreateResource(CStrID UID)
 					}
 
 					DEM::Game::ETransitionInterruptionMode InterruptionMode = DEM::Game::ETransitionInterruptionMode::ResetToStart;
-					const auto& ModeStr = TransitionDesc.Get(CStrID("InterruptionMode"), CString::Empty);
+					const auto& ModeStr = TransitionDesc.Get(CStrID("InterruptionMode"), EmptyString);
 					if (ModeStr == "ResetToStart") InterruptionMode = DEM::Game::ETransitionInterruptionMode::ResetToStart;
 					else if (ModeStr == "RewindToEnd") InterruptionMode = DEM::Game::ETransitionInterruptionMode::RewindToEnd;
 					else if (ModeStr == "Proportional") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Proportional;
 					else if (ModeStr == "Forbid") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Forbid;
 					else if (ModeStr == "Force") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Force;
 					else if (ModeStr == "Wait") InterruptionMode = DEM::Game::ETransitionInterruptionMode::Wait;
-					else if (ModeStr.IsValid()) ::Sys::Error("CSmartObjectLoader::CreateResource() > Unknown transition interruption mode");
+					else if (!ModeStr.empty()) ::Sys::Error("CSmartObjectLoader::CreateResource() > Unknown transition interruption mode");
 
 					StateInfo.Transitions.push_back({ TransitionParam.GetName(), std::move(Task), InterruptionMode });
 				}

@@ -36,7 +36,6 @@ public:
 	CParams(CParams&& Other) noexcept = default;
 	CParams(size_t InitialCapacity) { Params.reserve(InitialCapacity); }
 
-	//???const char*/CString version?
 	IPTR						IndexOf(CStrID Name) const;
 	bool						Has(CStrID Name) const { return IndexOf(Name) != INVALID_INDEX; }
 	UPTR						GetCount() const { return Params.size(); }
@@ -290,9 +289,6 @@ struct hrd_type<T, typename std::enable_if_t<std::is_integral_v<T> && (sizeof(T)
 // Lossy conversion, remove when extend HRD types to 64 bits
 template<>
 struct hrd_type<double> { using type = float; };
-
-template<>
-struct hrd_type<std::string> { using type = CString; };
 
 template <typename T>
 using THRDType = typename hrd_type<T>::type;

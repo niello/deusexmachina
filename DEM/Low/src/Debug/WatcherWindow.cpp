@@ -202,13 +202,13 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 	int i = 0;
 	for (auto It = Watched.begin(); It != Watched.end(); It++, ++i)
 	{
-		if (!CheckMatch || StringUtils::MatchesPattern(It->VarName.CStr(), Pattern.c_str()))
+		if (!CheckMatch || StringUtils::MatchesPattern(It->VarName.c_str(), Pattern.c_str()))
 		{
 			if (It->Type == DEM)
 			{
 				Data::CData CurrVar;
 
-				if (CoreSrv->GetGlobal(It->VarName.CStr(), CurrVar))
+				if (CoreSrv->GetGlobal(It->VarName.c_str(), CurrVar))
 				{
 					if (CurrVar.IsA<bool>())
 					{
@@ -225,10 +225,10 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 						It->pTypeItem->setText("DEM float");
 						It->pValueItem->setText(StringUtils::ToString(CurrVar.GetValue<float>()).c_str());
 					}
-					else if (CurrVar.IsA<CString>())
+					else if (CurrVar.IsA<std::string>())
 					{
 						It->pTypeItem->setText("DEM string");
-						It->pValueItem->setText(CurrVar.GetValue<CString>().CStr());
+						It->pValueItem->setText(CurrVar.GetValue<std::string>().c_str());
 					}
 					else if (CurrVar.IsA<vector4>())
 					{
@@ -251,7 +251,7 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 			else if (It->Type == Lua)
 			{
 				char Script[256];	
-				_snprintf(Script, sizeof(Script) - 1, "return %s", It->VarName.CStr());
+				_snprintf(Script, sizeof(Script) - 1, "return %s", It->VarName.c_str());
 				Data::CData Output;
 				//ScriptSrv->RunScript(Script, -1, &Output);
 
@@ -276,10 +276,10 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 					It->pTypeItem->setText("Lua float");
 					It->pValueItem->setText(StringUtils::ToString(Output).c_str());
 				}
-				else if (Output.IsA<CString>())
+				else if (Output.IsA<std::string>())
 				{
 					It->pTypeItem->setText("Lua string");
-					It->pValueItem->setText(Output.GetValue<CString>().CStr());
+					It->pValueItem->setText(Output.GetValue<std::string>().c_str());
 				}
 				else if (Output.IsA<vector4>())
 				{

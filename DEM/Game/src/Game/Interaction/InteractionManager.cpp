@@ -54,45 +54,45 @@ bool CInteractionManager::RegisterTool(CStrID ID, const Data::CParams& Params)
 {
 	CInteractionTool Tool;
 
-	Tool.IconID = Params.Get(CStrID("Icon"), CString::Empty);
-	Tool.Name = Params.Get(CStrID("Name"), CString::Empty);
-	Tool.Description = Params.Get(CStrID("Description"), CString::Empty);
+	Tool.IconID = Params.Get(CStrID("Icon"), EmptyString);
+	Tool.Name = Params.Get(CStrID("Name"), EmptyString);
+	Tool.Description = Params.Get(CStrID("Description"), EmptyString);
 
 	// FIXME: tags not here, in actor abilities?!
 	//Data::PDataArray Tags;
 	//if (Params.TryGet<Data::PDataArray>(Tags, CStrID("Tags")))
 	//	for (const auto& TagData : *Tags)
-	//		Tool.Tags.insert(CStrID(TagData.GetValue<CString>().CStr()));
+	//		Tool.Tags.insert(CStrID(TagData.GetValue<std::string>().CStr()));
 
 	Data::PDataArray Actions;
 	if (Params.TryGet<Data::PDataArray>(Actions, CStrID("Interactions")))
 	{
 		for (const auto& ActionData : *Actions)
 		{
-			if (auto pActionStr = ActionData.As<CString>())
+			if (auto pActionStr = ActionData.As<std::string>())
 			{
-				Tool.Interactions.emplace_back(CStrID(pActionStr->CStr()), sol::function());
+				Tool.Interactions.emplace_back(CStrID(pActionStr->c_str()), sol::function());
 			}
 			else if (auto pActionDesc = ActionData.As<Data::PParams>())
 			{
-				CString ActID;
-				if ((*pActionDesc)->TryGet<CString>(ActID, CStrID("ID")))
+				std::string ActID;
+				if ((*pActionDesc)->TryGet<std::string>(ActID, CStrID("ID")))
 				{
 					// TODO: use ICondition?!
 					// TODO: pushes the compiled chunk as a Lua function on top of the stack,
 					// need to save anywhere in this Tool's table?
 					sol::function ConditionFunc;
-					const std::string Condition((*pActionDesc)->Get(CStrID("Condition"), CString::Empty));
+					const std::string Condition((*pActionDesc)->Get(CStrID("Condition"), EmptyString));
 					if (!Condition.empty())
 					{
-						auto LoadedCondition = _Session.GetScriptState().load("local Actors, Target = ...; return " + Condition, (ID.CStr() + ActID).CStr());
+						auto LoadedCondition = _Session.GetScriptState().load("local Actors, Target = ...; return " + Condition, (ID.CStr() + ActID).c_str());
 						if (LoadedCondition.valid())
 							ConditionFunc = LoadedCondition;
 						else
 							::Sys::Error(LoadedCondition.get<sol::error>().what());
 					}
 
-					Tool.Interactions.emplace_back(CStrID(ActID.CStr()), std::move(ConditionFunc));
+					Tool.Interactions.emplace_back(CStrID(ActID), std::move(ConditionFunc));
 				}
 			}
 		}

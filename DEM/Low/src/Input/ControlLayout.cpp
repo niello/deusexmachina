@@ -12,14 +12,14 @@ bool CControlLayout::Initialize(const Data::CParams& Desc)
 	{
 		const Data::CParam& Prm = Desc.Get(i);
 
-		const auto& RuleStr = Prm.GetValue<CString>();
-		if (RuleStr.IsEmpty()) continue;
+		const auto& RuleStr = Prm.GetValue<std::string>();
+		if (RuleStr.empty()) continue;
 
-		const char* pRuleStr = RuleStr.CStr();
+		const char* pRuleStr = RuleStr.c_str();
 		auto pRule = ParseRule(pRuleStr);
 		if (!pRule)
 		{
-			::Sys::Error(("CControlLayout::Initialize() > error parsing rule string \"" + RuleStr + "\"\n").CStr());
+			::Sys::Error("CControlLayout::Initialize() > error parsing rule string \"{}\"\n"_format(RuleStr));
 			continue;
 		}
 
@@ -37,7 +37,7 @@ bool CControlLayout::Initialize(const Data::CParams& Desc)
 		else
 		{
 			n_delete(pRule);
-			::Sys::Error(("CControlLayout::Initialize() > unexpected rule type returned for \"" + RuleStr + "\"\n").CStr());
+			::Sys::Error("CControlLayout::Initialize() > unexpected rule type returned for \"{}\"\n"_format(RuleStr));
 			continue;
 		}
 	}

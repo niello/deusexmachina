@@ -17,6 +17,7 @@
 #include <Render/GPUDriver.h>
 #include <Render/VideoDriverFactory.h>
 #include <Data/ParamsUtils.h>
+#include <Data/StringUtils.h>
 #include <Input/InputTranslator.h>
 #include <regex>
 
@@ -189,8 +190,7 @@ CStrID CApplication::CreateUserProfile(const char* pUserID, bool Overwrite)
 {
 	if (!IsValidUserProfileName(pUserID)) return CStrID::Empty;
 
-	CString UserID(pUserID);
-	UserID.Trim();
+	std::string UserID(StringUtils::Trim(pUserID));
 
 	if (UserProfileExists(pUserID))
 	{
@@ -507,9 +507,9 @@ float CApplication::GetFloatSetting(const char* pKey, float Default, CStrID User
 }
 //---------------------------------------------------------------------
 
-CString CApplication::GetStringSetting(const char* pKey, const CString& Default, CStrID UserID) const
+std::string CApplication::GetStringSetting(const char* pKey, const std::string& Default, CStrID UserID) const
 {
-	return GetSetting<CString>(pKey, Default, UserID);
+	return GetSetting<std::string>(pKey, Default, UserID);
 }
 //---------------------------------------------------------------------
 
@@ -577,7 +577,7 @@ bool CApplication::SetFloatSetting(const char* pKey, float Value, CStrID UserID)
 }
 //---------------------------------------------------------------------
 
-bool CApplication::SetStringSetting(const char* pKey, const CString& Value, CStrID UserID)
+bool CApplication::SetStringSetting(const char* pKey, const std::string& Value, CStrID UserID)
 {
 	return SetSetting(pKey, Value, UserID);
 }

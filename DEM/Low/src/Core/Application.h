@@ -141,12 +141,12 @@ public:
 	bool				GetBoolSetting(const char* pKey, bool Default, CStrID UserID) const;
 	int					GetIntSetting(const char* pKey, int Default, CStrID UserID) const;
 	float				GetFloatSetting(const char* pKey, float Default, CStrID UserID) const;
-	CString				GetStringSetting(const char* pKey, const CString& Default, CStrID UserID) const;
+	std::string				GetStringSetting(const char* pKey, const std::string& Default, CStrID UserID) const;
 	bool				SetSetting(const char* pKey, const Data::CData& Value, CStrID UserID);
 	bool				SetBoolSetting(const char* pKey, bool Value, CStrID UserID);
 	bool				SetIntSetting(const char* pKey, int Value, CStrID UserID);
 	bool				SetFloatSetting(const char* pKey, float Value, CStrID UserID);
-	bool				SetStringSetting(const char* pKey, const CString& Value, CStrID UserID);
+	bool				SetStringSetting(const char* pKey, const std::string& Value, CStrID UserID);
 
 	bool				Run(PApplicationState InitialState);
 	bool				Update();

@@ -68,7 +68,7 @@ PGameLevel CGameLevel::LoadFromDesc(CStrID ID, const Data::CParams& In, Resource
 			// The most practical way is to check resources with refcount = 1, they are held by a resource manager only.
 			// Use StaticSceneIsUnique = false if you expect to use the scene in multuple level instances and you
 			// plan to modify it in the runtime (which is not recommended nor typical for _static_ scenes).
-			auto Rsrc = ResMgr.RegisterResource<Scene::CSceneNode>(Param.GetValue<CString>().CStr());
+			auto Rsrc = ResMgr.RegisterResource<Scene::CSceneNode>(Param.GetValue<std::string>().c_str());
 			if (auto StaticSceneNode = Rsrc->ValidateObject<Scene::CSceneNode>())
 			{
 				// If no reuse allowed, ensure it or fall back to shared resource
@@ -96,8 +96,8 @@ PGameLevel CGameLevel::LoadFromDesc(CStrID ID, const Data::CParams& In, Resource
 			const auto& NavDesc = Elm.GetValue<Data::PParams>();
 			const float AgentRadius = NavDesc->Get(CStrID("AgentRadius"), -0.f);
 			const float AgentHeight = NavDesc->Get(CStrID("AgentHeight"), -0.f);
-			const auto NavigationMapID = NavDesc->Get(CStrID("NavMesh"), CString::Empty);
-			auto Rsrc = ResMgr.RegisterResource<DEM::AI::CNavMesh>(NavigationMapID.CStr());
+			const auto NavigationMapID = NavDesc->Get(CStrID("NavMesh"), EmptyString);
+			auto Rsrc = ResMgr.RegisterResource<DEM::AI::CNavMesh>(NavigationMapID.c_str());
 			if (AgentRadius <= 0.f || AgentHeight <= 0.f || !Rsrc) continue;
 
 			if (NavDesc->Get(CStrID("Preload"), false))

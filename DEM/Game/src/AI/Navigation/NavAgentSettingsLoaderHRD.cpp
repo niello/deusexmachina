@@ -55,9 +55,9 @@ DEM::Core::PObject CNavAgentSettingsLoaderHRD::CreateResource(CStrID UID)
 
 			DEM::AI::PTraversalAction Action;
 			{
-				CString ActionID;
+				std::string ActionID;
 				if (AreaDesc.TryGet(ActionID, CStrID("Action")))
-					Action = DEM::Core::CFactory::Instance().Create<DEM::AI::CTraversalAction>(ActionID.CStr());
+					Action = DEM::Core::CFactory::Instance().Create<DEM::AI::CTraversalAction>(ActionID.c_str());
 			}
 
 			const bool UseControllersInArea = AreaDesc.Get(CStrID("UseControllers"), false);

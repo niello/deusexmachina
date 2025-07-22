@@ -1,6 +1,5 @@
 #pragma once
 #include <IO/FileSystem.h>
-#include <Data/String.h>
 
 // Native OS file system. Use empty path to mount the whole host file system,
 // though it is not recommended. Better mount only folders your app uses.

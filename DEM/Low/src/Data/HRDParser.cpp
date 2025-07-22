@@ -585,7 +585,7 @@ void CHRDParser::AddConst(std::vector<CToken>& Tokens, const std::string& Const,
 		case T_INT:		Data = StringUtils::ToInt(Const.c_str()); break;
 		case T_INT_HEX:	Data = (int)strtoul(Const.c_str(), nullptr, 16); break; //!!!can use 0 base to autodetect radix
 		case T_FLOAT:	Data = StringUtils::ToFloat(Const.c_str()); break;
-		case T_STRING:	Data = CString(Const); break;
+		case T_STRING:	Data = std::string(Const); break;
 		case T_STRID:	Data = CStrID(Const); break;
 		default:		Sys::Error("Unknown data type\n");
 	}
@@ -720,8 +720,8 @@ bool CHRDParser::ParseData(const std::vector<CToken>& Tokens, CData& Output)
 	if (CurrToken.Table == TBL_RW) TokenValue = TableRW[CurrToken.Index];
 	else if (CurrToken.Table == TBL_ID) TokenValue = TableID[CurrToken.Index];
 	else if (CurrToken.Table == TBL_DLM) TokenValue = TableDlm[CurrToken.Index];
-	else if (TableConst[CurrToken.Index].IsA<CString>())
-		TokenValue = TableConst[CurrToken.Index].GetValue<CString>();
+	else if (TableConst[CurrToken.Index].IsA<std::string>())
+		TokenValue = TableConst[CurrToken.Index].GetValue<std::string>();
 	else TokenValue = "Non-string (numeric) constant";
 	
 	if (pErr) pErr->append("Current token: {}\n"_format(TokenValue));
@@ -732,8 +732,8 @@ bool CHRDParser::ParseData(const std::vector<CToken>& Tokens, CData& Output)
 		if (PrevToken.Table == TBL_RW) TokenValue = TableRW[PrevToken.Index];
 		else if (PrevToken.Table == TBL_ID) TokenValue = TableID[PrevToken.Index];
 		else if (PrevToken.Table == TBL_DLM) TokenValue = TableDlm[PrevToken.Index];
-		else if (TableConst[PrevToken.Index].IsA<CString>())
-			TokenValue = TableConst[PrevToken.Index].GetValue<CString>();
+		else if (TableConst[PrevToken.Index].IsA<std::string>())
+			TokenValue = TableConst[PrevToken.Index].GetValue<std::string>();
 		else TokenValue = "Non-string (numeric) constant";
 		
 		if (pErr) pErr->append("Previous token: {}\n"_format(TokenValue));

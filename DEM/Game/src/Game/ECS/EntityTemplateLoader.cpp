@@ -32,7 +32,7 @@ DEM::Core::PObject CEntityTemplateLoader::CreateResource(CStrID UID)
 	if (!Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), Params)) return nullptr;
 
 	// Recurse to base files, merge them into main params
-	CString BaseName;
+	std::string BaseName;
 	const CStrID sidBase("_Base_");
 	while (Params.TryGet(BaseName, sidBase))
 	{
@@ -41,7 +41,7 @@ DEM::Core::PObject CEntityTemplateLoader::CreateResource(CStrID UID)
 		{
 			// TODO: can support optional multiple templates in one file through sub-ID
 			const char* pOutBaseSubId;
-			IO::PStream Stream = _ResMgr.CreateResourceStream(BaseName.CStr(), pOutBaseSubId, IO::SAP_SEQUENTIAL);
+			IO::PStream Stream = _ResMgr.CreateResourceStream(BaseName.c_str(), pOutBaseSubId, IO::SAP_SEQUENTIAL);
 			if (!Stream || !Stream->IsOpened()) return nullptr;
 			Buffer = Stream->ReadAll();
 		}

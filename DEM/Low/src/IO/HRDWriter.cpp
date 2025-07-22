@@ -44,11 +44,11 @@ bool CHRDWriter::WriteData(const Data::CData& Value)
 	}
 	else if (Value.IsA<int>()) WRITE_NSTRING(StringUtils::ToString(Value))
 	else if (Value.IsA<float>()) WRITE_NSTRING(StringUtils::ToString(Value))
-	else if (Value.IsA<CString>())
+	else if (Value.IsA<std::string>())
 	{
 		//!!!correctly serialize \n, \t etc!
 		WRITE_STATIC_STRING("\"")
-		WRITE_NSTRING(static_cast<std::string>(Value.GetValue<CString>()))
+		WRITE_NSTRING(static_cast<std::string>(Value.GetValue<std::string>()))
 		WRITE_STATIC_STRING("\"")
 	}
 	else if (Value.IsA<CStrID>())

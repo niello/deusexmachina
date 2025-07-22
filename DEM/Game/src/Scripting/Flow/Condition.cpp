@@ -57,7 +57,7 @@ static inline bool CompareVarData(HVar Left, CStrID Op, const Data::CData& Right
 		{
 			if (const THRDType* pRightValue = Right.As<THRDType>()) //???TODO: compare HRD null to monostate?!
 			{
-				if constexpr (std::is_same_v<THRDType, CString>)
+				if constexpr (std::is_same_v<THRDType, std::string>)
 					Result = Compare(LeftValue, Op, std::string_view{ *pRightValue });
 				else
 					Result = Compare(LeftValue, Op, *pRightValue);
@@ -243,7 +243,7 @@ bool CLuaStringCondition::Evaluate(const CConditionContext& Ctx) const
 	const auto& Params = Ctx.Condition.Params;
 	if (!Params) return true;
 
-	const std::string_view Code = Params->Get<CString>(sidCode, CString::Empty);
+	const std::string_view Code = Params->Get<std::string>(sidCode, EmptyString);
 	if (Code.empty()) return true;
 
 	sol::environment Env(Ctx.Session.GetScriptState(), sol::create, Ctx.Session.GetScriptState().globals());

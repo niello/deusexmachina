@@ -4,6 +4,7 @@
 #include <tracy/Tracy.hpp>
 #include <fmt/format.h>
 #include <stdint.h>
+#include <string>
 #include <vector>
 #include <set>
 #include <functional>
@@ -16,6 +17,8 @@ auto operator"" _format(const char* s, size_t n) {
 		return fmt::format(fmt::runtime(std::string_view(s, n)), args...);
 	};
 }
+
+inline static const std::string EmptyString{};
 
 #define OK   return true
 #define FAIL return false

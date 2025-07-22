@@ -2,7 +2,6 @@
 #include <Animation/Skeleton.h>
 #include <Animation/AnimationController.h>
 #include <Data/Metadata.h>
-#include <Data/String.h>
 
 // Animation component plays a single animation clip on the entity scene hierarchy
 
@@ -15,7 +14,7 @@ struct CAnimationComponent
 	Anim::CAnimationController Controller;
 
 	CStrID  ClipID;
-	CString RelTargetPath; // FIXME: use std::string, CData must use it too then
+	std::string RelTargetPath; // FIXME: use std::string, CData must use it too then
 	float   Speed = 1.f;
 	float   CurrTime = 0.f;
 	bool    Looped = false;

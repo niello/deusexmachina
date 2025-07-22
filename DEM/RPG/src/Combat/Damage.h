@@ -62,20 +62,20 @@ struct ParamsFormat<DEM::RPG::EDamageType>
 	{
 		switch (Value)
 		{
-			case DEM::RPG::EDamageType::Piercing: Output = CString("Piercing"); return;
-			case DEM::RPG::EDamageType::Slashing: Output = CString("Slashing"); return;
-			case DEM::RPG::EDamageType::Bludgeoning: Output = CString("Bludgeoning"); return;
-			case DEM::RPG::EDamageType::Energetic: Output = CString("Energetic"); return;
-			case DEM::RPG::EDamageType::Chemical: Output = CString("Chemical"); return;
+			case DEM::RPG::EDamageType::Piercing: Output = std::string("Piercing"); return;
+			case DEM::RPG::EDamageType::Slashing: Output = std::string("Slashing"); return;
+			case DEM::RPG::EDamageType::Bludgeoning: Output = std::string("Bludgeoning"); return;
+			case DEM::RPG::EDamageType::Energetic: Output = std::string("Energetic"); return;
+			case DEM::RPG::EDamageType::Chemical: Output = std::string("Chemical"); return;
 			default: Output = {}; return;
 		}
 	}
 
 	static inline void Deserialize(const Data::CData& Input, DEM::RPG::EDamageType& Value)
 	{
-		if (!Input.IsA<CString>()) return;
+		if (!Input.IsA<std::string>()) return;
 
-		const std::string_view TypeStr = Input.GetValue<CString>().CStr();
+		const std::string_view TypeStr = Input.GetValue<std::string>();
 		if (TypeStr == "Piercing") Value = DEM::RPG::EDamageType::Piercing;
 		else if (TypeStr == "Slashing") Value = DEM::RPG::EDamageType::Slashing;
 		else if (TypeStr == "Bludgeoning") Value = DEM::RPG::EDamageType::Bludgeoning;

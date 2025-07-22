@@ -1,6 +1,5 @@
 #pragma once
 #include <IO/Stream.h>
-#include <Data/String.h>
 
 // Stream that accesses data from a file stored in some file system
 

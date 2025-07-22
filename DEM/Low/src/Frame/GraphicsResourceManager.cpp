@@ -873,7 +873,7 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 		// Find the renderer type
 		const Data::CParam& PrmRenderer = Settings.SettingsDesc->Get(sidRenderer);
 		if (PrmRenderer.IsA<int>()) Settings.pRendererType = DEM::Core::CFactory::Instance().GetRTTI(static_cast<uint32_t>(PrmRenderer.GetValue<int>()));
-		else if (PrmRenderer.IsA<CString>()) Settings.pRendererType = DEM::Core::CFactory::Instance().GetRTTI(PrmRenderer.GetValue<CString>().CStr());
+		else if (PrmRenderer.IsA<std::string>()) Settings.pRendererType = DEM::Core::CFactory::Instance().GetRTTI(PrmRenderer.GetValue<std::string>().c_str());
 		if (!Settings.pRendererType) continue;
 
 		// Renderer is useful only if it can render something
@@ -885,8 +885,8 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 			const DEM::Core::CRTTI* pObjType = nullptr;
 			if (ObjTypeData.IsA<int>())
 				pObjType = DEM::Core::CFactory::Instance().GetRTTI(static_cast<uint32_t>(ObjTypeData.GetValue<int>()));
-			else if (ObjTypeData.IsA<CString>())
-				pObjType = DEM::Core::CFactory::Instance().GetRTTI(ObjTypeData.GetValue<CString>().CStr());
+			else if (ObjTypeData.IsA<std::string>())
+				pObjType = DEM::Core::CFactory::Instance().GetRTTI(ObjTypeData.GetValue<std::string>().c_str());
 
 			if (pObjType) Settings.RenderableTypes.push_back(pObjType);
 		}
@@ -908,9 +908,9 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 		const Data::CParam& Prm = PhaseDescs->Get(i);
 		Data::CParams& PhaseDesc = *Prm.GetValue<Data::PParams>();
 
-		const CString& PhaseType = PhaseDesc.Get<CString>(CStrID("Type"), CString::Empty); //???use FourCC in PRM?
-		CString ClassName = "Frame::CRenderPhase" + PhaseType;
-		Frame::PRenderPhase CurrPhase = DEM::Core::CFactory::Instance().Create<Frame::CRenderPhase>(ClassName.CStr());
+		const std::string& PhaseType = PhaseDesc.Get<std::string>(CStrID("Type"), EmptyString); //???use FourCC in PRM?
+		std::string ClassName = "Frame::CRenderPhase" + PhaseType;
+		Frame::PRenderPhase CurrPhase = DEM::Core::CFactory::Instance().Create<Frame::CRenderPhase>(ClassName.c_str());
 
 		if (!CurrPhase || !CurrPhase->Init(*RP.Get(), *this, Prm.GetName(), PhaseDesc)) return nullptr;
 

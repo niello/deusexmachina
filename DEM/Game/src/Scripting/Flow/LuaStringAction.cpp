@@ -11,7 +11,7 @@ static const CStrID sidCode("Code");
 
 void CLuaStringAction::Update(Flow::CUpdateContext& Ctx)
 {
-	const std::string_view Code = _pPrototype->Params->Get<CString>(sidCode, CString::Empty);
+	const std::string_view Code = _pPrototype->Params->Get<std::string>(sidCode, EmptyString);
 	if (!Code.empty())
 	{
 		sol::environment Env(Ctx.pSession->GetScriptState(), sol::create, Ctx.pSession->GetScriptState().globals());

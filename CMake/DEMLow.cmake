@@ -80,7 +80,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/Singleton.h
 	DEM/Low/src/Data/SparseArray.hpp
 	DEM/Low/src/Data/SparseArray2.hpp
-	DEM/Low/src/Data/String.h
 	DEM/Low/src/Data/StringID.h
 	DEM/Low/src/Data/StringIDStorage.h
 	DEM/Low/src/Data/StringTokenizer.h
@@ -395,7 +394,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Data/Params.cpp
 	DEM/Low/src/Data/ParamsTextResolver.cpp
 	DEM/Low/src/Data/ParamsUtils.cpp
-	DEM/Low/src/Data/String.cpp
 	DEM/Low/src/Data/StringID.cpp
 	DEM/Low/src/Data/StringIDStorage.cpp
 	DEM/Low/src/Data/StringUtils.cpp

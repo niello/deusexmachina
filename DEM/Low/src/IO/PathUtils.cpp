@@ -1,4 +1,5 @@
 #include "PathUtils.h"
+#include <System/System.h>
 
 namespace PathUtils
 {

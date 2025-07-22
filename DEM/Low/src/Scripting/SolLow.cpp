@@ -17,19 +17,19 @@ namespace DEM::Scripting
 
 static sol::object MakeObjectFromData(sol::state_view& s, const Data::CData& Data)
 {
-	if (auto pVal = Data.As<bool>())
+	if (auto* pVal = Data.As<bool>())
 		return sol::make_object(s, *pVal);
-	if (auto pVal = Data.As<int>())
+	if (auto* pVal = Data.As<int>())
 		return sol::make_object(s, *pVal);
-	if (auto pVal = Data.As<float>())
+	if (auto* pVal = Data.As<float>())
 		return sol::make_object(s, *pVal);
-	if (auto pVal = Data.As<CString>())
-		return sol::make_object(s, pVal->CStr() ? pVal->CStr() : "");
-	if (auto pVal = Data.As<CStrID>())
+	if (auto* pVal = Data.As<std::string>())
 		return sol::make_object(s, *pVal);
-	if (auto pVal = Data.As<Data::PParams>())
+	if (auto* pVal = Data.As<CStrID>())
+		return sol::make_object(s, *pVal);
+	if (auto* pVal = Data.As<Data::PParams>())
 		return sol::make_object(s, pVal->Get());
-	if (auto pVal = Data.As<Data::PDataArray>())
+	if (auto* pVal = Data.As<Data::PDataArray>())
 		return sol::make_object(s, pVal->Get());
 
 	return sol::object();

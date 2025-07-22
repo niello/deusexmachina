@@ -16,7 +16,7 @@ bool CBinaryWriter::WriteData(const Data::CData& Value)
 	else if (Value.IsA<bool>()) return Write<bool>(Value);
 	else if (Value.IsA<int>()) return Write<int>(Value);
 	else if (Value.IsA<float>()) return Write<float>(Value);
-	else if (Value.IsA<CString>()) return Write<CString>(Value);
+	else if (Value.IsA<std::string>()) return Write<std::string>(Value);
 	else if (Value.IsA<CStrID>()) return Write<CStrID>(Value);
 	else if (Value.IsA<vector3>()) return Write<vector3>(Value);
 	else if (Value.IsA<vector4>()) return Write<vector4>(Value);
@@ -228,9 +228,9 @@ bool CBinaryWriter::WriteDataAsOfType(const Data::CData& Value, int TypeID, Data
 				return Write((int)Value.GetValue<float>());
 			else if (TypeID == DATA_TYPE_ID(int) && Value.IsA<bool>())
 				return Write((int)Value.GetValue<bool>());
-			else if (TypeID == DATA_TYPE_ID(CStrID) && Value.IsA<CString>())
-				return Write(Value.GetValue<CString>());
-			else if (TypeID == DATA_TYPE_ID(CString) && Value.IsA<CStrID>())
+			else if (TypeID == DATA_TYPE_ID(CStrID) && Value.IsA<std::string>())
+				return Write(Value.GetValue<std::string>());
+			else if (TypeID == DATA_TYPE_ID(std::string) && Value.IsA<CStrID>())
 				return Write(Value.GetValue<CStrID>());
 			else FAIL;
 		}
@@ -238,7 +238,7 @@ bool CBinaryWriter::WriteDataAsOfType(const Data::CData& Value, int TypeID, Data
 		if (TypeID == DATA_TYPE_ID(bool)) return Write(Value.GetValue<bool>());
 		else if (TypeID == DATA_TYPE_ID(int)) return Write(Value.GetValue<int>());
 		else if (TypeID == DATA_TYPE_ID(float)) return Write(Value.GetValue<float>());
-		else if (TypeID == DATA_TYPE_ID(CString)) return Write(Value.GetValue<CString>());
+		else if (TypeID == DATA_TYPE_ID(std::string)) return Write(Value.GetValue<std::string>());
 		else if (TypeID == DATA_TYPE_ID(CStrID)) return Write(Value.GetValue<CStrID>());
 		else if (TypeID == DATA_TYPE_ID(vector3)) return Write(Value.GetValue<vector3>());
 		else if (TypeID == DATA_TYPE_ID(vector4)) return Write(Value.GetValue<vector4>());

@@ -22,7 +22,7 @@ void InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Locat
 	DEM::ParamsFormat::Serialize(DmgTypeStr, DamageType);
 	::Sys::DbgOut("***DBG Hit: " + Game::EntityToString(ActorID) + " hits " + Game::EntityToString(TargetID) +
 		" (" + std::to_string(pDestructible->HP.GetFinalValue()) + " HP)" +
-		" for " + std::to_string(std::max(0, Damage)) + " HP (" + DmgTypeStr.GetValue<CString>().CStr() + ")\n");
+		" for " + std::to_string(std::max(0, Damage)) + " HP (" + DmgTypeStr.GetValue<std::string>().c_str() + ")\n");
 
 	if (Damage <= 0) return;
 

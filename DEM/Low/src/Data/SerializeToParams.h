@@ -521,14 +521,6 @@ struct ParamsFormat<T, typename std::enable_if_t<std::is_floating_point_v<T> && 
 	static inline void Deserialize(const Data::CData& Input, T& Value) { Value = Input.GetValue<float>(); }
 };
 
-//!!!FIXME: TMP, use std::string instead of CString!
-template<typename... TTraits>
-struct ParamsFormat<std::basic_string<TTraits...>>
-{
-	static inline void Serialize(Data::CData& Output, const std::basic_string<TTraits...>& Value) { Output = CString(Value.c_str()); }
-	static inline void Deserialize(const Data::CData& Input, std::basic_string<TTraits...>& Value) { Value = Input.GetValue<CString>().CStr(); }
-};
-
 template<typename T>
 struct ParamsFormat<T, typename std::enable_if_t<Meta::is_not_collection_v<T> && Meta::CMetadata<T>::IsRegistered>>
 {

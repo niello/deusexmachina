@@ -1,13 +1,10 @@
 #pragma once
 #include <IO/Stream.h>
 #include <Data/Params.h>
-#include <Data/String.h>
 #include <Data/Flags.h>
 #include <map>
 
 // Binary data serializer
-
-class CString;
 
 namespace Data
 {
@@ -33,7 +30,7 @@ public:
 	CBinaryWriter(IStream& DestStream): Stream(DestStream) { }
 
 	bool				WriteString(const char* Value);
-	bool				WriteString(const CString& Value);
+	bool				WriteString(const std::string& Value);
 	bool				WriteParams(const Data::CParams& Value);
 	bool				WriteParams(const Data::CParams& Value, const Data::CDataScheme& Scheme, const std::map<CStrID, Data::PDataScheme>& Schemes) { UPTR Dummy; return WriteParamsByScheme(Value, Scheme, Schemes, Dummy); }
 	bool				WriteParam(const Data::CParam& Value) { return Write(Value.GetName()) && Write(Value.GetRawValue()); }
@@ -44,7 +41,7 @@ public:
 	bool				Write(const T& Value) { return Stream.Write(&Value, sizeof(T)) == sizeof(T); }
 	template<> bool		Write<char*>(char* const& Value) { return WriteString(Value); }
 	template<> bool		Write<const char*>(const char* const& Value) { return WriteString(Value); }
-	template<> bool		Write<CString>(const CString& Value) { return WriteString(Value); }
+	template<> bool		Write<std::string>(const std::string& Value) { return WriteString(Value); }
 	template<> bool		Write<CStrID>(const CStrID& Value) { return WriteString(Value.CStr()); }
 	template<> bool		Write<Data::CParams>(const Data::CParams& Value) { return WriteParams(Value); }
 	template<> bool		Write<Data::PParams>(const Data::PParams& Value) { return !Value || WriteParams(*Value); }
@@ -76,10 +73,10 @@ inline bool CBinaryWriter::WriteString(const char* Value)
 }
 //---------------------------------------------------------------------
 
-inline bool CBinaryWriter::WriteString(const CString& Value)
+inline bool CBinaryWriter::WriteString(const std::string& Value)
 {
-	return Write<U16>((U16)Value.GetLength()) &&
-		(!Value.GetLength() || Stream.Write(Value.CStr(), Value.GetLength()) == Value.GetLength());
+	return Write<U16>((U16)Value.size()) &&
+		(!Value.size() || Stream.Write(Value.c_str(), Value.size()) == Value.size());
 }
 //---------------------------------------------------------------------
 

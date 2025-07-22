@@ -21,7 +21,7 @@ Data::PParams LoadParamsFromHRD(const char* pFileName)
 
 	Data::PParams Params(n_new(Data::CParams()));
 	Data::CHRDParser Parser;
-	//CString Errors;
+	//std::string Errors;
 	return Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), *Params/*, &Errors*/) ?
 		Params :
 		nullptr;
@@ -41,10 +41,10 @@ Data::PParams LoadParamsFromPRM(const char* pFileName)
 
 Data::PParams LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileName)
 {
-	Data::PParams Main = ParamsUtils::LoadParamsFromPRM((CString(pRootPath) + pRelativeFileName).CStr());
+	Data::PParams Main = ParamsUtils::LoadParamsFromPRM((std::string(pRootPath) + pRelativeFileName).c_str());
 	if (!Main) return nullptr;
 
-	CString BaseName;
+	std::string BaseName;
 	if (!Main->TryGet(BaseName, CStrID("_Base_"))) return Main;
 
 	if (BaseName == pRelativeFileName)
@@ -53,7 +53,7 @@ Data::PParams LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileNa
 		return nullptr;
 	}
 
-	Data::PParams Params = LoadDescFromPRM(pRootPath, (BaseName + ".prm").CStr());
+	Data::PParams Params = LoadDescFromPRM(pRootPath, (BaseName + ".prm").c_str());
 	if (!Params) return nullptr;
 
 	Params->Merge(*Main, Data::Merge_AddNew | Data::Merge_Replace | Data::Merge_Deep); //!!!can specify merge flags in Desc!

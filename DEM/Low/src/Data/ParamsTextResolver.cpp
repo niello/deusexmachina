@@ -35,7 +35,7 @@ bool CParamsTextResolver::ResolveToken(std::string_view In, CStringAppender Out)
 		case CTypeID<bool>::TypeID: Out.Append(StringUtils::ToString(Value.GetValue<bool>())); return true;
 		case CTypeID<int>::TypeID: Out.Append(StringUtils::ToString(Value.GetValue<int>())); return true;
 		case CTypeID<float>::TypeID: Out.Append(StringUtils::ToString(Value.GetValue<float>())); return true;
-		case CTypeID<CString>::TypeID: Out.Append(StringUtils::ToString(Value.GetValue<CString>())); return true;
+		case CTypeID<std::string>::TypeID: Out.Append(StringUtils::ToString(Value.GetValue<std::string>())); return true;
 		case CTypeID<CStrID>::TypeID: Out.Append(StringUtils::ToString(Value.GetValue<CStrID>())); return true;
 		case CTypeID<vector3>::TypeID: Out.Append(StringUtils::ToString(Value.GetValue<vector3>())); return true;
 		case CTypeID<vector4>::TypeID: Out.Append(StringUtils::ToString(Value.GetValue<vector4>())); return true;

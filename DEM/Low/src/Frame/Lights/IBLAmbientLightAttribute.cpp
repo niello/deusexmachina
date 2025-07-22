@@ -19,12 +19,12 @@ bool CIBLAmbientLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UP
 		{
 			case 'IRRM':
 			{
-				_IrradianceMapUID = CStrID(DataReader.Read<CString>());
+				_IrradianceMapUID = CStrID(DataReader.Read<std::string>());
 				break;
 			}
 			case 'PMRM':
 			{
-				_RadianceEnvMapUID = CStrID(DataReader.Read<CString>());
+				_RadianceEnvMapUID = CStrID(DataReader.Read<std::string>());
 				break;
 			}
 			case 'LRNG':

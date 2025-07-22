@@ -21,7 +21,7 @@ bool CRenderPhaseDebugDraw::Init(CRenderPath& Owner, CGraphicsResourceManager& G
 
 	RenderTargetID = Desc.Get(CStrID("RenderTarget")).GetValue<CStrID>();
 
-	const auto EffectID = CStrID(Desc.Get<CString>(CStrID("Effect"), CString::Empty));
+	const auto EffectID = CStrID(Desc.Get<std::string>(CStrID("Effect"), EmptyString));
 	Effect = GfxMgr.GetEffect(CStrID(EffectID));
 
 	OK;

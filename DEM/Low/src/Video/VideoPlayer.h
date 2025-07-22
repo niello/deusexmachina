@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_VIDEO_PLAYER_H__
-#define __DEM_L1_VIDEO_PLAYER_H__
-
-#include <Data/String.h>
+#include <System/System.h>
 
 // An abstract player for videos
 
@@ -53,6 +50,3 @@ public:
 };
 
 }
-
-#endif
-

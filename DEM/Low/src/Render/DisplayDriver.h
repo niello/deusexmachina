@@ -25,7 +25,7 @@ public:
 		U16		NativeHeight = 0;
 		bool	IsPrimary = false;
 		//bool	IsAttachedToDesktop; // D3D9: HMONITOR -> DISPLAY_DEVICE
-		//CString DeviceName; // D3D9 - from adapter info
+		//std::string DeviceName; // D3D9 - from adapter info
 		//work area, monitor area in desktop coords (DPI-dependent)
 		//rotation (unspec, 0, 90, 180, 270)
 	};

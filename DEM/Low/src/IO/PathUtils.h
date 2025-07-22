@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_IO_PATH_UTILS_H__
-#define __DEM_L1_IO_PATH_UTILS_H__
-
-#include <Data/String.h>
+#include <StdDEM.h>
 
 // Path and URI utility functions
 
@@ -164,5 +161,3 @@ inline std::string GetAbsolutePath(const char* pCurrentPath, const char* pRelati
 //---------------------------------------------------------------------
 
 }
-
-#endif

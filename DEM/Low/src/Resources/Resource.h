@@ -87,8 +87,8 @@ struct ParamsFormat<Resources::PResource>
 	{
 		if (auto pStrID = Input.As<CStrID>())
 			Value = (*pStrID) ? n_new(Resources::CResource(*pStrID)) : nullptr;
-		else if (auto pString = Input.As<CString>())
-			Value = pString->IsValid() ? n_new(Resources::CResource(CStrID(pString->CStr()))) : nullptr;
+		else if (auto* pString = Input.As<std::string>())
+			Value = !pString->empty() ? n_new(Resources::CResource(CStrID(pString->c_str()))) : nullptr;
 		else
 			Value = nullptr;
 	}

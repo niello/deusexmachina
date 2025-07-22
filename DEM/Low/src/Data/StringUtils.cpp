@@ -1,4 +1,5 @@
 #include "StringUtils.h"
+#include <System/System.h>
 
 namespace StringUtils
 {

@@ -35,32 +35,6 @@ bool CBinaryReader::ReadString(char*& OutValue)
 }
 //---------------------------------------------------------------------
 
-bool CBinaryReader::ReadString(CString& OutValue)
-{
-	U16 Len;
-	if (!Read(Len)) FAIL;
-
-	if (Len)
-	{
-		//!!!NEED CString::Reserve!
-		//OutValue.Reserve(Len);
-
-		char* pTmp = n_new_array(char, Len + 1);
-		if (Stream.Read(pTmp, Len) != Len)
-		{
-			n_delete_array(pTmp);
-			FAIL;
-		}
-		pTmp[Len] = 0;
-		OutValue.Set(pTmp, Len);
-		n_delete_array(pTmp);
-	}
-	else OutValue.Set("");
-
-	OK;
-}
-//---------------------------------------------------------------------
-
 bool CBinaryReader::ReadString(std::string& OutValue)
 {
 	U16 Len;
@@ -116,7 +90,7 @@ bool CBinaryReader::ReadData(Data::CData& OutValue)
 	else if (Type == DATA_TYPE_ID(bool)) OutValue = Read<bool>();
 	else if (Type == DATA_TYPE_ID(int)) OutValue = Read<int>();
 	else if (Type == DATA_TYPE_ID(float)) OutValue = Read<float>();
-	else if (Type == DATA_TYPE_ID(CString)) OutValue = Read<CString>();
+	else if (Type == DATA_TYPE_ID(std::string)) OutValue = Read<std::string>();
 	else if (Type == DATA_TYPE_ID(CStrID)) OutValue = Read<CStrID>();
 	else if (Type == DATA_TYPE_ID(vector3)) OutValue = Read<vector3>();
 	else if (Type == DATA_TYPE_ID(vector4)) OutValue = Read<vector4>();

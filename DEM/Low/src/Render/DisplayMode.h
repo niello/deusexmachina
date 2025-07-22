@@ -1,6 +1,5 @@
 #pragma once
 #include <Render/RenderFwd.h>
-#include <Data/String.h>
 
 // Display mode of some video adapter output. Use in CDisplayDriver to
 // change application display mode for curtain monitor.

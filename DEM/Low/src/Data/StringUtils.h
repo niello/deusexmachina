@@ -1,5 +1,4 @@
 #pragma once
-#include <Data/String.h>
 #include <Data/StringID.h>
 #include <Math/Matrix44.h>
 #include <rtm/vector4f.h>
@@ -106,12 +105,6 @@ inline std::string ToString(const char* Value)
 inline std::string ToString(CStrID Value)
 {
 	return Value.ToString();
-}
-//---------------------------------------------------------------------
-
-inline std::string ToString(const CString& Value)
-{
-	return std::string{ static_cast<std::string_view>(Value) };
 }
 //---------------------------------------------------------------------
 

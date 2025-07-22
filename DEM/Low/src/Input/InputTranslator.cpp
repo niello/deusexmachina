@@ -43,8 +43,8 @@ bool CInputTranslator::UpdateParams(const DEM::Core::CApplication& App, std::set
 {
 	auto ParamGetter = [&App, UserID = _UserID](const char* pKey) -> std::string
 	{
-		CString Value = App.GetStringSetting(pKey, CString::Empty, UserID);
-		return Value.IsValid() ? Value.CStr() : "";
+		const std::string Value = App.GetStringSetting(pKey, EmptyString, UserID);
+		return !Value.empty() ? Value.c_str() : "";
 	};
 
 	bool Result = true;

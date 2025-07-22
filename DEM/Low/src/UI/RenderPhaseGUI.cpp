@@ -26,16 +26,16 @@ bool CRenderPhaseGUI::Init(CRenderPath& Owner, CGraphicsResourceManager& GfxMgr,
 
 	RenderTargetID = Desc.Get(CStrID("RenderTarget")).GetValue<CStrID>();
 
-	CString ModeStr;
-	if (Desc.TryGet<CString>(ModeStr, CStrID("Mode")))
+	std::string ModeStr;
+	if (Desc.TryGet<std::string>(ModeStr, CStrID("Mode")))
 	{
-		if (!n_stricmp(ModeStr.CStr(), "opaque")) DrawMode = UI::DrawMode_Opaque;
-		else if (!n_stricmp(ModeStr.CStr(), "transparent")) DrawMode = UI::DrawMode_Transparent;
+		if (!n_stricmp(ModeStr.c_str(), "opaque")) DrawMode = UI::DrawMode_Opaque;
+		else if (!n_stricmp(ModeStr.c_str(), "transparent")) DrawMode = UI::DrawMode_Transparent;
 		else DrawMode = UI::DrawMode_All;
 	}
 	else DrawMode = UI::DrawMode_All;
 
-	const auto EffectID = CStrID(Desc.Get<CString>(CStrID("Effect"), CString::Empty));
+	const auto EffectID = CStrID(Desc.Get<std::string>(CStrID("Effect"), EmptyString));
 	if (Render::PEffect Effect = GfxMgr.GetEffect(CStrID(EffectID)))
 	{
 		// TODO: move to effect declaration as a default value

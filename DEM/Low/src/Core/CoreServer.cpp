@@ -73,7 +73,7 @@ void CCoreServer::Trigger()
 			{
 				//!!!???pre-create params once per timer?!
 				Data::PParams P = n_new(Data::CParams);
-				P->Set(CStrID("Name"), CString(It->first.CStr()));
+				P->Set(CStrID("Name"), std::string(It->first.CStr()));
 				EventSrv->FireEvent(Timer.EventID, P);
 				if (Timer.Loop) Timer.CurrTime -= Timer.Time;
 				else
