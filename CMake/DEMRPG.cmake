@@ -1,8 +1,10 @@
 set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Character/AppearanceAsset.h
 	DEM/RPG/src/Character/AppearanceComponent.h
+	DEM/RPG/src/Character/BoolStat.h
 	DEM/RPG/src/Character/CharacterSheet.h
 	DEM/RPG/src/Character/ModifiableParameter.h
+	DEM/RPG/src/Character/NumericStat.h
 	DEM/RPG/src/Character/ParameterModifier.h
 	DEM/RPG/src/Character/SkillsComponent.h
 	DEM/RPG/src/Character/SocialComponent.h
@@ -49,6 +51,7 @@ set(DEM_L3_RPG_HEADERS
 
 set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/AI/PerceptionSystems.cpp
+	DEM/RPG/src/Character/NumericStat.cpp
 	DEM/RPG/src/Combat/AttackAbility.cpp
 	DEM/RPG/src/Combat/CombatUtils.cpp
 	DEM/RPG/src/Conversation/BarterAction.cpp
