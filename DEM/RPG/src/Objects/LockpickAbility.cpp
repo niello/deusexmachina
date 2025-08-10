@@ -60,7 +60,7 @@ static int GetTotalLockpickingModifier(const Game::CGameWorld& World, Game::HEnt
 {
 	int Total = 0;
 	if (auto pStats = World.FindComponent<const Sh2::CStatsComponent>(ActorID))
-		Total += (pStats->Dexterity - 11); // TODO: utility method Sh2::GetStatModifier(StatValue)!
+		Total += (pStats->Dexterity.Get<int>() - 11); // TODO: utility method Sh2::GetStatModifier(StatValue)!
 	if (auto pSkills = World.FindComponent<const Sh2::CSkillsComponent>(ActorID))
 		Total += pSkills->Lockpicking;
 
@@ -94,7 +94,7 @@ bool CLockpickAbility::IsAvailable(const Game::CGameSession& Session, const Game
 	// TODO: check character caps - to utility function?
 	for (auto ActorID : Context.Actors)
 		if (auto pStats = pWorld->FindComponent<const Sh2::CStatsComponent>(ActorID))
-			if (pStats->Capabilities & Sh2::ECapability::Interact) return true;
+			if (pStats->CanInteract) return true;
 
 	return false;
 }
@@ -124,7 +124,7 @@ bool CLockpickAbility::IsTargetValid(const Game::CGameSession& Session, U32 Inde
 	{
 		// Must be able to interact with objects
 		auto pStats = pWorld->FindComponent<const Sh2::CStatsComponent>(ActorID);
-		if (!pStats || !(pStats->Capabilities & Sh2::ECapability::Interact)) continue;
+		if (!pStats || !pStats->CanInteract) continue;
 
 		// Must have a Lockpicking skill opened
 		if (auto pSkills = pWorld->FindComponent<const Sh2::CSkillsComponent>(ActorID))

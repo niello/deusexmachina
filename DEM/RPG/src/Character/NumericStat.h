@@ -1,5 +1,5 @@
 #pragma once
-#include <StdDEM.h>
+#include <Data/SerializeToParams.h>
 #include <sol/sol.hpp>
 
 // A character numeric stat value that can be temporarily altered by modifiers.
@@ -61,11 +61,11 @@ public:
 	//???!!!signal about potential modification?! when becomes dirty! NOT OnChanged, calculation is lazy!
 
 	CNumericStat() = default;
-	CNumericStat(const CNumericStat& Other) = delete;
+	CNumericStat(const CNumericStat& Other) : CNumericStat(Other.GetBaseValue()) {}
 	CNumericStat(CNumericStat&& Other) = default;
 	CNumericStat(float BaseValue) : _BaseValue(BaseValue), _FinalValue(BaseValue) {}
 
-	CNumericStat& operator =(const CNumericStat& Other) = delete;
+	CNumericStat& operator =(const CNumericStat& Other) { SetBaseValue(Other.GetBaseValue()); return *this; }
 	CNumericStat& operator =(CNumericStat&& Other) = default;
 	CNumericStat& operator =(float BaseValue) { SetBaseValue(BaseValue); return *this; }
 
@@ -75,13 +75,33 @@ public:
 
 	void  UpdateFinalValue() const;
 
-	void  SetBaseValue(float NewBaseValue) { _BaseValue = NewBaseValue; }
+	void  SetBaseValue(float NewBaseValue) { _BaseValue = NewBaseValue; _Dirty = true; }
 	float GetBaseValue() const { return _BaseValue; }
 	float Get() const { UpdateFinalValue(); return _FinalValue; }
 
 	template<typename T>
 	T     Get() const { return static_cast<T>(Get()); }
+
+	operator float() const noexcept { return Get(); }
 };
 
 }
 
+namespace DEM::Serialization
+{
+
+template<>
+struct ParamsFormat<RPG::CNumericStat>
+{
+	static inline void Serialize(Data::CData& Output, const RPG::CNumericStat& Value)
+	{
+		Output = Value.GetBaseValue();
+	}
+
+	static inline void Deserialize(const Data::CData& Input, RPG::CNumericStat& Value)
+	{
+		Value.SetBaseValue(Input);
+	}
+};
+
+}

@@ -48,8 +48,8 @@ bool CAttackAbility::IsAvailable(const Game::CGameSession& Session, const Game::
 	// Need at least one capable actor
 	// TODO: check character caps - to utility function?
 	for (auto ActorID : Context.Actors)
-		if (auto pStats = pWorld->FindComponent<const Sh2::CStatsComponent>(ActorID))
-			if (pStats->Capabilities & Sh2::ECapability::Interact) return true;
+		if (auto* pStats = pWorld->FindComponent<const Sh2::CStatsComponent>(ActorID))
+			if (pStats->CanInteract) return true;
 
 	// TODO: also need an attack, either from weapon or natural
 

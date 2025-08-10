@@ -26,7 +26,7 @@ bool CPickItemAbility::IsAvailable(const Game::CGameSession& Session, const Game
 	// TODO: check space!
 	for (auto ActorID : Context.Actors)
 		if (auto pStats = pWorld->FindComponent<const Sh2::CStatsComponent>(ActorID))
-			if (pStats->Capabilities & Sh2::ECapability::Interact) return true;
+			if (pStats->CanInteract) return true;
 
 	return false;
 }

@@ -23,7 +23,7 @@ bool CTalkAbility::IsAvailable(const Game::CGameSession& Session, const Game::CI
 
 	for (auto ActorID : Context.Actors)
 		if (auto pStats = pWorld->FindComponent<const Sh2::CStatsComponent>(ActorID))
-			if (pStats->Capabilities & Sh2::ECapability::Talk) return true;
+			if (pStats->CanSpeak) return true;
 
 	return false;
 }

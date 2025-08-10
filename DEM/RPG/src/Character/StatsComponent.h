@@ -1,32 +1,27 @@
 #pragma once
+#include <Character/NumericStat.h>
+#include <Character/BoolStat.h>
 #include <Data/Metadata.h>
-#include <StdDEM.h>
 
 // A set of creature stats for Shantara2 role system
 
 namespace DEM::Sh2
 {
 
-enum ECapability : U8 //!!!TODO: serialize U8 to CData!
-{
-	Move = 0x01,
-	Interact = 0x02,
-	Talk = 0x04
-};
-
 struct CStatsComponent
 {
-	//!!!TODO: serialize U8 to CData!
-	//???need stats array indexed with enum? see CCharacterSheet.
-	int Strength = 0;
-	int Constitution = 0;
-	int Dexterity = 0;
-	int Perception = 0;
-	int Erudition = 0;
-	int Learnability = 0;
-	int Charisma = 0;
-	int Willpower = 0;
-	U8  Capabilities = ECapability::Move | ECapability::Interact | ECapability::Talk; //???!!!serialize enum as String1 | String2 | ...!?
+	RPG::CNumericStat Strength;
+	RPG::CNumericStat Constitution;
+	RPG::CNumericStat Dexterity;
+	RPG::CNumericStat Perception;
+	RPG::CNumericStat Erudition;
+	RPG::CNumericStat Learnability;
+	RPG::CNumericStat Charisma;
+	RPG::CNumericStat Willpower;
+
+	RPG::CBoolStat    CanMove;
+	RPG::CBoolStat    CanInteract;
+	RPG::CBoolStat    CanSpeak;
 };
 
 }
