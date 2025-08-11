@@ -8,12 +8,29 @@ void CNumericStat::AddModifier(EModifierType Type, float Value, U32 SourceID, U1
 	const auto It = std::lower_bound(_Modifiers.cbegin(), _Modifiers.cend(), Priority,
 		[](const CModifier& Elm, U16 NewPriority) { return Elm.Priority < NewPriority; });
 	_Modifiers.insert(It, CModifier{ Value, SourceID, Priority, Type });
+	_Dirty = true;
+	OnModified(*this);
 }
 //---------------------------------------------------------------------
 
-void CNumericStat::ClearModifiers(U32 SourceID)
+void CNumericStat::RemoveModifiers(U32 SourceID)
 {
-	_Modifiers.erase(std::remove_if(_Modifiers.begin(), _Modifiers.end(), [SourceID](const auto& Elm) { return Elm.SourceID == SourceID; }), _Modifiers.end());
+	auto It = std::remove_if(_Modifiers.begin(), _Modifiers.end(), [SourceID](const auto& Elm) { return Elm.SourceID == SourceID; });
+	if (It == _Modifiers.end()) return;
+
+	_Modifiers.erase(It, _Modifiers.end());
+	_Dirty = true;
+	OnModified(*this);
+}
+//---------------------------------------------------------------------
+
+void CNumericStat::RemoveAllModifiers()
+{
+	if (_Modifiers.empty()) return;
+
+	_Modifiers.clear();
+	_Dirty = true;
+	OnModified(*this);
 }
 //---------------------------------------------------------------------
 
@@ -84,6 +101,16 @@ void CNumericStat::UpdateFinalValue() const
 			case ERoundingRule::Nearest: _FinalValue = std::round(_FinalValue); break;
 		}
 	}
+}
+//---------------------------------------------------------------------
+
+void CNumericStat::SetBaseValue(float NewBaseValue)
+{
+	if (_BaseValue == NewBaseValue) return;
+
+	_BaseValue = NewBaseValue;
+	_Dirty = true;
+	OnModified(*this);
 }
 //---------------------------------------------------------------------
 

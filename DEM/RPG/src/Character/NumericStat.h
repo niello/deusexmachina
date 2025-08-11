@@ -1,4 +1,5 @@
 #pragma once
+#include <Events/Signal.h>
 #include <Data/SerializeToParams.h>
 #include <sol/sol.hpp>
 
@@ -58,7 +59,7 @@ protected:
 
 public:
 
-	//???!!!signal about potential modification?! when becomes dirty! NOT OnChanged, calculation is lazy!
+	Events::CSignal<void(const CNumericStat&)> OnModified;
 
 	CNumericStat() = default;
 	CNumericStat(const CNumericStat& Other) : CNumericStat(Other.GetBaseValue()) {}
@@ -70,12 +71,12 @@ public:
 	CNumericStat& operator =(float BaseValue) { SetBaseValue(BaseValue); return *this; }
 
 	void  AddModifier(EModifierType Type, float Value, U32 SourceID, U16 Priority);
-	void  ClearModifiers(U32 SourceID);
-	void  ClearAllModifiers() { _Modifiers.clear(); }
+	void  RemoveModifiers(U32 SourceID);
+	void  RemoveAllModifiers();
 
 	void  UpdateFinalValue() const;
 
-	void  SetBaseValue(float NewBaseValue) { _BaseValue = NewBaseValue; _Dirty = true; }
+	void  SetBaseValue(float NewBaseValue);
 	float GetBaseValue() const { return _BaseValue; }
 	float Get() const { UpdateFinalValue(); return _FinalValue; }
 

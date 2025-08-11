@@ -1,4 +1,5 @@
 #pragma once
+#include <Events/Signal.h>
 #include <Data/SerializeToParams.h>
 
 // A character boolean stat value that can be temporarily altered by modifiers
@@ -8,14 +9,16 @@ namespace DEM::RPG
 
 struct CBoolStatDefinition
 {
-	bool DefaultValue = false; // 'true' adds an innate enabler for this stat
+	bool DefaultValue = false; // 'true' adds an innate enabler (InnateID) for this stat
 	// no formula, can't come up with an idea of its usage now
-	// inverted name for scripts and facade value getter - for cases like IsNotHexed -> IsHexed
+	// inverted name for scripts and facade value getter - for cases like IsNotCursed -> IsCursed
 };
 
 class CBoolStat
 {
 protected:
+
+	CBoolStatDefinition* _pStatDef = nullptr;
 
 	// Usually a status effect instance ID
 	std::set<U32> _Enablers;
@@ -24,9 +27,9 @@ protected:
 
 public:
 
-	//???need signal? can be used for secondary param calculation? or signal is needed for different notification reasons?
+	Events::CSignal<void(const CBoolStat&)> OnModified;
 
-	static constexpr U32 InnateID = 0;
+	static constexpr U32 InnateID = 0; //???or check _pStatDef->DefaultValue directly?
 
 	CBoolStat() = default;
 	CBoolStat(const CBoolStat& Other) : CBoolStat(Other.GetBaseValue()) {}
@@ -37,25 +40,13 @@ public:
 	CBoolStat& operator =(CBoolStat&& Other) = default;
 	CBoolStat& operator =(float BaseValue) { SetBaseValue(BaseValue); return *this; }
 
-	void AddEnabler(U32 SourceID) { _Enablers.insert(SourceID); }
-	void AddBlocker(U32 SourceID) { _Blockers.insert(SourceID); }
-	void AddImmunity(U32 SourceID) { _Immunity.insert(SourceID); }
+	void AddEnabler(U32 SourceID);
+	void AddBlocker(U32 SourceID);
+	void AddImmunity(U32 SourceID);
+	void RemoveModifiers(U32 SourceID);
+	void RemoveAllModifiers();
 
-	void Remove(U32 SourceID)
-	{
-		_Enablers.erase(SourceID);
-		_Blockers.erase(SourceID);
-		_Immunity.erase(SourceID);
-	}
-
-	void SetBaseValue(bool NewBaseValue)
-	{
-		if (NewBaseValue)
-			_Enablers.insert(InnateID);
-		else
-			_Enablers.erase(InnateID);
-	}
-
+	void SetBaseValue(bool NewBaseValue);
 	bool GetBaseValue() const { return _Enablers.find(InnateID) != _Enablers.cend(); }
 	bool Get() const noexcept { return !_Enablers.empty() && (_Blockers.empty() || !_Immunity.empty()); }
 
