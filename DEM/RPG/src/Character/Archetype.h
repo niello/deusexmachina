@@ -1,5 +1,6 @@
 #pragma once
 #include <Resources/Resource.h>
+#include <Resources/ResourceManager.h>
 #include <Data/SerializeToParams.h>
 #include <sol/sol.hpp>
 
@@ -23,14 +24,16 @@ struct CNumericStatDefinition
 	sol::function Formula; //???!!!can / should cache here?
 	std::string   FormulaStr;
 	float         DefaultBaseValue = 0.f;
-	float         MinValue = std::numeric_limits<float>::lowest();
-	float         MaxValue = std::numeric_limits<float>::max();
+	float         MinBaseValue = std::numeric_limits<float>::lowest();
+	float         MaxBaseValue = std::numeric_limits<float>::max();
+	float         MinFinalValue = std::numeric_limits<float>::lowest();
+	float         MaxFinalValue = std::numeric_limits<float>::max();
 	ERoundingRule RoundingRule = ERoundingRule::None;
 };
 
 struct CBoolStatDefinition
 {
-	bool DefaultValue = false; // 'true' adds an innate enabler (InnateID) for this stat
+	bool DefaultValue = false;
 	// no formula, can't come up with an idea of its usage now
 	// inverted name for scripts and facade value getter - for cases like IsNotCursed -> IsCursed
 };
@@ -49,7 +52,17 @@ public:
 
 	std::set<CStrID>                        BodyParts; // TODO: name! Maybe HitZones?
 
-	//!!!need OnPostLoad to init BaseArchetype, maybe cache pointers from it and maybe cache Lua formulas!
+	void OnPostLoad(Resources::CResourceManager& ResMgr)
+	{
+		ResMgr.RegisterResource<CArchetype>(BaseArchetype);
+		if (BaseArchetype) BaseArchetype->ValidateObject<CArchetype>();
+
+		// TODO:
+		// maybe cache fallback pointers from base (need Ptr instead of unique_ptr then)
+		// maybe cache Lua formulas in CNumericStatDefinition
+		//???use reflection to iterate over CNumericStatDefinition fields?
+		//???or use universal runtime map based on string IDs of stats from config?
+	}
 };
 
 using PArchetype = Ptr<CArchetype>;
@@ -99,8 +112,10 @@ template<> constexpr auto RegisterMembers<DEM::RPG::CNumericStatDefinition>()
 	(
 		DEM_META_MEMBER_FIELD(RPG::CNumericStatDefinition, FormulaStr),
 		DEM_META_MEMBER_FIELD(RPG::CNumericStatDefinition, DefaultBaseValue),
-		DEM_META_MEMBER_FIELD(RPG::CNumericStatDefinition, MinValue),
-		DEM_META_MEMBER_FIELD(RPG::CNumericStatDefinition, MaxValue),
+		DEM_META_MEMBER_FIELD(RPG::CNumericStatDefinition, MinBaseValue),
+		DEM_META_MEMBER_FIELD(RPG::CNumericStatDefinition, MaxBaseValue),
+		DEM_META_MEMBER_FIELD(RPG::CNumericStatDefinition, MinFinalValue),
+		DEM_META_MEMBER_FIELD(RPG::CNumericStatDefinition, MaxFinalValue),
 		DEM_META_MEMBER_FIELD(RPG::CNumericStatDefinition, RoundingRule)
 	);
 }

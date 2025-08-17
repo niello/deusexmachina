@@ -8,6 +8,8 @@ void CBoolStat::SetDesc(CBoolStatDefinition* pStatDef)
 {
 	if (_pStatDef == pStatDef) return;
 
+	//???TODO: should SetBaseValue(false) override _pStatDef->DefaultValue == true?
+
 	_pStatDef = pStatDef;
 	OnModified(*this);
 }

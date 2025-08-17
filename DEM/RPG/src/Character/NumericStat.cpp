@@ -13,6 +13,7 @@ void CNumericStat::SetDesc(CNumericStatDefinition* pStatDef)
 	_pStatDef = pStatDef;
 
 	//!!!only if previous or new stat def has formula! could use "base value dirty", which will also dirtify the final value!
+	//???should immediately clamp base value to min/max? or do that only on direct set and on final value evaluation?
 	_Dirty = true;
 }
 //---------------------------------------------------------------------
@@ -54,6 +55,11 @@ void CNumericStat::UpdateFinalValue() const
 
 	_Dirty = false;
 
+	//!!!TODO: if base value is dirty and desc has formula, apply the formula and then clamp to Min/MaxBaseValue!
+
+	//???always clamp to Min/MaxBaseValue here? e.g. SetDesc might limit the stat but we may not want to change its value forever.
+	//SetDesc itself might be temporary
+
 	_FinalValue = _BaseValue;
 
 	for (size_t RangeStart = 0; RangeStart < _Modifiers.size(); /**/)
@@ -66,8 +72,8 @@ void CNumericStat::UpdateFinalValue() const
 
 		// Process base-independent modifiers
 		std::optional<float> Override;
-		float Min = _pStatDef ? _pStatDef->MinValue : std::numeric_limits<float>::lowest();
-		float Max = _pStatDef ? _pStatDef->MaxValue : std::numeric_limits<float>::max();
+		float Min = _pStatDef ? _pStatDef->MinFinalValue : std::numeric_limits<float>::lowest();
+		float Max = _pStatDef ? _pStatDef->MaxFinalValue : std::numeric_limits<float>::max();
 		for (size_t i = RangeStart; i < RangeEnd; ++i)
 		{
 			const auto& Mod = _Modifiers[i];
@@ -125,6 +131,8 @@ void CNumericStat::SetBaseValue(float NewBaseValue)
 	_BaseValue = NewBaseValue;
 	_Dirty = true;
 	OnModified(*this);
+
+	//???should clamp to Min/MaxBaseValue? or do it only in final value eval? in getter too?
 }
 //---------------------------------------------------------------------
 

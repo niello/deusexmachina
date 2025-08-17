@@ -84,10 +84,11 @@ struct ParamsFormat<RPG::CNumericStat>
 
 	static inline void Deserialize(const Data::CData& Input, RPG::CNumericStat& Value)
 	{
-		//!!!TODO: need conversion!
-		//float InputFloat = 0.f;
-		//ParamsFormat<float>::Deserialize(Input, InputFloat);
-		//Value.SetBaseValue(InputFloat);
+		//!!!TODO: need autoconversion of compatible types!
+		if (auto* pInput = Input.As<float>())
+			Value.SetBaseValue(*pInput);
+		else if (auto* pInput = Input.As<int>())
+			Value.SetBaseValue(static_cast<float>(*pInput));
 	}
 };
 
