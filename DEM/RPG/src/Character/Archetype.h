@@ -1,5 +1,5 @@
 #pragma once
-#include <Core/Object.h>
+#include <Resources/Resource.h>
 #include <Data/SerializeToParams.h>
 #include <sol/sol.hpp>
 
@@ -41,11 +41,15 @@ class CArchetype : public DEM::Core::CObject
 
 public:
 
+	Resources::PResource                    BaseArchetype;
+
 	std::unique_ptr<CNumericStatDefinition> Strength;
 
 	std::unique_ptr<CBoolStatDefinition>    CanSpeak;
 
 	std::set<CStrID>                        BodyParts; // TODO: name! Maybe HitZones?
+
+	//!!!need OnPostLoad to init BaseArchetype, maybe cache pointers from it and maybe cache Lua formulas!
 };
 
 using PArchetype = Ptr<CArchetype>;
@@ -115,6 +119,7 @@ template<> constexpr auto RegisterMembers<DEM::RPG::CArchetype>()
 {
 	return std::make_tuple
 	(
+		DEM_META_MEMBER_FIELD(RPG::CArchetype, BaseArchetype),
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, Strength),
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, CanSpeak),
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, BodyParts)

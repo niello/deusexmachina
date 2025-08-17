@@ -1,6 +1,7 @@
 #pragma once
 #include <Character/NumericStat.h>
 #include <Character/BoolStat.h>
+#include <Resources/Resource.h>
 #include <Data/Metadata.h>
 
 // A set of creature stats for Shantara2 role system
@@ -10,6 +11,8 @@ namespace DEM::Sh2
 
 struct CStatsComponent
 {
+	Resources::PResource Archetype;
+
 	RPG::CNumericStat Strength;
 	RPG::CNumericStat Constitution;
 	RPG::CNumericStat Dexterity;
@@ -34,6 +37,7 @@ template<> constexpr auto RegisterMembers<Sh2::CStatsComponent>()
 {
 	return std::make_tuple
 	(
+		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, Archetype),
 		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, Strength),
 		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, Constitution),
 		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, Dexterity),
@@ -41,7 +45,10 @@ template<> constexpr auto RegisterMembers<Sh2::CStatsComponent>()
 		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, Erudition),
 		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, Learnability),
 		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, Charisma),
-		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, Willpower)
+		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, Willpower),
+		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, CanMove),
+		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, CanInteract),
+		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, CanSpeak)
 	);
 }
 
