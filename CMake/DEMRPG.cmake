@@ -53,6 +53,7 @@ set(DEM_L3_RPG_HEADERS
 set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/AI/PerceptionSystems.cpp
 	DEM/RPG/src/Character/BoolStat.cpp
+	DEM/RPG/src/Character/CharacterSheet.cpp
 	DEM/RPG/src/Character/CharacterSystems.cpp
 	DEM/RPG/src/Character/NumericStat.cpp
 	DEM/RPG/src/Combat/AttackAbility.cpp

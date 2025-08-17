@@ -59,8 +59,8 @@ struct MemberAccess
 template<typename TClass, typename T, typename TAccessor>
 struct MemberAccess<TClass, T, TAccessor, typename std::enable_if_t<is_pointer_to_member_v<TAccessor, TClass, T>>>
 {
-	static inline const T* ConstPtr(TAccessor pGetter, const TClass& Instance) { return &Instance.*pGetter; }
-	static inline T*       Ptr(TAccessor pSetter, TClass& Instance) { return &Instance.*pSetter; }
+	static inline const T* ConstPtr(TAccessor pGetter, const TClass& Instance) { return &(Instance.*pGetter); }
+	static inline T*       Ptr(TAccessor pSetter, TClass& Instance) { return &(Instance.*pSetter); }
 	static inline const T& ConstRef(TAccessor pGetter, const TClass& Instance) { return Instance.*pGetter; }
 	static inline T&       Ref(TAccessor pSetter, TClass& Instance) { return Instance.*pSetter; }
 	static inline T        Copy(TAccessor pGetter, const TClass& Instance) { return Instance.*pGetter; }

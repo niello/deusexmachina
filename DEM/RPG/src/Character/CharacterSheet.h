@@ -1,76 +1,56 @@
 #pragma once
-#ifndef __DEM_L3_CHARACTER_SHEET_H__
-#define __DEM_L3_CHARACTER_SHEET_H__
+#include <Game/ECS/Entity.h>
+#include <variant>
 
-#include <Core/Object.h>
-#include <Data/StringID.h>
-#include <Data/Dictionary.h>
+// The sheet is an interface for all stats in one place, like in a tabletop RPG system.
+// Different stats can live in different components, e.g. Strength is in "stats" and HP
+// is in "destructible". The sheet simplifies implementing RPG rules and formulas,
+// especially scripted. Marking accessed stats supported for dependency tracking.
 
-// Character sheet represents a character in terms of a role system. It contains all the
-// stats, parameters, modifiers, states, effects etc.
-// This sheet is based on the Potential Role System.
-
-namespace RPG
+namespace sol
 {
+	class state;
+}
 
-// Primary characteristics
-enum EStat
+namespace DEM::Game
 {
-	Stat_Strength,
-	Stat_Endurance,
-	Stat_Perception,
-	Stat_Dexterity,
-	Stat_Erudition,
-	Stat_Learning,
-	Stat_Charisma,
-	Stat_WillPower,
+	class CGameWorld;
+}
 
-	Stat_Count
-};
-
-enum EPose
+namespace DEM::RPG
 {
-	Pose_Stand,
-	Pose_Crouch,
-	Pose_Sit,
-	Pose_Lay,
-	Pose_Falling	//???here or in movements?
-};
-
-enum EMentalState
-{
-	Mental_Normal,
-	Mental_Careless,
-	Mental_Intent,
-	Mental_Panic,
-	Mental_Fear,
-	Mental_Horrified,
-	Mental_Insane,
-	Mental_Unconscious,
-	Mental_Dead
-};
+class CNumericStat;
+class CBoolStat;
 
 class CCharacterSheet
 {
+public:
+
+	using TStat = std::variant<std::monostate, CNumericStat*, CBoolStat*/*, float*, bool**/>;
+
 protected:
 
-	short			StatBase[Stat_Count];
-	short			StatCurr[Stat_Count];
+	//!!!FIXME: instead of variant, can use own 2-type union!
+	struct CRecord
+	{
+		TStat Stat;
+		bool  Accessed = false;
+	};
 
-	short			HPBorn;
+	std::map<std::string, CRecord, std::less<>> _Stats; // TODO: unordered map with transparent comparator?
 
-	EPose			Pose;
-	EMentalState	MentalState;
+	// TODO: listen component add/remove to fix stats, _if_ dynamic changing of stat components must be supported
 
 public:
 
-	short	GetStatBase(EStat Stat) const { return StatBase[Stat]; }
-	short	GetStatCurr(EStat Stat) const { return StatCurr[Stat]; }
-	short	GetStatModifier(EStat Stat) const { return StatCurr[Stat] - 11; }
+	// TODO: iterate and clear accessed stats. Can pass a numeric stat to subscribe? Or should be outside?!!!
 
-	short	GetHPMax() const { HPBorn + StatCurr[Stat_Endurance] - 1; }
+	static void RegisterScriptAPI(sol::state& State);
+
+	CCharacterSheet(Game::CGameWorld& World, Game::HEntity EntityID);
+
+	TStat FindStat(std::string_view Name) const;
+	TStat FindStatAndRegisterAccess(std::string_view Name);
 };
 
 }
-
-#endif
