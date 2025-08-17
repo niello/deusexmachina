@@ -1,7 +1,21 @@
 #include "NumericStat.h"
+#include <Character/Archetype.h>
 
 namespace DEM::RPG
 {
+
+void CNumericStat::SetDesc(CNumericStatDefinition* pStatDef)
+{
+	if (_pStatDef == pStatDef) return;
+
+	// discard old subscriptions!
+
+	_pStatDef = pStatDef;
+
+	//!!!only if previous or new stat def has formula! could use "base value dirty", which will also dirtify the final value!
+	_Dirty = true;
+}
+//---------------------------------------------------------------------
 
 void CNumericStat::AddModifier(EModifierType Type, float Value, U32 SourceID, U16 Priority)
 {

@@ -1,7 +1,17 @@
 #include "BoolStat.h"
+#include <Character/Archetype.h>
 
 namespace DEM::RPG
 {
+
+void CBoolStat::SetDesc(CBoolStatDefinition* pStatDef)
+{
+	if (_pStatDef == pStatDef) return;
+
+	_pStatDef = pStatDef;
+	OnModified(*this);
+}
+//---------------------------------------------------------------------
 
 void CBoolStat::AddEnabler(U32 SourceID)
 {
@@ -26,7 +36,7 @@ void CBoolStat::AddImmunity(U32 SourceID)
 
 void CBoolStat::RemoveModifiers(U32 SourceID)
 {
-	n_assert(SourceID != InnateID);
+	n_assert(SourceID != BaseValueID);
 
 	size_t Changed = 0;
 	Changed += _Enablers.erase(SourceID);
@@ -51,8 +61,14 @@ void CBoolStat::RemoveAllModifiers()
 
 void CBoolStat::SetBaseValue(bool NewBaseValue)
 {
-	const bool Changed = NewBaseValue ? _Enablers.insert(InnateID).second : !!_Enablers.erase(InnateID);
+	const bool Changed = NewBaseValue ? _Enablers.insert(BaseValueID).second : !!_Enablers.erase(BaseValueID);
 	if (Changed) OnModified(*this);
+}
+//---------------------------------------------------------------------
+
+bool CBoolStat::Get() const noexcept
+{
+	return (!_Enablers.empty() || (_pStatDef && _pStatDef->DefaultValue)) && (_Blockers.empty() || !_Immunity.empty());
 }
 //---------------------------------------------------------------------
 

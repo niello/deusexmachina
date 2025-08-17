@@ -6,17 +6,13 @@
 
 namespace DEM::RPG
 {
-
-struct CBoolStatDefinition
-{
-	bool DefaultValue = false; // 'true' adds an innate enabler (InnateID) for this stat
-	// no formula, can't come up with an idea of its usage now
-	// inverted name for scripts and facade value getter - for cases like IsNotCursed -> IsCursed
-};
+struct CBoolStatDefinition;
 
 class CBoolStat
 {
 protected:
+
+	static constexpr U32 BaseValueID = 0; //???need? or only use _pStatDef->DefaultValue?
 
 	CBoolStatDefinition* _pStatDef = nullptr;
 
@@ -29,8 +25,6 @@ public:
 
 	Events::CSignal<void(const CBoolStat&)> OnModified;
 
-	static constexpr U32 InnateID = 0; //???or check _pStatDef->DefaultValue directly?
-
 	CBoolStat() = default;
 	CBoolStat(const CBoolStat& Other) : CBoolStat(Other.GetBaseValue()) {}
 	CBoolStat(CBoolStat&& Other) = default;
@@ -40,6 +34,8 @@ public:
 	CBoolStat& operator =(CBoolStat&& Other) = default;
 	CBoolStat& operator =(float BaseValue) { SetBaseValue(BaseValue); return *this; }
 
+	void SetDesc(CBoolStatDefinition* pStatDef);
+
 	void AddEnabler(U32 SourceID);
 	void AddBlocker(U32 SourceID);
 	void AddImmunity(U32 SourceID);
@@ -47,8 +43,8 @@ public:
 	void RemoveAllModifiers();
 
 	void SetBaseValue(bool NewBaseValue);
-	bool GetBaseValue() const { return _Enablers.find(InnateID) != _Enablers.cend(); }
-	bool Get() const noexcept { return !_Enablers.empty() && (_Blockers.empty() || !_Immunity.empty()); }
+	bool GetBaseValue() const { return _Enablers.find(BaseValueID) != _Enablers.cend(); }
+	bool Get() const noexcept;
 
 	operator bool() const noexcept { return Get(); }
 };

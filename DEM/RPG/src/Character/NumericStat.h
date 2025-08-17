@@ -1,7 +1,6 @@
 #pragma once
 #include <Events/Signal.h>
 #include <Data/SerializeToParams.h>
-#include <sol/sol.hpp>
 
 // A character numeric stat value that can be temporarily altered by modifiers.
 // Calculations are done with floats. Modifiers of the same priority use the same base value, not results
@@ -9,25 +8,7 @@
 
 namespace DEM::RPG
 {
-
-enum class ERoundingRule : U8
-{
-	None,
-	Floor,
-	Ceil,
-	Nearest
-};
-
-struct CNumericStatDefinition
-{
-	// formula must use facade for dependency access. separate UpdateBaseValue(Facade& Ctx) for secondaries?
-	// TODO: dependency list? stats from our formula, preparsed (Sheet mock that records index methamethod requests?). Subscribe on their OnDirty.
-	sol::function Formula;
-	float         DefaultBaseValue = 0.f;
-	float         MinValue = std::numeric_limits<float>::lowest();
-	float         MaxValue = std::numeric_limits<float>::max();
-	ERoundingRule RoundingRule = ERoundingRule::None;
-};
+struct CNumericStatDefinition;
 
 enum class EModifierType : U8
 {
@@ -70,6 +51,8 @@ public:
 	CNumericStat& operator =(CNumericStat&& Other) = default;
 	CNumericStat& operator =(float BaseValue) { SetBaseValue(BaseValue); return *this; }
 
+	void SetDesc(CNumericStatDefinition* pStatDef);
+
 	void  AddModifier(EModifierType Type, float Value, U32 SourceID, U16 Priority);
 	void  RemoveModifiers(U32 SourceID);
 	void  RemoveAllModifiers();
@@ -101,7 +84,10 @@ struct ParamsFormat<RPG::CNumericStat>
 
 	static inline void Deserialize(const Data::CData& Input, RPG::CNumericStat& Value)
 	{
-		Value.SetBaseValue(Input);
+		//!!!TODO: need conversion!
+		//float InputFloat = 0.f;
+		//ParamsFormat<float>::Deserialize(Input, InputFloat);
+		//Value.SetBaseValue(InputFloat);
 	}
 };
 

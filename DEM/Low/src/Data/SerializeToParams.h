@@ -598,7 +598,7 @@ struct ParamsFormat<std::optional<T>>
 {
 	static inline void Serialize(Data::CData& Output, const std::optional<T>& Value)
 	{
-		// FIXME: instead of writing null could skip writing completely, but we can't do it from here
+		// FIXME: instead of writing null could skip writing completely, but we can't do it from here now
 		if (Value)
 			ParamsFormat<T>::Serialize(Output, Value.value());
 		else
@@ -616,6 +616,33 @@ struct ParamsFormat<std::optional<T>>
 			T NewValue{};
 			ParamsFormat<T>::Deserialize(Input, NewValue);
 			Value = std::move(NewValue);
+		}
+	}
+};
+
+// TODO: enable only for Ts constructible this way!
+template<typename T>
+struct ParamsFormat<std::unique_ptr<T>>
+{
+	static inline void Serialize(Data::CData& Output, const std::unique_ptr<T>& Value)
+	{
+		// FIXME: instead of writing null could skip writing completely, but we can't do it from here now
+		if (Value)
+			ParamsFormat<T>::Serialize(Output, *Value);
+		else
+			Output.Clear();
+	}
+
+	static inline void Deserialize(const Data::CData& Input, std::unique_ptr<T>& Value)
+	{
+		if (Input.IsVoid())
+		{
+			Value.reset();
+		}
+		else
+		{
+			Value.reset(new T{});
+			ParamsFormat<T>::Deserialize(Input, *Value);
 		}
 	}
 };

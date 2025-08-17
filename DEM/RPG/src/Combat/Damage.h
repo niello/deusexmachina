@@ -75,12 +75,12 @@ struct ParamsFormat<DEM::RPG::EDamageType>
 	{
 		if (!Input.IsA<std::string>()) return;
 
-		const std::string_view TypeStr = Input.GetValue<std::string>();
-		if (TypeStr == "Piercing") Value = DEM::RPG::EDamageType::Piercing;
-		else if (TypeStr == "Slashing") Value = DEM::RPG::EDamageType::Slashing;
-		else if (TypeStr == "Bludgeoning") Value = DEM::RPG::EDamageType::Bludgeoning;
-		else if (TypeStr == "Energetic") Value = DEM::RPG::EDamageType::Energetic;
-		else if (TypeStr == "Chemical") Value = DEM::RPG::EDamageType::Chemical;
+		const std::string_view InputStr = Input.GetValue<std::string>();
+		if (InputStr == "Piercing") Value = DEM::RPG::EDamageType::Piercing;
+		else if (InputStr == "Slashing") Value = DEM::RPG::EDamageType::Slashing;
+		else if (InputStr == "Bludgeoning") Value = DEM::RPG::EDamageType::Bludgeoning;
+		else if (InputStr == "Energetic") Value = DEM::RPG::EDamageType::Energetic;
+		else if (InputStr == "Chemical") Value = DEM::RPG::EDamageType::Chemical;
 	}
 };
 
