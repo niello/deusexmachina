@@ -1,12 +1,23 @@
 #pragma once
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
+#include <Resources/DataAssetLoader.h>
 #include <Data/SerializeToParams.h>
 #include <sol/sol.hpp>
 
 // An archetype is a set of rules that defines specifics of a type of an RPG entity,
 // typically a character or a creature. These specifics may include presence and limits
 // of certain stats, formulas for secondary stats, list of body parts or hit zones etc.
+
+namespace DEM::Game
+{
+	using PGameSession = Ptr<class CGameSession>;
+}
+
+namespace Resources
+{
+	class CArchetypeLoader;
+}
 
 namespace DEM::RPG
 {
@@ -52,20 +63,29 @@ public:
 
 	std::set<CStrID>                        BodyParts; // TODO: name! Maybe HitZones?
 
-	void OnPostLoad(Resources::CResourceManager& ResMgr)
-	{
-		ResMgr.RegisterResource<CArchetype>(BaseArchetype);
-		if (BaseArchetype) BaseArchetype->ValidateObject<CArchetype>();
-
-		// TODO:
-		// maybe cache fallback pointers from base (need Ptr instead of unique_ptr then)
-		// maybe cache Lua formulas in CNumericStatDefinition
-		//???use reflection to iterate over CNumericStatDefinition fields?
-		//???or use universal runtime map based on string IDs of stats from config?
-	}
+	void OnPostLoad(const Resources::CDataAssetLoaderHRD<DEM::RPG::CArchetype>& Loader);
 };
 
 using PArchetype = Ptr<CArchetype>;
+
+}
+
+namespace Resources
+{
+
+class CArchetypeLoader : public Resources::CDataAssetLoaderHRD<DEM::RPG::CArchetype>
+{
+protected:
+
+	DEM::Game::PGameSession _Session; // for Lua
+
+public:
+
+	CArchetypeLoader(Resources::CResourceManager& ResourceManager, DEM::Game::CGameSession& Session);
+	~CArchetypeLoader();
+
+	auto* GetSession() const { return _Session.Get(); }
+};
 
 }
 

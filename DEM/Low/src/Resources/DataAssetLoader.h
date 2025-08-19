@@ -1,5 +1,6 @@
 #pragma once
 #include <Resources/ResourceLoader.h>
+#include <IO/Stream.h>
 #include <Data/Buffer.h>
 #include <Data/HRDParser.h>
 #include <Data/SerializeToParams.h>
@@ -67,6 +68,8 @@ public:
 			NewObject->OnPostLoad();
 		else if constexpr (has_method_with_signature_OnPostLoad_v<T, void(Resources::CResourceManager&)>)
 			NewObject->OnPostLoad(_ResMgr);
+		else if constexpr (has_method_with_signature_OnPostLoad_v<T, void(const CDataAssetLoaderHRD<T>&)>)
+			NewObject->OnPostLoad(*this);
 
 		return NewObject;
 	}

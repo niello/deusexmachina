@@ -21,6 +21,8 @@ public:
 
 	virtual const DEM::Core::CRTTI&	GetResultType() const = 0;
 	virtual DEM::Core::PObject		CreateResource(CStrID UID) = 0;
+
+	auto& GetResourceManager() const { return _ResMgr; }
 };
 
 }

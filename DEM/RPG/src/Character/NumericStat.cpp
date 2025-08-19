@@ -59,6 +59,7 @@ void CNumericStat::UpdateFinalValue() const
 
 	//???always clamp to Min/MaxBaseValue here? e.g. SetDesc might limit the stat but we may not want to change its value forever.
 	//SetDesc itself might be temporary
+	//formula needs lua state->session and character sheet->world and self entity ID
 
 	_FinalValue = _BaseValue;
 

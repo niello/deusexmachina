@@ -28,6 +28,11 @@ void InitStats(Game::CGameWorld& World, Game::CGameSession& Session, Resources::
 
 			//???use reflection to iterate over stats without boilerplate?
 
+			//!!!without archetype there can be no formulas, sheet may be not needed. But also might save it in CStatsComponent just in case.
+			//strong refs will be in each found CNumericStat anyway
+
+			//???pass Lua state to archetype loader as a constructor argument? or even session!
+
 			Stats.Strength.SetDesc(pArchetype->Strength.get());
 
 			Stats.CanSpeak.SetDesc(pArchetype->CanSpeak.get());
