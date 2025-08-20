@@ -36,7 +36,7 @@ public:
 
 	static_assert(std::is_base_of_v<DEM::Core::CObject, T>, "Resource class must be derived from Core::CObject");
 
-	CDataAssetLoaderHRD(Resources::CResourceManager& ResourceManager) : CResourceLoader(ResourceManager) {}
+	explicit CDataAssetLoaderHRD(Resources::CResourceManager& ResourceManager) : CResourceLoader(ResourceManager) {}
 
 	virtual const DEM::Core::CRTTI& GetResultType() const override { return T::RTTI; }
 

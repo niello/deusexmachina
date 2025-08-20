@@ -81,8 +81,8 @@ protected:
 
 public:
 
-	CArchetypeLoader(Resources::CResourceManager& ResourceManager, DEM::Game::CGameSession& Session);
-	~CArchetypeLoader();
+	explicit CArchetypeLoader(Resources::CResourceManager& ResourceManager, DEM::Game::CGameSession& Session);
+	virtual ~CArchetypeLoader() override;
 
 	auto* GetSession() const { return _Session.Get(); }
 };

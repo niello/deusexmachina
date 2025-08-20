@@ -4,23 +4,36 @@
 namespace DEM::RPG
 {
 
+static void LoadFormulaScript(CNumericStatDefinition& Desc, sol::state& ScriptState, std::string_view StatName)
+{
+	if (!Desc.FormulaStr.empty())
+	{
+		auto Result = ScriptState.load("return function() return {} end"_format(Desc.FormulaStr));
+		if (Result.valid())
+			Desc.Formula = Result;
+		else
+			::Sys::Error("CArchetype::OnPostLoad() > error loading stat '{}', formula '{}': {}"_format(StatName, Desc.FormulaStr, Result.get<sol::error>().what()));
+	}
+}
+//---------------------------------------------------------------------
+
 void CArchetype::OnPostLoad(const Resources::CDataAssetLoaderHRD<DEM::RPG::CArchetype>& Loader)
 {
 	Loader.GetResourceManager().RegisterResource<CArchetype>(BaseArchetype);
 	if (BaseArchetype) BaseArchetype->ValidateObject<CArchetype>();
 
 	auto* pSession = static_cast<const Resources::CArchetypeLoader&>(Loader).GetSession();
+	auto& ScriptState = pSession->GetScriptState();
 
-	if (!Strength->FormulaStr.empty())
+	// TODO: check what is better, this or std::map<statname, desc> and runtime loop
+	DEM::Meta::CMetadata<CArchetype>::ForEachMember([this, &ScriptState](const auto& Member)
 	{
-		// Strength->FormulaStr -> Strength->Formula
-	}
+		if constexpr (std::is_same_v<DEM::Meta::TMemberValue<decltype(Member)>, std::unique_ptr<CNumericStatDefinition>>)
+			LoadFormulaScript(*Member.GetValueRef(*this).get(), ScriptState, Member.GetName());
+	});
 
 	// TODO:
 	// maybe cache fallback pointers from base (need Ptr instead of unique_ptr then)
-	// maybe cache Lua formulas in CNumericStatDefinition
-	//???use reflection to iterate over CNumericStatDefinition fields?
-	//???or use universal runtime map based on string IDs of stats from config?
 }
 //---------------------------------------------------------------------
 

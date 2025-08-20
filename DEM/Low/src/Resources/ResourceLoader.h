@@ -17,7 +17,7 @@ protected:
 
 public:
 
-	CResourceLoader(CResourceManager& ResourceManager) : _ResMgr(ResourceManager) {}
+	explicit CResourceLoader(CResourceManager& ResourceManager) : _ResMgr(ResourceManager) {}
 
 	virtual const DEM::Core::CRTTI&	GetResultType() const = 0;
 	virtual DEM::Core::PObject		CreateResource(CStrID UID) = 0;

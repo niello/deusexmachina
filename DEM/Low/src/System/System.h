@@ -61,8 +61,8 @@ namespace Sys
 	#define n_assert(exp)			do { (void)sizeof(exp); } while(0)
 	#define n_assert2(exp, msg)		do { (void)sizeof(exp); } while(0)
 #else
-	#define n_verify(exp)			do { if (!(exp)) if (::Sys::ReportAssertionFailure(#exp, nullptr, __FILE__, __LINE__, __FUNCTION__)) __debugbreak(); } while(0)
-	#define n_assert(exp)			do { if (!(exp)) if (::Sys::ReportAssertionFailure(#exp, nullptr, __FILE__, __LINE__, __FUNCTION__)) __debugbreak(); } while(0)
+	#define n_verify(exp)			do { if (!(exp)) if (::Sys::ReportAssertionFailure(#exp, {}, __FILE__, __LINE__, __FUNCTION__)) __debugbreak(); } while(0)
+	#define n_assert(exp)			do { if (!(exp)) if (::Sys::ReportAssertionFailure(#exp, {}, __FILE__, __LINE__, __FUNCTION__)) __debugbreak(); } while(0)
 	#define n_assert2(exp, msg)		do { if (!(exp)) if (::Sys::ReportAssertionFailure(#exp, msg, __FILE__, __LINE__, __FUNCTION__)) __debugbreak(); } while(0)
 #endif
 
