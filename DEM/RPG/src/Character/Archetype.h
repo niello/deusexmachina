@@ -58,7 +58,16 @@ public:
 	Resources::PResource                    BaseArchetype;
 
 	std::unique_ptr<CNumericStatDefinition> Strength;
+	std::unique_ptr<CNumericStatDefinition> Constitution;
+	std::unique_ptr<CNumericStatDefinition> Dexterity;
+	std::unique_ptr<CNumericStatDefinition> Perception;
+	std::unique_ptr<CNumericStatDefinition> Erudition;
+	std::unique_ptr<CNumericStatDefinition> Learnability;
+	std::unique_ptr<CNumericStatDefinition> Charisma;
+	std::unique_ptr<CNumericStatDefinition> Willpower;
 
+	std::unique_ptr<CBoolStatDefinition>    CanMove;
+	std::unique_ptr<CBoolStatDefinition>    CanInteract;
 	std::unique_ptr<CBoolStatDefinition>    CanSpeak;
 
 	std::set<CStrID>                        BodyParts; // TODO: name! Maybe HitZones?
