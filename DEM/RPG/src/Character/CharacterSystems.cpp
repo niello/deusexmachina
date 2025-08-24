@@ -22,7 +22,6 @@ void InitStats(Game::CGameWorld& World, Game::CGameSession& Session, Resources::
 		if (auto* pArchetype = Stats.Archetype->ValidateObject<CArchetype>())
 		{
 			// ... init stats from archetype ...
-			// can cache sheet interface at the same time?
 
 			//!!!TODO: need pArchetype fallback to parent (base)!
 
@@ -31,11 +30,15 @@ void InitStats(Game::CGameWorld& World, Game::CGameSession& Session, Resources::
 			//!!!without archetype there can be no formulas, sheet may be not needed. But also might save it in CStatsComponent just in case.
 			//strong refs will be in each found CNumericStat anyway
 
-			//???pass Lua state to archetype loader as a constructor argument? or even session!
-
 			Stats.Strength.SetDesc(pArchetype->Strength.get());
 
 			Stats.CanSpeak.SetDesc(pArchetype->CanSpeak.get());
+
+			//!!!must init other components!
+
+			// NB: now must do this after setting descs
+			//???what about runtime changes?
+			Stats.Sheet = new CCharacterSheet(World, EntityID);
 		}
 	});
 }

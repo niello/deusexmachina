@@ -8,7 +8,7 @@ static void LoadFormulaScript(CNumericStatDefinition& Desc, sol::state& ScriptSt
 {
 	if (!Desc.FormulaStr.empty())
 	{
-		auto Result = ScriptState.load("return function() return {} end"_format(Desc.FormulaStr));
+		auto Result = ScriptState.load("return function(Sheet) return {} end"_format(Desc.FormulaStr));
 		if (Result.valid())
 			Desc.Formula = Result;
 		else

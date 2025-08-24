@@ -21,8 +21,9 @@ namespace DEM::RPG
 {
 class CNumericStat;
 class CBoolStat;
+using PCharacterSheet = Ptr<class CCharacterSheet>;
 
-class CCharacterSheet
+class CCharacterSheet : public Data::CRefCounted
 {
 public:
 
@@ -40,6 +41,23 @@ protected:
 	std::map<std::string, CRecord, std::less<>> _Stats; // TODO: unordered map with transparent comparator?
 
 	// TODO: listen component add/remove to fix stats, _if_ dynamic changing of stat components must be supported
+
+	template<typename T>
+	void CollectStatsFromComponent(T* pComponent)
+	{
+		DEM::Meta::CMetadata<T>::ForEachMember([this, pComponent](const auto& Member)
+		{
+			using TMember = DEM::Meta::TMemberValue<decltype(Member)>;
+			if constexpr (std::is_same_v<TMember, CNumericStat> || std::is_same_v<TMember, CBoolStat>)
+			{
+				auto* pStat = Member.GetValuePtr(*pComponent);
+				_Stats.emplace(Member.GetName(), CRecord{ pStat, false });
+				if constexpr (std::is_same_v<TMember, CNumericStat>)
+					if (pStat->GetDesc() && pStat->GetDesc()->Formula) //???or set to all stats? archetype can change later?!
+						pStat->SetSheet(this);
+			}
+		});
+	}
 
 public:
 

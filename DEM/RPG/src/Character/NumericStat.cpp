@@ -1,19 +1,49 @@
 #include "NumericStat.h"
 #include <Character/Archetype.h>
+#include <Character/CharacterSheet.h> // for the intrusive ptr
 
 namespace DEM::RPG
 {
+
+CNumericStat::CNumericStat() = default;
+CNumericStat::CNumericStat(const CNumericStat& Other) : CNumericStat(Other.GetBaseValue()) {}
+CNumericStat::CNumericStat(CNumericStat&& Other) noexcept = default;
+CNumericStat::CNumericStat(float BaseValue) : _BaseValue(BaseValue), _FinalValue(BaseValue) {}
+CNumericStat::~CNumericStat() = default;
+CNumericStat& CNumericStat::operator =(const CNumericStat& Other) { SetBaseValue(Other.GetBaseValue()); return *this; }
+CNumericStat& CNumericStat::operator =(CNumericStat&& Other) = default;
+CNumericStat& CNumericStat::operator =(float BaseValue) { SetBaseValue(BaseValue); return *this; }
+//---------------------------------------------------------------------
 
 void CNumericStat::SetDesc(CNumericStatDefinition* pStatDef)
 {
 	if (_pStatDef == pStatDef) return;
 
-	// discard old subscriptions!
+	if (_pStatDef && _pStatDef->Formula)
+	{
+		// ...
+		_Dirty = true; //???TODO: could use "base value dirty"
+
+		// discard old subscriptions!
+	}
 
 	_pStatDef = pStatDef;
 
-	//!!!only if previous or new stat def has formula! could use "base value dirty", which will also dirtify the final value!
-	//???should immediately clamp base value to min/max? or do that only on direct set and on final value evaluation?
+	if (pStatDef && pStatDef->Formula)
+	{
+		//subscribe on deps!? or at the first evaluation? it is already dirty anyway!
+		_Dirty = true; //???TODO: could use "base value dirty"
+	}
+
+	//???should make dirty if there is no formula? e.g. min/max may affect calcs!
+
+	//???should immediately clamp _base_ value to min/max? or do that only on direct set and on final value evaluation?
+}
+//---------------------------------------------------------------------
+
+void CNumericStat::SetSheet(const PCharacterSheet& Sheet)
+{
+	_Sheet = Sheet;
 	_Dirty = true;
 }
 //---------------------------------------------------------------------
@@ -55,11 +85,23 @@ void CNumericStat::UpdateFinalValue() const
 
 	_Dirty = false;
 
-	//!!!TODO: if base value is dirty and desc has formula, apply the formula and then clamp to Min/MaxBaseValue!
+	//!!!TODO: && base value dirty!
+	if (_pStatDef && _pStatDef->Formula)
+	{
+		auto Result = _pStatDef->Formula(_Sheet.Get());
+		if (Result.valid())
+		{
+			_BaseValue = Result.get<float>();
+		}
+		else
+		{
+			::Sys::Error(Result.get<sol::error>().what());
+			_BaseValue = 0.f;
+		}
+	}
 
 	//???always clamp to Min/MaxBaseValue here? e.g. SetDesc might limit the stat but we may not want to change its value forever.
 	//SetDesc itself might be temporary
-	//formula needs lua state->session and character sheet->world and self entity ID
 
 	_FinalValue = _BaseValue;
 

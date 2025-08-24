@@ -1,5 +1,6 @@
 #include "CharacterSheet.h"
 #include <Character/StatsComponent.h>
+#include <Character/Archetype.h>
 #include <Combat/DestructibleComponent.h>
 #include <Game/ECS/GameWorld.h>
 
@@ -34,24 +35,12 @@ void CCharacterSheet::RegisterScriptAPI(sol::state& State)
 CCharacterSheet::CCharacterSheet(Game::CGameWorld& World, Game::HEntity EntityID)
 {
 	if (auto* pComponent = World.FindComponent<Sh2::CStatsComponent>(EntityID))
-	{
-		DEM::Meta::CMetadata<Sh2::CStatsComponent>::ForEachMember([this, pComponent](const auto& Member)
-		{
-			using TMember = DEM::Meta::TMemberValue<decltype(Member)>;
-			if constexpr (std::is_same_v<TMember, CNumericStat> || std::is_same_v<TMember, CBoolStat>)
-				_Stats.emplace(Member.GetName(), CRecord{ Member.GetValuePtr(*pComponent), false });
-		});
-	}
+		CollectStatsFromComponent(pComponent);
 
 	if (auto* pComponent = World.FindComponent<RPG::CDestructibleComponent>(EntityID))
-	{
-		DEM::Meta::CMetadata<RPG::CDestructibleComponent>::ForEachMember([this, pComponent](const auto& Member)
-		{
-			using TMember = DEM::Meta::TMemberValue<decltype(Member)>;
-			if constexpr (std::is_same_v<TMember, CNumericStat> || std::is_same_v<TMember, CBoolStat>)
-				_Stats.emplace(Member.GetName(), CRecord{ Member.GetValuePtr(*pComponent), false });
-		});
-	}
+		CollectStatsFromComponent(pComponent);
+
+	// TODO: subscribe on each component's addition if it is missing and on removal if it is present
 }
 //---------------------------------------------------------------------
 

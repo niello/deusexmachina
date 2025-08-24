@@ -1,6 +1,7 @@
 #pragma once
 #include <Character/NumericStat.h>
 #include <Character/BoolStat.h>
+#include <Character/CharacterSheet.h>
 #include <Resources/Resource.h>
 #include <Data/Metadata.h>
 
@@ -12,6 +13,7 @@ namespace DEM::Sh2
 struct CStatsComponent
 {
 	Resources::PResource Archetype;
+	RPG::PCharacterSheet Sheet;
 
 	RPG::CNumericStat Strength;
 	RPG::CNumericStat Constitution;

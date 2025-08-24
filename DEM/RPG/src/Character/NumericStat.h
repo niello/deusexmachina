@@ -9,6 +9,7 @@
 namespace DEM::RPG
 {
 struct CNumericStatDefinition;
+using PCharacterSheet = Ptr<class CCharacterSheet>;
 
 enum class EModifierType : U8
 {
@@ -19,7 +20,7 @@ enum class EModifierType : U8
 	Override   // Overrides a base value, the greater one is chosen on a conflict
 };
 
-class CNumericStat
+class CNumericStat final
 {
 protected:
 
@@ -31,10 +32,11 @@ protected:
 		EModifierType Type;
 	};
 
-	std::vector<CModifier>  _Modifiers; // Sorted by Priority
+	std::vector<CModifier>  _Modifiers;          // Sorted by Priority
 	CNumericStatDefinition* _pStatDef = nullptr;
+	PCharacterSheet         _Sheet;              // Only for the secondary stat formula evaluation
 
-	float         _BaseValue = 0.f;
+	mutable float _BaseValue = 0.f;
 	mutable float _FinalValue = 0.f;
 	mutable bool  _Dirty = false;
 
@@ -42,16 +44,19 @@ public:
 
 	Events::CSignal<void(const CNumericStat&)> OnModified;
 
-	CNumericStat() = default;
-	CNumericStat(const CNumericStat& Other) : CNumericStat(Other.GetBaseValue()) {}
-	CNumericStat(CNumericStat&& Other) = default;
-	CNumericStat(float BaseValue) : _BaseValue(BaseValue), _FinalValue(BaseValue) {}
+	CNumericStat();
+	CNumericStat(const CNumericStat& Other);
+	CNumericStat(CNumericStat&& Other) noexcept;
+	CNumericStat(float BaseValue);
+	~CNumericStat();
 
-	CNumericStat& operator =(const CNumericStat& Other) { SetBaseValue(Other.GetBaseValue()); return *this; }
-	CNumericStat& operator =(CNumericStat&& Other) = default;
-	CNumericStat& operator =(float BaseValue) { SetBaseValue(BaseValue); return *this; }
+	CNumericStat& operator =(const CNumericStat& Other);
+	CNumericStat& operator =(CNumericStat&& Other);
+	CNumericStat& operator =(float BaseValue);
 
-	void SetDesc(CNumericStatDefinition* pStatDef);
+	void  SetDesc(CNumericStatDefinition* pStatDef);
+	void  SetSheet(const PCharacterSheet& Sheet);
+	auto* GetDesc() const { return _pStatDef; }
 
 	void  AddModifier(EModifierType Type, float Value, U32 SourceID, U16 Priority);
 	void  RemoveModifiers(U32 SourceID);
