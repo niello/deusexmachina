@@ -4,15 +4,16 @@
 namespace DEM::RPG
 {
 
-static void LoadFormulaScript(CNumericStatDefinition& Desc, sol::state& ScriptState, std::string_view StatName)
+static void LoadFormulaScript(CNumericStatDefinition* pDesc, sol::state& ScriptState, std::string_view StatName)
 {
-	if (!Desc.FormulaStr.empty())
+	if (pDesc && !pDesc->FormulaStr.empty())
 	{
-		auto Result = ScriptState.load("return function(Sheet) return {} end"_format(Desc.FormulaStr));
+		// TODO: load() loads the chunk as a function but can't pass named arguments there (except by "x = ..."). What is the best way?
+		auto Result = ScriptState.script("return function(Sheet) return {} end"_format(pDesc->FormulaStr));
 		if (Result.valid())
-			Desc.Formula = Result;
+			pDesc->Formula = Result;
 		else
-			::Sys::Error("CArchetype::OnPostLoad() > error loading stat '{}', formula '{}': {}"_format(StatName, Desc.FormulaStr, Result.get<sol::error>().what()));
+			::Sys::Error("CArchetype::OnPostLoad() > error loading stat '{}', formula '{}': {}"_format(StatName, pDesc->FormulaStr, Result.get<sol::error>().what()));
 	}
 }
 //---------------------------------------------------------------------
@@ -29,7 +30,7 @@ void CArchetype::OnPostLoad(const Resources::CDataAssetLoaderHRD<DEM::RPG::CArch
 	DEM::Meta::CMetadata<CArchetype>::ForEachMember([this, &ScriptState](const auto& Member)
 	{
 		if constexpr (std::is_same_v<DEM::Meta::TMemberValue<decltype(Member)>, std::unique_ptr<CNumericStatDefinition>>)
-			LoadFormulaScript(*Member.GetValueRef(*this).get(), ScriptState, Member.GetName());
+			LoadFormulaScript(Member.GetValueRef(*this).get(), ScriptState, Member.GetName());
 	});
 
 	// TODO:

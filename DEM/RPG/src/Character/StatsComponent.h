@@ -24,6 +24,10 @@ struct CStatsComponent
 	RPG::CNumericStat Charisma;
 	RPG::CNumericStat Willpower;
 
+	//!!!DBG TMP! here?
+	RPG::CNumericStat BirthHP;
+	RPG::CNumericStat MaxHP;
+
 	RPG::CBoolStat    CanMove;
 	RPG::CBoolStat    CanInteract;
 	RPG::CBoolStat    CanSpeak;
@@ -48,10 +52,13 @@ template<> constexpr auto RegisterMembers<Sh2::CStatsComponent>()
 		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, Learnability),
 		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, Charisma),
 		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, Willpower),
+		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, BirthHP),
+		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, MaxHP),
 		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, CanMove),
 		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, CanInteract),
 		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, CanSpeak)
 	);
 }
+static_assert(CMetadata<Sh2::CStatsComponent>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
 
 }

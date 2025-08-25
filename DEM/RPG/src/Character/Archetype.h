@@ -66,6 +66,8 @@ public:
 	std::unique_ptr<CNumericStatDefinition> Charisma;
 	std::unique_ptr<CNumericStatDefinition> Willpower;
 
+	std::unique_ptr<CNumericStatDefinition> MaxHP;
+
 	std::unique_ptr<CBoolStatDefinition>    CanMove;
 	std::unique_ptr<CBoolStatDefinition>    CanInteract;
 	std::unique_ptr<CBoolStatDefinition>    CanSpeak;
@@ -134,8 +136,8 @@ struct ParamsFormat<DEM::RPG::ERoundingRule>
 namespace DEM::Meta
 {
 
-template<> constexpr auto RegisterClassName<DEM::RPG::CNumericStatDefinition>() { return "DEM::RPG::CNumericStatDefinition"; }
-template<> constexpr auto RegisterMembers<DEM::RPG::CNumericStatDefinition>()
+template<> constexpr auto RegisterClassName<RPG::CNumericStatDefinition>() { return "DEM::RPG::CNumericStatDefinition"; }
+template<> constexpr auto RegisterMembers<RPG::CNumericStatDefinition>()
 {
 	return std::make_tuple
 	(
@@ -149,8 +151,8 @@ template<> constexpr auto RegisterMembers<DEM::RPG::CNumericStatDefinition>()
 	);
 }
 
-template<> constexpr auto RegisterClassName<DEM::RPG::CBoolStatDefinition>() { return "DEM::RPG::CBoolStatDefinition"; }
-template<> constexpr auto RegisterMembers<DEM::RPG::CBoolStatDefinition>()
+template<> constexpr auto RegisterClassName<RPG::CBoolStatDefinition>() { return "DEM::RPG::CBoolStatDefinition"; }
+template<> constexpr auto RegisterMembers<RPG::CBoolStatDefinition>()
 {
 	return std::make_tuple
 	(
@@ -158,16 +160,27 @@ template<> constexpr auto RegisterMembers<DEM::RPG::CBoolStatDefinition>()
 	);
 }
 
-template<> constexpr auto RegisterClassName<DEM::RPG::CArchetype>() { return "DEM::RPG::CArchetype"; }
-template<> constexpr auto RegisterMembers<DEM::RPG::CArchetype>()
+template<> constexpr auto RegisterClassName<RPG::CArchetype>() { return "DEM::RPG::CArchetype"; }
+template<> constexpr auto RegisterMembers<RPG::CArchetype>()
 {
 	return std::make_tuple
 	(
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, BaseArchetype),
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, Strength),
+		DEM_META_MEMBER_FIELD(RPG::CArchetype, Constitution),
+		DEM_META_MEMBER_FIELD(RPG::CArchetype, Dexterity),
+		DEM_META_MEMBER_FIELD(RPG::CArchetype, Perception),
+		DEM_META_MEMBER_FIELD(RPG::CArchetype, Erudition),
+		DEM_META_MEMBER_FIELD(RPG::CArchetype, Learnability),
+		DEM_META_MEMBER_FIELD(RPG::CArchetype, Charisma),
+		DEM_META_MEMBER_FIELD(RPG::CArchetype, Willpower),
+		DEM_META_MEMBER_FIELD(RPG::CArchetype, MaxHP),
+		DEM_META_MEMBER_FIELD(RPG::CArchetype, CanMove),
+		DEM_META_MEMBER_FIELD(RPG::CArchetype, CanInteract),
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, CanSpeak),
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, BodyParts)
 	);
 }
+static_assert(CMetadata<RPG::CArchetype>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
 
 }

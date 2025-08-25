@@ -21,24 +21,33 @@ void InitStats(Game::CGameWorld& World, Game::CGameSession& Session, Resources::
 
 		if (auto* pArchetype = Stats.Archetype->ValidateObject<CArchetype>())
 		{
-			// ... init stats from archetype ...
+			//!!!TODO: need pArchetype fallback to parent (base)! better do on load, then need Ptr instead of unique_ptr for descs.
 
-			//!!!TODO: need pArchetype fallback to parent (base)!
-
-			//???use reflection to iterate over stats without boilerplate?
-
-			//!!!without archetype there can be no formulas, sheet may be not needed. But also might save it in CStatsComponent just in case.
-			//strong refs will be in each found CNumericStat anyway
-
+			//!!!FIXME: not stable enough! easy to forget a new field!
 			Stats.Strength.SetDesc(pArchetype->Strength.get());
+			Stats.Constitution.SetDesc(pArchetype->Constitution.get());
+			Stats.Dexterity.SetDesc(pArchetype->Dexterity.get());
+			Stats.Perception.SetDesc(pArchetype->Perception.get());
+			Stats.Erudition.SetDesc(pArchetype->Erudition.get());
+			Stats.Learnability.SetDesc(pArchetype->Learnability.get());
+			Stats.Charisma.SetDesc(pArchetype->Charisma.get());
+			Stats.Willpower.SetDesc(pArchetype->Willpower.get());
 
+			Stats.MaxHP.SetDesc(pArchetype->MaxHP.get());
+
+			Stats.CanMove.SetDesc(pArchetype->CanMove.get());
+			Stats.CanInteract.SetDesc(pArchetype->CanInteract.get());
 			Stats.CanSpeak.SetDesc(pArchetype->CanSpeak.get());
 
 			//!!!must init other components!
+			//???MaxHP in destructible or in sheet? destructible could store only current HP, e.g. door needs no max HP?! what about repairing?
 
 			// NB: now must do this after setting descs
 			//???what about runtime changes?
 			Stats.Sheet = new CCharacterSheet(World, EntityID);
+
+			//!!!DBG TMP!
+			::Sys::Log("***DBG MaxHP = {}"_format(Stats.MaxHP.Get()));
 		}
 	});
 }
