@@ -86,9 +86,12 @@ void CNumericStat::UpdateFinalValue() const
 	_Dirty = false;
 
 	//!!!TODO: && base value dirty!
-	if (_pStatDef && _pStatDef->Formula)
+	if (_pStatDef && _pStatDef->Formula && _Sheet)
 	{
+		_Sheet->BeginStatTracking();
 		auto Result = _pStatDef->Formula(_Sheet.Get());
+		auto AccessedStats = _Sheet->EndStatTracking();
+
 		if (Result.valid())
 		{
 			_BaseValue = Result.get<float>();
@@ -97,6 +100,16 @@ void CNumericStat::UpdateFinalValue() const
 		{
 			::Sys::Error(Result.get<sol::error>().what());
 			_BaseValue = 0.f;
+		}
+
+		for (auto* pStat : AccessedStats.NumericStats)
+		{
+			//!!!TODO: subscribe on AccessedStats changes, invalidate base value
+		}
+
+		for (auto* pStat : AccessedStats.BoolStats)
+		{
+			//!!!TODO: subscribe on AccessedStats changes, invalidate base value
 		}
 	}
 

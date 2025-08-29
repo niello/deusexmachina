@@ -25,6 +25,8 @@ struct CStatsComponent
 	RPG::CNumericStat Willpower;
 
 	//!!!DBG TMP! here?
+	//!!!can make BirthHP a simple int/float constant instead of a full CNumericStat? Probably could support it in __index of the Lua character sheet!
+	//assign constants to Sheet (Ctx) class table as sol::property?
 	RPG::CNumericStat BirthHP;
 	RPG::CNumericStat MaxHP;
 

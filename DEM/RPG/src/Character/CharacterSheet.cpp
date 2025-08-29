@@ -14,7 +14,7 @@ void CCharacterSheet::RegisterScriptAPI(sol::state& State)
 	// Pass a final value of the stat to Lua, lazy-evaluating if necessary
 	UT.set_function(sol::meta_function::index, [](CCharacterSheet& Self, std::string_view Key, sol::this_state s)
 	{
-		auto Var = Self.FindStatAndRegisterAccess(Key);
+		auto Var = Self.FindStat(Key);
 
 		if (const auto* ppStat = std::get_if<CNumericStat*>(&Var))
 			return sol::make_object(s, (*ppStat)->Get());
@@ -47,16 +47,37 @@ CCharacterSheet::CCharacterSheet(Game::CGameWorld& World, Game::HEntity EntityID
 CCharacterSheet::TStat CCharacterSheet::FindStat(std::string_view Name) const
 {
 	auto It = _Stats.find(Name);
-	return (It != _Stats.cend()) ? It->second.Stat : std::monostate{};
+	if (It == _Stats.cend()) return std::monostate{};
+
+	if (!_StatTrackingStack.empty())
+	{
+		if (const auto* ppStat = std::get_if<CNumericStat*>(&It->second))
+			_StatTrackingStack.back().NumericStats.push_back(*ppStat);
+		else if (const auto* ppStat = std::get_if<CBoolStat*>(&It->second))
+			_StatTrackingStack.back().BoolStats.push_back(*ppStat);
+	}
+
+	return It->second;
 }
 //---------------------------------------------------------------------
 
-CCharacterSheet::TStat CCharacterSheet::FindStatAndRegisterAccess(std::string_view Name)
+void CCharacterSheet::BeginStatTracking()
 {
-	auto It = _Stats.find(Name);
-	if (It == _Stats.cend()) return std::monostate{};
-	It->second.Accessed = true;
-	return It->second.Stat;
+	_StatTrackingStack.emplace_back();
+}
+//---------------------------------------------------------------------
+
+CAccessedStats CCharacterSheet::EndStatTracking()
+{
+	n_assert_dbg(!_StatTrackingStack.empty());
+
+	CAccessedStats Stats;
+	if (!_StatTrackingStack.empty())
+	{
+		Stats = std::move(_StatTrackingStack.back());
+		_StatTrackingStack.pop_back();
+	}
+	return Stats;
 }
 //---------------------------------------------------------------------
 
