@@ -36,9 +36,12 @@ protected:
 	CNumericStatDefinition* _pStatDef = nullptr;
 	PCharacterSheet         _Sheet;              // Only for the secondary stat formula evaluation
 
+	mutable std::vector<DEM::Events::CConnection> _DependencyChangedSubs;
+
 	mutable float _BaseValue = 0.f;
 	mutable float _FinalValue = 0.f;
 	mutable bool  _Dirty = false;
+	mutable bool  _BaseDirty = false;
 
 public:
 

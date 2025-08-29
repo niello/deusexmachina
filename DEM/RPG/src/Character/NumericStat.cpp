@@ -1,5 +1,6 @@
 #include "NumericStat.h"
 #include <Character/Archetype.h>
+#include <Character/BoolStat.h>
 #include <Character/CharacterSheet.h> // for the intrusive ptr
 
 namespace DEM::RPG
@@ -21,23 +22,18 @@ void CNumericStat::SetDesc(CNumericStatDefinition* pStatDef)
 
 	if (_pStatDef && _pStatDef->Formula)
 	{
-		// ...
-		_Dirty = true; //???TODO: could use "base value dirty"
-
-		// discard old subscriptions!
+		_BaseDirty = true;
+		_DependencyChangedSubs.clear();
 	}
 
 	_pStatDef = pStatDef;
 
 	if (pStatDef && pStatDef->Formula)
-	{
-		//subscribe on deps!? or at the first evaluation? it is already dirty anyway!
-		_Dirty = true; //???TODO: could use "base value dirty"
-	}
+		_BaseDirty = true;
 
 	//???should make dirty if there is no formula? e.g. min/max may affect calcs!
 
-	//???should immediately clamp _base_ value to min/max? or do that only on direct set and on final value evaluation?
+	//???should immediately clamp _base_ value to new min/max? or do that only on direct set and on final value evaluation?
 }
 //---------------------------------------------------------------------
 
@@ -45,6 +41,8 @@ void CNumericStat::SetSheet(const PCharacterSheet& Sheet)
 {
 	_Sheet = Sheet;
 	_Dirty = true;
+	if (_pStatDef && _pStatDef->Formula)
+		_BaseDirty = true;
 }
 //---------------------------------------------------------------------
 
@@ -81,13 +79,13 @@ void CNumericStat::RemoveAllModifiers()
 
 void CNumericStat::UpdateFinalValue() const
 {
-	if (!_Dirty) return;
+	if (!_Dirty && !_BaseDirty) return;
 
-	_Dirty = false;
-
-	//!!!TODO: && base value dirty!
-	if (_pStatDef && _pStatDef->Formula && _Sheet)
+	if (_BaseDirty && _pStatDef && _pStatDef->Formula && _Sheet)
 	{
+		//!!!TODO: store in map and renew only changed connections?
+		_DependencyChangedSubs.clear();
+
 		_Sheet->BeginStatTracking();
 		auto Result = _pStatDef->Formula(_Sheet.Get());
 		auto AccessedStats = _Sheet->EndStatTracking();
@@ -102,15 +100,13 @@ void CNumericStat::UpdateFinalValue() const
 			_BaseValue = 0.f;
 		}
 
+		_BaseValue = std::clamp(_BaseValue, _pStatDef->MinBaseValue, _pStatDef->MaxBaseValue);
+
 		for (auto* pStat : AccessedStats.NumericStats)
-		{
-			//!!!TODO: subscribe on AccessedStats changes, invalidate base value
-		}
+			_DependencyChangedSubs.push_back(pStat->OnModified.Subscribe([this](auto&) {_BaseDirty = true; }));
 
 		for (auto* pStat : AccessedStats.BoolStats)
-		{
-			//!!!TODO: subscribe on AccessedStats changes, invalidate base value
-		}
+			_DependencyChangedSubs.push_back(pStat->OnModified.Subscribe([this](auto&) {_BaseDirty = true; }));
 	}
 
 	//???always clamp to Min/MaxBaseValue here? e.g. SetDesc might limit the stat but we may not want to change its value forever.
@@ -177,6 +173,9 @@ void CNumericStat::UpdateFinalValue() const
 			case ERoundingRule::Nearest: _FinalValue = std::round(_FinalValue); break;
 		}
 	}
+
+	_BaseDirty = false;
+	_Dirty = false;
 }
 //---------------------------------------------------------------------
 
