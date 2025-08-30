@@ -67,8 +67,8 @@ public:
 
 	TStat          FindStat(std::string_view Name) const;
 
-	void           BeginStatTracking();
-	CAccessedStats EndStatTracking();
+	void           BeginStatAccessTracking();
+	CAccessedStats EndStatAccessTracking();
 };
 
 }

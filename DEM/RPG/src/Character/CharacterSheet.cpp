@@ -61,13 +61,13 @@ CCharacterSheet::TStat CCharacterSheet::FindStat(std::string_view Name) const
 }
 //---------------------------------------------------------------------
 
-void CCharacterSheet::BeginStatTracking()
+void CCharacterSheet::BeginStatAccessTracking()
 {
 	_StatTrackingStack.emplace_back();
 }
 //---------------------------------------------------------------------
 
-CAccessedStats CCharacterSheet::EndStatTracking()
+CAccessedStats CCharacterSheet::EndStatAccessTracking()
 {
 	n_assert_dbg(!_StatTrackingStack.empty());
 

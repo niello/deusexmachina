@@ -40,8 +40,8 @@ protected:
 
 	mutable float _BaseValue = 0.f;
 	mutable float _FinalValue = 0.f;
-	mutable bool  _Dirty = false;
 	mutable bool  _BaseDirty = false;
+	mutable bool  _FinalDirty = false;
 
 public:
 
@@ -65,11 +65,9 @@ public:
 	void  RemoveModifiers(U32 SourceID);
 	void  RemoveAllModifiers();
 
-	void  UpdateFinalValue() const;
-
 	void  SetBaseValue(float NewBaseValue);
 	float GetBaseValue() const { return _BaseValue; }
-	float Get() const { UpdateFinalValue(); return _FinalValue; }
+	float Get() const;
 
 	template<typename T>
 	T     Get() const { return static_cast<T>(Get()); }

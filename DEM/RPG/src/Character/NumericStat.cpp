@@ -21,14 +21,11 @@ void CNumericStat::SetDesc(CNumericStatDefinition* pStatDef)
 	if (_pStatDef == pStatDef) return;
 
 	if (_pStatDef && _pStatDef->Formula)
-	{
-		_BaseDirty = true;
 		_DependencyChangedSubs.clear();
-	}
 
 	_pStatDef = pStatDef;
 
-	if (pStatDef && pStatDef->Formula)
+	if (_Sheet && _pStatDef && _pStatDef->Formula)
 		_BaseDirty = true;
 
 	//???should make dirty if there is no formula? e.g. min/max may affect calcs!
@@ -39,9 +36,10 @@ void CNumericStat::SetDesc(CNumericStatDefinition* pStatDef)
 
 void CNumericStat::SetSheet(const PCharacterSheet& Sheet)
 {
+	if (_Sheet == Sheet) return;
+
 	_Sheet = Sheet;
-	_Dirty = true;
-	if (_pStatDef && _pStatDef->Formula)
+	if (_Sheet && _pStatDef && _pStatDef->Formula)
 		_BaseDirty = true;
 }
 //---------------------------------------------------------------------
@@ -51,7 +49,7 @@ void CNumericStat::AddModifier(EModifierType Type, float Value, U32 SourceID, U1
 	const auto It = std::lower_bound(_Modifiers.cbegin(), _Modifiers.cend(), Priority,
 		[](const CModifier& Elm, U16 NewPriority) { return Elm.Priority < NewPriority; });
 	_Modifiers.insert(It, CModifier{ Value, SourceID, Priority, Type });
-	_Dirty = true;
+	_FinalDirty = true;
 	OnModified(*this);
 }
 //---------------------------------------------------------------------
@@ -62,7 +60,7 @@ void CNumericStat::RemoveModifiers(U32 SourceID)
 	if (It == _Modifiers.end()) return;
 
 	_Modifiers.erase(It, _Modifiers.end());
-	_Dirty = true;
+	_FinalDirty = true;
 	OnModified(*this);
 }
 //---------------------------------------------------------------------
@@ -72,23 +70,26 @@ void CNumericStat::RemoveAllModifiers()
 	if (_Modifiers.empty()) return;
 
 	_Modifiers.clear();
-	_Dirty = true;
+	_FinalDirty = true;
 	OnModified(*this);
 }
 //---------------------------------------------------------------------
 
-void CNumericStat::UpdateFinalValue() const
+float CNumericStat::Get() const
 {
-	if (!_Dirty && !_BaseDirty) return;
+	if (!_BaseDirty && !_FinalDirty) return _FinalValue;
 
-	if (_BaseDirty && _pStatDef && _pStatDef->Formula && _Sheet)
+	// Recalculate the base value of a secondary stat
+	if (_BaseDirty)
 	{
-		//!!!TODO: store in map and renew only changed connections?
+		n_assert(_Sheet && _pStatDef && _pStatDef->Formula);
+
+		//!!!???TODO: store in map and renew only changed connections?
 		_DependencyChangedSubs.clear();
 
-		_Sheet->BeginStatTracking();
+		_Sheet->BeginStatAccessTracking();
 		auto Result = _pStatDef->Formula(_Sheet.Get());
-		auto AccessedStats = _Sheet->EndStatTracking();
+		const auto AccessedStats = _Sheet->EndStatAccessTracking();
 
 		if (Result.valid())
 		{
@@ -100,6 +101,7 @@ void CNumericStat::UpdateFinalValue() const
 			_BaseValue = 0.f;
 		}
 
+		//???or clamp at assignment to _FinalValue below? to keep the original base value intact. 
 		_BaseValue = std::clamp(_BaseValue, _pStatDef->MinBaseValue, _pStatDef->MaxBaseValue);
 
 		for (auto* pStat : AccessedStats.NumericStats)
@@ -107,13 +109,13 @@ void CNumericStat::UpdateFinalValue() const
 
 		for (auto* pStat : AccessedStats.BoolStats)
 			_DependencyChangedSubs.push_back(pStat->OnModified.Subscribe([this](auto&) {_BaseDirty = true; }));
-	}
 
-	//???always clamp to Min/MaxBaseValue here? e.g. SetDesc might limit the stat but we may not want to change its value forever.
-	//SetDesc itself might be temporary
+		_BaseDirty = false;
+	}
 
 	_FinalValue = _BaseValue;
 
+	// Apply modifiers group bu group
 	for (size_t RangeStart = 0; RangeStart < _Modifiers.size(); /**/)
 	{
 		// Find the priority range
@@ -164,6 +166,7 @@ void CNumericStat::UpdateFinalValue() const
 		RangeStart = RangeEnd;
 	}
 
+	// Apply final rounding
 	if (_pStatDef)
 	{
 		switch (_pStatDef->RoundingRule)
@@ -174,17 +177,21 @@ void CNumericStat::UpdateFinalValue() const
 		}
 	}
 
-	_BaseDirty = false;
-	_Dirty = false;
+	_FinalDirty = false;
+
+	return _FinalValue;
 }
 //---------------------------------------------------------------------
 
 void CNumericStat::SetBaseValue(float NewBaseValue)
 {
+	n_assert(!_pStatDef || !_pStatDef->Formula);
+
 	if (_BaseValue == NewBaseValue) return;
 
 	_BaseValue = NewBaseValue;
-	_Dirty = true;
+	_BaseDirty = false;
+	_FinalDirty = true;
 	OnModified(*this);
 
 	//???should clamp to Min/MaxBaseValue? or do it only in final value eval? in getter too?
