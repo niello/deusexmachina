@@ -492,9 +492,10 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 
 				if (Rec.NewStorage == EItemStorage::Equipment)
 				{
-					if (auto pArmor = FindItemComponent<const CArmorComponent>(World, StackID))
-						if (auto pDestructible = FindItemComponent<CDestructibleComponent>(World, EntityID))
-							AddEquipmentModifier<CArmorAbsorptionModifier>(*pEquipped, pDestructible->DamageAbsorption, World, StackID);
+					//!!!FIXME: ARMOR!!!
+					//if (auto pArmor = FindItemComponent<const CArmorComponent>(World, StackID))
+					//	if (auto pDestructible = FindItemComponent<CDestructibleComponent>(World, EntityID))
+					//		AddEquipmentModifier<CArmorAbsorptionModifier>(*pEquipped, pDestructible->DamageAbsorption, World, StackID);
 
 					// ...
 				}

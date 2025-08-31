@@ -7,10 +7,10 @@ namespace DEM::RPG
 
 void InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Location, int Damage, EDamageType DamageType, Game::HEntity ActorID)
 {
-	auto pDestructible = World.FindComponent<CDestructibleComponent>(TargetID);
+	auto* pDestructible = World.FindComponent<CDestructibleComponent>(TargetID);
 	if (!pDestructible || pDestructible->HP.GetFinalValue() <= 0) return;
 
-	const auto& Absorption = pDestructible->DamageAbsorption.GetFinalValue();
+	const auto& Absorption = pDestructible->DamageAbsorption;
 	if (!Absorption.empty())
 	{
 		const auto It = Location ? Absorption.find(Location) : Absorption.cbegin();
@@ -28,7 +28,7 @@ void InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Locat
 
 	auto HP = pDestructible->GetHP();
 	HP -= Damage;
-	pDestructible->SetHP(HP);
+	pDestructible->HP = HP;
 	pDestructible->OnHit(Damage);
 
 	if (pDestructible->HP.GetFinalValue() <= 0) pDestructible->OnDestroyed(DamageType);

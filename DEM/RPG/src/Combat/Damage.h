@@ -1,7 +1,5 @@
 #pragma once
-#include <Data/StringID.h>
-#include <Data/SerializeToParams.h>
-#include <StdDEM.h>
+#include <Character/NumericStat.h>
 #include <map>
 #include <array>
 
@@ -23,6 +21,8 @@ enum class EDamageType : U8
 	Cheat
 };
 constexpr size_t DamageTypeCount = static_cast<size_t>(EDamageType::COUNT);
+
+using CZoneDamageAbsorption = std::array<CNumericStat, DamageTypeCount>;
 
 // HitZone -> AbsorptionValue[DamageType]
 class CDamageAbsorption : public std::map<CStrID, std::array<int, DamageTypeCount>>
