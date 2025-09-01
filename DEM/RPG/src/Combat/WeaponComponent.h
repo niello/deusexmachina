@@ -1,6 +1,5 @@
 #pragma once
 #include <Data/Metadata.h>
-#include <Character/ModifiableParameter.h> // FIXME: not character but stats?
 #include <Combat/Damage.h>
 
 // Weapon is typically an item component which makes it capable of attacking targets and inflicting damage

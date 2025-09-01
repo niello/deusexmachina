@@ -59,8 +59,8 @@ bool CAttackAbility::IsAvailable(const Game::CGameSession& Session, const Game::
 
 inline static bool IsTargetDestructible(const Game::CGameWorld& World, Game::HEntity TargetID)
 {
-	auto pDestructible = World.FindComponent<const CDestructibleComponent>(TargetID);
-	return pDestructible && pDestructible->HP.GetFinalValue() > 0;
+	auto* pDestructible = World.FindComponent<const CDestructibleComponent>(TargetID);
+	return pDestructible && pDestructible->HP > 0;
 }
 //---------------------------------------------------------------------
 

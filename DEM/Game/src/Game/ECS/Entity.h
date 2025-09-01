@@ -36,6 +36,8 @@ inline std::string EntityToString(HEntity EntityID)
 		std::string("empty");
 }
 
+inline auto format_as(HEntity EntityID) { return EntityToString(EntityID); }
+
 }
 
 namespace StringUtils
