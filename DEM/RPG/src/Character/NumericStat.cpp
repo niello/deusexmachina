@@ -9,28 +9,29 @@ namespace DEM::RPG
 CNumericStat::CNumericStat() = default;
 CNumericStat::CNumericStat(const CNumericStat& Other) : CNumericStat(Other.GetBaseValue()) {}
 CNumericStat::CNumericStat(CNumericStat&& Other) noexcept = default;
-CNumericStat::CNumericStat(float BaseValue) : _BaseValue(BaseValue), _FinalValue(BaseValue) {}
+CNumericStat::CNumericStat(float BaseValue) : _BaseValue(BaseValue), _FinalValue(BaseValue), _BaseDirty(false) {}
 CNumericStat::~CNumericStat() = default;
 CNumericStat& CNumericStat::operator =(const CNumericStat& Other) { SetBaseValue(Other.GetBaseValue()); return *this; }
 CNumericStat& CNumericStat::operator =(CNumericStat&& Other) = default;
 CNumericStat& CNumericStat::operator =(float BaseValue) { SetBaseValue(BaseValue); return *this; }
 //---------------------------------------------------------------------
 
-void CNumericStat::SetDesc(CNumericStatDefinition* pStatDef)
+void CNumericStat::SetDesc(const CNumericStatDefinition* pStatDef)
 {
 	if (_pStatDef == pStatDef) return;
 
+	// If the base value was calculated with the formula, detaching it makes
+	// the base value inactual. This doesn't happen for independent base values.
 	if (_pStatDef && _pStatDef->Formula)
+	{
 		_DependencyChangedSubs.clear();
+		_BaseDirty = true;
+	}
 
 	_pStatDef = pStatDef;
 
 	if (_Sheet && _pStatDef && _pStatDef->Formula)
 		_BaseDirty = true;
-
-	//???should make dirty if there is no formula? e.g. min/max may affect calcs!
-
-	//???should immediately clamp _base_ value to new min/max? or do that only on direct set and on final value evaluation?
 }
 //---------------------------------------------------------------------
 
@@ -79,41 +80,53 @@ float CNumericStat::Get() const
 {
 	if (!_BaseDirty && !_FinalDirty) return _FinalValue;
 
-	// Recalculate the base value of a secondary stat
+	// Recalculate the base value
 	if (_BaseDirty)
 	{
-		n_assert(_Sheet && _pStatDef && _pStatDef->Formula);
-
-		//!!!???TODO: store in map and renew only changed connections?
-		_DependencyChangedSubs.clear();
-
-		_Sheet->BeginStatAccessTracking();
-		auto Result = _pStatDef->Formula(_Sheet.Get());
-		const auto AccessedStats = _Sheet->EndStatAccessTracking();
-
-		if (Result.valid())
+		if (_pStatDef)
 		{
-			_BaseValue = Result.get<float>();
+			// A secondary stat calculates its base value with a formula, using a sheet with other stats as an input
+			if (_pStatDef->Formula && _Sheet)
+			{
+				//!!!???TODO: store in map and renew only changed connections?
+				_DependencyChangedSubs.clear();
+
+				_Sheet->BeginStatAccessTracking();
+				auto Result = _pStatDef->Formula(_Sheet.Get());
+				const auto AccessedStats = _Sheet->EndStatAccessTracking();
+
+				if (Result.valid())
+				{
+					_BaseValue = Result.get<float>();
+				}
+				else
+				{
+					::Sys::Error(Result.get<sol::error>().what());
+					_BaseValue = _pStatDef->DefaultBaseValue;
+				}
+
+				for (auto* pStat : AccessedStats.NumericStats)
+					_DependencyChangedSubs.push_back(pStat->OnModified.Subscribe([this](auto&) {_BaseDirty = true; }));
+
+				for (auto* pStat : AccessedStats.BoolStats)
+					_DependencyChangedSubs.push_back(pStat->OnModified.Subscribe([this](auto&) {_BaseDirty = true; }));
+			}
+			else
+			{
+				_BaseValue = _pStatDef->DefaultBaseValue;
+			}
 		}
-		else
-		{
-			::Sys::Error(Result.get<sol::error>().what());
-			_BaseValue = 0.f;
-		}
-
-		//???or clamp at assignment to _FinalValue below? to keep the original base value intact. 
-		_BaseValue = std::clamp(_BaseValue, _pStatDef->MinBaseValue, _pStatDef->MaxBaseValue);
-
-		for (auto* pStat : AccessedStats.NumericStats)
-			_DependencyChangedSubs.push_back(pStat->OnModified.Subscribe([this](auto&) {_BaseDirty = true; }));
-
-		for (auto* pStat : AccessedStats.BoolStats)
-			_DependencyChangedSubs.push_back(pStat->OnModified.Subscribe([this](auto&) {_BaseDirty = true; }));
 
 		_BaseDirty = false;
 	}
 
+	// Start calculations from the base
 	_FinalValue = _BaseValue;
+
+	// Apply base value limits independently from calculating the base value itself.
+	// Thus changing _pStatDef will not require invalidation of a manually set base value.
+	if (_pStatDef)
+		_FinalValue = std::clamp(_FinalValue, _pStatDef->MinBaseValue, _pStatDef->MaxBaseValue);
 
 	// Apply modifiers group bu group
 	for (size_t RangeStart = 0; RangeStart < _Modifiers.size(); /**/)
@@ -187,10 +200,11 @@ void CNumericStat::SetBaseValue(float NewBaseValue)
 {
 	n_assert(!_pStatDef || !_pStatDef->Formula);
 
+	_BaseDirty = false;
+
 	if (_BaseValue == NewBaseValue) return;
 
 	_BaseValue = NewBaseValue;
-	_BaseDirty = false;
 	_FinalDirty = true;
 	OnModified(*this);
 

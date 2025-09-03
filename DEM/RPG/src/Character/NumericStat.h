@@ -5,6 +5,7 @@
 // A character numeric stat value that can be temporarily altered by modifiers.
 // Calculations are done with floats. Modifiers of the same priority use the same base value, not results
 // of each other's application. The results of the priority group becomes a base value for the next one.
+// The base value can be set directly, and if doesn't, it will be initialized from CNumericStatDefinition.
 
 namespace DEM::RPG
 {
@@ -32,15 +33,17 @@ protected:
 		EModifierType Type;
 	};
 
-	std::vector<CModifier>  _Modifiers;          // Sorted by Priority
-	CNumericStatDefinition* _pStatDef = nullptr;
-	PCharacterSheet         _Sheet;              // Only for the secondary stat formula evaluation
+	// They go first intentionally, for convenience in the debug watch. Alignment is still perfect.
+	mutable float _BaseValue = 0.f;
+	mutable float _FinalValue = 0.f;
+
+	std::vector<CModifier>        _Modifiers;          // Sorted by Priority
+	const CNumericStatDefinition* _pStatDef = nullptr;
+	PCharacterSheet               _Sheet;              // Only for the secondary stat formula evaluation
 
 	mutable std::vector<DEM::Events::CConnection> _DependencyChangedSubs;
 
-	mutable float _BaseValue = 0.f;
-	mutable float _FinalValue = 0.f;
-	mutable bool  _BaseDirty = false;
+	mutable bool  _BaseDirty = true;
 	mutable bool  _FinalDirty = false;
 
 public:
@@ -57,7 +60,7 @@ public:
 	CNumericStat& operator =(CNumericStat&& Other);
 	CNumericStat& operator =(float BaseValue);
 
-	void  SetDesc(CNumericStatDefinition* pStatDef);
+	void  SetDesc(const CNumericStatDefinition* pStatDef);
 	void  SetSheet(const PCharacterSheet& Sheet);
 	auto* GetDesc() const { return _pStatDef; }
 
