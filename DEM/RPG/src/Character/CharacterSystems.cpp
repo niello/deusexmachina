@@ -2,6 +2,7 @@
 #include <Game/ECS/GameWorld.h>
 #include <Character/Archetype.h>
 #include <Character/StatsComponent.h>
+#include <Combat/DestructibleComponent.h>
 
 namespace DEM::RPG
 {
@@ -33,6 +34,8 @@ void InitStats(Game::CGameWorld& World, Game::CGameSession& Session, Resources::
 			Stats.Charisma.SetDesc(pArchetype->Charisma.get());
 			Stats.Willpower.SetDesc(pArchetype->Willpower.get());
 
+			//???MaxHP in destructible or in sheet? destructible could store only current HP, e.g. door needs no max HP?! what about repairing?
+			//healing and repairing try to access the sheet? then the door can be repaired indefinitely because max HP is unknown?
 			Stats.MaxHP.SetDesc(pArchetype->MaxHP.get());
 
 			Stats.CanMove.SetDesc(pArchetype->CanMove.get());
@@ -40,14 +43,27 @@ void InitStats(Game::CGameWorld& World, Game::CGameSession& Session, Resources::
 			Stats.CanSpeak.SetDesc(pArchetype->CanSpeak.get());
 
 			//!!!must init other components!
-			//???MaxHP in destructible or in sheet? destructible could store only current HP, e.g. door needs no max HP?! what about repairing?
+
+			if (auto* pDestructible = World.FindComponent<CDestructibleComponent>(EntityID))
+			{
+				// Logically damage absorption is a primary stat. Technically it isn't inited with the sheet (at least for now).
+				n_assert_dbg(!pArchetype->DamageAbsorption || !pArchetype->DamageAbsorption->Formula);
+
+				for (const CStrID HitZone : pArchetype->HitZones)
+				{
+					// Add a hit zone with its absorption values
+					auto& ZoneAbsorption = pDestructible->DamageAbsorption[HitZone];
+
+					// Initialize all absorption stats from the same definition for now. Can change later.
+					if (pArchetype->DamageAbsorption)
+						for (auto& Stat : ZoneAbsorption)
+							Stat.SetDesc(pArchetype->DamageAbsorption.get());
+				}
+			}
 
 			// NB: now must do this after setting descs
 			//???what about runtime changes?
 			Stats.Sheet = new CCharacterSheet(World, EntityID);
-
-			//!!!DBG TMP!
-			::Sys::Log("***DBG MaxHP = {}"_format(Stats.MaxHP.Get()));
 		}
 	});
 }

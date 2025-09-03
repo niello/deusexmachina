@@ -67,12 +67,13 @@ public:
 	std::unique_ptr<CNumericStatDefinition> Willpower;
 
 	std::unique_ptr<CNumericStatDefinition> MaxHP;
+	std::unique_ptr<CNumericStatDefinition> DamageAbsorption; // for now a single definition for all, limits them to the same default value
 
 	std::unique_ptr<CBoolStatDefinition>    CanMove;
 	std::unique_ptr<CBoolStatDefinition>    CanInteract;
 	std::unique_ptr<CBoolStatDefinition>    CanSpeak;
 
-	std::set<CStrID>                        BodyParts; // TODO: name! Maybe HitZones?
+	std::set<CStrID>                        HitZones;
 
 	void OnPostLoad(const Resources::CDataAssetLoaderHRD<DEM::RPG::CArchetype>& Loader);
 };
@@ -175,10 +176,11 @@ template<> constexpr auto RegisterMembers<RPG::CArchetype>()
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, Charisma),
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, Willpower),
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, MaxHP),
+		DEM_META_MEMBER_FIELD(RPG::CArchetype, DamageAbsorption),
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, CanMove),
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, CanInteract),
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, CanSpeak),
-		DEM_META_MEMBER_FIELD(RPG::CArchetype, BodyParts)
+		DEM_META_MEMBER_FIELD(RPG::CArchetype, HitZones)
 	);
 }
 static_assert(CMetadata<RPG::CArchetype>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
