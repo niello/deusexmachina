@@ -46,7 +46,8 @@ void InitStats(Game::CGameWorld& World, Game::CGameSession& Session, Resources::
 
 			if (auto* pDestructible = World.FindComponent<CDestructibleComponent>(EntityID))
 			{
-				// Logically damage absorption is a primary stat. Technically it isn't inited with the sheet (at least for now).
+				// Logically this check is needed because damage absorption is a primary stat.
+				// Technically - because this stat isn't inited with the sheet (at least for now).
 				n_assert_dbg(!pArchetype->DamageAbsorption || !pArchetype->DamageAbsorption->Formula);
 
 				for (const CStrID HitZone : pArchetype->HitZones)

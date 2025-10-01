@@ -4,41 +4,17 @@
 #include <Items/ArmorComponent.h>
 #include <Items/EquipmentChangesComponent.h>
 #include <Items/EquippableComponent.h>
-#include <Combat/DestructibleComponent.h>
+#include <Combat/CombatUtils.h> // apply armor
 #include <Character/AppearanceComponent.h>
 #include <Character/AppearanceAsset.h>
 #include <Scene/SceneComponent.h>
 #include <Scene/NodeAttribute.h>
 #include <Data/Algorithms.h>
 
-//!!!DBG TMP!
-#include <Frame/Lights/PointLightAttribute.h>
-
 // A set of ECS systems required for functioning of the equipment logic
 
 namespace DEM::RPG
 {
-
-//!!!DBG TMP! Must be not here, maybe in Damage.h?
-class CArmorAbsorptionModifier : public CParameterModifier<CDamageAbsorption>
-{
-public:
-
-	Game::CGameWorld& _World;
-	Game::HEntity _SourceID;
-
-	CArmorAbsorptionModifier(Game::CGameWorld& World, Game::HEntity SourceID) : _World(World), _SourceID(SourceID) {}
-
-	virtual I32 GetPriority() const override { return 0; }
-
-	virtual bool Apply(CDamageAbsorption& Value) override
-	{
-		auto pArmor = FindItemComponent<const CArmorComponent>(_World, _SourceID);
-		if (!pArmor) return false;
-		Value += pArmor->Absorption;
-		return true;
-	}
-};
 
 void InitEquipment(Game::CGameWorld& World, Resources::CResourceManager& ResMgr)
 {
@@ -492,18 +468,17 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 
 				if (Rec.NewStorage == EItemStorage::Equipment)
 				{
-					//!!!FIXME: ARMOR!!!
-					//if (auto pArmor = FindItemComponent<const CArmorComponent>(World, StackID))
-					//	if (auto pDestructible = FindItemComponent<CDestructibleComponent>(World, EntityID))
-					//		AddEquipmentModifier<CArmorAbsorptionModifier>(*pEquipped, pDestructible->DamageAbsorption, World, StackID);
+					//???!!!FIXME: check what happens if it is moved from one equipment slot to another?! is old modifier removed?!
+					if (auto* pArmor = FindItemComponent<const CArmorComponent>(World, StackID))
+						ApplyArmorModifiers(World, EntityID, pArmor->Absorption, Rec.NewSlot);
 
-					// ...
+					// ... other automatic modifiers and status effect activation (also allow OnEquip command list, like for OnHit & OnUse?)
 				}
 
-				// ...
+				// ... other automatic modifiers and status effect activation
 
 				// Apply custom logic from the script
-				if (auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
+				if (auto* pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
 				{
 					if (auto ScriptObject = Session.GetScript(pEquippable->ScriptAssetID))
 					{
@@ -519,13 +494,20 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 			}
 			else
 			{
-				// Modifiers are disconnected when the component is destroyed
 				if (World.RemoveComponent<CEquippedComponent>(StackID))
 				{
 					::Sys::Log("Item unequipped\n");
 
+					// Remove equipment modifiers and effects
+
+					if (Rec.PrevStorage == EItemStorage::Equipment)
+					{
+						if (auto* pArmor = FindItemComponent<const CArmorComponent>(World, StackID))
+							RemoveArmorModifiers(World, EntityID, pArmor->Absorption, Rec.PrevSlot);
+					}
+
 					// Apply custom logic from the script
-					if (auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
+					if (auto* pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
 					{
 						if (auto ScriptObject = Session.GetScript(pEquippable->ScriptAssetID))
 						{

@@ -14,6 +14,7 @@ struct CEquippedComponent
 {
 	Game::HEntity                  OwnerID;
 	std::vector<Data::PRefCounted> Modifiers;
+	//!!!instead of modifiers, store modified stats! by ID?
 	sol::function                  FnUpdateEquipped;
 };
 

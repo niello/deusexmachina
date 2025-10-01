@@ -27,8 +27,8 @@ protected:
 
 	struct CModifier
 	{
+		CStrID        SourceID; // Status effect ID, ability ID, equipment slot ID etc
 		float         Value;
-		U32           SourceID; // Usually a status effect instance ID
 		U16           Priority;
 		EModifierType Type;
 	};
@@ -64,8 +64,8 @@ public:
 	void  SetSheet(const PCharacterSheet& Sheet);
 	auto* GetDesc() const { return _pStatDef; }
 
-	void  AddModifier(EModifierType Type, float Value, U32 SourceID, U16 Priority);
-	void  RemoveModifiers(U32 SourceID);
+	void  AddModifier(EModifierType Type, float Value, CStrID SourceID, U16 Priority);
+	void  RemoveModifiers(CStrID SourceID);
 	void  RemoveAllModifiers();
 
 	void  SetBaseValue(float NewBaseValue);

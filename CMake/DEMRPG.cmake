@@ -10,6 +10,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Character/SkillsComponent.h
 	DEM/RPG/src/Character/SocialComponent.h
 	DEM/RPG/src/Character/StatsComponent.h
+	DEM/RPG/src/Character/StatusEffect.h
 	DEM/RPG/src/Combat/AttackAbility.h
 	DEM/RPG/src/Combat/CombatUtils.h
 	DEM/RPG/src/Combat/Damage.h

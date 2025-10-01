@@ -45,17 +45,17 @@ void CNumericStat::SetSheet(const PCharacterSheet& Sheet)
 }
 //---------------------------------------------------------------------
 
-void CNumericStat::AddModifier(EModifierType Type, float Value, U32 SourceID, U16 Priority)
+void CNumericStat::AddModifier(EModifierType Type, float Value, CStrID SourceID, U16 Priority)
 {
 	const auto It = std::lower_bound(_Modifiers.cbegin(), _Modifiers.cend(), Priority,
 		[](const CModifier& Elm, U16 NewPriority) { return Elm.Priority < NewPriority; });
-	_Modifiers.insert(It, CModifier{ Value, SourceID, Priority, Type });
+	_Modifiers.insert(It, CModifier{ SourceID, Value, Priority, Type });
 	_FinalDirty = true;
 	OnModified(*this);
 }
 //---------------------------------------------------------------------
 
-void CNumericStat::RemoveModifiers(U32 SourceID)
+void CNumericStat::RemoveModifiers(CStrID SourceID)
 {
 	auto It = std::remove_if(_Modifiers.begin(), _Modifiers.end(), [SourceID](const auto& Elm) { return Elm.SourceID == SourceID; });
 	if (It == _Modifiers.end()) return;

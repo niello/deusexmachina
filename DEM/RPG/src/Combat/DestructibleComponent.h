@@ -9,8 +9,8 @@ namespace DEM::RPG
 
 struct CDestructibleComponent
 {
-	int                                     HP = 0;
-	std::map<CStrID, CZoneDamageAbsorption> DamageAbsorption;
+	int                                         HP = 0;
+	std::map<CStrID, CZoneDamageAbsorptionStat> DamageAbsorption;
 
 	Events::CSignal<void(int)>         OnHit;
 	Events::CSignal<void(EDamageType)> OnDestroyed;

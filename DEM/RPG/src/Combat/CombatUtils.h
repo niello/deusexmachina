@@ -13,6 +13,8 @@ namespace DEM::RPG
 {
 
 void InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Location, int Damage, EDamageType DamageType, Game::HEntity ActorID = {});
+void ApplyArmorModifiers(Game::CGameWorld& World, Game::HEntity TargetID, const std::map<CStrID, CZoneDamageAbsorptionMod>& ZoneMods, CStrID SourceID);
+void RemoveArmorModifiers(Game::CGameWorld& World, Game::HEntity TargetID, const std::map<CStrID, CZoneDamageAbsorptionMod>& ZoneMods, CStrID SourceID);
 
 }
 

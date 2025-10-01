@@ -12,7 +12,7 @@ struct CArmorComponent
 	// Need to apply/remove modifiers for equipped instances
 	static constexpr bool Signals = true;
 
-	CDamageAbsorption Absorption;
+	std::map<CStrID, CZoneDamageAbsorptionMod> Absorption;
 };
 
 }

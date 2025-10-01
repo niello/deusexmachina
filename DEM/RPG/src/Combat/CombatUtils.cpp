@@ -18,7 +18,8 @@ void InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Locat
 	{
 		const auto It = Absorption.find(Location);
 		const auto& ZoneAbsorption = (It != Absorption.cend()) ? It->second : Absorption.cbegin()->second;
-		FinalDamage -= ZoneAbsorption[static_cast<size_t>(DamageType)];
+		if (IsAbsorbableDamageType(DamageType))
+			FinalDamage -= ZoneAbsorption[static_cast<size_t>(DamageType)];
 	}
 
 	// TODO: resistance (%)
@@ -43,6 +44,41 @@ void InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Locat
 
 	//!!!DBG TMP!
 	if (pDestructible->HP <= 0) ::Sys::DbgOut("***DBG Destroyed: {}\n"_format(Game::EntityToString(TargetID)));
+}
+//---------------------------------------------------------------------
+
+void ApplyArmorModifiers(Game::CGameWorld& World, Game::HEntity TargetID, const std::map<CStrID, CZoneDamageAbsorptionMod>& ZoneMods, CStrID SourceID)
+{
+	auto* pDestructible = World.FindComponent<CDestructibleComponent>(TargetID);
+	if (!pDestructible) return;
+
+	// TODO PERF: can sync linearly, both maps are sorted by a hit zone
+	for (const auto& [Zone, Mods] : ZoneMods)
+	{
+		// Don't create new protected zones by the armor if a creature doesn't have them naturally
+		auto It = pDestructible->DamageAbsorption.find(Zone);
+		if (It == pDestructible->DamageAbsorption.cend()) continue;
+
+		for (size_t i = 0; i < Mods.size(); ++i)
+			It->second[i].AddModifier(EModifierType::Add, static_cast<float>(Mods[i]), SourceID, 0);
+	}
+}
+//---------------------------------------------------------------------
+
+void RemoveArmorModifiers(Game::CGameWorld& World, Game::HEntity TargetID, const std::map<CStrID, CZoneDamageAbsorptionMod>& ZoneMods, CStrID SourceID)
+{
+	auto* pDestructible = World.FindComponent<CDestructibleComponent>(TargetID);
+	if (!pDestructible) return;
+
+	// TODO PERF: can sync linearly, both maps are sorted by a hit zone
+	for (const auto& [Zone, Mods] : ZoneMods)
+	{
+		auto It = pDestructible->DamageAbsorption.find(Zone);
+		if (It == pDestructible->DamageAbsorption.cend()) continue;
+
+		for (auto& Stat : It->second)
+			Stat.RemoveModifiers(SourceID);
+	}
 }
 //---------------------------------------------------------------------
 
