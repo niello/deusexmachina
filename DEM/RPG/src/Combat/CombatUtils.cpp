@@ -52,6 +52,9 @@ void ApplyArmorModifiers(Game::CGameWorld& World, Game::HEntity TargetID, const 
 	auto* pDestructible = World.FindComponent<CDestructibleComponent>(TargetID);
 	if (!pDestructible) return;
 
+	// TODO: to some centralized list
+	constexpr U16 ModifierPriority_Equipment = 0;
+
 	// TODO PERF: can sync linearly, both maps are sorted by a hit zone
 	for (const auto& [Zone, Mods] : ZoneMods)
 	{
@@ -60,7 +63,8 @@ void ApplyArmorModifiers(Game::CGameWorld& World, Game::HEntity TargetID, const 
 		if (It == pDestructible->DamageAbsorption.cend()) continue;
 
 		for (size_t i = 0; i < Mods.size(); ++i)
-			It->second[i].AddModifier(EModifierType::Add, static_cast<float>(Mods[i]), SourceID, 0);
+			if (Mods[i])
+				It->second[i].AddModifier(EModifierType::Add, static_cast<float>(Mods[i]), SourceID, ModifierPriority_Equipment);
 	}
 }
 //---------------------------------------------------------------------
