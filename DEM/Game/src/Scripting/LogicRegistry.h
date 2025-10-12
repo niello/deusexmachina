@@ -5,7 +5,8 @@
 // A registry of declarative condition implementations for picking them by type ID
 
 //???CConditionData -> CLogicData / CLogicDesc / CLogicCallData / ...? identical for conditions and actions.
-//???can optimize static logic params from PParams to VGameVarStorage or something like that?
+//???can optimize static logic params from PParams to CGameVarStorage or something like that?
+//!!!source and target can be written to context vars, like in Flow! See ResolveEntityID, same as for e.g. conversation Initiator.
 
 namespace DEM::Game
 {
@@ -19,7 +20,7 @@ class CLogicRegistry final : public DEM::Core::CRTTIBaseClass
 
 protected:
 
-	CGameSession&                    _Session;
+	CGameSession&                          _Session;
 	std::unordered_map<CStrID, PCondition> _Conditions;
 
 public:

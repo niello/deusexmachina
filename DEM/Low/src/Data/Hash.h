@@ -72,9 +72,14 @@ inline uint32_t Hash(const void* pData, int Length)
 }
 //---------------------------------------------------------------------
 
+}
+
+namespace DEM::Literals
+{
+
 constexpr auto operator ""_hash(const char* pData, size_t Length)
 {
-	return Hash(pData, Length);
+	return DEM::Utils::Hash(pData, Length);
 }
 //---------------------------------------------------------------------
 

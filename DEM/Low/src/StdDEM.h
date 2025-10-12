@@ -11,12 +11,20 @@
 #include <functional>
 #include <algorithm>
 
-using namespace std::string_view_literals;
-using namespace fmt::literals;
+namespace DEM::Literals
+{
+
 auto operator ""_format(const char* s, size_t n)
 {
 	return [=](auto&&... args) { return fmt::format(fmt::runtime(std::string_view(s, n)), args...); };
 }
+//---------------------------------------------------------------------
+
+}
+
+using namespace std::string_view_literals;
+using namespace fmt::literals;
+using namespace DEM::Literals;
 
 inline static const std::string EmptyString{};
 
