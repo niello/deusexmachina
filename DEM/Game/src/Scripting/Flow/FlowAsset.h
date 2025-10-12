@@ -1,6 +1,6 @@
 #pragma once
 #include <Scripting/Flow/FlowCommon.h>
-#include <Scripting/Flow/Condition.h>
+#include <Scripting/Condition.h>
 #include <Core/Object.h>
 
 // Reusable and stateless asset representing a node based Flow script.
@@ -11,9 +11,9 @@ namespace DEM::Flow
 
 struct CFlowLink
 {
-	CConditionData Condition;
-	U32            DestID = EmptyActionID;
-	bool           YieldToNextFrame = false;
+	Game::CConditionData Condition;
+	U32                  DestID = EmptyActionID;
+	bool                 YieldToNextFrame = false;
 };
 
 struct CFlowActionData

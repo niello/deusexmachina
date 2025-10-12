@@ -83,7 +83,7 @@ const CFlowLink* IFlowAction::GetRandomValidLink(Game::CGameSession& Session, co
 
 Game::HEntity IFlowAction::ResolveEntityID(CStrID ParamID) const
 {
-	return (_pPrototype && _pPlayer) ? DEM::Flow::ResolveEntityID(_pPrototype->Params, ParamID, &_pPlayer->GetVars()) : Game::HEntity{};
+	return (_pPrototype && _pPlayer) ? Game::ResolveEntityID(_pPrototype->Params, ParamID, &_pPlayer->GetVars()) : Game::HEntity{};
 }
 //---------------------------------------------------------------------
 

@@ -1,11 +1,11 @@
-#include "ConditionRegistry.h"
+#include "LogicRegistry.h"
 #include <Game/GameSession.h>
-#include <Scripting/Flow/ScriptCondition.h>
+#include <Scripting/ScriptCondition.h>
 
-namespace DEM::Flow
+namespace DEM::Game
 {
 
-CConditionRegistry::CConditionRegistry(Game::CGameSession& Owner)
+CLogicRegistry::CLogicRegistry(Game::CGameSession& Owner)
 	: _Session(Owner)
 {
 	// Register standard condition implementations
@@ -19,10 +19,10 @@ CConditionRegistry::CConditionRegistry(Game::CGameSession& Owner)
 }
 //---------------------------------------------------------------------
 
-CConditionRegistry::~CConditionRegistry() = default;
+CLogicRegistry::~CLogicRegistry() = default;
 //---------------------------------------------------------------------
 
-CScriptCondition* CConditionRegistry::RegisterScriptedCondition(CStrID Type, CStrID ScriptAssetID)
+CScriptCondition* CLogicRegistry::RegisterScriptedCondition(CStrID Type, CStrID ScriptAssetID)
 {
 	if (auto ScriptObject = _Session.GetScript(ScriptAssetID))
 	{

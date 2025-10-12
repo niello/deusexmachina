@@ -72,4 +72,10 @@ inline uint32_t Hash(const void* pData, int Length)
 }
 //---------------------------------------------------------------------
 
+constexpr auto operator ""_hash(const char* pData, size_t Length)
+{
+	return Hash(pData, Length);
+}
+//---------------------------------------------------------------------
+
 }

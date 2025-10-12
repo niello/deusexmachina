@@ -1,7 +1,7 @@
 #pragma once
 #include <Data/Metadata.h>
 #include <Data/StringID.h>
-#include <set>
+#include <Game/ECS/Entity.h>
 
 // An effect that affects character stats or state
 
@@ -38,43 +38,42 @@ struct CStatusEffectData
 struct CStatusEffect //???rename to CStatusEffectInstance?
 {
 	// Merging rules: is enabled, duration sum/max, magnitude sum/max. If disabled, stacking is performed. Merging happens to the instance of the same source ID.
-	// Source:
-	// - HEntity CreatureID;
-	// - HEntity ItemStackID;
-	// - CStrID  AbilityID;
-	// - CStrID  ParentStatusEffectID;
-	// Active time / remaining duration
-	// Magnitude
-	// Extended tags (typically added by source)
+
+	Game::HEntity    SourceCreatureID;
+	Game::HEntity    SourceItemStackID;
+	CStrID           SourceAbilityID;
+	CStrID           SourceStatusEffectID; // An effect must be applied by another "parent"/"source" effect
+
+	std::set<CStrID> Tags;                 // Instances can have additional tags besides effect (stack) tags
+
 	// Expiration conditions (list)
-	// U8 SuspendBehaviourCounter = 0;
-	// U8 SuspendLifetimeCounter = 0;
 	// Expiration condition event subscriptions
 
-	//???instance ID? to remove modifiers. instead of using raw pointer?
-	// SourceID - must be a set of fields? character + ability + item. They can be notified about effect lifetime events? At least maybe an ability can.
-	// TargetID - or known from outside?
-	//???position where an effect was applied, if applicable. E.g. for periodic blood leaking VFX.
-	// Total active time
+	float            Time = 0.f; //???active time or remaining duration?
+	float            Magnitude = 0.f;      // When it drops to zero, an instance expires immediately
+
+	U8               SuspendBehaviourCounter = 0;
+	U8               SuspendLifetimeCounter = 0;
+
+	//???position where an effect was applied, if applicable. E.g. for periodic blood leaking VFX. or custom var storage?
 	//???Interval timer + tick count, or calculate each time from active time and activation period?
 	//  - or handle by command + active time?
 	//  - Or tick is per effect, not per command?
 	//  - probably tick can be one of triggers!
-	// Magnitude (0 -> expire immediately)
-	//???suspended counter - timer doesn't advance while suspended, no ticks happen
-	//  - can even suspend itself by a trigger->command, e.g. enable effect only while moving
-	//???running persistent (looping) VFX and audio?
+};
 
-	//!!!CStatusEffectData tags can be added or altered by Source! need to cache or check in both places every time?
+struct CStatusEffectStack
+{
+	CStatusEffectData*         pEffectData = nullptr; //???strong ptr? if resource, must have refcount anyway
+	std::vector<CStatusEffect> Instances;
+
+	// trigger and trigger condition event subscriptions
+	// list of modified stats, if needed
 };
 
 struct CStatusEffectComponent
 {
-	// Stacking ID / CStatusEffectData ptr -> struct:
-	// - list of CStatusEffect[Instance] records
-	// - trigger and trigger condition event subscriptions
-	// - list of modified stats, if needed
-	// - possibly, CStatusEffectData ptr here if the key will be CStrID yet
+	std::map<CStrID, CStatusEffectStack> StatusEffectStacks;
 
 	// Total magnitude is recalculated each time and clamped to a min of all CStatusEffectData limits?
 

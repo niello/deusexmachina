@@ -1,9 +1,9 @@
 #include "Condition.h"
-#include <Scripting/Flow/ConditionRegistry.h>
+#include <Scripting/LogicRegistry.h>
 #include <Game/SessionVars.h>
 #include <Game/GameSession.h>
 
-namespace DEM::Flow
+namespace DEM::Game
 {
 static const CStrID sidLeft("Left");
 static const CStrID sidOp("Op");
@@ -47,7 +47,7 @@ static inline bool Compare(const T& Left, CStrID Op, const U& Right)
 }
 //---------------------------------------------------------------------
 
-static inline bool CompareVarData(HVar Left, CStrID Op, const Data::CData& Right, const Game::CGameVarStorage& Vars)
+static inline bool CompareVarData(HVar Left, CStrID Op, const Data::CData& Right, const CGameVarStorage& Vars)
 {
 	bool Result = false;
 	Vars.Visit(Left, [&Right, Op, &Result](auto&& LeftValue)
@@ -69,7 +69,7 @@ static inline bool CompareVarData(HVar Left, CStrID Op, const Data::CData& Right
 }
 //---------------------------------------------------------------------
 
-static inline bool CompareVarVar(HVar Left, CStrID Op, HVar Right, const Game::CGameVarStorage& LeftVars, const Game::CGameVarStorage& RightVars)
+static inline bool CompareVarVar(HVar Left, CStrID Op, HVar Right, const CGameVarStorage& LeftVars, const CGameVarStorage& RightVars)
 {
 	bool Result = false;
 	LeftVars.Visit(Left, [&RightVars, Right, Op, &Result](auto&& LeftValue)
@@ -87,7 +87,7 @@ static inline bool CompareVarVar(HVar Left, CStrID Op, HVar Right, const Game::C
 }
 //---------------------------------------------------------------------
 
-static std::pair<const Game::CGameVarStorage*, HVar> FindVar(Game::CGameSession& Session, const Game::CGameVarStorage* pVars, CStrID ID)
+static std::pair<const CGameVarStorage*, HVar> FindVar(CGameSession& Session, const CGameVarStorage* pVars, CStrID ID)
 {
 	if (pVars)
 	{
@@ -95,7 +95,7 @@ static std::pair<const Game::CGameVarStorage*, HVar> FindVar(Game::CGameSession&
 		if (Handle) return { pVars, Handle };
 	}
 
-	if (const auto* pSessionVars = Session.FindFeature<Game::CSessionVars>())
+	if (const auto* pSessionVars = Session.FindFeature<CSessionVars>())
 	{
 		auto Handle = pSessionVars->Runtime.Find(ID);
 		if (Handle) return { &pSessionVars->Runtime, Handle };
@@ -108,11 +108,11 @@ static std::pair<const Game::CGameVarStorage*, HVar> FindVar(Game::CGameSession&
 }
 //---------------------------------------------------------------------
 
-bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const Game::CGameVarStorage* pVars)
+bool EvaluateCondition(const CConditionData& Cond, CGameSession& Session, const CGameVarStorage* pVars)
 {
 	if (!Cond.Type) return true;
 
-	const auto* pConditions = Session.FindFeature<CConditionRegistry>();
+	const auto* pConditions = Session.FindFeature<CLogicRegistry>();
 	if (!pConditions) return true;
 
 	if (auto* pCondition = pConditions->FindCondition(Cond.Type))
@@ -123,12 +123,12 @@ bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, 
 }
 //---------------------------------------------------------------------
 
-std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Session, const Game::CGameVarStorage* pVars)
+std::string GetConditionText(const CConditionData& Cond, CGameSession& Session, const CGameVarStorage* pVars)
 {
 	std::string Result;
 
 	if (Cond.Type)
-		if (const auto* pConditions = Session.FindFeature<CConditionRegistry>())
+		if (const auto* pConditions = Session.FindFeature<CLogicRegistry>())
 			if (auto* pCondition = pConditions->FindCondition(Cond.Type))
 				pCondition->GetText(Result, { Cond, Session, pVars });
 
@@ -136,20 +136,20 @@ std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Ses
 }
 //---------------------------------------------------------------------
 
-Game::HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const Game::CGameVarStorage* pVars)
+HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const CGameVarStorage* pVars)
 {
 	if (auto* pParam = Params->Find(ParamID))
 	{
 		if (pParam->IsA<int>())
 		{
 			// An entity ID is provided in an action parameter
-			return Game::HEntity{ static_cast<DEM::Game::HEntity::TRawValue>(pParam->GetValue<int>()) };
+			return HEntity{ static_cast<HEntity::TRawValue>(pParam->GetValue<int>()) };
 		}
 		else if (pVars && pParam->IsA<CStrID>())
 		{
 			// An entity ID is stored in a flow player variable storage and is referenced in action by var ID
-			const int Raw = pVars->Get<int>(pVars->Find(pParam->GetValue<CStrID>()), static_cast<int>(Game::HEntity{}.Raw));
-			return Game::HEntity{ static_cast<DEM::Game::HEntity::TRawValue>(Raw) };
+			const int Raw = pVars->Get<int>(pVars->Find(pParam->GetValue<CStrID>()), static_cast<int>(HEntity{}.Raw));
+			return HEntity{ static_cast<HEntity::TRawValue>(Raw) };
 		}
 	}
 

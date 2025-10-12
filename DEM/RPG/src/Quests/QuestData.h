@@ -1,5 +1,5 @@
 #pragma once
-#include <Scripting/Flow/Condition.h>
+#include <Scripting/Condition.h>
 
 // An objective of a player and its character. Can be started and then completed with different outcomes.
 
@@ -9,7 +9,7 @@ namespace DEM::RPG
 struct CQuestOutcomeData
 {
 	std::string                            UIDesc;
-	Flow::CConditionData                   Condition;
+	Game::CConditionData                   Condition;
 	std::vector<CStrID>                    StartQuests;
 	std::vector<std::pair<CStrID, CStrID>> EndQuests; // Quest -> Outcome
 	// Reward

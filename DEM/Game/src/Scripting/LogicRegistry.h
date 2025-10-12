@@ -4,29 +4,28 @@
 
 // A registry of declarative condition implementations for picking them by type ID
 
+//???CConditionData -> CLogicData / CLogicDesc / CLogicCallData / ...? identical for conditions and actions.
+//???can optimize static logic params from PParams to VGameVarStorage or something like that?
+
 namespace DEM::Game
 {
-	class CGameSession;
-}
-
-namespace DEM::Flow
-{
+class CGameSession;
 using PCondition = std::unique_ptr<class ICondition>;
 class CScriptCondition;
 
-class CConditionRegistry final : public DEM::Core::CRTTIBaseClass
+class CLogicRegistry final : public DEM::Core::CRTTIBaseClass
 {
-	RTTI_CLASS_DECL(CConditionRegistry, DEM::Core::CRTTIBaseClass);
+	RTTI_CLASS_DECL(CLogicRegistry, DEM::Core::CRTTIBaseClass);
 
 protected:
 
-	Game::CGameSession&                    _Session;
+	CGameSession&                    _Session;
 	std::unordered_map<CStrID, PCondition> _Conditions;
 
 public:
 
-	CConditionRegistry(Game::CGameSession& Owner);
-	~CConditionRegistry();
+	CLogicRegistry(CGameSession& Owner);
+	~CLogicRegistry();
 
 	template<typename T, typename... TArgs>
 	T* RegisterCondition(CStrID Type, TArgs&&... Args)

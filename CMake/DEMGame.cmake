@@ -74,16 +74,16 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Physics/CharacterControllerComponent.h
 	DEM/Game/src/Physics/RigidBodyComponent.h
 	DEM/Game/src/Scene/SceneComponent.h
+	DEM/Game/src/Scripting/Condition.h
+	DEM/Game/src/Scripting/LogicRegistry.h
+	DEM/Game/src/Scripting/ScriptCondition.h
 	DEM/Game/src/Scripting/SolGame.h
-	DEM/Game/src/Scripting/Flow/Condition.h
-	DEM/Game/src/Scripting/Flow/ConditionRegistry.h
 	DEM/Game/src/Scripting/Flow/FlowAsset.h
 	DEM/Game/src/Scripting/Flow/FlowAssetLoader.h
 	DEM/Game/src/Scripting/Flow/FlowCommon.h
 	DEM/Game/src/Scripting/Flow/FlowPlayer.h
 	DEM/Game/src/Scripting/Flow/HubAction.h
 	DEM/Game/src/Scripting/Flow/LuaStringAction.h
-	DEM/Game/src/Scripting/Flow/ScriptCondition.h
 	DEM/Game/src/Scripting/Flow/SetVarAction.h
 )
 
@@ -137,14 +137,14 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/Objects/SmartObjectSystem.cpp
 	DEM/Game/src/Physics/PhysicsSystems.cpp
 	DEM/Game/src/Scene/SceneSystems.cpp
+	DEM/Game/src/Scripting/Condition.cpp
+	DEM/Game/src/Scripting/LogicRegistry.cpp
+	DEM/Game/src/Scripting/ScriptCondition.cpp
 	DEM/Game/src/Scripting/SolGame.cpp
-	DEM/Game/src/Scripting/Flow/Condition.cpp
-	DEM/Game/src/Scripting/Flow/ConditionRegistry.cpp
 	DEM/Game/src/Scripting/Flow/FlowAssetLoader.cpp
 	DEM/Game/src/Scripting/Flow/FlowPlayer.cpp
 	DEM/Game/src/Scripting/Flow/HubAction.cpp
 	DEM/Game/src/Scripting/Flow/LuaStringAction.cpp
-	DEM/Game/src/Scripting/Flow/ScriptCondition.cpp
 	DEM/Game/src/Scripting/Flow/SetVarAction.cpp
 )
 

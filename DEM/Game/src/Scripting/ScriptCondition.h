@@ -1,10 +1,10 @@
 #pragma once
-#include <Scripting/Flow/Condition.h>
+#include <Scripting/Condition.h>
 #include <Scripting/SolGame.h>
 
 // A single C++ class for any scripted condition objects
 
-namespace DEM::Flow
+namespace DEM::Game
 {
 
 class CScriptCondition : public ICondition

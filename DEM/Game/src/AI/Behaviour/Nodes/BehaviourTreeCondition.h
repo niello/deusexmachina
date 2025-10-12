@@ -1,6 +1,6 @@
 #pragma once
 #include <AI/Behaviour/BehaviourTreeAsset.h>
-#include <Scripting/Flow/Condition.h>
+#include <Scripting/Condition.h>
 
 // A BT decorator that checks a condition and either passes execution to its child or returns failure to the parent
 
@@ -13,7 +13,7 @@ class CBehaviourTreeCondition : public CBehaviourTreeNodeBase
 
 protected:
 
-	Flow::CConditionData _Condition;
+	Game::CConditionData _Condition;
 	std::vector<CStrID>  _UsedBBKeys;
 	bool                 _OverrideLowerPriority = true;
 

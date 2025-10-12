@@ -1,7 +1,7 @@
 #pragma once
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
-#include <Scripting/Flow/Condition.h>
+#include <Scripting/Condition.h>
 
 // Item list us used for random or conditional generation of items
 
@@ -18,7 +18,7 @@ struct CItemListRecord
 {
 	CStrID               ItemTemplateID;
 	Resources::PResource SubList; // CItemList //!!!TODO: need an inline asset loading support! ID vs CParams!
-	Flow::CConditionData Condition;
+	Game::CConditionData Condition;
 	U32                  RandomWeight = 1; // only for randomly evaluated lists
 	U32                  MinCount = 1;
 	U32                  MaxCount = 1;

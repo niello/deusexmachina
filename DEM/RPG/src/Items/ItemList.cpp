@@ -131,7 +131,7 @@ void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, C
 			if (!RecordLimit && !Record.MaxCount) continue;
 
 			// TODO: can build a var storage for conditions, maybe outside, e.g. to pass a destination container ID
-			if (!Flow::EvaluateCondition(Record.Condition, Session, nullptr)) continue;
+			if (!Game::EvaluateCondition(Record.Condition, Session, nullptr)) continue;
 
 			ValidRecords.push_back(&Record);
 			TotalWeight += Record.RandomWeight;
@@ -171,7 +171,7 @@ void CItemList::EvaluateInternal(Game::CGameSession& Session, std::map<CStrID, C
 		for (const auto& Record : Records)
 		{
 			// TODO: can build a var storage for conditions, maybe outside, e.g. to pass a destination container ID
-			if (!Flow::EvaluateCondition(Record.Condition, Session, nullptr)) continue;
+			if (!Game::EvaluateCondition(Record.Condition, Session, nullptr)) continue;
 
 			EvaluateRecord(Record, Session, Out, Mul, Limits);
 

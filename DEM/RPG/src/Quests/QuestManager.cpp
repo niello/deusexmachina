@@ -1,6 +1,6 @@
 #include "QuestManager.h"
 #include <Game/GameSession.h>
-#include <Scripting/Flow/ConditionRegistry.h>
+#include <Scripting/LogicRegistry.h>
 
 namespace DEM::RPG
 {
@@ -89,7 +89,7 @@ bool CQuestManager::HandleQuestStart(CStrID ID, PFlowVarStorage Vars, bool Loadi
 		if (!OutcomeData.Condition.Type) continue;
 
 		// Evaluate outcome condition immediately to catch already completed quests
-		if (Flow::EvaluateCondition(OutcomeData.Condition, _Session, QuestVars.get()))
+		if (Game::EvaluateCondition(OutcomeData.Condition, _Session, QuestVars.get()))
 		{
 			EnqueueQuestCompletion(ID, OutcomeID, QuestVars);
 			return true;
@@ -99,7 +99,7 @@ bool CQuestManager::HandleQuestStart(CStrID ID, PFlowVarStorage Vars, bool Loadi
 	// Subscribe to relevant events to re-evaluate outcome conditions.
 	// FIXME: subscription goes in reverse order to enforce desired call priority when subscribing to the same CSignal,
 	// which calls handlers in LIFO. Need subscription with explicit priority instead! Condition may subscribe not only CSignal!
-	if (const auto* pConditions = _Session.FindFeature<Flow::CConditionRegistry>())
+	if (const auto* pConditions = _Session.FindFeature<Game::CLogicRegistry>())
 	{
 		for (auto RIt = pQuestData->Outcomes.crbegin(); RIt != pQuestData->Outcomes.crend(); ++RIt)
 		{
@@ -112,7 +112,7 @@ bool CQuestManager::HandleQuestStart(CStrID ID, PFlowVarStorage Vars, bool Loadi
 				pCondition->SubscribeRelevantEvents(ItActiveQuest->second.Subs, { Cond, _Session, QuestVars.get() },
 					[this, ID, OutcomeID, &Cond](std::unique_ptr<Game::CGameVarStorage>& EventVars)
 				{
-					if (Flow::EvaluateCondition(Cond, _Session, EventVars.get()))
+					if (Game::EvaluateCondition(Cond, _Session, EventVars.get()))
 					{
 						std::shared_ptr<Game::CGameVarStorage> SharedEventVars;
 						if (EventVars) SharedEventVars = std::make_shared<Game::CGameVarStorage>(std::move(*EventVars));

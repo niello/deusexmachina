@@ -71,7 +71,7 @@ sol::usertype<T> RegisterVarStorage(sol::state& State, std::string_view Key)
 
 void RegisterGameTypes(sol::state& State, Game::CGameWorld& World)
 {
-	EnsureTable(State.globals(), { "DEM", "Flow" }).set_function("ResolveEntityID", &DEM::Flow::ResolveEntityID);
+	EnsureTable(State.globals(), { "DEM", "Game" }).set_function("ResolveEntityID", &DEM::Game::ResolveEntityID);
 
 	RegisterVarStorage<CBasicVarStorage>(State, "CBasicVarStorage");
 	RegisterVarStorage<Game::CGameVarStorage>(State, "CGameVarStorage");

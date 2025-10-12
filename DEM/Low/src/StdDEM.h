@@ -7,15 +7,15 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <map>
 #include <functional>
 #include <algorithm>
 
 using namespace std::string_view_literals;
 using namespace fmt::literals;
-auto operator"" _format(const char* s, size_t n) {
-	return [=](auto&&... args) {
-		return fmt::format(fmt::runtime(std::string_view(s, n)), args...);
-	};
+auto operator ""_format(const char* s, size_t n)
+{
+	return [=](auto&&... args) { return fmt::format(fmt::runtime(std::string_view(s, n)), args...); };
 }
 
 inline static const std::string EmptyString{};

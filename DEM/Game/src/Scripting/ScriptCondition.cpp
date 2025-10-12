@@ -1,7 +1,7 @@
 #include "ScriptCondition.h"
 #include <Events/Connection.h>
 
-namespace DEM::Flow
+namespace DEM::Game
 {
 
 CScriptCondition::CScriptCondition(sol::table ScriptAsset)
@@ -32,12 +32,12 @@ void CScriptCondition::SubscribeRelevantEvents(std::vector<Events::CConnection>&
 	{
 		if (Arg.is<sol::nil_t>())
 		{
-			std::unique_ptr<Game::CGameVarStorage> NoVars;
+			std::unique_ptr<CGameVarStorage> NoVars;
 			Callback(NoVars);
 		}
-		else if (Arg.is<std::unique_ptr<Game::CGameVarStorage>>())
+		else if (Arg.is<std::unique_ptr<CGameVarStorage>>())
 		{
-			Callback(Arg.as<std::unique_ptr<Game::CGameVarStorage>&>());
+			Callback(Arg.as<std::unique_ptr<CGameVarStorage>&>());
 		}
 		else
 		{

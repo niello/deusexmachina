@@ -5,19 +5,15 @@
 
 // Condition object that can be described declaratively and evaluated in a provided context
 
-namespace DEM::Game
-{
-	using PGameSession = Ptr<class CGameSession>;
-}
-
 namespace DEM::Events
 {
 	class CConnection;
 }
 
-namespace DEM::Flow
+namespace DEM::Game
 {
 using PCondition = std::unique_ptr<class ICondition>;
+using PGameSession = Ptr<class CGameSession>;
 
 struct CConditionData
 {
@@ -27,16 +23,16 @@ struct CConditionData
 
 struct CConditionContext
 {
-	const CConditionData&        Condition;
-	Game::CGameSession&          Session;
-	const Game::CGameVarStorage* pVars;
+	const CConditionData&  Condition;
+	CGameSession&          Session;
+	const CGameVarStorage* pVars;
 };
 
-bool EvaluateCondition(const CConditionData& Cond, Game::CGameSession& Session, const Game::CGameVarStorage* pVars);
-std::string GetConditionText(const CConditionData& Cond, Game::CGameSession& Session, const Game::CGameVarStorage* pVars);
-Game::HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const Game::CGameVarStorage* pVars);
+bool EvaluateCondition(const CConditionData& Cond, CGameSession& Session, const CGameVarStorage* pVars);
+std::string GetConditionText(const CConditionData& Cond, CGameSession& Session, const CGameVarStorage* pVars);
+HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const CGameVarStorage* pVars);
 
-using FEventCallback = std::function<void(std::unique_ptr<Game::CGameVarStorage>&)>;
+using FEventCallback = std::function<void(std::unique_ptr<CGameVarStorage>&)>;
 
 class ICondition
 {
@@ -119,13 +115,13 @@ public:
 namespace DEM::Meta
 {
 
-template<> constexpr auto RegisterClassName<DEM::Flow::CConditionData>() { return "DEM::Flow::CConditionData"; }
-template<> constexpr auto RegisterMembers<DEM::Flow::CConditionData>()
+template<> constexpr auto RegisterClassName<Game::CConditionData>() { return "DEM::Game::CConditionData"; }
+template<> constexpr auto RegisterMembers<Game::CConditionData>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(Flow::CConditionData, Type),
-		DEM_META_MEMBER_FIELD(Flow::CConditionData, Params)
+		DEM_META_MEMBER_FIELD(Game::CConditionData, Type),
+		DEM_META_MEMBER_FIELD(Game::CConditionData, Params)
 	);
 }
 
