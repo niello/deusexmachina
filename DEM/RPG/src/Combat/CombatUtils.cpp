@@ -14,12 +14,15 @@ void InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Locat
 	float FinalDamage = static_cast<float>(Damage);
 
 	const auto& Absorption = pDestructible->DamageAbsorption;
-	if (!Absorption.empty())
+	if (!Absorption.empty() && IsAbsorbableDamageType(DamageType))
 	{
-		const auto It = Absorption.find(Location);
-		const auto& ZoneAbsorption = (It != Absorption.cend()) ? It->second : Absorption.cbegin()->second;
-		if (IsAbsorbableDamageType(DamageType))
-			FinalDamage -= ZoneAbsorption[static_cast<size_t>(DamageType)];
+		auto It = Absorption.find(Location);
+		if (It == Absorption.cend())
+		{
+			It = Absorption.cbegin();
+			Location = It->first;
+		}
+		FinalDamage -= It->second[static_cast<size_t>(DamageType)];
 	}
 
 	// TODO: resistance (%)
@@ -32,8 +35,8 @@ void InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Locat
 	//!!!FIXME: {fmt} doesn't see format_as(HEntity)!!!
 	Data::CData DmgTypeStr;
 	DEM::ParamsFormat::Serialize(DmgTypeStr, DamageType);
-	::Sys::DbgOut("***DBG Hit: {} hits {} (was {} HP) for {} HP ({})\n"_format(
-		Game::EntityToString(ActorID), Game::EntityToString(TargetID), pDestructible->HP, std::max(0L, FinalDamageInt), DmgTypeStr.GetValue<std::string>()));
+	::Sys::DbgOut("***DBG Hit: {} hits {} at {} (was {} HP) for {} HP ({})\n"_format(
+		Game::EntityToString(ActorID), Game::EntityToString(TargetID), Location, pDestructible->HP, std::max(0L, FinalDamageInt), DmgTypeStr.GetValue<std::string>()));
 
 	if (FinalDamageInt <= 0) return;
 
