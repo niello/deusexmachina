@@ -5,6 +5,7 @@
 #include <Game/Interaction/Zone.h>
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/EventsComponent.h>
+#include <Scripting/LogicRegistry.h>
 #include <AI/Navigation/NavAgentComponent.h>
 #include <Character/StatsComponent.h>
 #include <Character/SkillsComponent.h>
@@ -147,22 +148,22 @@ bool CAttackAbility::GetFacingParams(const Game::CGameSession& Session, const Ga
 }
 //---------------------------------------------------------------------
 
+static const CWeaponComponent* FindCurrentWeapon(Game::CGameWorld& World, Game::HEntity ActorID)
+{
+	if (auto* pEquipment = World.FindComponent<const CEquipmentComponent>(ActorID))
+		for (size_t HandIdx = 0; HandIdx < pEquipment->Scheme->HandCount; ++HandIdx)
+			if (auto* pWeaponComponent = FindItemComponent<const CWeaponComponent>(World, pEquipment->Hands[HandIdx].ItemStackID))
+				return pWeaponComponent;
+
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
 static void InitStrike(Game::CGameWorld& World, CAttackAbilityInstance& Instance)
 {
 	// Find weapon
-	const CWeaponComponent* pWeaponComponent = nullptr;
-	int Hands = 1;
-	if (auto pEquipment = World.FindComponent<const CEquipmentComponent>(Instance.Actor))
-	{
-		for (size_t HandIdx = 0; HandIdx < pEquipment->Scheme->HandCount; ++HandIdx)
-		{
-			if (pWeaponComponent = FindItemComponent<const CWeaponComponent>(World, pEquipment->Hands[HandIdx].ItemStackID))
-			{
-				if (pWeaponComponent->Big) Hands = 2;
-				break;
-			}
-		}
-	}
+	const auto* pWeaponComponent = FindCurrentWeapon(World, Instance.Actor);
+	const int Hands = (pWeaponComponent && pWeaponComponent->Big) ? 2 : 1;
 
 	// Calculate strike params
 	//!!!DBG TMP!
@@ -212,11 +213,34 @@ static void InitStrike(Game::CGameWorld& World, CAttackAbilityInstance& Instance
 }
 //---------------------------------------------------------------------
 
-static void ApplyDamageFromAbility(Game::CGameWorld& World, CAttackAbilityInstance& Instance)
+static void ApplyDamageFromAbility(Game::CGameSession& Session, Game::CGameWorld& World, CAttackAbilityInstance& Instance)
 {
 	if (Instance.DamageType == EDamageType::COUNT) return;
 
 	InflictDamage(World, Instance.Targets[0].Entity, Instance.Location, Instance.Damage, Instance.DamageType, Instance.Actor);
+
+	if (const auto* pGameLogic = Session.FindFeature<Game::CLogicRegistry>())
+	{
+		//???don't calculate damage in advance? only check hit/miss type?
+		//???apply OnHit commands from the natural weapon if no pWeaponComponent? or must find natiral as pWeaponComponent?!!!
+		if (const auto* pWeaponComponent = FindCurrentWeapon(World, Instance.Actor))
+		{
+			// apply OnHit commands from this weapon
+
+			//!!!DBG TMP!
+			if (auto* pCmd = pGameLogic->FindCommand(CStrID("DealDamage")))
+			{
+				(*pCmd)(Session, nullptr, nullptr);
+			}
+			else
+			{
+				// log command not found
+			}
+		}
+
+		//!!!apply OnHit commands from all active status effects!
+		//???no special commands from ability here? need special abilities to cast additional effects?
+	}
 
 	Instance.DamageType = EDamageType::COUNT; // Reset applied damage
 }
@@ -235,12 +259,12 @@ void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance
 	if (auto pEvents = pWorld->FindComponent<Game::CEventsComponent>(Instance.Actor))
 	{
 		AttackInstance.AnimEventConn = pEvents->OnEvent.Subscribe(
-			[&AttackInstance, pWorld](DEM::Game::HEntity EntityID, CStrID ID, const Data::CParams* pParams, float TimeOffset)
+			[&AttackInstance, &Session, pWorld](DEM::Game::HEntity EntityID, CStrID ID, const Data::CParams* pParams, float TimeOffset)
 		{
 			if (ID == "Hit")
 			{
 				// Logically strike a target at the proper moment of attack animation to sync with visuals
-				ApplyDamageFromAbility(*pWorld, AttackInstance);
+				ApplyDamageFromAbility(Session, *pWorld, AttackInstance);
 			}
 			else if (ID == Anim::Event_AnimEnd)
 			{
@@ -248,7 +272,7 @@ void CAttackAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance
 				//???maybe should cancel strike here? then any animation will do it, but only Hit animation will inflict damage.
 				//???but what to do with attack period? Strike anim end doesn't cancel waiting, other anim restarts strike from beginning!
 				//!!!need to handle interruptions (e.g. from being hit) here, attack action must be cancelled or at least reset!
-				ApplyDamageFromAbility(*pWorld, AttackInstance);
+				ApplyDamageFromAbility(Session, *pWorld, AttackInstance);
 				if (auto pAnimComponent = pWorld->FindComponent<Game::CAnimationComponent>(AttackInstance.Actor))
 				{
 					pAnimComponent->Controller.GetParams().Set<CStrID>(sidAction, CStrID::Empty);
@@ -269,7 +293,7 @@ AI::ECommandStatus CAttackAbility::OnUpdate(Game::CGameSession& Session, Game::C
 
 	// If the strike time reached and damage wasn't yet inflicted, must do it now
 	if (AttackInstance.DamageType != EDamageType::COUNT && AttackInstance.ElapsedTime >= AttackInstance.StrikeEndTime)
-		ApplyDamageFromAbility(*pWorld, AttackInstance);
+		ApplyDamageFromAbility(Session, *pWorld, AttackInstance);
 
 	// Could wait for the end of the attack Period here, but now we chose to succeed immediately, allowing an actor to proceed with the next action
 	if (!IsTargetDestructible(*pWorld, Instance.Targets[0].Entity)) return AI::ECommandStatus::Succeeded;
