@@ -34,4 +34,23 @@ CScriptCondition* CLogicRegistry::RegisterScriptedCondition(CStrID Type, CStrID 
 }
 //---------------------------------------------------------------------
 
+const CCommand& CLogicRegistry::RegisterScriptedCommand(CStrID Type, CStrID ScriptAssetID)
+{
+	if (auto ScriptObject = _Session.GetScript(ScriptAssetID))
+	{
+		if (auto FnExecute = ScriptObject.get<sol::function>("Execute"))
+		{
+			auto [It, Inserted] = _Commands.insert_or_assign(Type,
+				[FnExecute](CGameSession& Session, const Data::CParams* pParams, CGameVarStorage* pVars)
+			{
+				FnExecute(pParams, pVars);
+			});
+			return It->second;
+		}
+	}
+
+	return NopCommand;
+}
+//---------------------------------------------------------------------
+
 }

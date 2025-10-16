@@ -25,7 +25,7 @@ struct CCommandContext
 	CGameVarStorage*    pVars = nullptr;
 };
 
-bool EvaluateCommand(const CCommandData& Command, CGameSession& Session, CGameVarStorage* pVars);
+bool ExecuteCommand(const CCommandData& Command, CGameSession& Session, CGameVarStorage* pVars);
 //???GetCommandText?
 
 //!!!TODO: scripted command here? or RegisterScriptedCommand wrapper in CLogicManager is enough?

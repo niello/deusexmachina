@@ -5,7 +5,7 @@
 #include <Game/Interaction/Zone.h>
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/EventsComponent.h>
-#include <Scripting/LogicRegistry.h>
+#include <Scripting/Command.h>
 #include <AI/Navigation/NavAgentComponent.h>
 #include <Character/StatsComponent.h>
 #include <Character/SkillsComponent.h>
@@ -219,28 +219,19 @@ static void ApplyDamageFromAbility(Game::CGameSession& Session, Game::CGameWorld
 
 	InflictDamage(World, Instance.Targets[0].Entity, Instance.Location, Instance.Damage, Instance.DamageType, Instance.Actor);
 
-	if (const auto* pGameLogic = Session.FindFeature<Game::CLogicRegistry>())
+	//???don't calculate damage in advance? only check hit/miss type?
+	//???apply OnHit commands from the natural weapon if no pWeaponComponent? or must find natiral as pWeaponComponent?!!!
+	if (const auto* pWeaponComponent = FindCurrentWeapon(World, Instance.Actor))
 	{
-		//???don't calculate damage in advance? only check hit/miss type?
-		//???apply OnHit commands from the natural weapon if no pWeaponComponent? or must find natiral as pWeaponComponent?!!!
-		if (const auto* pWeaponComponent = FindCurrentWeapon(World, Instance.Actor))
-		{
-			// apply OnHit commands from this weapon
+		//!!!apply OnHit commands from this weapon
 
-			//!!!DBG TMP!
-			if (const auto& Cmd = pGameLogic->FindCommand(CStrID("DealDamage")))
-			{
-				Cmd(Session, nullptr, nullptr);
-			}
-			else
-			{
-				// log command not found
-			}
-		}
-
-		//!!!apply OnHit commands from all active status effects!
-		//???no special commands from ability here? need special abilities to cast additional effects?
+		//!!!DBG TMP!
+		Game::CCommandData Data{ CStrID("TestCmd"), nullptr };
+		Game::ExecuteCommand(Data, Session, nullptr);
 	}
+
+	//!!!apply OnHit commands from all active status effects!
+	//???no special commands from ability here? need special abilities to cast additional effects?
 
 	Instance.DamageType = EDamageType::COUNT; // Reset applied damage
 }

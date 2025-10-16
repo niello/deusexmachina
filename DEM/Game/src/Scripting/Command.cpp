@@ -5,7 +5,7 @@
 namespace DEM::Game
 {
 
-bool EvaluateCommand(const CCommandData& Command, CGameSession& Session, CGameVarStorage* pVars)
+bool ExecuteCommand(const CCommandData& Command, CGameSession& Session, CGameVarStorage* pVars)
 {
 	// No-op
 	if (!Command.Type) return true;

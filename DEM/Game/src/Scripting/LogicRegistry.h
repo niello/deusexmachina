@@ -76,6 +76,8 @@ public:
 		_Commands.insert_or_assign(Type, std::move(Cmd));
 	}
 
+	const CCommand& RegisterScriptedCommand(CStrID Type, CStrID ScriptAssetID);
+
 	const CCommand& FindCommand(CStrID Type) const
 	{
 		auto It = _Commands.find(Type);
