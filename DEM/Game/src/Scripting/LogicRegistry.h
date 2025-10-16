@@ -16,6 +16,11 @@
 //???behaviour/script/commandlist is a vector<command + optional condition [+ optional chance]>?
 
 //???how about resolving conditions and commands from type right on deserialization? session-aware serialization?
+//!!!command list can be deserialized from file and then resolved (both commands and conditions) with a second session-aware pass!!!
+//but if command list is a resource, then can't pre-init it. May store as part of resource without resolving. Or register logic per app, not per session?
+//can add Flow actions that executes a command list and a single command, to easily reuse registered logic pieces in Flow scripts
+
+//!!!need script interface! access conditions(?) and commands(!) to call them from script directly, e.g. Session.Logic.PlayVFX(...)
 
 namespace Data
 {
@@ -27,13 +32,15 @@ namespace DEM::Game
 class CGameSession;
 using PCondition = std::unique_ptr<class ICondition>;
 class CScriptCondition;
-using CCommand = void (*)(CGameSession& Session, const Data::CParams* pParams, CGameVarStorage* pVars); //???std::function for binding Lua functions? Or ICommand?
+using CCommand = std::function<void(CGameSession& Session, const Data::CParams* pParams, CGameVarStorage* pVars)>;
 
 class CLogicRegistry final : public DEM::Core::CRTTIBaseClass
 {
 	RTTI_CLASS_DECL(CLogicRegistry, DEM::Core::CRTTIBaseClass);
 
 protected:
+
+	static inline CCommand NopCommand;
 
 	CGameSession&                          _Session;
 	std::unordered_map<CStrID, PCondition> _Conditions;
@@ -59,15 +66,20 @@ public:
 		return (It != _Conditions.cend()) ? It->second.get() : nullptr;
 	}
 
-	void RegisterCommand(CStrID Type, CCommand Cmd)
+	void RegisterCommand(CStrID Type, const CCommand& Cmd)
 	{
 		_Commands.insert_or_assign(Type, Cmd);
 	}
 
-	CCommand FindCommand(CStrID Type) const
+	void RegisterCommand(CStrID Type, CCommand&& Cmd)
+	{
+		_Commands.insert_or_assign(Type, std::move(Cmd));
+	}
+
+	const CCommand& FindCommand(CStrID Type) const
 	{
 		auto It = _Commands.find(Type);
-		return (It != _Commands.cend()) ? It->second : nullptr;
+		return (It != _Commands.cend()) ? It->second : NopCommand;
 	}
 };
 

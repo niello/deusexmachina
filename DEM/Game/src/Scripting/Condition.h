@@ -13,7 +13,7 @@ namespace DEM::Events
 namespace DEM::Game
 {
 using PCondition = std::unique_ptr<class ICondition>;
-using PGameSession = Ptr<class CGameSession>;
+class CGameSession;
 
 struct CConditionData
 {
@@ -25,7 +25,7 @@ struct CConditionContext
 {
 	const CConditionData&  Condition;
 	CGameSession&          Session;
-	const CGameVarStorage* pVars;
+	const CGameVarStorage* pVars = nullptr;
 };
 
 bool EvaluateCondition(const CConditionData& Cond, CGameSession& Session, const CGameVarStorage* pVars);

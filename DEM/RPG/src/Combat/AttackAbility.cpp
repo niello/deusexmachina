@@ -228,9 +228,9 @@ static void ApplyDamageFromAbility(Game::CGameSession& Session, Game::CGameWorld
 			// apply OnHit commands from this weapon
 
 			//!!!DBG TMP!
-			if (auto* pCmd = pGameLogic->FindCommand(CStrID("DealDamage")))
+			if (const auto& Cmd = pGameLogic->FindCommand(CStrID("DealDamage")))
 			{
-				(*pCmd)(Session, nullptr, nullptr);
+				Cmd(Session, nullptr, nullptr);
 			}
 			else
 			{

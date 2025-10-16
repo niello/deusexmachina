@@ -112,13 +112,13 @@ bool EvaluateCondition(const CConditionData& Cond, CGameSession& Session, const 
 {
 	if (!Cond.Type) return true;
 
-	const auto* pConditions = Session.FindFeature<CLogicRegistry>();
-	if (!pConditions) return true;
+	const auto* pLogic = Session.FindFeature<CLogicRegistry>();
+	if (!pLogic) return true;
 
-	if (auto* pCondition = pConditions->FindCondition(Cond.Type))
+	if (auto* pCondition = pLogic->FindCondition(Cond.Type))
 		return pCondition->Evaluate({ Cond, Session, pVars });
 
-	::Sys::Error("Unsupported condition type");
+	::Sys::Error("Unsupported condition type: {}"_format(Cond.Type));
 	return false;
 }
 //---------------------------------------------------------------------
@@ -128,8 +128,8 @@ std::string GetConditionText(const CConditionData& Cond, CGameSession& Session, 
 	std::string Result;
 
 	if (Cond.Type)
-		if (const auto* pConditions = Session.FindFeature<CLogicRegistry>())
-			if (auto* pCondition = pConditions->FindCondition(Cond.Type))
+		if (const auto* pLogic = Session.FindFeature<CLogicRegistry>())
+			if (auto* pCondition = pLogic->FindCondition(Cond.Type))
 				pCondition->GetText(Result, { Cond, Session, pVars });
 
 	return Result;
