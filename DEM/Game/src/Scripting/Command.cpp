@@ -24,4 +24,20 @@ bool ExecuteCommand(const CCommandData& Command, CGameSession& Session, CGameVar
 }
 //---------------------------------------------------------------------
 
+bool ExecuteCommandList(const CCommandList& List, CGameSession& Session, CGameVarStorage* pVars /*chance RNG*/)
+{
+	for (const auto& Record : List)
+	{
+		if (Chance(Record.Chance /*RNG*/))
+			if (EvaluateCondition(Record.Condition, Session, pVars))
+				if (ExecuteCommand(Record.Command, Session, pVars))
+					continue;
+
+		if (Record.BreakIfFailed) return false;
+	}
+
+	return true;
+}
+//---------------------------------------------------------------------
+
 }

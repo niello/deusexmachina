@@ -25,12 +25,28 @@ struct CCommandContext
 	CGameVarStorage*    pVars = nullptr;
 };
 
+//???move to another header? or include condition here?
+struct CCommandListRecord
+{
+	CCommandData   Command;
+	CConditionData Condition;             // Optional, empty condition type resolves to true
+	float          Chance = 1.f;          // Chance >= 1.f = 100%, <=0.f is skipped, otherwise uses random chance check
+	bool           BreakIfFailed = false;
+};
+
+using CCommandList = std::vector<CCommandListRecord>;
+
 bool ExecuteCommand(const CCommandData& Command, CGameSession& Session, CGameVarStorage* pVars);
+bool ExecuteCommandList(const CCommandList& List, CGameSession& Session, CGameVarStorage* pVars /*chance RNG*/);
 //???GetCommandText?
 
-//!!!TODO: scripted command here? or RegisterScriptedCommand wrapper in CLogicManager is enough?
-
-//!!!command list here! vector<cmd + optional cond + optional chance + bool break on failure>
+bool ExecuteCommandList(const CCommandList& List, CGameSession& Session /*chance RNG*/)
+{
+	// A temporary context used only for communication inside the list during a single evaluation
+	CGameVarStorage Vars;
+	return ExecuteCommandList(List, Session, &Vars);
+}
+//---------------------------------------------------------------------
 
 }
 
