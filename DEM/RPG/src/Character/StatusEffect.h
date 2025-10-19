@@ -2,11 +2,17 @@
 #include <Data/Metadata.h>
 #include <Data/StringID.h>
 #include <Game/ECS/Entity.h>
+#include <Scripting/CommandList.h>
 
 // An effect that affects character stats or state
 
 namespace DEM::RPG
 {
+
+struct CStatusEffectTrigger
+{
+	// event type or ID, optional condition
+};
 
 struct CStatusEffectData
 {
@@ -16,11 +22,11 @@ struct CStatusEffectData
 	std::set<CStrID> SuspendBehaviourTags; // What effect must temporarily stop affecting the world
 	std::set<CStrID> SuspendLifetimeTags;  // What effects must temporarily stop counting time to expire
 
-	// map<trigger -> command[list]> (parametrized conditional triggers, like Health < 0.25 * TargetSheet.MaxHP)
-	// - chance in % is per command, not per trigger, or it is even a decorator over the base command
-	// - chance can be also a part of a trigger condition, with slightly different usage
+	// map<trigger ID -> trigger data + command[list]> (parametrized conditional triggers, like Health < 0.25 * TargetSheet.MaxHP)
 	// - if trigger is condition, it can subscribe an event with existing mechanism! or is trigger / condition a decorator too?
-	// - NB: failed activation chance check may or may not burn magnitude, it depends on settings
+	// - trigger that has no event to react must be checked every frame? is it one of trigger types?
+	//!!!need a list of trigger types (IDs)! Maybe use vector indexed by enum? Skip where command list is empty. How to deserialize?! Key = enum element name!
+	//!!!try using command list in weapon/attack/ability/equipment first!
 
 	// stacking rules: max magnitude, max count, priority rule (prefer min, max, first, last when limiting by stacked instance count)
 	//???magnitude - reduce in the instance or clamp stack sum after calculation?

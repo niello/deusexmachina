@@ -75,6 +75,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Physics/RigidBodyComponent.h
 	DEM/Game/src/Scene/SceneComponent.h
 	DEM/Game/src/Scripting/Command.h
+	DEM/Game/src/Scripting/CommandList.h
 	DEM/Game/src/Scripting/Condition.h
 	DEM/Game/src/Scripting/LogicRegistry.h
 	DEM/Game/src/Scripting/ScriptCondition.h
@@ -139,6 +140,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Physics/PhysicsSystems.cpp
 	DEM/Game/src/Scene/SceneSystems.cpp
 	DEM/Game/src/Scripting/Command.cpp
+	DEM/Game/src/Scripting/CommandList.cpp
 	DEM/Game/src/Scripting/Condition.cpp
 	DEM/Game/src/Scripting/LogicRegistry.cpp
 	DEM/Game/src/Scripting/ScriptCondition.cpp

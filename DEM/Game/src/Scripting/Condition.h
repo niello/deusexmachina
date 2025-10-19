@@ -124,5 +124,6 @@ template<> constexpr auto RegisterMembers<Game::CConditionData>()
 		DEM_META_MEMBER_FIELD(Game::CConditionData, Params)
 	);
 }
+static_assert(CMetadata<Game::CConditionData>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
 
 }
