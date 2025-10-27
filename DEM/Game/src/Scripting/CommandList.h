@@ -19,7 +19,7 @@ using CCommandList = std::vector<CCommandListRecord>;
 
 bool ExecuteCommandList(const CCommandList& List, CGameSession& Session, CGameVarStorage* pVars /*chance RNG*/);
 
-bool ExecuteCommandList(const CCommandList& List, CGameSession& Session /*chance RNG*/)
+inline bool ExecuteCommandList(const CCommandList& List, CGameSession& Session /*chance RNG*/)
 {
 	// A temporary context used only for communication inside the list during a single evaluation
 	CGameVarStorage Vars;

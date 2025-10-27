@@ -5,20 +5,12 @@
 
 // A registry of declarative condition implementations for picking them by type ID
 
-//???CConditionData -> CLogicData / CLogicDesc / CLogicCallData / ...? identical for conditions and actions.
-//???can optimize static logic params from PParams to CGameVarStorage or something like that?
-//!!!source and target can be written to context vars, like in Flow! See ResolveEntityID, same as for e.g. conversation Initiator.
-//???CConditionContext -> CLogicContext / CLogicCallParams? likely identical for conditions and actions! Data (type + static params), Session, optional Vars (dynamic ctx)
-//conditions accept const vars, so maube must separate CConditionContext and CCommandContext, but the main difference will be pVars constness.
-//Condition (including chance) is external to the low level command desc? Or optional addition to any command?! Parse like in CConditionData but as an additional opt. field?
-
-//???command list as a command?
-//???behaviour/script/commandlist is a vector<command + optional condition [+ optional chance]>?
-
+//???could deserialize static data of commands and conditions into C++ structures and keep them instead of CParams?
 //???how about resolving conditions and commands from type right on deserialization? session-aware serialization?
-//!!!command list can be deserialized from file and then resolved (both commands and conditions) with a second session-aware pass!!!
+//!!!command list can be deserialized from file without session and then resolved (both commands and conditions) with a second session-aware pass!!!
 //but if command list is a resource, then can't pre-init it. May store as part of resource without resolving. Or register logic per app, not per session?
-//can add Flow actions that executes a command list and a single command, to easily reuse registered logic pieces in Flow scripts
+
+// TODO FLOW: can add Flow actions that execute a command list and a single command, to easily reuse registered logic pieces in Flow scripts
 
 //!!!need script interface! access conditions(?) and commands(!) to call them from script directly, e.g. Session.Logic.PlayVFX(...)
 

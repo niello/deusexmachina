@@ -9,6 +9,7 @@
 #include <AI/Navigation/NavAgentComponent.h>
 #include <Character/StatsComponent.h>
 #include <Character/SkillsComponent.h>
+#include <Character/StatusEffect.h>
 #include <Combat/DestructibleComponent.h>
 #include <Combat/WeaponComponent.h>
 #include <Combat/CombatUtils.h>
@@ -148,6 +149,8 @@ bool CAttackAbility::GetFacingParams(const Game::CGameSession& Session, const Ga
 }
 //---------------------------------------------------------------------
 
+// TODO: can be natural weapon, not equipment? Can express as a CWeaponComponent right on a creature entity.
+//???What to do with different natural attack types of one creature?
 static const CWeaponComponent* FindCurrentWeapon(Game::CGameWorld& World, Game::HEntity ActorID)
 {
 	if (auto* pEquipment = World.FindComponent<const CEquipmentComponent>(ActorID))
@@ -217,21 +220,26 @@ static void ApplyDamageFromAbility(Game::CGameSession& Session, Game::CGameWorld
 {
 	if (Instance.DamageType == EDamageType::COUNT) return;
 
+	Game::CGameVarStorage Vars;
+	Vars.Set(CStrID("Damage"), Instance.Damage); //!!!DBG TMP! Need damage before and after calculation, and other params!
+
+	//???don't calculate damage in advance? only check hit/miss type? or need for special effects / animation choosing?
 	InflictDamage(World, Instance.Targets[0].Entity, Instance.Location, Instance.Damage, Instance.DamageType, Instance.Actor);
 
-	//???don't calculate damage in advance? only check hit/miss type?
-	//???apply OnHit commands from the natural weapon if no pWeaponComponent? or must find natiral as pWeaponComponent?!!!
 	if (const auto* pWeaponComponent = FindCurrentWeapon(World, Instance.Actor))
-	{
-		//!!!apply OnHit commands from this weapon
+		Game::ExecuteCommandList(pWeaponComponent->OnHit, Session, &Vars);
 
-		//!!!DBG TMP!
-		Game::CCommandData Data{ CStrID("TestCmd"), nullptr };
-		Game::ExecuteCommand(Data, Session, nullptr);
-	}
-
-	//!!!apply OnHit commands from all active status effects!
 	//???no special commands from ability here? need special abilities to cast additional effects?
+
+	if (const auto* pStatusEffectComponent = World.FindComponent<const CStatusEffectComponent>(Instance.Actor))
+	{
+		for (const auto& [ID, Stack] : pStatusEffectComponent->StatusEffectStacks)
+		{
+			//!!!TODO: need utility method to fill Varswith magnitude etc for each stack on the start of its behaviour evaluation? everywhere! and clear after eval?
+			//!!!source and target can be written to Vars, like in Flow! See ResolveEntityID, same as for e.g. conversation Initiator.
+			//could be: EvaluateStatusEffectEvent(Stack.pEffectData, 'OnHit', &Vars);
+		}
+	}
 
 	Instance.DamageType = EDamageType::COUNT; // Reset applied damage
 }
