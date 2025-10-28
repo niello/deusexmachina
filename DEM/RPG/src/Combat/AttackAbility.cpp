@@ -231,7 +231,7 @@ static void ApplyDamageFromAbility(Game::CGameSession& Session, Game::CGameWorld
 
 	//???no special commands from ability here? need special abilities to cast additional effects?
 
-	if (const auto* pStatusEffectComponent = World.FindComponent<const CStatusEffectComponent>(Instance.Actor))
+	if (const auto* pStatusEffectComponent = World.FindComponent<const CStatusEffectsComponent>(Instance.Actor))
 	{
 		for (const auto& [ID, Stack] : pStatusEffectComponent->StatusEffectStacks)
 		{

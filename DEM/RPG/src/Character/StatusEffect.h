@@ -1,4 +1,5 @@
 #pragma once
+#include <Core/Object.h>
 #include <Data/StringID.h>
 #include <Game/ECS/Entity.h>
 #include <Scripting/Condition.h>
@@ -25,8 +26,12 @@ struct CStatusEffectBehaviour
 	Game::CCommandList   Commands;
 };
 
-struct CStatusEffectData
+class CStatusEffectData : public Core::CObject
 {
+	RTTI_CLASS_DECL(DEM::RPG::CStatusEffectData, DEM::Core::CObject);
+
+public:
+
 	CStrID           ID;
 	std::set<CStrID> Tags;
 	std::set<CStrID> BlockTags;            // What effects are discarded and blocked from being added
@@ -89,7 +94,7 @@ struct CStatusEffectStack
 	// list of modified stats, if needed
 };
 
-struct CStatusEffectComponent
+struct CStatusEffectsComponent
 {
 	std::map<CStrID, CStatusEffectStack> StatusEffectStacks;
 
@@ -106,13 +111,29 @@ struct CStatusEffectComponent
 namespace DEM::Meta
 {
 
+template<> constexpr auto RegisterClassName<RPG::CStatusEffectBehaviour>() { return "DEM::RPG::CStatusEffectBehaviour"; }
+template<> constexpr auto RegisterMembers<RPG::CStatusEffectBehaviour>()
+{
+	return std::make_tuple
+	(
+		//???!!!trigger ID here? not enum but CStrID?
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Condition),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Commands)
+	);
+}
+static_assert(CMetadata<RPG::CStatusEffectBehaviour>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
+
 template<> constexpr auto RegisterClassName<RPG::CStatusEffectData>() { return "DEM::RPG::CStatusEffectData"; }
 template<> constexpr auto RegisterMembers<RPG::CStatusEffectData>()
 {
 	return std::make_tuple
 	(
-		//DEM_META_MEMBER_FIELD(RPG::CStatsComponent, Archetype),
-		//DEM_META_MEMBER_FIELD(RPG::CStatsComponent, CanSpeak)
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, ID),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, Tags),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, BlockTags),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, SuspendBehaviourTags),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, SuspendLifetimeTags),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, Behaviours)
 	);
 }
 static_assert(CMetadata<RPG::CStatusEffectData>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
