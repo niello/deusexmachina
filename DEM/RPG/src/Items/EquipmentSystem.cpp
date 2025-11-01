@@ -4,6 +4,7 @@
 #include <Items/ArmorComponent.h>
 #include <Items/EquipmentChangesComponent.h>
 #include <Items/EquippableComponent.h>
+#include <Items/EquippedComponent.h>
 #include <Combat/CombatUtils.h> // apply armor
 #include <Character/AppearanceComponent.h>
 #include <Character/AppearanceAsset.h>
@@ -477,6 +478,11 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 
 				// ... other automatic modifiers and status effect activation
 
+				// for script:
+				//auto Mod = MakePtr<TModifier>(std::forward<TArgs>(Args)...);
+				//Source.Modifiers.push_back(Mod);
+				//Param.AddModifier(std::move(Mod));
+
 				// Apply custom logic from the script
 				if (auto* pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
 				{
@@ -505,6 +511,9 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 						if (auto* pArmor = FindItemComponent<const CArmorComponent>(World, StackID))
 							RemoveArmorModifiers(World, EntityID, pArmor->Absorption, Rec.PrevSlot);
 					}
+
+					// ... remove all modifiers registered in CEquippedComponent? or remove by source ID - this stack?
+					// need to store what stats are affected!!! not to scan all them. Or get this info implicitly.
 
 					// Apply custom logic from the script
 					if (auto* pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))

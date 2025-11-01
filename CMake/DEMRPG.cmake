@@ -4,7 +4,6 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Character/Archetype.h
 	DEM/RPG/src/Character/BoolStat.h
 	DEM/RPG/src/Character/CharacterSheet.h
-	DEM/RPG/src/Character/ModifiableParameter.h
 	DEM/RPG/src/Character/NumericStat.h
 	DEM/RPG/src/Character/ParameterModifier.h
 	DEM/RPG/src/Character/SkillsComponent.h

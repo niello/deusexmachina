@@ -26,7 +26,7 @@ void CArchetype::OnPostLoad(const Resources::CDataAssetLoaderHRD<DEM::RPG::CArch
 	auto* pSession = static_cast<const Resources::CArchetypeLoader&>(Loader).GetSession();
 	auto& ScriptState = pSession->GetScriptState();
 
-	// TODO: check what is better, this or std::map<statname, desc> and runtime loop. Could help against duplicating stat lists here and in components.
+	// TODO: check what is better, metadata iteration or std::map<statname, desc> runtime loop. Could help against duplicating stat lists here and in components.
 	DEM::Meta::CMetadata<CArchetype>::ForEachMember([this, &ScriptState](const auto& Member)
 	{
 		if constexpr (std::is_same_v<DEM::Meta::TMemberValue<decltype(Member)>, std::unique_ptr<CNumericStatDefinition>>)
@@ -34,7 +34,7 @@ void CArchetype::OnPostLoad(const Resources::CDataAssetLoaderHRD<DEM::RPG::CArch
 	});
 
 	// TODO:
-	// maybe cache fallback pointers from base (need Ptr instead of unique_ptr then)
+	// maybe cache fallback pointers from base, i.e. parent archetype (need Ptr instead of unique_ptr then)
 }
 //---------------------------------------------------------------------
 
