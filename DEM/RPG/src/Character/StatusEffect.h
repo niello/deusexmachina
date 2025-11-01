@@ -58,25 +58,25 @@ public:
 	// UI name, desc, tooltip, possibly with hyperlinks
 };
 
-struct CStatusEffect //???rename to CStatusEffectInstance?
+struct CStatusEffectInstance
 {
 	// Merging rules: is enabled, duration sum/max, magnitude sum/max. If disabled, stacking is performed. Merging happens to the instance of the same source ID.
-
-	Game::HEntity    SourceCreatureID;
-	Game::HEntity    SourceItemStackID;
-	CStrID           SourceAbilityID;
-	CStrID           SourceStatusEffectID; // An effect must be applied by another "parent"/"source" effect
-
-	std::set<CStrID> Tags;                 // Instances can have additional tags besides effect (stack) tags
-
-	// Expiration conditions (list)
 	// Expiration condition event subscriptions
 
-	float            Time = 0.f; //???active time or remaining duration?
-	float            Magnitude = 0.f;      // When it drops to zero, an instance expires immediately
+	Game::HEntity        SourceCreatureID;
+	Game::HEntity        SourceItemStackID;
+	CStrID               SourceAbilityID;
+	CStrID               SourceStatusEffectID; // An effect must be applied by another "parent"/"source" effect
 
-	U8               SuspendBehaviourCounter = 0;
-	U8               SuspendLifetimeCounter = 0;
+	std::set<CStrID>     Tags;                 // Instances can have additional tags besides effect (stack) tags
+
+	Game::CConditionData ExpirationCondition; //???when happens, can zero out magnitude and/or time, delay cleanup from stack
+
+	float                Time = 0.f; //???active time or remaining duration?
+	float                Magnitude = 0.f;      // When it drops to zero, an instance expires immediately
+
+	U8                   SuspendBehaviourCounter = 0;
+	U8                   SuspendLifetimeCounter = 0;
 
 	//???position where an effect was applied, if applicable. E.g. for periodic blood leaking VFX. or custom var storage?
 	//???Interval timer + tick count, or calculate each time from active time and activation period?
@@ -87,8 +87,8 @@ struct CStatusEffect //???rename to CStatusEffectInstance?
 
 struct CStatusEffectStack
 {
-	CStatusEffectData*         pEffectData = nullptr; //???strong ptr? if resource, must have refcount anyway
-	std::vector<CStatusEffect> Instances;
+	CStatusEffectData*                 pEffectData = nullptr; //???strong ptr? if resource, must have refcount anyway
+	std::vector<CStatusEffectInstance> Instances;
 
 	// trigger and trigger condition event subscriptions
 	// list of modified stats, if needed

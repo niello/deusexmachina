@@ -11,6 +11,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Character/SocialComponent.h
 	DEM/RPG/src/Character/StatsComponent.h
 	DEM/RPG/src/Character/StatusEffect.h
+	DEM/RPG/src/Character/StatusEffectLogic.h
 	DEM/RPG/src/Combat/AttackAbility.h
 	DEM/RPG/src/Combat/CombatUtils.h
 	DEM/RPG/src/Combat/Damage.h
@@ -58,6 +59,7 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/Character/CharacterSheet.cpp
 	DEM/RPG/src/Character/CharacterSystems.cpp
 	DEM/RPG/src/Character/NumericStat.cpp
+	DEM/RPG/src/Character/StatusEffectLogic.cpp
 	DEM/RPG/src/Combat/AttackAbility.cpp
 	DEM/RPG/src/Combat/CombatUtils.cpp
 	DEM/RPG/src/Conversation/BarterAction.cpp

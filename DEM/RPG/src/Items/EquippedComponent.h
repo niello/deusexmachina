@@ -4,8 +4,7 @@
 #include <sol/sol.hpp>
 
 // A component that marks individual item stacks as equipped and holds their modifiers applied to the equipment owner.
-// The only reason to have modifiers here is to hold strong references. Processing is done in CModifiableParameter.
-// This component is not persistent.
+// The only reason to have modifiers here is to hold strong references. This component is not persistent.
 
 namespace DEM::RPG
 {

@@ -148,8 +148,14 @@ HEntity ResolveEntityID(const Data::PParams& Params, CStrID ParamID, const CGame
 		else if (pVars && pParam->IsA<CStrID>())
 		{
 			// An entity ID is stored in a flow player variable storage and is referenced in action by var ID
-			const int Raw = pVars->Get<int>(pVars->Find(pParam->GetValue<CStrID>()), static_cast<int>(HEntity{}.Raw));
-			return HEntity{ static_cast<HEntity::TRawValue>(Raw) };
+			if (auto Handle = pVars->Find(pParam->GetValue<CStrID>()))
+			{
+				HEntity Value;
+				if (pVars->TryGet<HEntity>(Handle, Value)) return Value;
+
+				const int Raw = pVars->Get<int>(Handle, static_cast<int>(HEntity{}.Raw));
+				return HEntity{ static_cast<HEntity::TRawValue>(Raw) };
+			}
 		}
 	}
 
