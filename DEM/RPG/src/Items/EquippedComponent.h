@@ -11,10 +11,9 @@ namespace DEM::RPG
 
 struct CEquippedComponent
 {
-	Game::HEntity                  OwnerID;
-	std::vector<Data::PRefCounted> Modifiers;
-	//!!!instead of modifiers, store modified stats! by ID?
-	sol::function                  FnUpdateEquipped;
+	Game::HEntity       OwnerID;
+	sol::function       FnUpdateEquipped;
+	//???std::vector<CStrID> ModifiedStats;
 };
 
 }

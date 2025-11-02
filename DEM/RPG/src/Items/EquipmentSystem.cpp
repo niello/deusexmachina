@@ -8,6 +8,7 @@
 #include <Combat/CombatUtils.h> // apply armor
 #include <Character/AppearanceComponent.h>
 #include <Character/AppearanceAsset.h>
+#include <Character/StatsComponent.h>
 #include <Scene/SceneComponent.h>
 #include <Scene/NodeAttribute.h>
 #include <Data/Algorithms.h>
@@ -398,6 +399,22 @@ void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID,
 }
 //---------------------------------------------------------------------
 
+static void RemoveEquipmentStatModifiers(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SlotID)
+{
+	//???!!!how to optimize scanning all stats? store modified stat list in CEquippedComponent? or subscribe character on modifier source lifetime events?!
+	if (auto* pComponent = World.FindComponent<Sh2::CStatsComponent>(EntityID))
+	{
+		DEM::Meta::CMetadata<Sh2::CStatsComponent>::ForEachMember([pComponent, SlotID](const auto& Member)
+		{
+			if constexpr (std::is_same_v<DEM::Meta::TMemberValue<decltype(Member)>, CNumericStat>)
+				Member.GetValueRef(*pComponent).RemoveModifiers(SlotID);
+			else if constexpr (std::is_same_v<DEM::Meta::TMemberValue<decltype(Member)>, CBoolStat>)
+				Member.GetValueRef(*pComponent).RemoveModifiers(SlotID);
+		});
+	}
+}
+//---------------------------------------------------------------------
+
 void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Session, Resources::CResourceManager& RsrcMgr)
 {
 	World.ForEachComponent<const CEquipmentChangesComponent>([&World, &Session, &RsrcMgr](auto EntityID, const CEquipmentChangesComponent& Changes)
@@ -440,13 +457,14 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 					n_assert_dbg(!IsReequipped || pEquipped->OwnerID == EntityID);
 
 					// Discard all prevoius modifiers and effects, we will recreate them
-					pEquipped->Modifiers.clear();
+					RemoveEquipmentStatModifiers(World, EntityID, Rec.PrevSlot);
 
 					// Apply custom logic from the script
 					if (!IsReequipped)
 					{
-						if (auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
+						if (auto* pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
 						{
+							//???cache script object or even Lua functions in CEquippableComponent? can do on init.
 							if (auto ScriptObject = Session.GetScript(pEquippable->ScriptAssetID))
 							{
 								auto FnProxy = ScriptObject["OnUnequipped"];
@@ -478,14 +496,10 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 
 				// ... other automatic modifiers and status effect activation
 
-				// for script:
-				//auto Mod = MakePtr<TModifier>(std::forward<TArgs>(Args)...);
-				//Source.Modifiers.push_back(Mod);
-				//Param.AddModifier(std::move(Mod));
-
 				// Apply custom logic from the script
 				if (auto* pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
 				{
+					//!!!FIXME: "already loaded" item script is in fact broken!!! ForceReload fixes the issue.
 					if (auto ScriptObject = Session.GetScript(pEquippable->ScriptAssetID))
 					{
 						auto FnProxy = ScriptObject["OnEquipped"];
@@ -512,8 +526,7 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 							RemoveArmorModifiers(World, EntityID, pArmor->Absorption, Rec.PrevSlot);
 					}
 
-					// ... remove all modifiers registered in CEquippedComponent? or remove by source ID - this stack?
-					// need to store what stats are affected!!! not to scan all them. Or get this info implicitly.
+					RemoveEquipmentStatModifiers(World, EntityID, Rec.PrevSlot);
 
 					// Apply custom logic from the script
 					if (auto* pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))

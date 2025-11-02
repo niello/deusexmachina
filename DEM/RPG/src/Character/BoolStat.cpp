@@ -15,28 +15,28 @@ void CBoolStat::SetDesc(CBoolStatDefinition* pStatDef)
 }
 //---------------------------------------------------------------------
 
-void CBoolStat::AddEnabler(U32 SourceID)
+void CBoolStat::AddEnabler(CStrID SourceID)
 {
 	if (_Enablers.insert(SourceID).second)
 		OnModified(*this);
 }
 //---------------------------------------------------------------------
 
-void CBoolStat::AddBlocker(U32 SourceID)
+void CBoolStat::AddBlocker(CStrID SourceID)
 {
 	if (_Blockers.insert(SourceID).second)
 		OnModified(*this);
 }
 //---------------------------------------------------------------------
 
-void CBoolStat::AddImmunity(U32 SourceID)
+void CBoolStat::AddImmunity(CStrID SourceID)
 {
 	if (_Immunity.insert(SourceID).second)
 		OnModified(*this);
 }
 //---------------------------------------------------------------------
 
-void CBoolStat::RemoveModifiers(U32 SourceID)
+void CBoolStat::RemoveModifiers(CStrID SourceID)
 {
 	n_assert(SourceID != BaseValueID);
 

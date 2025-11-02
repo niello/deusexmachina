@@ -12,14 +12,13 @@ class CBoolStat
 {
 protected:
 
-	static constexpr U32 BaseValueID = 0; //???need? or only use _pStatDef->DefaultValue?
+	inline static const CStrID BaseValueID;
 
 	CBoolStatDefinition* _pStatDef = nullptr;
 
-	// Usually a status effect instance ID
-	std::set<U32> _Enablers;
-	std::set<U32> _Blockers;
-	std::set<U32> _Immunity;
+	std::set<CStrID> _Enablers;
+	std::set<CStrID> _Blockers;
+	std::set<CStrID> _Immunity;
 
 public:
 
@@ -36,10 +35,10 @@ public:
 
 	void SetDesc(CBoolStatDefinition* pStatDef);
 
-	void AddEnabler(U32 SourceID);
-	void AddBlocker(U32 SourceID);
-	void AddImmunity(U32 SourceID);
-	void RemoveModifiers(U32 SourceID);
+	void AddEnabler(CStrID SourceID);
+	void AddBlocker(CStrID SourceID);
+	void AddImmunity(CStrID SourceID);
+	void RemoveModifiers(CStrID SourceID);
 	void RemoveAllModifiers();
 
 	void SetBaseValue(bool NewBaseValue);
