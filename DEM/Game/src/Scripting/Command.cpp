@@ -14,10 +14,7 @@ bool ExecuteCommand(const CCommandData& Command, CGameSession& Session, CGameVar
 	if (!pLogic) return true;
 
 	if (const auto& Cmd = pLogic->FindCommand(Command.Type))
-	{
-		Cmd(Session, Command.Params.Get(), pVars);
-		return true;
-	}
+		return Cmd(Session, Command.Params.Get(), pVars);
 
 	::Sys::Error("Unsupported command type: {}"_format(Command.Type));
 	return false;

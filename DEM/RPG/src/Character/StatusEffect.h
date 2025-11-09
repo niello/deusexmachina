@@ -9,6 +9,8 @@
 
 namespace DEM::RPG
 {
+// TODO: or +infinity? or negative? need something that never expires with standard math
+constexpr float STATUS_EFFECT_INFINITE = std::numeric_limits<float>::max();
 
 //???not enum because can be extended from game logic?! or type like OnEvent and define event ID? then from game fire StatusEffectEvent(Effect, EventID)?
 //???but isn't it better then to treat all hardcoded cases like OnTimer or OnApplied as events too? Hardcoded event IDs.
@@ -56,6 +58,8 @@ public:
 	// expiration conditions
 	// show in UI, icon, text with named param placeholders etc
 	// UI name, desc, tooltip, possibly with hyperlinks
+
+	//???flag "only first instance"? for applying instances from different sources in a sequence. One expires, the next starts. Need?
 };
 
 struct CStatusEffectInstance
@@ -72,17 +76,14 @@ struct CStatusEffectInstance
 
 	Game::CConditionData ExpirationCondition; //???when happens, can zero out magnitude and/or time, delay cleanup from stack
 
-	float                Time = 0.f; //???active time or remaining duration?
+	float                Duration = STATUS_EFFECT_INFINITE;
+	float                Time = 0.f; //???active time or remaining duration? or need both! duration as optional expiration condition, time as period counter base.
 	float                Magnitude = 0.f;      // When it drops to zero, an instance expires immediately
 
-	U8                   SuspendBehaviourCounter = 0;
-	U8                   SuspendLifetimeCounter = 0;
+	U8                   SuspendBehaviourCounter = 0; // While > 0, behaviours are not triggered and magnitude isn't contributed to the stack
+	U8                   SuspendLifetimeCounter = 0;  // While > 0, internal timer doesn't tick and time-based expiration isn't checked
 
 	//???position where an effect was applied, if applicable. E.g. for periodic blood leaking VFX. or custom var storage?
-	//???Interval timer + tick count, or calculate each time from active time and activation period?
-	//  - or handle by command + active time?
-	//  - Or tick is per effect, not per command?
-	//  - probably tick can be one of triggers!
 };
 
 struct CStatusEffectStack
@@ -90,20 +91,21 @@ struct CStatusEffectStack
 	CStatusEffectData*                 pEffectData = nullptr; //???strong ptr? if resource, must have refcount anyway
 	std::vector<CStatusEffectInstance> Instances;
 
+	//???precalculated CGameVarStorage context for commands?
+
 	// trigger and trigger condition event subscriptions
-	// list of modified stats, if needed
+
+	// list of modified stats, if needed. Can skip this optiization for now. Or store map source->stats in a stats component!
+	// Modifiers are applied per stack, with source = stack effect ID. Modifier is updated (or removed and re-added).
+	// So each stat has only one modifiers from each affecting effect stack.
+
+	// cached magnitude? or recalc each time? also may need a dirty flag
+	// Total magnitude is recalculated each time and clamped to a min of all CStatusEffectData limits?
 };
 
 struct CStatusEffectsComponent
 {
 	std::map<CStrID, CStatusEffectStack> StatusEffectStacks;
-
-	// Total magnitude is recalculated each time and clamped to a min of all CStatusEffectData limits?
-
-	// Modifiers are applied per stack, with source = stack effect ID. Modifier is updated (or removed and re-added).
-	// So each stat has only one modifiers from each affecting effect stack.
-
-	// Tag immunity (bool or %) is stored in stats and checked in a status effect application function
 };
 
 }

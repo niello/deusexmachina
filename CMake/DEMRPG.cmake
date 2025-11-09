@@ -4,6 +4,7 @@ set(DEM_L3_RPG_HEADERS
 	DEM/RPG/src/Character/Archetype.h
 	DEM/RPG/src/Character/BoolStat.h
 	DEM/RPG/src/Character/CharacterSheet.h
+	DEM/RPG/src/Character/CharacterStatLogic.h
 	DEM/RPG/src/Character/NumericStat.h
 	DEM/RPG/src/Character/ParameterModifier.h
 	DEM/RPG/src/Character/SkillsComponent.h
@@ -56,7 +57,7 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/Character/Archetype.cpp
 	DEM/RPG/src/Character/BoolStat.cpp
 	DEM/RPG/src/Character/CharacterSheet.cpp
-	DEM/RPG/src/Character/CharacterSystems.cpp
+	DEM/RPG/src/Character/CharacterStatLogic.cpp
 	DEM/RPG/src/Character/NumericStat.cpp
 	DEM/RPG/src/Character/StatusEffectLogic.cpp
 	DEM/RPG/src/Combat/AttackAbility.cpp

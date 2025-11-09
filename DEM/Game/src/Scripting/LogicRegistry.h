@@ -24,7 +24,7 @@ namespace DEM::Game
 class CGameSession;
 using PCondition = std::unique_ptr<class ICondition>;
 class CScriptCondition;
-using CCommand = std::function<void(CGameSession& Session, const Data::CParams* pParams, CGameVarStorage* pVars)>;
+using CCommand = std::function<bool(CGameSession& Session, const Data::CParams* pParams, CGameVarStorage* pVars)>;
 
 class CLogicRegistry final : public DEM::Core::CRTTIBaseClass
 {

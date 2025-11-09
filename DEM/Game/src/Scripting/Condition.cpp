@@ -254,7 +254,7 @@ bool CLuaStringCondition::Evaluate(const CConditionContext& Ctx) const
 
 	sol::environment Env(Ctx.Session.GetScriptState(), sol::create, Ctx.Session.GetScriptState().globals());
 	Env["Vars"] = Ctx.pVars;
-	auto Result = Ctx.Session.GetScriptState().script("return " + std::string(Code), Env);
+	auto Result = Ctx.Session.GetScriptState().script("return {}"_format(Code), Env);
 	if (!Result.valid())
 	{
 		::Sys::Error(Result.get<sol::error>().what());

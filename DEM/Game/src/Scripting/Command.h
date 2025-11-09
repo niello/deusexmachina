@@ -8,7 +8,7 @@
 namespace DEM::Game
 {
 class CGameSession;
-using CCommand = std::function<void(CGameSession& Session, const Data::CParams* pParams, CGameVarStorage* pVars)>;
+using CCommand = std::function<bool(CGameSession& Session, const Data::CParams* pParams, CGameVarStorage* pVars)>;
 
 //???reuse between conditions and commands? CLogicData?
 //!!!ResolveEntityID is also common!

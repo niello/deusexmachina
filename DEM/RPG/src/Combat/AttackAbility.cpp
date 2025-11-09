@@ -9,7 +9,7 @@
 #include <AI/Navigation/NavAgentComponent.h>
 #include <Character/StatsComponent.h>
 #include <Character/SkillsComponent.h>
-#include <Character/StatusEffect.h>
+#include <Character/StatusEffectLogic.h>
 #include <Combat/DestructibleComponent.h>
 #include <Combat/WeaponComponent.h>
 #include <Combat/CombatUtils.h>
@@ -232,15 +232,8 @@ static void ApplyDamageFromAbility(Game::CGameSession& Session, Game::CGameWorld
 
 	//???no special commands from ability here? need special abilities to cast additional effects?
 
-	if (const auto* pStatusEffectComponent = World.FindComponent<const CStatusEffectsComponent>(Instance.Actor))
-	{
-		for (const auto& [ID, Stack] : pStatusEffectComponent->StatusEffectStacks)
-		{
-			//!!!TODO: need utility method to fill Varswith magnitude etc for each stack on the start of its behaviour evaluation? everywhere! and clear after eval?
-			//!!!source and target can be written to Vars, like in Flow! See ResolveEntityID, same as for e.g. conversation Initiator.
-			//could be: EvaluateStatusEffectEvent(Stack.pEffectData, 'OnHit', &Vars);
-		}
-	}
+	TriggerStatusEffects(Session, World, Instance.Actor, CStrID("OnDamageDealt"), &Vars);
+	TriggerStatusEffects(Session, World, Instance.Targets[0].Entity, CStrID("OnDamaged"), &Vars);
 
 	Instance.DamageType = EDamageType::COUNT; // Reset applied damage
 }

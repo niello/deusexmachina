@@ -4,14 +4,30 @@
 #include <Character/StatsComponent.h>
 #include <Combat/DestructibleComponent.h>
 
-namespace DEM::RPG
-{
-
 //???where to cache Lua sheet interface? or recreate each time a secondary stat formula is recalculated? maps then will not speed things up!
 //if not cacheable, must be a simple set of pointers to components, with O(n) direct string comparison in __index. Will then use some
 //utility functions like CNumericStat* FindStat(component, string), maybe using metadata.
 //???store sheet interface in CStatsComponent, reuse at each formula evaluation! if components like destructible can change in runtime, must listen add/remove!
 //!!!adding components will also need an archetype to be applied to its stats!
+
+namespace DEM::RPG
+{
+
+void RemoveStatModifiers(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SourceID)
+{
+	//???!!!how to optimize scanning all stats? store SourceID->vector<StatID> index map? or subscribe character on modifier source lifetime events?!
+	if (auto* pComponent = World.FindComponent<Sh2::CStatsComponent>(EntityID))
+	{
+		DEM::Meta::CMetadata<Sh2::CStatsComponent>::ForEachMember([pComponent, SourceID](const auto& Member)
+		{
+			if constexpr (std::is_same_v<DEM::Meta::TMemberValue<decltype(Member)>, CNumericStat>)
+				Member.GetValueRef(*pComponent).RemoveModifiers(SourceID);
+			else if constexpr (std::is_same_v<DEM::Meta::TMemberValue<decltype(Member)>, CBoolStat>)
+				Member.GetValueRef(*pComponent).RemoveModifiers(SourceID);
+		});
+	}
+}
+//---------------------------------------------------------------------
 
 void InitStats(Game::CGameWorld& World, Game::CGameSession& Session, Resources::CResourceManager& ResMgr)
 {

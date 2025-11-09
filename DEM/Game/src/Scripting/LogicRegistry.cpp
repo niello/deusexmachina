@@ -43,7 +43,16 @@ const CCommand& CLogicRegistry::RegisterScriptedCommand(CStrID Type, CStrID Scri
 			auto [It, Inserted] = _Commands.insert_or_assign(Type,
 				[FnExecute](CGameSession& Session, const Data::CParams* pParams, CGameVarStorage* pVars)
 			{
-				FnExecute(pParams, pVars);
+				const auto Result = FnExecute(pParams, pVars);
+				if (!Result.valid())
+				{
+					::Sys::Error(Result.get<sol::error>().what());
+					return false;
+				}
+
+				//???SOL: why nil can't be negated? https://www.lua.org/pil/3.3.html
+				const auto Type = Result.get_type();
+				return (Type == sol::type::userdata) || (Type != sol::type::none && Type != sol::type::nil && Result);
 			});
 			return It->second;
 		}

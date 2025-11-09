@@ -166,6 +166,12 @@ auto ObjectToString(const sol::object& Object, sol::state_view& State, F Callbac
 }
 //---------------------------------------------------------------------
 
+inline sol::function LoadFunction(sol::state_view& State, std::string_view)
+{
+	//
+}
+//---------------------------------------------------------------------
+
 template<typename TRet = bool, typename... TArgs>
 TRet LuaCall(const sol::function& Fn, TArgs&&... Args)
 {
@@ -180,8 +186,9 @@ TRet LuaCall(const sol::function& Fn, TArgs&&... Args)
 
 	if constexpr (std::is_same_v<TRet, bool>)
 	{
+		//???SOL: why nil can't be negated? https://www.lua.org/pil/3.3.html
 		const auto Type = Result.get_type();
-		return Type != sol::type::nil && Type != sol::type::none && Result;
+		return (Type == sol::type::userdata) || (Type != sol::type::none && Type != sol::type::nil && Result);
 	}
 	else if constexpr (!std::is_same_v<TRet, void>)
 	{
