@@ -77,7 +77,7 @@ bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams*
 
 bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, CStatusEffectInstance&& Instance)
 {
-	// Magnitude must be greater than zero for effect to last. Simply don't use magnitude value in formulas if you need not.
+	// Magnitude of each active instance must be greater than zero. Simply don't use magnitude value in formulas if you need not.
 	// Infinite duration is STATUS_EFFECT_INFINITE, other values are treated as an explicit duration.
 	if (Instance.Magnitude <= 0.f || Instance.Duration <= 0.f) return false;
 
@@ -145,9 +145,75 @@ void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& 
 
 void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, float dt)
 {
-	World.ForEachComponent<CStatusEffectsComponent>([&Session](auto EntityID, CStatusEffectsComponent& StatusEffects)
+	World.ForEachComponent<CStatusEffectsComponent>([&Session, dt](auto EntityID, CStatusEffectsComponent& StatusEffects)
 	{
-		// ...
+		for (auto& [ID, Stack] : StatusEffects.StatusEffectStacks)
+		{
+			for (auto& Instance : Stack.Instances)
+			{
+				const float PrevTime = Instance.Time;
+				const float NewTime = PrevTime + dt;
+
+				// gather instances that must tick, by each tick trigger separately
+				// apply their magnitudes
+				// process tick
+				// clear instances expired by time
+
+				//!!!should NOT apply expiration by time (an not only by time?) to instances with lifetime suspended!
+
+				if (NewTime > Instance.Duration) Instance.Magnitude = 0.f;
+
+				//!!!check expiration by signal-less expiration conditions! need flag to identify this case! simply Subs.empty() is not enough,
+				//some sub-conditions may have subs, some others don't. Condition must set check-on-update request flag.
+
+				if (Instance.Magnitude <= 0.f)
+				{
+					// remove instance right now by iterator? or delay for std::remove_if?
+					// remember to recalculate stack magnitude and check for stack emptiness
+					continue;
+				}
+
+				// Time triggers work per instance. Use merge policies to combine instances.
+				//
+				// for each OnTime trigger
+				//   get Delay and Period
+				//   check trigger activation with PrevTime & NewTime
+				//   check optional condition
+				//   call trigger with magnitude of the instance, not of the whole stack
+				//
+				//???or send instance AND stack magnitudes? what if command will alter a modifier?! E.g. -Magnitude Strength each second!
+				//!!!magnitude not always summed up! e.g. two +Strength effects, but system may want to choose a stronger one! StackAccum=Strongest, not Sum.
+
+				// on each trigger stack must walk all its instances and apply them according to its accumulation policies?
+				// for time could aggregate all instances that have ticked at this frame, just by the same rule. Aggregation will work.
+
+				// different triggers aggregate differently
+				// time trigger need to check prev and new time. Others don't.
+				// probably even a condition may depend on a certain instance and can't be checked for the whole stack at once? e.g. conditions on source.
+				// at least must filter out instances with suspended behaviour
+
+				//???!!!are trigger params universal?! e.g. character type (source vs target). Initially thought that they will be defined only in conditions.
+				//???unify trigger and condition params? Some kind of extended structure:
+				// Trigger='X' Condition='Y' Params { ... } Commands [ ... ]
+
+				// "Type": "OnSkillCheck", "SkillType": "Lockpicking"
+				// "Type": "OnGainingStatusEffect", "TargetTag": "Poison"
+
+				//!!!trigger reacts on event and checks params!
+				// - time trigger checks lifetime before activation (Game)
+				// - skill trigger checks a skill ID (RPG)
+				// - arbitrary trigger simply fires (Game)
+				// so some trigger activation code will be in a game mechanics part, can't simply fire a trigger for a stack, must iterate in place and check specific params!
+				// for (trigger : triggers(type))
+				//   if custom params match the situation
+				//     fire the trigger (gather instances, check optional condition etc)
+			}
+
+			// delete expired stacks and send trigger
+
+			//!!!document the problem with adding modifiers from different commands! can be cumulative or overwriting!
+			//e.g. OnMagnitudeChange -> set modifier Strength -Mag. Or OnEachHit -> add modifier Strength -Mag. Different types of effects.
+		}
 	});
 }
 //---------------------------------------------------------------------

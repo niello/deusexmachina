@@ -12,18 +12,9 @@ namespace DEM::RPG
 // TODO: or +infinity? or negative? need something that never expires with standard math
 constexpr float STATUS_EFFECT_INFINITE = std::numeric_limits<float>::max();
 
-//???not enum because can be extended from game logic?! or type like OnEvent and define event ID? then from game fire StatusEffectEvent(Effect, EventID)?
-//???but isn't it better then to treat all hardcoded cases like OnTimer or OnApplied as events too? Hardcoded event IDs.
-//!!!split all possible events to effect lifetime ("engine" level) and game logic level!
-enum EStatusEffectTrigger
-{
-	OnApplied,
-	OnRemoved
-};
-
 struct CStatusEffectBehaviour
 {
-	EStatusEffectTrigger Trigger;
+	CStrID               Trigger;
 	Game::CConditionData Condition;
 	Game::CCommandList   Commands;
 };
@@ -64,7 +55,9 @@ public:
 
 struct CStatusEffectInstance
 {
+	//???merging rules here or in data?
 	// Merging rules: is enabled, duration sum/max, magnitude sum/max. If disabled, stacking is performed. Merging happens to the instance of the same source ID.
+
 	// Expiration condition event subscriptions
 
 	Game::HEntity        SourceCreatureID;
@@ -118,7 +111,7 @@ template<> constexpr auto RegisterMembers<RPG::CStatusEffectBehaviour>()
 {
 	return std::make_tuple
 	(
-		//???!!!trigger ID here? not enum but CStrID?
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Trigger),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Condition),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Commands)
 	);
