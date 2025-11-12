@@ -145,24 +145,61 @@ void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& 
 
 void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, float dt)
 {
+	// Tick logic requires dt > 0 
+	if (dt <= 0.f) return;
+
 	World.ForEachComponent<CStatusEffectsComponent>([&Session, dt](auto EntityID, CStatusEffectsComponent& StatusEffects)
 	{
 		for (auto& [ID, Stack] : StatusEffects.StatusEffectStacks)
 		{
+			// for Trigger in Stack.pEffectData->Behaviours['OnTime']
+
+			const float Delay = 0.f; // Trigger->GetParam<float>('Delay');
+			const float Period = 0.f; // Trigger->GetParam<float>('Period');
+			const bool IsOneTime = (Period <= 0.f);
+
+			float TotalMagnitude = 0.f;
 			for (auto& Instance : Stack.Instances)
 			{
+				if (Instance.Magnitude <= 0.f) continue;
+
 				const float PrevTime = Instance.Time;
 				const float NewTime = PrevTime + dt;
 
-				// gather instances that must tick, by each tick trigger separately
-				// apply their magnitudes
-				// process tick
-				// clear instances expired by time
+				// Check if the next tick time is reached during this update
+				const float NextTick =
+					((!PrevTime && !Delay) || PrevTime < Delay) ? Delay :
+					IsOneTime ? std::numeric_limits<float>::max() :
+					(PrevTime + Period - std::fmodf(PrevTime - Delay, Period));
+				while (NextTickTime <= NewTime)
+				{
+					TotalMagnitude += Instance.Magnitude;
+					CurrentTime = NextTickTime; // Advance the current time to the tick time
 
-				//!!!should NOT apply expiration by time (an not only by time?) to instances with lifetime suspended!
+					if (IsOneTime) break;
 
-				if (NewTime > Instance.Duration) Instance.Magnitude = 0.f;
+					NextTickTime += Instance.Period;
+				}
 
+				//!!!to a function IsInstanceTriggered(Instance, Trigger)
+				// if (Instance.SuspendBehaviourCounter || !Trigger.Condition(Instance as ctx)) continue;
+
+				TotalMagnitude += Instance.Magnitude;
+			}
+
+			if (TotalMagnitude > 0.f)
+			{
+				// execute trigger commands with TotalMagnitude
+			}
+
+			for (auto& Instance : Stack.Instances)
+				Instance.Time += dt;
+
+			//???SuspendLifetimeCounter here or above, preventing Time increment?!
+			Stack.Instances.erase(std::remove_if(Stack.Instances.begin(), Stack.Instances.end(), [](const auto& Instance) { return Instance.Magnitude <= 0.f || (!Instance.SuspendLifetimeCounter && Instance.Time > Instance.Duration); }), Stack.Instances.end());
+
+			///////
+			{
 				//!!!check expiration by signal-less expiration conditions! need flag to identify this case! simply Subs.empty() is not enough,
 				//some sub-conditions may have subs, some others don't. Condition must set check-on-update request flag.
 
