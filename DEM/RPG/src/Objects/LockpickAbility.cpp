@@ -6,6 +6,7 @@
 #include <Game/ECS/GameWorld.h>
 #include <Character/StatsComponent.h>
 #include <Character/SkillsComponent.h>
+#include <Character/StatusEffectLogic.h>
 #include <Items/EquipmentComponent.h>
 #include <Items/LockpickComponent.h>
 #include <Items/ItemUtils.h>
@@ -208,6 +209,12 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 	//!!!remember difference (or result?) in an ability instance params!
 	CStrID AnimAction;
 	const int Difference = Math::RandomU32(1, 20) + SkillRollModifier - pLock->Difficulty;
+
+	//???!!!store in stack? or even in instance? not to rebuild each time
+	Game::CGameVarStorage Vars;
+	//Params { Skill = "Lockpicking" }
+	TriggerStatusEffects(Session, *pWorld, Instance.Actor, CStrID("OnSkillCheck"), &Vars);
+
 	static_cast<CSkillCheckAbilityInstance&>(Instance).Difference = Difference;
 	if (Difference > 0)
 	{

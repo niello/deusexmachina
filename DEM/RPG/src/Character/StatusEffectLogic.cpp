@@ -100,25 +100,27 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 
 		// handle policies for duration and magnitude; match sources;
 		//!!!???can't ignore source if expiration conditions use it?! requires correct effect data setup from GD?
+		// clamp magnitude and duration to limits? or apply limits only to the total value in the stack?
+		//!!!stack must update totals (magnitude and maybe smth else)!
 	}
 	else
 	{
 		// Add a new instance
 		Stack.Instances.push_back(std::move(Instance));
 
-		// subscribe on expiration condition events
+		// TODO: subscribe on expiration condition events
 	}
 
 	if (IsNew)
 	{
 		Stack.pEffectData = &Effect;
 
-		// remove effects blocked by us, remember blocking tags in some Tag->Counter cache if needed
-		TriggerStatusEffect(Session, Stack, CStrID("OnAdded"), nullptr);
-	}
+		// TODO: remove effects blocked by us, remember blocking tags in some Tag->Counter cache if needed
 
-	// clamp magnitude and duration to limits? or apply limits only to the total value in the stack?
-	//!!!stack must update totals (magnitude and maybe smth else)!
+		//???!!!store in stack? or even in instance? not to rebuild each time
+		Game::CGameVarStorage Vars;
+		TriggerStatusEffect(Session, Stack, CStrID("OnAdded"), &Vars);
+	}
 
 	return false;
 }
