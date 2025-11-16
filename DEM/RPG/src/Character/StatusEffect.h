@@ -14,7 +14,7 @@ constexpr float STATUS_EFFECT_INFINITE = std::numeric_limits<float>::max();
 
 struct CStatusEffectBehaviour
 {
-	CStrID               Trigger;
+	Data::PParams        Params;
 	Game::CConditionData Condition;
 	Game::CCommandList   Commands;
 };
@@ -31,7 +31,7 @@ public:
 	std::set<CStrID> SuspendBehaviourTags; // What effect must temporarily stop affecting the world
 	std::set<CStrID> SuspendLifetimeTags;  // What effects must temporarily stop counting time to expire
 
-	std::vector<CStatusEffectBehaviour> Behaviours;
+	std::map<CStrID, std::vector<CStatusEffectBehaviour>> Behaviours;
 	// - parametrized, like Health < 0.25 * TargetSheet.MaxHP
 	// - if trigger is condition, it can subscribe an event with existing mechanism! or is trigger / condition a decorator too?
 	// - trigger that has no event to react must be checked every frame? is it one of trigger types?
@@ -81,7 +81,7 @@ struct CStatusEffectInstance
 
 struct CStatusEffectStack
 {
-	CStatusEffectData*                 pEffectData = nullptr; //???strong ptr? if resource, must have refcount anyway
+	const CStatusEffectData*           pEffectData = nullptr; //???strong ptr? if resource, must have refcount anyway
 	std::vector<CStatusEffectInstance> Instances;
 
 	//???precalculated CGameVarStorage context for commands?
@@ -111,7 +111,7 @@ template<> constexpr auto RegisterMembers<RPG::CStatusEffectBehaviour>()
 {
 	return std::make_tuple
 	(
-		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Trigger),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Params),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Condition),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Commands)
 	);

@@ -111,6 +111,8 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 
 	if (IsNew)
 	{
+		Stack.pEffectData = &Effect;
+
 		// remove effects blocked by us, remember blocking tags in some Tag->Counter cache if needed
 		TriggerStatusEffect(Session, Stack, CStrID("OnAdded"), nullptr);
 	}
@@ -145,106 +147,73 @@ void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& 
 
 void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, float dt)
 {
-	// Tick logic requires dt > 0 
+	// Tick logic requires dt > 0, or the same tick might happen multiple times
 	if (dt <= 0.f) return;
 
 	World.ForEachComponent<CStatusEffectsComponent>([&Session, dt](auto EntityID, CStatusEffectsComponent& StatusEffects)
 	{
+		//???!!!store in stack? or even in instance? not to rebuild each time
+		Game::CGameVarStorage Vars;
+
+		// Trigger OnTime behaviours
 		for (auto& [ID, Stack] : StatusEffects.StatusEffectStacks)
 		{
-			// for Trigger in Stack.pEffectData->Behaviours['OnTime']
+			auto ItBhvs = Stack.pEffectData->Behaviours.find(CStrID("OnTime"));
+			if (ItBhvs == Stack.pEffectData->Behaviours.cend()) continue;
 
-			const float Delay = 0.f; // Trigger->GetParam<float>('Delay');
-			const float Period = 0.f; // Trigger->GetParam<float>('Period');
-			const bool IsOneTime = (Period <= 0.f);
-
-			float TotalMagnitude = 0.f;
-			for (auto& Instance : Stack.Instances)
+			for (const auto& Bhv : ItBhvs->second)
 			{
-				if (Instance.Magnitude <= 0.f) continue;
+				// Can't process OnTime trigger without params
+				n_assert(Bhv.Params);
+				if (!Bhv.Params) continue;
 
-				const float PrevTime = Instance.Time;
-				const float NewTime = PrevTime + dt;
+				const float Delay = Bhv.Params->Get<float>(CStrID("Delay"), 0.f);
+				const float Period = Bhv.Params->Get<float>(CStrID("Period"), 0.f);
+				const bool IsOneTime = (Period <= 0.f);
 
-				// Check if the next tick time is reached during this update
-				const float NextTick =
-					((!PrevTime && !Delay) || PrevTime < Delay) ? Delay :
-					IsOneTime ? std::numeric_limits<float>::max() :
-					(PrevTime + Period - std::fmodf(PrevTime - Delay, Period));
-				while (NextTickTime <= NewTime)
+				float TotalMagnitude = 0.f;
+				for (auto& Instance : Stack.Instances)
 				{
-					TotalMagnitude += Instance.Magnitude;
-					CurrentTime = NextTickTime; // Advance the current time to the tick time
+					//!!!check expiration by signal-less expiration conditions! need flag out arg in SubscribeRelevantEvents to identify this case!
+					// simply Subs.empty() is not enough, some sub-conditions may have subs, some others don't. Condition must set check-on-update request flag.
+					//???or, if this flag is set, subscriptions are of no use and can be cleared? Or subscribe not always for recalc?
 
-					if (IsOneTime) break;
+					//!!!TODO: to a function IsInstanceTriggered(Instance, Trigger)
+					if (Instance.SuspendBehaviourCounter || Instance.Magnitude <= 0.f || !Game::EvaluateCondition(Bhv.Condition, Session, &Vars)) continue;
 
-					NextTickTime += Instance.Period;
+					const float PrevTime = Instance.Time;
+					const float NewTime = PrevTime + dt;
+					const bool WaitFirstTick = ((!PrevTime && !Delay) || PrevTime < Delay);
+
+					if (IsOneTime)
+					{
+						if (WaitFirstTick && Delay <= NewTime)
+							TotalMagnitude += Instance.Magnitude;
+					}
+					else
+					{
+						//!!!???instead of loop can calculate tick index prev and new, and apply resulting tick number!
+						float NextTickTime = WaitFirstTick ? Delay : (PrevTime + Period - std::fmodf(PrevTime - Delay, Period));
+						while (NextTickTime <= NewTime)
+						{
+							//???or trigger OnTime each time separately?
+							//???respect magnitude accumulation policy?
+							TotalMagnitude += Instance.Magnitude;
+							NextTickTime += Period;
+						}
+					}
 				}
 
-				//!!!to a function IsInstanceTriggered(Instance, Trigger)
-				// if (Instance.SuspendBehaviourCounter || !Trigger.Condition(Instance as ctx)) continue;
+				//!!!set TotalMagnitude to context!
+				if (TotalMagnitude > 0.f)
+					Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
 
-				TotalMagnitude += Instance.Magnitude;
+				for (auto& Instance : Stack.Instances)
+					Instance.Time += dt;
 			}
-
-			if (TotalMagnitude > 0.f)
-			{
-				// execute trigger commands with TotalMagnitude
-			}
-
-			for (auto& Instance : Stack.Instances)
-				Instance.Time += dt;
 
 			//???SuspendLifetimeCounter here or above, preventing Time increment?!
 			Stack.Instances.erase(std::remove_if(Stack.Instances.begin(), Stack.Instances.end(), [](const auto& Instance) { return Instance.Magnitude <= 0.f || (!Instance.SuspendLifetimeCounter && Instance.Time > Instance.Duration); }), Stack.Instances.end());
-
-			///////
-			{
-				//!!!check expiration by signal-less expiration conditions! need flag to identify this case! simply Subs.empty() is not enough,
-				//some sub-conditions may have subs, some others don't. Condition must set check-on-update request flag.
-
-				if (Instance.Magnitude <= 0.f)
-				{
-					// remove instance right now by iterator? or delay for std::remove_if?
-					// remember to recalculate stack magnitude and check for stack emptiness
-					continue;
-				}
-
-				// Time triggers work per instance. Use merge policies to combine instances.
-				//
-				// for each OnTime trigger
-				//   get Delay and Period
-				//   check trigger activation with PrevTime & NewTime
-				//   check optional condition
-				//   call trigger with magnitude of the instance, not of the whole stack
-				//
-				//???or send instance AND stack magnitudes? what if command will alter a modifier?! E.g. -Magnitude Strength each second!
-				//!!!magnitude not always summed up! e.g. two +Strength effects, but system may want to choose a stronger one! StackAccum=Strongest, not Sum.
-
-				// on each trigger stack must walk all its instances and apply them according to its accumulation policies?
-				// for time could aggregate all instances that have ticked at this frame, just by the same rule. Aggregation will work.
-
-				// different triggers aggregate differently
-				// time trigger need to check prev and new time. Others don't.
-				// probably even a condition may depend on a certain instance and can't be checked for the whole stack at once? e.g. conditions on source.
-				// at least must filter out instances with suspended behaviour
-
-				//???!!!are trigger params universal?! e.g. character type (source vs target). Initially thought that they will be defined only in conditions.
-				//???unify trigger and condition params? Some kind of extended structure:
-				// Trigger='X' Condition='Y' Params { ... } Commands [ ... ]
-
-				// "Type": "OnSkillCheck", "SkillType": "Lockpicking"
-				// "Type": "OnGainingStatusEffect", "TargetTag": "Poison"
-
-				//!!!trigger reacts on event and checks params!
-				// - time trigger checks lifetime before activation (Game)
-				// - skill trigger checks a skill ID (RPG)
-				// - arbitrary trigger simply fires (Game)
-				// so some trigger activation code will be in a game mechanics part, can't simply fire a trigger for a stack, must iterate in place and check specific params!
-				// for (trigger : triggers(type))
-				//   if custom params match the situation
-				//     fire the trigger (gather instances, check optional condition etc)
-			}
 
 			// delete expired stacks and send trigger
 
