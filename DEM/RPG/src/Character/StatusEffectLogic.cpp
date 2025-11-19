@@ -212,21 +212,18 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 				// Advance instance time and remove instances expired by time
 				for (auto It = Stack.Instances.begin(); It != Stack.Instances.end(); /**/)
 				{
-					It->Time += dt;
-
 					if (!It->SuspendLifetimeCounter)
 					{
-						if (It->RemainingTime > dt)
-						{
-							It->RemainingTime -= dt;
-						}
-						else
+						if (It->RemainingTime <= dt)
 						{
 							It = Stack.Instances.erase(It);
 							continue;
 						}
+
+						It->RemainingTime -= dt;
 					}
 
+					It->Time += dt;
 					++It;
 				}
 			}
