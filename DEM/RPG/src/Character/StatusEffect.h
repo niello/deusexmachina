@@ -9,8 +9,7 @@
 
 namespace DEM::RPG
 {
-// TODO: or +infinity? or negative? need something that never expires with standard math
-constexpr float STATUS_EFFECT_INFINITE = std::numeric_limits<float>::max();
+constexpr float STATUS_EFFECT_INFINITE = std::numeric_limits<float>::infinity();
 
 struct CStatusEffectBehaviour
 {
@@ -69,7 +68,7 @@ struct CStatusEffectInstance
 
 	Game::CConditionData ExpirationCondition; //???when happens, can zero out magnitude and/or time, delay cleanup from stack
 
-	float                Duration = STATUS_EFFECT_INFINITE;
+	float                RemainingTime = STATUS_EFFECT_INFINITE;
 	float                Time = 0.f; //???active time or remaining duration? or need both! duration as optional expiration condition, time as period counter base.
 	float                Magnitude = 0.f;      // When it drops to zero, an instance expires immediately
 

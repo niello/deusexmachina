@@ -57,17 +57,17 @@ bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams*
 		}
 	}
 
-	Effect.Duration = STATUS_EFFECT_INFINITE;
+	Effect.RemainingTime = STATUS_EFFECT_INFINITE;
 	if (auto* pData = pParams->FindValue(CStrID("Duration")))
 	{
 		if (const auto* pValue = pData->As<float>())
 		{
-			Effect.Duration = *pValue;
+			Effect.RemainingTime = *pValue;
 		}
 		else if (const auto* pValue = pData->As<std::string>())
 		{
 			sol::function Formula = Session.GetScriptState().script("return function(Params, Vars) return {} end"_format(*pValue));
-			Effect.Duration = Scripting::LuaCall<float>(Formula, pParams, pVars);
+			Effect.RemainingTime = Scripting::LuaCall<float>(Formula, pParams, pVars);
 		}
 	}
 
@@ -79,7 +79,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 {
 	// Magnitude of each active instance must be greater than zero. Simply don't use magnitude value in formulas if you need not.
 	// Infinite duration is STATUS_EFFECT_INFINITE, other values are treated as an explicit duration.
-	if (Instance.Magnitude <= 0.f || Instance.Duration <= 0.f) return false;
+	if (Instance.Magnitude <= 0.f || Instance.RemainingTime <= 0.f) return false;
 
 	auto* pStatusEffectComponent = World.FindOrAddComponent<CStatusEffectsComponent>(TargetID);
 	if (!pStatusEffectComponent) return false;
@@ -119,18 +119,18 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 
 		//???!!!store in stack? or even in instance? not to rebuild each time
 		Game::CGameVarStorage Vars;
-		TriggerStatusEffect(Session, Stack, CStrID("OnAdded"), &Vars);
+		TriggerStatusEffect(Session, Stack, CStrID("OnAdded"), Vars);
 	}
 
 	return false;
 }
 //---------------------------------------------------------------------
 
-void TriggerStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity EntityID, CStrID Event, Game::CGameVarStorage* pVars)
+void TriggerStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity EntityID, CStrID Event, Game::CGameVarStorage& Vars)
 {
 	if (const auto* pStatusEffectComponent = World.FindComponent<const CStatusEffectsComponent>(EntityID))
 		for (const auto& [ID, Stack] : pStatusEffectComponent->StatusEffectStacks)
-			TriggerStatusEffect(Session, Stack, Event, pVars);
+			TriggerStatusEffect(Session, Stack, Event, Vars);
 }
 //---------------------------------------------------------------------
 
@@ -155,64 +155,88 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 				//Instance.Magnitude = 0.f;
 			}
 
+			// Remove instances expired by magnitude before further processing
+			Stack.Instances.erase(std::remove_if(Stack.Instances.begin(), Stack.Instances.end(), [](const auto& Instance) { return Instance.Magnitude <= 0.f; }), Stack.Instances.end());
+
 			// Trigger OnTime behaviours
-			auto ItBhvs = Stack.pEffectData->Behaviours.find(CStrID("OnTime"));
-			if (ItBhvs != Stack.pEffectData->Behaviours.cend())
+			if (!Stack.Instances.empty())
 			{
-				for (const auto& Bhv : ItBhvs->second)
+				auto ItBhvs = Stack.pEffectData->Behaviours.find(CStrID("OnTime"));
+				if (ItBhvs != Stack.pEffectData->Behaviours.cend())
 				{
-					// Can't process OnTime trigger without params
-					n_assert(Bhv.Params);
-					if (!Bhv.Params) continue;
-
-					const float Delay = Bhv.Params->Get<float>(CStrID("Delay"), 0.f);
-					const float Period = Bhv.Params->Get<float>(CStrID("Period"), 0.f);
-					const bool IsOneTime = (Period <= 0.f);
-
-					float TotalMagnitude = 0.f;
-					for (const auto& Instance : Stack.Instances)
+					for (const auto& Bhv : ItBhvs->second)
 					{
-						//!!!TODO: to a function IsInstanceTriggered(Instance, Trigger)
-						if (Instance.SuspendBehaviourCounter || Instance.Magnitude <= 0.f || !Game::EvaluateCondition(Bhv.Condition, Session, &Vars)) continue;
+						// Can't process OnTime trigger without params
+						n_assert(Bhv.Params);
+						if (!Bhv.Params) continue;
 
-						const float PrevTime = Instance.Time;
-						const float NewTime = PrevTime + dt;
-						const bool WaitFirstTick = ((!PrevTime && !Delay) || PrevTime < Delay);
+						const float Delay = Bhv.Params->Get<float>(CStrID("Delay"), 0.f);
+						const float Period = Bhv.Params->Get<float>(CStrID("Period"), 0.f);
+						const bool IsOneTime = (Period <= 0.f);
 
-						if (IsOneTime)
+						float TotalMagnitude = 0.f;
+						for (const auto& Instance : Stack.Instances)
 						{
-							if (WaitFirstTick && Delay <= NewTime)
-								TotalMagnitude += Instance.Magnitude; //???respect magnitude accumulation policy?
+							//!!!TODO: to a function IsInstanceTriggered(Instance, Trigger)
+							if (Instance.SuspendBehaviourCounter || Instance.Magnitude <= 0.f || !Game::EvaluateCondition(Bhv.Condition, Session, &Vars)) continue;
+
+							const float PrevTime = Instance.Time;
+							const float NewTime = PrevTime + dt;
+							const bool WaitFirstTick = ((!PrevTime && !Delay) || PrevTime < Delay);
+
+							if (IsOneTime)
+							{
+								if (WaitFirstTick && Delay <= NewTime)
+									TotalMagnitude += Instance.Magnitude; //???respect magnitude accumulation policy?
+							}
+							else
+							{
+								//!!!???instead of loop can calculate tick index prev and new, and apply resulting tick number!
+								float NextTickTime = WaitFirstTick ? Delay : (PrevTime + Period - std::fmodf(PrevTime - Delay, Period));
+								while (NextTickTime <= NewTime)
+								{
+									//???or trigger OnTime each time separately?
+									//???respect magnitude accumulation policy?
+									TotalMagnitude += Instance.Magnitude;
+									NextTickTime += Period;
+								}
+							}
+						}
+
+						//!!!set TotalMagnitude to context!
+						if (TotalMagnitude > 0.f)
+							Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
+					}
+				}
+
+				// Advance instance time and remove instances expired by time
+				for (auto It = Stack.Instances.begin(); It != Stack.Instances.end(); /**/)
+				{
+					It->Time += dt;
+
+					if (!It->SuspendLifetimeCounter)
+					{
+						if (It->RemainingTime > dt)
+						{
+							It->RemainingTime -= dt;
 						}
 						else
 						{
-							//!!!???instead of loop can calculate tick index prev and new, and apply resulting tick number!
-							float NextTickTime = WaitFirstTick ? Delay : (PrevTime + Period - std::fmodf(PrevTime - Delay, Period));
-							while (NextTickTime <= NewTime)
-							{
-								//???or trigger OnTime each time separately?
-								//???respect magnitude accumulation policy?
-								TotalMagnitude += Instance.Magnitude;
-								NextTickTime += Period;
-							}
+							It = Stack.Instances.erase(It);
+							continue;
 						}
 					}
 
-					//!!!set TotalMagnitude to context!
-					if (TotalMagnitude > 0.f)
-						Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
+					++It;
 				}
 			}
 
-			// Advance instance time
-			for (auto& Instance : Stack.Instances)
-				Instance.Time += dt;
+			if (Stack.Instances.empty())
+			{
+				TriggerStatusEffect(Session, Stack, CStrID("OnRemoved"), Vars);
 
-			// Remove instances expired by condition, magnitude or time
-			//???SuspendLifetimeCounter here or above, preventing Time increment?! without increment will do the same tick repeatedly!
-			Stack.Instances.erase(std::remove_if(Stack.Instances.begin(), Stack.Instances.end(), [](const auto& Instance) { return Instance.Magnitude <= 0.f || (!Instance.SuspendLifetimeCounter && Instance.Time > Instance.Duration); }), Stack.Instances.end());
-
-			// delete expired _stacks_ and send trigger
+				// delete expired stack
+			}
 
 			//!!!document the problem with adding modifiers from different commands! can be cumulative or overwriting!
 			//e.g. OnMagnitudeChange -> set modifier Strength -Mag. Or OnEachHit -> add modifier Strength -Mag. Different types of effects.
