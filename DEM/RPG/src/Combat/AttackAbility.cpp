@@ -10,6 +10,7 @@
 #include <Character/StatsComponent.h>
 #include <Character/SkillsComponent.h>
 #include <Character/StatusEffectLogic.h>
+#include <Character/StatusEffect.h>
 #include <Combat/DestructibleComponent.h>
 #include <Combat/WeaponComponent.h>
 #include <Combat/CombatUtils.h>
@@ -232,8 +233,8 @@ static void ApplyDamageFromAbility(Game::CGameSession& Session, Game::CGameWorld
 
 	//???no special commands from ability here? need special abilities to cast additional effects?
 
-	TriggerStatusEffects(Session, World, Instance.Actor, CStrID("OnDamageDealt"), &Vars);
-	TriggerStatusEffects(Session, World, Instance.Targets[0].Entity, CStrID("OnDamaged"), &Vars);
+	TriggerStatusEffects(Session, World, Instance.Actor, CStrID("OnDamageDealt"), Vars);
+	TriggerStatusEffects(Session, World, Instance.Targets[0].Entity, CStrID("OnDamaged"), Vars);
 
 	Instance.DamageType = EDamageType::COUNT; // Reset applied damage
 }

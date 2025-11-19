@@ -134,19 +134,6 @@ void TriggerStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, 
 }
 //---------------------------------------------------------------------
 
-void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& Stack, CStrID Event, Game::CGameVarStorage* pVars)
-{
-	::Sys::DbgOut("Status effect '{}' trigger '{}'\n"_format(Stack.pEffectData->ID, Event));
-
-	//???lazy refresh stack totals here?
-	//???!!!if no pVars, use new temporary ctx? or require pVars to be passed from outside if want to use them?! more optimal.
-	//!!!TODO: fill Vars with magnitude etc
-	//!!!source and target can be written to Vars, like in Flow! See ResolveEntityID, same as for e.g. conversation Initiator.
-	//???get source ID from the first instance? or add only if has a single instance / if is the same in all instances?
-	//!!!TODO: clear Vars from magnitude etc
-}
-//---------------------------------------------------------------------
-
 void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, float dt)
 {
 	// Tick logic requires dt > 0, or the same tick might happen multiple times
@@ -157,67 +144,75 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 		//???!!!store in stack? or even in instance? not to rebuild each time
 		Game::CGameVarStorage Vars;
 
-		// Trigger OnTime behaviours
 		for (auto& [ID, Stack] : StatusEffects.StatusEffectStacks)
 		{
-			auto ItBhvs = Stack.pEffectData->Behaviours.find(CStrID("OnTime"));
-			if (ItBhvs == Stack.pEffectData->Behaviours.cend()) continue;
-
-			for (const auto& Bhv : ItBhvs->second)
+			// Check instance expiration from conditions
+			for (auto& Instance : Stack.Instances)
 			{
-				// Can't process OnTime trigger without params
-				n_assert(Bhv.Params);
-				if (!Bhv.Params) continue;
-
-				const float Delay = Bhv.Params->Get<float>(CStrID("Delay"), 0.f);
-				const float Period = Bhv.Params->Get<float>(CStrID("Period"), 0.f);
-				const bool IsOneTime = (Period <= 0.f);
-
-				float TotalMagnitude = 0.f;
-				for (auto& Instance : Stack.Instances)
-				{
-					//!!!check expiration by signal-less expiration conditions! need flag out arg in SubscribeRelevantEvents to identify this case!
-					// simply Subs.empty() is not enough, some sub-conditions may have subs, some others don't. Condition must set check-on-update request flag.
-					//???or, if this flag is set, subscriptions are of no use and can be cleared? Or subscribe not always for recalc?
-
-					//!!!TODO: to a function IsInstanceTriggered(Instance, Trigger)
-					if (Instance.SuspendBehaviourCounter || Instance.Magnitude <= 0.f || !Game::EvaluateCondition(Bhv.Condition, Session, &Vars)) continue;
-
-					const float PrevTime = Instance.Time;
-					const float NewTime = PrevTime + dt;
-					const bool WaitFirstTick = ((!PrevTime && !Delay) || PrevTime < Delay);
-
-					if (IsOneTime)
-					{
-						if (WaitFirstTick && Delay <= NewTime)
-							TotalMagnitude += Instance.Magnitude;
-					}
-					else
-					{
-						//!!!???instead of loop can calculate tick index prev and new, and apply resulting tick number!
-						float NextTickTime = WaitFirstTick ? Delay : (PrevTime + Period - std::fmodf(PrevTime - Delay, Period));
-						while (NextTickTime <= NewTime)
-						{
-							//???or trigger OnTime each time separately?
-							//???respect magnitude accumulation policy?
-							TotalMagnitude += Instance.Magnitude;
-							NextTickTime += Period;
-						}
-					}
-				}
-
-				//!!!set TotalMagnitude to context!
-				if (TotalMagnitude > 0.f)
-					Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
-
-				for (auto& Instance : Stack.Instances)
-					Instance.Time += dt;
+				//!!!check expiration by signal-less expiration conditions! need flag out arg in SubscribeRelevantEvents to identify this case!
+				// simply Subs.empty() is not enough, some sub-conditions may have subs, some others don't. Condition must set check-on-update request flag.
+				//???or, if this flag is set, subscriptions are of no use and can be cleared? Or subscribe not always for recalc?
+				//Instance.Magnitude = 0.f;
 			}
 
-			//???SuspendLifetimeCounter here or above, preventing Time increment?!
+			// Trigger OnTime behaviours
+			auto ItBhvs = Stack.pEffectData->Behaviours.find(CStrID("OnTime"));
+			if (ItBhvs != Stack.pEffectData->Behaviours.cend())
+			{
+				for (const auto& Bhv : ItBhvs->second)
+				{
+					// Can't process OnTime trigger without params
+					n_assert(Bhv.Params);
+					if (!Bhv.Params) continue;
+
+					const float Delay = Bhv.Params->Get<float>(CStrID("Delay"), 0.f);
+					const float Period = Bhv.Params->Get<float>(CStrID("Period"), 0.f);
+					const bool IsOneTime = (Period <= 0.f);
+
+					float TotalMagnitude = 0.f;
+					for (const auto& Instance : Stack.Instances)
+					{
+						//!!!TODO: to a function IsInstanceTriggered(Instance, Trigger)
+						if (Instance.SuspendBehaviourCounter || Instance.Magnitude <= 0.f || !Game::EvaluateCondition(Bhv.Condition, Session, &Vars)) continue;
+
+						const float PrevTime = Instance.Time;
+						const float NewTime = PrevTime + dt;
+						const bool WaitFirstTick = ((!PrevTime && !Delay) || PrevTime < Delay);
+
+						if (IsOneTime)
+						{
+							if (WaitFirstTick && Delay <= NewTime)
+								TotalMagnitude += Instance.Magnitude; //???respect magnitude accumulation policy?
+						}
+						else
+						{
+							//!!!???instead of loop can calculate tick index prev and new, and apply resulting tick number!
+							float NextTickTime = WaitFirstTick ? Delay : (PrevTime + Period - std::fmodf(PrevTime - Delay, Period));
+							while (NextTickTime <= NewTime)
+							{
+								//???or trigger OnTime each time separately?
+								//???respect magnitude accumulation policy?
+								TotalMagnitude += Instance.Magnitude;
+								NextTickTime += Period;
+							}
+						}
+					}
+
+					//!!!set TotalMagnitude to context!
+					if (TotalMagnitude > 0.f)
+						Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
+				}
+			}
+
+			// Advance instance time
+			for (auto& Instance : Stack.Instances)
+				Instance.Time += dt;
+
+			// Remove instances expired by condition, magnitude or time
+			//???SuspendLifetimeCounter here or above, preventing Time increment?! without increment will do the same tick repeatedly!
 			Stack.Instances.erase(std::remove_if(Stack.Instances.begin(), Stack.Instances.end(), [](const auto& Instance) { return Instance.Magnitude <= 0.f || (!Instance.SuspendLifetimeCounter && Instance.Time > Instance.Duration); }), Stack.Instances.end());
 
-			// delete expired stacks and send trigger
+			// delete expired _stacks_ and send trigger
 
 			//!!!document the problem with adding modifiers from different commands! can be cumulative or overwriting!
 			//e.g. OnMagnitudeChange -> set modifier Strength -Mag. Or OnEachHit -> add modifier Strength -Mag. Different types of effects.
