@@ -57,6 +57,7 @@ sol::usertype<T> RegisterVarStorage(sol::state& State, std::string_view Key)
 {
 	// TODO: assert if the usertype for T already exists, or there will be an error later on (Lua will GC the second metatable)
 	auto UserType = State.new_usertype<T>(Key);
+
 	UserType.set("new_shared", sol::factories([]() { return std::shared_ptr<T>(new T{}); }));
 	UserType.set("new_unique", sol::factories([]() { return std::unique_ptr<T>(new T{}); }));
 	UserType.set_function("clear", &T::clear);
@@ -64,7 +65,59 @@ sol::usertype<T> RegisterVarStorage(sol::state& State, std::string_view Key)
 	UserType.set_function("size", &T::size);
 	UserType.set_function("Find", static_cast<HVar(T::*)(CStrID ID) const>(&T::Find));
 	UserType.set_function("Has", [](const T& Self, CStrID ID) { return !!Self.Find(ID); });
+
 	RegisterVarStorageTemplateMethods(UserType);
+
+	UserType.set_function(sol::meta_function::index, [](const T& Self, std::string_view KeyStr, sol::this_state s)
+	{
+		sol::object Result;
+		if (const auto Handle = Self.Find(CStrID(KeyStr)))
+			Self.Visit(Handle, [&Result, s](auto&& Value) { Result = sol::make_object(s, Value); });
+		return Result;
+	});
+
+	// TODO: test and improve
+	UserType.set_function(sol::meta_function::new_index, [](T& Self, std::string_view KeyStr, sol::stack_object Value)
+	{
+		const CStrID Key(KeyStr);
+		switch (Value.get_type())
+		{
+			case sol::type::none:
+			case sol::type::lua_nil:
+			{
+				// TODO: Self.Erase(Key);
+				NOT_IMPLEMENTED;
+				return;
+			}
+			case sol::type::string:
+			{
+				if (Self.TrySet(Key, Value.as<std::string>())) return;
+				break;
+			}
+			case sol::type::number:
+			{
+				if (Self.TrySet(Key, Value.as<int>())) return;
+				if (Self.TrySet(Key, Value.as<float>())) return;
+				break;
+			}
+			case sol::type::boolean:
+			{
+				if (Self.TrySet(Key, Value.as<bool>())) return;
+				break;
+			}
+			case sol::type::userdata:
+			case sol::type::lightuserdata:
+			case sol::type::table:
+			{
+				// TODO: iterate all supported storage types and try to get that type from Value?
+				NOT_IMPLEMENTED;
+				break;
+			}
+		}
+
+		::Sys::Error("Unsupported type for this CVarStorage");
+	});
+
 	return UserType;
 }
 //---------------------------------------------------------------------

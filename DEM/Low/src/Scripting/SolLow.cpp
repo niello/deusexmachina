@@ -100,7 +100,7 @@ void RegisterBasicTypes(sol::state& State)
 				return MakeObjectFromData(sol::state_view(s), pParam->GetRawValue());
 			return sol::object();
 		});
-		UT.set_function(sol::meta_function::new_index, [](Data::CParams& Self, const char* pKey, sol::object Value) { NOT_IMPLEMENTED; });
+		UT.set_function(sol::meta_function::new_index, [](Data::CParams& Self, const char* pKey, sol::stack_object Value) { NOT_IMPLEMENTED; });
 		RegisterStringOperations(UT);
 	}
 
@@ -111,7 +111,7 @@ void RegisterBasicTypes(sol::state& State)
 		{
 			return (Self.size() > i) ? MakeObjectFromData(sol::state_view(s), Self[i]) : sol::object();
 		});
-		UT.set_function(sol::meta_function::new_index, [](Data::CDataArray& Self, size_t i, sol::object Value) { NOT_IMPLEMENTED; });
+		UT.set_function(sol::meta_function::new_index, [](Data::CDataArray& Self, size_t i, sol::stack_object Value) { NOT_IMPLEMENTED; });
 	}
 
 	State.new_usertype<::Events::CEvent>("CEvent"
