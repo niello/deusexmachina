@@ -67,6 +67,7 @@ sol::usertype<T> RegisterVarStorage(sol::state& State, std::string_view Key)
 	UserType.set_function("Has", [](const T& Self, CStrID ID) { return !!Self.Find(ID); });
 
 	RegisterVarStorageTemplateMethods(UserType);
+	RegisterStringOperations(UserType);
 
 	UserType.set_function(sol::meta_function::index, [](const T& Self, std::string_view KeyStr, sol::this_state s)
 	{
@@ -96,8 +97,22 @@ sol::usertype<T> RegisterVarStorage(sol::state& State, std::string_view Key)
 			}
 			case sol::type::number:
 			{
-				if (Self.TrySet(Key, Value.as<int>())) return;
-				if (Self.TrySet(Key, Value.as<float>())) return;
+				if (Value.is<int>())
+				{
+					// TODO: 64 bit integers?
+					if (Self.TrySet(Key, Value.as<int>())) return;
+				}
+				else
+				{
+					if constexpr (T::Supports<double>())
+					{
+						if (Self.TrySet(Key, Value.as<double>())) return;
+					}
+					else
+					{
+						if (Self.TrySet(Key, Value.as<float>())) return;
+					}
+				}
 				break;
 			}
 			case sol::type::boolean:
@@ -107,9 +122,14 @@ sol::usertype<T> RegisterVarStorage(sol::state& State, std::string_view Key)
 			}
 			case sol::type::userdata:
 			case sol::type::lightuserdata:
+			{
+				// TODO: iterate over all supported storage types and try to get that type from Value?
+				NOT_IMPLEMENTED;
+				break;
+			}
 			case sol::type::table:
 			{
-				// TODO: iterate all supported storage types and try to get that type from Value?
+				// TODO: iterate over the table and add each record to the storage? But what about Key then?
 				NOT_IMPLEMENTED;
 				break;
 			}

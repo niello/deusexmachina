@@ -210,9 +210,13 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 	//!!!remember difference (or result?) in an ability instance params!
 	const int Difference = Math::RandomU32(1, 20) + SkillRollModifier - pLock->Difficulty;
 
-	//???!!!store in stack? or even in instance? not to rebuild each time
 	Game::CGameVarStorage Vars;
+	//Vars.Set(CStrID("Skill"), CStrID("Lockpicking"));
+	//Vars.Set(CStrID("Roll"), Roll);
+	// TODO: method to merge vars from one storage to another in an optimized way, type by type? Or a composite resolver to combine multiple storages?
 	TriggerStatusEffects(Session, *pWorld, Instance.Actor, CStrID("OnSkillCheck"), Vars, CBhvParamEqOrMissingPolicy{ CStrID("Skill"), CStrID("Lockpicking") });
+
+	// TODO: get possibly modified roll result from Vars. There also may be forced success or failure (determined by special roll values too?).
 
 	static_cast<CSkillCheckAbilityInstance&>(Instance).Difference = Difference;
 

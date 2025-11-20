@@ -144,14 +144,16 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 				// simply Subs.empty() is not enough, some sub-conditions may have subs, some others don't. Condition must set check-on-update request flag.
 				//???or, if this flag is set, subscriptions are of no use and can be cleared? Or subscribe not always for recalc?
 				//Instance.Magnitude = 0.f;
+
+				//???erase here instead of erase-remove? don't evaluate condition if magnitude is already <= 0.f!
 			}
 
 			// Remove instances expired by magnitude before further processing
 			Stack.Instances.erase(std::remove_if(Stack.Instances.begin(), Stack.Instances.end(), [](const auto& Instance) { return Instance.Magnitude <= 0.f; }), Stack.Instances.end());
 
-			// Trigger OnTime behaviours
 			if (!Stack.Instances.empty())
 			{
+				// Trigger OnTime behaviours on this stack
 				auto ItBhvs = Stack.pEffectData->Behaviours.find(CStrID("OnTime"));
 				if (ItBhvs != Stack.pEffectData->Behaviours.cend())
 				{

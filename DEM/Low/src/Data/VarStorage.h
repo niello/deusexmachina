@@ -333,3 +333,20 @@ struct ParamsFormat<CVarStorage<TVarTypes...>>
 };
 
 }
+
+namespace StringUtils
+{
+
+template<typename... TVarTypes>
+std::string ToString(const CVarStorage<TVarTypes...>& Value)
+{
+	std::string Result;
+	Value.Visit([&Result](CStrID RecordID, const auto& RecordValue)
+	{
+		Result.append("{} = {}\n"_format(RecordID, ToString(RecordValue)));
+	});
+	return Result;
+}
+//---------------------------------------------------------------------
+
+}

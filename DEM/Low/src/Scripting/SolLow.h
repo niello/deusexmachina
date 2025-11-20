@@ -73,7 +73,7 @@ void RegisterStringOperations(sol::usertype<T>& UserType)
 	UserType.set(sol::meta_function::concatenation, sol::overload(
 		[](std::string_view a, const T& b)
 		{
-			// TODO: ToString writing to the Out param would help here!
+			// TODO: ToString version with the Out param would help here!
 			std::string bStr = StringUtils::ToString(b);
 			std::string Result;
 			Result.reserve(a.size() + bStr.size());
