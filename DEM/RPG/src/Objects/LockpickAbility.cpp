@@ -19,6 +19,8 @@
 
 namespace DEM::RPG
 {
+static const CBhvParamEqOrMissingPolicy LockpickingSkillPolicy{ CStrID("Skill"), CStrID("Lockpicking") };
+
 void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID, CAppearanceComponent& AppearanceComponent, Resources::CResourceManager& RsrcMgr);
 
 static std::pair<Game::HEntity, int> FindBestLockpick(const Game::CGameWorld& World, Game::HEntity ActorID)
@@ -213,35 +215,7 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 
 	//???!!!store in stack? or even in instance? not to rebuild each time
 	Game::CGameVarStorage Vars;
-	//TriggerStatusEffects(Session, *pWorld, Instance.Actor, CStrID("OnSkillCheck"), &Vars);
-	if (const auto* pStatusEffectComponent = pWorld->FindComponent<const CStatusEffectsComponent>(Instance.Actor))
-	{
-		for (const auto& [ID, Stack] : pStatusEffectComponent->StatusEffectStacks)
-		{
-			auto ItBhvs = Stack.pEffectData->Behaviours.find(CStrID("OnSkillCheck"));
-			if (ItBhvs == Stack.pEffectData->Behaviours.cend()) continue;
-
-			for (const auto& Bhv : ItBhvs->second)
-			{
-				const auto Skill = Bhv.Params ? Bhv.Params->Get<CStrID>(CStrID("Skill"), {}) : CStrID{};
-				if (Skill && Skill != CStrID("Lockpicking")) continue;
-
-				float TotalMagnitude = 0.f;
-				for (auto& Instance : Stack.Instances)
-				{
-					//!!!TODO: to a function IsInstanceTriggered(Instance, Trigger)
-					if (Instance.SuspendBehaviourCounter || Instance.Magnitude <= 0.f || !Game::EvaluateCondition(Bhv.Condition, Session, &Vars)) continue;
-
-					TotalMagnitude += Instance.Magnitude; //???respect magnitude accumulation policy?
-				}
-
-				//!!!set TotalMagnitude to context!
-				//???handle firing this for each instance separately by magnitude accumulation policy? Sum / Max / Oldest / Newest / Separate; per-bhv.
-				if (TotalMagnitude > 0.f)
-					Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
-			}
-		}
-	}
+	TriggerStatusEffects(Session, *pWorld, Instance.Actor, CStrID("OnSkillCheck"), Vars, LockpickingSkillPolicy);
 
 	static_cast<CSkillCheckAbilityInstance&>(Instance).Difference = Difference;
 	if (Difference > 0)

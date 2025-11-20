@@ -1,5 +1,5 @@
 #pragma once
-#include <Game/GameVarStorage.h>
+#include <Character/StatusEffect.h>
 
 // ECS systems and utils for character status effect application and management
 
@@ -11,18 +11,26 @@ namespace DEM::Game
 
 namespace DEM::RPG
 {
-class CStatusEffectData;
-struct CStatusEffectInstance;
-struct CStatusEffectStack;
 
 bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars);
 bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, CStatusEffectInstance&& Instance);
-void TriggerStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity EntityID, CStrID Event, Game::CGameVarStorage& Vars);
 void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, float dt);
 
 HAS_METHOD_WITH_SIGNATURE_TRAIT(ShouldProcessBehaviour);
 HAS_METHOD_WITH_SIGNATURE_TRAIT(ShouldProcessInstance);
 struct CNoFilterPolicy {};
+
+struct CBhvParamEqOrMissingPolicy
+{
+	CStrID ParamID;
+	CStrID ExpectedValue;
+
+	bool ShouldProcessBehaviour(const CStatusEffectBehaviour& Bhv) const
+	{
+		const auto Skill = Bhv.Params ? Bhv.Params->Get<CStrID>(ParamID, ExpectedValue) : ExpectedValue;
+		return Skill == ExpectedValue;
+	}
+};
 
 template<typename TPolicy = CNoFilterPolicy>
 void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& Stack, CStrID Event, Game::CGameVarStorage& Vars, TPolicy Policy = {})
@@ -62,5 +70,15 @@ void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& 
 			Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
 	}
 }
+//---------------------------------------------------------------------
+
+template<typename TPolicy = CNoFilterPolicy>
+void TriggerStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity EntityID, CStrID Event, Game::CGameVarStorage& Vars, TPolicy Policy = {})
+{
+	if (const auto* pStatusEffectComponent = World.FindComponent<const CStatusEffectsComponent>(EntityID))
+		for (const auto& [ID, Stack] : pStatusEffectComponent->StatusEffectStacks)
+			TriggerStatusEffect(Session, Stack, Event, Vars, Policy);
+}
+//---------------------------------------------------------------------
 
 }

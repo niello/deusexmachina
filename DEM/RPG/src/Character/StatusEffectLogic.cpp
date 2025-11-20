@@ -1,5 +1,4 @@
 #include "StatusEffectLogic.h"
-#include <Character/StatusEffect.h>
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
 
@@ -123,14 +122,6 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	}
 
 	return false;
-}
-//---------------------------------------------------------------------
-
-void TriggerStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity EntityID, CStrID Event, Game::CGameVarStorage& Vars)
-{
-	if (const auto* pStatusEffectComponent = World.FindComponent<const CStatusEffectsComponent>(EntityID))
-		for (const auto& [ID, Stack] : pStatusEffectComponent->StatusEffectStacks)
-			TriggerStatusEffect(Session, Stack, Event, Vars);
 }
 //---------------------------------------------------------------------
 
