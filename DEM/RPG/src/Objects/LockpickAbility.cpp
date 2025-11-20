@@ -19,8 +19,6 @@
 
 namespace DEM::RPG
 {
-static const CBhvParamEqOrMissingPolicy LockpickingSkillPolicy{ CStrID("Skill"), CStrID("Lockpicking") };
-
 void RebuildCharacterAppearance(Game::CGameWorld& World, Game::HEntity EntityID, CAppearanceComponent& AppearanceComponent, Resources::CResourceManager& RsrcMgr);
 
 static std::pair<Game::HEntity, int> FindBestLockpick(const Game::CGameWorld& World, Game::HEntity ActorID)
@@ -210,14 +208,15 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 	// FIXME: use Session.RNG, call utility method Sh2::SkillCheck(Actor, Lockpicking, Source)
 	//!!!choose animation!
 	//!!!remember difference (or result?) in an ability instance params!
-	CStrID AnimAction;
 	const int Difference = Math::RandomU32(1, 20) + SkillRollModifier - pLock->Difficulty;
 
 	//???!!!store in stack? or even in instance? not to rebuild each time
 	Game::CGameVarStorage Vars;
-	TriggerStatusEffects(Session, *pWorld, Instance.Actor, CStrID("OnSkillCheck"), Vars, LockpickingSkillPolicy);
+	TriggerStatusEffects(Session, *pWorld, Instance.Actor, CStrID("OnSkillCheck"), Vars, CBhvParamEqOrMissingPolicy{ CStrID("Skill"), CStrID("Lockpicking") });
 
 	static_cast<CSkillCheckAbilityInstance&>(Instance).Difference = Difference;
+
+	CStrID AnimAction;
 	if (Difference > 0)
 	{
 		// success
