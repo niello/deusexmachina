@@ -15,6 +15,7 @@ namespace DEM::RPG
 bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars);
 bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, CStatusEffectInstance&& Instance);
 void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, float dt);
+bool ShouldProcessStatusEffectsInstance(Game::CGameSession& Session, const CStatusEffectInstance& Instance, const CStatusEffectBehaviour& Bhv, const Game::CGameVarStorage& Vars);
 
 HAS_METHOD_WITH_SIGNATURE_TRAIT(ShouldProcessBehaviour);
 HAS_METHOD_WITH_SIGNATURE_TRAIT(ShouldProcessInstance);
@@ -43,6 +44,8 @@ void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& 
 	//???get source ID from the first instance? or add only if has a single instance / if is the same in all instances?
 	//???TODO: clear Vars from magnitude etc at the end?
 
+	n_assert(!Stack.Instances.empty());
+
 	auto ItBhvs = Stack.pEffectData->Behaviours.find(Event);
 	if (ItBhvs == Stack.pEffectData->Behaviours.cend()) return;
 
@@ -55,8 +58,7 @@ void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& 
 		float TotalMagnitude = 0.f;
 		for (const auto& Instance : Stack.Instances)
 		{
-			//!!!TODO: to a function IsInstanceTriggered(Instance, Trigger)
-			if (Instance.SuspendBehaviourCounter || Instance.Magnitude <= 0.f || !Game::EvaluateCondition(Bhv.Condition, Session, &Vars)) continue;
+			if (!ShouldProcessStatusEffectsInstance(Session, Instance, Bhv, Vars)) continue;
 
 			if constexpr (has_method_with_signature_ShouldProcessInstance_v<TPolicy, bool(const CStatusEffectInstance&)>)
 				if (!Policy.ShouldProcessInstance(Instance)) continue;

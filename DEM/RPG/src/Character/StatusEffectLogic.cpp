@@ -170,8 +170,7 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 						float TotalMagnitude = 0.f;
 						for (const auto& Instance : Stack.Instances)
 						{
-							//!!!TODO: to a function IsInstanceTriggered(Instance, Trigger)
-							if (Instance.SuspendBehaviourCounter || Instance.Magnitude <= 0.f || !Game::EvaluateCondition(Bhv.Condition, Session, &Vars)) continue;
+							if (!ShouldProcessStatusEffectsInstance(Session, Instance, Bhv, Vars)) continue;
 
 							const float PrevTime = Instance.Time;
 							const float NewTime = PrevTime + dt;
@@ -232,6 +231,13 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 			//e.g. OnMagnitudeChange -> set modifier Strength -Mag. Or OnEachHit -> add modifier Strength -Mag. Different types of effects.
 		}
 	});
+}
+//---------------------------------------------------------------------
+
+bool ShouldProcessStatusEffectsInstance(Game::CGameSession& Session, const CStatusEffectInstance& Instance,
+	const CStatusEffectBehaviour& Bhv, const Game::CGameVarStorage& Vars)
+{
+	return !Instance.SuspendBehaviourCounter && Instance.Magnitude > 0.f && Game::EvaluateCondition(Bhv.Condition, Session, &Vars);
 }
 //---------------------------------------------------------------------
 
