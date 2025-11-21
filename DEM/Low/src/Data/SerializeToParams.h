@@ -5,6 +5,7 @@
 #include <Data/DataArray.h>
 #include <Data/Algorithms.h>
 #include <Data/FixedArray.h> // for specialization
+#include <Data/Enum.h>
 #include <Math/SIMDMath.h> // for specializations
 #include <optional>
 
@@ -616,6 +617,31 @@ struct ParamsFormat<std::optional<T>>
 			T NewValue{};
 			ParamsFormat<T>::Deserialize(Input, NewValue);
 			Value = std::move(NewValue);
+		}
+	}
+};
+
+template<typename T>
+struct ParamsFormat<T, typename std::enable_if_t<std::is_enum_v<std::decay_t<T>>>>
+{
+	using TDecay = std::decay_t<T>;
+
+	static inline void Serialize(Data::CData& Output, TDecay Value)
+	{
+		Output = StringUtils::ToString(Value);
+	}
+
+	static inline void Deserialize(const Data::CData& Input, TDecay& Value)
+	{
+		if (auto* pInput = Input.As<std::string>())
+		{
+			if (auto EnumOpt = magic_enum::enum_cast<TDecay>(*pInput))
+				Value = EnumOpt.value();
+		}
+		else if (auto* pInput = Input.As<int>())
+		{
+			if (auto EnumOpt = magic_enum::enum_cast<TDecay>(*pInput))
+				Value = EnumOpt.value();
 		}
 	}
 };

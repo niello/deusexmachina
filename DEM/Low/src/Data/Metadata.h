@@ -37,6 +37,21 @@ template<typename T, typename U> inline bool IsEqualByValue(const T& a, const U&
 		return a == b;
 }
 
+// TODO: to StringUtils?
+template<typename TCallback, typename TDelimiter>
+static constexpr void SplitString(std::string_view Value, TDelimiter Delimiter, TCallback Callback)
+{
+	size_t Index = 0;
+	size_t Start = 0;
+	size_t Pos = 0;
+	while ((Pos = Value.find(Delimiter, Start)) != std::string_view::npos)
+	{
+		Callback(Index, Value.substr(Start, Pos - Start));
+		++Index;
+		Start = Pos + Delimiter.size();
+	}
+}
+
 // Access this to work with registered types
 template<typename T>
 class CMetadata final
@@ -60,16 +75,7 @@ public:
 	template<typename TCallback>
 	static constexpr void ForEachNamespace(TCallback Callback)
 	{
-		size_t Index = 0;
-		size_t Start = 0;
-		size_t Pos = 0;
-		constexpr std::string_view FullName = GetClassName();
-		while ((Pos = FullName.find(NamespaceDelimiter, Start)) != std::string_view::npos)
-		{
-			Callback(Index, FullName.substr(Start, Pos - Start));
-			++Index;
-			Start = Pos + NamespaceDelimiter.size();
-		}
+		SplitString(GetClassName(), NamespaceDelimiter, Callback);
 	}
 
 	static constexpr std::string_view GetUnqualifiedClassName()

@@ -83,18 +83,21 @@ void RegisterStringOperations(sol::usertype<T>& UserType)
 }
 //---------------------------------------------------------------------
 
+inline sol::table Namespace(sol::state_view& State, std::string_view FullName, std::string_view Delimiter = ".")
+{
+	sol::table Table = State.globals();
+	Meta::SplitString(FullName, Delimiter, [&Table](size_t /*Index*/, std::string_view NamespaceName)
+	{
+		Table = EnsureTable(Table, NamespaceName);
+	});
+	return Table;
+}
+//---------------------------------------------------------------------
+
 template<typename T>
 sol::table Namespace(sol::state_view& State)
 {
-	sol::table Table = State.globals();
-	if constexpr (Meta::CMetadata<T>::IsRegistered)
-	{
-		Meta::CMetadata<T>::ForEachNamespace([&Table](size_t /*Index*/, std::string_view NamespaceName)
-		{
-			Table = EnsureTable(Table, NamespaceName);
-		});
-	}
-	return Table;
+	return Namespace(State, Meta::CMetadata<T>::GetClassName(), "::");
 }
 //---------------------------------------------------------------------
 
@@ -119,6 +122,29 @@ sol::usertype<T> RegisterTypeWithMetadata(sol::state_view& State, TArgs&&... Arg
 	auto UserType = Namespace<T>(State).new_usertype<T>(Meta::CMetadata<T>::GetUnqualifiedClassName(), std::forward<TArgs>(Args)...);
 	RegisterMetadataFields(UserType);
 	return UserType;
+}
+//---------------------------------------------------------------------
+
+// Reverse enum_entries(). Things would be much easier if magic_enum would also offer (Name, Value) entry list.
+template <typename T, size_t... Is>
+void RegisterEnumImpl(sol::table Table, std::string_view Name, std::index_sequence<Is...>) {
+	constexpr auto Entries = magic_enum::enum_entries<T>();
+	Table.new_enum(Name, { std::make_pair(Entries[Is].second, Entries[Is].first)... });
+}
+//---------------------------------------------------------------------
+
+template <typename T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
+void RegisterEnum(sol::state_view& State, std::string_view Name = {})
+{
+	constexpr std::string_view Dlm = "::"sv;
+
+	if (Name.empty()) Name = magic_enum::enum_type_name<T>();
+
+	// Separate type name from namespace
+	const size_t Pos = Name.rfind(Dlm);
+	const auto UnqualifiedName = (Pos != std::string_view::npos) ? Name.substr(Pos + Dlm.size()) : Name;
+
+	RegisterEnumImpl<T>(Namespace(State, Name, Dlm), UnqualifiedName, std::make_index_sequence<magic_enum::enum_count<T>()>{});
 }
 //---------------------------------------------------------------------
 
@@ -163,12 +189,6 @@ auto ObjectToString(const sol::object& Object, sol::state_view& State, F Callbac
 			return Callback("Non-printable object of type " + TypeName);
 		}
 	}
-}
-//---------------------------------------------------------------------
-
-inline sol::function LoadFunction(sol::state_view& State, std::string_view)
-{
-	//
 }
 //---------------------------------------------------------------------
 
