@@ -1,6 +1,7 @@
 #pragma once
 #include <Core/Object.h>
 #include <Data/StringID.h>
+#include <Data/Enum.h>
 #include <Game/ECS/Entity.h>
 #include <Scripting/Condition.h>
 #include <Scripting/CommandList.h>
@@ -11,11 +12,21 @@ namespace DEM::RPG
 {
 constexpr float STATUS_EFFECT_INFINITE = std::numeric_limits<float>::infinity();
 
+enum class EStatusEffectMagnitudePolicy : U8
+{
+	Sum,
+	Max,
+	Oldest,
+	Newest,
+	Separate
+};
+
 struct CStatusEffectBehaviour
 {
-	Data::PParams        Params;
-	Game::CConditionData Condition;
-	Game::CCommandList   Commands;
+	Data::PParams                Params;
+	Game::CConditionData         Condition;
+	Game::CCommandList           Commands;
+	EStatusEffectMagnitudePolicy MagnitudePolicy = EStatusEffectMagnitudePolicy::Sum;
 };
 
 class CStatusEffectData : public Core::CObject
@@ -112,7 +123,8 @@ template<> constexpr auto RegisterMembers<RPG::CStatusEffectBehaviour>()
 	(
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Params),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Condition),
-		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Commands)
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Commands),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, MagnitudePolicy)
 	);
 }
 static_assert(CMetadata<RPG::CStatusEffectBehaviour>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
