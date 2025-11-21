@@ -20,6 +20,7 @@ option(DEM_DEPS_DISABLE_CXX_EXCEPTIONS "Disable C++ exceptions" ON)
 option(DEM_DEPS_DISABLE_CXX_RTTI "Disable C++ RTTI" ON)
 
 include(DEMCMakeUtils.cmake)
+include("${CMAKE_CURRENT_SOURCE_DIR}/acl/cmake/CMakeUtils.cmake") # for create_source_groups
 
 if(MSVC AND DEM_DEPS_DISABLE_CXX_EXCEPTIONS)
 	if(CMAKE_CXX_FLAGS MATCHES "/EHsc")
@@ -33,26 +34,34 @@ endif()
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/fmt") # target: fmt or alias fmt::fmt
 target_compile_definitions(fmt PRIVATE FMT_USE_EXCEPTIONS=0)
 
+# Dependency: magic_enum
+
+add_library(magic_enum INTERFACE)
+target_include_directories(magic_enum INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/magic_enum/include")
+
+file(GLOB_RECURSE RTM_INCLUDE_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_SOURCE_DIR}/magic_enum/include/*.*)
+create_source_groups("${RTM_INCLUDE_FILES}" ${CMAKE_CURRENT_SOURCE_DIR}/magic_enum)
+add_custom_target(magic_enum_ SOURCES ${RTM_INCLUDE_FILES})
+
 # Dependency: RTM
 
 add_library(rtm INTERFACE)
 target_include_directories(rtm INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/rtm/includes")
+
+file(GLOB_RECURSE RTM_INCLUDE_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_SOURCE_DIR}/rtm/includes/*.h)
+create_source_groups("${RTM_INCLUDE_FILES}" ${CMAKE_CURRENT_SOURCE_DIR}/rtm)
+add_custom_target(rtm_ SOURCES ${RTM_INCLUDE_FILES})
 
 # Dependency: ACL
 
 add_library(acl INTERFACE)
 target_include_directories(acl INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/acl/includes")
 
-# ACL & RTM custom targets for displaying files in IDE
-
-include("${CMAKE_CURRENT_SOURCE_DIR}/acl/cmake/CMakeUtils.cmake")
+# custom target for displaying files in IDE
 file(GLOB_RECURSE ACL_INCLUDE_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_SOURCE_DIR}/acl/includes/*.h)
 create_source_groups("${ACL_INCLUDE_FILES}" ${CMAKE_CURRENT_SOURCE_DIR}/acl)
 file(GLOB_RECURSE NATVIS_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_SOURCE_DIR}/acl/*.natvis)
 add_custom_target(acl_ SOURCES ${ACL_INCLUDE_FILES} ${NATVIS_FILES})
-file(GLOB_RECURSE RTM_INCLUDE_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_SOURCE_DIR}/rtm/includes/*.h)
-create_source_groups("${RTM_INCLUDE_FILES}" ${CMAKE_CURRENT_SOURCE_DIR}/rtm)
-add_custom_target(rtm_ SOURCES ${RTM_INCLUDE_FILES})
 
 # Dependency: Lua
 

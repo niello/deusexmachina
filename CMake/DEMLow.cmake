@@ -51,6 +51,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/DataArray.h
 	DEM/Low/src/Data/DataScheme.h
 	DEM/Low/src/Data/DynamicEnum.h
+	DEM/Low/src/Data/Enum.h
 	DEM/Low/src/Data/FixedArray.h
 	DEM/Low/src/Data/FixedOrderMap.h
 	DEM/Low/src/Data/Flags.h
@@ -65,7 +66,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/MemberAccess.h
 	DEM/Low/src/Data/Metadata.h
 	DEM/Low/src/Data/MurmurHash3.h
-	DEM/Low/src/Data/PairT.h
 	DEM/Low/src/Data/Param.h
 	DEM/Low/src/Data/Params.h
 	DEM/Low/src/Data/ParamsTextResolver.h
