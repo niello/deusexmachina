@@ -29,23 +29,19 @@ struct CBhvParamEqOrMissingPolicy
 
 	bool ShouldProcessBehaviour(const CStatusEffectBehaviour& Bhv) const
 	{
-		const auto Skill = Bhv.Params ? Bhv.Params->Get<CStrID>(ParamID, ExpectedValue) : ExpectedValue;
-		return Skill == ExpectedValue;
+		return !Bhv.Params || Bhv.Params->Get<CStrID>(ParamID, ExpectedValue) == ExpectedValue;
 	}
 };
 
 template<typename TPolicy = CNoFilterPolicy>
 void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& Stack, CStrID Event, Game::CGameVarStorage& Vars, TPolicy Policy = {})
 {
-	//???!!!store Vars in component? in stack? or even in instance? not to rebuild each time
-	//!!!if done, don't forget to remove redundant empty check above!
+	n_assert(!Stack.Instances.empty());
 
-	//!!!TODO: fill Vars with magnitude etc
 	//!!!source and target can be written to Vars, like in Flow! See ResolveEntityID, same as for e.g. conversation Initiator.
 	//???get source ID from the first instance? or add only if has a single instance / if is the same in all instances?
-	//???TODO: clear Vars from magnitude etc at the end?
-
-	n_assert(!Stack.Instances.empty());
+	//!!!for all magnitude policies except sum can determine source etc, because a single Instance is selected!
+	Vars.Set(CStrID("StatusEffectID"), Stack.pEffectData->ID);
 
 	auto ItBhvs = Stack.pEffectData->Behaviours.find(Event);
 	if (ItBhvs == Stack.pEffectData->Behaviours.cend()) return;
@@ -69,10 +65,12 @@ void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& 
 
 		if (PendingMagnitude > 0.f)
 		{
-			//!!!set PendingMagnitude to context!
+			Vars.Set(CStrID("Magnitude"), PendingMagnitude);
 			Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
 		}
 	}
+
+	//???TODO: clear Vars from stack and instance vars?
 }
 //---------------------------------------------------------------------
 

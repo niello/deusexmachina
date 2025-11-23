@@ -1,7 +1,6 @@
 #pragma once
 #include <Core/Object.h>
 #include <Data/StringID.h>
-#include <Data/Enum.h>
 #include <Game/ECS/Entity.h>
 #include <Scripting/Condition.h>
 #include <Scripting/CommandList.h>

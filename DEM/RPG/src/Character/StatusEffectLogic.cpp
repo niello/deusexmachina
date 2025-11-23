@@ -154,8 +154,10 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 		//???!!!store in stack? or even in instance? not to rebuild each time
 		Game::CGameVarStorage Vars;
 
-		for (auto& [ID, Stack] : StatusEffects.StatusEffectStacks)
+		for (auto ItStack = StatusEffects.StatusEffectStacks.begin(); ItStack != StatusEffects.StatusEffectStacks.end(); /**/)
 		{
+			auto& [ID, Stack] = *ItStack;
+
 			// Check instance expiration from conditions
 			for (auto& Instance : Stack.Instances)
 			{
@@ -197,40 +199,40 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 
 						if (PendingMagnitude > 0.f)
 						{
-							//!!!set PendingMagnitude to context!
+							Vars.Set(CStrID("Magnitude"), PendingMagnitude);
 							Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
 						}
 					}
 				}
 
 				// Advance instance time and remove instances expired by time
-				for (auto It = Stack.Instances.begin(); It != Stack.Instances.end(); /**/)
+				for (auto ItInstance = Stack.Instances.begin(); ItInstance != Stack.Instances.end(); /**/)
 				{
-					if (!It->SuspendLifetimeCounter)
+					if (!ItInstance->SuspendLifetimeCounter)
 					{
-						if (It->RemainingTime <= dt)
+						if (ItInstance->RemainingTime <= dt)
 						{
-							It = Stack.Instances.erase(It);
+							ItInstance = Stack.Instances.erase(ItInstance);
 							continue;
 						}
 
-						It->RemainingTime -= dt;
+						ItInstance->RemainingTime -= dt;
 					}
 
-					It->Time += dt;
-					++It;
+					ItInstance->Time += dt;
+					++ItInstance;
 				}
 			}
 
+			// Remove totally expired status effect stacks
 			if (Stack.Instances.empty())
 			{
 				TriggerStatusEffect(Session, Stack, CStrID("OnRemoved"), Vars);
-
-				// delete expired stack
+				ItStack = StatusEffects.StatusEffectStacks.erase(ItStack);
+				continue;
 			}
 
-			//!!!document the problem with adding modifiers from different commands! can be cumulative or overwriting!
-			//e.g. OnMagnitudeChange -> set modifier Strength -Mag. Or OnEachHit -> add modifier Strength -Mag. Different types of effects.
+			++ItStack;
 		}
 	});
 }
@@ -272,7 +274,7 @@ void ProcessStatusEffectsInstance(Game::CGameSession& Session, float Magnitude, 
 		}
 		case EStatusEffectMagnitudePolicy::Separate:
 		{
-			//!!!TODO: set magnitude from instance!
+			Vars.Set(CStrID("Magnitude"), Magnitude);
 			Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
 			break;
 		}
