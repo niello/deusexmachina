@@ -16,6 +16,7 @@ bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams*
 bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, CStatusEffectInstance&& Instance);
 void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, float dt);
 bool ShouldProcessStatusEffectsInstance(Game::CGameSession& Session, const CStatusEffectInstance& Instance, const CStatusEffectBehaviour& Bhv, const Game::CGameVarStorage& Vars);
+void ProcessStatusEffectsInstance(Game::CGameSession& Session, float Magnitude, const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars, float& PendingMagnitude);
 
 HAS_METHOD_WITH_SIGNATURE_TRAIT(ShouldProcessBehaviour);
 HAS_METHOD_WITH_SIGNATURE_TRAIT(ShouldProcessInstance);
@@ -55,7 +56,7 @@ void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& 
 			if (!Policy.ShouldProcessBehaviour(Bhv)) continue;
 
 		//!!!if bhv condition would be instance-independent, magnitude could be recalculated only when dirty, by the accumulation policy.
-		float TotalMagnitude = 0.f;
+		float PendingMagnitude = 0.f;
 		for (const auto& Instance : Stack.Instances)
 		{
 			if (!ShouldProcessStatusEffectsInstance(Session, Instance, Bhv, Vars)) continue;
@@ -63,13 +64,14 @@ void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& 
 			if constexpr (has_method_with_signature_ShouldProcessInstance_v<TPolicy, bool(const CStatusEffectInstance&)>)
 				if (!Policy.ShouldProcessInstance(Instance)) continue;
 
-			TotalMagnitude += Instance.Magnitude; //???respect magnitude accumulation policy?
+			ProcessStatusEffectsInstance(Session, Instance.Magnitude, Bhv, Vars, PendingMagnitude);
 		}
 
-		//!!!set TotalMagnitude to context!
-		//???handle firing this for each instance separately by magnitude accumulation policy? Sum / Max / Oldest / Newest / Separate; per-bhv.
-		if (TotalMagnitude > 0.f)
+		if (PendingMagnitude > 0.f)
+		{
+			//!!!set PendingMagnitude to context!
 			Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
+		}
 	}
 }
 //---------------------------------------------------------------------

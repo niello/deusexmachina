@@ -125,6 +125,25 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 }
 //---------------------------------------------------------------------
 
+static size_t CalcTimeTriggerActivationCount(float PrevTime, float dt, float Delay, float Period)
+{
+	const float NewTime = PrevTime + dt;
+	const bool WaitFirstTick = ((!PrevTime && !Delay) || PrevTime < Delay);
+
+	if (Period <= 0.f)
+		return WaitFirstTick && Delay <= NewTime; // will return 1 or 0
+
+	float NextTickTime = WaitFirstTick ? Delay : (PrevTime + Period - std::fmodf(PrevTime - Delay, Period));
+	size_t TickCount = 0;
+	while (NextTickTime <= NewTime)
+	{
+		++TickCount;
+		NextTickTime += Period;
+	}
+	return TickCount;
+}
+//---------------------------------------------------------------------
+
 void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, float dt)
 {
 	// Tick logic requires dt > 0, or the same tick might happen multiple times
@@ -165,39 +184,22 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 
 						const float Delay = Bhv.Params->Get<float>(CStrID("Delay"), 0.f);
 						const float Period = Bhv.Params->Get<float>(CStrID("Period"), 0.f);
-						const bool IsOneTime = (Period <= 0.f);
 
-						float TotalMagnitude = 0.f;
+						float PendingMagnitude = 0.f;
 						for (const auto& Instance : Stack.Instances)
 						{
 							if (!ShouldProcessStatusEffectsInstance(Session, Instance, Bhv, Vars)) continue;
 
-							const float PrevTime = Instance.Time;
-							const float NewTime = PrevTime + dt;
-							const bool WaitFirstTick = ((!PrevTime && !Delay) || PrevTime < Delay);
-
-							if (IsOneTime)
-							{
-								if (WaitFirstTick && Delay <= NewTime)
-									TotalMagnitude += Instance.Magnitude; //???respect magnitude accumulation policy?
-							}
-							else
-							{
-								//!!!???instead of loop can calculate tick index prev and new, and apply resulting tick number!
-								float NextTickTime = WaitFirstTick ? Delay : (PrevTime + Period - std::fmodf(PrevTime - Delay, Period));
-								while (NextTickTime <= NewTime)
-								{
-									//???or trigger OnTime each time separately?
-									//???respect magnitude accumulation policy?
-									TotalMagnitude += Instance.Magnitude;
-									NextTickTime += Period;
-								}
-							}
+							const auto ActivationCount = CalcTimeTriggerActivationCount(Instance.Time, dt, Delay, Period);
+							for (size_t i = 0; i < ActivationCount; ++i)
+								ProcessStatusEffectsInstance(Session, Instance.Magnitude, Bhv, Vars, PendingMagnitude);
 						}
 
-						//!!!set TotalMagnitude to context!
-						if (TotalMagnitude > 0.f)
+						if (PendingMagnitude > 0.f)
+						{
+							//!!!set PendingMagnitude to context!
 							Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
+						}
 					}
 				}
 
@@ -238,6 +240,43 @@ bool ShouldProcessStatusEffectsInstance(Game::CGameSession& Session, const CStat
 	const CStatusEffectBehaviour& Bhv, const Game::CGameVarStorage& Vars)
 {
 	return !Instance.SuspendBehaviourCounter && Instance.Magnitude > 0.f && Game::EvaluateCondition(Bhv.Condition, Session, &Vars);
+}
+//---------------------------------------------------------------------
+
+void ProcessStatusEffectsInstance(Game::CGameSession& Session, float Magnitude, const CStatusEffectBehaviour& Bhv,
+	Game::CGameVarStorage& Vars, float& PendingMagnitude)
+{
+	switch (Bhv.MagnitudePolicy)
+	{
+		case EStatusEffectMagnitudePolicy::Sum:
+		{
+			PendingMagnitude += Magnitude;
+			break;
+		}
+		case EStatusEffectMagnitudePolicy::Max:
+		{
+			if (PendingMagnitude < Magnitude)
+				PendingMagnitude = Magnitude;
+			break;
+		}
+		case EStatusEffectMagnitudePolicy::Oldest:
+		{
+			if (PendingMagnitude <= 0.f)
+				PendingMagnitude = Magnitude;
+			break;
+		}
+		case EStatusEffectMagnitudePolicy::Newest:
+		{
+			PendingMagnitude = Magnitude;
+			break;
+		}
+		case EStatusEffectMagnitudePolicy::Separate:
+		{
+			//!!!TODO: set magnitude from instance!
+			Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
+			break;
+		}
+	}
 }
 //---------------------------------------------------------------------
 
