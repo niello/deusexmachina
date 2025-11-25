@@ -628,7 +628,11 @@ struct ParamsFormat<T, typename std::enable_if_t<std::is_enum_v<std::decay_t<T>>
 
 	static inline void Serialize(Data::CData& Output, TDecay Value)
 	{
-		Output = StringUtils::ToString(Value);
+		auto ValueStr = StringUtils::ToString(Value);
+		if (ValueStr.empty())
+			Output.Clear();
+		else
+			Output = std::move(ValueStr);
 	}
 
 	static inline void Deserialize(const Data::CData& Input, TDecay& Value)
@@ -636,6 +640,11 @@ struct ParamsFormat<T, typename std::enable_if_t<std::is_enum_v<std::decay_t<T>>
 		if (auto* pInput = Input.As<std::string>())
 		{
 			if (auto EnumOpt = magic_enum::enum_cast<TDecay>(*pInput))
+				Value = EnumOpt.value();
+		}
+		else if (auto* pInput = Input.As<CStrID>())
+		{
+			if (auto EnumOpt = magic_enum::enum_cast<TDecay>(pInput->ToStringView()))
 				Value = EnumOpt.value();
 		}
 		else if (auto* pInput = Input.As<int>())
