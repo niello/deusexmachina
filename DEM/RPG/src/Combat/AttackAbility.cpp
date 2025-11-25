@@ -228,10 +228,11 @@ static void ApplyDamageFromAbility(Game::CGameSession& Session, Game::CGameWorld
 	//???don't calculate damage in advance? only check hit/miss type? or need for special effects / animation choosing?
 	InflictDamage(World, Instance.Targets[0].Entity, Instance.Location, Instance.Damage, Instance.DamageType, Instance.Actor);
 
+	//!!!instead of OnHit, must use same triggers as status effects!
 	if (const auto* pWeaponComponent = FindCurrentWeapon(World, Instance.Actor))
 		Game::ExecuteCommandList(pWeaponComponent->OnHit, Session, &Vars);
 
-	//???no special commands from ability here? need special abilities to cast additional effects?
+	//???no special commands from ability here? need special abilities (not generic attack ability) to cast additional effects?
 
 	TriggerStatusEffects(Session, World, Instance.Actor, CStrID("OnDamageDealt"), Vars);
 	TriggerStatusEffects(Session, World, Instance.Targets[0].Entity, CStrID("OnDamaged"), Vars);

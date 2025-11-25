@@ -190,9 +190,9 @@ bool CLockpickAbility::GetFacingParams(const Game::CGameSession& Session, const 
 
 void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstance& Instance) const
 {
-	auto pWorld = Session.FindFeature<Game::CGameWorld>();
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return;
-	auto pLock = pWorld->FindComponent<CLockComponent>(Instance.Targets[0].Entity);
+	auto* pLock = pWorld->FindComponent<CLockComponent>(Instance.Targets[0].Entity);
 	if (!pLock) return;
 
 	// TODO: activate trap if there is one triggered by lockpicking!
@@ -206,18 +206,15 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 	constexpr int JammingFailureThreshold = -10;
 
 	// FIXME: use Session.RNG, call utility method Sh2::SkillCheck(Actor, Lockpicking, Source)
-	//!!!choose animation!
-	//!!!remember difference (or result?) in an ability instance params!
-	const int Difference = Math::RandomU32(1, 20) + SkillRollModifier - pLock->Difficulty;
+	const int Roll = Math::RandomU32(1, 20) + SkillRollModifier;
 
 	Game::CGameVarStorage Vars;
-	//Vars.Set(CStrID("Skill"), CStrID("Lockpicking"));
-	//Vars.Set(CStrID("Roll"), Roll);
-	// TODO: method to merge vars from one storage to another in an optimized way, type by type? Or a composite resolver to combine multiple storages?
+	Vars.Set(CStrID("Skill"), CStrID("Lockpicking"));
+	const auto HRoll = Vars.Set(CStrID("Roll"), Roll);
 	TriggerStatusEffects(Session, *pWorld, Instance.Actor, CStrID("OnSkillCheck"), Vars, CBhvParamEqOrMissingPolicy{ CStrID("Skill"), CStrID("Lockpicking") });
 
-	// TODO: get possibly modified roll result from Vars. There also may be forced success or failure (determined by special roll values too?).
-
+	// TODO: there also may be forced success or failure (determined by special roll values?).
+	const int Difference = Vars.Get(HRoll, Roll) - pLock->Difficulty;
 	static_cast<CSkillCheckAbilityInstance&>(Instance).Difference = Difference;
 
 	CStrID AnimAction;
@@ -250,7 +247,7 @@ void CLockpickAbility::OnStart(Game::CGameSession& Session, Game::CAbilityInstan
 		SheatheAllItems(*pWorld, Instance.Actor);
 
 		// FIXME: trigger from inside the SheatheAllItems / UnsheatheAllItems
-		if (auto pAppearance = pWorld->FindComponent<CAppearanceComponent>(Instance.Actor))
+		if (auto* pAppearance = pWorld->FindComponent<CAppearanceComponent>(Instance.Actor))
 			RebuildCharacterAppearance(*pWorld, Instance.Actor, *pAppearance, Session.GetResourceManager()); // FIXME: where to get ResourceManager properly?!
 	}
 

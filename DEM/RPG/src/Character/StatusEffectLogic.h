@@ -38,6 +38,9 @@ void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& 
 {
 	n_assert(!Stack.Instances.empty());
 
+	// TODO: method to merge vars from one storage to another in an optimized way, type by type? Or a composite
+	// resolver to combine multiple storages? Then could merge pre-baked stack or instance vars into external Vars.
+
 	//!!!source and target can be written to Vars, like in Flow! See ResolveEntityID, same as for e.g. conversation Initiator.
 	//???get source ID from the first instance? or add only if has a single instance / if is the same in all instances?
 	//!!!for all magnitude policies except sum can determine source etc, because a single Instance is selected!

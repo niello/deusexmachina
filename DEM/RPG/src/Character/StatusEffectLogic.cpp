@@ -159,14 +159,22 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 			auto& [ID, Stack] = *ItStack;
 
 			// Check instance expiration from conditions
-			for (auto& Instance : Stack.Instances)
+			for (auto ItInstance = Stack.Instances.begin(); ItInstance != Stack.Instances.end(); /**/)
 			{
-				//!!!check expiration by signal-less expiration conditions! need flag out arg in SubscribeRelevantEvents to identify this case!
-				// simply Subs.empty() is not enough, some sub-conditions may have subs, some others don't. Condition must set check-on-update request flag.
-				//???or, if this flag is set, subscriptions are of no use and can be cleared? Or subscribe not always for recalc?
-				//Instance.Magnitude = 0.f;
+				if (ItInstance->Magnitude > 0.f)
+				{
+					//!!!check expiration by signal-less expiration conditions! need flag out arg in SubscribeRelevantEvents to identify this case!
+					// simply Subs.empty() is not enough, some sub-conditions may have subs, some others don't. Condition must set check-on-update request flag.
+					//???or, if this flag is set, subscriptions are of no use and can be cleared? Or subscribe not always for recalc?
+					const bool Expired = false;
+					if (!Expired)
+					{
+						++ItInstance;
+						continue;
+					}
+				}
 
-				//???erase here instead of erase-remove? don't evaluate condition if magnitude is already <= 0.f!
+				ItInstance = Stack.Instances.erase(ItInstance);
 			}
 
 			// Remove instances expired by magnitude before further processing
