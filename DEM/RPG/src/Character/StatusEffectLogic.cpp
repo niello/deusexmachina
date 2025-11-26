@@ -1,6 +1,7 @@
 #include "StatusEffectLogic.h"
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
+#include <Scripting/LogicRegistry.h>
 
 namespace DEM::RPG
 {
@@ -105,9 +106,24 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	else
 	{
 		// Add a new instance
-		Stack.Instances.push_back(std::move(Instance));
 
-		// TODO: subscribe on expiration condition events
+		// Clear magnitude when expiration condition is met. This effectively invalidates an instance.
+		if (const auto* pConditions = Session.FindFeature<Game::CLogicRegistry>())
+		{
+			if (auto* pCondition = pConditions->FindCondition(Instance.ExpirationCondition.Type))
+			{
+				//!!!pass stack or instance vars!
+				pCondition->SubscribeRelevantEvents(Instance.ExpirationSubs, { Instance.ExpirationCondition, Session, nullptr },
+					[&Instance, &Session](std::unique_ptr<Game::CGameVarStorage>& EventVars)
+				{
+					//???merge event vars with initial ones?
+					if (Game::EvaluateCondition(Instance.ExpirationCondition, Session, EventVars.get()))
+						Instance.Magnitude = 0.f;
+				});
+			}
+		}
+
+		Stack.Instances.push_back(std::move(Instance));
 	}
 
 	if (IsNew)
@@ -158,16 +174,16 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 		{
 			auto& [ID, Stack] = *ItStack;
 
-			// Check instance expiration from conditions
+			// Remove instances expired by conditions or magnitude before further processing
 			for (auto ItInstance = Stack.Instances.begin(); ItInstance != Stack.Instances.end(); /**/)
 			{
-				if (ItInstance->Magnitude > 0.f)
+				// Must check condition that has no subscriptions each frame
+				//???simply Subs.empty() is not enough, some sub-conditions may have subs, some others don't. Condition must set check-on-update request flag.
+				//???or, if this flag is set, subscriptions are of no use and can be cleared? Or subscribe not always for recalc?
+				if (ItInstance->Magnitude > 0.f && ItInstance->ExpirationCondition.Type && ItInstance->ExpirationSubs.empty())
 				{
-					//!!!check expiration by signal-less expiration conditions! need flag out arg in SubscribeRelevantEvents to identify this case!
-					// simply Subs.empty() is not enough, some sub-conditions may have subs, some others don't. Condition must set check-on-update request flag.
-					//???or, if this flag is set, subscriptions are of no use and can be cleared? Or subscribe not always for recalc?
-					const bool Expired = false;
-					if (!Expired)
+					// If not expired, keep an instance in the list
+					if (!Game::EvaluateCondition(ItInstance->ExpirationCondition, Session, &Vars))
 					{
 						++ItInstance;
 						continue;
@@ -176,9 +192,6 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 
 				ItInstance = Stack.Instances.erase(ItInstance);
 			}
-
-			// Remove instances expired by magnitude before further processing
-			Stack.Instances.erase(std::remove_if(Stack.Instances.begin(), Stack.Instances.end(), [](const auto& Instance) { return Instance.Magnitude <= 0.f; }), Stack.Instances.end());
 
 			if (!Stack.Instances.empty())
 			{
