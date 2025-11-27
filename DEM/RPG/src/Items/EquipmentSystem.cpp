@@ -5,6 +5,7 @@
 #include <Items/EquipmentChangesComponent.h>
 #include <Items/EquippableComponent.h>
 #include <Items/EquippedComponent.h>
+#include <Items/EquipmentComponent.h>
 #include <Character/AppearanceComponent.h>
 #include <Character/AppearanceAsset.h>
 #include <Character/CharacterStatLogic.h>
@@ -484,6 +485,15 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 				// Apply custom logic from the script
 				if (auto* pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
 				{
+					if (!pEquippable->OnEquip.empty())
+					{
+						Game::CGameVarStorage Vars;
+						Vars.Set(CStrID("Target"), EntityID);
+						Vars.Set(CStrID("SourceCreature"), EntityID);
+						Vars.Set(CStrID("SourceItemStack"), StackID);
+						Game::ExecuteCommandList(pEquippable->OnEquip, Session, &Vars);
+					}
+
 					//!!!FIXME: "already loaded" item script is in fact broken!!! ForceReload fixes the issue.
 					if (auto ScriptObject = Session.GetScript(pEquippable->ScriptAssetID))
 					{
@@ -496,12 +506,20 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 							pEquipped->FnUpdateEquipped = FnProxy;
 					}
 				}
+
+				//???or store changes in CEquipmentComponent and awoid searching it here?
+				if (auto* pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID))
+					pEquipment->OnItemEquipped(StackID);
 			}
 			else
 			{
 				if (World.RemoveComponent<CEquippedComponent>(StackID))
 				{
 					::Sys::Log("Item unequipped\n");
+
+					//???or store changes in CEquipmentComponent and awoid searching it here?
+					if (auto* pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID))
+						pEquipment->OnItemUnequipped(StackID);
 
 					// Remove equipment modifiers and effects
 
@@ -516,6 +534,8 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 					// Apply custom logic from the script
 					if (auto* pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID))
 					{
+						//Game::ExecuteCommandList(pEquippable->OnUnequip, Session, &Vars);
+
 						if (auto ScriptObject = Session.GetScript(pEquippable->ScriptAssetID))
 						{
 							auto FnProxy = ScriptObject["OnUnequipped"];

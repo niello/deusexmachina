@@ -1,7 +1,7 @@
 #pragma once
 #include <Data/Metadata.h>
 #include <Data/FixedOrderMap.h>
-#include <StdDEM.h>
+#include <Scripting/CommandList.h>
 
 // Generic equippable settings. They override implicit equipment rules like 'all weapons can be equipped to hands'.
 
@@ -14,6 +14,7 @@ struct CEquippableComponent
 	std::vector<Resources::PResource> AppearanceAssets;
 	CFixedOrderMap<CStrID, U32>       Slots;        // A list of slot types blocked by this entity when equipped, with count for each type
 	U32                               MaxStack = 1; // Maximum count of these items in the equipment slot
+	Game::CCommandList                OnEquip;
 };
 
 }
@@ -29,7 +30,8 @@ template<> constexpr auto RegisterMembers<DEM::RPG::CEquippableComponent>()
 		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, Slots),
 		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, MaxStack),
 		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, ScriptAssetID),
-		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, AppearanceAssets)
+		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, AppearanceAssets),
+		DEM_META_MEMBER_FIELD(RPG::CEquippableComponent, OnEquip)
 	);
 }
 

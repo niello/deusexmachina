@@ -192,7 +192,7 @@ static void InitStrike(Game::CGameWorld& World, CAttackAbilityInstance& Instance
 	// FIXME: need better handling for this case? Assert?
 	if (Period <= 0.f) Period = 0.001f;
 
-	// TODO: determine location, also can setup AC params, especially IK, to animate strike to that location visually
+	// TODO: determine location, also can setup anim controller params, especially IK, to animate strike to that location visually
 	Instance.Location = {};
 
 	Instance.StrikeEndTime = Instance.ElapsedTime + Period;

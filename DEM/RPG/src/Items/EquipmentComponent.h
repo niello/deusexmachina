@@ -1,6 +1,7 @@
 #pragma once
 #include <Items/EquipmentScheme.h>
 #include <Game/ECS/Entity.h>
+#include <Events/Signal.h>
 
 // Stores an equipment of a character
 
@@ -20,6 +21,9 @@ struct CEquipmentComponent
 	CStrID                          SchemeID; // FIXME: ID to resource directly!
 	PEquipmentScheme                Scheme;
 	std::unique_ptr<CHandSlot[]>    Hands;
+
+	Events::CSignal<void(Game::HEntity)> OnItemEquipped;
+	Events::CSignal<void(Game::HEntity)> OnItemUnequipped;
 };
 
 }

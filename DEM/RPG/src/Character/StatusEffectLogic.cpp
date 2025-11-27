@@ -26,52 +26,52 @@ bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams*
 
 	//!!!TODO: source, tags & target info to an universal command context structure? besides arbitrary pVars.
 	//!!!need to take into account expiration conditions, thay will need vars for evaluation!
-	CStatusEffectInstance Effect;
-	Effect.SourceCreatureID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("SourceCreature")), {});
-	Effect.SourceItemStackID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("SourceItemStack")), {});
-	Effect.SourceAbilityID = pVars->Get<CStrID>(pVars->Find(CStrID("SourceAbility")), {});
-	Effect.SourceStatusEffectID = pVars->Get<CStrID>(pVars->Find(CStrID("SourceStatusEffect")), {});
+	CStatusEffectInstance Instance;
+	Instance.SourceCreatureID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("SourceCreature")), {});
+	Instance.SourceItemStackID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("SourceItemStack")), {});
+	Instance.SourceAbilityID = pVars->Get<CStrID>(pVars->Find(CStrID("SourceAbility")), {});
+	Instance.SourceStatusEffectID = pVars->Get<CStrID>(pVars->Find(CStrID("SourceStatusEffect")), {});
 
 	Data::PDataArray TagsDesc;
 	if (pParams->TryGet(TagsDesc, CStrID("Tags")))
 		for (const auto& TagData : *TagsDesc)
-			Effect.Tags.insert(TagData.GetValue<CStrID>());
+			Instance.Tags.insert(TagData.GetValue<CStrID>());
 
 	Data::CData ConditionDesc;
 	if (pParams->TryGet(ConditionDesc, CStrID("ExpirationCondition")))
-		ParamsFormat::Deserialize(ConditionDesc, Effect.ExpirationCondition);
+		ParamsFormat::Deserialize(ConditionDesc, Instance.ExpirationCondition);
 
-	Effect.Magnitude = 1.f;
+	Instance.Magnitude = 1.f;
 	if (auto* pData = pParams->FindValue(CStrID("Magnitude")))
 	{
 		if (const auto* pValue = pData->As<float>())
 		{
-			Effect.Magnitude = *pValue;
+			Instance.Magnitude = *pValue;
 		}
 		else if (const auto* pValue = pData->As<std::string>())
 		{
 			//???pass source and target sheets? what else? how to make flexible (easily add other data if needed later)? use environment?
 			//???pass here or they must be passed from outside to every command, including this one? commands are also parametrized.
 			sol::function Formula = Session.GetScriptState().script("return function(Params, Vars) return {} end"_format(*pValue));
-			Effect.Magnitude = Scripting::LuaCall<float>(Formula, pParams, pVars);
+			Instance.Magnitude = Scripting::LuaCall<float>(Formula, pParams, pVars);
 		}
 	}
 
-	Effect.RemainingTime = STATUS_EFFECT_INFINITE;
+	Instance.RemainingTime = STATUS_EFFECT_INFINITE;
 	if (auto* pData = pParams->FindValue(CStrID("Duration")))
 	{
 		if (const auto* pValue = pData->As<float>())
 		{
-			Effect.RemainingTime = *pValue;
+			Instance.RemainingTime = *pValue;
 		}
 		else if (const auto* pValue = pData->As<std::string>())
 		{
 			sol::function Formula = Session.GetScriptState().script("return function(Params, Vars) return {} end"_format(*pValue));
-			Effect.RemainingTime = Scripting::LuaCall<float>(Formula, pParams, pVars);
+			Instance.RemainingTime = Scripting::LuaCall<float>(Formula, pParams, pVars);
 		}
 	}
 
-	return AddStatusEffect(Session, *pWorld, TargetEntityID, *pEffectData, std::move(Effect));
+	return AddStatusEffect(Session, *pWorld, TargetEntityID, *pEffectData, std::move(Instance));
 }
 //---------------------------------------------------------------------
 
@@ -102,6 +102,8 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 		//!!!???can't ignore source if expiration conditions use it?! requires correct effect data setup from GD?
 		// clamp magnitude and duration to limits? or apply limits only to the total value in the stack?
 		//!!!stack must update totals (magnitude and maybe smth else)!
+
+		//!!!if can't merge, fall back to adding a new instance!
 	}
 	else
 	{
@@ -248,6 +250,7 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 			// Remove totally expired status effect stacks
 			if (Stack.Instances.empty())
 			{
+				//!!!FIXME: OnRemoved happens without instances, magnitude will be zero, nothing will be triggered. Need manual triggering?
 				TriggerStatusEffect(Session, Stack, CStrID("OnRemoved"), Vars);
 				ItStack = StatusEffects.StatusEffectStacks.erase(ItStack);
 				continue;
