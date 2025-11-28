@@ -39,9 +39,9 @@ target_compile_definitions(fmt PRIVATE FMT_USE_EXCEPTIONS=0)
 add_library(magic_enum INTERFACE)
 target_include_directories(magic_enum INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/magic_enum/include")
 
-file(GLOB_RECURSE RTM_INCLUDE_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_SOURCE_DIR}/magic_enum/include/*.*)
-create_source_groups("${RTM_INCLUDE_FILES}" ${CMAKE_CURRENT_SOURCE_DIR}/magic_enum)
-add_custom_target(magic_enum_ SOURCES ${RTM_INCLUDE_FILES})
+file(GLOB_RECURSE MAGIC_ENUM_INCLUDE_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_SOURCE_DIR}/magic_enum/include/*.*)
+create_source_groups("${MAGIC_ENUM_INCLUDE_FILES}" ${CMAKE_CURRENT_SOURCE_DIR}/magic_enum)
+add_custom_target(magic_enum_ SOURCES ${MAGIC_ENUM_INCLUDE_FILES})
 
 # Dependency: RTM
 
@@ -72,6 +72,10 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/lua" "${CMAKE_CURRENT_BINARY_DIR}/
 add_library(sol INTERFACE)
 target_include_directories(sol INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/sol")
 target_compile_definitions(sol INTERFACE SOL_ALL_SAFETIES_ON) # SOL_NO_EXCEPTIONS)
+
+file(GLOB_RECURSE SOL_INCLUDE_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_SOURCE_DIR}/sol/*.*)
+create_source_groups("${SOL_INCLUDE_FILES}" ${CMAKE_CURRENT_SOURCE_DIR}/sol)
+add_custom_target(sol_ SOURCES ${SOL_INCLUDE_FILES})
 
 # Dependency: Tracy profiler
 

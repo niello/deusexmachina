@@ -55,7 +55,12 @@ void RegisterSignalType(sol::state& State)
 {
 	using TSignal = Events::CSignal<T>;
 	State.new_usertype<TSignal>(sol::detail::demangle<TSignal>()
-		, "Subscribe", &TSignal::Subscribe<sol::function>
+		, "Subscribe", sol::overload(
+			// NB: use lambda overloads to mitigate indefinitely long holding of temporary connection variable in Lua
+			&TSignal::Subscribe<sol::function>
+			, [](TSignal& Self, Events::CConnection& Conn, const sol::function& Fn) { Conn = Self.Subscribe(Fn); }
+			, [](TSignal& Self, std::vector<Events::CConnection>& Conn, const sol::function& Fn) { Conn.push_back(Self.Subscribe(Fn)); }
+		)
 		, "SubscribeAndForget", &TSignal::SubscribeAndForget<sol::function>
 		, "UnsubscribeAll", &TSignal::UnsubscribeAll
 		, "Empty", &TSignal::Empty

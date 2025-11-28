@@ -126,15 +126,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 					EventVars->Set(CStrID("SourceItemStack"), pInstance->SourceItemStackID);
 
 					if (!Game::EvaluateCondition(pInstance->ValidityCondition, Session, EventVars.get()))
-					{
 						pInstance->Magnitude = 0.f;
-
-						// FIXME: Lua holds a strong reference for indefinitely long time, need a stable solution!
-						// OutSubs:add(Equipment.OnItemEquipped:Subscribe(...) -> returned sub + sub in vector!!!
-						for (auto& Sub : pInstance->ConditionSubs)
-							Sub.Disconnect();
-						pInstance->ConditionSubs.clear();
-					}
 				});
 			}
 		}
