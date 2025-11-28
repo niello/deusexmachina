@@ -110,6 +110,10 @@ struct CStatusEffectStack
 struct CStatusEffectsComponent
 {
 	std::map<CStrID, CStatusEffectStack> StatusEffectStacks;
+
+	CStatusEffectsComponent() = default;
+	CStatusEffectsComponent(CStatusEffectsComponent&&) noexcept = default;
+	CStatusEffectsComponent& operator =(CStatusEffectsComponent&&) noexcept = default;
 };
 
 }
