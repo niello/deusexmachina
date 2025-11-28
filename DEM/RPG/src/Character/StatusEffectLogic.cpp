@@ -114,12 +114,19 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 		{
 			if (auto* pCondition = pConditions->FindCondition(Instance.ExpirationCondition.Type))
 			{
-				//!!!pass stack or instance vars!
-				pCondition->SubscribeRelevantEvents(Instance.ExpirationSubs, { Instance.ExpirationCondition, Session, nullptr },
+				//???!!!reuse vars from Command_ApplyStatusEffect?
+				Game::CGameVarStorage Vars;
+				Vars.Set(CStrID("SourceCreature"), Instance.SourceCreatureID);
+				Vars.Set(CStrID("SourceItemStack"), Instance.SourceItemStackID);
+				pCondition->SubscribeRelevantEvents(Instance.ExpirationSubs, { Instance.ExpirationCondition, Session, &Vars },
 					[&Instance, &Session](std::unique_ptr<Game::CGameVarStorage>& EventVars)
 				{
+					//!!!FIXME: Instance is already broken here, because it is moved!
+					//but it could be broken due to reallocation of Stack.Instances too, must fix!
+					NOT_IMPLEMENTED_MSG("FIX CRASH");
+
 					//???merge event vars with initial ones?
-					if (Game::EvaluateCondition(Instance.ExpirationCondition, Session, EventVars.get()))
+					if (!Game::EvaluateCondition(Instance.ExpirationCondition, Session, EventVars.get()))
 						Instance.Magnitude = 0.f;
 				});
 			}
@@ -176,23 +183,18 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 		{
 			auto& [ID, Stack] = *ItStack;
 
-			// Remove instances expired by conditions or magnitude before further processing
+			// Remove instances expired by conditions or magnitude before further processing.
+			// Must check condition that has no subscriptions each frame. If a part of a condition
+			// can't rely on signals, all subs are dropped.
 			for (auto ItInstance = Stack.Instances.begin(); ItInstance != Stack.Instances.end(); /**/)
 			{
-				// Must check condition that has no subscriptions each frame
-				//???simply Subs.empty() is not enough, some sub-conditions may have subs, some others don't. Condition must set check-on-update request flag.
-				//???or, if this flag is set, subscriptions are of no use and can be cleared? Or subscribe not always for recalc?
-				if (ItInstance->Magnitude > 0.f && ItInstance->ExpirationCondition.Type && ItInstance->ExpirationSubs.empty())
-				{
-					// If not expired, keep an instance in the list
-					if (!Game::EvaluateCondition(ItInstance->ExpirationCondition, Session, &Vars))
-					{
-						++ItInstance;
-						continue;
-					}
-				}
-
-				ItInstance = Stack.Instances.erase(ItInstance);
+				//!!!ExpirationCondition is now an anti-expiration condition, rename!
+				if (ItInstance->Magnitude <= 0.f)
+					ItInstance = Stack.Instances.erase(ItInstance);
+				else if (ItInstance->ExpirationCondition.Type && ItInstance->ExpirationSubs.empty() && !Game::EvaluateCondition(ItInstance->ExpirationCondition, Session, &Vars))
+					ItInstance = Stack.Instances.erase(ItInstance);
+				else
+					++ItInstance;
 			}
 
 			if (!Stack.Instances.empty())

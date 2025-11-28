@@ -468,6 +468,11 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 
 				pEquipped->OwnerID = EntityID;
 
+				//???or store changes in CEquipmentComponent and avoid searching it here?
+				//???can use for canceling operation?
+				if (auto* pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID))
+					pEquipment->OnItemEquipped(StackID);
+
 				// Apply equipment modifiers and effects
 
 				if (Rec.NewStorage == EItemStorage::Equipment)
@@ -506,10 +511,6 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 							pEquipped->FnUpdateEquipped = FnProxy;
 					}
 				}
-
-				//???or store changes in CEquipmentComponent and awoid searching it here?
-				if (auto* pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID))
-					pEquipment->OnItemEquipped(StackID);
 			}
 			else
 			{
@@ -517,7 +518,8 @@ void ProcessEquipmentChanges(Game::CGameWorld& World, Game::CGameSession& Sessio
 				{
 					::Sys::Log("Item unequipped\n");
 
-					//???or store changes in CEquipmentComponent and awoid searching it here?
+					//???or store changes in CEquipmentComponent and avoid searching it here?
+					//???can use for canceling operation?
 					if (auto* pEquipment = FindItemComponent<const CEquipmentComponent>(World, EntityID))
 						pEquipment->OnItemUnequipped(StackID);
 
