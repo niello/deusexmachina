@@ -26,48 +26,48 @@ bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams*
 
 	//!!!TODO: source, tags & target info to an universal command context structure? besides arbitrary pVars.
 	//!!!need to take into account expiration conditions, thay will need vars for evaluation!
-	CStatusEffectInstance Instance;
-	Instance.SourceCreatureID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("SourceCreature")), {});
-	Instance.SourceItemStackID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("SourceItemStack")), {});
-	Instance.SourceAbilityID = pVars->Get<CStrID>(pVars->Find(CStrID("SourceAbility")), {});
-	Instance.SourceStatusEffectID = pVars->Get<CStrID>(pVars->Find(CStrID("SourceStatusEffect")), {});
+	PStatusEffectInstance Instance(new CStatusEffectInstance());
+	Instance->SourceCreatureID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("SourceCreature")), {});
+	Instance->SourceItemStackID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("SourceItemStack")), {});
+	Instance->SourceAbilityID = pVars->Get<CStrID>(pVars->Find(CStrID("SourceAbility")), {});
+	Instance->SourceStatusEffectID = pVars->Get<CStrID>(pVars->Find(CStrID("SourceStatusEffect")), {});
 
 	Data::PDataArray TagsDesc;
 	if (pParams->TryGet(TagsDesc, CStrID("Tags")))
 		for (const auto& TagData : *TagsDesc)
-			Instance.Tags.insert(TagData.GetValue<CStrID>());
+			Instance->Tags.insert(TagData.GetValue<CStrID>());
 
 	Data::CData ConditionDesc;
-	if (pParams->TryGet(ConditionDesc, CStrID("ExpirationCondition")))
-		ParamsFormat::Deserialize(ConditionDesc, Instance.ExpirationCondition);
+	if (pParams->TryGet(ConditionDesc, CStrID("ValidityCondition")))
+		ParamsFormat::Deserialize(ConditionDesc, Instance->ValidityCondition);
 
-	Instance.Magnitude = 1.f;
+	Instance->Magnitude = 1.f;
 	if (auto* pData = pParams->FindValue(CStrID("Magnitude")))
 	{
 		if (const auto* pValue = pData->As<float>())
 		{
-			Instance.Magnitude = *pValue;
+			Instance->Magnitude = *pValue;
 		}
 		else if (const auto* pValue = pData->As<std::string>())
 		{
 			//???pass source and target sheets? what else? how to make flexible (easily add other data if needed later)? use environment?
 			//???pass here or they must be passed from outside to every command, including this one? commands are also parametrized.
 			sol::function Formula = Session.GetScriptState().script("return function(Params, Vars) return {} end"_format(*pValue));
-			Instance.Magnitude = Scripting::LuaCall<float>(Formula, pParams, pVars);
+			Instance->Magnitude = Scripting::LuaCall<float>(Formula, pParams, pVars);
 		}
 	}
 
-	Instance.RemainingTime = STATUS_EFFECT_INFINITE;
+	Instance->RemainingTime = STATUS_EFFECT_INFINITE;
 	if (auto* pData = pParams->FindValue(CStrID("Duration")))
 	{
 		if (const auto* pValue = pData->As<float>())
 		{
-			Instance.RemainingTime = *pValue;
+			Instance->RemainingTime = *pValue;
 		}
 		else if (const auto* pValue = pData->As<std::string>())
 		{
 			sol::function Formula = Session.GetScriptState().script("return function(Params, Vars) return {} end"_format(*pValue));
-			Instance.RemainingTime = Scripting::LuaCall<float>(Formula, pParams, pVars);
+			Instance->RemainingTime = Scripting::LuaCall<float>(Formula, pParams, pVars);
 		}
 	}
 
@@ -75,14 +75,20 @@ bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams*
 }
 //---------------------------------------------------------------------
 
-bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, CStatusEffectInstance&& Instance)
+bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, PStatusEffectInstance&& Instance)
 {
 	// Magnitude of each active instance must be greater than zero. Simply don't use magnitude value in formulas if you need not.
 	// Infinite duration is STATUS_EFFECT_INFINITE, other values are treated as an explicit duration.
-	if (Instance.Magnitude <= 0.f || Instance.RemainingTime <= 0.f) return false;
+	if (Instance->Magnitude <= 0.f || Instance->RemainingTime <= 0.f) return false;
 
 	auto* pStatusEffectComponent = World.FindOrAddComponent<CStatusEffectsComponent>(TargetID);
 	if (!pStatusEffectComponent) return false;
+
+	//???!!!store Vars in stack? or even in instance? not to rebuild each time
+	Game::CGameVarStorage Vars;
+	Vars.Set(CStrID("SourceCreature"), Instance->SourceCreatureID);
+	Vars.Set(CStrID("SourceItemStack"), Instance->SourceItemStackID);
+	if (!Game::EvaluateCondition(Instance->ValidityCondition, Session, &Vars)) return false;
 
 	// TODO: immunity / blocking
 	// check by tags of other status effects if this effect is blocked
@@ -107,31 +113,25 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	}
 	else
 	{
-		// Add a new instance
-
 		// Clear magnitude when expiration condition is met. This effectively invalidates an instance.
 		if (const auto* pConditions = Session.FindFeature<Game::CLogicRegistry>())
 		{
-			if (auto* pCondition = pConditions->FindCondition(Instance.ExpirationCondition.Type))
+			if (auto* pCondition = pConditions->FindCondition(Instance->ValidityCondition.Type))
 			{
-				//???!!!reuse vars from Command_ApplyStatusEffect?
-				Game::CGameVarStorage Vars;
-				Vars.Set(CStrID("SourceCreature"), Instance.SourceCreatureID);
-				Vars.Set(CStrID("SourceItemStack"), Instance.SourceItemStackID);
-				pCondition->SubscribeRelevantEvents(Instance.ExpirationSubs, { Instance.ExpirationCondition, Session, &Vars },
-					[&Instance, &Session](std::unique_ptr<Game::CGameVarStorage>& EventVars)
+				pCondition->SubscribeRelevantEvents(Instance->ConditionSubs, { Instance->ValidityCondition, Session, &Vars },
+					[pInstance = Instance.get(), &Session](std::unique_ptr<Game::CGameVarStorage>& EventVars)
 				{
-					//!!!FIXME: Instance is already broken here, because it is moved!
-					//but it could be broken due to reallocation of Stack.Instances too, must fix!
-					NOT_IMPLEMENTED_MSG("FIX CRASH");
+					if (!EventVars) EventVars = std::make_unique<Game::CGameVarStorage>();
+					EventVars->Set(CStrID("SourceCreature"), pInstance->SourceCreatureID);
+					EventVars->Set(CStrID("SourceItemStack"), pInstance->SourceItemStackID);
 
-					//???merge event vars with initial ones?
-					if (!Game::EvaluateCondition(Instance.ExpirationCondition, Session, EventVars.get()))
-						Instance.Magnitude = 0.f;
+					if (!Game::EvaluateCondition(pInstance->ValidityCondition, Session, EventVars.get()))
+						pInstance->Magnitude = 0.f;
 				});
 			}
 		}
 
+		// Add a new instance
 		Stack.Instances.push_back(std::move(Instance));
 	}
 
@@ -141,8 +141,6 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 
 		// TODO: remove effects blocked by us, remember blocking tags in some Tag->Counter cache if needed
 
-		//???!!!store in stack? or even in instance? not to rebuild each time
-		Game::CGameVarStorage Vars;
 		TriggerStatusEffect(Session, Stack, CStrID("OnAdded"), Vars);
 	}
 
@@ -176,7 +174,7 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 
 	World.ForEachComponent<CStatusEffectsComponent>([&Session, dt](auto EntityID, CStatusEffectsComponent& StatusEffects)
 	{
-		//???!!!store in stack? or even in instance? not to rebuild each time
+		//???!!!store Vars in stack? or even in instance? not to rebuild each time
 		Game::CGameVarStorage Vars;
 
 		for (auto ItStack = StatusEffects.StatusEffectStacks.begin(); ItStack != StatusEffects.StatusEffectStacks.end(); /**/)
@@ -188,10 +186,10 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 			// can't rely on signals, all subs are dropped.
 			for (auto ItInstance = Stack.Instances.begin(); ItInstance != Stack.Instances.end(); /**/)
 			{
-				//!!!ExpirationCondition is now an anti-expiration condition, rename!
-				if (ItInstance->Magnitude <= 0.f)
+				const auto* pInstance = (*ItInstance).get();
+				if (pInstance->Magnitude <= 0.f)
 					ItInstance = Stack.Instances.erase(ItInstance);
-				else if (ItInstance->ExpirationCondition.Type && ItInstance->ExpirationSubs.empty() && !Game::EvaluateCondition(ItInstance->ExpirationCondition, Session, &Vars))
+				else if (pInstance->ConditionSubs.empty() && !Game::EvaluateCondition(pInstance->ValidityCondition, Session, &Vars))
 					ItInstance = Stack.Instances.erase(ItInstance);
 				else
 					++ItInstance;
@@ -215,11 +213,11 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 						float PendingMagnitude = 0.f;
 						for (const auto& Instance : Stack.Instances)
 						{
-							if (!ShouldProcessStatusEffectsInstance(Session, Instance, Bhv, Vars)) continue;
+							if (!ShouldProcessStatusEffectsInstance(Session, *Instance, Bhv, Vars)) continue;
 
-							const auto ActivationCount = CalcTimeTriggerActivationCount(Instance.Time, dt, Delay, Period);
+							const auto ActivationCount = CalcTimeTriggerActivationCount(Instance->Time, dt, Delay, Period);
 							for (size_t i = 0; i < ActivationCount; ++i)
-								ProcessStatusEffectsInstance(Session, Instance.Magnitude, Bhv, Vars, PendingMagnitude);
+								ProcessStatusEffectsInstance(Session, Instance->Magnitude, Bhv, Vars, PendingMagnitude);
 						}
 
 						if (PendingMagnitude > 0.f)
@@ -233,18 +231,19 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 				// Advance instance time and remove instances expired by time
 				for (auto ItInstance = Stack.Instances.begin(); ItInstance != Stack.Instances.end(); /**/)
 				{
-					if (!ItInstance->SuspendLifetimeCounter)
+					auto* pInstance = (*ItInstance).get();
+					if (!pInstance->SuspendLifetimeCounter)
 					{
-						if (ItInstance->RemainingTime <= dt)
+						if (pInstance->RemainingTime <= dt)
 						{
 							ItInstance = Stack.Instances.erase(ItInstance);
 							continue;
 						}
 
-						ItInstance->RemainingTime -= dt;
+						pInstance->RemainingTime -= dt;
 					}
 
-					ItInstance->Time += dt;
+					pInstance->Time += dt;
 					++ItInstance;
 				}
 			}

@@ -13,7 +13,7 @@ namespace DEM::RPG
 {
 
 bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars);
-bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, CStatusEffectInstance&& Instance);
+bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, PStatusEffectInstance&& Instance);
 void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, float dt);
 bool ShouldProcessStatusEffectsInstance(Game::CGameSession& Session, const CStatusEffectInstance& Instance, const CStatusEffectBehaviour& Bhv, const Game::CGameVarStorage& Vars);
 void ProcessStatusEffectsInstance(Game::CGameSession& Session, float Magnitude, const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars, float& PendingMagnitude);
@@ -58,12 +58,12 @@ void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& 
 		float PendingMagnitude = 0.f;
 		for (const auto& Instance : Stack.Instances)
 		{
-			if (!ShouldProcessStatusEffectsInstance(Session, Instance, Bhv, Vars)) continue;
+			if (!ShouldProcessStatusEffectsInstance(Session, *Instance, Bhv, Vars)) continue;
 
 			if constexpr (has_method_with_signature_ShouldProcessInstance_v<TPolicy, bool(const CStatusEffectInstance&)>)
-				if (!Policy.ShouldProcessInstance(Instance)) continue;
+				if (!Policy.ShouldProcessInstance(*Instance)) continue;
 
-			ProcessStatusEffectsInstance(Session, Instance.Magnitude, Bhv, Vars, PendingMagnitude);
+			ProcessStatusEffectsInstance(Session, Instance->Magnitude, Bhv, Vars, PendingMagnitude);
 		}
 
 		if (PendingMagnitude > 0.f)

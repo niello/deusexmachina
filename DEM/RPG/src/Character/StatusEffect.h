@@ -11,6 +11,8 @@ namespace DEM::RPG
 {
 constexpr float STATUS_EFFECT_INFINITE = std::numeric_limits<float>::infinity();
 
+using PStatusEffectInstance = std::unique_ptr<struct CStatusEffectInstance>;
+
 enum class EStatusEffectMagnitudePolicy : U8
 {
 	Sum,
@@ -70,27 +72,28 @@ struct CStatusEffectInstance
 	Game::HEntity                    SourceCreatureID;
 	Game::HEntity                    SourceItemStackID;
 	CStrID                           SourceAbilityID;
-	CStrID                           SourceStatusEffectID; // An effect must be applied by another "parent"/"source" effect
+	CStrID                           SourceStatusEffectID;        // An effect must be applied by another "parent"/"source" effect
 
-	std::set<CStrID>                 Tags;                 // Instances can have additional tags besides effect (stack) tags
+	std::set<CStrID>                 Tags;                        // Instances can have additional tags besides effect (stack) tags
 
-	Game::CConditionData             ExpirationCondition; //???when happens, can zero out magnitude and/or time, delay cleanup from stack
-	std::vector<Events::CConnection> ExpirationSubs;
+	Game::CConditionData             ValidityCondition;           // As soon as it is false, an instance expires
+	std::vector<Events::CConnection> ConditionSubs;
 
 	float                            RemainingTime = STATUS_EFFECT_INFINITE;
-	float                            Time = 0.f; //???active time or remaining duration? or need both! duration as optional expiration condition, time as period counter base.
-	float                            Magnitude = 0.f;      // When it drops to zero, an instance expires immediately
+	float                            Time = 0.f;
+	float                            Magnitude = 0.f;             // When it drops to zero, an instance expires
 
 	U8                               SuspendBehaviourCounter = 0; // While > 0, behaviours are not triggered and magnitude isn't contributed to the stack
 	U8                               SuspendLifetimeCounter = 0;  // While > 0, internal timer doesn't tick and time-based expiration isn't checked
 
 	//???position where an effect was applied, if applicable. E.g. for periodic blood leaking VFX. or custom var storage?
+	//!!!in a custom var storage could store most of context info - sources etc!
 };
 
 struct CStatusEffectStack
 {
 	const CStatusEffectData*           pEffectData = nullptr; //???strong ptr? if resource, must have refcount anyway
-	std::vector<CStatusEffectInstance> Instances;
+	std::vector<PStatusEffectInstance> Instances; // Pointer to an instance must be stable, it can be captured in condition callbacks
 
 	//???precalculated CGameVarStorage context for commands?
 
