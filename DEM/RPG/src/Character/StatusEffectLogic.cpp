@@ -104,11 +104,29 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	{
 		NOT_IMPLEMENTED;
 
-		// handle policies for duration and magnitude; match sources;
-		//!!!???can't ignore source if expiration conditions use it?! requires correct effect data setup from GD?
-		// clamp magnitude and duration to limits? or apply limits only to the total value in the stack?
-		//!!!stack must update totals (magnitude and maybe smth else)!
-
+		// sources van be merged with Old, New, Matching, ForgetAll
+		// warn on Forget/Matching if a condition is present?
+		//
+		// if all sources equal, consider condition equal too
+		// if sources don't match, keep condition from the same side as sources
+		// if sources are erased, either erase condition or use new one
+		// don't forget to resubscribe if the condition changes
+		//
+		// tags can be merged by policy Old, New, And (Matching), Or (All)
+		//
+		// magnitude policy - use existing one for instances? or separate one for merging?
+		// Old, New, Sum, Max
+		// can limit merged magnitude with optional max value
+		//
+		// duration policy - only for merging or handle +dt similarly to magnitude gathering?
+		// Old, New, Sum, Max
+		// can limit duration with optional max value
+		// based on remaining time, not on initial duration
+		//
+		// time and suspension counters remain intact
+		//
+		// custom vars can use the same policy as tags
+		//
 		//!!!if can't merge, fall back to adding a new instance!
 	}
 	else
@@ -251,8 +269,22 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 			// Remove totally expired status effect stacks
 			if (Stack.Instances.empty())
 			{
-				//!!!FIXME: OnRemoved happens without instances, magnitude will be zero, nothing will be triggered. Need manual triggering?
-				TriggerStatusEffect(Session, Stack, CStrID("OnRemoved"), Vars);
+				// OnRemoved behaviour is instance-less, handle manually
+				auto ItBhvs = Stack.pEffectData->Behaviours.find(CStrID("OnRemoved"));
+				if (ItBhvs != Stack.pEffectData->Behaviours.cend())
+				{
+					//!!!source and target can be written to Vars, like in Flow! See ResolveEntityID, same as for e.g. conversation Initiator.
+					//???get source ID from the first instance? or add only if has a single instance / if is the same in all instances?
+					//!!!for all magnitude policies except sum can determine source etc, because a single Instance is selected!
+					Vars.Set(CStrID("StatusEffectID"), Stack.pEffectData->ID);
+
+					for (const auto& Bhv : ItBhvs->second)
+						if (Game::EvaluateCondition(Bhv.Condition, Session, &Vars))
+							Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
+
+					//???TODO: clear Vars from stack vars?
+				}
+
 				ItStack = StatusEffects.StatusEffectStacks.erase(ItStack);
 				continue;
 			}
