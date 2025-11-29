@@ -75,6 +75,114 @@ bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams*
 }
 //---------------------------------------------------------------------
 
+static bool MergeStatusEffectInstances(const CStatusEffectData& Effect, CStatusEffectInstance& Dest, CStatusEffectInstance& Src)
+{
+	if (Effect.SourceMergePolicy == EStatusEffectSetMergePolicy::FullMatch)
+	{
+		if (Dest.SourceCreatureID != Src.SourceCreatureID ||
+			Dest.SourceItemStackID != Src.SourceItemStackID ||
+			Dest.SourceAbilityID != Src.SourceAbilityID ||
+			Dest.SourceStatusEffectID != Src.SourceStatusEffectID)
+		{
+			return false;
+		}
+	}
+
+	if (Effect.TagMergePolicy == EStatusEffectSetMergePolicy::FullMatch && Dest.Tags != Src.Tags)
+		return false;
+
+	switch (Effect.SourceMergePolicy)
+	{
+		case EStatusEffectSetMergePolicy::All:
+		{
+			// Not exactly "All" but somewhat close
+			if (!Dest.SourceCreatureID) Dest.SourceCreatureID = Src.SourceCreatureID;
+			if (!Dest.SourceItemStackID) Dest.SourceItemStackID = Src.SourceItemStackID;
+			if (!Dest.SourceAbilityID) Dest.SourceAbilityID = Src.SourceAbilityID;
+			if (!Dest.SourceStatusEffectID) Dest.SourceStatusEffectID = Src.SourceStatusEffectID;
+			break;
+		}
+		case EStatusEffectSetMergePolicy::Matching:
+		{
+			if (Dest.SourceCreatureID != Src.SourceCreatureID) Dest.SourceCreatureID = {};
+			if (Dest.SourceItemStackID != Src.SourceItemStackID) Dest.SourceItemStackID = {};
+			if (Dest.SourceAbilityID != Src.SourceAbilityID) Dest.SourceAbilityID = {};
+			if (Dest.SourceStatusEffectID != Src.SourceStatusEffectID) Dest.SourceStatusEffectID = {};
+			break;
+		}
+		case EStatusEffectSetMergePolicy::Last:
+		{
+			Dest.SourceCreatureID = Src.SourceCreatureID;
+			Dest.SourceItemStackID = Src.SourceItemStackID;
+			Dest.SourceAbilityID = Src.SourceAbilityID;
+			Dest.SourceStatusEffectID = Src.SourceStatusEffectID;
+			break;
+		}
+	}
+
+	switch (Effect.TagMergePolicy)
+	{
+		case EStatusEffectSetMergePolicy::All:
+		{
+			Dest.Tags.merge(std::move(Src.Tags));
+			break;
+		}
+		case EStatusEffectSetMergePolicy::Matching:
+		{
+			Algo::InplaceIntersection(Dest.Tags, Src.Tags);
+			break;
+		}
+		case EStatusEffectSetMergePolicy::Last:
+		{
+			Dest.Tags = std::move(Src.Tags);
+			break;
+		}
+	}
+
+	switch (Effect.MagnitudeMergePolicy)
+	{
+		case EStatusEffectNumMergePolicy::Sum:
+		{
+			Dest.Magnitude += Src.Magnitude;
+			break;
+		}
+		case EStatusEffectNumMergePolicy::Max:
+		{
+			if (Dest.Magnitude < Src.Magnitude)
+				Dest.Magnitude = Src.Magnitude;
+			break;
+		}
+		case EStatusEffectNumMergePolicy::Last:
+		{
+			Dest.Magnitude = Src.Magnitude;
+			break;
+		}
+	}
+
+	switch (Effect.DurationMergePolicy)
+	{
+		case EStatusEffectNumMergePolicy::Sum:
+		{
+			Dest.RemainingTime += Src.RemainingTime;
+			break;
+		}
+		case EStatusEffectNumMergePolicy::Max:
+		{
+			if (Dest.RemainingTime < Src.RemainingTime)
+				Dest.RemainingTime = Src.RemainingTime;
+			break;
+		}
+		case EStatusEffectNumMergePolicy::Last:
+		{
+			Dest.RemainingTime = Src.RemainingTime;
+			break;
+		}
+	}
+
+	return true;
+}
+//---------------------------------------------------------------------
+
 bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, PStatusEffectInstance&& Instance)
 {
 	// Magnitude of each active instance must be greater than zero. Simply don't use magnitude value in formulas if you need not.
@@ -91,46 +199,63 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	if (!Game::EvaluateCondition(Instance->ValidityCondition, Session, &Vars)) return false;
 
 	// TODO: immunity / blocking
+	//!!!NB: blocking and suspension can use instance tags before it is merged!
 	// check by tags of other status effects if this effect is blocked
 	//???where to cache immunity tags? or scan all active stacks and check one by one?
 	// Tag immunity (bool or %) is stored in stats and checked here?
 	//???are blocking tags and immunity tags the same thing?
 
-	auto [ItStack, IsNew] = pStatusEffectComponent->StatusEffectStacks.try_emplace(Effect.ID);
+	auto [ItStack, IsNewStack] = pStatusEffectComponent->StatusEffectStacks.try_emplace(Effect.ID);
 	auto& Stack = ItStack->second;
 
-	constexpr bool Merge = false;
-	if (Merge)
+	bool Merged = false;
+	if (Effect.Merge)
 	{
-		NOT_IMPLEMENTED;
-
-		// sources van be merged with Old, New, Matching, ForgetAll
-		// warn on Forget/Matching if a condition is present?
-		//
-		// if all sources equal, consider condition equal too
-		// if sources don't match, keep condition from the same side as sources
-		// if sources are erased, either erase condition or use new one
-		// don't forget to resubscribe if the condition changes
-		//
-		// tags can be merged by policy Old, New, And (Matching), Or (All)
-		//
-		// magnitude policy - use existing one for instances? or separate one for merging?
-		// Old, New, Sum, Max
-		// can limit merged magnitude with optional max value
-		//
-		// duration policy - only for merging or handle +dt similarly to magnitude gathering?
-		// Old, New, Sum, Max
-		// can limit duration with optional max value
-		// based on remaining time, not on initial duration
-		//
-		// time and suspension counters remain intact
-		//
-		// custom vars can use the same policy as tags
-		//
-		//!!!if can't merge, fall back to adding a new instance!
+		for (auto& ExistingInstance : Stack.Instances)
+		{
+			if (MergeStatusEffectInstances(Effect, *ExistingInstance, *Instance))
+			{
+				Merged = true;
+				break;
+			}
+		}
 	}
-	else
+
+	if (!Merged)
 	{
+		// Choose between existing and the new instance if the stacking policy requires it
+		switch (Effect.StackPolicy)
+		{
+			case EStatusEffectStackPolicy::Discard:
+			{
+				if (!Stack.Instances.empty()) return false;
+				break;
+			}
+			case EStatusEffectStackPolicy::Replace:
+			{
+				Stack.Instances.clear();
+				break;
+			}
+			case EStatusEffectStackPolicy::KeepLongest:
+			{
+				for (const auto& ExistingInstance : Stack.Instances)
+					if (ExistingInstance->RemainingTime > Instance->RemainingTime)
+						return false;
+
+				Stack.Instances.clear();
+				break;
+			}
+			case EStatusEffectStackPolicy::KeepStrongest:
+			{
+				for (const auto& ExistingInstance : Stack.Instances)
+					if (ExistingInstance->Magnitude > Instance->Magnitude)
+						return false;
+
+				Stack.Instances.clear();
+				break;
+			}
+		}
+
 		// Clear magnitude when expiration condition is met. This effectively invalidates an instance.
 		if (const auto* pConditions = Session.FindFeature<Game::CLogicRegistry>())
 		{
@@ -153,7 +278,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 		Stack.Instances.push_back(std::move(Instance));
 	}
 
-	if (IsNew)
+	if (IsNewStack)
 	{
 		Stack.pEffectData = &Effect;
 
@@ -305,34 +430,35 @@ bool ShouldProcessStatusEffectsInstance(Game::CGameSession& Session, const CStat
 void ProcessStatusEffectsInstance(Game::CGameSession& Session, float Magnitude, const CStatusEffectBehaviour& Bhv,
 	Game::CGameVarStorage& Vars, float& PendingMagnitude)
 {
-	switch (Bhv.MagnitudePolicy)
+	if (!Bhv.MagnitudeAggregation)
 	{
-		case EStatusEffectMagnitudePolicy::Sum:
+		Vars.Set(CStrID("Magnitude"), Magnitude);
+		Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
+		return;
+	}
+
+	switch (*Bhv.MagnitudeAggregation)
+	{
+		case EStatusEffectNumMergePolicy::Sum:
 		{
 			PendingMagnitude += Magnitude;
 			break;
 		}
-		case EStatusEffectMagnitudePolicy::Max:
+		case EStatusEffectNumMergePolicy::Max:
 		{
 			if (PendingMagnitude < Magnitude)
 				PendingMagnitude = Magnitude;
 			break;
 		}
-		case EStatusEffectMagnitudePolicy::Oldest:
+		case EStatusEffectNumMergePolicy::First:
 		{
 			if (PendingMagnitude <= 0.f)
 				PendingMagnitude = Magnitude;
 			break;
 		}
-		case EStatusEffectMagnitudePolicy::Newest:
+		case EStatusEffectNumMergePolicy::Last:
 		{
 			PendingMagnitude = Magnitude;
-			break;
-		}
-		case EStatusEffectMagnitudePolicy::Separate:
-		{
-			Vars.Set(CStrID("Magnitude"), Magnitude);
-			Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
 			break;
 		}
 	}

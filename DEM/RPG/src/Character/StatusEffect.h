@@ -13,21 +13,38 @@ constexpr float STATUS_EFFECT_INFINITE = std::numeric_limits<float>::infinity();
 
 using PStatusEffectInstance = std::unique_ptr<struct CStatusEffectInstance>;
 
-enum class EStatusEffectMagnitudePolicy : U8
+enum class EStatusEffectNumMergePolicy : U8
 {
-	Sum,
-	Max,
-	Oldest,
-	Newest,
-	Separate
+	Sum,   // Sum of 2 values
+	Max,   // Maximum of 2 values
+	First, // Older value
+	Last   // Newer value
+};
+
+enum class EStatusEffectSetMergePolicy : U8
+{
+	All,      // Set union (both subsets)
+	Matching, // Set intersection (only equal elements)
+	First,    // Older value
+	Last,     // Newer value
+	FullMatch // If values are not equal, merging fails
+};
+
+enum class EStatusEffectStackPolicy : U8
+{
+	Stack,        // Add a new instance
+	Discard,      // Discard new instance
+	Replace,      // Discard existing instances
+	KeepLongest,  // Keep an instance with greater remaining duration
+	KeepStrongest // Keep an instance with greater magnitude
 };
 
 struct CStatusEffectBehaviour
 {
-	Data::PParams                Params;
-	Game::CConditionData         Condition;
-	Game::CCommandList           Commands;
-	EStatusEffectMagnitudePolicy MagnitudePolicy = EStatusEffectMagnitudePolicy::Sum;
+	Data::PParams                              Params;
+	Game::CConditionData                       Condition;
+	Game::CCommandList                         Commands;
+	std::optional<EStatusEffectNumMergePolicy> MagnitudeAggregation;
 };
 
 class CStatusEffectData : public Core::CObject
@@ -49,26 +66,35 @@ public:
 	//!!!need a list of trigger types (IDs)! Maybe use vector indexed by enum? Skip where command list is empty. How to deserialize?! Key = enum element name!
 	//!!!try using command list in weapon/attack/ability/equipment first!
 
-	// stacking rules: max magnitude, max count, priority rule (prefer min, max, first, last when limiting by stacked instance count)
-	//???magnitude - reduce in the instance or clamp stack sum after calculation?
-	//???off-limit effects always suspend behaviour? or need configurable policy?
+	// TODO: can use in either merging, total value gathering or both
+	//float MaxMagnitude = std::numeric_limits<float>::max();
+	//float MaxDuration = STATUS_EFFECT_INFINITE;
+
+	EStatusEffectStackPolicy    StackPolicy = EStatusEffectStackPolicy::Stack;
+
+	// Merging parameters
+	EStatusEffectNumMergePolicy MagnitudeMergePolicy = EStatusEffectNumMergePolicy::Sum;
+	EStatusEffectNumMergePolicy DurationMergePolicy = EStatusEffectNumMergePolicy::Sum;
+	EStatusEffectSetMergePolicy SourceMergePolicy = EStatusEffectSetMergePolicy::FullMatch;
+	EStatusEffectSetMergePolicy TagMergePolicy = EStatusEffectSetMergePolicy::FullMatch;
+	bool                        Merge = true;
 
 	// is hostile, is source known to target - or per command list or even per command? e.g. attack may not be a status effect but may use commands?
 	// - each command can be hostile or not depending on the actual effect
 	// - effect-applying command delegates hostility to the child effect, and it can apply it even at "on started/applied"
+	//???use tags?
 
-	// expiration conditions
 	// show in UI, icon, text with named param placeholders etc
 	// UI name, desc, tooltip, possibly with hyperlinks
 
 	//???flag "only first instance"? for applying instances from different sources in a sequence. One expires, the next starts. Need?
+	//!!!much like duration policy!
+
+	//???precalculated CGameVarStorage context for commands? Can use same merge policy as tags, just rename it.
 };
 
 struct CStatusEffectInstance
 {
-	//???merging rules here or in data?
-	// Merging rules: is enabled, duration sum/max, magnitude sum/max. If disabled, stacking is performed. Merging happens to the instance of the same source ID.
-
 	Game::HEntity                    SourceCreatureID;
 	Game::HEntity                    SourceItemStackID;
 	CStrID                           SourceAbilityID;
@@ -129,7 +155,7 @@ template<> constexpr auto RegisterMembers<RPG::CStatusEffectBehaviour>()
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Params),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Condition),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Commands),
-		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, MagnitudePolicy)
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, MagnitudeAggregation)
 	);
 }
 static_assert(CMetadata<RPG::CStatusEffectBehaviour>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?
@@ -144,7 +170,13 @@ template<> constexpr auto RegisterMembers<RPG::CStatusEffectData>()
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, BlockTags),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, SuspendBehaviourTags),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, SuspendLifetimeTags),
-		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, Behaviours)
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, Behaviours),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, StackPolicy),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, MagnitudeMergePolicy),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, DurationMergePolicy),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, SourceMergePolicy),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, TagMergePolicy),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, Merge)
 	);
 }
 static_assert(CMetadata<RPG::CStatusEffectData>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?

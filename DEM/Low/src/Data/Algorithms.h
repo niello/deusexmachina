@@ -301,4 +301,26 @@ inline void SetDifference(const std::unordered_set<T>& a, const std::unordered_s
 }
 //---------------------------------------------------------------------
 
+template<typename... T>
+void InplaceIntersection(std::set<T...>& a, const std::set<T...>& b)
+{
+	auto ItA = a.begin();
+	auto ItB = b.cbegin();
+	while (ItA != a.end() && ItB != b.cend())
+	{
+		if (*ItA < *ItB)
+		{
+			ItA = a.erase(ItA);
+		}
+		else
+		{
+			if (!(*ItB < *ItA)) ++ItA;
+			++ItB;
+		}
+	}
+
+	a.erase(ItA, a.end());
+}
+//---------------------------------------------------------------------
+
 }
