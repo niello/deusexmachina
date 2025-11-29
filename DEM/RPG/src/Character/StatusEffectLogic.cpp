@@ -224,35 +224,37 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	if (!Merged)
 	{
 		// Choose between existing and the new instance if the stacking policy requires it
-		switch (Effect.StackPolicy)
+		if (!Stack.Instances.empty())
 		{
-			case EStatusEffectStackPolicy::Discard:
+			switch (Effect.StackPolicy)
 			{
-				if (!Stack.Instances.empty()) return false;
-				break;
-			}
-			case EStatusEffectStackPolicy::Replace:
-			{
-				Stack.Instances.clear();
-				break;
-			}
-			case EStatusEffectStackPolicy::KeepLongest:
-			{
-				for (const auto& ExistingInstance : Stack.Instances)
-					if (ExistingInstance->RemainingTime > Instance->RemainingTime)
-						return false;
+				case EStatusEffectStackPolicy::Discard:
+				{
+					return false;
+				}
+				case EStatusEffectStackPolicy::Replace:
+				{
+					Stack.Instances.clear();
+					break;
+				}
+				case EStatusEffectStackPolicy::KeepLongest:
+				{
+					for (const auto& ExistingInstance : Stack.Instances)
+						if (ExistingInstance->RemainingTime > Instance->RemainingTime)
+							return false;
 
-				Stack.Instances.clear();
-				break;
-			}
-			case EStatusEffectStackPolicy::KeepStrongest:
-			{
-				for (const auto& ExistingInstance : Stack.Instances)
-					if (ExistingInstance->Magnitude > Instance->Magnitude)
-						return false;
+					Stack.Instances.clear();
+					break;
+				}
+				case EStatusEffectStackPolicy::KeepStrongest:
+				{
+					for (const auto& ExistingInstance : Stack.Instances)
+						if (ExistingInstance->Magnitude > Instance->Magnitude)
+							return false;
 
-				Stack.Instances.clear();
-				break;
+					Stack.Instances.clear();
+					break;
+				}
 			}
 		}
 
