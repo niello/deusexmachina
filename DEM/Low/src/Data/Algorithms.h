@@ -323,4 +323,28 @@ void InplaceIntersection(std::set<T...>& a, const std::set<T...>& b)
 }
 //---------------------------------------------------------------------
 
+template<typename... T>
+void InplaceDifference(std::set<T...>& a, const std::set<T...>& b)
+{
+	auto ItA = a.begin();
+	auto ItB = b.cbegin();
+	while (ItA != a.end() && ItB != b.cend())
+	{
+		if (*ItA < *ItB)
+		{
+			++ItA;
+		}
+		else if (*ItB < *ItA)
+		{
+			++ItB; // for big b could also be: b.lower_bound(*ItA);
+		}
+		else
+		{
+			ItA = a.erase(ItA);
+			++ItB;
+		}
+	}
+}
+//---------------------------------------------------------------------
+
 }

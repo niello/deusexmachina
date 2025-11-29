@@ -82,7 +82,7 @@ template<typename TPolicy = CNoFilterPolicy>
 void TriggerStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity EntityID, CStrID Event, Game::CGameVarStorage& Vars, TPolicy Policy = {})
 {
 	if (const auto* pStatusEffectComponent = World.FindComponent<const CStatusEffectsComponent>(EntityID))
-		for (const auto& [ID, Stack] : pStatusEffectComponent->StatusEffectStacks)
+		for (const auto& [ID, Stack] : pStatusEffectComponent->Stacks)
 			TriggerStatusEffect(Session, Stack, Event, Vars, Policy);
 }
 //---------------------------------------------------------------------

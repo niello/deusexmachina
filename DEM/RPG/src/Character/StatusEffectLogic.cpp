@@ -183,6 +183,38 @@ static bool MergeStatusEffectInstances(const CStatusEffectData& Effect, CStatusE
 }
 //---------------------------------------------------------------------
 
+static void UpdateTagSuspension(CStatusEffectInstance& Instance, CStrID Tag, const CStatusEffectData& Effect, const CStatusEffectsComponent& Component)
+{
+	auto It = Component.SuspendedTags.find(Tag);
+	if (It == Component.SuspendedTags.cend()) return;
+
+	if (It->second.Behaviour)
+	{
+		Instance.SuspendBehaviourCounter += It->second.Behaviour;
+		if (Effect.SuspendBehaviourTags.find(Tag) != Effect.SuspendBehaviourTags.cend())
+			--Instance.SuspendBehaviourCounter;
+	}
+
+	if (It->second.Lifetime)
+	{
+		Instance.SuspendLifetimeCounter += It->second.Lifetime;
+		if (Effect.SuspendLifetimeTags.find(Tag) != Effect.SuspendLifetimeTags.cend())
+			--Instance.SuspendLifetimeCounter;
+	}
+}
+//---------------------------------------------------------------------
+
+template<typename F>
+void ForEachTag(const CStatusEffectData& Effect, const CStatusEffectInstance& Instance, F Callback)
+{
+	// NB: duplicates are removed when an instance is added
+	for (const CStrID Tag : Effect.Tags)
+		Callback(Tag);
+	for (const CStrID Tag : Instance.Tags)
+		Callback(Tag);
+}
+//---------------------------------------------------------------------
+
 bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, PStatusEffectInstance&& Instance)
 {
 	// Magnitude of each active instance must be greater than zero. Simply don't use magnitude value in formulas if you need not.
@@ -204,88 +236,94 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	//???where to cache immunity tags? or scan all active stacks and check one by one?
 	// Tag immunity (bool or %) is stored in stats and checked here?
 	//???are blocking tags and immunity tags the same thing?
+	//!!!blocking and clearing are different! clearing is a command ClearEffectsByTags { WithTags [...] WithoutTags [...] }
 
-	auto [ItStack, IsNewStack] = pStatusEffectComponent->StatusEffectStacks.try_emplace(Effect.ID);
+	auto [ItStack, IsNewStack] = pStatusEffectComponent->Stacks.try_emplace(Effect.ID);
 	auto& Stack = ItStack->second;
-
-	bool Merged = false;
-	if (Effect.Merge)
-	{
-		for (auto& ExistingInstance : Stack.Instances)
-		{
-			if (MergeStatusEffectInstances(Effect, *ExistingInstance, *Instance))
-			{
-				Merged = true;
-				break;
-			}
-		}
-	}
-
-	if (!Merged)
-	{
-		// Choose between existing and the new instance if the stacking policy requires it
-		if (!Stack.Instances.empty())
-		{
-			switch (Effect.StackPolicy)
-			{
-				case EStatusEffectStackPolicy::Discard:
-				{
-					return false;
-				}
-				case EStatusEffectStackPolicy::Replace:
-				{
-					Stack.Instances.clear();
-					break;
-				}
-				case EStatusEffectStackPolicy::KeepLongest:
-				{
-					for (const auto& ExistingInstance : Stack.Instances)
-						if (ExistingInstance->RemainingTime > Instance->RemainingTime)
-							return false;
-
-					Stack.Instances.clear();
-					break;
-				}
-				case EStatusEffectStackPolicy::KeepStrongest:
-				{
-					for (const auto& ExistingInstance : Stack.Instances)
-						if (ExistingInstance->Magnitude > Instance->Magnitude)
-							return false;
-
-					Stack.Instances.clear();
-					break;
-				}
-			}
-		}
-
-		// Clear magnitude when expiration condition is met. This effectively invalidates an instance.
-		if (const auto* pConditions = Session.FindFeature<Game::CLogicRegistry>())
-		{
-			if (auto* pCondition = pConditions->FindCondition(Instance->ValidityCondition.Type))
-			{
-				pCondition->SubscribeRelevantEvents(Instance->ConditionSubs, { Instance->ValidityCondition, Session, &Vars },
-					[pInstance = Instance.get(), &Session](std::unique_ptr<Game::CGameVarStorage>& EventVars)
-				{
-					if (!EventVars) EventVars = std::make_unique<Game::CGameVarStorage>();
-					EventVars->Set(CStrID("SourceCreature"), pInstance->SourceCreatureID);
-					EventVars->Set(CStrID("SourceItemStack"), pInstance->SourceItemStackID);
-
-					if (!Game::EvaluateCondition(pInstance->ValidityCondition, Session, EventVars.get()))
-						pInstance->Magnitude = 0.f;
-				});
-			}
-		}
-
-		// Add a new instance
-		Stack.Instances.push_back(std::move(Instance));
-	}
 
 	if (IsNewStack)
 	{
 		Stack.pEffectData = &Effect;
 
 		// TODO: remove effects blocked by us, remember blocking tags in some Tag->Counter cache if needed
+		// do this before suspension to process less
 
+		//!!!need also to propagate suspension into existing effects and instances that have this tag!
+		for (const CStrID Tag : Effect.SuspendBehaviourTags)
+			++pStatusEffectComponent->SuspendedTags[Tag].Behaviour;
+		for (const CStrID Tag : Effect.SuspendLifetimeTags)
+			++pStatusEffectComponent->SuspendedTags[Tag].Lifetime;
+	}
+	else if (!Stack.Instances.empty())
+	{
+		// Try merging a new instance into an existing one if allowed
+		if (Effect.AllowMerge)
+			for (auto& ExistingInstance : Stack.Instances)
+				if (MergeStatusEffectInstances(Effect, *ExistingInstance, *Instance))
+					return true; // TODO: may need to trigger OnMagnitudeChanged here, maybe inside MergeStatusEffectInstances
+
+		// Choose between existing and the new instance if the stacking policy requires it
+		switch (Effect.StackPolicy)
+		{
+			case EStatusEffectStackPolicy::Discard:
+			{
+				return false;
+			}
+			case EStatusEffectStackPolicy::Replace:
+			{
+				Stack.Instances.clear();
+				break;
+			}
+			case EStatusEffectStackPolicy::KeepLongest:
+			{
+				for (const auto& ExistingInstance : Stack.Instances)
+					if (ExistingInstance->RemainingTime > Instance->RemainingTime)
+						return false;
+
+				Stack.Instances.clear();
+				break;
+			}
+			case EStatusEffectStackPolicy::KeepStrongest:
+			{
+				for (const auto& ExistingInstance : Stack.Instances)
+					if (ExistingInstance->Magnitude > Instance->Magnitude)
+						return false;
+
+				Stack.Instances.clear();
+				break;
+			}
+		}
+	}
+
+	// Remove additional instance tags that duplicate common effect tags
+	Algo::InplaceDifference(Instance->Tags, Effect.Tags);
+
+	// Init suspension counters
+	ForEachTag(Effect, *Instance, [&](CStrID Tag) { UpdateTagSuspension(*Instance, Tag, Effect, *pStatusEffectComponent); });
+
+	// Clear magnitude when expiration condition is met. This effectively invalidates an instance.
+	if (const auto* pConditions = Session.FindFeature<Game::CLogicRegistry>())
+	{
+		if (auto* pCondition = pConditions->FindCondition(Instance->ValidityCondition.Type))
+		{
+			pCondition->SubscribeRelevantEvents(Instance->ConditionSubs, { Instance->ValidityCondition, Session, &Vars },
+				[pInstance = Instance.get(), &Session](std::unique_ptr<Game::CGameVarStorage>& EventVars)
+			{
+				if (!EventVars) EventVars = std::make_unique<Game::CGameVarStorage>();
+				EventVars->Set(CStrID("SourceCreature"), pInstance->SourceCreatureID);
+				EventVars->Set(CStrID("SourceItemStack"), pInstance->SourceItemStackID);
+
+				if (!Game::EvaluateCondition(pInstance->ValidityCondition, Session, EventVars.get()))
+					pInstance->Magnitude = 0.f;
+			});
+		}
+	}
+
+	// Add a new instance
+	Stack.Instances.push_back(std::move(Instance));
+
+	if (IsNewStack)
+	{
 		TriggerStatusEffect(Session, Stack, CStrID("OnAdded"), Vars);
 	}
 
@@ -322,7 +360,7 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 		//???!!!store Vars in stack? or even in instance? not to rebuild each time
 		Game::CGameVarStorage Vars;
 
-		for (auto ItStack = StatusEffects.StatusEffectStacks.begin(); ItStack != StatusEffects.StatusEffectStacks.end(); /**/)
+		for (auto ItStack = StatusEffects.Stacks.begin(); ItStack != StatusEffects.Stacks.end(); /**/)
 		{
 			auto& [ID, Stack] = *ItStack;
 
@@ -412,7 +450,7 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 					//???TODO: clear Vars from stack vars?
 				}
 
-				ItStack = StatusEffects.StatusEffectStacks.erase(ItStack);
+				ItStack = StatusEffects.Stacks.erase(ItStack);
 				continue;
 			}
 
