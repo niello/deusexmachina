@@ -183,7 +183,7 @@ static bool MergeStatusEffectInstances(const CStatusEffectData& Effect, CStatusE
 }
 //---------------------------------------------------------------------
 
-static void UpdateTagSuspension(CStatusEffectInstance& Instance, CStrID Tag, const CStatusEffectData& Effect, const CStatusEffectsComponent& Component)
+static void SetTagSuspension(CStatusEffectInstance& Instance, CStrID Tag, const CStatusEffectData& Effect, const CStatusEffectsComponent& Component)
 {
 	auto It = Component.SuspendedTags.find(Tag);
 	if (It == Component.SuspendedTags.cend()) return;
@@ -200,6 +200,38 @@ static void UpdateTagSuspension(CStatusEffectInstance& Instance, CStrID Tag, con
 		Instance.SuspendLifetimeCounter += It->second.Lifetime;
 		if (Effect.SuspendLifetimeTags.find(Tag) != Effect.SuspendLifetimeTags.cend())
 			--Instance.SuspendLifetimeCounter;
+	}
+}
+//---------------------------------------------------------------------
+
+static void ToggleSuspensionFromEffect(CStatusEffectsComponent& Component, const CStatusEffectData& Effect, bool Enable)
+{
+	const int32_t Mod = Enable ? 1 : -1;
+
+	for (const CStrID Tag : Effect.SuspendBehaviourTags)
+	{
+		Component.SuspendedTags[Tag].Behaviour += Mod;
+
+		for (auto& [OtherID, OtherStack] : Component.Stacks)
+		{
+			const bool HasTag = (OtherStack.pEffectData->Tags.find(Tag) != OtherStack.pEffectData->Tags.cend());
+			for (auto& OtherInstance : OtherStack.Instances)
+				if (HasTag || (OtherInstance->Tags.find(Tag) != OtherInstance->Tags.cend()))
+					OtherInstance->SuspendBehaviourCounter += Mod;
+		}
+	}
+
+	for (const CStrID Tag : Effect.SuspendLifetimeTags)
+	{
+		Component.SuspendedTags[Tag].Lifetime += Mod;
+
+		for (auto& [OtherID, OtherStack] : Component.Stacks)
+		{
+			const bool HasTag = (OtherStack.pEffectData->Tags.find(Tag) != OtherStack.pEffectData->Tags.cend());
+			for (auto& OtherInstance : OtherStack.Instances)
+				if (HasTag || (OtherInstance->Tags.find(Tag) != OtherInstance->Tags.cend()))
+					OtherInstance->SuspendLifetimeCounter += Mod;
+		}
 	}
 }
 //---------------------------------------------------------------------
@@ -245,14 +277,8 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	{
 		Stack.pEffectData = &Effect;
 
-		// TODO: remove effects blocked by us, remember blocking tags in some Tag->Counter cache if needed
-		// do this before suspension to process less
-
-		//!!!need also to propagate suspension into existing effects and instances that have this tag!
-		for (const CStrID Tag : Effect.SuspendBehaviourTags)
-			++pStatusEffectComponent->SuspendedTags[Tag].Behaviour;
-		for (const CStrID Tag : Effect.SuspendLifetimeTags)
-			++pStatusEffectComponent->SuspendedTags[Tag].Lifetime;
+		// NB: a new stack is not in the list yet, and it is intentional
+		ToggleSuspensionFromEffect(*pStatusEffectComponent, Effect, true);
 	}
 	else if (!Stack.Instances.empty())
 	{
@@ -299,7 +325,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	Algo::InplaceDifference(Instance->Tags, Effect.Tags);
 
 	// Init suspension counters
-	ForEachTag(Effect, *Instance, [&](CStrID Tag) { UpdateTagSuspension(*Instance, Tag, Effect, *pStatusEffectComponent); });
+	ForEachTag(Effect, *Instance, [&](CStrID Tag) { SetTagSuspension(*Instance, Tag, Effect, *pStatusEffectComponent); });
 
 	// Clear magnitude when expiration condition is met. This effectively invalidates an instance.
 	if (const auto* pConditions = Session.FindFeature<Game::CLogicRegistry>())
@@ -435,13 +461,14 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 			if (Stack.Instances.empty())
 			{
 				// OnRemoved behaviour is instance-less, handle manually
-				auto ItBhvs = Stack.pEffectData->Behaviours.find(CStrID("OnRemoved"));
-				if (ItBhvs != Stack.pEffectData->Behaviours.cend())
+				auto& Effect = *Stack.pEffectData;
+				auto ItBhvs = Effect.Behaviours.find(CStrID("OnRemoved"));
+				if (ItBhvs != Effect.Behaviours.cend())
 				{
 					//!!!source and target can be written to Vars, like in Flow! See ResolveEntityID, same as for e.g. conversation Initiator.
 					//???get source ID from the first instance? or add only if has a single instance / if is the same in all instances?
 					//!!!for all magnitude policies except sum can determine source etc, because a single Instance is selected!
-					Vars.Set(CStrID("StatusEffectID"), Stack.pEffectData->ID);
+					Vars.Set(CStrID("StatusEffectID"), Effect.ID);
 
 					for (const auto& Bhv : ItBhvs->second)
 						if (Game::EvaluateCondition(Bhv.Condition, Session, &Vars))
@@ -451,6 +478,10 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 				}
 
 				ItStack = StatusEffects.Stacks.erase(ItStack);
+
+				// NB: a new stack is not in the list already, and it is intentional
+				ToggleSuspensionFromEffect(StatusEffects, Effect, false);
+
 				continue;
 			}
 
