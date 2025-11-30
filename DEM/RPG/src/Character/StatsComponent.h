@@ -33,6 +33,8 @@ struct CStatsComponent
 	RPG::CBoolStat    CanMove;
 	RPG::CBoolStat    CanInteract;
 	RPG::CBoolStat    CanSpeak;
+
+	std::map<CStrID, RPG::CBoolStat> TagImmunity;
 };
 
 }
@@ -58,7 +60,8 @@ template<> constexpr auto RegisterMembers<Sh2::CStatsComponent>()
 		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, MaxHP),
 		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, CanMove),
 		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, CanInteract),
-		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, CanSpeak)
+		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, CanSpeak),
+		DEM_META_MEMBER_FIELD(Sh2::CStatsComponent, TagImmunity)
 	);
 }
 static_assert(CMetadata<Sh2::CStatsComponent>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?

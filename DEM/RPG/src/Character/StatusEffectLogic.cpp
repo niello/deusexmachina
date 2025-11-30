@@ -1,6 +1,7 @@
 #include "StatusEffectLogic.h"
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
+#include <Character/CharacterStatLogic.h>
 #include <Scripting/LogicRegistry.h>
 
 namespace DEM::RPG
@@ -212,12 +213,15 @@ static void ToggleSuspensionFromEffect(CStatusEffectsComponent& Component, const
 	{
 		Component.SuspendedTags[Tag].Behaviour += Mod;
 
-		for (auto& [OtherID, OtherStack] : Component.Stacks)
+		for (auto& [ID, Stack] : Component.Stacks)
 		{
-			const bool HasTag = (OtherStack.pEffectData->Tags.find(Tag) != OtherStack.pEffectData->Tags.cend());
-			for (auto& OtherInstance : OtherStack.Instances)
-				if (HasTag || (OtherInstance->Tags.find(Tag) != OtherInstance->Tags.cend()))
-					OtherInstance->SuspendBehaviourCounter += Mod;
+			// Always called before the stack is added or after it is removed
+			n_assert_dbg(Effect.ID != ID);
+
+			const bool HasTag = (Stack.pEffectData->Tags.find(Tag) != Stack.pEffectData->Tags.cend());
+			for (auto& Instance : Stack.Instances)
+				if (HasTag || (Instance->Tags.find(Tag) != Instance->Tags.cend()))
+					Instance->SuspendBehaviourCounter += Mod;
 		}
 	}
 
@@ -225,12 +229,15 @@ static void ToggleSuspensionFromEffect(CStatusEffectsComponent& Component, const
 	{
 		Component.SuspendedTags[Tag].Lifetime += Mod;
 
-		for (auto& [OtherID, OtherStack] : Component.Stacks)
+		for (auto& [ID, Stack] : Component.Stacks)
 		{
-			const bool HasTag = (OtherStack.pEffectData->Tags.find(Tag) != OtherStack.pEffectData->Tags.cend());
-			for (auto& OtherInstance : OtherStack.Instances)
-				if (HasTag || (OtherInstance->Tags.find(Tag) != OtherInstance->Tags.cend()))
-					OtherInstance->SuspendLifetimeCounter += Mod;
+			// Always called before the stack is added or after it is removed
+			n_assert_dbg(Effect.ID != ID);
+
+			const bool HasTag = (Stack.pEffectData->Tags.find(Tag) != Stack.pEffectData->Tags.cend());
+			for (auto& Instance : Stack.Instances)
+				if (HasTag || (Instance->Tags.find(Tag) != Instance->Tags.cend()))
+					Instance->SuspendLifetimeCounter += Mod;
 		}
 	}
 }
@@ -256,19 +263,17 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	auto* pStatusEffectComponent = World.FindOrAddComponent<CStatusEffectsComponent>(TargetID);
 	if (!pStatusEffectComponent) return false;
 
+	// Remove additional instance tags that duplicate common effect tags
+	Algo::InplaceDifference(Instance->Tags, Effect.Tags);
+
+	if (IsImmuneToAnyTag(World, TargetID, Effect.Tags)) return false;
+	if (IsImmuneToAnyTag(World, TargetID, Instance->Tags)) return false;
+
 	//???!!!store Vars in stack? or even in instance? not to rebuild each time
 	Game::CGameVarStorage Vars;
 	Vars.Set(CStrID("SourceCreature"), Instance->SourceCreatureID);
 	Vars.Set(CStrID("SourceItemStack"), Instance->SourceItemStackID);
 	if (!Game::EvaluateCondition(Instance->ValidityCondition, Session, &Vars)) return false;
-
-	// TODO: immunity / blocking
-	//!!!NB: blocking and suspension can use instance tags before it is merged!
-	// check by tags of other status effects if this effect is blocked
-	//???where to cache immunity tags? or scan all active stacks and check one by one?
-	// Tag immunity (bool or %) is stored in stats and checked here?
-	//???are blocking tags and immunity tags the same thing?
-	//!!!blocking and clearing are different! clearing is a command ClearEffectsByTags { WithTags [...] WithoutTags [...] }
 
 	auto [ItStack, IsNewStack] = pStatusEffectComponent->Stacks.try_emplace(Effect.ID);
 	auto& Stack = ItStack->second;
@@ -321,9 +326,6 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 		}
 	}
 
-	// Remove additional instance tags that duplicate common effect tags
-	Algo::InplaceDifference(Instance->Tags, Effect.Tags);
-
 	// Init suspension counters
 	ForEachTag(Effect, *Instance, [&](CStrID Tag) { SetTagSuspension(*Instance, Tag, Effect, *pStatusEffectComponent); });
 
@@ -349,9 +351,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	Stack.Instances.push_back(std::move(Instance));
 
 	if (IsNewStack)
-	{
 		TriggerStatusEffect(Session, Stack, CStrID("OnAdded"), Vars);
-	}
 
 	return true;
 }

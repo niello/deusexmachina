@@ -16,15 +16,19 @@ namespace DEM::RPG
 void RemoveStatModifiers(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SourceID)
 {
 	//???!!!how to optimize scanning all stats? store SourceID->vector<StatID> index map? or subscribe character on modifier source lifetime events?!
-	if (auto* pComponent = World.FindComponent<Sh2::CStatsComponent>(EntityID))
+	if (auto* pStats = World.FindComponent<Sh2::CStatsComponent>(EntityID))
 	{
-		DEM::Meta::CMetadata<Sh2::CStatsComponent>::ForEachMember([pComponent, SourceID](const auto& Member)
+		DEM::Meta::CMetadata<Sh2::CStatsComponent>::ForEachMember([pStats, SourceID](const auto& Member)
 		{
 			if constexpr (std::is_same_v<DEM::Meta::TMemberValue<decltype(Member)>, CNumericStat>)
-				Member.GetValueRef(*pComponent).RemoveModifiers(SourceID);
+				Member.GetValueRef(*pStats).RemoveModifiers(SourceID);
 			else if constexpr (std::is_same_v<DEM::Meta::TMemberValue<decltype(Member)>, CBoolStat>)
-				Member.GetValueRef(*pComponent).RemoveModifiers(SourceID);
+				Member.GetValueRef(*pStats).RemoveModifiers(SourceID);
 		});
+
+		//!!!FIXME: improve handling code! Now hard to maintain and understand!
+		for (auto& Stat : pStats->TagImmunity)
+			Stat.second.RemoveModifiers(SourceID);
 	}
 }
 //---------------------------------------------------------------------
@@ -58,6 +62,9 @@ void InitStats(Game::CGameWorld& World, Game::CGameSession& Session, Resources::
 			Stats.CanInteract.SetDesc(pArchetype->CanInteract.get());
 			Stats.CanSpeak.SetDesc(pArchetype->CanSpeak.get());
 
+			for (const CStrID Tag : pArchetype->TagImmunity)
+				Stats.TagImmunity[Tag].SetBaseValue(true);
+
 			//!!!must init other components!
 
 			if (auto* pDestructible = World.FindComponent<CDestructibleComponent>(EntityID))
@@ -83,6 +90,24 @@ void InitStats(Game::CGameWorld& World, Game::CGameSession& Session, Resources::
 			Stats.Sheet = new CCharacterSheet(World, EntityID);
 		}
 	});
+}
+//---------------------------------------------------------------------
+
+bool IsImmuneToAnyTag(const Game::CGameWorld& World, Game::HEntity EntityID, const std::set<CStrID>& Tags)
+{
+	if (Tags.empty()) return false;
+
+	auto* pStats = World.FindComponent<const Sh2::CStatsComponent>(EntityID);
+	if (!pStats) return false;
+
+	for (const CStrID Tag : Tags)
+	{
+		auto It = pStats->TagImmunity.find(Tag);
+		if (It != pStats->TagImmunity.cend() && It->second.Get())
+			return true;
+	}
+
+	return false;
 }
 //---------------------------------------------------------------------
 

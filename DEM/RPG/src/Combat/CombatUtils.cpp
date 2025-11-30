@@ -1,7 +1,6 @@
 #include "CombatUtils.h"
 #include <Combat/DestructibleComponent.h>
 #include <Game/ECS/GameWorld.h>
-#include <fmt/format.h>
 
 namespace DEM::RPG
 {

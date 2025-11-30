@@ -73,6 +73,8 @@ public:
 	std::unique_ptr<CBoolStatDefinition>    CanInteract;
 	std::unique_ptr<CBoolStatDefinition>    CanSpeak;
 
+	std::set<CStrID>                        TagImmunity;
+
 	std::set<CStrID>                        HitZones;
 
 	void OnPostLoad(const Resources::CDataAssetLoaderHRD<DEM::RPG::CArchetype>& Loader);
@@ -97,39 +99,6 @@ public:
 	virtual ~CArchetypeLoader() override;
 
 	auto* GetSession() const { return _Session.Get(); }
-};
-
-}
-
-namespace DEM::Serialization
-{
-
-//!!!FIXME: need generic serialization for all enums!
-template<>
-struct ParamsFormat<DEM::RPG::ERoundingRule>
-{
-	static inline void Serialize(Data::CData& Output, DEM::RPG::ERoundingRule Value)
-	{
-		switch (Value)
-		{
-			case DEM::RPG::ERoundingRule::None: Output = std::string("None"); return;
-			case DEM::RPG::ERoundingRule::Floor: Output = std::string("Floor"); return;
-			case DEM::RPG::ERoundingRule::Ceil: Output = std::string("Ceil"); return;
-			case DEM::RPG::ERoundingRule::Nearest: Output = std::string("Nearest"); return;
-			default: Output = {}; return;
-		}
-	}
-
-	static inline void Deserialize(const Data::CData& Input, DEM::RPG::ERoundingRule& Value)
-	{
-		if (!Input.IsA<std::string>()) return;
-
-		const std::string_view InputStr = Input.GetValue<std::string>();
-		if (InputStr == "None") Value = DEM::RPG::ERoundingRule::None;
-		else if (InputStr == "Floor") Value = DEM::RPG::ERoundingRule::Floor;
-		else if (InputStr == "Ceil") Value = DEM::RPG::ERoundingRule::Ceil;
-		else if (InputStr == "Nearest") Value = DEM::RPG::ERoundingRule::Nearest;
-	}
 };
 
 }
@@ -180,6 +149,7 @@ template<> constexpr auto RegisterMembers<RPG::CArchetype>()
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, CanMove),
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, CanInteract),
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, CanSpeak),
+		DEM_META_MEMBER_FIELD(RPG::CArchetype, TagImmunity),
 		DEM_META_MEMBER_FIELD(RPG::CArchetype, HitZones)
 	);
 }

@@ -15,7 +15,7 @@ struct CDestructibleComponent
 	Events::CSignal<void(int)>         OnHit;
 	Events::CSignal<void(EDamageType)> OnDestroyed;
 
-	// TODO: resistances and immunities. here or in a separate component with hit zones?
+	// TODO: damage resistances and immunities. here or in a separate component with hit zones?
 };
 
 }
