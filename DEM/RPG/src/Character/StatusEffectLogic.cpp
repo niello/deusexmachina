@@ -266,6 +266,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	// Remove additional instance tags that duplicate common effect tags
 	Algo::InplaceDifference(Instance->Tags, Effect.Tags);
 
+	//???TODO: use ForEachTag and find stats component once?!
 	if (IsImmuneToAnyTag(World, TargetID, Effect.Tags)) return false;
 	if (IsImmuneToAnyTag(World, TargetID, Instance->Tags)) return false;
 
@@ -291,7 +292,8 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 		if (Effect.AllowMerge)
 			for (auto& ExistingInstance : Stack.Instances)
 				if (MergeStatusEffectInstances(Effect, *ExistingInstance, *Instance))
-					return true; // TODO: may need to trigger OnMagnitudeChanged here, maybe inside MergeStatusEffectInstances
+					return true; // TODO: OnMagnitudeChanged (inside MergeStatusEffectInstances?)
+
 
 		// Choose between existing and the new instance if the stacking policy requires it
 		switch (Effect.StackPolicy)
@@ -337,12 +339,17 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 			pCondition->SubscribeRelevantEvents(Instance->ConditionSubs, { Instance->ValidityCondition, Session, &Vars },
 				[pInstance = Instance.get(), &Session](std::unique_ptr<Game::CGameVarStorage>& EventVars)
 			{
+				if (pInstance->Magnitude <= 0.f) return;
+
 				if (!EventVars) EventVars = std::make_unique<Game::CGameVarStorage>();
 				EventVars->Set(CStrID("SourceCreature"), pInstance->SourceCreatureID);
 				EventVars->Set(CStrID("SourceItemStack"), pInstance->SourceItemStackID);
 
 				if (!Game::EvaluateCondition(pInstance->ValidityCondition, Session, EventVars.get()))
+				{
 					pInstance->Magnitude = 0.f;
+					// TODO: OnMagnitudeChanged
+				}
 			});
 		}
 	}
@@ -352,6 +359,8 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 
 	if (IsNewStack)
 		TriggerStatusEffect(Session, Stack, CStrID("OnAdded"), Vars);
+
+	// TODO: OnMagnitudeChanged
 
 	return true;
 }
@@ -402,6 +411,8 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 					ItInstance = Stack.Instances.erase(ItInstance);
 				else
 					++ItInstance;
+
+				// TODO: OnMagnitudeChanged
 			}
 
 			if (!Stack.Instances.empty())
@@ -446,6 +457,7 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 						if (pInstance->RemainingTime <= dt)
 						{
 							ItInstance = Stack.Instances.erase(ItInstance);
+							// TODO: OnMagnitudeChanged
 							continue;
 						}
 
@@ -508,6 +520,7 @@ void ProcessStatusEffectsInstance(Game::CGameSession& Session, float Magnitude, 
 		return;
 	}
 
+	//???TODO: really need all aggregation types per bhv, or use magnitude merge policy? or one aggregation type for all bhvs?
 	switch (*Bhv.MagnitudeAggregation)
 	{
 		case EStatusEffectNumMergePolicy::Sum:
