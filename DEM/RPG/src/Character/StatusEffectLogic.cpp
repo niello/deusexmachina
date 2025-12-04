@@ -1,7 +1,7 @@
 #include "StatusEffectLogic.h"
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
-#include <Character/CharacterStatLogic.h>
+#include <Character/StatsComponent.h>
 #include <Scripting/LogicRegistry.h>
 
 namespace DEM::RPG
@@ -73,6 +73,27 @@ bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams*
 	}
 
 	return AddStatusEffect(Session, *pWorld, TargetEntityID, *pEffectData, std::move(Instance));
+}
+//---------------------------------------------------------------------
+
+bool Command_ModifyStatusEffectMagnitude(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars)
+{
+	if (!pVars) return false;
+
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return false;
+
+	auto* pInstance = FindCurrentStatusEffectInstance(*pWorld, *pVars);
+	if (!pInstance) return false;
+
+	// Params: Amount (signed; may be int, float or formula), Operation(?) (Mul, Add, Set)
+	//!!!clamp result to 0.f, don't allow negative!
+	//!!!handle formula as in Command_ApplyStatusEffect! Make a util function for that?
+	// TODO: OnMagnitudeChanged
+	//???what instance to choose? an active one? what if the command comes not from an effect instance? can't use then?
+	//!!!if reducing magnitude by time, may want to apply only to the first (oldest) instance, or allinstances will melt equally!
+	NOT_IMPLEMENTED;
+	return false;
 }
 //---------------------------------------------------------------------
 
@@ -243,17 +264,6 @@ static void ToggleSuspensionFromEffect(CStatusEffectsComponent& Component, const
 }
 //---------------------------------------------------------------------
 
-template<typename F>
-void ForEachTag(const CStatusEffectData& Effect, const CStatusEffectInstance& Instance, F Callback)
-{
-	// NB: duplicates are removed when an instance is added
-	for (const CStrID Tag : Effect.Tags)
-		Callback(Tag);
-	for (const CStrID Tag : Instance.Tags)
-		Callback(Tag);
-}
-//---------------------------------------------------------------------
-
 bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, PStatusEffectInstance&& Instance)
 {
 	// Magnitude of each active instance must be greater than zero. Simply don't use magnitude value in formulas if you need not.
@@ -266,12 +276,26 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	// Remove additional instance tags that duplicate common effect tags
 	Algo::InplaceDifference(Instance->Tags, Effect.Tags);
 
-	//???TODO: use ForEachTag and find stats component once?!
-	if (IsImmuneToAnyTag(World, TargetID, Effect.Tags)) return false;
-	if (IsImmuneToAnyTag(World, TargetID, Instance->Tags)) return false;
+	// Check for tag-based immunities
+	if (auto* pStats = World.FindComponent<const Sh2::CStatsComponent>(TargetID))
+	{
+		for (const CStrID Tag : Effect.Tags)
+		{
+			auto It = pStats->TagImmunity.find(Tag);
+			if (It != pStats->TagImmunity.cend() && It->second.Get())
+				return false;
+		}
+		for (const CStrID Tag : Instance->Tags)
+		{
+			auto It = pStats->TagImmunity.find(Tag);
+			if (It != pStats->TagImmunity.cend() && It->second.Get())
+				return false;
+		}
+	}
 
 	//???!!!store Vars in stack? or even in instance? not to rebuild each time
 	Game::CGameVarStorage Vars;
+	Vars.Set(CStrID("StatusEffectOwner"), TargetID);
 	Vars.Set(CStrID("SourceCreature"), Instance->SourceCreatureID);
 	Vars.Set(CStrID("SourceItemStack"), Instance->SourceItemStackID);
 	if (!Game::EvaluateCondition(Instance->ValidityCondition, Session, &Vars)) return false;
@@ -329,7 +353,10 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	}
 
 	// Init suspension counters
-	ForEachTag(Effect, *Instance, [&](CStrID Tag) { SetTagSuspension(*Instance, Tag, Effect, *pStatusEffectComponent); });
+	for (const CStrID Tag : Effect.Tags)
+		SetTagSuspension(*Instance, Tag, Effect, *pStatusEffectComponent);
+	for (const CStrID Tag : Instance->Tags)
+		SetTagSuspension(*Instance, Tag, Effect, *pStatusEffectComponent);
 
 	// Clear magnitude when expiration condition is met. This effectively invalidates an instance.
 	if (const auto* pConditions = Session.FindFeature<Game::CLogicRegistry>())
@@ -435,6 +462,8 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 						{
 							if (!ShouldProcessStatusEffectsInstance(Session, *Instance, Bhv, Vars)) continue;
 
+							// TODO: set StatusEffectInstanceIndex if separated stackable effect
+
 							const auto ActivationCount = CalcTimeTriggerActivationCount(Instance->Time, dt, Delay, Period);
 							for (size_t i = 0; i < ActivationCount; ++i)
 								ProcessStatusEffectsInstance(Session, Instance->Magnitude, Bhv, Vars, PendingMagnitude);
@@ -480,6 +509,7 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 					//!!!source and target can be written to Vars, like in Flow! See ResolveEntityID, same as for e.g. conversation Initiator.
 					//???get source ID from the first instance? or add only if has a single instance / if is the same in all instances?
 					//!!!for all magnitude policies except sum can determine source etc, because a single Instance is selected!
+					Vars.Set(CStrID("StatusEffectOwner"), EntityID);
 					Vars.Set(CStrID("StatusEffectID"), Effect.ID);
 
 					for (const auto& Bhv : ItBhvs->second)
@@ -546,6 +576,30 @@ void ProcessStatusEffectsInstance(Game::CGameSession& Session, float Magnitude, 
 			break;
 		}
 	}
+}
+//---------------------------------------------------------------------
+
+// Find a current status effect stack for a command context
+CStatusEffectStack* FindCurrentStatusEffectStack(const Game::CGameWorld& World, const Game::CGameVarStorage& Vars)
+{
+	const auto OwnerID = Vars.Get<Game::HEntity>(Vars.Find(CStrID("StatusEffectOwner")), {});
+	auto* pStatusEffectComponent = World.FindComponent<CStatusEffectsComponent>(OwnerID);
+	if (!pStatusEffectComponent) return nullptr;
+
+	const CStrID EffectID = Vars.Get<CStrID>(Vars.Find(CStrID("StatusEffectID")), {});
+	auto ItStack = pStatusEffectComponent->Stacks.find(EffectID);
+	return (ItStack != pStatusEffectComponent->Stacks.cend()) ? &ItStack->second : nullptr;
+}
+//---------------------------------------------------------------------
+
+// Find a current status effect instance for a command context
+CStatusEffectInstance* FindCurrentStatusEffectInstance(const Game::CGameWorld& World, const Game::CGameVarStorage& Vars)
+{
+	auto* pStack = FindCurrentStatusEffectStack(World, Vars);
+	if (!pStack) return nullptr;
+
+	const size_t InstanceIndex = static_cast<size_t>(Vars.Get<int>(Vars.Find(CStrID("StatusEffectInstanceIndex")), pStack->Instances.size()));
+	return (InstanceIndex < pStack->Instances.size()) ? pStack->Instances[InstanceIndex].get() : nullptr;
 }
 //---------------------------------------------------------------------
 

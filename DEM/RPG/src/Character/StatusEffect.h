@@ -55,7 +55,6 @@ public:
 
 	CStrID           ID;
 	std::set<CStrID> Tags;
-	std::set<CStrID> BlockTags;            // What effects are discarded and blocked from being added
 	std::set<CStrID> SuspendBehaviourTags; // What effect must temporarily stop affecting the world
 	std::set<CStrID> SuspendLifetimeTags;  // What effects must temporarily stop counting time to expire
 
@@ -91,6 +90,11 @@ public:
 	//!!!much like duration policy!
 
 	//???precalculated CGameVarStorage context for commands? Can use same merge policy as tags, just rename it.
+
+	void OnPostLoad()
+	{
+		Tags.insert(ID);
+	}
 };
 
 struct CStatusEffectInstance
@@ -174,7 +178,6 @@ template<> constexpr auto RegisterMembers<RPG::CStatusEffectData>()
 	(
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, ID),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, Tags),
-		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, BlockTags),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, SuspendBehaviourTags),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, SuspendLifetimeTags),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, Behaviours),

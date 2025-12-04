@@ -93,22 +93,4 @@ void InitStats(Game::CGameWorld& World, Game::CGameSession& Session, Resources::
 }
 //---------------------------------------------------------------------
 
-bool IsImmuneToAnyTag(const Game::CGameWorld& World, Game::HEntity EntityID, const std::set<CStrID>& Tags)
-{
-	if (Tags.empty()) return false;
-
-	auto* pStats = World.FindComponent<const Sh2::CStatsComponent>(EntityID);
-	if (!pStats) return false;
-
-	for (const CStrID Tag : Tags)
-	{
-		auto It = pStats->TagImmunity.find(Tag);
-		if (It != pStats->TagImmunity.cend() && It->second.Get())
-			return true;
-	}
-
-	return false;
-}
-//---------------------------------------------------------------------
-
 }

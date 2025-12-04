@@ -13,10 +13,14 @@ namespace DEM::RPG
 {
 
 bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars);
+bool Command_ModifyStatusEffectMagnitude(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars);
+
 bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, PStatusEffectInstance&& Instance);
 void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, float dt);
 bool ShouldProcessStatusEffectsInstance(Game::CGameSession& Session, const CStatusEffectInstance& Instance, const CStatusEffectBehaviour& Bhv, const Game::CGameVarStorage& Vars);
 void ProcessStatusEffectsInstance(Game::CGameSession& Session, float Magnitude, const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars, float& PendingMagnitude);
+CStatusEffectStack* FindCurrentStatusEffectStack(const Game::CGameWorld& World, const Game::CGameVarStorage& Vars);
+CStatusEffectInstance* FindCurrentStatusEffectInstance(const Game::CGameWorld& World, const Game::CGameVarStorage& Vars);
 
 HAS_METHOD_WITH_SIGNATURE_TRAIT(ShouldProcessBehaviour);
 HAS_METHOD_WITH_SIGNATURE_TRAIT(ShouldProcessInstance);
@@ -64,6 +68,8 @@ void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& 
 			if constexpr (has_method_with_signature_ShouldProcessInstance_v<TPolicy, bool(const CStatusEffectInstance&)>)
 				if (!Policy.ShouldProcessInstance(*Instance)) continue;
 
+			// TODO: set StatusEffectInstanceIndex if separated stackable effect
+
 			ProcessStatusEffectsInstance(Session, Instance->Magnitude, Bhv, Vars, PendingMagnitude);
 		}
 
@@ -82,8 +88,12 @@ template<typename TPolicy = CNoFilterPolicy>
 void TriggerStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity EntityID, CStrID Event, Game::CGameVarStorage& Vars, TPolicy Policy = {})
 {
 	if (const auto* pStatusEffectComponent = World.FindComponent<const CStatusEffectsComponent>(EntityID))
+	{
+		Vars.Set(CStrID("StatusEffectOwner"), EntityID);
+
 		for (const auto& [ID, Stack] : pStatusEffectComponent->Stacks)
 			TriggerStatusEffect(Session, Stack, Event, Vars, Policy);
+	}
 }
 //---------------------------------------------------------------------
 
