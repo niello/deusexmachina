@@ -7,6 +7,53 @@
 namespace DEM::RPG
 {
 
+static void OnMagnitudeChanged(CStatusEffectInstance& Instance, float PrevValue, float NewValue)
+{
+	if (PrevValue == NewValue) return;
+	//!!!must notify about aggregated magnitude in mergeable effects! But values passed are only instance's! Where to calc?
+	// need effect ID, owner ID, stack, to update modifiers based on magnitude
+	//???need instance? maybe not!
+	//trigger OnMagnitudeChanged bhv, probably with StatusEffectInstanceIndex in vars!
+}
+//---------------------------------------------------------------------
+
+//!!!TODO: to command utils!
+static float EvaluateCommandNumericValue(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars, CStrID ID, float Default)
+{
+	if (auto* pData = pParams ? pParams->FindValue(ID) : nullptr)
+	{
+		if (const auto* pValue = pData->As<float>())
+			return *pValue;
+
+		if (const auto* pValue = pData->As<int>())
+			return static_cast<float>(*pValue);
+
+		if (const auto* pValue = pData->As<std::string>())
+		{
+			//???pass source and target sheets? what else? how to make flexible (easily add other data if needed later)? use environment?
+			//???pass here or they must be passed from outside to every command, including this one? commands are also parametrized.
+			//!!!can be even Vars.Get(Params.MyID)!
+			sol::function Formula = Session.GetScriptState().script("return function(Params, Vars) return {} end"_format(*pValue));
+			return Scripting::LuaCall<float>(Formula, pParams, pVars);
+		}
+	}
+
+	return Default;
+}
+//---------------------------------------------------------------------
+
+//!!!TODO: to command utils!
+template<typename T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
+static T EvaluateCommandEnumValue(Game::CGameSession& Session, const Data::CParams* pParams, CStrID ID, T Default)
+{
+	T Value = Default;
+	Data::CData Data;
+	if (pParams && pParams->TryGet(Data, ID))
+		ParamsFormat::Deserialize(Data, Value);
+	return Value;
+}
+//---------------------------------------------------------------------
+
 bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars)
 {
 	// Params are required because of an effect ID, vars - because of a target entity ID
@@ -25,53 +72,24 @@ bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams*
 	const auto TargetEntityID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("Target")), {});
 	if (!TargetEntityID) return false;
 
-	//!!!TODO: source, tags & target info to an universal command context structure? besides arbitrary pVars.
-	//!!!need to take into account expiration conditions, thay will need vars for evaluation!
 	PStatusEffectInstance Instance(new CStatusEffectInstance());
 	Instance->SourceCreatureID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("SourceCreature")), {});
 	Instance->SourceItemStackID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("SourceItemStack")), {});
 	Instance->SourceAbilityID = pVars->Get<CStrID>(pVars->Find(CStrID("SourceAbility")), {});
 	Instance->SourceStatusEffectID = pVars->Get<CStrID>(pVars->Find(CStrID("SourceStatusEffect")), {});
 
-	Data::PDataArray TagsDesc;
+	Data::CData TagsDesc;
 	if (pParams->TryGet(TagsDesc, CStrID("Tags")))
-		for (const auto& TagData : *TagsDesc)
-			Instance->Tags.insert(TagData.GetValue<CStrID>());
+		ParamsFormat::Deserialize(TagsDesc, Instance->Tags);
 
 	Data::CData ConditionDesc;
 	if (pParams->TryGet(ConditionDesc, CStrID("ValidityCondition")))
 		ParamsFormat::Deserialize(ConditionDesc, Instance->ValidityCondition);
 
-	Instance->Magnitude = 1.f;
-	if (auto* pData = pParams->FindValue(CStrID("Magnitude")))
-	{
-		if (const auto* pValue = pData->As<float>())
-		{
-			Instance->Magnitude = *pValue;
-		}
-		else if (const auto* pValue = pData->As<std::string>())
-		{
-			//???pass source and target sheets? what else? how to make flexible (easily add other data if needed later)? use environment?
-			//???pass here or they must be passed from outside to every command, including this one? commands are also parametrized.
-			sol::function Formula = Session.GetScriptState().script("return function(Params, Vars) return {} end"_format(*pValue));
-			Instance->Magnitude = Scripting::LuaCall<float>(Formula, pParams, pVars);
-		}
-	}
+	Instance->Magnitude = EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Magnitude"), 1.f);
+	Instance->RemainingTime = EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Duration"), STATUS_EFFECT_INFINITE);
 
-	Instance->RemainingTime = STATUS_EFFECT_INFINITE;
-	if (auto* pData = pParams->FindValue(CStrID("Duration")))
-	{
-		if (const auto* pValue = pData->As<float>())
-		{
-			Instance->RemainingTime = *pValue;
-		}
-		else if (const auto* pValue = pData->As<std::string>())
-		{
-			sol::function Formula = Session.GetScriptState().script("return function(Params, Vars) return {} end"_format(*pValue));
-			Instance->RemainingTime = Scripting::LuaCall<float>(Formula, pParams, pVars);
-		}
-	}
-
+	// NB: positive magnitude check is inside
 	return AddStatusEffect(Session, *pWorld, TargetEntityID, *pEffectData, std::move(Instance));
 }
 //---------------------------------------------------------------------
@@ -86,12 +104,16 @@ bool Command_ModifyStatusEffectMagnitude(Game::CGameSession& Session, const Data
 	auto* pInstance = FindCurrentStatusEffectInstance(*pWorld, *pVars);
 	if (!pInstance) return false;
 
-	// Params: Amount (signed; may be int, float or formula), Operation(?) (Mul, Add, Set)
+	const auto Amount = EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Amount"), 1.f);
+
+	enum class EOp { Mul, Add, Set };
+	const EOp Op = EvaluateCommandEnumValue(Session, pParams, CStrID("Op"), EOp::Add);
+
+	//!!!for aggregated effects without specified instance, must affect first or all instances! if all, must not send OnMagnitudeChanged for each!
 	//!!!clamp result to 0.f, don't allow negative!
-	//!!!handle formula as in Command_ApplyStatusEffect! Make a util function for that?
 	// TODO: OnMagnitudeChanged
 	//???what instance to choose? an active one? what if the command comes not from an effect instance? can't use then?
-	//!!!if reducing magnitude by time, may want to apply only to the first (oldest) instance, or allinstances will melt equally!
+	//!!!if reducing magnitude by time, may want to apply only to the first (oldest) instance, or all instances will melt equally!
 	NOT_IMPLEMENTED;
 	return false;
 }
@@ -161,6 +183,7 @@ static bool MergeStatusEffectInstances(const CStatusEffectData& Effect, CStatusE
 		}
 	}
 
+	float PrevMagnitude = Dest.Magnitude;
 	switch (Effect.MagnitudeMergePolicy)
 	{
 		case EStatusEffectNumMergePolicy::Sum:
@@ -201,10 +224,13 @@ static bool MergeStatusEffectInstances(const CStatusEffectData& Effect, CStatusE
 		}
 	}
 
+	OnMagnitudeChanged(Dest, PrevMagnitude, Dest.Magnitude);
+
 	return true;
 }
 //---------------------------------------------------------------------
 
+// TODO: OnMagnitudeChanged
 static void SetTagSuspension(CStatusEffectInstance& Instance, CStrID Tag, const CStatusEffectData& Effect, const CStatusEffectsComponent& Component)
 {
 	auto It = Component.SuspendedTags.find(Tag);
@@ -226,6 +252,7 @@ static void SetTagSuspension(CStatusEffectInstance& Instance, CStrID Tag, const 
 }
 //---------------------------------------------------------------------
 
+// TODO: OnMagnitudeChanged
 static void ToggleSuspensionFromEffect(CStatusEffectsComponent& Component, const CStatusEffectData& Effect, bool Enable)
 {
 	const int32_t Mod = Enable ? 1 : -1;
@@ -316,7 +343,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 		if (Effect.AllowMerge)
 			for (auto& ExistingInstance : Stack.Instances)
 				if (MergeStatusEffectInstances(Effect, *ExistingInstance, *Instance))
-					return true; // TODO: OnMagnitudeChanged (inside MergeStatusEffectInstances?)
+					return true;
 
 
 		// Choose between existing and the new instance if the stacking policy requires it
@@ -375,7 +402,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 				if (!Game::EvaluateCondition(pInstance->ValidityCondition, Session, EventVars.get()))
 				{
 					pInstance->Magnitude = 0.f;
-					// TODO: OnMagnitudeChanged
+					OnMagnitudeChanged(*pInstance, pInstance->Magnitude, 0.f);
 				}
 			});
 		}
@@ -387,7 +414,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	if (IsNewStack)
 		TriggerStatusEffect(Session, Stack, CStrID("OnAdded"), Vars);
 
-	// TODO: OnMagnitudeChanged
+	OnMagnitudeChanged(*Stack.Instances.back(), 0.f, Stack.Instances.back()->Magnitude);
 
 	return true;
 }
@@ -431,15 +458,20 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 			// can't rely on signals, all subs are dropped.
 			for (auto ItInstance = Stack.Instances.begin(); ItInstance != Stack.Instances.end(); /**/)
 			{
-				const auto* pInstance = (*ItInstance).get();
-				if (pInstance->Magnitude <= 0.f)
+				const auto& Instance = *(*ItInstance).get();
+				if (Instance.Magnitude <= 0.f)
+				{
 					ItInstance = Stack.Instances.erase(ItInstance);
-				else if (pInstance->ConditionSubs.empty() && !Game::EvaluateCondition(pInstance->ValidityCondition, Session, &Vars))
+				}
+				else if (Instance.ConditionSubs.empty() && !Game::EvaluateCondition(Instance.ValidityCondition, Session, &Vars))
+				{
+					OnMagnitudeChanged(Instance, Instance.Magnitude, 0.f);
 					ItInstance = Stack.Instances.erase(ItInstance);
+				}
 				else
+				{
 					++ItInstance;
-
-				// TODO: OnMagnitudeChanged
+				}
 			}
 
 			if (!Stack.Instances.empty())
@@ -480,20 +512,20 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 				// Advance instance time and remove instances expired by time
 				for (auto ItInstance = Stack.Instances.begin(); ItInstance != Stack.Instances.end(); /**/)
 				{
-					auto* pInstance = (*ItInstance).get();
-					if (!pInstance->SuspendLifetimeCounter)
+					auto& Instance = *(*ItInstance).get();
+					if (!Instance.SuspendLifetimeCounter)
 					{
-						if (pInstance->RemainingTime <= dt)
+						if (Instance.RemainingTime <= dt)
 						{
+							OnMagnitudeChanged(Instance, Instance.Magnitude, 0.f);
 							ItInstance = Stack.Instances.erase(ItInstance);
-							// TODO: OnMagnitudeChanged
 							continue;
 						}
 
-						pInstance->RemainingTime -= dt;
+						Instance.RemainingTime -= dt;
 					}
 
-					pInstance->Time += dt;
+					Instance.Time += dt;
 					++ItInstance;
 				}
 			}
@@ -518,6 +550,8 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 
 					//???TODO: clear Vars from stack vars?
 				}
+
+				//!!!remove modifiers added by this stack! drop effects with this effect as a source?
 
 				ItStack = StatusEffects.Stacks.erase(ItStack);
 
