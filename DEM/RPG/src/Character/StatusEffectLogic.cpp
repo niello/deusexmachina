@@ -14,6 +14,7 @@ static void OnMagnitudeChanged(CStatusEffectInstance& Instance, float PrevValue,
 	// need effect ID, owner ID, stack, to update modifiers based on magnitude
 	//???need instance? maybe not!
 	//trigger OnMagnitudeChanged bhv, probably with StatusEffectInstanceIndex in vars!
+	//???maybe aggregate changes in magnitude, and trigger only in Update(dt)?
 }
 //---------------------------------------------------------------------
 
