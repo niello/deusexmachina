@@ -41,10 +41,9 @@ enum class EStatusEffectStackPolicy : U8
 
 struct CStatusEffectBehaviour
 {
-	Data::PParams                              Params;
-	Game::CConditionData                       Condition;
-	Game::CCommandList                         Commands;
-	std::optional<EStatusEffectNumMergePolicy> MagnitudeAggregation;
+	Data::PParams        Params;
+	Game::CConditionData Condition;
+	Game::CCommandList   Commands;
 };
 
 class CStatusEffectData : public Core::CObject
@@ -85,9 +84,6 @@ public:
 
 	// show in UI, icon, text with named param placeholders etc
 	// UI name, desc, tooltip, possibly with hyperlinks
-
-	//???flag "only first instance"? for applying instances from different sources in a sequence. One expires, the next starts. Need?
-	//!!!much like duration policy!
 
 	//???precalculated CGameVarStorage context for commands? Can use same merge policy as tags, just rename it.
 
@@ -133,8 +129,7 @@ struct CStatusEffectStack
 	// Modifiers are applied per stack, with source = stack effect ID. Modifier is updated (or removed and re-added).
 	// So each stat has only one modifiers from each affecting effect stack.
 
-	// cached magnitude? or recalc each time? also may need a dirty flag
-	// Total magnitude is recalculated each time and clamped to a min of all CStatusEffectData limits?
+	//float AggregatedMagnitude = 0.f;
 };
 
 struct CStatusEffectsComponent
@@ -165,8 +160,7 @@ template<> constexpr auto RegisterMembers<RPG::CStatusEffectBehaviour>()
 	(
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Params),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Condition),
-		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Commands),
-		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, MagnitudeAggregation)
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectBehaviour, Commands)
 	);
 }
 static_assert(CMetadata<RPG::CStatusEffectBehaviour>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?

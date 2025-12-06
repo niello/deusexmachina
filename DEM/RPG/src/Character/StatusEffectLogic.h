@@ -19,8 +19,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, float dt);
 bool ShouldProcessStatusEffectsInstance(Game::CGameSession& Session, const CStatusEffectInstance& Instance, const CStatusEffectBehaviour& Bhv, const Game::CGameVarStorage& Vars);
 void ProcessStatusEffectsInstance(Game::CGameSession& Session, float Magnitude, const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars, float& PendingMagnitude);
-CStatusEffectStack* FindCurrentStatusEffectStack(const Game::CGameWorld& World, const Game::CGameVarStorage& Vars);
-CStatusEffectInstance* FindCurrentStatusEffectInstance(const Game::CGameWorld& World, const Game::CGameVarStorage& Vars);
+std::pair<CStatusEffectStack*, CStatusEffectInstance*> FindCurrentStatusEffectInstance(const Game::CGameSession& Session, const Game::CGameVarStorage& Vars);
 
 HAS_METHOD_WITH_SIGNATURE_TRAIT(ShouldProcessBehaviour);
 HAS_METHOD_WITH_SIGNATURE_TRAIT(ShouldProcessInstance);
@@ -67,8 +66,6 @@ void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& 
 
 			if constexpr (has_method_with_signature_ShouldProcessInstance_v<TPolicy, bool(const CStatusEffectInstance&)>)
 				if (!Policy.ShouldProcessInstance(*Instance)) continue;
-
-			// TODO: set StatusEffectInstanceIndex if separated stackable effect
 
 			ProcessStatusEffectsInstance(Session, Instance->Magnitude, Bhv, Vars, PendingMagnitude);
 		}

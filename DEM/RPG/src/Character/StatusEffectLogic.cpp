@@ -7,14 +7,24 @@
 namespace DEM::RPG
 {
 
-static void OnMagnitudeChanged(CStatusEffectInstance& Instance, float PrevValue, float NewValue)
+static void OnMagnitudeChanged(CStatusEffectStack& Stack, CStatusEffectInstance& Instance, float PrevValue, float NewValue)
 {
-	if (PrevValue == NewValue) return;
-	//!!!must notify about aggregated magnitude in mergeable effects! But values passed are only instance's! Where to calc?
-	// need effect ID, owner ID, stack, to update modifiers based on magnitude
-	//???need instance? maybe not!
-	//trigger OnMagnitudeChanged bhv, probably with StatusEffectInstanceIndex in vars!
-	//???maybe aggregate changes in magnitude, and trigger only in Update(dt)?
+	if (Instance.SuspendBehaviourCounter || PrevValue == NewValue) return;
+
+	if (Stack.pEffectData->AllowMerge)
+	{
+		// calculate aggregated magnitude, don't count suspended
+		// if equal to previous, return (can be pretty frequent case e.g. for Max)
+		// set prev and new aggregated mag. to Vars
+	}
+	else
+	{
+		// add StatusEffectInstanceIndex to Vars
+		// set prev and new instance mag. to Vars
+	}
+
+	// TriggerStatusEffect(Session, Stack, CStrID("OnMagnitudeChanged"), Vars);
+	// update modifiers based on magnitude (re-eval formulas)
 }
 //---------------------------------------------------------------------
 
@@ -99,11 +109,8 @@ bool Command_ModifyStatusEffectMagnitude(Game::CGameSession& Session, const Data
 {
 	if (!pVars) return false;
 
-	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
-	if (!pWorld) return false;
-
-	auto* pInstance = FindCurrentStatusEffectInstance(*pWorld, *pVars);
-	if (!pInstance) return false;
+	auto [pStack, pInstance] = FindCurrentStatusEffectInstance(Session, *pVars);
+	if (!pStack || !pInstance) return false;
 
 	const auto Amount = EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Amount"), 1.f);
 
@@ -117,6 +124,30 @@ bool Command_ModifyStatusEffectMagnitude(Game::CGameSession& Session, const Data
 	//!!!if reducing magnitude by time, may want to apply only to the first (oldest) instance, or all instances will melt equally!
 	NOT_IMPLEMENTED;
 	return false;
+}
+//---------------------------------------------------------------------
+
+static void MergeValues(float& Dest, float Src, EStatusEffectNumMergePolicy Policy)
+{
+	switch (Policy)
+	{
+		case EStatusEffectNumMergePolicy::Sum:
+		{
+			Dest += Src;
+			break;
+		}
+		case EStatusEffectNumMergePolicy::Max:
+		{
+			if (Dest < Src)
+				Dest = Src;
+			break;
+		}
+		case EStatusEffectNumMergePolicy::Last:
+		{
+			Dest = Src;
+			break;
+		}
+	}
 }
 //---------------------------------------------------------------------
 
@@ -184,47 +215,10 @@ static bool MergeStatusEffectInstances(const CStatusEffectData& Effect, CStatusE
 		}
 	}
 
-	float PrevMagnitude = Dest.Magnitude;
-	switch (Effect.MagnitudeMergePolicy)
-	{
-		case EStatusEffectNumMergePolicy::Sum:
-		{
-			Dest.Magnitude += Src.Magnitude;
-			break;
-		}
-		case EStatusEffectNumMergePolicy::Max:
-		{
-			if (Dest.Magnitude < Src.Magnitude)
-				Dest.Magnitude = Src.Magnitude;
-			break;
-		}
-		case EStatusEffectNumMergePolicy::Last:
-		{
-			Dest.Magnitude = Src.Magnitude;
-			break;
-		}
-	}
+	MergeValues(Dest.RemainingTime, Src.RemainingTime, Effect.DurationMergePolicy);
 
-	switch (Effect.DurationMergePolicy)
-	{
-		case EStatusEffectNumMergePolicy::Sum:
-		{
-			Dest.RemainingTime += Src.RemainingTime;
-			break;
-		}
-		case EStatusEffectNumMergePolicy::Max:
-		{
-			if (Dest.RemainingTime < Src.RemainingTime)
-				Dest.RemainingTime = Src.RemainingTime;
-			break;
-		}
-		case EStatusEffectNumMergePolicy::Last:
-		{
-			Dest.RemainingTime = Src.RemainingTime;
-			break;
-		}
-	}
-
+	const float PrevMagnitude = Dest.Magnitude;
+	MergeValues(Dest.Magnitude, Src.Magnitude, Effect.MagnitudeMergePolicy);
 	OnMagnitudeChanged(Dest, PrevMagnitude, Dest.Magnitude);
 
 	return true;
@@ -578,63 +572,52 @@ bool ShouldProcessStatusEffectsInstance(Game::CGameSession& Session, const CStat
 void ProcessStatusEffectsInstance(Game::CGameSession& Session, float Magnitude, const CStatusEffectBehaviour& Bhv,
 	Game::CGameVarStorage& Vars, float& PendingMagnitude)
 {
-	if (!Bhv.MagnitudeAggregation)
+	if (Stack.pEffectData->AllowMerge)
 	{
+		switch (Stack.pEffectData->MagnitudeMergePolicy)
+		{
+			case EStatusEffectNumMergePolicy::Sum:
+				PendingMagnitude += Magnitude;
+				break;
+			case EStatusEffectNumMergePolicy::Max:
+				if (PendingMagnitude < Magnitude)
+					PendingMagnitude = Magnitude;
+				break;
+			case EStatusEffectNumMergePolicy::First:
+				if (PendingMagnitude <= 0.f)
+					PendingMagnitude = Magnitude;
+				break;
+			case EStatusEffectNumMergePolicy::Last:
+				PendingMagnitude = Magnitude;
+				break;
+		}
+	}
+	else
+	{
+		// TODO: set StatusEffectInstanceIndex to Vars
 		Vars.Set(CStrID("Magnitude"), Magnitude);
 		Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
-		return;
 	}
-
-	//???TODO: really need all aggregation types per bhv, or use magnitude merge policy? or one aggregation type for all bhvs?
-	switch (*Bhv.MagnitudeAggregation)
-	{
-		case EStatusEffectNumMergePolicy::Sum:
-		{
-			PendingMagnitude += Magnitude;
-			break;
-		}
-		case EStatusEffectNumMergePolicy::Max:
-		{
-			if (PendingMagnitude < Magnitude)
-				PendingMagnitude = Magnitude;
-			break;
-		}
-		case EStatusEffectNumMergePolicy::First:
-		{
-			if (PendingMagnitude <= 0.f)
-				PendingMagnitude = Magnitude;
-			break;
-		}
-		case EStatusEffectNumMergePolicy::Last:
-		{
-			PendingMagnitude = Magnitude;
-			break;
-		}
-	}
-}
-//---------------------------------------------------------------------
-
-// Find a current status effect stack for a command context
-CStatusEffectStack* FindCurrentStatusEffectStack(const Game::CGameWorld& World, const Game::CGameVarStorage& Vars)
-{
-	const auto OwnerID = Vars.Get<Game::HEntity>(Vars.Find(CStrID("StatusEffectOwner")), {});
-	auto* pStatusEffectComponent = World.FindComponent<CStatusEffectsComponent>(OwnerID);
-	if (!pStatusEffectComponent) return nullptr;
-
-	const CStrID EffectID = Vars.Get<CStrID>(Vars.Find(CStrID("StatusEffectID")), {});
-	auto ItStack = pStatusEffectComponent->Stacks.find(EffectID);
-	return (ItStack != pStatusEffectComponent->Stacks.cend()) ? &ItStack->second : nullptr;
 }
 //---------------------------------------------------------------------
 
 // Find a current status effect instance for a command context
-CStatusEffectInstance* FindCurrentStatusEffectInstance(const Game::CGameWorld& World, const Game::CGameVarStorage& Vars)
+std::pair<CStatusEffectStack*, CStatusEffectInstance*> FindCurrentStatusEffectInstance(const Game::CGameSession& Session, const Game::CGameVarStorage& Vars)
 {
-	auto* pStack = FindCurrentStatusEffectStack(World, Vars);
-	if (!pStack) return nullptr;
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return { nullptr, nullptr };
 
+	const auto OwnerID = Vars.Get<Game::HEntity>(Vars.Find(CStrID("StatusEffectOwner")), {});
+	auto* pStatusEffectComponent = pWorld->FindComponent<CStatusEffectsComponent>(OwnerID);
+	if (!pStatusEffectComponent) return { nullptr, nullptr };
+
+	const CStrID EffectID = Vars.Get<CStrID>(Vars.Find(CStrID("StatusEffectID")), {});
+	auto ItStack = pStatusEffectComponent->Stacks.find(EffectID);
+	if (ItStack == pStatusEffectComponent->Stacks.cend()) return { nullptr, nullptr };
+
+	auto* pStack = &ItStack->second;
 	const size_t InstanceIndex = static_cast<size_t>(Vars.Get<int>(Vars.Find(CStrID("StatusEffectInstanceIndex")), pStack->Instances.size()));
-	return (InstanceIndex < pStack->Instances.size()) ? pStack->Instances[InstanceIndex].get() : nullptr;
+	return { pStack, (InstanceIndex < pStack->Instances.size()) ? pStack->Instances[InstanceIndex].get() : nullptr };
 }
 //---------------------------------------------------------------------
 
