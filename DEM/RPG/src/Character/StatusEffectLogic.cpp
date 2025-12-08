@@ -109,21 +109,25 @@ bool Command_ModifyStatusEffectMagnitude(Game::CGameSession& Session, const Data
 {
 	if (!pVars) return false;
 
-	auto [pStack, pInstance] = FindCurrentStatusEffectInstance(Session, *pVars);
-	if (!pStack || !pInstance) return false;
+	const auto MagnitudeHandle = pVars->Find(CStrID("Magnitude"));
+	if (!MagnitudeHandle) return false;
+
+	float Magnitude = pVars->Get<float>(MagnitudeHandle, 0.f);
 
 	const auto Amount = EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Amount"), 1.f);
 
 	enum class EOp { Mul, Add, Set };
 	const EOp Op = EvaluateCommandEnumValue(Session, pParams, CStrID("Op"), EOp::Add);
+	switch (Op)
+	{
+		case EOp::Mul: Magnitude *= Amount; break;
+		case EOp::Add: Magnitude += Amount; break;
+		case EOp::Set: Magnitude = Amount; break;
+	}
 
-	//!!!for aggregated effects without specified instance, must affect first or all instances! if all, must not send OnMagnitudeChanged for each!
-	//!!!clamp result to 0.f, don't allow negative!
-	// TODO: OnMagnitudeChanged
-	//???what instance to choose? an active one? what if the command comes not from an effect instance? can't use then?
-	//!!!if reducing magnitude by time, may want to apply only to the first (oldest) instance, or all instances will melt equally!
-	NOT_IMPLEMENTED;
-	return false;
+	pVars->Set(MagnitudeHandle, Magnitude);
+
+	return true;
 }
 //---------------------------------------------------------------------
 
@@ -598,10 +602,13 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 	{
 		//???!!!store Vars in stack? or even in instance? not to rebuild each time
 		Game::CGameVarStorage Vars;
+		Vars.Set(CStrID("StatusEffectOwner"), EntityID);
 
 		for (auto ItStack = StatusEffects.Stacks.begin(); ItStack != StatusEffects.Stacks.end(); /**/)
 		{
 			auto& [ID, Stack] = *ItStack;
+
+			Vars.Set(CStrID("StatusEffectID"), Stack.pEffectData->ID);
 
 			// Remove instances expired by conditions or magnitude before further processing.
 			// Must check condition that has no subscriptions each frame. If a part of a condition
@@ -664,7 +671,6 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 					//!!!source and target can be written to Vars, like in Flow! See ResolveEntityID, same as for e.g. conversation Initiator.
 					//???get source ID from the first instance? or add only if has a single instance / if is the same in all instances?
 					//!!!for all magnitude policies except sum can determine source etc, because a single Instance is selected!
-					Vars.Set(CStrID("StatusEffectOwner"), EntityID);
 					Vars.Set(CStrID("StatusEffectID"), Effect.ID);
 
 					for (const auto& Bhv : ItBhvs->second)

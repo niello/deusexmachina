@@ -75,6 +75,8 @@ public:
 	EStatusEffectNumMergePolicy DurationMergePolicy = EStatusEffectNumMergePolicy::Sum;
 	EStatusEffectSetMergePolicy SourceMergePolicy = EStatusEffectSetMergePolicy::FullMatch;
 	EStatusEffectSetMergePolicy TagMergePolicy = EStatusEffectSetMergePolicy::FullMatch;
+	bool                        AllowMerge = true;
+
 	bool                        Aggregated = true;
 
 	// is hostile, is source known to target - or per command list or even per command? e.g. attack may not be a status effect but may use commands?
@@ -180,6 +182,7 @@ template<> constexpr auto RegisterMembers<RPG::CStatusEffectData>()
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, DurationMergePolicy),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, SourceMergePolicy),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, TagMergePolicy),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, AllowMerge),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, Aggregated)
 	);
 }
