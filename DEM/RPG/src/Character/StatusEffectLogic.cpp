@@ -557,6 +557,8 @@ void RunStatusEffectOnTimeBehaviour(Game::CGameSession& Session, const CStatusEf
 			if (!ShouldProcessStatusEffectsInstance(Session, *Instance, Bhv, Vars)) continue;
 
 			const auto ActivationCount = CalcTimeTriggerActivationCount(Instance->Time, dt, Delay, Period);
+			if (!ActivationCount) continue;
+
 			const float InstanceMagnitude = Instance->Magnitude * static_cast<float>(ActivationCount);
 
 			// TODO: MagnitudeMergePolicy -> AggregationPolicy!
