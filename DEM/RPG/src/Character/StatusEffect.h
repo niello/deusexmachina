@@ -64,11 +64,14 @@ public:
 	//!!!need a list of trigger types (IDs)! Maybe use vector indexed by enum? Skip where command list is empty. How to deserialize?! Key = enum element name!
 	//!!!try using command list in weapon/attack/ability/equipment first!
 
-	// TODO: can use in either merging, total value gathering or both
+	//???merge cap or aggregation cap? or need both separately? duration can be only merge cap, no duration aggregation ever happens!
 	//float MaxMagnitude = std::numeric_limits<float>::max();
 	//float MaxDuration = STATUS_EFFECT_INFINITE;
 
+	// Stacking and aggregation parameters
 	EStatusEffectStackPolicy    StackPolicy = EStatusEffectStackPolicy::Stack;
+	EStatusEffectNumMergePolicy MagnitudeAggregationPolicy = EStatusEffectNumMergePolicy::Sum;
+	bool                        Aggregated = true;
 
 	// Merging parameters
 	EStatusEffectNumMergePolicy MagnitudeMergePolicy = EStatusEffectNumMergePolicy::Sum;
@@ -76,8 +79,6 @@ public:
 	EStatusEffectSetMergePolicy SourceMergePolicy = EStatusEffectSetMergePolicy::FullMatch;
 	EStatusEffectSetMergePolicy TagMergePolicy = EStatusEffectSetMergePolicy::FullMatch;
 	bool                        AllowMerge = true;
-
-	bool                        Aggregated = true;
 
 	// is hostile, is source known to target - or per command list or even per command? e.g. attack may not be a status effect but may use commands?
 	// - each command can be hostile or not depending on the actual effect
@@ -122,6 +123,7 @@ struct CStatusEffectStack
 {
 	const CStatusEffectData*           pEffectData = nullptr; //???strong ptr? if resource, must have refcount anyway
 	std::vector<PStatusEffectInstance> Instances; // Pointer to an instance must be stable, it can be captured in condition callbacks
+	float                              AggregatedMagnitude = 0.f;
 
 	//???precalculated CGameVarStorage context for commands?
 
@@ -130,8 +132,6 @@ struct CStatusEffectStack
 	// list of modified stats, if needed. Can skip this optiization for now. Or store map source->stats in a stats component!
 	// Modifiers are applied per stack, with source = stack effect ID. Modifier is updated (or removed and re-added).
 	// So each stat has only one modifiers from each affecting effect stack.
-
-	//float AggregatedMagnitude = 0.f;
 };
 
 struct CStatusEffectsComponent
@@ -178,12 +178,13 @@ template<> constexpr auto RegisterMembers<RPG::CStatusEffectData>()
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, SuspendLifetimeTags),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, Behaviours),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, StackPolicy),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, MagnitudeAggregationPolicy),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, Aggregated),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, MagnitudeMergePolicy),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, DurationMergePolicy),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, SourceMergePolicy),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, TagMergePolicy),
-		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, AllowMerge),
-		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, Aggregated)
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, AllowMerge)
 	);
 }
 static_assert(CMetadata<RPG::CStatusEffectData>::ValidateMembers()); // FIXME: how to trigger in RegisterMembers?

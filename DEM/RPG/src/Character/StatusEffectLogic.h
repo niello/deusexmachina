@@ -46,15 +46,13 @@ void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& 
 	// TODO: method to merge vars from one storage to another in an optimized way, type by type? Or a composite
 	// resolver to combine multiple storages? Then could merge pre-baked stack or instance vars into external Vars.
 	// Or method like Combine(VarStorage Dest, { VarStorage, ... }) for any number of storages, with optimal reserve. Dest is reused.
-
 	const auto StatusEffectIDHandle = Vars.Set(CStrID("StatusEffectID"), Stack.pEffectData->ID);
 
 	for (const auto& Bhv : ItBhvs->second)
 	{
+		//???or use only Bhv.Condition?
 		if constexpr (has_method_with_signature_ShouldProcessBehaviour_v<TPolicy, bool(const CStatusEffectBehaviour&)>)
 			if (!Policy.ShouldProcessBehaviour(Bhv)) continue;
-
-		// TODO: can Bhv.Condition be independent from instance? If could, move it here and check once!
 
 		RunStatusEffectBehaviour(Session, Stack, Bhv, Vars);
 	}
