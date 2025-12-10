@@ -18,7 +18,6 @@ bool Command_ModifyStatusEffectMagnitude(Game::CGameSession& Session, const Data
 bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, PStatusEffectInstance&& Instance);
 void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, float dt);
 void RunStatusEffectBehaviour(Game::CGameSession& Session, const CStatusEffectStack& Stack, const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars);
-std::pair<CStatusEffectStack*, CStatusEffectInstance*> FindCurrentStatusEffectInstance(const Game::CGameSession& Session, const Game::CGameVarStorage& Vars);
 
 HAS_METHOD_WITH_SIGNATURE_TRAIT(ShouldProcessBehaviour);
 struct CNoFilterPolicy {};
