@@ -17,7 +17,7 @@ bool Command_ModifyStatusEffectMagnitude(Game::CGameSession& Session, const Data
 
 bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, PStatusEffectInstance&& Instance);
 void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, float dt);
-void RunStatusEffectBehaviour(Game::CGameSession& Session, const CStatusEffectStack& Stack, const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars);
+void RunStatusEffectBehaviour(Game::CGameSession& Session, CStatusEffectStack& Stack, const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars);
 
 HAS_METHOD_WITH_SIGNATURE_TRAIT(ShouldProcessBehaviour);
 struct CNoFilterPolicy {};
@@ -34,7 +34,7 @@ struct CBhvParamEqOrMissingPolicy
 };
 
 template<typename TPolicy = CNoFilterPolicy>
-void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& Stack, CStrID Event, Game::CGameVarStorage& Vars, TPolicy Policy = {})
+void TriggerStatusEffect(Game::CGameSession& Session, CStatusEffectStack& Stack, CStrID Event, Game::CGameVarStorage& Vars, TPolicy Policy = {})
 {
 	n_assert(!Stack.Instances.empty());
 	if (Stack.Instances.empty()) return;
@@ -65,11 +65,11 @@ void TriggerStatusEffect(Game::CGameSession& Session, const CStatusEffectStack& 
 template<typename TPolicy = CNoFilterPolicy>
 void TriggerStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity EntityID, CStrID Event, Game::CGameVarStorage& Vars, TPolicy Policy = {})
 {
-	if (const auto* pStatusEffectComponent = World.FindComponent<const CStatusEffectsComponent>(EntityID))
+	if (auto* pStatusEffectComponent = World.FindComponent<CStatusEffectsComponent>(EntityID))
 	{
 		Vars.Set(CStrID("StatusEffectOwner"), EntityID);
 
-		for (const auto& [ID, Stack] : pStatusEffectComponent->Stacks)
+		for (auto& [ID, Stack] : pStatusEffectComponent->Stacks)
 			TriggerStatusEffect(Session, Stack, Event, Vars, Policy);
 	}
 }

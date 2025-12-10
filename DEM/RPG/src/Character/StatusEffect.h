@@ -64,13 +64,10 @@ public:
 	//!!!need a list of trigger types (IDs)! Maybe use vector indexed by enum? Skip where command list is empty. How to deserialize?! Key = enum element name!
 	//!!!try using command list in weapon/attack/ability/equipment first!
 
-	//???merge cap or aggregation cap? or need both separately? duration can be only merge cap, no duration aggregation ever happens!
-	//float MaxMagnitude = std::numeric_limits<float>::max();
-	//float MaxDuration = STATUS_EFFECT_INFINITE;
-
 	// Stacking and aggregation parameters
 	EStatusEffectStackPolicy    StackPolicy = EStatusEffectStackPolicy::Stack;
 	EStatusEffectNumMergePolicy MagnitudeAggregationPolicy = EStatusEffectNumMergePolicy::Sum;
+	float                       MaxAggregatedMagnitude = std::numeric_limits<float>::max(); //???apply to instances when no aggregation?
 	bool                        Aggregated = true;
 
 	// Merging parameters
@@ -78,6 +75,7 @@ public:
 	EStatusEffectNumMergePolicy DurationMergePolicy = EStatusEffectNumMergePolicy::Sum;
 	EStatusEffectSetMergePolicy SourceMergePolicy = EStatusEffectSetMergePolicy::FullMatch;
 	EStatusEffectSetMergePolicy TagMergePolicy = EStatusEffectSetMergePolicy::FullMatch;
+	//float                       MaxInstanceDuration = STATUS_EFFECT_INFINITE;
 	bool                        AllowMerge = true;
 
 	// is hostile, is source known to target - or per command list or even per command? e.g. attack may not be a status effect but may use commands?
@@ -179,6 +177,7 @@ template<> constexpr auto RegisterMembers<RPG::CStatusEffectData>()
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, Behaviours),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, StackPolicy),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, MagnitudeAggregationPolicy),
+		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, MaxAggregatedMagnitude),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, Aggregated),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, MagnitudeMergePolicy),
 		DEM_META_MEMBER_FIELD(RPG::CStatusEffectData, DurationMergePolicy),
