@@ -434,8 +434,8 @@ static void ToggleSuspensionFromEffect(Game::CGameSession& Session, CStatusEffec
 
 		for (auto& [ID, Stack] : Component.Stacks)
 		{
-			// Always called before the stack is added or after it is removed
-			n_assert_dbg(Effect.ID != ID);
+			// An effect doesn't suspend itself
+			if (Effect.ID == ID) continue;
 
 			const bool HasTag = (Stack.pEffectData->Tags.find(Tag) != Stack.pEffectData->Tags.cend());
 			for (auto& Instance : Stack.Instances)
@@ -820,15 +820,35 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 }
 //---------------------------------------------------------------------
 
-bool AddNumericStatModifierFromStatusEffect(DEM::Game::CGameSession& Session, const Data::CParams* pParams, DEM::Game::CGameVarStorage& Vars, CStrID EffectID)
+bool AddNumericStatModifierFromStatusEffect(DEM::Game::CGameSession& Session, const Data::CParams& Params, DEM::Game::CGameVarStorage& Vars, CStrID EffectID)
 {
-	const CStrID StatID = pParams->Get<CStrID>(CStrID("Stat"), {});
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return false;
 
-	const auto Value = EvaluateCommandNumericValue(Session, pParams, &Vars, CStrID("Value"), 1.f);
-	const auto Type = EvaluateCommandEnumValue(Session, pParams, CStrID("Type"), EModifierType::Add);
+	const auto OwnerID = Vars.Get<Game::HEntity>(Vars.Find(CStrID("StatusEffectOwner")), {});
+	if (!OwnerID) return false;
 
-	// priority, default 0, use EvaluateCommandNumericValue and round? or force read int! no formula for priority? if string, read from string!
-	// source ID - EffectID
+	const CStrID StatID = Params.Get<CStrID>(CStrID("Stat"), {});
+	if (!StatID) return false;
+
+	auto* pStats = pWorld->FindComponent<Sh2::CStatsComponent>(OwnerID);
+	if (!pStats) return false;
+
+	const auto Priority = static_cast<U16>(Params.Get<int>(CStrID("Priority"), 0));
+	const auto Value = EvaluateCommandNumericValue(Session, &Params, &Vars, CStrID("Value"), 1.f);
+	const auto Type = EvaluateCommandEnumValue(Session, &Params, CStrID("Type"), EModifierType::Add);
+
+	//???get from CCharacterSheet instead?
+	Meta::CMetadata<Sh2::CStatsComponent>::WithMember(StatID.ToStringView(), [pStats, Type, Value, EffectID, Priority](auto&& Member)
+	{
+		using TMember = DEM::Meta::TMemberValue<decltype(Member)>;
+		if constexpr (std::is_same_v<TMember, CNumericStat>)
+		{
+			Member.GetValueRef(*pStats).AddModifier(Type, Value, EffectID, Priority);
+
+			// ...
+		}
+	});
 
 	//!!!assert that it is aggregated or has 1 instance, otherwise behaviour is unexpected by user (source ID is not per-instance)!
 

@@ -18,7 +18,7 @@ bool Command_ModifyStatusEffectMagnitude(Game::CGameSession& Session, const Data
 bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, PStatusEffectInstance&& Instance);
 void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, float dt);
 void RunStatusEffectBehaviour(Game::CGameSession& Session, CStatusEffectStack& Stack, const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars);
-bool AddNumericStatModifierFromStatusEffect(DEM::Game::CGameSession& Session, const Data::CParams* pParams, DEM::Game::CGameVarStorage& Vars, CStrID EffectID);
+bool AddNumericStatModifierFromStatusEffect(DEM::Game::CGameSession& Session, const Data::CParams& Params, DEM::Game::CGameVarStorage& Vars, CStrID EffectID);
 
 HAS_METHOD_WITH_SIGNATURE_TRAIT(ShouldProcessBehaviour);
 struct CNoFilterPolicy {};
