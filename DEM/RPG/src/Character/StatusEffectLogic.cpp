@@ -820,14 +820,21 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 }
 //---------------------------------------------------------------------
 
-bool AddStatModifierFromStatusEffect(DEM::Game::CGameSession& Session, const Data::CParams* pParams, DEM::Game::CGameVarStorage& Vars, CStrID EffectID)
+bool AddNumericStatModifierFromStatusEffect(DEM::Game::CGameSession& Session, const Data::CParams* pParams, DEM::Game::CGameVarStorage& Vars, CStrID EffectID)
 {
+	const CStrID StatID = pParams->Get<CStrID>(CStrID("Stat"), {});
+
+	const auto Value = EvaluateCommandNumericValue(Session, pParams, &Vars, CStrID("Value"), 1.f);
+	const auto Type = EvaluateCommandEnumValue(Session, pParams, CStrID("Type"), EModifierType::Add);
+
+	// priority, default 0, use EvaluateCommandNumericValue and round? or force read int! no formula for priority? if string, read from string!
+	// source ID - EffectID
+
 	//!!!assert that it is aggregated or has 1 instance, otherwise behaviour is unexpected by user (source ID is not per-instance)!
 
 	//!!!document the problem with adding modifiers from different commands! can be cumulative or overwriting!
 	//e.g. OnMagnitudeChange -> set modifier Strength -Mag. Or OnEachHit -> add modifier Strength -Mag. Different types of effects.
-	//???use Operator? but can't update total value without total recalculation, which is probably impossible, or must store all active mod formulas and values in stack!
-	//???!!!tag immunity as a separate command or here?!
+	//???!!!tag immunity / bool mod as a separate command or here?!
 
 	//???what part of a command logic is common for all modifier sources?
 
