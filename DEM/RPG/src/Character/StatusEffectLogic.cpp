@@ -446,6 +446,25 @@ static void ToggleSuspensionFromEffect(Game::CGameSession& Session, CStatusEffec
 }
 //---------------------------------------------------------------------
 
+// These behaviours are executed on the stack level, without instances and magnitude
+static void RunStackLevelBehaviour(Game::CGameSession& Session, CStatusEffectStack& Stack, Game::CGameVarStorage& Vars, CStrID ID)
+{
+	auto& Effect = *Stack.pEffectData;
+	auto ItBhvs = Effect.Behaviours.find(ID);
+	if (ItBhvs == Effect.Behaviours.cend()) return;
+
+	const auto StatusEffectIDHandle = Vars.Set(CStrID("StatusEffectID"), Effect.ID);
+
+	for (const auto& Bhv : ItBhvs->second)
+		if (Game::EvaluateCondition(Bhv.Condition, Session, &Vars))
+			Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
+
+	//???TODO: clear Vars from stack vars?
+	// TODO: CVarStorage::Erase!
+	Vars.Set(StatusEffectIDHandle, CStrID::Empty);
+}
+//---------------------------------------------------------------------
+
 bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, PStatusEffectInstance&& Instance)
 {
 	// Magnitude of each active instance must be greater than zero. Simply don't use magnitude value in formulas if you need not.
@@ -585,7 +604,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	Stack.Instances.push_back(std::move(Instance));
 
 	if (IsNewStack)
-		TriggerStatusEffect(Session, Stack, CStrID("OnAdded"), Vars);
+		RunStackLevelBehaviour(Session, Stack, Vars, CStrID("OnAdded"));
 
 	auto& NewInstance = *Stack.Instances.back();
 	if (!NewInstance.SuspendBehaviourCounter)
@@ -790,26 +809,15 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 			// Remove totally expired status effect stacks
 			if (Stack.Instances.empty())
 			{
-				// OnRemoved is handled manually because it runs without instances and magnitude
-				auto& Effect = *Stack.pEffectData;
-				auto ItBhvs = Effect.Behaviours.find(CStrID("OnRemoved"));
-				if (ItBhvs != Effect.Behaviours.cend())
-				{
-					Vars.Set(CStrID("StatusEffectID"), Effect.ID);
+				RunStackLevelBehaviour(Session, Stack, Vars, CStrID("OnRemoved"));
 
-					for (const auto& Bhv : ItBhvs->second)
-						if (Game::EvaluateCondition(Bhv.Condition, Session, &Vars))
-							Game::ExecuteCommandList(Bhv.Commands, Session, &Vars);
-
-					//???TODO: clear Vars from stack vars?
-				}
-
-				//!!!remove modifiers added by this stack! drop effects with this effect as a source?
+				//!!!remove modifiers added by this stack!
+				//???drop effects with this effect as a source?
 
 				ItStack = StatusEffects.Stacks.erase(ItStack);
 
 				// NB: a removed stack is not in the list already, and it is intentional
-				ToggleSuspensionFromEffect(Session, StatusEffects, Effect, false);
+				ToggleSuspensionFromEffect(Session, StatusEffects, *Stack.pEffectData, false);
 			}
 			else
 			{
