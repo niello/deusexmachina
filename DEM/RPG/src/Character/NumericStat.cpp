@@ -55,14 +55,15 @@ void CNumericStat::AddModifier(EModifierType Type, float Value, CStrID SourceID,
 }
 //---------------------------------------------------------------------
 
-void CNumericStat::RemoveModifiers(CStrID SourceID)
+bool CNumericStat::RemoveModifiers(CStrID SourceID)
 {
 	auto It = std::remove_if(_Modifiers.begin(), _Modifiers.end(), [SourceID](const auto& Elm) { return Elm.SourceID == SourceID; });
-	if (It == _Modifiers.end()) return;
+	if (It == _Modifiers.end()) return false;
 
 	_Modifiers.erase(It, _Modifiers.end());
 	_FinalDirty = true;
 	OnModified(*this);
+	return true;
 }
 //---------------------------------------------------------------------
 

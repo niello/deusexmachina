@@ -2,12 +2,13 @@
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
 #include <Character/StatsComponent.h>
+#include <Character/CharacterStatLogic.h>
 #include <Scripting/LogicRegistry.h>
 
 namespace DEM::RPG
 {
-static void OnAggregatedMagnitudeChanged(Game::CGameSession& Session, CStatusEffectStack& Stack, float NewMagnitude);
-static void OnSeparateMagnitudeChanged(Game::CGameSession& Session, const CStatusEffectData& Effect, CStatusEffectInstance& Instance, float PrevValue);
+static void OnAggregatedMagnitudeChanged(Game::CGameSession& Session, CStatusEffectStack& Stack, Game::HEntity OwnerID, float NewMagnitude);
+static void OnSeparateMagnitudeChanged(Game::CGameSession& Session, CStatusEffectStack& Stack, CStatusEffectInstance& Instance, Game::HEntity OwnerID, float PrevMagnitude);
 
 static void MergeValues(float& Dest, float Src, EStatusEffectNumMergePolicy Policy)
 {
@@ -30,6 +31,43 @@ static void MergeValues(float& Dest, float Src, EStatusEffectNumMergePolicy Poli
 			break;
 		}
 	}
+}
+//---------------------------------------------------------------------
+
+static float EvaluateCommandNumericValue(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars, CStrID ID, float Default)
+{
+	if (auto* pData = pParams ? pParams->FindValue(ID) : nullptr)
+	{
+		if (const auto* pValue = pData->As<float>())
+			return *pValue;
+
+		if (const auto* pValue = pData->As<int>())
+			return static_cast<float>(*pValue);
+
+		if (const auto* pValue = pData->As<std::string>())
+		{
+			//???pass source and target sheets? what else? how to make flexible (easily add other data if needed later)?
+			//???use environment instead of an immediate call of a temporary function?
+			//???pass here or they must be passed from outside to every command, including this one? commands are also parametrized.
+			//!!!can be even Vars.Get(Params.MyID)!
+			//!!!also can call a function, even bound from C++! Formula can be like DEM.RPG.LinearStepwisePoison(Vars.Get('Magnitude')).
+			sol::function Formula = Session.GetScriptState().script("return function(Params, Vars) return {} end"_format(*pValue));
+			return Scripting::LuaCall<float>(Formula, pParams, pVars);
+		}
+	}
+
+	return Default;
+}
+//---------------------------------------------------------------------
+
+template<typename T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
+static T EvaluateCommandEnumValue(Game::CGameSession& Session, const Data::CParams* pParams, CStrID ID, T Default)
+{
+	T Value = Default;
+	Data::CData Data;
+	if (pParams && pParams->TryGet(Data, ID))
+		ParamsFormat::Deserialize(Data, Value);
+	return Value;
 }
 //---------------------------------------------------------------------
 
@@ -59,7 +97,7 @@ static float CalcAggregatedMagnitude(const CStatusEffectStack& Stack)
 }
 //---------------------------------------------------------------------
 
-static void RunBhvAggregated(Game::CGameSession& Session, CStatusEffectStack& Stack,
+static void RunBhvAggregated(Game::CGameSession& Session, CStatusEffectStack& Stack, Game::HEntity OwnerID,
 	const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars, float Magnitude)
 {
 	if (Magnitude <= 0.f) return;
@@ -111,12 +149,13 @@ static void RunBhvAggregated(Game::CGameSession& Session, CStatusEffectStack& St
 			n_assert(RemainingDiff == 0.f);
 		}
 
-		OnAggregatedMagnitudeChanged(Session, Stack, NewMagnitude);
+		OnAggregatedMagnitudeChanged(Session, Stack, OwnerID, NewMagnitude);
 	}
 }
 //---------------------------------------------------------------------
 
-static void RunBhvSeparate(Game::CGameSession& Session, const CStatusEffectData& Effect, CStatusEffectInstance& Instance, const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars)
+static void RunBhvSeparate(Game::CGameSession& Session, CStatusEffectStack& Stack, Game::HEntity OwnerID,
+	CStatusEffectInstance& Instance, const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars)
 {
 	// Some behaviours may need to run on suspended or expired instances
 	const float Magnitude = Instance.SuspendBehaviourCounter ? 0.f : Instance.Magnitude;
@@ -135,100 +174,100 @@ static void RunBhvSeparate(Game::CGameSession& Session, const CStatusEffectData&
 		n_assert(!Instance.SuspendBehaviourCounter);
 
 		Instance.Magnitude = NewMagnitude;
-		OnSeparateMagnitudeChanged(Session, Effect, Instance, Magnitude);
+		OnSeparateMagnitudeChanged(Session, Stack, Instance, OwnerID, Magnitude);
 	}
 }
 //---------------------------------------------------------------------
 
-static void OnAggregatedMagnitudeChanged(Game::CGameSession& Session, CStatusEffectStack& Stack, float NewMagnitude)
+static void RefreshModifiersWithMagnitude(Game::CGameSession& Session, CStatusEffectStack& Stack, Game::HEntity OwnerID, float Magnitude)
+{
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return;
+
+	auto* pStats = pWorld->FindComponent<Sh2::CStatsComponent>(OwnerID);
+	if (!pStats) return;
+
+	const auto EffectID = Stack.pEffectData->ID;
+
+	Game::CGameVarStorage Vars;
+	Vars.Set(CStrID("StatusEffectOwner"), OwnerID);
+	Vars.Set(CStrID("StatusEffectID"), EffectID);
+	Vars.Set(CStrID("Magnitude"), Magnitude);
+
+	for (const auto& [StatID, Record] : Stack.ActiveMagnitudeStatModifiers)
+	{
+		Meta::CMetadata<Sh2::CStatsComponent>::WithMember(StatID.ToStringView(), [&Session, &Vars, pStats, EffectID, &Record](auto&& Member)
+		{
+			if constexpr (std::is_same_v<Meta::TMemberValue<decltype(Member)>, CNumericStat>)
+			{
+				//!!!FIXME: DUPLICATED CODE!
+				sol::function Formula = Session.GetScriptState().script("return function(Params, Vars) return {} end"_format(Record.FormulaStr));
+				const float Value = Scripting::LuaCall<float>(Formula, Record.pParams, Vars);
+				if (Value != Record.Value)
+				{
+					auto& Stat = Member.GetValueRef(*pStats);
+					Stat.RemoveModifiers(EffectID);
+					Stat.AddModifier(Record.Type, Value, EffectID, Record.Priority);
+				}
+			}
+		});
+	}
+}
+//---------------------------------------------------------------------
+
+static void OnAggregatedMagnitudeChanged(Game::CGameSession& Session, CStatusEffectStack& Stack, Game::HEntity OwnerID, float NewMagnitude)
 {
 	const float PrevMagnitude = Stack.AggregatedMagnitude;
 	if (PrevMagnitude == NewMagnitude) return;
 	Stack.AggregatedMagnitude = NewMagnitude;
 
-	//!!!update Stack modifiers based on magnitude (re-eval formulas), erase mods that became +0 or *1!
+	RefreshModifiersWithMagnitude(Session, Stack, OwnerID, Stack.AggregatedMagnitude);
 
 	auto ItBhvs = Stack.pEffectData->Behaviours.find(CStrID("OnMagnitudeChanged"));
 	if (ItBhvs != Stack.pEffectData->Behaviours.cend())
 	{
 		Game::CGameVarStorage Vars;
-		//Vars.Set(CStrID("StatusEffectOwner"), EntityID);
+		Vars.Set(CStrID("StatusEffectOwner"), OwnerID);
 		Vars.Set(CStrID("StatusEffectID"), Stack.pEffectData->ID);
 		Vars.Set(CStrID("PrevMagnitude"), PrevMagnitude);
 
 		// NB: must not use NewMagnitude here, because an aggregated magnitude can change in subsequent commands
 		for (const auto& Bhv : ItBhvs->second)
 			if (Game::EvaluateCondition(Bhv.Condition, Session, &Vars))
-				RunBhvAggregated(Session, Stack, Bhv, Vars, Stack.AggregatedMagnitude);
+				RunBhvAggregated(Session, Stack, OwnerID, Bhv, Vars, Stack.AggregatedMagnitude);
 	}
 }
 //---------------------------------------------------------------------
 
-static void OnSeparateMagnitudeChanged(Game::CGameSession& Session, const CStatusEffectData& Effect, CStatusEffectInstance& Instance, float PrevValue)
+static void OnSeparateMagnitudeChanged(Game::CGameSession& Session, CStatusEffectStack& Stack, CStatusEffectInstance& Instance, Game::HEntity OwnerID, float PrevMagnitude)
 {
-	const float NewValue = Instance.SuspendBehaviourCounter ? 0.f : Instance.Magnitude;
-	if (PrevValue == NewValue) return;
+	const float NewMagnitude = Instance.SuspendBehaviourCounter ? 0.f : Instance.Magnitude;
+	if (PrevMagnitude == NewMagnitude) return;
 
-	//!!!update Stack modifiers based on magnitude (re-eval formulas), erase mods that became +0 or *1!
+	RefreshModifiersWithMagnitude(Session, Stack, OwnerID, NewMagnitude);
 
+	const auto& Effect = *Stack.pEffectData;
 	auto ItBhvs = Effect.Behaviours.find(CStrID("OnMagnitudeChanged"));
 	if (ItBhvs != Effect.Behaviours.cend())
 	{
 		Game::CGameVarStorage Vars;
-		//Vars.Set(CStrID("StatusEffectOwner"), EntityID);
+		Vars.Set(CStrID("StatusEffectOwner"), OwnerID);
 		Vars.Set(CStrID("StatusEffectID"), Effect.ID);
-		Vars.Set(CStrID("PrevMagnitude"), PrevValue);
+		Vars.Set(CStrID("PrevMagnitude"), PrevMagnitude);
 		for (const auto& Bhv : ItBhvs->second)
 			if (Game::EvaluateCondition(Bhv.Condition, Session, &Vars))
-				RunBhvSeparate(Session, Effect, Instance, Bhv, Vars);
+				RunBhvSeparate(Session, Stack, OwnerID, Instance, Bhv, Vars);
 	}
 }
 //---------------------------------------------------------------------
 
-static inline void OnMagnitudeChanged(Game::CGameSession& Session, CStatusEffectStack& Stack, CStatusEffectInstance& Instance, float PrevValue)
+static inline void OnMagnitudeChanged(Game::CGameSession& Session, CStatusEffectStack& Stack, Game::HEntity OwnerID, CStatusEffectInstance& Instance, float PrevValue)
 {
 	// Aggregated effects don't handle individual instance magnitude changes, only an aggregated value matters
 	if (Stack.pEffectData->Aggregated)
-		OnAggregatedMagnitudeChanged(Session, Stack, CalcAggregatedMagnitude(Stack));
+		OnAggregatedMagnitudeChanged(Session, Stack, OwnerID, CalcAggregatedMagnitude(Stack));
 	else
-		OnSeparateMagnitudeChanged(Session, *Stack.pEffectData, Instance, PrevValue);
-}
-//---------------------------------------------------------------------
-
-static float EvaluateCommandNumericValue(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars, CStrID ID, float Default)
-{
-	if (auto* pData = pParams ? pParams->FindValue(ID) : nullptr)
-	{
-		if (const auto* pValue = pData->As<float>())
-			return *pValue;
-
-		if (const auto* pValue = pData->As<int>())
-			return static_cast<float>(*pValue);
-
-		if (const auto* pValue = pData->As<std::string>())
-		{
-			//???pass source and target sheets? what else? how to make flexible (easily add other data if needed later)?
-			//???use environment instead of an immediate call of a temporary function?
-			//???pass here or they must be passed from outside to every command, including this one? commands are also parametrized.
-			//!!!can be even Vars.Get(Params.MyID)!
-			//!!!also can call a function, even bound from C++! Formula can be like DEM.RPG.LinearStepwisePoison(Vars.Get('Magnitude')).
-			sol::function Formula = Session.GetScriptState().script("return function(Params, Vars) return {} end"_format(*pValue));
-			return Scripting::LuaCall<float>(Formula, pParams, pVars);
-		}
-	}
-
-	return Default;
-}
-//---------------------------------------------------------------------
-
-template<typename T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
-static T EvaluateCommandEnumValue(Game::CGameSession& Session, const Data::CParams* pParams, CStrID ID, T Default)
-{
-	T Value = Default;
-	Data::CData Data;
-	if (pParams && pParams->TryGet(Data, ID))
-		ParamsFormat::Deserialize(Data, Value);
-	return Value;
+		OnSeparateMagnitudeChanged(Session, Stack, Instance, OwnerID, PrevValue);
 }
 //---------------------------------------------------------------------
 
@@ -390,7 +429,7 @@ static void AddSuspensionFromTag(CStatusEffectInstance& Instance, CStrID Tag, co
 }
 //---------------------------------------------------------------------
 
-static void ToggleSuspensionFromEffect(Game::CGameSession& Session, CStatusEffectsComponent& Component, const CStatusEffectData& Effect, bool Enable)
+static void ToggleSuspensionFromEffect(Game::CGameSession& Session, CStatusEffectsComponent& Component, Game::HEntity OwnerID, const CStatusEffectData& Effect, bool Enable)
 {
 	const int32_t Mod = Enable ? 1 : -1;
 
@@ -419,12 +458,12 @@ static void ToggleSuspensionFromEffect(Game::CGameSession& Session, CStatusEffec
 					if (Stack.pEffectData->Aggregated)
 						AggregatedMagnitudeChanged = true;
 					else
-						OnSeparateMagnitudeChanged(Session, *Stack.pEffectData, *Instance, WasSuspended ? 0.f : Instance->Magnitude);
+						OnSeparateMagnitudeChanged(Session, Stack, *Instance, OwnerID, WasSuspended ? 0.f : Instance->Magnitude);
 				}
 			}
 
 			if (AggregatedMagnitudeChanged)
-				OnAggregatedMagnitudeChanged(Session, Stack, CalcAggregatedMagnitude(Stack));
+				OnAggregatedMagnitudeChanged(Session, Stack, OwnerID, CalcAggregatedMagnitude(Stack));
 		}
 	}
 
@@ -511,7 +550,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 		Stack.pEffectData = &Effect;
 
 		// NB: a new stack is not in the list yet, and it is intentional
-		ToggleSuspensionFromEffect(Session, *pStatusEffectComponent, Effect, true);
+		ToggleSuspensionFromEffect(Session, *pStatusEffectComponent, TargetID, Effect, true);
 	}
 	else
 	{
@@ -524,7 +563,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 				if (MergeStatusEffectInstances(Effect, *ExistingInstance, *Instance))
 				{
 					if (!ExistingInstance->SuspendBehaviourCounter)
-						OnMagnitudeChanged(Session, Stack, *ExistingInstance, PrevMagnitude);
+						OnMagnitudeChanged(Session, Stack, TargetID, *ExistingInstance, PrevMagnitude);
 					return true;
 				}
 			}
@@ -576,7 +615,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 		if (auto* pCondition = pConditions->FindCondition(Instance->ValidityCondition.Type))
 		{
 			pCondition->SubscribeRelevantEvents(Instance->ConditionSubs, { Instance->ValidityCondition, Session, &Vars },
-				[pStatusEffectComponent, pInstance = Instance.get(), &Session, EffectID = Effect.ID](std::unique_ptr<Game::CGameVarStorage>& EventVars)
+				[pStatusEffectComponent, pInstance = Instance.get(), &Session, EffectID = Effect.ID, TargetID](std::unique_ptr<Game::CGameVarStorage>& EventVars)
 			{
 				// Skip already expired instances
 				if (pInstance->Magnitude <= 0.f) return;
@@ -593,7 +632,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 					{
 						auto It = pStatusEffectComponent->Stacks.find(EffectID);
 						if (It != pStatusEffectComponent->Stacks.cend())
-							OnMagnitudeChanged(Session, It->second, *pInstance, pInstance->Magnitude);
+							OnMagnitudeChanged(Session, It->second, TargetID, *pInstance, pInstance->Magnitude);
 					}
 				}
 			});
@@ -608,28 +647,28 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 
 	auto& NewInstance = *Stack.Instances.back();
 	if (!NewInstance.SuspendBehaviourCounter)
-		OnMagnitudeChanged(Session, Stack, NewInstance, 0.f);
+		OnMagnitudeChanged(Session, Stack, TargetID, NewInstance, 0.f);
 
 	return true;
 }
 //---------------------------------------------------------------------
 
-void RunStatusEffectBehaviour(Game::CGameSession& Session, CStatusEffectStack& Stack, const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars)
+void RunStatusEffectBehaviour(Game::CGameSession& Session, CStatusEffectStack& Stack, Game::HEntity OwnerID, const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars)
 {
 	if (!Game::EvaluateCondition(Bhv.Condition, Session, &Vars)) return;
 
 	if (Bhv.Params) Vars.Load(*Bhv.Params);
 
 	if (Stack.pEffectData->Aggregated)
-		RunBhvAggregated(Session, Stack, Bhv, Vars, Stack.AggregatedMagnitude);
+		RunBhvAggregated(Session, Stack, OwnerID, Bhv, Vars, Stack.AggregatedMagnitude);
 	else
 		for (const auto& Instance : Stack.Instances)
 			if (IsInstanceActive(*Instance))
-				RunBhvSeparate(Session, *Stack.pEffectData, *Instance, Bhv, Vars);
+				RunBhvSeparate(Session, Stack, OwnerID, *Instance, Bhv, Vars);
 }
 //---------------------------------------------------------------------
 
-static void RemoveExpiredInstances(Game::CGameSession& Session, CStatusEffectStack& Stack, Game::CGameVarStorage& Vars)
+static void RemoveExpiredInstances(Game::CGameSession& Session, CStatusEffectStack& Stack, Game::HEntity OwnerID, Game::CGameVarStorage& Vars)
 {
 	bool AggregatedMagnitudeChanged = false;
 	for (auto ItInstance = Stack.Instances.begin(); ItInstance != Stack.Instances.end(); /**/)
@@ -641,13 +680,14 @@ static void RemoveExpiredInstances(Game::CGameSession& Session, CStatusEffectSta
 		}
 		else if (Instance.ConditionSubs.empty() && !Game::EvaluateCondition(Instance.ValidityCondition, Session, &Vars))
 		{
+			// Must check condition that has no subscriptions each frame. If a part of a condition can't rely on signals, all subs are dropped.
 			const float PrevMagnitude = std::exchange(Instance.Magnitude, 0.f);
 			if (!Instance.SuspendBehaviourCounter)
 			{
 				if (Stack.pEffectData->Aggregated)
 					AggregatedMagnitudeChanged = true;
 				else
-					OnSeparateMagnitudeChanged(Session, *Stack.pEffectData, Instance, PrevMagnitude);
+					OnSeparateMagnitudeChanged(Session, Stack, Instance, OwnerID, PrevMagnitude);
 			}
 
 			ItInstance = Stack.Instances.erase(ItInstance);
@@ -659,11 +699,11 @@ static void RemoveExpiredInstances(Game::CGameSession& Session, CStatusEffectSta
 	}
 
 	if (AggregatedMagnitudeChanged)
-		OnAggregatedMagnitudeChanged(Session, Stack, CalcAggregatedMagnitude(Stack));
+		OnAggregatedMagnitudeChanged(Session, Stack, OwnerID, CalcAggregatedMagnitude(Stack));
 }
 //---------------------------------------------------------------------
 
-static void TickInstanceRemainingTimes(Game::CGameSession& Session, CStatusEffectStack& Stack, float dt)
+static void TickInstanceRemainingTimes(Game::CGameSession& Session, CStatusEffectStack& Stack, Game::HEntity OwnerID, float dt)
 {
 	bool AggregatedMagnitudeChanged = false;
 	for (auto ItInstance = Stack.Instances.begin(); ItInstance != Stack.Instances.end(); /**/)
@@ -679,7 +719,7 @@ static void TickInstanceRemainingTimes(Game::CGameSession& Session, CStatusEffec
 					if (Stack.pEffectData->Aggregated)
 						AggregatedMagnitudeChanged = true;
 					else
-						OnSeparateMagnitudeChanged(Session, *Stack.pEffectData, Instance, PrevMagnitude);
+						OnSeparateMagnitudeChanged(Session, Stack, Instance, OwnerID, PrevMagnitude);
 				}
 
 				ItInstance = Stack.Instances.erase(ItInstance);
@@ -694,7 +734,7 @@ static void TickInstanceRemainingTimes(Game::CGameSession& Session, CStatusEffec
 	}
 
 	if (AggregatedMagnitudeChanged)
-		OnAggregatedMagnitudeChanged(Session, Stack, CalcAggregatedMagnitude(Stack));
+		OnAggregatedMagnitudeChanged(Session, Stack, OwnerID, CalcAggregatedMagnitude(Stack));
 }
 //---------------------------------------------------------------------
 
@@ -717,7 +757,8 @@ static size_t CalcTimeTriggerActivationCount(float PrevTime, float dt, float Del
 }
 //---------------------------------------------------------------------
 
-static void RunOnTimeBehaviour(Game::CGameSession& Session, CStatusEffectStack& Stack, const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars, float dt)
+static void RunOnTimeBehaviour(Game::CGameSession& Session, CStatusEffectStack& Stack, Game::HEntity OwnerID,
+	const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars, float dt)
 {
 	// Can't process OnTime trigger without params
 	n_assert(Bhv.Params);
@@ -754,7 +795,7 @@ static void RunOnTimeBehaviour(Game::CGameSession& Session, CStatusEffectStack& 
 
 		// TODO: apply magnitude limit? or not applicable because the same instance can tick multiple times?
 
-		RunBhvAggregated(Session, Stack, Bhv, Vars, Magnitude);
+		RunBhvAggregated(Session, Stack, OwnerID, Bhv, Vars, Magnitude);
 	}
 	else
 	{
@@ -764,7 +805,7 @@ static void RunOnTimeBehaviour(Game::CGameSession& Session, CStatusEffectStack& 
 
 			const auto ActivationCount = CalcTimeTriggerActivationCount(Instance->Time, dt, Delay, Period);
 			for (size_t i = 0; i < ActivationCount; ++i)
-				RunBhvSeparate(Session, *Stack.pEffectData, *Instance, Bhv, Vars);
+				RunBhvSeparate(Session, Stack, OwnerID, *Instance, Bhv, Vars);
 		}
 	}
 }
@@ -775,7 +816,7 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 	// Tick logic requires dt > 0, or the same tick might happen multiple times
 	if (dt <= 0.f) return;
 
-	World.ForEachComponent<CStatusEffectsComponent>([&Session, dt](auto EntityID, CStatusEffectsComponent& StatusEffects)
+	World.ForEachComponent<CStatusEffectsComponent>([&Session, &World, dt](auto EntityID, CStatusEffectsComponent& StatusEffects)
 	{
 		//???!!!store Vars in stack? or even in instance? not to rebuild each time
 		Game::CGameVarStorage Vars;
@@ -786,38 +827,33 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 		for (auto ItStack = StatusEffects.Stacks.begin(); ItStack != StatusEffects.Stacks.end(); /**/)
 		{
 			auto& [ID, Stack] = *ItStack;
+			const auto& Effect = *Stack.pEffectData;
 
-			Vars.Set(CStrID("StatusEffectID"), Stack.pEffectData->ID);
+			Vars.Set(CStrID("StatusEffectID"), Effect.ID);
 
-			// Remove instances expired by conditions or magnitude before further processing.
-			// Must check condition that has no subscriptions each frame. If a part of a condition
-			// can't rely on signals, all subs are dropped.
-			RemoveExpiredInstances(Session, Stack, Vars);
+			// Remove instances expired by conditions or magnitude before further processing
+			RemoveExpiredInstances(Session, Stack, EntityID, Vars);
 
 			if (!Stack.Instances.empty())
 			{
 				// Trigger OnTime behaviours on this stack
-				auto ItBhvs = Stack.pEffectData->Behaviours.find(CStrID("OnTime"));
-				if (ItBhvs != Stack.pEffectData->Behaviours.cend())
+				auto ItBhvs = Effect.Behaviours.find(CStrID("OnTime"));
+				if (ItBhvs != Effect.Behaviours.cend())
 					for (const auto& Bhv : ItBhvs->second)
-						RunOnTimeBehaviour(Session, Stack, Bhv, Vars, dt);
+						RunOnTimeBehaviour(Session, Stack, EntityID, Bhv, Vars, dt);
 
 				// Advance instance time and remove instances expired by time
-				TickInstanceRemainingTimes(Session, Stack, dt);
+				TickInstanceRemainingTimes(Session, Stack, EntityID, dt);
 			}
 
 			// Remove totally expired status effect stacks
 			if (Stack.Instances.empty())
 			{
+				// NB: effects spawned by this effect are not removed, use validity condition for it
 				RunStackLevelBehaviour(Session, Stack, Vars, CStrID("OnRemoved"));
-
-				//!!!remove modifiers added by this stack!
-				//???drop effects with this effect as a source?
-
+				RemoveStatModifiers(World, EntityID, Effect.ID);
 				ItStack = StatusEffects.Stacks.erase(ItStack);
-
-				// NB: a removed stack is not in the list already, and it is intentional
-				ToggleSuspensionFromEffect(Session, StatusEffects, *Stack.pEffectData, false);
+				ToggleSuspensionFromEffect(Session, StatusEffects, EntityID, Effect, false);
 			}
 			else
 			{
@@ -842,32 +878,43 @@ bool AddNumericStatModifierFromStatusEffect(DEM::Game::CGameSession& Session, co
 	auto* pStats = pWorld->FindComponent<Sh2::CStatsComponent>(OwnerID);
 	if (!pStats) return false;
 
+	auto* pStatusEffects = pWorld->FindComponent<CStatusEffectsComponent>(OwnerID);
+	if (!pStatusEffects) return false;
+
+	auto ItStack = pStatusEffects->Stacks.find(EffectID);
+	if (ItStack != pStatusEffects->Stacks.cend()) return false;
+	auto& Stack = ItStack->second;
+
+	// Multi-instance effects without aggregation can't manage modifiers because all instances share the same source ID
+	n_assert(Stack.pEffectData->Aggregated || Stack.Instances.size() == 1);
+
 	const auto Priority = static_cast<U16>(Params.Get<int>(CStrID("Priority"), 0));
 	const auto Value = EvaluateCommandNumericValue(Session, &Params, &Vars, CStrID("Value"), 1.f);
 	const auto Type = EvaluateCommandEnumValue(Session, &Params, CStrID("Type"), EModifierType::Add);
 
-	//???get from CCharacterSheet instead?
-	Meta::CMetadata<Sh2::CStatsComponent>::WithMember(StatID.ToStringView(), [pStats, Type, Value, EffectID, Priority](auto&& Member)
+	//???get from CCharacterSheet instead of metadata? need to improve stat architecture!
+	bool IsSet = false;
+	Meta::CMetadata<Sh2::CStatsComponent>::WithMember(StatID.ToStringView(), [pStats, Type, Value, EffectID, Priority, &IsSet](auto&& Member)
 	{
-		using TMember = DEM::Meta::TMemberValue<decltype(Member)>;
-		if constexpr (std::is_same_v<TMember, CNumericStat>)
+		if constexpr (std::is_same_v<Meta::TMemberValue<decltype(Member)>, CNumericStat>)
 		{
-			Member.GetValueRef(*pStats).AddModifier(Type, Value, EffectID, Priority);
-
-			// ...
+			auto& Stat = Member.GetValueRef(*pStats);
+			Stat.RemoveModifiers(EffectID);
+			Stat.AddModifier(Type, Value, EffectID, Priority);
+			IsSet = true;
 		}
 	});
 
-	//!!!assert that it is aggregated or has 1 instance, otherwise behaviour is unexpected by user (source ID is not per-instance)!
+	if (!IsSet) return false;
 
-	//!!!document the problem with adding modifiers from different commands! can be cumulative or overwriting!
-	//e.g. OnMagnitudeChange -> set modifier Strength -Mag. Or OnEachHit -> add modifier Strength -Mag. Different types of effects.
-	//???!!!tag immunity / bool mod as a separate command or here?!
+	const auto* pData = Params.FindValue(CStrID("Value"));
+	const auto* pValue = pData ? pData->As<std::string>() : nullptr;
+	if (pValue && pValue->find("Vars.Magnitude"))
+		Stack.ActiveMagnitudeStatModifiers.insert_or_assign(StatID, CStatusEffectStack::CStatModifier{ *pValue, &Params, Type, Value, Priority });
+	else
+		Stack.ActiveMagnitudeStatModifiers.erase(StatID);
 
-	//???what part of a command logic is common for all modifier sources?
-
-	NOT_IMPLEMENTED;
-	return false;
+	return true;
 }
 //---------------------------------------------------------------------
 

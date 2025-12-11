@@ -65,7 +65,7 @@ public:
 	auto* GetDesc() const { return _pStatDef; }
 
 	void  AddModifier(EModifierType Type, float Value, CStrID SourceID, U16 Priority);
-	void  RemoveModifiers(CStrID SourceID);
+	bool  RemoveModifiers(CStrID SourceID);
 	void  RemoveAllModifiers();
 
 	void  SetBaseValue(float NewBaseValue);

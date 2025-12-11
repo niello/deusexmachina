@@ -17,7 +17,7 @@ bool Command_ModifyStatusEffectMagnitude(Game::CGameSession& Session, const Data
 
 bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, PStatusEffectInstance&& Instance);
 void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, float dt);
-void RunStatusEffectBehaviour(Game::CGameSession& Session, CStatusEffectStack& Stack, const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars);
+void RunStatusEffectBehaviour(Game::CGameSession& Session, CStatusEffectStack& Stack, Game::HEntity OwnerID, const CStatusEffectBehaviour& Bhv, Game::CGameVarStorage& Vars);
 bool AddNumericStatModifierFromStatusEffect(DEM::Game::CGameSession& Session, const Data::CParams& Params, DEM::Game::CGameVarStorage& Vars, CStrID EffectID);
 
 HAS_METHOD_WITH_SIGNATURE_TRAIT(ShouldProcessBehaviour);
@@ -35,7 +35,7 @@ struct CBhvParamEqOrMissingPolicy
 };
 
 template<typename TPolicy = CNoFilterPolicy>
-void TriggerStatusEffect(Game::CGameSession& Session, CStatusEffectStack& Stack, CStrID Event, Game::CGameVarStorage& Vars, TPolicy Policy = {})
+void TriggerStatusEffect(Game::CGameSession& Session, CStatusEffectStack& Stack, Game::HEntity OwnerID, CStrID Event, Game::CGameVarStorage& Vars, TPolicy Policy = {})
 {
 	n_assert(!Stack.Instances.empty());
 	if (Stack.Instances.empty()) return;
@@ -54,7 +54,7 @@ void TriggerStatusEffect(Game::CGameSession& Session, CStatusEffectStack& Stack,
 		if constexpr (has_method_with_signature_ShouldProcessBehaviour_v<TPolicy, bool(const CStatusEffectBehaviour&)>)
 			if (!Policy.ShouldProcessBehaviour(Bhv)) continue;
 
-		RunStatusEffectBehaviour(Session, Stack, Bhv, Vars);
+		RunStatusEffectBehaviour(Session, Stack, OwnerID, Bhv, Vars);
 	}
 
 	//???TODO: clear Vars from stack and instance vars?
@@ -71,7 +71,7 @@ void TriggerStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, 
 		Vars.Set(CStrID("StatusEffectOwner"), EntityID);
 
 		for (auto& [ID, Stack] : pStatusEffectComponent->Stacks)
-			TriggerStatusEffect(Session, Stack, Event, Vars, Policy);
+			TriggerStatusEffect(Session, Stack, EntityID, Event, Vars, Policy);
 	}
 }
 //---------------------------------------------------------------------

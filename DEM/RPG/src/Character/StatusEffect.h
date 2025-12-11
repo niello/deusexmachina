@@ -12,6 +12,7 @@ namespace DEM::RPG
 constexpr float STATUS_EFFECT_INFINITE = std::numeric_limits<float>::infinity();
 
 using PStatusEffectInstance = std::unique_ptr<struct CStatusEffectInstance>;
+enum class EModifierType : U8;
 
 enum class EStatusEffectNumMergePolicy : U8
 {
@@ -119,17 +120,21 @@ struct CStatusEffectInstance
 
 struct CStatusEffectStack
 {
+	struct CStatModifier
+	{
+		std::string          FormulaStr; //!!!could cache sol::function!
+		const Data::CParams* pParams;
+		EModifierType        Type;
+		float                Value;
+		U16                  Priority;
+	};
+
 	const CStatusEffectData*           pEffectData = nullptr; //???strong ptr? if resource, must have refcount anyway
 	std::vector<PStatusEffectInstance> Instances; // Pointer to an instance must be stable, it can be captured in condition callbacks
+	std::map<CStrID, CStatModifier>    ActiveMagnitudeStatModifiers;
 	float                              AggregatedMagnitude = 0.f;
 
 	//???precalculated CGameVarStorage context for commands?
-
-	// trigger and trigger condition event subscriptions
-
-	// list of modified stats, if needed. Can skip this optiization for now. Or store map source->stats in a stats component!
-	// Modifiers are applied per stack, with source = stack effect ID. Modifier is updated (or removed and re-added).
-	// So each stat has only one modifiers from each affecting effect stack.
 };
 
 struct CStatusEffectsComponent
