@@ -13,6 +13,7 @@ namespace DEM::RPG
 {
 
 bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars);
+bool Command_ClearStatusEffects(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars);
 bool Command_ModifyStatusEffectMagnitude(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars);
 
 bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game::HEntity TargetID, const CStatusEffectData& Effect, PStatusEffectInstance&& Instance);

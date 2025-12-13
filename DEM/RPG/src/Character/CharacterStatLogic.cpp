@@ -1,7 +1,9 @@
+#include "CharacterStatLogic.h"
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
 #include <Character/Archetype.h>
 #include <Character/StatsComponent.h>
+#include <Character/StatusEffectLogic.h>
 #include <Combat/DestructibleComponent.h>
 
 //???where to cache Lua sheet interface? or recreate each time a secondary stat formula is recalculated? maps then will not speed things up!
@@ -90,6 +92,19 @@ void InitStats(Game::CGameWorld& World, Game::CGameSession& Session, Resources::
 			Stats.Sheet = new CCharacterSheet(World, EntityID);
 		}
 	});
+}
+//---------------------------------------------------------------------
+
+bool Command_ModifyStat(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars)
+{
+	if (!pParams) return false;
+
+	const auto StatusEffectID = pVars ? pVars->Get<CStrID>(pVars->Find(CStrID("StatusEffectID")), {}) : CStrID{};
+	if (StatusEffectID)
+		return DEM::RPG::AddNumericStatModifierFromStatusEffect(Session, *pParams, *pVars, StatusEffectID);
+
+	NOT_IMPLEMENTED;
+	return false;
 }
 //---------------------------------------------------------------------
 

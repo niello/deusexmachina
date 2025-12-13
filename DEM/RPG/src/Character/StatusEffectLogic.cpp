@@ -2,7 +2,7 @@
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
 #include <Character/StatsComponent.h>
-#include <Character/CharacterStatLogic.h>
+#include <Character/CharacterStatLogic.h> // RemoveStatModifiers
 #include <Scripting/LogicRegistry.h>
 
 namespace DEM::RPG
@@ -196,18 +196,27 @@ static void RefreshModifiersWithMagnitude(Game::CGameSession& Session, CStatusEf
 
 	for (const auto& [StatID, Record] : Stack.ActiveMagnitudeStatModifiers)
 	{
-		Meta::CMetadata<Sh2::CStatsComponent>::WithMember(StatID.ToStringView(), [&Session, &Vars, pStats, EffectID, &Record](auto&& Member)
+		Meta::CMetadata<Sh2::CStatsComponent>::WithMember(StatID.ToStringView(), [&Session, &Vars, pStats, EffectID, &Record, StatID](auto&& Member)
 		{
 			if constexpr (std::is_same_v<Meta::TMemberValue<decltype(Member)>, CNumericStat>)
 			{
 				//!!!FIXME: DUPLICATED CODE!
+				//???store sol::function in record instead of string?
 				sol::function Formula = Session.GetScriptState().script("return function(Params, Vars) return {} end"_format(Record.FormulaStr));
 				const float Value = Scripting::LuaCall<float>(Formula, Record.pParams, Vars);
 				if (Value != Record.Value)
 				{
 					auto& Stat = Member.GetValueRef(*pStats);
+
+					//!!!DBG TMP!
+					const auto PrevValue = Stat.Get();
+
+					// TODO: update existing modifier, don't send changed event if parameters are the same
 					Stat.RemoveModifiers(EffectID);
 					Stat.AddModifier(Record.Type, Value, EffectID, Record.Priority);
+
+					//!!!DBG TMP!
+					::Sys::Log("Effect '{}': Stat '{}' updated {} -> {}"_format(EffectID, StatID, PrevValue, Stat.Get()));
 				}
 			}
 		});
@@ -308,6 +317,14 @@ bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams*
 
 	// NB: positive magnitude check is inside
 	return AddStatusEffect(Session, *pWorld, TargetEntityID, *pEffectData, std::move(Instance));
+}
+//---------------------------------------------------------------------
+
+bool Command_ClearStatusEffects(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars)
+{
+	// (WithTags [...] WithoutTags [...]) / (ID [...]) / SourceEffectID
+	NOT_IMPLEMENTED;
+	return false;
 }
 //---------------------------------------------------------------------
 
@@ -894,14 +911,22 @@ bool AddNumericStatModifierFromStatusEffect(DEM::Game::CGameSession& Session, co
 
 	//???get from CCharacterSheet instead of metadata? need to improve stat architecture!
 	bool IsSet = false;
-	Meta::CMetadata<Sh2::CStatsComponent>::WithMember(StatID.ToStringView(), [pStats, Type, Value, EffectID, Priority, &IsSet](auto&& Member)
+	Meta::CMetadata<Sh2::CStatsComponent>::WithMember(StatID.ToStringView(), [pStats, Type, Value, EffectID, Priority, &IsSet, StatID](auto&& Member)
 	{
 		if constexpr (std::is_same_v<Meta::TMemberValue<decltype(Member)>, CNumericStat>)
 		{
 			auto& Stat = Member.GetValueRef(*pStats);
+
+			//!!!DBG TMP!
+			const auto PrevValue = Stat.Get();
+
+			// TODO: update existing modifier, don't send changed event if parameters are the same
 			Stat.RemoveModifiers(EffectID);
 			Stat.AddModifier(Type, Value, EffectID, Priority);
 			IsSet = true;
+
+			//!!!DBG TMP!
+			::Sys::Log("Effect '{}': Stat '{}' modified {} -> {}"_format(EffectID, StatID, PrevValue, Stat.Get()));
 		}
 	});
 
