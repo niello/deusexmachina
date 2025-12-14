@@ -42,7 +42,7 @@ static inline bool Compare(const T& Left, CStrID Op, const U& Right)
 		if (Op == sidOpGreater) return Right < Left;
 	}
 
-	::Sys::Error("DEM::Flow::Compare() > unknown operator '...<TODO>...' or incompatible types");
+	::Sys::Error("DEM::Game::Compare() > unknown operator '{}' or incompatible types"_format(Op));
 	return false;
 }
 //---------------------------------------------------------------------

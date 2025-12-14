@@ -242,8 +242,13 @@ static void OnAggregatedMagnitudeChanged(Game::CGameSession& Session, CStatusEff
 
 		// NB: must not use NewMagnitude here, because an aggregated magnitude can change in subsequent commands
 		for (const auto& Bhv : ItBhvs->second)
+		{
+			//!!!FIXME: duplicated set, see inside RunBhvAggregated! needed for bhv condition!
+			Vars.Set(CStrID("Magnitude"), Stack.AggregatedMagnitude);
+
 			if (Game::EvaluateCondition(Bhv.Condition, Session, &Vars))
 				RunBhvAggregated(Session, Stack, OwnerID, Bhv, Vars, Stack.AggregatedMagnitude);
+		}
 	}
 }
 //---------------------------------------------------------------------
@@ -263,9 +268,15 @@ static void OnSeparateMagnitudeChanged(Game::CGameSession& Session, CStatusEffec
 		Vars.Set(CStrID("StatusEffectOwner"), OwnerID);
 		Vars.Set(CStrID("StatusEffectID"), Effect.ID);
 		Vars.Set(CStrID("PrevMagnitude"), PrevMagnitude);
+
 		for (const auto& Bhv : ItBhvs->second)
+		{
+			//!!!FIXME: duplicated set, see inside RunBhvSeparate! needed for bhv condition!
+			Vars.Set(CStrID("Magnitude"), NewMagnitude);
+
 			if (Game::EvaluateCondition(Bhv.Condition, Session, &Vars))
 				RunBhvSeparate(Session, Stack, OwnerID, Instance, Bhv, Vars);
+		}
 	}
 }
 //---------------------------------------------------------------------
@@ -736,6 +747,10 @@ static void TickInstanceRemainingTimes(Game::CGameSession& Session, CStatusEffec
 		{
 			if (Instance.RemainingTime <= dt)
 			{
+				//!!!DBG TMP!
+				::Sys::Log("Expired (timeout) status effect instance '{}' on {}\n"_format(Stack.pEffectData->ID, OwnerID));
+
+				//!!!FIXME: suspension changes magnitude of panic, magnitude controls its suspension source (fear). Circular dependency!
 				const float PrevMagnitude = std::exchange(Instance.Magnitude, 0.f);
 				if (!Instance.SuspendBehaviourCounter)
 				{
@@ -872,6 +887,9 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 			// Remove totally expired status effect stacks
 			if (Stack.Instances.empty())
 			{
+				//!!!DBG TMP!
+				::Sys::Log("Removed status effect '{}' on {}\n"_format(Effect.ID, EntityID));
+
 				// NB: effects spawned by this effect are not removed, use validity condition for it
 				RunStackLevelBehaviour(Session, Stack, Vars, CStrID("OnRemoved"));
 				RemoveStatModifiers(World, EntityID, Effect.ID);
