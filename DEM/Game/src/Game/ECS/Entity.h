@@ -36,9 +36,18 @@ inline std::string EntityToString(HEntity EntityID)
 		std::string("empty");
 }
 
-inline auto format_as(HEntity EntityID) { return EntityToString(EntityID); }
+// TODO: why {fmt} doesn't see it?
+//inline auto format_as(HEntity EntityID) { return EntityToString(EntityID); }
 
 }
+
+template <>
+struct fmt::formatter<DEM::Game::HEntity> : fmt::formatter<std::string_view, char> {
+	template <class FormatContext>
+	auto format(DEM::Game::HEntity value, FormatContext& ctx) const {
+		return fmt::formatter<std::string_view, char>::format(DEM::Game::EntityToString(value), ctx);
+	}
+};
 
 namespace StringUtils
 {

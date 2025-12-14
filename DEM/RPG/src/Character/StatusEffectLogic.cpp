@@ -216,7 +216,7 @@ static void RefreshModifiersWithMagnitude(Game::CGameSession& Session, CStatusEf
 					Stat.AddModifier(Record.Type, Value, EffectID, Record.Priority);
 
 					//!!!DBG TMP!
-					::Sys::Log("Effect '{}': Stat '{}' updated {} -> {}"_format(EffectID, StatID, PrevValue, Stat.Get()));
+					::Sys::Log("Effect '{}': Stat '{}' updated {} -> {}\n"_format(EffectID, StatID, PrevValue, Stat.Get()));
 				}
 			}
 		});
@@ -295,7 +295,9 @@ bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams*
 	const auto* pEffectData = Rsrc->ValidateObject<CStatusEffectData>();
 	if (!pEffectData) return false;
 
-	const auto TargetEntityID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("Target")), {});
+	// TODO: use ResolveEntityID? to allow direct ID.
+	const auto TargetVarID = pParams->Get<CStrID>(CStrID("Target"), CStrID("Target"));
+	const auto TargetEntityID = pVars->Get<Game::HEntity>(pVars->Find(TargetVarID), {});
 	if (!TargetEntityID) return false;
 
 	PStatusEffectInstance Instance(new CStatusEffectInstance());
@@ -322,7 +324,7 @@ bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams*
 
 bool Command_ClearStatusEffects(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars)
 {
-	// (WithTags [...] WithoutTags [...]) / (ID [...]) / SourceEffectID
+	// (WithTags [...] WithoutTags [...]) / (ID [...]) / SourceStatusEffect and other sources (match names!)
 	NOT_IMPLEMENTED;
 	return false;
 }
@@ -510,6 +512,7 @@ static void RunStackLevelBehaviour(Game::CGameSession& Session, CStatusEffectSta
 	if (ItBhvs == Effect.Behaviours.cend()) return;
 
 	const auto StatusEffectIDHandle = Vars.Set(CStrID("StatusEffectID"), Effect.ID);
+	Vars.Set(CStrID("Magnitude"), 0.f);
 
 	for (const auto& Bhv : ItBhvs->second)
 		if (Game::EvaluateCondition(Bhv.Condition, Session, &Vars))
@@ -658,6 +661,9 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 
 	// Add a new instance
 	Stack.Instances.push_back(std::move(Instance));
+
+	//!!!DBG TMP!
+	::Sys::Log("Applied status effect '{}' on {}\n"_format(Effect.ID, TargetID));
 
 	if (IsNewStack)
 		RunStackLevelBehaviour(Session, Stack, Vars, CStrID("OnAdded"));
@@ -899,7 +905,7 @@ bool AddNumericStatModifierFromStatusEffect(DEM::Game::CGameSession& Session, co
 	if (!pStatusEffects) return false;
 
 	auto ItStack = pStatusEffects->Stacks.find(EffectID);
-	if (ItStack != pStatusEffects->Stacks.cend()) return false;
+	if (ItStack == pStatusEffects->Stacks.cend()) return false;
 	auto& Stack = ItStack->second;
 
 	// Multi-instance effects without aggregation can't manage modifiers because all instances share the same source ID
@@ -926,7 +932,7 @@ bool AddNumericStatModifierFromStatusEffect(DEM::Game::CGameSession& Session, co
 			IsSet = true;
 
 			//!!!DBG TMP!
-			::Sys::Log("Effect '{}': Stat '{}' modified {} -> {}"_format(EffectID, StatID, PrevValue, Stat.Get()));
+			::Sys::Log("Effect '{}': Stat '{}' modified {} -> {}\n"_format(EffectID, StatID, PrevValue, Stat.Get()));
 		}
 	});
 

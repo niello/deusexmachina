@@ -20,5 +20,8 @@ namespace DEM::RPG
 void RemoveStatModifiers(Game::CGameWorld& World, Game::HEntity EntityID, CStrID SourceID);
 void InitStats(Game::CGameWorld& World, Game::CGameSession& Session, Resources::CResourceManager& ResMgr);
 bool Command_ModifyStat(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars);
+bool Command_EnableCapability(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars);
+bool Command_BlockCapability(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars);
+bool Command_ProtectCapability(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars);
 
 }

@@ -97,7 +97,7 @@ void InitStats(Game::CGameWorld& World, Game::CGameSession& Session, Resources::
 
 bool Command_ModifyStat(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars)
 {
-	if (!pParams) return false;
+	if (!pParams || !pVars) return false;
 
 	const auto StatusEffectID = pVars ? pVars->Get<CStrID>(pVars->Find(CStrID("StatusEffectID")), {}) : CStrID{};
 	if (StatusEffectID)
@@ -105,6 +105,60 @@ bool Command_ModifyStat(Game::CGameSession& Session, const Data::CParams* pParam
 
 	NOT_IMPLEMENTED;
 	return false;
+}
+//---------------------------------------------------------------------
+
+template<typename F>
+static bool DoCapabilityCommand(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars, F Logic)
+{
+	if (!pParams || !pVars) return false;
+
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return false;
+
+	const CStrID StatID = pParams->Get<CStrID>(CStrID("Stat"), {});
+	if (!StatID) return false;
+
+	//!!!FIXME: how to determine target universally? A command may be from status effect or not!
+	const auto TargetID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("StatusEffectOwner")), {});
+	if (!TargetID) return false;
+
+	auto* pStats = pWorld->FindComponent<Sh2::CStatsComponent>(TargetID);
+	if (!pStats) return false;
+
+	//!!!FIXME: how to determine source universally? A command may be from status effect or not!
+	const auto Source = pVars->Get<CStrID>(pVars->Find(CStrID("StatusEffectID")), {});
+
+	//???get from CCharacterSheet instead of metadata? need to improve stat architecture!
+	bool IsSet = false;
+	Meta::CMetadata<Sh2::CStatsComponent>::WithMember(StatID.ToStringView(), [pStats, Source, &IsSet, Logic](auto&& Member)
+	{
+		if constexpr (std::is_same_v<Meta::TMemberValue<decltype(Member)>, CBoolStat>)
+		{
+			Logic(Member.GetValueRef(*pStats), Source);
+			IsSet = true;
+		}
+	});
+
+	return IsSet;
+}
+//---------------------------------------------------------------------
+
+bool Command_EnableCapability(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars)
+{
+	return DoCapabilityCommand(Session, pParams, pVars, [](CBoolStat& Stat, CStrID Source) { Stat.AddEnabler(Source); });
+}
+//---------------------------------------------------------------------
+
+bool Command_BlockCapability(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars)
+{
+	return DoCapabilityCommand(Session, pParams, pVars, [](CBoolStat& Stat, CStrID Source) { Stat.AddBlocker(Source); });
+}
+//---------------------------------------------------------------------
+
+bool Command_ProtectCapability(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars)
+{
+	return DoCapabilityCommand(Session, pParams, pVars, [](CBoolStat& Stat, CStrID Source) { Stat.AddImmunity(Source); });
 }
 //---------------------------------------------------------------------
 

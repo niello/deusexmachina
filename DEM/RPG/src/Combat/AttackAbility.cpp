@@ -230,7 +230,12 @@ static void ApplyDamageFromAbility(Game::CGameSession& Session, Game::CGameWorld
 
 	//!!!instead of OnHit, must use same triggers as status effects!
 	if (const auto* pWeaponComponent = FindCurrentWeapon(World, Instance.Actor))
+	{
+		Vars.Set(CStrID("SourceCreature"), Instance.Actor);
+		//Vars.Set(CStrID("SourceItemStack"), WeaponItemStackID); //!!!TODO: get entity ID with weapon ptr!
+		Vars.Set(CStrID("SourceAbility"), CStrID("Attack"));
 		Game::ExecuteCommandList(pWeaponComponent->OnHit, Session, &Vars);
+	}
 
 	//???no special commands from ability here? need special abilities (not generic attack ability) to cast additional effects?
 
