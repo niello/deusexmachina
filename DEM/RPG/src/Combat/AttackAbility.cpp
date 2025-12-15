@@ -289,6 +289,10 @@ AI::ECommandStatus CAttackAbility::OnUpdate(Game::CGameSession& Session, Game::C
 	auto pWorld = Session.FindFeature<Game::CGameWorld>();
 	if (!pWorld) return AI::ECommandStatus::Failed;
 
+	// TODO: universalize check? Must do the same check for start & continue, for all abilities on the system level?
+	auto* pStats = pWorld->FindComponent<const Sh2::CStatsComponent>(Instance.Actor);
+	if (!pStats || !pStats->CanInteract) return AI::ECommandStatus::Failed;
+
 	auto& AttackInstance = static_cast<CAttackAbilityInstance&>(Instance);
 
 	// If the strike time reached and damage wasn't yet inflicted, must do it now
