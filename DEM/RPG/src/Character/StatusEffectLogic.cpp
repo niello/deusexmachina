@@ -216,7 +216,7 @@ static void RefreshModifiersWithMagnitude(Game::CGameSession& Session, CStatusEf
 					Stat.AddModifier(Record.Type, Value, EffectID, Record.Priority);
 
 					//!!!DBG TMP!
-					::Sys::Log("Effect '{}': Stat '{}' updated {} -> {}\n"_format(EffectID, StatID, PrevValue, Stat.Get()));
+					::Sys::Log("[SE] Effect '{}': Stat '{}' updated {} -> {}\n"_format(EffectID, StatID, PrevValue, Stat.Get()));
 				}
 			}
 		});
@@ -315,7 +315,7 @@ bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams*
 	Instance->SourceCreatureID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("SourceCreature")), {});
 	Instance->SourceItemStackID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("SourceItemStack")), {});
 	Instance->SourceAbilityID = pVars->Get<CStrID>(pVars->Find(CStrID("SourceAbility")), {});
-	Instance->SourceStatusEffectID = pVars->Get<CStrID>(pVars->Find(CStrID("SourceStatusEffect")), {});
+	Instance->SourceStatusEffectID = pVars->Get<CStrID>(pVars->Find(CStrID("StatusEffectID")), {});
 
 	Data::CData TagsDesc;
 	if (pParams->TryGet(TagsDesc, CStrID("Tags")))
@@ -333,9 +333,56 @@ bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams*
 }
 //---------------------------------------------------------------------
 
-bool Command_ClearStatusEffects(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars)
+bool Command_RemoveStatusEffects(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars)
 {
-	// (WithTags [...] WithoutTags [...]) / (ID [...]) / SourceStatusEffect and other sources (match names!)
+	if (!pParams || !pVars) return false;
+
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return false;
+
+	// TODO: use ResolveEntityID? to allow direct ID.
+	const auto TargetVarID = pParams->Get<CStrID>(CStrID("Target"), CStrID("Target"));
+	const auto TargetEntityID = pVars->Get<Game::HEntity>(pVars->Find(TargetVarID), {});
+	if (!TargetEntityID) return false;
+
+	auto* pStatusEffectComponent = pWorld->FindOrAddComponent<CStatusEffectsComponent>(TargetEntityID);
+	if (!pStatusEffectComponent) return false;
+
+	if (const auto SourceStatusEffectVar = pParams->Get<CStrID>(CStrID("SourceStatusEffect"), {}))
+	{
+		if (const auto SourceStatusEffect = pVars->Get<CStrID>(pVars->Find(SourceStatusEffectVar), {}))
+		{
+			for (auto& [EffectID, Stack] : pStatusEffectComponent->Stacks)
+			{
+				for (auto& Instance : Stack.Instances)
+				{
+					if (Instance->SourceStatusEffectID == SourceStatusEffect)
+					{
+						//!!!FIXME: CODE DUPLICATION!
+
+						// Skip already expired instances
+						if (Instance->Magnitude <= 0.f) continue;
+
+						//!!!DBG TMP!
+						::Sys::Log("[SE] Removed status effect instance '{}' on {}\n"_format(EffectID, TargetEntityID));
+
+						const float PrevMagnitude = std::exchange(Instance->Magnitude, 0.f);
+
+						if (!Instance->SuspendBehaviourCounter)
+						{
+							auto It = pStatusEffectComponent->Stacks.find(EffectID);
+							if (It != pStatusEffectComponent->Stacks.cend())
+								OnMagnitudeChanged(Session, It->second, TargetEntityID, *Instance, PrevMagnitude);
+						}
+					}
+				}
+			}
+
+			return true;
+		}
+	}
+
+	// TODO: (WithTags [...] WithoutTags [...]) / (ID [...])
 	NOT_IMPLEMENTED;
 	return false;
 }
@@ -663,7 +710,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 					{
 						auto It = pStatusEffectComponent->Stacks.find(EffectID);
 						if (It != pStatusEffectComponent->Stacks.cend())
-							OnMagnitudeChanged(Session, It->second, TargetID, *pInstance, pInstance->Magnitude);
+							OnMagnitudeChanged(Session, It->second, TargetID, *pInstance, PrevMagnitude);
 					}
 				}
 			});
@@ -674,7 +721,7 @@ bool AddStatusEffect(Game::CGameSession& Session, Game::CGameWorld& World, Game:
 	Stack.Instances.push_back(std::move(Instance));
 
 	//!!!DBG TMP!
-	::Sys::Log("Applied status effect '{}' on {}\n"_format(Effect.ID, TargetID));
+	::Sys::Log("[SE] Applied status effect '{}' on {}\n"_format(Effect.ID, TargetID));
 
 	if (IsNewStack)
 		RunStackLevelBehaviour(Session, Stack, Vars, CStrID("OnAdded"));
@@ -748,7 +795,7 @@ static void TickInstanceRemainingTimes(Game::CGameSession& Session, CStatusEffec
 			if (Instance.RemainingTime <= dt)
 			{
 				//!!!DBG TMP!
-				::Sys::Log("Expired (timeout) status effect instance '{}' on {}\n"_format(Stack.pEffectData->ID, OwnerID));
+				::Sys::Log("[SE] Expired (timeout) status effect instance '{}' on {}\n"_format(Stack.pEffectData->ID, OwnerID));
 
 				//!!!FIXME: suspension changes magnitude of panic, magnitude controls its suspension source (fear). Circular dependency!
 				const float PrevMagnitude = std::exchange(Instance.Magnitude, 0.f);
@@ -888,7 +935,7 @@ void UpdateStatusEffects(Game::CGameSession& Session, Game::CGameWorld& World, f
 			if (Stack.Instances.empty())
 			{
 				//!!!DBG TMP!
-				::Sys::Log("Removed status effect '{}' on {}\n"_format(Effect.ID, EntityID));
+				::Sys::Log("[SE] Removed status effect '{}' on {}\n"_format(Effect.ID, EntityID));
 
 				// NB: effects spawned by this effect are not removed, use validity condition for it
 				RunStackLevelBehaviour(Session, Stack, Vars, CStrID("OnRemoved"));
@@ -950,7 +997,7 @@ bool AddNumericStatModifierFromStatusEffect(DEM::Game::CGameSession& Session, co
 			IsSet = true;
 
 			//!!!DBG TMP!
-			::Sys::Log("Effect '{}': Stat '{}' modified {} -> {}\n"_format(EffectID, StatID, PrevValue, Stat.Get()));
+			::Sys::Log("[SE] Effect '{}': Stat '{}' modified {} -> {}\n"_format(EffectID, StatID, PrevValue, Stat.Get()));
 		}
 	});
 

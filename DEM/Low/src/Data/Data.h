@@ -58,7 +58,7 @@ public:
 	template<class T> bool		IsA() const { return Type == CType::GetType<T>(); }
 	bool						IsValid() const { return Type != nullptr; }
 	bool						IsVoid() const { return !Type /*|| Type->GetID() == INVALID_TYPE_ID*/; }
-	bool						IsNull() const { return IsVoid() || (!Value && Type != DATA_TYPE(bool) && Type != DATA_TYPE(int)); }
+	bool						IsNull() const { return IsVoid() || (!Value && Type != DATA_TYPE(bool) && Type != DATA_TYPE(int) && Type != DATA_TYPE(float)); }
 
 	// Overwrites type
 	void						SetType(const CType* SrcType);
