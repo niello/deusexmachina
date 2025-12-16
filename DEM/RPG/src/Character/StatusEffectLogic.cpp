@@ -1005,7 +1005,7 @@ bool AddNumericStatModifierFromStatusEffect(DEM::Game::CGameSession& Session, co
 
 	const auto* pData = Params.FindValue(CStrID("Value"));
 	const auto* pValue = pData ? pData->As<std::string>() : nullptr;
-	if (pValue && pValue->find("Vars.Magnitude"))
+	if (pValue && pValue->find("Vars.Magnitude") != std::string::npos)
 		Stack.ActiveMagnitudeStatModifiers.insert_or_assign(StatID, CStatusEffectStack::CStatModifier{ *pValue, &Params, Type, Value, Priority });
 	else
 		Stack.ActiveMagnitudeStatModifiers.erase(StatID);

@@ -203,15 +203,19 @@ CStrID BlockEquipmentSlots(Game::CGameWorld& World, CEquipmentComponent& Equipme
 // Returns main slot ID
 CStrID UnblockEquipmentSlots(Game::CGameWorld& World, CEquipmentComponent& Equipment, Game::HEntity StackID)
 {
-	auto pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID);
+	const auto* pEquippable = FindItemComponent<const CEquippableComponent>(World, StackID);
+
+	// For items without an explicit slot type defined (e.g. weapons) track any occupied slot
 	const auto MainSlotType = (pEquippable && !pEquippable->Slots.empty()) ? pEquippable->Slots.front().first : CStrID::Empty;
 	CStrID MainSlotID;
+	CStrID AnySlotID;
 
 	for (auto It = Equipment.Equipment.begin(); It != Equipment.Equipment.end(); /**/)
 	{
 		if (It->second == StackID)
 		{
 			if (!MainSlotID && MainSlotType == Equipment.Scheme->Slots[It->first]) MainSlotID = It->first;
+			if (!AnySlotID) AnySlotID = It->first;
 			It = Equipment.Equipment.erase(It);
 		}
 		else
@@ -220,7 +224,7 @@ CStrID UnblockEquipmentSlots(Game::CGameWorld& World, CEquipmentComponent& Equip
 		}
 	}
 
-	return MainSlotID;
+	return MainSlotID ? MainSlotID : AnySlotID;
 }
 //---------------------------------------------------------------------
 
