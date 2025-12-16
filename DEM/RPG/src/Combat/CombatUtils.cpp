@@ -5,10 +5,10 @@
 namespace DEM::RPG
 {
 
-void InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Location, int Damage, EDamageType DamageType, Game::HEntity ActorID)
+U32 InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Location, int Damage, EDamageType DamageType, Game::HEntity ActorID)
 {
 	auto* pDestructible = World.FindComponent<CDestructibleComponent>(TargetID);
-	if (!pDestructible || pDestructible->HP <= 0) return;
+	if (!pDestructible || pDestructible->HP <= 0) return 0;
 
 	float FinalDamage = static_cast<float>(Damage);
 
@@ -37,7 +37,7 @@ void InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Locat
 	::Sys::DbgOut("***DBG Hit: {} hits {} at {} (was {} HP) for {} HP ({})\n"_format(
 		Game::EntityToString(ActorID), Game::EntityToString(TargetID), Location, pDestructible->HP, std::max(0L, FinalDamageInt), DmgTypeStr.GetValue<std::string>()));
 
-	if (FinalDamageInt <= 0) return;
+	if (FinalDamageInt <= 0) return 0;
 
 	pDestructible->HP -= FinalDamageInt;
 	pDestructible->OnHit(FinalDamageInt);
@@ -46,6 +46,8 @@ void InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Locat
 
 	//!!!DBG TMP!
 	if (pDestructible->HP <= 0) ::Sys::DbgOut("***DBG Destroyed: {}\n"_format(Game::EntityToString(TargetID)));
+
+	return static_cast<U32>(FinalDamageInt);
 }
 //---------------------------------------------------------------------
 
@@ -85,6 +87,14 @@ void RemoveArmorModifiers(Game::CGameWorld& World, Game::HEntity TargetID, const
 		for (auto& Stat : It->second)
 			Stat.RemoveModifiers(SourceID);
 	}
+}
+//---------------------------------------------------------------------
+
+bool Command_DealDamage(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars)
+{
+	// Params: DamageType, Amount, Source(?), Hostile(? = true; or tag?)
+	NOT_IMPLEMENTED;
+	return false;
 }
 //---------------------------------------------------------------------
 

@@ -226,7 +226,11 @@ static void ApplyDamageFromAbility(Game::CGameSession& Session, Game::CGameWorld
 	Vars.Set(CStrID("Damage"), Instance.Damage); //!!!DBG TMP! Need damage before and after calculation, and other params!
 
 	//???don't calculate damage in advance? only check hit/miss type? or need for special effects / animation choosing?
-	InflictDamage(World, Instance.Targets[0].Entity, Instance.Location, Instance.Damage, Instance.DamageType, Instance.Actor);
+	const auto EffectiveDamage = InflictDamage(World, Instance.Targets[0].Entity, Instance.Location, Instance.Damage, Instance.DamageType, Instance.Actor);
+
+	//!!!DBG TMP! Need better damage flow logic!
+	if (EffectiveDamage > 0 && IsPhysicalDamageType(Instance.DamageType))
+		Vars.Set<int>(CStrID("PhysicalDamage"), EffectiveDamage);
 
 	//!!!instead of OnHit, must use same triggers as status effects!
 	if (const auto* pWeaponComponent = FindCurrentWeapon(World, Instance.Actor))
