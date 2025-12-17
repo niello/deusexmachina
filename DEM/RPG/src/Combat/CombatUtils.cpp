@@ -105,11 +105,13 @@ bool Command_DealDamage(Game::CGameSession& Session, const Data::CParams* pParam
 	const auto TargetEntityID = pVars->Get<Game::HEntity>(pVars->Find(TargetVarID), {});
 	if (!TargetEntityID) return false;
 
+	const auto SourceEntityID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("SourceCreature")), {});
+
 	const auto HitZone = pParams->Get<CStrID>(CStrID("HitZone"), CStrID::Empty);
 	const auto Amount = std::lroundf(EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Amount"), 1.f));
 	const auto DamageType = EvaluateCommandEnumValue(Session, pParams, CStrID("Type"), EDamageType::Raw);
 
-	InflictDamage(*pWorld, TargetEntityID, HitZone, Amount, DamageType, {});
+	InflictDamage(*pWorld, TargetEntityID, HitZone, Amount, DamageType, SourceEntityID);
 
 	return true;
 }

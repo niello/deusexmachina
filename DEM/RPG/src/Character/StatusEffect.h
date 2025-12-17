@@ -132,6 +132,7 @@ struct CStatusEffectStack
 	std::vector<PStatusEffectInstance> Instances; // Pointer to an instance must be stable, it can be captured in condition callbacks
 	std::map<CStrID, CStatModifier>    ActiveMagnitudeStatModifiers;
 	float                              AggregatedMagnitude = 0.f;
+	const CStatusEffectInstance*       pAggregatedInstance = nullptr; // None when aggregated from multiple instances
 
 	//???precalculated CGameVarStorage context for commands?
 };
