@@ -1,6 +1,8 @@
 #include "CombatUtils.h"
 #include <Combat/DestructibleComponent.h>
+#include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
+#include <Scripting/Command.h>
 
 namespace DEM::RPG
 {
@@ -90,11 +92,26 @@ void RemoveArmorModifiers(Game::CGameWorld& World, Game::HEntity TargetID, const
 }
 //---------------------------------------------------------------------
 
+// Can add params: Source(?), Hostile(? = true; or tag?)
 bool Command_DealDamage(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars)
 {
-	// Params: DamageType, Amount, Source(?), Hostile(? = true; or tag?)
-	NOT_IMPLEMENTED;
-	return false;
+	if (!pParams || !pVars) return false;
+
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return false;
+
+	// TODO: use ResolveEntityID? to allow direct ID.
+	const auto TargetVarID = pParams->Get<CStrID>(CStrID("Target"), CStrID("Target"));
+	const auto TargetEntityID = pVars->Get<Game::HEntity>(pVars->Find(TargetVarID), {});
+	if (!TargetEntityID) return false;
+
+	const auto HitZone = pParams->Get<CStrID>(CStrID("HitZone"), CStrID::Empty);
+	const auto Amount = std::lroundf(EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Amount"), 1.f));
+	const auto DamageType = EvaluateCommandEnumValue(Session, pParams, CStrID("Type"), EDamageType::Raw);
+
+	InflictDamage(*pWorld, TargetEntityID, HitZone, Amount, DamageType, {});
+
+	return true;
 }
 //---------------------------------------------------------------------
 
