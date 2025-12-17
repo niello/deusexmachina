@@ -782,7 +782,6 @@ static void TickInstanceRemainingTimes(Game::CGameSession& Session, CStatusEffec
 				//!!!DBG TMP!
 				::Sys::Log("[SE] Expired (timeout) status effect instance '{}' on {}\n"_format(Stack.pEffectData->ID, OwnerID));
 
-				//!!!FIXME: suspension changes magnitude of panic, magnitude controls its suspension source (fear). Circular dependency!
 				const float PrevMagnitude = std::exchange(Instance.Magnitude, 0.f);
 				if (!Instance.SuspendBehaviourCounter)
 				{
@@ -863,8 +862,7 @@ static void RunOnTimeBehaviour(Game::CGameSession& Session, CStatusEffectStack& 
 			MergeValues(Magnitude, InstanceMagnitude, Stack.pEffectData->MagnitudeAggregationPolicy);
 		}
 
-		// TODO: apply magnitude limit? or not applicable because the same instance can tick multiple times?
-
+		// NB: MaxAggregatedMagnitude is not applied here. Multiple ticks of the same instance may be aggregated.
 		RunBhvAggregated(Session, Stack, OwnerID, Bhv, Vars, Magnitude);
 	}
 	else
