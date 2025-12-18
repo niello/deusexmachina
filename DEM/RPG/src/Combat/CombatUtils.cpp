@@ -117,4 +117,20 @@ bool Command_DealDamage(Game::CGameSession& Session, const Data::CParams* pParam
 }
 //---------------------------------------------------------------------
 
+bool Command_ReduceDamage(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars)
+{
+	const auto DamageType = EvaluateCommandEnumValue(Session, pParams, CStrID("Types"), EDamageType::Raw);
+
+	// filter incoming damage by type, do nothing if type doesn't match
+	// get current damage value
+	// multiply max % of protection, can be formula!
+	// clamp to max absolute protection, can be formula!
+	// if "charge variable" is set, clamp to remaining charge (magnitude), and reduce charges by protection value
+	// reduce damage by protection value
+
+	NOT_IMPLEMENTED;
+	return false;
+}
+//---------------------------------------------------------------------
+
 }

@@ -18,6 +18,7 @@ U32 InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Locati
 void ApplyArmorModifiers(Game::CGameWorld& World, Game::HEntity TargetID, const std::map<CStrID, CZoneDamageAbsorptionMod>& ZoneMods, CStrID SourceID);
 void RemoveArmorModifiers(Game::CGameWorld& World, Game::HEntity TargetID, const std::map<CStrID, CZoneDamageAbsorptionMod>& ZoneMods, CStrID SourceID);
 bool Command_DealDamage(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars);
+bool Command_ReduceDamage(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars);
 
 }
 

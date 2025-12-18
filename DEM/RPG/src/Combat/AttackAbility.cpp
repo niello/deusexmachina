@@ -224,6 +224,7 @@ static void ApplyDamageFromAbility(Game::CGameSession& Session, Game::CGameWorld
 	Game::CGameVarStorage Vars;
 	Vars.Set(CStrID("Target"), Instance.Targets[0].Entity);
 	Vars.Set(CStrID("Damage"), Instance.Damage); //!!!DBG TMP! Need damage before and after calculation, and other params!
+	Vars.Set(CStrID("DamageType"), Instance.DamageType);
 
 	//???don't calculate damage in advance? only check hit/miss type? or need for special effects / animation choosing?
 	const auto EffectiveDamage = InflictDamage(World, Instance.Targets[0].Entity, Instance.Location, Instance.Damage, Instance.DamageType, Instance.Actor);

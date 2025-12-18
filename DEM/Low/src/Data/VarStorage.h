@@ -162,6 +162,10 @@ public:
 				return true;
 			}
 		}
+		else if constexpr (std::is_enum_v<T>)
+		{
+			return TryGet(Handle, reinterpret_cast<std::underlying_type_t<T>&>(Out));
+		}
 
 		return false;
 	}
@@ -180,21 +184,28 @@ public:
 	template<typename T, typename std::enable_if_t<DEM::Meta::should_pass_by_value<T>>* = nullptr>
 	HVar Set(CStrID ID, T Value)
 	{
-		static_assert(Supports<T>(), "Requested type is not supported by this storage nor it can be unambiguosly converted to a supported type");
-
-		auto It = _VarsByID.find(ID);
-		if (It == _VarsByID.cend())
+		if constexpr (std::is_enum_v<T> && !Supports<T>())
 		{
-			auto& Storage = std::get<TypeIndex<T>>(_Storages);
-			It = _VarsByID.emplace(ID, HVar{ static_cast<uint32_t>(TypeIndex<T>), static_cast<uint32_t>(Storage.size()) }).first;
-			Storage.push_back(static_cast<TEffective<T>>(Value));
+			return Set(ID, static_cast<std::underlying_type_t<T>>(Value));
 		}
 		else
 		{
-			Set(It->second, static_cast<TEffective<T>>(Value));
-		}
+			static_assert(Supports<T>(), "Requested type is not supported by this storage nor it can be unambiguosly converted to a supported type");
 
-		return It->second;
+			auto It = _VarsByID.find(ID);
+			if (It == _VarsByID.cend())
+			{
+				auto& Storage = std::get<TypeIndex<T>>(_Storages);
+				It = _VarsByID.emplace(ID, HVar{ static_cast<uint32_t>(TypeIndex<T>), static_cast<uint32_t>(Storage.size()) }).first;
+				Storage.push_back(static_cast<TEffective<T>>(Value));
+			}
+			else
+			{
+				Set(It->second, static_cast<TEffective<T>>(Value));
+			}
+
+			return It->second;
+		}
 	}
 
 	template<typename T, typename std::enable_if_t<!DEM::Meta::should_pass_by_value<T>>* = nullptr>
