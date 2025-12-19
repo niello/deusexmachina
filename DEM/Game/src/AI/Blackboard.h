@@ -31,7 +31,7 @@ public:
 	}
 
 	// NB: this is probably too big to be inlined and microoptimization with T instead of T&& yields better assembly
-	template<typename T, typename std::enable_if_t<(sizeof(T) <= sizeof(size_t))>* = nullptr>
+	template<typename T, typename std::enable_if_t<DEM::Meta::should_pass_by_value<T>>* = nullptr>
 	HVar Set(CStrID ID, T Value)
 	{
 		const auto Handle = _Storage.Set(ID, Value);
@@ -39,7 +39,7 @@ public:
 		return Handle;
 	}
 
-	template<typename T, typename std::enable_if_t<(sizeof(T) > sizeof(size_t))>* = nullptr>
+	template<typename T, typename std::enable_if_t<!DEM::Meta::should_pass_by_value<T>>* = nullptr>
 	HVar Set(CStrID ID, T&& Value)
 	{
 		const auto Handle = _Storage.Set(ID, std::forward<T>(Value));

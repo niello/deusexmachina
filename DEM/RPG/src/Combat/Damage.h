@@ -24,12 +24,8 @@ enum class EDamageType : U8
 
 	Raw // Direct non-absorbable damage
 };
-//template <>
-//struct magic_enum::customize::enum_range<Directions>
-//{
-//	static constexpr bool is_flags = true;
-//};
 constexpr size_t DamageTypeCount = static_cast<size_t>(EDamageType::COUNT);
+//static constexpr CEnumMask<EDamageType> PhysicalMask(EDamageType::Piercing, EDamageType::Slashing, EDamageType::Bludgeoning);
 
 static inline bool IsAbsorbableDamageType(EDamageType Type) { return Type >= EDamageType::Piercing && Type < EDamageType::COUNT; }
 static inline bool IsPhysicalDamageType(EDamageType Type) { return Type >= EDamageType::Piercing && Type <= EDamageType::Bludgeoning; }

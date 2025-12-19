@@ -18,20 +18,6 @@ enum class ECommandStatus : U8
 inline bool IsFinishedCommandStatus(ECommandStatus Status) { return Status == ECommandStatus::Succeeded || Status == ECommandStatus::Failed; }
 inline bool IsTerminalCommandStatus(ECommandStatus Status) { return IsFinishedCommandStatus(Status) || Status == ECommandStatus::Cancelled; }
 
-inline std::string_view CommandStatusToString(ECommandStatus Status)
-{
-	switch (Status)
-	{
-		case ECommandStatus::NotStarted: return "NotStarted"sv;
-		case ECommandStatus::Running:    return "Running"sv;
-		case ECommandStatus::Succeeded:  return "Succeeded"sv;
-		case ECommandStatus::Failed:     return "Failed"sv;
-		case ECommandStatus::Cancelled:  return "Cancelled"sv;
-		default:                         return "<unknown>"sv;
-	}
-}
-//---------------------------------------------------------------------
-
 class CCommand : public Core::CObject
 {
 	RTTI_CLASS_DECL(DEM::AI::CCommand, Core::CObject);
@@ -161,17 +147,6 @@ bool UpdateCommand(CCommandFuture& Cmd, TArgs&&... Args)
 	}
 
 	return false;
-}
-//---------------------------------------------------------------------
-
-}
-
-namespace StringUtils
-{
-
-inline std::string ToString(DEM::AI::ECommandStatus Status)
-{
-	return std::string(DEM::AI::CommandStatusToString(Status));
 }
 //---------------------------------------------------------------------
 

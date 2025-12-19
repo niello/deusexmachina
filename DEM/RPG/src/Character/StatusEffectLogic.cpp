@@ -309,8 +309,8 @@ bool Command_ApplyStatusEffect(Game::CGameSession& Session, const Data::CParams*
 	if (pParams->TryGet(ConditionDesc, CStrID("ValidityCondition")))
 		ParamsFormat::Deserialize(ConditionDesc, Instance->ValidityCondition);
 
-	Instance->Magnitude = EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Magnitude"), 1.f);
-	Instance->RemainingTime = EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Duration"), STATUS_EFFECT_INFINITE);
+	Instance->Magnitude = Game::EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Magnitude"), 1.f);
+	Instance->RemainingTime = Game::EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Duration"), STATUS_EFFECT_INFINITE);
 
 	// NB: positive magnitude check is inside
 	return AddStatusEffect(Session, *pWorld, TargetEntityID, *pEffectData, std::move(Instance));
@@ -381,10 +381,10 @@ bool Command_ModifyStatusEffectMagnitude(Game::CGameSession& Session, const Data
 
 	float Magnitude = pVars->Get<float>(MagnitudeHandle);
 
-	const auto Amount = EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Amount"), 1.f);
+	const auto Amount = Game::EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Amount"), 1.f);
 
 	enum class EOp { Mul, Add, Set };
-	const EOp Op = EvaluateCommandEnumValue(Session, pParams, CStrID("Op"), EOp::Add);
+	const EOp Op = Game::EvaluateCommandValue(pParams, CStrID("Op"), EOp::Add);
 	switch (Op)
 	{
 		case EOp::Mul: Magnitude *= Amount; break;
@@ -960,8 +960,8 @@ bool AddNumericStatModifierFromStatusEffect(DEM::Game::CGameSession& Session, co
 	n_assert(Stack.pEffectData->Aggregated || Stack.Instances.size() == 1);
 
 	const auto Priority = static_cast<U16>(Params.Get<int>(CStrID("Priority"), 0));
-	const auto Value = EvaluateCommandNumericValue(Session, &Params, &Vars, CStrID("Value"), 1.f);
-	const auto Type = EvaluateCommandEnumValue(Session, &Params, CStrID("Type"), EModifierType::Add);
+	const auto Value = Game::EvaluateCommandNumericValue(Session, &Params, &Vars, CStrID("Value"), 1.f);
+	const auto Type = Game::EvaluateCommandValue(&Params, CStrID("Type"), EModifierType::Add);
 
 	//???get from CCharacterSheet instead of metadata? need to improve stat architecture!
 	bool IsSet = false;

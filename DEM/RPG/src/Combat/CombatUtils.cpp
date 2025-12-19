@@ -108,8 +108,8 @@ bool Command_DealDamage(Game::CGameSession& Session, const Data::CParams* pParam
 	const auto SourceEntityID = pVars->Get<Game::HEntity>(pVars->Find(CStrID("SourceCreature")), {});
 
 	const auto HitZone = pParams->Get<CStrID>(CStrID("HitZone"), CStrID::Empty);
-	const auto Amount = std::lroundf(EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Amount"), 1.f));
-	const auto DamageType = EvaluateCommandEnumValue(Session, pParams, CStrID("Type"), EDamageType::Raw);
+	const auto Amount = std::lroundf(Game::EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Amount"), 1.f));
+	const auto DamageType = Game::EvaluateCommandValue(pParams, CStrID("Type"), EDamageType::Raw);
 
 	InflictDamage(*pWorld, TargetEntityID, HitZone, Amount, DamageType, SourceEntityID);
 
@@ -122,7 +122,7 @@ bool Command_ReduceDamage(Game::CGameSession& Session, const Data::CParams* pPar
 	if (!pParams || !pVars) return false;
 
 	//!!!TODO: default - All!
-	const auto DamageTypeFilter = EvaluateCommandEnumValue(Session, pParams, CStrID("Types"), EDamageType::Raw);
+	const auto DamageTypeFilter = Game::EvaluateCommandValue(pParams, CStrID("Types"), EDamageType::Raw);
 	const auto DamageType = pVars->Get(pVars->Find(CStrID("DamageType")), EDamageType::Raw);
 	if (!magic_enum::enum_flags_test_any(DamageType, DamageTypeFilter)) return false;
 

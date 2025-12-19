@@ -30,8 +30,8 @@ bool ExecuteCommand(const CCommandData& Command, CGameSession& Session, CGameVar
 
 float EvaluateCommandNumericValue(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars, CStrID ID, float Default);
 
-template<typename T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
-static T EvaluateCommandEnumValue(Game::CGameSession& Session, const Data::CParams* pParams, CStrID ID, T Default)
+template<typename T>
+static T EvaluateCommandValue(const Data::CParams* pParams, CStrID ID, T Default)
 {
 	T Value = Default;
 	Data::CData Data;
