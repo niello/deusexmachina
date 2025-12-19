@@ -12,15 +12,14 @@ std::optional<T> EnumFromString(std::string_view Value)
 	std::optional<T> Result;
 	StringUtils::Tokenize(Value, '|', [&Result](std::string_view id)
 	{
-		const auto Curr = magic_enum::enum_cast<T>(id);
-		if (!Curr)
+		if (const auto CurrOpt = magic_enum::enum_cast<T>(id))
 		{
-			Result = std::nullopt;
-			return true; // break on failure
+			Result = Result ? (*Result | *CurrOpt) : CurrOpt;
+			return false; // continue
 		}
 
-		Result = Result ? (*Result | *Curr) : Curr;
-		return false; // continue
+		Result = std::nullopt;
+		return true; // break on failure
 	});
 
 	return Result;

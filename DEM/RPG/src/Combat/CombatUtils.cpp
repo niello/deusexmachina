@@ -121,8 +121,10 @@ bool Command_ReduceDamage(Game::CGameSession& Session, const Data::CParams* pPar
 {
 	if (!pParams || !pVars) return false;
 
+	//!!!TODO: default - All!
 	const auto DamageTypeFilter = EvaluateCommandEnumValue(Session, pParams, CStrID("Types"), EDamageType::Raw);
 	const auto DamageType = pVars->Get(pVars->Find(CStrID("DamageType")), EDamageType::Raw);
+	if (!magic_enum::enum_flags_test_any(DamageType, DamageTypeFilter)) return false;
 
 	// filter incoming damage by type, do nothing if type doesn't match
 	// get current damage value
