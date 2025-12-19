@@ -31,6 +31,7 @@ endif()
 #???run python script to update cmake src lists?
 
 # Dependency: {fmt}
+
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/fmt") # target: fmt or alias fmt::fmt
 target_compile_definitions(fmt PRIVATE FMT_USE_EXCEPTIONS=0)
 
@@ -38,6 +39,7 @@ target_compile_definitions(fmt PRIVATE FMT_USE_EXCEPTIONS=0)
 
 add_library(magic_enum INTERFACE)
 target_include_directories(magic_enum INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/magic_enum/include")
+target_compile_definitions(magic_enum INTERFACE MAGIC_ENUM_ENABLE_HASH)
 
 file(GLOB_RECURSE MAGIC_ENUM_INCLUDE_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_SOURCE_DIR}/magic_enum/include/*.*)
 create_source_groups("${MAGIC_ENUM_INCLUDE_FILES}" ${CMAKE_CURRENT_SOURCE_DIR}/magic_enum)

@@ -119,7 +119,10 @@ bool Command_DealDamage(Game::CGameSession& Session, const Data::CParams* pParam
 
 bool Command_ReduceDamage(Game::CGameSession& Session, const Data::CParams* pParams, Game::CGameVarStorage* pVars)
 {
-	const auto DamageType = EvaluateCommandEnumValue(Session, pParams, CStrID("Types"), EDamageType::Raw);
+	if (!pParams || !pVars) return false;
+
+	const auto DamageTypeFilter = EvaluateCommandEnumValue(Session, pParams, CStrID("Types"), EDamageType::Raw);
+	const auto DamageType = pVars->Get(pVars->Find(CStrID("DamageType")), EDamageType::Raw);
 
 	// filter incoming damage by type, do nothing if type doesn't match
 	// get current damage value

@@ -639,12 +639,12 @@ struct ParamsFormat<T, typename std::enable_if_t<std::is_enum_v<std::decay_t<T>>
 	{
 		if (auto* pInput = Input.As<std::string>())
 		{
-			if (auto EnumOpt = magic_enum::enum_cast<TDecay>(*pInput))
+			if (auto EnumOpt = EnumFromString<TDecay>(*pInput))
 				Value = EnumOpt.value();
 		}
 		else if (auto* pInput = Input.As<CStrID>())
 		{
-			if (auto EnumOpt = magic_enum::enum_cast<TDecay>(pInput->ToStringView()))
+			if (auto EnumOpt = EnumFromString<TDecay>(pInput->ToStringView()))
 				Value = EnumOpt.value();
 		}
 		else if (auto* pInput = Input.As<int>())

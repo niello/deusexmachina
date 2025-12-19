@@ -51,10 +51,6 @@ protected:
 
 public:
 
-	// Small types are better returned by value. Also bools from std::vector<bool> can't be returned by reference.
-	template<typename T>
-	using TRetVal = std::conditional_t<DEM::Meta::should_pass_by_value<T>, T, const T&>;
-
 	using TVariant = std::variant<std::monostate, TVarTypes...>;
 
 	template<typename T>
@@ -111,8 +107,25 @@ public:
 		return ID ? Find<T>(ID) : HVar{};
 	}
 
-	template<typename T>
-	TRetVal<T> Get(HVar Handle) const
+	// Small types are better returned by value. Also bools from std::vector<bool> can't be returned by reference.
+	template<typename T, typename std::enable_if_t<DEM::Meta::should_pass_by_value<T>>* = nullptr>
+	T Get(HVar Handle) const
+	{
+		if constexpr (!Supports<T>() && std::is_enum_v<T>)
+		{
+			return static_cast<T>(Get<std::underlying_type_t<T>>(Handle));
+		}
+		else
+		{
+			static_assert(Supports<T>(), "Requested type is not supported by this storage");
+			n_assert_dbg(Handle.TypeIdx == TypeIndex<T>);
+			return std::get<std::vector<TEffective<T>>>(_Storages)[Handle.VarIdx];
+		}
+	}
+
+	// NB: can't convert to the best match type because a reference is returned
+	template<typename T, typename std::enable_if_t<!DEM::Meta::should_pass_by_value<T>>* = nullptr>
+	const T& Get(HVar Handle) const
 	{
 		static_assert(DEM::Meta::contains_type<T, TVarTypes...>(), "Requested type is not supported by this storage");
 		n_assert_dbg(Handle.TypeIdx == TypeIndex<T>);
@@ -122,11 +135,19 @@ public:
 	template<typename T, typename std::enable_if_t<DEM::Meta::should_pass_by_value<T>>* = nullptr>
 	T Get(HVar Handle, T Default) const
 	{
-		static_assert(DEM::Meta::contains_type<T, TVarTypes...>(), "Requested type is not supported by this storage");
-		const auto& Storage = std::get<std::vector<T>>(_Storages);
-		return (Handle.TypeIdx == TypeIndex<T> && Handle.VarIdx < Storage.size()) ? Storage[Handle.VarIdx] : Default;
+		if constexpr (!Supports<T>() && std::is_enum_v<T>)
+		{
+			return static_cast<T>(Get<std::underlying_type_t<T>>(Handle, static_cast<std::underlying_type_t<T>>(Default)));
+		}
+		else
+		{
+			static_assert(Supports<T>(), "Requested type is not supported by this storage");
+			const auto& Storage = std::get<std::vector<TEffective<T>>>(_Storages);
+			return (Handle.TypeIdx == TypeIndex<T> && Handle.VarIdx < Storage.size()) ? Storage[Handle.VarIdx] : Default;
+		}
 	}
 
+	// NB: can't convert to the best match type because a reference is returned
 	template<typename T, typename std::enable_if_t<!DEM::Meta::should_pass_by_value<T>>* = nullptr>
 	const T& Get(HVar Handle, const T& Default) const
 	{

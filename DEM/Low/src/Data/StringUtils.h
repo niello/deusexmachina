@@ -46,6 +46,39 @@ inline bool AreEqualCaseInsensitive(const char* pStr1, const char* pStr2)
 }
 //---------------------------------------------------------------------
 
+template<typename F, typename D>
+void Tokenize(std::string_view Input, D Dlm, F Callback)
+{
+	size_t Start = 0;
+	size_t End;
+	while ((End = Input.find(Dlm, Start)) != std::string_view::npos)
+	{
+		if constexpr (std::is_invocable_r_v<bool, F, std::string_view>)
+		{
+			if (Callback(Input.substr(Start, End - Start))) return;
+		}
+		else if constexpr (std::is_invocable_r_v<void, F, std::string_view>)
+		{
+			Callback(Input.substr(Start, End - Start));
+		}
+		Start = End + 1;
+	}
+
+	// Handle the last token
+	if (Start < Input.size())
+	{
+		if constexpr (std::is_invocable_r_v<bool, F, std::string_view>)
+		{
+			if (Callback(Input.substr(Start))) return;
+		}
+		else if constexpr (std::is_invocable_r_v<void, F, std::string_view>)
+		{
+			Callback(Input.substr(Start));
+		}
+	}
+}
+//---------------------------------------------------------------------
+
 inline std::string_view TrimLeft(std::string_view Input, std::string_view Chars = DEM_WHITESPACE)
 {
 	const size_t First = Input.find_first_not_of(Chars);
