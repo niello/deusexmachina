@@ -655,6 +655,26 @@ struct ParamsFormat<T, typename std::enable_if_t<std::is_enum_v<std::decay_t<T>>
 	}
 };
 
+template<typename T>
+struct ParamsFormat<CEnumMask<T>>
+{
+	static inline void Serialize(Data::CData& Output, CEnumMask<T> Value)
+	{
+		if (Value)
+			ParamsFormat<T>::Serialize(Output, *Value);
+		else
+			Output.Clear();
+	}
+
+	static inline void Deserialize(const Data::CData& Input, CEnumMask<T>& Value)
+	{
+		if (auto* pInput = Input.As<std::string>())
+			Value = EnumMaskFromString<T>(*pInput);
+		else if (auto* pInput = Input.As<CStrID>())
+			Value = EnumMaskFromString<T>(pInput->ToStringView());
+	}
+};
+
 // TODO: enable only for Ts constructible this way!
 template<typename T>
 struct ParamsFormat<std::unique_ptr<T>>
