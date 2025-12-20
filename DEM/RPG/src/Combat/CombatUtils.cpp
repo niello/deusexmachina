@@ -121,20 +121,42 @@ bool Command_ReduceDamage(Game::CGameSession& Session, const Data::CParams* pPar
 {
 	if (!pParams || !pVars) return false;
 
-	//!!!TODO: default - All!
-	const auto DamageTypeFilter = Game::EvaluateCommandValue(pParams, CStrID("Types"), EDamageType::Raw);
+	const auto DamageTypeFilter = Game::EvaluateCommandValue(pParams, CStrID("Types"), CEnumMask<EDamageType>::All());
 	const auto DamageType = pVars->Get(pVars->Find(CStrID("DamageType")), EDamageType::Raw);
-	if (!magic_enum::enum_flags_test_any(DamageType, DamageTypeFilter)) return false;
+	if (!DamageTypeFilter.Test(DamageType)) return false;
 
-	// filter incoming damage by type, do nothing if type doesn't match
-	// get current damage value
-	// multiply max % of protection, can be formula!
-	// clamp to max absolute protection, can be formula!
-	// if "charge variable" is set, clamp to remaining charge (magnitude), and reduce charges by protection value
-	// reduce damage by protection value
+	const auto DamageHandle = pVars->Find(CStrID("Damage"));
+	if (!DamageHandle) return false;
 
-	NOT_IMPLEMENTED;
-	return false;
+	const auto Damage = pVars->Get(DamageHandle, 0);
+	if (Damage <= 0) return false;
+
+	const auto Rate = Game::EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Rate"), 1.f);
+	const auto Limit = Game::EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Limit"), std::numeric_limits<float>::max());
+	auto DamageAbsorbed = std::min(Rate * Damage, Limit);
+	if (DamageAbsorbed <= 0.f) return false;
+
+	// If absorption requires charges, clamp the value to charges available at the moment
+	if (const auto ChargeVarID = pParams->Get<CStrID>(CStrID("ChargeVar"), CStrID::Empty))
+	{
+		if (const auto ChargeHandle = pVars->Find(ChargeVarID))
+		{
+			const auto Charges = pVars->Get(ChargeHandle, 0.f);
+			if (DamageAbsorbed > Charges)
+			{
+				pVars->Set(ChargeHandle, 0.f);
+				if (Charges <= 0.f) return false;
+				DamageAbsorbed = Charges;
+			}
+			else
+			{
+				pVars->Set(ChargeHandle, Charges - DamageAbsorbed);
+			}
+		}
+	}
+
+	pVars->Set(DamageHandle, Damage - DamageAbsorbed);
+	return true;
 }
 //---------------------------------------------------------------------
 
