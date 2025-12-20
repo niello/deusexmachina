@@ -1,5 +1,6 @@
 #include "CombatUtils.h"
 #include <Combat/DestructibleComponent.h>
+#include <Character/StatusEffectLogic.h>
 #include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
 #include <Scripting/Command.h>
@@ -7,12 +8,21 @@
 namespace DEM::RPG
 {
 
-U32 InflictDamage(Game::CGameWorld& World, Game::HEntity TargetID, CStrID Location, int Damage, EDamageType DamageType, Game::HEntity ActorID)
+U32 InflictDamage(Game::CGameSession& Session, Game::HEntity TargetID, CStrID Location, int Damage, EDamageType DamageType, Game::HEntity ActorID)
 {
-	auto* pDestructible = World.FindComponent<CDestructibleComponent>(TargetID);
+	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
+	if (!pWorld) return false;
+
+	auto* pDestructible = pWorld->FindComponent<CDestructibleComponent>(TargetID);
 	if (!pDestructible || pDestructible->HP <= 0) return 0;
 
-	float FinalDamage = static_cast<float>(Damage);
+	// TODO: if (auto* pBhvs = ...)? Not to allocate Vars in vain.
+	Game::CGameVarStorage Vars;
+	const auto DamageHandle = Vars.Set(CStrID("Damage"), static_cast<float>(Damage));
+	Vars.Set(CStrID("DamageType"), DamageType);
+	TriggerStatusEffects(Session, *pWorld, TargetID, CStrID("OnIncomingDamage"), Vars);
+
+	auto FinalDamage = Vars.Get(DamageHandle, 0.f);
 
 	const auto& Absorption = pDestructible->DamageAbsorption;
 	if (!Absorption.empty() && IsAbsorbableDamageType(DamageType))
@@ -97,9 +107,6 @@ bool Command_DealDamage(Game::CGameSession& Session, const Data::CParams* pParam
 {
 	if (!pParams || !pVars) return false;
 
-	auto* pWorld = Session.FindFeature<Game::CGameWorld>();
-	if (!pWorld) return false;
-
 	// TODO: use ResolveEntityID? to allow direct ID.
 	const auto TargetVarID = pParams->Get<CStrID>(CStrID("Target"), CStrID("Target"));
 	const auto TargetEntityID = pVars->Get<Game::HEntity>(pVars->Find(TargetVarID), {});
@@ -111,7 +118,7 @@ bool Command_DealDamage(Game::CGameSession& Session, const Data::CParams* pParam
 	const auto Amount = std::lroundf(Game::EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Amount"), 1.f));
 	const auto DamageType = Game::EvaluateCommandValue(pParams, CStrID("Type"), EDamageType::Raw);
 
-	InflictDamage(*pWorld, TargetEntityID, HitZone, Amount, DamageType, SourceEntityID);
+	InflictDamage(Session, TargetEntityID, HitZone, Amount, DamageType, SourceEntityID);
 
 	return true;
 }
@@ -128,12 +135,12 @@ bool Command_ReduceDamage(Game::CGameSession& Session, const Data::CParams* pPar
 	const auto DamageHandle = pVars->Find(CStrID("Damage"));
 	if (!DamageHandle) return false;
 
-	const auto Damage = pVars->Get(DamageHandle, 0);
-	if (Damage <= 0) return false;
+	const auto Damage = pVars->Get(DamageHandle, 0.f);
+	if (Damage <= 0.f) return false;
 
 	const auto Rate = Game::EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Rate"), 1.f);
 	const auto Limit = Game::EvaluateCommandNumericValue(Session, pParams, pVars, CStrID("Limit"), std::numeric_limits<float>::max());
-	auto DamageAbsorbed = std::min(Rate * Damage, Limit);
+	auto DamageAbsorbed = std::round(std::min(Rate * Damage, Limit));
 	if (DamageAbsorbed <= 0.f) return false;
 
 	// If absorption requires charges, clamp the value to charges available at the moment

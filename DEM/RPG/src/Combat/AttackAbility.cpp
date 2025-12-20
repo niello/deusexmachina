@@ -227,7 +227,7 @@ static void ApplyDamageFromAbility(Game::CGameSession& Session, Game::CGameWorld
 	Vars.Set(CStrID("DamageType"), Instance.DamageType);
 
 	//???don't calculate damage in advance? only check hit/miss type? or need for special effects / animation choosing?
-	const auto EffectiveDamage = InflictDamage(World, Instance.Targets[0].Entity, Instance.Location, Instance.Damage, Instance.DamageType, Instance.Actor);
+	const auto EffectiveDamage = InflictDamage(Session, Instance.Targets[0].Entity, Instance.Location, Instance.Damage, Instance.DamageType, Instance.Actor);
 
 	//!!!DBG TMP! Need better damage flow logic!
 	if (EffectiveDamage > 0 && IsPhysicalDamageType(Instance.DamageType))
